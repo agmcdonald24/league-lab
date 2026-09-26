@@ -80,6 +80,8 @@ NULL or labelled "unavailable".
     re-fetched every run too (cheap) — there is no separate Thursday job yet.
 14. **The Mac is still the pipeline.** Hosting (docs/HOSTING.md) publishes marts after each refresh; if the Mac
     does not refresh, the hosted copy goes stale (the banner says when it was published). GitHub Actions (I-01) removes this.
+14c. **Publishing is not atomic on the free tier** (0.5 GB cannot hold two copies): pages show "not built yet" for the
+    minute or two of a restore. The publication contract (I-02) fixes this once the database has room for two copies.
 14a. **One league.** Every NFL-wide mart uses the current league's scoring; a second league needs S-01 first.
 14b. **Beta password is not authentication.** It is a closed door for a link; the database role is read-only regardless.
 

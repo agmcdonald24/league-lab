@@ -7,3 +7,6 @@ gatherUsageStats = false
 [theme]
 base = "light"
 primaryColor = "#2563eb"
+
+[client]
+toolbarMode = "viewer"

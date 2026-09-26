@@ -64,7 +64,7 @@ def freshness_banner() -> None:
     parts = []
     for _, r in status.iterrows():
         when = pd.to_datetime(r["last_loaded"]).strftime("%Y-%m-%d %H:%M") if pd.notna(r["last_loaded"]) else "never"
-        flag = f" · ⚠️ {int(r['failures'])} failed loads (7d)" if r["failures"] else ""
+        flag = f" · ⚠️ {int(r['failures'])} partition(s) currently failing" if r["failures"] else ""
         parts.append(f"**{r['source']}** loaded {when}{flag}")
     if not cov.empty:
         c = cov.iloc[0]

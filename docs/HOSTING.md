@@ -10,12 +10,13 @@ Mac: ingest → dbt build → backup → sync_to_hosted.sh ──► hosted Post
 GitHub repo ──► Streamlit Community Cloud (app/Home.py) ─────────┘  read-only role
 ```
 
-What leaves your machine: the `analytics`, `analytics_seeds` and `ops` schemas (marts, seeds, load
-manifest) — never `raw`, `staging`, `intermediate`, never `.env`, never the archive.
+What leaves your machine: the analytics marts the pages and packs read (the script derives the list
+from the code — 35 relations, ~290 MB), the seeds and the `ops` schema — never `raw`, `staging`,
+`intermediate`, the play-level tables, `.env` or the archive.
 
 ## 1. Hosted Postgres (15 minutes)
 
-Either provider works; both have a free tier that fits (~400 MB today, +≈40 MB per season).
+Either provider works; both have a free tier that fits (~290 MB today, +≈30 MB per season; Neon's cap is 0.5 GB).
 
 **Neon** (recommended: cheap, Postgres 17, no sleeping issues for a read-only workload)
 1. neon.tech → sign up → New project → name `league-lab`, region closest to you, Postgres 17.
@@ -36,7 +37,7 @@ LEAGUE_LAB_HOSTED_APP_PASSWORD=<a long random password for the read-only app rol
 Publish:
 
 ```bash
-make sync-hosted        # ~1-3 minutes: dumps marts, creates the read-only role, restores in one transaction
+make sync-hosted        # ~1-3 minutes: dumps the marts the pages read, creates the read-only role, restores
 ```
 
 Every `make refresh` (and the nightly launchd job) now ends with the same sync. If the sync fails
@@ -92,9 +93,11 @@ The URL is `https://<app-name>.streamlit.app`; you can rename it in the app sett
   fraction of that. If the marts outgrow 0.5 GB (several seasons from now), Neon's paid tier is
   ~$19/month; before that, the play-level tables are already excluded and `fct_player_game` can be
   slimmed.
-* **A refresh in progress**: the sync is one transaction, so viewers see the old marts until the
-  new ones commit; nobody sees a half-built schema. A page that needs a mart the hosted copy does
-  not have yet says so instead of failing.
+* **A refresh in progress**: the sync drops the previous copy and restores the new one (free
+  tiers cannot hold two copies at once — Neon caps a project at 0.5 GB), so for the length of the
+  restore (a minute or two) pages say "marts not built on this machine yet" instead of failing.
+  The nightly job runs at 08:00, before anyone is looking. If a restore ever fails midway, run
+  `make sync-hosted` again; local data is never touched.
 * **Security model**: the hosted role is read-only (`default_transaction_read_only`), sees only the
   three published schemas and has a 30 s statement timeout. The beta password is a closed door for
   a link, not authentication; use Community Cloud's private sharing if that matters.

@@ -127,11 +127,17 @@ real widening is needed, dependent views are dropped with a logged warning and r
 
 ## Share-ready beta 2026-09-26 (Andrew: "offer this publicly ... collect feedback")
 
-* **Hosted publishing**: `scripts/sync_to_hosted.sh` / `make sync-hosted` dumps `analytics` (minus the four play-level
-  tables the pages never read), `analytics_seeds` and `ops` — 404 MB — and restores them on the hosted database in
-  **one transaction** (drop → restore → grants), creating the read-only `league_lab_app` role there. `make refresh`
-  runs it when `LEAGUE_LAB_HOSTED_ADMIN_URL` is set. Refuses to target the local cluster. Simulated end to end in
-  the sandbox: restored into a second database, all 13 pages rendered against it with the read-only role.
+* **Hosted publishing**: `scripts/sync_to_hosted.sh` / `make sync-hosted` publishes the analytics relations the
+  pages and packs reference (derived from the code at run time: 35 of 49, ≈290 MB) plus seeds and `ops`, creating
+  the read-only `league_lab_app` role. Drop-then-restore, not atomic: Neon's free tier caps a project at 0.5 GB and
+  cannot hold two copies (the first atomic attempt failed on exactly that), so pages show "not built yet" for the
+  restore's minute or two. `make refresh` runs it when `LEAGUE_LAB_HOSTED_ADMIN_URL` is set; refuses the local
+  cluster. Simulated end to end in the sandbox; all 13 pages render against the hosted copy with the read-only role.
+* **Live**: deployed 2026-09-26 on Neon (us-east-2) + Streamlit Community Cloud from `github.com/agmcdonald24/league-lab`.
+  Found on the first walkthrough and fixed: the Receivers guard named a play-level table the hosted copy omits; the
+  freshness banner counted historical failures (now: partitions whose latest attempt failed); the viewer toolbar
+  showed Fork/GitHub (`client.toolbarMode = viewer`); secrets added after the first deploy needed a reboot (the
+  bridge now re-reads secrets before every connection).
 * **App for the cloud**: `st.secrets` → environment bridge (`LEAGUE_LAB_*`), optional beta password gate
   (`LEAGUE_LAB_APP_PASSWORD`), sidebar feedback button (`LEAGUE_LAB_FEEDBACK_URL`), `app/requirements.txt`
   (runtime only — Community Cloud reads the entrypoint directory's file first), `app/.streamlit/config.toml`.

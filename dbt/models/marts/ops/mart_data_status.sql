@@ -13,12 +13,22 @@ with parts as (
     group by 1, 2
 ),
 
+-- a partition counts as failing only when its LATEST attempt failed (an early failure that a
+-- later run fixed is history, not a problem) - excluding partitions the loader expects to be
+-- missing (a season file not yet published)
+latest_per_partition as (
+    select distinct on (source, dataset, partition_key)
+           source, dataset, partition_key, status, started_at, error
+    from {{ source('ops', 'load_manifest') }}
+    order by source, dataset, partition_key, load_id desc
+),
+
 recent_failures as (
     select source, dataset,
            count(*) as failures_7d,
            max(started_at) as last_failure_at,
            (array_agg(left(error, 200) order by started_at desc))[1] as last_error
-    from {{ source('ops', 'load_manifest') }}
+    from latest_per_partition
     where status in ('failed', 'contract_failed') and started_at > now() - interval '7 days'
     group by 1, 2
 ),

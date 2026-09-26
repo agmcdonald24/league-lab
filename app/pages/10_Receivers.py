@@ -9,7 +9,7 @@ from lib.ui import freshness_banner, seasons_available, setup, unavailable
 
 setup("Receivers")
 freshness_banner()
-require_relations("mart_player_context", "fct_play_charting")
+require_relations("mart_player_context")
 
 seasons = seasons_available()
 c1, c2, c3 = st.columns([1, 1, 2])
