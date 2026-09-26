@@ -6,7 +6,7 @@ import streamlit as st
 from lib.charts import heat_style
 from lib.db import query
 from lib.table import howto, show
-from lib.ui import freshness_banner, perspective, setup
+from lib.ui import freshness_banner, league_positions, perspective, setup
 
 setup("Trade Finder")
 freshness_banner()
@@ -30,7 +30,11 @@ ps = query(
        from analytics.mart_league_positional_strength where league_id = %s""",
     (league_id,),
 )
-rank_pivot = ps.pivot_table(index="team_name", columns="position", values="position_rank")[["QB", "RB", "WR", "TE", "K"]]
+positions = league_positions(ps)  # a dynasty league without K slots has no kicker rows
+if ps.empty:
+    st.info("No positional-strength rows for this league yet (rosters or season stats not built).")
+    st.stop()
+rank_pivot = ps.pivot_table(index="team_name", columns="position", values="position_rank")[positions]
 rank_pivot.index.name = "Team"
 st.caption("Rank of starter points per game by position (1 = strongest, darker = stronger).")
 st.dataframe(heat_style(rank_pivot), width="stretch")
@@ -45,10 +49,10 @@ partners = [r for r in members["roster_id"].tolist() if r != roster_id]
 partner = st.selectbox("Trade partner", partners, format_func=lambda r: labels[int(r)])
 pp = ps[ps["roster_id"] == partner].set_index("position")
 fit = pd.DataFrame({
-    "position": ["QB", "RB", "WR", "TE", "K"],
-    "you_vs_median": [mine["starter_ppg_vs_median"].get(p) for p in ["QB", "RB", "WR", "TE", "K"]],
-    "partner_vs_median": [pp["starter_ppg_vs_median"].get(p) for p in ["QB", "RB", "WR", "TE", "K"]],
-    "partner_best_bench_ppg": [pp["best_bench_ppg"].get(p) for p in ["QB", "RB", "WR", "TE", "K"]],
+    "position": positions,
+    "you_vs_median": [mine["starter_ppg_vs_median"].get(p) for p in positions],
+    "partner_vs_median": [pp["starter_ppg_vs_median"].get(p) for p in positions],
+    "partner_best_bench_ppg": [pp["best_bench_ppg"].get(p) for p in positions],
 })
 fit["complementary"] = (fit["you_vs_median"] < 0) & (fit["partner_vs_median"] > 0)
 st.markdown("**Shape fit with this partner** — a *Fit* marks a position where you are below the league median and they are above it.")

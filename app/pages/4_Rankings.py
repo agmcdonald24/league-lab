@@ -9,7 +9,7 @@ from lib.ui import freshness_banner, next_week_info, perspective, setup
 
 setup("Rankings")
 freshness_banner()
-require_relations("mart_player_week_rankings", "mart_player_week_features", "mart_backtest_summary")
+require_relations("mart_player_week_rankings", "mart_backtest_summary")
 league_id, roster_id, members = perspective(require_team=False)
 cal = next_week_info()
 cur_season = int(cal["season"]) if not cal.empty else None

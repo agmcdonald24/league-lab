@@ -11,6 +11,12 @@ Newest first. The Home page shows the top entry as "What's new".
   (`bonus_rec_yd_100` …, exclusive buckets), 40+/50+ yard touchdowns (from play-by-play) and
   distance-bucketed missed field goals. Expected points leave bonuses out on purpose.
 - Sleeper's "no previous league" marker (`"0"`) no longer produces a failed partition.
+- The league and team you pick now carry across pages (Streamlit drops the URL's `?league=&team=`
+  when you switch pages; the choice is remembered for the browser session, and a shared link still
+  wins when it carries one).
+- A league without kicker slots no longer breaks Trade Finder and League Intel; a table missing
+  during a hosted refresh shows a notice instead of a traceback; the Rankings guard no longer
+  demands a mart the page does not read.
 
 ## 2026-09-26 — Share-ready beta
 

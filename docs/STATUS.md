@@ -171,6 +171,14 @@ real widening is needed, dependent views are dropped with a logged warning and r
   game, 2023–2025 REG totals ≈ 100 / 30 / 100 per season (40+); reference-league reconciliation still 0 rows.
 * Second league: *Forever Unclean Dynasty* (12 teams, superflex, 1 PPR, 6-pt pass TD, chain 2021–2026). Its
   rankings/expected points are in the reference league's scoring until S-01 — the sidebar says so.
+* **First live use with two leagues surfaced three app bugs** (Andrew): the sidebar snapped back to the reference
+  league on every page (Streamlit drops the query string on navigation → the choice now also lives in
+  `st.session_state`, URL > session > reference; the URL's team applies only to the URL's league since roster ids
+  repeat); Trade Finder / League Intel indexed a pivot with `K` — the dynasty league starts no kicker
+  (`league_positions()` = positions present); the Rankings guard named `mart_player_week_features`, which the page
+  never reads and the hosted sync therefore omits (`tests/test_app_guards.py` now enforces guard = read). `query()`
+  turns `UndefinedTable` into a "being refreshed" notice for the sync's drop-restore window. Verified with the
+  headless page run (13/13) and a Playwright walk: `?team=5` on Team Hub → Matchups → Rankings keeps team 5.
 
 ## Next concrete actions
 

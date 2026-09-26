@@ -10,6 +10,16 @@ from .db import connection_ok, query, setting
 SKILL_POSITIONS = ["QB", "RB", "WR", "TE", "K"]
 
 
+def league_positions(df: pd.DataFrame, column: str = "position") -> list[str]:
+    """The skill positions present in a league-scoped frame, in QB/RB/WR/TE/K order.
+
+    A league without kicker (or TE) slots has no rows for that position; pages must not
+    hard-code the five and index a pivot with a position the league does not start.
+    """
+    present = set(df[column].dropna().unique().tolist()) if not df.empty else set()
+    return [p for p in SKILL_POSITIONS if p in present]
+
+
 def _gate() -> None:
     """Optional shared password for a hosted beta (LEAGUE_LAB_APP_PASSWORD in secrets). Not a
     security boundary - the database role is read-only regardless - just a closed door for a link."""
@@ -118,8 +128,13 @@ def current_leagues() -> pd.DataFrame:
 def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFrame]:
     """Sidebar selectors: which league and which roster the page looks through.
 
-    Nothing is keyed to a particular user: the choice lives in the URL (?league=&team=) so a link
-    can be shared with a leaguemate and it opens on their team.
+    Nothing is keyed to a particular user. Precedence for the default on each page:
+      1. the URL (?league=&team=) — a shared link opens on that league and team;
+      2. what was chosen earlier in this browser session — Streamlit drops the query string when
+         you move between pages, so without this the selector snapped back to the reference
+         league on every page;
+      3. the reference league, whole-league view.
+    The choice is written back to the URL on every page so any page's link stays shareable.
     Returns (league_id, roster_id, members_df).
     """
     leagues = current_leagues()
@@ -127,10 +142,17 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
         st.warning("No current-season league loaded. Run `make ingest-sleeper` and `make build`.")
         st.stop()
     qp = st.query_params
+    ss = st.session_state
+    remembered_teams: dict[str, int | None] = ss.setdefault("ll_team_by_league", {})
     with st.sidebar:
         st.markdown("### Perspective")
         league_ids = leagues["league_id"].tolist()
-        default_league = qp.get("league") if qp.get("league") in league_ids else league_ids[0]
+        if qp.get("league") in league_ids:
+            default_league = qp.get("league")
+        elif ss.get("ll_league") in league_ids:
+            default_league = ss.get("ll_league")
+        else:
+            default_league = league_ids[0]
         league_id = st.selectbox(
             "League", league_ids, index=league_ids.index(default_league),
             format_func=lambda lid: f"{leagues.set_index('league_id').loc[lid, 'league_name']} {leagues.set_index('league_id').loc[lid, 'season']}",
@@ -143,11 +165,15 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
         options = [None] + members["roster_id"].tolist() if not require_team else members["roster_id"].tolist()
         labels = {int(r.roster_id): f"{r.team_name} ({r.manager_name})" for r in members.itertuples()}
         default_team = None
+        # the URL's team applies to the URL's league only (roster ids repeat across leagues); a bare
+        # ?team= (older links) applies to whichever league is selected
         try:
-            if qp.get("team") is not None and int(qp.get("team")) in labels:
+            if qp.get("league") in (None, league_id) and qp.get("team") is not None and int(qp.get("team")) in labels:
                 default_team = int(qp.get("team"))
         except ValueError:
             default_team = None
+        if default_team is None and remembered_teams.get(league_id) in labels:
+            default_team = remembered_teams[league_id]
         if default_team is None and require_team:
             default_team = options[0]
         roster_id = st.selectbox(
@@ -165,6 +191,8 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
                 + (f" — this league differs on: {diff}." if diff else " — identical to this league's, so nothing is lost."),
                 icon="ℹ️",
             )
+    ss["ll_league"] = league_id
+    remembered_teams[league_id] = int(roster_id) if roster_id is not None else None
     st.query_params["league"] = league_id
     if roster_id is not None:
         st.query_params["team"] = str(roster_id)

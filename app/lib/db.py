@@ -65,7 +65,17 @@ def setting(name: str, default: str = "") -> str:
 def query(sql: str, params: tuple = ()) -> pd.DataFrame:
     """Run a read-only query and return a DataFrame (cached)."""
     with psycopg.connect(_dsn(), autocommit=True) as conn, conn.cursor() as cur:
-        cur.execute(sql, params)
+        try:
+            cur.execute(sql, params)
+        except psycopg.errors.UndefinedTable as exc:
+            # the hosted copy is dropped and restored by every sync (a minute or two); a page
+            # hit inside that window, or before a new mart is published, gets a notice, not a traceback
+            st.warning(
+                "This table is not on this database right now: "
+                f"`{str(exc).splitlines()[0]}`. If the data is being refreshed (nightly, or `make sync-hosted`), "
+                "reload in a minute or two; otherwise run `make build` and `make sync-hosted`."
+            )
+            st.stop()
         cols = [d.name for d in cur.description]
         rows = cur.fetchall()
     df = pd.DataFrame(rows, columns=cols)

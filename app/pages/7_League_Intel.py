@@ -4,7 +4,7 @@ import streamlit as st
 from lib.charts import bar_chart, color_map, heat_style, line_chart
 from lib.db import query
 from lib.table import howto, show
-from lib.ui import freshness_banner, perspective, setup
+from lib.ui import freshness_banner, league_positions, perspective, setup
 
 setup("League Intel")
 freshness_banner()
@@ -63,7 +63,7 @@ ps = query(
     (league_id,),
 )
 if not ps.empty:
-    pv = ps.pivot_table(index="team_name", columns="position", values="position_rank")[["QB", "RB", "WR", "TE", "K"]]
+    pv = ps.pivot_table(index="team_name", columns="position", values="position_rank")[league_positions(ps)]
     pv.index.name = "Team"
     st.dataframe(heat_style(pv), width="stretch")
 
