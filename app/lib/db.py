@@ -88,7 +88,27 @@ def connection_ok() -> tuple[bool, str]:
         who = scalar("select current_user")
         return True, str(who)
     except Exception as exc:  # noqa: BLE001
-        return False, str(exc)
+        return False, str(exc) + "\n\n" + _diagnostics()
+
+
+def _diagnostics() -> str:
+    """What the app can see about its configuration (names only, never values) - shown on a failed connection."""
+    import os
+
+    from streamlit import config as st_config
+
+    lines = []
+    try:
+        lines.append("secrets keys: " + ", ".join(sorted(k for k in st.secrets.keys())))
+    except Exception as exc:  # noqa: BLE001
+        lines.append(f"secrets: not readable ({type(exc).__name__}: {exc})")
+    try:
+        lines.append("secrets files checked: " + ", ".join(st_config.get_option("secrets.files")))
+    except Exception as exc:  # noqa: BLE001
+        lines.append(f"secrets files: unknown ({exc})")
+    lines.append("LEAGUE_LAB_* in environment: " + ", ".join(sorted(k for k in os.environ if k.startswith("LEAGUE_LAB_"))))
+    lines.append(f"cwd: {os.getcwd()}")
+    return "Diagnostics — " + " | ".join(lines)
 
 
 @st.cache_data(ttl=60, show_spinner=False)
