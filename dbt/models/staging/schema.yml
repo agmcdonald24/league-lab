@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: stg_sleeper__leagues
+    columns:
+      - name: league_id
+        tests: [unique, not_null]
+      - name: season
+        tests: [not_null]
+  - name: stg_sleeper__matchup_players
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, week, roster_id, sleeper_player_id]
+  - name: stg_sleeper__players
+    columns:
+      - name: sleeper_player_id
+        tests: [unique, not_null]
+  - name: stg_nflverse__player_stats_week
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+    columns:
+      - name: game_id
+        tests: [not_null]
+  - name: stg_nflverse__team_stats_week
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [team, season, week]
+  - name: stg_nflverse__games
+    columns:
+      - name: game_id
+        tests: [unique, not_null]
+  - name: stg_nflverse__snap_counts
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [pfr_player_id, game_id]
+  - name: stg_nflverse__players
+    columns:
+      - name: gsis_id
+        tests: [unique, not_null]

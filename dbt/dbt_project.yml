@@ -1,0 +1,77 @@
+name: league_lab
+version: "0.1.0"
+config-version: 2
+profile: league_lab
+require-dbt-version: [">=1.9.0", "<2.0.0"]
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+analysis-paths: ["analyses"]
+
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # NFL season year of the first history partition (matches LEAGUE_LAB_SEASONS_START)
+  seasons_start: "{{ env_var('LEAGUE_LAB_SEASONS_START', '2016') | int }}"
+  # tolerance (fantasy points) when reconciling recomputed vs Sleeper-observed points
+  points_tolerance: 0.5
+
+models:
+  league_lab:
+    +persist_docs:
+      relation: true
+      columns: true
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: table
+    marts:
+      +schema: analytics
+      +materialized: table
+
+seeds:
+  league_lab:
+    +schema: analytics_seeds
+    scoring_stat_map:
+      +column_types:
+        sleeper_key: text
+        stat_expression: text
+        description: text
+    trend_metrics:
+      +column_types:
+        metric: text
+        label: text
+        arrow_label: text
+        min_change: numeric
+        is_opportunity: boolean
+        positions: text
+        higher_is_better: boolean
+        display_kind: text
+    ranking_weights:
+      +column_types:
+        position: text
+        feature: text
+        weight: numeric
+        train_seasons: text
+        n_rows: integer
+        r2_train: numeric
+        fitted_at: text
+    metric_registry:
+      +column_types:
+        metric: text
+        version: text
+        numerator: text
+        denominator: text
+        grain: text
+        status: text
+        notes: text
+
+tests:
+  league_lab:
+    +store_failures: true
+    +schema: analytics_test_failures

@@ -1,0 +1,11 @@
+# Streamlit Community Cloud installs from the entrypoint directory's dependency file first (plan S-03),
+# so this file — the explorer's runtime only, no dbt / ingestion — wins over the repo's uv.lock there.
+# Versions match uv.lock. Locally, `make sync` (uv) is what you use; never pip install this by hand.
+streamlit==1.64.0
+pandas==3.0.6
+pyarrow==25.0.1
+plotly==7.1.0
+numpy==2.5.3
+psycopg[binary]==3.3.6
+pydantic-settings==2.15.0
+python-dotenv==1.2.3

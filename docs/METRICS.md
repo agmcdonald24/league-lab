@@ -1,0 +1,266 @@
+# Metric contract
+
+The registry of record is `dbt/seeds/metric_registry.csv` (name, version, numerator, denominator,
+grain, status, notes); this file explains the rules behind it. Plan §6 is the source of the rules.
+
+## Rules that apply to every rate
+
+1. **Sum, then divide.** Season and window rates are computed from summed numerators and summed
+   denominators, never by averaging per-game rates.
+2. **Shared window.** The denominator is the team total *in the same games* as the numerator —
+   by default the player's appearance games (`played = true`). Filters (weeks, season type,
+   partial-game exclusion) apply to both sides identically. The denominator is never narrowed to
+   the selected player; other positions' targets stay in it.
+3. **Independent denominators.** Team totals come from `fct_team_game` (nflverse team file), not
+   from summing player rows. A test verifies player sums never exceed team totals.
+4. **Zero denominator → NULL.** Never 0, never ∞.
+5. **Signed air yards** can make `air_yards_share` negative or above 100%; the value is kept and
+   `air_yards_denominator_unstable` is flagged when team air yards ≤ 0. No generic 0–100% test.
+6. **Unknown ≠ zero.** Missing snaps → `snaps_known = false`, `offense_snap_pct` NULL. Deferred
+   metrics (first read, context splits, routes) are NULL/"unavailable" everywhere.
+
+## Available in this build (v1.0)
+
+| Metric | Definition |
+|---|---|
+| `target_share` | targets ÷ team targets (games appeared) |
+| `carry_share` | carries ÷ team carries |
+| `air_yards_share` | receiving air yards ÷ team passing air yards (signed; see rule 5) |
+| `offense_snap_pct` / `avg_offense_snap_pct` | from snap counts (PFR); participation evidence, not routes |
+| `adot` | receiving air yards ÷ targets |
+| `catch_rate`, `yards_per_target`, `yac_per_reception`, `yards_per_carry` | as named |
+| `completion_rate`, `yards_per_attempt` | as named |
+| `dropbacks_excl_scrambles` | attempts + sacks suffered (player and team). Scrambles need play-by-play; the name says so |
+| `targets_per_game`, `carries_per_game` | ÷ games played (appearance games) |
+| recent form `*_l3`, `*_l5`, `*_std` | last 3 / last 5 appearance games in the same season & season type, ordered by week; denominators summed over the same games; season-to-date alongside |
+| `points_current_scoring` | newest league's `scoring_settings` × nflverse stats (cross-year research) |
+| `points_recomputed` (league) | that season's `scoring_settings` × nflverse stats |
+| `points_observed` (league) | Sleeper's own `players_points` — includes commissioner edits, bonuses, DEF |
+| kicker streaming (realized) | started-kicker points per roster-week; common eligible weeks = weeks every roster started a K; changes and acquisitions counted from lineups/transactions |
+| `lineup_efficiency` | points for ÷ Sleeper potential points (`ppts`) |
+
+Appearance: `played = offense_snaps > 0 OR any of attempts/carries/targets/fg_att/pat_att > 0`.
+`games_with_stats` counts nflverse stat rows (a player on the active roster with a zero line still
+has one); `games_played` counts `played`.
+
+## Manager's Edge metrics (v1.0, 2026-09-26)
+
+| Metric | Definition |
+|---|---|
+| `points_expected` / `expected_per_game` | current league scoring applied to ffverse expected stats (receptions, yards, TDs, 2-pt, INT for pass/rush/receive). No kicking or fumbles, so K expected points are NULL. `diff_per_game` = actual − expected; negative = producing below opportunity |
+| defense vs position | points (current scoring) scored by opposing QB/RB/WR/TE/K against a defense, per game; season-to-date and last-4; rank 1 = allows the most. Regular season only |
+| all-play | for each scored regular-season week, wins vs every other roster; season all-play win%; `expected_wins` = games × all-play win%; `luck_wins` = actual − expected |
+| optimal lineup | best lineup from the players rostered that week using Sleeper observed points; greedy fill of fixed slots then REC_FLEX/WRRB_FLEX/FLEX/SUPER_FLEX (optimal for fixed slots + one flex type). `bench_points_left` = optimal − started; `lineup_efficiency` = started ÷ optimal. Validated against Sleeper's `ppts` (regular season): exact for 29/30 rosters |
+| positional strength | sum of season ppg over the top-N rostered players at a position (N = starting slots at that position); compared with the league median; rank 1 = strongest |
+| availability | `rostered_by_*` from the current Sleeper roster payloads; free agent = not on any roster in that league. Team defenses (DEF) are not in the table (no NFL player id) |
+| share trends | `target_share_trend` = last-3 share − season share (same for carries). Meaningless before 4 games |
+| CB coverage context | PFR advanced defense when the defender was targeted: targets, completions, yards, TDs, passer rating allowed, aDOT, YAC, missed tackles; season-to-date; 2018+. The matchup page lists the opponent's LCB/RCB/NB (depth rank ≤ 2) from the latest depth chart. Not a shadow-coverage assignment |
+| next matchup | next NFL week = first week with unplayed games; opponent from the schedule; bye when no game; injury = latest weekly report row |
+
+## Trends (v1.0, 2026-09-26)
+
+Every trend answers one question with two bars: *did the player's role change over his last three
+games, and is the change bigger than his own week-to-week noise?*
+
+| Term | Definition |
+|---|---|
+| window | the player's **last 3 played regular-season games** (`value_l3`) versus **every played game before them** (`value_prior`). Byes and DNP weeks are skipped, not counted as zero. Nothing is called before game 4 (`direction = insufficient`) |
+| value | rate metrics are *sums over sums* inside each window (e.g. targets ÷ team targets over the 3 games), never the mean of three per-game rates; per-game metrics divide by games in the window |
+| `change` | `value_l3 − value_prior`, compared with a **practical minimum** per metric (`seeds/trend_metrics.csv`: 3 points of target share, 5 of snap/carry/air-yard share, 1 target or 2 carries per game, 2 expected points, 3 fantasy points, 1 yard of aDOT, 3 pass attempts) |
+| `z` ("Strength") | `(mean_l3 − mean_prior) ÷ (sd_game × √(1/3 + 1/n_prior))`, where `sd_game` is the standard deviation of the player's own per-game values this season. ±1 = beyond his usual noise; ±2 = a clear change. NULL when sd is 0 or there is no prior game |
+| `direction` | **up** when `change ≥ min_change` *and* `z ≥ 1`; **down** symmetric; **flat** otherwise; **insufficient** below 4 games. `confidence` = strong (|z| ≥ 2) / moderate (≥ 1) / weak |
+| `slope_per_game` | least-squares slope of the per-game value over game number, season-to-date (a smoother read than L3 vs prior; not used for direction) |
+| `tags` ("Trend") | the up/down metrics spelled out, ordered by |z| — "↑ targets, ↑ snaps, ↓ aDOT" is more work at shallower depth; "↑ targets, ↑ aDOT" is a deeper role |
+| `momentum` | mean `z` across the **opportunity** metrics only (targets/game, target share, air-yard share, carries/game, carry share, snap share, expected points; pass attempts for QBs). Fantasy points and aDOT are excluded on purpose: three touchdowns do not change a role. `opportunity_trend` = rising (≥ 1) / falling (≤ −1) / steady / insufficient |
+| defense trend | points allowed to a position (current scoring, regular season) over the defense's last 3 games vs before, same `z` construction; **softer** when change ≥ 3 points and z ≥ 1, **stiffer** symmetric |
+
+Metric positions: target/air-yard/aDOT metrics for RB/WR/TE; carry metrics for RB/QB; snaps and
+expected points for all four; pass attempts for QB. Kickers and team defenses have no trends.
+
+The older `target_share_trend` / `carry_share_trend` columns in `mart_player_availability` (L3 minus
+season) are kept for the Waiver Wire sort; the trend marts supersede them for any judgement call.
+
+## Scoring recomputation — approximations
+
+| Sleeper key | Expression | Note |
+|---|---|---|
+| `fgmiss`, `xpmiss` | `fg_missed + fg_blocked`, `pat_missed + pat_blocked` | Sleeper treats blocked kicks as misses; nflverse separates them |
+| `fgm_50p` | `fg_made_50_59 + fg_made_60_` | |
+| `fum` | `fumbles_total` | any fumble |
+| `fum_lost` | `fumbles_lost_total` | sack + rush + receiving fumbles lost |
+| `st_td`, `fum_rec_td` | `special_teams_tds`, `fumble_recovery_tds` | |
+| DEF keys (`sack`, `int`, `pts_allow_*` …) | unmapped | team defense is out of MVP1; observed DEF points still come from Sleeper |
+| bonus keys (`bonus_rec_te`, `pass_td_40p` …) | unmapped | the dbt test `assert_unmapped_scoring_keys_are_known` warns if a league uses one |
+
+Reconciliation: `assert_recomputed_points_reconcile` warns on |observed − recomputed| > 0.5 for
+QB/RB/WR/TE/K. Differences are information (stat corrections, unmodelled keys), not failures.
+
+## Play-by-play metrics (v1.0, Phase 2, 2026-09-26)
+
+Source: nflfastR play-by-play (`fct_play`, one row per play, 2016+), NFL participation
+(`bridge_play_participation`, players on the field, 2016 → last completed season) and FTN Data
+charting (`fct_play_charting`, 2022+, CC-BY-SA 4.0 — attribute FTN Data when publishing).
+
+### Eligibility flags (`fct_play`)
+
+| Flag | Definition | Reconciliation |
+|---|---|---|
+| `is_no_play` | `play_type = 'no_play'` or `play_deleted` — nullified / no play. Kept, never counted | — |
+| `is_pass_attempt` | ball thrown (completion, incompletion, interception **or spike**); sacks excluded | = team `attempts` in 5,340 of 5,344 team-games 2016–2026 (official stats count spikes) |
+| `is_target` | pass attempt to an identified receiver, **excluding two-point tries** | = nflverse weekly `targets` in 4,533 of 4,533 player-weeks (2025); 5,342 of 5,344 team-games all seasons |
+| `is_rush_attempt` | rush attempt incl. scrambles and kneels, excluding two-point tries | = nflverse weekly `carries` (1 player-week differs, Ogunbowale 2024) |
+| `is_sack` / `is_scramble` | sack on a real play / `qb_scramble` on a run play | sacks = team `sacks_suffered` everywhere |
+| `is_dropback` | `qb_dropback` on a real play, no two-point tries = attempts − spikes + sacks + scrambles | identity holds in every team-game |
+| `is_two_point` / `is_two_point_target` | two-point conversion try; targeted two-point throws flagged separately | never a target, carry or dropback |
+| `is_kneel`, `is_spike`, `has_penalty`, `is_aborted` | as named | spikes are attempts but not dropbacks; kneels are carries but not dropbacks |
+
+### Context (`fct_play`, `mart_player_context`)
+
+* **half**: `H1` / `H2` / `OT` (overtime separate). **score_state** from the offense's *pre-snap*
+  differential: trailing 9+, trailing 1–8, tied, leading 1–8, leading 9+ (raw score and clock kept).
+  **down_distance**: 1st; 2nd short (≤3) / medium (4–6) / long (7+); 3rd/4th short / medium / long.
+  **field_zone**: own half, opp half (21–50), red zone 11–20, inside 10. **qb**: the passer on throws
+  and sacks, the rusher on scrambles.
+* `mart_player_context` (player × season × split × bucket): the player's targets, receptions, yards,
+  first-read targets, carries and routes proxy in the bucket, next to the **team's** dropbacks,
+  targets, carries and first-read targets in the same bucket over the same games (the games the
+  player appeared in). A row exists for every bucket the team saw in those games, so 0 is a real
+  zero. Test: halves sum to the season mart's totals.
+
+### First-read target share
+
+`first_read_target_share = player first-read targets ÷ team first-read targets` over the player's
+appearance games (plan §6 definition, sums over sums, same window rules as target share).
+
+`read_thrown` coding, **verified against the data** (every season 2022–2026):
+
+| Code | Meaning | Evidence |
+|---|---|---|
+| `1` | first (primary) read | the majority code on targeted throws in every season (≈52%), where the first read is expected |
+| `2` | second read or later | ≈11% |
+| `CHK` | checkdown | ≈13% (one 2022 row is `" CHK"` with a leading space — trimmed) |
+| `DES` | designed throw (screens, many RPOs) — **kept separate, never a first read** | ≈9% |
+| `SD` | scramble drill | ≈6% |
+| `0` (2023+) / `NULL` (2022) | **uncharted / not a throw** | sits on every run, kickoff and punt (≈19.8k plays a season) and on 2–3% of pass attempts — the same slice that is `NULL` in 2022 |
+
+The nflreadr dictionary describes `0` as "first read from 2023"; the data contradicts it (a first-read
+rate of 2% is impossible), so League Lab follows the data. `MVP1_PLAN.md` §6 carried the dictionary's
+wording; treat this section as the correction.
+
+Stored with every rate: `first_read_targets`, `team_first_read_targets`, `charted_targets`
+(targets with any read code), `charting_coverage` (team charted ÷ team targets), `designed_targets`,
+`checkdown_targets`, `later_read_targets`, `scramble_drill_targets`, `first_read_metric_version`.
+Uncharted targets are never assumed to be first reads. `first_read_rate_of_targets` (first reads ÷
+the player's own charted targets) is a different question and is published separately.
+
+Manual reconciliation (plan §9.6), PHI vs DAL 2025 week 1: 20 PHI targets, 20 charted; first reads on
+Dotson (51-yd, 3rd-and-6), D. Smith (1st-and-10, Q3) and A.J. Brown (2nd-and-11, Q4) — three by hand,
+`team_first_read_targets = 3` in the mart; Goedert 7 targets, 5 checkdowns, 0 first reads; Brown
+`first_read_target_share = 1/3`.
+
+### Routes proxy, TPRR / YPRR proxy, route participation
+
+* `routes_proxy` = dropbacks (`is_dropback`) the player was on the field for, from participation,
+  **receiving positions only** (WR/TE/RB/FB/HB). It is a proxy: presence is not a route (blocking
+  tight ends, chip-and-release backs), so it runs ≈10–15% above the charting services — Chase 2024:
+  705 vs ≈615 published. `NULL` when the game has no participation row (unknown, not zero).
+* `tprr_proxy` = targets ÷ routes_proxy and `yprr_proxy` = receiving yards ÷ routes_proxy over
+  participation-covered games — **lower bounds**; compare players with each other, not with
+  published TPRR/YPRR.
+* `route_participation` = routes_proxy ÷ team dropbacks with participation data: the passing-down
+  analogue of snap share.
+* Participation files are published after each season's postseason, so the current season has no
+  routes proxy in-season. A licensed feed imported with `league-lab import-routes` fills `routes`,
+  `targets_per_route_run`, `yards_per_route_run` (no proxy label) — CSV contract in
+  `src/league_lab/ingest/routes_feed.py`.
+
+### Dropbacks
+
+`dropbacks` (team and QB) = attempts − spikes + sacks + scrambles from play-by-play. The stats-only
+`dropbacks_excl_scrambles` (attempts + sacks) is kept next to it; where both exist the play-by-play
+version is the one to use (plan §6: dropbacks include scrambles).
+
+## Rankings — baseline projection and backtest (v1.0, 2026-09-26)
+
+### Feature snapshot (`mart_player_week_features`)
+
+One row per rostered QB/RB/WR/TE and regular-season week in which his team plays. Every feature is
+**as of the games before that week** (test `assert_features_never_peek`): the player's latest played
+game before the week supplies season-to-date / last-3 / last-5 PPG, expected points, shares and snaps;
+the previous season supplies `prev_ppg` / `prev_xppg`; the opponent's points allowed to the position
+and the league average are computed over games before the week; the Vegas implied team total is
+`(total ± spread) / 2` from the closing line; the injury report is the week's own. For the upcoming
+week the universe is the latest published roster. `no_history` marks players with neither in-season
+nor previous-season games (projected from position averages).
+
+Finished `f_*` inputs never contain NULL: season form falls back to last season, then to the position's
+regulars' mean PPG from the previous season (`pos_prev_ppg`, itself as-of). `f_sample` runs 0 → 1 over
+the first six games so the interaction terms fade last season out.
+
+### Projection (`mart_player_week_rankings`)
+
+`proj_points = intercept + Σ weight × feature`, per position, weights in `seeds/ranking_weights.csv`
+(ordinary least squares on 2019–2022 played player-weeks, `league-lab fit-rankings`; test
+`assert_rankings_apply_seed_formula` keeps SQL and seed identical). Contributions are grouped as
+**form** (xPPG L5, PPG season / L3 / previous and the fade interactions), **usage** (L3-vs-season
+target/carry share, L3 snap share), **matchup** (opponent allowed − league average), **Vegas**
+(implied team total) and **home**. `is_rankable` excludes Out, Doubtful and IR; ranks are per
+season-week-position among rankable players.
+
+| Feature | QB | RB | WR | TE |
+|---|---|---|---|---|
+| `intercept` | +0.260 | −0.721 | −1.323 | −1.804 |
+| `f_xppg_l5` | +0.095 | +0.143 | +0.212 | +0.255 |
+| `f_ppg_std` | +0.271 | −0.064 | −0.008 | −0.000 |
+| `f_ppg_l3` | +0.133 | +0.152 | +0.047 | +0.012 |
+| `f_ppg_prev` | +0.168 | +0.116 | +0.154 | +0.197 |
+| `f_ppg_std_x_sample` | +0.038 | +0.404 | +0.364 | +0.286 |
+| `f_ppg_prev_x_nosample` | +0.016 | +0.380 | +0.390 | +0.275 |
+| `f_opp_allowed_diff` | +0.145 | +0.065 | +0.018 | +0.071 |
+| `f_implied_total` | +0.103 | +0.039 | +0.053 | +0.072 |
+| `f_home` | +0.466 | +0.147 | +0.087 | −0.033 |
+| `f_target_trend` | — | −3.995 | −1.754 | −1.489 |
+| `f_carry_trend` | +7.883 | +1.633 | — | — |
+| `f_snap_l3` | +1.942 | +4.197 | +2.472 | +2.564 |
+| player-weeks / R² (train) | 2,469 / 0.31 | 5,931 / 0.35 | 8,856 / 0.28 | 4,449 / 0.27 |
+
+Reading the weights: expected points and season PPG (through the fade term) carry most of the load;
+last season matters until about game six; the **negative** target-trend weight says a last-3 target
+share above the season share partly reverts — a hot streak is treated as partly noise; the opponent
+term is worth about 0.07–0.15 points per point of "allowed above average", i.e. matchups move a
+projection by a point or two, not five; QBs get the biggest home bump.
+
+### Backtest (`league-lab backtest`, `mart_backtest_summary`)
+
+For each held-out season-week-position, on players who played: **Spearman** rank correlation between
+the scorer's order and actual points; **top-N hit rate** (N = 12 QB/TE, 24 RB/WR) = share of the actual
+top-N the scorer's top-N contained; **MAE** in points; the actual PPG of the scorer's top-N next to the
+true top-N (the ceiling). Scorers: the baseline and three naive rankings — season PPG to date,
+last-3 PPG, expected points L5 — built from the same as-of inputs.
+
+2023–2025 (weights fitted on 2019–2022, mean over 54 season-weeks per position):
+
+| Pos | Baseline Spearman | Best naive | Gap | Baseline hit rate | Best naive hit rate |
+|---|---|---|---|---|---|
+| QB | 0.501 | 0.469 (xPPG L5) | +0.032 | 51.9% | 51.7% |
+| RB | 0.670 | 0.644 (season PPG) | +0.026 | 62.3% | 61.7% |
+| WR | 0.604 | 0.565 (season PPG) | +0.039 | 46.4% | 44.1% |
+| TE | 0.573 | 0.524 (xPPG L5) | +0.048 | 46.3% | 44.4% |
+
+The baseline has the higher Spearman in all 12 position-seasons. The levels are the honest part:
+weekly fantasy points are mostly noise, a 0.6 rank correlation is a good weekly ranking, and a
+top-24 WR list catches under half of the actual top 24. Any later model (ML or otherwise) must beat
+this table on the same harness, out of sample, before it replaces the baseline.
+
+## Deferred (status in registry)
+
+| Metric | Status | What it needs |
+|---|---|---|
+| routes (licensed), TPRR, YPRR without the proxy label | unavailable until imported | a provider CSV through `league-lab import-routes`; **never** derived from snaps or targets |
+| in-season routes proxy | unavailable in-season | the NFL publishes participation after the postseason |
+
+## Versioning
+
+Bump the `version` in `metric_registry.csv` when a definition changes; the explorer shows the
+registry on the Data Status page. Old versions are not recomputed retroactively unless the change
+is a bug fix, in which case say so in `STATUS.md`.

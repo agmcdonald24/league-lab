@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: int_player_id_map
+    columns:
+      - name: gsis_id
+        tests: [not_null]
+      - name: sleeper_id
+        tests: [not_null]
+  - name: int_player_game_snaps
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+  - name: int_player_week_team
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+  - name: int_current_league
+    columns:
+      - name: league_id
+        tests: [unique, not_null]
+  - name: int_nfl_calendar
+    columns:
+      - name: season
+        tests: [unique, not_null]
+  - name: int_expected_points_week
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+  - name: int_defender_game_coverage
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+  - name: int_pfr_gsis_map
+    columns:
+      - name: pfr_id
+        tests: [unique, not_null]
+  - name: int_player_game_metric_long
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id, metric]

@@ -1,0 +1,328 @@
+version: 2
+
+models:
+  # ------------------------------------------------------------------ NFL dimensions & facts
+  - name: dim_game
+    description: Canonical NFL game dimension (plan §5). Week alone is never the key.
+    columns:
+      - name: game_id
+        tests: [unique, not_null]
+      - name: season_type
+        tests:
+          - accepted_values:
+              arguments: {values: ["REG", "POST"]}
+      - name: home_team
+        tests: [not_null]
+      - name: away_team
+        tests: [not_null]
+
+  - name: dim_team
+    columns:
+      - name: team_abbr
+        tests: [unique, not_null]
+
+  - name: dim_player
+    description: Canonical player keyed on gsis_id; latest_team is not historical.
+    columns:
+      - name: gsis_id
+        tests: [unique, not_null]
+      - name: sleeper_id
+        tests:
+          - unique:
+              config: {where: "sleeper_id is not null"}
+
+  - name: player_id_map
+    description: Accepted sleeper_id <-> gsis_id (+pfr) mappings; ambiguous pairs are excluded.
+    columns:
+      - name: gsis_id
+        tests: [unique, not_null]
+      - name: sleeper_id
+        tests: [unique, not_null]
+
+  - name: player_id_quarantine
+    description: Identity issues that would otherwise cause silent bad joins.
+
+  - name: player_team_history
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+
+  - name: mart_player_week_features
+    description: "Weekly feature snapshot per rostered QB/RB/WR/TE and regular-season week, as of the games before that week (rankings input)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+    columns:
+      - name: f_xppg_l5
+        tests: [not_null]
+      - name: f_implied_total
+        tests: [not_null]
+
+  - name: mart_player_week_rankings
+    description: "Baseline projection, contributions, naive baselines and ranks per season-week-position."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [season, week, position, rank_pos]
+    columns:
+      - name: proj_points
+        tests: [not_null]
+
+  - name: fct_play
+    description: "One row per play with eligibility flags and pre-play context (Phase 2)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id, play_id]
+    columns:
+      - name: game_id
+        tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_game'), field: game_id}
+      - name: half
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['H1', 'H2', 'OT']
+      - name: score_state
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['trailing_9plus', 'trailing_1_8', 'tied', 'leading_1_8', 'leading_9plus']
+      - name: down_distance
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['1st', '2nd_short', '2nd_medium', '2nd_long', '3rd_4th_short', '3rd_4th_medium', '3rd_4th_long']
+
+  - name: bridge_play_actor
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id, play_id, role, gsis_id]
+    columns:
+      - name: role
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['passer', 'receiver', 'rusher', 'kicker', 'scorer']
+
+  - name: bridge_play_participation
+    description: "Offensive players on the field per play (presence, not routes)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id, play_id, gsis_id]
+
+  - name: fct_play_charting
+    description: "FTN charting per play (2022+) with first-read / designed / checkdown target flags."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id, play_id]
+    columns:
+      - name: read_thrown
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['first', 'later', 'checkdown', 'designed', 'scramble_drill']
+
+  - name: fct_team_game
+    description: "Team totals per game: the denominators."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [team, game_id]
+    columns:
+      - name: game_id
+        tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_game'), field: game_id}
+      - name: targets
+        tests:
+          - expression_is_true:
+              arguments: {expression: "targets >= 0"}
+
+  - name: fct_player_game
+    description: Player x game facts with team denominators, snaps and shares.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+      # player numerators can never exceed the independent team denominators
+      - expression_is_true:
+          arguments:
+            expression: "targets <= team_targets"
+            condition: "team_targets is not null"
+      - expression_is_true:
+          arguments:
+            expression: "carries <= team_carries"
+            condition: "team_carries is not null"
+      - expression_is_true:
+          arguments:
+            expression: "attempts <= team_attempts"
+            condition: "team_attempts is not null"
+      - expression_is_true:
+          arguments:
+            expression: "target_share between 0 and 1"
+            condition: "target_share is not null"
+      - expression_is_true:
+          arguments:
+            expression: "carry_share between 0 and 1"
+            condition: "carry_share is not null"
+      # zero denominator must give NULL, never a division artefact
+      - expression_is_true:
+          arguments:
+            expression: "target_share is null"
+            condition: "coalesce(team_targets, 0) = 0"
+    columns:
+      - name: gsis_id
+        tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_player'), field: gsis_id}
+      - name: game_id
+        tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_game'), field: game_id}
+      - name: season_type
+        tests:
+          - accepted_values:
+              arguments: {values: ["REG", "POST"]}
+
+  - name: mart_player_season
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, season_type]
+      - expression_is_true:
+          arguments:
+            expression: "targets <= team_targets"
+            condition: "team_targets is not null"
+      - expression_is_true:
+          arguments:
+            expression: "games_played <= games_with_stats"
+      - expression_is_true:
+          arguments:
+            expression: "routes is null and targets_per_route_run is null and yards_per_route_run is null"
+
+  - name: mart_player_season_team
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, season_type, team]
+
+  - name: mart_player_recent_form
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+      - expression_is_true:
+          arguments:
+            expression: "games_l3 <= 3 and games_l5 <= 5 and games_l3 <= games_l5"
+      - expression_is_true:
+          arguments:
+            expression: "targets_l3 <= team_targets_l3"
+            condition: "team_targets_l3 is not null"
+
+  # ------------------------------------------------------------------ league
+  - name: dim_league_season
+    columns:
+      - name: league_id
+        tests: [unique, not_null]
+      - name: season
+        tests: [unique, not_null]
+      - name: playoff_week_start
+        tests: [not_null]
+
+  - name: dim_league_member
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id]
+    columns:
+      - name: user_id
+        tests: [not_null]
+
+  - name: fct_league_matchup
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, week, roster_id]
+      - expression_is_true:
+          arguments:
+            expression: "result in ('W','L','T')"
+            condition: "is_scored and not is_bye"
+    columns:
+      - name: roster_id
+        tests:
+          - relationships:
+              arguments: {to: ref('dim_league_member'), field: roster_id}
+              config: {where: "1=1"}
+
+  - name: league_player_week
+    description: Lineup membership, starter flag, slot, observed and recomputed points.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, week, roster_id, sleeper_player_id]
+      - expression_is_true:
+          arguments:
+            expression: "slot is not null"
+            condition: "is_starter"
+      - expression_is_true:
+          arguments:
+            expression: "slot is null and slot_index is null"
+            condition: "not is_starter"
+
+  - name: mart_league_standings
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id]
+      - expression_is_true:
+          arguments:
+            expression: "wins + losses + ties = games"
+
+  - name: mart_league_kicker_week
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, week, roster_id]
+
+  - name: mart_league_kicker_summary
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id]
+
+  - name: mart_league_transactions
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, transaction_id, action, sleeper_player_id, roster_id]
+
+  - name: mart_league_draft
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [draft_id, pick_no]
+
+  # ------------------------------------------------------------------ ops
+  - name: mart_data_status
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [source, dataset]
+  - name: mart_coverage
+    columns:
+      - name: season
+        tests: [unique, not_null]

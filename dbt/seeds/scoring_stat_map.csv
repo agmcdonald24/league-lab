@@ -1,0 +1,24 @@
+sleeper_key,stat_expression,description
+pass_yd,passing_yards,passing yards
+pass_td,passing_tds,passing touchdowns
+pass_int,passing_interceptions,interceptions thrown
+pass_2pt,passing_2pt_conversions,2-pt conversions passed
+rush_yd,rushing_yards,rushing yards
+rush_td,rushing_tds,rushing touchdowns
+rush_2pt,rushing_2pt_conversions,2-pt conversions rushed
+rec,receptions,receptions
+rec_yd,receiving_yards,receiving yards
+rec_td,receiving_tds,receiving touchdowns
+rec_2pt,receiving_2pt_conversions,2-pt conversions received
+fum,fumbles_total,fumbles (any)
+fum_lost,fumbles_lost_total,fumbles lost
+fum_rec_td,fumble_recovery_tds,fumble recovery touchdowns
+st_td,special_teams_tds,special teams touchdowns
+fgm_0_19,fg_made_0_19,FG made 0-19
+fgm_20_29,fg_made_20_29,FG made 20-29
+fgm_30_39,fg_made_30_39,FG made 30-39
+fgm_40_49,fg_made_40_49,FG made 40-49
+fgm_50p,fg_made_50_59 + fg_made_60_,FG made 50+
+fgmiss,fg_missed + fg_blocked,FG missed incl. blocked
+xpm,pat_made,PAT made
+xpmiss,pat_missed + pat_blocked,PAT missed incl. blocked

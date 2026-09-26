@@ -1,0 +1,21 @@
+select
+    league_id,
+    transaction_id,
+    week,
+    type                                            as transaction_type,
+    status,
+    to_timestamp(created / 1000.0)                  as created_at,
+    to_timestamp(status_updated / 1000.0)           as status_updated_at,
+    creator                                         as creator_user_id,
+    roster_ids,
+    consenter_ids,
+    adds,
+    drops,
+    draft_picks,
+    waiver_budget,
+    (settings ->> 'waiver_bid')::integer            as waiver_bid,
+    (settings ->> 'seq')::integer                   as seq,
+    (settings ->> 'priority')::integer              as waiver_priority,
+    metadata ->> 'notes'                            as notes,
+    fetched_at
+from {{ source('raw', 'sleeper_transaction') }}

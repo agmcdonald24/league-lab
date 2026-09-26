@@ -1,0 +1,14 @@
+metric,label,arrow_label,min_change,is_opportunity,positions,higher_is_better,display_kind
+target_share,Target share,target share,0.03,true,RB|WR|TE,true,pct
+air_yards_share,Air-yard share,air-yard share,0.05,true,WR|TE|RB,true,pct
+adot,aDOT,aDOT,1.0,false,WR|TE|RB,true,num1
+targets_per_game,Targets per game,targets,1.0,true,RB|WR|TE,true,num1
+carry_share,Carry share,carry share,0.05,true,RB|QB,true,pct
+carries_per_game,Carries per game,carries,2.0,true,RB|QB,true,num1
+snap_share,Snap share,snaps,0.05,true,QB|RB|WR|TE,true,pct
+expected_points,Expected points,expected points,2.0,true,QB|RB|WR|TE,true,num1
+points,Fantasy points,points,3.0,false,QB|RB|WR|TE,true,num1
+pass_attempts,Pass attempts,pass attempts,3.0,true,QB,true,num1
+first_read_share,First-read target share,first-read share,0.04,true,RB|WR|TE,true,pct
+route_participation,Route participation (proxy),route share,0.05,true,RB|WR|TE,true,pct
+tprr_proxy,Targets per route (proxy),targets per route,0.03,false,RB|WR|TE,true,pct

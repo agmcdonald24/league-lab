@@ -1,0 +1,99 @@
+version: 2
+
+sources:
+  - name: raw
+    description: >
+      Source tables loaded by `league-lab ingest`. Each table is replaced one partition at a
+      time inside a transaction; provenance is in ops.load_manifest. Never modelled directly by
+      the explorer.
+    schema: raw
+    loader: league_lab.ingest
+    tables:
+      - name: sleeper_league
+        description: One row per league-season in the previous_league_id chain (full payload in `payload`).
+        columns:
+          - name: league_id
+            tests: [unique, not_null]
+      - name: sleeper_league_user
+      - name: sleeper_roster
+      - name: sleeper_matchup
+        description: One row per league-week-roster; players_points is the per-player observed points map.
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [league_id, week, roster_id]
+      - name: sleeper_transaction
+      - name: sleeper_draft
+      - name: sleeper_draft_pick
+      - name: sleeper_traded_pick
+      - name: sleeper_bracket
+      - name: sleeper_player
+        description: Sleeper's NFL player directory (cached at most daily).
+      - name: sleeper_state
+      - name: nfl_player_stats_week
+        description: "nflverse stats_player_week_<season>.parquet, all columns. Attribution: nflverse."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [player_id, season, week]
+      - name: nfl_team_stats_week
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [team, season, week]
+      - name: nfl_schedules
+        columns:
+          - name: game_id
+            tests: [unique, not_null]
+      - name: nfl_rosters_weekly
+      - name: nfl_snap_counts
+      - name: nfl_players
+        columns:
+          - name: gsis_id
+            tests: [unique, not_null]
+      - name: nfl_teams
+      - name: nfl_ff_playerids
+        description: "dynastyprocess db_playerids.csv, cross-provider ID crosswalk (sleeper_id <-> gsis_id)."
+      - name: nfl_ff_opportunity
+        description: "ffverse/ffopportunity expected points model output per player-week (ep_weekly_<season>.parquet)."
+      - name: nfl_pbp
+        description: "nflfastR play_by_play_<season>.parquet, core column subset (LEAGUE_LAB_PBP_COLUMNS=all for every column). Attribution: nflverse."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [game_id, play_id]
+      - name: nfl_pbp_participation
+        description: "nflverse pbp_participation_<season>.parquet: players on the field per play (2016 to the last completed season)."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [nflverse_game_id, play_id]
+      - name: nfl_ftn_charting
+        description: "FTN Data charting via nflverse (ftn_charting_<season>.parquet, 2022+). License CC-BY-SA 4.0 - attribute FTN Data."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [nflverse_game_id, nflverse_play_id]
+      - name: routes_feed
+        description: "Licensed routes-run import contract (league-lab import-routes). Empty until a provider export is imported."
+      - name: nfl_injuries
+        description: Weekly NFL injury reports (report status + practice status) per player.
+      - name: nfl_depth_charts
+        description: Depth chart snapshots (many per season, `dt` timestamp); recent seasons only.
+      - name: nfl_ngs_receiving
+      - name: nfl_ngs_rushing
+      - name: nfl_ngs_passing
+      - name: nfl_pfr_advstats_def
+        description: Pro-Football-Reference advanced defensive stats per player-game (coverage targets/yards allowed), 2018+.
+      - name: nfl_pfr_advstats_rec
+      - name: nfl_pfr_advstats_pass
+      - name: nfl_pfr_advstats_rush
+
+  - name: ops
+    schema: ops
+    tables:
+      - name: load_manifest
+      - name: source_partition
+      - name: backtest_results
+        description: "Written by `league-lab backtest`: per season-week-position-scorer Spearman, top-N hit rate, MAE."
+

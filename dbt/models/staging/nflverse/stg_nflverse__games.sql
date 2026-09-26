@@ -1,0 +1,36 @@
+-- Every scheduled NFL game since seasons_start. game_id is the canonical key; week alone never is.
+select
+    game_id,
+    season,
+    game_type,
+    case when game_type = 'REG' then 'REG' else 'POST' end  as season_type,
+    week,
+    gameday::date                                            as game_date,
+    weekday,
+    gametime                                                 as kickoff_local_time,
+    (gameday || ' ' || coalesce(gametime, '13:00'))::timestamp
+        at time zone 'America/New_York'                      as kickoff_at,
+    away_team,
+    home_team,
+    away_score,
+    home_score,
+    result                                                   as home_margin,
+    total                                                    as total_points,
+    coalesce(overtime, 0) = 1                                as went_to_overtime,
+    home_score is not null and away_score is not null        as is_final,
+    coalesce(div_game, 0) = 1                                as is_divisional,
+    location,
+    roof,
+    surface,
+    temp,
+    wind,
+    stadium,
+    stadium_id,
+    away_qb_id, home_qb_id, away_qb_name, home_qb_name,
+    away_rest, home_rest,
+    spread_line, total_line,
+    old_game_id,
+    pfr                                                      as pfr_game_id,
+    _fetched_at                                              as source_fetched_at
+from {{ source('raw', 'nfl_schedules') }}
+where season >= {{ var('seasons_start') }}

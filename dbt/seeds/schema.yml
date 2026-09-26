@@ -1,0 +1,34 @@
+version: 2
+seeds:
+  - name: scoring_stat_map
+    description: >
+      Sleeper scoring key -> nflverse stat expression. GENERATED from src/league_lab/scoring.py
+      (tests/test_scoring.py fails if they diverge). Do not edit by hand.
+    columns:
+      - name: sleeper_key
+        tests: [unique, not_null]
+      - name: stat_expression
+        tests: [not_null]
+  - name: metric_registry
+    description: Metric definitions, versions and availability (plan §6). Surfaced in the explorer.
+    columns:
+      - name: metric
+        tests: [unique, not_null]
+  - name: trend_metrics
+    description: >
+      The metrics the trend model tracks: label, the practical minimum change worth calling a
+      trend, whether the metric is *opportunity* (feeds the momentum score) and which positions
+      it applies to. Edit here to add or retune a metric.
+    columns:
+      - name: metric
+        tests: [unique, not_null]
+
+  - name: ranking_weights
+    description: "Transparent baseline projection weights per position (OLS fit by `league-lab fit-rankings`; formula applied in mart_player_week_rankings)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [position, feature]
+    columns:
+      - name: weight
+        tests: [not_null]

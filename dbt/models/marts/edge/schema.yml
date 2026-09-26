@@ -1,0 +1,137 @@
+version: 2
+
+models:
+  - name: mart_player_expected_points
+    description: Actual vs expected points (current league scoring) per player-game.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+      - expression_is_true:
+          arguments:
+            expression: "points_diff = round(points_actual - points_expected, 2)"
+            condition: "expected_known"
+  - name: mart_player_expected_season
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season]
+  - name: mart_defense_vs_position
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [defense, game_id, position]
+      - expression_is_true:
+          arguments:
+            expression: "games_l4 between 1 and 4"
+  - name: mart_defense_vs_position_current
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [defense, position]
+      - expression_is_true:
+          arguments:
+            expression: "rank_std between 1 and 32"
+  - name: mart_defender_coverage_season
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season]
+      - expression_is_true:
+          arguments:
+            expression: "completions_allowed <= targets"
+            condition: "targets is not null and completions_allowed is not null"
+  - name: mart_matchup_cb_context
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [defense, gsis_id, depth_position]
+  - name: mart_player_next_matchup
+    columns:
+      - name: gsis_id
+        tests: [unique, not_null]
+    tests:
+      - expression_is_true:
+          arguments:
+            expression: "(is_bye and opponent is null) or (not is_bye and opponent is not null)"
+  - name: mart_league_roster_membership
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, sleeper_player_id]
+  - name: mart_player_availability
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, gsis_id]
+      - expression_is_true:
+          arguments:
+            expression: "is_free_agent = (rostered_by_roster_id is null)"
+  - name: mart_league_optimal_lineup
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, week, roster_id]
+      # the best possible lineup can never score less than the one actually started
+      - expression_is_true:
+          arguments:
+            expression: "points_optimal >= points_started - 0.01"
+      - expression_is_true:
+          arguments:
+            expression: "lineup_efficiency between 0 and 1.0001"
+            condition: "lineup_efficiency is not null"
+  - name: mart_league_all_play
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id]
+      - expression_is_true:
+          arguments:
+            expression: "all_play_wins + all_play_losses + all_play_ties = games * (select max(num_teams) - 1 from analytics.dim_league_season d where d.league_id = mart_league_all_play.league_id)"
+  - name: mart_league_all_play_week
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, week, roster_id]
+  - name: mart_league_keeper_candidates
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, sleeper_player_id]
+  - name: mart_league_manager_profile
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id]
+  - name: mart_league_positional_strength
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id, position]
+  - name: mart_player_trends
+    description: Player x season x metric trend statistics (see model header for definitions).
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, metric]
+      - expression_is_true:
+          arguments:
+            expression: "direction in ('up','down','flat','insufficient')"
+      - expression_is_true:
+          arguments:
+            expression: "abs(change) >= min_change and abs(z) >= 1"
+            condition: "direction in ('up','down')"
+      - expression_is_true:
+          arguments:
+            expression: "games >= 4"
+            condition: "direction <> 'insufficient'"
+  - name: mart_player_trend_tags
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season]
+  - name: mart_defense_trends
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [defense, season, position]

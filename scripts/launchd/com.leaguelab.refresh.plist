@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Daily League Lab refresh at 08:00 local time (plan §7 schedule, collapsed to one job).
+     Install:  mkdir -p logs   # launchd needs the log directory to exist before it opens StandardOutPath
+               sed "s|__ROOT__|$PWD|g" scripts/launchd/com.leaguelab.refresh.plist > ~/Library/LaunchAgents/com.leaguelab.refresh.plist
+               launchctl load ~/Library/LaunchAgents/com.leaguelab.refresh.plist
+     Remove:   launchctl unload ~/Library/LaunchAgents/com.leaguelab.refresh.plist
+     launchd runs missed jobs on wake, so a closed laptop catches up on the next open. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.leaguelab.refresh</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>cd __ROOT__ &amp;&amp; ./scripts/refresh.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>8</integer><key>Minute</key><integer>0</integer></dict>
+  <key>StandardOutPath</key><string>__ROOT__/logs/refresh.log</string>
+  <key>StandardErrorPath</key><string>__ROOT__/logs/refresh.log</string>
+  <key>RunAtLoad</key><false/>
+</dict>
+</plist>
