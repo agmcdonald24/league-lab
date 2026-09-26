@@ -89,11 +89,22 @@ season) are kept for the Waiver Wire sort; the trend marts supersede them for an
 | `fum` | `fumbles_total` | any fumble |
 | `fum_lost` | `fumbles_lost_total` | sack + rush + receiving fumbles lost |
 | `st_td`, `fum_rec_td` | `special_teams_tds`, `fumble_recovery_tds` | |
+| `fgmiss_0_19` … `fgmiss_50p` | `fg_missed_0_19` … `fg_missed_50_59 + fg_missed_60_` | nflverse has no per-distance blocked buckets, so a blocked FG scores 0 in a league with distance-bucketed misses (about 1% of attempts) |
+| `pass_td_40p`, `rush_td_40p`, `rec_td_40p` (and `_50p`) | long-touchdown counts from play-by-play (`int_player_game_pbp`: touchdown plays with `yards_gained ≥ 40 / 50` by passer / rusher / receiver) | laterals credit the first receiver; 0 when a game has no plays loaded |
+| `bonus_pass_yd_300/400`, `bonus_rush_yd_100/200`, `bonus_rec_yd_100/200` | `1` when `low ≤ yards < high` for the game | Sleeper's buckets are **exclusive** (100–199, 200+): a 210-yard game pays the 200+ bonus only. Kind `bonus` in the seed |
+| **Expected points** | `stat` keys only (`league_points(…, include_bonuses=false)`) | a threshold on an expected yardage would pay deterministically at 100.0 and not at 99.9; in a league with bonuses, actual − expected carries the bonus points |
 | DEF keys (`sack`, `int`, `pts_allow_*` …) | unmapped | team defense is out of MVP1; observed DEF points still come from Sleeper |
-| bonus keys (`bonus_rec_te`, `pass_td_40p` …) | unmapped | the dbt test `assert_unmapped_scoring_keys_are_known` warns if a league uses one |
+| position-conditional keys (`bonus_rec_te`, `bonus_rec_rb`, `bonus_rec_wr`), first-down keys (`*_fd`) | unmapped | the dbt test `assert_unmapped_scoring_keys_are_known` warns if a league uses one |
 
 Reconciliation: `assert_recomputed_points_reconcile` warns on |observed − recomputed| > 0.5 for
-QB/RB/WR/TE/K. Differences are information (stat corrections, unmodelled keys), not failures.
+QB/RB/WR/TE/K, in every configured league under that league-season's own settings. Differences are
+information (stat corrections, unmodelled keys), not failures.
+
+**Several leagues.** `points_current_scoring`, expected points, availability and rankings are
+priced in the *reference* league's scoring (the first id in `LEAGUE_LAB_SLEEPER_LEAGUE_ID`;
+`dim_league_season.is_reference_league`). League pages use each league's own observed points and
+`points_recomputed`. `dim_league_season.scoring_diff_vs_reference` lists the keys where a league
+differs, and the sidebar shows it. Per-league pricing of the NFL-wide marts is plan S-01.
 
 ## Play-by-play metrics (v1.0, Phase 2, 2026-09-26)
 

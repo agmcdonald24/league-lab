@@ -149,10 +149,33 @@ real widening is needed, dependent views are dropped with a logged warning and r
 * `docs/HOSTING.md` is the step-by-step (Neon or Supabase free tier → GitHub → Streamlit Community Cloud → secrets).
 * `dbt build` unchanged (277 pass, 1 warn); `pytest` 21/21; `ruff` clean; 13/13 pages render locally and against the hosted copy.
 
+## Second league 2026-09-27 (Andrew: "include the other league I have so I can share with that group too")
+
+* **Config**: `LEAGUE_LAB_SLEEPER_LEAGUE_ID` takes a comma-separated list; the first id is the *reference* league
+  (`Settings.reference_league_id` → dbt var `reference_league_id` → `int_current_league`) whose scoring prices the
+  NFL-wide marts. `dim_league_season.is_reference_league` / `scoring_diff_vs_reference`; the sidebar warns a
+  non-reference league's viewers which keys differ. `?league=<id>` deep link.
+* **Ingestion**: the chain walk stops at Sleeper's "no previous league" marker (`"0"` on older leagues, null on
+  newer) instead of fetching league `0` (404 → a failed partition that flipped `make` to exit 1 and the banner to
+  "1 partition failing"). `mart_data_status` counts a partition as failing only when its latest attempt failed.
+* **Two leagues per season broke three single-league assumptions**, all fixed: `dim_league_season.season` was
+  tested unique (now `[league_id, season]`, plus `assert_one_reference_league`); `mart_coverage` joined leagues by
+  season (now one row per season: `leagues`, `league_names`, max/min scored weeks); the scoring map did not know
+  the second league's keys (78 warn rows: six yardage-game bonuses, three 40+ yard TD bonuses, four missed-FG
+  distance buckets).
+* **Scoring map v2** (`league_lab.scoring`, seed `scoring_stat_map` + `kind`): yardage-game bonuses as exclusive
+  buckets (`column:low:high`), 40+/50+ yard passing/rushing/receiving TDs counted from play-by-play
+  (`int_player_game_pbp.pass_tds_40p` … joined onto the stats row in `fct_player_game` and `league_player_week`),
+  missed-FG distance buckets. Expected points use `include_bonuses=false`. Seeds `+full_refresh: true`. Sandbox
+  checks: long-TD counts never exceed the weekly TD counts (0 violations), receiving = passing long TDs in every
+  game, 2023–2025 REG totals ≈ 100 / 30 / 100 per season (40+); reference-league reconciliation still 0 rows.
+* Second league: *Forever Unclean Dynasty* (12 teams, superflex, 1 PPR, 6-pt pass TD, chain 2021–2026). Its
+  rankings/expected points are in the reference league's scoring until S-01 — the sidebar says so.
+
 ## Next concrete actions
 
-1. **Andrew**: `make build && make app` to see the beta UI; then `docs/HOSTING.md` — Neon project, `.env` hosted lines, `make sync-hosted`, `git init` + GitHub, Streamlit Community Cloud with the three secrets. ~35 minutes.
-2. **Andrew**: `git init && git add -A && git commit` is now step 2 of HOSTING.md (the repo is what Community Cloud deploys).
+1. **Andrew**: `make build && make sync-hosted`, commit and push; check `assert_recomputed_points_reconcile` for the second league (a handful of rows per season is stat corrections; hundreds means a key is modelled wrong); share `?league=1321941740235550720`.
+2. **Andrew**: reset the Neon owner password (it was pasted in chat) and update `.env`; optionally `LEAGUE_LAB_APP_PASSWORD` / `LEAGUE_LAB_FEEDBACK_URL` in the Streamlit secrets.
 3. **Andrew (decisions)**: O03 refresh time, O05 backup destination, review of the Edge pages (U04), acceptance (H03).
 4. **Next engineering** (Andrew's call): R-07 an ML challenger on the same harness (only kept if it beats the baseline);
    R-08 rest-of-season projections + lineup optimizer; P2-14 defensive participation for CB context; Phase 3 ops hardening; Phase 4 hosting.

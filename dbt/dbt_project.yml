@@ -39,9 +39,13 @@ models:
 seeds:
   league_lab:
     +schema: analytics_seeds
+    # seeds are small and their columns change with the code: always recreate them so a new
+    # column (scoring_stat_map.kind) never needs a manual --full-refresh
+    +full_refresh: true
     scoring_stat_map:
       +column_types:
         sleeper_key: text
+        kind: text
         stat_expression: text
         description: text
     trend_metrics:

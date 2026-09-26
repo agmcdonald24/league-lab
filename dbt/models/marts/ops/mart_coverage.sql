@@ -18,8 +18,16 @@ snaps as (
     select season, count(distinct game_id) as games_with_snaps from {{ ref('int_player_game_snaps') }} group by 1
 ),
 
+-- one row per season whatever the number of leagues configured (mart grain is the season)
 league as (
-    select season, league_id, last_scored_leg as league_scored_weeks from {{ ref('dim_league_season') }}
+    select season,
+           count(*)                                              as leagues,
+           string_agg(league_name || ' (' || league_id || ')', '; ' order by is_reference_league desc, league_name) as league_names,
+           min(league_id) filter (where is_reference_league)    as league_id,
+           max(last_scored_leg)                                  as league_scored_weeks,
+           min(last_scored_leg)                                  as league_scored_weeks_min
+    from {{ ref('dim_league_season') }}
+    group by 1
 ),
 
 pbp as (
@@ -46,7 +54,7 @@ select
     g.scheduled_games, g.final_games, g.through_game_date, g.through_reg_week,
     s.games_with_player_stats, s.max_week as stats_max_week,
     sn.games_with_snaps,
-    l.league_id, l.league_scored_weeks,
+    l.leagues, l.league_names, l.league_id, l.league_scored_weeks, l.league_scored_weeks_min,
     p.games_with_pbp, p.plays, p.pbp_max_week,
     pa.games_with_participation,
     c.games_with_charting, c.charting_max_week, c.avg_charting_coverage,

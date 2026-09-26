@@ -5,6 +5,8 @@
 --     positions only. A PROXY: presence on a dropback is not proof a route was run (blocking
 --     tight ends, chip-and-release backs). Labelled as such everywhere it is shown.
 --   * dropbacks as the QB on the play (attempts + sacks + scrambles)
+--   * long touchdowns (40+ / 50+ yards, by the play's yards_gained) by passer, rusher and
+--     receiver - the counts behind Sleeper's pass_td_40p / rush_td_40p / rec_td_40p bonus keys
 -- Team denominators live in int_team_game_pbp; this table carries only the player's numerators
 -- plus the team's participation-covered dropbacks for the same game (the routes_proxy denominator).
 with plays as (
@@ -38,7 +40,9 @@ recv as (
         count(*) filter (where c.is_scramble_drill_target)           as scramble_drill_targets,
         count(*) filter (where p.is_target and c.is_drop)            as drops,
         count(*) filter (where p.is_target and c.is_catchable_ball)  as catchable_targets,
-        count(*) filter (where p.is_target and c.is_contested_ball)  as contested_targets
+        count(*) filter (where p.is_target and c.is_contested_ball)  as contested_targets,
+        count(*) filter (where p.pass_touchdown and p.yards_gained >= 40) as rec_tds_40p,
+        count(*) filter (where p.pass_touchdown and p.yards_gained >= 50) as rec_tds_50p
     from plays as p
     left join charting as c using (game_id, play_id)
     where p.receiver_player_id is not null
@@ -54,9 +58,23 @@ rush as (
         count(*) filter (where p.is_rush_attempt and p.is_scramble)  as scrambles,
         count(*) filter (where p.is_rush_attempt and p.is_red_zone)  as red_zone_carries,
         count(*) filter (where p.is_rush_attempt and p.yardline_100 <= 10) as inside_10_carries,
-        count(*) filter (where p.is_rush_attempt and p.yardline_100 <= 5)  as inside_5_carries
+        count(*) filter (where p.is_rush_attempt and p.yardline_100 <= 5)  as inside_5_carries,
+        count(*) filter (where p.rush_touchdown and p.yards_gained >= 40) as rush_tds_40p,
+        count(*) filter (where p.rush_touchdown and p.yards_gained >= 50) as rush_tds_50p
     from plays as p
     where p.rusher_player_id is not null
+    group by 1, 2
+),
+
+-- passer on the play (long passing touchdowns)
+passer as (
+    select
+        p.passer_player_id                                           as gsis_id,
+        p.game_id,
+        count(*) filter (where p.pass_touchdown and p.yards_gained >= 40) as pass_tds_40p,
+        count(*) filter (where p.pass_touchdown and p.yards_gained >= 50) as pass_tds_50p
+    from plays as p
+    where p.passer_player_id is not null and p.pass_touchdown
     group by 1, 2
 ),
 
@@ -90,6 +108,7 @@ keys as (
     select gsis_id, game_id from recv
     union select gsis_id, game_id from rush
     union select gsis_id, game_id from qb
+    union select gsis_id, game_id from passer
     union select gsis_id, game_id from part
 ),
 
@@ -137,6 +156,13 @@ select
     qb.dropbacks,
     qb.sacks_taken,
     qb.scramble_dropbacks,
+    -- long touchdowns (Sleeper *_td_40p / *_td_50p keys); 0 when the game has plays, NULL never (keys come from plays)
+    coalesce(passer.pass_tds_40p, 0)            as pass_tds_40p,
+    coalesce(passer.pass_tds_50p, 0)            as pass_tds_50p,
+    coalesce(rush.rush_tds_40p, 0)              as rush_tds_40p,
+    coalesce(rush.rush_tds_50p, 0)              as rush_tds_50p,
+    coalesce(recv.rec_tds_40p, 0)               as rec_tds_40p,
+    coalesce(recv.rec_tds_50p, 0)               as rec_tds_50p,
     part.plays_on_field,
     part.dropbacks_on_field,
     part.rushes_on_field,
@@ -148,4 +174,5 @@ left join pos using (gsis_id, game_id)
 left join recv using (gsis_id, game_id)
 left join rush using (gsis_id, game_id)
 left join qb using (gsis_id, game_id)
+left join passer using (gsis_id, game_id)
 left join part using (gsis_id, game_id)

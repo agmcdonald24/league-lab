@@ -22,7 +22,7 @@ if (status["failures_7d"].fillna(0) > 0).any():
 
 st.subheader("Coverage by season")
 cov = query("""select season, scheduled_games, final_games, through_reg_week, games_with_player_stats, games_with_snaps,
-                      play_by_play_status, ftn_charting_status, participation_status, routes_status, league_scored_weeks
+                      play_by_play_status, ftn_charting_status, participation_status, routes_status, leagues, league_scored_weeks
                from analytics.mart_coverage order by season""")
 st.caption("Every source per season. 'not published yet' (participation) means the NFL releases that season's file after its "
            "postseason; 'no licensed feed' (routes) means the proxy from participation is what the pages use.")
@@ -30,7 +30,7 @@ st.dataframe(cov, hide_index=True, width="stretch", column_config={
     "season": "Season", "scheduled_games": "Games", "final_games": "Final", "through_reg_week": "Through wk",
     "games_with_player_stats": "Games w/ stats", "games_with_snaps": "Games w/ snaps", "play_by_play_status": "Play-by-play",
     "ftn_charting_status": "FTN charting (first reads)", "participation_status": "Participation (routes proxy)",
-    "routes_status": "Licensed routes", "league_scored_weeks": "League weeks scored"})
+    "routes_status": "Licensed routes", "leagues": "Leagues", "league_scored_weeks": "League weeks scored"})
 
 st.subheader("Identity quarantine")
 q = query("select issue, count(*) as rows from analytics.player_id_quarantine group by issue order by 2 desc")

@@ -93,6 +93,12 @@ previous seasons is fetched too. Leaguemates of the second league pick it in the
 `?league=<id>&team=<roster>` opens straight on their team. League pages use that league's scoring;
 NFL pages use the reference league's, and the sidebar lists any scoring differences.
 
+After the build, look at two tests in the output: `assert_unmapped_scoring_keys_are_known` (a warning
+means the new league uses a scoring key League Lab cannot recompute — `METRICS.md` lists what is
+modelled) and `assert_recomputed_points_reconcile` (rows = player-weeks where the recomputed points
+differ from Sleeper's by more than 0.5; a handful per season is stat corrections, hundreds means a
+key is modelled wrong).
+
 ## 4. What to expect
 
 * **Freshness** = your Mac's last refresh + sync (the banner on every page says when). If the Mac

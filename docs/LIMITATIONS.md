@@ -21,8 +21,10 @@ NULL or labelled "unavailable".
    PFR id is missing or ambiguous has `snaps_known = false` (unknown, not zero).
 4. **Team defense is observed only.** DEF points come from Sleeper's `players_points`; League Lab
    does not recompute defensive scoring and does not model individual defenders.
-5. **Recomputed points are an approximation** of Sleeper's scoring (blocked kicks, bonus keys —
-   see `METRICS.md`). Observed points remain the source of truth for league history.
+5. **Recomputed points are an approximation** of Sleeper's scoring (blocked kicks in distance
+   buckets, position-conditional bonuses, first-down keys — see `METRICS.md`; yardage-game and
+   long-touchdown bonuses *are* modelled). Observed points remain the source of truth for league
+   history. Expected points leave bonus keys out by design.
 6. **`player_team_history` grain is player-week**, not a validity interval; a mid-week
    transaction shows the roster the file captured for that week.
 7. **Postseason league weeks** (Sleeper playoffs) are included in `league_player_week` and

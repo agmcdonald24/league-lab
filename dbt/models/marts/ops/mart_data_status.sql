@@ -30,6 +30,7 @@ recent_failures as (
            (array_agg(left(error, 200) order by started_at desc))[1] as last_error
     from latest_per_partition
     where status in ('failed', 'contract_failed') and started_at > now() - interval '7 days'
+      and partition_key <> '0'  -- Sleeper's "no previous league" sentinel, once fetched by mistake
     group by 1, 2
 ),
 

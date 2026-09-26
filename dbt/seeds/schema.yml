@@ -7,6 +7,13 @@ seeds:
     columns:
       - name: sleeper_key
         tests: [unique, not_null]
+      - name: kind
+        description: "stat = a weekly-stats column list; bonus = long-TD count from play-by-play or a per-game yardage threshold (column:low:high)"
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [stat, bonus]
       - name: stat_expression
         tests: [not_null]
   - name: metric_registry

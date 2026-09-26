@@ -162,7 +162,12 @@ league scored weeks, and explicit status text for play-by-play / FTN / participa
 ## Scoring
 
 `scoring_stat_map` (seed, generated from `league_lab.scoring`) maps Sleeper keys to nflverse
-column expressions; the `league_points(scoring_jsonb, alias)` macro builds
-`Σ weight × expression`. `fct_player_game.points_current_scoring` uses the newest league's
-settings (cross-year research); `league_player_week.points_recomputed` uses that season's
-settings (history). Approximations are listed in `METRICS.md`.
+column expressions, with a `kind`: `stat` rows are `+`-joined weekly-stat columns; `bonus` rows
+are either a play-by-play long-touchdown count (`pass_tds_40p` …, joined from
+`int_player_game_pbp` onto the stats row by the scoring models) or a per-game threshold
+`column:low:high`. The `league_points(scoring_jsonb, alias, include_bonuses=true)` macro builds
+`Σ weight × expression`; expected points pass `include_bonuses=false`.
+`fct_player_game.points_current_scoring` uses the reference league's newest settings
+(cross-year research); `league_player_week.points_recomputed` uses each league-season's own
+settings (history). Approximations are listed in `METRICS.md`. Seeds are always recreated
+(`+full_refresh: true`) so a new seed column never needs a manual `--full-refresh`.

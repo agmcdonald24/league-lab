@@ -235,11 +235,16 @@ models:
 
   # ------------------------------------------------------------------ league
   - name: dim_league_season
+    tests:
+      # one row per league-season; several leagues share a season once more than one is configured
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season]
     columns:
       - name: league_id
         tests: [unique, not_null]
       - name: season
-        tests: [unique, not_null]
+        tests: [not_null]
       - name: playoff_week_start
         tests: [not_null]
 

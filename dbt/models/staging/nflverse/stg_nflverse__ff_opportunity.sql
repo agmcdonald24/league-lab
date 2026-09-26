@@ -32,6 +32,8 @@ select
     0::double precision as fg_made_0_19, 0::double precision as fg_made_20_29, 0::double precision as fg_made_30_39,
     0::double precision as fg_made_40_49, 0::double precision as fg_made_50_59, 0::double precision as fg_made_60_,
     0::double precision as fg_missed, 0::double precision as fg_blocked,
+    0::double precision as fg_missed_0_19, 0::double precision as fg_missed_20_29, 0::double precision as fg_missed_30_39,
+    0::double precision as fg_missed_40_49, 0::double precision as fg_missed_50_59, 0::double precision as fg_missed_60_,
     0::double precision as pat_made, 0::double precision as pat_missed, 0::double precision as pat_blocked,
     -- the model's own actual/expected fantasy points (its scoring, kept for reference only)
     total_fantasy_points                        as ffopp_fantasy_points,

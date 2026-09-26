@@ -429,7 +429,8 @@ class SleeperIngester:
         chain: list[dict[str, Any]] = []
         seen: set[str] = set()
         current: str | None = league_id
-        while current and current not in seen and len(chain) < 25:
+        # Sleeper marks "no previous league" as "0" (older leagues) or null (newer ones)
+        while current and current not in seen and current != "0" and len(chain) < 25:
             seen.add(current)
             league = self.load_league(current)
             if not league:

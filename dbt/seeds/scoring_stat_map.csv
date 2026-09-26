@@ -1,24 +1,41 @@
-sleeper_key,stat_expression,description
-pass_yd,passing_yards,passing yards
-pass_td,passing_tds,passing touchdowns
-pass_int,passing_interceptions,interceptions thrown
-pass_2pt,passing_2pt_conversions,2-pt conversions passed
-rush_yd,rushing_yards,rushing yards
-rush_td,rushing_tds,rushing touchdowns
-rush_2pt,rushing_2pt_conversions,2-pt conversions rushed
-rec,receptions,receptions
-rec_yd,receiving_yards,receiving yards
-rec_td,receiving_tds,receiving touchdowns
-rec_2pt,receiving_2pt_conversions,2-pt conversions received
-fum,fumbles_total,fumbles (any)
-fum_lost,fumbles_lost_total,fumbles lost
-fum_rec_td,fumble_recovery_tds,fumble recovery touchdowns
-st_td,special_teams_tds,special teams touchdowns
-fgm_0_19,fg_made_0_19,FG made 0-19
-fgm_20_29,fg_made_20_29,FG made 20-29
-fgm_30_39,fg_made_30_39,FG made 30-39
-fgm_40_49,fg_made_40_49,FG made 40-49
-fgm_50p,fg_made_50_59 + fg_made_60_,FG made 50+
-fgmiss,fg_missed + fg_blocked,FG missed incl. blocked
-xpm,pat_made,PAT made
-xpmiss,pat_missed + pat_blocked,PAT missed incl. blocked
+sleeper_key,kind,stat_expression,description
+pass_yd,stat,passing_yards,passing yards
+pass_td,stat,passing_tds,passing touchdowns
+pass_int,stat,passing_interceptions,interceptions thrown
+pass_2pt,stat,passing_2pt_conversions,2-pt conversions passed
+rush_yd,stat,rushing_yards,rushing yards
+rush_td,stat,rushing_tds,rushing touchdowns
+rush_2pt,stat,rushing_2pt_conversions,2-pt conversions rushed
+rec,stat,receptions,receptions
+rec_yd,stat,receiving_yards,receiving yards
+rec_td,stat,receiving_tds,receiving touchdowns
+rec_2pt,stat,receiving_2pt_conversions,2-pt conversions received
+fum,stat,fumbles_total,fumbles (any)
+fum_lost,stat,fumbles_lost_total,fumbles lost
+fum_rec_td,stat,fumble_recovery_tds,fumble recovery touchdowns
+st_td,stat,special_teams_tds,special teams touchdowns
+fgm_0_19,stat,fg_made_0_19,FG made 0-19
+fgm_20_29,stat,fg_made_20_29,FG made 20-29
+fgm_30_39,stat,fg_made_30_39,FG made 30-39
+fgm_40_49,stat,fg_made_40_49,FG made 40-49
+fgm_50p,stat,fg_made_50_59 + fg_made_60_,FG made 50+
+fgmiss,stat,fg_missed + fg_blocked,FG missed incl. blocked
+fgmiss_0_19,stat,fg_missed_0_19,FG missed 0-19 (blocked kicks not bucketed by nflverse)
+fgmiss_20_29,stat,fg_missed_20_29,FG missed 20-29
+fgmiss_30_39,stat,fg_missed_30_39,FG missed 30-39
+fgmiss_40_49,stat,fg_missed_40_49,FG missed 40-49
+fgmiss_50p,stat,fg_missed_50_59 + fg_missed_60_,FG missed 50+
+xpm,stat,pat_made,PAT made
+xpmiss,stat,pat_missed + pat_blocked,PAT missed incl. blocked
+pass_td_40p,bonus,pass_tds_40p,passing TDs of 40+ yards (play-by-play)
+pass_td_50p,bonus,pass_tds_50p,passing TDs of 50+ yards (play-by-play)
+rush_td_40p,bonus,rush_tds_40p,rushing TDs of 40+ yards (play-by-play)
+rush_td_50p,bonus,rush_tds_50p,rushing TDs of 50+ yards (play-by-play)
+rec_td_40p,bonus,rec_tds_40p,receiving TDs of 40+ yards (play-by-play)
+rec_td_50p,bonus,rec_tds_50p,receiving TDs of 50+ yards (play-by-play)
+bonus_pass_yd_300,bonus,passing_yards:300:400,300-399 passing yard game
+bonus_pass_yd_400,bonus,passing_yards:400:,400+ passing yard game
+bonus_rush_yd_100,bonus,rushing_yards:100:200,100-199 rushing yard game
+bonus_rush_yd_200,bonus,rushing_yards:200:,200+ rushing yard game
+bonus_rec_yd_100,bonus,receiving_yards:100:200,100-199 receiving yard game
+bonus_rec_yd_200,bonus,receiving_yards:200:,200+ receiving yard game
