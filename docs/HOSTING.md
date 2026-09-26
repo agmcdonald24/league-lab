@@ -81,6 +81,18 @@ Check before pushing: `git status --ignored | grep -E "\.env$|data/"` must list 
 
 The URL is `https://<app-name>.streamlit.app`; you can rename it in the app settings.
 
+## 3b. Adding another Sleeper league
+
+```
+LEAGUE_LAB_SLEEPER_LEAGUE_ID=1389709692405551104,<other league id>     # in .env; first id = reference scoring
+make ingest-sleeper && make build && make sync-hosted
+```
+
+The league id is the number in the Sleeper URL (`sleeper.com/leagues/<id>/...`). Its whole chain of
+previous seasons is fetched too. Leaguemates of the second league pick it in the sidebar; the link
+`?league=<id>&team=<roster>` opens straight on their team. League pages use that league's scoring;
+NFL pages use the reference league's, and the sidebar lists any scoring differences.
+
 ## 4. What to expect
 
 * **Freshness** = your Mac's last refresh + sync (the banner on every page says when). If the Mac

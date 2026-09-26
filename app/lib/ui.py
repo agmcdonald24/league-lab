@@ -110,8 +110,8 @@ def unavailable(metric: str, why: str) -> None:
 def current_leagues() -> pd.DataFrame:
     """Current-season league chains loaded in this database (several leagues can coexist)."""
     return query(
-        """select league_id, season, league_name, playoff_week_start, last_scored_leg
-           from analytics.dim_league_season where is_current_season order by league_name"""
+        """select league_id, season, league_name, playoff_week_start, last_scored_leg, is_reference_league, scoring_diff_vs_reference
+           from analytics.dim_league_season where is_current_season order by is_reference_league desc, league_name"""
     )
 
 
@@ -155,6 +155,16 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
             format_func=lambda r: "— whole league —" if r is None else labels[int(r)],
         )
         st.caption("Shareable: the URL carries the league and team.")
+        row = leagues.set_index("league_id").loc[league_id]
+        if len(leagues) > 1 and not bool(row["is_reference_league"]):
+            ref_name = leagues[leagues["is_reference_league"].astype(bool)]["league_name"].iloc[0]
+            diff = row["scoring_diff_vs_reference"]
+            st.warning(
+                f"League pages (standings, matchups, rosters, trades, keepers) use **{row['league_name']}** scoring. "
+                f"NFL pages (Players, Rankings, Trends, Receivers, expected points) are priced under **{ref_name}** scoring"
+                + (f" — this league differs on: {diff}." if diff else " — identical to this league's, so nothing is lost."),
+                icon="ℹ️",
+            )
     st.query_params["league"] = league_id
     if roster_id is not None:
         st.query_params["team"] = str(roster_id)

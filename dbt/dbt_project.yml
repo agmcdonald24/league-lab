@@ -16,6 +16,8 @@ clean-targets: ["target", "dbt_packages"]
 vars:
   # NFL season year of the first history partition (matches LEAGUE_LAB_SEASONS_START)
   seasons_start: "{{ env_var('LEAGUE_LAB_SEASONS_START', '2016') | int }}"
+  # league whose scoring prices NFL-wide points (first id in LEAGUE_LAB_SLEEPER_LEAGUE_ID; set by the CLI)
+  reference_league_id: "{{ env_var('LEAGUE_LAB_REFERENCE_LEAGUE_ID', '') }}"
   # tolerance (fantasy points) when reconciling recomputed vs Sleeper-observed points
   points_tolerance: 0.5
 

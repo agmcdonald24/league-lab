@@ -47,7 +47,13 @@ class Settings(BaseSettings):
     app_db_url: str | None = Field(default=None, description="Full DSN override for the app role")
 
     # --- league ---
-    sleeper_league_id: str = "1389709692405551104"
+    sleeper_league_id: str = "1389709692405551104"  # comma-separated to load several leagues
+
+    @property
+    def reference_league_id(self) -> str:
+        """The league whose scoring prices every NFL-wide number (PPG, expected points, projections):
+        the first id in LEAGUE_LAB_SLEEPER_LEAGUE_ID. League pages always use their own scoring."""
+        return self.sleeper_league_id.split(",")[0].strip()
     sleeper_base_url: str = "https://api.sleeper.app/v1"
 
     # --- nflverse ---

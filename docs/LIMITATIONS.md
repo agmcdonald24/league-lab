@@ -82,7 +82,10 @@ NULL or labelled "unavailable".
     does not refresh, the hosted copy goes stale (the banner says when it was published). GitHub Actions (I-01) removes this.
 14c. **Publishing is not atomic on the free tier** (0.5 GB cannot hold two copies): pages show "not built yet" for the
     minute or two of a restore. The publication contract (I-02) fixes this once the database has room for two copies.
-14a. **One league.** Every NFL-wide mart uses the current league's scoring; a second league needs S-01 first.
+14a. **Several leagues, one reference scoring.** Several leagues can be loaded (comma-separated ids); league pages
+    use each league's own scoring, but NFL-wide numbers (PPG, expected points, projections, trends) are priced under the
+    **reference league** — the first id in `LEAGUE_LAB_SLEEPER_LEAGUE_ID`. The sidebar says so and lists the scoring keys
+    that differ. Per-league pricing of NFL pages is S-01 (component projections, M-01).
 14b. **Beta password is not authentication.** It is a closed door for a link; the database role is read-only regardless.
 
 ## Verification caveats specific to this build

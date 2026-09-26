@@ -179,6 +179,7 @@ def _dbt_env() -> dict[str, str]:
     env.setdefault("LEAGUE_LAB_DB_USER", s.db_user)
     env.setdefault("LEAGUE_LAB_DB_PASSWORD", s.db_password)
     env.setdefault("LEAGUE_LAB_SEASONS_START", str(s.seasons_start))
+    env.setdefault("LEAGUE_LAB_REFERENCE_LEAGUE_ID", s.reference_league_id)
     return env
 
 
