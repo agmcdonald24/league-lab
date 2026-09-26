@@ -45,8 +45,8 @@ def setup(title: str, icon: str = "🏈") -> None:
     ok, detail = connection_ok()
     if not ok:
         st.error(
-            "Cannot reach the analytics database with the read-only role. "
-            "Check `.env` (LEAGUE_LAB_APP_DB_*) and that PostgreSQL is running.\n\n" + detail
+            "Cannot reach the analytics database with the read-only role. Locally: "
+            "check `.env` (LEAGUE_LAB_APP_DB_*) and that PostgreSQL is running. Hosted: set LEAGUE_LAB_APP_DB_URL in the app secrets and reboot the app.\n\n" + detail
         )
         st.stop()
     st.title(title)

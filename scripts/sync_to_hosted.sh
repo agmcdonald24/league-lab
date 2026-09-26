@@ -16,7 +16,12 @@
 #         scripts/sync_to_hosted.sh --dry-run  (dump only, print size)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-[ -f .env ] && set -a && . ./.env && set +a
+# load .env the way the app does (python-dotenv): values with &, ?, spaces or quotes are safe
+if [ -f .env ]; then
+  set -a
+  eval "$(uv run python -c 'import shlex; from dotenv import dotenv_values; [print(f"{k}={shlex.quote(v)}") for k, v in dotenv_values(".env").items() if v is not None]')"
+  set +a
+fi
 
 : "${LEAGUE_LAB_HOSTED_ADMIN_URL:?set LEAGUE_LAB_HOSTED_ADMIN_URL in .env}"
 : "${LEAGUE_LAB_HOSTED_APP_PASSWORD:?set LEAGUE_LAB_HOSTED_APP_PASSWORD in .env}"

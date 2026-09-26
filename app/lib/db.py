@@ -28,26 +28,29 @@ ANALYTICS = "analytics"
 CACHE_TTL_SECONDS = 600
 
 
-def _apply_secrets() -> None:
+def _apply_secrets() -> bool:
     """On Streamlit Community Cloud settings live in st.secrets, not in a .env: copy the ones we
-    know into the environment before Settings is first built. Local runs have no secrets file and
-    skip this silently."""
+    know into the environment. Runs before every connection (cheap) rather than once at import,
+    because secrets can be added after the first deploy; returns True when something new arrived.
+    Local runs have no secrets file and skip this silently."""
     import os
 
     try:
         secrets = st.secrets
         keys = list(secrets.keys())
     except Exception:  # no secrets.toml locally
-        return
+        return False
+    changed = False
     for k in keys:
-        if k.startswith("LEAGUE_LAB_") and k not in os.environ:
+        if k.startswith("LEAGUE_LAB_") and os.environ.get(k) != str(secrets[k]):
             os.environ[k] = str(secrets[k])
-
-
-_apply_secrets()
+            changed = True
+    return changed
 
 
 def _dsn() -> str:
+    if _apply_secrets():
+        get_settings.cache_clear()  # settings were built before the secrets arrived
     return get_settings().app_dsn()
 
 
