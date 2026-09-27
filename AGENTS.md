@@ -1,7 +1,8 @@
 # AGENTS.md — working agreement for League Lab
 
-Read this, then `docs/PROJECT_PLAN.md` (what is built, what is next), `docs/STATUS.md` (current
-state and evidence), and the task you were given. `docs/MVP1_PLAN.md` is the original
+Read this, then `docs/HANDOFF.md` (the current handoff: state, task order, the traps),
+`docs/PROJECT_PLAN.md` (what is built, what is next), `docs/STATUS.md` (current state and
+evidence), and the task you were given. `docs/MVP1_PLAN.md` is the original
 specification and remains the contract for scope, metric definitions and acceptance.
 
 ## Ground rules

@@ -214,6 +214,7 @@ real widening is needed, dependent views are dropped with a logged warning and r
 ## Next concrete actions
 
 1. **Andrew**: `make sync && make build && make project && make backtest-v2 && make sync-hosted`, commit and push; the reconciliation on the dynasty league was 6 rows in 6 seasons (bonus semantics confirmed).
+1b. **Next agent**: `docs/HANDOFF.md` → Iteration 9 in `docs/PROJECT_PLAN.md`, starting with S-01a (per-league observed points), then U-10 / U-11 / U-12 / M-05 / M-06.
 2. **Andrew**: reset the Neon owner password (it was pasted in chat) and update `.env`; optionally `LEAGUE_LAB_APP_PASSWORD` / `LEAGUE_LAB_FEEDBACK_URL` in the Streamlit secrets.
 3. **Andrew (decisions)**: O03 refresh time, O05 backup destination, review of the Edge pages (U04), acceptance (H03).
 4. **Next engineering** (Andrew's call): R-07 an ML challenger on the same harness (only kept if it beats the baseline);

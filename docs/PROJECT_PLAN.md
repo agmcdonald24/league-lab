@@ -1,6 +1,6 @@
 # League Lab — project plan and backlog
 
-Version 1.1 · 2026-09-26 · Owner: Andrew · Companion to [MVP1_PLAN.md](MVP1_PLAN.md)
+Version 1.2 · 2026-09-27 · Owner: Andrew · Companion to [MVP1_PLAN.md](MVP1_PLAN.md)
 
 This document tracks the path from the **trimmed MVP1 build** delivered on 2026-09-25 to the
 **complete MVP1 as specified** in `MVP1_PLAN.md`, and beyond it to sharing with leaguemates. It is
@@ -213,7 +213,25 @@ the fallback the model must beat.
 | M-05 | Rest-of-season projection (sum of weekly component projections with schedule) and a lineup optimizer on the weekly one | R-08 |
 | M-06 | Refit cadence and drift monitor: after each season, refit on all completed seasons, backtest the newest one, page shows the drift | R-09 |
 
-### Iteration 9 — operations for a product (Phase 3)
+### Iteration 9 — from explorer to decisions (agreed 2026-09-27; next up)
+
+Feedback that set this iteration (Andrew's second-model review + the two-league QA walk):
+*Waivers shows 145–219 players and leaves the pick to the user; the scoring warning is a dump of
+keys; pages navigate well but a decision (usage → projection → availability → trade value) still
+takes four separate investigations; league pages price PPG in the wrong league's scoring.*
+Order matters: S-01a first, because every shortlist and card built on top of it would otherwise
+show dynasty managers League of Scrubs numbers.
+
+| ID | Task | Acceptance |
+|---|---|---|
+| S-01a | **Per-league observed points.** New mart `fct_player_game_league` (league_id × gsis_id × game_id: points under that league's *current* scoring via `league_points` over the stats row + `int_player_game_pbp` long-TD counts), for every current league-season. Re-key on `league_id` everything a league page reads per game: `mart_player_recent_form` (ppg windows), `mart_player_season` PPG, `mart_player_availability` (`ppg_std`, `points_per_game_l3/l5`, `diff_per_game`), `mart_player_expected_season` (xPPG uses the same map with `include_bonuses=false`), `mart_league_positional_strength`, `mart_league_keeper_candidates`, Team Hub / Trade Finder / Waiver Wire / Matchups start-sit queries. NFL research pages (Players, Trends, Receivers, Kickers, defense vs position) stay in reference scoring and say so | Josh Allen's PPG on the dynasty Team Hub equals his Sleeper dynasty points ÷ games (49.6, not 38.2); `assert_league_points_match_recomputed`: for rostered players, `fct_player_game_league` = `league_player_week.points_recomputed` to the cent; the sidebar warning shrinks to "NFL research pages use reference scoring"; hosted copy stays under 0.5 GB (drop `nflverse_*` duplicates from availability if needed) |
+| U-10 | **Scoring summary line.** `dim_league_season.scoring_label` derived from the settings and roster positions: "12-team superflex dynasty · full PPR · 6-pt pass TD · 100/200-yd bonuses · TE premium 0.5" (rules: rec 0/0.5/1 → standard/half/full PPR; `bonus_rec_te` → TE premium; any `bonus_*_yd_*` → yardage bonuses; `pass_td`; SUPER_FLEX / 2QB from slots; league_type). Sidebar shows the label; the key-by-key diff moves into an expander "Scoring differences vs the reference league" | one line under the league name on every page; the raw diff is one click away, never on screen by default |
+| U-11 | **Waiver shortlist.** Above the free-agent table: "Adds worth a claim" for the selected roster — per position the league starts, the top 3 free agents by **projection v2 (this league's scoring)** for the next week and by season-to-date PPG, each compared with the roster's *weakest starter and best bench* at that position (from `mart_league_optimal_lineup` / positional strength): "+3.1 over your RB2 this week", "+1.4 PPG over your best bench WR". Only players who clear the bar appear; an empty shortlist says "nothing on the wire beats what you have at RB". Default sort of the big table becomes v2 projection; the current filters stay | on the dynasty league with team 1 the shortlist has ≤ 12 rows, every row states the comparison, and no kicker appears; Playwright walk on both leagues |
+| U-12 | **Player card (decision flow).** One page (`/Player?id=<gsis>` and a search box) that answers the four questions in one screen: **Usage** (season/L3 target or carry share, snap share, first-read share, red-zone share, the trend tags), **Projection** (v2 for this league: proj, floor, ceiling, the stat line, next opponent and its rank vs the position), **Availability** (rostered by whom in this league, or free agent; injury; bye), **Value** (PPG vs xPPG this season in this league's scoring, position rank, last season, and for a rostered player the Trade Finder fit against the viewer's roster). Every table on other pages links player names to the card (`st.column_config.LinkColumn`) | a WR free agent's card and a rostered QB's card render on both leagues with no empty section except where data is genuinely unavailable (then the standard "unavailable" note); the four sections cite their marts; ≤ 6 queries |
+| M-05 | **Start/sit + rest of season.** Matchups start-sit board switches to v2 (proj, floor, ceiling in this league's scoring) with a "floor play / ceiling play" tag when the ordering flips between P10 and P90; rest-of-season = sum of weekly v2 projections over the remaining schedule (bye-adjusted, opponent-adjusted through `int_opponent_week_asof`), shown on the card and the Team Hub | the start-sit board's top choice per slot equals `mart_league_optimal_lineup` under v2 in ≥ 90% of played weeks of 2025 (backtest note in STATUS) |
+| M-06 | Refit cadence + drift: `make project` already refits nightly; add `ops.projection_drift` (weekly Spearman/MAE of the live board once the week is played) and a small "how the model is doing this season" strip on the Rankings page | the strip shows the current season's realised Spearman per position next to the backtest's |
+
+### Iteration 10 — operations for a product (Phase 3)
 
 | ID | Task | Notes |
 |---|---|---|
