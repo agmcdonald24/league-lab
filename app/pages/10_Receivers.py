@@ -5,11 +5,12 @@ import streamlit as st
 from lib.charts import bar_chart, color_map, line_chart
 from lib.db import query, require_relations
 from lib.table import howto, show
-from lib.ui import freshness_banner, seasons_available, setup, unavailable
+from lib.ui import freshness_banner, reference_scoring_note, seasons_available, setup, unavailable
 
 setup("Receivers")
 freshness_banner()
 require_relations("mart_player_context")
+reference_scoring_note("Points on this page")
 
 seasons = seasons_available()
 c1, c2, c3 = st.columns([1, 1, 2])

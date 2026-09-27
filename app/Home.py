@@ -56,7 +56,8 @@ if cur is not None and roster_id is not None:
     if season and week:
         g1, g2 = st.columns(2)
         with g1:
-            st.markdown(f"**Your highest projections for NFL week {week}** (baseline; the Rankings page shows how far to trust it)")
+            st.markdown(f"**Your highest projections for NFL week {week}** (baseline formula, reference league's scoring; "
+                        "the Rankings page has projection v2 in this league's scoring and how far to trust each)")
             proj = query(
                 """select k.player_name, k.position, k.opponent, k.report_status, k.proj_points, k.rank_pos
                    from analytics.mart_player_week_rankings k

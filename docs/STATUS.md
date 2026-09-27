@@ -1,13 +1,13 @@
 # STATUS
 
-Updated: 2026-09-26 · Owner: Andrew · Integration: Claude (Cowork session)
+Updated: 2026-09-27 · Owner: Andrew · Integration: Claude (Cowork session)
 
 ## Current state
 
 | Item | Value |
 |---|---|
-| Commit | no git history yet — `git init` recommended (see next actions) |
-| Phase | 1 (core) bootstrapped on Andrew's Mac 2026-09-26; 1.5 (Manager's Edge) reviewed and polished; 1.6 (Trends), 2 (play-by-play), 2b (Rankings) built; **Iteration 7 (share-ready beta) built 2026-09-26 — hosting steps are Andrew's** |
+| Commit | git `main` (GitHub `agmcdonald24/league-lab`, private); latest change: S-01a (2026-09-27) |
+| Phase | 1 (core) bootstrapped on Andrew's Mac 2026-09-26; 1.5 (Manager's Edge) reviewed and polished; 1.6 (Trends), 2 (play-by-play), 2b (Rankings) built; **Iteration 7 (share-ready beta) built 2026-09-26 — hosting steps are Andrew's**; Iteration 8 (projection v2) built; **Iteration 9 started — S-01a done 2026-09-27** |
 | Python / uv | 3.13 (project), `uv.lock` committed (97 packages, unchanged this iteration) |
 | Key versions | dbt-core 1.11.15, dbt-postgres 1.11.0, polars 1.44.2, psycopg 3.3.6, streamlit 1.64.0, httpx 0.28.1, pandas 3.0.6, plotly 7.1.0 |
 | Database | `league_lab` on localhost:5432 (Homebrew PostgreSQL 17 on the Mac; PostgreSQL 16 in the build sandbox); ≈2.2 GB after Phase 2 (raw pbp 751 MB, participation 321 MB) |
@@ -211,10 +211,86 @@ real widening is needed, dependent views are dropped with a logged warning and r
 * Verified: `make pytest` 25/25, `ruff` clean; 13 pages × 2 leagues render headlessly; walk-forward report under
   `reports/backtests/projection_v2_2021_2025_*.md`.
 
+## S-01a 2026-09-27 — per-league observed points (Iteration 9)
+
+Task: league pages priced PPG / xPPG / ranks in the reference league's scoring. Plan sections: Iteration 9 (S-01a),
+Iteration 7 (S-01a row). **Where it was validated:** a replica, not the Mac's live database — the Mac's nightly backup
+`backups/league_lab_20260927_080431.dump` (pg_dump 17.11, 08:04 today, code `aee5c98` = the same models as `1ad4e67`)
+restored into PostgreSQL 17.10 in a cloud sandbox, Python 3.13 from `uv.lock`. The Mac's database still holds the
+pre-S-01a marts until its next `make build` (or the 08:00 nightly).
+
+* **Baseline first** (replica, unchanged code): `make build` PASS=289 WARN=2 ERROR=0 (291 nodes) — identical to the
+  Mac's 08:00 refresh log, same two warnings (`assert_recomputed_points_reconcile` 6 rows,
+  `assert_optimal_lineup_matches_sleeper_potential` 7 rows).
+* **Built**: `fct_player_game_league` (league_id × gsis_id × game_id; every `fct_player_game` row × each current
+  league-season; `points` = `league_points` over the stats row + long-TD counts, `points_expected` = same map over the
+  ffverse expected stats without bonus keys; 368,662 rows = 184,331 × 2; 52 MB) and `mart_league_player_season`
+  (league × player × regular season: points, PPG, L3/L5 PPG, xPPG, PPG − xPPG, positional ranks; 41,664 rows; 8 MB).
+  Re-keyed on them: `mart_player_availability` (points_std, ppg_std, points_per_game_l3/_l5, expected_per_game,
+  diff_per_game, games_with_expected), `mart_league_keeper_candidates`, `mart_league_positional_strength` (through
+  availability) and `mart_league_draft` (season points under the chain's current scoring, via `chain_id`). The
+  NFL-wide marts (`fct_player_game`, `mart_player_season`, `mart_player_recent_form`, `mart_player_expected_*`) are
+  untouched: the research pages and the projection features read them.
+* **After**: `make build` **PASS=301 WARN=2 ERROR=0** (303 nodes: 4 seeds, 69 table models, 193 data tests, 37 views;
+  +2 models, +10 tests), the same two warnings with the same row counts (6, 7). 9 m 25 s on the replica's 2 vCPUs
+  (the Mac runs 291 nodes in 2 m 20 s). `make pytest` 25/25, `make lint` clean.
+* **Josh Allen check** (acceptance): dynasty Team Hub (Pitts n' Titts, roster 1) PPG **49.6** (49.65 = Sleeper
+  48.0 + 51.3 = 99.30 ÷ 2 games), was **38.2** (38.24 — League of Scrubs scoring, which is still what the League of
+  Scrubs Team Hub shows). xPPG 32.7 (was 27.2), PPG − xPPG +16.9 (was +11.0). Seen in SQL, in the headless run's
+  rendered dataframe and in the browser.
+* **`assert_league_points_match_recomputed`** (the acceptance test): PASS — 737 rostered player-games in the two
+  current league-seasons (460 dynasty, 277 League of Scrubs), 737 equal to the cent, 0 missing, max |diff| 0.00;
+  in 2026 Sleeper's observed points equal the recomputed ones on all 737. Negative control: pricing the dynasty's
+  460 in League of Scrubs scoring (what the pages showed) fails 389 of them (dynasty − reference = +2.21 per
+  player-game on average).
+* **Reference league did not move** — `assert_reference_league_matches_nfl_marts` PASS (per-game points, season
+  points / PPG / games / position, L3/L5, expected points, and no player-game missing for either league), and a
+  before/after diff of the league marts on the replica: League of Scrubs 0 changed cells (804 availability rows,
+  157 keeper, 49 positional strength, 450 draft picks). Dynasty: only points-derived columns changed —
+  availability 351 of 804 rows, keeper facts 223 of 291 (184 position ranks), positional strength 48 of 48
+  (16 position ranks), draft 416 of 480 season-point values (159 ranks).
+* **Projection inputs untouched**: `mart_player_week_projections` and `fct_player_game.points_current_scoring`
+  byte-identical before/after; `mart_player_week_features` identical except `prev_snap_pct` in 21,628 rows by
+  ≤ 4.4e-16 (float summation order in an `avg` over double precision — none of the 44 models upstream of the
+  features/projections changed).
+* **Sidebar**: on a non-reference league the notice is now one line, "NFL research pages use reference scoring
+  (League of Scrubs)"; the key-by-key difference sits in a caption under it until U-10 moves it into an expander.
+  Players, Trends, Receivers and Matchups' defense-vs-position section carry a one-line reference-scoring note;
+  the Opp rank / points-allowed tooltips say reference scoring; Home's projection panel and the packs' baseline
+  tables are labelled baseline / reference scoring.
+* **Hosted budget**: pages and packs name the same 37 analytics relations as before (the new marts are
+  pipeline-only), so the sync publishes the same 47 relations: 310.9 MB estimated on the replica with the sync
+  script's own selection (309.9 MB before; limit 500 MB). Nothing was synced.
+* **Headless page check** (HANDOFF.md): 13 pages × 2 leagues = 26 runs, 0 exceptions.
+* **Browser walk** (Chromium via Playwright, local app on the replica): dynasty Team Hub, Trade Finder and Waiver
+  Wire (team 1), plus League of Scrubs Team Hub (team 9) for contrast — 0 exceptions. Team Hub: Allen 49.6 / L3 49.6 /
+  xPPG 32.7 / +16.9; QB starter PPG 78.4 (Allen 49.65 + Hurts 28.78), rank 1; roster value Allen 99.3 pts, pos rank 1.
+  Trade Finder: QB/RB/WR/TE matrix (no K), sell-high list led by Allen +16.9. Waiver Wire: 79 free agents ranked by
+  dynasty xPPG (Noah Fant 14.1; 11.2 in League of Scrubs scoring). League of Scrubs Team Hub: Allen 38.2, no notice.
+  Console: 8 × 404 from Streamlit probing `/<previous page>/_stcore/health|host-config` on hard navigation — framework
+  noise, not page errors.
+* **Data partitions touched**: none — no ingestion, no raw/ops writes; dbt rebuilt the replica only.
+* **Not done / open**: (1) the Mac's database and the hosted copy still have the old marts — `make build` (or the
+  nightly) and a push are needed, see next actions; (2) `metric_registry.csv` versions for `expected_points` and
+  `positional_strength` (definition now per league) were not bumped and no row was added for per-league points —
+  the seeds were out of bounds for this task; (3) still reference-scored on league-facing screens, labelled:
+  Opp rank, Home's baseline projection panel, the packs' baseline tables, the Rankings board's as-of inputs
+  (PPG / xPPG L5 / prev PPG; the page's how-to says reference scoring, but the shared PPG tooltip there reads
+  "this league's scoring" — pre-existing); (4) expected points
+  leave bonus keys out in every league, so in the dynasty PPG − xPPG includes the bonus points; (5) past seasons on
+  a league page are priced in the league's current scoring (by design, so years compare); (6) seen on the walk,
+  pre-existing, not S-01a: the dynasty "Roster value" table says "Waiver / free agent" for players drafted in earlier
+  seasons — the mart only reads the current season's draft.
+
 ## Next concrete actions
 
-1. **Andrew**: `make sync && make build && make project && make backtest-v2 && make sync-hosted`, commit and push; the reconciliation on the dynasty league was 6 rows in 6 seasons (bonus semantics confirmed).
-1b. **Next agent**: `docs/HANDOFF.md` → Iteration 9 in `docs/PROJECT_PLAN.md`, starting with S-01a (per-league observed points), then U-10 / U-11 / U-12 / M-05 / M-06.
+1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
+   and `git push` **before the next nightly** — the nightly publishes the new marts to Neon, and Community Cloud runs
+   the page code from GitHub, so an unpushed commit leaves hosted pages showing per-league numbers under the old
+   sidebar text. Then `make sync-hosted` if you want it live now. Optional: OK a `metric_registry.csv` bump
+   (`expected_points`, `positional_strength` → 1.1, per-league note).
+1b. **Next agent**: `docs/HANDOFF.md` → Iteration 9 in `docs/PROJECT_PLAN.md`: **U-10** (scoring summary line; the
+   raw diff into an expander), then U-11 / U-12 / M-05 / M-06.
 2. **Andrew**: reset the Neon owner password (it was pasted in chat) and update `.env`; optionally `LEAGUE_LAB_APP_PASSWORD` / `LEAGUE_LAB_FEEDBACK_URL` in the Streamlit secrets.
 3. **Andrew (decisions)**: O03 refresh time, O05 backup destination, review of the Edge pages (U04), acceptance (H03).
 4. **Next engineering** (Andrew's call): R-07 an ML challenger on the same harness (only kept if it beats the baseline);

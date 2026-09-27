@@ -5,7 +5,7 @@ import streamlit as st
 from lib.charts import line_chart
 from lib.db import query, require_relations
 from lib.table import Col, howto, show
-from lib.ui import freshness_banner, next_week_info, perspective, setup
+from lib.ui import freshness_banner, next_week_info, perspective, reference_scoring_note, setup
 
 setup("Trends")
 freshness_banner()
@@ -26,6 +26,7 @@ howto(
     "Nothing is called a trend before a player's fourth game. Early in the season the page shows an *early read* instead and says so.",
     title="How to use this page",
 )
+reference_scoring_note("Points, expected points and defense trends on this page")
 
 # ---------------------------------------------------------------- scope filters
 c0, c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1, 1])

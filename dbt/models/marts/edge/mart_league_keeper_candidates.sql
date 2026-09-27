@@ -1,6 +1,8 @@
 -- Keeper facts for every currently rostered player in each current league-season: how he was
 -- acquired (draft round/pick or waiver/FA), season-to-date production and positional rank, and
 -- the expected-points signal. League keeper *rules* (cost, eligibility) are applied by the reader.
+-- Production, ranks and expected points are in this league's own scoring (mart_league_player_season,
+-- plan S-01a); the ranks still cover every NFL player at the position, rostered or not.
 with cur as (select league_id, season from {{ ref('dim_league_season') }} where is_current_season),
 
 members as (
@@ -15,15 +17,10 @@ drafted as (
 ),
 
 std as (
-    select gsis_id, season, position, games_played, points_current_scoring, points_current_scoring_per_game,
-           rank() over (partition by season, position order by points_current_scoring desc nulls last) as position_rank_std,
-           rank() over (partition by season, position order by points_current_scoring_per_game desc nulls last) as position_rank_ppg
-    from {{ ref('mart_player_season') }}
-    where season_type = 'REG' and position in ('QB', 'RB', 'WR', 'TE', 'K')
-),
-
-exp as (
-    select gsis_id, season, expected_per_game, diff_per_game from {{ ref('mart_player_expected_season') }}
+    select league_id, gsis_id, season, games_played, points, ppg, position_rank_points, position_rank_ppg,
+           expected_per_game, diff_per_game
+    from {{ ref('mart_league_player_season') }}
+    where league_id in (select league_id from cur) and position in ('QB', 'RB', 'WR', 'TE', 'K')
 )
 
 select
@@ -34,10 +31,9 @@ select
     d.drafted_by_roster_id is not null and d.drafted_by_roster_id <> m.roster_id as acquired_after_draft,
     d.sleeper_player_id is null as undrafted_or_waiver,
     coalesce(d.is_keeper, false) as was_keeper,
-    s.games_played, s.points_current_scoring as points_std, s.points_current_scoring_per_game as ppg_std,
-    s.position_rank_std, s.position_rank_ppg,
-    e.expected_per_game, e.diff_per_game
+    s.games_played, s.points as points_std, s.ppg as ppg_std,
+    s.position_rank_points as position_rank_std, s.position_rank_ppg,
+    s.expected_per_game, s.diff_per_game
 from members as m
 left join drafted as d using (league_id, sleeper_player_id)
-left join std as s on s.gsis_id = m.gsis_id and s.season = m.season
-left join exp as e on e.gsis_id = m.gsis_id and e.season = m.season
+left join std as s on s.league_id = m.league_id and s.gsis_id = m.gsis_id and s.season = m.season

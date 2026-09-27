@@ -237,7 +237,7 @@ def team_brief(conn: psycopg.Connection, league_id: str, roster_id: int, out_dir
         where k.season = %s and k.week = %s and a.rostered_by_roster_id = %s
         order by array_position(array['QB','RB','WR','TE'], k.position), k.proj_points desc nulls last""", (league_id, season, next_wk, roster_id))
     pack.add(f"Week {next_wk} projections for your roster (baseline)", c, r,
-             note="proj = form + usage + matchup + Vegas + home (+ intercept); pos_rank among all rankable players at the position. See the Rankings page backtest before trusting a single rank",
+             note="proj = form + usage + matchup + Vegas + home (+ intercept), in the reference league's scoring (projection v2 in this league's scoring is on the Rankings page); pos_rank among all rankable players at the position. See the Rankings page backtest before trusting a single rank",
              limit=None, csv_name="projections")
 
     c, r = _rows(conn, """
@@ -246,7 +246,7 @@ def team_brief(conn: psycopg.Connection, league_id: str, roster_id: int, out_dir
         join analytics.mart_player_availability a on a.gsis_id = k.gsis_id and a.league_id = %s
         where k.season = %s and k.week = %s and a.is_free_agent and k.is_rankable and k.position in ('QB','RB','WR','TE')
         order by k.proj_points desc nulls last limit 20""", (league_id, season, next_wk))
-    pack.add(f"Best projected free agents for week {next_wk}", c, r, csv_name="projections_free_agents")
+    pack.add(f"Best projected free agents for week {next_wk}", c, r, note="baseline formula, reference league's scoring", csv_name="projections_free_agents")
 
     c, r = _rows(conn, """
         select a.player_name, a.position, a.nfl_team, t.games, t.tags as trend, round(t.momentum::numeric, 2) as momentum, t.opportunity_trend,

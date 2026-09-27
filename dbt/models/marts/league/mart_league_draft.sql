@@ -1,10 +1,11 @@
--- Draft picks with the player's regular-season outcome under that league's scoring
--- (points recomputed from NFL stats), so draft value can be reviewed after the fact.
+-- Draft picks with the player's regular-season outcome under that league's *current* scoring
+-- (points recomputed from NFL stats in fct_player_game_league for the chain's current season, plan
+-- S-01a), so draft value can be reviewed after the fact and drafts from different years compare.
 with picks as (
     select * from {{ ref('stg_sleeper__draft_picks') }}
 ),
 
-l as (select league_id, season, scoring_settings from {{ ref('dim_league_season') }}),
+l as (select league_id, chain_id, season, scoring_settings from {{ ref('dim_league_season') }}),
 
 season_points as (
     select
@@ -16,11 +17,12 @@ season_points as (
     group by 1, 2
 ),
 
+-- keyed by the chain's current league-season (chain_id = the newest season's league_id)
 nfl_points as (
-    select pg.gsis_id, pg.season, sum(pg.points_current_scoring) as points_current_scoring, count(*) filter (where played) as games_played
-    from {{ ref('fct_player_game') }} as pg
+    select pg.league_id, pg.gsis_id, pg.season, sum(pg.points) as points_current_scoring, count(*) filter (where played) as games_played
+    from {{ ref('fct_player_game_league') }} as pg
     where pg.season_type = 'REG'
-    group by 1, 2
+    group by 1, 2, 3
 )
 
 select
@@ -42,6 +44,6 @@ from picks as p
 join l using (league_id)
 left join {{ ref('stg_sleeper__players') }} as sp using (sleeper_player_id)
 left join {{ ref('player_id_map') }} as idm on idm.sleeper_id = p.sleeper_player_id
-left join nfl_points as np on np.gsis_id = idm.gsis_id and np.season = l.season
+left join nfl_points as np on np.league_id = l.chain_id and np.gsis_id = idm.gsis_id and np.season = l.season
 left join season_points as spt on spt.league_id = p.league_id and spt.sleeper_player_id = p.sleeper_player_id
 left join {{ ref('dim_league_member') }} as m on m.league_id = p.league_id and m.roster_id = p.roster_id

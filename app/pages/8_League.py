@@ -90,7 +90,7 @@ with tab_tx:
     show(view, ["created_at", "week", "transaction_type", "action", "team_name", "player_name", "position", "waiver_bid"], height=480)
 
 with tab_draft:
-    howto("Every pick with what the player went on to do. **Season pts** uses the current league scoring so drafts from different years compare; "
+    howto("Every pick with what the player went on to do. **Season pts** uses this league's current scoring so drafts from different years compare; "
           "**Pts while started** is what he actually scored for whoever started him in this league. "
           "**Pos rank by pick** vs **Pos rank by pts** is the hit/miss column: a WR taken 8th at his position who finished 2nd was a steal.")
     draft = query(

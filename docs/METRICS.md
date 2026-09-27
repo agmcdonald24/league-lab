@@ -33,7 +33,8 @@ grain, status, notes); this file explains the rules behind it. Plan §6 is the s
 | `dropbacks_excl_scrambles` | attempts + sacks suffered (player and team). Scrambles need play-by-play; the name says so |
 | `targets_per_game`, `carries_per_game` | ÷ games played (appearance games) |
 | recent form `*_l3`, `*_l5`, `*_std` | last 3 / last 5 appearance games in the same season & season type, ordered by week; denominators summed over the same games; season-to-date alongside |
-| `points_current_scoring` | newest league's `scoring_settings` × nflverse stats (cross-year research) |
+| `points_current_scoring` | reference league's newest `scoring_settings` × nflverse stats (cross-year research, NFL-wide marts) |
+| `points` (`fct_player_game_league`) | each *current* league-season's `scoring_settings` × nflverse stats, every NFL game (league pages, S-01a) |
 | `points_recomputed` (league) | that season's `scoring_settings` × nflverse stats |
 | `points_observed` (league) | Sleeper's own `players_points` — includes commissioner edits, bonuses, DEF |
 | kicker streaming (realized) | started-kicker points per roster-week; common eligible weeks = weeks every roster started a K; changes and acquisitions counted from lineups/transactions |
@@ -47,11 +48,11 @@ has one); `games_played` counts `played`.
 
 | Metric | Definition |
 |---|---|
-| `points_expected` / `expected_per_game` | current league scoring applied to ffverse expected stats (receptions, yards, TDs, 2-pt, INT for pass/rush/receive). No kicking or fumbles, so K expected points are NULL. `diff_per_game` = actual − expected; negative = producing below opportunity |
-| defense vs position | points (current scoring) scored by opposing QB/RB/WR/TE/K against a defense, per game; season-to-date and last-4; rank 1 = allows the most. Regular season only |
+| `points_expected` / `expected_per_game` | league scoring applied to ffverse expected stats (receptions, yards, TDs, 2-pt, INT for pass/rush/receive): the viewer's league on league pages (`mart_league_player_season`, S-01a), the reference league in the NFL-wide marts. No kicking or fumbles, so K expected points are NULL. `diff_per_game` = actual − expected in the same scoring; negative = producing below opportunity |
+| defense vs position | points (reference scoring) scored by opposing QB/RB/WR/TE/K against a defense, per game; season-to-date and last-4; rank 1 = allows the most. Regular season only. The same ranks appear as **Opp rank** on league pages |
 | all-play | for each scored regular-season week, wins vs every other roster; season all-play win%; `expected_wins` = games × all-play win%; `luck_wins` = actual − expected |
 | optimal lineup | best lineup from the players rostered that week using Sleeper observed points; greedy fill of fixed slots then REC_FLEX/WRRB_FLEX/FLEX/SUPER_FLEX (optimal for fixed slots + one flex type). `bench_points_left` = optimal − started; `lineup_efficiency` = started ÷ optimal. Validated against Sleeper's `ppts` (regular season): exact for 29/30 rosters |
-| positional strength | sum of season ppg over the top-N rostered players at a position (N = starting slots at that position); compared with the league median; rank 1 = strongest |
+| positional strength | sum of season ppg (the league's own scoring) over the top-N rostered players at a position (N = starting slots at that position); compared with the league median; rank 1 = strongest |
 | availability | `rostered_by_*` from the current Sleeper roster payloads; free agent = not on any roster in that league. Team defenses (DEF) are not in the table (no NFL player id) |
 | share trends | `target_share_trend` = last-3 share − season share (same for carries). Meaningless before 4 games |
 | CB coverage context | PFR advanced defense when the defender was targeted: targets, completions, yards, TDs, passer rating allowed, aDOT, YAC, missed tackles; season-to-date; 2018+. The matchup page lists the opponent's LCB/RCB/NB (depth rank ≤ 2) from the latest depth chart. Not a shadow-coverage assignment |
@@ -100,11 +101,27 @@ Reconciliation: `assert_recomputed_points_reconcile` warns on |observed − reco
 QB/RB/WR/TE/K, in every configured league under that league-season's own settings. Differences are
 information (stat corrections, unmodelled keys), not failures.
 
-**Several leagues.** `points_current_scoring`, expected points, availability and rankings are
-priced in the *reference* league's scoring (the first id in `LEAGUE_LAB_SLEEPER_LEAGUE_ID`;
-`dim_league_season.is_reference_league`). League pages use each league's own observed points and
-`points_recomputed`. `dim_league_season.scoring_diff_vs_reference` lists the keys where a league
-differs, and the sidebar shows it. Per-league pricing of the NFL-wide marts is plan S-01.
+**Several leagues (per-league pricing, S-01a, 2026-09-27).** Two scales, one rule: *a league page
+prices every player in that league's own current scoring; an NFL research page prices every player
+and season in the reference league's scoring* (the first id in `LEAGUE_LAB_SLEEPER_LEAGUE_ID`;
+`dim_league_season.is_reference_league`).
+
+| Where | Scoring | Relations |
+|---|---|---|
+| League pages — Team Hub, Waiver Wire, Matchups start/sit, Trade Finder, League Intel, League (draft), weekly packs: PPG, points, PPG (L3/L5), xPPG, PPG − xPPG, positional strength, keeper / roster-value ranks, draft season points | the selected league's **current** scoring | `fct_player_game_league` → `mart_league_player_season` → `mart_player_availability`, `mart_league_keeper_candidates`, `mart_league_positional_strength`; `mart_league_draft` via `chain_id` |
+| Observed league history — standings, matchups, lineups, `points_recomputed` | that league-*season*'s own scoring (Sleeper's points) | `league_player_week`, `fct_league_matchup`, … |
+| Rankings — projection v2 | the selected league's scoring | `mart_player_week_projections` |
+| NFL research — Players, Trends, Receivers, defense vs position (and the **Opp rank** columns derived from it), the baseline projection formula, the projection features | reference scoring | `fct_player_game.points_current_scoring`, `mart_player_season`, `mart_player_recent_form`, `mart_player_expected_*`, `mart_defense_*`, `mart_player_week_features/_rankings` |
+
+The per-league marts reuse the NFL-wide arithmetic unchanged — points over every stat row, PPG per
+appearance game, L3/L5 = the last 3/5 appearance games of the season, xPPG over QB/RB/WR/TE game rows
+with an expected row and an appearance, ranks over every NFL player at the position — so the reference
+league's pages did not move by a cent (`assert_reference_league_matches_nfl_marts`), and
+`assert_league_points_match_recomputed` holds every current league's per-game points equal to
+`league_player_week.points_recomputed` for rostered players. Expected points stay without bonus keys
+in every league. The metric-registry versions for `expected_points` and `positional_strength` still
+read 1.0: the seed was out of bounds for S-01a (see `docs/STATUS.md`). `scoring_diff_vs_reference`
+still lists the keys where a league differs; the sidebar shows it under a one-line notice.
 
 ## Play-by-play metrics (v1.0, Phase 2, 2026-09-26)
 

@@ -68,10 +68,12 @@ load, checksum, ETag, rows, loaded_at. Used to skip unchanged content.
 | `dim_league_member` | league_id, roster_id | manager/team names, Sleeper-stored record |
 | `fct_league_matchup` | league_id, week, roster_id | opponent, result, `is_playoff_week`, `is_scored` |
 | `league_player_week` | league_id, week, roster_id, sleeper_player_id | starter flag + slot, `points_observed` (Sleeper), `points_recomputed` (that season's scoring × nflverse) |
+| `fct_player_game_league` | league_id, gsis_id, game_id | every `fct_player_game` row × each **current** league-season (S-01a, 2026-09-27): `points` under that league's current scoring (`league_points` over the stats row + long-TD counts, = `league_player_week.points_recomputed` to the cent), `points_expected` (same map, ffverse expected stats, stat keys only), `played`, `position`. ≈369k rows for two leagues. Pipeline-only (no page reads it; not published) |
+| `mart_league_player_season` | league_id, gsis_id, season | regular season in the league's own scoring (S-01a): `points`, `ppg`, `points_per_game_l3/_l5` (last 3/5 appearance games), `games_with_expected`, `points_expected`, `expected_per_game`, `diff_per_game`, `position_rank_points/_ppg` (all NFL players at the position). Same arithmetic as `mart_player_season` / `mart_player_recent_form` / `mart_player_expected_season`; the reference league reproduces them exactly |
 | `mart_league_standings` | league_id, roster_id | computed vs Sleeper record, lineup efficiency, champion flag |
 | `mart_league_kicker_week` / `_summary` | league-week-roster / league-roster | realized started-kicker points, common eligible weeks, changes, acquisitions |
 | `mart_league_transactions` | transaction × player × action | |
-| `mart_league_draft` | draft_id, pick_no | pick vs season outcome |
+| `mart_league_draft` | draft_id, pick_no | pick vs season outcome; season points under the chain's **current** scoring (`fct_player_game_league` via `chain_id`) |
 
 ## analytics — Manager's Edge (2026-09-26)
 
@@ -84,12 +86,12 @@ load, checksum, ETag, rows, loaded_at. Used to skip unchanged content.
 | `mart_matchup_cb_context` | defense, gsis_id, depth_position | opponent's CBs (latest depth chart) + coverage |
 | `mart_player_next_matchup` | gsis_id | next game/bye, opponent DvP rank, injury, depth rank |
 | `mart_league_roster_membership` | league_id, sleeper_player_id | who rosters whom now |
-| `mart_player_availability` | league_id, gsis_id | rostered-by / free agent × usage × expected gap × next matchup |
+| `mart_player_availability` | league_id, gsis_id | rostered-by / free agent × usage × expected gap × next matchup; points columns (`points_std`, `ppg_std`, `points_per_game_l3/_l5`, `expected_per_game`, `diff_per_game`, `games_with_expected`) in the row's league scoring via `mart_league_player_season` (S-01a); usage, shares and opponent ranks are scoring-free or reference-scored |
 | `mart_league_optimal_lineup` | league_id, week, roster_id | started vs optimal points, bench points left |
 | `mart_league_all_play` / `_week` | league_id, roster_id / + week | all-play record, expected wins, luck |
-| `mart_league_keeper_candidates` | league_id, sleeper_player_id | acquisition cost facts + production |
+| `mart_league_keeper_candidates` | league_id, sleeper_player_id | acquisition cost facts + production, ranks and xPPG in the league's own scoring (S-01a) |
 | `mart_league_manager_profile` | league_id, roster_id | luck, lineup discipline, activity, roster shape |
-| `mart_league_positional_strength` | league_id, roster_id, position | starter ppg vs league median, rank |
+| `mart_league_positional_strength` | league_id, roster_id, position | starter ppg vs league median, rank (league's own scoring through availability) |
 
 ## analytics — Trends (2026-09-26)
 
@@ -172,6 +174,8 @@ are either a play-by-play long-touchdown count (`pass_tds_40p` …, joined from
 `zero_stat_columns(have)` emits `0 as <col>` for every seed column a relation lacks so a partial line
 (a projection, the component outcomes) can be priced with the same macro.
 `fct_player_game.points_current_scoring` uses the reference league's newest settings
-(cross-year research); `league_player_week.points_recomputed` uses each league-season's own
-settings (history). Approximations are listed in `METRICS.md`. Seeds are always recreated
+(cross-year research: every NFL mart, the research pages, defense vs position, trends, the projection
+features); `league_player_week.points_recomputed` uses each league-season's own settings (history);
+`fct_player_game_league.points` uses each *current* league-season's settings for every NFL game
+(league pages: availability, keeper facts, positional strength, draft outcomes — plan S-01a). Approximations are listed in `METRICS.md`. Seeds are always recreated
 (`+full_refresh: true`) so a new seed column never needs a manual `--full-refresh`.

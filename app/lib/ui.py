@@ -213,14 +213,11 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
         st.caption("Shareable: the URL carries the league and team.")
         row = leagues.set_index("league_id").loc[league_id]
         if len(leagues) > 1 and not bool(row["is_reference_league"]):
+            # league pages price everything in this league's own scoring (plan S-01a); only the NFL
+            # research pages (Players, Trends, Receivers, defense vs position) keep the reference scale
             ref_name = leagues[leagues["is_reference_league"].astype(bool)]["league_name"].iloc[0]
-            st.warning(
-                f"Observed points (standings, matchups, lineups, recomputed points) use **{row['league_name']}** scoring. "
-                f"Rankings (projection v2) are priced in this league's scoring. Per-game player numbers elsewhere (PPG, xPPG, "
-                f"positional strength, waiver wire) are priced under **{ref_name}** scoring until per-league pricing lands (plan S-01a)."
-                + scoring_diff_summary(row["scoring_diff_vs_reference"], league_slots(league_id)),
-                icon="ℹ️",
-            )
+            st.warning(f"NFL research pages use reference scoring (**{ref_name}**).", icon="ℹ️")
+            st.caption(f"Scoring vs {ref_name}:" + scoring_diff_summary(row["scoring_diff_vs_reference"], league_slots(league_id)))
     ss["ll_league"] = league_id
     remembered_teams[league_id] = int(roster_id) if roster_id is not None else None
     st.query_params["league"] = league_id
@@ -229,6 +226,17 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
     elif "team" in st.query_params:
         del st.query_params["team"]
     return league_id, (int(roster_id) if roster_id is not None else None), members
+
+
+def reference_scoring_note(what: str = "Fantasy points on this page") -> None:
+    """Say which scoring an NFL research table uses. Research pages keep one scale for every player
+    and season (the reference league's); league pages use each league's own scoring (plan S-01a)."""
+    ref = query("select league_name from analytics.dim_league_season where is_reference_league")
+    name = ref["league_name"].iloc[0] if not ref.empty else "the reference league"
+    st.caption(
+        f"{what} use **{name}** scoring (the reference league), so every player and season compares on one scale. "
+        "League pages (Team Hub, Waiver Wire, Matchups start/sit, Trade Finder, League Intel, League) use each league's own scoring."
+    )
 
 
 def scoring_diff_summary(diff: str | None, slots: list[str]) -> str:

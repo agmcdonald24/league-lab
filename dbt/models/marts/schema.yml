@@ -322,6 +322,54 @@ models:
             expression: "slot is null and slot_index is null"
             condition: "not is_starter"
 
+  - name: fct_player_game_league
+    description: >
+      Player x game x current league-season (plan S-01a): every fct_player_game row priced under each
+      current league's own scoring (points) and the same map over the ffverse expected stats, stat keys
+      only (points_expected). Reconciled to league_player_week.points_recomputed by
+      assert_league_points_match_recomputed; the reference league reproduces fct_player_game exactly.
+    columns:
+      - name: league_id
+        description: The current league-season whose scoring prices the row (dim_league_season.is_current_season).
+        tests: [not_null]
+      - name: points
+        description: Fantasy points under this league's current scoring (league_points over the stats row + long-TD counts).
+      - name: points_expected
+        description: This league's scoring applied to ffverse expected stats, no bonus keys; NULL when ffverse has no row.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, gsis_id, game_id]
+      - expression_is_true:
+          arguments:
+            expression: "points is not null"
+      - expression_is_true:
+          arguments:
+            expression: "points_expected is not null"
+            condition: "expected_known"
+
+  - name: mart_league_player_season
+    description: >
+      League x player x NFL regular season (plan S-01a): season points and PPG, last-3 / last-5
+      appearance-game PPG, expected points and positional ranks, in the league's own current scoring.
+      Same arithmetic as mart_player_season / mart_player_recent_form / mart_player_expected_season
+      (assert_reference_league_matches_nfl_marts).
+    columns:
+      - name: league_id
+        tests: [not_null]
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, gsis_id, season]
+      - expression_is_true:
+          arguments:
+            expression: "ppg = round(points / games_played, 2)"
+            condition: "games_played > 0"
+      - expression_is_true:
+          arguments:
+            expression: "games_with_expected <= games_played"
+            condition: "games_with_expected is not null"
+
   - name: mart_league_standings
     tests:
       - unique_combination_of_columns:

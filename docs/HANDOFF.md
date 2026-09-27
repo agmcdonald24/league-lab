@@ -14,17 +14,18 @@ For the next agent (Claude Code or any other) picking this repo up. Read in this
   nightly refresh (launchd 08:00) which now ends with `league-lab project` and the hosted sync.
 * Two leagues: **League of Scrubs** (reference; 10 teams, half PPR, K + DEF) and **Forever Unclean
   Dynasty** (12 teams, superflex, full PPR, 6-pt pass TD, yardage and long-TD bonuses, no K/DEF).
-  The reference league's scoring prices every NFL-wide mart (`points_current_scoring`); only
-  Rankings v2 and the observed league points are per league. Closing that gap is task **S-01a**,
-  and it goes first.
-* Test agents walked every page on both leagues on 2026-09-26; every finding is fixed except the
-  per-league pricing above (see `docs/STATUS.md` § "First live use with two leagues").
+  Since **S-01a** (done 2026-09-27) league pages price every player in the selected league's own
+  current scoring (`fct_player_game_league` → `mart_league_player_season` → availability, keeper
+  facts, positional strength, league draft); the NFL research pages, defense vs position (and the
+  Opp rank columns), the baseline formula and the projection features stay in the reference
+  league's scoring (`points_current_scoring`) and say so.
+* Test agents walked every page on both leagues on 2026-09-26; every finding is fixed, the
+  per-league pricing last (S-01a; evidence in `docs/STATUS.md` § "S-01a").
 
 ## The tasks, in order (details and acceptance in `docs/PROJECT_PLAN.md` § Iteration 9)
 
-1. **S-01a** per-league observed points for the league pages (`fct_player_game_league`, re-key the
-   per-game marts on `league_id`).
-2. **U-10** scoring summary line (`dim_league_season.scoring_label`), raw diff in an expander.
+1. ~~**S-01a** per-league observed points for the league pages~~ — done 2026-09-27.
+2. **U-10** (next) scoring summary line (`dim_league_season.scoring_label`), raw diff in an expander.
 3. **U-11** waiver shortlist ("adds worth a claim" vs your weakest starter / best bench, priced by v2).
 4. **U-12** player card — usage, projection, availability, value on one screen; names link to it.
 5. **M-05** start/sit on v2 with floor/ceiling tags; rest-of-season sums.
@@ -71,6 +72,13 @@ for league, team in (("1321941740235550720", "1"), ("1389709692405551104", "2"))
 * **`require_relations("x")` must name only relations the page reads as `analytics.x`.** The
   hosted sync derives what to publish from those references; `tests/test_app_guards.py` enforces it.
 * **Missing cells**: `show()` passes `placeholder=""`; do not print NaN/None yourself.
+* **Two scoring scales.** A league page reads points from `mart_league_player_season` /
+  `mart_player_availability` / `fct_player_game_league` (the league's own scoring) — never
+  `points_current_scoring`. The NFL-wide marts (`fct_player_game`, `mart_player_season`,
+  `mart_player_recent_form`, `mart_player_expected_*`) stay reference-scored because the projection
+  features read them; do not re-key them. `assert_reference_league_matches_nfl_marts` fails if the
+  two sets of arithmetic drift apart. Do not name `analytics.fct_player_game_league` in page code
+  unless a page reads it: the hosted sync publishes every relation the code names (≈52 MB more; `mart_league_player_season` is ≈8 MB).
 * **Seeds are generated.** `scoring_stat_map.csv` comes from `league_lab.scoring.write_seed()`;
   `tests/test_scoring.py` fails if they diverge. Seeds always full-refresh (`+full_refresh: true`).
   Pricing anywhere in SQL goes through the `league_points(scoring_jsonb, alias, include_bonuses)`

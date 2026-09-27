@@ -5,7 +5,14 @@ import streamlit as st
 from lib.charts import heat_style
 from lib.db import query
 from lib.table import howto, show
-from lib.ui import freshness_banner, league_slots, next_week_info, perspective, setup
+from lib.ui import (
+    freshness_banner,
+    league_slots,
+    next_week_info,
+    perspective,
+    reference_scoring_note,
+    setup,
+)
 
 setup("Matchups")
 freshness_banner()
@@ -67,10 +74,12 @@ if roster_id is not None:
 # ------------------------------------------------------------- defense vs position table
 st.subheader("Defense vs position")
 howto(
-    "**Pts allowed/G** is how many fantasy points (this league's scoring) each defense has given up to opposing players at the position, per game, this season.",
+    "**Pts allowed/G** is how many fantasy points each defense has given up to opposing players at the position, per game, this season — "
+    "in the reference league's scoring, like every NFL research table, so the ranks are the same for every league.",
     "**Rank** 1 = gives up the most = the matchup you want; 32 = the stingiest. The **(L4)** columns use the defense's last four games, which catches injuries and scheme changes faster.",
     "Early in the season these ranks move a lot week to week; from about week 6 they settle.",
 )
+reference_scoring_note("Points allowed and ranks in this section")
 dvp = query(
     """select defense, position, games, points_allowed_per_game_std, rank_std, points_allowed_per_game_l4, rank_l4
        from analytics.mart_defense_vs_position_current order by position, rank_std""",

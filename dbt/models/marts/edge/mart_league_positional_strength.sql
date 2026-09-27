@@ -1,6 +1,7 @@
 -- Roster x position for current league-seasons: how strong each roster is at each position, using
 -- season-to-date points per game of the players it currently rosters (top-N where N = starting
 -- slots at that position, plus depth = the rest). Compared with the league median for trade fit.
+-- PPG is in the league's own scoring (mart_player_availability.ppg_std, plan S-01a).
 with cur as (select league_id from {{ ref('dim_league_season') }} where is_current_season),
 
 -- starter slots per position; a SUPER_FLEX slot is a second QB start in practice, so it counts

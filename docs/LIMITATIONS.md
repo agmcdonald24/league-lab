@@ -84,10 +84,16 @@ NULL or labelled "unavailable".
     does not refresh, the hosted copy goes stale (the banner says when it was published). GitHub Actions (I-01) removes this.
 14c. **Publishing is not atomic on the free tier** (0.5 GB cannot hold two copies): pages show "not built yet" for the
     minute or two of a restore. The publication contract (I-02) fixes this once the database has room for two copies.
-14a. **Several leagues, one reference scoring.** Several leagues can be loaded (comma-separated ids); league pages
-    use each league's own scoring, but NFL-wide numbers (PPG, expected points, projections, trends) are priced under the
-    **reference league** — the first id in `LEAGUE_LAB_SLEEPER_LEAGUE_ID`. The sidebar says so and lists the scoring keys
-    that differ. Per-league pricing of NFL pages is S-01 (component projections, M-01).
+14a. **Several leagues, two scales.** Several leagues can be loaded (comma-separated ids). Since S-01a (2026-09-27)
+    league pages (Team Hub, Waiver Wire, Matchups start/sit, Trade Finder, League Intel, League draft) price PPG, xPPG,
+    positional strength, keeper ranks and draft outcomes in the selected league's **current** scoring
+    (`fct_player_game_league`). The NFL research pages (Players, Trends, Receivers), defense vs position — and the
+    **Opp rank** columns derived from it on league pages — the baseline projection formula (Home's projection panel, the
+    Rankings page's baseline option, the packs' baseline tables) and the as-of projection *features* stay in the
+    **reference league's** scoring — the first id in `LEAGUE_LAB_SLEEPER_LEAGUE_ID`; the pages say so. Past seasons on a
+    league page are priced under that league's current scoring (so years compare), not the scoring each season used —
+    Sleeper's observed points and `points_recomputed` carry the historical scoring. Only leagues in the newest season are
+    priced (a chain that did not renew has no per-league rows).
 14b. **Beta password is not authentication.** It is a closed door for a link; the database role is read-only regardless.
 
 ## Verification caveats specific to this build

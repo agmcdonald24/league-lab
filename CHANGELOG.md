@@ -2,6 +2,19 @@
 
 Newest first. The Home page shows the top entry as "What's new".
 
+## 2026-09-27 — Your league's scoring on every league page
+
+- Team Hub, Waiver Wire, the Matchups start/sit board, Trade Finder, League Intel and the League page's draft review
+  now price every player in **the league you picked**: PPG, PPG over the last 3 and 5 games, xPPG and PPG − xPPG,
+  positional strength, roster-value and keeper ranks, draft season points. Until now a second league saw those in
+  League of Scrubs scoring — Josh Allen showed 38.2 PPG on the Forever Unclean Dynasty Team Hub; it is 49.6 there
+  now, exactly his Sleeper points per game. Nothing changes for League of Scrubs.
+- The NFL research pages — Players, Trends, Receivers and defense vs position (with the Opp rank columns built from
+  it) — keep one scale for everyone, League of Scrubs scoring, and each now says so. The sidebar notice is down to
+  that one line.
+- Home's "highest projections" panel is labelled for what it is: the baseline formula in League of Scrubs scoring.
+  Projection v2 in your league's scoring is on the Rankings page.
+
 ## 2026-09-26 — Projection v2
 
 - Rankings now default to **Projection v2**: a projected stat line (targets, receptions, yards, TDs, carries,

@@ -4,7 +4,13 @@ import streamlit as st
 from lib.charts import line_chart
 from lib.db import query
 from lib.table import howto, show
-from lib.ui import SKILL_POSITIONS, freshness_banner, seasons_available, setup
+from lib.ui import (
+    SKILL_POSITIONS,
+    freshness_banner,
+    reference_scoring_note,
+    seasons_available,
+    setup,
+)
 
 setup("Players")
 freshness_banner()
@@ -30,7 +36,7 @@ POSITION_COLUMNS = {
 cols = ", ".join(POSITION_COLUMNS[position])
 
 howto(
-    "Season totals for every player at the position, ranked by fantasy points under this league's scoring.",
+    "Season totals for every player at the position, ranked by fantasy points in the reference league's scoring (one scale for every season).",
     "**Target % / Carry % / Air-yard %** divide the player's numbers by his *team's* totals in the games he played — so a player who missed "
     "games is not penalised, and a player whose team never throws is shown for what he is.",
     "**1st-read share** (2022+) is the player's share of the team's first-read targets — where the QB looks first. "
@@ -38,6 +44,7 @@ howto(
     "dropback is not proof of a route, so they read ~10–15% conservative. **Snap %** is share of all offensive snaps, runs included.",
     "Blank cells mean the number could not be computed (no targets, no snaps recorded, season not charted), never zero.",
 )
+reference_scoring_note()
 season_df = query(
     f"""select player_name, teams, games_played, {cols}, points_current_scoring, points_current_scoring_per_game
         from analytics.mart_player_season
