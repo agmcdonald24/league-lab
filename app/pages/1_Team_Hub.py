@@ -6,7 +6,7 @@ import streamlit as st
 from lib.charts import bar_chart, line_chart
 from lib.db import query
 from lib.table import howto, show
-from lib.ui import freshness_banner, perspective, setup
+from lib.ui import freshness_banner, league_seasons, perspective, setup
 
 setup("Team Hub")
 freshness_banner()
@@ -102,14 +102,23 @@ show(ps, ["position", "players", "starter_ppg", "league_median_starter_ppg", "st
 if not ps.empty:
     st.plotly_chart(bar_chart(ps, "position", "starter_ppg_vs_median", "Starter PPG vs league median", "PPG vs median", y_format="+.1f", x_title=""), width="stretch")
 
-# ---------------------------------------------------------------- keeper facts
-st.subheader("Keeper facts")
-howto(
-    "This league allows one keeper. The table lists how each player was acquired (draft round and pick, or a waiver/free-agent add), "
-    "what he has produced, and where that ranks among all NFL players at his position this season.",
-    "**xPPG** is included because a keeper decision is about next year: a player scoring far above his opportunity is a riskier keep than his points suggest.",
-    "Apply your league's keeper cost rule yourself — League Lab only supplies the facts.",
-)
+# ---------------------------------------------------------------- keeper facts (redraft / keeper leagues; a dynasty keeps everyone)
+league_type = league_seasons(league_id)["league_type"].iloc[0] if not league_seasons(league_id).empty else "redraft"
+if league_type == "dynasty":
+    st.subheader("Roster value (dynasty)")
+    howto(
+        "A dynasty league keeps the whole roster, so there is no keeper decision; this table is the same facts read as roster value: "
+        "how each player was acquired, what he has produced, and where that ranks among all NFL players at his position this season.",
+        "**xPPG** matters more than PPG for next year: a player scoring far above his opportunity is a riskier hold than his points suggest.",
+    )
+else:
+    st.subheader("Keeper facts")
+    howto(
+        "The table lists how each player was acquired (draft round and pick, or a waiver/free-agent add), "
+        "what he has produced, and where that ranks among all NFL players at his position this season.",
+        "**xPPG** is included because a keeper decision is about next year: a player scoring far above his opportunity is a riskier keep than his points suggest.",
+        "Apply your league's keeper cost rule yourself — League Lab only supplies the facts.",
+    )
 kc = query(
     """select player_name, position, nfl_team,
               case when was_keeper then 'Kept last year'

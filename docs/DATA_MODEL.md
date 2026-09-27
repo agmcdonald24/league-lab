@@ -141,6 +141,8 @@ moved a handful of special-teams-only players' shares — the correct direction 
 | `ranking_weights` (seed) | position, feature | OLS weights from `league-lab fit-rankings` (train window, n, R², fit date) |
 | `mart_player_week_rankings` | gsis_id, season, week | `proj_points`, contributions `c_form / c_usage / c_matchup / c_vegas / c_home / c_intercept`, inputs, naive baselines, `is_rankable`, `rank_pos`, `rank_overall`, `actual_rank_pos` |
 | `mart_backtest_summary` (view) | season, position, scorer | from `ops.backtest_results` (written by `league-lab backtest`): Spearman, hit rate, MAE, top-N picked vs ceiling PPG |
+| `mart_player_week_projections` | league_id, gsis_id, season, week | projection v2 from `ops.projections` (written by `league-lab project`): projected stat line, `proj_points` in the league's scoring, `p10 / p50 / p90`, `interval_width`, as-of context, the outcome priced under the league's scoring (`points_actual`), `actual_inside_interval`, `rank_pos` (by P50), `actual_rank_pos` |
+| `mart_projection_backtest` (view) | league_id, season, position, scorer | from `ops.projection_backtest` (written by `league-lab backtest-v2`): Spearman, hit rate, MAE, `coverage_80`, interval width per walk-forward season |
 
 ## analytics — ops views
 
@@ -167,6 +169,8 @@ are either a play-by-play long-touchdown count (`pass_tds_40p` …, joined from
 `int_player_game_pbp` onto the stats row by the scoring models) or a per-game threshold
 `column:low:high`. The `league_points(scoring_jsonb, alias, include_bonuses=true)` macro builds
 `Σ weight × expression`; expected points pass `include_bonuses=false`.
+`zero_stat_columns(have)` emits `0 as <col>` for every seed column a relation lacks so a partial line
+(a projection, the component outcomes) can be priced with the same macro.
 `fct_player_game.points_current_scoring` uses the reference league's newest settings
 (cross-year research); `league_player_week.points_recomputed` uses each league-season's own
 settings (history). Approximations are listed in `METRICS.md`. Seeds are always recreated

@@ -53,6 +53,6 @@ st.dataframe(query("select metric, version, status, numerator, denominator, grai
 st.subheader("Attribution")
 st.markdown(
     "NFL data: **nflverse** (nflverse-data releases) and the **dynastyprocess** player-id crosswalk. "
-    "League data: **Sleeper** public API. FTN charting (when added in Phase 2) is CC-BY-SA 4.0, attributed to "
+    "League data: **Sleeper** public API. FTN charting (first reads, catchable balls, drops) is CC-BY-SA 4.0, attributed to "
     "*FTN Data via nflverse*. Check each source's terms before redistributing any of this data."
 )

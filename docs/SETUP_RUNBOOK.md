@@ -82,6 +82,17 @@ make fit-rankings TRAIN=2019-2024 && make build && make backtest SEASONS=2025   
 The shipped seed was fitted on 2019–2022 and evaluated on 2023–2025. Refitting on more seasons is fine
 but then the backtest must use seasons the fit never saw, or it stops meaning anything.
 
+### Projection v2 (stat lines, per-league points, floor / ceiling)
+
+```bash
+make project                  # fit on completed seasons, project this season for every league, build its marts (~2 min)
+make backtest-v2              # walk-forward 2021-2025 (~6 min): each season scored by a model trained on the seasons before it
+```
+
+`make refresh` (and the nightly job) runs `project` after the build, so the live board follows the
+week's lines and injury reports. The Rankings page defaults to v2 and keeps the baseline formula as
+the check; the backtest section shows both on the same held-out seasons.
+
 ### Importing a licensed routes file (optional)
 
 ```bash

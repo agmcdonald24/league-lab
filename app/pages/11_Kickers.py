@@ -4,17 +4,18 @@ import streamlit as st
 from lib.charts import bar_chart, color_map, line_chart
 from lib.db import query
 from lib.table import howto, show
-from lib.ui import freshness_banner, league_seasons, setup, unavailable
+from lib.ui import freshness_banner, league_slots, perspective, season_picker, setup, unavailable
 
 setup("Kickers")
 freshness_banner()
 
-ls = league_seasons()
-if ls.empty:
-    st.warning("No league data loaded.")
+current_league_id, _, _ = perspective(require_team=False)
+if "K" not in league_slots(current_league_id):
+    st.info("This league does not start a kicker, so there is no kicker streaming to review. Pick another league in the sidebar.")
     st.stop()
-season = st.selectbox("League season", ls["season"].tolist())
-league_id = ls.set_index("season").loc[season, "league_id"]
+league = season_picker(current_league_id, "League season")
+league_id = league["league_id"]
+season = int(league["season"])
 
 st.subheader("Season summary")
 howto(

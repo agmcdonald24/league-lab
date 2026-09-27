@@ -15,6 +15,8 @@ select
     (payload -> 'settings' ->> 'trade_deadline')::integer            as trade_deadline_week,
     (payload -> 'settings' ->> 'waiver_type')::integer               as waiver_type,
     (payload -> 'settings' ->> 'waiver_budget')::integer             as waiver_budget,
+    -- Sleeper: 0 = redraft, 1 = keeper, 2 = dynasty
+    case (payload -> 'settings' ->> 'type')::integer when 2 then 'dynasty' when 1 then 'keeper' else 'redraft' end as league_type,
     payload -> 'scoring_settings'                                    as scoring_settings,
     payload -> 'roster_positions'                                    as roster_positions,
     (payload -> 'scoring_settings' ->> 'rec')::numeric               as ppr_value,

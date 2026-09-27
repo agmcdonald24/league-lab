@@ -2,7 +2,18 @@
 
 Newest first. The Home page shows the top entry as "What's new".
 
-## 2026-09-27 — Second league
+## 2026-09-26 — Projection v2
+
+- Rankings now default to **Projection v2**: a projected stat line (targets, receptions, yards, TDs, carries,
+  attempts, INTs) per player-week from a gradient-boosted model, priced in **your league's** scoring, with a
+  **floor (P10) and ceiling (P90)** calibrated so about 80% of outcomes land inside. The baseline formula stays
+  as the check; the backtest section scores both on seasons the model never saw, per league.
+- Fixes from the first two-league walkthrough: League and Kickers pages pick the season within the selected
+  league; League Intel history is per league; blank cells are blank (not "None"); no kicker options in a league
+  without a kicker slot; superflex counts as a second QB starter; dynasty leagues get "roster value" instead of
+  "keeper facts"; dates render as dates; Rankings only offers played weeks and the next one.
+
+## 2026-09-26 — Second league
 
 - Several Sleeper leagues at once: `LEAGUE_LAB_SLEEPER_LEAGUE_ID=<id>,<id>`; the first is the
   *reference* league whose scoring prices NFL-wide pages. `?league=<id>` opens the app on a league;

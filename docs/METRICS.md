@@ -263,6 +263,68 @@ weekly fantasy points are mostly noise, a 0.6 rank correlation is a good weekly 
 top-24 WR list catches under half of the actual top 24. Any later model (ML or otherwise) must beat
 this table on the same harness, out of sample, before it replaces the baseline.
 
+## Projection v2 — stat-line projections with an interval (v2.0, 2026-09-26)
+
+Plan M-01 / M-03. Code: `league_lab.projections`; tables `ops.projections`, `ops.projection_backtest`,
+`ops.projection_importance`; marts `mart_player_week_projections`, `mart_projection_backtest`.
+
+### What is projected
+
+Per position, one gradient-boosted regressor (scikit-learn `HistGradientBoostingRegressor`, fixed
+hyperparameters, Poisson loss for counts and touchdowns, squared error for yards) per **stat-line
+component**: QB — attempts, passing yards/TDs/INTs, carries, rushing yards/TDs, fumbles lost; RB —
+carries, rushing yards/TDs, targets, receptions, receiving yards/TDs, fumbles lost; WR — the RB list
+with receiving first; TE — targets, receptions, receiving yards/TDs, fumbles lost. Other components
+are 0 for that position.
+
+**Points** (`proj_points`) = the projected line put through a league's scoring map
+(`league_lab.scoring.compute_points`, stat keys + yardage bonuses; long-TD keys are not projected).
+One row per configured league, so two leagues with different scoring get different boards — the
+first honest multi-league projection (S-01 for projections).
+
+**Floor / ceiling** (`p10`, `p90`; `p50` = projection + median miss, informational) = quantile
+regressors of the **miss around the priced line** (the league's actual points minus the line),
+on the same features plus the line. The misses they learn from are **out-of-fold**: components
+fitted on the odd training seasons price the even ones and vice versa, so the residuals are the
+size of real forecast errors, not in-sample fits. (Quantile regression of raw points fails at
+P10: a fifth of played WR weeks score 0, the initial constant sits on that mass and the model
+never leaves it — the first attempt put every WR's floor at 0.) The three are made monotone by
+sorting, then **split-conformal calibrated**: fitted on all training seasons but the newest, the
+newest measures how far actuals fall outside [P10, P90], and both ends are widened by the 80th
+percentile of that miss. Coverage on data the model never saw is reported, not assumed. **The
+board ranks by `proj_points`** (the priced line) among rankable players (Out / Doubtful / IR
+excluded, like the baseline); the interval belongs to that projection.
+
+### Features (all as-of the week; NULL allowed — the model treats "not known yet" as information)
+
+Week, games to date, `f_sample`; season-to-date / last-3 / last-5 PPG and xPPG (reference scoring),
+points SD; last season's PPG / xPPG / snap share / per-game component rates; position prior (last
+season's regulars); target / carry / snap / air-yards shares (season, last 3); first-read share
+(FTN, in-season); red-zone targets and carries per game; **per-game rate of every component,
+season to date and last 3**; opponent's points allowed to the position (season, last 4, rank, league
+average); implied team total, spread, total, home; Questionable flag. **Excluded on purpose:** the
+routes proxy / route participation (the participation file arrives after the postseason, so it would
+be NULL all season in production — the first backtest leaned on it for TEs and overstated the live
+board). Feature list: `projections.FEATURES`.
+
+### Backtest (`league-lab backtest-v2`, `mart_projection_backtest`)
+
+Walk-forward: each held-out season N is scored by a model trained on 2016…N−1 (calibrated on N−1),
+per league, on players who played, same harness as the baseline (Spearman, top-N hit rate, MAE)
+plus **coverage_80** (share of actuals inside [P10, P90]), the pinball losses and the mean interval
+width. Three scorers per league-season-week-position: `v2_p50`, `v2_points` (the priced line) and
+`baseline` (the OLS formula, priced in reference scoring, scored against the league's actuals —
+i.e. what a non-reference league saw before v2). Results are in `docs/STATUS.md` and on the page.
+
+### Production (`league-lab project`, nightly)
+
+Fits on every completed season (no calibration-season loss for the components; the interval gives
+up one), projects every week of the current season for every configured league, writes
+`ops.projections`; `mart_player_week_projections` adds names, context, the outcome priced under the
+league's own scoring (`league_points` macro over the component outcomes) and `rank_pos`. Everything
+shown for the current season is out of sample. Refit cadence: every refresh (≈1–2 min); a
+hyperparameter change is a new `MODEL_VERSION`.
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

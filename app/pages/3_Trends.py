@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 from lib.charts import line_chart
 from lib.db import query, require_relations
-from lib.table import howto, show
+from lib.table import Col, howto, show
 from lib.ui import freshness_banner, next_week_info, perspective, setup
 
 setup("Trends")
@@ -33,7 +33,7 @@ season = c0.selectbox("Season", seasons, index=seasons.index(current_season) if 
                       help="Past seasons show the trends as they stood at the end of that season — useful to see how the logic reads a full year.")
 positions = c1.multiselect("Positions", ["QB", "RB", "WR", "TE"], default=["RB", "WR", "TE"])
 scope_options = {"all": "Everyone", "fa": "Free agents in this league", "rostered": "Rostered in this league", "team": "Selected team only"}
-scope = c2.selectbox("Who", list(scope_options), format_func=lambda k: scope_options[k], index=1 if season == current_season else 0)
+scope = c2.selectbox("Who", list(scope_options), format_func=lambda k: scope_options[k], index=1 if season == current_season else 0, key="trends_scope")
 min_games = c3.number_input("Min games", 1, 17, 4)
 top_n = c4.number_input("Show", 5, 50, 15)
 if season != current_season:
@@ -78,13 +78,19 @@ if enough.empty:
            order by abs(value_latest - value_season) / nullif(min_change, 0) desc nulls last""",
         (season, positions),
     )
-    early = early.merge(avail[["gsis_id", "rostered_by_team", "is_free_agent"]], on="gsis_id", how="left")
+    early = early.merge(avail[["gsis_id", "rostered_by_roster_id", "rostered_by_team", "is_free_agent"]], on="gsis_id", how="left")
     if scope == "fa":
         early = early[early["is_free_agent"].fillna(True)]
     elif scope == "rostered":
         early = early[early["rostered_by_team"].notna()]
+    elif scope == "team" and roster_id is not None:
+        early = early[early["rostered_by_roster_id"] == roster_id]
     early = early[early["games"] >= min(int(min_games), 2)]
-    show(early.head(int(top_n) * 2), ["player_name", "position", "team", "rostered_by_team", "games", "metric_label", "value_season", "value_latest", "change", "change_vs_minimum"])
+    if int(min_games) > 2:
+        st.caption("Early read: *Min games* is capped at 2 until the season has four games of data.")
+    # the early read is about the latest game vs the season, so those columns stay visible whatever the detail level
+    show(early.head(int(top_n) * 2), ["player_name", "position", "team", "rostered_by_team", "games", "metric_label", "value_season", "value_latest", "change", "change_vs_minimum"],
+         overrides={"value_latest": Col("Latest game", "num2"), "change_vs_minimum": Col("Change vs minimum", "num2", "How many times the metric's minimum meaningful change the move is; 1 = just meaningful")})
 else:
     cols = ["player_name", "position", "team", "rostered_by_team", "games", "tags", "momentum", "target_share_l3", "target_share_change",
             "snap_share_l3", "snap_share_change", "expected_points_l3", "expected_points_change", "points_l3", "points_change",

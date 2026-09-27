@@ -33,6 +33,13 @@ fit-rankings: ## refit the baseline projection weights on TRAIN seasons (default
 backtest: ## score the rankings on held-out SEASONS (default 2023-2025); writes reports/backtests + ops.backtest_results
 	uv run league-lab backtest --seasons $(or $(SEASONS),2023-2025)
 
+backtest-v2: ## walk-forward backtest of projection v2 on SEASONS (default 2021-2025); writes reports/backtests + ops.projection_backtest
+	uv run league-lab backtest-v2 --seasons $(or $(SEASONS),2021-2025)
+
+project: ## fit projection v2 on completed seasons, write this season's projections (ops.projections), publish the mart
+	uv run league-lab project
+	uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest
+
 backfill: ## full nflverse history (2016+)
 	uv run league-lab ingest nfl
 
@@ -71,7 +78,7 @@ pytest: ## python unit tests (no database required)
 lint: ## ruff
 	uv run ruff check src app tests
 
-.PHONY: help setup sync migrate check ingest-sleeper ingest-nfl fit-rankings backtest sync-hosted pilot backfill dbt-deps build test docs refresh status app backup pytest lint
+.PHONY: help setup sync migrate check ingest-sleeper ingest-nfl fit-rankings backtest backtest-v2 project sync-hosted pilot backfill dbt-deps build test docs refresh status app backup pytest lint
 
 teams: ## roster ids and team names for the current league
 	uv run league-lab teams

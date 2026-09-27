@@ -78,6 +78,27 @@ create table if not exists ops.backtest_results (
     top_n_actual_ppg  double precision,
     top_n_picked_ppg  double precision
 );
+-- Projection v2 (plan M-01/M-03): written by `league-lab project` / `league-lab backtest-v2`;
+-- exist empty so dbt can model them before the first run.
+create table if not exists ops.projections (
+    model_version text, fitted_at timestamptz, train_seasons text, league_id text, season integer, week integer,
+    gsis_id text, position text,
+    proj_targets double precision, proj_receptions double precision, proj_receiving_yards double precision,
+    proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision,
+    proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision,
+    proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision,
+    proj_points double precision, p10 double precision, p50 double precision, p90 double precision
+);
+create index if not exists projections_idx on ops.projections (league_id, season, week, position);
+create table if not exists ops.projection_backtest (
+    run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
+    position text, scorer text, n_players integer, spearman double precision, top_n integer, hit_rate double precision,
+    mae double precision, coverage_80 double precision, pinball_10 double precision, pinball_50 double precision,
+    pinball_90 double precision, interval_width double precision
+);
+create table if not exists ops.projection_importance (
+    model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision
+);
 create table if not exists raw.routes_feed (
     season          integer,
     week            integer,

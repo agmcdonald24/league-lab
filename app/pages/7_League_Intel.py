@@ -4,7 +4,7 @@ import streamlit as st
 from lib.charts import bar_chart, color_map, heat_style, line_chart
 from lib.db import query
 from lib.table import howto, show
-from lib.ui import freshness_banner, league_positions, perspective, setup
+from lib.ui import freshness_banner, league_positions, league_slots, perspective, setup
 
 setup("League Intel")
 freshness_banner()
@@ -18,7 +18,7 @@ howto(
     "**Bench pts left/wk** is how much a better lineup would have added each week. High numbers mark managers who don't sweat start/sit — "
     "useful to know when you are trading with them.",
     "**Waiver adds / FA adds / Trades / FAAB spent** show who is active and who sits still; **Failed claims** shows who is chasing the same players as you.",
-    "The **QB / RB / WR / TE / K / DEF / IR** columns count how many of each the roster currently holds.",
+    "The position columns (**QB / RB / WR / TE**, plus **K / DEF** where the league starts them) and **IR** count how many of each the roster currently holds.",
 )
 prof = query(
     """select team_name, manager_name, standing, wins, losses, points_for, points_against,
@@ -29,7 +29,9 @@ prof = query(
        from analytics.mart_league_manager_profile where league_id = %s order by standing nulls last""",
     (league_id,),
 )
-show(prof, height=420)
+slots = league_slots(league_id)
+prof_cols = [c for c in prof.columns if c not in {f"n_{p.lower()}" for p in ("QB", "RB", "WR", "TE", "K", "DEF") if p not in slots}]
+show(prof, prof_cols, height=420)
 
 c1, c2 = st.columns(2)
 c1.plotly_chart(bar_chart(prof.sort_values("luck_wins"), "team_name", "luck_wins", "Schedule luck (wins above what the points deserve)", "wins", horizontal=True, y_format="+.2f"), width="stretch")
@@ -74,6 +76,9 @@ hist = query(
        from analytics.mart_league_all_play a
        join analytics.dim_league_season l using (league_id)
        left join analytics.mart_league_standings s using (league_id, roster_id)
-       where not l.is_current_season order by l.season desc, a.luck_wins desc""",
+       where not l.is_current_season
+         and l.chain_id = (select chain_id from analytics.dim_league_season where league_id = %s)
+       order by l.season desc, a.luck_wins desc""",
+    (league_id,),
 )
 show(hist)

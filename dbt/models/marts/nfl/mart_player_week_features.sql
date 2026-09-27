@@ -12,7 +12,13 @@
 -- the raw columns next to them show what was actually known.
 with prev as (
     select s.gsis_id, s.season + 1 as season, s.games_played as prev_games, s.points_current_scoring_per_game as prev_ppg,
-           e.expected_per_game as prev_xppg
+           e.expected_per_game as prev_xppg,
+           -- previous-season component rates per game (projection v2 priors for week 1 and thin samples)
+           {%- for c in component_stats() if c not in ('red_zone_targets', 'red_zone_carries') %}
+           {%- set col = 'fumbles_lost' if c == 'fumbles_lost_total' else c %}
+           case when s.games_played > 0 then round(s.{{ col }}::numeric / s.games_played, 3) end as prev_{{ c }}_pg,
+           {%- endfor %}
+           s.avg_offense_snap_pct as prev_snap_pct
     from {{ ref('mart_player_season') }} as s
     left join {{ ref('mart_player_expected_season') }} as e on e.gsis_id = s.gsis_id and e.season = s.season
     where s.season_type = 'REG'
@@ -33,7 +39,11 @@ inj as (
 ),
 
 outcome as (
-    select gsis_id, season, week, points_current_scoring as points_actual, played, offense_snap_pct as snap_pct_actual
+    select gsis_id, season, week, points_current_scoring as points_actual, played, offense_snap_pct as snap_pct_actual,
+           -- component outcomes: what projection v2 is trained on and scored against
+           {%- for c in component_stats() %}
+           {{ c }} as out_{{ c }}{{ "," if not loop.last }}
+           {%- endfor %}
     from {{ ref('fct_player_game') }}
     where season_type = 'REG'
 )
@@ -46,8 +56,16 @@ select
     a.ppg_std, a.ppg_l3, a.ppg_l5, a.points_sd_std, a.xppg_std, a.xppg_l3, a.xppg_l5, a.games_with_xp_std,
     a.target_share_std, a.target_share_l3, a.carry_share_std, a.carry_share_l3, a.snap_pct_l3, a.air_yards_share_l3,
     a.first_read_share_std, a.first_read_share_l3, a.route_participation_l3, a.attempts_std, a.attempts_l3,
+    -- as-of component rates per game (season to date, last 3) and snap share season to date
+    a.snap_pct_std,
+    {%- for c in component_stats() %}
+    a.{{ c }}_pg_std, a.{{ c }}_pg_l3,
+    {%- endfor %}
     -- previous season
-    p.prev_games, p.prev_ppg, p.prev_xppg, pp.pos_prev_ppg,
+    p.prev_games, p.prev_ppg, p.prev_xppg, pp.pos_prev_ppg, p.prev_snap_pct,
+    {%- for c in component_stats() if c not in ('red_zone_targets', 'red_zone_carries') %}
+    p.prev_{{ c }}_pg,
+    {%- endfor %}
     -- opponent as of the week
     d.opp_allowed_std, d.opp_allowed_l4, d.opp_rank_std, d.opp_games, d.league_allowed_avg,
     -- injury report for the week
@@ -66,7 +84,10 @@ select
     least(coalesce(a.games_to_date, 0), 6) / 6.0                                               as f_sample,   -- 0 at week 1 -> 1 after six games
     (a.games_to_date is null and p.prev_games is null)                                         as no_history,
     -- outcome
-    o.points_actual, coalesce(o.played, false) as played, o.snap_pct_actual
+    o.points_actual, coalesce(o.played, false) as played, o.snap_pct_actual,
+    {%- for c in component_stats() %}
+    o.out_{{ c }}{{ "," if not loop.last }}
+    {%- endfor %}
 from {{ ref('int_player_week_universe') }} as u
 left join {{ ref('int_player_week_asof_features') }} as a using (gsis_id, season, week)
 left join prev as p on p.gsis_id = u.gsis_id and p.season = u.season

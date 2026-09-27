@@ -3,11 +3,13 @@
 -- slots at that position, plus depth = the rest). Compared with the league median for trade fit.
 with cur as (select league_id from {{ ref('dim_league_season') }} where is_current_season),
 
+-- starter slots per position; a SUPER_FLEX slot is a second QB start in practice, so it counts
+-- toward QB (the flex slots are not attributed: the "starters" are the top-N at each position)
 slots as (
-    select ls.league_id, rp.slot as position, count(*) as n
+    select ls.league_id, case rp.slot when 'SUPER_FLEX' then 'QB' else rp.slot end as position, count(*) as n
     from {{ ref('dim_league_season') }} as ls
     cross join lateral jsonb_array_elements_text(ls.roster_positions) as rp(slot)
-    where rp.slot in ('QB', 'RB', 'WR', 'TE', 'K')
+    where rp.slot in ('QB', 'RB', 'WR', 'TE', 'K', 'SUPER_FLEX')
     group by 1, 2
 ),
 

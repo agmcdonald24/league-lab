@@ -96,4 +96,10 @@ sources:
       - name: source_partition
       - name: backtest_results
         description: "Written by `league-lab backtest`: per season-week-position-scorer Spearman, top-N hit rate, MAE."
+      - name: projections
+        description: "Written by `league-lab project` (projection v2): per league x season x week x player, the projected stat line, its priced points and P10/P50/P90."
+      - name: projection_backtest
+        description: "Written by `league-lab backtest-v2`: walk-forward scores per league-season-week-position-scorer, with interval coverage."
+      - name: projection_importance
+        description: "Written by `league-lab backtest-v2`: permutation importance of the P50 model per position (newest test season)."
 

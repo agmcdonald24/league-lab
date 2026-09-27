@@ -15,7 +15,10 @@ seasons = seasons_available()
 c1, c2, c3 = st.columns([1, 1, 2])
 season = c1.selectbox("Season", seasons)
 season_type = c2.radio("Season type", ["REG", "POST"], horizontal=True, format_func=lambda s: "Regular season" if s == "REG" else "Playoffs")
-week_lo, week_hi = c3.slider("Week window", 1, 22, (1, 18))
+if season_type == "POST":
+    week_lo, week_hi = c3.slider("Week window (playoffs are weeks 19-22)", 19, 22, (19, 22))
+else:
+    week_lo, week_hi = c3.slider("Week window", 1, 18, (1, 18))
 
 candidates = query(
     """select player_name from analytics.mart_player_season
@@ -188,7 +191,8 @@ rp = query(
     (season, season_type, players, week_lo, week_hi),
 )
 if rp["routes_proxy"].isna().all() and rp["routes"].isna().all():
-    unavailable("Routes for this window", f"No participation file for NFL {season} yet (it arrives after the postseason) and no licensed routes feed has been imported.")
+    unavailable("Routes for this window", f"No participation data for these games: NFL {season}'s participation file arrives after the postseason "
+                "(and does not cover playoff games for some seasons), and no licensed routes feed has been imported.")
 else:
     cols = ["player_name", "games_with_participation", "routes_proxy", "routes_proxy_per_game", "route_participation", "tprr_proxy", "yprr_proxy"]
     if rp["routes"].notna().any():

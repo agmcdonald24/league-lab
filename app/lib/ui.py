@@ -90,11 +90,41 @@ def seasons_available() -> list[int]:
     return df["season"].tolist()
 
 
-def league_seasons() -> pd.DataFrame:
-    return query(
-        """select league_id, season, league_name, status, playoff_week_start, last_scored_leg, is_current_season
+def league_seasons(league_id: str | None = None) -> pd.DataFrame:
+    """Seasons of one league's chain (newest first). With several leagues loaded, a page must pick
+    a chain first (perspective()), else two rows share each season."""
+    df = query(
+        """select league_id, chain_id, season, league_name, league_type, status, playoff_week_start, last_scored_leg,
+                  is_current_season, roster_positions
            from analytics.dim_league_season order by season desc"""
     )
+    if league_id is not None and not df.empty:
+        chain = df.loc[df["league_id"] == league_id, "chain_id"]
+        if not chain.empty:
+            df = df[df["chain_id"] == chain.iloc[0]]
+    return df
+
+
+def league_slots(league_id: str) -> list[str]:
+    """Positions this league starts (QB/RB/WR/TE/K/DEF present in roster_positions; SUPER_FLEX counts as QB)."""
+    ls = league_seasons()
+    row = ls[ls["league_id"] == league_id]
+    if row.empty:
+        return list(SKILL_POSITIONS)
+    slots = list(row["roster_positions"].iloc[0] or [])
+    present = {"QB" if s == "SUPER_FLEX" else s for s in slots}
+    return [p for p in ["QB", "RB", "WR", "TE", "K", "DEF"] if p in present]
+
+
+def season_picker(league_id: str, label: str = "Season") -> pd.Series:
+    """A season selectbox over the selected league's chain; returns that league-season's row."""
+    ls = league_seasons(league_id)
+    if ls.empty:
+        st.warning("No league data loaded. Run `make ingest-sleeper` and `make build`.")
+        st.stop()
+    seasons = ls["season"].astype(int).tolist()
+    season = st.selectbox(label, seasons, format_func=lambda s: f"{s} · {ls.loc[ls['season'] == s, 'league_name'].iloc[0]}")
+    return ls[ls["season"] == season].iloc[0]
 
 
 def pct(v) -> str:
@@ -184,11 +214,11 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
         row = leagues.set_index("league_id").loc[league_id]
         if len(leagues) > 1 and not bool(row["is_reference_league"]):
             ref_name = leagues[leagues["is_reference_league"].astype(bool)]["league_name"].iloc[0]
-            diff = row["scoring_diff_vs_reference"]
             st.warning(
-                f"League pages (standings, matchups, rosters, trades, keepers) use **{row['league_name']}** scoring. "
-                f"NFL pages (Players, Rankings, Trends, Receivers, expected points) are priced under **{ref_name}** scoring"
-                + (f" — this league differs on: {diff}." if diff else " — identical to this league's, so nothing is lost."),
+                f"Observed points (standings, matchups, lineups, recomputed points) use **{row['league_name']}** scoring. "
+                f"Rankings (projection v2) are priced in this league's scoring. Per-game player numbers elsewhere (PPG, xPPG, "
+                f"positional strength, waiver wire) are priced under **{ref_name}** scoring until per-league pricing lands (plan S-01a)."
+                + scoring_diff_summary(row["scoring_diff_vs_reference"], league_slots(league_id)),
                 icon="ℹ️",
             )
     ss["ll_league"] = league_id
@@ -199,6 +229,20 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
     elif "team" in st.query_params:
         del st.query_params["team"]
     return league_id, (int(roster_id) if roster_id is not None else None), members
+
+
+def scoring_diff_summary(diff: str | None, slots: list[str]) -> str:
+    """The scoring keys where this league differs from the reference, skill positions first;
+    kicker/defense keys are only counted when the league does not start those positions."""
+    if not diff:
+        return " Scoring is identical to the reference league's."
+    parts = [p.strip() for p in diff.split(", ") if p.strip()]
+    kd = [p for p in parts if p.split(":")[0].startswith(("fgm", "fgmiss", "xpm", "pts_allow", "yds_allow", "def_", "st_", "sack", "int:", "ff:", "fum_rec", "safe", "blk_kick"))]
+    skill = [p for p in parts if p not in kd]
+    text = " Differs on: " + ", ".join(skill) if skill else " Skill-position scoring is identical."
+    if kd:
+        text += f" (+{len(kd)} kicker/defense keys" + (")" if {"K", "DEF"} & set(slots) else " this league does not start)")
+    return text + "."
 
 
 def next_week_info() -> pd.Series:

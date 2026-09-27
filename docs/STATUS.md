@@ -180,9 +180,40 @@ real widening is needed, dependent views are dropped with a logged warning and r
   turns `UndefinedTable` into a "being refreshed" notice for the sync's drop-restore window. Verified with the
   headless page run (13/13) and a Playwright walk: `?team=5` on Team Hub → Matchups → Rankings keeps team 5.
 
+## Iteration 8 — Projection v2 2026-09-26 (Andrew: "whats the next phase … lets kick that off")
+
+* **Built** (plan M-01 + M-03, part of M-02): `league_lab.projections` — per position, a gradient-boosted regressor
+  per stat-line component (scikit-learn HistGradientBoosting; Poisson for counts/TDs, squared error for yards) on
+  ~70 as-of features, priced per configured league with the scoring map; quantile regressors for P10/P50/P90 with
+  split-conformal calibration on the newest training season. CLI `league-lab project` (nightly, in `refresh.sh`)
+  and `backtest-v2`; tables `ops.projections / projection_backtest / projection_importance`; marts
+  `mart_player_week_projections` (outcome priced under the league's own scoring via `league_points` +
+  `zero_stat_columns`) and `mart_projection_backtest`. Rankings page: model switch (v2 default, baseline as the
+  check), floor–ceiling chart, projected stat line, per-league backtest with coverage, importances.
+* **Walk-forward 2021–2025** (each season by a model trained on the seasons before it; 90 season-weeks per position;
+  Spearman of the v2 projection vs the baseline, reference league): QB 0.542 vs 0.513 (+0.029), RB 0.661 vs 0.651
+  (+0.010), WR 0.610 vs 0.600 (+0.010), TE 0.554 vs 0.555 (−0.001, a tie). MAE lower or equal at every position
+  (QB 5.86 vs 6.12, RB 4.29 vs 4.32, WR 4.07 vs 4.09, TE 3.01 vs 3.01). Dynasty league (6-pt pass TD, full PPR,
+  bonuses): QB +0.028, RB +0.010, WR +0.011, TE +0.002 — and there the "baseline" is the reference-scoring formula,
+  i.e. what that league saw before. **Interval coverage** (target 80%): QB 78%, RB 80%, WR 81%, TE 81% in both
+  leagues; widths are player-specific (a WR1 in the dynasty league: floor ≈ 6–9, projection ≈ 15–18, ceiling ≈ 28–30).
+* **What it took to get the interval right** (three iterations, all in the report history): (1) quantile GBMs on raw
+  points collapsed at P10 — a fifth of played WR weeks score 0, the model's initial constant sat on that mass and
+  never left it (every WR's floor was 0 in one league and not the other, by luck); (2) quantiles of the residual
+  around the priced line fixed that but learned in-sample residuals, so the intervals were too narrow (coverage 52–78%)
+  and the P50 model got worse than the line; (3) residuals against **out-of-fold** lines (components fitted on the
+  odd training seasons price the even ones and vice versa) plus split-conformal widening on the newest training
+  season → calibrated. The board ranks by the priced line; P50 is informational.
+* **Honesty notes**: the first run used the routes proxy (`route_participation_l3`) and TE leaned on it hardest —
+  but the participation file arrives after the postseason, so the live board would never have it; removed.
+  Gains over the baseline are modest and real at QB/RB/WR and nil at TE; the calibrated interval is the bigger
+  product change. Everything shown for 2026 is out of sample (trained on 2016–2025).
+* Verified: `make pytest` 25/25, `ruff` clean; 13 pages × 2 leagues render headlessly; walk-forward report under
+  `reports/backtests/projection_v2_2021_2025_*.md`.
+
 ## Next concrete actions
 
-1. **Andrew**: `make build && make sync-hosted`, commit and push; check `assert_recomputed_points_reconcile` for the second league (a handful of rows per season is stat corrections; hundreds means a key is modelled wrong); share `?league=1321941740235550720`.
+1. **Andrew**: `make sync && make build && make project && make backtest-v2 && make sync-hosted`, commit and push; the reconciliation on the dynasty league was 6 rows in 6 seasons (bonus semantics confirmed).
 2. **Andrew**: reset the Neon owner password (it was pasted in chat) and update `.env`; optionally `LEAGUE_LAB_APP_PASSWORD` / `LEAGUE_LAB_FEEDBACK_URL` in the Streamlit secrets.
 3. **Andrew (decisions)**: O03 refresh time, O05 backup destination, review of the Edge pages (U04), acceptance (H03).
 4. **Next engineering** (Andrew's call): R-07 an ML challenger on the same harness (only kept if it beats the baseline);

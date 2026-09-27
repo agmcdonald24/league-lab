@@ -60,6 +60,32 @@ models:
       - name: f_implied_total
         tests: [not_null]
 
+  - name: mart_player_week_projections
+    description: "Projection v2 per league x season x week x player: projected stat line, points in the league's scoring, P10/P50/P90, outcome priced under the league's scoring, ranks."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, gsis_id, season, week]
+      - expression_is_true:
+          name: projection_interval_is_ordered
+          arguments:
+            expression: "p10 <= p50 and p50 <= p90"
+      - expression_is_true:
+          name: projection_points_are_non_negative
+          arguments:
+            expression: "proj_points >= 0 and p10 >= 0"
+    columns:
+      - name: p50
+        tests: [not_null]
+      - name: league_name
+        tests: [not_null]
+
+  - name: mart_projection_backtest
+    description: "Walk-forward scoreboard of projection v2 per league, held-out season, position and scorer, with interval coverage."
+    columns:
+      - name: spearman
+        tests: [not_null]
+
   - name: mart_player_week_rankings
     description: "Baseline projection, contributions, naive baselines and ranks per season-week-position."
     tests:
@@ -245,6 +271,14 @@ models:
         tests: [unique, not_null]
       - name: season
         tests: [not_null]
+      - name: chain_id
+        description: league_id of the newest season in this league's chain (the id pages use to list "this league's seasons")
+        tests: [not_null]
+      - name: league_type
+        tests:
+          - accepted_values:
+              arguments:
+                values: [redraft, keeper, dynasty]
       - name: playoff_week_start
         tests: [not_null]
 

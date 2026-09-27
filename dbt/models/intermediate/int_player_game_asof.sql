@@ -22,7 +22,11 @@ xp as (
 ),
 
 pg as (
-    select gsis_id, game_id, attempts, targets, carries, points_current_scoring
+    select gsis_id, game_id, attempts, targets, carries, points_current_scoring,
+           -- stat-line components (projection v2 projects these, then prices them per league)
+           receptions, receiving_yards, receiving_tds, rushing_yards, rushing_tds,
+           passing_yards, passing_tds, passing_interceptions, fumbles_lost_total,
+           red_zone_targets, red_zone_carries, offense_snap_pct
     from {{ ref('fct_player_game') }}
 ),
 
@@ -37,7 +41,13 @@ w as (
         avg(xp.points_expected)   over (partition by rf.gsis_id, rf.season order by rf.week rows between 4 preceding and current row) as xppg_l5,
         avg(pg.attempts)          over (partition by rf.gsis_id, rf.season order by rf.week rows between 2 preceding and current row) as attempts_l3,
         avg(pg.attempts)          over (partition by rf.gsis_id, rf.season order by rf.week) as attempts_std,
-        stddev_samp(pg.points_current_scoring) over (partition by rf.gsis_id, rf.season order by rf.week) as points_sd_std
+        stddev_samp(pg.points_current_scoring) over (partition by rf.gsis_id, rf.season order by rf.week) as points_sd_std,
+        -- per-game component rates, season to date and last 3 (as-of: window ends at this game)
+        {%- for c in component_stats() %}
+        avg(pg.{{ c }}) over (partition by rf.gsis_id, rf.season order by rf.week) as {{ c }}_pg_std,
+        avg(pg.{{ c }}) over (partition by rf.gsis_id, rf.season order by rf.week rows between 2 preceding and current row) as {{ c }}_pg_l3,
+        {%- endfor %}
+        avg(pg.offense_snap_pct) over (partition by rf.gsis_id, rf.season order by rf.week) as snap_pct_std
     from rf
     left join xp using (gsis_id, game_id)
     left join pg using (gsis_id, game_id)
@@ -52,5 +62,9 @@ select
     carry_share_std, carry_share_l3, carry_share_l5, carries_l3,
     air_yards_share_l3, snap_pct_l3, snap_pct_l5,
     first_read_share_std, first_read_share_l3, route_participation_l3,
-    round(attempts_std::numeric, 2) as attempts_std, round(attempts_l3::numeric, 2) as attempts_l3
+    round(attempts_std::numeric, 2) as attempts_std, round(attempts_l3::numeric, 2) as attempts_l3,
+    {%- for c in component_stats() %}
+    round({{ c }}_pg_std::numeric, 3) as {{ c }}_pg_std, round({{ c }}_pg_l3::numeric, 3) as {{ c }}_pg_l3,
+    {%- endfor %}
+    round(snap_pct_std::numeric, 4) as snap_pct_std
 from w

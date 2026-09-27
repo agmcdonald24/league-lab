@@ -5,7 +5,7 @@ import streamlit as st
 from lib.charts import heat_style
 from lib.db import query
 from lib.table import howto, show
-from lib.ui import freshness_banner, next_week_info, perspective, setup
+from lib.ui import freshness_banner, league_slots, next_week_info, perspective, setup
 
 setup("Matchups")
 freshness_banner()
@@ -75,7 +75,8 @@ dvp = query(
     """select defense, position, games, points_allowed_per_game_std, rank_std, points_allowed_per_game_l4, rank_l4
        from analytics.mart_defense_vs_position_current order by position, rank_std""",
 )
-pos = st.radio("Position", ["QB", "RB", "WR", "TE", "K"], horizontal=True)
+dvp_positions = [p for p in league_slots(league_id) if p in ("QB", "RB", "WR", "TE", "K")]
+pos = st.radio("Position", dvp_positions, horizontal=True)
 sub = dvp[dvp["position"] == pos].sort_values("rank_std")
 c1, c2 = st.columns(2)
 with c1:
@@ -85,7 +86,8 @@ with c2:
     st.markdown("**Gives up the least**")
     show(sub.tail(10).sort_values("rank_std", ascending=False), ["defense", "games", "points_allowed_per_game_std", "rank_std", "points_allowed_per_game_l4", "rank_l4"])
 
-pivot = dvp.pivot_table(index="defense", columns="position", values="rank_std")[["QB", "RB", "WR", "TE", "K"]]
+pivot = dvp.pivot_table(index="defense", columns="position", values="rank_std")[dvp_positions]
+pivot.index.name = "Defense"
 st.markdown("**All defenses — rank by position (darker = gives up more)**")
 st.dataframe(heat_style(pivot), width="stretch", height=600)
 

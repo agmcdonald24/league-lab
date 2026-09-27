@@ -3,7 +3,7 @@
 import streamlit as st
 from lib.db import query
 from lib.table import howto, show
-from lib.ui import freshness_banner, next_week_info, perspective, setup
+from lib.ui import freshness_banner, league_slots, next_week_info, perspective, setup
 
 setup("Waiver Wire")
 freshness_banner()
@@ -25,7 +25,8 @@ howto(
 )
 
 c1, c2, c3, c4 = st.columns([1.2, 1, 1, 1.4])
-positions = c1.multiselect("Positions", ["QB", "RB", "WR", "TE", "K"], default=["RB", "WR", "TE"])
+league_pos = [p for p in league_slots(league_id) if p in ("QB", "RB", "WR", "TE", "K")]   # no K in a league without a kicker slot
+positions = c1.multiselect("Positions", league_pos, default=[p for p in ("RB", "WR", "TE") if p in league_pos])
 min_games = c2.number_input("Min games played", 1, 17, 2)
 hide_injured = c3.checkbox("Hide Out / IR", value=True)
 sort_labels = {
@@ -66,6 +67,10 @@ elif set(positions) <= {"QB", "K"}:
     cols = qbk_cols
 else:
     cols = rec_cols
+if sort_by not in cols:          # the column the list is ranked by is always shown
+    cols = cols[:8] + [sort_by] + cols[8:]
+if not fa.empty and fa[sort_by].isna().all():
+    st.info(f"**{sort_labels[sort_by]}** has no values yet for these players (it needs more games this season), so the list is not ranked by it.")
 show(fa, cols, height=560)
 
 # ------------------------------------------------------------- your drop candidates

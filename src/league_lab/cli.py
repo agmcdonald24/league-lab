@@ -311,6 +311,38 @@ def backtest_cmd(
     console.print(t)
 
 
+@app.command("backtest-v2")
+def backtest_v2_cmd(
+    seasons: str = typer.Option("2021-2025", help="Held-out seasons, each scored by a model trained on the seasons before it"),
+    out: Path | None = typer.Option(None, help="Report directory (default: <repo>/reports/backtests)"),
+):
+    """Walk-forward backtest of projection v2 (components + P10/P50/P90) against the baseline; writes ops.projection_backtest + a report."""
+    from .projections import run_backtest, summarize
+
+    res = run_backtest(seasons, out)
+    t = Table(title=f"projection v2 backtest {seasons} (mean over season-weeks)")
+    for c in ("league", "position", "scorer", "weeks", "spearman", "hit_rate", "mae", "coverage_80", "width"):
+        t.add_column(c)
+    for r in summarize(res).sort_values(["league_id", "position", "spearman"], ascending=[True, True, False]).itertuples():
+        cov = "" if r.coverage_80 != r.coverage_80 else f"{r.coverage_80:.1%}"
+        wid = "" if r.interval_width != r.interval_width else f"{r.interval_width:.1f}"
+        t.add_row(r.league_id[-6:], r.position, r.scorer, str(r.weeks), f"{r.spearman:.3f}", f"{r.hit_rate:.1%}", f"{r.mae:.2f}", cov, wid)
+    console.print(t)
+
+
+@app.command("project")
+def project_cmd(
+    season: int | None = typer.Option(None, help="Season to project (default: the newest with features); trained on the seasons before it"),
+):
+    """Fit projection v2 on completed seasons and write this season's weekly projections per league to ops.projections. Then `make build`."""
+    from .projections import run_project
+
+    pred = run_project(season)
+    console.print(f"wrote {len(pred)} projection rows for {int(pred['season'].iloc[0])} "
+                  f"({pred['league_id'].nunique()} league(s), weeks {int(pred['week'].min())}-{int(pred['week'].max())}) — "
+                  "run `make build` to publish mart_player_week_projections")
+
+
 @app.command("teams")
 def teams_cmd():
     """List roster ids and team names for the current league season(s)."""

@@ -135,7 +135,7 @@ COLUMNS: dict[str, Col] = {
     "stddev_points_common_weeks": C("Std dev", "num1"), "avg_points_vs_week_avg": C("vs week avg", "signed1"),
     "distinct_kickers_started": C("Kickers used", "int"), "kicker_changes": C("Changes", "int"), "kicker_acquisitions": C("Acquired", "int"),
     "rank_common_weeks": C("Rank", "int"), "total_points": C("Points", "num1"),
-    "game_date": C("Date"), "went_to_overtime": C("OT", "bool", yes="OT", no=""), "starting_qb": C("Starting QB"),
+    "game_date": C("Date", "date"), "went_to_overtime": C("OT", "bool", yes="OT", no=""), "starting_qb": C("Starting QB"),
     "window": C("Window"), "game_no": C("Game #", "int"), "first_week": C("First wk", "int"), "last_week": C("Last wk", "int"),
     "team_count": C("Teams", "int"), "games_l3": C("G (L3)", "int"), "games_l5": C("G (L5)", "int"),
     "targets_l3": C("Tgt (L3)", "int"), "team_targets_l3": C("Team tgt (L3)", "int"), "targets_l5": C("Tgt (L5)", "int"), "team_targets_l5": C("Team tgt (L5)", "int"),
@@ -211,6 +211,21 @@ COLUMNS: dict[str, Col] = {
     "league_allowed_avg": C("League avg", "num1", "League-wide points allowed per game to this position, as of the same point"),
     "implied_team_total": C("Implied total", "num1", "Vegas-implied team points"),
     "report_status": C("Injury", help="Report status for the week (Out / Doubtful excluded from the rank; Questionable stays in)"),
+    # ---- projection v2
+    "p10": C("Floor (P10)", "num1", "10th percentile of this league's points: one week in ten lands below"),
+    "p50": C("Median (P50)", "num1", "Median of this league's points: as likely above as below"),
+    "p90": C("Ceiling (P90)", "num1", "90th percentile: one week in ten lands above"),
+    "interval_width": C("Range", "num1", "P90 − P10 in points: how uncertain the week is"),
+    "proj_targets": C("Tgt", "num1", "Projected targets"), "proj_receptions": C("Rec", "num1", "Projected receptions"),
+    "proj_receiving_yards": C("Rec yds", "num1", "Projected receiving yards"), "proj_receiving_tds": C("Rec TD", "num2", "Projected receiving touchdowns (expected count)"),
+    "proj_carries": C("Car", "num1", "Projected carries"), "proj_rushing_yards": C("Rush yds", "num1", "Projected rushing yards"),
+    "proj_rushing_tds": C("Rush TD", "num2", "Projected rushing touchdowns (expected count)"),
+    "proj_attempts": C("Att", "num1", "Projected pass attempts"), "proj_passing_yards": C("Pass yds", "num1", "Projected passing yards"),
+    "proj_passing_tds": C("Pass TD", "num2", "Projected passing touchdowns (expected count)"), "proj_passing_interceptions": C("INT", "num2", "Projected interceptions (expected count)"),
+    "proj_fumbles_lost": C("Fum lost", "num2"),
+    "actual_inside_interval": C("In range", "bool", "Did the actual land inside P10–P90?", yes="yes", no="no"),
+    "coverage_80": C("Coverage", "pct", "Share of actual outcomes that landed inside P10–P90 (target 80%)"),
+    "league_name": C("League"), "train_seasons": C("Trained on"), "model_version": C("Model"),
     "scorer_label": C("Ranking"), "weeks": C("Weeks", "int"), "top_n": C("N", "int"),
     "spearman": C("Spearman", "num2", "Rank correlation between the ranking and actual points, averaged over weeks; 1 = perfect, 0 = coin flip"),
     "hit_rate": C("Top-N hit rate", "pct", "Share of the actual top-N scorers the ranking's top-N caught"),
@@ -223,14 +238,15 @@ COLUMNS: dict[str, Col] = {
 # Columns hidden in "Essentials" mode (sidebar detail toggle): denominators, statistics of a
 # statistic, coverage/provenance fields and fine-grained counts. Everything is one click away.
 ADVANCED_PATTERNS = ("team_", "_z", "slope_per_game", "confidence", "charted_targets", "charting_coverage", "games_with_",
-                     "nflverse_", "denominator", "c_intercept", "c_home", "n_up", "n_down", "opp_games", "prev_games",
+                     "nflverse_", "denominator", "c_intercept", "n_up", "n_down", "opp_games", "prev_games",
                      "asof_week", "later_read", "scramble_drill", "checkdown", "contested", "catchable", "inside_10", "inside_5",
                      "deep_targets", "two_point", "league_allowed_avg", "routes_provider", "points_current_scoring_league",
                      "value_prior", "value_latest", "change_vs_minimum", "practice_status", "spread_line", "total_line",
                      "first_read_rate_of_targets", "designed_rate", "designed_targets", "drops", "top_n_ceiling", "top_n_picked",
                      "games_l3", "targets_l3", "carries_l3", "week_avg", "yac_per", "receiving_air_yards", "air_yards")
 ADVANCED_EXACT = {"opponent_points", "margin"}
-ESSENTIAL_EXACT = {"team", "teams", "team_name", "nfl_team", "implied_team_total", "receptions", "team_dropbacks"}
+ESSENTIAL_EXACT = {"team", "teams", "team_name", "nfl_team", "implied_team_total", "receptions", "team_dropbacks",
+                   "red_zone_target_share", "red_zone_carry_share", "air_yards_share", "c_home"}
 
 
 def is_advanced(column: str) -> bool:
@@ -301,6 +317,9 @@ def prepare(df: pd.DataFrame, cols: list[str] | None = None, overrides: dict[str
             s = pd.to_datetime(out[c], errors="coerce", utc=True)
             out[c] = s.dt.tz_convert("America/New_York").dt.strftime("%a %b %-d, %-I:%M %p")
             config[c] = st.column_config.TextColumn(label, help=hlp)
+        elif kind == "date":
+            out[c] = pd.to_datetime(out[c], errors="coerce").dt.strftime("%Y-%m-%d")
+            config[c] = st.column_config.TextColumn(label, help=hlp)
         else:
             out[c] = out[c].astype(object).where(out[c].notna(), "")
             config[c] = st.column_config.TextColumn(label, help=hlp)
@@ -314,13 +333,15 @@ def show(df: pd.DataFrame, cols: list[str] | None = None, height: int | None = N
         st.caption("Nothing to show yet.")
         return
     if detail_level() == "essentials":
-        keep = [c for c in (cols or list(df.columns)) if not is_advanced(c)]
+        # a page's explicit override marks the column essential for that table
+        keep = [c for c in (cols or list(df.columns)) if c in (overrides or {}) or not is_advanced(c)]
         cols = keep or cols
     out, config = prepare(df, cols, overrides)
     if index is not None:
         out.index = index
     kwargs = {"height": height} if height else {}
-    st.dataframe(out, column_config=config, hide_index=index is None, width="stretch", **kwargs)
+    # placeholder="": a missing value is an empty cell, not the word "None" (Streamlit's default)
+    st.dataframe(out, column_config=config, hide_index=index is None, width="stretch", placeholder="", **kwargs)
 
 
 def howto(*lines: str, title: str = "How to read this table") -> None:
@@ -331,4 +352,5 @@ def howto(*lines: str, title: str = "How to read this table") -> None:
 
 def glossary_rows() -> pd.DataFrame:
     rows = [(v.label, k, v.help) for k, v in COLUMNS.items() if v.help]
-    return pd.DataFrame(rows, columns=["Column", "Source field", "Meaning"]).sort_values("Column")
+    df = pd.DataFrame(rows, columns=["Column", "Source field", "Meaning"]).sort_values(["Column", "Source field"])
+    return df.drop_duplicates("Column", keep="first")

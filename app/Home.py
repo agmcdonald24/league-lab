@@ -45,9 +45,9 @@ if cur is not None and roster_id is not None:
     c1, c2, c3, c4 = st.columns(4)
     if not prof.empty:
         r = prof.iloc[0]
-        c1.metric(f"{me['team_name']}", f"{int(r['wins'])}-{int(r['losses'])}", f"#{int(r['standing'])} in the league")
+        c1.metric(f"{me['team_name']}", f"{int(r['wins'])}-{int(r['losses'])}", f"#{int(r['standing'])} in the league", delta_color="off")
         c2.metric("All-play win %", f"{float(r['all_play_win_pct'] or 0):.0%}", f"{float(r['luck_wins'] or 0):+.1f} luck wins")
-        c3.metric("Lineup efficiency", f"{float(r['lineup_efficiency'] or 0):.0%}", f"{float(r['avg_bench_points_left'] or 0):.1f} bench pts/wk left")
+        c3.metric("Lineup efficiency", f"{float(r['lineup_efficiency'] or 0):.0%}", f"{float(r['avg_bench_points_left'] or 0):.1f} bench pts/wk left", delta_color="off")
     if not nxt.empty:
         c4.markdown(f"<div style='font-size:0.85rem;color:#6b6f76'>Week {int(nxt.iloc[0]['week'])} opponent</div>"
                     f"<div style='font-size:1.5rem;font-weight:600;line-height:1.3'>{nxt.iloc[0]['opponent'] or '—'}</div>", unsafe_allow_html=True)

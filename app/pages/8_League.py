@@ -4,19 +4,15 @@ import streamlit as st
 from lib.charts import bar_chart, color_map, line_chart
 from lib.db import query
 from lib.table import howto, show
-from lib.ui import freshness_banner, league_seasons, setup
+from lib.ui import freshness_banner, perspective, season_picker, setup
 
 setup("League")
 freshness_banner()
 
-ls = league_seasons()
-if ls.empty:
-    st.warning("No league data loaded. Run `make ingest-sleeper` and `make build`.")
-    st.stop()
-
-season = st.selectbox("Season", ls["season"].tolist(), format_func=lambda s: f"{s} · {ls.set_index('season').loc[s, 'league_name']}")
-league = ls.set_index("season").loc[season]
+current_league_id, _, _ = perspective(require_team=False)   # which league (sidebar); the season below walks its chain
+league = season_picker(current_league_id)
 league_id = league["league_id"]
+season = int(league["season"])
 
 tab_standings, tab_weekly, tab_matchups, tab_tx, tab_draft = st.tabs(
     ["Standings", "Weekly scores", "Matchups & lineups", "Transactions", "Draft review"]
@@ -67,7 +63,8 @@ with tab_matchups:
     lineup_team = st.selectbox("Show a lineup", sorted(mu["team_name"].unique().tolist()) if not mu.empty else [])
     if lineup_team:
         howto("**Points** are what Sleeper scored. **Recomputed** is the same week rebuilt from NFL statistics under this season's scoring — "
-              "the two agree to the decimal for this league, which is how we know the scoring map is right. Blank for team defenses.")
+              "the two agree to the decimal for this league, which is how we know the scoring map is right. Blank for team defenses and for a "
+              "player who had no NFL stat row that week (not on a roster, or an empty slot).")
         lineup = query(
             """select l.slot, l.player_name, l.position, l.nfl_team, l.points_observed, l.points_recomputed, l.is_starter
                from analytics.league_player_week l
