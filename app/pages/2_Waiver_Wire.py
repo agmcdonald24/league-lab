@@ -77,7 +77,8 @@ cmp as (
            case when p.is_rankable then p.proj - b.weak_proj end as week_diff,
            -- fewer playable players than slots: the N-th slot is open this week (flex slots are not counted)
            coalesce(p.is_rankable and p.proj is not null and b.modeled and b.weak_proj is null, false) as week_open,
-           round(a.ppg_std, 1) - b.bench_ppg as season_diff
+           -- the season bar needs two games: a one-game PPG is a box score, not a rate (PO decision, wave A)
+           case when coalesce(a.games_played, 0) >= 2 then round(a.ppg_std, 1) - b.bench_ppg end as season_diff
     from analytics.mart_player_availability as a
     join prm on a.league_id = prm.league_id
     join bars as b on b.position = a.position
@@ -121,9 +122,11 @@ def _claim_season(r: pd.Series) -> str:
         return ""
     if pd.isna(r["bench_ppg"]):
         return f"no bench {pos} with a PPG to compare"
-    d = round(float(r["season_diff"]), 1)
     games = int(r["games_played"]) if pd.notna(r["games_played"]) else 0
-    nums = f"({r['ppg_std']:.1f} vs {r['bench_ppg']:.1f}" + (", 1 game)" if games == 1 else ")")
+    if pd.isna(r["season_diff"]):
+        return f"only {games} game this season — not compared" if games == 1 else "no season comparison yet"
+    d = round(float(r["season_diff"]), 1)
+    nums = f"({r['ppg_std']:.1f} vs {r['bench_ppg']:.1f}, {games} games)"
     if d > 0:
         return f"+{d:.1f} PPG over your best bench {pos} {nums}"
     return f"{abs(d):.1f} PPG below your best bench {pos} {nums}" if d < 0 else f"level with your best bench {pos} {nums}"
@@ -149,7 +152,7 @@ else:
         "there — your RB2 when the league starts two RBs; a superflex slot counts as a second QB, FLEX slots are left out. Out, Doubtful and IR players "
         "don't count as starters (the Rankings rule), and players in your IR slot are left out.",
         "**Season vs your bench**: his PPG this season against the best PPG on your bench at the position (bench = your players beyond the top N by PPG). "
-        "One game is a weak signal; those rows say so. The two bars rank your players differently (next week's projection vs season PPG), "
+        "A player needs two games this season before his PPG counts (one game is a box score, not a rate). The two bars rank your players differently (next week's projection vs season PPG), "
         "so one player can be both your weakest projected starter and your best bench player.",
         "**Floor / Ceiling** are the projection's P10 / P90: one week in ten lands below the floor, one in ten above the ceiling. "
         "Kickers have no v2 projection, so K is compared on season PPG only.",
