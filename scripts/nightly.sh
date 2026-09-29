@@ -4,12 +4,13 @@
 # (.github/workflows/nightly.yml) against a throwaway Postgres, the Mac runs it through
 # scripts/refresh.sh (launchd 08:00), and anyone can run it by hand.
 #
-#   migrate → restore state (a fresh database takes the backtests, the frozen projection record and
-#     the drift history from the hosted copy)
+#   migrate → restore state (a fresh database takes the backtests, the frozen projection record, the
+#     drift history and last night's lineups from the hosted copy; the record also from the archive)
 #   → replay the archive (data/raw: Sleeper, nflverse history, nflverse current season; --offline)
 #   → live fetch (Sleeper, nflverse current season; conditional requests)
 #   → dbt build → backtests (only when missing or made by another model version)
-#   → project (projection v2, then the lineups solved on it) → projection + lineup marts → drift
+#   → project (projection v2, then the lineups solved on it) → save the record to the archive
+#   → projection + lineup marts → drift
 #   → backup (NIGHTLY_BACKUP=1) → hosted sync (when LEAGUE_LAB_HOSTED_ADMIN_URL is set)
 #
 # Usage:  scripts/nightly.sh           the nightly run
@@ -196,30 +197,97 @@ dbt_step() {  # dbt_step <name> <dbt args...>
 }
 
 # State the archive cannot rebuild: the two backtests behind the Rankings scoreboards (written by
-# `league-lab backtest` and `backtest-v2`, the latter minutes of CPU), the projection record
-# (`ops.projections`: each league-week's board is frozen at its first kickoff, plan B5, so a fresh
-# database must start from the published record or `project` would refit every played week) and
-# the drift history scored on it (`ops.projection_drift`). A fresh database (every CI run) copies
-# them back from the hosted copy, where the last sync put them (the sync publishes all of `ops`);
-# the backtests are recomputed after the build only when neither place has them, when they come
+# `league-lab backtest` and `backtest-v2`, the latter minutes of CPU), the DECISION RECORD (plan
+# B5: `ops.projections`, each league-week's board frozen at its first kickoff, and the drift
+# history `ops.projection_drift` scored on it) and the lineups solved on it (`ops.lineups`,
+# `ops.lineup_totals`; re-solved by `project`, restored only so a soft `project` failure publishes
+# last night's board WITH last night's lineups). A fresh database (every CI run) copies them back
+# from the hosted copy, where the last sync put them (the sync publishes all of `ops`); the
+# backtests are recomputed after the build only when neither place has them, when they come
 # from another MODEL_VERSION, or on request (NIGHTLY_BACKTESTS=1). On the Mac every table is
-# already in the database: nothing happens. Lineups (`ops.lineups`, `ops.lineup_totals`) are not
-# state: `project` re-solves the season from the frozen projections and Sleeper's weekly rosters.
-STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift"
+# already in the database: nothing happens.
+#
+# The record is the one thing this pipeline cannot recompute, so it is handled harder than the
+# rest: (1) "cannot reach the hosted copy" is NOT "empty" — the night stops, because refitting
+# every played week blind and then publishing it would overwrite the record with refit values;
+# (2) a failed copy stops the night too; (3) after `project`, the record is also written to the
+# archive ($RAW_DIR/record/, so it rides the Actions cache): if the hosted copy is reachable but
+# has lost it (a restore that died midway), the archive's copy is used instead.
+STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals"
+RECORD_TABLES="ops.projections ops.projection_drift"
+RECORD_DIR="$RAW_DIR/record"   # one <schema>.<table>.sql.gz per record table
+
+is_record() { case " $RECORD_TABLES " in *" $1 "*) return 0;; esac; return 1; }
 
 restore_state() {
-  local t n h
+  local t n h rc
   for t in $STATE_TABLES; do
     n="$(q "select count(*) from $t")" || return 1
     if [ "$n" != 0 ]; then echo "$t: $n rows here, kept"; continue; fi
-    if [ -z "${LEAGUE_LAB_HOSTED_ADMIN_URL:-}" ]; then echo "$t: empty, no hosted copy configured to restore from"; continue; fi
-    h="$(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -Atqc "select count(*) from $t" 2>/dev/null || echo 0)"
-    if [ "$h" = 0 ]; then echo "$t: empty here and on the hosted copy"; continue; fi
+    if [ -z "${LEAGUE_LAB_HOSTED_ADMIN_URL:-}" ]; then
+      echo "$t: empty, no hosted copy configured to restore from"
+      is_record "$t" && restore_record_from_archive "$t"
+      continue
+    fi
+    h="$(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -Atqc "select count(*) from $t" 2>&1 | head -1)"; rc=${PIPESTATUS[0]}
+    if [ "$rc" != 0 ]; then
+      if is_record "$t"; then
+        echo "$t: cannot read the hosted copy ($h)" >&2
+        echo "$t: the decision record cannot be verified; refusing to refit every played week blind" >&2
+        return 1
+      fi
+      echo "$t: cannot read the hosted copy ($h); the backtests step recomputes it"
+      continue
+    fi
+    if [ "$h" = 0 ]; then
+      echo "$t: empty here and on the hosted copy"
+      is_record "$t" && restore_record_from_archive "$t"
+      continue
+    fi
     if pg_dump "$LEAGUE_LAB_HOSTED_ADMIN_URL" --data-only --no-owner --no-privileges --table "$t" \
-         | psql "$LOCAL_DSN" -v ON_ERROR_STOP=1 -q --single-transaction; then
-      echo "$t: restored $(q "select count(*) from $t") rows from the hosted copy"
+         | psql "$LOCAL_DSN" -v ON_ERROR_STOP=1 -q --single-transaction 2>&1 | grep -v '^ *set_config\|^ *setval\|^ *-*$\|^(1 row)$'; then :; fi
+    n="$(q "select count(*) from $t")" || return 1
+    if [ "$n" = "$h" ]; then
+      echo "$t: restored $n rows from the hosted copy"
+    elif is_record "$t"; then
+      echo "$t: restore from the hosted copy failed ($n of $h rows); the decision record must not be refit blind" >&2
+      return 1
     else
-      echo "$t: restore from the hosted copy failed (a backtest is recomputed below; projections are refit for every week, so tonight's played weeks count as refit values)"
+      echo "$t: restore from the hosted copy failed ($n of $h rows); the backtests step recomputes it"
+    fi
+  done
+}
+
+# the archive's copy of the record (written by save_record after every successful `project`)
+restore_record_from_archive() {  # restore_record_from_archive <table>
+  local t="$1" n f="$RECORD_DIR/$1.sql.gz"
+  if [ ! -f "$f" ]; then
+    echo "$t: no copy in the archive either ($f): first publication, or the record is gone"
+    in_ci && echo "::warning title=decision record::$t is empty on the hosted copy and in the archive: tonight starts a new record (every played week becomes a refit value)"
+    return 0
+  fi
+  echo "$t: taking the archive's copy ($(stat -c %y "$f" | cut -c1-19)) ..."
+  if gunzip -c "$f" | psql "$LOCAL_DSN" -v ON_ERROR_STOP=1 -q --single-transaction >/dev/null 2>&1; then :; fi
+  n="$(q "select count(*) from $t")" || return 1
+  if [ "$n" = 0 ]; then
+    echo "$t: the archive's copy did not restore" >&2
+    return 1
+  fi
+  echo "$t: restored $n rows from the archive's copy"
+}
+
+save_record() {  # a copy of each record table next to the archive, so it rides the Actions cache
+  local t f
+  mkdir -p "$RECORD_DIR"
+  for t in $RECORD_TABLES; do
+    f="$RECORD_DIR/$t.sql.gz"
+    if pg_dump "$LOCAL_DSN" --data-only --no-owner --no-privileges --table "$t" | gzip -1 > "$f.tmp"; then
+      mv "$f.tmp" "$f"
+      echo "$t: saved to $f ($(du -h "$f" | cut -f1))"
+    else
+      rm -f "$f.tmp"
+      echo "$t: could not save to $f" >&2
+      return 1
     fi
   done
 }
@@ -321,6 +389,7 @@ else
   FAILED+=(project)
   finish
 fi
+soft save-record save_record
 # the projection marts on tonight's projections (+ mart_projection_backtest+: dbt's view swap
 # cascades to mart_projection_drift, which must be rebuilt or it never reaches the hosted copy)
 # and the lineup mart on the lineups `project` solved last (plan B1)

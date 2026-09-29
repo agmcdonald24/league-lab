@@ -90,7 +90,10 @@ HGB = dict(max_iter=300, learning_rate=0.04, max_leaf_nodes=15, min_samples_leaf
 def load_frame(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
     cols = ["gsis_id", "season", "week", "position", "player_name", "team", "opponent", "played", "points_actual", "no_history",
             "report_status", "roster_status", *[f for f in FEATURES if f != "questionable"], *[f"out_{c}" for c in ALL_COMPONENTS]]
-    sql = f"select {', '.join(dict.fromkeys(cols))} from analytics.mart_player_week_features where season = any(%s) and position = any(%s)"
+    # ordered: the early-stopping validation split (automatic above 10k rows) follows row order, so an
+    # unordered scan (synchronized seq scans on a 60 MB table) made two fits of the same data differ
+    sql = (f"select {', '.join(dict.fromkeys(cols))} from analytics.mart_player_week_features "
+           "where season = any(%s) and position = any(%s) order by gsis_id, season, week")
     with conn.cursor() as cur:
         cur.execute(sql, (seasons, list(POSITIONS)))
         names = [d.name for d in cur.description]
