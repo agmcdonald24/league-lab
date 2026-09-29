@@ -11,7 +11,15 @@ import numpy as np
 import pytest
 
 from league_lab import db, lineup
-from league_lab.lineup import SLOT_ELIGIBILITY, LineupInputs, Player, build, parse_slots, solve
+from league_lab.lineup import (
+    SLOT_ELIGIBILITY,
+    LineupInputs,
+    Player,
+    build,
+    parse_slots,
+    solve,
+    starter_slots,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRUBS = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "FLEX", "K", "DEF", "BN", "BN", "BN", "BN", "BN"]
@@ -411,6 +419,74 @@ def test_build_proposed_realised_locks_byes_and_flags():
     assert t3["empty_slots"] == "RB, SUPER_FLEX" and t3["lineup_value"] == 21 + 8 + 9.5 + 4   # total unchanged
     assert (t3["n_unvalued"], t3["n_ppg_valued"], t3["weakest_slot"], t3["weakest_margin"]) == (1, 2, "K", 1.5)
     assert t3["bench_value"] == 8.0                                  # the rookie K; the unvalued add nothing
+
+
+def test_starter_slots_follow_roster_positions_without_bench():
+    rp = ["QB", "RB", "WR", "FLEX", "DL", "K", "DEF", "BN", "BN", "IR", "TAXI"]
+    assert starter_slots(rp, ["q", "r", "0", "w", "idp", "k", "CLE"]) == {
+        "q": "QB", "r": "RB", "w": "FLEX", "idp": "DL", "k": "K", "CLE": "DEF"}     # "0" = empty WR; DL keeps its place
+    assert starter_slots(rp, ["q", "r"]) == {"q": "QB", "r": "RB"} and starter_slots(rp, None) == {}
+
+
+def _no_list_inputs(weekly: bool = False) -> LineupInputs:
+    """Week 1 in progress with NO Sleeper weekly list (the fetch has not run since Thursday): PIT @ CLE has
+    kicked off, KC and BUF have not. Sleeper's `starters` array: QB Watson (CLE), RB Hunt (KC), WR "0"
+    (empty), FLEX Pickens (PIT), DL an IDP, K Butker (KC), DEF Cleveland."""
+    kick = datetime(2026, 9, 11, 0, 15, tzinfo=UTC)
+    games = {1: {"CLE": kick, "PIT": kick, "KC": kick + timedelta(days=3), "BUF": kick + timedelta(days=3, hours=4)}}
+    roster = [("q", "g-q", "Watson", "QB", "CLE"), ("r", "g-r", "Hunt", "RB", "KC"), ("w", "g-w", "Pickens", "WR", "PIT"),
+              ("idp", None, "Garrett", "DL", "KC"), ("k", "g-k", "Butker", "K", "KC"), ("CLE", None, "Browns", "DEF", "CLE"),
+              ("rp", "g-rp", "Warren", "RB", "PIT"), ("rb", "g-rb", "Cook", "RB", "BUF"), ("wk", "g-wk", "Rice", "WR", "KC")]
+    cur = [{"sleeper_player_id": sid, "gsis_id": g, "player_name": n, "position": pos, "nfl_team": t, "is_on_ir": False,
+            "is_on_taxi": False} for sid, g, n, pos, t in roster]
+    proj = {("L", 1, g): {"proj_points": pts, "team": t, "report_status": None, "roster_status": "ACT"}
+            for g, t, pts in [("g-q", "CLE", 20.0), ("g-r", "KC", 6.0), ("g-w", "PIT", 11.0), ("g-rp", "PIT", 16.0),
+                              ("g-rb", "BUF", 14.0), ("g-wk", "KC", 9.0)]}
+    rp = ["QB", "RB", "WR", "FLEX", "DL", "K", "DEF", "BN", "BN", "BN", "BN"]
+    weekly_list = {}
+    if weekly:   # a Sleeper list for the week says Pickens sits and Warren starts at FLEX: the list wins
+        weekly_list = {("L", 1): {1: [{**r, "is_starter": r["sleeper_player_id"] in {"q", "r", "rp", "idp", "k", "CLE"},
+                                       "slot": {"q": "QB", "r": "RB", "rp": "FLEX", "idp": "DL", "k": "K", "CLE": "DEF"}.get(r["sleeper_player_id"]),
+                                       "points_observed": None, "is_scored_week": False} for r in cur]}}
+    return LineupInputs(
+        season=2026, leagues=[{"league_id": "L", "roster_positions": rp, "last_scored_leg": 0, "roster_ids": [1]}],
+        weeks={"L": [1]}, proj=proj, weekly=weekly_list, current={"L": {1: cur}},
+        sleeper={r["sleeper_player_id"]: {"position": r["position"], "fantasy_positions": [r["position"]], "team": r["nfl_team"]} for r in cur},
+        k_ppg={("L", "g-k"): 8.0}, games=games, model_version="v2.0",
+        starters={("L", 1): ["q", "r", "0", "w", "idp", "k", "CLE"]})
+
+
+def test_build_locks_todays_starters_when_the_week_has_no_sleeper_list():
+    as_of = datetime(2026, 9, 11, 12, 0, tzinfo=UTC)                # PIT @ CLE under way, KC / BUF not yet
+    rows, totals, _ = build(_no_list_inputs(), as_of=as_of)
+    r = {x["sleeper_player_id"]: x for x in rows if x["sleeper_player_id"]}
+    # started starters are locked in the slot Sleeper's array implies (no margin: not a decision)
+    assert {k: (r[k]["slot"], r[k]["is_locked"], r[k]["margin"]) for k in ("q", "w", "CLE")} == {
+        "q": ("QB", True, None), "w": ("FLEX", True, None), "CLE": ("DEF", True, None)}
+    assert r["CLE"]["value_source"] == "unvalued"                  # a locked DEF with no Sleeper points yet: 0
+    # a started bench player cannot come in, although he out-projects everyone at RB
+    assert (r["rp"]["role"], r["rp"]["reason"]) == ("unplayable", "game started (bench)")
+    # the rest is solved: Sleeper's RB starter Hunt (KC, not started) is free to move and loses RB to Cook;
+    # the empty ("0") WR slot is filled by Rice; the K stays; the IDP has no modelled slot
+    assert (r["rb"]["slot"], r["wk"]["slot"], r["k"]["slot"], r["r"]["role"]) == ("RB", "WR", "K", "bench")
+    assert not r["r"]["is_locked"] and r["idp"]["reason"] == "no DL slot in this lineup"
+    t = totals[0]
+    rest = solve([Player(id=i, position=pos, value=v) for i, pos, v in [("r", "RB", 6.0), ("rb", "RB", 14.0), ("wk", "WR", 9.0), ("k", "K", 8.0)]],
+                 ["RB", "WR", "K"])                                # the open slots once QB, FLEX and DEF are locked
+    assert t["lineup_value"] == pytest.approx(20.0 + 11.0 + 0.0 + rest.total) == 62.0
+    assert (t["n_locked"], t["slots_filled"], t["empty_slots"], t["weakest_slot"]) == (3, 6, None, "K")   # RB 14-6 ties K 8: lower value
+    # before the kickoff nothing is locked: Warren (16) starts at RB, Pickens at WR, Cook at FLEX
+    rows, totals, _ = build(_no_list_inputs(), as_of=datetime(2026, 9, 10, 12, 0, tzinfo=UTC))
+    r = {x["sleeper_player_id"]: x for x in rows if x["sleeper_player_id"]}
+    assert (r["rp"]["slot"], r["w"]["slot"], r["rb"]["slot"], totals[0]["n_locked"]) == ("RB", "WR", "FLEX", 0)
+    assert totals[0]["lineup_value"] == 20 + 16 + 11 + 14 + 8 + 0
+
+
+def test_build_prefers_the_weekly_list_to_todays_starters():
+    rows, totals, _ = build(_no_list_inputs(weekly=True), as_of=datetime(2026, 9, 11, 12, 0, tzinfo=UTC))
+    r = {x["sleeper_player_id"]: x for x in rows if x["sleeper_player_id"]}
+    assert (r["rp"]["slot"], r["rp"]["is_locked"]) == ("FLEX", True)    # the list's FLEX, not the array's
+    assert (r["w"]["role"], r["w"]["reason"]) == ("unplayable", "game started (bench)")
 
 
 # ------------------------------------------------------------------------------ DDL copies agree

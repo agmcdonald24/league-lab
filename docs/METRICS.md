@@ -449,11 +449,16 @@ slot for his position in this league; in a week not yet
 scored also the Sleeper IR slot and the taxi squad (today's roster flags; unknown for past weeks, so not
 applied there) and "game started (bench)". **Questionable plays** and is flagged (`report_status`).
 **Locks**: in a week Sleeper has not scored, a player whose game kicked off before `as_of` stays where
-Sleeper had him — a starter keeps his slot (value counted, no margin), a bench player stays benched.
+Sleeper had him — a starter keeps his slot (value counted, no margin), a bench player stays benched
+("game started (bench)"); a starter whose game has not started is free to move. Where he was comes from
+Sleeper's list for that week when it exists, otherwise from today's roster: Sleeper's `starters` array
+(`stg_sleeper__rosters.starter_ids`), ordered like `roster_positions` without BN / IR / TAXI (IDP slots
+keep their place), "0" = an empty slot. So a Thursday game is locked correctly even when the weekly
+list has not been fetched yet (B1 follow-up 2).
 
-**Rosters.** Per week the roster is Sleeper's list for that week when there is one (every week played
-so far, including the one in progress, which carries the slots of locked starters), otherwise today's
-roster. Proposed lineups of weeks already scored are the pre-kickoff counterfactual on that week's
+**Rosters.** Per week the roster is Sleeper's list for that week when there is one (first choice: every
+week played so far, including the one in progress), otherwise today's roster with today's starters in
+the slots Sleeper's `starters` array implies. Proposed lineups of weeks already scored are the pre-kickoff counterfactual on that week's
 roster (no locks): what projection v2 would have started, for comparison with the realised optimum.
 
 **Checks.** `tests/test_lineup.py` compares `solve()` with exhaustive enumeration of every legal lineup
