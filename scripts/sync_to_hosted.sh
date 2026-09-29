@@ -32,8 +32,9 @@ LOCAL_DSN="$(uv run python -c 'from league_lab.config import get_settings; print
 # Roles are cluster-wide: pointing this at the local cluster would rewrite the local app role's
 # password. Refuse unless explicitly allowed (only useful for a simulation).
 local_host="$(uv run python -c 'from league_lab.config import get_settings; s=get_settings(); print(f"{s.db_host}:{s.db_port}")')"
+# (with or without a port: postgresql://u:p@localhost/db is the local cluster too)
 case "$LEAGUE_LAB_HOSTED_ADMIN_URL" in
-  *"@${local_host}/"*|*"@localhost:"*|*"@127.0.0.1:"*)
+  *"@${local_host}/"*|*"@${local_host%:*}/"*|*"@localhost:"*|*"@localhost/"*|*"@127.0.0.1:"*|*"@127.0.0.1/"*)
     if [ "${LEAGUE_LAB_HOSTED_ALLOW_LOCAL:-}" != "1" ]; then
       echo "refusing: LEAGUE_LAB_HOSTED_ADMIN_URL points at the local cluster (${local_host}); set LEAGUE_LAB_HOSTED_ALLOW_LOCAL=1 only for a simulation" >&2
       exit 4
