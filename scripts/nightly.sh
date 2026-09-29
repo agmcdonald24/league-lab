@@ -4,11 +4,12 @@
 # (.github/workflows/nightly.yml) against a throwaway Postgres, the Mac runs it through
 # scripts/refresh.sh (launchd 08:00), and anyone can run it by hand.
 #
-#   migrate → restore state (a fresh database takes the backtests from the hosted copy)
+#   migrate → restore state (a fresh database takes the backtests, the frozen projection record and
+#     the drift history from the hosted copy)
 #   → replay the archive (data/raw: Sleeper, nflverse history, nflverse current season; --offline)
 #   → live fetch (Sleeper, nflverse current season; conditional requests)
 #   → dbt build → backtests (only when missing or made by another model version)
-#   → project (projection v2) → projection marts → drift
+#   → project (projection v2, then the lineups solved on it) → projection + lineup marts → drift
 #   → backup (NIGHTLY_BACKUP=1) → hosted sync (when LEAGUE_LAB_HOSTED_ADMIN_URL is set)
 #
 # Usage:  scripts/nightly.sh           the nightly run
@@ -195,11 +196,16 @@ dbt_step() {  # dbt_step <name> <dbt args...>
 }
 
 # State the archive cannot rebuild: the two backtests behind the Rankings scoreboards (written by
-# `league-lab backtest` and `backtest-v2`, the latter minutes of CPU). A fresh database (every CI
-# run) copies them back from the hosted copy, where the last sync put them; they are recomputed
-# after the build only when neither place has them, when they come from another MODEL_VERSION, or
-# on request (NIGHTLY_BACKTESTS=1). On the Mac they are already in the database: nothing happens.
-STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance"
+# `league-lab backtest` and `backtest-v2`, the latter minutes of CPU), the projection record
+# (`ops.projections`: each league-week's board is frozen at its first kickoff, plan B5, so a fresh
+# database must start from the published record or `project` would refit every played week) and
+# the drift history scored on it (`ops.projection_drift`). A fresh database (every CI run) copies
+# them back from the hosted copy, where the last sync put them (the sync publishes all of `ops`);
+# the backtests are recomputed after the build only when neither place has them, when they come
+# from another MODEL_VERSION, or on request (NIGHTLY_BACKTESTS=1). On the Mac every table is
+# already in the database: nothing happens. Lineups (`ops.lineups`, `ops.lineup_totals`) are not
+# state: `project` re-solves the season from the frozen projections and Sleeper's weekly rosters.
+STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift"
 
 restore_state() {
   local t n h
@@ -213,7 +219,7 @@ restore_state() {
          | psql "$LOCAL_DSN" -v ON_ERROR_STOP=1 -q --single-transaction; then
       echo "$t: restored $(q "select count(*) from $t") rows from the hosted copy"
     else
-      echo "$t: restore from the hosted copy failed; the backtests step recomputes it"
+      echo "$t: restore from the hosted copy failed (a backtest is recomputed below; projections are refit for every week, so tonight's played weeks count as refit values)"
     fi
   done
 }
@@ -316,7 +322,8 @@ else
 fi
 # the projection marts on tonight's projections (+ mart_projection_backtest+: dbt's view swap
 # cascades to mart_projection_drift, which must be rebuilt or it never reaches the hosted copy)
-hard projection-marts dbt_step projection-marts build --select mart_player_week_projections+ mart_projection_backtest+
+# and the lineup mart on the lineups `project` solved last (plan B1)
+hard projection-marts dbt_step projection-marts build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+
 soft drift drift_if_unscored
 
 # 4. Keep and publish.

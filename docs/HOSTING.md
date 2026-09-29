@@ -202,11 +202,16 @@ about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; t
   data: the next run downloads the history again and Sleeper's live fetch reloads the whole chain.
 
 What the archive cannot rebuild: the two backtests behind the Rankings scoreboards
-(`league-lab backtest`, `backtest-v2`). The runner's database is new every night, so it copies them
-back from the hosted copy (where the previous sync put them) before the build. They are recomputed
-only when neither place has them (the first run, if the hosted copy never had them), when the
-projection model's version changed, or when a manual run ticks *"Recompute both backtests"*;
-`backtest-v2` then adds about 15 minutes to that run. A licensed routes file imported on the Mac
+(`league-lab backtest`, `backtest-v2`), the projection record (`ops.projections`: a league-week's
+board is frozen at its first kickoff and never rewritten — the decision record, plan B5) and the
+drift history scored on it (`ops.projection_drift`). The runner's database is new every night, so
+it copies all of them back from the hosted copy (where the previous sync put them: the sync
+publishes the whole `ops` schema) before the build. Without that restore every played week would be
+refit from scratch each night and the "kickoff board" share on Rankings would read 0%. The backtests
+are recomputed only when neither place has them (the first run, if the hosted copy never had them),
+when the projection model's version changed, or when a manual run ticks *"Recompute both
+backtests"*; `backtest-v2` then adds about 15 minutes to that run. The lineups (`ops.lineups`) are
+not state: `project` re-solves the season from the frozen projections and Sleeper's weekly rosters. A licensed routes file imported on the Mac
 (`import-routes`) is not in the archive either; while GitHub publishes, the pages show the routes
 proxy.
 
