@@ -68,26 +68,29 @@ of a started week), outcomes from `mart_player_week_projections`.
 `ops.lineups` (B1, exact lineup service) — per league_id × season × week × roster_id × `is_realised`
 (false = the **proposed** lineup from projection v2, true = the **realised** optimum at Sleeper's points
 for weeks Sleeper has scored), one row per starting slot and per rostered player:
-`role` = `starter` | `empty` (a starting slot nobody can fill: player columns NULL) | `bench` (playable,
-not starting; `bench_rank` 1 = best value) | `unplayable` (`reason`: `bye`, `Out`, `Doubtful`, `NFL injured
-reserve`, `IR slot`, `taxi squad`, `game started (bench)`, `no projection`, `no NFL id`, `no NFL team`,
-`no season PPG yet`, `no <POS> slot in this lineup`, …). Starting rows carry `slot` (unique label within
+`role` = `starter` | `empty` (a starting slot nobody on the roster is eligible for this week — or, in a
+realised lineup, only a negative scorer: player columns NULL) | `bench` (playable, not starting;
+`bench_rank` 1 = best value) | `unplayable` (`reason`: `bye`, `Out`, `Doubtful`, `NFL injured reserve`,
+`IR slot`, `taxi squad`, `game started (bench)`, `no NFL team`, `no <POS> slot in this lineup`, …). A
+playable player with no value yet is a starter or bench row with `value` 0, `value_source` `unvalued`
+and `reason` `no value yet` (seated only where nobody valued can play). Starting rows carry `slot` (unique label within
 the lineup: `QB`, `RB1`, `RB2`, `FLEX1`, `SUPER_FLEX`, … — numbered only when the slot repeats; same-type
 slots list the better player first), `slot_type` (the Sleeper slot), `slot_order` (position in
 `roster_positions`), `margin` (lineup total minus the best total without him, re-solved; NULL for an
 empty slot and a locked player) and `is_locked` (his game has kicked off in a week not yet scored).
 Every row: `sleeper_player_id`, `gsis_id` (NULL when unmapped: DEF, a rookie K), `player_name`
-(Sleeper's), `position` (Sleeper's), `value` (NULL = unknown, never 0), `value_source` (`proj_points` |
-`season_ppg` | `observed_ppg` | `sleeper_observed`), `report_status` (injury report; Questionable plays),
+(Sleeper's), `position` (Sleeper's), `value` (NULL = unknown on an unplayable row; 0 on an `unvalued`
+row), `value_source` (`proj_points` | `season_ppg` | `observed_ppg` | `unvalued` | `sleeper_observed`), `report_status` (injury report; Questionable plays),
 `model_version` (proposed only), `run_at`. Keys: (league, season, week, roster, is_realised, slot) where
 slot is set; (…, sleeper_player_id) where set — a player appears once per lineup (source tests).
 
 `ops.lineup_totals` (B1) — one row per lineup (league_id × season × week × roster_id × is_realised):
 `lineup_value` (sum of the starters' known values), `bench_value` (the best legal lineup the playable
 bench alone would field), `slots_total`, `slots_filled`, `empty_slots` (comma-separated labels or NULL),
-`weakest_slot` / `weakest_margin` / `weakest_sleeper_player_id` (the unlocked starter with the smallest
+`weakest_slot` / `weakest_margin` / `weakest_sleeper_player_id` (the unlocked, valued starter with the smallest
 margin), `n_players`, `n_bench`, `n_unplayable`, `n_locked`, `n_questionable` (starters), `n_ppg_valued`
-(starters valued by a season PPG instead of a projection), `as_of` (the time kickoffs were judged
+(starters valued by a season PPG instead of a projection), `n_unvalued` (starters seated with no value
+yet; added 2026-09-29, `db migrate` / the writer / the mart's pre_hook add it to an existing table), `as_of` (the time kickoffs were judged
 against), `inputs_fingerprint` (realised rows: md5 of the Sleeper points the lineup was solved on — the
 dbt test skips a roster-week whose points changed since), `model_version`, `run_at`. Both tables are
 written together by `league-lab lineups` and at the end of `league-lab project` (the season's rows are
@@ -137,7 +140,7 @@ replaced in one transaction; `src/league_lab/lineup.py`).
 | `mart_league_roster_membership` | league_id, sleeper_player_id | who rosters whom now |
 | `mart_player_availability` | league_id, gsis_id | rostered-by / free agent × usage × expected gap × next matchup; points columns (`points_std`, `ppg_std`, `points_per_game_l3/_l5`, `expected_per_game`, `diff_per_game`, `games_with_expected`) in the row's league scoring via `mart_league_player_season` (S-01a); usage, shares and opponent ranks are scoring-free or reference-scored |
 | `mart_league_optimal_lineup` | league_id, week, roster_id | started vs optimal points, bench points left (greedy fill over Sleeper's points; held below the exact solver by `assert_exact_lineup_dominates_greedy`) |
-| `mart_lineup_recommendation` (view, B1) | league_id, season, week, roster_id, slot | the **proposed** lineup from `ops.lineups` / `ops.lineup_totals`, one row per starting slot (filled or empty): `slot`, `slot_type`, `slot_order`, `sleeper_player_id`, `gsis_id`, `player_name` (dim_player by gsis_id, else Sleeper's), `position`, `player_value`, `value_source`, `lineup_margin`, `is_weakest_slot`, `is_empty_slot`, `is_locked`, `report_status`, `is_questionable`; per lineup `lineup_value`, `bench_value`, `weakest_slot`, `weakest_margin`, `empty_slots`, `realised_optimal` (scored weeks), `model_version`, `as_of`, `run_at`; `team_name` / `manager_name` from dim_league_member. Tests: key unique, a player once per lineup, margin ≥ 0, weakest = smallest margin, empty slot has no player |
+| `mart_lineup_recommendation` (view, B1) | league_id, season, week, roster_id, slot | the **proposed** lineup from `ops.lineups` / `ops.lineup_totals`, one row per starting slot (filled or empty): `slot`, `slot_type`, `slot_order`, `sleeper_player_id`, `gsis_id`, `player_name` (dim_player by gsis_id, else Sleeper's), `position`, `player_value`, `value_source`, `lineup_margin`, `is_weakest_slot`, `is_empty_slot`, `is_locked`, `report_status`, `is_questionable`; per lineup `lineup_value`, `bench_value`, `weakest_slot`, `weakest_margin`, `empty_slots`, `n_unvalued`, `realised_optimal` (scored weeks), `model_version`, `as_of`, `run_at`; `team_name` / `manager_name` from dim_league_member. Tests: key unique, a player once per lineup, margin ≥ 0, weakest = smallest valued margin, an unvalued starter counts 0 with margin 0, empty slot has no player, `value_source` in (proj_points, season_ppg, observed_ppg, unvalued) |
 | `mart_league_all_play` / `_week` | league_id, roster_id / + week | all-play record, expected wins, luck |
 | `mart_league_keeper_candidates` | league_id, sleeper_player_id | acquisition cost facts + production, ranks and xPPG in the league's own scoring (S-01a) |
 | `mart_league_manager_profile` | league_id, roster_id | luck, lineup discipline, activity, roster shape |

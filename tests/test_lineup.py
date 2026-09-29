@@ -19,41 +19,50 @@ DYNASTY = ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "SUPER_FLEX", *["BN"] * 1
 
 
 # ------------------------------------------------------------------------------ the yardstick
-def _ok(p: Player) -> bool:
-    return p.playable and p.value is not None and math.isfinite(p.value)
+def _unvalued(p: Player) -> bool:
+    """No value yet: playable (or locked) without a finite value, or labelled unvalued: counts 0."""
+    return p.value_source == "unvalued" or p.value is None or not math.isfinite(p.value)
 
 
-def brute(players: list[Player], slots: list[str]) -> float:
-    """Best total over every legal lineup, by enumeration: each slot takes nobody or one unused
-    eligible player; locked players must sit in a slot of their locked type; players who cannot
-    play (or have no value) never start. Independent of the solver's internals."""
+def _v(p: Player) -> float:
+    return 0.0 if _unvalued(p) else p.value
+
+
+def brute(players: list[Player], slots: list[str]) -> tuple[float, int, int]:
+    """The best legal lineup by enumeration, under the objective the solver promises: total first,
+    filled slots second, valued starters third. Each slot takes nobody or one unused eligible player;
+    locked players must sit in a slot of their locked type; players who cannot play never start; a
+    player with no value yet counts 0. Returns (total, filled, valued). Independent of the solver."""
     types = [s.type for s in parse_slots(slots)[0]]
     locked = [p for p in players if p.locked_slot is not None]
-    free = [p for p in players if p.locked_slot is None and _ok(p)]
-    best = -math.inf
+    free = [p for p in players if p.locked_slot is None and p.playable]
+    best = (-math.inf, 0, 0)
 
-    def rec(j: int, used: frozenset, total: float) -> None:
+    def rec(j: int, used: frozenset, total: float, filled: int, valued: int) -> None:
         nonlocal best
         if j == len(types):
             if all(p.id in used for p in locked):
-                best = max(best, total)
+                best = max(best, (round(total, 6), filled, valued))
             return
-        rec(j + 1, used, total)                                    # leave the slot empty
-        for p in locked:
-            if p.id not in used and p.locked_slot == types[j]:
-                rec(j + 1, used | {p.id}, total + (p.value or 0.0))
-        for p in free:
-            if p.id not in used and p.positions & SLOT_ELIGIBILITY[types[j]]:
-                rec(j + 1, used | {p.id}, total + p.value)
+        rec(j + 1, used, total, filled, valued)                    # leave the slot empty
+        for p in [*(q for q in locked if q.locked_slot == types[j]),
+                  *(q for q in free if q.positions & SLOT_ELIGIBILITY[types[j]])]:
+            if p.id not in used:
+                rec(j + 1, used | {p.id}, total + _v(p), filled + 1, valued + (not _unvalued(p)))
 
-    rec(0, frozenset(), 0.0)
+    rec(0, frozenset(), 0.0, 0, 0)
     return best
 
 
 def check(players: list[Player], slots: list[str]) -> lineup.Lineup:
-    """solve() == enumeration: total, legality, bench, and every margin re-solved by brute force."""
+    """solve() == enumeration: total, filled slots and valued starters, legality, bench, and every
+    margin re-solved by brute force."""
     lu = solve(players, slots)
-    assert lu.total == pytest.approx(brute(players, slots), abs=1e-6)
+    total, filled, valued = brute(players, slots)
+    starters = [s.player for s in lu.starts if s.player is not None]
+    assert lu.total == pytest.approx(total, abs=1e-6)
+    assert len(starters) == filled, "an otherwise-empty slot left empty (or one filled too many)"
+    assert sum(p.value_source != "unvalued" for p in starters) == valued, "an unvalued player displaced a valued one"
     by_id = {p.id: p for p in players}
     seen = []
     for s in lu.starts:
@@ -65,16 +74,19 @@ def check(players: list[Player], slots: list[str]) -> lineup.Lineup:
             assert p.locked_slot == s.slot.type and s.margin is None
         else:
             assert p.positions & SLOT_ELIGIBILITY[s.slot.type], (p, s.slot)
-            assert _ok(by_id[p.id])
+            assert by_id[p.id].playable
             without = [q for q in players if q.id != p.id]
-            assert s.margin == pytest.approx(lu.total - brute(without, slots), abs=1e-6), (p.id, s.slot.label)
+            assert s.margin == pytest.approx(lu.total - brute(without, slots)[0], abs=1e-6), (p.id, s.slot.label)
             assert s.margin >= 0
+        if p.value_source == "unvalued":
+            assert p.value == 0.0 and p.reason and (s.margin == 0.0 or s.locked)
     assert len(seen) == len(set(seen)), "a player in two slots"
     assert sum(s.value or 0.0 for s in lu.starts) == pytest.approx(lu.total, abs=1e-6)
     bench_vals = [p.value for p in lu.bench]
     assert bench_vals == sorted(bench_vals, reverse=True)
     assert {p.id for p in lu.bench} | set(seen) | {p.id for p in lu.unplayable} == {p.id for p in players}
     assert not ({p.id for p in lu.bench} & set(seen))
+    assert lu.weakest is None or lu.weakest.player.value_source != "unvalued"
     return lu
 
 
@@ -163,13 +175,50 @@ def test_dual_eligibility():
     check([qbte, P("q1", "QB", 20), P("t1", "TE", 8)], ["QB", "TE"])
 
 
-def test_byes_injuries_and_no_value_never_start():
+def test_byes_and_injuries_never_start():
     ps = [P("r1", "RB", 25, playable=False, reason="bye"), P("r2", "RB", 20, playable=False, reason="Out"),
           P("r3", "RB", 10, status="Questionable"), P("r4", "RB", None), P("r5", "RB", 4)]
     lu = check(ps, ["RB", "FLEX"])
     assert set(lu.starter_ids) == {"r3", "r5"}
-    assert {p.id: p.reason for p in lu.unplayable} == {"r1": "bye", "r2": "Out", "r4": "no value"}
+    assert {p.id: p.reason for p in lu.unplayable} == {"r1": "bye", "r2": "Out"}
     assert lu.lineup["RB"][0].status == "Questionable"             # plays, flagged
+    assert [(p.id, p.value, p.value_source, p.reason) for p in lu.bench] == [("r4", 0.0, "unvalued", "no value yet")]
+
+
+# ------------------------------------------------------------------------------ unvalued (no value yet)
+def test_the_only_k_is_unvalued_so_he_is_seated_at_zero():
+    ps = [P("q1", "QB", 18), P("r1", "RB", 9), Player(id="k1", position="K", value=None, reason="no value yet")]
+    lu = check(ps, ["QB", "RB", "K"])
+    k = lu.lineup["K"][0]
+    assert (k.id, k.value, k.value_source) == ("k1", 0.0, "unvalued") and lu.empty_slots == []
+    assert lu.total == pytest.approx(27) and lu.margins["K"] == 0.0     # total unchanged, margin 0
+    assert lu.weakest.slot.label == "RB"                                # not a decision: never the weakest
+
+
+def test_an_unvalued_wr_sits_behind_valued_wrs():
+    ps = [P("w1", "WR", 12), P("w2", "WR", 9), P("wu", "WR", None), P("w0", "WR", 0.0)]
+    lu = check(ps, ["WR", "WR"])
+    assert set(lu.starter_ids) == {"w1", "w2"} and lu.total == pytest.approx(21)
+    assert [p.id for p in lu.bench] == ["w0", "wu"]                     # both at 0; valued first
+    # at a tie with a valued player worth exactly 0, the valued one starts
+    lu = check([P("w0", "WR", 0.0), P("wu", "WR", None)], ["WR"])
+    assert lu.starter_ids == ["w0"]
+    # an explicit value_source="unvalued" is carried at 0 whatever value it came with
+    lu = check([Player(id="x", position="WR", value=7.0, value_source="unvalued"), P("w", "WR", 1.0)], ["WR"])
+    assert lu.starter_ids == ["w"] and lu.bench[0].value == 0.0
+
+
+def test_an_unvalued_player_fills_an_otherwise_empty_flex():
+    ps = [P("r1", "RB", 10), P("w1", "WR", 8), Player(id="ru", position="RB", value=None)]
+    lu = check(ps, ["RB", "WR", "FLEX", "TE"])
+    assert lu.lineup["FLEX"][0].id == "ru" and lu.total == pytest.approx(18)
+    assert lu.empty_slots == ["TE"]                                     # empty = nobody eligible at all
+    # filled slots second: the valued WR takes WR so the unvalued RB can take FLEX (not WR at FLEX, WR empty)
+    lu = check([P("a", "WR", 5), Player(id="u", position="RB", value=None)], ["WR", "FLEX"])
+    assert (slot_of(lu, "a"), slot_of(lu, "u")) == ("WR", "FLEX")
+    # locked with no value: seated in his slot at 0, no margin
+    lu = check([Player(id="d", position="DEF", value=None, locked_slot="DEF"), P("q", "QB", 20)], ["QB", "DEF"])
+    assert lu.lineup["DEF"][0].value_source == "unvalued" and lu.starts[1].locked and lu.starts[1].margin is None
 
 
 def test_locked_starter_keeps_his_slot():
@@ -204,6 +253,8 @@ def test_k_and_def_present_and_absent():
     lu = check(ps, DYNASTY)                                        # no K / DEF slot: they cannot play here
     assert {p.id: p.reason for p in lu.unplayable} == {"k1": "no K slot in this lineup", "k2": "no K slot in this lineup",
                                                        "d1": "no DEF slot in this lineup"}
+    lu = solve([Player(id="k", position="K", value=None), P("q", "QB", 9)], DYNASTY)   # no K slot and no value:
+    assert (lu.unplayable[0].value, lu.unplayable[0].value_source) == (None, None)  # unknown stays NULL
 
 
 def test_a_negative_value_never_beats_an_empty_slot_and_zero_still_fills():
@@ -225,7 +276,7 @@ def test_dicts_are_accepted_as_player_records():
     assert lu.starter_ids == ["a"]
 
 
-@pytest.mark.parametrize("seed", range(160))
+@pytest.mark.parametrize("seed", range(240))
 def test_random_rosters_match_enumeration(seed):
     rng = np.random.default_rng(seed)
     pool = ["QB", "RB", "WR", "TE", "K", "DEF", "FLEX", "SUPER_FLEX", "REC_FLEX", "WRRB_FLEX"]
@@ -240,8 +291,11 @@ def test_random_rosters_match_enumeration(seed):
             open_types = [t for t in slots if SLOT_ELIGIBILITY[t] & {pos, *(fp or ())}
                           and slots.count(t) > sum(p.locked_slot == t for p in players)]
             lock = str(rng.choice(open_types)) if open_types else None
-        players.append(Player(id=f"p{i}", position=pos, value=value if rng.random() > 0.05 else None,
-                              playable=bool(rng.random() > 0.1), locked_slot=lock, fantasy_positions=fp))
+        r = rng.random()
+        value = None if r < 0.15 else (0.0 if r < 0.22 else value)          # unvalued / valued at exactly 0
+        players.append(Player(id=f"p{i}", position=pos, value=value, playable=bool(rng.random() > 0.1),
+                              locked_slot=lock, fantasy_positions=fp,
+                              value_source="unvalued" if rng.random() < 0.05 else "proj_points"))
     check(players, slots)
 
 
@@ -270,7 +324,8 @@ def test_real_slot_sets_solve_in_under_5_ms(slots, n):
 # ------------------------------------------------------------------------------ the builder
 def _inputs() -> LineupInputs:
     """One hand-made league, one roster: week 1 scored, week 2 in progress (KC played Thursday),
-    week 3 ahead with BUF on bye; a veteran K (LAR, i.e. nflverse LA) was added after week 2."""
+    week 3 ahead with BUF on bye. Added after week 2: a veteran K (LAR, i.e. nflverse LA), a WR with
+    no v2 projection and the Rams DEF (never scored in this league) — the last two have no value yet."""
     kick = datetime(2026, 9, 17, 0, 15, tzinfo=UTC)
     games = {w: {"KC": kick + timedelta(days=7 * (w - 1)), "BUF": kick + timedelta(days=7 * (w - 1), hours=60),
                  "LA": kick + timedelta(days=7 * (w - 1), hours=61)} for w in (1, 2, 3)}
@@ -282,7 +337,8 @@ def _inputs() -> LineupInputs:
                ("3", "g3", "Cook", "RB", "BUF", False, False), ("4", "g4", "Kyren", "RB", "LAR", False, False),
                ("5", "g5", "Kelce", "TE", "KC", False, False), ("6", "g6", "Hurt WR", "WR", "LAR", True, False),
                ("7", None, "Rookie K", "K", "KC", False, False), ("KC", None, "Chiefs", "DEF", "KC", False, False),
-               ("8", "g8", "Taxi RB", "RB", "KC", False, True), ("9", "g9", "Vet K", "K", "LAR", False, False)]]
+               ("8", "g8", "Taxi RB", "RB", "KC", False, True), ("9", "g9", "Vet K", "K", "LAR", False, False),
+               ("10", "g10", "New WR", "WR", "KC", False, False), ("LAR", None, "Rams", "DEF", "LAR", False, False)]]
     slot = {"1": "QB", "3": "RB", "4": "FLEX", "5": "TE", "7": "K", "KC": "DEF"}
     week_list = {w: [{**r, "is_starter": r["sleeper_player_id"] in slot, "slot": slot.get(r["sleeper_player_id"]),
                       "points_observed": obs, "is_scored_week": w == 1}
@@ -347,8 +403,14 @@ def test_build_proposed_realised_locks_byes_and_flags():
     assert (w3["9"]["slot"], w3["9"]["value"], w3["9"]["value_source"]) == ("K", 9.5, "season_ppg")
     assert w3["7"]["role"] == "bench" and w3["1"]["slot"] == "QB" and w3["1"]["margin"] == pytest.approx(21.0)
     t3 = tot[(3, False)]
-    assert t3["empty_slots"] == "RB, FLEX, SUPER_FLEX" and t3["lineup_value"] == 21 + 8 + 9.5 + 4
-    assert (t3["n_ppg_valued"], t3["weakest_slot"], t3["weakest_margin"], t3["bench_value"]) == (2, "K", 1.5, 8.0)
+    # the WR without a projection fills the otherwise-empty FLEX at 0 (unvalued); RB / SUPER_FLEX: nobody eligible
+    assert (w3["10"]["slot"], w3["10"]["value"], w3["10"]["value_source"], w3["10"]["reason"], w3["10"]["margin"]) == \
+        ("FLEX", 0.0, "unvalued", "no value yet", 0.0)
+    # the Rams DEF has no value yet and sits behind the Chiefs DEF (valued at Sleeper's PPG)
+    assert (w3["LAR"]["role"], w3["LAR"]["value_source"], w3["KC"]["slot"]) == ("bench", "unvalued", "DEF")
+    assert t3["empty_slots"] == "RB, SUPER_FLEX" and t3["lineup_value"] == 21 + 8 + 9.5 + 4   # total unchanged
+    assert (t3["n_unvalued"], t3["n_ppg_valued"], t3["weakest_slot"], t3["weakest_margin"]) == (1, 2, "K", 1.5)
+    assert t3["bench_value"] == 8.0                                  # the rookie K; the unvalued add nothing
 
 
 # ------------------------------------------------------------------------------ DDL copies agree

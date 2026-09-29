@@ -7,7 +7,9 @@ Newest first. The Home page shows the top entry as "What's new".
 - Behind the pages, League Lab now works out the **best legal lineup** for every team in both leagues, every
   week: all slots solved together (FLEX and superflex included — a WR who beats your QB2 goes in the superflex),
   byes, Out / Doubtful, IR and taxi left out, Questionable flagged, players whose game has started kept where
-  they are. Each starter gets a **margin** — how many points the lineup loses without him — so the closest call
+  they are. A kicker or defense you just picked up still fills its slot, counted as 0 until Sleeper has scored him
+  in your league, and never ahead of anyone with a value; an empty slot now means nobody on the roster can play
+  there. Each starter gets a **margin** — how many points the lineup loses without him — so the closest call
   of the week is named. For weeks already played it also computes the best lineup you could have started; it
   matches Sleeper's own max points (weeks 1–2: all 22 teams, to the cent, except one where it is 1 point higher
   by leaving a −1 defense out). No page shows it yet: the start/sit, waiver and roster views are being rebuilt on it.

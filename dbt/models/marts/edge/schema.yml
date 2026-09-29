@@ -106,7 +106,13 @@ models:
           name: lineup_weakest_slot_has_the_smallest_margin
           arguments:
             expression: "lineup_margin >= weakest_margin"
-            condition: "lineup_margin is not null"
+            condition: "lineup_margin is not null and value_source <> 'unvalued'"
+      # a player with no value yet counts 0 and changes nothing: margin 0 (unless locked: no margin)
+      - expression_is_true:
+          name: lineup_unvalued_starter_counts_zero
+          arguments:
+            expression: "player_value = 0 and lineup_margin = 0 and not is_weakest_slot"
+            condition: "value_source = 'unvalued' and not is_locked"
     columns:
       - name: slot
         tests: [not_null]
@@ -118,7 +124,7 @@ models:
         tests:
           - accepted_values:
               arguments:
-                values: ["proj_points", "season_ppg", "observed_ppg"]
+                values: ["proj_points", "season_ppg", "observed_ppg", "unvalued"]
   - name: mart_league_all_play
     tests:
       - unique_combination_of_columns:
