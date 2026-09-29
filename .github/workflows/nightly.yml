@@ -1,0 +1,193 @@
+# The nightly pipeline on a GitHub-hosted runner (plan B6 / I-01): a throwaway Postgres 17, the raw
+# archive from the Actions cache, live Sleeper + nflverse for the current season, dbt build,
+# projection v2, and the hosted sync to Neon. Every step lives in scripts/nightly.sh, the same
+# script the Mac runs, so a failure here reproduces locally.
+# Setup, secrets, cost and how to read a failed run: docs/HOSTING.md § "Nightly on GitHub Actions".
+name: nightly
+
+on:
+  schedule:
+    # GitHub cron is UTC. 11:37 UTC = 07:37 in New York on daylight time (EDT, mid-March to early
+    # November) and 06:37 on standard time (EST). A run takes ~15 min (HOSTING.md § Cost), so the
+    # hosted copy is fresh by about 08:00 EDT. Off the hour on purpose: GitHub delays, and under
+    # load drops, scheduled runs queued at :00.
+    - cron: "37 11 * * *"
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Also re-check every historical NFL season live (monthly audit)"
+        type: boolean
+        default: false
+      backtests:
+        description: "Recompute both backtests (normally copied from the hosted copy; backtest-v2 takes a while)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One writer (AGENTS.md rule 2): a second run waits for the first; never two syncs at once.
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  nightly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          # superuser of a container that lives for this job only, reachable only from this runner
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        # --shm-size: Docker's 64 MB /dev/shm is too small for parallel hash joins on the play tables
+        options: >-
+          --shm-size=1g
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 30
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Python environment (uv.lock)
+        run: uv sync --locked
+
+      - name: PostgreSQL 17 client (pg_dump must match the service's major version)
+        run: |
+          # the runner ships PostgreSQL 16 tools; pg_dump 16 refuses a 17 server
+          if [ ! -x /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh ]; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-common
+          fi
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
+          sudo apt-get install -y -qq postgresql-client-17 > /dev/null
+          echo /usr/lib/postgresql/17/bin >> "$GITHUB_PATH"
+
+      - name: Season
+        id: season
+        run: |
+          /usr/lib/postgresql/17/bin/pg_dump --version
+          echo "season=$(uv run python -c 'from league_lab.ingest.nflverse import current_nfl_season; print(current_nfl_season())')" >> "$GITHUB_OUTPUT"
+
+      # The archive (data/raw, ~280 MB: every nflverse file and Sleeper payload ever fetched) is what
+      # the runner keeps between runs (the backtests come back from the hosted copy: nightly.sh
+      # restore-state). Newest entry for this season first, then any season's (a new season starts
+      # from last season's archive). Empty on the first run: nightly.sh then downloads the history.
+      - name: Restore the raw archive
+        id: restore
+        uses: actions/cache/restore@v6
+        with:
+          path: data/raw
+          key: league-lab-raw-v1-${{ steps.season.outputs.season }}-${{ github.run_id }}
+          restore-keys: |
+            league-lab-raw-v1-${{ steps.season.outputs.season }}-
+            league-lab-raw-v1-
+
+      - name: Roles, database and .env for the service
+        env:
+          PGPASSWORD: postgres
+          SLEEPER_LEAGUE_ID: ${{ secrets.LEAGUE_LAB_SLEEPER_LEAGUE_ID }}
+          HOSTED_ADMIN_URL: ${{ secrets.LEAGUE_LAB_HOSTED_ADMIN_URL }}
+          HOSTED_APP_PASSWORD: ${{ secrets.LEAGUE_LAB_HOSTED_APP_PASSWORD }}
+        run: |
+          league_ids="$(printf '%s' "$SLEEPER_LEAGUE_ID" | tr -d '[:space:]')"
+          if ! [[ "$league_ids" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
+            echo "::error title=secret LEAGUE_LAB_SLEEPER_LEAGUE_ID::missing or not a comma-separated list of league ids (Settings > Secrets and variables > Actions)"
+            exit 1
+          fi
+          if [ -n "$HOSTED_ADMIN_URL" ] && [ -z "$HOSTED_APP_PASSWORD" ]; then
+            echo "::error title=secret LEAGUE_LAB_HOSTED_APP_PASSWORD::LEAGUE_LAB_HOSTED_ADMIN_URL is set but LEAGUE_LAB_HOSTED_APP_PASSWORD is not"
+            exit 1
+          fi
+          [ -n "$HOSTED_ADMIN_URL" ] || echo "::warning title=no hosted sync::LEAGUE_LAB_HOSTED_ADMIN_URL is not set: this run builds everything and publishes nothing"
+          PIPELINE_PW="$(openssl rand -hex 16)"
+          APP_PW="$(openssl rand -hex 16)"
+          echo "::add-mask::$PIPELINE_PW"
+          echo "::add-mask::$APP_PW"
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -q \
+            -v db_name=league_lab -v pipeline_pw="'$PIPELINE_PW'" -v app_pw="'$APP_PW'" \
+            -f scripts/init_db.sql
+          # The two hosted secrets are not written here: they reach nightly.sh as environment
+          # variables (next step), byte for byte. python-dotenv expands ${...} even inside quotes,
+          # so a .env line cannot carry every possible password.
+          umask 077
+          cat > .env <<EOF
+          LEAGUE_LAB_DB_HOST=localhost
+          LEAGUE_LAB_DB_PORT=5432
+          LEAGUE_LAB_DB_NAME=league_lab
+          LEAGUE_LAB_DB_USER=league_lab_pipeline
+          LEAGUE_LAB_DB_PASSWORD=$PIPELINE_PW
+          LEAGUE_LAB_APP_DB_USER=league_lab_app
+          LEAGUE_LAB_APP_DB_PASSWORD=$APP_PW
+          LEAGUE_LAB_SLEEPER_LEAGUE_ID=$league_ids
+          LEAGUE_LAB_SEASONS_START=2016
+          DBT_PROFILES_DIR=config/dbt
+          EOF
+          uv run league-lab db check
+
+      - name: Nightly pipeline (scripts/nightly.sh)
+        env:
+          LEAGUE_LAB_HOSTED_ADMIN_URL: ${{ secrets.LEAGUE_LAB_HOSTED_ADMIN_URL }}
+          LEAGUE_LAB_HOSTED_APP_PASSWORD: ${{ secrets.LEAGUE_LAB_HOSTED_APP_PASSWORD }}
+          NIGHTLY_BACKTESTS: ${{ inputs.backtests && '1' || '' }}
+        run: ./scripts/nightly.sh ${{ inputs.full && '--full' || '' }}
+
+      # Save the archive only when its content changed (the key is a fingerprint of every file):
+      # during the season that is every night (Sleeper payloads, the current season's nflverse
+      # files); in the off-season it is rare. Saved even when a later step failed: every archive
+      # file is written atomically, so a partial night's archive is still a valid one.
+      - name: Archive fingerprint
+        id: fingerprint
+        if: ${{ !cancelled() }}
+        env:
+          SEASON: ${{ steps.season.outputs.season }}
+        run: |
+          if [ -d data/raw ] && [ -n "$(find data/raw -type f -print -quit)" ]; then
+            fp="$(cd data/raw && find . -type f ! -name '*.tmp' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
+            echo "key=league-lab-raw-v1-${SEASON}-${fp}" >> "$GITHUB_OUTPUT"
+            echo "archive: $(du -sh data/raw | cut -f1), $(find data/raw -type f | wc -l) files, fingerprint $fp"
+          else
+            echo "no archive to save"
+          fi
+
+      - name: Save the raw archive
+        if: ${{ !cancelled() && steps.fingerprint.outputs.key != '' && steps.fingerprint.outputs.key != steps.restore.outputs.cache-matched-key }}
+        uses: actions/cache/save@v6
+        with:
+          path: data/raw
+          key: ${{ steps.fingerprint.outputs.key }}
+
+      - name: Upload logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: nightly-logs
+          path: logs/
+          retention-days: 14
+          if-no-files-found: warn
+
+      # run_results.json of the last dbt invocation; logs/run_results.<step>.json keeps each one
+      # (dbt-build is the full build, projection-marts the rebuild after `project`)
+      - name: Upload dbt run results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: dbt-run-results
+          path: |
+            dbt/target/run_results.json
+            logs/run_results.*.json
+          retention-days: 14
+          if-no-files-found: warn

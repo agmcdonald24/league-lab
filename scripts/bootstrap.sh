@@ -79,10 +79,10 @@ set -a; source .env; set +a
 
 # --- 3. roles, database, schemas, grants -----------------------------------------------
 step "Creating roles/database/schemas (scripts/init_db.sql)"
-psql -v ON_ERROR_STOP=1 -q -d postgres \
+psql -v ON_ERROR_STOP=1 -q -d postgres -v db_name="${LEAGUE_LAB_DB_NAME:-league_lab}" \
   -v pipeline_pw="'${LEAGUE_LAB_DB_PASSWORD}'" -v app_pw="'${LEAGUE_LAB_APP_DB_PASSWORD}'" \
   -f scripts/init_db.sql
-ok "league_lab database, league_lab_pipeline and league_lab_app roles are ready"
+ok "${LEAGUE_LAB_DB_NAME:-league_lab} database, league_lab_pipeline and league_lab_app roles are ready"
 
 # --- 4. python environment --------------------------------------------------------------
 step "Installing Python 3.13 environment with uv (uv sync --locked)"
@@ -118,7 +118,7 @@ step "Done"
 cat <<EOF
     Explorer:   make app          (opens http://127.0.0.1:8501)
     Status:     make status
-    Refresh:    make refresh      (Sleeper + current NFL season + dbt build)
+    Refresh:    make refresh      (the nightly pipeline: Sleeper + current NFL season + dbt build + projections)
     Full history: ./scripts/bootstrap.sh --full   (or: make backfill)
     Docs:       docs/SETUP_RUNBOOK.md, docs/PROJECT_PLAN.md, docs/STATUS.md
 EOF

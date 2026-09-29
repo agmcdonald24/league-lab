@@ -470,6 +470,88 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   (the strip on Neon, "38+ relations" in the sync log) is Andrew's `make sync-hosted`; the sync will add
   `analytics.dim_game` (≈3k rows) because the banner reads it. `project` took 3 min alone and 36 min while two other
   model fits shared the sandbox's 2 cores. No `metric_registry.csv` row for `frozen_share` (seeds out of bounds).
+### B6 — the nightly pipeline on GitHub Actions (2026-09-29; absorbs I-01)
+
+* **Built**: `scripts/nightly.sh`, one script for every machine: migrate → restore state → replay the archive
+  (`ingest sleeper --offline`, `ingest nfl --offline` for 2016…last season, then the current season) → live
+  fetch (Sleeper; `ingest nfl --seasons <current>`, conditional requests) → `dbt build` → backtests (only when
+  missing or from another `MODEL_VERSION`) → `project` → projection marts → drift → backup (`NIGHTLY_BACKUP=1`) →
+  `sync_to_hosted.sh` (when `LEAGUE_LAB_HOSTED_ADMIN_URL` is set). Timing line per step, a summary table (also the
+  Actions run summary), `::error` annotation naming the failing step, everything appended to `logs/nightly.log`.
+  Failure policy: an ingest failure keeps going on the previous good data (the archive replayed a minute earlier)
+  and fails the run at the end; a failure from the build on stops before anything is published. Same
+  `.state/refresh.lock` as before, now with the holder's pid (a lock left by a killed run is cleared). `.env` is
+  read without overriding the caller's environment. `NIGHTLY_SLEEPER_OFFLINE=1` skips the live Sleeper fetch.
+* `scripts/refresh.sh` (launchd, `make refresh`) is now `NIGHTLY_BACKUP=1 scripts/nightly.sh`. Changes on the
+  Mac: the archive replay runs first (4 s measured: every checksum matches, nothing reloads); a failed ingest no
+  longer blocks the publish; a failed `project` still publishes with last night's projections (as before) but is
+  fatal on a fresh database, where there is no earlier board.
+  `make refresh` used to run `league-lab refresh` (no lock, no projections, no sync) although the runbook said it
+  was `refresh.sh`; it now is. `make nightly` runs the CI path.
+* `.github/workflows/nightly.yml`: `schedule` 11:37 UTC (07:37 EDT / 06:37 EST) + `workflow_dispatch` (inputs:
+  `--full` history audit, recompute backtests); `concurrency: nightly` (queued, never cancelled); `ubuntu-24.04`,
+  `services: postgres:17` (throwaway password, `--shm-size=1g`); `uv sync --locked`; `postgresql-client-17` from
+  PGDG (the runner's 16 cannot dump a 17 server); `scripts/init_db.sql` against the service with generated role
+  passwords (masked); `.env` for the service + the league-id secret (validated); the two hosted secrets reach
+  `nightly.sh` as environment variables (python-dotenv expands `${...}` even inside quotes, so a `.env` line cannot
+  carry every password); archive restore/save through `actions/cache` (key `league-lab-raw-v1-<season>-<content
+  fingerprint>`, saved only when the fingerprint changed); artifacts `nightly-logs` and `dbt-run-results` (14 days).
+* `scripts/init_db.sql` takes `-v db_name=…` (default `league_lab`; quoted with `%I` / `:"db_name"`), so the same
+  script creates a worktree's or the CI service's database; re-running it where the roles exist changes nothing
+  unless passwords are passed. `bootstrap.sh` passes `LEAGUE_LAB_DB_NAME`.
+* **Two findings the fresh database exposed** (both would have blanked hosted pages on the first CI sync):
+  (1) the backtests behind the Rankings scoreboards (`ops.backtest_results`, `ops.projection_backtest`,
+  `ops.projection_importance`) are not derivable from the archive → `restore-state` copies them back from the
+  hosted copy, recomputed only when neither has them; (2) `project` scores drift on the board *as last built*,
+  which in a fresh database is empty → `drift` re-scores the just-published board when the season has no drift rows
+  (on the Mac `project`'s own rows are kept, so M-06's semantics there are unchanged).
+* **Evidence** (this sandbox: 2 CPUs shared with two other agents' builds, load average 4–8; Postgres 16 here, 17
+  in CI). `league_lab_b6` created from nothing as the workflow does it (`init_db.sql -v db_name=league_lab_b6` with
+  the `.env` passwords; a second run without passwords changes nothing; the shared roles and the other databases
+  untouched). Hosted target `league_lab_b6_hosted`, owned by a CREATEROLE role holding ADMIN on `league_lab_app`
+  (Neon's owner shape), `LEAGUE_LAB_HOSTED_ALLOW_LOCAL=1`, app password = the local one; dropped afterwards.
+  Sleeper replayed from the archive (`NIGHTLY_SLEEPER_OFFLINE=1`), nflverse history replayed, current season live.
+
+  | step | run A: fresh db, hosted empty | run B: fresh db, hosted from A (every CI night) | run C: `refresh.sh` on the loaded db (the Mac) |
+  |---|---:|---:|---:|
+  | migrate / restore-state | 1 s / 0 s (nothing to restore) | 1 s / 1 s (864 + 2,160 + 300 rows restored) | 1 s / 0 s (kept) |
+  | replay-sleeper | 7 s | 3 s | 2 s |
+  | replay-nflverse-history (2016–2025) | 1 m 12 s | 46 s | 2 s (all unchanged) |
+  | replay-nflverse-current | 7 s | 4 s | 0 s |
+  | fetch-sleeper | skipped | skipped | skipped |
+  | fetch-nflverse-current (live) | 11 s (19 unchanged, 1 new) | 9 s | 9 s |
+  | dbt-build | 8 m 38 s | 5 m 48 s | 2 m 39 s |
+  | backtests | 15 m 50 s (recomputed) | 1 s (kept) | 1 s (kept) |
+  | project / projection-marts / drift | 2 m 35 s / 27 s / 1 s | 2 m 38 s / 25 s / 2 s | 2 m 37 s / 6 s / 0 s |
+  | backup / sync-hosted | skipped / 13 s | skipped / 10 s | 57 s (400 MB) / 9 s |
+  | **total** | **29 m 23 s** | **10 m 09 s** | **6 m 44 s** |
+
+  Every run: `Done. PASS=308 WARN=2 ERROR=0 SKIP=0 NO-OP=0 TOTAL=310` (the two known warnings, 6 and 7 rows, as on the
+  Mac), projection marts `PASS=12`, sync `verified: all 38 page relations are on the hosted copy` (hosted copy
+  319 MB; the app role reads it and cannot write). Drift: `project`'s own pass wrote 0 rows on the fresh database
+  ("weeks none played"), the drift step then 24; on the loaded database `project` wrote 24 and they were kept. An
+  earlier fresh run's first live fetch loaded week-4 data into 18 current-season partitions. Lock: a live holder
+  → exit 3; a dead holder's lock is removed. `actionlint` 1.7.12 with shellcheck 0.11.0: 0 errors;
+  `yaml.safe_load` ok; shellcheck clean on `nightly.sh`/`refresh.sh`; the workflow's secret/`.env` step run with
+  stubbed `psql`/`uv` (good ids, missing, malformed, URL without password, no URL); the cache fingerprint is
+  deterministic. `pytest` 29 passed, `ruff` clean.
+* **Sandbox-only settings, not committed**: a `sitecustomize` that clears Python 3.13's `VERIFY_X509_STRICT` (this
+  sandbox's TLS-intercepting proxy CA has no keyUsage extension; chain and hostname verification stay on) — the
+  first attempt without it failed every live nflverse fetch with `CERTIFICATE_VERIFY_FAILED` and was stopped; and
+  `OMP_NUM_THREADS=1` — a second attempt with default threads stalled in `backtest-v2` under the three-way CPU
+  contention (first fit after 11 min) and was stopped; single-threaded, the whole recompute took 15 m 50 s.
+* **Unresolved / only verifiable on GitHub**: the live Sleeper fetch (blocked here; ~9 league-seasons ≈ 400
+  requests + the 5 MB player directory, estimated 1–2 min); the PGDG client install, `actions/cache` save/restore
+  and the artifact uploads; the restore of the backtests from Neon (tested against the local hosted simulation
+  only); real runner timings (this sandbox shared its 2 CPUs with two other agents' builds) and disk (the database
+  is 3.4 GB + the 0.3 GB archive, inside the runner's ~14 GB).
+  **B5 × B6**: the CI database is new every night, so frozen projections (B5) must be carried like the backtests —
+  add B5's table to `STATE_TABLES` in `nightly.sh` (restored from the hosted copy before `project`), or every
+  night's "first publication" is that night. A licensed routes file imported on the Mac is not in the archive.
+  The Data Status page's "last loaded" is the night's replay time for every partition (the archive's fetch time is
+  kept in `ops.load_manifest.fetched_at`).
+* **Andrew**: merge to `main`, add the three secrets (HOSTING.md § 5), run it once by hand from the Actions tab,
+  then retire the launchd job or take `LEAGUE_LAB_HOSTED_ADMIN_URL` out of the Mac's `.env` (one writer).
 
 ## Next concrete actions
 
