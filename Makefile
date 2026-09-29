@@ -38,7 +38,7 @@ backtest-v2: ## walk-forward backtest of projection v2 on SEASONS (default 2021-
 
 project: ## fit projection v2 on completed seasons, write this season's projections (ops.projections), publish the mart
 	uv run league-lab project
-	uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+
+	uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+
 
 backfill: ## full nflverse history (2016+)
 	uv run league-lab ingest nfl

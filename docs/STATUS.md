@@ -370,6 +370,66 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
 * **Open**: no `metric_registry.csv` row for the drift metrics (seeds out of bounds); freezing played weeks'
   projections at kickoff would make the drift exact — a separate task.
 
+## Wave B (Iteration 9b)
+
+### B1 2026-09-29 — exact lineup service (branch `dev/B1`)
+
+* **Built**: `src/league_lab/lineup.py` — `solve(players, slots)`: maximum-weight bipartite matching
+  (`scipy.optimize.linear_sum_assignment`) of players to the league's starting slots (`SLOT_ELIGIBILITY` on Sleeper
+  `fantasy_positions`; BN/IR/TAXI dropped, IDP reported); each player at most once, empty slots allowed and reported,
+  unplayable players listed with the reason, locked players kept in their slot; returns lineup, total, bench (value
+  order) and per filled slot the **margin** = total − best total with him removed (re-solved). `lineups(conn, season)`
+  (CLI `league-lab lineups`; called at the end of `project()` after `drift()`, failure logged, not fatal) writes
+  `ops.lineups` (one row per starting slot / bench player / unplayable player per league × season × week × roster ×
+  proposed|realised) and `ops.lineup_totals` (one row per lineup: value, bench value, weakest slot and margin, counts,
+  `inputs_fingerprint`); view `mart_lineup_recommendation` (proposed lineup with names, margins, weakest slot,
+  `realised_optimal`); Makefile `project` / `refresh.sh` select it. Design, sources and limits in `docs/METRICS.md`
+  § Lineup value and `docs/DATA_MODEL.md`.
+* **Decisions** (PO to confirm): (1) the realised optimum uses **Sleeper's points for every position**, not the
+  projections mart's `points_actual` for QB–TE as specified — `points_actual` drops 2-pt conversions and long-TD
+  bonuses (28 rostered player-weeks exactly 2 short in weeks 1–2), so it would sit below Sleeper's max points by
+  construction; (2) `lineups()` reads `ops.projections` (+ features for status), not `mart_player_week_projections`,
+  because inside `project` that mart still holds the previous refit (values rounded as the mart rounds); (3) Sleeper
+  publishes max points only per roster-season, so the error test compares each roster-week with
+  `mart_league_optimal_lineup` (its weekly reconstruction, = ppts for all 22 rosters in 2026) and skips roster-weeks
+  whose Sleeper points changed since the solve (fingerprint), so a stat correction between the nightly `dbt build`
+  and `project` cannot fail the night; (4) a player with no value (K/DEF first rostered in a week not yet scored) is
+  unplayable per spec, so his slot shows empty.
+* **Evidence** (clone `league_lab_b1`, 2026 weeks 1–18, weeks 1–2 scored, week 3 fully kicked off at run time):
+  `league-lab lineups` → 9,048 rows / 440 roster-weeks (396 proposed, 44 realised) in 1.1–1.3 s (solver 0.2–0.4 s; a
+  first cold run 3.3 s); week 4 for all 22 rosters 25 ms. End to end: `league-lab project` (refit 39 min here, CPU
+  shared with another worktree's refit) logged "lineups written … 1.30 s" after the drift; then the Makefile line
+  `dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+` PASS=23, and
+  all 7,096 projection-valued lineup rows equal the rebuilt `mart_player_week_projections.proj_points` exactly.
+  `dbt build --select mart_lineup_recommendation+ assert_exact_lineup_dominates_greedy` PASS=11; source tests PASS=4.
+  Negative controls: realised total −1 → FAIL 1; same row with a changed fingerprint → skipped (PASS); realised row
+  deleted → FAIL 1 (coverage). Exact vs greedy on all 1,384 scored roster-weeks 2021–2026 (ad hoc, not persisted):
+  1,367 equal, 17 higher (13 a negative scorer left out, 4 Travis Hunter DB/WR at WR), 0 lower; the Hunter weeks close
+  the 2025 greedy-vs-ppts gaps (League of Scrubs roster 6 −9.70 — not "a bench defense" as noted above — and dynasty
+  roster 11 −17.30 → 0). Only 2023 dynasty roster 4 (−3.05) stays below Sleeper, as the greedy does. 2026 season to
+  date: exact = ppts for 21 of 22 rosters, League of Scrubs roster 4 +1.00 (a −1 DEF left out).
+* **Sanity reads** (after the sandbox refit; the Mac-fitted projections the clone came with gave the same shape, e.g.
+  dynasty roster 1 week 4 = 131.75): dynasty roster 1 week 4 = 130.26 — QB Allen 32.32 (margin 22.47), RB Cook 17.86
+  (8.01) / Henderson 10.83 (0.98), WR Collins 16.15 (6.30) / Watson 14.28 (4.43), TE Goedert 7.33 (0.53), FLEX Tucker
+  10.00 (**0.15**, weakest; Monangai 9.85 first on the bench), SUPER_FLEX Hurts 21.49 (11.64); bench lineup 50.48;
+  A.J. Brown / Tyson IR slot, Singleton / Meyers / Strand taxi, Sampson NFL IR. Same roster week 2 realised 168.70 =
+  Sleeper max for the week (started 146.40); weeks 1–2 386.65 = Sleeper ppts 386.65. Superflex: dynasty roster 5
+  (The72Repeat) week 4 starts RB David Montgomery 11.66 at SUPER_FLEX over QB2 Kyle McCord 9.17 (margin 0.20); a
+  non-QB superflex in 1–4 of 12 dynasty lineups in each of weeks 4–18. League of Scrubs roster 2 (MacZaddy) week 4 =
+  112.33: K McLaughlin 13.50 (`season_ppg`, = his league PPG over 2 games), DEF Kansas City 1.00 (`observed_ppg`, one
+  scored week), weakest FLEX2 Croskey-Merritt 9.13 (0.06); QBs Young 17.75 / Shough 16.55 on the bench (1 QB slot).
+* **Tests**: `tests/test_lineup.py` 179 (solver vs exhaustive enumeration incl. every margin: 1QB, 2QB, superflex ×3,
+  mixed FLEX/REC_FLEX/WRRB_FLEX where the greedy order loses 19 → 11, dual eligibility, byes/injuries/no value, locks,
+  fewer players than slots, K/DEF present/absent, negative values, 160 random rosters; the builder on a hand-made league
+  with a scored week, an in-progress week with locks and a bye week; speed: median 0.3 ms per solve with margins on the
+  real slot sets, < 5 ms asserted; DDL copies agree). `pytest` 208/208, `ruff` clean, `db migrate` OK, headless page
+  check 26/26 runs, 0 exceptions (pages untouched).
+* **Open**: 5 of 10 League of Scrubs rosters have an empty K or DEF in week 4 (CAR, MIN, CIN, NE DEF and Trey Smack K
+  were first rostered in week 3, not yet scored; Smack has no NFL id) — a second pass that seats an unvalued eligible
+  player in an otherwise-empty slot, or R-13, would fix it; scipy is used directly but only declared transitively (via
+  scikit-learn) — `uv add scipy` is a one-line follow-up; no `metric_registry.csv` row (seeds out of bounds); the view
+  and `ops.lineups` (≈9k rows) will be published by the hosted sync (every analytics view + `ops.*`).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

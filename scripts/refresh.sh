@@ -32,7 +32,7 @@ if ! pg_isready -q -h "${LEAGUE_LAB_DB_HOST:-localhost}" -p "${LEAGUE_LAB_DB_POR
 fi
 uv run league-lab refresh "$@"
 # projection v2 for the current season (refits on completed seasons, ~1-2 min), then its marts
-uv run league-lab project && uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+ \
+uv run league-lab project && uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ \
   || echo "projection v2 failed (marts from the last successful run are kept)" >&2
 ./scripts/backup.sh || echo "backup failed (data was refreshed successfully)" >&2
 # publish the marts to the hosted database when one is configured (plan S-03)

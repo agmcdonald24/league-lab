@@ -2,6 +2,16 @@
 
 Newest first. The Home page shows the top entry as "What's new".
 
+## 2026-09-29 — Wave B (decision engine)
+
+- Behind the pages, League Lab now works out the **best legal lineup** for every team in both leagues, every
+  week: all slots solved together (FLEX and superflex included — a WR who beats your QB2 goes in the superflex),
+  byes, Out / Doubtful, IR and taxi left out, Questionable flagged, players whose game has started kept where
+  they are. Each starter gets a **margin** — how many points the lineup loses without him — so the closest call
+  of the week is named. For weeks already played it also computes the best lineup you could have started; it
+  matches Sleeper's own max points (weeks 1–2: all 22 teams, to the cent, except one where it is 1 point higher
+  by leaving a −1 defense out). No page shows it yet: the start/sit, waiver and roster views are being rebuilt on it.
+
 ## 2026-09-27 — Your league's scoring on every league page
 
 - Team Hub, Waiver Wire, the Matchups start/sit board, Trade Finder, League Intel and the League page's draft review

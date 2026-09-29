@@ -363,6 +363,73 @@ scores every player who played, the drift only rankable ones (Out / Doubtful / I
 are left out, as on the board). A few weeks are a small sample: read a gap to the backtest as a
 question, not a verdict, until mid-season.
 
+## Lineup value (B1, 2026-09-29; `league-lab lineups`, `ops.lineups`, `mart_lineup_recommendation`)
+
+**Objective.** For one roster and one week, the lineup value is the largest total of player values
+that a *legal* lineup can reach: every starting slot of the league (`dim_league_season.roster_positions`
+minus BN / IR / TAXI) takes at most one player, every player starts at most once, a player only fills
+a slot his Sleeper `fantasy_positions` allow (QB, RB, WR, TE, K, DEF; FLEX = RB/WR/TE; SUPER_FLEX =
+QB/RB/WR/TE; REC_FLEX = WR/TE; WRRB_FLEX = RB/WR; IDP slots are not modelled and are reported), and a
+slot may stay empty. Solved exactly as a maximum-weight bipartite matching
+(`scipy.optimize.linear_sum_assignment`, `src/league_lab/lineup.py::solve`), not greedily slot by slot:
+SUPER_FLEX is a slot like any other, so a WR who is worth more than the QB2 starts there; a player whose
+value is below zero never beats an empty slot. Ties are broken toward filling more slots, and the chosen
+starters are then seated with the better players in the narrower slots (WR before FLEX), which changes
+neither the set nor the total.
+
+**Margin.** Per filled, unlocked starting slot: `margin = lineup value − lineup value with that player
+removed`, re-solving the whole lineup (a WR's absence may pull a RB into FLEX and a TE into …). It is
+what the player is worth to *this* lineup this week, ≥ 0 by construction; 0 means an equal alternative
+sits on the bench. The **weakest slot** is the starter with the smallest margin (ties: the lower value)
+— the closest lineup call. A locked starter (his game has kicked off) is not a decision and has no
+margin. **Bench value** = the lineup value the playable bench alone would reach if every starter sat.
+
+**Value sources** (`value_source`).
+
+| Lineup | Position | Value | Source |
+|---|---|---|---|
+| proposed | QB / RB / WR / TE | projection v2 `proj_points` for that league-week (this league's scoring, rounded like the mart) | `proj_points` |
+| proposed | K | season points per game in this league's scoring (`mart_league_player_season.ppg`, games played > 0) | `season_ppg` |
+| proposed | DEF, or a K without an NFL id | mean of the points Sleeper scored for him in this league over this season's scored weeks his team played (byes excluded) | `observed_ppg` |
+| realised | every position | the points Sleeper counted that week (`league_player_week.points_observed`) | `sleeper_observed` |
+
+The realised lineup uses Sleeper's points for QB/RB/WR/TE too, not `points_actual` of the projections
+mart: `points_actual` prices the projected components only and so leaves out 2-point conversions and
+long-TD bonuses (28 rostered player-weeks in weeks 1–2 of 2026 were exactly 2 points short); a realised
+optimum on it would sit below Sleeper's own max points by construction.
+
+**Who cannot play** (listed with the reason, never in the lineup): bye (no game for his team that week),
+Out, Doubtful, NFL injured reserve (`roster_status = 'RES'`), no projection / no NFL id / no NFL team
+(QB–TE), no season PPG yet (K / DEF), no slot for his position in this league; in a week not yet
+scored also the Sleeper IR slot and the taxi squad (today's roster flags; unknown for past weeks, so not
+applied there) and "game started (bench)". **Questionable plays** and is flagged (`report_status`).
+**Locks**: in a week Sleeper has not scored, a player whose game kicked off before `as_of` stays where
+Sleeper had him — a starter keeps his slot (value counted, no margin), a bench player stays benched.
+
+**Rosters.** Per week the roster is Sleeper's list for that week when there is one (every week played
+so far, including the one in progress, which carries the slots of locked starters), otherwise today's
+roster. Proposed lineups of weeks already scored are the pre-kickoff counterfactual on that week's
+roster (no locks): what projection v2 would have started, for comparison with the realised optimum.
+
+**Checks.** `tests/test_lineup.py` compares `solve()` with exhaustive enumeration of every legal lineup
+(1QB, 2QB, superflex, FLEX + REC_FLEX + WRRB_FLEX, dual eligibility, byes, locks, fewer players than
+slots, K/DEF present and absent, 160 random rosters) including every margin, and times both real slot
+sets (median < 5 ms with margins). `assert_exact_lineup_dominates_greedy` (error): on every scored
+roster-week the realised optimum ≥ `mart_league_optimal_lineup.points_optimal`, the per-week
+reconstruction of Sleeper's max points, which the existing warn test holds to Sleeper's season `ppts`.
+On 1,384 scored roster-weeks 2021–2026 the exact optimum equals the greedy fill in 1,367 and beats it in
+17 (13 a negative scorer left out, 4 Travis Hunter — Sleeper DB, eligible at WR — started at WR), never
+below; the Hunter weeks explain the 2025 gaps of the greedy against Sleeper's ppts (League of Scrubs
+roster 6 −9.70, dynasty roster 11 −17.30: exact = ppts for both).
+
+**Not modelled.** Matchup win probability or variance (the objective is expected points; P10/P90 are
+not used); K and DEF projections (season PPG is a placeholder until R-13 — a DEF or K first rostered in
+a week Sleeper has not scored yet has no value and cannot fill his slot); the K's injury status; IDP
+slots; bye-week or multi-week planning (one week at a time — the 4-week horizon is B2); Sleeper's
+per-player lock time beyond the scheduled kickoff; historical IR / taxi membership for past weeks; the
+waiver pool (B3). Past weeks' proposals use this season's K / DEF points per game to date (hindsight for
+those two positions only).
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

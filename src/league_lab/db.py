@@ -106,6 +106,24 @@ create table if not exists ops.projection_drift (
     n_players integer, spearman double precision, top_n integer, hit_rate double precision, mae double precision,
     coverage_80 double precision, interval_width double precision, games_played integer, games_scheduled integer
 );
+-- Exact lineup service (plan B1): written by `league-lab lineups` and at the end of `league-lab
+-- project` (src/league_lab/lineup.py; replaces the season's rows). One row per starting slot
+-- (filled or empty), bench player and player who cannot play, per league x season x week x roster x
+-- proposed / realised; the totals table has one row per lineup.
+create table if not exists ops.lineups (
+    run_at timestamptz, model_version text, league_id text, season integer, week integer, roster_id integer,
+    is_realised boolean, role text, slot text, slot_type text, slot_order integer, bench_rank integer,
+    sleeper_player_id text, gsis_id text, player_name text, position text, value double precision,
+    value_source text, margin double precision, is_locked boolean, report_status text, reason text
+);
+create index if not exists lineups_idx on ops.lineups (league_id, season, week, roster_id);
+create table if not exists ops.lineup_totals (
+    run_at timestamptz, as_of timestamptz, model_version text, league_id text, season integer, week integer,
+    roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision,
+    slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision,
+    weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer,
+    n_questionable integer, n_ppg_valued integer, inputs_fingerprint text
+);
 create table if not exists raw.routes_feed (
     season          integer,
     week            integer,

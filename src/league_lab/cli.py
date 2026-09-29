@@ -334,7 +334,7 @@ def backtest_v2_cmd(
 def project_cmd(
     season: int | None = typer.Option(None, help="Season to project (default: the newest with features); trained on the seasons before it"),
 ):
-    """Fit projection v2 on completed seasons and write this season's weekly projections per league to ops.projections (and rescore the played weeks: ops.projection_drift). Then `make build`."""
+    """Fit projection v2 on completed seasons and write this season's weekly projections per league to ops.projections (and rescore the played weeks: ops.projection_drift; re-solve the lineups: ops.lineups). Then `make build`."""
     from .projections import run_project
 
     pred = run_project(season)
@@ -364,6 +364,38 @@ def drift_cmd(
         t.add_row(r.league_id[-6:], str(r.week), r.position, str(r.n_players), fmt(r.spearman, ".3f"), fmt(r.hit_rate, ".1%"),
                   fmt(r.mae, ".2f"), fmt(r.coverage_80, ".1%"), fmt(r.interval_width, ".1f"), f"{r.games_played}/{r.games_scheduled}")
     console.print(t)
+
+
+@app.command("lineups")
+def lineups_cmd(
+    season: int | None = typer.Option(None, help="Projected season (default: the newest in ops.projections)"),
+):
+    """Exact lineup service (plan B1): the best legal lineup per league x roster x week from projection v2 (and the
+    realised optimum for scored weeks); writes ops.lineups + ops.lineup_totals. Then `make project` publishes the mart."""
+    from .lineup import run_lineups
+
+    run = run_lineups(season)
+    if run.season is None:
+        console.print("ops.projections is empty: run `league-lab project` first")
+        return
+    t = run.totals
+    realised = int(t["is_realised"].sum()) if len(t) else 0
+    console.print(f"wrote {len(run.rows)} rows to ops.lineups and {len(t)} to ops.lineup_totals for {run.season} "
+                  f"({len(t) - realised} proposed, {realised} realised roster-weeks) in {run.seconds:.2f} s "
+                  f"(solver {run.solve_seconds:.2f} s)")
+    if run.next_week is None or t.empty:
+        return
+    nxt = t[(t["week"] == run.next_week) & ~t["is_realised"]].sort_values(["league_id", "roster_id"])
+    tab = Table(title=f"proposed lineups, week {run.next_week}")
+    for c in ("league", "roster", "lineup", "bench", "weakest slot", "margin", "empty", "PPG-valued"):
+        tab.add_column(c)
+    def txt(v, spec: str = "") -> str:
+        return "" if v is None or v != v else format(v, spec)
+
+    for r in nxt.itertuples():
+        tab.add_row(r.league_id[-6:], str(r.roster_id), txt(r.lineup_value, ".2f"), txt(r.bench_value, ".2f"),
+                    txt(r.weakest_slot), txt(r.weakest_margin, ".2f"), txt(r.empty_slots), str(r.n_ppg_valued))
+    console.print(tab)
 
 
 @app.command("teams")
