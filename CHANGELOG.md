@@ -14,6 +14,18 @@ Newest first. The Home page shows the top entry as "What's new".
   that one line.
 - Home's "highest projections" panel is labelled for what it is: the baseline formula in League of Scrubs scoring.
   Projection v2 in your league's scoring is on the Rankings page.
+- The sidebar says what kind of league you picked in one line under the league name, on every page
+  ("12-team superflex dynasty · full PPR · 6-pt pass TD · yardage bonuses"); the key-by-key scoring differences
+  moved into a collapsed "Scoring differences vs the reference league" section, one click away.
+- Waiver Wire opens with **Adds worth a claim** for your team: per position your league starts, up to three free
+  agents who beat your weakest projected starter this week (projection v2, your league's scoring) or your best
+  bench player's PPG, each saying so in words ("+0.3 over your TE1 this week (Proj 7.9 vs 7.6)") with floor and
+  ceiling; otherwise "Nothing on the wire beats what you have at RB." The free-agent table now ranks by projection
+  v2 for next week by default; every other ranking and filter is still there.
+- Rankings (projection v2) has a new strip, **"How the model is doing this season"**: once a week is complete, the live
+  board is scored like the backtest — per position, this season's rank correlation and floor–ceiling coverage next
+  to the backtest's, with the number of weeks scored. After weeks 1–2 of 2026 RB is at or above its backtest in both
+  leagues, WR and QB below (QB 0.43 vs 0.54 in League of Scrubs) — two weeks is a small sample.
 
 ## 2026-09-26 — Projection v2
 

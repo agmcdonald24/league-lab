@@ -86,6 +86,21 @@ models:
       - name: spearman
         tests: [not_null]
 
+  - name: mart_projection_drift
+    description: "Drift monitor (M-06): the live v2 board's complete played weeks per league, season and position (mean Spearman, hit rate, MAE, coverage_80, width) next to the backtest's v2_points means."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season, position]
+      - expression_is_true:
+          name: projection_drift_rates_in_range
+          arguments:
+            expression: "spearman between -1 and 1 and hit_rate between 0 and 1 and coverage_80 between 0 and 1 and mae >= 0"
+            condition: "weeks_scored > 0"
+    columns:
+      - name: weeks_scored
+        tests: [not_null]
+
   - name: mart_player_week_rankings
     description: "Baseline projection, contributions, naive baselines and ranks per season-week-position."
     tests:
@@ -280,6 +295,12 @@ models:
               arguments:
                 values: [redraft, keeper, dynasty]
       - name: playoff_week_start
+        tests: [not_null]
+      - name: scoring_label
+        description: >-
+          One-line summary of the league's format and scoring (plan U-10), e.g. "12-team superflex dynasty ·
+          full PPR · 6-pt pass TD · yardage bonuses"; derived from num_teams, roster_positions, league_type
+          and scoring_settings (rec, pass_td, bonus_*_yd_*, bonus_rec_te)
         tests: [not_null]
 
   - name: dim_league_member

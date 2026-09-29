@@ -334,13 +334,36 @@ def backtest_v2_cmd(
 def project_cmd(
     season: int | None = typer.Option(None, help="Season to project (default: the newest with features); trained on the seasons before it"),
 ):
-    """Fit projection v2 on completed seasons and write this season's weekly projections per league to ops.projections. Then `make build`."""
+    """Fit projection v2 on completed seasons and write this season's weekly projections per league to ops.projections (and rescore the played weeks: ops.projection_drift). Then `make build`."""
     from .projections import run_project
 
     pred = run_project(season)
     console.print(f"wrote {len(pred)} projection rows for {int(pred['season'].iloc[0])} "
                   f"({pred['league_id'].nunique()} league(s), weeks {int(pred['week'].min())}-{int(pred['week'].max())}) — "
                   "run `make build` to publish mart_player_week_projections")
+
+
+@app.command("drift")
+def drift_cmd(
+    season: int | None = typer.Option(None, help="Projected season to score (default: the newest in mart_player_week_projections)"),
+):
+    """Score the live projection v2 board's played weeks like the backtest (Spearman, hit rate, MAE, coverage); writes ops.projection_drift."""
+    from .projections import run_drift
+
+    res = run_drift(season)
+    if res.empty:
+        console.print("no played week on the board yet: ops.projection_drift has no rows for this season")
+        return
+    t = Table(title=f"projection drift {int(res['season'].iloc[0])} (live board, played + rankable players)")
+    for c in ("league", "week", "position", "n", "spearman", "hit_rate", "mae", "coverage_80", "width", "games"):
+        t.add_column(c)
+    def fmt(v, spec: str) -> str:
+        return "" if v is None or v != v else format(v, spec)
+
+    for r in res.sort_values(["league_id", "week", "position"]).itertuples():
+        t.add_row(r.league_id[-6:], str(r.week), r.position, str(r.n_players), fmt(r.spearman, ".3f"), fmt(r.hit_rate, ".1%"),
+                  fmt(r.mae, ".2f"), fmt(r.coverage_80, ".1%"), fmt(r.interval_width, ".1f"), f"{r.games_played}/{r.games_scheduled}")
+    console.print(t)
 
 
 @app.command("teams")

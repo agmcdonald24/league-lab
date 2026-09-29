@@ -282,6 +282,94 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   pre-existing, not S-01a: the dynasty "Roster value" table says "Waiver / free agent" for players drafted in earlier
   seasons — the mart only reads the current season's draft.
 
+## Wave A (Iteration 9)
+
+### PO merge and QA 2026-09-29
+
+* Three Opus developers ran in parallel, each in its own git worktree, branch and database clone (`league_lab_u10`,
+  `_u11`, `_m06`) off `59ed8ca` (S-01a); merged into `integration/wave-a` (conflicts in CHANGELOG, STATUS and the
+  `table.py` registry, all "keep both"), rebuilt on the main database (`dim_league_season+`, `mart_projection_drift`,
+  `league-lab drift`; 80 pass / 2 pre-existing warns), `pytest` 29/29, `ruff` clean, headless check 26/26.
+* One QA agent walked the integrated build on both leagues (~30 controls, 22 rosters via SQL). Findings and what
+  was done: (1) **sidebar selectors dropped every second change** — the League/Team selectboxes were unkeyed with a
+  moving `index=`, so their identity flipped between runs; now keyed widgets whose value the app re-asserts before
+  each render (a keyed widget's own state does not survive a page change) with the URL seeding only a fresh visit or
+  a pasted link — verified by a Playwright walk: three league switches in a row, three team switches, team kept across
+  Matchups → Rankings, "whole league" on Rankings then Team Hub back on the last team, pasted deep link honoured;
+  (2) the shortlist's "best bench" could be the weakest starter himself — bench is now the best PPG among players
+  beyond the top N *by projection*; (3) blank comparison cells now say why ("no games this season", "no v2
+  projection for him this week"); (4) shortlist only from active NFL rosters (`roster_status = 'ACT'`, so no
+  inactive-list or practice-squad adds); (5) the label's "6-pt" uses a non-breaking hyphen; (6) drift caption says
+  "complete weeks". PO decision: the season bar needs two games (a one-game PPG is a box score, not a rate).
+* Not done: shortlist columns are wide (horizontal scroll under ~1900 px); Players / Receivers / Data Status have no
+  league selector and therefore no label (by design).
+
+
+### U-10 2026-09-29 — scoring summary line
+
+* `dim_league_season.scoring_label` (SQL, from `num_teams`, `roster_positions`, `league_type`, `scoring_settings`):
+  dynasty "12-team superflex dynasty · full PPR · 6-pt pass TD · yardage bonuses" (all six seasons), League of Scrubs
+  "10-team redraft · half PPR · 4-pt pass TD" (all three). Rules in `docs/DATA_MODEL.md`; synthetic rows checked the
+  other branches (0.25 PPR, standard, 2QB, TE premium 0.5, missing num_teams / pass_td).
+* Sidebar (`perspective()`): the label is a caption under the League selector on every page that has one (10 of 13;
+  Players, Receivers and Data Status have no league selector and were not touched). On a non-reference league the
+  one-line "NFL research pages use reference scoring (League of Scrubs)" notice stays; the key-by-key diff moved into
+  a collapsed expander "Scoring differences vs the reference league". The label is read via `to_jsonb(d) ->>
+  'scoring_label'`, so page code pushed before the hosted marts are synced shows no label instead of failing.
+* Tests: `not_null_dim_league_season_scoring_label` PASS; `assert_scoring_label_describes_leagues` PASS (negative
+  control with the expectations swapped returns 2 rows). `dbt build --select dim_league_season+` PASS=76 WARN=2
+  ERROR=0 (78 nodes; the same two warnings, 6 and 7 rows). `pytest` 25/25, `ruff` clean. Headless check 26/26 runs,
+  0 exceptions. Playwright (Team Hub, both leagues): label shown, expander closed by default, diff visible only after
+  a click; no page errors. Validated on the sandbox clone `league_lab_u10`, not the Mac.
+* Open: at the default sidebar width the dynasty label wraps onto two visual lines (the break falls inside "6-pt").
+### U-11 2026-09-29 — waiver shortlist ("Adds worth a claim")
+
+* **Built** (plan Iteration 9, U-11): Waiver Wire section above the free-agent table for the selected roster (whole-league
+  view: a one-line hint). Page SQL, one query (`SHORTLIST_SQL`, gsis_id joins): per position the league starts (DEF
+  skipped; K only where started), N = starting slots (SUPER_FLEX counts as QB; FLEX types ignored); **this week** = free
+  agent's v2 `proj_points` for `next_week_info()` vs the roster's N-th best *playable* projection (Out / Doubtful / IR
+  are not starters, the Rankings rule; IR-slot players left out); **season** = free agent's PPG vs the (N+1)-th best PPG on
+  the roster. Free agents: `is_free_agent`, not Out / IR (injury or NFL RES). Up to 3 per position that clear a bar (both
+  bars first, then projection); text columns state both comparisons; Proj / Floor (P10) / Ceiling (P90) / PPG / injury
+  shown. Nothing clears → "Nothing on the wire beats what you have at <POS>."; no bar evaluable (K: no v2 kicker model and
+  no bench K) → "Nothing to compare at K: …". Free-agent table: new `proj_v2` column, default *Rank by* "Projection v2
+  (week N)"; all earlier rankings and filters kept. Columns registered in `app/lib/table.py` (`# ---- U-11 waiver
+  shortlist`). No new mart: a mart downstream of projections would lag a day, because `scripts/refresh.sh` rebuilds only
+  `mart_player_week_projections` after `league-lab project`.
+* **Evidence** (`league_lab_u11`, week 3 next): dynasty team 1 → 4 rows (WR Ryan Miller; TE Michael Mayer, Mike Gesicki,
+  Evan Engram), "Nothing on the wire beats…" at QB and RB, no K; League of Scrubs team 2 → 5 rows (2 WR, 3 TE), QB/RB
+  captions, K "Nothing to compare". Every roster in both leagues (22) at weeks 3, 4, 99 and none: ≤ 3 per position, every
+  row clears a bar, no K on the dynasty, dynasty max 8 rows. Headless page check 26/26 with 0 exceptions; `pytest` 25/25;
+  `ruff` clean; Playwright walk of both leagues (team selected + whole league): 0 exceptions, no "None" in the shortlist,
+  default rank "Projection v2 (week 3)", table sorted by it; console only Streamlit's `/<page>/_stcore/*` 404 probes.
+* **Open**: 40 of the 124 week-3 rows (all rosters) qualify only on a one-game PPG (labelled "1 game"); a ≥ 2-game rule
+  for the season bar is Andrew's call. Kickers get no "this week" comparison until v2 projects K. Only 18 of the 124
+  rows clear the week bar: in week 3 the free-agent pool rarely out-projects a starter.
+### M-06 2026-09-29 — drift monitor (branch `dev/M-06`)
+
+* **Built**: `projections.drift()` / `score_drift()` score the live v2 board's played weeks like the backtest
+  (players who played and are rankable; `proj_points` vs `points_actual` in the league's scoring; `_spearman`,
+  `_hit_rate`, `TOP_N`, 8-player minimum) into `ops.projection_drift` (league × season × week × position, plus
+  `games_played / games_scheduled` so a week in progress is visible). Called at the end of `league-lab project`
+  (a failure there is logged, never fatal to the projections) and on its own as `league-lab drift`. View
+  `mart_projection_drift` (complete weeks only, next to the backtest's `v2_points` means). Rankings, v2 only:
+  strip "How the model is doing this season" above the backtest.
+* **Evidence** (clone `league_lab_m06`, after a fresh `league-lab project`): 18 rows for 2026 — weeks 1–2 every
+  position in both leagues (16/16 games), week 3 WR only (1/16 games, 10 players; QB/RB/TE under 8). Season means
+  (League of Scrubs, 2 weeks vs backtest 2021–2025): Spearman QB 0.430 vs 0.542, RB 0.675 vs 0.661, WR 0.537 vs
+  0.610, TE 0.558 vs 0.554; coverage QB 75% vs 78%, RB 82% vs 80%, WR 80% vs 81%, TE 78% vs 81%. Dynasty: QB 0.402
+  vs 0.534, RB 0.688 vs 0.663, WR 0.553 vs 0.625, TE 0.570 vs 0.571. Hand check, week 2 WR League of Scrubs:
+  SQL average-rank `corr()` 0.5423364769 = stored 0.5423364769 = `scipy.stats.spearmanr` (144 players).
+  `pytest` 29/29 (4 new in `tests/test_projection_drift.py`), `ruff` clean, dbt view + 4 tests PASS, headless
+  26/26 runs 0 exceptions, browser check of the strip on both leagues.
+* **Found on the way**: the clone's stored 2026 projections (fitted 2026-09-26 23:53 UTC, i.e. on the Mac before
+  S-01a) and a refit here differ in 19,820 of 19,822 rows, while two consecutive refits here are identical. Cause not
+  isolated — another platform, and S-01a moved `prev_snap_pct` by ≤ 4.4e-16; either can move the trees. Effect on the
+  drift is small but visible (dynasty week 1 QB Spearman 0.309 → 0.328, League of Scrubs week 1 WR 0.521 → 0.532).
+  So past weeks' projections are not a kickoff snapshot; the drift scores the board as it stands (METRICS.md § Drift).
+* **Open**: no `metric_registry.csv` row for the drift metrics (seeds out of bounds); freezing played weeks'
+  projections at kickoff would make the drift exact — a separate task.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from lib.charts import SURFACE, bar_chart, base_layout
-from lib.db import query, require_relations
+from lib.db import missing_relations, query, require_relations
 from lib.table import Col, howto, show
 from lib.ui import freshness_banner, next_week_info, perspective, setup
 
@@ -189,6 +189,44 @@ if roster_id is not None and scope != "team":
         else:
             show(mine, ["rank_pos", "player_name", "team", "opponent", "report_status", "proj_points", "c_form", "c_matchup", "c_vegas", "xppg_l5", "ppg_std", "implied_team_total"]
                  + (["points_actual", "actual_rank_pos"] if played_week else []))
+
+# ---------------------------------------------------------------- drift (M-06): this season's played weeks vs the backtest
+if model == "v2":
+    st.subheader("How the model is doing this season")
+    if missing_relations(("mart_projection_drift",)):
+        st.caption("The season scoreboard is not built on this database yet (`make build`, then `league-lab drift`).")
+    else:
+        dr = query(
+            """select season, position, weeks_scored, first_week, last_week, week_in_progress, spearman, backtest_spearman,
+                      coverage_80, backtest_coverage_80, backtest_seasons
+               from analytics.mart_projection_drift where league_id = %s""",
+            (league_id,),
+        )
+        dr_season = cur_season if cur_season in dr["season"].tolist() else (int(dr["season"].max()) if not dr.empty else cur_season)
+        dr = dr[dr["season"] == dr_season].copy()
+        dr["position"] = pd.Categorical(dr["position"], ["QB", "RB", "WR", "TE"], ordered=True)
+        dr = dr.sort_values("position")
+        in_progress = pd.to_numeric(dr["week_in_progress"], errors="coerce").max() if not dr.empty else float("nan")
+        pending = f" Week {int(in_progress)} is still being played; it counts once its last game is in." if pd.notna(in_progress) else ""
+        scored = dr[pd.to_numeric(dr["weeks_scored"], errors="coerce").fillna(0) > 0]
+        if scored.empty:
+            st.caption(f"No week of the {dr_season or 'current'} season is complete yet, so there is nothing to score the live board against.{pending}"
+                       if pending else
+                       f"No week of the {dr_season or 'current'} season has been played yet: this fills in once week 1 is complete.")
+        else:
+            first, last = int(scored["first_week"].min()), int(scored["last_week"].max())
+            n_weeks = int(pd.to_numeric(scored["weeks_scored"]).max())
+            span = f"week {first}" if first == last else f"weeks {first}–{last}"
+            bt_span = f" ({scored['backtest_seasons'].dropna().iloc[0]})" if scored["backtest_seasons"].notna().any() else ""
+            small = (f" {['One', 'Two', 'Three', 'Four', 'Five'][n_weeks - 1]} week{'s' if n_weeks > 1 else ''} is a small sample: "
+                     "one odd Sunday moves these a lot." if n_weeks < 6 else "")
+            st.caption(f"The live board scored like the backtest on NFL {dr_season}'s complete {span} ({league_name} scoring, players who played), "
+                       f"next to the walk-forward backtest{bt_span}.{small}{pending}")
+            show(scored, ["position", "weeks_scored", "spearman", "backtest_spearman", "coverage_80", "backtest_coverage_80"],
+                 overrides={"spearman": Col("Spearman · this season", "num2", "Rank correlation between the projected order and actual points, "
+                                                                          "averaged over this season's complete weeks; 1 = perfect, 0 = coin flip"),
+                            "coverage_80": Col("Coverage · this season", "pct", "Share of this season's actuals that landed inside P10–P90 "
+                                                                                "(target 80%)")})
 
 # ---------------------------------------------------------------- backtest
 st.subheader("Backtest — how much to trust this")
