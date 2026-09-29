@@ -23,7 +23,8 @@ the raw as-of columns are used as they are (a NULL means "not known yet", which 
 
 Outputs: ``ops.projections`` (one row per league x season x week x player), ``ops.projection_backtest``
 (per season-week-position-scorer), ``ops.projection_importance`` (permutation importance of the
-P50 model per position), and a Markdown report under ``reports/backtests``.
+P50 model per position), ``ops.projection_drift`` (plan M-06: the live board's played weeks scored
+like a held-out season), and a Markdown report under ``reports/backtests``.
 """
 
 from __future__ import annotations
@@ -389,7 +390,95 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     pred["train_seasons"] = f"{min(train_seasons)}-{max(train_seasons)}"
     _write(conn, "ops.projections", pred, "season = %s", (season,))
     log.info("projections written: %s rows for %s (%s leagues)", len(pred), season, len(scorings))
+    # M-06: keep the drift monitor current on every refit. It scores mart_player_week_projections as
+    # last built: in the nightly the full dbt build runs first, so the outcomes are tonight's and the
+    # projections the previous refit's (what the board showed before the latest games). The refit is
+    # deterministic on unchanged inputs, but played weeks are re-projected every night, so a change in
+    # the training data can move them: this is the board as it stands, not a kickoff snapshot.
+    # A failure here must not cost the night its projections: log it, keep the previous drift rows.
+    try:
+        drift(conn, season)
+    except Exception:
+        conn.rollback()
+        log.exception("drift monitor failed (projections were written); run `league-lab drift` after `dbt build`")
     return pred
+
+
+# ------------------------------------------------------------------------------ drift (M-06): the live board, scored like the backtest
+DRIFT_COLUMNS = ["league_id", "season", "week", "position", "n_players", "spearman", "top_n", "hit_rate", "mae",
+                 "coverage_80", "interval_width", "games_played", "games_scheduled", "model_version"]
+
+
+def score_drift(board: pd.DataFrame, min_players: int = 8) -> pd.DataFrame:
+    """Per league x season x week x position: the live board's played weeks scored the way
+    ``score_predictions`` scores a held-out season (Spearman, top-N hit rate, MAE, share of actuals
+    inside [P10, P90], mean P90 - P10), with the same ``min_players`` rule.
+
+    ``board`` holds rows of ``analytics.mart_player_week_projections``: league_id, season, week,
+    position, game_id, played, is_rankable, proj_points, p10, p90, points_actual (already priced in
+    the league's own scoring), model_version. Scored on players who played and were rankable (the
+    board the page shows). ``games_played`` / ``games_scheduled`` count the week's games with at
+    least one player in / on the board, so a week still being played (Thursday night only) is
+    visible as such; the season view averages complete weeks only.
+    """
+    if board.empty:
+        return pd.DataFrame(columns=DRIFT_COLUMNS)
+    b = board.copy()
+    for c in ("proj_points", "p10", "p90", "points_actual"):
+        b[c] = pd.to_numeric(b[c], errors="coerce").astype(float)
+    b["played"] = b["played"].fillna(False).astype(bool)
+    b["is_rankable"] = b["is_rankable"].fillna(False).astype(bool)
+    wk = ["league_id", "season", "week"]
+    games = pd.DataFrame({
+        "games_scheduled": b.groupby(wk)["game_id"].nunique(),
+        "games_played": b[b["played"]].groupby(wk)["game_id"].nunique(),
+    }).fillna(0).astype(int)
+    s = b[b["played"] & b["is_rankable"] & b["points_actual"].notna() & b["proj_points"].notna()]
+    out: list[dict[str, object]] = []
+    for (league_id, season, week, pos), g in s.groupby([*wk, "position"]):
+        if len(g) < min_players:
+            continue
+        y, p = g["points_actual"], g["proj_points"]
+        iv = g[g["p10"].notna() & g["p90"].notna()]
+        yi = iv["points_actual"]
+        out.append({
+            "league_id": league_id, "season": int(season), "week": int(week), "position": pos,
+            "n_players": int(len(g)),
+            "spearman": _spearman(p, y), "top_n": TOP_N[pos], "hit_rate": _hit_rate(p, y, TOP_N[pos]),
+            "mae": float((p - y).abs().mean()),
+            "coverage_80": float(((yi >= iv["p10"]) & (yi <= iv["p90"])).mean()) if len(iv) else None,
+            "interval_width": float((iv["p90"] - iv["p10"]).mean()) if len(iv) else None,
+            "games_played": int(games.loc[(league_id, season, week), "games_played"]),
+            "games_scheduled": int(games.loc[(league_id, season, week), "games_scheduled"]),
+            "model_version": g["model_version"].dropna().max() if g["model_version"].notna().any() else None,
+        })
+    return pd.DataFrame(out, columns=DRIFT_COLUMNS)
+
+
+def load_board(conn: psycopg.Connection, season: int) -> pd.DataFrame:
+    """Every row of the season's board (played or not: the unplayed rows count the week's games)."""
+    with conn.cursor() as cur:
+        cur.execute("""select league_id, season, week, position, gsis_id, game_id, played, is_rankable,
+                              proj_points, p10, p90, points_actual, model_version
+                       from analytics.mart_player_week_projections where season = %s""", (season,))
+        return pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
+
+
+def drift(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame:
+    """Score the played weeks of the projected season (default: the newest on the board) and
+    replace that season's rows in ``ops.projection_drift``."""
+    if season is None:
+        with conn.cursor() as cur:
+            cur.execute("select max(season) from analytics.mart_player_week_projections")
+            season = cur.fetchone()[0]
+        if season is None:
+            log.warning("drift: mart_player_week_projections is empty (run `league-lab project` and `dbt build`)")
+            return pd.DataFrame(columns=[*DRIFT_COLUMNS, "run_at"])
+    res = score_drift(load_board(conn, int(season)))
+    res["run_at"] = datetime.now(UTC)
+    _write(conn, "ops.projection_drift", res, "season = %s", (int(season),))
+    log.info("drift written: %s rows for %s (weeks %s)", len(res), season, sorted(res["week"].unique().tolist()) if len(res) else "none played")
+    return res
 
 
 # ------------------------------------------------------------------------------ persistence
@@ -409,6 +498,10 @@ DDL = {
         pinball_90 double precision, interval_width double precision)""",
     "ops.projection_importance": """create table if not exists ops.projection_importance (
         model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision)""",
+    "ops.projection_drift": """create table if not exists ops.projection_drift (
+        run_at timestamptz, model_version text, league_id text, season integer, week integer, position text,
+        n_players integer, spearman double precision, top_n integer, hit_rate double precision, mae double precision,
+        coverage_80 double precision, interval_width double precision, games_played integer, games_scheduled integer)""",
 }
 
 
@@ -491,3 +584,9 @@ def run_project(season: int | None = None) -> pd.DataFrame:
     s = get_settings()
     with psycopg.connect(s.pipeline_dsn(), autocommit=False) as conn:
         return project(conn, season)
+
+
+def run_drift(season: int | None = None) -> pd.DataFrame:
+    s = get_settings()
+    with psycopg.connect(s.pipeline_dsn(), autocommit=False) as conn:
+        return drift(conn, season)

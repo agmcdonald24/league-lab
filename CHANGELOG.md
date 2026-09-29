@@ -22,6 +22,10 @@ Newest first. The Home page shows the top entry as "What's new".
   bench player's PPG, each saying so in words ("+0.3 over your TE1 this week (Proj 7.9 vs 7.6)") with floor and
   ceiling; otherwise "Nothing on the wire beats what you have at RB." The free-agent table now ranks by projection
   v2 for next week by default; every other ranking and filter is still there.
+- Rankings (projection v2) has a new strip, **"How the model is doing this season"**: once a week is complete, the live
+  board is scored like the backtest — per position, this season's rank correlation and floor–ceiling coverage next
+  to the backtest's, with the number of weeks scored. After weeks 1–2 of 2026 RB is at or above its backtest in both
+  leagues, WR and QB below (QB 0.43 vs 0.54 in League of Scrubs) — two weeks is a small sample.
 
 ## 2026-09-26 — Projection v2
 

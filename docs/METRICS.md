@@ -342,6 +342,27 @@ league's own scoring (`league_points` macro over the component outcomes) and `ra
 shown for the current season is out of sample. Refit cadence: every refresh (≈1–2 min); a
 hyperparameter change is a new `MODEL_VERSION`.
 
+### Drift (`league-lab drift`, `ops.projection_drift`, `mart_projection_drift`; plan M-06)
+
+Once a week of the projected season has been played, the live board is scored the way the backtest
+scores a held-out season: per league × week × position, on players who **played** and were
+**rankable** (the board the page shows), projection = `proj_points`, actual = `points_actual` (the
+league's own scoring), with the same harness — Spearman, top-N hit rate (QB/TE 12, RB/WR 24), MAE,
+`coverage_80` (share of actuals inside [P10, P90]), mean P90 − P10 — and the same 8-player minimum.
+`games_played / games_scheduled` mark a week still being played (Thursday night only is a handful
+of players from two teams): its rows are written and refreshed nightly, but the season view averages
+**complete weeks only** and reports the other as `week_in_progress`. The view sets each position's
+season means next to the backtest's `v2_points` means over its held-out seasons (`backtest_*`).
+Written at the end of every `league-lab project` (it reads `mart_player_week_projections` as last
+built; in the nightly the full `dbt build` runs first, so outcomes are that night's and projections
+the previous refit's) and by `league-lab drift` on demand. **Not a kickoff snapshot:** `project`
+re-projects every week of the season on each refit; the refit is deterministic on unchanged inputs,
+but a change in the training data (a stat correction, a rebuilt feature) moves past weeks' numbers
+too, and the drift follows the board as it stands. Scope difference from the backtest: the backtest
+scores every player who played, the drift only rankable ones (Out / Doubtful / IR who played anyway
+are left out, as on the board). A few weeks are a small sample: read a gap to the backtest as a
+question, not a verdict, until mid-season.
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

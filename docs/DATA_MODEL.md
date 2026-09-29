@@ -44,6 +44,12 @@ code_version, file_path, started_at, finished_at.
 `ops.source_partition` — current state per (source, dataset, partition_key): last successful
 load, checksum, ETag, rows, loaded_at. Used to skip unchanged content.
 
+`ops.projection_drift` (M-06) — one row per league_id × season × week × position for played weeks
+of the projected season (≥ 8 played, rankable players): n_players, spearman, top_n, hit_rate, mae,
+coverage_80, interval_width, games_played / games_scheduled (the week is complete when they are
+equal), model_version, run_at. Written by `league-lab drift` and at the end of `league-lab project`
+(replaces the season's rows); scored from `mart_player_week_projections`.
+
 ## analytics — NFL
 
 | Model | Grain / key | Contract |
@@ -145,6 +151,7 @@ moved a handful of special-teams-only players' shares — the correct direction 
 | `mart_backtest_summary` (view) | season, position, scorer | from `ops.backtest_results` (written by `league-lab backtest`): Spearman, hit rate, MAE, top-N picked vs ceiling PPG |
 | `mart_player_week_projections` | league_id, gsis_id, season, week | projection v2 from `ops.projections` (written by `league-lab project`): projected stat line, `proj_points` in the league's scoring, `p10 / p50 / p90`, `interval_width`, as-of context, the outcome priced under the league's scoring (`points_actual`), `actual_inside_interval`, `rank_pos` (by P50), `actual_rank_pos` |
 | `mart_projection_backtest` (view) | league_id, season, position, scorer | from `ops.projection_backtest` (written by `league-lab backtest-v2`): Spearman, hit rate, MAE, `coverage_80`, interval width per walk-forward season |
+| `mart_projection_drift` (view, M-06) | league_id, season, position | from `ops.projection_drift`: `weeks_scored`, `first_week` / `last_week`, `week_in_progress`, `player_weeks`, mean `spearman / hit_rate / mae / coverage_80 / interval_width` over **complete** weeks, next to `backtest_spearman / _hit_rate / _mae / _coverage_80 / _interval_width` (`mart_projection_backtest`, scorer `v2_points`, averaged over its held-out seasons; `backtest_seasons`, `backtest_weeks`) |
 
 ## analytics — ops views
 
