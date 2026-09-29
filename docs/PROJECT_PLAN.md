@@ -231,7 +231,44 @@ show dynasty managers League of Scrubs numbers.
 | M-05 | **Start/sit + rest of season.** Matchups start-sit board switches to v2 (proj, floor, ceiling in this league's scoring) with a "floor play / ceiling play" tag when the ordering flips between P10 and P90; rest-of-season = sum of weekly v2 projections over the remaining schedule (bye-adjusted, opponent-adjusted through `int_opponent_week_asof`), shown on the card and the Team Hub | the start-sit board's top choice per slot equals `mart_league_optimal_lineup` under v2 in ≥ 90% of played weeks of 2025 (backtest note in STATUS) |
 | M-06 | Refit cadence + drift: `make project` already refits nightly; add `ops.projection_drift` (weekly Spearman/MAE of the live board once the week is played) and a small "how the model is doing this season" strip on the Rankings page | the strip shows the current season's realised Spearman per position next to the backtest's |
 
-### Iteration 10 — operations for a product (Phase 3)
+### Iteration 9 status (2026-09-29)
+
+S-01a, U-10, U-11, M-06 **delivered** (Wave A; see STATUS). U-12 and M-05 are **superseded** by
+Iteration 9b below: the review in `docs/league-lab-next-iteration-2026-09-29.md` showed that a
+start/sit board and a player card built on the current greedy, position-by-position lineup logic
+would inherit its errors (FLEX ignored, superflex forced to a QB slot, hindsight-optimal as the
+yardstick). The exact lineup service comes first and everything decision-shaped is built on it.
+
+### Iteration 9b — the decision engine (agreed 2026-09-29; Wave B)
+
+Source: `docs/league-lab-next-iteration-2026-09-29.md` (Andrew's development brief), adopted
+with these adjustments: slot assignment is a maximum-weight bipartite matching
+(`scipy.optimize.linear_sum_assignment`), not an integer program; `read_thrown = 1` stays mapped
+to "first read" (verified by hand against PHI–DAL 2025 wk 1) with an open item to confirm with
+FTN; the deploy path (GitHub Actions nightly) is inside this iteration, not "ongoing"; the routes
+feed trial and trade evaluator are Iteration 10. Wave B round 1 = B1 + B5 + B6 (independent);
+round 2 = B2 + B3 + B4 (all consume B1). One QA pass per round.
+
+| ID | Task | Acceptance |
+|---|---|---|
+| B1 | **Exact lineup service.** `src/league_lab/lineup.py`: `solve(players, slots)` — players carry (id, position, projection, eligible flags: playable/locked/bye), slots come from `dim_league_season.roster_positions` with an eligibility map (`QB`, `RB`, `WR`, `TE`, `K`, `DEF`, `FLEX`=RB/WR/TE, `SUPER_FLEX`=QB/RB/WR/TE, `REC_FLEX`=WR/TE, `WRRB_FLEX`=RB/WR, `IDP_*` ignored, `BN`/`IR`/`TAXI` not slots); maximum-weight matching over eligible (player, slot) pairs, each player in at most one slot, empty slots allowed and reported; returns the lineup, its total, the bench, and per slot the margin over the best eligible alternative. `league-lab lineups` (called at the end of `project`) writes `ops.lineups` per league × roster × season × week (proposed lineup from v2 `proj_points` for the projected season; realised lineup value from `points_actual` for played weeks) and `mart_lineup_recommendation` publishes it with names. The historical `mart_league_optimal_lineup` keeps its greedy SQL but gains a test comparing it with the exact solver on played weeks | unit tests compare the solver with exhaustive enumeration on synthetic fixtures for 1QB, 2QB, superflex, mixed FLEX/REC_FLEX/WRRB_FLEX, dual eligibility, byes, locked starters, fewer players than slots, K and DEF present/absent; both leagues' real slot sets solve for every roster and week 4 in < 1 s total; `assert_exact_lineup_dominates_greedy`: on played weeks the exact realised lineup ≥ Sleeper's `max points` for every roster-week (ties allowed, never below) |
+| B2 | **Roster value and league rankings** from B1: per league × roster, this week's lineup value, the 4-week horizon (sum of weekly solves over the schedule, byes included), starter strength vs depth (best lineup minus best lineup without the roster's top player at each slot; bench value = the lineup value the bench would produce if every starter sat), weakest replaceable slot with its margin. Replaces `mart_league_positional_strength` as the source for Team Hub / Trade Finder / League Intel roster views; superflex handled by eligibility, never by "QB slot" | a QB3 does not raise a superflex roster's starting strength; a WR who improves FLEX is recognised; every rank names its horizon; removing a player re-solves the full lineup; Trade Finder's "shape fit" is expressed as lineup gain |
+| B3 | **Waiver engine.** For the selected roster: every legal add/drop pair (free agent on an active NFL roster × droppable rostered player, roster-size respected) evaluated by weekly lineup gain (B1 re-solve after the move minus before) and 4-week depth gain, versus doing nothing; ranked; zero-game candidates allowed and labelled "no evidence yet"; separate lists for *start now*, *next-few-weeks cover* and *upside stash* (the last from role signals only when B-round-2 role alerts exist, else omitted); the drop is named and its own future usefulness counted; an explicit "nothing beats what you have" result. Replaces the U-11 position-bar shortlist | for every roster in both leagues the top move is legal, states the gain in points, names the drop, and re-running the solver by hand on one example reproduces the number; the 22-roster sweep runs in < 5 s |
+| B4 | **Player card + My Week.** `/Player?id=<gsis>` (search box; every player name on every page links to it) with four sections in this league's scoring: usage (season/L3 target or carry share, snap share, first-read share, red-zone share, trend tags), projection (v2 proj/floor/ceiling, the stat line, next opponent and its rank vs the position, next 4 opponents), availability (rostered by whom / free agent, injury, bye, lock), value (PPG vs xPPG, position rank, and for a rostered player where he sits in that roster's B1 lineup). **My Week** (new Home section or page): the B1 proposed lineup, the two or three slots with the smallest margins as the decisions that matter, each with the named alternative and the projected difference, injury/lock flags | both cards render on both leagues with no empty section except a labelled "unavailable"; ≤ 6 queries per card; My Week's lineup equals `mart_lineup_recommendation` for that roster-week |
+| B5 | **Decision record.** Freeze each league-week's projections at first publication: `ops.projections` keeps the row written first for a (league, season, week) and later `project()` runs update only weeks not yet played (`ops.projection_snapshots` or a `frozen_at` column — design choice documented); drift scores the frozen board; `mart_projection_drift` is published and shown; a stale-data flag when the injury report is older than the newest game | after two consecutive `project` runs the played weeks' rows are byte-identical; the Rankings strip renders on the hosted copy; the sync log shows 38+ relations |
+| B6 | **GitHub Actions nightly.** `.github/workflows/nightly.yml`: Postgres service; `uv sync`; `scripts/init_db.sql`; restore the archive from the Actions cache (`data/raw`, keyed by season) and replay it with `--offline`, then fetch the current season live (Sleeper + nflverse); `dbt build`; `league-lab project`; `sync_to_hosted.sh` to Neon from repository secrets; upload the logs as an artifact; manual `workflow_dispatch`. `scripts/nightly.sh` holds the steps so the same script runs locally. The Mac's launchd job becomes optional (documented) | the workflow passes `actionlint`; `scripts/nightly.sh` runs end to end in the sandbox against a fresh Postgres (offline replay, live nflverse, Sleeper from the archive); the run budget is stated (minutes, cache size); `docs/HOSTING.md` § "Nightly on GitHub Actions" tells Andrew the three secrets to set and how to run it once by hand |
+
+### Iteration 10 — after the decision engine
+
+| ID | Task | Notes |
+|---|---|---|
+| T-01 | Trade evaluator on B1: both rosters before/after a package, two-for-one drops and replacements, partners ranked by complementary lineup gain, market value kept separate from fit | brief § 5 |
+| R-10 | Role-change alerts (routes proxy where available, snap/target trajectory, teammate absences) validated against known cases; routes provider trial with a safe game/week upsert importer | brief § 2 |
+| R-11 | Matchup comparison: opportunity allowed vs efficiency allowed, opponent-quality adjustment, as-of; two FLEX options side by side | brief § 4 |
+| R-12 | Scenario upside (base / larger-role scenarios with expiry), calibrated before probabilities are shown | brief § 3 |
+| R-13 | K and D/ST projection paths for leagues that start them | brief § 4 |
+
+### Iteration 11 — operations for a product (Phase 3)
 
 | ID | Task | Notes |
 |---|---|---|

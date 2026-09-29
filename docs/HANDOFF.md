@@ -6,7 +6,7 @@ For the next agent (Claude Code or any other) picking this repo up. Read in this
 
 ## Where things stand
 
-* Everything through **Iteration 8** is built, tested and committed: two Sleeper leagues side by
+* Everything through **Wave A of Iteration 9** is built, tested and committed: two Sleeper leagues side by
   side (`LEAGUE_LAB_SLEEPER_LEAGUE_ID=<reference>,<other>`), the Phase 2 play-by-play layer, the
   OLS baseline rankings with backtest, and **Projection v2** (per-league stat-line projections with
   a calibrated floor/ceiling, walk-forward validated 2021–2025). The app is live on Streamlit
@@ -22,18 +22,18 @@ For the next agent (Claude Code or any other) picking this repo up. Read in this
 * Test agents walked every page on both leagues on 2026-09-26; every finding is fixed, the
   per-league pricing last (S-01a; evidence in `docs/STATUS.md` § "S-01a").
 
-## The tasks, in order (details and acceptance in `docs/PROJECT_PLAN.md` § Iteration 9)
+## The tasks, in order (details and acceptance in `docs/PROJECT_PLAN.md` § Iteration 9b)
 
-1. ~~**S-01a** per-league observed points for the league pages~~ — done 2026-09-27.
-2. **U-10** (next) scoring summary line (`dim_league_season.scoring_label`), raw diff in an expander.
-3. **U-11** waiver shortlist ("adds worth a claim" vs your weakest starter / best bench, priced by v2).
-4. **U-12** player card — usage, projection, availability, value on one screen; names link to it.
-5. **M-05** start/sit on v2 with floor/ceiling tags; rest-of-season sums.
-6. **M-06** drift strip on the Rankings page.
-Then Iteration 10 (GitHub Actions nightly, publication contract, backup drill).
+Wave A (S-01a, U-10, U-11, M-06) is delivered. **Wave B** builds the decision engine from
+`docs/league-lab-next-iteration-2026-09-29.md`:
+
+Round 1 (independent, in parallel): **B1** exact lineup service · **B5** decision record (frozen
+projections, published drift) · **B6** GitHub Actions nightly.
+Round 2 (all consume B1): **B2** roster value and rankings · **B3** waiver engine · **B4** player
+card + My Week. Then Iteration 10 (trade evaluator, role alerts, matchup comparison, K/DST).
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
-dbt test named in the acceptance column, and cite the task ID in the commit.
+dbt/unit tests named in the acceptance column, and cite the task ID in the commit.
 
 ## How to work here
 
