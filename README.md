@@ -43,7 +43,7 @@ tests. Then:
 
 ```bash
 ./scripts/bootstrap.sh --full   # or: make backfill      -> NFL history 2016-present
-make refresh                    # daily: Sleeper + current NFL season + dbt build (+ backup)
+make refresh                    # daily: the nightly pipeline (scripts/nightly.sh) + backup; GitHub Actions runs it too
 make status                     # what loaded, when, what failed
 make test                       # dbt tests only
 make pytest                     # python unit tests (no database needed)
@@ -67,7 +67,7 @@ league-lab/
   dbt/                      # sources, staging, intermediate, marts, seeds, tests, macros
   app/                      # Streamlit explorer: Team Hub, Waiver Wire, Matchups, Trade Finder, League Intel,
                             #   League, Players, Receivers, Kickers, Data Status
-  scripts/                  # bootstrap.sh, init_db.sql, refresh.sh, backup.sh, restore_test.sh, launchd/
+  scripts/                  # bootstrap.sh, init_db.sql, nightly.sh, refresh.sh, backup.sh, sync_to_hosted.sh, restore_test.sh, launchd/
   tests/                    # pytest unit tests + a synthetic Sleeper fixture generator
   docs/                     # plan, project plan/backlog, runbook, data model, metrics, sources, limitations, status
   data/raw/                 # (git-ignored) replayable source archive

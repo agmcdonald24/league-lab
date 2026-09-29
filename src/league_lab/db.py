@@ -87,8 +87,15 @@ create table if not exists ops.projections (
     proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision,
     proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision,
     proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision,
-    proj_points double precision, p10 double precision, p50 double precision, p90 double precision
+    proj_points double precision, p10 double precision, p50 double precision, p90 double precision,
+    frozen_at timestamptz, frozen_source text
 );
+-- Decision record (plan B5): a league-week's rows are frozen once its first game kicks off.
+-- frozen_source: NULL = live (rewritten by every refit), 'kickoff' = the board as published before the
+-- week's first kickoff (frozen_at = that publication time), 'refit' = the week was already under way
+-- when its rows were locked (not a kickoff record). An existing table gains the columns here.
+alter table ops.projections add column if not exists frozen_at timestamptz;
+alter table ops.projections add column if not exists frozen_source text;
 create index if not exists projections_idx on ops.projections (league_id, season, week, position);
 create table if not exists ops.projection_backtest (
     run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
@@ -104,8 +111,30 @@ create table if not exists ops.projection_importance (
 create table if not exists ops.projection_drift (
     run_at timestamptz, model_version text, league_id text, season integer, week integer, position text,
     n_players integer, spearman double precision, top_n integer, hit_rate double precision, mae double precision,
-    coverage_80 double precision, interval_width double precision, games_played integer, games_scheduled integer
+    coverage_80 double precision, interval_width double precision, games_played integer, games_scheduled integer,
+    frozen_share double precision
 );
+-- Exact lineup service (plan B1): written by `league-lab lineups` and at the end of `league-lab
+-- project` (src/league_lab/lineup.py; replaces the season's rows). One row per starting slot
+-- (filled or empty), bench player and player who cannot play, per league x season x week x roster x
+-- proposed / realised; the totals table has one row per lineup.
+create table if not exists ops.lineups (
+    run_at timestamptz, model_version text, league_id text, season integer, week integer, roster_id integer,
+    is_realised boolean, role text, slot text, slot_type text, slot_order integer, bench_rank integer,
+    sleeper_player_id text, gsis_id text, player_name text, position text, value double precision,
+    value_source text, margin double precision, is_locked boolean, report_status text, reason text
+);
+create index if not exists lineups_idx on ops.lineups (league_id, season, week, roster_id);
+create table if not exists ops.lineup_totals (
+    run_at timestamptz, as_of timestamptz, model_version text, league_id text, season integer, week integer,
+    roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision,
+    slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision,
+    weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer,
+    n_questionable integer, n_ppg_valued integer, inputs_fingerprint text, n_unvalued integer
+);
+-- B5: share of a scored week's rows that are the board as published before kickoff
+alter table ops.projection_drift add column if not exists frozen_share double precision;
+alter table ops.lineup_totals add column if not exists n_unvalued integer;   -- B1 follow-up (2026-09-29)
 create table if not exists raw.routes_feed (
     season          integer,
     week            integer,

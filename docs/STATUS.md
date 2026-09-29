@@ -370,6 +370,336 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
 * **Open**: no `metric_registry.csv` row for the drift metrics (seeds out of bounds); freezing played weeks'
   projections at kickoff would make the drift exact — a separate task.
 
+## Wave B (Iteration 9b)
+
+### PO merge and QA — round 1 (B1 + B5 + B6), 2026-09-29
+
+* Three Opus developers in parallel again (worktrees `wt-b1` / `wt-b5` / `wt-b6`, branches `dev/B1` / `dev/B5` /
+  `dev/B6`, clones `league_lab_b1` / `_b5` / `_b6`) off `0fda8e7`. Merged into `integration/wave-b`: conflicts in
+  `db.py` (both migrations kept), `table.py` (both registry blocks), CHANGELOG / STATUS ("keep both"), `refresh.sh`
+  (B6's version: it execs `nightly.sh`). Cross-branch fixes by the PO: `nightly.sh` restores `ops.projections` and
+  `ops.projection_drift` before `project` (B5 × B6: a fresh CI database would otherwise refit every played week) and
+  builds `mart_lineup_recommendation+` (B1 × B6). B1 accepted as designed: Sleeper's observed points for realised
+  lineups (`points_actual` omits 2-pt conversions and long-TD bonuses), `ops.projections` as the source,
+  `mart_league_optimal_lineup` as the max-points oracle, `lineup_margin`. PO decision on the empty K/DEF slots: a
+  playable player with no value fills an otherwise-empty slot at 0 (B1 follow-up 1, `8e6147d`; `uv add scipy`).
+* Verified on the main database before QA: `pytest` 298, `ruff` clean, `project` kept weeks 1–3 frozen (labelled
+  `refit`) and rewrote 4–18, 8,978 lineup rows / 440 roster-weeks, zero empty K/DEF slots in week 4, drift view
+  survives the `+` build, 26 page runs × 2 leagues with 0 exceptions.
+* One QA agent (Opus) on the integrated build: two fresh-database `nightly.sh` runs against a hosted simulation
+  (9m31s fresh with the record restored, 5m11s loaded; exit 0; weeks 1–3 byte-identical to the main database 6/6
+  after each), the week-4 kickoff path (week 4 kept and labelled `kickoff`, `frozen_at` before the Oct 2 00:15 UTC
+  kickoff, the freeze test's negative control caught 5/5 corruptions), four week-4 lineups re-solved by brute force
+  independently of `lineup.py` (totals, filled slots, weakest slot and every margin match), realised lineups vs
+  Sleeper's max points 21/22 equal + 1 higher (the −1 defense), all 33 remaining empty slots are byes / IR / taxi,
+  Playwright on both leagues (captions, the "Kickoff board" column, the banner), the sync's local-cluster guard and
+  the workflow desk-checked (action tags exist; actionlint / shellcheck clean). Findings and what was done:
+  1. **HIGH** — `restore_state` treated an unreachable hosted copy as empty, and the sync then published the refit
+     board over the record → for the two record tables "cannot read" and "copy failed" now stop the night; a
+     reachable copy that has lost the record is repaired from the archive (`save-record` writes both tables to
+     `data/raw/record/` after every `project`, so they ride the Actions cache); only "empty everywhere" starts a new
+     record, with a CI warning. Exercised all five paths by hand (`scratchpad/state_harness.sh`).
+  2. **HIGH** — Neon was the only copy of the record and the sync dropped `ops` before restoring → `ops` (a few MB)
+     is now dropped inside the restore transaction (a failed restore rolls back); the marts still swap outside it
+     (Neon's 0.5 GB cannot hold two copies). Plus the archive copy above.
+  3. **MEDIUM** — locks needed Sleeper's weekly list; without it started starters were dropped instead of locked
+     (week 4 at kickoff + 12 h: 0 locks, 2 rosters lost a slot, values down to −17.5) → B1 follow-up 2 (`8fa1755`):
+     today's roster carries `is_starter` / `slot` from Sleeper's ordered `starters` array (`stg_sleeper__rosters
+     .starter_ids`); 6 PIT/CLE starters locked, no roster loses a slot, real-clock output unchanged.
+  4. **MEDIUM** — projection v2 was not reproducible on identical inputs (unordered training scan → the
+     early-stopping validation split moved; RB/WR/TE values differed up to 1.48 points, only 166–193 of ~590 rows per
+     week identical) → `load_frame` orders the rows; two consecutive `project` runs are byte-identical on all 36
+     league-weeks. MODEL_VERSION unchanged (same model, now deterministic).
+  5. **MEDIUM** — the stale-injury flag could never fire on a CI-built copy (replay time ≠ report time) → B6
+     follow-up (`62e31f9`): a partition's `loaded_at` is the content time (the archive sidecar's `fetched_at`; a 304
+     keeps it), the freshness caption is ET; the flag now behaves the same on the runner and the Mac.
+  6. LOW — a soft `project` failure published empty lineups from the runner → `ops.lineups` / `ops.lineup_totals`
+     restored too, so that night republishes last night's board with last night's lineups; HOSTING's failure table
+     updated. LOW — the sync let `.env` override the caller's environment (`LEAGUE_LAB_DB_NAME=x` built x, published
+     the `.env` database) → the environment wins, as in `nightly.sh`. LOW — the app password was interpolated into
+     SQL and the sync log is a CI artifact → quoted psql variable. LOW — local-cluster guard without a port (QA fixed,
+     `5b24701`). LOW — a failed live fetch with no archive claimed "previous good data" → stops the night (B6
+     follow-up).
+* Left open (round 2 or later): an unvalued K/DEF counts 0 until R-13; a K/DEF with negative season PPG loses to an
+  empty slot; the freeze is per week (Sunday games fixed at Thursday's kickoff); `metric_registry` rows for lineups /
+  `frozen_share` (seeds); pg_dump's `set_config` / `setval` noise in the sync log; the freeze test's "more than one
+  label" branch returns every row of the league-week. Only verifiable on GitHub: the live Sleeper fetch, the PGDG
+  client install, cache save/restore, artifacts, masking, Neon (must be Postgres 17: pg_dump 17 emits
+  `SET transaction_timeout`; the Mac's pg_dump 17 already syncs to it, so it is), runner timing and disk. If the
+  repository were public, GitHub disables scheduled workflows after 60 days without activity (off-season).
+
+### B1 2026-09-29 — exact lineup service (branch `dev/B1`)
+
+* **Built**: `src/league_lab/lineup.py` — `solve(players, slots)`: maximum-weight bipartite matching
+  (`scipy.optimize.linear_sum_assignment`) of players to the league's starting slots (`SLOT_ELIGIBILITY` on Sleeper
+  `fantasy_positions`; BN/IR/TAXI dropped, IDP reported); each player at most once, empty slots allowed and reported,
+  unplayable players listed with the reason, locked players kept in their slot; returns lineup, total, bench (value
+  order) and per filled slot the **margin** = total − best total with him removed (re-solved). `lineups(conn, season)`
+  (CLI `league-lab lineups`; called at the end of `project()` after `drift()`, failure logged, not fatal) writes
+  `ops.lineups` (one row per starting slot / bench player / unplayable player per league × season × week × roster ×
+  proposed|realised) and `ops.lineup_totals` (one row per lineup: value, bench value, weakest slot and margin, counts,
+  `inputs_fingerprint`); view `mart_lineup_recommendation` (proposed lineup with names, margins, weakest slot,
+  `realised_optimal`); Makefile `project` / `refresh.sh` select it. Design, sources and limits in `docs/METRICS.md`
+  § Lineup value and `docs/DATA_MODEL.md`.
+* **Decisions** (PO to confirm): (1) the realised optimum uses **Sleeper's points for every position**, not the
+  projections mart's `points_actual` for QB–TE as specified — `points_actual` drops 2-pt conversions and long-TD
+  bonuses (28 rostered player-weeks exactly 2 short in weeks 1–2), so it would sit below Sleeper's max points by
+  construction; (2) `lineups()` reads `ops.projections` (+ features for status), not `mart_player_week_projections`,
+  because inside `project` that mart still holds the previous refit (values rounded as the mart rounds); (3) Sleeper
+  publishes max points only per roster-season, so the error test compares each roster-week with
+  `mart_league_optimal_lineup` (its weekly reconstruction, = ppts for all 22 rosters in 2026) and skips roster-weeks
+  whose Sleeper points changed since the solve (fingerprint), so a stat correction between the nightly `dbt build`
+  and `project` cannot fail the night; (4) `lineup_margin`, not `margin`, in the mart (`margin` is the matchup margin
+  in the registry). **Accepted by the PO 2026-09-29.**
+* **Evidence** (clone `league_lab_b1`, 2026 weeks 1–18, weeks 1–2 scored, week 3 fully kicked off at run time):
+  `league-lab lineups` → 9,048 rows / 440 roster-weeks (396 proposed, 44 realised) in 1.1–1.3 s (solver 0.2–0.4 s; a
+  first cold run 3.3 s); week 4 for all 22 rosters 25 ms. End to end: `league-lab project` (refit 39 min here, CPU
+  shared with another worktree's refit) logged "lineups written … 1.30 s" after the drift; then the Makefile line
+  `dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+` PASS=23, and
+  all 7,096 projection-valued lineup rows equal the rebuilt `mart_player_week_projections.proj_points` exactly.
+  `dbt build --select mart_lineup_recommendation+ assert_exact_lineup_dominates_greedy` PASS=11; source tests PASS=4.
+  Negative controls: realised total −1 → FAIL 1; same row with a changed fingerprint → skipped (PASS); realised row
+  deleted → FAIL 1 (coverage). Exact vs greedy on all 1,384 scored roster-weeks 2021–2026 (ad hoc, not persisted):
+  1,367 equal, 17 higher (13 a negative scorer left out, 4 Travis Hunter DB/WR at WR), 0 lower; the Hunter weeks close
+  the 2025 greedy-vs-ppts gaps (League of Scrubs roster 6 −9.70 — not "a bench defense" as noted above — and dynasty
+  roster 11 −17.30 → 0). Only 2023 dynasty roster 4 (−3.05) stays below Sleeper, as the greedy does. 2026 season to
+  date: exact = ppts for 21 of 22 rosters, League of Scrubs roster 4 +1.00 (a −1 DEF left out).
+* **Sanity reads** (after the sandbox refit; the Mac-fitted projections the clone came with gave the same shape, e.g.
+  dynasty roster 1 week 4 = 131.75): dynasty roster 1 week 4 = 130.26 — QB Allen 32.32 (margin 22.47), RB Cook 17.86
+  (8.01) / Henderson 10.83 (0.98), WR Collins 16.15 (6.30) / Watson 14.28 (4.43), TE Goedert 7.33 (0.53), FLEX Tucker
+  10.00 (**0.15**, weakest; Monangai 9.85 first on the bench), SUPER_FLEX Hurts 21.49 (11.64); bench lineup 50.48;
+  A.J. Brown / Tyson IR slot, Singleton / Meyers / Strand taxi, Sampson NFL IR. Same roster week 2 realised 168.70 =
+  Sleeper max for the week (started 146.40); weeks 1–2 386.65 = Sleeper ppts 386.65. Superflex: dynasty roster 5
+  (The72Repeat) week 4 starts RB David Montgomery 11.66 at SUPER_FLEX over QB2 Kyle McCord 9.17 (margin 0.20); a
+  non-QB superflex in 1–4 of 12 dynasty lineups in each of weeks 4–18. League of Scrubs roster 2 (MacZaddy) week 4 =
+  112.33: K McLaughlin 13.50 (`season_ppg`, = his league PPG over 2 games), DEF Kansas City 1.00 (`observed_ppg`, one
+  scored week), weakest FLEX2 Croskey-Merritt 9.13 (0.06); QBs Young 17.75 / Shough 16.55 on the bench (1 QB slot).
+* **Tests**: `tests/test_lineup.py` 179 (solver vs exhaustive enumeration incl. every margin: 1QB, 2QB, superflex ×3,
+  mixed FLEX/REC_FLEX/WRRB_FLEX where the greedy order loses 19 → 11, dual eligibility, byes/injuries/no value, locks,
+  fewer players than slots, K/DEF present/absent, negative values, 160 random rosters; the builder on a hand-made league
+  with a scored week, an in-progress week with locks and a bye week; speed: median 0.3 ms per solve with margins on the
+  real slot sets, < 5 ms asserted; DDL copies agree). `pytest` 208/208, `ruff` clean, `db migrate` OK, headless page
+  check 26/26 runs, 0 exceptions (pages untouched).
+* **Follow-up (PO decision 2026-09-29) — unvalued players fill otherwise-empty slots.** A playable, eligible player
+  with no value yet (K / DEF Sleeper has not scored in this league, a K with no NFL id and no points, a QB–TE with no v2
+  projection although his team plays) is carried at 0 with `value_source = 'unvalued'`, `reason = 'no value yet'`. The
+  objective is now total first, filled slots second, valued starters third (tie weights 1e-9 / 1e-12), so he is seated
+  only where nobody valued can play, never displaces a valued player (even one worth exactly 0), never changes the
+  total; margin 0, never the weakest slot. `ops.lineup_totals.n_unvalued` (DDL in `lineup.DDL`, `db.py`, the mart's
+  pre_hook, each with `alter table … add column if not exists` for existing tables; `db migrate` added it in place on
+  the clone), exposed in the mart and registered in `table.py`; new mart test `lineup_unvalued_starter_counts_zero`,
+  `value_source` accepts `unvalued`, the weakest-slot test skips unvalued rows. `is_empty_slot` now means nobody eligible
+  (bye, Out, IR, taxi, nobody at the position). `scipy>=1.18.1` declared (`uv add scipy`; version unchanged).
+  **Evidence**: week-4 empty slots before → after: League of Scrubs 5 → 0 (rosters 3 K Trey Smack, 4 DEF Carolina,
+  7 DEF Minnesota, 8 DEF Cincinnati, 10 DEF New England now `unvalued` starters, value 0, margin 0, totals unchanged),
+  dynasty 0 → 0; all weeks 101 → 31 and 2 → 2 (every remaining proposed empty slot has no eligible player: byes).
+  `league-lab lineups` 8,978 rows / 440 roster-weeks in 1.0 s; dbt `mart_lineup_recommendation+` +
+  `assert_exact_lineup_dominates_greedy` PASS=12, source tests PASS=4; exact vs greedy on 1,384 historical
+  roster-weeks unchanged (1,367 equal, 17 higher, 0 lower). `tests/test_lineup.py` 262 (enumeration now checks all
+  three objective levels; new fixtures: the only K unvalued, an unvalued WR behind valued WRs and behind a WR worth
+  exactly 0, an unvalued RB filling an otherwise-empty FLEX next to a truly empty TE, a locked unvalued DEF; 240 random
+  rosters — 44 seat an unvalued player, 34 bench one, 21 start a valued player worth 0; the builder fixture gained a WR
+  without a projection seated at FLEX and an unvalued DEF behind a valued one). `pytest` 291/291, `ruff` clean,
+  `uv lock --check` OK, headless page check 26/26, 0 exceptions.
+* **Follow-up 2 (PO, from QA) — locks without a weekly list.** QA found that when Sleeper's weekly matchup list for the
+  week in progress does not exist yet (a Thursday game before the next fetch, or a soft-failed fetch in CI), the
+  fallback roster carried no starters, so players whose game had started were dropped to "game started (bench)"
+  instead of locked. Fix: today's roster rows now carry `is_starter` / `slot` from Sleeper's `starters` array, read from
+  `staging.stg_sleeper__rosters.starter_ids` (already stored, ordered, in `raw.sleeper_roster.starters`; no ingestion,
+  dbt or column change); `lineup.starter_slots()` maps it onto `roster_positions` without BN / IR / TAXI (IDP slots
+  keep their place, "0" = empty). The weekly list stays the first choice. **Evidence** (clone, `lineups(as_of=2026-10-02
+  12:15 UTC)` = week 4's first kickoff, PIT @ CLE, + 12 h; no week-4 list): before (`8e6147d`) 0 locks, 26 "game
+  started (bench)", 2 empty slots (League of Scrubs roster 6 DEF Pittsburgh 15.0, roster 10 TE), lineup values
+  −0.37 … −17.39 on 6 rosters; after: **6 locked** (dynasty 8 WR2 Metcalf, 12 FLEX Boston; League of Scrubs 6 RB2
+  Judkins, WR2 Boston, DEF Pittsburgh 15.0, 10 TE Freiermuth), 20 "game started (bench)", **0 empty slots, no roster
+  loses a slot**; the 4 remaining deltas (−0.37 … −1.41) are the lock itself: Sleeper's own lineup benched a started
+  Metcalf / Warren / Fannin, or (roster 6) locked Boston at WR2 pushing out a free Jameson Williams (9.61 − 9.14).
+  At the real clock the output is byte-identical to `8e6147d` apart from run_at / as_of (md5 of both tables, 8,978 /
+  440 rows; weeks 1–3 have lists, no week-4 game has started). Tests: `test_lineup.py` 265 (+3: the starters-array
+  mapping with "0", IDP alignment and a short array; a week with no list: started starters locked in the array's
+  slots, a started bench player blocked, a not-started starter moved, the "0" slot filled, total = locked + optimum of
+  the rest = 62, and the pre-kickoff lineup; the weekly list beats the array). `pytest` 294/294, `ruff` clean, dbt
+  lineup build PASS=12 (and the mart tests PASS=11 with the locked state loaded), source tests PASS=4, headless page
+  check 26/26, 0 exceptions.
+* **Open**: an unvalued K/DEF counts 0, so the lineup value understates those rosters until Sleeper scores him (R-13 is
+  the real fix); a K / DEF with a negative season PPG would still lose to an empty slot (none in 2026 so far); in a
+  realised lineup an empty slot can also mean "only a negative scorer" (League of Scrubs roster 4, week 1, DEF −1); no
+  `metric_registry.csv` row (seeds out of bounds); the view and `ops.lineups` (≈9k rows) will be published by the
+  hosted sync (every analytics view + `ops.*`).
+
+### B5 2026-09-29 — decision record (branch `dev/B5`, clone `league_lab_b5`)
+
+* **Built** (plan Iteration 9b, B5): a league-week's rows in `ops.projections` are rewritten by every refit until the
+  week's first kickoff (`min(dim_game.kickoff_at)`) and never after (`projections.freeze_plan`, applied in one
+  transaction by `_write_projections`; `project()` changed by one call). New columns `frozen_source` (NULL live /
+  `kickoff` / `refit`) and `frozen_at` (= the kept rows' `fitted_at`, before the first kickoff; only for `kickoff`),
+  added to an existing table by `db migrate`, the writer and the mart's pre-hook (`alter table … add column if not
+  exists`). Design: a label on the table, not an `ops.projection_snapshots` table — the row a manager saw is the only
+  row, so mart, page, drift and the hosted copy need no second copy (`docs/METRICS.md` § Decision record,
+  `docs/DATA_MODEL.md`). **2026 weeks 1–3 hold refit values** (rows fitted 2026-09-26 23:53 UTC, after those weeks
+  kicked off): labelled `refit`, kept unchanged, and the Rankings board and strip say "refit values". Drift reads the
+  projection from `ops.projections` (the frozen rows) and writes `frozen_share`; `mart_projection_drift` carries the
+  player-weighted `frozen_share` and `refit_weeks`. Freshness banner: "Injury report last loaded <when>; treat
+  Questionable tags as stale." when the injuries partition's last content change (`mart_data_status`; nflverse's
+  `date_modified` is empty since 2025) is before the last final game's date or more than 48 h before the next kickoff
+  (`dim_game`, guarded by `missing_relations`), only when a game is within 7 days. dbt:
+  `assert_frozen_projections_precede_kickoff` (kickoff times, not run times), `accepted_values` on
+  `frozen_source`, `projection_drift_frozen_share_in_range`.
+* **Evidence**: `db migrate` added the columns to the 19,822-row table. `league-lab project` run 1: weeks 1–3 kept
+  (per league-week md5 of the value columns identical to the pre-B5 rows, 6/6) and labelled `refit`; weeks 4–18
+  rewritten (16,268 rows). Run 2: whole-row md5 (every column, labels included) of weeks 1–3 identical to run 1, 6/6;
+  weeks 4–18 rewritten (30/30 league-weeks new md5). Drift after B5 = M-06's numbers (18 rows, Spearman identical,
+  MAE within 1e-15), `frozen_share` 0 everywhere. `dbt build --select mart_player_week_projections+
+  mart_projection_backtest+` PASS=14 twice and `mart_projection_drift` is still a view afterwards;
+  `source:ops.projections+ source:ops.projection_drift+ mart_projection_backtest+` PASS=16. Kickoff path simulated on
+  the clone (clock set to week 4's first kickoff + 12 h): week 4 kept and labelled `kickoff`, `frozen_at` 2026-09-29
+  18:22:23 UTC < kickoff 2026-10-02 00:15 UTC, weeks 5–18 rewritten, the freeze test PASS; negative control (one
+  `kickoff` row moved past kickoff, one `refit` row given a `frozen_at`) → FAIL 2 naming both; real clock restored →
+  every league-week byte-identical to run 2. `pytest` 36/36 (7 new in `tests/test_projection_freeze.py`: freeze rules,
+  two in-memory refits byte-identical on played weeks, kickoff board kept, DDL copies agree and upgrade, `frozen_share`,
+  banner flag on/off), `ruff` clean, headless check 26/26 runs 0 exceptions, Playwright on the dynasty Rankings page:
+  strip "Scored on refit values: weeks 1 and 2 …", week 3 caption, banner flag shown by the data itself (loaded
+  Sat Sep 26, next kickoff Thu Oct 1), gone with the threshold raised to 200 h (restored).
+* **Open**: B6's nightly on an ephemeral Postgres must carry `ops.projections` forward between runs (e.g. restore it
+  from the hosted copy before `project`), or every played week is re-created as `refit` each night. The freeze is per
+  week: Sunday games' board is fixed at Thursday's kickoff (a per-game freeze is a refinement). For week 4 to be the
+  first kickoff record on the Mac, B5 must be running before the Friday 2026-10-02 08:00 refresh. Hosted acceptance
+  (the strip on Neon, "38+ relations" in the sync log) is Andrew's `make sync-hosted`; the sync will add
+  `analytics.dim_game` (≈3k rows) because the banner reads it. `project` took 3 min alone and 36 min while two other
+  model fits shared the sandbox's 2 cores. No `metric_registry.csv` row for `frozen_share` (seeds out of bounds).
+### B6 — the nightly pipeline on GitHub Actions (2026-09-29; absorbs I-01)
+
+* **Built**: `scripts/nightly.sh`, one script for every machine: migrate → restore state → replay the archive
+  (`ingest sleeper --offline`, `ingest nfl --offline` for 2016…last season, then the current season) → live
+  fetch (Sleeper; `ingest nfl --seasons <current>`, conditional requests) → `dbt build` → backtests (only when
+  missing or from another `MODEL_VERSION`) → `project` → projection marts → drift → backup (`NIGHTLY_BACKUP=1`) →
+  `sync_to_hosted.sh` (when `LEAGUE_LAB_HOSTED_ADMIN_URL` is set). Timing line per step, a summary table (also the
+  Actions run summary), `::error` annotation naming the failing step, everything appended to `logs/nightly.log`.
+  Failure policy: an ingest failure keeps going on the previous good data (the archive replayed a minute earlier)
+  and fails the run at the end; a failure from the build on stops before anything is published. Same
+  `.state/refresh.lock` as before, now with the holder's pid (a lock left by a killed run is cleared). `.env` is
+  read without overriding the caller's environment. `NIGHTLY_SLEEPER_OFFLINE=1` skips the live Sleeper fetch.
+* `scripts/refresh.sh` (launchd, `make refresh`) is now `NIGHTLY_BACKUP=1 scripts/nightly.sh`. Changes on the
+  Mac: the archive replay runs first (4 s measured: every checksum matches, nothing reloads); a failed ingest no
+  longer blocks the publish; a failed `project` still publishes with last night's projections (as before) but is
+  fatal on a fresh database, where there is no earlier board.
+  `make refresh` used to run `league-lab refresh` (no lock, no projections, no sync) although the runbook said it
+  was `refresh.sh`; it now is. `make nightly` runs the CI path.
+* `.github/workflows/nightly.yml`: `schedule` 11:37 UTC (07:37 EDT / 06:37 EST) + `workflow_dispatch` (inputs:
+  `--full` history audit, recompute backtests); `concurrency: nightly` (queued, never cancelled); `ubuntu-24.04`,
+  `services: postgres:17` (throwaway password, `--shm-size=1g`); `uv sync --locked`; `postgresql-client-17` from
+  PGDG (the runner's 16 cannot dump a 17 server); `scripts/init_db.sql` against the service with generated role
+  passwords (masked); `.env` for the service + the league-id secret (validated); the two hosted secrets reach
+  `nightly.sh` as environment variables (python-dotenv expands `${...}` even inside quotes, so a `.env` line cannot
+  carry every password); archive restore/save through `actions/cache` (key `league-lab-raw-v1-<season>-<content
+  fingerprint>`, saved only when the fingerprint changed); artifacts `nightly-logs` and `dbt-run-results` (14 days).
+* `scripts/init_db.sql` takes `-v db_name=…` (default `league_lab`; quoted with `%I` / `:"db_name"`), so the same
+  script creates a worktree's or the CI service's database; re-running it where the roles exist changes nothing
+  unless passwords are passed. `bootstrap.sh` passes `LEAGUE_LAB_DB_NAME`.
+* **Two findings the fresh database exposed** (both would have blanked hosted pages on the first CI sync):
+  (1) the backtests behind the Rankings scoreboards (`ops.backtest_results`, `ops.projection_backtest`,
+  `ops.projection_importance`) are not derivable from the archive → `restore-state` copies them back from the
+  hosted copy, recomputed only when neither has them; (2) `project` scores drift on the board *as last built*,
+  which in a fresh database is empty → `drift` re-scores the just-published board when the season has no drift rows
+  (on the Mac `project`'s own rows are kept, so M-06's semantics there are unchanged).
+* **Evidence** (this sandbox: 2 CPUs shared with two other agents' builds, load average 4–8; Postgres 16 here, 17
+  in CI). `league_lab_b6` created from nothing as the workflow does it (`init_db.sql -v db_name=league_lab_b6` with
+  the `.env` passwords; a second run without passwords changes nothing; the shared roles and the other databases
+  untouched). Hosted target `league_lab_b6_hosted`, owned by a CREATEROLE role holding ADMIN on `league_lab_app`
+  (Neon's owner shape), `LEAGUE_LAB_HOSTED_ALLOW_LOCAL=1`, app password = the local one; dropped afterwards.
+  Sleeper replayed from the archive (`NIGHTLY_SLEEPER_OFFLINE=1`), nflverse history replayed, current season live.
+
+  | step | run A: fresh db, hosted empty | run B: fresh db, hosted from A (every CI night) | run C: `refresh.sh` on the loaded db (the Mac) |
+  |---|---:|---:|---:|
+  | migrate / restore-state | 1 s / 0 s (nothing to restore) | 1 s / 1 s (864 + 2,160 + 300 rows restored) | 1 s / 0 s (kept) |
+  | replay-sleeper | 7 s | 3 s | 2 s |
+  | replay-nflverse-history (2016–2025) | 1 m 12 s | 46 s | 2 s (all unchanged) |
+  | replay-nflverse-current | 7 s | 4 s | 0 s |
+  | fetch-sleeper | skipped | skipped | skipped |
+  | fetch-nflverse-current (live) | 11 s (19 unchanged, 1 new) | 9 s | 9 s |
+  | dbt-build | 8 m 38 s | 5 m 48 s | 2 m 39 s |
+  | backtests | 15 m 50 s (recomputed) | 1 s (kept) | 1 s (kept) |
+  | project / projection-marts / drift | 2 m 35 s / 27 s / 1 s | 2 m 38 s / 25 s / 2 s | 2 m 37 s / 6 s / 0 s |
+  | backup / sync-hosted | skipped / 13 s | skipped / 10 s | 57 s (400 MB) / 9 s |
+  | **total** | **29 m 23 s** | **10 m 09 s** | **6 m 44 s** |
+
+  Every run: `Done. PASS=308 WARN=2 ERROR=0 SKIP=0 NO-OP=0 TOTAL=310` (the two known warnings, 6 and 7 rows, as on the
+  Mac), projection marts `PASS=12`, sync `verified: all 38 page relations are on the hosted copy` (hosted copy
+  319 MB; the app role reads it and cannot write). Drift: `project`'s own pass wrote 0 rows on the fresh database
+  ("weeks none played"), the drift step then 24; on the loaded database `project` wrote 24 and they were kept. An
+  earlier fresh run's first live fetch loaded week-4 data into 18 current-season partitions. Lock: a live holder
+  → exit 3; a dead holder's lock is removed. `actionlint` 1.7.12 with shellcheck 0.11.0: 0 errors;
+  `yaml.safe_load` ok; shellcheck clean on `nightly.sh`/`refresh.sh`; the workflow's secret/`.env` step run with
+  stubbed `psql`/`uv` (good ids, missing, malformed, URL without password, no URL); the cache fingerprint is
+  deterministic. `pytest` 29 passed, `ruff` clean.
+* **Sandbox-only settings, not committed**: a `sitecustomize` that clears Python 3.13's `VERIFY_X509_STRICT` (this
+  sandbox's TLS-intercepting proxy CA has no keyUsage extension; chain and hostname verification stay on) — the
+  first attempt without it failed every live nflverse fetch with `CERTIFICATE_VERIFY_FAILED` and was stopped; and
+  `OMP_NUM_THREADS=1` — a second attempt with default threads stalled in `backtest-v2` under the three-way CPU
+  contention (first fit after 11 min) and was stopped; single-threaded, the whole recompute took 15 m 50 s.
+* **Unresolved / only verifiable on GitHub**: the live Sleeper fetch (blocked here; ~9 league-seasons ≈ 400
+  requests + the 5 MB player directory, estimated 1–2 min); the PGDG client install, `actions/cache` save/restore
+  and the artifact uploads; the restore of the backtests from Neon (tested against the local hosted simulation
+  only); real runner timings (this sandbox shared its 2 CPUs with two other agents' builds) and disk (the database
+  is 3.4 GB + the 0.3 GB archive, inside the runner's ~14 GB).
+  **B5 × B6**: the CI database is new every night, so frozen projections (B5) must be carried like the backtests —
+  add B5's table to `STATE_TABLES` in `nightly.sh` (restored from the hosted copy before `project`), or every
+  night's "first publication" is that night. A licensed routes file imported on the Mac is not in the archive.
+  (The "last loaded" = replay time problem found in QA is fixed: follow-up below.)
+* **Andrew**: merge to `main`, add the three secrets (HOSTING.md § 5), run it once by hand from the Actions tab,
+  then retire the launchd job or take `LEAGUE_LAB_HOSTED_ADMIN_URL` out of the Mac's `.env` (one writer).
+
+#### B6 follow-up 2026-09-29 — content time, not replay time (QA finding, MEDIUM)
+
+* **Finding**: on a fresh database every partition's `ops.source_partition.loaded_at` was the replay time, so the
+  CI-built copy said "loaded this morning" for files unchanged for days (nflverse `teams`: 2026-09-29 19:25 UTC vs
+  the archive's 2026-09-26), B5's stale-injury flag could never fire there, and "sleeper loaded …" showed the replay.
+* **Decision implemented**: `loaded_at` is the **content time**, the `fetched_at` of the bytes loaded
+  (`manifest.record_manifest` writes `rec.fetched_at`, `now()` only without one). `http.fetch_to_archive` makes that
+  one instant everywhere: an `--offline` replay returns the sidecar's `fetched_at` (the file's mtime without a
+  sidecar: the curl-mirrored pbp history); a live download of new bytes stamps the download and writes the same
+  instant to the sidecar; a 304, or a 200 with the archived bytes (Sleeper sends no 304; nflverse re-uploads under
+  new ETags), keeps the archived `fetched_at`, leaves the file alone and records the check as `checked_at` in the
+  sidecar (the Sleeper player directory's once-a-day guard now reads `checked_at`). **No new column**: "when this
+  database last checked" already exists as `ops.load_manifest.started_at` (every attempt, unchanged ones included)
+  → `mart_data_status.last_attempt_at`, shown next to `last_loaded_at` on Data Status. `mart_data_status`, the banner
+  and the sync's "published through" line read `loaded_at` unchanged, so they now show content time. No dbt source
+  has a `freshness:` config, so no test depends on the timestamp. A database loaded before this change keeps its old
+  insert times until a partition's content changes (the CI copy is rebuilt every night, so it is right at once).
+* `nightly.sh` (ingest section only; `restore_state`, the sync and the record steps untouched): a live fetch with no
+  archive behind it (replay skipped: first run or lost cache) is now fatal, `FAILED: stopped here (no archive to fall
+  back on: the failed partitions have no data)`, instead of "continued with the previous good data"; with an archive
+  it still continues ("failed partitions keep the copy the archive replay loaded"). The loader's own line now says
+  "whatever those partitions held before was kept (nothing, if they were never loaded)". The workflow's cache
+  fingerprint ignores `*.meta.json`, so a night that only records checks does not save a new cache entry.
+* `app/lib/ui.py` `freshness_banner`, caption only: "**nflverse** loaded Tue Sep 29, 4:53 PM ET", Eastern and
+  labelled like the B5 warning under it (was unlabelled UTC `2026-09-29 20:53`).
+* **Evidence** (`league_lab_b6` dropped and recreated with `init_db.sql`, `nightly.sh` with
+  `NIGHTLY_SLEEPER_OFFLINE=1`, `OMP_NUM_THREADS=2`, quiet sandbox; hosted simulation created and dropped again):
+  fresh night 19 m 35 s (dbt 5 m 50 s `PASS=326 WARN=2 ERROR=0 TOTAL=328`, backtests recomputed 9 m 53 s because the
+  simulation was empty, project 2 m 01 s, sync `verified: all 40 page relations`, `published through: 2026-09-29
+  20:34:18.278195+00` = the newest content, tonight's schedules download); a second night on the loaded database
+  8 m 00 s (dbt 5 m 27 s, same PASS line, backtests kept). `mart_data_status.last_loaded_at` (UTC) vs the archive's
+  `fetched_at`:
+
+  | partition | archive `fetched_at` | fresh night | second night (loaded db) |
+  |---|---|---|---|
+  | sleeper `state` | 2026-09-26 10:33:15.032896 | 2026-09-26 10:33:15.032896 | 2026-09-26 10:33:15.032896 |
+  | nflverse `teams` | 2026-09-26 02:40:38.704114 | 2026-09-26 02:40:38.704114 | 2026-09-26 02:40:38.704114 |
+  | nflverse `injuries` (2026) | 2026-09-29 17:35:05.483554 | 2026-09-29 17:35:05.483554 | 2026-09-29 17:35:05.483554 |
+  | nflverse `snap_counts` (2026; archived file removed before the run, so downloaded live) | — | 2026-09-29 20:34:17.896380 (tonight) | same |
+  | nflverse `schedules` (changed upstream during the evening) | 2026-09-29 18:36:43 | 2026-09-29 20:34:18 (tonight) | 2026-09-29 20:53:32 (changed again) |
+
+  `last_attempt_at` moved to each night's check (20:33–20:34, then 20:53) while `last_loaded_at` stayed put. The
+  replica's "2026-09-26 03:06" for `teams` quoted in the QA note was itself that database's replay time; the
+  archive says 02:40:38. pbp 2016 (no sidecar) shows its file time, 2026-09-26 13:48:37. Tests:
+  `tests/test_content_time.py` (8: offline replay carries the sidecar time / the file time; a live download is now
+  and a replay reproduces it to the microsecond; 304 and identical 200 keep the content time without rewriting the
+  file; `record_manifest` writes the record's fetch time and moves nothing on an unchanged attempt; the nflverse
+  loader end to end, offline and live, database calls stubbed; the ET caption). `pytest` 309 passed, `ruff` clean,
+  headless check 26 renders (13 pages × 2 leagues), 0 exceptions. No-archive path: with an empty `data/raw/sleeper`
+  and the blocked Sleeper API the night stopped at `fetch-sleeper` with the new line, exit 1.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

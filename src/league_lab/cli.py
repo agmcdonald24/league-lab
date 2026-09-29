@@ -74,7 +74,7 @@ def _print_results(results) -> int:
                   "" if r.row_count is None else str(r.row_count), (r.error or "")[:80])
     console.print(t)
     if failures:
-        console.print(f"[red]{failures} partition(s) failed; previous good data was kept for those.[/red]")
+        console.print(f"[red]{failures} partition(s) failed; whatever those partitions held before was kept (nothing, if they were never loaded).[/red]")
     return failures
 
 
@@ -334,12 +334,15 @@ def backtest_v2_cmd(
 def project_cmd(
     season: int | None = typer.Option(None, help="Season to project (default: the newest with features); trained on the seasons before it"),
 ):
-    """Fit projection v2 on completed seasons and write this season's weekly projections per league to ops.projections (and rescore the played weeks: ops.projection_drift). Then `make build`."""
+    """Fit projection v2 on completed seasons and write this season's weekly projections per league to ops.projections (and rescore the played weeks: ops.projection_drift; re-solve the lineups: ops.lineups). Then `make build`."""
     from .projections import run_project
 
     pred = run_project(season)
-    console.print(f"wrote {len(pred)} projection rows for {int(pred['season'].iloc[0])} "
-                  f"({pred['league_id'].nunique()} league(s), weeks {int(pred['week'].min())}-{int(pred['week'].max())}) — "
+    fz = pred.attrs.get("freeze", {})
+    console.print(f"projected {len(pred)} rows for {int(pred['season'].iloc[0])} "
+                  f"({pred['league_id'].nunique()} league(s), weeks {int(pred['week'].min())}-{int(pred['week'].max())}); "
+                  f"wrote {fz.get('rows_written', len(pred))} (weeks {fz.get('rewritten') or 'none'}), "
+                  f"kept frozen weeks {fz.get('kept') or 'none'} (kickoff board: {fz.get('kickoff') or 'none'}; refit values: {fz.get('refit') or 'none'}) — "
                   "run `make build` to publish mart_player_week_projections")
 
 
@@ -347,23 +350,56 @@ def project_cmd(
 def drift_cmd(
     season: int | None = typer.Option(None, help="Projected season to score (default: the newest in mart_player_week_projections)"),
 ):
-    """Score the live projection v2 board's played weeks like the backtest (Spearman, hit rate, MAE, coverage); writes ops.projection_drift."""
+    """Score the projection v2 board's played weeks like the backtest (Spearman, hit rate, MAE, coverage, share frozen at kickoff); writes ops.projection_drift."""
     from .projections import run_drift
 
     res = run_drift(season)
     if res.empty:
         console.print("no played week on the board yet: ops.projection_drift has no rows for this season")
         return
-    t = Table(title=f"projection drift {int(res['season'].iloc[0])} (live board, played + rankable players)")
-    for c in ("league", "week", "position", "n", "spearman", "hit_rate", "mae", "coverage_80", "width", "games"):
+    t = Table(title=f"projection drift {int(res['season'].iloc[0])} (stored board, frozen at kickoff for started weeks; played + rankable players)")
+    for c in ("league", "week", "position", "n", "spearman", "hit_rate", "mae", "coverage_80", "width", "games", "kickoff board"):
         t.add_column(c)
     def fmt(v, spec: str) -> str:
         return "" if v is None or v != v else format(v, spec)
 
     for r in res.sort_values(["league_id", "week", "position"]).itertuples():
         t.add_row(r.league_id[-6:], str(r.week), r.position, str(r.n_players), fmt(r.spearman, ".3f"), fmt(r.hit_rate, ".1%"),
-                  fmt(r.mae, ".2f"), fmt(r.coverage_80, ".1%"), fmt(r.interval_width, ".1f"), f"{r.games_played}/{r.games_scheduled}")
+                  fmt(r.mae, ".2f"), fmt(r.coverage_80, ".1%"), fmt(r.interval_width, ".1f"), f"{r.games_played}/{r.games_scheduled}",
+                  fmt(r.frozen_share, ".0%"))
     console.print(t)
+
+
+@app.command("lineups")
+def lineups_cmd(
+    season: int | None = typer.Option(None, help="Projected season (default: the newest in ops.projections)"),
+):
+    """Exact lineup service (plan B1): the best legal lineup per league x roster x week from projection v2 (and the
+    realised optimum for scored weeks); writes ops.lineups + ops.lineup_totals. Then `make project` publishes the mart."""
+    from .lineup import run_lineups
+
+    run = run_lineups(season)
+    if run.season is None:
+        console.print("ops.projections is empty: run `league-lab project` first")
+        return
+    t = run.totals
+    realised = int(t["is_realised"].sum()) if len(t) else 0
+    console.print(f"wrote {len(run.rows)} rows to ops.lineups and {len(t)} to ops.lineup_totals for {run.season} "
+                  f"({len(t) - realised} proposed, {realised} realised roster-weeks) in {run.seconds:.2f} s "
+                  f"(solver {run.solve_seconds:.2f} s)")
+    if run.next_week is None or t.empty:
+        return
+    nxt = t[(t["week"] == run.next_week) & ~t["is_realised"]].sort_values(["league_id", "roster_id"])
+    tab = Table(title=f"proposed lineups, week {run.next_week}")
+    for c in ("league", "roster", "lineup", "bench", "weakest slot", "margin", "empty", "PPG-valued"):
+        tab.add_column(c)
+    def txt(v, spec: str = "") -> str:
+        return "" if v is None or v != v else format(v, spec)
+
+    for r in nxt.itertuples():
+        tab.add_row(r.league_id[-6:], str(r.roster_id), txt(r.lineup_value, ".2f"), txt(r.bench_value, ".2f"),
+                    txt(r.weakest_slot), txt(r.weakest_margin, ".2f"), txt(r.empty_slots), str(r.n_ppg_valued))
+    console.print(tab)
 
 
 @app.command("teams")

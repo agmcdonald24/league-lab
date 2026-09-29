@@ -25,6 +25,11 @@ Outputs: ``ops.projections`` (one row per league x season x week x player), ``op
 (per season-week-position-scorer), ``ops.projection_importance`` (permutation importance of the
 P50 model per position), ``ops.projection_drift`` (plan M-06: the live board's played weeks scored
 like a held-out season), and a Markdown report under ``reports/backtests``.
+
+Decision record (plan B5): a league-week's rows in ``ops.projections`` are rewritten by every refit
+until the week's first kickoff and never after (``_write_projections`` / ``freeze_plan``); the rows
+that were live at kickoff are kept and labelled ``frozen_source = 'kickoff'`` with ``frozen_at`` = their
+publication time, and the drift scores them.
 """
 
 from __future__ import annotations
@@ -39,6 +44,7 @@ import pandas as pd
 import psycopg
 
 from .config import PROJECT_ROOT, get_settings
+from .lineup import lineups_after_project
 from .rankings import TOP_N, _hit_rate, _spearman, parse_seasons
 from .scoring import compute_points
 
@@ -84,7 +90,10 @@ HGB = dict(max_iter=300, learning_rate=0.04, max_leaf_nodes=15, min_samples_leaf
 def load_frame(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
     cols = ["gsis_id", "season", "week", "position", "player_name", "team", "opponent", "played", "points_actual", "no_history",
             "report_status", "roster_status", *[f for f in FEATURES if f != "questionable"], *[f"out_{c}" for c in ALL_COMPONENTS]]
-    sql = f"select {', '.join(dict.fromkeys(cols))} from analytics.mart_player_week_features where season = any(%s) and position = any(%s)"
+    # ordered: the early-stopping validation split (automatic above 10k rows) follows row order, so an
+    # unordered scan (synchronized seq scans on a 60 MB table) made two fits of the same data differ
+    sql = (f"select {', '.join(dict.fromkeys(cols))} from analytics.mart_player_week_features "
+           "where season = any(%s) and position = any(%s) order by gsis_id, season, week")
     with conn.cursor() as cur:
         cur.execute(sql, (seasons, list(POSITIONS)))
         names = [d.name for d in cur.description]
@@ -388,25 +397,24 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     pred = pd.concat(preds, ignore_index=True)
     pred["model_version"], pred["fitted_at"] = MODEL_VERSION, datetime.now(UTC)
     pred["train_seasons"] = f"{min(train_seasons)}-{max(train_seasons)}"
-    _write(conn, "ops.projections", pred, "season = %s", (season,))
-    log.info("projections written: %s rows for %s (%s leagues)", len(pred), season, len(scorings))
-    # M-06: keep the drift monitor current on every refit. It scores mart_player_week_projections as
-    # last built: in the nightly the full dbt build runs first, so the outcomes are tonight's and the
-    # projections the previous refit's (what the board showed before the latest games). The refit is
-    # deterministic on unchanged inputs, but played weeks are re-projected every night, so a change in
-    # the training data can move them: this is the board as it stands, not a kickoff snapshot.
+    _write_projections(conn, pred, season)   # B5: weeks whose first game has kicked off are kept, not rewritten
+    log.info("projections computed: %s rows for %s (%s leagues)", len(pred), season, len(scorings))
+    # M-06: keep the drift monitor current on every refit. It scores the stored (for a started week:
+    # frozen, B5) projections against the outcomes in mart_player_week_projections as last built: in
+    # the nightly the full dbt build runs first, so the outcomes are tonight's.
     # A failure here must not cost the night its projections: log it, keep the previous drift rows.
     try:
         drift(conn, season)
     except Exception:
         conn.rollback()
         log.exception("drift monitor failed (projections were written); run `league-lab drift` after `dbt build`")
+    lineups_after_project(conn, season)   # B1: exact lineups on the fresh projections (a failure is logged, not fatal)
     return pred
 
 
 # ------------------------------------------------------------------------------ drift (M-06): the live board, scored like the backtest
 DRIFT_COLUMNS = ["league_id", "season", "week", "position", "n_players", "spearman", "top_n", "hit_rate", "mae",
-                 "coverage_80", "interval_width", "games_played", "games_scheduled", "model_version"]
+                 "coverage_80", "interval_width", "games_played", "games_scheduled", "frozen_share", "model_version"]
 
 
 def score_drift(board: pd.DataFrame, min_players: int = 8) -> pd.DataFrame:
@@ -414,12 +422,16 @@ def score_drift(board: pd.DataFrame, min_players: int = 8) -> pd.DataFrame:
     ``score_predictions`` scores a held-out season (Spearman, top-N hit rate, MAE, share of actuals
     inside [P10, P90], mean P90 - P10), with the same ``min_players`` rule.
 
-    ``board`` holds rows of ``analytics.mart_player_week_projections``: league_id, season, week,
-    position, game_id, played, is_rankable, proj_points, p10, p90, points_actual (already priced in
-    the league's own scoring), model_version. Scored on players who played and were rankable (the
-    board the page shows). ``games_played`` / ``games_scheduled`` count the week's games with at
-    least one player in / on the board, so a week still being played (Thursday night only) is
-    visible as such; the season view averages complete weeks only.
+    ``board`` holds one row per league x season x week x player (``load_board``): league_id, season,
+    week, position, game_id, played, is_rankable, points_actual (already priced in the league's own
+    scoring) from ``analytics.mart_player_week_projections``, and the projection as stored in
+    ``ops.projections`` (proj_points, p10, p90, model_version, frozen_source). Scored on players who
+    played and were rankable (the board the page shows). ``games_played`` / ``games_scheduled`` count
+    the week's games with at least one player in / on the board, so a week still being played
+    (Thursday night only) is visible as such; the season view averages complete weeks only.
+    ``frozen_share`` (B5) is the share of the scored rows whose projection is the board as published
+    before the week's first kickoff (``frozen_source = 'kickoff'``); 0 = refit values (a week played
+    before the freeze existed, or one not locked yet), and a board without the label counts as 0.
     """
     if board.empty:
         return pd.DataFrame(columns=DRIFT_COLUMNS)
@@ -428,6 +440,7 @@ def score_drift(board: pd.DataFrame, min_players: int = 8) -> pd.DataFrame:
         b[c] = pd.to_numeric(b[c], errors="coerce").astype(float)
     b["played"] = b["played"].fillna(False).astype(bool)
     b["is_rankable"] = b["is_rankable"].fillna(False).astype(bool)
+    b["is_kickoff_board"] = (b["frozen_source"] == "kickoff").fillna(False).astype(bool) if "frozen_source" in b else False
     wk = ["league_id", "season", "week"]
     games = pd.DataFrame({
         "games_scheduled": b.groupby(wk)["game_id"].nunique(),
@@ -450,23 +463,33 @@ def score_drift(board: pd.DataFrame, min_players: int = 8) -> pd.DataFrame:
             "interval_width": float((iv["p90"] - iv["p10"]).mean()) if len(iv) else None,
             "games_played": int(games.loc[(league_id, season, week), "games_played"]),
             "games_scheduled": int(games.loc[(league_id, season, week), "games_scheduled"]),
+            "frozen_share": float(g["is_kickoff_board"].mean()),
             "model_version": g["model_version"].dropna().max() if g["model_version"].notna().any() else None,
         })
     return pd.DataFrame(out, columns=DRIFT_COLUMNS)
 
 
 def load_board(conn: psycopg.Connection, season: int) -> pd.DataFrame:
-    """Every row of the season's board (played or not: the unplayed rows count the week's games)."""
+    """Every row of the season's board (played or not: the unplayed rows count the week's games).
+
+    The projection comes from ``ops.projections`` itself (rounded like the mart), so a week that has
+    kicked off is scored on its frozen rows even if the mart has not been rebuilt since the refit
+    that locked it; outcomes, availability and games come from the mart."""
     with conn.cursor() as cur:
-        cur.execute("""select league_id, season, week, position, gsis_id, game_id, played, is_rankable,
-                              proj_points, p10, p90, points_actual, model_version
-                       from analytics.mart_player_week_projections where season = %s""", (season,))
+        cur.execute("""select m.league_id, m.season, m.week, m.position, m.gsis_id, m.game_id, m.played, m.is_rankable,
+                              round(p.proj_points::numeric, 2) as proj_points, round(p.p10::numeric, 2) as p10,
+                              round(p.p90::numeric, 2) as p90, m.points_actual, p.model_version, p.frozen_source
+                       from analytics.mart_player_week_projections as m
+                       join ops.projections as p using (league_id, season, week, gsis_id)
+                       where m.season = %s""", (season,))
         return pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
 
 
 def drift(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame:
     """Score the played weeks of the projected season (default: the newest on the board) and
     replace that season's rows in ``ops.projection_drift``."""
+    with conn.cursor() as cur:
+        cur.execute(DDL["ops.projections"])   # an older database gains the freeze labels load_board reads
     if season is None:
         with conn.cursor() as cur:
             cur.execute("select max(season) from analytics.mart_player_week_projections")
@@ -490,7 +513,10 @@ DDL = {
         proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision,
         proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision,
         proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision,
-        proj_points double precision, p10 double precision, p50 double precision, p90 double precision)""",
+        proj_points double precision, p10 double precision, p50 double precision, p90 double precision,
+        frozen_at timestamptz, frozen_source text);
+        alter table ops.projections add column if not exists frozen_at timestamptz;
+        alter table ops.projections add column if not exists frozen_source text""",
     "ops.projection_backtest": """create table if not exists ops.projection_backtest (
         run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
         position text, scorer text, n_players integer, spearman double precision, top_n integer, hit_rate double precision,
@@ -501,7 +527,9 @@ DDL = {
     "ops.projection_drift": """create table if not exists ops.projection_drift (
         run_at timestamptz, model_version text, league_id text, season integer, week integer, position text,
         n_players integer, spearman double precision, top_n integer, hit_rate double precision, mae double precision,
-        coverage_80 double precision, interval_width double precision, games_played integer, games_scheduled integer)""",
+        coverage_80 double precision, interval_width double precision, games_played integer, games_scheduled integer,
+        frozen_share double precision);
+        alter table ops.projection_drift add column if not exists frozen_share double precision""",
 }
 
 
@@ -518,6 +546,102 @@ def _write(conn: psycopg.Connection, table: str, df: pd.DataFrame, where: str, p
             for r in records:
                 cp.write_row(r)
     conn.commit()
+
+
+# ------------------------------------------------------------------------------ decision record (B5): freeze a league-week at kickoff
+def freeze_plan(new_weeks: pd.DataFrame, stored: pd.DataFrame, kickoffs: dict[int, datetime], now: datetime) -> pd.DataFrame:
+    """What a refit may do to each (league_id, week) of the season in ``ops.projections``.
+
+    ``new_weeks``: the refit's (league_id, week) pairs. ``stored``: one row per stored league-week with
+    ``fitted_at`` (max), ``frozen_source`` and ``frozen_at`` (the label, NULL while live). ``kickoffs``:
+    week -> first kickoff of that week (``dim_game.kickoff_at``); a week without one counts as not
+    started. A week has *started* once its first kickoff is at or before ``now``.
+
+    Rules (one label per league-week):
+    * not started -> ``write``: the refit replaces the rows (live, label NULL); a stored week the refit
+      no longer projects -> ``delete`` (what the old season-wide delete did);
+    * started, rows stored -> ``keep``: never deleted or rewritten. The first refit after kickoff labels
+      them (``relabel``): ``kickoff`` with ``frozen_at`` = their ``fitted_at`` when they were written
+      before the first kickoff (the board managers saw), otherwise ``refit`` with ``frozen_at`` NULL
+      (the week was already under way when its rows were written: 2026 weeks 1-3, which were played
+      before this rule existed, or a league added mid-season);
+    * started, nothing stored -> ``write`` labelled ``refit`` (and kept from then on).
+
+    Returns columns league_id, week, first_kickoff, started, action, relabel, frozen_source, frozen_at.
+    """
+    keys = ["league_id", "week"]
+    new = new_weeks[keys].drop_duplicates().astype({"league_id": object, "week": int}).assign(in_new=True)
+    old = (stored.reindex(columns=[*keys, "fitted_at", "frozen_source", "frozen_at"])
+           .astype({"league_id": object, "week": int, "frozen_source": object, "frozen_at": object}).assign(is_stored=True))
+    w = new.merge(old, on=keys, how="outer")
+    w["in_new"] = w["in_new"].astype("boolean").fillna(False).astype(bool)
+    w["is_stored"] = w["is_stored"].astype("boolean").fillna(False).astype(bool)
+    out = []
+    for r in w.itertuples(index=False):
+        kick = kickoffs.get(int(r.week))
+        started = kick is not None and kick <= now
+        stored_source = r.frozen_source if isinstance(r.frozen_source, str) else None
+        stored_at = None if pd.isna(r.frozen_at) else r.frozen_at
+        row = {"league_id": r.league_id, "week": int(r.week), "first_kickoff": kick, "started": started,
+               "relabel": False, "frozen_source": None, "frozen_at": None}
+        if not started:
+            row["action"] = "write" if r.in_new else "delete"
+        elif r.is_stored:
+            row["action"] = "keep"
+            if stored_source is not None:
+                row["frozen_source"], row["frozen_at"] = stored_source, stored_at
+            else:
+                fitted = None if pd.isna(r.fitted_at) else r.fitted_at
+                pre_kickoff = fitted is not None and fitted < kick
+                row["relabel"] = True
+                row["frozen_source"], row["frozen_at"] = ("kickoff", fitted) if pre_kickoff else ("refit", None)
+        else:
+            row["action"], row["frozen_source"] = "write", "refit"
+        out.append(row)
+    cols = [*keys, "first_kickoff", "started", "action", "relabel", "frozen_source", "frozen_at"]
+    # object columns so a missing label stays None (pandas would turn it into NaN / NaT)
+    plan = pd.DataFrame({c: pd.Series([row[c] for row in out], dtype=object) for c in cols})
+    return plan.astype({"week": int, "started": bool, "relabel": bool})
+
+
+def _write_projections(conn: psycopg.Connection, pred: pd.DataFrame, season: int, now: datetime | None = None) -> pd.DataFrame:
+    """Write a refit's season of projections under the B5 freeze rule (``freeze_plan``), in one
+    transaction: label the league-weeks locked for the first time, then replace only the weeks that
+    have not kicked off (and write, labelled ``refit``, a started week that has no rows yet). Rows of a
+    week that has kicked off are never deleted or rewritten; to re-project one deliberately, delete
+    its rows by hand first (it then comes back labelled ``refit``). ``now`` is for tests/simulation.
+    Records the plan in ``pred.attrs["freeze"]`` for the CLI."""
+    now = now or datetime.now(UTC)
+    with conn.cursor() as cur:
+        cur.execute(DDL["ops.projections"])
+        cur.execute("select week, min(kickoff_at) from analytics.dim_game where season = %s group by week", (season,))
+        kickoffs = {int(wk): k for wk, k in cur.fetchall() if k is not None}
+        cur.execute("""select league_id, week, max(fitted_at) as fitted_at, max(frozen_source) as frozen_source, max(frozen_at) as frozen_at
+                       from ops.projections where season = %s group by 1, 2""", (season,))
+        stored = pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
+        plan = freeze_plan(pred, stored, kickoffs, now)
+        for r in plan[plan["relabel"]].itertuples(index=False):
+            cur.execute("""update ops.projections set frozen_source = %s, frozen_at = %s
+                           where season = %s and league_id = %s and week = %s and frozen_source is null""",
+                        (r.frozen_source, r.frozen_at, season, r.league_id, int(r.week)))
+    writes = plan[plan["action"] == "write"]
+    rows = pred.merge(writes[["league_id", "week", "frozen_source", "frozen_at"]], on=["league_id", "week"], how="inner")
+    rows["frozen_at"] = rows["frozen_at"].astype(object).where(rows["frozen_at"].notna(), None)
+    replace = plan[plan["action"].isin(["write", "delete"])]
+    _write(conn, "ops.projections", rows, "season = %s and (league_id, week) in (select * from unnest(%s::text[], %s::int[]))",
+           (season, replace["league_id"].tolist(), [int(w) for w in replace["week"]]))   # commits the relabel with the write
+
+    def weeks(mask: pd.Series) -> list[int]:
+        return sorted(plan.loc[mask, "week"].astype(int).unique().tolist())
+
+    summary = {"rewritten": weeks(plan["action"] == "write"), "kept": weeks(plan["action"] == "keep"),
+               "kickoff": weeks(plan["frozen_source"] == "kickoff"), "refit": weeks(plan["frozen_source"] == "refit"),
+               "locked_now": weeks(plan["relabel"]), "rows_written": len(rows)}
+    pred.attrs["freeze"] = summary
+    log.info("projections written for %s: %s rows (weeks %s rewritten); weeks %s kept as frozen (kickoff board: %s, refit values: %s; locked this run: %s)",
+             season, len(rows), summary["rewritten"] or "none", summary["kept"] or "none", summary["kickoff"] or "none",
+             summary["refit"] or "none", summary["locked_now"] or "none")
+    return plan
 
 
 # ------------------------------------------------------------------------------ report

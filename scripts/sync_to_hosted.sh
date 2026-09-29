@@ -5,9 +5,11 @@
 #             every analytics view and its dependencies, analytics_seeds, ops.
 # What never goes: raw, staging, intermediate, play-level tables — the hosted copy is ~280 MB, not 3.5 GB.
 #
-# Publishing drops the previous copy, then restores the new one in a single transaction. Free
-# tiers (Neon 0.5 GB) cannot hold two copies at once, so the swap is not atomic: for the length
-# of the restore (a minute or two) pages show "marts not built yet" rather than failing.
+# Publishing drops the previous marts, then restores the new copy in a single transaction. Free
+# tiers (Neon 0.5 GB) cannot hold two copies of the marts at once, so that swap is not atomic: for
+# the length of the restore (a minute or two) pages show "marts not built yet" rather than failing.
+# The small `ops` schema (the decision record the nightly restores from here) IS swapped inside
+# the transaction, so a failed restore never loses it.
 #
 # Needs in .env (or the environment):
 #   LEAGUE_LAB_HOSTED_ADMIN_URL      owner connection string of the hosted database (Neon/Supabase "postgres" role)
@@ -22,7 +24,8 @@ echo "=== $(date '+%F %T') sync start (code $(git rev-parse --short HEAD 2>/dev/
 # load .env the way the app does (python-dotenv): values with &, ?, spaces or quotes are safe
 if [ -f .env ]; then
   set -a
-  eval "$(uv run python -c 'import shlex; from dotenv import dotenv_values; [print(f"{k}={shlex.quote(v)}") for k, v in dotenv_values(".env").items() if v is not None]')"
+  # (the caller's environment wins, as in nightly.sh and the app: LEAGUE_LAB_DB_NAME=x publishes x)
+  eval "$(uv run python -c 'import os, shlex; from dotenv import dotenv_values; [print(f"{k}={shlex.quote(v)}") for k, v in dotenv_values(".env").items() if v is not None and k not in os.environ]')"
   set +a
 fi
 
@@ -32,8 +35,9 @@ LOCAL_DSN="$(uv run python -c 'from league_lab.config import get_settings; print
 # Roles are cluster-wide: pointing this at the local cluster would rewrite the local app role's
 # password. Refuse unless explicitly allowed (only useful for a simulation).
 local_host="$(uv run python -c 'from league_lab.config import get_settings; s=get_settings(); print(f"{s.db_host}:{s.db_port}")')"
+# (with or without a port: postgresql://u:p@localhost/db is the local cluster too)
 case "$LEAGUE_LAB_HOSTED_ADMIN_URL" in
-  *"@${local_host}/"*|*"@localhost:"*|*"@127.0.0.1:"*)
+  *"@${local_host}/"*|*"@${local_host%:*}/"*|*"@localhost:"*|*"@localhost/"*|*"@127.0.0.1:"*|*"@127.0.0.1/"*)
     if [ "${LEAGUE_LAB_HOSTED_ALLOW_LOCAL:-}" != "1" ]; then
       echo "refusing: LEAGUE_LAB_HOSTED_ADMIN_URL points at the local cluster (${local_host}); set LEAGUE_LAB_HOSTED_ALLOW_LOCAL=1 only for a simulation" >&2
       exit 4
@@ -74,26 +78,32 @@ echo "dump: $(du -h "$DUMP" | cut -f1) compressed"
 [ "${1:-}" = "--dry-run" ] && exit 0
 
 echo "ensuring the read-only role exists on the hosted database ..."
-psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q <<SQL
-do \$\$ begin
+# (the password goes in as a psql variable, quoted by psql: a quote in it cannot break the SQL or
+# echo the line, and this log is uploaded as a CI artifact)
+psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -v app_pw="$LEAGUE_LAB_HOSTED_APP_PASSWORD" <<'SQL'
+do $$ begin
   if not exists (select 1 from pg_roles where rolname = 'league_lab_app') then
     create role league_lab_app login;
   end if;
-end \$\$;
-alter role league_lab_app with login password '${LEAGUE_LAB_HOSTED_APP_PASSWORD}';
+end $$;
+alter role league_lab_app with login password :'app_pw';
 alter role league_lab_app set default_transaction_read_only = on;
 alter role league_lab_app set statement_timeout = '30s';
 SQL
 
 # Free tiers cap the project at ~0.5 GB, and a drop inside the same transaction as the restore
-# does not free space until commit - so the old copy is dropped first (its own transaction) and
-# the new one restored right after. Between the two, pages say "marts not built yet" instead of
-# failing; the window is the restore time, printed below.
-echo "publishing: dropping the previous copy, then restoring (pages show 'not built yet' meanwhile) ..."
+# does not free space until commit - so the old copy of the marts (analytics, analytics_seeds:
+# the bulk) is dropped first (its own transaction) and the new one restored right after. Between
+# the two, pages say "marts not built yet" instead of failing; the window is the restore time,
+# printed below. `ops` is a few MB and is the only copy of the decision record when GitHub
+# Actions publishes (ops.projections: each week's board frozen at kickoff; the nightly restores it
+# from here), so it is dropped INSIDE the restore transaction: a restore that dies midway rolls
+# back and the previous ops survives.
+echo "publishing: dropping the previous marts, then restoring (pages show 'not built yet' meanwhile; ops swaps atomically) ..."
 t0=$(date +%s)
-psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "drop schema if exists analytics cascade; drop schema if exists analytics_seeds cascade; drop schema if exists ops cascade;"
+psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "drop schema if exists analytics cascade; drop schema if exists analytics_seeds cascade;"
 {
-  echo "create schema if not exists analytics; create schema if not exists analytics_seeds; create schema if not exists ops;"
+  echo "drop schema if exists ops cascade; create schema if not exists analytics; create schema if not exists analytics_seeds; create schema ops;"
   gunzip -c "$DUMP"
   cat <<'SQL'
 grant usage on schema analytics, analytics_seeds, ops to league_lab_app;

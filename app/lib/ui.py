@@ -73,7 +73,10 @@ def freshness_banner() -> None:
     )
     parts = []
     for _, r in status.iterrows():
-        when = pd.to_datetime(r["last_loaded"]).strftime("%Y-%m-%d %H:%M") if pd.notna(r["last_loaded"]) else "never"
+        # when the loaded content was fetched from the source (ops.source_partition.loaded_at), in
+        # Eastern time and labelled, like the stale-injury warning below
+        when = (f"{pd.to_datetime(r['last_loaded'], utc=True).tz_convert('America/New_York'):%a %b %-d, %-I:%M %p} ET"
+                if pd.notna(r["last_loaded"]) else "never")
         flag = f" · ⚠️ {int(r['failures'])} partition(s) currently failing" if r["failures"] else ""
         parts.append(f"**{r['source']}** loaded {when}{flag}")
     if not cov.empty:
@@ -83,6 +86,37 @@ def freshness_banner() -> None:
             + (f" · league scored through week {int(c['league_scored_weeks'])}" if pd.notna(c["league_scored_weeks"]) else "")
         )
     st.caption(" · ".join(parts) if parts else "No loads recorded yet — run `make pilot`.")
+
+    # B5 stale-data flag. nflverse's current-season injury file carries no report timestamp (its
+    # date_modified is empty since 2025), so "the newest report" is when the file's content last
+    # changed here: ops.source_partition.loaded_at moves only on a load whose checksum changed
+    # (mart_data_status.last_loaded_at). Stale when that is older than the most recent final game's
+    # date, or more than `stale_hours` before the next kickoff (the next game on the schedule after
+    # now). Only in a game week (a kickoff within 7 days): in the offseason nothing is flagged.
+    # dim_game is skipped on a database that does not have it yet (a hosted copy between a code push
+    # and the next sync): then the last-final-game rule alone decides.
+    stale_hours = 48
+    from .db import missing_relations
+
+    et = "America/New_York"
+    loaded = query("""select max(last_loaded_at) as loaded from analytics.mart_data_status
+                      where source = 'nflverse' and dataset = 'injuries'""")
+    loaded_at = pd.to_datetime(loaded["loaded"].iloc[0], utc=True) if not loaded.empty else pd.NaT
+    last_final = pd.to_datetime(cov["through_game_date"].iloc[0]) if not cov.empty else pd.NaT
+    next_kick, game_week = pd.NaT, True
+    if not missing_relations(("dim_game",)):
+        nk = query("select min(kickoff_at) as next_kickoff from analytics.dim_game where kickoff_at > now()")
+        next_kick = pd.to_datetime(nk["next_kickoff"].iloc[0], utc=True) if not nk.empty else pd.NaT
+        game_week = pd.notna(next_kick) and next_kick <= pd.Timestamp.now(tz="UTC") + pd.Timedelta(days=7)
+    why = []
+    if game_week and pd.notna(last_final) and (pd.isna(loaded_at) or loaded_at.tz_convert(et).date() < last_final.date()):
+        why.append(f"it predates the last final game ({last_final:%a %b %-d})")
+    if game_week and pd.notna(next_kick) and (pd.isna(loaded_at) or loaded_at < next_kick - pd.Timedelta(hours=stale_hours)):
+        why.append(f"it was loaded more than {stale_hours} h before the next kickoff ({next_kick.tz_convert(et):%a %b %-d, %-I:%M %p} ET)")
+    if why:
+        when = f"{loaded_at.tz_convert(et):%a %b %-d, %-I:%M %p} ET" if pd.notna(loaded_at) else "never"
+        reason = " and ".join(why)
+        st.warning(f"Injury report last loaded {when}; treat Questionable tags as stale. {reason[0].upper()}{reason[1:]}.")
 
 
 def seasons_available() -> list[int]:

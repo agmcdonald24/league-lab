@@ -340,11 +340,41 @@ up one), projects every week of the current season for every configured league, 
 `ops.projections`; `mart_player_week_projections` adds names, context, the outcome priced under the
 league's own scoring (`league_points` macro over the component outcomes) and `rank_pos`. Everything
 shown for the current season is out of sample. Refit cadence: every refresh (≈1–2 min); a
-hyperparameter change is a new `MODEL_VERSION`.
+hyperparameter change is a new `MODEL_VERSION`. Every week is re-projected by each refit, but only the
+weeks that have not kicked off are **written**: a started week keeps the rows it had (next section).
+
+### Decision record (plan B5, 2026-09-29): a week's board is frozen at its first kickoff
+
+**Rule.** `league-lab project` rewrites a league-week's rows in `ops.projections` on every refit until
+the week's **first kickoff** (`min(dim_game.kickoff_at)` over the season-week, every game type); from
+then on the rows are never deleted or rewritten (`projections.freeze_plan`, applied by
+`_write_projections` in one transaction). The first refit after kickoff labels the kept rows:
+
+| `frozen_source` | `frozen_at` | Meaning |
+|---|---|---|
+| NULL | NULL | live board: the week has not kicked off (or has, and no refit has run since — it is labelled on the next one) |
+| `kickoff` | the kept rows' `fitted_at` (always before the first kickoff) | **the board as published before kickoff** — what a manager saw when setting a lineup. The last refit before kickoff wins: with the nightly at 07:37 ET (GitHub Actions; 08:00 on the Mac) that is Thursday morning's board |
+| `refit` | NULL | the week was already under way when its rows were locked: **2026 weeks 1–3**, played before this rule existed (their rows are the refit of 2026-09-26 23:53 UTC, after weeks 1–3 had kicked off), or a league-week first projected after its kickoff (a league added mid-season). Not a kickoff record, and the page says so |
+
+A week without a scheduled kickoff counts as not started. To re-project a frozen week on purpose (a bug
+fix), delete its rows by hand; the next refit writes it back labelled `refit`. Test:
+`assert_frozen_projections_precede_kickoff` (a `kickoff` row's `frozen_at` equals its `fitted_at` and
+precedes the week's first kickoff — kickoff times, not run times, since every scheduled game has one;
+`refit` rows have no `frozen_at`; nothing written after kickoff is left live; one label per league-week).
+
+**Why a column on `ops.projections`, not a separate `ops.projection_snapshots` table.** The acceptance
+("after two consecutive `project` runs the played weeks' rows are byte-identical") is about
+`ops.projections` itself; with a label on the table the row a manager saw is the only row there is, so
+`mart_player_week_projections`, the Rankings board, the drift and the hosted copy (0.5 GB budget) need
+no second copy, no "prefer the snapshot" join and no reconciliation of two versions of a played week.
+What is given up: the refit values of a played week are no longer kept anywhere (they were never shown
+after kickoff anyway), and the freeze is per week, not per game — a Sunday player's board is fixed at
+Thursday's first kickoff, so Friday–Sunday injury news does not reach it (a per-game freeze is a
+possible refinement).
 
 ### Drift (`league-lab drift`, `ops.projection_drift`, `mart_projection_drift`; plan M-06)
 
-Once a week of the projected season has been played, the live board is scored the way the backtest
+Once a week of the projected season has been played, the board (frozen at kickoff, B5) is scored the way the backtest
 scores a held-out season: per league × week × position, on players who **played** and were
 **rankable** (the board the page shows), projection = `proj_points`, actual = `points_actual` (the
 league's own scoring), with the same harness — Spearman, top-N hit rate (QB/TE 12, RB/WR 24), MAE,
@@ -353,15 +383,106 @@ league's own scoring), with the same harness — Spearman, top-N hit rate (QB/TE
 of players from two teams): its rows are written and refreshed nightly, but the season view averages
 **complete weeks only** and reports the other as `week_in_progress`. The view sets each position's
 season means next to the backtest's `v2_points` means over its held-out seasons (`backtest_*`).
-Written at the end of every `league-lab project` (it reads `mart_player_week_projections` as last
-built; in the nightly the full `dbt build` runs first, so outcomes are that night's and projections
-the previous refit's) and by `league-lab drift` on demand. **Not a kickoff snapshot:** `project`
-re-projects every week of the season on each refit; the refit is deterministic on unchanged inputs,
-but a change in the training data (a stat correction, a rebuilt feature) moves past weeks' numbers
-too, and the drift follows the board as it stands. Scope difference from the backtest: the backtest
-scores every player who played, the drift only rankable ones (Out / Doubtful / IR who played anyway
-are left out, as on the board). A few weeks are a small sample: read a gap to the backtest as a
+Written at the end of every `league-lab project` and by `league-lab drift` on demand. **Scored on the
+frozen board (B5):** the projection is read from `ops.projections` itself (rounded like the mart), i.e.
+for a week that has kicked off the rows kept at kickoff, even if the mart has not been rebuilt since;
+outcomes, availability and games come from `mart_player_week_projections` as last built (in the nightly
+the full `dbt build` runs first, so they are that night's). `frozen_share` = share of the scored rows
+whose `frozen_source` is `kickoff`; a week scored on `refit` (or not yet labelled) rows has 0, and the
+view carries the player-weighted `frozen_share` over complete weeks plus `refit_weeks`, so the page says
+"scored on the board as shown before kickoff" or "refit values" (2026 weeks 1–3 are refit values: they
+were played before the freeze existed; their numbers did not move when B5 was deployed).
+Scope difference from the backtest: the backtest scores every player who played, the drift only
+rankable ones (Out / Doubtful / IR who played anyway are left out, as on the board). A few weeks are a small sample: read a gap to the backtest as a
 question, not a verdict, until mid-season.
+
+## Lineup value (B1, 2026-09-29; `league-lab lineups`, `ops.lineups`, `mart_lineup_recommendation`)
+
+**Objective.** For one roster and one week, the lineup value is the largest total of player values
+that a *legal* lineup can reach: every starting slot of the league (`dim_league_season.roster_positions`
+minus BN / IR / TAXI) takes at most one player, every player starts at most once, a player only fills
+a slot his Sleeper `fantasy_positions` allow (QB, RB, WR, TE, K, DEF; FLEX = RB/WR/TE; SUPER_FLEX =
+QB/RB/WR/TE; REC_FLEX = WR/TE; WRRB_FLEX = RB/WR; IDP slots are not modelled and are reported), and a
+slot may stay empty. Solved exactly as a maximum-weight bipartite matching
+(`scipy.optimize.linear_sum_assignment`, `src/league_lab/lineup.py::solve`), not greedily slot by slot:
+SUPER_FLEX is a slot like any other, so a WR who is worth more than the QB2 starts there; a player whose
+value is below zero never beats an empty slot. The objective is lexicographic: **total first, filled slots
+second, valued starters third** (tiny tie-break weights, 1e-9 per filled slot and 1e-12 per valued
+starter). The chosen starters are then seated with the better players in the narrower slots (WR before
+FLEX), which changes neither the set nor the total.
+
+**Unvalued players** (PO decision 2026-09-29). A playable, eligible player with no value yet — a K or DEF
+Sleeper has not scored in this league (first rostered in a week not yet scored), a K with no NFL id and no
+Sleeper points, a QB–TE with no v2 projection this week although his team plays — is carried at value 0
+with `value_source = 'unvalued'` and `reason = 'no value yet'`. By the objective above he is seated only
+in a slot nobody valued can fill (a filled slot beats an empty one at equal total, and a valued player,
+even one worth exactly 0, beats him at a tie), so he never displaces a valued player and never changes
+the total; his margin is 0 and he is never the weakest slot. `n_unvalued` counts such starters. An
+**empty slot** therefore means nobody on the roster is eligible to play there this week (bye, Out,
+Doubtful, IR, taxi, nobody at the position) — or, in a realised lineup, only a negative scorer.
+
+**Margin.** Per filled, unlocked starting slot: `margin = lineup value − lineup value with that player
+removed`, re-solving the whole lineup (a WR's absence may pull a RB into FLEX and a TE into …). It is
+what the player is worth to *this* lineup this week, ≥ 0 by construction; 0 means an equal alternative
+sits on the bench. The **weakest slot** is the starter with the smallest margin (ties: the lower value)
+— the closest lineup call. A locked starter (his game has kicked off) is not a decision and has no
+margin. **Bench value** = the lineup value the playable bench alone would reach if every starter sat.
+
+**Value sources** (`value_source`).
+
+| Lineup | Position | Value | Source |
+|---|---|---|---|
+| proposed | QB / RB / WR / TE | projection v2 `proj_points` for that league-week (this league's scoring, rounded like the mart) | `proj_points` |
+| proposed | K | season points per game in this league's scoring (`mart_league_player_season.ppg`, games played > 0) | `season_ppg` |
+| proposed | DEF, or a K without a season PPG here (no NFL id, or no NFL game yet) | mean of the points Sleeper scored for him in this league over this season's scored weeks his team played (byes excluded) | `observed_ppg` |
+| proposed | any, when none of the above exists yet | 0, seated only where nobody valued can play | `unvalued` |
+| realised | every position | the points Sleeper counted that week (`league_player_week.points_observed`) | `sleeper_observed` |
+
+The realised lineup uses Sleeper's points for QB/RB/WR/TE too, not `points_actual` of the projections
+mart: `points_actual` prices the projected components only and so leaves out 2-point conversions and
+long-TD bonuses (28 rostered player-weeks in weeks 1–2 of 2026 were exactly 2 points short); a realised
+optimum on it would sit below Sleeper's own max points by construction.
+
+**Who cannot play** (listed with the reason, never in the lineup): bye (no game for his team that week),
+Out, Doubtful, NFL injured reserve (`roster_status = 'RES'`), no NFL team (QB–TE on no NFL roster), no
+slot for his position in this league; in a week not yet
+scored also the Sleeper IR slot and the taxi squad (today's roster flags; unknown for past weeks, so not
+applied there) and "game started (bench)". **Questionable plays** and is flagged (`report_status`).
+**Locks**: in a week Sleeper has not scored, a player whose game kicked off before `as_of` stays where
+Sleeper had him — a starter keeps his slot (value counted, no margin), a bench player stays benched
+("game started (bench)"); a starter whose game has not started is free to move. Where he was comes from
+Sleeper's list for that week when it exists, otherwise from today's roster: Sleeper's `starters` array
+(`stg_sleeper__rosters.starter_ids`), ordered like `roster_positions` without BN / IR / TAXI (IDP slots
+keep their place), "0" = an empty slot. So a Thursday game is locked correctly even when the weekly
+list has not been fetched yet (B1 follow-up 2).
+
+**Rosters.** Per week the roster is Sleeper's list for that week when there is one (first choice: every
+week played so far, including the one in progress), otherwise today's roster with today's starters in
+the slots Sleeper's `starters` array implies. Proposed lineups of weeks already scored are the pre-kickoff counterfactual on that week's
+roster (no locks): what projection v2 would have started, for comparison with the realised optimum.
+
+**Checks.** `tests/test_lineup.py` compares `solve()` with exhaustive enumeration of every legal lineup
+(1QB, 2QB, superflex, FLEX + REC_FLEX + WRRB_FLEX, dual eligibility, byes, locks, fewer players than
+slots, K/DEF present and absent, an unvalued K alone, an unvalued WR behind valued WRs, an unvalued RB
+and an otherwise-empty FLEX, 240 random rosters with unvalued and zero-valued players) on all three
+levels of the objective and every margin, and times both real slot
+sets (median < 5 ms with margins). `assert_exact_lineup_dominates_greedy` (error): on every scored
+roster-week the realised optimum ≥ `mart_league_optimal_lineup.points_optimal`, the per-week
+reconstruction of Sleeper's max points, which the existing warn test holds to Sleeper's season `ppts`.
+On 1,384 scored roster-weeks 2021–2026 the exact optimum equals the greedy fill in 1,367 and beats it in
+17 (13 a negative scorer left out, 4 Travis Hunter — Sleeper DB, eligible at WR — started at WR), never
+below; the Hunter weeks explain the 2025 gaps of the greedy against Sleeper's ppts (League of Scrubs
+roster 6 −9.70, dynasty roster 11 −17.30: exact = ppts for both).
+
+**Not modelled.** Matchup win probability or variance (the objective is expected points; P10/P90 are
+not used); K and DEF projections (season PPG is a placeholder until R-13 — a DEF or K first rostered in
+a week Sleeper has not scored yet is unvalued: he fills his slot at 0, so the lineup value understates
+that roster by his real expectation); a K / DEF whose season PPG is negative (an empty slot beats him;
+none in 2026 so far); the K's injury status; IDP
+slots; bye-week or multi-week planning (one week at a time — the 4-week horizon is B2); Sleeper's
+per-player lock time beyond the scheduled kickoff; historical IR / taxi membership for past weeks; the
+waiver pool (B3). Past weeks' proposals use this season's K / DEF points per game to date (hindsight for
+those two positions only).
 
 ## Deferred (status in registry)
 

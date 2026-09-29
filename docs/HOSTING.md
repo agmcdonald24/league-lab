@@ -1,22 +1,24 @@
 # Hosting League Lab for the league (beta)
 
-Goal: a link leaguemates can open. Cost: **$0** on free tiers. Your Mac stays the pipeline (it
-already refreshes nightly); after each refresh it publishes the marts to a hosted Postgres, and
-Streamlit Community Cloud serves the explorer from GitHub against that database.
+Goal: a link leaguemates can open. Cost: **$0** on free tiers. One nightly pipeline
+(`scripts/nightly.sh`) refreshes the data and publishes the marts to a hosted Postgres; it runs on
+GitHub Actions (§5; the Mac is then optional) or on your Mac (launchd, 08:00). Streamlit Community
+Cloud serves the explorer from GitHub against that database.
 
 ```
-Mac: ingest → dbt build → backup → sync_to_hosted.sh ──► hosted Postgres (marts only, ~400 MB)
-                                                                 ▲
-GitHub repo ──► Streamlit Community Cloud (app/Home.py) ─────────┘  read-only role
+GitHub Actions (§5) or Mac: scripts/nightly.sh
+  archive replay → live fetch → dbt build → project → sync_to_hosted.sh ──► hosted Postgres (marts only, ~300 MB)
+                                                                                    ▲
+GitHub repo ──► Streamlit Community Cloud (app/Home.py) ────────────────────────────┘  read-only role
 ```
 
 What leaves your machine: the analytics marts the pages and packs read (the script derives the list
-from the code — 35 relations, ~290 MB), the seeds and the `ops` schema — never `raw`, `staging`,
+from the code — 40 relations, ~320 MB), the seeds and the `ops` schema — never `raw`, `staging`,
 `intermediate`, the play-level tables, `.env` or the archive.
 
 ## 1. Hosted Postgres (15 minutes)
 
-Either provider works; both have a free tier that fits (~290 MB today, +≈30 MB per season; Neon's cap is 0.5 GB).
+Either provider works; both have a free tier that fits (~320 MB today, +≈30 MB per season; Neon's cap is 0.5 GB).
 
 **Neon** (recommended: cheap, Postgres 17, no sleeping issues for a read-only workload)
 1. neon.tech → sign up → New project → name `league-lab`, region closest to you, Postgres 17.
@@ -101,8 +103,8 @@ key is modelled wrong).
 
 ## 4. What to expect
 
-* **Freshness** = your Mac's last refresh + sync (the banner on every page says when). If the Mac
-  is asleep at 08:00 the launchd job runs when it wakes.
+* **Freshness** = the last nightly run + sync (the banner on every page says when): GitHub Actions
+  starts at 07:37 New York time (§5); the Mac's launchd job at 08:00, or when the Mac wakes.
 * **Cold start**: Community Cloud sleeps an app after a few days without visitors; the first
   visitor waits ~30 s. Neon free tier suspends compute after 5 minutes idle; the first query
   waits ~1 s.
@@ -114,16 +116,145 @@ key is modelled wrong).
 * **A refresh in progress**: the sync drops the previous copy and restores the new one (free
   tiers cannot hold two copies at once — Neon caps a project at 0.5 GB), so for the length of the
   restore (a minute or two) pages say "marts not built on this machine yet" instead of failing.
-  The nightly job runs at 08:00, before anyone is looking. If a restore ever fails midway, run
-  `make sync-hosted` again; local data is never touched.
+  The nightly job runs around 08:00, before anyone is looking. If a restore ever fails midway, run
+  `make sync-hosted` again; local data is never touched, and the small `ops` schema (the decision
+  record the GitHub nightly restores from here) is swapped inside the restore transaction, so it
+  is never half-gone.
 * **Security model**: the hosted role is read-only (`default_transaction_read_only`), sees only the
   three published schemas and has a 30 s statement timeout. The beta password is a closed door for
   a link, not authentication; use Community Cloud's private sharing if that matters.
 
-## 5. Moving the pipeline off the Mac (later, plan I-01)
+## 5. Nightly on GitHub Actions
 
-A GitHub Actions workflow can run the whole nightly job (ingest → build → sync) on a free runner
-with an ephemeral Postgres, so the Mac is no longer infrastructure. Not needed for the beta.
+`.github/workflows/nightly.yml` runs the whole nightly on a free GitHub runner: a throwaway
+Postgres 17, the raw archive restored from the Actions cache, live Sleeper + nflverse for the
+current season, `dbt build`, projection v2, and the sync to Neon. Every step is in
+`scripts/nightly.sh`, the same script the Mac runs (`make nightly`), so anything that fails there
+can be reproduced on the Mac. Once it runs green, the Mac is optional.
+
+### Set it up once (5 minutes)
+
+1. The workflow has to be on `main`: GitHub runs schedules from the default branch only.
+2. GitHub → the repository → **Settings → Secrets and variables → Actions → New repository secret**,
+   three times:
+
+   | Secret | Value |
+   |---|---|
+   | `LEAGUE_LAB_SLEEPER_LEAGUE_ID` | the same list as the Mac's `.env`, e.g. `1389709692405551104,1321941740235550720` (first id = the reference scoring) |
+   | `LEAGUE_LAB_HOSTED_ADMIN_URL` | the Neon **owner** connection string, direct (non-pooler) host, as in §1 |
+   | `LEAGUE_LAB_HOSTED_APP_PASSWORD` | **the same** password as in the Mac's `.env`. The sync sets the read-only role's password to this value on every run; a different one locks the Streamlit app out until you change its secret too |
+
+   Nothing else: the runner's own database, roles and passwords are created fresh on every run.
+   Without `LEAGUE_LAB_HOSTED_ADMIN_URL` a run builds everything and publishes nothing (a dry run,
+   flagged with a warning).
+3. Run it once by hand (next section) and watch it. The first run finds no archive in the cache
+   and downloads the whole history from GitHub releases (~280 MB; about a minute more than a normal
+   run: 23 MB/s from a sandbox, faster from a runner). Budget 15–20 minutes, plus ~15 if the hosted
+   copy has no backtests yet (below).
+4. Decide what the Mac does (last section below). **One writer**: two syncs at once drop each
+   other's schemas mid-restore.
+
+### Run it by hand
+
+**Actions** tab → **nightly** (left) → **Run workflow** → branch `main` → **Run workflow**. Two
+optional tick boxes: *"Also re-check every historical NFL season live"* is the monthly audit
+(`--full`: every old season is asked again with a conditional request, so unchanged files cost one
+round trip); *"Recompute both backtests"* after a change to the projection model or its features.
+From a terminal: `gh workflow run nightly` then `gh run watch`.
+
+It also runs by itself every day at **11:37 UTC = 07:37 in New York on daylight time** (06:37 on
+standard time, November to March; GitHub's cron has no time zones). GitHub may start a scheduled
+run a few minutes late. A run takes about 15 minutes (§ Cost), so the hosted copy is fresh by
+about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; they never overlap.
+
+### Reading a failed run
+
+* The run's **summary page** shows a table of every step with its time and result, the dbt
+  `Done. PASS=… WARN=… ERROR=…` line and the sync's `verified: all N page relations` line, and an
+  annotation naming the failing step.
+* In the job log, open **Nightly pipeline (scripts/nightly.sh)**: each nightly step is a
+  collapsible group that ends with `step <name>: ok in 1m23s` or `step <name>: FAILED (exit 1)`.
+* **Artifacts** (bottom of the run page, kept 14 days): `nightly-logs` (`nightly.log`, `sync.log`,
+  `run_results.dbt-build.json` for the full build) and `dbt-run-results`.
+* What stops a night and what does not:
+
+  | Failing step | What happened | What to do |
+  |---|---|---|
+  | `fetch-sleeper`, `fetch-nflverse-current` | Sleeper or nflverse was down, or a file is not published yet | Nothing. The night carried on with the archive's copy of that partition, published, and is red so you notice. The next night retries. With no archive (first run, lost cache) there is no copy to fall back on: the night stops here instead ("no archive to fall back on"); re-run |
+  | `fetch-nflverse-history` | a partial or empty cache and a download failed | Re-run (button on the run page). Stops before the build so a copy with holes in the history is never published |
+  | `dbt-build` | a test failed on new data | The failing test is in the log and in `run_results.dbt-build.json`; reproduce with `make build` on the Mac. The hosted copy keeps the previous night |
+  | `backtests`, `projection-marts` | projection code or its data | Reproduce with `make project`. Nothing was published |
+  | `restore-state` | the hosted copy could not be read, or the decision record (`ops.projections`, `ops.projection_drift`) did not copy | Nothing was published: refitting every played week blind and publishing it would overwrite the record with refit values. Check Neon and the `HOSTED_*` secrets; re-run. A hosted copy that is reachable but has lost the record is repaired from the archive's copy (`data/raw/record/`, in the cache) without stopping |
+  | `project` | projection code or its data | Reproduce with `make project`. The night carried on with the previous projections and lineups (on the runner: the ones restore-state copied back from the hosted copy) and published them again. It stops before publishing only when no projections exist anywhere yet |
+  | `save-record` | the archive directory is not writable | The night carried on and published; the cache just has no fresh copy of the record that night |
+  | `sync-hosted` | Neon unreachable, or a wrong `HOSTED_*` secret | Check the two secrets; re-run. If the restore died midway, pages say "marts not built yet" until a sync completes (§4) |
+  | *Roles, database and .env* (before the pipeline) | a missing or malformed secret | The annotation names it |
+
+### The archive cache
+
+* **What**: `data/raw`, every nflverse file and Sleeper payload fetched so far (~280 MB, +≈25 MB a
+  season). It is the only thing carried from one run to the next: the runner's database is
+  rebuilt from it every night (replaying it takes about a minute; then only the current season is
+  fetched live). A replayed partition keeps the time its file was fetched, so the "loaded" times on
+  the pages (and the stale-injury warning) show when the data arrived, not when the runner
+  replayed it.
+* **Keys**: `league-lab-raw-v1-<season>-<fingerprint>`, the fingerprint being a hash of every file.
+  A run restores the newest entry for this season (else the newest of any season, so a new season
+  starts from last season's archive) and saves a new entry only when the fingerprint changed:
+  most nights in season (new Sleeper weeks, the current season's files), rarely in the off-season
+  (a sidecar that only records a new ETag or the last check does not count).
+* **Budget**: GitHub keeps 10 GB of cache per repository and evicts entries nobody restored for 7
+  days, so in season about seven ~280 MB entries live at once (~2 GB), plus uv's package cache
+  (a few hundred MB). Well inside 10 GB.
+* **Losing it** (eviction, or deleting it under **Actions → Caches**) costs one slow night, never
+  data: the next run downloads the history again and Sleeper's live fetch reloads the whole chain.
+
+What the archive cannot rebuild: the two backtests behind the Rankings scoreboards
+(`league-lab backtest`, `backtest-v2`), the **decision record** (`ops.projections`: a league-week's
+board is frozen at its first kickoff and never rewritten, plan B5; and the drift history scored on
+it, `ops.projection_drift`) and last night's lineups (`ops.lineups`, `ops.lineup_totals`). The
+runner's database is new every night, so it copies all of them back from the hosted copy (where
+the previous sync put them: the sync publishes the whole `ops` schema) before the build. Without
+that restore every played week would be refit from scratch each night and the "kickoff board"
+share on Rankings would read 0%. The record gets two more protections, because nothing can
+recompute it: the night **stops** when the hosted copy cannot be read or the copy fails (nothing is
+published, so nothing is overwritten), and after every successful `project` the two record tables
+are also written to `data/raw/record/` — inside the cached archive — so a hosted copy that has lost
+them (a restore that died midway, though the sync now swaps `ops` inside its transaction) is
+repaired from that copy. The backtests are recomputed only when neither place has them (the first
+run, if the hosted copy never had them), when the projection model's version changed, or when a
+manual run ticks *"Recompute both backtests"*; `backtest-v2` then adds about 15 minutes to that
+run. The lineups are restored only so a night whose `project` fails republishes a consistent copy;
+`project` re-solves them from the frozen projections and Sleeper's rosters. A licensed routes file imported on the Mac
+(`import-routes`) is not in the archive either; while GitHub publishes, the pages show the routes
+proxy.
+
+### Cost
+
+Measured in a 2-CPU / 7 GB sandbox (the size of GitHub's standard runner for private
+repositories) against a fresh database, the way the runner starts every night: `nightly.sh` took
+**10 min 09 s** with the backtests restored from the hosted copy (step times in `docs/STATUS.md`,
+Wave B / B6). Add what the sandbox could not do: the live Sleeper fetch (~1–2 min), the restore
+into Neon instead of a local database (~1–2 min) and the runner's setup and cache transfer
+(~3 min): **about 15 minutes a run**, 30 runs ≈ **450 minutes a month**. GitHub Free includes
+**2,000 minutes a month** for private repositories, so that is under a quarter, with room for
+manual runs and the odd backtest recompute (+15 min). A public repository would run free. If the
+minutes ever run out, GitHub stops runs until the month resets rather than charging, unless you
+have set up a paid budget (Settings → Billing). Logs and artifacts are a few MB (500 MB of
+artifact storage is included).
+
+### The Mac's launchd job
+
+Optional once the Actions run is green. Pick one:
+
+* **Retire it**: `launchctl unload ~/Library/LaunchAgents/com.leaguelab.refresh.plist && rm ~/Library/LaunchAgents/com.leaguelab.refresh.plist`
+  (the reinstall lines are in `docs/SETUP_RUNBOOK.md` § 2).
+* **Keep it for local data only** (your own database for `make app`, weekly packs, backtests):
+  delete `LEAGUE_LAB_HOSTED_ADMIN_URL` from the Mac's `.env`. The job keeps refreshing the Mac
+  and never publishes.
+
+`make sync-hosted` from the Mac still works as a manual fallback, while no Actions run is in
+progress (the Actions tab shows it).
 
 ## Licences to keep in mind when sharing
 

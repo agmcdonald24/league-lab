@@ -32,7 +32,8 @@ Flags: `--full` ingests every season from `LEAGUE_LAB_SEASONS_START` (2016) inst
 
 | Want | Run |
 |---|---|
-| Refresh league + current season, rebuild, back up | `make refresh` (= `scripts/refresh.sh`) |
+| Refresh league + current season, rebuild, project, back up, publish | `make refresh` (= `scripts/refresh.sh` → `scripts/nightly.sh`) |
+| The same pipeline exactly as GitHub Actions runs it (no backup) | `make nightly` (`NIGHTLY_SLEEPER_OFFLINE=1` skips live Sleeper) |
 | Backfill all history | `make backfill` |
 | Only Sleeper | `make ingest-sleeper` |
 | Only some seasons | `make ingest-nfl SEASONS=2019-2021` |
@@ -53,9 +54,15 @@ sed "s|__ROOT__|$PWD|g" scripts/launchd/com.leaguelab.refresh.plist > ~/Library/
 launchctl load ~/Library/LaunchAgents/com.leaguelab.refresh.plist
 ```
 
-Runs at 08:00 local time; launchd runs a missed job the next time the Mac wakes. Logs go to
-`logs/refresh.log`. `scripts/refresh.sh` refuses to start while another refresh holds
-`.state/refresh.lock` (one writer). Manual `make refresh` is always fine.
+Runs at 08:00 local time; launchd runs a missed job the next time the Mac wakes. `scripts/refresh.sh`
+is `scripts/nightly.sh` (the pipeline GitHub Actions runs: archive replay, live Sleeper + current NFL
+season, dbt build, projections, hosted sync) plus a backup. Logs go to `logs/nightly.log` (every step
+with its time and a summary) and `logs/refresh.log`. It refuses to start while another run holds
+`.state/refresh.lock` (one writer; a lock left by a killed run is recognised by its pid and removed).
+Manual `make refresh` is always fine.
+
+**Or run it on GitHub instead** and let the Mac sleep: `docs/HOSTING.md` § 5 "Nightly on GitHub Actions"
+(three repository secrets, then this job is optional: unload it, or keep it with the hosted sync off).
 
 ### Upgrading an existing install (new datasets or models)
 
@@ -159,7 +166,8 @@ Running plain `dbt` instead of `league-lab dbt` (from the repo root, so the rela
 ## 6. Where things live on disk
 
 * Raw archive: `data/raw/sleeper/<league_id>/...json.gz`, `data/raw/nflverse/<dataset>/<file>.parquet`
-  with `*.meta.json` sidecars (URL, ETag, fetch time, sha256). Replay with `--offline`.
+  with `*.meta.json` sidecars (URL, ETag, fetch time = when those bytes were first fetched, last check,
+  sha256). Replay with `--offline`; a replayed partition keeps the archive's fetch time as its "loaded" time.
 * Manifest: `ops.load_manifest` (every attempt) and `ops.source_partition` (current state).
 * Backups: `backups/` (7 daily + weekly). Choose an off-machine destination (O05) and copy them there.
 * Footprint today: raw archive ≈ 60 MB for 2016–2026; database ≈ 1 GB after full build.

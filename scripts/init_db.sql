@@ -1,9 +1,14 @@
 -- League Lab: roles, database, schemas and grants.
 -- Run as a superuser (Homebrew Postgres: your macOS user) against the *postgres* maintenance DB:
 --   psql -v ON_ERROR_STOP=1 -v pipeline_pw="'...'" -v app_pw="'...'" -d postgres -f scripts/init_db.sql
--- Idempotent: safe to re-run. Passwords are only (re)set when the variables are supplied.
+-- Another database name (a worktree, the CI service): add  -v db_name=league_lab_ci  (default league_lab).
+-- Idempotent: safe to re-run, including on a cluster where the roles already exist (they are
+-- shared by every database in the cluster). Passwords are only (re)set when the variables are supplied.
 
-\set db_name league_lab
+\if :{?db_name}
+\else
+  \set db_name league_lab
+\endif
 
 -- Roles ------------------------------------------------------------------------------
 select 'create role league_lab_pipeline login' where not exists (select 1 from pg_roles where rolname = 'league_lab_pipeline') \gexec
@@ -17,14 +22,15 @@ select 'create role league_lab_app login' where not exists (select 1 from pg_rol
 \endif
 
 -- Database ---------------------------------------------------------------------------
-select 'create database league_lab owner league_lab_pipeline' where not exists (select 1 from pg_database where datname = 'league_lab') \gexec
+select format('create database %I owner league_lab_pipeline', :'db_name')
+where not exists (select 1 from pg_database where datname = :'db_name') \gexec
 
-\connect league_lab
+\connect :"db_name"
 
 -- Lock down PUBLIC, then hand the pipeline role the schemas it owns ------------------
 revoke create on schema public from public;
-revoke all on database league_lab from public;
-grant connect on database league_lab to league_lab_app;
+revoke all on database :"db_name" from public;
+grant connect on database :"db_name" to league_lab_app;
 
 create schema if not exists raw          authorization league_lab_pipeline;
 create schema if not exists ops          authorization league_lab_pipeline;

@@ -241,6 +241,26 @@ COLUMNS: dict[str, Col] = {
     "weeks_scored": C("Weeks scored", "int", "Complete weeks of this season the live board has been scored on (a week counts once its last game is in)"),
     "backtest_spearman": C("Spearman · backtest", "num2", "The same rank correlation on the walk-forward backtest's held-out seasons (v2 projection, this league's scoring)"),
     "backtest_coverage_80": C("Coverage · backtest", "pct", "Share of actuals inside P10–P90 on the walk-forward backtest's held-out seasons (target 80%)"),
+    # ---- B1 lineups
+    "slot_type": C("Slot type", help="The league's slot: QB, RB, WR, TE, FLEX (RB/WR/TE), SUPER_FLEX (QB/RB/WR/TE), K, DEF"),
+    "slot_order": C("#", "int", "Position of the slot in the league's lineup"),
+    "player_value": C("Value", "num1", "The points the lineup counts him for: projection v2 this week in this league's scoring; K = season points per game in this league; DEF = points per game Sleeper scored for it in this league; 0 for a player with no value yet"),
+    "value_source": C("Value from", help="proj_points = projection v2 · season_ppg = the K's points per game this season in this league's scoring · observed_ppg = points per game Sleeper scored this season (DEF, or a K without an NFL id) · unvalued = no value yet (a K / DEF Sleeper has not scored in this league, no projection this week): counted as 0 and only started where nobody with a value can play"),
+    "lineup_margin": C("Margin", "num1", "What the lineup loses without him: best lineup total minus the best total re-solved from the rest of the roster. Small = a close call; 0 = an equal option sits on the bench. Blank for a locked player"),
+    "is_weakest_slot": C("Closest call", "bool", "The starter with the smallest margin: the lineup decision that matters most this week", yes="closest call", no=""),
+    "is_empty_slot": C("Empty", "bool", "Nobody on the roster is eligible for this slot this week (bye, Out, IR, taxi, or nobody at the position)", yes="EMPTY", no=""),
+    "is_locked": C("Locked", "bool", "His game has kicked off: he stays where Sleeper has him", yes="locked", no=""),
+    "is_questionable": C("Q", "bool", "Questionable on the injury report: counted as playing", yes="Q", no=""),
+    "lineup_value": C("Lineup", "num1", "Total value of the best legal lineup this roster can start (every slot solved together, FLEX and superflex included)"),
+    "bench_value": C("Bench lineup", "num1", "The best legal lineup the bench alone could field if every starter sat: depth, in points"),
+    "weakest_slot": C("Closest-call slot", help="The slot whose starter has the smallest margin"),
+    "weakest_margin": C("Its margin", "num1", "Points the lineup would lose by benching the closest-call starter for the best alternative"),
+    "empty_slots": C("Empty slots", help="Slots nobody on the roster can fill this week"),
+    "n_unvalued": C("No value yet", "int", "Starters with no value yet (a K / DEF Sleeper has not scored in this league, a player with no projection this week): counted as 0, started only where nobody with a value could play"),
+    "realised_optimal": C("Best possible (actual)", "num1", "For a week Sleeper has scored: the best legal lineup this roster could have started at the points Sleeper counted (hindsight)"),
+    # ---- B5 decision record
+    "frozen_share": C("Kickoff board", "pct", "Share of the scored player-weeks whose projection is the board as published before that week's "
+                                              "first kickoff (frozen since); the rest are refit values from a later run of the same model"),
 }
 
 

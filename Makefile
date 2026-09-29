@@ -38,7 +38,7 @@ backtest-v2: ## walk-forward backtest of projection v2 on SEASONS (default 2021-
 
 project: ## fit projection v2 on completed seasons, write this season's projections (ops.projections), publish the mart
 	uv run league-lab project
-	uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+
+	uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+
 
 backfill: ## full nflverse history (2016+)
 	uv run league-lab ingest nfl
@@ -60,8 +60,11 @@ docs: ## dbt docs (generate + serve on 8080)
 sync-hosted: ## publish the marts to the hosted database (needs LEAGUE_LAB_HOSTED_ADMIN_URL + LEAGUE_LAB_HOSTED_APP_PASSWORD in .env)
 	./scripts/sync_to_hosted.sh
 
-refresh: ## daily refresh: sleeper + current NFL season + dbt build (+ hosted sync when configured)
-	uv run league-lab refresh
+refresh: ## the nightly pipeline + a local backup (= scripts/refresh.sh, what launchd runs; hosted sync when configured)
+	./scripts/refresh.sh
+
+nightly: ## the nightly pipeline exactly as GitHub Actions runs it (scripts/nightly.sh; NIGHTLY_SLEEPER_OFFLINE=1 skips live Sleeper)
+	./scripts/nightly.sh
 
 status: ## load manifest summary
 	uv run league-lab status
@@ -78,7 +81,7 @@ pytest: ## python unit tests (no database required)
 lint: ## ruff
 	uv run ruff check src app tests
 
-.PHONY: help setup sync migrate check ingest-sleeper ingest-nfl fit-rankings backtest backtest-v2 project sync-hosted pilot backfill dbt-deps build test docs refresh status app backup pytest lint
+.PHONY: help setup sync migrate check ingest-sleeper ingest-nfl fit-rankings backtest backtest-v2 project sync-hosted pilot backfill dbt-deps build test docs refresh nightly status app backup pytest lint
 
 teams: ## roster ids and team names for the current league
 	uv run league-lab teams
