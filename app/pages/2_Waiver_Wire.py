@@ -63,13 +63,19 @@ mine as (
     where not coalesce(a.is_on_ir, false)
 ),
 bars as (
+    -- the bench is whoever does not start this week (beyond the top N by projection), and the best
+    -- of them by PPG - so the weakest starter and the best bench player are never the same man
     select s.position, s.n,
            exists (select 1 from proj where proj.position = s.position) as modeled,
            w.proj as weak_proj, case when w.proj is not null then w.player_name end as weak_name,
            b.ppg as bench_ppg, case when b.ppg is not null then b.player_name end as bench_name
     from slots as s
     left join mine as w on w.position = s.position and w.proj_rn = s.n
-    left join mine as b on b.position = s.position and b.ppg_rn = s.n + 1
+    left join lateral (
+        select m.ppg, m.player_name from mine as m
+        where m.position = s.position and m.proj_rn > s.n and m.ppg is not null
+        order by m.ppg desc, m.player_name limit 1
+    ) as b on true
 ),
 cmp as (
     select b.position, a.gsis_id, a.player_name, a.nfl_team, a.injury_status, a.games_played,
@@ -84,7 +90,8 @@ cmp as (
     join bars as b on b.position = a.position
     left join proj as p on p.gsis_id = a.gsis_id
     where a.is_free_agent
-      and a.injury_status is distinct from 'Out' and a.injury_status is distinct from 'IR' and a.roster_status is distinct from 'RES'
+      and a.injury_status is distinct from 'Out' and a.injury_status is distinct from 'IR'
+      and a.roster_status = 'ACT'   -- on an active NFL roster: not reserve, inactive list, practice squad or cut
 ),
 cleared as (
     select c.*, row_number() over (
@@ -108,7 +115,7 @@ def _claim_week(r: pd.Series) -> str:
     if r["week_open"]:
         return f"fills your open {slot} slot this week (Proj {r['proj_v2']:.1f}; no playable {slot} on your roster)"
     if pd.isna(r["week_diff"]):
-        return ""
+        return "no v2 projection for him this week" if pd.isna(r["proj_v2"]) else f"no playable {slot} to compare"
     d = round(float(r["week_diff"]), 1)
     nums = f"(Proj {r['proj_v2']:.1f} vs {r['weak_proj']:.1f})"
     if d > 0:
@@ -119,7 +126,7 @@ def _claim_week(r: pd.Series) -> str:
 def _claim_season(r: pd.Series) -> str:
     pos = r["bar_position"]
     if pd.isna(r["ppg_std"]):
-        return ""
+        return "no games this season"
     if pd.isna(r["bench_ppg"]):
         return f"no bench {pos} with a PPG to compare"
     games = int(r["games_played"]) if pd.notna(r["games_played"]) else 0
@@ -146,12 +153,13 @@ if roster_id is None:
     st.caption("Pick a team under **Team perspective** in the sidebar to see which free agents beat what that roster already has.")
 else:
     howto(
-        "For each position your league starts, up to three free agents (not Out / IR) who beat what you already have. A player is listed when he clears "
+        "For each position your league starts, up to three free agents on an active NFL roster (not Out / IR, not practice squad or inactive) who beat what you already have. A player is listed when he clears "
         "at least one bar; players clearing both come first, then the higher projection.",
         f"**This week vs your starter**: his projection v2 for week {next_week or 'next'} in this league's scoring against your *weakest projected starter* "
         "there — your RB2 when the league starts two RBs; a superflex slot counts as a second QB, FLEX slots are left out. Out, Doubtful and IR players "
         "don't count as starters (the Rankings rule), and players in your IR slot are left out.",
-        "**Season vs your bench**: his PPG this season against the best PPG on your bench at the position (bench = your players beyond the top N by PPG). "
+        "**Season vs your bench**: his PPG this season against the best PPG among your players who would not start this week at the position "
+        "(everyone beyond the top N by projection), so the weakest starter and the best bench player are never the same man. "
         "A player needs two games this season before his PPG counts (one game is a box score, not a rate). The two bars rank your players differently (next week's projection vs season PPG), "
         "so one player can be both your weakest projected starter and your best bench player.",
         "**Floor / Ceiling** are the projection's P10 / P90: one week in ten lands below the floor, one in ten above the ceiling. "

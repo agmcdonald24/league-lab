@@ -284,6 +284,27 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
 
 ## Wave A (Iteration 9)
 
+### PO merge and QA 2026-09-29
+
+* Three Opus developers ran in parallel, each in its own git worktree, branch and database clone (`league_lab_u10`,
+  `_u11`, `_m06`) off `59ed8ca` (S-01a); merged into `integration/wave-a` (conflicts in CHANGELOG, STATUS and the
+  `table.py` registry, all "keep both"), rebuilt on the main database (`dim_league_season+`, `mart_projection_drift`,
+  `league-lab drift`; 80 pass / 2 pre-existing warns), `pytest` 29/29, `ruff` clean, headless check 26/26.
+* One QA agent walked the integrated build on both leagues (~30 controls, 22 rosters via SQL). Findings and what
+  was done: (1) **sidebar selectors dropped every second change** — the League/Team selectboxes were unkeyed with a
+  moving `index=`, so their identity flipped between runs; now keyed widgets whose value the app re-asserts before
+  each render (a keyed widget's own state does not survive a page change) with the URL seeding only a fresh visit or
+  a pasted link — verified by a Playwright walk: three league switches in a row, three team switches, team kept across
+  Matchups → Rankings, "whole league" on Rankings then Team Hub back on the last team, pasted deep link honoured;
+  (2) the shortlist's "best bench" could be the weakest starter himself — bench is now the best PPG among players
+  beyond the top N *by projection*; (3) blank comparison cells now say why ("no games this season", "no v2
+  projection for him this week"); (4) shortlist only from active NFL rosters (`roster_status = 'ACT'`, so no
+  inactive-list or practice-squad adds); (5) the label's "6-pt" uses a non-breaking hyphen; (6) drift caption says
+  "complete weeks". PO decision: the season bar needs two games (a one-game PPG is a box score, not a rate).
+* Not done: shortlist columns are wide (horizontal scroll under ~1900 px); Players / Receivers / Data Status have no
+  league selector and therefore no label (by design).
+
+
 ### U-10 2026-09-29 — scoring summary line
 
 * `dim_league_season.scoring_label` (SQL, from `num_teams`, `roster_positions`, `league_type`, `scoring_settings`):

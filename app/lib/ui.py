@@ -177,18 +177,31 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
         st.stop()
     qp = st.query_params
     ss = st.session_state
-    remembered_teams: dict[str, int | None] = ss.setdefault("ll_team_by_league", {})
+    remembered_teams: dict[str, int | None] = ss.setdefault("ll_team_by_league", {})   # last team picked per league
+    whole_league: dict[str, bool] = ss.setdefault("ll_whole_league", {})              # "whole league" chosen on a page that allows it
+    # The widgets carry keys, and their state is seeded - never a moving `index=`: a selectbox whose
+    # default is recomputed every run loses every second change (the widget identity flips). The
+    # URL seeds the widgets only when it is not the URL this code wrote itself (a fresh visit or a
+    # pasted deep link); a user's pick in the widget always wins over the URL it will then rewrite.
+    url_league = qp.get("league")
+    external_nav = url_league is not None and url_league != ss.get("ll_url_league")
     with st.sidebar:
         st.markdown("### Perspective")
         league_ids = leagues["league_id"].tolist()
-        if qp.get("league") in league_ids:
-            default_league = qp.get("league")
+        if external_nav and url_league in league_ids:
+            seed_league = url_league
         elif ss.get("ll_league") in league_ids:
-            default_league = ss.get("ll_league")
+            seed_league = ss.get("ll_league")
         else:
-            default_league = league_ids[0]
+            seed_league = league_ids[0]
+        # assigned every run, on purpose: a keyed widget's own state does not survive a page change
+        # (the new page's widget is a new widget), but a value the app assigns before creating it does
+        if external_nav or ss.get("ll_league_widget") not in league_ids:
+            ss["ll_league_widget"] = seed_league
+        else:
+            ss["ll_league_widget"] = ss["ll_league_widget"]
         league_id = st.selectbox(
-            "League", league_ids, index=league_ids.index(default_league),
+            "League", league_ids, key="ll_league_widget",
             format_func=lambda lid: f"{leagues.set_index('league_id').loc[lid, 'league_name']} {leagues.set_index('league_id').loc[lid, 'season']}",
         )
         row = leagues.set_index("league_id").loc[league_id]
@@ -203,20 +216,34 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
         )
         options = [None] + members["roster_id"].tolist() if not require_team else members["roster_id"].tolist()
         labels = {int(r.roster_id): f"{r.team_name} ({r.manager_name})" for r in members.itertuples()}
-        default_team = None
         # the URL's team applies to the URL's league only (roster ids repeat across leagues); a bare
         # ?team= (older links) applies to whichever league is selected
+        url_team = None
         try:
-            if qp.get("league") in (None, league_id) and qp.get("team") is not None and int(qp.get("team")) in labels:
-                default_team = int(qp.get("team"))
+            if qp.get("team") is not None and (url_league in (None, league_id)) and int(qp.get("team")) in labels:
+                url_team = int(qp.get("team"))
         except ValueError:
-            default_team = None
-        if default_team is None and remembered_teams.get(league_id) in labels:
-            default_team = remembered_teams[league_id]
-        if default_team is None and require_team:
-            default_team = options[0]
+            url_team = None
+        team_external = url_team is not None and (external_nav or url_league is None) and qp.get("team") != ss.get("ll_url_team")
+        if team_external:
+            seed_team = url_team
+        elif not require_team and whole_league.get(league_id):
+            seed_team = None
+        else:
+            seed_team = remembered_teams.get(league_id)
+        if seed_team not in labels:
+            seed_team = None
+        if seed_team is None and require_team:
+            seed_team = options[0]
+        # reseed when the league changed (the option list is a different roster set), on a pasted
+        # link, or when the remembered value is not an option on this page (whole-league vs team-only)
+        if (team_external or ss.get("ll_team_widget_league") != league_id or ss.get("ll_team_widget", "_") not in options):
+            ss["ll_team_widget"] = seed_team
+            ss["ll_team_widget_league"] = league_id
+        else:
+            ss["ll_team_widget"] = ss["ll_team_widget"]   # see the league widget: survive the page change
         roster_id = st.selectbox(
-            "Team perspective", options, index=options.index(default_team) if default_team in options else 0,
+            "Team perspective", options, key="ll_team_widget",
             format_func=lambda r: "— whole league —" if r is None else labels[int(r)],
         )
         st.caption("Shareable: the URL carries the league and team.")
@@ -229,12 +256,18 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
             with st.expander("Scoring differences vs the reference league", expanded=False):
                 st.caption(f"Scoring vs {ref_name}:" + scoring_diff_summary(row["scoring_diff_vs_reference"], league_slots(league_id)))
     ss["ll_league"] = league_id
-    remembered_teams[league_id] = int(roster_id) if roster_id is not None else None
+    if roster_id is not None:
+        remembered_teams[league_id] = int(roster_id)
+    whole_league[league_id] = roster_id is None and not require_team
     st.query_params["league"] = league_id
+    ss["ll_url_league"] = league_id
     if roster_id is not None:
         st.query_params["team"] = str(roster_id)
-    elif "team" in st.query_params:
-        del st.query_params["team"]
+        ss["ll_url_team"] = str(roster_id)
+    else:
+        if "team" in st.query_params:
+            del st.query_params["team"]
+        ss["ll_url_team"] = None
     return league_id, (int(roster_id) if roster_id is not None else None), members
 
 

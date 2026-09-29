@@ -79,7 +79,7 @@ labels as (
                 league_type),
             case rec when 0 then 'standard' when 0.5 then 'half PPR' when 1 then 'full PPR'
                      else rtrim(rtrim(rec::text, '0'), '.') || ' PPR' end,
-            rtrim(rtrim(pass_td::text, '0'), '.') || '-pt pass TD',
+            rtrim(rtrim(pass_td::text, '0'), '.') || '‑pt pass TD',   -- non-breaking hyphen: "6-pt" never splits across lines
             case when has_yardage_bonus then 'yardage bonuses' end,
             case when te_premium <> 0 then 'TE premium ' || rtrim(rtrim(te_premium::text, '0'), '.') end
         ) as scoring_label

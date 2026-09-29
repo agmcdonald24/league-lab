@@ -220,7 +220,7 @@ if model == "v2":
             bt_span = f" ({scored['backtest_seasons'].dropna().iloc[0]})" if scored["backtest_seasons"].notna().any() else ""
             small = (f" {['One', 'Two', 'Three', 'Four', 'Five'][n_weeks - 1]} week{'s' if n_weeks > 1 else ''} is a small sample: "
                      "one odd Sunday moves these a lot." if n_weeks < 6 else "")
-            st.caption(f"The live board scored like the backtest on NFL {dr_season} {span} ({league_name} scoring, players who played), "
+            st.caption(f"The live board scored like the backtest on NFL {dr_season}'s complete {span} ({league_name} scoring, players who played), "
                        f"next to the walk-forward backtest{bt_span}.{small}{pending}")
             show(scored, ["position", "weeks_scored", "spearman", "backtest_spearman", "coverage_80", "backtest_coverage_80"],
                  overrides={"spearman": Col("Spearman · this season", "num2", "Rank correlation between the projected order and actual points, "
