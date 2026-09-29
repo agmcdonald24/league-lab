@@ -11,6 +11,13 @@ Newest first. The Home page shows the top entry as "What's new".
   of the week is named. For weeks already played it also computes the best lineup you could have started; it
   matches Sleeper's own max points (weeks 1–2: all 22 teams, to the cent, except one where it is 1 point higher
   by leaving a −1 defense out). No page shows it yet: the start/sit, waiver and roster views are being rebuilt on it.
+- **What the board said before kickoff is now kept.** From week 4 on, each week's projection v2 board (Rankings)
+  is frozen when the week's first game kicks off: later refreshes no longer rewrite it, the page says "the board as
+  published before the first kickoff (Thu …)", and the "How the model is doing this season" strip is scored on that
+  frozen board. Weeks 1–3 were played before this existed, so their projections are labelled as **refit values**
+  (from a later run of the same model), on the board and in the strip. Every page also warns when the injury report
+  is stale ("Injury report last loaded Sat Sep 26, 7:02 AM ET; treat Questionable tags as stale.") — when it was
+  loaded before the last final game's date or more than 48 hours before the next kickoff.
 
 ## 2026-09-27 — Your league's scoring on every league page
 

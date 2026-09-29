@@ -44,11 +44,26 @@ code_version, file_path, started_at, finished_at.
 `ops.source_partition` — current state per (source, dataset, partition_key): last successful
 load, checksum, ETag, rows, loaded_at. Used to skip unchanged content.
 
+`ops.projections` (projection v2) — one row per league_id × season × week × gsis_id: model_version,
+fitted_at, train_seasons, position, the projected stat line (`proj_*`), `proj_points`, `p10 / p50 / p90`,
+and the **decision-record labels (plan B5)** `frozen_source` / `frozen_at`. Written by `league-lab project`:
+a league-week is replaced by every refit until the week's first kickoff (`min(dim_game.kickoff_at)`)
+and never deleted or rewritten after it. `frozen_source` NULL = live; `kickoff` = the board as published
+before the first kickoff, `frozen_at` = its `fitted_at` (< first kickoff); `refit` = rows locked after the
+week had started (2026 weeks 1–3, played before B5; a league added mid-season), `frozen_at` NULL. One
+label per league-week (`assert_frozen_projections_precede_kickoff`). Design: a label on this table
+rather than a separate `ops.projection_snapshots` table — the row a manager saw is the only row, so the
+mart, the page, the drift and the hosted copy need no second copy or "prefer the snapshot" join
+(`docs/METRICS.md` § Decision record). `league-lab db migrate` (and the writer and the mart's pre-hook)
+add the two columns to an existing table (`alter table … add column if not exists`).
+
 `ops.projection_drift` (M-06) — one row per league_id × season × week × position for played weeks
 of the projected season (≥ 8 played, rankable players): n_players, spearman, top_n, hit_rate, mae,
 coverage_80, interval_width, games_played / games_scheduled (the week is complete when they are
-equal), model_version, run_at. Written by `league-lab drift` and at the end of `league-lab project`
-(replaces the season's rows); scored from `mart_player_week_projections`.
+equal), `frozen_share` (B5: share of the scored rows that are the board as published before kickoff;
+0 = refit values), model_version, run_at. Written by `league-lab drift` and at the end of `league-lab
+project` (replaces the season's rows); the projection is read from `ops.projections` (the frozen rows
+of a started week), outcomes from `mart_player_week_projections`.
 
 `ops.lineups` (B1, exact lineup service) — per league_id × season × week × roster_id × `is_realised`
 (false = the **proposed** lineup from projection v2, true = the **realised** optimum at Sleeper's points
@@ -178,9 +193,9 @@ moved a handful of special-teams-only players' shares — the correct direction 
 | `ranking_weights` (seed) | position, feature | OLS weights from `league-lab fit-rankings` (train window, n, R², fit date) |
 | `mart_player_week_rankings` | gsis_id, season, week | `proj_points`, contributions `c_form / c_usage / c_matchup / c_vegas / c_home / c_intercept`, inputs, naive baselines, `is_rankable`, `rank_pos`, `rank_overall`, `actual_rank_pos` |
 | `mart_backtest_summary` (view) | season, position, scorer | from `ops.backtest_results` (written by `league-lab backtest`): Spearman, hit rate, MAE, top-N picked vs ceiling PPG |
-| `mart_player_week_projections` | league_id, gsis_id, season, week | projection v2 from `ops.projections` (written by `league-lab project`): projected stat line, `proj_points` in the league's scoring, `p10 / p50 / p90`, `interval_width`, as-of context, the outcome priced under the league's scoring (`points_actual`), `actual_inside_interval`, `rank_pos` (by P50), `actual_rank_pos` |
+| `mart_player_week_projections` | league_id, gsis_id, season, week | projection v2 from `ops.projections` (written by `league-lab project`): projected stat line, `proj_points` in the league's scoring, `p10 / p50 / p90`, `interval_width`, as-of context, the outcome priced under the league's scoring (`points_actual`), `actual_inside_interval`, `rank_pos` (by P50), `actual_rank_pos`, `frozen_source` / `frozen_at` (B5: NULL = live board, `kickoff` = frozen as published before the week's first kickoff, `refit` = locked after kickoff, not a kickoff record) |
 | `mart_projection_backtest` (view) | league_id, season, position, scorer | from `ops.projection_backtest` (written by `league-lab backtest-v2`): Spearman, hit rate, MAE, `coverage_80`, interval width per walk-forward season |
-| `mart_projection_drift` (view, M-06) | league_id, season, position | from `ops.projection_drift`: `weeks_scored`, `first_week` / `last_week`, `week_in_progress`, `player_weeks`, mean `spearman / hit_rate / mae / coverage_80 / interval_width` over **complete** weeks, next to `backtest_spearman / _hit_rate / _mae / _coverage_80 / _interval_width` (`mart_projection_backtest`, scorer `v2_points`, averaged over its held-out seasons; `backtest_seasons`, `backtest_weeks`) |
+| `mart_projection_drift` (view, M-06) | league_id, season, position | from `ops.projection_drift`: `weeks_scored`, `first_week` / `last_week`, `week_in_progress`, `player_weeks`, mean `spearman / hit_rate / mae / coverage_80 / interval_width` over **complete** weeks, next to `backtest_spearman / _hit_rate / _mae / _coverage_80 / _interval_width` (`mart_projection_backtest`, scorer `v2_points`, averaged over its held-out seasons; `backtest_seasons`, `backtest_weeks`); B5: `frozen_share` (player-weighted share of the complete weeks' scored rows that are the board as published before kickoff) and `refit_weeks` (complete weeks scored on refit values, e.g. `1, 2`) |
 
 ## analytics — ops views
 

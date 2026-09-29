@@ -79,6 +79,12 @@ models:
         tests: [not_null]
       - name: league_name
         tests: [not_null]
+      - name: frozen_source
+        description: "B5 decision record: NULL = live board; 'kickoff' = the board as published before the week's first kickoff (frozen_at = when); 'refit' = rows locked after the week had started (not a kickoff record)."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['kickoff', 'refit']
 
   - name: mart_projection_backtest
     description: "Walk-forward scoreboard of projection v2 per league, held-out season, position and scorer, with interval coverage."
@@ -96,6 +102,11 @@ models:
           name: projection_drift_rates_in_range
           arguments:
             expression: "spearman between -1 and 1 and hit_rate between 0 and 1 and coverage_80 between 0 and 1 and mae >= 0"
+            condition: "weeks_scored > 0"
+      - expression_is_true:
+          name: projection_drift_frozen_share_in_range
+          arguments:
+            expression: "frozen_share between 0 and 1 and (refit_weeks is null) = (frozen_share = 1)"
             condition: "weeks_scored > 0"
     columns:
       - name: weeks_scored

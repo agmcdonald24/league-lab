@@ -1,6 +1,6 @@
 {{ config(
     materialized='view',
-    pre_hook="create table if not exists ops.projection_drift (run_at timestamptz, model_version text, league_id text, season integer, week integer, position text, n_players integer, spearman double precision, top_n integer, hit_rate double precision, mae double precision, coverage_80 double precision, interval_width double precision, games_played integer, games_scheduled integer)"
+    pre_hook="create table if not exists ops.projection_drift (run_at timestamptz, model_version text, league_id text, season integer, week integer, position text, n_players integer, spearman double precision, top_n integer, hit_rate double precision, mae double precision, coverage_80 double precision, interval_width double precision, games_played integer, games_scheduled integer, frozen_share double precision); alter table ops.projection_drift add column if not exists frozen_share double precision"
 ) }}
 -- Drift monitor (plan M-06): how the live projection v2 board has done on the weeks of the projected
 -- season already played (from `ops.projection_drift`, written by `league-lab drift` and at the end of
@@ -9,6 +9,9 @@
 -- Season means use COMPLETE weeks only (every scheduled game has players in): a week still being
 -- played is a handful of players from a couple of teams, so it is reported as `week_in_progress`
 -- and joins the averages once its last game is in.
+-- B5: `frozen_share` = share of the scored player-weeks (complete weeks) whose projection is the board
+-- as published before that week's first kickoff (the frozen record); `refit_weeks` lists the complete
+-- weeks scored on refit values instead (played before the freeze existed: 2026 weeks 1-3).
 with d as (
     select *, games_played >= games_scheduled as is_complete_week
     from {{ source('ops', 'projection_drift') }}
@@ -29,6 +32,10 @@ season as (
         round((avg(mae) filter (where is_complete_week))::numeric, 2)                     as mae,
         round((avg(coverage_80) filter (where is_complete_week))::numeric, 3)             as coverage_80,
         round((avg(interval_width) filter (where is_complete_week))::numeric, 1)          as interval_width,
+        round((sum(n_players * coalesce(frozen_share, 0)) filter (where is_complete_week)
+               / nullif(sum(n_players) filter (where is_complete_week), 0))::numeric, 3)  as frozen_share,
+        string_agg(week::text, ', ' order by week)
+            filter (where is_complete_week and coalesce(frozen_share, 0) < 1)             as refit_weeks,
         max(model_version)                                                                as model_version,
         max(run_at)                                                                       as run_at
     from d
@@ -72,6 +79,8 @@ select
     b.backtest_interval_width,
     b.backtest_seasons,
     b.backtest_weeks,
+    s.frozen_share,
+    s.refit_weeks,
     s.model_version,
     s.run_at
 from season as s

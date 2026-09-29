@@ -257,6 +257,9 @@ COLUMNS: dict[str, Col] = {
     "weakest_margin": C("Its margin", "num1", "Points the lineup would lose by benching the closest-call starter for the best alternative"),
     "empty_slots": C("Empty slots", help="Slots nobody on the roster can fill this week"),
     "realised_optimal": C("Best possible (actual)", "num1", "For a week Sleeper has scored: the best legal lineup this roster could have started at the points Sleeper counted (hindsight)"),
+    # ---- B5 decision record
+    "frozen_share": C("Kickoff board", "pct", "Share of the scored player-weeks whose projection is the board as published before that week's "
+                                              "first kickoff (frozen since); the rest are refit values from a later run of the same model"),
 }
 
 
