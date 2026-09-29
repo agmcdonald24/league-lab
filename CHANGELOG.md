@@ -2,6 +2,12 @@
 
 Newest first. The Home page shows the top entry as "What's new".
 
+## 2026-09-29 — Wave B (decision engine)
+
+- Behind the scenes: the nightly data refresh can now run on GitHub's servers (about 7:40 a.m. Eastern) instead of
+  Andrew's laptop, so a closed laptop no longer means yesterday's numbers. Same steps, same checks; the banner on every
+  page still says when the data was last published.
+
 ## 2026-09-27 — Your league's scoring on every league page
 
 - Team Hub, Waiver Wire, the Matchups start/sit board, Trade Finder, League Intel and the League page's draft review
