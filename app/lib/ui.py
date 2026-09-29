@@ -148,10 +148,14 @@ def unavailable(metric: str, why: str) -> None:
 
 # ---------------------------------------------------------------- league / team perspective
 def current_leagues() -> pd.DataFrame:
-    """Current-season league chains loaded in this database (several leagues can coexist)."""
+    """Current-season league chains loaded in this database (several leagues can coexist).
+
+    scoring_label (U-10) is read through to_jsonb so a hosted copy published before the column
+    existed shows no label instead of failing every page (page code deploys on push, marts on sync)."""
     return query(
-        """select league_id, season, league_name, playoff_week_start, last_scored_leg, is_reference_league, scoring_diff_vs_reference
-           from analytics.dim_league_season where is_current_season order by is_reference_league desc, league_name"""
+        """select league_id, season, league_name, playoff_week_start, last_scored_leg, is_reference_league, scoring_diff_vs_reference,
+                  to_jsonb(d) ->> 'scoring_label' as scoring_label
+           from analytics.dim_league_season as d where is_current_season order by is_reference_league desc, league_name"""
     )
 
 
@@ -187,6 +191,11 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
             "League", league_ids, index=league_ids.index(default_league),
             format_func=lambda lid: f"{leagues.set_index('league_id').loc[lid, 'league_name']} {leagues.set_index('league_id').loc[lid, 'season']}",
         )
+        row = leagues.set_index("league_id").loc[league_id]
+        label = row["scoring_label"]
+        if isinstance(label, str) and label:
+            # plan U-10: what kind of league this is, in one line, on every page
+            st.caption(label)
         members = query(
             """select roster_id, team_name, manager_name from analytics.dim_league_member
                where league_id = %s order by team_name""",
@@ -211,13 +220,14 @@ def perspective(require_team: bool = True) -> tuple[str, int | None, pd.DataFram
             format_func=lambda r: "— whole league —" if r is None else labels[int(r)],
         )
         st.caption("Shareable: the URL carries the league and team.")
-        row = leagues.set_index("league_id").loc[league_id]
         if len(leagues) > 1 and not bool(row["is_reference_league"]):
             # league pages price everything in this league's own scoring (plan S-01a); only the NFL
             # research pages (Players, Trends, Receivers, defense vs position) keep the reference scale
             ref_name = leagues[leagues["is_reference_league"].astype(bool)]["league_name"].iloc[0]
             st.warning(f"NFL research pages use reference scoring (**{ref_name}**).", icon="ℹ️")
-            st.caption(f"Scoring vs {ref_name}:" + scoring_diff_summary(row["scoring_diff_vs_reference"], league_slots(league_id)))
+            # the key-by-key diff is one click away, never on screen by default (plan U-10)
+            with st.expander("Scoring differences vs the reference league", expanded=False):
+                st.caption(f"Scoring vs {ref_name}:" + scoring_diff_summary(row["scoring_diff_vs_reference"], league_slots(league_id)))
     ss["ll_league"] = league_id
     remembered_teams[league_id] = int(roster_id) if roster_id is not None else None
     st.query_params["league"] = league_id

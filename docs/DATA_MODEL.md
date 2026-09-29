@@ -64,7 +64,7 @@ load, checksum, ETag, rows, loaded_at. Used to skip unchanged content.
 
 | Model | Grain / key | Contract |
 |---|---|---|
-| `dim_league_season` | league_id (season unique) | scoring version, roster positions, playoff structure, `is_current_season` |
+| `dim_league_season` | league_id (season unique) | scoring version, roster positions, playoff structure, `is_current_season`; `chain_id`, `is_reference_league`, `scoring_diff_vs_reference` (keys that differ from the reference league); `scoring_label` (U-10, not null): one line built in SQL from `num_teams`, `roster_positions`, `league_type` and `scoring_settings` — "12-team superflex dynasty · full PPR · 6-pt pass TD · yardage bonuses" (rec 0 / 0.5 / 1 → standard / half PPR / full PPR, else "x PPR"; `pass_td` → "n-pt pass TD"; any non-zero `bonus_*_yd_*` → yardage bonuses; non-zero `bonus_rec_te` → TE premium x; a SUPER_FLEX slot → superflex, else two QB slots → 2QB) |
 | `dim_league_member` | league_id, roster_id | manager/team names, Sleeper-stored record |
 | `fct_league_matchup` | league_id, week, roster_id | opponent, result, `is_playoff_week`, `is_scored` |
 | `league_player_week` | league_id, week, roster_id, sleeper_player_id | starter flag + slot, `points_observed` (Sleeper), `points_recomputed` (that season's scoring × nflverse) |

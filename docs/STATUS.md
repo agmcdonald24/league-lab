@@ -282,6 +282,26 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   pre-existing, not S-01a: the dynasty "Roster value" table says "Waiver / free agent" for players drafted in earlier
   seasons — the mart only reads the current season's draft.
 
+## Wave A (Iteration 9)
+
+### U-10 2026-09-29 — scoring summary line
+
+* `dim_league_season.scoring_label` (SQL, from `num_teams`, `roster_positions`, `league_type`, `scoring_settings`):
+  dynasty "12-team superflex dynasty · full PPR · 6-pt pass TD · yardage bonuses" (all six seasons), League of Scrubs
+  "10-team redraft · half PPR · 4-pt pass TD" (all three). Rules in `docs/DATA_MODEL.md`; synthetic rows checked the
+  other branches (0.25 PPR, standard, 2QB, TE premium 0.5, missing num_teams / pass_td).
+* Sidebar (`perspective()`): the label is a caption under the League selector on every page that has one (10 of 13;
+  Players, Receivers and Data Status have no league selector and were not touched). On a non-reference league the
+  one-line "NFL research pages use reference scoring (League of Scrubs)" notice stays; the key-by-key diff moved into
+  a collapsed expander "Scoring differences vs the reference league". The label is read via `to_jsonb(d) ->>
+  'scoring_label'`, so page code pushed before the hosted marts are synced shows no label instead of failing.
+* Tests: `not_null_dim_league_season_scoring_label` PASS; `assert_scoring_label_describes_leagues` PASS (negative
+  control with the expectations swapped returns 2 rows). `dbt build --select dim_league_season+` PASS=76 WARN=2
+  ERROR=0 (78 nodes; the same two warnings, 6 and 7 rows). `pytest` 25/25, `ruff` clean. Headless check 26/26 runs,
+  0 exceptions. Playwright (Team Hub, both leagues): label shown, expander closed by default, diff visible only after
+  a click; no page errors. Validated on the sandbox clone `league_lab_u10`, not the Mac.
+* Open: at the default sidebar width the dynasty label wraps onto two visual lines (the break falls inside "6-pt").
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

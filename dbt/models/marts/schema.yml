@@ -281,6 +281,12 @@ models:
                 values: [redraft, keeper, dynasty]
       - name: playoff_week_start
         tests: [not_null]
+      - name: scoring_label
+        description: >-
+          One-line summary of the league's format and scoring (plan U-10), e.g. "12-team superflex dynasty ·
+          full PPR · 6-pt pass TD · yardage bonuses"; derived from num_teams, roster_positions, league_type
+          and scoring_settings (rec, pass_td, bonus_*_yd_*, bonus_rec_te)
+        tests: [not_null]
 
   - name: dim_league_member
     tests:
