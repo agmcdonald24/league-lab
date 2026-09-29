@@ -308,8 +308,9 @@ soft fetch-nflverse-current uv run league-lab ingest nfl --seasons "$SEASON"
 # 3. Build, then the pieces that read the built marts.
 hard dbt-build dbt_step dbt-build build
 hard backtests backtests
-# projection v2. A failure is fatal only when there is no earlier board to fall back on (a fresh
-# database: publishing would blank the Rankings pages); on the Mac last night's projections stay.
+# projection v2. A failure is fatal only when there is no earlier board to fall back on (neither this
+# database nor the hosted copy had projections: publishing would blank the Rankings pages); otherwise
+# last night's projections stay (on a fresh database: the ones restore-state copied back).
 if run_step project uv run league-lab project; then
   record project "$LAST_SECS" ok
 elif [ "$(q 'select count(*) from ops.projections')" != 0 ]; then

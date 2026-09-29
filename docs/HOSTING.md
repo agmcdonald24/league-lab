@@ -13,12 +13,12 @@ GitHub repo ──► Streamlit Community Cloud (app/Home.py) ──────
 ```
 
 What leaves your machine: the analytics marts the pages and packs read (the script derives the list
-from the code — 35 relations, ~290 MB), the seeds and the `ops` schema — never `raw`, `staging`,
+from the code — 40 relations, ~320 MB), the seeds and the `ops` schema — never `raw`, `staging`,
 `intermediate`, the play-level tables, `.env` or the archive.
 
 ## 1. Hosted Postgres (15 minutes)
 
-Either provider works; both have a free tier that fits (~290 MB today, +≈30 MB per season; Neon's cap is 0.5 GB).
+Either provider works; both have a free tier that fits (~320 MB today, +≈30 MB per season; Neon's cap is 0.5 GB).
 
 **Neon** (recommended: cheap, Postgres 17, no sleeping issues for a read-only workload)
 1. neon.tech → sign up → New project → name `league-lab`, region closest to you, Postgres 17.
@@ -181,7 +181,8 @@ about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; t
   | `fetch-sleeper`, `fetch-nflverse-current` | Sleeper or nflverse was down, or a file is not published yet | Nothing. The night carried on with the archive's copy of that partition, published, and is red so you notice. The next night retries |
   | `fetch-nflverse-history` | a partial or empty cache and a download failed | Re-run (button on the run page). Stops before the build so a copy with holes in the history is never published |
   | `dbt-build` | a test failed on new data | The failing test is in the log and in `run_results.dbt-build.json`; reproduce with `make build` on the Mac. The hosted copy keeps the previous night |
-  | `backtests`, `project`, `projection-marts` | projection code or its data | Reproduce with `make project`. Nothing was published |
+  | `backtests`, `projection-marts` | projection code or its data | Reproduce with `make project`. Nothing was published |
+  | `project` | projection code or its data | Reproduce with `make project`. The night carried on with the previous projections (on the runner: the ones restore-state copied back from the hosted copy) and published; from the runner the lineups (`ops.lineups`, not restored) reach the hosted copy empty until a night's `project` succeeds. It stops before publishing only when no projections exist anywhere yet |
   | `sync-hosted` | Neon unreachable, or a wrong `HOSTED_*` secret | Check the two secrets; re-run. If the restore died midway, pages say "marts not built yet" until a sync completes (§4) |
   | *Roles, database and .env* (before the pipeline) | a missing or malformed secret | The annotation names it |
 

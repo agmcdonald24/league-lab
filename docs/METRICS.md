@@ -353,7 +353,7 @@ then on the rows are never deleted or rewritten (`projections.freeze_plan`, appl
 | `frozen_source` | `frozen_at` | Meaning |
 |---|---|---|
 | NULL | NULL | live board: the week has not kicked off (or has, and no refit has run since — it is labelled on the next one) |
-| `kickoff` | the kept rows' `fitted_at` (always before the first kickoff) | **the board as published before kickoff** — what a manager saw when setting a lineup. The last refit before kickoff wins: with the nightly at 08:00 ET that is Thursday morning's board |
+| `kickoff` | the kept rows' `fitted_at` (always before the first kickoff) | **the board as published before kickoff** — what a manager saw when setting a lineup. The last refit before kickoff wins: with the nightly at 07:37 ET (GitHub Actions; 08:00 on the Mac) that is Thursday morning's board |
 | `refit` | NULL | the week was already under way when its rows were locked: **2026 weeks 1–3**, played before this rule existed (their rows are the refit of 2026-09-26 23:53 UTC, after weeks 1–3 had kicked off), or a league-week first projected after its kickoff (a league added mid-season). Not a kickoff record, and the page says so |
 
 A week without a scheduled kickoff counts as not started. To re-project a frozen week on purpose (a bug
@@ -434,7 +434,7 @@ margin. **Bench value** = the lineup value the playable bench alone would reach 
 |---|---|---|---|
 | proposed | QB / RB / WR / TE | projection v2 `proj_points` for that league-week (this league's scoring, rounded like the mart) | `proj_points` |
 | proposed | K | season points per game in this league's scoring (`mart_league_player_season.ppg`, games played > 0) | `season_ppg` |
-| proposed | DEF, or a K without an NFL id | mean of the points Sleeper scored for him in this league over this season's scored weeks his team played (byes excluded) | `observed_ppg` |
+| proposed | DEF, or a K without a season PPG here (no NFL id, or no NFL game yet) | mean of the points Sleeper scored for him in this league over this season's scored weeks his team played (byes excluded) | `observed_ppg` |
 | proposed | any, when none of the above exists yet | 0, seated only where nobody valued can play | `unvalued` |
 | realised | every position | the points Sleeper counted that week (`league_player_week.points_observed`) | `sleeper_observed` |
 
