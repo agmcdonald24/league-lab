@@ -393,8 +393,8 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   publishes max points only per roster-season, so the error test compares each roster-week with
   `mart_league_optimal_lineup` (its weekly reconstruction, = ppts for all 22 rosters in 2026) and skips roster-weeks
   whose Sleeper points changed since the solve (fingerprint), so a stat correction between the nightly `dbt build`
-  and `project` cannot fail the night; (4) a player with no value (K/DEF first rostered in a week not yet scored) is
-  unplayable per spec, so his slot shows empty.
+  and `project` cannot fail the night; (4) `lineup_margin`, not `margin`, in the mart (`margin` is the matchup margin
+  in the registry). **Accepted by the PO 2026-09-29.**
 * **Evidence** (clone `league_lab_b1`, 2026 weeks 1–18, weeks 1–2 scored, week 3 fully kicked off at run time):
   `league-lab lineups` → 9,048 rows / 440 roster-weeks (396 proposed, 44 realised) in 1.1–1.3 s (solver 0.2–0.4 s; a
   first cold run 3.3 s); week 4 for all 22 rosters 25 ms. End to end: `league-lab project` (refit 39 min here, CPU
@@ -424,11 +424,32 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   with a scored week, an in-progress week with locks and a bye week; speed: median 0.3 ms per solve with margins on the
   real slot sets, < 5 ms asserted; DDL copies agree). `pytest` 208/208, `ruff` clean, `db migrate` OK, headless page
   check 26/26 runs, 0 exceptions (pages untouched).
-* **Open**: 5 of 10 League of Scrubs rosters have an empty K or DEF in week 4 (CAR, MIN, CIN, NE DEF and Trey Smack K
-  were first rostered in week 3, not yet scored; Smack has no NFL id) — a second pass that seats an unvalued eligible
-  player in an otherwise-empty slot, or R-13, would fix it; scipy is used directly but only declared transitively (via
-  scikit-learn) — `uv add scipy` is a one-line follow-up; no `metric_registry.csv` row (seeds out of bounds); the view
-  and `ops.lineups` (≈9k rows) will be published by the hosted sync (every analytics view + `ops.*`).
+* **Follow-up (PO decision 2026-09-29) — unvalued players fill otherwise-empty slots.** A playable, eligible player
+  with no value yet (K / DEF Sleeper has not scored in this league, a K with no NFL id and no points, a QB–TE with no v2
+  projection although his team plays) is carried at 0 with `value_source = 'unvalued'`, `reason = 'no value yet'`. The
+  objective is now total first, filled slots second, valued starters third (tie weights 1e-9 / 1e-12), so he is seated
+  only where nobody valued can play, never displaces a valued player (even one worth exactly 0), never changes the
+  total; margin 0, never the weakest slot. `ops.lineup_totals.n_unvalued` (DDL in `lineup.DDL`, `db.py`, the mart's
+  pre_hook, each with `alter table … add column if not exists` for existing tables; `db migrate` added it in place on
+  the clone), exposed in the mart and registered in `table.py`; new mart test `lineup_unvalued_starter_counts_zero`,
+  `value_source` accepts `unvalued`, the weakest-slot test skips unvalued rows. `is_empty_slot` now means nobody eligible
+  (bye, Out, IR, taxi, nobody at the position). `scipy>=1.18.1` declared (`uv add scipy`; version unchanged).
+  **Evidence**: week-4 empty slots before → after: League of Scrubs 5 → 0 (rosters 3 K Trey Smack, 4 DEF Carolina,
+  7 DEF Minnesota, 8 DEF Cincinnati, 10 DEF New England now `unvalued` starters, value 0, margin 0, totals unchanged),
+  dynasty 0 → 0; all weeks 101 → 31 and 2 → 2 (every remaining proposed empty slot has no eligible player: byes).
+  `league-lab lineups` 8,978 rows / 440 roster-weeks in 1.0 s; dbt `mart_lineup_recommendation+` +
+  `assert_exact_lineup_dominates_greedy` PASS=12, source tests PASS=4; exact vs greedy on 1,384 historical
+  roster-weeks unchanged (1,367 equal, 17 higher, 0 lower). `tests/test_lineup.py` 262 (enumeration now checks all
+  three objective levels; new fixtures: the only K unvalued, an unvalued WR behind valued WRs and behind a WR worth
+  exactly 0, an unvalued RB filling an otherwise-empty FLEX next to a truly empty TE, a locked unvalued DEF; 240 random
+  rosters — 44 seat an unvalued player, 34 bench one, 21 start a valued player worth 0; the builder fixture gained a WR
+  without a projection seated at FLEX and an unvalued DEF behind a valued one). `pytest` 291/291, `ruff` clean,
+  `uv lock --check` OK, headless page check 26/26, 0 exceptions.
+* **Open**: an unvalued K/DEF counts 0, so the lineup value understates those rosters until Sleeper scores him (R-13 is
+  the real fix); a K / DEF with a negative season PPG would still lose to an empty slot (none in 2026 so far); in a
+  realised lineup an empty slot can also mean "only a negative scorer" (League of Scrubs roster 4, week 1, DEF −1); no
+  `metric_registry.csv` row (seeds out of bounds); the view and `ops.lineups` (≈9k rows) will be published by the
+  hosted sync (every analytics view + `ops.*`).
 
 ## Next concrete actions
 

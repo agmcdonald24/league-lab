@@ -2,16 +2,19 @@
     materialized='view',
     pre_hook=[
         "create table if not exists ops.lineups (run_at timestamptz, model_version text, league_id text, season integer, week integer, roster_id integer, is_realised boolean, role text, slot text, slot_type text, slot_order integer, bench_rank integer, sleeper_player_id text, gsis_id text, player_name text, position text, value double precision, value_source text, margin double precision, is_locked boolean, report_status text, reason text)",
-        "create table if not exists ops.lineup_totals (run_at timestamptz, as_of timestamptz, model_version text, league_id text, season integer, week integer, roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision, slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision, weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer, n_questionable integer, n_ppg_valued integer, inputs_fingerprint text)"
+        "create table if not exists ops.lineup_totals (run_at timestamptz, as_of timestamptz, model_version text, league_id text, season integer, week integer, roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision, slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision, weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer, n_questionable integer, n_ppg_valued integer, inputs_fingerprint text, n_unvalued integer)",
+        "alter table ops.lineup_totals add column if not exists n_unvalued integer"
     ]
 ) }}
 -- Exact lineup service (plan B1): per league x season x week x roster, the PROPOSED starting lineup
 -- one row per starting slot (filled or empty), from `ops.lineups` / `ops.lineup_totals` (written by
 -- `league-lab lineups` and at the end of `league-lab project`; src/league_lab/lineup.py). The lineup is
 -- a maximum-weight matching of the roster to the league's slots at projection v2 `proj_points` (K at the
--- league's season PPG, DEF at the PPG Sleeper observed: `value_source`); `lineup_margin` = the lineup
+-- league's season PPG, DEF at the PPG Sleeper observed: `value_source`; a player with no value yet is
+-- `unvalued`, counted 0 and seated only where nobody valued can play); `lineup_margin` = the lineup
 -- total minus the best total without that player (re-solved), so the smallest margin is the decision
--- that matters (`weakest_slot`); a locked player (his game has kicked off) has no margin. For weeks
+-- that matters (`weakest_slot`, unvalued starters left out); a locked player (his game has kicked off)
+-- has no margin; an empty slot means nobody on the roster is eligible to play there this week. For weeks
 -- Sleeper has scored, `realised_optimal` is the best lineup the same roster could have started at the
 -- points Sleeper counted (hindsight). Names from dim_player (by gsis_id), else Sleeper's name.
 with l as (
@@ -55,6 +58,7 @@ select
     t.weakest_slot,
     t.weakest_margin,
     t.empty_slots,
+    t.n_unvalued,
     r.realised_optimal,
     t.model_version,
     t.as_of,

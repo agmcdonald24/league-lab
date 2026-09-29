@@ -122,8 +122,9 @@ create table if not exists ops.lineup_totals (
     roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision,
     slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision,
     weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer,
-    n_questionable integer, n_ppg_valued integer, inputs_fingerprint text
+    n_questionable integer, n_ppg_valued integer, inputs_fingerprint text, n_unvalued integer
 );
+alter table ops.lineup_totals add column if not exists n_unvalued integer;   -- B1 follow-up (2026-09-29)
 create table if not exists raw.routes_feed (
     season          integer,
     week            integer,

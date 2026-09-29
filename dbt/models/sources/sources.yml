@@ -109,7 +109,7 @@ sources:
               arguments:
                 combination_of_columns: [league_id, season, week, position]
       - name: lineups
-        description: "Written by `league-lab lineups` (and at the end of `league-lab project`), plan B1: per league x season x week x roster x proposed/realised (`is_realised`), one row per starting slot (role starter | empty), bench player (role bench, `bench_rank`) and player who cannot play (role unplayable, `reason`), with `value`, `value_source`, re-solved `margin` and `is_locked`."
+        description: "Written by `league-lab lineups` (and at the end of `league-lab project`), plan B1: per league x season x week x roster x proposed/realised (`is_realised`), one row per starting slot (role starter | empty), bench player (role bench, `bench_rank`) and player who cannot play (role unplayable, `reason`), with `value`, `value_source` (`unvalued` = no value yet, counted 0, seated only where nobody valued can play), re-solved `margin` and `is_locked`."
         tests:
           - unique_combination_of_columns:
               arguments:
@@ -120,7 +120,7 @@ sources:
                 combination_of_columns: [league_id, season, week, roster_id, is_realised, sleeper_player_id]
               config: {where: "sleeper_player_id is not null"}
       - name: lineup_totals
-        description: "Written with ops.lineups (plan B1): one row per lineup (league x season x week x roster x is_realised): lineup_value, bench_value (the best lineup the bench alone would field), filled / empty slots, weakest slot and margin, counts; `inputs_fingerprint` = md5 of the Sleeper points a realised lineup was solved on."
+        description: "Written with ops.lineups (plan B1): one row per lineup (league x season x week x roster x is_realised): lineup_value, bench_value (the best lineup the bench alone would field), filled / empty slots, weakest slot and margin, counts (`n_unvalued` = starters seated with no value yet); `inputs_fingerprint` = md5 of the Sleeper points a realised lineup was solved on."
         tests:
           - unique_combination_of_columns:
               arguments:

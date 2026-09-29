@@ -5,7 +5,10 @@ What it does
 * ``solve(players, slots)`` fills a league's starting slots with a **maximum-weight bipartite
   matching** (``scipy.optimize.linear_sum_assignment``) over the eligible (player, slot) pairs:
   each player in at most one slot, a slot may stay empty, a player who cannot play is left out
-  (with the reason), a locked player keeps his slot. Eligibility is ``SLOT_ELIGIBILITY`` applied
+  (with the reason), a locked player keeps his slot. A playable player with no value yet is
+  **unvalued**: he counts 0 (``value_source = 'unvalued'``) and is seated only in a slot nobody
+  valued can fill (the objective is total first, filled slots second, valued before unvalued third),
+  so he never displaces a valued player nor changes the total. Eligibility is ``SLOT_ELIGIBILITY`` applied
   to the player's Sleeper ``fantasy_positions`` (Travis Hunter is DB/WR, so he may start at WR or
   FLEX), and SUPER_FLEX keeps all four positions — never "a second QB slot". It returns the
   lineup (slot -> player, value), its total, the bench in value order, the players who cannot
@@ -18,7 +21,9 @@ What it does
 
   - the **proposed** lineup: QB/RB/WR/TE at projection v2 ``proj_points`` (this league's scoring);
     K at the league's season PPG (``mart_league_player_season``), DEF at the points per game
-    Sleeper observed for it in this league (v2 projects neither: ``value_source`` says so);
+    Sleeper observed for it in this league (v2 projects neither: ``value_source`` says so); a K or
+    DEF Sleeper has not scored in this league yet, or a skill player without a v2 projection this
+    week, is unvalued (seated only in an otherwise-empty slot);
     Out / Doubtful / NFL injured reserve / bye / Sleeper IR slot / taxi squad cannot play;
     Questionable plays and is flagged (``report_status``); in a week not yet scored, a player
     whose game has kicked off is locked: a starter keeps his slot, a bench player stays benched;
@@ -70,7 +75,9 @@ SLOT_ELIGIBILITY: dict[str, frozenset[str]] = {
 }
 IGNORED_SLOTS = frozenset({"IDP_FLEX", "DL", "LB", "DB"})   # IDP is not modelled: dropped, reported
 NOT_SLOTS = frozenset({"BN", "IR", "TAXI"})                  # roster spots, not starting slots
-EPS = 1e-9   # per filled slot: among equal totals prefer the lineup that fills more slots
+EPS = 1e-9    # per filled slot: among equal totals prefer the lineup that fills more slots
+EPS2 = 1e-12  # per valued starter: then prefer a valued player (even at 0) over an unvalued one
+UNVALUED = "unvalued"
 # Sleeper team abbreviations that differ from nflverse's (dim_game): the Rams
 SLEEPER_TO_NFLVERSE_TEAM = {"LAR": "LA"}
 
@@ -101,8 +108,10 @@ def parse_slots(roster_positions: Iterable[str]) -> tuple[list[Slot], list[str]]
 # ------------------------------------------------------------------------------ the solver
 @dataclass(frozen=True, slots=True)
 class Player:
-    """One rostered player as the solver sees him. ``value`` None = unknown (never 0): such a
-    player cannot play. ``locked_slot`` = the Sleeper slot type he is locked into."""
+    """One rostered player as the solver sees him. ``value`` None (or ``value_source`` "unvalued")
+    on a playable player = no value yet: ``solve`` carries him as unvalued (value 0, reason "no value
+    yet") and seats him only where nobody valued can play. ``locked_slot`` = the Sleeper slot type
+    he is locked into."""
     id: str
     position: str | None
     value: float | None
@@ -170,21 +179,23 @@ class Lineup:
 
     @property
     def weakest(self) -> Start | None:
-        """The filled, unlocked slot with the smallest margin (ties: the lower value)."""
-        cands = [s for s in self.starts if s.margin is not None]
+        """The filled, unlocked, valued slot with the smallest margin (ties: the lower value). An
+        unvalued starter (margin 0 by construction) is not a decision and is left out."""
+        cands = [s for s in self.starts if s.margin is not None and s.player.value_source != UNVALUED]
         return min(cands, key=lambda s: (s.margin, s.value, s.slot.order)) if cands else None
 
 
-def _match(values: np.ndarray, elig: np.ndarray) -> tuple[float, np.ndarray]:
+def _match(values: np.ndarray, elig: np.ndarray, tie: np.ndarray) -> tuple[float, np.ndarray]:
     """Maximum-weight matching of players (rows) to slots (columns) where a slot may stay empty.
     Non-edges and negative values weigh 0, which is exactly "leave the slot empty / the player
-    benched", so the optimum of the assignment problem is the optimum of the matching.
-    Returns (total value, player row per slot or -1)."""
+    benched", so the optimum of the assignment problem is the optimum of the matching. ``tie`` per
+    row (EPS, + EPS2 for a valued player) orders equal totals: more filled slots, then more valued
+    starters. Returns (total value, player row per slot or -1)."""
     n, m = elig.shape
     assign = np.full(m, -1, dtype=np.intp)
     if n == 0 or m == 0:
         return 0.0, assign
-    w = np.where(elig, values[:, None] + EPS, 0.0)
+    w = np.where(elig, (values + tie)[:, None], 0.0)
     np.maximum(w, 0.0, out=w)
     rows, cols = linear_sum_assignment(w, maximize=True)
     keep = w[rows, cols] > 0.0
@@ -221,6 +232,10 @@ def solve(players: Sequence[Player | Mapping], slots: Iterable[str], *, margins:
     locked: dict[int, Player] = {}
     pool: list[Player] = []
     for p in map(_as_player, players):
+        given = p
+        if (p.playable or p.locked_slot is not None) and (
+                p.value is None or not math.isfinite(p.value) or p.value_source == UNVALUED):
+            p = replace(p, value=0.0, value_source=UNVALUED, reason=p.reason or "no value yet")
         if p.locked_slot is not None:
             t = p.locked_slot.upper()
             j = next((j for j in open_cols if types[j] == t), None)
@@ -232,17 +247,16 @@ def solve(players: Sequence[Player | Mapping], slots: Iterable[str], *, margins:
         elif not p.playable:
             unplayable.append(p if p.reason else replace(p, reason="cannot play"))
         elif not any(p.positions & SLOT_ELIGIBILITY[t] for t in set(types)):
-            unplayable.append(replace(p, playable=False, reason=p.reason or f"no {p.position} slot in this lineup"))
-        elif p.value is None or not math.isfinite(p.value):
-            unplayable.append(replace(p, playable=False, reason=p.reason or "no value"))
+            unplayable.append(replace(given, playable=False, reason=f"no {p.position} slot in this lineup"))
         else:
             pool.append(p)
 
     cols = np.array(open_cols, dtype=np.intp)
     vals = np.array([p.value for p in pool], dtype=float)
+    tie = np.array([EPS + (0.0 if p.value_source == UNVALUED else EPS2) for p in pool], dtype=float)
     elig = np.array([[bool(p.positions & SLOT_ELIGIBILITY[types[j]]) for j in open_cols] for p in pool],
                     dtype=bool).reshape(len(pool), len(open_cols))
-    free_total, assign = _match(vals, elig)
+    free_total, assign = _match(vals, elig, tie)
     locked_total = sum(p.value for p in locked.values() if p.value is not None and math.isfinite(p.value))
 
     chosen: dict[int, tuple[int, float | None]] = {}
@@ -253,7 +267,7 @@ def solve(players: Sequence[Player | Mapping], slots: Iterable[str], *, margins:
         if margins:
             mask = np.ones(len(pool), dtype=bool)
             mask[i] = False
-            alt, _ = _match(vals[mask], elig[mask])
+            alt, _ = _match(vals[mask], elig[mask], tie[mask])
             margin = free_total - alt
             margin = 0.0 if abs(margin) < 1e-6 else margin   # EPS tie-breaks move a total by < slots x 1e-9
         chosen[int(cols[k])] = (int(i), margin)
@@ -297,7 +311,8 @@ DDL = {
         roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision,
         slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision,
         weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer,
-        n_questionable integer, n_ppg_valued integer, inputs_fingerprint text)""",
+        n_questionable integer, n_ppg_valued integer, inputs_fingerprint text, n_unvalued integer);
+        alter table ops.lineup_totals add column if not exists n_unvalued integer""",
 }
 LINEUP_COLUMNS = ["run_at", "model_version", "league_id", "season", "week", "roster_id", "is_realised", "role", "slot",
                   "slot_type", "slot_order", "bench_rank", "sleeper_player_id", "gsis_id", "player_name", "position",
@@ -305,7 +320,7 @@ LINEUP_COLUMNS = ["run_at", "model_version", "league_id", "season", "week", "ros
 TOTALS_COLUMNS = ["run_at", "as_of", "model_version", "league_id", "season", "week", "roster_id", "is_realised",
                   "lineup_value", "bench_value", "slots_total", "slots_filled", "empty_slots", "weakest_slot",
                   "weakest_margin", "weakest_sleeper_player_id", "n_players", "n_bench", "n_unplayable", "n_locked",
-                  "n_questionable", "n_ppg_valued", "inputs_fingerprint"]
+                  "n_questionable", "n_ppg_valued", "inputs_fingerprint", "n_unvalued"]
 PPG_SOURCES = ("season_ppg", "observed_ppg")
 
 # The fingerprint of the Sleeper points a realised lineup was solved on; the dbt test recomputes it
@@ -486,18 +501,19 @@ def _proposed_player(inp: LineupInputs, league_id: str, week: int, row: dict, cu
         return out("game started (bench)")
     if team is not None and inp.games and team not in inp.games.get(week, {}):
         return out("bye")
+    # no value yet (no v2 projection this week; a K / DEF Sleeper has not scored in this league):
+    # playable, carried at 0 as unvalued, seated by solve() only where nobody valued can play
+    unvalued = replace(base, value=None, value_source=UNVALUED, reason="no value yet")
     if positions & SKILL:
-        if not gsis:
-            return out("no NFL id")
         if pr is None:
-            return out("no projection" if team else "no NFL team")
+            return unvalued if team else out("no NFL team")   # no NFL team: not on a roster, no game
         if pr["roster_status"] == "RES":
             return out("NFL injured reserve")
         if pr["report_status"] in ("Out", "Doubtful"):
             return out(pr["report_status"])
         return base
     if positions & {"K", "DEF"}:
-        return base if base.value is not None else out("no season PPG yet")
+        return base if base.value is not None else unvalued
     return base  # no slot for his position: solve() says so
 
 
@@ -510,7 +526,7 @@ def _emit(lu: Lineup, key: dict, names: dict[str, dict]) -> tuple[list[dict], di
                 "player_name": n.get("player_name"), "position": p.position if p else None,
                 "value": _r2(p.value) if p else None, "value_source": p.value_source if p else None,
                 "report_status": p.status if p else None, "slot": None, "slot_type": None, "slot_order": None,
-                "bench_rank": None, "margin": None, "is_locked": False, "reason": None, **kw}
+                "bench_rank": None, "margin": None, "is_locked": False, "reason": p.reason if p else None, **kw}
 
     for s in lu.starts:
         rows.append(row(s.player, role="starter" if s.player else "empty", slot=s.slot.label, slot_type=s.slot.type,
@@ -518,7 +534,7 @@ def _emit(lu: Lineup, key: dict, names: dict[str, dict]) -> tuple[list[dict], di
     for i, p in enumerate(lu.bench, 1):
         rows.append(row(p, role="bench", bench_rank=i))
     for p in lu.unplayable:
-        rows.append(row(p, role="unplayable", reason=p.reason))
+        rows.append(row(p, role="unplayable"))
     w = lu.weakest
     starters = [s.player for s in lu.starts if s.player is not None]
     total = {
@@ -530,6 +546,7 @@ def _emit(lu: Lineup, key: dict, names: dict[str, dict]) -> tuple[list[dict], di
         "n_unplayable": len(lu.unplayable), "n_locked": sum(s.locked for s in lu.starts),
         "n_questionable": sum(p.status == "Questionable" for p in starters),
         "n_ppg_valued": sum(p.value_source in PPG_SOURCES for p in starters),
+        "n_unvalued": sum(p.value_source == UNVALUED for p in starters),
     }
     return rows, total
 
