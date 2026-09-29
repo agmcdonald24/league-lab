@@ -23,12 +23,14 @@
 #   NIGHTLY_BACKTESTS=1         recompute both backtests even when present (backtest-v2 takes minutes)
 #   LEAGUE_LAB_HOSTED_ADMIN_URL, LEAGUE_LAB_HOSTED_APP_PASSWORD   publish to the hosted copy at the end
 #
-# Failure policy. A failed ingest step does not stop the run: the loaders keep the previous good
+# Failure policy. A failed live fetch does not stop the run: the loaders keep the previous good
 # data of a failed partition (here: the archive replayed a minute earlier), so the rest of the night
-# still builds and publishes, and the run exits 1 at the end naming the step. Anything after the
-# ingest (dbt build, backtests, project, the projection marts, the sync) stops the run at once, so a
-# half-built night never reaches the hosted copy; it keeps yesterday's. (Drift, the backup, and
-# `project` when an earlier board exists are reported like an ingest failure: the night publishes.)
+# still builds and publishes, and the run exits 1 at the end naming the step. Without an archive
+# (first run, lost cache) there is no previous copy, so a failed live fetch stops the night.
+# Anything after the ingest (dbt build, backtests, project, the projection marts, the sync) stops
+# the run at once, so a half-built night never reaches the hosted copy; it keeps yesterday's.
+# (Drift, the backup, and `project` when an earlier board exists are reported like a failed live
+# fetch: the night publishes.)
 # Exit codes: 0 every step ok · 1 a step failed (named on the last line) · 2 Postgres is not
 # reachable · 3 another run holds the lock · 64 bad arguments.
 # Everything is appended to logs/nightly.log (and printed).
@@ -42,7 +44,7 @@ FULL=0
 for arg in "$@"; do
   case "$arg" in
     --full) FULL=1 ;;
-    -h|--help) sed -n '3,30p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,35p' "$0"; exit 0 ;;
     *) echo "nightly.sh: unknown argument: $arg (see --help)" >&2; exit 64 ;;
   esac
 done
@@ -174,11 +176,26 @@ hard() {  # hard <name> <command...>: on failure stop the night here (nothing is
   finish
 }
 
-soft() {  # soft <name> <command...>: on failure keep going (previous good data is kept), fail at the end
+soft() {  # soft <name> <command...>: on failure keep going, fail the run at the end ($SOFT_WHY says why that is safe)
   local name="$1"
   if run_step "$@"; then record "$name" "$LAST_SECS" ok; return 0; fi
-  record "$name" "$LAST_SECS" "FAILED: continued with the previous good data"
+  record "$name" "$LAST_SECS" "FAILED: continued${SOFT_WHY:+ ($SOFT_WHY)}"
   FAILED+=("$name")
+}
+
+live() {  # live <replayed: 1|0> <name> <command...>: a live fetch. Soft when the archive replay ran
+  # (a failed partition keeps the copy it loaded); hard when there was no archive, because then a
+  # failed partition has no data at all and the build would fail on it or publish without it
+  local replayed="$1"; shift
+  if [ "$replayed" = 1 ]; then
+    SOFT_WHY="failed partitions keep the copy the archive replay loaded" soft "$@"
+    return 0
+  fi
+  local name="$1"
+  if run_step "$@"; then record "$name" "$LAST_SECS" ok; return 0; fi
+  record "$name" "$LAST_SECS" "FAILED: stopped here (no archive to fall back on: the failed partitions have no data)"
+  FAILED+=("$name")
+  finish
 }
 
 skip() {  # skip <name> <reason>
@@ -331,10 +348,12 @@ hard restore-state restore_state
 
 # 1. Replay the archive. On a fresh database this restores everything as of the last run; on a
 #    loaded one every partition's checksum matches and is skipped.
+SLEEPER_REPLAYED=1; NFLVERSE_REPLAYED=1
 if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then
   # the replay is the only Sleeper load tonight, so it must succeed
   hard replay-sleeper uv run league-lab ingest sleeper --offline
 elif [ ! -f "$RAW_DIR/sleeper/state/nfl.json.gz" ]; then
+  SLEEPER_REPLAYED=0
   skip replay-sleeper "no Sleeper archive yet (first run or cache miss); the live step loads the whole chain"
 elif run_step replay-sleeper uv run league-lab ingest sleeper --offline; then
   record replay-sleeper "$LAST_SECS" ok
@@ -358,6 +377,7 @@ else
 fi
 
 if [ ! -d "$RAW_DIR/nflverse" ]; then
+  NFLVERSE_REPLAYED=0
   skip replay-nflverse-current "no archive for $SEASON yet; the live step loads it"
 elif run_step replay-nflverse-current uv run league-lab ingest nfl --offline --seasons "$SEASON"; then
   record replay-nflverse-current "$LAST_SECS" ok
@@ -369,9 +389,9 @@ fi
 if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then
   skip fetch-sleeper "NIGHTLY_SLEEPER_OFFLINE=1: league data is the archive's (state fetched $(sed -n 's/.*"fetched_at": "\([^"]*\)".*/\1/p' "$RAW_DIR/sleeper/state/nfl.json.gz.meta.json" 2>/dev/null || echo '?'))"
 else
-  soft fetch-sleeper uv run league-lab ingest sleeper
+  live "$SLEEPER_REPLAYED" fetch-sleeper uv run league-lab ingest sleeper
 fi
-soft fetch-nflverse-current uv run league-lab ingest nfl --seasons "$SEASON"
+live "$NFLVERSE_REPLAYED" fetch-nflverse-current uv run league-lab ingest nfl --seasons "$SEASON"
 
 # 3. Build, then the pieces that read the built marts.
 hard dbt-build dbt_step dbt-build build

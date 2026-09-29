@@ -394,7 +394,9 @@ class SleeperIngester:
         meta = read_meta(path)
         offline = self.run.offline
         if meta and not self.run.force and not offline and path.exists():
-            age = datetime.now(UTC) - datetime.fromisoformat(meta["fetched_at"])
+            # age of the last download (checked_at), not of the content: an unchanged directory
+            # keeps its fetched_at, and Sleeper asks for this call at most once a day
+            age = datetime.now(UTC) - datetime.fromisoformat(meta.get("checked_at") or meta["fetched_at"])
             if age < PLAYER_DIRECTORY_MAX_AGE:
                 log.info("player directory is %s old; replaying archive instead of re-downloading", age)
                 offline = True

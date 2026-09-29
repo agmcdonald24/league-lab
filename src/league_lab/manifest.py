@@ -103,7 +103,15 @@ def get_partition_state(
 
 
 def record_manifest(conn: psycopg.Connection, rec: LoadRecord) -> int:
-    """Insert a manifest row; on success also update the partition state. Caller commits."""
+    """Insert a manifest row; on success also update the partition state. Caller commits.
+
+    ``ops.source_partition.loaded_at`` is the content time, ``rec.fetched_at``: when the loaded
+    bytes were fetched from the source (``http.Fetched.fetched_at``: the archive's own time for an
+    ``--offline`` replay or an unchanged answer, the download for new content). So a database
+    rebuilt from the archive shows the same times as one that loaded everything live. When this
+    database last *checked* a partition is ``ops.load_manifest.started_at`` of its latest attempt
+    (every attempt is logged, ``skipped_unchanged`` included). ``now()`` only without a fetch time.
+    """
     p = rec.as_params()
     with conn.cursor() as cur:
         cur.execute(
@@ -124,11 +132,11 @@ def record_manifest(conn: psycopg.Connection, rec: LoadRecord) -> int:
                 """insert into ops.source_partition
                    (source, dataset, partition_key, last_load_id, checksum_sha256, source_etag,
                     source_last_modified, row_count, loaded_at)
-                   values (%s,%s,%s,%s,%s,%s,%s,%s,now())
+                   values (%s,%s,%s,%s,%s,%s,%s,%s,coalesce(%s, now()))
                    on conflict (source, dataset, partition_key) do update set
                      last_load_id=excluded.last_load_id, checksum_sha256=excluded.checksum_sha256,
                      source_etag=excluded.source_etag, source_last_modified=excluded.source_last_modified,
-                     row_count=excluded.row_count, loaded_at=now()""",
+                     row_count=excluded.row_count, loaded_at=excluded.loaded_at""",
                 (
                     rec.source,
                     rec.dataset,
@@ -138,6 +146,7 @@ def record_manifest(conn: psycopg.Connection, rec: LoadRecord) -> int:
                     rec.source_etag,
                     rec.source_last_modified,
                     rec.row_count,
+                    rec.fetched_at,
                 ),
             )
     return load_id

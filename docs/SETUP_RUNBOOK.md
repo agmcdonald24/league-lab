@@ -166,7 +166,8 @@ Running plain `dbt` instead of `league-lab dbt` (from the repo root, so the rela
 ## 6. Where things live on disk
 
 * Raw archive: `data/raw/sleeper/<league_id>/...json.gz`, `data/raw/nflverse/<dataset>/<file>.parquet`
-  with `*.meta.json` sidecars (URL, ETag, fetch time, sha256). Replay with `--offline`.
+  with `*.meta.json` sidecars (URL, ETag, fetch time = when those bytes were first fetched, last check,
+  sha256). Replay with `--offline`; a replayed partition keeps the archive's fetch time as its "loaded" time.
 * Manifest: `ops.load_manifest` (every attempt) and `ops.source_partition` (current state).
 * Backups: `backups/` (7 daily + weekly). Choose an off-machine destination (O05) and copy them there.
 * Footprint today: raw archive ≈ 60 MB for 2016–2026; database ≈ 1 GB after full build.

@@ -178,7 +178,7 @@ about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; t
 
   | Failing step | What happened | What to do |
   |---|---|---|
-  | `fetch-sleeper`, `fetch-nflverse-current` | Sleeper or nflverse was down, or a file is not published yet | Nothing. The night carried on with the archive's copy of that partition, published, and is red so you notice. The next night retries |
+  | `fetch-sleeper`, `fetch-nflverse-current` | Sleeper or nflverse was down, or a file is not published yet | Nothing. The night carried on with the archive's copy of that partition, published, and is red so you notice. The next night retries. With no archive (first run, lost cache) there is no copy to fall back on: the night stops here instead ("no archive to fall back on"); re-run |
   | `fetch-nflverse-history` | a partial or empty cache and a download failed | Re-run (button on the run page). Stops before the build so a copy with holes in the history is never published |
   | `dbt-build` | a test failed on new data | The failing test is in the log and in `run_results.dbt-build.json`; reproduce with `make build` on the Mac. The hosted copy keeps the previous night |
   | `backtests`, `projection-marts` | projection code or its data | Reproduce with `make project`. Nothing was published |
@@ -191,11 +191,14 @@ about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; t
 * **What**: `data/raw`, every nflverse file and Sleeper payload fetched so far (~280 MB, +≈25 MB a
   season). It is the only thing carried from one run to the next: the runner's database is
   rebuilt from it every night (replaying it takes about a minute; then only the current season is
-  fetched live).
+  fetched live). A replayed partition keeps the time its file was fetched, so the "loaded" times on
+  the pages (and the stale-injury warning) show when the data arrived, not when the runner
+  replayed it.
 * **Keys**: `league-lab-raw-v1-<season>-<fingerprint>`, the fingerprint being a hash of every file.
   A run restores the newest entry for this season (else the newest of any season, so a new season
   starts from last season's archive) and saves a new entry only when the fingerprint changed:
-  every night in season (Sleeper payloads, the current season's files), rarely in the off-season.
+  most nights in season (new Sleeper weeks, the current season's files), rarely in the off-season
+  (a sidecar that only records a new ETag or the last check does not count).
 * **Budget**: GitHub keeps 10 GB of cache per repository and evicts entries nobody restored for 7
   days, so in season about seven ~280 MB entries live at once (~2 GB), plus uv's package cache
   (a few hundred MB). Well inside 10 GB.

@@ -73,7 +73,10 @@ def freshness_banner() -> None:
     )
     parts = []
     for _, r in status.iterrows():
-        when = pd.to_datetime(r["last_loaded"]).strftime("%Y-%m-%d %H:%M") if pd.notna(r["last_loaded"]) else "never"
+        # when the loaded content was fetched from the source (ops.source_partition.loaded_at), in
+        # Eastern time and labelled, like the stale-injury warning below
+        when = (f"{pd.to_datetime(r['last_loaded'], utc=True).tz_convert('America/New_York'):%a %b %-d, %-I:%M %p} ET"
+                if pd.notna(r["last_loaded"]) else "never")
         flag = f" · ⚠️ {int(r['failures'])} partition(s) currently failing" if r["failures"] else ""
         parts.append(f"**{r['source']}** loaded {when}{flag}")
     if not cov.empty:

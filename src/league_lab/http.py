@@ -3,6 +3,13 @@
 The archive under ``data/raw/<source>/...`` is the replayable copy of every source partition.
 Each file has a sidecar ``<file>.meta.json`` with URL, ETag, Last-Modified, fetch time and
 SHA-256, so a later run can send ``If-None-Match`` and skip unchanged content (plan §7).
+
+``fetched_at`` is the *content* time: when these bytes were first downloaded. A 304, or a 200
+whose bytes equal the archived ones (Sleeper sends no conditional answers; nflverse re-uploads
+identical files under a new ETag), keeps it and records the check as ``checked_at`` instead. So
+``Fetched.fetched_at`` is the same instant whether a partition comes from the network or from
+the archive (``--offline``), and a database rebuilt from the archive reports the same "loaded"
+times as one that loaded every file live (``ops.source_partition.loaded_at``).
 """
 
 from __future__ import annotations
@@ -82,6 +89,15 @@ def _write_archive(path: Path, data: bytes, meta: dict) -> None:
     _atomic_write(_meta_path(path), json.dumps(meta, indent=2).encode())
 
 
+def archived_at(path: Path, meta: dict | None) -> datetime:
+    """When the archived content was fetched: the sidecar's ``fetched_at`` (UTC), else the
+    file's modification time (a file mirrored without a sidecar)."""
+    if meta and meta.get("fetched_at"):
+        ts = datetime.fromisoformat(meta["fetched_at"])
+        return ts if ts.tzinfo else ts.replace(tzinfo=UTC)
+    return datetime.fromtimestamp(path.stat().st_mtime, UTC)
+
+
 def read_archive(path: Path) -> bytes:
     data = path.read_bytes()
     if path.suffix == ".gz":
@@ -128,7 +144,7 @@ def fetch_to_archive(
             status_code=0,
             etag=(prior or {}).get("etag"),
             last_modified=(prior or {}).get("last_modified"),
-            fetched_at=datetime.fromisoformat(prior["fetched_at"]) if prior and prior.get("fetched_at") else now,
+            fetched_at=archived_at(path, prior),  # the archive's own fetch time, never the replay's
             from_cache=True,
             path=path,
             checksum=sha256_bytes(data),
@@ -152,6 +168,8 @@ def fetch_to_archive(
                 last_exc = exc
                 resp = None
             if resp is not None and resp.status_code == 304 and path.exists():
+                # unchanged upstream: the content is the archived one, fetched when the archive says
+                # (the sidecar is left alone, so an unchanged night does not change the archive)
                 data = read_archive(path)
                 return Fetched(
                     url=url,
@@ -159,26 +177,33 @@ def fetch_to_archive(
                     status_code=304,
                     etag=prior.get("etag") if prior else None,
                     last_modified=prior.get("last_modified") if prior else None,
-                    fetched_at=now,
+                    fetched_at=archived_at(path, prior),
                     from_cache=True,
                     path=path,
                     checksum=sha256_bytes(data),
                 )
             if resp is not None and resp.status_code == 200:
                 data = resp.content
+                checksum = sha256_bytes(data)
+                # the same bytes as the archive (no conditional answer, or a re-upload under a new
+                # ETag): keep the file and its content time, record the check and the new headers
+                same = prior is not None and prior.get("sha256") == checksum and path.exists()
                 fetched = Fetched(
                     url=url,
                     content=data,
                     status_code=200,
                     etag=resp.headers.get("etag"),
                     last_modified=resp.headers.get("last-modified"),
-                    fetched_at=now,
+                    fetched_at=archived_at(path, prior) if same else now,
                     from_cache=False,
                     path=path,
-                    checksum=sha256_bytes(data),
+                    checksum=checksum,
                 )
-                on_disk = gzip.compress(data) if compress else data
-                _write_archive(path, on_disk, fetched.meta)
+                meta = {**fetched.meta, "checked_at": now.isoformat()}
+                if same:
+                    _atomic_write(_meta_path(path), json.dumps(meta, indent=2).encode())
+                else:
+                    _write_archive(path, gzip.compress(data) if compress else data, meta)
                 return fetched
             if resp is not None and resp.status_code == 404:
                 raise FetchError(f"404 not found: {url}")
