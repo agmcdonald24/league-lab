@@ -372,6 +372,62 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
 
 ## Wave B (Iteration 9b)
 
+### PO merge and QA — round 1 (B1 + B5 + B6), 2026-09-29
+
+* Three Opus developers in parallel again (worktrees `wt-b1` / `wt-b5` / `wt-b6`, branches `dev/B1` / `dev/B5` /
+  `dev/B6`, clones `league_lab_b1` / `_b5` / `_b6`) off `0fda8e7`. Merged into `integration/wave-b`: conflicts in
+  `db.py` (both migrations kept), `table.py` (both registry blocks), CHANGELOG / STATUS ("keep both"), `refresh.sh`
+  (B6's version: it execs `nightly.sh`). Cross-branch fixes by the PO: `nightly.sh` restores `ops.projections` and
+  `ops.projection_drift` before `project` (B5 × B6: a fresh CI database would otherwise refit every played week) and
+  builds `mart_lineup_recommendation+` (B1 × B6). B1 accepted as designed: Sleeper's observed points for realised
+  lineups (`points_actual` omits 2-pt conversions and long-TD bonuses), `ops.projections` as the source,
+  `mart_league_optimal_lineup` as the max-points oracle, `lineup_margin`. PO decision on the empty K/DEF slots: a
+  playable player with no value fills an otherwise-empty slot at 0 (B1 follow-up 1, `8e6147d`; `uv add scipy`).
+* Verified on the main database before QA: `pytest` 298, `ruff` clean, `project` kept weeks 1–3 frozen (labelled
+  `refit`) and rewrote 4–18, 8,978 lineup rows / 440 roster-weeks, zero empty K/DEF slots in week 4, drift view
+  survives the `+` build, 26 page runs × 2 leagues with 0 exceptions.
+* One QA agent (Opus) on the integrated build: two fresh-database `nightly.sh` runs against a hosted simulation
+  (9m31s fresh with the record restored, 5m11s loaded; exit 0; weeks 1–3 byte-identical to the main database 6/6
+  after each), the week-4 kickoff path (week 4 kept and labelled `kickoff`, `frozen_at` before the Oct 2 00:15 UTC
+  kickoff, the freeze test's negative control caught 5/5 corruptions), four week-4 lineups re-solved by brute force
+  independently of `lineup.py` (totals, filled slots, weakest slot and every margin match), realised lineups vs
+  Sleeper's max points 21/22 equal + 1 higher (the −1 defense), all 33 remaining empty slots are byes / IR / taxi,
+  Playwright on both leagues (captions, the "Kickoff board" column, the banner), the sync's local-cluster guard and
+  the workflow desk-checked (action tags exist; actionlint / shellcheck clean). Findings and what was done:
+  1. **HIGH** — `restore_state` treated an unreachable hosted copy as empty, and the sync then published the refit
+     board over the record → for the two record tables "cannot read" and "copy failed" now stop the night; a
+     reachable copy that has lost the record is repaired from the archive (`save-record` writes both tables to
+     `data/raw/record/` after every `project`, so they ride the Actions cache); only "empty everywhere" starts a new
+     record, with a CI warning. Exercised all five paths by hand (`scratchpad/state_harness.sh`).
+  2. **HIGH** — Neon was the only copy of the record and the sync dropped `ops` before restoring → `ops` (a few MB)
+     is now dropped inside the restore transaction (a failed restore rolls back); the marts still swap outside it
+     (Neon's 0.5 GB cannot hold two copies). Plus the archive copy above.
+  3. **MEDIUM** — locks needed Sleeper's weekly list; without it started starters were dropped instead of locked
+     (week 4 at kickoff + 12 h: 0 locks, 2 rosters lost a slot, values down to −17.5) → B1 follow-up 2 (`8fa1755`):
+     today's roster carries `is_starter` / `slot` from Sleeper's ordered `starters` array (`stg_sleeper__rosters
+     .starter_ids`); 6 PIT/CLE starters locked, no roster loses a slot, real-clock output unchanged.
+  4. **MEDIUM** — projection v2 was not reproducible on identical inputs (unordered training scan → the
+     early-stopping validation split moved; RB/WR/TE values differed up to 1.48 points, only 166–193 of ~590 rows per
+     week identical) → `load_frame` orders the rows; two consecutive `project` runs are byte-identical on all 36
+     league-weeks. MODEL_VERSION unchanged (same model, now deterministic).
+  5. **MEDIUM** — the stale-injury flag could never fire on a CI-built copy (replay time ≠ report time) → B6
+     follow-up (`62e31f9`): a partition's `loaded_at` is the content time (the archive sidecar's `fetched_at`; a 304
+     keeps it), the freshness caption is ET; the flag now behaves the same on the runner and the Mac.
+  6. LOW — a soft `project` failure published empty lineups from the runner → `ops.lineups` / `ops.lineup_totals`
+     restored too, so that night republishes last night's board with last night's lineups; HOSTING's failure table
+     updated. LOW — the sync let `.env` override the caller's environment (`LEAGUE_LAB_DB_NAME=x` built x, published
+     the `.env` database) → the environment wins, as in `nightly.sh`. LOW — the app password was interpolated into
+     SQL and the sync log is a CI artifact → quoted psql variable. LOW — local-cluster guard without a port (QA fixed,
+     `5b24701`). LOW — a failed live fetch with no archive claimed "previous good data" → stops the night (B6
+     follow-up).
+* Left open (round 2 or later): an unvalued K/DEF counts 0 until R-13; a K/DEF with negative season PPG loses to an
+  empty slot; the freeze is per week (Sunday games fixed at Thursday's kickoff); `metric_registry` rows for lineups /
+  `frozen_share` (seeds); pg_dump's `set_config` / `setval` noise in the sync log; the freeze test's "more than one
+  label" branch returns every row of the league-week. Only verifiable on GitHub: the live Sleeper fetch, the PGDG
+  client install, cache save/restore, artifacts, masking, Neon (must be Postgres 17: pg_dump 17 emits
+  `SET transaction_timeout`; the Mac's pg_dump 17 already syncs to it, so it is), runner timing and disk. If the
+  repository were public, GitHub disables scheduled workflows after 60 days without activity (off-season).
+
 ### B1 2026-09-29 — exact lineup service (branch `dev/B1`)
 
 * **Built**: `src/league_lab/lineup.py` — `solve(players, slots)`: maximum-weight bipartite matching

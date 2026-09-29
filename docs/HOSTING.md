@@ -117,7 +117,9 @@ key is modelled wrong).
   tiers cannot hold two copies at once — Neon caps a project at 0.5 GB), so for the length of the
   restore (a minute or two) pages say "marts not built on this machine yet" instead of failing.
   The nightly job runs around 08:00, before anyone is looking. If a restore ever fails midway, run
-  `make sync-hosted` again; local data is never touched.
+  `make sync-hosted` again; local data is never touched, and the small `ops` schema (the decision
+  record the GitHub nightly restores from here) is swapped inside the restore transaction, so it
+  is never half-gone.
 * **Security model**: the hosted role is read-only (`default_transaction_read_only`), sees only the
   three published schemas and has a 30 s statement timeout. The beta password is a closed door for
   a link, not authentication; use Community Cloud's private sharing if that matters.
@@ -182,7 +184,9 @@ about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; t
   | `fetch-nflverse-history` | a partial or empty cache and a download failed | Re-run (button on the run page). Stops before the build so a copy with holes in the history is never published |
   | `dbt-build` | a test failed on new data | The failing test is in the log and in `run_results.dbt-build.json`; reproduce with `make build` on the Mac. The hosted copy keeps the previous night |
   | `backtests`, `projection-marts` | projection code or its data | Reproduce with `make project`. Nothing was published |
-  | `project` | projection code or its data | Reproduce with `make project`. The night carried on with the previous projections (on the runner: the ones restore-state copied back from the hosted copy) and published; from the runner the lineups (`ops.lineups`, not restored) reach the hosted copy empty until a night's `project` succeeds. It stops before publishing only when no projections exist anywhere yet |
+  | `restore-state` | the hosted copy could not be read, or the decision record (`ops.projections`, `ops.projection_drift`) did not copy | Nothing was published: refitting every played week blind and publishing it would overwrite the record with refit values. Check Neon and the `HOSTED_*` secrets; re-run. A hosted copy that is reachable but has lost the record is repaired from the archive's copy (`data/raw/record/`, in the cache) without stopping |
+  | `project` | projection code or its data | Reproduce with `make project`. The night carried on with the previous projections and lineups (on the runner: the ones restore-state copied back from the hosted copy) and published them again. It stops before publishing only when no projections exist anywhere yet |
+  | `save-record` | the archive directory is not writable | The night carried on and published; the cache just has no fresh copy of the record that night |
   | `sync-hosted` | Neon unreachable, or a wrong `HOSTED_*` secret | Check the two secrets; re-run. If the restore died midway, pages say "marts not built yet" until a sync completes (§4) |
   | *Roles, database and .env* (before the pipeline) | a missing or malformed secret | The annotation names it |
 
@@ -206,16 +210,22 @@ about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; t
   data: the next run downloads the history again and Sleeper's live fetch reloads the whole chain.
 
 What the archive cannot rebuild: the two backtests behind the Rankings scoreboards
-(`league-lab backtest`, `backtest-v2`), the projection record (`ops.projections`: a league-week's
-board is frozen at its first kickoff and never rewritten — the decision record, plan B5) and the
-drift history scored on it (`ops.projection_drift`). The runner's database is new every night, so
-it copies all of them back from the hosted copy (where the previous sync put them: the sync
-publishes the whole `ops` schema) before the build. Without that restore every played week would be
-refit from scratch each night and the "kickoff board" share on Rankings would read 0%. The backtests
-are recomputed only when neither place has them (the first run, if the hosted copy never had them),
-when the projection model's version changed, or when a manual run ticks *"Recompute both
-backtests"*; `backtest-v2` then adds about 15 minutes to that run. The lineups (`ops.lineups`) are
-not state: `project` re-solves the season from the frozen projections and Sleeper's weekly rosters. A licensed routes file imported on the Mac
+(`league-lab backtest`, `backtest-v2`), the **decision record** (`ops.projections`: a league-week's
+board is frozen at its first kickoff and never rewritten, plan B5; and the drift history scored on
+it, `ops.projection_drift`) and last night's lineups (`ops.lineups`, `ops.lineup_totals`). The
+runner's database is new every night, so it copies all of them back from the hosted copy (where
+the previous sync put them: the sync publishes the whole `ops` schema) before the build. Without
+that restore every played week would be refit from scratch each night and the "kickoff board"
+share on Rankings would read 0%. The record gets two more protections, because nothing can
+recompute it: the night **stops** when the hosted copy cannot be read or the copy fails (nothing is
+published, so nothing is overwritten), and after every successful `project` the two record tables
+are also written to `data/raw/record/` — inside the cached archive — so a hosted copy that has lost
+them (a restore that died midway, though the sync now swaps `ops` inside its transaction) is
+repaired from that copy. The backtests are recomputed only when neither place has them (the first
+run, if the hosted copy never had them), when the projection model's version changed, or when a
+manual run ticks *"Recompute both backtests"*; `backtest-v2` then adds about 15 minutes to that
+run. The lineups are restored only so a night whose `project` fails republishes a consistent copy;
+`project` re-solves them from the frozen projections and Sleeper's rosters. A licensed routes file imported on the Mac
 (`import-routes`) is not in the archive either; while GitHub publishes, the pages show the routes
 proxy.
 

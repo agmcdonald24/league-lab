@@ -26,6 +26,9 @@ Newest first. The Home page shows the top entry as "What's new".
 - The "loaded" line under every page title now shows Eastern time with the label ("**nflverse** loaded Tue Sep 29,
   4:34 PM ET"), like the injury warning below it, and it means when that data arrived from the source: a nightly
   rebuild no longer makes week-old files look like they loaded this morning.
+- The live board no longer jitters between refreshes with no news: two fits of the same data now give the same
+  numbers (the training rows were read in an unordered scan, which moved the model's internal validation split;
+  differences reached 1.5 points on a player).
 
 ## 2026-09-27 — Your league's scoring on every league page
 
