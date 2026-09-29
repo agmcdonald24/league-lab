@@ -16,6 +16,9 @@
 #         scripts/sync_to_hosted.sh --dry-run  (dump only, print size)
 set -euo pipefail
 cd "$(dirname "$0")/.."
+mkdir -p logs
+exec > >(tee -a logs/sync.log) 2>&1
+echo "=== $(date '+%F %T') sync start (code $(git rev-parse --short HEAD 2>/dev/null || echo '?')) ==="
 # load .env the way the app does (python-dotenv): values with &, ?, spaces or quotes are safe
 if [ -f .env ]; then
   set -a
@@ -105,4 +108,12 @@ echo "verifying ..."
 psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -At -c "
   select 'analytics tables: ' || count(*) from information_schema.tables where table_schema = 'analytics';" \
   -c "select 'published through: ' || coalesce(max(loaded_at)::text, 'n/a') from ops.source_partition;"
+# every relation the pages read must be there, visible to the app role - or the run fails loudly
+hosted_have="$(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select table_name from information_schema.tables where table_schema = 'analytics' order by 1")"
+missing="$(comm -23 <(echo "$closure" | sort) <(echo "$hosted_have" | sort))"
+if [ -n "$missing" ]; then
+  echo "ERROR: published copy is missing relations the pages read: $(echo "$missing" | tr '\n' ' ')" >&2
+  exit 5
+fi
+echo "verified: all $(echo "$closure" | wc -l | tr -d ' ') page relations are on the hosted copy"
 echo "done. Point the app at: postgresql://league_lab_app:<password>@<host>/<db>?sslmode=require"
