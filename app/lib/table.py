@@ -232,6 +232,10 @@ COLUMNS: dict[str, Col] = {
     "mae": C("MAE", "num2", "Mean absolute error in points"),
     "top_n_picked_ppg": C("Top-N picked PPG", "num1", "Actual PPG of the players the ranking put in its top-N"),
     "top_n_ceiling_ppg": C("Top-N ceiling PPG", "num1", "Actual PPG of the true top-N that week (perfect foresight)"),
+    # ---- M-06 drift
+    "weeks_scored": C("Weeks scored", "int", "Complete weeks of this season the live board has been scored on (a week counts once its last game is in)"),
+    "backtest_spearman": C("Spearman · backtest", "num2", "The same rank correlation on the walk-forward backtest's held-out seasons (v2 projection, this league's scoring)"),
+    "backtest_coverage_80": C("Coverage · backtest", "pct", "Share of actuals inside P10–P90 on the walk-forward backtest's held-out seasons (target 80%)"),
 }
 
 

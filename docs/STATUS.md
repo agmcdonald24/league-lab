@@ -282,6 +282,33 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   pre-existing, not S-01a: the dynasty "Roster value" table says "Waiver / free agent" for players drafted in earlier
   seasons — the mart only reads the current season's draft.
 
+## Wave A (Iteration 9)
+
+### M-06 2026-09-29 — drift monitor (branch `dev/M-06`)
+
+* **Built**: `projections.drift()` / `score_drift()` score the live v2 board's played weeks like the backtest
+  (players who played and are rankable; `proj_points` vs `points_actual` in the league's scoring; `_spearman`,
+  `_hit_rate`, `TOP_N`, 8-player minimum) into `ops.projection_drift` (league × season × week × position, plus
+  `games_played / games_scheduled` so a week in progress is visible). Called at the end of `league-lab project`
+  (a failure there is logged, never fatal to the projections) and on its own as `league-lab drift`. View
+  `mart_projection_drift` (complete weeks only, next to the backtest's `v2_points` means). Rankings, v2 only:
+  strip "How the model is doing this season" above the backtest.
+* **Evidence** (clone `league_lab_m06`, after a fresh `league-lab project`): 18 rows for 2026 — weeks 1–2 every
+  position in both leagues (16/16 games), week 3 WR only (1/16 games, 10 players; QB/RB/TE under 8). Season means
+  (League of Scrubs, 2 weeks vs backtest 2021–2025): Spearman QB 0.430 vs 0.542, RB 0.675 vs 0.661, WR 0.537 vs
+  0.610, TE 0.558 vs 0.554; coverage QB 75% vs 78%, RB 82% vs 80%, WR 80% vs 81%, TE 78% vs 81%. Dynasty: QB 0.402
+  vs 0.534, RB 0.688 vs 0.663, WR 0.553 vs 0.625, TE 0.570 vs 0.571. Hand check, week 2 WR League of Scrubs:
+  SQL average-rank `corr()` 0.5423364769 = stored 0.5423364769 = `scipy.stats.spearmanr` (144 players).
+  `pytest` 29/29 (4 new in `tests/test_projection_drift.py`), `ruff` clean, dbt view + 4 tests PASS, headless
+  26/26 runs 0 exceptions, browser check of the strip on both leagues.
+* **Found on the way**: the clone's stored 2026 projections (fitted 2026-09-26 23:53 UTC, i.e. on the Mac before
+  S-01a) and a refit here differ in 19,820 of 19,822 rows, while two consecutive refits here are identical. Cause not
+  isolated — another platform, and S-01a moved `prev_snap_pct` by ≤ 4.4e-16; either can move the trees. Effect on the
+  drift is small but visible (dynasty week 1 QB Spearman 0.309 → 0.328, League of Scrubs week 1 WR 0.521 → 0.532).
+  So past weeks' projections are not a kickoff snapshot; the drift scores the board as it stands (METRICS.md § Drift).
+* **Open**: no `metric_registry.csv` row for the drift metrics (seeds out of bounds); freezing played weeks'
+  projections at kickoff would make the drift exact — a separate task.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

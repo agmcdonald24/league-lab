@@ -14,6 +14,10 @@ Newest first. The Home page shows the top entry as "What's new".
   that one line.
 - Home's "highest projections" panel is labelled for what it is: the baseline formula in League of Scrubs scoring.
   Projection v2 in your league's scoring is on the Rankings page.
+- Rankings (projection v2) has a new strip, **"How the model is doing this season"**: once a week is complete, the live
+  board is scored like the backtest — per position, this season's rank correlation and floor–ceiling coverage next
+  to the backtest's, with the number of weeks scored. After weeks 1–2 of 2026 RB is at or above its backtest in both
+  leagues, WR and QB below (QB 0.43 vs 0.54 in League of Scrubs) — two weeks is a small sample.
 
 ## 2026-09-26 — Projection v2
 

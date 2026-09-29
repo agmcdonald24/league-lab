@@ -102,4 +102,10 @@ sources:
         description: "Written by `league-lab backtest-v2`: walk-forward scores per league-season-week-position-scorer, with interval coverage."
       - name: projection_importance
         description: "Written by `league-lab backtest-v2`: permutation importance of the P50 model per position (newest test season)."
+      - name: projection_drift
+        description: "Written by `league-lab drift` (and at the end of `league-lab project`), plan M-06: the live board's played weeks scored like the backtest, per league-season-week-position, with the week's games played / scheduled."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [league_id, season, week, position]
 

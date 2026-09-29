@@ -99,6 +99,13 @@ create table if not exists ops.projection_backtest (
 create table if not exists ops.projection_importance (
     model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision
 );
+-- Drift monitor (plan M-06): the live board's played weeks scored like the backtest, written by
+-- `league-lab drift` and at the end of `league-lab project`.
+create table if not exists ops.projection_drift (
+    run_at timestamptz, model_version text, league_id text, season integer, week integer, position text,
+    n_players integer, spearman double precision, top_n integer, hit_rate double precision, mae double precision,
+    coverage_80 double precision, interval_width double precision, games_played integer, games_scheduled integer
+);
 create table if not exists raw.routes_feed (
     season          integer,
     week            integer,
