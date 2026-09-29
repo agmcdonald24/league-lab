@@ -2,6 +2,16 @@
 
 Newest first. The Home page shows the top entry as "What's new".
 
+## 2026-09-29 — Wave B (decision engine)
+
+- **What the board said before kickoff is now kept.** From week 4 on, each week's projection v2 board (Rankings)
+  is frozen when the week's first game kicks off: later refreshes no longer rewrite it, the page says "the board as
+  published before the first kickoff (Thu …)", and the "How the model is doing this season" strip is scored on that
+  frozen board. Weeks 1–3 were played before this existed, so their projections are labelled as **refit values**
+  (from a later run of the same model), on the board and in the strip. Every page also warns when the injury report
+  is stale ("Injury report last loaded Sat Sep 26, 7:02 AM ET; treat Questionable tags as stale.") — when it was
+  loaded before the last final game's date or more than 48 hours before the next kickoff.
+
 ## 2026-09-27 — Your league's scoring on every league page
 
 - Team Hub, Waiver Wire, the Matchups start/sit board, Trade Finder, League Intel and the League page's draft review

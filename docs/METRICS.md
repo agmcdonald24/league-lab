@@ -340,11 +340,41 @@ up one), projects every week of the current season for every configured league, 
 `ops.projections`; `mart_player_week_projections` adds names, context, the outcome priced under the
 league's own scoring (`league_points` macro over the component outcomes) and `rank_pos`. Everything
 shown for the current season is out of sample. Refit cadence: every refresh (≈1–2 min); a
-hyperparameter change is a new `MODEL_VERSION`.
+hyperparameter change is a new `MODEL_VERSION`. Every week is re-projected by each refit, but only the
+weeks that have not kicked off are **written**: a started week keeps the rows it had (next section).
+
+### Decision record (plan B5, 2026-09-29): a week's board is frozen at its first kickoff
+
+**Rule.** `league-lab project` rewrites a league-week's rows in `ops.projections` on every refit until
+the week's **first kickoff** (`min(dim_game.kickoff_at)` over the season-week, every game type); from
+then on the rows are never deleted or rewritten (`projections.freeze_plan`, applied by
+`_write_projections` in one transaction). The first refit after kickoff labels the kept rows:
+
+| `frozen_source` | `frozen_at` | Meaning |
+|---|---|---|
+| NULL | NULL | live board: the week has not kicked off (or has, and no refit has run since — it is labelled on the next one) |
+| `kickoff` | the kept rows' `fitted_at` (always before the first kickoff) | **the board as published before kickoff** — what a manager saw when setting a lineup. The last refit before kickoff wins: with the nightly at 08:00 ET that is Thursday morning's board |
+| `refit` | NULL | the week was already under way when its rows were locked: **2026 weeks 1–3**, played before this rule existed (their rows are the refit of 2026-09-26 23:53 UTC, after weeks 1–3 had kicked off), or a league-week first projected after its kickoff (a league added mid-season). Not a kickoff record, and the page says so |
+
+A week without a scheduled kickoff counts as not started. To re-project a frozen week on purpose (a bug
+fix), delete its rows by hand; the next refit writes it back labelled `refit`. Test:
+`assert_frozen_projections_precede_kickoff` (a `kickoff` row's `frozen_at` equals its `fitted_at` and
+precedes the week's first kickoff — kickoff times, not run times, since every scheduled game has one;
+`refit` rows have no `frozen_at`; nothing written after kickoff is left live; one label per league-week).
+
+**Why a column on `ops.projections`, not a separate `ops.projection_snapshots` table.** The acceptance
+("after two consecutive `project` runs the played weeks' rows are byte-identical") is about
+`ops.projections` itself; with a label on the table the row a manager saw is the only row there is, so
+`mart_player_week_projections`, the Rankings board, the drift and the hosted copy (0.5 GB budget) need
+no second copy, no "prefer the snapshot" join and no reconciliation of two versions of a played week.
+What is given up: the refit values of a played week are no longer kept anywhere (they were never shown
+after kickoff anyway), and the freeze is per week, not per game — a Sunday player's board is fixed at
+Thursday's first kickoff, so Friday–Sunday injury news does not reach it (a per-game freeze is a
+possible refinement).
 
 ### Drift (`league-lab drift`, `ops.projection_drift`, `mart_projection_drift`; plan M-06)
 
-Once a week of the projected season has been played, the live board is scored the way the backtest
+Once a week of the projected season has been played, the board (frozen at kickoff, B5) is scored the way the backtest
 scores a held-out season: per league × week × position, on players who **played** and were
 **rankable** (the board the page shows), projection = `proj_points`, actual = `points_actual` (the
 league's own scoring), with the same harness — Spearman, top-N hit rate (QB/TE 12, RB/WR 24), MAE,
@@ -353,14 +383,17 @@ league's own scoring), with the same harness — Spearman, top-N hit rate (QB/TE
 of players from two teams): its rows are written and refreshed nightly, but the season view averages
 **complete weeks only** and reports the other as `week_in_progress`. The view sets each position's
 season means next to the backtest's `v2_points` means over its held-out seasons (`backtest_*`).
-Written at the end of every `league-lab project` (it reads `mart_player_week_projections` as last
-built; in the nightly the full `dbt build` runs first, so outcomes are that night's and projections
-the previous refit's) and by `league-lab drift` on demand. **Not a kickoff snapshot:** `project`
-re-projects every week of the season on each refit; the refit is deterministic on unchanged inputs,
-but a change in the training data (a stat correction, a rebuilt feature) moves past weeks' numbers
-too, and the drift follows the board as it stands. Scope difference from the backtest: the backtest
-scores every player who played, the drift only rankable ones (Out / Doubtful / IR who played anyway
-are left out, as on the board). A few weeks are a small sample: read a gap to the backtest as a
+Written at the end of every `league-lab project` and by `league-lab drift` on demand. **Scored on the
+frozen board (B5):** the projection is read from `ops.projections` itself (rounded like the mart), i.e.
+for a week that has kicked off the rows kept at kickoff, even if the mart has not been rebuilt since;
+outcomes, availability and games come from `mart_player_week_projections` as last built (in the nightly
+the full `dbt build` runs first, so they are that night's). `frozen_share` = share of the scored rows
+whose `frozen_source` is `kickoff`; a week scored on `refit` (or not yet labelled) rows has 0, and the
+view carries the player-weighted `frozen_share` over complete weeks plus `refit_weeks`, so the page says
+"scored on the board as shown before kickoff" or "refit values" (2026 weeks 1–3 are refit values: they
+were played before the freeze existed; their numbers did not move when B5 was deployed).
+Scope difference from the backtest: the backtest scores every player who played, the drift only
+rankable ones (Out / Doubtful / IR who played anyway are left out, as on the board). A few weeks are a small sample: read a gap to the backtest as a
 question, not a verdict, until mid-season.
 
 ## Deferred (status in registry)

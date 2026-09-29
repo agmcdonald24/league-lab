@@ -59,11 +59,27 @@ position = c3.selectbox("Position", ["QB", "RB", "WR", "TE"], index=2)
 scope_options = {"all": "Everyone", "fa": "Free agents in this league", "rostered": "Rostered in this league", "team": "Selected team only"}
 scope = c4.selectbox("Who", list(scope_options), format_func=lambda k: scope_options[k], index=0)
 top_n = c5.number_input("Show", 10, 80, 36)
-if season == cur_season and week == cur_week:
+# B5 decision record: a week's v2 board is frozen at its first kickoff. to_jsonb keeps the page working on a
+# copy whose mart predates the label (it reads as unlabelled there).
+freeze = query("""select to_jsonb(p) ->> 'frozen_source' as frozen_source, to_jsonb(p) ->> 'frozen_at' as frozen_at
+                  from analytics.mart_player_week_projections as p where league_id = %s and season = %s and week = %s limit 1""",
+               (league_id, season, week)) if model == "v2" else pd.DataFrame()
+frozen_source = freeze["frozen_source"].iloc[0] if not freeze.empty else None
+if frozen_source == "kickoff":
+    frozen_when = pd.to_datetime(freeze["frozen_at"].iloc[0], utc=True).tz_convert("America/New_York")
+    st.caption(f"Week {week}'s games have started: the table shows the board as published before the first kickoff "
+               f"({frozen_when:%a %b %-d, %-I:%M %p} ET), frozen since, next to what happened.")
+elif frozen_source == "refit":
+    st.caption(f"Week {week} was already under way when boards started being frozen at kickoff, so its projections are **refit values** "
+               "from a later run of the same model (same as-of rule), not the exact board shown before the games.")
+elif season == cur_season and week == cur_week:
     st.caption(f"NFL {season} week {week} is the next week to be played: this is the live board. "
-               "Lines and injury reports update through the week; refresh on Sunday morning.")
+               + ("Lines and injury reports update with each refresh until the week's first game kicks off; from then on the board is "
+                  "frozen, and that frozen board is what the season scoreboard below is scored on." if model == "v2" else
+                  "Lines and injury reports update through the week; refresh on Sunday morning."))
 elif season < cur_season or week < cur_week:
-    st.caption(f"Week {week} has been played: the table shows what the projection said *before* the games, next to what happened.")
+    st.caption(f"Week {week} has been played: the table shows " + ("the projection next to what happened." if model == "v2" else
+               "what the projection said *before* the games, next to what happened."))
 
 avail = query(
     """select gsis_id, rostered_by_roster_id, rostered_by_team, is_free_agent from analytics.mart_player_availability where league_id = %s""",
@@ -198,10 +214,12 @@ if model == "v2":
     else:
         dr = query(
             """select season, position, weeks_scored, first_week, last_week, week_in_progress, spearman, backtest_spearman,
-                      coverage_80, backtest_coverage_80, backtest_seasons
-               from analytics.mart_projection_drift where league_id = %s""",
+                      coverage_80, backtest_coverage_80, backtest_seasons,
+                      to_jsonb(d) ->> 'frozen_share' as frozen_share, to_jsonb(d) ->> 'refit_weeks' as refit_weeks
+               from analytics.mart_projection_drift as d where league_id = %s""",
             (league_id,),
         )
+        dr["frozen_share"] = pd.to_numeric(dr["frozen_share"], errors="coerce")
         dr_season = cur_season if cur_season in dr["season"].tolist() else (int(dr["season"].max()) if not dr.empty else cur_season)
         dr = dr[dr["season"] == dr_season].copy()
         dr["position"] = pd.Categorical(dr["position"], ["QB", "RB", "WR", "TE"], ordered=True)
@@ -220,9 +238,24 @@ if model == "v2":
             bt_span = f" ({scored['backtest_seasons'].dropna().iloc[0]})" if scored["backtest_seasons"].notna().any() else ""
             small = (f" {['One', 'Two', 'Three', 'Four', 'Five'][n_weeks - 1]} week{'s' if n_weeks > 1 else ''} is a small sample: "
                      "one odd Sunday moves these a lot." if n_weeks < 6 else "")
-            st.caption(f"The live board scored like the backtest on NFL {dr_season}'s complete {span} ({league_name} scoring, players who played), "
-                       f"next to the walk-forward backtest{bt_span}.{small}{pending}")
-            show(scored, ["position", "weeks_scored", "spearman", "backtest_spearman", "coverage_80", "backtest_coverage_80"],
+            # B5: which board was scored — the one published before each week's first kickoff, or refit values
+            refit_weeks = max(scored["refit_weeks"].dropna().tolist(), key=len, default="")   # e.g. "1, 2, 3"
+            refit_span = (("weeks " + " and ".join(refit_weeks.rsplit(", ", 1)) if "," in refit_weeks else "week " + refit_weeks)
+                          if refit_weeks else "some weeks")
+            if scored["frozen_share"].isna().all():
+                board = ""   # a copy whose drift view predates B5
+            elif scored["frozen_share"].min() >= 0.999:
+                board = " Scored on the board as shown before kickoff: each week's projections are frozen when its first game starts."
+            elif scored["frozen_share"].max() <= 0.001:
+                board = (f" Scored on **refit values**: {refit_span} {'were' if ',' in refit_weeks else 'was'} played before boards were "
+                         "frozen at kickoff, so the projections come from a later run of the same model, not the exact board shown before the games.")
+            else:
+                board = (f" {refit_span.capitalize()} (played before boards were frozen at kickoff) are scored on **refit values**, "
+                         "the other weeks on the board as shown before kickoff.")
+            st.caption(f"The board scored like the backtest on NFL {dr_season}'s complete {span} ({league_name} scoring, players who played), "
+                       f"next to the walk-forward backtest{bt_span}.{small}{board}{pending}")
+            show(scored, ["position", "weeks_scored", "spearman", "backtest_spearman", "coverage_80", "backtest_coverage_80"]
+                 + (["frozen_share"] if scored["frozen_share"].notna().any() else []),
                  overrides={"spearman": Col("Spearman · this season", "num2", "Rank correlation between the projected order and actual points, "
                                                                           "averaged over this season's complete weeks; 1 = perfect, 0 = coin flip"),
                             "coverage_80": Col("Coverage · this season", "pct", "Share of this season's actuals that landed inside P10–P90 "

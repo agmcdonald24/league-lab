@@ -241,6 +241,9 @@ COLUMNS: dict[str, Col] = {
     "weeks_scored": C("Weeks scored", "int", "Complete weeks of this season the live board has been scored on (a week counts once its last game is in)"),
     "backtest_spearman": C("Spearman · backtest", "num2", "The same rank correlation on the walk-forward backtest's held-out seasons (v2 projection, this league's scoring)"),
     "backtest_coverage_80": C("Coverage · backtest", "pct", "Share of actuals inside P10–P90 on the walk-forward backtest's held-out seasons (target 80%)"),
+    # ---- B5 decision record
+    "frozen_share": C("Kickoff board", "pct", "Share of the scored player-weeks whose projection is the board as published before that week's "
+                                              "first kickoff (frozen since); the rest are refit values from a later run of the same model"),
 }
 
 

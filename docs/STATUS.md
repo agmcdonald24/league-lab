@@ -370,6 +370,49 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
 * **Open**: no `metric_registry.csv` row for the drift metrics (seeds out of bounds); freezing played weeks'
   projections at kickoff would make the drift exact — a separate task.
 
+## Wave B (Iteration 9b)
+
+### B5 2026-09-29 — decision record (branch `dev/B5`, clone `league_lab_b5`)
+
+* **Built** (plan Iteration 9b, B5): a league-week's rows in `ops.projections` are rewritten by every refit until the
+  week's first kickoff (`min(dim_game.kickoff_at)`) and never after (`projections.freeze_plan`, applied in one
+  transaction by `_write_projections`; `project()` changed by one call). New columns `frozen_source` (NULL live /
+  `kickoff` / `refit`) and `frozen_at` (= the kept rows' `fitted_at`, before the first kickoff; only for `kickoff`),
+  added to an existing table by `db migrate`, the writer and the mart's pre-hook (`alter table … add column if not
+  exists`). Design: a label on the table, not an `ops.projection_snapshots` table — the row a manager saw is the only
+  row, so mart, page, drift and the hosted copy need no second copy (`docs/METRICS.md` § Decision record,
+  `docs/DATA_MODEL.md`). **2026 weeks 1–3 hold refit values** (rows fitted 2026-09-26 23:53 UTC, after those weeks
+  kicked off): labelled `refit`, kept unchanged, and the Rankings board and strip say "refit values". Drift reads the
+  projection from `ops.projections` (the frozen rows) and writes `frozen_share`; `mart_projection_drift` carries the
+  player-weighted `frozen_share` and `refit_weeks`. Freshness banner: "Injury report last loaded <when>; treat
+  Questionable tags as stale." when the injuries partition's last content change (`mart_data_status`; nflverse's
+  `date_modified` is empty since 2025) is before the last final game's date or more than 48 h before the next kickoff
+  (`dim_game`, guarded by `missing_relations`), only when a game is within 7 days. dbt:
+  `assert_frozen_projections_precede_kickoff` (kickoff times, not run times), `accepted_values` on
+  `frozen_source`, `projection_drift_frozen_share_in_range`.
+* **Evidence**: `db migrate` added the columns to the 19,822-row table. `league-lab project` run 1: weeks 1–3 kept
+  (per league-week md5 of the value columns identical to the pre-B5 rows, 6/6) and labelled `refit`; weeks 4–18
+  rewritten (16,268 rows). Run 2: whole-row md5 (every column, labels included) of weeks 1–3 identical to run 1, 6/6;
+  weeks 4–18 rewritten (30/30 league-weeks new md5). Drift after B5 = M-06's numbers (18 rows, Spearman identical,
+  MAE within 1e-15), `frozen_share` 0 everywhere. `dbt build --select mart_player_week_projections+
+  mart_projection_backtest+` PASS=14 twice and `mart_projection_drift` is still a view afterwards;
+  `source:ops.projections+ source:ops.projection_drift+ mart_projection_backtest+` PASS=16. Kickoff path simulated on
+  the clone (clock set to week 4's first kickoff + 12 h): week 4 kept and labelled `kickoff`, `frozen_at` 2026-09-29
+  18:22:23 UTC < kickoff 2026-10-02 00:15 UTC, weeks 5–18 rewritten, the freeze test PASS; negative control (one
+  `kickoff` row moved past kickoff, one `refit` row given a `frozen_at`) → FAIL 2 naming both; real clock restored →
+  every league-week byte-identical to run 2. `pytest` 36/36 (7 new in `tests/test_projection_freeze.py`: freeze rules,
+  two in-memory refits byte-identical on played weeks, kickoff board kept, DDL copies agree and upgrade, `frozen_share`,
+  banner flag on/off), `ruff` clean, headless check 26/26 runs 0 exceptions, Playwright on the dynasty Rankings page:
+  strip "Scored on refit values: weeks 1 and 2 …", week 3 caption, banner flag shown by the data itself (loaded
+  Sat Sep 26, next kickoff Thu Oct 1), gone with the threshold raised to 200 h (restored).
+* **Open**: B6's nightly on an ephemeral Postgres must carry `ops.projections` forward between runs (e.g. restore it
+  from the hosted copy before `project`), or every played week is re-created as `refit` each night. The freeze is per
+  week: Sunday games' board is fixed at Thursday's kickoff (a per-game freeze is a refinement). For week 4 to be the
+  first kickoff record on the Mac, B5 must be running before the Friday 2026-10-02 08:00 refresh. Hosted acceptance
+  (the strip on Neon, "38+ relations" in the sync log) is Andrew's `make sync-hosted`; the sync will add
+  `analytics.dim_game` (≈3k rows) because the banner reads it. `project` took 3 min alone and 36 min while two other
+  model fits shared the sandbox's 2 cores. No `metric_registry.csv` row for `frozen_share` (seeds out of bounds).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
