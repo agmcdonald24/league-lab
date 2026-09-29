@@ -14,6 +14,11 @@ Newest first. The Home page shows the top entry as "What's new".
   that one line.
 - Home's "highest projections" panel is labelled for what it is: the baseline formula in League of Scrubs scoring.
   Projection v2 in your league's scoring is on the Rankings page.
+- Waiver Wire opens with **Adds worth a claim** for your team: per position your league starts, up to three free
+  agents who beat your weakest projected starter this week (projection v2, your league's scoring) or your best
+  bench player's PPG, each saying so in words ("+0.3 over your TE1 this week (Proj 7.9 vs 7.6)") with floor and
+  ceiling; otherwise "Nothing on the wire beats what you have at RB." The free-agent table now ranks by projection
+  v2 for next week by default; every other ranking and filter is still there.
 
 ## 2026-09-26 — Projection v2
 
