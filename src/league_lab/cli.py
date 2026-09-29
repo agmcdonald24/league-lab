@@ -74,7 +74,7 @@ def _print_results(results) -> int:
                   "" if r.row_count is None else str(r.row_count), (r.error or "")[:80])
     console.print(t)
     if failures:
-        console.print(f"[red]{failures} partition(s) failed; previous good data was kept for those.[/red]")
+        console.print(f"[red]{failures} partition(s) failed; whatever those partitions held before was kept (nothing, if they were never loaded).[/red]")
     return failures
 
 

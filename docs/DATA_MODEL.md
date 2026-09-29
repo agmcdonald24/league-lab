@@ -31,18 +31,30 @@ marts the explorer reads). `analytics_seeds` holds the scoring map and metric re
 | `routes_feed` | provider, season | season, week, one of gsis_id/sleeper_id/pfr_id, provider | licensed routes import contract (`league-lab import-routes`), empty until used |
 
 Every raw nfl table carries `_fetched_at`; every Sleeper table carries `payload jsonb` and
-`fetched_at`. Column types are derived from the source file and widened (never narrowed) when a
-later season's file changes type.
+`fetched_at`: the **content time**, when those bytes were fetched from the source (see
+`ops.source_partition.loaded_at` below). Column types are derived from the source file and widened
+(never narrowed) when a later season's file changes type.
 
 ## ops
 
 `ops.load_manifest` — one row per attempted partition load: source, dataset, partition_key,
 source_url, source_last_modified, source_etag, fetched_at, checksum_sha256, schema_fingerprint,
 row_count, status (`success` | `failed` | `skipped_unchanged` | `contract_failed`), error,
-code_version, file_path, started_at, finished_at.
+code_version, file_path, started_at, finished_at. `started_at` is **when this database checked**
+the partition (every attempt, unchanged ones included; `mart_data_status.last_attempt_at`).
 
 `ops.source_partition` — current state per (source, dataset, partition_key): last successful
-load, checksum, ETag, rows, loaded_at. Used to skip unchanged content.
+load, checksum, ETag, rows, loaded_at. Used to skip unchanged content. **`loaded_at` is the content
+time**, not the moment of the insert: the `fetched_at` of the bytes that were loaded. A live
+download of new content stamps the download time (the same instant written to the archive's
+`.meta.json`); an `--offline` replay stamps the archive's own `fetched_at` (the file's mtime if it
+has no sidecar); an unchanged answer (304, or identical bytes under a new ETag / from Sleeper,
+which sends none) keeps the archived `fetched_at` and records the check as `checked_at` in the
+sidecar. So a database rebuilt from the archive every night (GitHub Actions) shows the same
+`loaded_at` as one that loaded every file live, and it moves only when the content changes, which
+is what `mart_data_status.last_loaded_at`, the page banner, B5's stale-injury flag and the sync's
+"published through" line read. No separate column was needed: "checked" lives in `load_manifest`.
+(Before 2026-09-29 `loaded_at` was the insert time, so a replayed database showed the replay time.)
 
 `ops.projections` (projection v2) — one row per league_id × season × week × gsis_id: model_version,
 fitted_at, train_seasons, position, the projected stat line (`proj_*`), `proj_points`, `p10 / p50 / p90`,

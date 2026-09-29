@@ -589,10 +589,60 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   **B5 × B6**: the CI database is new every night, so frozen projections (B5) must be carried like the backtests —
   add B5's table to `STATE_TABLES` in `nightly.sh` (restored from the hosted copy before `project`), or every
   night's "first publication" is that night. A licensed routes file imported on the Mac is not in the archive.
-  The Data Status page's "last loaded" is the night's replay time for every partition (the archive's fetch time is
-  kept in `ops.load_manifest.fetched_at`).
+  (The "last loaded" = replay time problem found in QA is fixed: follow-up below.)
 * **Andrew**: merge to `main`, add the three secrets (HOSTING.md § 5), run it once by hand from the Actions tab,
   then retire the launchd job or take `LEAGUE_LAB_HOSTED_ADMIN_URL` out of the Mac's `.env` (one writer).
+
+#### B6 follow-up 2026-09-29 — content time, not replay time (QA finding, MEDIUM)
+
+* **Finding**: on a fresh database every partition's `ops.source_partition.loaded_at` was the replay time, so the
+  CI-built copy said "loaded this morning" for files unchanged for days (nflverse `teams`: 2026-09-29 19:25 UTC vs
+  the archive's 2026-09-26), B5's stale-injury flag could never fire there, and "sleeper loaded …" showed the replay.
+* **Decision implemented**: `loaded_at` is the **content time**, the `fetched_at` of the bytes loaded
+  (`manifest.record_manifest` writes `rec.fetched_at`, `now()` only without one). `http.fetch_to_archive` makes that
+  one instant everywhere: an `--offline` replay returns the sidecar's `fetched_at` (the file's mtime without a
+  sidecar: the curl-mirrored pbp history); a live download of new bytes stamps the download and writes the same
+  instant to the sidecar; a 304, or a 200 with the archived bytes (Sleeper sends no 304; nflverse re-uploads under
+  new ETags), keeps the archived `fetched_at`, leaves the file alone and records the check as `checked_at` in the
+  sidecar (the Sleeper player directory's once-a-day guard now reads `checked_at`). **No new column**: "when this
+  database last checked" already exists as `ops.load_manifest.started_at` (every attempt, unchanged ones included)
+  → `mart_data_status.last_attempt_at`, shown next to `last_loaded_at` on Data Status. `mart_data_status`, the banner
+  and the sync's "published through" line read `loaded_at` unchanged, so they now show content time. No dbt source
+  has a `freshness:` config, so no test depends on the timestamp. A database loaded before this change keeps its old
+  insert times until a partition's content changes (the CI copy is rebuilt every night, so it is right at once).
+* `nightly.sh` (ingest section only; `restore_state`, the sync and the record steps untouched): a live fetch with no
+  archive behind it (replay skipped: first run or lost cache) is now fatal, `FAILED: stopped here (no archive to fall
+  back on: the failed partitions have no data)`, instead of "continued with the previous good data"; with an archive
+  it still continues ("failed partitions keep the copy the archive replay loaded"). The loader's own line now says
+  "whatever those partitions held before was kept (nothing, if they were never loaded)". The workflow's cache
+  fingerprint ignores `*.meta.json`, so a night that only records checks does not save a new cache entry.
+* `app/lib/ui.py` `freshness_banner`, caption only: "**nflverse** loaded Tue Sep 29, 4:53 PM ET", Eastern and
+  labelled like the B5 warning under it (was unlabelled UTC `2026-09-29 20:53`).
+* **Evidence** (`league_lab_b6` dropped and recreated with `init_db.sql`, `nightly.sh` with
+  `NIGHTLY_SLEEPER_OFFLINE=1`, `OMP_NUM_THREADS=2`, quiet sandbox; hosted simulation created and dropped again):
+  fresh night 19 m 35 s (dbt 5 m 50 s `PASS=326 WARN=2 ERROR=0 TOTAL=328`, backtests recomputed 9 m 53 s because the
+  simulation was empty, project 2 m 01 s, sync `verified: all 40 page relations`, `published through: 2026-09-29
+  20:34:18.278195+00` = the newest content, tonight's schedules download); a second night on the loaded database
+  8 m 00 s (dbt 5 m 27 s, same PASS line, backtests kept). `mart_data_status.last_loaded_at` (UTC) vs the archive's
+  `fetched_at`:
+
+  | partition | archive `fetched_at` | fresh night | second night (loaded db) |
+  |---|---|---|---|
+  | sleeper `state` | 2026-09-26 10:33:15.032896 | 2026-09-26 10:33:15.032896 | 2026-09-26 10:33:15.032896 |
+  | nflverse `teams` | 2026-09-26 02:40:38.704114 | 2026-09-26 02:40:38.704114 | 2026-09-26 02:40:38.704114 |
+  | nflverse `injuries` (2026) | 2026-09-29 17:35:05.483554 | 2026-09-29 17:35:05.483554 | 2026-09-29 17:35:05.483554 |
+  | nflverse `snap_counts` (2026; archived file removed before the run, so downloaded live) | — | 2026-09-29 20:34:17.896380 (tonight) | same |
+  | nflverse `schedules` (changed upstream during the evening) | 2026-09-29 18:36:43 | 2026-09-29 20:34:18 (tonight) | 2026-09-29 20:53:32 (changed again) |
+
+  `last_attempt_at` moved to each night's check (20:33–20:34, then 20:53) while `last_loaded_at` stayed put. The
+  replica's "2026-09-26 03:06" for `teams` quoted in the QA note was itself that database's replay time; the
+  archive says 02:40:38. pbp 2016 (no sidecar) shows its file time, 2026-09-26 13:48:37. Tests:
+  `tests/test_content_time.py` (8: offline replay carries the sidecar time / the file time; a live download is now
+  and a replay reproduces it to the microsecond; 304 and identical 200 keep the content time without rewriting the
+  file; `record_manifest` writes the record's fetch time and moves nothing on an unchanged attempt; the nflverse
+  loader end to end, offline and live, database calls stubbed; the ET caption). `pytest` 309 passed, `ruff` clean,
+  headless check 26 renders (13 pages × 2 leagues), 0 exceptions. No-archive path: with an empty `data/raw/sleeper`
+  and the blocked Sleeper API the night stopped at `fetch-sleeper` with the new line, exit 1.
 
 ## Next concrete actions
 

@@ -23,6 +23,9 @@ Newest first. The Home page shows the top entry as "What's new".
 - Behind the scenes: the nightly data refresh can now run on GitHub's servers (about 7:40 a.m. Eastern) instead of
   Andrew's laptop, so a closed laptop no longer means yesterday's numbers. Same steps, same checks; the banner on every
   page still says when the data was last published.
+- The "loaded" line under every page title now shows Eastern time with the label ("**nflverse** loaded Tue Sep 29,
+  4:34 PM ET"), like the injury warning below it, and it means when that data arrived from the source: a nightly
+  rebuild no longer makes week-old files look like they loaded this morning.
 
 ## 2026-09-27 — Your league's scoring on every league page
 

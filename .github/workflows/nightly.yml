@@ -145,10 +145,12 @@ jobs:
           NIGHTLY_BACKTESTS: ${{ inputs.backtests && '1' || '' }}
         run: ./scripts/nightly.sh ${{ inputs.full && '--full' || '' }}
 
-      # Save the archive only when its content changed (the key is a fingerprint of every file):
-      # during the season that is every night (Sleeper payloads, the current season's nflverse
-      # files); in the off-season it is rare. Saved even when a later step failed: every archive
-      # file is written atomically, so a partial night's archive is still a valid one.
+      # Save the archive only when its content changed (the key is a fingerprint of every data
+      # file; a sidecar-only change, a new ETag or the time of the last check, does not count: the
+      # content time a replay needs changes only with the bytes). In season that is most nights
+      # (new Sleeper weeks, the current season's nflverse files); in the off-season it is rare.
+      # Saved even when a later step failed: every archive file is written atomically, so a
+      # partial night's archive is still a valid one.
       - name: Archive fingerprint
         id: fingerprint
         if: ${{ !cancelled() }}
@@ -156,7 +158,7 @@ jobs:
           SEASON: ${{ steps.season.outputs.season }}
         run: |
           if [ -d data/raw ] && [ -n "$(find data/raw -type f -print -quit)" ]; then
-            fp="$(cd data/raw && find . -type f ! -name '*.tmp' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
+            fp="$(cd data/raw && find . -type f ! -name '*.tmp' ! -name '*.meta.json' -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -c1-16)"
             echo "key=league-lab-raw-v1-${SEASON}-${fp}" >> "$GITHUB_OUTPUT"
             echo "archive: $(du -sh data/raw | cut -f1), $(find data/raw -type f | wc -l) files, fingerprint $fp"
           else
