@@ -26,7 +26,8 @@ What it does
     week, is unvalued (seated only in an otherwise-empty slot);
     Out / Doubtful / NFL injured reserve / bye / Sleeper IR slot / taxi squad cannot play;
     Questionable plays and is flagged (``report_status``); in a week not yet scored, a player
-    whose game has kicked off is locked: a starter keeps his slot, a bench player stays benched;
+    whose game has kicked off is locked: a starter keeps his slot, a bench player stays benched
+    (where he was: Sleeper's list for that week, else today's `starters` array — ``starter_slots``);
   - for weeks Sleeper has scored, the **realised** optimum: the same roster at the points
     Sleeper counted (``league_player_week.points_observed``) — the hindsight yardstick, which
     ``assert_exact_lineup_dominates_greedy`` holds against Sleeper's max points.
@@ -103,6 +104,14 @@ def parse_slots(roster_positions: Iterable[str]) -> tuple[list[Slot], list[str]]
         seen[t] += 1
         out.append(Slot(f"{t}{seen[t]}" if counts[t] > 1 else t, t, i))
     return out, ignored
+
+
+def starter_slots(roster_positions: Iterable[str], starters: Iterable[str] | None) -> dict[str, str]:
+    """Sleeper's roster ``starters`` array -> {player id: Sleeper slot}. The array is ordered like
+    ``roster_positions`` without BN / IR / TAXI (IDP slots keep their place, so the alignment holds
+    even though the solver ignores them); "0" (or empty) is an empty slot."""
+    positions = [str(x).upper() for x in roster_positions if str(x).upper() not in NOT_SLOTS]
+    return {sid: slot for slot, sid in zip(positions, starters or [], strict=False) if sid and sid != "0"}
 
 
 # ------------------------------------------------------------------------------ the solver
@@ -349,6 +358,9 @@ class LineupInputs:
     games: dict[int, dict[str, datetime | None]]            # week -> nflverse team -> kickoff
     fingerprints: dict[tuple[str, int, int], str] = field(default_factory=dict)
     model_version: str | None = None
+    # (league, roster) -> Sleeper's current `starters` array (ordered like roster_positions without
+    # BN / IR / TAXI; "0" = empty): the slots of today's starters when a week has no Sleeper list yet
+    starters: dict[tuple[str, int], list[str]] = field(default_factory=dict)
 
 
 def _frame(cur: psycopg.Cursor, sql: str, params: tuple = ()) -> list[dict]:
@@ -383,6 +395,8 @@ def load_inputs(conn: psycopg.Connection, season: int) -> LineupInputs:
             select league_id, week, roster_id, {FINGERPRINT_SQL} as fp
             from analytics.league_player_week where season = %s and league_id = any(%s) and is_scored_week
             group by 1, 2, 3""", (season, ids))
+        starter_rows = _frame(cur, """
+            select league_id, roster_id, starter_ids from staging.stg_sleeper__rosters where league_id = any(%s)""", (ids,))
         current_rows = _frame(cur, """
             select league_id, roster_id, sleeper_player_id, gsis_id, player_name, position, nfl_team, is_on_ir, is_on_taxi
             from analytics.mart_league_roster_membership where league_id = any(%s)""", (ids,))
@@ -427,6 +441,7 @@ def load_inputs(conn: psycopg.Connection, season: int) -> LineupInputs:
         games=games,
         fingerprints={(r["league_id"], int(r["week"]), int(r["roster_id"])): r["fp"] for r in fp_rows},
         model_version=",".join(sorted(v for v in versions if v)) or None,
+        starters={(r["league_id"], int(r["roster_id"])): list(r["starter_ids"] or []) for r in starter_rows},
     )
 
 
@@ -563,13 +578,21 @@ def build(inp: LineupInputs, as_of: datetime | None = None, run_at: datetime | N
     for lg in inp.leagues:
         league_id, slots = lg["league_id"], list(lg["roster_positions"] or [])
         cur_by_roster = inp.current.get(league_id, {})
+        # today's roster, with today's starters in the slots Sleeper's `starters` array implies: the lock
+        # rule needs them in a week Sleeper has no list for yet (a Thursday game before the fetch)
+        today: dict[int, list[dict]] = {}
+        for roster_id in lg["roster_ids"]:
+            slot_of = starter_slots(slots, inp.starters.get((league_id, roster_id)))
+            today[roster_id] = [{**r, "is_starter": r["sleeper_player_id"] in slot_of, "slot": slot_of.get(r["sleeper_player_id"])}
+                                for r in cur_by_roster.get(roster_id, [])]
         for week in inp.weeks.get(league_id, []):
             scored = week <= int(lg["last_scored_leg"])
             week_lists = inp.weekly.get((league_id, week))
             for roster_id in lg["roster_ids"]:
-                cur_rows = {r["sleeper_player_id"]: r for r in cur_by_roster.get(roster_id, [])}
-                # Sleeper's list for that week when there is one (it carries the slots of locked
-                # starters); otherwise, and for a roster missing from it in an unscored week, today's roster
+                cur_rows = {r["sleeper_player_id"]: r for r in today[roster_id]}
+                # Sleeper's list for that week when there is one (first choice: it carries that week's
+                # starters and slots); otherwise, and for a roster missing from it in an unscored week,
+                # today's roster with today's starters (Sleeper's `starters` array)
                 roster = (week_lists or {}).get(roster_id) or ([] if scored else list(cur_rows.values()))
                 if scored and not roster:
                     continue   # a scored week Sleeper has no list for: nothing honest to solve
