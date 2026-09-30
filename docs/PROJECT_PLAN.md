@@ -261,7 +261,8 @@ round 2 = B2 + B3 + B4 (all consume B1). One QA pass per round.
 ### Round 1 status and Andrew's mobile review (2026-09-29)
 
 Round 1 (B1, B5, B6) is on `main` (`ba2c9c5`), on the Mac and pushed; the hosted app shows the
-frozen-board captions and the drift strip. Andrew then reviewed the live app **from his phone**
+frozen-board captions and the drift strip. **Round 2 (B2, B3, B4) delivered 2026-09-30** (STATUS § "PO
+merge and QA — round 2"); Wave B is complete apart from the gaps listed there, which move to U-13. Andrew then reviewed the live app **from his phone**
 (transcript in `docs/STATUS.md` § "Andrew's mobile review"). The review changes round 2 and adds
 Iteration 10 rows; nothing in round 1 is reopened.
 

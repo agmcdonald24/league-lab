@@ -428,6 +428,29 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   `SET transaction_timeout`; the Mac's pg_dump 17 already syncs to it, so it is), runner timing and disk. If the
   repository were public, GitHub disables scheduled workflows after 60 days without activity (off-season).
 
+### PO merge and QA — round 2 (B2 + B3 + B4), 2026-09-30
+
+* Three Opus developers in parallel off `04a4111` (worktrees `wt-b2` / `wt-b3` / `wt-b4`, clones
+  `league_lab_b2` / `_b3` / `_b4`, ports 8521–8523), each with the shared round-2 brief (answer-first cards,
+  phone width, one projection, plain words, page ownership). Merged into `integration/wave-b2`: conflicts
+  only in `table.py` (both appended blocks kept), METRICS and STATUS ("keep both"). PO fixes: `ops.waiver_moves`
+  added to the nightly's restored state (a soft `project` failure republishes last night's moves with last
+  night's lineups); the U-11 registry entries `claim_week` / `claim_season` / `compared_with` removed (the
+  shortlist is gone). Decisions confirmed as delivered: B2's lineup gain solved at page time (scipy in
+  `app/requirements.txt`), buy-low sorted by 4-week fit, the "Inherited" label; B3's "unknown is not zero"
+  (an unvalued starter keeps his slot, an unvalued player is never a drop), rest-of-season points as the drop
+  tie-break, free-agent defenses not evaluated (R-13); B4's week from the clock, the alternative = whoever the
+  re-solve brings in (both named on a slide), no card for a starter nobody can replace.
+* Verified on the main database: `pytest` 530, `ruff` clean, migrate, `mart_league_acquisitions+` and the
+  projection/lineup/waiver marts built, `project` writes lineups then waiver moves, headless check on every
+  page × both leagues (+ the Player page by id) with 0 exceptions.
+* Known gaps carried into Iteration 10 (U-13): player names on Team Hub / Trade Finder (B2's `narrow_table`,
+  column `player`) and the waiver cards' claim/drop columns are not links yet (B4's `show()` link needs
+  `player_name` + `gsis_id`); Receivers / Players / League tables need `gsis_id` in their SELECTs for the
+  same reason; the Matchups caption still takes its week from `mart_nfl_calendar` while the cards take it
+  from the clock (they agree after a nightly); `metric_registry` rows for roster value, lineup gain, trade
+  fit, weekly/horizon gain (seeds).
+
 ### B1 2026-09-29 — exact lineup service (branch `dev/B1`)
 
 * **Built**: `src/league_lab/lineup.py` — `solve(players, slots)`: maximum-weight bipartite matching

@@ -1,4 +1,4 @@
-# Handoff — League Lab, 2026-09-29
+# Handoff — League Lab, 2026-09-30
 
 For the next agent (Claude Code or any other) picking this repo up. Read in this order:
 `AGENTS.md` (rules) → this file → `docs/PROJECT_PLAN.md` § Iteration 9 (the tasks) →
@@ -31,7 +31,7 @@ Round 1 (independent, in parallel): **B1** exact lineup service · **B5** decisi
 projections, published drift) · **B6** GitHub Actions nightly — **delivered 2026-09-29** (`ba2c9c5`,
 STATUS § "Wave B / PO merge and QA — round 1").
 Round 2 (all consume B1): **B2** roster value and rankings · **B3** waiver engine · **B4** player
-card + My Week — with the acceptance amended by Andrew's mobile review (plan § "Round 1 status and
+card + My Week — **delivered 2026-09-30** (STATUS § "PO merge and QA — round 2"), with the acceptance amended by Andrew's mobile review (plan § "Round 1 status and
 Andrew's mobile review": answer-first cards, phone width, one projection, plain words). Then
 Iteration 10, where the review added U-13 mobile pass, U-14 plain-language pass, U-15 model
 explainer + honest importance, U-16 League consolidation, U-17 Receivers/Kickers context, R-14 CB

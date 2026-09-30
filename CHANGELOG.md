@@ -2,7 +2,7 @@
 
 Newest first. The Home page shows the top entry as "What's new".
 
-## 2026-09-29 — Wave B (decision engine)
+## 2026-09-30 — Wave B (decision engine)
 
 - **My week, and a card for every player.** Home now opens on your week: your best lineup, and the two or three
   closest calls as plain cards — "RB2: start Kenny Gainwell over Emanuel Wilson, 7.54 vs 7.09 projected, 0.45 apart,
