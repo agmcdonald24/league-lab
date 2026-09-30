@@ -1058,6 +1058,18 @@ priced line itself — it describes the residual adjuster, not the projection (p
   built, `project` (v2 → K/DEF → lineups → waivers → importance), the projection/lineup/importance marts rebuilt,
   `backtest-kd` run once so the hosted copy carries the K/DEF backtest, the headless check on every page × both
   leagues + the Player page with 0 exceptions.
+* One QA agent, phone-first, 20 minutes: every walked page (Home, League, Matchups, Rankings, Kickers, Waiver Wire, Team
+  Hub, Player) has no sideways scroll and no table over five columns — including inside every expander — on both
+  leagues; the Phone level is the default on a phone user agent, Essentials on desktop; every League chart shows all
+  10 / 12 teams; the selection survived Home → League → Matchups → Kickers → Home; the Kickers card (McLaughlin 8.07,
+  Reichard 10.28), the Scrubs waiver card (Browns DEF +0.90 / +9.74) and Team Hub / My Week K and DEF values all equal
+  the marts; "The model" answers the three questions in plain words; Rankings now defaults to week 4. QA fixed two
+  things (`a5d3262`): the range chart's hover called the bar's width "P90"; Home's "10th most of 10" now says "the
+  fewest in the league". Open LOW items: under touch emulation a table link needs two taps (unconfirmed on a real
+  iPhone); Kickers sits behind "View 3 more" in the phone sidebar; luck wording differs between Home and League on a
+  tie; the freshness line, "(#2 vs RB)", "first choice … 46%" and "QB2 by points per game" still read as insider
+  phrases on Home; the backtest chart title still says Spearman; a defense drop's "costs 21.6 (already counted)"
+  reads oddly next to a net +9.7; the Player page leads with Usage; the schedule-luck x-axis title clips at 390 px.
 * Left for round 2 / later: Rankings' Position selector still QB–TE (K/DEF boards need the backtest selector reworked);
   the D/ST keys `def_st_ff` / `def_st_fum_rec` / `st_ff` / `st_fum_rec` price at 0 (≈0.1 pt/game); `backtest-kd` is
   not in the nightly (run it after a `KD_MODEL_VERSION` change); the Player card's no-projection text for a K on a
