@@ -240,8 +240,10 @@ if not ranked.empty and model == "v2":
     for c in ("p10", "proj_points", "p90", "points_actual"):
         top[c] = pd.to_numeric(top[c], errors="coerce")
     fig = go.Figure()
-    fig.add_trace(go.Bar(x=top["player_name"], y=top["p90"] - top["p10"], base=top["p10"], name="Floor to ceiling (P10–P90)",
-                         marker=dict(color="#2a78d6", opacity=0.25), hovertemplate="P10 %{base:.1f} · P90 %{y:.1f}<extra></extra>"))
+    # the bar's y is the width (ceiling − floor): the hover reads the ceiling itself from customdata
+    fig.add_trace(go.Bar(x=top["player_name"], y=top["p90"] - top["p10"], base=top["p10"], name="Floor to ceiling",
+                         customdata=top["p90"], marker=dict(color="#2a78d6", opacity=0.25),
+                         hovertemplate="floor %{base:.1f} · ceiling %{customdata:.1f}<extra></extra>"))
     fig.add_trace(go.Scatter(x=top["player_name"], y=top["proj_points"], mode="markers", name="Projection",
                              marker=dict(size=10, color="#2a78d6", line=dict(width=2, color=SURFACE)), hovertemplate="proj %{y:.1f}<extra></extra>"))
     if played_week:
