@@ -18,6 +18,21 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `ops.projection_importance` labelled `model = 'quantile_p50'`, off the page. New view `mart_projection_importance`
   (added to the `project` / nightly projection-marts `--select`); written by `league-lab project` after the
   projections, which are byte-identical to before.
+- **Trade evaluator and simulator (T-01, T-02).** New `src/league_lab/trades.py` on B1's lineup service:
+  `evaluate(board, give, get)` re-solves **both** rosters in every week of the horizon (this week + 3; byes, Out / IR,
+  taxi and locks as in `ops.lineups`) and reports each side's lineup value before / after, depth (the bench's own
+  lineup), the closest call, who starts and who sits, the roster size — a side over its limit cuts the player whose
+  loss over the horizon is smallest (counted in the gain), a side left with an open spot is shown the best free agent
+  — and the **market** kept apart from the fit: rest-of-season projected points above the best free agent at the
+  position (`REPLACEMENT_SQL`; a kicker is ~0, a one-QB league's QBs are cheap), plus PPG / xPPG / position rank / age
+  / NFL season per player. `partners(board, me)` ranks every other roster by its best 1-for-1 and 2-for-1 that raise
+  both lineups over the horizon, by the smaller gain: an exact branch and bound on the lineup's submodularity,
+  identical to the exhaustive search on both leagues, ~1 s a roster, cached 10 min. **Trade Finder** rewritten
+  phone-first: three cards (best partner + package + both gains, your best buy-low by position, your best sell-high),
+  **Try a trade** (partner, players both ways; both lineups this week and over four weeks, league rank change on
+  lineup / 4 weeks / depth, roster size, the fit line, the market line and a one-sentence verdict), the package in the
+  URL (`?partner=&give=&get=`), buy-low / sell-high lists by position and owner. The weekly pack's team brief gains
+  "Trade partners" (with the market columns). Definitions: `docs/METRICS.md` § Trades. No new table or mart.
 
 ## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
 

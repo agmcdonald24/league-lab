@@ -779,6 +779,137 @@ for his position (reference scoring, 1 = gives up the most), the same rank the M
 to him (a direct swap; a slide could make the real gap smaller — the card says "would have to beat", not
 "is worth").
 
+## Trades (T-01 evaluator, T-02 simulator, 2026-09-30; `league_lab.trades`, Trade Finder, the weekly pack)
+
+**Question.** For a package — players of my roster for players of one other roster — what happens to *both*
+best lineups this week and over the next four, to depth and roster size, and is it a fair price? Across the
+league: who should I call, with what? Two answers, never blended: **fit** (lineup points) and **market**
+(what the players are worth), plus a one-sentence verdict that reads both.
+
+**Fit (lineup gain of a package).** Per roster and per week of the horizon (this week and the next three: the weeks
+of `mart_league_roster_horizon`, § Roster value), with B1's `lineup.solve` on the players and values `ops.lineups`
+holds for that roster-week (`RosterBoard`):
+
+    gain(roster, week) = best lineup(roster − what it gives + what it gets − its cut) − best lineup(roster)
+
+**Before** = `ops.lineup_totals.lineup_value` (reproduced to the cent by the re-solve). A player it gets is
+carried as B1 carries him on his own roster (`roster_value.incoming_player`): nothing that week on a bye, Out /
+Doubtful, NFL injured reserve or in Sleeper's IR slot; a taxi-squad player can play. **Locks**: a player whose
+game that week has kicked off stays with his roster that week (his points count there) and moves from the
+next week; a locked starter keeps his slot. **This week's gain** = the first week; **horizon gain** = the sum over
+the four weeks. Gains are rounded to the cent; the page shows one decimal. Both sides are evaluated with the
+same code (`evaluate(board, give, get)`: one board holds both rosters of the league).
+
+**Depth, closest call, who starts and who sits** (this week, both sides). Depth = the best lineup the bench alone
+would field (`solve(bench)`, B1's `bench_value`; before = `mart_league_roster_value.bench_value` to the cent).
+Closest call = B1's `weakest` of the after-lineup (the unlocked starter with the smallest margin). Who starts = the
+after-lineup's starters who did not start before (arrived, or up from the bench); who sits = the before-lineup's
+starters who do not start after (traded, cut, or to the bench), each named on the page.
+
+**Roster size.** Active spots = starting + bench slots of `roster_positions` (IR and TAXI slots are not spots);
+active players = not in the IR slot, not on the taxi squad (B3's rule). Every player a roster gets takes an
+active spot (Sleeper puts a traded player on the bench); a player it gives frees one only if he held one. A
+roster left over its limit **cuts** until it fits (never more): the cut is the droppable player whose removal
+costs the post-trade lineups least over the horizon (0 for a player who starts in none of them — the lineups
+stay optimal without him), ties to the fewest rest-of-season projected points (B3's drop rule); every droppable
+player is compared (the first version stopped after the first starter when no cut was free — found by the hand
+check, fixed, and a test now holds it); two cuts are taken one at a time. Droppable = was on the roster, stays,
+active, not locked this week, has a value in some horizon week (unknown is not zero). **The cut's loss is in the
+after-lineups** (and so in the gain). A roster left with a spot **the trade opened** is shown the best free
+agent to fill it: among free agents on an active NFL roster (not Out / IR; `mart_player_availability`), valued
+per week at this league's projection (`ops.projections`; bye = no projection; Out / Doubtful, NFL IR or a game
+already kicked off = can't play), the one whose addition raises the post-trade lineups most over the horizon,
+then this week — exactly, with B3's entry bar (an add's gain with nobody dropped is max(0, value − bar), § Waiver
+moves). The fill is reported, never added to the gain.
+
+**Market (the fairness score), kept apart from fit.** Per player:
+
+    season points = Σ ops.projections.proj_points (this league's scoring, each week rounded to the cent) from this week to week 18
+    market score  = max(0, season points − replacement(position))
+    replacement   = the most season points of a free agent at that position (active NFL roster, not Out / IR); 0 if none
+
+(`trades.MARKET_SQL`, `trades.REPLACEMENT_SQL`, `price_by_player`). What we chose and why:
+*projection, not PPG*: the market score starts from the one projection every page uses (v2 in this league's
+scoring, K and DEF at kd1.0), and v2 already weighs usage — its strongest inputs are expected points (xPPG, last 5
+and season) next to points per game — so it is "xPPG-weighted" without a second model; the season's PPG and xPPG
+are shown next to it (the market line) because PPG is what the other manager sees. *Position-adjusted by the
+waiver wire*: a kicker projects about a WR3's season points, but a better one is on waivers (League of Scrubs:
+the best free-agent kicker projects 127 season points, more than any rostered kicker), so his market score is
+0; in the one-QB League of Scrubs the waiver wire holds 239-point QBs (a rostered QB below that scores 0), in the
+superflex dynasty the best free-agent QB projects 113. *Whole points*: each player is rounded half up, then the
+side is summed, so the fairness line's totals are the market column's numbers. A player with no projection has
+no market score: counted as unknown and said so, never 0. **About even** = the two sides within 10 points or
+10 % of the larger (`trades.about_even`).
+
+*Why it is only a rough guide* (said on the page): it is this season only (a dynasty's future years, draft picks
+and keeper costs are not in it); it counts every projected week, injured or benched (a player on IR is priced as
+if he plays); the replacement is one free agent's projection (a hot pickup moves the bar); and other managers
+price on names, PPG and need, not on our projection — the verdict says "expect", never "will".
+
+**Market line** (every player in a package, next to the lineups, never added to them): market score, season points,
+PPG and xPPG this season and position rank by season points in this league's scoring (`mart_league_player_season`),
+games, age (from `dim_player.birth_date`) and NFL season (season − `rookie_season` + 1, 1 = rookie), and this
+week's value.
+
+**The three lines (T-02).**
+* *Fit line*: "Fit (what the best lineups gain): you +g this week and +G over weeks 4–7; them +h and +H."
+* *Market line*: "Market (season points above the best free agent at the position): you give M_out, you get M_in:
+  about even | you get / give N more."
+* *Verdict* (one sentence): whose lineup it helps and by how much (this week first, or the horizon first when the
+  week is negative), then the market, then the likely answer — both lineups gain over the horizon: "worth
+  offering", or "they may ask for more" when the market says they give up more; only mine gains: "expect a no",
+  or "a rebuilding team might take it for the value" when the market says they get more; mine does not gain:
+  "skip it", or "only worth it for the season value" when the market says I get more. Example (dynasty, Andrew's
+  roster): "Helps you +5.4 this week (+27.3 over weeks 4–7), them +6.8 (+29.0 over weeks 4–7); the market calls
+  it about even: worth offering."
+
+**League rank change.** `mart_league_roster_rankings` (measures `lineup_value`, `horizon_value`, `bench_value`) with
+the two rosters' values replaced by their post-trade totals; `rank()` semantics (ties share a rank).
+
+**Partners (who to call).** For every other roster: the best **1-for-1** and the best **2-for-1** (two of mine
+for one of theirs, or one of mine for two of theirs) that raise **both** lineups over the horizon (each ≥ 0.01),
+ranked by the **smaller of the two horizon gains** (the trade both sides gain most from), then their sum; a trade
+that helps only one side is never listed ("no trade helps both of you" is an answer per team). A two-for-one counts
+only when each of the two players adds to the lineup of the team getting them after it loses the player it
+gives; otherwise it is a one-for-one with a throw-in (a throw-in changes neither lineup: the receiver cuts his
+cheapest player). The best partner = the roster whose best package ranks first. Moved players: every rostered
+player with a value in some horizon week. The horizon is the test (it includes this week): a trade that helps
+both this week and costs one side over four weeks is not one both should accept.
+
+*Exact search with bounds (branch and bound).* A lineup is a maximum-weight matching, a gross-substitutes
+valuation, hence submodular in the player set: adding a set of players gains at most the sum of what each would add
+alone, and removing players never raises the total. So for a package my horizon gain is at most what its incoming
+players add to (my roster − the players I give) minus what losing those costs me; the same for them; a 1-for-1's
+bound is its exact value when no cut is needed, and a cut only lowers a gain. What one player adds to a roster-week
+is exactly max(0, value − bar) (B3's entry bar), so every bound is a lookup once the bars of the rosters involved
+(mine, theirs, each without one player) are prepared. Candidates are evaluated with the evaluator's own code in the
+order of their bound until the bound drops below the best package found. `partners_exhaustive` evaluates every
+package with no bound: identical results on 4 random 3-roster leagues × all shapes (tests) and on every partner of
+both real leagues for all shapes (Andrew's rosters, after the cut fix: dynasty 11/11 partners identical, exhaustive
+315 s vs 0.6 s; League of Scrubs 9/9, 64 s vs 0.6 s). **Timing** (page time, computed once per league / team / data
+version and cached 10 min): every roster of both leagues, a fresh board each time, the sandbox shared with two
+other builds (load 3.7): dynasty median 0.81 s, max 1.20 s (12 rosters, 114–288 packages re-solved in full each);
+League of Scrubs median 0.63 s, max 0.98 s (10 rosters). Andrew's dynasty roster 12: 13,212 packages bounded, 149
+evaluated.
+
+**Checks.** `tests/test_trades.py` (33: 1-for-1 both gain reproduced by hand; 1-for-1 where one side loses, never a
+partner trade; depth, closest call, who starts / sits; 2-for-1 with the forced cut and the market sums; the cheapest
+cut when nobody is free (byes over the horizon; fails on the first version); a K-for-WR trade that empties the K
+slot and prices the kicker at 0; bye weeks over the horizon; a trade that empties a slot; locks; IR / taxi spots;
+the fill against brute force; 96 random packages never over the roster size, a single cut against brute force;
+the partner search against the exhaustive search; fit / market / verdict lines; rank change; URL parameters) and
+`tests/test_trade_finder_page.py` (AppTest on the database: the page opens on the best partner's trade, the
+simulator equals `evaluate`, the market line's numbers are the table's, a pasted link reproduces the package,
+broken links render, the buy-low list filters by position and owner).
+
+**Not modelled.** Draft picks, keeper costs and seasons after this one (a dynasty trade's long run: the market
+score is this season only); waiver priority / FAAB for the fill; what the other manager believes (the verdict
+is a heuristic, not a prediction); a traded player's Sleeper IR / taxi status on his new roster (he takes a bench
+spot); two cuts chosen jointly (they are taken one at a time); 3-for-1 or 2-for-2 in the partner search (the
+simulator takes any package). No `metric_registry.csv` rows (seeds are out of bounds for this task); proposed:
+`trade_fit` (v1.1: package gain per roster, week and horizon), `trade_market_score` (v1.0: season points above
+the best free agent at the position, grain player × league × week).
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

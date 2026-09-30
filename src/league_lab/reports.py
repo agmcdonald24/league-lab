@@ -338,7 +338,7 @@ def team_brief(conn: psycopg.Connection, league_id: str, roster_id: int, out_dir
     pack.add("Starter strength vs depth", c, r, note="strength = the best lineup minus the best lineup without that starter (the whole lineup re-solved)")
 
     c, r = _rows(conn, """
-        select roster_id, week, role, slot, slot_type, sleeper_player_id, player_name, position, fantasy_positions,
+        select roster_id, week, role, slot, slot_type, sleeper_player_id, gsis_id, player_name, position, fantasy_positions,
                player_value, value_source, lineup_margin, is_locked, reason
         from analytics.mart_league_roster_horizon where league_id = %s""", (league_id,))
     cand_cols, cand_rows = _rows(conn, """
@@ -367,6 +367,34 @@ def team_brief(conn: psycopg.Connection, league_id: str, roster_id: int, out_dir
                    d["gain_horizon"], d["fit_horizon"]) for d in sell[:10]],
                  note=f"loss = what your lineup loses without him; best partner = the roster whose lineup gains most over {span}",
                  csv_name="trade_fits_sell")
+        # plan T-01: whole packages, both rosters re-solved (roster size and cuts included), best partner first; the
+        # market score (season points above the best free agent at the position) next to the fit, never added to it
+        from .trades import (
+            MARKET_SQL,
+            REPLACEMENT_SQL,
+            market_by_player,
+            partners,
+            price_by_player,
+            season_value,
+        )
+
+        names = {sid: row[c.index("player_name")] for row in r if (sid := row[c.index("sleeper_player_id")]) is not None}
+        _, mk_rows = _rows(conn, MARKET_SQL, (league_id, season, board.weeks[0]))
+        _, repl_rows = _rows(conn, REPLACEMENT_SQL, (league_id, season, board.weeks[0], league_id))
+        prices = price_by_player(board, market_by_player(board, {k: v for k, v, _ in mk_rows}), {k: v for k, v, _ in repl_rows})
+
+        def _who(ids: tuple[str, ...]) -> str:
+            return " + ".join(str(names.get(x, x)) for x in ids)
+        pack.add("Trade partners — trades that raise both lineups",
+                 ["partner", "shape", "you_give", "you_get", "your_gain_week", "your_gain_horizon", "their_gain_week", "their_gain_horizon",
+                  "market_given", "market_received"],
+                 [(team.get(p.roster_id), pk.shape, _who(pk.give), _who(pk.get), pk.my_week, pk.my_horizon, pk.their_week, pk.their_horizon,
+                   season_value(prices, pk.give)[0], season_value(prices, pk.get)[0])
+                  for p in partners(board, roster_id) for pk in (p.one_for_one, p.two_for_one) if pk is not None],
+                 note=f"per team the best 1-for-1 and 2-for-1 that raise both best lineups over {span} (week {board.weeks[0]} first); "
+                      "best partner first (ranked by the smaller of the two gains); a two-for-one includes the cut it forces; "
+                      "market = rest-of-season projected points above the best free agent at the position (a price, not a lineup)",
+                 csv_name="trade_partners")
 
     c, r = _rows(conn, """
         select k.player_name, k.position, a.acquired_label as acquired, k.games_played, k.ppg_std, k.position_rank_std, k.expected_per_game

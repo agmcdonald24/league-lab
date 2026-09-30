@@ -1332,6 +1332,83 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
   in `app/whats_new.md`. (4) The Waiver Wire box no longer says "free-agent defenses are not valued yet" (C3 changes
   that). (5) Importance is measured in the reference league's scoring only; the dynasty page says so.
 
+### C4 2026-09-30 — T-01 trade evaluator + T-02 trade simulator (branch `dev/C4`, clone `league_lab_c4`)
+
+* **Built.** `src/league_lab/trades.py` on B1's lineup service and B2's `RosterBoard` (page time with scipy, no
+  nightly table or mart: a whole league's partner sweep takes ~1 s). `evaluate(board, give, get)` re-solves **both**
+  rosters in every week of the horizon (this week + 3) and returns per side: lineup value before / after (week and
+  horizon), depth (the bench's own lineup, = B1's `bench_value`), the closest call after (`Lineup.weakest`), who
+  starts / who sits, roster size (a side over its limit **cuts** its cheapest player over the horizon, counted in the
+  gain; a side left with an open spot is shown the best free agent), and the **market** kept apart: rest-of-season
+  projected points above the best free agent at the position (`REPLACEMENT_SQL`, `price_by_player`), summed in whole
+  points. `partners(board, me)`: every other roster's best 1-for-1 and 2-for-1 (either direction) that raise both
+  lineups over the horizon, ranked by the smaller gain, exact branch and bound. `fit_line` / `fairness_line` /
+  `verdict` (the three lines of the simulator). `roster_value.RosterBoard` gains `roster`, `is_active`,
+  `active_count`, `is_locked`, `has_value`, `pool_with`, `lineup_with` (nothing existing changed). **Trade Finder**
+  rewritten: three cards (best partner + package + both gains; buy low, with the best per position; sell high), the
+  partner table in an expander, **Try a trade** (partner, players both ways as multiselects; verdict, fit line,
+  market line, league rank change on week / 4 weeks / depth, roster size; the market table: market, PPG, xPPG, and in
+  an expander season points, position rank, games, age, NFL season, this week's value; both lineups slot by slot with
+  the change, who starts and who sits; week by week in an expander), the package in the URL
+  (`?partner=&give=&get=`, Sleeper ids), buy-low / sell-high lists filterable by position and owner.
+  `reports.py` team brief: new "Trade partners" section (both lineups' gains + market given / received; the
+  existing sections unchanged; the board rows now carry `gsis_id`). `app/lib/table.py`: a `# ---- C4 trades` block.
+* **Design choices** (PO to confirm): (1) one board for both rosters (`evaluate(board, give, get)`, not
+  `board_a, board_b`: a league's `RosterBoard` holds every roster); (2) "both accept" = both **horizon** gains ≥ 0.01
+  (the horizon includes this week; a trade that helps both this week but costs one side over four weeks is not
+  listed); (3) the 2-for-1 search is wider than the plan's "second piece = the giver's lowest-margin bench player":
+  every pair in either direction, but a pair counts only if **each** piece adds to the receiver's lineup — a pure
+  throw-in changes neither lineup, so it is the 1-for-1; (4) the market score starts from the v2 projection (the one
+  projection every page uses; its strongest inputs are xPPG L5 / season, so it is usage-weighted without a second
+  model) and is position-adjusted by the waiver wire (best free agent's season points), not by a league-wide VOR
+  rank: simple, explainable ("above what you could pick up"), and it prices a kicker at 0 and a one-QB league's QBs
+  low; "about even" = within 10 points or 10 %; (5) the cut is chosen one at a time (joint choice only matters for
+  3-for-1s); (6) no nightly table: the sweep is < 1.3 s per roster, cached 10 min on (league, roster, data key).
+* **Evidence** (clone `league_lab_c4`, this week = 4, horizon 4–7, no locks in weeks 4–7):
+  - **Hand check** (`scratchpad/waveC2/c4/hand_check2.py`: `ops.lineups` rows → an integer program (scipy milp /
+    HiGHS, not the assignment solver) per roster-week, the trade applied by hand, every legal cut tried, market by its
+    own SQL): **dynasty, Shake & Bake (12)**: top partner The72Repeat (5), best package the 1-for-2 **Bo Nix for
+    Breece Hall + Quinshon Judkins**: roster 12 109.69 / 116.42 / 104.90 / 106.81 → 115.12 / 122.95 / 111.32 / 115.74
+    (+5.43 this week, +27.31 over 4 weeks), must cut Jaylen Wright (costs 0.00), depth 83.92 → 76.95; roster 5 126.86
+    / 119.26 / 120.46 / 119.75 → 133.64 / 128.00 / 126.59 / 127.10 (+6.78, +29.00), depth 69.62 → 64.42; market: Nix
+    306.31 − 113.21 (Justin Fields) = 193 given, Hall 205.94 − 93.72 = 112 + Judkins 157.47 − 93.72 = 64 → 176
+    received: "about even: worth offering". Also the 1-for-1 Aaron Rodgers for Breece Hall (+6.28 / +26.37 vs +4.04 /
+    +21.28, market 160 vs 112). **League of Scrubs, MacZaddy (2)**: top partner GoodGameBuddy (6), the 1-for-2 **Bryce
+    Young for Jameson Williams + MarShawn Lloyd**: 113.06 / 98.15 / 109.20 / 91.83 → 113.54 / 98.15 / 109.20 / 102.77
+    (+0.48, +11.42), must cut Jacory Croskey-Merritt (0.00), depth 40.84 → 47.39; roster 6 115.30 / 111.43 / 107.74 /
+    112.37 → 119.73 / 111.43 / 109.24 / 115.68 (+4.43, +9.24), opens a spot (best free agent Daniel Carlson, K,
+    +13.5, reported not added); market 0 (Young 213.31 < the free agent Drake Maye's 238.83) vs 11 (Williams 123.17 −
+    112.21): "they may ask for more". Every number = `evaluate` to the cent; `before` = `ops.lineup_totals`, depth
+    before = `mart_league_roster_value.bench_value`.
+  - **Two-for-one with a forced cut that costs points**: Scrubs, Patrick Mahomes for Tony Pollard + Joe Burrow
+    (roster 5): roster 2 must cut Jacory Croskey-Merritt, whose loss over the horizon is **0.06** (counted: +0.76 over
+    4 weeks instead of +0.82), confirmed by trying every legal cut. **Bug found by this check and fixed**: the first
+    version stopped comparing cuts after the first starter when no cut was free, and cut Terrance Ferguson (costs
+    11.41: −10.59 instead of +0.76). New test `test_the_cut_is_the_cheapest_over_the_horizon_when_nobody_is_free`
+    fails on the old rule; the random-package test now brute-forces every single cut.
+  - **Never a one-sided trade in the "both accept" list**: all 22 dynasty and 18 Scrubs listed packages re-evaluated:
+    both horizon gains ≥ 0.01; unit tests: a 1-for-1 where one side loses and a K-for-WR are never offered.
+  - **Exact search**: `partners` = `partners_exhaustive` for every partner and shape (after the fix): dynasty 11/11
+    (exhaustive 315 s vs 0.6 s), Scrubs 9/9 (64 s vs 0.6 s). **Sweep time** (every roster, fresh board, box shared
+    with two builds, load 3.7): dynasty median 0.81 s, max 1.20 s; Scrubs median 0.63 s, max 0.98 s (< 3 s).
+  - **URL round trip** (Playwright, both leagues, phone and desktop): the URL the page writes
+    (`?league=…&team=12&partner=5&give=11563&get=8155%2C12512`), opened in a fresh browser, shows the same package,
+    lines and tables (4/4); AppTest: a second partner's link opens that package, and the URL it writes reproduces it.
+  - `pytest` 609 passed (+38: `tests/test_trades.py` 33 — 1-for-1 both gain, one side loses, depth / closest call /
+    starts / sits, 2-for-1 forced cut + market sums, the cheapest cut when nobody is free, K-for-WR with the K slot
+    empty and the kicker priced 0, bye weeks over the horizon, empty slot, locks, IR / taxi, fill vs brute force, 96
+    random packages, partner search vs exhaustive, lines and verdicts, ranks, URL ids; `tests/test_trade_finder_page.py`
+    5 on the database), `ruff` clean, headless check 39 runs 0 exceptions (Trade Finder with `partner`/`give`/`get`
+    params: a package, a broken link, an empty one, bad ids, another team, a K-for-WR, a two-for-one with a cut).
+  - Playwright (Streamlit on 8551): `scratchpad/waveC2/c4/shots2/tf_{dyn,scr}_{390,1300}_{cards,simulator,
+    simulator2,simulator3,full}.png`; at 390 px scrollWidth = clientWidth, every table outside an expander ≤ 5 columns
+    (market 5, lineups 4), a card before the first table, 0 exceptions.
+* **Open**: the market is this season only (dynasty future value, picks, keeper costs not modelled); an injured
+  player's season points count every projected week; a 1-for-1 that empties a slot does not suggest the free agent to
+  refill it (only an opened spot gets a fill); a traded player's Sleeper IR / taxi status on his new roster is not
+  modelled (he takes a bench spot). No `metric_registry.csv` rows (seeds out of bounds): proposed `trade_fit` v1.1
+  and `trade_market_score` v1.0 (METRICS § Trades). No `--select` appended (no mart).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

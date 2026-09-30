@@ -21,7 +21,9 @@ A player is available to another roster in a week when he can play for his own (
 locked) or sits on its taxi squad (a roster choice, not an injury); a bye, Out / Doubtful, NFL injured
 reserve, Sleeper's IR slot or a game that has kicked off make him worth 0 to anybody that week.
 Roster-size limits (who would be dropped) are out of scope here: that is the waiver engine (B3) and the
-trade evaluator (T-01).
+trade evaluator (T-01, ``league_lab.trades``), which re-solves whole packages with ``lineup_with`` (a
+roster-week with players taken off and others' players put on) and reads roster spots from ``roster`` /
+``is_active`` / ``active_count`` (Sleeper's IR slot and the taxi squad do not take a spot).
 """
 
 from __future__ import annotations
@@ -33,6 +35,8 @@ from collections.abc import Iterable, Mapping
 from .lineup import UNVALUED, Player, solve
 
 PLAYABLE_ROLES = frozenset({"starter", "bench"})
+# lineup-row reasons of a player who does not take an active roster spot (T-01): Sleeper's IR slot, taxi squad
+INACTIVE_REASONS = frozenset({"IR slot", "taxi squad"})
 
 
 def _get(row: Mapping, key: str, default=None):
@@ -100,13 +104,19 @@ class RosterBoard:
         self._rows: dict[tuple[int, int], list[Mapping]] = defaultdict(list)
         self._player: dict[tuple[str, int], Mapping] = {}
         self._owner: dict[str, int] = {}
+        self._members: dict[int, dict[str, None]] = defaultdict(dict)   # roster -> players (insertion-ordered set)
+        self._first: dict[str, tuple[int, Mapping]] = {}                 # player -> (first week, its row)
         for r in rows:
             roster, week = int(_get(r, "roster_id")), int(_get(r, "week"))
             self._rows[(roster, week)].append(r)
             sid = _get(r, "sleeper_player_id")
             if sid is not None:
-                self._player[(str(sid), week)] = r
-                self._owner[str(sid)] = roster
+                sid = str(sid)
+                self._player[(sid, week)] = r
+                self._owner[sid] = roster
+                self._members[roster][sid] = None
+                if sid not in self._first or week < self._first[sid][0]:
+                    self._first[sid] = (week, r)
         self._pool: dict[tuple[int, int], list[Player]] = {}
         self._value: dict[tuple[int, int], float] = {}
 
@@ -163,6 +173,51 @@ class RosterBoard:
 
     def horizon_loss(self, player_id: str, weeks: Iterable[int] | None = None) -> float:
         return _r2(sum(self.loss(player_id, w) for w in (weeks or self.weeks)))
+
+    # ---- T-01 (trade evaluator): whole packages, roster spots, locks
+    def roster(self, roster_id: int) -> list[str]:
+        """Every player on the roster (starters, bench, and those who cannot play: IR slot, taxi, bye ...)."""
+        return list(self._members.get(int(roster_id), {}))
+
+    def is_active(self, player_id: str) -> bool:
+        """He takes one of the roster's active spots (starting + bench slots): not in Sleeper's IR slot, not on
+        the taxi squad (read from his row in the board's first week: today's roster)."""
+        first = self._first.get(str(player_id))
+        return first is not None and _get(first[1], "reason") not in INACTIVE_REASONS
+
+    def active_count(self, roster_id: int) -> int:
+        return sum(self.is_active(p) for p in self.roster(roster_id))
+
+    def is_locked(self, player_id: str, week: int) -> bool:
+        """His game that week has kicked off: a locked starter, or a bench player whose game started."""
+        row = self.row(player_id, week)
+        return row is not None and (bool(_get(row, "is_locked", False)) or _get(row, "reason") == "game started (bench)")
+
+    def has_value(self, player_id: str, weeks: Iterable[int] | None = None) -> bool:
+        """He has a value (a projection, or points per game) in at least one of the weeks: unknown is not zero."""
+        for w in (weeks or self.weeks):
+            row = self.row(player_id, w)
+            if row is not None and _get(row, "value_source") != UNVALUED and _get(row, "player_value", _get(row, "value")) is not None:
+                return True
+        return False
+
+    def pool_with(self, roster_id: int, week: int, remove: Iterable[str] = (), add: Iterable[str] = ()) -> list[Player]:
+        """The solver's players for the roster-week with ``remove`` taken off and ``add`` (players of other
+        rosters, each as ``incoming_player`` carries him: left out when he cannot play for anybody that week)
+        put on. The caller decides who may move (a locked player's game has kicked off: see league_lab.trades)."""
+        gone = {str(x) for x in remove}
+        out = [p for p in self.pool(roster_id, week) if p.id not in gone]
+        for pid in add:
+            row = self.row(pid, week)
+            p = incoming_player(row) if row is not None else None
+            if p is not None:
+                out.append(p)
+        return out
+
+    def lineup_with(self, roster_id: int, week: int, remove: Iterable[str] = (), add: Iterable[str] = (), *,
+                    margins: bool = False):
+        """The best lineup of ``pool_with(...)`` (``lineup.solve``)."""
+        return solve(self.pool_with(roster_id, week, remove, add), self.slots, margins=margins)
 
 
 def trade_candidates(board: RosterBoard, roster_id: int, candidates: Iterable[Mapping]) -> tuple[list[dict], list[dict]]:

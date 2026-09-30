@@ -23,6 +23,11 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 - It also shows what the model leans on, in points: how much a player has been on the field over his last 3
   games matters most for QBs and WRs, his share of the carries for RBs and of the targets for TEs. The old
   "price line 0.017" table described a small side model, not the projection, and is gone.
+- **Trade Finder can try a trade for you.** It opens on the team where one trade helps both lineups most, and your
+  best buy-low at each position. Tick players both ways and see both lineups this week and over four weeks, who
+  starts and who sits, who has to be cut, where both teams would rank, and what the players are worth on the market
+  (projected points for the rest of the season above the best free agent at their position), with a one-line
+  verdict like "Helps you +5.4 this week, them +6.8; about even: worth offering". Copy the link to share the trade.
 
 ## Sep 30 · Your week, answered
 

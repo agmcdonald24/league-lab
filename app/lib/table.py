@@ -279,6 +279,16 @@ COLUMNS: dict[str, Col] = {
     "weekly_gain": C("This week", "signed1", "Your best lineup this week after the claim minus your best lineup now (every slot re-filled, FLEX and superflex included)"),
     "horizon_gain": C("Next 4 wks", "signed1", "The same gain summed over this week and the next three: covers a bye or an injury, and counts the games the dropped player would have started"),
     "waiver_why": C("Why", help="Where he plays this week and whom he replaces, the later weeks he helps, and anything to check (no games yet, Questionable, a drop who projects more for the season)"),
+    # ---- C4 trades (T-01 evaluator, T-02 simulator: app/pages/6_Trade_Finder.py)
+    "trade_value": C("Value", "num2", "His value to this lineup this week: the projection in this league's scoring"),
+    "trade_change": C("Change", "signed1", "This lineup slot after the trade minus before (a teammate may slide over; the changes add up to the lineup's change)"),
+    "market_price": C("Market", "int", "Market score: rest-of-season projected points in this league's scoring above the best free agent at his position. A price, not a lineup: blank = no projection yet"),
+    "season_points": C("Season pts", "int", "Rest-of-season projected points in this league's scoring (every remaining week, injured or not)"),
+    "trade_age": C("Age", "int"), "nfl_year": C("NFL yr", "int", "His NFL season: 1 = rookie"),
+    "moving_to": C("Goes to", help="The team that gets him in the trade"),
+    "you_get": C("You get", help="The player(s) you would ask for"), "you_give": C("You give", help="The player(s) you would send"),
+    "you_gain_h": C("You · 4 wks", "signed1", "What your best lineups over the next four weeks gain with the trade, added up"),
+    "they_gain_h": C("Them · 4 wks", "signed1", "What their best lineups over the next four weeks gain with the trade, added up"),
 }
 
 
