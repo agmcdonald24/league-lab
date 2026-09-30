@@ -1033,6 +1033,104 @@ the shortlist uses projection v2 in the selected league's scoring, Home's "Your 
 Rankings is the permutation importance of the P50 *quantile* model, whose dominant input is the
 priced line itself — it describes the residual adjuster, not the projection (plan U-15).
 
+## Wave C (Iteration 10)
+
+### C1 2026-09-30 — U-13 mobile pass + U-16 League consolidation (branch `dev/C1`, clone `league_lab_c1`)
+
+**What changed.**
+* **Phone detail level** (`app/lib/table.py`): `detail_level()` is now `phone | essentials | everything`;
+  `phone_columns(df, cols, overrides, phone_cols)` (pure) picks at most five columns — the caller's `phone_cols`, else
+  the first five essentials; identifiers never count; injury-report columns (`report_status`, `injury_status`,
+  `is_on_ir`, `is_questionable`) only when some row is not Healthy, and then the first of them takes the fifth place;
+  practice status and the injury text never show at Phone. `show()` applies it, pins the first column at Phone, and
+  gained `phone_cols=`, `links=`, `widths=`, `pin=`. The sidebar radio (`ui._sidebar_links`) has three options; a new
+  session starts on **Phone when the browser's User-Agent says phone** (`"Mobi"`: iPhone, Android phones; not iPad,
+  not desktop) — read server-side from `st.context.headers`, no JavaScript. The choice is kept in `st.session_state`
+  and re-assigned before the widget (the `perspective()` trick), so it survives page hops; `?detail=phone|essentials|
+  everything` seeds it. A viewport-width component was not built: the User-Agent is cheaper and deterministic.
+* **One week rule** (end of `app/lib/ui.py`): `current_week(league_id=None, *, season=None, now=None)` = the first
+  regular-season week of the league's season whose **last** game has not kicked off (B4's rule; pure core
+  `first_open_week(games, now)`), with `current_season()`, `week_schedule()`, `week_first_kickoff()`,
+  `week_opponents()` and `align_opponents(df, season, week)` (re-keys a frame's opponent / is_home / is_bye /
+  opp_rank_std / opp_rank_l4 / opp_points_allowed_pg_std to the week; `mart_player_availability` and
+  `mart_player_next_matchup` key them to `mart_nfl_calendar`). Used by `cards.decision_week` (now a wrapper),
+  Rankings' default week, the Matchups caption, board, receiver line and lookup, Team Hub's usage table and Waiver
+  Wire's free-agent browse. `mart_nfl_calendar` is left to history.
+* **League (U-16)**: `7_League_Intel.py` deleted, folded into `8_League.py`: season picker → one answer line →
+  three charts with **every team** (schedule luck and points left on the bench as horizontal bars, weekly scoring
+  rank as a heatmap; your team solid and bold with ◀; no drag/zoom so a phone scrolls) → B2's roster rankings
+  (5 columns, current season) → expanders: Standings, Manager profiles (Intel's table), Weekly scores and high
+  scores, Matchups and lineups, Transactions, Draft review, Past seasons. The 8-team line charts are gone.
+* **Matchups** (below B4's cards): the start/sit board stays in its expander; "Cornerbacks your receivers face" is
+  a card (toughest / easiest matchup of your starting WR/TE by rank vs position, and the toughest opponent's
+  starting corners' passer rating allowed, targets-weighted) + the 14-column CB table in an expander; "Defense vs
+  position" is a card (best and toughest matchup in your lineup; whole league: who gives up the most per position)
+  + the tables and heat grid in an expander; the lookup moved into an expander. "Likely cover" is not claimed:
+  alignment data is R-14.
+* **Rankings** (filters and board region only): a wrapping horizontal row — Position (segmented), Week, and a
+  "More filters" popover (projection, season, who, **injury** filter: anyone ranked / no injury tag / only tagged,
+  count); a caption lists non-default filters. One answer card (#1 at the position with the bad-week / good-week
+  range; your players on the board with rank and projection), then the board as **five columns at every level**
+  (#, player — "· Q" after a tagged name —, opponent, projection, range "7.8–32.0"; a played week swaps opponent for
+  the actual). The full board, "your players", the drift scoreboard and the backtest detail moved into expanders.
+* **Links**: `show()` links `player_name` and `kicker_name` whenever `gsis_id` is in the frame, and any other name
+  column through `links={"col": ("id_col", "plain_name_col")}`. Added `gsis_id` to the SELECTs of Team Hub (roster,
+  slot strength via `top_gsis_id`, usage, keeper facts), Trade Finder (candidates), Waiver Wire (`add_gsis_id` /
+  `drop_gsis_id` → both claim and drop link; free agents; recent moves via `player_id_map`), League (lineups from
+  `league_player_week`, transactions via `player_id_map` on `sleeper_player_id`, draft), Receivers (every table),
+  Players (season table; the game log now selects by `gsis_id`, not by name), Kickers (weekly), Matchups (lookup).
+  B2's two `narrow_table` helpers now call `show()`.
+* **Other pages, layout only**: answer line/card first and wide tables in expanders on Trends, Players, Receivers,
+  Kickers and Data Status (the last is nobody's page in Wave C; touched only for the walk's "every page" rule).
+  Stale "League Intel" mentions removed from Home's page table, `reference_scoring_note`, README, METRICS,
+  LIMITATIONS and two dbt descriptions.
+
+**Evidence** (clone `league_lab_c1`, now = 2026-09-30 14:07 UTC, `mart_nfl_calendar.next_week` = 3):
+* Playwright walk (`scratchpad/waveC/c1/walk.py`), 13 pages × 2 leagues (dynasty roster 12, Scrubs roster 2) × 2
+  viewports (390 × 844 iPhone 14 UA, 1300 × 900) = 52 page views: `scrollWidth == clientWidth` on all 52; 20 tables
+  outside expanders, the widest 5 columns (`aria-colcount`); a bordered answer card above the first table on every
+  page that has one; 0 Streamlit exceptions. At 390 px the default level is Phone (Players' season table 5 columns
+  vs 20 at 1300; Receivers 5 vs 12; Trends 5 vs 10); opened expanders at 390: Team Hub roster, League standings,
+  Matchups CBs = 5 columns each.
+* League charts (Plotly data): schedule luck / bench / weekly rank = 12 / 12 / 12 teams (dynasty) and 10 / 10 / 10
+  (Scrubs) at both widths. Answer lines: dynasty 12 "the unluckiest team by schedule (−0.9 wins); your bench has left
+  49 points unstarted (the 7th most of 12, 2 weeks)"; Scrubs 2 "the 5th-unluckiest (−0.2 wins) … 7 points (the fewest
+  in the league)" — reproduced by `rank()` over `mart_league_manager_profile` (−0.22 ties 5th; 7.40 = 10th of 10).
+* One week: Home "My week — week 4", Rankings' week selectbox **4**, Matchups caption "NFL 2026 · week 4 · first
+  kickoff Thu Oct 1, 8:15 PM ET", Waiver Wire "week 4", on both leagues — while `mart_nfl_calendar` says 3. Team Hub's
+  usage table: Malik Willis vs **MIN** (#20 vs QB) = `mart_player_week_projections` week 4 (MIN, 20); the
+  availability mart still says KC (#30), week 3.
+* Player card from a name (phone, click in the grid → new tab, card heading = the player, 0 exceptions): Team Hub
+  roster (Bo Nix; Patrick Mahomes), Trade Finder buy-low (Quinshon Judkins; De'Von Achane), Waiver Wire claim
+  (Tyler Allgeier) **and** drop (Bryce Young) in the same row, League transactions (Case Keenum; Sam Darnold) and
+  draft (Jeremiyah Love), Receivers (Amon-Ra St. Brown), Rankings (Chris Olave), Matchups board (Aaron Rodgers),
+  Players (Christian Watson). Not links: team rows (standings, profiles, roster rankings, kicker summary), defenders
+  (no card for defenders), defenses; rows without an NFL id link to the card's search (League draft 10 of 150 picks,
+  transactions 24 of 358 rows, lineups 36 of 1,336 — team defenses mostly). Card text (Team Hub's closest call,
+  Waiver cards) is not linked: that copy is C2's.
+* Detail level: iPhone → Phone (League standings 5 columns), desktop → Essentials (14); Everything picked on League
+  stays Everything after hopping to Team Hub and back; `?detail=phone` on desktop → Phone.
+* `pytest` 552 passed (22 new in `tests/test_mobile.py`: `current_week` before Thursday / after Thursday's kickoff /
+  after the Monday game / off-season / no schedule, the wired helper with `query` stubbed, `decision_week` delegating,
+  `align_opponents`; the Phone column choice, injury rule, ids, User-Agent default, `show()` at Phone and
+  Essentials, two links per row, kicker links); `ruff check src tests app` clean; `tests/test_app_guards.py` passes
+  with the Intel page gone; headless check (Home + 12 pages × 2 leagues + 6 Player-by-id runs = 32) 0 exceptions,
+  plus 78 more runs at Phone, Everything and whole-league: 0 exceptions, no table wider than 5 at Phone.
+* Screenshots (scratchpad `waveC/c1/shots/`): `{phone,desktop}_{dyn,scr}_{Matchups,League,Rankings,Team_Hub}_{fold,full}.png`,
+  `phone_{dyn,scr}_{Team_Hub,League,Matchups}_open.png`, `link_*.png` (the card each click opened).
+
+**Decisions for the PO.** Rankings shows injury as "· Q/D/O" after the name, not as a column (keeps the range in
+five columns at every level); the Phone default comes from the User-Agent (no width component); tables that are the
+page's main content on research pages (Players, Receivers, Trends) sit in an expander that starts open; the
+League page drops the "Points by week" line chart (the rank heatmap covers every team) and the standings'
+points-for bar; Data Status got the answer-first layout although no Wave C task owns it.
+
+**Open.** Player links still open a new tab (Streamlit's LinkColumn), and a new tab is a new session: the level
+returns to the device default and the team comes from the URL. Merge notes: C2's edits to `7_League_Intel.py`'s
+`howto` strings (if any) must be carried into the matching `8_League.py` expanders (git will report modify/delete);
+Home's page table and the Essentials sentence were edited in two lines (C2 owns Home's copy). No `--select` appended,
+no seeds touched; `metric_registry` rows I would have added: none (no new metric).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

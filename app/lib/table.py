@@ -304,9 +304,75 @@ def is_advanced(column: str) -> bool:
     return any(pat in column for pat in ADVANCED_PATTERNS)
 
 
+# ---- C1 (U-13): the Phone level. Three table-detail levels, set by the sidebar radio in ui.setup():
+#   phone      - at most five columns per table (the caller's `phone_cols`, else the first five essentials);
+#                injury / IR / report-status columns only when some row is not Healthy (then one of them
+#                takes the fifth place); the first column pinned
+#   essentials - hides denominators, noise statistics and fine-grained counts (ADVANCED_PATTERNS)
+#   everything - every column the page passes
+DETAIL_LEVELS = ("phone", "essentials", "everything")
+DETAIL_LABELS = {"phone": "Phone", "essentials": "Essentials", "everything": "Everything"}
+PHONE_MAX_COLUMNS = 5
+# injury-report columns: never among a Phone table's five, except that the first of INJURY_STATUS_COLUMNS (in
+# the caller's order) with a row that is not Healthy takes the fifth place; practice status and the injury text
+# are detail and stay off the Phone level
+INJURY_COLUMNS = ("report_status", "injury_status", "is_on_ir", "is_questionable", "injury", "practice_status")
+INJURY_STATUS_COLUMNS = ("report_status", "injury_status", "is_on_ir", "is_questionable")
+_HEALTHY = {"", "healthy", "act", "active", "none", "nan", "false", "0"}
+_ID_COLUMNS = {"gsis_id", "roster_id", "league_id", "sleeper_id", "sleeper_player_id"}
+
+
 def detail_level() -> str:
-    """'essentials' (default) or 'everything' - set by the sidebar toggle in setup()."""
-    return st.session_state.get("detail_level", "essentials")
+    """'phone' | 'essentials' | 'everything' - the sidebar radio in setup() (Essentials outside a Streamlit run)."""
+    level = st.session_state.get("detail_level", "essentials")
+    return level if level in DETAIL_LEVELS else "essentials"
+
+
+def default_detail_level(user_agent: str | None = None) -> str:
+    """The level a new viewer starts on: Phone when the browser says it is a phone (the User-Agent carries
+    "Mobi" on iPhone and Android phones, not on tablets or desktops), else Essentials. The request header is
+    read server-side (st.context), so no JavaScript round trip is needed; the sidebar toggle overrides it."""
+    if user_agent is None:
+        try:
+            user_agent = st.context.headers.get("User-Agent") or ""
+        except Exception:  # noqa: BLE001 - outside a Streamlit run
+            user_agent = ""
+    return "phone" if "Mobi" in str(user_agent) else "essentials"
+
+
+def essential_columns(cols: list[str], overrides: dict | None = None) -> list[str]:
+    """The Essentials subset of `cols` (a page's explicit override marks a column essential)."""
+    keep = [c for c in cols if c in (overrides or {}) or not is_advanced(c)]
+    return keep or list(cols)
+
+
+def not_healthy(series: pd.Series) -> pd.Series:
+    """True where an injury-report value says something (Questionable, Out, IR, a True flag); blank / Healthy / ACT
+    / False are healthy."""
+    if pd.api.types.is_bool_dtype(series):
+        return series.fillna(False).astype(bool)
+    return series.map(lambda v: not (v is None or (isinstance(v, float) and pd.isna(v)) or v is False
+                                     or str(v).strip().lower() in _HEALTHY)).astype(bool)
+
+
+def _is_id(column: str) -> bool:
+    """An identifier carried for links and joins, never worth one of a phone's five columns."""
+    return column in _ID_COLUMNS or column.endswith(("_gsis_id", "_sleeper_id"))
+
+
+def phone_columns(df: pd.DataFrame, cols: list[str] | None = None, overrides: dict | None = None,
+                  phone_cols: list[str] | None = None, limit: int = PHONE_MAX_COLUMNS) -> list[str]:
+    """The columns a table shows at the Phone level (pure): the caller's `phone_cols`, else the first `limit`
+    essentials of `cols`; no injury-report column unless some row is not Healthy - then the first such column
+    (in `cols` order) takes the last place. Never more than `limit` columns."""
+    wanted = [c for c in (list(cols) if cols else list(df.columns)) if not _is_id(c)]
+    base = list(phone_cols) if phone_cols else essential_columns(wanted, overrides)
+    base = [c for c in base if c in df.columns and c not in INJURY_COLUMNS and not _is_id(c)]
+    candidates = [c for c in [*(phone_cols or []), *wanted] if c in INJURY_STATUS_COLUMNS and c in df.columns]
+    hurt = next((c for c in dict.fromkeys(candidates) if not_healthy(df[c]).any()), None)
+    if hurt is None:
+        return base[:limit]
+    return [*base[:limit - 1], hurt]
 
 
 def _auto_kind(series: pd.Series) -> str:
@@ -373,19 +439,42 @@ def prepare(df: pd.DataFrame, cols: list[str] | None = None, overrides: dict[str
     return out, config
 
 
+# name column -> id column linked to the Player card whenever both are in the frame (C1 extends B4's player_name)
+AUTO_LINKS = {"player_name": "gsis_id", "kicker_name": "gsis_id"}
+
+
 def show(df: pd.DataFrame, cols: list[str] | None = None, height: int | None = None, overrides: dict[str, Col] | None = None,
-         index: pd.Series | None = None) -> None:
-    """Render a mart DataFrame as a readable table (labels, %, words instead of checkboxes)."""
+         index: pd.Series | None = None, *, phone_cols: list[str] | None = None,
+         links: dict[str, str | tuple[str, str]] | None = None, widths: dict[str, str | int] | None = None,
+         pin: bool = False) -> None:
+    """Render a mart DataFrame as a readable table (labels, %, words instead of checkboxes).
+
+    * Detail level (sidebar): Phone = `phone_columns()` (≤ 5, first column pinned), Essentials, Everything.
+    * Links: `player_name` / `kicker_name` link to the Player card when the frame carries `gsis_id` (shown or
+      not); `links={"col": "id_col"}` links any other name column, `{"col": ("id_col", "plain_name_col")}` when
+      the shown text is not the bare name (a row without an id then searches the plain name).
+    * `widths` (column -> "small" | "medium" | "large" | px) and `pin` (pin the first column) for phone-first tables."""
     if df is None or df.empty:
         st.caption("Nothing to show yet.")
         return
-    if detail_level() == "essentials":
+    level = detail_level()
+    if level == "phone":
+        cols = phone_columns(df, cols, overrides, phone_cols)
+    elif level == "essentials":
         # a page's explicit override marks the column essential for that table
-        keep = [c for c in (cols or list(df.columns)) if c in (overrides or {}) or not is_advanced(c)]
-        cols = keep or cols
+        cols = essential_columns(cols or list(df.columns), overrides)
     out, config = prepare(df, cols, overrides)
-    if "player_name" in out.columns and "gsis_id" in df.columns:
-        link_player_names(out, df, config)
+    link_map: dict[str, str | tuple[str, str]] = {c: i for c, i in AUTO_LINKS.items() if c in out.columns and i in df.columns}
+    link_map.update(links or {})
+    for col, spec in link_map.items():
+        id_col, plain = (spec, None) if isinstance(spec, str) else spec
+        if col in out.columns and id_col in df.columns:
+            link_column(out, df, config, col, id_col, plain)
+    for c, w in (widths or {}).items():
+        if c in config:
+            config[c]["width"] = w
+    if (pin or level == "phone") and len(out.columns) > 1:
+        config[out.columns[0]]["pinned"] = True
     if index is not None:
         out.index = index
     kwargs = {"height": height} if height else {}
@@ -395,18 +484,39 @@ def show(df: pd.DataFrame, cols: list[str] | None = None, height: int | None = N
 
 def link_player_names(out: pd.DataFrame, df: pd.DataFrame, config: dict) -> None:
     """B4: every player name links to his card (Player?name=…&id=<gsis>&league=…&team=…) when the frame
-    carries gsis_id, whether or not gsis_id is a displayed column. `out` is `df[cols]` in the same row
-    order, so the two align by position. A row without a gsis id links to the card's search for that name."""
+    carries gsis_id, whether or not gsis_id is a displayed column."""
+    link_column(out, df, config, "player_name", "gsis_id")
+
+
+def link_column(out: pd.DataFrame, df: pd.DataFrame, config: dict, col: str, id_col: str, plain: str | None = None) -> None:
+    """Turn the shown column `col` into links to the player card: `Player?name=<shown text>&id=<id>&league=…&team=…`.
+    `out` is `df[cols]` in the same row order, so the two align by position. A row without an id links to the
+    card's search for the bare name (`plain`, else the shown text); a row with neither stays empty."""
     from .ui import PLAYER_PAGE, player_url
 
-    names, ids = df["player_name"].to_numpy(), df["gsis_id"].to_numpy()
-    out["player_name"] = [
-        None if (n is None or (isinstance(n, float) and pd.isna(n)) or n == "") and (i is None or pd.isna(i))
-        else player_url(i, n if isinstance(n, str) and n else i)
-        for n, i in zip(names, ids, strict=True)
-    ]
-    spec = config.get("player_name") or {}
-    config["player_name"] = st.column_config.LinkColumn(
+    def blank(v) -> bool:
+        if v is None:
+            return True
+        try:
+            if pd.isna(v):
+                return True
+        except (TypeError, ValueError):
+            pass
+        return isinstance(v, str) and v.strip() in ("", "—")
+
+    shown, ids = out[col].to_numpy(), df[id_col].to_numpy()
+    bare = df[plain].to_numpy() if plain and plain in df.columns else shown
+    urls = []
+    for s, i, b in zip(shown, ids, bare, strict=True):
+        if not blank(i):
+            urls.append(player_url(i, s if not blank(s) else i))
+        elif not blank(b):
+            urls.append(player_url(None, b))
+        else:
+            urls.append(None)
+    out[col] = urls
+    spec = config.get(col) or {}
+    config[col] = st.column_config.LinkColumn(
         spec.get("label", "Player"), help=spec.get("help"), alignment="left",
         display_text=rf"^{PLAYER_PAGE}\?name=([^&]*)",   # shows the name (URL-decoded by the grid)
     )

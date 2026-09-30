@@ -2,6 +2,19 @@
 
 Newest first. The Home page shows the top entry as "What's new".
 
+## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
+
+- **Built for your phone.** Open League Lab on a phone and every table shows at most five columns (a new **Phone**
+  setting next to Essentials and Everything in the sidebar), and every page starts with its answer — a line or a
+  card — with the big tables one tap below. **League Intel is gone: its charts now open the League page** — schedule
+  luck, points left on the bench and each week's scoring rank for every team (not just eight), your team marked, under
+  one line such as "You've been the unluckiest team by schedule; your bench has left 49 points unstarted". Rankings'
+  filters fit in one row (position, week, the rest under "More filters"; injuries are a filter now) and the board is
+  five columns: rank, player, opponent, projection and the bad-week-to-good-week range. Matchups sums up the corners
+  your receivers face and your best and worst matchups in a line each. Tap a player's name in almost any table —
+  Team Hub, Trade Finder, both sides of a waiver claim, League's lineups, moves and draft, Receivers, Players,
+  Kickers — to open his card. And every page now agrees on which week "this week" is.
+
 ## 2026-09-30 — Wave B (decision engine)
 
 - **My week, and a card for every player.** Home now opens on your week: your best lineup, and the two or three

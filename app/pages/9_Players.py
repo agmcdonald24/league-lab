@@ -1,5 +1,7 @@
-"""Player explorer: season and game tables with filters."""
+"""Player explorer: season and game tables with filters. Phone first (U-13): the leaders as one line, the season
+table (≤ 5 columns at the Phone level) and the game log in expanders; names open the player card."""
 
+import pandas as pd
 import streamlit as st
 from lib.charts import line_chart
 from lib.db import query
@@ -16,11 +18,12 @@ setup("Players")
 freshness_banner()
 
 seasons = seasons_available()
-c1, c2, c3, c4 = st.columns([1, 1, 1, 2])
+c1, c2, c3 = st.columns([1.2, 1, 1], vertical_alignment="bottom")
 position = c1.selectbox("Position", SKILL_POSITIONS, index=2)
 season = c2.selectbox("Season", seasons)
-season_type = c3.radio("Season type", ["REG", "POST"], horizontal=True, format_func=lambda s: "Regular season" if s == "REG" else "Playoffs")
-min_games = c4.slider("Minimum games played", 1, 17, 1)
+with c3.popover("More filters", width="stretch"):
+    season_type = st.radio("Season type", ["REG", "POST"], horizontal=True, format_func=lambda s: "Regular season" if s == "REG" else "Playoffs")
+    min_games = st.slider("Minimum games played", 1, 17, 1)
 
 POSITION_COLUMNS = {
     "QB": ["attempts", "completions", "completion_rate", "passing_yards", "yards_per_attempt", "passing_tds",
@@ -46,18 +49,35 @@ howto(
 )
 reference_scoring_note()
 season_df = query(
-    f"""select player_name, teams, games_played, {cols}, points_current_scoring, points_current_scoring_per_game
+    f"""select gsis_id, player_name, teams, games_played, {cols}, points_current_scoring, points_current_scoring_per_game
         from analytics.mart_player_season
         where position = %s and season = %s and season_type = %s and games_played >= %s
         order by points_current_scoring desc nulls last""",
     (position, season, season_type, min_games),
 )
 st.subheader(f"{position} · {season} {'regular season' if season_type == 'REG' else 'playoffs'} · season totals")
-show(season_df, height=420)
+PHONE = {"QB": ["passing_yards", "passing_tds"], "RB": ["carries", "carry_share"], "WR": ["targets", "target_share"],
+         "TE": ["targets", "target_share"], "K": ["fg_made", "fg_pct"]}[position]
+VOLUME_WORDS = {"passing_yards": "passing yards", "carries": "carries", "targets": "targets", "fg_made": "field goals made"}
+with st.container(border=True):
+    if season_df.empty:
+        st.markdown(f"**No {position} has {min_games}+ games in {season} yet.**")
+    else:
+        lead = season_df.iloc[0]
+        vol = PHONE[0]
+        top_vol = season_df.sort_values(vol, ascending=False, na_position="last").iloc[0]
+        st.markdown(f"**Most points: {lead['player_name']}, {float(lead['points_current_scoring'] or 0):.1f} "
+                    f"({float(lead['points_current_scoring_per_game'] or 0):.1f} a game).** "
+                    + (f"Most {VOLUME_WORDS[vol]}: {top_vol['player_name']} ({int(top_vol[vol])}). " if pd.notna(top_vol[vol]) else "")
+                    + f"{len(season_df)} players.")
+with st.expander("Season totals, every player", expanded=True):
+    show(season_df, [c for c in season_df.columns if c != "gsis_id"], height=420,
+         phone_cols=["player_name", "games_played", *PHONE, "points_current_scoring_per_game"])
 
 st.subheader("Game log")
-names = season_df["player_name"].tolist()
-player = st.selectbox("Player", names)
+pick = st.selectbox("Player", season_df["gsis_id"].tolist(),
+                    format_func=lambda g: season_df.set_index("gsis_id").loc[g, "player_name"] if g in set(season_df["gsis_id"]) else g)
+player = season_df.set_index("gsis_id").loc[pick, "player_name"] if pick else None
 if player:
     counting = [c for c in POSITION_COLUMNS[position] if c not in (
         "carry_share", "target_share", "air_yards_share", "avg_offense_snap_pct", "completion_rate", "yards_per_attempt",
@@ -69,10 +89,11 @@ if player:
                    first_read_targets, team_first_read_targets, first_read_target_share, routes_proxy, route_participation, tprr_proxy,
                    red_zone_targets, red_zone_carries, points_current_scoring, went_to_overtime
             from analytics.fct_player_game
-            where player_name = %s and season = %s and season_type = %s order by week""",
-        (player, season, season_type),
+            where gsis_id = %s and season = %s and season_type = %s order by week""",
+        (pick, season, season_type),
     )
-    show(games)
+    with st.expander(f"{player}: every game", expanded=False):
+        show(games, phone_cols=["week", "opponent_team", "offense_snap_pct", PHONE[0], "points_current_scoring"])
     if position in ("WR", "TE", "RB"):
         metric = "target_share" if position != "RB" else "carry_share"
         chart = games[["week", metric]].assign(series=player).dropna()

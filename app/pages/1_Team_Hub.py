@@ -7,8 +7,16 @@ import pandas as pd
 import streamlit as st
 from lib.charts import line_chart
 from lib.db import query, require_relations
-from lib.table import Col, howto, prepare, show
-from lib.ui import freshness_banner, league_seasons, perspective, setup
+from lib.table import Col, howto, show
+from lib.ui import (
+    align_opponents,
+    current_season,
+    current_week,
+    freshness_banner,
+    league_seasons,
+    perspective,
+    setup,
+)
 
 setup("Team Hub")
 freshness_banner()
@@ -29,15 +37,11 @@ def pos_name(name, pos) -> str:
     return f"{name} ({pos})" if isinstance(pos, str) and pos else str(name)
 
 
-def narrow_table(df: pd.DataFrame, cols: list[str], overrides: dict, widths: dict[str, str | int], height: int | None = None) -> None:
-    """A phone-first table: the registry's labels and formats (lib.table.prepare), the first column
-    pinned and narrow widths, so the numbers stay on screen at 390 px (plan B2, round-2 convention 2)."""
-    out, config = prepare(df, cols, overrides)
-    for c, w in widths.items():
-        if c in config:
-            config[c]["width"] = w
-    config[cols[0]]["pinned"] = True
-    st.dataframe(out, column_config=config, hide_index=True, width="stretch", placeholder="", **({"height": height} if height else {}))
+def narrow_table(df: pd.DataFrame, cols: list[str], overrides: dict, widths: dict[str, str | int], height: int | None = None,
+                 links: dict | None = None) -> None:
+    """A phone-first table (plan B2, round-2 convention 2): lib.table.show with the first column pinned and narrow
+    widths, so the numbers stay on screen at 390 px; `links` makes a name column open the player card (C1)."""
+    show(df, cols, height=height, overrides=overrides, widths=widths, pin=True, links=links)
 
 
 # ---------------------------------------------------------------- the answer: cards
@@ -48,7 +52,7 @@ rk = query(
     (league_id, roster_id),
 )
 rows = query(
-    """select week, role, slot, slot_type, slot_order, bench_rank, player_name, position, player_value, value_source, lineup_margin,
+    """select week, role, slot, slot_type, slot_order, bench_rank, gsis_id, player_name, position, player_value, value_source, lineup_margin,
               is_locked, report_status, reason, acquired_label, acquired_how_by_manager
        from analytics.mart_league_roster_horizon
        where league_id = %s and roster_id = %s and is_this_week""",
@@ -144,6 +148,7 @@ if not rows.empty:
     tbl["acquired"] = tbl["acquired_label"]
     with st.expander(f"Roster · week {int(rows['week'].iloc[0])} lineup ({(rows['role'] != 'empty').sum()} players)", expanded=False):
         narrow_table(tbl, ["player", "where", "player_value", "lineup_margin", "acquired"], height=min(80 + 35 * len(tbl), 980),
+             links={"player": ("gsis_id", "player_name")},
              widths={"player": 150, "where": 72, "player_value": 56, "lineup_margin": 60, "acquired": "large"},
              overrides={"player": Col("Player"), "where": Col("Slot", help="Starting slot this week, Bench, or why he cannot play (IR, Taxi, Bye, Out)"),
                         "player_value": Col("Value", "num1", "This week's projection in this league's scoring (K: points per game this season; DEF: points per game Sleeper scored)"),
@@ -152,7 +157,7 @@ if not rows.empty:
 
 # ---------------------------------------------------------------- starter strength vs depth
 ss = query(
-    """select slot_type, slots, first_slot_order, top_player_name, top_position, top_value, starter_strength, replacement_name, replacement_value,
+    """select slot_type, slots, first_slot_order, top_gsis_id, top_player_name, top_position, top_value, starter_strength, replacement_name, replacement_value,
               empty_slots, top_is_locked
        from analytics.mart_league_roster_slot_strength where league_id = %s and roster_id = %s order by first_slot_order""",
     (league_id, roster_id),
@@ -166,7 +171,7 @@ if not ss.empty:
         s2["best"] = [pos_name(r.top_player_name, r.top_position) if isinstance(r.top_player_name, str) else "—" for r in s2.itertuples()]
         s2["next_up"] = [(f"{r.replacement_name} ({r.replacement_value:.1f})" if isinstance(r.replacement_name, str)
                           else ("locked" if r.top_is_locked else "nobody")) for r in s2.itertuples()]
-        narrow_table(s2, ["slot", "best", "top_value", "starter_strength", "next_up"],
+        narrow_table(s2, ["slot", "best", "top_value", "starter_strength", "next_up"], links={"best": ("top_gsis_id", "top_player_name")},
              widths={"slot": 80, "best": 150, "top_value": 56, "starter_strength": 70, "next_up": "medium"},
              overrides={"slot": Col("Slot"), "best": Col("Best starter"), "top_value": Col("Value", "num1"),
                         "starter_strength": Col("Strength", "num2", "The best lineup minus the best lineup without him: what he is worth over the next man up"),
@@ -200,7 +205,7 @@ with st.expander("Usage and production, every player", expanded=False):
         "**Opp rank**: where next week's opponent ranks in points allowed to this position. 1 = gives up the most (good matchup), 32 = the fewest.",
     )
     roster = query(
-        """select a.player_name, a.position, a.nfl_team, a.injury_status, a.games_played, a.ppg_std, a.points_per_game_l3,
+        """select a.gsis_id, a.player_name, a.position, a.nfl_team, a.injury_status, a.games_played, a.ppg_std, a.points_per_game_l3,
                   a.expected_per_game, a.diff_per_game, a.target_share, a.target_share_l3, a.first_read_share_std, a.first_read_share_l3,
                   a.carry_share, a.carry_share_l3, a.avg_offense_snap_pct, a.snap_pct_l3, a.opponent, a.opp_rank_std, a.opp_rank_l4,
                   t.tags, t.momentum
@@ -210,6 +215,8 @@ with st.expander("Usage and production, every player", expanded=False):
            order by array_position(array['QB','RB','WR','TE','K'], a.position), a.ppg_std desc nulls last""",
         (league_id, roster_id),
     )
+    # one week rule (C1): the opponent of the week every page means by "this week" (lib.ui.current_week)
+    roster = align_opponents(roster, current_season(league_id), current_week(league_id))
     injured = st.toggle("Only players on the injury report", value=False, key="th_injured")
     if injured:
         roster = roster[roster["injury_status"].notna() & (roster["injury_status"] != "")]
@@ -218,7 +225,7 @@ with st.expander("Usage and production, every player", expanded=False):
             "avg_offense_snap_pct", "snap_pct_l3", "opponent", "opp_rank_std", "opp_rank_l4"]
     if roster["injury_status"].notna().any() and (roster["injury_status"].fillna("") != "").any():
         cols.insert(3, "injury_status")   # only when somebody is not healthy (round-2 convention)
-    show(roster, cols, height=min(80 + 36 * len(roster), 640))
+    show(roster, cols, height=min(80 + 36 * len(roster), 640), phone_cols=["player_name", "position", "ppg_std", "expected_per_game", "opponent"])
 
 # ---------------------------------------------------------------- lineup discipline
 with st.expander("Started vs best possible lineup, by week", expanded=False):
@@ -249,7 +256,7 @@ with st.expander(title, expanded=False):
         st.caption("How each player was acquired this season, what he has produced, and where that ranks among all NFL players at his "
                    "position. Apply your league's keeper rule yourself: League Lab supplies the facts.")
     kc = query(
-        """select k.player_name, k.position, a.acquired_label as acquired, k.games_played, k.ppg_std, k.position_rank_ppg,
+        """select k.gsis_id, k.player_name, k.position, a.acquired_label as acquired, k.games_played, k.ppg_std, k.position_rank_ppg,
                   k.expected_per_game, k.diff_per_game
            from analytics.mart_league_keeper_candidates k
            left join analytics.mart_league_acquisitions a
@@ -259,4 +266,4 @@ with st.expander(title, expanded=False):
         (league_id, roster_id),
     )
     show(kc, ["player_name", "position", "acquired", "games_played", "ppg_std", "position_rank_ppg", "expected_per_game", "diff_per_game"],
-         overrides={"acquired": Col("Acquired", help="How he joined this roster, read across the whole league history")})
+         phone_cols=["player_name", "position", "acquired", "ppg_std", "diff_per_game"], overrides={"acquired": Col("Acquired", help="How he joined this roster, read across the whole league history")})

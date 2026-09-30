@@ -1,21 +1,26 @@
 """Rankings: weekly projections per position — the transparent baseline formula and projection v2 (a projected
-stat line priced in this league's scoring, with a floor and a ceiling) — and the backtests that say how far to trust each."""
+stat line priced in this league's scoring, with a floor and a ceiling) — and the backtests that say how far to trust each.
+
+Phone first (plan U-13): one compact filter row (position, week, the rare ones in a popover; injury is a filter),
+a one-line answer, the board as five columns (rank, player, opponent, projection, floor–ceiling), the full board
+in an expander. The default week is lib.ui.current_week — the week My Week shows."""
 
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 from lib.charts import SURFACE, bar_chart, base_layout
 from lib.db import missing_relations, query, require_relations
-from lib.table import Col, howto, show
-from lib.ui import freshness_banner, next_week_info, perspective, setup
+from lib.table import Col, howto, not_healthy, show
+from lib.ui import current_season, current_week, freshness_banner, perspective, setup
 
 setup("Rankings")
 freshness_banner()
 require_relations("mart_player_week_rankings", "mart_backtest_summary", "mart_player_week_projections", "mart_projection_backtest")
 league_id, roster_id, members = perspective(require_team=False)
-cal = next_week_info()
-cur_season = int(cal["season"]) if not cal.empty else None
-cur_week = int(cal["next_week"]) if not cal.empty and pd.notna(cal["next_week"]) else 1
+# one week rule (C1): the default week is the one every page means by "this week" (My Week, the cards)
+cur_season = current_season(league_id)
+cur_week = current_week(league_id)
+PLOT_CONFIG = {"displayModeBar": False, "scrollZoom": False}
 
 v2_available = not query("select 1 from analytics.mart_player_week_projections where league_id = %s limit 1", (league_id,)).empty
 league_name = query("select league_name from analytics.dim_league_season where league_id = %s", (league_id,))["league_name"].iloc[0]
@@ -34,31 +39,46 @@ howto(
     title="How to use this page",
 )
 
-# ---------------------------------------------------------------- controls
+# ---------------------------------------------------------------- controls: one row (position · week · more)
 model_options = {"v2": f"Projection v2 · {league_name} scoring", "baseline": "Baseline formula · reference scoring"}
 if not v2_available:
     model_options.pop("v2")
-seasons = query("select distinct season from analytics.mart_player_week_rankings order by season desc")["season"].astype(int).tolist()
-c0, c1, c2, c3, c4, c5 = st.columns([1.6, 0.8, 0.8, 0.9, 1.4, 0.9])
-model = c0.selectbox("Projection", list(model_options), format_func=lambda k: model_options[k])
-if model == "v2":
-    seasons = query("select distinct season from analytics.mart_player_week_projections where league_id = %s order by season desc",
-                    (league_id,))["season"].astype(int).tolist()
-season = c1.selectbox("Season", seasons, index=seasons.index(cur_season) if cur_season in seasons else 0)
+scope_options = {"all": "Everyone", "fa": "Free agents in this league", "rostered": "Rostered in this league", "team": "Selected team only"}
+injury_options = {"any": "Anyone ranked (Questionable stays in)", "clear": "No injury tag", "tagged": "Only players with an injury tag"}
+# a horizontal container wraps instead of stacking: on a phone the row is position + week, then the popover
+bar = st.container(horizontal=True, vertical_alignment="bottom", gap="small")
+with bar:
+    f_pos, f_week = st.empty(), st.empty()
+    f_more = st.popover("More filters", width="content")
+with f_more:
+    model = st.selectbox("Projection", list(model_options), format_func=lambda k: model_options[k])
+    if model == "v2":
+        seasons = query("select distinct season from analytics.mart_player_week_projections where league_id = %s order by season desc",
+                        (league_id,))["season"].astype(int).tolist()
+    else:
+        seasons = query("select distinct season from analytics.mart_player_week_rankings order by season desc")["season"].astype(int).tolist()
+    season = st.selectbox("Season", seasons, index=seasons.index(cur_season) if cur_season in seasons else 0)
+    scope = st.selectbox("Who", list(scope_options), format_func=lambda k: scope_options[k], index=0)
+    injury = st.radio("Injury report", list(injury_options), format_func=lambda k: injury_options[k], index=0,
+                      help="Out / Doubtful / IR are never ranked (they are listed under the board).")
+    top_n = st.number_input("Show", 10, 80, 36)
+position = f_pos.segmented_control("Position", ["QB", "RB", "WR", "TE"], default="WR", key="rk_position", width="content") or "WR"
 if model == "v2":
     weeks = query("select distinct week from analytics.mart_player_week_projections where league_id = %s and season = %s order by week",
                   (league_id, season))["week"].astype(int).tolist()
 else:
     weeks = query("select distinct week from analytics.mart_player_week_rankings where season = %s order by week", (season,))["week"].astype(int).tolist()
-if season == cur_season:
+if season == cur_season and cur_week is not None:
     # only played weeks and the next one: later weeks have no lines or injury reports yet, so a board would be form only
     weeks = [w for w in weeks if w <= cur_week] or weeks
 default_week = cur_week if season == cur_season and cur_week in weeks else weeks[-1]
-week = c2.selectbox("Week", weeks, index=weeks.index(default_week))
-position = c3.selectbox("Position", ["QB", "RB", "WR", "TE"], index=2)
-scope_options = {"all": "Everyone", "fa": "Free agents in this league", "rostered": "Rostered in this league", "team": "Selected team only"}
-scope = c4.selectbox("Who", list(scope_options), format_func=lambda k: scope_options[k], index=0)
-top_n = c5.number_input("Show", 10, 80, 36)
+week = f_week.selectbox("Week", weeks, index=weeks.index(default_week), width=96)
+set_filters = [label for label, on in (("model", model != next(iter(model_options))), ("season", season != (cur_season if cur_season in seasons else seasons[0])),
+                                       ("who", scope != "all"), ("injury", injury != "any"), ("count", int(top_n) != 36)) if on]
+if set_filters:
+    st.caption("Also filtered: " + ", ".join(
+        {"model": model_options[model], "season": f"NFL {season}", "who": scope_options[scope], "injury": injury_options[injury],
+         "count": f"top {int(top_n)}"}[k] for k in set_filters) + ".")
 # B5 decision record: a week's v2 board is frozen at its first kickoff. to_jsonb keeps the page working on a
 # copy whose mart predates the label (it reads as unlabelled there).
 freeze = query("""select to_jsonb(p) ->> 'frozen_source' as frozen_source, to_jsonb(p) ->> 'frozen_at' as frozen_at
@@ -77,7 +97,7 @@ elif season == cur_season and week == cur_week:
                + ("Lines and injury reports update with each refresh until the week's first game kicks off; from then on the board is "
                   "frozen, and that frozen board is what the season scoreboard below is scored on." if model == "v2" else
                   "Lines and injury reports update through the week; refresh on Sunday morning."))
-elif season < cur_season or week < cur_week:
+elif cur_season is not None and (season < cur_season or (cur_week is not None and week < cur_week)):
     st.caption(f"Week {week} has been played: the table shows " + ("the projection next to what happened." if model == "v2" else
                "what the projection said *before* the games, next to what happened."))
 
@@ -116,55 +136,104 @@ elif scope == "rostered":
     rk = rk[rk["rostered_by_roster_id"].notna()]
 elif scope == "team" and roster_id is not None:
     rk = rk[rk["rostered_by_roster_id"] == roster_id]
+# injury is a filter, not a column (round-2 convention 5): the board tags a Questionable player's name instead
+tagged = not_healthy(rk["report_status"]) if not rk.empty else pd.Series(dtype=bool)
+if injury == "clear":
+    rk = rk[~tagged]
+elif injury == "tagged":
+    rk = rk[tagged]
 
-ranked = rk[rk["is_rankable"]].head(int(top_n))
+ranked = rk[rk["is_rankable"]].head(int(top_n)).copy()
 played_week = rk["points_actual"].notna().mean() > 0.5  # most of the week is in (not just Thursday night)
 
+
+def _tag(r) -> str:
+    s = r["report_status"]
+    return f"{r['player_name']} · {s[0]}" if isinstance(s, str) and bool(not_healthy(pd.Series([s])).iloc[0]) else str(r["player_name"])
+
+
+def _range(r) -> str:
+    lo, hi = pd.to_numeric(r.get("p10"), errors="coerce"), pd.to_numeric(r.get("p90"), errors="coerce")
+    return f"{lo:.1f}–{hi:.1f}" if pd.notna(lo) and pd.notna(hi) else ""
+
+
+if not ranked.empty:
+    ranked["player"] = ranked.apply(_tag, axis=1)
+    ranked["proj_range"] = ranked.apply(_range, axis=1) if model == "v2" else ""
+
+# ---------------------------------------------------------------- the answer, then the board (five columns)
 st.subheader(f"{position} · NFL {season} week {week}")
+with st.container(border=True):
+    if ranked.empty:
+        st.markdown(f"**Nobody to rank at {position} with these filters.**")
+    else:
+        t = ranked.iloc[0]
+        rng = f" (bad week {pd.to_numeric(t['p10']):.1f}, good week {pd.to_numeric(t['p90']):.1f})" if model == "v2" and pd.notna(t.get("p10")) else ""
+        opp = f" vs {t['opponent']}" if isinstance(t["opponent"], str) and t["opponent"] else ""
+        st.markdown(f"**#1 {position}: {t['player_name']}{opp}, {float(t['proj_points']):.1f} projected{rng}.**")
+        if roster_id is not None and scope != "team":
+            mine = rk[(rk["rostered_by_roster_id"] == roster_id) & rk["is_rankable"]].head(4)
+            if not mine.empty:
+                st.markdown("Yours: " + " · ".join(f"#{int(r.rank_pos)} {r.player_name} {float(r.proj_points):.1f}" for r in mine.itertuples()) + ".")
+            else:
+                st.markdown(f"None of your {position}s is on this board.")
+board_ov = {"player": Col("Player", help="Q / D / O after a name = on the injury report (Questionable / Doubtful / Out)"),
+            "proj_points": Col("Proj", "num1", "The projected stat line put through this league's scoring map"),
+            "proj_range": Col("Range", help="Floor–ceiling: a bad week (10th percentile) to a good week (90th); about 80% of outcomes land between")}
 if model == "v2":
-    howto(
-        f"**Proj** is the projected stat line put through **{league_name}**'s scoring map. "
-        "**Floor** and **Ceiling** are the 10th and 90th percentiles of the week's points: about 80% of outcomes land between them, "
-        "one week in ten below the floor, one in ten above the ceiling. The wider the range, the less the projection should be trusted.",
-        "The stat-line columns are what the projection is made of: expected targets, receptions, yards and touchdowns (a TD of 0.45 means "
-        "a 45% chance of one, roughly).",
-        "**xPPG (L5)**, **PPG**, **Prev PPG** are the as-of inputs in the reference league's scoring. **Opp rank** 1 = the defense that gives up the most to this position.",
-        "When the week has been played, **Actual** (this league's scoring), **Actual rank** and **In range** appear.",
-    )
-    line_cols = {"QB": ["proj_attempts", "proj_passing_yards", "proj_passing_tds", "proj_passing_interceptions", "proj_carries", "proj_rushing_yards", "proj_rushing_tds"],
-                 "RB": ["proj_carries", "proj_rushing_yards", "proj_rushing_tds", "proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds"],
-                 "WR": ["proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds", "proj_carries", "proj_rushing_yards"],
-                 "TE": ["proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds"]}[position]
-    cols = ["rank_pos", "player_name", "team", "opponent", "rostered_by_team", "report_status", "proj_points", "p10", "p90", "interval_width",
-            *line_cols, "xppg_l5", "ppg_std", "ppg_l3", "prev_ppg", "games_to_date", "opp_rank_std", "implied_team_total", "is_home",
-            "target_share_l3" if position != "QB" else "carry_share_l3", "snap_pct_l3"]
-    if position in ("WR", "TE", "RB"):
-        cols.append("first_read_share_l3")
-    if played_week:
-        cols += ["points_actual", "actual_rank_pos", "actual_inside_interval"]
-    show(ranked, cols, height=min(80 + 36 * len(ranked), 900),
-         overrides={"proj_points": Col("Proj", "num1", "The projected stat line put through this league's scoring map")})
+    board_cols = (["rank_pos", "player", "proj_points", "proj_range", "points_actual"] if played_week
+                  else ["rank_pos", "player", "opponent", "proj_points", "proj_range"])
 else:
-    howto(
-        "**Proj** is the projection in the reference league's scoring; the five columns after it are its parts and add up to it (plus a small intercept). "
-        "A player can be #3 on form and #12 overall because his implied team total is low and the opponent is stiff — that is the point.",
-        "**xPPG (L5)** = expected points over the last five games (opportunity); **PPG** season / last 3; **Prev PPG** last season. "
-        "**Opp allowed** = points the opponent gives up per game to this position so far, next to the league average. "
-        "**Implied total** = the team's Vegas-implied points.",
-        "When the week has been played, **Actual** and **Actual rank** appear so you can see where the projection was right and wrong.",
-    )
-    cols = ["rank_pos", "player_name", "team", "opponent", "rostered_by_team", "report_status", "proj_points", "c_form", "c_usage", "c_matchup", "c_vegas", "c_home",
-            "xppg_l5", "ppg_std", "ppg_l3", "prev_ppg", "games_to_date", "opp_allowed_std", "league_allowed_avg", "implied_team_total", "is_home",
-            "target_share_l3" if position != "QB" else "carry_share_l3", "snap_pct_l3"]
-    if position in ("WR", "TE", "RB"):
-        cols.append("first_read_share_l3")
-    if played_week:
-        cols += ["points_actual", "actual_rank_pos"]
-    show(ranked, cols, height=min(80 + 36 * len(ranked), 900))
+    board_cols = (["rank_pos", "player", "proj_points", "xppg_l5", "points_actual"] if played_week
+                  else ["rank_pos", "player", "opponent", "proj_points", "xppg_l5"])
+show(ranked, board_cols, height=min(80 + 36 * len(ranked), 900), overrides=board_ov, phone_cols=board_cols,
+     links={"player": ("gsis_id", "player_name")}, widths={"rank_pos": 40, "player": 150}, pin=True)
 
 excluded = rk[~rk["is_rankable"] & rk["report_status"].isin(["Out", "Doubtful"])]
 if not excluded.empty:
     st.caption("Not ranked (Out / Doubtful): " + ", ".join(excluded["player_name"].head(20)) + (" …" if len(excluded) > 20 else ""))
+
+with st.expander("The full board: stat line, usage, matchup, who has him"):
+    if model == "v2":
+        howto(
+            f"**Proj** is the projected stat line put through **{league_name}**'s scoring map. "
+            "**Floor** and **Ceiling** are the 10th and 90th percentiles of the week's points: about 80% of outcomes land between them, "
+            "one week in ten below the floor, one in ten above the ceiling. The wider the range, the less the projection should be trusted.",
+            "The stat-line columns are what the projection is made of: expected targets, receptions, yards and touchdowns (a TD of 0.45 means "
+            "a 45% chance of one, roughly).",
+            "**xPPG (L5)**, **PPG**, **Prev PPG** are the as-of inputs in the reference league's scoring. **Opp rank** 1 = the defense that gives up the most to this position.",
+            "When the week has been played, **Actual** (this league's scoring), **Actual rank** and **In range** appear.",
+        )
+        line_cols = {"QB": ["proj_attempts", "proj_passing_yards", "proj_passing_tds", "proj_passing_interceptions", "proj_carries", "proj_rushing_yards", "proj_rushing_tds"],
+                     "RB": ["proj_carries", "proj_rushing_yards", "proj_rushing_tds", "proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds"],
+                     "WR": ["proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds", "proj_carries", "proj_rushing_yards"],
+                     "TE": ["proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds"]}[position]
+        cols = ["rank_pos", "player_name", "team", "opponent", "rostered_by_team", "report_status", "proj_points", "p10", "p90", "interval_width",
+                *line_cols, "xppg_l5", "ppg_std", "ppg_l3", "prev_ppg", "games_to_date", "opp_rank_std", "implied_team_total", "is_home",
+                "target_share_l3" if position != "QB" else "carry_share_l3", "snap_pct_l3"]
+        if position in ("WR", "TE", "RB"):
+            cols.append("first_read_share_l3")
+        if played_week:
+            cols += ["points_actual", "actual_rank_pos", "actual_inside_interval"]
+        show(ranked, cols, height=min(80 + 36 * len(ranked), 900), phone_cols=["player_name", "proj_points", *line_cols[:3]],
+             overrides={"proj_points": Col("Proj", "num1", "The projected stat line put through this league's scoring map")})
+    else:
+        howto(
+            "**Proj** is the projection in the reference league's scoring; the five columns after it are its parts and add up to it (plus a small intercept). "
+            "A player can be #3 on form and #12 overall because his implied team total is low and the opponent is stiff — that is the point.",
+            "**xPPG (L5)** = expected points over the last five games (opportunity); **PPG** season / last 3; **Prev PPG** last season. "
+            "**Opp allowed** = points the opponent gives up per game to this position so far, next to the league average. "
+            "**Implied total** = the team's Vegas-implied points.",
+            "When the week has been played, **Actual** and **Actual rank** appear so you can see where the projection was right and wrong.",
+        )
+        cols = ["rank_pos", "player_name", "team", "opponent", "rostered_by_team", "report_status", "proj_points", "c_form", "c_usage", "c_matchup", "c_vegas", "c_home",
+                "xppg_l5", "ppg_std", "ppg_l3", "prev_ppg", "games_to_date", "opp_allowed_std", "league_allowed_avg", "implied_team_total", "is_home",
+                "target_share_l3" if position != "QB" else "carry_share_l3", "snap_pct_l3"]
+        if position in ("WR", "TE", "RB"):
+            cols.append("first_read_share_l3")
+        if played_week:
+            cols += ["points_actual", "actual_rank_pos"]
+        show(ranked, cols, height=min(80 + 36 * len(ranked), 900), phone_cols=["player_name", "proj_points", "c_form", "c_usage", "c_matchup"])
 
 # ---------------------------------------------------------------- why: range chart (v2) or contribution chart (baseline)
 if not ranked.empty and model == "v2":
@@ -183,28 +252,30 @@ if not ranked.empty and model == "v2":
     layout = base_layout("Floor, projection and ceiling — top of the board", f"points ({league_name})", x_title="")
     layout["xaxis"] = dict(title="", showgrid=False, zeroline=False, tickangle=-35)
     layout["hovermode"] = "x"
-    fig.update_layout(**layout, barmode="overlay")
-    st.plotly_chart(fig, width="stretch")
+    fig.update_layout(**layout, barmode="overlay", dragmode=False)
+    st.plotly_chart(fig, width="stretch", config=PLOT_CONFIG)
 elif not ranked.empty:
     top = ranked.head(min(15, len(ranked)))
     parts = top.melt(id_vars=["player_name"], value_vars=["c_form", "c_usage", "c_matchup", "c_vegas", "c_home"], var_name="part", value_name="points")
     parts["part"] = parts["part"].map({"c_form": "Form", "c_usage": "Usage", "c_matchup": "Matchup", "c_vegas": "Vegas", "c_home": "Home"})
     parts["points"] = pd.to_numeric(parts["points"], errors="coerce")
     fig = bar_chart(parts, "player_name", "points", "What the projection is made of (top of the board)", "points", series="part", y_format=".1f", x_title="")
-    fig.update_layout(barmode="relative")
-    st.plotly_chart(fig, width="stretch")
+    fig.update_layout(barmode="relative", dragmode=False)
+    st.plotly_chart(fig, width="stretch", config=PLOT_CONFIG)
 
 # ---------------------------------------------------------------- your roster vs the board
 if roster_id is not None and scope != "team":
     mine = rk[(rk["rostered_by_roster_id"] == roster_id)]
     if not mine.empty:
-        st.subheader("Your players on this board")
-        if model == "v2":
-            show(mine, ["rank_pos", "player_name", "team", "opponent", "report_status", "proj_points", "p10", "p90", "xppg_l5", "ppg_std", "opp_rank_std", "implied_team_total"]
-                 + (["points_actual", "actual_rank_pos", "actual_inside_interval"] if played_week else []))
-        else:
-            show(mine, ["rank_pos", "player_name", "team", "opponent", "report_status", "proj_points", "c_form", "c_matchup", "c_vegas", "xppg_l5", "ppg_std", "implied_team_total"]
-                 + (["points_actual", "actual_rank_pos"] if played_week else []))
+        with st.expander(f"Your {position}s on this board, every column"):
+            if model == "v2":
+                show(mine, ["rank_pos", "player_name", "team", "opponent", "report_status", "proj_points", "p10", "p90", "xppg_l5", "ppg_std", "opp_rank_std", "implied_team_total"]
+                     + (["points_actual", "actual_rank_pos", "actual_inside_interval"] if played_week else []),
+                     phone_cols=["rank_pos", "player_name", "opponent", "proj_points", "p90"])
+            else:
+                show(mine, ["rank_pos", "player_name", "team", "opponent", "report_status", "proj_points", "c_form", "c_matchup", "c_vegas", "xppg_l5", "ppg_std", "implied_team_total"]
+                     + (["points_actual", "actual_rank_pos"] if played_week else []),
+                     phone_cols=["rank_pos", "player_name", "opponent", "proj_points", "xppg_l5"])
 
 # ---------------------------------------------------------------- drift (M-06): this season's played weeks vs the backtest
 if model == "v2":
@@ -254,12 +325,14 @@ if model == "v2":
                          "the other weeks on the board as shown before kickoff.")
             st.caption(f"The board scored like the backtest on NFL {dr_season}'s complete {span} ({league_name} scoring, players who played), "
                        f"next to the walk-forward backtest{bt_span}.{small}{board}{pending}")
-            show(scored, ["position", "weeks_scored", "spearman", "backtest_spearman", "coverage_80", "backtest_coverage_80"]
-                 + (["frozen_share"] if scored["frozen_share"].notna().any() else []),
-                 overrides={"spearman": Col("Spearman · this season", "num2", "Rank correlation between the projected order and actual points, "
-                                                                          "averaged over this season's complete weeks; 1 = perfect, 0 = coin flip"),
-                            "coverage_80": Col("Coverage · this season", "pct", "Share of this season's actuals that landed inside P10–P90 "
-                                                                                "(target 80%)")})
+            with st.expander("The scoreboard by position"):
+                show(scored, ["position", "weeks_scored", "spearman", "backtest_spearman", "coverage_80", "backtest_coverage_80"]
+                     + (["frozen_share"] if scored["frozen_share"].notna().any() else []),
+                     phone_cols=["position", "spearman", "backtest_spearman", "coverage_80", "backtest_coverage_80"],
+                     overrides={"spearman": Col("Spearman · this season", "num2", "Rank correlation between the projected order and actual points, "
+                                                                              "averaged over this season's complete weeks; 1 = perfect, 0 = coin flip"),
+                                "coverage_80": Col("Coverage · this season", "pct", "Share of this season's actuals that landed inside P10–P90 "
+                                                                                    "(target 80%)")})
 
 # ---------------------------------------------------------------- backtest
 st.subheader("Backtest — how much to trust this")
@@ -281,23 +354,25 @@ if model == "v2":
     if bt.empty:
         st.caption("No v2 backtest for this league yet (`make backtest-v2`).")
     else:
-        b1, b2 = st.columns([1, 1])
-        bt_season = b1.selectbox("Backtest season", sorted(bt["season"].unique().tolist(), reverse=True))
-        bt_pos = b2.selectbox("Backtest position", ["QB", "RB", "WR", "TE"], index=["QB", "RB", "WR", "TE"].index(position))
-        sel = bt[(bt["season"] == bt_season) & (bt["position"] == bt_pos)]
-        show(sel, ["scorer_label", "train_seasons", "weeks", "top_n", "spearman", "hit_rate", "mae", "coverage_80", "interval_width"])
+        with st.expander("Backtest detail: one season, one position"):
+            b1, b2 = st.columns([1, 1])
+            bt_season = b1.selectbox("Backtest season", sorted(bt["season"].unique().tolist(), reverse=True))
+            bt_pos = b2.selectbox("Backtest position", ["QB", "RB", "WR", "TE"], index=["QB", "RB", "WR", "TE"].index(position))
+            sel = bt[(bt["season"] == bt_season) & (bt["position"] == bt_pos)]
+            show(sel, ["scorer_label", "train_seasons", "weeks", "top_n", "spearman", "hit_rate", "mae", "coverage_80", "interval_width"],
+                 phone_cols=["scorer_label", "spearman", "hit_rate", "mae", "coverage_80"])
         allp = bt[bt["scorer"].isin(["v2_points", "baseline"])]
         piv = allp.pivot_table(index=["season", "position"], columns="scorer", values="spearman").reset_index()
         if {"v2_points", "baseline"} <= set(piv.columns):
             piv["edge"] = pd.to_numeric(piv["v2_points"]) - pd.to_numeric(piv["baseline"])
             piv["label"] = piv["season"].astype(str) + " " + piv["position"]
             st.plotly_chart(bar_chart(piv, "label", "edge", "v2 minus baseline (Spearman, per held-out season)", "Spearman gap",
-                                      y_format="+.3f", x_title=""), width="stretch")
+                                      y_format="+.3f", x_title=""), width="stretch", config=PLOT_CONFIG)
         cov = bt[bt["scorer"] == "v2_points"].copy()
         cov["coverage_80"] = pd.to_numeric(cov["coverage_80"], errors="coerce")
         cov["label"] = cov["season"].astype(str) + " " + cov["position"]
         st.plotly_chart(bar_chart(cov, "label", "coverage_80", "Share of actuals inside the floor–ceiling range (target 0.80)", "coverage",
-                                  y_format=".2f", x_title=""), width="stretch")
+                                  y_format=".2f", x_title=""), width="stretch", config=PLOT_CONFIG)
 else:
     howto(
         "The weights were fitted on 2019–2022. Each held-out season (2023 on) is scored week by week, position by position, on players who played: "
@@ -314,11 +389,13 @@ else:
     if bt.empty:
         st.caption("No backtest has been run yet (`make backtest`).")
     else:
-        b1, b2 = st.columns([1, 1])
-        bt_season = b1.selectbox("Backtest season", sorted(bt["season"].unique().tolist(), reverse=True))
-        bt_pos = b2.selectbox("Backtest position", ["QB", "RB", "WR", "TE"], index=["QB", "RB", "WR", "TE"].index(position))
-        sel = bt[(bt["season"] == bt_season) & (bt["position"] == bt_pos)]
-        show(sel, ["scorer_label", "weeks", "top_n", "spearman", "hit_rate", "mae", "top_n_picked_ppg", "top_n_ceiling_ppg"])
+        with st.expander("Backtest detail: one season, one position"):
+            b1, b2 = st.columns([1, 1])
+            bt_season = b1.selectbox("Backtest season", sorted(bt["season"].unique().tolist(), reverse=True))
+            bt_pos = b2.selectbox("Backtest position", ["QB", "RB", "WR", "TE"], index=["QB", "RB", "WR", "TE"].index(position))
+            sel = bt[(bt["season"] == bt_season) & (bt["position"] == bt_pos)]
+            show(sel, ["scorer_label", "weeks", "top_n", "spearman", "hit_rate", "mae", "top_n_picked_ppg", "top_n_ceiling_ppg"],
+                 phone_cols=["scorer_label", "spearman", "hit_rate", "mae", "top_n_picked_ppg"])
         allp = bt[bt["scorer_label"].isin(["League Lab baseline", "Season PPG to date"])]
         piv = allp.pivot_table(index=["season", "position"], columns="scorer_label", values="spearman").reset_index()
         if {"League Lab baseline", "Season PPG to date"} <= set(piv.columns):

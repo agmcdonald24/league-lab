@@ -97,14 +97,13 @@ st.markdown(
 | **Rankings** | Weekly projection per position with every term visible (form, usage, matchup, Vegas, home) and a backtest that says how far to trust it |
 | **Matchups** | Your closest lineup calls of the week first, then defense-vs-position ranks, cornerback coverage context and the start/sit board |
 | **Trade Finder** | Positional surplus/need across rosters, buy-low and sell-high lists from expected vs actual points |
-| **League Intel** | Manager profiles: all-play luck, bench points left, FAAB/adds/trades, roster shape |
-| **League** | Standings, weekly scores, matchups, transactions and draft review per season |
+| **League** | Schedule luck, points left on the bench and the weekly scoring rank for every team; roster rankings; standings, manager profiles, matchups, transactions and draft review per season |
 | **Players** | Season and game tables for QB/RB/WR/TE/K: shares against independent team totals, first-read share, routes proxy, red-zone share |
 | **Receivers** | Compare receivers: target/air-yard share, aDOT, first-read share, routes proxy (TPRR/YPRR), context splits by half / score state / down / QB |
 | **Kickers** | Kicker streaming: realized points in common eligible weeks, variability, changes |
 | **Data Status** | Source freshness, coverage by season, identity quarantine, metric registry |
 
-Tables start in **Essentials** mode (sidebar) — switch to **Everything** for denominators, noise statistics and every count.
+Tables start in **Phone** mode on a phone (at most five columns) and **Essentials** elsewhere (sidebar) — switch to **Everything** for denominators, noise statistics and every count.
 """
 )
 

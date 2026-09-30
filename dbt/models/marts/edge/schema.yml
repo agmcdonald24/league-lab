@@ -241,7 +241,7 @@ models:
             expression: "replacement_sleeper_player_id is not null and abs(replacement_value - (player_value - lineup_margin)) < 0.005"
             condition: "role = 'starter' and lineup_margin is not null and player_value - lineup_margin > 0.005"
   - name: mart_league_roster_value
-    description: "B2: per current league x roster: this week's lineup value, its weakest replaceable slot with the margin and the replacement, depth (bench lineup value), and the 4-week horizon (sum of the proposed lineup values) with its weakest week. Replaces mart_league_positional_strength on Team Hub, Trade Finder and League Intel."
+    description: "B2: per current league x roster: this week's lineup value, its weakest replaceable slot with the margin and the replacement, depth (bench lineup value), and the 4-week horizon (sum of the proposed lineup values) with its weakest week. Replaces mart_league_positional_strength on Team Hub, Trade Finder and League."
     tests:
       - unique_combination_of_columns:
           arguments:

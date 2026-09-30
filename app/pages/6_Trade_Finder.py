@@ -7,7 +7,7 @@ eligibility: a QB3 behind two better QBs adds nothing; a WR who beats your FLEX 
 import pandas as pd
 import streamlit as st
 from lib.db import query, require_relations
-from lib.table import Col, detail_level, howto, prepare
+from lib.table import Col, detail_level, howto, show
 from lib.ui import freshness_banner, league_seasons, perspective, setup
 
 from league_lab.roster_value import RosterBoard, trade_candidates
@@ -21,14 +21,9 @@ managers = {int(r.roster_id): r.manager_name for r in members.itertuples()}
 
 
 def narrow_table(df: pd.DataFrame, cols: list[str], overrides: dict, widths: dict[str, str | int], height: int | None = None) -> None:
-    """A phone-first table: the registry's labels and formats (lib.table.prepare), the first column
-    pinned and narrow widths, so the numbers stay on screen at 390 px (plan B2, round-2 convention 2)."""
-    out, config = prepare(df, cols, overrides)
-    for c, w in widths.items():
-        if c in config:
-            config[c]["width"] = w
-    config[cols[0]]["pinned"] = True
-    st.dataframe(out, column_config=config, hide_index=True, width="stretch", placeholder="", **({"height": height} if height else {}))
+    """A phone-first table (plan B2, round-2 convention 2): lib.table.show with the first column pinned and narrow
+    widths, so the numbers stay on screen at 390 px; the player column opens the player card (C1, `gsis_id`)."""
+    show(df, cols, height=height, overrides=overrides, widths=widths, pin=True, links={"player": ("gsis_id", "player_name")})
 
 horizon = query(
     """select roster_id, week, this_week, horizon_first_week, horizon_last_week, role, slot, slot_type, sleeper_player_id,
@@ -47,7 +42,7 @@ ls = league_seasons(league_id)
 slots = list(ls.loc[ls["league_id"] == league_id, "roster_positions"].iloc[0] or [])
 
 avail = query(
-    """select sleeper_id as sleeper_player_id, player_name, position, rostered_by_roster_id, games_with_expected, ppg_std,
+    """select sleeper_id as sleeper_player_id, gsis_id, player_name, position, rostered_by_roster_id, games_with_expected, ppg_std,
               expected_per_game, diff_per_game
        from analytics.mart_player_availability
        where league_id = %s and not is_free_agent and position in ('QB','RB','WR','TE')

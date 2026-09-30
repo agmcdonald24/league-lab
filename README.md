@@ -17,7 +17,7 @@ nflverse ────┘   (Parquet/JSON archive)   └─ dbt models + tests �
 * **Interface**: Streamlit, bound to `127.0.0.1`, reading only validated marts with a read-only role.
   Pick any league and any team as the perspective (it lives in the URL, so a link opens on a
   leaguemate's team). Team Hub, Waiver Wire, Matchups (defense vs position + cornerback context),
-  Trade Finder, League Intel, plus the research pages.
+  Trade Finder, League (luck, bench, weekly rank, roster rankings), plus the research pages.
 * **Weekly packs**: `league-lab weekly-pack --week 3 --team 2` writes the facts behind a newsletter
   (results, luck, lineup decisions, top/bottom performers, moves, kickers) and a private team brief
   (roster health, waiver targets, buy-low/sell-high, trade fits, keeper facts) as Markdown + CSV.
@@ -65,8 +65,8 @@ league-lab/
     ingest/nflverse.py      #   release files -> raw.nfl_*     (18 datasets, typed, schema-drift tolerant)
     reports.py              #   weekly data packs (Markdown + CSV)
   dbt/                      # sources, staging, intermediate, marts, seeds, tests, macros
-  app/                      # Streamlit explorer: Team Hub, Waiver Wire, Matchups, Trade Finder, League Intel,
-                            #   League, Players, Receivers, Kickers, Data Status
+  app/                      # Streamlit explorer: Home, Player, Team Hub, Waiver Wire, Trends, Rankings, Matchups,
+                            #   Trade Finder, League, Players, Receivers, Kickers, Data Status
   scripts/                  # bootstrap.sh, init_db.sql, nightly.sh, refresh.sh, backup.sh, sync_to_hosted.sh, restore_test.sh, launchd/
   tests/                    # pytest unit tests + a synthetic Sleeper fixture generator
   docs/                     # plan, project plan/backlog, runbook, data model, metrics, sources, limitations, status

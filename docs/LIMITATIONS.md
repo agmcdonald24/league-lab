@@ -85,7 +85,7 @@ NULL or labelled "unavailable".
 14c. **Publishing is not atomic on the free tier** (0.5 GB cannot hold two copies): pages show "not built yet" for the
     minute or two of a restore. The publication contract (I-02) fixes this once the database has room for two copies.
 14a. **Several leagues, two scales.** Several leagues can be loaded (comma-separated ids). Since S-01a (2026-09-27)
-    league pages (Team Hub, Waiver Wire, Matchups start/sit, Trade Finder, League Intel, League draft) price PPG, xPPG,
+    league pages (Team Hub, Waiver Wire, Matchups start/sit, Trade Finder, League (profiles, draft)) price PPG, xPPG,
     positional strength, keeper ranks and draft outcomes in the selected league's **current** scoring
     (`fct_player_game_league`). The NFL research pages (Players, Trends, Receivers), defense vs position — and the
     **Opp rank** columns derived from it on league pages — the baseline projection formula (Home's projection panel, the
