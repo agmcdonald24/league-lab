@@ -63,17 +63,18 @@ def _weeks_text(r: pd.Series) -> str:
 def _seat_text(r: pd.Series) -> str:
     """Where he plays this week and who makes way, in plain words (the numbers the lineup uses)."""
     slot = r["add_slot"]
+    he = "It" if r.get("add_position") == "DEF" else "He"
     if not isinstance(slot, str):
         return ""
     if r["fills_empty_slot"]:
-        return f"He fills your empty {slot} slot (nobody on your roster can play it this week)."
+        return f"{he} fills your empty {slot} slot (nobody on your roster can play it this week)."
     if isinstance(r["displaced_name"], str):
         if r["displaced_name"] == r["drop_name"]:
-            return f"He starts at {slot}; {r['drop_name']} ({_f(r['drop_value'])} this week) leaves your lineup."
+            return f"{he} starts at {slot}; {r['drop_name']} ({_f(r['drop_value'])} this week) leaves your lineup."
         where = f", from {r['displaced_slot']}" if isinstance(r["displaced_slot"], str) and r["displaced_slot"] != slot else ""
-        return (f"He starts at {slot}; **{r['displaced_name']}** ({r['displaced_position']}{where}, projected "
+        return (f"{he} starts at {slot}; **{r['displaced_name']}** ({r['displaced_position']}{where}, projected "
                 f"{_f(r['displaced_value'])}) goes to your bench.")
-    return f"He starts at {slot}."
+    return f"{he} starts at {slot}."
 
 
 def _notes(r: pd.Series) -> list[str]:

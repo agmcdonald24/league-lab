@@ -3,8 +3,16 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
-## Sep 30 · Plainer words, and where the projections come from
+## Sep 30 · Built for your phone, plainer words, kickers and defenses
 
+- Open League Lab on your phone: every table shows at most five columns (a **Phone** setting next to Essentials
+  and Everything), every page starts with its answer, and the big tables sit one tap below. League Intel is
+  gone: its charts (schedule luck, points left on the bench, each week's scoring rank, every team) now open the
+  League page. Tap a player's name almost anywhere to open his page.
+- Kickers and defenses have real projections now, from what their team is expected to score, how often it
+  kicks, the offense or defense they face, and the kicker's own range. Your lineup and the waiver list use them
+  (a kicker or defense you just picked up is no longer counted as 0), and free-agent defenses show up on
+  Waiver Wire.
 - Every "How to read this" box now tells you what to do with the page, in a few short lines.
 - **Worth a look** on this page: your schedule luck, the points you leave on your bench, the best bargain on
   your roster and which of your players is most often his quarterback's first look, each one tap from the page

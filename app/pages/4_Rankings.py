@@ -37,7 +37,7 @@ howto(
 )
 
 # ---------------------------------------------------------------- controls: one row (position · week · more)
-model_options = {"v2": f"Projection v2 · {league_name} scoring", "baseline": "Baseline formula · reference scoring"}
+model_options = {"v2": f"League Lab projection · {league_name} scoring", "baseline": "Old formula · reference scoring"}
 if not v2_available:
     model_options.pop("v2")
 scope_options = {"all": "Everyone", "fa": "Free agents in this league", "rostered": "Rostered in this league", "team": "Selected team only"}
@@ -328,7 +328,7 @@ if model == "v2":
                 show(scored, ["position", "weeks_scored", "spearman", "backtest_spearman", "coverage_80", "backtest_coverage_80"]
                      + (["frozen_share"] if scored["frozen_share"].notna().any() else []),
                      phone_cols=["position", "spearman", "backtest_spearman", "coverage_80", "backtest_coverage_80"],
-                     overrides={"spearman": Col("Spearman · this season", "num2", "Rank correlation between the projected order and actual points, "
+                     overrides={"spearman": Col("Order score · this season", "num2", "Rank correlation between the projected order and actual points, "
                                                                               "averaged over this season's complete weeks; 1 = perfect, 0 = coin flip"),
                                 "coverage_80": Col("Coverage · this season", "pct", "Share of this season's actuals that landed inside P10–P90 "
                                                                                     "(target 80%)")})
@@ -353,7 +353,7 @@ if model == "v2":
         (league_id,),
     )
     if bt.empty:
-        st.caption("No v2 backtest for this league yet (`make backtest-v2`).")
+        st.caption("No backtest for this league yet.")
     else:
         with st.expander("Backtest detail: one season, one position"):
             b1, b2 = st.columns([1, 1])
@@ -367,7 +367,7 @@ if model == "v2":
         if {"v2_points", "baseline"} <= set(piv.columns):
             piv["edge"] = pd.to_numeric(piv["v2_points"]) - pd.to_numeric(piv["baseline"])
             piv["label"] = piv["season"].astype(str) + " " + piv["position"]
-            st.plotly_chart(bar_chart(piv, "label", "edge", "v2 minus baseline (Spearman, per held-out season)", "Spearman gap",
+            st.plotly_chart(bar_chart(piv, "label", "edge", "Projection minus old formula (order score, per past season)", "Order-score gap",
                                       y_format="+.3f", x_title=""), width="stretch", config=PLOT_CONFIG)
         cov = bt[bt["scorer"] == "v2_points"].copy()
         cov["coverage_80"] = pd.to_numeric(cov["coverage_80"], errors="coerce")
