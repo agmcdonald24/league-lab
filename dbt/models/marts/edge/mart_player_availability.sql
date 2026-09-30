@@ -1,5 +1,7 @@
 -- The waiver-wire / trade-target base table: every QB/RB/WR/TE/K with a Sleeper id who is on an
 -- NFL roster this season, x each *current* league season, with who rosters them (NULL = free agent),
+-- plus (plan R-13) every team defense (Sleeper id 'KC'; gsis_id NULL) for the leagues that start a
+-- DEF, so a free-agent defense is a real waiver candidate (the waiver engine prices it with kd1.0),
 -- season-to-date usage, latest recent form, expected-points gap, injury and next matchup.
 -- Points columns (points_std, ppg_std, points_per_game_l3/l5, expected_per_game, diff_per_game,
 -- games_with_expected) are priced in *this row's league's* own scoring via mart_league_player_season
@@ -45,6 +47,43 @@ nm as (select * from {{ ref('mart_player_next_matchup') }}),
 owned as (
     select league_id, sleeper_player_id, roster_id, team_name, manager_name, is_current_starter, is_on_ir
     from {{ ref('mart_league_roster_membership') }}
+),
+
+-- plan R-13: team defenses. Points in the league's own D/ST scoring over the team's played games
+-- (nflverse team stats priced by def_points(), reconciled with Sleeper in docs/METRICS.md)
+def_leagues as (
+    select league_id, season, scoring_settings from {{ ref('dim_league_season') }}
+    where is_current_season and roster_positions ? 'DEF'
+),
+
+def_week as (
+    select * from {{ ref('mart_kd_week') }} where position = 'DEF' and season = (select season from cal)
+),
+
+def_pts as (
+    select dl.league_id, w.unit_id, w.week, {{ def_points('dl.scoring_settings', 'w', 'out_') }} as points,
+           row_number() over (partition by dl.league_id, w.unit_id order by w.week desc) as games_ago
+    from def_leagues as dl
+    cross join def_week as w
+    where w.played
+),
+
+def_form as (
+    select league_id, unit_id, count(*) as games_played, sum(points) as points,
+           round(avg(points), 2) as ppg,
+           round(avg(points) filter (where games_ago <= 3), 2) as ppg_l3,
+           round(avg(points) filter (where games_ago <= 5), 2) as ppg_l5
+    from def_pts
+    group by 1, 2
+),
+
+def_units as (
+    select distinct on (unit_id) unit_id, player_name, team from def_week order by unit_id, week desc
+),
+
+def_next as (
+    select w.unit_id, w.opponent, w.is_home
+    from def_week as w join cal on w.week = cal.next_week
 )
 
 select
@@ -82,3 +121,43 @@ left join std using (gsis_id)
 left join recent using (gsis_id)
 left join lpts on lpts.league_id = lg.league_id and lpts.gsis_id = p.gsis_id
 left join owned as o on o.league_id = lg.league_id and o.sleeper_player_id = p.sleeper_id
+
+union all
+
+select
+    dl.league_id,
+    dl.season,
+    null::text                                 as gsis_id,
+    u.unit_id                                  as sleeper_id,
+    u.player_name,
+    'DEF'::text                                as position,
+    u.team                                     as nfl_team,
+    'ACT'::text                                as roster_status,
+    o.roster_id                                as rostered_by_roster_id,
+    o.team_name                                as rostered_by_team,
+    o.manager_name                             as rostered_by_manager,
+    o.roster_id is null                        as is_free_agent,
+    o.is_current_starter,
+    o.is_on_ir,
+    coalesce(f.games_played, 0)                as games_played,
+    null, null, null, null, null,
+    null, null, null, null, null,
+    f.points                                   as points_std,
+    f.ppg                                      as ppg_std,
+    null, null, null, null,
+    null, null, null, f.ppg_l3,
+    null, null, null,
+    null, f.ppg_l5,
+    null, null,
+    null, null, null,
+    (select next_week from cal)                as next_week,
+    nx.opponent,
+    nx.is_home,
+    nx.unit_id is null                         as is_bye,
+    null, null, null,
+    null, null, null, null, null
+from def_leagues as dl
+cross join def_units as u
+left join def_form as f on f.league_id = dl.league_id and f.unit_id = u.unit_id
+left join def_next as nx on nx.unit_id = u.unit_id
+left join owned as o on o.league_id = dl.league_id and o.sleeper_player_id = u.unit_id

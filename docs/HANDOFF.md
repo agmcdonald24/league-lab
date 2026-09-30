@@ -33,12 +33,16 @@ STATUS § "Wave B / PO merge and QA — round 1").
 Round 2 (all consume B1): **B2** roster value and rankings · **B3** waiver engine · **B4** player
 card + My Week — **delivered 2026-09-30** (STATUS § "PO merge and QA — round 2"), with the acceptance amended by Andrew's mobile review (plan § "Round 1 status and
 Andrew's mobile review": answer-first cards, phone width, one projection, plain words). Then
-Iteration 10, where the review added U-13 mobile pass, U-14 plain-language pass, U-15 model
-explainer + honest importance, U-16 League consolidation, U-17 Receivers/Kickers context, R-14 CB
-matchups, R-15 defense-vs-position picture, T-02 trade simulator, P-01 profiles + any league.
+Iteration 10 as Wave C: round 1 (U-13 mobile pass + U-16 League consolidation, U-14 plain-language
+pass + U-15 model explainer, R-13 kicker and defense projections) **delivered 2026-09-30**; round 2 next:
+**C4** T-01 trade evaluator + T-02 simulator · **C5** R-14 cornerback matchups + R-15 defense-vs-position
+picture + U-17 Receivers/Kickers context · **C6** R-10 role alerts + R-11 matchup comparison + R-12 scenario
+upside. P-01 profiles + any league needs a design note first.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
-dbt/unit tests named in the acceptance column, and cite the task ID in the commit.
+dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a
+league-mate would notice also gets a plain-words entry in `app/whats_new.md` (Home's "What's new"), and
+page copy follows `docs/WORDS.md`.
 
 ## How to work here
 

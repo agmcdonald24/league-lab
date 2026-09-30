@@ -10,7 +10,7 @@
 --     injuries and taxi already in each week's lineup), and its weakest week.
 -- Ranks across the league, each naming its horizon, are in mart_league_roster_rankings. Replaces
 -- mart_league_positional_strength (season PPG of the top-N at each position, superflex counted as a QB
--- slot) as the roster view of Team Hub, Trade Finder and League Intel.
+-- slot) as the roster view of Team Hub, Trade Finder and League.
 {{ config(materialized='view') }}
 
 with h as materialized (

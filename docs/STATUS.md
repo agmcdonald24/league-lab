@@ -1033,6 +1033,305 @@ the shortlist uses projection v2 in the selected league's scoring, Home's "Your 
 Rankings is the permutation importance of the P50 *quantile* model, whose dominant input is the
 priced line itself — it describes the residual adjuster, not the projection (plan U-15).
 
+## Wave C (Iteration 10)
+
+### PO merge — round 1 (C1 + C2 + C3), 2026-09-30
+
+* Three Opus developers in parallel off `8d8cead` (worktrees `wt-c1` / `wt-c2` / `wt-c3`, clones `league_lab_c1` /
+  `_c2` / `_c3`, ports 8531–8533) with the Wave C brief (page ownership split by region: C1 layout, C2 text, C3
+  model). Merged into `integration/wave-c`: C1 first, C3 (CHANGELOG / STATUS keep both), then C2 — Rankings,
+  Matchups and League conflicted where C1 restructured a region whose `howto` text C2 rewrote: resolved as C1's
+  structure with C2's text pasted into it; `7_League_Intel.py` stays deleted (C1) and C2's three rewritten boxes
+  for it were carried into League; Home is C2's (its page guide already falls back to League when Intel is gone).
+  PO fix-ups: the label renames C2 could not make (`Proj (v2)` → Proj, `Floor (P10)` / `Ceiling (P90)` / `Median (P50)`
+  → Floor / Ceiling / Middle, `Spearman` → Order score, the Rankings picker "League Lab projection · …" / "Old formula",
+  chart titles), the K/DEF registry help (`player_value`, `value_source`) now that kickers and defenses are projected,
+  "It starts at DEF" on waiver cards, and one What's new line each for C1 and C3 in `app/whats_new.md`.
+* Decisions confirmed as delivered: C1 — Phone level from the User-Agent (`Mobi`), injuries as "· Q/D/O" after the
+  name on Rankings, the "Points by week" line chart dropped in favour of the rank heatmap, no "likely cover" claim
+  on the cornerback card until R-14; C2 — importance from the held-out twin (2016–2024 models scored on 2025), the
+  priced-line MAE rise as the single number, computed once per training window, What's new from `app/whats_new.md`;
+  C3 — DEF keyed by the Sleeper id in `ops.projections.gsis_id` (NULL in the mart, keyed by team), an unmapped K
+  takes his team's only projected kicker, both K and DEF ship as the model (`KD_SHIP`), `kd1.0` rows in
+  `ops.projection_backtest`.
+* Verified on the main database: `pytest` 571, `ruff` clean, migrate, `mart_kd_team_game+ mart_player_availability+`
+  built, `project` (v2 → K/DEF → lineups → waivers → importance), the projection/lineup/importance marts rebuilt,
+  `backtest-kd` run once so the hosted copy carries the K/DEF backtest, the headless check on every page × both
+  leagues + the Player page with 0 exceptions.
+* One QA agent, phone-first, 20 minutes: every walked page (Home, League, Matchups, Rankings, Kickers, Waiver Wire, Team
+  Hub, Player) has no sideways scroll and no table over five columns — including inside every expander — on both
+  leagues; the Phone level is the default on a phone user agent, Essentials on desktop; every League chart shows all
+  10 / 12 teams; the selection survived Home → League → Matchups → Kickers → Home; the Kickers card (McLaughlin 8.07,
+  Reichard 10.28), the Scrubs waiver card (Browns DEF +0.90 / +9.74) and Team Hub / My Week K and DEF values all equal
+  the marts; "The model" answers the three questions in plain words; Rankings now defaults to week 4. QA fixed two
+  things (`a5d3262`): the range chart's hover called the bar's width "P90"; Home's "10th most of 10" now says "the
+  fewest in the league". Open LOW items: under touch emulation a table link needs two taps (unconfirmed on a real
+  iPhone); Kickers sits behind "View 3 more" in the phone sidebar; luck wording differs between Home and League on a
+  tie; the freshness line, "(#2 vs RB)", "first choice … 46%" and "QB2 by points per game" still read as insider
+  phrases on Home; the backtest chart title still says Spearman; a defense drop's "costs 21.6 (already counted)"
+  reads oddly next to a net +9.7; the Player page leads with Usage; the schedule-luck x-axis title clips at 390 px.
+* Left for round 2 / later: Rankings' Position selector still QB–TE (K/DEF boards need the backtest selector reworked);
+  the D/ST keys `def_st_ff` / `def_st_fum_rec` / `st_ff` / `st_fum_rec` price at 0 (≈0.1 pt/game); `backtest-kd` is
+  not in the nightly (run it after a `KD_MODEL_VERSION` change); the Player card's no-projection text for a K on a
+  bye; names inside cards (Team Hub, Waiver Wire) are not links; importance is in the reference scoring only;
+  `metric_registry` rows for `projection_importance` and `kd_projection`.
+
+### C1 2026-09-30 — U-13 mobile pass + U-16 League consolidation (branch `dev/C1`, clone `league_lab_c1`)
+
+**What changed.**
+* **Phone detail level** (`app/lib/table.py`): `detail_level()` is now `phone | essentials | everything`;
+  `phone_columns(df, cols, overrides, phone_cols)` (pure) picks at most five columns — the caller's `phone_cols`, else
+  the first five essentials; identifiers never count; injury-report columns (`report_status`, `injury_status`,
+  `is_on_ir`, `is_questionable`) only when some row is not Healthy, and then the first of them takes the fifth place;
+  practice status and the injury text never show at Phone. `show()` applies it, pins the first column at Phone, and
+  gained `phone_cols=`, `links=`, `widths=`, `pin=`. The sidebar radio (`ui._sidebar_links`) has three options; a new
+  session starts on **Phone when the browser's User-Agent says phone** (`"Mobi"`: iPhone, Android phones; not iPad,
+  not desktop) — read server-side from `st.context.headers`, no JavaScript. The choice is kept in `st.session_state`
+  and re-assigned before the widget (the `perspective()` trick), so it survives page hops; `?detail=phone|essentials|
+  everything` seeds it. A viewport-width component was not built: the User-Agent is cheaper and deterministic.
+* **One week rule** (end of `app/lib/ui.py`): `current_week(league_id=None, *, season=None, now=None)` = the first
+  regular-season week of the league's season whose **last** game has not kicked off (B4's rule; pure core
+  `first_open_week(games, now)`), with `current_season()`, `week_schedule()`, `week_first_kickoff()`,
+  `week_opponents()` and `align_opponents(df, season, week)` (re-keys a frame's opponent / is_home / is_bye /
+  opp_rank_std / opp_rank_l4 / opp_points_allowed_pg_std to the week; `mart_player_availability` and
+  `mart_player_next_matchup` key them to `mart_nfl_calendar`). Used by `cards.decision_week` (now a wrapper),
+  Rankings' default week, the Matchups caption, board, receiver line and lookup, Team Hub's usage table and Waiver
+  Wire's free-agent browse. `mart_nfl_calendar` is left to history.
+* **League (U-16)**: `7_League_Intel.py` deleted, folded into `8_League.py`: season picker → one answer line →
+  three charts with **every team** (schedule luck and points left on the bench as horizontal bars, weekly scoring
+  rank as a heatmap; your team solid and bold with ◀; no drag/zoom so a phone scrolls) → B2's roster rankings
+  (5 columns, current season) → expanders: Standings, Manager profiles (Intel's table), Weekly scores and high
+  scores, Matchups and lineups, Transactions, Draft review, Past seasons. The 8-team line charts are gone.
+* **Matchups** (below B4's cards): the start/sit board stays in its expander; "Cornerbacks your receivers face" is
+  a card (toughest / easiest matchup of your starting WR/TE by rank vs position, and the toughest opponent's
+  starting corners' passer rating allowed, targets-weighted) + the 14-column CB table in an expander; "Defense vs
+  position" is a card (best and toughest matchup in your lineup; whole league: who gives up the most per position)
+  + the tables and heat grid in an expander; the lookup moved into an expander. "Likely cover" is not claimed:
+  alignment data is R-14.
+* **Rankings** (filters and board region only): a wrapping horizontal row — Position (segmented), Week, and a
+  "More filters" popover (projection, season, who, **injury** filter: anyone ranked / no injury tag / only tagged,
+  count); a caption lists non-default filters. One answer card (#1 at the position with the bad-week / good-week
+  range; your players on the board with rank and projection), then the board as **five columns at every level**
+  (#, player — "· Q" after a tagged name —, opponent, projection, range "7.8–32.0"; a played week swaps opponent for
+  the actual). The full board, "your players", the drift scoreboard and the backtest detail moved into expanders.
+* **Links**: `show()` links `player_name` and `kicker_name` whenever `gsis_id` is in the frame, and any other name
+  column through `links={"col": ("id_col", "plain_name_col")}`. Added `gsis_id` to the SELECTs of Team Hub (roster,
+  slot strength via `top_gsis_id`, usage, keeper facts), Trade Finder (candidates), Waiver Wire (`add_gsis_id` /
+  `drop_gsis_id` → both claim and drop link; free agents; recent moves via `player_id_map`), League (lineups from
+  `league_player_week`, transactions via `player_id_map` on `sleeper_player_id`, draft), Receivers (every table),
+  Players (season table; the game log now selects by `gsis_id`, not by name), Kickers (weekly), Matchups (lookup).
+  B2's two `narrow_table` helpers now call `show()`.
+* **Other pages, layout only**: answer line/card first and wide tables in expanders on Trends, Players, Receivers,
+  Kickers and Data Status (the last is nobody's page in Wave C; touched only for the walk's "every page" rule).
+  Stale "League Intel" mentions removed from Home's page table, `reference_scoring_note`, README, METRICS,
+  LIMITATIONS and two dbt descriptions.
+
+**Evidence** (clone `league_lab_c1`, now = 2026-09-30 14:07 UTC, `mart_nfl_calendar.next_week` = 3):
+* Playwright walk (`scratchpad/waveC/c1/walk.py`), 13 pages × 2 leagues (dynasty roster 12, Scrubs roster 2) × 2
+  viewports (390 × 844 iPhone 14 UA, 1300 × 900) = 52 page views: `scrollWidth == clientWidth` on all 52; 20 tables
+  outside expanders, the widest 5 columns (`aria-colcount`); a bordered answer card above the first table on every
+  page that has one; 0 Streamlit exceptions. At 390 px the default level is Phone (Players' season table 5 columns
+  vs 20 at 1300; Receivers 5 vs 12; Trends 5 vs 10); opened expanders at 390: Team Hub roster, League standings,
+  Matchups CBs = 5 columns each.
+* League charts (Plotly data): schedule luck / bench / weekly rank = 12 / 12 / 12 teams (dynasty) and 10 / 10 / 10
+  (Scrubs) at both widths. Answer lines: dynasty 12 "the unluckiest team by schedule (−0.9 wins); your bench has left
+  49 points unstarted (the 7th most of 12, 2 weeks)"; Scrubs 2 "the 5th-unluckiest (−0.2 wins) … 7 points (the fewest
+  in the league)" — reproduced by `rank()` over `mart_league_manager_profile` (−0.22 ties 5th; 7.40 = 10th of 10).
+* One week: Home "My week — week 4", Rankings' week selectbox **4**, Matchups caption "NFL 2026 · week 4 · first
+  kickoff Thu Oct 1, 8:15 PM ET", Waiver Wire "week 4", on both leagues — while `mart_nfl_calendar` says 3. Team Hub's
+  usage table: Malik Willis vs **MIN** (#20 vs QB) = `mart_player_week_projections` week 4 (MIN, 20); the
+  availability mart still says KC (#30), week 3.
+* Player card from a name (phone, click in the grid → new tab, card heading = the player, 0 exceptions): Team Hub
+  roster (Bo Nix; Patrick Mahomes), Trade Finder buy-low (Quinshon Judkins; De'Von Achane), Waiver Wire claim
+  (Tyler Allgeier) **and** drop (Bryce Young) in the same row, League transactions (Case Keenum; Sam Darnold) and
+  draft (Jeremiyah Love), Receivers (Amon-Ra St. Brown), Rankings (Chris Olave), Matchups board (Aaron Rodgers),
+  Players (Christian Watson). Not links: team rows (standings, profiles, roster rankings, kicker summary), defenders
+  (no card for defenders), defenses; rows without an NFL id link to the card's search (League draft 10 of 150 picks,
+  transactions 24 of 358 rows, lineups 36 of 1,336 — team defenses mostly). Card text (Team Hub's closest call,
+  Waiver cards) is not linked: that copy is C2's.
+* Detail level: iPhone → Phone (League standings 5 columns), desktop → Essentials (14); Everything picked on League
+  stays Everything after hopping to Team Hub and back; `?detail=phone` on desktop → Phone.
+* `pytest` 552 passed (22 new in `tests/test_mobile.py`: `current_week` before Thursday / after Thursday's kickoff /
+  after the Monday game / off-season / no schedule, the wired helper with `query` stubbed, `decision_week` delegating,
+  `align_opponents`; the Phone column choice, injury rule, ids, User-Agent default, `show()` at Phone and
+  Essentials, two links per row, kicker links); `ruff check src tests app` clean; `tests/test_app_guards.py` passes
+  with the Intel page gone; headless check (Home + 12 pages × 2 leagues + 6 Player-by-id runs = 32) 0 exceptions,
+  plus 78 more runs at Phone, Everything and whole-league: 0 exceptions, no table wider than 5 at Phone.
+* Screenshots (scratchpad `waveC/c1/shots/`): `{phone,desktop}_{dyn,scr}_{Matchups,League,Rankings,Team_Hub}_{fold,full}.png`,
+  `phone_{dyn,scr}_{Team_Hub,League,Matchups}_open.png`, `link_*.png` (the card each click opened).
+
+**Decisions for the PO.** Rankings shows injury as "· Q/D/O" after the name, not as a column (keeps the range in
+five columns at every level); the Phone default comes from the User-Agent (no width component); tables that are the
+page's main content on research pages (Players, Receivers, Trends) sit in an expander that starts open; the
+League page drops the "Points by week" line chart (the rank heatmap covers every team) and the standings'
+points-for bar; Data Status got the answer-first layout although no Wave C task owns it.
+
+**Open.** Player links still open a new tab (Streamlit's LinkColumn), and a new tab is a new session: the level
+returns to the device default and the team comes from the URL. Merge notes: C2's edits to `7_League_Intel.py`'s
+`howto` strings (if any) must be carried into the matching `8_League.py` expanders (git will report modify/delete);
+Home's page table and the Essentials sentence were edited in two lines (C2 owns Home's copy). No `--select` appended,
+no seeds touched; `metric_registry` rows I would have added: none (no new metric).
+### C3 2026-09-30 — R-13 kicker and D/ST projections (branch `dev/C3`, clone `league_lab_c3`)
+
+* **Built.** `src/league_lab/kdef.py` (model `kd1.0`): per kicker-week and team-defense-week a stat line —
+  K: FG made 0–19 / 20–29 / 30–39 / 40–49 / 50+, FG missed (blocked = missed), PAT made / missed; DEF: sacks,
+  INT, fumble recoveries, forced fumbles, defensive TDs (INT + fumble returns), ST TDs, safeties, blocked kicks
+  and **points allowed as a bucket distribution** (point forecast + out-of-fold errors → P(each `pts_allow_*`
+  bucket)) — priced in each league's scoring; one `HistGradientBoostingRegressor` per component (Poisson /
+  squared error), as-of team, opponent, game (Vegas, home, dome) and kicker-accuracy features; P10/P50/P90 =
+  projection + out-of-fold residual quantiles (calibrated interval). New marts `mart_kd_team_game` (team ×
+  game facts, 5,822 rows) and `mart_kd_week` (K / DEF unit × week with outcomes, 11,706 rows), macros
+  `def_points()` (the D/ST scoring twin of `kdef.DEF_STAT_MAP`) and `kd_team()` (OAK/SD → LV/LAC so the 2016–2019
+  schedule meets the stats files). `projections.project` appends the K/DEF rows to the v2 rows **before the one
+  `_write_projections` call** (freeze unchanged); `mart_player_week_projections` gains K/DEF rows (a `union all`
+  branch; no new columns, types unchanged); `mart_player_availability` gains the 32 team defenses for leagues that
+  start a DEF; `lineup.py` values K/DEF from `proj_points` (fallbacks unchanged); the waiver engine now sees
+  free-agent defenses through the availability rows; Kickers page opens with "Next week's kickers";
+  `league-lab backtest-kd`. Docs: METRICS § Kicker and defense projections (+ Lineup value sources), DATA_MODEL.
+* **Decisions** (PO to confirm): (1) **boosting, not a hand rates model** — same family and machinery as v2;
+  the inputs interact and have holes the trees take as they are; (2) **calibrated interval, not quantile models**
+  (errors barely depend on the level; ~5k rows); floor clipped at 0 like v2 (Scrubs D/ST < 0 in 6.6% of
+  team-weeks); (3) **DEF key in `ops.projections.gsis_id` = the Sleeper id** (`KC`, `LAR`); the mart shows DEF
+  `gsis_id` NULL and is keyed by `team` (dbt tests split by position); (4) **an unmapped Sleeper kicker** (Trey
+  Smack, no `player_id_map` row) takes his NFL team's projected kicker that week **only when the team has exactly
+  one** (never a name join; ambiguous = no value); (5) backtest rows go to **`ops.projection_backtest` tagged
+  `kd1.0`** (restored by the nightly's restore-state like v2's) and `backtest()`'s delete now skips `kd*` rows so a
+  `backtest-v2` rerun cannot wipe them; (6) K rows follow the injury report like QB–TE (Out / Doubtful / NFL IR
+  cannot play) once projected; (7) lineups' `model_version` stays the v2 tag (the K/DEF provenance is
+  `value_source = 'proj_points'` + the `kd1.0` rows); (8) the D/ST keys not projected (`def_st_ff`,
+  `def_st_fum_rec`, `st_ff`, `st_fum_rec`: 1 point each in Scrubs, ~0.1 a game) price 0 and are logged.
+* **Backtest** (walk-forward, League of Scrubs scoring, ~30 units × 18 weeks a season, same unit-weeks for all
+  three scorers; 80 s):
+
+  | Pos | Scorer | 2021 | 2022 | 2023 | 2024 | 2025 | mean Spearman | MAE | top-10 hit | coverage 80 |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | K | **kd1.0** | 0.186 | 0.077 | 0.105 | 0.180 | 0.147 | **0.139** | 3.71 | 40.3% | 79.3% |
+  | K | season PPG | 0.101 | −0.000 | 0.045 | 0.082 | 0.118 | 0.069 | 4.06 | 36.3% | |
+  | K | last-3 PPG | 0.052 | 0.061 | 0.024 | 0.065 | 0.083 | 0.057 | 4.23 | 36.2% | |
+  | DEF | **kd1.0** | 0.263 | 0.165 | 0.249 | 0.316 | 0.332 | **0.265** | 4.64 | 44.9% | 80.2% |
+  | DEF | season PPG | 0.098 | 0.013 | 0.050 | 0.154 | 0.076 | 0.078 | 5.14 | 36.6% | |
+  | DEF | last-3 PPG | 0.081 | 0.088 | 0.110 | 0.132 | 0.047 | 0.092 | 5.35 | 38.4% | |
+
+  **Ship decision: both ship as the model** (`KD_SHIP`): kd1.0 beats season PPG on Spearman in every season at
+  both positions and has the lower MAE every season. Honest caveat: a kicker Spearman of 0.14 is a small edge.
+* **Evidence** (clone `league_lab_c3`, 2026-09-30):
+  - D/ST pricing vs Sleeper (Scrubs rostered D/ST 2024–2025): 349 / 398 exact, 388 within 1 pt, MAE 0.19; the
+    mart's SQL pricing (`league_points()` / `def_points()`) equals `kdef`'s Python pricing on all 5,434 played
+    K/DEF unit-weeks 2021–2025 (max difference 0.00).
+  - Coverage: every rostered Scrubs K and DEF has a projection for every remaining week his team plays — DEF 154 /
+    154 roster-weeks (11 defenses), K 140 / 140 (10 kickers: 126 by NFL id + 14 for Trey Smack via GB's only
+    kicker). `ops.projections` 2026: K 448 + DEF 448 rows (32 units × weeks 4–18 with a game).
+  - Lineups (Scrubs, week 4): every K/DEF starter `value_source = 'proj_points'`; **0 unvalued starters** (before:
+    5 starters — Smack K, CAR/MIN/CIN/NE DEF — plus Josh Jacobs on a bench, an RB without a v2 row, out of scope);
+    weeks 4–18: `n_unvalued` 0 and `n_ppg_valued` 0 for every Scrubs roster.
+  - Waivers: 1,222 free-agent DEF moves (582 *start now* over 6 rosters, 21 defenses evaluated); MacZaddy's top
+    claim is "Claim Cleveland Browns (DEF), drop Kansas City Chiefs: +0.9 this week, +9.7 over the next 4 weeks";
+    the sweep 2.1–2.5 s (was 1.65 s).
+  - Worked example (week 4, reproduced by hand): Will Reichard (MIN vs MIA) 0.002 + 0.534 + 0.635 FG 0–39 × 3 +
+    0.561 FG 40–49 × 4 + 0.426 FG 50+ × 5 − 0.374 missed + 2.844 PAT − 0.082 PAT missed = **10.28** = stored
+    `proj_points`; P10 / P50 / P90 = 10.28 + (−5.66, −0.42, +5.98) = 4.62 / 9.86 / 16.26. Vikings D/ST vs MIA:
+    3.33 sacks + 2 × 1.11 INT + 2 × 0.57 FR + 0.86 FF + 6 × (0.22 + 0.02) TD + 2 × (0.015 + 0.022) + bucket
+    probabilities (0.02, 0.07, 0.20, 0.30, 0.24, 0.12, 0.05) × (10, 7, 4, 1, 0, −1, −4) = **10.54** = stored.
+  - Freeze and determinism: two consecutive `project` runs give byte-identical weeks 4–18 for all positions
+    (17,164 rows, md5 without `fitted_at` `b42e5bb8…` both times); weeks 1–3 untouched (3,554 rows, md5
+    `e2631911…` before any change and after); QB–TE weeks 4–18 unchanged by the K/DEF addition (16,268 rows,
+    `aacf0043…` before and after); `ops.projection_drift` unchanged (18 rows, `f9e64de2…` without `run_at`); v2
+    backtest rows unchanged (2,160, `9fe9cc91…`). `assert_frozen_projections_precede_kickoff` passes.
+  - dbt: `build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+
+    mart_player_availability+` PASS=73 (incl. the lineup, roster-value and waiver-legality tests); `mart_kd_*`
+    PASS=10; pytest 541 passed (11 new in `tests/test_kdef.py`); ruff clean; headless check 34 runs, 0 exceptions.
+  - `league-lab project` time, back to back on a quiet sandbox (load 1.2–2.0, `OMP_NUM_THREADS=2`): **before (main,
+    `8d8cead`) 130.3 s, after 134.8 s**; the K/DEF step itself ≈ 12 s (load + fit K + fit DEF + price), the waiver
+    sweep 2.0 s (was 1.7 s: more candidates), lineups unchanged (0.6–0.8 s). Earlier runs under three developers'
+    contention (load 5–7) took 1,142 s before / 1,393 s after — the difference there is the contention, not R-13.
+* **Open / for the PO**: `app/lib/table.py` help strings for `player_value` / `value_source` still say "K = season
+  PPG, DEF = Sleeper PPG" (shared registry, append-only for C3: C1/C2 to update); the Player card's
+  no-projection text for a K ("the model projects QB, RB, WR and TE") is now only reached on a bye and should say
+  so; the waiver card says "He starts at DEF" for a team defense; Rankings' Position selector does not gain K/DEF
+  (not a one-line change: the baseline branch and the backtest selector index by QB–TE); a `metric_registry` row
+  I would have added: `kd_projection, kd1.0, league points of the projected K/DEF stat line, per unit-week, active`.
+  The nightly does not rerun `backtest-kd` on its own (the rows are restored with `ops.projection_backtest`; run
+  `league-lab backtest-kd` after a `KD_MODEL_VERSION` change).
+### C2 2026-09-30 — U-14 plain words + U-15 model explainer and honest importance (branch `dev/C2`, clone `league_lab_c2`)
+
+* **Built.** *Home* (`app/Home.py`): a three-sentence intro; **Worth a look** — four one-line links with the
+  selected team's number (schedule luck with its league rank, points left on the bench per week with its rank, the
+  best bargain on the roster = the starter-level player (top 12 QB/TE, top 24 RB/WR by PPG) who cost least: free
+  agent / waiver first, then the latest draft round, trades excluded; the rostered player with the highest first-read
+  share over the last 3 games → his card), league-level lines without a team, 4 queries; `st.page_link`s that keep the
+  session (league / team in `query_params`) and wrap at phone width (a 2-line CSS rule scoped to page links); the
+  League Intel link resolves to League when U-16 deletes the page. The page list is now **the questions a manager
+  asks** → page (13 links, same file-existence rule). **What's new** reads `app/whats_new.md` (one plain entry per
+  release, rewritten from CHANGELOG, newest shown, the rest under "Earlier updates"); CHANGELOG stays the technical
+  record. Glossary shows Column + Meaning (no field names). My Week untouched. *Every page's "How to read this"*: 31
+  `howto(...)` / expander bodies on all 13 pages + the cards' box (`cards.howto_cards`) rewritten to 3–5 bullets
+  that say what to do, text-only edits inside the literals. *Registry*: 53 `help=` strings de-jargoned (no key,
+  label or kind touched). *Rankings "The model"* (my region only): "Is this a model you trained? Yes", what it learned
+  from, what it predicts (one small gradient-boosted model per stat, priced in the league's scoring), floor/ceiling,
+  how it was graded, Spearman once with its gloss, the kickoff board, what it does not know, refresh cadence; then
+  **What it leans on most**: the top input per position in one line, a "how we measured it" caption, a tab per
+  position (the board's position first) with a one-line reading and the top 10 as a numbered list in points
+  (a grid hid the number at 390 px). The old quantile table is gone from the page. The old-formula expander caption
+  is plain too. `docs/WORDS.md`: the rules and the term → words table.
+* **Importance (U-15).** `projections.component_importance`: per input, 5 shuffles, every component re-predicted,
+  **MAE** (in the stat's unit, so × points per unit = points; a Poisson deviance has no points equivalent), the
+  headline = rise in MAE of the **priced line** vs actual points in the reference scoring (`component = 'total'`),
+  plus one row per stat in its unit with `importance_points`. `importance_after_project` runs at the end of `project`
+  (after lineups and waivers), **once per `MODEL_VERSION` × training window**, on the newest training season (2025)
+  with a **twin** of the component models fitted on 2016–2024 (= the backtest's 2025 fold), kept on later runs;
+  `run_importance()` forces. `ops.projection_importance` gains `model`, `component`, `feature_label`, `unit`,
+  `importance_sd`, `importance_points`, `baseline_mae`, `n_rows`, `train_seasons`, `eval_season`, `fit_seasons`
+  (migrate + `_write` DDL); the 300 pre-U-15 rows are labelled `quantile_p50` / `p50_residual` and `backtest-v2` now
+  rewrites only those. New view `mart_projection_importance` (5 tests), appended to the `make project` and nightly
+  `projection-marts` `--select`. `FEATURE_LABELS`: a plain name for all 74 inputs. `MODEL_VERSION` unchanged.
+* **Evidence** (clone `league_lab_c2`, 2026-09-30):
+  * **Projections byte-identical**: md5 over every value column of `ops.projections` 2026 weeks 4–18 (16,268 rows,
+    `fitted_at` excluded) = `0d99a972fe70107f3e40c8b8373b664f` on the clone as delivered, after a `project` on the
+    unchanged code (14:13 UTC), after the first `project` with U-15 (15:00, importance computed) and after the second
+    (15:10, importance kept). Timings under a shared 2-core box: 2 m 32 s before; 6 m 16 s with the one-off importance
+    (the importance step 2 m 44 s: 4 twin fits + 74 × 5 shuffles × 4 positions); 3 m 43 s on the next run (importance
+    step: one count query). Note for the PO: `OMP_WAIT_POLICY=PASSIVE` made the fit ~7× faster while C3's fit shared
+    the cores (OpenMP spin-waiting), with identical numbers.
+  * **Importance, 2025, League of Scrubs scoring, points of error added** (top 3; the average miss in brackets):
+    QB (6.03) snap share L3 +0.38, pass attempts/G L3 +0.20, Vegas implied total +0.18; RB (4.29) carry share L3
+    +0.36, rushing yards/G season +0.11, target share season +0.06; WR (3.90) snap share L3 +0.12, receiving yards/G
+    last season +0.04, xPPG season +0.04; TE (2.98) target share season +0.19, snap share L3 +0.10, receiving yards/G
+    last season +0.10. 2,442 rows (74 inputs × (1 total + the position's stats)). **In-sample vs held out**
+    (production models on 2025 vs the twin): same top input for all four positions; rank correlation over the 74
+    inputs 0.68 / 0.80 / 0.62 / 0.58, top-10 overlap 7 / 9 / 8 / 6; in-sample inflates what the model memorised
+    (QB rushing yards/G 0.20 vs 0.05) — hence the twin. **Priced vs weighted sum** of per-stat rises: Spearman
+    0.97–0.98, top-10 overlap 8–9 of 10 (`scratchpad/waveC/c2/imp_compare.py`).
+  * **Rankings** (AppTest, both leagues as dynasty 12 / Scrubs 2): the top line names QB snap share L3 · RB carry
+    share L3 · WR snap share L3 · TE target share season; 4 tabs, 4 readings, 4 lists of 10; no `priced_line` and no
+    "interval model" caption on the page. Playwright: expander at 390 and 1300 px, main `scrollWidth` = viewport.
+  * **Home** (AppTest + Playwright, dynasty 12 / Scrubs 2): Worth a look = "Schedule luck: −0.9 wins … (12th luckiest
+    of 12)", "Points left on your bench: 24.6 a week (7th most of 12)", "Best bargain: Parker Washington (Free agent
+    2025 wk 9) is the WR14", "first look: Parker Washington 46%" / "−0.2 wins (5th of 10)", "3.7 a week (10th of 10)",
+    "Bryce Young (Free agent 2026 wk 2) is the QB2", "Parker Washington 46%"; each reproduced by hand from
+    `mart_league_manager_profile` (rank over the league), `mart_league_keeper_candidates` ⟕ `mart_league_acquisitions`
+    and `mart_player_availability` (0.4643). Whole-league Home renders both leagues. 390 px: `scrollWidth` 390, every
+    link wraps; 1300 px fine. Screenshots `scratchpad/waveC/c2/shots/{home,rankings_model}_{dyn12,scrubs2}_{390,1300}.png`.
+  * `pytest` 538 passed (+8: `tests/test_projection_importance.py` — every input named and plain, unit points,
+    the priced importance reproduced by hand with the same shuffles, a 0-point stat adds 0 points, unused / constant
+    inputs 0, determinism and a skipped column not shifting the others, too few rows; negative controls: unweighted
+    aggregation → 3 failed, one label removed → 1 failed). `ruff` clean. Headless check: 13 pages × 2 leagues + 6
+    Player runs + Home/Rankings as dynasty 12 + Home without a team × 2 = 38 runs, 0 exceptions, 0 errors. `dbt build`
+    of the project select: PASS=70.
+  * **Jargon grep** (`v2|P10|P90|P50|Spearman|xPPG|z-score|mart|quantile|gsis` in user-visible string literals of
+    `app/`, SQL / identifiers / docstrings skipped): 33 hits — 12 in my copy, each with its gloss in the same box
+    (xPPG = expected points per game; Spearman naming the grade tables' column header; P10/P90 explained in the Floor /
+    Ceiling tooltips); 10 registry **labels** I may not edit; 11 in C1's Rankings / Waiver Wire regions (see Open).
+* **Open / for the PO.** (1) Labels to rename at merge (registry, C1 regions): `Proj (v2)` → `Proj`; `Floor (P10)` →
+  `Floor`; `Ceiling (P90)` → `Ceiling`; `Median (P50)` → `Middle`; `Spearman` / `Spearman · backtest` / `Spearman · this
+  season` → `Order score …`; `xPPG …` labels keep (glossed in every tooltip); Rankings' model picker "Projection v2 · …"
+  → "League Lab projection · …"; chart legend "Floor to ceiling (P10–P90)" and hover "P10/P90" → floor/ceiling; "v2
+  minus baseline (Spearman, per held-out season)" → "Projection minus old formula (order score, per past season)";
+  "No v2 backtest … (`make backtest-v2`)" → "No backtest for this league yet". (2) League Intel's three rewritten boxes
+  live in `7_League_Intel.py`, which U-16 deletes: carry them into League with the charts. (3) "What's new" has only
+  my entry for Wave C: add one line each for C1 (phone layout, League page) and C3 (kicker and defense projections)
+  in `app/whats_new.md`. (4) The Waiver Wire box no longer says "free-agent defenses are not valued yet" (C3 changes
+  that). (5) Importance is measured in the reference league's scoring only; the dynasty page says so.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

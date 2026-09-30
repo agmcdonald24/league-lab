@@ -5,38 +5,41 @@ import streamlit as st
 from lib.charts import line_chart
 from lib.db import query, require_relations
 from lib.table import Col, howto, show
-from lib.ui import freshness_banner, next_week_info, perspective, reference_scoring_note, setup
+from lib.ui import current_season as season_of
+from lib.ui import freshness_banner, perspective, reference_scoring_note, setup
 
 setup("Trends")
 freshness_banner()
 require_relations("mart_player_trend_tags", "mart_player_trends", "mart_defense_trends")
 league_id, roster_id, members = perspective(require_team=False)
-cal = next_week_info()
-current_season = int(cal["season"]) if not cal.empty else None
+current_season = season_of(league_id)   # one week rule (C1): the league's season, not mart_nfl_calendar
 seasons = query("select distinct season from analytics.mart_player_trend_tags order by season desc")["season"].astype(int).tolist()
 
 howto(
-    "For every player and every usage metric, the last **three games** are compared with the games before them. "
-    "A metric is called **up** or **down** only when the move clears two bars: a practical minimum (e.g. 3 points of target share) "
-    "*and* a size at least equal to the player's own week-to-week noise (**Strength** ±1; ±2 is a clear change).",
-    "**Momentum** averages strength across the *opportunity* metrics — targets, snaps, carries, air yards, expected points — and "
-    "deliberately ignores fantasy points. A player can score three touchdowns without his role changing at all.",
-    "**Trend** spells out which metrics moved. \"↑ targets, ↑ snaps, ↓ aDOT\" (more work, shallower) is a different story from "
-    "\"↑ targets, flat snaps, ↑ aDOT\" (same snaps, deeper role); both read as \"trending up\" on a points-only site.",
-    "Nothing is called a trend before a player's fourth game. Early in the season the page shows an *early read* instead and says so.",
+    "**Use it to spot a role change before the points show up**: add the risers off waivers, and think about moving the fallers.",
+    "Each player's last **3 games** are compared with his games before that. A number is called **up** or **down** only when the "
+    "change is big enough to matter (say, 3 points of target share) *and* bigger than his normal week-to-week swing.",
+    "**Strength** says how unusual the change is for him: 1 is worth a look, 2 is a clear change. **Momentum** averages that over "
+    "his work (targets, snaps, carries, how far downfield he is targeted, expected points) and ignores his fantasy points on "
+    "purpose: three touchdowns can happen without the role changing at all.",
+    "**Trend** names what moved: \"↑ targets, ↑ snaps\" is more work; \"↑ targets, ↑ aDOT\" (targeted deeper downfield) is a "
+    "different, deeper role.",
+    "Nothing is called a trend before a player's fourth game; until then the page shows an *early read* and says so.",
     title="How to use this page",
 )
 reference_scoring_note("Points, expected points and defense trends on this page")
 
 # ---------------------------------------------------------------- scope filters
-c0, c1, c2, c3, c4 = st.columns([0.8, 1.2, 1.2, 1, 1])
-season = c0.selectbox("Season", seasons, index=seasons.index(current_season) if current_season in seasons else 0,
-                      help="Past seasons show the trends as they stood at the end of that season — useful to see how the logic reads a full year.")
+# one compact row (U-13): who and which positions; the rare ones (season, minimum games, list length) in a popover
+c1, c2, c3 = st.columns([1.3, 1.3, 1], vertical_alignment="bottom")
+with c3.popover("More filters", width="stretch"):
+    season = st.selectbox("Season", seasons, index=seasons.index(current_season) if current_season in seasons else 0,
+                          help="Past seasons show the trends as they stood at the end of that season — useful to see how the logic reads a full year.")
+    min_games = st.number_input("Min games", 1, 17, 4)
+    top_n = st.number_input("Show", 5, 50, 15)
 positions = c1.multiselect("Positions", ["QB", "RB", "WR", "TE"], default=["RB", "WR", "TE"])
 scope_options = {"all": "Everyone", "fa": "Free agents in this league", "rostered": "Rostered in this league", "team": "Selected team only"}
 scope = c2.selectbox("Who", list(scope_options), format_func=lambda k: scope_options[k], index=1 if season == current_season else 0, key="trends_scope")
-min_games = c3.number_input("Min games", 1, 17, 4)
-top_n = c4.number_input("Show", 5, 50, 15)
 if season != current_season:
     st.caption(f"Showing NFL {season}. \"Rostered by\" and matchup columns reflect today's league rosters, not {season}'s.")
 
@@ -90,16 +93,33 @@ if enough.empty:
     if int(min_games) > 2:
         st.caption("Early read: *Min games* is capped at 2 until the season has four games of data.")
     # the early read is about the latest game vs the season, so those columns stay visible whatever the detail level
-    show(early.head(int(top_n) * 2), ["player_name", "position", "team", "rostered_by_team", "games", "metric_label", "value_season", "value_latest", "change", "change_vs_minimum"],
-         overrides={"value_latest": Col("Latest game", "num2"), "change_vs_minimum": Col("Change vs minimum", "num2", "How many times the metric's minimum meaningful change the move is; 1 = just meaningful")})
+    with st.container(border=True):
+        if early.empty:
+            st.markdown("**No early read yet: nobody in this scope has played two games.**")
+        else:
+            e = early.iloc[0]
+            st.markdown(f"**Biggest early move: {e['player_name']} ({e['position']}), {e['metric_label']} {float(e['value_season']):.1f} "
+                        f"for the season, {float(e['value_latest']):.1f} in his latest game.**")
+    with st.expander("The early read, every column", expanded=True):
+        show(early.head(int(top_n) * 2), ["player_name", "position", "team", "rostered_by_team", "games", "metric_label", "value_season", "value_latest", "change", "change_vs_minimum"],
+             overrides={"value_latest": Col("Latest game", "num2"), "change_vs_minimum": Col("Change vs minimum", "num2", "How many times the metric's minimum meaningful change the move is; 1 = just meaningful")},
+             phone_cols=["player_name", "metric_label", "value_season", "value_latest", "change"])
 else:
     cols = ["player_name", "position", "team", "rostered_by_team", "games", "tags", "momentum", "target_share_l3", "target_share_change",
             "snap_share_l3", "snap_share_change", "expected_points_l3", "expected_points_change", "points_l3", "points_change",
             "injury_status", "opponent", "opp_rank_std"]
+    up, down = enough.sort_values("momentum", ascending=False).head(int(top_n)), enough.sort_values("momentum").head(int(top_n))
+    with st.container(border=True):     # the answer first (U-13): who is moving, then the lists
+        u, d = up.iloc[0], down.iloc[0]
+        st.markdown(f"**Rising most: {u['player_name']} ({u['position']}, {u['tags'] or 'role growing'}); "
+                    f"falling most: {d['player_name']} ({d['position']}, {d['tags'] or 'role shrinking'}).**")
+    phone = ["player_name", "position", "tags", "momentum", "rostered_by_team"]
     st.subheader("Trending up — opportunity growing")
-    show(enough.sort_values("momentum", ascending=False).head(int(top_n)), cols)
+    with st.expander(f"The {len(up)} rising most", expanded=True):
+        show(up, cols, phone_cols=phone)
     st.subheader("Trending down — opportunity shrinking")
-    show(enough.sort_values("momentum").head(int(top_n)), cols)
+    with st.expander(f"The {len(down)} falling most"):
+        show(down, cols, phone_cols=phone)
 
 # ---------------------------------------------------------------- player detail
 st.subheader("One player, every metric")
@@ -117,7 +137,9 @@ if pick:
     for c in ("value_prior", "value_l3", "value_season", "change", "slope_per_game"):
         detail.loc[pct_rows, c] = pd.to_numeric(detail.loc[pct_rows, c], errors="coerce") * 100
     detail["metric_label"] = detail["metric_label"] + detail["display_kind"].map({"pct": " (%)", "num1": ""}).fillna("")
-    show(detail, ["metric_label", "games_with_metric", "value_prior", "value_l3", "value_season", "change", "z", "slope_per_game", "direction", "confidence"])
+    with st.expander(f"{pick}: every metric", expanded=True):
+        show(detail, ["metric_label", "games_with_metric", "value_prior", "value_l3", "value_season", "change", "z", "slope_per_game", "direction", "confidence"],
+             phone_cols=["metric_label", "value_prior", "value_l3", "change", "direction"])
 
     series = query(
         """select p.week, 'target_share' as metric, 'Target share' as metric_label, p.target_share as value
@@ -145,8 +167,11 @@ if pick:
 
 # ---------------------------------------------------------------- defenses
 st.subheader("Defenses getting softer or stiffer")
-howto("Points allowed to each position over a defense's last three games versus the games before, in units of that unit's own game-to-game noise. "
-      "**softer** = giving up more lately (start players against them); **stiffer** = tightening up. Needs four games.")
+howto("**Softer** means the defense has given up more to that position over its last 3 games than before: a better matchup "
+      "than its season rank says, so lean toward starting players against it.",
+      "**Stiffer** means it has tightened up: be careful with players facing it, even if the season numbers look friendly.",
+      "Only changes bigger than the defense's normal week-to-week swing are listed (**Strength** 1 = worth a look, 2 = clear). "
+      "A defense needs four games before it shows up here.")
 dt = query(
     """select defense, position, games, allowed_prior, allowed_l3, allowed_season, change, z, direction
        from analytics.mart_defense_trends where season = %s and direction in ('softer','stiffer') order by abs(z) desc""",
@@ -155,4 +180,11 @@ dt = query(
 if dt.empty:
     st.caption("No defense has four games yet, or none has moved beyond noise.")
 else:
-    show(dt.head(20))
+    with st.container(border=True):
+        soft = dt[dt["direction"] == "softer"].head(1)
+        stiff = dt[dt["direction"] == "stiffer"].head(1)
+        bits = [f"{r.defense} vs {r.position} ({r.direction}: {float(r.allowed_l3):.1f} a game lately, {float(r.allowed_prior):.1f} before)"
+                for r in pd.concat([soft, stiff]).itertuples()]
+        st.markdown("**Biggest moves: " + "; ".join(bits) + ".**")
+    with st.expander("Every defense that moved beyond noise"):
+        show(dt.head(20), phone_cols=["defense", "position", "allowed_prior", "allowed_l3", "direction"])

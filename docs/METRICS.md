@@ -108,7 +108,7 @@ and season in the reference league's scoring* (the first id in `LEAGUE_LAB_SLEEP
 
 | Where | Scoring | Relations |
 |---|---|---|
-| League pages — Team Hub, Waiver Wire, Matchups start/sit, Trade Finder, League Intel, League (draft), weekly packs: PPG, points, PPG (L3/L5), xPPG, PPG − xPPG, positional strength, keeper / roster-value ranks, draft season points | the selected league's **current** scoring | `fct_player_game_league` → `mart_league_player_season` → `mart_player_availability`, `mart_league_keeper_candidates`, `mart_league_positional_strength`; `mart_league_draft` via `chain_id` |
+| League pages — Team Hub, Waiver Wire, Matchups start/sit, Trade Finder, League (manager profiles, draft), weekly packs: PPG, points, PPG (L3/L5), xPPG, PPG − xPPG, positional strength, keeper / roster-value ranks, draft season points | the selected league's **current** scoring | `fct_player_game_league` → `mart_league_player_season` → `mart_player_availability`, `mart_league_keeper_candidates`, `mart_league_positional_strength`; `mart_league_draft` via `chain_id` |
 | Observed league history — standings, matchups, lineups, `points_recomputed` | that league-*season*'s own scoring (Sleeper's points) | `league_player_week`, `fct_league_matchup`, … |
 | Rankings — projection v2 | the selected league's scoring | `mart_player_week_projections` |
 | NFL research — Players, Trends, Receivers, defense vs position (and the **Opp rank** columns derived from it), the baseline projection formula, the projection features | reference scoring | `fct_player_game.points_current_scoring`, `mart_player_season`, `mart_player_recent_form`, `mart_player_expected_*`, `mart_defense_*`, `mart_player_week_features/_rankings` |
@@ -283,7 +283,8 @@ this table on the same harness, out of sample, before it replaces the baseline.
 ## Projection v2 — stat-line projections with an interval (v2.0, 2026-09-26)
 
 Plan M-01 / M-03. Code: `league_lab.projections`; tables `ops.projections`, `ops.projection_backtest`,
-`ops.projection_importance`; marts `mart_player_week_projections`, `mart_projection_backtest`.
+`ops.projection_importance`; marts `mart_player_week_projections`, `mart_projection_backtest`,
+`mart_projection_importance` (U-15).
 
 ### What is projected
 
@@ -343,6 +344,57 @@ shown for the current season is out of sample. Refit cadence: every refresh (≈
 hyperparameter change is a new `MODEL_VERSION`. Every week is re-projected by each refit, but only the
 weeks that have not kicked off are **written**: a started week keeps the rows it had (next section).
 
+### What drives the projection — importance (v2.0, plan U-15, 2026-09-30)
+
+**Before U-15** Rankings showed the permutation importance of the **P50 interval model** (`importance()`,
+written by `backtest-v2`): its inputs are the features *plus the priced line*, and the priced line
+dominated, so "price line 0.017, snap 0.007" described the model that places the floor and ceiling around
+the projection, not the projection. Those rows stay in `ops.projection_importance`, labelled
+`model = 'quantile_p50'`, `component = 'p50_residual'`, and are no longer shown.
+
+**Now** (`component_importance`, `importance_after_project`; rows `model = 'component'`):
+
+* **Which models.** The component models (one per stat per position, `COMPONENTS`) that make the projection.
+  They are measured as a **twin** of the production fit: same features, hyperparameters and training filter,
+  fitted on the production window minus its newest season (`fit_seasons` 2016–2024) and scored on that newest
+  season (`eval_season` 2025) — the models that grade 2025 in the walk-forward backtest. *Why not the
+  production models on 2025* (the newest training season itself): both were measured on the clone. The top
+  input per position is the same, but scoring rows a model was fitted on overstates what it memorised — QB
+  rushing yards per game this season 0.20 points in-sample vs 0.05 held out, implied team total 0.34 vs 0.18;
+  over all 74 inputs the two orders correlate 0.68 (QB), 0.80 (RB), 0.62 (WR), 0.58 (TE), top-10 overlap
+  7, 9, 8, 6 of 10. The page shows the held-out number, consistent with "graded on seasons it never saw".
+* **Scrambling.** Per input, `IMPORTANCE_REPEATS` = 5 shuffles of that column across the season's rows
+  (`numpy` `default_rng(0)`, drawn for every input in `FEATURES` order, so an input that never varies — it
+  scores 0 — never shifts the others); every component re-predicted from the scrambled matrix, clipped at 0
+  like the board. `importance` = mean rise in error, `importance_sd` = its standard deviation over the 5.
+* **Error: MAE, not Poisson deviance.** MAE is in the stat's own unit (targets, yards …), so times the points
+  a unit is worth it is points; a deviance has no points equivalent.
+* **One number per input per position** (`component = 'total'`, `unit = 'points'`): the rise in the MAE of the
+  **priced line** against the points the player actually scored, both in the **reference league's scoring**
+  (League of Scrubs; `unit_points`: 0.5 a catch, 0.1 a yard, 6 a TD, 0.04 a passing yard, 4 a passing TD, −1 an
+  INT, −2 a fumble lost; it has no bonus keys, so a stat line's points are exactly that sum). This weights each
+  component by its **points per unit** (not by its share of points) and adds the errors *before* taking the
+  absolute value, so errors in different stats offset or compound the way they do in the projection, and the
+  stats the model does not project (a WR's pass) stay in the actual points like the board's misses. Checked
+  against the alternative the plan offered — the per-component rises weighted and summed
+  (`importance_points` summed over components): the two order the 74 inputs almost identically (Spearman
+  0.97–0.98 per position, top-10 overlap 8–9 of 10), so the choice moves the numbers, not the story.
+  Targets, carries and attempts are worth 0 points per unit, so an input that moves only the targets model adds
+  no points of error: volume matters through the catches, yards and touchdowns it predicts
+  (`tests/test_projection_importance.py`).
+* **Per stat** (`component` = the stat, `unit` = the stat): the rise in that component's MAE in its own unit,
+  and `importance_points` = rise × |points per unit|, for a breakdown; `baseline_mae` is the unscrambled MAE
+  (points for `total`), `n_rows` the rows scored.
+* **Cadence.** Written by `league-lab project` after the projections, lineups and waiver moves, **once per
+  `MODEL_VERSION` × training window** (`train_seasons` of the production fit); later runs keep it (the nightly
+  restores the table from the hosted copy with the rest of `ops`). `projections.run_importance()` forces a
+  recompute. It never reads or changes the production models: the board is byte-identical with or without it.
+* **Published** by the view `mart_projection_importance` (`importance_rank` per model version × model × position
+  × component; added to the `make project` / nightly projection-marts `--select`) and shown in Rankings' "The
+  model" expander: top 10 per position, plain names from `projections.FEATURE_LABELS` (every input has one,
+  tested), as "points of error added". Caveats said on the page: inputs that move together (targets and catches,
+  a season and its last 3 games) share the credit, so each looks smaller than it is; importance is not cause.
+
 ### Decision record (plan B5, 2026-09-29): a week's board is frozen at its first kickoff
 
 **Rule.** `league-lab project` rewrites a league-week's rows in `ops.projections` on every refit until
@@ -396,6 +448,96 @@ Scope difference from the backtest: the backtest scores every player who played,
 rankable ones (Out / Doubtful / IR who played anyway are left out, as on the board). A few weeks are a small sample: read a gap to the backtest as a
 question, not a verdict, until mid-season.
 
+## Kicker and defense projections (kd1.0, plan R-13, 2026-09-30; `league_lab.kdef`, `league-lab backtest-kd`)
+
+League of Scrubs starts a K and a DEF. Until R-13 the lineup valued a K at his season PPG, a DEF at the
+points Sleeper had observed for it, and a newly rostered K / DEF at 0 ("unvalued"); the waiver engine could
+not see free-agent defenses at all. kd1.0 projects both the way v2 projects QB–TE: a **stat line per
+unit-week, priced in each league's own scoring**, with a calibrated interval, backtested walk-forward.
+
+**Units and outcomes** (`mart_kd_team_game`, `mart_kd_week`). A K unit is a kicker (`gsis_id`); a DEF unit is
+a team defense, keyed by its Sleeper id (`KC`; the Rams are `LAR` where nflverse says `LA`). Every kicker
+who kicked in a week's game, plus every kicker on his team's latest weekly roster (ACT) for a week without
+one (the upcoming weeks); every team × scheduled game for DEF. Outcomes come from the nflverse weekly
+player stats (K) and team stats (DEF) and the schedule's final score; one franchise code throughout (the
+2016–2019 schedule's OAK / SD are LV / LAC, as the stats files already say).
+
+| Position | Line component (`out_*` / projected) | Source column | Priced by |
+|---|---|---|---|
+| K | FG made 0–19, 20–29, 30–39, 40–49, 50+ | `fg_made_*` (50+ = 50–59 + 60+) | `fgm_*` |
+| K | FG missed (blocked counted as missed) | `fg_missed + fg_blocked` | `fgmiss` |
+| K | FG missed by distance (projected: FG missed × the training seasons' distance shares; blocked kicks are not bucketed by nflverse) | `fg_missed_*` | `fgmiss_*` |
+| K | PAT made / missed (blocked counted as missed) | `pat_made`, `pat_missed + pat_blocked` | `xpm`, `xpmiss` |
+| DEF | sacks, interceptions, opponent fumbles recovered, forced fumbles | `def_sacks`, `def_interceptions`, `fumble_recovery_opp`, `def_fumbles_forced` | `sack`, `int`, `fum_rec`, `ff` |
+| DEF | defensive TDs (interception and fumble returns) | `def_tds + fumble_recovery_tds` | `def_td` |
+| DEF | special-teams TDs | `special_teams_tds` | `def_st_td` |
+| DEF | safeties, blocked kicks (punt + FG + PAT) | `def_safeties`, `def_*_blocks` | `safe`, `blk_kick` |
+| DEF | points allowed (the opponent's final score) | schedule | `pts_allow_0` … `pts_allow_35p` |
+
+K keys price through the same Sleeper-key → nflverse-column map as every player (`scoring.SLEEPER_STAT_MAP`,
+`league_points()`). The D/ST keys are not in that seed (it maps player keys and is generated from
+`scoring.py`); `kdef.DEF_STAT_MAP` / `PTS_ALLOW_BUCKETS` and the dbt macro `def_points()` are the one
+definition (a unit test checks the two list the same keys). **Reconciled with Sleeper**: League of Scrubs'
+rostered D/ST weeks 2024–2025, priced this way against the points Sleeper counted: 349 of 398 exact, 388
+within 1 point, MAE 0.19 (the misses are ±1 forced-fumble / recovery counting and special-teams
+fumbles). Not projected (they price 0 and the log names them): `def_st_ff`, `def_st_fum_rec`, `st_ff`,
+`st_fum_rec` (Scrubs weights them 1 each; about 0.1 a game), and yards-allowed buckets (no league scores them).
+
+**Features** (as of the week: games before it; NULL = not known yet, handled natively by the trees):
+the game — week, home, dome (roof dome / closed), Vegas implied totals for both sides, total, spread; the
+team's per-game rates season to date, last 3 (this season) and last season — K: points scored, FG attempts
+and makes, PAT attempts, red-zone plays, EPA per play; DEF: sacks, interceptions, fumble recoveries, forced
+fumbles, defensive and special-teams TDs, blocked kicks, points allowed; the opponent's — K: points the
+defense allows and FG attempts it allows; DEF: the offense's sacks taken, giveaways, points, EPA per play,
+plays; and for K the kicker's career before the week: games, attempts 0–39, accuracy 0–39 / 40–49 / 50+ /
+PAT each shrunk to a prior (0.93 / 0.80 / 0.66 / 0.94 with 10 pseudo-attempts), share of attempts from 50+.
+
+**Model** (fixed constants; a change is a new version): one `HistGradientBoostingRegressor` per component,
+Poisson loss for the counts, squared error for points allowed (150 iterations, learning rate 0.04, 7
+leaves, ≥ 80 rows per leaf, L2 1.0, seed 0). Chosen over a hand rates model because the inputs interact
+(implied total × dome × the kicker's range) and have holes (week 1, a new kicker, no line yet) the trees
+handle as they are, and the stat-line machinery is v2's. **Points allowed as a distribution**: the
+out-of-fold forecast errors of points allowed (components fitted on the odd training seasons predict the
+even ones and vice versa) are added to the forecast; the share landing in each whole-point bucket
+([lo − 0.5, hi + 0.5), below 0.5 = shutout) is the bucket's probability and the bucket points are the
+probability-weighted sum. **Interval**: P10 / P50 / P90 = the projection + the 10th / 50th / 90th
+percentile of the out-of-fold residuals of the league's points (a calibrated interval, not quantile models:
+K and D/ST errors barely depend on the level, and a few thousand unit-weeks do not support a conditional
+one); the floor is clipped at 0 like v2's (a Scrubs D/ST scores below 0 in 6.6% of team-weeks 2021–2025, a
+K in 1.5%). Production fits on every completed season (2016–2025) and projects every unit-week of the
+season; rows go to `ops.projections` (`model_version = 'kd1.0'`, `position` K / DEF, `gsis_id` = the
+kicker's id or the Sleeper defense id) only for the leagues that start the position, through the same B5
+writer as v2 (`projections.project` appends them before `_write_projections`), so the freeze applies
+unchanged. v2's drift reads QB–TE only (`load_board` filters the positions) and v2's backtest bookkeeping
+counts `v2.0` rows; `backtest-v2`'s delete leaves the `kd*` rows alone.
+
+**Backtest** (walk-forward 2021–2025, League of Scrubs scoring, every kicker / D/ST that played, scored per
+week on the unit-weeks all three scorers know; ~30 units a week, 18 weeks a season; `ops.projection_backtest`
+rows tagged `kd1.0`, scorers `kd_points`, `season_ppg`, `last3_ppg`). `season_ppg` = league points per game
+this season before the week (last season's before his first game); `last3_ppg` = his last three games
+before the week, across seasons. Top-N = 10 (a 10-team league starts ten of each).
+
+| Pos | Scorer | Spearman 2021 | 2022 | 2023 | 2024 | 2025 | **mean** | MAE (mean) | Top-10 hit | Coverage 80 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| K | kd1.0 | 0.186 | 0.077 | 0.105 | 0.180 | 0.147 | **0.139** | 3.71 | 40.3% | 79.3% |
+| K | season PPG | 0.101 | −0.000 | 0.045 | 0.082 | 0.118 | 0.069 | 4.06 | 36.3% | |
+| K | last-3 PPG | 0.052 | 0.061 | 0.024 | 0.065 | 0.083 | 0.057 | 4.23 | 36.2% | |
+| DEF | kd1.0 | 0.263 | 0.165 | 0.249 | 0.316 | 0.332 | **0.265** | 4.64 | 44.9% | 80.2% |
+| DEF | season PPG | 0.098 | 0.013 | 0.050 | 0.154 | 0.076 | 0.078 | 5.14 | 36.6% | |
+| DEF | last-3 PPG | 0.081 | 0.088 | 0.110 | 0.132 | 0.047 | 0.092 | 5.35 | 38.4% | |
+
+**Ship rule** (Andrew: honest numbers, not a model for its own sake): the model ships for a position only
+if its mean Spearman beats season PPG's; otherwise season PPG ships as that position's projection
+(`kdef.KD_SHIP`, `ppg_projection`). kd1.0 beats season PPG in every held-out season at both positions (K
++0.070 on average, DEF +0.187) and has the lower MAE every season: both ship as the model. Weekly kicker
+and defense scoring stays very noisy — a rank agreement of 0.14 for kickers means the order is only a
+little better than a coin flip; the card copy says so.
+
+**Where it is used.** `mart_player_week_projections` (K / DEF rows for the leagues that start them: context
+and outcome from `mart_kd_week`, the actual priced in the league's scoring; a DEF row has `gsis_id` NULL and
+is keyed by `team`); B1's lineups (`value_source = 'proj_points'`; § Lineup value); B3's waiver engine
+(free-agent defenses from `mart_player_availability`'s DEF rows); the Kickers page's "Next week's kickers".
+
 ## Lineup value (B1, 2026-09-29; `league-lab lineups`, `ops.lineups`, `mart_lineup_recommendation`)
 
 **Objective.** For one roster and one week, the lineup value is the largest total of player values
@@ -433,8 +575,9 @@ margin. **Bench value** = the lineup value the playable bench alone would reach 
 | Lineup | Position | Value | Source |
 |---|---|---|---|
 | proposed | QB / RB / WR / TE | projection v2 `proj_points` for that league-week (this league's scoring, rounded like the mart) | `proj_points` |
-| proposed | K | season points per game in this league's scoring (`mart_league_player_season.ppg`, games played > 0) | `season_ppg` |
-| proposed | DEF, or a K without a season PPG here (no NFL id, or no NFL game yet) | mean of the points Sleeper scored for him in this league over this season's scored weeks his team played (byes excluded) | `observed_ppg` |
+| proposed | K, DEF (R-13, 2026-09-30) | the kd1.0 projection `proj_points` for that league-week (§ Kicker and defense projections); a K without an NFL id takes his NFL team's projected kicker that week when the team has exactly one (never guessed when it has two) | `proj_points` |
+| proposed | K without a kd1.0 projection | season points per game in this league's scoring (`mart_league_player_season.ppg`, games played > 0) | `season_ppg` |
+| proposed | DEF without a kd1.0 projection, or a K without either of the above (no NFL id, or no NFL game yet) | mean of the points Sleeper scored for him in this league over this season's scored weeks his team played (byes excluded) | `observed_ppg` |
 | proposed | any, when none of the above exists yet | 0, seated only where nobody valued can play | `unvalued` |
 | realised | every position | the points Sleeper counted that week (`league_player_week.points_observed`) | `sleeper_observed` |
 
@@ -475,10 +618,10 @@ below; the Hunter weeks explain the 2025 gaps of the greedy against Sleeper's pp
 roster 6 −9.70, dynasty roster 11 −17.30: exact = ppts for both).
 
 **Not modelled.** Matchup win probability or variance (the objective is expected points; P10/P90 are
-not used); K and DEF projections (season PPG is a placeholder until R-13 — a DEF or K first rostered in
-a week Sleeper has not scored yet is unvalued: he fills his slot at 0, so the lineup value understates
-that roster by his real expectation); a K / DEF whose season PPG is negative (an empty slot beats him;
-none in 2026 so far); the K's injury status; IDP
+not used); since R-13 K and DEF carry the kd1.0 projection, so a K or DEF first rostered in a week
+Sleeper has not scored yet is valued like everyone else (the PPG paths and "unvalued" remain the fallback
+where no projection exists); a K / DEF whose value is negative (an empty slot beats him; none in 2026 so
+far); IDP
 slots; bye-week or multi-week planning (one week at a time — the 4-week horizon is B2); Sleeper's
 per-player lock time beyond the scheduled kickoff; historical IR / taxi membership for past weeks; the
 waiver pool (B3: § Waiver moves). Past weeks' proposals use this season's K / DEF points per game to date (hindsight for

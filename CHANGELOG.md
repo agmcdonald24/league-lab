@@ -1,6 +1,43 @@
 # Changelog
 
-Newest first. The Home page shows the top entry as "What's new".
+Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
+
+## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
+
+- **Plain words, and an honest "what drives the projection" (U-14, U-15).** Home is rewritten for a league-mate: a
+  three-sentence intro, **Worth a look** (your schedule luck, points left on your bench, the best bargain on your
+  roster, the player on it who is most often his quarterback's first look — each a link to the page behind it), the pages listed as the
+  questions they answer, and "What's new" in plain words (`app/whats_new.md`) instead of this file. Every page's "How
+  to read this" box says what to do with the page in three to five bullets, and the column tooltips lost their jargon
+  (`docs/WORDS.md` is the word list). Rankings' "The model" section answers "is this a model you trained?" and the
+  importance table now measures the projection itself: the component models (targets, catches, yards, TDs …),
+  scrambled one input at a time on the newest training season (2025, scored by a twin fitted on 2016–2024), in
+  **points of error added** in the reference scoring, with plain names, top 10 per position (snap share over the
+  last 3 games leads for QB and WR, carry share for RB, target share for TE). The old table (price line
+  0.017, snap 0.007) was the floor–ceiling model's median, whose main input is the projection; its rows stay in
+  `ops.projection_importance` labelled `model = 'quantile_p50'`, off the page. New view `mart_projection_importance`
+  (added to the `project` / nightly projection-marts `--select`); written by `league-lab project` after the
+  projections, which are byte-identical to before.
+
+## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
+
+- **Built for your phone.** Open League Lab on a phone and every table shows at most five columns (a new **Phone**
+  setting next to Essentials and Everything in the sidebar), and every page starts with its answer — a line or a
+  card — with the big tables one tap below. **League Intel is gone: its charts now open the League page** — schedule
+  luck, points left on the bench and each week's scoring rank for every team (not just eight), your team marked, under
+  one line such as "You've been the unluckiest team by schedule; your bench has left 49 points unstarted". Rankings'
+  filters fit in one row (position, week, the rest under "More filters"; injuries are a filter now) and the board is
+  five columns: rank, player, opponent, projection and the bad-week-to-good-week range. Matchups sums up the corners
+  your receivers face and your best and worst matchups in a line each. Tap a player's name in almost any table —
+  Team Hub, Trade Finder, both sides of a waiver claim, League's lineups, moves and draft, Receivers, Players,
+  Kickers — to open his card. And every page now agrees on which week "this week" is.
+- **Kickers and defenses get real projections.** Each week's kicker is now projected from what his team is
+  expected to score, how often it kicks field goals and extra points, the defense it faces, a dome, and his own
+  accuracy from each distance; each defense from its sacks and takeaways, the offense it faces and how many points
+  it is likely to allow — both priced in League of Scrubs' scoring. Tested on the last five seasons, these ordered
+  kickers and defenses better than points per game in every season. Your lineup now uses them (a kicker or defense
+  you just picked up is no longer counted as 0), the waiver list now includes free-agent defenses, and the Kickers
+  page opens with next week's projections: your kicker, and the best one on waivers.
 
 ## 2026-09-30 — Wave B (decision engine)
 

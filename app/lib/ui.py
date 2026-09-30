@@ -40,9 +40,24 @@ def _gate() -> None:
 def _sidebar_links() -> None:
     fb = setting("FEEDBACK_URL")
     with st.sidebar:
-        st.radio("Table detail", ["essentials", "everything"], key="detail_level", horizontal=True,
-                 format_func=lambda v: "Essentials" if v == "essentials" else "Everything",
-                 help="Essentials hides denominators, noise statistics and fine-grained counts. Everything shows every column.")
+        # C1 (U-13): Phone / Essentials / Everything. Remembered for the browser session the way perspective()
+        # remembers the team (the value is re-assigned before the widget, so it survives a page change); a
+        # ?detail= link seeds it; a new session starts on Phone when the browser is a phone (User-Agent).
+        from .table import DETAIL_LABELS, DETAIL_LEVELS, default_detail_level
+
+        ss = st.session_state
+        url_detail = st.query_params.get("detail")
+        if url_detail in DETAIL_LEVELS and url_detail != ss.get("ll_url_detail"):
+            ss["detail_level"] = url_detail
+            ss["ll_url_detail"] = url_detail
+        elif ss.get("detail_level") not in DETAIL_LEVELS:
+            ss["detail_level"] = default_detail_level()
+        else:
+            ss["detail_level"] = ss["detail_level"]
+        st.radio("Table detail", list(DETAIL_LEVELS), key="detail_level", horizontal=True,
+                 format_func=lambda v: DETAIL_LABELS[v],
+                 help="Phone shows at most five columns per table. Essentials hides denominators, noise statistics and "
+                      "fine-grained counts. Everything shows every column.")
         if fb:
             st.link_button("Send feedback", fb, width="stretch")
         st.caption("Data: nflverse · FTN Data (CC BY-SA 4.0) · Sleeper. See Home → Data & attribution.")
@@ -313,7 +328,7 @@ def reference_scoring_note(what: str = "Fantasy points on this page") -> None:
     name = ref["league_name"].iloc[0] if not ref.empty else "the reference league"
     st.caption(
         f"{what} use **{name}** scoring (the reference league), so every player and season compares on one scale. "
-        "League pages (Team Hub, Waiver Wire, Matchups start/sit, Trade Finder, League Intel, League) use each league's own scoring."
+        "League pages (Team Hub, Waiver Wire, Matchups start/sit, Trade Finder, League) use each league's own scoring."
     )
 
 
@@ -380,3 +395,105 @@ def player_link(gsis_id, name) -> str:
         return label
     safe = label.replace("[", "(").replace("]", ")")
     return f"[{safe}]({player_url(gsis_id, name)})"
+
+
+# ---------------------------------------------------------------- the one week rule (C1, U-13)
+# Every page that says "this week" means current_week(): the first regular-season week of the season whose
+# LAST game has not kicked off (B4's rule, first in lib/cards.py). A Thursday game does not end the week (its
+# players are locked); the Monday game kicking off does. mart_nfl_calendar ("the week after the last FINAL
+# game") stays for history only: it lags the clock between Monday night's kickoff and the next nightly.
+def first_open_week(games: pd.DataFrame, now=None) -> int | None:
+    """Pure: the first `week` of `games` (rows with `week` and `kickoff_at`, one per game or per week) whose last
+    kickoff is after `now` (default: the clock). None when every week's last game has kicked off (off-season)."""
+    if games is None or games.empty:
+        return None
+    now = pd.Timestamp.now(tz="UTC") if now is None else pd.Timestamp(now)
+    if now.tzinfo is None:
+        now = now.tz_localize("UTC")
+    last = pd.to_datetime(games["kickoff_at"], utc=True).groupby(games["week"].astype(int)).max()
+    open_weeks = last[last > now]
+    return None if open_weeks.empty else int(open_weeks.index.min())
+
+
+def current_season(league_id: str | None = None) -> int | None:
+    """The league's season (dim_league_season); without a league, the current leagues' season, else the newest
+    season on the NFL schedule."""
+    if league_id is not None:
+        df = query("select season from analytics.dim_league_season where league_id = %s", (league_id,))
+        if not df.empty:
+            return int(df["season"].iloc[0])
+    cur = current_leagues()
+    if not cur.empty:
+        return int(cur["season"].max())
+    df = query("select max(season) as season from analytics.dim_game")
+    return None if df.empty or pd.isna(df["season"].iloc[0]) else int(df["season"].iloc[0])
+
+
+def week_schedule(season: int) -> pd.DataFrame:
+    """One row per regular-season week of `season`: week, first_kickoff, kickoff_at (= the week's last kickoff)."""
+    return query(
+        """select week, min(kickoff_at) as first_kickoff, max(kickoff_at) as kickoff_at
+           from analytics.dim_game where season = %s and season_type = 'REG' group by week order by week""",
+        (int(season),),
+    )
+
+
+def current_week(league_id: str | None = None, *, season: int | None = None, now=None) -> int | None:
+    """The week the pages are about (My Week, the decision cards, Rankings' default week, Matchups, Team Hub's
+    opponents, Waiver Wire's projections): the first regular-season week of the league's season (or `season`)
+    whose last game has not kicked off. None after the season's last game has kicked off."""
+    season = season if season is not None else current_season(league_id)
+    if season is None:
+        return None
+    return first_open_week(week_schedule(season), now)
+
+
+def week_first_kickoff(season: int, week: int) -> pd.Timestamp | None:
+    ws = week_schedule(season)
+    row = ws[ws["week"].astype(int) == int(week)]
+    return None if row.empty or pd.isna(row["first_kickoff"].iloc[0]) else pd.Timestamp(row["first_kickoff"].iloc[0])
+
+
+def week_opponents(season: int, week: int) -> pd.DataFrame:
+    """Every NFL team's regular-season game in `week`: team, opponent, is_home, kickoff_at (a team on bye has no row)."""
+    return query(
+        """select home_team as team, away_team as opponent, true as is_home, kickoff_at from analytics.dim_game
+           where season = %s and week = %s and season_type = 'REG'
+           union all
+           select away_team, home_team, false, kickoff_at from analytics.dim_game
+           where season = %s and week = %s and season_type = 'REG'""",
+        (int(season), int(week), int(season), int(week)),
+    )
+
+
+def align_opponents(df: pd.DataFrame, season: int | None, week: int | None, team_col: str = "nfl_team",
+                    position_col: str = "position") -> pd.DataFrame:
+    """Re-key a frame's next-game columns to `week` (current_week()): opponent, is_home, is_bye, kickoff_at and the
+    opponent's rank vs the position (opp_rank_std, opp_rank_l4, opp_points_allowed_pg_std from
+    analytics.mart_defense_vs_position_current). The availability marts key them to mart_nfl_calendar's week,
+    which lags the clock until the nightly after Monday's game; on a database where the two agree this changes
+    nothing. Only columns already in `df` are replaced."""
+    if df is None or df.empty or season is None or week is None or team_col not in df.columns:
+        return df
+    opp = week_opponents(season, week).drop_duplicates("team")
+    dvp = query("select defense, position, rank_std, rank_l4, points_allowed_per_game_std from analytics.mart_defense_vs_position_current")
+    out = df.copy()
+    games = out[[team_col]].merge(opp, left_on=team_col, right_on="team", how="left")
+    has_team = out[team_col].notna().to_numpy()
+    if "opponent" in out.columns:
+        out["opponent"] = games["opponent"].to_numpy()
+    if "is_home" in out.columns:
+        out["is_home"] = games["is_home"].to_numpy()
+    if "kickoff_at" in out.columns:
+        out["kickoff_at"] = games["kickoff_at"].to_numpy()
+    if "is_bye" in out.columns:
+        out["is_bye"] = has_team & games["opponent"].isna().to_numpy()
+    if position_col in out.columns:
+        ranks = pd.DataFrame({"defense": games["opponent"].to_numpy(), "position": out[position_col].to_numpy()}).merge(
+            dvp, on=["defense", "position"], how="left")
+        for col, src in (("opp_rank_std", "rank_std"), ("opp_rank_l4", "rank_l4"), ("opp_points_allowed_pg_std", "points_allowed_per_game_std")):
+            if col in out.columns:
+                out[col] = ranks[src].to_numpy()
+    if "next_week" in out.columns:
+        out["next_week"] = int(week)
+    return out

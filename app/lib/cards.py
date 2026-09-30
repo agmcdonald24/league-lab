@@ -1,7 +1,8 @@
 """Decision cards (plan B4): the week's lineup decisions, read from the exact lineup service (B1).
 
-* ``decision_week(season)`` — the week the cards are about: the first regular-season week with a game
-  still to kick off (so a Thursday game does not end the week's decisions; its players show as locked).
+* ``decision_week(season)`` — the week the cards are about: ``lib.ui.current_week`` (C1, U-13: one week rule for
+  every page), the first regular-season week whose last game has not kicked off (so a Thursday game does not end
+  the week's decisions; its players show as locked).
 * ``lineup_rows(league_id, season, week, roster_id)`` — ONE query: the proposed starters and empty slots
   (``analytics.mart_lineup_recommendation``), the bench and the players who cannot play (``ops.lineups``,
   same run), each with his game's kickoff and his opponent's rank against his position
@@ -24,7 +25,7 @@ import pandas as pd
 import streamlit as st
 
 from .db import missing_relations, query
-from .ui import player_link
+from .ui import current_week, player_link
 
 # Slot -> positions that may fill it. A copy of league_lab.lineup.SLOT_ELIGIBILITY: the hosted app does
 # not install scipy, so it cannot import the solver module; tests/test_cards.py keeps the two equal.
@@ -69,14 +70,9 @@ def verdict(margin: float) -> str:
 
 # ------------------------------------------------------------------------------ data
 def decision_week(season: int) -> int | None:
-    """The first regular-season week of `season` whose last game has not kicked off yet (None after it)."""
-    df = query(
-        """select week from analytics.dim_game
-           where season = %s and season_type = 'REG'
-           group by week having max(kickoff_at) > now() order by week limit 1""",
-        (int(season),),
-    )
-    return None if df.empty else int(df["week"].iloc[0])
+    """The first regular-season week of `season` whose last game has not kicked off yet (None after it):
+    ``lib.ui.current_week``, the rule every page uses."""
+    return current_week(season=int(season))
 
 
 LINEUP_SQL = """
@@ -372,15 +368,14 @@ def rank_phrase(rk: pd.DataFrame, week: int | None = None) -> str:
 def howto_cards() -> None:
     with st.expander("How to read this"):
         st.markdown(
-            "- The lineup is the best legal one your roster can start this week, every slot solved together "
-            "(FLEX and superflex included), on this week's projections in your league's scoring.\n"
-            "- A card is one of the week's closest calls: the starter whose absence would cost the least. "
-            "**Apart** is how much the lineup loses if you swap him for the named player: under "
-            f"{COIN_FLIP:.0f} point is a coin flip (go with the news), under {LEAN:.0f} a lean, more is clear.\n"
-            "- The named player is the one who would actually come in: the best bench player who can play "
-            "that slot, or, when moving a teammate over works better, the card says who moves.\n"
-            "- **#28 vs WR** is the opponent's rank in points allowed to that position this season "
-            "(1 = gives up the most, the matchup you want).\n"
-            "- Players whose game has started are locked, and a starter nobody on your bench can replace (your only "
-            "kicker or defense) is not a call: neither gets a card."
+            "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and "
+            "superflex filled by whoever is worth most there. Start it, then check the cards.\n"
+            "- Each card is one of the week's closest calls. **Apart** is how many points separate the two players: under "
+            f"{COIN_FLIP:.0f} point is a coin flip (go with the latest news), under {LEAN:.0f} a lean, more is clear.\n"
+            "- The named player is the one who would really come in: your best bench player for that spot, or, when "
+            "moving a teammate over works better, the card says who moves.\n"
+            "- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the "
+            "matchup you want), 32 = the fewest.\n"
+            "- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can "
+            "replace, like your only kicker."
         )

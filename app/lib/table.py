@@ -53,8 +53,8 @@ COLUMNS: dict[str, Col] = {
     "ppg_std": C("PPG", "num1", "Fantasy points per game this season, this league's scoring"),
     "points_per_game_l3": C("PPG (L3)", "num1", "Points per game over the last three games played"),
     "points_per_game_l5": C("PPG (L5)", "num1", "Points per game over the last five games played"),
-    "expected_per_game": C("xPPG", "num1", "Expected points per game: this league's scoring applied to the opportunity the player got (targets, air yards, carries, field position) — pass/rush/receive only"),
-    "diff_per_game": C("PPG − xPPG", "signed1", "Actual minus expected per game. Negative = producing below the opportunity (candidate to improve); positive = above it (candidate to cool off)"),
+    "expected_per_game": C("xPPG", "num1", "Expected points per game: what his targets and carries are usually worth, given where on the field they came, in this league's scoring (passing, rushing and receiving only)"),
+    "diff_per_game": C("PPG − xPPG", "signed1", "Points per game minus expected points per game. Below zero = scoring less than his work is worth (likely to pick up); above zero = scoring more (likely to cool off)"),
     "points_std": C("Points", "num1", "Season fantasy points, this league's scoring"), "points_current_scoring": C("Points", "num1"),
     "points": C("Points", "num1"), "points_observed": C("Points", "num1", "Points as Sleeper scored them"), "points_recomputed": C("Recomputed", "num1", "Points recomputed from NFL stats under this season's scoring (blank for DEF)"),
     "points_actual": C("Actual", "num1"), "points_expected": C("Expected", "num1"), "points_diff": C("Diff", "signed1"),
@@ -69,18 +69,18 @@ COLUMNS: dict[str, Col] = {
     "receiving_air_yards": C("Air yds", "int"), "team_targets": C("Team tgt", "int", "The team's total targets in the same games"),
     "team_carries": C("Team car", "int"), "team_air_yards": C("Team air yds", "int"), "rec_yards": C("Rec yds", "int"),
     "targets_per_game": C("Tgt/G", "num1"), "carries_per_game": C("Car/G", "num1"),
-    "target_share": C("Target %", "pct", "Player targets ÷ team targets, in the games the player appeared in"),
+    "target_share": C("Target %", "pct", "His share of his team's targets, in the games he played"),
     "target_share_l3": C("Target % (L3)", "pct", "Target share over the last three games played"),
     "target_share_l5": C("Target % (L5)", "pct"), "target_share_std": C("Target % (season)", "pct"),
     "target_share_trend": C("Target trend", "signed_pct", "Last-three target share minus season target share (needs 4+ games)"),
     "target_share_in_qb_games": C("Target %", "pct"),
-    "carry_share": C("Carry %", "pct", "Player carries ÷ team carries"), "carry_share_l3": C("Carry % (L3)", "pct"),
+    "carry_share": C("Carry %", "pct", "His share of his team's carries, in the games he played"), "carry_share_l3": C("Carry % (L3)", "pct"),
     "carry_share_trend": C("Carry trend", "signed_pct"), "carry_share_std": C("Carry % (season)", "pct"),
-    "air_yards_share": C("Air-yard %", "pct", "Share of the team's intended air yards (can exceed 100% or go negative on odd game scripts)"),
+    "air_yards_share": C("Air-yard %", "pct", "His share of how far downfield his team throws (air yards). Can go above 100% or below 0 in odd games"),
     "air_yards_share_l3": C("Air-yard % (L3)", "pct"),
-    "avg_offense_snap_pct": C("Snap %", "pct", "Average share of offensive snaps played (participation, not routes)"),
+    "avg_offense_snap_pct": C("Snap %", "pct", "Share of his team's offensive plays he was on the field for"),
     "offense_snap_pct": C("Snap %", "pct"), "snap_pct_l3": C("Snap % (L3)", "pct"), "snap_pct": C("Snap %", "pct"),
-    "adot": C("aDOT", "num1", "Average depth of target (air yards per target)"), "catch_rate": C("Catch %", "pct"),
+    "adot": C("aDOT", "num1", "How far downfield his targets travel on average, in yards (average depth of target)"), "catch_rate": C("Catch %", "pct"),
     "yards_per_target": C("Y/Tgt", "num1"), "yac_per_reception": C("YAC/Rec", "num1"), "yac_per_rec": C("YAC/Rec", "num1"),
     "yards_per_carry": C("Y/Car", "num1"), "completion_rate": C("Comp %", "pct"), "yards_per_attempt": C("Y/Att", "num1"),
     "dropbacks_excl_scrambles": C("Dropbacks", "int", "Pass attempts + sacks (scrambles need play-by-play)"),
@@ -88,10 +88,10 @@ COLUMNS: dict[str, Col] = {
     "fg_made_40_49": C("FG 40-49", "int"), "fg_made_50p": C("FG 50+", "int"), "fg_long": C("Long", "int"), "pat_att": C("XPA", "int"), "pat_made": C("XPM", "int"),
     "nflverse_ppr_per_game": C("PPR PPG", "num1"), "points_current_scoring_per_game": C("PPG", "num1"),
     # ---- matchup context
-    "opp_rank_std": C("Opp rank", "int", "Where the next opponent ranks in points allowed to this position this season: 1 = allows the most (best matchup), 32 = the fewest. Reference league's scoring, the same for every league"),
+    "opp_rank_std": C("Opp rank", "int", "Next opponent's rank against this position this season: 1 = gives up the most points (the matchup you want), 32 = the fewest. One scale for every league"),
     "opp_rank_l4": C("Opp rank (L4)", "int", "Same rank over the opponent's last four games"),
-    "opp_points_allowed_pg_std": C("Opp pts allowed/G", "num1", "Points the next opponent has allowed to this position per game this season, reference league's scoring"), "kickoff_at": C("Kickoff", "dt"),
-    "points_allowed_per_game_std": C("Pts allowed/G", "num1", "Points allowed to the position per game this season, reference league's scoring"),
+    "opp_points_allowed_pg_std": C("Opp pts allowed/G", "num1", "Points the next opponent gives up per game to this position this season (one scale for every league)"), "kickoff_at": C("Kickoff", "dt"),
+    "points_allowed_per_game_std": C("Pts allowed/G", "num1", "Points this defense gives up per game to the position this season (one scale for every league)"),
     "points_allowed_per_game_l4": C("Pts allowed/G (L4)", "num1"), "rank_std": C("Rank", "int", "1 = allows the most points to the position"),
     "rank_l4": C("Rank (L4)", "int"),
     "completion_pct_allowed": C("Comp % allowed", "pct"), "yards_allowed": C("Yds allowed", "int"),
@@ -105,7 +105,7 @@ COLUMNS: dict[str, Col] = {
     "best_week": C("Best week", "num1"), "worst_week": C("Worst week", "num1"),
     "all_play_win_pct": C("All-play %", "pct", "Win rate if the roster had played every other roster every week"),
     "all_play_wins": C("All-play W", "int"), "all_play_losses": C("All-play L", "int"), "all_play_ties": C("All-play T", "int"),
-    "all_play_rank": C("All-play rank", "int"), "expected_wins": C("Expected W", "num2", "Games × all-play win rate"),
+    "all_play_rank": C("All-play rank", "int"), "expected_wins": C("Expected W", "num2", "Wins the team's points deserve: games played × its all-play win rate"),
     "luck_wins": C("Luck", "signed1", "Actual wins minus expected wins. Positive = the schedule has been kind"),
     "top_half_weeks": C("Top-half weeks", "int"), "avg_points_rank": C("Avg weekly rank", "num1"), "week_points_rank": C("Weekly rank", "int"),
     "week_median_others": C("Median of others", "num1"), "median_of_others": C("Median of others", "num1"),
@@ -141,15 +141,15 @@ COLUMNS: dict[str, Col] = {
     "targets_l3": C("Tgt (L3)", "int"), "team_targets_l3": C("Team tgt (L3)", "int"), "targets_l5": C("Tgt (L5)", "int"), "team_targets_l5": C("Team tgt (L5)", "int"),
     "carries_l3": C("Car (L3)", "int"), "points_per_game_std": C("PPG (season)", "num1"),
     # ---- trends
-    "tags": C("Trend", help="Metrics moving beyond the player's own week-to-week noise over his last three games (strongest first)"),
-    "momentum": C("Momentum", "signed1", "Average trend strength across opportunity metrics (targets, snaps, carries, air yards, expected points). +1 or more = role growing; −1 or less = shrinking"),
-    "opportunity_trend": C("Opportunity", help="rising / steady / falling, from momentum"),
+    "tags": C("Trend", help="What moved over his last 3 games, beyond his usual week-to-week swings (strongest first)"),
+    "momentum": C("Momentum", "signed1", "His role trend: how much his work (targets, snaps, carries, deep targets, expected points) has changed over the last 3 games. +1 or more = growing, −1 or less = shrinking"),
+    "opportunity_trend": C("Opportunity", help="rising / steady / falling: his role trend in one word"),
     "metric_label": C("Metric"), "value_l3": C("Last 3", "num2"), "value_prior": C("Before that", "num2"), "value_season": C("Season", "num2"),
     "value_latest": C("Latest game", "num2"),
     "change": C("Change", "signed1", "Last three games minus the games before them"),
-    "change_vs_minimum": C("Change vs minimum", "signed1", "Change divided by the metric's practical minimum (3 pts target share, 5 pts snap/carry share, 2 expected points): 2.0 = twice the bar. Lets shares and points be compared"),
-    "z": C("Strength", "signed1", "Change in units of the player's own game-to-game noise. ±1 = worth noticing, ±2 = clear"),
-    "slope_per_game": C("Slope / game", "signed1", "Least-squares trend per game over the season"),
+    "change_vs_minimum": C("Change vs minimum", "signed1", "The change next to the smallest change that matters (3 points of target share, 5 of snap or carry share, 2 expected points): 2.0 = twice that. Lets shares and points be compared"),
+    "z": C("Strength", "signed1", "How unusual the change is for this player, next to his normal week-to-week swings: ±1 = worth noticing, ±2 = clear"),
+    "slope_per_game": C("Slope / game", "signed1", "Average change per game over the season (a straight line through his games)"),
     "direction": C("Direction"), "confidence": C("Confidence"), "games_with_metric": C("G", "int"),
     "n_up": C("# up", "int"), "n_down": C("# down", "int"),
     "target_share_change": C("Target % change", "signed_pct"), "target_share_z": C("Target strength", "signed1"),
@@ -161,34 +161,34 @@ COLUMNS: dict[str, Col] = {
     "allowed_l3": C("Allowed/G (L3)", "num1"), "allowed_prior": C("Allowed/G before", "num1"), "allowed_season": C("Allowed/G season", "num1"),
     "latest_week": C("Through wk", "int"),
     # ---- Phase 2: play-by-play, first reads, routes proxy, context
-    "first_read_targets": C("1st-read tgt", "int", "Targets thrown to this player as the quarterback's first read (FTN charting, 2022+)"),
+    "first_read_targets": C("1st-read tgt", "int", "Targets where he was the quarterback's first look (FTN charting, 2022 on)"),
     "team_first_read_targets": C("Team 1st-read tgt", "int", "The team's first-read targets in the same games"),
-    "first_read_target_share": C("1st-read share", "pct", "Player first-read targets ÷ team first-read targets over the same games. Where the QB looks first — a role signal that target share alone hides"),
-    "first_read_share": C("1st-read share", "pct", "Player first-read targets ÷ team first-read targets over the same games"),
-    "first_read_share_l3": C("1st-read % (L3)", "pct", "First-read target share over the last three games"),
-    "first_read_share_std": C("1st-read % (season)", "pct", "First-read target share, season to date"),
-    "first_read_rate_of_targets": C("1st read of own tgt", "pct", "Share of this player's charted targets that were first reads (a different question from first-read share)"),
-    "designed_targets": C("Designed tgt", "int", "Targets on designed throws (screens, many RPOs) — kept separate from progression reads"),
+    "first_read_target_share": C("1st-read share", "pct", "When the quarterback throws to his first look, how often it is this player (same games): who the play is drawn up for, which targets alone hide"),
+    "first_read_share": C("1st-read share", "pct", "When the quarterback throws to his first look, how often it is this player (same games)"),
+    "first_read_share_l3": C("1st-read % (L3)", "pct", "How often he is the quarterback's first look, last 3 games"),
+    "first_read_share_std": C("1st-read % (season)", "pct", "How often he is the quarterback's first look, this season"),
+    "first_read_rate_of_targets": C("1st read of own tgt", "pct", "Of his charted targets, the share where he was the first look (not the same question as first-read share)"),
+    "designed_targets": C("Designed tgt", "int", "Targets on designed throws (screens and the like), counted apart from first looks"),
     "designed_rate_of_targets": C("Designed of own tgt", "pct", "Share of this player's charted targets that were designed throws"),
     "checkdown_targets": C("Checkdown tgt", "int"), "later_read_targets": C("2nd+ read tgt", "int"), "scramble_drill_targets": C("Scramble-drill tgt", "int"),
-    "charted_targets": C("Charted tgt", "int", "Targets that carry a read code. Coverage is not 100%; missing is never assumed to be a first read"),
-    "charting_coverage": C("Charting coverage", "pct", "Share of the team's targets that carry a read code in these games. Treat rates built on low coverage with care"),
-    "routes_proxy": C("Routes (proxy)", "int", "Dropbacks the player was on the field for (NFL participation data). A proxy: presence is not proof a route was run, so it runs ~10-15% above charted route counts"),
+    "charted_targets": C("Charted tgt", "int", "Targets FTN charted with where the quarterback looked. Not every throw is charted; an uncharted one is never counted as a first look"),
+    "charting_coverage": C("Charting coverage", "pct", "Share of the team's targets that were charted in these games. Below 90%, treat the first-look numbers as partial"),
+    "routes_proxy": C("Routes (proxy)", "int", "Pass plays he was on the field for (NFL play data). An estimate: being on the field is not always running a route, so it runs 10–15% above counted routes"),
     "routes_proxy_per_game": C("Routes/G (proxy)", "num1"),
-    "route_participation": C("Route %", "pct", "Routes proxy ÷ team dropbacks with participation data: how often the player is on the field when the QB drops back"),
+    "route_participation": C("Route %", "pct", "How often he is on the field when his quarterback drops back to pass (estimate)"),
     "route_participation_l3": C("Route % (L3)", "pct"),
-    "tprr_proxy": C("TPRR (proxy)", "pct", "Targets per route run on the proxy denominator — a lower bound on the true rate. Earning targets when on the field is the stickiest receiver skill"),
-    "yprr_proxy": C("YPRR (proxy)", "num2", "Receiving yards per route run on the proxy denominator (lower bound)"),
-    "routes": C("Routes", "int", "Route count from a licensed provider file (league-lab import-routes)"), "routes_provider": C("Routes source"),
+    "tprr_proxy": C("TPRR (proxy)", "pct", "Targets per route (estimate, runs a little low). Earning targets when he is out there is the stickiest receiver skill"),
+    "yprr_proxy": C("YPRR (proxy)", "num2", "Receiving yards per route (estimate, runs a little low)"),
+    "routes": C("Routes", "int", "Routes run, from a licensed data provider"), "routes_provider": C("Routes source"),
     "targets_per_route_run": C("TPRR", "pct", "Targets per route run (licensed routes)"), "yards_per_route_run": C("YPRR", "num2", "Yards per route run (licensed routes)"),
     "tprr": C("TPRR", "pct"), "yprr": C("YPRR", "num2"),
     "team_dropbacks": C("Team dropbacks", "int", "Pass attempts + sacks + scrambles (no spikes, kneels or two-point tries)"),
     "team_dropbacks_with_participation": C("Team dropbacks (part.)", "int"),
     "dropbacks": C("Dropbacks", "int", "Pass attempts + sacks + scrambles"), "dropbacks_per_game": C("Dropbacks/G", "num1"),
     "scrambles": C("Scrambles", "int"), "sacks_taken": C("Sacks", "int"),
-    "dropback_rate": C("Dropback %", "pct", "Dropbacks ÷ offensive plays"),
+    "dropback_rate": C("Dropback %", "pct", "Share of the team's plays that were dropbacks to pass"),
     "red_zone_targets": C("RZ tgt", "int", "Targets inside the 20"), "red_zone_carries": C("RZ carries", "int"),
-    "red_zone_target_share": C("RZ target %", "pct", "Red-zone targets ÷ team red-zone targets, same games"),
+    "red_zone_target_share": C("RZ target %", "pct", "His share of the team's targets inside the opponent's 20, same games"),
     "red_zone_carry_share": C("RZ carry %", "pct"),
     "inside_10_targets": C("Inside-10 tgt", "int"), "inside_10_carries": C("Inside-10 carries", "int"), "inside_5_carries": C("Inside-5 carries", "int"),
     "deep_targets": C("Deep tgt", "int", "Targets with 20+ air yards"),
@@ -198,24 +198,24 @@ COLUMNS: dict[str, Col] = {
     # ---- rankings
     "rank_pos": C("#", "int", "Projected rank at the position this week (Out / Doubtful / IR excluded)"),
     "actual_rank_pos": C("Actual rank", "int", "Where the player actually finished at the position that week"),
-    "proj_points": C("Proj", "num1", "Projected points in this league's scoring = intercept + form + usage + matchup + Vegas + home"),
-    "c_form": C("Form", "signed1", "Expected points (L5), season / last-3 PPG and last season, weighted; last season fades out over six games"),
-    "c_usage": C("Usage", "signed1", "Snap share and whether the last-3 target/carry share sits above the season share (a hot L3 share partly reverts, so its weight is negative)"),
+    "proj_points": C("Proj", "num1", "Projected points this week in this league's scoring (on the old formula's board, the parts to its right add up to it)"),
+    "c_form": C("Form", "signed1", "Recent and season scoring and what his work is worth, weighted; last season fades out over his first six games"),
+    "c_usage": C("Usage", "signed1", "Snap share, and whether his last-3-game share of targets or carries is above his season share (a hot streak partly cools, so this can be negative)"),
     "c_matchup": C("Matchup", "signed1", "Opponent's points allowed per game to this position vs the league average, as of the games played so far"),
-    "c_vegas": C("Vegas", "signed1", "Implied team total from the closing line: (total ± spread) / 2"),
+    "c_vegas": C("Vegas", "signed1", "Points Vegas expects the team to score, from the closing spread and over/under"),
     "c_home": C("Home", "signed1"),
-    "xppg_l5": C("xPPG (L5)", "num1", "Expected points per game over the last five games (opportunity)"),
+    "xppg_l5": C("xPPG (L5)", "num1", "Expected points per game over his last 5 games: what his targets and carries were worth"),
     "ppg_l3": C("PPG (L3)", "num1"), "prev_ppg": C("Prev PPG", "num1", "Last season's points per game"),
     "games_to_date": C("G so far", "int", "Games played this season before this week"),
     "opp_allowed_std": C("Opp allows", "num1", "Points per game the opponent has allowed to this position so far"),
     "league_allowed_avg": C("League avg", "num1", "League-wide points allowed per game to this position, as of the same point"),
-    "implied_team_total": C("Implied total", "num1", "Vegas-implied team points"),
+    "implied_team_total": C("Implied total", "num1", "Points Vegas expects his team to score"),
     "report_status": C("Injury", help="Report status for the week (Out / Doubtful excluded from the rank; Questionable stays in)"),
     # ---- projection v2
-    "p10": C("Floor (P10)", "num1", "10th percentile of this league's points: one week in ten lands below"),
-    "p50": C("Median (P50)", "num1", "Median of this league's points: as likely above as below"),
-    "p90": C("Ceiling (P90)", "num1", "90th percentile: one week in ten lands above"),
-    "interval_width": C("Range", "num1", "P90 − P10 in points: how uncertain the week is"),
+    "p10": C("Floor", "num1", "Floor: a bad week for him. 1 week in 10 lands below it (that is what P10 means)"),
+    "p50": C("Middle", "num1", "Median of this league's points: as likely above as below"),
+    "p90": C("Ceiling", "num1", "Ceiling: a good week for him. 1 week in 10 lands above it (that is what P90 means)"),
+    "interval_width": C("Range", "num1", "Ceiling minus floor, in points: the bigger it is, the less sure the projection"),
     "proj_targets": C("Tgt", "num1", "Projected targets"), "proj_receptions": C("Rec", "num1", "Projected receptions"),
     "proj_receiving_yards": C("Rec yds", "num1", "Projected receiving yards"), "proj_receiving_tds": C("Rec TD", "num2", "Projected receiving touchdowns (expected count)"),
     "proj_carries": C("Car", "num1", "Projected carries"), "proj_rushing_yards": C("Rush yds", "num1", "Projected rushing yards"),
@@ -223,27 +223,27 @@ COLUMNS: dict[str, Col] = {
     "proj_attempts": C("Att", "num1", "Projected pass attempts"), "proj_passing_yards": C("Pass yds", "num1", "Projected passing yards"),
     "proj_passing_tds": C("Pass TD", "num2", "Projected passing touchdowns (expected count)"), "proj_passing_interceptions": C("INT", "num2", "Projected interceptions (expected count)"),
     "proj_fumbles_lost": C("Fum lost", "num2"),
-    "actual_inside_interval": C("In range", "bool", "Did the actual land inside P10–P90?", yes="yes", no="no"),
-    "coverage_80": C("Coverage", "pct", "Share of actual outcomes that landed inside P10–P90 (target 80%)"),
+    "actual_inside_interval": C("In range", "bool", "Did his real score land between floor and ceiling?", yes="yes", no="no"),
+    "coverage_80": C("Coverage", "pct", "How often the real score landed between floor and ceiling (the aim is 8 weeks in 10)"),
     "league_name": C("League"), "train_seasons": C("Trained on"), "model_version": C("Model"),
     "scorer_label": C("Ranking"), "weeks": C("Weeks", "int"), "top_n": C("N", "int"),
-    "spearman": C("Spearman", "num2", "Rank correlation between the ranking and actual points, averaged over weeks; 1 = perfect, 0 = coin flip"),
+    "spearman": C("Order score", "num2", "Order score: how well the projected order of players matched the order they really finished in, averaged over weeks. 1 = perfect, 0 = no better than random"),
     "hit_rate": C("Top-N hit rate", "pct", "Share of the actual top-N scorers the ranking's top-N caught"),
-    "mae": C("MAE", "num2", "Mean absolute error in points"),
+    "mae": C("MAE", "num2", "Average miss, in points"),
     "top_n_picked_ppg": C("Top-N picked PPG", "num1", "Actual PPG of the players the ranking put in its top-N"),
     "top_n_ceiling_ppg": C("Top-N ceiling PPG", "num1", "Actual PPG of the true top-N that week (perfect foresight)"),
     # ---- U-11 waiver shortlist
-    "proj_v2": C("Proj (v2)", "num1", "Projection v2 for the next NFL week in this league's scoring (the Rankings page's board). Blank = no projection: kickers, a bye, practice squad, cut or retired"),
+    "proj_v2": C("Proj", "num1", "This week's projected points in this league's scoring, the same number as on Rankings and in your lineup. Blank = no projection: a kicker, a bye, practice squad, cut or retired"),
     # ---- M-06 drift
     "weeks_scored": C("Weeks scored", "int", "Complete weeks of this season the live board has been scored on (a week counts once its last game is in)"),
-    "backtest_spearman": C("Spearman · backtest", "num2", "The same rank correlation on the walk-forward backtest's held-out seasons (v2 projection, this league's scoring)"),
-    "backtest_coverage_80": C("Coverage · backtest", "pct", "Share of actuals inside P10–P90 on the walk-forward backtest's held-out seasons (target 80%)"),
+    "backtest_spearman": C("Order score · backtest", "num2", "The same order score on past seasons the model never saw (2021 to 2025), in this league's scoring"),
+    "backtest_coverage_80": C("Coverage · backtest", "pct", "How often the real score landed between floor and ceiling on past seasons the model never saw (the aim is 8 in 10)"),
     # ---- B1 lineups
     "slot_type": C("Slot type", help="The league's slot: QB, RB, WR, TE, FLEX (RB/WR/TE), SUPER_FLEX (QB/RB/WR/TE), K, DEF"),
     "slot_order": C("#", "int", "Position of the slot in the league's lineup"),
-    "player_value": C("Value", "num1", "The points the lineup counts him for: projection v2 this week in this league's scoring; K = season points per game in this league; DEF = points per game Sleeper scored for it in this league; 0 for a player with no value yet"),
-    "value_source": C("Value from", help="proj_points = projection v2 · season_ppg = the K's points per game this season in this league's scoring · observed_ppg = points per game Sleeper scored this season (DEF, or a K without an NFL id) · unvalued = no value yet (a K / DEF Sleeper has not scored in this league, no projection this week): counted as 0 and only started where nobody with a value can play"),
-    "lineup_margin": C("Margin", "num1", "What the lineup loses without him: best lineup total minus the best total re-solved from the rest of the roster. Small = a close call; 0 = an equal option sits on the bench. Blank for a locked player"),
+    "player_value": C("Value", "num1", "The points his lineup counts him for this week: his projection in this league's scoring (kickers and defenses have their own projections now); points per game only when no projection exists; 0 if there is no number yet"),
+    "value_source": C("Value from", help="Where the value comes from: proj_points = this week's projection (players, kickers and defenses) · season_ppg / observed_ppg = points per game, used only when no projection exists · unvalued = no number yet (counted as 0, started only where nobody else can play)"),
+    "lineup_margin": C("Margin", "num1", "How much your best lineup loses without him, with the rest of the lineup re-picked. Small = a close call; 0 = an equal option sits on the bench. Blank once his game has started"),
     "is_weakest_slot": C("Closest call", "bool", "The starter with the smallest margin: the lineup decision that matters most this week", yes="closest call", no=""),
     "is_empty_slot": C("Empty", "bool", "Nobody on the roster is eligible for this slot this week (bye, Out, IR, taxi, or nobody at the position)", yes="EMPTY", no=""),
     "is_locked": C("Locked", "bool", "His game has kicked off: he stays where Sleeper has him", yes="locked", no=""),
@@ -256,8 +256,8 @@ COLUMNS: dict[str, Col] = {
     "n_unvalued": C("No value yet", "int", "Starters with no value yet (a K / DEF Sleeper has not scored in this league, a player with no projection this week): counted as 0, started only where nobody with a value could play"),
     "realised_optimal": C("Best possible (actual)", "num1", "For a week Sleeper has scored: the best legal lineup this roster could have started at the points Sleeper counted (hindsight)"),
     # ---- B5 decision record
-    "frozen_share": C("Kickoff board", "pct", "Share of the scored player-weeks whose projection is the board as published before that week's "
-                                              "first kickoff (frozen since); the rest are refit values from a later run of the same model"),
+    "frozen_share": C("Kickoff board", "pct", "Share of the graded games whose projection is the one shown before that week's first kickoff "
+                                              "(locked since); the rest are re-runs of the same model, for weeks played before boards were locked"),
     # ---- B2 roster value
     "acquired_label": C("Acquired", help="How he joined this roster: draft round.pick, trade (from whom), waiver / free agent, with the season; "
                                          "read across the whole league history for a dynasty. 'Inherited' = the roster had him before its manager took over"),
@@ -304,9 +304,75 @@ def is_advanced(column: str) -> bool:
     return any(pat in column for pat in ADVANCED_PATTERNS)
 
 
+# ---- C1 (U-13): the Phone level. Three table-detail levels, set by the sidebar radio in ui.setup():
+#   phone      - at most five columns per table (the caller's `phone_cols`, else the first five essentials);
+#                injury / IR / report-status columns only when some row is not Healthy (then one of them
+#                takes the fifth place); the first column pinned
+#   essentials - hides denominators, noise statistics and fine-grained counts (ADVANCED_PATTERNS)
+#   everything - every column the page passes
+DETAIL_LEVELS = ("phone", "essentials", "everything")
+DETAIL_LABELS = {"phone": "Phone", "essentials": "Essentials", "everything": "Everything"}
+PHONE_MAX_COLUMNS = 5
+# injury-report columns: never among a Phone table's five, except that the first of INJURY_STATUS_COLUMNS (in
+# the caller's order) with a row that is not Healthy takes the fifth place; practice status and the injury text
+# are detail and stay off the Phone level
+INJURY_COLUMNS = ("report_status", "injury_status", "is_on_ir", "is_questionable", "injury", "practice_status")
+INJURY_STATUS_COLUMNS = ("report_status", "injury_status", "is_on_ir", "is_questionable")
+_HEALTHY = {"", "healthy", "act", "active", "none", "nan", "false", "0"}
+_ID_COLUMNS = {"gsis_id", "roster_id", "league_id", "sleeper_id", "sleeper_player_id"}
+
+
 def detail_level() -> str:
-    """'essentials' (default) or 'everything' - set by the sidebar toggle in setup()."""
-    return st.session_state.get("detail_level", "essentials")
+    """'phone' | 'essentials' | 'everything' - the sidebar radio in setup() (Essentials outside a Streamlit run)."""
+    level = st.session_state.get("detail_level", "essentials")
+    return level if level in DETAIL_LEVELS else "essentials"
+
+
+def default_detail_level(user_agent: str | None = None) -> str:
+    """The level a new viewer starts on: Phone when the browser says it is a phone (the User-Agent carries
+    "Mobi" on iPhone and Android phones, not on tablets or desktops), else Essentials. The request header is
+    read server-side (st.context), so no JavaScript round trip is needed; the sidebar toggle overrides it."""
+    if user_agent is None:
+        try:
+            user_agent = st.context.headers.get("User-Agent") or ""
+        except Exception:  # noqa: BLE001 - outside a Streamlit run
+            user_agent = ""
+    return "phone" if "Mobi" in str(user_agent) else "essentials"
+
+
+def essential_columns(cols: list[str], overrides: dict | None = None) -> list[str]:
+    """The Essentials subset of `cols` (a page's explicit override marks a column essential)."""
+    keep = [c for c in cols if c in (overrides or {}) or not is_advanced(c)]
+    return keep or list(cols)
+
+
+def not_healthy(series: pd.Series) -> pd.Series:
+    """True where an injury-report value says something (Questionable, Out, IR, a True flag); blank / Healthy / ACT
+    / False are healthy."""
+    if pd.api.types.is_bool_dtype(series):
+        return series.fillna(False).astype(bool)
+    return series.map(lambda v: not (v is None or (isinstance(v, float) and pd.isna(v)) or v is False
+                                     or str(v).strip().lower() in _HEALTHY)).astype(bool)
+
+
+def _is_id(column: str) -> bool:
+    """An identifier carried for links and joins, never worth one of a phone's five columns."""
+    return column in _ID_COLUMNS or column.endswith(("_gsis_id", "_sleeper_id"))
+
+
+def phone_columns(df: pd.DataFrame, cols: list[str] | None = None, overrides: dict | None = None,
+                  phone_cols: list[str] | None = None, limit: int = PHONE_MAX_COLUMNS) -> list[str]:
+    """The columns a table shows at the Phone level (pure): the caller's `phone_cols`, else the first `limit`
+    essentials of `cols`; no injury-report column unless some row is not Healthy - then the first such column
+    (in `cols` order) takes the last place. Never more than `limit` columns."""
+    wanted = [c for c in (list(cols) if cols else list(df.columns)) if not _is_id(c)]
+    base = list(phone_cols) if phone_cols else essential_columns(wanted, overrides)
+    base = [c for c in base if c in df.columns and c not in INJURY_COLUMNS and not _is_id(c)]
+    candidates = [c for c in [*(phone_cols or []), *wanted] if c in INJURY_STATUS_COLUMNS and c in df.columns]
+    hurt = next((c for c in dict.fromkeys(candidates) if not_healthy(df[c]).any()), None)
+    if hurt is None:
+        return base[:limit]
+    return [*base[:limit - 1], hurt]
 
 
 def _auto_kind(series: pd.Series) -> str:
@@ -373,19 +439,42 @@ def prepare(df: pd.DataFrame, cols: list[str] | None = None, overrides: dict[str
     return out, config
 
 
+# name column -> id column linked to the Player card whenever both are in the frame (C1 extends B4's player_name)
+AUTO_LINKS = {"player_name": "gsis_id", "kicker_name": "gsis_id"}
+
+
 def show(df: pd.DataFrame, cols: list[str] | None = None, height: int | None = None, overrides: dict[str, Col] | None = None,
-         index: pd.Series | None = None) -> None:
-    """Render a mart DataFrame as a readable table (labels, %, words instead of checkboxes)."""
+         index: pd.Series | None = None, *, phone_cols: list[str] | None = None,
+         links: dict[str, str | tuple[str, str]] | None = None, widths: dict[str, str | int] | None = None,
+         pin: bool = False) -> None:
+    """Render a mart DataFrame as a readable table (labels, %, words instead of checkboxes).
+
+    * Detail level (sidebar): Phone = `phone_columns()` (≤ 5, first column pinned), Essentials, Everything.
+    * Links: `player_name` / `kicker_name` link to the Player card when the frame carries `gsis_id` (shown or
+      not); `links={"col": "id_col"}` links any other name column, `{"col": ("id_col", "plain_name_col")}` when
+      the shown text is not the bare name (a row without an id then searches the plain name).
+    * `widths` (column -> "small" | "medium" | "large" | px) and `pin` (pin the first column) for phone-first tables."""
     if df is None or df.empty:
         st.caption("Nothing to show yet.")
         return
-    if detail_level() == "essentials":
+    level = detail_level()
+    if level == "phone":
+        cols = phone_columns(df, cols, overrides, phone_cols)
+    elif level == "essentials":
         # a page's explicit override marks the column essential for that table
-        keep = [c for c in (cols or list(df.columns)) if c in (overrides or {}) or not is_advanced(c)]
-        cols = keep or cols
+        cols = essential_columns(cols or list(df.columns), overrides)
     out, config = prepare(df, cols, overrides)
-    if "player_name" in out.columns and "gsis_id" in df.columns:
-        link_player_names(out, df, config)
+    link_map: dict[str, str | tuple[str, str]] = {c: i for c, i in AUTO_LINKS.items() if c in out.columns and i in df.columns}
+    link_map.update(links or {})
+    for col, spec in link_map.items():
+        id_col, plain = (spec, None) if isinstance(spec, str) else spec
+        if col in out.columns and id_col in df.columns:
+            link_column(out, df, config, col, id_col, plain)
+    for c, w in (widths or {}).items():
+        if c in config:
+            config[c]["width"] = w
+    if (pin or level == "phone") and len(out.columns) > 1:
+        config[out.columns[0]]["pinned"] = True
     if index is not None:
         out.index = index
     kwargs = {"height": height} if height else {}
@@ -395,18 +484,39 @@ def show(df: pd.DataFrame, cols: list[str] | None = None, height: int | None = N
 
 def link_player_names(out: pd.DataFrame, df: pd.DataFrame, config: dict) -> None:
     """B4: every player name links to his card (Player?name=…&id=<gsis>&league=…&team=…) when the frame
-    carries gsis_id, whether or not gsis_id is a displayed column. `out` is `df[cols]` in the same row
-    order, so the two align by position. A row without a gsis id links to the card's search for that name."""
+    carries gsis_id, whether or not gsis_id is a displayed column."""
+    link_column(out, df, config, "player_name", "gsis_id")
+
+
+def link_column(out: pd.DataFrame, df: pd.DataFrame, config: dict, col: str, id_col: str, plain: str | None = None) -> None:
+    """Turn the shown column `col` into links to the player card: `Player?name=<shown text>&id=<id>&league=…&team=…`.
+    `out` is `df[cols]` in the same row order, so the two align by position. A row without an id links to the
+    card's search for the bare name (`plain`, else the shown text); a row with neither stays empty."""
     from .ui import PLAYER_PAGE, player_url
 
-    names, ids = df["player_name"].to_numpy(), df["gsis_id"].to_numpy()
-    out["player_name"] = [
-        None if (n is None or (isinstance(n, float) and pd.isna(n)) or n == "") and (i is None or pd.isna(i))
-        else player_url(i, n if isinstance(n, str) and n else i)
-        for n, i in zip(names, ids, strict=True)
-    ]
-    spec = config.get("player_name") or {}
-    config["player_name"] = st.column_config.LinkColumn(
+    def blank(v) -> bool:
+        if v is None:
+            return True
+        try:
+            if pd.isna(v):
+                return True
+        except (TypeError, ValueError):
+            pass
+        return isinstance(v, str) and v.strip() in ("", "—")
+
+    shown, ids = out[col].to_numpy(), df[id_col].to_numpy()
+    bare = df[plain].to_numpy() if plain and plain in df.columns else shown
+    urls = []
+    for s, i, b in zip(shown, ids, bare, strict=True):
+        if not blank(i):
+            urls.append(player_url(i, s if not blank(s) else i))
+        elif not blank(b):
+            urls.append(player_url(None, b))
+        else:
+            urls.append(None)
+    out[col] = urls
+    spec = config.get(col) or {}
+    config[col] = st.column_config.LinkColumn(
         spec.get("label", "Player"), help=spec.get("help"), alignment="left",
         display_text=rf"^{PLAYER_PAGE}\?name=([^&]*)",   # shows the name (URL-decoded by the grid)
     )

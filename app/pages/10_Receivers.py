@@ -1,4 +1,5 @@
-"""Receiver comparison and early/late windows."""
+"""Receiver comparison and early/late windows. Phone first (U-13): filters in one row, the comparison as one line,
+every table in an expander (≤ 5 columns at the Phone level); names open the player card (gsis_id)."""
 
 import pandas as pd
 import streamlit as st
@@ -13,13 +14,14 @@ require_relations("mart_player_context")
 reference_scoring_note("Points on this page")
 
 seasons = seasons_available()
-c1, c2, c3 = st.columns([1, 1, 2])
+c1, c2 = st.columns([1, 1], vertical_alignment="bottom")
 season = c1.selectbox("Season", seasons)
-season_type = c2.radio("Season type", ["REG", "POST"], horizontal=True, format_func=lambda s: "Regular season" if s == "REG" else "Playoffs")
-if season_type == "POST":
-    week_lo, week_hi = c3.slider("Week window (playoffs are weeks 19-22)", 19, 22, (19, 22))
-else:
-    week_lo, week_hi = c3.slider("Week window", 1, 18, (1, 18))
+with c2.popover("Weeks and playoffs", width="stretch"):
+    season_type = st.radio("Season type", ["REG", "POST"], horizontal=True, format_func=lambda s: "Regular season" if s == "REG" else "Playoffs")
+    if season_type == "POST":
+        week_lo, week_hi = st.slider("Week window (playoffs are weeks 19-22)", 19, 22, (19, 22))
+    else:
+        week_lo, week_hi = st.slider("Week window", 1, 18, (1, 18))
 
 candidates = query(
     """select player_name from analytics.mart_player_season
@@ -32,7 +34,7 @@ if len(players) < 1:
     st.stop()
 
 games = query(
-    """select player_name, position, week, team, opponent_team, played, offense_snap_pct, snaps_known,
+    """select gsis_id, player_name, position, week, team, opponent_team, played, offense_snap_pct, snaps_known,
               targets, team_targets, receptions, receiving_yards, receiving_air_yards, team_air_yards,
               receiving_yards_after_catch, receiving_tds, target_share, air_yards_share, adot,
               points_current_scoring, roster_status
@@ -47,7 +49,7 @@ colors = color_map(sorted(players))
 def summarize(df: pd.DataFrame) -> pd.DataFrame:
     """Sum numerators and denominators over the same games, then divide."""
     df = df.assign(_snap=df["offense_snap_pct"].where(df["snaps_known"].astype(bool)))
-    g = df.groupby("player_name")
+    g = df.groupby(["player_name", "gsis_id"], dropna=False)
     out = pd.DataFrame({
         "games": g["played"].sum(),
         "targets": g["targets"].sum(),
@@ -71,15 +73,34 @@ def summarize(df: pd.DataFrame) -> pd.DataFrame:
 
 
 st.subheader(f"Window summary · weeks {week_lo}–{week_hi}")
-howto(
-    "Each receiver's numbers over the selected weeks. Shares are computed the right way: total targets ÷ total *team* targets over the same games, not an average of weekly percentages.",
-    "**aDOT** is average depth of target — how far downfield the throws go. **YAC/Rec** is yards after the catch per reception. "
-    "Together they describe the role: a low-aDOT / high-YAC receiver lives on screens and slants; a high-aDOT receiver on deep shots.",
-    "**Snap %** is participation, not routes; a receiver at 95% snaps with a 12% target share is on the field but not in the plan.",
-)
 summary = summarize(games)
-show(summary, ["player_name", "games", "targets", "targets_per_game", "target_share", "air_yards_share", "adot",
-               "receptions", "receiving_yards", "yac_per_rec", "receiving_tds", "snap_pct", "points_per_game"])
+with st.container(border=True):
+    if summary.empty or summary["games"].fillna(0).sum() == 0:
+        st.markdown(f"**No games for these receivers in weeks {week_lo}–{week_hi}.**")
+    else:
+        ts = summary.dropna(subset=["target_share"]).sort_values("target_share", ascending=False)
+        ad = summary.dropna(subset=["adot"]).sort_values("adot", ascending=False)
+        pp = summary.dropna(subset=["points_per_game"]).sort_values("points_per_game", ascending=False)
+        bits = []
+        if not ts.empty:
+            bits.append(f"**Biggest share of his team's targets: {ts.iloc[0]['player_name']} ({ts.iloc[0]['target_share']:.1%})**")
+        if not ad.empty and len(summary) > 1:
+            bits.append(f"deepest role: {ad.iloc[0]['player_name']} (aDOT {ad.iloc[0]['adot']:.1f})")
+        if not pp.empty and len(summary) > 1:
+            bits.append(f"most points a game: {pp.iloc[0]['player_name']} ({pp.iloc[0]['points_per_game']:.1f})")
+        st.markdown("; ".join(bits) + ".")
+howto(
+    "Each receiver's numbers over the weeks you picked. **Target %** is his share of his team's targets in those games: the "
+    "steadiest sign of how much the offense wants him.",
+    "**aDOT** (average depth of target) is how far downfield his targets travel; **YAC/Rec** is yards after the catch per catch. "
+    "Short targets and lots of YAC = screens and slants; deep targets = boom-or-bust weeks.",
+    "**Snap %** is how often he is on the field. On the field 95% of the time but only 12% of the targets means he is out "
+    "there, not in the plan: don't count on him.",
+)
+with st.expander("The window, every column", expanded=True):
+    show(summary, ["player_name", "games", "targets", "targets_per_game", "target_share", "air_yards_share", "adot",
+                   "receptions", "receiving_yards", "yac_per_rec", "receiving_tds", "snap_pct", "points_per_game"],
+         phone_cols=["player_name", "games", "target_share", "adot", "points_per_game"])
 
 metric_labels = {"target_share": "Target %", "targets": "Targets", "air_yards_share": "Air-yard %", "adot": "aDOT", "offense_snap_pct": "Snap %", "points_current_scoring": "Points"}
 metric = st.selectbox("Chart", list(metric_labels), format_func=lambda k: metric_labels[k])
@@ -88,22 +109,28 @@ st.plotly_chart(line_chart(games.dropna(subset=[metric]), "week", metric, "playe
 
 # ---- early vs late ------------------------------------------------------------------------
 st.subheader("Early vs late window")
-howto("Pick two week ranges and compare the same receivers across them. Use it to see whether a role changed "
-      "(target share moved) or the team changed (team targets moved) — the two look identical in the box score.")
+howto("Pick two stretches of weeks and compare the same receivers across them.",
+      "If his **Target %** moved, his role changed. If only **Team tgt** moved, his team just threw more or less: the box score "
+      "looks the same either way, this table tells them apart.",
+      "A role change is worth acting on (add, start, or sell); a team that threw more for a few weeks usually goes back.")
 e1, e2 = st.columns(2)
 early = e1.slider("Early weeks", 1, 22, (1, 6))
 late = e2.slider("Late weeks", 1, 22, (12, 18))
 ew = summarize(games[games["week"].between(*early)]).assign(window="early")
 lw = summarize(games[games["week"].between(*late)]).assign(window="late")
 both = pd.concat([ew, lw]).sort_values(["player_name", "window"])
-show(both, ["player_name", "window", "games", "targets_per_game", "team_targets", "target_share", "air_yards_share", "adot", "snap_pct", "points_per_game"])
+with st.expander("Early vs late, every column"):
+    show(both, ["player_name", "window", "games", "targets_per_game", "team_targets", "target_share", "air_yards_share", "adot", "snap_pct", "points_per_game"],
+         phone_cols=["player_name", "window", "target_share", "adot", "points_per_game"])
 
 # ---- recent form ----------------------------------------------------------------------------
 st.subheader("Recent form — last 3 / last 5 games vs season")
-howto("As of each receiver's latest game: target share over his last three and last five games next to his season-to-date share. "
-      "A rising L3 with a flat season number is the earliest usage signal you can get from box-score data.")
+howto("Each receiver's share of his team's targets over his last 3 and last 5 games, next to his whole season.",
+      "Last 3 well above the season number is the earliest sign of a bigger role you can get from the box score: a waiver add "
+      "or a player to start.",
+      "Last 3 well below it is the warning sign: check for an injury or a new receiver in the offense before you start him.")
 recent = query(
-    """select player_name, week, target_share_l3, target_share_l5, target_share_std,
+    """select gsis_id, player_name, week, target_share_l3, target_share_l5, target_share_std,
               targets_l3, team_targets_l3, snap_pct_l3, points_per_game_l3, points_per_game_std
        from analytics.mart_player_recent_form
        where season = %s and season_type = %s and player_name = any(%s) and week between %s and %s
@@ -111,25 +138,26 @@ recent = query(
     (season, season_type, players, week_lo, week_hi),
 )
 latest = recent.sort_values("week").groupby("player_name").tail(1)
-show(latest)
+with st.expander("Last 3 / last 5 vs season, every column"):
+    show(latest, [c for c in latest.columns if c != "gsis_id"],
+         phone_cols=["player_name", "target_share_l3", "target_share_l5", "target_share_std", "points_per_game_l3"])
 
 # ---- first reads (FTN charting, 2022+) --------------------------------------------------------
 st.subheader("First-read target share")
 howto(
-    "**First-read share** = this player's first-read targets ÷ the *team's* first-read targets over the same games. "
-    "It answers *where does the quarterback look first* — a role signal that target share hides, because checkdowns and "
-    "scramble-drill throws count the same as a designed primary read in the box score.",
-    "**1st read of own tgt** is a different question: of *this player's* targets, how many were first reads. A high number "
-    "with a low first-read share is a specialist; a low number with a high target share is a safety valve.",
-    "**Designed** throws (screens, many RPOs) are kept separate and never counted as first reads. **Charting coverage** is the share "
-    "of the team's targets that carry a read code; nothing is inferred for uncharted throws.",
-    "Source: FTN Data charting via nflverse (CC-BY-SA 4.0). Seasons before 2022 are not charted and show blank, not zero.",
+    "**First-read share**: when the quarterback throws to the receiver he looked at first, how often it is this player. It shows "
+    "who the play is drawn up for, which plain targets hide (a checkdown counts the same as a first look in the box score).",
+    "A high first-read share is the best sign a receiver's targets will last: start him, and trust a quiet week less.",
+    "**1st read of own tgt** asks something else: of *his* targets, how many came as the first look. High there but low overall "
+    "= a specialist; low there with lots of targets = a safety valve.",
+    "**Designed** throws (screens and the like) are counted apart. **Charting coverage** is the share of throws that were charted: "
+    "below 90%, treat the numbers as partial. Charting by FTN Data (CC BY-SA 4.0) starts in 2022; earlier seasons show blank, not zero.",
 )
 if season < 2022:
     unavailable("First-read target share", f"FTN charting starts in 2022; {season} has no read codes. Never shown as zero.")
 else:
     fr = query(
-        """select player_name, count(*) filter (where played) as games, sum(targets) as targets,
+        """select gsis_id, player_name, count(*) filter (where played) as games, sum(targets) as targets,
                   sum(charted_targets) as charted_targets, sum(first_read_targets) as first_read_targets,
                   sum(designed_targets) as designed_targets, sum(checkdown_targets) as checkdown_targets,
                   sum(later_read_targets) as later_read_targets, sum(scramble_drill_targets) as scramble_drill_targets,
@@ -143,12 +171,14 @@ else:
                   sum(drops) as drops, sum(contested_targets) as contested_targets
            from analytics.fct_player_game
            where season = %s and season_type = %s and player_name = any(%s) and week between %s and %s
-           group by 1 order by first_read_target_share desc nulls last""",
+           group by 1, 2 order by first_read_target_share desc nulls last""",
         (season, season_type, players, week_lo, week_hi),
     )
-    show(fr, ["player_name", "games", "targets", "charted_targets", "first_read_targets", "team_first_read_targets", "first_read_target_share",
-              "first_read_rate_of_targets", "designed_targets", "designed_rate_of_targets", "checkdown_targets", "later_read_targets",
-              "scramble_drill_targets", "drops", "contested_targets", "charting_coverage"])
+    with st.expander("First reads, every column"):
+        show(fr, ["player_name", "games", "targets", "charted_targets", "first_read_targets", "team_first_read_targets", "first_read_target_share",
+                  "first_read_rate_of_targets", "designed_targets", "designed_rate_of_targets", "checkdown_targets", "later_read_targets",
+                  "scramble_drill_targets", "drops", "contested_targets", "charting_coverage"],
+             phone_cols=["player_name", "targets", "first_read_targets", "first_read_target_share", "first_read_rate_of_targets"])
     low = fr[fr["charting_coverage"].fillna(0) < 0.9]
     if not low.empty:
         st.caption("⚠️ Charting coverage below 90% for: " + ", ".join(low["player_name"]) + " — treat their first-read rates as partial.")
@@ -166,16 +196,16 @@ else:
 # ---- routes proxy (participation, completed seasons) ------------------------------------------
 st.subheader("Routes (participation proxy)")
 howto(
-    "**Routes (proxy)** counts the dropbacks a receiver was on the field for, from the NFL's participation data. It is a proxy, "
-    "not a charted route count: a tight end who stayed in to block is counted, so the proxy runs about 10–15% above the charting "
-    "services' numbers and **TPRR / YPRR (proxy)** are lower bounds. Compare players against each other, not against published TPRR.",
-    "**Route %** = routes proxy ÷ team dropbacks with participation data: how often the player is on the field when the QB drops back. "
-    "Snap % includes run plays; route % is the passing-down version.",
-    "Participation files are published after each season's postseason, so the current season shows blank here until then. "
-    "A licensed in-season routes feed drops in through `league-lab import-routes` and appears as **Routes** / **TPRR** / **YPRR** without the proxy label.",
+    "**Route %** is how often he is on the field when the quarterback drops back to pass: the passing-play version of snap share. "
+    "A receiver who runs a route on most pass plays gets chances every week.",
+    "**TPRR** (targets per route) is how often he gets the ball thrown his way when he is out there: the stickiest receiver skill. "
+    "**YPRR** is yards per route.",
+    "These are estimates (a tight end who stayed in to block still counts as out there), so they run 10–15% low. Compare players "
+    "with each other, not with numbers from other sites.",
+    "The NFL publishes this data after the season, so the current season is blank here until then.",
 )
 rp = query(
-    """select player_name, count(*) filter (where routes_proxy is not null) as games_with_participation,
+    """select gsis_id, player_name, count(*) filter (where routes_proxy is not null) as games_with_participation,
               sum(routes_proxy) as routes_proxy,
               case when count(*) filter (where routes_proxy is not null) > 0 then sum(routes_proxy)::numeric / count(*) filter (where routes_proxy is not null) end as routes_proxy_per_game,
               sum(team_dropbacks_with_participation) filter (where routes_proxy is not null) as team_dropbacks_with_participation,
@@ -188,7 +218,7 @@ rp = query(
               case when sum(routes) > 0 then sum(receiving_yards) filter (where routes is not null)::numeric / sum(routes) end as yprr
        from analytics.fct_player_game
        where season = %s and season_type = %s and player_name = any(%s) and week between %s and %s and played
-       group by 1 order by yprr_proxy desc nulls last""",
+       group by 1, 2 order by yprr_proxy desc nulls last""",
     (season, season_type, players, week_lo, week_hi),
 )
 if rp["routes_proxy"].isna().all() and rp["routes"].isna().all():
@@ -198,23 +228,23 @@ else:
     cols = ["player_name", "games_with_participation", "routes_proxy", "routes_proxy_per_game", "route_participation", "tprr_proxy", "yprr_proxy"]
     if rp["routes"].notna().any():
         cols += ["routes", "routes_provider", "tprr", "yprr"]
-    show(rp, cols)
+    with st.expander("Routes, every column"):
+        show(rp, cols, phone_cols=["player_name", "routes_proxy_per_game", "route_participation", "tprr_proxy", "yprr_proxy"])
 
 # ---- context splits ---------------------------------------------------------------------------
 st.subheader("Context splits — where the usage comes from")
 howto(
-    "Each row is one situation. **Team tgt** / **Team dropbacks** are the team's totals *in that situation, in the games this receiver played*, "
-    "so the share is a real share, not a mix of games. Halves keep overtime separate; the score state is the score *before* the snap "
-    "(never the final score); down-and-distance groups third and fourth down together.",
-    "Read it as a story: a receiver whose target share jumps when trailing by 9+ is a garbage-time producer; one whose share holds when "
-    "leading is in the plan regardless of script. **QB on the play** splits the same numbers by who was under center — the first thing to "
-    "check after a quarterback change.",
-    "Routes proxy per situation needs participation data (completed seasons only).",
+    "Each row is one situation (a half, the score, the down, the field zone, or who played quarterback), with his share of the "
+    "team's targets in that situation, in the games he played.",
+    "Read it as a story: a receiver whose share jumps only when his team trails by 9+ is a garbage-time scorer, a risky start "
+    "when his team is favoured. One whose share holds when leading is in the plan whatever the score.",
+    "**QB on the play** splits the numbers by quarterback: the first thing to check after a quarterback change.",
+    "The score is the score *before* the snap; third and fourth down are grouped together.",
 )
 ctx_labels = {"half": "Half", "score_state": "Score state (pre-snap)", "down_distance": "Down & distance", "field_zone": "Field zone", "qb": "QB on the play"}
 ctx = st.selectbox("Split by", list(ctx_labels), format_func=lambda k: ctx_labels[k])
 cx = query(
-    """select c.player_name, c.context_type, case when c.context_type = 'qb' then coalesce(q.player_name, c.bucket) else c.bucket end as bucket,
+    """select c.gsis_id, c.player_name, c.context_type, case when c.context_type = 'qb' then coalesce(q.player_name, c.bucket) else c.bucket end as bucket,
               c.games, c.targets, c.team_targets, c.target_share, c.first_read_targets, c.team_first_read_targets, c.first_read_target_share,
               c.receptions, c.receiving_yards, c.yards_per_target, c.adot, c.carries, c.team_carries, c.carry_share,
               c.routes_proxy, c.team_dropbacks, c.route_participation, c.tprr_proxy, c.yprr_proxy
@@ -236,8 +266,10 @@ if not cx.empty:
         cx["_o"] = cx["bucket"].map({b: i for i, b in enumerate(order[ctx])})
         cx = cx.sort_values(["player_name", "_o"]).drop(columns="_o")
     cx["bucket"] = cx["bucket"].map(lambda b: pretty.get(b, b))
-    show(cx, ["player_name", "bucket", "games", "targets", "team_targets", "target_share", "first_read_target_share", "receptions", "receiving_yards",
-              "yards_per_target", "adot", "routes_proxy", "team_dropbacks", "route_participation", "tprr_proxy", "carries", "carry_share"])
+    with st.expander(f"{ctx_labels[ctx]}, every column"):
+        show(cx, ["player_name", "bucket", "games", "targets", "team_targets", "target_share", "first_read_target_share", "receptions", "receiving_yards",
+                  "yards_per_target", "adot", "routes_proxy", "team_dropbacks", "route_participation", "tprr_proxy", "carries", "carry_share"],
+             phone_cols=["player_name", "bucket", "targets", "target_share", "yards_per_target"])
     chart = cx.dropna(subset=["target_share"])
     if not chart.empty and ctx != "qb":
         st.plotly_chart(bar_chart(chart, "bucket", "target_share", f"Target share by {ctx_labels[ctx].lower()}", "Target %", series="player_name",
