@@ -180,3 +180,118 @@ models:
       - unique_combination_of_columns:
           arguments:
             combination_of_columns: [defense, season, position]
+  # ---- B2 roster value and league rankings (plan Iteration 9b)
+  - name: mart_league_acquisitions
+    description: "B2: how every currently rostered player came to his roster: the move that began his current stint (draft pick by this roster, or a completed trade / waiver / free-agent / commissioner add), read across the whole league chain for a dynasty (a 2024 trade is a 2024 trade), the current season for redraft / keeper leagues; `acquired_label` in plain words; `fantasy_positions` = Sleeper eligibility for the lineup solver."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, sleeper_player_id]
+      - expression_is_true:
+          name: acquisition_trade_names_its_partner
+          arguments:
+            expression: "trade_partner_roster_id is not null and trade_partner_roster_id <> roster_id and trade_partner_manager is not null"
+            condition: "acquired_how = 'trade'"
+      - expression_is_true:
+          name: acquisition_draft_has_round_and_pick
+          arguments:
+            expression: "draft_round is not null and draft_pick_in_round is not null and draft_kind is not null"
+            condition: "acquired_how = 'draft'"
+      - expression_is_true:
+          name: acquisition_is_not_in_the_future
+          arguments:
+            expression: "acquired_season <= season and acquired_at <= now()"
+    columns:
+      - name: acquired_how
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["draft", "trade", "waiver", "free_agent", "commissioner"]
+      - name: acquired_how_by_manager
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["draft", "trade", "waiver", "free_agent", "commissioner", "inherited"]
+      - name: acquired_season
+        tests: [not_null]
+      - name: acquired_label
+        tests: [not_null]
+  - name: mart_league_roster_horizon
+    description: "B2: every current roster's proposed B1 lineup rows (starters, bench, players who cannot play) for this week and the next three, with names, eligibility, margins, the player who replaces each starter when he is removed (`replacement_*`), the best starter per slot type and the acquisition label. A view over ops.lineups."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id, week, sleeper_player_id]
+          config: {where: "sleeper_player_id is not null"}
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id, week, slot]
+          config: {where: "slot is not null"}
+      - expression_is_true:
+          name: roster_horizon_is_one_to_four_weeks
+          arguments:
+            expression: "horizon_weeks between 1 and 4 and week between horizon_first_week and horizon_last_week"
+      # removing a starter changes the lineup along one alternating path: exactly one bench player
+      # worth value - margin comes in, unless the slot is left empty (margin = value)
+      - expression_is_true:
+          name: roster_horizon_starter_has_a_replacement
+          arguments:
+            expression: "replacement_sleeper_player_id is not null and abs(replacement_value - (player_value - lineup_margin)) < 0.005"
+            condition: "role = 'starter' and lineup_margin is not null and player_value - lineup_margin > 0.005"
+  - name: mart_league_roster_value
+    description: "B2: per current league x roster: this week's lineup value, its weakest replaceable slot with the margin and the replacement, depth (bench lineup value), and the 4-week horizon (sum of the proposed lineup values) with its weakest week. Replaces mart_league_positional_strength on Team Hub, Trade Finder and League Intel."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id]
+      - expression_is_true:
+          name: roster_value_has_every_horizon_week
+          arguments:
+            expression: "horizon_lineups = horizon_weeks and horizon_value >= lineup_value - 0.005"
+      - expression_is_true:
+          name: roster_value_weakest_replacement_matches_margin
+          arguments:
+            expression: "weakest_margin >= 0 and abs(weakest_replacement_value - (weakest_value - weakest_margin)) < 0.005"
+            condition: "weakest_replacement_name is not null"
+    columns:
+      - name: lineup_value
+        tests: [not_null]
+      - name: horizon_value
+        tests: [not_null]
+      - name: week_label
+        tests: [not_null]
+      - name: horizon_label
+        tests: [not_null]
+  - name: mart_league_roster_rankings
+    description: "B2: every current roster ranked in its league on this week's lineup value, on the 4-week horizon and on depth (bench lineup value); one row per roster x measure, each naming its horizon."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id, measure]
+      - expression_is_true:
+          name: roster_rank_within_league
+          arguments:
+            expression: "league_rank between 1 and n_rosters"
+    columns:
+      - name: measure
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["lineup_value", "horizon_value", "bench_value"]
+      - name: horizon
+        tests: [not_null]
+      - name: league_rank
+        tests: [not_null]
+  - name: mart_league_roster_slot_strength
+    description: "B2: starter strength vs depth this week, per current league x roster x slot type: the best lineup minus the best lineup without the roster's top player at that slot type (his B1 margin), and who replaces him."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, roster_id, slot_type]
+      - expression_is_true:
+          name: slot_strength_between_zero_and_his_value
+          arguments:
+            expression: "starter_strength >= 0 and starter_strength <= top_value + 0.005"
+            condition: "starter_strength is not null"

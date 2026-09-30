@@ -9,3 +9,5 @@ numpy==2.5.3
 psycopg[binary]==3.3.6
 pydantic-settings==2.15.0
 python-dotenv==1.2.3
+# the lineup solver (league_lab.lineup, via league_lab.roster_value on Trade Finder; plan B2)
+scipy==1.18.1

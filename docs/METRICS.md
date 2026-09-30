@@ -52,7 +52,7 @@ has one); `games_played` counts `played`.
 | defense vs position | points (reference scoring) scored by opposing QB/RB/WR/TE/K against a defense, per game; season-to-date and last-4; rank 1 = allows the most. Regular season only. The same ranks appear as **Opp rank** on league pages |
 | all-play | for each scored regular-season week, wins vs every other roster; season all-play win%; `expected_wins` = games × all-play win%; `luck_wins` = actual − expected |
 | optimal lineup | best lineup from the players rostered that week using Sleeper observed points; greedy fill of fixed slots then REC_FLEX/WRRB_FLEX/FLEX/SUPER_FLEX (optimal for fixed slots + one flex type). `bench_points_left` = optimal − started; `lineup_efficiency` = started ÷ optimal. Validated against Sleeper's `ppts` (regular season): exact for 29/30 rosters |
-| positional strength | sum of season ppg (the league's own scoring) over the top-N rostered players at a position (N = starting slots at that position); compared with the league median; rank 1 = strongest |
+| positional strength | sum of season ppg (the league's own scoring) over the top-N rostered players at a position (N = starting slots at that position); compared with the league median; rank 1 = strongest. **No page or pack reads it since B2** (superflex counted as a QB slot, FLEX never attributed): the roster views use § Roster value |
 | availability | `rostered_by_*` from the current Sleeper roster payloads; free agent = not on any roster in that league. Team defenses (DEF) are not in the table (no NFL player id) |
 | share trends | `target_share_trend` = last-3 share − season share (same for carries). Meaningless before 4 games |
 | CB coverage context | PFR advanced defense when the defender was targeted: targets, completions, yards, TDs, passer rating allowed, aDOT, YAC, missed tackles; season-to-date; 2018+. The matchup page lists the opponent's LCB/RCB/NB (depth rank ≤ 2) from the latest depth chart. Not a shadow-coverage assignment |
@@ -483,6 +483,68 @@ slots; bye-week or multi-week planning (one week at a time — the 4-week horizo
 per-player lock time beyond the scheduled kickoff; historical IR / taxi membership for past weeks; the
 waiver pool (B3). Past weeks' proposals use this season's K / DEF points per game to date (hindsight for
 those two positions only).
+
+## Roster value (B2, 2026-09-30; `mart_league_roster_value`, `_rankings`, `_slot_strength`, `_horizon`, `mart_league_acquisitions`)
+
+Everything here is read from the B1 lineup service (§ Lineup value): proposed lineups solved on projection v2
+priced in each league's scoring, one per league × roster × remaining week. Nothing is re-solved in SQL.
+
+**This week** = the first regular-season week with a kickoff after `now()` (the rule `league-lab lineups` uses
+for its next week); a week in progress (Thursday played) stays this week until its last kickoff. **Horizon** =
+this week and the next three with a proposed lineup (fewer at the end of the season); every page names it
+("week 4", "weeks 4–7").
+
+| Metric | Definition | Grain |
+|---|---|---|
+| lineup value | `ops.lineup_totals.lineup_value` of this week: the best legal lineup (every slot solved together; FLEX / SUPER_FLEX by eligibility) | roster |
+| weakest replaceable slot | the unlocked, valued starter with the smallest margin (`weakest_slot`, `weakest_margin`), with his **replacement**: the bench player who enters the re-solved lineup without him | roster |
+| depth (bench value) | `bench_value`: the best legal lineup the bench alone would field if every starter sat (a QB3 counts here) | roster |
+| 4-week horizon value | Σ lineup value over the horizon weeks (byes, Out / IR, taxi already in each week's lineup) | roster |
+| starter strength | per slot type the roster starts: best lineup − best lineup with the roster's top starter at that slot type removed, the whole lineup re-solved | roster × slot type |
+| league rank | `rank()` of the value among the league's rosters (1 = highest), per measure; each row carries its `horizon` | roster × measure |
+| lineup gain (Trade Finder) | for a player X and a roster A that does not own him: best lineup of A with X − best lineup of A (= X's margin in A's re-solved lineup), per week and over the horizon | player × roster |
+| lineup loss | X's margin in his own roster's lineup (0 on the bench, when he cannot play, or locked) | player |
+| fit | gain of the receiving roster − loss of the giving roster: the lineup points a move creates | player × roster |
+| acquired | the move that began the player's current stint on the roster (see below) | rostered player |
+
+**Starter strength is read, not re-solved.** B1 already stores, for every unlocked starter, `margin = lineup value
+− best lineup re-solved without him`, which is the definition. So starter strength is the margin of the
+best-valued starter seated in a slot of that type (`is_top_at_slot_type`). Checked on the live data: all 773
+unlocked starters of the 88 roster-weeks in the horizon (both leagues, weeks 4–7) have margin = lineup value −
+a fresh `solve()` without him to the cent, and rebuilding each roster-week from the published rows reproduces
+`lineup_value` to the cent (88/88; `docs/STATUS.md` § B2).
+
+**Replacement.** Removing one starter from a maximum-weight matching changes the lineup along one alternating
+path (a WR out, the FLEX WR slides to WR2, a bench RB joins at FLEX): exactly one bench player comes in, or
+nobody worth anything (the slot stays empty or takes a player with no value yet), and the total falls by
+value(starter) − value(entrant). So the entrant is the bench player worth value − margin to the cent (positive
+values only; equal values: the better bench rank). Verified against the solver on the live data (773/773) and on
+120 random rosters in `tests/test_roster_value.py`.
+
+**Superflex and FLEX by eligibility.** A QB3 behind two starting QBs adds 0 to the lineup (Andrew's dynasty
+roster: Rodgers 17.86 and Willis 17.28 on the bench, lineup 109.69 with or without them); a QB is a gain only
+when he beats whoever sits at SUPER_FLEX (Kirk Cousins 16.19 adds +4.53 to The72Repeat, whose SUPER_FLEX is a RB
+at 11.66, and 0 to Andrew's). A WR who beats the FLEX starter adds the difference even when he is nobody's WR1/WR2
+(Tee Higgins 13.25 adds +3.25 to Pitts n' Titts through FLEX, over Tre Tucker 10.00). The retired
+`mart_league_positional_strength` counted SUPER_FLEX as a QB slot and never attributed FLEX.
+
+**Acquired** (`mart_league_acquisitions`). The latest move *into* this roster: a draft pick made by the roster
+(`stg_sleeper__draft_picks.roster_id`), or a completed transaction whose `adds` put him there (trade, waiver,
+free agent, commissioner), ordered by `status_updated` (draft picks by draft start + pick number). A dynasty reads
+the whole chain (`dim_league_season.chain_id`, linked by `previous_league_id`; roster ids are stable along a
+Sleeper chain); a redraft or keeper league only the current season (every season starts from its draft; a
+keeper is that draft's keeper pick). Labels: "Rookie draft 2021 · 2.09" (round.pick in round), "Startup draft
+2021 · 3.04" (a dynasty chain's first draft), "Trade 2025 offseason · from PhillyRoc" (the roster that gave him
+up, its manager at the time; "offseason" = before that NFL season's first kickoff), "Waiver 2026 wk 2 · $36",
+"Free agent 2025 wk 9". **Inherited**: when today's owner and co-owners managed none of the roster's seasons
+before season S (a takeover), what it held before S is "Inherited S (<the event>)". Owner and co-owner swapping
+roles is not a takeover. Sleeper records owners per season, so a mid-season takeover counts from its season.
+
+**Not modelled.** Roster-size limits and the player sent back in a trade (the trade evaluator is Iteration 10
+T-01; the waiver engine B3 handles add/drop pairs); a player on another roster's taxi squad counts as
+available to the receiving roster (a roster choice, not an injury); a locked player (game kicked off) counts 0
+both ways that week; a takeover within a season is dated to that season's start; the replacement's name is
+ambiguous only when two bench players have exactly the same value (either is a correct answer: same total).
 
 ## Deferred (status in registry)
 

@@ -700,6 +700,92 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   headless check 26 renders (13 pages × 2 leagues), 0 exceptions. No-archive path: with an empty `data/raw/sleeper`
   and the blocked Sleeper API the night stopped at `fetch-sleeper` with the new line, exit 1.
 
+### B2 2026-09-30 — roster value and league rankings (branch `dev/B2`, clone `league_lab_b2`)
+
+* **Built** (plan Iteration 9b B2 + the review's acquisition finding): four views on the B1 lineup service —
+  `mart_league_roster_horizon` (every current roster's proposed lineup rows for this week and the next three, with
+  names, eligibility, margins, the replacement of each starter, the best starter per slot type and the acquisition
+  label), `mart_league_roster_value` (per roster: this week's lineup value, weakest slot + margin + replacement,
+  bench value, 4-week horizon value and its worst week), `mart_league_roster_rankings` (every roster ranked on lineup
+  value, horizon and depth, one row per measure, each naming its horizon), `mart_league_roster_slot_strength`
+  (starter strength per slot type) — and the table `mart_league_acquisitions` (how each rostered player joined his
+  roster, across the whole chain for a dynasty). `src/league_lab/roster_value.py` (`RosterBoard`: rebuild a
+  roster-week from the published rows, `gain` / `loss` / `trade_candidates`) serves Trade Finder and the weekly pack.
+  Team Hub, Trade Finder and League Intel's roster section rewritten phone-first; `mart_league_positional_strength`
+  is read by no page or pack any more (kept as a mart; the sync stops publishing it because nothing references it).
+  `reports.py` team brief: "Your positional strength" / "Trade fits" replaced by roster value + rank, closest call,
+  starter strength, buy-low / sell-high by lineup gain; keeper facts carry the chain acquisition. Definitions:
+  `docs/METRICS.md` § Roster value; models: `docs/DATA_MODEL.md` § Roster value (B2).
+* **Design choices** (PO to confirm): (1) starter strength is **read** from `ops.lineups.margin` (B1 already stores
+  lineup − fresh solve without him), not re-solved; (2) the replacement ("Tucker over Monangai") is the bench player
+  worth value − margin, from the alternating-path property of the matching, found in SQL by a window over integer
+  cents (no self-join: the first version took 4.4 s, now < 50 ms per view); (3) Trade Finder's lineup gain is solved
+  at page time with `lineup.solve` (0.24 s for the dynasty's 202 candidates × 4 weeks, cached 10 min), because a
+  gain for every player × every other roster × 4 weeks would be ~20k solves a night for lists nobody opens —
+  `app/requirements.txt` gains `scipy==1.18.1` (the hosted app installs from it; B3/B4 may add the same line);
+  (4) "this week" = the first REG week with a kickoff after `now()` (a view: it moves on without a rebuild), horizon =
+  this week + 3; (5) acquisition = the latest move into this roster (its current stint), whole chain for a dynasty,
+  current season for redraft/keeper; a roster taken over by a new manager marks older players **Inherited** — owner
+  *and co-owners* count (Andrew's dynasty roster 12 has had him as owner or co-owner every season since 2021, so
+  nothing on it is "inherited"; PhillyRoc took over roster 9 in 2024: 4 players inherited); (6) no `--select`
+  appended: the four views declare `-- depends_on: mart_lineup_recommendation`, so the existing
+  `mart_lineup_recommendation+` in the Makefile `project` target and nightly `projection-marts` rebuilds and tests
+  them (`dbt ls` confirms); the acquisitions table is built by the main `dbt build`.
+* **Evidence** (clone, this week = 4, horizon 4–7, both leagues):
+  - Rebuilding every roster-week of the horizon from the published rows reproduces `ops.lineup_totals.lineup_value`
+    to the cent 88/88; every one of the 773 unlocked starters' margins equals lineup value − a fresh `solve()`
+    without him to the cent; the replacement named by the mart is the player who enters that re-solve 773/773
+    (`scratchpad/waveB_r2/b2/verify_board.py`). By hand: dynasty roster 1 (130.26) without Tre Tucker 130.11 → 0.15
+    = his FLEX margin, Monangai enters; without Jalen Hurts 118.62 → 11.64 = his SUPER_FLEX margin; Andrew's roster 12
+    (109.69) without Kenny Gainwell 109.24 → 0.45 (Emanuel Wilson enters) = the card "RB2, Kenny Gainwell over
+    Emanuel Wilson by 0.45".
+  - **QB3 in superflex**: roster 12 starts Bo Nix 20.60 (QB) and Michael Penix Jr. 19.81 (SUPER_FLEX), Aaron Rodgers
+    17.86 and Malik Willis 17.28 on the bench: lineup 109.69 without Willis, and without both, change +0.00. Adding
+    Kirk Cousins (16.19, a bench QB of roster 2) to roster 12: +0.00; to The72Repeat (roster 5, whose SUPER_FLEX is RB
+    David Montgomery 11.66 and QB2 McCord 9.17 sits): +4.53 = 16.19 − 11.66. Removing The72Repeat's QB2/QB3 (McCord,
+    Sanders): 126.86 → 126.86. The old mart counted SUPER_FLEX as a QB slot (roster 5 "QB starters" = Purdy + McCord).
+  - **WR who improves FLEX**: dynasty roster 1 starts WR Collins 16.15 / Watson 14.28 and Tre Tucker 10.00 at FLEX;
+    adding Tee Higgins (WR 13.25, roster 6) → 133.51, +3.25 (seated at FLEX, Tucker out) = his margin in the new
+    lineup; George Pickens 13.10 → +3.10. A position-by-position count of the two WR slots (the old mart) sees 0.
+    Unit test: a WR better than WR2 takes WR2 and pushes WR2 into FLEX, gain 18.00 − 10.00.
+  - **Trade Finder lineup gain**: Javonte Williams (RB 13.88, roster 7's RB1, margin 2.10) gives Andrew's roster 12
+    **+6.34** in week 4 (109.69 → 116.03, Gainwell out) and costs roster 7 **2.10** (128.59 → 126.49, Travis Kelce
+    comes in): fit +4.24; weeks 4–7 +28.11 (6.34, 6.78, 7.87, 7.12) vs 16.55 (2.10, 6.91, 4.13, 3.41): fit +11.56.
+    Card on the page (dynasty, team 12): "Buy low: ask The72Repeat (jnaumann1011) about Quinshon Judkins (RB) … adds
+    +3.9 to your week-4 lineup and costs them 0.0; over weeks 4–7: +15.5 for you, 1.3 for them (fit +14.2)".
+  - **Every rank names its horizon**: `mart_league_roster_rankings.horizon` not null (test); Team Hub "10th of 12 in
+    the league (week 4)", "(weeks 4–7)"; League Intel columns "Week 4", "Weeks 4–7", "Depth · week 4"; the pack's
+    table has a `horizon` column.
+  - **Acquisition across the chain** (Sleeper raw log → page): Amon-Ra St. Brown — draft pick 21 (round 2) of the
+    2021 rookie draft `716476861135253504` by roster 12 → "Rookie draft 2021 · 2.09"; George Kittle — trade
+    `956061477281034240` (3-team, created 2023-04-24, processed 2023-04-25, adds 4217→12, drops 4217→9, roster 9 =
+    Kuch4120 then) → "Trade 2023 offseason · from Kuch4120"; Aaron Rodgers — drafted 2021 by roster 3, to 12 in 2022
+    wk 3, to 9 in May 2024, back in trade `1223826061477814272` (2025-05-03, adds 96→12, drops 96→9) → "Trade 2025
+    offseason · from PhillyRoc"; also Bo Nix → "Trade 2025 offseason · from Chargers2017" (2025-09-03). The old
+    Team Hub showed all four as "Waiver / free agent" (it read the 2026 draft only): 200 of the dynasty's 291
+    rostered players were acquired before 2026 and all 200 showed "Waiver / free agent". Every rostered player has
+    an acquisition row (448/448; 0 without an event), none has a later move off his roster (both dbt tests).
+  - dbt: `--select mart_league_acquisitions+ assert_every_rostered_player_has_acquisition
+    assert_acquisition_starts_current_stint` PASS=36 (5 models, 31 tests); the Makefile / nightly projection-marts
+    select `mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+` PASS=49 (now
+    includes the four views). Negative controls: Kittle's acquisition row deleted → FAIL 1; Godwin's dated to his
+    2021 draft → stint test FAIL 2 (the 2022 trade away: a drop and an add elsewhere); one `ops.lineup_totals` value
+    +1 → reconcile test FAIL 1; all restored (lineup totals md5 identical), PASS=36 again.
+  - `pytest` 439 passed (+130 in `tests/test_roster_value.py`: rebuild to the cent, margin = fresh solve, QB3 adds
+    0, superflex by eligibility, WR through FLEX, fit, taxi/Out/locked, horizon, `trade_candidates`, and the SQL
+    replacement rule vs the solver on 120 random rosters), `ruff` clean, headless page check 26 runs, 0 exceptions.
+    Views: horizon 42 ms, value 50 ms, rankings 49 ms, slot strength 28 ms (whole league).
+  - Playwright (Streamlit on 8521, dynasty team 12 and League of Scrubs team 2): `scratchpad/waveB_r2/b2/shots/`
+    `{team_hub,trade_finder,league_intel}_{dynasty,scrubs}_{390,1300}.png` (first screen) and `…_full.png` (whole page
+    with the roster / buy-low expander open); at 390 px the page never scrolls sideways (scrollWidth = clientWidth);
+    the tables pin the first column and keep the decision columns (value, margin / gain, fit) on screen.
+* **Open**: Josh Jacobs has no v2 projection in weeks 4–7 (unvalued, 0) on two rosters — a projection-side gap, not
+  B2's; a takeover inside a season is dated to that season's start (Sleeper keeps one owner per season); the
+  replacement's name is arbitrary between two bench players of exactly equal value (same total); Trade Finder
+  ignores roster size and what is sent back (T-01); no `metric_registry.csv` rows (seeds out of bounds) — would add
+  `roster_lineup_value`, `roster_horizon_value`, `roster_bench_value`, `starter_strength`, `lineup_gain`,
+  `trade_fit` (v1.0, grain roster / roster × slot type / player × roster).
+
 ## Andrew's mobile review of the live app (2026-09-29, after round 1)
 
 Reviewed from his phone, spoken; the points, page by page (the plan's "Round 1 status and Andrew's

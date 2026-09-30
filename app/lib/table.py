@@ -261,6 +261,21 @@ COLUMNS: dict[str, Col] = {
     # ---- B5 decision record
     "frozen_share": C("Kickoff board", "pct", "Share of the scored player-weeks whose projection is the board as published before that week's "
                                               "first kickoff (frozen since); the rest are refit values from a later run of the same model"),
+    # ---- B2 roster value
+    "acquired_label": C("Acquired", help="How he joined this roster: draft round.pick, trade (from whom), waiver / free agent, with the season; "
+                                         "read across the whole league history for a dynasty. 'Inherited' = the roster had him before its manager took over"),
+    "horizon_value": C("Next 4 weeks", "num1", "The best lineup of each of the next four weeks added up (byes and injuries already in each week)"),
+    "horizon_label": C("Horizon", help="The weeks a value or rank covers"),
+    "starter_strength": C("Strength", "num2", "The best lineup minus the best lineup without the roster's top starter at that slot (the whole lineup re-picked)"),
+    "replacement_name": C("Next man up", help="Who comes into the lineup when that starter sits"),
+    "league_rank": C("Rank", "int", "Rank among the league's rosters (1 = highest); the horizon says which weeks"),
+    "gain_week": C("You gain · wk", "signed1", "What your best lineup this week gains by adding him (his margin in your re-picked lineup)"),
+    "gain_horizon": C("You gain · 4 wks", "signed1", "The same over the next four weeks"),
+    "loss_week": C("They lose · wk", "num1", "What his roster's best lineup this week loses without him (his margin there; 0 on the bench)"),
+    "loss_horizon": C("They lose · 4 wks", "num1", "The same over the next four weeks"),
+    "fit_week": C("Fit · wk", "signed1", "Lineup points the move creates this week: what the receiving roster gains minus what the giving roster loses"),
+    "fit_horizon": C("Fit · 4 wks", "signed1", "Lineup points the move creates over the next four weeks: receiver's gain minus giver's loss. Positive = the player is worth more on the other roster"),
+    "best_partner": C("Best fit", help="The roster whose lineup gains the most from him over the next four weeks"),
 }
 
 

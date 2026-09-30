@@ -13,6 +13,14 @@ Newest first. The Home page shows the top entry as "What's new".
   of the week is named. For weeks already played it also computes the best lineup you could have started; it
   matches Sleeper's own max points (weeks 1–2: all 22 teams, to the cent, except one where it is 1 point higher
   by leaving a −1 defense out). No page shows it yet: the start/sit, waiver and roster views are being rebuilt on it.
+- **Team Hub, Trade Finder and League Intel now read your real lineup.** Team Hub opens with the answer: your best
+  lineup this week and your closest call (e.g. "FLEX, your starter over your best bench player by 0.15"), the next four weeks
+  and your depth, each ranked against the league, and how your starters got there; the roster is one table
+  (player, slot, value, margin, acquired). **"Acquired" is now right for the dynasty**: it reads every season of the
+  league, so a 2023 trade says "Trade 2023 offseason · from <the manager you traded with>", not "Waiver / free agent". Trade Finder lists
+  buy-low and sell-high players by position with what each would add to your lineup and cost his owner's, this
+  week and over four weeks — a WR who beats your FLEX counts, a third QB behind two starters does not. League Intel
+  ranks every team on this week, the next four weeks and depth. The old position-by-position strength bars are gone.
 - **What the board said before kickoff is now kept.** From week 4 on, each week's projection v2 board (Rankings)
   is frozen when the week's first game kicks off: later refreshes no longer rewrite it, the page says "the board as
   published before the first kickoff (Thu …)", and the "How the model is doing this season" strip is scored on that
