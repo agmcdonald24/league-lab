@@ -1,4 +1,4 @@
-# Handoff — League Lab, 2026-09-27
+# Handoff — League Lab, 2026-09-29
 
 For the next agent (Claude Code or any other) picking this repo up. Read in this order:
 `AGENTS.md` (rules) → this file → `docs/PROJECT_PLAN.md` § Iteration 9 (the tasks) →
@@ -28,9 +28,14 @@ Wave A (S-01a, U-10, U-11, M-06) is delivered. **Wave B** builds the decision en
 `docs/league-lab-next-iteration-2026-09-29.md`:
 
 Round 1 (independent, in parallel): **B1** exact lineup service · **B5** decision record (frozen
-projections, published drift) · **B6** GitHub Actions nightly.
+projections, published drift) · **B6** GitHub Actions nightly — **delivered 2026-09-29** (`ba2c9c5`,
+STATUS § "Wave B / PO merge and QA — round 1").
 Round 2 (all consume B1): **B2** roster value and rankings · **B3** waiver engine · **B4** player
-card + My Week. Then Iteration 10 (trade evaluator, role alerts, matchup comparison, K/DST).
+card + My Week — with the acceptance amended by Andrew's mobile review (plan § "Round 1 status and
+Andrew's mobile review": answer-first cards, phone width, one projection, plain words). Then
+Iteration 10, where the review added U-13 mobile pass, U-14 plain-language pass, U-15 model
+explainer + honest importance, U-16 League consolidation, U-17 Receivers/Kickers context, R-14 CB
+matchups, R-15 defense-vs-position picture, T-02 trade simulator, P-01 profiles + any league.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit.

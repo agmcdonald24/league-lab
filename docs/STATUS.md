@@ -700,6 +700,46 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   headless check 26 renders (13 pages × 2 leagues), 0 exceptions. No-archive path: with an empty `data/raw/sleeper`
   and the blocked Sleeper API the night stopped at `fetch-sleeper` with the new line, exit 1.
 
+## Andrew's mobile review of the live app (2026-09-29, after round 1)
+
+Reviewed from his phone, spoken; the points, page by page (the plan's "Round 1 status and Andrew's
+mobile review" says what each one became):
+
+* **General / mobile**: could there be a mobile version and a desktop version? Tables are too big
+  for a phone; Rankings' filters are "very clunky"; Trade Finder and League Intel "don't do well on
+  mobile"; keep the big tables but "at the bottom, tight", and put the answer "in your face".
+* **Home**: "a nice homepage for an agent to use"; reads like AI, needs dumbing down for a broad
+  audience; a release "hype-up"; cool things are buried.
+* **Team Hub**: stack the sections differently; the roster-value "acquired" is wrong for the
+  dynasty team; a note somewhere says it uses League of Scrubs data only — should follow the
+  selected league; wants a profile ("set your profile", pick through your teams in several leagues)
+  and, eventually, any Sleeper league connected, not just these two; clicking through pages
+  sometimes loses whose team / which league it is.
+* **Waiver Wire**: the shortlist recommended only Mike Gesicki (dynasty) "2.9 below your TE1 this
+  week"; the TE1 is 10.3 there but 11.5 on his team view (and 9.4 in the other league) — "I don't
+  know what these projected v2s are"; hide the IR / Out column when empty; break "rank buys" and the
+  like into their own dashboards; tables too big for mobile.
+* **Rankings**: injury column not needed (a filter instead); "where did these projections come
+  from — did you train a model?"; what are Spearman this season / backtest; importance "price line
+  0.017 … snap 0.7% — crazy that it's that low"; what is "price line".
+* **Matchups**: the start/sit board does not make the decision stand out — be upfront and
+  suggestive, table in the background; cornerbacks: who will Amon-Ra be matched against, how do the
+  CBs rank, is there a projection for it; defense vs position as a chart; "look up any player next to
+  matchup" unclear.
+* **Trade Finder**: fine on desktop, not on mobile; a trade simulator; buy-low across the league with
+  owners (already there) — also by position.
+* **League Intel**: "not sure what this means"; the charts (schedule luck, points left on the bench,
+  weekly scoring rank) are the interesting part, but only eight teams fit; fold it into League;
+  standings / high scores / matchups / lineups feel superfluous.
+* **Players**: keep. **Receivers**: add context on why the metrics matter and how to use the chart.
+  **Kickers**: "could use some love".
+
+PO findings from the review, checked in the code the same day: the 10.3 vs 11.5 is two models —
+the shortlist uses projection v2 in the selected league's scoring, Home's "Your week" table uses
+`mart_player_week_rankings` (the baseline model, reference scoring); the importance table on
+Rankings is the permutation importance of the P50 *quantile* model, whose dominant input is the
+priced line itself — it describes the residual adjuster, not the projection (plan U-15).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
