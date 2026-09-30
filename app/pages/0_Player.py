@@ -303,8 +303,9 @@ with st.container(border=True):
                     src = {"season_ppg": " (his points per game this season)", "observed_ppg": " (points per game Sleeper scored)"}.get(m["value_source"], "")
                     head = f"Week {week}: **starts at {where}** for {team_name}, {float(m['value']):.2f}{src}"
                     if alt is not None:
-                        st.markdown(f"{head} — margin **{float(m['margin']):.2f}** over {player_link(alt['gsis_id'], alt['player_name'])} "
-                                    f"({float(alt['value']):.2f}), {verdict(float(m['margin']))}.")
+                        st.markdown(f"{head} — without him the lineup loses **{float(m['margin']):.2f}** "
+                                    f"({player_link(alt['gsis_id'], alt['player_name'])}, {float(alt['value']):.2f}, would come in): "
+                                    f"{verdict(float(m['margin']))}.")
                     else:
                         st.markdown(f"{head} — {a['how']}: he is a must-start.")
             elif m["role"] == "bench":

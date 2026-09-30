@@ -756,7 +756,7 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
     off by 0.05 → 4 failed; the slid-in player replaced by the slot's best → 4 failed.
   * **Player card**, both leagues, AppTest and Playwright: Amon-Ra St. Brown (rostered WR, dynasty 12: shares 35.1 /
     42.9 / 92.5 / 42.9 %, 17.0 proj, floor 7.6, ceiling 28.7, 9.1 targets, @ CAR #21 vs WR, next 4 with the week-6 bye,
-    starts at WR1 margin 7.76 over Godwin 9.21), Ryan Miller (free-agent WR, both leagues: Questionable, 2.6 proj),
+    starts at WR1, "without him the lineup loses 7.76 (Chris Godwin Jr., 9.21, would come in): clear"), Ryan Miller (free-agent WR, both leagues: Questionable, 2.6 proj),
     Chase McLaughlin (K, Scrubs: projection "unavailable: the model projects QB, RB, WR and TE …", FG 6 of 6, 13.50 at K
     "nobody on the bench can play K: he is a must-start"), Josh Jacobs (no v2 projection: "unavailable: he is on the
     exempt list"; usage "unavailable: no games this season yet"; bench 5 of 5 with no value this week), Aaron Rodgers
