@@ -484,6 +484,32 @@ per-player lock time beyond the scheduled kickoff; historical IR / taxi membersh
 waiver pool (B3). Past weeks' proposals use this season's K / DEF points per game to date (hindsight for
 those two positions only).
 
+### Decision cards (B4, 2026-09-30; `app/lib/cards.py`, Home "My week", Matchups, the player card)
+
+No new number: a card restates B1's lineup for one roster-week. **Which week**: the first regular-season
+week of the league's season whose last game has not kicked off (`dim_game`), so a Thursday game does not
+end the week's decisions — its players show as locked. **Which starters**: the unlocked, valued starters
+(`lineup_margin` not NULL, `value_source` ≠ `unvalued`, and his game not kicked off at page time — B1's
+`is_locked` is as of the nightly run) in B1's weakest-slot order (margin, then value, then slot order;
+at a tie of the cent-rounded stored margins the mart's `is_weakest_slot` goes first), skipping a starter
+nobody on the bench can replace (margin = his whole value: the only K, the only DEF), up to three.
+**The named alternative** is the player who enters the best lineup when that starter sits. B1's margin is
+exactly that re-solve, and removing one starter changes the optimum along one alternating path (teammates
+may slide between slots; exactly one bench player comes in), so the alternative is the bench player whose
+value is `player_value − lineup_margin` (± 0.011: values and margins are stored to the cent, a K's season
+PPG is solved unrounded). First choice: the best unlocked bench player eligible for the slot, when his
+value is that one ("start Gainwell at RB2 over Wilson, 0.45"); otherwise the bench player with that value
+comes in after a teammate slides over, and the card names the teammate ("Judkins would come in at FLEX and
+Golden would move to WR2"). Checked against the solver on every proposed roster-week of 2026 weeks 4–18
+(both leagues, 330 roster-weeks, 978 cards: 920 direct swaps, 58 slides, 978/978 re-solves bring in exactly
+the named player and lose exactly the margin) and on 360 random rosters in `tests/test_cards.py`.
+**Words**: the projected difference on the card is the margin; under 1 point "a coin flip", under 3 "a
+lean", otherwise "clear". The opponent's rank on a card is `mart_defense_vs_position_current.rank_std`
+for his position (reference scoring, 1 = gives up the most), the same rank the Matchups page shows.
+**Bench player on the player card**: the lowest-valued unlocked starter in a slot he can play and the gap
+to him (a direct swap; a slide could make the real gap smaller — the card says "would have to beat", not
+"is worth").
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

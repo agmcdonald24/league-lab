@@ -4,6 +4,15 @@ Newest first. The Home page shows the top entry as "What's new".
 
 ## 2026-09-29 — Wave B (decision engine)
 
+- **My week, and a card for every player.** Home now opens on your week: your best lineup, and the two or three
+  closest calls as plain cards — "RB2: start Kenny Gainwell over Emanuel Wilson, 7.54 vs 7.09 projected, 0.45 apart,
+  a coin flip", with each player's opponent and how that defense ranks against the position. It uses the same
+  projection as the rest of the league pages, in your league's scoring (the old "Your week" table used a simpler
+  formula in League of Scrubs scoring, which is why a player could show 11.5 there and 10.3 on Waiver Wire). The same
+  cards sit at the top of Matchups, with the start/sit board one tap below. Tap any player's name in a table — or
+  search on the new **Player** page — for one screen on him: how much he is used, this week's projection with a bad
+  and a good week, whether he is available (whose team, injury, bye, locked or not) and what he is worth in your
+  league, including where he sits in his team's lineup this week.
 - Behind the pages, League Lab now works out the **best legal lineup** for every team in both leagues, every
   week: all slots solved together (FLEX and superflex included — a WR who beats your QB2 goes in the superflex),
   byes, Out / Doubtful, IR and taxi left out, Questionable flagged, players whose game has started kept where

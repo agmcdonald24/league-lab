@@ -2,10 +2,12 @@
 
 import pandas as pd
 import streamlit as st
+from lib.cards import decision_cards, decision_week, howto_cards, lineup_rows, lineup_table
 from lib.charts import heat_style
 from lib.db import query
 from lib.table import howto, show
 from lib.ui import (
+    current_leagues,
     freshness_banner,
     league_slots,
     next_week_info,
@@ -24,19 +26,22 @@ season, next_week = int(cal["season"]), int(cal["next_week"])
 kick = pd.Timestamp(cal["next_week_first_kickoff"]).tz_convert("America/New_York") if pd.notna(cal["next_week_first_kickoff"]) else None
 st.caption(f"NFL {season} · week {next_week}" + (f" · first kickoff {kick:%a %b %-d, %-I:%M %p} ET" if kick is not None else ""))
 
-# ------------------------------------------------------------- start/sit board for the roster
+# ------------------------------------------------------------- lineup decisions, then the start/sit board (plan B4)
 if roster_id is not None:
-    st.subheader("Start / sit board")
-    howto(
-        "Every player on the roster with next week's opponent and where that defense ranks in points allowed to his position "
-        "(**Opp rank** 1 = gives up the most, 32 = the fewest). **Opp rank (L4)** uses only the defense's last four games.",
-        "Read matchup rank together with **xPPG** (the player's own opportunity) — a great matchup for a player nobody throws to is still a bad start.",
-        "**Injury** and **Practice** are the latest official report; a Questionable tag with full practice is usually fine, "
-        "a Questionable with no practice is a real risk.",
-        "**BYE** means no game; the player scores zero if started.",
-    )
+    # the same cards as Home's My Week (lib/cards.py): the closest calls of the best lineup (B1), for the
+    # first week with a game still to kick off
+    lu_season = int(current_leagues().set_index("league_id").loc[league_id, "season"])
+    lu_week = decision_week(lu_season)
+    if lu_week is not None:
+        st.subheader(f"Your lineup decisions — week {lu_week}")
+        lu_rows = lineup_rows(league_id, lu_season, lu_week, roster_id)
+        decision_cards(league_id, roster_id, lu_week, lu_season, rows=lu_rows)
+        with st.expander("Your best lineup this week"):
+            lineup_table(lu_rows, full=True)
+        howto_cards()
+
     board = query(
-        """select player_name, position, nfl_team, is_current_starter, injury_status, practice_status, is_bye,
+        """select gsis_id, player_name, position, nfl_team, is_current_starter, injury_status, practice_status, is_bye,
                   opponent, is_home, opp_rank_std, opp_rank_l4, opp_points_allowed_pg_std,
                   ppg_std, points_per_game_l3, expected_per_game, target_share_l3, snap_pct_l3, depth_rank
            from analytics.mart_player_availability
@@ -44,9 +49,18 @@ if roster_id is not None:
            order by array_position(array['QB','RB','WR','TE','K'], position), coalesce(expected_per_game, ppg_std) desc nulls last""",
         (league_id, roster_id),
     )
-    show(board, ["player_name", "position", "nfl_team", "is_current_starter", "injury_status", "practice_status", "opponent", "is_home", "is_bye",
-                 "opp_rank_std", "opp_rank_l4", "opp_points_allowed_pg_std", "ppg_std", "points_per_game_l3", "expected_per_game",
-                 "target_share_l3", "snap_pct_l3", "depth_rank"], height=520)
+    with st.expander("Start / sit board: every player with his matchup"):
+        st.markdown(
+            "- Every player on the roster with next week's opponent and where that defense ranks in points allowed to his position "
+            "(**Opp rank** 1 = gives up the most, 32 = the fewest). **Opp rank (L4)** uses only the defense's last four games.\n"
+            "- Read matchup rank together with **xPPG** (the player's own opportunity) — a great matchup for a player nobody throws to is still a bad start.\n"
+            "- **Injury** and **Practice** are the latest official report; a Questionable tag with full practice is usually fine, "
+            "a Questionable with no practice is a real risk.\n"
+            "- **BYE** means no game; the player scores zero if started."
+        )
+        show(board, ["player_name", "position", "nfl_team", "is_current_starter", "injury_status", "practice_status", "opponent", "is_home", "is_bye",
+                     "opp_rank_std", "opp_rank_l4", "opp_points_allowed_pg_std", "ppg_std", "points_per_game_l3", "expected_per_game",
+                     "target_share_l3", "snap_pct_l3", "depth_rank"], height=520)
 
     st.subheader("Cornerback context for a receiver")
     howto(
