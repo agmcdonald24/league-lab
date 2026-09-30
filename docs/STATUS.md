@@ -444,6 +444,23 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
 * Verified on the main database: `pytest` 530, `ruff` clean, migrate, `mart_league_acquisitions+` and the
   projection/lineup/waiver marts built, `project` writes lineups then waiver moves, headless check on every
   page × both leagues (+ the Player page by id) with 0 exceptions.
+* One QA agent, phone-first (iPhone 14 emulation, 390 × 844, both leagues as Andrew's rosters), 12 minutes:
+  no sideways scroll on any of the 7 walked pages; Team Hub, Waiver Wire, Trade Finder and Matchups show a card
+  before any table; the league/team selection survived every hop on the phone layout (Andrew's report not
+  reproduced — a hypothesis: player links open a new tab, and in that new session switching league has no
+  remembered team); every card matches its mart (Home = Matchups first card = `weakest_slot` / margin; Waiver
+  card = `mart_waiver_moves` rank 1; Team Hub closest call = the same) for both rosters; the TE1 / RB2
+  projection is the same number on Home, Player, Team Hub and the mart (9.47 Kittle, 10.73 Hampton); no jargon
+  on any card. Findings: (HIGH) Rankings' default week and Team Hub's opponent column take the week from
+  `mart_nfl_calendar` (3 on a database loaded before Monday night's game was final) while the cards take it
+  from the clock (4) — they agree once a nightly has marked the last game final, so the live app is
+  consistent, but it is one week rule too many → U-13 makes one `current_week()` helper; (MEDIUM) Matchups'
+  defender table (14 columns) and defense-vs-position tables (6) sit outside expanders; League Intel opens on a
+  23-column standings table with no card → U-13 / U-16; (LOW, fixed by the PO) the injury banner took ~300 px
+  on a phone and pushed Home's first card below the fold → one sentence; four jargon phrases ("margin",
+  "re-solved") reworded. (LOW, open) player links open a new tab (Streamlit's LinkColumn); browser Back is
+  imprecise after page hops (query-param rewrites add history entries); the Player page leads with Usage, the
+  projection is second.
 * Known gaps carried into Iteration 10 (U-13): player names on Team Hub / Trade Finder (B2's `narrow_table`,
   column `player`) and the waiver cards' claim/drop columns are not links yet (B4's `show()` link needs
   `player_name` + `gsis_id`); Receivers / Players / League tables need `gsis_id` in their SELECTs for the
