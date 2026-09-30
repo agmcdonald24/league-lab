@@ -1035,6 +1035,35 @@ priced line itself — it describes the residual adjuster, not the projection (p
 
 ## Wave C (Iteration 10)
 
+### PO merge — round 1 (C1 + C2 + C3), 2026-09-30
+
+* Three Opus developers in parallel off `8d8cead` (worktrees `wt-c1` / `wt-c2` / `wt-c3`, clones `league_lab_c1` /
+  `_c2` / `_c3`, ports 8531–8533) with the Wave C brief (page ownership split by region: C1 layout, C2 text, C3
+  model). Merged into `integration/wave-c`: C1 first, C3 (CHANGELOG / STATUS keep both), then C2 — Rankings,
+  Matchups and League conflicted where C1 restructured a region whose `howto` text C2 rewrote: resolved as C1's
+  structure with C2's text pasted into it; `7_League_Intel.py` stays deleted (C1) and C2's three rewritten boxes
+  for it were carried into League; Home is C2's (its page guide already falls back to League when Intel is gone).
+  PO fix-ups: the label renames C2 could not make (`Proj (v2)` → Proj, `Floor (P10)` / `Ceiling (P90)` / `Median (P50)`
+  → Floor / Ceiling / Middle, `Spearman` → Order score, the Rankings picker "League Lab projection · …" / "Old formula",
+  chart titles), the K/DEF registry help (`player_value`, `value_source`) now that kickers and defenses are projected,
+  "It starts at DEF" on waiver cards, and one What's new line each for C1 and C3 in `app/whats_new.md`.
+* Decisions confirmed as delivered: C1 — Phone level from the User-Agent (`Mobi`), injuries as "· Q/D/O" after the
+  name on Rankings, the "Points by week" line chart dropped in favour of the rank heatmap, no "likely cover" claim
+  on the cornerback card until R-14; C2 — importance from the held-out twin (2016–2024 models scored on 2025), the
+  priced-line MAE rise as the single number, computed once per training window, What's new from `app/whats_new.md`;
+  C3 — DEF keyed by the Sleeper id in `ops.projections.gsis_id` (NULL in the mart, keyed by team), an unmapped K
+  takes his team's only projected kicker, both K and DEF ship as the model (`KD_SHIP`), `kd1.0` rows in
+  `ops.projection_backtest`.
+* Verified on the main database: `pytest` 571, `ruff` clean, migrate, `mart_kd_team_game+ mart_player_availability+`
+  built, `project` (v2 → K/DEF → lineups → waivers → importance), the projection/lineup/importance marts rebuilt,
+  `backtest-kd` run once so the hosted copy carries the K/DEF backtest, the headless check on every page × both
+  leagues + the Player page with 0 exceptions.
+* Left for round 2 / later: Rankings' Position selector still QB–TE (K/DEF boards need the backtest selector reworked);
+  the D/ST keys `def_st_ff` / `def_st_fum_rec` / `st_ff` / `st_fum_rec` price at 0 (≈0.1 pt/game); `backtest-kd` is
+  not in the nightly (run it after a `KD_MODEL_VERSION` change); the Player card's no-projection text for a K on a
+  bye; names inside cards (Team Hub, Waiver Wire) are not links; importance is in the reference scoring only;
+  `metric_registry` rows for `projection_importance` and `kd_projection`.
+
 ### C1 2026-09-30 — U-13 mobile pass + U-16 League consolidation (branch `dev/C1`, clone `league_lab_c1`)
 
 **What changed.**
