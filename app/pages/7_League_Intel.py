@@ -1,10 +1,12 @@
-"""League Intel: how every manager plays — luck, lineup discipline, activity, roster shape."""
+"""League Intel: how every manager plays — luck, lineup discipline, activity, and (plan B2) every roster's
+lineup value, 4-week outlook and depth ranked in the league."""
 
+import pandas as pd
 import streamlit as st
 from lib.charts import bar_chart, color_map, heat_style, line_chart
-from lib.db import query
-from lib.table import howto, show
-from lib.ui import freshness_banner, league_positions, league_slots, perspective, setup
+from lib.db import missing_relations, query
+from lib.table import Col, howto, prepare, show
+from lib.ui import freshness_banner, league_slots, perspective, setup
 
 setup("League Intel")
 freshness_banner()
@@ -55,19 +57,64 @@ if not apw.empty:
     sel = st.multiselect("Teams on the chart", teams, default=teams[:5], max_selections=8)
     st.plotly_chart(line_chart(apw[apw["team_name"].isin(sel)], "week", "points", "team_name", "Points by week", "points", y_format=".1f", colors=color_map(teams)), width="stretch")
 
-# ------------------------------------------------------------- positional strength heatmap
-st.subheader("Roster shape — starter strength rank by position")
-howto("Rank of each roster's would-be starters at each position by season points per game (1 = strongest, darker = stronger). "
-      "Rosters that are dark in one column and light in another are the natural trade partners.")
-ps = query(
-    """select team_name, position, position_rank
-       from analytics.mart_league_positional_strength where league_id = %s""",
-    (league_id,),
-)
-if not ps.empty:
-    pv = ps.pivot_table(index="team_name", columns="position", values="position_rank")[league_positions(ps)]
-    pv.index.name = "Team"
-    st.dataframe(heat_style(pv), width="stretch")
+# ------------------------------------------------------------- roster rankings (plan B2)
+st.subheader("Roster rankings")
+if missing_relations(("mart_league_roster_rankings", "mart_league_roster_value")):
+    st.info("Roster rankings appear after the next build publishes the roster-value marts.")
+else:
+    rk = query(
+        """select roster_id, team_name, measure, horizon, value, league_rank, n_rosters
+           from analytics.mart_league_roster_rankings where league_id = %s""",
+        (league_id,),
+    )
+    rv = query(
+        """select roster_id, weakest_slot, weakest_margin from analytics.mart_league_roster_value where league_id = %s""",
+        (league_id,),
+    )
+    if rk.empty:
+        st.caption("No lineups for the weeks ahead yet.")
+    else:
+        def _ord(n) -> str:
+            n = int(n)
+            return f"{n}{'th' if 10 <= n % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')}"
+
+        hz = rk.drop_duplicates("measure").set_index("measure")["horizon"]
+        top = rk[rk["league_rank"] == 1].drop_duplicates("measure").set_index("measure")
+        n = int(rk["n_rosters"].max())
+        lines = [f"Strongest lineup ({hz['lineup_value']}): **{top.loc['lineup_value', 'team_name']}** ({top.loc['lineup_value', 'value']:.1f})",
+                 f"best over {hz['horizon_value']}: **{top.loc['horizon_value', 'team_name']}** ({top.loc['horizon_value', 'value']:.1f})",
+                 f"deepest bench ({hz['bench_value']}): **{top.loc['bench_value', 'team_name']}** ({top.loc['bench_value', 'value']:.1f})"]
+        st.markdown(" · ".join(lines) + ".")
+        if roster_id is not None:
+            mine = rk[rk["roster_id"] == roster_id].set_index("measure")
+            if not mine.empty:
+                st.markdown(f"Yours: {_ord(mine.loc['lineup_value', 'league_rank'])} in {hz['lineup_value']}, "
+                            f"{_ord(mine.loc['horizon_value', 'league_rank'])} over {hz['horizon_value']}, "
+                            f"{_ord(mine.loc['bench_value', 'league_rank'])} in depth (of {n}).")
+        wide = rk.pivot_table(index=["roster_id", "team_name"], columns="measure", values=["value", "league_rank"]).reset_index()
+        wide.columns = ["_".join(str(x) for x in c if x) for c in wide.columns]
+        wide = wide.merge(rv, on="roster_id", how="left").sort_values("league_rank_lineup_value")
+        for m in ("lineup_value", "horizon_value", "bench_value"):
+            wide[m] = [f"{v:.1f} · {_ord(r)}" for v, r in zip(wide[f"value_{m}"], wide[f"league_rank_{m}"], strict=True)]
+        wide["closest"] = [f"{s} · {mg:.2f}" if isinstance(s, str) and pd.notna(mg) else "—"
+                           for s, mg in zip(wide["weakest_slot"], wide["weakest_margin"], strict=True)]
+        wk_h, hz_h = hz["lineup_value"].capitalize(), hz["horizon_value"].capitalize()
+        cols = ["team_name", "lineup_value", "horizon_value", "bench_value", "closest"]
+        out, config = prepare(wide, cols, overrides={"team_name": Col("Team"),
+                        "lineup_value": Col(wk_h, help=f"Best legal lineup, {hz['lineup_value']} (every slot solved together): value · league rank"),
+                        "horizon_value": Col(hz_h, help=f"The best lineups of {hz['horizon_value']} added up: value · league rank"),
+                        "bench_value": Col(f"Depth · {hz['bench_value']}", help="The lineup the bench alone would field if every starter sat: value · league rank"),
+                        "closest": Col("Closest call", help="The starter with the smallest margin and what the lineup loses by benching him for the next man up")})
+        # phone first: the team pinned, narrow value columns (the table is five columns wide)
+        config["team_name"].update(width=130, pinned=True)
+        for c in cols[1:]:
+            config[c]["width"] = 92
+        st.dataframe(out, column_config=config, hide_index=True, width="stretch", placeholder="")
+        howto("**Lineup value** is each roster's best legal lineup from this league's projections, every slot solved together "
+              "(FLEX and superflex by eligibility). **Depth** is what its bench alone would field. The rank after each value is its place "
+              "in the league for the weeks named in the column. **Closest call** is the slot where the lineup decision is tightest.",
+              "A roster ranked high on the next four weeks but low on depth is one injury from trouble — a natural trade partner "
+              "for a deep roster that needs starters.")
 
 # ------------------------------------------------------------- historical luck
 st.subheader("Past seasons — record vs what the points deserved")

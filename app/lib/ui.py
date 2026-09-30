@@ -116,7 +116,8 @@ def freshness_banner() -> None:
     if why:
         when = f"{loaded_at.tz_convert(et):%a %b %-d, %-I:%M %p} ET" if pd.notna(loaded_at) else "never"
         reason = " and ".join(why)
-        st.warning(f"Injury report last loaded {when}; treat Questionable tags as stale. {reason[0].upper()}{reason[1:]}.")
+        # kept to one sentence: on a phone this banner sits above every page's first card
+        st.warning(f"Injury report is from {when} — treat Questionable tags as stale ({reason}).")
 
 
 def seasons_available() -> list[int]:
@@ -333,3 +334,49 @@ def scoring_diff_summary(diff: str | None, slots: list[str]) -> str:
 def next_week_info() -> pd.Series:
     df = query("select season, last_completed_week, next_week, latest_week_with_results, next_week_first_kickoff from analytics.mart_nfl_calendar")
     return df.iloc[0] if not df.empty else pd.Series(dtype=object)
+
+
+# ---------------------------------------------------------------- player card links (B4)
+PLAYER_PAGE = "Player"   # app/pages/0_Player.py -> /Player
+
+
+def _link_context() -> dict[str, str]:
+    """The league / team a player link should carry: the URL's (perspective() writes both on every page
+    that calls it), else what this browser session picked earlier (pages without a selector)."""
+    out: dict[str, str] = {}
+    try:
+        qp, ss = st.query_params, st.session_state
+        league = qp.get("league") or ss.get("ll_league")
+        if league:
+            out["league"] = str(league)
+            team = qp.get("team") if qp.get("league") else (ss.get("ll_team_by_league") or {}).get(league)
+            if team is not None and str(team) != "":
+                out["team"] = str(team)
+    except Exception:  # noqa: BLE001 - outside a Streamlit run (unit tests, packs): no context
+        pass
+    return out
+
+
+def player_url(gsis_id, name=None) -> str:
+    """Relative URL of the player card: `Player?name=…&id=<gsis>&league=…&team=…`.
+
+    The name goes first so a LinkColumn sorts by it and can show it (display_text regex on `name=`);
+    a row without a gsis id (a team defense, a Sleeper-only kicker) links to the card's search for that name."""
+    from urllib.parse import urlencode
+
+    params: dict[str, str] = {}
+    if name is not None and not (isinstance(name, float) and pd.isna(name)) and str(name) != "":
+        params["name"] = str(name)
+    if gsis_id is not None and not (isinstance(gsis_id, float) and pd.isna(gsis_id)) and str(gsis_id) != "":
+        params["id"] = str(gsis_id)
+    params.update(_link_context())
+    return f"{PLAYER_PAGE}?{urlencode(params)}"
+
+
+def player_link(gsis_id, name) -> str:
+    """A markdown link to the player's card (the bare name when there is no gsis id)."""
+    label = "" if name is None or (isinstance(name, float) and pd.isna(name)) else str(name)
+    if gsis_id is None or (isinstance(gsis_id, float) and pd.isna(gsis_id)) or str(gsis_id) == "":
+        return label
+    safe = label.replace("[", "(").replace("]", ")")
+    return f"[{safe}]({player_url(gsis_id, name)})"

@@ -217,7 +217,7 @@ dbt_step() {  # dbt_step <name> <dbt args...>
 # `league-lab backtest` and `backtest-v2`, the latter minutes of CPU), the DECISION RECORD (plan
 # B5: `ops.projections`, each league-week's board frozen at its first kickoff, and the drift
 # history `ops.projection_drift` scored on it) and the lineups solved on it (`ops.lineups`,
-# `ops.lineup_totals`; re-solved by `project`, restored only so a soft `project` failure publishes
+# `ops.lineup_totals`, and the waiver moves `ops.waiver_moves`; re-solved by `project`, restored only so a soft `project` failure publishes
 # last night's board WITH last night's lineups). A fresh database (every CI run) copies them back
 # from the hosted copy, where the last sync put them (the sync publishes all of `ops`); the
 # backtests are recomputed after the build only when neither place has them, when they come
@@ -230,7 +230,7 @@ dbt_step() {  # dbt_step <name> <dbt args...>
 # (2) a failed copy stops the night too; (3) after `project`, the record is also written to the
 # archive ($RAW_DIR/record/, so it rides the Actions cache): if the hosted copy is reachable but
 # has lost it (a restore that died midway), the archive's copy is used instead.
-STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals"
+STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals ops.waiver_moves"
 RECORD_TABLES="ops.projections ops.projection_drift"
 RECORD_DIR="$RAW_DIR/record"   # one <schema>.<table>.sql.gz per record table
 

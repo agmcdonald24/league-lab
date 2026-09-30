@@ -2,8 +2,17 @@
 
 Newest first. The Home page shows the top entry as "What's new".
 
-## 2026-09-29 — Wave B (decision engine)
+## 2026-09-30 — Wave B (decision engine)
 
+- **My week, and a card for every player.** Home now opens on your week: your best lineup, and the two or three
+  closest calls as plain cards — "RB2: start Kenny Gainwell over Emanuel Wilson, 7.54 vs 7.09 projected, 0.45 apart,
+  a coin flip", with each player's opponent and how that defense ranks against the position. It uses the same
+  projection as the rest of the league pages, in your league's scoring (the old "Your week" table used a simpler
+  formula in League of Scrubs scoring, which is why a player could show 11.5 there and 10.3 on Waiver Wire). The same
+  cards sit at the top of Matchups, with the start/sit board one tap below. Tap any player's name in a table — or
+  search on the new **Player** page — for one screen on him: how much he is used, this week's projection with a bad
+  and a good week, whether he is available (whose team, injury, bye, locked or not) and what he is worth in your
+  league, including where he sits in his team's lineup this week.
 - Behind the pages, League Lab now works out the **best legal lineup** for every team in both leagues, every
   week: all slots solved together (FLEX and superflex included — a WR who beats your QB2 goes in the superflex),
   byes, Out / Doubtful, IR and taxi left out, Questionable flagged, players whose game has started kept where
@@ -13,12 +22,20 @@ Newest first. The Home page shows the top entry as "What's new".
   of the week is named. For weeks already played it also computes the best lineup you could have started; it
   matches Sleeper's own max points (weeks 1–2: all 22 teams, to the cent, except one where it is 1 point higher
   by leaving a −1 defense out). No page shows it yet: the start/sit, waiver and roster views are being rebuilt on it.
+- **Team Hub, Trade Finder and League Intel now read your real lineup.** Team Hub opens with the answer: your best
+  lineup this week and your closest call (e.g. "FLEX, your starter over your best bench player by 0.15"), the next four weeks
+  and your depth, each ranked against the league, and how your starters got there; the roster is one table
+  (player, slot, value, margin, acquired). **"Acquired" is now right for the dynasty**: it reads every season of the
+  league, so a 2023 trade says "Trade 2023 offseason · from <the manager you traded with>", not "Waiver / free agent". Trade Finder lists
+  buy-low and sell-high players by position with what each would add to your lineup and cost his owner's, this
+  week and over four weeks — a WR who beats your FLEX counts, a third QB behind two starters does not. League Intel
+  ranks every team on this week, the next four weeks and depth. The old position-by-position strength bars are gone.
 - **What the board said before kickoff is now kept.** From week 4 on, each week's projection v2 board (Rankings)
   is frozen when the week's first game kicks off: later refreshes no longer rewrite it, the page says "the board as
   published before the first kickoff (Thu …)", and the "How the model is doing this season" strip is scored on that
   frozen board. Weeks 1–3 were played before this existed, so their projections are labelled as **refit values**
   (from a later run of the same model), on the board and in the strip. Every page also warns when the injury report
-  is stale ("Injury report last loaded Sat Sep 26, 7:02 AM ET; treat Questionable tags as stale.") — when it was
+  is stale ("Injury report is from Sat Sep 26, 7:02 AM ET — treat Questionable tags as stale (…)") — when it was
   loaded before the last final game's date or more than 48 hours before the next kickoff.
 - Behind the scenes: the nightly data refresh can now run on GitHub's servers (about 7:40 a.m. Eastern) instead of
   Andrew's laptop, so a closed laptop no longer means yesterday's numbers. Same steps, same checks; the banner on every
@@ -29,6 +46,14 @@ Newest first. The Home page shows the top entry as "What's new".
 - The live board no longer jitters between refreshes with no news: two fits of the same data now give the same
   numbers (the training rows were read in an unordered scan, which moved the model's internal validation split;
   differences reached 1.5 points on a player).
+- **Waiver Wire now answers "who should I claim, and who goes?"** Pick your team and the page opens with the claim
+  that improves your lineup most, in one line: "Claim Michael Mayer (TE), drop Dylan Sampson: +1.1 this week at TE,
+  +2.4 over the next 4 weeks", with the player he pushes out of your lineup and his projection (the same numbers as
+  your lineup elsewhere, no second model). Every free agent is tried against every player you could drop, and your
+  whole lineup is rebuilt each time — FLEX and superflex included, byes and the dropped player's own future starts
+  counted over four weeks. Then the best **cover** for a coming bye, a **flyer** on someone with no games yet, or a
+  plain "Nothing beats what you have". The full ranked list is one tap away; browsing every free agent moved under
+  it. The "Adds worth a claim" position-by-position shortlist is gone.
 
 ## 2026-09-27 — Your league's scoring on every league page
 

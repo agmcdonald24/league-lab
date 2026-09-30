@@ -198,13 +198,13 @@ def test_freshness_banner_flags_a_stale_injury_report(banner):
     today = now.tz_convert("America/New_York").date()
     # loaded yesterday, next kickoff in 3 days: more than 48 h before it -> stale
     w = banner(now - pd.Timedelta(days=1), today - timedelta(days=2), now + pd.Timedelta(days=3))
-    assert len(w) == 1 and w[0].startswith("Injury report last loaded ") and "; treat Questionable tags as stale." in w[0]
+    assert len(w) == 1 and w[0].startswith("Injury report is from ") and "treat Questionable tags as stale" in w[0]
     assert "48 h before the next kickoff" in w[0] and "last final game" not in w[0]
     # loaded before the last final game's date -> stale on that rule too
     w = banner(now - pd.Timedelta(days=4), today - timedelta(days=2), now + pd.Timedelta(days=3))
     assert "predates the last final game" in w[0] and "48 h" in w[0]
     # never loaded
-    assert "last loaded never" in banner(None, today - timedelta(days=2), now + pd.Timedelta(days=1))[0]
+    assert "is from never" in banner(None, today - timedelta(days=2), now + pd.Timedelta(days=1))[0]
 
 
 def test_freshness_banner_quiet_when_fresh_or_offseason(banner):

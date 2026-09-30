@@ -402,6 +402,54 @@ def lineups_cmd(
     console.print(tab)
 
 
+@app.command("waivers")
+def waivers_cmd(
+    season: int | None = typer.Option(None, help="Projected season (default: the newest in ops.lineup_totals)"),
+    verify: str | None = typer.Option(None, help="LEAGUE_ID:ROSTER_ID — also run the unpruned sweep on that roster and compare (read-only)"),
+):
+    """Waiver engine (plan B3): every legal add/drop per roster, valued by re-solving the B1 lineups for the next
+    unplayed week and the 4-week horizon; writes ops.waiver_moves (runs at the end of `project`). Then `make project`
+    publishes mart_waiver_moves."""
+    from .waivers import run_verify, run_waivers
+
+    if verify:
+        league_id, _, roster = verify.partition(":")
+        res = run_verify(league_id, int(roster), season)
+        console.print(f"{league_id} roster {roster}: pruned {res['pruned_rows']} rows in {res['pruned_seconds']:.2f} s "
+                      f"({res['survivors']} of {res['adds']} free agents past the bar), unpruned {res['unpruned_rows']} rows "
+                      f"in {res['unpruned_seconds']:.2f} s — {'IDENTICAL' if res['identical'] else 'DIFFERENT'}")
+        for label in ("only_pruned", "only_unpruned"):
+            for row in res[label]:
+                console.print(f"  {label}: {row}")
+        if not res["identical"]:
+            raise typer.Exit(1)
+        return
+    run = run_waivers(season)
+    if run.season is None:
+        console.print("ops.lineup_totals is empty: run `league-lab project` first")
+        return
+    t = run.rows
+    st = run.stats
+    console.print(f"wrote {len(t)} rows to ops.waiver_moves for {run.season} (decision week {run.week}) in {run.seconds:.2f} s "
+                  f"(sweep of {st.get('rosters', 0)} rosters {run.sweep_seconds:.2f} s; {st.get('survivors', 0)} of "
+                  f"{st.get('adds', 0)} free agent x roster pairs past the bar; lineups re-solved to ops.lineup_totals: "
+                  f"{st.get('rosters', 0) - st.get('lineup_mismatch', 0)}/{st.get('rosters', 0)})")
+    if t.empty:
+        return
+    tab = Table(title="top move per roster (horizon = the decision week and the next three)")
+    for c in ("league", "roster", "list", "add", "drop", "this week", "horizon", "slot", "displaced"):
+        tab.add_column(c)
+
+    def txt(v, spec: str = "") -> str:
+        return "" if v is None or v != v else format(v, spec)
+
+    first = t.sort_values(["league_id", "roster_id", "move_rank"], na_position="first").groupby(["league_id", "roster_id"]).head(1)
+    for r in first.itertuples():
+        tab.add_row(r.league_id[-6:], str(r.roster_id), r.list_kind, txt(r.add_name), txt(r.drop_name) or ("—" if r.list_kind != "nothing" else ""),
+                    txt(r.weekly_gain, "+.2f"), txt(r.horizon_gain, "+.2f"), txt(r.add_slot), txt(r.displaced_name))
+    console.print(tab)
+
+
 @app.command("teams")
 def teams_cmd():
     """List roster ids and team names for the current league season(s)."""

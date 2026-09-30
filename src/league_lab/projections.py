@@ -47,6 +47,7 @@ from .config import PROJECT_ROOT, get_settings
 from .lineup import lineups_after_project
 from .rankings import TOP_N, _hit_rate, _spearman, parse_seasons
 from .scoring import compute_points
+from .waivers import waivers_after_project
 
 log = logging.getLogger(__name__)
 
@@ -409,6 +410,7 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
         conn.rollback()
         log.exception("drift monitor failed (projections were written); run `league-lab drift` after `dbt build`")
     lineups_after_project(conn, season)   # B1: exact lineups on the fresh projections (a failure is logged, not fatal)
+    waivers_after_project(conn, season)   # B3: waiver moves on those lineups (a failure is logged, not fatal)
     return pred
 
 

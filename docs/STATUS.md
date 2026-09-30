@@ -428,6 +428,46 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   `SET transaction_timeout`; the Mac's pg_dump 17 already syncs to it, so it is), runner timing and disk. If the
   repository were public, GitHub disables scheduled workflows after 60 days without activity (off-season).
 
+### PO merge and QA — round 2 (B2 + B3 + B4), 2026-09-30
+
+* Three Opus developers in parallel off `04a4111` (worktrees `wt-b2` / `wt-b3` / `wt-b4`, clones
+  `league_lab_b2` / `_b3` / `_b4`, ports 8521–8523), each with the shared round-2 brief (answer-first cards,
+  phone width, one projection, plain words, page ownership). Merged into `integration/wave-b2`: conflicts
+  only in `table.py` (both appended blocks kept), METRICS and STATUS ("keep both"). PO fixes: `ops.waiver_moves`
+  added to the nightly's restored state (a soft `project` failure republishes last night's moves with last
+  night's lineups); the U-11 registry entries `claim_week` / `claim_season` / `compared_with` removed (the
+  shortlist is gone). Decisions confirmed as delivered: B2's lineup gain solved at page time (scipy in
+  `app/requirements.txt`), buy-low sorted by 4-week fit, the "Inherited" label; B3's "unknown is not zero"
+  (an unvalued starter keeps his slot, an unvalued player is never a drop), rest-of-season points as the drop
+  tie-break, free-agent defenses not evaluated (R-13); B4's week from the clock, the alternative = whoever the
+  re-solve brings in (both named on a slide), no card for a starter nobody can replace.
+* Verified on the main database: `pytest` 530, `ruff` clean, migrate, `mart_league_acquisitions+` and the
+  projection/lineup/waiver marts built, `project` writes lineups then waiver moves, headless check on every
+  page × both leagues (+ the Player page by id) with 0 exceptions.
+* One QA agent, phone-first (iPhone 14 emulation, 390 × 844, both leagues as Andrew's rosters), 12 minutes:
+  no sideways scroll on any of the 7 walked pages; Team Hub, Waiver Wire, Trade Finder and Matchups show a card
+  before any table; the league/team selection survived every hop on the phone layout (Andrew's report not
+  reproduced — a hypothesis: player links open a new tab, and in that new session switching league has no
+  remembered team); every card matches its mart (Home = Matchups first card = `weakest_slot` / margin; Waiver
+  card = `mart_waiver_moves` rank 1; Team Hub closest call = the same) for both rosters; the TE1 / RB2
+  projection is the same number on Home, Player, Team Hub and the mart (9.47 Kittle, 10.73 Hampton); no jargon
+  on any card. Findings: (HIGH) Rankings' default week and Team Hub's opponent column take the week from
+  `mart_nfl_calendar` (3 on a database loaded before Monday night's game was final) while the cards take it
+  from the clock (4) — they agree once a nightly has marked the last game final, so the live app is
+  consistent, but it is one week rule too many → U-13 makes one `current_week()` helper; (MEDIUM) Matchups'
+  defender table (14 columns) and defense-vs-position tables (6) sit outside expanders; League Intel opens on a
+  23-column standings table with no card → U-13 / U-16; (LOW, fixed by the PO) the injury banner took ~300 px
+  on a phone and pushed Home's first card below the fold → one sentence; four jargon phrases ("margin",
+  "re-solved") reworded. (LOW, open) player links open a new tab (Streamlit's LinkColumn); browser Back is
+  imprecise after page hops (query-param rewrites add history entries); the Player page leads with Usage, the
+  projection is second.
+* Known gaps carried into Iteration 10 (U-13): player names on Team Hub / Trade Finder (B2's `narrow_table`,
+  column `player`) and the waiver cards' claim/drop columns are not links yet (B4's `show()` link needs
+  `player_name` + `gsis_id`); Receivers / Players / League tables need `gsis_id` in their SELECTs for the
+  same reason; the Matchups caption still takes its week from `mart_nfl_calendar` while the cards take it
+  from the clock (they agree after a nightly); `metric_registry` rows for roster value, lineup gain, trade
+  fit, weekly/horizon gain (seeds).
+
 ### B1 2026-09-29 — exact lineup service (branch `dev/B1`)
 
 * **Built**: `src/league_lab/lineup.py` — `solve(players, slots)`: maximum-weight bipartite matching
@@ -699,6 +739,259 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   loader end to end, offline and live, database calls stubbed; the ET caption). `pytest` 309 passed, `ruff` clean,
   headless check 26 renders (13 pages × 2 leagues), 0 exceptions. No-archive path: with an empty `data/raw/sleeper`
   and the blocked Sleeper API the night stopped at `fetch-sleeper` with the new line, exit 1.
+
+### B2 2026-09-30 — roster value and league rankings (branch `dev/B2`, clone `league_lab_b2`)
+
+* **Built** (plan Iteration 9b B2 + the review's acquisition finding): four views on the B1 lineup service —
+  `mart_league_roster_horizon` (every current roster's proposed lineup rows for this week and the next three, with
+  names, eligibility, margins, the replacement of each starter, the best starter per slot type and the acquisition
+  label), `mart_league_roster_value` (per roster: this week's lineup value, weakest slot + margin + replacement,
+  bench value, 4-week horizon value and its worst week), `mart_league_roster_rankings` (every roster ranked on lineup
+  value, horizon and depth, one row per measure, each naming its horizon), `mart_league_roster_slot_strength`
+  (starter strength per slot type) — and the table `mart_league_acquisitions` (how each rostered player joined his
+  roster, across the whole chain for a dynasty). `src/league_lab/roster_value.py` (`RosterBoard`: rebuild a
+  roster-week from the published rows, `gain` / `loss` / `trade_candidates`) serves Trade Finder and the weekly pack.
+  Team Hub, Trade Finder and League Intel's roster section rewritten phone-first; `mart_league_positional_strength`
+  is read by no page or pack any more (kept as a mart; the sync stops publishing it because nothing references it).
+  `reports.py` team brief: "Your positional strength" / "Trade fits" replaced by roster value + rank, closest call,
+  starter strength, buy-low / sell-high by lineup gain; keeper facts carry the chain acquisition. Definitions:
+  `docs/METRICS.md` § Roster value; models: `docs/DATA_MODEL.md` § Roster value (B2).
+* **Design choices** (PO to confirm): (1) starter strength is **read** from `ops.lineups.margin` (B1 already stores
+  lineup − fresh solve without him), not re-solved; (2) the replacement ("Tucker over Monangai") is the bench player
+  worth value − margin, from the alternating-path property of the matching, found in SQL by a window over integer
+  cents (no self-join: the first version took 4.4 s, now < 50 ms per view); (3) Trade Finder's lineup gain is solved
+  at page time with `lineup.solve` (0.24 s for the dynasty's 202 candidates × 4 weeks, cached 10 min), because a
+  gain for every player × every other roster × 4 weeks would be ~20k solves a night for lists nobody opens —
+  `app/requirements.txt` gains `scipy==1.18.1` (the hosted app installs from it; B3/B4 may add the same line);
+  (4) "this week" = the first REG week with a kickoff after `now()` (a view: it moves on without a rebuild), horizon =
+  this week + 3; (5) acquisition = the latest move into this roster (its current stint), whole chain for a dynasty,
+  current season for redraft/keeper; a roster taken over by a new manager marks older players **Inherited** — owner
+  *and co-owners* count (Andrew's dynasty roster 12 has had him as owner or co-owner every season since 2021, so
+  nothing on it is "inherited"; PhillyRoc took over roster 9 in 2024: 4 players inherited); (6) no `--select`
+  appended: the four views declare `-- depends_on: mart_lineup_recommendation`, so the existing
+  `mart_lineup_recommendation+` in the Makefile `project` target and nightly `projection-marts` rebuilds and tests
+  them (`dbt ls` confirms); the acquisitions table is built by the main `dbt build`.
+* **Evidence** (clone, this week = 4, horizon 4–7, both leagues):
+  - Rebuilding every roster-week of the horizon from the published rows reproduces `ops.lineup_totals.lineup_value`
+    to the cent 88/88; every one of the 773 unlocked starters' margins equals lineup value − a fresh `solve()`
+    without him to the cent; the replacement named by the mart is the player who enters that re-solve 773/773
+    (`scratchpad/waveB_r2/b2/verify_board.py`). By hand: dynasty roster 1 (130.26) without Tre Tucker 130.11 → 0.15
+    = his FLEX margin, Monangai enters; without Jalen Hurts 118.62 → 11.64 = his SUPER_FLEX margin; Andrew's roster 12
+    (109.69) without Kenny Gainwell 109.24 → 0.45 (Emanuel Wilson enters) = the card "RB2, Kenny Gainwell over
+    Emanuel Wilson by 0.45".
+  - **QB3 in superflex**: roster 12 starts Bo Nix 20.60 (QB) and Michael Penix Jr. 19.81 (SUPER_FLEX), Aaron Rodgers
+    17.86 and Malik Willis 17.28 on the bench: lineup 109.69 without Willis, and without both, change +0.00. Adding
+    Kirk Cousins (16.19, a bench QB of roster 2) to roster 12: +0.00; to The72Repeat (roster 5, whose SUPER_FLEX is RB
+    David Montgomery 11.66 and QB2 McCord 9.17 sits): +4.53 = 16.19 − 11.66. Removing The72Repeat's QB2/QB3 (McCord,
+    Sanders): 126.86 → 126.86. The old mart counted SUPER_FLEX as a QB slot (roster 5 "QB starters" = Purdy + McCord).
+  - **WR who improves FLEX**: dynasty roster 1 starts WR Collins 16.15 / Watson 14.28 and Tre Tucker 10.00 at FLEX;
+    adding Tee Higgins (WR 13.25, roster 6) → 133.51, +3.25 (seated at FLEX, Tucker out) = his margin in the new
+    lineup; George Pickens 13.10 → +3.10. A position-by-position count of the two WR slots (the old mart) sees 0.
+    Unit test: a WR better than WR2 takes WR2 and pushes WR2 into FLEX, gain 18.00 − 10.00.
+  - **Trade Finder lineup gain**: Javonte Williams (RB 13.88, roster 7's RB1, margin 2.10) gives Andrew's roster 12
+    **+6.34** in week 4 (109.69 → 116.03, Gainwell out) and costs roster 7 **2.10** (128.59 → 126.49, Travis Kelce
+    comes in): fit +4.24; weeks 4–7 +28.11 (6.34, 6.78, 7.87, 7.12) vs 16.55 (2.10, 6.91, 4.13, 3.41): fit +11.56.
+    Card on the page (dynasty, team 12): "Buy low: ask The72Repeat (jnaumann1011) about Quinshon Judkins (RB) … adds
+    +3.9 to your week-4 lineup and costs them 0.0; over weeks 4–7: +15.5 for you, 1.3 for them (fit +14.2)".
+  - **Every rank names its horizon**: `mart_league_roster_rankings.horizon` not null (test); Team Hub "10th of 12 in
+    the league (week 4)", "(weeks 4–7)"; League Intel columns "Week 4", "Weeks 4–7", "Depth · week 4"; the pack's
+    table has a `horizon` column.
+  - **Acquisition across the chain** (Sleeper raw log → page): Amon-Ra St. Brown — draft pick 21 (round 2) of the
+    2021 rookie draft `716476861135253504` by roster 12 → "Rookie draft 2021 · 2.09"; George Kittle — trade
+    `956061477281034240` (3-team, created 2023-04-24, processed 2023-04-25, adds 4217→12, drops 4217→9, roster 9 =
+    Kuch4120 then) → "Trade 2023 offseason · from Kuch4120"; Aaron Rodgers — drafted 2021 by roster 3, to 12 in 2022
+    wk 3, to 9 in May 2024, back in trade `1223826061477814272` (2025-05-03, adds 96→12, drops 96→9) → "Trade 2025
+    offseason · from PhillyRoc"; also Bo Nix → "Trade 2025 offseason · from Chargers2017" (2025-09-03). The old
+    Team Hub showed all four as "Waiver / free agent" (it read the 2026 draft only): 200 of the dynasty's 291
+    rostered players were acquired before 2026 and all 200 showed "Waiver / free agent". Every rostered player has
+    an acquisition row (448/448; 0 without an event), none has a later move off his roster (both dbt tests).
+  - dbt: `--select mart_league_acquisitions+ assert_every_rostered_player_has_acquisition
+    assert_acquisition_starts_current_stint` PASS=36 (5 models, 31 tests); the Makefile / nightly projection-marts
+    select `mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+` PASS=49 (now
+    includes the four views). Negative controls: Kittle's acquisition row deleted → FAIL 1; Godwin's dated to his
+    2021 draft → stint test FAIL 2 (the 2022 trade away: a drop and an add elsewhere); one `ops.lineup_totals` value
+    +1 → reconcile test FAIL 1; all restored (lineup totals md5 identical), PASS=36 again.
+  - `pytest` 439 passed (+130 in `tests/test_roster_value.py`: rebuild to the cent, margin = fresh solve, QB3 adds
+    0, superflex by eligibility, WR through FLEX, fit, taxi/Out/locked, horizon, `trade_candidates`, and the SQL
+    replacement rule vs the solver on 120 random rosters), `ruff` clean, headless page check 26 runs, 0 exceptions.
+    Views: horizon 42 ms, value 50 ms, rankings 49 ms, slot strength 28 ms (whole league).
+  - Playwright (Streamlit on 8521, dynasty team 12 and League of Scrubs team 2): `scratchpad/waveB_r2/b2/shots/`
+    `{team_hub,trade_finder,league_intel}_{dynasty,scrubs}_{390,1300}.png` (first screen) and `…_full.png` (whole page
+    with the roster / buy-low expander open); at 390 px the page never scrolls sideways (scrollWidth = clientWidth);
+    the tables pin the first column and keep the decision columns (value, margin / gain, fit) on screen.
+* **Open**: Josh Jacobs has no v2 projection in weeks 4–7 (unvalued, 0) on two rosters — a projection-side gap, not
+  B2's; a takeover inside a season is dated to that season's start (Sleeper keeps one owner per season); the
+  replacement's name is arbitrary between two bench players of exactly equal value (same total); Trade Finder
+  ignores roster size and what is sent back (T-01); no `metric_registry.csv` rows (seeds out of bounds) — would add
+  `roster_lineup_value`, `roster_horizon_value`, `roster_bench_value`, `starter_strength`, `lineup_gain`,
+  `trade_fit` (v1.0, grain roster / roster × slot type / player × roster).
+### B3 2026-09-30 — waiver engine (branch `dev/B3`, clone `league_lab_b3`)
+
+* **Built** (plan Iteration 9b, B3, with the round-2 amendments): `src/league_lab/waivers.py` —
+  `waiver_moves(conn, season, as_of)` evaluates, for every roster of both leagues, every free agent on an active NFL
+  roster (`mart_player_availability`: free agent, `ACT`, not Out / IR, a position the league starts) × every droppable
+  player (not IR slot / taxi / locked / without a value), plus "no drop" when the roster has an open spot, by re-solving
+  the B1 lineup after the move minus before on the players and values of `ops.lineups` (the add valued by B1's own
+  `_proposed_player`: v2 `proj_points` in the league's scoring, K season PPG, byes / Out / started games) for the
+  **decision week** (first week with a game still to kick off: week 4) and the horizon weeks 4–7. Writes
+  `ops.waiver_moves` (moves with weekly gain > 0 → *start now*, else horizon gain > 0 → *cover*; one `nothing` row per
+  roster without a move); view `mart_waiver_moves` (names, `lineup_value` from `mart_lineup_recommendation`,
+  `inputs_current`, `on_current_lineup`). Called at the end of `league-lab project` after the lineups (+1 import, +1
+  call in `projections.py`; logged, never fatal) and as `league-lab waivers [--verify LEAGUE:ROSTER]`. Waiver Wire
+  page rebuilt answer-first (below). Definitions in `docs/METRICS.md` § Waiver moves, tables in `docs/DATA_MODEL.md`.
+* **Decisions** (PO to confirm): (1) **unknown is not zero** — a starter with no value yet (unscored K / DEF) keeps his
+  slot and a player without a value in any horizon week is never a drop: the first run proposed dropping four League of
+  Scrubs rosters' only (unscored) DEF "for free" and GoodGameBuddy's injured Josh Jacobs; (2) **ranking** = horizon
+  gain, then weekly gain, then no drop, then the drop with the fewest rest-of-season projected points; the card flags a
+  drop who projects more than the add over the season (MacZaddy: every cover drops QB3 Bryce Young, 213 vs 123 for
+  Allgeier — Young shares Mahomes' week-5 bye, Shough covers it, so Young is the one who never starts in weeks 4–7);
+  (3) **no `--select` edit**: `mart_waiver_moves` refs `mart_lineup_recommendation` (for `lineup_value`), so the
+  existing `mart_lineup_recommendation+` in the Makefile `project` target and `nightly.sh` rebuilds it (PASS=41 on that
+  line); (4) the legality test only holds leagues whose rosters and statuses are unchanged since the moves were
+  computed (`inputs_fingerprint`, same SQL in `waivers.py` and the mart, pytest-checked), so a claim between the nightly
+  `dbt build` and `project` cannot fail the night; coverage (every roster has a row) is always checked; (5) the
+  "Adds worth a claim" shortlist and "Your bench, weakest first" are removed (the engine names the drop and what he
+  costs); the free-agent table and recent moves stay, each in an expander; the FA table's projection column now uses
+  the decision week (was `mart_nfl_calendar.next_week` = 3, a week already kicked off); (6) free-agent DEFs are not
+  evaluated (`mart_player_availability` has no DEF; B1 has no value path for a never-rostered DEF: R-13).
+* **Evidence** (after `league-lab project` on the clone: refit 3 m 00 s, weeks 1–3 kept, lineups 8,978 rows in 0.72 s,
+  then `waiver moves written for 2026: 2249 rows (2244 moves, 5 rosters with nothing better) … in 1.57 s (sweep 1.21 s;
+  372 of 6134 free-agent x roster pairs past the bar)`; standalone `league-lab waivers` 1.70 s in-process, 3.1 s wall
+  with interpreter start). **22-roster sweep: 1.21–1.31 s (< 5 s), rows written 2,249** (dynasty 85 start-now / 78
+  cover / 5 nothing; League of Scrubs 566 / 1,515 / 0), 12 of 22 rosters have a start-now claim, 39 best claims are
+  "no evidence yet". Every roster's re-solve of `ops.lineups` equals `ops.lineup_totals` (22/22).
+  - **Pruning rule**: a move's gain ≤ the add's gain with nobody dropped = `max(0, value − bar)`, bar = lineup −
+    best lineup with one open slot he can play removed (exact; the cheapest starter he can push out after the
+    reshuffle, 0 for an empty slot); free agents at or below the bar in all four weeks are skipped. **Loses nothing**:
+    `league-lab waivers --verify` MacZaddy (LoS 2) pruned 283 rows in 0.62 s vs unpruned (every FA × drop × week, plain
+    `solve()`) 283 rows in 4.98 s — IDENTICAL on every column; Shake & Bake (dynasty 12) 1 = 1 (0 of 212 past the bar);
+    dynasty 1 44 = 44. Tests: 24 random rosters (822 moves, 280 covers, 51 no-drop) pruned = unpruned; the bar equals
+    `solve()`'s add gain on 40 random rosters × 4 positions × 5 values.
+  - **Numbers are the published ones**: all 1,156 displaced-starter values = `mart_lineup_recommendation.player_value`;
+    all 1,446 projection-valued adds = `mart_player_week_projections.proj_points`; all 798 K adds =
+    `mart_league_player_season.ppg`; `lineup_before` = `lineup_value` on all 2,249 rows.
+  - **Hand re-solve** (independent integer program, scipy `milp`/HiGHS, on the published marts;
+    `scratchpad/waveB_r2/b3/hand_check.py`): dynasty 1 Pitts n' Titts "Claim Michael Mayer, drop Dylan Sampson" week 4
+    IP 130.26 → 131.37 = +1.11 (Mayer 8.44 takes TE from Goedert 7.33; Watson WR↔FLEX reshuffle), weeks 5/6/7 +0.11 /
+    +1.13 / 0.00, horizon +2.35 = stored. **Gesicki** (same roster, #3): 130.26 → 130.59, +0.33 over Goedert 7.33,
+    horizon +0.33 = stored. MacZaddy "Claim Tyler Allgeier, drop Bryce Young": weeks 4–6 0.00, week 7 IP 91.14 →
+    100.72 = +9.58 (Hampton, Tuten, Croskey-Merritt on bye: RB2 empty) = stored; MacZaddy week 4 lineup 112.33
+    unchanged → "Nothing on the wire beats this week's lineup (112.3 for week 4)" + the Allgeier cover card + flyer
+    Sean Tucker (no games). **Shake & Bake: nothing beats what he has** — per week 4–7 the bar vs the best free agent
+    (IP gain of adding him with nobody dropped = 0.00 in all 16 cases): week 4 QB 19.81 vs Kaliakmanis 9.21, RB 7.54 vs
+    Kendre Miller 6.97, WR 11.08 vs Keenan Allen 8.14, **TE 9.47 (Kittle) vs Mayer 8.44 — and Gesicki 7.66**, the TE
+    the U-11 shortlist offered (Kittle's 9.47 is the number `mart_lineup_recommendation` / My Week show). "Nothing" rows
+    also for dynasty 4, 5, 9, 10.
+  - **dbt**: `mart_lineup_recommendation+` PASS=27 (15 waiver tests + legality) and the Makefile line PASS=41;
+    negative controls on the legality test (add = a rostered player, drop = an IR-slot player, no drop on a full
+    roster, drop from another roster, one roster's rows deleted) → FAIL 5; same with the leagues' fingerprints changed →
+    FAIL 1 (coverage only; the rest skipped as stale); restored → PASS.
+  - **Tests**: `tests/test_waivers.py` 77 (empty-slot fill, beating a starter names the displaced starter, no gain
+    below the bench / at a tie, the drop's horizon value counted (backup TE: +2 +2 −3 +2), locked starter not
+    displaced (a cover from week 2), a free agent on bye this week covers later, open spot vs full roster, unknown is
+    not zero, negative / unvalued adds, pruned = unpruned, the bar, ranking, DDL and fingerprint copies agree).
+    `pytest` 386 passed, `ruff` clean, headless page check 26 runs (13 pages × 2 leagues) 0 exceptions.
+  - **Page** (Playwright, both leagues, 390 × 844 and 1300 × 900; `scrollWidth = clientWidth` at 390, no exception, no
+    page error; screenshots `scratchpad/waveB_r2/b3/shots/`): cards first ("Claim Michael Mayer (TE), drop Dylan
+    Sampson: +1.1 this week at TE, +2.4 over the next 4 weeks" + "He starts at TE; Dallas Goedert (TE, projected 7.3)
+    goes to your bench. Your week-4 lineup: 130.3 → 131.4."), best cover, flyer, or "Nothing beats what you have";
+    one line on upside stashes; the five-column table (Claim, Drop, This week, Next 4 wks, Why) in an expander; "How to
+    read this"; the free-agent browser and recent moves in expanders (the only tables wider than five columns).
+* **Open**: `ops.waiver_moves` is not in `nightly.sh`'s `STATE_TABLES` (outside the line B3 may edit): on a fresh CI
+  database a soft `project` failure republishes last night's lineups but no moves (the page then says they are not
+  computed yet) — add it next to `ops.lineup_totals`; the U-11 registry entries `claim_week` / `claim_season` /
+  `compared_with` in `app/lib/table.py` are now unused (append-only rule: PO to delete, they also show in Home's
+  glossary); no `metric_registry.csv` row for `weekly_gain` / `horizon_gain` (seeds out of bounds); a "nothing" card
+  could name the closest miss (e.g. Mayer 8.4 vs Kittle 9.5) — not stored today; waiver priority / FAAB, two-for-one
+  moves and free-agent DEFs are not modelled; K values rest on 2–3 games so far.
+### B4 2026-09-30 — player card and My Week (branch `dev/B4`, clone `league_lab_b4`)
+
+* **Built** (plan Iteration 9b, B4, with the round-2 amendments): `app/lib/cards.py` (shared decision cards:
+  `decision_week`, `lineup_rows` — one query over `mart_lineup_recommendation` + `ops.lineups` bench / unplayable +
+  `dim_game` kickoff + `mart_defense_vs_position_current` —, the pure `decisions` / `alternative` / `bench_gap`, and
+  `decision_cards`, `lineup_table`, `league_line`, `howto_cards`); **My Week** replaces Home's "Your week" (team, record,
+  opponent; the lineup value and, when B2's `mart_league_roster_rankings` is on the database, its rank; up to three
+  decision cards; the proposed lineup in four columns; margins, bench and who can't play in an expander; usage movers in
+  an expander) and Home's intro is two plain sentences; **Matchups** opens with the same cards and "Your best lineup this
+  week" (expander), the start/sit board moved into an expander (its SELECT gained `gsis_id`); the **player card**
+  `app/pages/0_Player.py` → `/Player?id=<gsis>` (+ `league` / `team`; `0_` puts it second in the sidebar without
+  renaming any page), search box (name → gsis, punctuation-blind: "amonra st brown" finds Amon-Ra St. Brown), four
+  bordered sections — Usage, Projection (week N, this league's scoring), Availability, Value — each ending in
+  "unavailable: <why>" when it has nothing; **links**: `player_url` / `player_link` at the end of `app/lib/ui.py`
+  and `show()` in `app/lib/table.py` renders `player_name` as a `LinkColumn` (`display_text` regex on the leading
+  `name=` parameter, left-aligned; URL `Player?name=…&id=…&league=…&team=…`, name first so the column still sorts by
+  name) whenever the frame carries `gsis_id` — displayed or not; a row without a gsis id (a team defense) links to the
+  card's search for that name. Definitions in `docs/METRICS.md` § Lineup value → Decision cards. No new mart, no
+  dbt change, no registry column (the lineup table's labels are `show()` overrides).
+* **Decisions** (PO to confirm): (1) the week is the first regular-season week whose **last** game has not kicked off
+  (clock, `dim_game`), not `mart_nfl_calendar.next_week` — the calendar follows finals in the data and in this clone
+  still says week 3 (1 of 16 week-3 games final when it was loaded), while every week-3 game has kicked off; on the Mac
+  after a nightly the two agree except between the Monday-night kickoff and the next nightly. The Matchups caption and
+  start/sit board still follow the calendar (not my section). (2) The named alternative is **who the re-solve brings
+  in** (value = starter value − margin), not always "the best bench player eligible for the slot": the two differ when
+  a teammate slides (58 of 978 cards over weeks 4–18; 0 of Andrew's six week-4 cards); the card then names both ("Judkins
+  would come in at FLEX and Golden would move to WR2"), so the number on the card is always B1's margin. (3) A starter
+  nobody on the bench can replace (only K, only DEF: margin = value) gets no card — League of Scrubs roster 2's DEF
+  (1.00, no backup) would otherwise be its second "call". (4) Locked = B1's `is_locked` **or** his game has kicked off
+  at page time. (5) Values and margins on cards and the lineup table show two decimals (0.15 apart must not read as
+  "10.0 vs 9.9"); the projection section of the card keeps one decimal like Rankings / Waiver Wire. (6) "coin flip"
+  < 1 point, "lean" < 3, else "clear".
+* **Evidence** (clone `league_lab_b4`, clock 2026-09-30, decision week 4):
+  * **My Week = the mart**: `tests/test_my_week.py` runs Home (AppTest) for dynasty roster 12 and League of Scrubs
+    roster 2 and asserts the lineup table equals `mart_lineup_recommendation` slot by slot (gsis id, name, value), the
+    week is the first open week, the cards equal an independent SQL (smallest-margin unlocked valued starters over the
+    best eligible bench player, the entering player when a teammate slides, forced starters skipped) and the first card
+    is the mart's `weakest_slot`. 2 passed; negative controls: a dropped TE row → 2 failed; cards ordered by value → 2
+    failed. Andrew's week 4 by hand from `ops.lineups`: dynasty 12 (lineup 109.69) — RB2 Gainwell 7.54 over bench RB
+    Emanuel Wilson 7.09 = 0.45 (margin 0.45), TE Kittle 9.47 over Likely 8.84 = 0.63, FLEX Boston 11.08 over Godwin 9.21
+    = 1.87 (Rodgers 17.86 / Willis 17.28 are QBs, not FLEX-eligible); Scrubs 2 (112.33) — FLEX2 Croskey-Merritt 9.13
+    over Tuten 9.07 = 0.06, RB2 Hampton 10.73 over Tuten = 1.66, QB Mahomes 19.98 over Young 17.75 = 2.23 (DEF Kansas
+    City 1.00, margin 1.00, no bench DEF: skipped).
+  * **Every card re-solved**: all 330 proposed roster-weeks of weeks 4–18 (both leagues) through `decisions()` and then
+    `lineup.solve()` without the starter: 978 cards, 978 bring in exactly the named player and lose exactly the margin;
+    920 direct swaps, 58 slides; the first card is the mart's weakest slot in 323 / 330 roster-weeks — in 5 that
+    starter is irreplaceable (a lone K / DEF) and 2 have no card at all (League of Scrubs rosters 6 wk 11 and 4 wk 13:
+    empty bench) (`scratchpad/waveB_r2/b4/verify_decisions.py`).
+    `tests/test_cards.py` (12): the eligibility map equals the solver's; Andrew's dynasty week 4 rebuilt by hand; a slide
+    (W2 10.0 benched → FLEX WR 9.5 slides, RB 8.0 enters: margin 2.0, not 3.0); forced / locked / unvalued starters
+    skipped; 360 random rosters on three slot sets (dynasty, League of Scrubs, WRRB_FLEX + REC_FLEX + FLEX) against the
+    solver; `show()` links with `st.dataframe` captured (gsis not displayed but used; a DEF row → search link; label and
+    `display_text`), frames without `gsis_id` untouched; `player_link` encoding; B2 rank phrase. Negative controls: target
+    off by 0.05 → 4 failed; the slid-in player replaced by the slot's best → 4 failed.
+  * **Player card**, both leagues, AppTest and Playwright: Amon-Ra St. Brown (rostered WR, dynasty 12: shares 35.1 /
+    42.9 / 92.5 / 42.9 %, 17.0 proj, floor 7.6, ceiling 28.7, 9.1 targets, @ CAR #21 vs WR, next 4 with the week-6 bye,
+    starts at WR1, "without him the lineup loses 7.76 (Chris Godwin Jr., 9.21, would come in): clear"), Ryan Miller (free-agent WR, both leagues: Questionable, 2.6 proj),
+    Chase McLaughlin (K, Scrubs: projection "unavailable: the model projects QB, RB, WR and TE …", FG 6 of 6, 13.50 at K
+    "nobody on the bench can play K: he is a must-start"), Josh Jacobs (no v2 projection: "unavailable: he is on the
+    exempt list"; usage "unavailable: no games this season yet"; bench 5 of 5 with no value this week), Aaron Rodgers
+    (free-agent QB, Scrubs), a DEF name link → search ("team defenses have no card"). No empty section in any.
+  * **Queries per card** (psycopg `execute` counted on a cold cache, `count_queries.py`): 5 for a rostered player, 4
+    for a free agent — `dim_game` (week), one profile join (`dim_player` ⟕ `mart_player_availability` ⟕
+    `mart_player_season` ⟕ `mart_player_trend_tags` ⟕ `mart_league_player_season` ×2), `mart_player_week_projections`,
+    `dim_game` ⟕ `mart_defense_vs_position_current` (schedule + ranks), `lineup_rows` (the roster's lineup). Page chrome
+    on top: connection check, banner (4), `require_relations`, perspective (2–3).
+  * **Links**: rendered pages (AppTest, dynasty 12 / Scrubs 2) — player names are links in Home (lineup, full lineup,
+    movers), Matchups (full lineup, start/sit board), Rankings (2 boards), Trends (1), Waiver Wire (the "Adds worth a
+    claim" shortlist, when it has rows). Frames with names but **no `gsis_id`** (their SELECT omits it; each is a
+    one-token fix in the owner's page): Team Hub skill / kicker / keeper tables (B2), Trade Finder theirs / yours /
+    buy-low / sell-high (B2), Waiver Wire free agents / bench / transactions (B3), Receivers (5 tables: selected by
+    name), Players (season, games), League (lineups, transactions, draft); Kickers uses `kicker_name`, Matchups' CB
+    table `defender_name`, Team Hub `top_players` (text lists). Browser: a card link and a grid cell both open
+    `/Player?name=…&id=…&league=…&team=…` in a new tab on the right player.
+  * `grep mart_player_week_rankings app/Home.py` → nothing (only `4_Rankings.py` reads it). `tests/test_app_guards.py`
+    passes (the card guards `mart_player_availability`, `mart_player_week_projections`, `mart_league_player_season`,
+    `dim_game`, all read as `analytics.<name>` on the page). `pytest` 323 passed (+14), `ruff` clean. Headless check
+    (`scratchpad/waveB_r2/b4/apptest_b4.py`): 14 pages × 2 leagues = 28 runs + 6 Player runs with `at.query_params["id"]` /
+    `["name"]`, 0 exceptions, 0 errors. Playwright 390 × 844 and 1300 × 900, full height: Home, Matchups, four player
+    cards, both leagues — main-area `scrollWidth` = viewport (no horizontal page scroll), the lineup table 4 columns,
+    card metrics wrap two or three per row at 390 px. B2's rank line exercised with a stand-in view shaped like B2's
+    committed `mart_league_roster_rankings` (created, read — "109.69 in week 4, 10th of 12 in the league" — and dropped).
+* **Open**: the unlinked frames above (owners' pages); the Matchups caption / board follow `mart_nfl_calendar` (week 3 in
+  this clone) while the cards follow the clock (week 4); an alternative whose game kicks off after the nightly still
+  counts in B1's stored margin until the next run; the card cannot name the slid teammate on a path longer than one
+  slide ("the lineup reshuffles" — none in weeks 4–18); `st.column_config.LinkColumn` opens the card in a new tab
+  (Streamlit's behaviour; a markdown link on a card does too); no `metric_registry.csv` row (seeds out of bounds; cards
+  define no new metric).
 
 ## Andrew's mobile review of the live app (2026-09-29, after round 1)
 

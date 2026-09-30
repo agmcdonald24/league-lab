@@ -319,25 +319,62 @@ def team_brief(conn: psycopg.Connection, league_id: str, roster_id: int, out_dir
         order by diff_per_game desc limit 8""", (league_id, roster_id))
     pack.add("Your sell-high candidates (production above opportunity)", c, r, csv_name="sell_high")
 
+    # plan B2: roster value from the exact lineup service replaces the positional-strength tables
     c, r = _rows(conn, """
-        select position, starter_ppg, league_median_starter_ppg, starter_ppg_vs_median, position_rank, best_bench_ppg, top_players
-        from analytics.mart_league_positional_strength where league_id = %s and roster_id = %s
-        order by array_position(array['QB','RB','WR','TE','K'], position)""", (league_id, roster_id))
-    pack.add("Your positional strength", c, r)
+        select measure_label as measure, horizon, round(value::numeric, 1) as value, rank_label as league_rank
+        from analytics.mart_league_roster_rankings where league_id = %s and roster_id = %s
+        order by array_position(array['lineup_value','horizon_value','bench_value'], measure)""", (league_id, roster_id))
+    pack.add("Your roster value and league rank", c, r,
+             note="lineup value = the best legal lineup from this league's projections (every slot solved together); depth = what the bench alone would field")
 
     c, r = _rows(conn, """
-        select p.team_name, p.position, p.starter_ppg_vs_median as partner_vs_median, p.best_bench_ppg as partner_best_bench,
-               m.starter_ppg_vs_median as you_vs_median
-        from analytics.mart_league_positional_strength p
-        join analytics.mart_league_positional_strength m on m.league_id = p.league_id and m.position = p.position and m.roster_id = %s
-        where p.league_id = %s and p.roster_id <> %s and p.starter_ppg_vs_median > 0 and m.starter_ppg_vs_median < 0
-        order by p.starter_ppg_vs_median - m.starter_ppg_vs_median desc""", (roster_id, league_id, roster_id))
-    pack.add("Trade fits — partners deep where you are thin", c, r, csv_name="trade_fits")
+        select weakest_slot, weakest_player_name, weakest_replacement_name, weakest_margin
+        from analytics.mart_league_roster_value where league_id = %s and roster_id = %s""", (league_id, roster_id))
+    pack.add("Your closest lineup call this week", c, r, note="the starter with the smallest margin, and who would replace him")
 
     c, r = _rows(conn, """
-        select player_name, position, draft_round, draft_pick, undrafted_or_waiver, games_played, ppg_std, position_rank_std, expected_per_game
-        from analytics.mart_league_keeper_candidates where league_id = %s and roster_id = %s order by ppg_std desc nulls last limit 10""", (league_id, roster_id))
-    pack.add("Keeper facts", c, r)
+        select slot_type, top_player_name, round(top_value::numeric, 1) as value, starter_strength, replacement_name as next_man_up
+        from analytics.mart_league_roster_slot_strength where league_id = %s and roster_id = %s order by first_slot_order""", (league_id, roster_id))
+    pack.add("Starter strength vs depth", c, r, note="strength = the best lineup minus the best lineup without that starter (the whole lineup re-solved)")
+
+    c, r = _rows(conn, """
+        select roster_id, week, role, slot, slot_type, sleeper_player_id, player_name, position, fantasy_positions,
+               player_value, value_source, lineup_margin, is_locked, reason
+        from analytics.mart_league_roster_horizon where league_id = %s""", (league_id,))
+    cand_cols, cand_rows = _rows(conn, """
+        select sleeper_id as sleeper_player_id, player_name, position, diff_per_game
+        from analytics.mart_player_availability
+        where league_id = %s and not is_free_agent and position in ('QB','RB','WR','TE')
+          and coalesce(games_with_expected, 0) >= 2 and diff_per_game is not null""", (league_id,))
+    _, slot_rows = _rows(conn, "select roster_positions from analytics.dim_league_season where league_id = %s", (league_id,))
+    if r and slot_rows:
+        from .roster_value import RosterBoard, trade_candidates
+
+        board = RosterBoard([dict(zip(c, row, strict=True)) for row in r], list(slot_rows[0][0] or []))
+        _, owners = _rows(conn, "select roster_id, team_name from analytics.dim_league_member where league_id = %s", (league_id,))
+        team = dict(owners)
+        buy, sell = trade_candidates(board, roster_id, [dict(zip(cand_cols, row, strict=True)) for row in cand_rows])
+        span = f"weeks {board.weeks[0]}-{board.weeks[-1]}"
+        pack.add("Trade fits — buy low, by lineup gain",
+                 ["player_name", "position", "owner", "diff_per_game", "gain_week", "loss_week", "gain_horizon", "loss_horizon", "fit_horizon"],
+                 [(d["player_name"], d["position"], team.get(d["owner"]), d["diff_per_game"], d["gain_week"], d["loss_week"],
+                   d["gain_horizon"], d["loss_horizon"], d["fit_horizon"]) for d in buy[:15]],
+                 note=f"gain = what your best lineup gains with him (week {board.weeks[0]} and {span}); loss = what his roster's lineup loses without him; fit = gain - loss",
+                 csv_name="trade_fits")
+        pack.add("Trade fits — sell high, by lineup gain",
+                 ["player_name", "position", "diff_per_game", "loss_week", "best_partner", "gain_week", "gain_horizon", "fit_horizon"],
+                 [(d["player_name"], d["position"], d["diff_per_game"], d["loss_week"], team.get(d["partner"]), d["gain_week"],
+                   d["gain_horizon"], d["fit_horizon"]) for d in sell[:10]],
+                 note=f"loss = what your lineup loses without him; best partner = the roster whose lineup gains most over {span}",
+                 csv_name="trade_fits_sell")
+
+    c, r = _rows(conn, """
+        select k.player_name, k.position, a.acquired_label as acquired, k.games_played, k.ppg_std, k.position_rank_std, k.expected_per_game
+        from analytics.mart_league_keeper_candidates k
+        left join analytics.mart_league_acquisitions a
+               on a.league_id = k.league_id and a.roster_id = k.roster_id and a.sleeper_player_id = k.sleeper_player_id
+        where k.league_id = %s and k.roster_id = %s order by k.ppg_std desc nulls last limit 10""", (league_id, roster_id))
+    pack.add("Keeper facts", c, r, note="acquired = how he joined this roster, across the whole league history for a dynasty")
 
     return pack.write(f"team_brief_{roster_id}")
 

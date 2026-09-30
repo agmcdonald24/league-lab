@@ -234,9 +234,6 @@ COLUMNS: dict[str, Col] = {
     "top_n_ceiling_ppg": C("Top-N ceiling PPG", "num1", "Actual PPG of the true top-N that week (perfect foresight)"),
     # ---- U-11 waiver shortlist
     "proj_v2": C("Proj (v2)", "num1", "Projection v2 for the next NFL week in this league's scoring (the Rankings page's board). Blank = no projection: kickers, a bye, practice squad, cut or retired"),
-    "claim_week": C("This week vs your starter", help="His v2 projection for next week against your weakest projected starter at the position (N-th best of N starting slots; superflex counts as a QB slot, FLEX slots are left out; Out / Doubtful / IR don't start)"),
-    "claim_season": C("Season vs your bench", help="His PPG this season against the best PPG on your bench at the position (bench = your players beyond the top N by PPG; IR slot left out)"),
-    "compared_with": C("Compared with", help="Your players behind the comparison: the weakest projected starter at the position and the best bench player by PPG"),
     # ---- M-06 drift
     "weeks_scored": C("Weeks scored", "int", "Complete weeks of this season the live board has been scored on (a week counts once its last game is in)"),
     "backtest_spearman": C("Spearman · backtest", "num2", "The same rank correlation on the walk-forward backtest's held-out seasons (v2 projection, this league's scoring)"),
@@ -261,6 +258,27 @@ COLUMNS: dict[str, Col] = {
     # ---- B5 decision record
     "frozen_share": C("Kickoff board", "pct", "Share of the scored player-weeks whose projection is the board as published before that week's "
                                               "first kickoff (frozen since); the rest are refit values from a later run of the same model"),
+    # ---- B2 roster value
+    "acquired_label": C("Acquired", help="How he joined this roster: draft round.pick, trade (from whom), waiver / free agent, with the season; "
+                                         "read across the whole league history for a dynasty. 'Inherited' = the roster had him before its manager took over"),
+    "horizon_value": C("Next 4 weeks", "num1", "The best lineup of each of the next four weeks added up (byes and injuries already in each week)"),
+    "horizon_label": C("Horizon", help="The weeks a value or rank covers"),
+    "starter_strength": C("Strength", "num2", "The best lineup minus the best lineup without the roster's top starter at that slot (the whole lineup re-picked)"),
+    "replacement_name": C("Next man up", help="Who comes into the lineup when that starter sits"),
+    "league_rank": C("Rank", "int", "Rank among the league's rosters (1 = highest); the horizon says which weeks"),
+    "gain_week": C("You gain · wk", "signed1", "What your best lineup this week gains by adding him (his margin in your re-picked lineup)"),
+    "gain_horizon": C("You gain · 4 wks", "signed1", "The same over the next four weeks"),
+    "loss_week": C("They lose · wk", "num1", "What his roster's best lineup this week loses without him (his margin there; 0 on the bench)"),
+    "loss_horizon": C("They lose · 4 wks", "num1", "The same over the next four weeks"),
+    "fit_week": C("Fit · wk", "signed1", "Lineup points the move creates this week: what the receiving roster gains minus what the giving roster loses"),
+    "fit_horizon": C("Fit · 4 wks", "signed1", "Lineup points the move creates over the next four weeks: receiver's gain minus giver's loss. Positive = the player is worth more on the other roster"),
+    "best_partner": C("Best fit", help="The roster whose lineup gains the most from him over the next four weeks"),
+    # ---- B3 waiver engine
+    "waiver_claim": C("Claim", help="The free agent to claim (on an active NFL roster, not Out or on injured reserve)"),
+    "waiver_drop": C("Drop", help="The player to let go: the one whose loss costs your lineup least over the next four weeks (among equals, the one projected to score least the rest of the season). Open spot = nobody has to go"),
+    "weekly_gain": C("This week", "signed1", "Your best lineup this week after the claim minus your best lineup now (every slot re-filled, FLEX and superflex included)"),
+    "horizon_gain": C("Next 4 wks", "signed1", "The same gain summed over this week and the next three: covers a bye or an injury, and counts the games the dropped player would have started"),
+    "waiver_why": C("Why", help="Where he plays this week and whom he replaces, the later weeks he helps, and anything to check (no games yet, Questionable, a drop who projects more for the season)"),
 }
 
 
@@ -366,11 +384,32 @@ def show(df: pd.DataFrame, cols: list[str] | None = None, height: int | None = N
         keep = [c for c in (cols or list(df.columns)) if c in (overrides or {}) or not is_advanced(c)]
         cols = keep or cols
     out, config = prepare(df, cols, overrides)
+    if "player_name" in out.columns and "gsis_id" in df.columns:
+        link_player_names(out, df, config)
     if index is not None:
         out.index = index
     kwargs = {"height": height} if height else {}
     # placeholder="": a missing value is an empty cell, not the word "None" (Streamlit's default)
     st.dataframe(out, column_config=config, hide_index=index is None, width="stretch", placeholder="", **kwargs)
+
+
+def link_player_names(out: pd.DataFrame, df: pd.DataFrame, config: dict) -> None:
+    """B4: every player name links to his card (Player?name=…&id=<gsis>&league=…&team=…) when the frame
+    carries gsis_id, whether or not gsis_id is a displayed column. `out` is `df[cols]` in the same row
+    order, so the two align by position. A row without a gsis id links to the card's search for that name."""
+    from .ui import PLAYER_PAGE, player_url
+
+    names, ids = df["player_name"].to_numpy(), df["gsis_id"].to_numpy()
+    out["player_name"] = [
+        None if (n is None or (isinstance(n, float) and pd.isna(n)) or n == "") and (i is None or pd.isna(i))
+        else player_url(i, n if isinstance(n, str) and n else i)
+        for n, i in zip(names, ids, strict=True)
+    ]
+    spec = config.get("player_name") or {}
+    config["player_name"] = st.column_config.LinkColumn(
+        spec.get("label", "Player"), help=spec.get("help"), alignment="left",
+        display_text=rf"^{PLAYER_PAGE}\?name=([^&]*)",   # shows the name (URL-decoded by the grid)
+    )
 
 
 def howto(*lines: str, title: str = "How to read this table") -> None:
