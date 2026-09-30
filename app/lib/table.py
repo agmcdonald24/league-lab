@@ -279,6 +279,14 @@ COLUMNS: dict[str, Col] = {
     "weekly_gain": C("This week", "signed1", "Your best lineup this week after the claim minus your best lineup now (every slot re-filled, FLEX and superflex included)"),
     "horizon_gain": C("Next 4 wks", "signed1", "The same gain summed over this week and the next three: covers a bye or an injury, and counts the games the dropped player would have started"),
     "waiver_why": C("Why", help="Where he plays this week and whom he replaces, the later weeks he helps, and anything to check (no games yet, Questionable, a drop who projects more for the season)"),
+    # ---- C5 matchups (R-14 cornerbacks, R-11 comparison)
+    "targets_per_coverage_snap": C("Thrown at", "pct", "How often he is the target when he is on the field for a pass play (targets per coverage snap), since the start of last season. Lower = quarterbacks stay away from him; the one coverage number that carries over from one season to the next"),
+    "rank_targets_per_snap": C("CB rank", "int", "Rank among corners with enough pass plays (at least 20 a team game since the start of last season) by how rarely he is thrown at: 1 = thrown at least"),
+    "rank_yards_per_target": C("Rank (yds)", "int", "Rank by yards allowed per throw at him: 1 = fewest. Swings a lot from season to season"),
+    "rank_passer_rating": C("Rank (rating)", "int", "Rank by quarterback rating on throws at him: 1 = lowest. Swings a lot from season to season"),
+    "passer_rating_allowed": C("Rating allowed", "num1", "Quarterback rating on throws at him (the NFL formula on all those throws together): lower = tougher. Swings a lot from season to season"),
+    "coverage_snaps": C("Pass plays", "int", "Pass plays he was on the field for since the start of last season (this season estimated from his share of snaps until the league publishes who was on the field)"),
+    "defender_snap_share": C("His snaps", "pct", "The corner's share of his defense's snaps in those games"),
 }
 
 

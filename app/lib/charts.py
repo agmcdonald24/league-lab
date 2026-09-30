@@ -112,3 +112,53 @@ def heat_style(df: pd.DataFrame, low_is_strong: bool = True, fmt: str = "{:.0f}"
         return f"background-color: {color}; color: {'#ffffff' if t > 0.6 else TEXT}"
 
     return df.style.map(shade).format(fmt, na_rep="—")
+
+
+# ---- C5 (R-15): defense vs position as a picture ---------------------------------------------------------
+def dvp_bars(sel: pd.DataFrame, value: str, title: str, x_title: str, league_avg: float | None = None,
+             rank_col: str = "rank", n_total: int | None = None) -> go.Figure:
+    """Ranked horizontal bars of points allowed per game (most first) for the rows `lib.matchups.dvp_selection`
+    picked: the defenses your players face this week solid and labelled in bold with ◀ (never color alone), the
+    rest lighter; a gap row "⋯ N more" where defenses are skipped; a hairline at the league average. One hue,
+    no drag / zoom (a phone scrolls past it), a hover on every bar."""
+    labels, xs, colors, hover = [], [], [], []
+    gap_no = 0
+    for r in sel.itertuples(index=False):
+        if int(getattr(r, "gap_before", 0) or 0) > 0:
+            gap_no += 1
+            labels.append("⋯ " + f"{int(r.gap_before)} more" + "​" * gap_no)   # unique category per gap
+            xs.append(None)
+            colors.append(SURFACE)
+            hover.append(f"{int(r.gap_before)} defenses in between (the full list is below)")
+        mine = bool(getattr(r, "is_mine", False))
+        labels.append(f"<b>{r.defense} ◀</b>" if mine else str(r.defense))
+        v = pd.to_numeric(getattr(r, value), errors="coerce")
+        xs.append(None if pd.isna(v) else float(v))
+        colors.append(CATEGORICAL[0] if mine else "rgba(42,120,214,0.40)")
+        rank = getattr(r, rank_col, None)
+        of = f" of {n_total}" if n_total else ""
+        facing = getattr(r, "facing", "") or ""
+        hover.append(f"{r.defense}: {float(v):.1f} per game" + (f", #{int(rank)}{of}" if rank is not None and pd.notna(rank) else "")
+                     + (f"<br>your {facing}" if facing else ""))
+    # direct labels only on your opponents' bars (the rest stay in the hover and the table)
+    text = []
+    for lab, x in zip(labels, xs, strict=True):
+        text.append(f"{x:.1f}" if x is not None and "◀" in lab else "")
+    fig = go.Figure(go.Bar(
+        x=xs, y=labels, orientation="h", marker=dict(color=colors, line=dict(width=2, color=SURFACE)),
+        text=text, textposition="outside", textfont=dict(size=11, color=TEXT), cliponaxis=False,
+        customdata=hover, hovertemplate="%{customdata}<extra></extra>",
+    ))
+    if league_avg is not None and pd.notna(league_avg):
+        fig.add_vline(x=float(league_avg), line=dict(color=TEXT_SECONDARY, width=1))
+        fig.add_annotation(x=float(league_avg), y=1.0, yref="paper", yanchor="bottom", text="league average",
+                           showarrow=False, font=dict(size=11, color=TEXT_SECONDARY))
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=15, color=TEXT)), paper_bgcolor=SURFACE, plot_bgcolor=SURFACE,
+        font=dict(color=TEXT_SECONDARY, size=12), margin=dict(l=8, r=12, t=56, b=40), showlegend=False,
+        height=100 + 24 * len(labels), dragmode=False, hovermode="closest", bargap=0.25,
+        xaxis=dict(title=x_title, gridcolor=GRID, zeroline=False, fixedrange=True),
+        yaxis=dict(title="", showgrid=False, autorange="reversed", automargin=True, fixedrange=True,
+                   categoryorder="array", categoryarray=labels),
+    )
+    return fig

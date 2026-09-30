@@ -1,0 +1,109 @@
+version: 2
+
+# Wave C round 2, C5: cornerback matchups (R-14) and the matchup comparison (R-11). Definitions in
+# docs/METRICS.md § "Cornerback matchups" and § "Matchup comparison"; lineage in docs/DATA_MODEL.md.
+models:
+  - name: mart_cb_coverage
+    description: "R-14: cornerback quality per defender x season x window ('season' = that season to date; 'two_seasons' = the season before + that season). PFR coverage numerators (targets, completions, yards, TDs, INTs as the primary defender) over coverage snaps in the same games (participation, else the snap-share estimate); passer rating allowed by the NFL formula on the sums; ranked among cornerbacks with >= 20 coverage snaps per team game in the window (1 = hardest to throw on). wr1_follow_slope / other_follow_slope / shadow_flag: shadow evidence, kept for the record and NOT shown in the app (it did not repeat from one season to the next)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, window_label]
+      - expression_is_true:
+          name: cb_coverage_ranked_rows_complete
+          arguments:
+            expression: "coverage_snaps >= min_coverage_snaps and targets > 0 and rank_yards_per_target between 1 and n_ranked and rank_targets_per_snap between 1 and n_ranked and rank_passer_rating between 1 and n_ranked"
+            condition: "is_ranked"
+      - expression_is_true:
+          name: cb_coverage_unranked_rows_have_no_rank
+          arguments:
+            expression: "rank_yards_per_target is null and rank_targets_per_snap is null and rank_passer_rating is null"
+            condition: "not is_ranked"
+      - expression_is_true:
+          name: cb_coverage_rates_in_range
+          arguments:
+            expression: "targets_per_coverage_snap between 0 and 0.6 and passer_rating_allowed between 0 and 158.4 and completions_allowed <= targets"
+            condition: "is_ranked"
+    columns:
+      - name: window_label
+        tests:
+          - accepted_values:
+              arguments: {values: ['season', 'two_seasons']}
+      - name: gsis_id
+        tests: [not_null]
+
+  - name: mart_receiver_vs_cb
+    description: "R-14: who a receiver (WR/TE) has faced, per cornerback x season (regular season, 2022 on). evidence 'on_field' = his targets on plays with that corner on the field (participation, completed seasons); 'same_game' = his totals in games that corner played (the current season), with the corner's average share of his defense's snaps. On the field is not coverage: public data does not say who covered whom."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [receiver_gsis_id, defender_gsis_id, season]
+      - expression_is_true:
+          name: receiver_vs_cb_counts_consistent
+          arguments:
+            expression: "targets >= receptions and receptions >= receiving_tds and games >= 1"
+      - expression_is_true:
+          name: receiver_vs_cb_snap_share_only_same_game
+          arguments:
+            expression: "(evidence = 'same_game' and defender_snap_share between 0 and 1) or (evidence = 'on_field' and defender_snap_share is null)"
+    columns:
+      - name: evidence
+        tests:
+          - accepted_values:
+              arguments: {values: ['on_field', 'same_game']}
+
+  - name: mart_cb_matchup_week
+    description: "R-14: every rostered WR/TE x regular-season week (2025 on) with a game: the opponent's rank-1 LCB / RCB / NB from its depth chart as of that game, where his targets went since the start of last season (before the week), the likely cover (the outside corner on the side his targets lean to; the nickel corner also named for a WR who often works inside) or why there is no call, that corner's quality (mart_cb_coverage, two_seasons) and his history against the defense this season and against that corner."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+      - expression_is_true:
+          name: cb_matchup_called_rows_name_a_corner
+          arguments:
+            expression: "likely_cover_gsis_id is not null and likely_cover_slot in ('LCB', 'RCB', 'NB') and alignment_lean in ('left', 'right')"
+            condition: "call_status = 'called'"
+      - expression_is_true:
+          name: cb_matchup_uncalled_rows_name_nobody
+          arguments:
+            expression: "likely_cover_gsis_id is null and inside_cover_gsis_id is null"
+            condition: "call_status <> 'called'"
+      - expression_is_true:
+          name: cb_matchup_location_shares_sum_to_one
+          arguments:
+            expression: "abs(left_share + middle_share + right_share - 1) < 0.01"
+            condition: "located_targets > 0"
+    columns:
+      - name: call_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: ['called', 'tight end', 'too few targets', 'no depth chart yet']}
+      - name: opponent
+        tests: [not_null]
+
+  - name: mart_defense_position_profile
+    description: "R-11: each defense x position (QB/RB/WR/TE) as of each regular-season week, from its games BEFORE that week: opportunities allowed per game (targets + carries; QB attempts + carries), yards per opportunity, TD rate, points allowed per game (reference scoring), points allowed above what the offenses it faced usually score (shrunk), indices vs the league, 'gives_up' in words and ranks (1 = gives up the most, of the defenses with a game)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [season, week, defense, position]
+      - expression_is_true:
+          name: defense_profile_ranks_in_range
+          arguments:
+            expression: "rank_points between 1 and n_defenses and rank_opportunity between 1 and n_defenses and rank_efficiency between 1 and n_defenses and rank_adjusted between 1 and n_defenses and gives_up is not null"
+            condition: "games > 0 and opps_allowed_pg > 0"
+      - expression_is_true:
+          name: defense_profile_empty_before_first_game
+          arguments:
+            expression: "points_allowed_pg is null and rank_points is null and gives_up is null"
+            condition: "games = 0"
+    columns:
+      - name: position
+        tests:
+          - accepted_values:
+              arguments: {values: ['QB', 'RB', 'WR', 'TE']}
+      - name: gives_up
+        tests:
+          - accepted_values:
+              arguments: {values: ['volume and big plays', 'volume', 'big plays', 'little of either', 'about average']}
