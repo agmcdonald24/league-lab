@@ -1033,6 +1033,88 @@ the shortlist uses projection v2 in the selected league's scoring, Home's "Your 
 Rankings is the permutation importance of the P50 *quantile* model, whose dominant input is the
 priced line itself — it describes the residual adjuster, not the projection (plan U-15).
 
+## Wave C (Iteration 10)
+
+### C2 2026-09-30 — U-14 plain words + U-15 model explainer and honest importance (branch `dev/C2`, clone `league_lab_c2`)
+
+* **Built.** *Home* (`app/Home.py`): a three-sentence intro; **Worth a look** — four one-line links with the
+  selected team's number (schedule luck with its league rank, points left on the bench per week with its rank, the
+  best bargain on the roster = the starter-level player (top 12 QB/TE, top 24 RB/WR by PPG) who cost least: free
+  agent / waiver first, then the latest draft round, trades excluded; the rostered player with the highest first-read
+  share over the last 3 games → his card), league-level lines without a team, 4 queries; `st.page_link`s that keep the
+  session (league / team in `query_params`) and wrap at phone width (a 2-line CSS rule scoped to page links); the
+  League Intel link resolves to League when U-16 deletes the page. The page list is now **the questions a manager
+  asks** → page (13 links, same file-existence rule). **What's new** reads `app/whats_new.md` (one plain entry per
+  release, rewritten from CHANGELOG, newest shown, the rest under "Earlier updates"); CHANGELOG stays the technical
+  record. Glossary shows Column + Meaning (no field names). My Week untouched. *Every page's "How to read this"*: 31
+  `howto(...)` / expander bodies on all 13 pages + the cards' box (`cards.howto_cards`) rewritten to 3–5 bullets
+  that say what to do, text-only edits inside the literals. *Registry*: 53 `help=` strings de-jargoned (no key,
+  label or kind touched). *Rankings "The model"* (my region only): "Is this a model you trained? Yes", what it learned
+  from, what it predicts (one small gradient-boosted model per stat, priced in the league's scoring), floor/ceiling,
+  how it was graded, Spearman once with its gloss, the kickoff board, what it does not know, refresh cadence; then
+  **What it leans on most**: the top input per position in one line, a "how we measured it" caption, a tab per
+  position (the board's position first) with a one-line reading and the top 10 as a numbered list in points
+  (a grid hid the number at 390 px). The old quantile table is gone from the page. The old-formula expander caption
+  is plain too. `docs/WORDS.md`: the rules and the term → words table.
+* **Importance (U-15).** `projections.component_importance`: per input, 5 shuffles, every component re-predicted,
+  **MAE** (in the stat's unit, so × points per unit = points; a Poisson deviance has no points equivalent), the
+  headline = rise in MAE of the **priced line** vs actual points in the reference scoring (`component = 'total'`),
+  plus one row per stat in its unit with `importance_points`. `importance_after_project` runs at the end of `project`
+  (after lineups and waivers), **once per `MODEL_VERSION` × training window**, on the newest training season (2025)
+  with a **twin** of the component models fitted on 2016–2024 (= the backtest's 2025 fold), kept on later runs;
+  `run_importance()` forces. `ops.projection_importance` gains `model`, `component`, `feature_label`, `unit`,
+  `importance_sd`, `importance_points`, `baseline_mae`, `n_rows`, `train_seasons`, `eval_season`, `fit_seasons`
+  (migrate + `_write` DDL); the 300 pre-U-15 rows are labelled `quantile_p50` / `p50_residual` and `backtest-v2` now
+  rewrites only those. New view `mart_projection_importance` (5 tests), appended to the `make project` and nightly
+  `projection-marts` `--select`. `FEATURE_LABELS`: a plain name for all 74 inputs. `MODEL_VERSION` unchanged.
+* **Evidence** (clone `league_lab_c2`, 2026-09-30):
+  * **Projections byte-identical**: md5 over every value column of `ops.projections` 2026 weeks 4–18 (16,268 rows,
+    `fitted_at` excluded) = `0d99a972fe70107f3e40c8b8373b664f` on the clone as delivered, after a `project` on the
+    unchanged code (14:13 UTC), after the first `project` with U-15 (15:00, importance computed) and after the second
+    (15:10, importance kept). Timings under a shared 2-core box: 2 m 32 s before; 6 m 16 s with the one-off importance
+    (the importance step 2 m 44 s: 4 twin fits + 74 × 5 shuffles × 4 positions); 3 m 43 s on the next run (importance
+    step: one count query). Note for the PO: `OMP_WAIT_POLICY=PASSIVE` made the fit ~7× faster while C3's fit shared
+    the cores (OpenMP spin-waiting), with identical numbers.
+  * **Importance, 2025, League of Scrubs scoring, points of error added** (top 3; the average miss in brackets):
+    QB (6.03) snap share L3 +0.38, pass attempts/G L3 +0.20, Vegas implied total +0.18; RB (4.29) carry share L3
+    +0.36, rushing yards/G season +0.11, target share season +0.06; WR (3.90) snap share L3 +0.12, receiving yards/G
+    last season +0.04, xPPG season +0.04; TE (2.98) target share season +0.19, snap share L3 +0.10, receiving yards/G
+    last season +0.10. 2,442 rows (74 inputs × (1 total + the position's stats)). **In-sample vs held out**
+    (production models on 2025 vs the twin): same top input for all four positions; rank correlation over the 74
+    inputs 0.68 / 0.80 / 0.62 / 0.58, top-10 overlap 7 / 9 / 8 / 6; in-sample inflates what the model memorised
+    (QB rushing yards/G 0.20 vs 0.05) — hence the twin. **Priced vs weighted sum** of per-stat rises: Spearman
+    0.97–0.98, top-10 overlap 8–9 of 10 (`scratchpad/waveC/c2/imp_compare.py`).
+  * **Rankings** (AppTest, both leagues as dynasty 12 / Scrubs 2): the top line names QB snap share L3 · RB carry
+    share L3 · WR snap share L3 · TE target share season; 4 tabs, 4 readings, 4 lists of 10; no `priced_line` and no
+    "interval model" caption on the page. Playwright: expander at 390 and 1300 px, main `scrollWidth` = viewport.
+  * **Home** (AppTest + Playwright, dynasty 12 / Scrubs 2): Worth a look = "Schedule luck: −0.9 wins … (12th luckiest
+    of 12)", "Points left on your bench: 24.6 a week (7th most of 12)", "Best bargain: Parker Washington (Free agent
+    2025 wk 9) is the WR14", "first look: Parker Washington 46%" / "−0.2 wins (5th of 10)", "3.7 a week (10th of 10)",
+    "Bryce Young (Free agent 2026 wk 2) is the QB2", "Parker Washington 46%"; each reproduced by hand from
+    `mart_league_manager_profile` (rank over the league), `mart_league_keeper_candidates` ⟕ `mart_league_acquisitions`
+    and `mart_player_availability` (0.4643). Whole-league Home renders both leagues. 390 px: `scrollWidth` 390, every
+    link wraps; 1300 px fine. Screenshots `scratchpad/waveC/c2/shots/{home,rankings_model}_{dyn12,scrubs2}_{390,1300}.png`.
+  * `pytest` 538 passed (+8: `tests/test_projection_importance.py` — every input named and plain, unit points,
+    the priced importance reproduced by hand with the same shuffles, a 0-point stat adds 0 points, unused / constant
+    inputs 0, determinism and a skipped column not shifting the others, too few rows; negative controls: unweighted
+    aggregation → 3 failed, one label removed → 1 failed). `ruff` clean. Headless check: 13 pages × 2 leagues + 6
+    Player runs + Home/Rankings as dynasty 12 + Home without a team × 2 = 38 runs, 0 exceptions, 0 errors. `dbt build`
+    of the project select: PASS=70.
+  * **Jargon grep** (`v2|P10|P90|P50|Spearman|xPPG|z-score|mart|quantile|gsis` in user-visible string literals of
+    `app/`, SQL / identifiers / docstrings skipped): 33 hits — 12 in my copy, each with its gloss in the same box
+    (xPPG = expected points per game; Spearman naming the grade tables' column header; P10/P90 explained in the Floor /
+    Ceiling tooltips); 10 registry **labels** I may not edit; 11 in C1's Rankings / Waiver Wire regions (see Open).
+* **Open / for the PO.** (1) Labels to rename at merge (registry, C1 regions): `Proj (v2)` → `Proj`; `Floor (P10)` →
+  `Floor`; `Ceiling (P90)` → `Ceiling`; `Median (P50)` → `Middle`; `Spearman` / `Spearman · backtest` / `Spearman · this
+  season` → `Order score …`; `xPPG …` labels keep (glossed in every tooltip); Rankings' model picker "Projection v2 · …"
+  → "League Lab projection · …"; chart legend "Floor to ceiling (P10–P90)" and hover "P10/P90" → floor/ceiling; "v2
+  minus baseline (Spearman, per held-out season)" → "Projection minus old formula (order score, per past season)";
+  "No v2 backtest … (`make backtest-v2`)" → "No backtest for this league yet". (2) League Intel's three rewritten boxes
+  live in `7_League_Intel.py`, which U-16 deletes: carry them into League with the charts. (3) "What's new" has only
+  my entry for Wave C: add one line each for C1 (phone layout, League page) and C3 (kicker and defense projections)
+  in `app/whats_new.md`. (4) The Waiver Wire box no longer says "free-agent defenses are not valued yet" (C3 changes
+  that). (5) Importance is measured in the reference league's scoring only; the dynasty page says so.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

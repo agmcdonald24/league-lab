@@ -329,12 +329,13 @@ with st.container(border=True):
 
 with st.expander("How to read this"):
     st.markdown(
-        "- **Usage**: his share of his team's targets or carries, snaps, first reads (the receiver the quarterback "
-        "looked to first) and red-zone chances — season to date, with the last three games as the arrow.\n"
-        f"- **Projection**: this week's projection in {league_name} scoring; floor and ceiling are the bad and good "
-        "weeks (one in ten falls outside each). The opponent's rank is points allowed to the position this season, "
-        "1 = gives up the most.\n"
-        "- **Value**: points per game in this league's scoring against what his opportunities were worth, his rank at "
-        "the position, and where he sits in his team's best lineup this week — the margin is what that lineup would "
-        "lose without him, and the named player is who would come in."
+        "- **Usage** is the work he gets: his share of his team's targets or carries, of its plays, of the quarterback's "
+        "first looks and of the red-zone chances. The arrow is the last 3 games: up means a growing role.\n"
+        f"- **Projection** is this week's projected points in {league_name} scoring, with a bad week (floor) and a good "
+        "week (ceiling): 1 week in 10 lands below the floor, 1 in 10 above the ceiling. The opponent's rank is 1 for the "
+        "defense that gives up the most to his position.\n"
+        "- **Availability** says whose team he is on (or that he is a free agent), his injury status, and whether his "
+        "game has started.\n"
+        "- **Value** compares what he scores with what his work is usually worth (above = running hot, below = due), and "
+        "says where he sits in his team's best lineup this week and how much that lineup would lose without him."
     )

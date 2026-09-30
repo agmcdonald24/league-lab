@@ -21,16 +21,13 @@ v2_available = not query("select 1 from analytics.mart_player_week_projections w
 league_name = query("select league_name from analytics.dim_league_season where league_id = %s", (league_id,))["league_name"].iloc[0]
 
 howto(
-    "**Two projections, same as-of rule** (a week-N projection sees only games before week N — the backtests depend on that):",
-    "**Projection v2** projects the *stat line* — targets, receptions, yards, touchdowns, carries, attempts, interceptions — with a gradient-boosted "
-    "model per position, then prices that line in **this league's** scoring. Two leagues with different scoring get different boards. "
-    "It also gives a **floor (P10)** and a **ceiling (P90)**: about 80% of outcomes land between them (the backtest reports the real share).",
-    "**Baseline** is one weighted sum per position — form, usage, matchup, Vegas, home — fitted once on 2019–2022 and printed at the bottom. "
-    "It is priced in the reference league's scoring only. v2 is the default wherever the backtest shows it ahead; the baseline stays as the check.",
-    "**Trust** is measured, not asserted: the *Backtest* section scores each projection on seasons the model never saw "
-    "(v2 walk-forward: a season is scored by a model trained only on the seasons before it). A rank correlation around 0.6 means the order "
-    "is right more often than not and wrong plenty.",
-    "**Out / Doubtful / IR** are excluded from the ranked list. **Questionable** stays in and is flagged; check the news before kickoff.",
+    "**Pick a position and a week.** The list is who should score the most, in your league's scoring. Tap a name for his page.",
+    "**Floor and ceiling** are his bad week and his good week: 8 weeks in 10 land between them. A wide gap means boom or bust.",
+    "**Two projections.** The default is League Lab's own model: it predicts targets, catches, yards and touchdowns, then counts "
+    "them your league's way. The other is the old, simpler formula (one scale for every league), kept as a check.",
+    "**How much to trust it**: the sections below grade the projections on weeks they had not seen. They get the order right more "
+    "often than not, and still miss plenty. \"The model\" at the bottom says what it is and what it leans on.",
+    "**Out and Doubtful** players are left off. **Questionable** players stay on with a flag: check the news before kickoff.",
     title="How to use this page",
 )
 
@@ -123,13 +120,14 @@ played_week = rk["points_actual"].notna().mean() > 0.5  # most of the week is in
 st.subheader(f"{position} · NFL {season} week {week}")
 if model == "v2":
     howto(
-        f"**Proj** is the projected stat line put through **{league_name}**'s scoring map. "
-        "**Floor** and **Ceiling** are the 10th and 90th percentiles of the week's points: about 80% of outcomes land between them, "
-        "one week in ten below the floor, one in ten above the ceiling. The wider the range, the less the projection should be trusted.",
-        "The stat-line columns are what the projection is made of: expected targets, receptions, yards and touchdowns (a TD of 0.45 means "
-        "a 45% chance of one, roughly).",
-        "**xPPG (L5)**, **PPG**, **Prev PPG** are the as-of inputs in the reference league's scoring. **Opp rank** 1 = the defense that gives up the most to this position.",
-        "When the week has been played, **Actual** (this league's scoring), **Actual rank** and **In range** appear.",
+        f"**Proj** is his projected points in **{league_name}** scoring: the stat line in the next columns, counted your league's way.",
+        "**Floor** and **Ceiling** are a bad week and a good week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. "
+        "The wider the gap (**Range**), the less sure the projection is.",
+        "The stat columns are what the projection is made of. A touchdown number like 0.45 means roughly a 45% chance he scores one.",
+        "**xPPG (L5)** is what his targets and carries were worth over his last 5 games (expected points per game), **PPG** what he "
+        "actually scored. **Opp rank** 1 = the defense that gives up the most to his position: the matchup you want. These use one "
+        "scale for every league.",
+        "Once the week is played, **Actual**, **Actual rank** and **In range** (did he land between floor and ceiling?) show up.",
     )
     line_cols = {"QB": ["proj_attempts", "proj_passing_yards", "proj_passing_tds", "proj_passing_interceptions", "proj_carries", "proj_rushing_yards", "proj_rushing_tds"],
                  "RB": ["proj_carries", "proj_rushing_yards", "proj_rushing_tds", "proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds"],
@@ -146,12 +144,13 @@ if model == "v2":
          overrides={"proj_points": Col("Proj", "num1", "The projected stat line put through this league's scoring map")})
 else:
     howto(
-        "**Proj** is the projection in the reference league's scoring; the five columns after it are its parts and add up to it (plus a small intercept). "
-        "A player can be #3 on form and #12 overall because his implied team total is low and the opponent is stiff — that is the point.",
-        "**xPPG (L5)** = expected points over the last five games (opportunity); **PPG** season / last 3; **Prev PPG** last season. "
-        "**Opp allowed** = points the opponent gives up per game to this position so far, next to the league average. "
-        "**Implied total** = the team's Vegas-implied points.",
-        "When the week has been played, **Actual** and **Actual rank** appear so you can see where the projection was right and wrong.",
+        "**Proj** is the old formula's projection, on one scale for every league. The five columns after it (form, usage, matchup, "
+        "Vegas, home) are its parts and add up to it, plus a small constant.",
+        "Use the parts to see *why*: a player can be #3 on form and #12 overall because Vegas expects his team to score little and "
+        "the defense is tough.",
+        "**xPPG (L5)** is what his targets and carries were worth over his last 5 games; **PPG** is what he scored; **Opp allows** is "
+        "what the defense gives up to his position, next to the league average; **Implied total** is the points Vegas expects his team to score.",
+        "Once the week is played, **Actual** and **Actual rank** show where the formula was right and wrong.",
     )
     cols = ["rank_pos", "player_name", "team", "opponent", "rostered_by_team", "report_status", "proj_points", "c_form", "c_usage", "c_matchup", "c_vegas", "c_home",
             "xppg_l5", "ppg_std", "ppg_l3", "prev_ppg", "games_to_date", "opp_allowed_std", "league_allowed_avg", "implied_team_total", "is_home",
@@ -265,13 +264,15 @@ if model == "v2":
 st.subheader("Backtest — how much to trust this")
 if model == "v2":
     howto(
-        "**Walk-forward**: each held-out season is scored by a model trained only on the seasons before it (2021 by 2016–2020, … 2025 by 2016–2024), "
-        f"in **{league_name}** scoring, on players who played. **Spearman** = rank correlation between the projected order and actual points "
-        "(1 = perfect, 0 = coin flip); **Top-N hit rate** = of the week's actual top-N scorers (QB/TE 12, RB/WR 24), the share the projection's "
-        "top-N caught; **MAE** = average miss in points; **Coverage** = share of actuals that landed inside P10–P90 (target 80%); **Range** = mean P90 − P10.",
-        "Three rows per position: the v2 projection (priced line), the v2 P50 (projection plus the median residual, shown for completeness), "
-        "and the baseline formula scored against the same actuals. "
-        "If the baseline wins a position in a season, that is a finding, not a bug — the page shows it either way. `make backtest-v2` refreshes this.",
+        "**What this is**: each past season (2021–2025) predicted by a model trained only on the seasons before it, then graded on "
+        f"what happened, in **{league_name}** scoring. It is the fairest test we have of how the projections will do this year.",
+        "**Spearman** (the order score): how well the projected order matched the real order of scorers, 1 = perfect, 0 = no better "
+        "than random. Around 0.5–0.6 is good for one week of fantasy football. **Top-N hit rate**: of the week's real top 12 (QB, TE) "
+        "or top 24 (RB, WR), how many the projection had in its own top group.",
+        "**MAE** is the average miss in points. **Coverage** is how often the real score landed between floor and ceiling (the aim "
+        "is 8 weeks in 10); **Range** is the average gap between them.",
+        "Three rows per position: the projection, its middle outcome (the floor–ceiling model's centre, for completeness) and the old "
+        "formula on the same games. If the old formula wins somewhere, that is shown, not hidden.",
     )
     bt = query(
         """select season, position, scorer, scorer_label, train_seasons, weeks, top_n, spearman, hit_rate, mae, coverage_80, interval_width
@@ -300,12 +301,13 @@ if model == "v2":
                                   y_format=".2f", x_title=""), width="stretch")
 else:
     howto(
-        "The weights were fitted on 2019–2022. Each held-out season (2023 on) is scored week by week, position by position, on players who played: "
-        "**Spearman** = rank correlation between the projected order and the actual points (1 = perfect, 0 = coin flip); "
-        "**Top-N hit rate** = of the week's actual top-N scorers (QB/TE 12, RB/WR 24), the share the projection's top-N caught; "
-        "**MAE** = average miss in points. The three naive rows are what you would get by sorting on one column.",
-        "Read the gaps, not the levels: weekly fantasy scoring is mostly noise, so 0.6 is good. If a naive scorer beats the baseline for a position "
-        "in a season, that is a finding, not a bug — the page shows it either way. `make backtest` refreshes this after the season ends.",
+        "**What this is**: the old formula was fitted on 2019–2022, then graded week by week on 2023 onward, seasons it never saw.",
+        "**Spearman** (the order score): how well the projected order matched the real order of scorers, 1 = perfect, 0 = no better "
+        "than random. **Top-N hit rate**: of the week's real top 12 (QB, TE) or top 24 (RB, WR), how many it had in its top group. "
+        "**MAE**: the average miss in points.",
+        "The simple rows (\"Season PPG to date\" and the like) are what you would get by sorting on one column. Compare the formula "
+        "with them, not with 1.0: one week of fantasy football is mostly luck, so 0.6 is good.",
+        "If a simple sort beats the formula somewhere, that is shown, not hidden.",
     )
     bt = query(
         """select season, position, scorer_label, weeks, top_n, spearman, hit_rate, mae, top_n_picked_ppg, top_n_ceiling_ppg
@@ -327,29 +329,92 @@ else:
             st.plotly_chart(bar_chart(piv, "label", "edge", "Baseline minus 'sort by season PPG' (Spearman, per held-out season)", "Spearman gap",
                                       y_format="+.3f", x_title=""), width="stretch")
 
-# ---------------------------------------------------------------- the formula / the model
+# ---------------------------------------------------------------- the formula / the model (plan U-15: plain words, honest importance)
 if model == "v2":
-    with st.expander("The model (projection v2)"):
+    with st.expander("The model: where these projections come from"):
         meta = rk[["model_version", "train_seasons"]].dropna().head(1) if "model_version" in rk.columns else pd.DataFrame()
-        trained = f"trained on {meta['train_seasons'].iloc[0]}" if not meta.empty else "not fitted yet"
+        span = str(meta["train_seasons"].iloc[0]).replace("-", " to ") if not meta.empty else "2016 to last season"
         st.markdown(
-            f"**{meta['model_version'].iloc[0] if not meta.empty else 'v2'}**, {trained}. Per position: one gradient-boosted regressor per stat-line component "
-            "(Poisson loss for counts and touchdowns, squared error for yards) over ~75 as-of features — season-to-date and last-3 per-game rates for every "
-            "component, snap and target/carry shares, first-read share, expected points, last season's rates, the opponent's points allowed to the position, "
-            "the closing line's implied total and spread, home/away, the injury report, and how many games the season has (so last season fades out as this "
-            "one accumulates). Points = the projected line put through this league's scoring map. Floor and ceiling are quantile models of the miss "
-            "around that projection (learned on out-of-fold misses), widened on the newest training season so that 80% of outcomes land inside "
-            "(split-conformal). Hyperparameters are fixed "
-            "constants in `league_lab.projections`; a change is a new model version. Refit once a season (`make project`)."
+            "**Is this a model you trained?** Yes. League Lab trains its own model; these are not Sleeper's or ESPN's projections.\n\n"
+            f"- **What it learned from**: the regular-season games QBs, RBs, WRs and TEs played from {span} (over 50,000 of them), "
+            "each with only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, "
+            "carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against his "
+            "position, the Vegas line, home or away, and the injury report.\n"
+            "- **What it predicts**: the stat line, not points. For each position there is one small model per stat: targets, "
+            "catches, receiving yards and TDs, carries, rushing yards and TDs, and for quarterbacks pass attempts, passing yards, "
+            "TDs and interceptions. Each is a *gradient-boosted* model: a few hundred small decision trees, each one fixing the "
+            f"mistakes of the ones before it. Then **{league_name}**'s scoring turns the stat line into points, which is why the "
+            "same player projects differently in each league.\n"
+            "- **Floor and ceiling** come from separate models that learned how far off the projection usually is for a player "
+            "like this one: 8 weeks in 10 land between them, and the grades above check that they do.\n"
+            "- **How it was graded**: trained on the past, graded on seasons it never saw. Each season from 2021 to 2025 was "
+            "predicted by a model trained only on the seasons before it (the Backtest section).\n"
+            "- **Spearman** is the order score in both grade tables: how well the projected order of players matched the order they "
+            "really finished in, 1 = perfect, 0 = no better than random. *This season* scores this year's finished weeks; "
+            "*backtest* is the same score on 2021 to 2025.\n"
+            "- **Kickoff board**: the projections as they stood when each week's first game kicked off. They are locked from then "
+            "on, so this season's grades score what you actually saw, not a later re-run.\n"
+            "- **What it does not know**: injury news after the morning refresh, the weather, how the game actually goes (a "
+            "blowout sends starters to the bench early), and coaching decisions made during the week. Check the news before kickoff.\n"
+            "- **Refreshed** every morning with the newest games; its recipe stays the same all season."
         )
-        imp = query("""select position, feature, round(importance::numeric, 3) as importance from ops.projection_importance
-                       where position = %s order by importance desc limit 12""", (position,))
-        if not imp.empty:
-            st.caption("What the interval model leans on (permutation importance of the median-miss model on the newest held-out season).")
-            st.dataframe(imp[["feature", "importance"]], hide_index=True, width="stretch")
+        # What drives the projection: the component models' permutation importance (ops.projection_importance,
+        # model = 'component', component = 'total'), in points of error of the priced line. The old table here
+        # was the interval model's (its main input is the projection itself); those rows stay in the mart,
+        # labelled model = 'quantile_p50', and are not shown.
+        st.markdown("**What it leans on most**")
+        if missing_relations(("mart_projection_importance",)):
+            st.caption("Not measured on this database yet: it is written by the next projection refresh.")
+        else:
+            mv = meta["model_version"].iloc[0] if not meta.empty else None
+            imp = query(
+                """select i.position, i.feature_label, i.importance, i.importance_rank, i.baseline_mae, i.eval_season, i.fit_seasons,
+                          (select d.league_name from analytics.dim_league_season as d
+                           where d.league_id = i.league_id order by d.season desc limit 1) as scored_in
+                   from analytics.mart_projection_importance as i
+                   where i.model = 'component' and i.component = 'total' and i.importance_rank <= 10
+                     and i.model_version = coalesce(%s, (select max(model_version) from analytics.mart_projection_importance
+                                                         where model = 'component'))
+                   order by i.position, i.importance_rank""",
+                (mv,),
+            )
+            if imp.empty:
+                st.caption("Not measured for this model yet: it is written by the next projection refresh.")
+            else:
+                imp["importance"] = pd.to_numeric(imp["importance"], errors="coerce")
+                tops = imp[imp["importance_rank"] == 1].set_index("position")["feature_label"]
+                order = [p for p in ["QB", "RB", "WR", "TE"] if p in tops.index]
+                st.markdown(" · ".join(f"**{p}**: {tops[p][0].lower() + tops[p][1:]}" for p in order))
+                r0 = imp.iloc[0]
+                fit = str(r0["fit_seasons"]).replace("-", " to ") if isinstance(r0["fit_seasons"], str) else "the seasons before"
+                st.caption(
+                    f"How we measured it: a copy of the model trained on {fit} projected the {int(r0['eval_season'])} season, which "
+                    "it had never seen. Then we scrambled one input at a time (shuffled it between players, so it tells the model "
+                    "nothing) and counted how much bigger the average miss got, in points per player per game "
+                    f"({r0['scored_in']} scoring). Bigger = the model leans on it more. Inputs that move together (targets and "
+                    "catches, a season and its last 3 games) share the credit, so each looks a little smaller than it is. The "
+                    "projection itself (the \"price line\" an older table here showed) is the answer, not an input."
+                )
+                tab_order = ([position] if position in order else []) + [p for p in order if p != position]   # the board's position first
+                for tab, pos in zip(st.tabs(tab_order), tab_order, strict=True):
+                    with tab:
+                        t = imp[imp["position"] == pos]
+                        names = [n[0].lower() + n[1:] for n in t["feature_label"]]
+                        base = float(t["baseline_mae"].iloc[0])
+                        st.markdown(
+                            f"For {pos}s the model leans most on **{names[0]}**."
+                            + (" Next: " + " · ".join(f"*{n}*" for n in names[1:3]) + "." if len(names) > 1 else "")
+                            + f" It misses a {pos} by {base:.1f} points a game on average; scrambling the top input adds "
+                            f"{float(t['importance'].iloc[0]):.2f} to that."
+                        )
+                        # a list, not a grid: it wraps at phone width and the number stays on screen
+                        st.markdown("\n".join(f"{int(r.importance_rank)}. {r.feature_label} · **{float(r.importance):+.2f}**"
+                                               for r in t.itertuples()))
+                        st.caption("Points of error added per player per game when that input is scrambled.")
 else:
-    with st.expander("The formula (seed `ranking_weights.csv`)"):
+    with st.expander("The old formula: its weights"):
         wts = query("select position, feature, weight, train_seasons, n_rows, r2_train, fitted_at from analytics_seeds.ranking_weights where position = %s order by feature", (position,))
-        st.caption(f"Fitted on {wts['train_seasons'].iloc[0]} ({int(wts['n_rows'].iloc[0])} player-weeks, R² {float(wts['r2_train'].iloc[0]):.2f}) on {wts['fitted_at'].iloc[0]}. "
-                   "proj = intercept + Σ weight × feature. f_sample runs 0 → 1 over the first six games so last season fades out.")
+        st.caption(f"One weighted sum per position, fitted on {wts['train_seasons'].iloc[0]} ({int(wts['n_rows'].iloc[0])} player-games). "
+                   "The projection is a constant plus each input times its weight. Last season's numbers fade out over a player's "
+                   "first six games of this season.")
         st.dataframe(wts[["feature", "weight"]], hide_index=True, width="stretch")

@@ -106,6 +106,22 @@ create table if not exists ops.projection_backtest (
 create table if not exists ops.projection_importance (
     model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision
 );
+-- Plan U-15: `model` = 'component' (what drives the projection: the component models, written by
+-- `league-lab project`, `component` = 'total' in points or one stat in its own unit) or 'quantile_p50'
+-- (the interval model, written by `backtest-v2`; the rows written before U-15 are that model).
+alter table ops.projection_importance add column if not exists model text;
+alter table ops.projection_importance add column if not exists component text;
+alter table ops.projection_importance add column if not exists feature_label text;
+alter table ops.projection_importance add column if not exists unit text;
+alter table ops.projection_importance add column if not exists importance_sd double precision;
+alter table ops.projection_importance add column if not exists importance_points double precision;
+alter table ops.projection_importance add column if not exists baseline_mae double precision;
+alter table ops.projection_importance add column if not exists n_rows integer;
+alter table ops.projection_importance add column if not exists train_seasons text;
+alter table ops.projection_importance add column if not exists eval_season integer;
+alter table ops.projection_importance add column if not exists fit_seasons text;
+update ops.projection_importance set model = 'quantile_p50', component = coalesce(component, 'p50_residual'),
+    unit = coalesce(unit, 'points') where model is null;
 -- Drift monitor (plan M-06): the live board's played weeks scored like the backtest, written by
 -- `league-lab drift` and at the end of `league-lab project`.
 create table if not exists ops.projection_drift (

@@ -36,13 +36,14 @@ POSITION_COLUMNS = {
 cols = ", ".join(POSITION_COLUMNS[position])
 
 howto(
-    "Season totals for every player at the position, ranked by fantasy points in the reference league's scoring (one scale for every season).",
-    "**Target % / Carry % / Air-yard %** divide the player's numbers by his *team's* totals in the games he played — so a player who missed "
-    "games is not penalised, and a player whose team never throws is shown for what he is.",
-    "**1st-read share** (2022+) is the player's share of the team's first-read targets — where the QB looks first. "
-    "**Route %** and **TPRR / YPRR (proxy)** come from NFL participation data (completed seasons only) and are proxies: presence on a "
-    "dropback is not proof of a route, so they read ~10–15% conservative. **Snap %** is share of all offensive snaps, runs included.",
-    "Blank cells mean the number could not be computed (no targets, no snaps recorded, season not charted), never zero.",
+    "Season totals for every player at a position, ranked by fantasy points on one scale for every league and season. Use it to "
+    "compare anyone with anyone, this year or past years.",
+    "**Target %**, **Carry %** and **Air-yard %** are his share of his *team's* targets, carries and downfield throws in the games "
+    "he played: a player who missed games is not marked down for it.",
+    "**1st-read share** (2022 on) is how often he is the quarterback's first look. **Route %** is how often he is on the field when "
+    "the quarterback drops back to pass; **TPRR / YPRR** are targets and yards per route. Those three are estimates from completed "
+    "seasons and run a little low. **Snap %** counts every play, runs included.",
+    "A blank cell means the number could not be worked out (no targets, no snaps recorded, a season before charting), never zero.",
 )
 reference_scoring_note()
 season_df = query(

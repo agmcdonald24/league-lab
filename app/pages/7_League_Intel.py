@@ -14,13 +14,13 @@ league_id, roster_id, members = perspective(require_team=False)
 
 st.subheader("Manager profiles")
 howto(
-    "**All-play %** is each roster's win rate if it had played every other roster every week — the record its points deserve. "
-    "**Expected W** turns that into wins; **Luck** is actual wins minus expected. A 2-0 team with a big negative luck number "
-    "is scoring like a 1-1 team and has been getting favourable draws.",
-    "**Bench pts left/wk** is how much a better lineup would have added each week. High numbers mark managers who don't sweat start/sit — "
-    "useful to know when you are trading with them.",
-    "**Waiver adds / FA adds / Trades / FAAB spent** show who is active and who sits still; **Failed claims** shows who is chasing the same players as you.",
-    "The position columns (**QB / RB / WR / TE**, plus **K / DEF** where the league starts them) and **IR** count how many of each the roster currently holds.",
+    "**Luck** is wins above (+) or below (−) what a team's points deserve. **All-play %** is its record if it had played every "
+    "team every week; **Expected W** turns that into wins. A lucky team is weaker than its record: a good trade partner to sell to.",
+    "**Bench pts left/wk** is what a better lineup would have added each week. A manager who leaves a lot on the bench is not "
+    "watching start/sit closely, which is worth knowing before you trade with him.",
+    "**Waiver adds**, **FA adds**, **Trades** and **FAAB spent** show who is active and who sits still; **Failed claims** shows "
+    "who is chasing the same players as you.",
+    "The position columns (and **IR**) count how many of each the team holds now: a team thin at a position is a buyer there.",
 )
 prof = query(
     """select team_name, manager_name, standing, wins, losses, points_for, points_against,
@@ -41,8 +41,10 @@ c2.plotly_chart(bar_chart(prof.sort_values("avg_bench_points_left", ascending=Fa
 
 # ------------------------------------------------------------- all-play by week
 st.subheader("Weekly scoring rank")
-howto("Each cell is where the roster's score ranked that week (1 = top scorer, darker = better). A roster that keeps landing in the top half "
-      "but keeps losing is unlucky; the opposite is riding a soft schedule.")
+howto("Each cell is where the team's score ranked that week: 1 = the week's top scorer, darker = better.",
+      "A team that keeps landing in the top half but keeps losing has been unlucky and should climb. One that wins while "
+      "scoring in the bottom half has had a soft schedule and should fall back.",
+      "Use it before a trade: a strong team with a bad record may be happy to deal, a weak one on a hot streak may overrate its roster.")
 apw = query(
     """select week, team_name, points, week_points_rank, all_play_wins, result
        from analytics.mart_league_all_play_week where league_id = %s order by week, team_name""",
@@ -110,11 +112,11 @@ else:
         for c in cols[1:]:
             config[c]["width"] = 92
         st.dataframe(out, column_config=config, hide_index=True, width="stretch", placeholder="")
-        howto("**Lineup value** is each roster's best legal lineup from this league's projections, every slot solved together "
-              "(FLEX and superflex by eligibility). **Depth** is what its bench alone would field. The rank after each value is its place "
-              "in the league for the weeks named in the column. **Closest call** is the slot where the lineup decision is tightest.",
-              "A roster ranked high on the next four weeks but low on depth is one injury from trouble — a natural trade partner "
-              "for a deep roster that needs starters.")
+        howto("**Lineup value** is the projected points of each team's best lineup, FLEX and superflex included, in this "
+              "league's scoring. The rank after each number is its place in the league for the weeks named in the column.",
+              "**Depth** is what a team's bench alone could put out. **Closest call** is the spot where its start/sit decision is tightest.",
+              "A team ranked high on the next four weeks but low on depth is one injury from trouble: a natural trade partner "
+              "if you are deep and need a starter.")
 
 # ------------------------------------------------------------- historical luck
 st.subheader("Past seasons — record vs what the points deserved")

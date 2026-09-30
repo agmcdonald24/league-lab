@@ -1,6 +1,23 @@
 # Changelog
 
-Newest first. The Home page shows the top entry as "What's new".
+Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
+
+## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
+
+- **Plain words, and an honest "what drives the projection" (U-14, U-15).** Home is rewritten for a league-mate: a
+  three-sentence intro, **Worth a look** (your schedule luck, points left on your bench, the best bargain on your
+  roster, the player on it who is most often his quarterback's first look — each a link to the page behind it), the pages listed as the
+  questions they answer, and "What's new" in plain words (`app/whats_new.md`) instead of this file. Every page's "How
+  to read this" box says what to do with the page in three to five bullets, and the column tooltips lost their jargon
+  (`docs/WORDS.md` is the word list). Rankings' "The model" section answers "is this a model you trained?" and the
+  importance table now measures the projection itself: the component models (targets, catches, yards, TDs …),
+  scrambled one input at a time on the newest training season (2025, scored by a twin fitted on 2016–2024), in
+  **points of error added** in the reference scoring, with plain names, top 10 per position (snap share over the
+  last 3 games leads for QB and WR, carry share for RB, target share for TE). The old table (price line
+  0.017, snap 0.007) was the floor–ceiling model's median, whose main input is the projection; its rows stay in
+  `ops.projection_importance` labelled `model = 'quantile_p50'`, off the page. New view `mart_projection_importance`
+  (added to the `project` / nightly projection-marts `--select`); written by `league-lab project` after the
+  projections, which are byte-identical to before.
 
 ## 2026-09-30 — Wave B (decision engine)
 

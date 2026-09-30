@@ -283,7 +283,8 @@ this table on the same harness, out of sample, before it replaces the baseline.
 ## Projection v2 — stat-line projections with an interval (v2.0, 2026-09-26)
 
 Plan M-01 / M-03. Code: `league_lab.projections`; tables `ops.projections`, `ops.projection_backtest`,
-`ops.projection_importance`; marts `mart_player_week_projections`, `mart_projection_backtest`.
+`ops.projection_importance`; marts `mart_player_week_projections`, `mart_projection_backtest`,
+`mart_projection_importance` (U-15).
 
 ### What is projected
 
@@ -342,6 +343,57 @@ league's own scoring (`league_points` macro over the component outcomes) and `ra
 shown for the current season is out of sample. Refit cadence: every refresh (≈1–2 min); a
 hyperparameter change is a new `MODEL_VERSION`. Every week is re-projected by each refit, but only the
 weeks that have not kicked off are **written**: a started week keeps the rows it had (next section).
+
+### What drives the projection — importance (v2.0, plan U-15, 2026-09-30)
+
+**Before U-15** Rankings showed the permutation importance of the **P50 interval model** (`importance()`,
+written by `backtest-v2`): its inputs are the features *plus the priced line*, and the priced line
+dominated, so "price line 0.017, snap 0.007" described the model that places the floor and ceiling around
+the projection, not the projection. Those rows stay in `ops.projection_importance`, labelled
+`model = 'quantile_p50'`, `component = 'p50_residual'`, and are no longer shown.
+
+**Now** (`component_importance`, `importance_after_project`; rows `model = 'component'`):
+
+* **Which models.** The component models (one per stat per position, `COMPONENTS`) that make the projection.
+  They are measured as a **twin** of the production fit: same features, hyperparameters and training filter,
+  fitted on the production window minus its newest season (`fit_seasons` 2016–2024) and scored on that newest
+  season (`eval_season` 2025) — the models that grade 2025 in the walk-forward backtest. *Why not the
+  production models on 2025* (the newest training season itself): both were measured on the clone. The top
+  input per position is the same, but scoring rows a model was fitted on overstates what it memorised — QB
+  rushing yards per game this season 0.20 points in-sample vs 0.05 held out, implied team total 0.34 vs 0.18;
+  over all 74 inputs the two orders correlate 0.68 (QB), 0.80 (RB), 0.62 (WR), 0.58 (TE), top-10 overlap
+  7, 9, 8, 6 of 10. The page shows the held-out number, consistent with "graded on seasons it never saw".
+* **Scrambling.** Per input, `IMPORTANCE_REPEATS` = 5 shuffles of that column across the season's rows
+  (`numpy` `default_rng(0)`, drawn for every input in `FEATURES` order, so an input that never varies — it
+  scores 0 — never shifts the others); every component re-predicted from the scrambled matrix, clipped at 0
+  like the board. `importance` = mean rise in error, `importance_sd` = its standard deviation over the 5.
+* **Error: MAE, not Poisson deviance.** MAE is in the stat's own unit (targets, yards …), so times the points
+  a unit is worth it is points; a deviance has no points equivalent.
+* **One number per input per position** (`component = 'total'`, `unit = 'points'`): the rise in the MAE of the
+  **priced line** against the points the player actually scored, both in the **reference league's scoring**
+  (League of Scrubs; `unit_points`: 0.5 a catch, 0.1 a yard, 6 a TD, 0.04 a passing yard, 4 a passing TD, −1 an
+  INT, −2 a fumble lost; it has no bonus keys, so a stat line's points are exactly that sum). This weights each
+  component by its **points per unit** (not by its share of points) and adds the errors *before* taking the
+  absolute value, so errors in different stats offset or compound the way they do in the projection, and the
+  stats the model does not project (a WR's pass) stay in the actual points like the board's misses. Checked
+  against the alternative the plan offered — the per-component rises weighted and summed
+  (`importance_points` summed over components): the two order the 74 inputs almost identically (Spearman
+  0.97–0.98 per position, top-10 overlap 8–9 of 10), so the choice moves the numbers, not the story.
+  Targets, carries and attempts are worth 0 points per unit, so an input that moves only the targets model adds
+  no points of error: volume matters through the catches, yards and touchdowns it predicts
+  (`tests/test_projection_importance.py`).
+* **Per stat** (`component` = the stat, `unit` = the stat): the rise in that component's MAE in its own unit,
+  and `importance_points` = rise × |points per unit|, for a breakdown; `baseline_mae` is the unscrambled MAE
+  (points for `total`), `n_rows` the rows scored.
+* **Cadence.** Written by `league-lab project` after the projections, lineups and waiver moves, **once per
+  `MODEL_VERSION` × training window** (`train_seasons` of the production fit); later runs keep it (the nightly
+  restores the table from the hosted copy with the rest of `ops`). `projections.run_importance()` forces a
+  recompute. It never reads or changes the production models: the board is byte-identical with or without it.
+* **Published** by the view `mart_projection_importance` (`importance_rank` per model version × model × position
+  × component; added to the `make project` / nightly projection-marts `--select`) and shown in Rankings' "The
+  model" expander: top 10 per position, plain names from `projections.FEATURE_LABELS` (every input has one,
+  tested), as "points of error added". Caveats said on the page: inputs that move together (targets and catches,
+  a season and its last 3 games) share the credit, so each looks smaller than it is; importance is not cause.
 
 ### Decision record (plan B5, 2026-09-29): a week's board is frozen at its first kickoff
 

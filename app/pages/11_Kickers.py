@@ -19,11 +19,12 @@ season = int(league["season"])
 
 st.subheader("Season summary")
 howto(
-    "Did streaming kickers actually pay? This compares what each roster's *started* kicker scored.",
-    "**Common weeks** are the weeks in which every roster started a kicker, so totals compare like with like. "
-    "**vs week avg** is the roster's kicker minus the league's average started kicker that week.",
-    "**Kickers used**, **Changes** and **Acquired** show how much churn it took. A roster with one kicker all year and a top-3 total didn't need to stream.",
-    "This reports what happened. It does not reconstruct who was on waivers or simulate the alternative.",
+    "Did swapping kickers every week pay off? This compares what each team's *started* kicker scored.",
+    "**Common weeks** are the weeks every team started a kicker, so the totals are fair. **vs week avg** is a team's kicker "
+    "minus the average started kicker that week: above zero, its kicker choices beat the league.",
+    "**Kickers used**, **Changes** and **Acquired** show how much swapping it took. One kicker all year and a top-3 total? "
+    "That team never needed to stream.",
+    "It shows what happened, not what a different pick would have scored.",
 )
 summary = query(
     """select team_name, manager_name, weeks_started_k, common_weeks, total_points_common_weeks,

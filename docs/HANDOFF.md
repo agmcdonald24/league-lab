@@ -38,7 +38,9 @@ explainer + honest importance, U-16 League consolidation, U-17 Receivers/Kickers
 matchups, R-15 defense-vs-position picture, T-02 trade simulator, P-01 profiles + any league.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
-dbt/unit tests named in the acceptance column, and cite the task ID in the commit.
+dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a
+league-mate would notice also gets a plain-words entry in `app/whats_new.md` (Home's "What's new"), and
+page copy follows `docs/WORDS.md`.
 
 ## How to work here
 

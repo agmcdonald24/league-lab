@@ -16,14 +16,15 @@ current_season = int(cal["season"]) if not cal.empty else None
 seasons = query("select distinct season from analytics.mart_player_trend_tags order by season desc")["season"].astype(int).tolist()
 
 howto(
-    "For every player and every usage metric, the last **three games** are compared with the games before them. "
-    "A metric is called **up** or **down** only when the move clears two bars: a practical minimum (e.g. 3 points of target share) "
-    "*and* a size at least equal to the player's own week-to-week noise (**Strength** ±1; ±2 is a clear change).",
-    "**Momentum** averages strength across the *opportunity* metrics — targets, snaps, carries, air yards, expected points — and "
-    "deliberately ignores fantasy points. A player can score three touchdowns without his role changing at all.",
-    "**Trend** spells out which metrics moved. \"↑ targets, ↑ snaps, ↓ aDOT\" (more work, shallower) is a different story from "
-    "\"↑ targets, flat snaps, ↑ aDOT\" (same snaps, deeper role); both read as \"trending up\" on a points-only site.",
-    "Nothing is called a trend before a player's fourth game. Early in the season the page shows an *early read* instead and says so.",
+    "**Use it to spot a role change before the points show up**: add the risers off waivers, and think about moving the fallers.",
+    "Each player's last **3 games** are compared with his games before that. A number is called **up** or **down** only when the "
+    "change is big enough to matter (say, 3 points of target share) *and* bigger than his normal week-to-week swing.",
+    "**Strength** says how unusual the change is for him: 1 is worth a look, 2 is a clear change. **Momentum** averages that over "
+    "his work (targets, snaps, carries, how far downfield he is targeted, expected points) and ignores his fantasy points on "
+    "purpose: three touchdowns can happen without the role changing at all.",
+    "**Trend** names what moved: \"↑ targets, ↑ snaps\" is more work; \"↑ targets, ↑ aDOT\" (targeted deeper downfield) is a "
+    "different, deeper role.",
+    "Nothing is called a trend before a player's fourth game; until then the page shows an *early read* and says so.",
     title="How to use this page",
 )
 reference_scoring_note("Points, expected points and defense trends on this page")
@@ -145,8 +146,11 @@ if pick:
 
 # ---------------------------------------------------------------- defenses
 st.subheader("Defenses getting softer or stiffer")
-howto("Points allowed to each position over a defense's last three games versus the games before, in units of that unit's own game-to-game noise. "
-      "**softer** = giving up more lately (start players against them); **stiffer** = tightening up. Needs four games.")
+howto("**Softer** means the defense has given up more to that position over its last 3 games than before: a better matchup "
+      "than its season rank says, so lean toward starting players against it.",
+      "**Stiffer** means it has tightened up: be careful with players facing it, even if the season numbers look friendly.",
+      "Only changes bigger than the defense's normal week-to-week swing are listed (**Strength** 1 = worth a look, 2 = clear). "
+      "A defense needs four games before it shows up here.")
 dt = query(
     """select defense, position, games, allowed_prior, allowed_l3, allowed_season, change, z, direction
        from analytics.mart_defense_trends where season = %s and direction in ('softer','stiffer') order by abs(z) desc""",

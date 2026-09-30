@@ -372,15 +372,14 @@ def rank_phrase(rk: pd.DataFrame, week: int | None = None) -> str:
 def howto_cards() -> None:
     with st.expander("How to read this"):
         st.markdown(
-            "- The lineup is the best legal one your roster can start this week, every slot solved together "
-            "(FLEX and superflex included), on this week's projections in your league's scoring.\n"
-            "- A card is one of the week's closest calls: the starter whose absence would cost the least. "
-            "**Apart** is how much the lineup loses if you swap him for the named player: under "
-            f"{COIN_FLIP:.0f} point is a coin flip (go with the news), under {LEAN:.0f} a lean, more is clear.\n"
-            "- The named player is the one who would actually come in: the best bench player who can play "
-            "that slot, or, when moving a teammate over works better, the card says who moves.\n"
-            "- **#28 vs WR** is the opponent's rank in points allowed to that position this season "
-            "(1 = gives up the most, the matchup you want).\n"
-            "- Players whose game has started are locked, and a starter nobody on your bench can replace (your only "
-            "kicker or defense) is not a call: neither gets a card."
+            "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and "
+            "superflex filled by whoever is worth most there. Start it, then check the cards.\n"
+            "- Each card is one of the week's closest calls. **Apart** is how many points separate the two players: under "
+            f"{COIN_FLIP:.0f} point is a coin flip (go with the latest news), under {LEAN:.0f} a lean, more is clear.\n"
+            "- The named player is the one who would really come in: your best bench player for that spot, or, when "
+            "moving a teammate over works better, the card says who moves.\n"
+            "- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the "
+            "matchup you want), 32 = the fewest.\n"
+            "- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can "
+            "replace, like your only kicker."
         )

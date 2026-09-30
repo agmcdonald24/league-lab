@@ -119,14 +119,15 @@ with st.container(border=True):
                     f"(fit {t['fit_horizon']:+.1f}).")
 
 howto(
-    "**Buy low** lists players on other rosters scoring *below* what their usage is worth (PPG − xPPG under zero): their manager "
-    "sees a disappointing box score, the usage says it should improve. **Sell high** lists your players scoring *above* it.",
-    f"**You gain** is how much your best lineup goes up with him, every slot re-picked (a WR who beats your FLEX counts; a QB3 behind "
-    f"your two starting QBs adds nothing, even in superflex). **They lose** is how much their best lineup drops without him (0 if he "
-    f"sits on their bench). Both are this week ({wk}) and over the next four weeks ({span}), from this league's projections.",
-    "**Fit** = what the receiving lineup gains minus what the giving lineup loses: the lineup points the move creates. A big positive "
-    "fit is a player who matters more to the other roster than to his own: an easier ask, or a better sale.",
-    "This is not a valuation: it ignores what you would send back and who you would drop. It tells you where to look and what to say.",
+    "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG − xPPG**, points minus expected points "
+    "per game, below zero). Their manager sees a "
+    "bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports.",
+    f"**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). "
+    f"**They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week ({wk}) and "
+    f"the next four ({span}), in your league's scoring.",
+    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other "
+    "team than to his own: an easier ask when you buy, a better sale when you sell.",
+    "Use it to know where to look and what to say. It is not a price: it ignores what you would send back and who you would drop.",
     title="How to read this",
 )
 

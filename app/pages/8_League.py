@@ -19,8 +19,11 @@ tab_standings, tab_weekly, tab_matchups, tab_tx, tab_draft = st.tabs(
 )
 
 with tab_standings:
-    howto("Regular-season record from scored weeks. **Lineup eff.** is points scored as a share of the best lineup available each week "
-          "(Sleeper's 'max points'). **Std dev** is week-to-week volatility — a high-variance roster is dangerous in the playoffs and fragile before them.")
+    howto("The regular-season table from the weeks Sleeper has scored.",
+          "**Lineup eff.** is the points a team started as a share of its best possible lineup each week (Sleeper's \"max points\"). "
+          "Low means the manager keeps leaving points on the bench.",
+          "**Std dev** is how much a team's score swings week to week. A big swing makes a team dangerous in a one-week playoff game "
+          "and shaky before it.")
     standings = query(
         """select standing, team_name, manager_name, wins, losses, ties, points_for, points_against,
                   avg_points, stddev_points, best_week, worst_week, lineup_efficiency, is_champion
@@ -62,9 +65,10 @@ with tab_matchups:
     show(mu)
     lineup_team = st.selectbox("Show a lineup", sorted(mu["team_name"].unique().tolist()) if not mu.empty else [])
     if lineup_team:
-        howto("**Points** are what Sleeper scored. **Recomputed** is the same week rebuilt from NFL statistics under this season's scoring — "
-              "the two agree to the decimal for this league, which is how we know the scoring map is right. Blank for team defenses and for a "
-              "player who had no NFL stat row that week (not on a roster, or an empty slot).")
+        howto("**Points** are what Sleeper scored. **Recomputed** is the same week worked out by League Lab from the NFL's stats "
+              "with your league's scoring.",
+              "The two match to the decimal, which is how you know every other page counts points the way Sleeper does.",
+              "Blank for team defenses and for a player with no NFL stats that week (not on an NFL roster, or an empty slot).")
         lineup = query(
             """select l.slot, l.player_name, l.position, l.nfl_team, l.points_observed, l.points_recomputed, l.is_starter
                from analytics.league_player_week l
@@ -90,9 +94,10 @@ with tab_tx:
     show(view, ["created_at", "week", "transaction_type", "action", "team_name", "player_name", "position", "waiver_bid"], height=480)
 
 with tab_draft:
-    howto("Every pick with what the player went on to do. **Season pts** uses this league's current scoring so drafts from different years compare; "
-          "**Pts while started** is what he actually scored for whoever started him in this league. "
-          "**Pos rank by pick** vs **Pos rank by pts** is the hit/miss column: a WR taken 8th at his position who finished 2nd was a steal.")
+    howto("Every pick, and what the player went on to do. Use it to see who drafts well, and which rounds paid off.",
+          "**Pos rank by pick** vs **Pos rank by pts** is the hit-or-miss check: a WR taken 8th among WRs who finished 2nd was a steal.",
+          "**Season pts** uses this league's current scoring, so drafts from different years compare. **Pts while started** is what "
+          "he scored for whoever started him in this league.")
     draft = query(
         """select pick_no, round, team_name, player_name, position, drafted_team, is_keeper,
                   nfl_reg_games_played, nfl_reg_points_current_scoring, position_rank_by_pick, position_rank_by_points,
