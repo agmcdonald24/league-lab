@@ -60,12 +60,13 @@ if roster_id is not None:
     board = align_opponents(board, season, next_week)      # this week's opponents (the mart keys them to the calendar week)
     with st.expander("Start / sit board: every player with his matchup"):
         st.markdown(
-            "- Every player on the roster with next week's opponent and where that defense ranks in points allowed to his position "
-            "(**Opp rank** 1 = gives up the most, 32 = the fewest). **Opp rank (L4)** uses only the defense's last four games.\n"
-            "- Read matchup rank together with **xPPG** (the player's own opportunity) — a great matchup for a player nobody throws to is still a bad start.\n"
-            "- **Injury** and **Practice** are the latest official report; a Questionable tag with full practice is usually fine, "
-            "a Questionable with no practice is a real risk.\n"
-            "- **BYE** means no game; the player scores zero if started."
+            "- Every player on your roster with next week's opponent. **Opp rank** 1 = the defense that gives up the most to his "
+            "position (the matchup you want), 32 = the fewest; **(L4)** uses only its last 4 games.\n"
+            "- Weigh the matchup against his work: **xPPG** (expected points per game) is what his targets and carries are usually "
+            "worth. A great matchup for a player nobody throws to is still a bad start.\n"
+            "- **Injury** and **Practice** are the latest official report: Questionable with a full practice is usually fine, "
+            "Questionable with no practice is a real risk.\n"
+            "- **BYE** means no game: he scores zero if you start him."
         )
         show(board, ["player_name", "position", "nfl_team", "is_current_starter", "injury_status", "practice_status", "opponent", "is_home", "is_bye",
                      "opp_rank_std", "opp_rank_l4", "opp_points_allowed_pg_std", "ppg_std", "points_per_game_l3", "expected_per_game",
@@ -122,11 +123,12 @@ if roster_id is not None:
                 st.caption(cl + " Which corner covers whom is not in public data.")
     with st.expander("The opposing cornerbacks, receiver by receiver"):
         howto(
-            "Pick one of your receivers to see the cornerbacks on the opposing defense's latest depth chart and how they have fared when targeted this season.",
-            "**Rating allowed** is the passer rating on throws at that defender (lower = tougher coverage); **Y/Tgt allowed** and **Comp % allowed** say the same thing in plainer units.",
-            "This is context, not an assignment: public data does not record which corner covered which receiver, and shadow coverage is invisible here. "
-            "Use it to judge *how tough the secondary is*, not to predict a specific one-on-one.",
-            "Coverage data starts in 2018 and comes from Pro-Football-Reference.",
+            "Pick one of your receivers to see the cornerbacks he is likely to face and how they have done when targeted this season.",
+            "**Rating allowed** is the quarterback rating on throws at that defender: lower = tougher coverage. **Y/Tgt allowed** "
+            "(yards per throw at him) and **Comp % allowed** say the same in plainer numbers.",
+            "Use it to judge *how tough the secondary is*, not to call a one-on-one: public data does not say which corner covered "
+            "which receiver.",
+            "Coverage numbers come from Pro-Football-Reference and start in 2018.",
         )
         # the toughest matchup first (the one the line above names), then the rest of the receivers
         by_rank = wrs.sort_values("_r", ascending=False, na_position="last")
@@ -163,10 +165,11 @@ with st.container(border=True):
     st.caption("Rank 1 = the defense that gives up the most points to the position this season (the matchup you want), 32 = the fewest.")
 with st.expander("Defense vs position: every defense, by position"):
     howto(
-        "**Pts allowed/G** is how many fantasy points each defense has given up to opposing players at the position, per game, this season — "
-        "in the reference league's scoring, like every NFL research table, so the ranks are the same for every league.",
-        "**Rank** 1 = gives up the most = the matchup you want; 32 = the stingiest. The **(L4)** columns use the defense's last four games, which catches injuries and scheme changes faster.",
-        "Early in the season these ranks move a lot week to week; from about week 6 they settle.",
+        "**Start players against the defenses at the top** of the \"gives up the most\" list; be wary of the bottom one.",
+        "**Pts allowed/G** is the fantasy points each defense gives up to that position per game this season, on one scale for every "
+        "league. **Rank** 1 = gives up the most (the matchup you want), 32 = the stingiest.",
+        "The **(L4)** columns use only the defense's last 4 games: they catch an injury or a new scheme sooner.",
+        "Early in the season these ranks jump around; from about week 6 they settle.",
     )
     reference_scoring_note("Points allowed and ranks in this section")
     pos = st.radio("Position", dvp_positions, horizontal=True)

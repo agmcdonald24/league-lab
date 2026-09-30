@@ -216,18 +216,21 @@ if is_current:
             for c in cols[1:]:
                 config[c]["width"] = 92
             st.dataframe(out, column_config=config, hide_index=True, width="stretch", placeholder="")
-            howto("**Lineup value** is each roster's best legal lineup from this league's projections, every slot solved together "
-                  "(FLEX and superflex by eligibility). **Depth** is what its bench alone would field. The rank after each value is its place "
-                  "in the league for the weeks named in the column. **Closest call** is the slot where the lineup decision is tightest.",
-                  "A roster ranked high on the next four weeks but low on depth is one injury from trouble — a natural trade partner "
-                  "for a deep roster that needs starters.")
+            howto("**Lineup value** is the projected points of each team's best lineup, FLEX and superflex included, in this "
+                  "league's scoring. The rank after each number is its place in the league for the weeks named in the column.",
+                  "**Depth** is what a team's bench alone could put out. **Closest call** is the spot where its start/sit decision is tightest.",
+                  "A team ranked high on the next four weeks but low on depth is one injury from trouble: a natural trade partner "
+                  "if you are deep and need a starter.")
 
 # ------------------------------------------------------------- the rest, tight: one expander each
 st.subheader(f"{season} in detail")
 
 with st.expander("Standings"):
-    howto("Regular-season record from scored weeks. **Lineup eff.** is points scored as a share of the best lineup available each week "
-          "(Sleeper's 'max points'). **Std dev** is week-to-week volatility — a high-variance roster is dangerous in the playoffs and fragile before them.")
+    howto("The regular-season table from the weeks Sleeper has scored.",
+          "**Lineup eff.** is the points a team started as a share of its best possible lineup each week (Sleeper's \"max points\"). "
+          "Low means the manager keeps leaving points on the bench.",
+          "**Std dev** is how much a team's score swings week to week. A big swing makes a team dangerous in a one-week playoff game "
+          "and shaky before it.")
     standings = query(
         """select standing, team_name, manager_name, wins, losses, ties, points_for, points_against,
                   avg_points, stddev_points, best_week, worst_week, lineup_efficiency, is_champion
@@ -238,12 +241,12 @@ with st.expander("Standings"):
 
 with st.expander("Manager profiles: luck, bench, moves, roster shape"):
     howto(
-        "**All-play %** is each roster's win rate if it had played every other roster every week — the record its points deserve. "
-        "**Expected W** turns that into wins; **Luck** is actual wins minus expected. A 2-0 team with a big negative luck number "
-        "is scoring like a 1-1 team and has been getting favourable draws.",
-        "**Bench pts left/wk** is how much a better lineup would have added each week. High numbers mark managers who don't sweat start/sit — "
-        "useful to know when you are trading with them.",
-        "**Waiver adds / FA adds / Trades / FAAB spent** show who is active and who sits still; **Failed claims** shows who is chasing the same players as you.",
+        "**Luck** is wins above (+) or below (−) what a team's points deserve. **All-play %** is its record if it had played every "
+        "team every week; **Expected W** turns that into wins. A lucky team is weaker than its record: a good trade partner to sell to.",
+        "**Bench pts left/wk** is what a better lineup would have added each week. A manager who leaves a lot on the bench is not "
+        "watching start/sit closely, which is worth knowing before you trade with him.",
+        "**Waiver adds**, **FA adds**, **Trades** and **FAAB spent** show who is active and who sits still; **Failed claims** shows "
+        "who is chasing the same players as you.",
         "The position columns (**QB / RB / WR / TE**, plus **K / DEF** where the league starts them) and **IR** count how many of each the roster currently holds.",
     )
     slots = league_slots(current_league_id)
@@ -284,9 +287,10 @@ with st.expander("Matchups and lineups, by week"):
     show(mu)
     lineup_team = st.selectbox("Show a lineup", sorted(mu["team_name"].unique().tolist()) if not mu.empty else [])
     if lineup_team:
-        howto("**Points** are what Sleeper scored. **Recomputed** is the same week rebuilt from NFL statistics under this season's scoring — "
-              "the two agree to the decimal for this league, which is how we know the scoring map is right. Blank for team defenses and for a "
-              "player who had no NFL stat row that week (not on a roster, or an empty slot).")
+        howto("**Points** are what Sleeper scored. **Recomputed** is the same week worked out by League Lab from the NFL's stats "
+              "with your league's scoring.",
+              "The two match to the decimal, which is how you know every other page counts points the way Sleeper does.",
+              "Blank for team defenses and for a player with no NFL stats that week (not on an NFL roster, or an empty slot).")
         lineup = query(
             """select l.gsis_id, l.slot, l.player_name, l.position, l.nfl_team, l.points_observed, l.points_recomputed, l.is_starter
                from analytics.league_player_week l
@@ -317,9 +321,10 @@ with st.expander("Transactions"):
          phone_cols=["player_name", "action", "team_name", "week", "waiver_bid"])
 
 with st.expander("Draft review"):
-    howto("Every pick with what the player went on to do. **Season pts** uses this league's current scoring so drafts from different years compare; "
-          "**Pts while started** is what he actually scored for whoever started him in this league. "
-          "**Pos rank by pick** vs **Pos rank by pts** is the hit/miss column: a WR taken 8th at his position who finished 2nd was a steal.")
+    howto("Every pick, and what the player went on to do. Use it to see who drafts well, and which rounds paid off.",
+          "**Pos rank by pick** vs **Pos rank by pts** is the hit-or-miss check: a WR taken 8th among WRs who finished 2nd was a steal.",
+          "**Season pts** uses this league's current scoring, so drafts from different years compare. **Pts while started** is what "
+          "he scored for whoever started him in this league.")
     draft = query(
         """select gsis_id, pick_no, round, team_name, player_name, position, drafted_team, is_keeper,
                   nfl_reg_games_played, nfl_reg_points_current_scoring, position_rank_by_pick, position_rank_by_points,

@@ -118,15 +118,16 @@ else:
             st.caption("Your week-" + str(week) + " starters: " + " · ".join(f"{c} {label.get(k, k)}" for k, c in counts.items()) + ".")
 
     howto(
-        "**Lineup value** is the best legal lineup your roster can start this week: every slot solved together, so a WR who "
-        "beats your FLEX counts and SUPER_FLEX goes to whoever is worth most there (a QB3 counts only if he beats that player). "
-        "Values are this week's projections in this league's scoring.",
-        "**Margin** is what the lineup would lose without that starter, after re-picking the whole lineup from the rest of "
-        "the roster. The smallest margin is your **closest call**: the one lineup decision that is nearly a coin flip.",
-        "**Next 4 weeks** adds up the best lineup of each week; byes and injuries are already in it.",
-        "**Depth** is the lineup your bench alone could field if every starter sat: what an injury or a bye costs you.",
-        "**Acquired** is how each player joined this roster: the draft (round.pick), a trade (and with whom), waivers or free agency, "
-        "and the season. For a dynasty this reads the whole league history, not just this year.",
+        "**Lineup value** is the projected points of the best lineup you can start this week, in your league's scoring, with FLEX "
+        "and superflex filled by whoever is worth most there. The rank next to it is where that puts you in the league.",
+        "**Margin** is how much your lineup loses without that starter. The smallest one is your **closest call**: check the news "
+        "on those two players before kickoff.",
+        "**Next 4 weeks** adds up your best lineup for each of the next four weeks, byes and injuries included. Low here but high "
+        "this week? Look for cover now.",
+        "**Depth** is the lineup your bench alone could put out. Low depth means one injury hurts: a trade or a claim for a starter "
+        "matters more to you than to most.",
+        "**Acquired** is how each player joined your team: draft pick, trade (and with whom), waivers or free agency. Dynasty "
+        "rosters read the whole league history.",
         title="How to read this",
     )
 
@@ -197,12 +198,13 @@ if not prof.empty:
 # ---------------------------------------------------------------- usage and production (wide: in an expander)
 with st.expander("Usage and production, every player", expanded=False):
     howto(
-        "**PPG** is what the player has scored per game under this league's scoring; **xPPG** is what his opportunity "
-        "(targets, air yards, carries, field position) was worth under the same scoring.",
-        "**PPG − xPPG** below zero means he has been unlucky relative to his usage — that tends to improve. Above zero means "
-        "he has been scoring more than his usage supports — that tends to cool off.",
-        "**Target %** and **Snap %** are the usage that drives points. The **(L3)** versions cover the last three games.",
-        "**Opp rank**: where next week's opponent ranks in points allowed to this position. 1 = gives up the most (good matchup), 32 = the fewest.",
+        "**PPG** is what he has scored per game in your league's scoring. **xPPG** (expected points per game) is what his targets "
+        "and carries are usually worth, given where they happened on the field.",
+        "**PPG − xPPG** below zero: he has been unlucky for the work he gets, so expect more. Above zero: he is scoring more than "
+        "his work supports, so expect less. Hold the first, think about selling the second.",
+        "**Target %** (his share of the team's targets) and **Snap %** (share of plays he is on the field) are the work that drives "
+        "points. **(L3)** means the last 3 games: a jump there is the first sign of a bigger role.",
+        "**Opp rank**: next week's defense against his position, 1 = gives up the most (the matchup you want), 32 = the fewest.",
     )
     roster = query(
         """select a.gsis_id, a.player_name, a.position, a.nfl_team, a.injury_status, a.games_played, a.ppg_std, a.points_per_game_l3,

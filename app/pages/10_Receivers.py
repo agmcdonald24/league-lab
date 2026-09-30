@@ -90,10 +90,12 @@ with st.container(border=True):
             bits.append(f"most points a game: {pp.iloc[0]['player_name']} ({pp.iloc[0]['points_per_game']:.1f})")
         st.markdown("; ".join(bits) + ".")
 howto(
-    "Each receiver's numbers over the selected weeks. Shares are computed the right way: total targets ÷ total *team* targets over the same games, not an average of weekly percentages.",
-    "**aDOT** is average depth of target — how far downfield the throws go. **YAC/Rec** is yards after the catch per reception. "
-    "Together they describe the role: a low-aDOT / high-YAC receiver lives on screens and slants; a high-aDOT receiver on deep shots.",
-    "**Snap %** is participation, not routes; a receiver at 95% snaps with a 12% target share is on the field but not in the plan.",
+    "Each receiver's numbers over the weeks you picked. **Target %** is his share of his team's targets in those games: the "
+    "steadiest sign of how much the offense wants him.",
+    "**aDOT** (average depth of target) is how far downfield his targets travel; **YAC/Rec** is yards after the catch per catch. "
+    "Short targets and lots of YAC = screens and slants; deep targets = boom-or-bust weeks.",
+    "**Snap %** is how often he is on the field. On the field 95% of the time but only 12% of the targets means he is out "
+    "there, not in the plan: don't count on him.",
 )
 with st.expander("The window, every column", expanded=True):
     show(summary, ["player_name", "games", "targets", "targets_per_game", "target_share", "air_yards_share", "adot",
@@ -107,8 +109,10 @@ st.plotly_chart(line_chart(games.dropna(subset=[metric]), "week", metric, "playe
 
 # ---- early vs late ------------------------------------------------------------------------
 st.subheader("Early vs late window")
-howto("Pick two week ranges and compare the same receivers across them. Use it to see whether a role changed "
-      "(target share moved) or the team changed (team targets moved) — the two look identical in the box score.")
+howto("Pick two stretches of weeks and compare the same receivers across them.",
+      "If his **Target %** moved, his role changed. If only **Team tgt** moved, his team just threw more or less: the box score "
+      "looks the same either way, this table tells them apart.",
+      "A role change is worth acting on (add, start, or sell); a team that threw more for a few weeks usually goes back.")
 e1, e2 = st.columns(2)
 early = e1.slider("Early weeks", 1, 22, (1, 6))
 late = e2.slider("Late weeks", 1, 22, (12, 18))
@@ -121,8 +125,10 @@ with st.expander("Early vs late, every column"):
 
 # ---- recent form ----------------------------------------------------------------------------
 st.subheader("Recent form — last 3 / last 5 games vs season")
-howto("As of each receiver's latest game: target share over his last three and last five games next to his season-to-date share. "
-      "A rising L3 with a flat season number is the earliest usage signal you can get from box-score data.")
+howto("Each receiver's share of his team's targets over his last 3 and last 5 games, next to his whole season.",
+      "Last 3 well above the season number is the earliest sign of a bigger role you can get from the box score: a waiver add "
+      "or a player to start.",
+      "Last 3 well below it is the warning sign: check for an injury or a new receiver in the offense before you start him.")
 recent = query(
     """select gsis_id, player_name, week, target_share_l3, target_share_l5, target_share_std,
               targets_l3, team_targets_l3, snap_pct_l3, points_per_game_l3, points_per_game_std
@@ -139,14 +145,13 @@ with st.expander("Last 3 / last 5 vs season, every column"):
 # ---- first reads (FTN charting, 2022+) --------------------------------------------------------
 st.subheader("First-read target share")
 howto(
-    "**First-read share** = this player's first-read targets ÷ the *team's* first-read targets over the same games. "
-    "It answers *where does the quarterback look first* — a role signal that target share hides, because checkdowns and "
-    "scramble-drill throws count the same as a designed primary read in the box score.",
-    "**1st read of own tgt** is a different question: of *this player's* targets, how many were first reads. A high number "
-    "with a low first-read share is a specialist; a low number with a high target share is a safety valve.",
-    "**Designed** throws (screens, many RPOs) are kept separate and never counted as first reads. **Charting coverage** is the share "
-    "of the team's targets that carry a read code; nothing is inferred for uncharted throws.",
-    "Source: FTN Data charting via nflverse (CC-BY-SA 4.0). Seasons before 2022 are not charted and show blank, not zero.",
+    "**First-read share**: when the quarterback throws to the receiver he looked at first, how often it is this player. It shows "
+    "who the play is drawn up for, which plain targets hide (a checkdown counts the same as a first look in the box score).",
+    "A high first-read share is the best sign a receiver's targets will last: start him, and trust a quiet week less.",
+    "**1st read of own tgt** asks something else: of *his* targets, how many came as the first look. High there but low overall "
+    "= a specialist; low there with lots of targets = a safety valve.",
+    "**Designed** throws (screens and the like) are counted apart. **Charting coverage** is the share of throws that were charted: "
+    "below 90%, treat the numbers as partial. Charting by FTN Data (CC BY-SA 4.0) starts in 2022; earlier seasons show blank, not zero.",
 )
 if season < 2022:
     unavailable("First-read target share", f"FTN charting starts in 2022; {season} has no read codes. Never shown as zero.")
@@ -191,13 +196,13 @@ else:
 # ---- routes proxy (participation, completed seasons) ------------------------------------------
 st.subheader("Routes (participation proxy)")
 howto(
-    "**Routes (proxy)** counts the dropbacks a receiver was on the field for, from the NFL's participation data. It is a proxy, "
-    "not a charted route count: a tight end who stayed in to block is counted, so the proxy runs about 10–15% above the charting "
-    "services' numbers and **TPRR / YPRR (proxy)** are lower bounds. Compare players against each other, not against published TPRR.",
-    "**Route %** = routes proxy ÷ team dropbacks with participation data: how often the player is on the field when the QB drops back. "
-    "Snap % includes run plays; route % is the passing-down version.",
-    "Participation files are published after each season's postseason, so the current season shows blank here until then. "
-    "A licensed in-season routes feed drops in through `league-lab import-routes` and appears as **Routes** / **TPRR** / **YPRR** without the proxy label.",
+    "**Route %** is how often he is on the field when the quarterback drops back to pass: the passing-play version of snap share. "
+    "A receiver who runs a route on most pass plays gets chances every week.",
+    "**TPRR** (targets per route) is how often he gets the ball thrown his way when he is out there: the stickiest receiver skill. "
+    "**YPRR** is yards per route.",
+    "These are estimates (a tight end who stayed in to block still counts as out there), so they run 10–15% low. Compare players "
+    "with each other, not with numbers from other sites.",
+    "The NFL publishes this data after the season, so the current season is blank here until then.",
 )
 rp = query(
     """select gsis_id, player_name, count(*) filter (where routes_proxy is not null) as games_with_participation,
@@ -229,13 +234,12 @@ else:
 # ---- context splits ---------------------------------------------------------------------------
 st.subheader("Context splits — where the usage comes from")
 howto(
-    "Each row is one situation. **Team tgt** / **Team dropbacks** are the team's totals *in that situation, in the games this receiver played*, "
-    "so the share is a real share, not a mix of games. Halves keep overtime separate; the score state is the score *before* the snap "
-    "(never the final score); down-and-distance groups third and fourth down together.",
-    "Read it as a story: a receiver whose target share jumps when trailing by 9+ is a garbage-time producer; one whose share holds when "
-    "leading is in the plan regardless of script. **QB on the play** splits the same numbers by who was under center — the first thing to "
-    "check after a quarterback change.",
-    "Routes proxy per situation needs participation data (completed seasons only).",
+    "Each row is one situation (a half, the score, the down, the field zone, or who played quarterback), with his share of the "
+    "team's targets in that situation, in the games he played.",
+    "Read it as a story: a receiver whose share jumps only when his team trails by 9+ is a garbage-time scorer, a risky start "
+    "when his team is favoured. One whose share holds when leading is in the plan whatever the score.",
+    "**QB on the play** splits the numbers by quarterback: the first thing to check after a quarterback change.",
+    "The score is the score *before* the snap; third and fourth down are grouped together.",
 )
 ctx_labels = {"half": "Half", "score_state": "Score state (pre-snap)", "down_distance": "Down & distance", "field_zone": "Field zone", "qb": "QB on the play"}
 ctx = st.selectbox("Split by", list(ctx_labels), format_func=lambda k: ctx_labels[k])

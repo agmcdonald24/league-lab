@@ -22,8 +22,8 @@ model version). scikit-learn's HistGradientBoostingRegressor handles NULL featur
 the raw as-of columns are used as they are (a NULL means "not known yet", which is information).
 
 Outputs: ``ops.projections`` (one row per league x season x week x player), ``ops.projection_backtest``
-(per season-week-position-scorer), ``ops.projection_importance`` (permutation importance of the
-P50 model per position), ``ops.projection_drift`` (plan M-06: the live board's played weeks scored
+(per season-week-position-scorer), ``ops.projection_importance`` (plan U-15: permutation importance of
+the component models in points, written by ``project``; the P50 interval model's, by ``backtest-v2``), ``ops.projection_drift`` (plan M-06: the live board's played weeks scored
 like a held-out season), and a Markdown report under ``reports/backtests``.
 
 Decision record (plan B5): a league-week's rows in ``ops.projections`` are rewritten by every refit
@@ -282,6 +282,214 @@ def importance(m: PositionModel, test: pd.DataFrame, league_id: str, scoring: di
     return pd.DataFrame({"position": m.position, "feature": [*FEATURES, "priced_line"], "importance": r.importances_mean}).sort_values("importance", ascending=False)
 
 
+# ------------------------------------------------------------------------------ importance of the projection itself (plan U-15)
+# `importance()` above measures the P50 *interval* model, whose main input is the priced line: it
+# describes the residual adjuster, not what drives the projection. What drives the projection are the
+# component models (targets, catches, yards, TDs ... per position). `component_importance` scrambles one
+# input at a time for all of them together, prices the scrambled stat line in the reference league's
+# scoring and reports how many points of error that adds (plus each component's own rise in its units).
+
+IMPORTANCE_REPEATS = 5   # shuffles per feature; the reported number is their mean (sd alongside)
+
+COMPONENT_LABELS: dict[str, str] = {
+    "targets": "Targets", "receptions": "Catches", "receiving_yards": "Receiving yards", "receiving_tds": "Receiving TDs",
+    "carries": "Carries", "rushing_yards": "Rushing yards", "rushing_tds": "Rushing TDs", "attempts": "Pass attempts",
+    "passing_yards": "Passing yards", "passing_tds": "Passing TDs", "passing_interceptions": "Interceptions thrown",
+    "fumbles_lost_total": "Fumbles lost",
+}
+
+# Every model input in plain words (the Rankings page shows these, never the column names).
+# tests/test_projection_importance.py: every entry of FEATURES has one, and no two share a label.
+FEATURE_LABELS: dict[str, str] = {
+    "week": "Week of the season",
+    "games_to_date": "Games played so far this season",
+    "f_sample": "How much this season counts vs last (grows over 6 games)",
+    "prev_games": "Games played last season",
+    "ppg_std": "Points per game, season",
+    "ppg_l3": "Points per game, last 3 games",
+    "ppg_l5": "Points per game, last 5 games",
+    "points_sd_std": "How much his points swing week to week, season",
+    "xppg_std": "Expected points per game (what his touches are worth), season",
+    "xppg_l3": "Expected points per game, last 3 games",
+    "xppg_l5": "Expected points per game, last 5 games",
+    "prev_ppg": "Points per game, last season",
+    "prev_xppg": "Expected points per game, last season",
+    "pos_prev_ppg": "Typical points per game for his position, last season",
+    "target_share_std": "Share of his team's targets, season",
+    "target_share_l3": "Share of his team's targets, last 3 games",
+    "carry_share_std": "Share of his team's carries, season",
+    "carry_share_l3": "Share of his team's carries, last 3 games",
+    "snap_pct_std": "Snap share, season",
+    "snap_pct_l3": "Snap share, last 3 games",
+    "air_yards_share_l3": "Share of his team's air yards (throws downfield), last 3 games",
+    "first_read_share_std": "How often he is the QB's first look, season",
+    "first_read_share_l3": "How often he is the QB's first look, last 3 games",
+    "prev_snap_pct": "Snap share, last season",
+    "opp_allowed_std": "Points the opponent gives up to his position, season",
+    "opp_allowed_l4": "Points the opponent gives up to his position, last 4 games",
+    "opp_rank_std": "Opponent's rank against his position",
+    "league_allowed_avg": "League-average points given up to his position",
+    "f_opp_allowed_diff": "Opponent vs league average, points given up to his position",
+    "implied_team_total": "Points Vegas expects his team to score",
+    "spread_line": "Point spread (Vegas)",
+    "total_line": "Game over/under (Vegas)",
+    "f_home": "Home or away",
+    "questionable": "Listed Questionable on the injury report",
+    "red_zone_targets_pg_std": "Red-zone targets per game, season",
+    "red_zone_targets_pg_l3": "Red-zone targets per game, last 3 games",
+    "red_zone_carries_pg_std": "Red-zone carries per game, season",
+    "red_zone_carries_pg_l3": "Red-zone carries per game, last 3 games",
+    **{f"{c}_pg_std": f"{n} per game, season" for c, n in COMPONENT_LABELS.items()},
+    **{f"{c}_pg_l3": f"{n} per game, last 3 games" for c, n in COMPONENT_LABELS.items()},
+    **{f"prev_{c}_pg": f"{n} per game, last season" for c, n in COMPONENT_LABELS.items()},
+    "priced_line": "The projection itself (the interval model's input)",
+}
+
+IMPORTANCE_COLUMNS = ["position", "component", "feature", "feature_label", "unit", "importance", "importance_sd",
+                      "importance_points", "baseline_mae", "n_rows"]
+
+
+def unit_points(scoring: dict[str, float]) -> dict[str, float]:
+    """Points one unit of each stat-line component is worth under ``scoring`` (stat keys only: a
+    yardage bonus is not a per-unit value). The reference league has no bonus keys, so there a stat
+    line's points are exactly the sum of component x unit points; ``targets`` is worth 0 in most leagues."""
+    return {c: compute_points({c: 1.0}, scoring, include_bonuses=False) for c in ALL_COMPONENTS}
+
+
+def component_importance(m: PositionModel, rows: pd.DataFrame, scoring: dict[str, float],
+                         n_repeats: int = IMPORTANCE_REPEATS, seed: int = 0) -> pd.DataFrame:
+    """Permutation importance of the component models, in points (plan U-15).
+
+    Rows: the position's played player-weeks with history and known outcomes (the training filter
+    of ``fit_position``). For each feature, ``n_repeats`` times: shuffle that one column, re-predict
+    every component (clipped at 0, as ``predict_position`` does), and measure the mean absolute error
+    against what happened:
+
+    * per component (``component`` = e.g. ``targets``, ``unit`` = the component): the rise in that
+      component's MAE, and ``importance_points`` = that rise x the component's points per unit;
+    * for the projection (``component = 'total'``, ``unit = 'points'``): the rise in the MAE of the
+      priced line (sum of component x points per unit) against the player's actual points, both in
+      ``scoring``. This is the headline: "points of error added when the feature is scrambled". It
+      weights each component by its points per unit, like summing the per-component
+      ``importance_points``, but lets errors in different components offset or compound the way they
+      do in the real projection, and counts the stats the model does not project (a WR's pass) in
+      the actual points, as the board's misses do.
+
+    The mean over the shuffles is ``importance``, their standard deviation ``importance_sd``; the
+    unscrambled MAE is ``baseline_mae``. A feature that never varies on these rows scores 0.
+    Deterministic for a given ``seed``; the models are only read (predictions are unaffected).
+    """
+    comps = [c for c in COMPONENTS[m.position] if c in m.components]
+    d = rows[(rows["position"] == m.position) & rows["played"].fillna(False).astype(bool) & ~rows["no_history"].fillna(False).astype(bool)]
+    d = d.dropna(subset=[f"out_{c}" for c in comps]).reset_index(drop=True)
+    if len(d) < 50 or not comps:
+        return pd.DataFrame(columns=IMPORTANCE_COLUMNS)
+    x = _matrix(d)
+    w = unit_points(scoring)
+    outs = np.nan_to_num(d[[f"out_{c}" for c in ALL_COMPONENTS]].to_numpy(dtype=float))
+    y_pts = outs @ np.array([w[c] for c in ALL_COMPONENTS])          # what the player actually scored (stat keys)
+    y = {c: d[f"out_{c}"].to_numpy(dtype=float) for c in comps}
+    wc = np.array([w[c] for c in comps])
+
+    def predict(xm: np.ndarray) -> np.ndarray:                       # (rows, components)
+        return np.column_stack([np.clip(m.components[c].predict(xm), 0, None) for c in comps])
+
+    def maes(p: np.ndarray) -> tuple[float, np.ndarray]:
+        return float(np.mean(np.abs(y_pts - p @ wc))), np.array([np.mean(np.abs(y[c] - p[:, k])) for k, c in enumerate(comps)])
+
+    base_pts, base_c = maes(predict(x))
+    n = len(d)
+    rng = np.random.default_rng(seed)
+    out: list[dict[str, object]] = []
+    for j, f in enumerate(FEATURES):
+        col = x[:, j]
+        nan = np.isnan(col)
+        varies = np.unique(col[~nan]).size + int(nan.any()) > 1      # "unknown" counts as a value of its own
+        perms = [rng.permutation(n) for _ in range(n_repeats)]      # drawn for every feature: a skipped column never shifts the others
+        rise_pts, rise_c = np.zeros(n_repeats), np.zeros((n_repeats, len(comps)))
+        if varies:
+            # all the shuffles of this column in one matrix: one predict call per component (the per-call
+            # overhead of 300 trees dominates at these sizes)
+            xp = np.tile(x, (n_repeats, 1))
+            xp[:, j] = np.concatenate([col[p] for p in perms])
+            pp = predict(xp)
+            for r in range(n_repeats):
+                mp, mc = maes(pp[r * n:(r + 1) * n])
+                rise_pts[r], rise_c[r] = mp - base_pts, mc - base_c
+        label = FEATURE_LABELS.get(f, f)
+        out.append({"position": m.position, "component": "total", "feature": f, "feature_label": label, "unit": "points",
+                    "importance": float(rise_pts.mean()), "importance_sd": float(rise_pts.std()),
+                    "importance_points": float(rise_pts.mean()), "baseline_mae": base_pts, "n_rows": len(d)})
+        for k, c in enumerate(comps):
+            out.append({"position": m.position, "component": c, "feature": f, "feature_label": label, "unit": c,
+                        "importance": float(rise_c[:, k].mean()), "importance_sd": float(rise_c[:, k].std()),
+                        "importance_points": float(rise_c[:, k].mean() * abs(wc[k])), "baseline_mae": float(base_c[k]),
+                        "n_rows": len(d)})
+    return pd.DataFrame(out, columns=IMPORTANCE_COLUMNS)
+
+
+def importance_after_project(conn: psycopg.Connection, train: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]],
+                             train_seasons: str, force: bool = False) -> pd.DataFrame | None:
+    """Side output of ``project`` (plan U-15): what drives the projection, into ``ops.projection_importance``
+    (``model = 'component'``; the interval model's rows from ``backtest-v2`` stay, ``model = 'quantile_p50'``).
+
+    Measured on the newest training season (``eval_season``) with a **twin** of the production component
+    models fitted on the same window minus that season (``fit_seasons``): the same models that score that
+    season in the walk-forward backtest. Scrambling inputs on rows a model was fitted on overstates the
+    inputs it memorised (2025 QBs: rushing yards per game this season added 0.20 points of error on the
+    production models, which saw 2025, and 0.05 on the twin, which did not), so the page shows the
+    held-out number. In the reference league's scoring.
+
+    Computed once per ``MODEL_VERSION`` x training window (a few minutes: one extra component fit and
+    the shuffles), kept on later runs (the nightly restores the table from the hosted copy); ``force``
+    recomputes. It never touches the production models or the projections, runs after they are written,
+    and a failure is logged, never fatal."""
+    try:
+        with conn.cursor() as cur:
+            cur.execute(DDL["ops.projection_importance"])
+            cur.execute("""select count(*) from ops.projection_importance
+                           where model_version = %s and model = 'component' and train_seasons = %s""", (MODEL_VERSION, train_seasons))
+            have = cur.fetchone()[0]
+        conn.commit()
+        if have and not force:
+            log.info("importance: kept (%s rows for %s, trained %s)", have, MODEL_VERSION, train_seasons)
+            return None
+        ref_id = next(iter(scorings))
+        eval_season = int(train["season"].max())
+        past = train[train["season"] < eval_season]
+        rows = train[train["season"] == eval_season]
+        frames = []
+        for pos in POSITIONS:
+            d = past[(past["position"] == pos) & past["played"] & ~past["no_history"]]          # fit_position's training filter
+            d = d.dropna(subset=[f"out_{c}" for c in COMPONENTS[pos]]).reset_index(drop=True)
+            twin = PositionModel(pos, components=_fit_components(_matrix(d), d, pos), n_rows=len(d))
+            frames.append(component_importance(twin, rows, scorings[ref_id][1]))
+        imp = pd.concat(frames, ignore_index=True)
+        imp["model_version"], imp["model"], imp["run_at"], imp["league_id"] = MODEL_VERSION, "component", datetime.now(UTC), ref_id
+        imp["train_seasons"], imp["eval_season"] = train_seasons, eval_season
+        imp["fit_seasons"] = f"{int(past['season'].min())}-{int(past['season'].max())}"
+        _write(conn, "ops.projection_importance", imp, "model_version = %s and model = 'component'", (MODEL_VERSION,))
+        top = imp[imp["component"] == "total"].sort_values("importance", ascending=False).groupby("position").head(1)
+        log.info("importance written: %s rows (%s season, held out from a %s fit, %s scoring); top input per position: %s", len(imp),
+                 eval_season, imp["fit_seasons"].iloc[0], scorings[ref_id][0],
+                 {r.position: f"{r.feature} +{r.importance:.2f} pts" for r in top.itertuples()})
+        return imp
+    except Exception:
+        conn.rollback()
+        log.exception("projection importance failed (projections were written); the next `league-lab project` retries")
+        return None
+
+
+def run_importance(force: bool = True) -> pd.DataFrame | None:
+    """Recompute the importance on its own (``uv run python -c 'from league_lab.projections import run_importance; run_importance()'``)."""
+    s = get_settings()
+    with psycopg.connect(s.pipeline_dsn(), autocommit=False) as conn:
+        season = max(available_seasons(conn))
+        train_seasons = [x for x in available_seasons(conn) if x < season]
+        train = load_frame(conn, train_seasons)
+        return importance_after_project(conn, train, league_scorings(conn), f"{min(train_seasons)}-{max(train_seasons)}", force=force)
+
+
 # ------------------------------------------------------------------------------ scoring a season
 def _pinball(y: np.ndarray, q_pred: np.ndarray, q: float) -> float:
     diff = y - q_pred
@@ -368,7 +576,9 @@ def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | 
     _write(conn, "ops.projection_backtest", res, "season = any(%s) and coalesce(model_version, '') not like 'kd%%'", (test_seasons,))
     imp = pd.concat(imps, ignore_index=True) if imps else pd.DataFrame(columns=["position", "feature", "importance"])
     imp["model_version"], imp["run_at"], imp["league_id"] = MODEL_VERSION, datetime.now(UTC), ref_id
-    _write(conn, "ops.projection_importance", imp, "model_version = %s", (MODEL_VERSION,))
+    imp["model"], imp["component"], imp["unit"] = "quantile_p50", "p50_residual", "points"   # U-15: the interval model's rows, labelled
+    imp["feature_label"] = imp["feature"].map(FEATURE_LABELS)
+    _write(conn, "ops.projection_importance", imp, "model_version = %s and model = 'quantile_p50'", (MODEL_VERSION,))
     out_dir = out_dir or PROJECT_ROOT / "reports" / "backtests"
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"projection_v2_{min(test_seasons)}_{max(test_seasons)}_{run_id}.md"
@@ -415,6 +625,7 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
         log.exception("drift monitor failed (projections were written); run `league-lab drift` after `dbt build`")
     lineups_after_project(conn, season)   # B1: exact lineups on the fresh projections (a failure is logged, not fatal)
     waivers_after_project(conn, season)   # B3: waiver moves on those lineups (a failure is logged, not fatal)
+    importance_after_project(conn, train, scorings, f"{min(train_seasons)}-{max(train_seasons)}")   # U-15 (once per window; a failure is logged, not fatal)
     return pred
 
 
@@ -541,7 +752,20 @@ DDL = {
         mae double precision, coverage_80 double precision, pinball_10 double precision, pinball_50 double precision,
         pinball_90 double precision, interval_width double precision)""",
     "ops.projection_importance": """create table if not exists ops.projection_importance (
-        model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision)""",
+        model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision);
+        alter table ops.projection_importance add column if not exists model text;
+        alter table ops.projection_importance add column if not exists component text;
+        alter table ops.projection_importance add column if not exists feature_label text;
+        alter table ops.projection_importance add column if not exists unit text;
+        alter table ops.projection_importance add column if not exists importance_sd double precision;
+        alter table ops.projection_importance add column if not exists importance_points double precision;
+        alter table ops.projection_importance add column if not exists baseline_mae double precision;
+        alter table ops.projection_importance add column if not exists n_rows integer;
+        alter table ops.projection_importance add column if not exists train_seasons text;
+        alter table ops.projection_importance add column if not exists eval_season integer;
+        alter table ops.projection_importance add column if not exists fit_seasons text;
+        update ops.projection_importance set model = 'quantile_p50', component = coalesce(component, 'p50_residual'),
+            unit = coalesce(unit, 'points') where model is null""",
     "ops.projection_drift": """create table if not exists ops.projection_drift (
         run_at timestamptz, model_version text, league_id text, season integer, week integer, position text,
         n_players integer, spearman double precision, top_n integer, hit_rate double precision, mae double precision,

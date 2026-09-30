@@ -9,8 +9,10 @@ from lib.ui import setup
 setup("Data Status", icon="🧪")
 
 st.subheader("Sources")
-howto("One row per dataset League Lab loads. **Partitions** are usually seasons. **Last status** is the most recent attempt; "
-      "a failed attempt never replaces good data, so a failure here means *stale*, not *wrong*. `make refresh` retries.")
+howto("One row per source League Lab reads (NFL stats, Sleeper, charting). **Last loaded** says how fresh each one is.",
+      "**Last status** is the latest attempt. A failed attempt never replaces good data, so a failure here means the numbers are "
+      "a day or so *old*, not *wrong*; the next nightly refresh tries again.",
+      "**Partitions** are the pieces a source comes in, usually one per season.")
 status = query(
     """select source, dataset, partitions, rows_loaded, first_partition, last_partition, last_loaded_at,
               last_status, last_attempt_at, failures_7d, last_failure_at, last_error

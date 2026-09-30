@@ -140,6 +140,27 @@ models:
       - name: spearman
         tests: [not_null]
 
+  - name: mart_projection_importance
+    description: "U-15: what drives projection v2. model = 'component' (from `league-lab project`, once per model version x training window): per position and input, the points of error added when that input is scrambled in every component model (component = 'total', reference league's scoring), and per stat in its own unit, on the newest training season (eval_season) with a twin of the models fitted without it (fit_seasons); model = 'quantile_p50' (from `backtest-v2`, and every row written before U-15): the interval model's median."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [model_version, model, position, component, feature]
+      - expression_is_true:
+          name: projection_importance_component_rows_complete
+          arguments:
+            expression: "feature_label is not null and feature_label <> feature and eval_season is not null and train_seasons is not null and fit_seasons is not null and n_rows > 0 and importance_sd >= 0"
+            condition: "model = 'component'"
+    columns:
+      - name: model
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['component', 'quantile_p50']
+      - name: importance
+        tests: [not_null]
+
   - name: mart_projection_drift
     description: "Drift monitor (M-06): the live v2 board's complete played weeks per league, season and position (mean Spearman, hit rate, MAE, coverage_80, width) next to the backtest's v2_points means."
     tests:

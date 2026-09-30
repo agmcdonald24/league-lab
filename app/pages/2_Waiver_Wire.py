@@ -216,19 +216,16 @@ else:
                 st.caption("One row per player: the drop that costs your lineup least (among equals, the player projected "
                            "to score least the rest of the season). Start-now claims gain this week; the others help later.")
         howto(
-            "**What a claim is worth.** For every free agent on an active NFL roster (not Out or on injured reserve) and every "
-            "player you could drop (not in your IR slot or on your taxi squad, and not already playing this week), we rebuild your "
-            "best legal lineup with the swap and subtract the lineup you have now. The lineup is the one your team page shows: every "
-            "slot filled at once, FLEX and superflex included, with the same projections.",
-            f"**Week {decision_week}** is the gain in this week's lineup; **weeks {decision_week}–{int(mv['horizon_last_week'].iloc[0])}** add up this week "
-            "and the next three, so a bye you can cover and the games the dropped player would have started all count. "
-            "*Start now* claims improve this week; the *cover* claims only help a coming week.",
-            "**Who to drop.** The player whose loss costs your lineup least over the four weeks; among equals, the one projected to "
-            "score least over the rest of the season. We never suggest dropping a player we have no projection for yet "
-            "(a kicker or defense your league has not scored, an injured player with no projection): unknown is not zero.",
-            "**Only the next four weeks count.** In a dynasty league a young player's future is not in these numbers: look twice before "
-            "dropping one. Kickers are valued at their points per game so far this season; free-agent defenses are not valued yet.",
-            "**No games yet** marks a player who has not played this season: his projection rests on last season and his role only.",
+            "**What a claim is worth**: we try every free agent against every player you could drop, rebuild your best lineup each "
+            "time, and show how many points it adds. Same projections and same lineup as the rest of the app.",
+            f"**Week {decision_week}** is what the claim adds this week; **weeks {decision_week}–{int(mv['horizon_last_week'].iloc[0])}** add "
+            "up this week and the next three, so covering a bye counts, and so do the games the dropped player would have started. "
+            "*Start now* claims help this week; *cover* claims help a week coming up.",
+            "**Who to drop**: the player your lineup misses least over those four weeks. We never suggest dropping someone we have no "
+            "projection for yet (a kicker or defense your league has not scored, an injured player): unknown is not zero.",
+            "**Only the next four weeks count.** In a dynasty league, a young player's future is not in these numbers: look twice "
+            "before dropping one.",
+            "**No games yet** means he has not played this season: the projection leans on last season and his role.",
             title="How to read this",
         )
 
@@ -290,11 +287,14 @@ with st.expander("Browse every free agent"):
     phone = ["player_name", "position", "proj_v2", sort_by if sort_by != "proj_v2" else "expected_per_game", "opp_rank_std"]
     show(fa, cols, height=480, phone_cols=phone)
     howto(
-        "**Target % / Snap %**: the player's share of his team's targets and offensive snaps. A receiver at 20%+ targets on 80%+ snaps has a real role whatever his points say.",
-        "**xPPG** prices that opportunity in this league's scoring. **PPG − xPPG** well below zero = he has been unlucky: the cheap add nobody else sees.",
-        "**Trend / Momentum** (from the Trends page) name the usage metrics that moved over the last three games beyond the player's own noise. Blank until game four.",
-        "**1st-read share** is the player's share of his team's first-read targets (where the QB looks first, from FTN charting).",
-        "**Opp rank** is next week's matchup for his position (1 = the defense that gives up the most). **Depth** is his rank on the team's latest depth chart.",
+        "**Look for work, not last week's points.** **Target %** and **Snap %** are his share of the team's targets and of its plays. "
+        "A receiver with 20%+ of the targets who is on the field 80%+ of the time has a real role, whatever his points say.",
+        "**xPPG** (expected points per game) is what that work is usually worth in your league's scoring. **PPG − xPPG** well below "
+        "zero means he has been unlucky: the cheap add nobody else sees.",
+        "**Trend** and **Momentum** (from the Trends page) say whose role has grown or shrunk over the last 3 games, beyond his usual "
+        "week-to-week swings. Blank until his fourth game.",
+        "**1st-read share** is how often he is the quarterback's first look. **Opp rank** is next week's matchup (1 = the defense that "
+        "gives up the most). **Depth** is his spot on his team's depth chart (1 = starter).",
     )
 
 # ------------------------------------------------------------- recent league moves
