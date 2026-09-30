@@ -234,9 +234,6 @@ COLUMNS: dict[str, Col] = {
     "top_n_ceiling_ppg": C("Top-N ceiling PPG", "num1", "Actual PPG of the true top-N that week (perfect foresight)"),
     # ---- U-11 waiver shortlist
     "proj_v2": C("Proj (v2)", "num1", "Projection v2 for the next NFL week in this league's scoring (the Rankings page's board). Blank = no projection: kickers, a bye, practice squad, cut or retired"),
-    "claim_week": C("This week vs your starter", help="His v2 projection for next week against your weakest projected starter at the position (N-th best of N starting slots; superflex counts as a QB slot, FLEX slots are left out; Out / Doubtful / IR don't start)"),
-    "claim_season": C("Season vs your bench", help="His PPG this season against the best PPG on your bench at the position (bench = your players beyond the top N by PPG; IR slot left out)"),
-    "compared_with": C("Compared with", help="Your players behind the comparison: the weakest projected starter at the position and the best bench player by PPG"),
     # ---- M-06 drift
     "weeks_scored": C("Weeks scored", "int", "Complete weeks of this season the live board has been scored on (a week counts once its last game is in)"),
     "backtest_spearman": C("Spearman · backtest", "num2", "The same rank correlation on the walk-forward backtest's held-out seasons (v2 projection, this league's scoring)"),
