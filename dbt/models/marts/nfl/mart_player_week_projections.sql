@@ -49,6 +49,61 @@ priced as (
     from p
     join outcome_line as o using (gsis_id, season, week)
     join l on l.league_id = p.league_id
+),
+
+-- Plan R-13: kickers and team defenses (model kd1.0, `league_lab.kdef`) for the leagues that start
+-- them, appended below with the same columns. Context and outcome come from mart_kd_week; the
+-- skill-position stat line, usage and PPG columns are NULL (not 0: they do not apply). A DEF row
+-- has gsis_id NULL: the unit is the team (`team`); ops.projections keys it by the Sleeper id ('KC').
+kd as (
+    select u.*,
+           count(*) filter (where u.played) over (partition by u.position, u.unit_id, u.season order by u.week
+                                                   rows between unbounded preceding and 1 preceding) as games_to_date
+    from {{ ref('mart_kd_week') }} as u
+),
+
+-- the kicker's outcome as a weekly-stats row (the columns the scoring map prices) and the defense's
+-- outcome columns, so each league prices it with its own map: league_points() for K, def_points() for DEF
+kd_line as (
+    select position, unit_id, season, week, played,
+           coalesce(out_fg_made_0_19, 0) as fg_made_0_19, coalesce(out_fg_made_20_29, 0) as fg_made_20_29,
+           coalesce(out_fg_made_30_39, 0) as fg_made_30_39, coalesce(out_fg_made_40_49, 0) as fg_made_40_49,
+           coalesce(out_fg_made_50p, 0) as fg_made_50_59, coalesce(out_fg_missed, 0) as fg_missed,
+           coalesce(out_fg_missed_0_19, 0) as fg_missed_0_19, coalesce(out_fg_missed_20_29, 0) as fg_missed_20_29,
+           coalesce(out_fg_missed_30_39, 0) as fg_missed_30_39, coalesce(out_fg_missed_40_49, 0) as fg_missed_40_49,
+           coalesce(out_fg_missed_50p, 0) as fg_missed_50_59, coalesce(out_pat_made, 0) as pat_made,
+           coalesce(out_pat_missed, 0) as pat_missed,
+           {{ zero_stat_columns(['fg_made_0_19', 'fg_made_20_29', 'fg_made_30_39', 'fg_made_40_49', 'fg_made_50_59', 'fg_missed',
+                                 'fg_missed_0_19', 'fg_missed_20_29', 'fg_missed_30_39', 'fg_missed_40_49', 'fg_missed_50_59',
+                                 'pat_made', 'pat_missed']) }},
+           out_sacks, out_interceptions, out_fumble_recoveries, out_forced_fumbles, out_def_tds, out_st_tds,
+           out_safeties, out_blocked_kicks, out_points_allowed
+    from kd
+),
+
+kd_priced as (
+    select p.league_id, p.position, p.gsis_id as unit_id, p.season, p.week,
+           case when k.played then
+               case when p.position = 'K' then {{ league_points('l.scoring_settings', 'k') }}
+                    else {{ def_points('l.scoring_settings', 'k', 'out_') }} end
+           end as points_actual_league
+    from p
+    join kd_line as k on k.position = p.position and k.unit_id = p.gsis_id and k.season = p.season and k.week = p.week
+    join l on l.league_id = p.league_id
+    where p.position in ('K', 'DEF')
+),
+
+kd_rows as (
+    select p.*, u.player_name, u.team, u.opponent, u.game_id, u.is_home, u.implied_team_total, u.spread_line, u.games_to_date,
+           u.report_status, u.roster_status, u.played,
+           u.report_status is distinct from 'Out' and u.report_status is distinct from 'Doubtful'
+               and u.roster_status is distinct from 'RES'                                            as is_rankable,
+           pr.points_actual_league
+    from p
+    join kd as u on u.position = p.position and u.unit_id = p.gsis_id and u.season = p.season and u.week = p.week
+    left join kd_priced as pr on pr.league_id = p.league_id and pr.position = p.position and pr.unit_id = p.gsis_id
+                             and pr.season = p.season and pr.week = p.week
+    where p.position in ('K', 'DEF')
 )
 
 select
@@ -82,3 +137,31 @@ from p
 join f using (gsis_id, season, week)
 join l on l.league_id = p.league_id
 left join priced as pr on pr.league_id = p.league_id and pr.gsis_id = p.gsis_id and pr.season = p.season and pr.week = p.week
+
+union all
+
+select
+    k.league_id, l.league_name, l.is_reference_league,
+    k.season, k.week, case when k.position = 'K' then k.gsis_id end as gsis_id, k.position, k.player_name, k.team, k.opponent,
+    k.game_id, k.is_home, k.implied_team_total::numeric, k.spread_line::double precision, k.games_to_date::bigint, k.report_status,
+    null::text as practice_status, k.roster_status, false as no_history, k.is_rankable,
+    round(k.proj_points::numeric, 2) as proj_points,
+    round(k.p10::numeric, 2) as p10, round(k.p50::numeric, 2) as p50, round(k.p90::numeric, 2) as p90,
+    round((k.p90 - k.p10)::numeric, 2) as interval_width,
+    null::numeric as proj_targets, null::numeric as proj_receptions, null::numeric as proj_receiving_yards, null::numeric as proj_receiving_tds,
+    null::numeric as proj_carries, null::numeric as proj_rushing_yards, null::numeric as proj_rushing_tds, null::numeric as proj_attempts,
+    null::numeric as proj_passing_yards, null::numeric as proj_passing_tds, null::numeric as proj_passing_interceptions,
+    null::numeric as proj_fumbles_lost,
+    null::numeric as ppg_std, null::numeric as ppg_l3, null::numeric as xppg_l5, null::numeric as prev_ppg, null::bigint as opp_rank_std,
+    null::numeric as snap_pct_l3, null::numeric as target_share_l3, null::numeric as carry_share_l3, null::numeric as first_read_share_l3,
+    k.played, round(k.points_actual_league::numeric, 2) as points_actual,
+    null::integer as out_targets, null::integer as out_receptions, null::integer as out_receiving_yards, null::integer as out_receiving_tds,
+    null::integer as out_carries, null::integer as out_rushing_yards, null::integer as out_rushing_tds, null::integer as out_attempts,
+    null::integer as out_passing_yards, null::integer as out_passing_tds, null::integer as out_passing_interceptions,
+    case when k.played then (k.points_actual_league between k.p10 and k.p90) end as actual_inside_interval,
+    rank() over (partition by k.league_id, k.season, k.week, k.position order by case when k.is_rankable then k.proj_points end desc nulls last, k.gsis_id) as rank_pos,
+    case when k.played then rank() over (partition by k.league_id, k.season, k.week, k.position order by case when k.played then k.points_actual_league end desc nulls last, k.gsis_id) end as actual_rank_pos,
+    k.model_version, k.train_seasons, k.fitted_at,
+    k.frozen_source, k.frozen_at
+from kd_rows as k
+join l on l.league_id = k.league_id

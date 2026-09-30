@@ -17,8 +17,10 @@ that has not kicked off at ``as_of``) and a **horizon** of that week and the nex
   gain** = the sum over the horizon's weeks (byes, Out weeks and the drop's own future starts all
   count: the drop's contribution to the next four lineups is what the move gives up).
   The free agent is valued exactly as B1 would value him on the roster (``lineup._proposed_player``):
-  projection v2 ``proj_points`` in this league's scoring, K at the league's season PPG, unplayable
-  on a bye / Out / Doubtful / NFL IR / once his game has kicked off.
+  projection v2 ``proj_points`` in this league's scoring, K and DEF at their kd1.0 projection (plan
+  R-13; season / observed PPG where none exists), unplayable on a bye / Out / Doubtful / NFL IR /
+  once his game has kicked off. Free-agent team defenses come from ``mart_player_availability``'s DEF
+  rows (Sleeper id 'KC', no gsis id) for the leagues that start a DEF.
 * the **lists**: *start now* (weekly gain > 0), *cover* (weekly gain <= 0, horizon gain > 0: a
   bye-week or injury cover). A move that gains nothing in either is not stored; a roster with no
   such move gets one ``list_kind = 'nothing'`` row ("nothing beats what you have"). Moves are ranked

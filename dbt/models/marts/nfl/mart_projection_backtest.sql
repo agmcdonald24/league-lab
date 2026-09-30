@@ -15,6 +15,10 @@ select
         when 'v2_points' then 'v2 · projected line, priced'
         when 'v2_p50' then 'v2 · P50 (median)'
         when 'baseline' then 'Baseline formula (reference scoring)'
+        -- plan R-13 (model kd1.0, positions K / DEF): the model and its two PPG yardsticks
+        when 'kd_points' then 'K/DEF model · projected line, priced'
+        when 'season_ppg' then 'Season-to-date PPG'
+        when 'last3_ppg' then 'Last-3-games PPG'
         else scorer end                                  as scorer_label,
     count(*)                                             as weeks,
     max(top_n)                                           as top_n,

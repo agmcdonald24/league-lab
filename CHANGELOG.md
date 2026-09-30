@@ -2,6 +2,16 @@
 
 Newest first. The Home page shows the top entry as "What's new".
 
+## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
+
+- **Kickers and defenses get real projections.** Each week's kicker is now projected from what his team is
+  expected to score, how often it kicks field goals and extra points, the defense it faces, a dome, and his own
+  accuracy from each distance; each defense from its sacks and takeaways, the offense it faces and how many points
+  it is likely to allow — both priced in League of Scrubs' scoring. Tested on the last five seasons, these ordered
+  kickers and defenses better than points per game in every season. Your lineup now uses them (a kicker or defense
+  you just picked up is no longer counted as 0), the waiver list now includes free-agent defenses, and the Kickers
+  page opens with next week's projections: your kicker, and the best one on waivers.
+
 ## 2026-09-30 — Wave B (decision engine)
 
 - **My week, and a card for every player.** Home now opens on your week: your best lineup, and the two or three

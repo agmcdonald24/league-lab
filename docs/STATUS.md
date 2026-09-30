@@ -1033,6 +1033,90 @@ the shortlist uses projection v2 in the selected league's scoring, Home's "Your 
 Rankings is the permutation importance of the P50 *quantile* model, whose dominant input is the
 priced line itself — it describes the residual adjuster, not the projection (plan U-15).
 
+## Wave C (Iteration 10)
+
+### C3 2026-09-30 — R-13 kicker and D/ST projections (branch `dev/C3`, clone `league_lab_c3`)
+
+* **Built.** `src/league_lab/kdef.py` (model `kd1.0`): per kicker-week and team-defense-week a stat line —
+  K: FG made 0–19 / 20–29 / 30–39 / 40–49 / 50+, FG missed (blocked = missed), PAT made / missed; DEF: sacks,
+  INT, fumble recoveries, forced fumbles, defensive TDs (INT + fumble returns), ST TDs, safeties, blocked kicks
+  and **points allowed as a bucket distribution** (point forecast + out-of-fold errors → P(each `pts_allow_*`
+  bucket)) — priced in each league's scoring; one `HistGradientBoostingRegressor` per component (Poisson /
+  squared error), as-of team, opponent, game (Vegas, home, dome) and kicker-accuracy features; P10/P50/P90 =
+  projection + out-of-fold residual quantiles (calibrated interval). New marts `mart_kd_team_game` (team ×
+  game facts, 5,822 rows) and `mart_kd_week` (K / DEF unit × week with outcomes, 11,706 rows), macros
+  `def_points()` (the D/ST scoring twin of `kdef.DEF_STAT_MAP`) and `kd_team()` (OAK/SD → LV/LAC so the 2016–2019
+  schedule meets the stats files). `projections.project` appends the K/DEF rows to the v2 rows **before the one
+  `_write_projections` call** (freeze unchanged); `mart_player_week_projections` gains K/DEF rows (a `union all`
+  branch; no new columns, types unchanged); `mart_player_availability` gains the 32 team defenses for leagues that
+  start a DEF; `lineup.py` values K/DEF from `proj_points` (fallbacks unchanged); the waiver engine now sees
+  free-agent defenses through the availability rows; Kickers page opens with "Next week's kickers";
+  `league-lab backtest-kd`. Docs: METRICS § Kicker and defense projections (+ Lineup value sources), DATA_MODEL.
+* **Decisions** (PO to confirm): (1) **boosting, not a hand rates model** — same family and machinery as v2;
+  the inputs interact and have holes the trees take as they are; (2) **calibrated interval, not quantile models**
+  (errors barely depend on the level; ~5k rows); floor clipped at 0 like v2 (Scrubs D/ST < 0 in 6.6% of
+  team-weeks); (3) **DEF key in `ops.projections.gsis_id` = the Sleeper id** (`KC`, `LAR`); the mart shows DEF
+  `gsis_id` NULL and is keyed by `team` (dbt tests split by position); (4) **an unmapped Sleeper kicker** (Trey
+  Smack, no `player_id_map` row) takes his NFL team's projected kicker that week **only when the team has exactly
+  one** (never a name join; ambiguous = no value); (5) backtest rows go to **`ops.projection_backtest` tagged
+  `kd1.0`** (restored by the nightly's restore-state like v2's) and `backtest()`'s delete now skips `kd*` rows so a
+  `backtest-v2` rerun cannot wipe them; (6) K rows follow the injury report like QB–TE (Out / Doubtful / NFL IR
+  cannot play) once projected; (7) lineups' `model_version` stays the v2 tag (the K/DEF provenance is
+  `value_source = 'proj_points'` + the `kd1.0` rows); (8) the D/ST keys not projected (`def_st_ff`,
+  `def_st_fum_rec`, `st_ff`, `st_fum_rec`: 1 point each in Scrubs, ~0.1 a game) price 0 and are logged.
+* **Backtest** (walk-forward, League of Scrubs scoring, ~30 units × 18 weeks a season, same unit-weeks for all
+  three scorers; 80 s):
+
+  | Pos | Scorer | 2021 | 2022 | 2023 | 2024 | 2025 | mean Spearman | MAE | top-10 hit | coverage 80 |
+  |---|---|---|---|---|---|---|---|---|---|---|
+  | K | **kd1.0** | 0.186 | 0.077 | 0.105 | 0.180 | 0.147 | **0.139** | 3.71 | 40.3% | 79.3% |
+  | K | season PPG | 0.101 | −0.000 | 0.045 | 0.082 | 0.118 | 0.069 | 4.06 | 36.3% | |
+  | K | last-3 PPG | 0.052 | 0.061 | 0.024 | 0.065 | 0.083 | 0.057 | 4.23 | 36.2% | |
+  | DEF | **kd1.0** | 0.263 | 0.165 | 0.249 | 0.316 | 0.332 | **0.265** | 4.64 | 44.9% | 80.2% |
+  | DEF | season PPG | 0.098 | 0.013 | 0.050 | 0.154 | 0.076 | 0.078 | 5.14 | 36.6% | |
+  | DEF | last-3 PPG | 0.081 | 0.088 | 0.110 | 0.132 | 0.047 | 0.092 | 5.35 | 38.4% | |
+
+  **Ship decision: both ship as the model** (`KD_SHIP`): kd1.0 beats season PPG on Spearman in every season at
+  both positions and has the lower MAE every season. Honest caveat: a kicker Spearman of 0.14 is a small edge.
+* **Evidence** (clone `league_lab_c3`, 2026-09-30):
+  - D/ST pricing vs Sleeper (Scrubs rostered D/ST 2024–2025): 349 / 398 exact, 388 within 1 pt, MAE 0.19; the
+    mart's SQL pricing (`league_points()` / `def_points()`) equals `kdef`'s Python pricing on all 5,434 played
+    K/DEF unit-weeks 2021–2025 (max difference 0.00).
+  - Coverage: every rostered Scrubs K and DEF has a projection for every remaining week his team plays — DEF 154 /
+    154 roster-weeks (11 defenses), K 140 / 140 (10 kickers: 126 by NFL id + 14 for Trey Smack via GB's only
+    kicker). `ops.projections` 2026: K 448 + DEF 448 rows (32 units × weeks 4–18 with a game).
+  - Lineups (Scrubs, week 4): every K/DEF starter `value_source = 'proj_points'`; **0 unvalued starters** (before:
+    5 starters — Smack K, CAR/MIN/CIN/NE DEF — plus Josh Jacobs on a bench, an RB without a v2 row, out of scope);
+    weeks 4–18: `n_unvalued` 0 and `n_ppg_valued` 0 for every Scrubs roster.
+  - Waivers: 1,222 free-agent DEF moves (582 *start now* over 6 rosters, 21 defenses evaluated); MacZaddy's top
+    claim is "Claim Cleveland Browns (DEF), drop Kansas City Chiefs: +0.9 this week, +9.7 over the next 4 weeks";
+    the sweep 2.1–2.5 s (was 1.65 s).
+  - Worked example (week 4, reproduced by hand): Will Reichard (MIN vs MIA) 0.002 + 0.534 + 0.635 FG 0–39 × 3 +
+    0.561 FG 40–49 × 4 + 0.426 FG 50+ × 5 − 0.374 missed + 2.844 PAT − 0.082 PAT missed = **10.28** = stored
+    `proj_points`; P10 / P50 / P90 = 10.28 + (−5.66, −0.42, +5.98) = 4.62 / 9.86 / 16.26. Vikings D/ST vs MIA:
+    3.33 sacks + 2 × 1.11 INT + 2 × 0.57 FR + 0.86 FF + 6 × (0.22 + 0.02) TD + 2 × (0.015 + 0.022) + bucket
+    probabilities (0.02, 0.07, 0.20, 0.30, 0.24, 0.12, 0.05) × (10, 7, 4, 1, 0, −1, −4) = **10.54** = stored.
+  - Freeze and determinism: two consecutive `project` runs give byte-identical weeks 4–18 for all positions
+    (17,164 rows, md5 without `fitted_at` `b42e5bb8…` both times); weeks 1–3 untouched (3,554 rows, md5
+    `e2631911…` before any change and after); QB–TE weeks 4–18 unchanged by the K/DEF addition (16,268 rows,
+    `aacf0043…` before and after); `ops.projection_drift` unchanged (18 rows, `f9e64de2…` without `run_at`); v2
+    backtest rows unchanged (2,160, `9fe9cc91…`). `assert_frozen_projections_precede_kickoff` passes.
+  - dbt: `build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+
+    mart_player_availability+` PASS=73 (incl. the lineup, roster-value and waiver-legality tests); `mart_kd_*`
+    PASS=10; pytest 541 passed (11 new in `tests/test_kdef.py`); ruff clean; headless check 34 runs, 0 exceptions.
+  - `league-lab project` time, back to back on a quiet sandbox (load 1.2–2.0, `OMP_NUM_THREADS=2`): **before (main,
+    `8d8cead`) 130.3 s, after 134.8 s**; the K/DEF step itself ≈ 12 s (load + fit K + fit DEF + price), the waiver
+    sweep 2.0 s (was 1.7 s: more candidates), lineups unchanged (0.6–0.8 s). Earlier runs under three developers'
+    contention (load 5–7) took 1,142 s before / 1,393 s after — the difference there is the contention, not R-13.
+* **Open / for the PO**: `app/lib/table.py` help strings for `player_value` / `value_source` still say "K = season
+  PPG, DEF = Sleeper PPG" (shared registry, append-only for C3: C1/C2 to update); the Player card's
+  no-projection text for a K ("the model projects QB, RB, WR and TE") is now only reached on a bye and should say
+  so; the waiver card says "He starts at DEF" for a team defense; Rankings' Position selector does not gain K/DEF
+  (not a one-line change: the baseline branch and the backtest selector index by QB–TE); a `metric_registry` row
+  I would have added: `kd_projection, kd1.0, league points of the projected K/DEF stat line, per unit-week, active`.
+  The nightly does not rerun `backtest-kd` on its own (the rows are restored with `ops.projection_backtest`; run
+  `league-lab backtest-kd` after a `KD_MODEL_VERSION` change).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

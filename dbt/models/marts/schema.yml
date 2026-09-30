@@ -61,11 +61,24 @@ models:
         tests: [not_null]
 
   - name: mart_player_week_projections
-    description: "Projection v2 per league x season x week x player: projected stat line, points in the league's scoring, P10/P50/P90, outcome priced under the league's scoring, ranks."
+    description: "Projection v2 per league x season x week x player: projected stat line, points in the league's scoring, P10/P50/P90, outcome priced under the league's scoring, ranks. Plan R-13: plus K and DEF rows (model kd1.0) for leagues that start them; a DEF row has gsis_id NULL and is keyed by team."
     tests:
       - unique_combination_of_columns:
           arguments:
             combination_of_columns: [league_id, gsis_id, season, week]
+          config:
+            where: "position <> 'DEF'"
+      - unique_combination_of_columns:
+          name: projection_def_unique_per_team_week
+          arguments:
+            combination_of_columns: [league_id, team, season, week]
+          config:
+            where: "position = 'DEF'"
+      - expression_is_true:
+          name: projection_kd_keys_are_consistent
+          arguments:
+            expression: "(position = 'DEF') = (gsis_id is null) and team is not null"
+            condition: "position in ('K', 'DEF')"
       - expression_is_true:
           name: projection_interval_is_ordered
           arguments:
@@ -85,6 +98,41 @@ models:
           - accepted_values:
               arguments:
                 values: ['kickoff', 'refit']
+
+  - name: mart_kd_team_game
+    description: "Plan R-13: team x regular-season game, played or scheduled: game context (implied totals, dome), the team's kicking (FG made by distance, misses incl. blocked, PATs), team defense and special teams (sacks, takeaways, TDs, safeties, blocked kicks, points allowed) and the offense an opposing defense faces. The K and D/ST projections' training facts."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [team, game_id]
+      - expression_is_true:
+          name: kd_team_game_outcomes_only_when_played
+          arguments:
+            expression: "played = (sacks is not null and points_allowed is not null)"
+    columns:
+      - name: game_id
+        tests: [not_null]
+
+  - name: mart_kd_week
+    description: "Plan R-13: kicker (unit_id = gsis_id) and team-defense (unit_id = Sleeper id, 'LAR' for the Rams) units x regular-season week with game context and, when played, the outcome as stat-line components (out_*)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [position, unit_id, season, week]
+      - expression_is_true:
+          name: kd_week_outcome_only_when_played
+          arguments:
+            expression: "(played and coalesce(out_pat_made, out_sacks) is not null) or (not played and coalesce(out_pat_made, out_sacks) is null)"
+    columns:
+      - name: position
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['K', 'DEF']
+      - name: unit_id
+        tests: [not_null]
+      - name: team
+        tests: [not_null]
 
   - name: mart_projection_backtest
     description: "Walk-forward scoreboard of projection v2 per league, held-out season, position and scorer, with interval coverage."
