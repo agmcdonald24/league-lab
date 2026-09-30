@@ -125,4 +125,10 @@ sources:
           - unique_combination_of_columns:
               arguments:
                 combination_of_columns: [league_id, season, week, roster_id, is_realised]
+      - name: waiver_moves
+        description: "Written by `league-lab waivers` (and at the end of `league-lab project`, after the lineups), plan B3: per league x season x decision week x roster, every legal add/drop pair that raises the B1 lineup this week or over the 4-week horizon (weekly / horizon gain, the slot the add takes, the starter he displaces, the drop's cost), or one `nothing` row per roster; `inputs_fingerprint` = the league's rosters and free-agent statuses the moves were computed on."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [league_id, season, week, roster_id, add_sleeper_id, drop_sleeper_id]
 
