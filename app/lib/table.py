@@ -279,6 +279,16 @@ COLUMNS: dict[str, Col] = {
     "weekly_gain": C("This week", "signed1", "Your best lineup this week after the claim minus your best lineup now (every slot re-filled, FLEX and superflex included)"),
     "horizon_gain": C("Next 4 wks", "signed1", "The same gain summed over this week and the next three: covers a bye or an injury, and counts the games the dropped player would have started"),
     "waiver_why": C("Why", help="Where he plays this week and whom he replaces, the later weeks he helps, and anything to check (no games yet, Questionable, a drop who projects more for the season)"),
+    # ---- C6 signals (R-10 role alerts, R-12 scenario upside)
+    "role_label": C("Change", help="What kind of change: filling in for an injured starter, a new starter, a new team, or a bigger / smaller role the coaches gave him"),
+    "role_change": C("What changed", help="His share before the change (his usual level) → since the change: of the snaps, the targets, the carries"),
+    "role_games": C("Held", help="How many games the change has held: one game is a first look, three games is his role now"),
+    "role_cause": C("Why", help="The reason we can name: a teammate out or back, a benching or a depth-chart move, a trade. \"The coaches changed his role\" when there is none"),
+    "role_who": C("Rostered by", help="Who has him in this league (Free agent = nobody)"),
+    "upside_stash": C("Stash", help="A free agent whose role grew in his last one to three games and who would not start for you as he is"),
+    "upside_if_holds": C("If it holds", "num1", "What if the bigger role holds: his projection this week with his last three games at the new level, in this league's scoring. A what-if, not a forecast"),
+    "upside_gain": C("Lineup gain if it holds", "signed1", "What claiming him adds to your best lineup over the next four weeks if the bigger role holds (the drop counted)"),
+    "upside_drop": C("Drop", help="The player your lineup misses least over the next four weeks. Blank = an open roster spot"),
 }
 
 

@@ -140,6 +140,43 @@ player's free-agent / NFL-roster / injury status when computed: `waivers.FINGERP
 `src/league_lab/waivers.py`); `db migrate`, the writer and the mart's pre_hook create it. Source test: one row
 per (league, season, week, roster, add, drop).
 
+`ops.player_role_alerts` (plan R-10, C6) — one row per season × gsis_id × week with a role alert: `game_id`,
+`player_name`, `position`, `team`, `direction` (up / down), `games_held` (1–3) and `since_week` (the first game of the
+change), `confidence` (one / two / three games), `primary_metric` and `metrics_changed` (text[]), `z` (the change over
+its noise, primary metric), the evidence `snap_from/_to`, `route_from/_to`, `target_from/_to`, `carry_from/_to`
+(0–1 shares, before = median of up to 8 prior games, after = the window), `change_text`, the named reason
+`trigger_kind` (none / teammate_out / teammate_back / teammate_up / traded / depth_up / depth_down),
+`trigger_gsis_id`, `trigger_name`, `trigger_status` (out_injured / inactive / barely_played / gone / traded_away /
+back / took_over / the new team / the depth rank), `trigger_text`, `prior_games`, `kind` (role_up / role_down /
+absence_beneficiary / depth_move / new_team), `cause_text` (always set), `expires_after_week` (the alert week + 3)
+and `expiry_rule`, `signals_version` (ra1.1), `run_at`. Written by `league-lab project` right after the
+projections and by `league-lab signals` (`src/league_lab/signals.py`): the projected season is rewritten every run,
+every other season only when the table has no rows of it under the current `signals_version` (a fresh database
+computes 2016 on in ~20 s). Past seasons use route share (published after the season); the current season has none.
+The mart's pre_hook creates it. Source test: unique (season, gsis_id, week).
+
+`ops.player_scenarios` (plan R-12, C6) — one row per league_id × season × week × gsis_id (QB/RB/WR/TE with a live
+bigger-role alert; the weeks from the next unplayed one to `expires_after_week`): the alert (`alert_week`,
+`since_week`, `games_held`, `confidence`, `kind`, `trigger_*`, `cause_text`, `change_text`), `base_points` (= the
+stored projection, checked to 1e-6 in `project`), `larger_points` (the scenario), `points_gain`, `with_alert_points`
+(base + `hold_rate` × gap), `hold_rate`, `backtest_n` / `backtest_hit_rate` (the calibration for that games-held
+level), `presentation` ('what if' — or 'with the alert' once the backtest supports it) and `presentation_note`, both
+stat lines (`base_*` / `larger_*` for targets, receptions, receiving yards, carries, rushing yards, attempts,
+passing yards, touchdowns; `base_line` / `larger_line` jsonb with every component), `features_set` (jsonb
+{input: [base, scenario]}), `expires_after_week`, `expiry_rule`, `model_version`, `signals_version`, `run_at`.
+The projected season's rows are replaced every run. Source test: unique (league_id, season, week, gsis_id).
+
+`ops.waiver_upside` (plan R-12, C6; B3's `list_kind = 'upside'`) — one row per league × season × decision week ×
+roster × free agent with a live bigger-role scenario who does not help that roster at his projection today (base
+horizon gain ≤ 0): `upside_rank`, the add (`add_*`), `base_value` / `scenario_value` / `points_gain` /
+`with_alert_value` / `presentation` (his decision-week scenario row), the alert (`alert_week`, `since_week`,
+`games_held`, `confidence`, `kind`, `trigger_*`, `cause_text`, `change_text`, `expires_after_week`, `expiry_rule`),
+the drop (`drop_*`, `drop_horizon_loss`; NULL on an open roster spot), the B3-style gains at his projection
+(`base_weekly_gain`, `base_horizon_gain`) and if the bigger role holds (`holds_weekly_gain`, `holds_horizon_gain`,
+`holds_week_gains` double precision[], `holds_slot`), `open_roster_spots`, `inputs_fingerprint`, `as_of`,
+`run_at`. Written by the waiver engine right after `ops.waiver_moves` (`waivers.upside_after_waivers`; the same
+decision week and 4-week horizon). Source test: unique (league, season, week, roster, add).
+
 ## analytics — NFL
 
 | Model | Grain / key | Contract |
@@ -155,6 +192,7 @@ per (league, season, week, roster, add, drop).
 | `mart_player_season` | gsis_id, season, season_type | sums first, rates second; `teams`, `team_count`; routes/TPRR/YPRR NULL by design |
 | `mart_player_season_team` | + team | per-team split |
 | `mart_player_recent_form` | gsis_id, game_id | last-3/last-5 windows with shared denominators, season-to-date |
+| `intermediate.int_player_game_role` (R-10) | gsis_id, game_id | every QB/RB/WR/TE on a team's weekly roster (or who played for it) × each played regular-season team game: `status` (played / out_injured — did not play and on the injury report or IR/PUP / inactive), `snap_share` (0 for a missed game with snap counts, NULL without), `route_share` (routes proxy over dropbacks with participation; NULL in-season), target / carry shares with the team's totals, the stat line, air yards, red-zone and first-read counts, `points_expected`, `team_margin`, `report_status`, `roster_status`. Read by `signals.py` only. Tests: key unique, shares in 0–1, a missed game has no usage, `status` / `position` accepted values |
 
 ## analytics — league
 
@@ -186,6 +224,9 @@ per (league, season, week, roster, add, drop).
 | `mart_league_optimal_lineup` | league_id, week, roster_id | started vs optimal points, bench points left (greedy fill over Sleeper's points; held below the exact solver by `assert_exact_lineup_dominates_greedy`) |
 | `mart_lineup_recommendation` (view, B1) | league_id, season, week, roster_id, slot | the **proposed** lineup from `ops.lineups` / `ops.lineup_totals`, one row per starting slot (filled or empty): `slot`, `slot_type`, `slot_order`, `sleeper_player_id`, `gsis_id`, `player_name` (dim_player by gsis_id, else Sleeper's), `position`, `player_value`, `value_source`, `lineup_margin`, `is_weakest_slot`, `is_empty_slot`, `is_locked`, `report_status`, `is_questionable`; per lineup `lineup_value`, `bench_value`, `weakest_slot`, `weakest_margin`, `empty_slots`, `n_unvalued`, `realised_optimal` (scored weeks), `model_version`, `as_of`, `run_at`; `team_name` / `manager_name` from dim_league_member. Tests: key unique, a player once per lineup, margin ≥ 0, weakest = smallest valued margin, an unvalued starter counts 0 with margin 0, empty slot has no player, `value_source` in (proj_points, season_ppg, observed_ppg, unvalued) |
 | `mart_waiver_moves` (view, B3) | league_id, season, week, roster_id, add_sleeper_id, drop_sleeper_id | `ops.waiver_moves` with names (dim_player by gsis_id, else Sleeper's), `team_name` / `manager_name`, the add's `add_team` (availability), `lineup_value` (the decision week's lineup as `mart_lineup_recommendation` publishes it), `on_current_lineup` (moves solved on the lineups published now: same `as_of`), `inputs_current` (the league's rosters and free-agent statuses unchanged since: same fingerprint). Tests (`dbt/models/marts/edge/waivers.yml`): key unique, `move_rank` / `add_rank` unique per roster, `lineup_before` = `lineup_value` (when on the current lineup), a move gains and its list follows from the gains, the `nothing` row is empty, weekly gain = after − before and horizon = Σ `week_gains`, gain ≤ the add alone, best drop ⇔ add rank; `assert_waiver_moves_are_legal` (error): the add is a free agent on an active NFL roster not Out / IR, the drop is on the roster and not IR / taxi / locked, "no drop" only with an open spot, one drop only when it makes room, every roster has a row — for leagues whose inputs are current |
+| `mart_player_role_alerts` (view, R-10) | season, gsis_id, week | `ops.player_role_alerts` plus `direction_label`, `team_last_week`, `is_latest` (the alert game is his team's latest played game), `trigger_ended` (an injured teammate's absence alert whose teammate is active with no injury designation on the latest report: `mart_player_availability`), `trigger_injury_now`, `is_live` (= is_latest and not trigger_ended: "this week's alerts"). Tests (`signals.yml`): key unique, 1–3 games held, a trigger has text, direction matches the sign of `z`, `kind` matches the direction, the expiry is after the alert, `kind` / `trigger_kind` / `confidence` accepted values, `change_text` / `cause_text` not null |
+| `mart_player_scenarios` (view, R-12) | league_id, season, week, gsis_id | `ops.player_scenarios` with the player's name, team and opponent and `proj_points` from `mart_player_week_projections`. Tests: key unique, `base_points` = `proj_points` (±0.005), gain = larger − base, `with_alert_points` between base and larger, the week is after the alert and within the expiry, `presentation` in ('with the alert', 'what if') |
+| `mart_waiver_upside` (view, R-12) | league_id, season, week, roster_id, add_sleeper_id | `ops.waiver_upside` plus `inputs_current` (the league's rosters and statuses unchanged since: the waiver engine's fingerprint). Tests: keys unique (add; rank), `holds_horizon_gain` = Σ `holds_week_gains`, a drop or an open spot, `base_horizon_gain` ≤ 0 (the stash case); `assert_waiver_upside_is_legal` (error): the add is a free agent on an active NFL roster not Out / IR, the drop is on the roster and not IR / taxi / locked — for leagues whose inputs are current |
 | `mart_league_all_play` / `_week` | league_id, roster_id / + week | all-play record, expected wins, luck |
 | `mart_league_keeper_candidates` | league_id, sleeper_player_id | acquisition cost facts + production, ranks and xPPG in the league's own scoring (S-01a) |
 | `mart_league_manager_profile` | league_id, roster_id | luck, lineup discipline, activity, roster shape |

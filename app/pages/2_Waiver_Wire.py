@@ -3,6 +3,7 @@
 import pandas as pd
 import streamlit as st
 from lib.db import missing_relations, query
+from lib.signals import upside_cards
 from lib.table import howto, show
 from lib.ui import (
     align_opponents,
@@ -194,7 +195,7 @@ else:
             flyer = best[best["is_no_evidence"].fillna(False).astype(bool) & ~best["add_name"].isin(shown)]
             if not flyer.empty:
                 _card("Flyer: no games this season yet", flyer.iloc[0], decision_week)
-        st.caption("Upside stashes (a player whose role is growing before his points do) arrive with the role alerts in a later release.")
+        upside_cards(league_id, roster_id, decision_week)   # R-12 (C6): the third card region, the upside stash list
         stale = []
         if not bool(mv["inputs_current"].iloc[0]):
             stale.append("rosters or injury reports have changed since, so a player may already be gone")

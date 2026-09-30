@@ -23,6 +23,10 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 - It also shows what the model leans on, in points: how much a player has been on the field over his last 3
   games matters most for QBs and WRs, his share of the carries for RBs and of the targets for TEs. The old
   "price line 0.017" table described a small side model, not the projection, and is gone.
+- **Role alerts**: Trends now opens with the players whose role changed this week, and why (last October it would
+  have said "Filling in: Rico Dowdle, snap share 36% → 67%, Chuba Hubbard out injured"). A player's own page says it too, with a what-if for
+  his points if the new role holds, and Waiver Wire lists **upside stashes**: free agents whose role is growing
+  before their points do. Receivers and Kickers now say why each number matters, with an example.
 
 ## Sep 30 · Your week, answered
 

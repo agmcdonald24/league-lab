@@ -131,4 +131,22 @@ sources:
           - unique_combination_of_columns:
               arguments:
                 combination_of_columns: [league_id, season, week, roster_id, add_sleeper_id, drop_sleeper_id]
+      - name: player_role_alerts
+        description: "Written by `league-lab project` / `league-lab signals` (plan R-10, src/league_lab/signals.py, rule ra1.1): every role alert of every season — a step change in a QB/RB/WR/TE's snap / route / target / carry share over his last one to three games with its kind, cause, evidence and expiry; the projected season is rewritten each run, any other season when the table lacks it under the current signals_version."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [season, gsis_id, week]
+      - name: player_scenarios
+        description: "Written by `league-lab project` / `league-lab signals` (plan R-12): per league x season x week x QB/RB/WR/TE with a live bigger-role alert, the base projection, the larger-role scenario and the 'with the alert' line with its stat lines, the calibration shown instead of a probability, the inputs set and the expiry; the projected season's rows are replaced each run."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [league_id, season, week, gsis_id]
+      - name: waiver_upside
+        description: "Written by the waiver engine right after ops.waiver_moves (plan R-12, list_kind = 'upside'): per league x season x decision week x roster, free agents with a live bigger-role scenario who do not help at their projection today, valued as a claim at their projection and if the role holds, with the cheapest drop."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [league_id, season, week, roster_id, add_sleeper_id]
 
