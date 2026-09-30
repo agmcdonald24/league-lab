@@ -481,7 +481,7 @@ that roster by his real expectation); a K / DEF whose season PPG is negative (an
 none in 2026 so far); the K's injury status; IDP
 slots; bye-week or multi-week planning (one week at a time — the 4-week horizon is B2); Sleeper's
 per-player lock time beyond the scheduled kickoff; historical IR / taxi membership for past weeks; the
-waiver pool (B3). Past weeks' proposals use this season's K / DEF points per game to date (hindsight for
+waiver pool (B3: § Waiver moves). Past weeks' proposals use this season's K / DEF points per game to date (hindsight for
 those two positions only).
 
 ## Roster value (B2, 2026-09-30; `mart_league_roster_value`, `_rankings`, `_slot_strength`, `_horizon`, `mart_league_acquisitions`)
@@ -545,6 +545,71 @@ T-01; the waiver engine B3 handles add/drop pairs); a player on another roster's
 available to the receiving roster (a roster choice, not an injury); a locked player (game kicked off) counts 0
 both ways that week; a takeover within a season is dated to that season's start; the replacement's name is
 ambiguous only when two bench players have exactly the same value (either is a correct answer: same total).
+## Waiver moves (B3, 2026-09-30; `league-lab waivers`, `ops.waiver_moves`, `mart_waiver_moves`)
+
+**Question.** For one roster: which free-agent claim (and which drop) improves the lineup, by how many points,
+this week and over the next few weeks — and is there any at all?
+
+**Moves.** Per roster of every current league: every free agent on an active NFL roster
+(`mart_player_availability`: `is_free_agent`, `roster_status = 'ACT'`, injury not Out / IR, a position the
+league can start; free-agent defenses are not in that mart) × every droppable player (on the roster today, not
+in the IR slot, not on the taxi squad, not locked: his game in the decision week has not kicked off, and not a
+player with no value yet — see below). **Roster size:** active players (not IR, not taxi) against the starting +
+bench slots of `roster_positions`; with an open spot "claim without a drop" is a move too; an over-full roster
+has no legal single move.
+
+**Value of a move.** The B1 lineup (§ Lineup value) re-solved after the move minus before, per week:
+
+    gain(week) = best lineup(roster − drop + add) − best lineup(roster)
+
+on exactly the players and values `ops.lineups` holds for that roster-week (locks kept), the add valued as B1
+would value him on the roster (`lineup._proposed_player`: v2 `proj_points` in this league's scoring, K at the
+league's season PPG, cannot play on a bye / Out / Doubtful / NFL IR / after his game kicked off). The
+**decision week** is the first week with a game still to kick off at `as_of` (default: the time the lineups
+were solved); **weekly gain** = its gain; **horizon gain** = the sum over the decision week and the next three
+(byes, Out weeks and the dropped player's own starts all count: what he would have contributed is what the move
+gives up). `lineup_before` is `ops.lineup_totals.lineup_value` (= `mart_lineup_recommendation.lineup_value`),
+so the number on the page is the number My Week shows; the starter a claim displaces is shown with his
+`mart_lineup_recommendation.player_value`.
+
+**Lists.** *Start now*: weekly gain > 0. *Cover*: weekly gain ≤ 0 and horizon gain > 0 (a bye or injury you
+can cover). A move that gains in neither is not stored; a roster with no move gets one `nothing` row ("nothing
+beats what you have"). *Upside stash* (a role growing before the points) needs the role alerts (R-10) and is
+omitted. **No evidence yet**: the add has not played this season (his projection rests on last season and his
+role) — allowed, labelled. **Rank**: horizon gain, then weekly gain, then "no drop", then the drop with the
+fewest projected points over the rest of the season (`drop_ros_points`, weeks he can play) — the least useful
+player; per add the first such move is its best drop (`is_best_drop`), and adds are ranked by it (`add_rank`).
+Gains are rounded to 0.01; a move must gain at least 0.01.
+
+**Unknown is not zero.** B1 carries a player with no value yet (a K / DEF Sleeper has not scored in this
+league, a player with no projection, e.g. an injured star who has not played) at 0. The engine therefore
+(1) keeps such a starter in his slot, so no claim is credited with "beating" a 0 that is really unknown, and
+(2) never proposes dropping a player with no value in any horizon week. Without this the first run proposed
+dropping League of Scrubs rosters' only (unscored) defense and an injured Josh Jacobs.
+
+**Pruning (exact).** Removing a player never raises a lineup's best total, so a move's gain in a week is at
+most the add's gain with nobody dropped, and that gain is exactly
+`max(0, value(add) − bar)` with `bar = lineup − max over the open slots s he can play of lineup(without slot s)`:
+the cheapest way to free a slot he can play (the starter he would push out after the reshuffle; 0 for an empty
+slot). The bar depends only on the roster-week and the add's position set, so it costs a few re-solves. A free
+agent at or below the bar in every week of the horizon cannot appear in either list with any drop: he is
+skipped. Survivors are paired with every legal drop; a drop who does not start in the best lineup with the add
+changes nothing (that lineup stays optimal), so only drops among those starters are re-solved. Re-solves reuse
+B1's matching (`lineup._match`) on the roster-week's free players (locked starters fixed); the decision week's
+seat for the stored moves comes from B1's `solve()` itself. `roster_moves_unpruned` evaluates every free agent ×
+every drop × every week from scratch with `solve()`; `league-lab waivers --verify LEAGUE:ROSTER` compares the
+two row for row (tests do the same on 24 random rosters, and check the bar against `solve()` on 40).
+
+**Checks.** `tests/test_waivers.py`; `mart_waiver_moves` tests (lineup before = the published lineup, gains add
+up, gain ≤ the add alone, lists follow from the gains); `assert_waiver_moves_are_legal` (the add is a free agent
+on an active NFL roster, not Out / IR; the drop is on the roster, not IR / taxi / locked; roster size; every
+roster covered). Rows of a league whose rosters or statuses changed since the moves were computed
+(`inputs_fingerprint`) are skipped by the legality test and flagged on the page.
+
+**Not modelled.** Waiver priority / FAAB and other managers' claims; free-agent defenses (no value path until
+R-13); anything beyond the four weeks (a dynasty rookie's future: the page says to look twice); two-for-one
+moves; the add's own injury risk beyond the report status; K values are season points per game so far (small
+samples early in the season).
 
 ## Deferred (status in registry)
 

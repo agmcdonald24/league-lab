@@ -108,6 +108,32 @@ dbt test skips a roster-week whose points changed since), `model_version`, `run_
 written together by `league-lab lineups` and at the end of `league-lab project` (the season's rows are
 replaced in one transaction; `src/league_lab/lineup.py`).
 
+`ops.waiver_moves` (B3, waiver engine) — per league_id × season × `week` (the **decision week**: the first
+week with a game that has not kicked off at `as_of`) × roster_id × `add_sleeper_id` × `drop_sleeper_id`, one
+row per legal move that raises the roster's best lineup this week or over the horizon (the decision week and
+the next three: `horizon_weeks`, `horizon_last_week`), or one row with `list_kind = 'nothing'` (add / drop
+NULL, gains 0) when no move does. `list_kind` = `start_now` (weekly gain > 0) | `cover` (weekly ≤ 0, horizon
+> 0) | `nothing`; `move_rank` (1 = best: horizon gain, then weekly gain, then no drop, then the drop with the
+fewest rest-of-season points); `is_best_drop` / `add_rank` (the best drop per add, adds ranked by it). The add:
+`add_sleeper_id`, `add_gsis_id`, `add_name`, `add_position`, `add_value` (his decision-week value as B1 would
+carry him: v2 `proj_points` in this league's scoring, K `season_ppg`), `add_value_source`, `add_reason` (why he
+cannot play this week: bye, Doubtful, game started), `add_report_status`, `add_games_played`, `is_no_evidence`
+(no game this season). The drop: `drop_*` ids / name / position, `drop_value` (this week), `drop_is_starter`,
+`drop_horizon_loss` (what dropping him alone costs the lineup over the horizon), `drop_ros_points` /
+`add_ros_points` (each one's projected points over the rest of the season, weeks he can play; `rest_of_season_weeks`).
+The gain: `weekly_gain`, `horizon_gain`, `week_gains` (double precision[], one per horizon week),
+`add_horizon_gain` (the add's gain with nobody dropped: the bound the pruning uses), `lineup_before` /
+`lineup_after` (decision week; before = `ops.lineup_totals.lineup_value`). The seat (decision week, B1's
+`solve()`): `add_slot` / `add_slot_type` (NULL = bench or cannot play), `fills_empty_slot`, `displaced_*` (the
+starter who leaves the lineup — the drop himself when he started — with his `displaced_value` and
+`displaced_slot` from `ops.lineups`). `open_roster_spots` (starting + bench slots minus active players; < 0 =
+over the limit, no legal single move), `inputs_fingerprint` (md5 of the league's roster membership and every
+player's free-agent / NFL-roster / injury status when computed: `waivers.FINGERPRINT_SQL`), `model_version`,
+`as_of` (= the lineups' `as_of` by default), `run_at`. Written by `league-lab waivers` and at the end of
+`league-lab project` right after the lineups (the season's rows replaced in one transaction;
+`src/league_lab/waivers.py`); `db migrate`, the writer and the mart's pre_hook create it. Source test: one row
+per (league, season, week, roster, add, drop).
+
 ## analytics — NFL
 
 | Model | Grain / key | Contract |
@@ -153,6 +179,7 @@ replaced in one transaction; `src/league_lab/lineup.py`).
 | `mart_player_availability` | league_id, gsis_id | rostered-by / free agent × usage × expected gap × next matchup; points columns (`points_std`, `ppg_std`, `points_per_game_l3/_l5`, `expected_per_game`, `diff_per_game`, `games_with_expected`) in the row's league scoring via `mart_league_player_season` (S-01a); usage, shares and opponent ranks are scoring-free or reference-scored |
 | `mart_league_optimal_lineup` | league_id, week, roster_id | started vs optimal points, bench points left (greedy fill over Sleeper's points; held below the exact solver by `assert_exact_lineup_dominates_greedy`) |
 | `mart_lineup_recommendation` (view, B1) | league_id, season, week, roster_id, slot | the **proposed** lineup from `ops.lineups` / `ops.lineup_totals`, one row per starting slot (filled or empty): `slot`, `slot_type`, `slot_order`, `sleeper_player_id`, `gsis_id`, `player_name` (dim_player by gsis_id, else Sleeper's), `position`, `player_value`, `value_source`, `lineup_margin`, `is_weakest_slot`, `is_empty_slot`, `is_locked`, `report_status`, `is_questionable`; per lineup `lineup_value`, `bench_value`, `weakest_slot`, `weakest_margin`, `empty_slots`, `n_unvalued`, `realised_optimal` (scored weeks), `model_version`, `as_of`, `run_at`; `team_name` / `manager_name` from dim_league_member. Tests: key unique, a player once per lineup, margin ≥ 0, weakest = smallest valued margin, an unvalued starter counts 0 with margin 0, empty slot has no player, `value_source` in (proj_points, season_ppg, observed_ppg, unvalued) |
+| `mart_waiver_moves` (view, B3) | league_id, season, week, roster_id, add_sleeper_id, drop_sleeper_id | `ops.waiver_moves` with names (dim_player by gsis_id, else Sleeper's), `team_name` / `manager_name`, the add's `add_team` (availability), `lineup_value` (the decision week's lineup as `mart_lineup_recommendation` publishes it), `on_current_lineup` (moves solved on the lineups published now: same `as_of`), `inputs_current` (the league's rosters and free-agent statuses unchanged since: same fingerprint). Tests (`dbt/models/marts/edge/waivers.yml`): key unique, `move_rank` / `add_rank` unique per roster, `lineup_before` = `lineup_value` (when on the current lineup), a move gains and its list follows from the gains, the `nothing` row is empty, weekly gain = after − before and horizon = Σ `week_gains`, gain ≤ the add alone, best drop ⇔ add rank; `assert_waiver_moves_are_legal` (error): the add is a free agent on an active NFL roster not Out / IR, the drop is on the roster and not IR / taxi / locked, "no drop" only with an open spot, one drop only when it makes room, every roster has a row — for leagues whose inputs are current |
 | `mart_league_all_play` / `_week` | league_id, roster_id / + week | all-play record, expected wins, luck |
 | `mart_league_keeper_candidates` | league_id, sleeper_player_id | acquisition cost facts + production, ranks and xPPG in the league's own scoring (S-01a) |
 | `mart_league_manager_profile` | league_id, roster_id | luck, lineup discipline, activity, roster shape |

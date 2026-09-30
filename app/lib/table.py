@@ -276,6 +276,12 @@ COLUMNS: dict[str, Col] = {
     "fit_week": C("Fit · wk", "signed1", "Lineup points the move creates this week: what the receiving roster gains minus what the giving roster loses"),
     "fit_horizon": C("Fit · 4 wks", "signed1", "Lineup points the move creates over the next four weeks: receiver's gain minus giver's loss. Positive = the player is worth more on the other roster"),
     "best_partner": C("Best fit", help="The roster whose lineup gains the most from him over the next four weeks"),
+    # ---- B3 waiver engine
+    "waiver_claim": C("Claim", help="The free agent to claim (on an active NFL roster, not Out or on injured reserve)"),
+    "waiver_drop": C("Drop", help="The player to let go: the one whose loss costs your lineup least over the next four weeks (among equals, the one projected to score least the rest of the season). Open spot = nobody has to go"),
+    "weekly_gain": C("This week", "signed1", "Your best lineup this week after the claim minus your best lineup now (every slot re-filled, FLEX and superflex included)"),
+    "horizon_gain": C("Next 4 wks", "signed1", "The same gain summed over this week and the next three: covers a bye or an injury, and counts the games the dropped player would have started"),
+    "waiver_why": C("Why", help="Where he plays this week and whom he replaces, the later weeks he helps, and anything to check (no games yet, Questionable, a drop who projects more for the season)"),
 }
 
 

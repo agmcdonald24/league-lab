@@ -1,8 +1,8 @@
-"""Waiver Wire: the adds worth a claim for your roster, then every free agent ranked by projection v2 or opportunity."""
+"""Waiver Wire: the claims that improve your lineup (plan B3), then every free agent to browse."""
 
 import pandas as pd
 import streamlit as st
-from lib.db import query
+from lib.db import missing_relations, query
 from lib.table import howto, show
 from lib.ui import freshness_banner, league_slots, next_week_info, perspective, setup
 
@@ -12,261 +12,286 @@ league_id, roster_id, members = perspective(require_team=False)
 cal = next_week_info()
 season = int(cal["season"]) if not cal.empty else None
 next_week = int(cal["next_week"]) if not cal.empty and pd.notna(cal["next_week"]) else None
-if not cal.empty:
-    st.caption(f"NFL {season}: week {int(cal['last_completed_week'])} complete" + (f", week {next_week} next." if next_week else "."))
 
-howto(
-    "**Adds worth a claim** (pick a team in the sidebar) is the short answer: per position your league starts, the free agents who beat "
-    "your weakest projected starter this week or your best bench player this season.",
-    "**Proj (v2)** is projection v2 for next week in this league's scoring (the Rankings page's board) and the table's default rank. "
-    "Kickers have no v2 projection, so they sort last on it.",
-    "Waiver decisions are also about **opportunity**, because opportunity persists and touchdowns don't. Rank by the usage columns, then check the points.",
-    "**Target % / Snap %** — the player's share of his team's targets and offensive snaps. A receiver at 20%+ targets on 80%+ snaps has a real role whatever his points say.",
-    "**xPPG** prices that opportunity under this league's scoring. **PPG − xPPG** well below zero = he has been unlucky; the cheap add nobody else sees.",
-    "**Trend / Momentum** (from the Trends page) name the usage metrics that moved over the last three games beyond the player's own noise. Blank until game four.",
-    "**1st-read share** (season and last 3) is the player's share of his team's first-read targets — where the QB looks first, from FTN charting. "
-    "A free agent whose first-read share is rising before his target share is the earliest role signal on this page.",
-    "**Opp rank** is next week's matchup for his position (1 = the defense that gives up the most). **Depth** is his rank on the team's latest depth chart.",
-    "Injured (Out / injured reserve) players are hidden by default.",
-    title="How to use this page",
-)
-
-# ------------------------------------------------------------- U-11: adds worth a claim
-# One query. Bars per position the league starts (N = starting slots, SUPER_FLEX counts as a QB slot,
-# FLEX-type slots ignored): (a) the roster's weakest projected starter = its N-th best playable v2
-# projection for next week (Out / Doubtful / IR are not playable, the Rankings rule; IR-slot players
-# excluded); (b) its best bench PPG = the (N+1)-th best PPG. Every free agent (not Out / IR) is compared
-# with both; at most 3 per position that clear at least one bar. Players join on gsis_id; unknown stays NULL.
-SHORTLIST_SQL = """
-with prm as (select %s::text as league_id, %s::int as roster_id, %s::int as season, %s::int as week),
-slots as (
-    select case rp.slot when 'SUPER_FLEX' then 'QB' else rp.slot end as position, count(*)::int as n
-    from analytics.dim_league_season as ls
-    join prm on prm.league_id = ls.league_id
-    cross join lateral jsonb_array_elements_text(ls.roster_positions) as rp(slot)
-    where rp.slot in ('QB', 'RB', 'WR', 'TE', 'K', 'SUPER_FLEX')
-    group by 1
-),
-proj as (
-    select p.gsis_id, p.position, round(p.proj_points, 1) as proj, p.p10, p.p90, p.is_rankable
-    from analytics.mart_player_week_projections as p
-    join prm on p.league_id = prm.league_id and p.season = prm.season and p.week = prm.week
-),
-mine as (
-    select a.position, a.player_name, round(a.ppg_std, 1) as ppg,
-           case when p.is_rankable then p.proj end as proj,
-           row_number() over (partition by a.position order by case when p.is_rankable then p.proj end desc nulls last, a.gsis_id) as proj_rn,
-           row_number() over (partition by a.position order by a.ppg_std desc nulls last, a.gsis_id) as ppg_rn
-    from analytics.mart_player_availability as a
-    join prm on a.league_id = prm.league_id and a.rostered_by_roster_id = prm.roster_id
-    left join proj as p on p.gsis_id = a.gsis_id
-    where not coalesce(a.is_on_ir, false)
-),
-bars as (
-    -- the bench is whoever does not start this week (beyond the top N by projection), and the best
-    -- of them by PPG - so the weakest starter and the best bench player are never the same man
-    select s.position, s.n,
-           exists (select 1 from proj where proj.position = s.position) as modeled,
-           w.proj as weak_proj, case when w.proj is not null then w.player_name end as weak_name,
-           b.ppg as bench_ppg, case when b.ppg is not null then b.player_name end as bench_name
-    from slots as s
-    left join mine as w on w.position = s.position and w.proj_rn = s.n
-    left join lateral (
-        select m.ppg, m.player_name from mine as m
-        where m.position = s.position and m.proj_rn > s.n and m.ppg is not null
-        order by m.ppg desc, m.player_name limit 1
-    ) as b on true
-),
-cmp as (
-    select b.position, a.gsis_id, a.player_name, a.nfl_team, a.injury_status, a.games_played,
-           round(a.ppg_std, 1) as ppg_std, p.proj as proj_v2, p.p10, p.p90,
-           case when p.is_rankable then p.proj - b.weak_proj end as week_diff,
-           -- fewer playable players than slots: the N-th slot is open this week (flex slots are not counted)
-           coalesce(p.is_rankable and p.proj is not null and b.modeled and b.weak_proj is null, false) as week_open,
-           -- the season bar needs two games: a one-game PPG is a box score, not a rate (PO decision, wave A)
-           case when coalesce(a.games_played, 0) >= 2 then round(a.ppg_std, 1) - b.bench_ppg end as season_diff
-    from analytics.mart_player_availability as a
-    join prm on a.league_id = prm.league_id
-    join bars as b on b.position = a.position
-    left join proj as p on p.gsis_id = a.gsis_id
-    where a.is_free_agent
-      and a.injury_status is distinct from 'Out' and a.injury_status is distinct from 'IR'
-      and a.roster_status = 'ACT'   -- on an active NFL roster: not reserve, inactive list, practice squad or cut
-),
-cleared as (
-    select c.*, row_number() over (
-               partition by c.position
-               order by (coalesce(c.week_diff > 0, false) or c.week_open)::int + coalesce(c.season_diff > 0, false)::int desc,
-                        c.proj_v2 desc nulls last, c.ppg_std desc nulls last, c.gsis_id) as pick
-    from cmp as c
-    where coalesce(c.week_diff > 0, false) or c.week_open or coalesce(c.season_diff > 0, false)
-)
-select b.position as bar_position, b.n, b.modeled, b.weak_proj, b.weak_name, b.bench_ppg, b.bench_name,
-       c.pick, c.gsis_id, c.player_name, c.position, c.nfl_team, c.injury_status, c.games_played, c.ppg_std, c.proj_v2, c.p10, c.p90,
-       c.week_diff, c.week_open, c.season_diff
-from bars as b
-left join cleared as c on c.position = b.position and c.pick <= 3
-order by b.position, c.pick
+# ------------------------------------------------------------- B3: the moves (precomputed nightly)
+# One query. mart_waiver_moves holds, per roster, every legal add/drop that raises the roster's best
+# lineup this week or over the next four weeks (the lineup solver re-run after the move minus before,
+# on the same projections mart_lineup_recommendation shows), ranked; or one 'nothing' row.
+MOVES_SQL = """
+select week, horizon_last_week, list_kind, move_rank, add_rank, is_best_drop, add_name, add_position, add_team,
+       add_value, add_value_source, add_reason, add_report_status, add_games_played, is_no_evidence,
+       drop_name, drop_position, drop_value, drop_is_starter, drop_horizon_loss, drop_ros_points, add_ros_points,
+       weekly_gain, horizon_gain, week_gains, lineup_before, lineup_after, lineup_value, add_slot, fills_empty_slot,
+       displaced_name, displaced_position, displaced_value, displaced_slot, open_roster_spots,
+       inputs_current, on_current_lineup, as_of
+from analytics.mart_waiver_moves
+where league_id = %s and roster_id = %s and season = (select max(season) from analytics.mart_waiver_moves where league_id = %s)
+order by move_rank nulls first
 """
 
 
-def _claim_week(r: pd.Series) -> str:
-    slot = f"{r['bar_position']}{int(r['n'])}"
-    if r["week_open"]:
-        return f"fills your open {slot} slot this week (Proj {r['proj_v2']:.1f}; no playable {slot} on your roster)"
-    if pd.isna(r["week_diff"]):
-        return "no v2 projection for him this week" if pd.isna(r["proj_v2"]) else f"no playable {slot} to compare"
-    d = round(float(r["week_diff"]), 1)
-    nums = f"(Proj {r['proj_v2']:.1f} vs {r['weak_proj']:.1f})"
-    if d > 0:
-        return f"+{d:.1f} over your {slot} this week {nums}"
-    return f"{abs(d):.1f} below your {slot} this week {nums}" if d < 0 else f"level with your {slot} this week {nums}"
+def _f(v: float) -> str:
+    return f"{float(v):.1f}"
 
 
-def _claim_season(r: pd.Series) -> str:
-    pos = r["bar_position"]
-    if pd.isna(r["ppg_std"]):
-        return "no games this season"
-    if pd.isna(r["bench_ppg"]):
-        return f"no bench {pos} with a PPG to compare"
-    games = int(r["games_played"]) if pd.notna(r["games_played"]) else 0
-    if pd.isna(r["season_diff"]):
-        return f"only {games} game this season — not compared" if games == 1 else "no season comparison yet"
-    d = round(float(r["season_diff"]), 1)
-    nums = f"({r['ppg_std']:.1f} vs {r['bench_ppg']:.1f}, {games} games)"
-    if d > 0:
-        return f"+{d:.1f} PPG over your best bench {pos} {nums}"
-    return f"{abs(d):.1f} PPG below your best bench {pos} {nums}" if d < 0 else f"level with your best bench {pos} {nums}"
+def _span(r: pd.Series) -> str:
+    """ "the next 4 weeks" (fewer at the end of the season)."""
+    n = int(r["horizon_last_week"]) - int(r["week"]) + 1
+    return f"the next {n} weeks" if n > 1 else "this week only"
 
 
-def _compared_with(r: pd.Series) -> str:
+def _weeks_helped(r: pd.Series) -> list[tuple[int, float]]:
+    gains = list(r["week_gains"]) if isinstance(r["week_gains"], list | tuple) else []
+    return [(int(r["week"]) + i, float(g)) for i, g in enumerate(gains) if g is not None and float(g) > 0.005]
+
+
+def _weeks_text(r: pd.Series) -> str:
+    helped = [w for w, _ in _weeks_helped(r)]
+    if not helped:
+        return ""
+    return ("week " if len(helped) == 1 else "weeks ") + ", ".join(str(w) for w in helped)
+
+
+def _seat_text(r: pd.Series) -> str:
+    """Where he plays this week and who makes way, in plain words (the numbers the lineup uses)."""
+    slot = r["add_slot"]
+    if not isinstance(slot, str):
+        return ""
+    if r["fills_empty_slot"]:
+        return f"He fills your empty {slot} slot (nobody on your roster can play it this week)."
+    if isinstance(r["displaced_name"], str):
+        if r["displaced_name"] == r["drop_name"]:
+            return f"He starts at {slot}; {r['drop_name']} ({_f(r['drop_value'])} this week) leaves your lineup."
+        where = f", from {r['displaced_slot']}" if isinstance(r["displaced_slot"], str) and r["displaced_slot"] != slot else ""
+        return (f"He starts at {slot}; **{r['displaced_name']}** ({r['displaced_position']}{where}, projected "
+                f"{_f(r['displaced_value'])}) goes to your bench.")
+    return f"He starts at {slot}."
+
+
+def _notes(r: pd.Series) -> list[str]:
+    out = []
+    if r["is_no_evidence"]:
+        out.append("No games this season yet: the projection rests on last season and his role, not on anything he has shown this year.")
+    if r["add_value_source"] == "season_ppg":
+        out.append("Kickers are valued at their points per game so far this season.")
+    if r["add_report_status"] == "Questionable":
+        out.append("He is Questionable this week.")
+    if isinstance(r["add_reason"], str):
+        out.append(f"He cannot play this week ({r['add_reason']}).")
+    if isinstance(r["drop_name"], str):
+        loss = float(r["drop_horizon_loss"] or 0)
+        out.append(f"Dropping {r['drop_name']} costs your lineup {_f(loss)} over {_span(r)} (already counted)."
+                   if loss > 0.05 else f"{r['drop_name']} would not start for you in {_span(r)}.")
+        if pd.notna(r["drop_ros_points"]) and pd.notna(r["add_ros_points"]) and float(r["drop_ros_points"]) > float(r["add_ros_points"]):
+            out.append(f"Careful: {r['drop_name']} projects more than {r['add_name']} over the rest of the season "
+                       f"({float(r['drop_ros_points']):.0f} vs {float(r['add_ros_points']):.0f} points).")
+    elif r["list_kind"] != "nothing":
+        out.append("You have an open roster spot, so nobody has to go.")
+    return out
+
+
+def _headline(r: pd.Series) -> str:
+    """The card's answer in one sentence: "Claim A, drop B: +2.9 this week at TE, +6.1 over the next 4 weeks"."""
+    who = f"{r['add_name']} ({r['add_position']})"
+    claim = f"Claim {who}, drop {r['drop_name']}" if isinstance(r["drop_name"], str) else f"Claim {who}, no drop needed"
+    wk, hz = float(r["weekly_gain"]), float(r["horizon_gain"])
+    if wk > 0:
+        at = f" at {r['add_slot']}" if isinstance(r["add_slot"], str) else ""
+        return f"{claim}: {wk:+.1f} this week{at}, {hz:+.1f} over {_span(r)}"
+    when = f", all in {_weeks_text(r)}" if _weeks_text(r) and abs(wk) < 0.05 else (f" ({_weeks_text(r)})" if _weeks_text(r) else "")
+    this_week = "" if abs(wk) < 0.05 else f", {wk:+.1f} this week"
+    return f"{claim}: {hz:+.1f} over {_span(r)}{when}{this_week}"
+
+
+def _card(title: str, r: pd.Series, week: int) -> None:
+    with st.container(border=True):
+        st.caption(title)
+        st.markdown(f"**{_headline(r)}**")
+        lines = []
+        if pd.notna(r["add_value"]) and not isinstance(r["add_reason"], str):
+            lines.append(f"{r['add_name']} projects {_f(r['add_value'])} for week {week} in your league's scoring. {_seat_text(r)}".strip())
+        if float(r["weekly_gain"]) > 0:
+            lines.append(f"Your week-{week} lineup: {_f(r['lineup_before'])} → {_f(r['lineup_after'])}.")
+        elif _weeks_text(r):
+            lines.append(f"It helps in {_weeks_text(r)}, not this week, so there is time: claim him before then.")
+        lines += _notes(r)
+        st.markdown("  \n".join(lines))
+
+
+def _why(r: pd.Series) -> str:
+    """The table's reason column: short, the card's words."""
     parts = []
-    if isinstance(r["weak_name"], str):
-        parts.append(f"{r['bar_position']}{int(r['n'])}: {r['weak_name']}")
-    if isinstance(r["bench_name"], str):
-        parts.append(f"best bench: {r['bench_name']}")
-    return " · ".join(parts)
+    if r["list_kind"] == "start_now" and isinstance(r["add_slot"], str):
+        if r["fills_empty_slot"]:
+            parts.append(f"fills empty {r['add_slot']}")
+        elif isinstance(r["displaced_name"], str):
+            parts.append(f"{r['add_slot']} over {r['displaced_name']} ({_f(r['displaced_value'])})")
+    later = [w for w, _ in _weeks_helped(r) if w != int(r["week"])]
+    if later and (r["list_kind"] == "cover" or float(r["horizon_gain"]) > float(r["weekly_gain"]) + 0.05):
+        parts.append("helps wk " + ", ".join(str(w) for w in later))
+    if r["is_no_evidence"]:
+        parts.append("no games yet")
+    if r["add_report_status"] == "Questionable":
+        parts.append("Q")
+    if isinstance(r["drop_name"], str) and float(r["drop_horizon_loss"] or 0) > 0.05:
+        parts.append(f"drop costs {_f(r['drop_horizon_loss'])}")
+    if (isinstance(r["drop_name"], str) and pd.notna(r["drop_ros_points"]) and pd.notna(r["add_ros_points"])
+            and float(r["drop_ros_points"]) > float(r["add_ros_points"])):
+        parts.append("drop projects more for the season")
+    return "; ".join(parts)
 
 
-st.subheader("Adds worth a claim")
+decision_week = None
+have_moves = not missing_relations(("mart_waiver_moves",))
+if have_moves:   # the week the claims are for (the next week with a game still to kick off)
+    wk = query("select week from analytics.mart_waiver_moves where league_id = %s order by season desc, week desc limit 1", (league_id,))
+    decision_week = int(wk["week"].iloc[0]) if not wk.empty and pd.notna(wk["week"].iloc[0]) else None
 if roster_id is None:
-    st.caption("Pick a team under **Team perspective** in the sidebar to see which free agents beat what that roster already has.")
+    st.info("Pick your team under **Team perspective** in the sidebar: this page then opens with the claims that improve "
+            "that roster's lineup, each with the player to drop.", icon="👈")
+elif not have_moves:
+    st.caption("The waiver moves are computed with the nightly update and are not on this copy yet. The free-agent list is below.")
 else:
-    howto(
-        "For each position your league starts, up to three free agents on an active NFL roster (not Out / IR, not practice squad or inactive) who beat what you already have. A player is listed when he clears "
-        "at least one bar; players clearing both come first, then the higher projection.",
-        f"**This week vs your starter**: his projection v2 for week {next_week or 'next'} in this league's scoring against your *weakest projected starter* "
-        "there — your RB2 when the league starts two RBs; a superflex slot counts as a second QB, FLEX slots are left out. Out, Doubtful and IR players "
-        "don't count as starters (the Rankings rule), and players in your IR slot are left out.",
-        "**Season vs your bench**: his PPG this season against the best PPG among your players who would not start this week at the position "
-        "(everyone beyond the top N by projection), so the weakest starter and the best bench player are never the same man. "
-        "A player needs two games this season before his PPG counts (one game is a box score, not a rate). The two bars rank your players differently (next week's projection vs season PPG), "
-        "so one player can be both your weakest projected starter and your best bench player.",
-        "**Floor / Ceiling** are the projection's P10 / P90: one week in ten lands below the floor, one in ten above the ceiling. "
-        "Kickers have no v2 projection, so K is compared on season PPG only.",
-        title="How the shortlist is built",
-    )
-    sl = query(SHORTLIST_SQL, (league_id, roster_id, season, next_week))
-    shortlist_positions = [p for p in league_slots(league_id) if p != "DEF"]   # K only where the league starts one
-    sl = sl[sl["bar_position"].isin(shortlist_positions)]
-    if not sl.empty and not sl.loc[sl["bar_position"] != "K", "modeled"].any():
-        st.info(f"Projection v2 has no week {next_week or '(next)'} board for this league yet (it is written by `make project`), "
-                "so the shortlist compares season PPG only.", icon="ℹ️")
-    picks = sl[sl["gsis_id"].notna()].copy()
-    if not picks.empty:
-        picks["claim_week"] = picks.apply(_claim_week, axis=1)
-        picks["claim_season"] = picks.apply(_claim_season, axis=1)
-        picks["compared_with"] = picks.apply(_compared_with, axis=1)
-        picks["_order"] = picks["bar_position"].map({p: i for i, p in enumerate(shortlist_positions)})
-        picks = picks.sort_values(["_order", "pick"])
-        show(picks, ["player_name", "position", "nfl_team", "injury_status", "claim_week", "proj_v2", "p10", "p90",
-                     "claim_season", "ppg_std", "compared_with"])
-    for pos in shortlist_positions:
-        bar = sl[sl["bar_position"] == pos]
-        if bar.empty or bar["gsis_id"].notna().any():
-            continue
-        b = bar.iloc[0]
-        if not b["modeled"] and pd.isna(b["bench_ppg"]):
-            why = "projection v2 does not project kickers" if pos == "K" else f"projection v2 has no {pos} board for this week"
-            st.caption(f"Nothing to compare at {pos}: {why} and your bench has no {pos} with a PPG.")
+    mv = query(MOVES_SQL, (league_id, roster_id, league_id))
+    if mv.empty:
+        st.caption("No waiver moves for this team yet: they are computed with the nightly update (after the projections).")
+    else:
+        decision_week = int(mv["week"].iloc[0])
+        team = members.set_index("roster_id").loc[roster_id, "team_name"]
+        st.subheader(f"Best claims for {team} · week {decision_week}")
+        best = mv[mv["is_best_drop"].fillna(False).astype(bool)].sort_values("add_rank")
+        start = best[best["list_kind"] == "start_now"]
+        cover = best[best["list_kind"] == "cover"]
+        lineup_now = float(mv["lineup_value"].iloc[0]) if pd.notna(mv["lineup_value"].iloc[0]) else float(mv["lineup_before"].iloc[0])
+        if (mv["list_kind"] == "nothing").all():
+            with st.container(border=True):
+                r = mv.iloc[0]
+                why = (" Your roster is over the limit, so no single claim is legal." if pd.notna(r["open_roster_spots"])
+                       and int(r["open_roster_spots"]) < 0 else "")
+                n = int(r["horizon_last_week"]) - decision_week + 1
+                st.markdown(f"**Nothing beats what you have.**  \nNo free agent improves your lineup this week or over the next "
+                            f"{n} weeks (week-{decision_week} lineup {_f(lineup_now)}).{why}")
         else:
-            st.caption(f"Nothing on the wire beats what you have at {pos}.")
+            if not start.empty:
+                _card("Top claim", start.iloc[0], decision_week)
+            else:
+                with st.container(border=True):
+                    st.markdown(f"**Nothing on the wire beats this week's lineup** ({_f(lineup_now)} for week {decision_week}).  \n"
+                                "The claims below help in a later week: a bye or an injury you can cover now.")
+            shown = set(start.head(1)["add_name"])
+            if not cover.empty:
+                _card("Best cover for a coming week", cover.iloc[0], decision_week)
+                shown.add(cover.iloc[0]["add_name"])
+            flyer = best[best["is_no_evidence"].fillna(False).astype(bool) & ~best["add_name"].isin(shown)]
+            if not flyer.empty:
+                _card("Flyer: no games this season yet", flyer.iloc[0], decision_week)
+        st.caption("Upside stashes (a player whose role is growing before his points do) arrive with the role alerts in a later release.")
+        stale = []
+        if not bool(mv["inputs_current"].iloc[0]):
+            stale.append("rosters or injury reports have changed since, so a player may already be gone")
+        if not bool(mv["on_current_lineup"].iloc[0]):
+            stale.append("your lineup has been re-solved since")
+        if stale:
+            asof = pd.to_datetime(mv["as_of"].iloc[0], utc=True).tz_convert("America/New_York")
+            st.warning(f"These claims were computed {asof:%a %b %-d, %-I:%M %p} ET; " + " and ".join(stale)
+                       + ". They refresh with the nightly update.", icon="⏱️")
 
-# ------------------------------------------------------------- every free agent
-c1, c2, c3, c4 = st.columns([1.2, 1, 1, 1.4])
-league_pos = [p for p in league_slots(league_id) if p in ("QB", "RB", "WR", "TE", "K")]   # no K in a league without a kicker slot
-positions = c1.multiselect("Positions", league_pos, default=[p for p in ("RB", "WR", "TE") if p in league_pos])
-min_games = c2.number_input("Min games played", 1, 17, 2)
-hide_injured = c3.checkbox("Hide Out / IR", value=True)
-sort_labels = {
-    "proj_v2": f"Projection v2 (week {next_week})" if next_week else "Projection v2 (next week)",
-    "expected_per_game": "Expected PPG (opportunity)", "momentum": "Momentum (role trend, needs 4+ games)", "target_share_l3": "Target % (last 3)", "target_share_trend": "Target trend",
-    "first_read_share_l3": "1st-read share (last 3)",
-    "carry_share_l3": "Carry % (last 3)", "snap_pct_l3": "Snap % (last 3)", "points_per_game_l3": "PPG (last 3)", "ppg_std": "PPG (season)",
-    "diff_per_game": "Most unlucky (PPG − xPPG)",
-}
-sort_by = c4.selectbox("Rank by", list(sort_labels), format_func=lambda k: sort_labels[k])
+        moves = best[best["list_kind"] != "nothing"].copy()
+        if not moves.empty:
+            with st.expander(f"All {len(moves)} claims that help, best first"):
+                moves["waiver_claim"] = moves["add_name"] + " " + moves["add_position"]
+                moves["waiver_drop"] = moves["drop_name"].where(moves["drop_name"].notna(), "— (open spot)")
+                moves["waiver_why"] = moves.apply(_why, axis=1)
+                show(moves, ["waiver_claim", "waiver_drop", "weekly_gain", "horizon_gain", "waiver_why"], height=420)
+                st.caption("One row per player: the drop that costs your lineup least (among equals, the player projected "
+                           "to score least the rest of the season). Start-now claims gain this week; the others help later.")
+        howto(
+            "**What a claim is worth.** For every free agent on an active NFL roster (not Out or on injured reserve) and every "
+            "player you could drop (not in your IR slot or on your taxi squad, and not already playing this week), we rebuild your "
+            "best legal lineup with the swap and subtract the lineup you have now. The lineup is the one your team page shows: every "
+            "slot filled at once, FLEX and superflex included, with the same projections.",
+            f"**Week {decision_week}** is the gain in this week's lineup; **weeks {decision_week}–{int(mv['horizon_last_week'].iloc[0])}** add up this week "
+            "and the next three, so a bye you can cover and the games the dropped player would have started all count. "
+            "*Start now* claims improve this week; the *cover* claims only help a coming week.",
+            "**Who to drop.** The player whose loss costs your lineup least over the four weeks; among equals, the one projected to "
+            "score least over the rest of the season. We never suggest dropping a player we have no projection for yet "
+            "(a kicker or defense your league has not scored, an injured player with no projection): unknown is not zero.",
+            "**Only the next four weeks count.** In a dynasty league a young player's future is not in these numbers: look twice before "
+            "dropping one. Kickers are valued at their points per game so far this season; free-agent defenses are not valued yet.",
+            "**No games yet** marks a player who has not played this season: his projection rests on last season and his role only.",
+            title="How to read this",
+        )
 
-fa = query(
-    """select a.player_name, a.position, a.nfl_team, a.roster_status, a.injury_status, a.depth_rank,
-              a.games_played, a.targets_per_game, a.carries_per_game, a.target_share, a.target_share_l3, a.target_share_trend,
-              a.carry_share, a.carry_share_l3, a.avg_offense_snap_pct, a.snap_pct_l3, a.first_read_share_std, a.first_read_share_l3,
-              a.ppg_std, a.points_per_game_l3, a.expected_per_game, a.diff_per_game,
-              a.opponent, a.is_bye, a.opp_rank_std, t.tags, t.momentum, pr.proj_points as proj_v2
-       from analytics.mart_player_availability a
-       left join analytics.mart_player_trend_tags t on t.gsis_id = a.gsis_id and t.season = a.season
-       left join analytics.mart_player_week_projections pr
-              on pr.league_id = a.league_id and pr.gsis_id = a.gsis_id and pr.season = %s and pr.week = %s
-       where a.league_id = %s and a.is_free_agent and a.position = any(%s) and coalesce(a.games_played, 0) >= %s""",
-    (season, next_week, league_id, positions, int(min_games)),
-)
-if hide_injured:
-    fa = fa[~fa["injury_status"].isin(["Out", "IR"]) & (fa["roster_status"] != "RES")]
-fa = fa.sort_values(sort_by, ascending=(sort_by == "diff_per_game"), na_position="last")
-
-st.subheader(f"Free agents · {len(fa)} players")
-rec_cols = ["player_name", "position", "nfl_team", "injury_status", "depth_rank", "games_played", "proj_v2", "tags", "momentum", "targets_per_game", "target_share",
-            "target_share_l3", "first_read_share_std", "first_read_share_l3", "avg_offense_snap_pct", "snap_pct_l3", "ppg_std", "points_per_game_l3",
-            "expected_per_game", "diff_per_game", "opponent", "is_bye", "opp_rank_std"]
-rb_cols = ["player_name", "position", "nfl_team", "injury_status", "depth_rank", "games_played", "proj_v2", "tags", "momentum", "carries_per_game", "carry_share",
-           "carry_share_l3", "targets_per_game", "target_share", "first_read_share_l3", "avg_offense_snap_pct", "snap_pct_l3", "ppg_std", "points_per_game_l3",
-           "expected_per_game", "diff_per_game", "opponent", "is_bye", "opp_rank_std"]
-qbk_cols = ["player_name", "position", "nfl_team", "injury_status", "depth_rank", "games_played", "proj_v2", "tags", "momentum", "ppg_std", "points_per_game_l3",
-            "expected_per_game", "diff_per_game", "opponent", "is_bye", "opp_rank_std"]
-if set(positions) <= {"RB"}:
-    cols = rb_cols
-elif set(positions) <= {"QB", "K"}:
-    cols = qbk_cols
-else:
-    cols = rec_cols
-if sort_by not in cols:          # the column the list is ranked by is always shown
-    cols = cols[:8] + [sort_by] + cols[8:]
-if not fa.empty and fa[sort_by].isna().all():
-    st.info(f"**{sort_labels[sort_by]}** has no values yet for these players (it needs more games this season), so the list is not ranked by it.")
-show(fa, cols, height=560)
-
-# ------------------------------------------------------------- your drop candidates
-if roster_id is not None:
-    st.subheader("Your bench, weakest first")
-    howto("Sorted by expected PPG, then PPG. The bottom of this list is where a waiver add would come from. "
-          "A player on a bye with low expected points is the usual first cut; an injured player with a strong role is not.")
-    bench = query(
-        """select player_name, position, nfl_team, injury_status, games_played, ppg_std, points_per_game_l3, expected_per_game,
-                  target_share_l3, carry_share_l3, snap_pct_l3, opponent, is_bye, opp_rank_std
-           from analytics.mart_player_availability
-           where league_id = %s and rostered_by_roster_id = %s and not is_current_starter and not is_on_ir
-           order by coalesce(expected_per_game, ppg_std, 0) asc""",
-        (league_id, roster_id),
+# ------------------------------------------------------------- browse every free agent
+with st.expander("Browse every free agent"):
+    week_for_proj = decision_week or next_week
+    c1, c2 = st.columns(2)
+    league_pos = [p for p in league_slots(league_id) if p in ("QB", "RB", "WR", "TE", "K")]   # no K in a league without a kicker slot
+    positions = c1.multiselect("Positions", league_pos, default=[p for p in ("RB", "WR", "TE") if p in league_pos])
+    min_games = c2.number_input("Min games played", 0, 17, 2)
+    hide_injured = c1.checkbox("Hide Out / IR", value=True)
+    sort_labels = {
+        "proj_v2": f"Projection (week {week_for_proj})" if week_for_proj else "Projection (next week)",
+        "expected_per_game": "Expected PPG (opportunity)", "momentum": "Momentum (role trend, needs 4+ games)", "target_share_l3": "Target % (last 3)", "target_share_trend": "Target trend",
+        "first_read_share_l3": "1st-read share (last 3)",
+        "carry_share_l3": "Carry % (last 3)", "snap_pct_l3": "Snap % (last 3)", "points_per_game_l3": "PPG (last 3)", "ppg_std": "PPG (season)",
+        "diff_per_game": "Most unlucky (PPG − xPPG)",
+    }
+    sort_by = c2.selectbox("Rank by", list(sort_labels), format_func=lambda k: sort_labels[k])
+    fa = query(
+        """select a.player_name, a.position, a.nfl_team, a.roster_status, a.injury_status, a.depth_rank,
+                  a.games_played, a.targets_per_game, a.carries_per_game, a.target_share, a.target_share_l3, a.target_share_trend,
+                  a.carry_share, a.carry_share_l3, a.avg_offense_snap_pct, a.snap_pct_l3, a.first_read_share_std, a.first_read_share_l3,
+                  a.ppg_std, a.points_per_game_l3, a.expected_per_game, a.diff_per_game,
+                  a.opponent, a.is_bye, a.opp_rank_std, t.tags, t.momentum, pr.proj_points as proj_v2
+           from analytics.mart_player_availability a
+           left join analytics.mart_player_trend_tags t on t.gsis_id = a.gsis_id and t.season = a.season
+           left join analytics.mart_player_week_projections pr
+                  on pr.league_id = a.league_id and pr.gsis_id = a.gsis_id and pr.season = %s and pr.week = %s
+           where a.league_id = %s and a.is_free_agent and a.position = any(%s) and coalesce(a.games_played, 0) >= %s""",
+        (season, week_for_proj, league_id, positions, int(min_games)),
     )
-    show(bench)
+    if hide_injured:
+        fa = fa[~fa["injury_status"].isin(["Out", "IR"]) & (fa["roster_status"] != "RES")]
+    fa = fa.sort_values(sort_by, ascending=(sort_by == "diff_per_game"), na_position="last")
+    st.caption(f"{len(fa)} free agents. **Proj** is the projection for week {week_for_proj} in this league's scoring, the same number "
+               "the claims above use. Waiver decisions are also about opportunity: target, carry and snap shares persist; touchdowns don't.")
+    rec_cols = ["player_name", "position", "nfl_team", "injury_status", "depth_rank", "games_played", "proj_v2", "tags", "momentum", "targets_per_game", "target_share",
+                "target_share_l3", "first_read_share_std", "first_read_share_l3", "avg_offense_snap_pct", "snap_pct_l3", "ppg_std", "points_per_game_l3",
+                "expected_per_game", "diff_per_game", "opponent", "is_bye", "opp_rank_std"]
+    rb_cols = ["player_name", "position", "nfl_team", "injury_status", "depth_rank", "games_played", "proj_v2", "tags", "momentum", "carries_per_game", "carry_share",
+               "carry_share_l3", "targets_per_game", "target_share", "first_read_share_l3", "avg_offense_snap_pct", "snap_pct_l3", "ppg_std", "points_per_game_l3",
+               "expected_per_game", "diff_per_game", "opponent", "is_bye", "opp_rank_std"]
+    qbk_cols = ["player_name", "position", "nfl_team", "injury_status", "depth_rank", "games_played", "proj_v2", "tags", "momentum", "ppg_std", "points_per_game_l3",
+                "expected_per_game", "diff_per_game", "opponent", "is_bye", "opp_rank_std"]
+    if set(positions) <= {"RB"}:
+        cols = rb_cols
+    elif set(positions) <= {"QB", "K"}:
+        cols = qbk_cols
+    else:
+        cols = rec_cols
+    if fa["injury_status"].isin(["Healthy"]).all() or fa["injury_status"].isna().all():
+        cols = [c for c in cols if c != "injury_status"]            # injury is a filter, not a column, unless someone is hurt
+    if sort_by not in cols:          # the column the list is ranked by is always shown
+        cols = cols[:7] + [sort_by] + cols[7:]
+    if not fa.empty and fa[sort_by].isna().all():
+        st.info(f"**{sort_labels[sort_by]}** has no values yet for these players (it needs more games this season), so the list is not ranked by it.")
+    show(fa, cols, height=480)
+    howto(
+        "**Target % / Snap %**: the player's share of his team's targets and offensive snaps. A receiver at 20%+ targets on 80%+ snaps has a real role whatever his points say.",
+        "**xPPG** prices that opportunity in this league's scoring. **PPG − xPPG** well below zero = he has been unlucky: the cheap add nobody else sees.",
+        "**Trend / Momentum** (from the Trends page) name the usage metrics that moved over the last three games beyond the player's own noise. Blank until game four.",
+        "**1st-read share** is the player's share of his team's first-read targets (where the QB looks first, from FTN charting).",
+        "**Opp rank** is next week's matchup for his position (1 = the defense that gives up the most). **Depth** is his rank on the team's latest depth chart.",
+    )
 
 # ------------------------------------------------------------- recent league moves
-st.subheader("Recent league moves")
-howto("Completed waiver claims, free-agent adds, drops and trades, newest first. Useful for seeing who is chasing the same positions and what bids clear.")
-tx = query(
-    """select created_at, week, transaction_type, action, team_name, player_name, position, waiver_bid
-       from analytics.mart_league_transactions where league_id = %s and status = 'complete'
-       order by created_at desc limit 40""",
-    (league_id,),
-)
-show(tx)
+with st.expander("Recent league moves"):
+    tx = query(
+        """select created_at, week, transaction_type, action, team_name, player_name, position, waiver_bid
+           from analytics.mart_league_transactions where league_id = %s and status = 'complete'
+           order by created_at desc limit 40""",
+        (league_id,),
+    )
+    st.caption("Completed waiver claims, free-agent adds, drops and trades, newest first: who is chasing the same positions and what bids clear.")
+    show(tx)

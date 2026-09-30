@@ -1,0 +1,61 @@
+version: 2
+
+# Plan B3 (waiver engine). A file of its own so the round-2 branches do not collide in schema.yml.
+models:
+  - name: mart_waiver_moves
+    description: "B3 waiver engine: per league x season x decision week x roster, every legal add/drop that raises the roster's best lineup this week (start_now) or over the 4-week horizon (cover), ranked, with the slot the add takes and the starter he displaces; or one 'nothing' row (nothing beats what you have). Legality: assert_waiver_moves_are_legal."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season, week, roster_id, add_sleeper_id, drop_sleeper_id]
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season, week, roster_id, move_rank]
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season, week, roster_id, add_rank]
+          config: {where: "add_rank is not null"}
+      # the lineup the moves start from is the one mart_lineup_recommendation publishes
+      - expression_is_true:
+          name: waiver_lineup_before_is_the_published_lineup
+          arguments:
+            expression: "abs(lineup_before - lineup_value) < 0.005"
+            condition: "on_current_lineup"
+      # a stored move gains this week or over the horizon; the lists follow from the gains
+      - expression_is_true:
+          name: waiver_move_gains
+          arguments:
+            expression: "(weekly_gain > 0 or horizon_gain > 0) and (list_kind = 'start_now') = (weekly_gain > 0) and add_sleeper_id is not null"
+            condition: "list_kind <> 'nothing'"
+      - expression_is_true:
+          name: waiver_nothing_row_is_empty
+          arguments:
+            expression: "add_sleeper_id is null and drop_sleeper_id is null and weekly_gain = 0 and horizon_gain = 0 and move_rank is null"
+            condition: "list_kind = 'nothing'"
+      # the weekly gain is the lineup after minus before; the horizon gain is the sum of the weeks
+      - expression_is_true:
+          name: waiver_gains_add_up
+          arguments:
+            expression: "abs(lineup_after - lineup_before - weekly_gain) < 0.015 and abs(horizon_gain - (select sum(g) from unnest(week_gains) as g)) < 0.025 and abs(week_gains[1] - weekly_gain) < 0.005 and cardinality(week_gains) = horizon_weeks"
+            condition: "list_kind <> 'nothing'"
+      # a move can never gain more than the add alone would (dropping nobody); the drop's cost is >= 0
+      - expression_is_true:
+          name: waiver_gain_bounded_by_the_add_alone
+          arguments:
+            expression: "horizon_gain <= add_horizon_gain + 0.025 and coalesce(drop_horizon_loss, 0) >= 0"
+            condition: "list_kind <> 'nothing'"
+      - expression_is_true:
+          name: waiver_best_drop_has_an_add_rank
+          arguments:
+            expression: "(add_rank is not null) = coalesce(is_best_drop, false)"
+    columns:
+      - name: list_kind
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["start_now", "cover", "nothing"]
+      - name: lineup_before
+        tests: [not_null]
+      - name: team_name
+        tests: [not_null]

@@ -150,6 +150,24 @@ create table if not exists raw.routes_feed (
     source_file     text,
     imported_at     timestamptz
 );
+-- Waiver engine (plan B3): written by `league-lab waivers` and at the end of `league-lab project`
+-- (src/league_lab/waivers.py; replaces the season's rows). One row per league x season x week x
+-- roster x add x drop that gains this week or over the 4-week horizon, or one `nothing` row per roster.
+create table if not exists ops.waiver_moves (
+    run_at timestamptz, as_of timestamptz, model_version text, league_id text, season integer, week integer,
+    roster_id integer, horizon_weeks integer, horizon_last_week integer, list_kind text, move_rank integer,
+    add_rank integer, is_best_drop boolean, add_sleeper_id text, add_gsis_id text, add_name text,
+    add_position text, add_value double precision, add_value_source text, add_reason text, add_report_status text,
+    add_games_played integer, is_no_evidence boolean, drop_sleeper_id text, drop_gsis_id text, drop_name text,
+    drop_position text, drop_value double precision, drop_ros_points double precision, add_ros_points double precision,
+    rest_of_season_weeks integer, drop_horizon_loss double precision, drop_is_starter boolean, weekly_gain double precision,
+    horizon_gain double precision, week_gains double precision[], add_horizon_gain double precision,
+    lineup_before double precision, lineup_after double precision, add_slot text, add_slot_type text,
+    fills_empty_slot boolean, displaced_sleeper_id text, displaced_gsis_id text, displaced_name text,
+    displaced_position text, displaced_value double precision, displaced_slot text, open_roster_spots integer,
+    inputs_fingerprint text
+);
+create index if not exists waiver_moves_idx on ops.waiver_moves (league_id, season, week, roster_id);
 """
 
 # Polars dtype -> Postgres type. Anything unknown becomes text.

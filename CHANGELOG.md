@@ -37,6 +37,14 @@ Newest first. The Home page shows the top entry as "What's new".
 - The live board no longer jitters between refreshes with no news: two fits of the same data now give the same
   numbers (the training rows were read in an unordered scan, which moved the model's internal validation split;
   differences reached 1.5 points on a player).
+- **Waiver Wire now answers "who should I claim, and who goes?"** Pick your team and the page opens with the claim
+  that improves your lineup most, in one line: "Claim Michael Mayer (TE), drop Dylan Sampson: +1.1 this week at TE,
+  +2.4 over the next 4 weeks", with the player he pushes out of your lineup and his projection (the same numbers as
+  your lineup elsewhere, no second model). Every free agent is tried against every player you could drop, and your
+  whole lineup is rebuilt each time — FLEX and superflex included, byes and the dropped player's own future starts
+  counted over four weeks. Then the best **cover** for a coming bye, a **flyer** on someone with no games yet, or a
+  plain "Nothing beats what you have". The full ranked list is one tap away; browsing every free agent moved under
+  it. The "Adds worth a claim" position-by-position shortlist is gone.
 
 ## 2026-09-27 — Your league's scoring on every league page
 
