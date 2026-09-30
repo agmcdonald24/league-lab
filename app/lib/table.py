@@ -387,11 +387,32 @@ def show(df: pd.DataFrame, cols: list[str] | None = None, height: int | None = N
         keep = [c for c in (cols or list(df.columns)) if c in (overrides or {}) or not is_advanced(c)]
         cols = keep or cols
     out, config = prepare(df, cols, overrides)
+    if "player_name" in out.columns and "gsis_id" in df.columns:
+        link_player_names(out, df, config)
     if index is not None:
         out.index = index
     kwargs = {"height": height} if height else {}
     # placeholder="": a missing value is an empty cell, not the word "None" (Streamlit's default)
     st.dataframe(out, column_config=config, hide_index=index is None, width="stretch", placeholder="", **kwargs)
+
+
+def link_player_names(out: pd.DataFrame, df: pd.DataFrame, config: dict) -> None:
+    """B4: every player name links to his card (Player?name=…&id=<gsis>&league=…&team=…) when the frame
+    carries gsis_id, whether or not gsis_id is a displayed column. `out` is `df[cols]` in the same row
+    order, so the two align by position. A row without a gsis id links to the card's search for that name."""
+    from .ui import PLAYER_PAGE, player_url
+
+    names, ids = df["player_name"].to_numpy(), df["gsis_id"].to_numpy()
+    out["player_name"] = [
+        None if (n is None or (isinstance(n, float) and pd.isna(n)) or n == "") and (i is None or pd.isna(i))
+        else player_url(i, n if isinstance(n, str) and n else i)
+        for n, i in zip(names, ids, strict=True)
+    ]
+    spec = config.get("player_name") or {}
+    config["player_name"] = st.column_config.LinkColumn(
+        spec.get("label", "Player"), help=spec.get("help"), alignment="left",
+        display_text=rf"^{PLAYER_PAGE}\?name=([^&]*)",   # shows the name (URL-decoded by the grid)
+    )
 
 
 def howto(*lines: str, title: str = "How to read this table") -> None:

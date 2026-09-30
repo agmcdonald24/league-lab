@@ -864,6 +864,94 @@ pre-S-01a marts until its next `make build` (or the 08:00 nightly).
   glossary); no `metric_registry.csv` row for `weekly_gain` / `horizon_gain` (seeds out of bounds); a "nothing" card
   could name the closest miss (e.g. Mayer 8.4 vs Kittle 9.5) — not stored today; waiver priority / FAAB, two-for-one
   moves and free-agent DEFs are not modelled; K values rest on 2–3 games so far.
+### B4 2026-09-30 — player card and My Week (branch `dev/B4`, clone `league_lab_b4`)
+
+* **Built** (plan Iteration 9b, B4, with the round-2 amendments): `app/lib/cards.py` (shared decision cards:
+  `decision_week`, `lineup_rows` — one query over `mart_lineup_recommendation` + `ops.lineups` bench / unplayable +
+  `dim_game` kickoff + `mart_defense_vs_position_current` —, the pure `decisions` / `alternative` / `bench_gap`, and
+  `decision_cards`, `lineup_table`, `league_line`, `howto_cards`); **My Week** replaces Home's "Your week" (team, record,
+  opponent; the lineup value and, when B2's `mart_league_roster_rankings` is on the database, its rank; up to three
+  decision cards; the proposed lineup in four columns; margins, bench and who can't play in an expander; usage movers in
+  an expander) and Home's intro is two plain sentences; **Matchups** opens with the same cards and "Your best lineup this
+  week" (expander), the start/sit board moved into an expander (its SELECT gained `gsis_id`); the **player card**
+  `app/pages/0_Player.py` → `/Player?id=<gsis>` (+ `league` / `team`; `0_` puts it second in the sidebar without
+  renaming any page), search box (name → gsis, punctuation-blind: "amonra st brown" finds Amon-Ra St. Brown), four
+  bordered sections — Usage, Projection (week N, this league's scoring), Availability, Value — each ending in
+  "unavailable: <why>" when it has nothing; **links**: `player_url` / `player_link` at the end of `app/lib/ui.py`
+  and `show()` in `app/lib/table.py` renders `player_name` as a `LinkColumn` (`display_text` regex on the leading
+  `name=` parameter, left-aligned; URL `Player?name=…&id=…&league=…&team=…`, name first so the column still sorts by
+  name) whenever the frame carries `gsis_id` — displayed or not; a row without a gsis id (a team defense) links to the
+  card's search for that name. Definitions in `docs/METRICS.md` § Lineup value → Decision cards. No new mart, no
+  dbt change, no registry column (the lineup table's labels are `show()` overrides).
+* **Decisions** (PO to confirm): (1) the week is the first regular-season week whose **last** game has not kicked off
+  (clock, `dim_game`), not `mart_nfl_calendar.next_week` — the calendar follows finals in the data and in this clone
+  still says week 3 (1 of 16 week-3 games final when it was loaded), while every week-3 game has kicked off; on the Mac
+  after a nightly the two agree except between the Monday-night kickoff and the next nightly. The Matchups caption and
+  start/sit board still follow the calendar (not my section). (2) The named alternative is **who the re-solve brings
+  in** (value = starter value − margin), not always "the best bench player eligible for the slot": the two differ when
+  a teammate slides (58 of 978 cards over weeks 4–18; 0 of Andrew's six week-4 cards); the card then names both ("Judkins
+  would come in at FLEX and Golden would move to WR2"), so the number on the card is always B1's margin. (3) A starter
+  nobody on the bench can replace (only K, only DEF: margin = value) gets no card — League of Scrubs roster 2's DEF
+  (1.00, no backup) would otherwise be its second "call". (4) Locked = B1's `is_locked` **or** his game has kicked off
+  at page time. (5) Values and margins on cards and the lineup table show two decimals (0.15 apart must not read as
+  "10.0 vs 9.9"); the projection section of the card keeps one decimal like Rankings / Waiver Wire. (6) "coin flip"
+  < 1 point, "lean" < 3, else "clear".
+* **Evidence** (clone `league_lab_b4`, clock 2026-09-30, decision week 4):
+  * **My Week = the mart**: `tests/test_my_week.py` runs Home (AppTest) for dynasty roster 12 and League of Scrubs
+    roster 2 and asserts the lineup table equals `mart_lineup_recommendation` slot by slot (gsis id, name, value), the
+    week is the first open week, the cards equal an independent SQL (smallest-margin unlocked valued starters over the
+    best eligible bench player, the entering player when a teammate slides, forced starters skipped) and the first card
+    is the mart's `weakest_slot`. 2 passed; negative controls: a dropped TE row → 2 failed; cards ordered by value → 2
+    failed. Andrew's week 4 by hand from `ops.lineups`: dynasty 12 (lineup 109.69) — RB2 Gainwell 7.54 over bench RB
+    Emanuel Wilson 7.09 = 0.45 (margin 0.45), TE Kittle 9.47 over Likely 8.84 = 0.63, FLEX Boston 11.08 over Godwin 9.21
+    = 1.87 (Rodgers 17.86 / Willis 17.28 are QBs, not FLEX-eligible); Scrubs 2 (112.33) — FLEX2 Croskey-Merritt 9.13
+    over Tuten 9.07 = 0.06, RB2 Hampton 10.73 over Tuten = 1.66, QB Mahomes 19.98 over Young 17.75 = 2.23 (DEF Kansas
+    City 1.00, margin 1.00, no bench DEF: skipped).
+  * **Every card re-solved**: all 330 proposed roster-weeks of weeks 4–18 (both leagues) through `decisions()` and then
+    `lineup.solve()` without the starter: 978 cards, 978 bring in exactly the named player and lose exactly the margin;
+    920 direct swaps, 58 slides; the first card is the mart's weakest slot in 323 / 330 roster-weeks — in 5 that
+    starter is irreplaceable (a lone K / DEF) and 2 have no card at all (League of Scrubs rosters 6 wk 11 and 4 wk 13:
+    empty bench) (`scratchpad/waveB_r2/b4/verify_decisions.py`).
+    `tests/test_cards.py` (12): the eligibility map equals the solver's; Andrew's dynasty week 4 rebuilt by hand; a slide
+    (W2 10.0 benched → FLEX WR 9.5 slides, RB 8.0 enters: margin 2.0, not 3.0); forced / locked / unvalued starters
+    skipped; 360 random rosters on three slot sets (dynasty, League of Scrubs, WRRB_FLEX + REC_FLEX + FLEX) against the
+    solver; `show()` links with `st.dataframe` captured (gsis not displayed but used; a DEF row → search link; label and
+    `display_text`), frames without `gsis_id` untouched; `player_link` encoding; B2 rank phrase. Negative controls: target
+    off by 0.05 → 4 failed; the slid-in player replaced by the slot's best → 4 failed.
+  * **Player card**, both leagues, AppTest and Playwright: Amon-Ra St. Brown (rostered WR, dynasty 12: shares 35.1 /
+    42.9 / 92.5 / 42.9 %, 17.0 proj, floor 7.6, ceiling 28.7, 9.1 targets, @ CAR #21 vs WR, next 4 with the week-6 bye,
+    starts at WR1, "without him the lineup loses 7.76 (Chris Godwin Jr., 9.21, would come in): clear"), Ryan Miller (free-agent WR, both leagues: Questionable, 2.6 proj),
+    Chase McLaughlin (K, Scrubs: projection "unavailable: the model projects QB, RB, WR and TE …", FG 6 of 6, 13.50 at K
+    "nobody on the bench can play K: he is a must-start"), Josh Jacobs (no v2 projection: "unavailable: he is on the
+    exempt list"; usage "unavailable: no games this season yet"; bench 5 of 5 with no value this week), Aaron Rodgers
+    (free-agent QB, Scrubs), a DEF name link → search ("team defenses have no card"). No empty section in any.
+  * **Queries per card** (psycopg `execute` counted on a cold cache, `count_queries.py`): 5 for a rostered player, 4
+    for a free agent — `dim_game` (week), one profile join (`dim_player` ⟕ `mart_player_availability` ⟕
+    `mart_player_season` ⟕ `mart_player_trend_tags` ⟕ `mart_league_player_season` ×2), `mart_player_week_projections`,
+    `dim_game` ⟕ `mart_defense_vs_position_current` (schedule + ranks), `lineup_rows` (the roster's lineup). Page chrome
+    on top: connection check, banner (4), `require_relations`, perspective (2–3).
+  * **Links**: rendered pages (AppTest, dynasty 12 / Scrubs 2) — player names are links in Home (lineup, full lineup,
+    movers), Matchups (full lineup, start/sit board), Rankings (2 boards), Trends (1), Waiver Wire (the "Adds worth a
+    claim" shortlist, when it has rows). Frames with names but **no `gsis_id`** (their SELECT omits it; each is a
+    one-token fix in the owner's page): Team Hub skill / kicker / keeper tables (B2), Trade Finder theirs / yours /
+    buy-low / sell-high (B2), Waiver Wire free agents / bench / transactions (B3), Receivers (5 tables: selected by
+    name), Players (season, games), League (lineups, transactions, draft); Kickers uses `kicker_name`, Matchups' CB
+    table `defender_name`, Team Hub `top_players` (text lists). Browser: a card link and a grid cell both open
+    `/Player?name=…&id=…&league=…&team=…` in a new tab on the right player.
+  * `grep mart_player_week_rankings app/Home.py` → nothing (only `4_Rankings.py` reads it). `tests/test_app_guards.py`
+    passes (the card guards `mart_player_availability`, `mart_player_week_projections`, `mart_league_player_season`,
+    `dim_game`, all read as `analytics.<name>` on the page). `pytest` 323 passed (+14), `ruff` clean. Headless check
+    (`scratchpad/waveB_r2/b4/apptest_b4.py`): 14 pages × 2 leagues = 28 runs + 6 Player runs with `at.query_params["id"]` /
+    `["name"]`, 0 exceptions, 0 errors. Playwright 390 × 844 and 1300 × 900, full height: Home, Matchups, four player
+    cards, both leagues — main-area `scrollWidth` = viewport (no horizontal page scroll), the lineup table 4 columns,
+    card metrics wrap two or three per row at 390 px. B2's rank line exercised with a stand-in view shaped like B2's
+    committed `mart_league_roster_rankings` (created, read — "109.69 in week 4, 10th of 12 in the league" — and dropped).
+* **Open**: the unlinked frames above (owners' pages); the Matchups caption / board follow `mart_nfl_calendar` (week 3 in
+  this clone) while the cards follow the clock (week 4); an alternative whose game kicks off after the nightly still
+  counts in B1's stored margin until the next run; the card cannot name the slid teammate on a path longer than one
+  slide ("the lineup reshuffles" — none in weeks 4–18); `st.column_config.LinkColumn` opens the card in a new tab
+  (Streamlit's behaviour; a markdown link on a card does too); no `metric_registry.csv` row (seeds out of bounds; cards
+  define no new metric).
 
 ## Andrew's mobile review of the live app (2026-09-29, after round 1)
 
