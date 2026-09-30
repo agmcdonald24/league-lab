@@ -19,7 +19,7 @@
 -- Quality score = minus the average of three z-scores inside the ranked pool: targets per coverage snap,
 -- adjusted yards per target, passer rating allowed (higher = harder to throw on); rank 1 = best. Label: the top
 -- quarter 'shutdown', the bottom quarter 'target', the rest 'solid'.
--- Shadow evidence (kept for the record, NOT shown: it caught 2 of 6 commonly reported shadow corners in 2025,
+-- Shadow evidence (kept for the record, NOT shown: it caught 1 of 6 commonly reported shadow corners in 2025,
 -- docs/METRICS.md): across his games, the targets he drew per target the opposing WR1 got vs per target
 -- everyone else got (two-regressor least squares).
 with g as (
