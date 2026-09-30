@@ -44,6 +44,7 @@ import pandas as pd
 import psycopg
 
 from .config import PROJECT_ROOT, get_settings
+from .kdef import rows_after_project as kd_rows_after_project
 from .lineup import lineups_after_project
 from .rankings import TOP_N, _hit_rate, _spearman, parse_seasons
 from .scoring import compute_points
@@ -363,7 +364,8 @@ def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | 
     res = pd.concat(results, ignore_index=True)
     run_id = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     res["run_id"], res["run_at"], res["model_version"] = run_id, datetime.now(UTC), MODEL_VERSION
-    _write(conn, "ops.projection_backtest", res, "season = any(%s)", (test_seasons,))
+    # the K / DEF rows (R-13, model kd1.0, `league-lab backtest-kd`) share the table: not this run's to delete
+    _write(conn, "ops.projection_backtest", res, "season = any(%s) and coalesce(model_version, '') not like 'kd%%'", (test_seasons,))
     imp = pd.concat(imps, ignore_index=True) if imps else pd.DataFrame(columns=["position", "feature", "importance"])
     imp["model_version"], imp["run_at"], imp["league_id"] = MODEL_VERSION, datetime.now(UTC), ref_id
     _write(conn, "ops.projection_importance", imp, "model_version = %s", (MODEL_VERSION,))
@@ -398,6 +400,8 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     pred = pd.concat(preds, ignore_index=True)
     pred["model_version"], pred["fitted_at"] = MODEL_VERSION, datetime.now(UTC)
     pred["train_seasons"] = f"{min(train_seasons)}-{max(train_seasons)}"
+    # R-13: K and DEF rows (model kd1.0, leagues that start them) go through the same B5 writer
+    pred = _with_kd_rows(conn, pred, season)
     _write_projections(conn, pred, season)   # B5: weeks whose first game has kicked off are kept, not rewritten
     log.info("projections computed: %s rows for %s (%s leagues)", len(pred), season, len(scorings))
     # M-06: keep the drift monitor current on every refit. It scores the stored (for a started week:
@@ -412,6 +416,18 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     lineups_after_project(conn, season)   # B1: exact lineups on the fresh projections (a failure is logged, not fatal)
     waivers_after_project(conn, season)   # B3: waiver moves on those lineups (a failure is logged, not fatal)
     return pred
+
+
+def _with_kd_rows(conn: psycopg.Connection, pred: pd.DataFrame, season: int) -> pd.DataFrame:
+    """R-13: the v2 rows plus the K / DEF rows of ``kdef`` (their own model_version, kd1.0), so one
+    ``_write_projections`` call writes a league-week whole. No K / DEF rows (a failure, or no league
+    starts them) leaves the v2 rows exactly as they were."""
+    kd = kd_rows_after_project(conn, season)
+    if kd.empty:
+        return pred
+    out = pd.concat([pred, kd], ignore_index=True)
+    out.attrs = pred.attrs
+    return out
 
 
 # ------------------------------------------------------------------------------ drift (M-06): the live board, scored like the backtest
@@ -483,7 +499,7 @@ def load_board(conn: psycopg.Connection, season: int) -> pd.DataFrame:
                               round(p.p90::numeric, 2) as p90, m.points_actual, p.model_version, p.frozen_source
                        from analytics.mart_player_week_projections as m
                        join ops.projections as p using (league_id, season, week, gsis_id)
-                       where m.season = %s""", (season,))
+                       where m.season = %s and m.position = any(%s)""", (season, list(POSITIONS)))   # QB-TE: K/DEF (R-13) are not v2
         return pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
 
 

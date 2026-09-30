@@ -64,6 +64,17 @@ models:
       - unique_combination_of_columns:
           arguments:
             combination_of_columns: [league_id, gsis_id]
+          config:
+            where: "gsis_id is not null"
+      # plan R-13: team defenses have no gsis_id; every row (players and DEF) is unique by Sleeper id
+      - unique_combination_of_columns:
+          name: availability_unique_per_sleeper_id
+          arguments:
+            combination_of_columns: [league_id, sleeper_id]
+      - expression_is_true:
+          name: availability_def_rows_are_team_defenses
+          arguments:
+            expression: "(position = 'DEF') = (gsis_id is null) and sleeper_id is not null"
       - expression_is_true:
           arguments:
             expression: "is_free_agent = (rostered_by_roster_id is null)"

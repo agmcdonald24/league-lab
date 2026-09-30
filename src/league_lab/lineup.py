@@ -20,10 +20,12 @@ What it does
   (``mart_lineup_recommendation`` publishes them with names). Per roster-week:
 
   - the **proposed** lineup: QB/RB/WR/TE at projection v2 ``proj_points`` (this league's scoring);
-    K at the league's season PPG (``mart_league_player_season``), DEF at the points per game
-    Sleeper observed for it in this league (v2 projects neither: ``value_source`` says so); a K or
-    DEF Sleeper has not scored in this league yet, or a skill player without a v2 projection this
-    week, is unvalued (seated only in an otherwise-empty slot);
+    K and DEF at their kd1.0 projection (plan R-13, ``league_lab.kdef``: ``proj_points`` in this
+    league's scoring, ``value_source = 'proj_points'``; a K Sleeper cannot map to an NFL id takes
+    the projection of the one kicker his NFL team has that week), falling back to the league's
+    season PPG for a K (``mart_league_player_season``) and to the points per game Sleeper observed
+    in this league for a DEF when no projection exists; a K or DEF with neither, or a skill player
+    without a v2 projection this week, is unvalued (seated only in an otherwise-empty slot);
     Out / Doubtful / NFL injured reserve / bye / Sleeper IR slot / taxi squad cannot play;
     Questionable plays and is flagged (``report_status``); in a week not yet scored, a player
     whose game has kicked off is locked: a starter keeps his slot, a bench player stays benched
@@ -361,6 +363,12 @@ class LineupInputs:
     # (league, roster) -> Sleeper's current `starters` array (ordered like roster_positions without
     # BN / IR / TAXI; "0" = empty): the slots of today's starters when a week has no Sleeper list yet
     starters: dict[tuple[str, int], list[str]] = field(default_factory=dict)
+    # plan R-13: K / DEF projections (kd1.0). (league, week, unit) -> proj_points, team, report_status,
+    # roster_status; unit = the kicker's gsis_id or the Sleeper defense id ('KC')
+    kd_proj: dict[tuple[str, int, str], dict] = field(default_factory=dict)
+    # (league, week, nflverse team) -> that team's kicker projection when exactly one K of the team is
+    # projected that week: the value of a Sleeper kicker without an NFL id (unmapped rookie)
+    k_team_proj: dict[tuple[str, int, str], dict] = field(default_factory=dict)
 
 
 def _frame(cur: psycopg.Cursor, sql: str, params: tuple = ()) -> list[dict]:
@@ -410,6 +418,7 @@ def load_inputs(conn: psycopg.Connection, season: int) -> LineupInputs:
         game_rows = _frame(cur, """
             select week, home_team, away_team, kickoff_at from analytics.dim_game
             where season = %s and season_type = 'REG'""", (season,))
+        kd_rows = _load_kd_projections(cur, season, ids)
 
     proj: dict[tuple[str, int, str], dict] = {}
     weeks: dict[str, set[int]] = defaultdict(set)
@@ -442,7 +451,36 @@ def load_inputs(conn: psycopg.Connection, season: int) -> LineupInputs:
         fingerprints={(r["league_id"], int(r["week"]), int(r["roster_id"])): r["fp"] for r in fp_rows},
         model_version=",".join(sorted(v for v in versions if v)) or None,
         starters={(r["league_id"], int(r["roster_id"])): list(r["starter_ids"] or []) for r in starter_rows},
+        **_kd_maps(kd_rows),
     )
+
+
+def _load_kd_projections(cur: psycopg.Cursor, season: int, ids: list[str]) -> list[dict]:
+    """K / DEF rows of ops.projections (plan R-13) with the unit's team and status for the week
+    (``mart_kd_week``); none on a database that has not built that mart yet."""
+    cur.execute("select to_regclass('analytics.mart_kd_week') is not null")
+    if not cur.fetchone()[0]:
+        return []
+    return _frame(cur, """
+        select p.league_id, p.week, p.position, p.gsis_id as unit_id, round(p.proj_points::numeric, 2) as proj_points,
+               u.team, u.report_status, u.roster_status
+        from ops.projections as p
+        join analytics.mart_kd_week as u
+          on u.position = p.position and u.unit_id = p.gsis_id and u.season = p.season and u.week = p.week
+        where p.season = %s and p.league_id = any(%s) and p.position in ('K', 'DEF')""", (season, ids))
+
+
+def _kd_maps(rows: list[dict]) -> dict[str, dict]:
+    """``kd_proj`` and ``k_team_proj`` of ``LineupInputs`` from ``_load_kd_projections`` rows."""
+    kd: dict[tuple[str, int, str], dict] = {}
+    by_team: dict[tuple[str, int, str], list[dict]] = defaultdict(list)
+    for r in rows:
+        v = {"proj_points": _num(r["proj_points"]), "team": r["team"], "report_status": r["report_status"],
+             "roster_status": r["roster_status"]}
+        kd[(r["league_id"], int(r["week"]), r["unit_id"])] = v
+        if r["position"] == "K" and r["team"]:
+            by_team[(r["league_id"], int(r["week"]), r["team"])].append(v)
+    return {"kd_proj": kd, "k_team_proj": {k: v[0] for k, v in by_team.items() if len(v) == 1}}
 
 
 # ------------------------------------------------------------------------------ building the lineups
@@ -488,17 +526,28 @@ def _proposed_player(inp: LineupInputs, league_id: str, week: int, row: dict, cu
 
     # value and status first (an unplayable player keeps his value for display)
     status = None
+    kp = None
     if positions & SKILL:
         if pr is not None:
             base = replace(base, value=pr["proj_points"], value_source="proj_points")
             status = pr["report_status"]
     elif "K" in positions:
-        if gsis and (league_id, gsis) in inp.k_ppg:
+        # plan R-13: the kd1.0 projection first (by NFL id; a K without one: his NFL team's only
+        # projected kicker that week), then the PPG fallbacks
+        kp = inp.kd_proj.get((league_id, week, gsis)) if gsis else (inp.k_team_proj.get((league_id, week, team)) if team else None)
+        if kp is not None and kp["proj_points"] is not None:
+            base = replace(base, value=kp["proj_points"], value_source="proj_points")
+            status, team = kp["report_status"], kp["team"] or team
+        elif gsis and (league_id, gsis) in inp.k_ppg:
             base = replace(base, value=inp.k_ppg[(league_id, gsis)], value_source="season_ppg")
         elif (league_id, sid) in obs_ppg:
             base = replace(base, value=obs_ppg[(league_id, sid)], value_source="observed_ppg")
-    elif "DEF" in positions and (league_id, sid) in obs_ppg:
-        base = replace(base, value=obs_ppg[(league_id, sid)], value_source="observed_ppg")
+    elif "DEF" in positions:
+        kp = inp.kd_proj.get((league_id, week, sid))
+        if kp is not None and kp["proj_points"] is not None:
+            base = replace(base, value=kp["proj_points"], value_source="proj_points")
+        elif (league_id, sid) in obs_ppg:
+            base = replace(base, value=obs_ppg[(league_id, sid)], value_source="observed_ppg")
     base = replace(base, status=status)
 
     def out(reason: str) -> Player:
@@ -528,6 +577,11 @@ def _proposed_player(inp: LineupInputs, league_id: str, week: int, row: dict, cu
             return out(pr["report_status"])
         return base
     if positions & {"K", "DEF"}:
+        if "K" in positions and base.value_source == "proj_points" and kp is not None:
+            if kp["roster_status"] == "RES":
+                return out("NFL injured reserve")
+            if kp["report_status"] in ("Out", "Doubtful"):
+                return out(kp["report_status"])
         return base if base.value is not None else unvalued
     return base  # no slot for his position: solve() says so
 

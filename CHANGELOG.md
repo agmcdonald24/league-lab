@@ -14,6 +14,13 @@ Newest first. The Home page shows the top entry as "What's new".
   your receivers face and your best and worst matchups in a line each. Tap a player's name in almost any table —
   Team Hub, Trade Finder, both sides of a waiver claim, League's lineups, moves and draft, Receivers, Players,
   Kickers — to open his card. And every page now agrees on which week "this week" is.
+- **Kickers and defenses get real projections.** Each week's kicker is now projected from what his team is
+  expected to score, how often it kicks field goals and extra points, the defense it faces, a dome, and his own
+  accuracy from each distance; each defense from its sacks and takeaways, the offense it faces and how many points
+  it is likely to allow — both priced in League of Scrubs' scoring. Tested on the last five seasons, these ordered
+  kickers and defenses better than points per game in every season. Your lineup now uses them (a kicker or defense
+  you just picked up is no longer counted as 0), the waiver list now includes free-agent defenses, and the Kickers
+  page opens with next week's projections: your kicker, and the best one on waivers.
 
 ## 2026-09-30 — Wave B (decision engine)
 
