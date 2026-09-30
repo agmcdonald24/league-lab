@@ -12,9 +12,17 @@ from lib.cards import (
     lineup_rows,
     lineup_table,
 )
-from lib.charts import dvp_bars, heat_style
+from lib.charts import dvp_bars, dvp_heatmap
 from lib.db import missing_relations, query
-from lib.matchups import cb_line, comparison_rows, comparison_verdict, dvp_selection, lean_text
+from lib.matchups import (
+    cb_line,
+    comparison_rows,
+    comparison_verdict,
+    cover_split,
+    dvp_heat_frame,
+    dvp_selection,
+    lean_text,
+)
 from lib.table import Col, detail_level, howto, show
 from lib.ui import (
     align_opponents,
@@ -95,10 +103,11 @@ elif not board.empty:
     my_players["is_starter"] = my_players["is_starter"].fillna(False).astype(bool)
 else:
     my_players = pd.DataFrame(columns=["gsis_id", "player_name", "position", "role", "slot", "is_starter"])
+phone = detail_level() == "phone"
 
 # the new marts reach the hosted copy with the nightly after this code: until then those sections say so and
 # the rest of the page renders (query() would stop the page on a missing table)
-c5_missing = set(missing_relations(("mart_defense_position_profile", "mart_cb_matchup_week", "mart_cb_coverage",
+c5_missing = set(missing_relations(("mart_defense_position_profile", "mart_cb_matchups", "mart_cb_rankings",
                                     "mart_receiver_vs_cb")))
 REFRESH_NOTE = "This section arrives with the next data refresh."
 
@@ -107,6 +116,7 @@ st.subheader("Two players side by side")
 proj = pd.DataFrame() if "mart_defense_position_profile" in c5_missing else query(
     """select pr.gsis_id, pr.player_name, pr.position, pr.team, pr.opponent, pr.is_home, pr.proj_points, pr.p10, pr.p90,
               pr.report_status, f.games, f.points_allowed_pg, f.rank_points, f.opps_allowed_pg, f.rank_opportunity,
+              f.targets_allowed_pg, f.rank_targets, f.carries_allowed_pg, f.rank_carries,
               f.yards_per_opp_allowed, f.rank_efficiency, f.td_rate_allowed, f.rank_td_rate, f.adjusted_points_pg,
               f.rank_adjusted, f.gives_up, f.n_defenses
        from analytics.mart_player_week_projections pr
@@ -127,15 +137,17 @@ else:
                        disabled=not mine_ids)
     pool = proj if anyone or not mine_ids else proj[proj["gsis_id"].isin(mine_ids)]
     labels = pool["label"].tolist()
-    # default: this week's closest lineup call (the first decision card: the starter and who would replace him)
+    by_id = pool.set_index("gsis_id")["label"]
+    # default: this week's closest lineup call with two comparable players (the first decision card, unless it
+    # is a kicker or a defense): the starter and who would replace him, with the lineup's margin
     default_a, default_b = (labels[0] if labels else None), (labels[1] if len(labels) > 1 else None)
+    decision = None
     if not my_rows.empty:
-        first = decisions(my_rows, 1)
-        if not first.empty:
-            by_id = pool.set_index("gsis_id")["label"]
-            a_id, b_id = first.iloc[0]["gsis_id"], first.iloc[0]["alt_gsis_id"]
-            if a_id in by_id.index and b_id in by_id.index:
-                default_a, default_b = by_id[a_id], by_id[b_id]
+        for d in decisions(my_rows, 3).to_dict("records"):
+            if d.get("gsis_id") in by_id.index and d.get("alt_gsis_id") in by_id.index:
+                decision = d
+                default_a, default_b = by_id[d["gsis_id"]], by_id[d["alt_gsis_id"]]
+                break
     if len(labels) < 2:
         st.caption("Fewer than two players with a projection this week.")
     else:
@@ -146,34 +158,36 @@ else:
         a = pool[pool["label"] == pick_a].iloc[0].to_dict()
         b = pool[pool["label"] == pick_b].iloc[0].to_dict()
         with st.container(border=True):
-            st.markdown(f"**{comparison_verdict(a, b)}**")
+            st.markdown(f"**{comparison_verdict(a, b, decision)}**")
             # a static table: its cells wrap at phone width (a grid would scroll sideways)
             st.table(comparison_rows(a, b).set_index("What").rename_axis(None))
-            st.caption(f"Week {next_week}. Projection, floor and ceiling in this league's scoring. The defense rows are what each "
-                       "opponent allowed to the position in its games so far, one scale for every league; (#1) = gives up the "
-                       "most of 32. Volume = touches + targets (a quarterback's throws + runs).")
+            st.caption(f"Week {next_week}. The projection decides: it already counts the opponent, and the lineup above is "
+                       "built on it. The defense rows are context: what each opponent allowed to the position in its games "
+                       "before this week, one scale for every league; (#1) = gives up the most of 32.")
         howto(
             "**Use it for a close call**: the two players open on your closest lineup decision; pick any two.",
-            "**Projection** is the same number as your lineup and the Rankings board. **Floor – ceiling** is the range 8 weeks "
-            "in 10 land in: take the higher floor when you only need a steady game, the higher ceiling when you need a big one.",
-            "**Volume allowed** (touches + targets per game) says whether a defense lets the position get the ball a lot. "
-            "**Yards per touch** (per target or carry) and **touchdown rate** say whether it gives up big plays. A volume "
-            "defense suits a player who lives on catches; a big-play defense suits one who needs one long gain.",
-            "**Vs the offenses faced**: points it allowed beyond what the same offenses score against everyone "
-            "else, shrunk toward zero early in the season. A soft rank earned against strong offenses is not soft.",
-            "Matchups move a projection less than role does: the projection already counts the opponent.",
+            "**Projection** is the same number as your lineup cards and the Rankings board; the lineup's margin (\"by 0.15\") "
+            "is what your lineup loses if you swap them. **Floor – ceiling** is the range 8 weeks in 10 land in: take the "
+            "higher floor when you only need a steady game, the higher ceiling when you need a big one.",
+            "**Targets / carries allowed** say whether a defense lets the position get the ball a lot (volume). **Yards per "
+            "target or carry** and **touchdown rate** say whether it gives up big plays. A volume defense suits a player who "
+            "lives on catches; a big-play defense suits one who needs one long gain.",
+            "**Vs the offenses faced**: points it allowed beyond what the same offenses score against everyone else, shrunk "
+            "toward zero early in the season. A soft rank earned against strong offenses is not soft. \"The matchup leans\" "
+            "uses this rank: 6 or more places apart, else the matchups are about even.",
+            "Matchups move a projection less than role does: when the lineup and the matchup disagree, go with the lineup.",
             title="How to read this",
         )
 
 # ------------------------------------------------------------- R-14: cornerbacks
-if roster_id is not None and c5_missing & {"mart_cb_matchup_week", "mart_cb_coverage", "mart_receiver_vs_cb"}:
+if roster_id is not None and c5_missing & {"mart_cb_matchups", "mart_cb_rankings", "mart_receiver_vs_cb"}:
     st.subheader("Cornerbacks your receivers face")
     st.caption(REFRESH_NOTE)
 elif roster_id is not None:
     st.subheader("Cornerbacks your receivers face")
     rec = my_players[my_players["position"].isin(["WR", "TE"])]
     cbm = query(
-        """select * from analytics.mart_cb_matchup_week where season = %s and week = %s and gsis_id = any(%s)""",
+        """select * from analytics.mart_cb_matchups where season = %s and week = %s and gsis_id = any(%s)""",
         (int(season), int(next_week), list(rec["gsis_id"])),
     ) if not rec.empty else pd.DataFrame()
     if not cbm.empty:
@@ -187,8 +201,11 @@ elif roster_id is not None:
                         else "No receivers on your roster.")
         else:
             st.markdown("\n".join(f"- {cb_line(r)}" for _, r in starters_cb.iterrows()))
-            st.caption("Likely across from him = the outside corner on the side his targets go: a lean, not an assignment. "
-                       "Nobody publishes who covers whom.")
+            n_cb = starters_cb["cb_n_ranked"].dropna()
+            st.caption("Likely across from him = the outside corner on the side more of his targets go: a lean, not an "
+                       "assignment (nobody publishes who covers whom). "
+                       + (f"#1 of {int(n_cb.iloc[0])} = the starting corner hardest to throw on since the start of "
+                          f"{int(season) - 1}; shutdown = the top quarter, target = the bottom quarter." if not n_cb.empty else ""))
     with st.expander("Cornerbacks, receiver by receiver"):
         if cbm.empty:
             st.caption("Nothing to show yet.")
@@ -202,27 +219,30 @@ elif roster_id is not None:
             ids = [x for x in (r["lcb_gsis_id"], r["rcb_gsis_id"], r["nb_gsis_id"]) if isinstance(x, str) and x]
             if ids:
                 corners = query(
-                    """select gsis_id, defender_name, first_season, coverage_snaps, targets, targets_per_coverage_snap,
-                              yards_per_target_allowed, passer_rating_allowed, rank_targets_per_snap, rank_yards_per_target,
-                              rank_passer_rating, n_ranked, is_ranked
-                       from analytics.mart_cb_coverage where season = %s and window_label = 'two_seasons' and gsis_id = any(%s)""",
+                    """select gsis_id, window_label, defender_name, quality_rank, quality_label, n_ranked, targets_per_coverage_snap,
+                              adj_yards_per_target, yards_per_target_allowed, passer_rating_allowed, round(coverage_snaps)::int as coverage_snaps, targets, is_ranked
+                       from analytics.mart_cb_rankings where season = %s and gsis_id = any(%s)""",
                     (int(season), ids),
                 )
+                two = corners[corners["window_label"] == "two_seasons"].drop(columns="window_label")
+                for w, col in (("season", "rank_this_season"), ("last_4", "rank_last_4")):
+                    two = two.merge(corners.loc[corners["window_label"] == w, ["gsis_id", "quality_rank"]]
+                                    .rename(columns={"quality_rank": col}), on="gsis_id", how="left")
                 slots = pd.DataFrame({"gsis_id": [r["lcb_gsis_id"], r["rcb_gsis_id"], r["nb_gsis_id"]],
                                       "depth_position": ["Left", "Right", "Slot"],
                                       "listed_name": [r["lcb_name"], r["rcb_name"], r["nb_name"]]}).dropna(subset=["gsis_id"])
-                corners = slots.merge(corners, on="gsis_id", how="left")
+                corners = slots.merge(two, on="gsis_id", how="left")
                 corners["defender_name"] = corners["defender_name"].fillna(corners["listed_name"])
-                st.markdown(f"**{r['opponent']}'s starting corners** (since the start of {int(season) - 1}; rank of "
-                            f"{int(r['cb_n_ranked'] or 0)} corners, 1 = thrown at least)")
+                st.markdown(f"**{r['opponent']}'s starting corners** (rank of {int(r['cb_n_ranked'] or 0)} corners since the "
+                            f"start of {int(season) - 1}, 1 = hardest to throw on)")
                 show(corners, overrides={"depth_position": Col("Side", help="Where the depth chart lists him: left or right outside, or the slot (nickel)")},
-                     cols=["defender_name", "depth_position", "rank_targets_per_snap", "targets_per_coverage_snap",
-                               "yards_per_target_allowed", "passer_rating_allowed", "coverage_snaps", "targets",
-                               "rank_yards_per_target", "rank_passer_rating"],
-                     phone_cols=["defender_name", "depth_position", "rank_targets_per_snap", "targets_per_coverage_snap",
-                                 "yards_per_target_allowed"])
+                     cols=["defender_name", "depth_position", "quality_rank", "quality_label", "targets_per_coverage_snap",
+                           "adj_yards_per_target", "passer_rating_allowed", "rank_this_season", "rank_last_4",
+                           "yards_per_target_allowed", "coverage_snaps", "targets"],
+                     phone_cols=["defender_name", "depth_position", "quality_rank", "quality_label", "passer_rating_allowed"])
             faced = query(
-                """select defender_name, defense, games, targets, receptions, receiving_yards, receiving_tds, defender_snap_share, evidence
+                """select defender_name, defense, games, targets, receptions, receiving_yards, receiving_tds, defender_snap_share,
+                          share_of_targets, evidence
                    from analytics.mart_receiver_vs_cb where receiver_gsis_id = %s and season = %s
                    order by defense, defender_snap_share desc nulls last, targets desc""",
                 (r["gsis_id"], int(season)),
@@ -236,6 +256,18 @@ elif roster_id is not None:
                 show(faced, ["defender_name", "defense", "targets", "receptions", "receiving_yards", "receiving_tds",
                              "defender_snap_share", "games"],
                      phone_cols=["defender_name", "defense", "targets", "receptions", "receiving_yards"])
+            last = query(
+                """select defender_name, defense, games, targets, receptions, receiving_yards, receiving_tds, share_of_targets
+                   from analytics.mart_receiver_vs_cb where receiver_gsis_id = %s and season = %s and evidence = 'on_field'
+                   order by defense, share_of_targets desc""",
+                (r["gsis_id"], int(season) - 1),
+            )
+            if not last.empty:
+                st.markdown(f"**Corners on the field for his targets in {int(season) - 1}**")
+                st.caption("On the field for that share of his targets against that defense: not necessarily covering him.")
+                show(last, ["defender_name", "defense", "share_of_targets", "targets", "receptions", "receiving_yards",
+                            "receiving_tds", "games"],
+                     phone_cols=["defender_name", "defense", "share_of_targets", "targets", "receiving_yards"])
             if isinstance(r["likely_cover_gsis_id"], str):
                 hist = query(
                     """select season, defense, games, targets, receptions, receiving_yards, receiving_tds, evidence, defender_snap_share
@@ -249,23 +281,66 @@ elif roster_id is not None:
                     st.caption("Past seasons: plays with him on the field (not necessarily covering). This season: games he played.")
                     show(hist, ["season", "defense", "targets", "receptions", "receiving_yards", "receiving_tds", "games"],
                          phone_cols=["season", "defense", "targets", "receptions", "receiving_yards"])
-        howto(
-            "**Start the receiver whose likely corner is thrown at most** (a high rank number) when two options are close; "
-            "don't bench a star for a tough corner: his targets matter more.",
-            "**Likely across from him** is a guess from where his targets go: the outside corner on that side (throws to "
-            "the offense's left meet the defense's right corner). Checked on last season, the corner we named drew more "
-            "targets when that receiver was targeted than a random pick did: a lean, not an assignment.",
-            "**What public data can't tell you**: who covered whom on a play (teams don't publish man-to-man assignments, "
-            "and nobody publishes the nearest defender), or whether a corner follows the top receiver around. Our best "
-            "test for that didn't repeat from one season to the next, so we don't flag it.",
-            "**CB rank** = how rarely he's thrown at (targets per pass play he's on the field for), since the start of last "
-            "season, among corners with at least 20 such plays a game. It is the one coverage number that carries over "
-            "from season to season; yards per throw and rating allowed (the quarterback rating on throws at him) swing a "
-            "lot year to year: read them as what happened.",
-            "Tight ends mostly draw linebackers and safeties, so they get no cornerback call. Coverage numbers come from "
-            "Pro-Football-Reference's charting and start in 2018.",
-            title="How to read this",
+    with st.expander("His points against the best corners"):
+        wr_ids = list(rec.loc[rec["position"] == "WR", "gsis_id"])
+        split_games = query(
+            """select m.gsis_id, m.player_name, m.season, m.week, m.opponent, m.likely_cover_name, m.cover_rank, m.cover_label,
+                      l.points
+               from analytics.mart_cb_matchups m
+               join analytics.fct_player_game_league l
+                 on l.league_id = %s and l.gsis_id = m.gsis_id and l.game_id = m.game_id and l.played
+               where m.gsis_id = any(%s) and m.call_status = 'called' and m.season >= %s and (m.season < %s or m.week < %s)
+               order by m.gsis_id, m.season, m.week""",
+            (league_id, wr_ids, int(season) - 1, int(season), int(next_week)),
+        ) if wr_ids else pd.DataFrame()
+        split = cover_split(split_games)
+        if split.empty:
+            st.caption("No games with a named corner since last season.")
+        else:
+            st.markdown("His points per game (this league's scoring) since the start of last season, in games where the "
+                        "corner we named across from him was a **shutdown** corner (top quarter) vs every other game. "
+                        "Evidence, not a projection change: the samples are small.")
+            show(split, ["player_name", "ppg_vs_shutdown", "games_vs_shutdown", "ppg_vs_rest", "games_vs_rest"])
+            with st.popover("Every game behind it"):
+                show(split_games, ["player_name", "season", "week", "opponent", "likely_cover_name", "cover_rank", "cover_label", "points"],
+                     phone_cols=["player_name", "week", "likely_cover_name", "cover_label", "points"])
+    with st.expander("Every starting corner, ranked"):
+        wins = {"Since last season": "two_seasons", "This season": "season", "Last 4 games": "last_4"}
+        wl = st.radio("Window", list(wins), horizontal=True, key=f"cb_win_{league_id}")
+        ranks = query(
+            """select quality_rank, defender_name, latest_team, quality_label, targets_per_coverage_snap, adj_yards_per_target,
+                      yards_per_target_allowed, passer_rating_allowed, round(coverage_snaps)::int as coverage_snaps, targets, games, n_ranked
+               from analytics.mart_cb_rankings where season = %s and window_label = %s and is_ranked order by quality_rank""",
+            (int(season), wins[wl]),
         )
+        if ranks.empty:
+            st.caption("No corner has enough pass plays in this window yet.")
+        else:
+            st.caption(f"{len(ranks)} corners with at least 20 pass plays in coverage per team game in the window "
+                       "(80 over the last 4 games).")
+            show(ranks, ["quality_rank", "defender_name", "latest_team", "quality_label", "targets_per_coverage_snap",
+                         "adj_yards_per_target", "passer_rating_allowed", "yards_per_target_allowed", "coverage_snaps", "targets", "games"],
+                 phone_cols=["quality_rank", "defender_name", "latest_team", "quality_label", "passer_rating_allowed"], height=420)
+    howto(
+        "**Start the receiver whose likely corner ranks lower** when two options are close; don't bench a star for a "
+        "tough corner: his targets matter more, and the projection already counts the defense.",
+        "**Likely across from him** is a guess from where his targets go (to the offense's left or right): the outside "
+        "corner on that side (throws to the offense's left meet the defense's right corner). Public data has no receiver "
+        "alignment and no coverage assignments. Checked on last season: when a receiver's targets leaned clearly to one "
+        "side (15 points or more), the corner we named was charged with about 1 in 5 of his targets and the other outside "
+        "corner about 1 in 7, no more than any other throw; with a closer split it was about 1 in 5 against 1 in 6 — "
+        "either could be across from him, so the card names both.",
+        "**What public data can't tell you**: who covered whom on a play, whether a corner follows the top receiver around "
+        "(our best test for that caught 1 of 6 well-known shadow corners last season, so we don't flag it), or who "
+        "lines up in the slot.",
+        "**CB rank** = among starting corners since the start of last season (at least 20 pass plays in coverage a team "
+        "game), on three numbers weighed equally: how often he is thrown at per pass play, yards per throw at him "
+        "adjusted for the offenses he faced, and the quarterback rating on those throws. Shutdown = the top quarter, "
+        "target = the bottom quarter, solid = the middle half.",
+        "Tight ends mostly draw linebackers and safeties, so they get no cornerback call. Coverage numbers come from "
+        "Pro-Football-Reference's charting (2018 on), a few days after each game.",
+        title="How to read this",
+    )
 
 # ------------------------------------------------------------- R-15: defense vs position, the answer line then the picture
 st.subheader("Defense vs position")
@@ -290,32 +365,53 @@ with st.container(border=True):
 if dvp.empty or not dvp_positions:
     st.caption("No defense has played a game yet this season.")
 else:
-    # the picture: one position at a time, your players' opponents always on it (plan R-15)
+    # your starters' opponents, by position (the marks on both pictures)
     starters_pos = my_players[my_players["is_starter"]] if not my_players.empty else my_players
     opp_of = board.set_index("gsis_id")["opponent"].to_dict() if not board.empty else {}
-    default_pos = next((p for p in ("WR", "RB", "QB", "TE", "K") if p in dvp_positions), dvp_positions[0])
-    c_pos, c_l4 = st.columns([3, 2])
-    pos = c_pos.segmented_control("Position", dvp_positions, default=default_pos, key=f"dvp_pos_{league_id}") or default_pos
-    last4 = c_l4.toggle("Last 4 games only", value=False, key=f"dvp_l4_{league_id}")
-    value, rank_col = ("points_allowed_per_game_l4", "rank_l4") if last4 else ("points_allowed_per_game_std", "rank_std")
-    sub = dvp[dvp["position"] == pos].copy()
-    mine: dict[str, str] = {}
-    for _, p in starters_pos[starters_pos["position"] == pos].iterrows():
+    marks: dict[str, dict[str, str]] = {}
+    for _, p in starters_pos[starters_pos["position"].isin(dvp_positions)].iterrows():
         o = opp_of.get(p["gsis_id"])
         if isinstance(o, str) and o:
-            mine[o] = (mine[o] + ", " if o in mine else "") + str(p["player_name"])
-    sel = dvp_selection(sub, value, mine, n=8)
-    avg = float(pd.to_numeric(sub[value], errors="coerce").mean()) if not sub.empty else None
+            cell = marks.setdefault(o, {})
+            cell[p["position"]] = (cell[p["position"]] + ", " if p["position"] in cell else "") + str(p["player_name"])
+    views = ["Every position", "One position"]
+    view = st.segmented_control("Show", views, default=views[0], key=f"dvp_view_{league_id}") or views[0]
+    c_l4, c_mine = st.columns(2)
+    last4 = c_l4.toggle("Last 4 games only", value=False, key=f"dvp_l4_{league_id}")
+    only_mine = c_mine.toggle("Only your opponents", value=phone and bool(marks), disabled=not marks,
+                              key=f"dvp_mine_{league_id}_{roster_id}")
+    value, rank_col = ("points_allowed_per_game_l4", "rank_l4") if last4 else ("points_allowed_per_game_std", "rank_std")
     window = "last 4 games" if last4 else "this season"
-    fig = dvp_bars(sel, value, f"Points allowed to {pos}s per game, {window}", "fantasy points per game",
-                   league_avg=avg, rank_col=rank_col, n_total=int(sub[rank_col].notna().sum()))
-    st.plotly_chart(fig, width="stretch", config={"displayModeBar": False, "scrollZoom": False})
-    marked = ", ".join(f"{t} ({who})" for t, who in mine.items())
-    st.caption((f"◀ = your starters' opponents this week: {marked}. " if mine else "No starter of yours faces a defense at this position this week. ")
-               + "The 8 defenses that give up the most and the 8 that give up the least, one scale for every league; every "
-               "defense is in the table below.")
+    n_def = int(dvp.groupby("position")["defense"].nunique().max())
+    if view == "Every position":
+        frame = dvp_heat_frame(dvp, dvp_positions, value, rank_col, marks, only_marked=only_mine)
+        fig = dvp_heatmap(frame, dvp_positions, f"Points allowed per game, {window}", n_total=n_def)
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False, "scrollZoom": False})
+        st.caption((("◀ and a ringed cell = where your starters play this week: "
+                     + "; ".join(f"{t} ({', '.join(f'{who} at {p}' for p, who in cells.items())})" for t, cells in marks.items()) + ". ")
+                    if marks else "No starter of yours has a game at these positions this week. ")
+                   + "Darker = gives up more to that position (its rank of " + str(n_def) + "); the number is points a game. "
+                   + ("Your opponents only; switch it off for every defense." if only_mine else "Your opponents first, then the defenses that give up the most across positions."))
+    else:
+        default_pos = next((p for p in ("WR", "RB", "QB", "TE", "K") if p in dvp_positions), dvp_positions[0])
+        pos = st.segmented_control("Position", dvp_positions, default=default_pos, key=f"dvp_pos_{league_id}") or default_pos
+        sub = dvp[dvp["position"] == pos].copy()
+        mine = {t: cells[pos] for t, cells in marks.items() if pos in cells}
+        if only_mine:
+            sub = sub[sub["defense"].isin(list(mine))]
+        sel = dvp_selection(sub, value, mine, n=len(sub))   # every defense, ranked (the phone filter keeps yours)
+        avg = float(pd.to_numeric(dvp.loc[dvp["position"] == pos, value], errors="coerce").mean())
+        if sel.empty:
+            st.caption(f"None of your starters plays {pos} this week: switch off \"Only your opponents\".")
+        else:
+            fig = dvp_bars(sel, value, f"Points allowed to {pos}s per game, {window}", "fantasy points per game",
+                           league_avg=avg, rank_col=rank_col, n_total=n_def)
+            st.plotly_chart(fig, width="stretch", config={"displayModeBar": False, "scrollZoom": False})
+            marked = ", ".join(f"{t} ({who})" for t, who in mine.items())
+            st.caption((f"◀ = your starters' opponents this week: {marked}. " if mine else f"No starter of yours plays {pos} this week. ")
+                       + "Most allowed at the top; the line is the league average.")
 
-with st.expander("Defense vs position: every defense, by position"):
+with st.expander("Defense vs position: every defense, by position (the table behind the pictures)"):
     howto(
         "**Start players against the defenses at the top** of the \"gives up the most\" list; be wary of the bottom one.",
         "**Pts allowed/G** is the fantasy points each defense gives up to that position per game this season, on one scale for every "
@@ -329,12 +425,6 @@ with st.expander("Defense vs position: every defense, by position"):
         sub_t = dvp[dvp["position"] == pos_t].sort_values("rank_std")
         show(sub_t, ["defense", "games", "points_allowed_per_game_std", "rank_std", "points_allowed_per_game_l4", "rank_l4"],
              phone_cols=["defense", "points_allowed_per_game_std", "rank_std", "points_allowed_per_game_l4", "rank_l4"], height=420)
-        # at the Phone level the heat table keeps four positions (with the defense, five columns)
-        heat_positions = dvp_positions[:4] if detail_level() == "phone" else dvp_positions
-        pivot = dvp.pivot_table(index="defense", columns="position", values="rank_std")[heat_positions]
-        pivot.index.name = "Defense"
-        st.markdown("**All defenses — rank by position (darker = gives up more)**")
-        st.dataframe(heat_style(pivot), width="stretch", height=600)
 
 # ------------------------------------------------------------- any player lookup
 with st.expander("Look up any player's next matchup"):

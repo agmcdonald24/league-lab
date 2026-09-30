@@ -2,13 +2,14 @@
 -- Who a receiver has actually faced (plan R-14), one row per receiver (WR/TE) x cornerback x season, regular
 -- season, 2022 on. Two kinds of evidence, never mixed in one row:
 --   'on_field'  - completed seasons with participation: his targets, catches, yards and TDs on the plays
---                 where that corner was on the field (play level). On the field is not "covering him":
---                 public data does not say which defender covered which receiver.
+--                 where that corner was on the field (play level), and the share of his targets against that
+--                 defense those plays make ("on the field for 61% of his targets vs DET"). On the field is not
+--                 "covering him": public data does not say which defender covered which receiver.
 --   'same_game' - the current season (its participation file arrives after the postseason): his totals
 --                 in the games that corner played, with the corner's average share of his defense's snaps.
--- Cornerbacks = the pool of mart_cb_coverage (that season's window).
+-- Cornerbacks = the pool of mart_cb_rankings (that season's window).
 with cbs as (
-    select distinct season, gsis_id from {{ ref('mart_cb_coverage') }} where window_label = 'season' and season >= 2022
+    select distinct season, gsis_id from {{ ref('mart_cb_rankings') }} where window_label = 'season' and season >= 2022
 ),
 
 receivers as (
@@ -32,19 +33,41 @@ tgt as (
       and pa.defense_players is not null
 ),
 
-on_field as (
-    select t.receiver_player_id as receiver_gsis_id, x.gsis_id as defender_gsis_id, t.season,
-           max(t.posteam) as receiver_team, max(t.defteam) as defense,
-           count(distinct t.game_id)                                   as games,
-           count(*)                                                    as targets,
-           count(*) filter (where t.is_complete)                       as receptions,
-           sum(t.receiving_yards) filter (where t.is_complete)         as receiving_yards,
-           count(*) filter (where t.is_td)                             as receiving_tds,
-           null::numeric                                               as defender_snap_share
+-- his targets against each defense that season (the share's denominator)
+vs_defense as (
+    select receiver_player_id as receiver_gsis_id, season, defteam, count(*) as targets
+    from tgt
+    group by 1, 2, 3
+),
+
+on_field_plays as (
+    select t.receiver_player_id as receiver_gsis_id, x.gsis_id as defender_gsis_id, t.season, t.defteam,
+           t.posteam, t.game_id, t.is_complete, t.receiving_yards, t.is_td
     from tgt as t
     cross join lateral (select distinct g as gsis_id from unnest(string_to_array(t.defense_players, ';')) as u(g) where g <> '') as x
     join cbs on cbs.season = t.season and cbs.gsis_id = x.gsis_id
     join receivers as r on r.gsis_id = t.receiver_player_id
+),
+
+on_field_den as (   -- his targets against every defense the corner was on the field for (a traded corner: both)
+    select k.receiver_gsis_id, k.defender_gsis_id, k.season, sum(v.targets) as targets_vs_defense
+    from (select distinct receiver_gsis_id, defender_gsis_id, season, defteam from on_field_plays) as k
+    join vs_defense as v using (receiver_gsis_id, season, defteam)
+    group by 1, 2, 3
+),
+
+on_field as (
+    select t.receiver_gsis_id, t.defender_gsis_id, t.season,
+           max(t.posteam) as receiver_team, max(t.defteam) as defense,
+           count(distinct t.game_id)                                   as games,
+           count(*)                                                    as targets,
+           count(*) filter (where t.is_complete)                       as receptions,
+           coalesce(sum(t.receiving_yards) filter (where t.is_complete), 0) as receiving_yards,   -- no catch = 0 yards
+           count(*) filter (where t.is_td)                             as receiving_tds,
+           null::numeric                                               as defender_snap_share,
+           max(d.targets_vs_defense)                                   as targets_vs_defense
+    from on_field_plays as t
+    join on_field_den as d using (receiver_gsis_id, defender_gsis_id, season)
     group by 1, 2, 3
 ),
 
@@ -65,7 +88,8 @@ same_game as (
            sum(pg.receptions)                                          as receptions,
            sum(pg.receiving_yards)                                     as receiving_yards,
            sum(pg.receiving_tds)                                       as receiving_tds,
-           round(avg(d.snap_share), 3)                                 as defender_snap_share
+           round(avg(d.snap_share), 3)                                 as defender_snap_share,
+           null::bigint                                                as targets_vs_defense
     from {{ ref('fct_player_game') }} as pg
     join receivers as r on r.gsis_id = pg.gsis_id
     join def_snaps as d on d.game_id = pg.game_id and d.team = pg.opponent_team and d.defense_snaps > 0
@@ -77,7 +101,9 @@ same_game as (
 select b.receiver_gsis_id, rp.player_name as receiver_name, b.defender_gsis_id, dp.player_name as defender_name,
        b.season, b.evidence, b.receiver_team, b.defense, b.games,
        b.targets::int as targets, b.receptions::int as receptions, b.receiving_yards::int as receiving_yards,
-       b.receiving_tds::int as receiving_tds, b.defender_snap_share
+       b.receiving_tds::int as receiving_tds, b.defender_snap_share,
+       b.targets_vs_defense::int as targets_vs_defense,
+       round(b.targets::numeric / nullif(b.targets_vs_defense, 0), 3) as share_of_targets
 from (
     select *, 'on_field' as evidence from on_field
     union all

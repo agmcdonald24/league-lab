@@ -12,7 +12,8 @@
 --                         league's last-season average for a team with no last season); the sum of the
 --                         game residuals / (games + 2), so two games cannot make a defense #1.
 -- Indices are the defense's rate over the league's rate for the same games window (1.10 = 10% above
--- average); the profile words use a +/-8% band. Ranks: 1 = gives up the most of that thing, of 32.
+-- average); the profile words use a +/-8% band. Ranks: 1 = gives up the most of that thing, of 32 (targets and
+-- carries to the position ranked separately too: the comparison's reason names the one that stands out).
 with team_games as (
     select t.game_id, t.season, t.week, t.team as offense, t.opponent_team as defense
     from {{ ref('fct_team_game') }} as t
@@ -161,5 +162,7 @@ select
     case when i.games > 0 then rank() over (partition by i.season, i.week, i.position, i.games > 0 order by i.yards_per_opp_allowed desc) end as rank_efficiency,
     case when i.games > 0 then rank() over (partition by i.season, i.week, i.position, i.games > 0 order by i.td_rate_allowed desc) end       as rank_td_rate,
     case when i.games > 0 then rank() over (partition by i.season, i.week, i.position, i.games > 0 order by i.adjusted_points_pg desc) end    as rank_adjusted,
+    case when i.games > 0 then rank() over (partition by i.season, i.week, i.position, i.games > 0 order by i.targets_allowed_pg desc) end    as rank_targets,
+    case when i.games > 0 then rank() over (partition by i.season, i.week, i.position, i.games > 0 order by i.carries_allowed_pg desc) end    as rank_carries,
     count(*) filter (where i.games > 0) over (partition by i.season, i.week, i.position)                                                     as n_defenses
 from indexed as i

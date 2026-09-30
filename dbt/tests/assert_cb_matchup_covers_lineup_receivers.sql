@@ -1,5 +1,5 @@
 -- Plan R-14: every WR / TE in a proposed lineup (mart_lineup_recommendation) for the current week whose NFL
--- team plays that week has a cornerback row in mart_cb_matchup_week, and the row either names the likely
+-- team plays that week has a cornerback row in mart_cb_matchups, and the row either names the likely
 -- cover or says why not ('tight end', 'too few targets', 'no depth chart yet'). The current week is the
 -- pages' rule (lib.ui.current_week): the first regular-season week whose last game has not kicked off.
 -- Off-season (no such week): nothing to check.
@@ -39,7 +39,7 @@ with_game as (
 
 select w.*, m.call_status, m.likely_cover_name
 from with_game as w
-left join {{ ref('mart_cb_matchup_week') }} as m on m.gsis_id = w.gsis_id and m.season = w.season and m.week = w.week
+left join {{ ref('mart_cb_matchups') }} as m on m.gsis_id = w.gsis_id and m.season = w.season and m.week = w.week
 where w.gsis_id is null
    or m.gsis_id is null
    or m.call_status is null

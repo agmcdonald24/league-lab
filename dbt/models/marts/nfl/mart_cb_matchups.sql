@@ -1,24 +1,50 @@
 {{ config(indexes=[{'columns': ['gsis_id', 'season', 'week'], 'unique': True}, {'columns': ['season', 'week', 'opponent']}], post_hook="analyze {{ this }}") }}
 -- Cornerback matchup per receiver-week (plan R-14): every rostered WR / TE x regular-season week of 2025 on
--- with a game. For a week not yet played this is next week's matchup; the played weeks are kept so the
+-- with a game (plus, for the current season, every other WR / TE on his latest team: a fantasy lineup can
+-- start anyone). For a week not yet played this is next week's matchup; the played weeks are kept so the
 -- guess can be checked against what happened (docs/METRICS.md § Cornerback matchups).
 --   * the opponent's corners: its depth chart as of that game (the latest snapshot before kickoff): the
 --     rank-1 left corner (LCB), right corner (RCB) and nickel / slot corner (NB);
 --   * where his targets go: pass location (left / middle / right, the offense's view) of his targets since
---     the start of last season, before that week;
---   * the likely cover (a guess, stated as one): the outside corner on the side most of his targets go (the
---     offense's left faces the defense's right corner); a WR with 28%+ of his located targets over the
---     middle also works inside, where the nickel corner is named as well. Fewer than 15 located targets ->
---     no call. Tight ends get no cornerback call. Checked on 2025 (docs/METRICS.md): a corner drew 0.185
---     targets per target to the receivers called onto him vs 0.130 per other target (0.158 with the sides
---     swapped) - a lean, not an assignment. Public data does not say who covered whom on any play.
---   * how good that corner is: mart_cb_coverage, window 'two_seasons' of that season (latest, not as-of);
+--     the start of last season, before that week. Public data has no receiver alignment (FTN charting and
+--     participation carry none), so this is where his targets went, not where he lined up;
+--   * the likely cover (a guess, stated as one): the outside corner on the side more of his targets go (the
+--     offense's left faces the defense's right corner). call_strength 'clear' when that side leads the other
+--     by 15+ points of his located targets, else 'even' (the other outside corner is named too). Fewer than
+--     15 located targets -> no call. Tight ends get no cornerback call. Checked on 2025 (docs/METRICS.md):
+--     with a clear lean the named corner was charged with 0.20 of the receiver's targets vs 0.14 for the other
+--     outside corner; with an even split 0.19 vs 0.16. A lean, not an assignment: public data does not say who
+--     covered whom on any play;
+--   * how good that corner is: mart_cb_rankings, window 'two_seasons' of that season (latest, not as-of);
 --   * what he has done: vs this defense this season before that week (fct_player_game) and with the likely
 --     cover on the field since 2022 (mart_receiver_vs_cb, both kinds of evidence summed).
-with uni as (
+with uni_roster as (
     select gsis_id, season, week, team, position, player_name, game_id, opponent, is_home
     from {{ ref('int_player_week_universe') }}
     where position in ('WR', 'TE') and season >= 2025
+),
+
+cur as (
+    select max(season) as season from {{ ref('dim_game') }} where season_type = 'REG'
+),
+
+-- every other WR / TE of the current season on his latest team (practice squad, cut, just signed): a
+-- fantasy lineup can start anyone, and every WR / TE in a proposed lineup must get a row
+uni_extra as (
+    select p.gsis_id, g.season, g.week, p.latest_team as team, p.position, p.player_name, g.game_id,
+           case when g.home_team = p.latest_team then g.away_team else g.home_team end as opponent,
+           g.home_team = p.latest_team as is_home
+    from {{ ref('dim_player') }} as p
+    join {{ ref('dim_game') }} as g
+      on g.season = (select season from cur) and g.season_type = 'REG' and p.latest_team in (g.home_team, g.away_team)
+    where p.position in ('WR', 'TE') and p.last_season >= (select season from cur) - 1
+      and not exists (select 1 from uni_roster as u where u.gsis_id = p.gsis_id and u.season = g.season and u.week = g.week)
+),
+
+uni as (
+    select * from uni_roster
+    union all
+    select * from uni_extra
 ),
 
 games as (
@@ -96,7 +122,9 @@ called as (
                 when b.located_targets < 15 then 'too few targets'
                 when b.tgt_left > b.tgt_right then 'left'
                 else 'right' end                                                         as alignment_lean,
-           coalesce(b.position = 'WR' and b.located_targets >= 15 and b.middle_share >= 0.28, false) as often_inside
+           -- the share of his located targets on the called side, and on the other side
+           case when b.located_targets > 0 then greatest(b.left_share, b.right_share) end as side_share,
+           case when b.located_targets > 0 then least(b.left_share, b.right_share) end    as other_side_share
     from base as b
 ),
 
@@ -119,12 +147,19 @@ pick as (
 
 named as (
     select p.*,
+           case when p.call_status <> 'called' then null
+                when p.side_share - p.other_side_share >= 0.15 then 'clear' else 'even' end as call_strength,
            case p.likely_cover_slot when 'LCB' then p.lcb_gsis_id when 'RCB' then p.rcb_gsis_id when 'NB' then p.nb_gsis_id end as likely_cover_gsis_id,
-           case p.likely_cover_slot when 'LCB' then p.lcb_name when 'RCB' then p.rcb_name when 'NB' then p.nb_name end          as likely_cover_name,
-           -- a receiver who often works inside also sees the nickel corner
-           case when p.call_status = 'called' and p.often_inside and p.likely_cover_slot <> 'NB' then p.nb_gsis_id end as inside_cover_gsis_id,
-           case when p.call_status = 'called' and p.often_inside and p.likely_cover_slot <> 'NB' then p.nb_name end     as inside_cover_name
+           case p.likely_cover_slot when 'LCB' then p.lcb_name when 'RCB' then p.rcb_name when 'NB' then p.nb_name end          as likely_cover_name
     from pick as p
+),
+
+-- an even split names the other outside corner too
+named2 as (
+    select n.*,
+           case when n.call_strength = 'even' and n.likely_cover_slot = 'LCB' and n.rcb_gsis_id is not null then 'RCB'
+                when n.call_strength = 'even' and n.likely_cover_slot = 'RCB' and n.lcb_gsis_id is not null then 'LCB' end as other_cover_slot
+    from named as n
 ),
 
 vs_opp as (   -- his line against this defense this season, before this week
@@ -144,7 +179,7 @@ vs_cover as (   -- with the likely cover on the field (or in the same game), eve
            sum(h.receiving_yards) as yards_vs_cover, sum(h.receiving_tds) as tds_vs_cover,
            min(h.season) as first_season_vs_cover, max(h.season) as last_season_vs_cover,
            string_agg(distinct h.evidence, ',' order by h.evidence) as evidence_vs_cover
-    from named as n
+    from named2 as n
     join {{ ref('mart_receiver_vs_cb') }} as h
       on h.receiver_gsis_id = n.gsis_id and h.defender_gsis_id = n.likely_cover_gsis_id
      and (h.evidence = 'on_field' or h.defender_snap_share >= 0.5)
@@ -153,9 +188,9 @@ vs_cover as (   -- with the likely cover on the field (or in the same game), eve
 
 quality as (
     select season, gsis_id, first_season, coverage_snaps, targets, yards_allowed, targets_per_coverage_snap,
-           yards_per_target_allowed, passer_rating_allowed, is_ranked, n_ranked, min_coverage_snaps,
-           rank_targets_per_snap, rank_yards_per_target, rank_passer_rating
-    from {{ ref('mart_cb_coverage') }}
+           yards_per_target_allowed, adj_yards_per_target, passer_rating_allowed, is_ranked, n_ranked, min_coverage_snaps,
+           quality_rank, quality_label, rank_targets_per_snap, rank_adj_yards_per_target, rank_passer_rating
+    from {{ ref('mart_cb_rankings') }}
     where window_label = 'two_seasons'
 )
 
@@ -163,19 +198,29 @@ select
     n.gsis_id, n.player_name, n.position, n.team, n.season, n.week, n.game_id, n.opponent, n.is_home,
     n.depth_chart_at, n.lcb_gsis_id, n.lcb_name, n.rcb_gsis_id, n.rcb_name, n.nb_gsis_id, n.nb_name,
     n.located_targets, n.tgt_left, n.tgt_middle, n.tgt_right, n.left_share, n.middle_share, n.right_share,
-    n.alignment_lean, n.often_inside, n.call_status, n.likely_cover_slot, n.likely_cover_gsis_id, n.likely_cover_name,
-    n.inside_cover_gsis_id, n.inside_cover_name,
+    n.alignment_lean, n.side_share, n.other_side_share, n.call_status, n.call_strength,
+    n.likely_cover_slot, n.likely_cover_gsis_id, n.likely_cover_name,
+    n.other_cover_slot,
+    case n.other_cover_slot when 'LCB' then n.lcb_gsis_id when 'RCB' then n.rcb_gsis_id end as other_cover_gsis_id,
+    case n.other_cover_slot when 'LCB' then n.lcb_name when 'RCB' then n.rcb_name end       as other_cover_name,
     q.first_season                    as cover_window_first_season,
     q.coverage_snaps                  as cover_coverage_snaps,
     q.targets                         as cover_targets,
     q.yards_allowed                   as cover_yards_allowed,
     q.targets_per_coverage_snap       as cover_targets_per_coverage_snap,
     q.yards_per_target_allowed        as cover_yards_per_target,
+    q.adj_yards_per_target            as cover_adj_yards_per_target,
     q.passer_rating_allowed           as cover_passer_rating,
     coalesce(q.is_ranked, false)      as cover_is_ranked,
+    q.quality_rank                    as cover_rank,
+    q.quality_label                   as cover_label,
     q.rank_targets_per_snap           as cover_rank_targets_per_snap,
-    q.rank_yards_per_target           as cover_rank_yards_per_target,
+    q.rank_adj_yards_per_target       as cover_rank_adj_yards_per_target,
     q.rank_passer_rating              as cover_rank_passer_rating,
+    -- the three listed corners' ranks (the card names the other outside corner on an even split, the table all three)
+    ql.quality_rank as lcb_rank, ql.quality_label as lcb_label,
+    qr.quality_rank as rcb_rank, qr.quality_label as rcb_label,
+    qn.quality_rank as nb_rank, qn.quality_label as nb_label,
     coalesce(q.n_ranked, (select max(n_ranked) from quality as q2 where q2.season = n.season)) as cb_n_ranked,
     coalesce(q.min_coverage_snaps, (select max(min_coverage_snaps) from quality as q2 where q2.season = n.season)) as cb_min_coverage_snaps,
     coalesce(o.games_vs_opp, 0)       as games_vs_opp,
@@ -183,7 +228,10 @@ select
     coalesce(v.games_vs_cover, 0)     as games_vs_cover,
     v.targets_vs_cover, v.receptions_vs_cover, v.yards_vs_cover, v.tds_vs_cover,
     v.first_season_vs_cover, v.last_season_vs_cover, v.evidence_vs_cover
-from named as n
+from named2 as n
 left join quality as q on q.season = n.season and q.gsis_id = n.likely_cover_gsis_id
+left join quality as ql on ql.season = n.season and ql.gsis_id = n.lcb_gsis_id
+left join quality as qr on qr.season = n.season and qr.gsis_id = n.rcb_gsis_id
+left join quality as qn on qn.season = n.season and qn.gsis_id = n.nb_gsis_id
 left join vs_opp as o on o.gsis_id = n.gsis_id and o.season = n.season and o.week = n.week
 left join vs_cover as v on v.gsis_id = n.gsis_id and v.season = n.season and v.week = n.week

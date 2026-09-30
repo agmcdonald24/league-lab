@@ -3,37 +3,46 @@ version: 2
 # Wave C round 2, C5: cornerback matchups (R-14) and the matchup comparison (R-11). Definitions in
 # docs/METRICS.md § "Cornerback matchups" and § "Matchup comparison"; lineage in docs/DATA_MODEL.md.
 models:
-  - name: mart_cb_coverage
-    description: "R-14: cornerback quality per defender x season x window ('season' = that season to date; 'two_seasons' = the season before + that season). PFR coverage numerators (targets, completions, yards, TDs, INTs as the primary defender) over coverage snaps in the same games (participation, else the snap-share estimate); passer rating allowed by the NFL formula on the sums; ranked among cornerbacks with >= 20 coverage snaps per team game in the window (1 = hardest to throw on). wr1_follow_slope / other_follow_slope / shadow_flag: shadow evidence, kept for the record and NOT shown in the app (it did not repeat from one season to the next)."
+  - name: mart_cb_rankings
+    description: "R-14: cornerback quality per defender x season x window ('season' = that season to date; 'last_4' = his last 4 regular-season games, that season and the one before; 'two_seasons' = the season before + that season). PFR coverage numerators (targets, completions, yards, TDs, INTs as the primary defender) over coverage snaps in the same games (participation, else the snap-share estimate); passer rating allowed by the NFL formula on the sums; adjusted yards per target = his yards per target minus the yards per target the offenses he faced get from their WRs and TEs (the game left out), shrunk toward the pool with 30 targets. Ranked among cornerbacks with >= 20 coverage snaps per team game in the window (80 for the last 4) on quality_score = minus the mean z-score of targets per coverage snap, adjusted yards per target and passer rating allowed (1 = hardest to throw on); quality_label: top quarter 'shutdown', bottom quarter 'target', else 'solid'. wr1_follow_slope / other_follow_slope / shadow_flag: shadow evidence kept for the record and NOT shown in the app (2025: 2 of 6 commonly reported shadow corners flagged)."
     tests:
       - unique_combination_of_columns:
           arguments:
             combination_of_columns: [gsis_id, season, window_label]
       - expression_is_true:
-          name: cb_coverage_ranked_rows_complete
+          name: cb_rankings_ranked_rows_complete
           arguments:
-            expression: "coverage_snaps >= min_coverage_snaps and targets > 0 and rank_yards_per_target between 1 and n_ranked and rank_targets_per_snap between 1 and n_ranked and rank_passer_rating between 1 and n_ranked"
+            expression: "coverage_snaps >= min_coverage_snaps and targets > 0 and quality_rank between 1 and n_ranked and rank_targets_per_snap between 1 and n_ranked and rank_adj_yards_per_target between 1 and n_ranked and rank_passer_rating between 1 and n_ranked and quality_label is not null and quality_score is not null"
             condition: "is_ranked"
       - expression_is_true:
-          name: cb_coverage_unranked_rows_have_no_rank
+          name: cb_rankings_unranked_rows_have_no_rank
           arguments:
-            expression: "rank_yards_per_target is null and rank_targets_per_snap is null and rank_passer_rating is null"
+            expression: "quality_rank is null and quality_label is null and rank_targets_per_snap is null and rank_adj_yards_per_target is null and rank_passer_rating is null"
             condition: "not is_ranked"
       - expression_is_true:
-          name: cb_coverage_rates_in_range
+          name: cb_rankings_rates_in_range
           arguments:
-            expression: "targets_per_coverage_snap between 0 and 0.6 and passer_rating_allowed between 0 and 158.4 and completions_allowed <= targets"
+            expression: "targets_per_coverage_snap between 0 and 0.6 and passer_rating_allowed between 0 and 158.4 and completions_allowed <= targets and adj_yards_per_target between 0 and 25 and exp_ypt_faced between 3 and 15"
             condition: "is_ranked"
+      - expression_is_true:
+          name: cb_rankings_last_4_is_four_games
+          arguments:
+            expression: "games <= 4"
+            condition: "window_label = 'last_4'"
     columns:
       - name: window_label
         tests:
           - accepted_values:
-              arguments: {values: ['season', 'two_seasons']}
+              arguments: {values: ['season', 'last_4', 'two_seasons']}
+      - name: quality_label
+        tests:
+          - accepted_values:
+              arguments: {values: ['shutdown', 'solid', 'target']}
       - name: gsis_id
         tests: [not_null]
 
   - name: mart_receiver_vs_cb
-    description: "R-14: who a receiver (WR/TE) has faced, per cornerback x season (regular season, 2022 on). evidence 'on_field' = his targets on plays with that corner on the field (participation, completed seasons); 'same_game' = his totals in games that corner played (the current season), with the corner's average share of his defense's snaps. On the field is not coverage: public data does not say who covered whom."
+    description: "R-14: who a receiver (WR/TE) has faced, per cornerback x season (regular season, 2022 on). evidence 'on_field' = his targets on plays with that corner on the field (participation, completed seasons), with share_of_targets = those targets over all his targets against that corner's defense that season; 'same_game' = his totals in games that corner played (the current season), with the corner's average share of his defense's snaps. On the field is not coverage: public data does not say who covered whom."
     tests:
       - unique_combination_of_columns:
           arguments:
@@ -45,34 +54,44 @@ models:
       - expression_is_true:
           name: receiver_vs_cb_snap_share_only_same_game
           arguments:
-            expression: "(evidence = 'same_game' and defender_snap_share between 0 and 1) or (evidence = 'on_field' and defender_snap_share is null)"
+            expression: "(evidence = 'same_game' and defender_snap_share between 0 and 1 and share_of_targets is null) or (evidence = 'on_field' and defender_snap_share is null and share_of_targets > 0 and share_of_targets <= 1)"
     columns:
       - name: evidence
         tests:
           - accepted_values:
               arguments: {values: ['on_field', 'same_game']}
 
-  - name: mart_cb_matchup_week
-    description: "R-14: every rostered WR/TE x regular-season week (2025 on) with a game: the opponent's rank-1 LCB / RCB / NB from its depth chart as of that game, where his targets went since the start of last season (before the week), the likely cover (the outside corner on the side his targets lean to; the nickel corner also named for a WR who often works inside) or why there is no call, that corner's quality (mart_cb_coverage, two_seasons) and his history against the defense this season and against that corner."
+  - name: mart_cb_matchups
+    description: "R-14: every rostered WR/TE (and, for the current season, every WR/TE on his latest team) x regular-season week (2025 on) with a game: the opponent's rank-1 LCB / RCB / NB from its depth chart as of that game, where his targets went since the start of last season (before the week; the offense's view), the likely cover (the outside corner on the side his targets lean to) with side_share / other_side_share and call_strength ('clear' = 15+ points apart, else 'even' and the other outside corner named), or why there is no call; that corner's quality (mart_cb_rankings, two_seasons) and his history against the defense this season and with that corner on the field. A lean, not an assignment."
     tests:
       - unique_combination_of_columns:
           arguments:
             combination_of_columns: [gsis_id, season, week]
       - expression_is_true:
-          name: cb_matchup_called_rows_name_a_corner
+          name: cb_matchups_called_rows_name_a_corner
           arguments:
-            expression: "likely_cover_gsis_id is not null and likely_cover_slot in ('LCB', 'RCB', 'NB') and alignment_lean in ('left', 'right')"
+            expression: "likely_cover_gsis_id is not null and likely_cover_slot in ('LCB', 'RCB', 'NB') and alignment_lean in ('left', 'right') and call_strength in ('clear', 'even') and side_share >= other_side_share"
             condition: "call_status = 'called'"
       - expression_is_true:
-          name: cb_matchup_uncalled_rows_name_nobody
+          name: cb_matchups_uncalled_rows_name_nobody
           arguments:
-            expression: "likely_cover_gsis_id is null and inside_cover_gsis_id is null"
+            expression: "likely_cover_gsis_id is null and other_cover_gsis_id is null and call_strength is null"
             condition: "call_status <> 'called'"
       - expression_is_true:
-          name: cb_matchup_location_shares_sum_to_one
+          name: cb_matchups_clear_calls_name_one_corner
+          arguments:
+            expression: "other_cover_gsis_id is null and side_share - other_side_share >= 0.15"
+            condition: "call_strength = 'clear'"
+      - expression_is_true:
+          name: cb_matchups_location_shares_sum_to_one
           arguments:
             expression: "abs(left_share + middle_share + right_share - 1) < 0.01"
             condition: "located_targets > 0"
+      - expression_is_true:
+          name: cb_matchups_ranked_cover_has_label
+          arguments:
+            expression: "cover_rank between 1 and cb_n_ranked and cover_label in ('shutdown', 'solid', 'target')"
+            condition: "cover_is_ranked"
     columns:
       - name: call_status
         tests:
@@ -91,7 +110,7 @@ models:
       - expression_is_true:
           name: defense_profile_ranks_in_range
           arguments:
-            expression: "rank_points between 1 and n_defenses and rank_opportunity between 1 and n_defenses and rank_efficiency between 1 and n_defenses and rank_adjusted between 1 and n_defenses and gives_up is not null"
+            expression: "rank_points between 1 and n_defenses and rank_opportunity between 1 and n_defenses and rank_efficiency between 1 and n_defenses and rank_adjusted between 1 and n_defenses and rank_targets between 1 and n_defenses and rank_carries between 1 and n_defenses and gives_up is not null"
             condition: "games > 0 and opps_allowed_pg > 0"
       - expression_is_true:
           name: defense_profile_empty_before_first_game

@@ -178,8 +178,6 @@ per (league, season, week, roster, add, drop).
 | `mart_nfl_calendar` | one row | current season, last completed week, next week |
 | `mart_player_expected_points` / `_season` | gsis_id, game_id / gsis_id, season | actual vs expected points under current league scoring |
 | `mart_defense_vs_position` / `_current` | defense, game_id, position / defense, position | points allowed per game STD and L4 with ranks |
-| `mart_defender_coverage_season` | gsis_id, season | PFR coverage stats when targeted |
-| `mart_matchup_cb_context` | defense, gsis_id, depth_position | opponent's CBs (latest depth chart) + coverage |
 | `mart_player_next_matchup` | gsis_id | next game/bye, opponent DvP rank, injury, depth rank |
 | `mart_league_roster_membership` | league_id, sleeper_player_id | who rosters whom now |
 | `mart_player_availability` | league_id, sleeper_id (league_id, gsis_id where gsis_id is set) | rostered-by / free agent × usage × expected gap × next matchup; points columns (`points_std`, `ppg_std`, `points_per_game_l3/_l5`, `expected_per_game`, `diff_per_game`, `games_with_expected`) in the row's league scoring via `mart_league_player_season` (S-01a); usage, shares and opponent ranks are scoring-free or reference-scored. **R-13**: plus one row per team defense (`position` DEF, `sleeper_id` = `KC` …, `gsis_id` NULL, `roster_status` ACT) for the leagues that start a DEF: rostered-by / free agent, `games_played`, `points_std` / `ppg_std` / `points_per_game_l3` / `_l5` in the league's D/ST scoring (`def_points()` over `mart_kd_week`), next opponent / home / bye; the usage and injury columns NULL |
@@ -190,6 +188,22 @@ per (league, season, week, roster, add, drop).
 | `mart_league_keeper_candidates` | league_id, sleeper_player_id | acquisition cost facts + production, ranks and xPPG in the league's own scoring (S-01a) |
 | `mart_league_manager_profile` | league_id, roster_id | luck, lineup discipline, activity, roster shape |
 | `mart_league_positional_strength` | league_id, roster_id, position | starter ppg vs league median, rank (league's own scoring through availability). **No page reads it since B2** (replaced by the roster-value marts below; superflex counted as a QB slot, FLEX not attributed); kept as a mart for comparison |
+
+### Matchups (C5, plan R-14 / R-11, 2026-09-30)
+
+Replaces `mart_defender_coverage_season` and `mart_matchup_cb_context` (retired; only the Matchups page read
+them). No `ops` source: built by the ordinary `dbt build`. Definitions: `docs/METRICS.md` § Cornerback matchups,
+§ Matchup comparison. Tests: `dbt/models/marts/nfl/matchups.yml` + `assert_cb_rankings_pool_size`,
+`assert_cb_matchup_covers_lineup_receivers`, `assert_defense_profile_is_asof`,
+`assert_coverage_snap_estimate_tracks_participation` (warn).
+
+| Model | Grain / key | Contract |
+|---|---|---|
+| `int_defender_game_coverage_snaps` (intermediate) | gsis_id, game_id | every defender-game PFR's advanced defense charts (2018+): the coverage numerators (`def_targets`, completions, yards, TDs, INTs, aDOT, YAC, missed tackles as the primary defender), PFR `position` and snap-count `snap_position`, `defense_snaps` / `team_defense_snaps`, the opponent's `opp_dropbacks`; `coverage_snaps` = `coverage_snaps_on_field` (participation: opponent dropbacks with him on the field) else `coverage_snaps_estimated` (snap share × opponent dropbacks), `coverage_snaps_source` |
+| `mart_cb_rankings` | gsis_id, season, window_label | cornerbacks only; `window_label` season / last_4 / two_seasons; games, `games_at_cb`, first / last game, `coverage_snaps` (+ `_estimated`), targets, completions, yards, TDs, INTs allowed, `targets_per_coverage_snap`, `yards_per_target_allowed`, `exp_ypt_faced` (the offenses' WR + TE yards per target), `adj_yards_per_target`, `completion_pct_allowed`, `yards_per_coverage_snap`, `adot_allowed`, `passer_rating_allowed`, pool yardsticks, `z_targets` / `z_yards` / `z_rating`, `quality_score`, `min_coverage_snaps`, `is_ranked`, `n_ranked`, `quality_rank` (1 = hardest to throw on), component ranks, `quality_label` (shutdown / solid / target); shadow evidence `wr1_games`, `wr1_follow_slope`, `other_follow_slope`, `shadow_flag` (not shown in the app). 6,316 rows (74 ranked in 2026 `two_seasons`) |
+| `mart_receiver_vs_cb` | receiver_gsis_id, defender_gsis_id, season | 2022 on, WR / TE × cornerback: `evidence` on_field (participation: targets / receptions / yards / TDs with him on the field, `targets_vs_defense`, `share_of_targets`) or same_game (current season: totals in games he played, `defender_snap_share`), receiver / defender names, teams, games. 39,572 rows |
+| `mart_cb_matchups` | gsis_id, season, week | 2025 on, every rostered WR / TE (+ current-season WR / TE on his latest team) × REG week with a game: `opponent`, `depth_chart_at`, rank-1 `lcb_*` / `rcb_*` / `nb_*` (id, name, rank, label), `tgt_left` / `_middle` / `_right`, shares, `located_targets`, `alignment_lean`, `side_share`, `other_side_share`, `call_status` (called / tight end / too few targets / no depth chart yet), `call_strength` (clear / even), `likely_cover_slot` / `_gsis_id` / `_name`, `other_cover_*` (even calls), the cover's two-season numbers, `cover_rank`, `cover_label`, component ranks, `cb_n_ranked`, `cb_min_coverage_snaps`, his line vs the defense this season (`*_vs_opp`) and with the cover on the field since 2022 (`*_vs_cover`, `evidence_vs_cover`). 16,972 rows |
+| `mart_defense_position_profile` | season, week, defense, position | as of the week (games before it): `games`, `points_allowed_pg`, `opps_allowed_pg`, `targets_allowed_pg`, `carries_allowed_pg`, `yards_per_opp_allowed`, `td_rate_allowed`, `offense_baseline_pg`, `adjusted_points_pg`, league rates, `opportunity_index`, `efficiency_index`, `gives_up`, ranks (`rank_points`, `rank_opportunity`, `rank_efficiency`, `rank_td_rate`, `rank_adjusted`, `rank_targets`, `rank_carries`; 1 = gives up the most), `n_defenses`. 24,704 rows |
 
 ### Roster value (B2, 2026-09-30)
 

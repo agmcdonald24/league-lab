@@ -140,13 +140,21 @@ def dvp_bars(sel: pd.DataFrame, value: str, title: str, x_title: str, league_avg
         facing = getattr(r, "facing", "") or ""
         hover.append(f"{r.defense}: {float(v):.1f} per game" + (f", #{int(rank)}{of}" if rank is not None and pd.notna(rank) else "")
                      + (f"<br>your {facing}" if facing else ""))
-    # direct labels only on your opponents' bars (the rest stay in the hover and the table)
+    # direct labels only on your opponents' bars, with the rank (the rest stay in the hover and the table)
+    ranks = []
+    for r in sel.itertuples(index=False):
+        if int(getattr(r, "gap_before", 0) or 0) > 0:
+            ranks.append(None)
+        rk = getattr(r, rank_col, None)
+        ranks.append(int(rk) if rk is not None and pd.notna(rk) else None)
     text = []
-    for lab, x in zip(labels, xs, strict=True):
-        text.append(f"{x:.1f}" if x is not None and "◀" in lab else "")
+    for lab, x, rk in zip(labels, xs, ranks, strict=True):
+        text.append((f"{x:.1f}" + (f" · #{rk}" if rk is not None else "")) if x is not None and "◀" in lab else "")
     fig = go.Figure(go.Bar(
         x=xs, y=labels, orientation="h", marker=dict(color=colors, line=dict(width=2, color=SURFACE)),
-        text=text, textposition="outside", textfont=dict(size=11, color=TEXT), cliponaxis=False,
+        # the label sits inside a long bar (white on the solid fill) and outside a short one, clear of the average line
+        text=text, textposition="auto", insidetextanchor="end", insidetextfont=dict(size=11, color="#ffffff"),
+        outsidetextfont=dict(size=11, color=TEXT), cliponaxis=False,
         customdata=hover, hovertemplate="%{customdata}<extra></extra>",
     ))
     if league_avg is not None and pd.notna(league_avg):
@@ -160,5 +168,66 @@ def dvp_bars(sel: pd.DataFrame, value: str, title: str, x_title: str, league_avg
         xaxis=dict(title=x_title, gridcolor=GRID, zeroline=False, fixedrange=True),
         yaxis=dict(title="", showgrid=False, autorange="reversed", automargin=True, fixedrange=True,
                    categoryorder="array", categoryarray=labels),
+    )
+    return fig
+
+
+# ---- C5 (R-15): defense vs position as a heatmap (every defense x every position the league starts) -------
+HEAT_RAMP = ["#0d366b", "#1c5cab", "#3987e5", "#86b6ef", "#cde2fb"]   # sequential blue 700 -> 100: dark = gives up more
+
+
+def dvp_heatmap(frame: pd.DataFrame, positions: list[str], title: str, n_total: int = 32) -> go.Figure:
+    """Defense x position cells (the rows `lib.matchups.dvp_heat_frame` ordered: your opponents pinned first).
+    Color = the defense's rank against the position (one blue ramp, darker = gives up more, so positions with
+    different point scales compare), the number in the cell = points allowed per game; your starter's cell is
+    ringed and his opponent's row label carries ◀ in bold (never color alone); a 2px surface gap between cells,
+    a hover on every cell, a scale legend below, no drag / zoom (a phone scrolls past it)."""
+    ys = [f"<b>{r.defense} ◀</b>" if r.is_mine else str(r.defense) for r in frame.itertuples(index=False)]
+    z, text, hover = [], [], []
+    for r in frame.itertuples(index=False):
+        rz, rt, rh = [], [], []
+        for p in positions:
+            v, k = getattr(r, p, None), getattr(r, f"{p}_rank", None)
+            ok = v is not None and pd.notna(v) and k is not None and pd.notna(k)
+            rz.append(float(k) if ok else None)
+            rt.append(f"{float(v):.1f}" if ok else "")
+            mine = [s.split(" (")[0] for s in str(r.facing or "").split("; ") if s.endswith(f"({p})")]
+            rh.append((f"{r.defense} vs {p}s: {float(v):.1f} points a game, #{int(k)} of {n_total}" if ok else f"{r.defense} vs {p}s: no games")
+                      + (f"<br>your {', '.join(mine)}" if mine else ""))
+        z.append(rz)
+        text.append(rt)
+        hover.append(rh)
+    scale = [[i / (len(HEAT_RAMP) - 1), c] for i, c in enumerate(HEAT_RAMP)]
+    fig = go.Figure(go.Heatmap(
+        z=z, x=positions, y=ys, colorscale=scale, zmin=1, zmax=max(n_total, 2), xgap=2, ygap=2,
+        customdata=hover, hovertemplate="%{customdata}<extra></extra>",
+        colorbar=dict(orientation="h", thickness=10, len=1.0, x=0.5, xanchor="center", y=0, yanchor="top",
+                      yref="paper", ypad=0, showticklabels=False, ticks="", outlinewidth=0),
+    ))
+    # the scale's two ends in words, inside the plot's width (tick labels at the ends would be clipped)
+    for x, anchor, words in ((0, "left", "#1 = gives up the most"), (1, "right", f"#{n_total} = the fewest")):
+        fig.add_annotation(x=x, xref="paper", xanchor=anchor, y=0, yref="paper", yanchor="top", yshift=-14,
+                           text=words, showarrow=False, font=dict(size=11, color=TEXT_SECONDARY))
+    # the number in each cell, in text ink that reads on its fill (white on the dark end of the ramp)
+    for i, (row_z, row_t) in enumerate(zip(z, text, strict=True)):
+        for j, (k, t) in enumerate(zip(row_z, row_t, strict=True)):
+            if not t:
+                continue
+            dark = (k - 1) / max(n_total - 1, 1) < 0.4
+            fig.add_annotation(x=positions[j], y=ys[i], text=t, showarrow=False,
+                               font=dict(size=12, color="#ffffff" if dark else TEXT))
+    # ring the cells where one of your starters plays: the defense he faces, at his position
+    for i, r in enumerate(frame.itertuples(index=False)):
+        for j, p in enumerate(positions):
+            if str(r.facing or "") and any(s.endswith(f"({p})") for s in str(r.facing).split("; ")):
+                fig.add_shape(type="rect", x0=j - 0.47, x1=j + 0.47, y0=i - 0.45, y1=i + 0.45, xref="x", yref="y",
+                              line=dict(color=TEXT, width=2.5), fillcolor="rgba(0,0,0,0)")
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=15, color=TEXT)), paper_bgcolor=SURFACE, plot_bgcolor=SURFACE,
+        font=dict(color=TEXT_SECONDARY, size=12), margin=dict(l=8, r=8, t=64, b=64),
+        height=160 + 28 * len(ys), dragmode=False, hovermode="closest",
+        xaxis=dict(side="top", showgrid=False, zeroline=False, fixedrange=True, tickfont=dict(size=12, color=TEXT)),
+        yaxis=dict(autorange="reversed", showgrid=False, zeroline=False, fixedrange=True, automargin=True,
+                   categoryorder="array", categoryarray=ys, tickfont=dict(size=12)),
     )
     return fig
