@@ -294,6 +294,15 @@ Round 2 conventions, from the review (apply to B2, B3, B4 and to every page U-13
 4. **Plain words.** No model jargon on a card; "why" behind an expander ("How to read this").
 5. **Injury / IR columns hidden unless the value is not Healthy**; injury is a filter, not a column.
 
+### Wave C (Iteration 10, agreed 2026-09-30) — what Andrew's review asked for first
+
+Round 1 (independent, in parallel): **C1** = U-13 mobile pass + U-16 League consolidation ·
+**C2** = U-14 plain-language pass + U-15 model explainer and honest importance · **C3** = R-13 K and
+D/ST projection paths. Round 2: **C4** = T-01 trade evaluator + T-02 simulator · **C5** = R-14
+cornerback matchups + R-15 defense-vs-position picture + U-17 Receivers/Kickers context · **C6** = R-10
+role alerts + R-11 matchup comparison + R-12 scenario upside (as one "player signals" task). P-01
+profiles + any league gets a design note before it is scheduled. One QA pass per round.
+
 ### Iteration 10 — after the decision engine
 
 | ID | Task | Notes |
