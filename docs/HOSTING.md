@@ -76,7 +76,11 @@ Check before pushing: `git status --ignored | grep -E "\.env$|data/"` must list 
    LEAGUE_LAB_FEEDBACK_URL = "https://forms.gle/..."                  # optional; shows a sidebar button
    ```
 
-4. Deploy. Dependencies come from `app/requirements.txt` (the explorer's runtime only; Community
+4. Deploy. **Every release must change `app/requirements.txt`** (the `# release: <sha>` line the PO bumps in
+   each bundle): Community Cloud restarts the app only when that file changes. A push that only changes
+   `app/lib/*.py` is hot-reloaded page by page against the library modules already in memory, and every
+   page fails with `ImportError` / `unexpected keyword argument` until someone clicks **Reboot app**
+   (app menu, top right) — which is also the fix if it ever happens. Dependencies come from `app/requirements.txt` (the explorer's runtime only; Community
    Cloud uses the entrypoint directory's file before the repo's `uv.lock`). First build ≈ 2 minutes.
 5. Settings → *Sharing*: **Public** (anyone with the link; the password gate keeps it to invitees)
    or **Private** (viewers must sign in with an email you list — up to a handful on the free tier).
