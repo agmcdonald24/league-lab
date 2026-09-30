@@ -65,7 +65,7 @@ if roster_id is not None:
         decision_cards(league_id, roster_id, week, season, rows=rows)
         st.markdown("**Your lineup**")
         lineup_table(rows)
-        with st.expander("Every slot with its margin, the bench and who can't play"):
+        with st.expander("Your full lineup: every slot, how close each call is, the bench, and who can't play"):
             lineup_table(rows, full=True)
         howto_cards()
         with st.expander("Movers on your roster (last 3 games vs before)"):

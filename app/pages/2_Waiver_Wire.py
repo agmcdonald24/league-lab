@@ -190,7 +190,7 @@ else:
         if not bool(mv["inputs_current"].iloc[0]):
             stale.append("rosters or injury reports have changed since, so a player may already be gone")
         if not bool(mv["on_current_lineup"].iloc[0]):
-            stale.append("your lineup has been re-solved since")
+            stale.append("your best lineup has been recomputed since, so the gains may have moved")
         if stale:
             asof = pd.to_datetime(mv["as_of"].iloc[0], utc=True).tz_convert("America/New_York")
             st.warning(f"These claims were computed {asof:%a %b %-d, %-I:%M %p} ET; " + " and ".join(stale)

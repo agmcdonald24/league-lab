@@ -35,7 +35,7 @@ Newest first. The Home page shows the top entry as "What's new".
   published before the first kickoff (Thu …)", and the "How the model is doing this season" strip is scored on that
   frozen board. Weeks 1–3 were played before this existed, so their projections are labelled as **refit values**
   (from a later run of the same model), on the board and in the strip. Every page also warns when the injury report
-  is stale ("Injury report last loaded Sat Sep 26, 7:02 AM ET; treat Questionable tags as stale.") — when it was
+  is stale ("Injury report is from Sat Sep 26, 7:02 AM ET — treat Questionable tags as stale (…)") — when it was
   loaded before the last final game's date or more than 48 hours before the next kickoff.
 - Behind the scenes: the nightly data refresh can now run on GitHub's servers (about 7:40 a.m. Eastern) instead of
   Andrew's laptop, so a closed laptop no longer means yesterday's numbers. Same steps, same checks; the banner on every

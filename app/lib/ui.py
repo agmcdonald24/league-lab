@@ -116,7 +116,8 @@ def freshness_banner() -> None:
     if why:
         when = f"{loaded_at.tz_convert(et):%a %b %-d, %-I:%M %p} ET" if pd.notna(loaded_at) else "never"
         reason = " and ".join(why)
-        st.warning(f"Injury report last loaded {when}; treat Questionable tags as stale. {reason[0].upper()}{reason[1:]}.")
+        # kept to one sentence: on a phone this banner sits above every page's first card
+        st.warning(f"Injury report is from {when} — treat Questionable tags as stale ({reason}).")
 
 
 def seasons_available() -> list[int]:

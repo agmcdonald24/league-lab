@@ -169,7 +169,7 @@ def alternative(starter: pd.Series, rows: pd.DataFrame) -> dict:
                f"{e['player_name']} takes {slot_label(mover['slot'])}" if mover is not None else "the lineup reshuffles"))
         return {"alt": e, "mover": mover, "how": how}
     # not expected (the margin is the re-solve); name the slot's best bench player and say it is approximate
-    return {"alt": best, "mover": None, "how": "best bench player for the slot (the full re-solve differs)"}
+    return {"alt": best, "mover": None, "how": "best bench player for the slot (the lineup would shuffle more than one player)"}
 
 
 def decisions(rows: pd.DataFrame, n: int = 3) -> pd.DataFrame:
