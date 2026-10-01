@@ -1354,6 +1354,17 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
 * Verified on the main database: `pytest` 691, `ruff` clean, migrate, the C5/C6 intermediate and mart builds, `project`
   (v2 → K/DEF → lineups → waivers → signals → importance), the projection-marts rebuild, the headless check on every page
   × both leagues + Player + Trade Finder with a package in the URL, 0 exceptions.
+* **Andrew's first `make build` on the Mac (PostgreSQL 17, 4 threads) exposed two things the sandbox had not:**
+  (1) three `ops` sources (`player_role_alerts`, `player_scenarios`, `waiver_upside`) did not exist because they were
+  created by `project`, which runs after `build` → `db migrate` now creates every project-written table from the
+  writers' own DDL (lineups, waiver moves and upside, role alerts, scenarios), verified on an empty database;
+  (2) `mart_defense_position_profile` ran 31+ minutes (killed) and `mart_receiver_vs_cb` 325 s — a planner problem
+  (fresh upstream tables without statistics, inequality joins, a self-join estimated at one row), reproduced here by
+  disabling autovacuum (>275 s, cancelled) → C5 hotfix `9a2ba49`: six indexed, analyzed intermediate tables, every
+  `week < week` join replaced by a small week bridge, big inputs stacked (`union all`) and grouped instead of
+  joined, `analyze` pre-hooks on the upstream tables; both marts now 1–3 s with or without statistics, md5-identical
+  output, 34/34 dbt tests. Also `receiver_vs_cb_counts_consistent` (4 rows failed on the Mac's newer data: a reception
+  or TD on a play with no target in the source) now warns.
 * One QA agent, phone-first, 25 minutes, both leagues as Andrew's rosters: no sideways scroll, answer before any
   table on Trade Finder / Matchups / Trends / Waiver Wire / Player; the top trade package's before/after lineup values
   equal `ops.lineup_totals` and an independent `lineup.solve` on the post-trade rosters (113.06 → 113.54 / 115.30 →
