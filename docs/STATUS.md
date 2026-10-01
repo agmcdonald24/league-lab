@@ -1609,6 +1609,104 @@ and style). Each dev appends a section below; nothing edits `mart_player_week_fe
 * Results: `ops.feature_experiments` (DDL in `db.migrate`), `mart_feature_experiments` (view), Rankings →
   "The model" → "What we tried".
 
+### D4 — team volume and style (dev/D4, clone `league_lab_d4`, 2026-10-01)
+
+* **Built.** Three intermediate tables under `dbt/models/intermediate/features/` (docs: `team_style.yml`, METRICS §
+  "Team volume and style", DATA_MODEL § "Feature group `team_style`"): `int_team_game_style` (offense × game facts
+  from `fct_play` + team stats: plays, dropbacks, neutral plays / dropbacks, nflfastR xpass, snap-to-snap pace, time
+  of possession from the game clock, drives, drive points, scoring drives, red-zone trips, first downs, giveaways;
+  5,588 rows 2016–2026), `int_team_week_style` (team × REG week incl. byes and unplayed weeks, 6,176 rows: offense
+  `off_` and defense-allowed `def_` × 12 metrics × season-to-date / last 4 / last season, shrunk
+  (n × window + 3 × last season) / (n + 3), n = games this season before the week), `int_player_week_team_style`
+  (the group's table, 109,123 rows = the universe: `ts_off_*` his offense, `ts_def_*` this week's opponent defense,
+  52 inputs incl. `ts_pace_product` and `ts_pass_env`, plus `ts_off_asof_week` / `ts_def_asof_week` for the
+  harness's as-of check). Macro `ts_shrink` / `ts_sums` (`dbt/macros/team_style.sql`). Groups registered in
+  `src/league_lab/feature_groups/team_style.py`: `team_style` (52), `team_style_volume` (7), `team_style_pass_rate`
+  (5), `team_style_efficiency` (14), `team_style_defense_faced` (24), plus `team_style_lean` (3, see below).
+  Nothing in production reads the tables; the nightly's full `dbt build` builds them (≈ 25 s) — no `--select` added.
+* **Tests.** dbt: 17 — 16 data tests (keys; counts nest; clock in range; `team_week_style_is_asof` / `player_team_style_is_asof`
+  (asof_week < week); `assert_team_style_is_asof` (game counts and plays per game re-derived from `fct_play` on its
+  own path, shrinkage included: 0 rows); `team_week_style_week1_is_last_season`; rates in range;
+  `assert_team_style_covers_universe` (one row per universe row, his team's and his opponent's numbers); and a dbt
+  **unit test** of the shrinkage on a fixture, 22 expected rows incl. the last-4 window, a playoff game that must not
+  count, a team without a last season (league prior) and a season without any prior) — the 17th. Negative controls: weight 2
+  instead of 3 → the unit test fails; `week <= W` instead of `< W` → unit test fails, and with the data tests alone
+  `team_week_style_is_asof` 5,344, `player_team_style_is_asof` 100,443, `week1_is_last_season` 318,
+  `assert_team_style_is_asof` 5,344 failing rows. pytest `tests/test_team_style.py` 21 (twins of the shrinkage and the
+  neutral situation on fixtures, the SQL hard-codes the same constants, the unit test's expected rows follow the
+  twin, the groups validate with `experiments.check_spec`, every column documented).
+* **League sanity, 2025** (pooled): plays per game 60.3 (band 58–68 ✓); time of possession 30.2 min per team-game
+  (OT included; 2,332 of 2,637 regulation games sum to 60:00 ± 15 s) ✓; seconds per play 31.8; **neutral pass rate
+  53.2% — below the plan's 55–62% band** with the plan's own definition (1st/2nd down, Q1–3, within 7); the same
+  filter over all downs gives 58.5% (third downs are passes). Kept the early-down definition (it is the
+  coaching-choice signal); PO to confirm.
+* **Hand-check, DET 2025 week 6** (`raw.nfl_pbp` / `raw.nfl_team_stats_week`, not through `fct_play`;
+  `scratchpad/waveD/d4/handcheck.sql`): DET's weeks 1–5 plays 64 + 58 + 65 + 54 + 59 = 300 → 60.0 a game; 2024
+  (the prior) 1,097 / 17 = 64.529; (5 × 60.0 + 3 × 64.529) / 8 = **61.698** = `off_plays_pg_std` 61.6985; last 4
+  (58 + 65 + 54 + 59) / 4 = 59.0 → (295 + 193.588) / 8 = **61.074** = `off_plays_pg_l4`. Neutral pass rate: neutral
+  dropbacks 1 + 17 + 15 + 7 + 11 = 51 of 2 + 30 + 39 + 17 + 24 = 112 plays = 0.4554; 2024 192 / 383 = 0.5013;
+  (5 × 0.4554 + 3 × 0.5013) / 8 = **0.4726** = `off_neutral_pass_rate_std`. First downs (team stats, pass + rush)
+  15 + 25 + 23 + 14 + 22 = 99 (play-by-play first downs on the same plays: also 99) → 19.8; 2024 386 / 17 = 22.706;
+  (99 + 68.118) / 8 = **20.890** = `off_first_downs_pg_std` 20.8897. `off_asof_week` = 5.
+* **Coverage** (`int_player_week_team_style` vs the universe, offense / defense numbers known): 2016 8,993 of 9,851
+  (week 1 has no earlier season), 2017–2026 100% (9,681 · 9,373 · 9,608 · 9,800 · 10,538 · 10,161 · 10,034 · 9,898 ·
+  10,268 · 9,911).
+* **What the market already knew** (4,766 team-games 2017–2025; `scratchpad/waveD/d4/market_corr.py`, full table in
+  `market_corr.csv`): r with the implied team total / game total — points per drive 0.67 / 0.49, yards per play
+  0.64 / 0.50, first downs 0.62 / 0.49, red-zone trips 0.60 / 0.42, scoring drives 0.64 / 0.45, sacks per dropback
+  −0.43 / −0.30, time of possession 0.31 / 0.08, neutral pass rate 0.29 / 0.24, PROE 0.26 / 0.26, `ts_pace_product`
+  0.25 / 0.16, plays 0.22 / 0.17, pace −0.04 / −0.10; defense side 0.0–0.38. Beyond the lines (partial r with what
+  then happened, implied total and total held fixed): efficiency adds ≈ 0 to drive points (−0.01 to +0.02); plays
+  per game +0.11 and pace −0.12 to the plays run; PROE +0.25, `ts_pass_env` +0.21, neutral pass rate +0.20 to the
+  dropback share (the implied total itself: −0.03). New information exists at the team level — in volume and in
+  pass/rush split, not in efficiency.
+* **Harness** (`league-lab experiment …`, D1's walk-forward, test seasons 2023–2025, both leagues, `OMP_NUM_THREADS=1`;
+  baseline 1,216 s, then 1,898 / 1,295 / 1,169 / 741 / 669 / 554 s on a box shared with two other fits). Mean over
+  seasons of the league-averaged Δ (group − baseline); "better" = seasons of 3:
+
+  | group | pos | Δ Spearman (better) | Δ MAE (better) | Δ interval score | decision |
+  |---|---|---|---|---|---|
+  | team_style (52) | QB / RB / WR / TE | −0.0026 (1) / −0.0024 (0) / −0.0010 (1) / −0.0055 (0) | +0.015 / +0.032 / +0.023 / +0.008 | +0.000 / +0.005 / +0.001 / +0.005 | drop ×4 |
+  | volume (7) | QB / RB / WR / TE | +0.0004 (1) / −0.0019 (0) / +0.0001 (2) / −0.0017 (2) | +0.016 / +0.020 / +0.003 / +0.009 | −0.002 / −0.000 / +0.000 / +0.003 | drop ×4 |
+  | pass_rate (5) | QB / RB / WR / TE | **+0.0096 (3)** / −0.0012 (0) / +0.0005 (2) / −0.0009 (2) | **−0.014 (2)** / +0.004 / −0.004 (3) / +0.015 | **−0.009** / −0.003 / −0.001 / +0.002 | **keep QB**, drop RB / WR / TE; verdict keep |
+  | efficiency (14) | QB / RB / WR / TE | +0.0011 (1) / −0.0002 (1) / −0.0005 (1) / −0.0038 (0) | +0.004 / +0.007 / +0.009 / +0.008 | −0.001 / +0.002 / +0.001 / +0.006 | drop ×4 |
+  | defense_faced (24) | QB / RB / WR / TE | −0.0035 (1) / −0.0029 (0) / −0.0003 (1) / −0.0031 (1) | +0.016 / +0.006 / +0.008 / +0.006 | +0.004 / +0.006 / +0.003 / +0.005 | drop ×4 |
+  | lean (3) | QB / RB / WR / TE | +0.0024 (1) / −0.0017 (0) / −0.0001 (1) / +0.0024 (3) | −0.011 / +0.006 / +0.001 / +0.005 | −0.012 / −0.000 / −0.000 / +0.002 | drop ×4 |
+
+  Baseline (v2, mean of the two leagues and three seasons): Spearman QB 0.534, RB 0.683, WR 0.624, TE 0.583; MAE
+  7.08 / 4.44 / 4.40 / 3.22. No no-peek failures or warnings on any group. Coverage changes ≤ 1 point everywhere.
+* **The one keep does not hold up on earlier seasons.** `team_style_pass_rate` at QB is a keep by the rule (+0.017,
+  +0.002, +0.010; 3 of 3), but every group, even the full 52-input one, gains +0.009 to +0.020 at QB in 2023 (QB
+  weeks have ~32 players: the season-to-season noise is about ±0.01). Re-run QB-only on 2021 and 2022 with the
+  harness's own pieces (`walk_forward` + `summarize_scores`; 2023 reproduced exactly: +0.0164 / +0.0180,
+  `scratchpad/waveD/d4/qb_extend.py`): **2021 −0.0049, 2022 −0.0054** (MAE −0.032, +0.047). Over 2021–2025 the mean
+  is +0.0037, better in 3 of 5 — the rule's 5-season version (≥ +0.005 and 4 of 5) says drop.
+* **The two hypotheses, below the points** (component models alone, same walk-forward, Poisson counts, MAE change
+  vs v2, seasons better of 3; `scratchpad/waveD/d4/component_check.py`): *volume helps RB / WR counts* — no: RB
+  carries +0.19% (1), RB targets −0.10% (3), WR targets −0.20% (2), TE targets −0.14% (2), all well under a percent;
+  *defense faced helps the pass / rush split* — no: QB attempts −0.30% (1), QB carries +0.50%, RB carries −0.01%,
+  WR targets −0.05%. What does move the split is the offense's own pass rate: QB attempts −1.08% (2; deviance 2) with
+  `pass_rate`, −0.86% (3) with `volume`. Why so little: v2 already sees each player's attempts / targets / carries
+  per game (season, last 3, last season), which are team plays × pass rate × his share — the team numbers are new
+  only for a player whose history is short or whose team changed.
+* **Recommendation: drop** `team_style` and its sub-groups for v3; at most keep `team_style_pass_rate` for QB **only
+  if** the PO accepts the 2023–2025 rule result over the 2021–2022 check (I would not). Revisit pass rate with D5's
+  QB-change inputs (a new starter changes the pass rate the history was built on). The tables can stay: they cost
+  ≈ 25 s a night, and they are the natural home for a "this offense throws a lot / runs fast" line on the Player
+  card if the PO wants one (not built).
+* **For the PO to confirm.** (1) A third model, `int_team_game_style`, beside the two named in the brief (the per-game
+  facts, reused by both sides and the hand-check). (2) The early-down neutral pass rate (53.2% in 2025) vs the plan's
+  55–62% band. (3) The last-4 window shrinks with the season's game count (both windows weigh this season
+  n / (n + 3)), so week 2's last 4 equals its season to date. (4) `ts_pass_env` is divided by the league's rate
+  (log5-style), not the bare product. (5) PROE uses nflfastR's xpass (league mean −2.2% in 2025: the model's
+  training years passed more). (6) `team_style_lean` was added: its three inputs were chosen on 2017–2025 team-level
+  correlations, which include the test seasons (it dropped anyway). (7) No `metric_registry.csv` rows (seeds are out
+  of bounds this round): add `team_style` v1.0 at merge if the PO keeps anything. (8) The `ops.feature_experiments`
+  rows (24 baseline + 144 group rows) live in the `league_lab_d4` clone only.
+* **Verified.** `dbt build` of the three models: PASS=20 (3 models + 17 tests); `pytest` 732 passed (before the lean group) / see the hand
+  back for the final count; `ruff` clean; headless page check (both leagues, 13 pages each + 6 Player runs): 32 runs,
+  0 exceptions, 0 errors. No page touched.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

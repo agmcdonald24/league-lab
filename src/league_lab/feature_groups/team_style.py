@@ -87,6 +87,11 @@ EFFICIENCY = cols("off", ["first_downs_pg", "yards_per_play", "points_per_drive"
                           "red_zone_trips_pg", "sacks_per_dropback", "giveaways_pg"])
 DEFENSE_FACED = cols("def", METRICS)
 ALL = ["ts_off_games", "ts_def_games", *cols("off", METRICS), *DEFENSE_FACED, "ts_pace_product", "ts_pass_env"]
+# The three inputs that carry what the Vegas lines do not (docs/METRICS.md § "Team volume and style": partial
+# correlation with the game's plays / dropback share once the implied total and the game total are known). Chosen
+# on team-level correlations over 2017-2025 - which include the harness's test seasons - not on model results:
+# a candidate to confirm, said so in STATUS.
+LEAN = ["ts_pace_product", "ts_pass_env", "ts_off_proe_std"]
 
 GROUPS = {
     "team_style": {
@@ -108,6 +113,11 @@ GROUPS = {
         "table": TABLE, "columns": EFFICIENCY,
         "label": "How well his offense moves the ball",
         "note": "first downs, yards per play, points per drive, scoring drives, red-zone trips, sacks, giveaways",
+    },
+    "team_style_lean": {
+        "table": TABLE, "columns": LEAN,
+        "label": "Expected plays and pass rate of the matchup",
+        "note": "the matchup's expected plays and neutral pass rate, and the offense's pass rate over expected: what the Vegas lines do not carry",
     },
     "team_style_defense_faced": {
         "table": TABLE, "columns": DEFENSE_FACED,

@@ -1231,6 +1231,95 @@ Runtime: the walk-forward refits every position for each test season (components
 3 quantile models per league); with `OMP_NUM_THREADS=1` a group of 2023–2025 is measured in STATUS
 § "Wave D (Iteration 12)". Several groups in one call share the frame and the baseline.
 
+## Team volume and style (team_style v1.0, plan D4, Wave D, 2026-10-01; feature group `team_style`)
+
+Andrew asked about "team stats, defensively, time of possession, number of first downs". Projection v2 prices a
+player's opportunity through his own shares and his team's Vegas implied total; it does not know how many plays
+his offense runs, how fast, how often it throws, or what the opponent's defense forces. This group adds those,
+as of the week, for the harness to judge (D1). Tables: `int_team_game_style` (team × game facts) →
+`int_team_week_style` (team × week, as of) → `int_player_week_team_style` (the group's table at the projection's
+grain). Python twins of the rules: `league_lab.feature_groups.team_style` (`tests/test_team_style.py`).
+
+**Per game** (`int_team_game_style`, one row per offense × game, regular season and postseason, 2016+; additive
+counts so any window pools sums over sums):
+
+| Fact | Definition | Source |
+|---|---|---|
+| play | a dropback (pass attempt, sack, scramble) or a designed run; kneels, spikes, two-point tries and penalty-nullified snaps are not plays | `fct_play` flags |
+| neutral | 1st or 2nd down, quarters 1–3, the offense's pre-play score within 7 points either way | `fct_play` |
+| neutral pass rate | neutral dropbacks / neutral plays | `fct_play` |
+| PROE (pass rate over expected) | (dropbacks − Σ xpass) / plays with xpass, every play. xpass = nflfastR's pre-snap probability of a dropback (down, distance, field position, clock, score, timeouts, win probability), one fixed model for every team, so the expectation is "an average team in this exact situation". League mean is −1 to −2.5% since 2017 (teams run more than the model's training years did): compare teams within a season | `fct_play.xpass` |
+| pace (seconds per play) | game-clock seconds from a real snap (play, punt, field goal; not a nullified one) to the offense's next real snap on the same drive, from snaps in quarters 1–3 with the score within 7 (any down); lower = faster. Game clock, so an incompletion's stopped clock is not counted | `fct_play.game_seconds_remaining` |
+| time of possession | the game clock from each play-by-play row to the next one in the same half, credited to that row's offense (a row without one — a timeout, stamped with the previous snap's time since 2022 — to the last offense before it); a kickoff return goes to the receiving team, a punt to the punting team, as the official stat does within a second or two | `fct_play` |
+| drive | a run of rows with the same nflfastR `fixed_drive` and offense containing at least one play (kneel-only, spike-only and return-only possessions are not drives) | `fct_play` |
+| drive points / scoring drive | the offense's score at the start of the next possession (or the final score, `dim_game`) minus its score at the drive's start: touchdowns, the try, field goals; a defensive or return score never counts for the offense. Scoring drive = drive points > 0 | `fct_play` pre-play scores |
+| red-zone trip | a drive with a real snap at the opponent's 20 or closer | `fct_play` |
+| first downs | passing + rushing first downs (penalty first downs excluded) | nflverse team stats (`fct_team_game`) |
+| giveaways | interceptions thrown + fumbles lost | nflverse team stats |
+| clock glitches | a row-to-row clock gap outside 0–75 s is a mislabelled quarter or a missing row in the source (`2020_01_LV_CAR` has Q2 clock times inside Q1): capped at 0 / 75 s for time of possession, left out of pace (0.2% of gaps; real snap-to-snap gaps are under a minute). After the cap 2,332 of 2,637 regulation games sum to 60:00 ± 15 s of possession, 138 differ by more than a minute | |
+
+**Per week, as of** (`int_team_week_style`, team × season × regular-season week, byes and unplayed weeks
+included). For the **offense** (`off_`) and the **defense** (`def_`: the same quantity over the offenses it
+faced — plays faced, pace faced, pass rate faced, first downs allowed, sacks made per opponent dropback,
+opponent giveaways = takeaways, points per drive allowed …), twelve metrics:
+
+| Metric | Formula over the window's games |
+|---|---|
+| `plays_pg` | plays / games |
+| `sec_per_play` | pace seconds / pace snaps |
+| `neutral_pass_rate` | neutral dropbacks / neutral plays |
+| `proe` | (dropbacks − Σ xpass) / plays with xpass |
+| `first_downs_pg` | first downs / games with a team-stats row |
+| `top_min_pg` | time of possession (minutes) / games |
+| `red_zone_trips_pg` | red-zone trips / games |
+| `points_per_drive` | drive points / drives |
+| `scoring_drive_rate` | scoring drives / drives |
+| `yards_per_play` | yards on plays (sacks negative) / plays |
+| `sacks_per_dropback` | sacks / dropbacks (defense: sacks made per opponent dropback) |
+| `giveaways_pg` | giveaways / games with a team-stats row (defense: takeaways) |
+
+Windows: `_std` = the team's regular-season games of the season **before the week**; `_l4` = the last four of
+those (fewer early on); `_prev` = the team's full previous regular season (the league's when the team has none).
+Playoff games never count. **Shrinkage** (dbt macro `ts_shrink`, the 3-game weight `mart_defense_position_profile`
+uses for an offense's last season): value = (n × window + 3 × prev) / (n + 3), n = the team's games this season
+before the week, **for both windows** — the in-season weight grows with the season, not with the window: week 1
+is last season; week 2 = ¼ this season; week 7 after 6 games = ⅔; week 10 after 9 games = ¾. No prior (2016, the
+first season loaded): the window's own value (NULL in week 1); a window value with no denominator falls back to
+the prior. `off_asof_week` / `def_asof_week` = the newest game week used (< week).
+
+**Per player-week** (`int_player_week_team_style`, the group's table): one row per `int_player_week_universe` row;
+`ts_off_<metric>_<std|l4>` = his offense this week (the universe's team), `ts_def_<metric>_<std|l4>` = this week's
+opponent defense, `ts_off_games` / `ts_def_games` (n), `ts_off_asof_week` / `ts_def_asof_week` (the harness's
+as-of marker), and two matchup inputs:
+* `ts_pace_product` = `ts_off_plays_pg_std` × `ts_def_plays_pg_std` / the league's plays per game (mean of the 32
+  teams' `off_plays_pg_std` that week): the expected play count of this matchup;
+* `ts_pass_env` = `ts_off_neutral_pass_rate_std` × `ts_def_neutral_pass_rate_std` / the league's neutral pass rate
+  that week: the matchup's expected neutral pass rate (log5-style; the plan's "offense × defense", divided by the
+  league so it reads as a rate).
+Team codes: one per franchise (`kd_team`: OAK → LV, SD → LAC, STL → LA), as play-by-play and the team stats use.
+
+**League sanity, 2025 regular season** (pooled over every team-game): plays per game 60.3; neutral pass rate
+53.2% (2023 54.2%, 2024 53.5%; the same filter on **all** downs is 58.5%: third downs are 80% passes); PROE −2.2%;
+seconds per play 31.8; time of possession 30.2 minutes per team-game (overtime included; 30:00 by construction in
+regulation); drives 10.1 per game; points per drive 2.17; scoring-drive share 40.8%; red-zone trips 3.26; first
+downs 17.5; yards per play 5.43; sacks per dropback 6.5%; giveaways 1.16.
+
+**What the market already knows.** On 4,766 team-games (2017–2025), the efficiency numbers track the Vegas
+implied total closely (r = 0.60–0.67 for points per drive, yards per play, first downs, red-zone trips, scoring
+drives, season to date) and add nothing to the drive points the team then scored once the implied total and the
+game total are partialled out (partial r −0.01 to +0.02). Volume and pass rate are what the lines do not carry:
+`ts_pace_product` r = 0.25 with the implied total, partial r = +0.115 with the plays the offense then ran
+(seconds per play −0.118); `ts_off_proe_std` r = 0.26 with the implied total, partial r = +0.25 with the game's
+dropback share (`ts_pass_env` +0.21, the opponent's PROE faced +0.09); the implied total itself correlates −0.03
+with the dropback share. Script: `scratchpad/waveD/d4/market_corr.py`.
+
+**Harness result** (D1's walk-forward, test seasons 2023–2025, both leagues; the table is in STATUS § "Wave D
+(Iteration 12)" → D4): every group drops at RB, WR and TE (|ΔSpearman| ≤ 0.006, ΔMAE −0.004 to +0.032). The only
+keep by the rule is `team_style_pass_rate` at QB (ΔSpearman +0.0096, better in 3 of 3; ΔMAE −0.014; interval score
+−0.009), and it does not hold on 2021–2022 (−0.005 each): over five seasons +0.0037, better in 3 of 5. v2 already
+sees each player's attempts / targets / carries per game, which carry his team's volume and pass rate; the team
+numbers add little on top. Recommendation: drop for v3 (PO's decision).
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

@@ -151,7 +151,8 @@ def test_metrics_match_the_sql():
 def test_groups_are_well_formed():
     groups = T.GROUPS
     assert set(groups) == {"team_style", "team_style_volume", "team_style_pass_rate", "team_style_efficiency",
-                           "team_style_defense_faced"}
+                           "team_style_defense_faced", "team_style_lean"}
+    assert set(T.LEAN) <= set(T.ALL) and len(T.LEAN) == 3
     subs = T.VOLUME + T.PASS_RATE + T.EFFICIENCY + T.DEFENSE_FACED
     assert len(subs) == len(set(subs))                                      # the four sub-groups do not overlap
     assert set(subs) | {"ts_off_games", "ts_def_games"} == set(T.ALL)      # and cover the full group
