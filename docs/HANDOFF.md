@@ -1,4 +1,4 @@
-# Handoff — League Lab, 2026-09-30
+# Handoff — League Lab, 2026-10-01
 
 For the next agent (Claude Code or any other) picking this repo up. Read in this order:
 `AGENTS.md` (rules) → this file → `docs/PROJECT_PLAN.md` § Iteration 9 (the tasks) →
@@ -37,9 +37,12 @@ Iteration 10 as Wave C: round 1 (U-13 mobile pass + U-16 League consolidation, U
 pass + U-15 model explainer, R-13 kicker and defense projections) **delivered 2026-09-30**; round 2 (**C4** T-01 trade
 evaluator + T-02 simulator · **C5** R-14 cornerback matchups + R-15 defense-vs-position picture + R-11 matchup
 comparison · **C6** R-10 role alerts + R-12 scenario upside + U-17 Receivers/Kickers context) **delivered
-2026-09-30**. Iteration 10 is complete apart from P-01 (profiles + any league), which needs a design note first;
-the open items are listed in each STATUS section. Next: Andrew's review of the live app, then P-01 or the
-Iteration 11 operations rows.
+2026-09-30**. Iteration 10 is complete apart from P-01 (profiles + any league), which needs a design note first.
+**Iteration 12 (Wave D) delivered 2026-10-01: projection v3.0** (starting-QB inputs at QB, teammate-out inputs
+at RB/WR/TE — every other candidate group was tested through the feature harness and dropped), the 50% range,
+per-tier calibration, the win probability on the decision cards, and the front-end spike with its decision note
+(`docs/FRONTEND_DECISION.md`). Next: Andrew's decisions on the front end and P-01; the weather backfill and
+kicker-wind re-test; the Iteration 11 operations rows.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a

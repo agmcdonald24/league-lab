@@ -366,6 +366,13 @@ intermediate tables at player-week grain, the harness joins them by name, nothin
 `mart_player_week_features` until a group is kept. **Round 2** = D5 (personnel) · D6 (sharper ranges and
 decisions) · D7 (front-end spike). Then v3 ships as one `MODEL_VERSION` bump with a fresh backtest.
 
+**Delivered 2026-10-01** (STATUS § "Wave D"): D1–D4 built, every group dropped (the lines carry them); D5
+kept `qb` at QB and `teammates` at RB/WR/TE; D6 shipped the 50% range, per-tier calibration and the win
+probability (no sharpening of the 80% range survived the test); D7's decision note is
+`docs/FRONTEND_DECISION.md`. **Projection v3.0 shipped.** Open after Wave D: the weather backfill from the
+Mac and a re-test of wind for kickers; QB coverage (partial games) — a "plays / points given he plays" split
+with the starting-QB inputs; Andrew's front-end decision (D7); P-01; Iteration 11 operations.
+
 ### Iteration 11 — operations for a product (Phase 3)
 
 | ID | Task | Notes |
