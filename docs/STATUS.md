@@ -1608,7 +1608,7 @@ and style). Each dev appends a section below; nothing edits `mart_player_week_fe
   loop of `backtest` factored out as `walk_forward(...)` (same calls, same order).
 * Results: `ops.feature_experiments` (DDL in `db.migrate`), `mart_feature_experiments` (view), Rankings →
   "The model" → "What we tried".
-* Harness ready: `2baa78b` at 2026-10-01 12:40:56 UTC (19 min after the start); `29fdc2c` 12:47 UTC fixes boolean
+* Harness ready: `2baa78b` at 2026-10-01 12:40:56 UTC (19 min after the start); `29fdc2c` 12:45 UTC fixes boolean
   columns in the outcome probe (D3 / D4 told to take it).
 * Defaults byte-identical (OMP_NUM_THREADS=1, same database): `ops.projections` 2026 weeks 4–18, every column but
   `fitted_at` / `frozen_at`, 17,164 rows, md5 `e6e45f116f5188f7dfdea2f4e1062120` from `league-lab project` on
