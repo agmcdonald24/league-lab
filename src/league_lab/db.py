@@ -87,8 +87,8 @@ create table if not exists ops.projections (
     proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision,
     proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision,
     proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision,
-    proj_points double precision, p10 double precision, p50 double precision, p90 double precision,
-    frozen_at timestamptz, frozen_source text
+    proj_points double precision, p10 double precision, p25 double precision, p50 double precision, p75 double precision,
+    p90 double precision, frozen_at timestamptz, frozen_source text
 );
 -- Decision record (plan B5): a league-week's rows are frozen once its first game kicks off.
 -- frozen_source: NULL = live (rewritten by every refit), 'kickoff' = the board as published before the
@@ -96,6 +96,10 @@ create table if not exists ops.projections (
 -- when its rows were locked (not a kickoff record). An existing table gains the columns here.
 alter table ops.projections add column if not exists frozen_at timestamptz;
 alter table ops.projections add column if not exists frozen_source text;
+-- Plan D6 (Wave D): the 50% range ("most weeks"), calibrated like the 80% one. NULL on rows written
+-- before it existed (2026 weeks 1-3 are frozen with P10/P50/P90 only).
+alter table ops.projections add column if not exists p25 double precision;
+alter table ops.projections add column if not exists p75 double precision;
 create index if not exists projections_idx on ops.projections (league_id, season, week, position);
 create table if not exists ops.projection_backtest (
     run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
@@ -103,6 +107,11 @@ create table if not exists ops.projection_backtest (
     mae double precision, coverage_80 double precision, pinball_10 double precision, pinball_50 double precision,
     pinball_90 double precision, interval_width double precision
 );
+-- v3 ship (2026-10-01): the 50% range's scores are kept from v3.0 on (v2.0's rows predate it: NULL)
+alter table ops.projection_backtest add column if not exists coverage_50 double precision;
+alter table ops.projection_backtest add column if not exists interval_width_50 double precision;
+alter table ops.projection_backtest add column if not exists pinball_25 double precision;
+alter table ops.projection_backtest add column if not exists pinball_75 double precision;
 create table if not exists ops.projection_importance (
     model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision
 );
@@ -250,15 +259,19 @@ def migrate(conn: psycopg.Connection) -> None:
     are created here too, from the writer's own DDL, so a fresh or upgraded database passes `dbt build`'s
     source tests BEFORE the first `project` (the Mac hit this: `make build` ran before `make project` and
     three sources did not exist yet)."""
-    from . import lineup, signals, waivers  # local import: those modules import this one
+    from . import experiments, lineup, signals, waivers  # local: those modules import this one
 
     with conn.cursor() as cur:
         for schema in SCHEMAS:
             cur.execute(sql.SQL("create schema if not exists {}").format(sql.Identifier(schema)))
         cur.execute(OPS_DDL)
-        for ddl in (*lineup.DDL.values(), waivers.UPSIDE_DDL, *signals.DDL.values()):
+        for ddl in (*lineup.DDL.values(), waivers.UPSIDE_DDL, *signals.DDL.values(), experiments.DDL):   # D1: ops.feature_experiments
             cur.execute(ddl)
     conn.commit()
+    # plan D3: raw.nfl_weather + the stadium reference (dbt resolves venues before any weather is fetched)
+    from .ingest import weather
+
+    weather.ensure_tables(conn)
 
 
 def ensure_table(

@@ -18,12 +18,12 @@ HALF_PPR = {"rec": 0.5, "rec_yd": 0.1, "rec_td": 6.0, "rush_yd": 0.1, "rush_td":
 
 # ------------------------------------------------------------------------------ plain names
 def test_every_model_input_has_a_plain_name():
-    missing = [f for f in P.FEATURES if f not in P.FEATURE_LABELS]
-    assert not missing, f"FEATURES without a plain name in FEATURE_LABELS: {missing}"
-    labels = [P.FEATURE_LABELS[f] for f in P.FEATURES]
+    missing = [f for f in P.ALL_FEATURES if f not in P.FEATURE_LABELS]
+    assert not missing, f"model inputs without a plain name in FEATURE_LABELS: {missing}"
+    labels = [P.FEATURE_LABELS[f] for f in P.ALL_FEATURES]
     assert len(set(labels)) == len(labels), "two inputs share a plain name"
     jargon = re.compile(r"_|\bxPPG\b|\bP10\b|\bP90\b|Spearman|z-score|\bmart\b|quantile|gsis|\bstd\b|\bpg\b", re.I)
-    bad = {f: lab for f, lab in zip(P.FEATURES, labels, strict=True) if jargon.search(lab) or lab == f}
+    bad = {f: lab for f, lab in zip(P.ALL_FEATURES, labels, strict=True) if jargon.search(lab) or lab == f}
     assert not bad, f"plain names that are not plain: {bad}"
 
 

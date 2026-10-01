@@ -31,6 +31,10 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | P90 / ceiling | ceiling: a good week for him (1 week in 10 lands above it) |
 | P10–P90 interval, 80% interval | between floor and ceiling (8 weeks in 10 land there) |
 | P50 | the middle outcome |
+| P25–P75, 50% range (D6) | most weeks: "most weeks 9–16" (half his weeks land there: a quarter below, a quarter above); leads on a card and on the Rankings board, the floor–ceiling behind it |
+| P(A outscores B), win probability (D6) | "Tucker outscores Monangai 54% of the time": whole percent, never 0 or 100 |
+| 50–55% / 55–65% / 65%+ (D6) | a coin flip / a lean / clear (the card's headline word; the margin's words only when there is no percentage: a kicker, a defense) |
+| same-game correlation (D6) | "teammates and players facing each other are not independent (a shootout lifts both)" |
 | interval width | the gap between floor and ceiling; "Range" |
 | coverage_80 | how often the real score landed between floor and ceiling (the aim is 8 in 10) |
 | Spearman, rank correlation | the order score: how well the projected order matched the real one (1 = perfect, 0 = random) |

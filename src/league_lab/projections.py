@@ -44,6 +44,7 @@ import pandas as pd
 import psycopg
 
 from .config import PROJECT_ROOT, get_settings
+from .feature_groups import personnel as _PN
 from .kdef import rows_after_project as kd_rows_after_project
 from .lineup import lineups_after_project
 from .rankings import TOP_N, _hit_rate, _spearman, parse_seasons
@@ -53,9 +54,18 @@ from .waivers import waivers_after_project
 
 log = logging.getLogger(__name__)
 
-MODEL_VERSION = "v2.0"
+MODEL_VERSION = "v3.0"
 POSITIONS = ("QB", "RB", "WR", "TE")
 QUANTILES = (0.1, 0.5, 0.9)
+# Plan D6 (Wave D): the 50% range ("most weeks"), fitted and calibrated with the same machinery as the
+# 80% one (P10-P90) and written next to it as p25 / p75. The 80% models and their order are unchanged.
+QUANTILES_50 = (0.25, 0.75)
+# Plan D6 follow-up: the conformal widening of both ranges is computed per projection tier, the terciles of
+# the calibration season's priced line within the position (cut points kept on the model), so a starter's
+# range holds 80% / 50% on starters and not only on average; a tier with fewer than TIER_MIN_ROWS
+# calibration rows takes the position-wide widening.
+TIER_QUANTILES = (1 / 3, 2 / 3)
+TIER_MIN_ROWS = 200
 
 # Stat-line components projected per position (everything else is 0 for that position).
 COMPONENTS: dict[str, list[str]] = {
@@ -83,6 +93,19 @@ BASE_FEATURES = [
 ]
 COMPONENT_FEATURES = [f"{c}_pg_std" for c in ALL_COMPONENTS] + [f"{c}_pg_l3" for c in ALL_COMPONENTS] + [f"prev_{c}_pg" for c in ALL_COMPONENTS]
 FEATURES = BASE_FEATURES + COMPONENT_FEATURES
+# Projection v3 (plan D5, Wave D): personnel inputs, per position, kept by the feature-group harness on 2021-2025
+# (``int_player_week_personnel`` via ``mart_player_week_features``; docs/METRICS.md § "Personnel" / § projection v3).
+# QB: who starts (the projected starter vs the QB his recent games were played with); RB / WR / TE: the leading
+# teammate out this week. Every position keeps the v2 inputs; the lists live with the feature group.
+QB_INPUTS = list(_PN.QB)                 # pn_qb_changed, pn_qb_games_together, pn_qb_prev_ppg_diff, pn_qb_is_rookie_or_backup, pn_qb_starting
+TEAMMATE_INPUTS = list(_PN.TEAMMATES)    # pn_top_target_out, pn_top_rusher_out, pn_teammate_share_out, pn_absence_beneficiary
+FEATURES_BY_POSITION: dict[str, list[str]] = {
+    "QB": FEATURES + QB_INPUTS,
+    "RB": FEATURES + TEAMMATE_INPUTS,
+    "WR": FEATURES + TEAMMATE_INPUTS,
+    "TE": FEATURES + TEAMMATE_INPUTS,
+}
+ALL_FEATURES = list(dict.fromkeys(f for fs in FEATURES_BY_POSITION.values() for f in fs))   # what load_frame reads
 
 # Fixed hyperparameters (a change is a new MODEL_VERSION). Small trees, strong leaf minimum:
 # weekly fantasy outcomes are noisy and the training sets are a few thousand rows per position.
@@ -90,9 +113,14 @@ HGB = dict(max_iter=300, learning_rate=0.04, max_leaf_nodes=15, min_samples_leaf
 
 
 # ------------------------------------------------------------------------------ data
-def load_frame(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
+def load_frame(conn: psycopg.Connection, seasons: list[int], extra_tables: dict[str, list[str]] | None = None) -> pd.DataFrame:
+    """The as-of feature frame of ``seasons`` (QB-TE), ordered by player, season, week.
+
+    ``extra_tables`` (plan D1, the feature-group harness): ``{"schema.table": [columns]}`` of feature tables at
+    ``(gsis_id, season, week)`` grain, left-joined onto the frame as float columns (NULL = not known). The
+    default (None) is the production frame, untouched."""
     cols = ["gsis_id", "season", "week", "position", "player_name", "team", "opponent", "played", "points_actual", "no_history",
-            "report_status", "roster_status", *[f for f in FEATURES if f != "questionable"], *[f"out_{c}" for c in ALL_COMPONENTS]]
+            "report_status", "roster_status", *[f for f in ALL_FEATURES if f != "questionable"], *[f"out_{c}" for c in ALL_COMPONENTS]]
     # ordered: the early-stopping validation split (automatic above 10k rows) follows row order, so an
     # unordered scan (synchronized seq scans on a 60 MB table) made two fits of the same data differ
     sql = (f"select {', '.join(dict.fromkeys(cols))} from analytics.mart_player_week_features "
@@ -102,9 +130,33 @@ def load_frame(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
         names = [d.name for d in cur.description]
         df = pd.DataFrame(cur.fetchall(), columns=names)
     for c in df.columns:
-        if c in FEATURES or c.startswith("out_") or c == "points_actual":
+        if c in ALL_FEATURES or c.startswith("out_") or c == "points_actual":
             df[c] = pd.to_numeric(df[c], errors="coerce").astype(float)
     df["questionable"] = (df["report_status"] == "Questionable").astype(float)
+    for table, extra in (extra_tables or {}).items():
+        df = _join_feature_table(conn, df, table, extra, seasons)
+    return df
+
+
+def _join_feature_table(conn: psycopg.Connection, df: pd.DataFrame, table: str, columns: list[str], seasons: list[int]) -> pd.DataFrame:
+    """Left-join one feature table's ``columns`` at ``(gsis_id, season, week)`` (row order kept: the fit depends on it)."""
+    from psycopg import sql
+
+    schema, name = table.split(".", 1)
+    q = sql.SQL("select gsis_id, season, week, {} from {}.{} where season = any(%s)").format(
+        sql.SQL(", ").join(sql.Identifier(c) for c in columns), sql.Identifier(schema), sql.Identifier(name))
+    with conn.cursor() as cur:
+        cur.execute(q, (seasons,))
+        extra = pd.DataFrame(cur.fetchall(), columns=["gsis_id", "season", "week", *columns])
+    for c in columns:   # booleans and numerics alike: float, NULL -> NaN (HGB treats it as "not known")
+        extra[c] = pd.to_numeric(extra[c].map(lambda v: float(v) if v is not None else np.nan), errors="coerce").astype(float)
+    extra = extra.astype({"season": df["season"].dtype, "week": df["week"].dtype})   # week is float in the frame (it is a feature)
+    clash = [c for c in columns if c in df.columns]
+    if clash:
+        raise ValueError(f"{table}: columns {clash} already exist in the feature frame")
+    n = len(df)
+    df = df.merge(extra, on=["gsis_id", "season", "week"], how="left", validate="many_to_one")
+    assert len(df) == n, f"{table}: the join changed the row count ({n} -> {len(df)})"
     return df
 
 
@@ -129,8 +181,13 @@ class PositionModel:
     components: dict[str, object] = field(default_factory=dict)      # component -> regressor
     quantiles: dict[tuple[str, float], object] = field(default_factory=dict)  # (league_id, q) -> regressor
     conformal: dict[str, float] = field(default_factory=dict)        # league_id -> interval widening (points)
+    conformal_50: dict[str, float] = field(default_factory=dict)     # league_id -> widening of the 50% range (plan D6)
+    tier_cuts: dict[str, tuple[float, ...]] = field(default_factory=dict)          # league_id -> projection tier cut points
+    conformal_tiers: dict[str, tuple[float, ...]] = field(default_factory=dict)    # league_id -> 80% widening per tier
+    conformal_50_tiers: dict[str, tuple[float, ...]] = field(default_factory=dict) # league_id -> 50% widening per tier
     n_rows: int = 0
     calibration_season: int | None = None
+    features: list[str] | None = None    # the inputs it was fitted on (fit_position always sets them); None = FEATURES
 
 
 def _regressor(loss: str, quantile: float | None = None):
@@ -161,9 +218,9 @@ def _binnable(x: np.ndarray) -> np.ndarray:
     return x
 
 
-def _matrix(d: pd.DataFrame) -> np.ndarray:
-    """Feature matrix (NaN = not known yet)."""
-    return _binnable(d[FEATURES].to_numpy(dtype=float))
+def _matrix(d: pd.DataFrame, features: list[str] | None = None) -> np.ndarray:
+    """Feature matrix (NaN = not known yet). ``features`` (plan D1 harness): default FEATURES."""
+    return _binnable(d[FEATURES if features is None else features].to_numpy(dtype=float))
 
 
 def _fit_components(x: np.ndarray, d: pd.DataFrame, position: str) -> dict[str, object]:
@@ -199,11 +256,15 @@ def _oof_lines(x: np.ndarray, d: pd.DataFrame, position: str, scorings: dict[str
     return lines
 
 
-def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[str, dict[str, float]]]) -> PositionModel:
+def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[str, dict[str, float]]],
+                 features: list[str] | None = None) -> PositionModel:
+    """``features`` (plan D1 harness): the input columns; default the position's production inputs
+    (``FEATURES_BY_POSITION``, v3). The model keeps them (``predict_position`` / importance use them)."""
+    features = list(FEATURES_BY_POSITION[position] if features is None else features)
     d = train[(train["position"] == position) & train["played"] & ~train["no_history"]]
     d = d.dropna(subset=[f"out_{c}" for c in COMPONENTS[position]]).reset_index(drop=True)
-    x = _matrix(d)
-    m = PositionModel(position, n_rows=len(d))
+    x = _matrix(d, features)
+    m = PositionModel(position, n_rows=len(d), features=features)
     # 1. the point projection: one regressor per component on every training row
     m.components = _fit_components(x, d, position)
     # 2. the interval: quantile regressors of the RESIDUAL of the league's points around the
@@ -214,6 +275,8 @@ def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[s
     # 3. split-conformal calibration (CQR): the residual models are fitted on all but the newest
     #    training season; that season measures how far actuals fall outside [P10, P90], and both
     #    ends are widened by the 80th percentile of the miss, so "80% inside" holds out of sample.
+    #    Plan D6 follow-up: per projection tier (terciles of the calibration season's line), so it holds
+    #    for starters too (position-wide, starters' ranges held 76-77% and the fringe's more than 80%).
     seasons = sorted(d["season"].unique())
     cal_season = seasons[-1] if len(seasons) >= 3 else None
     is_cal = (d["season"] == cal_season).to_numpy() if cal_season else np.zeros(len(d), dtype=bool)
@@ -227,24 +290,56 @@ def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[s
         fit_idx, cal_idx = ok & ~is_cal, ok & is_cal
         for q in QUANTILES:
             m.quantiles[(league_id, q)] = _regressor("quantile", q).fit(_binnable(xq[fit_idx]), y[fit_idx])
+        # plan D6: the 50% range, fitted after the 80% models (each regressor has its own seed, so the
+        # P10 / P50 / P90 models are exactly what they were) and calibrated the same way for 50%
+        for q in QUANTILES_50:
+            m.quantiles[(league_id, q)] = _regressor("quantile", q).fit(_binnable(xq[fit_idx]), y[fit_idx])
+        xc, yc = xq[cal_idx], y[cal_idx]
+        tiers = None
         if cal_idx.sum() >= 50:
-            lo = m.quantiles[(league_id, QUANTILES[0])].predict(xq[cal_idx])
-            hi = m.quantiles[(league_id, QUANTILES[-1])].predict(xq[cal_idx])
-            miss = np.maximum(lo - y[cal_idx], y[cal_idx] - hi)      # negative when inside the interval
-            n = int(cal_idx.sum())
-            level = min(1.0, np.ceil((n + 1) * (QUANTILES[-1] - QUANTILES[0])) / n)
-            m.conformal[league_id] = float(np.quantile(miss, level))
-        else:
-            m.conformal[league_id] = 0.0
-    log.info("fit %s: %s rows, %s components, %s quantile models, calibration season %s, widening %s",
+            m.tier_cuts[league_id] = tuple(float(c) for c in np.quantile(line[cal_idx], TIER_QUANTILES))
+            tiers = np.searchsorted(m.tier_cuts[league_id], line[cal_idx])
+        for (q_lo, q_hi), pooled, per_tier in (((QUANTILES[0], QUANTILES[-1]), m.conformal, m.conformal_tiers),
+                                               (QUANTILES_50, m.conformal_50, m.conformal_50_tiers)):
+            lo = m.quantiles[(league_id, q_lo)].predict(xc) if len(yc) else np.zeros(0)
+            hi = m.quantiles[(league_id, q_hi)].predict(xc) if len(yc) else np.zeros(0)
+            pooled[league_id] = _conformal_widening(lo, hi, yc, q_hi - q_lo)
+            if tiers is not None:
+                per_tier[league_id] = tuple(_conformal_widening(lo[tiers == t], hi[tiers == t], yc[tiers == t], q_hi - q_lo)
+                                            if (tiers == t).sum() >= TIER_MIN_ROWS else pooled[league_id]
+                                            for t in range(len(TIER_QUANTILES) + 1))
+    log.info("fit %s: %s rows, %s components, %s quantile models, calibration season %s, widening 80%% by tier %s, 50%% by tier %s",
              position, len(d), len(m.components), len(m.quantiles), cal_season,
-             {k[-6:]: round(v, 2) for k, v in m.conformal.items()})
+             {k[-6:]: [round(v, 2) for v in t] for k, t in m.conformal_tiers.items()},
+             {k[-6:]: [round(v, 2) for v in t] for k, t in m.conformal_50_tiers.items()})
     return m
 
 
+def _conformal_widening(lo: np.ndarray, hi: np.ndarray, y_cal: np.ndarray, coverage: float) -> float:
+    """Split-conformal widening (CQR) of the range [lo, hi] predicted for the calibration rows: the
+    ceil((n + 1) x coverage) / n quantile of how far each actual falls outside it (negative = inside), so that
+    share of held-out outcomes lands inside once both ends move out by it. 0 with fewer than 50 rows."""
+    n = len(y_cal)
+    if n < 50:
+        return 0.0
+    miss = np.maximum(lo - y_cal, y_cal - hi)      # negative when inside the interval
+    level = min(1.0, np.ceil((n + 1) * coverage) / n)
+    return float(np.quantile(miss, level))
+
+
+def _widening(m: PositionModel, league_id: str, line: np.ndarray, band: str) -> np.ndarray | float:
+    """Per row: the widening of its projection tier (``band`` '80' or '50'); the position-wide value for a model
+    without tiers."""
+    per_tier = (m.conformal_tiers if band == "80" else m.conformal_50_tiers).get(league_id)
+    pooled = (m.conformal if band == "80" else m.conformal_50).get(league_id, 0.0)
+    if not per_tier or league_id not in m.tier_cuts:
+        return pooled
+    return np.asarray(per_tier, dtype=float)[np.searchsorted(m.tier_cuts[league_id], line)]
+
+
 def predict_position(m: PositionModel, rows: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]]) -> pd.DataFrame:
-    """One output row per league per input row: projected line, priced points, P10/P50/P90."""
-    x = _matrix(rows)
+    """One output row per league per input row: projected line, priced points, P10/P50/P90 and (plan D6) P25/P75."""
+    x = _matrix(rows, m.features)
     out = rows[["gsis_id", "season", "week", "position"]].copy()
     out["season"], out["week"] = out["season"].astype(int), out["week"].astype(int)   # week is also a feature (float)
     for c in ALL_COMPONENTS:
@@ -261,10 +356,19 @@ def predict_position(m: PositionModel, rows: pd.DataFrame, scorings: dict[str, t
         # a quantile model has no monotonicity guarantee across separate fits: sort the three,
         # then apply the conformal widening to both ends (a floor of 0 for P10: no negative floors)
         qs = np.sort(o[["p10", "p50", "p90"]].to_numpy(dtype=float), axis=1)
-        adj = m.conformal.get(league_id, 0.0)
+        adj = _widening(m, league_id, line, "80")
         o["p10"], o["p50"], o["p90"] = np.clip(qs[:, 0] - adj, 0, None), qs[:, 1], qs[:, 2] + adj
         o["p90"] = np.maximum(o["p90"], o["proj_points"])   # the ceiling never sits below the projection
         o["p50"] = np.clip(o["p50"], o["p10"], o["p90"])     # keep the order after the floor was clipped at 0
+        # plan D6: the 50% range, sorted and widened the same way, then kept inside the 80% one around P50
+        # (P10 <= P25 <= P50 <= P75 <= P90); a model fitted before D6 has no 50% models: NULL
+        if all((league_id, q) in m.quantiles for q in QUANTILES_50):
+            q50 = np.sort(np.column_stack([line + m.quantiles[(league_id, q)].predict(xq) for q in QUANTILES_50]), axis=1)
+            adj50 = _widening(m, league_id, line, "50")
+            o["p25"] = np.clip(q50[:, 0] - adj50, o["p10"], o["p50"])
+            o["p75"] = np.clip(q50[:, 1] + adj50, o["p50"], o["p90"])
+        else:
+            o["p25"], o["p75"] = np.nan, np.nan
         frames.append(o)
     return pd.concat(frames, ignore_index=True)
 
@@ -276,11 +380,11 @@ def importance(m: PositionModel, test: pd.DataFrame, league_id: str, scoring: di
     d = test[(test["position"] == m.position) & test["played"]].dropna(subset=[f"out_{c}" for c in COMPONENTS[m.position]])
     if len(d) < 50:
         return pd.DataFrame(columns=["position", "feature", "importance"])
-    x = _matrix(d)
+    x = _matrix(d, m.features)
     line = _line_points(m, x, scoring)
     y = price(d, scoring, "out_").to_numpy(dtype=float) - line
     r = permutation_importance(m.quantiles[(league_id, 0.5)], _quantile_features(x, line), y, scoring="neg_mean_absolute_error", n_repeats=3, random_state=0)
-    return pd.DataFrame({"position": m.position, "feature": [*FEATURES, "priced_line"], "importance": r.importances_mean}).sort_values("importance", ascending=False)
+    return pd.DataFrame({"position": m.position, "feature": [*(m.features or FEATURES), "priced_line"], "importance": r.importances_mean}).sort_values("importance", ascending=False)
 
 
 # ------------------------------------------------------------------------------ importance of the projection itself (plan U-15)
@@ -300,7 +404,7 @@ COMPONENT_LABELS: dict[str, str] = {
 }
 
 # Every model input in plain words (the Rankings page shows these, never the column names).
-# tests/test_projection_importance.py: every entry of FEATURES has one, and no two share a label.
+# tests/test_projection_importance.py: every model input (ALL_FEATURES) has one, and no two share a label.
 FEATURE_LABELS: dict[str, str] = {
     "week": "Week of the season",
     "games_to_date": "Games played so far this season",
@@ -343,6 +447,16 @@ FEATURE_LABELS: dict[str, str] = {
     **{f"{c}_pg_std": f"{n} per game, season" for c, n in COMPONENT_LABELS.items()},
     **{f"{c}_pg_l3": f"{n} per game, last 3 games" for c, n in COMPONENT_LABELS.items()},
     **{f"prev_{c}_pg": f"{n} per game, last season" for c, n in COMPONENT_LABELS.items()},
+    # v3 (plan D5): who plays next to him this week
+    "pn_qb_changed": "A different QB starts than in his recent games",
+    "pn_qb_games_together": "Games he has played with this week's QB",
+    "pn_qb_prev_ppg_diff": "This week's QB vs his usual QB, points per start",
+    "pn_qb_is_rookie_or_backup": "This week's QB has started fewer than 8 games",
+    "pn_qb_starting": "Is he the projected starter?",
+    "pn_top_target_out": "Top target on his team out this week",
+    "pn_top_rusher_out": "Top ball carrier on his team out this week",
+    "pn_teammate_share_out": "Share of the team's targets out this week",
+    "pn_absence_beneficiary": "His role grew when a teammate went out, and that teammate is still out",
     "priced_line": "The projection itself (the interval model's input)",
 }
 
@@ -385,7 +499,7 @@ def component_importance(m: PositionModel, rows: pd.DataFrame, scoring: dict[str
     d = d.dropna(subset=[f"out_{c}" for c in comps]).reset_index(drop=True)
     if len(d) < 50 or not comps:
         return pd.DataFrame(columns=IMPORTANCE_COLUMNS)
-    x = _matrix(d)
+    x = _matrix(d, m.features)
     w = unit_points(scoring)
     outs = np.nan_to_num(d[[f"out_{c}" for c in ALL_COMPONENTS]].to_numpy(dtype=float))
     y_pts = outs @ np.array([w[c] for c in ALL_COMPONENTS])          # what the player actually scored (stat keys)
@@ -402,7 +516,7 @@ def component_importance(m: PositionModel, rows: pd.DataFrame, scoring: dict[str
     n = len(d)
     rng = np.random.default_rng(seed)
     out: list[dict[str, object]] = []
-    for j, f in enumerate(FEATURES):
+    for j, f in enumerate(m.features or FEATURES):
         col = x[:, j]
         nan = np.isnan(col)
         varies = np.unique(col[~nan]).size + int(nan.any()) > 1      # "unknown" counts as a value of its own
@@ -463,7 +577,8 @@ def importance_after_project(conn: psycopg.Connection, train: pd.DataFrame, scor
         for pos in POSITIONS:
             d = past[(past["position"] == pos) & past["played"] & ~past["no_history"]]          # fit_position's training filter
             d = d.dropna(subset=[f"out_{c}" for c in COMPONENTS[pos]]).reset_index(drop=True)
-            twin = PositionModel(pos, components=_fit_components(_matrix(d), d, pos), n_rows=len(d))
+            feats = FEATURES_BY_POSITION[pos]
+            twin = PositionModel(pos, components=_fit_components(_matrix(d, feats), d, pos), n_rows=len(d), features=feats)
             frames.append(component_importance(twin, rows, scorings[ref_id][1]))
         imp = pd.concat(frames, ignore_index=True)
         imp["model_version"], imp["model"], imp["run_at"], imp["league_id"] = MODEL_VERSION, "component", datetime.now(UTC), ref_id
@@ -530,8 +645,20 @@ def score_predictions(pred: pd.DataFrame, actual: pd.DataFrame, baseline: pd.Dat
                     "pinball_50": _pinball(y.to_numpy(), g["p50"].to_numpy(), 0.5) if name != "baseline" else None,
                     "pinball_90": _pinball(y.to_numpy(), g["p90"].to_numpy(), 0.9) if name != "baseline" else None,
                     "interval_width": float((g["p90"] - g["p10"]).mean()) if name != "baseline" else None,
+                    # plan D6: the 50% range (stored in ops.projection_backtest from v3.0 on)
+                    **(_scores_50(y, g) if name != "baseline" else {}),
                 })
     return pd.DataFrame(out)
+
+
+def _scores_50(y: pd.Series, g: pd.DataFrame) -> dict[str, float | None]:
+    """Coverage, pinball losses and width of the 50% range [P25, P75] (plan D6); None when the frame has none."""
+    if "p25" not in g or "p75" not in g or g["p25"].isna().any() or g["p75"].isna().any():
+        return {"coverage_50": None, "pinball_25": None, "pinball_75": None, "interval_width_50": None}
+    yv = y.to_numpy()
+    return {"coverage_50": float(((y >= g["p25"]) & (y <= g["p75"])).mean()),
+            "pinball_25": _pinball(yv, g["p25"].to_numpy(), 0.25), "pinball_75": _pinball(yv, g["p75"].to_numpy(), 0.75),
+            "interval_width_50": float((g["p75"] - g["p25"]).mean())}
 
 
 def load_baseline(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
@@ -542,15 +669,15 @@ def load_baseline(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
 
 
 # ------------------------------------------------------------------------------ walk-forward backtest
-def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | None = None) -> pd.DataFrame:
-    scorings = league_scorings(conn)
-    all_seasons = available_seasons(conn)
-    first = min(all_seasons)
-    frame = load_frame(conn, [s for s in all_seasons if s <= max(test_seasons)])
-    baseline = load_baseline(conn, test_seasons)
+def walk_forward(frame: pd.DataFrame, test_seasons: list[int], scorings: dict[str, tuple[str, dict[str, float]]], first: int,
+                 baseline: pd.DataFrame | None, features: list[str] | dict[str, list[str]] | None = None, positions: tuple[str, ...] = POSITIONS,
+                 importance_ref: str | None = None) -> tuple[pd.DataFrame, list[pd.DataFrame]]:
+    """The walk-forward loop of ``backtest``: for each test season N, fit every position on seasons
+    ``first``..N-1 of ``frame`` and score N. ``features`` / ``positions`` (plan D1, the feature-group
+    harness) default to production; ``importance_ref`` (a league id) also measures the P50 model's
+    permutation importance on the newest test season. Returns the per-week scores and the importances."""
     results: list[pd.DataFrame] = []
     imps: list[pd.DataFrame] = []
-    ref_id = next(iter(scorings))
     for n in test_seasons:
         train = frame[(frame["season"] >= first) & (frame["season"] < n)]
         test = frame[frame["season"] == n]
@@ -558,11 +685,12 @@ def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | 
             log.warning("season %s: no train (%s rows) or test (%s rows)", n, len(train), len(test))
             continue
         preds = []
-        for pos in POSITIONS:
-            m = fit_position(train, pos, {k: v for k, v in scorings.items()})
+        for pos in positions:
+            feats = features.get(pos) if isinstance(features, dict) else features     # v3: per position
+            m = fit_position(train, pos, {k: v for k, v in scorings.items()}, feats)
             preds.append(predict_position(m, test[test["position"] == pos], scorings))
-            if n == max(test_seasons):
-                imps.append(importance(m, test, ref_id, scorings[ref_id][1]))
+            if importance_ref is not None and n == max(test_seasons):
+                imps.append(importance(m, test, importance_ref, scorings[importance_ref][1]))
         pred = pd.concat(preds, ignore_index=True)
         pred.attrs["scorings"] = {k: v[1] for k, v in scorings.items()}
         actual = test[test["played"]][["gsis_id", "season", "week", "position", *[f"out_{c}" for c in ALL_COMPONENTS]]].dropna()
@@ -570,11 +698,22 @@ def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | 
         res["train_seasons"] = f"{first}-{n - 1}"
         results.append(res)
         log.info("season %s scored: %s rows", n, len(res))
-    res = pd.concat(results, ignore_index=True)
+    return pd.concat(results, ignore_index=True), imps
+
+
+def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | None = None) -> pd.DataFrame:
+    scorings = league_scorings(conn)
+    all_seasons = available_seasons(conn)
+    first = min(all_seasons)
+    frame = load_frame(conn, [s for s in all_seasons if s <= max(test_seasons)])
+    baseline = load_baseline(conn, test_seasons)
+    ref_id = next(iter(scorings))
+    res, imps = walk_forward(frame, test_seasons, scorings, first, baseline, importance_ref=ref_id)
     run_id = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     res["run_id"], res["run_at"], res["model_version"] = run_id, datetime.now(UTC), MODEL_VERSION
     # the K / DEF rows (R-13, model kd1.0, `league-lab backtest-kd`) share the table: not this run's to delete
-    _write(conn, "ops.projection_backtest", res, "season = any(%s) and coalesce(model_version, '') not like 'kd%%'", (test_seasons,))
+    # v3: only this model version's rows are replaced (v2.0's stay as its record; K / DEF rows are kd1.0's)
+    _write(conn, "ops.projection_backtest", res, "season = any(%s) and model_version = %s", (test_seasons, MODEL_VERSION))
     imp = pd.concat(imps, ignore_index=True) if imps else pd.DataFrame(columns=["position", "feature", "importance"])
     imp["model_version"], imp["run_at"], imp["league_id"] = MODEL_VERSION, datetime.now(UTC), ref_id
     imp["model"], imp["component"], imp["unit"] = "quantile_p50", "p50_residual", "points"   # U-15: the interval model's rows, labelled
@@ -582,7 +721,7 @@ def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | 
     _write(conn, "ops.projection_importance", imp, "model_version = %s and model = 'quantile_p50'", (MODEL_VERSION,))
     out_dir = out_dir or PROJECT_ROOT / "reports" / "backtests"
     out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / f"projection_v2_{min(test_seasons)}_{max(test_seasons)}_{run_id}.md"
+    path = out_dir / f"projection_{MODEL_VERSION.replace('.', '_')}_{min(test_seasons)}_{max(test_seasons)}_{run_id}.md"
     path.write_text(report(res, scorings, imp))
     log.info("report written to %s", path)
     return res
@@ -744,15 +883,21 @@ DDL = {
         proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision,
         proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision,
         proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision,
-        proj_points double precision, p10 double precision, p50 double precision, p90 double precision,
-        frozen_at timestamptz, frozen_source text);
+        proj_points double precision, p10 double precision, p25 double precision, p50 double precision, p75 double precision,
+        p90 double precision, frozen_at timestamptz, frozen_source text);
         alter table ops.projections add column if not exists frozen_at timestamptz;
-        alter table ops.projections add column if not exists frozen_source text""",
+        alter table ops.projections add column if not exists frozen_source text;
+        alter table ops.projections add column if not exists p25 double precision;
+        alter table ops.projections add column if not exists p75 double precision""",
     "ops.projection_backtest": """create table if not exists ops.projection_backtest (
         run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
         position text, scorer text, n_players integer, spearman double precision, top_n integer, hit_rate double precision,
         mae double precision, coverage_80 double precision, pinball_10 double precision, pinball_50 double precision,
-        pinball_90 double precision, interval_width double precision)""",
+        pinball_90 double precision, interval_width double precision);
+        alter table ops.projection_backtest add column if not exists coverage_50 double precision;
+        alter table ops.projection_backtest add column if not exists interval_width_50 double precision;
+        alter table ops.projection_backtest add column if not exists pinball_25 double precision;
+        alter table ops.projection_backtest add column if not exists pinball_75 double precision;""",
     "ops.projection_importance": """create table if not exists ops.projection_importance (
         model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision);
         alter table ops.projection_importance add column if not exists model text;
@@ -897,7 +1042,7 @@ def summarize(res: pd.DataFrame) -> pd.DataFrame:
 
 
 def report(res: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]], imp: pd.DataFrame) -> str:
-    lines = [f"# Projection v2 backtest ({MODEL_VERSION})",
+    lines = [f"# Projection backtest ({MODEL_VERSION})",
              f"_generated {datetime.now(UTC):%Y-%m-%d %H:%M} UTC · walk-forward: train on seasons before N, test N · players who played, "
              "regular season, weeks with ≥ 8 ranked players_", "",
              "Scorers: `v2_points` = projected stat line priced under the league's scoring; `v2_p50` = the median of the quantile model; "

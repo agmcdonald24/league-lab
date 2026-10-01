@@ -9,10 +9,21 @@ rostered player his roster's lineup (lib.cards.lineup_rows) — five at most.
 
 import pandas as pd
 import streamlit as st
-from lib.cards import TOL, alternative, bench_gap, decision_week, lineup_rows, slot_label, verdict
+from lib.cards import (
+    TOL,
+    alternative,
+    bench_gap,
+    decision_week,
+    lineup_rows,
+    slot_label,
+    verdict,
+    win_probability,
+)
 from lib.db import missing_relations, query, require_relations
 from lib.signals import alert_headline, alert_lines, scenario_phrase
 from lib.ui import current_leagues, freshness_banner, pct, perspective, player_link, setup
+
+from league_lab import decisions as D
 
 setup("Player")
 freshness_banner()
@@ -96,7 +107,7 @@ if prof.empty:
 p = prof.iloc[0]
 pos, team = p["position"], p["team"]
 proj = query(                                                                         # 3: projection
-    """select proj_points, p10, p90, proj_targets, proj_receptions, proj_receiving_yards, proj_receiving_tds,
+    """select proj_points, p10, p25, p75, p90, proj_targets, proj_receptions, proj_receiving_yards, proj_receiving_tds,
               proj_carries, proj_rushing_yards, proj_rushing_tds, proj_attempts, proj_passing_yards, proj_passing_tds,
               proj_passing_interceptions, opponent, is_home
        from analytics.mart_player_week_projections
@@ -176,6 +187,9 @@ with st.container(border=True):
         r = proj.iloc[0]
         with st.container(horizontal=True, wrap=True, gap="medium"):
             st.metric("Projected", f"{float(r['proj_points']):.1f}", width="content")
+            if is_num(r["p25"]) and is_num(r["p75"]):      # the 50% range (plan D6); NULL on weeks frozen before it existed
+                st.metric("Most weeks", f"{float(r['p25']):.0f}–{float(r['p75']):.0f}", width="content",
+                          help="Half his weeks land in this range: a quarter below it, a quarter above")
             st.metric("Floor", f"{float(r['p10']):.1f}", width="content", help="One week in ten he scores less")
             st.metric("Ceiling", f"{float(r['p90']):.1f}", width="content", help="One week in ten he scores more")
         parts = []
@@ -304,9 +318,13 @@ with st.container(border=True):
                     src = {"season_ppg": " (his points per game this season)", "observed_ppg": " (points per game Sleeper scored)"}.get(m["value_source"], "")
                     head = f"Week {week}: **starts at {where}** for {team_name}, {float(m['value']):.2f}{src}"
                     if alt is not None:
+                        # the same words as the decision cards (plan D6): from the win probability when both have a
+                        # range, else from the margin
+                        pw = win_probability(m, alt)
+                        call = verdict(float(m["margin"])) if pw is None else D.words(pw)
                         st.markdown(f"{head} — without him the lineup loses **{float(m['margin']):.2f}** "
                                     f"({player_link(alt['gsis_id'], alt['player_name'])}, {float(alt['value']):.2f}, would come in): "
-                                    f"{verdict(float(m['margin']))}.")
+                                    f"{call}.")
                     else:
                         st.markdown(f"{head} — {a['how']}: he is a must-start.")
             elif m["role"] == "bench":
@@ -372,8 +390,9 @@ with st.expander("How to read this"):
     st.markdown(
         "- **Usage** is the work he gets: his share of his team's targets or carries, of its plays, of the quarterback's "
         "first looks and of the red-zone chances. The arrow is the last 3 games: up means a growing role.\n"
-        f"- **Projection** is this week's projected points in {league_name} scoring, with a bad week (floor) and a good "
-        "week (ceiling): 1 week in 10 lands below the floor, 1 in 10 above the ceiling. The opponent's rank is 1 for the "
+        f"- **Projection** is this week's projected points in {league_name} scoring. **Most weeks** is the range half "
+        "his weeks land in (a quarter below, a quarter above); the **floor** and **ceiling** are a bad week and a good "
+        "week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. The opponent's rank is 1 for the "
         "defense that gives up the most to his position.\n"
         "- **Availability** says whose team he is on (or that he is a free agent), his injury status, and whether his "
         "game has started.\n"

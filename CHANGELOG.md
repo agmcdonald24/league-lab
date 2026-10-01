@@ -2,6 +2,39 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-01 — Projection v3 and the decision ranges
+
+- **Projection v3.0 (D5 + the v3 ship).** Per-position inputs, `projections.FEATURES_BY_POSITION`: QB = v2's inputs + 5
+  starting-QB inputs (`pn_qb_starting`, games with this week's QB, points-per-start gap, < 8 career starts, QB
+  changed); RB / WR / TE = v2's + 4 teammate inputs (top target / top ball carrier out, share of targets out, live
+  absence alert). From `int_player_week_personnel` (new: `int_pn_team_game`, `int_pn_player_game`,
+  `int_pn_player_week_status`, `int_pn_window_player`) joined into `mart_player_week_features`
+  (`assert_features_never_peek` covers them). Walk-forward 2021–2025, both leagues: QB Spearman 0.538 → 0.582 (better in
+  5 of 5 seasons), MAE 7.01 → 6.49, interval score 1.516 → 1.434; RB +0.009, WR +0.005, TE +0.002. `MODEL_VERSION`
+  v3.0; v2.0's backtest rows stay (`mart_projection_backtest` gains `model_version` in its grain, `is_current`,
+  `coverage_50`, `interval_width_50`, `interval_score`; `ops.projection_backtest` keeps the 50% range's scores from
+  v3.0 on); the drift strip compares with the backtest of the model on the board. The scenario refits
+  (`signals.py`) and the component importance use the position's inputs; nine plain labels; `pn_qb_starting` is the
+  QB model's top input. A projected starter not filled yet (beyond about a week) is the team's last starter. K / DEF
+  unchanged (kd1.0). Live boards already frozen keep their v2.0 rows (on the Mac v3 starts at week 5).
+- **Ranges and decisions (D6).** A 50% range (`p25` / `p75`, "most weeks") next to the 80% one, both split-conformal
+  widened per projection tier (starters' ranges were too narrow: top-N coverage 75.9–77.4% → 78.8–80.5%); decision
+  cards lead with "A outscores B x% of the time" (`league_lab.decisions`: the two players' quantiles, a Gaussian
+  copula with measured same-game correlations; Brier 0.221 on 5,374 lineup calls of 2024–2025 vs 0.249 for a coin flip).
+- **After QA.** A card whose starter projects more but wins less often leads with the recommendation and says both;
+  Home's intro moves under My week once a team is picked (the first card is above the fold on a phone); the Player
+  page and `/api/player` show the "most weeks" range; the experiment record ships as the seed
+  `dbt/seeds/feature_experiments.csv` (unioned into `mart_feature_experiments`), so "What we tried" fills on any build.
+- **Feature-group harness (D1) and what it rejected (D2–D5).** `league-lab experiment <group>`: the production model with
+  and without a group on 2023–2025, a paired keep / drop rule per position, a no-peek check; results in
+  `ops.feature_experiments` / `mart_feature_experiments` and on Rankings → "What we tried". Dropped: game context
+  (kickoff, rest, travel, venue), weather (Open-Meteo loader built, `league-lab ingest weather`), team volume and
+  style, offensive-line absences, own injury history. The harness's baseline is now the production model (per
+  position) and refuses a group whose columns are already inputs.
+- **Fixes.** `int_player_game_role` matches teams on one code per franchise (the Raiders 2016–19 and the Chargers 2016
+  were missing: 5,264 → 5,344 team-games, role alerts 7,074 → 7,157 under version ra1.2, which recomputes every
+  season once). The read-only API (D7) gains `scipy` (the cards' decision probability needs it).
+
 ## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
 
 - **Matchups: cornerbacks, defense vs position as a picture, two players side by side (R-14, R-15, R-11).** New

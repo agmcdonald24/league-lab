@@ -146,6 +146,24 @@ def ingest_nfl_cmd(
     raise typer.Exit(1 if _print_results(results) else 0)
 
 
+@ingest_app.command("weather")
+def ingest_weather_cmd(
+    seasons: str | None = typer.Option(None, help="e.g. 2025, 2016-2025 (default: every season with games)"),
+    forecast: bool = typer.Option(False, help="Also fetch the forecast for games in the next 16 days (one call per stadium)"),
+    offline: bool = typer.Option(False, help="Replay every archived Open-Meteo file from data/raw/open_meteo; no network"),
+    force: bool = typer.Option(False, help="Re-fetch and reload even when the archive already covers the games"),
+):
+    """Game-day weather from Open-Meteo by stadium and kickoff hour -> raw.nfl_weather (archive: one call per stadium-season; reads raw.nfl_schedules, so run it after `ingest nfl`)."""
+    from .ingest.weather import ingest_weather
+
+    with connect() as conn:
+        migrate(conn)
+        results = ingest_weather(conn, parse_seasons(seasons), offline=offline, forecast=forecast, force=force)
+    if not results:
+        console.print("weather: nothing to load (no archived Open-Meteo files to replay, or no game needs weather)")
+    raise typer.Exit(1 if _print_results(results) else 0)
+
+
 @ingest_app.command("all")
 def ingest_all_cmd(
     seasons: str | None = typer.Option(None),
@@ -334,11 +352,12 @@ def backtest_v2_cmd(
 def backtest_kd_cmd(
     seasons: str = typer.Option("2021-2025", help="Held-out seasons, each scored by a model trained on the seasons before it"),
     out: Path | None = typer.Option(None, help="Report directory (default: <repo>/reports/backtests)"),
+    weather: bool = typer.Option(False, help="Plan D3 experiment: add game-day wind + dome (intermediate.int_game_weather) to the features; writes only the report"),
 ):
     """Walk-forward backtest of the K and D/ST projections (kd1.0) against season-to-date and last-3 PPG, in each K/DEF league's scoring; writes the kd1.0 rows of ops.projection_backtest + a report."""
     from .kdef import run_backtest, summarize, verdict
 
-    res = run_backtest(seasons, out)
+    res = run_backtest(seasons, out, weather=weather)
     t = Table(title=f"K / DEF backtest {seasons} (mean over season-weeks, same unit-weeks for every scorer)")
     for c in ("league", "position", "season", "scorer", "weeks", "units/wk", "spearman", "top-10 hit", "mae", "coverage_80"):
         t.add_column(c)
@@ -529,6 +548,64 @@ def teams_cmd():
     for r in rows:
         t.add_row(*[str(x) for x in r])
     console.print(t)
+
+
+@app.command("experiment")
+def experiment_cmd(
+    groups: list[str] | None = typer.Argument(None, help="Feature group(s) to evaluate, or 'baseline' to refit the cached no-extra-features run"),
+    list_groups: bool = typer.Option(False, "--list", help="List the registered feature groups and their latest verdict"),
+    seasons: str = typer.Option("2023-2025", help="Test seasons (each trained on the seasons before it)"),
+    leagues: str | None = typer.Option(None, help="Comma-separated league ids (default: every current league)"),
+):
+    """Plan D1: evaluate feature groups against projection v2 (walk-forward, both leagues), apply the keep/drop
+    rule per position and write ops.feature_experiments. Several groups in one call share the data and the baseline."""
+    import time
+
+    from . import experiments as E
+
+    if list_groups or not groups:
+        reg = E.load_registry()
+        t = Table(title=f"feature groups ({len(reg)})")
+        for c in ("group", "table", "columns", "positions", "in-season", "note"):
+            t.add_column(c)
+        for name, spec in sorted(reg.items()):
+            t.add_row(name, spec.get("table", ""), ", ".join(spec.get("columns", [])), ", ".join(spec.get("positions") or ["all"]),
+                      ", ".join(spec.get("in_season") or []) or "-", spec.get("note", ""))
+        console.print(t)
+        if not groups:
+            return
+    t0 = time.monotonic()
+    try:
+        ctx, results = E.run_many(groups, tuple(parse_seasons(seasons) or E.DEFAULT_TEST_SEASONS),
+                                  [x.strip() for x in leagues.split(",")] if leagues else None)
+    except E.GroupError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1) from exc
+    names = {lid: v[0] for lid, v in ctx.scorings.items()}
+    if ctx.baseline_seconds is not None:
+        console.print(f"baseline fitted in {ctx.baseline_seconds:.0f} s (cached under key {ctx.key})")
+    b = ctx.baseline
+    bt = Table(title=f"baseline (projection v2, no extra inputs), test seasons {seasons}")
+    for c in ("league", "season", "pos", "weeks", "spearman", "mae", "coverage_80", "width", "interval score"):
+        bt.add_column(c)
+    for r in b.sort_values(["league_id", "test_season", "position"]).itertuples():
+        bt.add_row(names.get(r.league_id, r.league_id), str(r.test_season), r.position, str(r.n_weeks), f"{r.spearman:.3f}",
+                   f"{r.mae:.2f}", f"{r.coverage_80:.1%}", f"{r.interval_width:.1f}", f"{r.interval_score:.3f}")
+    console.print(bt)
+    for res in results:
+        t = Table(title=f"{res.spec.name}: {res.verdict} ({len(res.spec.columns)} inputs, fitted in {res.seconds:.0f} s)")
+        for c in ("pos", "season", "league", "Δ spearman", "Δ mae", "Δ coverage", "Δ width", "Δ interval score"):
+            t.add_column(c)
+        for r in res.rows.sort_values(["position", "test_season", "league_id"]).itertuples():
+            t.add_row(r.position, str(r.test_season), names.get(r.league_id, r.league_id), f"{r.delta_spearman:+.4f}", f"{r.delta_mae:+.3f}",
+                      f"{r.delta_coverage_80:+.3f}", f"{r.delta_interval_width:+.2f}", f"{r.delta_interval_score:+.4f}")
+        console.print(t)
+        for d in res.decisions.itertuples():
+            console.print(f"  {d.position}: {d.decision:5s} mean Δspearman {d.delta_spearman:+.4f} (better in {d.seasons_better_spearman}/{d.n_seasons}), "
+                          f"mean Δmae {d.delta_mae:+.3f} (better in {d.seasons_better_mae}/{d.n_seasons})")
+        for w in res.no_peek.warnings:
+            console.print(f"  [yellow]no-peek warning: {w}[/yellow]")
+    console.print(f"total {time.monotonic() - t0:.0f} s; results in ops.feature_experiments (publish: league-lab dbt build --select mart_feature_experiments)")
 
 
 @app.command("version")

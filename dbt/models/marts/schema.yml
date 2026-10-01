@@ -59,6 +59,13 @@ models:
         tests: [not_null]
       - name: f_implied_total
         tests: [not_null]
+      - name: pn_qb_starting
+        description: "v3 (plan D5): personnel inputs from intermediate.int_player_week_personnel (definitions there and in docs/METRICS.md § Personnel): pn_qb_changed, pn_qb_games_together, pn_qb_prev_ppg_diff, pn_qb_is_rookie_or_backup, pn_qb_starting (read by the model at QB); pn_top_target_out, pn_top_rusher_out, pn_teammate_share_out, pn_absence_beneficiary (read at RB / WR / TE); pn_asof_week (< week, checked by assert_features_never_peek)."
+        tests:
+          - expression_is_true:
+              name: features_personnel_in_range
+              arguments:
+                expression: "coalesce(pn_qb_starting, 0) in (0, 1) and coalesce(pn_qb_changed, 0) in (0, 1) and coalesce(pn_top_target_out, 0) in (0, 1) and coalesce(pn_teammate_share_out, 0) between 0 and 1 and (position = 'QB' or pn_qb_starting is null)"
 
   - name: mart_player_week_projections
     description: "Projection v2 per league x season x week x player: projected stat line, points in the league's scoring, P10/P50/P90, outcome priced under the league's scoring, ranks. Plan R-13: plus K and DEF rows (model kd1.0) for leagues that start them; a DEF row has gsis_id NULL and is keyed by team."
@@ -87,9 +94,24 @@ models:
           name: projection_points_are_non_negative
           arguments:
             expression: "proj_points >= 0 and p10 >= 0"
+      - expression_is_true:
+          name: projection_50_range_inside_80_range
+          arguments:
+            expression: "p10 <= p25 and p25 <= p50 and p50 <= p75 and p75 <= p90"
+            condition: "p25 is not null or p75 is not null"
+      - expression_is_true:
+          name: projection_50_range_both_ends_or_neither
+          arguments:
+            expression: "(p25 is null) = (p75 is null)"
     columns:
       - name: p50
         tests: [not_null]
+      - name: p25
+        description: "Plan D6: the low end of the 50% range ('most weeks'): about a quarter of outcomes land below it (split-conformal calibrated like p10). NULL on rows frozen before it existed (2026 weeks 1-3) and on K / DEF (kd1.0 has P10/P50/P90 only)."
+      - name: p75
+        description: "Plan D6: the high end of the 50% range: about a quarter of outcomes land above it. NULL where p25 is."
+      - name: actual_inside_50
+        description: "Plan D6: the league's points landed inside [p25, p75] (played rows with a 50% range; NULL otherwise)."
       - name: league_name
         tests: [not_null]
       - name: frozen_source
@@ -135,7 +157,11 @@ models:
         tests: [not_null]
 
   - name: mart_projection_backtest
-    description: "Walk-forward scoreboard of projection v2 per league, held-out season, position and scorer, with interval coverage."
+    description: "Walk-forward scoreboard of the projection per model version, league, held-out season, position and scorer, with interval coverage. is_current = the newest QB-TE model version (v3.0 from 2026-10-01; v2.0's rows stay as its record) or the K / DEF model (kd1.0)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [model_version, league_id, season, position, scorer]
     columns:
       - name: spearman
         tests: [not_null]
@@ -159,6 +185,29 @@ models:
               arguments:
                 values: ['component', 'quantile_p50']
       - name: importance
+        tests: [not_null]
+
+  - name: mart_feature_experiments
+    description: "Plan D1 (Wave D): the feature-group harness's verdicts (`league-lab experiment <group>`), one row per group x position from each group's latest run: projection v2 refitted with the group's inputs added vs the cached baseline (no extra inputs), walk-forward over the test seasons in both leagues' scoring; deltas = group - baseline (Spearman up and MAE down are better; interval score = mean pinball loss at 0.1 and 0.9, down is better), seasons_better_* = test seasons (league-averaged) that improved, decision keep / drop / mixed per position and group_verdict per group (docs/METRICS.md § Feature experiments)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [feature_group, position]
+    columns:
+      - name: decision
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['keep', 'drop', 'mixed']
+      - name: group_verdict
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['keep', 'drop', 'mixed']
+      - name: delta_spearman
+        tests: [not_null]
+      - name: delta_mae
         tests: [not_null]
 
   - name: mart_projection_drift

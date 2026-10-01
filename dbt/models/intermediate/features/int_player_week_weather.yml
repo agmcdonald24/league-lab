@@ -1,0 +1,99 @@
+version: 2
+
+# Plan D3 (Wave D, Iteration 12): the weather feature group. Loader: league_lab.ingest.weather
+# (`league-lab ingest weather`); definitions: docs/METRICS.md § Weather.
+models:
+  - name: int_game_weather
+    description: >
+      One row per NFL game (seasons_start on, REG and POST): the venue it was played at (reference
+      raw.nfl_stadiums, per-game corrections first), its roof decision and the game-day weather a
+      projection may use, with the source of each value and when it became known. A played game takes
+      the Open-Meteo archive, else the schedules' observed temp / wind, else its last forecast; an
+      upcoming game its newest forecast (fetched before kickoff); a dome or closed / undecided retractable
+      roof is 'dome' with every value 0.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id]
+    columns:
+      - name: game_id
+        tests: [not_null]
+      - name: stadium_id
+        description: "The venue (raw.nfl_stadiums). NULL = a stadium the reference does not know: add it to src/league_lab/ingest/reference/stadiums.csv."
+        tests:
+          - not_null:
+              config: {severity: warn}
+      - name: venue_resolved_by
+        description: "game_override (raw.nfl_stadium_game_venues) | stadium_name (the recorded name belongs to another venue) | stadium_id | unresolved."
+      - name: recorded_stadium_id
+        description: "What nflverse records (raw.nfl_schedules.stadium_id)."
+      - name: roof_type
+        description: "The venue's roof: outdoors | dome | retractable."
+      - name: roof
+        description: "The schedules' roof for this game (retractables: open / closed; NULL until game day)."
+      - name: roof_assumed_closed
+        description: "A retractable roof not decided yet (upcoming game): counted as closed (wx_dome = 1)."
+      - name: wx_dome
+        description: "1 = the weather does not reach the field (fixed dome, or a retractable roof closed or undecided); 0 = open to the weather. Known before the game except a retractable roof's open / closed call (game day). NULL = unknown venue."
+        tests:
+          - accepted_values:
+              arguments:
+                values: [0, 1]
+      - name: wx_wind_mph
+        description: "Mean 10 m wind speed (mph), kickoff hour and the two after. 0 in a dome."
+      - name: wx_gust_mph
+        description: "Max 10 m gust (mph) over the game's first three hours (Open-Meteo only; NULL for nflverse_observed)."
+      - name: wx_precip_in
+        description: "Precipitation (inches, rain + snow water) over the game's first three hours (Open-Meteo only; NULL until the first real run backfills the archive)."
+      - name: wx_temp_f
+        description: "Mean 2 m temperature (°F), kickoff hour and the two after. 0 in a dome (wx_dome tells it apart)."
+      - name: wx_cold
+        description: "1 when wx_temp_f < 32 °F outdoors; 0 in a dome."
+      - name: wx_windy
+        description: "1 when wx_wind_mph >= 15 outdoors; 0 in a dome."
+      - name: wx_snow
+        description: "1 when Open-Meteo reports snowfall or a snow weather code in the game's first three hours (NULL without Open-Meteo data)."
+      - name: wx_source
+        description: "archive | forecast | nflverse_observed | none (open to the weather, nothing known) | dome."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [archive, forecast, nflverse_observed, none, dome]
+      - name: wx_known_at
+        description: "When the value became known: the Open-Meteo answer's fetch time (archive / forecast) or the schedules file's (nflverse_observed). assert_weather_never_peeks: a forecast before kickoff, an observation after it."
+      - name: wx_forecast_hours_ahead
+        description: "Forecast only: kickoff minus the forecast's fetch time, hours."
+
+  - name: int_player_week_weather
+    description: >
+      Feature group `weather` at the feature-table contract grain (gsis_id, season, week): one row per
+      int_player_week_universe row, the weather of the player's game from int_game_weather. As of the
+      week for the live board (a forecast fetched before kickoff); training and the backtest see the
+      observed weather of past games (the documented train / serve gap). NULL = unknown.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+    columns:
+      - name: gsis_id
+        tests: [not_null]
+      - name: wx_dome
+        description: "1 = dome / closed or undecided retractable roof (every other wx_ value 0); 0 = open to the weather. From the stadium reference + the schedules' roof; known before the game (a retractable roof's call on game day)."
+      - name: wx_wind_mph
+        description: "Mean wind (mph) at the stadium, kickoff hour + 2 (Open-Meteo forecast for the board; archive / schedules for past games)."
+      - name: wx_gust_mph
+        description: "Max gust (mph) over the game's first three hours (Open-Meteo only)."
+      - name: wx_precip_in
+        description: "Precipitation (in) over the game's first three hours (Open-Meteo only; NULL before the first real run)."
+      - name: wx_temp_f
+        description: "Mean temperature (°F) at the stadium, kickoff hour + 2."
+      - name: wx_cold
+        description: "1 when outdoors and below 32 °F."
+      - name: wx_windy
+        description: "1 when outdoors and wind >= 15 mph."
+      - name: wx_snow
+        description: "1 when Open-Meteo has snow in the game's first three hours (NULL without Open-Meteo data)."
+      - name: wx_source
+        description: "Where the values come from: archive | forecast | nflverse_observed | none | dome (not a model input)."
+        tests: [not_null]

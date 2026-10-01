@@ -105,7 +105,7 @@ avail = query(
 if model == "v2":
     rk = query(
         """select gsis_id, rank_pos, player_name, team, opponent, is_home, implied_team_total, spread_line, report_status, practice_status,
-                  games_to_date, no_history, is_rankable, proj_points, p10, p50, p90, interval_width,
+                  games_to_date, no_history, is_rankable, proj_points, p10, p25, p50, p75, p90, interval_width,
                   proj_targets, proj_receptions, proj_receiving_yards, proj_receiving_tds, proj_carries, proj_rushing_yards, proj_rushing_tds,
                   proj_attempts, proj_passing_yards, proj_passing_tds, proj_passing_interceptions,
                   xppg_l5, ppg_std, ppg_l3, prev_ppg, opp_rank_std, target_share_l3, carry_share_l3, snap_pct_l3, first_read_share_l3,
@@ -149,14 +149,18 @@ def _tag(r) -> str:
     return f"{r['player_name']} · {s[0]}" if isinstance(s, str) and bool(not_healthy(pd.Series([s])).iloc[0]) else str(r["player_name"])
 
 
-def _range(r) -> str:
-    lo, hi = pd.to_numeric(r.get("p10"), errors="coerce"), pd.to_numeric(r.get("p90"), errors="coerce")
-    return f"{lo:.1f}–{hi:.1f}" if pd.notna(lo) and pd.notna(hi) else ""
+def _range(r, lo: str = "p25", hi: str = "p75") -> str:
+    a, b = pd.to_numeric(r.get(lo), errors="coerce"), pd.to_numeric(r.get(hi), errors="coerce")
+    return f"{a:.0f}–{b:.0f}" if pd.notna(a) and pd.notna(b) else ""
 
 
+# plan D6: the board's range is the 50% range ("most weeks": half his weeks land in it), the 80% floor-ceiling
+# behind it in the full table; a week frozen before the 50% range existed (2026 weeks 1-3) shows the 80% one
+has_mid = model == "v2" and not ranked.empty and "p25" in ranked and ranked["p25"].notna().any()
 if not ranked.empty:
     ranked["player"] = ranked.apply(_tag, axis=1)
-    ranked["proj_range"] = ranked.apply(_range, axis=1) if model == "v2" else ""
+    ranked["proj_range"] = (ranked.apply(_range, axis=1) if has_mid
+                            else ranked.apply(_range, axis=1, lo="p10", hi="p90") if model == "v2" else "")
 
 # ---------------------------------------------------------------- the answer, then the board (five columns)
 st.subheader(f"{position} · NFL {season} week {week}")
@@ -165,7 +169,10 @@ with st.container(border=True):
         st.markdown(f"**Nobody to rank at {position} with these filters.**")
     else:
         t = ranked.iloc[0]
-        rng = f" (bad week {pd.to_numeric(t['p10']):.1f}, good week {pd.to_numeric(t['p90']):.1f})" if model == "v2" and pd.notna(t.get("p10")) else ""
+        rng = ""
+        if model == "v2" and pd.notna(t.get("p10")):
+            mid = f"most weeks {_range(t)}, " if has_mid and _range(t) else ""
+            rng = f" ({mid}bad week {pd.to_numeric(t['p10']):.1f}, good week {pd.to_numeric(t['p90']):.1f})"
         opp = f" vs {t['opponent']}" if isinstance(t["opponent"], str) and t["opponent"] else ""
         st.markdown(f"**#1 {position}: {t['player_name']}{opp}, {float(t['proj_points']):.1f} projected{rng}.**")
         if roster_id is not None and scope != "team":
@@ -176,7 +183,10 @@ with st.container(border=True):
                 st.markdown(f"None of your {position}s is on this board.")
 board_ov = {"player": Col("Player", help="Q / D / O after a name = on the injury report (Questionable / Doubtful / Out)"),
             "proj_points": Col("Proj", "num1", "The projected stat line put through this league's scoring map"),
-            "proj_range": Col("Range", help="Floor–ceiling: a bad week (10th percentile) to a good week (90th); about 80% of outcomes land between")}
+            "proj_range": (Col("Most weeks", help="Half his weeks land in this range (a quarter below, a quarter above). The wider "
+                                                  "floor–ceiling, 8 weeks in 10, is in the full table below")
+                           if has_mid else
+                           Col("Range", help="Floor–ceiling: a bad week (10th percentile) to a good week (90th); about 80% of outcomes land between"))}
 if model == "v2":
     board_cols = (["rank_pos", "player", "proj_points", "proj_range", "points_actual"] if played_week
                   else ["rank_pos", "player", "opponent", "proj_points", "proj_range"])
@@ -194,6 +204,7 @@ with st.expander("The full board: stat line, usage, matchup, who has him"):
     if model == "v2":
         howto(
             f"**Proj** is his projected points in **{league_name}** scoring: the stat line in the next columns, counted your league's way.",
+            "**Most weeks** (the board) is the range half his weeks land in: a quarter below it, a quarter above. "
             "**Floor** and **Ceiling** are a bad week and a good week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. "
             "The wider the gap (**Range**), the less sure the projection is.",
             "The stat columns are what the projection is made of. A touchdown number like 0.45 means roughly a 45% chance he scores one.",
@@ -206,7 +217,7 @@ with st.expander("The full board: stat line, usage, matchup, who has him"):
                      "RB": ["proj_carries", "proj_rushing_yards", "proj_rushing_tds", "proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds"],
                      "WR": ["proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds", "proj_carries", "proj_rushing_yards"],
                      "TE": ["proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds"]}[position]
-        cols = ["rank_pos", "player_name", "team", "opponent", "rostered_by_team", "report_status", "proj_points", "p10", "p90", "interval_width",
+        cols = ["rank_pos", "player_name", "team", "opponent", "rostered_by_team", "report_status", "proj_points", "p10", "p25", "p75", "p90", "interval_width",
                 *line_cols, "xppg_l5", "ppg_std", "ppg_l3", "prev_ppg", "games_to_date", "opp_rank_std", "implied_team_total", "is_home",
                 "target_share_l3" if position != "QB" else "carry_share_l3", "snap_pct_l3"]
         if position in ("WR", "TE", "RB"):
@@ -214,7 +225,9 @@ with st.expander("The full board: stat line, usage, matchup, who has him"):
         if played_week:
             cols += ["points_actual", "actual_rank_pos", "actual_inside_interval"]
         show(ranked, cols, height=min(80 + 36 * len(ranked), 900), phone_cols=["player_name", "proj_points", *line_cols[:3]],
-             overrides={"proj_points": Col("Proj", "num1", "The projected stat line put through this league's scoring map")})
+             overrides={"proj_points": Col("Proj", "num1", "The projected stat line put through this league's scoring map"),
+                        "p25": Col("Most weeks from", "num1", "1 week in 4 lands below it: the low end of the range half his weeks land in"),
+                        "p75": Col("Most weeks to", "num1", "1 week in 4 lands above it: the high end of the range half his weeks land in")})
     else:
         howto(
             "**Proj** is the old formula's projection, on one scale for every league. The five columns after it (form, usage, matchup, "
@@ -351,7 +364,8 @@ if model == "v2":
     )
     bt = query(
         """select season, position, scorer, scorer_label, train_seasons, weeks, top_n, spearman, hit_rate, mae, coverage_80, interval_width
-           from analytics.mart_projection_backtest where league_id = %s order by season desc, position, spearman desc""",
+           from analytics.mart_projection_backtest where league_id = %s and is_current
+           order by season desc, position, spearman desc""",
         (league_id,),
     )
     if bt.empty:
@@ -418,14 +432,17 @@ if model == "v2":
             f"- **What it learned from**: the regular-season games QBs, RBs, WRs and TEs played from {span} (over 50,000 of them), "
             "each with only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, "
             "carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against his "
-            "position, the Vegas line, home or away, and the injury report.\n"
+            "position, the Vegas line, home or away, the injury report, who starts at quarterback and whether his team's top "
+            "target is out.\n"
             "- **What it predicts**: the stat line, not points. For each position there is one small model per stat: targets, "
             "catches, receiving yards and TDs, carries, rushing yards and TDs, and for quarterbacks pass attempts, passing yards, "
             "TDs and interceptions. Each is a *gradient-boosted* model: a few hundred small decision trees, each one fixing the "
             f"mistakes of the ones before it. Then **{league_name}**'s scoring turns the stat line into points, which is why the "
             "same player projects differently in each league.\n"
-            "- **Floor and ceiling** come from separate models that learned how far off the projection usually is for a player "
-            "like this one: 8 weeks in 10 land between them, and the grades above check that they do.\n"
+            "- **Most weeks, floor and ceiling** come from separate models that learned how far off the projection usually is "
+            "for a player like this one, then widened or narrowed until they held on seasons they had never seen, separately "
+            "for cheap, mid-priced and expensive projections: half his weeks land in the *most weeks* range, 8 in 10 between "
+            "the floor and the ceiling, and the grades above check that they do.\n"
             "- **How it was graded**: trained on the past, graded on seasons it never saw. Each season from 2021 to 2025 was "
             "predicted by a model trained only on the seasons before it (the Backtest section).\n"
             "- **Spearman** is the order score in both grade tables: how well the projected order of players matched the order they "
@@ -436,6 +453,19 @@ if model == "v2":
             "- **What it does not know**: injury news after the morning refresh, the weather, how the game actually goes (a "
             "blowout sends starters to the bench early), and coaching decisions made during the week. Check the news before kickoff.\n"
             "- **Refreshed** every morning with the newest games; its recipe stays the same all season."
+        )
+        # projection v3 (plan D5, Wave D): what was added, the evidence, what was tried and dropped
+        st.markdown(
+            "**New in October: who plays next to him.** The model now knows who is starting at quarterback this week "
+            "(and whether that is the quarterback a player's recent games were played with), and whether his team's top "
+            "target or top ball carrier is out. A backup quarterback who starts is no longer projected from his few "
+            "garbage-time snaps, and a backup who is not starting is no longer projected as if he might. Graded the same "
+            "way on 2021 to 2025, the quarterback order score went up by 0.045 in every one of the five seasons and the "
+            "average miss fell by about half a point a game; for running backs, receivers and tight ends the top-teammate-out "
+            "inputs add about 0.005 to the order score, in every season tested. We also tried the kickoff time and rest days, "
+            "the weather, how fast and how often a team throws, injuries on the offensive line and a player's own injury "
+            "history: none made the projections better on seasons they had not seen (Vegas lines already price most of it), "
+            "so they were left out. Each test is listed under *What we tried*."
         )
         # What drives the projection: the component models' permutation importance (ops.projection_importance,
         # model = 'component', component = 'total'), in points of error of the priced line. The old table here
@@ -471,8 +501,7 @@ if model == "v2":
                     "it had never seen. Then we scrambled one input at a time (shuffled it between players, so it tells the model "
                     "nothing) and counted how much bigger the average miss got, in points per player per game "
                     f"({r0['scored_in']} scoring). Bigger = the model leans on it more. Inputs that move together (targets and "
-                    "catches, a season and its last 3 games) share the credit, so each looks a little smaller than it is. The "
-                    "projection itself (the \"price line\" an older table here showed) is the answer, not an input."
+                    "catches, a season and its last 3 games) share the credit, so each looks a little smaller than it is."
                 )
                 tab_order = ([position] if position in order else []) + [p for p in order if p != position]   # the board's position first
                 for tab, pos in zip(st.tabs(tab_order), tab_order, strict=True):
@@ -490,6 +519,69 @@ if model == "v2":
                         st.markdown("\n".join(f"{int(r.importance_rank)}. {r.feature_label} · **{float(r.importance):+.2f}**"
                                                for r in t.itertuples()))
                         st.caption("Points of error added per player per game when that input is scrambled.")
+        # plan D1: the feature-group harness's verdicts (mart_feature_experiments), in docs/WORDS.md's words
+        st.markdown("**What we tried**")
+        fx = pd.DataFrame() if missing_relations(("mart_feature_experiments",)) else query(
+            """select feature_group, label, position, delta_spearman, delta_mae, decision, group_verdict, n_seasons,
+                      seasons_better_spearman, seasons_better_mae, test_seasons
+               from analytics.mart_feature_experiments order by label, position""")
+        if fx.empty:
+            st.caption("Nothing tested yet. New inputs (game time and rest, weather, team style) are tried here one group at a "
+                       "time before the model uses them.")
+        else:
+            for c in ("delta_spearman", "delta_mae"):
+                fx[c] = pd.to_numeric(fx[c], errors="coerce")
+            kept = fx[fx["decision"] == "keep"]
+            n_groups = fx["feature_group"].nunique()
+            if kept.empty:
+                st.markdown(f"Nothing new made it in yet: {n_groups} group{'s' if n_groups != 1 else ''} of inputs tested, none helped "
+                            "steadily enough to keep.")
+            else:
+                st.markdown("Worth adding: " + " · ".join(f"**{lbl}** for {', '.join(g['position'])}"
+                                                          for lbl, g in kept.groupby("label", sort=False)) + ".")
+            yrs = str(fx["test_seasons"].iloc[0]).split(",")
+            span = f"{yrs[0]} to {yrs[-1]}" if len(yrs) > 1 else yrs[0]
+
+            def _verdict(r) -> str:
+                n, better = int(r.n_seasons), max(int(r.seasons_better_spearman), int(r.seasons_better_mae))
+                if r.decision == "keep":
+                    return f"Keep: {better} of {n} seasons"
+                if r.decision == "mixed":
+                    return "Mixed"
+                if r.delta_spearman <= 0 and r.delta_mae >= 0:
+                    return "Drop: no gain"
+                if better >= -(-2 * n // 3):          # steady but below the bar: +0.005 order score or -0.05 points
+                    return "Drop: too small"
+                return f"Drop: {better} of {n} seasons"
+
+            fx["tried"] = fx["label"].fillna(fx["feature_group"])
+            # one line per group: the answer wraps at phone width; the table below is the detail
+            lines = []
+            for lbl, g in fx.groupby("tried", sort=False):
+                parts = []
+                for dec, word in (("keep", "keep"), ("mixed", "mixed"), ("drop", "drop")):
+                    pos = g.loc[g["decision"] == dec, "position"].tolist()
+                    if pos:
+                        parts.append(f"{word} at every position" if len(pos) == len(g) else f"{word} for {', '.join(pos)}")
+                lines.append(f"- **{lbl}**: " + "; ".join(parts))
+            st.markdown("\n".join(lines))
+            fx["d_order"] = fx["delta_spearman"].map(lambda v: f"{round(v, 3) + 0.0:+.3f}")   # + 0.0: no "-0.000"
+            fx["d_miss"] = fx["delta_mae"].map(lambda v: f"{round(v, 2) + 0.0:+.2f} pts")
+            fx["verdict"] = [_verdict(r) for r in fx.itertuples()]
+            st.caption(f"Each group of new inputs was added on its own, the model re-trained, and graded on {span}: seasons it "
+                       "never saw, in both leagues' scoring, against the same model without them. Order score up and average "
+                       "miss down are better. We keep a group for a position only when it helps in at least 2 of the 3 seasons, "
+                       "not just on average.")
+            show(fx, ["tried", "position", "verdict", "d_order", "d_miss"],   # the verdict before the numbers: on screen at 390 px
+                 overrides={"tried": Col("What we added", "text", "The group of new inputs tested"),
+                            "d_order": Col("Order score", "text", "Change in the order score (how well the projected order matched "
+                                           "the real one; 1 = perfect). Plus is better."),
+                            "d_miss": Col("Average miss", "text", "Change in the average miss, in points per player per game. Minus is better."),
+                            "verdict": Col("Verdict", "text", "Keep: helps this position in at least 2 of the 3 seasons (how many). "
+                                           "Drop: no gain, a gain too small to matter (under +0.005 order score and 0.05 points "
+                                           "a game), or better in too few seasons (how many). Mixed: helps one way, hurts another.")},
+                 phone_cols=["tried", "position", "verdict", "d_order", "d_miss"],
+                 widths={"position": "small", "d_order": "small", "d_miss": "small"})
 else:
     with st.expander("The old formula: its weights"):
         wts = query("select position, feature, weight, train_seasons, n_rows, r2_train, fitted_at from analytics_seeds.ranking_weights where position = %s order by feature", (position,))

@@ -230,7 +230,7 @@ dbt_step() {  # dbt_step <name> <dbt args...>
 # (2) a failed copy stops the night too; (3) after `project`, the record is also written to the
 # archive ($RAW_DIR/record/, so it rides the Actions cache): if the hosted copy is reachable but
 # has lost it (a restore that died midway), the archive's copy is used instead.
-STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals ops.waiver_moves ops.waiver_upside ops.player_role_alerts ops.player_scenarios"
+STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals ops.waiver_moves ops.waiver_upside ops.player_role_alerts ops.player_scenarios ops.feature_experiments"
 RECORD_TABLES="ops.projections ops.projection_drift"
 RECORD_DIR="$RAW_DIR/record"   # one <schema>.<table>.sql.gz per record table
 
@@ -384,6 +384,14 @@ elif run_step replay-nflverse-current uv run league-lab ingest nfl --offline --s
 else
   record replay-nflverse-current "$LAST_SECS" "incomplete: the live nflverse step reloads it"
 fi
+# game-day weather (plan D3: Open-Meteo archive per stadium-season + forecasts for the next games).
+# Soft both ways: the feature table falls back to the schedules' observed temp / wind, and the
+# archived weather and earlier forecasts stay when a fetch fails.
+if [ -d "$RAW_DIR/weather" ]; then
+  SOFT_WHY="weather features fall back to the schedules' observed temp / wind" soft replay-weather uv run league-lab ingest weather --offline
+else
+  skip replay-weather "no weather archive yet; the live step loads it"
+fi
 
 # 2. Live: what changed upstream since the archive was written.
 if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then
@@ -392,6 +400,11 @@ else
   live "$SLEEPER_REPLAYED" fetch-sleeper uv run league-lab ingest sleeper
 fi
 live "$NFLVERSE_REPLAYED" fetch-nflverse-current uv run league-lab ingest nfl --seasons "$SEASON"
+if [ "${NIGHTLY_WEATHER_OFFLINE:-}" = 1 ]; then
+  skip fetch-weather "NIGHTLY_WEATHER_OFFLINE=1 (sandboxes without api.open-meteo.com)"
+else
+  SOFT_WHY="the archived weather and the earlier forecasts stay" soft fetch-weather uv run league-lab ingest weather --forecast
+fi
 
 # 3. Build, then the pieces that read the built marts.
 hard dbt-build dbt_step dbt-build build

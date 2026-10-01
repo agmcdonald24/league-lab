@@ -1,0 +1,163 @@
+version: 2
+
+# Plan D5 (Wave D round 2): the personnel feature group (`pn_`), evaluated by the D1 harness
+# (`league-lab experiment personnel qb oline teammates own_injury`; src/league_lab/feature_groups/personnel.py).
+# History is read only from PLAYED regular-season games with week < W; availability only from week W's injury
+# report (the team's final game-status report of the week) and the weekly roster's reserve lists; the quarterback
+# from the published schedule. Definitions and the evidence: docs/METRICS.md § "Personnel".
+models:
+  - name: int_pn_team_game
+    description: "One row per team x regular-season game (2016 on, played or not), one code per franchise (kd_team): the schedule's starting QB (the projected starter for a game not played yet, NULL until nflverse fills it in about a week ahead), whether the box score is in, the team's offensive snaps (snap leader's snaps / his share), targets and carries (fct_team_game) and the team's n-th game."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [team, season, week]
+    columns:
+      - name: game_id
+        tests: [not_null]
+      - name: starting_qb_id
+        description: "raw.nfl_schedules home_qb_id / away_qb_id. Played game: the QB who started. Not played: the projected starter (filled about a week ahead; NULL further out)."
+        tests:
+          - not_null:
+              config: {where: "is_played"}
+      - name: is_played
+        description: "The team's box score is in (fct_team_game). Only played games with week < W feed a week-W row."
+      - name: team_snaps
+        description: "The game's offensive snaps: the snap leader's snaps / his snap share (int_player_game_snaps). NULL without snap counts."
+      - name: game_no
+        description: "The team's n-th regular-season game of the season (byes skipped)."
+
+  - name: int_pn_player_game
+    description: "What each QB / RB / WR / TE / offensive lineman did in each of his team's PLAYED regular-season games (2016 on): the team's weekly roster that week plus anyone with a snap or stat row for the team (call-ups). status 'played' / 'missed_injured' (did not play and was Out, Doubtful or Questionable that week, or on a reserve list - the C6 rule) / 'missed_other'; snap share (0 when the team has snap counts and he has none, NULL without); targets, carries, reference-scoring points; the game's starting QB. One code per franchise, so the Raiders 2016-19 and the Chargers 2016 are here (int_player_game_role loses them)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+      - expression_is_true:
+          name: pn_player_game_shares_in_range
+          arguments:
+            expression: "coalesce(snap_share, 0) between 0 and 1 and injured_miss_streak >= 0 and (status = 'missed_injured') = (injured_miss_streak > 0)"
+    columns:
+      - name: gsis_id
+        tests: [not_null]
+      - name: pos_group
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['QB', 'RB', 'WR', 'TE', 'OL']
+      - name: status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['played', 'missed_injured', 'missed_other']
+      - name: injured_miss_streak
+        description: "Games in a row he has missed injured through this one (his own team-games, across seasons); 0 when he played or missed for another reason."
+
+  - name: int_pn_player_week_status
+    description: "Each QB / RB / WR / TE / lineman's availability for regular-season week W as it stands before W's kickoff: week W's injury report (designation and practice participation: nflverse's final game-status report of the week - Friday for a Sunday game) and the weekly roster (the newest roster week <= W, the universe's rule). Only the reserve lists are read from the roster (RES = injured reserve / PUP / NFI, PUP, SUS, EXE, NON): ACT vs INA is the game-day inactive list, announced 90 minutes before kickoff, and is never used."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+    columns:
+      - name: report_status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Out', 'Doubtful', 'Questionable']
+      - name: practice_status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['DNP', 'Limited', 'Full']
+      - name: team_report_known
+        description: "His team has at least one row on week W's report (it is published). Seven team-weeks 2016-25 have none (an empty report or a missing file: unknown)."
+
+  - name: int_pn_window_player
+    description: "Per team x week W and player: his part in the team's last four played regular-season games before W this season (snap / target / carry share over the window, shares over the team's totals) and his week-W availability: out_injured (Out or Doubtful on week W's report, or on a reserve list with this team) and gone (no longer on the team's roster). No rows for week 1 or a team's first game."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [team, season, week, gsis_id]
+      - expression_is_true:
+          name: pn_window_is_asof
+          arguments:
+            expression: "last_game_week < week and window_games between 1 and 4 and games_played <= window_games"
+      - expression_is_true:
+          name: pn_window_shares_in_range
+          arguments:
+            expression: "coalesce(snap_share, 0) between 0 and 1 and coalesce(target_share, 0) between 0 and 1 and coalesce(carry_share, 0) between 0 and 1 and not (out_injured and gone)"
+
+  - name: int_player_week_personnel
+    description: "The personnel feature group: one row per int_player_week_universe row (2016-2026), every column as of the week. qb: the projected starter vs the QB his last four played games were played with, their games together, the points-per-start gap, a starter with < 8 career starts, (QB rows) is he the projected starter. oline: line starters (top five by snaps over the last four games) Out / Doubtful / reserve this week, their snap share, games since the starting five changed. teammates: the leading teammate by target / carry share out (Out / Doubtful / reserve / gone), the target share of absent pass-catchers, a live absence alert (C6). own_injury: games missed injured this / last season, weeks Questionable in a row, first game back after 2+, this week's designation and practice. NULL = not known (week 1 for the in-season inputs; a report not published yet; a projected starter not filled in)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+      - expression_is_true:
+          name: personnel_is_asof
+          arguments:
+            expression: "pn_asof_week is null or pn_asof_week < week"
+      - expression_is_true:
+          name: personnel_week1_has_no_in_season_inputs
+          arguments:
+            expression: "week > 1 or (pn_ol_starters_out is null and pn_ol_snap_share_out is null and pn_ol_games_since_change is null and pn_top_target_out is null and pn_top_rusher_out is null and pn_teammate_share_out is null and pn_absence_beneficiary is null)"
+      - expression_is_true:
+          name: personnel_in_range
+          arguments:
+            expression: "coalesce(pn_ol_starters_out, 0) between 0 and 5 and coalesce(pn_ol_snap_share_out, 0) between 0 and 5 and coalesce(pn_teammate_share_out, 0) between 0 and 1 and coalesce(pn_report_status_ord, 0) between 0 and 3 and coalesce(pn_practice_ord, 0) between 0 and 2 and coalesce(pn_q_streak, 0) between 0 and 18 and coalesce(pn_qb_games_together, 0) >= 0 and pn_games_missed_season >= 0"
+      - expression_is_true:
+          name: personnel_qb_flags_agree
+          arguments:
+            expression: "(pn_qb_changed is null) = (proj_qb_id is null or usual_qb_id is null) and (pn_qb_changed = 0) = (pn_qb_prev_ppg_diff = 0 and proj_qb_id = usual_qb_id) and (position = 'QB' or pn_qb_starting is null)"
+    columns:
+      - name: gsis_id
+        tests: [not_null]
+      - name: proj_qb_id
+        description: "The schedule's starting QB of his team's game this week (projected for a game not played yet; v3: for an unplayed game nflverse has not filled yet - more than about a week ahead - the starter of the team's newest played game). Not an input; the reference for the qb columns."
+      - name: proj_qb_source
+        description: "'schedule' (nflverse's starter / projected starter) or 'last_start' (an unfilled future game: the team's newest played start)."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['schedule', 'last_start']
+      - name: usual_qb_id
+        description: "The QB his history was built with: the schedule's starting QB in the majority of his newest four played games (this season before the week, or last season; ties: the more recent). Not an input."
+      - name: pn_qb_changed
+        description: "1 = this week's projected starter is not usual_qb_id; NULL when either is unknown (no projected starter yet; no played game this season or last)."
+      - name: pn_qb_games_together
+        description: "Games (2016 on, before the week) in which he and this week's projected starter both played >= 50% of the team's offensive snaps. A QB's own row: his games with >= 50% of the snaps. NULL without a projected starter."
+      - name: pn_qb_prev_ppg_diff
+        description: "Points per start (reference scoring) of the projected starter minus the usual QB's, each over his newest 17 starts of the last two seasons and this one before the week (a starter's season is the schedule's starting QB). 0 when it is the same QB; NULL when either has no start in that span or either QB is unknown."
+      - name: pn_qb_is_rookie_or_backup
+        description: "1 = the projected starter has fewer than 8 career starts before the week (counted from 2016: in 2016-17 a veteran's earlier starts are not seen). NULL without a projected starter."
+      - name: pn_qb_starting
+        description: "QB rows only: 1 = he is his team's projected starter this week, 0 = another QB is; NULL for RB / WR / TE and without a projected starter."
+      - name: pn_ol_starters_out
+        description: "Of his team's five line starters (the five linemen with the most offensive snaps over the team's last four played games), how many are Out or Doubtful on this week's report or on a reserve list. NULL in week 1 and when the week's report is not out."
+      - name: pn_ol_snap_share_out
+        description: "Their combined snap share over those games (about 1 per full-time starter)."
+      - name: pn_ol_games_since_change
+        description: "Consecutive games, through the team's last game, that the same five linemen led the team in offensive snaps (1 = the five changed in the last game). NULL in week 1."
+      - name: pn_top_target_out
+        description: "1 = the teammate (RB / WR / TE, not him) with the largest target share over the team's last four games is out this week (Out / Doubtful / reserve list) or gone from the roster. NULL in week 1 and when the report is not out."
+      - name: pn_top_rusher_out
+        description: "The same for the teammate (QB / RB / WR / TE, not him) with the largest carry share."
+      - name: pn_teammate_share_out
+        description: "The summed target share (last four games) of the RB / WR / TE teammates out or gone this week (his own excluded)."
+      - name: pn_absence_beneficiary
+        description: "1 = he has an absence_beneficiary role alert (C6, ops.player_role_alerts) from his team's last game and the absent teammate is still out this week (not on the roster as active / inactive without an Out / Doubtful designation). NULL in week 1 and for team-seasons the alerts do not cover (the Raiders 2016-19 and the Chargers 2016 are missing from int_player_game_role)."
+      - name: pn_games_missed_season
+        description: "His team's games this season before the week that he missed injured (int_pn_player_game status missed_injured, any team)."
+      - name: pn_games_missed_prev
+        description: "The same over last season's regular season; NULL when he had no team-game last season (a rookie, 2016)."
+      - name: pn_q_streak
+        description: "Consecutive weeks (his team's game weeks) he has been Questionable, through this week's report; 0 when not Questionable this week; NULL when the report is not out."
+      - name: pn_returning
+        description: "1 = he missed his last two or more team-games injured (across seasons) and is not ruled Out / Doubtful / on a reserve list this week: his first game back. NULL without any team-game before."
+      - name: pn_report_status_ord
+        description: "This week's designation: 3 Out or on a reserve list, 2 Doubtful, 1 Questionable, 0 not listed; NULL when the report is not out (and he is not on a reserve list)."
+      - name: pn_practice_ord
+        description: "This week's final practice participation on the report: 2 did not participate, 1 limited, 0 full or not listed; NULL when the report is not out."
+      - name: pn_asof_week
+        description: "The newest game week of this season any input read (his team's or his own); always < week (the harness's as-of check). NULL in week 1."

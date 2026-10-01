@@ -32,3 +32,7 @@ app/.streamlit/secrets.toml
 .vscode/
 .DS_Store
 reports/
+
+# web app (plan D7): dependencies and the build output (the API serves web/dist; deploys build it)
+web/node_modules
+web/dist

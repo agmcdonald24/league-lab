@@ -8,9 +8,12 @@
   same run), each with his game's kickoff and his opponent's rank against his position
   (``analytics.dim_game``, ``analytics.mart_defense_vs_position_current``). Cached like every query.
 * ``decisions(rows)`` — pure: the smallest-margin unlocked, valued starters (B1's weakest-slot order:
-  margin, then value, then slot order) with the named alternative (``alternative``).
+  margin, then value, then slot order) with the named alternative (``alternative``) and (plan D6) how often the
+  starter outscores him (``win_probability``: ``league_lab.decisions`` on both players' calibrated ranges).
 * ``decision_cards(...)`` / ``lineup_table(...)`` — the Streamlit rendering, shared by Home (My Week), the
-  Matchups page and the player card.
+  Matchups page and the player card. Plan D6: a card leads with "A outscores B 54% of the time — a coin flip"
+  (50-55% a coin flip, 55-65% a lean, 65%+ clear), the margin second, then both players' 50% range ("most
+  weeks") and 80% range; without a probability (K, DEF, a points-per-game value) the margin's words stay.
 
 The alternative is the bench player the lineup re-solve brings in when the starter sits. B1's margin is
 exactly that re-solve, and removing one starter changes the best lineup along one alternating path
@@ -23,6 +26,8 @@ from __future__ import annotations
 
 import pandas as pd
 import streamlit as st
+
+from league_lab import decisions as D
 
 from .db import missing_relations, query
 from .ui import current_week, player_link
@@ -68,6 +73,40 @@ def verdict(margin: float) -> str:
     return "clear"
 
 
+QUANTILE_COLS = ("p10", "p25", "p50", "p75", "p90")
+SKILL = frozenset({"QB", "RB", "WR", "TE"})
+
+
+def _num(v) -> float | None:
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return None if pd.isna(f) else f
+
+
+def win_probability(me: pd.Series, alt: pd.Series) -> float | None:
+    """Plan D6: how often the starter outscores the named alternative this week, from both calibrated ranges
+    (``league_lab.decisions``; teammates / opponents correlated). Only for two QB-TE projections (the
+    calibrated case); None otherwise (a K or DEF, a value from points per game, a row without a range)."""
+    if me.get("value_source") != "proj_points" or alt.get("value_source") != "proj_points":
+        return None
+    if me.get("position") not in SKILL or alt.get("position") not in SKILL:
+        return None
+    rows = [{**{q: _num(r.get(q)) for q in QUANTILE_COLS}, "team": r.get("team"), "opponent": r.get("opponent"),
+             "position": r.get("position")} for r in (me, alt)]
+    return D.win_probability(rows[0], rows[1])
+
+
+def range_text(r, prefix: str = "") -> tuple[str | None, str | None]:
+    """('6–14', '3–19'): the 50% range ("most weeks") and the 80% range (a bad week to a good week), whole points;
+    None where the row has no such range (p25 / p75 are NULL on weeks frozen before they existed)."""
+    lo50, hi50, lo80, hi80 = (_num(r.get(prefix + k)) for k in ("p25", "p75", "p10", "p90"))
+    mid = f"{lo50:.0f}–{hi50:.0f}" if lo50 is not None and hi50 is not None else None
+    wide = f"{lo80:.0f}–{hi80:.0f}" if lo80 is not None and hi80 is not None else None
+    return mid, wide
+
+
 # ------------------------------------------------------------------------------ data
 def decision_week(season: int) -> int | None:
     """The first regular-season week of `season` whose last game has not kicked off yet (None after it):
@@ -96,7 +135,9 @@ with lr as (
 tm as (
     select lr.*,
            coalesce(pr.team, dp.latest_team,
-                    case when lr.position = 'DEF' then case lr.sleeper_player_id when 'LAR' then 'LA' else lr.sleeper_player_id end end) as team
+                    case when lr.position = 'DEF' then case lr.sleeper_player_id when 'LAR' then 'LA' else lr.sleeper_player_id end end) as team,
+           -- plan D6: his calibrated range this week (p25 / p75 NULL on weeks frozen before they existed)
+           pr.p10, pr.p25, pr.p50, pr.p75, pr.p90
     from lr
     left join analytics.mart_player_week_projections pr
            on pr.league_id = %s and pr.season = %s and pr.week = %s and pr.gsis_id = lr.gsis_id
@@ -187,7 +228,10 @@ def decisions(rows: pd.DataFrame, n: int = 3) -> pd.DataFrame:
         alt, mover = a["alt"], a["mover"]
         if alt is None:
             continue
+        pw = win_probability(s, alt)
         out.append({
+            "p_win": pw, "win_words": D.words(pw) if pw is not None else None,
+            **{q: _num(s.get(q)) for q in QUANTILE_COLS}, **{f"alt_{q}": _num(alt.get(q)) for q in QUANTILE_COLS},
             "slot": s["slot"], "slot_type": s["slot_type"], "sleeper_player_id": s.get("sleeper_player_id"),
             "gsis_id": s["gsis_id"], "player_name": s["player_name"],
             "position": s["position"], "value": float(s["value"]), "value_source": s["value_source"],
@@ -244,8 +288,29 @@ def render_decision(d: pd.Series | dict) -> None:
         basis = ("projected" if d.get("value_source") == "proj_points" and d.get("alt_value_source") == "proj_points"
                  else "points per game this season" if {d.get("value_source"), d.get("alt_value_source")} <= {"season_ppg", "observed_ppg"}
                  else "for the lineup")
-        st.markdown(f"{d['value']:.2f} vs {d['alt_value']:.2f} {basis} — **{d['margin']:.2f} apart, {d['verdict']}**.")
+        pw = _num(d.get("p_win"))
         extra = []
+        if pw is not None:
+            # plan D6: the headline is how often he outscores the alternative; the margin (what the lineup is
+            # solved on) is the second line
+            if pw >= 0.5:
+                st.markdown(f"**{d['player_name']} outscores {d['alt_name']} {D.percent(pw)}% of the time — {D.words(pw)}.**")
+                st.markdown(f"{d['value']:.2f} vs {d['alt_value']:.2f} {basis}: {d['margin']:.2f} apart.")
+            else:
+                # the range (how often) and the projection (how many points on average) disagree on this close
+                # call: the lineup is built on the projection, so the recommendation leads and the odds explain
+                # (QA, Wave D: the old order read as "start A … B wins more often")
+                st.markdown(f"**{d['player_name']} projects {d['margin']:.2f} more on average; {d['alt_name']} outscores him "
+                            f"{D.percent(1 - pw)}% of the time — {D.words(1 - pw)}.**")
+                st.markdown(f"{d['value']:.2f} vs {d['alt_value']:.2f} {basis}: {d['margin']:.2f} apart. "
+                            f"Too close to lose sleep over — the projection says {d['player_name']}, the ranges say either.")
+            (m1, w1), (m2, w2) = range_text(d), range_text(d, "alt_")
+            if m1 and m2:
+                extra.append(f"Most weeks: {d['player_name']} {m1}, {d['alt_name']} {m2}.")
+            if w1 and w2:
+                extra.append(f"A bad week to a good week: {d['player_name']} {w1}, {d['alt_name']} {w2}.")
+        else:
+            st.markdown(f"{d['value']:.2f} vs {d['alt_value']:.2f} {basis} — **{d['margin']:.2f} apart, {d['verdict']}**.")
         if d.get("mover_name") and isinstance(d["mover_name"], str):
             extra.append(f"{d['alt_name']} would come in at {slot_label(d['mover_slot'])} and {d['mover_name']} would move to {slot}.")
         m = " · ".join(x for x in (_matchup(d["player_name"], d["opponent"], d["opp_rank"], d["position"]),
@@ -370,8 +435,15 @@ def howto_cards() -> None:
         st.markdown(
             "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and "
             "superflex filled by whoever is worth most there. Start it, then check the cards.\n"
-            "- Each card is one of the week's closest calls. **Apart** is how many points separate the two players: under "
-            f"{COIN_FLIP:.0f} point is a coin flip (go with the latest news), under {LEAN:.0f} a lean, more is clear.\n"
+            "- Each card is one of the week's closest calls. The first line is **how often your starter outscores the other "
+            "player** this week, from both players' ranges: 50–55% is a coin flip (go with the latest news), 55–65% a lean, "
+            "65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the "
+            "percentage allows for that.\n"
+            "- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip "
+            "the two can disagree (under 50% but more points): the card then says both.\n"
+            "- **Most weeks** is the range half of his weeks land in (a quarter below, a quarter above). **A bad week to a "
+            "good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) "
+            f"falls back on the points: under {COIN_FLIP:.0f} point apart is a coin flip, under {LEAN:.0f} a lean.\n"
             "- The named player is the one who would really come in: your best bench player for that spot, or, when "
             "moving a teammate over works better, the card says who moves.\n"
             "- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the "

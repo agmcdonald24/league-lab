@@ -3,6 +3,15 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 1 · Projections that know who is playing, and ranges you can use
+
+- The projections now know who starts at quarterback and whether a player's top teammate is out: a backup
+  quarterback who starts is projected like a starter (and one who sits, like a backup), and a receiver or back
+  whose team's top target is out this week gets the bigger share he is likely to see. Every card leads with
+  "most weeks" (the middle half of his outcomes) instead of a 20-point spread, and a start/sit call now says how
+  often one player outscores the other ("A beats B 58% of the time"). In your leagues this starts with week 5's
+  projections (week 4's were already locked when it shipped).
+
 ## Sep 30 · Built for your phone, plainer words, kickers and defenses
 
 - Matchups answers "who is my receiver up against?": the cornerback most likely across from him (from where his

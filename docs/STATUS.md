@@ -1592,6 +1592,809 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
   2025 only, so `depth_move` by depth chart (not benching) starts there. A depth-chart promotion before the player has
   played (a Wednesday "named starter") is not an alert yet.
 
+## Wave D (Iteration 12)
+
+### PO merge — rounds 1 and 2 and the v3 ship, 2026-10-01
+
+* **Round 1** (D1 harness + D2 game context, D3 weather, D4 team volume and style; three Opus devs in parallel,
+  ~2.5 h because every harness run refits the model three times per group): every feature group **dropped** at every
+  position — Δ order score within ±0.004, the Vegas implied total / spread / total already carry day, time, rest,
+  travel, dome, wind, temperature, pace, pass rate, first downs and the defense faced. Wind for kickers: 0.139 →
+  0.149 Spearman (standard error 0.009 — re-test after the Open-Meteo backfill; `backtest-kd --weather`). Kept: the
+  harness (`league-lab experiment`, paired decision rule, no-peek check, `mart_feature_experiments`, "What we tried"
+  on Rankings), the weather loader (first real run from the Mac: `uv run league-lab ingest weather --forecast`,
+  ~280 archive calls, ~8 min; the nightly replays and fetches it — `NIGHTLY_WEATHER_OFFLINE=1` in sandboxes), the
+  feature tables (built by the full build, unused in production). PO integration: the nightly's weather steps,
+  `ops.feature_experiments` restored with the state; D3 could not merge D1 (its session refused `git merge`) so its
+  weather groups were run by the PO on the integrated branch — all four drop.
+* **Round 2** (D5 personnel, D6 ranges and decisions, D7 front-end spike): **personnel is the one group that pays** —
+  `qb` at QB (+0.0445 Spearman over 2021–2025, 5 of 5 seasons; MAE −0.52; interval score −0.082) and `teammates` at
+  RB/WR/TE (+0.005–0.006; WR 5 of 5 seasons at +0.0047, just under the +0.005 bar but taken for consistency);
+  `oline` and `own_injury` drop. D6: 30 residual-model variants, none sharpens the 80% range by ≥ 2% (the no-inputs
+  control is within 0.2% — the width is weekly noise); shipped the 50% "most weeks" range (`p25` / `p75`), per-tier
+  conformal calibration (starters were covered at 76% / 47%, now 80% / 50% at RB/WR/TE; QB stays 2–4 points low
+  because of partial games), and the win probability `decisions.py` (Brier 0.221 vs 0.249 coin flip on 5,374
+  real B1 pairs 2024–25; deciles within 1–3 points) on the decision cards. D7: My Week + Player on FastAPI + Svelte
+  against the same marts, first content 371 ms vs 1,909 ms, 36 KB vs 1.9 MB, one-tap links in session; the
+  recommendation (port page by page, My Week and Player first, Trade Finder last) is in `docs/FRONTEND_DECISION.md`.
+* **v3.0 ship** (`8f89988`): `FEATURES_BY_POSITION` (QB + 5 starting-QB inputs; RB/WR/TE + 4 teammate inputs),
+  `MODEL_VERSION = "v3.0"`, the 9 inputs in `mart_player_week_features` from `int_player_week_personnel` (never-peek
+  extended), five-season backtest written next to v2.0's rows, importance v3.0 ("Is he the projected starter?" is the
+  #1 QB input at +1.83 points of error), the C6 OAK/SD → LV/LAC fix (+83 alerts), `ops.projection_backtest` gains the
+  50% columns, `mart_projection_backtest` one row per model version with `is_current`. PO: release stamp, the API's
+  My Week tests re-pinned to the card shape (D6 changed the headline; v3 flipped the week-4 pair), `scipy` in
+  `api/pyproject.toml` (the cards import it), the lineup solve-time test loosened (a benchmark, failed once at load 7).
+  Week 4 froze on the Mac with v2.0 rows (2026-10-02 00:15 UTC); v3 starts at week 5 there.
+* **QA on the integrated branch** (`7149f49`, 25 min scoped: numbers on Home / Player / Rankings vs the marts, both
+  leagues, 390 px): every number matched. Fixed by the PO: (1) a card whose starter projects more but outscores the
+  alternative *less* often (the quantile-implied mean and the point projection disagree on a close call) read as
+  "start A … B wins more often" — the card now leads with the recommendation ("A projects 0.31 more on average; B
+  outscores him 51% of the time — a coin flip … the projection says A, the ranges say either"), and the wide range
+  names both players; (2) Home's first card sat at y = 819 of 844 on a phone — the intro paragraph now shows at the
+  top only until a team is picked, then sits under My week (first card y ≈ 625 with the stale-injury banner, less on
+  a fresh database); (3) the Player page and `/api/player` show the "most weeks" range (p25–p75) between the
+  projection and the floor, how-to updated, the API's parity and card tests re-pinned; (4) "The model" on Rankings
+  describes both ranges and the per-tier calibration, the leftover "price line" sentence is gone; (5) "What we tried"
+  lacked the personnel rows and showed `team_style_pass_rate` as a keep — the PO's 480 experiment rows (20 groups,
+  both leagues) are now **the seed `dbt/seeds/feature_experiments.csv`** (same columns as `ops.feature_experiments`;
+  `mart_feature_experiments` unions the seed with the live table, the live row wins on the same run), so `make build`
+  on any database shows the record; `team_style_pass_rate` @ QB overridden to drop (kept by the 3-season rule, 2021
+  and 2022 reverse it), `qb` / `teammates` noted as shipped in v3.0. `uv run pytest` targeted 54 + experiments 20,
+  `api` 37 passed, headless check 39 runs ALL OK, ruff clean.
+  **Modeling open item (from QA 2): the quantile models are fitted on residuals independently of the point model,
+  so the median of the range can sit on the other side of the alternative's median from the point projection on a
+  close pair. Either centre the ranges on the projection (shift so p50 = proj_points) or solve the lineup on the
+  range's median; decide with the week-5 drift numbers — until then the card says both.**
+
+Projection v3, round 1: D1 (the feature-group harness) + D2 (game context) · D3 (weather) · D4 (team volume
+and style). Each dev appends a section below; nothing edits `mart_player_week_features` until the PO keeps a group.
+
+### D1 — feature-group harness (dev/D1)
+
+* `league-lab experiment <group> [<group> ...] [--seasons 2023-2025] [--leagues ...]`, `--list`, `baseline`
+  (`src/league_lab/experiments.py`); groups register in `src/league_lab/feature_groups/<family>.py` as
+  `GROUPS = {name: {table, columns, positions, in_season, label, note}}`; the rule, the no-peek check and the
+  outputs are in `docs/METRICS.md` § "Feature experiments".
+* `projections.py` hooks, defaults unchanged: `load_frame(..., extra_tables=None)`, `fit_position(..., features=None)`
+  (the model keeps `features`; `predict_position` uses them), `_matrix(d, features=None)`, and the walk-forward
+  loop of `backtest` factored out as `walk_forward(...)` (same calls, same order).
+* Results: `ops.feature_experiments` (DDL in `db.migrate`), `mart_feature_experiments` (view), Rankings →
+  "The model" → "What we tried".
+* Harness ready: `2baa78b` at 2026-10-01 12:40:56 UTC (19 min after the start); `29fdc2c` 12:45 UTC fixes boolean
+  columns in the outcome probe (D3 / D4 told to take it).
+* Defaults byte-identical (OMP_NUM_THREADS=1, same database): `ops.projections` 2026 weeks 4–18, every column but
+  `fitted_at` / `frozen_at`, 17,164 rows, md5 `e6e45f116f5188f7dfdea2f4e1062120` from `league-lab project` on
+  `2951c80` and on the hooked code; `league-lab backtest-v2 --seasons 2025`, the 432 `v2.0` rows of
+  `ops.projection_backtest` but `run_id` / `run_at`, md5 `412207ebe4d71b8e69cf605820c53f8f` before (code of
+  `2951c80`, run from an archive copy) and after.
+* The harness's baseline reproduces `backtest-v2`: its 2025 season means equal the 2025 `v2_points` weekly means of
+  `ops.projection_backtest` to 6 decimals in all 8 league × position cells (Spearman, MAE, coverage, interval score).
+* Baseline (2023–2025, both leagues, 24 cells, key `cb461af0c56b4811`): 18 min 30 s wall on the shared box (load
+  average ≈ 5: D3 and D4 fitting too), **9 min 19 s CPU** (single thread: what it takes alone). The PO's ~5 min
+  estimate was low: a test season costs ~3 CPU-min for four positions (components + out-of-fold lines + 3 quantile
+  models × 2 leagues per position). A group on fewer positions costs proportionally less.
+* No-peek check on planted leaks (`tests/test_experiments.py::test_no_peek_check_catches_planted_leaks`, live DB):
+  the week's own points as an input → refused at QB / RB / WR / TE (|r| 1.00 vs 0.34–0.48 with the adjacent weeks)
+  plus the serve-gap warning; `pl_asof_week = week` → refused (as-of); an `in_season` column filled in week 1 →
+  refused (week 1); an honest numeric + boolean pair passes. On the production inputs the largest probe excess is
+  0.047 (limit 0.10).
+
+### D2 — game context through the harness (dev/D1)
+
+* `dbt/models/intermediate/features/int_player_week_game_context.sql` (+ `int_player_week_game_context.yml`, named
+  after the model so the three branches' docs files never collide; `dbt/tests/assert_game_context_known_before_kickoff.sql`):
+  109,123 rows = `int_player_week_universe`, unique index on the grain; 15 `gc_` columns, all from the published
+  schedule (definitions, shares and the rest-day reconciliation with nflverse in `docs/METRICS.md` § "Game context").
+  `dbt build` of the model + its tests: PASS=9 (unique grain, ranges, not-nulls, known-before-kickoff).
+* Registered in `src/league_lab/feature_groups/game_context.py`: `game_context` (all 15), `rest` (5), `time` (6:
+  weekday, kickoff hour, primetime, 1 pm window, time zones crossed, west-coast early), `venue` (4: dome, turf,
+  division, neutral). The no-peek check passes (largest probe excess 0.019; no warnings: no serve gap).
+* One session, `league-lab experiment game_context rest time venue` (baseline from the cache): 80 min 36 s wall on
+  the shared box, 40 min 11 s CPU (≈ 10 CPU-min per four-position group).
+* Harness table (mean over 2023–2025 of the league-averaged season Δ = group − baseline; "n/3" = seasons better):
+
+| Group | Pos | ΔSpearman | better | ΔMAE (pts) | better | Δ interval score | Δ coverage (pp) | Δ width | Decision |
+|---|---|---|---|---|---|---|---|---|---|
+| game_context | QB | +0.0012 | 1/3 | −0.013 | 1/3 | −0.0073 | −0.62 | −0.18 | drop |
+| game_context | RB | +0.0001 | 1/3 | +0.008 | 1/3 | +0.0008 | +0.84 | +0.06 | drop |
+| game_context | TE | −0.0020 | 0/3 | +0.017 | 0/3 | +0.0019 | −0.23 | +0.02 | drop |
+| game_context | WR | +0.0004 | 2/3 | +0.000 | 1/3 | −0.0009 | −0.21 | −0.08 | drop |
+| rest | QB | +0.0029 | 2/3 | +0.004 | 2/3 | −0.0038 | −0.35 | −0.01 | drop |
+| rest | RB | −0.0004 | 0/3 | −0.011 | 2/3 | −0.0017 | +0.62 | +0.01 | drop |
+| rest | TE | +0.0002 | 2/3 | +0.008 | 1/3 | +0.0037 | +0.04 | +0.02 | drop |
+| rest | WR | +0.0012 | 3/3 | +0.002 | 1/3 | −0.0014 | −0.37 | −0.13 | drop |
+| time | QB | −0.0012 | 1/3 | +0.007 | 1/3 | −0.0027 | +0.50 | +0.21 | drop |
+| time | RB | −0.0002 | 1/3 | +0.005 | 1/3 | +0.0002 | −0.16 | +0.00 | drop |
+| time | TE | −0.0011 | 1/3 | +0.009 | 1/3 | +0.0036 | −0.19 | +0.03 | drop |
+| time | WR | +0.0001 | 2/3 | +0.002 | 1/3 | −0.0008 | −0.53 | −0.09 | drop |
+| venue | QB | +0.0035 | 1/3 | +0.011 | 1/3 | −0.0066 | −0.09 | −0.12 | drop |
+| venue | RB | +0.0002 | 3/3 | +0.004 | 1/3 | +0.0018 | +0.09 | +0.05 | drop |
+| venue | TE | −0.0019 | 1/3 | +0.012 | 0/3 | +0.0035 | −0.11 | +0.00 | drop |
+| venue | WR | +0.0006 | 2/3 | −0.007 | 2/3 | −0.0013 | −0.42 | −0.13 | drop |
+
+* Group verdict: **drop** for all four (no position helps, none hurts: every |mean ΔSpearman| < 0.004, every
+  |mean ΔMAE| < 0.02 points, against bars of 0.005 and 0.05). The QB swings are fit noise, not signal: every group
+  adds +0.010 to +0.017 to QB in 2023 and gives it back in 2024–2025 (≈ 670 QB player-weeks a season), which is what
+  the 2-of-3 rule is for. **Recommendation: drop game context at every position**: v2 already sees the Vegas
+  implied total, spread and total, which price kickoff, rest, travel and venue. The interval does not sharpen
+  either (Δ interval score within ±0.0073 against 0.64–1.80 points). The table stays as a building block (the
+  K/DEF model or D6's per-role variance could use the dome / kickoff columns); nothing reads it in production.
+
+### D4 — team volume and style (dev/D4, clone `league_lab_d4`, 2026-10-01)
+
+* **Built.** Three intermediate tables under `dbt/models/intermediate/features/` (docs: `team_style.yml`, METRICS §
+  "Team volume and style", DATA_MODEL § "Feature group `team_style`"): `int_team_game_style` (offense × game facts
+  from `fct_play` + team stats: plays, dropbacks, neutral plays / dropbacks, nflfastR xpass, snap-to-snap pace, time
+  of possession from the game clock, drives, drive points, scoring drives, red-zone trips, first downs, giveaways;
+  5,588 rows 2016–2026), `int_team_week_style` (team × REG week incl. byes and unplayed weeks, 6,176 rows: offense
+  `off_` and defense-allowed `def_` × 12 metrics × season-to-date / last 4 / last season, shrunk
+  (n × window + 3 × last season) / (n + 3), n = games this season before the week), `int_player_week_team_style`
+  (the group's table, 109,123 rows = the universe: `ts_off_*` his offense, `ts_def_*` this week's opponent defense,
+  52 inputs incl. `ts_pace_product` and `ts_pass_env`, plus `ts_off_asof_week` / `ts_def_asof_week` for the
+  harness's as-of check). Macro `ts_shrink` / `ts_sums` (`dbt/macros/team_style.sql`). Groups registered in
+  `src/league_lab/feature_groups/team_style.py`: `team_style` (52), `team_style_volume` (7), `team_style_pass_rate`
+  (5), `team_style_efficiency` (14), `team_style_defense_faced` (24), plus `team_style_lean` (3, see below).
+  Nothing in production reads the tables; the nightly's full `dbt build` builds them (≈ 25 s) — no `--select` added.
+* **Tests.** dbt: 17 — 16 data tests (keys; counts nest; clock in range; `team_week_style_is_asof` / `player_team_style_is_asof`
+  (asof_week < week); `assert_team_style_is_asof` (game counts and plays per game re-derived from `fct_play` on its
+  own path, shrinkage included: 0 rows); `team_week_style_week1_is_last_season`; rates in range;
+  `assert_team_style_covers_universe` (one row per universe row, his team's and his opponent's numbers); and a dbt
+  **unit test** of the shrinkage on a fixture, 22 expected rows incl. the last-4 window, a playoff game that must not
+  count, a team without a last season (league prior) and a season without any prior) — the 17th. Negative controls: weight 2
+  instead of 3 → the unit test fails; `week <= W` instead of `< W` → unit test fails, and with the data tests alone
+  `team_week_style_is_asof` 5,344, `player_team_style_is_asof` 100,443, `week1_is_last_season` 318,
+  `assert_team_style_is_asof` 5,344 failing rows. pytest `tests/test_team_style.py` 21 (twins of the shrinkage and the
+  neutral situation on fixtures, the SQL hard-codes the same constants, the unit test's expected rows follow the
+  twin, the groups validate with `experiments.check_spec`, every column documented).
+* **League sanity, 2025** (pooled): plays per game 60.3 (band 58–68 ✓); time of possession 30.2 min per team-game
+  (OT included; 2,332 of 2,637 regulation games sum to 60:00 ± 15 s) ✓; seconds per play 31.8; **neutral pass rate
+  53.2% — below the plan's 55–62% band** with the plan's own definition (1st/2nd down, Q1–3, within 7); the same
+  filter over all downs gives 58.5% (third downs are passes). Kept the early-down definition (it is the
+  coaching-choice signal); PO to confirm.
+* **Hand-check, DET 2025 week 6** (`raw.nfl_pbp` / `raw.nfl_team_stats_week`, not through `fct_play`;
+  `scratchpad/waveD/d4/handcheck.sql`): DET's weeks 1–5 plays 64 + 58 + 65 + 54 + 59 = 300 → 60.0 a game; 2024
+  (the prior) 1,097 / 17 = 64.529; (5 × 60.0 + 3 × 64.529) / 8 = **61.698** = `off_plays_pg_std` 61.6985; last 4
+  (58 + 65 + 54 + 59) / 4 = 59.0 → (295 + 193.588) / 8 = **61.074** = `off_plays_pg_l4`. Neutral pass rate: neutral
+  dropbacks 1 + 17 + 15 + 7 + 11 = 51 of 2 + 30 + 39 + 17 + 24 = 112 plays = 0.4554; 2024 192 / 383 = 0.5013;
+  (5 × 0.4554 + 3 × 0.5013) / 8 = **0.4726** = `off_neutral_pass_rate_std`. First downs (team stats, pass + rush)
+  15 + 25 + 23 + 14 + 22 = 99 (play-by-play first downs on the same plays: also 99) → 19.8; 2024 386 / 17 = 22.706;
+  (99 + 68.118) / 8 = **20.890** = `off_first_downs_pg_std` 20.8897. `off_asof_week` = 5.
+* **Coverage** (`int_player_week_team_style` vs the universe, offense / defense numbers known): 2016 8,993 of 9,851
+  (week 1 has no earlier season), 2017–2026 100% (9,681 · 9,373 · 9,608 · 9,800 · 10,538 · 10,161 · 10,034 · 9,898 ·
+  10,268 · 9,911).
+* **What the market already knew** (4,766 team-games 2017–2025; `scratchpad/waveD/d4/market_corr.py`, full table in
+  `market_corr.csv`): r with the implied team total / game total — points per drive 0.67 / 0.49, yards per play
+  0.64 / 0.50, first downs 0.62 / 0.49, red-zone trips 0.60 / 0.42, scoring drives 0.64 / 0.45, sacks per dropback
+  −0.43 / −0.30, time of possession 0.31 / 0.08, neutral pass rate 0.29 / 0.24, PROE 0.26 / 0.26, `ts_pace_product`
+  0.25 / 0.16, plays 0.22 / 0.17, pace −0.04 / −0.10; defense side 0.0–0.38. Beyond the lines (partial r with what
+  then happened, implied total and total held fixed): efficiency adds ≈ 0 to drive points (−0.01 to +0.02); plays
+  per game +0.11 and pace −0.12 to the plays run; PROE +0.25, `ts_pass_env` +0.21, neutral pass rate +0.20 to the
+  dropback share (the implied total itself: −0.03). New information exists at the team level — in volume and in
+  pass/rush split, not in efficiency.
+* **Harness** (`league-lab experiment …`, D1's walk-forward, test seasons 2023–2025, both leagues, `OMP_NUM_THREADS=1`;
+  baseline 1,216 s, then 1,898 / 1,295 / 1,169 / 741 / 669 / 554 s on a box shared with two other fits). Mean over
+  seasons of the league-averaged Δ (group − baseline); "better" = seasons of 3:
+
+  | group | pos | Δ Spearman (better) | Δ MAE (better) | Δ interval score | decision |
+  |---|---|---|---|---|---|
+  | team_style (52) | QB / RB / WR / TE | −0.0026 (1) / −0.0024 (0) / −0.0010 (1) / −0.0055 (0) | +0.015 / +0.032 / +0.023 / +0.008 | +0.000 / +0.005 / +0.001 / +0.005 | drop ×4 |
+  | volume (7) | QB / RB / WR / TE | +0.0004 (1) / −0.0019 (0) / +0.0001 (2) / −0.0017 (2) | +0.016 / +0.020 / +0.003 / +0.009 | −0.002 / −0.000 / +0.000 / +0.003 | drop ×4 |
+  | pass_rate (5) | QB / RB / WR / TE | **+0.0096 (3)** / −0.0012 (0) / +0.0005 (2) / −0.0009 (2) | **−0.014 (2)** / +0.004 / −0.004 (3) / +0.015 | **−0.009** / −0.003 / −0.001 / +0.002 | **keep QB**, drop RB / WR / TE; verdict keep |
+  | efficiency (14) | QB / RB / WR / TE | +0.0011 (1) / −0.0002 (1) / −0.0005 (1) / −0.0038 (0) | +0.004 / +0.007 / +0.009 / +0.008 | −0.001 / +0.002 / +0.001 / +0.006 | drop ×4 |
+  | defense_faced (24) | QB / RB / WR / TE | −0.0035 (1) / −0.0029 (0) / −0.0003 (1) / −0.0031 (1) | +0.016 / +0.006 / +0.008 / +0.006 | +0.004 / +0.006 / +0.003 / +0.005 | drop ×4 |
+  | lean (3) | QB / RB / WR / TE | +0.0024 (1) / −0.0017 (0) / −0.0001 (1) / +0.0024 (3) | −0.011 / +0.006 / +0.001 / +0.005 | −0.012 / −0.000 / −0.000 / +0.002 | drop ×4 |
+
+  Baseline (v2, mean of the two leagues and three seasons): Spearman QB 0.534, RB 0.683, WR 0.624, TE 0.583; MAE
+  7.08 / 4.44 / 4.40 / 3.22. No no-peek failures or warnings on any group. Coverage changes ≤ 1 point everywhere.
+* **The one keep does not hold up on earlier seasons.** `team_style_pass_rate` at QB is a keep by the rule (+0.017,
+  +0.002, +0.010; 3 of 3), but every group, even the full 52-input one, gains +0.009 to +0.020 at QB in 2023 (QB
+  weeks have ~32 players: the season-to-season noise is about ±0.01). Re-run QB-only on 2021 and 2022 with the
+  harness's own pieces (`walk_forward` + `summarize_scores`; 2023 reproduced exactly: +0.0164 / +0.0180,
+  `scratchpad/waveD/d4/qb_extend.py`): **2021 −0.0049, 2022 −0.0054** (MAE −0.032, +0.047). Over 2021–2025 the mean
+  is +0.0037, better in 3 of 5 — the rule's 5-season version (≥ +0.005 and 4 of 5) says drop.
+* **The two hypotheses, below the points** (component models alone, same walk-forward, Poisson counts, MAE change
+  vs v2, seasons better of 3; `scratchpad/waveD/d4/component_check.py`): *volume helps RB / WR counts* — no: RB
+  carries +0.19% (1), RB targets −0.10% (3), WR targets −0.20% (2), TE targets −0.14% (2), all well under a percent;
+  *defense faced helps the pass / rush split* — no: QB attempts −0.30% (1), QB carries +0.50%, RB carries −0.01%,
+  WR targets −0.05%. What does move the split is the offense's own pass rate: QB attempts −1.08% (2; deviance 2) with
+  `pass_rate`, −0.86% (3) with `volume`. Why so little: v2 already sees each player's attempts / targets / carries
+  per game (season, last 3, last season), which are team plays × pass rate × his share — the team numbers are new
+  only for a player whose history is short or whose team changed.
+* **Recommendation: drop** `team_style` and its sub-groups for v3; at most keep `team_style_pass_rate` for QB **only
+  if** the PO accepts the 2023–2025 rule result over the 2021–2022 check (I would not). Revisit pass rate with D5's
+  QB-change inputs (a new starter changes the pass rate the history was built on). The tables can stay: they cost
+  ≈ 25 s a night, and they are the natural home for a "this offense throws a lot / runs fast" line on the Player
+  card if the PO wants one (not built).
+* **For the PO to confirm.** (1) A third model, `int_team_game_style`, beside the two named in the brief (the per-game
+  facts, reused by both sides and the hand-check). (2) The early-down neutral pass rate (53.2% in 2025) vs the plan's
+  55–62% band. (3) The last-4 window shrinks with the season's game count (both windows weigh this season
+  n / (n + 3)), so week 2's last 4 equals its season to date. (4) `ts_pass_env` is divided by the league's rate
+  (log5-style), not the bare product. (5) PROE uses nflfastR's xpass (league mean −2.2% in 2025: the model's
+  training years passed more). (6) `team_style_lean` was added: its three inputs were chosen on 2017–2025 team-level
+  correlations, which include the test seasons (it dropped anyway). (7) No `metric_registry.csv` rows (seeds are out
+  of bounds this round): add `team_style` v1.0 at merge if the PO keeps anything. (8) The `ops.feature_experiments`
+  rows (24 baseline + 144 group rows) live in the `league_lab_d4` clone only.
+* **Verified.** `dbt build` of the three models: PASS=20 (3 models + 17 tests); `pytest` 732 passed (before the lean group) / see the hand
+  back for the final count; `ruff` clean; headless page check (both leagues, 13 pages each + 6 Player runs): 32 runs,
+  0 exceptions, 0 errors. No page touched.
+### D3 2026-10-01 — weather: Open-Meteo loader, stadium reference, the `weather` feature group (branch `dev/D3`, clone `league_lab_d3`)
+
+* **Built.** `src/league_lab/ingest/weather.py` + `league-lab ingest weather [--seasons] [--forecast] [--offline] [--force]`:
+  Open-Meteo hourly weather at the stadium for the kickoff hour and the two after → `raw.nfl_weather`
+  (`source = 'archive'`: ERA5, **one call per stadium-season**, one row per game; `'forecast'`: one call per stadium
+  per run for its games in the next 16 days, one row per game **per fetch, never deleted**). Archive under
+  `data/raw/open_meteo/{archive/<season>/<stadium>.json.gz, forecast/<season>/<stadium>/<time>.json.gz}` with the
+  usual sidecars, `--offline` replay, manifest source `open_meteo` (partitions `<season>:<stadium>`); a stadium-season
+  is re-fetched only when a played game (older than the archive's 5-day delay) is not in its file. Stadium reference
+  `src/league_lab/ingest/reference/stadiums.csv` (49 venues: the 47 nflverse `stadium_id`s 2016–2026 + Croke Park and
+  Berlin's Olympiastadion; lat / lon from the Wikipedia / GeoHack infoboxes, time zone, roof type, tenants, every name
+  nflverse used) and `stadium_game_venues.csv` (the seven 2025 international games nflverse records at the home
+  team's stadium) → `raw.nfl_stadiums` / `raw.nfl_stadium_game_venues`, loaded by `db migrate`. dbt:
+  `intermediate.int_game_weather` (game grain: venue, roof decision, the value and its source / known-at time, each
+  source's numbers side by side) and `intermediate.int_player_week_weather` (contract grain: `wx_dome`,
+  `wx_wind_mph`, `wx_gust_mph`, `wx_precip_in`, `wx_temp_f`, `wx_cold`, `wx_windy`, `wx_snow`, `wx_source`),
+  `int_player_week_weather.yml`, tests `assert_weather_dome_rows_zero`, `assert_weather_never_peeks`,
+  `assert_weather_one_row_per_universe_row`, `assert_stadium_reference_covers_schedules` (warn). Groups for the
+  harness: `src/league_lab/feature_groups/weather.py` (`weather`, `wind`, `temp`, `dome`). K/DEF hook:
+  `kdef.WEATHER_FEATURES` (`wx_wind_mph`, `wx_dome`), off in kd1.0, `league-lab backtest-kd --weather` (report only).
+  Docs: SOURCES § Open-Meteo (+ licence), METRICS § Weather (+ the train / serve gap and how to measure it),
+  DATA_MODEL (raw + intermediate), HOSTING § Weather in the nightly (the two lines for `nightly.sh`).
+* **Evidence.**
+  - Stadium coverage: every `stadium_id` in the archived `games.parquet` 2016–2026 is in the CSV, every game
+    resolves to a venue, every home game resolved by id has its home team as a tenant that season, and no kickoff
+    before 10:00 ET sits at a US venue (`tests/test_weather.py::test_stadium_reference_covers_every_schedules_stadium`);
+    the same in dbt on the database (`assert_stadium_reference_covers_schedules`: PASS). Resolution on 3,033 games
+    2016–2026: 3,025 by id, 7 per-game corrections, 1 by name (2026_05_PHI_JAX → Tottenham).
+  - Loader on fixtures (hand-built from Open-Meteo's documented response format — the API is blocked here; never
+    fetched): 17 tests. Batching: 7 archivable games at 5 stadium-seasons → **5 calls** (BUF00 2024's three games in
+    one); a game inside the 5-day delay waits; a second run makes 0 calls (`skipped_unchanged`); a newly archivable
+    game re-fetches only its stadium-season; `--offline` rebuilds identical rows with a client that fails on any
+    request; two forecasts of one game → two rows (77.0 h and 53.0 h ahead), kept after the archive arrives and
+    after a forecast file is lost; HTTP 400 → `failed`, nothing written, no file left. Worked example
+    (2024_01_ARI_BUF fixture, 13:00 EDT = 17:00 UTC): wind 12/15/18 → 15.0, temp 61/63/65 → 63.0, gusts at 18–20 UTC
+    21/27/24 → 27, precipitation 0.02 + 0.05 + 0.01 = 0.08.
+  - On the database: the staged fixtures replayed with `ingest weather --offline` → 3 partitions `success` (archive
+    2024:BUF00, 2025:DUB00, forecast 2026:BUF00, 1 row each), again → 3 × `skipped_unchanged`; `int_game_weather` then
+    took `archive` for 2024_01_ARI_BUF (over the schedules' 20 mph / 61 °F) and for 2025_04_MIN_PIT (at DUB00, not
+    PIT00), `forecast` (77 h ahead) for 2026_04_NE_BUF; 17 dbt tests PASS. The demo rows were deleted afterwards
+    (the evaluation below runs on the schedules' observations only).
+  - Feature table: 109,123 rows = `int_player_week_universe`; dbt build 2 models + 21 tests PASS. Hand check:
+    Josh Allen 2024 wk 16 (NE at BUF, schedules 14 °F / 2 mph) → `wx_temp_f` 14, `wx_wind_mph` 2, `wx_cold` 1,
+    `wx_source` nflverse_observed; wk 15 at DET → `wx_dome` 1, every value 0.
+  - Coverage (player-weeks, open-air with wind and temperature / dome / unknown): 2016 7,401 / 2,358 / 92 ·
+    2017 7,245 / 2,251 / 185 · 2018 7,015 / 2,182 / 176 · 2019 7,139 / 2,198 / 271 · 2020 6,370 / 3,430 / 0 ·
+    2021 7,033 / 3,081 / 424 · **2022 3,627 / 3,156 / 3,378** · 2023 5,512 / 3,033 / 1,489 · 2024 6,306 / 3,404 / 188 ·
+    2025 6,632 / 3,439 / 197 · 2026 780 / 3,331 / 5,800 (upcoming weeks: no forecast here). Precipitation and gusts:
+    NULL outdoors until the first real run.
+  - Data sanity (2016–2025 team-games, schedules' wind): passing yards per team-game 253.5 dome · 243.7 under 10 mph ·
+    231.4 at 10–14 · 221.6 at 15–19 · 210.7 at 20+ (YPA 7.43 → 6.73); kicker 50+ makes per game 0.348 dome → 0.244
+    → 0.218 → 0.227 → 0.147. The effect is real; the question is whether the model lacks it (the Vegas total prices it).
+* **Feature-group evaluation (local; the D1 harness could not be merged here, see Decisions).** Walk-forward test
+  seasons 2023–2025, the v2 model with the group's columns added (nothing else changed), both leagues' scoring,
+  Spearman / MAE of `proj_points` per league-season-week-position and the 80% interval score, paired across the
+  three seasons (keep = mean Δ beyond 2 × its standard error). Δ vs v2, mean of 3 seasons (League of Scrubs |
+  Dynasty):
+
+  | Group | QB Δ Spearman | RB | WR | TE | QB Δ MAE | RB | WR | TE | Verdict |
+  |---|---|---|---|---|---|---|---|---|---|
+  | weather (8 columns) | +0.003 \| +0.001 | −0.000 \| −0.000 | +0.000 \| −0.000 | −0.001 \| −0.001 | +0.002 \| +0.005 | +0.005 \| +0.005 | +0.002 \| −0.000 | +0.006 \| +0.005 | drop: noise (Scrubs TE MAE worse in 3/3) |
+  | wind | +0.001 \| +0.003 | +0.000 \| −0.000 | +0.000 \| −0.000 | −0.001 \| +0.000 | +0.020 \| +0.029 | +0.003 \| +0.001 | −0.003 \| −0.004 | +0.007 \| +0.006 | drop: noise (TE MAE worse 3/3 both leagues) |
+  | temp | +0.002 \| +0.004 | −0.001 \| −0.001 | −0.000 \| +0.000 | −0.003 \| −0.001 | +0.012 \| +0.014 | +0.007 \| +0.005 | −0.001 \| −0.004 | +0.014 \| +0.013 | drop (TE worse) |
+  | dome | −0.001 \| +0.002 | −0.001 \| −0.001 | −0.000 \| +0.000 | −0.004 \| −0.003 | +0.013 \| +0.008 | +0.004 \| +0.004 | +0.003 \| +0.002 | +0.007 \| +0.008 | drop (RB, TE worse) |
+
+  Baseline (v2) means: Spearman QB 0.539 | 0.528, RB 0.681 | 0.686, WR 0.617 | 0.631, TE 0.575 | 0.591. Interval
+  score Δ within ±0.3 everywhere (QB weather −0.03 | −0.29, the only gain, not beyond noise). Fit time per test season
+  ~7 min with three devs on 2 cores. Rows: `scratchpad/waveD/d3/weather_eval_rows.csv`, summary
+  `weather_eval_summary.csv`, script `eval_weather.py`.
+* **K / DEF with weather** (`backtest-kd` vs `backtest-kd --weather`, wind + dome added, 2021–2025, League of Scrubs):
+
+  | | 2021 | 2022 | 2023 | 2024 | 2025 | all |
+  |---|---|---|---|---|---|---|
+  | K Spearman kd1.0 → +wind | 0.186 → 0.185 | 0.077 → 0.056 | 0.105 → 0.134 | 0.180 → 0.202 | 0.147 → 0.170 | **0.139 → 0.149** |
+  | K MAE | 3.64 → 3.64 | 3.56 → 3.61 | 3.63 → 3.62 | 3.87 → 3.86 | 3.83 → 3.81 | 3.71 → 3.71 |
+  | DEF Spearman | 0.263 → 0.261 | 0.165 → 0.172 | 0.249 → 0.243 | 0.316 → 0.319 | 0.332 → 0.334 | 0.265 → 0.266 |
+  | DEF MAE | 4.70 → 4.72 | 4.44 → 4.43 | 4.92 → 4.91 | 4.51 → 4.50 | 4.61 → 4.60 | 4.64 → 4.63 |
+
+  K: +0.010 on average (+0.022 to +0.029 in 2023–2025; −0.021 in 2022, the season with 91 of 198 open-air games
+  missing their wind), standard error 0.009 — not beyond noise yet; MAE flat; top-10 hit 40.3% → 40.1%. DEF: nothing.
+* **Recommendation.** Keep nothing for QB–TE now (weather, wind, temp, dome: Δ Spearman within ±0.004 everywhere,
+  TE MAE slightly worse — the Vegas total already carries the weather). Do not ship K wind yet (kd1.0 stays). Re-run
+  both after the first real Open-Meteo run: it fills the 2022–2023 holes, adds precipitation and gusts and puts every
+  season on one definition; K wind is the candidate (wind + the kicker's range is where the data shows the effect),
+  shipped as kd1.1 only if it stays ahead in 4 of 5 seasons with the gap beyond 2 × its standard error.
+* **Decisions** (PO to confirm): (1) **the D1 merge was refused by the permission system in this session** (the
+  task also says "do not merge"), so the harness table is a local evaluation with the same model and scorer; the
+  group file follows D1's announced format (`GROUPS = {name: {table, columns, label, note}}`, no `in_season`), so after
+  integration `OMP_NUM_THREADS=1 OMP_WAIT_POLICY=PASSIVE uv run league-lab experiment weather wind temp dome` produces
+  the harness table; (2) the CSVs live in `src/league_lab/ingest/reference/` (`.gitignore`'s `data/` would hide
+  `src/league_lab/data/`); (3) `wx_source` has a fifth value, `dome`; (4) a retractable roof not decided yet counts as
+  **closed** (89% of 2016–2025 retractable games); the stadium reference beats nflverse's roof for fixed roofs (MCG,
+  Stade de France, Munich are open-air); (5) gusts / precipitation / snowfall are read at k+1..k+3 (Open-Meteo reports
+  them for the preceding hour), wind / temperature at k..k+2 — both cover the game's first three hours; (6) archive
+  rows are written for every game the file covers (closed-roof games included; dbt decides), forecast rows for every
+  game at the stadium not yet kicked off; (7) `db.migrate()` gains one call (`weather.ensure_tables`) so dbt resolves
+  venues before any weather is fetched; (8) the coverage test is a dbt **warning** (a new venue in a future schedule
+  must not stop the nightly), the pytest is the hard check; (9) an extra model, `int_game_weather` (game grain), sits
+  under `features/` next to the contract table; (10) `cli.py`: `ingest weather`, `backtest-kd --weather`.
+* **Open.** (a) The first real run (Mac or Actions): `uv run league-lab ingest weather --forecast` — 280 archive calls
+  for 2016–2026 (~8 min, ~1,300 weighted calls of the 10,000/day free tier) + ~23 forecasts; the first contact with
+  the live API (the fixtures follow the docs; a renamed variable would show as a `failed` partition). (b) The PO adds
+  the two `nightly.sh` lines (HOSTING § Weather in the nightly). (c) Precipitation stays NULL until (a) — the harness
+  treats NULL as unknown; re-run the groups after it. (d) Forecast history lives only in the archive cache on
+  Actions (a forecast cannot be fetched again): worth saving like the decision record (`data/raw/record/` or the
+  hosted sync) before the gap measurement depends on it. (e) The Kickers page "wind is the reason" line waits for a
+  shipped kd1.1. (f) `metric_registry.csv` rows for the `wx_` features (seeds were out of bounds for this round).
+
+### D5 2026-10-01 — personnel: starting QB, offensive line, teammates out, own injuries (branch `dev/D5`, clone `league_lab_d5`)
+
+* **Built.** Five intermediate models under `dbt/models/intermediate/features/` (docs + tests:
+  `int_player_week_personnel.yml`; definitions: METRICS § "Personnel"; DATA_MODEL § "Feature group `personnel`"):
+  `int_pn_team_game` (team × REG game: the schedule's starting / projected QB, played, team snaps / targets / carries,
+  5,822 rows), `int_pn_player_game` (QB / RB / WR / TE / OL × played game: played, missed injured / other, snap share,
+  targets, carries, points, the game's starter, injured-miss streak; 218,397), `int_pn_player_week_status` (week W's
+  report + practice + weekly roster for every player-week; 265,667), `int_pn_window_player` (team × week × player: shares
+  over the last four played games before W, out / gone this week; 121,464) and the group's table
+  `int_player_week_personnel` (109,123 rows = the universe, 20 `pn_` inputs + `proj_qb_id` / `usual_qb_id` references +
+  `pn_asof_week`). One code per franchise. Registered in `src/league_lab/feature_groups/personnel.py`: `personnel` (20),
+  `qb` (5), `oline` (3), `teammates` (4), `own_injury` (6). Nothing in production reads the tables; the nightly's full
+  `dbt build` builds them (78 s) — no `--select` appended.
+* **Tests.** dbt `--select int_pn_team_game+ int_pn_player_week_status+`: PASS=27 (5 models, 22 tests: keys, ranges,
+  as-of marker, week 1 without in-season inputs, QB flags agree, `assert_personnel_is_asof` — universe row for row, the
+  projected starter = the raw schedule's, the usual QB from a game he played before the week, career starts re-counted
+  on the raw schedule — and `assert_personnel_ol_count_from_raw`: the OL count re-derived from raw snap counts, injuries
+  and weekly rosters on its own path, every team-week 2016–2026, 0 differences). Negative control: a window that
+  includes the week's own game fails `pn_window_is_asof` on 113,684 rows and changes the OL count on 631 of 5,018
+  team-weeks. pytest `tests/test_personnel.py` 13 (QB-change twin on fixtures incl. the CIN case, OL-count twin incl. the
+  MIN case, the SQL hard-codes the twins' constants, the groups validate and every column is documented, and on the
+  database both twins reproduce every 2025 row). The harness's no-peek check: all five groups pass, **0 refusals**,
+  largest probe excess 0.040 (`pn_top_rusher_out`, RB). Its warnings are the report's publishing calendar, not a peek:
+  on the clone's data (fetched 2026-09-26) week 4's report is not out, so `oline` / `teammates` / `pn_practice_ord` are
+  NULL for week 4.
+* **As of: which report.** nflverse `injuries` holds one row per player-week: the team's final game-status report
+  (Friday for a Sunday game); `date_modified` (2016–24) is a median 47–55 h before kickoff, 24 of ≈ 52,000 rows were
+  modified after kickoff (13 in 2020). Reserve lists from the weekly roster (0 RES player-weeks 2017–25 with snaps in
+  that game). The roster's INA is the game-day inactive list (0 of 7,204 INA player-weeks 2022–25 played) and is never read.
+* **Hand checks** (METRICS § "Personnel"): QB change 2025 — CIN week 3 (Burrow → Browning), NYG week 4 (Wilson → Dart),
+  ARI week 6 (Murray → Brissett): every RB / WR / TE row 0 the week before, 1 that week; the new starter's
+  `pn_qb_starting` 1, the old one's 0; gap −1.86 / NULL (Dart, no start) / −9.79. Offensive line, MIN 2025 week 5 from
+  the raw tables: O'Neill, Jackson, Jurgens Out among the five → 3, share 1.8703 = the table. Teammates, LA 2025 week 7:
+  Nacua Out → `pn_top_target_out` 1 on every other Rams row.
+* **Coverage** by season and sub-group: METRICS § "Personnel" (2017–2025: QB change 88–92% of rows, OL / teammates 94%
+  (100% from week 2), report 99.5–100%, last-season games missed 81–86%; 2016 lower: no 2015).
+* **Harness** (`OMP_NUM_THREADS=1 … league-lab experiment personnel qb oline teammates own_injury`, one session, baseline
+  from the cache, **66 min wall** (personnel 1,573 s, qb 752, oline 559, teammates 543, own_injury 507); test seasons
+  2023–2025, both leagues; mean of the league-averaged season Δ; (n) = seasons better of 3):
+
+  | group | pos | Δ Spearman (better) | Δ MAE pts (better) | Δ interval score | Δ coverage pp | Δ width | decision |
+  |---|---|---|---|---|---|---|---|
+  | personnel (20) | QB | **+0.0484 (3)** | **−0.532 (3)** | −0.082 | −0.23 | −1.43 | keep |
+  | personnel | RB | **+0.0066 (3)** | −0.037 (3) | −0.011 | +0.34 | −0.06 | keep |
+  | personnel | WR | **+0.0057 (3)** | −0.025 (3) | −0.003 | −0.71 | −0.11 | keep |
+  | personnel | TE | +0.0027 (3) | +0.009 (1) | +0.003 | +0.06 | +0.05 | drop — verdict **keep** |
+  | qb (5) | QB | **+0.0528 (3)** | **−0.541 (3)** | −0.084 | −0.62 | −1.61 | keep |
+  | qb | RB / WR / TE | −0.0003 (1) / +0.0003 (1) / +0.0000 (1) | −0.005 / −0.003 / +0.012 | ±0.003 | | | drop ×3 — verdict **keep** |
+  | oline (3) | QB / RB / WR / TE | +0.0041 (2) / −0.0003 (0) / −0.0003 (1) / +0.0005 (3) | +0.012 / −0.007 / +0.009 / +0.000 | ±0.010 | | | drop ×4 — verdict **drop** |
+  | teammates (4) | QB | −0.0069 (0) | +0.040 (1) | −0.003 | −0.48 | −0.04 | drop (hurts) |
+  | teammates | RB | **+0.0064 (3)** | −0.035 (3) | −0.009 | +0.20 | −0.00 | keep |
+  | teammates | WR | **+0.0053 (3)** | −0.013 (3) | −0.004 | −0.34 | −0.12 | keep |
+  | teammates | TE | **+0.0054 (3)** | −0.009 (3) | −0.002 | +0.40 | +0.02 | keep — verdict **mixed** |
+  | own_injury (6) | QB / RB / WR / TE | +0.0027 (2) / −0.0008 (0) / +0.0000 (2) / −0.0035 (0) | +0.012 / −0.007 / +0.004 / +0.012 | ±0.005 | | | drop ×4 — verdict **drop** |
+
+  Baseline (v2): Spearman QB 0.533, RB 0.683, WR 0.624, TE 0.583; MAE 7.08 / 4.44 / 4.40 / 3.22. The QB gain is ten times
+  anything round 1 found: 2023 +0.072, 2024 +0.022, 2025 +0.065 (`qb`).
+* **QB and WR on 2021–2022** (`scratchpad/waveD/d5/qb_wr_extend.py`, D4's pattern: `walk_forward` + `summarize_scores`, QB and
+  WR only, 17 min; 2023 reproduces the harness to 4 decimals: `qb` QB +0.0718 / −0.627, `personnel` QB +0.0700, WR
+  +0.0028, `teammates` WR +0.0023). Five seasons 2021 / 2022 / 2023 / 2024 / 2025:
+  - `qb` at QB: Spearman +0.046 / +0.018 / +0.072 / +0.022 / +0.065 → **mean +0.0446, 5 of 5**; MAE −0.56 / −0.38 / −0.63 /
+    −0.27 / −0.73 → **−0.51, 5 of 5**. Holds (unlike D4's pass rate). `qb` at WR: +0.0039 / +0.0005 / −0.0001 / −0.0004 /
+    +0.0014 → +0.0011, 3 of 5: nothing.
+  - `teammates` at WR: +0.0032 / +0.0042 / +0.0023 / +0.0056 / +0.0082 → **mean +0.0047, 5 of 5**; MAE −0.003 / −0.008 /
+    −0.011 / −0.012 / −0.016 → −0.010, 5 of 5. Consistent every season, **0.0003 under the +0.005 bar** of the rule's
+    5-season version. At QB: +0.0041 / −0.0050 / −0.0021 / −0.0185 / −0.0001 → −0.0043, 1 of 5 (drop).
+  - `personnel` at QB: +0.055 / +0.017 / +0.070 / +0.015 / +0.061 → +0.0434, 5 of 5; at WR: +0.0058 / +0.0067 / +0.0028 /
+    +0.0069 / +0.0074 → **+0.0059, 5 of 5** (MAE −0.023, 5 of 5): passes the 5-season bar.
+* **Where the QB gain comes from** (`scratchpad/waveD/d5/qb_segments.py`, 2025, reference league, 677 played QB rows,
+  MAE 6.04 → 5.39): 74% from the 140 rows of QBs who played without being the projected starter (relief and mop-up:
+  v2 projected 6.5 from their history, actual 2.1, with `qb` 3.3), 12% from the 43 rows of a new starter (v2 9.0, actual
+  13.2, with `qb` 12.4 — the superflex decision: "Browning starts this week"), 14% from the 494 usual starters' rows. v2
+  projects "points if he plays" from his own history and cannot tell a starter from a backup; the projected starter is
+  known a week ahead.
+* **Recommendation.** Ship two small per-position sets in v3: **QB ← `qb`** (5 inputs; 5 of 5 seasons, +0.045 Spearman,
+  −0.51 points MAE, interval score −0.08: also a sharper range for D6) and **RB / WR / TE ← `teammates`** (4 inputs; 3 of
+  3 at each position, +0.005 to +0.006; WR 5 of 5 at +0.0047). Drop `oline` and `own_injury` (no position helps:
+  the line's absences and a player's own history are in the lines and in his recent usage already) and `qb` at RB / WR /
+  TE (the WR "new quarterback" mechanism does not show in five seasons). Alternative for WR only: `personnel` (+0.0059,
+  passes the 5-season bar) at 20 inputs for +0.001 — not worth it. Expect the live gain at RB / WR / TE to be smaller
+  than the backtest's until the freeze rule changes (decision 3).
+* **For the PO to confirm.** (1) Per-position inputs need a change outside D5's files: `projections.py` has one `FEATURES`
+  for every position — v3 needs e.g. `FEATURES_BY_POSITION = {QB: FEATURES + personnel.QB, RB/WR/TE: FEATURES +
+  personnel.TEAMMATES}` used by `fit_position` / `predict_position` / `component_importance` and by `signals.py`'s scenario
+  refits, `load_frame` joining `int_player_week_personnel` (or the PO adds the 9 columns to
+  `mart_player_week_features`), plus `FEATURE_LABELS` for the Rankings explainer; the harness needs nothing.
+  (2) `pn_qb_prev_ppg_diff` = points per start over the newest 17 starts of the last two seasons and this one (not "last
+  season" alone: a backup's last start is often two seasons back). (3) **The freeze gap**: on Thursday 2026-10-01 (week
+  4, first kickoff tonight) nflverse's injury file has 257 rows for 30 teams with practice participation but only 2
+  designations; Friday's Out / Doubtful arrive after B5 freezes the week at its first kickoff. Training uses the final
+  report, so `teammates` (and v2's existing `questionable`) see less on the frozen board than in the backtest; reserve-list
+  and released teammates are known in time. Freezing each game at its own kickoff (not the week's first) would close it.
+  The `qb` inputs are not affected (the projected starter is filled about a week ahead: on 2026-09-26 weeks 3–4 were
+  filled; week 3's 30 unplayed projections all matched the actual starters; 2 of 32 week-4 projections changed during
+  the week). (4) The harness scores every QB who played, mop-up included; three quarters of the QB gain is there. It is
+  real (v2 over-projects backups by ~4 points) and the decision-relevant part (new starters, 12%) improves too.
+  (5) `pn_practice_ord` added to the brief's list (own_injury dropped anyway). (6) `pn_top_target_out` /
+  `pn_top_rusher_out` are about the leading teammate **other than him** (for the WR1 himself: the WR2), and "out" includes
+  "gone" (released / traded: the C6 absence logic) and Doubtful. (7) `pn_absence_beneficiary` reads `ops.player_role_alerts`
+  (the mart view was missing from the clone and would be dropped by any cascade). (8) No `metric_registry.csv` rows (seeds
+  out of bounds): add `personnel` v1.0 at merge if kept. (9) The `ops.feature_experiments` rows (5 groups × 24) are in
+  `league_lab_d5` only.
+* **Found on the way (not D5's files).** `int_player_game_role` (C6) joins `dim_game`'s OAK / SD to `fct_team_game`'s LV / LAC
+  and loses the Raiders 2016–19 and the Chargers 2016 (so do the role alerts); `kd_team()` on both sides fixes it.
+  `tests/test_lineup.py::test_real_slot_sets_solve_in_under_5_ms[slots3-26]` failed once at load average 7 (worst 112 ms
+  vs 25 ms) and passes alone: a timing flake.
+* **Verified.** pytest **763 passed** (56 s on a quiet box; the first run at load 7 had the timing flake above); `ruff check src tests app` clean;
+  headless page check (both leagues, every page + 6 Player runs): 32 runs, 0 exceptions. No page touched.
+### D6 2026-10-01 — sharper ranges and decisions (branch `dev/D6`, clone `league_lab_d6`)
+
+Andrew: "if an 80% confidence interval is like a 20-point spread, how useful is that?". Definitions, the
+experiment and the calibration are in `docs/METRICS.md` § "Ranges and decisions"; this section is the evidence.
+
+* **Built.** (1) The **50% range** `p25` / `p75` ("most weeks"): two more residual quantile regressors (0.25,
+  0.75) per position × league in `projections.fit_position`, fitted after the P10 / P50 / P90 models (own seeds:
+  those are bit-for-bit unchanged), split-conformal widened for 50% (`_conformal_widening`, now shared with the
+  80% range), sorted and kept inside [P10, P50] / [P50, P90] in `predict_position`; new columns on
+  `ops.projections` (B5 way: `db.py` migrate, the writer's DDL and the mart pre-hook each `alter table … add
+  column if not exists`) and `mart_player_week_projections` (`p25`, `p75`, `actual_inside_50`; tests
+  `projection_50_range_inside_80_range`, `projection_50_range_both_ends_or_neither`); `score_predictions`
+  also returns `coverage_50` / `pinball_25` / `pinball_75` / `interval_width_50` (not persisted:
+  `ops.projection_backtest` keeps its columns). (2) `src/league_lab/decisions.py`: P(A outscores B) from the
+  two players' quantiles (piecewise-linear quantile function, exponential upper tail, Gaussian copula with the
+  measured same-game correlations, 40,000-draw Monte Carlo, fixed seed). (3) `app/lib/cards.py`: the card
+  headline is the probability ("Kenny Gainwell outscores Emanuel Wilson 53% of the time — a coin flip."), the
+  margin second, then "Most weeks" and "A bad week to a good week"; Rankings' board column is "Most weeks"
+  (P25–P75; the 80% "Range" on a week without it) and the full table gains the two columns. Docs: METRICS,
+  DATA_MODEL (`ops.projections`, the mart), WORDS (four rows).
+* **The experiment** (scripts `exp_cache.py` / `exp_fit.py` / `exp_score.py` / `exp_insea.py` /
+  `exp_decide.py` in the session scratchpad `waveD/d6/`): walk-forward 2023–2025 in both leagues' scoring,
+  components and out-of-fold lines fitted once per test season × position (12 min wall) and shared by every
+  variant; 11 residual-model families × 1–7 conformal schemes = 30 variants (61 min wall for the family fits on
+  the shared box, load 4–10).
+  The v2 variant reproduces the harness's cached baseline (`ops.feature_experiments`, key
+  `cb461af0c56b4811`) to four decimals in all 24 cells (e.g. League of Scrubs 2023 QB: interval score 1.2212,
+  coverage 0.7326, width 17.729, Spearman 0.5257); the production code (`walk_forward` on 2025 QB) reproduces
+  the experiment's v2 50% numbers exactly (pinball 2.2125 / 2.5062 Scrubs). Spearman is the same in every row
+  (QB 0.533, RB 0.683, WR 0.624, TE 0.583: the point projection never moves). Mean over 2023–2025 × both
+  leagues; "Top-N" = the board's top 24 RB / WR, top 12 QB / TE by projection each week:
+
+| Variant | Pos | Interval score | Δ vs v2 | Coverage 80 | Width 80 | Top-N width 80 | Top-N coverage 80 | Coverage 50 | Width 50 | Top-N width 50 | Top-N coverage 50 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| v2 (production) | QB | 1.509 | +0.0% | 75.5% | 21.9 | 23.4 | 77.4% | 46.7% | 11.7 | 12.1 | 47.6% |
+| (a) + role features (frame: SD/dud rate L16, TD share, receiving / rushing share) | QB | 1.508 | -0.1% | 75.3% | 21.8 | 23.2 | 77.4% | 46.6% | 11.8 | 12.4 | 48.4% |
+| (a) + aDOT / deep-target share (WR, TE) | QB | 1.508 | -0.1% | 75.3% | 21.8 | 23.2 | 77.4% | 46.6% | 11.8 | 12.4 | 48.4% |
+| (a) roleB + per-tail conformal | QB | 1.503 | -0.4% | 75.7% | 21.8 | 23.2 | 77.6% | 46.5% | 11.6 | 12.2 | 48.0% |
+| (b) scale model x fixed shape | QB | 1.543 | +2.2% | 75.3% | 21.6 | 23.1 | 78.3% | 46.4% | 11.7 | 12.2 | 48.1% |
+| (b) scale model, normalised conformal | QB | 1.566 | +3.8% | 75.3% | 21.9 | 23.5 | 78.7% | 46.4% | 11.8 | 12.4 | 48.1% |
+| (b) scale model with role features, normalised conformal | QB | 1.561 | +3.4% | 75.6% | 22.2 | 24.1 | 79.2% | 46.3% | 11.8 | 12.5 | 49.2% |
+| (c) per-tail conformal | QB | 1.510 | +0.0% | 75.5% | 21.9 | 23.4 | 77.5% | 46.1% | 11.5 | 11.9 | 47.0% |
+| (c) conformal per projection tier (terciles) | QB | 1.509 | +0.0% | 75.8% | 22.1 | 24.1 | 78.8% | 47.2% | 11.8 | 12.2 | 48.1% |
+| (c) conformal per role (deep/short WR-TE, receiving RB, rushing QB) | QB | 1.508 | -0.1% | 76.1% | 22.1 | 23.6 | 78.1% | 46.9% | 11.7 | 12.1 | 48.0% |
+| (c) conformal per tier x role | QB | 1.512 | +0.2% | 76.3% | 22.4 | 24.7 | 79.5% | 47.8% | 12.0 | 12.5 | 49.2% |
+| (a)+(c) roleB, per-tail, per tier | QB | 1.508 | -0.1% | 75.5% | 22.1 | 23.6 | 78.2% | 46.3% | 11.7 | 12.0 | 47.1% |
+| (d) two-part: regulars / the rest | QB | 1.502 | -0.5% | 75.2% | 21.9 | 23.9 | 78.0% | 46.2% | 11.6 | 12.4 | 49.3% |
+| (d) two-part, per-tail conformal | QB | 1.501 | -0.5% | 75.8% | 22.1 | 23.9 | 78.9% | 45.8% | 11.5 | 12.3 | 48.9% |
+| in-season recalibration | QB | 1.508 | -0.1% | 75.6% | 21.9 | 23.4 | 77.4% | 47.0% | 11.7 | 12.2 | 47.8% |
+| control: no features (residual quantiles by projection bin) | QB | 1.531 | +1.5% | 76.2% | 23.0 | 24.8 | 80.0% | 48.7% | 12.3 | 13.4 | 53.2% |
+| regularised: early stopping | QB | 1.519 | +0.7% | 74.6% | 22.1 | 23.7 | 77.0% | 46.4% | 11.6 | 12.3 | 48.6% |
+| regularised: leaf >= 200 | QB | 1.515 | +0.4% | 74.6% | 21.7 | 23.7 | 78.0% | 46.5% | 11.8 | 12.5 | 49.5% |
+| v2 (production) | RB | 0.971 | +0.0% | 79.8% | 13.6 | 19.1 | 77.3% | 51.3% | 6.9 | 10.1 | 47.6% |
+| (a) + role features (frame: SD/dud rate L16, TD share, receiving / rushing share) | RB | 0.969 | -0.2% | 79.9% | 13.6 | 19.2 | 77.8% | 51.2% | 6.9 | 9.9 | 47.3% |
+| (a) + aDOT / deep-target share (WR, TE) | RB | 0.969 | -0.2% | 79.9% | 13.6 | 19.2 | 77.8% | 51.2% | 6.9 | 9.9 | 47.3% |
+| (a) roleB + per-tail conformal | RB | 0.969 | -0.2% | 80.0% | 13.6 | 19.3 | 78.0% | 50.9% | 6.8 | 9.9 | 46.6% |
+| (b) scale model x fixed shape | RB | 0.984 | +1.3% | 80.6% | 13.3 | 19.1 | 73.1% | 52.1% | 6.6 | 9.3 | 43.1% |
+| (b) scale model, normalised conformal | RB | 0.985 | +1.5% | 80.6% | 13.3 | 19.3 | 73.6% | 52.5% | 6.7 | 9.5 | 44.3% |
+| (b) scale model with role features, normalised conformal | RB | 0.981 | +1.1% | 80.9% | 13.4 | 19.6 | 74.7% | 52.1% | 6.8 | 9.7 | 44.8% |
+| (c) per-tail conformal | RB | 0.970 | -0.1% | 80.2% | 13.6 | 19.1 | 77.4% | 51.0% | 6.9 | 10.0 | 47.4% |
+| (c) conformal per projection tier (terciles) | RB | 0.971 | +0.0% | 79.9% | 13.8 | 19.9 | 79.5% | 51.3% | 7.2 | 11.0 | 51.0% |
+| (c) conformal per role (deep/short WR-TE, receiving RB, rushing QB) | RB | 0.971 | +0.0% | 80.1% | 13.7 | 19.2 | 77.7% | 51.6% | 7.0 | 10.1 | 47.9% |
+| (c) conformal per tier x role | RB | 0.971 | -0.0% | 80.2% | 13.9 | 20.0 | 79.8% | 51.3% | 7.2 | 11.0 | 51.4% |
+| (a)+(c) roleB, per-tail, per tier | RB | 0.966 | -0.5% | 80.2% | 13.8 | 20.7 | 79.9% | 51.0% | 7.1 | 11.4 | 51.2% |
+| (d) two-part: regulars / the rest | RB | 0.974 | +0.4% | 80.7% | 13.5 | 19.8 | 79.0% | 51.5% | 7.1 | 10.8 | 50.2% |
+| (d) two-part, per-tail conformal | RB | 0.972 | +0.1% | 80.3% | 13.8 | 20.4 | 78.3% | 51.8% | 7.1 | 11.0 | 50.1% |
+| in-season recalibration | RB | 0.971 | +0.0% | 79.9% | 13.6 | 19.1 | 77.3% | 50.7% | 6.9 | 10.1 | 47.6% |
+| control: no features (residual quantiles by projection bin) | RB | 0.973 | +0.2% | 79.6% | 14.5 | 21.2 | 82.4% | 51.0% | 7.3 | 11.2 | 51.8% |
+| regularised: early stopping | RB | 0.971 | -0.0% | 80.2% | 13.8 | 19.4 | 78.0% | 51.6% | 7.0 | 10.2 | 47.8% |
+| regularised: leaf >= 200 | RB | 0.973 | +0.2% | 80.0% | 13.9 | 19.7 | 78.4% | 51.4% | 7.1 | 10.4 | 48.5% |
+| v2 (production) | WR | 0.957 | +0.0% | 81.4% | 13.8 | 19.8 | 75.9% | 49.7% | 6.9 | 10.5 | 46.8% |
+| (a) + role features (frame: SD/dud rate L16, TD share, receiving / rushing share) | WR | 0.954 | -0.3% | 81.5% | 13.6 | 19.7 | 76.1% | 49.4% | 6.9 | 10.5 | 46.9% |
+| (a) + aDOT / deep-target share (WR, TE) | WR | 0.954 | -0.3% | 81.0% | 13.7 | 19.8 | 75.9% | 49.5% | 6.9 | 10.5 | 46.8% |
+| (a) roleB + per-tail conformal | WR | 0.954 | -0.3% | 81.2% | 13.5 | 19.6 | 75.9% | 50.0% | 6.8 | 10.3 | 46.2% |
+| (b) scale model x fixed shape | WR | 0.961 | +0.4% | 80.8% | 13.2 | 20.4 | 73.0% | 49.2% | 6.4 | 9.8 | 43.1% |
+| (b) scale model, normalised conformal | WR | 0.961 | +0.4% | 80.8% | 13.2 | 20.3 | 73.0% | 49.3% | 6.4 | 9.7 | 42.6% |
+| (b) scale model with role features, normalised conformal | WR | 0.960 | +0.3% | 80.7% | 13.2 | 20.3 | 73.1% | 49.1% | 6.4 | 9.7 | 42.9% |
+| (c) per-tail conformal | WR | 0.957 | -0.0% | 81.5% | 13.6 | 19.6 | 75.7% | 50.1% | 6.8 | 10.4 | 46.4% |
+| (c) conformal per projection tier (terciles) | WR | 0.956 | -0.1% | 81.1% | 14.3 | 21.3 | 79.7% | 49.6% | 7.2 | 11.1 | 49.0% |
+| (c) conformal per role (deep/short WR-TE, receiving RB, rushing QB) | WR | 0.957 | -0.0% | 81.2% | 13.8 | 19.8 | 76.0% | 49.5% | 6.9 | 10.5 | 46.8% |
+| (c) conformal per tier x role | WR | 0.956 | -0.1% | 81.3% | 14.3 | 21.4 | 80.1% | 49.8% | 7.2 | 11.1 | 49.7% |
+| (a)+(c) roleB, per-tail, per tier | WR | 0.950 | -0.7% | 81.0% | 13.9 | 21.6 | 80.2% | 49.9% | 7.0 | 11.2 | 49.4% |
+| (d) two-part: regulars / the rest | WR | 0.958 | +0.1% | 80.6% | 13.3 | 20.4 | 77.7% | 49.7% | 6.8 | 10.7 | 47.5% |
+| (d) two-part, per-tail conformal | WR | 0.960 | +0.3% | 80.7% | 13.8 | 20.9 | 78.5% | 50.0% | 6.8 | 10.7 | 47.5% |
+| in-season recalibration | WR | 0.957 | +0.0% | 81.0% | 13.7 | 19.7 | 75.9% | 50.1% | 6.9 | 10.5 | 46.8% |
+| control: no features (residual quantiles by projection bin) | WR | 0.957 | -0.0% | 80.5% | 14.1 | 21.3 | 79.8% | 49.5% | 7.1 | 11.2 | 50.2% |
+| regularised: early stopping | WR | 0.957 | +0.0% | 81.4% | 13.8 | 19.8 | 75.9% | 49.7% | 6.9 | 10.5 | 46.8% |
+| regularised: leaf >= 200 | WR | 0.957 | -0.0% | 81.6% | 13.8 | 20.0 | 76.5% | 50.2% | 6.9 | 10.7 | 47.5% |
+| v2 (production) | TE | 0.719 | +0.0% | 80.9% | 9.5 | 14.4 | 76.3% | 50.7% | 5.0 | 8.3 | 47.9% |
+| (a) + role features (frame: SD/dud rate L16, TD share, receiving / rushing share) | TE | 0.717 | -0.2% | 80.8% | 9.5 | 14.8 | 76.6% | 51.7% | 5.0 | 8.3 | 49.3% |
+| (a) + aDOT / deep-target share (WR, TE) | TE | 0.716 | -0.3% | 81.1% | 9.4 | 14.7 | 77.1% | 50.3% | 4.9 | 8.0 | 48.8% |
+| (a) roleB + per-tail conformal | TE | 0.714 | -0.6% | 81.3% | 10.0 | 15.3 | 78.0% | 50.0% | 4.9 | 8.0 | 48.1% |
+| (b) scale model x fixed shape | TE | 0.735 | +2.3% | 80.2% | 9.0 | 14.4 | 71.3% | 51.4% | 4.8 | 7.5 | 43.1% |
+| (b) scale model, normalised conformal | TE | 0.735 | +2.3% | 80.7% | 9.2 | 15.5 | 75.5% | 51.8% | 5.0 | 8.1 | 46.8% |
+| (b) scale model with role features, normalised conformal | TE | 0.733 | +2.0% | 81.1% | 9.2 | 15.6 | 75.8% | 51.4% | 5.0 | 8.1 | 47.7% |
+| (c) per-tail conformal | TE | 0.717 | -0.2% | 81.1% | 9.9 | 14.9 | 77.7% | 50.3% | 5.0 | 8.3 | 47.8% |
+| (c) conformal per projection tier (terciles) | TE | 0.717 | -0.2% | 81.3% | 9.8 | 15.6 | 80.5% | 50.7% | 5.1 | 8.4 | 48.6% |
+| (c) conformal per role (deep/short WR-TE, receiving RB, rushing QB) | TE | 0.718 | -0.1% | 81.2% | 9.5 | 14.5 | 76.7% | 50.6% | 5.0 | 8.4 | 48.3% |
+| (c) conformal per tier x role | TE | 0.718 | -0.1% | 81.3% | 9.8 | 15.6 | 80.9% | 50.8% | 5.1 | 8.5 | 49.0% |
+| (a)+(c) roleB, per-tail, per tier | TE | 0.715 | -0.5% | 81.5% | 10.2 | 16.4 | 80.6% | 49.8% | 5.0 | 8.3 | 48.3% |
+| (d) two-part: regulars / the rest | TE | 0.727 | +1.2% | 81.3% | 9.5 | 15.3 | 79.0% | 51.9% | 5.0 | 8.3 | 48.6% |
+| (d) two-part, per-tail conformal | TE | 0.727 | +1.2% | 81.6% | 10.2 | 15.8 | 79.6% | 51.1% | 5.0 | 8.2 | 48.2% |
+| in-season recalibration | TE | 0.719 | +0.0% | 80.4% | 9.4 | 14.4 | 76.3% | 50.5% | 5.0 | 8.3 | 48.0% |
+| control: no features (residual quantiles by projection bin) | TE | 0.719 | +0.0% | 81.0% | 10.5 | 16.6 | 82.6% | 51.2% | 5.3 | 8.9 | 52.9% |
+| regularised: early stopping | TE | 0.720 | +0.3% | 80.8% | 10.1 | 14.8 | 77.0% | 51.3% | 5.0 | 8.0 | 47.2% |
+| regularised: leaf >= 200 | TE | 0.722 | +0.5% | 80.9% | 9.5 | 15.4 | 78.6% | 51.2% | 4.9 | 8.3 | 48.7% |
+
+* **Kept: nothing for the 80% range** (no variant beats v2 by 2% at any position: best −0.7%, WR). Kept: the
+  50% range on v2's machinery. Why nothing sharpens: the control with **no inputs at all** (residual quantiles
+  by projection bin) is within 0.2% of v2 at RB / WR / TE — given the projection, the inputs do not tell a
+  volatile player from a steady one; the width is weekly noise. A scale model is worse (+0.4% to +3.8%).
+* **50% range coverage** (target 48–52%): RB 51.3%, WR 49.7%, TE 50.7% — **QB 46.7%** (per league-season
+  43.1–49.5%; v2's 80% range at QB is 75.5% on the same seasons). Width at 50% vs 80%, top 24 in League of
+  Scrubs: RB 9.5 vs 17.9, WR 9.4 vs 17.5 points; top 12 QB 10.1 vs 19.4, TE 7.5 vs 13.1.
+* **Production run** (2026, trained 2016–2025): QB widening 80% 1.06 / 1.80 (unchanged), 50% 0.67 / 0.83
+  (Scrubs / dynasty); RB 0.03 / 0.01; WR 0.01 / −0.00. All 16,268 v2 rows of weeks 4–18 carry P25 / P75 and
+  satisfy P10 ≤ P25 ≤ P50 ≤ P75 ≤ P90 (mean width 6.08 vs 12.18 at 80%); the 896 K / DEF rows are NULL (kd1.0).
+  Crossings clipped: P75 = P90 on 1 row (George Kittle, week 4), P25 = P50 on 104 (QB 49, WR 54, TE 1), P25 =
+  P10 > 0 on 413 (mostly TE).
+* **The point estimate did not move** (md5, `ops.projections` season 2026): weeks 4–18 `proj_points` 17,164
+  rows `d4877509be0f2435074eaac87ce6ed24` before (a `project` on `690d99b` in this clone) and after; every
+  column but `fitted_at` / `frozen_at` / `p25` / `p75` `fa4947af69924cd311e6ecd0cdab3faf` before and after
+  (P10 / P50 / P90 unchanged). **Weeks 1–3 untouched**: 3,554 rows, the original columns
+  `e26319116f0e4cda6ab13d745e80afdf` before and after both runs, `p25` / `p75` NULL on all of them. **Two
+  consecutive `project` runs byte-identical**: every column but `fitted_at` / `frozen_at`
+  `c6e0905b3a5a9e60fd2210d9a65d69ae` both times (236 s and 287 s wall, OMP_NUM_THREADS=1, shared box).
+* **dbt**: `dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+
+  mart_projection_importance mart_player_role_alerts+ mart_waiver_upside` PASS=107 (incl. the two new tests);
+  `assert_frozen_projections_precede_kickoff` PASS=1.
+* **Same-game correlations** (Gaussian copula, normal scores of the randomised PIT, held-out 2023–2025, pairs
+  where both were projected ≥ 5, mean of the two leagues): teammates QB–WR +0.22 (9,801 pairs), QB–TE +0.21
+  (3,265), QB–RB +0.03, RB–RB −0.08 (2,592), RB–WR −0.03 (14,536), WR–WR +0.02 (8,083), TE–WR +0.01, QB–QB
+  −0.41 (540: a starter and his replacement); opponents QB–QB +0.11 (2,216), QB–WR +0.07, WR–WR +0.05 (11,246),
+  QB–TE +0.04, others within ±0.03; pooled teammates +0.05, opponents +0.03.
+* **Decision calibration, 2024–2025** (both leagues' Sleeper rosters of those seasons, B1's solver on the
+  walk-forward values, QB–TE slots; every filled slot vs the bench player the re-solve brings in): 5,374
+  pairs, 4,895 with both players playing. **Brier 0.2210** vs 0.3672 for "the higher projection wins = 100%"
+  and 0.2491 for a coin flip; mean predicted 64.7%, observed 63.2% (2024: 64.0 / 63.7, Brier 0.2193; 2025:
+  65.3 / 62.7, 0.2227). Deciles predicted → observed: 49.7 → 49.0, 53.5 → 52.1, 56.2 → 54.1, 58.8 → 57.3, 61.7 →
+  60.2, 64.8 → 61.6, 67.9 → 64.4, 71.8 → 74.3, 76.8 → 77.3, 85.6 → 81.7. By word: coin flip 975 pairs 51.9 →
+  51.0%, lean 1,756 59.5 → 56.8%, clear 2,164 74.6 → 73.9%. The cards' three closest calls (2,005 pairs):
+  Brier 0.2460 vs a coin's 0.2486 (mean 56.6% predicted, 54.1% observed). 242 pairs share a game (Brier 0.2022
+  with the correlation, 0.2020 without). A shrink toward 50% fitted on one season does not help the other.
+* **Worked examples, week 4** (live board, `cards.decisions` on `lineup_rows`; "by hand" = the independent
+  integral P(A > B) = mean over A's quantile levels of F_B(Q_A(u)) on a 4,000-level grid):
+  dynasty roster 12 — **RB2 Kenny Gainwell (TB vs GB) 7.54 over Emanuel Wilson (SEA vs LAC) 7.09, 0.45
+  apart: 53% (Monte Carlo 0.5340, by hand 0.5336), a coin flip; most weeks 3–10 vs 2–9, bad to good week 1–16
+  vs 1–15** (P10 / P25 / P50 / P75 / P90 0.96 / 3.44 / 5.98 / 9.98 / 16.03 and 1.17 / 2.24 / 5.76 / 9.07 /
+  14.52); TE Kittle over Likely 48% (0.4817 / 0.4790); FLEX Boston over Godwin 58%, a lean (0.5808 /
+  0.5788). League of Scrubs roster 2 — **FLEX2 Jacory Croskey-Merritt (WAS vs IND) 9.13 over Bhayshul Tuten
+  (JAX vs CIN) 9.07, 0.06 apart: 46% (0.4649 / 0.4644), a coin flip; most weeks 4–11 vs 4–13, bad to good week
+  2–17 vs 2–19** (1.82 / 4.10 / 7.68 / 11.36 / 17.30 and 1.92 / 4.40 / 8.28 / 13.16 / 19.17: the projection and
+  the range disagree, and the card says both); RB2 Hampton over Tuten 59%, a lean; QB Mahomes over Bryce Young
+  55%, a lean (most weeks 17–24 vs 13–25). No week-4 pair shares a game.
+* **Checks**: `pytest` 765 passed (`tests/test_decisions.py` 15: the quantile function's knots, tails and
+  clipped-range floor, three-knot fallback, Monte Carlo vs the closed form for two normals at ρ = 0 / 0.35 /
+  −0.3 within 0.01 and the piecewise-linear version within 0.02, determinism and symmetry, correlation
+  direction, the relationship / ρ lookup, words and percent, Brier and deciles, the DDL in all three copies;
+  `test_my_week` on the live clone checks the cards' first lines); `ruff` clean; headless page check 38 runs
+  (13 pages × 2 leagues, the Player page by id × 6, Home and Matchups for dynasty roster 12, Rankings week 2
+  — frozen, P25 / P75 NULL — and week 4 for both rosters): 0 exceptions. Screenshots (390 and 1300 px, both
+  rosters, no horizontal scroll at 390): `waveD/d6/shots/{home,matchups,rankings}_{dyn12,scrubs2}_{390,1300}.png`.
+* **For the PO to decide** (point 1 decided: adopted, see the follow-up below). (1) **Starters' ranges are too narrow**: top-N coverage 75.9–77.4% (80%) and
+  46.8–47.9% (50%); conformal per projection tier fixes it (78.8–80.5% / 48.1–51.0%) at no interval-score cost
+  by widening starters' ranges (top-24 WR 19.8 → 21.3 at 80%, 10.5 → 11.1 at 50%); not kept under the 2% rule;
+  it is `_conformal_widening` per tercile of the calibration season's lines. It barely moves the decision
+  probability (Brier 0.2208 vs 0.2210, mean overconfidence 0.9 vs 1.5 points). (2) **QB** misses at both
+  levels (75.5% / 46.7%): partial games (2023: 88 QB weeks on ≤ 25% of the snaps, 62.5% below P10; full games
+  6.9%), the ≤ 50%-snap share rising from 12–13% (2016–17) to 18–20%; no variant fixes it — it needs injury
+  inputs (D5). (3) The probability is ~1.5 points overconfident on average (2025 more than 2024); no shrink
+  applied.
+* **Open / not verified**: weeks frozen before the first D6 refit keep NULL P25 / P75 (in the PO's database
+  week 4 freezes at 2026-10-02 00:15 UTC; its cards then fall back to the 80% range and the three-knot
+  distribution); the harness's cached baseline stays valid (P10 / P90 unchanged) but its `data_key` does not see
+  the residual path — a future change there needs `HARNESS_VERSION` bumped or the interval code in the key; the
+  Player page still shows floor / ceiling only (not in D6's ownership); K / DEF cards keep the margin's words.
+### D7 2026-10-01 — front-end spike: My Week + the player card on a phone-first stack (branch `dev/D7`, clone `league_lab_d7`)
+
+A decision, not a migration: Andrew's note is `docs/FRONTEND_DECISION.md` (recommendation: port page by page, My
+Week + Player first, then Waiver Wire / Team Hub / Matchups; Trade Finder last; the rule: the Streamlit page stays
+until the new one matches the headless check's numbers). Nothing in `app/`, `src/`, `dbt/` changed
+(`git diff --stat integration/wave-d -- app src dbt` empty); no root dependency added.
+
+* **`api/`** (FastAPI, Python 3.13, its own `pyproject.toml` + `uv.lock`, psycopg pool on the read-only role,
+  10-minute query cache like `st.cache_data`, gzip, 503 on a missing mart): `/api/leagues`, `/api/leagues/{id}/rosters`,
+  `/api/my-week?league&team`, `/api/player/{gsis}?league&team`, `/api/search?league&q`, `/api/status`,
+  `/api/session|login|logout`; everything else serves `web/dist` (SPA fallback, hashed assets immutable).
+  `league_lab_api/applib.py` loads `app/lib/cards.py`, `ui.py`, `signals.py` **unchanged** as a private package
+  whose `db` is the API's and whose `streamlit` is a recording stand-in: `lineup_rows` (LINEUP_SQL), `decisions`,
+  `alternative`, `bench_gap`, `league_line`, `lineup_frame`, `current_week`, `freshness_banner` run as is, and the
+  card text is `render_decision`'s own output (captured), so D6's wording change reaches the web app without a
+  change here. Copied verbatim (marked): Home's record / opponent / movers queries, `lineup_table(full=True)`'s
+  six lines for the bench rows, and the whole player page (its queries and sentences are inline in `0_Player.py`).
+  Gate: `LEAGUE_LAB_APP_PASSWORD` (unset = open) → POST `/api/login` → HttpOnly `ll_auth` cookie (180 days) or a
+  bearer token, `<expiry>.<HMAC-SHA256>` keyed on `LEAGUE_LAB_API_SECRET` or the password (a new password signs
+  everyone out). `api/Dockerfile` (+ `Dockerfile.dockerignore`) builds web + API into one image (no Docker daemon
+  here: the image layout was reproduced by hand — `uv sync --frozen --no-dev` in a copy holding only `api/`,
+  `app/lib`, `web/dist`, no streamlit installed — and served both leagues' My Week, a player card and the
+  manifest; ~125 MB RSS).
+* **`web/`** (Svelte 5 + TypeScript + Tailwind 4, Vite 8; 26 KB JS + 5 KB CSS gzipped): `/` My Week (picker remembered
+  in `localStorage`, a `?league&team` link wins; the three cards; the lineup in 4 columns, the flag column only when a
+  row has a flag; full lineup, How to read this, movers in `<details>`), `/player/<gsis>` (Projection, Value,
+  Availability, Usage, Signals — answer first; search; Back). History-API router: names are real links handled in
+  place (one tap, same tab, one history entry), Back restores the scroll position, picks rewrite the URL without a
+  history entry. Manifest + icons + a small service worker (installable); light / dark from the system; an inline
+  script starts the first screen's API call before the bundle arrives.
+* **API tests** (`cd api && uv run pytest -q`): **39 passed** (68 s). Against independent SQL for dynasty 12 and Scrubs
+  2, week 4: the lineup table = `mart_lineup_recommendation` slot by slot (value, margin), lineup value in the league
+  line, full list = starters + `ops.lineups` bench / can't play; the cards = the (up to) three unlocked, valued starters
+  with the smallest margins below their own value (by hand: dynasty RB2 0.45, TE 0.63, FLEX 1.87; Scrubs FLEX2 0.06,
+  RB2 1.66, QB 2.23), alternative = value − margin and on the bench in `ops.lineups`; worked example dynasty 12:
+  "RB2: start Kenny Gainwell over Emanuel Wilson, 7.54 vs 7.09 projected — 0.45 apart, a coin flip", lineup 109.69
+  (10th of 12). Player: Projected / Floor / Ceiling = `mart_player_week_projections` for ten players (rostered WR,
+  starter RB, bench RB, taxi, IR slot, free agent ×2, K, no projection, Out); the starter's lineup sentence carries the
+  mart's value and margin. **Parity** (`tests/test_parity.py`, Streamlit's AppTest in the repo env via
+  `tests/streamlit_twin.py`): Home ×2 leagues — every card block, the record and league lines, both lineup tables
+  (slot, name, value, margin, flag), How to read this, the freshness line and warning identical; Player ×10 — every
+  section title, metric (label, value, delta) and sentence identical (links compared as text). Gate: all six data
+  endpoints 401 without a token, wrong password 401 "That is not it.", bad / tampered / expired tokens 401, cookie and
+  bearer 200, a new password invalidates old tokens. Static: SPA fallback, manifest type, immutable assets, gzip.
+* **Web checks**: `npm run lint` (eslint + svelte-check + tsc) clean; Playwright `npm run e2e` **24 passed** (12 × phone
+  390 × 844 iPhone UA with touch, 12 × desktop 1300 × 900): no sideways scroll on both routes (incl. the full-lineup
+  and How-to expanders), the first card ends inside the first screen, tables ≤ 5 columns, a card name and a table
+  name open the card on ONE tap with no popup and exactly one new history entry, in-app Back + browser Back / Forward,
+  scroll restored on Back, the pick remembered across a bare visit, search, dark mode, manifest + service worker,
+  and the password screen against a gated API (wrong → "That is not it.", right → cards, a name tap and a new tab
+  stay signed in).
+* **Side by side** (`npm run measure`, `e2e/measure.spec.ts`; Streamlit 8577 through `e2e/gzip-proxy.mjs` on 8578
+  because `streamlit run` serves its JS uncompressed; 5 loads / 10 taps; load average 7–8 on 2 CPUs throughout —
+  D5 / D6 fits): first content phone web 371 ms vs Streamlit 1,909 (repeat 100 vs 2,069); desktop 305 vs 1,927;
+  weight 36 KB (7 requests) vs 1,929 KB gzipped / 5,528 KB raw (140 requests); name → card 151 vs 1,830 ms phone
+  (Streamlit in a new tab), 131 vs 2,012 desktop; back to My Week 68 vs 938 (Streamlit: sidebar → Home); change
+  team 33 (216 first) vs 1,082; slow 4G phone: first content 542 vs 5,365 ms (12,719 uncompressed), name → card
+  268 vs 2,296. Fold at 390 × 844: web 3 of 3 cards fully visible (first at 253 px), Streamlit 0 (first at 819 px).
+  `e2e/streamlit-probe.mjs` (10 tries each): one sidebar page hop adds 3 history entries; the browser's Back returned
+  to My Week 0/10 on the phone, 3/10 on the desktop; with `LEAGUE_LAB_APP_PASSWORD` set, a card name's new tab asks
+  for the password again (checked). One-tap on Streamlit is driver-dependent in emulation (Python Playwright: 2 taps,
+  8 of 8; Node: 1 tap) — always a new tab.
+* **Headless check** (`apptest_wc.py` on this worktree, both leagues × 13 pages + 6 Player-by-id runs): 32 runs, 0
+  exceptions (no app file changed).
+* **Decisions for the PO.** (1) Svelte over React (26 KB vs ~60 KB of framework JS; same TypeScript). (2) Routes under
+  `/api/…` so the app's own paths (`/`, `/player/…`) never collide. (3) The player card shows Projection first (the
+  Streamlit page leads with Usage, an open LOW from Wave B) and keeps the fifth section, Signals (C6), which the plan
+  row's "four sections" predates. (4) The cards' text is captured from `render_decision` rather than re-templated, so
+  the web cards follow `cards.py`. (5) The stale-injury warning is a one-line "⚠️ Injury news may be stale ›" that opens
+  to the full sentence (the first screen stays the answer). (6) Measurements against Streamlit behind a gzip proxy
+  (the uncompressed numbers are reported next to them).
+* **Open.** The spike is not deployed (no host credentials here): `api/README.md` has the Render / Fly / Railway /
+  Cloud Run steps. The player page's sentences are a verbatim copy until they move into `app/lib` (the port rule's
+  step 1); after D6 merges, re-run `api/tests/test_parity.py` (it fails on any drift). If `cards.py` starts
+  importing `league_lab.*`, the image needs `src/` and that module's dependencies. Absolute timings are from a loaded
+  2-core sandbox and a local database; the hosted app adds the Neon round trips to both. No `--select` appended, no
+  seeds or metrics touched.
+
+* **Follow-up 2026-10-01 (PO decision on point 1): per-tier calibration adopted.** `_conformal_widening` now
+  runs per position × league × projection tier for both ranges: tiers = terciles of the calibration season's
+  priced (out-of-fold) line within the position (`TIER_QUANTILES = (1/3, 2/3)`, cut points stored on the model,
+  a projected row takes its tier from its own `proj_points`); a tier with < 200 calibration rows takes the
+  position-wide widening (`TIER_MIN_ROWS`; never binds: smallest tier 206 rows in the walk-forward, QB 2023,
+  213+ in production). This is the experiment's `v2_bucket_tier` (the production `walk_forward` on 2025 QB
+  reproduces it: interval score 1.28327 / 1.77809, coverage 0.76147 / 0.74251, Scrubs / dynasty). Walk-forward
+  2023–2025, both leagues, position-wide → per tier (top-N = the board's top 24 RB / WR, top 12 QB / TE by
+  projection each week among those who played; rest = the others who played):
+
+  | Pos | Coverage 80: all / top-N / rest | Coverage 50: all / top-N / rest | Top-N width 80 / 50 (points) | Interval score 80 / 50 |
+  |---|---|---|---|---|
+  | QB | 75.5 → **75.8** / 77.4 → **78.8** / 74.6 → 74.3% | 46.7 → **47.2** / 47.6 → **48.1** / 46.2 → 46.9% | 23.4 → 24.1 / 12.1 → 12.2 | 1.5092 → 1.5094 (+0.01%) / 2.7785 → 2.7831 (+0.17%) |
+  | RB | 79.8 → **79.9** / 77.3 → **79.5** / 80.8 → 80.1% | 51.3 → **51.3** / 47.7 → **51.0** / 52.7 → 51.4% | 19.1 → 19.9 / 10.1 → 11.0 | 0.9709 → 0.9710 (+0.01%) / 1.7048 → 1.7055 (+0.04%) |
+  | WR | 81.4 → **81.1** / 75.9 → **79.7** / 82.7 → 81.4% | 49.7 → **49.6** / 46.8 → **49.0** / 50.4 → 49.8% | 19.8 → 21.3 / 10.5 → 11.1 | 0.9572 → 0.9558 (−0.15%) / 1.6752 → 1.6759 (+0.04%) |
+  | TE | 80.9 → **81.3** / 76.3 → **80.5** / 81.9 → 81.5% | 50.7 → **50.7** / 47.9 → **48.6** / 51.3 → 51.2% | 14.4 → 15.6 / 8.3 → 8.4 | 0.7186 → 0.7174 (−0.17%) / 1.2643 → 1.2648 (+0.04%) |
+
+  RB / WR / TE are inside 78–82% / 48–52% overall and on the top-N (TE top-12 50%: 48.6%); QB stays below
+  (75.8% / 47.2%; top-12 78.8% / 48.1%): partial games, as above. Production widenings per tier (League of
+  Scrubs, low / middle / top): 80% QB 0.79 / 1.81 / 1.28, RB −0.01 / 0.20 / 0.60, WR 0.00 / −0.04 / 0.26, TE
+  0.00 / 0.04 / 0.32; 50% QB 0.53 / 0.80 / 0.91, RB −0.02 / 0.23 / 0.39, WR 0.00 / −0.17 / 0.38, TE 0.02 / 0.03 /
+  0.30. Mean width, 2026 weeks 4–18: 12.34 (80%) / 6.18 (50%), was 12.18 / 6.08; all 16,268 v2 rows ordered.
+  **md5** (`ops.projections` 2026): weeks 4–18 `proj_points` `d4877509be0f2435074eaac87ce6ed24` unchanged;
+  weeks 1–3 (original columns) `e26319116f0e4cda6ab13d745e80afdf` unchanged, P25 / P75 NULL; two consecutive
+  `project` runs byte-identical, every column but `fitted_at` / `frozen_at` `cc2606c0402d82cef400085a8bbb17f6`
+  both times (233 s / 229 s). dbt (`mart_player_week_projections+ … mart_waiver_upside` +
+  `assert_frozen_projections_precede_kickoff`) PASS=108. Decision probability on the shipped ranges: Brier
+  0.2208 (was 0.2210), mean predicted 64.1% vs observed 63.2% (was 64.7%); week 4: Gainwell over Wilson 53%
+  (Monte Carlo 0.5333, by hand 0.5327), Croskey-Merritt over Tuten 47% (0.4658 / 0.4651; most weeks 4–12 vs
+  4–13). Tests: `tests/test_decisions.py` +2 (the CQR quantile and its 50-row floor; the per-tier lookup and the
+  position-wide fallback); `test_projection_freeze.py` unchanged and passing. METRICS § Ranges and decisions:
+  the tier rule and this table.
+
+### v3 ship 2026-10-01 — projection v3.0 = v2 + the starting-QB inputs at QB + the teammate inputs at RB / WR / TE (branch `dev/V3`, clone `league_lab_d5`)
+
+The PO accepted D5's recommendation: `qb` at QB (5 inputs), `teammates` at RB / WR / TE (4); `oline`, `own_injury` and
+`personnel`-at-WR not taken. Definitions: METRICS § "Projection v3" and § "Personnel".
+
+* **Code.** `projections.py`: `MODEL_VERSION = "v3.0"`, `QB_INPUTS` / `TEAMMATE_INPUTS` (from
+  `feature_groups.personnel`), `FEATURES_BY_POSITION`, `ALL_FEATURES` (what `load_frame` reads); `fit_position` defaults
+  to the position's inputs and the model keeps them (`predict_position`, the P50 and the component importance read
+  `m.features`; the importance twin fits on the position's inputs); `walk_forward` takes per-position lists; nine plain
+  labels in `FEATURE_LABELS`; `backtest` replaces only its own version's rows. `signals.py`: the scenario refits
+  (`component_models`, `predict_lines(…, position)`) use the position's inputs (the base reproduces the stored
+  projection to 0.00e+00 on 26 rows); `SIGNALS_VERSION` ra1.2 (same rule, recomputed on the fixed role table).
+  `experiments.py`: the baseline is the production model per position, a group adds its columns to each position's
+  inputs, `data_key` includes `FEATURES_BY_POSITION`, and a group whose columns are already inputs at one of its
+  positions is refused (`personnel` / `qb` / `teammates` moved to `personnel.SHIPPED_GROUPS`). dbt:
+  `mart_player_week_features` left-joins the nine inputs + `pn_asof_week` (`assert_features_never_peek` checks
+  `pn_asof_week` < week and no teammate input in week 1; `features_personnel_in_range`); `int_player_week_personnel`:
+  an unplayed game nflverse has not filled yet takes the team's newest played starter (`proj_qb_source`), so weeks
+  5–18 are not "unknown starter" (2016–2025 rows unchanged); `int_player_game_role`: `kd_team()` on the schedule, roster
+  and snap sides (the C6 defect: 99,738 → 101,230 rows, 5,264 → 5,344 team-games; role alerts 7,074 → 7,157:
+  absence_beneficiary 2,312 → 2,346, role_up 1,865 → 1,881, role_down 1,915 → 1,937, depth_move 889 → 899, new_team 93 →
+  94; the Raiders 2016–19 0 → 58, the Chargers 2016 0 → 24); `mart_projection_backtest` per model version with
+  `is_current`, `coverage_50`, `interval_width_50`, `interval_score` (unique key test); `mart_projection_drift` joins the
+  backtest of the board's model version; `ops.projection_backtest` gains `coverage_50`, `interval_width_50`,
+  `pinball_25`, `pinball_75` (db migrate, the writer's DDL, the mart pre-hook). App: Rankings reads the current
+  version's backtest and "The model" has a paragraph on what v3 added, the evidence and what was dropped;
+  `app/whats_new.md` "Oct 1"; `CHANGELOG.md` 2026-10-01. API: `scipy` added to `api/pyproject.toml` (D6's decision
+  probability in the cards imports it; the parity test failed without it — a dependency, not a wording change).
+* **Backtest v3.0** (`league-lab backtest-v2 --seasons 2021-2025`, 17 min 13 s, `OMP_NUM_THREADS=1`), v2.0 = the stored
+  record; mean over seasons of the league-averaged season means; (n/5) = seasons better:
+
+  | Pos | Spearman v2.0 → v3.0 | Δ (n/5) | MAE v2.0 → v3.0 | Δ (n/5) | Cov 80 v2.0 → v3.0 | Cov 50 v3.0 | Width 80 v2.0 → v3.0 | Width 50 v3.0 | Interval score v2.0 → v3.0 |
+  |---|---|---|---|---|---|---|---|---|---|
+  | QB | 0.5377 → 0.5822 | **+0.0445 (5)** | 7.013 → 6.494 | **−0.520 (5)** | 77.9% → 78.4% | 48.9% | 22.79 → 21.47 | 11.13 | 1.5163 → 1.4344 (−0.082) |
+  | RB | 0.6618 → 0.6704 | +0.0086 (5) | 4.542 → 4.498 | −0.044 (5) | 79.7% → 80.4% | 51.0% | 13.58 → 13.92 | 7.33 | 0.9929 → 0.9792 |
+  | WR | 0.6173 → 0.6220 | +0.0047 (4) | 4.466 → 4.464 | −0.002 (3) | 81.0% → 80.7% | 49.9% | 13.66 → 14.20 | 7.33 | 0.9678 → 0.9603 |
+  | TE | 0.5624 → 0.5648 | +0.0024 (4) | 3.285 → 3.288 | +0.002 (2) | 81.0% → 81.3% | 50.4% | 9.68 → 10.04 | 5.24 | 0.7364 → 0.7327 |
+
+  QB by season +0.048 / +0.018 / +0.071 / +0.024 / +0.062; top-N hit rate +0.9 pp at QB. Width and coverage include D6's
+  per-tier widening. **Reproduces the harness**: on identical data (2023–2025 vs the harness's cached v2 baseline)
+  v3.0 = QB +0.0528, MAE −0.541, interval score −0.082 (the `qb` run cell for cell: e.g. Scrubs 2023 0.6012, dynasty
+  2025 0.5885 = `ops.feature_experiments`), RB +0.0065, WR +0.0058, TE +0.0061 (`teammates`: +0.0064 / +0.0053 /
+  +0.0054; ±0.002 per cell from the Raiders / Chargers alerts the role fix added). The stored v2.0 record differs from
+  that baseline by up to ±0.004 per cell (an older run): the five-season RB / WR / TE deltas carry that noise.
+* **Importance v3.0** (component, 2025 held out from a 2016–2024 twin, written by `project`): QB 1st **Is he the
+  projected starter?** +1.83 points (2nd the implied total +0.18), 6th games with this week's QB +0.07; RB 4th top ball
+  carrier out +0.06; WR 5th share of the team's targets out +0.02; TE 10th the same +0.02.
+* **`league-lab project` on the clone** (week 4 had not kicked off: 18:05 UTC): weeks 1–3 untouched — 3,554 rows, md5
+  `186253414a410e81805c7852d89e3e5f` before and after both runs; weeks 4–18 rewritten (16,268 v3.0 + 896 kd1.0 rows);
+  two consecutive runs byte-identical: 17,164 rows, md5 `b535e82e0b5f33ec1165cc5ae3f6a0e9` (every column but
+  `fitted_at`). Run 1 7 min 20 s (importance included), run 2 4 min 17 s. Drift: 18 rows (weeks 1–3, v2.0 boards; the
+  strip compares with v2.0's backtest until a v3.0 week is scored). Lineups 8,978 rows, waivers 3,996, scenarios 26.
+* **Checks.** `pytest` **781 passed**; `ruff` clean; `dbt build --select mart_player_week_features+
+  mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance
+  mart_player_role_alerts+ mart_waiver_upside mart_projection_drift int_player_game_role+ int_pn_team_game+`: PASS=154
+  (incl. `assert_features_never_peek`, `assert_personnel_is_asof`, `assert_personnel_ol_count_from_raw`); headless
+  check both leagues + Player runs: 32 runs, 0 exceptions; API `tests/test_parity.py` 12 passed (after `scipy`). The
+  API's `tests/test_myweek.py` has 3 failures that pin numbers and words of the v2 board before D6 ("0.13 apart, a coin
+  flip" — D6's card now leads with the probability — and Wilson / Gainwell's order, which v3 flipped): D7's fixtures to
+  re-pin, not changed here.
+* **On the Mac** (week 4 froze at 2026-10-02 00:15 UTC with v2.0 rows: v3 starts at week 5 there; weeks 1–4 keep their
+  v2.0 rows and `model_version` says so):
+  ```
+  git pull && make sync
+  uv run league-lab db migrate                     # the backtest's 50%-range columns (and D6's p25 / p75)
+  make build                                       # dbt: the fixed role table, personnel, the features mart (~3 min)
+  uv run league-lab signals                        # role alerts for every season under ra1.2 (~30 s)
+  uv run league-lab dbt build --select int_player_week_personnel+   # the absence input sees the recomputed alerts
+  make backtest-v2                                 # v3.0, 2021-2025 (~12-17 min); v2.0's rows stay
+  make project                                     # the v3 board for week 5 on, importance, lineups, waivers, signals
+  make sync-hosted && git push                     # or let the 08:00 nightly publish
+  ```
+  The nightly does not run `backtest-v2`: until it is run once, Rankings' backtest shows v2.0's record (`is_current`
+  falls back to the newest version that has rows).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

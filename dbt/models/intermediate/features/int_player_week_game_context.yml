@@ -1,0 +1,55 @@
+version: 2
+
+# Plan D2 (Wave D): the game-context feature group (`gc_`), evaluated by the D1 harness
+# (`league-lab experiment game_context rest time venue`; src/league_lab/feature_groups/game_context.py).
+# Every column comes from the published schedule (raw.nfl_schedules via stg_nflverse__games): known
+# before kickoff, for future weeks too. Time zones are hours relative to US Eastern.
+models:
+  - name: int_player_week_game_context
+    description: "Game context per player-week (one row per int_player_week_universe row, regular season from 2016): when the game is (weekday, kickoff hour, primetime, the 1 pm window), rest (days since the team's previous game, short week, off a bye, the opponent's rest and the edge), travel (time zones crossed, a west-coast team at 1 pm ET) and the venue (fixed dome, artificial turf, division game, neutral site). All from the published schedule, as-of the week; NULL where the schedule does not say."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+      - expression_is_true:
+          name: game_context_in_range
+          arguments:
+            expression: "gc_weekday between -4 and 3 and gc_kickoff_hour_et between 9 and 23 and gc_rest_days between 3 and 21 and gc_travel_tz between -11 and 12 and gc_roof in (0, 1)"
+    columns:
+      - name: gsis_id
+        description: "Player (grain, with season and week)."
+        tests: [not_null]
+      - name: gc_weekday
+        description: "Days from the week's Sunday (an ordinal, not one-hot): Thursday -3, Friday -2, Saturday -1, Sunday 0, Monday +1, Tuesday +2, a Christmas Wednesday before the Sunday -4. From the schedule's game date; known when the schedule is published."
+        tests: [not_null]
+      - name: gc_kickoff_hour_et
+        description: "Kickoff hour, US Eastern, with minutes as a fraction (13.0, 16.42 for 4:25 pm, 20.33 for 8:20 pm, 9.5 for London). Schedule `gametime`; a flexed game carries its flexed time once announced (12+ days ahead, 6 for week 18); NULL if the schedule has no time."
+      - name: gc_primetime
+        description: "Kickoff at or after 8 pm ET (Thursday, Sunday and Monday night, Thanksgiving night). From gametime."
+      - name: gc_early_window
+        description: "Kickoff in the 1 pm ET window (12:00-13:59 ET: the Sunday early games, Thanksgiving's 12:30). From gametime."
+      - name: gc_rest_days
+        description: "Days since the team's previous regular-season game this season (schedule dates); NULL in week 1 (no previous game). Known since the schedule was published."
+      - name: gc_short_week
+        description: "Rest of 4 days or fewer (a Thursday game after a Sunday). From gc_rest_days."
+      - name: gc_off_bye
+        description: "The team's previous game was two or more weeks earlier (a bye week in between); NULL in week 1. From the schedule."
+      - name: gc_opp_rest_days
+        description: "The opponent's gc_rest_days."
+      - name: gc_rest_edge
+        description: "gc_rest_days - gc_opp_rest_days (positive: his team is better rested)."
+      - name: gc_travel_tz
+        description: "Time zones crossed from the team's home stadium to the venue, signed west -> east positive (Seattle at the Giants +3, the Giants at Seattle -3, home 0, Rams in Melbourne -7: wrapped to the short way round). A stadium -> time-zone map in the model (Arizona as Mountain, international venues at their in-season offset)."
+        tests: [not_null]
+      - name: gc_west_coast_early
+        description: "A Pacific-time team kicking off before 2 pm ET (the 1 pm ET body-clock game, London mornings included). From the team map and gametime."
+      - name: gc_roof
+        description: "1 = fixed dome, 0 = open air, NULL = retractable roof (open or closed is decided on game day: nflverse fills open/closed after the game and leaves it empty for future games, so the harness never sees the call). From the schedule's roof."
+      - name: gc_surface_turf
+        description: "Artificial turf (fieldturf, matrixturf, a_turf, sportturf, astroturf) vs grass; NULL when the schedule leaves the surface blank. A stadium property, known before the season."
+      - name: gc_div_game
+        description: "Division game (schedule div_game)."
+        tests: [not_null]
+      - name: gc_neutral_site
+        description: "Played at a neutral site (schedule location = Neutral: international games, relocated games)."
+        tests: [not_null]

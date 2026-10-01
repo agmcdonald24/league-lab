@@ -190,6 +190,27 @@ def test_fit_and_predict_give_ordered_intervals_priced_per_league(position):
     pd.testing.assert_frame_equal(pred, pred2)
 
 
+def test_weather_hook_is_off_by_default_and_adds_wind_and_dome_when_asked():
+    """Plan D3: kd1.0 is unchanged unless weather is asked for; then the game's wind and dome join the
+    inputs (by game_id; a game without weather is NULL = unknown, never 0)."""
+    frame = _synthetic("K")
+    frame["game_id"] = (frame["season"].astype(str) + "_" + frame["week"].astype(str) + "_"
+                        + (frame["unit_id"].str[1:].astype(int) // 2).astype(str))      # two kickers per game
+    assert kdef.features_for("K") == kdef.FEATURES["K"] and "wx_wind_mph" not in kdef.FEATURES["K"]
+    games = frame[["game_id"]].drop_duplicates().reset_index(drop=True)
+    wx = games.assign(wx_dome=(games.index % 4 == 0).astype(float), wx_wind_mph=(games.index % 7) * 3.0, wx_gust_mph=None,
+                      wx_precip_in=None, wx_temp_f=50.0, wx_source="nflverse_observed").iloc[:-1]   # the last game: no weather
+    f = kdef.with_weather(frame, wx)
+    assert len(f) == len(frame) and f["wx_wind_mph"].isna().sum() == (frame["game_id"] == games["game_id"].iloc[-1]).sum()
+    scorings = {"L": ("League", SCRUBS)}
+    m = kdef.fit_kd(f[f["season"] < 2023], "K", scorings, weather=True)
+    assert m.features == kdef.FEATURES["K"] + ["wx_wind_mph", "wx_dome"]
+    pred, _ = kdef.predict_kd(m, f[f["season"] == 2023], scorings)
+    assert len(pred) == 30 * 12 and pred["proj_points"].notna().all()
+    off = kdef.fit_kd(frame[frame["season"] < 2023], "K", scorings)
+    assert off.features == kdef.FEATURES["K"]
+
+
 # ------------------------------------------------------------------------------ lineup value paths (B1)
 def _inp(kd_rows: list[dict], k_ppg: dict | None = None) -> LineupInputs:
     sleeper = {"k1": {"position": "K", "fantasy_positions": ["K"], "team": "KC"},

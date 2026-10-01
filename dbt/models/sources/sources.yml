@@ -88,6 +88,41 @@ sources:
       - name: nfl_pfr_advstats_rec
       - name: nfl_pfr_advstats_pass
       - name: nfl_pfr_advstats_rush
+      - name: nfl_weather
+        description: "Plan D3, `league-lab ingest weather` (league_lab.ingest.weather): Open-Meteo hourly weather at the stadium for the kickoff hour and the two after, per game. source = 'archive' (ERA5 reanalysis, one row per game, replaced when the stadium-season is re-fetched) or 'forecast' (one row per game per fetch, kept forever: forecast_hours_ahead = kickoff - fetched_at). Partition = (source, season, stadium_id). Empty until the first run from a machine that reaches open-meteo.com. Attribution: Open-Meteo.com (CC BY 4.0), ERA5 (Copernicus C3S)."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [game_id, source, fetched_at]
+        columns:
+          - name: source
+            tests:
+              - accepted_values:
+                  arguments:
+                    values: [archive, forecast]
+          - name: forecast_hours_ahead
+            description: "Forecast rows only, always > 0 (a forecast is fetched before kickoff)."
+      - name: nfl_stadiums
+        description: "Plan D3: the stadium reference shipped with the code (src/league_lab/ingest/reference/stadiums.csv), reloaded by `db migrate` when the CSV changes: every venue of an NFL game 2016-2026 with latitude / longitude, time zone, roof type and tenants (team + seasons). Coordinates: each stadium's Wikipedia / GeoHack infobox, 4 decimals."
+        columns:
+          - name: stadium_id
+            tests: [unique, not_null]
+          - name: roof_type
+            tests:
+              - accepted_values:
+                  arguments:
+                    values: [outdoors, dome, retractable]
+      - name: nfl_stadium_game_venues
+        description: "Plan D3: per-game venue corrections (src/league_lab/ingest/reference/stadium_game_venues.csv): international games nflverse records at the home team's stadium."
+        columns:
+          - name: game_id
+            tests: [unique, not_null]
+          - name: stadium_id
+            tests:
+              - relationships:
+                  arguments:
+                    to: source('raw', 'nfl_stadiums')
+                    field: stadium_id
 
   - name: ops
     schema: ops
@@ -97,11 +132,13 @@ sources:
       - name: backtest_results
         description: "Written by `league-lab backtest`: per season-week-position-scorer Spearman, top-N hit rate, MAE."
       - name: projections
-        description: "Written by `league-lab project` (projection v2): per league x season x week x player, the projected stat line, its priced points and P10/P50/P90. Plan B5: a league-week is rewritten by every refit until its first kickoff and never after; frozen_source / frozen_at label the kept rows (assert_frozen_projections_precede_kickoff)."
+        description: "Written by `league-lab project` (projection v2): per league x season x week x player, the projected stat line, its priced points and P10/P50/P90, plus (plan D6) P25/P75, the 50% range (NULL on rows written before it existed). Plan B5: a league-week is rewritten by every refit until its first kickoff and never after; frozen_source / frozen_at label the kept rows (assert_frozen_projections_precede_kickoff)."
       - name: projection_backtest
         description: "Written by `league-lab backtest-v2`: walk-forward scores per league-season-week-position-scorer, with interval coverage."
       - name: projection_importance
         description: "Plan U-15. model = 'component' (written by `league-lab project`, once per model version x training window): permutation importance of the component models on the newest training season, measured with a twin fitted without that season (fit_seasons), per position and input, in points of error of the priced line (component = 'total', reference scoring) and per stat in its own unit. model = 'quantile_p50' (written by `league-lab backtest-v2`; every row from before U-15): the P50 interval model on the newest test season."
+      - name: feature_experiments
+        description: "Written by `league-lab experiment` (plan D1, src/league_lab/experiments.py): per run x feature group x position x league x test season, projection v2 refitted with the group's inputs vs the cached baseline (feature_group = 'baseline', keyed on model_version + test_seasons + data_key): Spearman, hit rate, MAE, coverage_80, interval width and interval score (mean pinball loss at 0.1 and 0.9), their baseline_* and delta_*, the per-position decision and the group verdict."
       - name: projection_drift
         description: "Written by `league-lab drift` (and at the end of `league-lab project`), plan M-06: the live board's played weeks scored like the backtest, per league-season-week-position, with the week's games played / scheduled and (B5) frozen_share, the share of scored rows that are the board as published before kickoff."
         tests:
@@ -132,7 +169,7 @@ sources:
               arguments:
                 combination_of_columns: [league_id, season, week, roster_id, add_sleeper_id, drop_sleeper_id]
       - name: player_role_alerts
-        description: "Written by `league-lab project` / `league-lab signals` (plan R-10, src/league_lab/signals.py, rule ra1.1): every role alert of every season — a step change in a QB/RB/WR/TE's snap / route / target / carry share over his last one to three games with its kind, cause, evidence and expiry; the projected season is rewritten each run, any other season when the table lacks it under the current signals_version."
+        description: "Written by `league-lab project` / `league-lab signals` (plan R-10, src/league_lab/signals.py, rule ra1.1; version ra1.2 = the same rule on the franchise-coded int_player_game_role): every role alert of every season — a step change in a QB/RB/WR/TE's snap / route / target / carry share over his last one to three games with its kind, cause, evidence and expiry; the projected season is rewritten each run, any other season when the table lacks it under the current signals_version."
         tests:
           - unique_combination_of_columns:
               arguments:

@@ -24,13 +24,12 @@ freshness_banner()
 league_id, roster_id, members = perspective(require_team=False)
 season = int(current_leagues().set_index("league_id").loc[league_id, "season"])
 
-st.markdown(
-    """
-League Lab looks at your Sleeper league and tells you who to start, who to pick up and how your team really
-stacks up, in your league's own scoring. Pick your league and your team in the menu (the arrow at the top left
-on a phone) and every page follows your team. Send someone the link and it opens on the same team.
-"""
-)
+INTRO = ("League Lab looks at your Sleeper league and tells you who to start, who to pick up and how your team really "
+         "stacks up, in your league's own scoring. Pick your league and your team in the menu (the arrow at the top "
+         "left on a phone) and every page follows your team; a shared link opens on the same team.")
+if roster_id is None:
+    st.markdown(INTRO)      # with a team picked the week's calls come first (QA, Wave D: the first card was below the fold
+                            # on a phone with the intro above it); the intro then sits under My week
 
 # ---------------------------------------------------------------- my week (plan B4): the lineup decisions
 # One projection everywhere (round-2 convention 3): the proposed lineup of the exact lineup service (B1,
@@ -121,6 +120,8 @@ LEAGUE_PAGE = page("7_League_Intel.py", "8_League.py")
 st.markdown("""<style>[data-testid="stPageLink-NavLink"], [data-testid="stPageLink-NavLink"] > span { height: auto; }
 [data-testid="stPageLink-NavLink"] > span, [data-testid="stPageLink-NavLink"] > span * { white-space: normal; overflow: visible; }</style>""",
             unsafe_allow_html=True)
+if roster_id is not None:
+    st.caption(INTRO)
 st.subheader("Worth a look")
 luck = query(
     """select roster_id, team_name, luck_wins, avg_bench_points_left,

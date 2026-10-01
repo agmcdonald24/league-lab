@@ -76,6 +76,49 @@ seeds:
         grain: text
         status: text
         notes: text
+    # the published record of the feature experiments (Wave D): the same columns as ops.feature_experiments,
+    # so a fresh database shows "What we tried" without re-running 10 CPU-minutes per group
+    feature_experiments:
+      +column_types:
+        run_id: text
+        run_at: timestamptz
+        model_version: text
+        harness_version: text
+        feature_group: text
+        group_table: text
+        group_columns: text
+        test_seasons: text
+        train_seasons: text
+        data_key: text
+        position: text
+        league_id: text
+        test_season: integer
+        n_weeks: integer
+        n_player_weeks: integer
+        spearman: double precision
+        hit_rate: double precision
+        mae: double precision
+        coverage_80: double precision
+        interval_width: double precision
+        interval_score: double precision
+        baseline_spearman: double precision
+        baseline_hit_rate: double precision
+        baseline_mae: double precision
+        baseline_coverage_80: double precision
+        baseline_interval_width: double precision
+        baseline_interval_score: double precision
+        delta_spearman: double precision
+        delta_hit_rate: double precision
+        delta_mae: double precision
+        delta_coverage_80: double precision
+        delta_interval_width: double precision
+        delta_interval_score: double precision
+        decision: text
+        group_verdict: text
+        runtime_s: double precision
+        no_peek_warnings: text
+        label: text
+        note: text
 
 tests:
   league_lab:
