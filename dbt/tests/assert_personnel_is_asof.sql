@@ -1,7 +1,8 @@
 -- D5 (personnel): the feature table is the universe, row for row, and its quarterback inputs only read games
 -- before the week. Returns offending rows with the problem:
 --   * a universe row missing, or a row outside the universe;
---   * proj_qb_id is not the schedule's starting QB of his team's game that week (raw.nfl_schedules);
+--   * proj_qb_id is not the schedule's starting QB of his team's game that week (raw.nfl_schedules), where the
+--     schedule has one (v3: an unfilled future game falls back to the team's newest played start, 'last_start');
 --   * usual_qb_id is not the starting QB of any game he played BEFORE the week (this season or last);
 --   * pn_qb_is_rookie_or_backup disagrees with the projected starter's starts before the week counted on the raw
 --     schedule (played games, any team, from 2016);
@@ -34,7 +35,9 @@ union all
 select p.gsis_id, p.season, p.week, 'proj_qb_id is not the schedule''s starter of the week'
 from p
 left join sched as s on s.season = p.season and s.week = p.week and s.team = p.team
-where p.proj_qb_id is distinct from s.qb
+where (s.qb is not null and p.proj_qb_id is distinct from s.qb)
+   or (s.qb is null and s.played)                                      -- a played game always has its starter
+   or (s.qb is null and p.proj_qb_source is distinct from 'last_start' and p.proj_qb_id is not null)
 
 union all
 select p.gsis_id, p.season, p.week, 'usual_qb_id is not from a game he played before the week'

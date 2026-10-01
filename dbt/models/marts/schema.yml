@@ -59,6 +59,13 @@ models:
         tests: [not_null]
       - name: f_implied_total
         tests: [not_null]
+      - name: pn_qb_starting
+        description: "v3 (plan D5): personnel inputs from intermediate.int_player_week_personnel (definitions there and in docs/METRICS.md § Personnel): pn_qb_changed, pn_qb_games_together, pn_qb_prev_ppg_diff, pn_qb_is_rookie_or_backup, pn_qb_starting (read by the model at QB); pn_top_target_out, pn_top_rusher_out, pn_teammate_share_out, pn_absence_beneficiary (read at RB / WR / TE); pn_asof_week (< week, checked by assert_features_never_peek)."
+        tests:
+          - expression_is_true:
+              name: features_personnel_in_range
+              arguments:
+                expression: "coalesce(pn_qb_starting, 0) in (0, 1) and coalesce(pn_qb_changed, 0) in (0, 1) and coalesce(pn_top_target_out, 0) in (0, 1) and coalesce(pn_teammate_share_out, 0) between 0 and 1 and (position = 'QB' or pn_qb_starting is null)"
 
   - name: mart_player_week_projections
     description: "Projection v2 per league x season x week x player: projected stat line, points in the league's scoring, P10/P50/P90, outcome priced under the league's scoring, ranks. Plan R-13: plus K and DEF rows (model kd1.0) for leagues that start them; a DEF row has gsis_id NULL and is keyed by team."
@@ -150,7 +157,11 @@ models:
         tests: [not_null]
 
   - name: mart_projection_backtest
-    description: "Walk-forward scoreboard of projection v2 per league, held-out season, position and scorer, with interval coverage."
+    description: "Walk-forward scoreboard of the projection per model version, league, held-out season, position and scorer, with interval coverage. is_current = the newest QB-TE model version (v3.0 from 2026-10-01; v2.0's rows stay as its record) or the K / DEF model (kd1.0)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [model_version, league_id, season, position, scorer]
     columns:
       - name: spearman
         tests: [not_null]

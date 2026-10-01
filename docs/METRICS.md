@@ -449,6 +449,53 @@ Scope difference from the backtest: the backtest scores every player who played,
 rankable ones (Out / Doubtful / IR who played anyway are left out, as on the board). A few weeks are a small sample: read a gap to the backtest as a
 question, not a verdict, until mid-season.
 
+### Projection v3 (v3.0, 2026-10-01; Wave D): personnel inputs by position
+
+v3 is v2 (every input, hyperparameter and interval model above; D6's 50% range and per-tier conformal widening, §
+"Ranges and decisions") plus the two personnel sub-groups the harness kept (§ "Personnel", § "Feature experiments"),
+**per position** (`projections.FEATURES_BY_POSITION`; the lists live in `league_lab.feature_groups.personnel`):
+
+| Position | Inputs | Added (plain name on Rankings) |
+|---|---|---|
+| QB | `FEATURES` + 5 | `pn_qb_starting` "Is he the projected starter?", `pn_qb_games_together` "Games he has played with this week's QB", `pn_qb_prev_ppg_diff` "This week's QB vs his usual QB, points per start", `pn_qb_is_rookie_or_backup` "This week's QB has started fewer than 8 games", `pn_qb_changed` "A different QB starts than in his recent games" |
+| RB, WR, TE | `FEATURES` + 4 | `pn_top_target_out` "Top target on his team out this week", `pn_top_rusher_out` "Top ball carrier on his team out this week", `pn_teammate_share_out` "Share of the team's targets out this week", `pn_absence_beneficiary` "His role grew when a teammate went out, and that teammate is still out" |
+
+The nine columns reach the model through `mart_player_week_features` (left-joined from `int_player_week_personnel`;
+`assert_features_never_peek` covers them: `pn_asof_week` < week, the teammate inputs NULL in week 1). Dropped by the
+harness and not in v3: game context, rest and travel, weather, team volume and style, the offensive line, a player's
+own injury history. The K / DEF model is unchanged (kd1.0). The projected starter for a game nflverse has not filled
+yet (more than about a week ahead) is the starter of the team's newest played game (`proj_qb_source = 'last_start'`):
+the board's later weeks assume the same starter rather than leave unknown an input that is always known in training.
+
+**Backtest** (`league-lab backtest-v2 --seasons 2021-2025`, both leagues, priced line, mean over seasons of the
+league-averaged season means; "n/5" = seasons better; the v2.0 rows of `ops.projection_backtest` are its record from
+an earlier run and stay; `mart_projection_backtest.is_current` picks v3.0):
+
+| Pos | Spearman v2.0 → v3.0 | Δ (n/5) | MAE v2.0 → v3.0 | Δ (n/5) | Coverage 80 v2.0 → v3.0 | Coverage 50 v3.0 | Width 80 v2.0 → v3.0 | Width 50 v3.0 | Interval score v2.0 → v3.0 |
+|---|---|---|---|---|---|---|---|---|---|
+| QB | 0.538 → 0.582 | **+0.0445 (5)** | 7.01 → 6.49 | **−0.52 (5)** | 77.9% → 78.4% | 48.9% | 22.8 → 21.5 | 11.1 | 1.516 → 1.434 (−0.082) |
+| RB | 0.662 → 0.670 | +0.0086 (5) | 4.54 → 4.50 | −0.044 (5) | 79.7% → 80.4% | 51.0% | 13.6 → 13.9 | 7.3 | 0.993 → 0.979 |
+| WR | 0.617 → 0.622 | +0.0047 (4) | 4.47 → 4.46 | −0.002 (3) | 81.0% → 80.7% | 49.9% | 13.7 → 14.2 | 7.3 | 0.968 → 0.960 |
+| TE | 0.562 → 0.565 | +0.0024 (4) | 3.29 → 3.29 | +0.002 (2) | 81.0% → 81.3% | 50.4% | 9.7 → 10.0 | 5.2 | 0.736 → 0.733 |
+
+QB by season: +0.048 / +0.018 / +0.071 / +0.024 / +0.062. The coverage and width changes include D6's per-tier
+widening (starters' ranges were too narrow), not only the new inputs. On identical data, 2023–2025 against the
+harness's cached v2 baseline (key `cb461af0c56b4811`), v3.0 reproduces the harness: QB +0.0528 / MAE −0.541 /
+interval score −0.082 (the `qb` group exactly, cell for cell), RB +0.0065, WR +0.0058, TE +0.0061 (the `teammates`
+group: +0.0064 / +0.0053 / +0.0054; the ±0.002 difference is the Raiders 2016–19 / Chargers 2016 absence alerts the
+`int_player_game_role` fix added to training). The stored v2.0 record itself differs from that baseline by up to
+±0.004 per cell (an older run), which is why the five-season Δ at RB / WR / TE above is not the harness's to the digit.
+
+**What drives it** (component importance, 2025 held out from a 2016–2024 twin, reference scoring; Rankings "What it
+leans on most"): QB **1st `pn_qb_starting` (+1.83 points of error when scrambled; next, the implied total +0.18)**,
+6th games with this week's QB (+0.07); RB 4th top ball carrier out (+0.06); WR 5th share of the team's targets out
+(+0.02); TE 10th share of the team's targets out (+0.02).
+
+**Live board.** On a database where week 4 froze before v3 shipped (the Mac: week 4's board froze at its first
+kickoff, 2026-10-02 00:15 UTC, with v2.0 rows) v3 starts at week 5; weeks already frozen keep their v2.0 rows and
+`model_version` says which model made each row; the drift strip compares a season with the backtest of the newest
+model on its board. Two consecutive `project` runs write byte-identical weeks 4–18 (`ops.projections`, md5 in STATUS).
+
 ## Kicker and defense projections (kd1.0, plan R-13, 2026-09-30; `league_lab.kdef`, `league-lab backtest-kd`)
 
 League of Scrubs starts a K and a DEF. Until R-13 the lineup valued a K at his season PPG, a DEF at the
@@ -1099,7 +1146,7 @@ scales compare), the number = points allowed per game; your starters' opponents 
 cell where your starter plays ringed; the other defenses by their mean rank across the positions. Ranked bars = one
 position, every defense ranked, yours solid and labelled with the value and rank. "Only your opponents" is on by
 default at the Phone level. The table behind both stays in the expander.
-## Role alerts (ra1.1, plan R-10, 2026-09-30; `league_lab.signals`, `ops.player_role_alerts`, `mart_player_role_alerts`)
+## Role alerts (ra1.1 rule, version ra1.2 since 2026-10-01; plan R-10, 2026-09-30; `league_lab.signals`, `ops.player_role_alerts`, `mart_player_role_alerts`)
 
 **Question.** Has a player's *role* changed in his last one to three games, and why — before his points show it?
 A role alert is a detected role change with a stated cause, not a hot streak: a big game on the same snaps and
@@ -1534,7 +1581,9 @@ Five seasons (2021–2022 added with the harness's pieces, `scratchpad/waveD/d5/
 harness): `qb` at QB +0.046 / +0.018 / +0.072 / +0.022 / +0.065 (mean +0.0446, 5 of 5; MAE −0.51, 5 of 5); `teammates` at
 WR +0.0032 / +0.0042 / +0.0023 / +0.0056 / +0.0082 (mean +0.0047, 5 of 5: consistent, 0.0003 under the bar); `personnel`
 at WR +0.0059, 5 of 5. Recommendation (the PO's decision): v3 takes `qb` at QB and `teammates` at RB / WR / TE (per-position
-inputs), drops `oline` and `own_injury`.
+inputs), drops `oline` and `own_injury`. **Shipped 2026-10-01 as v3.0** (§ "Projection v3"): the harness now refuses `personnel`, `qb` and
+`teammates` (their columns are model inputs; kept for the record as `personnel.SHIPPED_GROUPS`); `oline` and `own_injury`
+stay registered as candidates.
 ## Ranges and decisions (plan D6, Wave D round 2, 2026-10-01; `projections.fit_position` / `predict_position`, `league_lab.decisions`, `app/lib/cards.py`)
 
 Andrew: "if an 80% confidence interval is like a 20-point spread, how useful is that?". The 80% range is

@@ -4,8 +4,8 @@ A *feature group* is a table of as-of inputs at the projection's grain, ``(gsis_
 plus the columns to try. The harness answers one question per group and position: does projection v2
 get better when it can also see these columns? It fits the v2 model exactly as ``backtest-v2`` does
 (``projections.walk_forward``: per position, components + interval models + conformal widening, trained
-on the seasons before each test season) twice, with ``FEATURES`` (the *baseline*, cached) and with
-``FEATURES + group columns``, scores both with ``projections.score_predictions`` on the same played
+on the seasons before each test season) twice, with the production inputs (``FEATURES_BY_POSITION``, the
+*baseline*, cached) and with those + the group's columns, scores both with ``projections.score_predictions`` on the same played
 player-weeks, and applies a paired decision rule across the test seasons.
 
 Registering a group
@@ -123,13 +123,15 @@ def check_spec(name: str, spec: dict, table_columns: dict[str, str] | None) -> G
     cols = list(spec["columns"])
     if len(set(cols)) != len(cols):
         raise GroupError(f"group {name!r}: duplicate columns {sorted({c for c in cols if cols.count(c) > 1})}")
-    clash = [c for c in cols if c in P.FEATURES or c in ("gsis_id", "season", "week", "position", "played", "points_actual")]
-    if clash:
-        raise GroupError(f"group {name!r}: {clash} are already model inputs or keys; prefix the group's columns (gc_, wx_, ts_ ...)")
     positions = tuple(spec.get("positions") or P.POSITIONS)
     bad = [p for p in positions if p not in P.POSITIONS]
     if bad:
         raise GroupError(f"group {name!r}: unknown positions {bad} (allowed: {list(P.POSITIONS)})")
+    # v3: a column that is already a production input at one of the group's positions (FEATURES_BY_POSITION) is a clash
+    shipped = {f for p in positions for f in P.FEATURES_BY_POSITION[p]}
+    clash = [c for c in cols if c in shipped or c in ("gsis_id", "season", "week", "position", "played", "points_actual")]
+    if clash:
+        raise GroupError(f"group {name!r}: {clash} are already model inputs or keys; prefix the group's columns (gc_, wx_, ts_ ...)")
     in_season = list(spec.get("in_season") or [])
     stray = [c for c in in_season if c not in cols]
     if stray:
@@ -389,7 +391,7 @@ def summarize_scores(res: pd.DataFrame) -> pd.DataFrame:
 def data_key(frame: pd.DataFrame, test_seasons: tuple[int, ...], scorings: dict) -> str:
     """What the cached baseline depends on: the model (version, inputs, hyperparameters), the test seasons,
     the leagues' scoring and the training data (rows and points), so a rebuilt mart invalidates it."""
-    payload = json.dumps({"mv": P.MODEL_VERSION, "hv": HARNESS_VERSION, "features": P.FEATURES, "hgb": P.HGB,
+    payload = json.dumps({"mv": P.MODEL_VERSION, "hv": HARNESS_VERSION, "features": P.FEATURES, "features_by_position": P.FEATURES_BY_POSITION, "hgb": P.HGB,
                           "seasons": list(test_seasons), "scorings": {k: v[1] for k, v in sorted(scorings.items())},
                           "rows": len(frame), "points": round(float(frame["points_actual"].fillna(0).sum()), 2),
                           "played": int(frame["played"].fillna(False).sum())}, sort_keys=True, default=str)
@@ -462,7 +464,7 @@ def prepare(conn: psycopg.Connection, specs: list[GroupSpec], test_seasons: tupl
     return Context(tuple(sorted(test_seasons)), scorings, first, frame, data_key(frame, tuple(sorted(test_seasons)), scorings))
 
 
-def _fit_and_score(ctx: Context, features: list[str] | None, positions: tuple[str, ...]) -> pd.DataFrame:
+def _fit_and_score(ctx: Context, features: list[str] | dict[str, list[str]] | None, positions: tuple[str, ...]) -> pd.DataFrame:
     res, _ = P.walk_forward(ctx.frame, list(ctx.test_seasons), ctx.scorings, ctx.first, None, features=features, positions=positions)
     return summarize_scores(res)
 
@@ -516,7 +518,8 @@ def run_experiment(conn: psycopg.Connection, group: str | GroupSpec, test_season
     ctx = ctx or prepare(conn, [spec], test_seasons, leagues)
     base = ctx.baseline if ctx.baseline is not None else baseline(conn, ctx)
     t0 = time.monotonic()
-    s = _fit_and_score(ctx, [*P.FEATURES, *spec.columns], spec.positions)
+    # v3: each position's production inputs plus the group's (the baseline is the production model)
+    s = _fit_and_score(ctx, {p: [*P.FEATURES_BY_POSITION[p], *spec.columns] for p in spec.positions}, spec.positions)
     seconds = time.monotonic() - t0
     keys = ["league_id", "test_season", "position"]
     s = s.merge(base[[*keys, *[f"baseline_{m}" for m in METRICS]]], on=keys, how="left")

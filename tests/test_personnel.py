@@ -127,17 +127,34 @@ def test_sql_hard_codes_the_twins_constants():
     assert "r.roster_status in ('RES', 'PUP') then 'missed_injured'" in PLAYER_GAME_SQL
 
 
+SHIPPED = {"personnel", "qb", "teammates"}
+
+
+def test_v3_ships_qb_at_qb_and_teammates_at_rb_wr_te():
+    from league_lab import projections as P
+
+    assert P.MODEL_VERSION == "v3.0"
+    assert P.FEATURES_BY_POSITION["QB"] == [*P.FEATURES, *PN.QB]
+    for pos in ("RB", "WR", "TE"):
+        assert P.FEATURES_BY_POSITION[pos] == [*P.FEATURES, *PN.TEAMMATES]
+    assert not set(PN.OLINE + PN.OWN_INJURY) & set(P.ALL_FEATURES)     # dropped by the harness
+
+
 def test_groups_validate_and_every_column_is_documented():
-    reg = PN.GROUPS
-    assert set(reg) == {"personnel", "qb", "oline", "teammates", "own_injury"}
+    reg = {**PN.GROUPS, **PN.SHIPPED_GROUPS}
+    assert set(PN.GROUPS) == {"oline", "own_injury"} and set(PN.SHIPPED_GROUPS) == SHIPPED
     model = next(m for m in YML["models"] if m["name"] == "int_player_week_personnel")
     documented = {c["name"] for c in model["columns"] if c.get("description")}
     types = {c: "double precision" for c in documented} | {"gsis_id": "text", "season": "integer", "week": "integer"}
     for name, spec in reg.items():
+        assert set(spec["columns"]) <= documented, f"{name}: undocumented columns"
+        if name in SHIPPED:     # v3.0 ships qb (QB) and teammates (RB / WR / TE): the harness now refuses them
+            with pytest.raises(E.GroupError, match="already model inputs"):
+                E.check_spec(name, spec, types)
+            continue
         g = E.check_spec(name, spec, types)
         assert g.table == PN.TABLE
         assert set(g.in_season) <= set(PN.IN_SEASON)
-        assert set(spec["columns"]) <= documented, f"{name}: undocumented columns"
     sub = PN.QB + PN.OLINE + PN.TEAMMATES + PN.OWN_INJURY
     assert reg["personnel"]["columns"] == sub and len(set(sub)) == len(sub)
     assert all(c.startswith("pn_") for c in sub)

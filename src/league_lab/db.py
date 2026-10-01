@@ -107,6 +107,11 @@ create table if not exists ops.projection_backtest (
     mae double precision, coverage_80 double precision, pinball_10 double precision, pinball_50 double precision,
     pinball_90 double precision, interval_width double precision
 );
+-- v3 ship (2026-10-01): the 50% range's scores are kept from v3.0 on (v2.0's rows predate it: NULL)
+alter table ops.projection_backtest add column if not exists coverage_50 double precision;
+alter table ops.projection_backtest add column if not exists interval_width_50 double precision;
+alter table ops.projection_backtest add column if not exists pinball_25 double precision;
+alter table ops.projection_backtest add column if not exists pinball_75 double precision;
 create table if not exists ops.projection_importance (
     model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision
 );

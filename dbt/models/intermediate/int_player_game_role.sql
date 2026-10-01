@@ -14,18 +14,20 @@
 --   target_share / carry_share   his targets / carries over the team's (0 when he did not play)
 -- src/league_lab/signals.py reads this model to find role changes (step changes, teammate absences).
 with games as (
-    select g.game_id, g.season, g.week, g.kickoff_at, t.team,
-           case when g.home_team = t.team then g.away_team else g.home_team end as opponent,
+    -- one code per franchise (kd_team: the schedule's OAK / SD -> LV / LAC, as fct_team_game and the stats say;
+    -- v3 fix: matching the schedule's code against fct_team_game's lost the Raiders 2016-19 and the Chargers 2016)
+    select g.game_id, g.season, g.week, g.kickoff_at, {{ kd_team('t.team') }} as team,
+           {{ kd_team("case when g.home_team = t.team then g.away_team else g.home_team end") }} as opponent,
            case when g.home_team = t.team then g.home_score - g.away_score else g.away_score - g.home_score end as team_margin
     from {{ ref('dim_game') }} as g
     cross join lateral (values (g.home_team), (g.away_team)) as t(team)
     -- games that have been played: the team's box score is in (an unplayed week is not a missed game)
-    join {{ ref('fct_team_game') }} as tg on tg.game_id = g.game_id and tg.team = t.team
+    join {{ ref('fct_team_game') }} as tg on tg.game_id = g.game_id and tg.team = {{ kd_team('t.team') }}
     where g.season_type = 'REG' and g.season >= {{ var('seasons_start') }}
 ),
 
 roster as (
-    select r.gsis_id, r.season, r.week, r.team, r.position, r.roster_status, r.full_name
+    select r.gsis_id, r.season, r.week, {{ kd_team('r.team') }} as team, r.position, r.roster_status, r.full_name
     from {{ ref('int_player_week_team') }} as r
     where r.season_type = 'REG' and r.position in ('QB', 'RB', 'WR', 'TE')
       and r.roster_status in ('ACT', 'INA', 'RES', 'PUP', 'SUS', 'EXE', 'NON')
@@ -41,7 +43,7 @@ stats as (
 ),
 
 snaps as (
-    select gsis_id, game_id, team, offense_snaps, offense_snap_pct
+    select gsis_id, game_id, {{ kd_team('team') }} as team, offense_snaps, offense_snap_pct
     from {{ ref('int_player_game_snaps') }}
     where game_type = 'REG'
 ),

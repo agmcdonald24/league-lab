@@ -7,6 +7,9 @@
 --     league average as of the same point
 --   * the Vegas implied team total and home/away from the closing line
 --   * the injury report status for that week
+--   * (projection v3, plan D5) personnel: who starts at QB vs the QB his recent games were played with, and
+--     whether his team's leading target / ball carrier is out this week (int_player_week_personnel; the
+--     model reads the qb inputs at QB and the teammate inputs at RB / WR / TE)
 -- and the outcome (`points_actual`, `played`) for the backtest. Nothing from the week itself or
 -- later leaks into a feature. `f_*` columns are the finished, NULL-free inputs the projection uses;
 -- the raw columns next to them show what was actually known.
@@ -70,6 +73,10 @@ select
     d.opp_allowed_std, d.opp_allowed_l4, d.opp_rank_std, d.opp_games, d.league_allowed_avg,
     -- injury report for the week
     i.report_status, i.practice_status,
+    -- personnel (v3, plan D5; as of the week: games before it, week W's injury report, the projected starter)
+    pn.pn_qb_changed, pn.pn_qb_games_together, pn.pn_qb_prev_ppg_diff, pn.pn_qb_is_rookie_or_backup, pn.pn_qb_starting,
+    pn.pn_top_target_out, pn.pn_top_rusher_out, pn.pn_teammate_share_out, pn.pn_absence_beneficiary,
+    pn.pn_asof_week,
     -- finished features (NULL-free): season form falls back to last season, then the position's regulars
     coalesce(a.xppg_l5, a.xppg_std, p.prev_xppg, a.ppg_std, p.prev_ppg, pp.pos_prev_ppg, 0)   as f_xppg_l5,
     coalesce(a.ppg_std, p.prev_ppg, pp.pos_prev_ppg, 0)                                        as f_ppg_std,
@@ -94,4 +101,5 @@ left join prev as p on p.gsis_id = u.gsis_id and p.season = u.season
 left join pos_prev as pp on pp.season = u.season and pp.position = u.position
 left join {{ ref('int_opponent_week_asof') }} as d on d.defense = u.opponent and d.season = u.season and d.week = u.week and d.position = u.position
 left join inj as i on i.season = u.season and i.week = u.week and i.gsis_id = u.gsis_id
+left join {{ ref('int_player_week_personnel') }} as pn on pn.gsis_id = u.gsis_id and pn.season = u.season and pn.week = u.week
 left join outcome as o on o.gsis_id = u.gsis_id and o.season = u.season and o.week = u.week

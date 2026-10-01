@@ -76,7 +76,9 @@ import psycopg
 
 log = logging.getLogger(__name__)
 
-SIGNALS_VERSION = "ra1.1"
+# ra1.2 (projection v3, 2026-10-01): same rule; int_player_game_role now keeps the Raiders 2016-19 and the Chargers
+# 2016 (one code per franchise), so every season is recomputed once under the new version
+SIGNALS_VERSION = "ra1.2"
 
 # ------------------------------------------------------------------------------ the alert rule (fixed constants: a change is a new version)
 POSITION_METRICS: dict[str, tuple[str, ...]] = {
@@ -831,21 +833,22 @@ def with_alert(base: float, larger: float, games_held: int) -> float:
 def component_models(train: pd.DataFrame, position: str) -> dict[str, object]:
     """The position's component models exactly as ``projections.fit_position`` fits them (same rows, same order,
     same seed: deterministic, so the base reproduces the stored projection)."""
-    from .projections import COMPONENTS, _fit_components, _matrix
+    from .projections import COMPONENTS, FEATURES_BY_POSITION, _fit_components, _matrix
 
     d = train[(train["position"] == position) & train["played"] & ~train["no_history"]]
     d = d.dropna(subset=[f"out_{c}" for c in COMPONENTS[position]]).reset_index(drop=True)
-    return _fit_components(_matrix(d), d, position)
+    return _fit_components(_matrix(d, FEATURES_BY_POSITION[position]), d, position)   # v3: the position's inputs
 
 
-def predict_lines(models: dict[str, object], rows: pd.DataFrame, ref_rows: pd.DataFrame) -> pd.DataFrame:
+def predict_lines(models: dict[str, object], rows: pd.DataFrame, ref_rows: pd.DataFrame, position: str) -> pd.DataFrame:
     """The component predictions for ``rows``. ``ref_rows`` = every row ``projections.predict_position`` predicts
     with them (the position's rows of the season): a feature that is unknown for ALL of those rows is 0 there
     (``projections._binnable``), so it must be 0 here too — not decided on this handful of rows."""
-    from .projections import ALL_COMPONENTS, FEATURES
+    from .projections import ALL_COMPONENTS, FEATURES_BY_POSITION
 
-    x = np.array(rows[FEATURES].to_numpy(dtype=float), dtype=float, copy=True)
-    x[:, ref_rows[FEATURES].isna().all(axis=0).to_numpy()] = 0.0
+    feats = FEATURES_BY_POSITION[position]                      # v3: the inputs component_models fitted on
+    x = np.array(rows[feats].to_numpy(dtype=float), dtype=float, copy=True)
+    x[:, ref_rows[feats].isna().all(axis=0).to_numpy()] = 0.0
     return pd.DataFrame({f"proj_{c}": (np.clip(models[c].predict(x), 0, None) if c in models else 0.0) for c in ALL_COMPONENTS})
 
 
@@ -944,8 +947,8 @@ def scenarios(conn: psycopg.Connection, season: int, train: pd.DataFrame, target
         idx = [i for i, m in enumerate(meta) if m["position"] == pos]
         models = component_models(train, pos)             # = projections.fit_position's component models (same rows, same seed)
         ref = target[target["position"] == pos]
-        comp_b = predict_lines(models, base_rows.iloc[idx], ref)
-        comp_s = predict_lines(models, scen.iloc[idx], ref)
+        comp_b = predict_lines(models, base_rows.iloc[idx], ref, pos)
+        comp_s = predict_lines(models, scen.iloc[idx], ref, pos)
         for league_id, (_, scoring) in scorings.items():
             pb, ps = price(comp_b, scoring, "proj_").to_numpy(), price(comp_s, scoring, "proj_").to_numpy()
             for j, i in enumerate(idx):
@@ -1146,8 +1149,8 @@ def scenario_backtest(conn: psycopg.Connection, seasons: list[int]) -> Calibrati
             b_rows = pd.DataFrame([it[1] for it in its]).reset_index(drop=True)
             s_rows = pd.DataFrame([larger_role_row(it[1], it[2], ref_scoring, caps)[0] for it in its]).reset_index(drop=True)
             ref = test[test["position"] == pos]
-            pb = price(predict_lines(models, b_rows, ref), ref_scoring, "proj_").to_numpy()
-            ps = price(predict_lines(models, s_rows, ref), ref_scoring, "proj_").to_numpy()
+            pb = price(predict_lines(models, b_rows, ref, pos), ref_scoring, "proj_").to_numpy()
+            ps = price(predict_lines(models, s_rows, ref, pos), ref_scoring, "proj_").to_numpy()
             for j, (a, _, _, actual, n_fut) in enumerate(its):
                 rows.append({"season": s, "week": int(a.week), "gsis_id": a.gsis_id, "player_name": a.player_name, "position": pos,
                              "games_held": int(a.games_held), "kind": a.kind, "base": float(pb[j]), "larger": float(ps[j]),

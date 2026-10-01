@@ -364,7 +364,8 @@ if model == "v2":
     )
     bt = query(
         """select season, position, scorer, scorer_label, train_seasons, weeks, top_n, spearman, hit_rate, mae, coverage_80, interval_width
-           from analytics.mart_projection_backtest where league_id = %s order by season desc, position, spearman desc""",
+           from analytics.mart_projection_backtest where league_id = %s and is_current
+           order by season desc, position, spearman desc""",
         (league_id,),
     )
     if bt.empty:
@@ -431,7 +432,8 @@ if model == "v2":
             f"- **What it learned from**: the regular-season games QBs, RBs, WRs and TEs played from {span} (over 50,000 of them), "
             "each with only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, "
             "carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against his "
-            "position, the Vegas line, home or away, and the injury report.\n"
+            "position, the Vegas line, home or away, the injury report, who starts at quarterback and whether his team's top "
+            "target is out.\n"
             "- **What it predicts**: the stat line, not points. For each position there is one small model per stat: targets, "
             "catches, receiving yards and TDs, carries, rushing yards and TDs, and for quarterbacks pass attempts, passing yards, "
             "TDs and interceptions. Each is a *gradient-boosted* model: a few hundred small decision trees, each one fixing the "
@@ -449,6 +451,19 @@ if model == "v2":
             "- **What it does not know**: injury news after the morning refresh, the weather, how the game actually goes (a "
             "blowout sends starters to the bench early), and coaching decisions made during the week. Check the news before kickoff.\n"
             "- **Refreshed** every morning with the newest games; its recipe stays the same all season."
+        )
+        # projection v3 (plan D5, Wave D): what was added, the evidence, what was tried and dropped
+        st.markdown(
+            "**New in October: who plays next to him.** The model now knows who is starting at quarterback this week "
+            "(and whether that is the quarterback a player's recent games were played with), and whether his team's top "
+            "target or top ball carrier is out. A backup quarterback who starts is no longer projected from his few "
+            "garbage-time snaps, and a backup who is not starting is no longer projected as if he might. Graded the same "
+            "way on 2021 to 2025, the quarterback order score went up by 0.045 in every one of the five seasons and the "
+            "average miss fell by about half a point a game; for running backs, receivers and tight ends the top-teammate-out "
+            "inputs add about 0.005 to the order score, in every season tested. We also tried the kickoff time and rest days, "
+            "the weather, how fast and how often a team throws, injuries on the offensive line and a player's own injury "
+            "history: none made the projections better on seasons they had not seen (Vegas lines already price most of it), "
+            "so they were left out. Each test is listed under *What we tried*."
         )
         # What drives the projection: the component models' permutation importance (ops.projection_importance,
         # model = 'component', component = 'total'), in points of error of the priced line. The old table here

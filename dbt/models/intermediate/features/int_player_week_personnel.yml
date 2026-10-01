@@ -114,7 +114,13 @@ models:
       - name: gsis_id
         tests: [not_null]
       - name: proj_qb_id
-        description: "The schedule's starting QB of his team's game this week (projected for a game not played yet). Not an input; the reference for the qb columns."
+        description: "The schedule's starting QB of his team's game this week (projected for a game not played yet; v3: for an unplayed game nflverse has not filled yet - more than about a week ahead - the starter of the team's newest played game). Not an input; the reference for the qb columns."
+      - name: proj_qb_source
+        description: "'schedule' (nflverse's starter / projected starter) or 'last_start' (an unfilled future game: the team's newest played start)."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['schedule', 'last_start']
       - name: usual_qb_id
         description: "The QB his history was built with: the schedule's starting QB in the majority of his newest four played games (this season before the week, or last season; ties: the more recent). Not an input."
       - name: pn_qb_changed

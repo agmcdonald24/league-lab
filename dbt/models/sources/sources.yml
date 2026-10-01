@@ -169,7 +169,7 @@ sources:
               arguments:
                 combination_of_columns: [league_id, season, week, roster_id, add_sleeper_id, drop_sleeper_id]
       - name: player_role_alerts
-        description: "Written by `league-lab project` / `league-lab signals` (plan R-10, src/league_lab/signals.py, rule ra1.1): every role alert of every season — a step change in a QB/RB/WR/TE's snap / route / target / carry share over his last one to three games with its kind, cause, evidence and expiry; the projected season is rewritten each run, any other season when the table lacks it under the current signals_version."
+        description: "Written by `league-lab project` / `league-lab signals` (plan R-10, src/league_lab/signals.py, rule ra1.1; version ra1.2 = the same rule on the franchise-coded int_player_game_role): every role alert of every season — a step change in a QB/RB/WR/TE's snap / route / target / carry share over his last one to three games with its kind, cause, evidence and expiry; the projected season is rewritten each run, any other season when the table lacks it under the current signals_version."
         tests:
           - unique_combination_of_columns:
               arguments:

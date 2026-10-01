@@ -46,6 +46,7 @@ backtest as (
     select
         league_id,
         position,
+        model_version,
         min(season)::text || '–' || max(season)::text                                    as backtest_seasons,
         sum(weeks)                                                                        as backtest_weeks,
         round(avg(spearman), 3)                                                           as backtest_spearman,
@@ -54,8 +55,8 @@ backtest as (
         round(avg(coverage_80), 3)                                                        as backtest_coverage_80,
         round(avg(interval_width), 1)                                                     as backtest_interval_width
     from {{ ref('mart_projection_backtest') }}
-    where scorer = 'v2_points'
-    group by 1, 2
+    where scorer = 'v2_points'                     -- v3: every QB-TE version's backtest, joined on the board's version
+    group by 1, 2, 3
 )
 
 select
@@ -84,4 +85,6 @@ select
     s.model_version,
     s.run_at
 from season as s
-left join backtest as b using (league_id, position)
+-- the backtest of the model that made this season's board (the newest version on it: a season whose early weeks
+-- were frozen under v2.0 compares with v3.0's once a v3.0 week is scored)
+left join backtest as b on b.league_id = s.league_id and b.position = s.position and b.model_version = s.model_version

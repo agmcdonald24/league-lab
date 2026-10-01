@@ -107,7 +107,10 @@ OWN_INJURY = ["pn_games_missed_season", "pn_games_missed_prev", "pn_q_streak", "
 # built from this season's games: NULL in week 1 (the harness's no-peek check 4)
 IN_SEASON = [*OLINE, *TEAMMATES]
 
-GROUPS = {
+# The groups as the harness evaluated them (2026-10-01, docs/STATUS.md § D5). v3.0 SHIPPED `qb` at QB and `teammates` at
+# RB / WR / TE (projections.FEATURES_BY_POSITION): those columns are model inputs now, so the harness would refuse the
+# three groups that contain them ("already model inputs"); they stay here for the record, outside GROUPS.
+SHIPPED_GROUPS = {
     "personnel": {
         "table": TABLE, "columns": [*QB, *OLINE, *TEAMMATES, *OWN_INJURY], "in_season": IN_SEASON,
         "label": "Personnel: all of it",
@@ -117,19 +120,23 @@ GROUPS = {
         "table": TABLE, "columns": QB,
         "label": "Starting quarterback",
         "note": "D5 sub-group: projected starter vs the QB of his last 4 games, games together, points-per-start gap, "
-                "starter with < 8 career starts, (QB) is he the projected starter",
-    },
-    "oline": {
-        "table": TABLE, "columns": OLINE, "in_season": OLINE,
-        "label": "Offensive line out",
-        "note": "D5 sub-group: line starters (top 5 by snaps, last 4 games) Out / Doubtful / reserve this week, their "
-                "snap share, games since the starting five changed",
+                "starter with < 8 career starts, (QB) is he the projected starter. Shipped in v3.0 at QB",
     },
     "teammates": {
         "table": TABLE, "columns": TEAMMATES, "in_season": TEAMMATES,
         "label": "Teammates out",
         "note": "D5 sub-group: leading teammate by target / carry share (last 4 games) out, target share of absent "
-                "pass-catchers, live absence alert",
+                "pass-catchers, live absence alert. Shipped in v3.0 at RB / WR / TE",
+    },
+}
+
+# Still candidates (dropped by the rule on 2023-2025; the harness can re-run them against v3).
+GROUPS = {
+    "oline": {
+        "table": TABLE, "columns": OLINE, "in_season": OLINE,
+        "label": "Offensive line out",
+        "note": "D5 sub-group: line starters (top 5 by snaps, last 4 games) Out / Doubtful / reserve this week, their "
+                "snap share, games since the starting five changed",
     },
     "own_injury": {
         "table": TABLE, "columns": OWN_INJURY,

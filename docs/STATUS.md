@@ -2268,6 +2268,81 @@ until the new one matches the headless check's numbers). Nothing in `app/`, `src
   position-wide fallback); `test_projection_freeze.py` unchanged and passing. METRICS § Ranges and decisions:
   the tier rule and this table.
 
+### v3 ship 2026-10-01 — projection v3.0 = v2 + the starting-QB inputs at QB + the teammate inputs at RB / WR / TE (branch `dev/V3`, clone `league_lab_d5`)
+
+The PO accepted D5's recommendation: `qb` at QB (5 inputs), `teammates` at RB / WR / TE (4); `oline`, `own_injury` and
+`personnel`-at-WR not taken. Definitions: METRICS § "Projection v3" and § "Personnel".
+
+* **Code.** `projections.py`: `MODEL_VERSION = "v3.0"`, `QB_INPUTS` / `TEAMMATE_INPUTS` (from
+  `feature_groups.personnel`), `FEATURES_BY_POSITION`, `ALL_FEATURES` (what `load_frame` reads); `fit_position` defaults
+  to the position's inputs and the model keeps them (`predict_position`, the P50 and the component importance read
+  `m.features`; the importance twin fits on the position's inputs); `walk_forward` takes per-position lists; nine plain
+  labels in `FEATURE_LABELS`; `backtest` replaces only its own version's rows. `signals.py`: the scenario refits
+  (`component_models`, `predict_lines(…, position)`) use the position's inputs (the base reproduces the stored
+  projection to 0.00e+00 on 26 rows); `SIGNALS_VERSION` ra1.2 (same rule, recomputed on the fixed role table).
+  `experiments.py`: the baseline is the production model per position, a group adds its columns to each position's
+  inputs, `data_key` includes `FEATURES_BY_POSITION`, and a group whose columns are already inputs at one of its
+  positions is refused (`personnel` / `qb` / `teammates` moved to `personnel.SHIPPED_GROUPS`). dbt:
+  `mart_player_week_features` left-joins the nine inputs + `pn_asof_week` (`assert_features_never_peek` checks
+  `pn_asof_week` < week and no teammate input in week 1; `features_personnel_in_range`); `int_player_week_personnel`:
+  an unplayed game nflverse has not filled yet takes the team's newest played starter (`proj_qb_source`), so weeks
+  5–18 are not "unknown starter" (2016–2025 rows unchanged); `int_player_game_role`: `kd_team()` on the schedule, roster
+  and snap sides (the C6 defect: 99,738 → 101,230 rows, 5,264 → 5,344 team-games; role alerts 7,074 → 7,157:
+  absence_beneficiary 2,312 → 2,346, role_up 1,865 → 1,881, role_down 1,915 → 1,937, depth_move 889 → 899, new_team 93 →
+  94; the Raiders 2016–19 0 → 58, the Chargers 2016 0 → 24); `mart_projection_backtest` per model version with
+  `is_current`, `coverage_50`, `interval_width_50`, `interval_score` (unique key test); `mart_projection_drift` joins the
+  backtest of the board's model version; `ops.projection_backtest` gains `coverage_50`, `interval_width_50`,
+  `pinball_25`, `pinball_75` (db migrate, the writer's DDL, the mart pre-hook). App: Rankings reads the current
+  version's backtest and "The model" has a paragraph on what v3 added, the evidence and what was dropped;
+  `app/whats_new.md` "Oct 1"; `CHANGELOG.md` 2026-10-01. API: `scipy` added to `api/pyproject.toml` (D6's decision
+  probability in the cards imports it; the parity test failed without it — a dependency, not a wording change).
+* **Backtest v3.0** (`league-lab backtest-v2 --seasons 2021-2025`, 17 min 13 s, `OMP_NUM_THREADS=1`), v2.0 = the stored
+  record; mean over seasons of the league-averaged season means; (n/5) = seasons better:
+
+  | Pos | Spearman v2.0 → v3.0 | Δ (n/5) | MAE v2.0 → v3.0 | Δ (n/5) | Cov 80 v2.0 → v3.0 | Cov 50 v3.0 | Width 80 v2.0 → v3.0 | Width 50 v3.0 | Interval score v2.0 → v3.0 |
+  |---|---|---|---|---|---|---|---|---|---|
+  | QB | 0.5377 → 0.5822 | **+0.0445 (5)** | 7.013 → 6.494 | **−0.520 (5)** | 77.9% → 78.4% | 48.9% | 22.79 → 21.47 | 11.13 | 1.5163 → 1.4344 (−0.082) |
+  | RB | 0.6618 → 0.6704 | +0.0086 (5) | 4.542 → 4.498 | −0.044 (5) | 79.7% → 80.4% | 51.0% | 13.58 → 13.92 | 7.33 | 0.9929 → 0.9792 |
+  | WR | 0.6173 → 0.6220 | +0.0047 (4) | 4.466 → 4.464 | −0.002 (3) | 81.0% → 80.7% | 49.9% | 13.66 → 14.20 | 7.33 | 0.9678 → 0.9603 |
+  | TE | 0.5624 → 0.5648 | +0.0024 (4) | 3.285 → 3.288 | +0.002 (2) | 81.0% → 81.3% | 50.4% | 9.68 → 10.04 | 5.24 | 0.7364 → 0.7327 |
+
+  QB by season +0.048 / +0.018 / +0.071 / +0.024 / +0.062; top-N hit rate +0.9 pp at QB. Width and coverage include D6's
+  per-tier widening. **Reproduces the harness**: on identical data (2023–2025 vs the harness's cached v2 baseline)
+  v3.0 = QB +0.0528, MAE −0.541, interval score −0.082 (the `qb` run cell for cell: e.g. Scrubs 2023 0.6012, dynasty
+  2025 0.5885 = `ops.feature_experiments`), RB +0.0065, WR +0.0058, TE +0.0061 (`teammates`: +0.0064 / +0.0053 /
+  +0.0054; ±0.002 per cell from the Raiders / Chargers alerts the role fix added). The stored v2.0 record differs from
+  that baseline by up to ±0.004 per cell (an older run): the five-season RB / WR / TE deltas carry that noise.
+* **Importance v3.0** (component, 2025 held out from a 2016–2024 twin, written by `project`): QB 1st **Is he the
+  projected starter?** +1.83 points (2nd the implied total +0.18), 6th games with this week's QB +0.07; RB 4th top ball
+  carrier out +0.06; WR 5th share of the team's targets out +0.02; TE 10th the same +0.02.
+* **`league-lab project` on the clone** (week 4 had not kicked off: 18:05 UTC): weeks 1–3 untouched — 3,554 rows, md5
+  `186253414a410e81805c7852d89e3e5f` before and after both runs; weeks 4–18 rewritten (16,268 v3.0 + 896 kd1.0 rows);
+  two consecutive runs byte-identical: 17,164 rows, md5 `b535e82e0b5f33ec1165cc5ae3f6a0e9` (every column but
+  `fitted_at`). Run 1 7 min 20 s (importance included), run 2 4 min 17 s. Drift: 18 rows (weeks 1–3, v2.0 boards; the
+  strip compares with v2.0's backtest until a v3.0 week is scored). Lineups 8,978 rows, waivers 3,996, scenarios 26.
+* **Checks.** `pytest` **781 passed**; `ruff` clean; `dbt build --select mart_player_week_features+
+  mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance
+  mart_player_role_alerts+ mart_waiver_upside mart_projection_drift int_player_game_role+ int_pn_team_game+`: PASS=154
+  (incl. `assert_features_never_peek`, `assert_personnel_is_asof`, `assert_personnel_ol_count_from_raw`); headless
+  check both leagues + Player runs: 32 runs, 0 exceptions; API `tests/test_parity.py` 12 passed (after `scipy`). The
+  API's `tests/test_myweek.py` has 3 failures that pin numbers and words of the v2 board before D6 ("0.13 apart, a coin
+  flip" — D6's card now leads with the probability — and Wilson / Gainwell's order, which v3 flipped): D7's fixtures to
+  re-pin, not changed here.
+* **On the Mac** (week 4 froze at 2026-10-02 00:15 UTC with v2.0 rows: v3 starts at week 5 there; weeks 1–4 keep their
+  v2.0 rows and `model_version` says so):
+  ```
+  git pull && make sync
+  uv run league-lab db migrate                     # the backtest's 50%-range columns (and D6's p25 / p75)
+  make build                                       # dbt: the fixed role table, personnel, the features mart (~3 min)
+  uv run league-lab signals                        # role alerts for every season under ra1.2 (~30 s)
+  uv run league-lab dbt build --select int_player_week_personnel+   # the absence input sees the recomputed alerts
+  make backtest-v2                                 # v3.0, 2021-2025 (~12-17 min); v2.0's rows stay
+  make project                                     # the v3 board for week 5 on, importance, lineups, waivers, signals
+  make sync-hosted && git push                     # or let the 08:00 nightly publish
+  ```
+  The nightly does not run `backtest-v2`: until it is run once, Rankings' backtest shows v2.0's record (`is_current`
+  falls back to the newest version that has rows).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

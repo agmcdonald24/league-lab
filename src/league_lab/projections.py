@@ -44,6 +44,7 @@ import pandas as pd
 import psycopg
 
 from .config import PROJECT_ROOT, get_settings
+from .feature_groups import personnel as _PN
 from .kdef import rows_after_project as kd_rows_after_project
 from .lineup import lineups_after_project
 from .rankings import TOP_N, _hit_rate, _spearman, parse_seasons
@@ -53,7 +54,7 @@ from .waivers import waivers_after_project
 
 log = logging.getLogger(__name__)
 
-MODEL_VERSION = "v2.0"
+MODEL_VERSION = "v3.0"
 POSITIONS = ("QB", "RB", "WR", "TE")
 QUANTILES = (0.1, 0.5, 0.9)
 # Plan D6 (Wave D): the 50% range ("most weeks"), fitted and calibrated with the same machinery as the
@@ -92,6 +93,19 @@ BASE_FEATURES = [
 ]
 COMPONENT_FEATURES = [f"{c}_pg_std" for c in ALL_COMPONENTS] + [f"{c}_pg_l3" for c in ALL_COMPONENTS] + [f"prev_{c}_pg" for c in ALL_COMPONENTS]
 FEATURES = BASE_FEATURES + COMPONENT_FEATURES
+# Projection v3 (plan D5, Wave D): personnel inputs, per position, kept by the feature-group harness on 2021-2025
+# (``int_player_week_personnel`` via ``mart_player_week_features``; docs/METRICS.md § "Personnel" / § projection v3).
+# QB: who starts (the projected starter vs the QB his recent games were played with); RB / WR / TE: the leading
+# teammate out this week. Every position keeps the v2 inputs; the lists live with the feature group.
+QB_INPUTS = list(_PN.QB)                 # pn_qb_changed, pn_qb_games_together, pn_qb_prev_ppg_diff, pn_qb_is_rookie_or_backup, pn_qb_starting
+TEAMMATE_INPUTS = list(_PN.TEAMMATES)    # pn_top_target_out, pn_top_rusher_out, pn_teammate_share_out, pn_absence_beneficiary
+FEATURES_BY_POSITION: dict[str, list[str]] = {
+    "QB": FEATURES + QB_INPUTS,
+    "RB": FEATURES + TEAMMATE_INPUTS,
+    "WR": FEATURES + TEAMMATE_INPUTS,
+    "TE": FEATURES + TEAMMATE_INPUTS,
+}
+ALL_FEATURES = list(dict.fromkeys(f for fs in FEATURES_BY_POSITION.values() for f in fs))   # what load_frame reads
 
 # Fixed hyperparameters (a change is a new MODEL_VERSION). Small trees, strong leaf minimum:
 # weekly fantasy outcomes are noisy and the training sets are a few thousand rows per position.
@@ -106,7 +120,7 @@ def load_frame(conn: psycopg.Connection, seasons: list[int], extra_tables: dict[
     ``(gsis_id, season, week)`` grain, left-joined onto the frame as float columns (NULL = not known). The
     default (None) is the production frame, untouched."""
     cols = ["gsis_id", "season", "week", "position", "player_name", "team", "opponent", "played", "points_actual", "no_history",
-            "report_status", "roster_status", *[f for f in FEATURES if f != "questionable"], *[f"out_{c}" for c in ALL_COMPONENTS]]
+            "report_status", "roster_status", *[f for f in ALL_FEATURES if f != "questionable"], *[f"out_{c}" for c in ALL_COMPONENTS]]
     # ordered: the early-stopping validation split (automatic above 10k rows) follows row order, so an
     # unordered scan (synchronized seq scans on a 60 MB table) made two fits of the same data differ
     sql = (f"select {', '.join(dict.fromkeys(cols))} from analytics.mart_player_week_features "
@@ -116,7 +130,7 @@ def load_frame(conn: psycopg.Connection, seasons: list[int], extra_tables: dict[
         names = [d.name for d in cur.description]
         df = pd.DataFrame(cur.fetchall(), columns=names)
     for c in df.columns:
-        if c in FEATURES or c.startswith("out_") or c == "points_actual":
+        if c in ALL_FEATURES or c.startswith("out_") or c == "points_actual":
             df[c] = pd.to_numeric(df[c], errors="coerce").astype(float)
     df["questionable"] = (df["report_status"] == "Questionable").astype(float)
     for table, extra in (extra_tables or {}).items():
@@ -173,7 +187,7 @@ class PositionModel:
     conformal_50_tiers: dict[str, tuple[float, ...]] = field(default_factory=dict) # league_id -> 50% widening per tier
     n_rows: int = 0
     calibration_season: int | None = None
-    features: list[str] | None = None    # the inputs it was fitted on; None = FEATURES (plan D1 harness hook)
+    features: list[str] | None = None    # the inputs it was fitted on (fit_position always sets them); None = FEATURES
 
 
 def _regressor(loss: str, quantile: float | None = None):
@@ -244,11 +258,13 @@ def _oof_lines(x: np.ndarray, d: pd.DataFrame, position: str, scorings: dict[str
 
 def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[str, dict[str, float]]],
                  features: list[str] | None = None) -> PositionModel:
-    """``features`` (plan D1 harness): the input columns; default FEATURES (production)."""
+    """``features`` (plan D1 harness): the input columns; default the position's production inputs
+    (``FEATURES_BY_POSITION``, v3). The model keeps them (``predict_position`` / importance use them)."""
+    features = list(FEATURES_BY_POSITION[position] if features is None else features)
     d = train[(train["position"] == position) & train["played"] & ~train["no_history"]]
     d = d.dropna(subset=[f"out_{c}" for c in COMPONENTS[position]]).reset_index(drop=True)
     x = _matrix(d, features)
-    m = PositionModel(position, n_rows=len(d), features=None if features is None else list(features))
+    m = PositionModel(position, n_rows=len(d), features=features)
     # 1. the point projection: one regressor per component on every training row
     m.components = _fit_components(x, d, position)
     # 2. the interval: quantile regressors of the RESIDUAL of the league's points around the
@@ -364,11 +380,11 @@ def importance(m: PositionModel, test: pd.DataFrame, league_id: str, scoring: di
     d = test[(test["position"] == m.position) & test["played"]].dropna(subset=[f"out_{c}" for c in COMPONENTS[m.position]])
     if len(d) < 50:
         return pd.DataFrame(columns=["position", "feature", "importance"])
-    x = _matrix(d)
+    x = _matrix(d, m.features)
     line = _line_points(m, x, scoring)
     y = price(d, scoring, "out_").to_numpy(dtype=float) - line
     r = permutation_importance(m.quantiles[(league_id, 0.5)], _quantile_features(x, line), y, scoring="neg_mean_absolute_error", n_repeats=3, random_state=0)
-    return pd.DataFrame({"position": m.position, "feature": [*FEATURES, "priced_line"], "importance": r.importances_mean}).sort_values("importance", ascending=False)
+    return pd.DataFrame({"position": m.position, "feature": [*(m.features or FEATURES), "priced_line"], "importance": r.importances_mean}).sort_values("importance", ascending=False)
 
 
 # ------------------------------------------------------------------------------ importance of the projection itself (plan U-15)
@@ -388,7 +404,7 @@ COMPONENT_LABELS: dict[str, str] = {
 }
 
 # Every model input in plain words (the Rankings page shows these, never the column names).
-# tests/test_projection_importance.py: every entry of FEATURES has one, and no two share a label.
+# tests/test_projection_importance.py: every model input (ALL_FEATURES) has one, and no two share a label.
 FEATURE_LABELS: dict[str, str] = {
     "week": "Week of the season",
     "games_to_date": "Games played so far this season",
@@ -431,6 +447,16 @@ FEATURE_LABELS: dict[str, str] = {
     **{f"{c}_pg_std": f"{n} per game, season" for c, n in COMPONENT_LABELS.items()},
     **{f"{c}_pg_l3": f"{n} per game, last 3 games" for c, n in COMPONENT_LABELS.items()},
     **{f"prev_{c}_pg": f"{n} per game, last season" for c, n in COMPONENT_LABELS.items()},
+    # v3 (plan D5): who plays next to him this week
+    "pn_qb_changed": "A different QB starts than in his recent games",
+    "pn_qb_games_together": "Games he has played with this week's QB",
+    "pn_qb_prev_ppg_diff": "This week's QB vs his usual QB, points per start",
+    "pn_qb_is_rookie_or_backup": "This week's QB has started fewer than 8 games",
+    "pn_qb_starting": "Is he the projected starter?",
+    "pn_top_target_out": "Top target on his team out this week",
+    "pn_top_rusher_out": "Top ball carrier on his team out this week",
+    "pn_teammate_share_out": "Share of the team's targets out this week",
+    "pn_absence_beneficiary": "His role grew when a teammate went out, and that teammate is still out",
     "priced_line": "The projection itself (the interval model's input)",
 }
 
@@ -473,7 +499,7 @@ def component_importance(m: PositionModel, rows: pd.DataFrame, scoring: dict[str
     d = d.dropna(subset=[f"out_{c}" for c in comps]).reset_index(drop=True)
     if len(d) < 50 or not comps:
         return pd.DataFrame(columns=IMPORTANCE_COLUMNS)
-    x = _matrix(d)
+    x = _matrix(d, m.features)
     w = unit_points(scoring)
     outs = np.nan_to_num(d[[f"out_{c}" for c in ALL_COMPONENTS]].to_numpy(dtype=float))
     y_pts = outs @ np.array([w[c] for c in ALL_COMPONENTS])          # what the player actually scored (stat keys)
@@ -490,7 +516,7 @@ def component_importance(m: PositionModel, rows: pd.DataFrame, scoring: dict[str
     n = len(d)
     rng = np.random.default_rng(seed)
     out: list[dict[str, object]] = []
-    for j, f in enumerate(FEATURES):
+    for j, f in enumerate(m.features or FEATURES):
         col = x[:, j]
         nan = np.isnan(col)
         varies = np.unique(col[~nan]).size + int(nan.any()) > 1      # "unknown" counts as a value of its own
@@ -551,7 +577,8 @@ def importance_after_project(conn: psycopg.Connection, train: pd.DataFrame, scor
         for pos in POSITIONS:
             d = past[(past["position"] == pos) & past["played"] & ~past["no_history"]]          # fit_position's training filter
             d = d.dropna(subset=[f"out_{c}" for c in COMPONENTS[pos]]).reset_index(drop=True)
-            twin = PositionModel(pos, components=_fit_components(_matrix(d), d, pos), n_rows=len(d))
+            feats = FEATURES_BY_POSITION[pos]
+            twin = PositionModel(pos, components=_fit_components(_matrix(d, feats), d, pos), n_rows=len(d), features=feats)
             frames.append(component_importance(twin, rows, scorings[ref_id][1]))
         imp = pd.concat(frames, ignore_index=True)
         imp["model_version"], imp["model"], imp["run_at"], imp["league_id"] = MODEL_VERSION, "component", datetime.now(UTC), ref_id
@@ -618,7 +645,7 @@ def score_predictions(pred: pd.DataFrame, actual: pd.DataFrame, baseline: pd.Dat
                     "pinball_50": _pinball(y.to_numpy(), g["p50"].to_numpy(), 0.5) if name != "baseline" else None,
                     "pinball_90": _pinball(y.to_numpy(), g["p90"].to_numpy(), 0.9) if name != "baseline" else None,
                     "interval_width": float((g["p90"] - g["p10"]).mean()) if name != "baseline" else None,
-                    # plan D6: the 50% range (not stored in ops.projection_backtest: _write keeps the table's columns)
+                    # plan D6: the 50% range (stored in ops.projection_backtest from v3.0 on)
                     **(_scores_50(y, g) if name != "baseline" else {}),
                 })
     return pd.DataFrame(out)
@@ -643,7 +670,7 @@ def load_baseline(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
 
 # ------------------------------------------------------------------------------ walk-forward backtest
 def walk_forward(frame: pd.DataFrame, test_seasons: list[int], scorings: dict[str, tuple[str, dict[str, float]]], first: int,
-                 baseline: pd.DataFrame | None, features: list[str] | None = None, positions: tuple[str, ...] = POSITIONS,
+                 baseline: pd.DataFrame | None, features: list[str] | dict[str, list[str]] | None = None, positions: tuple[str, ...] = POSITIONS,
                  importance_ref: str | None = None) -> tuple[pd.DataFrame, list[pd.DataFrame]]:
     """The walk-forward loop of ``backtest``: for each test season N, fit every position on seasons
     ``first``..N-1 of ``frame`` and score N. ``features`` / ``positions`` (plan D1, the feature-group
@@ -659,7 +686,8 @@ def walk_forward(frame: pd.DataFrame, test_seasons: list[int], scorings: dict[st
             continue
         preds = []
         for pos in positions:
-            m = fit_position(train, pos, {k: v for k, v in scorings.items()}, features)
+            feats = features.get(pos) if isinstance(features, dict) else features     # v3: per position
+            m = fit_position(train, pos, {k: v for k, v in scorings.items()}, feats)
             preds.append(predict_position(m, test[test["position"] == pos], scorings))
             if importance_ref is not None and n == max(test_seasons):
                 imps.append(importance(m, test, importance_ref, scorings[importance_ref][1]))
@@ -684,7 +712,8 @@ def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | 
     run_id = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     res["run_id"], res["run_at"], res["model_version"] = run_id, datetime.now(UTC), MODEL_VERSION
     # the K / DEF rows (R-13, model kd1.0, `league-lab backtest-kd`) share the table: not this run's to delete
-    _write(conn, "ops.projection_backtest", res, "season = any(%s) and coalesce(model_version, '') not like 'kd%%'", (test_seasons,))
+    # v3: only this model version's rows are replaced (v2.0's stay as its record; K / DEF rows are kd1.0's)
+    _write(conn, "ops.projection_backtest", res, "season = any(%s) and model_version = %s", (test_seasons, MODEL_VERSION))
     imp = pd.concat(imps, ignore_index=True) if imps else pd.DataFrame(columns=["position", "feature", "importance"])
     imp["model_version"], imp["run_at"], imp["league_id"] = MODEL_VERSION, datetime.now(UTC), ref_id
     imp["model"], imp["component"], imp["unit"] = "quantile_p50", "p50_residual", "points"   # U-15: the interval model's rows, labelled
@@ -692,7 +721,7 @@ def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | 
     _write(conn, "ops.projection_importance", imp, "model_version = %s and model = 'quantile_p50'", (MODEL_VERSION,))
     out_dir = out_dir or PROJECT_ROOT / "reports" / "backtests"
     out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / f"projection_v2_{min(test_seasons)}_{max(test_seasons)}_{run_id}.md"
+    path = out_dir / f"projection_{MODEL_VERSION.replace('.', '_')}_{min(test_seasons)}_{max(test_seasons)}_{run_id}.md"
     path.write_text(report(res, scorings, imp))
     log.info("report written to %s", path)
     return res
@@ -864,7 +893,11 @@ DDL = {
         run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
         position text, scorer text, n_players integer, spearman double precision, top_n integer, hit_rate double precision,
         mae double precision, coverage_80 double precision, pinball_10 double precision, pinball_50 double precision,
-        pinball_90 double precision, interval_width double precision)""",
+        pinball_90 double precision, interval_width double precision);
+        alter table ops.projection_backtest add column if not exists coverage_50 double precision;
+        alter table ops.projection_backtest add column if not exists interval_width_50 double precision;
+        alter table ops.projection_backtest add column if not exists pinball_25 double precision;
+        alter table ops.projection_backtest add column if not exists pinball_75 double precision;""",
     "ops.projection_importance": """create table if not exists ops.projection_importance (
         model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision);
         alter table ops.projection_importance add column if not exists model text;
@@ -1009,7 +1042,7 @@ def summarize(res: pd.DataFrame) -> pd.DataFrame:
 
 
 def report(res: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]], imp: pd.DataFrame) -> str:
-    lines = [f"# Projection v2 backtest ({MODEL_VERSION})",
+    lines = [f"# Projection backtest ({MODEL_VERSION})",
              f"_generated {datetime.now(UTC):%Y-%m-%d %H:%M} UTC · walk-forward: train on seasons before N, test N · players who played, "
              "regular season, weeks with ≥ 8 ranked players_", "",
              "Scorers: `v2_points` = projected stat line priced under the league's scoring; `v2_p50` = the median of the quantile model; "

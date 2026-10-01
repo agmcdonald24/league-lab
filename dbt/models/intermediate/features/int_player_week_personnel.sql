@@ -25,10 +25,18 @@ reports as materialized (       -- team-weeks whose injury report is out
 ),
 
 team_last as materialized (     -- the team's newest played game before W this season (NULL in week 1)
-    select season, week, team, starting_qb_id as proj_qb_id,
-           max(case when is_played then week end) over (partition by team, season order by week
-                                                         rows between unbounded preceding and 1 preceding) as last_game_week
-    from tg
+    -- proj_qb_id: the schedule's starter; for an unplayed game nflverse has not filled yet (more than about a week
+    -- ahead: v3's later weeks) the starter of the team's newest played game (any season), so the board's later
+    -- weeks assume "the same starter" instead of an unknown the model never saw in training
+    select x.season, x.week, x.team, coalesce(x.starting_qb_id, x.last_starter) as proj_qb_id,
+           case when x.starting_qb_id is not null then 'schedule' when x.last_starter is not null then 'last_start' end as proj_qb_source,
+           x.last_game_week
+    from (select season, week, team, starting_qb_id,
+                 max(case when is_played then week end) over w_season as last_game_week,
+                 (array_agg(starting_qb_id) filter (where is_played) over w_all)[1] as last_starter
+          from tg
+          window w_season as (partition by team, season order by week rows between unbounded preceding and 1 preceding),
+                 w_all as (partition by team order by season desc, week desc rows between 1 following and unbounded following)) as x
 ),
 
 -- ------------------------------------------------------------------ 1. quarterback
@@ -239,7 +247,7 @@ q_streak as (                   -- consecutive weeks Questionable through this w
 select
     u.gsis_id, u.season, u.week, u.team, u.position,
     -- 1. quarterback
-    qb.proj_qb_id, qb.usual_qb_id,
+    qb.proj_qb_id, tl.proj_qb_source, qb.usual_qb_id,
     qb.pn_qb_changed, qb.pn_qb_games_together, qb.pn_qb_prev_ppg_diff, qb.pn_qb_is_rookie_or_backup, qb.pn_qb_starting,
     -- 2. offensive line (NULL: week 1, or week W's report not out)
     case when tl.last_game_week is not null and rp.team is not null then coalesce(ol.starters_out, 0) end        as pn_ol_starters_out,
