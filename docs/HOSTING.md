@@ -273,6 +273,22 @@ SOFT_WHY="the archived weather and the earlier forecasts stay" soft fetch-weathe
   game), so they are the one part of the weather archive that a lost cache cannot rebuild: losing
   it costs the train / serve gap measurement its history, not the board.
 
+### Sleeper's projections in the nightly (plan E1)
+
+"Our record" needs Sleeper's own projections saved **before** each week's first kickoff (they cannot be fetched
+again afterwards: the endpoint then answers the later numbers). `scripts/nightly.sh` has two steps for it:
+`replay-projections` (after `replay-weather`: every archived snapshot back into `raw.sleeper_projections`, soft,
+skipped while `data/raw/sleeper/projections` does not exist) and `fetch-projections` (after `project`, before
+`save-record`: one pull of the next week to kick off, `uv run league-lab ingest sleeper-projections`; soft; skipped
+with `NIGHTLY_SLEEPER_OFFLINE=1`); `mart_projection_record` is in the projection-marts `--select`. One call a night
+to `api.sleeper.com` (not the documented v1 API: if Sleeper moves it, the step fails softly and Data Status shows
+`sleeper / projections_pull` failing; point `LEAGUE_LAB_SLEEPER_PROJECTIONS_URL` at the new host). The Thursday
+morning run (07:37 ET on Actions, 08:00 on the Mac) is the snapshot the record uses for that week, the same run
+whose board is frozen. Archive: `data/raw/sleeper/projections/<season>/<week>_<stamp>.json.gz`, an estimated 0.2–0.4 MB a pull
+(the real answer has not been seen from the sandbox), an unchanged answer adds nothing — under 30 MB a season
+in the Actions cache; like the
+weather forecasts, a lost cache cannot rebuild these snapshots.
+
 ### Cost
 
 Measured in a 2-CPU / 7 GB sandbox (the size of GitHub's standard runner for private

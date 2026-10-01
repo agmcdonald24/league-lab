@@ -135,7 +135,7 @@ def _load() -> dict[str, types.ModuleType]:
     sys.modules["streamlit"] = _StreamlitStandIn()
     out: dict[str, types.ModuleType] = {}
     try:
-        for name in ("ui", "signals", "cards"):
+        for name in ("ui", "signals", "cards", "ros"):
             spec = importlib.util.spec_from_file_location(f"{PKG}.{name}", APP_LIB / f"{name}.py")
             assert spec is not None and spec.loader is not None, f"app/lib/{name}.py not found under {APP_LIB}"
             mod = importlib.util.module_from_spec(spec)
@@ -155,6 +155,7 @@ _mods = _load()
 ui: Any = _mods["ui"]
 cards: Any = _mods["cards"]
 signals: Any = _mods["signals"]
+ros: Any = _mods["ros"]              # plan E2: the rest-of-season sentences the Player page draws
 
 
 def capture(fn: Callable[..., Any], *args, **kwargs) -> tuple[Any, list[tuple[str, tuple, dict]]]:

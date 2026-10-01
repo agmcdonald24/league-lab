@@ -272,6 +272,10 @@ def migrate(conn: psycopg.Connection) -> None:
     from .ingest import weather
 
     weather.ensure_tables(conn)
+    # plan E1: raw.sleeper_projections (Sleeper's own projections, the benchmark of mart_projection_record)
+    from .ingest import sleeper_projections
+
+    sleeper_projections.ensure_tables(conn)
 
 
 def ensure_table(

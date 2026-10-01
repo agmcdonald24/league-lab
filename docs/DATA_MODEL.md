@@ -50,6 +50,19 @@ week; one row per `int_player_week_universe` row): `wx_dome`, `wx_wind_mph`, `wx
 docs/METRICS.md § Weather, tests in `int_player_week_weather.yml` and `dbt/tests/assert_weather_*.sql`,
 `assert_stadium_reference_covers_schedules.sql` (warn).
 
+**Sleeper's projections (plan E1, Wave E).** `raw.sleeper_projections` — Sleeper's own weekly projections
+(`league-lab ingest sleeper-projections`, `league_lab.ingest.sleeper_projections`; DDL in `db migrate`), one row
+per season × season_type × week × player_id × **fetched_at** (primary key): every pull is a snapshot whose rows
+share one `fetched_at`, never overwritten. Columns: `position`, `team`, `opponent`, `game_id`, `company` (who
+made the projection), `category`, `proj_date`; Sleeper's own `pts_ppr` / `pts_half_ppr` / `pts_std`; the
+projected stat line parsed into the weekly-stats column names (`attempts`, `completions`, `carries`, `targets`,
+`passing_yards` … `fg_made_0_19` … `pat_missed`, `pass_tds_40p` …: `sleeper_projections.LINE_COLUMNS`; NULL = not
+given); `payload jsonb` (the whole object, unknown keys included), `file_path`, `_loaded_at`. A DEF's
+`player_id` is the team abbreviation. Archive: `data/raw/sleeper/projections/<season>/<week:02d>_<YYYYmmddTHHMMSSZ>.json.gz`
+(+ sidecar; a hand-curled `.json` replays too). Manifest: source `sleeper`, datasets `projections` (one
+partition per snapshot, `<season>:<week>:<stamp>`) and `projections_pull` (the live pull of a week). Tests:
+key unique, `player_id` / `fetched_at` not null.
+
 ## ops
 
 `ops.load_manifest` — one row per attempted partition load: source, dataset, partition_key,
@@ -306,6 +319,16 @@ nightly `projection-marts`) rebuilds and tests them after every `project`. Defin
 | `mart_league_roster_rankings` (view) | league_id, roster_id, measure | `measure` (lineup_value, horizon_value, bench_value), `measure_label`, `horizon` (the weeks the rank covers), `value`, `league_rank` (rank(), 1 = highest), `n_rosters`, `rank_label` ('3/12'). Tests: key unique, horizon not null, rank within 1..n |
 | `mart_league_roster_slot_strength` (view) | league_id, roster_id, slot_type | this week, per slot type the league starts: `slots`, `empty_slots`, the top starter (`top_player_name`, `top_value`, `top_is_locked`), `starter_strength` (= his B1 margin: lineup minus a fresh solve without him), `replacement_name` / `_value`. Tests: key unique, 0 ≤ strength ≤ his value |
 
+### Rest of season (E2, plan Iteration 13, Wave E, 2026-10-01)
+
+Built by the ordinary `dbt build` from the weekly board; `mart_player_week_projections+` (Makefile `project`,
+nightly `projection-marts`) rebuilds it after every `project`. Read by the Player card, Rankings and Trade Finder
+(`app/lib/ros.py`); published to the hosted copy (the pages name it). Definitions: `docs/METRICS.md` § Rest of season.
+
+| Model | Grain / key | Contract |
+|---|---|---|
+| `mart_player_ros_projection` (table) | league_id, player_key (current season) | `player_key` (= `gsis_id`; a team defense's Sleeper id, `gsis_id` NULL), `player_name`, `position`, `team`, `roster_status`, `is_ranked`; the window `from_week` (first REG week whose last game has not kicked off, at build time) … `last_week` (the league's final), `playoff_week_start`; `ros_games`, `ros_points`, `ros_points_per_game`, `ros_p10` / `ros_p90` / `ros_sd` (weeks combined as independent normals), `playoff_games`, `playoff_points`, `ros_rank_pos`, `ros_rank_all` (league, rostered or not; NULL unless `is_ranked`), `bye_weeks` (int[]), `weeks_with_lines`, `model_versions`, `weeks_json` (`[[week, points], …]`), `built_at`. 1,226 rows (Scrubs 645 incl. K / DEF, dynasty 581), ~1.1 MB. Tests (`mart_player_ros_projection.yml`): key unique; games within the window and its byes; playoffs inside the window; p10 ≤ points ≤ p90; `weeks_json` length = games; ranked ⇔ rank; DEF ⇔ no gsis id; not-null keys and totals; position accepted values |
+
 ## analytics — Trends (2026-09-26)
 
 | Model | Grain / key | Contract |
@@ -388,12 +411,46 @@ Docs and tests: `dbt/models/intermediate/features/int_player_week_personnel.yml`
 | `int_pn_window_player` | team, season, week, gsis_id | per team-week, the players of the team's last four played games before W: `window_games`, `last_game_week` (< week), `games_played`, `snap_share` / `target_share` / `carry_share` over the window, week W's `report_status` / `roster_status` / `roster_team`, `out_injured`, `gone`, `report_known`. No rows for week 1. Tests: key unique, as-of, ranges |
 | `int_player_week_personnel` | gsis_id, season, week (= `int_player_week_universe`, unique index) | the harness's table for groups `personnel` / `qb` / `oline` / `teammates` / `own_injury`: `proj_qb_id`, `usual_qb_id` (references, not inputs), `pn_qb_changed`, `pn_qb_games_together`, `pn_qb_prev_ppg_diff`, `pn_qb_is_rookie_or_backup`, `pn_qb_starting`, `pn_ol_starters_out`, `pn_ol_snap_share_out`, `pn_ol_games_since_change`, `pn_top_target_out`, `pn_top_rusher_out`, `pn_teammate_share_out`, `pn_absence_beneficiary` (reads `ops.player_role_alerts`), `pn_games_missed_season`, `pn_games_missed_prev`, `pn_q_streak`, `pn_returning`, `pn_report_status_ord`, `pn_practice_ord`, `pn_asof_week` (< week). Tests: key unique, as-of marker, week 1 has no in-season input, ranges, QB flags agree, `assert_personnel_is_asof` (universe row for row; projected starter = the raw schedule's; usual QB from a game before the week; career starts re-counted on the raw schedule), `assert_personnel_ol_count_from_raw` (the OL count re-derived from raw snap counts / injuries / weekly rosters, every team-week). **v3**: nine of its columns feed `mart_player_week_features` (projection v3.0: the five `pn_qb_*` at QB, the four teammate inputs at RB / WR / TE); `proj_qb_source` = `schedule` or `last_start` (an unfilled future game takes the team's newest played starter) |
 
+### Feature groups of Wave E (E4, plan Iteration 13, 2026-10-01) — schemas `intermediate` and `ops`
+
+Tests, not production inputs: nothing downstream reads them. Definitions and verdicts: `docs/METRICS.md` § "Feature
+experiments" → "Wave E groups". Docs and tests: `dbt/models/intermediate/features/int_e4_feature_groups.yml`,
+`dbt/tests/assert_e4_feature_groups_cover_universe.sql`; Python twins and registries
+`league_lab.feature_groups.{rookie_prior,oline_quality,qb_x_offense,player_prior}` (`tests/test_e4_feature_groups.py`).
+
+| Model / table | Grain / key | Contract |
+|---|---|---|
+| `int_e4_player_week_rookie_prior` | gsis_id, season, week (= `int_player_week_universe`, unique index) | groups `rookie_prior` / `rookie_prior_early`, from `stg_nflverse__players`, constant within a season: `rk_draft_round`, `rk_draft_pick` (NULL = undrafted), `rk_draft_tier` (3 / 2 / 1 / 0 undrafted; NULL = not in the players table), `rk_undrafted`, `rk_years_in` (season − draft year, or rookie season when undrafted, floored at 0), `rk_is_rookie`, `rk_age` (on Sep 1); `rk_early_*` = the same seven in weeks 1–4, NULL from week 5. Tests: key unique, ranges, one row per universe row |
+| `int_e4_ol_starter_week` | team, season, week, gsis_id (5 per team-week with a window; no week 1) | D5's five starters (`int_pn_window_player`, top five OL by snap share over the last four played games before W) with `snap_share`, `out_injured`, `career_starts` (his games before W with ≥ 50% of the snaps, any team, 2016 on), `draft_score` (3 / 2 / 1 / 0), `prev_season_share` (season S−1 snaps in season-equivalents), `quality_rank` (1–5 by `prev_season_share`; ties window share, gsis_id). Tests: key unique, ranges |
+| `int_e4_player_week_oline_quality` | gsis_id, season, week (= the universe) | group `oline_quality`: `pn_olq_starters_out`, `pn_olq_snap_share_out` (copies of D5's), `pn_olq_career_starts_out`, `pn_olq_draft_capital_out`, `pn_olq_best_out` (rank of the best one out; 0 = nobody), `pn_olq_prev_season_share_out`; `olq_check_starters_out` (re-derived, not an input). NULL exactly where `pn_ol_starters_out` is (week 1, report not out). Tests: key unique, count = D5's, week 1 unknown, consistent |
+| `int_e4_player_week_qb_x_offense` | gsis_id, season, week (= the universe) | group `qb_x_offense`: `qbx_gap_x_implied`, `qbx_gap_x_total`, `qbx_gap_x_prev_ppg`, `qbx_backup_x_implied`, `qbx_gap_x_prev_epa`, `qbx_gap_bucket` (2 big drop / 1 some drop / 0 like for like / −1 upgrade); factors kept for checks, not inputs: `qbx_qb_gap` (= `pn_qb_prev_ppg_diff`), `qbx_prev_team_ppg` (`dim_game`, previous REG season), `qbx_prev_team_epa_play` (`fct_team_game`, previous REG season). A product is NULL when a factor is. Tests: key unique, products consistent, bucket values |
+| `ops.player_prior_oof` | gsis_id, season, week (= the universe, unique index) | group `player_prior`, written by `player_prior.build` (called by `experiments.get_group`; rebuilt only when `data_key` changes): `pp_resid_ewm` (EWM, half-life 8 games, of his out-of-fold misses before the week, reference scoring; NULL before his first scored game, i.e. all of 2016), `pp_resid_games`, `pp_asof_week` (< week, checked by the harness), `data_key`, `built_at` |
+| `ops.player_prior_oof_pred` | gsis_id, season, week (2017–2026 frame rows) | the production model's out-of-fold point projection per row (components trained on seasons < S): `position`, `played`, `no_history`, `proj_<league_id>` / `actual_<league_id>` for both leagues, `data_key`. Reproduces the harness's cached baseline on 2023–2025 exactly; read by `scripts/e4/week_subsets.py` and `player_prior_correction.py` |
+
 ## analytics — ops views
 
 `mart_data_status` (per source/dataset freshness and failures), `mart_coverage` (per season:
 through-game date, games with stats/snaps/pbp/participation/charting, average charting coverage,
 league scored weeks, and explicit status text for play-by-play / FTN / participation / routes —
 "not published yet" for the current season's participation, "no licensed feed imported" for routes).
+
+## analytics — our record (E1, Iteration 13, 2026-10-02)
+
+`mart_projection_record` (table, ~10 rows per league-week) — League Lab's board as published before kickoff
+(`ops.projections`, `frozen_source = 'kickoff'`) vs Sleeper's last pre-kickoff snapshot (`raw.sleeper_projections`,
+priced with `league_points`) vs the actual points (`mart_player_week_projections`), on the players both projected.
+Grain: league_id × season × scope (`week` | `season`) × week × position (`QB` `RB` `WR` `TE` = the ranking scores;
+`ALL` = the start/sit calls from `ops.lineups` / `ops.lineup_totals` and the pooled MAE). Columns: `league_name`,
+`first_week`, `weeks_scored`, `status` (`scored` | `in_play`), `top_n`, `n_both`, `n_players`, `ours_` /
+`sleeper_` `spearman` `mae` `hit_rate`, `pairs_listed` `pairs_n` `pairs_ours_right` `pairs_sleeper_right`
+`pairs_both_right` `pairs_neither_right` `pairs_disagree` `pairs_ours_right_disagree` `pairs_push`
+`pairs_no_sleeper`, `model_version`, `board_frozen_at`, `sleeper_fetched_at`, `first_kickoff_at`. Reads also
+`league_player_week` (Sleeper's observed points for the calls), `player_id_map`, `dim_game`, `dim_league_season`.
+Definitions: docs/METRICS.md § Projection record. Tests (`projection_record.yml`): key unique; `n_both ≥ 1` on
+every position row and `1 ≤ n_players ≤ n_both` on scored ones (the record's n); in-play rows carry no scores;
+the calls add up (both + ours only + Sleeper only + neither = `pairs_n`); both snapshots precede the first
+kickoff; ranges of the scores. Read by `app/pages/13_Record.py` ("Our record"); published to the hosted copy
+(the sync picks up every `analytics.` relation a page names).
 
 ## Identity resolution
 

@@ -9,6 +9,7 @@ rostered player his roster's lineup (lib.cards.lineup_rows) — five at most.
 
 import pandas as pd
 import streamlit as st
+from lib import ros as ROS
 from lib.cards import (
     TOL,
     alternative,
@@ -216,6 +217,18 @@ with st.container(border=True):
                       "SUS": "he is suspended"}.get(p["roster_status"], "the model has no projection for him this week")
             why = f"{status}."
         unavailable(why)
+    # plan E2: rest of season, one line after the stat line (the same row Rankings and Trade Finder read). Its own
+    # query, skipped on a copy published before the mart existed.
+    if week is not None and not missing_relations((ROS.RELATION,)):
+        ros = query(f"select {ROS.ROS_COLUMNS} from analytics.mart_player_ros_projection where league_id = %s and gsis_id = %s",
+                    (league_id, gsis))
+        if not ros.empty:
+            rr = ros.iloc[0]
+            st.markdown(ROS.card_line(rr))
+            st.caption(f"Week by week ({ROS.weeks_span(rr['from_week'], rr['last_week'])}, through this league's final): "
+                       f"{ROS.weeks_words(rr)}. {ROS.lines_note(rr)}")
+        elif yes(p["in_pool"]):
+            st.caption("Rest of season: no projection yet.")
     if not game.empty:
         g = game.iloc[0]
         rank = f" — {g['opponent']} ranks **#{int(g['opp_rank'])}** of 32 vs {pos} (1 = gives up the most)" if is_num(g["opp_rank"]) else ""
@@ -394,6 +407,12 @@ with st.expander("How to read this"):
         "his weeks land in (a quarter below, a quarter above); the **floor** and **ceiling** are a bad week and a good "
         "week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. The opponent's rank is 1 for the "
         "defense that gives up the most to his position.\n"
+        "- **Rest of season** adds up his projection for every week left in this league's season, up to its final: use it "
+        "for trades and waivers, where the next four weeks are not the whole story. His bye is a week with no game, not a "
+        "low score. *Likely* is the range 8 seasons in 10 would land in if every week were its own roll of the dice; a role "
+        "change or an injury moves the weeks together, so the real range is wider. The rank is among every player at his "
+        "position in this league, rostered or not. Only this week has betting lines yet: the later weeks lean on his usage "
+        "and the schedule.\n"
         "- **Availability** says whose team he is on (or that he is a free agent), his injury status, and whether his "
         "game has started.\n"
         "- **Value** compares what he scores with what his work is usually worth (above = running hot, below = due), and "

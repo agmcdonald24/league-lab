@@ -133,6 +133,27 @@ def my_week(league_id: str, roster_id: int) -> dict:
         lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna()
         out["lineup_value"] = None if lv.empty else float(lv.iloc[0])
     # the cards: numbers from decisions(), text from decision_cards() as drawn
+    out["notice"], out["cards"] = cards_from_rows(league_id, roster_id, week, season, rows)
+    out["lineup"], out["lineup_full"] = lineup(rows)
+    out["howto"] = howto()
+    # ---- copied from app/Home.py (Movers on your roster)
+    mv = query(
+        """select t.gsis_id, t.player_name, t.position, t.tags, t.momentum
+                   from analytics.mart_player_trend_tags t
+                   join analytics.mart_player_availability a on a.gsis_id = t.gsis_id and a.league_id = %s
+                   where t.season = %s and a.rostered_by_roster_id = %s and t.opportunity_trend in ('rising', 'falling')
+                   order by abs(t.momentum) desc limit 9""",
+        (league_id, season, roster_id),
+    )
+    out["movers"] = [{"gsis_id": _str(r.gsis_id), "player_name": r.player_name, "position": r.position,
+                      "tags": _str(r.tags), "momentum": _num(r.momentum)} for r in mv.itertuples()]
+    return out
+
+
+def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows: pd.DataFrame) -> tuple[str | None, list[dict]]:
+    """(the notice line, the cards) for a lineup frame in `cards.lineup_rows`' shape: the numbers from
+    `cards.decisions(rows)`, the text from `cards.decision_cards(..., rows=rows)` as drawn. Shared by the database
+    path (`my_week`) and the on-demand path (`ondemand.my_week`), which builds the same frame without the marts."""
     dec = cards.decisions(rows, 3) if not rows.empty else pd.DataFrame()
     _, calls = capture(cards.decision_cards, league_id, roster_id, week, season, rows=rows)
     drawn: list[list[tuple]] = []
@@ -149,30 +170,28 @@ def my_week(league_id: str, roster_id: int) -> dict:
         else:
             loose.append(c)
     notices = [b["text"] for b in blocks(loose) if b["kind"] in ("info", "warning", "markdown", "caption")]
-    out["notice"] = notices[0] if notices else None
+    out = []
     for i, (_, d) in enumerate(dec.iterrows()):
-        out["cards"].append({
+        out.append({
             "slot": d["slot"], "slot_label": cards.slot_label(d["slot"]),
             "gsis_id": _str(d["gsis_id"]), "player_name": d["player_name"], "value": _num(d["value"]),
             "alt_gsis_id": _str(d["alt_gsis_id"]), "alt_name": _str(d["alt_name"]), "alt_value": _num(d["alt_value"]),
             "margin": _num(d["margin"]), "verdict": d["verdict"], "how": d["how"],
+            "p_win": _num(d.get("p_win")),
             "blocks": blocks(drawn[i]) if i < len(drawn) else [],
         })
-    out["lineup"], out["lineup_full"] = lineup(rows)
+    return (notices[0] if notices else None), out
+
+
+def howto() -> str | None:
     _, how = capture(cards.howto_cards)
-    out["howto"] = next((links(c[1][0]) for c in how if c[0] == "markdown" and c[1]), None)
-    # ---- copied from app/Home.py (Movers on your roster)
-    mv = query(
-        """select t.gsis_id, t.player_name, t.position, t.tags, t.momentum
-                   from analytics.mart_player_trend_tags t
-                   join analytics.mart_player_availability a on a.gsis_id = t.gsis_id and a.league_id = %s
-                   where t.season = %s and a.rostered_by_roster_id = %s and t.opportunity_trend in ('rising', 'falling')
-                   order by abs(t.momentum) desc limit 9""",
-        (league_id, season, roster_id),
-    )
-    out["movers"] = [{"gsis_id": _str(r.gsis_id), "player_name": r.player_name, "position": r.position,
-                      "tags": _str(r.tags), "momentum": _num(r.momentum)} for r in mv.itertuples()]
-    return out
+    return next((links(c[1][0]) for c in how if c[0] == "markdown" and c[1]), None)
+
+
+def known_league(league_id: str) -> bool:
+    """Is this a current-season league of the database (else /api/my-week serves it on demand from Sleeper)?"""
+    df = ui.current_leagues()
+    return bool((df["league_id"] == str(league_id)).any())
 
 
 def status() -> dict:

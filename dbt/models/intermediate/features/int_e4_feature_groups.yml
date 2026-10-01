@@ -1,0 +1,137 @@
+version: 2
+
+# Plan E4 (Wave E): three feature groups for the D1 harness (src/league_lab/feature_groups/rookie_prior.py,
+# oline_quality.py, qb_x_offense.py; the fourth, player_prior, is built in Python from the model's own out-of-fold
+# predictions: ops.player_prior_oof). Each table has one row per int_player_week_universe row
+# (assert_e4_feature_groups_cover_universe), every column as of the week. Nothing in production reads them.
+# Definitions: docs/METRICS.md § "Feature experiments" -> "Wave E groups".
+models:
+  - name: int_e4_player_week_rookie_prior
+    description: "rookie_prior: draft capital and age from raw.nfl_players (staging), static within a season, known before it. NULL draft round / pick = undrafted (rk_undrafted = 1); every rk_ column NULL = not in the players table."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+      - expression_is_true:
+          name: e4_rookie_prior_in_range
+          arguments:
+            expression: "(week <= 4 or rk_early_draft_tier is null) and (week > 4 or rk_early_draft_tier is not distinct from rk_draft_tier) and coalesce(rk_draft_round, 1) between 1 and 7 and coalesce(rk_draft_pick, 1) between 1 and 270 and coalesce(rk_years_in, 0) between 0 and 30 and coalesce(rk_age, 25) between 19 and 50 and (rk_draft_tier = 0) = (rk_undrafted = 1) and (rk_is_rookie = 1) = (rk_years_in = 0)"
+    columns:
+      - name: rk_draft_round
+        description: "Draft round 1-7; NULL for an undrafted player."
+      - name: rk_draft_pick
+        description: "Overall pick; NULL for an undrafted player."
+      - name: rk_draft_tier
+        description: "3 = 1st round, 2 = day 2 (rounds 2-3), 1 = day 3 (rounds 4-7), 0 = undrafted; NULL = not in the players table."
+      - name: rk_undrafted
+        description: "1 = undrafted (in the players table without a draft round)."
+      - name: rk_years_in
+        description: "Season minus his entry season (draft year; rookie season for an undrafted player), floored at 0."
+      - name: rk_is_rookie
+        description: "1 = rk_years_in = 0."
+      - name: rk_age
+        description: "Age in years on September 1 of the season, one decimal."
+      - name: rk_early_draft_round
+        description: "rookie_prior_early: rk_draft_round in weeks 1-4, NULL from week 5 on (as are the six below)."
+      - name: rk_early_draft_pick
+        description: "rk_draft_pick in weeks 1-4 only."
+      - name: rk_early_draft_tier
+        description: "rk_draft_tier in weeks 1-4 only."
+      - name: rk_early_undrafted
+        description: "rk_undrafted in weeks 1-4 only."
+      - name: rk_early_years_in
+        description: "rk_years_in in weeks 1-4 only."
+      - name: rk_early_is_rookie
+        description: "rk_is_rookie in weeks 1-4 only."
+      - name: rk_early_age
+        description: "rk_age in weeks 1-4 only."
+
+  - name: int_e4_ol_starter_week
+    description: "oline_quality helper: per team x regular-season week (weeks with a window: not week 1), the line's five starters by D5's rule (top five linemen by offensive snaps over the team's last four played games before W, int_pn_window_player) with each one's quality as of W."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [team, season, week, gsis_id]
+      - expression_is_true:
+          name: e4_ol_starter_quality_in_range
+          arguments:
+            expression: "quality_rank between 1 and 5 and career_starts >= 0 and draft_score between 0 and 3 and prev_season_share between 0 and 1.0001"
+    columns:
+      - name: career_starts
+        description: "His played regular-season games before W (any team, 2016 on) with >= 50% of the offensive snaps."
+      - name: draft_score
+        description: "1st round 3, day 2 2, day 3 1, undrafted or unknown 0."
+      - name: prev_season_share
+        description: "Last season's snaps in season-equivalents: sum of his per-game snap shares over season S-1 / that season's games per team (16 through 2020, 17 since). 0 = no snaps."
+      - name: quality_rank
+        description: "1-5 among the five by prev_season_share (ties: window snap share, gsis_id): 1 = the line's most-used lineman last season."
+      - name: out_injured
+        description: "Week W: Out / Doubtful / reserve list (D5's rule)."
+
+  - name: int_e4_player_week_oline_quality
+    description: "oline_quality: the line's starters out this week weighted by how good they are. NULL exactly where int_player_week_personnel.pn_ol_starters_out is NULL (week 1, or the week's report not out)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+      - expression_is_true:
+          name: e4_oline_quality_count_matches_d5
+          arguments:
+            expression: "pn_olq_starters_out is null or pn_olq_starters_out = coalesce(olq_check_starters_out, 0)"
+      - expression_is_true:
+          name: e4_oline_quality_week1_unknown
+          arguments:
+            expression: "week > 1 or (pn_olq_career_starts_out is null and pn_olq_best_out is null)"
+      - expression_is_true:
+          name: e4_oline_quality_consistent
+          arguments:
+            expression: "pn_olq_starters_out is null or ((pn_olq_starters_out = 0) = (pn_olq_best_out = 0) and pn_olq_best_out between 0 and 5 and pn_olq_draft_capital_out between 0 and 3 * pn_olq_starters_out and pn_olq_prev_season_share_out <= pn_olq_starters_out + 0.001)"
+    columns:
+      - name: pn_olq_starters_out
+        description: "Copy of pn_ol_starters_out (D5): the line's five starters Out / Doubtful / reserve this week."
+      - name: pn_olq_snap_share_out
+        description: "Copy of pn_ol_snap_share_out (D5): their combined snap share over the window."
+      - name: pn_olq_career_starts_out
+        description: "Sum of the out starters' career starts before the week (int_e4_ol_starter_week.career_starts)."
+      - name: pn_olq_draft_capital_out
+        description: "Sum of the out starters' draft score (1st round 3, day 2 2, day 3 1, undrafted 0)."
+      - name: pn_olq_best_out
+        description: "The quality rank of the best starter out (1 = the line's most-used lineman last season ... 5); 0 = nobody out."
+      - name: pn_olq_prev_season_share_out
+        description: "Sum of the out starters' last-season snaps in season-equivalents."
+      - name: olq_check_starters_out
+        description: "The count re-derived from int_e4_ol_starter_week (test: equals pn_olq_starters_out); not an input."
+
+  - name: int_e4_player_week_qb_x_offense
+    description: "qb_x_offense: the starting-QB quality gap (pn_qb_prev_ppg_diff, D5) and the rookie / backup flag times how good the offense is. A product is NULL when either factor is."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+      - expression_is_true:
+          name: e4_qbx_products_consistent
+          arguments:
+            expression: "(qbx_gap_x_implied is null or qbx_qb_gap is not null) and (qbx_gap_x_prev_ppg is null or qbx_prev_team_ppg is not null) and coalesce(abs(qbx_gap_x_total), 0) < 2000 and coalesce(qbx_prev_team_ppg, 20) between 5 and 45 and coalesce(qbx_prev_team_epa_play, 0) between -0.5 and 0.5 and (qbx_gap_bucket is null) = (qbx_qb_gap is null)"
+    columns:
+      - name: qbx_qb_gap
+        description: "Copy of pn_qb_prev_ppg_diff (D5): points per start of this week's projected starter minus the usual QB's. Not in the group (a factor, for hand checks)."
+      - name: qbx_prev_team_ppg
+        description: "The team's points per game over its previous regular season (dim_game final scores; one code per franchise). NULL in 2016. Not in the group."
+      - name: qbx_gap_x_implied
+        description: "pn_qb_prev_ppg_diff x implied_team_total."
+      - name: qbx_gap_x_total
+        description: "pn_qb_prev_ppg_diff x total_line."
+      - name: qbx_gap_x_prev_ppg
+        description: "pn_qb_prev_ppg_diff x qbx_prev_team_ppg."
+      - name: qbx_backup_x_implied
+        description: "pn_qb_is_rookie_or_backup x implied_team_total."
+      - name: qbx_prev_team_epa_play
+        description: "The team's EPA per play over its previous regular season (fct_team_game: (passing_epa + rushing_epa) / (attempts + sacks_suffered + carries)). NULL in 2016. Not in the group (a factor)."
+      - name: qbx_gap_x_prev_epa
+        description: "pn_qb_prev_ppg_diff x qbx_prev_team_epa_play."
+      - name: qbx_gap_bucket
+        description: "pn_qb_prev_ppg_diff in four steps: 2 = big drop (<= -6), 1 = some drop (-6..-2], 0 = like for like (-2..+2), -1 = upgrade (>= +2); NULL = gap unknown."
+        tests:
+          - accepted_values:
+              arguments:
+                values: [-1, 0, 1, 2]

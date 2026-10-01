@@ -1,4 +1,4 @@
-# Handoff — League Lab, 2026-10-01
+# Handoff — League Lab, 2026-10-02
 
 For the next agent (Claude Code or any other) picking this repo up. Read in this order:
 `AGENTS.md` (rules) → this file → `docs/PROJECT_PLAN.md` § Iteration 9 (the tasks) →
@@ -43,6 +43,16 @@ at RB/WR/TE — every other candidate group was tested through the feature harne
 per-tier calibration, the win probability on the decision cards, and the front-end spike with its decision note
 (`docs/FRONTEND_DECISION.md`). Next: Andrew's decisions on the front end and P-01; the weather backfill and
 kicker-wind re-test; the Iteration 11 operations rows.
+
+**Iteration 13 (Wave E) delivered 2026-10-02 — from a lab to a product** (Andrew's direction: a $4–5/month
+tool the fantasy population would pay for): "Our record" (Sleeper's own projections archived before kickoff
+and scored against ours — the record starts the first week the nightly pulls them; `make sleeper-projections`),
+rest-of-season projections on Player / Rankings / Trade Finder, the any-league design and spike
+(`docs/ANY_LEAGUE.md`: stat lines stored once, scoring applied per request; `/api/my-week` for any Sleeper
+league id), and four more model tests (all dropped; two v3.1 leads in STATUS). **Next: Wave F**, the customer
+app on the D7 stack (FastAPI + Svelte; Streamlit stays as the research console) — first step E3's proposal:
+reference scorings + `ops.projection_lines` / `ops.projection_ranges`; then Wave G (accounts, payments, hosting,
+one nightly writer). Andrew checks Sleeper's commercial terms before anything is sold.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a

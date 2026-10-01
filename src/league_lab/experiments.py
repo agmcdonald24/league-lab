@@ -25,6 +25,10 @@ the same lines) that defines ``GROUPS = {name: spec}``::
         },
     }
 
+A group whose table is derived from the model itself (plan E4's ``player_prior``: the production model's
+out-of-fold residuals) adds ``"build": callable(conn)`` to its spec: ``get_group`` calls it first, and it
+(re)builds the table when it is missing or stale; the table is then checked and joined like any other.
+
 The no-peek check (``no_peek_check``) runs on the group's table before anything is fitted; a group that
 fails it is refused. See ``docs/METRICS.md`` § "Feature experiments" for the rule and the checks.
 
@@ -166,6 +170,10 @@ def get_group(conn: psycopg.Connection, name: str) -> GroupSpec:
     if name not in reg:
         raise GroupError(f"unknown feature group {name!r}; registered: {sorted(reg) or 'none'} (league-lab experiment --list)")
     spec = reg[name]
+    if callable(spec.get("build")):
+        # plan E4: a group derived from the model itself (player_prior: its out-of-fold residuals) is not a dbt model;
+        # its ``build(conn)`` (re)builds the table when it is missing or stale, before the table is read or checked
+        spec["build"](conn)
     table = spec.get("table")
     cols = describe_table(conn, table) if isinstance(table, str) and table.count(".") == 1 else None
     return check_spec(name, spec, cols)

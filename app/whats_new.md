@@ -3,6 +3,19 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 2 · Rest of season, and our record
+
+- A new page, **Our record**, keeps score on us: every week we save Sleeper's own projections before kickoff,
+  count them your league's way, and after the games check whose numbers were closer and who called the
+  start/sit decisions right. It starts the first week the numbers are saved; nothing is filled in after the fact.
+
+- Every player now has a **rest of season** number: his projection added up over every week left in your league,
+  up to your final (week 16 in League of Scrubs, week 17 in the dynasty), with his bye counted as a week off, the
+  playoff weeks on their own, and where he ranks at his position in your league, rostered or free agent. It is
+  one line on his page, a list under the weekly board on Rankings, and next to every trade you try on Trade
+  Finder ("you give 232 points, you get 120"). Only this week knows the betting lines yet, so the later weeks lean
+  on his role and the schedule.
+
 ## Oct 1 · Projections that know who is playing, and ranges you can use
 
 - The projections now know who starts at quarterback and whether a player's top teammate is out: a backup

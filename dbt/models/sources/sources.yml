@@ -123,6 +123,17 @@ sources:
                   arguments:
                     to: source('raw', 'nfl_stadiums')
                     field: stadium_id
+      - name: sleeper_projections
+        description: "Plan E1, `league-lab ingest sleeper-projections` (league_lab.ingest.sleeper_projections): Sleeper's own weekly projections (api.sleeper.com/projections/nfl/<season>/<week>, QB RB WR TE K DEF), one snapshot per pull: every row of a pull shares its fetched_at, and snapshots are never overwritten. The full object is in `payload`; the projected stat line is parsed into the weekly-stats column names (NULL = not given) next to Sleeper's own pts_ppr / pts_half_ppr / pts_std. mart_projection_record uses the last snapshot fetched before each week's first kickoff. Empty until the first pull from a machine that reaches Sleeper."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [season, season_type, week, player_id, fetched_at]
+        columns:
+          - name: player_id
+            tests: [not_null]
+          - name: fetched_at
+            tests: [not_null]
 
   - name: ops
     schema: ops

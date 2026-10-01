@@ -396,6 +396,12 @@ writer, a beta. 99¢ pricing is out (card fees take a third); fixed cost ~$10–
 Order: E1–E4 in parallel (four Opus devs, one round); the PO integrates, one scoped QA pass, ship. Wave F
 follows on Andrew's go after he reads `docs/ANY_LEAGUE.md`.
 
+**Delivered 2026-10-02** (STATUS § "Wave E"): all four rows; every E4 group dropped (two leads kept for v3.1:
+the player-prior correction, rookie priors for weeks 1–4). Open: Andrew's first real Sleeper-projections pull
+(the record starts then); Sleeper's commercial terms; the reference-scorings seed and `ops.projection_lines` /
+`ops.projection_ranges` (E3's proposal) as Wave F's first engineering step; the trade market's week-18 window
+(E2: adopt the league's final); IR-aware projections (E2).
+
 ### Iteration 11 — operations for a product (Phase 3)
 
 | ID | Task | Notes |

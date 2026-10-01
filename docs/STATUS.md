@@ -2395,6 +2395,264 @@ The PO accepted D5's recommendation: `qb` at QB (5 inputs), `teammates` at RB / 
   The nightly does not run `backtest-v2`: until it is run once, Rankings' backtest shows v2.0's record (`is_current`
   falls back to the newest version that has rows).
 
+## Wave E (Iteration 13)
+
+### PO merge — Wave E, 2026-10-01/02
+
+* **Delivered** (four Opus devs in parallel, ~35 min each; one 13-minute QA pass): E1 "Our record" (loader, snapshots,
+  `mart_projection_record`, the page; the record starts the first week Andrew's nightly archives Sleeper before
+  kickoff — the sandbox cannot reach Sleeper, so no real response has been parsed yet), E2 rest of season
+  (`mart_player_ros_projection`, Player / Rankings / Trade Finder), E3 the any-league design (`docs/ANY_LEAGUE.md`)
+  and spike (`/api/my-week` for a league the database does not have; parity 111.46 / 117.02 exact), E4 model tests
+  (`rookie_prior`, `rookie_prior_early`, `oline_quality`, `qb_x_offense`, `player_prior`: **all drop** — Andrew's two
+  questions answered from the evidence in METRICS § "Wave E groups": the model already lowers teammates when a much
+  worse QB starts, slightly too little on good offenses; which lineman is out barely moves fantasy points).
+  The experiment record (seed) is now 600 rows, 25 groups.
+* **QA findings fixed by the PO**: (1) `mart_projection_record` counted a Sleeper player with no stat line as a
+  projection of 0 (it would have tilted the record our way) — a listed player now needs Sleeper's own total or a
+  priced stat; (2) the Trade Finder rest-of-season sentence contradicted the verdict on lopsided trades — it now says
+  it is the players' plain totals before the roster spot and the re-solved lineup, with the betting-line caveat;
+  (3) `docs/ANY_LEAGUE.md` overstated the range approximation ("within 0.3%" was week 4; QB top end is off 1.2–1.5
+  points, width 7%) and the "rarely more than 0.1 from a reference scoring" claim was unmeasured — corrected, and
+  the Scrubs K / DEF parity footnoted (valued from Scrubs' own fit); (4) Rankings "Yours" says when it stops at four;
+  (5) Home's guide and What's new carry "Our record"; (6) the E4 cover test names its three tables literally;
+  (7) `/api/player` mirrors the Player page's rest-of-season line and how-to (the parity tests caught the gap).
+* **Checks**: `uv run pytest -q` 821 passed; `api` 51 passed; headless 41 runs ALL OK; ruff clean; the new models
+  built on the PO's database (PASS=57).
+* **Leads the PO is NOT shipping yet** (E4): `player_prior` as a *linear correction* (RB MAE −0.054, WR −0.040, TE
+  −0.014, 3 of 3 seasons; the control — a constant shift — makes MAE worse) and `rookie_prior_early` at RB / WR for
+  weeks 1–4 (+0.005–0.008 Spearman, 3 of 3). Both need a `projections.py` change and recalibrated ranges → v3.1
+  candidates, judged on 2021–2025 before anything ships.
+
+### E4 2026-10-01 — model tests: rookie prior, offensive-line quality, QB × offense, player prior (branch `dev/E4`, clone `league_lab_e4`)
+
+Andrew: "is the model treating everything equal?" (an elite QB lost on an elite offense vs a bad QB on a bad one; a
+Pro Bowl tackle vs a backup guard out) and the PO's shortlist (a player-identity prior, rookie / cold-start priors).
+Tests only: nothing in production reads the new tables; `projections.py` is untouched.
+
+* **Built.** Four groups, five registrations (definitions, as-of rules, verdicts: METRICS § "Feature experiments" →
+  "Wave E groups"; tables: DATA_MODEL § "Feature groups of Wave E"):
+  `rookie_prior` / `rookie_prior_early` (`int_e4_player_week_rookie_prior`, 109,123 rows = the universe; draft round,
+  pick, tier, undrafted, years in, rookie, age — fixed before the season; `_early` = the same seven in weeks 1–4 only),
+  `oline_quality` (`int_e4_player_week_oline_quality` + helper `int_e4_ol_starter_week`, 27,350 starter-weeks: D5's
+  five starters each with career starts before the week, draft score, last season's snaps and a 1–5 quality rank;
+  the group = D5's count and window share + career starts / draft capital / last-season snaps out + the best one out's
+  rank), `qb_x_offense` (`int_e4_player_week_qb_x_offense`: the QB gap × implied total, × game total, × last season's
+  team points per game, × last season's EPA per play, backup × implied total, the gap in four steps),
+  `player_prior` (`ops.player_prior_oof`, built in Python — see the design). Registries in
+  `src/league_lab/feature_groups/{rookie_prior,oline_quality,qb_x_offense,player_prior}.py`.
+* **Design: player_prior is the real out-of-fold residual, not the proxy.** `player_prior.component_walk_forward` fits
+  the production component models (same filter, inputs per position, hyper-parameters, frame order) for every season
+  S = 2017–2026 on seasons < S and projects season S; the feature for (player, S, W) is the exponentially weighted mean
+  (half-life 8 games) of (actual − projected, reference scoring) over his games before (S, W). The harness gets a small
+  hook: a group spec may carry `"build": callable(conn)` that `experiments.get_group` calls first (+8 lines in
+  `experiments.py`); `player_prior.build` refits only when `ops.player_prior_oof`'s `data_key` (model version, inputs,
+  hyper-parameters, scoring, the frame's rows / points) changed: 395 CPU-s, 672 s wall, once. The per-row projections
+  are kept in `ops.player_prior_oof_pred` (99,272 rows), which reproduce the harness's cached baseline on 2023–2025 to
+  0.00e+00 (Spearman, MAE, hit rate, 24 cells) — so they also score any week subset without refitting the baseline.
+* **Verdicts** (harness 2023–2025, both leagues, `OMP_NUM_THREADS=1`): **every group drops at every position.**
+  Mean ΔSpearman (seasons better of 3) / ΔMAE:
+  `rookie_prior` QB −0.0091 (0) / +0.049, RB +0.0015 (2) / +0.003, WR +0.0013 (3) / −0.009, TE +0.0046 (3) / +0.010 — 793 s;
+  `rookie_prior_early` QB −0.0008 (1), RB +0.0011 (2) / −0.009, WR +0.0016 (3) / −0.013 (3 of 3), TE +0.0019 (3) — 602 s;
+  `oline_quality` QB −0.0047 (0) / +0.035, RB −0.0004 (1) / −0.008 (3), WR +0.0001 (2) / −0.015, TE −0.0018 (0) — 652 s;
+  `qb_x_offense` QB −0.0052 (1) / +0.032 (hurts: worse 2 of 3), RB −0.0004 (1) / −0.005, WR +0.0003 (2) / −0.013, TE −0.0031 (0) — 529 s;
+  `player_prior` QB −0.0019 (2) / +0.009, RB +0.0005 (2) / −0.000, WR +0.0017 (3) / −0.017 (2), TE −0.0047 (1) / +0.011 — 552 s.
+  No-peek: 0 refusals; largest probe excess 0.0075 (`pn_olq_best_out`, QB); `pp_asof_week` < week on all 109,123
+  rows; `oline_quality` has D5's serve-gap warning (week 4's injury report is not in the clone: publishing calendar,
+  not a peek). Hand checks: MIN 2025 week 5 (O'Neill, Jackson, Jurgens out) → 3 out, 115 career starts, draft capital
+  6, best out = rank 1 (O'Neill), 0.9865 last-season snaps = `tests/test_e4_feature_groups.py`'s fixture; Puka Nacua
+  2025 week 6 `pp_resid_ewm` 4.3290 over 33 games = the same weighted mean computed by hand in SQL from
+  `ops.player_prior_oof_pred`.
+* **Weeks 1–4** (the plan's second number for `rookie_prior`): draft capital orders RBs and WRs better early —
+  `rookie_prior` RB +0.0067 / WR +0.0054, `rookie_prior_early` RB +0.0079 / WR +0.0078, 3 of 3 seasons each; QB worse
+  (−0.018 / −0.007). It does not help rookies themselves (their weeks 1–4 MAE is flat or worse). Over a season that
+  is +0.001–0.002 Spearman: under the bar, and the 2026 season is past week 4.
+* **player_prior as a linear correction** (follow-up, `scripts/e4/player_prior_correction.py`): proj + k × the
+  player's past miss, k per position fitted on earlier seasons only → ΔMAE RB −0.054 (3 of 3 seasons), WR −0.040 (3),
+  TE −0.014 (3), QB +0.007; a constant-shift control is worse (+0.03 to +0.12). Point projection only, ranges not refit.
+* **Andrew's questions, plainly.** (1) *Elite QB on an elite offense vs bad QB on a bad offense:* the model does not
+  treat them the same — it lowers a team's receivers and backs when the starter is replaced by a worse one — but it
+  lowers them a little too little, more so on a good offense: those players finish 0.7 ± 0.3 points below their
+  projection when a much worse QB starts on a top-third offense, 0.3 ± 0.3 on a bottom-third one, ~0 when the usual
+  QB plays. That is ~6% of player-weeks; handing the model the interactions did not fix it in the walk-forward.
+  (2) *Pro Bowl tackle vs backup guard:* by snaps, starts, draft slot and years, which lineman is out barely moves
+  fantasy points, and the model's misses do not depend on it (QB +0.29 ± 0.31 with a top-two lineman out vs
+  +0.36 ± 0.13 with nobody out; WR / TE −0.04 either way; RB −0.21 ± 0.17 vs +0.10 ± 0.07, the only hint). The proxy
+  cannot see grades (PFF), pass-block win rates or contracts.
+* **For the PO: ship nothing as v3.1 from the groups.** None passes the rule. Two leads worth a proper test, in order:
+  (a) `player_prior` as a post-hoc correction at RB / WR / TE (RB clears the MAE bar 3 of 3, WR close) — needs the
+  ranges recalibrated around the corrected projection and a `projections.py` change (PO-only): a
+  `walk_forward(..., correction=...)` pass in the harness so it is judged on all six metrics, 2021–2025;
+  (b) `rookie_prior_early` at RB / WR for weeks 1–4 of 2027, re-tested on 2021–2025 with a weeks-1–4 decision.
+* **Tests.** pytest `tests/test_e4_feature_groups.py` 14 passed (twins on fixtures — draft tier / years in / age,
+  OL quality on MIN 2025 week 5, the QB products and bucket, the as-of EWM; the SQL hard-codes the twins' constants;
+  the registries validate; with the database the twins reproduce every 2025 row and `ops.player_prior_oof` from the
+  out-of-fold projections); full suite 795 passed (59.7 s); ruff clean; dbt `--select int_e4_player_week_rookie_prior+
+  int_e4_ol_starter_week+ int_e4_player_week_qb_x_offense+` PASS=16 (4 models, 12 tests).
+* **Deviations (for the PO to confirm).** `pn_olq_best_out` is 0 when nobody is out (the plan said NULL): NULL keeps
+  meaning "not known" (week 1, report not out), as everywhere else. `rk_age` is the age on September 1 (constant in
+  the season), not at the week. The first `qb_x_offense` run had four products (QB −0.0043 / +0.025, RB +0.0002,
+  WR +0.0005 / −0.006, TE −0.0023 — drop; its rows: `scratchpad/waveE/e4/e4_qb_x_offense_4col_run.csv`); the
+  recorded run adds × EPA per play and the bucket, as the plan listed. `rookie_prior_early` is an extra group (the
+  weeks 1–4 result asked for it). Two scripts under `scripts/e4/` (week subsets, the correction) — new files outside
+  the listed paths, ruff clean; move or drop them as you prefer.
+* **For the seed.** `scratchpad/waveE/e4_experiments.csv` = the 120 rows of `ops.feature_experiments` for the five
+  groups (24 each), for `dbt/seeds/feature_experiments.csv`. Nightly: nothing to add (the full build builds the three
+  dbt tables, ~15 s; `ops.player_prior_oof` is built only by `league-lab experiment player_prior`).
+
+### E2 2026-10-01 — rest of season (branch `dev/E2`, clone `league_lab_e2`)
+
+* **Mart** `mart_player_ros_projection` (`dbt/models/marts/edge/`, + `mart_player_ros_projection.yml`, 14 tests): one row
+  per league × player — Scrubs 645 (581 QB/RB/WR/TE + 32 K + 32 DEF), dynasty 581; ~1.1 MB; builds in 2.4 s. Window
+  `from_week` (lib.ui's week rule in SQL from `dim_game`, at build time: 4 in the clone) … `last_week` = **the league's
+  final** (Scrubs 16, dynasty 17: playoff start + winners-bracket rounds), byes excluded (no `dim_game` row for his team
+  = no game: every team's bye is in weeks 5–14, so every 2026 row has exactly one in the window), `ros_points`,
+  `ros_games`, `playoff_points` (weeks ≥ `dim_league_season.playoff_week_start`), ranks by position and overall within
+  the league (active NFL roster only; injured reserve keeps its total, no rank), range = weekly 80% ranges combined as
+  independent normals (sd = (p90 − p10) / 2.563, √Σ, ∓ 1.2816 sd, floored at 0 — stated as the assumption in the yml,
+  METRICS and on the pages), `weeks_json`, `bye_weeks`, `weeks_with_lines`. DEF keyed by its Sleeper id (`player_key`).
+  Betting lines verified: `mart_player_week_features.implied_team_total` is set for 581 week-4 rows and 0 rows of weeks
+  5–18, so `weeks_with_lines` = 1 everywhere.
+* **Surfaces** (`app/lib/ros.py`: the shared sentences, pure, tested): Player card — one line after the stat line
+  ("Rest of season: **232 points** over 13 games (likely 190–273), **WR4** in this league · playoffs (weeks 15–17): 54")
+  and a caption with the week-by-week values ("wk 4 18.1 · 5 18.0 · 6 bye · 7 17.7 …") and the betting-line note;
+  Rankings — **a new "Rest of season" section under the weekly board** (the board is untouched): its own position
+  switch (QB RB WR TE + K / DEF where the league has them + All = overall rank), an answer card (#1, "Yours: …"), a
+  five-column list (Rank · Player · Points · Games · Playoffs) and an expander with every column; the "Who" filter
+  applies, ranks stay the league's; Trade Finder — under Fit and Market in "Try a trade" ("Rest of season (weeks 4–17,
+  through this league's final): you give **232** points, you get **120** (−112).") and as a caption on the best-partner
+  card; "Rest of season" + "ROS rank" columns in "Market line: every number". The engine is unchanged. Every surface
+  degrades to nothing (no exception) on a copy without the mart (`missing_relations`, not `require_relations`).
+  `table.py`: 15 columns under `# ---- E2 rest of season`. How-to bullets on all three pages; WORDS.md rows.
+* **Evidence.** By hand (`waveE/e2/hand.sql`: the board's weekly rows, a `dim_game` join per week by team, no mart
+  logic): Amon-Ra St. Brown, dynasty (**Andrew's roster 12**), weeks 4–17, bye 6 → 13 games, 231.61 points, playoffs
+  53.55, sd 32.55 → 189.9–273.3 — the mart: 13 / 231.61 / 53.55 / 32.55 / 189.9–273.3; Puka Nacua, Scrubs, weeks 4–16,
+  bye 11 → 12 games, 184.66, playoffs 30.30, sd 27.02 — the mart: the same, WR1. `tests/test_ros.py` recomputes **every**
+  row in Python (window, byes, totals, playoffs, sd, p90, ranks) and checks the trade engine's `MARKET_SQL` on the same
+  weeks: equal on all 1,226 rows. Same player on the three pages (AppTest, dynasty roster 12): Player "232 points …
+  WR4", Rankings "Yours: #4 Amon-Ra St. Brown 232", Trade Finder "you give 232" and ROS rank "WR4". Edge cases: a
+  kicker (McLaughlin, Scrubs: "97 points over 12 games … K16"), injured reserve (Jaxson Dart, Scrubs: 211 points, "not
+  ranked (on injured reserve)"). `uv run pytest -q` 790 passed (9 new in `tests/test_ros.py`); ruff clean; `test_app_guards` passes; headless check
+  (`apptest_e2.py`, 39 runs, both leagues) ALL OK, 0 exceptions. Screenshots 390 / 1300 px:
+  `scratchpad/waveE/e2/{player_dynasty,rankings_scrubs,rankings_dynasty,trade_dynasty}_{390,1300}.png`.
+* **Decisions for the PO.** (1) The window ends at **the league's final**, not week 18: weeks after it count for nobody
+  in the league; the plan's example said "playoffs (weeks 15–17)" — Scrubs' playoffs are 15–16. (2) The trade engine's
+  market (`trades.MARKET_SQL`, "Season pts") still runs to week 18: +14% points in Scrubs, +7% in the dynasty over what
+  the league plays; I left it (no engine change) and labelled both; suggest the market adopt `last_week` (one `between`
+  in `MARKET_SQL` / `REPLACEMENT_SQL`). (3) Ranks exclude players not on an active NFL roster (IR, inactive): their
+  projections run full (Dart 211, Mason 111) because the model does not know IR — the projection itself should, for
+  weeks inside a known IR stint (PO-owned `projections.py`). (4) The range is centred on the projection (not on the
+  quantiles' median) and is the narrowest honest one: its coverage is not measured (no per-row walk-forward output in
+  the clone) — measure on 2024–25 and inflate by position if it under-covers. (5) `metric_registry.csv` (seeds are out
+  of bounds): add `ros_points` ros1.0 (numerator Σ proj_points over the league's remaining weeks with a game, grain
+  league × player, status active) and `ros_range` ros1.0 (independence assumption).
+* **Makefile** `project`: `mart_player_ros_projection` appended to the `--select` line (it is already covered by
+  `mart_player_week_projections+`; `scripts/nightly.sh` `projection-marts` needs no change for the same reason — add it
+  for symmetry if you like). The hosted sync picks it up (the pages name `analytics.mart_player_ros_projection`).
+
+### E1 2026-10-01 — "Our record": League Lab against Sleeper's own projections (branch `dev/E1`, clone `league_lab_e1`)
+
+**What.** `league-lab ingest sleeper-projections` (`src/league_lab/ingest/sleeper_projections.py`) pulls Sleeper's
+projections for the next week to kick off into `raw.sleeper_projections` (full payload + the stat line parsed into
+the weekly-stats column names; one snapshot per pull, never overwritten; archive
+`data/raw/sleeper/projections/<season>/<week>_<stamp>.json.gz`; `--offline` replays it; host configurable as
+`LEAGUE_LAB_SLEEPER_PROJECTIONS_URL`; DDL in `db migrate`). `mart_projection_record` holds our kickoff board vs
+Sleeper's last pre-kickoff snapshot (priced in each league's scoring with `league_points`) vs the actual points,
+per league × season × week × position (QB–TE: Spearman, MAE, top-N hit rate on the players both projected; `ALL`:
+the cards' start/sit calls — who called it right) plus season-to-date rows. Page `app/pages/13_Record.py` "Our
+record"; one paragraph + link in Rankings' "The model" after "How it was graded". Nightly: `replay-projections`
+(after `replay-weather`), `fetch-projections` (soft, before `save-record`, skipped with `NIGHTLY_SLEEPER_OFFLINE=1`),
+`mart_projection_record` on the projection-marts `--select` (Makefile `project` too; new target
+`make sleeper-projections`). Definitions: METRICS § "Projection record".
+
+**Evidence (sandbox: Sleeper unreachable, every Sleeper number below is a FIXTURE).**
+* Pricing (acceptance): Sleeper's line priced with League of Scrubs' settings (standard half PPR) reproduces the
+  fixture's `pts_half_ppr` on all 29 priced players with a worst difference of 0.00 (≤ 0.05 required); with rec = 1 /
+  0 it reproduces `pts_ppr` / `pts_std` the same way; worked by hand: Josh Allen 25.50 (Scrubs), 31.575 (dynasty);
+  Will Reichard 9.1. The fixture's `pts_*` are computed from Sleeper's own keys, never through our mapping.
+* Loader round trip (`tests/test_sleeper_projections.py`, 18 tests): pull → one snapshot file + sidecar, 31 rows
+  (32 objects, one without `player_id`); `--offline` on a fresh store rebuilds identical rows; replaying again =
+  `skipped_unchanged`; an unchanged pull adds no file; a changed pull is a second snapshot (62 rows); a bad / empty
+  / 404 answer fails and leaves no file; a hand-curled `.json` replays with its name's stamp as the fetch time.
+* In `league_lab_e1`: 5 fixture snapshots replayed through the CLI (weeks 2 and 4; week 2 has one AFTER kickoff,
+  which the record ignores: `sleeper_fetched_at` = 2026-09-17 12:00 UTC); **to show a scored week the clone's
+  week-2 and week-4 boards were relabelled `kickoff` (they are `refit` / live in the PO's database) — clone only**.
+  The mart: 30 rows; hand checks (`scratchpad/waveE/e1/check_record.py`): SQL `league_points` = Python
+  `price_line` on 2,136 priced rows (max diff 0.0000); Scrubs week 2 WR recomputed in pandas (n 137, Spearman 0.555 /
+  0.533, MAE 4.18 / 4.33, hit@36 0.500 / 0.472) = the mart; the SQL's start/sit pairs = `cards.decisions()` on the
+  same lineup rows, 132 of 132. Fixture record (meaningless numbers): Scrubs week 2, 18 of 29 calls right vs 12 for
+  "Sleeper", MAE 4.07 vs 4.19; dynasty 15 of 33 vs 15, 4.91 vs 5.00; week 4 `in_play`.
+* dbt: `mart_projection_record` + 15 tests PASS (incl. `n_both ≥ 1`, `1 ≤ n_players ≤ n_both` on scored rows, calls
+  add up, snapshots precede kickoff); `uv run pytest -q` 799 passed; ruff clean; shellcheck clean; headless check
+  41 runs ALL OK (every page, both leagues); the page's three states checked (empty, week in play only, scored);
+  screenshots 390 / 1300 px in `scratchpad/waveE/e1/shots/`.
+
+**Open.** No real Sleeper answer has been seen: the parser follows the documented shape and keeps everything in
+`payload`; the first pull on the Mac is the real test (commands in the hand-back). K is priced, DEF is not (pairs
+with a DEF are counted apart). The record starts the first week Andrew's nightly pulls Sleeper before kickoff.
+
+### E3 2026-10-01 — any league: the design and a working spike (branch `dev/E3`, clone `league_lab_e3`)
+
+Design for Andrew and the PO: `docs/ANY_LEAGUE.md`. Nothing in `app/`, `dbt/`, the seeds, `projections.py`,
+`lineup.py`, `decisions.py` or `cards.py` changed; the spike reads them.
+
+* **Built.** `src/league_lab/anyleague.py`: a read-only Sleeper client (league / rosters / users / the player
+  directory, TTL cache; `LEAGUE_LAB_SLEEPER_FIXTURES=<dir>` reads fixtures; ids must be digits), `load_board` (the
+  week's NFL-wide stat lines from one league's `ops.projections` rows + every fitted league's ranges + status from
+  `mart_player_week_projections` + K / DEF from `ops.projections` × `mart_kd_week`), `price_lines`
+  (`scoring.compute_points`, bonuses included), `choose_reference` + `approximate_ranges` (the ratio method), and
+  `lineup_rows`, which assembles a `lineup.LineupInputs` for one roster-week and runs **`lineup.build`** (the
+  nightly's own code: IR / taxi / bye / Out / Doubtful / locks / unvalued) and returns the frame
+  `cards.lineup_rows` returns. `write_fixtures` / `python -m league_lab.anyleague fixtures <dir> <ids>` builds the
+  fixtures from `raw.sleeper_*` payloads trimmed to the fields read (no avatars, nicknames, chat; managers and team
+  names pseudonymised as "Manager n" / "Team n"):
+  `api/tests/fixtures/sleeper/` (120 KB: both leagues, 312 rostered players). API: `ondemand.py` (same JSON as
+  `myweek.my_week` + `source`, `on_demand`), `/api/my-week` falls through when the league is not a current league of
+  the database (`source=sleeper` forces it), `myweek.cards_from_rows` (the card extraction, shared; cards gain
+  `p_win`), 404 for a league Sleeper does not have, 502 when Sleeper does not answer. `api/league_lab_api/__init__.py`
+  puts `src/` on the path; **the Dockerfile now copies `src/league_lab`** (since D6 `cards.py` imports
+  `league_lab.decisions`, which the image did not contain — not verified here: no Docker daemon).
+* **Parity (acceptance)**, week 4, the mart's `as_of` (2026-10-01 19:26 UTC), each league served as if it were new
+  (ranges from the other league): dynasty roster 12 — lineup value **111.46 = 111.46**; QB Nix 19.78, RB1
+  Croskey-Merritt 9.70, RB2 Wilson 8.68, WR1 St. Brown 18.13, WR2 Washington 14.60, TE Kittle 10.36, FLEX Boston
+  11.13, SUPER_FLEX Rodgers 19.08, margins 1.01 / 1.48 / 0.46 / 7.90 / 4.37 / 0.84 / 0.90 / 0.31 — all identical;
+  13 bench in the same order, 4 can't play (taxi ×3, IR) with the same reasons. Scrubs roster 2 — **117.02 =
+  117.02**, 10 slots identical incl. K McLaughlin 8.07 and DEF KC 7.16 (identical kicking / defense keys → the
+  fitted kd1.0 values — i.e. Scrubs' own K / DEF fit, since the dynasty has none; QA: a new league with different
+  K / DEF keys gets them unvalued), 5 bench, 2 IR. Pricing: `compute_points` on the stat line = `ops.projections.proj_points`
+  for all 581 week-4 players in both leagues (max gap < 1e-9; no rounding, bonus or stat difference); 0 stat-line
+  mismatches between the leagues. Unmapped players on both rosters: 0. Scoring keys the projection cannot price:
+  dynasty `not_projected` = long-TD ×3, 2-pt ×3, `fum_rec_td`, `st_td` (0 in the nightly too); Scrubs 2-pt ×3,
+  `fum_rec_td`, `st_td`; unmapped: none (DEF keys count only in a league that starts a DEF).
+* **Range approximation (the open modeling piece).** `p_q(new) = proj(new) + (p_q(ref) − proj(ref)) × proj(new) /
+  proj(ref)`, the reference = the fitted scoring nearest by median |log price ratio|. Weeks 4–18 (8,134 player-weeks),
+  each league from the other, mean abs gap P10 / P25 / P50 / P75 / P90: dynasty 0.23 / 0.26 / 0.32 / 0.59 / 0.84,
+  Scrubs 0.19 / 0.22 / 0.26 / 0.49 / 0.69 points; 80% width 13.96 → 13.78 and 11.49 → 11.63. 80% coverage on weeks
+  1–3 (715 played rows each): fitted 79.2% → rebuilt 78.0% (dynasty), 78.2% → 78.0% (Scrubs); unscaled offsets 59.9%
+  / 88.5%; one scale per position slightly worse (P90 gap 0.87 / 0.72). Error vs distance (P90 gap / 80% width):
+  |log ratio| ≤ 0.1 3.5%, 0.1–0.2 5.5%, 0.2–0.3 7.0%. Andrew's rosters, week 4: dynasty 12 (25 players) P10 0.52 /
+  P90 1.09; Scrubs 2 (16) 0.65 / 0.98; card probabilities within 0.1 of the database path (tested).
+* **Latency** (`ondemand.my_week`, local database, fixtures — no Sleeper network): cold 259–331 ms (board query
+  34–91 ms, cards 67–69 ms, pricing 11–18, ranges 11–15, inputs 14–19, solve 1.6–2.7, frame 20–21), warm 141–158 ms
+  (cards 61–72 ms — the 3 × 40,000-draw win probability — is the largest part; board 11–15 from the cache).
+* **Checks.** `cd api && uv run pytest -q`: **51 passed, 2 skipped** (37 + 14 new in `tests/test_anyleague.py`;
+  `test_myweek.py::test_unknown_team_and_league` now sets the fixture directory: an unknown league is looked up on
+  Sleeper, and league "1" is still a 404). `uv run ruff check src tests app api/league_lab_api api/tests` clean; `cd
+  api && uv run ruff check .` clean. Scratch: `waveE/e3/measure_ranges.py` (the range table), `try_ondemand.py`.
+* **For the PO.** (1) Range method: ratio scaling from the nearest of a few *reference scorings* fitted nightly
+  (proposed seed `reference_scorings.csv`: Scrubs, dynasty, full PPR 4-pt, standard, TE premium). (2)
+  `projections.py`: fit `fit_position` / `predict_position` on that fixed dict instead of the env's leagues; write
+  `ops.projection_lines` (one row per player-week) + `ops.projection_ranges` (per reference scoring); `kdef.py`: keep
+  `predict_kd`'s league-free lines (`ops.kd_lines`). (3) Wave F order: those outputs → username league picker +
+  on-demand My Week + the opponent (matchups call) → the player card in the user's scoring → waiver wire on request →
+  Wave G (accounts, payments, shared cache, rate limit) → Trade Finder.
+* **Not verified / open.** No Sleeper from the sandbox: the live client is untested against the real host (Andrew:
+  `cd api && uv run uvicorn league_lab_api.main:app --port 8581`, then open
+  `http://localhost:8581/api/my-week?league=<any Sleeper league id>&team=<roster id>`; the first call fetches the
+  ~15 MB player directory). The opponent, the league rank and Sleeper's weekly lineup lists are not on the on-demand
+  path; a K / DEF in a scoring no fitted league shares is unvalued; Sleeper's terms for commercial use are Andrew's
+  to check. No `--select` appended; no seeds or metrics touched.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

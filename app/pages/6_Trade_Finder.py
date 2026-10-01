@@ -13,8 +13,9 @@ from datetime import UTC, date, datetime
 
 import pandas as pd
 import streamlit as st
+from lib import ros as ROS
 from lib.cards import slot_label
-from lib.db import query, require_relations
+from lib.db import missing_relations, query, require_relations
 from lib.table import Col, detail_level, howto, show
 from lib.ui import freshness_banner, league_seasons, perspective, player_link, setup
 
@@ -75,6 +76,12 @@ points = dict(zip(market_rows["player_key"], market_rows["season_points"], stric
 repl_rows = query(T.REPLACEMENT_SQL, (league_id, season, this_week, league_id))
 replacement = dict(zip(repl_rows["position"], repl_rows["replacement"], strict=True)) if not repl_rows.empty else {}
 repl_name = dict(zip(repl_rows["position"], repl_rows["replacement_name"], strict=True)) if not repl_rows.empty else {}
+# plan E2: rest of season in this league (analytics.mart_player_ros_projection, the row the Player card and Rankings read),
+# shown next to the engine's numbers, never fed to it. Weeks: from this week to the league's final (the market above
+# counts every NFL week to 18). Empty on a copy published before the mart existed.
+ros_rows = (pd.DataFrame() if missing_relations((ROS.RELATION,)) else
+            query(f"select {ROS.ROS_COLUMNS} from analytics.mart_player_ros_projection where league_id = %s", (league_id,)))
+ros_window = ROS.weeks_span(ros_rows["from_week"].iloc[0], ros_rows["last_week"].iloc[0]) if not ros_rows.empty else None
 
 data_key = (len(horizon), round(float(horizon["player_value"].fillna(0).sum()), 2), round(float(horizon["lineup_margin"].fillna(0).sum()), 2),
             len(avail), round(float(avail["diff_per_game"].sum()), 3), len(points), round(float(sum(points.values())), 2),
@@ -218,6 +225,31 @@ def market_caption(pk: T.Package) -> str:
     return f"Market (season points above the best free agent at the position): you give {out}, you get {inc}{extra}."
 
 
+def ros_key(pid) -> str:
+    """The rest-of-season row's key: his gsis id; a team defense's Sleeper id."""
+    return str(gsis(pid) or pid)
+
+
+def ros_line(give_ids, get_ids) -> str | None:
+    """'Rest of season (weeks 4–16, through this league's final): you give **142** points, you get **171** (+29).'"""
+    if ros_rows.empty or ros_window is None:
+        return None
+    out, _, miss_o = ROS.package_points(ros_rows, [ros_key(x) for x in give_ids])
+    inc, _, miss_i = ROS.package_points(ros_rows, [ros_key(x) for x in get_ids])
+    by_key = {ros_key(x): x for x in [*give_ids, *get_ids]}
+    return ROS.package_sentence(out, inc, ros_window, [name(by_key[k]) for k in [*miss_o, *miss_i]])
+
+
+def ros_of(pid, col):
+    """One rest-of-season value for a player (None: no row); `pos_rank` = 'RB8' (None when he is not ranked)."""
+    if ros_rows.empty:
+        return None
+    hit = ros_rows[ros_rows["player_key"] == ros_key(pid)]
+    if hit.empty:
+        return None
+    return ROS.rank_label(hit.iloc[0]) if col == "pos_rank" else hit.iloc[0][col]
+
+
 # ------------------------------------------------------------- the answer: three cards
 with st.container(border=True):
     if ranked:
@@ -226,6 +258,8 @@ with st.container(border=True):
                     f"**{pk.my_week:+.1f}** this week and **{pk.my_horizon:+.1f}** over {span_words}, them "
                     f"**{pk.their_week:+.1f}** and **{pk.their_horizon:+.1f}**.")
         st.caption(market_caption(pk))
+        if (rl := ros_line(pk.give, pk.get)) is not None:
+            st.caption(rl.replace("**", ""))
         if st.button("Try this trade", key="tf_card_0", width="content"):
             ss["tf_pending"] = (ranked[0].roster_id, list(pk.give), list(pk.get))
             st.toast("Loaded in \"Try a trade\" below.")
@@ -485,6 +519,8 @@ else:
         st.markdown(f"**You give {names(give)}; you get {names(get)}.** {T.verdict(trade, span_words)}")
         st.markdown(T.fit_line(trade, span_words))
         st.markdown(T.fairness_line(trade))
+        if (rl := ros_line(give, get)) is not None:
+            st.markdown(rl)
         # league rank before / after (mart_league_roster_rankings, the two rosters' values replaced)
         rk = query("""select roster_id, measure, value from analytics.mart_league_roster_rankings
                       where league_id = %s and measure in ('lineup_value', 'horizon_value', 'bench_value')""", (league_id,))
@@ -523,7 +559,8 @@ else:
         "position_rank_points": ml_get(x, "position_rank_points"), "games_played": ml_get(x, "games_played"),
         "trade_age": age_on(ml_get(x, "birth_date"), today),
         "nfl_year": (season - int(ml_get(x, "rookie_season")) + 1) if ml_get(x, "rookie_season") is not None else None,
-        "trade_value": week_value(x)[0]} for x in moving_ids])
+        "trade_value": week_value(x)[0],
+        "ros_points": ROS.whole(ros_of(x, "ros_points")), "pos_rank": ros_of(x, "pos_rank")} for x in moving_ids])
     ov_market = {"moving_to": Col("Goes to"),
                  "market_price": Col("Market", "int", "Season points above the best free agent at his position (rest-of-season "
                                                        "projection in this league's scoring, minus the best free agent's): what the "
@@ -535,7 +572,12 @@ else:
                  "position_rank_points": Col("Pos rank", "int", "Rank at his position by season points so far, this league's scoring"),
                  "games_played": Col("Games", "int"),
                  "trade_age": Col("Age", "int"), "nfl_year": Col("NFL yr", "int", "His NFL season: 1 = rookie"),
-                 "trade_value": Col(f"Wk {this_week}", "num2", f"His projection in week {this_week} (blank: he can't play that week)")}
+                 "trade_value": Col(f"Wk {this_week}", "num2", f"His projection in week {this_week} (blank: he can't play that week)"),
+                 "ros_points": Col("Rest of season", "int", f"His projected points over {ros_window or 'the weeks left'}, up to this "
+                                                             "league's final, byes excluded (Season pts counts every NFL week to 18). "
+                                                             "Blank: no projection yet"),
+                 "pos_rank": Col("ROS rank", help="His rank at the position for the rest of the season in this league, rostered or "
+                                                  "free agent: the rank the Player card and Rankings show")}
     show(moving, ["player_name", "moving_to", "market_price", "ppg_std", "expected_per_game"], overrides=ov_market,
          widths=fit({"player_name": 146, "moving_to": 64, "market_price": 52, "ppg_std": 46, "expected_per_game": 46}))
 
@@ -553,8 +595,9 @@ else:
                 st.caption(line)
 
     with st.expander("Market line: every number", expanded=False):
-        show(moving, ["player_name", "moving_to", "market_price", "season_points", "ppg_std", "expected_per_game",
-                      "position_rank_points", "games_played", "trade_age", "nfl_year", "trade_value"], overrides=ov_market)
+        show(moving, ["player_name", "moving_to", "market_price", "season_points", "ros_points", "pos_rank", "ppg_std",
+                      "expected_per_game", "position_rank_points", "games_played", "trade_age", "nfl_year", "trade_value"],
+             overrides=ov_market)
         repl = ", ".join(f"{p} {T.whole(v)} ({repl_name.get(p, '')})" for p, v in sorted(replacement.items()))
         st.caption(f"The best free agent's season points by position, the bar the market column is measured above: {repl}."
                    if repl else "No free agent has a projection yet: the market column is the season points.")
@@ -581,6 +624,9 @@ howto(
     "verdict reads both. It is a rough guide: it knows nothing of draft picks, next season or what the other manager believes.",
     "**Roster size**: if a team gets more players than it gives, it has to cut someone: the player it would miss least, and that "
     "loss is in the numbers. If it gets fewer, it opens a spot, and the best free agent to fill it is named.",
+    "**Rest of season** is the plain total: each player's projected points added up over the weeks left in your league's "
+    "season, up to its final (a bye is a week with no game). It is the same number and rank the Player card and Rankings "
+    "show. The market adds up the same projections to week 18 and subtracts a free agent; the lineups look at four weeks.",
     "Copy the page's link to share a trade: the link opens the same trade.",
     title="How to read this",
 )

@@ -5,9 +5,12 @@ Phone first (plan U-13): one compact filter row (position, week, the rare ones i
 a one-line answer, the board as five columns (rank, player, opponent, projection, floor–ceiling), the full board
 in an expander. The default week is lib.ui.current_week — the week My Week shows."""
 
+from urllib.parse import urlencode
+
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+from lib import ros as ROS
 from lib.charts import SURFACE, bar_chart, base_layout
 from lib.db import missing_relations, query, require_relations
 from lib.table import Col, howto, not_healthy, show
@@ -33,6 +36,9 @@ howto(
     "**How much to trust it**: the sections below grade the projections on weeks they had not seen. They get the order right more "
     "often than not, and still miss plenty. \"The model\" at the bottom says what it is and what it leans on.",
     "**Out and Doubtful** players are left off. **Questionable** players stay on with a flag: check the news before kickoff.",
+    "**Rest of season** (under the weekly board) adds up every week left in your league's season, up to its final: the list "
+    "for trades and waivers. A bye is a week with no game. *Likely* is where 8 seasons in 10 would land if every week were "
+    "its own roll of the dice; a role change or an injury moves the weeks together, so the real range is wider.",
     title="How to use this page",
 )
 
@@ -291,6 +297,82 @@ if roster_id is not None and scope != "team":
                      + (["points_actual", "actual_rank_pos"] if played_week else []),
                      phone_cols=["rank_pos", "player_name", "opponent", "proj_points", "xppg_l5"])
 
+# ---------------------------------------------------------------- rest of season (plan E2, Wave E)
+# A section of its own under the weekly board (the board above is untouched): every player's projection added up over
+# the weeks left in this league's season (analytics.mart_player_ros_projection, the row the Player card and Trade Finder
+# read, so a rank here is the rank there). Its own position switch (K and DEF where the league starts them, and "All"
+# for the overall rank); the "Who" filter above applies, the ranks stay the league's.
+st.subheader("Rest of season", anchor="rest-of-season")
+if missing_relations((ROS.RELATION,)):
+    st.caption("Rest-of-season totals are not on this copy yet: they arrive with the next nightly update.")
+else:
+    ros_all = query(f"select {ROS.ROS_COLUMNS} from analytics.mart_player_ros_projection where league_id = %s", (league_id,))
+    if ros_all.empty:
+        st.caption(f"No weeks left in {league_name}'s season: rest-of-season totals come back with next season's schedule.")
+    else:
+        ros_positions = [p for p in ("QB", "RB", "WR", "TE", "K", "DEF") if p in set(ros_all["position"])] + ["All"]
+        ros_pos = st.segmented_control("Position", ros_positions, key="rk_ros_position", width="content",
+                                       default=position if position in ros_positions else ros_positions[0]) or position
+        owners = query("""select coalesce(gsis_id, sleeper_id) as player_key, rostered_by_roster_id, rostered_by_team, is_free_agent
+                          from analytics.mart_player_availability where league_id = %s""", (league_id,))
+        ros = ros_all.merge(owners.drop_duplicates("player_key"), on="player_key", how="left")
+        if scope == "fa":
+            ros = ros[ros["is_free_agent"].fillna(True).astype(bool)]
+        elif scope == "rostered":
+            ros = ros[ros["rostered_by_roster_id"].notna()]
+        elif scope == "team" and roster_id is not None:
+            ros = ros[ros["rostered_by_roster_id"] == roster_id]
+        rank_col = "ros_rank_all" if ros_pos == "All" else "ros_rank_pos"
+        ros_view = ros if ros_pos == "All" else ros[ros["position"] == ros_pos]
+        ros_ranked = ros_view[ros_view[rank_col].notna()].sort_values(rank_col).head(int(top_n)).copy()
+        r0 = ros_all.iloc[0]
+        window = ROS.weeks_span(r0["from_week"], r0["last_week"])
+        po_window = ROS.playoff_window(r0)
+        what = "overall" if ros_pos == "All" else ros_pos
+        with st.container(border=True):
+            if ros_ranked.empty:
+                st.markdown(f"**Nobody to rank {what} with these filters.**")
+            else:
+                t = ros_ranked.iloc[0]
+                rng = ROS.range_words(t)
+                po = f" · playoffs ({po_window}): {ROS.whole(t['playoff_points'])}" if po_window else ""
+                label = f"{t['player_name']} ({t['position']})" if ros_pos == "All" else t["player_name"]
+                st.markdown(f"**#1 {what} for the rest of the season: {label}, {ROS.whole(t['ros_points'])} points over "
+                            f"{int(t['ros_games'])} games**" + (f" (likely {rng})" if rng else "") + f"{po}.")
+                if roster_id is not None and scope != "team":
+                    mine_all = ros_view[(ros_view["rostered_by_roster_id"] == roster_id) & ros_view[rank_col].notna()].sort_values(rank_col)
+                    mine_ros = mine_all.head(4)
+                    if not mine_ros.empty:
+                        more = f" … and {len(mine_all) - 4} more in the table" if len(mine_all) > 4 else ""
+                        st.markdown("Yours: " + " · ".join(f"#{int(r[rank_col])} {r['player_name']} {ROS.whole(r['ros_points'])}"
+                                                            for _, r in mine_ros.iterrows()) + f"{more}.")
+            st.caption(f"{window.capitalize()} in {league_name} scoring, up to the league's final. A bye is a week with no game: "
+                       "he plays one fewer. Ranked among everyone at the position, rostered or free agent. "
+                       + ROS.lines_note(r0).replace("his usage", "usage"))
+        if not ros_ranked.empty:
+            ros_ranked["ros_rank"] = ros_ranked[rank_col]
+            ros_ranked["player"] = (ros_ranked["player_name"] + " (" + ros_ranked["position"] + ")") if ros_pos == "All" else ros_ranked["player_name"]
+            ros_ranked["ros_range"] = ros_ranked.apply(lambda r: ROS.range_words(r) or "", axis=1)
+            ros_ranked["ros_byes"] = ros_ranked["bye_weeks"].map(lambda b: ", ".join(str(int(w)) for w in (b or [])))
+            ros_ranked["pos_rank"] = ros_ranked.apply(lambda r: ROS.rank_label(r) or "", axis=1)
+            # whole points, the numbers the card above shows
+            ros_ranked["ros_pts"] = ros_ranked["ros_points"].map(ROS.whole)
+            ros_ranked["playoff_pts"] = ros_ranked["playoff_points"].map(ROS.whole)
+            ros_cols = ["ros_rank", "player", "ros_pts", "ros_games", "playoff_pts"]
+            show(ros_ranked, ros_cols, height=min(80 + 36 * len(ros_ranked), 600), phone_cols=ros_cols,
+                 links={"player": ("gsis_id", "player_name")}, pin=True,
+                 widths={"ros_rank": 40, "player": 120, "ros_pts": 56, "ros_games": 48, "playoff_pts": 60})
+            with st.expander("Rest of season: every column"):
+                show(ros_ranked, ["ros_rank", "player", "team", "rostered_by_team", "ros_pts", "ros_range", "ros_points_per_game",
+                                  "ros_games", "ros_byes", "playoff_pts", "playoff_games", "pos_rank", "ros_rank_all"],
+                     phone_cols=["player", "ros_pts", "ros_range", "playoff_pts", "rostered_by_team"],
+                     links={"player": ("gsis_id", "player_name")})
+        unranked = ros_view[ros_view[rank_col].isna()]
+        if not unranked.empty:
+            st.caption("Not ranked (on injured reserve or not on an active NFL roster; the total assumes he plays every "
+                       "game): " + ", ".join(unranked.sort_values("ros_points", ascending=False)["player_name"].head(12))
+                       + (" …" if len(unranked) > 12 else ""))
+
 # ---------------------------------------------------------------- drift (M-06): this season's played weeks vs the backtest
 if model == "v2":
     st.subheader("How the model is doing this season")
@@ -453,6 +535,15 @@ if model == "v2":
             "- **What it does not know**: injury news after the morning refresh, the weather, how the game actually goes (a "
             "blowout sends starters to the bench early), and coaching decisions made during the week. Check the news before kickoff.\n"
             "- **Refreshed** every morning with the newest games; its recipe stays the same all season."
+        )
+        # plan E1: the week-by-week record against Sleeper's own projections lives on its own page (a relative
+        # URL like the player links: st.page_link from a page resolves against the entrypoint, not this file)
+        record_url = "Record?" + urlencode({"league": league_id, **({"team": str(roster_id)} if roster_id is not None else {})})
+        st.markdown(
+            "**Against the free numbers.** Every week we also save Sleeper's own projections (the ones in the Sleeper app) "
+            "before the first kickoff, count them your league's way, and check after the games whose were closer and who "
+            "called the start/sit decisions right. That record, from the first week Sleeper's numbers were saved, is on "
+            f"[Our record]({record_url})."
         )
         # projection v3 (plan D5, Wave D): what was added, the evidence, what was tried and dropped
         st.markdown(

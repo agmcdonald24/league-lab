@@ -2,6 +2,33 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave E
+
+- **Model tests (E4), no production change.** Four feature groups through the harness, 2023–2025, both leagues —
+  `rookie_prior` (+ `rookie_prior_early`), `oline_quality`, `qb_x_offense`, `player_prior` (the model's own out-of-fold
+  miss on the player, `ops.player_prior_oof`, built through a new `build` hook in `experiments.get_group`): all drop at
+  every position. Draft capital orders RBs / WRs better in weeks 1–4 only (+0.005–0.008, 3 of 3 seasons); the player's
+  past miss works as a linear correction (RB MAE −0.054, WR −0.040, 3 of 3) but not as an input — the PO's v3.1 leads.
+  New tables `int_e4_*` (dbt) and `ops.player_prior_oof` / `_pred`; METRICS § "Feature experiments" → "Wave E groups".
+
+- **Rest of season (E2).** `mart_player_ros_projection`: one row per league × player (1,226 rows, ~1.1 MB) — the
+  board's `proj_points` summed from `current_week` to the league's final (Scrubs 16, dynasty 17: winners-bracket
+  rounds), byes excluded, the playoff subtotal, ranks by position and overall in the league (active NFL roster only),
+  an 80% range from the weekly ranges combined as independent normals (stated as the assumption: it understates), the
+  week-by-week values. Player card (one line + the week-by-week list), Rankings ("Rest of season" section under the
+  weekly board, own position switch incl. K / DEF / All), Trade Finder (the package's totals next to fit and market;
+  "Rest of season" and "ROS rank" columns in the market expander). Same totals as the trade engine's market on the same
+  weeks (all rows); the market runs to week 18. `app/lib/ros.py`, `tests/test_ros.py`, METRICS § Rest of season.
+
+- **Our record (E1).** `league-lab ingest sleeper-projections` saves Sleeper's own weekly projections as snapshots
+  (`raw.sleeper_projections`, archive `data/raw/sleeper/projections/`, nightly `fetch-projections` /
+  `replay-projections`); `mart_projection_record` holds the board frozen at kickoff against Sleeper's last
+  pre-kickoff snapshot, priced in each league's scoring, and the actual points (Spearman, MAE, top-N hits on the
+  players both projected; the cards' start/sit calls: who called it right), week by week and season to date; new
+  page "Our record", linked from Rankings. Starts the first week Sleeper is pulled before kickoff.
+
+- **Any league (E3, design + spike).** `docs/ANY_LEAGUE.md`: stat lines stored once NFL-wide, a league's scoring applied per request, lineups solved per request, ranges from the nearest fitted scoring scaled by the price ratio (measured on the two leagues, each rebuilt from the other: mean gap P10 0.19–0.23, P90 0.69–0.84 points; 80% coverage 78.0% vs 79.2% / 78.2% fitted). `src/league_lab/anyleague.py` + `api/league_lab_api/ondemand.py`: `/api/my-week` serves a Sleeper league the database does not have (fixture mode `LEAGUE_LAB_SLEEPER_FIXTURES`); for the two known leagues it reproduces the nightly's lineup exactly (111.46 / 117.02, same slots, values, margins, bench), ~150 ms warm / ~300 ms cold. The API image now carries `src/league_lab` (the cards needed it since D6).
+
 ## 2026-10-01 — Projection v3 and the decision ranges
 
 - **Projection v3.0 (D5 + the v3 ship).** Per-position inputs, `projections.FEATURES_BY_POSITION`: QB = v2's inputs + 5

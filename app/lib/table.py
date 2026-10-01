@@ -318,6 +318,36 @@ COLUMNS: dict[str, Col] = {
     "upside_if_holds": C("If it holds", "num1", "What if the bigger role holds: his projection this week with his last three games at the new level, in this league's scoring. A what-if, not a forecast"),
     "upside_gain": C("Lineup gain if it holds", "signed1", "What claiming him adds to your best lineup over the next four weeks if the bigger role holds (the drop counted)"),
     "upside_drop": C("Drop", help="The player your lineup misses least over the next four weeks. Blank = an open roster spot"),
+    # ---- E2 rest of season (analytics.mart_player_ros_projection: Player card, Rankings, Trade Finder)
+    "ros_rank": C("Rank", "int", "Rank for the rest of the season among every player at the position in this league (overall under All), rostered or free agent"),
+    "ros_rank_pos": C("Pos rank", "int", "Rank at his position for the rest of the season in this league, rostered or free agent"),
+    "ros_rank_all": C("Overall", "int", "Rank among every player in this league for the rest of the season, all positions"),
+    "pos_rank": C("Pos rank", help="Rank at his position for the rest of the season in this league (RB8 = the eighth running back)"),
+    "ros_points": C("Rest of season", "num1", "His projected points added up over every week left in this league's season, up to its final, in this league's scoring. A bye counts no game"),
+    "ros_points_per_game": C("Per game", "num1", "Rest-of-season points divided by the games left"),
+    "ros_games": C("Games", "int", "Games left for him in this league's season: one fewer when his bye is still ahead"),
+    "ros_range": C("Likely", help="Where 8 seasons in 10 would land if every week were its own roll of the dice. A role change or an injury moves the weeks together, so the real range is wider"),
+    "ros_p10": C("Likely from", "num1", "The low end of the rest-of-season range (1 in 10 lands below it, weeks taken as independent)"),
+    "ros_p90": C("Likely to", "num1", "The high end of the rest-of-season range (1 in 10 lands above it, weeks taken as independent)"),
+    "playoff_points": C("Playoffs", "num1", "His projected points over this league's playoff weeks (from the playoff start to the final)"),
+    "playoff_games": C("Playoff games", "int", "Games he plays in this league's playoff weeks"),
+    "ros_byes": C("Bye", help="His bye week still ahead (blank: already played)"),
+    "ros_pts": C("Points", "int", "Rest of season: his projected points added up over every week left in this league's season, up to its final, in this league's scoring. A bye counts no game"),
+    "playoff_pts": C("Playoffs", "int", "His projected points over this league's playoff weeks (from the playoff start to the final)"),
+
+    # ---- E1 record (plan E1, "Our record": League Lab against Sleeper's own projections)
+    "n_players": C("Players", "int", "Players both projected who played (Out and Doubtful left out)"),
+    "ours_spearman": C("Order · ours", "num2", "How well our projected order matched the real one (1 = perfect, 0 = random)"),
+    "sleeper_spearman": C("Order · Sleeper", "num2", "How well Sleeper's projected order matched the real one (1 = perfect, 0 = random)"),
+    "ours_mae": C("Miss · ours", "num2", "Our average miss, in points (this league's scoring)"),
+    "sleeper_mae": C("Miss · Sleeper", "num2", "Sleeper's average miss, in points, its stat line counted this league's way"),
+    "ours_hit_rate": C("Top group · ours", "pct", "How many of the week's real top 12 QBs / 24 RBs / 36 WRs / 12 TEs we had in our top group"),
+    "sleeper_hit_rate": C("Top group · Sleeper", "pct", "How many of the week's real top group Sleeper had in its top group"),
+    "pairs_n": C("Calls", "int", "Start/sit calls graded: the three closest per team each week (a tie, or a call involving a defense, is left out)"),
+    "pairs_ours_right": C("Ours right", "int", "Calls where the player we said to start outscored the other"),
+    "pairs_sleeper_right": C("Sleeper right", "int", "Calls where the player Sleeper projected higher outscored the other"),
+    "pairs_disagree": C("Disagreed", "int", "Calls where Sleeper projected the bench player higher than our starter"),
+    "pairs_ours_right_disagree": C("Ours right when we disagreed", "int", "Of the calls where we disagreed with Sleeper, how many we got right"),
 }
 
 

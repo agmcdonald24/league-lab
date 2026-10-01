@@ -197,6 +197,7 @@ GUIDE = [
     ("How good is my team, really?", ("1_Team_Hub.py",)),
     ("Who should I trade for, and who should I sell?", ("6_Trade_Finder.py",)),
     ("Who is projected to score the most this week?", ("4_Rankings.py",)),
+    ("How good are these numbers, against the free ones in the Sleeper app?", ("13_Record.py",)),
     ("Who is getting more work lately, and who less?", ("3_Trends.py",)),
     ("Who has been lucky, and who leaves points on the bench?", ("7_League_Intel.py", "8_League.py")),
     ("Standings, every score, trades and how the draft turned out", ("8_League.py",)),
