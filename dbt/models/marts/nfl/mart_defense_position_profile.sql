@@ -13,96 +13,41 @@
 --                         game residuals / (games + 2), so two games cannot make a defense #1.
 -- Indices are the defense's rate over the league's rate for the same games window (1.10 = 10% above
 -- average); the profile words use a +/-8% band. Ranks: 1 = gives up the most of that thing, of 32 (targets and
--- carries to the position ranked separately too: the comparison's reason names the one that stands out).
-with team_games as (
-    select t.game_id, t.season, t.week, t.team as offense, t.opponent_team as defense
-    from {{ ref('fct_team_game') }} as t
-    where t.season_type = 'REG'
-),
-
-positions as (
-    select unnest(array['QB', 'RB', 'WR', 'TE']) as position
-),
-
-pg as (
-    select game_id, team as offense, position,
-           sum(points_current_scoring)                                                  as points,
-           sum(coalesce(targets, 0) + coalesce(carries, 0))                             as opps_skill,
-           sum(coalesce(attempts, 0) + coalesce(carries, 0))                            as opps_qb,
-           sum(coalesce(receiving_yards, 0) + coalesce(rushing_yards, 0))               as yards_skill,
-           sum(coalesce(passing_yards, 0) + coalesce(rushing_yards, 0))                 as yards_qb,
-           sum(coalesce(receiving_tds, 0) + coalesce(rushing_tds, 0))                   as tds_skill,
-           sum(coalesce(passing_tds, 0) + coalesce(rushing_tds, 0))                     as tds_qb,
-           sum(coalesce(targets, 0))                                                    as targets,
-           sum(coalesce(carries, 0))                                                    as carries
-    from {{ ref('fct_player_game') }}
-    where season_type = 'REG' and position in ('QB', 'RB', 'WR', 'TE')
-    group by 1, 2, 3
-),
-
-dg as (   -- one row per defense x game x position (a position nobody played that game counts as zero)
-    select tg.game_id, tg.season, tg.week, tg.offense, tg.defense, p.position,
-           coalesce(pg.points, 0)                                                        as points,
-           coalesce(case when p.position = 'QB' then pg.opps_qb else pg.opps_skill end, 0)   as opps,
-           coalesce(case when p.position = 'QB' then pg.yards_qb else pg.yards_skill end, 0) as yards,
-           coalesce(case when p.position = 'QB' then pg.tds_qb else pg.tds_skill end, 0)     as tds,
-           coalesce(pg.targets, 0) as targets, coalesce(pg.carries, 0) as carries
-    from team_games as tg
-    cross join positions as p
-    left join pg on pg.game_id = tg.game_id and pg.offense = tg.offense and pg.position = p.position
-),
-
-weeks as (
+-- carries to the position ranked separately too: the comparison's reason names the one that stands out). The
+-- per-game rows and the as-of step live in int_defense_position_game / int_defense_position_asof.
+-- C5 performance hotfix: no join between large inputs. The keys (every regular-season week x every team of that
+-- season x position) and the defense's games before each week (int_defense_position_asof, built with one equality
+-- join to a small bridge) are stacked and grouped; the league's rates are window sums over the same rows.
+with weeks as (
     select distinct season, week from {{ ref('dim_game') }}
     where season_type = 'REG' and season >= {{ var('seasons_start') }}
 ),
 
-keys as (
-    select w.season, w.week, d.defense, p.position
+teams as (
+    select distinct season, defense from {{ ref('int_defense_position_game') }}
+),
+
+keys_and_games as (
+    select w.season, w.week, t.defense, unnest(array['QB', 'RB', 'WR', 'TE']) as position, true as is_key,
+           null::text as game_id, null::numeric as points, null::bigint as opps, null::bigint as yards,
+           null::bigint as tds, null::bigint as targets, null::bigint as carries, null::numeric as offense_baseline
     from weeks as w
-    join (select distinct season, defense from team_games) as d on d.season = w.season
-    cross join positions as p
-),
-
--- each offense's points to the position before the week, and its last-season average
-off_asof as (
-    select k.season, k.week, d.offense, d.position, count(*) as n, sum(d.points) as points
-    from (select distinct season, week from keys) as k
-    join dg as d on d.season = k.season and d.week < k.week
-    group by 1, 2, 3, 4
-),
-
-off_prev as (
-    select season + 1 as season, offense, position, avg(points) as prev_pg
-    from dg group by 1, 2, 3
-),
-
-league_prev as (
-    select season + 1 as season, position, avg(points) as league_prev_pg
-    from dg group by 1, 2
-),
-
-games_before as (   -- the defense's games before the week, each with its offense's baseline
-    select k.season, k.week, k.defense, k.position, d.game_id, d.points, d.opps, d.yards, d.tds, d.targets, d.carries,
-           (coalesce(oa.points, 0) - d.points + 3 * coalesce(op.prev_pg, lp.league_prev_pg, 0))
-             / nullif(coalesce(oa.n, 0) - 1 + 3, 0)                                   as offense_baseline
-    from keys as k
-    join dg as d on d.season = k.season and d.defense = k.defense and d.position = k.position and d.week < k.week
-    left join off_asof as oa on oa.season = k.season and oa.week = k.week and oa.offense = d.offense and oa.position = d.position
-    left join off_prev as op on op.season = k.season and op.offense = d.offense and op.position = d.position
-    left join league_prev as lp on lp.season = k.season and lp.position = d.position
+    join teams as t on t.season = w.season
+    union all
+    select season, week, defense, position, false, game_id, points, opps, yards, tds, targets, carries, offense_baseline
+    from {{ ref('int_defense_position_asof') }}
 ),
 
 agg as (
-    select k.season, k.week, k.defense, k.position,
-           count(g.game_id)                                                             as games,
-           sum(g.points) as points, sum(g.opps) as opps, sum(g.yards) as yards, sum(g.tds) as tds,
-           sum(g.targets) as targets, sum(g.carries) as carries,
-           sum(g.points - g.offense_baseline)                                           as resid_sum,
-           avg(g.offense_baseline)                                                      as offense_baseline_pg
-    from keys as k
-    left join games_before as g using (season, week, defense, position)
+    select season, week, defense, position,
+           count(game_id)                                                               as games,
+           sum(points) as points, sum(opps) as opps, sum(yards) as yards, sum(tds) as tds,
+           sum(targets) as targets, sum(carries) as carries,
+           sum(points - offense_baseline)                                               as resid_sum,
+           avg(offense_baseline)                                                        as offense_baseline_pg
+    from keys_and_games
     group by 1, 2, 3, 4
+    having bool_or(is_key)
 ),
 
 rates as (
@@ -117,22 +62,21 @@ rates as (
     from agg as a
 ),
 
-league as (   -- the league's rates over the same windows (pooled: sums over sums)
-    select season, week, position,
-           sum(points) / nullif(sum(games), 0)                  as league_points_pg,
-           sum(opps)::numeric / nullif(sum(games), 0)           as league_opps_pg,
-           sum(yards)::numeric / nullif(sum(opps), 0)           as league_yards_per_opp,
-           sum(tds)::numeric / nullif(sum(opps), 0)             as league_td_rate
-    from agg
-    group by 1, 2, 3
+indexed as (   -- the league's rates over the same windows (pooled: sums over sums), as window sums: no join back
+    select r.*,
+           sum(r.points) over l / nullif(sum(r.games) over l, 0)                         as league_points_pg,
+           (sum(r.opps) over l)::numeric / nullif(sum(r.games) over l, 0)                  as league_opps_pg,
+           (sum(r.yards) over l)::numeric / nullif(sum(r.opps) over l, 0)                  as league_yards_per_opp,
+           (sum(r.tds) over l)::numeric / nullif(sum(r.opps) over l, 0)                    as league_td_rate
+    from rates as r
+    window l as (partition by r.season, r.week, r.position)
 ),
 
-indexed as (
-    select r.*, l.league_points_pg, l.league_opps_pg, l.league_yards_per_opp, l.league_td_rate,
-           r.opps_allowed_pg / nullif(l.league_opps_pg, 0)                               as opportunity_index,
-           r.yards_per_opp_allowed / nullif(l.league_yards_per_opp, 0)                   as efficiency_index
-    from rates as r
-    join league as l using (season, week, position)
+indexed2 as (
+    select i.*,
+           i.opps_allowed_pg / nullif(i.league_opps_pg, 0)                               as opportunity_index,
+           i.yards_per_opp_allowed / nullif(i.league_yards_per_opp, 0)                   as efficiency_index
+    from indexed as i
 )
 
 select
@@ -165,4 +109,4 @@ select
     case when i.games > 0 then rank() over (partition by i.season, i.week, i.position, i.games > 0 order by i.targets_allowed_pg desc) end    as rank_targets,
     case when i.games > 0 then rank() over (partition by i.season, i.week, i.position, i.games > 0 order by i.carries_allowed_pg desc) end    as rank_carries,
     count(*) filter (where i.games > 0) over (partition by i.season, i.week, i.position)                                                     as n_defenses
-from indexed as i
+from indexed2 as i

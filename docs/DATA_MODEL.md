@@ -238,6 +238,22 @@ them). No `ops` source: built by the ordinary `dbt build`. Definitions: `docs/ME
 `assert_cb_matchup_covers_lineup_receivers`, `assert_defense_profile_is_asof`,
 `assert_coverage_snap_estimate_tracks_participation` (warn).
 
+**Performance (hotfix 2026-10-01).** On PostgreSQL 17 with a 4-thread build, `mart_defense_position_profile`
+ran > 30 min and `mart_receiver_vs_cb` 5 min: both joined large inputs on several correlated keys (a defense's
+games `week < week`, a join back on receiver × corner × season, the raw participation table with no index), and
+right after `fct_player_game` / `fct_team_game` were rebuilt without statistics the planner estimated a handful of
+rows and chose nested loops (reproduced here: > 275 s, cancelled). The two marts now read six intermediate tables
+(`dbt/models/intermediate/matchups/`), each indexed and analyzed (`post_hook`), the upstream tables analyzed in a
+`pre_hook` before the query is planned, and **no join between large inputs anywhere**: rows that would be joined
+are stacked (`union all`) and grouped on the key, or flagged / broadcast with window functions; the one join left
+is to the ~1.7k-row week bridge. `int_season_week_before` (season, week, each earlier week) ·
+`int_defense_position_game` (defense × game × position, with the offense's and the league's prior-season points)
+· `int_defense_position_asof` (season × week × defense × position × each game before the week, with the offense
+baseline as a window over that fan-out) · `int_target_participation` (target plays 2022+ with the defense's
+on-field list) · `int_receiver_defender_game` (receiver × defender × game, with his targets against that defense
+that season) · `int_defender_snap_share` (defender-game snaps and share, 2022+). Same rows as before (md5 of both
+marts unchanged); 1–4 s per model with or without statistics, 1 or 4 threads.
+
 | Model | Grain / key | Contract |
 |---|---|---|
 | `int_defender_game_coverage_snaps` (intermediate) | gsis_id, game_id | every defender-game PFR's advanced defense charts (2018+): the coverage numerators (`def_targets`, completions, yards, TDs, INTs, aDOT, YAC, missed tackles as the primary defender), PFR `position` and snap-count `snap_position`, `defense_snaps` / `team_defense_snaps`, the opponent's `opp_dropbacks`; `coverage_snaps` = `coverage_snaps_on_field` (participation: opponent dropbacks with him on the field) else `coverage_snaps_estimated` (snap share × opponent dropbacks), `coverage_snaps_source` |

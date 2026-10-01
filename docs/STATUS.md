@@ -1492,6 +1492,23 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
   * **Checks**: dbt `mart_cb_rankings+ mart_receiver_vs_cb+ mart_defense_position_profile+` PASS (33 + 16 on the
     rebuild), `tests/test_matchups.py` 55, full `pytest` 626, `ruff` clean, headless check 32 runs 0 exceptions,
     Playwright at 390 × 844 (iPhone) and 1300 × 900, both leagues: no sideways scroll, heatmap 358 px wide at 390.
+* **Hotfix 2026-10-01 (branch `hotfix/c5-perf`): planner-proof Matchups marts.** Andrew's Mac (PostgreSQL 17,
+  4 threads) ran `mart_defense_position_profile` > 1,885 s and `mart_receiver_vs_cb` 325 s. Reproduced here by
+  rebuilding `fct_team_game` / `fct_player_game` without statistics (autovacuum off) right before the marts: the
+  profile ran > 275 s (1 thread) / > 134 s (4 threads), both cancelled — the planner estimated 28 team-games and
+  chose a nested loop with a join filter on four keys; the receiver mart took 61–64 s with or without statistics (a
+  join back on receiver × corner × season estimated at 1 row, looped over ~100k rows). Now six intermediate tables
+  (`dbt/models/intermediate/matchups/`, `docs/DATA_MODEL.md` § Matchups "Performance"), indexed and analyzed, the
+  upstream tables analyzed in `pre_hook`s, and no join between large inputs: stacked rows + `group by`, window
+  functions for the as-of baseline, the league rates, the corner / receiver flags and the names; the only join left
+  in the profile chain is to the 1,598-row week bridge (index loop, 182 distinct keys). Same output: md5 of the
+  ordered rows `cc7cac48…` (profile, 24,704 rows), `a236ff95…` (receiver vs CB, 39,572), `2505dfc5…`
+  (`mart_cb_matchups`, rebuilt downstream) before and after. Timings (sandbox, PostgreSQL 16): profile 2.9 s → 1.0 s
+  with statistics, > 275 s → 1.0 s without (1 thread), > 134 s → 1.0 s (4 threads); receiver vs CB 62 s → 3.1–3.3 s
+  in every case; the whole chain (12 models from `fct_team_game`) 34 s (1 thread) / 26 s (4 threads) without
+  statistics. Without statistics and without the pre-hook the new game-level query still runs in 0.43 s
+  (estimates 28 vs 5,344 rows, but there is no join to get wrong). `dbt build` of the chain + `mart_cb_matchups`:
+  34 / 34 PASS.
 * **Left open.** No projection change from the corner (a model change); the PPG split is evidence only. Shadow
   coverage, receiver alignment and slot assignment are not in public data. `metric_registry` rows not added (seeds are
   out of bounds): `cb_rankings` v1.0, `cb_matchups` v1.0, `defense_profile` v1.0.

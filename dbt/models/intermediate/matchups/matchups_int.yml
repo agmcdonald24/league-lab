@@ -1,0 +1,39 @@
+version: 2
+
+# C5 performance hotfix (2026-10-01): the intermediates behind mart_defense_position_profile and
+# mart_receiver_vs_cb. Each is an indexed, analyzed table built without a join between large inputs (stacked rows +
+# group by / window functions; the one join left is to the ~1.7k-row week bridge), so no planner, with or
+# without statistics, can turn them into a nested loop. docs/DATA_MODEL.md § Matchups.
+models:
+  - name: int_season_week_before
+    description: "Every regular-season week (seasons_start on) x each earlier week of its season: the 'games before' bridge."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [season, week, before_week]
+  - name: int_defense_position_game
+    description: "Defense x regular-season game x position (QB/RB/WR/TE): points, opportunities, yards, TDs, targets and carries the offense's players at the position had; the offense's and the league's points per game to the position the season before."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id, defense, position]
+  - name: int_defense_position_asof
+    description: "Season x week x defense x position x each game the defense played before the week, with the offense's baseline as of the week."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [season, week, defense, position, game_id]
+  - name: int_target_participation
+    description: "Every regular-season target (2022 on) whose play carries the defense's on-field list, with the defender ids."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [game_id, play_id]
+  - name: int_receiver_defender_game
+    description: "Receiver x defender on the field x game (participation seasons, 2022 on): targets, catches, yards on catches, TDs; targets_vs_defense = his targets against that defense that season."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [receiver_gsis_id, defender_gsis_id, game_id]
+  - name: int_defender_snap_share
+    description: "Defensive snaps per defender-game (regular season 2022 on, PFR snap counts mapped to gsis ids) and the share of the most any mapped teammate played."
