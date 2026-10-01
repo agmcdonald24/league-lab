@@ -360,8 +360,11 @@ UI stands and whether to replatform. PO findings before planning:
 | D6 | **Sharper ranges and decisions**: per-role variance (e.g. deep-threat vs slot WR) in the residual models, conformal recalibration per position × role, the interval score as the metric; cards lead with the 50% range; decision cards show "A beats B x% of the time" from the joint distribution | width at 80% coverage down vs v2 on the backtest (report the %), coverage still 78–82%; the decision probability calibrated on 2024–2025 played weeks |
 | D7 | **Front-end spike** (decision, not migration): My Week + the Player card rebuilt on a phone-first stack (a read-only API over the same Neon marts + a web front end, installable on the home screen), side by side with Streamlit on Andrew's phone; a one-page decision note (cost per page to port, hosting, what Streamlit cannot do: one-tap links, no new-tab sessions, layout control, restarts) | Andrew picks: stay, or port page by page |
 
-Order: D1 + D2/D3 + D4 (one dev each, in parallel) → D5 + D6 → v3 ships as one `MODEL_VERSION`
-bump with a fresh backtest. D7 runs alongside, touching no model code.
+Order (agreed 2026-10-01, "run wave d"): **Wave D round 1** = D1 + D2 (one dev: the harness first, then
+game context through it) · D3 (weather) · D4 (team volume and style) — feature groups land as their own
+intermediate tables at player-week grain, the harness joins them by name, nothing edits
+`mart_player_week_features` until a group is kept. **Round 2** = D5 (personnel) · D6 (sharper ranges and
+decisions) · D7 (front-end spike). Then v3 ships as one `MODEL_VERSION` bump with a fresh backtest.
 
 ### Iteration 11 — operations for a product (Phase 3)
 
