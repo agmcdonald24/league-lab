@@ -1354,6 +1354,19 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
 * Verified on the main database: `pytest` 691, `ruff` clean, migrate, the C5/C6 intermediate and mart builds, `project`
   (v2 → K/DEF → lineups → waivers → signals → importance), the projection-marts rebuild, the headless check on every page
   × both leagues + Player + Trade Finder with a package in the URL, 0 exceptions.
+* One QA agent, phone-first, 25 minutes, both leagues as Andrew's rosters: no sideways scroll, answer before any
+  table on Trade Finder / Matchups / Trends / Waiver Wire / Player; the top trade package's before/after lineup values
+  equal `ops.lineup_totals` and an independent `lineup.solve` on the post-trade rosters (113.06 → 113.54 / 115.30 →
+  119.73 Scrubs; 109.69 → 115.12 / 126.86 → 133.64 dynasty); the cornerback card equals `mart_cb_matchups` /
+  `mart_cb_rankings` (St. Brown: even call, Mike Jackson #37 of 74); the comparison's default pair equals Home's first
+  card; the top role alert's numbers equal `mart_player_role_alerts` (Germie Bernard 4 % → 79 % snaps, Pittman out); the
+  upside card equals `mart_waiver_upside`; the trade URL round-trips in a fresh browser; "covered by" appears nowhere;
+  the scenario is always a labelled what-if with its hit rate. No HIGH or MEDIUM findings. PO fixes from the LOW list: a
+  stash with zero upside is no longer listed; the what-if sentence now says plainly that it beat the projection less than
+  half the time; "Out of the lineup after the trade" instead of "Sits". Open LOW: the upside card on Waiver Wire has no
+  hit rate (the Player page has it); the role alert sits low on the Player page; "you give 0" market for a QB behind a
+  better free agent reads as wrong without the explanation; "Vs the offenses faced +5.7 (#1)" and a defense drop's
+  "(already counted)" still read as insider phrases.
 
 ### C4 2026-09-30 — T-01 trade evaluator + T-02 trade simulator (branch `dev/C4`, clone `league_lab_c4`)
 

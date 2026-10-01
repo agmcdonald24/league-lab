@@ -98,8 +98,10 @@ def scenario_phrase(r, league_name: str | None = None) -> str:
             tail = (f" Tested on 2023–2025: after {int(n)} alerts like this, the next three games landed nearer this line "
                     f"than the projection {100 * hit:.0f}% of the time.")
         else:
-            tail = (f" Treat it as a what-if, not a forecast: tested on 2023–2025, after {int(n)} alerts like this the next "
-                    f"three games landed nearer it than the projection {100 * hit:.0f}% of the time.")
+            verdict = ("it beat the projection less than half the time, so lean on the projection"
+                       if hit < 0.5 else "it beat the projection more often than not")
+            tail = (f" Treat it as a what-if, not a forecast: on 2023–2025, after {int(n)} alerts like this, the what-if was "
+                    f"closer to what happened next than the projection {100 * hit:.0f}% of the time — {verdict}.")
     else:
         tail = " Treat it as a what-if: not tested on past seasons yet."
     return head + tail

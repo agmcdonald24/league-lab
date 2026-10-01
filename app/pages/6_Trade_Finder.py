@@ -415,7 +415,7 @@ def lineup_frame(side: T.Side) -> tuple[pd.DataFrame, list[str]]:
     if starts:
         lines.append("Starts after the trade: " + ", ".join(starts) + ".")
     if sits:
-        lines.append("Sits after the trade: " + ", ".join(sits) + ".")
+        lines.append("Out of the lineup after the trade: " + ", ".join(sits) + ".")
     if empty:
         lines.append("Empty after the trade: " + ", ".join(empty) + " (nobody left who can play there this week).")
     return pd.DataFrame(rows), lines
