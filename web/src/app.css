@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* Phone first: 390 px is the design width; one column; the system's light or dark. */
+@theme {
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-brand: #15803d;
+}
+
+:root {
+  color-scheme: light dark;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  @apply bg-white text-zinc-900 antialiased dark:bg-[#0b0f0d] dark:text-zinc-100;
+  overflow-x: hidden;
+}
+
+.ll-link {
+  @apply text-green-700 underline decoration-green-700/30 underline-offset-2 dark:text-green-400 dark:decoration-green-400/40;
+}
+
+.ll-list {
+  @apply list-disc space-y-1.5 pl-5;
+}
+
+.tabnum {
+  font-variant-numeric: tabular-nums;
+}
+
+details > summary {
+  list-style: none;
+  cursor: pointer;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details > summary .chev {
+  transition: transform 0.15s ease;
+}
+details[open] > summary .chev {
+  transform: rotate(90deg);
+}

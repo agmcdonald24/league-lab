@@ -2157,6 +2157,83 @@ experiment and the calibration are in `docs/METRICS.md` § "Ranges and decisions
   distribution); the harness's cached baseline stays valid (P10 / P90 unchanged) but its `data_key` does not see
   the residual path — a future change there needs `HARNESS_VERSION` bumped or the interval code in the key; the
   Player page still shows floor / ceiling only (not in D6's ownership); K / DEF cards keep the margin's words.
+### D7 2026-10-01 — front-end spike: My Week + the player card on a phone-first stack (branch `dev/D7`, clone `league_lab_d7`)
+
+A decision, not a migration: Andrew's note is `docs/FRONTEND_DECISION.md` (recommendation: port page by page, My
+Week + Player first, then Waiver Wire / Team Hub / Matchups; Trade Finder last; the rule: the Streamlit page stays
+until the new one matches the headless check's numbers). Nothing in `app/`, `src/`, `dbt/` changed
+(`git diff --stat integration/wave-d -- app src dbt` empty); no root dependency added.
+
+* **`api/`** (FastAPI, Python 3.13, its own `pyproject.toml` + `uv.lock`, psycopg pool on the read-only role,
+  10-minute query cache like `st.cache_data`, gzip, 503 on a missing mart): `/api/leagues`, `/api/leagues/{id}/rosters`,
+  `/api/my-week?league&team`, `/api/player/{gsis}?league&team`, `/api/search?league&q`, `/api/status`,
+  `/api/session|login|logout`; everything else serves `web/dist` (SPA fallback, hashed assets immutable).
+  `league_lab_api/applib.py` loads `app/lib/cards.py`, `ui.py`, `signals.py` **unchanged** as a private package
+  whose `db` is the API's and whose `streamlit` is a recording stand-in: `lineup_rows` (LINEUP_SQL), `decisions`,
+  `alternative`, `bench_gap`, `league_line`, `lineup_frame`, `current_week`, `freshness_banner` run as is, and the
+  card text is `render_decision`'s own output (captured), so D6's wording change reaches the web app without a
+  change here. Copied verbatim (marked): Home's record / opponent / movers queries, `lineup_table(full=True)`'s
+  six lines for the bench rows, and the whole player page (its queries and sentences are inline in `0_Player.py`).
+  Gate: `LEAGUE_LAB_APP_PASSWORD` (unset = open) → POST `/api/login` → HttpOnly `ll_auth` cookie (180 days) or a
+  bearer token, `<expiry>.<HMAC-SHA256>` keyed on `LEAGUE_LAB_API_SECRET` or the password (a new password signs
+  everyone out). `api/Dockerfile` (+ `Dockerfile.dockerignore`) builds web + API into one image (no Docker daemon
+  here: the image layout was reproduced by hand — `uv sync --frozen --no-dev` in a copy holding only `api/`,
+  `app/lib`, `web/dist`, no streamlit installed — and served both leagues' My Week, a player card and the
+  manifest; ~125 MB RSS).
+* **`web/`** (Svelte 5 + TypeScript + Tailwind 4, Vite 8; 26 KB JS + 5 KB CSS gzipped): `/` My Week (picker remembered
+  in `localStorage`, a `?league&team` link wins; the three cards; the lineup in 4 columns, the flag column only when a
+  row has a flag; full lineup, How to read this, movers in `<details>`), `/player/<gsis>` (Projection, Value,
+  Availability, Usage, Signals — answer first; search; Back). History-API router: names are real links handled in
+  place (one tap, same tab, one history entry), Back restores the scroll position, picks rewrite the URL without a
+  history entry. Manifest + icons + a small service worker (installable); light / dark from the system; an inline
+  script starts the first screen's API call before the bundle arrives.
+* **API tests** (`cd api && uv run pytest -q`): **39 passed** (68 s). Against independent SQL for dynasty 12 and Scrubs
+  2, week 4: the lineup table = `mart_lineup_recommendation` slot by slot (value, margin), lineup value in the league
+  line, full list = starters + `ops.lineups` bench / can't play; the cards = the (up to) three unlocked, valued starters
+  with the smallest margins below their own value (by hand: dynasty RB2 0.45, TE 0.63, FLEX 1.87; Scrubs FLEX2 0.06,
+  RB2 1.66, QB 2.23), alternative = value − margin and on the bench in `ops.lineups`; worked example dynasty 12:
+  "RB2: start Kenny Gainwell over Emanuel Wilson, 7.54 vs 7.09 projected — 0.45 apart, a coin flip", lineup 109.69
+  (10th of 12). Player: Projected / Floor / Ceiling = `mart_player_week_projections` for ten players (rostered WR,
+  starter RB, bench RB, taxi, IR slot, free agent ×2, K, no projection, Out); the starter's lineup sentence carries the
+  mart's value and margin. **Parity** (`tests/test_parity.py`, Streamlit's AppTest in the repo env via
+  `tests/streamlit_twin.py`): Home ×2 leagues — every card block, the record and league lines, both lineup tables
+  (slot, name, value, margin, flag), How to read this, the freshness line and warning identical; Player ×10 — every
+  section title, metric (label, value, delta) and sentence identical (links compared as text). Gate: all six data
+  endpoints 401 without a token, wrong password 401 "That is not it.", bad / tampered / expired tokens 401, cookie and
+  bearer 200, a new password invalidates old tokens. Static: SPA fallback, manifest type, immutable assets, gzip.
+* **Web checks**: `npm run lint` (eslint + svelte-check + tsc) clean; Playwright `npm run e2e` **24 passed** (12 × phone
+  390 × 844 iPhone UA with touch, 12 × desktop 1300 × 900): no sideways scroll on both routes (incl. the full-lineup
+  and How-to expanders), the first card ends inside the first screen, tables ≤ 5 columns, a card name and a table
+  name open the card on ONE tap with no popup and exactly one new history entry, in-app Back + browser Back / Forward,
+  scroll restored on Back, the pick remembered across a bare visit, search, dark mode, manifest + service worker,
+  and the password screen against a gated API (wrong → "That is not it.", right → cards, a name tap and a new tab
+  stay signed in).
+* **Side by side** (`npm run measure`, `e2e/measure.spec.ts`; Streamlit 8577 through `e2e/gzip-proxy.mjs` on 8578
+  because `streamlit run` serves its JS uncompressed; 5 loads / 10 taps; load average 7–8 on 2 CPUs throughout —
+  D5 / D6 fits): first content phone web 371 ms vs Streamlit 1,909 (repeat 100 vs 2,069); desktop 305 vs 1,927;
+  weight 36 KB (7 requests) vs 1,929 KB gzipped / 5,528 KB raw (140 requests); name → card 151 vs 1,830 ms phone
+  (Streamlit in a new tab), 131 vs 2,012 desktop; back to My Week 68 vs 938 (Streamlit: sidebar → Home); change
+  team 33 (216 first) vs 1,082; slow 4G phone: first content 542 vs 5,365 ms (12,719 uncompressed), name → card
+  268 vs 2,296. Fold at 390 × 844: web 3 of 3 cards fully visible (first at 253 px), Streamlit 0 (first at 819 px).
+  `e2e/streamlit-probe.mjs` (10 tries each): one sidebar page hop adds 3 history entries; the browser's Back returned
+  to My Week 0/10 on the phone, 3/10 on the desktop; with `LEAGUE_LAB_APP_PASSWORD` set, a card name's new tab asks
+  for the password again (checked). One-tap on Streamlit is driver-dependent in emulation (Python Playwright: 2 taps,
+  8 of 8; Node: 1 tap) — always a new tab.
+* **Headless check** (`apptest_wc.py` on this worktree, both leagues × 13 pages + 6 Player-by-id runs): 32 runs, 0
+  exceptions (no app file changed).
+* **Decisions for the PO.** (1) Svelte over React (26 KB vs ~60 KB of framework JS; same TypeScript). (2) Routes under
+  `/api/…` so the app's own paths (`/`, `/player/…`) never collide. (3) The player card shows Projection first (the
+  Streamlit page leads with Usage, an open LOW from Wave B) and keeps the fifth section, Signals (C6), which the plan
+  row's "four sections" predates. (4) The cards' text is captured from `render_decision` rather than re-templated, so
+  the web cards follow `cards.py`. (5) The stale-injury warning is a one-line "⚠️ Injury news may be stale ›" that opens
+  to the full sentence (the first screen stays the answer). (6) Measurements against Streamlit behind a gzip proxy
+  (the uncompressed numbers are reported next to them).
+* **Open.** The spike is not deployed (no host credentials here): `api/README.md` has the Render / Fly / Railway /
+  Cloud Run steps. The player page's sentences are a verbatim copy until they move into `app/lib` (the port rule's
+  step 1); after D6 merges, re-run `api/tests/test_parity.py` (it fails on any drift). If `cards.py` starts
+  importing `league_lab.*`, the image needs `src/` and that module's dependencies. Absolute timings are from a loaded
+  2-core sandbox and a local database; the hosted app adds the Neon round trips to both. No `--select` appended, no
+  seeds or metrics touched.
 
 ## Next concrete actions
 

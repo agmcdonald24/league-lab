@@ -1,0 +1,12 @@
+# BuildKit uses <Dockerfile>.dockerignore for `docker build -f api/Dockerfile .` (context = the repository)
+**
+!api/pyproject.toml
+!api/uv.lock
+!api/league_lab_api/**
+!app/lib/**
+!web/**
+web/node_modules
+web/dist
+web/test-results
+web/e2e/.out
+**/__pycache__
