@@ -2395,6 +2395,84 @@ The PO accepted D5's recommendation: `qb` at QB (5 inputs), `teammates` at RB / 
   The nightly does not run `backtest-v2`: until it is run once, Rankings' backtest shows v2.0's record (`is_current`
   falls back to the newest version that has rows).
 
+## Wave E (Iteration 13)
+
+### E4 2026-10-01 — model tests: rookie prior, offensive-line quality, QB × offense, player prior (branch `dev/E4`, clone `league_lab_e4`)
+
+Andrew: "is the model treating everything equal?" (an elite QB lost on an elite offense vs a bad QB on a bad one; a
+Pro Bowl tackle vs a backup guard out) and the PO's shortlist (a player-identity prior, rookie / cold-start priors).
+Tests only: nothing in production reads the new tables; `projections.py` is untouched.
+
+* **Built.** Four groups, five registrations (definitions, as-of rules, verdicts: METRICS § "Feature experiments" →
+  "Wave E groups"; tables: DATA_MODEL § "Feature groups of Wave E"):
+  `rookie_prior` / `rookie_prior_early` (`int_e4_player_week_rookie_prior`, 109,123 rows = the universe; draft round,
+  pick, tier, undrafted, years in, rookie, age — fixed before the season; `_early` = the same seven in weeks 1–4 only),
+  `oline_quality` (`int_e4_player_week_oline_quality` + helper `int_e4_ol_starter_week`, 27,350 starter-weeks: D5's
+  five starters each with career starts before the week, draft score, last season's snaps and a 1–5 quality rank;
+  the group = D5's count and window share + career starts / draft capital / last-season snaps out + the best one out's
+  rank), `qb_x_offense` (`int_e4_player_week_qb_x_offense`: the QB gap × implied total, × game total, × last season's
+  team points per game, × last season's EPA per play, backup × implied total, the gap in four steps),
+  `player_prior` (`ops.player_prior_oof`, built in Python — see the design). Registries in
+  `src/league_lab/feature_groups/{rookie_prior,oline_quality,qb_x_offense,player_prior}.py`.
+* **Design: player_prior is the real out-of-fold residual, not the proxy.** `player_prior.component_walk_forward` fits
+  the production component models (same filter, inputs per position, hyper-parameters, frame order) for every season
+  S = 2017–2026 on seasons < S and projects season S; the feature for (player, S, W) is the exponentially weighted mean
+  (half-life 8 games) of (actual − projected, reference scoring) over his games before (S, W). The harness gets a small
+  hook: a group spec may carry `"build": callable(conn)` that `experiments.get_group` calls first (+8 lines in
+  `experiments.py`); `player_prior.build` refits only when `ops.player_prior_oof`'s `data_key` (model version, inputs,
+  hyper-parameters, scoring, the frame's rows / points) changed: 395 CPU-s, 672 s wall, once. The per-row projections
+  are kept in `ops.player_prior_oof_pred` (99,272 rows), which reproduce the harness's cached baseline on 2023–2025 to
+  0.00e+00 (Spearman, MAE, hit rate, 24 cells) — so they also score any week subset without refitting the baseline.
+* **Verdicts** (harness 2023–2025, both leagues, `OMP_NUM_THREADS=1`): **every group drops at every position.**
+  Mean ΔSpearman (seasons better of 3) / ΔMAE:
+  `rookie_prior` QB −0.0091 (0) / +0.049, RB +0.0015 (2) / +0.003, WR +0.0013 (3) / −0.009, TE +0.0046 (3) / +0.010 — 793 s;
+  `rookie_prior_early` QB −0.0008 (1), RB +0.0011 (2) / −0.009, WR +0.0016 (3) / −0.013 (3 of 3), TE +0.0019 (3) — 602 s;
+  `oline_quality` QB −0.0047 (0) / +0.035, RB −0.0004 (1) / −0.008 (3), WR +0.0001 (2) / −0.015, TE −0.0018 (0) — 652 s;
+  `qb_x_offense` QB −0.0052 (1) / +0.032 (hurts: worse 2 of 3), RB −0.0004 (1) / −0.005, WR +0.0003 (2) / −0.013, TE −0.0031 (0) — 529 s;
+  `player_prior` QB −0.0019 (2) / +0.009, RB +0.0005 (2) / −0.000, WR +0.0017 (3) / −0.017 (2), TE −0.0047 (1) / +0.011 — 552 s.
+  No-peek: 0 refusals; largest probe excess 0.0075 (`pn_olq_best_out`, QB); `pp_asof_week` < week on all 109,123
+  rows; `oline_quality` has D5's serve-gap warning (week 4's injury report is not in the clone: publishing calendar,
+  not a peek). Hand checks: MIN 2025 week 5 (O'Neill, Jackson, Jurgens out) → 3 out, 115 career starts, draft capital
+  6, best out = rank 1 (O'Neill), 0.9865 last-season snaps = `tests/test_e4_feature_groups.py`'s fixture; Puka Nacua
+  2025 week 6 `pp_resid_ewm` 4.3290 over 33 games = the same weighted mean computed by hand in SQL from
+  `ops.player_prior_oof_pred`.
+* **Weeks 1–4** (the plan's second number for `rookie_prior`): draft capital orders RBs and WRs better early —
+  `rookie_prior` RB +0.0067 / WR +0.0054, `rookie_prior_early` RB +0.0079 / WR +0.0078, 3 of 3 seasons each; QB worse
+  (−0.018 / −0.007). It does not help rookies themselves (their weeks 1–4 MAE is flat or worse). Over a season that
+  is +0.001–0.002 Spearman: under the bar, and the 2026 season is past week 4.
+* **player_prior as a linear correction** (follow-up, `scripts/e4/player_prior_correction.py`): proj + k × the
+  player's past miss, k per position fitted on earlier seasons only → ΔMAE RB −0.054 (3 of 3 seasons), WR −0.040 (3),
+  TE −0.014 (3), QB +0.007; a constant-shift control is worse (+0.03 to +0.12). Point projection only, ranges not refit.
+* **Andrew's questions, plainly.** (1) *Elite QB on an elite offense vs bad QB on a bad offense:* the model does not
+  treat them the same — it lowers a team's receivers and backs when the starter is replaced by a worse one — but it
+  lowers them a little too little, more so on a good offense: those players finish 0.7 ± 0.3 points below their
+  projection when a much worse QB starts on a top-third offense, 0.3 ± 0.3 on a bottom-third one, ~0 when the usual
+  QB plays. That is ~6% of player-weeks; handing the model the interactions did not fix it in the walk-forward.
+  (2) *Pro Bowl tackle vs backup guard:* by snaps, starts, draft slot and years, which lineman is out barely moves
+  fantasy points, and the model's misses do not depend on it (QB +0.29 ± 0.31 with a top-two lineman out vs
+  +0.36 ± 0.13 with nobody out; WR / TE −0.04 either way; RB −0.21 ± 0.17 vs +0.10 ± 0.07, the only hint). The proxy
+  cannot see grades (PFF), pass-block win rates or contracts.
+* **For the PO: ship nothing as v3.1 from the groups.** None passes the rule. Two leads worth a proper test, in order:
+  (a) `player_prior` as a post-hoc correction at RB / WR / TE (RB clears the MAE bar 3 of 3, WR close) — needs the
+  ranges recalibrated around the corrected projection and a `projections.py` change (PO-only): a
+  `walk_forward(..., correction=...)` pass in the harness so it is judged on all six metrics, 2021–2025;
+  (b) `rookie_prior_early` at RB / WR for weeks 1–4 of 2027, re-tested on 2021–2025 with a weeks-1–4 decision.
+* **Tests.** pytest `tests/test_e4_feature_groups.py` 14 passed (twins on fixtures — draft tier / years in / age,
+  OL quality on MIN 2025 week 5, the QB products and bucket, the as-of EWM; the SQL hard-codes the twins' constants;
+  the registries validate; with the database the twins reproduce every 2025 row and `ops.player_prior_oof` from the
+  out-of-fold projections); full suite 795 passed (59.7 s); ruff clean; dbt `--select int_e4_player_week_rookie_prior+
+  int_e4_ol_starter_week+ int_e4_player_week_qb_x_offense+` PASS=16 (4 models, 12 tests).
+* **Deviations (for the PO to confirm).** `pn_olq_best_out` is 0 when nobody is out (the plan said NULL): NULL keeps
+  meaning "not known" (week 1, report not out), as everywhere else. `rk_age` is the age on September 1 (constant in
+  the season), not at the week. The first `qb_x_offense` run had four products (QB −0.0043 / +0.025, RB +0.0002,
+  WR +0.0005 / −0.006, TE −0.0023 — drop; its rows: `scratchpad/waveE/e4/e4_qb_x_offense_4col_run.csv`); the
+  recorded run adds × EPA per play and the bucket, as the plan listed. `rookie_prior_early` is an extra group (the
+  weeks 1–4 result asked for it). Two scripts under `scripts/e4/` (week subsets, the correction) — new files outside
+  the listed paths, ruff clean; move or drop them as you prefer.
+* **For the seed.** `scratchpad/waveE/e4_experiments.csv` = the 120 rows of `ops.feature_experiments` for the five
+  groups (24 each), for `dbt/seeds/feature_experiments.csv`. Nightly: nothing to add (the full build builds the three
+  dbt tables, ~15 s; `ops.player_prior_oof` is built only by `league-lab experiment player_prior`).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

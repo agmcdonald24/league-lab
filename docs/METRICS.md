@@ -1344,6 +1344,119 @@ Runtime: the walk-forward refits every position for each test season (components
 3 quantile models per league); with `OMP_NUM_THREADS=1` a group of 2023–2025 is measured in STATUS
 § "Wave D (Iteration 12)". Several groups in one call share the frame and the baseline.
 
+### Wave E groups (plan E4, 2026-10-01; `feature_groups/rookie_prior.py`, `oline_quality.py`, `qb_x_offense.py`, `player_prior.py`)
+
+Andrew's questions behind them: "are you treating everything equal? an elite QB going down on an elite offense vs a
+bad QB on a bad offense; a really good lineman vs a replacement-level one" and "what else could make this better".
+Four candidate groups against v3.0 (the baseline is the production model per position; a group adds its columns to
+every position's inputs). Nothing in production reads them. Tables at the projection's grain, one row per
+`int_player_week_universe` row (`assert_e4_feature_groups_cover_universe`); docs and tests in
+`dbt/models/intermediate/features/int_e4_feature_groups.yml`; Python twins in the modules
+(`tests/test_e4_feature_groups.py` pins them on fixtures and reproduces every 2025 row on its own path).
+
+| Group (table) | Column | Definition |
+|---|---|---|
+| `rookie_prior` (`int_e4_player_week_rookie_prior`; static within a season, known before it) | `rk_draft_round`, `rk_draft_pick` | round 1–7 and overall pick (`raw.nfl_players`); NULL for an undrafted player |
+| | `rk_draft_tier` | 3 = 1st round, 2 = day 2 (rounds 2–3), 1 = day 3 (rounds 4–7), 0 = undrafted; NULL = not in the players table |
+| | `rk_undrafted` | 1 = in the players table without a draft round |
+| | `rk_years_in`, `rk_is_rookie` | season − entry season (draft year; an undrafted player's rookie season), floored at 0; rookie = 0 |
+| | `rk_age` | age on September 1 of the season, (Sep 1 − birth date) / 365.25, one decimal |
+| `rookie_prior_early` (same table; a follow-up, see the verdicts) | `rk_early_*` | the same seven columns in weeks 1–4 only, NULL from week 5 on (the prior while his season has little history) |
+| `oline_quality` (`int_e4_player_week_oline_quality`; helper `int_e4_ol_starter_week`; in-season: NULL exactly where D5's `pn_ol_starters_out` is — week 1, report not out) | `pn_olq_starters_out`, `pn_olq_snap_share_out` | copies of D5's `pn_ol_starters_out` / `pn_ol_snap_share_out` (the five starters = most offensive snaps over the team's last four played games; out = Out / Doubtful / reserve) |
+| | `pn_olq_career_starts_out` | sum over the out starters of their games before the week (any team, 2016 on) with ≥ 50% of the offensive snaps |
+| | `pn_olq_draft_capital_out` | sum of their draft score: 1st round 3, day 2 2, day 3 1, undrafted 0 |
+| | `pn_olq_best_out` | the quality rank of the best starter out among the five by last season's snaps (1 = the line's most-used lineman last season … 5); 0 = nobody out |
+| | `pn_olq_prev_season_share_out` | sum of their last-season snaps in season-equivalents: Σ per-game snap share over season S−1 / games per team that season (16 / 17); 0 = no snaps (a rookie) |
+| `qb_x_offense` (`int_e4_player_week_qb_x_offense`; the harness joins one table per group, so the products are materialized) | `qbx_gap_x_implied` | `pn_qb_prev_ppg_diff` (D5: points per start of the projected starter − the usual QB's) × `implied_team_total` |
+| | `qbx_gap_x_total` | the gap × `total_line` |
+| | `qbx_gap_x_prev_ppg` | the gap × the team's points per game over its previous regular season (`dim_game` final scores — `fct_team_game` has no points; one code per franchise; NULL in 2016) |
+| | `qbx_backup_x_implied` | `pn_qb_is_rookie_or_backup` (< 8 career starts) × `implied_team_total` |
+| | `qbx_gap_x_prev_epa` | the gap × the team's EPA per play over its previous regular season (`fct_team_game`: (`passing_epa` + `rushing_epa`) / (attempts + sacks + carries); NULL in 2016) |
+| | `qbx_gap_bucket` | the gap in four steps: 2 = big drop (≤ −6 points per start: a good starter replaced by a much worse one), 1 = some drop (−6, −2], 0 = like for like (−2, +2): the usual QB or a backup for a backup, −1 = upgrade (≥ +2); NULL = no gap known |
+| `player_prior` (`ops.player_prior_oof`, built in Python: see below) | `pp_resid_ewm` | his running out-of-fold residual: exponentially weighted mean (half-life 8 games: weight 0.5^(k/8) for his k-th newest game, across seasons) of (actual − projected points, reference scoring) over his games with (season, week) < (S, W); NULL before his first scored game |
+| | `pp_resid_games` | how many such games (0 = none) |
+
+**player_prior — out of fold, as of the week.** The projection for a season-S game comes from the production model
+trained only on seasons < S (`player_prior.component_walk_forward`: the component models of `fit_position` — same
+training filter, inputs per position, hyper-parameters and frame order — for S = 2017 … 2026; the interval models are
+not fitted, they do not move the point projection). Those projections are exactly the harness baseline's: scored
+like the harness on 2023–2025 they reproduce its cached baseline's Spearman, MAE and hit rate to 0.00e+00 in all 24
+league × season × position cells. The feature for (player, S, W) reads only residuals of his games before (S, W); in
+the walk-forward for test season N a training row (season < N) uses residuals from models trained before its own
+season, a test row residuals of season-N games before its week from the model trained on seasons < N (the fold's own
+baseline). 2016 has no residuals (nothing earlier to train on). `pp_asof_week` (the week of the newest game used when
+it is this season's) is < week on every row (the harness's check 3).
+
+**The harness hook.** `player_prior`'s spec carries `"build": player_prior.build`: `experiments.get_group` calls it
+before reading the table, and it refits only when `ops.player_prior_oof` is missing or its `data_key` (model version,
+inputs per position, hyper-parameters, half-life, the leagues' scoring, the frame's rows / played / points) changed.
+A build is 10 season-folds × 4 positions of component models: 395 CPU-s (672 s wall on the shared box). It also keeps
+the per-row out-of-fold projections in `ops.player_prior_oof_pred` (99,272 rows, both leagues' scoring), which is
+what a week subset of any group is scored against without refitting the baseline.
+
+**Weeks 1–4.** The harness keeps season means only (`summarize_scores`; the cached baseline has no weekly rows), so a
+week subset is scored from per-row point projections: the baseline's from `ops.player_prior_oof_pred`, the group's
+from `component_walk_forward` with its columns (`scripts/e4/week_subsets.py`), each week scored exactly as
+`score_predictions` does (played rows with every component known, weeks with ≥ 8 players), then averaged like the
+harness. Spearman / MAE / hit rate only (they depend on the point projection alone); the interval scores need the
+interval models.
+
+**Verdicts** (harness 2023–2025, both leagues, each season's Δ averaged over the leagues; "better" = seasons of 3;
+runtime with `OMP_NUM_THREADS=1` on the shared two-core box). Every group **drops** at every position:
+
+| Group | QB ΔSpearman / ΔMAE | RB | WR | TE | Fit |
+|---|---|---|---|---|---|
+| `rookie_prior` (7) | −0.0091 (0/3) / +0.049 (0/3) | +0.0015 (2/3) / +0.003 (1/3) | +0.0013 (3/3) / −0.009 (2/3) | +0.0046 (3/3) / +0.010 (1/3) | 793 s |
+| `rookie_prior_early` (7) | −0.0008 (1/3) / +0.015 (1/3) | +0.0011 (2/3) / −0.009 (2/3) | +0.0016 (3/3) / −0.013 (3/3) | +0.0019 (3/3) / +0.001 (1/3) | 602 s |
+| `oline_quality` (6) | −0.0047 (0/3) / +0.035 (0/3) | −0.0004 (1/3) / −0.008 (3/3) | +0.0001 (2/3) / −0.015 (2/3) | −0.0018 (0/3) / −0.002 (1/3) | 652 s |
+| `qb_x_offense` (6) | −0.0052 (1/3) / +0.032 (0/3) | −0.0004 (1/3) / −0.005 (1/3) | +0.0003 (2/3) / −0.013 (2/3) | −0.0031 (0/3) / +0.000 (2/3) | 529 s |
+| `player_prior` (2) | −0.0019 (2/3) / +0.009 (1/3) | +0.0005 (2/3) / −0.000 (2/3) | +0.0017 (3/3) / −0.017 (2/3) | −0.0047 (1/3) / +0.011 (1/3) | 552 s (+ the table: 395 CPU-s once) |
+
+No-peek: every group passes (no failure); the largest outcome-probe excess is 0.0075 (`pn_olq_best_out`, QB), then
+0.0067 (`qbx_gap_x_implied`, RB); `pp_resid_ewm` / `pp_resid_games` stay below −0.0015 (they track the previous week as
+much as this one); `pp_asof_week` < week on all 109,123 rows. `oline_quality` carries the same *serve gap* warning as
+D5's `oline` / `personnel` (known on 52% of 2026's played rows, none of week 4's): the week-4 injury report is not in
+the clone yet — the report is published before kickoff, so this is data timing, not a leak.
+
+**Weeks 1–4** (`scripts/e4/week_subsets.py`, same scorer; the baseline from `ops.player_prior_oof_pred` reproduces the
+harness's cached baseline to 0.00e+00 in all 24 cells, and the group's "all weeks" rows reproduce the harness's
+group deltas). ΔSpearman (seasons better) / ΔMAE:
+
+| Group, weeks 1–4 | QB | RB | WR | TE |
+|---|---|---|---|---|
+| `rookie_prior` | −0.0178 (1/3) / +0.049 | **+0.0067 (3/3)** / −0.003 | **+0.0054 (3/3)** / −0.020 (3/3) | +0.0038 (2/3) / +0.027 |
+| `rookie_prior_early` | −0.0074 (1/3) / +0.019 | **+0.0079 (3/3)** / −0.003 | **+0.0078 (3/3)** / −0.006 (3/3) | +0.0047 (2/3) / +0.018 |
+| `player_prior` | −0.0020 (2/3) / −0.046 | +0.0005 (2/3) / −0.009 | +0.0017 (3/3) / −0.015 | −0.0040 (1/3) / +0.010 |
+
+Draft capital orders RBs and WRs better in weeks 1–4 (+0.005 to +0.008, every season, both variants) — over the
+season that is +0.001–0.002, under the bar. It does not help rookies themselves: their weeks 1–4 MAE, pooled
+(QB 78, RB 328, WR 500, TE 184 player-weeks), is unchanged or worse (`rookie_prior` QB 5.80 → 6.05, RB 4.41 → 4.42,
+WR 4.29 → 4.27, TE 3.08 → 3.09; `_early` worse at every position) — v3's `pos_prev_ppg` and the Vegas line already
+carry a rookie's expected role; draft capital mostly separates the second- and third-year players.
+
+**player_prior as a correction, not an input** (`scripts/e4/player_prior_correction.py`). A player's past misses do
+predict his next one — corr(`pp_resid_ewm`, this week's miss) = 0.12 QB, 0.11 RB, 0.07 WR, 0.09 TE on 2019–2025
+rows with ≥ 8 earlier games — but as a tree input the signal is lost (the drop above). Applied linearly,
+proj' = proj + k × `pp_resid_ewm`, k per position fitted on seasons < S only (k ≈ 0.46 QB, 0.34 RB, 0.23 WR, 0.25 TE),
+point projection only: ΔMAE RB **−0.054 (3/3)**, WR −0.040 (3/3), TE −0.014 (3/3), QB +0.007 (2/3); ΔSpearman
++0.000 to +0.002. The control — the position's mean miss added as a constant — makes MAE worse (+0.03 to +0.12), so
+the gain is the player, not a bias fix. Not a harness verdict (the harness tests inputs; the ranges were not refit):
+a candidate for a v3.1 test, see STATUS § Wave E, E4.
+
+**Andrew's two questions, from the out-of-fold projections** (v3.0 trained on seasons < S, 2019–2025, reference
+scoring, miss = actual − projected, ± one standard error):
+* *An elite QB lost on an elite offense vs a bad QB lost on a bad one.* RB / WR / TE teammates of a QB who is ≥ 6
+  points per start worse than the usual one: −0.73 ± 0.28 on a top-third offense (last season's points), −0.43 ± 0.27
+  middle, −0.29 ± 0.28 bottom third; with the usual QB −0.01 … +0.08 (28,000 rows). The model does lower them (it
+  sees the teammates' own recent games, the Vegas total), but not quite enough, and more so on a good offense — about
+  0.4–0.7 points a week on ~6% of player-weeks; at QB itself the misses do not depend on the drop. The explicit
+  interactions (`qb_x_offense`) did not fix it in the walk-forward.
+* *A Pro Bowl tackle vs a backup guard.* The model's misses do not depend on which lineman is out: QB +0.29 ± 0.31
+  with one of the line's two most-used linemen out vs +0.36 ± 0.13 with nobody out; WR / TE −0.04 either way; RB
+  −0.21 ± 0.17 vs +0.10 ± 0.07 (the only hint, 0.3 points). The proxy sees snaps, starts, draft slot and years —
+  not PFF grades, pass-block win rates or contracts; a good lineman by those measures being out barely moves
+  fantasy points, and the model is not systematically wrong about it.
+
 ## Team volume and style (team_style v1.0, plan D4, Wave D, 2026-10-01; feature group `team_style`)
 
 Andrew asked about "team stats, defensively, time of possession, number of first downs". Projection v2 prices a

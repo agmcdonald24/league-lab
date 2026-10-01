@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave E
+
+- **Model tests (E4), no production change.** Four feature groups through the harness, 2023–2025, both leagues —
+  `rookie_prior` (+ `rookie_prior_early`), `oline_quality`, `qb_x_offense`, `player_prior` (the model's own out-of-fold
+  miss on the player, `ops.player_prior_oof`, built through a new `build` hook in `experiments.get_group`): all drop at
+  every position. Draft capital orders RBs / WRs better in weeks 1–4 only (+0.005–0.008, 3 of 3 seasons); the player's
+  past miss works as a linear correction (RB MAE −0.054, WR −0.040, 3 of 3) but not as an input — the PO's v3.1 leads.
+  New tables `int_e4_*` (dbt) and `ops.player_prior_oof` / `_pred`; METRICS § "Feature experiments" → "Wave E groups".
+
 ## 2026-10-01 — Projection v3 and the decision ranges
 
 - **Projection v3.0 (D5 + the v3 ship).** Per-position inputs, `projections.FEATURES_BY_POSITION`: QB = v2's inputs + 5
