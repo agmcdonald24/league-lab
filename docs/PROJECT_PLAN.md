@@ -302,8 +302,8 @@ D/ST projection paths — **delivered 2026-09-30** (STATUS § "Wave C / PO merge
 **C5** = R-14 cornerback matchups + R-15 defense-vs-position picture + R-11 matchup comparison (the whole
 Matchups page below the decision cards) · **C6** = R-10 role alerts + R-12 scenario upside + U-17
 Receivers/Kickers context (the "player signals" task: Trends, the Player card's last section, the waiver
-"upside stash" list B3 left out). P-01 profiles + any league gets a design note before it is scheduled.
-One QA pass per round.
+"upside stash" list B3 left out) — **delivered 2026-09-30** (STATUS § "Wave C / PO merge — round 2"). P-01
+profiles + any league gets a design note before it is scheduled. One QA pass per round.
 
 ### Iteration 10 — after the decision engine
 

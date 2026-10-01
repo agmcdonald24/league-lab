@@ -1332,6 +1332,29 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
   in `app/whats_new.md`. (4) The Waiver Wire box no longer says "free-agent defenses are not valued yet" (C3 changes
   that). (5) Importance is measured in the reference league's scoring only; the dynasty page says so.
 
+### PO merge — round 2 (C4 + C5 + C6), 2026-09-30
+
+* Three Opus developers in parallel off `f72afd4` (worktrees `wt-c4` / `wt-c5` / `wt-c6`, clones, ports 8551–8553).
+  Merged into `integration/wave-c2` with "keep both" conflicts only (registry blocks, METRICS, STATUS, CHANGELOG,
+  What's new). PO fix-ups: the nightly restores `ops.waiver_upside`, `ops.player_role_alerts` and
+  `ops.player_scenarios` with the rest of the `project` output (a soft `project` failure republishes a consistent
+  night); the projection-marts selection in the Makefile and `nightly.sh` is `mart_player_role_alerts+ mart_waiver_upside`
+  (C6 had appended the alerts view without `+`, which would have cascade-dropped nothing today but leaves
+  `mart_waiver_upside` outside the rebuild); the release stamp in `app/requirements.txt` bumped (Community Cloud
+  restarts only when that file changes — see HOSTING).
+* Decisions confirmed as delivered: C4 — one `RosterBoard` per league in `evaluate`, "both accept" judged on the 4-week
+  gain, every 2-for-1 pair searched (exact branch and bound = exhaustive), the market score = v2 rest-of-season points
+  above the best free agent at the position (documented with its limits, shown next to fit, never blended); C5 — no
+  "covered by" claim (public data has no assignment), the likely cover = the outside corner on the side his targets
+  favour, ranks on two seasons, the shadow flag and the nickel call computed but not shown (1 of 6 known 2025 shadow
+  corners caught), `mart_defender_coverage_season` and `mart_matchup_cb_context` retired; C6 — alerts in Python inside
+  `project()` (rule ra1.1, refits the component models for the scenario base, ~25 s), the larger-role scenario shipped as
+  a "what if" (`SCENARIO_SHIP=False`: 46–48 % nearer than base over 1–2 games held, 72 % at three), the upside list in
+  its own table.
+* Verified on the main database: `pytest` 691, `ruff` clean, migrate, the C5/C6 intermediate and mart builds, `project`
+  (v2 → K/DEF → lineups → waivers → signals → importance), the projection-marts rebuild, the headless check on every page
+  × both leagues + Player + Trade Finder with a package in the URL, 0 exceptions.
+
 ### C4 2026-09-30 — T-01 trade evaluator + T-02 trade simulator (branch `dev/C4`, clone `league_lab_c4`)
 
 * **Built.** `src/league_lab/trades.py` on B1's lineup service and B2's `RosterBoard` (page time with scipy, no
