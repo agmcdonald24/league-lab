@@ -15,6 +15,7 @@ depends on it; the nightly does not change.
 | `GET /api/leagues` | current-season leagues | `ui.current_leagues()` |
 | `GET /api/leagues/{league_id}/rosters` | the team picker's options | the query in `ui.perspective()` |
 | `GET /api/my-week?league=&team=` | Home's My Week: the record line, the league line, the cards (numbers **and** the cards' own text), the lineup (4 columns), the full lineup (+ bench, can't play), "How to read this", movers | `cards.lineup_rows` / `decisions` / `decision_cards` / `league_line` / `lineup_frame` / `howto_cards`; Home's two inline queries copied |
+| `GET /api/my-week?league=<any Sleeper id>&team=` (plan E3) | **a league the database does not have** is served on demand: Sleeper's league / rosters / users, the NFL-wide stat lines priced in its scoring, ranges from the nearest fitted scoring, the lineup solved per request; same JSON plus `source: "sleeper"` and `on_demand` (range reference, unmapped players and scoring keys, K / DEF source, timings). `source=sleeper` forces it for a known league. 404 for a league Sleeper does not have, 502 when Sleeper does not answer | `league_lab.anyleague` (`lineup.build`, `scoring.compute_points`), `ondemand.py`, the cards via `myweek.cards_from_rows`; design `docs/ANY_LEAGUE.md` |
 | `GET /api/player/{gsis}?league=&team=` | the player card: header + Usage, Projection, Availability, Value, Signals as ordered blocks | `pages/0_Player.py`'s queries and sentences, copied verbatim; `cards.alternative` / `bench_gap`, `signals.*` |
 | `GET /api/search?league=&q=` | the player card's search box (25 hits) | the page's query |
 | `GET /api/status` | the freshness line and the stale-injury warning | `ui.freshness_banner()` |
@@ -53,20 +54,24 @@ For front-end work, `cd web && npm run dev` (port 8582) proxies `/api` to 8581 a
 | `LEAGUE_LAB_APP_PASSWORD` | the beta password; unset = open, like the app |
 | `LEAGUE_LAB_API_SECRET` | optional signing key for the cookie; unset = derived from the password (changing the password signs everyone out) |
 | `LEAGUE_LAB_WEB_DIST` | where the built web app is (default `web/dist`) |
+| `LEAGUE_LAB_SLEEPER_FIXTURES` | plan E3: read Sleeper from `<dir>/league_<id>.json`, `rosters_<id>.json`, `users_<id>.json`, `players_nfl.json` instead of the network (tests, sandboxes); `python -m league_lab.anyleague fixtures <dir> <id> …` builds them from `raw.sleeper_*` |
+| `LEAGUE_LAB_SLEEPER_API` | the Sleeper host (default `https://api.sleeper.app/v1`) |
 | `PORT` | the container's port (hosts set it) |
 
 ## Tests
 
 ```bash
 cd api
-uv run pytest -q              # 39 tests; ~70 s (the parity tests render the Streamlit pages: LL_SKIP_PARITY=1 skips them)
+uv run pytest -q              # 53 tests (51 pass, 2 skip on this data); ~90 s (the parity tests render the Streamlit pages: LL_SKIP_PARITY=1 skips them)
 uv run ruff check .
 ```
 
 `test_myweek.py` / `test_player.py` check every endpoint against the marts with independent SQL (dynasty roster
 12 and Scrubs roster 2, the current week); `test_parity.py` compares with the rendered Streamlit pages (it runs
 `tests/streamlit_twin.py` in the repository's environment with `uv run --project ..`); `test_auth.py` the gate;
-`test_static.py` the web app's files and headers.
+`test_static.py` the web app's files and headers; `test_anyleague.py` (plan E3) the on-demand path against the
+marts with the two leagues' own Sleeper payloads as fixtures (`tests/fixtures/sleeper/`): the lineup to the cent,
+the range error, an unknown league through the route, cold / warm latency.
 
 ## Deploy (one service, the static app included)
 

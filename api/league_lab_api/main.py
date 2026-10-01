@@ -7,7 +7,9 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/login  /api/logout              the beta password → a signed cookie (or a bearer token)
     /api/leagues                         current-season leagues (ui.current_leagues)
     /api/leagues/{league_id}/rosters     the team picker's options
-    /api/my-week?league=&team=           Home's My Week: record line, the cards (numbers + the cards' own text), lineup
+    /api/my-week?league=&team=           Home's My Week: record line, the cards (numbers + the cards' own text), lineup;
+                                         a league the database does not have is served on demand from Sleeper
+                                         (plan E3: ondemand.py; `source=sleeper` forces that path for a known league)
     /api/player/{gsis}?league=&team=     the player card's sections
     /api/search?league=&q=               the player card's search box
     /api/status                          the freshness line and the stale-injury warning
@@ -27,7 +29,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel
 
-from . import auth, db, myweek, player
+from . import auth, db, myweek, ondemand, player
 from .db import DataNotReady
 from .myweek import NotFound
 from .settings import web_dist
@@ -53,6 +55,11 @@ JSON_CACHE = "private, max-age=120"
 @app.exception_handler(NotFound)
 async def _not_found(_req: Request, exc: NotFound):
     return JSONResponse({"detail": str(exc)}, status_code=404)
+
+
+@app.exception_handler(ondemand.SleeperDown)
+async def _sleeper_down(_req: Request, exc: ondemand.SleeperDown):
+    return JSONResponse({"detail": "Sleeper did not answer. Try again in a minute.", "error": str(exc)}, status_code=502)
 
 
 @app.exception_handler(DataNotReady)
@@ -143,7 +150,9 @@ def rosters(league_id: str, response: Response):
 
 
 @app.get("/api/my-week", dependencies=[Depends(require_auth)])
-def my_week(league: str, team: int, response: Response):
+def my_week(league: str, team: int, response: Response, source: str | None = None):
+    if source == "sleeper" or not myweek.known_league(league):
+        return _json(ondemand.my_week(league, team), response)
     return _json(myweek.my_week(league, team), response)
 
 

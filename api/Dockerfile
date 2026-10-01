@@ -20,6 +20,8 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY api/league_lab_api ./league_lab_api
 # the Streamlit app's own card / week / signals code, loaded unchanged by league_lab_api/applib.py
 COPY app/lib /srv/app/lib
+# the league_lab package the cards (decisions) and the on-demand path (anyleague, lineup, scoring) import (plan E3)
+COPY src/league_lab /srv/src/league_lab
 COPY --from=web /src/web/dist /srv/web/dist
 ENV PATH="/srv/api/.venv/bin:$PATH" PYTHONUNBUFFERED=1 LEAGUE_LAB_WEB_DIST=/srv/web/dist
 EXPOSE 8000
