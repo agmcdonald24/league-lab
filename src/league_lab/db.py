@@ -87,8 +87,8 @@ create table if not exists ops.projections (
     proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision,
     proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision,
     proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision,
-    proj_points double precision, p10 double precision, p50 double precision, p90 double precision,
-    frozen_at timestamptz, frozen_source text
+    proj_points double precision, p10 double precision, p25 double precision, p50 double precision, p75 double precision,
+    p90 double precision, frozen_at timestamptz, frozen_source text
 );
 -- Decision record (plan B5): a league-week's rows are frozen once its first game kicks off.
 -- frozen_source: NULL = live (rewritten by every refit), 'kickoff' = the board as published before the
@@ -96,6 +96,10 @@ create table if not exists ops.projections (
 -- when its rows were locked (not a kickoff record). An existing table gains the columns here.
 alter table ops.projections add column if not exists frozen_at timestamptz;
 alter table ops.projections add column if not exists frozen_source text;
+-- Plan D6 (Wave D): the 50% range ("most weeks"), calibrated like the 80% one. NULL on rows written
+-- before it existed (2026 weeks 1-3 are frozen with P10/P50/P90 only).
+alter table ops.projections add column if not exists p25 double precision;
+alter table ops.projections add column if not exists p75 double precision;
 create index if not exists projections_idx on ops.projections (league_id, season, week, position);
 create table if not exists ops.projection_backtest (
     run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,

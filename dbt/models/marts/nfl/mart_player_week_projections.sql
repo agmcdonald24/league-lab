@@ -1,7 +1,7 @@
 -- depends_on: {{ ref('scoring_stat_map') }}
 {{ config(
     indexes=[{'columns': ['league_id', 'season', 'week', 'position']}, {'columns': ['gsis_id', 'season', 'week']}],
-    pre_hook="create table if not exists ops.projections (model_version text, fitted_at timestamptz, train_seasons text, league_id text, season integer, week integer, gsis_id text, position text, proj_targets double precision, proj_receptions double precision, proj_receiving_yards double precision, proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision, proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision, proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision, proj_points double precision, p10 double precision, p50 double precision, p90 double precision, frozen_at timestamptz, frozen_source text); alter table ops.projections add column if not exists frozen_at timestamptz; alter table ops.projections add column if not exists frozen_source text"
+    pre_hook="create table if not exists ops.projections (model_version text, fitted_at timestamptz, train_seasons text, league_id text, season integer, week integer, gsis_id text, position text, proj_targets double precision, proj_receptions double precision, proj_receiving_yards double precision, proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision, proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision, proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision, proj_points double precision, p10 double precision, p25 double precision, p50 double precision, p75 double precision, p90 double precision, frozen_at timestamptz, frozen_source text); alter table ops.projections add column if not exists frozen_at timestamptz; alter table ops.projections add column if not exists frozen_source text; alter table ops.projections add column if not exists p25 double precision; alter table ops.projections add column if not exists p75 double precision"
 ) }}
 -- Projection v2 (plan M-01/M-03) per league x season x week x player: the projected stat line,
 -- the points it is worth under THAT league's scoring, and the P10 / P50 / P90 of the league's
@@ -113,6 +113,8 @@ select
     round(p.proj_points::numeric, 2) as proj_points,
     round(p.p10::numeric, 2) as p10, round(p.p50::numeric, 2) as p50, round(p.p90::numeric, 2) as p90,
     round((p.p90 - p.p10)::numeric, 2) as interval_width,
+    -- plan D6: the 50% range ("most weeks"), calibrated like the 80% one; NULL on rows frozen before it existed
+    round(p.p25::numeric, 2) as p25, round(p.p75::numeric, 2) as p75,
     round(p.proj_targets::numeric, 1) as proj_targets, round(p.proj_receptions::numeric, 1) as proj_receptions,
     round(p.proj_receiving_yards::numeric, 1) as proj_receiving_yards, round(p.proj_receiving_tds::numeric, 2) as proj_receiving_tds,
     round(p.proj_carries::numeric, 1) as proj_carries, round(p.proj_rushing_yards::numeric, 1) as proj_rushing_yards,
@@ -126,6 +128,7 @@ select
     f.out_targets, f.out_receptions, f.out_receiving_yards, f.out_receiving_tds, f.out_carries, f.out_rushing_yards, f.out_rushing_tds,
     f.out_attempts, f.out_passing_yards, f.out_passing_tds, f.out_passing_interceptions,
     case when f.played then (pr.points_actual_league between p.p10 and p.p90) end as actual_inside_interval,
+    case when f.played and p.p25 is not null then (pr.points_actual_league between p.p25 and p.p75) end as actual_inside_50,
     rank() over (partition by p.league_id, p.season, p.week, p.position order by case when f.is_rankable then p.proj_points end desc nulls last, p.gsis_id) as rank_pos,
     case when f.played then rank() over (partition by p.league_id, p.season, p.week, p.position order by case when f.played then pr.points_actual_league end desc nulls last, p.gsis_id) end as actual_rank_pos,
     p.model_version, p.train_seasons, p.fitted_at,
@@ -148,6 +151,7 @@ select
     round(k.proj_points::numeric, 2) as proj_points,
     round(k.p10::numeric, 2) as p10, round(k.p50::numeric, 2) as p50, round(k.p90::numeric, 2) as p90,
     round((k.p90 - k.p10)::numeric, 2) as interval_width,
+    round(k.p25::numeric, 2) as p25, round(k.p75::numeric, 2) as p75,
     null::numeric as proj_targets, null::numeric as proj_receptions, null::numeric as proj_receiving_yards, null::numeric as proj_receiving_tds,
     null::numeric as proj_carries, null::numeric as proj_rushing_yards, null::numeric as proj_rushing_tds, null::numeric as proj_attempts,
     null::numeric as proj_passing_yards, null::numeric as proj_passing_tds, null::numeric as proj_passing_interceptions,
@@ -159,6 +163,7 @@ select
     null::integer as out_carries, null::integer as out_rushing_yards, null::integer as out_rushing_tds, null::integer as out_attempts,
     null::integer as out_passing_yards, null::integer as out_passing_tds, null::integer as out_passing_interceptions,
     case when k.played then (k.points_actual_league between k.p10 and k.p90) end as actual_inside_interval,
+    case when k.played and k.p25 is not null then (k.points_actual_league between k.p25 and k.p75) end as actual_inside_50,
     rank() over (partition by k.league_id, k.season, k.week, k.position order by case when k.is_rankable then k.proj_points end desc nulls last, k.gsis_id) as rank_pos,
     case when k.played then rank() over (partition by k.league_id, k.season, k.week, k.position order by case when k.played then k.points_actual_league end desc nulls last, k.gsis_id) end as actual_rank_pos,
     k.model_version, k.train_seasons, k.fitted_at,

@@ -87,9 +87,24 @@ models:
           name: projection_points_are_non_negative
           arguments:
             expression: "proj_points >= 0 and p10 >= 0"
+      - expression_is_true:
+          name: projection_50_range_inside_80_range
+          arguments:
+            expression: "p10 <= p25 and p25 <= p50 and p50 <= p75 and p75 <= p90"
+            condition: "p25 is not null or p75 is not null"
+      - expression_is_true:
+          name: projection_50_range_both_ends_or_neither
+          arguments:
+            expression: "(p25 is null) = (p75 is null)"
     columns:
       - name: p50
         tests: [not_null]
+      - name: p25
+        description: "Plan D6: the low end of the 50% range ('most weeks'): about a quarter of outcomes land below it (split-conformal calibrated like p10). NULL on rows frozen before it existed (2026 weeks 1-3) and on K / DEF (kd1.0 has P10/P50/P90 only)."
+      - name: p75
+        description: "Plan D6: the high end of the 50% range: about a quarter of outcomes land above it. NULL where p25 is."
+      - name: actual_inside_50
+        description: "Plan D6: the league's points landed inside [p25, p75] (played rows with a 50% range; NULL otherwise)."
       - name: league_name
         tests: [not_null]
       - name: frozen_source

@@ -56,6 +56,9 @@ log = logging.getLogger(__name__)
 MODEL_VERSION = "v2.0"
 POSITIONS = ("QB", "RB", "WR", "TE")
 QUANTILES = (0.1, 0.5, 0.9)
+# Plan D6 (Wave D): the 50% range ("most weeks"), fitted and calibrated with the same machinery as the
+# 80% one (P10-P90) and written next to it as p25 / p75. The 80% models and their order are unchanged.
+QUANTILES_50 = (0.25, 0.75)
 
 # Stat-line components projected per position (everything else is 0 for that position).
 COMPONENTS: dict[str, list[str]] = {
@@ -158,6 +161,7 @@ class PositionModel:
     components: dict[str, object] = field(default_factory=dict)      # component -> regressor
     quantiles: dict[tuple[str, float], object] = field(default_factory=dict)  # (league_id, q) -> regressor
     conformal: dict[str, float] = field(default_factory=dict)        # league_id -> interval widening (points)
+    conformal_50: dict[str, float] = field(default_factory=dict)     # league_id -> widening of the 50% range (plan D6)
     n_rows: int = 0
     calibration_season: int | None = None
     features: list[str] | None = None    # the inputs it was fitted on; None = FEATURES (plan D1 harness hook)
@@ -259,23 +263,34 @@ def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[s
         fit_idx, cal_idx = ok & ~is_cal, ok & is_cal
         for q in QUANTILES:
             m.quantiles[(league_id, q)] = _regressor("quantile", q).fit(_binnable(xq[fit_idx]), y[fit_idx])
-        if cal_idx.sum() >= 50:
-            lo = m.quantiles[(league_id, QUANTILES[0])].predict(xq[cal_idx])
-            hi = m.quantiles[(league_id, QUANTILES[-1])].predict(xq[cal_idx])
-            miss = np.maximum(lo - y[cal_idx], y[cal_idx] - hi)      # negative when inside the interval
-            n = int(cal_idx.sum())
-            level = min(1.0, np.ceil((n + 1) * (QUANTILES[-1] - QUANTILES[0])) / n)
-            m.conformal[league_id] = float(np.quantile(miss, level))
-        else:
-            m.conformal[league_id] = 0.0
-    log.info("fit %s: %s rows, %s components, %s quantile models, calibration season %s, widening %s",
+        # plan D6: the 50% range, fitted after the 80% models (each regressor has its own seed, so the
+        # P10 / P50 / P90 models are exactly what they were) and calibrated the same way for 50%
+        for q in QUANTILES_50:
+            m.quantiles[(league_id, q)] = _regressor("quantile", q).fit(_binnable(xq[fit_idx]), y[fit_idx])
+        m.conformal[league_id] = _conformal_widening(m, league_id, QUANTILES[0], QUANTILES[-1], xq[cal_idx], y[cal_idx])
+        m.conformal_50[league_id] = _conformal_widening(m, league_id, *QUANTILES_50, xq[cal_idx], y[cal_idx])
+    log.info("fit %s: %s rows, %s components, %s quantile models, calibration season %s, widening 80%% %s, 50%% %s",
              position, len(d), len(m.components), len(m.quantiles), cal_season,
-             {k[-6:]: round(v, 2) for k, v in m.conformal.items()})
+             {k[-6:]: round(v, 2) for k, v in m.conformal.items()}, {k[-6:]: round(v, 2) for k, v in m.conformal_50.items()})
     return m
 
 
+def _conformal_widening(m: PositionModel, league_id: str, q_lo: float, q_hi: float, xq_cal: np.ndarray, y_cal: np.ndarray) -> float:
+    """Split-conformal widening (CQR) of the [q_lo, q_hi] range on the calibration rows: the
+    ceil((n + 1) x coverage) / n quantile of how far each actual falls outside it (negative = inside), so that
+    share of held-out outcomes lands inside once both ends move out by it. 0 with fewer than 50 rows."""
+    n = len(y_cal)
+    if n < 50:
+        return 0.0
+    lo = m.quantiles[(league_id, q_lo)].predict(xq_cal)
+    hi = m.quantiles[(league_id, q_hi)].predict(xq_cal)
+    miss = np.maximum(lo - y_cal, y_cal - hi)      # negative when inside the interval
+    level = min(1.0, np.ceil((n + 1) * (q_hi - q_lo)) / n)
+    return float(np.quantile(miss, level))
+
+
 def predict_position(m: PositionModel, rows: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]]) -> pd.DataFrame:
-    """One output row per league per input row: projected line, priced points, P10/P50/P90."""
+    """One output row per league per input row: projected line, priced points, P10/P50/P90 and (plan D6) P25/P75."""
     x = _matrix(rows, m.features)
     out = rows[["gsis_id", "season", "week", "position"]].copy()
     out["season"], out["week"] = out["season"].astype(int), out["week"].astype(int)   # week is also a feature (float)
@@ -297,6 +312,15 @@ def predict_position(m: PositionModel, rows: pd.DataFrame, scorings: dict[str, t
         o["p10"], o["p50"], o["p90"] = np.clip(qs[:, 0] - adj, 0, None), qs[:, 1], qs[:, 2] + adj
         o["p90"] = np.maximum(o["p90"], o["proj_points"])   # the ceiling never sits below the projection
         o["p50"] = np.clip(o["p50"], o["p10"], o["p90"])     # keep the order after the floor was clipped at 0
+        # plan D6: the 50% range, sorted and widened the same way, then kept inside the 80% one around P50
+        # (P10 <= P25 <= P50 <= P75 <= P90); a model fitted before D6 has no 50% models: NULL
+        if all((league_id, q) in m.quantiles for q in QUANTILES_50):
+            q50 = np.sort(np.column_stack([line + m.quantiles[(league_id, q)].predict(xq) for q in QUANTILES_50]), axis=1)
+            adj50 = m.conformal_50.get(league_id, 0.0)
+            o["p25"] = np.clip(q50[:, 0] - adj50, o["p10"], o["p50"])
+            o["p75"] = np.clip(q50[:, 1] + adj50, o["p50"], o["p90"])
+        else:
+            o["p25"], o["p75"] = np.nan, np.nan
         frames.append(o)
     return pd.concat(frames, ignore_index=True)
 
@@ -562,8 +586,20 @@ def score_predictions(pred: pd.DataFrame, actual: pd.DataFrame, baseline: pd.Dat
                     "pinball_50": _pinball(y.to_numpy(), g["p50"].to_numpy(), 0.5) if name != "baseline" else None,
                     "pinball_90": _pinball(y.to_numpy(), g["p90"].to_numpy(), 0.9) if name != "baseline" else None,
                     "interval_width": float((g["p90"] - g["p10"]).mean()) if name != "baseline" else None,
+                    # plan D6: the 50% range (not stored in ops.projection_backtest: _write keeps the table's columns)
+                    **(_scores_50(y, g) if name != "baseline" else {}),
                 })
     return pd.DataFrame(out)
+
+
+def _scores_50(y: pd.Series, g: pd.DataFrame) -> dict[str, float | None]:
+    """Coverage, pinball losses and width of the 50% range [P25, P75] (plan D6); None when the frame has none."""
+    if "p25" not in g or "p75" not in g or g["p25"].isna().any() or g["p75"].isna().any():
+        return {"coverage_50": None, "pinball_25": None, "pinball_75": None, "interval_width_50": None}
+    yv = y.to_numpy()
+    return {"coverage_50": float(((y >= g["p25"]) & (y <= g["p75"])).mean()),
+            "pinball_25": _pinball(yv, g["p25"].to_numpy(), 0.25), "pinball_75": _pinball(yv, g["p75"].to_numpy(), 0.75),
+            "interval_width_50": float((g["p75"] - g["p25"]).mean())}
 
 
 def load_baseline(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
@@ -786,10 +822,12 @@ DDL = {
         proj_receiving_tds double precision, proj_carries double precision, proj_rushing_yards double precision,
         proj_rushing_tds double precision, proj_attempts double precision, proj_passing_yards double precision,
         proj_passing_tds double precision, proj_passing_interceptions double precision, proj_fumbles_lost_total double precision,
-        proj_points double precision, p10 double precision, p50 double precision, p90 double precision,
-        frozen_at timestamptz, frozen_source text);
+        proj_points double precision, p10 double precision, p25 double precision, p50 double precision, p75 double precision,
+        p90 double precision, frozen_at timestamptz, frozen_source text);
         alter table ops.projections add column if not exists frozen_at timestamptz;
-        alter table ops.projections add column if not exists frozen_source text""",
+        alter table ops.projections add column if not exists frozen_source text;
+        alter table ops.projections add column if not exists p25 double precision;
+        alter table ops.projections add column if not exists p75 double precision""",
     "ops.projection_backtest": """create table if not exists ops.projection_backtest (
         run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
         position text, scorer text, n_players integer, spearman double precision, top_n integer, hit_rate double precision,

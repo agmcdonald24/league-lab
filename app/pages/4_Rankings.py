@@ -105,7 +105,7 @@ avail = query(
 if model == "v2":
     rk = query(
         """select gsis_id, rank_pos, player_name, team, opponent, is_home, implied_team_total, spread_line, report_status, practice_status,
-                  games_to_date, no_history, is_rankable, proj_points, p10, p50, p90, interval_width,
+                  games_to_date, no_history, is_rankable, proj_points, p10, p25, p50, p75, p90, interval_width,
                   proj_targets, proj_receptions, proj_receiving_yards, proj_receiving_tds, proj_carries, proj_rushing_yards, proj_rushing_tds,
                   proj_attempts, proj_passing_yards, proj_passing_tds, proj_passing_interceptions,
                   xppg_l5, ppg_std, ppg_l3, prev_ppg, opp_rank_std, target_share_l3, carry_share_l3, snap_pct_l3, first_read_share_l3,
@@ -149,14 +149,18 @@ def _tag(r) -> str:
     return f"{r['player_name']} · {s[0]}" if isinstance(s, str) and bool(not_healthy(pd.Series([s])).iloc[0]) else str(r["player_name"])
 
 
-def _range(r) -> str:
-    lo, hi = pd.to_numeric(r.get("p10"), errors="coerce"), pd.to_numeric(r.get("p90"), errors="coerce")
-    return f"{lo:.1f}–{hi:.1f}" if pd.notna(lo) and pd.notna(hi) else ""
+def _range(r, lo: str = "p25", hi: str = "p75") -> str:
+    a, b = pd.to_numeric(r.get(lo), errors="coerce"), pd.to_numeric(r.get(hi), errors="coerce")
+    return f"{a:.0f}–{b:.0f}" if pd.notna(a) and pd.notna(b) else ""
 
 
+# plan D6: the board's range is the 50% range ("most weeks": half his weeks land in it), the 80% floor-ceiling
+# behind it in the full table; a week frozen before the 50% range existed (2026 weeks 1-3) shows the 80% one
+has_mid = model == "v2" and not ranked.empty and "p25" in ranked and ranked["p25"].notna().any()
 if not ranked.empty:
     ranked["player"] = ranked.apply(_tag, axis=1)
-    ranked["proj_range"] = ranked.apply(_range, axis=1) if model == "v2" else ""
+    ranked["proj_range"] = (ranked.apply(_range, axis=1) if has_mid
+                            else ranked.apply(_range, axis=1, lo="p10", hi="p90") if model == "v2" else "")
 
 # ---------------------------------------------------------------- the answer, then the board (five columns)
 st.subheader(f"{position} · NFL {season} week {week}")
@@ -165,7 +169,10 @@ with st.container(border=True):
         st.markdown(f"**Nobody to rank at {position} with these filters.**")
     else:
         t = ranked.iloc[0]
-        rng = f" (bad week {pd.to_numeric(t['p10']):.1f}, good week {pd.to_numeric(t['p90']):.1f})" if model == "v2" and pd.notna(t.get("p10")) else ""
+        rng = ""
+        if model == "v2" and pd.notna(t.get("p10")):
+            mid = f"most weeks {_range(t)}, " if has_mid and _range(t) else ""
+            rng = f" ({mid}bad week {pd.to_numeric(t['p10']):.1f}, good week {pd.to_numeric(t['p90']):.1f})"
         opp = f" vs {t['opponent']}" if isinstance(t["opponent"], str) and t["opponent"] else ""
         st.markdown(f"**#1 {position}: {t['player_name']}{opp}, {float(t['proj_points']):.1f} projected{rng}.**")
         if roster_id is not None and scope != "team":
@@ -176,7 +183,10 @@ with st.container(border=True):
                 st.markdown(f"None of your {position}s is on this board.")
 board_ov = {"player": Col("Player", help="Q / D / O after a name = on the injury report (Questionable / Doubtful / Out)"),
             "proj_points": Col("Proj", "num1", "The projected stat line put through this league's scoring map"),
-            "proj_range": Col("Range", help="Floor–ceiling: a bad week (10th percentile) to a good week (90th); about 80% of outcomes land between")}
+            "proj_range": (Col("Most weeks", help="Half his weeks land in this range (a quarter below, a quarter above). The wider "
+                                                  "floor–ceiling, 8 weeks in 10, is in the full table below")
+                           if has_mid else
+                           Col("Range", help="Floor–ceiling: a bad week (10th percentile) to a good week (90th); about 80% of outcomes land between"))}
 if model == "v2":
     board_cols = (["rank_pos", "player", "proj_points", "proj_range", "points_actual"] if played_week
                   else ["rank_pos", "player", "opponent", "proj_points", "proj_range"])
@@ -194,6 +204,7 @@ with st.expander("The full board: stat line, usage, matchup, who has him"):
     if model == "v2":
         howto(
             f"**Proj** is his projected points in **{league_name}** scoring: the stat line in the next columns, counted your league's way.",
+            "**Most weeks** (the board) is the range half his weeks land in: a quarter below it, a quarter above. "
             "**Floor** and **Ceiling** are a bad week and a good week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. "
             "The wider the gap (**Range**), the less sure the projection is.",
             "The stat columns are what the projection is made of. A touchdown number like 0.45 means roughly a 45% chance he scores one.",
@@ -206,7 +217,7 @@ with st.expander("The full board: stat line, usage, matchup, who has him"):
                      "RB": ["proj_carries", "proj_rushing_yards", "proj_rushing_tds", "proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds"],
                      "WR": ["proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds", "proj_carries", "proj_rushing_yards"],
                      "TE": ["proj_targets", "proj_receptions", "proj_receiving_yards", "proj_receiving_tds"]}[position]
-        cols = ["rank_pos", "player_name", "team", "opponent", "rostered_by_team", "report_status", "proj_points", "p10", "p90", "interval_width",
+        cols = ["rank_pos", "player_name", "team", "opponent", "rostered_by_team", "report_status", "proj_points", "p10", "p25", "p75", "p90", "interval_width",
                 *line_cols, "xppg_l5", "ppg_std", "ppg_l3", "prev_ppg", "games_to_date", "opp_rank_std", "implied_team_total", "is_home",
                 "target_share_l3" if position != "QB" else "carry_share_l3", "snap_pct_l3"]
         if position in ("WR", "TE", "RB"):
@@ -214,7 +225,9 @@ with st.expander("The full board: stat line, usage, matchup, who has him"):
         if played_week:
             cols += ["points_actual", "actual_rank_pos", "actual_inside_interval"]
         show(ranked, cols, height=min(80 + 36 * len(ranked), 900), phone_cols=["player_name", "proj_points", *line_cols[:3]],
-             overrides={"proj_points": Col("Proj", "num1", "The projected stat line put through this league's scoring map")})
+             overrides={"proj_points": Col("Proj", "num1", "The projected stat line put through this league's scoring map"),
+                        "p25": Col("Most weeks from", "num1", "1 week in 4 lands below it: the low end of the range half his weeks land in"),
+                        "p75": Col("Most weeks to", "num1", "1 week in 4 lands above it: the high end of the range half his weeks land in")})
     else:
         howto(
             "**Proj** is the old formula's projection, on one scale for every league. The five columns after it (form, usage, matchup, "
