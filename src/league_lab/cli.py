@@ -146,6 +146,24 @@ def ingest_nfl_cmd(
     raise typer.Exit(1 if _print_results(results) else 0)
 
 
+@ingest_app.command("weather")
+def ingest_weather_cmd(
+    seasons: str | None = typer.Option(None, help="e.g. 2025, 2016-2025 (default: every season with games)"),
+    forecast: bool = typer.Option(False, help="Also fetch the forecast for games in the next 16 days (one call per stadium)"),
+    offline: bool = typer.Option(False, help="Replay every archived Open-Meteo file from data/raw/open_meteo; no network"),
+    force: bool = typer.Option(False, help="Re-fetch and reload even when the archive already covers the games"),
+):
+    """Game-day weather from Open-Meteo by stadium and kickoff hour -> raw.nfl_weather (archive: one call per stadium-season; reads raw.nfl_schedules, so run it after `ingest nfl`)."""
+    from .ingest.weather import ingest_weather
+
+    with connect() as conn:
+        migrate(conn)
+        results = ingest_weather(conn, parse_seasons(seasons), offline=offline, forecast=forecast, force=force)
+    if not results:
+        console.print("weather: nothing to load (no archived Open-Meteo files to replay, or no game needs weather)")
+    raise typer.Exit(1 if _print_results(results) else 0)
+
+
 @ingest_app.command("all")
 def ingest_all_cmd(
     seasons: str | None = typer.Option(None),

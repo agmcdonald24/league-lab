@@ -1,0 +1,50 @@
+stadium_id,name,other_names,city,country,latitude,longitude,timezone,roof_type,tenants,in_nflverse,notes
+ATL00,Georgia Dome,,Atlanta GA,USA,33.7575,-84.4008,America/New_York,dome,ATL 2016-2016,true,
+ATL97,Mercedes-Benz Stadium,,Atlanta GA,USA,33.7555,-84.4011,America/New_York,retractable,ATL 2017-2026,true,
+BAL00,M&T Bank Stadium,,Baltimore MD,USA,39.2780,-76.6227,America/New_York,outdoors,BAL 2016-2026,true,
+BER00,Olympiastadion Berlin,,Berlin,Germany,52.5147,13.2394,Europe/Berlin,outdoors,,false,not an nflverse id: the 2025 Berlin game (2025_10_ATL_IND) is recorded at IND00; see stadium_game_venues.csv
+BOS00,Gillette Stadium,,Foxborough MA,USA,42.0909,-71.2643,America/New_York,outdoors,NE 2016-2026,true,
+BUF00,Highmark Stadium,New Era Field,Orchard Park NY,USA,42.7738,-78.7870,America/New_York,outdoors,BUF 2016-2026,true,the 2026 stadium is across Abbott Road from the old one (same id in nflverse; < 1 km: the same weather grid cell)
+CAR00,Bank of America Stadium,,Charlotte NC,USA,35.2258,-80.8528,America/New_York,outdoors,CAR 2016-2026,true,
+CHI98,Soldier Field,,Chicago IL,USA,41.8623,-87.6167,America/Chicago,outdoors,CHI 2016-2026,true,
+CIN00,Paycor Stadium,Paul Brown Stadium,Cincinnati OH,USA,39.0955,-84.5161,America/New_York,outdoors,CIN 2016-2026,true,
+CLE00,Huntington Bank Field,FirstEnergy Stadium,Cleveland OH,USA,41.5061,-81.6995,America/New_York,outdoors,CLE 2016-2026,true,
+DAL00,AT&T Stadium,,Arlington TX,USA,32.7478,-97.0928,America/Chicago,retractable,DAL 2016-2026,true,
+DEN00,Empower Field at Mile High,Sports Authority Field at Mile High,Denver CO,USA,39.7439,-105.0201,America/Denver,outdoors,DEN 2016-2026,true,
+DET00,Ford Field,,Detroit MI,USA,42.3400,-83.0456,America/Detroit,dome,DET 2016-2026,true,
+DUB00,Croke Park,,Dublin,Ireland,53.3608,-6.2511,Europe/Dublin,outdoors,,false,not an nflverse id: the 2025 Dublin game (2025_04_MIN_PIT) is recorded at PIT00; see stadium_game_venues.csv
+FRA00,Deutsche Bank Park,,Frankfurt,Germany,50.0686,8.6455,Europe/Berlin,retractable,,true,retractable membrane roof; nflverse records the 2023 games as outdoors (treated as open)
+GER00,Allianz Arena,,Munich,Germany,48.2188,11.6247,Europe/Berlin,outdoors,,true,roof covers the stands only
+GNB00,Lambeau Field,,Green Bay WI,USA,44.5013,-88.0622,America/Chicago,outdoors,GB 2016-2026,true,
+HOU00,NRG Stadium,Reliant Stadium,Houston TX,USA,29.6847,-95.4107,America/Chicago,retractable,HOU 2016-2026,true,
+IND00,Lucas Oil Stadium,,Indianapolis IN,USA,39.7601,-86.1639,America/Indiana/Indianapolis,retractable,IND 2016-2026,true,
+JAX00,EverBank Stadium,EverBank Field|TIAA Bank Stadium,Jacksonville FL,USA,30.3239,-81.6373,America/New_York,outdoors,JAX 2016-2026,true,
+KAN00,GEHA Field at Arrowhead Stadium,Arrowhead Stadium,Kansas City MO,USA,39.0489,-94.4839,America/Chicago,outdoors,KC 2016-2026,true,
+LAX01,SoFi Stadium,,Inglewood CA,USA,33.9534,-118.3390,America/Los_Angeles,dome,LA 2020-2026|LAC 2020-2026,true,fixed translucent roof with open sides (nflverse: dome)
+LAX97,StubHub Center,,Carson CA,USA,33.8644,-118.2611,America/Los_Angeles,outdoors,LAC 2017-2019,true,
+LAX99,Los Angeles Memorial Coliseum,,Los Angeles CA,USA,34.0141,-118.2879,America/Los_Angeles,outdoors,LA 2016-2019,true,
+LON00,Wembley Stadium,,London,United Kingdom,51.5560,-0.2796,Europe/London,outdoors,,true,roof covers the stands only
+LON01,Twickenham Stadium,,London,United Kingdom,51.4559,-0.3415,Europe/London,outdoors,,true,
+LON02,Tottenham Hotspur Stadium,Tottenham Stadium,London,United Kingdom,51.6044,-0.0664,Europe/London,outdoors,,true,2026_05_PHI_JAX carries this name under stadium_id JAX00 (resolved by name)
+MAD01,Bernabeu,,Madrid,Spain,40.4531,-3.6883,Europe/Madrid,retractable,,true,Santiago Bernabeu; retractable roof since the 2024 renovation
+MEL00,Melbourne Cricket Ground,,Melbourne,Australia,-37.8200,144.9834,Australia/Melbourne,outdoors,,true,open-air; nflverse records roof = dome (wrong)
+MEX00,Estadio Banorte,Azteca Stadium,Mexico City,Mexico,19.3029,-99.1505,America/Mexico_City,outdoors,,true,
+MIA00,Hard Rock Stadium,,Miami Gardens FL,USA,25.9580,-80.2389,America/New_York,outdoors,MIA 2016-2026,true,canopy over the seats only
+MIN01,U.S. Bank Stadium,,Minneapolis MN,USA,44.9738,-93.2581,America/Chicago,dome,MIN 2016-2026,true,
+MUN01,FC Bayern Munich Stadium,,Munich,Germany,48.2188,11.6247,Europe/Berlin,outdoors,,true,the Allianz Arena (GER00) under its non-sponsor name; nflverse records roof = dome (wrong)
+NAS00,Nissan Stadium,,Nashville TN,USA,36.1664,-86.7714,America/Chicago,outdoors,TEN 2016-2026,true,
+NOR00,Caesars Superdome,Mercedes-Benz Superdome,New Orleans LA,USA,29.9511,-90.0812,America/Chicago,dome,NO 2016-2026,true,
+NYC01,MetLife Stadium,,East Rutherford NJ,USA,40.8136,-74.0744,America/New_York,outdoors,NYG 2016-2026|NYJ 2016-2026,true,
+OAK00,Ring Central Coliseum,Oakland-Alameda County Coliseum,Oakland CA,USA,37.7516,-122.2005,America/Los_Angeles,outdoors,OAK 2016-2019,true,
+PAR00,Stade de France,,Saint-Denis,France,48.9245,2.3602,Europe/Paris,outdoors,,true,roof covers the stands only; nflverse records roof = dome (wrong)
+PHI00,Lincoln Financial Field,,Philadelphia PA,USA,39.9008,-75.1675,America/New_York,outdoors,PHI 2016-2026,true,
+PHO00,State Farm Stadium,University of Phoenix Stadium,Glendale AZ,USA,33.5276,-112.2626,America/Phoenix,retractable,ARI 2016-2026,true,Arizona keeps standard time all year
+PIT00,Acrisure Stadium,Heinz Field,Pittsburgh PA,USA,40.4468,-80.0158,America/New_York,outdoors,PIT 2016-2026,true,
+RIO00,Maracana Stadium,,Rio de Janeiro,Brazil,-22.9122,-43.2302,America/Sao_Paulo,outdoors,,true,roof covers the stands only
+SAO00,Arena Corinthians,,Sao Paulo,Brazil,-23.5453,-46.4739,America/Sao_Paulo,outdoors,,true,
+SDG00,Qualcomm Stadium,,San Diego CA,USA,32.7831,-117.1194,America/Los_Angeles,outdoors,SD 2016-2016,true,
+SEA00,Lumen Field,CenturyLink Field,Seattle WA,USA,47.5952,-122.3316,America/Los_Angeles,outdoors,SEA 2016-2026,true,
+SFO01,Levi's Stadium,,Santa Clara CA,USA,37.4030,-121.9700,America/Los_Angeles,outdoors,SF 2016-2026,true,
+TAM00,Raymond James Stadium,,Tampa FL,USA,27.9759,-82.5033,America/New_York,outdoors,TB 2016-2026,true,
+VEG00,Allegiant Stadium,,Las Vegas NV,USA,36.0908,-115.1836,America/Los_Angeles,dome,LV 2020-2026,true,
+WAS00,Northwest Stadium,FedExField,Landover MD,USA,38.9078,-76.8644,America/New_York,outdoors,WAS 2016-2026,true,
