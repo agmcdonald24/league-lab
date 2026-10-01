@@ -311,7 +311,8 @@ sorting, then **split-conformal calibrated**: fitted on all training seasons but
 newest measures how far actuals fall outside [P10, P90], and both ends are widened by the 80th
 percentile of that miss. Coverage on data the model never saw is reported, not assumed. **The
 board ranks by `proj_points`** (the priced line) among rankable players (Out / Doubtful / IR
-excluded, like the baseline); the interval belongs to that projection.
+excluded, like the baseline); the interval belongs to that projection. **Plan D6** adds the 50% range
+(`p25`, `p75`, "most weeks") with the same machinery: § Ranges and decisions.
 
 ### Features (all as-of the week; NULL allowed — the model treats "not known yet" as information)
 
@@ -836,7 +837,9 @@ Golden would move to WR2"). Checked against the solver on every proposed roster-
 (both leagues, 330 roster-weeks, 978 cards: 920 direct swaps, 58 slides, 978/978 re-solves bring in exactly
 the named player and lose exactly the margin) and on 360 random rosters in `tests/test_cards.py`.
 **Words**: the projected difference on the card is the margin; under 1 point "a coin flip", under 3 "a
-lean", otherwise "clear". The opponent's rank on a card is `mart_defense_vs_position_current.rank_std`
+lean", otherwise "clear". **Since plan D6** the headline is the probability that the starter outscores the
+alternative (50–55% a coin flip, 55–65% a lean, 65%+ clear; § Ranges and decisions) and the margin is the
+second line; the margin's words remain only where there is no probability (K, DEF, points-per-game values). The opponent's rank on a card is `mart_defense_vs_position_current.rank_std`
 for his position (reference scoring, 1 = gives up the most), the same rank the Matchups page shows.
 **Bench player on the player card**: the lowest-valued unlocked starter in a slot he can play and the gap
 to him (a direct swap; a slide could make the real gap smaller — the card says "would have to beat", not
@@ -1414,6 +1417,137 @@ early (when the game is and the body clock); `rest` = the five rest columns; `ve
 neutral site. Results (2026-10-01, harness fx1.0, test seasons 2023–2025, both leagues): **drop** for every group
 and position: no mean ΔSpearman beyond ±0.004, no mean ΔMAE beyond ±0.02 points, interval score flat. The Vegas
 lines v2 already uses price the game context. Table: STATUS § "Wave D (Iteration 12)" / D2; Rankings → "What we tried".
+
+## Ranges and decisions (plan D6, Wave D round 2, 2026-10-01; `projections.fit_position` / `predict_position`, `league_lab.decisions`, `app/lib/cards.py`)
+
+Andrew: "if an 80% confidence interval is like a 20-point spread, how useful is that?". The 80% range is
+calibrated, so it cannot be narrowed by decree. Three things could change, and D6 tried all three: a
+**sharper** range at the same honesty, a **50% range** to lead with, and the **decision quantity** itself.
+
+### The two ranges
+
+* **80% range, floor to ceiling** (`p10`, `p90`): unchanged from v2 (§ Projection v2: quantile regressors of
+  the miss around the priced line on out-of-fold lines, split-conformal widened on the newest training season).
+* **50% range, "most weeks"** (`p25`, `p75`, new columns on `ops.projections` and
+  `mart_player_week_projections`): two more quantile regressors (0.25, 0.75) on the same rows and inputs as
+  P10 / P90, fitted after them (each regressor has its own seed: P10 / P50 / P90 are bit-for-bit what they
+  were), sorted, then widened by the split-conformal amount for 50%: the ceil((n + 1) × 0.5) / n quantile of
+  `max(P25 − y, y − P75)` on the calibration season (`_conformal_widening`, the same function the 80% range
+  uses). Production widenings (fit 2016–2025, calibrated on 2025; League of Scrubs / dynasty): QB 0.67 / 0.83,
+  RB 0.03 / 0.01 points (80%: QB 1.06 / 1.80, RB 0.07 / 0.04). Finally kept inside the 80% range around the
+  median: `P10 ≤ P25 ≤ P50 ≤ P75 ≤ P90` (mart test `projection_50_range_inside_80_range`). NULL on rows written
+  before D6 (2026 weeks 1–3 are frozen with P10 / P50 / P90 only; so is any week frozen before the first D6
+  refit) and on K / DEF (kd1.0 has no 50% range); pages and the decision probability fall back to the 80%
+  range there.
+* **How wide** (walk-forward 2023–2025, both leagues, played player-weeks, the board's top 24 RB / WR and top
+  12 QB / TE by projection each week): League of Scrubs — RB 17.9 → **9.5** points, WR 17.5 → **9.4**, TE 13.1 →
+  7.5, QB 19.4 → 10.1 (80% → 50%); dynasty (full PPR, 6-point passing TDs) RB 20.4 → 10.7, WR 22.0 → 11.6, TE
+  15.8 → 9.1, QB 27.4 → 14.1. **Coverage of the 50% range** (mean of 2023–2025 × both leagues, 4,042 QB,
+  8,990 RB, 14,228 WR, 7,332 TE played player-weeks): **RB 51.3%, WR 49.7%, TE 50.7%, QB 46.7%** (target
+  48–52%; per league-season 43.1–49.5% QB, 47.9–54.5% RB, 45.1–52.5% WR, 48.1–52.1% TE). QB misses like
+  its 80% range does (75.5% on the same seasons, v2 as is): see "Quarterbacks" below.
+
+### Can the range be sharper? The experiment
+
+Walk-forward 2023–2025 (each season N: components and out-of-fold lines fitted on 2016…N−1, the residual
+models on 2016…N−2, calibrated on N−1), both leagues' scoring, played player-weeks, scored the harness's way
+(per week with ≥ 8 players; season means; **interval score** = mean pinball loss at 0.1 and 0.9, lower =
+sharper at the same honesty; the six league × season cells averaged per position). The component models and
+priced lines were fitted once and shared by every variant, so the point projection and its Spearman are
+identical across variants (QB 0.533, RB 0.683, WR 0.624, TE 0.583). The v2 variant reproduces the harness
+baseline in `ops.feature_experiments` (key `cb461af0c56b4811`) to four decimals in every cell. Variants
+(scripts and the full 18-variant table: `docs/STATUS.md` § D6):
+
+| Variant | QB | RB | WR | TE |
+|---|---|---|---|---|
+| v2: interval score / coverage 80 / width 80 | 1.509 / 75.5% / 21.9 | 0.971 / 79.8% / 13.6 | 0.957 / 81.4% / 13.8 | 0.719 / 80.9% / 9.5 |
+| (a) role inputs added to the quantile models (own points SD, dud rate and CV over the last 16 games, TD share of points, RB receiving share, QB rushing share; WR / TE aDOT and deep-target share) | −0.1% | −0.2% | −0.3% | −0.3% |
+| (b) heteroscedastic: a scale model of the absolute miss × a fixed-shape residual distribution (normalised conformal) | +3.8% | +1.5% | +0.4% | +2.3% |
+| (b) the same with the role inputs | +3.4% | +1.1% | +0.3% | +2.0% |
+| (c) conformal per projection tier (terciles) | 0.0% | 0.0% | −0.1% | −0.2% |
+| (c) conformal per role (deep / short WR-TE, receiving RB, rushing QB) | −0.1% | 0.0% | 0.0% | −0.1% |
+| (c) each tail calibrated on its own (10% below, 10% above) | 0.0% | −0.1% | 0.0% | −0.2% |
+| (a)+(c) role inputs, per tail, per tier | −0.1% | −0.5% | −0.7% | −0.5% |
+| (d) two-part: separate models for regulars (snap share ≥ 50%) and the rest, per tail | −0.5% | +0.1% | +0.3% | +1.2% |
+| regularised residual models (early stopping / leaf ≥ 200) | +0.7% / +0.4% | 0.0% / +0.2% | 0.0% / 0.0% | +0.3% / +0.5% |
+| in-season recalibration (the season's played weeks join the calibration set) | −0.1% | 0.0% | 0.0% | 0.0% |
+| control: **no inputs at all** (residual quantiles by projection bin) | +1.5% | +0.2% | −0.1% | 0.0% |
+
+(Δ interval score vs v2; negative = sharper. Coverage stayed within 78.0–82.0% for every RB / WR / TE variant.)
+
+**Verdict: nothing is kept.** No variant beats v2 by the 2% bar at any position; the best is −0.7% (WR).
+The control explains why: residual quantiles that look only at the projection itself are within 0.2% of v2
+at RB / WR / TE. Once the projection is known, the ~80 inputs do not tell a volatile player from a steady
+one; the width is the week-to-week noise of fantasy points, not a modelling gap. A scale model is worse
+(it chases noise). The 80% range is as sharp as this data allows.
+
+Three findings that stand anyway:
+
+* **Starters' ranges are slightly too narrow, the fringe's slightly too wide.** On the board's top 24 RB / WR
+  and top 12 QB / TE the 80% range holds 75.9–77.4% (50%: 46.8–47.9%); the average is right because players
+  outside the top hold more. Conformal per projection tier fixes it (top-N 78.8–80.5% / 48.1–51.0%) at no
+  interval-score cost, by making starters' ranges *wider* (top-24 WR 19.8 → 21.3 points at 80%). Not kept
+  (the bar is sharpness); a PO decision, one function to change.
+* **Quarterbacks** fall below the floor too often (15.4% instead of 10%; coverage 75.5% / 46.7%), in v2 and in
+  every variant. The lower tail is partial games: in 2023, the 88 QB weeks with ≤ 25% of the snaps landed
+  below P10 62.5% of the time, full games (507) 6.9%. The share of played QB weeks with ≤ 50% of the snaps
+  rose from 12–13% (2016–17) to 18–20% (2020–25, 2022 aside at 15%), and none of the variants (per tail, per tier, in-season
+  recalibration, regularised, two-part) closes the gap. It needs inputs that see the injury (plan D5).
+* **P10 at 0** is the fringe: 17% of QB and RB, 34% of WR, 42% of TE played weeks have a floor of 0 (2023–2025,
+  both leagues); by the snaps he actually played (2023, League of Scrubs): 80% of the WR weeks on ≤ 25% of the
+  snaps, 3–7% of the weeks on ≥ 75% (healthy starters) at every position. The two-part split did not sharpen
+  the starters' range (above).
+
+### The decision probability (`league_lab.decisions`)
+
+**P(A outscores B)** for a lineup call, from both players' calibrated quantiles in the league's scoring:
+
+* each player is a **piecewise-linear quantile function** through P10 / P25 / P50 / P75 / P90 (three knots,
+  P10 / P50 / P90, on a row without the 50% range): uniform density between knots; below P10 linear with the
+  first segment's slope, never below 0; above P90 an exponential tail `P90 + s·ln(0.1 / (1 − u))` with
+  `s = 0.1 ×` the last segment's slope, so the density is continuous and a 40-point week stays possible;
+* the two are **independent unless they share a game**. Teammates and opponents use a Gaussian copula with
+  the correlation measured on the walk-forward (normal scores of each played player-week's randomised PIT
+  under its own distribution, pairs where both were projected ≥ 5 points, mean of the two leagues):
+  teammates QB–WR **+0.22**, QB–TE +0.21, QB–RB +0.03, RB–RB **−0.08**, RB–WR −0.03, WR–WR +0.02, TE–WR +0.01,
+  QB–QB **−0.41** (a starter and the backup who replaced him); opponents QB–QB +0.11, QB–WR +0.07, WR–WR +0.05,
+  QB–TE +0.04, others within ±0.03; a pair with < 150 observations in a league (TE–TE teammates) uses the
+  pooled value (teammates +0.05, opponents +0.03). From 540 pairs (QB–QB teammates) to 14,536 (RB–WR teammates), both leagues;
+* **Monte Carlo**: 40,000 paired draws, fixed seed (the same pair always gets the same answer), a tie counts
+  half (two floors of 0). Checked against the closed form for two normals (ρ = 0, 0.35, −0.3) within
+  0.01, and the piecewise-linear version of those normals within 0.02 (`tests/test_decisions.py`).
+
+**Calibration on 2024–2025** (walk-forward projections for the weeks, both leagues' Sleeper rosters of those
+seasons; for every roster-week the B1 solver on QB–TE values (K / DEF / IDP slots dropped), every filled
+slot's named alternative = the bench player the re-solve brings in, the probability before the week, the
+outcome after): 5,374 pairs, **4,895 where both played** (the ranges are "if he plays"; 479 pairs had a
+player who did not play). Brier **0.221** vs 0.367 for "the higher projection wins = 100%" and 0.249 for a
+coin flip; mean predicted 64.7%, observed 63.2% (2024: 64.0 / 63.7; 2025: 65.3 / 62.7). Deciles (equal
+counts):
+
+| Predicted | 49.7% | 53.5% | 56.2% | 58.8% | 61.7% | 64.8% | 67.9% | 71.8% | 76.8% | 85.6% |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **Observed** | 49.0% | 52.1% | 54.1% | 57.3% | 60.2% | 61.6% | 64.4% | 74.3% | 77.3% | 81.7% |
+
+By word: "a coin flip" (50–55%) 975 pairs, predicted 51.9%, observed 51.0%; "a lean" (55–65%) 1,756, 59.5% /
+56.8%; "clear" (65%+) 2,164, 74.6% / 73.9%. The cards' three closest calls per roster-week (2,005 pairs):
+Brier 0.246 vs a coin flip's 0.249 — the closest calls really are close to coin flips, and the percentage
+says so (mean 56.6%, observed 54.1%). Slightly overconfident on average (1.5 points); a shrink toward 50%
+fitted on one season did not help the other (Brier 0.2227 → 0.2225 on 2025, 0.2193 → 0.2201 on 2024), so
+none is applied. The same-game correlation is right in principle and immaterial here: 242 of the 4,895
+pairs share a game (Brier 0.2022 with it, 0.2020 without).
+
+**On the cards** (`app/lib/cards.py`): the headline is "**Tucker outscores Monangai 54% of the time — a coin
+flip.**" (whole percent, 1–99; 50–55% a coin flip, 55–65% a lean, 65%+ clear, read on either side of 50%),
+the margin the lineup is solved on is the second line ("10.00 vs 9.85 projected: 0.15 apart."), then "Most
+weeks: Tucker 6–14, Monangai 5–13." and "A bad week to a good week: 3–19 and 2–20." (whole points). Only for
+two QB–TE projections; a kicker, a defense or a points-per-game value keeps the margin's words. When the
+starter is below 50% the card says so and says both numbers: the range (how often) and the projection (how
+many points on average) come from different models and can disagree on a close call. Week 4, League of Scrubs
+roster 2: Croskey-Merritt projects 9.13 to Tuten's 9.07, but Tuten's range sits higher (most weeks 4–13 vs
+4–11), so Croskey-Merritt outscores him 46% of the time. The Rankings board's range column is
+the 50% range ("Most weeks"), the floor and ceiling in the full table; a week without it shows the 80% range
+under its old name.
 
 ## Deferred (status in registry)
 

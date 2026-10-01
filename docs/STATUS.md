@@ -1873,6 +1873,183 @@ and style). Each dev appends a section below; nothing edits `mart_player_week_fe
   hosted sync) before the gap measurement depends on it. (e) The Kickers page "wind is the reason" line waits for a
   shipped kd1.1. (f) `metric_registry.csv` rows for the `wx_` features (seeds were out of bounds for this round).
 
+### D6 2026-10-01 — sharper ranges and decisions (branch `dev/D6`, clone `league_lab_d6`)
+
+Andrew: "if an 80% confidence interval is like a 20-point spread, how useful is that?". Definitions, the
+experiment and the calibration are in `docs/METRICS.md` § "Ranges and decisions"; this section is the evidence.
+
+* **Built.** (1) The **50% range** `p25` / `p75` ("most weeks"): two more residual quantile regressors (0.25,
+  0.75) per position × league in `projections.fit_position`, fitted after the P10 / P50 / P90 models (own seeds:
+  those are bit-for-bit unchanged), split-conformal widened for 50% (`_conformal_widening`, now shared with the
+  80% range), sorted and kept inside [P10, P50] / [P50, P90] in `predict_position`; new columns on
+  `ops.projections` (B5 way: `db.py` migrate, the writer's DDL and the mart pre-hook each `alter table … add
+  column if not exists`) and `mart_player_week_projections` (`p25`, `p75`, `actual_inside_50`; tests
+  `projection_50_range_inside_80_range`, `projection_50_range_both_ends_or_neither`); `score_predictions`
+  also returns `coverage_50` / `pinball_25` / `pinball_75` / `interval_width_50` (not persisted:
+  `ops.projection_backtest` keeps its columns). (2) `src/league_lab/decisions.py`: P(A outscores B) from the
+  two players' quantiles (piecewise-linear quantile function, exponential upper tail, Gaussian copula with the
+  measured same-game correlations, 40,000-draw Monte Carlo, fixed seed). (3) `app/lib/cards.py`: the card
+  headline is the probability ("Kenny Gainwell outscores Emanuel Wilson 53% of the time — a coin flip."), the
+  margin second, then "Most weeks" and "A bad week to a good week"; Rankings' board column is "Most weeks"
+  (P25–P75; the 80% "Range" on a week without it) and the full table gains the two columns. Docs: METRICS,
+  DATA_MODEL (`ops.projections`, the mart), WORDS (four rows).
+* **The experiment** (scripts `exp_cache.py` / `exp_fit.py` / `exp_score.py` / `exp_insea.py` /
+  `exp_decide.py` in the session scratchpad `waveD/d6/`): walk-forward 2023–2025 in both leagues' scoring,
+  components and out-of-fold lines fitted once per test season × position (12 min wall) and shared by every
+  variant; 11 residual-model families × 1–7 conformal schemes = 30 variants (61 min wall for the family fits on
+  the shared box, load 4–10).
+  The v2 variant reproduces the harness's cached baseline (`ops.feature_experiments`, key
+  `cb461af0c56b4811`) to four decimals in all 24 cells (e.g. League of Scrubs 2023 QB: interval score 1.2212,
+  coverage 0.7326, width 17.729, Spearman 0.5257); the production code (`walk_forward` on 2025 QB) reproduces
+  the experiment's v2 50% numbers exactly (pinball 2.2125 / 2.5062 Scrubs). Spearman is the same in every row
+  (QB 0.533, RB 0.683, WR 0.624, TE 0.583: the point projection never moves). Mean over 2023–2025 × both
+  leagues; "Top-N" = the board's top 24 RB / WR, top 12 QB / TE by projection each week:
+
+| Variant | Pos | Interval score | Δ vs v2 | Coverage 80 | Width 80 | Top-N width 80 | Top-N coverage 80 | Coverage 50 | Width 50 | Top-N width 50 | Top-N coverage 50 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| v2 (production) | QB | 1.509 | +0.0% | 75.5% | 21.9 | 23.4 | 77.4% | 46.7% | 11.7 | 12.1 | 47.6% |
+| (a) + role features (frame: SD/dud rate L16, TD share, receiving / rushing share) | QB | 1.508 | -0.1% | 75.3% | 21.8 | 23.2 | 77.4% | 46.6% | 11.8 | 12.4 | 48.4% |
+| (a) + aDOT / deep-target share (WR, TE) | QB | 1.508 | -0.1% | 75.3% | 21.8 | 23.2 | 77.4% | 46.6% | 11.8 | 12.4 | 48.4% |
+| (a) roleB + per-tail conformal | QB | 1.503 | -0.4% | 75.7% | 21.8 | 23.2 | 77.6% | 46.5% | 11.6 | 12.2 | 48.0% |
+| (b) scale model x fixed shape | QB | 1.543 | +2.2% | 75.3% | 21.6 | 23.1 | 78.3% | 46.4% | 11.7 | 12.2 | 48.1% |
+| (b) scale model, normalised conformal | QB | 1.566 | +3.8% | 75.3% | 21.9 | 23.5 | 78.7% | 46.4% | 11.8 | 12.4 | 48.1% |
+| (b) scale model with role features, normalised conformal | QB | 1.561 | +3.4% | 75.6% | 22.2 | 24.1 | 79.2% | 46.3% | 11.8 | 12.5 | 49.2% |
+| (c) per-tail conformal | QB | 1.510 | +0.0% | 75.5% | 21.9 | 23.4 | 77.5% | 46.1% | 11.5 | 11.9 | 47.0% |
+| (c) conformal per projection tier (terciles) | QB | 1.509 | +0.0% | 75.8% | 22.1 | 24.1 | 78.8% | 47.2% | 11.8 | 12.2 | 48.1% |
+| (c) conformal per role (deep/short WR-TE, receiving RB, rushing QB) | QB | 1.508 | -0.1% | 76.1% | 22.1 | 23.6 | 78.1% | 46.9% | 11.7 | 12.1 | 48.0% |
+| (c) conformal per tier x role | QB | 1.512 | +0.2% | 76.3% | 22.4 | 24.7 | 79.5% | 47.8% | 12.0 | 12.5 | 49.2% |
+| (a)+(c) roleB, per-tail, per tier | QB | 1.508 | -0.1% | 75.5% | 22.1 | 23.6 | 78.2% | 46.3% | 11.7 | 12.0 | 47.1% |
+| (d) two-part: regulars / the rest | QB | 1.502 | -0.5% | 75.2% | 21.9 | 23.9 | 78.0% | 46.2% | 11.6 | 12.4 | 49.3% |
+| (d) two-part, per-tail conformal | QB | 1.501 | -0.5% | 75.8% | 22.1 | 23.9 | 78.9% | 45.8% | 11.5 | 12.3 | 48.9% |
+| in-season recalibration | QB | 1.508 | -0.1% | 75.6% | 21.9 | 23.4 | 77.4% | 47.0% | 11.7 | 12.2 | 47.8% |
+| control: no features (residual quantiles by projection bin) | QB | 1.531 | +1.5% | 76.2% | 23.0 | 24.8 | 80.0% | 48.7% | 12.3 | 13.4 | 53.2% |
+| regularised: early stopping | QB | 1.519 | +0.7% | 74.6% | 22.1 | 23.7 | 77.0% | 46.4% | 11.6 | 12.3 | 48.6% |
+| regularised: leaf >= 200 | QB | 1.515 | +0.4% | 74.6% | 21.7 | 23.7 | 78.0% | 46.5% | 11.8 | 12.5 | 49.5% |
+| v2 (production) | RB | 0.971 | +0.0% | 79.8% | 13.6 | 19.1 | 77.3% | 51.3% | 6.9 | 10.1 | 47.6% |
+| (a) + role features (frame: SD/dud rate L16, TD share, receiving / rushing share) | RB | 0.969 | -0.2% | 79.9% | 13.6 | 19.2 | 77.8% | 51.2% | 6.9 | 9.9 | 47.3% |
+| (a) + aDOT / deep-target share (WR, TE) | RB | 0.969 | -0.2% | 79.9% | 13.6 | 19.2 | 77.8% | 51.2% | 6.9 | 9.9 | 47.3% |
+| (a) roleB + per-tail conformal | RB | 0.969 | -0.2% | 80.0% | 13.6 | 19.3 | 78.0% | 50.9% | 6.8 | 9.9 | 46.6% |
+| (b) scale model x fixed shape | RB | 0.984 | +1.3% | 80.6% | 13.3 | 19.1 | 73.1% | 52.1% | 6.6 | 9.3 | 43.1% |
+| (b) scale model, normalised conformal | RB | 0.985 | +1.5% | 80.6% | 13.3 | 19.3 | 73.6% | 52.5% | 6.7 | 9.5 | 44.3% |
+| (b) scale model with role features, normalised conformal | RB | 0.981 | +1.1% | 80.9% | 13.4 | 19.6 | 74.7% | 52.1% | 6.8 | 9.7 | 44.8% |
+| (c) per-tail conformal | RB | 0.970 | -0.1% | 80.2% | 13.6 | 19.1 | 77.4% | 51.0% | 6.9 | 10.0 | 47.4% |
+| (c) conformal per projection tier (terciles) | RB | 0.971 | +0.0% | 79.9% | 13.8 | 19.9 | 79.5% | 51.3% | 7.2 | 11.0 | 51.0% |
+| (c) conformal per role (deep/short WR-TE, receiving RB, rushing QB) | RB | 0.971 | +0.0% | 80.1% | 13.7 | 19.2 | 77.7% | 51.6% | 7.0 | 10.1 | 47.9% |
+| (c) conformal per tier x role | RB | 0.971 | -0.0% | 80.2% | 13.9 | 20.0 | 79.8% | 51.3% | 7.2 | 11.0 | 51.4% |
+| (a)+(c) roleB, per-tail, per tier | RB | 0.966 | -0.5% | 80.2% | 13.8 | 20.7 | 79.9% | 51.0% | 7.1 | 11.4 | 51.2% |
+| (d) two-part: regulars / the rest | RB | 0.974 | +0.4% | 80.7% | 13.5 | 19.8 | 79.0% | 51.5% | 7.1 | 10.8 | 50.2% |
+| (d) two-part, per-tail conformal | RB | 0.972 | +0.1% | 80.3% | 13.8 | 20.4 | 78.3% | 51.8% | 7.1 | 11.0 | 50.1% |
+| in-season recalibration | RB | 0.971 | +0.0% | 79.9% | 13.6 | 19.1 | 77.3% | 50.7% | 6.9 | 10.1 | 47.6% |
+| control: no features (residual quantiles by projection bin) | RB | 0.973 | +0.2% | 79.6% | 14.5 | 21.2 | 82.4% | 51.0% | 7.3 | 11.2 | 51.8% |
+| regularised: early stopping | RB | 0.971 | -0.0% | 80.2% | 13.8 | 19.4 | 78.0% | 51.6% | 7.0 | 10.2 | 47.8% |
+| regularised: leaf >= 200 | RB | 0.973 | +0.2% | 80.0% | 13.9 | 19.7 | 78.4% | 51.4% | 7.1 | 10.4 | 48.5% |
+| v2 (production) | WR | 0.957 | +0.0% | 81.4% | 13.8 | 19.8 | 75.9% | 49.7% | 6.9 | 10.5 | 46.8% |
+| (a) + role features (frame: SD/dud rate L16, TD share, receiving / rushing share) | WR | 0.954 | -0.3% | 81.5% | 13.6 | 19.7 | 76.1% | 49.4% | 6.9 | 10.5 | 46.9% |
+| (a) + aDOT / deep-target share (WR, TE) | WR | 0.954 | -0.3% | 81.0% | 13.7 | 19.8 | 75.9% | 49.5% | 6.9 | 10.5 | 46.8% |
+| (a) roleB + per-tail conformal | WR | 0.954 | -0.3% | 81.2% | 13.5 | 19.6 | 75.9% | 50.0% | 6.8 | 10.3 | 46.2% |
+| (b) scale model x fixed shape | WR | 0.961 | +0.4% | 80.8% | 13.2 | 20.4 | 73.0% | 49.2% | 6.4 | 9.8 | 43.1% |
+| (b) scale model, normalised conformal | WR | 0.961 | +0.4% | 80.8% | 13.2 | 20.3 | 73.0% | 49.3% | 6.4 | 9.7 | 42.6% |
+| (b) scale model with role features, normalised conformal | WR | 0.960 | +0.3% | 80.7% | 13.2 | 20.3 | 73.1% | 49.1% | 6.4 | 9.7 | 42.9% |
+| (c) per-tail conformal | WR | 0.957 | -0.0% | 81.5% | 13.6 | 19.6 | 75.7% | 50.1% | 6.8 | 10.4 | 46.4% |
+| (c) conformal per projection tier (terciles) | WR | 0.956 | -0.1% | 81.1% | 14.3 | 21.3 | 79.7% | 49.6% | 7.2 | 11.1 | 49.0% |
+| (c) conformal per role (deep/short WR-TE, receiving RB, rushing QB) | WR | 0.957 | -0.0% | 81.2% | 13.8 | 19.8 | 76.0% | 49.5% | 6.9 | 10.5 | 46.8% |
+| (c) conformal per tier x role | WR | 0.956 | -0.1% | 81.3% | 14.3 | 21.4 | 80.1% | 49.8% | 7.2 | 11.1 | 49.7% |
+| (a)+(c) roleB, per-tail, per tier | WR | 0.950 | -0.7% | 81.0% | 13.9 | 21.6 | 80.2% | 49.9% | 7.0 | 11.2 | 49.4% |
+| (d) two-part: regulars / the rest | WR | 0.958 | +0.1% | 80.6% | 13.3 | 20.4 | 77.7% | 49.7% | 6.8 | 10.7 | 47.5% |
+| (d) two-part, per-tail conformal | WR | 0.960 | +0.3% | 80.7% | 13.8 | 20.9 | 78.5% | 50.0% | 6.8 | 10.7 | 47.5% |
+| in-season recalibration | WR | 0.957 | +0.0% | 81.0% | 13.7 | 19.7 | 75.9% | 50.1% | 6.9 | 10.5 | 46.8% |
+| control: no features (residual quantiles by projection bin) | WR | 0.957 | -0.0% | 80.5% | 14.1 | 21.3 | 79.8% | 49.5% | 7.1 | 11.2 | 50.2% |
+| regularised: early stopping | WR | 0.957 | +0.0% | 81.4% | 13.8 | 19.8 | 75.9% | 49.7% | 6.9 | 10.5 | 46.8% |
+| regularised: leaf >= 200 | WR | 0.957 | -0.0% | 81.6% | 13.8 | 20.0 | 76.5% | 50.2% | 6.9 | 10.7 | 47.5% |
+| v2 (production) | TE | 0.719 | +0.0% | 80.9% | 9.5 | 14.4 | 76.3% | 50.7% | 5.0 | 8.3 | 47.9% |
+| (a) + role features (frame: SD/dud rate L16, TD share, receiving / rushing share) | TE | 0.717 | -0.2% | 80.8% | 9.5 | 14.8 | 76.6% | 51.7% | 5.0 | 8.3 | 49.3% |
+| (a) + aDOT / deep-target share (WR, TE) | TE | 0.716 | -0.3% | 81.1% | 9.4 | 14.7 | 77.1% | 50.3% | 4.9 | 8.0 | 48.8% |
+| (a) roleB + per-tail conformal | TE | 0.714 | -0.6% | 81.3% | 10.0 | 15.3 | 78.0% | 50.0% | 4.9 | 8.0 | 48.1% |
+| (b) scale model x fixed shape | TE | 0.735 | +2.3% | 80.2% | 9.0 | 14.4 | 71.3% | 51.4% | 4.8 | 7.5 | 43.1% |
+| (b) scale model, normalised conformal | TE | 0.735 | +2.3% | 80.7% | 9.2 | 15.5 | 75.5% | 51.8% | 5.0 | 8.1 | 46.8% |
+| (b) scale model with role features, normalised conformal | TE | 0.733 | +2.0% | 81.1% | 9.2 | 15.6 | 75.8% | 51.4% | 5.0 | 8.1 | 47.7% |
+| (c) per-tail conformal | TE | 0.717 | -0.2% | 81.1% | 9.9 | 14.9 | 77.7% | 50.3% | 5.0 | 8.3 | 47.8% |
+| (c) conformal per projection tier (terciles) | TE | 0.717 | -0.2% | 81.3% | 9.8 | 15.6 | 80.5% | 50.7% | 5.1 | 8.4 | 48.6% |
+| (c) conformal per role (deep/short WR-TE, receiving RB, rushing QB) | TE | 0.718 | -0.1% | 81.2% | 9.5 | 14.5 | 76.7% | 50.6% | 5.0 | 8.4 | 48.3% |
+| (c) conformal per tier x role | TE | 0.718 | -0.1% | 81.3% | 9.8 | 15.6 | 80.9% | 50.8% | 5.1 | 8.5 | 49.0% |
+| (a)+(c) roleB, per-tail, per tier | TE | 0.715 | -0.5% | 81.5% | 10.2 | 16.4 | 80.6% | 49.8% | 5.0 | 8.3 | 48.3% |
+| (d) two-part: regulars / the rest | TE | 0.727 | +1.2% | 81.3% | 9.5 | 15.3 | 79.0% | 51.9% | 5.0 | 8.3 | 48.6% |
+| (d) two-part, per-tail conformal | TE | 0.727 | +1.2% | 81.6% | 10.2 | 15.8 | 79.6% | 51.1% | 5.0 | 8.2 | 48.2% |
+| in-season recalibration | TE | 0.719 | +0.0% | 80.4% | 9.4 | 14.4 | 76.3% | 50.5% | 5.0 | 8.3 | 48.0% |
+| control: no features (residual quantiles by projection bin) | TE | 0.719 | +0.0% | 81.0% | 10.5 | 16.6 | 82.6% | 51.2% | 5.3 | 8.9 | 52.9% |
+| regularised: early stopping | TE | 0.720 | +0.3% | 80.8% | 10.1 | 14.8 | 77.0% | 51.3% | 5.0 | 8.0 | 47.2% |
+| regularised: leaf >= 200 | TE | 0.722 | +0.5% | 80.9% | 9.5 | 15.4 | 78.6% | 51.2% | 4.9 | 8.3 | 48.7% |
+
+* **Kept: nothing for the 80% range** (no variant beats v2 by 2% at any position: best −0.7%, WR). Kept: the
+  50% range on v2's machinery. Why nothing sharpens: the control with **no inputs at all** (residual quantiles
+  by projection bin) is within 0.2% of v2 at RB / WR / TE — given the projection, the inputs do not tell a
+  volatile player from a steady one; the width is weekly noise. A scale model is worse (+0.4% to +3.8%).
+* **50% range coverage** (target 48–52%): RB 51.3%, WR 49.7%, TE 50.7% — **QB 46.7%** (per league-season
+  43.1–49.5%; v2's 80% range at QB is 75.5% on the same seasons). Width at 50% vs 80%, top 24 in League of
+  Scrubs: RB 9.5 vs 17.9, WR 9.4 vs 17.5 points; top 12 QB 10.1 vs 19.4, TE 7.5 vs 13.1.
+* **Production run** (2026, trained 2016–2025): QB widening 80% 1.06 / 1.80 (unchanged), 50% 0.67 / 0.83
+  (Scrubs / dynasty); RB 0.03 / 0.01; WR 0.01 / −0.00. All 16,268 v2 rows of weeks 4–18 carry P25 / P75 and
+  satisfy P10 ≤ P25 ≤ P50 ≤ P75 ≤ P90 (mean width 6.08 vs 12.18 at 80%); the 896 K / DEF rows are NULL (kd1.0).
+  Crossings clipped: P75 = P90 on 1 row (George Kittle, week 4), P25 = P50 on 104 (QB 49, WR 54, TE 1), P25 =
+  P10 > 0 on 413 (mostly TE).
+* **The point estimate did not move** (md5, `ops.projections` season 2026): weeks 4–18 `proj_points` 17,164
+  rows `d4877509be0f2435074eaac87ce6ed24` before (a `project` on `690d99b` in this clone) and after; every
+  column but `fitted_at` / `frozen_at` / `p25` / `p75` `fa4947af69924cd311e6ecd0cdab3faf` before and after
+  (P10 / P50 / P90 unchanged). **Weeks 1–3 untouched**: 3,554 rows, the original columns
+  `e26319116f0e4cda6ab13d745e80afdf` before and after both runs, `p25` / `p75` NULL on all of them. **Two
+  consecutive `project` runs byte-identical**: every column but `fitted_at` / `frozen_at`
+  `c6e0905b3a5a9e60fd2210d9a65d69ae` both times (236 s and 287 s wall, OMP_NUM_THREADS=1, shared box).
+* **dbt**: `dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+
+  mart_projection_importance mart_player_role_alerts+ mart_waiver_upside` PASS=107 (incl. the two new tests);
+  `assert_frozen_projections_precede_kickoff` PASS=1.
+* **Same-game correlations** (Gaussian copula, normal scores of the randomised PIT, held-out 2023–2025, pairs
+  where both were projected ≥ 5, mean of the two leagues): teammates QB–WR +0.22 (9,801 pairs), QB–TE +0.21
+  (3,265), QB–RB +0.03, RB–RB −0.08 (2,592), RB–WR −0.03 (14,536), WR–WR +0.02 (8,083), TE–WR +0.01, QB–QB
+  −0.41 (540: a starter and his replacement); opponents QB–QB +0.11 (2,216), QB–WR +0.07, WR–WR +0.05 (11,246),
+  QB–TE +0.04, others within ±0.03; pooled teammates +0.05, opponents +0.03.
+* **Decision calibration, 2024–2025** (both leagues' Sleeper rosters of those seasons, B1's solver on the
+  walk-forward values, QB–TE slots; every filled slot vs the bench player the re-solve brings in): 5,374
+  pairs, 4,895 with both players playing. **Brier 0.2210** vs 0.3672 for "the higher projection wins = 100%"
+  and 0.2491 for a coin flip; mean predicted 64.7%, observed 63.2% (2024: 64.0 / 63.7, Brier 0.2193; 2025:
+  65.3 / 62.7, 0.2227). Deciles predicted → observed: 49.7 → 49.0, 53.5 → 52.1, 56.2 → 54.1, 58.8 → 57.3, 61.7 →
+  60.2, 64.8 → 61.6, 67.9 → 64.4, 71.8 → 74.3, 76.8 → 77.3, 85.6 → 81.7. By word: coin flip 975 pairs 51.9 →
+  51.0%, lean 1,756 59.5 → 56.8%, clear 2,164 74.6 → 73.9%. The cards' three closest calls (2,005 pairs):
+  Brier 0.2460 vs a coin's 0.2486 (mean 56.6% predicted, 54.1% observed). 242 pairs share a game (Brier 0.2022
+  with the correlation, 0.2020 without). A shrink toward 50% fitted on one season does not help the other.
+* **Worked examples, week 4** (live board, `cards.decisions` on `lineup_rows`; "by hand" = the independent
+  integral P(A > B) = mean over A's quantile levels of F_B(Q_A(u)) on a 4,000-level grid):
+  dynasty roster 12 — **RB2 Kenny Gainwell (TB vs GB) 7.54 over Emanuel Wilson (SEA vs LAC) 7.09, 0.45
+  apart: 53% (Monte Carlo 0.5340, by hand 0.5336), a coin flip; most weeks 3–10 vs 2–9, bad to good week 1–16
+  vs 1–15** (P10 / P25 / P50 / P75 / P90 0.96 / 3.44 / 5.98 / 9.98 / 16.03 and 1.17 / 2.24 / 5.76 / 9.07 /
+  14.52); TE Kittle over Likely 48% (0.4817 / 0.4790); FLEX Boston over Godwin 58%, a lean (0.5808 /
+  0.5788). League of Scrubs roster 2 — **FLEX2 Jacory Croskey-Merritt (WAS vs IND) 9.13 over Bhayshul Tuten
+  (JAX vs CIN) 9.07, 0.06 apart: 46% (0.4649 / 0.4644), a coin flip; most weeks 4–11 vs 4–13, bad to good week
+  2–17 vs 2–19** (1.82 / 4.10 / 7.68 / 11.36 / 17.30 and 1.92 / 4.40 / 8.28 / 13.16 / 19.17: the projection and
+  the range disagree, and the card says both); RB2 Hampton over Tuten 59%, a lean; QB Mahomes over Bryce Young
+  55%, a lean (most weeks 17–24 vs 13–25). No week-4 pair shares a game.
+* **Checks**: `pytest` 765 passed (`tests/test_decisions.py` 15: the quantile function's knots, tails and
+  clipped-range floor, three-knot fallback, Monte Carlo vs the closed form for two normals at ρ = 0 / 0.35 /
+  −0.3 within 0.01 and the piecewise-linear version within 0.02, determinism and symmetry, correlation
+  direction, the relationship / ρ lookup, words and percent, Brier and deciles, the DDL in all three copies;
+  `test_my_week` on the live clone checks the cards' first lines); `ruff` clean; headless page check 38 runs
+  (13 pages × 2 leagues, the Player page by id × 6, Home and Matchups for dynasty roster 12, Rankings week 2
+  — frozen, P25 / P75 NULL — and week 4 for both rosters): 0 exceptions. Screenshots (390 and 1300 px, both
+  rosters, no horizontal scroll at 390): `waveD/d6/shots/{home,matchups,rankings}_{dyn12,scrubs2}_{390,1300}.png`.
+* **For the PO to decide.** (1) **Starters' ranges are too narrow**: top-N coverage 75.9–77.4% (80%) and
+  46.8–47.9% (50%); conformal per projection tier fixes it (78.8–80.5% / 48.1–51.0%) at no interval-score cost
+  by widening starters' ranges (top-24 WR 19.8 → 21.3 at 80%, 10.5 → 11.1 at 50%); not kept under the 2% rule;
+  it is `_conformal_widening` per tercile of the calibration season's lines. It barely moves the decision
+  probability (Brier 0.2208 vs 0.2210, mean overconfidence 0.9 vs 1.5 points). (2) **QB** misses at both
+  levels (75.5% / 46.7%): partial games (2023: 88 QB weeks on ≤ 25% of the snaps, 62.5% below P10; full games
+  6.9%), the ≤ 50%-snap share rising from 12–13% (2016–17) to 18–20%; no variant fixes it — it needs injury
+  inputs (D5). (3) The probability is ~1.5 points overconfident on average (2025 more than 2024); no shrink
+  applied.
+* **Open / not verified**: weeks frozen before the first D6 refit keep NULL P25 / P75 (in the PO's database
+  week 4 freezes at 2026-10-02 00:15 UTC; its cards then fall back to the 80% range and the three-knot
+  distribution); the harness's cached baseline stays valid (P10 / P90 unchanged) but its `data_key` does not see
+  the residual path — a future change there needs `HARNESS_VERSION` bumped or the interval code in the key; the
+  Player page still shows floor / ceiling only (not in D6's ownership); K / DEF cards keep the margin's words.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
