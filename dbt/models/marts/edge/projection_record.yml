@@ -1,0 +1,111 @@
+version: 2
+
+models:
+  - name: mart_projection_record
+    description: >
+      Plan E1, "Our record": League Lab's board as published before each week's first kickoff (ops.projections,
+      frozen_source = 'kickoff') against Sleeper's own projections (raw.sleeper_projections, the last snapshot
+      fetched before that kickoff, priced in the league's scoring with league_points) and the actual points, on the
+      players both projected. One row per league x season x scope x week x position: scope 'week' = one week
+      (status 'scored' once every game on the board has players in, 'in_play' before: counts only), scope
+      'season' = the scored weeks so far (week = the last one, first_week = the first; weekly means of the scores,
+      sums of the calls). position QB / RB / WR / TE carries the ranking scores; position 'ALL' carries the
+      start/sit calls (the decision cards' three closest calls per roster, ops.lineups) and the pooled MAE.
+      Definitions: docs/METRICS.md § "Projection record". Empty until a week has both boards frozen.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season, scope, week, position]
+      - expression_is_true:
+          name: record_n_both_is_at_least_one
+          arguments:
+            expression: "n_both >= 1"
+            condition: "position <> 'ALL'"
+      - expression_is_true:
+          name: record_scored_rows_have_players
+          arguments:
+            expression: "n_players >= 1 and n_players <= n_both"
+            condition: "status = 'scored' and position <> 'ALL'"
+      - expression_is_true:
+          name: record_in_play_rows_have_no_scores
+          arguments:
+            expression: "ours_mae is null and sleeper_mae is null and ours_spearman is null and pairs_n is null"
+            condition: "status = 'in_play'"
+      - expression_is_true:
+          name: record_calls_add_up
+          arguments:
+            expression: >
+              pairs_both_right + (pairs_ours_right - pairs_both_right) + (pairs_sleeper_right - pairs_both_right)
+              + pairs_neither_right = pairs_n
+              and pairs_ours_right_disagree = pairs_ours_right - pairs_both_right
+              and pairs_n + pairs_push + pairs_no_sleeper <= pairs_listed
+            condition: "position = 'ALL' and pairs_n is not null"
+      - expression_is_true:
+          name: record_season_rows_cover_their_weeks
+          arguments:
+            expression: "weeks_scored >= 1 and first_week <= week"
+            condition: "scope = 'season'"
+      - expression_is_true:
+          name: record_snapshots_precede_kickoff
+          arguments:
+            expression: "sleeper_fetched_at < first_kickoff_at and board_frozen_at < first_kickoff_at"
+            condition: "scope = 'week'"
+    columns:
+      - name: league_id
+        tests: [not_null]
+      - name: scope
+        tests:
+          - accepted_values:
+              arguments:
+                values: [week, season]
+      - name: position
+        tests:
+          - accepted_values:
+              arguments:
+                values: [QB, RB, WR, TE, ALL]
+      - name: status
+        description: "'scored' = every game on the week's board has players in; 'in_play' = both boards are frozen, the games are not all in (no scores yet)."
+        tests:
+          - accepted_values:
+              arguments:
+                values: [scored, in_play]
+      - name: n_both
+        description: Players on both boards (ours frozen before kickoff, Sleeper's last pre-kickoff snapshot; QB-TE, Sleeper id -> gsis id via player_id_map).
+      - name: n_players
+        description: Of those, the ones scored — played and rankable on our board (Out / Doubtful / IR excluded), with an actual.
+      - name: ours_spearman
+        description: Rank correlation (average ranks) of our projection with the actual points; NULL under 8 players. Season rows average the weeks.
+        tests:
+          - expression_is_true:
+              arguments:
+                expression: "ours_spearman between -1 and 1"
+                condition: "ours_spearman is not null"
+      - name: sleeper_spearman
+        tests:
+          - expression_is_true:
+              arguments:
+                expression: "sleeper_spearman between -1 and 1"
+                condition: "sleeper_spearman is not null"
+      - name: ours_hit_rate
+        description: Share of our top N (12 QB, 24 RB, 36 WR, 12 TE; fewer when fewer players were scored) who finished in the actual top N.
+        tests:
+          - expression_is_true:
+              arguments:
+                expression: "ours_hit_rate between 0 and 1"
+                condition: "ours_hit_rate is not null"
+      - name: sleeper_hit_rate
+        tests:
+          - expression_is_true:
+              arguments:
+                expression: "sleeper_hit_rate between 0 and 1"
+                condition: "sleeper_hit_rate is not null"
+      - name: ours_mae
+        description: Mean absolute error of our projection against the actual points (league scoring). ALL rows pool the positions.
+      - name: pairs_n
+        description: "Start/sit calls graded: the cards' closest calls (up to 3 per roster) with a result and a Sleeper number for both players (pushes and pairs Sleeper has no number for — a DEF — are counted apart)."
+      - name: pairs_ours_right
+        description: Calls where our starter outscored the bench player who would have come in.
+      - name: pairs_sleeper_right
+        description: Calls where the player Sleeper projected higher (in this league's scoring) outscored the other.
+      - name: pairs_disagree
+        description: Graded calls where Sleeper projected the bench player higher (or level); pairs_ours_right_disagree = how many of those we got right.

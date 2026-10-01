@@ -50,6 +50,19 @@ week; one row per `int_player_week_universe` row): `wx_dome`, `wx_wind_mph`, `wx
 docs/METRICS.md § Weather, tests in `int_player_week_weather.yml` and `dbt/tests/assert_weather_*.sql`,
 `assert_stadium_reference_covers_schedules.sql` (warn).
 
+**Sleeper's projections (plan E1, Wave E).** `raw.sleeper_projections` — Sleeper's own weekly projections
+(`league-lab ingest sleeper-projections`, `league_lab.ingest.sleeper_projections`; DDL in `db migrate`), one row
+per season × season_type × week × player_id × **fetched_at** (primary key): every pull is a snapshot whose rows
+share one `fetched_at`, never overwritten. Columns: `position`, `team`, `opponent`, `game_id`, `company` (who
+made the projection), `category`, `proj_date`; Sleeper's own `pts_ppr` / `pts_half_ppr` / `pts_std`; the
+projected stat line parsed into the weekly-stats column names (`attempts`, `completions`, `carries`, `targets`,
+`passing_yards` … `fg_made_0_19` … `pat_missed`, `pass_tds_40p` …: `sleeper_projections.LINE_COLUMNS`; NULL = not
+given); `payload jsonb` (the whole object, unknown keys included), `file_path`, `_loaded_at`. A DEF's
+`player_id` is the team abbreviation. Archive: `data/raw/sleeper/projections/<season>/<week:02d>_<YYYYmmddTHHMMSSZ>.json.gz`
+(+ sidecar; a hand-curled `.json` replays too). Manifest: source `sleeper`, datasets `projections` (one
+partition per snapshot, `<season>:<week>:<stamp>`) and `projections_pull` (the live pull of a week). Tests:
+key unique, `player_id` / `fetched_at` not null.
+
 ## ops
 
 `ops.load_manifest` — one row per attempted partition load: source, dataset, partition_key,
@@ -394,6 +407,24 @@ Docs and tests: `dbt/models/intermediate/features/int_player_week_personnel.yml`
 through-game date, games with stats/snaps/pbp/participation/charting, average charting coverage,
 league scored weeks, and explicit status text for play-by-play / FTN / participation / routes —
 "not published yet" for the current season's participation, "no licensed feed imported" for routes).
+
+## analytics — our record (E1, Iteration 13, 2026-10-02)
+
+`mart_projection_record` (table, ~10 rows per league-week) — League Lab's board as published before kickoff
+(`ops.projections`, `frozen_source = 'kickoff'`) vs Sleeper's last pre-kickoff snapshot (`raw.sleeper_projections`,
+priced with `league_points`) vs the actual points (`mart_player_week_projections`), on the players both projected.
+Grain: league_id × season × scope (`week` | `season`) × week × position (`QB` `RB` `WR` `TE` = the ranking scores;
+`ALL` = the start/sit calls from `ops.lineups` / `ops.lineup_totals` and the pooled MAE). Columns: `league_name`,
+`first_week`, `weeks_scored`, `status` (`scored` | `in_play`), `top_n`, `n_both`, `n_players`, `ours_` /
+`sleeper_` `spearman` `mae` `hit_rate`, `pairs_listed` `pairs_n` `pairs_ours_right` `pairs_sleeper_right`
+`pairs_both_right` `pairs_neither_right` `pairs_disagree` `pairs_ours_right_disagree` `pairs_push`
+`pairs_no_sleeper`, `model_version`, `board_frozen_at`, `sleeper_fetched_at`, `first_kickoff_at`. Reads also
+`league_player_week` (Sleeper's observed points for the calls), `player_id_map`, `dim_game`, `dim_league_season`.
+Definitions: docs/METRICS.md § Projection record. Tests (`projection_record.yml`): key unique; `n_both ≥ 1` on
+every position row and `1 ≤ n_players ≤ n_both` on scored ones (the record's n); in-play rows carry no scores;
+the calls add up (both + ours only + Sleeper only + neither = `pairs_n`); both snapshots precede the first
+kickoff; ranges of the scores. Read by `app/pages/13_Record.py` ("Our record"); published to the hosted copy
+(the sync picks up every `analytics.` relation a page names).
 
 ## Identity resolution
 

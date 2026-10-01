@@ -38,7 +38,11 @@ backtest-v2: ## walk-forward backtest of projection v2 on SEASONS (default 2021-
 
 project: ## fit projection v2 on completed seasons, write this season's projections (ops.projections), publish the mart
 	uv run league-lab project
-	uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside
+	uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside mart_projection_record
+
+sleeper-projections: ## plan E1: pull Sleeper's projections for the next week to kick off (WEEK=n for another), then rebuild "Our record"
+	uv run league-lab ingest sleeper-projections $(if $(WEEK),--week $(WEEK),)
+	uv run league-lab dbt build --select mart_projection_record
 
 backfill: ## full nflverse history (2016+)
 	uv run league-lab ingest nfl
@@ -81,7 +85,7 @@ pytest: ## python unit tests (no database required)
 lint: ## ruff
 	uv run ruff check src app tests
 
-.PHONY: help setup sync migrate check ingest-sleeper ingest-nfl fit-rankings backtest backtest-v2 project sync-hosted pilot backfill dbt-deps build test docs refresh nightly status app backup pytest lint
+.PHONY: help setup sync migrate check ingest-sleeper ingest-nfl fit-rankings backtest backtest-v2 project sleeper-projections sync-hosted pilot backfill dbt-deps build test docs refresh nightly status app backup pytest lint
 
 teams: ## roster ids and team names for the current league
 	uv run league-lab teams

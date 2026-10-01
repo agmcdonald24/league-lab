@@ -1739,6 +1739,64 @@ roster 2: Croskey-Merritt projects 9.13 to Tuten's 9.07, but Tuten's range sits 
 the 50% range ("Most weeks"), the floor and ceiling in the full table; a week without it shows the 80% range
 under its old name.
 
+## Projection record (pr1.0, plan E1, Wave E, 2026-10-02; `league_lab.ingest.sleeper_projections`, `mart_projection_record`, page "Our record")
+
+The benchmark people already get for free: Sleeper's own weekly projections, held against League Lab's board
+and the actual points, week by week, in each league's scoring.
+
+**Sleeper's side.** `league-lab ingest sleeper-projections` pulls
+`api.sleeper.com/projections/nfl/<season>/<week>?season_type=regular&position[]=QB…DEF&order_by=ppr`
+(`LEAGUE_LAB_SLEEPER_PROJECTIONS_URL`; not part of the documented v1 API) into `raw.sleeper_projections`, one
+**snapshot** per pull (every row of a pull shares its `fetched_at`; never overwritten; a pull identical to the
+week's newest snapshot adds nothing). The record uses **the last snapshot fetched before the week's first
+kickoff** (`min(dim_game.kickoff_at)`, regular season) — the moment `ops.projections` freezes (B5), so both
+sides are judged on what they said at the same time; Friday–Sunday news is in neither.
+
+**Pricing.** Sleeper's projected stat line (its scoring keys) is parsed into the weekly-stats column names
+(`STAT_COLUMNS`: `pass_yd` → `passing_yards`, `rec_tgt` → `targets`, `fum_lost` → `fumbles_lost_total`,
+`fgm_50p` → `fg_made_50_59` …) and priced with `league_points()` — the macro that prices our own line, yardage
+bonuses applied to the projected line the same way (a 104-yard projection pays the 100-yard bonus, 99.9 does
+not). Python twin: `sleeper_projections.price_line` (= `scoring.compute_points`). Check: in a standard half-PPR
+league (League of Scrubs' settings) the priced line reproduces Sleeper's `pts_half_ppr` within 0.05 (and
+`pts_ppr` / `pts_std` with rec = 1 / 0) on the 29 priced fixture players (`tests/test_sleeper_projections.py`;
+worst difference 0.00: both sides round to the cent). A DEF is not priced (team-defense keys are unmapped): pairs involving one are counted apart.
+
+**Ours.** `ops.projections` rows with `frozen_source = 'kickoff'` (the board as published before the first
+kickoff), QB / RB / WR / TE, `proj_points` rounded to the cent like the mart. Refit weeks (2026 weeks 1–3) are
+never on the record, and no week is filled in after the fact: the record starts the first week Sleeper was
+pulled before kickoff.
+
+**Population and scores** (per league × season × week × position; scope `week`):
+
+| Column | Definition |
+|---|---|
+| `n_both` | players on both boards (Sleeper id → gsis id via `player_id_map`) |
+| `n_players` | of those, played and rankable on our board (Out / Doubtful / IR excluded) with an actual — drift's population |
+| `ours_spearman`, `sleeper_spearman` | rank correlation with `points_actual` (average ranks); NULL under 8 players (drift's `min_players`) |
+| `ours_mae`, `sleeper_mae` | mean \|projection − actual\| in the league's scoring; the `ALL` row pools the four positions |
+| `ours_hit_rate`, `sleeper_hit_rate` | \|top N by projection ∩ top N by actual\| / min(N, n): N = 12 QB, **24 RB, 36 WR**, 12 TE (WR 36 here vs 24 in the backtest / drift: the plan's choice — three starting WRs plus a flex per team) |
+| `status` | `scored` once every game on the week's board has players in (drift's rule); `in_play` before: counts only, scores NULL |
+
+**Start/sit calls** (`position = 'ALL'`). Per roster and week, the decision cards' pairs
+(`app/lib/cards.py` `decisions`): the three smallest-margin valued starters of the proposed lineup
+(`ops.lineups`, not realised; weakest slot first on a tie), each with the bench player who comes in (value =
+starter value − margin; the slot's best eligible bench player when that matches, else the one with that value),
+taken as they stood before kickoff (no locks). Reproduced in SQL: 132 of 132 pairs identical to
+`cards.decisions()` on the same rows (both leagues, weeks 2 and 4 of the sandbox clone). Ours picks the starter;
+Sleeper picks whichever of the two it projects higher in the league's scoring (equal = no call); the right call
+is whoever scored more (`league_player_week.points_observed`, Sleeper's own count, else `points_actual`).
+`pairs_listed` = every pair; `pairs_no_sleeper` = one of the two has no Sleeper number (a DEF); `pairs_push` =
+equal actual points; `pairs_n` = the rest (graded) = both right + ours only + Sleeper only + neither;
+`pairs_disagree` = graded pairs where Sleeper picked the bench player (or tied), `pairs_ours_right_disagree` =
+how many of those we won — the number that separates the two sources.
+
+**Season rows** (`scope = 'season'`): the scored weeks so far — weekly means of the scores (like drift), sums of
+the counts and calls; `week` = the last scored week, `first_week` = the first.
+
+**What it is not.** Not a backtest (no past seasons: Sleeper's past snapshots were never saved); not every
+player Sleeper lists; not Sleeper's own scoring (its line is counted the league's way); a few weeks are noise
+(the page says so under four weeks).
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

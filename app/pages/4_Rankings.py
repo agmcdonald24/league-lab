@@ -454,6 +454,15 @@ if model == "v2":
             "blowout sends starters to the bench early), and coaching decisions made during the week. Check the news before kickoff.\n"
             "- **Refreshed** every morning with the newest games; its recipe stays the same all season."
         )
+        # plan E1: the week-by-week record against Sleeper's own projections lives on its own page
+        st.markdown(
+            "**Against the free numbers.** Every week we also save Sleeper's own projections (the ones in the Sleeper app) "
+            "before the first kickoff, count them your league's way, and check after the games whose were closer and who "
+            "called the start/sit decisions right. That record, from the first week Sleeper's numbers were saved, is on "
+            "*Our record*."
+        )
+        st.page_link("pages/13_Record.py", label="Our record: League Lab against Sleeper's projections",
+                     query_params={"league": league_id, **({"team": str(roster_id)} if roster_id is not None else {})})
         # projection v3 (plan D5, Wave D): what was added, the evidence, what was tried and dropped
         st.markdown(
             "**New in October: who plays next to him.** The model now knows who is starting at quarterback this week "

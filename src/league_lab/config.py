@@ -55,6 +55,9 @@ class Settings(BaseSettings):
         the first id in LEAGUE_LAB_SLEEPER_LEAGUE_ID. League pages always use their own scoring."""
         return self.sleeper_league_id.split(",")[0].strip()
     sleeper_base_url: str = "https://api.sleeper.app/v1"
+    # plan E1: Sleeper's own weekly projections (not part of the documented v1 API; another host).
+    # LEAGUE_LAB_SLEEPER_PROJECTIONS_URL; the request is <this>/<season>/<week>?season_type=regular&position[]=...
+    sleeper_projections_url: str = "https://api.sleeper.com/projections/nfl"
 
     # --- nflverse ---
     nflverse_base_url: str = "https://github.com/nflverse/nflverse-data/releases/download"
