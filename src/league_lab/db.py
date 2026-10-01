@@ -259,6 +259,10 @@ def migrate(conn: psycopg.Connection) -> None:
         for ddl in (*lineup.DDL.values(), waivers.UPSIDE_DDL, *signals.DDL.values(), experiments.DDL):   # D1: ops.feature_experiments
             cur.execute(ddl)
     conn.commit()
+    # plan D3: raw.nfl_weather + the stadium reference (dbt resolves venues before any weather is fetched)
+    from .ingest import weather
+
+    weather.ensure_tables(conn)
 
 
 def ensure_table(

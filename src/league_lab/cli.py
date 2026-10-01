@@ -146,6 +146,24 @@ def ingest_nfl_cmd(
     raise typer.Exit(1 if _print_results(results) else 0)
 
 
+@ingest_app.command("weather")
+def ingest_weather_cmd(
+    seasons: str | None = typer.Option(None, help="e.g. 2025, 2016-2025 (default: every season with games)"),
+    forecast: bool = typer.Option(False, help="Also fetch the forecast for games in the next 16 days (one call per stadium)"),
+    offline: bool = typer.Option(False, help="Replay every archived Open-Meteo file from data/raw/open_meteo; no network"),
+    force: bool = typer.Option(False, help="Re-fetch and reload even when the archive already covers the games"),
+):
+    """Game-day weather from Open-Meteo by stadium and kickoff hour -> raw.nfl_weather (archive: one call per stadium-season; reads raw.nfl_schedules, so run it after `ingest nfl`)."""
+    from .ingest.weather import ingest_weather
+
+    with connect() as conn:
+        migrate(conn)
+        results = ingest_weather(conn, parse_seasons(seasons), offline=offline, forecast=forecast, force=force)
+    if not results:
+        console.print("weather: nothing to load (no archived Open-Meteo files to replay, or no game needs weather)")
+    raise typer.Exit(1 if _print_results(results) else 0)
+
+
 @ingest_app.command("all")
 def ingest_all_cmd(
     seasons: str | None = typer.Option(None),
@@ -334,11 +352,12 @@ def backtest_v2_cmd(
 def backtest_kd_cmd(
     seasons: str = typer.Option("2021-2025", help="Held-out seasons, each scored by a model trained on the seasons before it"),
     out: Path | None = typer.Option(None, help="Report directory (default: <repo>/reports/backtests)"),
+    weather: bool = typer.Option(False, help="Plan D3 experiment: add game-day wind + dome (intermediate.int_game_weather) to the features; writes only the report"),
 ):
     """Walk-forward backtest of the K and D/ST projections (kd1.0) against season-to-date and last-3 PPG, in each K/DEF league's scoring; writes the kd1.0 rows of ops.projection_backtest + a report."""
     from .kdef import run_backtest, summarize, verdict
 
-    res = run_backtest(seasons, out)
+    res = run_backtest(seasons, out, weather=weather)
     t = Table(title=f"K / DEF backtest {seasons} (mean over season-weeks, same unit-weeks for every scorer)")
     for c in ("league", "position", "season", "scorer", "weeks", "units/wk", "spearman", "top-10 hit", "mae", "coverage_80"):
         t.add_column(c)

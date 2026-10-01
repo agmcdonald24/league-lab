@@ -240,6 +240,39 @@ run. The lineups are restored only so a night whose `project` fails republishes 
 (`import-routes`) is not in the archive either; while GitHub publishes, the pages show the routes
 proxy.
 
+### Weather in the nightly (plan D3)
+
+`league-lab ingest weather` (Open-Meteo: free, no key, reachable from the Mac and from Actions) is not
+in `scripts/nightly.sh` yet; the product owner adds these two lines (the script is not D3's to edit).
+Both read `raw.nfl_schedules`, so each goes **after** its nflverse counterpart:
+
+```bash
+# 1. replay — after the replay-nflverse-current block
+SOFT_WHY="weather features fall back to the schedules' observed temp / wind" soft replay-weather uv run league-lab ingest weather --offline
+# 2. live — after the fetch-nflverse-current line
+SOFT_WHY="the archived weather and the earlier forecasts stay" soft fetch-weather uv run league-lab ingest weather --forecast
+```
+
+* **Replay** rebuilds `raw.nfl_weather` on the runner's fresh database from the cached files (every
+  archive file and every forecast ever fetched); with no weather archive yet it loads nothing and
+  exits 0. **Live** fetches only what is new: an archive call for a stadium-season only when a
+  played game (older than the archive's 5-day delay) is not in its file yet — about one per home
+  game in season, nothing for completed seasons — and one forecast call per stadium with an
+  open-air game in the next 16 days (~20–25 a night in season). Both are `soft`: a failure never
+  stops the night (past games keep their archived weather, upcoming ones their last forecast or
+  "unknown").
+* **The first night with the lines** (or a lost cache) backfills the archive: 280 calls for every
+  stadium-season 2016–2026, spaced 1.5 s apart — **about 8 extra minutes once**. On the Mac, run
+  `uv run league-lab ingest weather --forecast` once by hand first (the backfill) so the first
+  nightly is a normal one.
+* **Archive cache**: `data/raw/open_meteo/archive/<season>/<stadium_id>.json.gz` — one small file per
+  stadium-season (~280 files, ~20 KB each, ~6 MB for 2016–2026, +~0.5 MB a season), and
+  `data/raw/open_meteo/forecast/<season>/<stadium_id>/<time>.json.gz` — one ~1 KB file per stadium per
+  night with an upcoming open-air game (~3,500 files, ~3 MB a season; each with its `.meta.json`
+  sidecar). The forecasts are never re-fetchable (a forecast is only ever available before the
+  game), so they are the one part of the weather archive that a lost cache cannot rebuild: losing
+  it costs the train / serve gap measurement its history, not the board.
+
 ### Cost
 
 Measured in a 2-CPU / 7 GB sandbox (the size of GitHub's standard runner for private

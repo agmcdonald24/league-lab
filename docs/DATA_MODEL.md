@@ -29,11 +29,26 @@ marts the explorer reads). `analytics_seeds` holds the scoring map and metric re
 | `nfl_pbp_participation` | season | nflverse_game_id, play_id | players on the field per play (`offense_players` / `defense_players` as `;`-lists). 2016 → last completed season (published after the postseason). 321 MB |
 | `nfl_ftn_charting` | season | nflverse_game_id, nflverse_play_id | FTN Data charting 2022+ (read_thrown, throwaway, drop, play action, RPO, motion, …). CC-BY-SA 4.0. 23 MB |
 | `routes_feed` | provider, season | season, week, one of gsis_id/sleeper_id/pfr_id, provider | licensed routes import contract (`league-lab import-routes`), empty until used |
+| `nfl_weather` | source, season, stadium_id | game_id, source, fetched_at | plan D3, `league-lab ingest weather`: Open-Meteo at the stadium, kickoff hour + the two after — `wind_mph` (mean), `gust_mph` (max), `precip_in` / `rain_in` / `snowfall_in` (sums), `snow`, `temp_f` (mean), `weather_code`, `precip_prob_pct` (forecast), `n_hours`, the grid point, `hourly` jsonb (the values used). `source = 'archive'`: one row per game; `'forecast'`: one row per game per fetch, kept forever, `forecast_hours_ahead` = kickoff − fetch. Empty until the first run from a machine that reaches open-meteo.com |
+| `nfl_stadiums` | all (from the repo) | stadium_id | plan D3 stadium reference (`src/league_lab/ingest/reference/stadiums.csv`, reloaded by `db migrate` when it changes): 49 venues, lat / lon, time zone, roof type, tenants, `names` (every name nflverse used) |
+| `nfl_stadium_game_venues` | all (from the repo) | game_id | plan D3: games nflverse records at another stadium (the 2025 international games) → where they were played |
 
 Every raw nfl table carries `_fetched_at`; every Sleeper table carries `payload jsonb` and
 `fetched_at`: the **content time**, when those bytes were fetched from the source (see
 `ops.source_partition.loaded_at` below). Column types are derived from the source file and widened
 (never narrowed) when a later season's file changes type.
+
+**Weather (plan D3, Wave D).** `intermediate.int_game_weather` — one row per game (seasons_start on,
+REG + POST): the venue (per-game correction → a stadium name that belongs to another venue → the
+recorded `stadium_id`; `venue_resolved_by`), `roof_type`, the game's `roof`, `roof_assumed_closed` (an
+undecided retractable roof), the `wx_` values (below), `wx_source` (archive | forecast |
+nflverse_observed | none | dome), `wx_known_at`, `wx_forecast_hours_ahead`, and each source's own
+numbers side by side (`archive_*`, `nflverse_*`, `forecast_*`) for the train / serve comparison.
+`intermediate.int_player_week_weather` — the feature group at the contract grain (gsis_id, season,
+week; one row per `int_player_week_universe` row): `wx_dome`, `wx_wind_mph`, `wx_gust_mph`,
+`wx_precip_in`, `wx_temp_f`, `wx_cold`, `wx_windy`, `wx_snow`, `wx_source`; definitions in
+docs/METRICS.md § Weather, tests in `int_player_week_weather.yml` and `dbt/tests/assert_weather_*.sql`,
+`assert_stadium_reference_covers_schedules.sql` (warn).
 
 ## ops
 

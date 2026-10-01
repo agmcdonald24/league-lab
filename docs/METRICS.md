@@ -538,6 +538,69 @@ and outcome from `mart_kd_week`, the actual priced in the league's scoring; a DE
 is keyed by `team`); B1's lineups (`value_source = 'proj_points'`; § Lineup value); B3's waiver engine
 (free-agent defenses from `mart_player_availability`'s DEF rows); the Kickers page's "Next week's kickers".
 
+## Weather (plan D3, Wave D round 1, 2026-10-01; `league_lab.ingest.weather`, `int_game_weather`, `int_player_week_weather`)
+
+Andrew asked about "weather during that day, wind conditions, precipitation". v2 does not use weather
+(the Vegas total prices some of it in). D3 builds the feature group and measures it; nothing ships
+until the feature-group harness keeps it (one `MODEL_VERSION` bump for v3).
+
+**Where the numbers come from.** Open-Meteo at the stadium's coordinates (`raw.nfl_stadiums`), hourly,
+for the **kickoff hour and the two after it**: wind speed and temperature at hours k, k+1, k+2
+(instantaneous), gusts / precipitation / snowfall at k+1, k+2, k+3 (Open-Meteo reports those for the
+preceding hour), so both cover the game's first three hours. Kickoff = nflverse `gameday` + `gametime`
+in US Eastern (every game, London included), requested in UTC. History = the Open-Meteo archive (ERA5
+reanalysis); the live board = the Open-Meteo forecast (up to 16 days ahead, refreshed nightly). Until
+the first real run backfills `raw.nfl_weather` (Open-Meteo is unreachable from the development
+sandbox), past games fall back to the schedules' observed `temp` / `wind` (no gust, no precipitation).
+
+| Column (`int_player_week_weather`) | Definition | NULL when |
+|---|---|---|
+| `wx_dome` | 1 = the weather does not reach the field: a fixed dome (stadium reference), or a retractable roof that is closed — **or not decided yet** (every upcoming game: nflverse fills `roof` on game day; 370 of 418 retractable-roof games 2016–2025 were played closed, 89%); 0 = open to the weather. The reference wins over nflverse's `roof` for fixed roofs (nflverse calls the MCG, Stade de France and the Munich stadium `dome`) | the venue is not in the reference |
+| `wx_wind_mph` | mean 10 m wind speed, mph (hours k..k+2); 0 in a dome | no source for an open-air game |
+| `wx_gust_mph` | max 10 m gust, mph (k+1..k+3); 0 in a dome | Open-Meteo has not answered for the game (the schedules have no gusts) |
+| `wx_precip_in` | precipitation (rain + snow water equivalent), inches, sum over k+1..k+3; 0 in a dome | as gusts; also when an hour is missing (a sum with a gap would understate it) |
+| `wx_temp_f` | mean 2 m temperature, °F; **0 in a dome** (the contract: every weather feature 0 under a roof; `wx_dome` tells a dome from a 0 °F game) | no source |
+| `wx_cold` | 1 when outdoors and `wx_temp_f` < 32 | `wx_temp_f` NULL |
+| `wx_windy` | 1 when outdoors and `wx_wind_mph` ≥ 15 | `wx_wind_mph` NULL |
+| `wx_snow` | 1 when Open-Meteo has snowfall or a WMO snow code (71–77, 85–86) in those hours | no Open-Meteo answer |
+| `wx_source` | `archive` · `forecast` · `nflverse_observed` · `none` (open-air, nothing known) · `dome` — bookkeeping, not a model input | never |
+
+**Which value a game gets** (`int_game_weather`): a played game takes the archive, else the schedules'
+observation, else its last forecast; an upcoming game its newest forecast (always fetched before
+kickoff). `assert_weather_never_peeks`: an observation only for a game played before it was fetched,
+a forecast only from before kickoff, no observation for a game not yet played;
+`assert_weather_dome_rows_zero`; one row per universe row (`assert_weather_one_row_per_universe_row`).
+
+**Venue.** The schedules' `stadium_id`, except a per-game correction (`stadium_game_venues.csv`: the seven
+2025 international games nflverse records at the home team's stadium — São Paulo, Dublin, London ×3,
+Berlin, Madrid) and a stadium name that belongs to another venue (2026_05_PHI_JAX, `JAX00` "Tottenham
+Hotspur Stadium" → London). `assert_stadium_reference_covers_schedules` (warn) flags a new stadium id or
+an early kickoff at a US stadium.
+
+### The train / serve gap (measure it, do not assume it away)
+
+Training and the backtest see the weather **as it was** (archive, or the stadium's own report); the live
+board sees **a forecast** made one to six days earlier. A model that learned "20 mph wind costs a
+kicker 1.5 points" applies that to a forecast of 20 mph that may verify at 12. Three consequences:
+
+1. The backtest's gain from a weather group is an **upper bound** on the live gain.
+2. The schedules' observation (field level, the stadium's report) and the archive (10 m, model grid)
+   differ in level as well: the sandbox evaluation uses the former, the first real run switches every
+   past game to the archive, so the harness must be **re-run after the backfill** before any keep
+   decision is final. `int_game_weather` keeps `archive_*`, `nflverse_*` and `forecast_*` side by side.
+3. **The plan to measure it**: every forecast is kept (`raw.nfl_weather`, `source = 'forecast'`, one row
+   per game per nightly fetch, `forecast_hours_ahead`; never overwritten by the archive). After one
+   season of forecasts (2026: about 200 open-air games × up to 16 nightly fetches each), compare per lead time (0–24 h,
+   1–2 d, 3–4 d, 5–7 d) the forecast with the archive for the same game: mean error and MAE of wind,
+   temperature and precipitation, and the share of `wx_windy` / `wx_cold` flags that flip. Then re-score
+   the season's played weeks with the features from the forecast the board actually had at its
+   kickoff freeze (the B5 decision record time) instead of the archive: the difference in Spearman /
+   MAE is the live value of the group. If it is gone at the board's usual lead time, the group stays
+   out (or ships only for the Sunday-morning refit).
+
+The retractable roof is a second, smaller gap: training knows whether it was open; the board assumes
+closed until game day (the roof is open for about 1 game in 9, in mild weather).
+
 ## Lineup value (B1, 2026-09-29; `league-lab lineups`, `ops.lineups`, `mart_lineup_recommendation`)
 
 **Objective.** For one roster and one week, the lineup value is the largest total of player values
