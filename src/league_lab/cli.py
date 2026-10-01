@@ -352,11 +352,12 @@ def backtest_v2_cmd(
 def backtest_kd_cmd(
     seasons: str = typer.Option("2021-2025", help="Held-out seasons, each scored by a model trained on the seasons before it"),
     out: Path | None = typer.Option(None, help="Report directory (default: <repo>/reports/backtests)"),
+    weather: bool = typer.Option(False, help="Plan D3 experiment: add game-day wind + dome (intermediate.int_game_weather) to the features; writes only the report"),
 ):
     """Walk-forward backtest of the K and D/ST projections (kd1.0) against season-to-date and last-3 PPG, in each K/DEF league's scoring; writes the kd1.0 rows of ops.projection_backtest + a report."""
     from .kdef import run_backtest, summarize, verdict
 
-    res = run_backtest(seasons, out)
+    res = run_backtest(seasons, out, weather=weather)
     t = Table(title=f"K / DEF backtest {seasons} (mean over season-weeks, same unit-weeks for every scorer)")
     for c in ("league", "position", "season", "scorer", "weeks", "units/wk", "spearman", "top-10 hit", "mae", "coverage_80"):
         t.add_column(c)

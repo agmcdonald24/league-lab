@@ -74,6 +74,10 @@ class MemoryStore:
         return self.state.get((dataset, partition_key))
 
     def replace(self, source, season, stadium_id, rows, rec: LoadRecord) -> int:
+        if source == "forecast":   # upsert, never delete (PgStore: on conflict do update, no delete)
+            kept = {(r["game_id"], r["fetched_at"]): r for r in self.parts.get((source, season, stadium_id), [])}
+            kept.update({(r["game_id"], r["fetched_at"]): r for r in rows})
+            rows = sorted(kept.values(), key=lambda r: (r["fetched_at"], r["game_id"]))
         self.parts[(source, season, stadium_id)] = list(rows)
         rec.row_count = len(rows)
         self.state[(rec.dataset, rec.partition_key)] = {"checksum_sha256": rec.checksum_sha256, "row_count": rec.row_count}
@@ -323,6 +327,12 @@ def test_every_forecast_is_kept_and_the_archive_never_replaces_it(tmp_path, cloc
     assert [r["forecast_hours_ahead"] for r in fc] == [77.0, 53.0]   # 2026-10-04 17:00Z minus each fetch
     assert [r["wind_mph"] for r in fc] == [11.0, 16.0] and [r["precip_prob_pct"] for r in fc] == [35, 85]
     assert fc[1]["precip_in"] == 0.17 and fc[1]["gust_mph"] == 31.0
+    # a forecast file that disappears from the archive does not take its row with it
+    first = sorted((tmp_path / "open_meteo" / "forecast" / "2026" / "BUF00").glob("*.json.gz"))[0]
+    first.unlink()
+    first.with_name(first.name + ".meta.json").unlink()
+    run(tmp_path, store, Api(), now=T0 + timedelta(days=1, hours=1), forecast=True)
+    assert len(store.rows("forecast")) == 2
     # ten days later the game is in the archive too: both forecast rows stay
     clock.current = T0 + timedelta(days=10)
     run(tmp_path, store, Api(), now=T0 + timedelta(days=10))

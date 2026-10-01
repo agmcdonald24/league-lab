@@ -41,7 +41,8 @@ cost nothing after the first run and the current season about one call per stadi
 
 Manifest: source ``open_meteo``, datasets ``archive`` and ``forecast``, partition ``<season>:<stadium_id>``
 (the forecast partition = every forecast file of that stadium-season; its rows are rebuilt from all of
-them, so a replay on a fresh database restores the full forecast history). The stadium reference is
+them, so a replay on a fresh database restores the full forecast history, and upserted, never deleted:
+a forecast row outlives a lost file). The stadium reference is
 source ``league_lab`` dataset ``stadiums``. ``raw.nfl_stadiums`` / ``raw.nfl_stadium_game_venues`` are
 (re)loaded from the CSVs by ``db migrate`` so dbt can resolve venues before any weather is fetched.
 
@@ -481,14 +482,19 @@ class PgStore:
         return get_partition_state(self.conn, SOURCE, dataset, partition_key)
 
     def replace(self, source: str, season: int, stadium_id: str, rows: list[dict[str, Any]], rec: LoadRecord) -> int:
+        """Archive: the stadium-season's rows are replaced (one per game, the newest answer). Forecast:
+        upserted and never deleted — a forecast cannot be fetched again, so a row outlives its file."""
+        cols = ", ".join(WEATHER_COLUMNS)
+        marks = ", ".join(["%s"] * len(WEATHER_COLUMNS))
+        updates = ", ".join(f"{c} = excluded.{c}" for c in WEATHER_COLUMNS if c not in ("game_id", "source", "fetched_at"))
         try:
             with self.conn.transaction(), self.conn.cursor() as cur:
-                cur.execute("delete from raw.nfl_weather where source = %s and season = %s and stadium_id = %s",
-                            (source, season, stadium_id))
+                if source == "archive":
+                    cur.execute("delete from raw.nfl_weather where source = %s and season = %s and stadium_id = %s",
+                                (source, season, stadium_id))
                 if rows:
-                    cols = ", ".join(WEATHER_COLUMNS)
-                    marks = ", ".join(["%s"] * len(WEATHER_COLUMNS))
-                    cur.executemany(f"insert into raw.nfl_weather ({cols}) values ({marks})",
+                    cur.executemany(f"""insert into raw.nfl_weather ({cols}) values ({marks})
+                                        on conflict (game_id, source, fetched_at) do update set {updates}, _loaded_at = now()""",
                                     [tuple(Jsonb(r[c]) if c == "hourly" else r[c] for c in WEATHER_COLUMNS) for r in rows])
                 rec.row_count = len(rows)
                 record_manifest(self.conn, rec)

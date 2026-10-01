@@ -197,6 +197,18 @@ FEATURES: dict[str, list[str]] = {
     "DEF": GAME_FEATURES + ["team_games_std"] + [f"{w}_{s}" for s in DEF_TEAM for w in WINDOWS]
            + [f"opp_{w}_{s}" for s in DEF_OPP for w in WINDOWS],
 }
+# Plan D3 (Wave D): game-day weather from intermediate.int_game_weather, OFF in kd1.0. `backtest-kd --weather`
+# measures it (docs/STATUS.md § Wave D, D3); shipping it is a new KD_MODEL_VERSION. Wind for the live board is
+# the Open-Meteo forecast, for training the observed weather (docs/METRICS.md § Weather).
+WEATHER_FEATURES = ["wx_wind_mph", "wx_dome"]
+WEATHER_COLUMNS = ["wx_dome", "wx_wind_mph", "wx_gust_mph", "wx_precip_in", "wx_temp_f", "wx_source"]
+
+
+def features_for(position: str, weather: bool = False) -> list[str]:
+    """The model inputs of ``position``: ``FEATURES`` plus, with ``weather``, ``WEATHER_FEATURES``."""
+    return FEATURES[position] + (WEATHER_FEATURES if weather else [])
+
+
 # Kicker accuracy priors (made / attempted) and their weight in attempts: a kicker with few kicks
 # reads as league-typical, not as 100% or 0%. Fixed constants (a change is a new model version).
 K_PRIOR = {"short": 0.93, "mid": 0.80, "long": 0.66, "pat": 0.94}
@@ -308,8 +320,8 @@ def build_features(units: pd.DataFrame, tg: pd.DataFrame) -> pd.DataFrame:
     return u.sort_values(["position", "unit_id", "season", "week"]).reset_index(drop=True)
 
 
-def _matrix(d: pd.DataFrame, position: str) -> np.ndarray:
-    x = d[FEATURES[position]].to_numpy(dtype=float).copy()
+def _matrix(d: pd.DataFrame, position: str, features: list[str] | None = None) -> np.ndarray:
+    x = d[features or FEATURES[position]].to_numpy(dtype=float).copy()
     x[:, np.isnan(x).all(axis=0)] = 0.0      # an entirely unknown column (binner needs something)
     return x
 
@@ -329,15 +341,30 @@ def _frame(cur: psycopg.Cursor, sql: str, params: tuple) -> pd.DataFrame:
     return pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
 
 
-def load_frame(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
-    """Unit-weeks of ``seasons`` with their features (team history reaches one season further back)."""
+def with_weather(units: pd.DataFrame, weather: pd.DataFrame) -> pd.DataFrame:
+    """``units`` plus the game's ``WEATHER_COLUMNS`` (int_game_weather rows, by game_id); NULL = unknown."""
+    w = weather[["game_id", *WEATHER_COLUMNS]].drop_duplicates("game_id")
+    out = units.drop(columns=[c for c in WEATHER_COLUMNS if c in units.columns]).merge(w, on="game_id", how="left")
+    for c in WEATHER_COLUMNS:
+        if c != "wx_source":
+            out[c] = pd.to_numeric(out[c], errors="coerce").astype(float)
+    return out
+
+
+def load_frame(conn: psycopg.Connection, seasons: list[int], weather: bool = False) -> pd.DataFrame:
+    """Unit-weeks of ``seasons`` with their features (team history reaches one season further back);
+    ``weather``: plus the game's weather (``WEATHER_COLUMNS``, plan D3)."""
     back = sorted({*seasons, *(s - 1 for s in seasons)})
     with conn.cursor() as cur:
         units = _frame(cur, f"""select {', '.join(dict.fromkeys(UNIT_COLUMNS))} from analytics.mart_kd_week
                                 where season = any(%s) order by position, unit_id, season, week""", (back,))
         tg = _frame(cur, f"""select {', '.join(TEAM_GAME_COLUMNS)} from analytics.mart_kd_team_game
                              where season = any(%s) order by team, season, week""", (back,))
+        wx = _frame(cur, f"""select game_id, {', '.join(WEATHER_COLUMNS)} from intermediate.int_game_weather
+                             where season = any(%s)""", (back,)) if weather else None
     f = build_features(units, tg)
+    if wx is not None:
+        f = with_weather(f, wx)
     return f[f["season"].isin(seasons)].reset_index(drop=True)
 
 
@@ -365,6 +392,7 @@ class KDModel:
     offsets: dict[str, tuple[float, float, float]] = field(default_factory=dict)  # league -> P10/P50/P90 offsets
     n_rows: int = 0
     train_seasons: str = ""
+    features: list[str] = field(default_factory=list)                  # model inputs (default FEATURES[position])
 
 
 def _regressor(loss: str):
@@ -409,12 +437,15 @@ def _outcome(d: pd.DataFrame, position: str) -> pd.DataFrame:
     return with_pa_buckets(d, "out_") if position == "DEF" else d
 
 
-def fit_kd(frame: pd.DataFrame, position: str, scorings: Mapping[str, tuple[str, dict[str, float]]]) -> KDModel:
-    """Fit one position on every played unit-week of ``frame`` (the caller passes training seasons)."""
+def fit_kd(frame: pd.DataFrame, position: str, scorings: Mapping[str, tuple[str, dict[str, float]]],
+           weather: bool = False) -> KDModel:
+    """Fit one position on every played unit-week of ``frame`` (the caller passes training seasons);
+    ``weather`` adds ``WEATHER_FEATURES`` (the frame must come from ``load_frame(..., weather=True)``)."""
     d = training_rows(frame, position)
-    x = _matrix(d, position)
+    features = features_for(position, weather)
+    x = _matrix(d, position, features)
     seasons = sorted(d["season"].unique())
-    m = KDModel(position, n_rows=len(d), train_seasons=f"{min(seasons)}-{max(seasons)}" if seasons else "")
+    m = KDModel(position, n_rows=len(d), train_seasons=f"{min(seasons)}-{max(seasons)}" if seasons else "", features=features)
     if position == "K":
         tot = {b: float(d[f"out_{b}"].sum()) for b in K_MISS_BUCKETS}
         s = sum(tot.values())
@@ -451,7 +482,7 @@ def fit_kd(frame: pd.DataFrame, position: str, scorings: Mapping[str, tuple[str,
 def predict_kd(m: KDModel, rows: pd.DataFrame, scorings: Mapping[str, tuple[str, dict[str, float]]]) -> tuple[pd.DataFrame, pd.DataFrame]:
     """(one row per league x unit-week: proj_points, p10, p50, p90; the league-free stat line per unit-week)."""
     rows = rows.reset_index(drop=True)
-    line = _line(m.components, _matrix(rows, m.position), m.position, m.miss_shares, m.pa_residuals)
+    line = _line(m.components, _matrix(rows, m.position, m.features or None), m.position, m.miss_shares, m.pa_residuals)
     keys = rows[["position", "unit_id", "season", "week"]].astype({"season": int, "week": int})
     lines = pd.concat([keys, line], axis=1)
     frames = []
@@ -605,10 +636,13 @@ def score_weeks(p: pd.DataFrame, min_units: int = 8) -> list[dict]:
     return out
 
 
-def backtest_kd(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | None = None) -> pd.DataFrame:
+def backtest_kd(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | None = None,
+                weather: bool = False) -> pd.DataFrame:
     """Walk-forward: for each season N, fit on every season before N, project N's unit-weeks, score
     in each K/DEF league's scoring against season-to-date and last-3 PPG. Replaces the ``kd1.0`` rows
-    of ``ops.projection_backtest`` and writes a report."""
+    of ``ops.projection_backtest`` and writes a report. ``weather`` (plan D3) adds ``WEATHER_FEATURES``:
+    an experiment, so it writes only its report (``projection_kd_wx_*``, rows tagged ``kd1.0+wx``) and
+    leaves the shipped model's backtest rows alone."""
     from .config import PROJECT_ROOT
     from .projections import _write
 
@@ -617,7 +651,7 @@ def backtest_kd(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path
         cur.execute("select distinct season from analytics.mart_kd_week where played order by 1")
         have = [int(r[0]) for r in cur.fetchall()]
     first = min(have)
-    frame = load_frame(conn, [s for s in have if s <= max(test_seasons)])
+    frame = load_frame(conn, [s for s in have if s <= max(test_seasons)], weather=weather)
     rows: list[dict] = []
     for n in test_seasons:
         train = frame[frame["season"] < n]
@@ -626,7 +660,7 @@ def backtest_kd(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path
             scorings = leagues[pos]
             if not scorings or test[test["position"] == pos].empty:
                 continue
-            m = fit_kd(train, pos, scorings)
+            m = fit_kd(train, pos, scorings, weather=weather)
             pred, _ = predict_kd(m, test[test["position"] == pos], scorings)
             for league_id, (_, scoring) in scorings.items():
                 base = ppg_baselines(frame[frame["season"] <= n], pos, scoring)
@@ -638,11 +672,13 @@ def backtest_kd(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path
             log.info("kd backtest %s %s scored", n, pos)
     res = pd.DataFrame(rows)
     run_id = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
-    res["run_id"], res["run_at"], res["model_version"] = run_id, datetime.now(UTC), KD_MODEL_VERSION
-    _write(conn, "ops.projection_backtest", res, "model_version = %s", (KD_MODEL_VERSION,))
+    res["run_id"], res["run_at"] = run_id, datetime.now(UTC)
+    res["model_version"] = f"{KD_MODEL_VERSION}+wx" if weather else KD_MODEL_VERSION
+    if not weather:
+        _write(conn, "ops.projection_backtest", res, "model_version = %s", (KD_MODEL_VERSION,))
     out_dir = out_dir or PROJECT_ROOT / "reports" / "backtests"
     out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / f"projection_kd_{min(test_seasons)}_{max(test_seasons)}_{run_id}.md"
+    path = out_dir / f"projection_kd_{'wx_' if weather else ''}{min(test_seasons)}_{max(test_seasons)}_{run_id}.md"
     path.write_text(report(res, leagues))
     log.info("kd report written to %s", path)
     return res
@@ -692,14 +728,14 @@ def report(res: pd.DataFrame, leagues: Mapping[str, Mapping[str, tuple[str, dict
 
 
 # ------------------------------------------------------------------------------ entry points
-def run_backtest(seasons: str, out: Path | None = None) -> pd.DataFrame:
+def run_backtest(seasons: str, out: Path | None = None, weather: bool = False) -> pd.DataFrame:
     from .config import get_settings
     from .rankings import parse_seasons
 
     with psycopg.connect(get_settings().pipeline_dsn(), autocommit=False) as conn:
-        return backtest_kd(conn, parse_seasons(seasons), out)
+        return backtest_kd(conn, parse_seasons(seasons), out, weather=weather)
 
 
-__all__ = ["DEF_STAT_MAP", "KD_MODEL_VERSION", "KD_POSITIONS", "KD_SHIP", "PTS_ALLOW_BUCKETS", "backtest_kd", "build_features",
+__all__ = ["DEF_STAT_MAP", "KD_MODEL_VERSION", "KD_POSITIONS", "KD_SHIP", "PTS_ALLOW_BUCKETS", "WEATHER_FEATURES", "backtest_kd", "build_features",
            "fit_kd", "kicker_asof", "pa_probabilities", "ppg_baselines", "predict_kd", "price_def", "price_k", "project_kd",
            "rows_after_project", "team_asof", "verdict"]
