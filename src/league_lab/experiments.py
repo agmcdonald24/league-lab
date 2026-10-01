@@ -209,13 +209,15 @@ def outcome_probe(conn: psycopg.Connection, spec: GroupSpec) -> pd.DataFrame:
     """Per position x column: corr of the input with the player's points this week, his previous and his
     next played week (same rows for all three; reference scoring, ``mart_player_week_features.points_actual``)."""
     t = _ident(spec.table)
+    types = describe_table(conn, spec.table) or {}
     sels, names = [], []
     for c in spec.columns:
         ci = sql.Identifier(c)
+        x = sql.SQL("f.{c}::int::float8" if types.get(c) == "boolean" else "f.{c}::float8").format(c=ci)   # boolean -> 0/1
         sels += [sql.SQL("count(f.{c})").format(c=ci),
-                 sql.SQL("corr(f.{c}::float8, o.y)").format(c=ci),
-                 sql.SQL("corr(f.{c}::float8, o.y_prev)").format(c=ci),
-                 sql.SQL("corr(f.{c}::float8, o.y_next)").format(c=ci)]
+                 sql.SQL("corr({x}, o.y)").format(x=x),
+                 sql.SQL("corr({x}, o.y_prev)").format(x=x),
+                 sql.SQL("corr({x}, o.y_next)").format(x=x)]
         names.append(c)
     q = sql.SQL("""
         with o as (

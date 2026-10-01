@@ -134,13 +134,15 @@ def test_no_peek_check_catches_planted_leaks(conn):
     conn.execute("""create temp table d1_planted as
         select u.gsis_id, u.season, u.week,
                (u.week % 3)::float8 as pl_honest,
+               u.week % 2 = 0 as pl_honest_flag,
                m.points_actual as pl_leak,
                u.week as pl_asof_week,
                1.0::float8 as pl_form
         from intermediate.int_player_week_universe as u
         left join analytics.mart_player_week_features as m using (gsis_id, season, week)
         where u.season >= 2023""")
-    honest = E.check_spec("honest", {"table": "pg_temp.d1_planted", "columns": ["pl_honest"]}, E.describe_table(conn, "pg_temp.d1_planted"))
+    honest = E.check_spec("honest", {"table": "pg_temp.d1_planted", "columns": ["pl_honest", "pl_honest_flag"]},
+                          E.describe_table(conn, "pg_temp.d1_planted"))
     rep = E.no_peek_check(conn, honest)
     # the planted as-of marker is a column of the table, so the table is refused whichever columns a group uses
     assert any(f.startswith("as-of:") for f in rep.failures)
