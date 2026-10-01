@@ -59,6 +59,12 @@ QUANTILES = (0.1, 0.5, 0.9)
 # Plan D6 (Wave D): the 50% range ("most weeks"), fitted and calibrated with the same machinery as the
 # 80% one (P10-P90) and written next to it as p25 / p75. The 80% models and their order are unchanged.
 QUANTILES_50 = (0.25, 0.75)
+# Plan D6 follow-up: the conformal widening of both ranges is computed per projection tier, the terciles of
+# the calibration season's priced line within the position (cut points kept on the model), so a starter's
+# range holds 80% / 50% on starters and not only on average; a tier with fewer than TIER_MIN_ROWS
+# calibration rows takes the position-wide widening.
+TIER_QUANTILES = (1 / 3, 2 / 3)
+TIER_MIN_ROWS = 200
 
 # Stat-line components projected per position (everything else is 0 for that position).
 COMPONENTS: dict[str, list[str]] = {
@@ -162,6 +168,9 @@ class PositionModel:
     quantiles: dict[tuple[str, float], object] = field(default_factory=dict)  # (league_id, q) -> regressor
     conformal: dict[str, float] = field(default_factory=dict)        # league_id -> interval widening (points)
     conformal_50: dict[str, float] = field(default_factory=dict)     # league_id -> widening of the 50% range (plan D6)
+    tier_cuts: dict[str, tuple[float, ...]] = field(default_factory=dict)          # league_id -> projection tier cut points
+    conformal_tiers: dict[str, tuple[float, ...]] = field(default_factory=dict)    # league_id -> 80% widening per tier
+    conformal_50_tiers: dict[str, tuple[float, ...]] = field(default_factory=dict) # league_id -> 50% widening per tier
     n_rows: int = 0
     calibration_season: int | None = None
     features: list[str] | None = None    # the inputs it was fitted on; None = FEATURES (plan D1 harness hook)
@@ -250,6 +259,8 @@ def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[s
     # 3. split-conformal calibration (CQR): the residual models are fitted on all but the newest
     #    training season; that season measures how far actuals fall outside [P10, P90], and both
     #    ends are widened by the 80th percentile of the miss, so "80% inside" holds out of sample.
+    #    Plan D6 follow-up: per projection tier (terciles of the calibration season's line), so it holds
+    #    for starters too (position-wide, starters' ranges held 76-77% and the fringe's more than 80%).
     seasons = sorted(d["season"].unique())
     cal_season = seasons[-1] if len(seasons) >= 3 else None
     is_cal = (d["season"] == cal_season).to_numpy() if cal_season else np.zeros(len(d), dtype=bool)
@@ -267,26 +278,47 @@ def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[s
         # P10 / P50 / P90 models are exactly what they were) and calibrated the same way for 50%
         for q in QUANTILES_50:
             m.quantiles[(league_id, q)] = _regressor("quantile", q).fit(_binnable(xq[fit_idx]), y[fit_idx])
-        m.conformal[league_id] = _conformal_widening(m, league_id, QUANTILES[0], QUANTILES[-1], xq[cal_idx], y[cal_idx])
-        m.conformal_50[league_id] = _conformal_widening(m, league_id, *QUANTILES_50, xq[cal_idx], y[cal_idx])
-    log.info("fit %s: %s rows, %s components, %s quantile models, calibration season %s, widening 80%% %s, 50%% %s",
+        xc, yc = xq[cal_idx], y[cal_idx]
+        tiers = None
+        if cal_idx.sum() >= 50:
+            m.tier_cuts[league_id] = tuple(float(c) for c in np.quantile(line[cal_idx], TIER_QUANTILES))
+            tiers = np.searchsorted(m.tier_cuts[league_id], line[cal_idx])
+        for (q_lo, q_hi), pooled, per_tier in (((QUANTILES[0], QUANTILES[-1]), m.conformal, m.conformal_tiers),
+                                               (QUANTILES_50, m.conformal_50, m.conformal_50_tiers)):
+            lo = m.quantiles[(league_id, q_lo)].predict(xc) if len(yc) else np.zeros(0)
+            hi = m.quantiles[(league_id, q_hi)].predict(xc) if len(yc) else np.zeros(0)
+            pooled[league_id] = _conformal_widening(lo, hi, yc, q_hi - q_lo)
+            if tiers is not None:
+                per_tier[league_id] = tuple(_conformal_widening(lo[tiers == t], hi[tiers == t], yc[tiers == t], q_hi - q_lo)
+                                            if (tiers == t).sum() >= TIER_MIN_ROWS else pooled[league_id]
+                                            for t in range(len(TIER_QUANTILES) + 1))
+    log.info("fit %s: %s rows, %s components, %s quantile models, calibration season %s, widening 80%% by tier %s, 50%% by tier %s",
              position, len(d), len(m.components), len(m.quantiles), cal_season,
-             {k[-6:]: round(v, 2) for k, v in m.conformal.items()}, {k[-6:]: round(v, 2) for k, v in m.conformal_50.items()})
+             {k[-6:]: [round(v, 2) for v in t] for k, t in m.conformal_tiers.items()},
+             {k[-6:]: [round(v, 2) for v in t] for k, t in m.conformal_50_tiers.items()})
     return m
 
 
-def _conformal_widening(m: PositionModel, league_id: str, q_lo: float, q_hi: float, xq_cal: np.ndarray, y_cal: np.ndarray) -> float:
-    """Split-conformal widening (CQR) of the [q_lo, q_hi] range on the calibration rows: the
+def _conformal_widening(lo: np.ndarray, hi: np.ndarray, y_cal: np.ndarray, coverage: float) -> float:
+    """Split-conformal widening (CQR) of the range [lo, hi] predicted for the calibration rows: the
     ceil((n + 1) x coverage) / n quantile of how far each actual falls outside it (negative = inside), so that
     share of held-out outcomes lands inside once both ends move out by it. 0 with fewer than 50 rows."""
     n = len(y_cal)
     if n < 50:
         return 0.0
-    lo = m.quantiles[(league_id, q_lo)].predict(xq_cal)
-    hi = m.quantiles[(league_id, q_hi)].predict(xq_cal)
     miss = np.maximum(lo - y_cal, y_cal - hi)      # negative when inside the interval
-    level = min(1.0, np.ceil((n + 1) * (q_hi - q_lo)) / n)
+    level = min(1.0, np.ceil((n + 1) * coverage) / n)
     return float(np.quantile(miss, level))
+
+
+def _widening(m: PositionModel, league_id: str, line: np.ndarray, band: str) -> np.ndarray | float:
+    """Per row: the widening of its projection tier (``band`` '80' or '50'); the position-wide value for a model
+    without tiers."""
+    per_tier = (m.conformal_tiers if band == "80" else m.conformal_50_tiers).get(league_id)
+    pooled = (m.conformal if band == "80" else m.conformal_50).get(league_id, 0.0)
+    if not per_tier or league_id not in m.tier_cuts:
+        return pooled
+    return np.asarray(per_tier, dtype=float)[np.searchsorted(m.tier_cuts[league_id], line)]
 
 
 def predict_position(m: PositionModel, rows: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]]) -> pd.DataFrame:
@@ -308,7 +340,7 @@ def predict_position(m: PositionModel, rows: pd.DataFrame, scorings: dict[str, t
         # a quantile model has no monotonicity guarantee across separate fits: sort the three,
         # then apply the conformal widening to both ends (a floor of 0 for P10: no negative floors)
         qs = np.sort(o[["p10", "p50", "p90"]].to_numpy(dtype=float), axis=1)
-        adj = m.conformal.get(league_id, 0.0)
+        adj = _widening(m, league_id, line, "80")
         o["p10"], o["p50"], o["p90"] = np.clip(qs[:, 0] - adj, 0, None), qs[:, 1], qs[:, 2] + adj
         o["p90"] = np.maximum(o["p90"], o["proj_points"])   # the ceiling never sits below the projection
         o["p50"] = np.clip(o["p50"], o["p10"], o["p90"])     # keep the order after the floor was clipped at 0
@@ -316,7 +348,7 @@ def predict_position(m: PositionModel, rows: pd.DataFrame, scorings: dict[str, t
         # (P10 <= P25 <= P50 <= P75 <= P90); a model fitted before D6 has no 50% models: NULL
         if all((league_id, q) in m.quantiles for q in QUANTILES_50):
             q50 = np.sort(np.column_stack([line + m.quantiles[(league_id, q)].predict(xq) for q in QUANTILES_50]), axis=1)
-            adj50 = m.conformal_50.get(league_id, 0.0)
+            adj50 = _widening(m, league_id, line, "50")
             o["p25"] = np.clip(q50[:, 0] - adj50, o["p10"], o["p50"])
             o["p75"] = np.clip(q50[:, 1] + adj50, o["p50"], o["p90"])
         else:

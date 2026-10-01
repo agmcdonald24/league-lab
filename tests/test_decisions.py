@@ -156,3 +156,29 @@ def test_p25_p75_are_added_in_every_copy_of_the_projections_ddl():
         for col in ("p25", "p75"):
             assert f"alter table ops.projections add column if not exists {col} double precision" in text
     assert "round(p.p25::numeric, 2) as p25" in mart and "round(k.p25::numeric, 2) as p25" in mart
+
+
+# ------------------------------------------------------------------------------ per-tier conformal (D6 follow-up)
+def test_conformal_widening_is_the_split_conformal_quantile():
+    rng = np.random.default_rng(0)
+    y = rng.normal(0, 1, 400)
+    lo, hi = np.full(400, -1.0), np.full(400, 1.0)
+    miss = np.maximum(lo - y, y - hi)
+    expected = np.quantile(miss, np.ceil(401 * 0.8) / 400)
+    assert projections._conformal_widening(lo, hi, y, 0.8) == pytest.approx(expected)
+    assert projections._conformal_widening(lo[:49], hi[:49], y[:49], 0.8) == 0.0    # too few rows: no widening
+    # widened by it, the calibration rows hold at least 80%
+    w = projections._conformal_widening(lo, hi, y, 0.8)
+    assert ((y >= lo - w) & (y <= hi + w)).mean() >= 0.8
+
+
+def test_widening_follows_the_projection_tier():
+    m = projections.PositionModel("WR")
+    m.conformal, m.conformal_50 = {"L": 0.5}, {"L": 0.2}
+    lines = np.array([2.0, 7.9, 8.0, 12.0, 30.0])
+    assert projections._widening(m, "L", lines, "80") == 0.5          # no tiers on the model: position-wide
+    m.tier_cuts["L"] = (5.0, 10.0)
+    m.conformal_tiers["L"], m.conformal_50_tiers["L"] = (-0.3, 0.4, 1.1), (-0.1, 0.1, 0.6)
+    np.testing.assert_allclose(projections._widening(m, "L", lines, "80"), [-0.3, 0.4, 0.4, 1.1, 1.1])
+    np.testing.assert_allclose(projections._widening(m, "L", lines, "50"), [-0.1, 0.1, 0.1, 0.6, 0.6])
+    assert projections.TIER_QUANTILES == (1 / 3, 2 / 3) and projections.TIER_MIN_ROWS == 200

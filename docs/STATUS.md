@@ -2143,7 +2143,7 @@ experiment and the calibration are in `docs/METRICS.md` § "Ranges and decisions
   (13 pages × 2 leagues, the Player page by id × 6, Home and Matchups for dynasty roster 12, Rankings week 2
   — frozen, P25 / P75 NULL — and week 4 for both rosters): 0 exceptions. Screenshots (390 and 1300 px, both
   rosters, no horizontal scroll at 390): `waveD/d6/shots/{home,matchups,rankings}_{dyn12,scrubs2}_{390,1300}.png`.
-* **For the PO to decide.** (1) **Starters' ranges are too narrow**: top-N coverage 75.9–77.4% (80%) and
+* **For the PO to decide** (point 1 decided: adopted, see the follow-up below). (1) **Starters' ranges are too narrow**: top-N coverage 75.9–77.4% (80%) and
   46.8–47.9% (50%); conformal per projection tier fixes it (78.8–80.5% / 48.1–51.0%) at no interval-score cost
   by widening starters' ranges (top-24 WR 19.8 → 21.3 at 80%, 10.5 → 11.1 at 50%); not kept under the 2% rule;
   it is `_conformal_widening` per tercile of the calibration season's lines. It barely moves the decision
@@ -2234,6 +2234,39 @@ until the new one matches the headless check's numbers). Nothing in `app/`, `src
   importing `league_lab.*`, the image needs `src/` and that module's dependencies. Absolute timings are from a loaded
   2-core sandbox and a local database; the hosted app adds the Neon round trips to both. No `--select` appended, no
   seeds or metrics touched.
+
+* **Follow-up 2026-10-01 (PO decision on point 1): per-tier calibration adopted.** `_conformal_widening` now
+  runs per position × league × projection tier for both ranges: tiers = terciles of the calibration season's
+  priced (out-of-fold) line within the position (`TIER_QUANTILES = (1/3, 2/3)`, cut points stored on the model,
+  a projected row takes its tier from its own `proj_points`); a tier with < 200 calibration rows takes the
+  position-wide widening (`TIER_MIN_ROWS`; never binds: smallest tier 206 rows in the walk-forward, QB 2023,
+  213+ in production). This is the experiment's `v2_bucket_tier` (the production `walk_forward` on 2025 QB
+  reproduces it: interval score 1.28327 / 1.77809, coverage 0.76147 / 0.74251, Scrubs / dynasty). Walk-forward
+  2023–2025, both leagues, position-wide → per tier (top-N = the board's top 24 RB / WR, top 12 QB / TE by
+  projection each week among those who played; rest = the others who played):
+
+  | Pos | Coverage 80: all / top-N / rest | Coverage 50: all / top-N / rest | Top-N width 80 / 50 (points) | Interval score 80 / 50 |
+  |---|---|---|---|---|
+  | QB | 75.5 → **75.8** / 77.4 → **78.8** / 74.6 → 74.3% | 46.7 → **47.2** / 47.6 → **48.1** / 46.2 → 46.9% | 23.4 → 24.1 / 12.1 → 12.2 | 1.5092 → 1.5094 (+0.01%) / 2.7785 → 2.7831 (+0.17%) |
+  | RB | 79.8 → **79.9** / 77.3 → **79.5** / 80.8 → 80.1% | 51.3 → **51.3** / 47.7 → **51.0** / 52.7 → 51.4% | 19.1 → 19.9 / 10.1 → 11.0 | 0.9709 → 0.9710 (+0.01%) / 1.7048 → 1.7055 (+0.04%) |
+  | WR | 81.4 → **81.1** / 75.9 → **79.7** / 82.7 → 81.4% | 49.7 → **49.6** / 46.8 → **49.0** / 50.4 → 49.8% | 19.8 → 21.3 / 10.5 → 11.1 | 0.9572 → 0.9558 (−0.15%) / 1.6752 → 1.6759 (+0.04%) |
+  | TE | 80.9 → **81.3** / 76.3 → **80.5** / 81.9 → 81.5% | 50.7 → **50.7** / 47.9 → **48.6** / 51.3 → 51.2% | 14.4 → 15.6 / 8.3 → 8.4 | 0.7186 → 0.7174 (−0.17%) / 1.2643 → 1.2648 (+0.04%) |
+
+  RB / WR / TE are inside 78–82% / 48–52% overall and on the top-N (TE top-12 50%: 48.6%); QB stays below
+  (75.8% / 47.2%; top-12 78.8% / 48.1%): partial games, as above. Production widenings per tier (League of
+  Scrubs, low / middle / top): 80% QB 0.79 / 1.81 / 1.28, RB −0.01 / 0.20 / 0.60, WR 0.00 / −0.04 / 0.26, TE
+  0.00 / 0.04 / 0.32; 50% QB 0.53 / 0.80 / 0.91, RB −0.02 / 0.23 / 0.39, WR 0.00 / −0.17 / 0.38, TE 0.02 / 0.03 /
+  0.30. Mean width, 2026 weeks 4–18: 12.34 (80%) / 6.18 (50%), was 12.18 / 6.08; all 16,268 v2 rows ordered.
+  **md5** (`ops.projections` 2026): weeks 4–18 `proj_points` `d4877509be0f2435074eaac87ce6ed24` unchanged;
+  weeks 1–3 (original columns) `e26319116f0e4cda6ab13d745e80afdf` unchanged, P25 / P75 NULL; two consecutive
+  `project` runs byte-identical, every column but `fitted_at` / `frozen_at` `cc2606c0402d82cef400085a8bbb17f6`
+  both times (233 s / 229 s). dbt (`mart_player_week_projections+ … mart_waiver_upside` +
+  `assert_frozen_projections_precede_kickoff`) PASS=108. Decision probability on the shipped ranges: Brier
+  0.2208 (was 0.2210), mean predicted 64.1% vs observed 63.2% (was 64.7%); week 4: Gainwell over Wilson 53%
+  (Monte Carlo 0.5333, by hand 0.5327), Croskey-Merritt over Tuten 47% (0.4658 / 0.4651; most weeks 4–12 vs
+  4–13). Tests: `tests/test_decisions.py` +2 (the CQR quantile and its 50-row floor; the per-tier lookup and the
+  position-wide fallback); `test_projection_freeze.py` unchanged and passing. METRICS § Ranges and decisions:
+  the tier rule and this table.
 
 ## Next concrete actions
 

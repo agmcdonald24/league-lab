@@ -1550,9 +1550,20 @@ calibrated, so it cannot be narrowed by decree. Three things could change, and D
   P10 / P90, fitted after them (each regressor has its own seed: P10 / P50 / P90 are bit-for-bit what they
   were), sorted, then widened by the split-conformal amount for 50%: the ceil((n + 1) × 0.5) / n quantile of
   `max(P25 − y, y − P75)` on the calibration season (`_conformal_widening`, the same function the 80% range
-  uses). Production widenings (fit 2016–2025, calibrated on 2025; League of Scrubs / dynasty): QB 0.67 / 0.83,
-  RB 0.03 / 0.01 points (80%: QB 1.06 / 1.80, RB 0.07 / 0.04). Finally kept inside the 80% range around the
-  median: `P10 ≤ P25 ≤ P50 ≤ P75 ≤ P90` (mart test `projection_50_range_inside_80_range`). NULL on rows written
+  uses). Production widenings (fit 2016–2025, calibrated on 2025, League of Scrubs, per projection tier
+  low / middle / top — the tier rule below): 50% QB 0.53 / 0.80 / 0.91, RB −0.02 / 0.23 / 0.39, WR 0.00 / −0.17
+  / 0.38, TE 0.02 / 0.03 / 0.30 points; 80% QB 0.79 / 1.81 / 1.28, RB −0.01 / 0.20 / 0.60, WR 0.00 / −0.04 /
+  0.26, TE 0.00 / 0.04 / 0.32 (position-wide before the tier rule: 80% QB 1.06, RB 0.07; 50% QB 0.67, RB 0.03). Finally kept inside the 80% range around the
+  median: `P10 ≤ P25 ≤ P50 ≤ P75 ≤ P90` (mart test `projection_50_range_inside_80_range`).
+* **The tier rule (D6 follow-up, PO decision 2026-10-01).** Both widenings (80% and 50%) are computed **per
+  position × league × projection tier**: the tiers are the terciles of the calibration season's priced line
+  (out-of-fold) within the position (`TIER_QUANTILES = (1/3, 2/3)`; the cut points are kept on the model and a
+  projected row takes its tier by its own `proj_points`); a tier with fewer than `TIER_MIN_ROWS = 200`
+  calibration rows takes the position-wide widening (never needed so far: the smallest tier in the walk-forward
+  has 206 rows, QB 2023; in production 213+). Why: position-wide, the board's starters held 76–77% (80%) and
+  47–48% (50%) while the fringe held more; coverage at the nominal level is the contract, and per tier it holds
+  on starters (78.8–80.5% / 48.1–51.0%) at no interval-score cost (−0.17% to +0.17%). Production widenings
+  are logged per tier by `league-lab project`. NULL on rows written
   before D6 (2026 weeks 1–3 are frozen with P10 / P50 / P90 only; so is any week frozen before the first D6
   refit) and on K / DEF (kd1.0 has no 50% range); pages and the decision probability fall back to the 80%
   range there.
@@ -1560,9 +1571,9 @@ calibrated, so it cannot be narrowed by decree. Three things could change, and D
   12 QB / TE by projection each week): League of Scrubs — RB 17.9 → **9.5** points, WR 17.5 → **9.4**, TE 13.1 →
   7.5, QB 19.4 → 10.1 (80% → 50%); dynasty (full PPR, 6-point passing TDs) RB 20.4 → 10.7, WR 22.0 → 11.6, TE
   15.8 → 9.1, QB 27.4 → 14.1. **Coverage of the 50% range** (mean of 2023–2025 × both leagues, 4,042 QB,
-  8,990 RB, 14,228 WR, 7,332 TE played player-weeks): **RB 51.3%, WR 49.7%, TE 50.7%, QB 46.7%** (target
-  48–52%; per league-season 43.1–49.5% QB, 47.9–54.5% RB, 45.1–52.5% WR, 48.1–52.1% TE). QB misses like
-  its 80% range does (75.5% on the same seasons, v2 as is): see "Quarterbacks" below.
+  8,990 RB, 14,228 WR, 7,332 TE played player-weeks), with the tier rule: **RB 51.3%, WR 49.6%, TE 50.7%,
+  QB 47.2%** (target 48–52%; position-wide before it: 51.3 / 49.7 / 50.7 / 46.7%). QB misses like its 80%
+  range does (75.8%): see "Quarterbacks" below.
 
 ### Can the range be sharper? The experiment
 
@@ -1600,11 +1611,11 @@ one; the width is the week-to-week noise of fantasy points, not a modelling gap.
 
 Three findings that stand anyway:
 
-* **Starters' ranges are slightly too narrow, the fringe's slightly too wide.** On the board's top 24 RB / WR
-  and top 12 QB / TE the 80% range holds 75.9–77.4% (50%: 46.8–47.9%); the average is right because players
-  outside the top hold more. Conformal per projection tier fixes it (top-N 78.8–80.5% / 48.1–51.0%) at no
-  interval-score cost, by making starters' ranges *wider* (top-24 WR 19.8 → 21.3 points at 80%). Not kept
-  (the bar is sharpness); a PO decision, one function to change.
+* **Starters' ranges were slightly too narrow, the fringe's slightly too wide.** On the board's top 24 RB / WR
+  and top 12 QB / TE the position-wide 80% range held 75.9–77.4% (50%: 46.8–47.9%); the average was right
+  because players outside the top held more. Conformal per projection tier fixes it at no interval-score cost
+  by making starters' ranges *wider* (top-24 WR 19.8 → 21.3 points at 80%). Not a sharpening (the 2% bar);
+  **adopted as a calibration fix** (PO, 2026-10-01): the tier rule above, numbers below.
 * **Quarterbacks** fall below the floor too often (15.4% instead of 10%; coverage 75.5% / 46.7%), in v2 and in
   every variant. The lower tail is partial games: in 2023, the 88 QB weeks with ≤ 25% of the snaps landed
   below P10 62.5% of the time, full games (507) 6.9%. The share of played QB weeks with ≤ 50% of the snaps
@@ -1614,6 +1625,19 @@ Three findings that stand anyway:
   both leagues); by the snaps he actually played (2023, League of Scrubs): 80% of the WR weeks on ≤ 25% of the
   snaps, 3–7% of the weeks on ≥ 75% (healthy starters) at every position. The two-part split did not sharpen
   the starters' range (above).
+
+**Per-tier calibration, before → after** (walk-forward 2023–2025, both leagues, the v2 residual models;
+top-N = the board's top 24 RB / WR and top 12 QB / TE by projection each week among those who played, rest =
+the others who played):
+
+| Pos | Coverage 80: all / top-N / rest | Coverage 50: all / top-N / rest | Top-N width 80 / 50 (points) | Interval score 80 / 50 |
+|---|---|---|---|---|
+| QB | 75.5 → **75.8** / 77.4 → **78.8** / 74.6 → 74.3% | 46.7 → **47.2** / 47.6 → **48.1** / 46.2 → 46.9% | 23.4 → 24.1 / 12.1 → 12.2 | 1.5092 → 1.5094 (+0.01%) / 2.7785 → 2.7831 (+0.17%) |
+| RB | 79.8 → **79.9** / 77.3 → **79.5** / 80.8 → 80.1% | 51.3 → **51.3** / 47.7 → **51.0** / 52.7 → 51.4% | 19.1 → 19.9 / 10.1 → 11.0 | 0.9709 → 0.9710 (+0.01%) / 1.7048 → 1.7055 (+0.04%) |
+| WR | 81.4 → **81.1** / 75.9 → **79.7** / 82.7 → 81.4% | 49.7 → **49.6** / 46.8 → **49.0** / 50.4 → 49.8% | 19.8 → 21.3 / 10.5 → 11.1 | 0.9572 → 0.9558 (−0.15%) / 1.6752 → 1.6759 (+0.04%) |
+| TE | 80.9 → **81.3** / 76.3 → **80.5** / 81.9 → 81.5% | 50.7 → **50.7** / 47.9 → **48.6** / 51.3 → 51.2% | 14.4 → 15.6 / 8.3 → 8.4 | 0.7186 → 0.7174 (−0.17%) / 1.2643 → 1.2648 (+0.04%) |
+
+QB stays below both targets: partial games (above), not the tier.
 
 ### The decision probability (`league_lab.decisions`)
 
@@ -1638,21 +1662,21 @@ Three findings that stand anyway:
 seasons; for every roster-week the B1 solver on QB–TE values (K / DEF / IDP slots dropped), every filled
 slot's named alternative = the bench player the re-solve brings in, the probability before the week, the
 outcome after): 5,374 pairs, **4,895 where both played** (the ranges are "if he plays"; 479 pairs had a
-player who did not play). Brier **0.221** vs 0.367 for "the higher projection wins = 100%" and 0.249 for a
-coin flip; mean predicted 64.7%, observed 63.2% (2024: 64.0 / 63.7; 2025: 65.3 / 62.7). Deciles (equal
-counts):
+player who did not play). With the ranges as shipped (the tier rule): Brier **0.2208** vs 0.3672 for "the
+higher projection wins = 100%" and 0.2491 for a coin flip; mean predicted 64.1%, observed 63.2% (2024: 63.5 /
+63.7, Brier 0.2192; 2025: 64.6 / 62.7, 0.2225). Deciles (equal counts):
 
-| Predicted | 49.7% | 53.5% | 56.2% | 58.8% | 61.7% | 64.8% | 67.9% | 71.8% | 76.8% | 85.6% |
+| Predicted | 49.7% | 53.3% | 55.8% | 58.3% | 61.1% | 64.0% | 67.1% | 70.9% | 75.8% | 84.8% |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **Observed** | 49.0% | 52.1% | 54.1% | 57.3% | 60.2% | 61.6% | 64.4% | 74.3% | 77.3% | 81.7% |
+| **Observed** | 49.2% | 52.8% | 52.9% | 58.0% | 61.1% | 60.4% | 64.8% | 75.2% | 75.7% | 82.1% |
 
-By word: "a coin flip" (50–55%) 975 pairs, predicted 51.9%, observed 51.0%; "a lean" (55–65%) 1,756, 59.5% /
-56.8%; "clear" (65%+) 2,164, 74.6% / 73.9%. The cards' three closest calls per roster-week (2,005 pairs):
-Brier 0.246 vs a coin flip's 0.249 — the closest calls really are close to coin flips, and the percentage
-says so (mean 56.6%, observed 54.1%). Slightly overconfident on average (1.5 points); a shrink toward 50%
-fitted on one season did not help the other (Brier 0.2227 → 0.2225 on 2025, 0.2193 → 0.2201 on 2024), so
-none is applied. The same-game correlation is right in principle and immaterial here: 242 of the 4,895
-pairs share a game (Brier 0.2022 with it, 0.2020 without).
+By word: "a coin flip" (50–55%) 1,036 pairs, predicted 51.9%, observed 51.5%; "a lean" (55–65%) 1,821, 59.6% /
+57.7%; "clear" (65%+) 2,038, 74.3% / 74.0%. The cards' three closest calls per roster-week (2,005 pairs):
+Brier 0.2458 vs a coin flip's 0.2486 — the closest calls really are close to coin flips, and the percentage
+says so (mean 56.2%, observed 54.1%). Slightly overconfident on average (0.9 points; 1.5 with the
+position-wide ranges, Brier 0.2210); a shrink toward 50% fitted on one season did not help the other, so none
+is applied. The same-game correlation is right in principle and immaterial here: 242 of the 4,895 pairs share
+a game (Brier 0.2028 with it, 0.2025 without).
 
 **On the cards** (`app/lib/cards.py`): the headline is "**Tucker outscores Monangai 54% of the time — a coin
 flip.**" (whole percent, 1–99; 50–55% a coin flip, 55–65% a lean, 65%+ clear, read on either side of 50%),
@@ -1662,7 +1686,7 @@ two QB–TE projections; a kicker, a defense or a points-per-game value keeps th
 starter is below 50% the card says so and says both numbers: the range (how often) and the projection (how
 many points on average) come from different models and can disagree on a close call. Week 4, League of Scrubs
 roster 2: Croskey-Merritt projects 9.13 to Tuten's 9.07, but Tuten's range sits higher (most weeks 4–13 vs
-4–11), so Croskey-Merritt outscores him 46% of the time. The Rankings board's range column is
+4–12), so Croskey-Merritt outscores him 47% of the time. The Rankings board's range column is
 the 50% range ("Most weeks"), the floor and ceiling in the full table; a week without it shows the 80% range
 under its old name.
 
