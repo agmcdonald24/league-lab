@@ -107,20 +107,33 @@ league_id = league["league_id"]
 season = int(league["season"])
 
 st.subheader("Season summary")
-howto(
-    "Did swapping kickers every week pay off? This compares what each team's *started* kicker scored.",
-    "**Common weeks** are the weeks every team started a kicker, so the totals are fair. **vs week avg** is a team's kicker "
-    "minus the average started kicker that week: above zero, its kicker choices beat the league.",
-    "**Kickers used**, **Changes** and **Acquired** show how much swapping it took. One kicker all year and a top-3 total? "
-    "That team never needed to stream.",
-    "It shows what happened, not what a different pick would have scored.",
-)
 summary = query(
     """select roster_id, team_name, manager_name, weeks_started_k, common_weeks, total_points_common_weeks,
               avg_points_common_weeks, stddev_points_common_weeks, avg_points_vs_week_avg,
               distinct_kickers_started, kicker_changes, kicker_acquisitions, rank_common_weeks
        from analytics.mart_league_kicker_summary where league_id = %s order by rank_common_weeks""",
     (league_id,),
+)
+# U-17 (C6): why each number matters, with a worked example from this league's season (copy only)
+ex = summary.dropna(subset=["avg_points_vs_week_avg"]).sort_values("avg_points_vs_week_avg", ascending=False) if not summary.empty else summary
+ex_top = ex.iloc[0] if not ex.empty else None
+ex_used = summary.dropna(subset=["distinct_kickers_started"]).sort_values("distinct_kickers_started", ascending=False) if not summary.empty else summary
+howto(
+    "**Use it to decide whether to stream a kicker or keep one.** It compares what each team's *started* kicker scored, in this "
+    "league's scoring.",
+    "**Common weeks** are the weeks every team started a kicker, so the totals are fair. Why it matters: a team that left the "
+    "slot empty (a bye it did not cover) would look worse for a reason that is not the kicker.",
+    "**vs week avg** is a team's kicker minus the average started kicker that week: above zero, its kicker choices beat the "
+    "league. Why it matters: it takes out the weeks when every kicker scored a lot or a little. "
+    + (f"Example: {ex_top['team_name']}, {float(ex_top['avg_points_vs_week_avg']):+.1f} a week: over a 17-week season that is "
+       f"{17 * float(ex_top['avg_points_vs_week_avg']):+.0f} points from the kicker slot alone. " if ex_top is not None else "")
+    + "Kickers sit close together, so ±1 a week is already a good or bad kicker.",
+    "**Kickers used**, **Changes** and **Acquired** show how much swapping it took. Why it matters: streaming costs waiver "
+    "moves; if it does not beat the average, keep one kicker. "
+    + (f"Example: {ex_used.iloc[0]['team_name']} started {int(ex_used.iloc[0]['distinct_kickers_started'])} different kickers "
+       f"and ranks {int(ex_used.iloc[0]['rank_common_weeks'])} of {len(summary)}. " if not ex_used.empty else "")
+    + "One kicker all year and a top-3 total? That team never needed to stream.",
+    "It shows what happened, not what a different pick would have scored.",
 )
 with st.container(border=True):     # the answer first (U-13); the table behind it
     if summary.empty:
@@ -139,6 +152,9 @@ with st.expander("Every roster's kickers, every column"):
          phone_cols=["team_name", "total_points_common_weeks", "avg_points_vs_week_avg", "kicker_changes", "rank_common_weeks"])
 if not summary.empty:
     st.plotly_chart(bar_chart(summary, "team_name", "total_points_common_weeks", "Started-kicker points, common weeks", "points", horizontal=True), width="stretch")
+    avg_total = float(summary["total_points_common_weeks"].mean())
+    st.caption(f"A good place on this chart is the top: more points from the kicker slot in the same weeks. The league's average "
+               f"is {avg_total:.1f} points; a bar well above it means the kicker choices paid, one well below means a kicker to replace.")
 
 weekly = query(
     """select week, team_name, gsis_id, kicker_name, nfl_team, points, round(week_avg_started_k::numeric, 2) as week_avg,
@@ -147,11 +163,26 @@ weekly = query(
     (league_id,),
 )
 st.subheader("Week by week")
+wk_avg = float(weekly.drop_duplicates("week")["week_avg"].astype(float).mean()) if not weekly.empty else None
+wk_best = weekly.sort_values("points", ascending=False).iloc[0] if not weekly.empty else None
+howto(
+    "**Use it to see whether a kicker is steady or lucky.** Each line is the kicker a team started that week and what he scored.",
+    "Why it matters: kicking is noisy, so one big week says little; a kicker who stays above the league's average started "
+    "kicker week after week is the one worth keeping. "
+    + (f"This season the average started kicker scored {wk_avg:.1f} a week. " if wk_avg is not None else ""),
+    ("Example: the best single week so far was "
+     f"{wk_best['kicker_name']} for {wk_best['team_name']}, {float(wk_best['points']):.1f} points in week {int(wk_best['week'])}. "
+     if wk_best is not None else "")
+    + "**Rank** is his place among that week's started kickers (1 = the most points); **changed** marks a new kicker that week.",
+)
 teams = sorted(weekly["team_name"].dropna().unique().tolist())
 pick = st.multiselect("Teams", teams, default=teams[:6], max_selections=8)
 sub = weekly[weekly["team_name"].isin(pick)]
 if not sub.empty:
     st.plotly_chart(line_chart(sub, "week", "points", "team_name", "Started kicker points by week", "points", y_format=".1f", colors=color_map(teams)), width="stretch")
+    st.caption("A good line stays high and flat: above the average started kicker"
+               + (f" (about {wk_avg:.0f} points a week)" if wk_avg is not None else "")
+               + " most weeks. Spikes and drops are normal for kickers; a line that sits low for three or four weeks is the one to stream away.")
 with st.expander("Every started kicker, week by week"):
     show(weekly, [c for c in weekly.columns if c != "gsis_id"], height=420, phone_cols=["week", "team_name", "kicker_name", "points", "week_rank"])
 

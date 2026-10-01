@@ -1,0 +1,116 @@
+version: 2
+
+# Plan R-10 / R-12 (Wave C round 2, C6): role alerts, scenario upside, the waiver upside list.
+# A file of its own so the round-2 branches do not collide in schema.yml.
+models:
+  - name: mart_player_role_alerts
+    description: "R-10 role alerts: per player x season x week, a detected role change with a stated cause — `kind` (role_up, role_down, absence_beneficiary, depth_move, new_team), `cause_text`, the evidence (`*_from` → `*_to`, `change_text`), its noise-aware strength (`z`), the confidence (`games_held`, `confidence`: one to three games) and the expiry (`expires_after_week`, `expiry_rule`; an absence alert also ends when the teammate is back on the latest report: `trigger_ended`). `is_live` = this week's alerts (his team's latest game, reason not ended). Rule: src/league_lab/signals.py, docs/METRICS.md § Role alerts."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [season, gsis_id, week]
+      - expression_is_true:
+          name: role_alert_window_is_one_to_three_games
+          arguments:
+            expression: "games_held between 1 and 3 and since_week <= week and prior_games >= 1"
+      - expression_is_true:
+          name: role_alert_trigger_has_text
+          arguments:
+            expression: "(trigger_kind = 'none') = (trigger_text is null)"
+      - expression_is_true:
+          name: role_alert_direction_matches_the_change
+          arguments:
+            expression: "(direction = 'up') = (z > 0)"
+      - expression_is_true:
+          name: role_alert_kind_matches_direction
+          arguments:
+            expression: "(kind <> 'role_up' or direction = 'up') and (kind <> 'role_down' or direction = 'down') and (kind <> 'absence_beneficiary' or direction = 'up')"
+      - expression_is_true:
+          name: role_alert_expires_after_it_fires
+          arguments:
+            expression: "expires_after_week > week and expiry_rule is not null"
+    columns:
+      - name: direction
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["up", "down"]
+      - name: kind
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["role_up", "role_down", "absence_beneficiary", "depth_move", "new_team"]
+      - name: confidence
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["one game", "two games", "three games"]
+      - name: trigger_kind
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["none", "teammate_out", "teammate_back", "teammate_up", "traded", "depth_up", "depth_down"]
+      - name: change_text
+        tests: [not_null]
+      - name: cause_text
+        tests: [not_null]
+  - name: mart_player_scenarios
+    description: "R-12 scenario upside: per league x season x week x QB / RB / WR / TE with a live bigger-role alert, base_points (the projection as stored) vs larger_points (the same component models with his last-3-games inputs at the level of the games since the change, capped at the position's 90th percentile; efficiency held), with_alert_points (base + the historical hold rate x the gap), the backtest the page shows instead of a probability (backtest_n, backtest_hit_rate, presentation: 'with the alert' or 'what if'), the inputs set (features_set), both stat lines, and the expiry (expires_after_week, expiry_rule)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season, week, gsis_id]
+      - expression_is_true:
+          name: scenario_gain_is_larger_minus_base
+          arguments:
+            expression: "abs(larger_points - base_points - points_gain) < 0.015"
+      - expression_is_true:
+          name: scenario_base_is_the_projection
+          arguments:
+            expression: "abs(base_points - proj_points) < 0.005"
+            condition: "proj_points is not null"
+      - expression_is_true:
+          name: scenario_with_alert_between_base_and_larger
+          arguments:
+            expression: "with_alert_points between least(base_points, larger_points) - 0.01 and greatest(base_points, larger_points) + 0.01"
+      - expression_is_true:
+          name: scenario_lives_after_the_alert_until_expiry
+          arguments:
+            expression: "week > alert_week and week <= expires_after_week"
+    columns:
+      - name: position
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["QB", "RB", "WR", "TE"]
+      - name: presentation
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["with the alert", "what if"]
+      - name: expiry_rule
+        tests: [not_null]
+  - name: mart_waiver_upside
+    description: "R-12 waiver upside stashes (list_kind = 'upside', the list B3 left out): per league x season x decision week x roster, every free agent with a live bigger-role alert and a scenario who does not help that roster at his projection today (base horizon gain <= 0), valued as a waiver move at his projection (base_*_gain) and if the bigger role holds (holds_*_gain, the scenario's projection for the weeks it covers), with the cheapest drop over the horizon. Legality: assert_waiver_upside_is_legal."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season, week, roster_id, add_sleeper_id]
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season, week, roster_id, upside_rank]
+      - expression_is_true:
+          name: upside_gains_add_up
+          arguments:
+            expression: "list_kind = 'upside' and abs(holds_horizon_gain - (select sum(g) from unnest(holds_week_gains) as g)) < 0.025 and abs(holds_week_gains[1] - holds_weekly_gain) < 0.005"
+      - expression_is_true:
+          name: upside_drop_or_open_spot
+          arguments:
+            expression: "drop_sleeper_id is not null or open_roster_spots > 0"
+      - expression_is_true:
+          name: upside_is_the_stash_case
+          arguments:
+            expression: "base_horizon_gain <= 0"

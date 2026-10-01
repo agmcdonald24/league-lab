@@ -1459,6 +1459,74 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
 * **Left open.** No projection change from the corner (a model change); the PPG split is evidence only. Shadow
   coverage, receiver alignment and slot assignment are not in public data. `metric_registry` rows not added (seeds are
   out of bounds): `cb_rankings` v1.0, `cb_matchups` v1.0, `defense_profile` v1.0.
+### C6 2026-09-30 — R-10 role alerts + R-12 scenario upside + U-17 Receivers/Kickers context (branch `dev/C6`, clone `league_lab_c6`)
+
+* **Built.** `src/league_lab/signals.py` (rule `ra1.1`, docs/METRICS.md § Role alerts / § Scenario upside), run by
+  `projections.project` right after the projections are written (one import + one call; logged, never fatal) and on
+  its own by `league-lab signals`; `league-lab signals-backtest` (read-only) calibrates the scenario and measures the
+  alerts' precision with the rule as it runs in season (no routes). New `intermediate.int_player_game_role` (every
+  QB–TE on a weekly roster × each played team game, missed games with their reason), `ops.player_role_alerts`
+  (2016–2026, 7,074 rows; the season rewritten each run, other seasons when their `signals_version` differs),
+  `ops.player_scenarios`, `ops.waiver_upside` (written by the waiver engine right after `ops.waiver_moves`), views
+  `mart_player_role_alerts` / `mart_player_scenarios` / `mart_waiver_upside` (`signals.yml`, `assert_waiver_upside_is_legal`).
+  Pages: Trends opens with **Role alerts this week** (up to three cards — your players, free agents with a bigger role,
+  then the rest — every alert in an expander), the Player card ends with **Signals** (role, cause, expiry, the
+  what-if in this league's scoring with its backtest hit rate), Waiver Wire's third card region is the **upside
+  stash** (replacing "arrive with the role alerts"); Receivers and Kickers copy (why each number matters, worked
+  examples from the selection, yardsticks computed from the selected season's top 12, chart captions saying what a
+  good position looks like). `app/lib/signals.py` holds the shared phrases; COLUMNS `# ---- C6 signals` block.
+* **Alerts.** A detected role change with a stated cause: `kind` role_up / role_down / absence_beneficiary /
+  depth_move / new_team, `cause_text`, evidence before → after, `games_held` 1–3, `expires_after_week` (+ the
+  absence rule "ends when X returns", live in `mart_player_role_alerts.trigger_ended` / `is_live`). Known cases fire in
+  the right week with the right cause: Chase Brown 2024 wk 9 ("Zack Moss out injured", snaps 36% → 80%), Cedric Tillman
+  2024 wk 7 ("Amari Cooper traded", targets 1% → 25%), Drake Maye 2024 wk 6 and Jaxson Dart 2025 wk 4 (depth_move,
+  "Jacoby Brissett benched" / "Russell Wilson benched"), Rico Dowdle 2025 wk 5 ("Chuba Hubbard out injured"; nothing
+  in wk 7 when Hubbard was back), TreVeyon Henderson 2025 wk 9, Amari Cooper 2024 wk 7 (new_team, snaps 89% → 35%).
+  Controls: Ja'Marr Chase 2024 wk 10 (49.9 points) and Kyle Pitts 2025 wk 15 (40.1) — no alert all season; 43 of 44
+  big 2024–25 weeks by established players fired nothing. **Precision, 2025 first detections, still real three games
+  later: bigger roles 120 / 180 = 66.7% (29 more expired as designed: the starter came back), smaller roles 77 / 120 =
+  64.2%** (2023 75.5% / 71.6%, 2024 75.0% / 59.6%). ra1.1 over ra1.0 (what the branch first had): a structural share
+  (snaps / routes) must move, 1.5 bar with a named reason, no one-game drop without one, expired fill-in roles
+  suppressed, depth-chart moves as a reason — 2025 up precision 57% → 67%.
+* **This week** (data through week 2 for 30 teams, week 3 for 2): 8 live alerts in each league among rostered players
+  and free agents, e.g. Aaron Jones (MIN) "Filling in: snap share 46% → 81%, carry share 35% → 82% since week 2 (one game
+  so far). Why: Jordan Mason out injured" — rostered in both leagues; free agents Konata Mumpfield, Myles Price, Ben
+  Sinnott (+ Germie Bernard, Kaleb Johnson in League of Scrubs).
+* **Scenario upside.** Base = the stored projection (refitted component models; `project` checks every base to
+  1e-6: max diff 0.0 on 26 rows); larger role = his last-3 inputs at the new role's level, capped at the position's
+  90th percentile, efficiency held, priced per league; `with_alert_points` = base + hold rate (69.5% / 76.4% / 81.4%) ×
+  gap. **Backtest 2023–2025** (models fitted on the seasons before; next-3-game PPG): the larger role was nearer than
+  the projection 45.6% of the time at one game held (n = 285), 47.4% at two (n = 266), 72% at three (n = 18); the
+  "with the alert" line 47.0% / 48.1%; mean miss 3.34 / 3.37 / 3.31 (base / larger / with) at one game. **Shipped as a
+  "what if"** with the hit rate on the page, no probability (`SCENARIO_SHIP = False`). On average those players did
+  outscore the projection by about the gap (+1.12 vs +1.04 at one game held): recorded for the next iteration.
+* **Upside stash** = free agents with a live scenario whose horizon gain at their projection is ≤ 0 (the start-now /
+  cover lists carry the rest), valued as B3 does at the projection and "if it holds", B3's drop rule: 81 rows, 22
+  rosters, 8 free agents this week (none would start for its roster even if the role holds; the card says so); the
+  positive case is `test_upside_stash_valued_at_base_and_if_it_holds` (+2.0 a week at FLEX).
+* **Checks.** `ops.projections` byte-identical across a `project` with the hook (md5 weeks 4–18 `1a6e0c16…`, weeks
+  1–3 `5396dcb9…`, 17,164 / 3,554 rows), `ops.lineups` proposed and `ops.waiver_moves` too; two consecutive `project`
+  runs give identical C6 tables (md5 excluding `run_at` / `as_of`); `project` ≈ 250–285 s here (signals step 23–25 s);
+  pytest 598 passed (27 in `tests/test_signals.py`), ruff clean, dbt `project` select 104 PASS, the headless check (35 runs) on every page ×
+  both leagues + the Player page (alert, no alert, K, smaller role): 0 exceptions; Playwright at 390 × 844 (phone UA)
+  and 1300 × 900 for Trends and Waiver Wire on both leagues, the Player card (alert, no alert, K, smaller role),
+  Receivers and Kickers (League of Scrubs), every expander opened: no sideways scroll, no table wider than the
+  viewport, cards before tables.
+* **Decisions** (PO to confirm): (1) alerts in Python (`signals.py`), not a dbt model: the rule walks windows of 1–3
+  games per player with teammate lookups and needs the fitted models for the scenario anyway; (2) the scenario refits
+  the four positions' component models in the hook (≈ 25 s) instead of reaching into `project()`'s locals — the brief
+  allows one call only; the refit is deterministic and checked against the stored projection; (3) the larger role uses
+  the level observed since the change (capped at the position's p90), not "the absent teammate's share + his" — it
+  covers depth moves and trades the same way, and the teammate's share is already in the games since; (4) the upside
+  list is its own table (`ops.waiver_upside`, `list_kind = 'upside'`), so `ops.waiver_moves`, its tests and B3's page
+  region are untouched; (5) scenarios only for players with a live bigger-role alert (no alert → "no role change
+  detected"); (6) `mart_player_role_alerts` appended to the Makefile `project` and nightly projection-marts `--select`
+  (the scenario and upside views were already descendants); (7) `metric_registry` rows not added (seeds are out of
+  bounds): `role_alert` ra1.1 and `scenario_upside` sc1.0 would be the two.
+* **Open.** The what-if is not calibrated to be shown as a chance (by design); the scenario's gap is too big for WR and
+  too small for QB/TE on average — a position-specific shrink is the next step if it is wanted. Depth charts exist from
+  2025 only, so `depth_move` by depth chart (not benching) starts there. A depth-chart promotion before the player has
+  played (a Wednesday "named starter") is not an alert yet.
 
 ## Next concrete actions
 

@@ -308,6 +308,16 @@ COLUMNS: dict[str, Col] = {
     "games_vs_shutdown": C("G", "int", "Games behind the number to the left"),
     "ppg_vs_rest": C("PPG vs rest", "num1", "His points per game in every other game with a named corner"),
     "games_vs_rest": C("G ", "int", "Games behind the number to the left"),
+    # ---- C6 signals (R-10 role alerts, R-12 scenario upside)
+    "role_label": C("Change", help="What kind of change: filling in for an injured starter, a new starter, a new team, or a bigger / smaller role the coaches gave him"),
+    "role_change": C("What changed", help="His share before the change (his usual level) → since the change: of the snaps, the targets, the carries"),
+    "role_games": C("Held", help="How many games the change has held: one game is a first look, three games is his role now"),
+    "role_cause": C("Why", help="The reason we can name: a teammate out or back, a benching or a depth-chart move, a trade. \"The coaches changed his role\" when there is none"),
+    "role_who": C("Rostered by", help="Who has him in this league (Free agent = nobody)"),
+    "upside_stash": C("Stash", help="A free agent whose role grew in his last one to three games and who would not start for you as he is"),
+    "upside_if_holds": C("If it holds", "num1", "What if the bigger role holds: his projection this week with his last three games at the new level, in this league's scoring. A what-if, not a forecast"),
+    "upside_gain": C("Lineup gain if it holds", "signed1", "What claiming him adds to your best lineup over the next four weeks if the bigger role holds (the drop counted)"),
+    "upside_drop": C("Drop", help="The player your lineup misses least over the next four weeks. Blank = an open roster spot"),
 }
 
 

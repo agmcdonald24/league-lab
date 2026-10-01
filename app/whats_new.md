@@ -32,6 +32,10 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
   starts and who sits, who has to be cut, where both teams would rank, and what the players are worth on the market
   (projected points for the rest of the season above the best free agent at their position), with a one-line
   verdict like "Helps you +5.4 this week, them +6.8; about even: worth offering". Copy the link to share the trade.
+- **Role alerts**: Trends now opens with the players whose role changed this week, and why (last October it would
+  have said "Filling in: Rico Dowdle, snap share 36% → 67%, Chuba Hubbard out injured"). A player's own page says it too, with a what-if for
+  his points if the new role holds, and Waiver Wire lists **upside stashes**: free agents whose role is growing
+  before their points do. Receivers and Kickers now say why each number matters, with an example.
 
 ## Sep 30 · Your week, answered
 

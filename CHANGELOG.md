@@ -45,6 +45,28 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   lineup / 4 weeks / depth, roster size, the fit line, the market line and a one-sentence verdict), the package in the
   URL (`?partner=&give=&get=`), buy-low / sell-high lists by position and owner. The weekly pack's team brief gains
   "Trade partners" (with the market columns). Definitions: `docs/METRICS.md` § Trades. No new table or mart.
+- **Player signals: role alerts, what-if upside, receiver and kicker context (C6: R-10, R-12, U-17).** New
+  `src/league_lab/signals.py` (rule `ra1.1`), run by `league-lab project` right after the projections (one import +
+  one call) and on its own as `league-lab signals`: a **role alert** is a step change in a QB/RB/WR/TE's snap, route
+  (past seasons), target or carry share over his last one to three games, past his usual swing and held in every
+  game, with a stated cause — `kind` role_up / role_down / absence_beneficiary (an injured, traded or released
+  starter) / depth_move (a benching, a new starter, a depth-chart move: nflverse depth charts from 2025) /
+  new_team — evidence before → after, games held and an expiry (a fill-in's alert ends when the starter is back
+  on the report). New `intermediate.int_player_game_role`, `ops.player_role_alerts`, view
+  `mart_player_role_alerts` (appended to the `project` / nightly projection-marts `--select`). Validated on known
+  cases (Chase Brown 2024 wk 9 "Zack Moss out injured", Cedric Tillman 2024 wk 7 "Amari Cooper traded", Drake
+  Maye 2024 wk 6 and Jaxson Dart 2025 wk 4 benchings, Rico Dowdle 2025 wk 5, TreVeyon Henderson 2025 wk 9); 43 of
+  44 big 2024–25 weeks by established receivers and backs fired nothing; still real three games later: 67% of
+  2025's bigger roles and 64% of the smaller ones, as the rule runs in season. **Scenario upside**
+  (`ops.player_scenarios`, view `mart_player_scenarios`): the same component models re-price the next weeks with
+  his last-3 inputs at the new role's level (capped at the position's 90th percentile), per league, with the
+  probability-weighted "with the alert" line; calibrated on 2023–2025 first (`league-lab signals-backtest`): the
+  larger role was the nearer number only 46–47% of the time, so it ships as a **what-if** with that hit rate, no
+  probability. `ops.projections` is byte-identical with the hook. Waiver Wire's third card region is the
+  **upside stash** list (`ops.waiver_upside`, view `mart_waiver_upside`: free agents with a live bigger role who do
+  not help at their projection today, valued as it is and if it holds, with the cheapest legal drop). Trends opens
+  with "Role alerts this week", the Player card ends with **Signals**; Receivers and Kickers explain why each number
+  matters with worked examples and yardsticks from the selected season.
 
 ## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
 

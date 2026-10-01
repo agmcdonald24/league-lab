@@ -48,6 +48,7 @@ from .kdef import rows_after_project as kd_rows_after_project
 from .lineup import lineups_after_project
 from .rankings import TOP_N, _hit_rate, _spearman, parse_seasons
 from .scoring import compute_points
+from .signals import signals_after_project
 from .waivers import waivers_after_project
 
 log = logging.getLogger(__name__)
@@ -614,6 +615,7 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     pred = _with_kd_rows(conn, pred, season)
     _write_projections(conn, pred, season)   # B5: weeks whose first game has kicked off are kept, not rewritten
     log.info("projections computed: %s rows for %s (%s leagues)", len(pred), season, len(scorings))
+    signals_after_project(conn, season, train, target, pred, scorings)   # R-10/R-12: role alerts + scenario upside (a failure is logged, not fatal)
     # M-06: keep the drift monitor current on every refit. It scores the stored (for a started week:
     # frozen, B5) projections against the outcomes in mart_player_week_projections as last built: in
     # the nightly the full dbt build runs first, so the outcomes are tonight's.

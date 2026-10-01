@@ -1033,6 +1033,125 @@ scales compare), the number = points allowed per game; your starters' opponents 
 cell where your starter plays ringed; the other defenses by their mean rank across the positions. Ranked bars = one
 position, every defense ranked, yours solid and labelled with the value and rank. "Only your opponents" is on by
 default at the Phone level. The table behind both stays in the expander.
+## Role alerts (ra1.1, plan R-10, 2026-09-30; `league_lab.signals`, `ops.player_role_alerts`, `mart_player_role_alerts`)
+
+**Question.** Has a player's *role* changed in his last one to three games, and why — before his points show it?
+A role alert is a detected role change with a stated cause, not a hot streak: a big game on the same snaps and
+targets is not one.
+
+**Inputs.** `intermediate.int_player_game_role`: every QB/RB/WR/TE on a team's weekly roster (or who played for it)
+× each played regular-season team game, with `status` (played / out_injured / inactive), snap share (0 when he
+missed a game that has snap counts), route share (routes proxy over dropbacks with participation — past seasons
+only, NULL in-season), target and carry share with the team's totals; the injury report of the next week; last
+season's median snap share; nflverse depth charts (2025 on): his best rank at his position in the team's last
+snapshot before each game.
+
+**Rule (per player × game W, k = 3, 2, 1 games held).** Window N = his last k games (injury absences skipped, a
+healthy scratch counts 0), prior P = up to 8 games before it. A share *changed* when (1) the window level (mean
+snap / route share; Σ targets / Σ team targets, carries likewise) is at least STEP above (below) the prior's
+**median** (a short fill-in stint inside the prior does not become the baseline) — STEP snaps / routes 0.20 (QB
+0.30), target share 0.08, carry share 0.15 — and every window game is past the step while the game before the window
+was not; (2) the new level (up) or the old one (down) is a real role: FLOOR snaps / routes 0.45 (QB 0.50), targets
+0.12, carries 0.30; (3) z = change / (σ × √(1/k + 1/n_prior)) ≥ 2.0, or ≥ 1.5 with a named reason, σ = the median
+within-player game-to-game sd of that share at the position (2016–2025: snaps 0.12–0.17, routes 0.15–0.20, targets
+0.055–0.072, carries 0.15). Then: at least one **structural** share (snaps or routes) changed, except an RB's carry
+share with a named reason or two games (ra1.1: a target or carry share alone held 32–42% of the time in 2025); one
+game alone needs a snap / route change and not a 20+-point blowout, or a named reason; a one-game **drop** needs a
+named reason (ra1.1: 32% held without one) and is skipped when he is on next week's report as Out / Doubtful / IR;
+a bigger role is never read from a game he missed, nor from his return from injury; an up change whose window
+included an injured starter's absence that has already ended (the starter is back for the latest game) is expired,
+not news. The alert keeps the longest k with a named reason, else the longest k; after three games the change is
+his role (his last-3 inputs have caught up) and it stops being reported.
+
+**Named reasons (`trigger_kind`) and kind.**
+
+| Reason | Detected as | `kind` | `cause_text` |
+|---|---|---|---|
+| traded | his own team changed between the prior and the window | new_team | "traded to BUF" |
+| teammate out, injured / traded / released | a starter of his group (QB; RB; WR+TE; median prior snap share ≥ 0.40 RB, 0.50 others; with < 2 prior games, last season's level) played the last prior game and missed every window game (out_injured, gone, traded_away; a game he barely played (< 10%) counts as injured when he is Out / Doubtful / IR next or misses the next game hurt) | absence_beneficiary | "Zack Moss out injured", "Amari Cooper traded" |
+| teammate benched | the same, but inactive while healthy or < 10% of the snaps | depth_move | "Russell Wilson benched" |
+| depth-chart move | his rank crossed the starter line (QB/RB/TE 1, WR 3) between the snapshot before the last prior game and the one before the latest game | depth_move | "up to RB1 on the depth chart" |
+| a new starter took over (down only, a label) | a teammate below the starter line in the prior starts every window game | depth_move | "&lt;name&gt; took over" |
+| teammate back (down) | a teammate missing from the last prior game starts every window game | role_down | "Chuba Hubbard back" |
+| none | — | role_up / role_down | "no teammate out, no trade: the coaches changed his role" |
+
+**Evidence, confidence, expiry.** `snap_from → snap_to` (and routes / targets / carries: before = prior median,
+after = window level), `change_text`; `games_held` 1–3 ("one game so far" … "three games: this is his role now");
+`expires_after_week` = W + 3, `expiry_rule`; an absence beneficiary's alert also ends when the injured teammate is
+back: `mart_player_role_alerts.trigger_ended` (active on his NFL roster with no injury designation on the latest
+report), and `is_live` = the alert game is his team's latest game and the reason has not ended.
+
+**Validation (`league-lab signals-backtest`, the rule as it runs in season: no routes).** Known cases — the alert
+fires in the week of the change with the right cause: Chase Brown (CIN) 2024 wk 9, absence_beneficiary "Zack Moss
+out injured", snaps 36% → 80%, carries 49% → 87%; Cedric Tillman (CLE) 2024 wk 7, "Amari Cooper traded", target
+share 1% → 25%, snaps 34% → 82%; Drake Maye (NE) 2024 wk 6, depth_move "Jacoby Brissett benched", snaps 0% → 100%;
+Jaxson Dart (NYG) 2025 wk 4, depth_move "Russell Wilson benched", 4% → 97%; Rico Dowdle (CAR) 2025 wk 5,
+"Chuba Hubbard out injured", snaps 36% → 67%, carries 32% → 72% (no alert in wk 7 when Hubbard was back; a second,
+cause-less change from wk 9: "up to RB1 on the depth chart"); TreVeyon Henderson (NE) 2025 wk 9, "Rhamondre
+Stevenson out injured", routes 30% → 90%; Amari Cooper (BUF) 2024 wk 7, new_team down, snaps 89% → 35%.
+No alert for players who merely had a big week: of the 44 games in 2024–25 where an established (≥ 60% snaps over
+his last 3) RB/WR/TE scored ≥ 25 points and ≥ 2.5× his PPG, 43 fired nothing — the one was TreVeyon Henderson's
+third game of a real change. The two controls: Ja'Marr Chase 2024 wk 10 (49.9 points) and Kyle Pitts 2025 wk 15
+(40.1 on a 7.7 PPG season) — no alert that week, nor any other week of their seasons. DeAndre Hopkins (KC) and Davante Adams (NYJ) after their 2024 trades: no
+alert (their role did not change).
+
+**Precision** — first detections (a change is re-reported at two and three games), "real" = the mean of the
+primary share over his next three games (games missed injured skipped) kept at least half the change; an absence
+alert whose injured teammate was back for the next game is "expired" (it lapsed as designed), not false; an
+absence alert only counts the games the teammate still missed:
+
+| Season | Bigger role: real / false (precision) | expired | unresolved | Smaller role: real / false (precision) |
+|---|---|---|---|---|
+| 2023 | 114 / 37 (75.5%) | 34 | 52 | 73 / 29 (71.6%) |
+| 2024 | 123 / 41 (75.0%) | 34 | 49 | 62 / 42 (59.6%) |
+| 2025 | 120 / 60 (66.7%) | 29 | 46 | 77 / 43 (64.2%) |
+
+2025 by kind: absence_beneficiary 68%, depth_move 67%, role_up 62%, role_down 65%, new_team 4 of 6. ra1.0 (before
+the structural requirement, the 1.5 bar with a reason and the one-game-drop rule) was 57% / 51% on 2025 (measured with routes).
+
+## Scenario upside (sc1.0, plan R-12, 2026-09-30; `ops.player_scenarios`, `mart_player_scenarios`, `ops.waiver_upside`)
+
+**Question.** If a bigger role holds, what does he project — and how much should anyone believe it?
+
+**Scenario.** For every QB/RB/WR/TE with a live bigger-role alert (not lapsed: an injured teammate expected back
+ends it), each week from the next unplayed one to `expires_after_week`: the **base** is the stored projection (the
+same component models, refitted in `signals.component_models` on the same rows with the same seed; `project` checks
+the refit reproduces every stored `proj_points` to 1e-6 and fails the step otherwise). The **larger role** re-predicts
+the stat line from the same as-of row with his last-3 opportunity inputs set to the level of the games since the
+change — snap share, target / carry / air-yard / first-read share, targets, carries, attempts, red-zone chances and
+expected points per game — each capped at the position's 90th percentile of the training player-weeks unless his own
+level is already above it; catches, yards and TDs per game scale with the volume at his own last-3 rate (a larger
+role, not better hands); `ppg_l3` moves by the priced change of that line. Priced in each league's scoring.
+`with_alert_points` = base + hold rate × (larger − base), hold rate = the share of 2016–2022 bigger-role alerts still
+real three games later (one game held 69.5%, two 76.4%, three 81.4%).
+
+**Calibration before a probability is shown** (`league-lab signals-backtest --seasons 2023-2025`): every bigger-role
+alert of 2023–2025 at QB–TE with a next game (absence alerts whose teammate played that game dropped: lapsed), the
+as-of row for his next game re-priced with component models fitted on the seasons before, against his points per
+game over his next three games (reference scoring):
+
+| Games held | alerts (scenario moved) | larger role nearer than the projection | "with the alert" nearer | mean miss: projection / larger / with | mean gap (larger − base) | mean (actual − base) |
+|---|---|---|---|---|---|---|
+| 1 | 285 | 45.6% | 47.0% | 3.34 / 3.37 / 3.31 | +1.04 | +1.12 |
+| 2 | 266 | 47.4% | 48.1% | 3.30 / 3.29 / 3.29 | +0.48 | +0.71 |
+| 3 | 18 | 72.2% | 72.2% | 2.70 / 2.53 / 2.56 | −0.19 | −0.31 |
+
+**Decision: shipped as a "what if"** (`SCENARIO_SHIP = False`, `presentation = 'what if'`): neither line was the
+nearer number more often than not at one or two games held, and the mean miss moved by under 0.04 points. The page
+shows the larger role and its hit rate ("tested on 2023–2025: after 285 alerts like this, the next three games landed
+nearer it than the projection 46% of the time"), never a chance. What the backtest does say: these players did
+outscore their projection on average by about the scenario's gap (+1.12 vs +1.04 a game at one game held) — the
+projection under-reacts to a new role on average, but single outcomes are too noisy (and right-skewed) for the
+scenario to be the better call for one player. By position the gap was about right for RB, too big for WR (+0.83
+gap, +0.17 actual) and too small for QB / TE. A rule or feature change re-runs the backtest before the constants
+(`HOLD_RATE`, `BACKTEST`, `SCENARIO_SHIP`) change.
+
+**Upside stash** (B3's `list_kind = 'upside'`, `ops.waiver_upside`): per roster, the free agents with a live
+scenario who do not help that roster at their projection today (base horizon gain ≤ 0 — the start-now / cover lists
+already carry the rest), valued the B3 way twice over the same horizon — at the projection and "if it holds" (the
+scenario's projection for the weeks it covers) — with B3's drop rule (the droppable player whose loss costs the
+lineup least over the horizon; ties to the fewest rest-of-season points; none on an open spot); ordered by the gain
+if it holds, then the scenario's gain.
 
 ## Deferred (status in registry)
 

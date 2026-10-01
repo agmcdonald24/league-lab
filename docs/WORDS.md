@@ -67,6 +67,15 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | luck_wins | wins above (+) or below (−) what your points deserve |
 | reference league / reference scoring | League of Scrubs scoring; "one scale for every league" on NFL-wide pages |
 | partition (Data Status) | the pieces a source comes in, usually one per season |
+| role alert (R-10), `direction` up / down | a bigger / smaller role; "Role alerts this week" |
+| `kind` absence_beneficiary / depth_move / new_team / role_up / role_down | Filling in (or Taking over the work) / New starter · Lost his starting job / Bigger (smaller) role on his new team / Bigger role / Smaller role |
+| `cause_text`, trigger | "Why: …" — a teammate out injured or back, benched, a depth-chart move, traded; "the coaches changed his role" when there is none |
+| `games_held`, confidence | "one game so far" / "two games so far" / "three games: this is his role now"; column "Held" |
+| expiry | "It ends when X returns" / "Check again after week N: by then his projection has caught up if it holds" |
+| larger-role scenario (R-12), `presentation = 'what if'` | "What if the new role holds: 11.3 in week 4 (projection 7.1, +4.2)"; never a chance |
+| scenario backtest hit rate | "tested on 2023–2025: after 285 alerts like this the next three games landed nearer it than the projection 46% of the time" |
+| upside stash (`ops.waiver_upside`) | Upside stash: his role is growing before his points do |
+| yardstick (Receivers, U-17) | what the season's top-12 at the position (the 12 with the most points a game) average |
 
 ## Adding to it
 
