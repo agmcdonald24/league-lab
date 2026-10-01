@@ -9,10 +9,21 @@ rostered player his roster's lineup (lib.cards.lineup_rows) — five at most.
 
 import pandas as pd
 import streamlit as st
-from lib.cards import TOL, alternative, bench_gap, decision_week, lineup_rows, slot_label, verdict
+from lib.cards import (
+    TOL,
+    alternative,
+    bench_gap,
+    decision_week,
+    lineup_rows,
+    slot_label,
+    verdict,
+    win_probability,
+)
 from lib.db import missing_relations, query, require_relations
 from lib.signals import alert_headline, alert_lines, scenario_phrase
 from lib.ui import current_leagues, freshness_banner, pct, perspective, player_link, setup
+
+from league_lab import decisions as D
 
 setup("Player")
 freshness_banner()
@@ -304,9 +315,13 @@ with st.container(border=True):
                     src = {"season_ppg": " (his points per game this season)", "observed_ppg": " (points per game Sleeper scored)"}.get(m["value_source"], "")
                     head = f"Week {week}: **starts at {where}** for {team_name}, {float(m['value']):.2f}{src}"
                     if alt is not None:
+                        # the same words as the decision cards (plan D6): from the win probability when both have a
+                        # range, else from the margin
+                        pw = win_probability(m, alt)
+                        call = verdict(float(m["margin"])) if pw is None else D.words(pw)
                         st.markdown(f"{head} — without him the lineup loses **{float(m['margin']):.2f}** "
                                     f"({player_link(alt['gsis_id'], alt['player_name'])}, {float(alt['value']):.2f}, would come in): "
-                                    f"{verdict(float(m['margin']))}.")
+                                    f"{call}.")
                     else:
                         st.markdown(f"{head} — {a['how']}: he is a must-start.")
             elif m["role"] == "bench":
