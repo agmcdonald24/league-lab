@@ -324,6 +324,45 @@ profiles + any league gets a design note before it is scheduled. One QA pass per
 | T-02 | **Trade simulator** on T-01: pick a package from two rosters, see both lineups before/after (this week and the 4-week horizon), the league rank change, and a fairness line (market value vs lineup gain); saved as a shareable URL | review: "simulate what might happen based on trade offers" |
 | P-01 | **Profiles and any league (product).** A viewer sets "my teams" once (per league, remembered per browser — no accounts yet), the perspective follows them across pages and leagues, and any Sleeper league id can be added: the ingestion already takes a list; needs a request path (a form → the nightly picks it up), per-league scoring map coverage checks, and the hosted copy sized for N leagues. Design note first (multi-tenant data model, what "your team" means without login, abuse limits), then build | review: "set up your own profile", "connect anybody's Sleeper league" |
 
+### Iteration 12 — projection v3 and a front-end decision (proposed 2026-10-01, Wave D)
+
+Andrew's questions (2026-10-01): game time/day, location, weather (wind, precipitation), team stats
+(time of possession, first downs, defense), injuries incl. QB and offensive line, and whether the
+80% range (~17–18 points for a top-24 WR/RB, ~18 for a QB) can be made more useful; plus where the
+UI stands and whether to replatform. PO findings before planning:
+
+* v2 already uses Vegas implied total, spread and total (the market prices weather, QB and line
+  injuries into these), home/away, opponent points allowed (season, last 4, rank), usage shares,
+  red-zone usage, xPPG and last season. It does NOT use: kickoff day/time, rest, travel, roof,
+  surface, wind, temperature, precipitation, team pace / plays / pass rate / first downs / time of
+  possession, the starting QB, offensive-line or teammate absences, or a player's injury history.
+* Data on hand: schedules carry weekday, kickoff time, rest days, roof, surface, division game,
+  referee, and the starting QBs (filled before kickoff); wind and temperature are filled only after
+  the game (1,814 of 2,145 outdoor games since 2016), so the live board needs a forecast source;
+  precipitation is not in nflverse at all (Open-Meteo's free archive + forecast by stadium location
+  and kickoff hour: reachable from the Mac and GitHub, blocked in the sandbox). Team stats (139
+  columns: first downs, sacks, penalties) and play-by-play (drives, time of possession, pace, neutral
+  pass rate) are loaded. Injury reports since 2016 here (nflverse has 2009+), 10k offensive-line rows.
+* Intervals are calibrated (backtest coverage 78–81%) — narrowing them by fiat would make them wrong.
+  Weekly fantasy points really are that noisy. What can change: (a) sharpness at the same coverage
+  (better features, per-role variance), measured by the interval score; (b) presentation — a 50%
+  "most weeks" range is about half as wide and is what a phone card should lead with, the 80% floor /
+  ceiling behind it; (c) the decision quantity: "Tucker outscores Monangai 54% of the time" instead of
+  two overlapping ranges.
+
+| ID | Task | Acceptance |
+|---|---|---|
+| D1 | **Feature-group harness**: each group below is added on its own and kept only if the walk-forward backtest (2021–2025, both leagues' scoring) improves Spearman or MAE beyond the season-to-season noise (paired across seasons), with the result table published on Rankings' "The model" | one table: group × position × Δ Spearman / Δ MAE / Δ interval score, with the keep/drop decision |
+| D2 | **Game context**: weekday / primetime / kickoff window, rest days (short week, off a bye), travel and time-zone change (west → east early kickoff), roof, surface, division game | in D1's table |
+| D3 | **Weather**: wind, temperature, precipitation by stadium and kickoff hour (Open-Meteo archive for training, forecast for the live board; dome = none); train/serve gap documented (training sees observed weather, the board sees the forecast) — also fed to the kicker and defense model | in D1's table; the Kickers page says when wind is the reason |
+| D4 | **Team volume and style**: plays per game, seconds per play (pace), neutral-situation pass rate, first downs, time of possession, red-zone trips, drive success — the player's offense and the opponent's defense, season and last 4 | in D1's table |
+| D5 | **Personnel**: starting QB differs from the one the player's history was built with (and that QB's quality), offensive-line starters out (injury report × snap-share starters), top teammate out (from R-10's absence logic), player's own injury history (games missed, current designation streak) | in D1's table; QB-change cases checked by hand (three 2025 examples) |
+| D6 | **Sharper ranges and decisions**: per-role variance (e.g. deep-threat vs slot WR) in the residual models, conformal recalibration per position × role, the interval score as the metric; cards lead with the 50% range; decision cards show "A beats B x% of the time" from the joint distribution | width at 80% coverage down vs v2 on the backtest (report the %), coverage still 78–82%; the decision probability calibrated on 2024–2025 played weeks |
+| D7 | **Front-end spike** (decision, not migration): My Week + the Player card rebuilt on a phone-first stack (a read-only API over the same Neon marts + a web front end, installable on the home screen), side by side with Streamlit on Andrew's phone; a one-page decision note (cost per page to port, hosting, what Streamlit cannot do: one-tap links, no new-tab sessions, layout control, restarts) | Andrew picks: stay, or port page by page |
+
+Order: D1 + D2/D3 + D4 (one dev each, in parallel) → D5 + D6 → v3 ships as one `MODEL_VERSION`
+bump with a fresh backtest. D7 runs alongside, touching no model code.
+
 ### Iteration 11 — operations for a product (Phase 3)
 
 | ID | Task | Notes |
