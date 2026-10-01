@@ -63,18 +63,56 @@ join pg_class c on c.relname = x.name join pg_namespace n on n.oid = c.relnamesp
 order by 1
 SQL
 )"
-TABLE_ARGS=()
-for t in $closure; do TABLE_ARGS+=(--table "analytics.$t"); done
-echo "publishing $(echo "$closure" | wc -l | tr -d ' ') analytics relations the pages read (of $(psql "$LOCAL_DSN" -At -c "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='analytics' and relkind in ('r','v')"))"
-TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+# --- the heavy per-game tables go as a window of seasons -------------------------------------
+# Neon's free tier caps the project at 512 MB and the full history no longer fits (2026-09-30: the
+# sync died mid-restore at that limit, leaving the hosted app without marts). The per-player-game
+# tables are ~80% of the copy and the pages only ever browse recent seasons on a phone, so the
+# hosted copy carries the newest LEAGUE_LAB_HOSTED_SEASONS seasons (default 3) of them; league
+# marts, the decision record and everything small go in full. The Mac keeps the full history.
+# Mechanism: season-filtered copies in a local schema `hosted_slim` (same names, same indexes),
+# dumped first and moved into `analytics` on the hosted side before the rest is restored, so the
+# views that read them restore unchanged.
+SLIM_TABLES="fct_player_game mart_player_week_rankings mart_player_context mart_player_recent_form mart_player_expected_points mart_player_trends mart_player_season mart_player_season_team mart_receiver_vs_cb"
+HOSTED_SEASONS="${LEAGUE_LAB_HOSTED_SEASONS:-3}"
+first_season="$(psql "$LOCAL_DSN" -At -c "select max(season) - ${HOSTED_SEASONS} + 1 from analytics.fct_player_game")"
+slim=()
+psql "$LOCAL_DSN" -v ON_ERROR_STOP=1 -q -c "drop schema if exists hosted_slim cascade; create schema hosted_slim;"
+for t in $closure; do
+  case " $SLIM_TABLES " in *" $t "*) ;; *) continue ;; esac
+  has_season="$(psql "$LOCAL_DSN" -At -c "select count(*) from information_schema.columns where table_schema = 'analytics' and table_name = '$t' and column_name = 'season'")"
+  [ "$has_season" = 1 ] || continue
+  psql "$LOCAL_DSN" -v ON_ERROR_STOP=1 -q -c "create table hosted_slim.$t as select * from analytics.$t where season >= $first_season"
+  # the same indexes, so the hosted planner sees what the local one sees
+  psql "$LOCAL_DSN" -At -c "select regexp_replace(indexdef, '^CREATE (UNIQUE )?INDEX \\S+ ON analytics\\.', 'CREATE \\1INDEX ON hosted_slim.') || ';' from pg_indexes where schemaname = 'analytics' and tablename = '$t'" \
+    | psql "$LOCAL_DSN" -v ON_ERROR_STOP=1 -q
+  slim+=("$t")
+done
+FULL_ARGS=()
+for t in $closure; do
+  case " ${slim[*]:-} " in *" $t "*) continue ;; esac
+  FULL_ARGS+=(--table "analytics.$t")
+done
+echo "publishing $(echo "$closure" | wc -l | tr -d ' ') analytics relations the pages read (of $(psql "$LOCAL_DSN" -At -c "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='analytics' and relkind in ('r','v')")); ${#slim[@]} of them as seasons ${first_season}+ (${slim[*]:-none})"
+size_mb="$(psql "$LOCAL_DSN" -At -c "select round((coalesce((select sum(pg_total_relation_size(c.oid)) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname in ('hosted_slim', 'ops', 'analytics_seeds') and c.relkind = 'r'), 0) + coalesce((select sum(pg_total_relation_size(c.oid)) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'analytics' and c.relkind = 'r' and c.relname = any(string_to_array('$(echo "$closure" | tr '\n' ',' | sed 's/,$//')', ',')) and not c.relname = any(string_to_array('$(echo "${slim[*]:-}" | tr ' ' ',')', ','))), 0)) / 1048576.0)")"
+echo "hosted copy will be about ${size_mb} MB (tables + indexes, as stored locally)"
+if [ "${size_mb%.*}" -gt 440 ]; then
+  echo "WARNING: that is close to Neon's 512 MB project limit; lower LEAGUE_LAB_HOSTED_SEASONS or trim SLIM_TABLES before it fails mid-restore" >&2
+fi
+TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"; psql "$LOCAL_DSN" -q -c "drop schema if exists hosted_slim cascade" 2>/dev/null' EXIT
 DUMP="$TMP/marts.sql.gz"
+SLIM_DUMP="$TMP/slim.sql.gz"
 
 echo "dumping marts from the local database ..."
 # (with --table given, pg_dump ignores --schema and emits no CREATE SCHEMA, so the other schemas
 # are selected by table pattern and the schemas are created explicitly before the restore)
 pg_dump "$LOCAL_DSN" --format=plain --no-owner --no-privileges --no-comments \
-        --table 'analytics_seeds.*' --table 'ops.*' "${TABLE_ARGS[@]}" | gzip -1 > "$DUMP"
-echo "dump: $(du -h "$DUMP" | cut -f1) compressed"
+        --table 'analytics_seeds.*' --table 'ops.*' "${FULL_ARGS[@]}" | gzip -1 > "$DUMP"
+if [ ${#slim[@]} -gt 0 ]; then
+  pg_dump "$LOCAL_DSN" --format=plain --no-owner --no-privileges --no-comments --table 'hosted_slim.*' | gzip -1 > "$SLIM_DUMP"
+else
+  : | gzip -1 > "$SLIM_DUMP"
+fi
+echo "dump: $(du -h "$DUMP" | cut -f1) + $(du -h "$SLIM_DUMP" | cut -f1) compressed"
 [ "${1:-}" = "--dry-run" ] && exit 0
 
 echo "ensuring the read-only role exists on the hosted database ..."
@@ -103,7 +141,11 @@ echo "publishing: dropping the previous marts, then restoring (pages show 'not b
 t0=$(date +%s)
 psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q -c "drop schema if exists analytics cascade; drop schema if exists analytics_seeds cascade;"
 {
-  echo "drop schema if exists ops cascade; create schema if not exists analytics; create schema if not exists analytics_seeds; create schema ops;"
+  echo "drop schema if exists ops cascade; create schema if not exists analytics; create schema if not exists analytics_seeds; create schema ops; drop schema if exists hosted_slim cascade; create schema hosted_slim;"
+  # the season-window tables first, moved into analytics so the views restored next find them
+  gunzip -c "$SLIM_DUMP"
+  for t in "${slim[@]:-}"; do [ -n "$t" ] && echo "alter table hosted_slim.$t set schema analytics;"; done
+  echo "drop schema hosted_slim;"
   gunzip -c "$DUMP"
   cat <<'SQL'
 grant usage on schema analytics, analytics_seeds, ops to league_lab_app;
@@ -125,5 +167,5 @@ if [ -n "$missing" ]; then
   echo "ERROR: published copy is missing relations the pages read: $(echo "$missing" | tr '\n' ' ')" >&2
   exit 5
 fi
-echo "verified: all $(echo "$closure" | wc -l | tr -d ' ') page relations are on the hosted copy"
+echo "verified: all $(echo "$closure" | wc -l | tr -d ' ') page relations are on the hosted copy ($(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select pg_size_pretty(pg_database_size(current_database()))") on the hosted database; seasons ${first_season}+ for ${#slim[@]} per-game tables)"
 echo "done. Point the app at: postgresql://league_lab_app:<password>@<host>/<db>?sslmode=require"

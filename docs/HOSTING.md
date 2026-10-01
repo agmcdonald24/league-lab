@@ -117,6 +117,13 @@ key is modelled wrong).
   fraction of that. If the marts outgrow 0.5 GB (several seasons from now), Neon's paid tier is
   ~$19/month; before that, the play-level tables are already excluded and `fct_player_game` can be
   slimmed.
+* **Size (Neon free tier: 512 MB per project).** On 2026-09-30 the full history no longer fit and a sync died
+  mid-restore at that limit. The sync now publishes the heavy per-player-game tables (`fct_player_game`,
+  `mart_player_week_rankings`, `mart_player_context`, `mart_player_recent_form`, `mart_player_expected_points`,
+  `mart_player_trends`, `mart_player_season`, `mart_receiver_vs_cb`) for the newest `LEAGUE_LAB_HOSTED_SEASONS`
+  seasons only (default 3); everything else goes in full. The hosted copy went from >512 MB to ~265 MB. The Mac
+  keeps the full history, so Players / Receivers / Trends season pickers on the hosted app list the last three
+  seasons. The sync prints the expected size and warns above 440 MB; lower the window or trim the list if it does.
 * **A refresh in progress**: the sync drops the previous copy and restores the new one (free
   tiers cannot hold two copies at once — Neon caps a project at 0.5 GB), so for the length of the
   restore (a minute or two) pages say "marts not built on this machine yet" instead of failing.
