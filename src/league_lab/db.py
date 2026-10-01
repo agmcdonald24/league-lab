@@ -244,11 +244,20 @@ def connect(dsn: str | None = None, autocommit: bool = False):
 
 
 def migrate(conn: psycopg.Connection) -> None:
-    """Create schemas and ops tables if missing. Safe to run repeatedly."""
+    """Create schemas and ops tables if missing. Safe to run repeatedly.
+
+    The ops tables a `project` step writes (lineups, waiver moves and upside stashes, role alerts, scenarios)
+    are created here too, from the writer's own DDL, so a fresh or upgraded database passes `dbt build`'s
+    source tests BEFORE the first `project` (the Mac hit this: `make build` ran before `make project` and
+    three sources did not exist yet)."""
+    from . import lineup, signals, waivers  # local import: those modules import this one
+
     with conn.cursor() as cur:
         for schema in SCHEMAS:
             cur.execute(sql.SQL("create schema if not exists {}").format(sql.Identifier(schema)))
         cur.execute(OPS_DDL)
+        for ddl in (*lineup.DDL.values(), waivers.UPSIDE_DDL, *signals.DDL.values()):
+            cur.execute(ddl)
     conn.commit()
 
 

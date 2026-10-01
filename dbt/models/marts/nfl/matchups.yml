@@ -49,6 +49,9 @@ models:
             combination_of_columns: [receiver_gsis_id, defender_gsis_id, season]
       - expression_is_true:
           name: receiver_vs_cb_counts_consistent
+          # upstream play-by-play occasionally records a reception or a TD on a play with no target (laterals,
+          # stat corrections): a sanity check on the source, not on this model's logic, so it warns
+          config: {severity: warn}
           arguments:
             expression: "targets >= receptions and receptions >= receiving_tds and games >= 1"
       - expression_is_true:
