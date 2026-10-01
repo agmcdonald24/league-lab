@@ -35,6 +35,16 @@ models:
       - unique_combination_of_columns:
           arguments:
             combination_of_columns: [gsis_id, game_id]
+  - name: int_defender_game_coverage_snaps
+    description: "R-14: coverage snaps per defender-game (the opponent's dropbacks he was on the field for): participation where the game has an on-field list, else his share of his team's defensive snaps x the opponent's dropbacks; keyed to PFR advanced-defense games (2018+)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+      - expression_is_true:
+          name: coverage_snaps_source_matches_value
+          arguments:
+            expression: "(coverage_snaps_source = 'participation' and coverage_snaps = coverage_snaps_on_field) or (coverage_snaps_source = 'snap_share' and coverage_snaps = coverage_snaps_estimated) or (coverage_snaps_source is null and coverage_snaps is null)"
   - name: int_pfr_gsis_map
     columns:
       - name: pfr_id
@@ -44,3 +54,31 @@ models:
       - unique_combination_of_columns:
           arguments:
             combination_of_columns: [gsis_id, game_id, metric]
+  # plan R-10 (C6): role inputs per player x team-game, missed games included (src/league_lab/signals.py)
+  - name: int_player_game_role
+    description: "Every QB / RB / WR / TE on a team's weekly roster (or who played for it) for every played regular-season game: status (played / out_injured / inactive), snap share (0 when he missed a game that has snap counts; NULL when the game has none), route share (the routes proxy; NULL without participation), target / carry share, the stat line and expected points. Read by the role-alert rule."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+      - expression_is_true:
+          name: role_shares_are_shares
+          arguments:
+            expression: "coalesce(snap_share, 0) between 0 and 1 and coalesce(route_share, 0) between 0 and 1 and coalesce(target_share, 0) between 0 and 1 and coalesce(carry_share, 0) between 0 and 1"
+      - expression_is_true:
+          name: role_missed_game_has_no_usage
+          arguments:
+            expression: "targets = 0 and carries = 0 and coalesce(snap_share, 0) = 0"
+            condition: "status <> 'played'"
+    columns:
+      - name: status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["played", "out_injured", "inactive"]
+      - name: position
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["QB", "RB", "WR", "TE"]

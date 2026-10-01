@@ -230,7 +230,7 @@ dbt_step() {  # dbt_step <name> <dbt args...>
 # (2) a failed copy stops the night too; (3) after `project`, the record is also written to the
 # archive ($RAW_DIR/record/, so it rides the Actions cache): if the hosted copy is reachable but
 # has lost it (a restore that died midway), the archive's copy is used instead.
-STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals ops.waiver_moves"
+STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals ops.waiver_moves ops.waiver_upside ops.player_role_alerts ops.player_scenarios"
 RECORD_TABLES="ops.projections ops.projection_drift"
 RECORD_DIR="$RAW_DIR/record"   # one <schema>.<table>.sql.gz per record table
 
@@ -413,7 +413,7 @@ soft save-record save_record
 # the projection marts on tonight's projections (+ mart_projection_backtest+: dbt's view swap
 # cascades to mart_projection_drift, which must be rebuilt or it never reaches the hosted copy)
 # and the lineup mart on the lineups `project` solved last (plan B1)
-hard projection-marts dbt_step projection-marts build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance
+hard projection-marts dbt_step projection-marts build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside
 soft drift drift_if_unscored
 
 # 4. Keep and publish.

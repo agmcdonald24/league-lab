@@ -1332,6 +1332,238 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
   in `app/whats_new.md`. (4) The Waiver Wire box no longer says "free-agent defenses are not valued yet" (C3 changes
   that). (5) Importance is measured in the reference league's scoring only; the dynasty page says so.
 
+### PO merge — round 2 (C4 + C5 + C6), 2026-09-30
+
+* Three Opus developers in parallel off `f72afd4` (worktrees `wt-c4` / `wt-c5` / `wt-c6`, clones, ports 8551–8553).
+  Merged into `integration/wave-c2` with "keep both" conflicts only (registry blocks, METRICS, STATUS, CHANGELOG,
+  What's new). PO fix-ups: the nightly restores `ops.waiver_upside`, `ops.player_role_alerts` and
+  `ops.player_scenarios` with the rest of the `project` output (a soft `project` failure republishes a consistent
+  night); the projection-marts selection in the Makefile and `nightly.sh` is `mart_player_role_alerts+ mart_waiver_upside`
+  (C6 had appended the alerts view without `+`, which would have cascade-dropped nothing today but leaves
+  `mart_waiver_upside` outside the rebuild); the release stamp in `app/requirements.txt` bumped (Community Cloud
+  restarts only when that file changes — see HOSTING).
+* Decisions confirmed as delivered: C4 — one `RosterBoard` per league in `evaluate`, "both accept" judged on the 4-week
+  gain, every 2-for-1 pair searched (exact branch and bound = exhaustive), the market score = v2 rest-of-season points
+  above the best free agent at the position (documented with its limits, shown next to fit, never blended); C5 — no
+  "covered by" claim (public data has no assignment), the likely cover = the outside corner on the side his targets
+  favour, ranks on two seasons, the shadow flag and the nickel call computed but not shown (1 of 6 known 2025 shadow
+  corners caught), `mart_defender_coverage_season` and `mart_matchup_cb_context` retired; C6 — alerts in Python inside
+  `project()` (rule ra1.1, refits the component models for the scenario base, ~25 s), the larger-role scenario shipped as
+  a "what if" (`SCENARIO_SHIP=False`: 46–48 % nearer than base over 1–2 games held, 72 % at three), the upside list in
+  its own table.
+* Verified on the main database: `pytest` 691, `ruff` clean, migrate, the C5/C6 intermediate and mart builds, `project`
+  (v2 → K/DEF → lineups → waivers → signals → importance), the projection-marts rebuild, the headless check on every page
+  × both leagues + Player + Trade Finder with a package in the URL, 0 exceptions.
+* One QA agent, phone-first, 25 minutes, both leagues as Andrew's rosters: no sideways scroll, answer before any
+  table on Trade Finder / Matchups / Trends / Waiver Wire / Player; the top trade package's before/after lineup values
+  equal `ops.lineup_totals` and an independent `lineup.solve` on the post-trade rosters (113.06 → 113.54 / 115.30 →
+  119.73 Scrubs; 109.69 → 115.12 / 126.86 → 133.64 dynasty); the cornerback card equals `mart_cb_matchups` /
+  `mart_cb_rankings` (St. Brown: even call, Mike Jackson #37 of 74); the comparison's default pair equals Home's first
+  card; the top role alert's numbers equal `mart_player_role_alerts` (Germie Bernard 4 % → 79 % snaps, Pittman out); the
+  upside card equals `mart_waiver_upside`; the trade URL round-trips in a fresh browser; "covered by" appears nowhere;
+  the scenario is always a labelled what-if with its hit rate. No HIGH or MEDIUM findings. PO fixes from the LOW list: a
+  stash with zero upside is no longer listed; the what-if sentence now says plainly that it beat the projection less than
+  half the time; "Out of the lineup after the trade" instead of "Sits". Open LOW: the upside card on Waiver Wire has no
+  hit rate (the Player page has it); the role alert sits low on the Player page; "you give 0" market for a QB behind a
+  better free agent reads as wrong without the explanation; "Vs the offenses faced +5.7 (#1)" and a defense drop's
+  "(already counted)" still read as insider phrases.
+
+### C4 2026-09-30 — T-01 trade evaluator + T-02 trade simulator (branch `dev/C4`, clone `league_lab_c4`)
+
+* **Built.** `src/league_lab/trades.py` on B1's lineup service and B2's `RosterBoard` (page time with scipy, no
+  nightly table or mart: a whole league's partner sweep takes ~1 s). `evaluate(board, give, get)` re-solves **both**
+  rosters in every week of the horizon (this week + 3) and returns per side: lineup value before / after (week and
+  horizon), depth (the bench's own lineup, = B1's `bench_value`), the closest call after (`Lineup.weakest`), who
+  starts / who sits, roster size (a side over its limit **cuts** its cheapest player over the horizon, counted in the
+  gain; a side left with an open spot is shown the best free agent), and the **market** kept apart: rest-of-season
+  projected points above the best free agent at the position (`REPLACEMENT_SQL`, `price_by_player`), summed in whole
+  points. `partners(board, me)`: every other roster's best 1-for-1 and 2-for-1 (either direction) that raise both
+  lineups over the horizon, ranked by the smaller gain, exact branch and bound. `fit_line` / `fairness_line` /
+  `verdict` (the three lines of the simulator). `roster_value.RosterBoard` gains `roster`, `is_active`,
+  `active_count`, `is_locked`, `has_value`, `pool_with`, `lineup_with` (nothing existing changed). **Trade Finder**
+  rewritten: three cards (best partner + package + both gains; buy low, with the best per position; sell high), the
+  partner table in an expander, **Try a trade** (partner, players both ways as multiselects; verdict, fit line,
+  market line, league rank change on week / 4 weeks / depth, roster size; the market table: market, PPG, xPPG, and in
+  an expander season points, position rank, games, age, NFL season, this week's value; both lineups slot by slot with
+  the change, who starts and who sits; week by week in an expander), the package in the URL
+  (`?partner=&give=&get=`, Sleeper ids), buy-low / sell-high lists filterable by position and owner.
+  `reports.py` team brief: new "Trade partners" section (both lineups' gains + market given / received; the
+  existing sections unchanged; the board rows now carry `gsis_id`). `app/lib/table.py`: a `# ---- C4 trades` block.
+* **Design choices** (PO to confirm): (1) one board for both rosters (`evaluate(board, give, get)`, not
+  `board_a, board_b`: a league's `RosterBoard` holds every roster); (2) "both accept" = both **horizon** gains ≥ 0.01
+  (the horizon includes this week; a trade that helps both this week but costs one side over four weeks is not
+  listed); (3) the 2-for-1 search is wider than the plan's "second piece = the giver's lowest-margin bench player":
+  every pair in either direction, but a pair counts only if **each** piece adds to the receiver's lineup — a pure
+  throw-in changes neither lineup, so it is the 1-for-1; (4) the market score starts from the v2 projection (the one
+  projection every page uses; its strongest inputs are xPPG L5 / season, so it is usage-weighted without a second
+  model) and is position-adjusted by the waiver wire (best free agent's season points), not by a league-wide VOR
+  rank: simple, explainable ("above what you could pick up"), and it prices a kicker at 0 and a one-QB league's QBs
+  low; "about even" = within 10 points or 10 %; (5) the cut is chosen one at a time (joint choice only matters for
+  3-for-1s); (6) no nightly table: the sweep is < 1.3 s per roster, cached 10 min on (league, roster, data key).
+* **Evidence** (clone `league_lab_c4`, this week = 4, horizon 4–7, no locks in weeks 4–7):
+  - **Hand check** (`scratchpad/waveC2/c4/hand_check2.py`: `ops.lineups` rows → an integer program (scipy milp /
+    HiGHS, not the assignment solver) per roster-week, the trade applied by hand, every legal cut tried, market by its
+    own SQL): **dynasty, Shake & Bake (12)**: top partner The72Repeat (5), best package the 1-for-2 **Bo Nix for
+    Breece Hall + Quinshon Judkins**: roster 12 109.69 / 116.42 / 104.90 / 106.81 → 115.12 / 122.95 / 111.32 / 115.74
+    (+5.43 this week, +27.31 over 4 weeks), must cut Jaylen Wright (costs 0.00), depth 83.92 → 76.95; roster 5 126.86
+    / 119.26 / 120.46 / 119.75 → 133.64 / 128.00 / 126.59 / 127.10 (+6.78, +29.00), depth 69.62 → 64.42; market: Nix
+    306.31 − 113.21 (Justin Fields) = 193 given, Hall 205.94 − 93.72 = 112 + Judkins 157.47 − 93.72 = 64 → 176
+    received: "about even: worth offering". Also the 1-for-1 Aaron Rodgers for Breece Hall (+6.28 / +26.37 vs +4.04 /
+    +21.28, market 160 vs 112). **League of Scrubs, MacZaddy (2)**: top partner GoodGameBuddy (6), the 1-for-2 **Bryce
+    Young for Jameson Williams + MarShawn Lloyd**: 113.06 / 98.15 / 109.20 / 91.83 → 113.54 / 98.15 / 109.20 / 102.77
+    (+0.48, +11.42), must cut Jacory Croskey-Merritt (0.00), depth 40.84 → 47.39; roster 6 115.30 / 111.43 / 107.74 /
+    112.37 → 119.73 / 111.43 / 109.24 / 115.68 (+4.43, +9.24), opens a spot (best free agent Daniel Carlson, K,
+    +13.5, reported not added); market 0 (Young 213.31 < the free agent Drake Maye's 238.83) vs 11 (Williams 123.17 −
+    112.21): "they may ask for more". Every number = `evaluate` to the cent; `before` = `ops.lineup_totals`, depth
+    before = `mart_league_roster_value.bench_value`.
+  - **Two-for-one with a forced cut that costs points**: Scrubs, Patrick Mahomes for Tony Pollard + Joe Burrow
+    (roster 5): roster 2 must cut Jacory Croskey-Merritt, whose loss over the horizon is **0.06** (counted: +0.76 over
+    4 weeks instead of +0.82), confirmed by trying every legal cut. **Bug found by this check and fixed**: the first
+    version stopped comparing cuts after the first starter when no cut was free, and cut Terrance Ferguson (costs
+    11.41: −10.59 instead of +0.76). New test `test_the_cut_is_the_cheapest_over_the_horizon_when_nobody_is_free`
+    fails on the old rule; the random-package test now brute-forces every single cut.
+  - **Never a one-sided trade in the "both accept" list**: all 22 dynasty and 18 Scrubs listed packages re-evaluated:
+    both horizon gains ≥ 0.01; unit tests: a 1-for-1 where one side loses and a K-for-WR are never offered.
+  - **Exact search**: `partners` = `partners_exhaustive` for every partner and shape (after the fix): dynasty 11/11
+    (exhaustive 315 s vs 0.6 s), Scrubs 9/9 (64 s vs 0.6 s). **Sweep time** (every roster, fresh board, box shared
+    with two builds, load 3.7): dynasty median 0.81 s, max 1.20 s; Scrubs median 0.63 s, max 0.98 s (< 3 s).
+  - **URL round trip** (Playwright, both leagues, phone and desktop): the URL the page writes
+    (`?league=…&team=12&partner=5&give=11563&get=8155%2C12512`), opened in a fresh browser, shows the same package,
+    lines and tables (4/4); AppTest: a second partner's link opens that package, and the URL it writes reproduces it.
+  - `pytest` 609 passed (+38: `tests/test_trades.py` 33 — 1-for-1 both gain, one side loses, depth / closest call /
+    starts / sits, 2-for-1 forced cut + market sums, the cheapest cut when nobody is free, K-for-WR with the K slot
+    empty and the kicker priced 0, bye weeks over the horizon, empty slot, locks, IR / taxi, fill vs brute force, 96
+    random packages, partner search vs exhaustive, lines and verdicts, ranks, URL ids; `tests/test_trade_finder_page.py`
+    5 on the database), `ruff` clean, headless check 39 runs 0 exceptions (Trade Finder with `partner`/`give`/`get`
+    params: a package, a broken link, an empty one, bad ids, another team, a K-for-WR, a two-for-one with a cut).
+  - Playwright (Streamlit on 8551): `scratchpad/waveC2/c4/shots2/tf_{dyn,scr}_{390,1300}_{cards,simulator,
+    simulator2,simulator3,full}.png`; at 390 px scrollWidth = clientWidth, every table outside an expander ≤ 5 columns
+    (market 5, lineups 4), a card before the first table, 0 exceptions.
+* **Open**: the market is this season only (dynasty future value, picks, keeper costs not modelled); an injured
+  player's season points count every projected week; a 1-for-1 that empties a slot does not suggest the free agent to
+  refill it (only an opened spot gets a fill); a traded player's Sleeper IR / taxi status on his new roster is not
+  modelled (he takes a bench spot). No `metric_registry.csv` rows (seeds out of bounds): proposed `trade_fit` v1.1
+  and `trade_market_score` v1.0 (METRICS § Trades). No `--select` appended (no mart).
+### C5 2026-09-30 — R-14 cornerback matchups + R-15 defense vs position as a picture + R-11 matchup comparison (branch `dev/C5`, clone `league_lab_c5`)
+
+* **Built.** *Marts* (`dbt/models/marts/nfl/`, no `ops` source, so no `--select` change): `mart_cb_rankings`
+  (cornerback × season × window season / last_4 / two_seasons; rank on targets per coverage snap, yards per target
+  adjusted for the offenses faced, rating allowed; shutdown / solid / target), `mart_cb_matchups` (WR / TE × week from
+  2025: the opponent's corners from its depth chart before kickoff, target direction since last season, the likely
+  cover with `call_strength` clear / even, the cover's rank, his history), `mart_receiver_vs_cb` (who was on the field
+  for his targets, with `share_of_targets`; same-game rows for the current season), `mart_defense_position_profile`
+  (opportunity vs efficiency allowed, opponent-adjusted, as of each week, + targets / carries ranks);
+  `int_defender_game_coverage_snaps`. Retired `mart_defender_coverage_season`, `mart_matchup_cb_context` (Matchups
+  was the only reader; drop them on the hosted copy at will). *Page* (`app/pages/5_Matchups.py` below B4's cards):
+  **Two players side by side** (opens on the first decision card whose two players are QB / RB / WR / TE; verdict
+  "The lineup says Gainwell by 0.45; the matchup agrees: his defense gives up the most carries to RBs"; a 3-column
+  static table; "the projection decides" caption), **Cornerbacks your receivers face** (one line per starting WR / TE:
+  the likely cover with his side, rank of N and label, the share behind the call, the history; expanders: receiver by
+  receiver — the opponent's three corners with their two-season / season / last-4 ranks, corners faced this season,
+  on the field last season, vs the cover before —, "His points against the best corners", "Every starting corner,
+  ranked" with a window switch), **Defense vs position**: heatmap (every defense × the league's positions, color =
+  rank, number = points a game, your opponents pinned with ◀ and your starters' cells ringed) or ranked bars for one
+  position, last-4 toggle, "Only your opponents" on by default at the Phone level, the table in the expander.
+  `app/lib/matchups.py` (the words, the heatmap rows, the verdict, and `call_cover` / `rank_corners`: Python twins of
+  the two SQL rules), `app/lib/charts.py` (`dvp_bars`, `dvp_heatmap` appended at the end), `app/lib/table.py`
+  (C5 block). Definitions: `docs/METRICS.md` § Cornerback matchups, § Matchup comparison.
+* **Evidence** (clone `league_lab_c5`, 2026 week 4):
+  * **Amon-Ra St. Brown** (dynasty 12) vs CAR: 66 / 60 / 73 targets left / middle / right since 2025 (`fct_play`,
+    before week 4); CAR's chart of 2026-09-26: LCB Mike Jackson, RCB Will Lee III, NB Jaycee Horn → right lean,
+    37% vs 33% = **even**: "Mike Jackson (left corner, #37 of 74, solid) or Will Lee III (right corner, unranked: too
+    few snaps)". Jackson rebuilt from `int_defender_game_coverage_snaps` (2025 + 2026): 19 games, 635 coverage snaps,
+    106 targets, 60 catches, 744 yards, 4 TD, 4 INT → 0.167 targets per snap, 7.02 yards per target, offenses' 7.76
+    → adjusted 7.04, rating 75.4; z 0.63 / −0.05 / −0.90 → score 0.107 → **#37 of 74, solid**. No meeting since 2022.
+  * **Parker Washington** (Scrubs 2 and dynasty 12) vs CIN: 53 / 27 / 33 → 47% left vs 29% = **clear** → RCB DJ
+    Turner II (#18 of 74, shutdown: 81 targets on 605 snaps, adjusted 6.87, rating 79.4); "11 catches for 137 yards on
+    11 targets with Turner on the field (2023–25)" = the raw participation rows (6 in 2023, 5 in 2025, all his CIN
+    targets). Tetairoa McMillan (Scrubs 2) vs DET: 43% vs 36% even → Rock Ya-Sin (#17, shutdown) or D.J. Reed (#39).
+  * **Rule check on 2025** (as-of rows): clear calls — the named corner charged with 0.204 of the receiver's targets,
+    the other outside corner 0.141, other throws 0.137; even calls 0.185 vs 0.163. **Shadow flag**: 1 of 6 commonly
+    reported 2025 shadow corners (Ramsey yes; Surtain II — the most negative slope —, Stingley Jr., Gardner, Gonzalez,
+    Terrell no), 0 of 10 flagged in 2024 flagged again → not shown.
+  * **Rankings**: 74 ranked (2026 two seasons), 76 (2026 season), 121 (last 4), 64–78 per completed season. Top 5:
+    Surtain II, Porter Jr., McDuffie, Stokes, Still; bottom 5: Alford, Stevenson, Robertson, Baker Jr., Hart. The
+    full 2026 pool rebuilt at full precision: 74 / 74, 0 rank and 0 label differences; the Python twin re-derives every
+    `mart_cb_matchups` call (16,972 rows, 0 differences).
+  * **Coverage of lineups**: every WR / TE starter of the 22 proposed week-4 lineups has a row (83 / 83: 6 clear, 54
+    even, 22 tight ends, 1 too few targets; 46 covers ranked).
+  * **R-11**: on all 22 rosters the comparison opens on the first card's pair and quotes its margin (22 / 22).
+  * **Checks**: dbt `mart_cb_rankings+ mart_receiver_vs_cb+ mart_defense_position_profile+` PASS (33 + 16 on the
+    rebuild), `tests/test_matchups.py` 55, full `pytest` 626, `ruff` clean, headless check 32 runs 0 exceptions,
+    Playwright at 390 × 844 (iPhone) and 1300 × 900, both leagues: no sideways scroll, heatmap 358 px wide at 390.
+* **Left open.** No projection change from the corner (a model change); the PPG split is evidence only. Shadow
+  coverage, receiver alignment and slot assignment are not in public data. `metric_registry` rows not added (seeds are
+  out of bounds): `cb_rankings` v1.0, `cb_matchups` v1.0, `defense_profile` v1.0.
+### C6 2026-09-30 — R-10 role alerts + R-12 scenario upside + U-17 Receivers/Kickers context (branch `dev/C6`, clone `league_lab_c6`)
+
+* **Built.** `src/league_lab/signals.py` (rule `ra1.1`, docs/METRICS.md § Role alerts / § Scenario upside), run by
+  `projections.project` right after the projections are written (one import + one call; logged, never fatal) and on
+  its own by `league-lab signals`; `league-lab signals-backtest` (read-only) calibrates the scenario and measures the
+  alerts' precision with the rule as it runs in season (no routes). New `intermediate.int_player_game_role` (every
+  QB–TE on a weekly roster × each played team game, missed games with their reason), `ops.player_role_alerts`
+  (2016–2026, 7,074 rows; the season rewritten each run, other seasons when their `signals_version` differs),
+  `ops.player_scenarios`, `ops.waiver_upside` (written by the waiver engine right after `ops.waiver_moves`), views
+  `mart_player_role_alerts` / `mart_player_scenarios` / `mart_waiver_upside` (`signals.yml`, `assert_waiver_upside_is_legal`).
+  Pages: Trends opens with **Role alerts this week** (up to three cards — your players, free agents with a bigger role,
+  then the rest — every alert in an expander), the Player card ends with **Signals** (role, cause, expiry, the
+  what-if in this league's scoring with its backtest hit rate), Waiver Wire's third card region is the **upside
+  stash** (replacing "arrive with the role alerts"); Receivers and Kickers copy (why each number matters, worked
+  examples from the selection, yardsticks computed from the selected season's top 12, chart captions saying what a
+  good position looks like). `app/lib/signals.py` holds the shared phrases; COLUMNS `# ---- C6 signals` block.
+* **Alerts.** A detected role change with a stated cause: `kind` role_up / role_down / absence_beneficiary /
+  depth_move / new_team, `cause_text`, evidence before → after, `games_held` 1–3, `expires_after_week` (+ the
+  absence rule "ends when X returns", live in `mart_player_role_alerts.trigger_ended` / `is_live`). Known cases fire in
+  the right week with the right cause: Chase Brown 2024 wk 9 ("Zack Moss out injured", snaps 36% → 80%), Cedric Tillman
+  2024 wk 7 ("Amari Cooper traded", targets 1% → 25%), Drake Maye 2024 wk 6 and Jaxson Dart 2025 wk 4 (depth_move,
+  "Jacoby Brissett benched" / "Russell Wilson benched"), Rico Dowdle 2025 wk 5 ("Chuba Hubbard out injured"; nothing
+  in wk 7 when Hubbard was back), TreVeyon Henderson 2025 wk 9, Amari Cooper 2024 wk 7 (new_team, snaps 89% → 35%).
+  Controls: Ja'Marr Chase 2024 wk 10 (49.9 points) and Kyle Pitts 2025 wk 15 (40.1) — no alert all season; 43 of 44
+  big 2024–25 weeks by established players fired nothing. **Precision, 2025 first detections, still real three games
+  later: bigger roles 120 / 180 = 66.7% (29 more expired as designed: the starter came back), smaller roles 77 / 120 =
+  64.2%** (2023 75.5% / 71.6%, 2024 75.0% / 59.6%). ra1.1 over ra1.0 (what the branch first had): a structural share
+  (snaps / routes) must move, 1.5 bar with a named reason, no one-game drop without one, expired fill-in roles
+  suppressed, depth-chart moves as a reason — 2025 up precision 57% → 67%.
+* **This week** (data through week 2 for 30 teams, week 3 for 2): 8 live alerts in each league among rostered players
+  and free agents, e.g. Aaron Jones (MIN) "Filling in: snap share 46% → 81%, carry share 35% → 82% since week 2 (one game
+  so far). Why: Jordan Mason out injured" — rostered in both leagues; free agents Konata Mumpfield, Myles Price, Ben
+  Sinnott (+ Germie Bernard, Kaleb Johnson in League of Scrubs).
+* **Scenario upside.** Base = the stored projection (refitted component models; `project` checks every base to
+  1e-6: max diff 0.0 on 26 rows); larger role = his last-3 inputs at the new role's level, capped at the position's
+  90th percentile, efficiency held, priced per league; `with_alert_points` = base + hold rate (69.5% / 76.4% / 81.4%) ×
+  gap. **Backtest 2023–2025** (models fitted on the seasons before; next-3-game PPG): the larger role was nearer than
+  the projection 45.6% of the time at one game held (n = 285), 47.4% at two (n = 266), 72% at three (n = 18); the
+  "with the alert" line 47.0% / 48.1%; mean miss 3.34 / 3.37 / 3.31 (base / larger / with) at one game. **Shipped as a
+  "what if"** with the hit rate on the page, no probability (`SCENARIO_SHIP = False`). On average those players did
+  outscore the projection by about the gap (+1.12 vs +1.04 at one game held): recorded for the next iteration.
+* **Upside stash** = free agents with a live scenario whose horizon gain at their projection is ≤ 0 (the start-now /
+  cover lists carry the rest), valued as B3 does at the projection and "if it holds", B3's drop rule: 81 rows, 22
+  rosters, 8 free agents this week (none would start for its roster even if the role holds; the card says so); the
+  positive case is `test_upside_stash_valued_at_base_and_if_it_holds` (+2.0 a week at FLEX).
+* **Checks.** `ops.projections` byte-identical across a `project` with the hook (md5 weeks 4–18 `1a6e0c16…`, weeks
+  1–3 `5396dcb9…`, 17,164 / 3,554 rows), `ops.lineups` proposed and `ops.waiver_moves` too; two consecutive `project`
+  runs give identical C6 tables (md5 excluding `run_at` / `as_of`); `project` ≈ 250–285 s here (signals step 23–25 s);
+  pytest 598 passed (27 in `tests/test_signals.py`), ruff clean, dbt `project` select 104 PASS, the headless check (35 runs) on every page ×
+  both leagues + the Player page (alert, no alert, K, smaller role): 0 exceptions; Playwright at 390 × 844 (phone UA)
+  and 1300 × 900 for Trends and Waiver Wire on both leagues, the Player card (alert, no alert, K, smaller role),
+  Receivers and Kickers (League of Scrubs), every expander opened: no sideways scroll, no table wider than the
+  viewport, cards before tables.
+* **Decisions** (PO to confirm): (1) alerts in Python (`signals.py`), not a dbt model: the rule walks windows of 1–3
+  games per player with teammate lookups and needs the fitted models for the scenario anyway; (2) the scenario refits
+  the four positions' component models in the hook (≈ 25 s) instead of reaching into `project()`'s locals — the brief
+  allows one call only; the refit is deterministic and checked against the stored projection; (3) the larger role uses
+  the level observed since the change (capped at the position's p90), not "the absent teammate's share + his" — it
+  covers depth moves and trades the same way, and the teammate's share is already in the games since; (4) the upside
+  list is its own table (`ops.waiver_upside`, `list_kind = 'upside'`), so `ops.waiver_moves`, its tests and B3's page
+  region are untouched; (5) scenarios only for players with a live bigger-role alert (no alert → "no role change
+  detected"); (6) `mart_player_role_alerts` appended to the Makefile `project` and nightly projection-marts `--select`
+  (the scenario and upside views were already descendants); (7) `metric_registry` rows not added (seeds are out of
+  bounds): `role_alert` ra1.1 and `scenario_upside` sc1.0 would be the two.
+* **Open.** The what-if is not calibrated to be shown as a chance (by design); the scenario's gap is too big for WR and
+  too small for QB/TE on average — a position-specific shrink is the next step if it is wanted. Depth charts exist from
+  2025 only, so `depth_move` by depth chart (not benching) starts there. A depth-chart promotion before the player has
+  played (a Wednesday "named starter") is not an alert yet.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

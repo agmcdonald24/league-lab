@@ -10,7 +10,8 @@ rostered player his roster's lineup (lib.cards.lineup_rows) — five at most.
 import pandas as pd
 import streamlit as st
 from lib.cards import TOL, alternative, bench_gap, decision_week, lineup_rows, slot_label, verdict
-from lib.db import query, require_relations
+from lib.db import missing_relations, query, require_relations
+from lib.signals import alert_headline, alert_lines, scenario_phrase
 from lib.ui import current_leagues, freshness_banner, pct, perspective, player_link, setup
 
 setup("Player")
@@ -326,6 +327,46 @@ with st.container(border=True):
                     st.markdown(head + ".")
             else:
                 st.markdown(f"Week {week}: **not in {team_name}'s lineup** — {m['reason'] or 'cannot play'}.")
+
+# ------------------------------------------------------------------ 5. signals (C6: R-10 role alert + R-12 scenario upside)
+# One query (the card's sixth): his role alert from his team's latest game (mart_player_role_alerts.is_latest) and, for a
+# bigger role, the larger-role scenario for the card's week in this league's scoring (mart_player_scenarios).
+with st.container(border=True):
+    st.markdown("**Signals** — has his role changed lately?")
+    if pos not in ("QB", "RB", "WR", "TE"):
+        unavailable("role alerts cover quarterbacks, running backs, receivers and tight ends (a kicker's work is his team's).")
+    elif missing_relations(("mart_player_role_alerts", "mart_player_scenarios")):
+        unavailable("role alerts arrive with the nightly update; they are not on this copy yet.")
+    else:
+        sig = query(
+            """select r.direction, r.kind, r.cause_text, r.since_week, r.week as alert_week, r.games_held, r.change_text,
+                      r.trigger_name, r.trigger_status, r.trigger_ended, r.expires_after_week,
+                      s.week, s.base_points, s.larger_points, s.points_gain, s.with_alert_points, s.presentation,
+                      s.backtest_n, s.backtest_hit_rate
+               from analytics.mart_player_role_alerts r
+               left join analytics.mart_player_scenarios s
+                      on s.gsis_id = r.gsis_id and s.season = r.season and s.league_id = %s
+                     and s.week = (select min(x.week) from analytics.mart_player_scenarios x
+                                   where x.gsis_id = r.gsis_id and x.season = r.season and x.league_id = %s and x.week >= %s)
+               where r.gsis_id = %s and r.season = %s and r.is_latest""",
+            (league_id, league_id, week if week is not None else 0, gsis, season),
+        )
+        if sig.empty:
+            st.markdown("Role: **no role change detected** in his last three games: his share of the snaps, targets and "
+                        "carries is where it has been.  \nUpside: nothing beyond the projection above.")
+        else:
+            r = sig.iloc[0]
+            st.markdown(f"Role: **{alert_headline(r, p['player_name'])}**. {alert_lines(r)}")
+            if r["direction"] == "up" and is_num(r["larger_points"]):
+                st.markdown("Upside: " + scenario_phrase(r, league_name))
+            elif r["direction"] == "up":
+                st.markdown("Upside: no what-if for the coming weeks (no game to project, or the reason has ended).")
+            else:
+                st.markdown("Upside: none: his role shrank, and the projection above already leans on his last three games.")
+        st.caption("A role alert needs his share of the snaps, targets or carries to jump (or fall) well past his usual swing, "
+                   "in every one of his last one to three games. The what-if re-runs the same projection with his last three "
+                   f"games at the new level, in {league_name} scoring.")
+
 
 with st.expander("How to read this"):
     st.markdown(

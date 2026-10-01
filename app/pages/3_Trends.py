@@ -3,10 +3,11 @@
 import pandas as pd
 import streamlit as st
 from lib.charts import line_chart
-from lib.db import query, require_relations
+from lib.db import missing_relations, query, require_relations
+from lib.signals import alert_headline, alert_lines, kind_label, who_has_him
 from lib.table import Col, howto, show
 from lib.ui import current_season as season_of
-from lib.ui import freshness_banner, perspective, reference_scoring_note, setup
+from lib.ui import freshness_banner, perspective, player_link, reference_scoring_note, setup
 
 setup("Trends")
 freshness_banner()
@@ -14,6 +15,65 @@ require_relations("mart_player_trend_tags", "mart_player_trends", "mart_defense_
 league_id, roster_id, members = perspective(require_team=False)
 current_season = season_of(league_id)   # one week rule (C1): the league's season, not mart_nfl_calendar
 seasons = query("select distinct season from analytics.mart_player_trend_tags order by season desc")["season"].astype(int).tolist()
+
+# ---------------------------------------------------------------- R-10 (C6): role alerts, the page's first section
+def role_alerts_section(league_id: str, roster_id: int | None, season: int | None) -> None:
+    """This week's role alerts (the alert game is his team's latest game and its reason has not ended) for players
+    rostered in this league or free agents: your players first, then free agents whose role grew, then the biggest
+    other changes, as cards; every alert of the week in an expander."""
+    st.subheader("Role alerts this week")
+    if season is None or missing_relations(("mart_player_role_alerts",)):
+        st.caption("Role alerts arrive with the nightly update; they are not on this copy yet.")
+        return
+    ra = query(
+        """select r.gsis_id, r.player_name, r.position, r.team, r.direction, r.kind, r.cause_text, r.since_week, r.week,
+                  r.games_held, r.change_text, r.trigger_name, r.trigger_status, r.trigger_ended, r.expires_after_week, r.z,
+                  a.rostered_by_roster_id, a.rostered_by_team, coalesce(a.is_free_agent, false) as is_free_agent
+           from analytics.mart_player_role_alerts r
+           join analytics.mart_player_availability a on a.league_id = %s and a.gsis_id = r.gsis_id
+           where r.season = %s and r.is_live
+           order by r.direction = 'up' desc, r.kind in ('role_up', 'role_down'), abs(r.z) desc, r.player_name""",
+        (league_id, season),
+    )
+    if ra.empty:
+        st.caption(f"No role change in NFL {season} this week among players rostered in this league or free agents: an alert "
+                   "needs a clear jump (or drop) in his share of the snaps, targets or carries in his last one to three games.")
+        return
+    mine = ra[ra["rostered_by_roster_id"] == roster_id] if roster_id is not None else ra.iloc[0:0]
+    fa = ra[ra["is_free_agent"].astype(bool) & (ra["direction"] == "up")]
+    picks = pd.concat([mine.head(2), fa.head(2), ra]).drop_duplicates("gsis_id").head(3)
+    for _, row in picks.iterrows():
+        who = who_has_him(row, roster_id)
+        with st.container(border=True):
+            st.markdown(f"**{alert_headline(row, player_link(row['gsis_id'], row['player_name']))}.**  \n"
+                        f"{alert_lines(row)}  \n"
+                        f"{row['position']} · {row['team']}" + (f" · {who}" if who else ""))
+    n_up, n_down = int((ra["direction"] == "up").sum()), int((ra["direction"] == "down").sum())
+    with st.expander(f"Every role alert this week ({n_up} bigger, {n_down} smaller)"):
+        tab = ra.assign(role_label=[kind_label(r) for _, r in ra.iterrows()], role_change=ra["change_text"],
+                        role_games=ra["games_held"].map({1: "one game", 2: "two games", 3: "three games"}),
+                        role_cause=ra["cause_text"],
+                        role_who=ra["rostered_by_team"].where(~ra["is_free_agent"].astype(bool), "Free agent"))
+        show(tab, ["player_name", "role_label", "role_change", "role_cause", "role_games", "position", "team", "role_who"],
+             phone_cols=["player_name", "role_label", "role_change", "role_cause", "role_games"])
+    howto(
+        "**Act on a bigger role before the points show up**: a free agent here is a stash (Waiver Wire values him for your "
+        "lineup); one of your bench players here may be worth a start. A smaller role is a reason to bench or sell.",
+        "An alert means his share of the snaps, the targets or the carries jumped (or fell) in his last one to three games, well "
+        "past his usual week-to-week swing, and held in every one of those games. A single big game is not an alert: three "
+        "touchdowns can happen without the role changing.",
+        "**Why** is the reason we can name: an injured starter (he is filling in), a benching or a depth-chart move, a trade. "
+        "\"The coaches changed his role\" means none of those: fine, but check the news.",
+        "**Held**: one game is a first look, three games is his role now. A fill-in's role ends when the starter returns: the "
+        "card says so once the starter is off the injury report.",
+        "How often they last: in the 2025 season, 67% of the bigger roles and 64% of the smaller ones were still there three "
+        "games later (a fill-in counted only while the starter stayed out).",
+        title="How to read role alerts",
+    )
+
+
+role_alerts_section(league_id, roster_id, current_season)
+# ---- end C6 role alerts
 
 howto(
     "**Use it to spot a role change before the points show up**: add the risers off waivers, and think about moving the fallers.",
@@ -28,6 +88,8 @@ howto(
     title="How to use this page",
 )
 reference_scoring_note("Points, expected points and defense trends on this page")
+
+
 
 # ---------------------------------------------------------------- scope filters
 # one compact row (U-13): who and which positions; the rare ones (season, minimum games, list length) in a popover

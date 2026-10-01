@@ -37,10 +37,20 @@ NULL or labelled "unavailable".
 
 9a. **Expected points are a model's opinion** (ffverse/ffopportunity, pass/rush/receive only). Kickers have
     no expected points; DEF has none. Treat `diff_per_game` as a prompt to look, not a verdict.
-9b. **Cornerback context is not coverage assignment.** PFR records what happened when a defender was
-    targeted; nobody in public data records who covered whom, and shadow coverage is invisible here.
-9c. **Depth charts** are the latest snapshot only; "who was CB1 in week 5" is not modelled (snapshots
-    are stored from 2025 on, so it can be).
+9b. **Cornerback matchups are a lean, not an assignment (R-14, 2026-09-30).** PFR charges each target to a
+    primary defender but not to a receiver; participation lists who was on the field (and, from 2023, man or zone
+    per play) but not who covered whom; FTN charting has no defender field; nobody publishes receiver alignment
+    (left / right / slot). So "likely across from him" is the outside corner on the side his targets went (checked:
+    1 in 5 of his targets against 1 in 7 for the other outside corner on a clear lean, about even otherwise), a
+    slot receiver cannot be sent to the nickel, and **shadow coverage is not detected** (our best test caught 1 of
+    6 well-known 2025 shadow corners and did not repeat year to year). The CB rank adjusts for the offenses a corner
+    faced, not the receivers he covered, and ranks on two seasons (a new season's few games are noise). The current
+    season's coverage snaps are estimated from snap share until participation arrives after the postseason; PFR's
+    charting lands a few days after each game, so the latest week can be missing. Nothing here changes a
+    projection.
+9c. **Depth charts**: the Matchups corners come from the snapshot before each kickoff (stored from 2025 on); a
+    team that lists a corner at a slot he does not play (or two nickels) misleads the call. Older weeks have no
+    snapshot, so there is no cornerback call before 2025.
 9d. **Availability ignores team defenses** and any Sleeper player with no NFL id (see quarantine).
 9e. **Optimal lineups** use Sleeper observed points and greedy slot filling; with more than one flex
     type the result can be suboptimal (this league has one). Validated against Sleeper `ppts`.

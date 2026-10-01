@@ -86,7 +86,7 @@ League Lab produces the facts (`league-lab weekly-pack`).
 | ME-05 lineups | `mart_league_optimal_lineup` | **matches Sleeper `ppts` exactly for 29/30 rosters 2024–2026** (one −9.7 exception, documented) |
 | ME-06 luck | `mart_league_all_play`, `mart_league_all_play_week` | all-play totals test |
 | ME-07 matchups | `mart_defense_vs_position(_current)`, `mart_player_next_matchup`, `mart_nfl_calendar` | |
-| ME-08 CB context | `int_defender_game_coverage`, `mart_defender_coverage_season`, `mart_matchup_cb_context` | 2018+ only |
+| ME-08 CB context | `int_defender_game_coverage`, `mart_defender_coverage_season`, `mart_matchup_cb_context` (both marts retired 2026-09-30 by R-14: `mart_cb_rankings`, `mart_cb_matchups`, `mart_receiver_vs_cb`) | 2018+ only |
 | ME-09 league intel | `mart_league_keeper_candidates`, `mart_league_manager_profile`, `mart_league_positional_strength` | |
 | ME-10 explorer | Team Hub, Waiver Wire, Matchups, Trade Finder, League Intel; league + team perspective in the URL | 12/12 pages headless |
 | ME-11 data packs | `league-lab weekly-pack --week N --team R` → `reports/<league>/week_NN/*.md + *.csv` | week 2 pack generated |
@@ -302,8 +302,8 @@ D/ST projection paths — **delivered 2026-09-30** (STATUS § "Wave C / PO merge
 **C5** = R-14 cornerback matchups + R-15 defense-vs-position picture + R-11 matchup comparison (the whole
 Matchups page below the decision cards) · **C6** = R-10 role alerts + R-12 scenario upside + U-17
 Receivers/Kickers context (the "player signals" task: Trends, the Player card's last section, the waiver
-"upside stash" list B3 left out). P-01 profiles + any league gets a design note before it is scheduled.
-One QA pass per round.
+"upside stash" list B3 left out) — **delivered 2026-09-30** (STATUS § "Wave C / PO merge — round 2"). P-01
+profiles + any league gets a design note before it is scheduled. One QA pass per round.
 
 ### Iteration 10 — after the decision engine
 

@@ -779,6 +779,380 @@ for his position (reference scoring, 1 = gives up the most), the same rank the M
 to him (a direct swap; a slide could make the real gap smaller — the card says "would have to beat", not
 "is worth").
 
+## Trades (T-01 evaluator, T-02 simulator, 2026-09-30; `league_lab.trades`, Trade Finder, the weekly pack)
+
+**Question.** For a package — players of my roster for players of one other roster — what happens to *both*
+best lineups this week and over the next four, to depth and roster size, and is it a fair price? Across the
+league: who should I call, with what? Two answers, never blended: **fit** (lineup points) and **market**
+(what the players are worth), plus a one-sentence verdict that reads both.
+
+**Fit (lineup gain of a package).** Per roster and per week of the horizon (this week and the next three: the weeks
+of `mart_league_roster_horizon`, § Roster value), with B1's `lineup.solve` on the players and values `ops.lineups`
+holds for that roster-week (`RosterBoard`):
+
+    gain(roster, week) = best lineup(roster − what it gives + what it gets − its cut) − best lineup(roster)
+
+**Before** = `ops.lineup_totals.lineup_value` (reproduced to the cent by the re-solve). A player it gets is
+carried as B1 carries him on his own roster (`roster_value.incoming_player`): nothing that week on a bye, Out /
+Doubtful, NFL injured reserve or in Sleeper's IR slot; a taxi-squad player can play. **Locks**: a player whose
+game that week has kicked off stays with his roster that week (his points count there) and moves from the
+next week; a locked starter keeps his slot. **This week's gain** = the first week; **horizon gain** = the sum over
+the four weeks. Gains are rounded to the cent; the page shows one decimal. Both sides are evaluated with the
+same code (`evaluate(board, give, get)`: one board holds both rosters of the league).
+
+**Depth, closest call, who starts and who sits** (this week, both sides). Depth = the best lineup the bench alone
+would field (`solve(bench)`, B1's `bench_value`; before = `mart_league_roster_value.bench_value` to the cent).
+Closest call = B1's `weakest` of the after-lineup (the unlocked starter with the smallest margin). Who starts = the
+after-lineup's starters who did not start before (arrived, or up from the bench); who sits = the before-lineup's
+starters who do not start after (traded, cut, or to the bench), each named on the page.
+
+**Roster size.** Active spots = starting + bench slots of `roster_positions` (IR and TAXI slots are not spots);
+active players = not in the IR slot, not on the taxi squad (B3's rule). Every player a roster gets takes an
+active spot (Sleeper puts a traded player on the bench); a player it gives frees one only if he held one. A
+roster left over its limit **cuts** until it fits (never more): the cut is the droppable player whose removal
+costs the post-trade lineups least over the horizon (0 for a player who starts in none of them — the lineups
+stay optimal without him), ties to the fewest rest-of-season projected points (B3's drop rule); every droppable
+player is compared (the first version stopped after the first starter when no cut was free — found by the hand
+check, fixed, and a test now holds it); two cuts are taken one at a time. Droppable = was on the roster, stays,
+active, not locked this week, has a value in some horizon week (unknown is not zero). **The cut's loss is in the
+after-lineups** (and so in the gain). A roster left with a spot **the trade opened** is shown the best free
+agent to fill it: among free agents on an active NFL roster (not Out / IR; `mart_player_availability`), valued
+per week at this league's projection (`ops.projections`; bye = no projection; Out / Doubtful, NFL IR or a game
+already kicked off = can't play), the one whose addition raises the post-trade lineups most over the horizon,
+then this week — exactly, with B3's entry bar (an add's gain with nobody dropped is max(0, value − bar), § Waiver
+moves). The fill is reported, never added to the gain.
+
+**Market (the fairness score), kept apart from fit.** Per player:
+
+    season points = Σ ops.projections.proj_points (this league's scoring, each week rounded to the cent) from this week to week 18
+    market score  = max(0, season points − replacement(position))
+    replacement   = the most season points of a free agent at that position (active NFL roster, not Out / IR); 0 if none
+
+(`trades.MARKET_SQL`, `trades.REPLACEMENT_SQL`, `price_by_player`). What we chose and why:
+*projection, not PPG*: the market score starts from the one projection every page uses (v2 in this league's
+scoring, K and DEF at kd1.0), and v2 already weighs usage — its strongest inputs are expected points (xPPG, last 5
+and season) next to points per game — so it is "xPPG-weighted" without a second model; the season's PPG and xPPG
+are shown next to it (the market line) because PPG is what the other manager sees. *Position-adjusted by the
+waiver wire*: a kicker projects about a WR3's season points, but a better one is on waivers (League of Scrubs:
+the best free-agent kicker projects 127 season points, more than any rostered kicker), so his market score is
+0; in the one-QB League of Scrubs the waiver wire holds 239-point QBs (a rostered QB below that scores 0), in the
+superflex dynasty the best free-agent QB projects 113. *Whole points*: each player is rounded half up, then the
+side is summed, so the fairness line's totals are the market column's numbers. A player with no projection has
+no market score: counted as unknown and said so, never 0. **About even** = the two sides within 10 points or
+10 % of the larger (`trades.about_even`).
+
+*Why it is only a rough guide* (said on the page): it is this season only (a dynasty's future years, draft picks
+and keeper costs are not in it); it counts every projected week, injured or benched (a player on IR is priced as
+if he plays); the replacement is one free agent's projection (a hot pickup moves the bar); and other managers
+price on names, PPG and need, not on our projection — the verdict says "expect", never "will".
+
+**Market line** (every player in a package, next to the lineups, never added to them): market score, season points,
+PPG and xPPG this season and position rank by season points in this league's scoring (`mart_league_player_season`),
+games, age (from `dim_player.birth_date`) and NFL season (season − `rookie_season` + 1, 1 = rookie), and this
+week's value.
+
+**The three lines (T-02).**
+* *Fit line*: "Fit (what the best lineups gain): you +g this week and +G over weeks 4–7; them +h and +H."
+* *Market line*: "Market (season points above the best free agent at the position): you give M_out, you get M_in:
+  about even | you get / give N more."
+* *Verdict* (one sentence): whose lineup it helps and by how much (this week first, or the horizon first when the
+  week is negative), then the market, then the likely answer — both lineups gain over the horizon: "worth
+  offering", or "they may ask for more" when the market says they give up more; only mine gains: "expect a no",
+  or "a rebuilding team might take it for the value" when the market says they get more; mine does not gain:
+  "skip it", or "only worth it for the season value" when the market says I get more. Example (dynasty, Andrew's
+  roster): "Helps you +5.4 this week (+27.3 over weeks 4–7), them +6.8 (+29.0 over weeks 4–7); the market calls
+  it about even: worth offering."
+
+**League rank change.** `mart_league_roster_rankings` (measures `lineup_value`, `horizon_value`, `bench_value`) with
+the two rosters' values replaced by their post-trade totals; `rank()` semantics (ties share a rank).
+
+**Partners (who to call).** For every other roster: the best **1-for-1** and the best **2-for-1** (two of mine
+for one of theirs, or one of mine for two of theirs) that raise **both** lineups over the horizon (each ≥ 0.01),
+ranked by the **smaller of the two horizon gains** (the trade both sides gain most from), then their sum; a trade
+that helps only one side is never listed ("no trade helps both of you" is an answer per team). A two-for-one counts
+only when each of the two players adds to the lineup of the team getting them after it loses the player it
+gives; otherwise it is a one-for-one with a throw-in (a throw-in changes neither lineup: the receiver cuts his
+cheapest player). The best partner = the roster whose best package ranks first. Moved players: every rostered
+player with a value in some horizon week. The horizon is the test (it includes this week): a trade that helps
+both this week and costs one side over four weeks is not one both should accept.
+
+*Exact search with bounds (branch and bound).* A lineup is a maximum-weight matching, a gross-substitutes
+valuation, hence submodular in the player set: adding a set of players gains at most the sum of what each would add
+alone, and removing players never raises the total. So for a package my horizon gain is at most what its incoming
+players add to (my roster − the players I give) minus what losing those costs me; the same for them; a 1-for-1's
+bound is its exact value when no cut is needed, and a cut only lowers a gain. What one player adds to a roster-week
+is exactly max(0, value − bar) (B3's entry bar), so every bound is a lookup once the bars of the rosters involved
+(mine, theirs, each without one player) are prepared. Candidates are evaluated with the evaluator's own code in the
+order of their bound until the bound drops below the best package found. `partners_exhaustive` evaluates every
+package with no bound: identical results on 4 random 3-roster leagues × all shapes (tests) and on every partner of
+both real leagues for all shapes (Andrew's rosters, after the cut fix: dynasty 11/11 partners identical, exhaustive
+315 s vs 0.6 s; League of Scrubs 9/9, 64 s vs 0.6 s). **Timing** (page time, computed once per league / team / data
+version and cached 10 min): every roster of both leagues, a fresh board each time, the sandbox shared with two
+other builds (load 3.7): dynasty median 0.81 s, max 1.20 s (12 rosters, 114–288 packages re-solved in full each);
+League of Scrubs median 0.63 s, max 0.98 s (10 rosters). Andrew's dynasty roster 12: 13,212 packages bounded, 149
+evaluated.
+
+**Checks.** `tests/test_trades.py` (33: 1-for-1 both gain reproduced by hand; 1-for-1 where one side loses, never a
+partner trade; depth, closest call, who starts / sits; 2-for-1 with the forced cut and the market sums; the cheapest
+cut when nobody is free (byes over the horizon; fails on the first version); a K-for-WR trade that empties the K
+slot and prices the kicker at 0; bye weeks over the horizon; a trade that empties a slot; locks; IR / taxi spots;
+the fill against brute force; 96 random packages never over the roster size, a single cut against brute force;
+the partner search against the exhaustive search; fit / market / verdict lines; rank change; URL parameters) and
+`tests/test_trade_finder_page.py` (AppTest on the database: the page opens on the best partner's trade, the
+simulator equals `evaluate`, the market line's numbers are the table's, a pasted link reproduces the package,
+broken links render, the buy-low list filters by position and owner).
+
+**Not modelled.** Draft picks, keeper costs and seasons after this one (a dynasty trade's long run: the market
+score is this season only); waiver priority / FAAB for the fill; what the other manager believes (the verdict
+is a heuristic, not a prediction); a traded player's Sleeper IR / taxi status on his new roster (he takes a bench
+spot); two cuts chosen jointly (they are taken one at a time); 3-for-1 or 2-for-2 in the partner search (the
+simulator takes any package). No `metric_registry.csv` rows (seeds are out of bounds for this task); proposed:
+`trade_fit` (v1.1: package gain per roster, week and horizon), `trade_market_score` (v1.0: season points above
+the best free agent at the position, grain player × league × week).
+## Cornerback matchups (cb1.0, plan R-14, 2026-09-30; `mart_cb_rankings`, `mart_cb_matchups`, `mart_receiver_vs_cb`)
+
+**What public data can and cannot say.** Pro-Football-Reference's advanced defense (nflverse, 2018 on, a few
+days after each game) charges each target to a *primary defender*: per defender-game targets, completions, yards,
+TDs and INTs allowed. It does not say which receiver those targets went to. The participation file (nflverse, every
+completed season; the current season arrives after its postseason) lists the defenders on the field per play (and,
+from 2023, a man / zone label per play) — no assignment. FTN charting (`fct_play_charting`) has no coverage or
+defender field (checked: read, catchable, contested, drop, screen, play action, box count, blitzers … nothing names
+a defender). Nobody publishes receiver alignment (left / right / slot). So: **"covered by" is never claimed**; the
+page says "likely across from him" (a guess from where his targets go, stated as one), "on the field for 61% of
+his targets vs DET" (participation) and "in games he played" (the current season).
+
+**Coverage snaps** (`int_defender_game_coverage_snaps`): the opponent's dropbacks he was on the field for
+(participation); in the current season, his share of his team's defensive snaps (PFR snap counts) × the opponent's
+dropbacks. Checked on 2025 against the play-level count: total 0.973 of it, 1.64 snaps a game off on average
+(`assert_coverage_snap_estimate_tracks_participation`, warn).
+
+**Rank** (`mart_cb_rankings`, one row per cornerback × season × window). Windows: `season` (that season to
+date), `last_4` (his last 4 regular-season games, that season and the one before), `two_seasons` (the season
+before + that season — what the card quotes: three games of a new season are a dozen targets per corner).
+Cornerback = PFR snap position CB (or DB with a PFR position CB / DB) in at least half his games in the window
+(PFR's own position when the snap row is missing); safeties and linebackers are out. Ranked pool = cornerbacks with
+**≥ 20 coverage snaps per team game** in the window (80 over the last 4) and a target. Three numbers, sums first:
+* targets per coverage snap (how often quarterbacks throw at him);
+* **adjusted yards per target**: each game's expectation = the opposing offense's WR + TE yards per target over
+  that game's season and the one before, the game left out; weighted by his targets in the game. Adjusted =
+  his yards per target − that expectation + the pool's expectation, shrunk toward the pool's yards per target with
+  30 targets: `((ypt − exp + pool_exp) × targets + pool_ypt × 30) / (targets + 30)`. It adjusts for the offenses he
+  faced, not the receivers he covered (unknowable);
+* passer rating allowed: the NFL formula on the summed components (targets as attempts), each part clamped to
+  [0, 2.375] — not an average of per-game ratings.
+
+`quality_score` = − the mean of the three z-scores inside the pool (sample sd); `quality_rank` 1 = hardest to
+throw on (`rank()`); `quality_label` = **shutdown** (top quarter, `rank ≤ ceil(n/4)`), **target** (bottom quarter),
+**solid** (the middle half). Component ranks (`rank_targets_per_snap`, `rank_adj_yards_per_target`,
+`rank_passer_rating`, 1 = best) are published beside it. Sanity check, 2026 `two_seasons` (74 ranked): top 5
+Patrick Surtain II, Joey Porter Jr., Trent McDuffie, Eric Stokes, Tarheeb Still; bottom 5 DeAundre Alford,
+Tyrique Stevenson, Amik Robertson, Darrell Baker Jr., Cam Hart. 2025 `season` (72): top Surtain II, Porter Jr.,
+Derek Stingley Jr., Still, Riq Woolen; bottom Greg Newsome II, DaRon Bland, Brandon Stephens, Hart, Baker Jr.,
+Robertson. The first version (targets per snap alone, and a pool that let safeties in through a nickel depth-chart
+listing) put Coby Bryant, Brian Branch and Kyle Hamilton at 1, 2 and 4 and Christian Gonzalez 78th of 82.
+
+**Likely cover** (`mart_cb_matchups`, one row per WR / TE × regular-season week from 2025, every rostered WR / TE
+plus every WR / TE on his latest team in the current season). The opponent's rank-1 LCB, RCB and NB from its depth
+chart as of kickoff (the latest snapshot before it). His targets by pass location (left / middle / right, the
+offense's view) since the start of last season, before the week (`fct_play`). Rule: fewer than 15 located targets →
+no call; a TE → no call (tight ends mostly draw linebackers and safeties); else the outside corner on the side more
+of his targets went — **the offense's left faces the defense's right corner** (LCB when the lean is right, RCB when
+left; a tie goes right; a missing corner falls back to the other outside one, then the nickel). `side_share` /
+`other_side_share` = the two outside shares; `call_strength` **clear** when they are 15+ points apart, else
+**even**, and the other outside corner is named too. **Checked on 2025** (as-of rows, week 2 on, per corner-game
+least squares of his PFR targets on the targets of the receivers called onto him and the offense's other targets,
+among the three listed starters): clear calls (545 receiver-games, 1,434 targets) — the named corner was charged
+with **0.204** of the receiver's targets (se 0.025), the other outside corner 0.141, any other target 0.137-0.140;
+even calls (1,888 receiver-games) — 0.185 vs 0.163. The slot corner drew 0.115-0.146 per target of these receivers
+(no more than other throws), so the card does not send a "slot" receiver to the nickel: public data cannot tell who
+plays inside. **A lean, not an assignment.**
+
+**Who he faced** (`mart_receiver_vs_cb`, receiver × cornerback × season, 2022 on). `on_field` (seasons with
+participation): his targets / catches / yards / TDs on the plays that corner was on the field, and
+`share_of_targets` = those targets ÷ all his targets against that corner's defense(s) that season. `same_game` (the
+current season): his totals in the games the corner played and the corner's average share of the defense's snaps.
+History on the card = against this defense this season (before the week) and with the likely cover on the field
+(on-field rows, or same-game rows where the corner played half the snaps), summed since 2022.
+
+**Shadow corners: tested, not shown.** Per corner-season, the targets he drew per target the opposing WR1 got
+against per target everyone else got (two-regressor least squares over his games); flag = ≥ 10 games, ≥ 40 targets,
+slope ≥ 0.30 and 0.25 above the other slope (`wr1_follow_slope`, `other_follow_slope`, `shadow_flag` in
+`mart_cb_rankings`). On six corners commonly reported to shadow in 2025 it caught **1**: Jalen Ramsey (flagged);
+Patrick Surtain II (the most negative slope of the season: quarterbacks stop throwing at a shadowed WR1), Derek
+Stingley Jr., Sauce Gardner, Christian Gonzalez and A.J. Terrell missed. Of the 10 corners flagged in 2024, none was
+flagged again in 2025 (1–6 of 13–20 in earlier years). The page says we cannot tell who follows the top receiver.
+
+**Evidence on the page, no projection change.** "His points against the best corners": per WR on the roster,
+points per game in the league's scoring (`fct_player_game_league`) since the start of last season in games where
+the corner named across from him (that week's row) was a shutdown corner vs every other game with a named corner
+(the corner's label from that season's `two_seasons` rank, i.e. with that season's later games — not as-of). The
+projection (v2) is unchanged: using the corner would be a model change.
+
+**Checks.** dbt: keys unique, ranked rows complete and in range (targets per snap 0–0.6, rating 0–158.4, adjusted
+ypt 0–25, expectation 3–15), unranked rows carry no rank, `last_4` ≤ 4 games, labels in the set; called rows name a
+corner with shares in order and a strength, clear calls name one corner 15+ points apart, uncalled rows name none,
+location shares sum to 1, a ranked cover has a label; `assert_cb_rankings_pool_size` (≥ 48 ranked: the current
+`two_seasons` pool and every completed season's own); `assert_cb_matchup_covers_lineup_receivers` (every WR / TE in
+a proposed lineup of the current week whose team plays has a row, called or with a reason). `tests/test_matchups.py`:
+`call_cover` and `rank_corners` are the Python twins of the two SQL rules, pinned on fixtures; the evidence script
+re-derives every `mart_cb_matchups` call (16,972 rows, 0 differences) and rebuilds the 2026 `two_seasons` pool from
+`int_defender_game_coverage_snaps` at full precision (74 ranked, 0 rank or label differences).
+
+## Matchup comparison (plan R-11) and defense vs position as a picture (plan R-15), 2026-09-30
+
+**Defense profile** (`mart_defense_position_profile`, metric defense_profile v1.0, one row per season × week ×
+defense × position QB / RB / WR / TE), from the defense's regular-season games of that season **before** the week
+(`assert_defense_profile_is_asof` recounts the games):
+* opportunity allowed: targets + carries per game to the position (QB: pass attempts + carries); targets and
+  carries also per game on their own (`rank_targets`, `rank_carries`);
+* efficiency allowed: yards per opportunity (receiving + rushing; QB passing + rushing) and TD rate per opportunity
+  (for a WR / TE opportunities are his targets and his few carries);
+* points allowed per game (reference scoring, one scale for every league, as defense vs position);
+* adjusted: points allowed above what the offenses it faced usually score to the position. Each game's baseline =
+  that offense's points to the position in its other games before the week plus 3 × its last-season average,
+  over (its other games + 3) (the league's last-season average when it has none); the sum of the game residuals ÷
+  (games + 2), so two games cannot make a defense #1;
+* indices vs the league over the same windows and `gives_up` in words (± 8% band): volume and big plays, volume,
+  big plays, little of either, about average. Ranks: 1 = gives up the most, of the defenses with a game.
+
+**The comparison**: two players (default = this week's closest call on the decision cards whose two players are
+QB / RB / WR / TE: the starter and the bench player who replaces him), each with his projection, floor – ceiling
+(v2 in the league's scoring, `mart_player_week_projections`), the opponent and its profile as of that week. The
+verdict: **"The lineup says {starter} by {margin}"** — the margin the card shows (`lineup_margin`, the re-solve) —
+when the pair is that decision, else "{A} projects {difference} more"; then the matchup: it **leans** to the player
+whose defense's adjusted rank is 6 or more places kinder ("his defense gives up the 4th-most carries to RBs": the
+lowest of the leaning player's defense ranks among carries / targets / yards per touch / TD rate for an RB,
+targets / yards per target / TD rate for a WR or TE, volume / yards per play / TD rate for a QB), "agrees" when that
+is the lineup's starter, or "the matchups are about even". The page says the projection decides (it already counts
+the opponent); the comparison is context.
+
+**The picture (R-15)**: `mart_defense_vs_position_current` (reference scoring, season to date and last 4 games).
+Heatmap = every defense × every position the league starts (QB / RB / WR / TE, K where it starts one), cell color
+= the defense's rank against the position (one blue ramp, darker = gives up more, so positions on different point
+scales compare), the number = points allowed per game; your starters' opponents pinned at the top with ◀ and the
+cell where your starter plays ringed; the other defenses by their mean rank across the positions. Ranked bars = one
+position, every defense ranked, yours solid and labelled with the value and rank. "Only your opponents" is on by
+default at the Phone level. The table behind both stays in the expander.
+## Role alerts (ra1.1, plan R-10, 2026-09-30; `league_lab.signals`, `ops.player_role_alerts`, `mart_player_role_alerts`)
+
+**Question.** Has a player's *role* changed in his last one to three games, and why — before his points show it?
+A role alert is a detected role change with a stated cause, not a hot streak: a big game on the same snaps and
+targets is not one.
+
+**Inputs.** `intermediate.int_player_game_role`: every QB/RB/WR/TE on a team's weekly roster (or who played for it)
+× each played regular-season team game, with `status` (played / out_injured / inactive), snap share (0 when he
+missed a game that has snap counts), route share (routes proxy over dropbacks with participation — past seasons
+only, NULL in-season), target and carry share with the team's totals; the injury report of the next week; last
+season's median snap share; nflverse depth charts (2025 on): his best rank at his position in the team's last
+snapshot before each game.
+
+**Rule (per player × game W, k = 3, 2, 1 games held).** Window N = his last k games (injury absences skipped, a
+healthy scratch counts 0), prior P = up to 8 games before it. A share *changed* when (1) the window level (mean
+snap / route share; Σ targets / Σ team targets, carries likewise) is at least STEP above (below) the prior's
+**median** (a short fill-in stint inside the prior does not become the baseline) — STEP snaps / routes 0.20 (QB
+0.30), target share 0.08, carry share 0.15 — and every window game is past the step while the game before the window
+was not; (2) the new level (up) or the old one (down) is a real role: FLOOR snaps / routes 0.45 (QB 0.50), targets
+0.12, carries 0.30; (3) z = change / (σ × √(1/k + 1/n_prior)) ≥ 2.0, or ≥ 1.5 with a named reason, σ = the median
+within-player game-to-game sd of that share at the position (2016–2025: snaps 0.12–0.17, routes 0.15–0.20, targets
+0.055–0.072, carries 0.15). Then: at least one **structural** share (snaps or routes) changed, except an RB's carry
+share with a named reason or two games (ra1.1: a target or carry share alone held 32–42% of the time in 2025); one
+game alone needs a snap / route change and not a 20+-point blowout, or a named reason; a one-game **drop** needs a
+named reason (ra1.1: 32% held without one) and is skipped when he is on next week's report as Out / Doubtful / IR;
+a bigger role is never read from a game he missed, nor from his return from injury; an up change whose window
+included an injured starter's absence that has already ended (the starter is back for the latest game) is expired,
+not news. The alert keeps the longest k with a named reason, else the longest k; after three games the change is
+his role (his last-3 inputs have caught up) and it stops being reported.
+
+**Named reasons (`trigger_kind`) and kind.**
+
+| Reason | Detected as | `kind` | `cause_text` |
+|---|---|---|---|
+| traded | his own team changed between the prior and the window | new_team | "traded to BUF" |
+| teammate out, injured / traded / released | a starter of his group (QB; RB; WR+TE; median prior snap share ≥ 0.40 RB, 0.50 others; with < 2 prior games, last season's level) played the last prior game and missed every window game (out_injured, gone, traded_away; a game he barely played (< 10%) counts as injured when he is Out / Doubtful / IR next or misses the next game hurt) | absence_beneficiary | "Zack Moss out injured", "Amari Cooper traded" |
+| teammate benched | the same, but inactive while healthy or < 10% of the snaps | depth_move | "Russell Wilson benched" |
+| depth-chart move | his rank crossed the starter line (QB/RB/TE 1, WR 3) between the snapshot before the last prior game and the one before the latest game | depth_move | "up to RB1 on the depth chart" |
+| a new starter took over (down only, a label) | a teammate below the starter line in the prior starts every window game | depth_move | "&lt;name&gt; took over" |
+| teammate back (down) | a teammate missing from the last prior game starts every window game | role_down | "Chuba Hubbard back" |
+| none | — | role_up / role_down | "no teammate out, no trade: the coaches changed his role" |
+
+**Evidence, confidence, expiry.** `snap_from → snap_to` (and routes / targets / carries: before = prior median,
+after = window level), `change_text`; `games_held` 1–3 ("one game so far" … "three games: this is his role now");
+`expires_after_week` = W + 3, `expiry_rule`; an absence beneficiary's alert also ends when the injured teammate is
+back: `mart_player_role_alerts.trigger_ended` (active on his NFL roster with no injury designation on the latest
+report), and `is_live` = the alert game is his team's latest game and the reason has not ended.
+
+**Validation (`league-lab signals-backtest`, the rule as it runs in season: no routes).** Known cases — the alert
+fires in the week of the change with the right cause: Chase Brown (CIN) 2024 wk 9, absence_beneficiary "Zack Moss
+out injured", snaps 36% → 80%, carries 49% → 87%; Cedric Tillman (CLE) 2024 wk 7, "Amari Cooper traded", target
+share 1% → 25%, snaps 34% → 82%; Drake Maye (NE) 2024 wk 6, depth_move "Jacoby Brissett benched", snaps 0% → 100%;
+Jaxson Dart (NYG) 2025 wk 4, depth_move "Russell Wilson benched", 4% → 97%; Rico Dowdle (CAR) 2025 wk 5,
+"Chuba Hubbard out injured", snaps 36% → 67%, carries 32% → 72% (no alert in wk 7 when Hubbard was back; a second,
+cause-less change from wk 9: "up to RB1 on the depth chart"); TreVeyon Henderson (NE) 2025 wk 9, "Rhamondre
+Stevenson out injured", routes 30% → 90%; Amari Cooper (BUF) 2024 wk 7, new_team down, snaps 89% → 35%.
+No alert for players who merely had a big week: of the 44 games in 2024–25 where an established (≥ 60% snaps over
+his last 3) RB/WR/TE scored ≥ 25 points and ≥ 2.5× his PPG, 43 fired nothing — the one was TreVeyon Henderson's
+third game of a real change. The two controls: Ja'Marr Chase 2024 wk 10 (49.9 points) and Kyle Pitts 2025 wk 15
+(40.1 on a 7.7 PPG season) — no alert that week, nor any other week of their seasons. DeAndre Hopkins (KC) and Davante Adams (NYJ) after their 2024 trades: no
+alert (their role did not change).
+
+**Precision** — first detections (a change is re-reported at two and three games), "real" = the mean of the
+primary share over his next three games (games missed injured skipped) kept at least half the change; an absence
+alert whose injured teammate was back for the next game is "expired" (it lapsed as designed), not false; an
+absence alert only counts the games the teammate still missed:
+
+| Season | Bigger role: real / false (precision) | expired | unresolved | Smaller role: real / false (precision) |
+|---|---|---|---|---|
+| 2023 | 114 / 37 (75.5%) | 34 | 52 | 73 / 29 (71.6%) |
+| 2024 | 123 / 41 (75.0%) | 34 | 49 | 62 / 42 (59.6%) |
+| 2025 | 120 / 60 (66.7%) | 29 | 46 | 77 / 43 (64.2%) |
+
+2025 by kind: absence_beneficiary 68%, depth_move 67%, role_up 62%, role_down 65%, new_team 4 of 6. ra1.0 (before
+the structural requirement, the 1.5 bar with a reason and the one-game-drop rule) was 57% / 51% on 2025 (measured with routes).
+
+## Scenario upside (sc1.0, plan R-12, 2026-09-30; `ops.player_scenarios`, `mart_player_scenarios`, `ops.waiver_upside`)
+
+**Question.** If a bigger role holds, what does he project — and how much should anyone believe it?
+
+**Scenario.** For every QB/RB/WR/TE with a live bigger-role alert (not lapsed: an injured teammate expected back
+ends it), each week from the next unplayed one to `expires_after_week`: the **base** is the stored projection (the
+same component models, refitted in `signals.component_models` on the same rows with the same seed; `project` checks
+the refit reproduces every stored `proj_points` to 1e-6 and fails the step otherwise). The **larger role** re-predicts
+the stat line from the same as-of row with his last-3 opportunity inputs set to the level of the games since the
+change — snap share, target / carry / air-yard / first-read share, targets, carries, attempts, red-zone chances and
+expected points per game — each capped at the position's 90th percentile of the training player-weeks unless his own
+level is already above it; catches, yards and TDs per game scale with the volume at his own last-3 rate (a larger
+role, not better hands); `ppg_l3` moves by the priced change of that line. Priced in each league's scoring.
+`with_alert_points` = base + hold rate × (larger − base), hold rate = the share of 2016–2022 bigger-role alerts still
+real three games later (one game held 69.5%, two 76.4%, three 81.4%).
+
+**Calibration before a probability is shown** (`league-lab signals-backtest --seasons 2023-2025`): every bigger-role
+alert of 2023–2025 at QB–TE with a next game (absence alerts whose teammate played that game dropped: lapsed), the
+as-of row for his next game re-priced with component models fitted on the seasons before, against his points per
+game over his next three games (reference scoring):
+
+| Games held | alerts (scenario moved) | larger role nearer than the projection | "with the alert" nearer | mean miss: projection / larger / with | mean gap (larger − base) | mean (actual − base) |
+|---|---|---|---|---|---|---|
+| 1 | 285 | 45.6% | 47.0% | 3.34 / 3.37 / 3.31 | +1.04 | +1.12 |
+| 2 | 266 | 47.4% | 48.1% | 3.30 / 3.29 / 3.29 | +0.48 | +0.71 |
+| 3 | 18 | 72.2% | 72.2% | 2.70 / 2.53 / 2.56 | −0.19 | −0.31 |
+
+**Decision: shipped as a "what if"** (`SCENARIO_SHIP = False`, `presentation = 'what if'`): neither line was the
+nearer number more often than not at one or two games held, and the mean miss moved by under 0.04 points. The page
+shows the larger role and its hit rate ("tested on 2023–2025: after 285 alerts like this, the next three games landed
+nearer it than the projection 46% of the time"), never a chance. What the backtest does say: these players did
+outscore their projection on average by about the scenario's gap (+1.12 vs +1.04 a game at one game held) — the
+projection under-reacts to a new role on average, but single outcomes are too noisy (and right-skewed) for the
+scenario to be the better call for one player. By position the gap was about right for RB, too big for WR (+0.83
+gap, +0.17 actual) and too small for QB / TE. A rule or feature change re-runs the backtest before the constants
+(`HOLD_RATE`, `BACKTEST`, `SCENARIO_SHIP`) change.
+
+**Upside stash** (B3's `list_kind = 'upside'`, `ops.waiver_upside`): per roster, the free agents with a live
+scenario who do not help that roster at their projection today (base horizon gain ≤ 0 — the start-now / cover lists
+already carry the rest), valued the B3 way twice over the same horizon — at the projection and "if it holds" (the
+scenario's projection for the weeks it covers) — with B3's drop rule (the droppable player whose loss costs the
+lineup least over the horizon; ties to the fewest rest-of-season points; none on an open spot); ordered by the gain
+if it holds, then the scenario's gain.
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

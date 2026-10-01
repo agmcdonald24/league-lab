@@ -472,6 +472,50 @@ def waivers_cmd(
     console.print(tab)
 
 
+@app.command("signals")
+def signals_cmd(
+    season: int | None = typer.Option(None, help="Projected season (default: the newest)"),
+):
+    """Role alerts + scenario upside (plan R-10 / R-12) on their own: rewrites ops.player_role_alerts (the season, and any
+    season written by another rule version) and ops.player_scenarios; `project` runs the same step after the projections."""
+    from .signals import run_signals
+
+    run = run_signals(season)
+    if run is None:
+        console.print("signals failed: see the log")
+        raise typer.Exit(1)
+    console.print(f"{run.alerts} alerts this season ({run.live_up} live bigger-role alerts at QB-TE, {run.lapsed} lapsed); "
+                  f"{run.scenarios} scenario rows in {run.seconds:.1f} s; base = stored projection to {run.base_max_diff:.1e}")
+
+
+@app.command("signals-backtest")
+def signals_backtest_cmd(
+    seasons: str = typer.Option("2023-2025", help="Seasons to test (walk-forward: models fitted on the seasons before each)"),
+    out: Path | None = typer.Option(None, help="Directory for the CSV + report (default reports/backtests)"),
+):
+    """Calibrate the larger-role scenario before a probability is shown (plan R-12), and measure the role alerts'
+    precision (R-10), with the rule as it runs in season (no routes). Read-only on the database."""
+    import psycopg
+
+    from .signals import scenario_backtest
+
+    wanted = parse_seasons(seasons) or []
+    with psycopg.connect(get_settings().pipeline_dsn()) as conn:
+        cal = scenario_backtest(conn, wanted)
+    d = out or PROJECT_ROOT / "reports" / "backtests"
+    d.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
+    cal.rows.to_csv(d / f"scenario_backtest_{stamp}.csv", index=False)
+    text = ["# Scenario upside calibration and role-alert precision", "",
+            f"hold rates (bigger role still there three games later, seasons before {min(wanted)}): {cal.hold}", "",
+            "## Scenario vs projection (alerts whose scenario moved the projection)", "", cal.summary.to_string(index=False), "",
+            "## Role alerts: first detections, three games later", "", cal.precision.to_string(index=False), "",
+            cal.precision_kind.to_string(index=False), ""]
+    (d / f"scenario_backtest_{stamp}.md").write_text("\n".join(text))
+    console.print("\n".join(text))
+    console.print(f"written to {d}/scenario_backtest_{stamp}.*")
+
+
 @app.command("teams")
 def teams_cmd():
     """List roster ids and team names for the current league season(s)."""

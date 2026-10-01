@@ -5,6 +5,10 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
 ## Sep 30 · Built for your phone, plainer words, kickers and defenses
 
+- Matchups answers "who is my receiver up against?": the cornerback most likely across from him (from where his
+  targets go, so a good guess, not a promise), where that corner ranks among the league's starters (shutdown, solid
+  or target) and how your receiver did against him before. It also puts two of your players side by side on your
+  closest lineup call, and shows defense vs position as a color chart with your opponents at the top.
 - Open League Lab on your phone: every table shows at most five columns (a **Phone** setting next to Essentials
   and Everything), every page starts with its answer, and the big tables sit one tap below. League Intel is
   gone: its charts (schedule luck, points left on the bench, each week's scoring rank, every team) now open the
@@ -23,6 +27,15 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 - It also shows what the model leans on, in points: how much a player has been on the field over his last 3
   games matters most for QBs and WRs, his share of the carries for RBs and of the targets for TEs. The old
   "price line 0.017" table described a small side model, not the projection, and is gone.
+- **Trade Finder can try a trade for you.** It opens on the team where one trade helps both lineups most, and your
+  best buy-low at each position. Tick players both ways and see both lineups this week and over four weeks, who
+  starts and who sits, who has to be cut, where both teams would rank, and what the players are worth on the market
+  (projected points for the rest of the season above the best free agent at their position), with a one-line
+  verdict like "Helps you +5.4 this week, them +6.8; about even: worth offering". Copy the link to share the trade.
+- **Role alerts**: Trends now opens with the players whose role changed this week, and why (last October it would
+  have said "Filling in: Rico Dowdle, snap share 36% → 67%, Chuba Hubbard out injured"). A player's own page says it too, with a what-if for
+  his points if the new role holds, and Waiver Wire lists **upside stashes**: free agents whose role is growing
+  before their points do. Receivers and Kickers now say why each number matters, with an example.
 
 ## Sep 30 · Your week, answered
 

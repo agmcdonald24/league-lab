@@ -4,6 +4,18 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
 
+- **Matchups: cornerbacks, defense vs position as a picture, two players side by side (R-14, R-15, R-11).** New
+  marts `mart_cb_rankings` (every starting corner ranked per season / last 4 games / two seasons on targets per
+  coverage snap, yards per target adjusted for the offenses faced and rating allowed: shutdown / solid / target),
+  `mart_cb_matchups` (per WR / TE-week: the opponent's corners from its depth chart before kickoff, where his targets
+  went, the corner likely across from him — clear or even split — and his history), `mart_receiver_vs_cb` (who was on
+  the field for his targets), `mart_defense_position_profile` (opportunity vs efficiency allowed, opponent-adjusted, as
+  of each week) and `int_defender_game_coverage_snaps`; `mart_defender_coverage_season` and `mart_matchup_cb_context`
+  retired. Matchups below the decision cards: a side-by-side card that opens on the closest call and quotes its margin
+  ("The lineup says Gainwell by 0.45; the matchup agrees: his defense gives up the most carries to RBs"), one
+  cornerback line per starting receiver, and a heatmap of every defense × position (your opponents pinned and ringed)
+  with ranked bars for one position. No projection change; shadow coverage was tested and is not shown (it caught 1
+  of 6 well-known 2025 shadow corners).
 - **Plain words, and an honest "what drives the projection" (U-14, U-15).** Home is rewritten for a league-mate: a
   three-sentence intro, **Worth a look** (your schedule luck, points left on your bench, the best bargain on your
   roster, the player on it who is most often his quarterback's first look — each a link to the page behind it), the pages listed as the
@@ -18,6 +30,43 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `ops.projection_importance` labelled `model = 'quantile_p50'`, off the page. New view `mart_projection_importance`
   (added to the `project` / nightly projection-marts `--select`); written by `league-lab project` after the
   projections, which are byte-identical to before.
+- **Trade evaluator and simulator (T-01, T-02).** New `src/league_lab/trades.py` on B1's lineup service:
+  `evaluate(board, give, get)` re-solves **both** rosters in every week of the horizon (this week + 3; byes, Out / IR,
+  taxi and locks as in `ops.lineups`) and reports each side's lineup value before / after, depth (the bench's own
+  lineup), the closest call, who starts and who sits, the roster size — a side over its limit cuts the player whose
+  loss over the horizon is smallest (counted in the gain), a side left with an open spot is shown the best free agent
+  — and the **market** kept apart from the fit: rest-of-season projected points above the best free agent at the
+  position (`REPLACEMENT_SQL`; a kicker is ~0, a one-QB league's QBs are cheap), plus PPG / xPPG / position rank / age
+  / NFL season per player. `partners(board, me)` ranks every other roster by its best 1-for-1 and 2-for-1 that raise
+  both lineups over the horizon, by the smaller gain: an exact branch and bound on the lineup's submodularity,
+  identical to the exhaustive search on both leagues, ~1 s a roster, cached 10 min. **Trade Finder** rewritten
+  phone-first: three cards (best partner + package + both gains, your best buy-low by position, your best sell-high),
+  **Try a trade** (partner, players both ways; both lineups this week and over four weeks, league rank change on
+  lineup / 4 weeks / depth, roster size, the fit line, the market line and a one-sentence verdict), the package in the
+  URL (`?partner=&give=&get=`), buy-low / sell-high lists by position and owner. The weekly pack's team brief gains
+  "Trade partners" (with the market columns). Definitions: `docs/METRICS.md` § Trades. No new table or mart.
+- **Player signals: role alerts, what-if upside, receiver and kicker context (C6: R-10, R-12, U-17).** New
+  `src/league_lab/signals.py` (rule `ra1.1`), run by `league-lab project` right after the projections (one import +
+  one call) and on its own as `league-lab signals`: a **role alert** is a step change in a QB/RB/WR/TE's snap, route
+  (past seasons), target or carry share over his last one to three games, past his usual swing and held in every
+  game, with a stated cause — `kind` role_up / role_down / absence_beneficiary (an injured, traded or released
+  starter) / depth_move (a benching, a new starter, a depth-chart move: nflverse depth charts from 2025) /
+  new_team — evidence before → after, games held and an expiry (a fill-in's alert ends when the starter is back
+  on the report). New `intermediate.int_player_game_role`, `ops.player_role_alerts`, view
+  `mart_player_role_alerts` (appended to the `project` / nightly projection-marts `--select`). Validated on known
+  cases (Chase Brown 2024 wk 9 "Zack Moss out injured", Cedric Tillman 2024 wk 7 "Amari Cooper traded", Drake
+  Maye 2024 wk 6 and Jaxson Dart 2025 wk 4 benchings, Rico Dowdle 2025 wk 5, TreVeyon Henderson 2025 wk 9); 43 of
+  44 big 2024–25 weeks by established receivers and backs fired nothing; still real three games later: 67% of
+  2025's bigger roles and 64% of the smaller ones, as the rule runs in season. **Scenario upside**
+  (`ops.player_scenarios`, view `mart_player_scenarios`): the same component models re-price the next weeks with
+  his last-3 inputs at the new role's level (capped at the position's 90th percentile), per league, with the
+  probability-weighted "with the alert" line; calibrated on 2023–2025 first (`league-lab signals-backtest`): the
+  larger role was the nearer number only 46–47% of the time, so it ships as a **what-if** with that hit rate, no
+  probability. `ops.projections` is byte-identical with the hook. Waiver Wire's third card region is the
+  **upside stash** list (`ops.waiver_upside`, view `mart_waiver_upside`: free agents with a live bigger role who do
+  not help at their projection today, valued as it is and if it holds, with the cheapest legal drop). Trends opens
+  with "Role alerts this week", the Player card ends with **Signals**; Receivers and Kickers explain why each number
+  matters with worked examples and yardsticks from the selected season.
 
 ## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
 
