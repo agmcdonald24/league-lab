@@ -145,7 +145,9 @@ def package_sentence(give_pts: int, get_pts: int, window: str, missing_names: li
     """'Rest of season (weeks 4–16, through this league's final): you give **142** points, you get **171** (+29).'"""
     diff = get_pts - give_pts
     out = (f"Rest of season ({window}, through this league's final): you give **{give_pts}** points, "
-           f"you get **{get_pts}** ({diff:+d}).")
+           f"you get **{get_pts}** ({diff:+d}) — the players' plain totals, before the roster spot a lopsided trade frees "
+           f"or fills and before your lineup is re-solved (the verdict above counts both). "
+           f"Only this week has betting lines; later weeks lean on usage and the schedule.")
     if missing_names:
         out += " No projection yet for " + ", ".join(missing_names) + " (left out, not counted as 0)."
     return out

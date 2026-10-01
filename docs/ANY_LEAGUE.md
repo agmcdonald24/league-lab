@@ -15,21 +15,27 @@ yardage bonuses). Pricing a stat line takes microseconds. So:
 * **Stored once, for the whole NFL**: the stat lines, the ranges, the players, the schedule, the injury report,
   the matchup context. The nightly prepares these and nothing per league.
 * **Done when someone opens the app**: read their league from Sleeper (settings, rosters, team names), price the
-  stat lines in their scoring, find their best lineup, write the cards. **About a quarter of a second** here, of
-  which a quarter is the cards' "how often he outscores him" calculation.
+  stat lines in their scoring, find their best lineup, write the cards. **About a quarter of a second** here with the
+  league already fetched (measured with fixtures; a live Sleeper read adds roughly 100–300 ms, see the table
+  below), of which a quarter is the cards' "how often he outscores him" calculation.
 * **Kept for a few minutes**: what Sleeper told us about the league (rosters change; scoring almost never).
 
 **This works today.** The spike answers `My Week` for any Sleeper league id, and for the two leagues we know it
 gives **exactly** the nightly's answer: the same starters in the same slots, the same values to the cent, the
 same lineup total (111.46 for dynasty team 12, 117.02 for Scrubs team 2, week 4), the same bench, the same cards.
+One honest footnote: the Scrubs kicker and defense (15.23 of the 117.02) are valued from Scrubs' own kicking and
+defense fit, because no other fitted league has those keys — a new league whose K / DEF scoring differs from every
+fitted one gets its K and DEF **unvalued** until a reference scoring with its keys exists (Risks, below).
 
 **The one thing that is not free is the range** ("most weeks 6–14", "a bad week to a good week 3–19"). Our ranges
 are fitted per league today. For a new league we take the range of the nearest league we did fit and stretch it
 by how much more (or less) the new scoring pays for the same stat line. Tested on our two leagues (each one
-rebuilt from the other, as if it were new): the ends of the ranges land **0.2 to 0.8 points** from the fitted
-ones on average, the ranges are as wide (within 0.3%), and they cover what really happened as often (78.0% vs
-79.2% and 78.0% vs 78.2% for the 80% range on weeks 1–3, where the actual points are known). Good enough to ship;
-better with a few more "reference scorings" (below).
+rebuilt from the other, as if it were new): over all positions the ends of the ranges land **0.2 to 0.8 points**
+from the fitted ones on average and the ranges are within 1–2% as wide; at quarterback, the position the two
+scorings differ on most (6-pt pass TD), the top end is off by **1.2–1.5 points** and the width by 7%; on Andrew's
+own dynasty roster the top end is off by 1.1 points. They cover what really happened as often (78.0% vs 79.2% and
+78.0% vs 78.2% for the 80% range on weeks 1–3, where the actual points are known). Good enough to ship for a
+scoring close to one we fit; the fix for the rest is a few more "reference scorings" (below).
 
 **For Andrew to check before selling**: Sleeper's terms for commercial use of their API (it is free, read-only,
 needs no key, asks for under 1,000 calls a minute — but the terms, not the docs, decide whether a paid product
@@ -130,8 +136,9 @@ from dynasty; unscaled 88.5%). By position, rebuilt vs fitted: QB 71.8 vs 75.6% 
 
 **The error grows with the distance between the scorings** (players binned by |log(price ratio)|, P90 gap as a
 share of the 80% width): ≤ 0.1 → 3.5%; 0.1–0.2 → 5.5%; 0.2–0.3 → 7.0% (both directions). Our two leagues are
-0.11 (RB) to 0.21 (QB, TE) apart (median). So: **fit a handful of reference scorings, not one**, and a new league
-is rarely more than 0.1 from one. The spike's acceptance test (`api/tests/test_anyleague.py`) bounds the roster's
+0.11 (RB) to 0.21 (QB, TE) apart (median). So: **fit a handful of reference scorings, not one**. How far real
+leagues' scorings sit from them is not measured yet (we have two leagues); measuring it on a sample of public
+Sleeper leagues is Wave F's first check. The spike's acceptance test (`api/tests/test_anyleague.py`) bounds the roster's
 gaps and the whole board's (week 4: P10 / P90 0.23 / 0.83 and 0.19 / 0.68 points; 80% width ratio 0.997 / 1.003).
 On Andrew's rosters, week 4: dynasty 12 (25 players) P10 0.52, P25 0.36, P50 0.34, P75 0.65, P90 1.09; Scrubs 2
 (16 players) 0.65 / 0.41 / 0.44 / 0.86 / 0.98. The cards' win probabilities move by less than 0.1 (tested).

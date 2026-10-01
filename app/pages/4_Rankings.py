@@ -340,10 +340,12 @@ else:
                 st.markdown(f"**#1 {what} for the rest of the season: {label}, {ROS.whole(t['ros_points'])} points over "
                             f"{int(t['ros_games'])} games**" + (f" (likely {rng})" if rng else "") + f"{po}.")
                 if roster_id is not None and scope != "team":
-                    mine_ros = ros_view[(ros_view["rostered_by_roster_id"] == roster_id) & ros_view[rank_col].notna()].sort_values(rank_col).head(4)
+                    mine_all = ros_view[(ros_view["rostered_by_roster_id"] == roster_id) & ros_view[rank_col].notna()].sort_values(rank_col)
+                    mine_ros = mine_all.head(4)
                     if not mine_ros.empty:
+                        more = f" … and {len(mine_all) - 4} more in the table" if len(mine_all) > 4 else ""
                         st.markdown("Yours: " + " · ".join(f"#{int(r[rank_col])} {r['player_name']} {ROS.whole(r['ros_points'])}"
-                                                            for _, r in mine_ros.iterrows()) + ".")
+                                                            for _, r in mine_ros.iterrows()) + f"{more}.")
             st.caption(f"{window.capitalize()} in {league_name} scoring, up to the league's final. A bye is a week with no game: "
                        "he plays one fewer. Ranked among everyone at the position, rostered or free agent. "
                        + ROS.lines_note(r0).replace("his usage", "usage"))

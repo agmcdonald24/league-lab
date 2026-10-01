@@ -9,7 +9,7 @@ t as (
     select 'qb_x_offense', gsis_id, season, week from {{ ref('int_e4_player_week_qb_x_offense') }}
 )
 select g.tbl, 'missing' as problem, u.gsis_id, u.season, u.week
-from u cross join (select distinct tbl from t) as g
+from u cross join (values ('rookie_prior'), ('oline_quality'), ('qb_x_offense')) as g (tbl)   -- literal: an empty table must fail too (QA)
 where not exists (select 1 from t where t.tbl = g.tbl and (t.gsis_id, t.season, t.week) = (u.gsis_id, u.season, u.week))
 union all
 select t.tbl, 'outside', t.gsis_id, t.season, t.week

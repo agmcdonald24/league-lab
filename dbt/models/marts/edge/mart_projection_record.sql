@@ -63,6 +63,11 @@ sl as (
     from {{ source('raw', 'sleeper_projections') }} as p
     join snap as s using (season, week, fetched_at)
     where p.season_type = 'regular'
+      -- a listed player with no stat line (stats null / {}: a backup, a player ruled out) is not a projection of 0
+      -- (QA, Wave E): Sleeper's own total must be there, or at least one priced stat
+      and (p.pts_ppr is not null or p.pts_half_ppr is not null or p.pts_std is not null
+           or coalesce(p.attempts, p.carries, p.targets, p.passing_yards, p.rushing_yards, p.receiving_yards,
+                       p.receptions, p.passing_tds, p.rushing_tds, p.receiving_tds, p.fg_made_0_19, p.pat_made) is not null)
 ),
 
 leagues as (

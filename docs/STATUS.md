@@ -2397,6 +2397,33 @@ The PO accepted D5's recommendation: `qb` at QB (5 inputs), `teammates` at RB / 
 
 ## Wave E (Iteration 13)
 
+### PO merge — Wave E, 2026-10-01/02
+
+* **Delivered** (four Opus devs in parallel, ~35 min each; one 13-minute QA pass): E1 "Our record" (loader, snapshots,
+  `mart_projection_record`, the page; the record starts the first week Andrew's nightly archives Sleeper before
+  kickoff — the sandbox cannot reach Sleeper, so no real response has been parsed yet), E2 rest of season
+  (`mart_player_ros_projection`, Player / Rankings / Trade Finder), E3 the any-league design (`docs/ANY_LEAGUE.md`)
+  and spike (`/api/my-week` for a league the database does not have; parity 111.46 / 117.02 exact), E4 model tests
+  (`rookie_prior`, `rookie_prior_early`, `oline_quality`, `qb_x_offense`, `player_prior`: **all drop** — Andrew's two
+  questions answered from the evidence in METRICS § "Wave E groups": the model already lowers teammates when a much
+  worse QB starts, slightly too little on good offenses; which lineman is out barely moves fantasy points).
+  The experiment record (seed) is now 600 rows, 25 groups.
+* **QA findings fixed by the PO**: (1) `mart_projection_record` counted a Sleeper player with no stat line as a
+  projection of 0 (it would have tilted the record our way) — a listed player now needs Sleeper's own total or a
+  priced stat; (2) the Trade Finder rest-of-season sentence contradicted the verdict on lopsided trades — it now says
+  it is the players' plain totals before the roster spot and the re-solved lineup, with the betting-line caveat;
+  (3) `docs/ANY_LEAGUE.md` overstated the range approximation ("within 0.3%" was week 4; QB top end is off 1.2–1.5
+  points, width 7%) and the "rarely more than 0.1 from a reference scoring" claim was unmeasured — corrected, and
+  the Scrubs K / DEF parity footnoted (valued from Scrubs' own fit); (4) Rankings "Yours" says when it stops at four;
+  (5) Home's guide and What's new carry "Our record"; (6) the E4 cover test names its three tables literally;
+  (7) `/api/player` mirrors the Player page's rest-of-season line and how-to (the parity tests caught the gap).
+* **Checks**: `uv run pytest -q` 821 passed; `api` 51 passed; headless 41 runs ALL OK; ruff clean; the new models
+  built on the PO's database (PASS=57).
+* **Leads the PO is NOT shipping yet** (E4): `player_prior` as a *linear correction* (RB MAE −0.054, WR −0.040, TE
+  −0.014, 3 of 3 seasons; the control — a constant shift — makes MAE worse) and `rookie_prior_early` at RB / WR for
+  weeks 1–4 (+0.005–0.008 Spearman, 3 of 3). Both need a `projections.py` change and recalibrated ranges → v3.1
+  candidates, judged on 2021–2025 before anything ships.
+
 ### E4 2026-10-01 — model tests: rookie prior, offensive-line quality, QB × offense, player prior (branch `dev/E4`, clone `league_lab_e4`)
 
 Andrew: "is the model treating everything equal?" (an elite QB lost on an elite offense vs a bad QB on a bad one; a
@@ -2591,7 +2618,8 @@ Design for Andrew and the PO: `docs/ANY_LEAGUE.md`. Nothing in `app/`, `dbt/`, t
   11.13, SUPER_FLEX Rodgers 19.08, margins 1.01 / 1.48 / 0.46 / 7.90 / 4.37 / 0.84 / 0.90 / 0.31 — all identical;
   13 bench in the same order, 4 can't play (taxi ×3, IR) with the same reasons. Scrubs roster 2 — **117.02 =
   117.02**, 10 slots identical incl. K McLaughlin 8.07 and DEF KC 7.16 (identical kicking / defense keys → the
-  fitted kd1.0 values), 5 bench, 2 IR. Pricing: `compute_points` on the stat line = `ops.projections.proj_points`
+  fitted kd1.0 values — i.e. Scrubs' own K / DEF fit, since the dynasty has none; QA: a new league with different
+  K / DEF keys gets them unvalued), 5 bench, 2 IR. Pricing: `compute_points` on the stat line = `ops.projections.proj_points`
   for all 581 week-4 players in both leagues (max gap < 1e-9; no rounding, bonus or stat difference); 0 stat-line
   mismatches between the leagues. Unmapped players on both rosters: 0. Scoring keys the projection cannot price:
   dynasty `not_projected` = long-TD ×3, 2-pt ×3, `fum_rec_td`, `st_td` (0 in the nightly too); Scrubs 2-pt ×3,

@@ -3,7 +3,11 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
-## Oct 2 · Rest of season
+## Oct 2 · Rest of season, and our record
+
+- A new page, **Our record**, keeps score on us: every week we save Sleeper's own projections before kickoff,
+  count them your league's way, and after the games check whose numbers were closer and who called the
+  start/sit decisions right. It starts the first week the numbers are saved; nothing is filled in after the fact.
 
 - Every player now has a **rest of season** number: his projection added up over every week left in your league,
   up to your final (week 16 in League of Scrubs, week 17 in the dynasty), with his bye counted as a week off, the
