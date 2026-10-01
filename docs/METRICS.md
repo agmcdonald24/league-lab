@@ -1739,6 +1739,53 @@ roster 2: Croskey-Merritt projects 9.13 to Tuten's 9.07, but Tuten's range sits 
 the 50% range ("Most weeks"), the floor and ceiling in the full table; a week without it shows the 80% range
 under its old name.
 
+## Rest of season (ros1.0, plan E2, Wave E, 2026-10-01; `mart_player_ros_projection`, `app/lib/ros.py`)
+
+One row per league × player (current season): the projection added up over the weeks left in **the league's**
+season. Read by the Player card (one line + the week-by-week list), Rankings ("Rest of season" section under the
+weekly board) and Trade Finder (the package's totals next to the engine's fit and market). One row, one number
+and one rank on all three pages.
+
+| Column | Definition |
+|---|---|
+| `from_week` | the first regular-season week whose **last** game has not kicked off (`lib.ui.current_week`'s rule, evaluated at build time; the nightly rebuilds daily, so between Monday night's kickoff and the next build the page's week can be one ahead: the pages print the mart's window) |
+| `last_week` | the league's championship week: `playoff_week_start` − 1 + rounds × weeks per round (+ 1 for a two-week final). Rounds = the winners bracket's rounds (`stg_sleeper__brackets`), else ⌈log₂ playoff_teams⌉; weeks per round from Sleeper's `settings.playoff_round_type` (0 one week, 1 two-week final, 2 two weeks per round — values 1 and 2 unverified, both leagues use 0). Never past the board's last week. **League of Scrubs: 16** (4 playoff teams, 2 rounds), **Forever Unclean Dynasty: 17** (6 teams, 3 rounds) |
+| window | `from_week` … `last_week`; a week with no regular-season `dim_game` row for his team is a **bye**: 0 games and no points, not a projection (`bye_weeks` lists them). The current week counts whole until its last game kicks off (a Thursday player's week stays in until Monday night, as in the trade engine's market) |
+| `ros_points` | Σ `proj_points` (each week as the board rounds it, to the cent) over his weeks with a game in the window, whatever the board holds per week (a frozen kickoff board, refit values or the live board; a week held twice keeps the frozen row) |
+| `ros_games` | the weeks summed; `ros_points_per_game` = `ros_points / ros_games` |
+| `playoff_points`, `playoff_games` | the same over `greatest(from_week, playoff_week_start)` … `last_week` (0 once the playoffs are past) |
+| `ros_sd` | √Σ sd_week², sd_week = (p90 − p10) / 2.563 — each week's calibrated 80% range read as a normal (P10 and P90 sit 1.2816 sd either side of the middle) |
+| `ros_p10`, `ros_p90` | `ros_points` ∓ 1.2816 · `ros_sd` (floored at 0); NULL when any week in the window has no range (unknown is not zero). Centred on the projection, not on the quantiles' median, so the range always brackets the total the pages print |
+| `ros_rank_pos`, `ros_rank_all` | rank by `ros_points` within the league, by position and overall (K and DEF included where the league starts them), rostered and free agents alike; ties broken by `player_key`. Only `is_ranked` players get a rank: on an active NFL roster at the first week of his window (`roster_status` ACT; a team defense always). A player on injured reserve keeps his total (it assumes he plays every remaining game) and has no rank — the weekly board's rule, without the week-only Out / Doubtful exclusion (one week out does not end a season) |
+| `weeks_with_lines` | weeks in the window with a Vegas implied total on the board. Today only the current week: `mart_player_week_features.implied_team_total` is NULL for every 2026 week ≥ 5 (verified: 0 of the week-5…18 rows), so the later weeks lean on usage, form and the schedule and come out flatter (Amon-Ra St. Brown, dynasty: 18.1 in week 4, 17.5–18.0 every week after) |
+| `weeks_json` | `[[week, points], …]` in week order, the weeks summed (the Player card's "week by week" line) |
+| `player_key` | `gsis_id`; a team defense's Sleeper id (`LAR` where nflverse says `LA`), the key `ops.projections` and the trade engine use |
+
+**The independence assumption.** The weeks are combined as if each were its own draw. They are not: a role
+change, an injury or a trade moves every later week the same way, and the projections for weeks without lines
+share one set of inputs. Positive correlation between weeks widens the true range (with an average week-to-week
+correlation ρ over n weeks the variance is n·sd²·(1 + (n − 1)·ρ); ρ = 0.1 over 13 weeks already doubles the
+variance, √2.2 ≈ 1.48× the width). So `ros_p10` / `ros_p90` is the narrowest honest range, not a calibrated one,
+and the pages say so ("if every week were its own roll of the dice … the real range is wider"). The range also
+assumes he plays every game: the projection has no injury risk in it. **Open**: measure the coverage of this range
+on 2024–2025 (walk-forward per-row projections from `backtest-v2`, weeks 4 → 17 summed against the actual totals)
+and, if it under-covers, inflate `ros_sd` by the measured factor (one number per position) — the D6 conformal step
+applied to the sum.
+
+**Against the trade engine.** `league_lab.trades.MARKET_SQL` (the market's "Season pts") sums the same
+`ops.projections` rows from this week **to week 18**; on the same weeks it equals `ros_points` exactly (all 1,226
+rows, `tests/test_ros.py::test_mart_matches_the_trade_engines_sum_on_the_same_weeks`). The two windows differ on
+purpose: weeks after the league's final count for nobody in the league (League of Scrubs plays to week 16, the
+dynasty to 17), so the market carries on average 14% (Scrubs, weeks 17–18) and 7% (dynasty, week 18) more points
+than the league will play. Trade Finder shows both, labelled: the plain rest-of-season total (this mart) next to the
+market price (the engine). Whether the market should stop at the league's final is the PO's call.
+
+Size: 645 + 581 rows (Scrubs incl. 32 K + 32 DEF, dynasty), ~1.1 MB with indexes. Tests:
+`dbt/models/marts/edge/mart_player_ros_projection.yml` (key unique, games fit the window and its byes, playoffs inside
+the window, the range brackets the total, `weeks_json` length = games, ranked ⇔ rank, DEF ⇔ no gsis id) and
+`tests/test_ros.py` (every row recomputed in Python from the board, the schedule and the bracket; the trade engine's
+sum on the same weeks; the page sentences).
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

@@ -1,0 +1,64 @@
+version: 2
+
+# Plan E2 (Wave E): rest of season. A file of its own so the Wave E branches do not collide in schema.yml.
+models:
+  - name: mart_player_ros_projection
+    description: >-
+      E2 rest of season: one row per league x player (current season) — the projected points over the weeks left
+      in the league's season, from mart_player_week_projections as the board holds each week. Window: `from_week`
+      (the first regular-season week whose last game has not kicked off: lib.ui.current_week, at build time) to
+      `last_week` (the league's championship week: playoff_week_start + winners-bracket rounds x weeks per round - 1).
+      Byes excluded (no dim_game row for his team that week = 0 games, not a projection; `bye_weeks` lists them).
+      `ros_points` = sum of proj_points, `ros_games` = weeks summed, `playoff_points` / `playoff_games` = the same from
+      dim_league_season.playoff_week_start. Range ASSUMPTION: each week's 80% range read as a normal,
+      sd_week = (p90 - p10) / 2.563, weeks independent, sd_ros = sqrt(sum sd_week^2),
+      ros_p10 / ros_p90 = ros_points -/+ 1.2816 sd_ros (floored at 0) — independence understates the spread (a role
+      change or an injury moves the later weeks together), so read it as the narrowest honest range. Ranks within the
+      league, rostered or free agent alike, among players on an active NFL roster (`is_ranked`). `weeks_json` =
+      [[week, points], ...] in week order. `weeks_with_lines` = weeks in the window with a Vegas implied total (only
+      the current week: later weeks lean on usage and schedule). docs/METRICS.md § Rest of season.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, player_key]
+      - expression_is_true:
+          name: ros_games_fit_the_window
+          arguments:
+            expression: "ros_games between 1 and last_week - from_week + 1 and ros_games + cardinality(bye_weeks) <= last_week - from_week + 1"
+      - expression_is_true:
+          name: ros_playoffs_inside_the_window
+          arguments:
+            expression: "playoff_games <= ros_games and playoff_games <= greatest(0, last_week - greatest(from_week, playoff_week_start) + 1) and (playoff_games > 0 or playoff_points = 0)"
+      - expression_is_true:
+          name: ros_range_brackets_the_total
+          arguments:
+            expression: "ros_p10 is null or (ros_p10 <= ros_points and ros_points <= ros_p90 and ros_sd >= 0)"
+      - expression_is_true:
+          name: ros_weeks_json_adds_up
+          arguments:
+            expression: "jsonb_array_length(weeks_json) = ros_games"
+      - expression_is_true:
+          name: ros_ranked_iff_rank
+          arguments:
+            expression: "(ros_rank_pos is not null) = is_ranked and (ros_rank_all is not null) = is_ranked"
+      - expression_is_true:
+          name: ros_defense_has_no_gsis_id
+          arguments:
+            expression: "(gsis_id is null) = (position = 'DEF') and player_key = coalesce(gsis_id, player_key)"
+    columns:
+      - name: league_id
+        tests: [not_null]
+      - name: player_key
+        tests: [not_null]
+      - name: position
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["QB", "RB", "WR", "TE", "K", "DEF"]
+      - name: ros_points
+        tests: [not_null]
+      - name: from_week
+        tests: [not_null]
+      - name: last_week
+        tests: [not_null]

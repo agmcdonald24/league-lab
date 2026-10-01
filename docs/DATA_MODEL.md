@@ -306,6 +306,16 @@ nightly `projection-marts`) rebuilds and tests them after every `project`. Defin
 | `mart_league_roster_rankings` (view) | league_id, roster_id, measure | `measure` (lineup_value, horizon_value, bench_value), `measure_label`, `horizon` (the weeks the rank covers), `value`, `league_rank` (rank(), 1 = highest), `n_rosters`, `rank_label` ('3/12'). Tests: key unique, horizon not null, rank within 1..n |
 | `mart_league_roster_slot_strength` (view) | league_id, roster_id, slot_type | this week, per slot type the league starts: `slots`, `empty_slots`, the top starter (`top_player_name`, `top_value`, `top_is_locked`), `starter_strength` (= his B1 margin: lineup minus a fresh solve without him), `replacement_name` / `_value`. Tests: key unique, 0 ≤ strength ≤ his value |
 
+### Rest of season (E2, plan Iteration 13, Wave E, 2026-10-01)
+
+Built by the ordinary `dbt build` from the weekly board; `mart_player_week_projections+` (Makefile `project`,
+nightly `projection-marts`) rebuilds it after every `project`. Read by the Player card, Rankings and Trade Finder
+(`app/lib/ros.py`); published to the hosted copy (the pages name it). Definitions: `docs/METRICS.md` § Rest of season.
+
+| Model | Grain / key | Contract |
+|---|---|---|
+| `mart_player_ros_projection` (table) | league_id, player_key (current season) | `player_key` (= `gsis_id`; a team defense's Sleeper id, `gsis_id` NULL), `player_name`, `position`, `team`, `roster_status`, `is_ranked`; the window `from_week` (first REG week whose last game has not kicked off, at build time) … `last_week` (the league's final), `playoff_week_start`; `ros_games`, `ros_points`, `ros_points_per_game`, `ros_p10` / `ros_p90` / `ros_sd` (weeks combined as independent normals), `playoff_games`, `playoff_points`, `ros_rank_pos`, `ros_rank_all` (league, rostered or not; NULL unless `is_ranked`), `bye_weeks` (int[]), `weeks_with_lines`, `model_versions`, `weeks_json` (`[[week, points], …]`), `built_at`. 1,226 rows (Scrubs 645 incl. K / DEF, dynasty 581), ~1.1 MB. Tests (`mart_player_ros_projection.yml`): key unique; games within the window and its byes; playoffs inside the window; p10 ≤ points ≤ p90; `weeks_json` length = games; ranked ⇔ rank; DEF ⇔ no gsis id; not-null keys and totals; position accepted values |
+
 ## analytics — Trends (2026-09-26)
 
 | Model | Grain / key | Contract |
