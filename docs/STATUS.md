@@ -2473,6 +2473,56 @@ Tests only: nothing in production reads the new tables; `projections.py` is unto
   groups (24 each), for `dbt/seeds/feature_experiments.csv`. Nightly: nothing to add (the full build builds the three
   dbt tables, ~15 s; `ops.player_prior_oof` is built only by `league-lab experiment player_prior`).
 
+### E2 2026-10-01 — rest of season (branch `dev/E2`, clone `league_lab_e2`)
+
+* **Mart** `mart_player_ros_projection` (`dbt/models/marts/edge/`, + `mart_player_ros_projection.yml`, 14 tests): one row
+  per league × player — Scrubs 645 (581 QB/RB/WR/TE + 32 K + 32 DEF), dynasty 581; ~1.1 MB; builds in 2.4 s. Window
+  `from_week` (lib.ui's week rule in SQL from `dim_game`, at build time: 4 in the clone) … `last_week` = **the league's
+  final** (Scrubs 16, dynasty 17: playoff start + winners-bracket rounds), byes excluded (no `dim_game` row for his team
+  = no game: every team's bye is in weeks 5–14, so every 2026 row has exactly one in the window), `ros_points`,
+  `ros_games`, `playoff_points` (weeks ≥ `dim_league_season.playoff_week_start`), ranks by position and overall within
+  the league (active NFL roster only; injured reserve keeps its total, no rank), range = weekly 80% ranges combined as
+  independent normals (sd = (p90 − p10) / 2.563, √Σ, ∓ 1.2816 sd, floored at 0 — stated as the assumption in the yml,
+  METRICS and on the pages), `weeks_json`, `bye_weeks`, `weeks_with_lines`. DEF keyed by its Sleeper id (`player_key`).
+  Betting lines verified: `mart_player_week_features.implied_team_total` is set for 581 week-4 rows and 0 rows of weeks
+  5–18, so `weeks_with_lines` = 1 everywhere.
+* **Surfaces** (`app/lib/ros.py`: the shared sentences, pure, tested): Player card — one line after the stat line
+  ("Rest of season: **232 points** over 13 games (likely 190–273), **WR4** in this league · playoffs (weeks 15–17): 54")
+  and a caption with the week-by-week values ("wk 4 18.1 · 5 18.0 · 6 bye · 7 17.7 …") and the betting-line note;
+  Rankings — **a new "Rest of season" section under the weekly board** (the board is untouched): its own position
+  switch (QB RB WR TE + K / DEF where the league has them + All = overall rank), an answer card (#1, "Yours: …"), a
+  five-column list (Rank · Player · Points · Games · Playoffs) and an expander with every column; the "Who" filter
+  applies, ranks stay the league's; Trade Finder — under Fit and Market in "Try a trade" ("Rest of season (weeks 4–17,
+  through this league's final): you give **232** points, you get **120** (−112).") and as a caption on the best-partner
+  card; "Rest of season" + "ROS rank" columns in "Market line: every number". The engine is unchanged. Every surface
+  degrades to nothing (no exception) on a copy without the mart (`missing_relations`, not `require_relations`).
+  `table.py`: 15 columns under `# ---- E2 rest of season`. How-to bullets on all three pages; WORDS.md rows.
+* **Evidence.** By hand (`waveE/e2/hand.sql`: the board's weekly rows, a `dim_game` join per week by team, no mart
+  logic): Amon-Ra St. Brown, dynasty (**Andrew's roster 12**), weeks 4–17, bye 6 → 13 games, 231.61 points, playoffs
+  53.55, sd 32.55 → 189.9–273.3 — the mart: 13 / 231.61 / 53.55 / 32.55 / 189.9–273.3; Puka Nacua, Scrubs, weeks 4–16,
+  bye 11 → 12 games, 184.66, playoffs 30.30, sd 27.02 — the mart: the same, WR1. `tests/test_ros.py` recomputes **every**
+  row in Python (window, byes, totals, playoffs, sd, p90, ranks) and checks the trade engine's `MARKET_SQL` on the same
+  weeks: equal on all 1,226 rows. Same player on the three pages (AppTest, dynasty roster 12): Player "232 points …
+  WR4", Rankings "Yours: #4 Amon-Ra St. Brown 232", Trade Finder "you give 232" and ROS rank "WR4". Edge cases: a
+  kicker (McLaughlin, Scrubs: "97 points over 12 games … K16"), injured reserve (Jaxson Dart, Scrubs: 211 points, "not
+  ranked (on injured reserve)"). `uv run pytest -q` 790 passed (9 new in `tests/test_ros.py`); ruff clean; `test_app_guards` passes; headless check
+  (`apptest_e2.py`, 39 runs, both leagues) ALL OK, 0 exceptions. Screenshots 390 / 1300 px:
+  `scratchpad/waveE/e2/{player_dynasty,rankings_scrubs,rankings_dynasty,trade_dynasty}_{390,1300}.png`.
+* **Decisions for the PO.** (1) The window ends at **the league's final**, not week 18: weeks after it count for nobody
+  in the league; the plan's example said "playoffs (weeks 15–17)" — Scrubs' playoffs are 15–16. (2) The trade engine's
+  market (`trades.MARKET_SQL`, "Season pts") still runs to week 18: +14% points in Scrubs, +7% in the dynasty over what
+  the league plays; I left it (no engine change) and labelled both; suggest the market adopt `last_week` (one `between`
+  in `MARKET_SQL` / `REPLACEMENT_SQL`). (3) Ranks exclude players not on an active NFL roster (IR, inactive): their
+  projections run full (Dart 211, Mason 111) because the model does not know IR — the projection itself should, for
+  weeks inside a known IR stint (PO-owned `projections.py`). (4) The range is centred on the projection (not on the
+  quantiles' median) and is the narrowest honest one: its coverage is not measured (no per-row walk-forward output in
+  the clone) — measure on 2024–25 and inflate by position if it under-covers. (5) `metric_registry.csv` (seeds are out
+  of bounds): add `ros_points` ros1.0 (numerator Σ proj_points over the league's remaining weeks with a game, grain
+  league × player, status active) and `ros_range` ros1.0 (independence assumption).
+* **Makefile** `project`: `mart_player_ros_projection` appended to the `--select` line (it is already covered by
+  `mart_player_week_projections+`; `scripts/nightly.sh` `projection-marts` needs no change for the same reason — add it
+  for symmetry if you like). The hosted sync picks it up (the pages name `analytics.mart_player_ros_projection`).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

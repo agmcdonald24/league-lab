@@ -11,6 +11,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   past miss works as a linear correction (RB MAE −0.054, WR −0.040, 3 of 3) but not as an input — the PO's v3.1 leads.
   New tables `int_e4_*` (dbt) and `ops.player_prior_oof` / `_pred`; METRICS § "Feature experiments" → "Wave E groups".
 
+- **Rest of season (E2).** `mart_player_ros_projection`: one row per league × player (1,226 rows, ~1.1 MB) — the
+  board's `proj_points` summed from `current_week` to the league's final (Scrubs 16, dynasty 17: winners-bracket
+  rounds), byes excluded, the playoff subtotal, ranks by position and overall in the league (active NFL roster only),
+  an 80% range from the weekly ranges combined as independent normals (stated as the assumption: it understates), the
+  week-by-week values. Player card (one line + the week-by-week list), Rankings ("Rest of season" section under the
+  weekly board, own position switch incl. K / DEF / All), Trade Finder (the package's totals next to fit and market;
+  "Rest of season" and "ROS rank" columns in the market expander). Same totals as the trade engine's market on the same
+  weeks (all rows); the market runs to week 18. `app/lib/ros.py`, `tests/test_ros.py`, METRICS § Rest of season.
+
 ## 2026-10-01 — Projection v3 and the decision ranges
 
 - **Projection v3.0 (D5 + the v3 ship).** Per-position inputs, `projections.FEATURES_BY_POSITION`: QB = v2's inputs + 5

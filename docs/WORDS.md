@@ -79,6 +79,10 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | larger-role scenario (R-12), `presentation = 'what if'` | "What if the new role holds: 11.3 in week 4 (projection 7.1, +4.2)"; never a chance |
 | scenario backtest hit rate | "tested on 2023–2025: after 285 alerts like this the next three games landed nearer it than the projection 46% of the time" |
 | upside stash (`ops.waiver_upside`) | Upside stash: his role is growing before his points do |
+| rest of season, ROS (E2), `ros_points` | rest of season: "Rest of season: 232 points over 13 games"; "through this league's final" when the window matters; "ROS rank" only as a column header |
+| `ros_p10`–`ros_p90` (E2, weeks taken as independent) | likely: "(likely 190–273)"; the gloss "where 8 seasons in 10 would land if every week were its own roll of the dice; a role change or an injury moves the weeks together, so the real range is wider" |
+| `ros_rank_pos` (E2) | "WR4 in this league" (every player at the position, rostered or free agent); "not ranked (on injured reserve)" |
+| `weeks_with_lines` (E2) | "Only week 4 has betting lines yet: the later weeks lean on his usage and the schedule" |
 | yardstick (Receivers, U-17) | what the season's top-12 at the position (the 12 with the most points a game) average |
 
 ## Adding to it
