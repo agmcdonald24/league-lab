@@ -1594,6 +1594,38 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
 
 ## Wave D (Iteration 12)
 
+### PO merge — rounds 1 and 2 and the v3 ship, 2026-10-01
+
+* **Round 1** (D1 harness + D2 game context, D3 weather, D4 team volume and style; three Opus devs in parallel,
+  ~2.5 h because every harness run refits the model three times per group): every feature group **dropped** at every
+  position — Δ order score within ±0.004, the Vegas implied total / spread / total already carry day, time, rest,
+  travel, dome, wind, temperature, pace, pass rate, first downs and the defense faced. Wind for kickers: 0.139 →
+  0.149 Spearman (standard error 0.009 — re-test after the Open-Meteo backfill; `backtest-kd --weather`). Kept: the
+  harness (`league-lab experiment`, paired decision rule, no-peek check, `mart_feature_experiments`, "What we tried"
+  on Rankings), the weather loader (first real run from the Mac: `uv run league-lab ingest weather --forecast`,
+  ~280 archive calls, ~8 min; the nightly replays and fetches it — `NIGHTLY_WEATHER_OFFLINE=1` in sandboxes), the
+  feature tables (built by the full build, unused in production). PO integration: the nightly's weather steps,
+  `ops.feature_experiments` restored with the state; D3 could not merge D1 (its session refused `git merge`) so its
+  weather groups were run by the PO on the integrated branch — all four drop.
+* **Round 2** (D5 personnel, D6 ranges and decisions, D7 front-end spike): **personnel is the one group that pays** —
+  `qb` at QB (+0.0445 Spearman over 2021–2025, 5 of 5 seasons; MAE −0.52; interval score −0.082) and `teammates` at
+  RB/WR/TE (+0.005–0.006; WR 5 of 5 seasons at +0.0047, just under the +0.005 bar but taken for consistency);
+  `oline` and `own_injury` drop. D6: 30 residual-model variants, none sharpens the 80% range by ≥ 2% (the no-inputs
+  control is within 0.2% — the width is weekly noise); shipped the 50% "most weeks" range (`p25` / `p75`), per-tier
+  conformal calibration (starters were covered at 76% / 47%, now 80% / 50% at RB/WR/TE; QB stays 2–4 points low
+  because of partial games), and the win probability `decisions.py` (Brier 0.221 vs 0.249 coin flip on 5,374
+  real B1 pairs 2024–25; deciles within 1–3 points) on the decision cards. D7: My Week + Player on FastAPI + Svelte
+  against the same marts, first content 371 ms vs 1,909 ms, 36 KB vs 1.9 MB, one-tap links in session; the
+  recommendation (port page by page, My Week and Player first, Trade Finder last) is in `docs/FRONTEND_DECISION.md`.
+* **v3.0 ship** (`8f89988`): `FEATURES_BY_POSITION` (QB + 5 starting-QB inputs; RB/WR/TE + 4 teammate inputs),
+  `MODEL_VERSION = "v3.0"`, the 9 inputs in `mart_player_week_features` from `int_player_week_personnel` (never-peek
+  extended), five-season backtest written next to v2.0's rows, importance v3.0 ("Is he the projected starter?" is the
+  #1 QB input at +1.83 points of error), the C6 OAK/SD → LV/LAC fix (+83 alerts), `ops.projection_backtest` gains the
+  50% columns, `mart_projection_backtest` one row per model version with `is_current`. PO: release stamp, the API's
+  My Week tests re-pinned to the card shape (D6 changed the headline; v3 flipped the week-4 pair), `scipy` in
+  `api/pyproject.toml` (the cards import it), the lineup solve-time test loosened (a benchmark, failed once at load 7).
+  Week 4 froze on the Mac with v2.0 rows (2026-10-02 00:15 UTC); v3 starts at week 5 there.
+
 Projection v3, round 1: D1 (the feature-group harness) + D2 (game context) · D3 (weather) · D4 (team volume
 and style). Each dev appends a section below; nothing edits `mart_player_week_features` until the PO keeps a group.
 
