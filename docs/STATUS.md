@@ -1873,6 +1873,115 @@ and style). Each dev appends a section below; nothing edits `mart_player_week_fe
   hosted sync) before the gap measurement depends on it. (e) The Kickers page "wind is the reason" line waits for a
   shipped kd1.1. (f) `metric_registry.csv` rows for the `wx_` features (seeds were out of bounds for this round).
 
+### D5 2026-10-01 — personnel: starting QB, offensive line, teammates out, own injuries (branch `dev/D5`, clone `league_lab_d5`)
+
+* **Built.** Five intermediate models under `dbt/models/intermediate/features/` (docs + tests:
+  `int_player_week_personnel.yml`; definitions: METRICS § "Personnel"; DATA_MODEL § "Feature group `personnel`"):
+  `int_pn_team_game` (team × REG game: the schedule's starting / projected QB, played, team snaps / targets / carries,
+  5,822 rows), `int_pn_player_game` (QB / RB / WR / TE / OL × played game: played, missed injured / other, snap share,
+  targets, carries, points, the game's starter, injured-miss streak; 218,397), `int_pn_player_week_status` (week W's
+  report + practice + weekly roster for every player-week; 265,667), `int_pn_window_player` (team × week × player: shares
+  over the last four played games before W, out / gone this week; 121,464) and the group's table
+  `int_player_week_personnel` (109,123 rows = the universe, 20 `pn_` inputs + `proj_qb_id` / `usual_qb_id` references +
+  `pn_asof_week`). One code per franchise. Registered in `src/league_lab/feature_groups/personnel.py`: `personnel` (20),
+  `qb` (5), `oline` (3), `teammates` (4), `own_injury` (6). Nothing in production reads the tables; the nightly's full
+  `dbt build` builds them (78 s) — no `--select` appended.
+* **Tests.** dbt `--select int_pn_team_game+ int_pn_player_week_status+`: PASS=27 (5 models, 22 tests: keys, ranges,
+  as-of marker, week 1 without in-season inputs, QB flags agree, `assert_personnel_is_asof` — universe row for row, the
+  projected starter = the raw schedule's, the usual QB from a game he played before the week, career starts re-counted
+  on the raw schedule — and `assert_personnel_ol_count_from_raw`: the OL count re-derived from raw snap counts, injuries
+  and weekly rosters on its own path, every team-week 2016–2026, 0 differences). Negative control: a window that
+  includes the week's own game fails `pn_window_is_asof` on 113,684 rows and changes the OL count on 631 of 5,018
+  team-weeks. pytest `tests/test_personnel.py` 13 (QB-change twin on fixtures incl. the CIN case, OL-count twin incl. the
+  MIN case, the SQL hard-codes the twins' constants, the groups validate and every column is documented, and on the
+  database both twins reproduce every 2025 row). The harness's no-peek check: all five groups pass, **0 refusals**,
+  largest probe excess 0.040 (`pn_top_rusher_out`, RB). Its warnings are the report's publishing calendar, not a peek:
+  on the clone's data (fetched 2026-09-26) week 4's report is not out, so `oline` / `teammates` / `pn_practice_ord` are
+  NULL for week 4.
+* **As of: which report.** nflverse `injuries` holds one row per player-week: the team's final game-status report
+  (Friday for a Sunday game); `date_modified` (2016–24) is a median 47–55 h before kickoff, 24 of ≈ 52,000 rows were
+  modified after kickoff (13 in 2020). Reserve lists from the weekly roster (0 RES player-weeks 2017–25 with snaps in
+  that game). The roster's INA is the game-day inactive list (0 of 7,204 INA player-weeks 2022–25 played) and is never read.
+* **Hand checks** (METRICS § "Personnel"): QB change 2025 — CIN week 3 (Burrow → Browning), NYG week 4 (Wilson → Dart),
+  ARI week 6 (Murray → Brissett): every RB / WR / TE row 0 the week before, 1 that week; the new starter's
+  `pn_qb_starting` 1, the old one's 0; gap −1.86 / NULL (Dart, no start) / −9.79. Offensive line, MIN 2025 week 5 from
+  the raw tables: O'Neill, Jackson, Jurgens Out among the five → 3, share 1.8703 = the table. Teammates, LA 2025 week 7:
+  Nacua Out → `pn_top_target_out` 1 on every other Rams row.
+* **Coverage** by season and sub-group: METRICS § "Personnel" (2017–2025: QB change 88–92% of rows, OL / teammates 94%
+  (100% from week 2), report 99.5–100%, last-season games missed 81–86%; 2016 lower: no 2015).
+* **Harness** (`OMP_NUM_THREADS=1 … league-lab experiment personnel qb oline teammates own_injury`, one session, baseline
+  from the cache, **66 min wall** (personnel 1,573 s, qb 752, oline 559, teammates 543, own_injury 507); test seasons
+  2023–2025, both leagues; mean of the league-averaged season Δ; (n) = seasons better of 3):
+
+  | group | pos | Δ Spearman (better) | Δ MAE pts (better) | Δ interval score | Δ coverage pp | Δ width | decision |
+  |---|---|---|---|---|---|---|---|
+  | personnel (20) | QB | **+0.0484 (3)** | **−0.532 (3)** | −0.082 | −0.23 | −1.43 | keep |
+  | personnel | RB | **+0.0066 (3)** | −0.037 (3) | −0.011 | +0.34 | −0.06 | keep |
+  | personnel | WR | **+0.0057 (3)** | −0.025 (3) | −0.003 | −0.71 | −0.11 | keep |
+  | personnel | TE | +0.0027 (3) | +0.009 (1) | +0.003 | +0.06 | +0.05 | drop — verdict **keep** |
+  | qb (5) | QB | **+0.0528 (3)** | **−0.541 (3)** | −0.084 | −0.62 | −1.61 | keep |
+  | qb | RB / WR / TE | −0.0003 (1) / +0.0003 (1) / +0.0000 (1) | −0.005 / −0.003 / +0.012 | ±0.003 | | | drop ×3 — verdict **keep** |
+  | oline (3) | QB / RB / WR / TE | +0.0041 (2) / −0.0003 (0) / −0.0003 (1) / +0.0005 (3) | +0.012 / −0.007 / +0.009 / +0.000 | ±0.010 | | | drop ×4 — verdict **drop** |
+  | teammates (4) | QB | −0.0069 (0) | +0.040 (1) | −0.003 | −0.48 | −0.04 | drop (hurts) |
+  | teammates | RB | **+0.0064 (3)** | −0.035 (3) | −0.009 | +0.20 | −0.00 | keep |
+  | teammates | WR | **+0.0053 (3)** | −0.013 (3) | −0.004 | −0.34 | −0.12 | keep |
+  | teammates | TE | **+0.0054 (3)** | −0.009 (3) | −0.002 | +0.40 | +0.02 | keep — verdict **mixed** |
+  | own_injury (6) | QB / RB / WR / TE | +0.0027 (2) / −0.0008 (0) / +0.0000 (2) / −0.0035 (0) | +0.012 / −0.007 / +0.004 / +0.012 | ±0.005 | | | drop ×4 — verdict **drop** |
+
+  Baseline (v2): Spearman QB 0.533, RB 0.683, WR 0.624, TE 0.583; MAE 7.08 / 4.44 / 4.40 / 3.22. The QB gain is ten times
+  anything round 1 found: 2023 +0.072, 2024 +0.022, 2025 +0.065 (`qb`).
+* **QB and WR on 2021–2022** (`scratchpad/waveD/d5/qb_wr_extend.py`, D4's pattern: `walk_forward` + `summarize_scores`, QB and
+  WR only, 17 min; 2023 reproduces the harness to 4 decimals: `qb` QB +0.0718 / −0.627, `personnel` QB +0.0700, WR
+  +0.0028, `teammates` WR +0.0023). Five seasons 2021 / 2022 / 2023 / 2024 / 2025:
+  - `qb` at QB: Spearman +0.046 / +0.018 / +0.072 / +0.022 / +0.065 → **mean +0.0446, 5 of 5**; MAE −0.56 / −0.38 / −0.63 /
+    −0.27 / −0.73 → **−0.51, 5 of 5**. Holds (unlike D4's pass rate). `qb` at WR: +0.0039 / +0.0005 / −0.0001 / −0.0004 /
+    +0.0014 → +0.0011, 3 of 5: nothing.
+  - `teammates` at WR: +0.0032 / +0.0042 / +0.0023 / +0.0056 / +0.0082 → **mean +0.0047, 5 of 5**; MAE −0.003 / −0.008 /
+    −0.011 / −0.012 / −0.016 → −0.010, 5 of 5. Consistent every season, **0.0003 under the +0.005 bar** of the rule's
+    5-season version. At QB: +0.0041 / −0.0050 / −0.0021 / −0.0185 / −0.0001 → −0.0043, 1 of 5 (drop).
+  - `personnel` at QB: +0.055 / +0.017 / +0.070 / +0.015 / +0.061 → +0.0434, 5 of 5; at WR: +0.0058 / +0.0067 / +0.0028 /
+    +0.0069 / +0.0074 → **+0.0059, 5 of 5** (MAE −0.023, 5 of 5): passes the 5-season bar.
+* **Where the QB gain comes from** (`scratchpad/waveD/d5/qb_segments.py`, 2025, reference league, 677 played QB rows,
+  MAE 6.04 → 5.39): 74% from the 140 rows of QBs who played without being the projected starter (relief and mop-up:
+  v2 projected 6.5 from their history, actual 2.1, with `qb` 3.3), 12% from the 43 rows of a new starter (v2 9.0, actual
+  13.2, with `qb` 12.4 — the superflex decision: "Browning starts this week"), 14% from the 494 usual starters' rows. v2
+  projects "points if he plays" from his own history and cannot tell a starter from a backup; the projected starter is
+  known a week ahead.
+* **Recommendation.** Ship two small per-position sets in v3: **QB ← `qb`** (5 inputs; 5 of 5 seasons, +0.045 Spearman,
+  −0.51 points MAE, interval score −0.08: also a sharper range for D6) and **RB / WR / TE ← `teammates`** (4 inputs; 3 of
+  3 at each position, +0.005 to +0.006; WR 5 of 5 at +0.0047). Drop `oline` and `own_injury` (no position helps:
+  the line's absences and a player's own history are in the lines and in his recent usage already) and `qb` at RB / WR /
+  TE (the WR "new quarterback" mechanism does not show in five seasons). Alternative for WR only: `personnel` (+0.0059,
+  passes the 5-season bar) at 20 inputs for +0.001 — not worth it. Expect the live gain at RB / WR / TE to be smaller
+  than the backtest's until the freeze rule changes (decision 3).
+* **For the PO to confirm.** (1) Per-position inputs need a change outside D5's files: `projections.py` has one `FEATURES`
+  for every position — v3 needs e.g. `FEATURES_BY_POSITION = {QB: FEATURES + personnel.QB, RB/WR/TE: FEATURES +
+  personnel.TEAMMATES}` used by `fit_position` / `predict_position` / `component_importance` and by `signals.py`'s scenario
+  refits, `load_frame` joining `int_player_week_personnel` (or the PO adds the 9 columns to
+  `mart_player_week_features`), plus `FEATURE_LABELS` for the Rankings explainer; the harness needs nothing.
+  (2) `pn_qb_prev_ppg_diff` = points per start over the newest 17 starts of the last two seasons and this one (not "last
+  season" alone: a backup's last start is often two seasons back). (3) **The freeze gap**: on Thursday 2026-10-01 (week
+  4, first kickoff tonight) nflverse's injury file has 257 rows for 30 teams with practice participation but only 2
+  designations; Friday's Out / Doubtful arrive after B5 freezes the week at its first kickoff. Training uses the final
+  report, so `teammates` (and v2's existing `questionable`) see less on the frozen board than in the backtest; reserve-list
+  and released teammates are known in time. Freezing each game at its own kickoff (not the week's first) would close it.
+  The `qb` inputs are not affected (the projected starter is filled about a week ahead: on 2026-09-26 weeks 3–4 were
+  filled; week 3's 30 unplayed projections all matched the actual starters; 2 of 32 week-4 projections changed during
+  the week). (4) The harness scores every QB who played, mop-up included; three quarters of the QB gain is there. It is
+  real (v2 over-projects backups by ~4 points) and the decision-relevant part (new starters, 12%) improves too.
+  (5) `pn_practice_ord` added to the brief's list (own_injury dropped anyway). (6) `pn_top_target_out` /
+  `pn_top_rusher_out` are about the leading teammate **other than him** (for the WR1 himself: the WR2), and "out" includes
+  "gone" (released / traded: the C6 absence logic) and Doubtful. (7) `pn_absence_beneficiary` reads `ops.player_role_alerts`
+  (the mart view was missing from the clone and would be dropped by any cascade). (8) No `metric_registry.csv` rows (seeds
+  out of bounds): add `personnel` v1.0 at merge if kept. (9) The `ops.feature_experiments` rows (5 groups × 24) are in
+  `league_lab_d5` only.
+* **Found on the way (not D5's files).** `int_player_game_role` (C6) joins `dim_game`'s OAK / SD to `fct_team_game`'s LV / LAC
+  and loses the Raiders 2016–19 and the Chargers 2016 (so do the role alerts); `kd_team()` on both sides fixes it.
+  `tests/test_lineup.py::test_real_slot_sets_solve_in_under_5_ms[slots3-26]` failed once at load average 7 (worst 112 ms
+  vs 25 ms) and passes alone: a timing flake.
+* **Verified.** pytest **763 passed** (56 s on a quiet box; the first run at load 7 had the timing flake above); `ruff check src tests app` clean;
+  headless page check (both leagues, every page + 6 Player runs): 32 runs, 0 exceptions. No page touched.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

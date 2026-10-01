@@ -1415,6 +1415,124 @@ neutral site. Results (2026-10-01, harness fx1.0, test seasons 2023–2025, both
 and position: no mean ΔSpearman beyond ±0.004, no mean ΔMAE beyond ±0.02 points, interval score flat. The Vegas
 lines v2 already uses price the game context. Table: STATUS § "Wave D (Iteration 12)" / D2; Rankings → "What we tried".
 
+## Personnel (pn_, plan D5, Wave D round 2, 2026-10-01; `int_player_week_personnel`, feature groups `personnel` / `qb` / `oline` / `teammates` / `own_injury`)
+
+Andrew: "certain injuries might make an impact … quarterback, that's a big one, but offensive line injuries". Round 1
+found that game context, weather and team style add nothing beyond the betting lines; personnel is the family with a
+mechanism the lines may not carry **at the player level**: a receiver's history was built with one quarterback and the
+board prices him with another; a back runs behind a line missing two starters; the top target is out and the shares
+move; a backup quarterback is projected from his own thin history. A candidate for v3, evaluated by the harness
+(§ "Feature experiments"); not a v2 input. Tables: `int_pn_team_game` → `int_pn_player_game` (what each QB / RB / WR /
+TE / lineman did in each played game) → `int_pn_player_week_status` (availability for week W) → `int_pn_window_player`
+(the team's last four games before W, per player) → `int_player_week_personnel` (one row per `int_player_week_universe`
+row). One code per franchise (`kd_team`). Python twins of the two hard-coded rules: `league_lab.feature_groups.personnel`.
+
+**What "as of the week" means here.** History: only the team's / player's **played** regular-season games with
+week < W. Availability: week W's **injury report** — nflverse `injuries`, one row per player-week: the team's final
+game-status report of the week (Friday for a Sunday game, Wednesday or Thursday for a Thursday game); where nflverse
+stamps `date_modified` (2016–2024) its median is 47–55 hours before kickoff, 24 of ≈ 52,000 rows were modified after
+kickoff (13 of them 2020 reschedules); 2025–26 carry no stamp — plus the **weekly roster's reserve lists** (RES =
+injured reserve / PUP / NFI, PUP, SUS, EXE, NON: placed before the roster deadline; 0 RES player-weeks 2017–2025 have
+snaps in that week's game, 17 in 2016). The roster's ACT vs INA split is **never** read: INA is the game-day inactive
+list (0 of 7,204 INA player-weeks 2022–25 played, 94% of ACT did), announced 90 minutes before kickoff. A team whose
+week-W report has no row yet (an upcoming week) gets NULL report-based inputs: unpublished is unknown, not "nobody hurt".
+The quarterback: the schedule's `home_qb_id` / `away_qb_id` (see the train / serve gap below).
+
+| Column | Definition |
+|---|---|
+| `pn_qb_changed` | 1 = this week's projected starter (`proj_qb_id`) is not the QB his history was built with (`usual_qb_id`: the schedule's starting QB in the majority of his newest **four** played games, this season before the week or last season; ties → the more recent). NULL when either is unknown. A receiver traded in the offseason is "changed" until most of his last four games are with the new QB |
+| `pn_qb_games_together` | games (2016 on, before the week) in which he and the projected starter both played ≥ 50% of the team's offensive snaps (a QB's own row: his games with ≥ 50%) |
+| `pn_qb_prev_ppg_diff` | points per start (reference scoring) of the projected starter minus the usual QB's, each over his newest **17 starts of the last two seasons and this one** before the week (not "last season" alone: a backup's last start is often two seasons back; the brief left the choice). 0 for the same QB; NULL when either has no start in that span |
+| `pn_qb_is_rookie_or_backup` | the projected starter has < 8 career starts before the week (counted from 2016: overstated in 2016–17, 61% / 20% of rows) |
+| `pn_qb_starting` | QB rows: 1 = he is the projected starter, 0 = another QB is; NULL for RB / WR / TE |
+| `pn_ol_starters_out` | of the team's five line starters — the five linemen with the most offensive snaps over the team's last four played games — how many are Out or Doubtful on week W's report or on a reserve list. NULL in week 1 and when the report is not out |
+| `pn_ol_snap_share_out` | their combined snap share over those games (≈ 1 per full-time starter) |
+| `pn_ol_games_since_change` | consecutive games through the team's last one that the same five linemen led it in snaps (1 = the five changed last game) |
+| `pn_top_target_out` | 1 = the teammate (RB / WR / TE, **not him**) with the largest target share over the team's last four games is out this week (Out / Doubtful / reserve) or gone from the roster (released, traded — the C6 absence logic's "traded" / "gone"). For the top target himself it is about the second one |
+| `pn_top_rusher_out` | the same for the largest carry share (QB included) |
+| `pn_teammate_share_out` | the summed target share of the RB / WR / TE teammates out or gone this week (his own excluded) |
+| `pn_absence_beneficiary` | 1 = an `absence_beneficiary` role alert (C6, `ops.player_role_alerts`) at his team's last game and the absent teammate is still out this week. NULL for team-seasons the alerts do not cover (the Raiders 2016–19 and the Chargers 2016: `int_player_game_role` joins `dim_game`'s OAK / SD to `fct_team_game`'s LV / LAC and loses them — a C6 defect for the PO) |
+| `pn_games_missed_season` / `_prev` | team-games he missed injured (did not play and was Out / Doubtful / Questionable that week or on a reserve list — the C6 rule) this season before the week / last season (NULL with no team-game last season) |
+| `pn_q_streak` | consecutive weeks (his team's game weeks) Questionable through this week's report; 0 when not Questionable |
+| `pn_returning` | 1 = he missed his last two or more team-games injured (across seasons) and is not Out / Doubtful / reserve this week |
+| `pn_report_status_ord` | 3 Out or reserve, 2 Doubtful, 1 Questionable, 0 not listed (v2 already has `questionable`) |
+| `pn_practice_ord` | the report's practice participation: 2 did not participate, 1 limited, 0 full or not listed (added to the brief's list: a Questionable player who did not practise is a different case) |
+
+In-season columns (NULL in week 1, the harness's check 4): the `oline` and `teammates` ones. `pn_asof_week` (the newest
+game of this season any input read) is < week on every row (check 3).
+
+**Evidence.** `dbt build --select int_pn_team_game+ int_pn_player_week_status+`: 5 models + 22 tests, PASS=27, 78 s on a quiet box (the feature table 57 s) (grain, ranges, as-of, week 1, QB flags agree,
+`assert_personnel_is_asof`: universe row for row, the projected starter = the raw schedule's, the usual QB comes from a
+game he played before the week, career starts re-counted on the raw schedule; `assert_personnel_ol_count_from_raw`: the
+OL count re-derived on its own path from raw snap counts, injuries and weekly rosters for every team-week 2016–2026, 0
+differences). Negative control: a window that includes the week's own game fails `pn_window_is_asof` on 113,684 rows and
+changes the OL count on 631 of 5,018 team-weeks. The twins reproduce the table on every 2025 row (`tests/test_personnel.py`).
+The harness's no-peek check passes all five groups (0 refusals; largest probe excess 0.040, `pn_top_rusher_out` at RB,
+limit 0.10).
+
+Hand checks. **QB change, 2025** (schedule `home_qb_id` / `away_qb_id`): CIN week 3 (Burrow hurt in week 2 → Browning),
+NYG week 4 (Wilson benched → Dart), ARI week 6 (Murray hurt → Brissett): every Bengals / Giants / Cardinals RB / WR / TE
+row has `pn_qb_changed` 0 the week before and 1 that week; the new starter's row has `pn_qb_starting` 1, the old one's 0;
+`pn_qb_is_rookie_or_backup` 1 for Browning (7 career starts, all 2023) and Dart (0); the points-per-start gap −1.86
+(Browning 20.05 over his 7 starts of 2023 vs Burrow 21.91 over his newest 17), −9.79 (Brissett vs Murray), NULL for Dart
+(no start). One exception that is right: Noah Fant (from Seattle) is "changed" in CIN week 2 too — his last four games
+were mostly with Geno Smith. **Offensive line**, MIN 2025 week 5 (reproduced from `raw.nfl_snap_counts`, `raw.nfl_injuries`,
+`raw.nfl_rosters_weekly`; `scratchpad/waveD/d5/ol_handcheck.sql`): weeks 1–4, 239 team snaps; the five starters Fries
+227 (0.9498), O'Neill 162 (0.6778, **Out** knee), Jackson 159 (0.6653, **Out** wrist), Skule 156 (0.6527), Jurgens 126
+(0.5272, **Out** hamstring) → 3 out, share 1.8703 = the table (Kelly, on injured reserve, is 7th by snaps over the
+window and not a starter by the rule). **Teammates**, LA 2025 week 7: Puka Nacua (target share 0.3103 over weeks 2–6)
+Out → `pn_top_target_out` 1 and `pn_teammate_share_out` 0.3103 on every other Rams row, 0 on Nacua's own (his leading
+teammate is Davante Adams, active).
+
+Coverage (share of universe rows with a value; 2026 = the weeks published on 2026-09-26):
+
+| Season | rows | qb (changed) | qb (ppg gap) | oline / teammates | oline, weeks 2+ | absence alert | own report | games missed last season |
+|---|---|---|---|---|---|---|---|---|
+| 2016 | 9,851 | 72.7% | 69.2% | 91.3% | 100.0% | 85.4% | 100.0% | — (no 2015) |
+| 2017 | 9,681 | 88.0% | 85.8% | 94.0% | 99.6% | 91.6% | 99.8% | 80.7% |
+| 2018 | 9,373 | 89.2% | 86.8% | 94.0% | 100.0% | 91.1% | 100.0% | 80.9% |
+| 2019 | 9,608 | 87.5% | 85.1% | 93.8% | 100.0% | 90.8% | 100.0% | 80.7% |
+| 2020 | 9,800 | 90.3% | 87.6% | 94.2% | 100.0% | 94.2% | 99.8% | 82.3% |
+| 2021 | 10,538 | 91.8% | 89.1% | 94.4% | 100.0% | 94.4% | 100.0% | 85.8% |
+| 2022 | 10,161 | 90.4% | 87.3% | 93.6% | 99.5% | 94.1% | 99.5% | 82.1% |
+| 2023 | 10,034 | 91.6% | 89.3% | 94.0% | 99.8% | 94.2% | 99.8% | 81.1% |
+| 2024 | 9,898 | 91.4% | 89.8% | 94.3% | 100.0% | 94.3% | 99.8% | 82.8% |
+| 2025 | 10,268 | 91.7% | 89.2% | 94.4% | 100.0% | 94.4% | 100.0% | 82.6% |
+| 2026 | 9,911 | 20.0% | 19.8% | 11.8% | 12.6% | 23.6% | 29.7% | 82.8% |
+
+QB rows with `pn_qb_starting` known: 100% of 2016–2025. 2026: the projected starters are filled through week 4, the
+reports through week 3 (week 4's comes out during the week).
+
+**The train / serve gaps (measure them, do not assume them away).**
+1. *The starting QB.* Training sees the QB who started; the live board sees nflverse's projected starter. Checked against
+   today's nflverse file: the projections of 2026-09-26 for week 3's 30 unplayed team-games matched all 30 actual
+   starters; for week 4, 2 of 32 projections changed during the week (CHI Bagent → Keenum, TB Mayfield → Jalon Daniels;
+   the nightly picks such changes up until the freeze). A weaker source for comparison: ESPN's depth-chart QB1 at the last
+   snapshot before kickoff (median 10.8 h) agreed with the starter in 495 of 544 2025 team-games and showed only 28 of
+   the season's 55 starter changes. The archive keeps one copy of `games.parquet`; keeping a dated copy per nightly would
+   measure the gap in-season.
+2. *The injury report and the freeze.* Training sees the week's **final** report (Friday for a Sunday game); the decision
+   record freezes a week's board at the week's **first** kickoff (B5, Thursday night), so a Sunday player's frozen
+   projection was made before his final designation. v2's own `questionable` input has the same gap today. It matters
+   for the report-based columns (`oline`, `teammates`, `own_injury`) and not for `qb` (the projected starter is filled
+   a week ahead).
+
+**Harness result** (fx1.0, test seasons 2023–2025, both leagues; mean over seasons of the league-averaged Δ, "n/3" =
+seasons better; one session, 66 min wall, baseline from the cache): see STATUS § "Wave D (Iteration 12)" → D5 for the
+full table. `qb` keeps QB (ΔSpearman +0.053, 3/3; ΔMAE −0.54 points, 3/3; interval score −0.084) and nothing else;
+`teammates` keeps RB / WR / TE (+0.0064 / +0.0053 / +0.0054, all 3/3, MAE better 3/3) and hurts QB (−0.0069, 0/3:
+mixed); `oline` and `own_injury` drop everywhere; `personnel` (all 20) keeps QB / RB / WR, drops TE (the extra columns
+dilute the teammates signal). Where the QB gain comes from (2025, reference league, 677 played QB rows, MAE 6.04 →
+5.39; `scratchpad/waveD/d5/qb_segments.py`): 74% from the 140 rows of QBs who played without being the projected
+starter (relief and mop-up: v2 projected them 6.5 from their history, the actual mean was 2.1, with `qb` 3.3), 12% from
+the 43 rows of a new starter (v2 9.0, actual 13.2, with `qb` 12.4), 14% from the 494 rows of the usual starter.
+
+Five seasons (2021–2022 added with the harness's pieces, `scratchpad/waveD/d5/qb_wr_extend.py`; 2023 reproduces the
+harness): `qb` at QB +0.046 / +0.018 / +0.072 / +0.022 / +0.065 (mean +0.0446, 5 of 5; MAE −0.51, 5 of 5); `teammates` at
+WR +0.0032 / +0.0042 / +0.0023 / +0.0056 / +0.0082 (mean +0.0047, 5 of 5: consistent, 0.0003 under the bar); `personnel`
+at WR +0.0059, 5 of 5. Recommendation (the PO's decision): v3 takes `qb` at QB and `teammates` at RB / WR / TE (per-position
+inputs), drops `oline` and `own_injury`.
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |
