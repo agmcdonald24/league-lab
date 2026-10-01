@@ -1592,6 +1592,116 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
   2025 only, so `depth_move` by depth chart (not benching) starts there. A depth-chart promotion before the player has
   played (a Wednesday "named starter") is not an alert yet.
 
+## Wave D (Iteration 12)
+
+### D3 2026-10-01 — weather: Open-Meteo loader, stadium reference, the `weather` feature group (branch `dev/D3`, clone `league_lab_d3`)
+
+* **Built.** `src/league_lab/ingest/weather.py` + `league-lab ingest weather [--seasons] [--forecast] [--offline] [--force]`:
+  Open-Meteo hourly weather at the stadium for the kickoff hour and the two after → `raw.nfl_weather`
+  (`source = 'archive'`: ERA5, **one call per stadium-season**, one row per game; `'forecast'`: one call per stadium
+  per run for its games in the next 16 days, one row per game **per fetch, never deleted**). Archive under
+  `data/raw/open_meteo/{archive/<season>/<stadium>.json.gz, forecast/<season>/<stadium>/<time>.json.gz}` with the
+  usual sidecars, `--offline` replay, manifest source `open_meteo` (partitions `<season>:<stadium>`); a stadium-season
+  is re-fetched only when a played game (older than the archive's 5-day delay) is not in its file. Stadium reference
+  `src/league_lab/ingest/reference/stadiums.csv` (49 venues: the 47 nflverse `stadium_id`s 2016–2026 + Croke Park and
+  Berlin's Olympiastadion; lat / lon from the Wikipedia / GeoHack infoboxes, time zone, roof type, tenants, every name
+  nflverse used) and `stadium_game_venues.csv` (the seven 2025 international games nflverse records at the home
+  team's stadium) → `raw.nfl_stadiums` / `raw.nfl_stadium_game_venues`, loaded by `db migrate`. dbt:
+  `intermediate.int_game_weather` (game grain: venue, roof decision, the value and its source / known-at time, each
+  source's numbers side by side) and `intermediate.int_player_week_weather` (contract grain: `wx_dome`,
+  `wx_wind_mph`, `wx_gust_mph`, `wx_precip_in`, `wx_temp_f`, `wx_cold`, `wx_windy`, `wx_snow`, `wx_source`),
+  `int_player_week_weather.yml`, tests `assert_weather_dome_rows_zero`, `assert_weather_never_peeks`,
+  `assert_weather_one_row_per_universe_row`, `assert_stadium_reference_covers_schedules` (warn). Groups for the
+  harness: `src/league_lab/feature_groups/weather.py` (`weather`, `wind`, `temp`, `dome`). K/DEF hook:
+  `kdef.WEATHER_FEATURES` (`wx_wind_mph`, `wx_dome`), off in kd1.0, `league-lab backtest-kd --weather` (report only).
+  Docs: SOURCES § Open-Meteo (+ licence), METRICS § Weather (+ the train / serve gap and how to measure it),
+  DATA_MODEL (raw + intermediate), HOSTING § Weather in the nightly (the two lines for `nightly.sh`).
+* **Evidence.**
+  - Stadium coverage: every `stadium_id` in the archived `games.parquet` 2016–2026 is in the CSV, every game
+    resolves to a venue, every home game resolved by id has its home team as a tenant that season, and no kickoff
+    before 10:00 ET sits at a US venue (`tests/test_weather.py::test_stadium_reference_covers_every_schedules_stadium`);
+    the same in dbt on the database (`assert_stadium_reference_covers_schedules`: PASS). Resolution on 3,033 games
+    2016–2026: 3,025 by id, 7 per-game corrections, 1 by name (2026_05_PHI_JAX → Tottenham).
+  - Loader on fixtures (hand-built from Open-Meteo's documented response format — the API is blocked here; never
+    fetched): 17 tests. Batching: 7 archivable games at 5 stadium-seasons → **5 calls** (BUF00 2024's three games in
+    one); a game inside the 5-day delay waits; a second run makes 0 calls (`skipped_unchanged`); a newly archivable
+    game re-fetches only its stadium-season; `--offline` rebuilds identical rows with a client that fails on any
+    request; two forecasts of one game → two rows (77.0 h and 53.0 h ahead), kept after the archive arrives and
+    after a forecast file is lost; HTTP 400 → `failed`, nothing written, no file left. Worked example
+    (2024_01_ARI_BUF fixture, 13:00 EDT = 17:00 UTC): wind 12/15/18 → 15.0, temp 61/63/65 → 63.0, gusts at 18–20 UTC
+    21/27/24 → 27, precipitation 0.02 + 0.05 + 0.01 = 0.08.
+  - On the database: the staged fixtures replayed with `ingest weather --offline` → 3 partitions `success` (archive
+    2024:BUF00, 2025:DUB00, forecast 2026:BUF00, 1 row each), again → 3 × `skipped_unchanged`; `int_game_weather` then
+    took `archive` for 2024_01_ARI_BUF (over the schedules' 20 mph / 61 °F) and for 2025_04_MIN_PIT (at DUB00, not
+    PIT00), `forecast` (77 h ahead) for 2026_04_NE_BUF; 17 dbt tests PASS. The demo rows were deleted afterwards
+    (the evaluation below runs on the schedules' observations only).
+  - Feature table: 109,123 rows = `int_player_week_universe`; dbt build 2 models + 21 tests PASS. Hand check:
+    Josh Allen 2024 wk 16 (NE at BUF, schedules 14 °F / 2 mph) → `wx_temp_f` 14, `wx_wind_mph` 2, `wx_cold` 1,
+    `wx_source` nflverse_observed; wk 15 at DET → `wx_dome` 1, every value 0.
+  - Coverage (player-weeks, open-air with wind and temperature / dome / unknown): 2016 7,401 / 2,358 / 92 ·
+    2017 7,245 / 2,251 / 185 · 2018 7,015 / 2,182 / 176 · 2019 7,139 / 2,198 / 271 · 2020 6,370 / 3,430 / 0 ·
+    2021 7,033 / 3,081 / 424 · **2022 3,627 / 3,156 / 3,378** · 2023 5,512 / 3,033 / 1,489 · 2024 6,306 / 3,404 / 188 ·
+    2025 6,632 / 3,439 / 197 · 2026 780 / 3,331 / 5,800 (upcoming weeks: no forecast here). Precipitation and gusts:
+    NULL outdoors until the first real run.
+  - Data sanity (2016–2025 team-games, schedules' wind): passing yards per team-game 253.5 dome · 243.7 under 10 mph ·
+    231.4 at 10–14 · 221.6 at 15–19 · 210.7 at 20+ (YPA 7.43 → 6.73); kicker 50+ makes per game 0.348 dome → 0.244
+    → 0.218 → 0.227 → 0.147. The effect is real; the question is whether the model lacks it (the Vegas total prices it).
+* **Feature-group evaluation (local; the D1 harness could not be merged here, see Decisions).** Walk-forward test
+  seasons 2023–2025, the v2 model with the group's columns added (nothing else changed), both leagues' scoring,
+  Spearman / MAE of `proj_points` per league-season-week-position and the 80% interval score, paired across the
+  three seasons (keep = mean Δ beyond 2 × its standard error). Δ vs v2, mean of 3 seasons (League of Scrubs |
+  Dynasty):
+
+  | Group | QB Δ Spearman | RB | WR | TE | QB Δ MAE | RB | WR | TE | Verdict |
+  |---|---|---|---|---|---|---|---|---|---|
+  | weather (8 columns) | +0.003 \| +0.001 | −0.000 \| −0.000 | +0.000 \| −0.000 | −0.001 \| −0.001 | +0.002 \| +0.005 | +0.005 \| +0.005 | +0.002 \| −0.000 | +0.006 \| +0.005 | drop: noise (Scrubs TE MAE worse in 3/3) |
+  | wind | +0.001 \| +0.003 | +0.000 \| −0.000 | +0.000 \| −0.000 | −0.001 \| +0.000 | +0.020 \| +0.029 | +0.003 \| +0.001 | −0.003 \| −0.004 | +0.007 \| +0.006 | drop: noise (TE MAE worse 3/3 both leagues) |
+  | temp | +0.002 \| +0.004 | −0.001 \| −0.001 | −0.000 \| +0.000 | −0.003 \| −0.001 | +0.012 \| +0.014 | +0.007 \| +0.005 | −0.001 \| −0.004 | +0.014 \| +0.013 | drop (TE worse) |
+  | dome | −0.001 \| +0.002 | −0.001 \| −0.001 | −0.000 \| +0.000 | −0.004 \| −0.003 | +0.013 \| +0.008 | +0.004 \| +0.004 | +0.003 \| +0.002 | +0.007 \| +0.008 | drop (RB, TE worse) |
+
+  Baseline (v2) means: Spearman QB 0.539 | 0.528, RB 0.681 | 0.686, WR 0.617 | 0.631, TE 0.575 | 0.591. Interval
+  score Δ within ±0.3 everywhere (QB weather −0.03 | −0.29, the only gain, not beyond noise). Fit time per test season
+  ~7 min with three devs on 2 cores. Rows: `scratchpad/waveD/d3/weather_eval_rows.csv`, summary
+  `weather_eval_summary.csv`, script `eval_weather.py`.
+* **K / DEF with weather** (`backtest-kd` vs `backtest-kd --weather`, wind + dome added, 2021–2025, League of Scrubs):
+
+  | | 2021 | 2022 | 2023 | 2024 | 2025 | all |
+  |---|---|---|---|---|---|---|
+  | K Spearman kd1.0 → +wind | 0.186 → 0.185 | 0.077 → 0.056 | 0.105 → 0.134 | 0.180 → 0.202 | 0.147 → 0.170 | **0.139 → 0.149** |
+  | K MAE | 3.64 → 3.64 | 3.56 → 3.61 | 3.63 → 3.62 | 3.87 → 3.86 | 3.83 → 3.81 | 3.71 → 3.71 |
+  | DEF Spearman | 0.263 → 0.261 | 0.165 → 0.172 | 0.249 → 0.243 | 0.316 → 0.319 | 0.332 → 0.334 | 0.265 → 0.266 |
+  | DEF MAE | 4.70 → 4.72 | 4.44 → 4.43 | 4.92 → 4.91 | 4.51 → 4.50 | 4.61 → 4.60 | 4.64 → 4.63 |
+
+  K: +0.010 on average (+0.022 to +0.029 in 2023–2025; −0.021 in 2022, the season with 91 of 198 open-air games
+  missing their wind), standard error 0.009 — not beyond noise yet; MAE flat; top-10 hit 40.3% → 40.1%. DEF: nothing.
+* **Recommendation.** Keep nothing for QB–TE now (weather, wind, temp, dome: Δ Spearman within ±0.004 everywhere,
+  TE MAE slightly worse — the Vegas total already carries the weather). Do not ship K wind yet (kd1.0 stays). Re-run
+  both after the first real Open-Meteo run: it fills the 2022–2023 holes, adds precipitation and gusts and puts every
+  season on one definition; K wind is the candidate (wind + the kicker's range is where the data shows the effect),
+  shipped as kd1.1 only if it stays ahead in 4 of 5 seasons with the gap beyond 2 × its standard error.
+* **Decisions** (PO to confirm): (1) **the D1 merge was refused by the permission system in this session** (the
+  task also says "do not merge"), so the harness table is a local evaluation with the same model and scorer; the
+  group file follows D1's announced format (`GROUPS = {name: {table, columns, label, note}}`, no `in_season`), so after
+  integration `OMP_NUM_THREADS=1 OMP_WAIT_POLICY=PASSIVE uv run league-lab experiment weather wind temp dome` produces
+  the harness table; (2) the CSVs live in `src/league_lab/ingest/reference/` (`.gitignore`'s `data/` would hide
+  `src/league_lab/data/`); (3) `wx_source` has a fifth value, `dome`; (4) a retractable roof not decided yet counts as
+  **closed** (89% of 2016–2025 retractable games); the stadium reference beats nflverse's roof for fixed roofs (MCG,
+  Stade de France, Munich are open-air); (5) gusts / precipitation / snowfall are read at k+1..k+3 (Open-Meteo reports
+  them for the preceding hour), wind / temperature at k..k+2 — both cover the game's first three hours; (6) archive
+  rows are written for every game the file covers (closed-roof games included; dbt decides), forecast rows for every
+  game at the stadium not yet kicked off; (7) `db.migrate()` gains one call (`weather.ensure_tables`) so dbt resolves
+  venues before any weather is fetched; (8) the coverage test is a dbt **warning** (a new venue in a future schedule
+  must not stop the nightly), the pytest is the hard check; (9) an extra model, `int_game_weather` (game grain), sits
+  under `features/` next to the contract table; (10) `cli.py`: `ingest weather`, `backtest-kd --weather`.
+* **Open.** (a) The first real run (Mac or Actions): `uv run league-lab ingest weather --forecast` — 280 archive calls
+  for 2016–2026 (~8 min, ~1,300 weighted calls of the 10,000/day free tier) + ~23 forecasts; the first contact with
+  the live API (the fixtures follow the docs; a renamed variable would show as a `failed` partition). (b) The PO adds
+  the two `nightly.sh` lines (HOSTING § Weather in the nightly). (c) Precipitation stays NULL until (a) — the harness
+  treats NULL as unknown; re-run the groups after it. (d) Forecast history lives only in the archive cache on
+  Actions (a forecast cannot be fetched again): worth saving like the decision record (`data/raw/record/` or the
+  hosted sync) before the gap measurement depends on it. (e) The Kickers page "wind is the reason" line waits for a
+  shipped kd1.1. (f) `metric_registry.csv` rows for the `wx_` features (seeds were out of bounds for this round).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
