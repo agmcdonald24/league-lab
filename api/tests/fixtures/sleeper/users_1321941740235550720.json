@@ -1,0 +1,119 @@
+[
+ {
+  "display_name": "Manager 1",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 1"
+  },
+  "user_id": "471090541178646528"
+ },
+ {
+  "display_name": "Manager 2",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 2"
+  },
+  "user_id": "486397450555224064"
+ },
+ {
+  "display_name": "Manager 3",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 3"
+  },
+  "user_id": "600044282631487488"
+ },
+ {
+  "display_name": "Manager 4",
+  "is_owner": true,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 4"
+  },
+  "user_id": "654100968224415744"
+ },
+ {
+  "display_name": "Manager 5",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 5"
+  },
+  "user_id": "654184212395573248"
+ },
+ {
+  "display_name": "Manager 6",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 6"
+  },
+  "user_id": "654184345354977280"
+ },
+ {
+  "display_name": "Manager 7",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 7"
+  },
+  "user_id": "654408549560045568"
+ },
+ {
+  "display_name": "Manager 8",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 8"
+  },
+  "user_id": "655388941993725952"
+ },
+ {
+  "display_name": "Manager 9",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 9"
+  },
+  "user_id": "664536225763385344"
+ },
+ {
+  "display_name": "Manager 10",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 10"
+  },
+  "user_id": "678983077954908160"
+ },
+ {
+  "display_name": "Manager 11",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 11"
+  },
+  "user_id": "680551187610693632"
+ },
+ {
+  "display_name": "Manager 12",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 12"
+  },
+  "user_id": "703452544063578112"
+ },
+ {
+  "display_name": "Manager 13",
+  "is_owner": false,
+  "league_id": "1321941740235550720",
+  "metadata": {
+   "team_name": "Team 13"
+  },
+  "user_id": "707632770209390592"
+ }
+]

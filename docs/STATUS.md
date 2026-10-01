@@ -2395,6 +2395,69 @@ The PO accepted D5's recommendation: `qb` at QB (5 inputs), `teammates` at RB / 
   The nightly does not run `backtest-v2`: until it is run once, Rankings' backtest shows v2.0's record (`is_current`
   falls back to the newest version that has rows).
 
+## Wave E (Iteration 13)
+
+### E3 2026-10-01 — any league: the design and a working spike (branch `dev/E3`, clone `league_lab_e3`)
+
+Design for Andrew and the PO: `docs/ANY_LEAGUE.md`. Nothing in `app/`, `dbt/`, the seeds, `projections.py`,
+`lineup.py`, `decisions.py` or `cards.py` changed; the spike reads them.
+
+* **Built.** `src/league_lab/anyleague.py`: a read-only Sleeper client (league / rosters / users / the player
+  directory, TTL cache; `LEAGUE_LAB_SLEEPER_FIXTURES=<dir>` reads fixtures; ids must be digits), `load_board` (the
+  week's NFL-wide stat lines from one league's `ops.projections` rows + every fitted league's ranges + status from
+  `mart_player_week_projections` + K / DEF from `ops.projections` × `mart_kd_week`), `price_lines`
+  (`scoring.compute_points`, bonuses included), `choose_reference` + `approximate_ranges` (the ratio method), and
+  `lineup_rows`, which assembles a `lineup.LineupInputs` for one roster-week and runs **`lineup.build`** (the
+  nightly's own code: IR / taxi / bye / Out / Doubtful / locks / unvalued) and returns the frame
+  `cards.lineup_rows` returns. `write_fixtures` / `python -m league_lab.anyleague fixtures <dir> <ids>` builds the
+  fixtures from `raw.sleeper_*` payloads trimmed to the fields read (no avatars, nicknames, chat; managers and team
+  names pseudonymised as "Manager n" / "Team n"):
+  `api/tests/fixtures/sleeper/` (120 KB: both leagues, 312 rostered players). API: `ondemand.py` (same JSON as
+  `myweek.my_week` + `source`, `on_demand`), `/api/my-week` falls through when the league is not a current league of
+  the database (`source=sleeper` forces it), `myweek.cards_from_rows` (the card extraction, shared; cards gain
+  `p_win`), 404 for a league Sleeper does not have, 502 when Sleeper does not answer. `api/league_lab_api/__init__.py`
+  puts `src/` on the path; **the Dockerfile now copies `src/league_lab`** (since D6 `cards.py` imports
+  `league_lab.decisions`, which the image did not contain — not verified here: no Docker daemon).
+* **Parity (acceptance)**, week 4, the mart's `as_of` (2026-10-01 19:26 UTC), each league served as if it were new
+  (ranges from the other league): dynasty roster 12 — lineup value **111.46 = 111.46**; QB Nix 19.78, RB1
+  Croskey-Merritt 9.70, RB2 Wilson 8.68, WR1 St. Brown 18.13, WR2 Washington 14.60, TE Kittle 10.36, FLEX Boston
+  11.13, SUPER_FLEX Rodgers 19.08, margins 1.01 / 1.48 / 0.46 / 7.90 / 4.37 / 0.84 / 0.90 / 0.31 — all identical;
+  13 bench in the same order, 4 can't play (taxi ×3, IR) with the same reasons. Scrubs roster 2 — **117.02 =
+  117.02**, 10 slots identical incl. K McLaughlin 8.07 and DEF KC 7.16 (identical kicking / defense keys → the
+  fitted kd1.0 values), 5 bench, 2 IR. Pricing: `compute_points` on the stat line = `ops.projections.proj_points`
+  for all 581 week-4 players in both leagues (max gap < 1e-9; no rounding, bonus or stat difference); 0 stat-line
+  mismatches between the leagues. Unmapped players on both rosters: 0. Scoring keys the projection cannot price:
+  dynasty `not_projected` = long-TD ×3, 2-pt ×3, `fum_rec_td`, `st_td` (0 in the nightly too); Scrubs 2-pt ×3,
+  `fum_rec_td`, `st_td`; unmapped: none (DEF keys count only in a league that starts a DEF).
+* **Range approximation (the open modeling piece).** `p_q(new) = proj(new) + (p_q(ref) − proj(ref)) × proj(new) /
+  proj(ref)`, the reference = the fitted scoring nearest by median |log price ratio|. Weeks 4–18 (8,134 player-weeks),
+  each league from the other, mean abs gap P10 / P25 / P50 / P75 / P90: dynasty 0.23 / 0.26 / 0.32 / 0.59 / 0.84,
+  Scrubs 0.19 / 0.22 / 0.26 / 0.49 / 0.69 points; 80% width 13.96 → 13.78 and 11.49 → 11.63. 80% coverage on weeks
+  1–3 (715 played rows each): fitted 79.2% → rebuilt 78.0% (dynasty), 78.2% → 78.0% (Scrubs); unscaled offsets 59.9%
+  / 88.5%; one scale per position slightly worse (P90 gap 0.87 / 0.72). Error vs distance (P90 gap / 80% width):
+  |log ratio| ≤ 0.1 3.5%, 0.1–0.2 5.5%, 0.2–0.3 7.0%. Andrew's rosters, week 4: dynasty 12 (25 players) P10 0.52 /
+  P90 1.09; Scrubs 2 (16) 0.65 / 0.98; card probabilities within 0.1 of the database path (tested).
+* **Latency** (`ondemand.my_week`, local database, fixtures — no Sleeper network): cold 259–331 ms (board query
+  34–91 ms, cards 67–69 ms, pricing 11–18, ranges 11–15, inputs 14–19, solve 1.6–2.7, frame 20–21), warm 141–158 ms
+  (cards 61–72 ms — the 3 × 40,000-draw win probability — is the largest part; board 11–15 from the cache).
+* **Checks.** `cd api && uv run pytest -q`: **51 passed, 2 skipped** (37 + 14 new in `tests/test_anyleague.py`;
+  `test_myweek.py::test_unknown_team_and_league` now sets the fixture directory: an unknown league is looked up on
+  Sleeper, and league "1" is still a 404). `uv run ruff check src tests app api/league_lab_api api/tests` clean; `cd
+  api && uv run ruff check .` clean. Scratch: `waveE/e3/measure_ranges.py` (the range table), `try_ondemand.py`.
+* **For the PO.** (1) Range method: ratio scaling from the nearest of a few *reference scorings* fitted nightly
+  (proposed seed `reference_scorings.csv`: Scrubs, dynasty, full PPR 4-pt, standard, TE premium). (2)
+  `projections.py`: fit `fit_position` / `predict_position` on that fixed dict instead of the env's leagues; write
+  `ops.projection_lines` (one row per player-week) + `ops.projection_ranges` (per reference scoring); `kdef.py`: keep
+  `predict_kd`'s league-free lines (`ops.kd_lines`). (3) Wave F order: those outputs → username league picker +
+  on-demand My Week + the opponent (matchups call) → the player card in the user's scoring → waiver wire on request →
+  Wave G (accounts, payments, shared cache, rate limit) → Trade Finder.
+* **Not verified / open.** No Sleeper from the sandbox: the live client is untested against the real host (Andrew:
+  `cd api && uv run uvicorn league_lab_api.main:app --port 8581`, then open
+  `http://localhost:8581/api/my-week?league=<any Sleeper league id>&team=<roster id>`; the first call fetches the
+  ~15 MB player directory). The opponent, the league rank and Sleeper's weekly lineup lists are not on the on-demand
+  path; a K / DEF in a scoring no fitted league shares is unvalued; Sleeper's terms for commercial use are Andrew's
+  to check. No `--select` appended; no seeds or metrics touched.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

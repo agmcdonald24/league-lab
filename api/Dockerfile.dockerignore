@@ -4,6 +4,7 @@
 !api/uv.lock
 !api/league_lab_api/**
 !app/lib/**
+!src/league_lab/**
 !web/**
 web/node_modules
 web/dist

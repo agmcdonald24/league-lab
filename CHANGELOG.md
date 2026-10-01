@@ -2,6 +2,10 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave E
+
+- **Any league (E3, design + spike).** `docs/ANY_LEAGUE.md`: stat lines stored once NFL-wide, a league's scoring applied per request, lineups solved per request, ranges from the nearest fitted scoring scaled by the price ratio (measured on the two leagues, each rebuilt from the other: mean gap P10 0.19–0.23, P90 0.69–0.84 points; 80% coverage 78.0% vs 79.2% / 78.2% fitted). `src/league_lab/anyleague.py` + `api/league_lab_api/ondemand.py`: `/api/my-week` serves a Sleeper league the database does not have (fixture mode `LEAGUE_LAB_SLEEPER_FIXTURES`); for the two known leagues it reproduces the nightly's lineup exactly (111.46 / 117.02, same slots, values, margins, bench), ~150 ms warm / ~300 ms cold. The API image now carries `src/league_lab` (the cards needed it since D6).
+
 ## 2026-10-01 — Projection v3 and the decision ranges
 
 - **Projection v3.0 (D5 + the v3 ship).** Per-position inputs, `projections.FEATURES_BY_POSITION`: QB = v2's inputs + 5

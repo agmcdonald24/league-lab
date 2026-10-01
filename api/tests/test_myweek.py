@@ -126,7 +126,11 @@ def test_worked_example_dynasty_12(client):
     assert d["league_line"].startswith("Your best lineup projects **")
 
 
-def test_unknown_team_and_league(client):
+def test_unknown_team_and_league(client, monkeypatch):
+    # plan E3: a league the database does not have is looked up on Sleeper (fixtures here: no network); Sleeper
+    # has no league "1", so it is still a 404
+    from pathlib import Path
+    monkeypatch.setenv("LEAGUE_LAB_SLEEPER_FIXTURES", str(Path(__file__).with_name("fixtures") / "sleeper"))
     assert client.get(f"/api/my-week?league={DYNASTY}&team=99").status_code == 404
     assert client.get("/api/my-week?league=1&team=2").status_code == 404
     assert client.get(f"/api/my-week?league={DYNASTY}").status_code == 422
