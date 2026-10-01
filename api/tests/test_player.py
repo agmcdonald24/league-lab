@@ -25,13 +25,15 @@ def test_player_card_numbers(client, sql, league, team, gsis):
     assert r.status_code == 200
     d = r.json()
     assert list(d["sections"]) == ["usage", "projection", "availability", "value", "signals"]
-    proj = sql("""select proj_points, p10, p90 from analytics.mart_player_week_projections
+    proj = sql("""select proj_points, p10, p25, p75, p90 from analytics.mart_player_week_projections
                   where league_id = %s and gsis_id = %s and season = %s and week = %s""", (league, gsis, d["season"], d["week"]))
     m = blocks(d["sections"]["projection"], "metrics")
     if proj:
         p = proj[0]
+        # the 50% range (plan D6) sits between the projection and the floor; weeks frozen before it existed have none
+        mid = [("Most weeks", f"{float(p['p25']):.0f}–{float(p['p75']):.0f}")] if p["p25"] is not None and p["p75"] is not None else []
         assert [(x["label"], x["value"]) for x in m[0]["metrics"]] == [
-            ("Projected", f"{float(p['proj_points']):.1f}"), ("Floor", f"{float(p['p10']):.1f}"), ("Ceiling", f"{float(p['p90']):.1f}")]
+            ("Projected", f"{float(p['proj_points']):.1f}"), *mid, ("Floor", f"{float(p['p10']):.1f}"), ("Ceiling", f"{float(p['p90']):.1f}")]
         assert d["proj_points"] == pytest.approx(float(p["proj_points"]))
     else:
         assert not m and blocks(d["sections"]["projection"], "unavailable")

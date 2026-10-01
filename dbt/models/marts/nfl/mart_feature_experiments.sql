@@ -7,16 +7,32 @@
 -- unit: each test season's delta (group - baseline) is first averaged over the leagues, then the
 -- seasons are averaged and counted (seasons_better_*). `decision` / `group_verdict` are the harness's
 -- (docs/METRICS.md § "Feature experiments"), passed through, never recomputed here.
-with latest as (
+-- The rows come from two places: the runs on this database (ops.feature_experiments) and the published record
+-- (seed feature_experiments: the Wave D runs, exported from the PO's database so that a fresh build shows
+-- "What we tried" without re-running 10 CPU-minutes per group). The same run in both = one row (ops wins).
+with every_row as (
+    select distinct on (run_id, feature_group, position, league_id, test_season)
+           run_id, run_at, model_version, harness_version, feature_group, group_table, group_columns, test_seasons, train_seasons, data_key, position, league_id, test_season, n_weeks, n_player_weeks, spearman, hit_rate, mae, coverage_80, interval_width, interval_score, baseline_spearman, baseline_hit_rate, baseline_mae, baseline_coverage_80, baseline_interval_width, baseline_interval_score, delta_spearman, delta_hit_rate, delta_mae, delta_coverage_80, delta_interval_width, delta_interval_score, decision, group_verdict, runtime_s, no_peek_warnings, label, note
+    from (
+        select 0 as pri, run_id, run_at, model_version, harness_version, feature_group, group_table, group_columns, test_seasons, train_seasons, data_key, position, league_id, test_season, n_weeks, n_player_weeks, spearman, hit_rate, mae, coverage_80, interval_width, interval_score, baseline_spearman, baseline_hit_rate, baseline_mae, baseline_coverage_80, baseline_interval_width, baseline_interval_score, delta_spearman, delta_hit_rate, delta_mae, delta_coverage_80, delta_interval_width, delta_interval_score, decision, group_verdict, runtime_s, no_peek_warnings, label, note
+        from {{ source('ops', 'feature_experiments') }}
+        union all
+        select 1 as pri, run_id, run_at, model_version, harness_version, feature_group, group_table, group_columns, test_seasons, train_seasons, data_key, position, league_id, test_season, n_weeks, n_player_weeks, spearman, hit_rate, mae, coverage_80, interval_width, interval_score, baseline_spearman, baseline_hit_rate, baseline_mae, baseline_coverage_80, baseline_interval_width, baseline_interval_score, delta_spearman, delta_hit_rate, delta_mae, delta_coverage_80, delta_interval_width, delta_interval_score, decision, group_verdict, runtime_s, no_peek_warnings, label, note
+        from {{ ref('feature_experiments') }}
+    ) as u
+    order by run_id, feature_group, position, league_id, test_season, pri
+),
+
+latest as (
     select distinct on (feature_group) feature_group, run_id
-    from {{ source('ops', 'feature_experiments') }}
+    from every_row
     where feature_group <> 'baseline'
     order by feature_group, run_at desc
 ),
 
 runs as (
     select e.*
-    from {{ source('ops', 'feature_experiments') }} as e
+    from every_row as e
     join latest as l using (feature_group, run_id)
 ),
 

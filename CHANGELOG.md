@@ -21,6 +21,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   widened per projection tier (starters' ranges were too narrow: top-N coverage 75.9–77.4% → 78.8–80.5%); decision
   cards lead with "A outscores B x% of the time" (`league_lab.decisions`: the two players' quantiles, a Gaussian
   copula with measured same-game correlations; Brier 0.221 on 5,374 lineup calls of 2024–2025 vs 0.249 for a coin flip).
+- **After QA.** A card whose starter projects more but wins less often leads with the recommendation and says both;
+  Home's intro moves under My week once a team is picked (the first card is above the fold on a phone); the Player
+  page and `/api/player` show the "most weeks" range; the experiment record ships as the seed
+  `dbt/seeds/feature_experiments.csv` (unioned into `mart_feature_experiments`), so "What we tried" fills on any build.
 - **Feature-group harness (D1) and what it rejected (D2–D5).** `league-lab experiment <group>`: the production model with
   and without a group on 2023–2025, a paired keep / drop rule per position, a no-peek check; results in
   `ops.feature_experiments` / `mart_feature_experiments` and on Rankings → "What we tried". Dropped: game context

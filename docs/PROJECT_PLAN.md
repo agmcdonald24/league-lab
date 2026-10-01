@@ -371,7 +371,10 @@ kept `qb` at QB and `teammates` at RB/WR/TE; D6 shipped the 50% range, per-tier 
 probability (no sharpening of the 80% range survived the test); D7's decision note is
 `docs/FRONTEND_DECISION.md`. **Projection v3.0 shipped.** Open after Wave D: the weather backfill from the
 Mac and a re-test of wind for kickers; QB coverage (partial games) — a "plays / points given he plays" split
-with the starting-QB inputs; Andrew's front-end decision (D7); P-01; Iteration 11 operations.
+with the starting-QB inputs; **the range's median vs the point projection** (QA, Wave D: on a close pair the
+card can say "A projects more, B wins more often" — centre the ranges on the projection or solve on the median;
+decide on week-5 drift); the experiment record is the seed `feature_experiments.csv` (re-export after a new harness
+run); Andrew's front-end decision (D7); P-01; Iteration 11 operations.
 
 ### Iteration 11 — operations for a product (Phase 3)
 

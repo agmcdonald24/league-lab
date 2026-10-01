@@ -16,6 +16,18 @@ seeds:
                 values: [stat, bonus]
       - name: stat_expression
         tests: [not_null]
+  - name: feature_experiments
+    description: >
+      The published record of the feature experiments (Wave D, `league-lab experiment <group>`): the same
+      columns as ops.feature_experiments, exported from the PO's database (`\copy (select * from
+      ops.feature_experiments order by run_at, feature_group, position, league_id, test_season) to
+      'dbt/seeds/feature_experiments.csv' csv header`). mart_feature_experiments unions it with the live
+      table so "What we tried" fills on a fresh build. Re-export after a harness run worth keeping.
+    columns:
+      - name: run_id
+        tests: [not_null]
+      - name: feature_group
+        tests: [not_null]
   - name: metric_registry
     description: Metric definitions, versions and availability (plan §6). Surfaced in the explorer.
     columns:

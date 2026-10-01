@@ -1625,6 +1625,26 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
   My Week tests re-pinned to the card shape (D6 changed the headline; v3 flipped the week-4 pair), `scipy` in
   `api/pyproject.toml` (the cards import it), the lineup solve-time test loosened (a benchmark, failed once at load 7).
   Week 4 froze on the Mac with v2.0 rows (2026-10-02 00:15 UTC); v3 starts at week 5 there.
+* **QA on the integrated branch** (`7149f49`, 25 min scoped: numbers on Home / Player / Rankings vs the marts, both
+  leagues, 390 px): every number matched. Fixed by the PO: (1) a card whose starter projects more but outscores the
+  alternative *less* often (the quantile-implied mean and the point projection disagree on a close call) read as
+  "start A … B wins more often" — the card now leads with the recommendation ("A projects 0.31 more on average; B
+  outscores him 51% of the time — a coin flip … the projection says A, the ranges say either"), and the wide range
+  names both players; (2) Home's first card sat at y = 819 of 844 on a phone — the intro paragraph now shows at the
+  top only until a team is picked, then sits under My week (first card y ≈ 625 with the stale-injury banner, less on
+  a fresh database); (3) the Player page and `/api/player` show the "most weeks" range (p25–p75) between the
+  projection and the floor, how-to updated, the API's parity and card tests re-pinned; (4) "The model" on Rankings
+  describes both ranges and the per-tier calibration, the leftover "price line" sentence is gone; (5) "What we tried"
+  lacked the personnel rows and showed `team_style_pass_rate` as a keep — the PO's 480 experiment rows (20 groups,
+  both leagues) are now **the seed `dbt/seeds/feature_experiments.csv`** (same columns as `ops.feature_experiments`;
+  `mart_feature_experiments` unions the seed with the live table, the live row wins on the same run), so `make build`
+  on any database shows the record; `team_style_pass_rate` @ QB overridden to drop (kept by the 3-season rule, 2021
+  and 2022 reverse it), `qb` / `teammates` noted as shipped in v3.0. `uv run pytest` targeted 54 + experiments 20,
+  `api` 37 passed, headless check 39 runs ALL OK, ruff clean.
+  **Modeling open item (from QA 2): the quantile models are fitted on residuals independently of the point model,
+  so the median of the range can sit on the other side of the alternative's median from the point projection on a
+  close pair. Either centre the ranges on the projection (shift so p50 = proj_points) or solve the lineup on the
+  range's median; decide with the week-5 drift numbers — until then the card says both.**
 
 Projection v3, round 1: D1 (the feature-group harness) + D2 (game context) · D3 (weather) · D4 (team volume
 and style). Each dev appends a section below; nothing edits `mart_player_week_features` until the PO keeps a group.

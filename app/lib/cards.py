@@ -293,18 +293,22 @@ def render_decision(d: pd.Series | dict) -> None:
         if pw is not None:
             # plan D6: the headline is how often he outscores the alternative; the margin (what the lineup is
             # solved on) is the second line
-            st.markdown(f"**{d['player_name']} outscores {d['alt_name']} {D.percent(pw)}% of the time — {D.words(pw)}.**")
-            st.markdown(f"{d['value']:.2f} vs {d['alt_value']:.2f} {basis}: {d['margin']:.2f} apart.")
-            if pw < 0.5:
-                # the range (how often) and the projection (how many points on average) can disagree on a close
-                # call: the lineup is built on the projection, so say both
-                extra.append(f"{d['alt_name']}'s range sits a little higher, so he wins this one slightly more often; "
-                             f"{d['player_name']} projects {d['margin']:.2f} more points on average.")
+            if pw >= 0.5:
+                st.markdown(f"**{d['player_name']} outscores {d['alt_name']} {D.percent(pw)}% of the time — {D.words(pw)}.**")
+                st.markdown(f"{d['value']:.2f} vs {d['alt_value']:.2f} {basis}: {d['margin']:.2f} apart.")
+            else:
+                # the range (how often) and the projection (how many points on average) disagree on this close
+                # call: the lineup is built on the projection, so the recommendation leads and the odds explain
+                # (QA, Wave D: the old order read as "start A … B wins more often")
+                st.markdown(f"**{d['player_name']} projects {d['margin']:.2f} more on average; {d['alt_name']} outscores him "
+                            f"{D.percent(1 - pw)}% of the time — {D.words(1 - pw)}.**")
+                st.markdown(f"{d['value']:.2f} vs {d['alt_value']:.2f} {basis}: {d['margin']:.2f} apart. "
+                            f"Too close to lose sleep over — the projection says {d['player_name']}, the ranges say either.")
             (m1, w1), (m2, w2) = range_text(d), range_text(d, "alt_")
             if m1 and m2:
                 extra.append(f"Most weeks: {d['player_name']} {m1}, {d['alt_name']} {m2}.")
             if w1 and w2:
-                extra.append(f"A bad week to a good week: {w1} and {w2}.")
+                extra.append(f"A bad week to a good week: {d['player_name']} {w1}, {d['alt_name']} {w2}.")
         else:
             st.markdown(f"{d['value']:.2f} vs {d['alt_value']:.2f} {basis} — **{d['margin']:.2f} apart, {d['verdict']}**.")
         if d.get("mover_name") and isinstance(d["mover_name"], str):

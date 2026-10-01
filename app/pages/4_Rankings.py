@@ -439,8 +439,10 @@ if model == "v2":
             "TDs and interceptions. Each is a *gradient-boosted* model: a few hundred small decision trees, each one fixing the "
             f"mistakes of the ones before it. Then **{league_name}**'s scoring turns the stat line into points, which is why the "
             "same player projects differently in each league.\n"
-            "- **Floor and ceiling** come from separate models that learned how far off the projection usually is for a player "
-            "like this one: 8 weeks in 10 land between them, and the grades above check that they do.\n"
+            "- **Most weeks, floor and ceiling** come from separate models that learned how far off the projection usually is "
+            "for a player like this one, then widened or narrowed until they held on seasons they had never seen, separately "
+            "for cheap, mid-priced and expensive projections: half his weeks land in the *most weeks* range, 8 in 10 between "
+            "the floor and the ceiling, and the grades above check that they do.\n"
             "- **How it was graded**: trained on the past, graded on seasons it never saw. Each season from 2021 to 2025 was "
             "predicted by a model trained only on the seasons before it (the Backtest section).\n"
             "- **Spearman** is the order score in both grade tables: how well the projected order of players matched the order they "
@@ -499,8 +501,7 @@ if model == "v2":
                     "it had never seen. Then we scrambled one input at a time (shuffled it between players, so it tells the model "
                     "nothing) and counted how much bigger the average miss got, in points per player per game "
                     f"({r0['scored_in']} scoring). Bigger = the model leans on it more. Inputs that move together (targets and "
-                    "catches, a season and its last 3 games) share the credit, so each looks a little smaller than it is. The "
-                    "projection itself (the \"price line\" an older table here showed) is the answer, not an input."
+                    "catches, a season and its last 3 games) share the credit, so each looks a little smaller than it is."
                 )
                 tab_order = ([position] if position in order else []) + [p for p in order if p != position]   # the board's position first
                 for tab, pos in zip(st.tabs(tab_order), tab_order, strict=True):
