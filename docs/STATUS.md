@@ -2523,6 +2523,47 @@ Tests only: nothing in production reads the new tables; `projections.py` is unto
   `mart_player_week_projections+`; `scripts/nightly.sh` `projection-marts` needs no change for the same reason — add it
   for symmetry if you like). The hosted sync picks it up (the pages name `analytics.mart_player_ros_projection`).
 
+### E1 2026-10-01 — "Our record": League Lab against Sleeper's own projections (branch `dev/E1`, clone `league_lab_e1`)
+
+**What.** `league-lab ingest sleeper-projections` (`src/league_lab/ingest/sleeper_projections.py`) pulls Sleeper's
+projections for the next week to kick off into `raw.sleeper_projections` (full payload + the stat line parsed into
+the weekly-stats column names; one snapshot per pull, never overwritten; archive
+`data/raw/sleeper/projections/<season>/<week>_<stamp>.json.gz`; `--offline` replays it; host configurable as
+`LEAGUE_LAB_SLEEPER_PROJECTIONS_URL`; DDL in `db migrate`). `mart_projection_record` holds our kickoff board vs
+Sleeper's last pre-kickoff snapshot (priced in each league's scoring with `league_points`) vs the actual points,
+per league × season × week × position (QB–TE: Spearman, MAE, top-N hit rate on the players both projected; `ALL`:
+the cards' start/sit calls — who called it right) plus season-to-date rows. Page `app/pages/13_Record.py` "Our
+record"; one paragraph + link in Rankings' "The model" after "How it was graded". Nightly: `replay-projections`
+(after `replay-weather`), `fetch-projections` (soft, before `save-record`, skipped with `NIGHTLY_SLEEPER_OFFLINE=1`),
+`mart_projection_record` on the projection-marts `--select` (Makefile `project` too; new target
+`make sleeper-projections`). Definitions: METRICS § "Projection record".
+
+**Evidence (sandbox: Sleeper unreachable, every Sleeper number below is a FIXTURE).**
+* Pricing (acceptance): Sleeper's line priced with League of Scrubs' settings (standard half PPR) reproduces the
+  fixture's `pts_half_ppr` on all 29 priced players with a worst difference of 0.00 (≤ 0.05 required); with rec = 1 /
+  0 it reproduces `pts_ppr` / `pts_std` the same way; worked by hand: Josh Allen 25.50 (Scrubs), 31.575 (dynasty);
+  Will Reichard 9.1. The fixture's `pts_*` are computed from Sleeper's own keys, never through our mapping.
+* Loader round trip (`tests/test_sleeper_projections.py`, 18 tests): pull → one snapshot file + sidecar, 31 rows
+  (32 objects, one without `player_id`); `--offline` on a fresh store rebuilds identical rows; replaying again =
+  `skipped_unchanged`; an unchanged pull adds no file; a changed pull is a second snapshot (62 rows); a bad / empty
+  / 404 answer fails and leaves no file; a hand-curled `.json` replays with its name's stamp as the fetch time.
+* In `league_lab_e1`: 5 fixture snapshots replayed through the CLI (weeks 2 and 4; week 2 has one AFTER kickoff,
+  which the record ignores: `sleeper_fetched_at` = 2026-09-17 12:00 UTC); **to show a scored week the clone's
+  week-2 and week-4 boards were relabelled `kickoff` (they are `refit` / live in the PO's database) — clone only**.
+  The mart: 30 rows; hand checks (`scratchpad/waveE/e1/check_record.py`): SQL `league_points` = Python
+  `price_line` on 2,136 priced rows (max diff 0.0000); Scrubs week 2 WR recomputed in pandas (n 137, Spearman 0.555 /
+  0.533, MAE 4.18 / 4.33, hit@36 0.500 / 0.472) = the mart; the SQL's start/sit pairs = `cards.decisions()` on the
+  same lineup rows, 132 of 132. Fixture record (meaningless numbers): Scrubs week 2, 18 of 29 calls right vs 12 for
+  "Sleeper", MAE 4.07 vs 4.19; dynasty 15 of 33 vs 15, 4.91 vs 5.00; week 4 `in_play`.
+* dbt: `mart_projection_record` + 15 tests PASS (incl. `n_both ≥ 1`, `1 ≤ n_players ≤ n_both` on scored rows, calls
+  add up, snapshots precede kickoff); `uv run pytest -q` 799 passed; ruff clean; shellcheck clean; headless check
+  41 runs ALL OK (every page, both leagues); the page's three states checked (empty, week in play only, scored);
+  screenshots 390 / 1300 px in `scratchpad/waveE/e1/shots/`.
+
+**Open.** No real Sleeper answer has been seen: the parser follows the documented shape and keeps everything in
+`payload`; the first pull on the Mac is the real test (commands in the hand-back). K is priced, DEF is not (pairs
+with a DEF are counted apart). The record starts the first week Andrew's nightly pulls Sleeper before kickoff.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

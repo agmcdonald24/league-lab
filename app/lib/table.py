@@ -334,6 +334,20 @@ COLUMNS: dict[str, Col] = {
     "ros_byes": C("Bye", help="His bye week still ahead (blank: already played)"),
     "ros_pts": C("Points", "int", "Rest of season: his projected points added up over every week left in this league's season, up to its final, in this league's scoring. A bye counts no game"),
     "playoff_pts": C("Playoffs", "int", "His projected points over this league's playoff weeks (from the playoff start to the final)"),
+
+    # ---- E1 record (plan E1, "Our record": League Lab against Sleeper's own projections)
+    "n_players": C("Players", "int", "Players both projected who played (Out and Doubtful left out)"),
+    "ours_spearman": C("Order · ours", "num2", "How well our projected order matched the real one (1 = perfect, 0 = random)"),
+    "sleeper_spearman": C("Order · Sleeper", "num2", "How well Sleeper's projected order matched the real one (1 = perfect, 0 = random)"),
+    "ours_mae": C("Miss · ours", "num2", "Our average miss, in points (this league's scoring)"),
+    "sleeper_mae": C("Miss · Sleeper", "num2", "Sleeper's average miss, in points, its stat line counted this league's way"),
+    "ours_hit_rate": C("Top group · ours", "pct", "How many of the week's real top 12 QBs / 24 RBs / 36 WRs / 12 TEs we had in our top group"),
+    "sleeper_hit_rate": C("Top group · Sleeper", "pct", "How many of the week's real top group Sleeper had in its top group"),
+    "pairs_n": C("Calls", "int", "Start/sit calls graded: the three closest per team each week (a tie, or a call involving a defense, is left out)"),
+    "pairs_ours_right": C("Ours right", "int", "Calls where the player we said to start outscored the other"),
+    "pairs_sleeper_right": C("Sleeper right", "int", "Calls where the player Sleeper projected higher outscored the other"),
+    "pairs_disagree": C("Disagreed", "int", "Calls where Sleeper projected the bench player higher than our starter"),
+    "pairs_ours_right_disagree": C("Ours right when we disagreed", "int", "Of the calls where we disagreed with Sleeper, how many we got right"),
 }
 
 

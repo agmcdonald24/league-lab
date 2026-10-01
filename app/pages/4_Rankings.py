@@ -5,6 +5,8 @@ Phone first (plan U-13): one compact filter row (position, week, the rare ones i
 a one-line answer, the board as five columns (rank, player, opponent, projection, floor–ceiling), the full board
 in an expander. The default week is lib.ui.current_week — the week My Week shows."""
 
+from urllib.parse import urlencode
+
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -531,6 +533,15 @@ if model == "v2":
             "- **What it does not know**: injury news after the morning refresh, the weather, how the game actually goes (a "
             "blowout sends starters to the bench early), and coaching decisions made during the week. Check the news before kickoff.\n"
             "- **Refreshed** every morning with the newest games; its recipe stays the same all season."
+        )
+        # plan E1: the week-by-week record against Sleeper's own projections lives on its own page (a relative
+        # URL like the player links: st.page_link from a page resolves against the entrypoint, not this file)
+        record_url = "Record?" + urlencode({"league": league_id, **({"team": str(roster_id)} if roster_id is not None else {})})
+        st.markdown(
+            "**Against the free numbers.** Every week we also save Sleeper's own projections (the ones in the Sleeper app) "
+            "before the first kickoff, count them your league's way, and check after the games whose were closer and who "
+            "called the start/sit decisions right. That record, from the first week Sleeper's numbers were saved, is on "
+            f"[Our record]({record_url})."
         )
         # projection v3 (plan D5, Wave D): what was added, the evidence, what was tried and dropped
         st.markdown(

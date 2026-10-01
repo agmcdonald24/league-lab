@@ -9,7 +9,7 @@
 #   → replay the archive (data/raw: Sleeper, nflverse history, nflverse current season; --offline)
 #   → live fetch (Sleeper, nflverse current season; conditional requests)
 #   → dbt build → backtests (only when missing or made by another model version)
-#   → project (projection v2, then the lineups solved on it) → save the record to the archive
+#   → project (projection v2, then the lineups solved on it) → Sleeper's projections (E1) → save the record
 #   → projection + lineup marts → drift
 #   → backup (NIGHTLY_BACKUP=1) → hosted sync (when LEAGUE_LAB_HOSTED_ADMIN_URL is set)
 #
@@ -392,6 +392,13 @@ if [ -d "$RAW_DIR/weather" ]; then
 else
   skip replay-weather "no weather archive yet; the live step loads it"
 fi
+# Sleeper's own projections (plan E1, "Our record"): every archived snapshot back into raw.sleeper_projections. Soft:
+# the record is built from the snapshots that load, and a file that fails to load stays in the archive.
+if [ -d "$RAW_DIR/sleeper/projections" ]; then
+  SOFT_WHY="the record is built from the snapshots that loaded; the files stay in the archive" soft replay-projections uv run league-lab ingest sleeper-projections --offline
+else
+  skip replay-projections "no Sleeper projections archive yet; fetch-projections pulls the coming week"
+fi
 
 # 2. Live: what changed upstream since the archive was written.
 if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then
@@ -422,11 +429,18 @@ else
   FAILED+=(project)
   finish
 fi
+# plan E1: Sleeper's projections for the next week to kick off, one snapshot a night, so the record has the last one
+# saved before the first kickoff (the moment this board freezes). Soft: a failed pull loses one night's snapshot.
+if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then
+  skip fetch-projections "NIGHTLY_SLEEPER_OFFLINE=1 (no api.sleeper.com here)"
+else
+  SOFT_WHY="the week keeps its earlier snapshots; the record uses the last one saved before kickoff" soft fetch-projections uv run league-lab ingest sleeper-projections
+fi
 soft save-record save_record
 # the projection marts on tonight's projections (+ mart_projection_backtest+: dbt's view swap
 # cascades to mart_projection_drift, which must be rebuilt or it never reaches the hosted copy)
 # and the lineup mart on the lineups `project` solved last (plan B1)
-hard projection-marts dbt_step projection-marts build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside
+hard projection-marts dbt_step projection-marts build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside mart_projection_record
 soft drift drift_if_unscored
 
 # 4. Keep and publish.

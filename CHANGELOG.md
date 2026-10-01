@@ -20,6 +20,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   "Rest of season" and "ROS rank" columns in the market expander). Same totals as the trade engine's market on the same
   weeks (all rows); the market runs to week 18. `app/lib/ros.py`, `tests/test_ros.py`, METRICS § Rest of season.
 
+- **Our record (E1).** `league-lab ingest sleeper-projections` saves Sleeper's own weekly projections as snapshots
+  (`raw.sleeper_projections`, archive `data/raw/sleeper/projections/`, nightly `fetch-projections` /
+  `replay-projections`); `mart_projection_record` holds the board frozen at kickoff against Sleeper's last
+  pre-kickoff snapshot, priced in each league's scoring, and the actual points (Spearman, MAE, top-N hits on the
+  players both projected; the cards' start/sit calls: who called it right), week by week and season to date; new
+  page "Our record", linked from Rankings. Starts the first week Sleeper is pulled before kickoff.
+
 ## 2026-10-01 — Projection v3 and the decision ranges
 
 - **Projection v3.0 (D5 + the v3 ship).** Per-position inputs, `projections.FEATURES_BY_POSITION`: QB = v2's inputs + 5

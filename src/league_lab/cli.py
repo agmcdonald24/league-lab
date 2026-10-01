@@ -615,3 +615,23 @@ def version_cmd():
     console.print(f"league-lab 0.1.0 ({code_version()}) at {datetime.now(UTC):%Y-%m-%d %H:%M UTC}")
     console.print(f"project root: {PROJECT_ROOT}")
     console.print(f"data dir:     {Path(get_settings().data_dir)}")
+
+
+# ---- E1
+@ingest_app.command("sleeper-projections")
+def ingest_sleeper_projections_cmd(
+    season: int | None = typer.Option(None, help="NFL season (default: the current one)"),
+    week: int | None = typer.Option(None, help="Regular-season week (default: the next week whose first game has not kicked off)"),
+    offline: bool = typer.Option(False, help="Replay every archived snapshot from data/raw/sleeper/projections (narrowed by --season / --week); no network"),
+    force: bool = typer.Option(False, help="Reload snapshots even when the manifest already holds them"),
+):
+    """Plan E1: Sleeper's own weekly projections -> raw.sleeper_projections, one snapshot per pull (the benchmark of
+    "Our record": the record uses the last snapshot fetched before the week's first kickoff)."""
+    from .ingest.sleeper_projections import ingest_sleeper_projections
+
+    with connect() as conn:
+        migrate(conn)
+        results = ingest_sleeper_projections(conn, season, week, offline=offline, force=force)
+    if not results:
+        console.print("sleeper projections: nothing to load (no archived snapshot to replay)")
+    raise typer.Exit(1 if _print_results(results) else 0)
