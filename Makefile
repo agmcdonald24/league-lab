@@ -38,9 +38,7 @@ backtest-v2: ## walk-forward backtest of projection v2 on SEASONS (default 2021-
 
 project: ## fit projection v2 on completed seasons, write this season's projections (ops.projections), publish the mart
 	uv run league-lab project
-	uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside mart_player_ros_projection
-
-	uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside mart_projection_record
+	uv run league-lab dbt build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside mart_player_ros_projection mart_projection_record
 
 sleeper-projections: ## plan E1: pull Sleeper's projections for the next week to kick off (WEEK=n for another), then rebuild "Our record"
 	uv run league-lab ingest sleeper-projections $(if $(WEEK),--week $(WEEK),)

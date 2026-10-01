@@ -440,7 +440,7 @@ soft save-record save_record
 # the projection marts on tonight's projections (+ mart_projection_backtest+: dbt's view swap
 # cascades to mart_projection_drift, which must be rebuilt or it never reaches the hosted copy)
 # and the lineup mart on the lineups `project` solved last (plan B1)
-hard projection-marts dbt_step projection-marts build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside mart_projection_record
+hard projection-marts dbt_step projection-marts build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside mart_player_ros_projection mart_projection_record
 soft drift drift_if_unscored
 
 # 4. Keep and publish.
