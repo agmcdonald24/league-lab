@@ -90,7 +90,12 @@ HGB = dict(max_iter=300, learning_rate=0.04, max_leaf_nodes=15, min_samples_leaf
 
 
 # ------------------------------------------------------------------------------ data
-def load_frame(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
+def load_frame(conn: psycopg.Connection, seasons: list[int], extra_tables: dict[str, list[str]] | None = None) -> pd.DataFrame:
+    """The as-of feature frame of ``seasons`` (QB-TE), ordered by player, season, week.
+
+    ``extra_tables`` (plan D1, the feature-group harness): ``{"schema.table": [columns]}`` of feature tables at
+    ``(gsis_id, season, week)`` grain, left-joined onto the frame as float columns (NULL = not known). The
+    default (None) is the production frame, untouched."""
     cols = ["gsis_id", "season", "week", "position", "player_name", "team", "opponent", "played", "points_actual", "no_history",
             "report_status", "roster_status", *[f for f in FEATURES if f != "questionable"], *[f"out_{c}" for c in ALL_COMPONENTS]]
     # ordered: the early-stopping validation split (automatic above 10k rows) follows row order, so an
@@ -105,6 +110,30 @@ def load_frame(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
         if c in FEATURES or c.startswith("out_") or c == "points_actual":
             df[c] = pd.to_numeric(df[c], errors="coerce").astype(float)
     df["questionable"] = (df["report_status"] == "Questionable").astype(float)
+    for table, extra in (extra_tables or {}).items():
+        df = _join_feature_table(conn, df, table, extra, seasons)
+    return df
+
+
+def _join_feature_table(conn: psycopg.Connection, df: pd.DataFrame, table: str, columns: list[str], seasons: list[int]) -> pd.DataFrame:
+    """Left-join one feature table's ``columns`` at ``(gsis_id, season, week)`` (row order kept: the fit depends on it)."""
+    from psycopg import sql
+
+    schema, name = table.split(".", 1)
+    q = sql.SQL("select gsis_id, season, week, {} from {}.{} where season = any(%s)").format(
+        sql.SQL(", ").join(sql.Identifier(c) for c in columns), sql.Identifier(schema), sql.Identifier(name))
+    with conn.cursor() as cur:
+        cur.execute(q, (seasons,))
+        extra = pd.DataFrame(cur.fetchall(), columns=["gsis_id", "season", "week", *columns])
+    for c in columns:   # booleans and numerics alike: float, NULL -> NaN (HGB treats it as "not known")
+        extra[c] = pd.to_numeric(extra[c].map(lambda v: float(v) if v is not None else np.nan), errors="coerce").astype(float)
+    extra = extra.astype({"season": df["season"].dtype, "week": df["week"].dtype})   # week is float in the frame (it is a feature)
+    clash = [c for c in columns if c in df.columns]
+    if clash:
+        raise ValueError(f"{table}: columns {clash} already exist in the feature frame")
+    n = len(df)
+    df = df.merge(extra, on=["gsis_id", "season", "week"], how="left", validate="many_to_one")
+    assert len(df) == n, f"{table}: the join changed the row count ({n} -> {len(df)})"
     return df
 
 
@@ -131,6 +160,7 @@ class PositionModel:
     conformal: dict[str, float] = field(default_factory=dict)        # league_id -> interval widening (points)
     n_rows: int = 0
     calibration_season: int | None = None
+    features: list[str] | None = None    # the inputs it was fitted on; None = FEATURES (plan D1 harness hook)
 
 
 def _regressor(loss: str, quantile: float | None = None):
@@ -161,9 +191,9 @@ def _binnable(x: np.ndarray) -> np.ndarray:
     return x
 
 
-def _matrix(d: pd.DataFrame) -> np.ndarray:
-    """Feature matrix (NaN = not known yet)."""
-    return _binnable(d[FEATURES].to_numpy(dtype=float))
+def _matrix(d: pd.DataFrame, features: list[str] | None = None) -> np.ndarray:
+    """Feature matrix (NaN = not known yet). ``features`` (plan D1 harness): default FEATURES."""
+    return _binnable(d[FEATURES if features is None else features].to_numpy(dtype=float))
 
 
 def _fit_components(x: np.ndarray, d: pd.DataFrame, position: str) -> dict[str, object]:
@@ -199,11 +229,13 @@ def _oof_lines(x: np.ndarray, d: pd.DataFrame, position: str, scorings: dict[str
     return lines
 
 
-def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[str, dict[str, float]]]) -> PositionModel:
+def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[str, dict[str, float]]],
+                 features: list[str] | None = None) -> PositionModel:
+    """``features`` (plan D1 harness): the input columns; default FEATURES (production)."""
     d = train[(train["position"] == position) & train["played"] & ~train["no_history"]]
     d = d.dropna(subset=[f"out_{c}" for c in COMPONENTS[position]]).reset_index(drop=True)
-    x = _matrix(d)
-    m = PositionModel(position, n_rows=len(d))
+    x = _matrix(d, features)
+    m = PositionModel(position, n_rows=len(d), features=None if features is None else list(features))
     # 1. the point projection: one regressor per component on every training row
     m.components = _fit_components(x, d, position)
     # 2. the interval: quantile regressors of the RESIDUAL of the league's points around the
@@ -244,7 +276,7 @@ def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[s
 
 def predict_position(m: PositionModel, rows: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]]) -> pd.DataFrame:
     """One output row per league per input row: projected line, priced points, P10/P50/P90."""
-    x = _matrix(rows)
+    x = _matrix(rows, m.features)
     out = rows[["gsis_id", "season", "week", "position"]].copy()
     out["season"], out["week"] = out["season"].astype(int), out["week"].astype(int)   # week is also a feature (float)
     for c in ALL_COMPONENTS:
@@ -542,15 +574,15 @@ def load_baseline(conn: psycopg.Connection, seasons: list[int]) -> pd.DataFrame:
 
 
 # ------------------------------------------------------------------------------ walk-forward backtest
-def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | None = None) -> pd.DataFrame:
-    scorings = league_scorings(conn)
-    all_seasons = available_seasons(conn)
-    first = min(all_seasons)
-    frame = load_frame(conn, [s for s in all_seasons if s <= max(test_seasons)])
-    baseline = load_baseline(conn, test_seasons)
+def walk_forward(frame: pd.DataFrame, test_seasons: list[int], scorings: dict[str, tuple[str, dict[str, float]]], first: int,
+                 baseline: pd.DataFrame | None, features: list[str] | None = None, positions: tuple[str, ...] = POSITIONS,
+                 importance_ref: str | None = None) -> tuple[pd.DataFrame, list[pd.DataFrame]]:
+    """The walk-forward loop of ``backtest``: for each test season N, fit every position on seasons
+    ``first``..N-1 of ``frame`` and score N. ``features`` / ``positions`` (plan D1, the feature-group
+    harness) default to production; ``importance_ref`` (a league id) also measures the P50 model's
+    permutation importance on the newest test season. Returns the per-week scores and the importances."""
     results: list[pd.DataFrame] = []
     imps: list[pd.DataFrame] = []
-    ref_id = next(iter(scorings))
     for n in test_seasons:
         train = frame[(frame["season"] >= first) & (frame["season"] < n)]
         test = frame[frame["season"] == n]
@@ -558,11 +590,11 @@ def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | 
             log.warning("season %s: no train (%s rows) or test (%s rows)", n, len(train), len(test))
             continue
         preds = []
-        for pos in POSITIONS:
-            m = fit_position(train, pos, {k: v for k, v in scorings.items()})
+        for pos in positions:
+            m = fit_position(train, pos, {k: v for k, v in scorings.items()}, features)
             preds.append(predict_position(m, test[test["position"] == pos], scorings))
-            if n == max(test_seasons):
-                imps.append(importance(m, test, ref_id, scorings[ref_id][1]))
+            if importance_ref is not None and n == max(test_seasons):
+                imps.append(importance(m, test, importance_ref, scorings[importance_ref][1]))
         pred = pd.concat(preds, ignore_index=True)
         pred.attrs["scorings"] = {k: v[1] for k, v in scorings.items()}
         actual = test[test["played"]][["gsis_id", "season", "week", "position", *[f"out_{c}" for c in ALL_COMPONENTS]]].dropna()
@@ -570,7 +602,17 @@ def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | 
         res["train_seasons"] = f"{first}-{n - 1}"
         results.append(res)
         log.info("season %s scored: %s rows", n, len(res))
-    res = pd.concat(results, ignore_index=True)
+    return pd.concat(results, ignore_index=True), imps
+
+
+def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | None = None) -> pd.DataFrame:
+    scorings = league_scorings(conn)
+    all_seasons = available_seasons(conn)
+    first = min(all_seasons)
+    frame = load_frame(conn, [s for s in all_seasons if s <= max(test_seasons)])
+    baseline = load_baseline(conn, test_seasons)
+    ref_id = next(iter(scorings))
+    res, imps = walk_forward(frame, test_seasons, scorings, first, baseline, importance_ref=ref_id)
     run_id = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     res["run_id"], res["run_at"], res["model_version"] = run_id, datetime.now(UTC), MODEL_VERSION
     # the K / DEF rows (R-13, model kd1.0, `league-lab backtest-kd`) share the table: not this run's to delete

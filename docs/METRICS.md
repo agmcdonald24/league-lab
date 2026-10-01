@@ -1153,6 +1153,84 @@ scenario's projection for the weeks it covers) — with B3's drop rule (the drop
 lineup least over the horizon; ties to the fewest rest-of-season points; none on an open spot); ordered by the gain
 if it holds, then the scenario's gain.
 
+## Feature experiments (fx1.0, plan D1, Wave D, 2026-10-01; `league_lab.experiments`, `league-lab experiment`, `ops.feature_experiments`, `mart_feature_experiments`)
+
+The gate for projection v3: a group of new inputs joins `FEATURES` only if it makes v2 better on seasons it
+never saw, consistently, per position. Nothing edits `mart_player_week_features` until a group is kept.
+
+**A group** is a table at `(gsis_id, season, week)` grain (one row per `int_player_week_universe` row, regular
+season from 2016, columns prefixed by group: `gc_`, `wx_`, `ts_`, every column as-of the week, NULL where
+unknown) plus the columns to try. It is registered in a module of `src/league_lab/feature_groups/` as
+`GROUPS = {name: {"table": "schema.table", "columns": [...], "positions": [...] (default all), "in_season":
+[...] (columns built from this season's games), "label": "plain words", "note": "..."}}`; one module per
+family so parallel branches never edit the same lines. Validation (`check_spec`) refuses, with the reason: an
+unknown or missing table, missing columns, a column that is already a v2 input or a key, a non-numeric /
+non-boolean column, an unknown position, an `in_season` column that is not in `columns`, the name `baseline`.
+
+**The run.** `league-lab experiment <group> [<group> ...] [--seasons 2023-2025] [--leagues id,id]`:
+1. the no-peek check (below) on every named group's table — a failure refuses the group before any fit;
+2. one frame (`projections.load_frame(..., extra_tables=...)`: the production frame with the groups' columns
+   left-joined as floats, row order kept);
+3. the **baseline**: `projections.walk_forward` (the loop `backtest-v2` runs, factored out unchanged) with
+   `FEATURES`, every position, for each test season N trained on 2016..N-1, scored by `score_predictions`
+   in every current league's scoring. Cached in `ops.feature_experiments` (`feature_group = 'baseline'`)
+   under `model_version` + `test_seasons` + `data_key` (an md5 of the model version, harness version,
+   `FEATURES`, `HGB`, the leagues' scoring and the training frame's row count, played count and points
+   sum), so every group compares with the same numbers and a rebuilt mart refits it;
+   `league-lab experiment baseline` refits it on demand;
+4. the group: the same loop with `FEATURES + columns` on the group's positions;
+5. per league × test season × position, the season means of the priced line's weekly scores (scorer
+   `v2_points`, what the board ranks by): Spearman, top-N hit rate, MAE, coverage_80, interval width and the
+   **interval score** = mean of the pinball losses at 0.1 and 0.9 (points; lower = a sharper range at the
+   same honesty; it is 1/20 of the Winkler score of the 80% interval), each next to the baseline's and as
+   Δ = group − baseline.
+
+**The decision rule** (`experiments.decide`), per position, paired across test seasons (each season's Δ
+averaged over the two leagues first: the season is the unit, the leagues share the component models):
+* *helps*: mean ΔSpearman ≥ +0.005 **and** ΔSpearman > 0 in at least ⌈2n/3⌉ of the n test seasons (2 of 3),
+  **or** mean ΔMAE ≤ −0.05 points with ΔMAE < 0 in at least ⌈2n/3⌉ seasons;
+* *hurts*: the mirror image (mean ΔSpearman ≤ −0.005 and worse in ⌈2n/3⌉, or mean ΔMAE ≥ +0.05 and worse
+  in ⌈2n/3⌉);
+* position decision: **keep** = helps and not hurts; **mixed** = both (better order with a bigger miss, or
+  the reverse); **drop** = otherwise — no consistent gain is a drop (inputs cost fit time and drift risk);
+* group verdict: **keep** = helps at least one position and hurts none; **mixed** = helps one position and
+  hurts another (the PO decides per position); **drop** = helps none.
+The interval score and coverage are reported (Δ) but do not decide: v2's intervals are conformally widened,
+so coverage stays near 80% whatever the inputs; a sharper range shows up as a lower interval score and width.
+
+**The no-peek check** (`experiments.no_peek_check`), the harness's generic version of
+`dbt/tests/assert_features_never_peek.sql`, run on the group's table before fitting. Refused:
+1. *grain*: duplicate `(gsis_id, season, week)` keys;
+2. *universe*: rows that are not player-weeks of `int_player_week_universe` (a join error);
+3. *as-of marker* (the dbt test's first clause): any column named `*asof_week` must be < `week`;
+4. *week 1* (its second clause): the group's `in_season` columns must be NULL in week 1;
+5. *outcome probe* (for tables without an as-of marker, which is most of them): per position and column,
+   on played player-weeks with a played week before and after in the same season, the correlation of the
+   input with this week's points (reference scoring) against its correlations with the previous and the
+   next played week's points. An input known before kickoff tracks this week barely more than its
+   neighbours (on the 72 production inputs the largest excess is 0.047: the opponent's points allowed,
+   QB); one built from the game itself jumps (the game's own targets, carries, yards: 0.11–0.52; the week's
+   points: 0.52–0.66). Refused when |r_same| − max(|r_prev|, |r_next|) ≥ 0.10 on ≥ 500 rows.
+Warned, recorded in `no_peek_warnings`, not refused:
+6. *coverage*: universe player-weeks the table lacks;
+7. *serve gap*: on the newest season, a column known on ≥ 50% of the played rows but on none of the rows of
+   the first week nobody has played yet is only known after the game (observed weather): training sees
+   something the live board cannot.
+A planted leak (the week's own points as an input) fails check 5 at every position (r = 1.00 vs 0.34–0.48)
+and triggers warning 7; a planted `*_asof_week = week` fails check 3; an `in_season` column filled in week 1
+fails check 4 (`tests/test_experiments.py::test_no_peek_check_catches_planted_leaks`).
+
+**Outputs.** `ops.feature_experiments`: one row per run × group × position × league × test season (`n_weeks`,
+`n_player_weeks`, the six metrics, `baseline_*`, `delta_*`, `decision`, `group_verdict`, `runtime_s`,
+`no_peek_warnings`, `data_key`). A rerun of a group replaces its rows for the same model version, test seasons
+and leagues. `mart_feature_experiments` (view): per group × position from each group's latest run, the
+league-averaged season deltas averaged over seasons, `seasons_better_spearman` / `seasons_better_mae`, the
+decision and the verdict. Rankings → "The model" → "What we tried" shows it in plain words.
+
+Runtime: the walk-forward refits every position for each test season (components, out-of-fold lines,
+3 quantile models per league); with `OMP_NUM_THREADS=1` a group of 2023–2025 is measured in STATUS
+§ "Wave D (Iteration 12)". Several groups in one call share the frame and the baseline.
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |
