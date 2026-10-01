@@ -4,6 +4,18 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-09-30 — Wave C (mobile, plain words, kickers and defenses)
 
+- **Matchups: cornerbacks, defense vs position as a picture, two players side by side (R-14, R-15, R-11).** New
+  marts `mart_cb_rankings` (every starting corner ranked per season / last 4 games / two seasons on targets per
+  coverage snap, yards per target adjusted for the offenses faced and rating allowed: shutdown / solid / target),
+  `mart_cb_matchups` (per WR / TE-week: the opponent's corners from its depth chart before kickoff, where his targets
+  went, the corner likely across from him — clear or even split — and his history), `mart_receiver_vs_cb` (who was on
+  the field for his targets), `mart_defense_position_profile` (opportunity vs efficiency allowed, opponent-adjusted, as
+  of each week) and `int_defender_game_coverage_snaps`; `mart_defender_coverage_season` and `mart_matchup_cb_context`
+  retired. Matchups below the decision cards: a side-by-side card that opens on the closest call and quotes its margin
+  ("The lineup says Gainwell by 0.45; the matchup agrees: his defense gives up the most carries to RBs"), one
+  cornerback line per starting receiver, and a heatmap of every defense × position (your opponents pinned and ringed)
+  with ranked bars for one position. No projection change; shadow coverage was tested and is not shown (it caught 1
+  of 6 well-known 2025 shadow corners).
 - **Plain words, and an honest "what drives the projection" (U-14, U-15).** Home is rewritten for a league-mate: a
   three-sentence intro, **Worth a look** (your schedule luck, points left on your bench, the best bargain on your
   roster, the player on it who is most often his quarterback's first look — each a link to the page behind it), the pages listed as the

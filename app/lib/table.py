@@ -289,6 +289,25 @@ COLUMNS: dict[str, Col] = {
     "you_get": C("You get", help="The player(s) you would ask for"), "you_give": C("You give", help="The player(s) you would send"),
     "you_gain_h": C("You · 4 wks", "signed1", "What your best lineups over the next four weeks gain with the trade, added up"),
     "they_gain_h": C("Them · 4 wks", "signed1", "What their best lineups over the next four weeks gain with the trade, added up"),
+    # ---- C5 matchups (R-14 cornerbacks, R-11 comparison)
+    "quality_rank": C("CB rank", "int", "Rank among starting corners (at least 20 pass plays in coverage a team game in the window) on three numbers weighed equally: how often he is thrown at, yards per throw at him adjusted for the offenses he faced, and the quarterback rating on those throws. 1 = hardest to throw on"),
+    "quality_label": C("Label", help="Shutdown = the top quarter of the rank, target = the bottom quarter (quarterbacks go after him), solid = the middle half"),
+    "rank_this_season": C("Rank (season)", "int", "The same rank on this season's games only: a few games are a handful of throws"),
+    "rank_last_4": C("Rank (L4)", "int", "The same rank on his last 4 games"),
+    "targets_per_coverage_snap": C("Thrown at", "pct", "How often he is the target when he is on the field for a pass play (targets per coverage snap). Lower = quarterbacks stay away from him"),
+    "adj_yards_per_target": C("Yds/throw (adj)", "num1", "Yards per throw at him, adjusted for the offenses he faced (what their receivers usually gain per target) and pulled toward the average when he has few targets. Lower = tougher"),
+    "passer_rating_allowed": C("Rating allowed", "num1", "Quarterback rating on throws at him (the NFL formula on all those throws together): lower = tougher"),
+    "coverage_snaps": C("Pass plays", "int", "Pass plays he was on the field for in the window (this season estimated from his share of snaps until the league publishes who was on the field)"),
+    "defender_snap_share": C("His snaps", "pct", "The corner's share of his defense's snaps in those games"),
+    "share_of_targets": C("Of his targets", "pct", "The share of the receiver's targets against that defense with this corner on the field: on the field, not necessarily covering him"),
+    "likely_cover_name": C("Named corner", help="The corner we named across from him that week (the outside corner on the side more of his targets went)"),
+    "cover_rank": C("CB rank", "int", "That corner's rank that season (since the start of the season before)"),
+    "cover_label": C("Label", help="Shutdown = the top quarter, target = the bottom quarter, solid = the rest"),
+    "latest_team": C("Team"),
+    "ppg_vs_shutdown": C("PPG vs shutdown", "num1", "His points per game (this league's scoring) in games where the corner we named across from him was a shutdown corner (top quarter)"),
+    "games_vs_shutdown": C("G", "int", "Games behind the number to the left"),
+    "ppg_vs_rest": C("PPG vs rest", "num1", "His points per game in every other game with a named corner"),
+    "games_vs_rest": C("G ", "int", "Games behind the number to the left"),
 }
 
 

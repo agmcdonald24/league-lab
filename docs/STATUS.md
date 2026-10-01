@@ -1408,6 +1408,57 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
   refill it (only an opened spot gets a fill); a traded player's Sleeper IR / taxi status on his new roster is not
   modelled (he takes a bench spot). No `metric_registry.csv` rows (seeds out of bounds): proposed `trade_fit` v1.1
   and `trade_market_score` v1.0 (METRICS § Trades). No `--select` appended (no mart).
+### C5 2026-09-30 — R-14 cornerback matchups + R-15 defense vs position as a picture + R-11 matchup comparison (branch `dev/C5`, clone `league_lab_c5`)
+
+* **Built.** *Marts* (`dbt/models/marts/nfl/`, no `ops` source, so no `--select` change): `mart_cb_rankings`
+  (cornerback × season × window season / last_4 / two_seasons; rank on targets per coverage snap, yards per target
+  adjusted for the offenses faced, rating allowed; shutdown / solid / target), `mart_cb_matchups` (WR / TE × week from
+  2025: the opponent's corners from its depth chart before kickoff, target direction since last season, the likely
+  cover with `call_strength` clear / even, the cover's rank, his history), `mart_receiver_vs_cb` (who was on the field
+  for his targets, with `share_of_targets`; same-game rows for the current season), `mart_defense_position_profile`
+  (opportunity vs efficiency allowed, opponent-adjusted, as of each week, + targets / carries ranks);
+  `int_defender_game_coverage_snaps`. Retired `mart_defender_coverage_season`, `mart_matchup_cb_context` (Matchups
+  was the only reader; drop them on the hosted copy at will). *Page* (`app/pages/5_Matchups.py` below B4's cards):
+  **Two players side by side** (opens on the first decision card whose two players are QB / RB / WR / TE; verdict
+  "The lineup says Gainwell by 0.45; the matchup agrees: his defense gives up the most carries to RBs"; a 3-column
+  static table; "the projection decides" caption), **Cornerbacks your receivers face** (one line per starting WR / TE:
+  the likely cover with his side, rank of N and label, the share behind the call, the history; expanders: receiver by
+  receiver — the opponent's three corners with their two-season / season / last-4 ranks, corners faced this season,
+  on the field last season, vs the cover before —, "His points against the best corners", "Every starting corner,
+  ranked" with a window switch), **Defense vs position**: heatmap (every defense × the league's positions, color =
+  rank, number = points a game, your opponents pinned with ◀ and your starters' cells ringed) or ranked bars for one
+  position, last-4 toggle, "Only your opponents" on by default at the Phone level, the table in the expander.
+  `app/lib/matchups.py` (the words, the heatmap rows, the verdict, and `call_cover` / `rank_corners`: Python twins of
+  the two SQL rules), `app/lib/charts.py` (`dvp_bars`, `dvp_heatmap` appended at the end), `app/lib/table.py`
+  (C5 block). Definitions: `docs/METRICS.md` § Cornerback matchups, § Matchup comparison.
+* **Evidence** (clone `league_lab_c5`, 2026 week 4):
+  * **Amon-Ra St. Brown** (dynasty 12) vs CAR: 66 / 60 / 73 targets left / middle / right since 2025 (`fct_play`,
+    before week 4); CAR's chart of 2026-09-26: LCB Mike Jackson, RCB Will Lee III, NB Jaycee Horn → right lean,
+    37% vs 33% = **even**: "Mike Jackson (left corner, #37 of 74, solid) or Will Lee III (right corner, unranked: too
+    few snaps)". Jackson rebuilt from `int_defender_game_coverage_snaps` (2025 + 2026): 19 games, 635 coverage snaps,
+    106 targets, 60 catches, 744 yards, 4 TD, 4 INT → 0.167 targets per snap, 7.02 yards per target, offenses' 7.76
+    → adjusted 7.04, rating 75.4; z 0.63 / −0.05 / −0.90 → score 0.107 → **#37 of 74, solid**. No meeting since 2022.
+  * **Parker Washington** (Scrubs 2 and dynasty 12) vs CIN: 53 / 27 / 33 → 47% left vs 29% = **clear** → RCB DJ
+    Turner II (#18 of 74, shutdown: 81 targets on 605 snaps, adjusted 6.87, rating 79.4); "11 catches for 137 yards on
+    11 targets with Turner on the field (2023–25)" = the raw participation rows (6 in 2023, 5 in 2025, all his CIN
+    targets). Tetairoa McMillan (Scrubs 2) vs DET: 43% vs 36% even → Rock Ya-Sin (#17, shutdown) or D.J. Reed (#39).
+  * **Rule check on 2025** (as-of rows): clear calls — the named corner charged with 0.204 of the receiver's targets,
+    the other outside corner 0.141, other throws 0.137; even calls 0.185 vs 0.163. **Shadow flag**: 1 of 6 commonly
+    reported 2025 shadow corners (Ramsey yes; Surtain II — the most negative slope —, Stingley Jr., Gardner, Gonzalez,
+    Terrell no), 0 of 10 flagged in 2024 flagged again → not shown.
+  * **Rankings**: 74 ranked (2026 two seasons), 76 (2026 season), 121 (last 4), 64–78 per completed season. Top 5:
+    Surtain II, Porter Jr., McDuffie, Stokes, Still; bottom 5: Alford, Stevenson, Robertson, Baker Jr., Hart. The
+    full 2026 pool rebuilt at full precision: 74 / 74, 0 rank and 0 label differences; the Python twin re-derives every
+    `mart_cb_matchups` call (16,972 rows, 0 differences).
+  * **Coverage of lineups**: every WR / TE starter of the 22 proposed week-4 lineups has a row (83 / 83: 6 clear, 54
+    even, 22 tight ends, 1 too few targets; 46 covers ranked).
+  * **R-11**: on all 22 rosters the comparison opens on the first card's pair and quotes its margin (22 / 22).
+  * **Checks**: dbt `mart_cb_rankings+ mart_receiver_vs_cb+ mart_defense_position_profile+` PASS (33 + 16 on the
+    rebuild), `tests/test_matchups.py` 55, full `pytest` 626, `ruff` clean, headless check 32 runs 0 exceptions,
+    Playwright at 390 × 844 (iPhone) and 1300 × 900, both leagues: no sideways scroll, heatmap 358 px wide at 390.
+* **Left open.** No projection change from the corner (a model change); the PPG split is evidence only. Shadow
+  coverage, receiver alignment and slot assignment are not in public data. `metric_registry` rows not added (seeds are
+  out of bounds): `cb_rankings` v1.0, `cb_matchups` v1.0, `defense_profile` v1.0.
 
 ## Next concrete actions
 

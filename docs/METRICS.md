@@ -909,6 +909,130 @@ spot); two cuts chosen jointly (they are taken one at a time); 3-for-1 or 2-for-
 simulator takes any package). No `metric_registry.csv` rows (seeds are out of bounds for this task); proposed:
 `trade_fit` (v1.1: package gain per roster, week and horizon), `trade_market_score` (v1.0: season points above
 the best free agent at the position, grain player × league × week).
+## Cornerback matchups (cb1.0, plan R-14, 2026-09-30; `mart_cb_rankings`, `mart_cb_matchups`, `mart_receiver_vs_cb`)
+
+**What public data can and cannot say.** Pro-Football-Reference's advanced defense (nflverse, 2018 on, a few
+days after each game) charges each target to a *primary defender*: per defender-game targets, completions, yards,
+TDs and INTs allowed. It does not say which receiver those targets went to. The participation file (nflverse, every
+completed season; the current season arrives after its postseason) lists the defenders on the field per play (and,
+from 2023, a man / zone label per play) — no assignment. FTN charting (`fct_play_charting`) has no coverage or
+defender field (checked: read, catchable, contested, drop, screen, play action, box count, blitzers … nothing names
+a defender). Nobody publishes receiver alignment (left / right / slot). So: **"covered by" is never claimed**; the
+page says "likely across from him" (a guess from where his targets go, stated as one), "on the field for 61% of
+his targets vs DET" (participation) and "in games he played" (the current season).
+
+**Coverage snaps** (`int_defender_game_coverage_snaps`): the opponent's dropbacks he was on the field for
+(participation); in the current season, his share of his team's defensive snaps (PFR snap counts) × the opponent's
+dropbacks. Checked on 2025 against the play-level count: total 0.973 of it, 1.64 snaps a game off on average
+(`assert_coverage_snap_estimate_tracks_participation`, warn).
+
+**Rank** (`mart_cb_rankings`, one row per cornerback × season × window). Windows: `season` (that season to
+date), `last_4` (his last 4 regular-season games, that season and the one before), `two_seasons` (the season
+before + that season — what the card quotes: three games of a new season are a dozen targets per corner).
+Cornerback = PFR snap position CB (or DB with a PFR position CB / DB) in at least half his games in the window
+(PFR's own position when the snap row is missing); safeties and linebackers are out. Ranked pool = cornerbacks with
+**≥ 20 coverage snaps per team game** in the window (80 over the last 4) and a target. Three numbers, sums first:
+* targets per coverage snap (how often quarterbacks throw at him);
+* **adjusted yards per target**: each game's expectation = the opposing offense's WR + TE yards per target over
+  that game's season and the one before, the game left out; weighted by his targets in the game. Adjusted =
+  his yards per target − that expectation + the pool's expectation, shrunk toward the pool's yards per target with
+  30 targets: `((ypt − exp + pool_exp) × targets + pool_ypt × 30) / (targets + 30)`. It adjusts for the offenses he
+  faced, not the receivers he covered (unknowable);
+* passer rating allowed: the NFL formula on the summed components (targets as attempts), each part clamped to
+  [0, 2.375] — not an average of per-game ratings.
+
+`quality_score` = − the mean of the three z-scores inside the pool (sample sd); `quality_rank` 1 = hardest to
+throw on (`rank()`); `quality_label` = **shutdown** (top quarter, `rank ≤ ceil(n/4)`), **target** (bottom quarter),
+**solid** (the middle half). Component ranks (`rank_targets_per_snap`, `rank_adj_yards_per_target`,
+`rank_passer_rating`, 1 = best) are published beside it. Sanity check, 2026 `two_seasons` (74 ranked): top 5
+Patrick Surtain II, Joey Porter Jr., Trent McDuffie, Eric Stokes, Tarheeb Still; bottom 5 DeAundre Alford,
+Tyrique Stevenson, Amik Robertson, Darrell Baker Jr., Cam Hart. 2025 `season` (72): top Surtain II, Porter Jr.,
+Derek Stingley Jr., Still, Riq Woolen; bottom Greg Newsome II, DaRon Bland, Brandon Stephens, Hart, Baker Jr.,
+Robertson. The first version (targets per snap alone, and a pool that let safeties in through a nickel depth-chart
+listing) put Coby Bryant, Brian Branch and Kyle Hamilton at 1, 2 and 4 and Christian Gonzalez 78th of 82.
+
+**Likely cover** (`mart_cb_matchups`, one row per WR / TE × regular-season week from 2025, every rostered WR / TE
+plus every WR / TE on his latest team in the current season). The opponent's rank-1 LCB, RCB and NB from its depth
+chart as of kickoff (the latest snapshot before it). His targets by pass location (left / middle / right, the
+offense's view) since the start of last season, before the week (`fct_play`). Rule: fewer than 15 located targets →
+no call; a TE → no call (tight ends mostly draw linebackers and safeties); else the outside corner on the side more
+of his targets went — **the offense's left faces the defense's right corner** (LCB when the lean is right, RCB when
+left; a tie goes right; a missing corner falls back to the other outside one, then the nickel). `side_share` /
+`other_side_share` = the two outside shares; `call_strength` **clear** when they are 15+ points apart, else
+**even**, and the other outside corner is named too. **Checked on 2025** (as-of rows, week 2 on, per corner-game
+least squares of his PFR targets on the targets of the receivers called onto him and the offense's other targets,
+among the three listed starters): clear calls (545 receiver-games, 1,434 targets) — the named corner was charged
+with **0.204** of the receiver's targets (se 0.025), the other outside corner 0.141, any other target 0.137-0.140;
+even calls (1,888 receiver-games) — 0.185 vs 0.163. The slot corner drew 0.115-0.146 per target of these receivers
+(no more than other throws), so the card does not send a "slot" receiver to the nickel: public data cannot tell who
+plays inside. **A lean, not an assignment.**
+
+**Who he faced** (`mart_receiver_vs_cb`, receiver × cornerback × season, 2022 on). `on_field` (seasons with
+participation): his targets / catches / yards / TDs on the plays that corner was on the field, and
+`share_of_targets` = those targets ÷ all his targets against that corner's defense(s) that season. `same_game` (the
+current season): his totals in the games the corner played and the corner's average share of the defense's snaps.
+History on the card = against this defense this season (before the week) and with the likely cover on the field
+(on-field rows, or same-game rows where the corner played half the snaps), summed since 2022.
+
+**Shadow corners: tested, not shown.** Per corner-season, the targets he drew per target the opposing WR1 got
+against per target everyone else got (two-regressor least squares over his games); flag = ≥ 10 games, ≥ 40 targets,
+slope ≥ 0.30 and 0.25 above the other slope (`wr1_follow_slope`, `other_follow_slope`, `shadow_flag` in
+`mart_cb_rankings`). On six corners commonly reported to shadow in 2025 it caught **1**: Jalen Ramsey (flagged);
+Patrick Surtain II (the most negative slope of the season: quarterbacks stop throwing at a shadowed WR1), Derek
+Stingley Jr., Sauce Gardner, Christian Gonzalez and A.J. Terrell missed. Of the 10 corners flagged in 2024, none was
+flagged again in 2025 (1–6 of 13–20 in earlier years). The page says we cannot tell who follows the top receiver.
+
+**Evidence on the page, no projection change.** "His points against the best corners": per WR on the roster,
+points per game in the league's scoring (`fct_player_game_league`) since the start of last season in games where
+the corner named across from him (that week's row) was a shutdown corner vs every other game with a named corner
+(the corner's label from that season's `two_seasons` rank, i.e. with that season's later games — not as-of). The
+projection (v2) is unchanged: using the corner would be a model change.
+
+**Checks.** dbt: keys unique, ranked rows complete and in range (targets per snap 0–0.6, rating 0–158.4, adjusted
+ypt 0–25, expectation 3–15), unranked rows carry no rank, `last_4` ≤ 4 games, labels in the set; called rows name a
+corner with shares in order and a strength, clear calls name one corner 15+ points apart, uncalled rows name none,
+location shares sum to 1, a ranked cover has a label; `assert_cb_rankings_pool_size` (≥ 48 ranked: the current
+`two_seasons` pool and every completed season's own); `assert_cb_matchup_covers_lineup_receivers` (every WR / TE in
+a proposed lineup of the current week whose team plays has a row, called or with a reason). `tests/test_matchups.py`:
+`call_cover` and `rank_corners` are the Python twins of the two SQL rules, pinned on fixtures; the evidence script
+re-derives every `mart_cb_matchups` call (16,972 rows, 0 differences) and rebuilds the 2026 `two_seasons` pool from
+`int_defender_game_coverage_snaps` at full precision (74 ranked, 0 rank or label differences).
+
+## Matchup comparison (plan R-11) and defense vs position as a picture (plan R-15), 2026-09-30
+
+**Defense profile** (`mart_defense_position_profile`, metric defense_profile v1.0, one row per season × week ×
+defense × position QB / RB / WR / TE), from the defense's regular-season games of that season **before** the week
+(`assert_defense_profile_is_asof` recounts the games):
+* opportunity allowed: targets + carries per game to the position (QB: pass attempts + carries); targets and
+  carries also per game on their own (`rank_targets`, `rank_carries`);
+* efficiency allowed: yards per opportunity (receiving + rushing; QB passing + rushing) and TD rate per opportunity
+  (for a WR / TE opportunities are his targets and his few carries);
+* points allowed per game (reference scoring, one scale for every league, as defense vs position);
+* adjusted: points allowed above what the offenses it faced usually score to the position. Each game's baseline =
+  that offense's points to the position in its other games before the week plus 3 × its last-season average,
+  over (its other games + 3) (the league's last-season average when it has none); the sum of the game residuals ÷
+  (games + 2), so two games cannot make a defense #1;
+* indices vs the league over the same windows and `gives_up` in words (± 8% band): volume and big plays, volume,
+  big plays, little of either, about average. Ranks: 1 = gives up the most, of the defenses with a game.
+
+**The comparison**: two players (default = this week's closest call on the decision cards whose two players are
+QB / RB / WR / TE: the starter and the bench player who replaces him), each with his projection, floor – ceiling
+(v2 in the league's scoring, `mart_player_week_projections`), the opponent and its profile as of that week. The
+verdict: **"The lineup says {starter} by {margin}"** — the margin the card shows (`lineup_margin`, the re-solve) —
+when the pair is that decision, else "{A} projects {difference} more"; then the matchup: it **leans** to the player
+whose defense's adjusted rank is 6 or more places kinder ("his defense gives up the 4th-most carries to RBs": the
+lowest of the leaning player's defense ranks among carries / targets / yards per touch / TD rate for an RB,
+targets / yards per target / TD rate for a WR or TE, volume / yards per play / TD rate for a QB), "agrees" when that
+is the lineup's starter, or "the matchups are about even". The page says the projection decides (it already counts
+the opponent); the comparison is context.
+
+**The picture (R-15)**: `mart_defense_vs_position_current` (reference scoring, season to date and last 4 games).
+Heatmap = every defense × every position the league starts (QB / RB / WR / TE, K where it starts one), cell color
+= the defense's rank against the position (one blue ramp, darker = gives up more, so positions on different point
+scales compare), the number = points allowed per game; your starters' opponents pinned at the top with ◀ and the
+cell where your starter plays ringed; the other defenses by their mean rank across the positions. Ranked bars = one
+position, every defense ranked, yours solid and labelled with the value and rank. "Only your opponents" is on by
+default at the Phone level. The table behind both stays in the expander.
 
 ## Deferred (status in registry)
 

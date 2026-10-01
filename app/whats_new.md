@@ -5,6 +5,10 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
 ## Sep 30 · Built for your phone, plainer words, kickers and defenses
 
+- Matchups answers "who is my receiver up against?": the cornerback most likely across from him (from where his
+  targets go, so a good guess, not a promise), where that corner ranks among the league's starters (shutdown, solid
+  or target) and how your receiver did against him before. It also puts two of your players side by side on your
+  closest lineup call, and shows defense vs position as a color chart with your opponents at the top.
 - Open League Lab on your phone: every table shows at most five columns (a **Phone** setting next to Essentials
   and Everything), every page starts with its answer, and the big tables sit one tap below. League Intel is
   gone: its charts (schedule luck, points left on the bench, each week's scoring rank, every team) now open the

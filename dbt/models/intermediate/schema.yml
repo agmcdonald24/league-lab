@@ -35,6 +35,16 @@ models:
       - unique_combination_of_columns:
           arguments:
             combination_of_columns: [gsis_id, game_id]
+  - name: int_defender_game_coverage_snaps
+    description: "R-14: coverage snaps per defender-game (the opponent's dropbacks he was on the field for): participation where the game has an on-field list, else his share of his team's defensive snaps x the opponent's dropbacks; keyed to PFR advanced-defense games (2018+)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+      - expression_is_true:
+          name: coverage_snaps_source_matches_value
+          arguments:
+            expression: "(coverage_snaps_source = 'participation' and coverage_snaps = coverage_snaps_on_field) or (coverage_snaps_source = 'snap_share' and coverage_snaps = coverage_snaps_estimated) or (coverage_snaps_source is null and coverage_snaps is null)"
   - name: int_pfr_gsis_map
     columns:
       - name: pfr_id
