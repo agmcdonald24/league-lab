@@ -2431,7 +2431,8 @@ record"; one paragraph + link in Rankings' "The model" after "How it was graded"
   "Sleeper", MAE 4.07 vs 4.19; dynasty 15 of 33 vs 15, 4.91 vs 5.00; week 4 `in_play`.
 * dbt: `mart_projection_record` + 15 tests PASS (incl. `n_both ≥ 1`, `1 ≤ n_players ≤ n_both` on scored rows, calls
   add up, snapshots precede kickoff); `uv run pytest -q` 799 passed; ruff clean; shellcheck clean; headless check
-  both leagues; screenshots 390 / 1300 px in `scratchpad/waveE/e1/shots/`.
+  41 runs ALL OK (every page, both leagues); the page's three states checked (empty, week in play only, scored);
+  screenshots 390 / 1300 px in `scratchpad/waveE/e1/shots/`.
 
 **Open.** No real Sleeper answer has been seen: the parser follows the documented shape and keeps everything in
 `payload`; the first pull on the Mac is the real test (commands in the hand-back). K is priced, DEF is not (pairs
