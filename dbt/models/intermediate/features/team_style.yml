@@ -1,0 +1,294 @@
+version: 2
+
+# D4 (plan Iteration 12): team volume and style, the feature group `team_style` (metric team_style v1.0).
+# Definitions: docs/METRICS.md § "Team volume and style". Python twins of the rules:
+# src/league_lab/feature_groups/team_style.py (tests/test_team_style.py).
+
+models:
+  - name: int_team_game_style
+    description: "Team x game (2016+, REG and POST): the offense's additive facts for team volume and style - plays, dropbacks, neutral-situation plays, expected passes (nflfastR xpass), pace snaps and seconds, time of possession, drives, drive points, scoring drives, red-zone trips, first downs, giveaways. The same row is the opponent defense's 'allowed' facts. Known after the game; int_team_week_style uses only games before a week."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [team, game_id]
+      - expression_is_true:
+          name: team_game_style_counts_nest
+          arguments:
+            expression: "dropbacks <= plays and sacks <= dropbacks and neutral_dropbacks <= neutral_plays and neutral_plays <= plays and xpass_dropbacks <= xpass_plays and xpass_plays <= plays and xpass_sum between 0 and xpass_plays and scoring_drives <= drives and red_zone_trips <= drives and drive_points >= 0 and drive_points <= 9 * drives"
+      - expression_is_true:
+          name: team_game_style_clock_in_range
+          arguments:
+            expression: "top_seconds between 0 and 4500 and pace_seconds between 0 and 75 * pace_snaps"
+    columns:
+      - name: team
+        description: "The offense (franchise code as in play-by-play and team stats: LV, LAC, LA for every season)."
+        tests: [not_null]
+      - name: game_id
+        tests: [not_null]
+      - name: opponent
+        description: "The defense it faced."
+        tests: [not_null]
+      - name: plays
+        description: "Dropbacks (pass attempts, sacks, scrambles) + designed runs. Kneels, spikes, two-point tries and penalty-nullified snaps are not plays."
+      - name: dropbacks
+        description: "Pass attempts + sacks + scrambles (fct_play.is_dropback)."
+      - name: sacks
+        description: "Sacks taken (fct_play.is_sack)."
+      - name: yards
+        description: "Yards gained on plays (sacks negative)."
+      - name: neutral_plays
+        description: "Plays on 1st or 2nd down in quarters 1-3 with the offense's pre-play score within 7 either way."
+      - name: neutral_dropbacks
+        description: "Dropbacks among neutral_plays."
+      - name: xpass_plays
+        description: "Plays with nflfastR's expected-pass probability (xpass) known."
+      - name: xpass_dropbacks
+        description: "Dropbacks among xpass_plays."
+      - name: xpass_sum
+        description: "Sum of xpass over xpass_plays (expected dropbacks)."
+      - name: pace_snaps
+        description: "Real snaps (play, punt, field goal) in quarters 1-3 with the score within 7 that have a next real snap on the same drive within 0-75 s of game clock."
+      - name: pace_seconds
+        description: "Game-clock seconds from those snaps to the next real snap of the drive."
+      - name: top_seconds
+        description: "Time of possession: game clock from each play-by-play row to the next in the same half, credited to the row's offense (a row without one, e.g. a timeout, to the last offense before it); gaps capped at 75 s (source clock glitches)."
+      - name: drives
+        description: "Possessions (same fixed_drive and offense) with at least one play (kneel-, spike- and return-only possessions excluded)."
+      - name: drive_points
+        description: "Offensive points on those drives: the offense's score at the start of the next possession (or the final score) minus its score at the drive's start (TDs, tries, field goals; never a defensive or return score)."
+      - name: scoring_drives
+        description: "Drives with drive points > 0."
+      - name: red_zone_trips
+        description: "Drives with a real snap at the opponent's 20 or closer."
+      - name: first_downs
+        description: "Passing + rushing first downs, nflverse team stats (penalty first downs excluded); NULL until the team-stats row is loaded."
+      - name: giveaways
+        description: "Interceptions thrown + fumbles lost, nflverse team stats; NULL until loaded."
+
+  - name: int_team_week_style
+    description: "Team x season x regular-season week (2016+; byes and unplayed weeks included): the offense's (off_) and the defense's (def_: what the offenses it faced did) team-style numbers AS OF the week - only the team's regular-season games of that season before the week - season to date (_std) and last 4 games (_l4), each shrunk toward last season (_prev) with the weight of 3 games: value = (n x window + 3 x prev) / (n + 3), n = games this season before the week. league_*_std: the mean over teams of the same week (for the derived matchup features)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [team, season, week]
+      - expression_is_true:
+          name: team_week_style_is_asof
+          arguments:
+            expression: "coalesce(off_asof_week, 0) < week and coalesce(def_asof_week, 0) < week and off_games < week and def_games < week"
+      - expression_is_true:
+          name: team_week_style_rates_in_range
+          arguments:
+            expression: "off_neutral_pass_rate_std between 0 and 1 and def_neutral_pass_rate_std between 0 and 1 and off_scoring_drive_rate_std between 0 and 1 and off_sacks_per_dropback_std between 0 and 1 and off_proe_std between -1 and 1 and off_plays_pg_std between 30 and 100 and off_sec_per_play_std between 10 and 60 and off_top_min_pg_std between 10 and 50"
+            condition: "off_plays_pg_std is not null"
+      - expression_is_true:
+          name: team_week_style_week1_is_last_season
+          arguments:
+            expression: "off_plays_pg_std = off_plays_pg_prev and def_neutral_pass_rate_std = def_neutral_pass_rate_prev and off_games = 0"
+            condition: "week = 1 and season > 2016"
+    columns:
+      - name: team
+        tests: [not_null]
+      - name: off_games
+        description: "The offense's regular-season games this season before the week (n of the shrinkage)."
+      - name: off_asof_week
+        description: "Newest game week the offense's numbers use (NULL before its first game); always < week."
+      - name: def_games
+        description: "The defense's games this season before the week."
+      - name: def_asof_week
+        description: "Newest game week the defense's numbers use; always < week."
+
+  - name: int_player_week_team_style
+    description: "Feature group team_style at the projection's grain: one row per int_player_week_universe row (gsis_id, season, week; regular season 2016+). ts_off_* = his own offense's numbers, ts_def_* = this week's opponent's defense (what it allowed), both from int_team_week_style as of the week (games before the week only, shrunk toward last season; known before kickoff). NULL where unknown (2016 week 1: no earlier season loaded)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+      - expression_is_true:
+          name: player_team_style_is_asof
+          arguments:
+            expression: "coalesce(ts_off_asof_week, 0) < week and coalesce(ts_def_asof_week, 0) < week"
+    columns:
+      - name: gsis_id
+        description: "Player (int_player_week_universe)."
+        tests: [not_null]
+      - name: ts_off_games
+        description: "His offense's regular-season games this season before the week (the shrinkage's n). Known before kickoff."
+      - name: ts_off_asof_week
+        description: "Newest game week his offense's numbers use; < week (the harness's as-of marker)."
+      - name: ts_def_games
+        description: "The opponent defense's games this season before the week."
+      - name: ts_def_asof_week
+        description: "Newest game week the opponent defense's numbers use; < week."
+      - name: ts_off_plays_pg_std
+        description: "His offense's plays per game (dropbacks + designed runs), season to date shrunk toward last season (3-game weight). Play-by-play, games before the week."
+      - name: ts_off_plays_pg_l4
+        description: "Same, last 4 games before the week (shrunk with the season's game count)."
+      - name: ts_off_sec_per_play_std
+        description: "His offense's pace: game-clock seconds from a snap to the next on the same drive, neutral score (within 7, Q1-Q3); lower = faster. Season to date, shrunk."
+      - name: ts_off_sec_per_play_l4
+        description: "Pace, last 4 games, shrunk."
+      - name: ts_off_neutral_pass_rate_std
+        description: "His offense's neutral pass rate: dropbacks / plays on 1st-2nd down, Q1-Q3, score within 7. Season to date, shrunk."
+      - name: ts_off_neutral_pass_rate_l4
+        description: "Neutral pass rate, last 4 games, shrunk."
+      - name: ts_off_proe_std
+        description: "His offense's pass rate over expectation: (dropbacks - sum of nflfastR xpass) / plays, all plays. Season to date, shrunk."
+      - name: ts_off_proe_l4
+        description: "PROE, last 4 games, shrunk."
+      - name: ts_off_first_downs_pg_std
+        description: "His offense's passing + rushing first downs per game (nflverse team stats). Season to date, shrunk."
+      - name: ts_off_first_downs_pg_l4
+        description: "First downs per game, last 4 games, shrunk."
+      - name: ts_off_top_min_pg_std
+        description: "His offense's time of possession, minutes per game (game clock, play-by-play). Season to date, shrunk."
+      - name: ts_off_top_min_pg_l4
+        description: "Time of possession, last 4 games, shrunk."
+      - name: ts_off_red_zone_trips_pg_std
+        description: "His offense's drives reaching the opponent's 20, per game. Season to date, shrunk."
+      - name: ts_off_red_zone_trips_pg_l4
+        description: "Red-zone trips per game, last 4 games, shrunk."
+      - name: ts_off_points_per_drive_std
+        description: "His offense's points per drive (TDs, tries, field goals). Season to date, shrunk."
+      - name: ts_off_points_per_drive_l4
+        description: "Points per drive, last 4 games, shrunk."
+      - name: ts_off_scoring_drive_rate_std
+        description: "Share of his offense's drives that scored. Season to date, shrunk."
+      - name: ts_off_scoring_drive_rate_l4
+        description: "Scoring-drive share, last 4 games, shrunk."
+      - name: ts_off_yards_per_play_std
+        description: "His offense's yards per play. Season to date, shrunk."
+      - name: ts_off_yards_per_play_l4
+        description: "Yards per play, last 4 games, shrunk."
+      - name: ts_off_sacks_per_dropback_std
+        description: "Sacks his offense took per dropback. Season to date, shrunk."
+      - name: ts_off_sacks_per_dropback_l4
+        description: "Sacks per dropback, last 4 games, shrunk."
+      - name: ts_off_giveaways_pg_std
+        description: "His offense's interceptions + fumbles lost per game (team stats). Season to date, shrunk."
+      - name: ts_off_giveaways_pg_l4
+        description: "Giveaways per game, last 4 games, shrunk."
+      - name: ts_def_plays_pg_std
+        description: "Plays the opponent's defense has faced per game. Season to date, shrunk. Games before the week."
+      - name: ts_def_plays_pg_l4
+        description: "Plays faced per game, last 4 games, shrunk."
+      - name: ts_def_sec_per_play_std
+        description: "Pace of the offenses the opponent's defense faced (seconds per play, neutral). Season to date, shrunk."
+      - name: ts_def_sec_per_play_l4
+        description: "Pace faced, last 4 games, shrunk."
+      - name: ts_def_neutral_pass_rate_std
+        description: "Neutral pass rate of the offenses the opponent's defense faced (how often teams throw on it). Season to date, shrunk."
+      - name: ts_def_neutral_pass_rate_l4
+        description: "Neutral pass rate faced, last 4 games, shrunk."
+      - name: ts_def_proe_std
+        description: "Pass rate over expectation of the offenses the opponent's defense faced. Season to date, shrunk."
+      - name: ts_def_proe_l4
+        description: "PROE faced, last 4 games, shrunk."
+      - name: ts_def_first_downs_pg_std
+        description: "First downs the opponent's defense allowed per game. Season to date, shrunk."
+      - name: ts_def_first_downs_pg_l4
+        description: "First downs allowed, last 4 games, shrunk."
+      - name: ts_def_top_min_pg_std
+        description: "Time of possession of the offenses the opponent's defense faced, minutes per game. Season to date, shrunk."
+      - name: ts_def_top_min_pg_l4
+        description: "Time of possession faced, last 4 games, shrunk."
+      - name: ts_def_red_zone_trips_pg_std
+        description: "Red-zone trips the opponent's defense allowed per game. Season to date, shrunk."
+      - name: ts_def_red_zone_trips_pg_l4
+        description: "Red-zone trips allowed, last 4 games, shrunk."
+      - name: ts_def_points_per_drive_std
+        description: "Offensive points per drive the opponent's defense allowed. Season to date, shrunk."
+      - name: ts_def_points_per_drive_l4
+        description: "Points per drive allowed, last 4 games, shrunk."
+      - name: ts_def_scoring_drive_rate_std
+        description: "Share of drives against the opponent's defense that scored. Season to date, shrunk."
+      - name: ts_def_scoring_drive_rate_l4
+        description: "Scoring-drive share allowed, last 4 games, shrunk."
+      - name: ts_def_yards_per_play_std
+        description: "Yards per play the opponent's defense allowed. Season to date, shrunk."
+      - name: ts_def_yards_per_play_l4
+        description: "Yards per play allowed, last 4 games, shrunk."
+      - name: ts_def_sacks_per_dropback_std
+        description: "Sacks the opponent's defense made per opponent dropback. Season to date, shrunk."
+      - name: ts_def_sacks_per_dropback_l4
+        description: "Sacks per dropback made, last 4 games, shrunk."
+      - name: ts_def_giveaways_pg_std
+        description: "Takeaways by the opponent's defense per game (its opponents' interceptions + fumbles lost). Season to date, shrunk."
+      - name: ts_def_giveaways_pg_l4
+        description: "Takeaways per game, last 4 games, shrunk."
+      - name: ts_pace_product
+        description: "Expected plays for his offense this week: ts_off_plays_pg_std x ts_def_plays_pg_std / the league's plays per game (mean of the teams' season-to-date values that week). Known before kickoff."
+      - name: ts_pass_env
+        description: "Expected neutral pass rate of the matchup: ts_off_neutral_pass_rate_std x ts_def_neutral_pass_rate_std / the league's neutral pass rate that week. Known before kickoff."
+
+unit_tests:
+  # The shrinkage rule (macro ts_shrink) and the as-of windows on a fixture. AAA's prior is its 2024 season (60 and
+  # 70 plays: 65 a game). 2025, AAA's games 80, 50, 62, 66, 70, 74 plays in weeks 1-6 (a 99-play playoff game is
+  # not regular season and never counts):
+  #   week 1: no game yet -> 65 (last season)                     week 2: (1 x 80 + 3 x 65) / 4 = 68.75
+  #   week 3: season 65.0 -> (2 x 65 + 3 x 65) / 5 = 65.0          week 6: season 65.6, last 4 (50, 62, 66, 70) = 62.0
+  #           -> std (5 x 65.6 + 195) / 8 = 65.375, l4 (5 x 62 + 195) / 8 = 63.125
+  #   week 7: season 67.0, last 4 = 68.0 -> std (6 x 67 + 195) / 9 = 66.3333, l4 (6 x 68 + 195) / 9 = 67.0
+  # Rates pool sums: week 3 neutral pass rate (10 + 12) / (20 + 30) = 0.44 (not the mean 0.45) ->
+  #   (2 x 0.44 + 3 x 0.5) / 5 = 0.476.
+  # (Decimals are quoted: the unit test compares the text, and the model rounds to 4 places.)
+  # BBB's defense faced AAA's offense: its def_ numbers are AAA's off_ numbers; BBB has no 2025 offense rows, so
+  #   its off_ numbers stay at its 2024 prior (50) with 0 games.
+  # CCC / DDD have no 2025 season: the prior is the league's 2025 (AAA's six games: 67.0 plays, 62 / 130 = 0.4769);
+  #   CCC after a 61-play game: (61 + 3 x 67) / 4 = 65.5. 2024 has no earlier season: the raw value stands (AAA
+  #   week 2: 60), week 1 NULL.
+  - name: team_week_style_shrinks_toward_last_season
+    model: int_team_week_style
+    given:
+      - input: ref('dim_game')
+        rows:
+          - {season: 2024, season_type: REG, week: 1, home_team: AAA, away_team: BBB}
+          - {season: 2024, season_type: REG, week: 2, home_team: BBB, away_team: AAA}
+          - {season: 2025, season_type: REG, week: 1, home_team: AAA, away_team: BBB}
+          - {season: 2025, season_type: REG, week: 2, home_team: AAA, away_team: BBB}
+          - {season: 2025, season_type: REG, week: 3, home_team: AAA, away_team: BBB}
+          - {season: 2025, season_type: REG, week: 4, home_team: AAA, away_team: BBB}
+          - {season: 2025, season_type: REG, week: 5, home_team: AAA, away_team: BBB}
+          - {season: 2025, season_type: REG, week: 6, home_team: AAA, away_team: BBB}
+          - {season: 2025, season_type: REG, week: 7, home_team: AAA, away_team: BBB}
+          - {season: 2025, season_type: POST, week: 19, home_team: AAA, away_team: BBB}
+          - {season: 2026, season_type: REG, week: 1, home_team: CCC, away_team: DDD}
+          - {season: 2026, season_type: REG, week: 2, home_team: DDD, away_team: CCC}
+      - input: ref('int_team_game_style')
+        rows:
+          - {team: AAA, opponent: BBB, game_id: g24_1, season: 2024, season_type: REG, week: 1, plays: 60, neutral_plays: 20, neutral_dropbacks: 10}
+          - {team: BBB, opponent: AAA, game_id: g24_1, season: 2024, season_type: REG, week: 1, plays: 50, neutral_plays: 20, neutral_dropbacks: 10}
+          - {team: AAA, opponent: BBB, game_id: g24_2, season: 2024, season_type: REG, week: 2, plays: 70, neutral_plays: 20, neutral_dropbacks: 10}
+          - {team: BBB, opponent: AAA, game_id: g24_2, season: 2024, season_type: REG, week: 2, plays: 50, neutral_plays: 20, neutral_dropbacks: 10}
+          - {team: AAA, opponent: BBB, game_id: g25_1, season: 2025, season_type: REG, week: 1, plays: 80, neutral_plays: 20, neutral_dropbacks: 10}
+          - {team: AAA, opponent: BBB, game_id: g25_2, season: 2025, season_type: REG, week: 2, plays: 50, neutral_plays: 30, neutral_dropbacks: 12}
+          - {team: AAA, opponent: BBB, game_id: g25_3, season: 2025, season_type: REG, week: 3, plays: 62, neutral_plays: 20, neutral_dropbacks: 10}
+          - {team: AAA, opponent: BBB, game_id: g25_4, season: 2025, season_type: REG, week: 4, plays: 66, neutral_plays: 20, neutral_dropbacks: 10}
+          - {team: AAA, opponent: BBB, game_id: g25_5, season: 2025, season_type: REG, week: 5, plays: 70, neutral_plays: 20, neutral_dropbacks: 10}
+          - {team: AAA, opponent: BBB, game_id: g25_6, season: 2025, season_type: REG, week: 6, plays: 74, neutral_plays: 20, neutral_dropbacks: 10}
+          - {team: AAA, opponent: BBB, game_id: g25_p, season: 2025, season_type: POST, week: 19, plays: 99, neutral_plays: 20, neutral_dropbacks: 20}
+          - {team: CCC, opponent: DDD, game_id: g26_1, season: 2026, season_type: REG, week: 1, plays: 61, neutral_plays: 20, neutral_dropbacks: 10}
+          - {team: DDD, opponent: CCC, game_id: g26_1, season: 2026, season_type: REG, week: 1, plays: 55, neutral_plays: 20, neutral_dropbacks: 8}
+    expect:
+      rows:
+        - {team: AAA, season: 2024, week: 1, off_games: 0, off_asof_week: null, off_plays_pg_std: null, off_plays_pg_l4: null, off_plays_pg_prev: null, off_neutral_pass_rate_std: null, def_games: 0, def_asof_week: null, def_plays_pg_std: null, def_plays_pg_l4: null, def_neutral_pass_rate_std: null}
+        - {team: AAA, season: 2024, week: 2, off_games: 1, off_asof_week: 1, off_plays_pg_std: "60.0000", off_plays_pg_l4: "60.0000", off_plays_pg_prev: null, off_neutral_pass_rate_std: "0.5000", def_games: 1, def_asof_week: 1, def_plays_pg_std: "50.0000", def_plays_pg_l4: "50.0000", def_neutral_pass_rate_std: "0.5000"}
+        - {team: BBB, season: 2024, week: 1, off_games: 0, off_asof_week: null, off_plays_pg_std: null, off_plays_pg_l4: null, off_plays_pg_prev: null, off_neutral_pass_rate_std: null, def_games: 0, def_asof_week: null, def_plays_pg_std: null, def_plays_pg_l4: null, def_neutral_pass_rate_std: null}
+        - {team: BBB, season: 2024, week: 2, off_games: 1, off_asof_week: 1, off_plays_pg_std: "50.0000", off_plays_pg_l4: "50.0000", off_plays_pg_prev: null, off_neutral_pass_rate_std: "0.5000", def_games: 1, def_asof_week: 1, def_plays_pg_std: "60.0000", def_plays_pg_l4: "60.0000", def_neutral_pass_rate_std: "0.5000"}
+        - {team: AAA, season: 2025, week: 1, off_games: 0, off_asof_week: null, off_plays_pg_std: "65.0000", off_plays_pg_l4: "65.0000", off_plays_pg_prev: "65.0000", off_neutral_pass_rate_std: "0.5000", def_games: 0, def_asof_week: null, def_plays_pg_std: "50.0000", def_plays_pg_l4: "50.0000", def_neutral_pass_rate_std: "0.5000"}
+        - {team: AAA, season: 2025, week: 2, off_games: 1, off_asof_week: 1, off_plays_pg_std: "68.7500", off_plays_pg_l4: "68.7500", off_plays_pg_prev: "65.0000", off_neutral_pass_rate_std: "0.5000", def_games: 0, def_asof_week: null, def_plays_pg_std: "50.0000", def_plays_pg_l4: "50.0000", def_neutral_pass_rate_std: "0.5000"}
+        - {team: AAA, season: 2025, week: 3, off_games: 2, off_asof_week: 2, off_plays_pg_std: "65.0000", off_plays_pg_l4: "65.0000", off_plays_pg_prev: "65.0000", off_neutral_pass_rate_std: "0.4760", def_games: 0, def_asof_week: null, def_plays_pg_std: "50.0000", def_plays_pg_l4: "50.0000", def_neutral_pass_rate_std: "0.5000"}
+        - {team: AAA, season: 2025, week: 4, off_games: 3, off_asof_week: 3, off_plays_pg_std: "64.5000", off_plays_pg_l4: "64.5000", off_plays_pg_prev: "65.0000", off_neutral_pass_rate_std: "0.4786", def_games: 0, def_asof_week: null, def_plays_pg_std: "50.0000", def_plays_pg_l4: "50.0000", def_neutral_pass_rate_std: "0.5000"}
+        - {team: AAA, season: 2025, week: 5, off_games: 4, off_asof_week: 4, off_plays_pg_std: "64.7143", off_plays_pg_l4: "64.7143", off_plays_pg_prev: "65.0000", off_neutral_pass_rate_std: "0.4810", def_games: 0, def_asof_week: null, def_plays_pg_std: "50.0000", def_plays_pg_l4: "50.0000", def_neutral_pass_rate_std: "0.5000"}
+        - {team: AAA, season: 2025, week: 6, off_games: 5, off_asof_week: 5, off_plays_pg_std: "65.3750", off_plays_pg_l4: "63.1250", off_plays_pg_prev: "65.0000", off_neutral_pass_rate_std: "0.4830", def_games: 0, def_asof_week: null, def_plays_pg_std: "50.0000", def_plays_pg_l4: "50.0000", def_neutral_pass_rate_std: "0.5000"}
+        - {team: AAA, season: 2025, week: 7, off_games: 6, off_asof_week: 6, off_plays_pg_std: "66.3333", off_plays_pg_l4: "67.0000", off_plays_pg_prev: "65.0000", off_neutral_pass_rate_std: "0.4846", def_games: 0, def_asof_week: null, def_plays_pg_std: "50.0000", def_plays_pg_l4: "50.0000", def_neutral_pass_rate_std: "0.5000"}
+        - {team: BBB, season: 2025, week: 1, off_games: 0, off_asof_week: null, off_plays_pg_std: "50.0000", off_plays_pg_l4: "50.0000", off_plays_pg_prev: "50.0000", off_neutral_pass_rate_std: "0.5000", def_games: 0, def_asof_week: null, def_plays_pg_std: "65.0000", def_plays_pg_l4: "65.0000", def_neutral_pass_rate_std: "0.5000"}
+        - {team: BBB, season: 2025, week: 2, off_games: 0, off_asof_week: null, off_plays_pg_std: "50.0000", off_plays_pg_l4: "50.0000", off_plays_pg_prev: "50.0000", off_neutral_pass_rate_std: "0.5000", def_games: 1, def_asof_week: 1, def_plays_pg_std: "68.7500", def_plays_pg_l4: "68.7500", def_neutral_pass_rate_std: "0.5000"}
+        - {team: BBB, season: 2025, week: 3, off_games: 0, off_asof_week: null, off_plays_pg_std: "50.0000", off_plays_pg_l4: "50.0000", off_plays_pg_prev: "50.0000", off_neutral_pass_rate_std: "0.5000", def_games: 2, def_asof_week: 2, def_plays_pg_std: "65.0000", def_plays_pg_l4: "65.0000", def_neutral_pass_rate_std: "0.4760"}
+        - {team: BBB, season: 2025, week: 4, off_games: 0, off_asof_week: null, off_plays_pg_std: "50.0000", off_plays_pg_l4: "50.0000", off_plays_pg_prev: "50.0000", off_neutral_pass_rate_std: "0.5000", def_games: 3, def_asof_week: 3, def_plays_pg_std: "64.5000", def_plays_pg_l4: "64.5000", def_neutral_pass_rate_std: "0.4786"}
+        - {team: BBB, season: 2025, week: 5, off_games: 0, off_asof_week: null, off_plays_pg_std: "50.0000", off_plays_pg_l4: "50.0000", off_plays_pg_prev: "50.0000", off_neutral_pass_rate_std: "0.5000", def_games: 4, def_asof_week: 4, def_plays_pg_std: "64.7143", def_plays_pg_l4: "64.7143", def_neutral_pass_rate_std: "0.4810"}
+        - {team: BBB, season: 2025, week: 6, off_games: 0, off_asof_week: null, off_plays_pg_std: "50.0000", off_plays_pg_l4: "50.0000", off_plays_pg_prev: "50.0000", off_neutral_pass_rate_std: "0.5000", def_games: 5, def_asof_week: 5, def_plays_pg_std: "65.3750", def_plays_pg_l4: "63.1250", def_neutral_pass_rate_std: "0.4830"}
+        - {team: BBB, season: 2025, week: 7, off_games: 0, off_asof_week: null, off_plays_pg_std: "50.0000", off_plays_pg_l4: "50.0000", off_plays_pg_prev: "50.0000", off_neutral_pass_rate_std: "0.5000", def_games: 6, def_asof_week: 6, def_plays_pg_std: "66.3333", def_plays_pg_l4: "67.0000", def_neutral_pass_rate_std: "0.4846"}
+        - {team: CCC, season: 2026, week: 1, off_games: 0, off_asof_week: null, off_plays_pg_std: "67.0000", off_plays_pg_l4: "67.0000", off_plays_pg_prev: "67.0000", off_neutral_pass_rate_std: "0.4769", def_games: 0, def_asof_week: null, def_plays_pg_std: "67.0000", def_plays_pg_l4: "67.0000", def_neutral_pass_rate_std: "0.4769"}
+        - {team: CCC, season: 2026, week: 2, off_games: 1, off_asof_week: 1, off_plays_pg_std: "65.5000", off_plays_pg_l4: "65.5000", off_plays_pg_prev: "67.0000", off_neutral_pass_rate_std: "0.4827", def_games: 1, def_asof_week: 1, def_plays_pg_std: "64.0000", def_plays_pg_l4: "64.0000", def_neutral_pass_rate_std: "0.4577"}
+        - {team: DDD, season: 2026, week: 1, off_games: 0, off_asof_week: null, off_plays_pg_std: "67.0000", off_plays_pg_l4: "67.0000", off_plays_pg_prev: "67.0000", off_neutral_pass_rate_std: "0.4769", def_games: 0, def_asof_week: null, def_plays_pg_std: "67.0000", def_plays_pg_l4: "67.0000", def_neutral_pass_rate_std: "0.4769"}
+        - {team: DDD, season: 2026, week: 2, off_games: 1, off_asof_week: 1, off_plays_pg_std: "64.0000", off_plays_pg_l4: "64.0000", off_plays_pg_prev: "67.0000", off_neutral_pass_rate_std: "0.4577", def_games: 1, def_asof_week: 1, def_plays_pg_std: "65.5000", def_plays_pg_l4: "65.5000", def_neutral_pass_rate_std: "0.4827"}
