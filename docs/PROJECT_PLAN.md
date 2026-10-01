@@ -376,6 +376,26 @@ card can say "A projects more, B wins more often" — centre the ranges on the p
 decide on week-5 drift); the experiment record is the seed `feature_experiments.csv` (re-export after a new harness
 run); Andrew's front-end decision (D7); P-01; Iteration 11 operations.
 
+### Iteration 13 — from a lab to a product: proof, rest of season, any league (agreed 2026-10-01, Wave E)
+
+Andrew's direction (2026-10-01): a tool the fantasy population would pay $4–5 a month or ~$20 a season for,
+worth several times that, covering its own hosting. Three things stand between the lab and that, none of them a
+feature: it works for two leagues (an env var and a nightly batch), it runs where nobody can log in or pay, and
+nothing proves it beats the free numbers people already have. The waves: **E** proof + rest of season + the
+any-league design (this iteration); **F** the customer app on the D7 stack (FastAPI + Svelte; Streamlit stays
+as the research console — the PO's call, Andrew may veto); **G** accounts, payments, hosting, one nightly
+writer, a beta. 99¢ pricing is out (card fees take a third); fixed cost ~$10–30 a month.
+
+| ID | Task | Acceptance |
+|----|------|------------|
+| E1 | **Our record** — the consensus benchmark. `league-lab ingest sleeper-projections` → `raw.sleeper_projections` (full payload; the archive `data/raw/sleeper/projections/<season>/<week>.json`; a nightly step before the freeze, `NIGHTLY_SLEEPER_OFFLINE=1` skips). Sleeper's projected stat line priced in each league's scoring with the same `league_points` machinery as ours; `mart_projection_record`: per league × season × week × position, v3 vs Sleeper vs actual on the players both projected — Spearman, MAE, hit rate (top-N precision), and the decision pairs (B1's closest calls: who called it); cumulative. A page "Our record" in plain words; Rankings' "How it was graded" points at it. | Loader round-trips a fixture; the pricing of Sleeper's line reproduces `pts_ppr` / `pts_half_ppr` for a standard-scoring league within 0.05; the record for the 2026 weeks Andrew has pulled; the page says from which week the record runs (the sandbox cannot reach Sleeper; the first pull is Andrew's). |
+| E2 | **Rest of season.** `mart_player_ros_projection`: per league × player — remaining weeks (bye excluded), projected total, games, playoff-weeks subtotal (`dim_league_season` playoff start), ROS rank by position and overall, a range (per-week ranges combined as independent: sd = (p90 − p10) / 2.563, stated as the assumption), the per-week values. Surfaces: Player card (one line + rank), Rankings (a "Rest of season" view), Trade Finder (ROS totals of the players in a package next to the engine's remaining-weeks sum). Plain words: later weeks don't know the betting lines yet (weeks ≥ current + 1 have NULL lines). | Totals reproduce by hand from `mart_player_week_projections` for two players; byes excluded (a player on bye shows one fewer game); ranks consistent across the three pages; headless check both leagues; 390 px screenshots. |
+| E3 | **Any league — design and spike.** `docs/ANY_LEAGUE.md`: the stat-line projections are league-independent (verified: 0 of 8,134 2026 pairs differ) → stored once NFL-wide; a league's scoring applied at request time (`scoring.compute_points`); lineups solved per request (`lineup.solve`); the ranges' per-league calibration is the open modeling piece (proposal + measured error of the approximation); what is cached (league settings, rosters, users: Sleeper fetch + TTL); cost at N leagues (no per-league rows); what changes in `projections.py`, `nightly.sh`, the API. Spike: `GET /api/my-week?league=<any Sleeper id>&team=<roster_id>` served without that league in the database — `src/league_lab/anyleague.py` (fetch → map players via `player_id_map` → price → solve → cards), fixture mode for the sandbox (Sleeper is unreachable here; build the fixtures from `raw.sleeper_*` payloads of the two known leagues). | Parity: the on-demand path reproduces the mart's lineup value for dynasty roster 12 and Scrubs roster 2 within 0.01 on points, the range approximation's error quantified on both; latency measured; `api` tests pass. |
+| E4 | **Model tests** through the harness, no production change: `player_prior` (his running out-of-fold residual against the model — the baseline's predictions on his earlier games, as-of; the proxy ppg − xppg history if the real one does not fit the harness in time), `rookie_prior` (draft round and overall pick, draft year → years in, age; rookies flagged; report the weeks 1–4 subset separately), `oline_quality` (starters out weighted by prior-season snap share, career starts and draft capital; the best lineman out), `qb_x_offense` (the QB gap × implied total / total line / prior-season offense). Results to `ops.feature_experiments`, exported for the seed. | Each group: the harness verdict per position with the paired seasons, no-peek clean, runtime; the hand-back says which (if any) the PO should ship as v3.1 and why. |
+
+Order: E1–E4 in parallel (four Opus devs, one round); the PO integrates, one scoped QA pass, ship. Wave F
+follows on Andrew's go after he reads `docs/ANY_LEAGUE.md`.
+
 ### Iteration 11 — operations for a product (Phase 3)
 
 | ID | Task | Notes |
