@@ -1608,6 +1608,65 @@ and style). Each dev appends a section below; nothing edits `mart_player_week_fe
   loop of `backtest` factored out as `walk_forward(...)` (same calls, same order).
 * Results: `ops.feature_experiments` (DDL in `db.migrate`), `mart_feature_experiments` (view), Rankings →
   "The model" → "What we tried".
+* Harness ready: `2baa78b` at 2026-10-01 12:40:56 UTC (19 min after the start); `29fdc2c` 12:47 UTC fixes boolean
+  columns in the outcome probe (D3 / D4 told to take it).
+* Defaults byte-identical (OMP_NUM_THREADS=1, same database): `ops.projections` 2026 weeks 4–18, every column but
+  `fitted_at` / `frozen_at`, 17,164 rows, md5 `e6e45f116f5188f7dfdea2f4e1062120` from `league-lab project` on
+  `2951c80` and on the hooked code; `league-lab backtest-v2 --seasons 2025`, the 432 `v2.0` rows of
+  `ops.projection_backtest` but `run_id` / `run_at`, md5 `412207ebe4d71b8e69cf605820c53f8f` before (code of
+  `2951c80`, run from an archive copy) and after.
+* The harness's baseline reproduces `backtest-v2`: its 2025 season means equal the 2025 `v2_points` weekly means of
+  `ops.projection_backtest` to 6 decimals in all 8 league × position cells (Spearman, MAE, coverage, interval score).
+* Baseline (2023–2025, both leagues, 24 cells, key `cb461af0c56b4811`): 18 min 30 s wall on the shared box (load
+  average ≈ 5: D3 and D4 fitting too), **9 min 19 s CPU** (single thread: what it takes alone). The PO's ~5 min
+  estimate was low: a test season costs ~3 CPU-min for four positions (components + out-of-fold lines + 3 quantile
+  models × 2 leagues per position). A group on fewer positions costs proportionally less.
+* No-peek check on planted leaks (`tests/test_experiments.py::test_no_peek_check_catches_planted_leaks`, live DB):
+  the week's own points as an input → refused at QB / RB / WR / TE (|r| 1.00 vs 0.34–0.48 with the adjacent weeks)
+  plus the serve-gap warning; `pl_asof_week = week` → refused (as-of); an `in_season` column filled in week 1 →
+  refused (week 1); an honest numeric + boolean pair passes. On the production inputs the largest probe excess is
+  0.047 (limit 0.10).
+
+### D2 — game context through the harness (dev/D1)
+
+* `dbt/models/intermediate/features/int_player_week_game_context.sql` (+ `int_player_week_game_context.yml`, named
+  after the model so the three branches' docs files never collide; `dbt/tests/assert_game_context_known_before_kickoff.sql`):
+  109,123 rows = `int_player_week_universe`, unique index on the grain; 15 `gc_` columns, all from the published
+  schedule (definitions, shares and the rest-day reconciliation with nflverse in `docs/METRICS.md` § "Game context").
+  `dbt build` of the model + its tests: PASS=9 (unique grain, ranges, not-nulls, known-before-kickoff).
+* Registered in `src/league_lab/feature_groups/game_context.py`: `game_context` (all 15), `rest` (5), `time` (6:
+  weekday, kickoff hour, primetime, 1 pm window, time zones crossed, west-coast early), `venue` (4: dome, turf,
+  division, neutral). The no-peek check passes (largest probe excess 0.019; no warnings: no serve gap).
+* One session, `league-lab experiment game_context rest time venue` (baseline from the cache): 80 min 36 s wall on
+  the shared box, 40 min 11 s CPU (≈ 10 CPU-min per four-position group).
+* Harness table (mean over 2023–2025 of the league-averaged season Δ = group − baseline; "n/3" = seasons better):
+
+| Group | Pos | ΔSpearman | better | ΔMAE (pts) | better | Δ interval score | Δ coverage (pp) | Δ width | Decision |
+|---|---|---|---|---|---|---|---|---|---|
+| game_context | QB | +0.0012 | 1/3 | −0.013 | 1/3 | −0.0073 | −0.62 | −0.18 | drop |
+| game_context | RB | +0.0001 | 1/3 | +0.008 | 1/3 | +0.0008 | +0.84 | +0.06 | drop |
+| game_context | TE | −0.0020 | 0/3 | +0.017 | 0/3 | +0.0019 | −0.23 | +0.02 | drop |
+| game_context | WR | +0.0004 | 2/3 | +0.000 | 1/3 | −0.0009 | −0.21 | −0.08 | drop |
+| rest | QB | +0.0029 | 2/3 | +0.004 | 2/3 | −0.0038 | −0.35 | −0.01 | drop |
+| rest | RB | −0.0004 | 0/3 | −0.011 | 2/3 | −0.0017 | +0.62 | +0.01 | drop |
+| rest | TE | +0.0002 | 2/3 | +0.008 | 1/3 | +0.0037 | +0.04 | +0.02 | drop |
+| rest | WR | +0.0012 | 3/3 | +0.002 | 1/3 | −0.0014 | −0.37 | −0.13 | drop |
+| time | QB | −0.0012 | 1/3 | +0.007 | 1/3 | −0.0027 | +0.50 | +0.21 | drop |
+| time | RB | −0.0002 | 1/3 | +0.005 | 1/3 | +0.0002 | −0.16 | +0.00 | drop |
+| time | TE | −0.0011 | 1/3 | +0.009 | 1/3 | +0.0036 | −0.19 | +0.03 | drop |
+| time | WR | +0.0001 | 2/3 | +0.002 | 1/3 | −0.0008 | −0.53 | −0.09 | drop |
+| venue | QB | +0.0035 | 1/3 | +0.011 | 1/3 | −0.0066 | −0.09 | −0.12 | drop |
+| venue | RB | +0.0002 | 3/3 | +0.004 | 1/3 | +0.0018 | +0.09 | +0.05 | drop |
+| venue | TE | −0.0019 | 1/3 | +0.012 | 0/3 | +0.0035 | −0.11 | +0.00 | drop |
+| venue | WR | +0.0006 | 2/3 | −0.007 | 2/3 | −0.0013 | −0.42 | −0.13 | drop |
+
+* Group verdict: **drop** for all four (no position helps, none hurts: every |mean ΔSpearman| < 0.004, every
+  |mean ΔMAE| < 0.02 points, against bars of 0.005 and 0.05). The QB swings are fit noise, not signal: every group
+  adds +0.010 to +0.017 to QB in 2023 and gives it back in 2024–2025 (≈ 670 QB player-weeks a season), which is what
+  the 2-of-3 rule is for. **Recommendation: drop game context at every position**: v2 already sees the Vegas
+  implied total, spread and total, which price kickoff, rest, travel and venue. The interval does not sharpen
+  either (Δ interval score within ±0.0073 against 0.64–1.80 points). The table stays as a building block (the
+  K/DEF model or D6's per-role variance could use the dome / kickoff columns); nothing reads it in production.
 
 ## Next concrete actions
 

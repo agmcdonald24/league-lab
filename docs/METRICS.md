@@ -1231,6 +1231,39 @@ Runtime: the walk-forward refits every position for each test season (components
 3 quantile models per league); with `OMP_NUM_THREADS=1` a group of 2023–2025 is measured in STATUS
 § "Wave D (Iteration 12)". Several groups in one call share the frame and the baseline.
 
+## Game context (gc_, plan D2, Wave D, 2026-10-01; `int_player_week_game_context`, feature groups `game_context` / `rest` / `time` / `venue`)
+
+A candidate for v3, evaluated by the harness above; not a v2 input. One row per `int_player_week_universe`
+row (109,123: every rostered QB/RB/WR/TE × regular-season week his team plays, 2016–2026), every column from
+the **published schedule** (`raw.nfl_schedules` → `stg_nflverse__games`), so it is known for future weeks
+exactly as for past ones (`assert_game_context_known_before_kickoff`: every not-yet-played game has every
+column whose schedule source is filled; the harness's outcome probe: largest excess 0.019, limit 0.10).
+
+| Column | Definition | Known |
+|---|---|---|
+| `gc_weekday` | days from the week's Sunday — an **ordinal**, not one-hot (HGB splits it where it matters): Thu −3, Fri −2, Sat −1, Sun 0, Mon +1, Tue +2 (2020 reschedules), a Christmas Wednesday before the Sunday −4. From the game date and the date of the week's Sunday games | schedule |
+| `gc_kickoff_hour_et` | `gametime` (nflverse: US Eastern) as hours, minutes as a fraction: 13.0, 16.42 (4:25), 20.33 (8:20), 9.5 (London) | schedule; a flexed game carries its flexed time (nflverse rewrites the schedule when the league flexes: 12+ days ahead, 6 for week 18); NULL gametime → NULL (never assumed 13:00; none in 2016–2026) |
+| `gc_primetime` | kickoff ≥ 20:00 ET | as above |
+| `gc_early_window` | kickoff 12:00–13:59 ET (the Sunday 1 pm games, Thanksgiving 12:30) | as above |
+| `gc_rest_days` | days since the team's previous regular-season game this season, from the game dates; NULL in week 1 (and for 2017 MIA / TB in week 2, whose opener was postponed). nflverse's `home_rest` / `away_rest` agree on 101,768 of 102,476 week-2+ rows; the 675 that differ are late-season Saturday games (2019 week 16: BUF at NE on Saturday after a Sunday game is 6 days, nflverse says 7) and the 2021 COVID reschedules, where the dates are right. nflverse's week-1 value (7) is a placeholder | schedule |
+| `gc_short_week` | rest ≤ 4 days | schedule |
+| `gc_off_bye` | the team's previous game was ≥ 2 weeks earlier; NULL in week 1 | schedule |
+| `gc_opp_rest_days`, `gc_rest_edge` | the opponent's rest; his team's rest − the opponent's | schedule |
+| `gc_travel_tz` | time zones crossed from the team's home stadium to the venue, west → east positive (SEA at NYG +3, NYG at SEA −3, home 0, a Pacific team in Munich +9, the Rams in Melbourne −7: wrapped to the short way). A stadium → zone map in the model (every `stadium_id` since 2016; Arizona counted as Mountain; international venues at their in-season offset; an unknown stadium falls back to the home team's zone) | schedule |
+| `gc_west_coast_early` | a Pacific-zone team (LA, LAC, LV/OAK, SD, SF, SEA) kicking off before 14:00 ET (the 1 pm body-clock game; London mornings included) | schedule |
+| `gc_roof` | 1 = fixed dome, 0 = open air, **NULL = retractable**: whether the roof is open or closed is decided on game day (nflverse fills `open` / `closed` after the game and leaves future games empty), so training never sees the call either | stadium |
+| `gc_surface_turf` | artificial turf (fieldturf, matrixturf, a_turf, sportturf, astroturf) vs grass; NULL when blank | stadium |
+| `gc_div_game` | division game | schedule |
+| `gc_neutral_site` | `location = 'Neutral'` (international and relocated games) | schedule |
+
+Shares over the 109,123 rows: primetime 19.9%, 1 pm window 52.0%, short week 6.4%, off a bye 6.4%, west-coast
+team at 1 pm 3.6%, fixed dome 18.5% (retractable NULL 15.4%), turf 43.3%, division game 36.5%, neutral site 1.9%.
+Sub-groups for the harness: `time` = weekday, kickoff hour, primetime, 1 pm window, time zones crossed, west-coast
+early (when the game is and the body clock); `rest` = the five rest columns; `venue` = roof, turf, division,
+neutral site. Results (2026-10-01, harness fx1.0, test seasons 2023–2025, both leagues): **drop** for every group
+and position: no mean ΔSpearman beyond ±0.004, no mean ΔMAE beyond ±0.02 points, interval score flat. The Vegas
+lines v2 already uses price the game context. Table: STATUS § "Wave D (Iteration 12)" / D2; Rankings → "What we tried".
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

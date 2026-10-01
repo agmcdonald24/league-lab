@@ -74,6 +74,16 @@ position: `position` K (`gsis_id` = the kicker's) or DEF (`gsis_id` = the **Slee
 the QB–TE `proj_*` columns NULL (they do not apply). Written in the same `project` call and through the
 same freeze as v2 (a league-week is written whole); `docs/METRICS.md` § Kicker and defense projections.
 
+`ops.feature_experiments` (plan D1, Wave D) — one row per run × `feature_group` × position × league_id ×
+test_season, written by `league-lab experiment` (`league_lab.experiments`; DDL in `db.migrate`): run_id, run_at,
+model_version, harness_version, group_table, group_columns, test_seasons, train_seasons, data_key, n_weeks,
+n_player_weeks, `spearman / hit_rate / mae / coverage_80 / interval_width / interval_score` (season means of the
+priced line's weekly scores; interval score = mean pinball loss at 0.1 and 0.9), the same six as `baseline_*`
+and `delta_*` (group − baseline), `decision` (keep / drop / mixed, per position), `group_verdict`, runtime_s,
+no_peek_warnings, label, note. The baseline's own rows are `feature_group = 'baseline'` (deltas 0), the cache
+every group compares with (keyed on model_version + test_seasons + data_key). A rerun replaces the group's rows
+for the same model version, test seasons and leagues.
+
 `ops.projection_drift` (M-06) — one row per league_id × season × week × position for played weeks
 of the projected season (≥ 8 played, rankable players): n_players, spearman, top_n, hit_rate, mae,
 coverage_80, interval_width, games_played / games_scheduled (the week is complete when they are
@@ -334,6 +344,8 @@ moved a handful of special-teams-only players' shares — the correct direction 
 | `mart_projection_backtest` (view) | league_id, season, position, scorer | from `ops.projection_backtest` (written by `league-lab backtest-v2`): Spearman, hit rate, MAE, `coverage_80`, interval width per walk-forward season |
 | `mart_projection_importance` (view, U-15) | model_version, model, position, component, feature | from `ops.projection_importance`: what drives projection v2. `model = 'component'` (written by `league-lab project`): permutation importance of the component models on the newest training season, `component = 'total'` in points of error of the priced line (reference league's scoring, `unit = 'points'`), one row per stat-line component in its own unit with `importance_points` (= rise × points per unit); `feature_label` (plain words, `projections.FEATURE_LABELS`), `importance_sd` over the shuffles, `baseline_mae`, `n_rows`, `train_seasons`, `eval_season`, `importance_rank` (1 = most error added, per model version × model × position × component). `model = 'quantile_p50'` (written by `backtest-v2`, and every row from before U-15): the P50 interval model, `component = 'p50_residual'`. Tests: key unique, `model` in the two values, component rows complete (plain label ≠ column name). Read by Rankings' "The model" expander |
 | `mart_projection_drift` (view, M-06) | league_id, season, position | from `ops.projection_drift`: `weeks_scored`, `first_week` / `last_week`, `week_in_progress`, `player_weeks`, mean `spearman / hit_rate / mae / coverage_80 / interval_width` over **complete** weeks, next to `backtest_spearman / _hit_rate / _mae / _coverage_80 / _interval_width` (`mart_projection_backtest`, scorer `v2_points`, averaged over its held-out seasons; `backtest_seasons`, `backtest_weeks`); B5: `frozen_share` (player-weighted share of the complete weeks' scored rows that are the board as published before kickoff) and `refit_weeks` (complete weeks scored on refit values, e.g. `1, 2`) |
+| `int_player_week_game_context` (D2, schema `intermediate`, feature group `gc_`) | gsis_id, season, week (unique index) | one row per `int_player_week_universe` row, all from the published schedule (`stg_nflverse__games`): `gc_weekday` (days from the week's Sunday, ordinal), `gc_kickoff_hour_et`, `gc_primetime` (≥ 20:00 ET), `gc_early_window` (12:00–13:59 ET), `gc_rest_days` / `gc_short_week` (≤ 4) / `gc_off_bye` (NULL in week 1), `gc_opp_rest_days`, `gc_rest_edge`, `gc_travel_tz` (time zones crossed, west → east positive; stadium → zone map in the model), `gc_west_coast_early`, `gc_roof` (1 dome, 0 open air, NULL retractable), `gc_surface_turf`, `gc_div_game`, `gc_neutral_site`. Tests: grain unique, ranges, `assert_game_context_known_before_kickoff`. Not in `mart_player_week_features` (a harness candidate) |
+| `mart_feature_experiments` (view, D1) | feature_group, position | from `ops.feature_experiments`, each group's latest run: label, note, group_table, group_columns, model_version, test_seasons, n_seasons, n_leagues, `spearman` / `baseline_spearman` / `delta_spearman`, `seasons_better_spearman`, `mae` / `baseline_mae` / `delta_mae`, `seasons_better_mae`, `delta_hit_rate`, `delta_coverage_80`, `delta_interval_width`, `interval_score`, `delta_interval_score` (league-averaged per season, then over seasons), `decision`, `group_verdict`, `no_peek_warnings`, runtime_s, run_at. Tests: key unique, decision / verdict in keep / drop / mixed. Read by Rankings' "The model" → "What we tried" |
 
 ## analytics — ops views
 

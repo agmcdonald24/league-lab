@@ -514,29 +514,45 @@ if model == "v2":
             span = f"{yrs[0]} to {yrs[-1]}" if len(yrs) > 1 else yrs[0]
 
             def _verdict(r) -> str:
-                n = int(r.n_seasons)
-                better = max(int(r.seasons_better_spearman), int(r.seasons_better_mae)) if r.decision != "drop" else int(r.seasons_better_spearman)
-                word = {"keep": "Keep", "mixed": "Mixed", "drop": "Drop"}.get(r.decision, str(r.decision))
-                why = {"keep": f"better in {better} of {n} seasons", "mixed": "better order, bigger miss (or the reverse)",
-                       "drop": f"order better in {better} of {n} seasons: not steady"}.get(r.decision, "")
-                return f"{word}: {why}"
+                n, better = int(r.n_seasons), max(int(r.seasons_better_spearman), int(r.seasons_better_mae))
+                if r.decision == "keep":
+                    return f"Keep: {better} of {n} seasons"
+                if r.decision == "mixed":
+                    return "Mixed"
+                if r.delta_spearman <= 0 and r.delta_mae >= 0:
+                    return "Drop: no gain"
+                if better >= -(-2 * n // 3):          # steady but below the bar: +0.005 order score or -0.05 points
+                    return "Drop: too small"
+                return f"Drop: {better} of {n} seasons"
 
             fx["tried"] = fx["label"].fillna(fx["feature_group"])
-            fx["d_order"] = fx["delta_spearman"].map(lambda v: f"{v:+.3f}")
-            fx["d_miss"] = fx["delta_mae"].map(lambda v: f"{v:+.2f} pts")
+            # one line per group: the answer wraps at phone width; the table below is the detail
+            lines = []
+            for lbl, g in fx.groupby("tried", sort=False):
+                parts = []
+                for dec, word in (("keep", "keep"), ("mixed", "mixed"), ("drop", "drop")):
+                    pos = g.loc[g["decision"] == dec, "position"].tolist()
+                    if pos:
+                        parts.append(f"{word} at every position" if len(pos) == len(g) else f"{word} for {', '.join(pos)}")
+                lines.append(f"- **{lbl}**: " + "; ".join(parts))
+            st.markdown("\n".join(lines))
+            fx["d_order"] = fx["delta_spearman"].map(lambda v: f"{round(v, 3) + 0.0:+.3f}")   # + 0.0: no "-0.000"
+            fx["d_miss"] = fx["delta_mae"].map(lambda v: f"{round(v, 2) + 0.0:+.2f} pts")
             fx["verdict"] = [_verdict(r) for r in fx.itertuples()]
             st.caption(f"Each group of new inputs was added on its own, the model re-trained, and graded on {span}: seasons it "
                        "never saw, in both leagues' scoring, against the same model without them. Order score up and average "
                        "miss down are better. We keep a group for a position only when it helps in at least 2 of the 3 seasons, "
                        "not just on average.")
-            show(fx, ["tried", "position", "d_order", "d_miss", "verdict"],
+            show(fx, ["tried", "position", "verdict", "d_order", "d_miss"],   # the verdict before the numbers: on screen at 390 px
                  overrides={"tried": Col("What we added", "text", "The group of new inputs tested"),
                             "d_order": Col("Order score", "text", "Change in the order score (how well the projected order matched "
                                            "the real one; 1 = perfect). Plus is better."),
                             "d_miss": Col("Average miss", "text", "Change in the average miss, in points per player per game. Minus is better."),
-                            "verdict": Col("Verdict", "text", "Keep: helps this position in most seasons. Drop: no steady gain. "
-                                           "Mixed: helps one way, hurts another.")},
-                 phone_cols=["tried", "position", "d_order", "d_miss", "verdict"], widths={"verdict": "large"})
+                            "verdict": Col("Verdict", "text", "Keep: helps this position in at least 2 of the 3 seasons (how many). "
+                                           "Drop: no gain, a gain too small to matter (under +0.005 order score and 0.05 points "
+                                           "a game), or better in too few seasons (how many). Mixed: helps one way, hurts another.")},
+                 phone_cols=["tried", "position", "verdict", "d_order", "d_miss"],
+                 widths={"position": "small", "d_order": "small", "d_miss": "small"})
 else:
     with st.expander("The old formula: its weights"):
         wts = query("select position, feature, weight, train_seasons, n_rows, r2_train, fitted_at from analytics_seeds.ranking_weights where position = %s order by feature", (position,))
