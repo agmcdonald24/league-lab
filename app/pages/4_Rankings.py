@@ -490,6 +490,53 @@ if model == "v2":
                         st.markdown("\n".join(f"{int(r.importance_rank)}. {r.feature_label} · **{float(r.importance):+.2f}**"
                                                for r in t.itertuples()))
                         st.caption("Points of error added per player per game when that input is scrambled.")
+        # plan D1: the feature-group harness's verdicts (mart_feature_experiments), in docs/WORDS.md's words
+        st.markdown("**What we tried**")
+        fx = pd.DataFrame() if missing_relations(("mart_feature_experiments",)) else query(
+            """select feature_group, label, position, delta_spearman, delta_mae, decision, group_verdict, n_seasons,
+                      seasons_better_spearman, seasons_better_mae, test_seasons
+               from analytics.mart_feature_experiments order by label, position""")
+        if fx.empty:
+            st.caption("Nothing tested yet. New inputs (game time and rest, weather, team style) are tried here one group at a "
+                       "time before the model uses them.")
+        else:
+            for c in ("delta_spearman", "delta_mae"):
+                fx[c] = pd.to_numeric(fx[c], errors="coerce")
+            kept = fx[fx["decision"] == "keep"]
+            n_groups = fx["feature_group"].nunique()
+            if kept.empty:
+                st.markdown(f"Nothing new made it in yet: {n_groups} group{'s' if n_groups != 1 else ''} of inputs tested, none helped "
+                            "steadily enough to keep.")
+            else:
+                st.markdown("Worth adding: " + " · ".join(f"**{lbl}** for {', '.join(g['position'])}"
+                                                          for lbl, g in kept.groupby("label", sort=False)) + ".")
+            yrs = str(fx["test_seasons"].iloc[0]).split(",")
+            span = f"{yrs[0]} to {yrs[-1]}" if len(yrs) > 1 else yrs[0]
+
+            def _verdict(r) -> str:
+                n = int(r.n_seasons)
+                better = max(int(r.seasons_better_spearman), int(r.seasons_better_mae)) if r.decision != "drop" else int(r.seasons_better_spearman)
+                word = {"keep": "Keep", "mixed": "Mixed", "drop": "Drop"}.get(r.decision, str(r.decision))
+                why = {"keep": f"better in {better} of {n} seasons", "mixed": "better order, bigger miss (or the reverse)",
+                       "drop": f"order better in {better} of {n} seasons: not steady"}.get(r.decision, "")
+                return f"{word}: {why}"
+
+            fx["tried"] = fx["label"].fillna(fx["feature_group"])
+            fx["d_order"] = fx["delta_spearman"].map(lambda v: f"{v:+.3f}")
+            fx["d_miss"] = fx["delta_mae"].map(lambda v: f"{v:+.2f} pts")
+            fx["verdict"] = [_verdict(r) for r in fx.itertuples()]
+            st.caption(f"Each group of new inputs was added on its own, the model re-trained, and graded on {span}: seasons it "
+                       "never saw, in both leagues' scoring, against the same model without them. Order score up and average "
+                       "miss down are better. We keep a group for a position only when it helps in at least 2 of the 3 seasons, "
+                       "not just on average.")
+            show(fx, ["tried", "position", "d_order", "d_miss", "verdict"],
+                 overrides={"tried": Col("What we added", "text", "The group of new inputs tested"),
+                            "d_order": Col("Order score", "text", "Change in the order score (how well the projected order matched "
+                                           "the real one; 1 = perfect). Plus is better."),
+                            "d_miss": Col("Average miss", "text", "Change in the average miss, in points per player per game. Minus is better."),
+                            "verdict": Col("Verdict", "text", "Keep: helps this position in most seasons. Drop: no steady gain. "
+                                           "Mixed: helps one way, hurts another.")},
+                 phone_cols=["tried", "position", "d_order", "d_miss", "verdict"], widths={"verdict": "large"})
 else:
     with st.expander("The old formula: its weights"):
         wts = query("select position, feature, weight, train_seasons, n_rows, r2_train, fitted_at from analytics_seeds.ranking_weights where position = %s order by feature", (position,))

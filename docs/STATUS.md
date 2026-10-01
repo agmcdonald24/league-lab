@@ -1592,6 +1592,23 @@ no seeds touched; `metric_registry` rows I would have added: none (no new metric
   2025 only, so `depth_move` by depth chart (not benching) starts there. A depth-chart promotion before the player has
   played (a Wednesday "named starter") is not an alert yet.
 
+## Wave D (Iteration 12)
+
+Projection v3, round 1: D1 (the feature-group harness) + D2 (game context) · D3 (weather) · D4 (team volume
+and style). Each dev appends a section below; nothing edits `mart_player_week_features` until the PO keeps a group.
+
+### D1 — feature-group harness (dev/D1)
+
+* `league-lab experiment <group> [<group> ...] [--seasons 2023-2025] [--leagues ...]`, `--list`, `baseline`
+  (`src/league_lab/experiments.py`); groups register in `src/league_lab/feature_groups/<family>.py` as
+  `GROUPS = {name: {table, columns, positions, in_season, label, note}}`; the rule, the no-peek check and the
+  outputs are in `docs/METRICS.md` § "Feature experiments".
+* `projections.py` hooks, defaults unchanged: `load_frame(..., extra_tables=None)`, `fit_position(..., features=None)`
+  (the model keeps `features`; `predict_position` uses them), `_matrix(d, features=None)`, and the walk-forward
+  loop of `backtest` factored out as `walk_forward(...)` (same calls, same order).
+* Results: `ops.feature_experiments` (DDL in `db.migrate`), `mart_feature_experiments` (view), Rankings →
+  "The model" → "What we tried".
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

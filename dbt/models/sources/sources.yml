@@ -102,6 +102,8 @@ sources:
         description: "Written by `league-lab backtest-v2`: walk-forward scores per league-season-week-position-scorer, with interval coverage."
       - name: projection_importance
         description: "Plan U-15. model = 'component' (written by `league-lab project`, once per model version x training window): permutation importance of the component models on the newest training season, measured with a twin fitted without that season (fit_seasons), per position and input, in points of error of the priced line (component = 'total', reference scoring) and per stat in its own unit. model = 'quantile_p50' (written by `league-lab backtest-v2`; every row from before U-15): the P50 interval model on the newest test season."
+      - name: feature_experiments
+        description: "Written by `league-lab experiment` (plan D1, src/league_lab/experiments.py): per run x feature group x position x league x test season, projection v2 refitted with the group's inputs vs the cached baseline (feature_group = 'baseline', keyed on model_version + test_seasons + data_key): Spearman, hit rate, MAE, coverage_80, interval width and interval score (mean pinball loss at 0.1 and 0.9), their baseline_* and delta_*, the per-position decision and the group verdict."
       - name: projection_drift
         description: "Written by `league-lab drift` (and at the end of `league-lab project`), plan M-06: the live board's played weeks scored like the backtest, per league-season-week-position, with the week's games played / scheduled and (B5) frozen_share, the share of scored rows that are the board as published before kickoff."
         tests:

@@ -250,13 +250,13 @@ def migrate(conn: psycopg.Connection) -> None:
     are created here too, from the writer's own DDL, so a fresh or upgraded database passes `dbt build`'s
     source tests BEFORE the first `project` (the Mac hit this: `make build` ran before `make project` and
     three sources did not exist yet)."""
-    from . import lineup, signals, waivers  # local import: those modules import this one
+    from . import experiments, lineup, signals, waivers  # local: those modules import this one
 
     with conn.cursor() as cur:
         for schema in SCHEMAS:
             cur.execute(sql.SQL("create schema if not exists {}").format(sql.Identifier(schema)))
         cur.execute(OPS_DDL)
-        for ddl in (*lineup.DDL.values(), waivers.UPSIDE_DDL, *signals.DDL.values()):
+        for ddl in (*lineup.DDL.values(), waivers.UPSIDE_DDL, *signals.DDL.values(), experiments.DDL):   # D1: ops.feature_experiments
             cur.execute(ddl)
     conn.commit()
 

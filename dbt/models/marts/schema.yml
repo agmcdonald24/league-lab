@@ -161,6 +161,29 @@ models:
       - name: importance
         tests: [not_null]
 
+  - name: mart_feature_experiments
+    description: "Plan D1 (Wave D): the feature-group harness's verdicts (`league-lab experiment <group>`), one row per group x position from each group's latest run: projection v2 refitted with the group's inputs added vs the cached baseline (no extra inputs), walk-forward over the test seasons in both leagues' scoring; deltas = group - baseline (Spearman up and MAE down are better; interval score = mean pinball loss at 0.1 and 0.9, down is better), seasons_better_* = test seasons (league-averaged) that improved, decision keep / drop / mixed per position and group_verdict per group (docs/METRICS.md § Feature experiments)."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [feature_group, position]
+    columns:
+      - name: decision
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['keep', 'drop', 'mixed']
+      - name: group_verdict
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['keep', 'drop', 'mixed']
+      - name: delta_spearman
+        tests: [not_null]
+      - name: delta_mae
+        tests: [not_null]
+
   - name: mart_projection_drift
     description: "Drift monitor (M-06): the live v2 board's complete played weeks per league, season and position (mean Spearman, hit rate, MAE, coverage_80, width) next to the backtest's v2_points means."
     tests:
