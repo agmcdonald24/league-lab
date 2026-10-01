@@ -316,3 +316,8 @@ def test_upside_fingerprint_is_the_waiver_engines():
     body = re.search(r"fp as \(\n(.*?)\n\)\n", mart, re.S).group(1)
     norm = lambda s: re.sub(r"\s+", " ", re.sub(r"\{\{\s*ref\('([a-z_]+)'\)\s*\}\}", r"analytics.\1", s)).strip()   # noqa: E731
     assert norm(body) == norm(waivers.FINGERPRINT_SQL)
+
+
+def test_kinds_are_the_marts_accepted_values():
+    yml = (ROOT / "dbt/models/marts/edge/signals.yml").read_text()
+    assert f'values: {list(signals.KINDS)}'.replace("'", '"') in yml

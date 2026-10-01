@@ -1,16 +1,16 @@
-"""Player signals (plan R-10 role alerts, R-12 scenario upside).
+"""Player signals (plan R-10 role alerts, R-12 scenario upside). docs/METRICS.md § Role alerts / § Scenario upside.
 
-Role alerts (R-10)
-------------------
-Per player x week: has his **role** changed in the last one to three games? Read from
+Role alerts (R-10, rule ``SIGNALS_VERSION``)
+--------------------------------------------
+Per player x week: has his **role** changed in the last one to three games, and why? Read from
 ``intermediate.int_player_game_role`` (every QB / RB / WR / TE on a team's roster for every played
 regular-season game, with the reason when he missed it), per position:
 
 * **snap share** (all positions) and **route share** (the routes proxy: on the field for a dropback;
   completed seasons only, the NFL publishes it after the season) are *structural*: they move when a
   coach changes who plays;
-* **target share** (RB / WR / TE) and **carry share** (RB) move with the game plan as well, so one
-  game of them alone is never an alert.
+* **target share** (RB / WR / TE) and **carry share** (RB) move with the game plan as well: supporting
+  evidence, never an alert on their own (an RB's carry share excepted, with a named reason or two games).
 
 For the latest game ``W`` and ``k`` = 1, 2, 3 (the games it has held) the window ``N`` = his last ``k``
 games and the prior ``P`` = up to ``PRIOR_GAMES`` games before it (injury absences are skipped, a
@@ -18,41 +18,46 @@ healthy scratch counts as 0). A metric has **changed** when
 
 * the window level (mean share; targets / team targets for the target and carry share) is at least
   ``STEP`` above (or below) the prior level (the median of the prior games, so a short injury fill-in
-  inside the prior does not become the baseline), and every game of the window is at least half of
-  ``STEP`` past it;
+  inside the prior does not become the baseline), every game of the window is past it and the game
+  before the window was not;
 * the new level (an up alert) or the old one (a down alert) is a fantasy-relevant role (``FLOOR``);
 * the change is bigger than noise: ``z = change / (SIGMA x sqrt(1/k + 1/n_prior)) >= Z_MIN``, with
   ``SIGMA`` the typical game-to-game swing of that share at his position (median within-player sd,
-  2016-2025). With a **trigger** (below) ``Z_MIN_TRIGGER`` is enough: the reason is evidence too.
+  2016-2025). With a named reason ``Z_MIN_TRIGGER`` is enough: the reason is evidence too.
 
-One game (k = 1) is an alert only when a structural metric changed or a trigger explains it, and not
-when a one-game snap jump comes in a blowout (``BLOWOUT`` points) without a trigger; a one-game drop
-is not an alert when he is on the next week's injury report (Out / Doubtful / IR: he got hurt).
-The alert keeps the largest ``k`` that holds; after three games the change is his role, and the
-projection's last-3 inputs have caught up.
+One game (k = 1) is an alert only when a structural metric changed (not in a ``BLOWOUT``) or a reason
+explains it; a one-game drop needs a reason and is skipped when he is on the next week's report (Out /
+Doubtful / IR: he got hurt). A bigger role is never read from a missed game or a return from injury, and
+an up change whose window held an injured starter's absence that has already ended is expired. The alert
+keeps the longest ``k`` with a named reason, else the longest ``k``; after three games the change is his
+role, and the projection's last-3 inputs have caught up.
 
-**Triggers.** *Teammate out*: a teammate in his position group (QB; RB; WR/TE) who was a starter in
-the prior games (median snap share >= ``STARTER``; with fewer than two prior games, last season's
-level) is missing from every game of the window (Out / Doubtful / IR, inactive, gone from the
-team, or < 10% of the snaps). *Teammate back*: one who was missing in the prior's last game and
-starts every window game (the other side of the same story: the fill-in's role shrinks).
-*Traded*: his own team changed between the prior and the window.
+**Reasons** (``find_triggers``) and **kind** (``alert_kind``): his own team changed (traded -> new_team);
+a starter of his position group missed every window game (out injured / traded / released ->
+absence_beneficiary; inactive while healthy or < 10% of the snaps -> a benching, depth_move); his own
+depth-chart rank crossed the starter line (nflverse depth charts, 2025 on -> depth_move); a new starter
+took over (the label of a down alert -> depth_move); a missing teammate came back (-> role_down); none
+(role_up / role_down, "the coaches changed his role"). Each alert carries the evidence (before -> after
+per share), the games held, the cause in words and an expiry (three weeks; an absence alert also ends
+when the teammate is back on the report: ``mart_player_role_alerts.trigger_ended``).
 
 Scenario upside (R-12)
 ----------------------
-For every RB / WR / TE with a live **up** alert, a *larger-role* scenario next to the *base*
-(the projection as stored): the same component models (refitted here on the same rows as
-``projections.project``: deterministic, checked against the stored projection to 1e-9) re-predict
-the stat line with his last-3-games inputs set to the level of the games since the change
-(opportunity: snap / target / carry / air-yards / first-read shares, targets, carries, red-zone
-chances and expected points per game at the window's level; outcomes — catches, yards, touchdowns —
-at that volume times his season rate per target / carry: efficiency held), priced in each league's
-scoring. It lapses (``expires_after_week``) three weeks after the alert, or earlier when the trigger
-ends (the teammate returns: re-read every night). No probability is attached (see
-``hold_rates``: the historical hold rate is reported for the PO, not shown as a chance).
+For every QB / RB / WR / TE with a live **up** alert, a *larger-role* scenario next to the *base* (the
+projection as stored): the same component models (refitted here on the same rows as
+``projections.project``: deterministic, checked against the stored projection) re-predict the stat line
+with his last-3-games inputs set to the level of the games since the change, each capped at the
+position's 90th percentile (``input_caps``); catches, yards and touchdowns follow the volume at his own
+last-3 rate (a larger role, not better hands); priced in each league's scoring. ``with_alert`` weighs the
+gap by the historical hold rate. It lapses (``expires_after_week``) three weeks after the alert, or
+earlier when the injured teammate is expected back (re-read every night). Calibrated before any
+probability is shown (``scenario_backtest``, constants ``HOLD_RATE`` / ``BACKTEST`` / ``SCENARIO_SHIP``):
+on 2023-2025 neither line beat the projection more often than not, so the pages show a "what if" with its
+hit rate.
 
-Outputs: ``ops.player_role_alerts`` (every season, rewritten each run) and ``ops.player_scenarios``
-(the projected season); views ``mart_player_role_alerts`` and ``mart_player_scenarios``.
+Outputs: ``ops.player_role_alerts`` (every season), ``ops.player_scenarios`` (the projected season);
+views ``mart_player_role_alerts`` and ``mart_player_scenarios``. The waiver upside list is
+``waivers.upside_after_waivers`` (``ops.waiver_upside``).
 """
 
 from __future__ import annotations
@@ -104,7 +109,6 @@ ABSENT_SNAP = 0.10
 GROUP = {"QB": "QB", "RB": "RB", "WR": "REC", "TE": "REC"}
 CONFIDENCE = {1: "one game", 2: "two games", 3: "three games"}
 METRIC_WORDS = {"snap_share": "snap share", "route_share": "routes", "target_share": "target share", "carry_share": "carry share"}
-OUT_STATUSES = frozenset({"Out", "Doubtful"})
 # depth chart (nflverse, daily snapshots from 2025): the best rank at his position that makes him a starter
 STARTER_RANK = {"QB": 1, "RB": 1, "WR": 3, "TE": 1}
 # what the alert is (plan R-10), from the direction and the named reason (``alert_kind``)
