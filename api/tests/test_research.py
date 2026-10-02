@@ -224,6 +224,7 @@ def test_matchups_cb_route(client, sql, league):
 def test_players_route(client, sql, league):
     d = client.get(f"/api/players?league={league}&season=2025&position=WR&limit=10").json()
     assert d["total"] > 100 and len(d["players"]) == 10 and d["columns"][:2] == ["targets", "target_share"]
+    assert (d["season"], d["league_season"], d["season_type"]) == (2025, 2026, "REG")
     pts = [p["points"] for p in d["players"]]
     assert pts == sorted(pts, reverse=True)
     p = d["players"][0]

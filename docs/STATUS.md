@@ -2912,6 +2912,7 @@ sentences, `signals.py` for the role alerts).
 * `/api/trends` names the gap fields as the contract does (`ppg`, `xppg`, `gap`, `gap_direction`) rather than
   `expected_per_game` / `diff_per_game`; `/api/players` keeps `mart_league_player_season`'s names (`points`, `ppg`,
   `expected_per_game`, `diff_per_game`, `position_rank_ppg`).
+* `season` at the top of a response is the season of its rows (`season=`); the league's own is `league_season`.
 * `team` / `position` keep the mart's value when the row has one (the season's team), `dim_player`'s otherwise.
 * `/api/matchups/cb`'s `is_starter` is Sleeper's current lineup (`is_current_starter` / the roster's `starters`), not the
   proposed lineup the Streamlit page prefers: it only orders the list and picks the summary lines.

@@ -122,7 +122,9 @@ league's** scoring (League of Scrubs): such a field is renamed `<column>_ref`, a
 under the plain name. Every response opens with the league block:
 
 ```jsonc
-{"league_id": "1321941740235550720", "league_name": "Forever Unclean Dynasty", "season": 2026, "week": 4,
+{"league_id": "1321941740235550720", "league_name": "Forever Unclean Dynasty", "week": 4,
+ "season": 2026,              // the season of the rows (a route's season=); the league's own: league_season
+ "league_season": 2026,
  "source": "database" | "sleeper", "points_source": "league marts" | "priced on request (scoring.compute_points)",
  // on demand only: the house league whose expected points this league's are priced from, and whether exactly
  "expected_points_reference": "1389709692405551104", "expected_points_exact": true,
@@ -146,7 +148,7 @@ these, as on the page), `mart_cb_matchups` has no points; the cornerback "best c
 // GET /api/trends?league=&position=ALL|QB|RB,WR…&view=all|over|under&season=&who=all|fa|rostered|team&team=
 //                &min_games=1&sort=&dir=&limit=50&metrics=moved|all
 // default order: view=over → gap desc, under → gap asc, all → momentum desc
-{… league block, "trend_season": 2026, "view": "over", "positions": ["QB","RB","WR","TE"], "total": 167,
+{… league block, "season": 2026, "view": "over", "positions": ["QB","RB","WR","TE"], "total": 167,
  "early_read": true, "notice": "No player in this list has four games yet (NFL 2026). …",   // null from game four
  "players": [{
    // mart_player_trend_tags (reference-scored points renamed _ref)
@@ -172,7 +174,7 @@ these, as on the page), `mart_cb_matchups` has no points; the cornerback "best c
  "howto_sections": [{"title": "How to read role alerts", "text": "- …"}]}
 
 // GET /api/matchups/defense?league=&position=ALL|QB|…   (ALL = the positions the league starts, of QB RB WR TE K)
-{… league block, "dvp_season": 2026, "profile_week": 4, "positions": ["QB","RB","WR","TE"], "n_defenses": 32,
+{… league block, "season": 2026, "profile_week": 4, "positions": ["QB","RB","WR","TE"], "n_defenses": 32,
  "weeks_used": [1, 2, 3],
  "teams": [{   // one row per defense × position, sorted by position then rank_std: the heatmap's cells
    "defense": "CAR", "position": "RB", "season": 2026, "games": 2, "through_week": 2, "games_l4": 2,
@@ -210,7 +212,7 @@ these, as on the page), `mart_cb_matchups` has no points; the cornerback "best c
 
 // GET /api/players?league=&season=&position=ALL|QB|RB|WR|TE|K&season_type=REG|POST&min_games=1&q=&sort=points&dir=desc
 //                 &limit=50&offset=0          (sort = any returned column; limit ≤ 500)
-{… league block, "players_season": 2025, "season_type": "REG", "positions": ["RB"], "total": 145, "offset": 0,
+{… league block, "season": 2025, "season_type": "REG", "positions": ["RB"], "total": 145, "offset": 0,
  "columns": ["carries", "carry_share", …],      // the page's stat columns for the position(s), in its order
  "players": [{"gsis_id": "00-0033280", "player_name": "Christian McCaffrey", "position": "RB", "teams": "SF", "games_played": 17,
               "carries": 311, "carry_share": 0.6466, …,                                   // mart_player_season
@@ -220,7 +222,7 @@ these, as on the page), `mart_cb_matchups` has no points; the cornerback "best c
 
 // GET /api/receivers?league=&season=&season_type=REG&weeks=1-18&limit=50&players=<gsis,gsis>&context=half|score_state|
 //                   down_distance|field_zone|qb|none        (no players: the page's candidates, 10+ targets, most first)
-{… league block, "receivers_season": 2026, "season_type": "REG", "weeks": [1, 18], "context_type": "half",
+{… league block, "season": 2026, "season_type": "REG", "weeks": [1, 18], "context_type": "half",
  "yardsticks": {"WR": {"target_share": 0.27, "targets_per_game": 9.1, …}, "TE": {…}},   // the season's top-12 averages
  "receivers": [{"gsis_id": "…", "player_name": "…", "position": "WR", "team": "…",
    // the window (app/pages/10_Receivers.py summarize(): numerators and denominators summed over the same games)
@@ -255,7 +257,7 @@ these, as on the page), `mart_cb_matchups` has no points; the cornerback "best c
 
 // GET /api/player/{gsis}/games?league=&season=2026&season_type=ALL|REG|POST     (404 for an unknown player)
 {… league block, "player": {"gsis_id", "player_name", "position", "team", "headshot_url", "rostered_by_roster_id", "rostered_by_team"},
- "games_season": 2026, "season_type": "ALL",
+ "season": 2026, "season_type": "ALL",
  "games": [{"game_id": "2026_01_TB_CIN", "season": 2026, "season_type": "REG", "week": 1, "game_date": "2026-09-13", "team": "CIN",
             "opponent": "TB", "is_home": true, "played": true, "roster_status": "ACT",
             "targets": 7, "receptions": 5, "receiving_yards": 51, …, "offense_snap_pct": 0.93,   // fct_player_game's stat columns

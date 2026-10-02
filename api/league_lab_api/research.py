@@ -130,8 +130,8 @@ class Ctx:
         return "database" if self.house else "sleeper"
 
     def meta(self) -> dict:
-        out = {"league_id": self.league_id, "league_name": self.league_name, "season": self.season, "week": self.week,
-               "source": self.source,
+        out = {"league_id": self.league_id, "league_name": self.league_name, "season": self.season,
+               "league_season": self.season, "week": self.week, "source": self.source,
                "points_source": "league marts" if self.house else "priced on request (scoring.compute_points)"}
         if not self.house:
             ref, exact = expected_ref(self)
@@ -507,7 +507,7 @@ def trends(league_id: str, *, position: str | None = None, limit: int | None = N
     alert_rows = [{**{k: r.get(k) for k in ("gsis_id", "player_name", "position", "team")}, **_alert(r, team)}
                   for r in _records(every)]
     enough = (tags["opportunity_trend"] != "insufficient").any() if not tags.empty else False
-    return {**ctx.meta(), "trend_season": season, "view": view, "positions": pos, "total": total,
+    return {**ctx.meta(), "season": season, "view": view, "positions": pos, "total": total,
             "early_read": not bool(enough), "notice": None if enough else EARLY_READ.format(season=season),
             "players": players, "role_alerts": alert_rows,
             "howto": TRENDS_HOWTO, "howto_sections": [{"title": "How to read role alerts", "text": ROLE_HOWTO}],
@@ -563,7 +563,7 @@ def matchups_defense(league_id: str, *, position: str | None = None, source: str
     played = query("select distinct week from analytics.dim_game where season = %s and season_type = 'REG' and is_final "
                    "order by week", (season,))
     n_def = int(rows.groupby("position")["defense"].nunique().max()) if not rows.empty else 0
-    return {**ctx.meta(), "dvp_season": season, "profile_week": week, "positions": pos, "n_defenses": n_def,
+    return {**ctx.meta(), "season": season, "profile_week": week, "positions": pos, "n_defenses": n_def,
             "weeks_used": [int(w) for w in played["week"]] if not played.empty else [],
             "teams": _records(rows), "howto": DVP_HOWTO, "scoring_note": REF_NOTE.format(ref=reference_name())}
 
@@ -743,7 +743,7 @@ def players(league_id: str, *, season: int | None = None, position: str | None =
     off = max(0, int(offset or 0))
     df = _sort(df, sort, dir, "points").iloc[off: off + _limit(limit)]
     page = decorate(df, ctx)
-    return {**ctx.meta(), "players_season": season, "season_type": st, "positions": pos, "columns": cols,
+    return {**ctx.meta(), "season": season, "season_type": st, "positions": pos, "columns": cols,
             "total": total, "offset": off, "players": _records(page), "howto": PLAYERS_HOWTO,
             "scoring_note": REF_NOTE.format(ref=reference_name())}
 
@@ -889,7 +889,7 @@ def receivers(league_id: str, *, season: int | None = None, limit: int | None = 
                         and position in ('WR', 'TE', 'RB') and targets >= 10 order by targets desc, gsis_id""", (season, st))
         ids = list(cand["gsis_id"].head(n))
     if not ids:
-        return {**ctx.meta(), "receivers_season": season, "season_type": st, "weeks": [lo, hi], "receivers": [],
+        return {**ctx.meta(), "season": season, "season_type": st, "weeks": [lo, hi], "receivers": [],
                 "yardsticks": {}, "howto": receivers_howto(season, {})}
     games = query(f"select {RECEIVER_GAME_COLS} from analytics.fct_player_game where season = %s and season_type = %s "
                   "and gsis_id = any(%s) and week between %s and %s order by gsis_id, week", (season, st, ids, lo, hi))
@@ -929,7 +929,7 @@ def receivers(league_id: str, *, season: int | None = None, limit: int | None = 
         r["context"] = ctx_rows.get(r["gsis_id"], [])
         out.append(r)
     ys = _yardsticks(season, st)
-    return {**ctx.meta(), "receivers_season": season, "season_type": st, "weeks": [lo, hi], "context_type": ctype,
+    return {**ctx.meta(), "season": season, "season_type": st, "weeks": [lo, hi], "context_type": ctype,
             "receivers": out, "yardsticks": ys, "howto": receivers_howto(season, ys),
             "scoring_note": REF_NOTE.format(ref=reference_name())}
 
@@ -969,7 +969,7 @@ def player_games(league_id: str, gsis: str, *, season: int | None = None, season
     lp = league_games(ctx, season, [gsis])[["game_id", "points", "points_expected"]].rename(
         columns={"points_expected": "expected_points"})
     g = g.merge(lp, on="game_id", how="left").drop(columns=["gsis_id"])
-    return {**ctx.meta(), **{"player": head}, "games_season": season, "season_type": st, "games": _records(g),
+    return {**ctx.meta(), **{"player": head}, "season": season, "season_type": st, "games": _records(g),
             "scoring_note": REF_NOTE.format(ref=reference_name())}
 
 
