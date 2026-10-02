@@ -26,15 +26,24 @@ Outputs: ``ops.projections`` (one row per league x season x week x player), ``op
 the component models in points, written by ``project``; the P50 interval model's, by ``backtest-v2``), ``ops.projection_drift`` (plan M-06: the live board's played weeks scored
 like a held-out season), and a Markdown report under ``reports/backtests``.
 
+NFL-wide outputs (plan F1, Wave F): the ranges are fitted per *reference scoring* (``reference_scorings``, the seed
+``reference_scorings.csv``) and ``project`` writes ``ops.projection_lines`` (the stat line per player-week, one copy for
+every league), ``ops.projection_ranges`` (per reference scoring x player-week) and, from ``kdef``, ``ops.kd_lines`` /
+``ops.kd_ranges``; the house leagues' ``ops.projections`` rows are derived from the same numbers (``house_rows``).
+
 Decision record (plan B5): a league-week's rows in ``ops.projections`` are rewritten by every refit
 until the week's first kickoff and never after (``_write_projections`` / ``freeze_plan``); the rows
 that were live at kickoff are kept and labelled ``frozen_source = 'kickoff'`` with ``frozen_at`` = their
-publication time, and the drift scores them.
+publication time, and the drift scores them. The NFL-wide tables follow the same rule (``write_nfl_wide``; the unit
+is the week, or the scoring x week for the ranges).
 """
 
 from __future__ import annotations
 
+import csv
+import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -43,12 +52,12 @@ import numpy as np
 import pandas as pd
 import psycopg
 
+from . import kdef as KD
 from .config import PROJECT_ROOT, get_settings
 from .feature_groups import personnel as _PN
-from .kdef import rows_after_project as kd_rows_after_project
 from .lineup import lineups_after_project
 from .rankings import TOP_N, _hit_rate, _spearman, parse_seasons
-from .scoring import compute_points
+from .scoring import compute_points, priced_keys
 from .signals import signals_after_project
 from .waivers import waivers_after_project
 
@@ -168,9 +177,72 @@ def league_scorings(conn: psycopg.Connection) -> dict[str, tuple[str, dict[str, 
         return {r[0]: (r[1], {k: float(v) for k, v in r[2].items()}) for r in cur.fetchall()}
 
 
-def price(df: pd.DataFrame, scoring: dict[str, float], prefix: str) -> pd.Series:
-    """League points of a stat line held in ``<prefix><component>`` columns (bonus keys included where computable)."""
+REFERENCE_SEED = PROJECT_ROOT / "dbt" / "seeds" / "reference_scorings.csv"
+MATCH_TOL = 1e-9     # two weights closer than this are the same weight (Sleeper stores float32-looking values)
+
+
+def reference_scorings(conn: psycopg.Connection | None = None) -> dict[str, tuple[str, dict[str, float]]]:
+    """name -> (label, scoring_settings) of the reference scorings (plan F1), in name order: the shape
+    ``league_scorings`` returns, keyed by the seed's ``name``. Read from ``analytics_seeds.reference_scorings``
+    (what the dbt tests price with); the seed file when the table is not built yet (a fresh database)."""
+    rows: list[tuple[str, str, object]] = []
+    if conn is not None:
+        with conn.cursor() as cur:
+            cur.execute("select to_regclass('analytics_seeds.reference_scorings') is not null")
+            if cur.fetchone()[0]:
+                cur.execute("select name, label, scoring_settings from analytics_seeds.reference_scorings order by name")
+                rows = list(cur.fetchall())
+    if not rows:
+        log.warning("analytics_seeds.reference_scorings is not built: reading %s (run `dbt seed`)", REFERENCE_SEED.name)
+        with open(REFERENCE_SEED, newline="") as fh:
+            rows = sorted((r["name"], r["label"], r["scoring_settings"]) for r in csv.DictReader(fh))
+    out: dict[str, tuple[str, dict[str, float]]] = {}
+    for name, label, settings in rows:
+        d = json.loads(settings) if isinstance(settings, str) else dict(settings or {})
+        out[str(name)] = (str(label), {k: float(v) for k, v in d.items() if v is not None})
+    return out
+
+
+def exact_reference(scoring: dict[str, float], references: dict[str, tuple[str, dict[str, float]]]) -> str | None:
+    """The reference scoring that prices every projected QB-TE stat line exactly as ``scoring`` does: the same
+    non-zero weights on the keys the line can carry (``scoring.priced_keys`` over ``ALL_COMPONENTS``, the
+    position premiums included), each within ``MATCH_TOL``. None when no reference is that scoring."""
+    mine = priced_keys(scoring, ALL_COMPONENTS)
+    for name, (_, ref) in references.items():
+        theirs = priced_keys(ref, ALL_COMPONENTS)
+        if theirs.keys() == mine.keys() and all(abs(theirs[k] - mine[k]) <= MATCH_TOL for k in mine):
+            return name
+    return None
+
+
+def fit_scorings(leagues: dict[str, tuple[str, dict[str, float]]], references: dict[str, tuple[str, dict[str, float]]]
+                 ) -> tuple[dict[str, tuple[str, dict[str, float]]], dict[str, str]]:
+    """What ``project`` fits (plan F1): every reference scoring, plus a house league no reference is (its ranges
+    are fitted on its own, as before Wave F). Returns (scorings to fit, league_id -> the key its ops.projections
+    rows take their ranges from: a reference name, or the league_id itself)."""
+    fit = dict(references)
+    source: dict[str, str] = {}
+    for lid, (name, scoring) in leagues.items():
+        ref = exact_reference(scoring, references)
+        if ref is None:
+            log.warning("%s (%s): no reference scoring prices its stat lines exactly; fitted on its own (add it to "
+                        "dbt/seeds/reference_scorings.csv)", name, lid)
+            fit[lid] = (name, scoring)
+            source[lid] = lid
+        else:
+            source[lid] = ref
+    return fit, source
+
+
+def price(df: pd.DataFrame, scoring: dict[str, float], prefix: str, position: str | None = None) -> pd.Series:
+    """League points of a stat line held in ``<prefix><component>`` columns (bonus keys included where computable).
+    The player's position (the frame's ``position`` column, else ``position``) rides along so a position premium
+    (``bonus_rec_te``, plan F1) prices; a scoring without one prices exactly as before."""
     rows = df[[f"{prefix}{c}" for c in ALL_COMPONENTS]].rename(columns=lambda c: c[len(prefix):])
+    if "position" in df.columns:
+        rows["position"] = df["position"].to_numpy()
+    elif position is not None:
+        rows["position"] = position
     return pd.Series([compute_points(r, scoring) for r in rows.to_dict("records")], index=df.index, dtype=float)
 
 
@@ -179,7 +251,7 @@ def price(df: pd.DataFrame, scoring: dict[str, float], prefix: str) -> pd.Series
 class PositionModel:
     position: str
     components: dict[str, object] = field(default_factory=dict)      # component -> regressor
-    quantiles: dict[tuple[str, float], object] = field(default_factory=dict)  # (league_id, q) -> regressor
+    quantiles: dict[tuple[str, float], object] = field(default_factory=dict)  # (scoring key, q) -> regressor (F1: a reference name or a league_id)
     conformal: dict[str, float] = field(default_factory=dict)        # league_id -> interval widening (points)
     conformal_50: dict[str, float] = field(default_factory=dict)     # league_id -> widening of the 50% range (plan D6)
     tier_cuts: dict[str, tuple[float, ...]] = field(default_factory=dict)          # league_id -> projection tier cut points
@@ -202,7 +274,7 @@ def _regressor(loss: str, quantile: float | None = None):
 def _line_points(m: PositionModel, x: np.ndarray, scoring: dict[str, float]) -> np.ndarray:
     """The priced projected line for a feature matrix (the anchor the quantile models work from)."""
     comp = pd.DataFrame({f"proj_{c}": (np.clip(m.components[c].predict(x), 0, None) if c in m.components else 0.0) for c in ALL_COMPONENTS})
-    return price(comp, scoring, "proj_").to_numpy(dtype=float)
+    return price(comp, scoring, "proj_", m.position).to_numpy(dtype=float)
 
 
 def _quantile_features(x: np.ndarray, line: np.ndarray) -> np.ndarray:
@@ -234,9 +306,9 @@ def _fit_components(x: np.ndarray, d: pd.DataFrame, position: str) -> dict[str, 
     return models
 
 
-def _price_models(models: dict[str, object], x: np.ndarray, scoring: dict[str, float]) -> np.ndarray:
+def _price_models(models: dict[str, object], x: np.ndarray, scoring: dict[str, float], position: str | None = None) -> np.ndarray:
     comp = pd.DataFrame({f"proj_{c}": (np.clip(models[c].predict(x), 0, None) if c in models else 0.0) for c in ALL_COMPONENTS})
-    return price(comp, scoring, "proj_").to_numpy(dtype=float)
+    return price(comp, scoring, "proj_", position).to_numpy(dtype=float)
 
 
 def _oof_lines(x: np.ndarray, d: pd.DataFrame, position: str, scorings: dict[str, tuple[str, dict[str, float]]]) -> dict[str, np.ndarray]:
@@ -252,7 +324,7 @@ def _oof_lines(x: np.ndarray, d: pd.DataFrame, position: str, scorings: dict[str
             continue
         models = _fit_components(x[tr], d[tr], position)
         for lid, (_, scoring) in scorings.items():
-            lines[lid][te] = _price_models(models, x[te], scoring)
+            lines[lid][te] = _price_models(models, x[te], scoring, position)
     return lines
 
 
@@ -337,13 +409,20 @@ def _widening(m: PositionModel, league_id: str, line: np.ndarray, band: str) -> 
     return np.asarray(per_tier, dtype=float)[np.searchsorted(m.tier_cuts[league_id], line)]
 
 
-def predict_position(m: PositionModel, rows: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]]) -> pd.DataFrame:
-    """One output row per league per input row: projected line, priced points, P10/P50/P90 and (plan D6) P25/P75."""
+def predict_position(m: PositionModel, rows: pd.DataFrame, scorings: dict[str, tuple[str, dict[str, float]]],
+                     lines: pd.DataFrame | None = None) -> pd.DataFrame:
+    """One output row per scoring (``league_id`` = its key) per input row: projected line, priced points, P10/P50/P90
+    and (plan D6) P25/P75. ``lines`` (plan F1, row-aligned ``proj_<component>`` columns): price and range a given
+    stat line instead of the components' prediction (a frozen week's stored line, ranged in a scoring that has
+    no stored range yet)."""
     x = _matrix(rows, m.features)
     out = rows[["gsis_id", "season", "week", "position"]].copy()
     out["season"], out["week"] = out["season"].astype(int), out["week"].astype(int)   # week is also a feature (float)
     for c in ALL_COMPONENTS:
-        out[f"proj_{c}"] = np.clip(m.components[c].predict(x), 0, None) if c in m.components else 0.0
+        if lines is not None:
+            out[f"proj_{c}"] = pd.to_numeric(lines[f"proj_{c}"], errors="coerce").fillna(0.0).to_numpy(dtype=float)
+        else:
+            out[f"proj_{c}"] = np.clip(m.components[c].predict(x), 0, None) if c in m.components else 0.0
     frames = []
     for league_id, (_, scoring) in scorings.items():
         o = out.copy()
@@ -734,27 +813,79 @@ def available_seasons(conn: psycopg.Connection) -> list[int]:
 
 
 # ------------------------------------------------------------------------------ production projections
+LINE_COLUMNS = ["model_version", "fitted_at", "train_seasons", "season", "week", "gsis_id", "position",
+                *[f"proj_{c}" for c in ALL_COMPONENTS]]
+RANGE_COLUMNS = ["scoring_name", "season", "week", "gsis_id", "position", "model_version", "fitted_at", "proj_points",
+                 "p10", "p25", "p50", "p75", "p90"]
+KD_LINES_TABLE_COLUMNS = ["model_version", "fitted_at", "train_seasons", "season", "week", "position", "unit_id",
+                          *KD.KD_LINE_COLUMNS]
+FREEZE_COLUMNS = ["frozen_at", "frozen_source"]
+HOUSE_TOL = 1e-6     # a house league's price of the line vs its reference's: identical by construction (checked)
+
+
 def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame:
-    """Fit on every completed season before ``season`` and project every week of ``season``."""
-    scorings = league_scorings(conn)
+    """Fit on every completed season before ``season`` and project every week of ``season``.
+
+    Plan F1 (Wave F): the residual ranges are fitted per *reference scoring* (``reference_scorings``) and the
+    NFL-wide outputs are written: ``ops.projection_lines`` (the stat line per player-week),
+    ``ops.projection_ranges`` (per reference scoring x player-week), ``ops.kd_lines`` / ``ops.kd_ranges`` (K / DEF).
+    The house leagues' ``ops.projections`` rows are derived from the same numbers (the line priced in the league's
+    scoring, the ranges of the reference that IS the league; a league no reference is gets fitted on its own), so
+    the two never disagree. One ``fitted_at`` and one ``now`` for every table: the B5 freeze treats them alike."""
+    leagues = league_scorings(conn)
+    references = reference_scorings(conn)
+    fit, source = fit_scorings(leagues, references)
     seasons = available_seasons(conn)
     season = season or max(seasons)
     train_seasons = [s for s in seasons if s < season]
     frame = load_frame(conn, [*train_seasons, season])
     train = frame[frame["season"] < season]
     target = frame[frame["season"] == season]
-    preds = []
+    fitted_at, trained = datetime.now(UTC), f"{min(train_seasons)}-{max(train_seasons)}"
+    preds, models = [], {}
     for pos in POSITIONS:
-        m = fit_position(train, pos, scorings)
-        preds.append(predict_position(m, target[target["position"] == pos], scorings))
-    pred = pd.concat(preds, ignore_index=True)
-    pred["model_version"], pred["fitted_at"] = MODEL_VERSION, datetime.now(UTC)
-    pred["train_seasons"] = f"{min(train_seasons)}-{max(train_seasons)}"
-    # R-13: K and DEF rows (model kd1.0, leagues that start them) go through the same B5 writer
-    pred = _with_kd_rows(conn, pred, season)
-    _write_projections(conn, pred, season)   # B5: weeks whose first game has kicked off are kept, not rewritten
-    log.info("projections computed: %s rows for %s (%s leagues)", len(pred), season, len(scorings))
-    signals_after_project(conn, season, train, target, pred, scorings)   # R-10/R-12: role alerts + scenario upside (a failure is logged, not fatal)
+        models[pos] = m = fit_position(train, pos, fit)
+        preds.append(predict_position(m, target[target["position"] == pos], fit))
+    every = pd.concat(preds, ignore_index=True)     # one row per fitted scoring x player-week (league_id = the scoring key)
+    every["model_version"], every["fitted_at"], every["train_seasons"] = MODEL_VERSION, fitted_at, trained
+    lines = nfl_lines(every)
+    ranges = every[every["league_id"].isin(list(references))].rename(columns={"league_id": "scoring_name"})[RANGE_COLUMNS]
+    pred = house_rows(every, leagues, source)
+    # R-13: K and DEF rows (model kd1.0, leagues that start them) go through the same B5 writer; F1: their
+    # league-free lines and the reference scorings' offsets go NFL-wide
+    kd = KD.run_after_project(conn, season, references, fitted_at)
+    pred = _with_kd_rows(pred, kd.pred)
+    now = datetime.now(UTC)
+    _write_projections(conn, pred, season, now)   # B5: weeks whose first game has kicked off are kept, not rewritten
+    log.info("projections computed: %s rows for %s (%s leagues; ranges fitted in %s scorings: %s)", len(pred), season,
+             len(leagues), len(fit), ", ".join(fit))
+
+    def range_for(name: str, week: int, stored: pd.DataFrame) -> pd.DataFrame:
+        """Ranges in ``name`` around a stored (frozen) stat line of ``week``: the week's features, tonight's models."""
+        out = []
+        for pos, mdl in models.items():
+            rows = target[(target["position"] == pos) & (target["week"] == week)]
+            ln = stored[stored["position"] == pos]
+            if rows.empty or ln.empty:
+                continue
+            rows = rows.merge(ln[["gsis_id", *[f"proj_{c}" for c in ALL_COMPONENTS]]], on="gsis_id", how="inner")
+            out.append(predict_position(mdl, rows, {name: fit[name]}, lines=rows))
+        if not out:
+            return pd.DataFrame(columns=RANGE_COLUMNS)
+        r = pd.concat(out, ignore_index=True).rename(columns={"league_id": "scoring_name"})
+        r["model_version"], r["fitted_at"] = MODEL_VERSION, fitted_at
+        return r[RANGE_COLUMNS]
+
+    # the NFL-wide tables (plan F1). A failure fails the step, after the house leagues' night has run
+    nfl_error: Exception | None = None
+    try:
+        record = {ref: lid for lid, ref in source.items() if ref in references}   # reference -> the house league it IS
+        pred.attrs["nfl_wide"] = write_nfl_wide(conn, season, lines, ranges, kd, references, record, range_for, now)
+    except Exception as exc:   # noqa: BLE001 - re-raised below
+        conn.rollback()
+        log.exception("NFL-wide outputs failed (ops.projections was written); `league-lab project` retries them")
+        nfl_error = exc
+    signals_after_project(conn, season, train, target, pred, leagues)   # R-10/R-12: role alerts + scenario upside (a failure is logged, not fatal)
     # M-06: keep the drift monitor current on every refit. It scores the stored (for a started week:
     # frozen, B5) projections against the outcomes in mart_player_week_projections as last built: in
     # the nightly the full dbt build runs first, so the outcomes are tonight's.
@@ -766,15 +897,43 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
         log.exception("drift monitor failed (projections were written); run `league-lab drift` after `dbt build`")
     lineups_after_project(conn, season)   # B1: exact lineups on the fresh projections (a failure is logged, not fatal)
     waivers_after_project(conn, season)   # B3: waiver moves on those lineups (a failure is logged, not fatal)
-    importance_after_project(conn, train, scorings, f"{min(train_seasons)}-{max(train_seasons)}")   # U-15 (once per window; a failure is logged, not fatal)
+    importance_after_project(conn, train, leagues, trained)   # U-15 (once per window; a failure is logged, not fatal)
+    if nfl_error is not None:
+        raise nfl_error
     return pred
 
 
-def _with_kd_rows(conn: psycopg.Connection, pred: pd.DataFrame, season: int) -> pd.DataFrame:
+def nfl_lines(every: pd.DataFrame) -> pd.DataFrame:
+    """One row per player-week (``ops.projection_lines``): the stat line ``predict_position`` wrote for every
+    scoring (the components are predicted once, so any scoring's copy is the line)."""
+    first = every["league_id"].iloc[0] if len(every) else None
+    return every[every["league_id"] == first][LINE_COLUMNS].reset_index(drop=True)
+
+
+def house_rows(every: pd.DataFrame, leagues: dict[str, tuple[str, dict[str, float]]], source: dict[str, str]) -> pd.DataFrame:
+    """The house leagues' ``ops.projections`` rows (QB-TE) from the fitted scorings: the stat line priced in the
+    league's own scoring (``proj_points``) and the P10-P90 of the scoring it takes its ranges from (``source``:
+    the reference that IS the league, else the league itself). Refuses a reference whose price of the line
+    differs from the league's (they are the same priced keys: it cannot, unless the match is wrong)."""
+    frames = []
+    for lid, (name, scoring) in leagues.items():
+        o = every[every["league_id"] == source[lid]].copy()
+        own = price(o, scoring, "proj_")
+        gap = float((own - o["proj_points"]).abs().max()) if len(o) else 0.0
+        if gap > HOUSE_TOL:
+            raise ValueError(f"{name}: priced {gap:.3g} points away from reference {source[lid]!r} (the match is wrong)")
+        o["league_id"], o["proj_points"] = lid, own
+        frames.append(o)
+        log.info("%s (%s): ranges from %r; price of the line equal to it within %.1e", name, lid[-6:], source[lid], gap)
+    cols = ["model_version", "fitted_at", "train_seasons", "league_id", "season", "week", "gsis_id", "position",
+            *[f"proj_{c}" for c in ALL_COMPONENTS], "proj_points", "p10", "p25", "p50", "p75", "p90"]
+    return pd.concat(frames, ignore_index=True)[cols] if frames else pd.DataFrame(columns=cols)
+
+
+def _with_kd_rows(pred: pd.DataFrame, kd: pd.DataFrame) -> pd.DataFrame:
     """R-13: the v2 rows plus the K / DEF rows of ``kdef`` (their own model_version, kd1.0), so one
     ``_write_projections`` call writes a league-week whole. No K / DEF rows (a failure, or no league
     starts them) leaves the v2 rows exactly as they were."""
-    kd = kd_rows_after_project(conn, season)
     if kd.empty:
         return pred
     # one fitted_at per run: the freeze relabels a league-week with frozen_at = its fitted_at, and
@@ -926,6 +1085,35 @@ DDL = {
 }
 
 
+_PROJ_DDL = ", ".join(f"proj_{c} double precision" for c in ALL_COMPONENTS)
+_KD_DDL = ", ".join(f"{c} double precision" for c in KD.KD_LINE_COLUMNS)
+# Plan F1 (Wave F): the NFL-wide outputs, one copy for every league (registered in db.migrate). Freeze unit (B5):
+# the week for the line tables, the (scoring_name, week) for the range tables; frozen_source / frozen_at as in
+# ops.projections (assert_frozen_nfl_wide_precede_kickoff).
+NFL_DDL = {
+    "ops.projection_lines": f"""create table if not exists ops.projection_lines (
+        model_version text, fitted_at timestamptz, train_seasons text, season integer, week integer, gsis_id text,
+        position text, {_PROJ_DDL}, frozen_at timestamptz, frozen_source text);
+        create index if not exists projection_lines_idx on ops.projection_lines (season, week, gsis_id)""",
+    "ops.projection_ranges": """create table if not exists ops.projection_ranges (
+        scoring_name text, season integer, week integer, gsis_id text, position text, model_version text,
+        fitted_at timestamptz, proj_points double precision, p10 double precision, p25 double precision,
+        p50 double precision, p75 double precision, p90 double precision, frozen_at timestamptz, frozen_source text);
+        create index if not exists projection_ranges_idx on ops.projection_ranges (scoring_name, season, week, gsis_id)""",
+    "ops.kd_lines": f"""create table if not exists ops.kd_lines (
+        model_version text, fitted_at timestamptz, train_seasons text, season integer, week integer, position text,
+        unit_id text, {_KD_DDL}, frozen_at timestamptz, frozen_source text);
+        create index if not exists kd_lines_idx on ops.kd_lines (season, week, position, unit_id)""",
+    "ops.kd_ranges": """create table if not exists ops.kd_ranges (
+        scoring_name text, season integer, week integer, position text, unit_id text, model_version text,
+        fitted_at timestamptz, proj_points double precision, p10 double precision, p50 double precision,
+        p90 double precision, off_p10 double precision, off_p50 double precision, off_p90 double precision,
+        frozen_at timestamptz, frozen_source text);
+        create index if not exists kd_ranges_idx on ops.kd_ranges (scoring_name, season, week, position, unit_id)""",
+}
+DDL.update(NFL_DDL)
+
+
 def _write(conn: psycopg.Connection, table: str, df: pd.DataFrame, where: str, params: tuple) -> None:
     with conn.cursor() as cur:
         cur.execute(DDL[table])
@@ -1043,6 +1231,174 @@ def _write_projections(conn: psycopg.Connection, pred: pd.DataFrame, season: int
              season, len(rows), summary["rewritten"] or "none", summary["kept"] or "none", summary["kickoff"] or "none",
              summary["refit"] or "none", summary["locked_now"] or "none")
     return plan
+
+
+# ------------------------------------------------------------------------------ plan F1: the NFL-wide tables under the same freeze
+WEEK_SCOPE = "nfl"     # the freeze unit of the line tables is the whole week (freeze_plan's league_id column)
+
+
+def _kickoffs(cur: psycopg.Cursor, season: int) -> dict[int, datetime]:
+    cur.execute("select week, min(kickoff_at) from analytics.dim_game where season = %s group by week", (season,))
+    return {int(wk): k for wk, k in cur.fetchall() if k is not None}
+
+
+def _none_for_missing(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
+    """Object columns with None for a missing value (pandas turns a missing timestamp into NaT, which COPY cannot write)."""
+    df = df.copy()
+    for c in cols:
+        if c in df:
+            df[c] = df[c].astype(object).where(df[c].notna(), None)
+    return df
+
+
+def _nfl_plan(cur: psycopg.Cursor, table: str, scope: str | None, new: pd.DataFrame, season: int,
+              kickoffs: dict[int, datetime], now: datetime) -> pd.DataFrame:
+    """``freeze_plan`` for one NFL-wide table (its ``league_id`` column = ``scope``'s value, or ``WEEK_SCOPE`` when the
+    freeze unit is the week), then the same relabel and repair ``_write_projections`` runs on ops.projections."""
+    sc = scope or f"'{WEEK_SCOPE}'"
+    cur.execute(f"""select {sc} as league_id, week, max(fitted_at) as fitted_at, max(frozen_source) as frozen_source,
+                           max(frozen_at) as frozen_at from {table} where season = %s group by 1, 2""", (season,))
+    stored = pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
+    keys = pd.DataFrame({"league_id": new[scope] if scope else WEEK_SCOPE, "week": new["week"].astype(int)})
+    plan = freeze_plan(keys, stored, kickoffs, now)
+    for r in plan[plan["relabel"]].itertuples(index=False):
+        cur.execute(f"""update {table} set frozen_source = %s, frozen_at = case when %s = 'kickoff' then fitted_at end
+                        where season = %s and week = %s and frozen_source is null""" + (f" and {scope} = %s" if scope else ""),
+                    (r.frozen_source, r.frozen_source, season, int(r.week), *([r.league_id] if scope else [])))
+    cur.execute(f"""update {table} set frozen_at = fitted_at
+                    where season = %s and frozen_source = 'kickoff' and frozen_at is distinct from fitted_at""", (season,))
+    return plan
+
+
+def _replace(conn: psycopg.Connection, table: str, rows: pd.DataFrame, columns: list[str], plan: pd.DataFrame,
+             scope: str | None, season: int) -> None:
+    """Delete the plan's write / delete units, copy ``rows`` (commits the relabel with them, like ``_write_projections``)."""
+    rep = plan[plan["action"].isin(["write", "delete"])]
+    rows = _none_for_missing(rows.reindex(columns=[*columns, *FREEZE_COLUMNS]), ["fitted_at", *FREEZE_COLUMNS])
+    if scope:
+        _write(conn, table, rows, f"season = %s and ({scope}, week) in (select * from unnest(%s::text[], %s::int[]))",
+               (season, rep["league_id"].tolist(), [int(w) for w in rep["week"]]))
+    else:
+        _write(conn, table, rows, "season = %s and week = any(%s)", (season, sorted({int(w) for w in rep["week"]})))
+
+
+def _weeks(plan: pd.DataFrame, action: str, source: str | None = "any") -> list[int]:
+    m = plan["action"] == action
+    if source != "any":
+        m &= plan["frozen_source"].isna() if source is None else plan["frozen_source"].eq(source)
+    return sorted({int(w) for w in plan.loc[m, "week"]})
+
+
+def _lines_from_record(cur: psycopg.Cursor, season: int, weeks: list[int]) -> pd.DataFrame:
+    """A started week's QB-TE stat lines as ``ops.projections`` holds them (the decision record, with its labels): the
+    first house league's rows of the week (reference league first). Used when ``ops.projection_lines`` has nothing
+    for a started week (its first run, or rows deleted by hand) so the lines agree with the record."""
+    if not weeks:
+        return pd.DataFrame(columns=[*LINE_COLUMNS, *FREEZE_COLUMNS])
+    cur.execute(f"""select p.league_id, {', '.join('p.' + c for c in [*LINE_COLUMNS, *FREEZE_COLUMNS])}
+                    from ops.projections as p
+                    left join analytics.dim_league_season as d on d.league_id = p.league_id and d.is_current_season
+                    where p.season = %s and p.week = any(%s) and p.position = any(%s)
+                    order by p.week, coalesce(d.is_reference_league, false) desc, p.league_id, p.gsis_id""",
+                (season, weeks, list(POSITIONS)))
+    df = pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
+    if df.empty:
+        return pd.DataFrame(columns=[*LINE_COLUMNS, *FREEZE_COLUMNS])
+    first = df.groupby("week")["league_id"].transform("first")
+    return df[df["league_id"] == first].drop(columns="league_id").reset_index(drop=True)
+
+
+def _ranges_from_record(cur: psycopg.Cursor, season: int, league_id: str, week: int) -> pd.DataFrame:
+    cur.execute("""select season, week, gsis_id, position, model_version, fitted_at, proj_points, p10, p25, p50, p75, p90,
+                          frozen_at, frozen_source
+                   from ops.projections where season = %s and league_id = %s and week = %s and position = any(%s)""",
+                (season, league_id, int(week), list(POSITIONS)))
+    return pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
+
+
+def _stored(cur: psycopg.Cursor, table: str, season: int, weeks: list[int]) -> pd.DataFrame:
+    cur.execute(f"select * from {table} where season = %s and week = any(%s)", (season, weeks))
+    return pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
+
+
+def write_nfl_wide(conn: psycopg.Connection, season: int, lines: pd.DataFrame, ranges: pd.DataFrame, kd: KD.KDRun,
+                   references: dict[str, tuple[str, dict[str, float]]], record: dict[str, str],
+                   range_for: Callable[[str, int, pd.DataFrame], pd.DataFrame], now: datetime | None = None) -> dict:
+    """Write the NFL-wide tables (plan F1) under the B5 freeze, each like ``_write_projections``: a unit (the week, or
+    the scoring x week for the ranges) is rewritten until the week's first kickoff and never after; the first refit
+    after kickoff labels it ``kickoff`` (frozen_at = its fitted_at) or ``refit``.
+
+    A started unit with nothing stored (the first run of these tables, a reference scoring added mid-season) is
+    filled so the tables agree with each other and with the record: the QB-TE lines from ``ops.projections``' rows
+    of the week (labels kept); a reference that IS a house league (``record``: name -> league_id) takes that
+    league's ``ops.projections`` ranges; any other reference is ranged around the stored line by tonight's models
+    (``range_for``), labelled ``refit``. K / DEF: the record holds priced points only, so a started week's K / DEF
+    line with nothing stored is tonight's, labelled ``refit``; ``ops.kd_ranges`` is always the stored line priced
+    in the scoring plus its offsets (``kdef.ranges_from_lines``). Returns a summary per table."""
+    now = now or datetime.now(UTC)
+    summary: dict[str, dict] = {}
+    with conn.cursor() as cur:
+        for ddl in NFL_DDL.values():
+            cur.execute(ddl)
+        kickoffs = _kickoffs(cur, season)
+        # 1. the QB-TE stat lines
+        plan = _nfl_plan(cur, "ops.projection_lines", None, lines, season, kickoffs, now)
+        live, refit = _weeks(plan, "write", None), _weeks(plan, "write", "refit")
+        seeded = _lines_from_record(cur, season, refit)
+    rest = sorted(set(refit) - {int(w) for w in seeded["week"]})
+    rows = pd.concat([lines[lines["week"].isin(live)].assign(frozen_source=None, frozen_at=None), seeded,
+                      lines[lines["week"].isin(rest)].assign(frozen_source="refit", frozen_at=None)], ignore_index=True)
+    _replace(conn, "ops.projection_lines", rows, LINE_COLUMNS, plan, None, season)
+    summary["ops.projection_lines"] = {"rows_written": len(rows), "live": live, "from_record": sorted({int(w) for w in seeded["week"]}),
+                                       "refit": rest, "kept": _weeks(plan, "keep")}
+    # 2. the ranges per reference scoring
+    with conn.cursor() as cur:
+        plan = _nfl_plan(cur, "ops.projection_ranges", "scoring_name", ranges, season, kickoffs, now)
+        w = plan[plan["action"] == "write"]
+        live_units = w.loc[w["frozen_source"].isna(), ["league_id", "week"]].rename(columns={"league_id": "scoring_name"})
+        parts = [ranges.merge(live_units, on=["scoring_name", "week"]).assign(frozen_source=None, frozen_at=None)]
+        from_record, around_stored = [], []
+        stored_lines: dict[int, pd.DataFrame] = {}
+        for r in w[w["frozen_source"].eq("refit")].itertuples(index=False):
+            lid = record.get(r.league_id)
+            rec = _ranges_from_record(cur, season, lid, int(r.week)) if lid else pd.DataFrame()
+            if len(rec):
+                parts.append(rec.assign(scoring_name=r.league_id))
+                from_record.append((r.league_id, int(r.week)))
+                continue
+            if int(r.week) not in stored_lines:
+                stored_lines[int(r.week)] = _stored(cur, "ops.projection_lines", season, [int(r.week)])
+            parts.append(range_for(r.league_id, int(r.week), stored_lines[int(r.week)]).assign(frozen_source="refit", frozen_at=None))
+            around_stored.append((r.league_id, int(r.week)))
+    rows = pd.concat([p for p in parts if len(p)], ignore_index=True) if any(len(p) for p in parts) else pd.DataFrame(columns=RANGE_COLUMNS)
+    _replace(conn, "ops.projection_ranges", rows, RANGE_COLUMNS, plan, "scoring_name", season)
+    summary["ops.projection_ranges"] = {"rows_written": len(rows), "live_units": len(live_units), "from_record": from_record,
+                                        "refit_around_stored_line": around_stored, "kept_units": int((plan["action"] == "keep").sum())}
+    # 3. K / DEF
+    if kd.lines.empty:
+        log.warning("no K / DEF lines this run: ops.kd_lines / ops.kd_ranges keep their rows")
+    else:
+        kdl = kd.lines.reindex(columns=KD_LINES_TABLE_COLUMNS)
+        with conn.cursor() as cur:
+            plan = _nfl_plan(cur, "ops.kd_lines", None, kdl, season, kickoffs, now)
+            w = plan[plan["action"] == "write"]
+        rows = kdl.merge(w[["week", "frozen_source", "frozen_at"]], on="week")
+        _replace(conn, "ops.kd_lines", rows, KD_LINES_TABLE_COLUMNS, plan, None, season)
+        summary["ops.kd_lines"] = {"rows_written": len(rows), "live": _weeks(plan, "write", None),
+                                   "refit": _weeks(plan, "write", "refit"), "kept": _weeks(plan, "keep")}
+        fitted_at = kdl["fitted_at"].iloc[0]
+        new = KD.ranges_from_lines(kdl, references, kd.offsets)
+        with conn.cursor() as cur:
+            plan = _nfl_plan(cur, "ops.kd_ranges", "scoring_name", new, season, kickoffs, now)
+            w = plan[plan["action"] == "write"].rename(columns={"league_id": "scoring_name"})
+            stored = _stored(cur, "ops.kd_lines", season, sorted({int(x) for x in w["week"]}))
+        rows = KD.ranges_from_lines(stored, references, kd.offsets) if len(stored) else new.iloc[0:0]
+        rows = rows.merge(w[["scoring_name", "week", "frozen_source", "frozen_at"]], on=["scoring_name", "week"])
+        rows["model_version"], rows["fitted_at"] = KD.KD_MODEL_VERSION, fitted_at
+        _replace(conn, "ops.kd_ranges", rows, KD.KD_RANGE_COLUMNS, plan, "scoring_name", season)
+        summary["ops.kd_ranges"] = {"rows_written": len(rows), "kept_units": int((plan["action"] == "keep").sum())}
+    log.info("NFL-wide outputs for %s: %s", season, summary)
+    return summary
 
 
 # ------------------------------------------------------------------------------ report

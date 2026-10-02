@@ -198,3 +198,41 @@ sources:
               arguments:
                 combination_of_columns: [league_id, season, week, roster_id, add_sleeper_id]
 
+      # plan F1 (Wave F): the NFL-wide model outputs, one copy for every league (src/league_lab/projections.py
+      # write_nfl_wide); the B5 freeze applies to each (assert_frozen_nfl_wide_precede_kickoff)
+      - name: projection_lines
+        description: "Written by `league-lab project` (plan F1): one row per season x week x QB/RB/WR/TE — the projected stat line (the 12 proj_* components, league-independent), its model_version / fitted_at / train_seasons, and the B5 freeze labels per week (frozen_source NULL = live; 'kickoff' = published before the week's first kickoff, frozen_at = fitted_at; 'refit' = written after it). A started week the table lacked on its first run is copied from ops.projections (the decision record) with its labels."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [season, week, gsis_id]
+        columns:
+          - name: gsis_id
+            tests: [not_null]
+      - name: projection_ranges
+        description: "Written by `league-lab project` (plan F1): one row per reference scoring (analytics_seeds.reference_scorings.name = scoring_name) x season x week x QB/RB/WR/TE — the stat line of ops.projection_lines priced in that scoring (proj_points) and the calibrated P10 / P25 / P50 / P75 / P90 fitted in it; freeze labels per scoring x week. A house league's ops.projections rows are the same numbers (assert_house_projections_are_the_nfl_wide_rows); proj_points = the line priced with league_points (assert_projection_ranges_price_the_lines)."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [scoring_name, season, week, gsis_id]
+        columns:
+          - name: scoring_name
+            tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: ref('reference_scorings')
+                    field: name
+                  config: {severity: warn}
+      - name: kd_lines
+        description: "Written by `league-lab project` (plan F1, model kd1.0): one row per season x week x K / DEF unit (unit_id = the kicker's gsis_id, or the Sleeper defense id 'KC' — ops.projections.gsis_id of the same row) — the league-free stat line kdef.predict_kd returns (K: proj_fg_made_* by distance, proj_fg_missed and its distance split, proj_pat_*; DEF: proj_sacks ... proj_points_allowed and the points-allowed bucket probabilities proj_pa_*; the other position's columns NULL), freeze labels per week."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [season, week, position, unit_id]
+      - name: kd_ranges
+        description: "Written by `league-lab project` (plan F1): one row per reference scoring x season x week x K / DEF unit — the kd_lines row priced in the scoring (kdef.price) and P10 / P50 / P90 = that price plus the scoring's fitted offsets (off_p10 / off_p50 / off_p90, constant per scoring x position) under kdef.interval's floors; no rows for a scoring that pays nothing for the position. Freeze labels per scoring x week."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [scoring_name, season, week, position, unit_id]

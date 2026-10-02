@@ -48,6 +48,12 @@ seeds:
         kind: text
         stat_expression: text
         description: text
+    # plan F1 (Wave F): the reference scorings the projection's ranges are fitted in (NFL-wide outputs)
+    reference_scorings:
+      +column_types:
+        name: text
+        label: text
+        scoring_settings: jsonb
     trend_metrics:
       +column_types:
         metric: text

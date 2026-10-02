@@ -29,16 +29,19 @@ Known approximations (documented in docs/METRICS.md):
 * ``fum`` (any fumble) uses ``fumbles_total``; ``fum_lost`` uses ``fumbles_lost_total``.
 * Long-touchdown keys count plays with ``yards_gained >= 40`` (``>= 50``) that scored, by the
   passer / rusher / receiver on the play (laterals credit the first receiver).
-* Position-conditional keys (``bonus_rec_te``, ``bonus_rec_rb``, ``bonus_rec_wr``) and the
-  ``*_fd`` first-down keys are unmapped; if a league enables them the reconciliation test in dbt
-  flags the gap rather than silently under-counting.
+* Position-conditional catch premiums (``bonus_rec_te``, ``bonus_rec_rb``, ``bonus_rec_wr``:
+  ``SLEEPER_POSITION_MAP``, plan F1) are priced by ``compute_points`` when the stats row carries the
+  player's ``position`` (the projection's ``price`` passes it), and only then. They stay OUT of
+  ``MAPPED_KEYS`` and of the seed: the SQL ``league_points`` macro has no position to condition on,
+  so ``unmapped_keys`` keeps reporting them and dbt's reconciliation test still flags a league that
+  enables one instead of silently under-counting. The ``*_fd`` first-down keys are unmapped.
 * Expected points (``int_expected_points_week``) apply the ``stat`` keys only: a threshold on an
   expected yardage would pay a bonus deterministically at 100.0 expected yards and not at 99.9.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 
 # sleeper_key -> (sql expression over stg_nflverse__player_stats_week columns, description)
 SLEEPER_STAT_MAP: dict[str, tuple[str, str]] = {
@@ -94,6 +97,15 @@ SLEEPER_BONUS_MAP: dict[str, tuple[str, int, int | None, str]] = {
     "bonus_rec_yd_200": ("receiving_yards", 200, None, "200+ receiving yard game"),
 }
 
+# Position-conditional per-catch premiums (plan F1, the TE-premium reference scoring): sleeper_key ->
+# (stat column, position, description). Priced by compute_points only for a stats row that carries
+# ``position``; not in MAPPED_KEYS / the seed (the SQL macro cannot condition on position).
+SLEEPER_POSITION_MAP: dict[str, tuple[str, str, str]] = {
+    "bonus_rec_te": ("receptions", "TE", "per catch by a tight end (TE premium)"),
+    "bonus_rec_rb": ("receptions", "RB", "per catch by a running back"),
+    "bonus_rec_wr": ("receptions", "WR", "per catch by a wide receiver"),
+}
+
 # Every key League Lab can recompute, with its kind.
 MAPPED_KEYS: dict[str, str] = (
     {k: "stat" for k in SLEEPER_STAT_MAP}
@@ -120,14 +132,21 @@ def compute_points(
 ) -> float:
     """Fantasy points for one player-game row under a Sleeper ``scoring_settings`` dict.
 
-    ``include_bonuses=False`` scores the ``stat`` keys only (what expected points use).
+    ``include_bonuses=False`` scores the ``stat`` keys only (what expected points use). A position-
+    conditional premium (``SLEEPER_POSITION_MAP``) counts when ``stats["position"]`` is its position
+    (a per-catch value, so it counts with or without bonuses); a row without ``position`` prices it 0.
     """
     total = 0.0
     for key, weight in scoring.items():
         if not weight:
             continue
         kind = MAPPED_KEYS.get(key)
-        if kind is None or (kind == "bonus" and not include_bonuses):
+        if kind is None:
+            pk = SLEEPER_POSITION_MAP.get(key)
+            if pk is not None and stats.get("position") == pk[1]:
+                total += float(stats.get(pk[0]) or 0) * float(weight)
+            continue
+        if kind == "bonus" and not include_bonuses:
             continue
         if key in SLEEPER_BONUS_MAP:
             value = float(bonus_hit(stats, key))
@@ -138,8 +157,33 @@ def compute_points(
 
 
 def unmapped_keys(scoring: Mapping[str, float]) -> list[str]:
-    """Scoring keys with a non-zero weight that League Lab cannot recompute (DEF, position bonuses...)."""
+    """Scoring keys with a non-zero weight that the stat map (and so the SQL macro) cannot recompute (DEF,
+    first downs...). The position-conditional premiums are listed too: only a stats row that carries the
+    player's position prices them (``priced_keys`` is the projection's view)."""
     return sorted(k for k, w in scoring.items() if w and k not in MAPPED_KEYS)
+
+
+def priced_keys(scoring: Mapping[str, float], columns: Iterable[str] | None = None) -> dict[str, float]:
+    """The non-zero keys ``compute_points`` prices (``MAPPED_KEYS`` + the position premiums), as floats; with
+    ``columns``, only the keys whose stat columns are all among them (the projected QB-TE line: kicking, 2-pt
+    and long-TD keys price 0 on it). Two scorings with the same ``priced_keys(..., line columns)`` price every
+    projected line identically (plan F1: how a league is matched to a reference scoring)."""
+    keep = None if columns is None else set(columns)
+    out: dict[str, float] = {}
+    for k, w in scoring.items():
+        if not w:
+            continue
+        if k in SLEEPER_POSITION_MAP:
+            cols = {SLEEPER_POSITION_MAP[k][0]}
+        elif k in SLEEPER_BONUS_MAP:
+            cols = {SLEEPER_BONUS_MAP[k][0]}
+        elif k in _PY_EXPR:
+            cols = set(_PY_EXPR[k])
+        else:
+            continue
+        if keep is None or cols <= keep:
+            out[k] = float(w)
+    return out
 
 
 def seed_rows() -> list[dict[str, str]]:

@@ -16,6 +16,24 @@ seeds:
                 values: [stat, bonus]
       - name: stat_expression
         tests: [not_null]
+  - name: reference_scorings
+    description: >
+      Plan F1 (Wave F): the scorings `league-lab project` fits the residual ranges in and writes NFL-wide
+      (`ops.projection_ranges`, `ops.kd_ranges`; read by `projections.reference_scorings`). `scrubs` and `dynasty`
+      are League of Scrubs' and Forever Unclean Dynasty's `scoring_settings` copied from `dim_league_season` on
+      2026-10-02 (the house leagues' `ops.projections` take their ranges from the reference whose priced keys
+      equal theirs; a house league that no longer equals one is fitted on its own, as before); `ppr`, `standard`
+      and `te_premium` are Sleeper's defaults with 1 / 0 / 1 point per catch (+0.5 per TE catch, `bonus_rec_te`)
+      and a 4-pt pass TD. Adding a row adds a fitted scoring (about 1 minute of `project` per row). A row's
+      settings are never edited once published (frozen weeks were priced in them): add a new name instead. Hand-written,
+      not generated; `scoring_settings` is the JSON of a Sleeper `scoring_settings` dict.
+    columns:
+      - name: name
+        tests: [unique, not_null]
+      - name: label
+        tests: [not_null]
+      - name: scoring_settings
+        tests: [not_null]
   - name: feature_experiments
     description: >
       The published record of the feature experiments (Wave D, `league-lab experiment <group>`): the same

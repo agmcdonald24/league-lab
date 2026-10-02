@@ -2665,6 +2665,55 @@ Design for Andrew and the PO: `docs/ANY_LEAGUE.md`. Nothing in `app/`, `dbt/`, t
   path; a K / DEF in a scoring no fitted league shares is unvalued; Sleeper's terms for commercial use are Andrew's
   to check. No `--select` appended; no seeds or metrics touched.
 
+## Wave F (Iteration 14)
+
+### F1 2026-10-02 — NFL-wide model outputs (reference scorings, `ops.projection_lines` / `_ranges`, `ops.kd_lines` / `_ranges`)
+
+* **What**: `league-lab project` fits the residual ranges per **reference scoring** (seed `reference_scorings.csv`:
+  `scrubs`, `dynasty` — the house leagues' settings copied from `dim_league_season` — `ppr`, `standard`,
+  `te_premium`) instead of per house league, and writes the stat line once for the NFL (`ops.projection_lines`), the
+  ranges per reference scoring (`ops.projection_ranges`), the K / DEF lines (`ops.kd_lines`) and their priced ranges
+  and offsets per reference scoring (`ops.kd_ranges`), all under the B5 freeze. The house leagues' `ops.projections`
+  is derived from the same numbers (line priced in the league's scoring + the ranges of the reference that IS the
+  league; a league no reference is would be fitted on its own). `bonus_rec_te` (and the RB / WR catch premiums) are
+  priced by `compute_points` when the row carries the position — Python only; the SQL macro and the seed are
+  unchanged (`unmapped_keys` still reports them). Docs: METRICS § "NFL-wide outputs", DATA_MODEL § ops,
+  ANY_LEAGUE § "What changes elsewhere".
+* **Evidence (clone `league_lab_f1`, 2026-10-02, week 4 kicked off 00:15 UTC)**:
+  * Rows: `projection_lines` 9,911 (weeks 1–3 `refit` v2.0 1,777, week 4 `kickoff` v3.0 581 frozen_at 2026-10-01
+    19:25:19, weeks 5–18 live 7,553); `projection_ranges` 49,555 (5 × 9,911; `scrubs` / `dynasty` weeks 1–4 copied
+    from the record with its labels, `ppr` / `standard` / `te_premium` weeks 1–4 ranged around the stored line,
+    `refit`); `kd_lines` 1,088 (K 544, DEF 544; weeks 1–4 `refit`); `kd_ranges` 5,440 (5 scorings × K / DEF × 544).
+  * House rows = NFL-wide rows, every week 1–18: 9,911 QB–TE rows per league, max gap 0 on the 12 components and on
+    proj_points / P10–P90 (P25 / P75 NULL on the same rows), 0 label / fitted_at mismatches, 0 rows on one side only;
+    lines × the league's scoring (`compute_points`) = `ops.projections.proj_points` max gap 0 (both leagues); the SQL
+    `league_points` re-pricing of the lines = `projection_ranges.proj_points` at 1e-9 for `scrubs` / `dynasty`: 0
+    violations. Scrubs K / DEF: 896 rows = `kd_ranges` `scrubs` and = `kd_lines` × Scrubs' scoring, gap 0 (week 4's
+    kickoff rows included: the refit line reproduces them exactly). TE premium: `te_premium` − `ppr` = 0.5 × projected
+    TE catches (≤ 0.0096, two 2-decimal roundings), 0 at QB / RB / WR.
+  * No change to the house leagues' numbers: `ops.projections` after F1 vs before (same data, a snapshot taken after
+    a pre-F1 run): 20,718 rows, max value gap 0; only `fitted_at` of the 15,938 rewritten rows (weeks 5–18) moved;
+    weeks 1–4 untouched (labels, `frozen_at`, `fitted_at`).
+  * Week 4 frozen in every table (table above); dbt: `assert_frozen_nfl_wide_precede_kickoff`,
+    `assert_projection_ranges_price_the_lines`, `assert_house_projections_are_the_nfl_wide_rows`,
+    `assert_frozen_projections_precede_kickoff`, the four sources' one-row-per-key tests, the seed's tests — 17 PASS;
+    each new test fails on a one-row mutation (range +0.01 → 1; a line +1e-6 → 2; a live row labelled `kickoff` → 544).
+  * Runtime of `project` (OMP_NUM_THREADS=1, shared cores): 233 s before, 463 s after (1.99×; the fits 2:50 → 6:10);
+    a second run 312 s (1.34×, less contention). The second run kept weeks 1–4 in all four tables and rewrote 5–18.
+  * The freeze on the new tables: writing the same rows twice leaves all four tables md5-identical; a write at week
+    5's first kickoff + 1 h labels week 5 `kickoff` in every table (543 / 2,715 / 60 / 300 rows, frozen_at =
+    fitted_at) and keeps its values against a refit that changed them (scripts in the hand-back).
+  * `backtest-v2` unchanged (not run): it calls `league_scorings` and the same `fit_position` / `predict_position`;
+    the only change on that path is the position riding along into `compute_points`, which neither house scoring
+    weights — the same path reproduced `ops.projections` to 0 above.
+* **Nightly**: the four tables are in `STATE_TABLES` (restored from the hosted copy on a fresh database), not in
+  `RECORD_TABLES`: `restore_state` stops the night when a record table cannot be read on the hosted copy, and the
+  hosted copy has no such tables until the first sync after the merge, so adding them now would stop the first
+  night on the Mac and in Actions. If a restore fails, `project` re-seeds the frozen QB–TE lines and the house
+  ranges from `ops.projections` (a record table); only the `ppr` / `standard` / `te_premium` ranges and the K / DEF
+  lines of frozen weeks would come back as `refit` values. Promote them to `RECORD_TABLES` once one sync has
+  published them (Wave G, when customers' frozen weeks become a record).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

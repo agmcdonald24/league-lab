@@ -2,6 +2,13 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave F
+
+- **NFL-wide model outputs (F1).** `league-lab project` fits the ranges per reference scoring (new seed
+  `reference_scorings.csv`: `scrubs`, `dynasty`, `ppr`, `standard`, `te_premium`) and writes `ops.projection_lines`,
+  `ops.projection_ranges`, `ops.kd_lines`, `ops.kd_ranges` under the B5 freeze; the house leagues' `ops.projections`
+  is derived from them (identical numbers, tested); `bonus_rec_te` priced in Python; METRICS § "NFL-wide outputs".
+
 ## 2026-10-02 — Wave E
 
 - **Model tests (E4), no production change.** Four feature groups through the harness, 2023–2025, both leagues —
