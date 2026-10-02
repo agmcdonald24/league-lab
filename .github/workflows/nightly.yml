@@ -1,7 +1,10 @@
 # The nightly pipeline on a GitHub-hosted runner (plan B6 / I-01): a throwaway Postgres 17, the raw
 # archive from the Actions cache, live Sleeper + nflverse for the current season, dbt build,
-# projection v2, and the hosted sync to Neon. Every step lives in scripts/nightly.sh, the same
-# script the Mac runs, so a failure here reproduces locally.
+# projection v2, Sleeper's own projections (fetch-projections, plan E1) and the hosted sync to Neon.
+# Every step lives in scripts/nightly.sh, the same script the Mac runs, so a failure here reproduces locally.
+# Wave H: this workflow is the ONE writer of the hosted copy the beta reads (the API on the server and the
+# Streamlit console); the Mac's launchd refresh builds only its own database (scripts/refresh.sh).
+# Secrets (names): LEAGUE_LAB_SLEEPER_LEAGUE_ID, LEAGUE_LAB_HOSTED_ADMIN_URL, LEAGUE_LAB_HOSTED_APP_PASSWORD.
 # Setup, secrets, cost and how to read a failed run: docs/HOSTING.md § "Nightly on GitHub Actions".
 name: nightly
 
@@ -11,6 +14,10 @@ on:
     # November) and 06:37 on standard time (EST). A run takes ~15 min (HOSTING.md § Cost), so the
     # hosted copy is fresh by about 08:00 EDT. Off the hour on purpose: GitHub delays, and under
     # load drops, scheduled runs queued at :00.
+    # The freeze: a week's board and Sleeper's snapshot freeze at its first kickoff — Thursday 8:15-8:30 PM ET in 161 of
+    # the 190 regular-season weeks 2016-2026 (analytics.dim_game), never earlier than 12:30 PM ET (Thanksgiving). The
+    # run on that morning is the last before it, 5+ hours early even if GitHub starts it late; a dropped run leaves
+    # the previous night's board and snapshot as the frozen ones.
     - cron: "37 11 * * *"
   workflow_dispatch:
     inputs:
@@ -26,7 +33,8 @@ on:
 permissions:
   contents: read
 
-# One writer (AGENTS.md rule 2): a second run waits for the first; never two syncs at once.
+# One writer (AGENTS.md rule 2; Wave H: the only writer of the hosted copy): a second run waits for the first;
+# never two syncs at once.
 concurrency:
   group: nightly
   cancel-in-progress: false
@@ -112,7 +120,7 @@ jobs:
             echo "::error title=secret LEAGUE_LAB_HOSTED_APP_PASSWORD::LEAGUE_LAB_HOSTED_ADMIN_URL is set but LEAGUE_LAB_HOSTED_APP_PASSWORD is not"
             exit 1
           fi
-          [ -n "$HOSTED_ADMIN_URL" ] || echo "::warning title=no hosted sync::LEAGUE_LAB_HOSTED_ADMIN_URL is not set: this run builds everything and publishes nothing"
+          [ -n "$HOSTED_ADMIN_URL" ] || echo "::warning title=no hosted sync::LEAGUE_LAB_HOSTED_ADMIN_URL is not set: this run builds everything and publishes nothing (and nothing else publishes: the hosted copy stays as it is)"
           PIPELINE_PW="$(openssl rand -hex 16)"
           APP_PW="$(openssl rand -hex 16)"
           echo "::add-mask::$PIPELINE_PW"
@@ -138,6 +146,8 @@ jobs:
           EOF
           uv run league-lab db check
 
+      # NIGHTLY_SLEEPER_OFFLINE is never set here: fetch-sleeper and fetch-projections (Sleeper's projections for the
+      # next week to kick off, saved before the freeze) run live; GITHUB_ACTIONS=true makes sync-hosted run (one writer).
       - name: Nightly pipeline (scripts/nightly.sh)
         env:
           LEAGUE_LAB_HOSTED_ADMIN_URL: ${{ secrets.LEAGUE_LAB_HOSTED_ADMIN_URL }}

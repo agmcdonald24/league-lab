@@ -3123,6 +3123,93 @@ placeholder test above.
   read 0 for 2026 in the mart and are hidden until filled in.
 
 
+## Wave H (Iteration 16)
+
+### H2 2026-10-02 — one writer, the record kept, the hosted relation audit (branch `dev/H2`, clone `league_lab_h2`)
+
+* **One writer.** GitHub Actions' nightly is the only writer of the hosted copy (the beta must not depend on the Mac
+  being awake). Off Actions, `nightly.sh` skips `sync-hosted` ("GitHub Actions is the one writer of the hosted copy")
+  and `sync_to_hosted.sh` refuses with exit 7 before touching anything, unless `LEAGUE_LAB_MAC_WRITES_HOSTED=1` (the
+  fallback while Actions is down: disable the workflow first) or the target is a local simulation
+  (`LEAGUE_LAB_HOSTED_ALLOW_LOCAL=1` and a local URL). The Mac's launchd `refresh.sh` keeps building the Mac's own
+  database (the research console, packs, backtests, the full history, a second archive of Sleeper's snapshots) and
+  still *reads* the hosted copy in `restore-state`. Gate cases (stub runners on the real block): no URL → skip; Mac
+  with URL → skip; Actions → run; Mac + flag → run; local simulation → run. `make sync-hosted` with a Neon-shaped URL
+  off Actions → exit 7 (test). The workflow needs no new secret (`LEAGUE_LAB_SLEEPER_LEAGUE_ID`,
+  `LEAGUE_LAB_HOSTED_ADMIN_URL`, `LEAGUE_LAB_HOSTED_APP_PASSWORD`); `fetch-projections` runs there (never offline),
+  after `project`, before `save-record`. Before the freeze: the first kickoff of a week is Thursday 8:15–8:30 PM ET in
+  161 of 190 regular-season weeks 2016–2026 and never earlier than 12:30 PM ET (Thanksgiving) (`dim_game`); the run
+  starts 07:37 ET (06:37 in winter) — 5+ hours early.
+* **The record kept.** `RECORD_TABLES` = `ops.projections`, `ops.projection_drift` + F1's `ops.projection_lines`,
+  `ops.projection_ranges`, `ops.kd_lines`, `ops.kd_ranges` (still in `STATE_TABLES` too). `restore_state` now asks the
+  hosted copy once which state tables it has: unreachable → a record table stops the night (as before); reachable
+  but the table was never published there (the first night after a table joins the record, or a hosted copy older
+  than it) → said so, then this database's rows (kept), else the archive's copy, else the record starts that night
+  with a warning — instead of stopping every night. A failed archive restore now fails the step (before, `run_step`'s
+  `||` context swallowed it). Isolated runs of the real functions (`harness.sh` in the hand-back), fresh migrated
+  database:
+
+  | case | hosted copy | archive | result |
+  |---|---|---|---|
+  | A | `league_lab_hosted` (no F1 tables, no `feature_experiments`) | none | 11 tables restored; the 4 F1 tables "not on the hosted copy (never published there)" → "no copy in the archive" warning; **returned 0** (the pre-H2 function with the same RECORD_TABLES: **returned 1**, `relation "ops.projection_lines" does not exist`) |
+  | B | same | `save_record` of the clone | the 4 F1 tables restored from the archive: 9,911 / 49,555 / 1,088 / 5,440 rows; 0 |
+  | C | unreachable (port 5999) | none | stops at `ops.projections`: "refusing to refit every played week blind"; 1 |
+  | D | `league_lab_hosted_h2` | none | all 16 tables restored; the record tables content-equal to the source (jsonb md5; column order differs from a fresh migrate); 0 |
+  | E | `league_lab_hosted` | — (clone with rows) | the 4 F1 tables "N rows here, kept (the hosted copy does not have this table yet: the next sync publishes it)"; 0 |
+
+  `save_record` writes the 6 tables in 1.8 s: 1.9 MB + 4 KB + 564 KB + 2.3 MB + 148 KB + 84 KB gzipped (~5 MB in the
+  Actions cache). Not carried: `raw.sleeper_projections` — the hosted copy never holds `raw`, and its durable copy is
+  the archive itself (one file per snapshot, replayed nightly); a dump next to it would sit in the same cache.
+* **The hosted relation audit.** The closure is derived in one place, `scripts/hosted_relations.py`: readers = the
+  console (`app/`, `reports.py`) and the API (`api/league_lab_api/*.py`, the `app/lib` modules and page functions it
+  loads, every `src/league_lab` module it imports, followed import by import — `anyleague`, `research`, `decisions`,
+  `sleeper_client`, `waivers`, `trades`, `lineup`, `roster_value`, `kdef`, `scoring`, `config`; the walk stops at the
+  model fit and loaders); names = `analytics.` / `analytics_seeds.` / `ops.<x>` plus bare names in
+  `missing_relations` / `require_relations`. Against `league_lab`: the API reads **63 relations** (50 analytics +
+  `analytics_seeds.reference_scorings` + 12 ops); the console 71. Added to the closure by the API side: **`mart_kd_week`,
+  `mart_kd_team_game`** (4.5 MB; named by `lineup.py`); every other relation the API reads was already published
+  (the sandbox's `league_lab_hosted` predates `mart_player_role_alerts`, `mart_player_ros_projection`,
+  `mart_projection_record` and F1's tables; a sync today publishes them). The window now also covers
+  **`fct_player_game_league`** (52 MB in full; the API joins it to the windowed `fct_player_game`, Matchups reads last
+  season on) and **`mart_player_week_features`** (68 MB; read for the current season only). Left out of `ops`:
+  `ops.player_prior_oof` / `_oof_pred` (E4's harness; absent on the PO's copy, read by no one). After the restore the
+  sync fails (exit 5) if any relation a reader names is missing. `src/league_lab/signals.py` (in the brief's list) is
+  the nightly's writer; the API reads its output through `ops` and `app/lib/signals.py`.
+  Sync of `league_lab` into `league_lab_hosted_h2`: **198.5 MB estimated → 200 MB database** (101.6 MB windowed + 98.3
+  MB in full; `ops` 30 MB), restore 4 s, `verified: all 79 relations the pages and the API read are on the hosted copy
+  (the API's 63 included …)`. Budget: warns above 440 MB, **refuses above 480 MB** before touching the hosted copy
+  (`LEAGUE_LAB_HOSTED_MAX_MB`, exit 6; with the budget set to 100 MB: exit 6, the target's 80 tables / 202 MB
+  unchanged, no `hosted_slim` left behind). Every GET route against it in-process (TestClient, the app role, Sleeper
+  fixtures; Scrubs 2, dynasty 12, Test League 3; 16 routes each): **47 × 200, 0 × 5xx, 0 "not built"**; the one 404 is
+  `/api/search` for the Test League (H1's row).
+* **Dry run** (`NIGHTLY_SLEEPER_OFFLINE=1 NIGHTLY_WEATHER_OFFLINE=1`, clone `league_lab_h2` of `league_lab` with
+  `raw.nfl_pbp`, `raw.nfl_pbp_participation`, `analytics.bridge_play_participation`, `intermediate.int_play_context_long`
+  dropped, a scratch copy of the archive, hosted target `league_lab_hosted_h2`; env overrides instead of editing `.env`):
+  **exit 0, 13 m 57 s**. migrate 2 s · restore-state 1 s (16 kept) · replay-sleeper 3 s · replay-nflverse-history 2 s ·
+  replay-nflverse-current 2 s · replay-weather / replay-projections skipped (no archive) · fetch-sleeper skipped
+  (offline) · fetch-nflverse-current 12 s (live) · fetch-weather skipped · **dbt-build 8 m 41 s** (`PASS=610 WARN=3
+  ERROR=0`) · backtests 1 s (kept) · **project 4 m 23 s** · fetch-projections skipped (offline) · save-record 1 s ·
+  projection-marts 13 s (`PASS=139`) · drift 0 s (26 rows written by `project`) · backup skipped · **sync-hosted 14 s**
+  (211.2 MB estimated, 206 MB database, `verified: all 79 …`). Skipped models for the dropped tables, through the new
+  `NIGHTLY_DBT_EXCLUDE` (sandbox only): `source:raw.nfl_pbp source:raw.nfl_pbp_participation stg_nflverse__pbp+1
+  stg_nflverse__pbp_participation+1 bridge_play_participation+1 int_play_context_long+1` = 11 models (the two pbp
+  staging views, `fct_play`, `bridge_play_participation`, `int_play_context_long`, `int_player_game_pbp`,
+  `int_team_game_pbp`, `int_target_participation`, `int_defender_game_coverage_snaps`, `mart_coverage`,
+  `mart_player_context`) + the two source tests; their tables stay as cloned. The record through the night: frozen
+  rows (`frozen_source` not null) md5-identical in `league_lab`, the clone after the night and the published copy —
+  `ops.projections` 4,780 (1,226 kickoff), `projection_lines` 2,358 (581), `projection_ranges` 11,790 (1,162),
+  `kd_lines` 256, `kd_ranges` 1,280.
+* **Found (PO, dbt)**: `int_player_week_universe` took **396 s** of the 8 m 41 s build — planned right after
+  `int_player_week_team` was rebuilt, before autovacuum analysed it (autoanalyze 17:00:56 UTC, the query started
+  ~17:00:28); EXPLAIN with statistics is a cheap hash join. A fresh database in Actions has the same order. An
+  `analyze {{ this }}` post-hook on `int_player_week_team` (the universe model has one for itself) should take ~6
+  minutes off every night.
+* **Checks**: shellcheck clean on `nightly.sh`, `refresh.sh`, `sync_to_hosted.sh`; actionlint clean on `nightly.yml`;
+  `tests/test_nightly_relations.py` 6 passed (record ⊆ state, the API's readers follow its imports, every relation a
+  route reads is named, `OPS_EXCLUDE` read by no one, the sync's exit 7 off Actions ×2); ruff clean.
+* **Open**: the live Sleeper and Open-Meteo steps and the Neon restore (no network here); the Mac's launchd behaviour
+  (no Mac) — the gate is the same block; `docs/HANDOFF.md` lines 13–14, 84, 135 still say the Mac syncs (PO's file).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

@@ -61,10 +61,10 @@ docs: ## dbt docs (generate + serve on 8080)
 	uv run league-lab dbt docs generate
 	uv run league-lab dbt docs serve --port 8080
 
-sync-hosted: ## publish the marts to the hosted database (needs LEAGUE_LAB_HOSTED_ADMIN_URL + LEAGUE_LAB_HOSTED_APP_PASSWORD in .env)
+sync-hosted: ## publish the marts to the hosted database (GitHub Actions does this nightly; from the Mac only with LEAGUE_LAB_MAC_WRITES_HOSTED=1)
 	./scripts/sync_to_hosted.sh
 
-refresh: ## the nightly pipeline + a local backup (= scripts/refresh.sh, what launchd runs; hosted sync when configured)
+refresh: ## the nightly pipeline + a local backup into the Mac's database (= scripts/refresh.sh, what launchd runs; no hosted sync)
 	./scripts/refresh.sh
 
 nightly: ## the nightly pipeline exactly as GitHub Actions runs it (scripts/nightly.sh; NIGHTLY_SLEEPER_OFFLINE=1 skips live Sleeper)

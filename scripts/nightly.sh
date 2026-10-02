@@ -3,6 +3,8 @@
 # The nightly pipeline (plan B6 / I-01). One script for every machine: GitHub Actions runs it
 # (.github/workflows/nightly.yml) against a throwaway Postgres, the Mac runs it through
 # scripts/refresh.sh (launchd 08:00), and anyone can run it by hand.
+# One writer (Wave H): only GitHub Actions publishes to the hosted copy. Anywhere else the night builds the
+# local database and skips sync-hosted, unless LEAGUE_LAB_MAC_WRITES_HOSTED=1 (docs/HOSTING.md § 5).
 #
 #   migrate → restore state (a fresh database takes the backtests, the frozen projection record, the
 #     drift history and last night's lineups from the hosted copy; the record also from the archive)
@@ -21,7 +23,14 @@
 #                               without api.sleeper.app). The replay must then succeed.
 #   NIGHTLY_BACKUP=1            pg_dump into backups/ after the build (refresh.sh sets it on the Mac)
 #   NIGHTLY_BACKTESTS=1         recompute both backtests even when present (backtest-v2 takes minutes)
-#   LEAGUE_LAB_HOSTED_ADMIN_URL, LEAGUE_LAB_HOSTED_APP_PASSWORD   publish to the hosted copy at the end
+#   NIGHTLY_WEATHER_OFFLINE=1   no live Open-Meteo fetch (sandboxes without api.open-meteo.com)
+#   NIGHTLY_DBT_EXCLUDE='<dbt selector>'   leave models out of the full dbt build; their tables stay as they are
+#                               (a sandbox clone without the play-by-play tables: 'source:raw.nfl_pbp
+#                               source:raw.nfl_pbp_participation stg_nflverse__pbp+1 stg_nflverse__pbp_participation+1
+#                               bridge_play_participation+1 int_play_context_long+1')
+#   LEAGUE_LAB_HOSTED_ADMIN_URL, LEAGUE_LAB_HOSTED_APP_PASSWORD   the hosted copy: restore-state reads it on every
+#                               machine; sync-hosted publishes to it at the end on GitHub Actions only
+#   LEAGUE_LAB_MAC_WRITES_HOSTED=1   this machine publishes too (the fallback while Actions is down; never both)
 #
 # Failure policy. A failed live fetch does not stop the run: the loaders keep the previous good
 # data of a failed partition (here: the archive replayed a minute earlier), so the rest of the night
@@ -44,7 +53,7 @@ FULL=0
 for arg in "$@"; do
   case "$arg" in
     --full) FULL=1 ;;
-    -h|--help) sed -n '3,35p' "$0"; exit 0 ;;
+    -h|--help) sed -n '3,44p' "$0"; exit 0 ;;
     *) echo "nightly.sh: unknown argument: $arg (see --help)" >&2; exit 64 ;;
   esac
 done
@@ -216,7 +225,9 @@ dbt_step() {  # dbt_step <name> <dbt args...>
 # State the archive cannot rebuild: the two backtests behind the Rankings scoreboards (written by
 # `league-lab backtest` and `backtest-v2`, the latter minutes of CPU), the DECISION RECORD (plan
 # B5: `ops.projections`, each league-week's board frozen at its first kickoff, and the drift
-# history `ops.projection_drift` scored on it) and the lineups solved on it (`ops.lineups`,
+# history `ops.projection_drift` scored on it; plan F1 / Wave H: the NFL-wide boards frozen the same way,
+# `ops.projection_lines` / `ops.projection_ranges` / `ops.kd_lines` / `ops.kd_ranges`, which the product API
+# prices every league from) and the lineups solved on it (`ops.lineups`,
 # `ops.lineup_totals`, and the waiver moves `ops.waiver_moves`; re-solved by `project`, restored only so a soft `project` failure publishes
 # last night's board WITH last night's lineups). A fresh database (every CI run) copies them back
 # from the hosted copy, where the last sync put them (the sync publishes all of `ops`); the
@@ -230,20 +241,62 @@ dbt_step() {  # dbt_step <name> <dbt args...>
 # (2) a failed copy stops the night too; (3) after `project`, the record is also written to the
 # archive ($RAW_DIR/record/, so it rides the Actions cache): if the hosted copy is reachable but
 # has lost it (a restore that died midway), the archive's copy is used instead.
+# (4) Wave H, a record table the hosted copy does not HAVE (reachable, but the table was never published: the
+# first night after a table joins RECORD_TABLES, or a hosted copy older than the table) is not "cannot read": it
+# is said so and treated like an empty one — this database's rows are kept when it has rows, else the archive's
+# copy, else the record starts tonight (`project` re-seeds the frozen QB–TE lines and the two house references'
+# ranges from `ops.projections`; the other references' ranges and the K / DEF lines of frozen weeks come back
+# as `refit`). Failing there instead would stop every night until someone published the table by hand.
+#
+# Not here: `raw.sleeper_projections` (plan E1, Sleeper's snapshots — the record's inputs). The hosted copy never
+# holds raw, and its durable copy is already the archive: every snapshot is a file in data/raw/sleeper/projections
+# (written once, atomically; in the Actions cache), and `replay-projections` rebuilds the table from them every
+# night. A dump next to it would sit in the same cache and protect against nothing the files do not. The second
+# copy is the Mac's own archive (its local nightly pulls the same snapshots).
 STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals ops.waiver_moves ops.waiver_upside ops.player_role_alerts ops.player_scenarios ops.feature_experiments ops.projection_lines ops.projection_ranges ops.kd_lines ops.kd_ranges"
-RECORD_TABLES="ops.projections ops.projection_drift"
+RECORD_TABLES="ops.projections ops.projection_drift ops.projection_lines ops.projection_ranges ops.kd_lines ops.kd_ranges"   # each also in STATE_TABLES
 RECORD_DIR="$RAW_DIR/record"   # one <schema>.<table>.sql.gz per record table
 
 is_record() { case " $RECORD_TABLES " in *" $1 "*) return 0;; esac; return 1; }
 
 restore_state() {
-  local t n h rc
+  local t n h rc hosted_has="" hosted_err="" reachable=0
+  if [ -n "${LEAGUE_LAB_HOSTED_ADMIN_URL:-}" ]; then
+    # one round trip: which state tables the hosted copy has. A failure here is "cannot read the hosted copy";
+    # a table missing from the answer is "not published there" (rule 4 above)
+    if hosted_has="$(PGCONNECT_TIMEOUT="${PGCONNECT_TIMEOUT:-15}" psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -Atqc "select n.nspname || '.' || c.relname from pg_class c join pg_namespace n on n.oid = c.relnamespace where c.relkind in ('r', 'p') and n.nspname || '.' || c.relname = any(string_to_array('$STATE_TABLES', ' '))" 2>&1)"; then
+      reachable=1
+    else
+      hosted_err="$(echo "$hosted_has" | head -1)"; hosted_has=""
+    fi
+  fi
   for t in $STATE_TABLES; do
     n="$(q "select count(*) from $t")" || return 1
-    if [ "$n" != 0 ]; then echo "$t: $n rows here, kept"; continue; fi
+    if [ "$n" != 0 ]; then
+      if [ "$reachable" = 1 ] && is_record "$t" && ! grep -qxF "$t" <<< "$hosted_has"; then
+        echo "$t: $n rows here, kept (the hosted copy does not have this table yet: the next sync publishes it)"
+      else
+        echo "$t: $n rows here, kept"
+      fi
+      continue
+    fi
     if [ -z "${LEAGUE_LAB_HOSTED_ADMIN_URL:-}" ]; then
       echo "$t: empty, no hosted copy configured to restore from"
-      is_record "$t" && restore_record_from_archive "$t"
+      is_record "$t" && { restore_record_from_archive "$t" || return 1; }
+      continue
+    fi
+    if [ "$reachable" != 1 ]; then
+      if is_record "$t"; then
+        echo "$t: cannot read the hosted copy ($hosted_err)" >&2
+        echo "$t: the decision record cannot be verified; refusing to refit every played week blind" >&2
+        return 1
+      fi
+      echo "$t: cannot read the hosted copy ($hosted_err); the backtests step recomputes it"
+      continue
+    fi
+    if ! grep -qxF "$t" <<< "$hosted_has"; then
+      echo "$t: empty here and not on the hosted copy (never published there)"
+      is_record "$t" && { restore_record_from_archive "$t" || return 1; }
       continue
     fi
     h="$(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -Atqc "select count(*) from $t" 2>&1 | head -1)"; rc=${PIPESTATUS[0]}
@@ -258,7 +311,7 @@ restore_state() {
     fi
     if [ "$h" = 0 ]; then
       echo "$t: empty here and on the hosted copy"
-      is_record "$t" && restore_record_from_archive "$t"
+      is_record "$t" && { restore_record_from_archive "$t" || return 1; }
       continue
     fi
     if pg_dump "$LEAGUE_LAB_HOSTED_ADMIN_URL" --data-only --no-owner --no-privileges --table "$t" \
@@ -280,7 +333,7 @@ restore_record_from_archive() {  # restore_record_from_archive <table>
   local t="$1" n f="$RECORD_DIR/$1.sql.gz"
   if [ ! -f "$f" ]; then
     echo "$t: no copy in the archive either ($f): first publication, or the record is gone"
-    in_ci && echo "::warning title=decision record::$t is empty on the hosted copy and in the archive: tonight starts a new record (every played week becomes a refit value)"
+    in_ci && echo "::warning title=decision record::$t is empty (or not published) on the hosted copy and not in the archive: tonight starts it again (played weeks become refit values, except what project re-seeds from ops.projections)"
     return 0
   fi
   echo "$t: taking the archive's copy ($(stat -c %y "$f" | cut -c1-19)) ..."
@@ -414,7 +467,9 @@ else
 fi
 
 # 3. Build, then the pieces that read the built marts.
-hard dbt-build dbt_step dbt-build build
+DBT_EXCLUDE=()
+[ -n "${NIGHTLY_DBT_EXCLUDE:-}" ] && read -r -a DBT_EXCLUDE <<< "--exclude $NIGHTLY_DBT_EXCLUDE"
+hard dbt-build dbt_step dbt-build build ${DBT_EXCLUDE[@]+"${DBT_EXCLUDE[@]}"}
 hard backtests backtests
 # projection v2. A failure is fatal only when there is no earlier board to fall back on (neither this
 # database nor the hosted copy had projections: publishing would blank the Rankings pages); otherwise
@@ -449,10 +504,15 @@ if [ "${NIGHTLY_BACKUP:-}" = 1 ]; then
 else
   skip backup "NIGHTLY_BACKUP is not 1 (the CI database is thrown away; its durable state is the archive cache + the hosted copy)"
 fi
-if [ -n "${LEAGUE_LAB_HOSTED_ADMIN_URL:-}" ]; then
+# one writer (Wave H): GitHub Actions publishes; another machine only with LEAGUE_LAB_MAC_WRITES_HOSTED=1 (the
+# fallback while Actions is down) or into a local simulation (LEAGUE_LAB_HOSTED_ALLOW_LOCAL=1; the sync checks the
+# target is local). The sync script enforces the same rule.
+if [ -z "${LEAGUE_LAB_HOSTED_ADMIN_URL:-}" ]; then
+  skip sync-hosted "LEAGUE_LAB_HOSTED_ADMIN_URL is not set"
+elif in_ci || [ "${LEAGUE_LAB_MAC_WRITES_HOSTED:-}" = 1 ] || [ "${LEAGUE_LAB_HOSTED_ALLOW_LOCAL:-}" = 1 ]; then
   hard sync-hosted ./scripts/sync_to_hosted.sh
 else
-  skip sync-hosted "LEAGUE_LAB_HOSTED_ADMIN_URL is not set"
+  skip sync-hosted "GitHub Actions is the one writer of the hosted copy (LEAGUE_LAB_MAC_WRITES_HOSTED=1 publishes from here)"
 fi
 
 finish

@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave H
+
+- **One writer, the record kept, the hosted relation audit (H2).** GitHub Actions' nightly is the only writer of the
+  hosted copy: off Actions `nightly.sh` skips `sync-hosted` and `sync_to_hosted.sh` refuses (exit 7) unless
+  `LEAGUE_LAB_MAC_WRITES_HOSTED=1`, so the Mac's launchd refresh builds only the Mac's database. The NFL-wide boards
+  (`ops.projection_lines` / `_ranges`, `ops.kd_lines` / `_ranges`) join the decision record (`RECORD_TABLES`: restored
+  hard, saved to the archive); a record table the hosted copy has never had is said so and taken from this database
+  or the archive instead of stopping the night. What the hosted copy holds is derived in one place,
+  `scripts/hosted_relations.py`, from the Streamlit console AND the product API (`api/`, the `src/league_lab` modules
+  it imports): the API's 63 relations verified after every publish; `fct_player_game_league` and
+  `mart_player_week_features` join the three-season window and E4's experiment tables stay out — ~200 MB, with a
+  480 MB refusal before anything is touched (`docs/HOSTING.md` § 5).
+
 ## 2026-10-02 — Wave G
 
 - **The research for any league (G1).** Seven API routes serve the research pages as JSON for any Sleeper league —
