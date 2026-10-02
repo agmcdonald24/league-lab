@@ -3125,6 +3125,31 @@ placeholder test above.
 
 ## Wave H (Iteration 16)
 
+### PO merge — Wave H, 2026-10-02
+
+* **Delivered** (three Opus devs, 30–40 min each): H0 the deploy kit (`render.yaml`, the Dockerfile proven stage by stage
+  and fixed — `app/pages` was missing from the image and broke `/api/waivers` and trades; `$PORT`; `nobody`; 260 MB python
+  stage; `.github/workflows/image.yml` builds, starts and checks the image and pushes it to GHCR; `scripts/smoke.sh`;
+  `docs/DEPLOY.md` as Andrew's walk-through: Render Starter, $7/month, Ohio next to Neon); H1 the gaps (upside stash and
+  buy-low / sell-high on Waivers, `/api/about` with "what it leans on most" and the grades, the rest-of-season board in
+  one round of queries — dynasty cold 1,079 → 249 ms, `/api/search` for any league); H2 one writer (GitHub Actions
+  publishes the hosted copy, the Mac's launchd no longer does unless `LEAGUE_LAB_MAC_WRITES_HOSTED=1`; `sync_to_hosted.sh`
+  refuses elsewhere), the NFL-wide boards in `RECORD_TABLES` with a first-night rule that cannot stop the night, the
+  relation closure derived in one place (`scripts/hosted_relations.py`: the API's 63 relations + the console's 71;
+  `mart_kd_week` / `mart_kd_team_game` added), the hosted copy windowed to ~200 MB, a full nightly dry run in the sandbox
+  (exit 0, 14 min).
+* **PO**: the integrated API walked against a hosted-shaped copy (H2's scratch target, app role): every route 200 for
+  both house leagues and the Test League, including H1's on-demand upside stash (it reads `ops.player_scenarios`, which
+  is published — H2's warning about `staging.stg_sleeper__players` concerned the nightly's own functions, which the API
+  does not call); `int_player_week_team` gets `analyze` after build (H2 measured 396 s of the nightly's 8-minute dbt
+  build lost to a plan made before statistics existed); `docs/HANDOFF.md` says who writes now. Checks: `api` 155 passed,
+  web lint 0 / 0, build, 58 fixture e2e, shellcheck + actionlint clean, root `pytest` green.
+* **Andrew's path to the beta** (`docs/DEPLOY.md`): GitHub secrets present → run the nightly workflow once (publishes
+  the current tables; the copy on Neon today predates the new app) → Render Blueprint with the read-only Neon URL and the
+  beta password → `scripts/smoke.sh https://<address> '<password>'` → share the link. Not verified from the sandbox:
+  a real `docker build`, GHCR, Render's acceptance of `autoDeployTrigger` / `buildFilter` / `region: ohio` (fallbacks in
+  the doc), Render's current prices.
+
 ### H2 2026-10-02 — one writer, the record kept, the hosted relation audit (branch `dev/H2`, clone `league_lab_h2`)
 
 * **One writer.** GitHub Actions' nightly is the only writer of the hosted copy (the beta must not depend on the Mac
