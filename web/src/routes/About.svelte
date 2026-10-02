@@ -3,7 +3,7 @@
   // (the Streamlit Rankings page's "The model" words: what it learned from, what it predicts, the ranges, how it was
   // graded, what it does not know, what we tried) — then the record against Sleeper's own projections, week by week
   // (GET /api/record: the summary and two numbers, the start/sit table, the by-position table, "How to read this").
-  import { paths, type RecordAnswer } from "../lib/api";
+  import { aboutPath, paths, type AboutAnswer, type RecordAnswer } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { aboutSections, MODEL_ANSWER } from "../lib/about";
   import { RECORD_HOWTO, recordView } from "../lib/record";
@@ -13,6 +13,9 @@
   import Md from "../components/Md.svelte";
   import Metrics from "../components/Metrics.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
+  import Bar from "../components/Bar.svelte";
+  import StatTile from "../components/StatTile.svelte";
+  import Tabs from "../components/Tabs.svelte";
 
   let { options, league, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -23,6 +26,17 @@
   const view = $derived(r.data ? recordView(r.data, name) : null);
   const sections = $derived(aboutSections(view?.leagueName ?? name));
   const num = (v: number | null | undefined, d = 0) => (v === null || v === undefined ? "—" : v.toFixed(d));
+
+  // H1 (Wave H): what the projection leans on most and its grades (GET /api/about)
+  const ab = new Remote<AboutAnswer>();
+  $effect(() => ab.load(aboutPath(league), onauth));
+  let impPos = $state("QB");
+  const imp = $derived(ab.data?.importance ?? null);
+  const impRows = $derived(imp?.positions.find((p) => p.position === impPos) ?? imp?.positions[0] ?? null);
+  const impMax = $derived(Math.max(0.05, ...(impRows?.features ?? []).map((f) => f.importance ?? 0)));
+  const grades = $derived(ab.data?.grades ?? null);
+  const pct = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${Math.round(v * 100)}%`);
+  const GRADES_HOWTO = $derived((grades?.howto ?? []).map((h) => `- ${h}`).join("\n"));
 </script>
 
 <main class="space-y-5" data-testid="about">
@@ -37,6 +51,49 @@
       </Card>
     {/each}
   </div>
+
+  {#if imp}
+    <section class="space-y-3" data-testid="importance">
+      <h2 class="text-xl font-extrabold tracking-tight">What it leans on most</h2>
+      <p class="text-sm leading-snug text-ink-3" data-testid="importance-tops">
+        {imp.positions.map((p) => `${p.position}: ${p.top.charAt(0).toLowerCase()}${p.top.slice(1)}`).join(" · ")}
+      </p>
+      <Tabs items={imp.positions.map((p) => ({ key: p.position, label: p.position }))} current={impRows?.position ?? impPos} onpick={(k) => (impPos = k)} size="sm" label="Position" testid="importance-pos" />
+      {#if impRows}
+        <Card testid="importance-card">
+          <p class="text-base leading-snug" data-testid="importance-lead"><Md text={impRows.lead} /></p>
+          <div class="mt-3 space-y-2.5" data-testid="importance-bars">
+            {#each impRows.features as f (f.rank)}
+              <Bar label={`${f.rank}. ${f.feature_label}`} value={f.importance} max={impMax} display={f.importance === null ? "—" : `+${f.importance.toFixed(2)}`} testid="importance-bar" />
+            {/each}
+          </div>
+          <p class="mt-3 text-sm text-ink-3">{imp.unit}</p>
+        </Card>
+      {/if}
+      <p class="text-sm leading-snug text-ink-3" data-testid="importance-how">{imp.how_measured}</p>
+    </section>
+  {/if}
+
+  {#if grades}
+    <section class="space-y-3" data-testid="grades">
+      <h2 class="text-xl font-extrabold tracking-tight">How the model is doing</h2>
+      <p class="text-base leading-snug" data-testid="grades-answer">{grades.answer}</p>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 wide:grid-cols-4">
+        {#each grades.positions as g (g.position)}
+          <Card title={g.position} testid="grade-card">
+            <div class="grid grid-cols-2 gap-2">
+              <StatTile label="Order · this season" value={num(g.season.spearman, 2)} caption={`backtest ${num(g.backtest.spearman, 2)}`} size="sm" testid="grade-order" />
+              <StatTile label="Avg miss · this season" value={num(g.season.mae, 1)} caption={`backtest ${num(g.backtest.mae, 1)} points`} size="sm" testid="grade-miss" />
+              <StatTile label="Inside the range" value={pct(g.season.coverage_80)} caption={`backtest ${pct(g.backtest.coverage_80)} · aim 80%`} size="sm" testid="grade-range" />
+              <StatTile label="Weeks scored" value={g.season.weeks_scored} caption={grades.backtest_seasons ? `backtest ${grades.backtest_seasons}` : null} size="sm" />
+            </div>
+          </Card>
+        {/each}
+      </div>
+      <Expander title="How to read the grades" testid="grades-howto"><Md text={GRADES_HOWTO} block class="text-base leading-snug" /></Expander>
+    </section>
+  {/if}
+  {#if ab.data?.why}<p class="text-sm leading-snug text-ink-3" data-testid="about-why">{ab.data.why}</p>{/if}
 
   <section class="space-y-3" data-testid="record">
     <h2 class="text-xl font-extrabold tracking-tight" id="record">Our record against Sleeper's projections</h2>

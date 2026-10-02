@@ -62,6 +62,7 @@ export async function serveFixtures(context: BrowserContext, opts: { gate?: bool
     else if (p === "/api/status") body = file("status.json");
     else if (p === "/api/ros") body = file(`ros_${q.get("league")}_${(q.get("position") ?? "ALL").toUpperCase()}.json`);
     else if (p === "/api/record") body = file(`record_${q.get("league")}.json`);
+    else if (p === "/api/about") body = file(`about_${q.get("league")}.json`); // H1 (Wave H)
     // ---- G3 research routes (Wave G): one file per league (the screens filter and sort on the phone)
     else if (p === "/api/trends") body = file(`trends_${q.get("league")}.json`);
     else if (p === "/api/matchups/defense") body = file(`matchups_defense_${q.get("league")}_${q.get("team")}.json`) ?? file(`matchups_defense_${q.get("league")}.json`);

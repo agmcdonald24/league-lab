@@ -27,6 +27,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   player card, Matchups, Compare and rest of season fail until the nightly publishes the current tables
   (`docs/STATUS.md` § Wave H, H0 lists them).
 
+- **The gaps Wave G left (H1).** Waivers shows the upside stash (a free agent whose role grew before his points did, with
+  the what-if) and buy low / sell high (the Trade Finder's lists, best by position) for any league; About shows what the
+  projection leans on most (bars per position) and its grades (this season vs the backtest) from the new `/api/about`;
+  rest of season for any league is read in one round of queries and priced in one pass (cold 1.1–1.7 s → 0.25–0.53 s);
+  the player search works for any Sleeper league (Sleeper's directory).
+
 ## 2026-10-02 — Wave G
 
 - **The research for any league (G1).** Seven API routes serve the research pages as JSON for any Sleeper league —

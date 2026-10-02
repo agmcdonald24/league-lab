@@ -57,7 +57,11 @@ import numpy as np
 import pandas as pd
 
 from . import lineup as LU
-from .scoring import MAPPED_KEYS, compute_points, unmapped_keys
+from .scoring import (  # noqa: F401 - compute_points: the reference the vector form equals
+    MAPPED_KEYS,
+    compute_points,
+    unmapped_keys,
+)
 from .sleeper_client import (  # noqa: F401 - re-exported: the API and the tests import them from here
     API_ENV,
     FIXTURES_ENV,
@@ -298,11 +302,47 @@ def _load_nfl_wide(query: Query, season: int, week: int) -> Board:
 
 
 def price_lines(line: pd.DataFrame, scoring: Mapping[str, float]) -> pd.Series:
-    """League points of every stat line: ``compute_points`` (bonuses included), exactly as ``projections.price``."""
-    stats = line[list(STAT_LINE)].rename(columns=STAT_LINE).fillna(0.0)
+    """League points of every stat line: ``compute_points`` (bonuses included), exactly as ``projections.price`` —
+    computed for every row at once (``compute_points_frame``: the same terms in the same order, so equal bit for bit)."""
+    stats = line[list(STAT_LINE)].rename(columns=STAT_LINE).apply(pd.to_numeric, errors="coerce").fillna(0.0)
     if "position" in line:          # F1: a position premium (bonus_rec_te, …) prices only when the row carries the position
         stats["position"] = line["position"].to_numpy()
-    return pd.Series([compute_points(r, scoring) for r in stats.to_dict("records")], index=line.index, dtype=float)
+    return pd.Series(compute_points_frame(stats, scoring), index=line.index, dtype=float)
+
+
+def compute_points_frame(stats: pd.DataFrame, scoring: Mapping[str, float]) -> np.ndarray:
+    """``[compute_points(r, scoring) for r in stats.to_dict("records")]`` for a frame with no missing values (Wave H,
+    H1): each scoring key's term added to the running total in ``scoring``'s order, as ``compute_points`` adds it, then
+    Python's ``round(…, 2)`` per row — the same floating-point operations, so the same numbers bit for bit (tested),
+    about 100x faster on a week's board."""
+    from .scoring import _PY_EXPR, SLEEPER_BONUS_MAP, SLEEPER_POSITION_MAP
+    n = len(stats)
+    pos = stats["position"].to_numpy() if "position" in stats else None
+
+    def col(c: str) -> np.ndarray:
+        return stats[c].to_numpy(dtype=float) if c in stats else np.zeros(n)
+    total = np.zeros(n)
+    for key, weight in scoring.items():
+        if not weight:
+            continue
+        kind = MAPPED_KEYS.get(key)
+        if kind is None:
+            pk = SLEEPER_POSITION_MAP.get(key)
+            if pk is not None and pos is not None:
+                hit = pos == pk[1]
+                total = np.where(hit, total + col(pk[0]) * float(weight), total)
+            continue
+        if key in SLEEPER_BONUS_MAP:
+            c, low, high = SLEEPER_BONUS_MAP[key][:3]
+            v = col(c)
+            value = ((v >= low) & ((v < high) if high is not None else True)).astype(float)
+        else:
+            cols = _PY_EXPR[key]
+            value = col(cols[0])
+            for c in cols[1:]:
+                value = value + col(c)
+        total = total + value * float(weight)
+    return np.array([round(x, 2) for x in total.tolist()], dtype=float)
 
 
 # ------------------------------------------------------------------------------ ranges for a league the model never saw
@@ -549,6 +589,20 @@ def price_week(query: Query, league_id: str, scoring: Mapping[str, float], slots
     t0 = time.perf_counter()
     b = board or load_board(query, season, week)
     t1 = time.perf_counter()
+    out = price_board(b, league_id, scoring, starts, exclude_reference=exclude_reference, t0=t0, t1=t1)
+    if cache and board is None:
+        if len(_priced) > 500:
+            _priced.clear()
+        _priced[key] = (now + PRICED_TTL_S, out)
+    return out
+
+
+def price_board(b: Board, league_id: str, scoring: Mapping[str, float], starts: tuple[str, ...], *,
+                exclude_reference: str | None = None, t0: float | None = None, t1: float | None = None) -> Priced:
+    """One week's board priced in a league's scoring (``price_week``'s body): the skill lines, the reference's ranges,
+    K / DEF."""
+    t0 = time.perf_counter() if t0 is None else t0
+    t1 = time.perf_counter() if t1 is None else t1
     proj = price_lines(b.line, scoring)
     t2 = time.perf_counter()
     ref = reference_for(proj, b, scoring, str(league_id), exclude_reference)
@@ -563,18 +617,14 @@ def price_week(query: Query, league_id: str, scoring: Mapping[str, float], slots
     for pos in starts:
         kd_src[pos], kd[pos] = kd_values(scoring, pos, b)
     t4 = time.perf_counter()
-    out = Priced(str(league_id), int(season), int(week), b, proj, ranges, ref, kd, kd_src,
-                 {"board": round((t1 - t0) * 1000, 1), "price": round((t2 - t1) * 1000, 1),
-                  "ranges": round((t3 - t2) * 1000, 1), "kd": round((t4 - t3) * 1000, 1)})
-    if cache and board is None:
-        if len(_priced) > 500:
-            _priced.clear()
-        _priced[key] = (now + PRICED_TTL_S, out)
-    return out
+    return Priced(str(league_id), int(b.season), int(b.week), b, proj, ranges, ref, kd, kd_src,
+                  {"board": round((t1 - t0) * 1000, 1), "price": round((t2 - t1) * 1000, 1),
+                   "ranges": round((t3 - t2) * 1000, 1), "kd": round((t4 - t3) * 1000, 1)})
 
 
 def clear_priced() -> None:
     _priced.clear()
+    _ros_cache.clear()
 
 
 def _solve_roster(query: Query, league_id: str, roster: dict, players: Mapping[str, dict], pr: Priced, slots: list[str],
@@ -805,41 +855,288 @@ def ros_window(league: Mapping, from_week: int, season_last_week: int, bracket_r
     return int(from_week), int(min(season_last_week, last)), pws
 
 
+# --- Wave H (H1): the NFL-wide board for a window of weeks in one round of queries (rest of season). The per-week
+# reads of _load_nfl_wide with "week between" instead of "week =": the same distinct-on rule per week.
+LINES_WINDOW_SQL = f"""
+select distinct on (week, gsis_id) week, gsis_id, position, model_version, frozen_source, {_COMPS}
+from {NFL_WIDE['lines']}
+where season = %s and week between %s and %s and position = any(%s)
+order by week, gsis_id, {_FRESHEST}
+"""
+RANGES_WINDOW_SQL = f"""
+select distinct on ({NFL_WIDE['scoring_name']}, week, gsis_id) {NFL_WIDE['scoring_name']} as scoring_name, week, gsis_id,
+       position, proj_points, p10, p25, p50, p75, p90
+from {NFL_WIDE['ranges']}
+where season = %s and week between %s and %s and {NFL_WIDE['scoring_name']} = any(%s) and position = any(%s)
+order by {NFL_WIDE['scoring_name']}, week, gsis_id, {_FRESHEST}
+"""
+KD_LINES_WINDOW_SQL = f"""
+select l.*, u.team, u.report_status, u.roster_status, u.player_name, u.implied_team_total
+from (select distinct on (week, position, {NFL_WIDE['kd_unit']}) *
+      from {NFL_WIDE['kd_lines']} where season = %s and week between %s and %s
+      order by week, position, {NFL_WIDE['kd_unit']}, {_FRESHEST}) as l
+left join analytics.mart_kd_week as u
+  on u.position = l.position and u.unit_id = l.{NFL_WIDE['kd_unit']} and u.season = l.season and u.week = l.week
+"""
+KD_RANGES_WINDOW_SQL = f"""
+select distinct on ({NFL_WIDE['scoring_name']}, week, position, {NFL_WIDE['kd_unit']})
+       {NFL_WIDE['scoring_name']} as scoring_name, week, position, {NFL_WIDE['kd_unit']} as unit_id, proj_points, p10, p90
+from {NFL_WIDE['kd_ranges']} where season = %s and week between %s and %s
+order by {NFL_WIDE['scoring_name']}, week, position, {NFL_WIDE['kd_unit']}, {_FRESHEST}
+"""
+STATUS_WINDOW_SQL = """
+select distinct on (week, gsis_id) week, gsis_id, team, report_status, roster_status, player_name, implied_team_total
+from analytics.mart_player_week_projections
+where season = %s and week between %s and %s and gsis_id is not null
+order by week, gsis_id, league_id
+"""
+
+
+@dataclass
+class Window:
+    """The NFL-wide board of weeks ``first``..``last`` read in one round of queries (``_load_nfl_wide``'s reads with
+    "week between" instead of "week =", the same distinct-on rule per week); every frame carries ``week``."""
+    lines: pd.DataFrame        # week, gsis_id, position, model_version, the 12 components (QB-TE)
+    ranges: pd.DataFrame       # scoring_name, week, gsis_id, proj_points, p10-p90 (QB-TE)
+    kd: pd.DataFrame           # week, position, unit_id, the K / DEF line, team, report_status, roster_status, player_name, …
+    kd_ranges: pd.DataFrame    # scoring_name, week, position, unit_id, proj_points, p10, p90
+    status: pd.DataFrame       # week, gsis_id, team, report_status, roster_status, player_name, implied_team_total
+    scorings: dict[str, dict[str, float]]
+    weeks: list[int]           # the weeks holding stat lines
+
+
+def load_window(query: Query, season: int, first: int, last: int, scoring: Mapping[str, float] | None = None) -> Window:
+    """Weeks ``first``..``last`` of the NFL-wide board in six queries. With ``scoring``: only the exact reference
+    scoring's ranges are read when there is one and it holds every week (``choose_reference`` takes it then), else all."""
+    args = (int(season), int(first), int(last))
+    scorings = {}
+    for r in query(REFERENCES_SQL, ()).itertuples():
+        sc = r.scoring_settings if isinstance(r.scoring_settings, dict) else json.loads(r.scoring_settings or "{}")
+        scorings[r.name] = {k: float(v) for k, v in sc.items() if v is not None}
+    lines = _floats(query(LINES_WINDOW_SQL, (*args, list(SKILL))), list(STAT_LINE))
+    weeks = sorted({int(w) for w in lines["week"]}) if not lines.empty else []
+    exact = exact_reference(scoring, scorings) if scoring is not None else None
+    names = [exact] if exact is not None else sorted(scorings)
+    rg = _floats(query(RANGES_WINDOW_SQL, (*args, names, list(SKILL))), ["proj_points", *QUANTILES])
+    if exact is not None and set(weeks) - {int(w) for w in rg["week"]}:
+        rg = _floats(query(RANGES_WINDOW_SQL, (*args, sorted(scorings), list(SKILL))), ["proj_points", *QUANTILES])
+    try:
+        kdr = _floats(query(KD_RANGES_WINDOW_SQL, args), ["proj_points", "p10", "p90"])
+    except Exception:  # noqa: BLE001 - no K / DEF ranges yet (as _load_nfl_wide)
+        kdr = pd.DataFrame(columns=["scoring_name", "week", "position", "unit_id", "proj_points", "p10", "p90"])
+    try:
+        kd = query(KD_LINES_WINDOW_SQL, args)
+        kd = kd.rename(columns={NFL_WIDE["kd_unit"]: "unit_id"}) if NFL_WIDE["kd_unit"] != "unit_id" else kd
+    except Exception:  # noqa: BLE001 - no K / DEF lines yet: K / DEF unvalued
+        kd = pd.DataFrame(columns=["week", "position", "unit_id", "team", "report_status", "roster_status"])
+    try:
+        status = query(STATUS_WINDOW_SQL, args)
+    except Exception:  # noqa: BLE001 - no per-week mart (as _status)
+        status = pd.DataFrame(columns=["week", "gsis_id", "team", "report_status", "roster_status", "player_name",
+                                       "implied_team_total"])
+    return Window(lines, rg, kd, kdr, status, scorings, weeks)
+
+
+def _closest_by_week(new: pd.DataFrame, refs: pd.DataFrame, key: str, exclude: str | None = None) -> dict[int, str]:
+    """week -> the reference whose prices are closest to ``new`` that week (``choose_reference``'s distance: the median
+    |log ratio| over the rows both price above one point; the first by name on a tie; never ``exclude``).
+    ``new``: week, ``key``, new; ``refs``: scoring_name, week, ``key``, proj_points."""
+    both = new.merge(refs[["scoring_name", "week", key, "proj_points"]], on=["week", key])
+    both = both[(both["new"] > 1) & (both["proj_points"].astype(float) > 1) & (both["scoring_name"] != exclude)]
+    if both.empty:
+        return {}
+    both = both.assign(d=np.abs(np.log(both["new"] / both["proj_points"].astype(float))))
+    d = both.groupby(["week", "scoring_name"])["d"].median().reset_index()
+    d = d.sort_values(["week", "d", "scoring_name"], kind="mergesort")
+    return {int(w): n for w, n in d.drop_duplicates("week")[["week", "scoring_name"]].itertuples(index=False)}
+
+
+def skill_window(win: Window, weeks: list[int], scoring: Mapping[str, float],
+                 exclude_reference: str | None = None) -> tuple[pd.DataFrame, set]:
+    """Every QB-TE stat line of ``weeks`` priced in one pass (``price_lines``), each week with its reference's ranges
+    (``price_week``'s rules: the exact reference scoring when the week has it, its quantiles as they are; else the
+    closest reference that week and ``approximate_ranges``, row by row over the whole window) and the week's status.
+    Returns the frame (week, gsis_id, position, proj_points, p10, p90, team, roster_status, player_name,
+    implied_team_total) and the references used."""
+    ln = win.lines[win.lines["week"].isin(weeks)].reset_index(drop=True)
+    sk = pd.DataFrame({"week": ln["week"].astype(int).to_numpy(), "gsis_id": ln["gsis_id"].to_numpy(),
+                       "position": ln["position"].to_numpy(),
+                       "proj": price_lines(ln, scoring).to_numpy() if not ln.empty else np.array([], dtype=float)})
+    rg = win.ranges
+    present = rg.groupby("week")["scoring_name"].unique().to_dict() if not rg.empty else {}
+    choice: dict[int, str] = {}
+    exact_w: set[int] = set()
+    for w in weeks:
+        names = set(present.get(w, ()))
+        ex = exact_reference(scoring, {n: sc for n, sc in win.scorings.items() if n in names}, exclude_reference)
+        if ex is not None:
+            choice[w] = ex
+            exact_w.add(w)
+    rest = [w for w in weeks if w not in exact_w]
+    if rest and not rg.empty:
+        new = sk[sk["week"].isin(rest)].rename(columns={"proj": "new"})[["week", "gsis_id", "new"]]
+        choice.update(_closest_by_week(new, rg[rg["week"].isin(rest)], "gsis_id", exclude_reference))
+    ch = pd.DataFrame({"week": list(choice), "scoring_name": list(choice.values())}, columns=["week", "scoring_name"])
+    ref = rg.merge(ch, on=["week", "scoring_name"]) if not rg.empty else rg
+    ref = ref.astype({"week": int}).set_index(["week", "gsis_id"])[["proj_points", *QUANTILES]] if not ref.empty else None
+    sk["p10"] = sk["p90"] = np.nan
+    if ref is not None and not sk.empty:
+        idx = pd.MultiIndex.from_arrays([sk["week"], sk["gsis_id"]])
+        proj = pd.Series(sk["proj"].to_numpy(), index=idx)
+        ex = sk["week"].isin(exact_w).to_numpy()
+        exact_rows = ref.reindex(idx)[["p10", "p90"]].astype(float).round(2)
+        approx = approximate_ranges(proj[~ex], ref) if (~ex).any() else None
+        for q in ("p10", "p90"):
+            vals = exact_rows[q].to_numpy(dtype=float).copy()
+            if approx is not None:
+                vals[~ex] = approx[q].to_numpy(dtype=float)
+            sk[q] = vals
+    st = win.status.astype({"week": int}) if not win.status.empty else win.status
+    sk = sk.merge(st[["week", "gsis_id", "team", "roster_status", "player_name", "implied_team_total"]],
+                  on=["week", "gsis_id"], how="left") if not st.empty else sk.assign(team=None, roster_status=None,
+                                                                                     player_name=None, implied_team_total=None)
+    sk["proj_points"] = sk["proj"].round(2)
+    return sk.drop(columns="proj"), {choice[w] for w in weeks if w in choice}
+
+
+def kd_window(win: Window, weeks: list[int], scoring: Mapping[str, float], position: str) -> pd.DataFrame:
+    """``kd_values`` on the NFL-wide board for every week at once: the K (DEF) lines of all weeks priced in one
+    ``kdef.price`` call, each week's range = the fixed offsets of the reference with the closest K (DEF) prices that
+    week. Columns: week + ``kd_values``' columns."""
+    from . import kdef
+    cols = ["week", "unit_id", "proj_points", "p10", "p90", "team", "report_status", "roster_status", "player_name",
+            "implied_team_total"]
+    if win.kd.empty or "position" not in win.kd:
+        return pd.DataFrame(columns=cols)
+    rows = win.kd[(win.kd["position"] == position) & win.kd["week"].isin(weeks)].reset_index(drop=True)
+    if rows.empty:
+        return pd.DataFrame(columns=cols)
+    line_cols = [f"proj_{c}" for c in (kdef.K_LINE if position == "K" else kdef.DEF_LINE)]
+    num = pd.DataFrame({c: (pd.to_numeric(rows[c], errors="coerce") if c in rows else pd.Series(0.0, index=rows.index))
+                        for c in line_cols})
+    proj = kdef.price(num, position, scoring, "proj_")
+    out = rows.drop(columns=[c for c in rows.columns if c.startswith("proj_")]).assign(proj_points=proj)
+    out["week"] = out["week"].astype(int)
+    kdr = win.kd_ranges.astype({"week": int}) if not win.kd_ranges.empty else win.kd_ranges
+    choice = _closest_by_week(out[["week", "unit_id"]].assign(new=proj), kdr, "unit_id") if not kdr.empty else {}
+    ch = pd.DataFrame({"week": list(choice), "scoring_name": list(choice.values())}, columns=["week", "scoring_name"])
+    f = (kdr.merge(ch, on=["week", "scoring_name"]).drop_duplicates(["week", "unit_id"]).set_index(["week", "unit_id"])
+         if not kdr.empty else None)
+    if f is not None and not f.empty:
+        f = f.reindex(pd.MultiIndex.from_arrays([out["week"], out["unit_id"]]))
+        lo = (f["p10"].astype(float) - f["proj_points"].astype(float)).to_numpy()
+        hi = (f["p90"].astype(float) - f["proj_points"].astype(float)).to_numpy()
+        has = np.array([w in choice for w in out["week"]])
+        out["p10"] = np.where(has, np.round(np.clip(proj + lo, 0, None), 2), np.nan)
+        out["p90"] = np.where(has, np.round(np.maximum(proj + hi, proj), 2), np.nan)
+    else:
+        out["p10"] = out["p90"] = np.nan
+    for c in cols:
+        if c not in out:
+            out[c] = None
+    return out[cols]
+
+
+_ros_cache: dict[tuple, tuple[float, pd.DataFrame]] = {}
+
+
+def _week_lists(d: pd.DataFrame) -> pd.Series:
+    """player_key -> [[week, points], …] in week order (``d`` sorted by player_key, week), without a per-group apply."""
+    keys = d["player_key"].to_numpy()
+    weeks, pts = d["week"].to_numpy(), d["proj_points"].to_numpy(dtype=float)
+    out: dict = {}
+    start = 0
+    for i in range(1, len(keys) + 1):
+        if i == len(keys) or keys[i] != keys[start]:
+            out[keys[start]] = [[int(weeks[j]), round(float(pts[j]), 2)] for j in range(start, i)]
+            start = i
+    return pd.Series(out, dtype=object)
+
+
 def ros_table(query: Query, league_id: str, league: Mapping, from_week: int, last_week: int,
               playoff_week_start: int | None, *, exclude_reference: str | None = None) -> pd.DataFrame:
     """Rest of season for every projected player in this league's scoring — mart_player_ros_projection's columns
-    and rules, priced on request: each week of the window priced (``price_week``, cached), byes (no regular-season
-    game for his team that week) excluded, the sum, the playoff subtotal, the 80% range with the weeks read as
-    independent normals, and the ranks by position / overall among every projected player on an active NFL roster
-    (a team defense always ranked) — the same population the mart ranks, when the league is a house league."""
+    and rules, priced on request: each week of the window priced, byes (no regular-season game for his team that week)
+    excluded, the sum, the playoff subtotal, the 80% range with the weeks read as independent normals, and the ranks by
+    position / overall among every projected player on an active NFL roster (a team defense always ranked) — the same
+    population the mart ranks, when the league is a house league.
+
+    Wave H (H1): on the NFL-wide board the whole window is read in one round of queries (``load_window``), every
+    week's stat lines priced in one vectorised pass, the ranges and K / DEF the same way (``skill_window`` /
+    ``kd_window``: ``price_week``'s rules per week); a week the NFL-wide tables do not hold (or the borrowed board) is
+    priced week by week as before (``price_week``). The answer is kept 10 minutes (the priced weeks' rule)."""
     scoring, slots = league_scoring(league)
     season = int(league["season"])
+    src = board_source()
+    key = (str(league_id), _scoring_key(scoring), tuple(slots), season, int(from_week), int(last_week), playoff_week_start,
+           exclude_reference, src)
+    now = time.monotonic()
+    hit = _ros_cache.get(key)
+    if hit is None or hit[0] <= now:
+        out = _ros_table(query, league_id, scoring, slots, season, from_week, last_week, playoff_week_start,
+                         exclude_reference, src)
+        if len(_ros_cache) > 100:
+            _ros_cache.clear()
+        hit = (now + PRICED_TTL_S, out)
+        _ros_cache[key] = hit
+    res = hit[1].copy()
+    res.attrs = dict(hit[1].attrs)
+    return res
+
+
+def _priced_frames(pr: Priced, w: int) -> list[pd.DataFrame]:
+    """One week priced by ``price_week`` as the rest-of-season rows (skill players, then K / DEF)."""
+    st = pr.board.status
+    sk = pd.DataFrame({"player_key": pr.proj.index, "gsis_id": pr.proj.index,
+                       "position": pr.board.line["position"].reindex(pr.proj.index).to_numpy(),
+                       "proj_points": pr.proj.round(2).to_numpy(),
+                       "p10": pr.ranges["p10"].reindex(pr.proj.index).to_numpy(dtype=float),
+                       "p90": pr.ranges["p90"].reindex(pr.proj.index).to_numpy(dtype=float)})
+    for c in ("team", "roster_status", "player_name", "implied_team_total"):
+        sk[c] = st[c].reindex(pr.proj.index).to_numpy() if c in st else None
+    frames = [sk.assign(week=w)]
+    for pos, kd in pr.kd.items():
+        if not kd.empty:
+            frames.append(_kd_frame(kd.assign(week=w), pos))
+    return frames
+
+
+def _kd_frame(kd: pd.DataFrame, pos: str) -> pd.DataFrame:
+    return pd.DataFrame({"player_key": kd["unit_id"].to_numpy(), "gsis_id": kd["unit_id"].to_numpy() if pos == "K" else None,
+                         "position": pos, "proj_points": pd.to_numeric(kd["proj_points"]).round(2).to_numpy(),
+                         "p10": pd.to_numeric(kd["p10"]).to_numpy(dtype=float),
+                         "p90": pd.to_numeric(kd["p90"]).to_numpy(dtype=float),
+                         "team": kd["team"].to_numpy(), "roster_status": kd["roster_status"].to_numpy(),
+                         "player_name": kd["player_name"].to_numpy(),
+                         "implied_team_total": kd["implied_team_total"].to_numpy(), "week": kd["week"].to_numpy()})
+
+
+def _ros_table(query: Query, league_id: str, scoring: dict[str, float], slots: list[str], season: int, from_week: int,
+               last_week: int, playoff_week_start: int | None, exclude_reference: str | None, src: str) -> pd.DataFrame:
     g = query(ROS_GAMES_SQL, (season,))
     plays = {(int(r.week), t) for r in g.itertuples() for t in (r.home_team, r.away_team)}
+    starts = tuple(p for p in ("K", "DEF") if p in {str(x).upper() for x in slots})
+    window = list(range(int(from_week), int(last_week) + 1))
     frames, refs = [], set()
-    for w in range(int(from_week), int(last_week) + 1):
+    fast: list[int] = []
+    if window and src != "borrow":
+        win = load_window(query, season, window[0], window[-1], scoring)
+        # auto: the weeks the NFL-wide tables hold (load_board's rule per week); forced nfl_wide: every week
+        fast = list(window) if src == "nfl_wide" else [w for w in window if w in set(win.weeks)]
+        if fast:
+            sk, used = skill_window(win, fast, scoring, exclude_reference)
+            refs |= used
+            frames.append(sk.assign(player_key=sk["gsis_id"]))
+            for pos in starts:
+                kd = kd_window(win, fast, scoring, pos)
+                if not kd.empty:
+                    frames.append(_kd_frame(kd, pos))
+    for w in window:
+        if w in fast:
+            continue
         pr = price_week(query, league_id, scoring, slots, season, w, exclude_reference=exclude_reference)
         refs.add(pr.reference)
-        st = pr.board.status
-        sk = pd.DataFrame({"player_key": pr.proj.index, "gsis_id": pr.proj.index,
-                           "position": pr.board.line["position"].reindex(pr.proj.index).to_numpy(),
-                           "proj_points": pr.proj.round(2).to_numpy(),
-                           "p10": pr.ranges["p10"].reindex(pr.proj.index).to_numpy(dtype=float),
-                           "p90": pr.ranges["p90"].reindex(pr.proj.index).to_numpy(dtype=float)})
-        for c in ("team", "roster_status", "player_name", "implied_team_total"):
-            sk[c] = st[c].reindex(pr.proj.index).to_numpy() if c in st else None
-        frames.append(sk.assign(week=w))
-        for pos, kd in pr.kd.items():
-            if kd.empty:
-                continue
-            frames.append(pd.DataFrame({"player_key": kd["unit_id"].to_numpy(),
-                                        "gsis_id": kd["unit_id"].to_numpy() if pos == "K" else None,
-                                        "position": pos, "proj_points": pd.to_numeric(kd["proj_points"]).round(2).to_numpy(),
-                                        "p10": pd.to_numeric(kd["p10"]).to_numpy(dtype=float),
-                                        "p90": pd.to_numeric(kd["p90"]).to_numpy(dtype=float),
-                                        "team": kd["team"].to_numpy(), "roster_status": kd["roster_status"].to_numpy(),
-                                        "player_name": kd["player_name"].to_numpy(),
-                                        "implied_team_total": kd["implied_team_total"].to_numpy(), "week": w}))
+        frames.extend(_priced_frames(pr, w))
     cols = ["player_key", "gsis_id", "position", "player_name", "team", "roster_status", "is_ranked", "from_week",
             "last_week", "playoff_week_start", "ros_games", "ros_points", "ros_points_per_game", "ros_p10", "ros_p90",
             "ros_sd", "playoff_games", "playoff_points", "ros_rank_pos", "ros_rank_all", "bye_weeks", "weeks_with_lines",
@@ -864,8 +1161,7 @@ def ros_table(query: Query, league_id: str, league: Mapping, from_week: int, las
         "playoff_points": d[d["in_po"]].groupby("player_key")["proj_points"].sum(),
         "ros_sd_raw": np.sqrt(grp["var"].sum()).where(grp["var"].count() == grp.size()),
         "weeks_with_lines": grp["implied_team_total"].count(),
-        "weeks_json": grp.apply(lambda x: [[int(w), round(float(p), 2)] for w, p in zip(x["week"], x["proj_points"], strict=True)],
-                                include_groups=False),
+        "weeks_json": _week_lists(d),
     })
     out["playoff_points"] = out["playoff_points"].fillna(0.0).round(2)
     for c in ("gsis_id", "position", "player_name", "team", "roster_status"):

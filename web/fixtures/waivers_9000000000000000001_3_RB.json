@@ -898,5 +898,610 @@
   "TE",
   "K",
   "DEF"
- ]
+ ],
+ "upside": {
+  "title": "Upside stash: his role is growing before his points do",
+  "stashes": [
+   {
+    "base_value": 8.06,
+    "scenario_value": 8.06,
+    "points_gain": 0.0,
+    "week": 5,
+    "change_text": "carry share 0% → 44%",
+    "cause_text": "no teammate out, no trade: the coaches changed his role",
+    "since_week": 2,
+    "games_held": 2,
+    "kind": "role_up",
+    "headline": "Upside stash: Kaleb Johnson (RB) — carry share 0% → 44% since week 2",
+    "lines": [
+     "The projection already counts most of it: 8.1 in week 5 if the new role holds, 8.1 as he is. Treat it as a what-if, not a forecast: on 2023–2025, after 266 alerts like this, the what-if was closer to what happened next than the projection 47% of the time — it beat the projection less than half the time, so lean on the projection.",
+     "Why: no teammate out, no trade: the coaches changed his role. Check again after week 6: by then his projection has caught up if it holds."
+    ],
+    "add": {
+     "sleeper_id": "12504",
+     "gsis_id": "00-0040142",
+     "player_name": "Kaleb Johnson",
+     "position": "RB",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zpzc4oobxi8nr5dyonob"
+    },
+    "drop": null,
+    "holds_weekly_gain": null,
+    "holds_horizon_gain": null,
+    "holds_slot": null,
+    "rank": 4
+   }
+  ],
+  "why": "The role alert and the what-if are NFL-wide, priced here in your league's scoring; what claiming him adds to your lineup if the role holds is worked out each night for the leagues League Lab updates, not on request.",
+  "howto": [
+   "**Upside stash**: a free agent whose role grew in his last one to three games (more snaps, targets or carries: a teammate out, a new starter) before his points caught up. **If it holds** is his projection with the bigger role: a what-if, not a forecast.",
+   "**Lineup gain if it holds** adds up this week and the next three in your lineup; most stashes add nothing yet, which is why they are stashes, not starters."
+  ],
+  "source": "on demand"
+ },
+ "trade_lists": {
+  "buy_low": [
+   {
+    "player": {
+     "sleeper_id": "8138",
+     "gsis_id": "00-0037248",
+     "player_name": "James Cook",
+     "position": "RB",
+     "team": "BUF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/anjbznqb9i21wzcgrtbs"
+    },
+    "roster_id": 6,
+    "team_name": "Two-Point Tries",
+    "ppg": 15.4,
+    "xppg": 16.68,
+    "diff_per_game": -1.28,
+    "gain_week": 7.24,
+    "gain_horizon": 17.81,
+    "loss_week": 6.66,
+    "loss_horizon": 15.68,
+    "fit_week": 0.58,
+    "fit_horizon": 2.13
+   },
+   {
+    "player": {
+     "sleeper_id": "12512",
+     "gsis_id": "00-0040784",
+     "player_name": "Quinshon Judkins",
+     "position": "RB",
+     "team": "CLE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ojtce2im0wp2ltyel0vc"
+    },
+    "roster_id": 6,
+    "team_name": "Two-Point Tries",
+    "ppg": 8.4,
+    "xppg": 10.56,
+    "diff_per_game": -2.16,
+    "gain_week": 0.0,
+    "gain_horizon": 2.28,
+    "loss_week": 0.0,
+    "loss_horizon": 0.18,
+    "fit_week": 0.0,
+    "fit_horizon": 2.1
+   },
+   {
+    "player": {
+     "sleeper_id": "8151",
+     "gsis_id": "00-0038134",
+     "player_name": "Kenneth Walker III",
+     "position": "RB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vk6nruaqdewdglofcwwg"
+    },
+    "roster_id": 6,
+    "team_name": "Two-Point Tries",
+    "ppg": 28.95,
+    "xppg": 31.24,
+    "diff_per_game": -2.29,
+    "gain_week": 8.34,
+    "gain_horizon": 23.69,
+    "loss_week": 7.76,
+    "loss_horizon": 21.7,
+    "fit_week": 0.58,
+    "fit_horizon": 1.99
+   },
+   {
+    "player": {
+     "sleeper_id": "9226",
+     "gsis_id": "00-0039040",
+     "player_name": "De'Von Achane",
+     "position": "RB",
+     "team": "MIA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xk1xwio0bryfxo1ylweu"
+    },
+    "roster_id": 6,
+    "team_name": "Two-Point Tries",
+    "ppg": 11.45,
+    "xppg": 15.85,
+    "diff_per_game": -4.4,
+    "gain_week": 4.68,
+    "gain_horizon": 18.38,
+    "loss_week": 4.1,
+    "loss_horizon": 16.56,
+    "fit_week": 0.58,
+    "fit_horizon": 1.82
+   },
+   {
+    "player": {
+     "sleeper_id": "7611",
+     "gsis_id": "00-0036875",
+     "player_name": "Rhamondre Stevenson",
+     "position": "RB",
+     "team": "NE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zmpuirvuw4r04inxth5i"
+    },
+    "roster_id": 4,
+    "team_name": "Kickoff Kings",
+    "ppg": 9.05,
+    "xppg": 11.52,
+    "diff_per_game": -2.47,
+    "gain_week": 0.24,
+    "gain_horizon": 0.24,
+    "loss_week": 0.0,
+    "loss_horizon": 0.0,
+    "fit_week": 0.24,
+    "fit_horizon": 0.24
+   },
+   {
+    "player": {
+     "sleeper_id": "11435",
+     "gsis_id": "00-0038797",
+     "player_name": "Emanuel Wilson",
+     "position": "RB",
+     "team": "SEA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/uorruvczsxzvffpbxu8z"
+    },
+    "roster_id": 2,
+    "team_name": "Waiver Wire Warriors",
+    "ppg": 4.75,
+    "xppg": 11.15,
+    "diff_per_game": -6.4,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 0.0,
+    "loss_horizon": 0.0,
+    "fit_week": 0.0,
+    "fit_horizon": 0.0
+   },
+   {
+    "player": {
+     "sleeper_id": "6806",
+     "gsis_id": "00-0036158",
+     "player_name": "J.K. Dobbins",
+     "position": "RB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cevotvl3ho5h1mioruyg"
+    },
+    "roster_id": 8,
+    "team_name": "Hail Marys",
+    "ppg": 3.6,
+    "xppg": 9.27,
+    "diff_per_game": -5.67,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 0.0,
+    "loss_horizon": 0.0,
+    "fit_week": 0.0,
+    "fit_horizon": 0.0
+   },
+   {
+    "player": {
+     "sleeper_id": "12474",
+     "gsis_id": "00-0040583",
+     "player_name": "Woody Marks",
+     "position": "RB",
+     "team": "HOU",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/y5ntpcenhhhv98uz2fys"
+    },
+    "roster_id": 1,
+    "team_name": "Bench Mob",
+    "ppg": 6.75,
+    "xppg": 9.65,
+    "diff_per_game": -2.9,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 0.0,
+    "loss_horizon": 0.0,
+    "fit_week": 0.0,
+    "fit_horizon": 0.0
+   },
+   {
+    "player": {
+     "sleeper_id": "11581",
+     "gsis_id": "00-0039811",
+     "player_name": "MarShawn Lloyd",
+     "position": "RB",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xp8sd4enimuk4zd0aqgu"
+    },
+    "roster_id": 5,
+    "team_name": "Practice Squad",
+    "ppg": 5.37,
+    "xppg": 8.06,
+    "diff_per_game": -2.7,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 0.0,
+    "loss_horizon": 0.0,
+    "fit_week": 0.0,
+    "fit_horizon": 0.0
+   },
+   {
+    "player": {
+     "sleeper_id": "13414",
+     "gsis_id": "00-0041052",
+     "player_name": "Kaelon Black",
+     "position": "RB",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/nwgkzr1ysr32jc79zfnt"
+    },
+    "roster_id": 4,
+    "team_name": "Kickoff Kings",
+    "ppg": 5.25,
+    "xppg": 5.95,
+    "diff_per_game": -0.7,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 0.0,
+    "loss_horizon": 0.0,
+    "fit_week": 0.0,
+    "fit_horizon": 0.0
+   },
+   {
+    "player": {
+     "sleeper_id": "8136",
+     "gsis_id": "00-0037256",
+     "player_name": "Rachaad White",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wtdhs50gcl2p6vngsnre"
+    },
+    "roster_id": 5,
+    "team_name": "Practice Squad",
+    "ppg": 9.5,
+    "xppg": 9.91,
+    "diff_per_game": -0.41,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 0.0,
+    "loss_horizon": 0.0,
+    "fit_week": 0.0,
+    "fit_horizon": 0.0
+   },
+   {
+    "player": {
+     "sleeper_id": "4866",
+     "gsis_id": "00-0034844",
+     "player_name": "Saquon Barkley",
+     "position": "RB",
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qcayrzjpura2zydszonh"
+    },
+    "roster_id": 5,
+    "team_name": "Practice Squad",
+    "ppg": 6.0,
+    "xppg": 7.97,
+    "diff_per_game": -1.97,
+    "gain_week": 0.0,
+    "gain_horizon": 0.18,
+    "loss_week": 0.0,
+    "loss_horizon": 0.21,
+    "fit_week": 0.0,
+    "fit_horizon": -0.03
+   },
+   {
+    "player": {
+     "sleeper_id": "9224",
+     "gsis_id": "00-0038597",
+     "player_name": "Chase Brown",
+     "position": "RB",
+     "team": "CIN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tch3y6jlj7khvyi9jg0c"
+    },
+    "roster_id": 5,
+    "team_name": "Practice Squad",
+    "ppg": 15.0,
+    "xppg": 18.13,
+    "diff_per_game": -3.13,
+    "gain_week": 5.14,
+    "gain_horizon": 14.28,
+    "loss_week": 5.43,
+    "loss_horizon": 15.74,
+    "fit_week": -0.29,
+    "fit_horizon": -1.46
+   },
+   {
+    "player": {
+     "sleeper_id": "4034",
+     "gsis_id": "00-0033280",
+     "player_name": "Christian McCaffrey",
+     "position": "RB",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck"
+    },
+    "roster_id": 5,
+    "team_name": "Practice Squad",
+    "ppg": 18.2,
+    "xppg": 19.9,
+    "diff_per_game": -1.7,
+    "gain_week": 7.63,
+    "gain_horizon": 25.15,
+    "loss_week": 7.92,
+    "loss_horizon": 26.64,
+    "fit_week": -0.29,
+    "fit_horizon": -1.49
+   },
+   {
+    "player": {
+     "sleeper_id": "7021",
+     "gsis_id": "00-0036139",
+     "player_name": "Rico Dowdle",
+     "position": "RB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mx2bxccuzmdvzbksypws"
+    },
+    "roster_id": 9,
+    "team_name": "Red Zone Regulars",
+    "ppg": 5.25,
+    "xppg": 8.4,
+    "diff_per_game": -3.15,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 0.0,
+    "loss_horizon": 1.93,
+    "fit_week": 0.0,
+    "fit_horizon": -1.93
+   },
+   {
+    "player": {
+     "sleeper_id": "12527",
+     "gsis_id": "00-0040122",
+     "player_name": "Ashton Jeanty",
+     "position": "RB",
+     "team": "LV",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/syspis1mntov9kgspb7r"
+    },
+    "roster_id": 8,
+    "team_name": "Hail Marys",
+    "ppg": 21.5,
+    "xppg": 26.76,
+    "diff_per_game": -5.26,
+    "gain_week": 5.44,
+    "gain_horizon": 26.54,
+    "loss_week": 5.68,
+    "loss_horizon": 30.37,
+    "fit_week": -0.24,
+    "fit_horizon": -3.83
+   },
+   {
+    "player": {
+     "sleeper_id": "7588",
+     "gsis_id": "00-0036997",
+     "player_name": "Javonte Williams",
+     "position": "RB",
+     "team": "DAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xvwroirev2kie6oiphtz"
+    },
+    "roster_id": 8,
+    "team_name": "Hail Marys",
+    "ppg": 16.1,
+    "xppg": 17.5,
+    "diff_per_game": -1.4,
+    "gain_week": 2.68,
+    "gain_horizon": 13.11,
+    "loss_week": 2.92,
+    "loss_horizon": 16.94,
+    "fit_week": -0.24,
+    "fit_horizon": -3.83
+   },
+   {
+    "player": {
+     "sleeper_id": "8228",
+     "gsis_id": "00-0037228",
+     "player_name": "Jaylen Warren",
+     "position": "RB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dkiteytgnxar1mpaxcxv"
+    },
+    "roster_id": 10,
+    "team_name": "Fourth and Long",
+    "ppg": 10.0,
+    "xppg": 13.56,
+    "diff_per_game": -3.56,
+    "gain_week": 0.0,
+    "gain_horizon": 1.04,
+    "loss_week": 0.0,
+    "loss_horizon": 6.74,
+    "fit_week": 0.0,
+    "fit_horizon": -5.7
+   },
+   {
+    "player": {
+     "sleeper_id": "13286",
+     "gsis_id": "00-0041512",
+     "player_name": "Jadarian Price",
+     "position": "RB",
+     "team": "SEA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toy90i08oumgbdlvctja"
+    },
+    "roster_id": 10,
+    "team_name": "Fourth and Long",
+    "ppg": 6.4,
+    "xppg": 10.36,
+    "diff_per_game": -3.96,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 3.07,
+    "loss_horizon": 5.87,
+    "fit_week": -3.07,
+    "fit_horizon": -5.87
+   },
+   {
+    "player": {
+     "sleeper_id": "7543",
+     "gsis_id": "00-0036973",
+     "player_name": "Travis Etienne",
+     "position": "RB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pwko5dybmjie8qqo4qz2"
+    },
+    "roster_id": 10,
+    "team_name": "Fourth and Long",
+    "ppg": 10.95,
+    "xppg": 12.89,
+    "diff_per_game": -1.94,
+    "gain_week": 1.57,
+    "gain_horizon": 4.54,
+    "loss_week": 5.18,
+    "loss_horizon": 13.85,
+    "fit_week": -3.61,
+    "fit_horizon": -9.31
+   },
+   {
+    "player": {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj"
+    },
+    "roster_id": 7,
+    "team_name": "Goal Line Stand",
+    "ppg": 12.0,
+    "xppg": 12.08,
+    "diff_per_game": -0.08,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 10.47,
+    "loss_horizon": 31.31,
+    "fit_week": -10.47,
+    "fit_horizon": -31.31
+   }
+  ],
+  "sell_high": [
+   {
+    "player": {
+     "sleeper_id": "6790",
+     "gsis_id": "00-0036275",
+     "player_name": "D'Andre Swift",
+     "position": "RB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/owpmwzoilitcodc6cmxo"
+    },
+    "roster_id": 7,
+    "team_name": "Goal Line Stand",
+    "ppg": 22.65,
+    "xppg": 18.87,
+    "diff_per_game": 3.79,
+    "gain_week": 4.86,
+    "gain_horizon": 31.59,
+    "loss_week": 4.26,
+    "loss_horizon": 18.55,
+    "fit_week": 0.6,
+    "fit_horizon": 13.04
+   },
+   {
+    "player": {
+     "sleeper_id": "11584",
+     "gsis_id": "00-0039361",
+     "player_name": "Bucky Irving",
+     "position": "RB",
+     "team": "TB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkc00rvnix3f2b96vkwo"
+    },
+    "roster_id": 7,
+    "team_name": "Goal Line Stand",
+    "ppg": 16.65,
+    "xppg": 14.35,
+    "diff_per_game": 2.3,
+    "gain_week": 6.5,
+    "gain_horizon": 35.35,
+    "loss_week": 5.9,
+    "loss_horizon": 22.31,
+    "fit_week": 0.6,
+    "fit_horizon": 13.04
+   }
+  ],
+  "best_buy_by_position": {
+   "QB": {
+    "player": {
+     "sleeper_id": "11560",
+     "gsis_id": "00-0039918",
+     "player_name": "Caleb Williams",
+     "position": "QB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt"
+    },
+    "roster_id": 7,
+    "team_name": "Goal Line Stand",
+    "ppg": 22.99,
+    "xppg": 23.0,
+    "diff_per_game": -0.01,
+    "gain_week": 0.0,
+    "gain_horizon": 6.45,
+    "loss_week": 0.0,
+    "loss_horizon": 0.98,
+    "fit_week": 0.0,
+    "fit_horizon": 5.47
+   },
+   "RB": {
+    "player": {
+     "sleeper_id": "8138",
+     "gsis_id": "00-0037248",
+     "player_name": "James Cook",
+     "position": "RB",
+     "team": "BUF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/anjbznqb9i21wzcgrtbs"
+    },
+    "roster_id": 6,
+    "team_name": "Two-Point Tries",
+    "ppg": 15.4,
+    "xppg": 16.68,
+    "diff_per_game": -1.28,
+    "gain_week": 7.24,
+    "gain_horizon": 17.81,
+    "loss_week": 6.66,
+    "loss_horizon": 15.68,
+    "fit_week": 0.58,
+    "fit_horizon": 2.13
+   },
+   "WR": {
+    "player": {
+     "sleeper_id": "12501",
+     "gsis_id": "00-0040667",
+     "player_name": "Matthew Golden",
+     "position": "WR",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dbjki6b0swksr7mk17wk"
+    },
+    "roster_id": 7,
+    "team_name": "Goal Line Stand",
+    "ppg": 15.43,
+    "xppg": 16.71,
+    "diff_per_game": -1.27,
+    "gain_week": 2.73,
+    "gain_horizon": 11.15,
+    "loss_week": 0.0,
+    "loss_horizon": 0.56,
+    "fit_week": 2.73,
+    "fit_horizon": 10.59
+   }
+  },
+  "buy_line": "**Buy low: ask Goal Line Stand about Matthew Golden (WR).** He scores 1.3 a game below what his usage is worth, adds **+2.7** to your week-4 lineup and costs them **0.0** (fit **+10.6** over weeks 4–7).",
+  "sell_line": "**Sell high: shop Jared Goff (QB) to Practice Squad.** He scores 0.7 a game above what his usage is worth. Their week-4 lineup gains **+0.8**, yours loses **0.0** (fit **+13.5** over weeks 4–7).",
+  "weeks": "weeks 4–7",
+  "howto": [
+   "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG − xPPG**, points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports.",
+   "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week and the next four, in your league's scoring.",
+   "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
+   "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade Finder."
+  ],
+  "source": "app/pages/6_Trade_Finder.py (roster_value.trade_candidates; the card sentences quoted)",
+  "points_source": "priced on request (research.league_season)"
+ }
 }
