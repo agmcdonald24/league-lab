@@ -6,13 +6,18 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/session                         is the gate on, is this browser signed in
     /api/login  /api/logout              the beta password → a signed cookie (or a bearer token)
     /api/leagues                         current-season leagues (ui.current_leagues)
+    /api/leagues?username=               a Sleeper user's leagues this season, their team in each (plan F3)
     /api/leagues/{league_id}/rosters     the team picker's options
     /api/my-week?league=&team=           Home's My Week: record line, the cards (numbers + the cards' own text), lineup;
                                          a league the database does not have is served on demand from Sleeper
                                          (plan E3: ondemand.py; `source=sleeper` forces that path for a known league)
-    /api/player/{gsis}?league=&team=     the player card's sections
+    /api/player/{gsis}?league=&team=     the player card's sections (any league: on demand, plan F3) + rest of season
+    /api/ros?league=&position=&limit=    rest of season: the mart for a house league, priced on request otherwise (F3)
+    /api/record?league=                  our record vs Sleeper's projections (house leagues; F3)
     /api/search?league=&q=               the player card's search box
-    /api/status                          the freshness line and the stale-injury warning
+    /api/status                          the freshness line, the stale-injury warning, Sleeper's cache ages + budget
+Errors are {"error": "<plain words>"} (plus the older "detail"): 404 unknown league / team / player / user,
+502 Sleeper did not answer, 503 the numbers are not ready yet / busy (our Sleeper budget).
 Everything else is the web app (web/dist): a real file, else index.html (the app routes itself).
 """
 
@@ -27,7 +32,9 @@ import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from league_lab import anyleague as A
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import auth, db, myweek, ondemand, player
 from .db import DataNotReady
@@ -52,20 +59,36 @@ app.add_middleware(GZipMiddleware, minimum_size=500)
 JSON_CACHE = "private, max-age=120"
 
 
+# errors: {"error": "<plain words>"} (the contract), "detail" kept for the D7 spike's web client
 @app.exception_handler(NotFound)
 async def _not_found(_req: Request, exc: NotFound):
-    return JSONResponse({"detail": str(exc)}, status_code=404)
+    return JSONResponse({"error": str(exc), "detail": str(exc)}, status_code=404, headers={"Cache-Control": "no-store"})
 
 
 @app.exception_handler(ondemand.SleeperDown)
 async def _sleeper_down(_req: Request, exc: ondemand.SleeperDown):
-    return JSONResponse({"detail": "Sleeper did not answer. Try again in a minute.", "error": str(exc)}, status_code=502)
+    return JSONResponse({"error": "Sleeper did not answer", "detail": "Sleeper did not answer. Try again in a minute.",
+                         "cause": str(exc)}, status_code=502, headers={"Cache-Control": "no-store"})
+
+
+@app.exception_handler(A.SleeperBusy)
+async def _sleeper_busy(_req: Request, exc: A.SleeperBusy):
+    return JSONResponse({"error": "busy, try again in a minute", "detail": "busy, try again in a minute"}, status_code=503,
+                        headers={"Cache-Control": "no-store", "Retry-After": "60"})
 
 
 @app.exception_handler(DataNotReady)
 async def _not_ready(_req: Request, exc: DataNotReady):
-    return JSONResponse({"detail": "This table is not on this database right now. If the data is being refreshed "
-                                   "(nightly), reload in a minute or two.", "relation": str(exc)}, status_code=503)
+    return JSONResponse({"error": "the numbers are not ready yet",
+                         "detail": "This table is not on this database right now. If the data is being refreshed "
+                                   "(nightly), reload in a minute or two.", "relation": str(exc)}, status_code=503,
+                        headers={"Cache-Control": "no-store"})
+
+
+@app.exception_handler(StarletteHTTPException)
+async def _http(_req: Request, exc: StarletteHTTPException):
+    return JSONResponse({"error": str(exc.detail), "detail": exc.detail}, status_code=exc.status_code,
+                        headers=getattr(exc, "headers", None))
 
 
 def require_auth(request: Request) -> None:
@@ -140,8 +163,10 @@ def logout(response: Response) -> dict:
 
 # ---------------------------------------------------------------- data (read-only)
 @app.get("/api/leagues", dependencies=[Depends(require_auth)])
-def leagues(response: Response):
-    return _json(myweek.leagues(), response)
+def leagues(response: Response, username: str | None = None):
+    if username is None:
+        return _json(myweek.leagues(), response)
+    return _json(ondemand.leagues_for_user(username), response)
 
 
 @app.get("/api/leagues/{league_id}/rosters", dependencies=[Depends(require_auth)])
@@ -157,10 +182,23 @@ def my_week(league: str, team: int, response: Response, source: str | None = Non
 
 
 @app.get("/api/player/{gsis}", dependencies=[Depends(require_auth)])
-def player_card(gsis: str, league: str, response: Response, team: int | None = None):
-    out = player.player_card(league, gsis)
+def player_card(gsis: str, league: str, response: Response, team: int | None = None, source: str | None = None):
+    if source == "sleeper" or not myweek.known_league(league):
+        out = ondemand.player_card(league, gsis)
+    else:
+        out = player.player_card(league, gsis)
     out["viewer_roster_id"] = team
     return _json(out, response)
+
+
+@app.get("/api/ros", dependencies=[Depends(require_auth)])
+def ros(league: str, response: Response, position: str = "ALL", limit: int = 50):
+    return _json(ondemand.ros(league, position, limit), response)
+
+
+@app.get("/api/record", dependencies=[Depends(require_auth)])
+def record(league: str, response: Response):
+    return _json(ondemand.record(league), response)
 
 
 @app.get("/api/search", dependencies=[Depends(require_auth)])
@@ -170,7 +208,10 @@ def search(league: str, q: str, response: Response):
 
 @app.get("/api/status", dependencies=[Depends(require_auth)])
 def status(response: Response):
-    return _json(myweek.status(), response)
+    out = myweek.status()
+    out["sleeper"] = A.sleeper().stats()
+    out["board_source"] = A.board_source()
+    return _json(out, response)
 
 
 # ---------------------------------------------------------------- the web app

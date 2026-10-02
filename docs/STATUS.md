@@ -2665,6 +2665,60 @@ Design for Andrew and the PO: `docs/ANY_LEAGUE.md`. Nothing in `app/`, `dbt/`, t
   path; a K / DEF in a scoring no fitted league shares is unvalued; Sleeper's terms for commercial use are Andrew's
   to check. No `--select` appended; no seeds or metrics touched.
 
+## Wave F (Iteration 14)
+
+### F3 2026-10-02 — the API for any league
+
+**What a Sleeper manager gets from the API now, for any league.** Type a Sleeper username → their leagues this season
+and their team in each (`/api/leagues?username=`); My Week with **this week's opponent** and his best lineup value;
+the player card, rest of season (`/api/ros`) priced in their league's scoring; the record for the house leagues. A
+house league gives the same numbers on demand as from the nightly (tested to the cent, opponent and rest of season
+included).
+
+* **Sleeper client** (`src/league_lab/sleeper_client.py`, split out of `anyleague`): caches by kind (player directory a
+  day, on disk in `LEAGUE_LAB_CACHE_DIR`; league / users a day; rosters 10 min; matchups 5 min; user lookups 1 h),
+  the last good answer on failure, a token bucket of 300 calls/min (503 `{"error": "busy, try again in a minute"}`),
+  `/api/status` → `sleeper` (calls, bucket, cache ages per kind, the directory file's age). Budget per active league:
+  `docs/SLEEPER_TERMS.md` (4 calls a first open, 0.3 calls/min kept open, ~1,000 open leagues per process).
+* **F1's read path** (`anyleague.load_board`): `ops.projection_lines` / `ops.projection_ranges` / `ops.kd_lines` /
+  `reference_scorings` when they hold the week (names in `anyleague.NFL_WIDE`, the one place), else E3's borrowing.
+  A league's range reference: exact match on the mapped keys (rounded to 3 places), else the nearest by median
+  |log price ratio| over the reference set. K / DEF priced from their stat lines with `kdef.price` in the league's own
+  scoring (the API now depends on `pydantic-settings`: `kdef` → `rankings` → `config`). Tested in this clone with the
+  tables built by `api/tests/fixtures/f1_tables.sql` (DDL F3 expects + a fill from `ops.projections`; the K / DEF
+  lines are synthetic — `ops.projections` keeps no K / DEF line — PAT-only kickers, sack-only defenses that price back
+  to the Scrubs values).
+* **Evidence** (week 4, this clone): `cd api && uv run pytest -q` **81 passed, 2 skipped** (51 before + 30 in
+  `tests/test_f3.py`); `uv run ruff check src tests app api/league_lab_api api/tests` clean.
+  - NFL-wide board, both house leagues: starters, slots, values, margins, bench and lineup value equal the marts
+    (≤ 0.005), ranges equal (≤ 0.011, an exact reference: `half_ppr_4pt_kdef`, `sf_ppr_6pt_bonuses`); Scrubs K / DEF
+    from lines = the nightly's. Borrowed board unchanged (E3's numbers: roster P90 gap 1.09 / 0.98).
+  - Opponent (fixture: week-3 pairings as week 4): Scrubs 2 vs roster 6, **120.31** on demand = `ops.lineup_totals`;
+    dynasty 12 vs roster 1, **131.91** = `ops.lineup_totals`; both boards.
+  - Rest of season on demand vs `mart_player_ros_projection`: the **same players** (645 Scrubs incl. K / DEF, 581
+    dynasty), ros_points / playoff_points ≤ 0.011, games, position and overall ranks identical — so the on-demand
+    `pos_rank` is the mart's population (every projected player on an active NFL roster, rostered or not); P90 ≤ 0.11 on
+    the NFL-wide board, mean gap 0.99 / 1.40 on the borrowed one. Bijan Robinson, Scrubs: 236.25 over 12 games,
+    196.5–276.0, RB1, playoffs 39.18 — mart and on demand.
+  - Test League (fictional, full PPR 4-pt, sack 2 / fgm_50p 6 / pts_allow_0 12, K + DEF): solved, K and DEF valued from
+    lines (a defense prices at 2 × its Scrubs value: sack 2); on the borrowed board its K / DEF stay unvalued and
+    reported. `/api/leagues?username=test_manager`: 3 leagues, rosters 12 / 2 / 1, labels = `dim_league_season`'s.
+  - Latency (this sandbox, three devs on two cores; fixtures, so no Sleeper time): `/api/my-week` on demand cold
+    483–571 ms / warm 112–137 ms (opponent solve 18–62 ms cold, 5–14 warm); `/api/leagues?username=` 107 ms cold;
+    `/api/ros` on demand cold 1.5–1.8 s (14 weekly boards) / warm 0.13–0.34 s, house league 9 ms; `/api/player` on
+    demand 1.2 s cold (includes rest of season) / 0.6 s; `/api/record` 3–14 ms; `/api/status` 13 ms.
+* **Decisions for the PO**: (1) the database path's opponent also asks Sleeper's matchups (the nightly's
+  `fct_league_matchup` has no week-4 rows yet), falling back to the table; `summary` stays Home.py's copy (parity).
+  (2) Errors carry `error` (contract) and keep `detail` (the D7 web client). (3) `opponent` adds `matchup_id`. (4) On
+  demand the player card lists `missing` (`value.points_per_game`, `signals.upside`) and reads the NFL-wide columns
+  (usage, injury, role alerts) from the first house league's marts. (5) Rest-of-season windows for a new league use
+  ceil(log2(playoff teams)) rounds (the mart's fallback; the bracket call is not spent). (6) Fixture user ids are
+  pseudonymised (`91…`) in the current fixtures (earlier commits still hold the real ids).
+* **Open**: `/api/search` for an unknown league (the card's search box) is not on demand yet; the ROS board loads
+  week by week (one query for all weeks would cut the cold 1.5 s); the Sleeper winners-bracket call for exact playoff
+  rounds; a shared cache / bucket for several processes (Wave G); F1's real column names at integration
+  (`anyleague.NFL_WIDE`).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

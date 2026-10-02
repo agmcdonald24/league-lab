@@ -2,6 +2,14 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave F
+
+- **The API for any Sleeper league (F3).** `/api/leagues?username=` (a user's leagues and their team in each), the
+  week's opponent on `/api/my-week` (Sleeper's matchups; his best lineup solved), the player card and `/api/ros` for any
+  league (priced on request; a house league reproduces the marts to the cent), `/api/record`; F1's NFL-wide tables
+  read when present (`anyleague.NFL_WIDE`), K / DEF priced in any scoring; the Sleeper client with caches, the player
+  directory on disk and a 300-calls-a-minute budget (`docs/SLEEPER_TERMS.md`); JSON errors `{"error": …}`.
+
 ## 2026-10-02 — Wave E
 
 - **Model tests (E4), no production change.** Four feature groups through the harness, 2023–2025, both leagues —

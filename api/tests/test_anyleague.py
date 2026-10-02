@@ -29,6 +29,13 @@ OTHER = {DYNASTY: SCRUBS, SCRUBS: DYNASTY}
 Q = ("p10", "p25", "p50", "p75", "p90")
 
 
+@pytest.fixture(autouse=True)
+def _borrowed_board(monkeypatch):
+    """E3's measures are of the BORROWED board (each house league priced as if new, its ranges from the other):
+    pinned here whatever F1 tables the database has (tests/test_f3.py covers the NFL-wide board)."""
+    monkeypatch.setenv(A.BOARD_SOURCE_ENV, "borrow")
+
+
 @pytest.fixture
 def fixtures(monkeypatch):
     monkeypatch.setenv(A.FIXTURES_ENV, str(FIXTURES))

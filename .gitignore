@@ -13,6 +13,7 @@ dist/
 
 # data, logs, backups (plan §3: never commit raw data, dumps or backups)
 data/
+.cache/
 backups/
 logs/
 *.log
