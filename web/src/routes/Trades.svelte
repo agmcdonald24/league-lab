@@ -83,7 +83,7 @@
   const partner = $derived.by(() => {
     const p = Number(params.get("partner"));
     if (p && others.some((r) => r.roster_id === p)) return p;
-    return best?.partners[0]?.roster_id ?? others[0]?.roster_id ?? null;
+    return top?.partner ?? others[0]?.roster_id ?? null;
   });
 
   // the partner's roster
@@ -96,11 +96,11 @@
   });
 
   const playable = (rows: TeamRosterRow[] | undefined) =>
-    (rows ?? []).filter((r) => r.role !== "empty" && r.sleeper_player_id).sort((a, b) => (b.player_value ?? -1) - (a.player_value ?? -1));
+    (rows ?? []).filter((r) => r.role !== "empty" && r.sleeper_id).sort((a, b) => (b.value ?? -1) - (a.value ?? -1));
   const myPlayers = $derived(playable(mine?.roster));
   const theirPlayers = $derived(playable(theirs?.roster));
-  const give = $derived(parseIds(params.get("give")).filter((id) => myPlayers.some((r) => r.sleeper_player_id === id)));
-  const getIds = $derived(parseIds(params.get("get")).filter((id) => theirPlayers.some((r) => r.sleeper_player_id === id)));
+  const give = $derived(parseIds(params.get("give")).filter((id) => myPlayers.some((r) => r.sleeper_id === id)));
+  const getIds = $derived(parseIds(params.get("get")).filter((id) => theirPlayers.some((r) => r.sleeper_id === id)));
   const pkgKey = $derived(partner !== null && give.length && getIds.length ? `${league}|${team}|${partner}|${[...give].sort()}|${[...getIds].sort()}` : "");
 
   // evaluate the package when it is complete (a short pause, so ticking two players asks once)
@@ -144,14 +144,18 @@
     setParams({ partner: String(p), get: null });
   }
 
-  function tryTrade(p: { roster_id: number; give: TradePlayer[]; get: TradePlayer[] }) {
-    setParams({ partner: String(p.roster_id), give: p.give.map((x) => x.sleeper_id).join(","), get: p.get.map((x) => x.sleeper_id).join(",") });
+  function tryTrade(p: { partner: number; give: TradePlayer[]; get: TradePlayer[] }) {
+    setParams({ partner: String(p.partner), give: p.give.map((x) => x.sleeper_id).join(","), get: p.get.map((x) => x.sleeper_id).join(",") });
     requestAnimationFrame(() => document.getElementById("try-a-trade")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
-  const top = $derived(best?.partners[0] ?? null);
+  const top = $derived(best?.partners.find((p) => p.is_best) ?? best?.partners[0] ?? null);
+  const verdictLess = (r: TradeEval) => (r.headline ?? `**You give ${names(r.give)}; you get ${names(r.get)}.**`).replace(r.verdict, "").trim();
+  const weekly = $derived(
+    result ? result.weeks.map((w, i) => ({ week: w, you_before: result!.before.mine.by_week[i], you_after: result!.after.mine.by_week[i], them_before: result!.before.theirs.by_week[i], them_after: result!.after.theirs.by_week[i] })) : [],
+  );
   const mmax = $derived(Math.max(1, result?.market.give ?? 0, result?.market.get ?? 0));
-  const rmax = $derived(Math.max(1, result?.ros.give ?? 0, result?.ros.get ?? 0));
+  const rmax = $derived(Math.max(1, result?.ros?.give ?? 0, result?.ros?.get ?? 0));
   const teamName = (id: number | null) => rosters.find((r) => r.roster_id === id)?.team_name ?? `Team ${id}`;
   const wantTabs = [
     { key: "ALL", label: "Any" },
@@ -175,18 +179,18 @@
   <Card title={title} pad={false} testid={`pick-${side}`}>
     {#if picked.length}
       <p class="-mt-1 px-4 pb-2 text-sm text-ink-2" data-testid={`picked-${side}`}>
-        {rows.filter((r) => picked.includes(r.sleeper_player_id ?? "")).map((r) => r.player_name).join(" + ")}
+        {rows.filter((r) => picked.includes(r.sleeper_id ?? "")).map((r) => r.player_name).join(" + ")}
       </p>
     {/if}
     {#if !rows.length}
       <div class="space-y-2 p-3"><div class="ll-skel h-10"></div><div class="ll-skel h-10"></div></div>
     {:else}
       <ul class="max-h-[26rem] divide-y divide-line overflow-y-auto">
-        {#each rows as r (r.sleeper_player_id)}
-          {@const on = picked.includes(r.sleeper_player_id ?? "")}
+        {#each rows as r (r.sleeper_id)}
+          {@const on = picked.includes(r.sleeper_id ?? "")}
           <li>
-            <label class="flex min-h-12 cursor-pointer items-center gap-2.5 px-3 py-1.5 {on ? 'bg-accent-soft' : 'hover:bg-raised'}" data-testid={`${side}-option`} data-id={r.sleeper_player_id}>
-              <input type="checkbox" class="h-5 w-5 shrink-0 accent-[var(--ll-accent)]" checked={on} onchange={() => toggle(side, r.sleeper_player_id ?? "")} />
+            <label class="flex min-h-12 cursor-pointer items-center gap-2.5 px-3 py-1.5 {on ? 'bg-accent-soft' : 'hover:bg-raised'}" data-testid={`${side}-option`} data-id={r.sleeper_id}>
+              <input type="checkbox" class="h-5 w-5 shrink-0 accent-[var(--ll-accent)]" checked={on} onchange={() => toggle(side, r.sleeper_id ?? "")} />
               <Headshot url={r.headshot_url} name={r.player_name ?? ""} team={r.team} size={32} />
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-base font-semibold">{r.player_name}</span>
@@ -196,7 +200,7 @@
                   <span class="truncate">{r.role === "starter" ? slotLabel(r.slot) : r.role === "bench" ? "bench" : (r.reason ?? "out")}</span>
                 </span>
               </span>
-              <span class="tabnum shrink-0 text-right text-base font-semibold">{r.role === "unplayable" ? "—" : f1(r.player_value)}</span>
+              <span class="tabnum shrink-0 text-right text-base font-semibold">{r.role === "unplayable" ? "—" : f1(r.value)}</span>
             </label>
           </li>
         {/each}
@@ -216,7 +220,7 @@
         {#if !best}
           <div class="ll-skel h-12" aria-label="Loading" data-testid="loading"></div>
         {:else if top}
-          <p data-testid="best-partner"><strong class="text-ink">Best partner: {top.team_name}.</strong> <Md text={partnerLine(top, best.span)} {ctx} /></p>
+          <p data-testid="best-partner"><Md text={best.words?.headline ?? `**Best partner: ${top.partner_team}.** ${partnerLine(top, best.span)}`} {ctx} /></p>
         {:else}
           <p data-testid="best-partner"><strong class="text-ink">No trade raises both lineups.</strong> Nobody in the league has a player who would improve your lineup over {best.span} and also needs one of yours. Try a trade you have in mind below.</p>
         {/if}
@@ -258,16 +262,16 @@
       {:else}
         {@const r = result}
         <Card tone="accent" testid="trade-result">
-          <p class="text-lg leading-snug" data-testid="trade-headline"><Md text={r.headline ?? `**You give ${names(r.give)}; you get ${names(r.get)}.**`} {ctx} /></p>
+          <p class="text-lg leading-snug" data-testid="trade-headline"><Md text={verdictLess(r)} {ctx} /></p>
           <p class="mt-2 text-lg leading-snug font-semibold text-ink" data-testid="verdict">{r.verdict}</p>
 
           <div class="mt-4 grid grid-cols-2 gap-2 wide:grid-cols-4" data-testid="fit-tiles">
-            <StatTile label="You · this week" value={s1(r.fit.mine.week)} caption={`${f2(r.before.mine.week)} → ${f2(r.after.mine.week)}`} />
-            <StatTile label={`You · ${r.span}`} value={s1(r.fit.mine.horizon)} caption={`${f1(r.before.mine.horizon)} → ${f1(r.after.mine.horizon)}`} />
-            <StatTile label={`${r.partner_team_name} · this week`} value={s1(r.fit.theirs.week)} caption={`${f2(r.before.theirs.week)} → ${f2(r.after.theirs.week)}`} />
-            <StatTile label={`${r.partner_team_name} · ${r.span}`} value={s1(r.fit.theirs.horizon)} caption={`${f1(r.before.theirs.horizon)} → ${f1(r.after.theirs.horizon)}`} />
+            <StatTile label="You · this week" value={s1(r.fit.this_week.mine)} caption={`${f2(r.before.mine.this_week)} → ${f2(r.after.mine.this_week)}`} />
+            <StatTile label={`You · ${r.span}`} value={s1(r.fit.next_4.mine)} caption={`${f1(r.before.mine.horizon)} → ${f1(r.after.mine.horizon)}`} />
+            <StatTile label={`${r.partner_team} · this week`} value={s1(r.fit.this_week.theirs)} caption={`${f2(r.before.theirs.this_week)} → ${f2(r.after.theirs.this_week)}`} />
+            <StatTile label={`${r.partner_team} · ${r.span}`} value={s1(r.fit.next_4.theirs)} caption={`${f1(r.before.theirs.horizon)} → ${f1(r.after.theirs.horizon)}`} />
           </div>
-          {#if r.fit.line}<p class="mt-2 text-sm text-ink-2"><Md text={r.fit.line} {ctx} /></p>{/if}
+          {#if r.fit.words}<p class="mt-2 text-sm text-ink-2"><Md text={r.fit.words} {ctx} /></p>{/if}
 
           <div class="mt-4 grid gap-4 wide:grid-cols-2">
             <div data-testid="market">
@@ -276,61 +280,55 @@
                 <Bar label="You give" value={r.market.give} max={mmax} display={fmt.whole(r.market.give)} color="var(--ll-div-hot)" />
                 <Bar label="You get" value={r.market.get} max={mmax} display={fmt.whole(r.market.get)} />
               </div>
-              {#if r.market.line}<p class="mt-2 text-sm text-ink-2"><Md text={r.market.line} {ctx} /></p>{/if}
+              {#if r.market.words}<p class="mt-2 text-sm text-ink-2"><Md text={r.market.words} {ctx} /></p>{/if}
             </div>
-            <div data-testid="ros">
-              <div class="ll-label mb-2">Rest of season{r.ros.window ? ` · ${r.ros.window}` : ""}</div>
-              <div class="space-y-2">
-                <Bar label="You give" value={r.ros.give} max={rmax} display={fmt.whole(r.ros.give)} color="var(--ll-div-hot)" />
-                <Bar label="You get" value={r.ros.get} max={rmax} display={fmt.whole(r.ros.get)} />
+            {#if r.ros}
+              <div data-testid="ros">
+                <div class="ll-label mb-2">Rest of season{r.ros.window ? ` · ${r.ros.window}` : ""}</div>
+                <div class="space-y-2">
+                  <Bar label="You give" value={r.ros.give} max={rmax} display={fmt.whole(r.ros.give)} color="var(--ll-div-hot)" />
+                  <Bar label="You get" value={r.ros.get} max={rmax} display={fmt.whole(r.ros.get)} />
+                </div>
+                <p class="mt-2 text-sm text-ink-2">
+                  The players' plain totals up to this league's final ({(r.ros.get ?? 0) - (r.ros.give ?? 0) >= 0 ? "+" : "−"}{Math.abs((r.ros.get ?? 0) - (r.ros.give ?? 0))}), before the roster spot a lopsided trade frees or fills.
+                </p>
               </div>
-              <p class="mt-2 text-sm text-ink-2">
-                The players' plain totals up to this league's final ({(r.ros.get ?? 0) - (r.ros.give ?? 0) >= 0 ? "+" : "−"}{Math.abs((r.ros.get ?? 0) - (r.ros.give ?? 0))}), before the roster spot a lopsided trade frees or fills.
-              </p>
-            </div>
+            {/if}
           </div>
 
-          {#if r.sides}
-            {@const sizes = [
-              ...r.sides.mine.cuts.map((c) => `you must cut ${c.player_name} (costs ${f1(c.horizon_loss)} over ${r.span})`),
-              ...(r.sides.mine.opened ? [`you open ${r.sides.mine.opened === 1 ? "a spot" : `${r.sides.mine.opened} spots`}`] : []),
-              ...r.sides.theirs.cuts.map((c) => `they must cut ${c.player_name} (costs ${f1(c.horizon_loss)} over ${r.span})`),
-              ...(r.sides.theirs.opened ? [`they open ${r.sides.theirs.opened === 1 ? "a spot" : `${r.sides.theirs.opened} spots`}`] : []),
-            ]}
-            <p class="mt-3 text-sm text-ink-2" data-testid="roster-size">Roster size: {sizes.length ? sizes.join("; ") : `no change (${r.give.length} for ${r.get.length})`}.</p>
-          {/if}
+          {#if r.ranks?.words}<p class="mt-3 text-sm text-ink-2" data-testid="rank-change"><Md text={r.ranks.words} {ctx} /></p>{/if}
+          {#if r.size_words}<p class="mt-2 text-sm text-ink-2" data-testid="roster-size"><Md text={r.size_words} {ctx} /></p>{/if}
         </Card>
 
-        {#if r.sides}
+        {#if r.lineups}
           <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
-            {#each [{ s: r.sides.mine, who: "Your lineup", b: r.before.mine, a: r.after.mine }, { s: r.sides.theirs, who: `${r.partner_team_name}'s lineup`, b: r.before.theirs, a: r.after.theirs }] as side (side.who)}
+            {#each [{ l: r.lineups.mine, s: r.sides.mine, who: "Your lineup", b: r.before.mine, a: r.after.mine }, { l: r.lineups.theirs, s: r.sides.theirs, who: `${r.partner_team}'s lineup`, b: r.before.theirs, a: r.after.theirs }] as side (side.who)}
               <Card title={`${side.who}, week ${r.week}`} pad={false} testid="lineup-after">
                 <p class="px-4 pb-2 text-base">
-                  <strong class="tabnum">{f2(side.b.week)} → {f2(side.a.week)}</strong>
+                  <strong class="tabnum">{f2(side.b.this_week)} → {f2(side.a.this_week)}</strong>
                   <span class="text-ink-2">({s1(side.s.gain_week)}) · depth {f1(side.b.bench)} → {f1(side.a.bench)}</span>
                 </p>
                 <ul class="divide-y divide-line">
-                  {#each side.s.lineup as row, i (`${row.slot}-${i}`)}
-                    <li class="grid min-h-11 grid-cols-[4.5rem_minmax(0,1fr)_3.25rem_3.25rem] items-center gap-2 px-3 py-1 {row.is_new ? 'bg-accent-soft' : ''}">
+                  {#each side.l.slots as row, i (`${row.slot}-${i}`)}
+                    {@const isNew = (row.player_name ?? "").endsWith(" (new)")}
+                    <li class="grid min-h-11 grid-cols-[4.5rem_minmax(0,1fr)_3.25rem_3.25rem] items-center gap-2 px-3 py-1 {isNew ? 'bg-accent-soft' : ''}">
                       <span class="text-sm font-semibold text-ink-3">{slotLabel(row.slot)}</span>
                       <span class="min-w-0 truncate text-base">
                         {#if href(row.gsis_id)}<a class="ll-name" href={href(row.gsis_id)}>{row.player_name ?? "—"}</a>{:else}{row.player_name ?? "—"}{/if}
-                        {#if row.is_new}<span class="ml-1 rounded-sm bg-accent px-1 text-[10px] font-bold text-on-accent uppercase">new</span>{/if}
                       </span>
                       <span class="tabnum text-right text-base">{f2(row.value)}</span>
                       <span class="tabnum text-right text-sm {row.change == null ? 'text-ink-3' : row.change > 0 ? 'text-good' : 'text-bad'}">{row.change == null ? "" : s1(row.change)}</span>
                     </li>
                   {/each}
                 </ul>
-                {#if side.s.closest_after}
-                  <p class="px-4 py-2 text-xs text-ink-3">Closest call after: {side.s.closest_after.player_name} at {slotLabel(side.s.closest_after.slot)}, {f2(side.s.closest_after.margin)} ahead of the next option.</p>
-                {/if}
+                {#each side.l.notes as note, i (i)}<p class="px-4 pt-2 text-xs text-ink-2">{note}</p>{/each}
+                {#if side.l.closest_call}<p class="px-4 py-2 text-xs text-ink-3">Closest call after: {side.l.closest_call}.</p>{/if}
               </Card>
             {/each}
           </div>
         {/if}
 
-        {#if r.weekly?.length}
+        {#if weekly.length}
           <Expander title={`Week by week (${r.span})`} testid="weekly">
             <table class="w-full table-fixed text-base" data-testid="weekly-table">
               <thead>
@@ -339,7 +337,7 @@
                 </tr>
               </thead>
               <tbody>
-                {#each r.weekly as w (w.week)}
+                {#each weekly as w (w.week)}
                   <tr class="border-t border-line">
                     <td class="py-1.5">{w.week}</td><td class="tabnum text-right">{f1(w.you_before)}</td><td class="tabnum text-right font-semibold">{f1(w.you_after)}</td><td class="tabnum text-right">{f1(w.them_before)}</td><td class="tabnum text-right font-semibold">{f1(w.them_after)}</td>
                   </tr>
@@ -363,12 +361,12 @@
       {:else if !finder.partners.length}
         <p class="ll-empty" data-testid="finder-empty">No trade that raises both lineups brings you {want === "ALL" ? "anyone" : `a ${want}`}. Try a trade you have in mind above.</p>
       {:else}
-        {@const gmax = Math.max(1, ...finder.partners.flatMap((p) => [p.my_horizon, p.their_horizon]))}
+        {@const gmax = Math.max(1, ...finder.partners.flatMap((p) => [p.you_gain_horizon, p.they_gain_horizon]))}
         <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
-          {#each finder.partners.slice(0, 12) as p, i (`${p.roster_id}-${p.shape}-${i}`)}
+          {#each finder.partners.slice(0, 12) as p, i (`${p.partner}-${p.shape}-${i}`)}
             <Card testid="partner-row">
               <div class="flex items-baseline justify-between gap-2">
-                <span class="min-w-0 truncate text-lg font-bold">{p.team_name}</span>
+                <span class="min-w-0 truncate text-lg font-bold">{p.partner_team}</span>
                 <span class="ll-label shrink-0">{p.shape}</span>
               </div>
               <div class="mt-2 space-y-1.5 text-base">
@@ -376,17 +374,17 @@
                 <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"><span class="ll-label w-14">You give</span>{#each p.give as x (x.sleeper_id)}{@render face(x)}{/each}</div>
               </div>
               <div class="mt-3 grid grid-cols-2 gap-3">
-                <Bar label="You" value={p.my_horizon} max={gmax} display={s1(p.my_horizon)} thick={6} />
-                <Bar label="Them" value={p.their_horizon} max={gmax} display={s1(p.their_horizon)} thick={6} />
+                <Bar label={`You · ${finder.span}`} value={p.you_gain_horizon} max={gmax} display={s1(p.you_gain_horizon)} thick={6} />
+                <Bar label="Them" value={p.they_gain_horizon} max={gmax} display={s1(p.they_gain_horizon)} thick={6} />
               </div>
               <div class="mt-3 flex items-center justify-between gap-2">
-                <span class="text-xs text-ink-3">Market: give {fmt.whole(p.market_out)}, get {fmt.whole(p.market_in)} · this week you {s1(p.my_week)}</span>
+                <span class="text-xs text-ink-3">Market: give {fmt.whole(p.price_out)}, get {fmt.whole(p.price_in)} · this week you {s1(p.you_gain_week)}</span>
                 <button type="button" class="min-h-9 shrink-0 rounded-md border border-line-strong px-3 text-sm font-semibold" onclick={() => tryTrade(p)} data-testid="try-partner">Try it</button>
               </div>
             </Card>
           {/each}
         </div>
-        {#if finder.none.length}<p class="text-sm text-ink-3">No trade helps both lineups with: {finder.none.join(", ")}.</p>{/if}
+        {#if finder.no_trade_with?.length}<p class="text-sm text-ink-3">No trade helps both lineups with: {finder.no_trade_with.join(", ")}.</p>{/if}
       {/if}
     </section>
 

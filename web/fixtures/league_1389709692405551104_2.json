@@ -1,7 +1,7 @@
 {
  "league_id": "1389709692405551104",
  "source": "database",
- "roster_id": null,
+ "roster_id": 2,
  "season": 2026,
  "profiles": [
   {
@@ -5180,7 +5180,7 @@
   }
  ],
  "words": {
-  "headline": "**Luckiest by schedule: Victory is Mine! (+1.6 wins); unluckiest: GoodGameBuddy (-1.3)** — 2026, 2 weeks.",
+  "headline": "**You've been the 5th-unluckiest team by schedule (-0.2 wins); your bench has left 7 points unstarted** (the fewest in the league, 2 weeks).",
   "source": "quoted from app/pages/8_League.py (the first line)"
  }
 }

@@ -1,11 +1,173 @@
 {
  "league_id": "1321941740235550720",
- "team": 12,
+ "source": "database",
+ "roster_id": 12,
+ "want": "TE",
  "week": 4,
  "span": "weeks 4–7",
- "want": "TE",
- "partners": [],
- "none": [
-  "masonbrandonn"
- ]
+ "partners": [
+  {
+   "partner": 7,
+   "partner_team": "Chillen wit Mahomes",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "11559",
+     "gsis_id": "00-0039917",
+     "player_name": "Michael Penix Jr.",
+     "position": "QB",
+     "team": "ATL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
+     "this_week": 18.77,
+     "cannot_play": null,
+     "market_price": 193,
+     "season_points": 258,
+     "roster_id": 12
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "1466",
+     "gsis_id": "00-0030506",
+     "player_name": "Travis Kelce",
+     "position": "TE",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+     "this_week": 12.46,
+     "cannot_play": null,
+     "market_price": 36,
+     "season_points": 164,
+     "roster_id": 7
+    }
+   ],
+   "you_gain_week": 1.23,
+   "you_gain_horizon": 4.3,
+   "they_gain_week": 0.0,
+   "they_gain_horizon": 8.19,
+   "price_out": 193,
+   "price_in": 36
+  },
+  {
+   "partner": 7,
+   "partner_team": "Chillen wit Mahomes",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "11610",
+     "gsis_id": "00-0039880",
+     "player_name": "Malik Washington",
+     "position": "WR",
+     "team": "MIA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dmaiwnmaal9nrwfskl28",
+     "this_week": 10.16,
+     "cannot_play": null,
+     "market_price": 25,
+     "season_points": 150,
+     "roster_id": 12
+    },
+    {
+     "sleeper_id": "11559",
+     "gsis_id": "00-0039917",
+     "player_name": "Michael Penix Jr.",
+     "position": "QB",
+     "team": "ATL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
+     "this_week": 18.77,
+     "cannot_play": null,
+     "market_price": 193,
+     "season_points": 258,
+     "roster_id": 12
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "1466",
+     "gsis_id": "00-0030506",
+     "player_name": "Travis Kelce",
+     "position": "TE",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+     "this_week": 12.46,
+     "cannot_play": null,
+     "market_price": 36,
+     "season_points": 164,
+     "roster_id": 7
+    }
+   ],
+   "you_gain_week": 1.23,
+   "you_gain_horizon": 4.3,
+   "they_gain_week": 0.0,
+   "they_gain_horizon": 8.66,
+   "price_out": 218,
+   "price_in": 36
+  },
+  {
+   "partner": 5,
+   "partner_team": "The72Repeat",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "11559",
+     "gsis_id": "00-0039917",
+     "player_name": "Michael Penix Jr.",
+     "position": "QB",
+     "team": "ATL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
+     "this_week": 18.77,
+     "cannot_play": null,
+     "market_price": 193,
+     "season_points": 258,
+     "roster_id": 12
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "10236",
+     "gsis_id": "00-0038933",
+     "player_name": "Dalton Kincaid",
+     "position": "TE",
+     "team": "BUF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z7k857flehljboaixj8m",
+     "this_week": 11.53,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 145,
+     "roster_id": 5
+    }
+   ],
+   "you_gain_week": 0.3,
+   "you_gain_horizon": 0.32,
+   "they_gain_week": -0.81,
+   "they_gain_horizon": 17.89,
+   "price_out": 193,
+   "price_in": 17
+  }
+ ],
+ "no_trade_with": [
+  "Pitts n’ Titts",
+  "Hakuna Nacua",
+  "Owner Of @kuch4120",
+  "masonbrandonn",
+  "Watsconsent",
+  "Taco Corp.",
+  "Them GriDDy Njigba’s",
+  "Ward of the Rings",
+  "2 da Moon wit Love"
+ ],
+ "words": {
+  "headline": "**Best partner: Chillen wit Mahomes (blatta24).** Your [Malik Washington](/player/00-0039880) and [Michael Penix Jr.](/player/00-0039917) for their [Travis Kelce](/player/00-0030506): you **+1.2** this week and **+4.3** over weeks 4–7, them **+0.0** and **+8.7**.",
+  "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"
+ },
+ "search": {
+  "candidates": 436,
+  "bar_sets": 29,
+  "evaluated": 13,
+  "seconds": 0.122
+ }
 }

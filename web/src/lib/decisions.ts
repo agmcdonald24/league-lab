@@ -1,7 +1,7 @@
 // The decision screens' words (plan G4): the Streamlit pages' sentences, ported where the API does not send them
 // (app/pages/2_Waiver_Wire.py `_headline`, 1_Team_Hub.py's cards, 8_League.py's luck line, 6_Trade_Finder.py's
 // partner card). Numbers keep their units; unknown is not zero (docs/WORDS.md).
-import type { AllPlayRow, LeagueView, PartnerRow, Team, TradePlayer, WaiverMove } from "./api";
+import type { AllPlayRow, LeagueView, PartnerRow, Team, TradePlayer, WaiverMove, Waivers } from "./api";
 
 export const f1 = (x: number | null | undefined): string => (x == null ? "—" : x.toFixed(1));
 export const f2 = (x: number | null | undefined): string => (x == null ? "—" : x.toFixed(2));
@@ -19,50 +19,41 @@ export function ordinal(n: number): string {
 export const slotLabel = (s: string | null | undefined): string => (s ?? "").replace("SUPER_FLEX", "Superflex");
 
 // ------------------------------------------------------------------ waivers
-function span(m: WaiverMove): string {
-  const n = m.horizon_last_week - m.week + 1;
+function span(m: WaiverMove, week: number, last: number): string {
+  void m;
+  const n = last - week + 1;
   return n > 1 ? `the next ${n} weeks` : "this week only";
 }
 
-function weeksText(m: WaiverMove): string {
-  const helped = (m.week_gains ?? []).map((g, i) => (g != null && g > 0.005 ? m.week + i : null)).filter((w): w is number => w !== null);
+function weeksText(m: WaiverMove, week: number): string {
+  const helped = (m.week_gains ?? []).map((g, i) => (g != null && g > 0.005 ? week + i : null)).filter((w): w is number => w !== null);
   if (!helped.length) return "";
   return (helped.length === 1 ? "week " : "weeks ") + helped.join(", ");
 }
 
-/** The card's answer in one sentence: "Claim A (TE), drop B: +2.9 this week at TE, +6.1 over the next 4 weeks". */
-export function waiverHeadline(m: WaiverMove): string {
-  if (m.headline) return m.headline;
-  const who = `${m.add_name} (${m.add_position})`;
-  const claim = m.drop_name ? `Claim ${who}, drop ${m.drop_name}` : `Claim ${who}, no drop needed`;
+/** The card's answer in one sentence (the API's `words.headline`, else 2_Waiver_Wire.py `_headline` here):
+ * "Claim A (TE), drop B: +2.9 this week at TE, +6.1 over the next 4 weeks". */
+export function waiverHeadline(m: WaiverMove, week = 0, last = 0): string {
+  if (m.words?.headline) return m.words.headline;
+  const who = `${m.add.player_name} (${m.add.position})`;
+  const claim = m.drop ? `Claim ${who}, drop ${m.drop.player_name}` : `Claim ${who}, no drop needed`;
   const wk = m.weekly_gain;
   const hz = m.horizon_gain;
   const sg = (x: number) => `${x >= 0 ? "+" : "−"}${Math.abs(x).toFixed(1)}`;
-  if (wk > 0) return `${claim}: ${sg(wk)} this week${m.add_slot ? ` at ${m.add_slot}` : ""}, ${sg(hz)} over ${span(m)}`;
-  const wt = weeksText(m);
+  if (wk > 0) return `${claim}: ${sg(wk)} this week${m.add_slot ? ` at ${m.add_slot}` : ""}, ${sg(hz)} over ${span(m, week, last)}`;
+  const wt = weeksText(m, week);
   const when = wt && Math.abs(wk) < 0.05 ? `, all in ${wt}` : wt ? ` (${wt})` : "";
   const thisWeek = Math.abs(wk) < 0.05 ? "" : `, ${sg(wk)} this week`;
-  return `${claim}: ${sg(hz)} over ${span(m)}${when}${thisWeek}`;
+  return `${claim}: ${sg(hz)} over ${span(m, week, last)}${when}${thisWeek}`;
 }
 
-/** The screen's first line (the answer): the top claim's gains, or "Nothing beats what you have". */
-export function waiverAnswer(moves: WaiverMove[], week: number, lastWeek: number, lineup: number | null): { title: string; text: string } {
-  const real = moves.filter((m) => m.list_kind !== "nothing");
-  if (!real.length) {
-    const n = lastWeek - week + 1;
-    const over = moves[0]?.open_roster_spots != null && moves[0].open_roster_spots < 0 ? " Your roster is over the limit, so no single claim is legal." : "";
-    return {
-      title: "Nothing beats what you have.",
-      text: `No free agent improves your lineup this week or over the next ${n} weeks (week-${week} lineup ${f1(lineup)}).${over}`,
-    };
-  }
-  const top = real.find((m) => m.list_kind === "start_now");
-  if (!top)
-    return {
-      title: `Nothing on the wire beats this week's lineup (${f1(lineup)} for week ${week}).`,
-      text: "The claims below help in a later week: a bye or an injury you can cover now.",
-    };
-  return { title: waiverHeadline(top), text: "" };
+/** The screen's first line (markdown): the top claim's sentence, else the API's notice ("Nothing beats what you have."). */
+export function waiverAnswer(w: Waivers): string {
+  const top = w.cards.find((c) => c.title === "Top claim");
+  if (top) return `**${waiverHeadline(top.move, w.week ?? 0, w.horizon_last_week ?? 0)}**`;
+  if (w.notice) return w.notice;
+  const n = (w.horizon_last_week ?? 0) - (w.week ?? 0) + 1;
+  return `**Nothing beats what you have.**  \nNo free agent improves your lineup this week or over the next ${n} weeks (week-${w.week} lineup ${f1(w.lineup_value)}).`;
 }
 
 /** "most weeks 9–16" (P25–P75), else "a bad week to a good week 6–19" (P10–P90), else nothing. */
@@ -74,15 +65,17 @@ export function rangeWords(p25?: number | null, p75?: number | null, p10?: numbe
 
 // ------------------------------------------------------------------ team hub
 export function rankText(team: Team, measure: "lineup_value" | "horizon_value" | "bench_value"): string {
-  const r = team.rankings.find((x) => x.measure === measure);
+  const r = team.ranks?.[measure];
   return r ? `${ordinal(r.league_rank)} of ${r.n_rosters} in the league` : "";
 }
 
+/** The answer (markdown): 1_Team_Hub.py's first line as the API quotes it, else written here. */
 export function teamAnswer(t: Team): string {
-  return `Week ${t.value.week}: your best lineup projects ${f1(t.value.lineup_value)}, ${rankText(t, "lineup_value")}.`;
+  return t.words?.lineup?.[0] ?? `**Week ${t.value.week}: your best lineup projects ${f1(t.value.lineup_value)}** — ${rankText(t, "lineup_value")}.`;
 }
 
 export function closestCall(t: Team): string | null {
+  if (t.words?.lineup?.[1]) return t.words.lineup[1];
   const v = t.value;
   if (!v.weakest_slot) return (v.n_locked ?? 0) > 0 ? "Every starter's game has kicked off: no lineup calls left this week." : null;
   if (v.weakest_replacement_name)
@@ -94,7 +87,8 @@ export function closestCall(t: Team): string | null {
 export function acquiredLine(t: Team): string | null {
   const starters = t.roster.filter((r) => r.role === "starter");
   if (!starters.length) return null;
-  const how = (r: (typeof starters)[number]) => (r.acquired_how_by_manager === "free_agent" ? "waiver" : (r.acquired_how_by_manager ?? "unknown"));
+  if (!starters.some((r) => r.acquired_how)) return null; // an on-demand league: no history to read
+  const how = (r: (typeof starters)[number]) => (r.acquired_how === "free_agent" ? "waiver" : (r.acquired_how ?? "unknown"));
   const priority: Record<string, number> = { trade: 0, draft: 1, inherited: 2, waiver: 3, commissioner: 4 };
   const counts = new Map<string, number>();
   for (const r of starters) counts.set(how(r), (counts.get(how(r)) ?? 0) + 1);
@@ -113,11 +107,13 @@ export function acquiredLine(t: Team): string | null {
 // ------------------------------------------------------------------ league
 const nth = (k: number, word: string) => (k === 1 ? `the ${word}` : `the ${ordinal(k)}-${word}`);
 
-/** League page's answer (8_League.py): your luck and your bench, or the league's luckiest / unluckiest without a team. */
+/** League page's answer (markdown; 8_League.py's first line as the API quotes it, else written here): your luck and
+ * your bench, or the league's luckiest / unluckiest without a team. The bench part needs the manager profiles (house leagues). */
 export function luckLine(v: LeagueView, team: number | null): string {
+  if (v.words?.headline) return v.words.headline;
   const rows = v.all_play.filter((r) => r.luck_wins != null);
-  const bench = new Map(v.profiles.map((p) => [p.roster_id, p.total_bench_points_left ?? 0]));
-  const weeks = `${v.weeks_played} week${v.weeks_played === 1 ? "" : "s"}`;
+  const bench = new Map((v.profiles ?? []).map((p) => [p.roster_id, p.total_bench_points_left ?? 0]));
+  const weeks = `${v.weeks_scored} week${v.weeks_scored === 1 ? "" : "s"}`;
   if (!rows.length) return "No scored weeks yet this season: luck shows up after week 1.";
   const mine = team === null ? undefined : rows.find((r) => r.roster_id === team);
   if (mine) {
@@ -126,6 +122,7 @@ export function luckLine(v: LeagueView, team: number | null): string {
     if (Math.abs(luck) < 0.05) luckTxt = "Your record is exactly what your points deserve";
     else if (luck < 0) luckTxt = `You've been ${nth(rows.filter((r) => (r.luck_wins as number) < luck).length + 1, "unluckiest")} team by schedule (${s1(luck)} wins)`;
     else luckTxt = `You've been ${nth(rows.filter((r) => (r.luck_wins as number) > luck).length + 1, "luckiest")} team by schedule (${s1(luck)} wins)`;
+    if (!bench.size) return `**${luckTxt}** (${weeks}).`;
     const b = bench.get(mine.roster_id) ?? 0;
     const kb = [...bench.values()].filter((x) => x > b).length + 1;
     const n = bench.size;
@@ -133,11 +130,7 @@ export function luckLine(v: LeagueView, team: number | null): string {
     return `**${luckTxt}; your bench has left ${Math.round(b)} points unstarted** (${where}, ${weeks}).`;
   }
   const lk = [...rows].sort((a, b) => (b.luck_wins as number) - (a.luck_wins as number));
-  const bn = [...v.profiles].sort((a, b) => (b.total_bench_points_left ?? 0) - (a.total_bench_points_left ?? 0))[0];
-  return (
-    `**Luckiest by schedule: ${lk[0].team_name} (${s1(lk[0].luck_wins)} wins); unluckiest: ${lk[lk.length - 1].team_name} ` +
-    `(${s1(lk[lk.length - 1].luck_wins)}). Most points left on the bench: ${bn.team_name} (${Math.round(bn.total_bench_points_left ?? 0)})**: ${v.season}, ${weeks}.`
-  );
+  return `**Luckiest by schedule: ${lk[0].team_name} (${s1(lk[0].luck_wins)} wins); unluckiest: ${lk[lk.length - 1].team_name} (${s1(lk[lk.length - 1].luck_wins)})**: ${v.season}, ${weeks}.`;
 }
 
 export function allPlayRecord(r: AllPlayRow): string {
@@ -164,8 +157,8 @@ export function names(ps: TradePlayer[]): string {
 /** The partner finder's card: "Your A for their B: you +3.6 this week and +22.1 over weeks 4–7, them +5.6 and +22.0." */
 export function partnerLine(p: PartnerRow, span: string): string {
   return (
-    `Your ${names(p.give)} for their ${names(p.get)}: you **${s1(p.my_week)}** this week and **${s1(p.my_horizon)}** over ${span}, ` +
-    `them **${s1(p.their_week)}** and **${s1(p.their_horizon)}**.`
+    `Your ${names(p.give)} for their ${names(p.get)}: you **${s1(p.you_gain_week)}** this week and **${s1(p.you_gain_horizon)}** over ${span}, ` +
+    `them **${s1(p.they_gain_week)}** and **${s1(p.they_gain_horizon)}**.`
   );
 }
 

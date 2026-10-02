@@ -1,15 +1,116 @@
 {
  "league_id": "1389709692405551104",
- "team": 2,
+ "source": "database",
+ "roster_id": 2,
+ "want": "TE",
  "week": 4,
  "span": "weeks 4–7",
- "want": "TE",
  "partners": [
   {
-   "roster_id": 7,
-   "team_name": "PSYCHO SILVERBACKS",
-   "manager_name": "MikeTirotti",
+   "partner": 4,
+   "partner_team": "Scrote Squad",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "this_week": 9.72,
+     "cannot_play": null,
+     "market_price": 9,
+     "season_points": 137,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+     "this_week": 7.38,
+     "cannot_play": null,
+     "market_price": 1,
+     "season_points": 110,
+     "roster_id": 4
+    }
+   ],
+   "you_gain_week": -0.52,
+   "you_gain_horizon": 3.29,
+   "they_gain_week": 1.53,
+   "they_gain_horizon": 2.02,
+   "price_out": 9,
+   "price_in": 1
+  },
+  {
+   "partner": 4,
+   "partner_team": "Scrote Squad",
    "shape": "1-for-2",
+   "kind": "2-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "this_week": 9.72,
+     "cannot_play": null,
+     "market_price": 9,
+     "season_points": 137,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+     "this_week": 7.38,
+     "cannot_play": null,
+     "market_price": 1,
+     "season_points": 110,
+     "roster_id": 4
+    },
+    {
+     "sleeper_id": "11604",
+     "gsis_id": "00-0039338",
+     "player_name": "Brock Bowers",
+     "position": "TE",
+     "team": "LV",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/waorceny0ggpaeckaol8",
+     "this_week": 6.02,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 84,
+     "roster_id": 4
+    }
+   ],
+   "you_gain_week": -0.52,
+   "you_gain_horizon": 3.29,
+   "they_gain_week": 1.53,
+   "they_gain_horizon": 2.02,
+   "price_out": 9,
+   "price_in": 1
+  },
+  {
+   "partner": 9,
+   "partner_team": "Negrodamus",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
    "give": [
     {
      "sleeper_id": "12507",
@@ -18,12 +119,67 @@
      "position": "RB",
      "team": "LAC",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
-     "value": 11.28,
-     "reason": null,
+     "this_week": 11.28,
+     "cannot_play": null,
      "market_price": 43,
      "season_points": 170,
-     "ros_points": 145.43,
-     "ros_rank_pos": 17
+     "roster_id": 2
+    },
+    {
+     "sleeper_id": "12487",
+     "gsis_id": "00-0040737",
+     "player_name": "Terrance Ferguson",
+     "position": "TE",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg",
+     "this_week": 5.79,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 86,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "10859",
+     "gsis_id": "00-0039065",
+     "player_name": "Sam LaPorta",
+     "position": "TE",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+     "this_week": 10.88,
+     "cannot_play": null,
+     "market_price": 32,
+     "season_points": 141,
+     "roster_id": 9
+    }
+   ],
+   "you_gain_week": -0.4,
+   "you_gain_horizon": 0.99,
+   "they_gain_week": -2.39,
+   "they_gain_horizon": 3.33,
+   "price_out": 43,
+   "price_in": 32
+  },
+  {
+   "partner": 7,
+   "partner_team": "PSYCHO SILVERBACKS",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "this_week": 9.72,
+     "cannot_play": null,
+     "market_price": 9,
+     "season_points": 137,
+     "roster_id": 2
     }
    ],
    "get": [
@@ -34,36 +190,176 @@
      "position": "TE",
      "team": "GB",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/n6vu44jbq31rydoaadaq",
-     "value": 7.96,
-     "reason": null,
+     "this_week": 7.96,
+     "cannot_play": null,
      "market_price": 0,
      "season_points": 106,
-     "ros_points": 91.02,
-     "ros_rank_pos": 12
-    },
-    {
-     "sleeper_id": "13286",
-     "gsis_id": "00-0041512",
-     "player_name": "Jadarian Price",
-     "position": "RB",
-     "team": "SEA",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toy90i08oumgbdlvctja",
-     "value": 10.01,
-     "reason": null,
-     "market_price": 4,
-     "season_points": 131,
-     "ros_points": 112.63,
-     "ros_rank_pos": 31
+     "roster_id": 7
     }
    ],
-   "my_week": -1.27,
-   "my_horizon": 5.64,
-   "their_week": 1.27,
-   "their_horizon": 7.41,
-   "market_out": 43,
-   "market_in": 4,
-   "is_best": true
+   "you_gain_week": -0.52,
+   "you_gain_horizon": 2.18,
+   "they_gain_week": 0.0,
+   "they_gain_horizon": 0.99,
+   "price_out": 9,
+   "price_in": 0
+  },
+  {
+   "partner": 10,
+   "partner_team": "GIBB ME ANOTA ONE",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "this_week": 9.19,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 122,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7600",
+     "gsis_id": "00-0036894",
+     "player_name": "Pat Freiermuth",
+     "position": "TE",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
+     "this_week": 6.19,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 93,
+     "roster_id": 10
+    }
+   ],
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 1.6,
+   "they_gain_week": 0.0,
+   "they_gain_horizon": 0.55,
+   "price_out": 0,
+   "price_in": 0
+  },
+  {
+   "partner": 1,
+   "partner_team": "Daejon Loves PR team",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "9228",
+     "gsis_id": "00-0039150",
+     "player_name": "Bryce Young",
+     "position": "QB",
+     "team": "CAR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+     "this_week": 17.25,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 202,
+     "roster_id": 2
+    },
+    {
+     "sleeper_id": "12487",
+     "gsis_id": "00-0040737",
+     "player_name": "Terrance Ferguson",
+     "position": "TE",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg",
+     "this_week": 5.79,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 86,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "12517",
+     "gsis_id": "00-0040126",
+     "player_name": "Colston Loveland",
+     "position": "TE",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cnxiyi76jeahgx94nh6d",
+     "this_week": 6.36,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 93,
+     "roster_id": 1
+    }
+   ],
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 0.96,
+   "they_gain_week": 0.96,
+   "they_gain_horizon": 0.54,
+   "price_out": 0,
+   "price_in": 0
+  },
+  {
+   "partner": 5,
+   "partner_team": "Victory is Mine!",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "this_week": 9.19,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 122,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "8110",
+     "gsis_id": "00-0038041",
+     "player_name": "Jake Ferguson",
+     "position": "TE",
+     "team": "DAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xpykb0tbosfwsn6dqstb",
+     "this_week": 5.91,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 84,
+     "roster_id": 5
+    }
+   ],
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 0.37,
+   "they_gain_week": 0.11,
+   "they_gain_horizon": 0.92,
+   "price_out": 0,
+   "price_in": 0
   }
  ],
- "none": []
+ "no_trade_with": [
+  "Run Bijan Run",
+  "GoodGameBuddy",
+  "MikeDaddy"
+ ],
+ "words": {
+  "headline": "**Best partner: Scrote Squad (nirajp75).** Your [Bhayshul Tuten](/player/00-0040719) for their [Isaiah Likely](/player/00-0037838): you **-0.5** this week and **+3.3** over weeks 4–7, them **+1.5** and **+2.0**.",
+  "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"
+ },
+ "search": {
+  "bar_sets": 31,
+  "candidates": 1310,
+  "evaluated": 29,
+  "seconds": 0.135
+ }
 }

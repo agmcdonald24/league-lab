@@ -1,7 +1,7 @@
 {
  "league_id": "9000000000000000001",
  "source": "sleeper",
- "roster_id": null,
+ "roster_id": 3,
  "season": 2026,
  "profiles": null,
  "draft": null,
@@ -1485,7 +1485,7 @@
   }
  ],
  "words": {
-  "headline": "**Luckiest by schedule: Red Zone Regulars (+0.9 wins); unluckiest: Fixture Falcons (-0.7)** — 2026, 2 weeks.",
+  "headline": "**You've been the unluckiest team by schedule (-0.7 wins)** (2 weeks).",
   "source": "quoted from app/pages/8_League.py (the first line)"
  }
 }

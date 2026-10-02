@@ -1,8 +1,9 @@
 {
  "league_id": "1321941740235550720",
- "team": 12,
+ "source": "database",
+ "roster_id": 12,
  "partner": 5,
- "partner_team_name": "The72Repeat",
+ "partner_team": "The72Repeat",
  "week": 4,
  "weeks": [
   4,
@@ -19,12 +20,11 @@
    "position": "TE",
    "team": "NYG",
    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
-   "value": 9.52,
-   "reason": null,
+   "this_week": 9.52,
+   "cannot_play": null,
    "market_price": 12,
    "season_points": 141,
-   "ros_points": 131.52,
-   "ros_rank_pos": 9
+   "roster_id": 12
   },
   {
    "sleeper_id": "11563",
@@ -33,12 +33,11 @@
    "position": "QB",
    "team": "DEN",
    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
-   "value": 19.78,
-   "reason": null,
+   "this_week": 19.78,
+   "cannot_play": null,
    "market_price": 216,
    "season_points": 282,
-   "ros_points": 261.36,
-   "ros_rank_pos": 16
+   "roster_id": 12
   }
  ],
  "get": [
@@ -49,335 +48,599 @@
    "position": "RB",
    "team": "NYJ",
    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
-   "value": 14.15,
-   "reason": null,
+   "this_week": 14.15,
+   "cannot_play": null,
    "market_price": 112,
    "season_points": 215,
-   "ros_points": 198.84,
-   "ros_rank_pos": 13
+   "roster_id": 5
   }
  ],
  "before": {
   "mine": {
-   "week": 111.15,
+   "this_week": 111.15,
    "horizon": 446.96,
-   "bench": 79.83
+   "bench": 79.83,
+   "by_week": [
+    111.15,
+    118.12,
+    107.51,
+    110.18
+   ]
   },
   "theirs": {
-   "week": 127.47,
+   "this_week": 127.47,
    "horizon": 494.34,
-   "bench": 59.13
+   "bench": 59.13,
+   "by_week": [
+    127.47,
+    121.73,
+    122.57,
+    122.57
+   ]
   }
  },
  "after": {
   "mine": {
-   "week": 114.74,
+   "this_week": 114.74,
    "horizon": 469.02,
-   "bench": 54.29
+   "bench": 54.29,
+   "by_week": [
+    114.74,
+    123.56,
+    112.81,
+    117.91
+   ]
   },
   "theirs": {
-   "week": 133.1,
+   "this_week": 133.1,
    "horizon": 516.31,
-   "bench": 60.99
+   "bench": 60.99,
+   "by_week": [
+    133.1,
+    129.05,
+    126.97,
+    127.19
+   ]
   }
  },
  "fit": {
-  "mine": {
-   "week": 3.59,
-   "horizon": 22.06
+  "this_week": {
+   "mine": 3.59,
+   "theirs": 5.63
   },
-  "theirs": {
-   "week": 5.63,
-   "horizon": 21.97
+  "next_4": {
+   "mine": 22.06,
+   "theirs": 21.97
   },
-  "line": "**Fit** (what the best lineups gain): you **+3.6** this week and **+22.1** over weeks 4–7; them **+5.6** and **+22.0**."
+  "words": "**Fit** (what the best lineups gain): you **+3.6** this week and **+22.1** over weeks 4–7; them **+5.6** and **+22.0**."
  },
  "market": {
   "give": 228,
   "get": 112,
-  "about_even": false,
+  "season_points_give": 423,
+  "season_points_get": 215,
   "unknown": [],
-  "line": "**Market** (season points above the best free agent at the position): you give **228**, you get **112**: you give 116 more.",
   "replacement": {
-   "QB": 66,
-   "RB": 102,
-   "TE": 128,
-   "WR": 126
-  }
+   "QB": {
+    "season_points": 66,
+    "player_name": "Justin Fields"
+   },
+   "RB": {
+    "season_points": 102,
+    "player_name": "Kendre Miller"
+   },
+   "TE": {
+    "season_points": 128,
+    "player_name": "Michael Mayer"
+   },
+   "WR": {
+    "season_points": 126,
+    "player_name": "Kendrick Bourne"
+   }
+  },
+  "words": "**Market** (season points above the best free agent at the position): you give **228**, you get **112**: you give 116 more.",
+  "players": [
+   {
+    "sleeper_id": "8131",
+    "gsis_id": "00-0037838",
+    "player_name": "Isaiah Likely",
+    "position": "TE",
+    "team": "NYG",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+    "this_week": 9.52,
+    "cannot_play": null,
+    "market_price": 12,
+    "season_points": 141,
+    "roster_id": 12,
+    "goes_to": "The72Repeat"
+   },
+   {
+    "sleeper_id": "11563",
+    "gsis_id": "00-0039732",
+    "player_name": "Bo Nix",
+    "position": "QB",
+    "team": "DEN",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+    "this_week": 19.78,
+    "cannot_play": null,
+    "market_price": 216,
+    "season_points": 282,
+    "roster_id": 12,
+    "goes_to": "The72Repeat"
+   },
+   {
+    "sleeper_id": "8155",
+    "gsis_id": "00-0038120",
+    "player_name": "Breece Hall",
+    "position": "RB",
+    "team": "NYJ",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
+    "this_week": 14.15,
+    "cannot_play": null,
+    "market_price": 112,
+    "season_points": 215,
+    "roster_id": 5,
+    "goes_to": "You"
+   }
+  ]
  },
+ "verdict": "Helps you +3.6 this week (+22.1 over weeks 4–7), them +5.6 (+22.0 over weeks 4–7); the market says you're giving up more: worth offering.",
+ "headline": "**You give [Isaiah Likely](/player/00-0037838) and [Bo Nix](/player/00-0039732); you get [Breece Hall](/player/00-0038120).** Helps you +3.6 this week (+22.1 over weeks 4–7), them +5.6 (+22.0 over weeks 4–7); the market says you're giving up more: worth offering.",
  "ros": {
   "give": 393,
   "get": 199,
-  "window": "weeks 4–17"
+  "window": "weeks 4–17",
+  "words": "Rest of season (weeks 4–17, through this league's final): you give **393** points, you get **199** (-194) — the players' plain totals, before the roster spot a lopsided trade frees or fills and before your lineup is re-solved (the verdict above counts both). Only this week has betting lines; later weeks lean on usage and the schedule."
  },
- "verdict": "Helps you +3.6 this week (+22.1 over weeks 4–7), them +5.6 (+22.0 over weeks 4–7); the market says you're giving up more: worth offering.",
- "headline": "**You give Isaiah Likely and Bo Nix; you get Breece Hall.**",
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    11,
+    11
+   ],
+   "theirs": [
+    7,
+    2
+   ],
+   "n": 12
+  },
+  "horizon_value": {
+   "mine": [
+    11,
+    9
+   ],
+   "theirs": [
+    4,
+    3
+   ],
+   "n": 12
+  },
+  "bench_value": {
+   "mine": [
+    3,
+    9
+   ],
+   "theirs": [
+    8,
+    7
+   ],
+   "n": 12
+  },
+  "words": "League rank, week 4: you 11th → **11th** of 12, The72Repeat 7th → 2nd; weeks 4–7: you 11th → **9th** of 12, The72Repeat 4th → 3rd; depth: you 3rd → **9th** of 12, The72Repeat 8th → 7th."
+ },
+ "size_words": "Roster size: you open a spot: no free agent would add to that lineup over weeks 4–7; they must cut [Kyle McCord](/player/00-0040014) (QB, 49 season points; costs 0.0 over weeks 4–7) to stay at 21 players.",
  "sides": {
   "mine": {
    "roster_id": 12,
-   "week_before": 111.15,
-   "week_after": 114.74,
-   "horizon_before": 446.96,
-   "horizon_after": 469.02,
-   "gain_week": 3.59,
-   "gain_horizon": 22.06,
-   "bench_before": 79.83,
-   "bench_after": 54.29,
-   "closest_after": {
-    "player_name": "Jacory Croskey-Merritt",
-    "slot": "RB2",
-    "margin": 1.02
-   },
-   "cuts": [],
-   "opened": 1,
-   "price_out": 228,
-   "price_in": 112,
-   "lineup": [
+   "team_name": "Shake & Bake",
+   "gives": [
     {
-     "slot": "QB",
-     "sleeper_id": "11559",
-     "gsis_id": "00-0039917",
-     "player_name": "Michael Penix Jr.",
-     "position": "QB",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
-     "is_new": false,
-     "value": 18.77,
-     "change": -1.01
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+     "this_week": 9.52,
+     "cannot_play": null,
+     "market_price": 12,
+     "season_points": 141,
+     "roster_id": 12
     },
     {
-     "slot": "RB1",
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 19.78,
+     "cannot_play": null,
+     "market_price": 216,
+     "season_points": 282,
+     "roster_id": 12
+    }
+   ],
+   "gets": [
+    {
      "sleeper_id": "8155",
      "gsis_id": "00-0038120",
      "player_name": "Breece Hall",
      "position": "RB",
+     "team": "NYJ",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
-     "is_new": true,
-     "value": 14.15,
-     "change": 4.45
-    },
+     "this_week": 14.15,
+     "cannot_play": null,
+     "market_price": 112,
+     "season_points": 215,
+     "roster_id": 5
+    }
+   ],
+   "weeks": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "before": {
+    "this_week": 111.15,
+    "horizon": 446.96,
+    "bench": 79.83,
+    "by_week": [
+     111.15,
+     118.12,
+     107.51,
+     110.18
+    ]
+   },
+   "after": {
+    "this_week": 114.74,
+    "horizon": 469.02,
+    "bench": 54.29,
+    "by_week": [
+     114.74,
+     123.56,
+     112.81,
+     117.91
+    ]
+   },
+   "gain_week": 3.59,
+   "gain_horizon": 22.06,
+   "cuts": [],
+   "limit": 21,
+   "size_before": 21,
+   "size_after": 20,
+   "opened": 1,
+   "fill": null,
+   "price_out": 228,
+   "price_in": 112,
+   "points_out": 423,
+   "points_in": 215,
+   "starts": [
     {
-     "slot": "RB2",
-     "sleeper_id": "12533",
-     "gsis_id": "00-0040242",
-     "player_name": "Jacory Croskey-Merritt",
+     "sleeper_id": "8155",
+     "gsis_id": "00-0038120",
+     "player_name": "Breece Hall",
      "position": "RB",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
-     "is_new": false,
-     "value": 9.7,
-     "change": 1.02
+     "team": "NYJ",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
+     "this_week": 14.15,
+     "cannot_play": null,
+     "market_price": 112,
+     "season_points": 215,
+     "roster_id": 5
     },
     {
-     "slot": "WR1",
-     "sleeper_id": "7547",
-     "gsis_id": "00-0036963",
-     "player_name": "Amon-Ra St. Brown",
-     "position": "WR",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fd8nwhm6pvxfyzphzl6i",
-     "is_new": false,
-     "value": 18.13,
-     "change": null
-    },
-    {
-     "slot": "WR2",
-     "sleeper_id": "9487",
-     "gsis_id": "00-0038606",
-     "player_name": "Parker Washington",
-     "position": "WR",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
-     "is_new": false,
-     "value": 14.6,
-     "change": null
-    },
-    {
-     "slot": "TE",
-     "sleeper_id": "4217",
-     "gsis_id": "00-0033288",
-     "player_name": "George Kittle",
-     "position": "TE",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
-     "is_new": false,
-     "value": 10.36,
-     "change": null
-    },
-    {
-     "slot": "FLEX",
-     "sleeper_id": "13346",
-     "gsis_id": "00-0041037",
-     "player_name": "Denzel Boston",
-     "position": "WR",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
-     "is_new": false,
-     "value": 11.13,
-     "change": null
-    },
-    {
-     "slot": "SUPER_FLEX",
      "sleeper_id": "8161",
      "gsis_id": "00-0038128",
      "player_name": "Malik Willis",
      "position": "QB",
+     "team": "MIA",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/txvgdbwbryzyyqq6gfet",
-     "is_new": false,
-     "value": 17.9,
-     "change": -0.87
+     "this_week": 17.9,
+     "cannot_play": null,
+     "market_price": 233,
+     "season_points": 299,
+     "roster_id": 12
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 19.78,
+     "cannot_play": null,
+     "market_price": 216,
+     "season_points": 282,
+     "roster_id": 12
+    },
+    {
+     "sleeper_id": "11435",
+     "gsis_id": "00-0038797",
+     "player_name": "Emanuel Wilson",
+     "position": "RB",
+     "team": "SEA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/uorruvczsxzvffpbxu8z",
+     "this_week": 8.68,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 119,
+     "roster_id": 12
     }
    ]
   },
   "theirs": {
    "roster_id": 5,
-   "week_before": 127.47,
-   "week_after": 133.1,
-   "horizon_before": 494.34,
-   "horizon_after": 516.31,
-   "gain_week": 5.63,
-   "gain_horizon": 21.97,
-   "bench_before": 59.13,
-   "bench_after": 60.99,
-   "closest_after": {
-    "player_name": "David Montgomery",
-    "slot": "RB2",
-    "margin": 1.82
-   },
-   "cuts": [
+   "team_name": "The72Repeat",
+   "gives": [
     {
-     "sleeper_id": "12494",
-     "gsis_id": "00-0040014",
-     "player_name": "Kyle McCord",
-     "position": "QB",
-     "team": "MIA",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/smdh2mmu457aammcblth",
-     "value": 3.74,
-     "reason": null,
-     "market_price": 0,
-     "season_points": 49,
-     "ros_points": 46.59,
-     "ros_rank_pos": 50,
-     "horizon_loss": 0.0
+     "sleeper_id": "8155",
+     "gsis_id": "00-0038120",
+     "player_name": "Breece Hall",
+     "position": "RB",
+     "team": "NYJ",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
+     "this_week": 14.15,
+     "cannot_play": null,
+     "market_price": 112,
+     "season_points": 215,
+     "roster_id": 5
     }
    ],
+   "gets": [
+    {
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+     "this_week": 9.52,
+     "cannot_play": null,
+     "market_price": 12,
+     "season_points": 141,
+     "roster_id": 12
+    },
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 19.78,
+     "cannot_play": null,
+     "market_price": 216,
+     "season_points": 282,
+     "roster_id": 12
+    }
+   ],
+   "weeks": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "before": {
+    "this_week": 127.47,
+    "horizon": 494.34,
+    "bench": 59.13,
+    "by_week": [
+     127.47,
+     121.73,
+     122.57,
+     122.57
+    ]
+   },
+   "after": {
+    "this_week": 133.1,
+    "horizon": 516.31,
+    "bench": 60.99,
+    "by_week": [
+     133.1,
+     129.05,
+     126.97,
+     127.19
+    ]
+   },
+   "gain_week": 5.63,
+   "gain_horizon": 21.97,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "12494",
+      "gsis_id": "00-0040014",
+      "player_name": "Kyle McCord",
+      "position": "QB",
+      "team": "MIA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/smdh2mmu457aammcblth",
+      "this_week": 3.74,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 49,
+      "roster_id": 5
+     },
+     "horizon_loss": 0.0,
+     "season_points": 49
+    }
+   ],
+   "limit": 21,
+   "size_before": 21,
+   "size_after": 21,
    "opened": 0,
+   "fill": null,
    "price_out": 112,
    "price_in": 228,
-   "lineup": [
+   "points_out": 215,
+   "points_in": 423,
+   "starts": [
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 19.78,
+     "cannot_play": null,
+     "market_price": 216,
+     "season_points": 282,
+     "roster_id": 12
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "8155",
+     "gsis_id": "00-0038120",
+     "player_name": "Breece Hall",
+     "position": "RB",
+     "team": "NYJ",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
+     "this_week": 14.15,
+     "cannot_play": null,
+     "market_price": 112,
+     "season_points": 215,
+     "roster_id": 5
+    }
+   ]
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
     {
      "slot": "QB",
-     "sleeper_id": "8183",
-     "gsis_id": "00-0037834",
+     "player_name": "Michael Penix Jr.",
+     "gsis_id": "00-0039917",
+     "value": 18.77,
+     "change": -1.01
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Breece Hall (new)",
+     "gsis_id": "00-0038120",
+     "value": 14.15,
+     "change": 4.45
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Jacory Croskey-Merritt",
+     "gsis_id": "00-0040242",
+     "value": 9.7,
+     "change": 1.02
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Amon-Ra St. Brown",
+     "gsis_id": "00-0036963",
+     "value": 18.13,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 14.6,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "player_name": "George Kittle",
+     "gsis_id": "00-0033288",
+     "value": 10.36,
+     "change": null
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Denzel Boston (locked)",
+     "gsis_id": "00-0041037",
+     "value": 11.13,
+     "change": null
+    },
+    {
+     "slot": "Superflex",
+     "player_name": "Malik Willis",
+     "gsis_id": "00-0038128",
+     "value": 17.9,
+     "change": -0.87
+    }
+   ],
+   "notes": [
+    "Starts after the trade: Breece Hall (RB1, 14.15, new), Malik Willis (Superflex, 17.90, from the bench).",
+    "Out of the lineup after the trade: Bo Nix (QB, 19.78, traded), Emanuel Wilson (RB2, 8.68, to the bench)."
+   ],
+   "closest_call": "Jacory Croskey-Merritt at RB2, 1.02 ahead of the next option"
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
      "player_name": "Brock Purdy",
-     "position": "QB",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
-     "is_new": false,
+     "gsis_id": "00-0037834",
      "value": 22.25,
      "change": null
     },
     {
      "slot": "RB1",
-     "sleeper_id": "9509",
-     "gsis_id": "00-0038542",
      "player_name": "Bijan Robinson",
-     "position": "RB",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/esii5yb8yn9edboi4mlq",
-     "is_new": false,
+     "gsis_id": "00-0038542",
      "value": 26.72,
      "change": null
     },
     {
      "slot": "RB2",
-     "sleeper_id": "5892",
-     "gsis_id": "00-0035685",
      "player_name": "David Montgomery",
-     "position": "RB",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/csz0c9roa4pqsccothxg",
-     "is_new": false,
+     "gsis_id": "00-0035685",
      "value": 11.97,
      "change": -2.18
     },
     {
      "slot": "WR1",
-     "sleeper_id": "7525",
-     "gsis_id": "00-0036912",
      "player_name": "DeVonta Smith",
-     "position": "WR",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/k724kq3hyv7jc0y9s03x",
-     "is_new": false,
+     "gsis_id": "00-0036912",
      "value": 14.83,
      "change": null
     },
     {
      "slot": "WR2",
-     "sleeper_id": "8137",
-     "gsis_id": "00-0037247",
      "player_name": "George Pickens",
-     "position": "WR",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cbpyykoguf7rsxezqzvk",
-     "is_new": false,
+     "gsis_id": "00-0037247",
      "value": 13.27,
      "change": null
     },
     {
      "slot": "TE",
-     "sleeper_id": "10236",
-     "gsis_id": "00-0038933",
      "player_name": "Dalton Kincaid",
-     "position": "TE",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z7k857flehljboaixj8m",
-     "is_new": false,
+     "gsis_id": "00-0038933",
      "value": 11.53,
      "change": null
     },
     {
      "slot": "FLEX",
-     "sleeper_id": "12501",
-     "gsis_id": "00-0040667",
      "player_name": "Matthew Golden",
-     "position": "WR",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dbjki6b0swksr7mk17wk",
-     "is_new": false,
+     "gsis_id": "00-0040667",
      "value": 12.75,
      "change": null
     },
     {
-     "slot": "SUPER_FLEX",
-     "sleeper_id": "11563",
+     "slot": "Superflex",
+     "player_name": "Bo Nix (new)",
      "gsis_id": "00-0039732",
-     "player_name": "Bo Nix",
-     "position": "QB",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
-     "is_new": true,
      "value": 19.78,
      "change": 7.81
     }
-   ]
+   ],
+   "notes": [
+    "Starts after the trade: Bo Nix (Superflex, 19.78, new).",
+    "Out of the lineup after the trade: Breece Hall (RB2, 14.15, traded)."
+   ],
+   "closest_call": "David Montgomery at RB2, 1.82 ahead of the next option"
   }
  },
- "weekly": [
-  {
-   "week": 4,
-   "you_before": 111.15,
-   "you_after": 114.74,
-   "them_before": 127.47,
-   "them_after": 133.1
-  },
-  {
-   "week": 5,
-   "you_before": 118.12,
-   "you_after": 123.56,
-   "them_before": 121.73,
-   "them_after": 129.05
-  },
-  {
-   "week": 6,
-   "you_before": 107.51,
-   "you_after": 112.81,
-   "them_before": 122.57,
-   "them_after": 126.97
-  },
-  {
-   "week": 7,
-   "you_before": 110.18,
-   "you_after": 117.91,
-   "them_before": 122.57,
-   "them_after": 127.19
-  }
- ]
+ "fill_players": {},
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)"
 }

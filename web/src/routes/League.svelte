@@ -16,7 +16,7 @@
   import PosBadge from "../components/PosBadge.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
 
-  let { league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
+  let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
   let data = $state<LeagueView | null>(null);
   let error = $state<string | null>(null);
@@ -24,8 +24,9 @@
 
   $effect(() => {
     const l = league;
+    const t = team;
     error = null;
-    const path = decisionPaths.league(l);
+    const path = decisionPaths.league(l, t);
     const hit = peek<LeagueView>(path);
     if (hit) {
       data = hit;
@@ -35,12 +36,12 @@
     data = null;
     get<LeagueView>(path)
       .then((d) => {
-        if (league !== l) return;
+        if (league !== l || team !== t) return;
         data = d;
         restoreScroll();
       })
       .catch((e) => {
-        if (league !== l) return;
+        if (league !== l || team !== t) return;
         if (e instanceof Unauthorized) onauth();
         else error = errorWords(e);
       });
@@ -49,6 +50,7 @@
   const allPlay = $derived(new Map((data?.all_play ?? []).map((r) => [r.roster_id, r])));
   const luck = $derived([...(data?.all_play ?? [])].filter((r) => r.luck_wins != null).sort((a, b) => (b.luck_wins ?? 0) - (a.luck_wins ?? 0)));
   const luckMax = $derived(Math.max(0.5, ...luck.map((r) => Math.abs(r.luck_wins ?? 0))));
+  const leagueName = $derived(options.find((o) => o.league_id === league)?.name ?? "The league");
   const bench = $derived([...(data?.profiles ?? [])].sort((a, b) => (b.total_bench_points_left ?? 0) - (a.total_bench_points_left ?? 0)));
   const benchMax = $derived(Math.max(1, ...bench.map((r) => r.total_bench_points_left ?? 0)));
   // one card per transaction (a trade or an add + drop is one move)
@@ -67,10 +69,10 @@
 
   // weekly scoring rank (8_League.py's heatmap): teams by their average rank, one column per week; more = a better week
   const n = $derived(data?.standings.length ?? 0);
-  const weekCols = $derived([...new Set((data?.weeks ?? []).map((w) => w.week))].sort((a, b) => a - b).map((w) => ({ key: String(w), label: `Wk ${w}` })));
+  const weekCols = $derived([...new Set((data?.all_play_week ?? []).map((w) => w.week))].sort((a, b) => a - b).map((w) => ({ key: String(w), label: `Wk ${w}` })));
   const rankRows = $derived.by(() => {
     const by: Record<number, { name: string; sum: number; k: number }> = {};
-    for (const w of data?.weeks ?? []) {
+    for (const w of data?.all_play_week ?? []) {
       const r = (by[w.roster_id] ??= { name: w.team_name, sum: 0, k: 0 });
       r.sum += w.week_points_rank;
       r.k += 1;
@@ -80,7 +82,7 @@
       .map(([id, r]) => ({ key: id, label: Number(id) === team ? `${r.name} (you)` : r.name }));
   });
   function rankCell(row: string, col: string) {
-    const w = data?.weeks.find((x) => String(x.roster_id) === row && String(x.week) === col);
+    const w = data?.all_play_week.find((x) => String(x.roster_id) === row && String(x.week) === col);
     if (!w) return { t: null, display: "—", title: "no score" };
     return {
       t: n > 1 ? (n - w.week_points_rank) / (n - 1) : 0.5,
@@ -110,7 +112,7 @@
       <div class="ll-skel h-64"></div>
     </div>
   {:else}
-    <ScreenHead eyebrow={`League · ${data.season} · ${data.weeks_played} week${data.weeks_played === 1 ? "" : "s"} played`} title={data.league_name}>
+    <ScreenHead eyebrow={`League · ${data.season} · ${data.weeks_scored} week${data.weeks_scored === 1 ? "" : "s"} played`} title={leagueName}>
       {#snippet answer()}
         <p data-testid="league-answer"><Md text={luckLine(data!, team)} {ctx} /></p>
         <p class="mt-1 text-sm text-ink-3">Luck = wins minus the wins your points deserve (your record if you had played every team every week).</p>
@@ -196,17 +198,21 @@
           <p class="mt-3 text-xs text-ink-3">Right of the line: more wins than the points deserve (a soft schedule). Left: fewer (a hard one). It evens out over a season.</p>
         </Card>
 
+        {#if data.profiles}
         <Card title="Points left on the bench" testid="bench">
-          <div class="space-y-2">
-            {#each bench as r (r.roster_id)}
-              {@const yours = r.roster_id === team}
-              <div class={yours ? "rounded-md bg-accent-soft px-2 py-1" : "px-2"} data-testid="bench-bar">
-                <Bar label={r.team_name + (yours ? " (you)" : "")} value={r.total_bench_points_left} max={benchMax} display={f1(r.total_bench_points_left)} thick={6} color={yours ? "var(--ll-accent)" : "var(--ll-series-1)"} />
-              </div>
-            {/each}
-          </div>
-          <p class="mt-3 text-xs text-ink-3">How much a better lineup would have added, {data.weeks_played} week{data.weeks_played === 1 ? "" : "s"}. High numbers mark managers who don't sweat start / sit: useful to know when you trade with them.</p>
-        </Card>
+            <div class="space-y-2">
+              {#each bench as r (r.roster_id)}
+                {@const yours = r.roster_id === team}
+                <div class={yours ? "rounded-md bg-accent-soft px-2 py-1" : "px-2"} data-testid="bench-bar">
+                  <Bar label={r.team_name + (yours ? " (you)" : "")} value={r.total_bench_points_left} max={benchMax} display={f1(r.total_bench_points_left)} thick={6} color={yours ? "var(--ll-accent)" : "var(--ll-series-1)"} />
+                </div>
+              {/each}
+            </div>
+            <p class="mt-3 text-xs text-ink-3">How much a better lineup would have added, {data.weeks_scored} week{data.weeks_scored === 1 ? "" : "s"}. High numbers mark managers who don't sweat start / sit: useful to know when you trade with them.</p>
+          </Card>
+        {:else}
+          <p class="ll-empty text-sm" data-testid="no-profiles">Points left on the bench and the draft need the league's past weeks in League Lab's database: they show for the leagues it keeps every night.</p>
+        {/if}
       </div>
     </div>
 
@@ -274,7 +280,7 @@
               </Expander>
             </div>
           {/if}
-          <p class="px-4 pb-3 text-xs text-ink-3">Pick → where he ranks at his position by points so far ({fmt.whole(data.weeks_played)} weeks): a WR taken 8th among WRs who is 2nd was a steal.</p>
+          <p class="px-4 pb-3 text-xs text-ink-3">Pick → where he ranks at his position by points so far ({fmt.whole(data.weeks_scored)} weeks): a WR taken 8th among WRs who is 2nd was a steal.</p>
         {/if}
       </Card>
     </div>

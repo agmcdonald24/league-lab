@@ -1,70 +1,310 @@
 {
  "league_id": "9000000000000000001",
- "team": 3,
+ "source": "sleeper",
+ "roster_id": 3,
+ "want": "QB",
  "week": 4,
  "span": "weeks 4–7",
- "want": "QB",
  "partners": [
   {
-   "roster_id": 4,
-   "team_name": "Kickoff Kings",
-   "manager_name": "kickoffkings",
-   "shape": "1-for-2",
+   "partner": 7,
+   "partner_team": "Goal Line Stand",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": false,
    "give": [
     {
-     "sleeper_id": "12507",
-     "gsis_id": "00-0040666",
-     "player_name": "Omarion Hampton",
+     "sleeper_id": "5967",
+     "gsis_id": "00-0035261",
+     "player_name": "Tony Pollard",
      "position": "RB",
-     "team": "LAC",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
-     "value": 11.28,
-     "reason": null,
-     "market_price": 43,
-     "season_points": 170,
-     "ros_points": 145.43,
-     "ros_rank_pos": 17
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mb2xdrqiys6ktlcuah2n",
+     "this_week": 9.97,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 143,
+     "roster_id": 3
     }
    ],
    "get": [
     {
-     "sleeper_id": "8228",
-     "gsis_id": "00-0037228",
-     "player_name": "Jaylen Warren",
-     "position": "RB",
-     "team": "PIT",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dkiteytgnxar1mpaxcxv",
-     "value": null,
-     "reason": "game started (bench)",
-     "market_price": 16,
-     "season_points": 144,
-     "ros_points": 123.28,
-     "ros_rank_pos": 23
-    },
-    {
-     "sleeper_id": "8183",
-     "gsis_id": "00-0037834",
-     "player_name": "Brock Purdy",
+     "sleeper_id": "11560",
+     "gsis_id": "00-0039918",
+     "player_name": "Caleb Williams",
      "position": "QB",
-     "team": "SF",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
-     "value": 17.59,
-     "reason": null,
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
+     "this_week": 8.83,
+     "cannot_play": null,
      "market_price": 0,
      "season_points": 234,
-     "ros_points": 200.64,
-     "ros_rank_pos": 10
+     "roster_id": 7
     }
    ],
-   "my_week": -2.08,
-   "my_horizon": 5.69,
-   "their_week": 3.09,
-   "their_horizon": 4.46,
-   "market_out": 43,
-   "market_in": 16,
-   "is_best": true
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 6.45,
+   "they_gain_week": 0.0,
+   "they_gain_horizon": 9.59,
+   "price_out": 0,
+   "price_in": 0
+  },
+  {
+   "partner": 7,
+   "partner_team": "Goal Line Stand",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 18.17,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 212,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "12529",
+     "gsis_id": "00-0040734",
+     "player_name": "TreVeyon Henderson",
+     "position": "RB",
+     "team": "NE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ebcjvwytgu2y4kqm8ihv",
+     "this_week": 11.54,
+     "cannot_play": null,
+     "market_price": 10,
+     "season_points": 156,
+     "roster_id": 3
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "4881",
+     "gsis_id": "00-0034796",
+     "player_name": "Lamar Jackson",
+     "position": "QB",
+     "team": "BAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/eno6s5qzl9grbfbfwhoa",
+     "this_week": 20.97,
+     "cannot_play": null,
+     "market_price": 6,
+     "season_points": 250,
+     "roster_id": 7
+    }
+   ],
+   "you_gain_week": 2.33,
+   "you_gain_horizon": 7.73,
+   "they_gain_week": -1.73,
+   "they_gain_horizon": 10.78,
+   "price_out": 10,
+   "price_in": 6
+  },
+  {
+   "partner": 4,
+   "partner_team": "Kickoff Kings",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 18.17,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 212,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "7600",
+     "gsis_id": "00-0036894",
+     "player_name": "Pat Freiermuth",
+     "position": "TE",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
+     "this_week": null,
+     "cannot_play": "game started (bench)",
+     "market_price": 0,
+     "season_points": 116,
+     "roster_id": 3
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7523",
+     "gsis_id": "00-0036971",
+     "player_name": "Trevor Lawrence",
+     "position": "QB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/k9uzdernqkx7oquy7dkg",
+     "this_week": 16.99,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 231,
+     "roster_id": 4
+    }
+   ],
+   "you_gain_week": -0.15,
+   "you_gain_horizon": 1.77,
+   "they_gain_week": 0.0,
+   "they_gain_horizon": 2.54,
+   "price_out": 0,
+   "price_in": 0
+  },
+  {
+   "partner": 6,
+   "partner_team": "Two-Point Tries",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 18.17,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 212,
+     "roster_id": 3
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "6804",
+     "gsis_id": "00-0036264",
+     "player_name": "Jordan Love",
+     "position": "QB",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/thz8stjkbjwddxqnozi5",
+     "this_week": 15.79,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 213,
+     "roster_id": 6
+    }
+   ],
+   "you_gain_week": -0.15,
+   "you_gain_horizon": 0.51,
+   "they_gain_week": 1.21,
+   "they_gain_horizon": 1.21,
+   "price_out": 0,
+   "price_in": 0
+  },
+  {
+   "partner": 1,
+   "partner_team": "Bench Mob",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 18.17,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 212,
+     "roster_id": 3
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "1166",
+     "gsis_id": "00-0029604",
+     "player_name": "Kirk Cousins",
+     "position": "QB",
+     "team": "LV",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/za7cynvpwlsro1tsaijk",
+     "this_week": 14.74,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 208,
+     "roster_id": 1
+    }
+   ],
+   "you_gain_week": -0.15,
+   "you_gain_horizon": 0.2,
+   "they_gain_week": 3.43,
+   "they_gain_horizon": 3.3,
+   "price_out": 0,
+   "price_in": 0
+  },
+  {
+   "partner": 10,
+   "partner_team": "Fourth and Long",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "5967",
+     "gsis_id": "00-0035261",
+     "player_name": "Tony Pollard",
+     "position": "RB",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mb2xdrqiys6ktlcuah2n",
+     "this_week": 9.97,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 143,
+     "roster_id": 3
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "6797",
+     "gsis_id": "00-0036355",
+     "player_name": "Justin Herbert",
+     "position": "QB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jnkspnntgebegzp4ghve",
+     "this_week": 13.86,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 215,
+     "roster_id": 10
+    }
+   ],
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 0.01,
+   "they_gain_week": 0.0,
+   "they_gain_horizon": 0.43,
+   "price_out": 0,
+   "price_in": 0
   }
  ],
- "none": [],
- "source": "sleeper"
+ "no_trade_with": [
+  "Waiver Wire Warriors",
+  "Practice Squad",
+  "Hail Marys",
+  "Red Zone Regulars"
+ ],
+ "words": {
+  "headline": "**Best partner: Goal Line Stand (goalline).** Your [Tyler Shough](/player/00-0040743) and [TreVeyon Henderson](/player/00-0040734) for their [Lamar Jackson](/player/00-0034796): you **+2.3** this week and **+7.7** over weeks 4–7, them **-1.7** and **+10.8**.",
+  "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"
+ },
+ "search": {
+  "bar_sets": 26,
+  "candidates": 683,
+  "evaluated": 14,
+  "seconds": 0.093
+ }
 }

@@ -52,9 +52,10 @@
       });
   });
 
-  const rank = (m: "lineup_value" | "horizon_value" | "bench_value") => data?.rankings.find((r) => r.measure === m) ?? null;
-  const slotMax = $derived(Math.max(1, ...(data?.slots ?? []).map((s) => Math.max(s.league_best_top_value ?? 0, s.top_value ?? 0))));
-  const weekMax = $derived(Math.max(1, ...(data?.weeks ?? []).map((w) => Math.max(w.league_best, w.lineup_value ?? 0))));
+  const rank = (m: "lineup_value" | "horizon_value" | "bench_value") => data?.ranks?.[m] ?? null;
+  const slotMax = $derived(Math.max(1, ...(data?.slot_strength ?? []).map((s) => Math.max(s.league?.best ?? 0, s.top?.value ?? 0))));
+  const weekMax = $derived(Math.max(1, ...(data?.weekly ?? []).map((w) => Math.max(w.league?.best ?? 0, w.lineup_value ?? 0))));
+  const leagueSorted = $derived([...(data?.league ?? [])].sort((a, b) => b.lineup_value - a.lineup_value));
   const leagueMax = $derived(Math.max(1, ...(data?.league ?? []).map((r) => r.lineup_value)));
   const starters = $derived((data?.roster ?? []).filter((r) => r.role === "starter" || r.role === "empty"));
   const bench = $derived((data?.roster ?? []).filter((r) => r.role === "bench"));
@@ -68,12 +69,20 @@
     "no NFL team": "No NFL team",
   };
 
+  // 1_Team_Hub.py's "How to read this", the screen's own words
+  const HOWTO =
+    "- **Lineup value** is the projected points of the best lineup you can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. The rank next to it is where that puts you in the league.\n" +
+    "- **Margin** is how much your lineup loses without that starter. The smallest one is your **closest call**: check the news on those two players before kickoff.\n" +
+    "- **Next 4 weeks** adds up your best lineup for each of the next four weeks, byes and injuries included. Low here but high this week? Look for cover now.\n" +
+    "- **Depth** is the lineup your bench alone could put out. Low depth means one injury hurts: a trade or a claim for a starter matters more to you than to most.\n" +
+    "- **By slot**: your best starter at each slot against the league's average (the tick) and its best (the end of the scale). An orange bar is below the average: that is where a claim or a trade helps most.";
+
   function rowContext(r: TeamRosterRow): string {
     const where = r.role === "starter" ? slotLabel(r.slot) + (r.is_locked ? " · locked" : "") : r.role === "bench" ? "Bench" : (REASON[r.reason ?? ""] ?? r.reason ?? "Out");
     const bits = [where];
-    if (r.role === "starter" && r.lineup_margin != null) bits.push(`margin ${f2(r.lineup_margin)}`);
+    if (r.role === "starter" && r.margin != null) bits.push(`margin ${f2(r.margin)}`);
     if (r.report_status === "Questionable") bits.push("Questionable");
-    if (r.acquired_label) bits.push(r.acquired_label);
+    if (r.acquired) bits.push(r.acquired);
     return bits.join(" · ");
   }
 </script>
@@ -91,7 +100,7 @@
   {:else}
     <ScreenHead eyebrow={`Your team · week ${data.value.week}`} title={data.team_name}>
       {#snippet answer()}
-        <p data-testid="team-answer"><strong class="text-ink">{teamAnswer(data!)}</strong></p>
+        <p data-testid="team-answer"><Md text={teamAnswer(data!)} {ctx} /></p>
       {/snippet}
     </ScreenHead>
 
@@ -101,8 +110,8 @@
       <StatTile label="Depth (the bench alone)" value={f1(data.value.bench_value)} caption={rank("bench_value") ? `${ordinal(rank("bench_value")!.league_rank)} of ${rank("bench_value")!.n_rosters}` : null} size="lg" />
       <StatTile
         label="Record"
-        value={data.profile ? `${data.profile.wins}-${data.profile.losses}` : "—"}
-        caption={data.profile?.standing ? `${ordinal(data.profile.standing)} in the standings` : null}
+        value={data.season ? `${data.season.wins}-${data.season.losses}` : "—"}
+        caption={data.season?.standing ? `${ordinal(data.season.standing)} in the standings` : null}
         size="lg"
       />
     </div>
@@ -126,26 +135,29 @@
 
         <Card title="Strength by slot vs the league" testid="team-slots">
           <div class="space-y-3">
-            {#each data.slots as s (s.slot_type)}
+            {#each data.slot_strength as s (s.slot_type)}
+              {@const v = s.top?.value ?? null}
+              {@const avg = s.league?.avg ?? null}
               <div data-testid="slot-bar">
                 <Bar
-                  value={s.top_value}
+                  value={v}
                   max={slotMax}
-                  mark={s.league_avg_top_value}
+                  mark={avg}
                   markLabel="league average"
-                  display={s.top_value == null ? "—" : `${f1(s.top_value)} · ${ordinal(s.league_rank_top_value ?? 0)}`}
-                  color={s.league_avg_top_value != null && s.top_value != null && s.top_value >= s.league_avg_top_value ? "var(--ll-series-1)" : "var(--ll-div-hot)"}
+                  display={v == null ? "—" : s.league?.rank ? `${f1(v)} · ${ordinal(s.league.rank)}` : f1(v)}
+                  color={avg == null || v == null || v >= avg ? "var(--ll-series-1)" : "var(--ll-div-hot)"}
                 >
                   {#snippet labelSnippet()}
                     <span class="font-semibold text-ink">{slotLabel(s.slot_type)}{s.slots > 1 ? ` ×${s.slots}` : ""}</span>
-                    {#if s.top_player_name}
+                    {#if s.top?.player_name}
                       ·
-                      {#if s.top_gsis_id}<a class="ll-name" href={withContext(`/player/${s.top_gsis_id}`, ctx)}>{s.top_player_name}</a>{:else}{s.top_player_name}{/if}
+                      {#if s.top.gsis_id}<a class="ll-name" href={withContext(`/player/${s.top.gsis_id}`, ctx)}>{s.top.player_name}</a>{:else}{s.top.player_name}{/if}
                     {/if}
                   {/snippet}
                 </Bar>
                 <p class="mt-0.5 text-xs text-ink-3">
-                  League average {f1(s.league_avg_top_value)}, best {f1(s.league_best_top_value)}. Next man up: {s.replacement_name ? `${s.replacement_name} (${f1(s.replacement_value)})` : s.top_is_locked ? "locked" : "nobody"}.
+                  {#if s.league}League average {f1(s.league.avg)}, best {f1(s.league.best)}.{/if}
+                  Next man up: {s.replacement_name ? `${s.replacement_name} (${f1(s.replacement_value)})` : s.top?.is_locked ? "locked" : "nobody"}.
                 </p>
               </div>
             {/each}
@@ -153,18 +165,19 @@
           <p class="mt-3 text-xs text-ink-3">The bar is your best starter at the slot this week; the tick is the league's average best starter there. Orange: below the average.</p>
         </Card>
 
-        <Card title={`The next ${data.weeks.length} weeks`} testid="team-horizon">
+        <Card title={`The next ${data.weekly.length} weeks`} testid="team-horizon">
           <div class="space-y-3">
-            {#each data.weeks as w (w.week)}
+            {#each data.weekly as w (w.week)}
+              {@const mid = w.league?.median ?? null}
               <div data-testid="week-bar">
                 <Bar
                   label={`Week ${w.week}`}
                   value={w.lineup_value}
                   max={weekMax}
-                  mark={w.league_median}
+                  mark={mid}
                   markLabel="league middle"
-                  display={`${f1(w.lineup_value)} · ${ordinal(w.league_rank)} of ${w.n_rosters}`}
-                  color={w.lineup_value != null && w.lineup_value >= w.league_median ? "var(--ll-series-1)" : "var(--ll-div-hot)"}
+                  display={w.league?.rank ? `${f1(w.lineup_value)} · ${ordinal(w.league.rank)} of ${w.league.n}` : f1(w.lineup_value)}
+                  color={mid == null || w.lineup_value == null || w.lineup_value >= mid ? "var(--ll-series-1)" : "var(--ll-div-hot)"}
                 />
               </div>
             {/each}
@@ -176,8 +189,8 @@
       <div class="space-y-4">
         <Card title={`Every roster · ${data.value.week_label}`} testid="team-league">
           <div class="space-y-2">
-            {#each data.league as r (r.roster_id)}
-              {@const yours = r.roster_id === data.roster_id}
+            {#each leagueSorted as r (r.roster_id)}
+              {@const yours = r.is_me ?? r.roster_id === data.roster_id}
               <div class={yours ? "rounded-md bg-accent-soft px-2 py-1" : "px-2"} data-testid="league-bar" data-yours={yours ? "1" : undefined}>
                 <Bar label={r.team_name + (yours ? " (you)" : "")} value={r.lineup_value} max={leagueMax} display={f1(r.lineup_value)} color={yours ? "var(--ll-accent)" : "var(--ll-series-1)"} thick={6} />
               </div>
@@ -188,7 +201,7 @@
 
         <Card title={`Roster · week ${data.value.week}`} pad={false} testid="team-roster">
           <ul class="divide-y divide-line">
-            {#each [...starters, ...bench, ...out] as r, i (r.sleeper_player_id ?? `${r.slot}-${i}`)}
+            {#each [...starters, ...bench, ...out] as r, i (r.sleeper_id ?? `${r.slot}-${i}`)}
               <li>
                 {#if r.role === "empty"}
                   <div class="flex min-h-14 items-center px-3 text-base text-ink-3">{slotLabel(r.slot)}: nobody can play it this week</div>
@@ -197,7 +210,7 @@
                     player={{ ...r, player_name: r.player_name ?? "" }}
                     href={r.gsis_id ? withContext(`/player/${r.gsis_id}`, ctx) : null}
                     context={rowContext(r)}
-                    value={r.role === "unplayable" ? "—" : f1(r.player_value)}
+                    value={r.role === "unplayable" ? "—" : f1(r.value)}
                     valueLabel={r.role === "starter" ? "starts" : r.role === "bench" ? "bench" : "out"}
                     testid={`roster-${r.role}`}
                   />
@@ -207,19 +220,19 @@
           </ul>
         </Card>
 
-        {#if data.profile}
+        {#if data.season}
           <p class="text-sm text-ink-2" data-testid="team-season">
-            Season so far: {data.profile.wins}-{data.profile.losses}{data.profile.all_play_win_pct != null ? ` · against everyone ${fmt.pct(data.profile.all_play_win_pct)}` : ""}{data.profile.luck_wins != null
-              ? ` · luck ${data.profile.luck_wins > 0 ? "+" : ""}${data.profile.luck_wins.toFixed(2)} wins`
-              : ""}{data.profile.avg_bench_points_left != null ? ` · ${f1(data.profile.avg_bench_points_left)} a week left on the bench` : ""}.
-            <a class="ll-link" href={withContext("/league", { league })}>The whole league</a>
+            Season so far: {data.season.wins}-{data.season.losses}{data.season.all_play_win_pct != null ? ` · against everyone ${fmt.pct(data.season.all_play_win_pct)}` : ""}{data.season.luck_wins != null
+              ? ` · luck ${data.season.luck_wins > 0 ? "+" : ""}${data.season.luck_wins.toFixed(2)} wins`
+              : ""}{data.season.avg_bench_points_left != null ? ` · ${f1(data.season.avg_bench_points_left)} a week left on the bench` : ""}.
+            <a class="ll-link" href={withContext("/league", ctx)}>The whole league</a>
           </p>
         {/if}
       </div>
     </div>
 
     <Expander title="How to read this" testid="howto">
-      <div class="text-base leading-snug">{@html md((data.howto ?? []).map((h) => `- ${h}`).join("\n"))}</div>
+      <div class="text-base leading-snug">{@html md(HOWTO)}</div>
     </Expander>
   {/if}
 </main>

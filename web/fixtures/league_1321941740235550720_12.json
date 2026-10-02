@@ -1,7 +1,7 @@
 {
  "league_id": "1321941740235550720",
  "source": "database",
- "roster_id": null,
+ "roster_id": 12,
  "season": 2026,
  "profiles": [
   {
@@ -3626,7 +3626,7 @@
   }
  ],
  "words": {
-  "headline": "**Luckiest by schedule: Hakuna Nacua (+0.6 wins); unluckiest: Shake & Bake (-0.9)** — 2026, 2 weeks.",
+  "headline": "**You've been the unluckiest team by schedule (-0.9 wins); your bench has left 49 points unstarted** (the 7th most of 12, 2 weeks).",
   "source": "quoted from app/pages/8_League.py (the first line)"
  }
 }

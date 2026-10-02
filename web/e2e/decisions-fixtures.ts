@@ -2,6 +2,7 @@
 // POST /api/trades/evaluate answered from web/fixtures/{waivers,team,league,trades_partners,trades_evaluate}_*.json.
 // Registered AFTER serveFixtures (Playwright runs the latest matching route first), everything else falls through to it.
 // Headshots (nfl.com / Sleeper CDN) are not reachable from a test: they are answered 404 at once, so the silhouette shows.
+// The fixtures are G2's saved answers (fixtures/save_decision_fixtures.py).
 import type { BrowserContext, Route } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -36,7 +37,7 @@ export async function serveDecisions(context: BrowserContext): Promise<DecisionC
     let body: string | null = null;
     if (p === "/api/waivers") body = file(`waivers_${q.get("league")}_${q.get("team")}_${(q.get("position") ?? "ALL").toUpperCase()}.json`);
     else if (p === "/api/team") body = file(`team_${q.get("league")}_${q.get("team")}.json`);
-    else if (p === "/api/league") body = file(`league_${q.get("league")}.json`);
+    else if (p === "/api/league") body = file(`league_${q.get("league")}${q.get("team") ? `_${q.get("team")}` : ""}.json`);
     else if (p === "/api/trades/partners") body = file(`trades_partners_${q.get("league")}_${q.get("team")}_${(q.get("want") ?? "ALL").toUpperCase()}.json`);
     else if (p === "/api/trades/evaluate" && req.method() === "POST") {
       const b = req.postDataJSON() as DecisionCalls["evaluate"][number];

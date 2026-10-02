@@ -1,46 +1,33 @@
 {
  "league_id": "1389709692405551104",
- "team": 2,
+ "source": "database",
+ "roster_id": 2,
+ "want": "QB",
  "week": 4,
  "span": "weeks 4–7",
- "want": "QB",
  "partners": [
   {
-   "roster_id": 4,
-   "team_name": "Scrote Squad",
-   "manager_name": "nirajp75",
-   "shape": "1-for-2",
+   "partner": 4,
+   "partner_team": "Scrote Squad",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
    "give": [
     {
-     "sleeper_id": "12507",
-     "gsis_id": "00-0040666",
-     "player_name": "Omarion Hampton",
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
      "position": "RB",
-     "team": "LAC",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
-     "value": 11.28,
-     "reason": null,
-     "market_price": 43,
-     "season_points": 170,
-     "ros_points": 145.43,
-     "ros_rank_pos": 17
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "this_week": 9.19,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 122,
+     "roster_id": 2
     }
    ],
    "get": [
-    {
-     "sleeper_id": "8228",
-     "gsis_id": "00-0037228",
-     "player_name": "Jaylen Warren",
-     "position": "RB",
-     "team": "PIT",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dkiteytgnxar1mpaxcxv",
-     "value": null,
-     "reason": "game started (bench)",
-     "market_price": 16,
-     "season_points": 144,
-     "ros_points": 123.28,
-     "ros_rank_pos": 23
-    },
     {
      "sleeper_id": "8183",
      "gsis_id": "00-0037834",
@@ -48,22 +35,193 @@
      "position": "QB",
      "team": "SF",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
-     "value": 17.59,
-     "reason": null,
+     "this_week": 17.59,
+     "cannot_play": null,
      "market_price": 0,
      "season_points": 234,
-     "ros_points": 200.64,
-     "ros_rank_pos": 10
+     "roster_id": 4
     }
    ],
-   "my_week": -2.08,
-   "my_horizon": 5.69,
-   "their_week": 3.09,
-   "their_horizon": 4.46,
-   "market_out": 43,
-   "market_in": 16,
-   "is_best": true
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 1.57,
+   "they_gain_week": 1.0,
+   "they_gain_horizon": 1.88,
+   "price_out": 0,
+   "price_in": 0
+  },
+  {
+   "partner": 4,
+   "partner_team": "Scrote Squad",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "this_week": 20.26,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 261,
+     "roster_id": 2
+    },
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "this_week": 9.19,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 122,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "4881",
+     "gsis_id": "00-0034796",
+     "player_name": "Lamar Jackson",
+     "position": "QB",
+     "team": "BAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/eno6s5qzl9grbfbfwhoa",
+     "this_week": 20.97,
+     "cannot_play": null,
+     "market_price": 6,
+     "season_points": 250,
+     "roster_id": 4
+    }
+   ],
+   "you_gain_week": 0.71,
+   "you_gain_horizon": 0.78,
+   "they_gain_week": 0.29,
+   "they_gain_horizon": 2.67,
+   "price_out": 17,
+   "price_in": 6
+  },
+  {
+   "partner": 5,
+   "partner_team": "Victory is Mine!",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 18.17,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 212,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "6797",
+     "gsis_id": "00-0036355",
+     "player_name": "Justin Herbert",
+     "position": "QB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jnkspnntgebegzp4ghve",
+     "this_week": 13.86,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 215,
+     "roster_id": 5
+    }
+   ],
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 0.71,
+   "they_gain_week": 0.85,
+   "they_gain_horizon": 0.13,
+   "price_out": 0,
+   "price_in": 0
+  },
+  {
+   "partner": 5,
+   "partner_team": "Victory is Mine!",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "this_week": 9.19,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 122,
+     "roster_id": 2
+    },
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 18.17,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 212,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "6797",
+     "gsis_id": "00-0036355",
+     "player_name": "Justin Herbert",
+     "position": "QB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jnkspnntgebegzp4ghve",
+     "this_week": 13.86,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 215,
+     "roster_id": 5
+    }
+   ],
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 0.71,
+   "they_gain_week": 0.96,
+   "they_gain_horizon": 1.05,
+   "price_out": 0,
+   "price_in": 0
   }
  ],
- "none": []
+ "no_trade_with": [
+  "Daejon Loves PR team",
+  "Run Bijan Run",
+  "GoodGameBuddy",
+  "PSYCHO SILVERBACKS",
+  "MikeDaddy",
+  "Negrodamus",
+  "GIBB ME ANOTA ONE"
+ ],
+ "words": {
+  "headline": "**Best partner: Scrote Squad (nirajp75).** Your [Jacory Croskey-Merritt](/player/00-0040242) for their [Brock Purdy](/player/00-0037834): you **+0.0** this week and **+1.6** over weeks 4–7, them **+1.0** and **+1.9**.",
+  "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"
+ },
+ "search": {
+  "bar_sets": 28,
+  "candidates": 976,
+  "evaluated": 17,
+  "seconds": 0.108
+ }
 }
