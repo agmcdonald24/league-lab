@@ -73,7 +73,18 @@ def twin(*args: str) -> dict:
     return _twins[args]
 
 
+SLEEPER_FIXTURES = Path(__file__).with_name("fixtures") / "sleeper"
+
+
 @pytest.fixture(autouse=True)
-def _fresh_cache():
+def _fresh_cache(monkeypatch):
+    """Every test: an empty query cache, a fresh Sleeper client reading the fixtures (a test never calls Sleeper:
+    the database path's opponent reads the matchups call too), the priced-week cache emptied."""
+    from league_lab import anyleague as A
+    monkeypatch.setenv(A.FIXTURES_ENV, str(SLEEPER_FIXTURES))
     db.clear_cache()
+    A._default = None
+    A.clear_priced()
     yield
+    A._default = None
+    A.clear_priced()

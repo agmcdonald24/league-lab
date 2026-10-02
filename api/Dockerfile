@@ -4,6 +4,9 @@
 #   docker build -f api/Dockerfile -t league-lab-web .
 #   docker run -p 8000:8000 -e LEAGUE_LAB_APP_DB_URL=... -e LEAGUE_LAB_APP_PASSWORD=... league-lab-web
 # Render / Fly / Railway / Cloud Run all build this file; they pass $PORT.
+# Plan F3: the same image serves the API for any Sleeper league (src/league_lab: anyleague, sleeper_client, lineup,
+# scoring, kdef's K / DEF pricing) and the web app (web/dist: "/" and the app's routes fall back to index.html; /api is
+# the API). The Sleeper player directory is cached for a day under LEAGUE_LAB_CACHE_DIR (lost on a redeploy: one call).
 
 FROM node:22-slim AS web
 WORKDIR /src/web
@@ -23,6 +26,8 @@ COPY app/lib /srv/app/lib
 # the league_lab package the cards (decisions) and the on-demand path (anyleague, lineup, scoring) import (plan E3)
 COPY src/league_lab /srv/src/league_lab
 COPY --from=web /src/web/dist /srv/web/dist
-ENV PATH="/srv/api/.venv/bin:$PATH" PYTHONUNBUFFERED=1 LEAGUE_LAB_WEB_DIST=/srv/web/dist
+RUN mkdir -p /srv/cache && chown nobody /srv/cache
+ENV PATH="/srv/api/.venv/bin:$PATH" PYTHONUNBUFFERED=1 LEAGUE_LAB_WEB_DIST=/srv/web/dist LEAGUE_LAB_CACHE_DIR=/srv/cache
+USER nobody
 EXPOSE 8000
 CMD ["sh", "-c", "exec uvicorn league_lab_api.main:app --host 0.0.0.0 --port ${PORT:-8000} --proxy-headers --forwarded-allow-ips='*'"]

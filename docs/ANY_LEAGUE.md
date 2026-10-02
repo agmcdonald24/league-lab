@@ -176,10 +176,14 @@ On Andrew's rosters, week 4: dynasty 12 (25 players) P10 0.52, P25 0.36, P50 0.3
   player × week), `mart_lineup_recommendation`, `mart_league_roster_*`, `mart_player_availability`,
   `fct_player_game_league` (52 MB: every historical game priced in each league), `mart_league_player_season`
   (8 MB). The hosted copy then grows with the NFL, not with customers.
-* **The API**: `/api/my-week` already falls through to Sleeper for an unknown league (spike). Next:
-  `/api/leagues?username=` (`Sleeper.user_leagues`), the opponent of the week (`/league/{id}/matchups/{week}`),
-  the waiver wire (free agents = the directory minus every roster, priced the same way), the player card in the
-  user's scoring, Trade Finder (`trades.py` already sums lineup value; it needs the same `LineupInputs`).
+* **The API** (plan F3, done 2026-10-02): `/api/my-week` falls through to Sleeper for an unknown league and names
+  the week's opponent (`/league/{id}/matchups/{week}`, his lineup solved the same way); `/api/leagues?username=`
+  (`anyleague.user_leagues`); the player card and `/api/ros` in the user's scoring (rest of season priced week by
+  week: the same players, totals and ranks as `mart_player_ros_projection` for a house league); `/api/record`
+  (house leagues). The board reads F1's NFL-wide tables when they hold the week (`anyleague.NFL_WIDE`), else
+  borrows; Sleeper's calls go through one cached, rate-limited client (`sleeper_client.py`, `docs/SLEEPER_TERMS.md`).
+  Next: the waiver wire (free agents = the directory minus every roster, priced the same way), search on demand,
+  Trade Finder (`trades.py` already sums lineup value; it needs the same `LineupInputs`).
 
 ## Sleeper's API
 

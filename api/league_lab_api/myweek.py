@@ -101,7 +101,7 @@ def my_week(league_id: str, roster_id: int) -> dict:
     out: dict = {"league_id": league_id, "league_name": lrow["league_name"], "season": season,
                  "scoring_label": _str(lrow["scoring_label"]), "roster_id": int(roster_id),
                  "team_name": me["team_name"], "manager_name": _str(me["manager_name"]), "week": week,
-                 "record": None, "opponent": None, "summary": f"**{me['team_name']}**", "league_line": "",
+                 "record": None, "opponent": None, "source": "database", "summary": f"**{me['team_name']}**", "league_line": "",
                  "cards": [], "notice": None, "lineup": [], "lineup_full": [], "howto": None, "movers": []}
     if week is None:
         out["notice"] = "The regular season is over: no lineup decisions left."
@@ -124,10 +124,10 @@ def my_week(league_id: str, roster_id: int) -> dict:
         out["record"] = {"wins": int(r["wins"]), "losses": int(r["losses"]), "standing": int(r["standing"])}
         bits.append(f"{int(r['wins'])}-{int(r['losses'])}, #{int(r['standing'])} in the league")
     if not opp.empty and isinstance(opp.iloc[0]["opponent"], str):
-        out["opponent"] = opp.iloc[0]["opponent"]
         bits.append(f"week {week} vs **{opp.iloc[0]['opponent']}**")
     out["summary"] = " · ".join(bits)
     # ---- end of the copy
+    out["opponent"] = opponent(league_id, int(roster_id), season, week)
     if not rows.empty:
         out["league_line"] = cards.league_line(league_id, roster_id, week, rows)
         lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna()
@@ -148,6 +148,37 @@ def my_week(league_id: str, roster_id: int) -> dict:
     out["movers"] = [{"gsis_id": _str(r.gsis_id), "player_name": r.player_name, "position": r.position,
                       "tags": _str(r.tags), "momentum": _num(r.momentum)} for r in mv.itertuples()]
     return out
+
+
+LINEUP_TOTAL_SQL = """select lineup_value from ops.lineup_totals
+                       where league_id = %s and season = %s and week = %s and roster_id = %s and not is_realised
+                       order by run_at desc limit 1"""
+MATCHUP_DB_SQL = """select m.opponent_roster_id as roster_id, o.team_name, o.manager_name, m.matchup_id
+                    from analytics.fct_league_matchup m
+                    left join analytics.dim_league_member o on o.league_id = m.league_id and o.roster_id = m.opponent_roster_id
+                    where m.league_id = %s and m.roster_id = %s and m.week = %s and m.opponent_roster_id is not null"""
+
+
+def opponent(league_id: str, roster_id: int, season: int, week: int) -> dict | None:
+    """Plan F3: the week's opponent {roster_id, team_name, manager, lineup_value} for a house league. Who: Sleeper's
+    matchups call (cached 5 minutes), else the nightly's fct_league_matchup (Sleeper down / our budget spent);
+    names from dim_league_member; lineup_value = the opponent's best lineup the nightly solved (ops.lineup_totals,
+    the number mart_lineup_recommendation shows him). None when the week has no matchup."""
+    from .ondemand import opponent_safe
+    opp, _ = opponent_safe(league_id, roster_id, week, solve=False)
+    if opp is None:
+        m = query(MATCHUP_DB_SQL, (league_id, roster_id, week))
+        if m.empty:
+            return None
+        opp = {"roster_id": int(m.iloc[0]["roster_id"]), "matchup_id": int(m.iloc[0]["matchup_id"])}
+    mem = query("select team_name, manager_name from analytics.dim_league_member where league_id = %s and roster_id = %s",
+                (league_id, int(opp["roster_id"])))
+    lv = query(LINEUP_TOTAL_SQL, (league_id, int(season), int(week), int(opp["roster_id"])))
+    return {"roster_id": int(opp["roster_id"]),
+            "team_name": _str(mem.iloc[0]["team_name"]) if not mem.empty else opp.get("team_name"),
+            "manager": _str(mem.iloc[0]["manager_name"]) if not mem.empty else opp.get("manager"),
+            "matchup_id": opp.get("matchup_id"),
+            "lineup_value": None if lv.empty else _num(lv.iloc[0]["lineup_value"])}
 
 
 def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows: pd.DataFrame) -> tuple[str | None, list[dict]]:
