@@ -8,9 +8,9 @@
   const num = (v: number | null) => (v === null || v === undefined ? "—" : v.toFixed(2));
 </script>
 
-<table class="w-full table-fixed border-collapse text-[15px]" data-testid={testid}>
+<table class="w-full table-fixed border-collapse text-base" data-testid={testid}>
   <thead>
-    <tr class="border-b border-zinc-200 text-left text-[11px] tracking-wide text-zinc-500 uppercase dark:border-zinc-800 dark:text-zinc-400">
+    <tr class="ll-label border-b border-line text-left">
       <th class="w-[4.75rem] py-1.5 pr-1 font-medium">Slot</th>
       <th class="py-1.5 pr-1 font-medium">Player</th>
       <th class="w-[3.5rem] py-1.5 text-right font-medium">Proj</th>
@@ -20,8 +20,8 @@
   </thead>
   <tbody>
     {#each rows as r, i (i)}
-      <tr class="border-b border-zinc-100 align-top last:border-0 dark:border-zinc-800/70">
-        <td class="py-2 pr-1 text-[13px] text-zinc-500 dark:text-zinc-400">{r.slot}</td>
+      <tr class="border-b border-line align-top last:border-0">
+        <td class="py-2 pr-1 text-sm font-semibold text-ink-3">{r.slot}</td>
         <td class="py-2 pr-1 leading-snug break-words">
           {#if r.gsis_id && r.player_name}
             <a class="ll-link" href={withContext(`/player/${r.gsis_id}`, ctx)}>{r.player_name}</a>
@@ -29,9 +29,9 @@
             {r.player_name ?? "—"}
           {/if}
         </td>
-        <td class="tabnum py-2 text-right">{num(r.value)}</td>
-        {#if full}<td class="tabnum py-2 text-right text-zinc-600 dark:text-zinc-300">{r.margin === null ? "" : r.margin.toFixed(2)}</td>{/if}
-        {#if showFlag}<td class="py-2 pl-2 text-[12px] leading-snug text-amber-700 dark:text-amber-400">{r.flag}</td>{/if}
+        <td class="tabnum py-2 text-right font-semibold">{num(r.value)}</td>
+        {#if full}<td class="tabnum py-2 text-right text-ink-2">{r.margin === null ? "" : r.margin.toFixed(2)}</td>{/if}
+        {#if showFlag}<td class="py-2 pl-2 text-xs leading-snug text-warn">{r.flag}</td>{/if}
       </tr>
     {/each}
   </tbody>

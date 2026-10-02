@@ -23,11 +23,10 @@
     onteam: (team: number | null) => void;
   } = $props();
 
-  const sel =
-    "min-w-0 flex-1 truncate rounded-xl border border-zinc-300 bg-white px-2.5 py-2 text-[15px] font-medium dark:border-zinc-700 dark:bg-zinc-900";
+  const sel = "ll-input min-w-0 flex-1 truncate py-1.5 pr-7 text-sm font-semibold";
 </script>
 
-<div class="flex gap-2" data-testid="picker">
+<div class="flex min-w-0 gap-2" data-testid="picker">
   <label class="sr-only" for="ll-league">League</label>
   <select id="ll-league" class={sel} value={league ?? ""} onchange={(e) => onleague(e.currentTarget.value)} data-testid="pick-league">
     {#each leagues as l (l.league_id)}

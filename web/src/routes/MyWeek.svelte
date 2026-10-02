@@ -8,7 +8,6 @@
   import Expander from "../components/Expander.svelte";
   import LineupTable from "../components/LineupTable.svelte";
   import Md from "../components/Md.svelte";
-  import TopBar from "../components/TopBar.svelte";
 
   let {
     options,
@@ -80,9 +79,8 @@
   });
 </script>
 
-<TopBar {options} {league} {team} {onauth} />
 
-<main class="space-y-4 px-4 pb-10" data-testid="my-week">
+<main class="space-y-4" data-testid="my-week">
   {#if team === null}
     <div class="rounded-2xl border border-dashed border-zinc-300 p-4 text-[15px] dark:border-zinc-700" data-testid="pick-prompt">
       {#if noTeamHere}

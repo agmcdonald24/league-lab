@@ -9,7 +9,6 @@
   import { restoreScroll, route, setParams } from "../lib/router.svelte";
   import Expander from "../components/Expander.svelte";
   import Md from "../components/Md.svelte";
-  import TopBar from "../components/TopBar.svelte";
 
   let {
     options,
@@ -87,9 +86,8 @@
   const label = (p: string) => (p === "ALL" ? "All" : p);
 </script>
 
-<TopBar {options} {league} {team} {onauth} />
 
-<main class="space-y-4 px-4 pb-10" data-testid="ros">
+<main class="space-y-4" data-testid="ros">
   <div class="flex flex-wrap gap-1.5" role="group" aria-label="Position" data-testid="ros-positions">
     {#each positions as p (p)}
       <button

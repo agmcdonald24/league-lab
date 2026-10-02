@@ -18,17 +18,17 @@
 </script>
 
 <form class="mx-auto mt-16 max-w-sm space-y-4 px-4" onsubmit={submit} data-testid="login">
-  <h1 class="text-2xl font-bold">League Lab</h1>
-  <p class="text-sm text-zinc-500">Private beta. Enter the password from your invite.</p>
+  <h1 class="flex items-center gap-2 text-2xl font-extrabold tracking-tight"><span class="grid h-8 w-8 place-items-center rounded-sm bg-accent text-xs font-black text-on-accent">LL</span>League Lab</h1>
+  <p class="text-sm text-ink-3">Private beta. Enter the password from your invite.</p>
   <input
-    class="w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-3 text-base dark:border-zinc-700"
+    class="ll-input w-full py-3"
     type="password"
     autocomplete="current-password"
     placeholder="Password"
     bind:value={password}
   />
-  {#if wrong}<p class="text-sm text-red-700 dark:text-red-400">That is not it.</p>{/if}
-  <button class="w-full rounded-xl bg-green-700 px-4 py-3 font-semibold text-white disabled:opacity-60" disabled={busy || !password}>
+  {#if wrong}<p class="text-sm text-bad">That is not it.</p>{/if}
+  <button class="w-full rounded-md bg-accent px-4 py-3 font-bold text-on-accent disabled:opacity-60" disabled={busy || !password}>
     Open League Lab
   </button>
 </form>

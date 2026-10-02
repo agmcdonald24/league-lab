@@ -10,9 +10,8 @@
   import Expander from "../components/Expander.svelte";
   import Md from "../components/Md.svelte";
   import Metrics from "../components/Metrics.svelte";
-  import TopBar from "../components/TopBar.svelte";
 
-  let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
+  let { options, league, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
   let data = $state<RecordAnswer | null>(null);
   let error = $state<string | null>(null);
@@ -48,9 +47,8 @@
   });
 </script>
 
-<TopBar {options} {league} {team} {onauth} />
 
-<main class="space-y-4 px-4 pb-10" data-testid="record">
+<main class="space-y-4" data-testid="record">
   <p class="text-[12px] font-semibold tracking-wide text-green-700 uppercase dark:text-green-400">Our record · {name}</p>
   {#if error}
     <p class="rounded-2xl border border-red-200 p-4 text-[15px] text-red-800 dark:border-red-900 dark:text-red-300">{error}</p>
