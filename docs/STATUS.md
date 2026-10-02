@@ -3149,6 +3149,13 @@ placeholder test above.
   beta password → `scripts/smoke.sh https://<address> '<password>'` → share the link. Not verified from the sandbox:
   a real `docker build`, GHCR, Render's acceptance of `autoDeployTrigger` / `buildFilter` / `region: ohio` (fallbacks in
   the doc), Render's current prices.
+* **Deploy, 2026-10-02 (PO, in the browser)**: Render Blueprint `league-lab` created from `render.yaml` (Starter, Ohio,
+  service `https://league-lab.onrender.com`). The first build failed in 10 s: `COPY app/pages` → "/app/pages": not found.
+  Cause: `api/Dockerfile.dockerignore` (D7/E3, pre-Wave H) still existed, and BuildKit prefers `<Dockerfile>.dockerignore`
+  over the root `.dockerignore` H0 kept current — the stale file never let `app/pages` through. Fix: the stale file is
+  deleted; `api/tests/test_build_context.py` fails if a `<Dockerfile>.dockerignore` reappears, if a path the Dockerfile
+  copies is untracked or excluded by `.dockerignore`, or if `.env` / `data/` / `dbt/` would get in. (The sandbox has no
+  Docker; the two ignore files diverged unseen.)
 
 ### H2 2026-10-02 — one writer, the record kept, the hosted relation audit (branch `dev/H2`, clone `league_lab_h2`)
 

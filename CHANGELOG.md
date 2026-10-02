@@ -4,6 +4,9 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-02 — Wave H
 
+- **Hotfix: the build context.** `api/Dockerfile.dockerignore` (a pre-Wave H duplicate that BuildKit preferred over
+  the root `.dockerignore`) kept `app/pages` out of the image and failed the first Render build; it is deleted, and
+  `api/tests/test_build_context.py` keeps the Dockerfile's `COPY` sources and `.dockerignore` in step.
 - **One writer, the record kept, the hosted relation audit (H2).** GitHub Actions' nightly is the only writer of the
   hosted copy: off Actions `nightly.sh` skips `sync-hosted` and `sync_to_hosted.sh` refuses (exit 7) unless
   `LEAGUE_LAB_MAC_WRITES_HOSTED=1`, so the Mac's launchd refresh builds only the Mac's database. The NFL-wide boards
