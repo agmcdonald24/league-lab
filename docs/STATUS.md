@@ -2694,7 +2694,7 @@ Design for Andrew and the PO: `docs/ANY_LEAGUE.md`. Nothing in `app/`, `dbt/`, t
   card inside the first screen, no "not in the database" anywhere. The spike's live-API suite (`npm run e2e` against
   the API on :8681): **22 passed, 2 skipped** (the gated pair needs a password API). `npm run measure:fixtures` (7
   loads each, cold, median): first content **92 ms phone / 97 ms desktop** (Test League), 105 / 111 ms (dynasty 12) —
-  limit 500 ms. `npm run lint`: 0 errors, 0 warnings (106 files). Build: 100.8 KB JS (34.5 KB gzipped) + 21.8 KB CSS
+  limit 500 ms. `npm run lint`: 0 errors, 0 warnings (107 files). Build: 100.8 KB JS (34.5 KB gzipped) + 21.8 KB CSS
   (5.3 KB). Worked example: the WR answer "Puka Nacua, 185 points over 12 games (likely 150–219) · playoffs: 30" =
   the mart's 184.66 / 12 / 150.0 / 219.3 / 30.3 rounded half up; the dynasty opponent line "projects 110.7 — you
   project 111.2" = roster 11's week-4 starters in `ops.lineups` (110.69) vs My Week's `lineup_value` 111.15 (one
