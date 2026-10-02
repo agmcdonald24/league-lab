@@ -62,6 +62,11 @@ API terms: free for non-commercial use, a licence for commercial use — Andrew 
 hosting, one nightly writer) waits for the answer. Run it: `cd web && npm ci && npm run build`, then
 `cd api && uv sync && uv run uvicorn league_lab_api.main:app --port 8581` → http://localhost:8581/.
 
+**Iteration 15 (Wave G) delivered 2026-10-02 — the lab in the app**: the research (trends, matchups, players, receivers,
+compare, game logs) and the decisions (waivers, trades, team hub, league) for any Sleeper league on demand, a design system
+(`docs/DESIGN.md`: dark-first, team colors, the player card as the unit, an inline-SVG chart kit), every screen in the
+web app, "About the numbers" (the model explanation + the record). Same run commands as Wave F.
+
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a
 league-mate would notice also gets a plain-words entry in `app/whats_new.md` (Home's "What's new"), and

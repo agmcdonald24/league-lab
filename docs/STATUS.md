@@ -2846,6 +2846,27 @@ included).
 
 ## Wave G (Iteration 15)
 
+### PO merge — Wave G, 2026-10-02
+
+* **Delivered** (four Opus devs in parallel, 35–58 min each; one 23-minute integration pass that reconciled G3's assumed
+  research shapes with G1's real ones in one mapping layer, `web/src/lib/shapes.ts`, and re-saved the research fixtures from
+  the live API): G1 the research routes for any league (trends, defense heatmap, cornerbacks, players, receivers, compare,
+  game logs; priced-on-request points equal the league marts to 0.0000 on 40,652 games); G2 the decisions for any league
+  (waivers, trade evaluate / partners, team hub, league — the nightly's own code paths, mart parity row for row); G3 the
+  design system (dark-first tokens, team colors, the player card as the unit, a 1 KB inline-SVG chart kit, one bar on every
+  screen) + the five research screens + "About the numbers" (the record folded in, as Andrew asked); G4 the four decision
+  screens. Live walk of 54 screens against the integrated API: 0 console errors, 0 failed requests, no sideways scroll.
+* **PO fixes after integration**: `/api/team` carries the league behind each slot (`league: {avg, best, rank, n}`) and each
+  week (`{median, best, rank, n}`) — G4's screen had these only in its fixtures; `/api/trends` takes `metrics=none` (the
+  screens never read the metric rows: 716 KB → ~60 KB) and the app asks for `min_games=2` so a one-game player is not "due";
+  the defense route documented; the STATUS sections ordered.
+* **Checks**: `api` 138 passed; web lint 0 / 0, build, 52 fixture e2e; ruff clean; root `pytest` unchanged (no `src` model
+  code touched beyond `waivers.sweep_roster`, re-verified against `ops.waiver_moves` row for row).
+* **Open**: real headshots and real Sleeper only on the Mac (the sandbox reaches neither); buy-low / sell-high lists and
+  the upside stash on Waivers; the keeper table on demand; "What it leans on most" on About needs a route; the cornerback
+  starters follow Sleeper's current lineup; the one-query rest-of-season board; Wave H (accounts, Stripe, hosting) waits
+  on Sleeper's licence — the non-commercial beta can be hosted meanwhile (`api/Dockerfile`).
+
 ### Integration (PO) 2026-10-02 — G3's research screens on G1's real answers (branch `integration/wave-g`)
 
 The research screens were built on fixtures from an assumed contract; they now read G1's answers through one mapping
@@ -3059,26 +3080,6 @@ phone 198–335 ms, desktop 218–301 ms. Screenshots `g4_<screen>_<league>_<pho
 fixture rosters differ between G2's Sleeper fixtures and F2's web fixtures (names mapped, rosters not); G3's
 placeholder test above.
 
-## Next concrete actions
-
-1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
-   and `git push` **before the next nightly** — the nightly publishes the new marts to Neon, and Community Cloud runs
-   the page code from GitHub, so an unpushed commit leaves hosted pages showing per-league numbers under the old
-   sidebar text. Then `make sync-hosted` if you want it live now. Optional: OK a `metric_registry.csv` bump
-   (`expected_points`, `positional_strength` → 1.1, per-league note).
-1b. **Next agent**: `docs/HANDOFF.md` → Iteration 9 in `docs/PROJECT_PLAN.md`: **U-10** (scoring summary line; the
-   raw diff into an expander), then U-11 / U-12 / M-05 / M-06.
-2. **Andrew**: reset the Neon owner password (it was pasted in chat) and update `.env`; optionally `LEAGUE_LAB_APP_PASSWORD` / `LEAGUE_LAB_FEEDBACK_URL` in the Streamlit secrets.
-3. **Andrew (decisions)**: O03 refresh time, O05 backup destination, review of the Edge pages (U04), acceptance (H03).
-4. **Next engineering** (Andrew's call): R-07 an ML challenger on the same harness (only kept if it beats the baseline);
-   R-08 rest-of-season projections + lineup optimizer; P2-14 defensive participation for CB context; Phase 3 ops hardening; Phase 4 hosting.
-
-## Source-license notes
-
-nflverse (attribution), dynastyprocess crosswalk (MIT), ffverse/ffopportunity (MIT), Pro-Football-Reference
-data via nflverse (see nflverse terms), Sleeper API (public read-only). FTN (Phase 2) CC-BY-SA 4.0.
-
-
 ### G3 2026-10-02 — the design system and the research screens (web)
 
 * **What**: a design system (`docs/DESIGN.md`): `web/src/app.css` tokens (dark first, light from the system; surfaces,
@@ -3120,3 +3121,24 @@ data via nflverse (see nflverse terms), Sleeper API (public read-only). FTN (Pha
   shows the silhouette); the screens against G1's real API (fixtures only); an iPhone's SF Pro (screenshots are DejaVu,
   wider). Open: "What it leans on most" (feature importance) is not on About (no route); route participation / TPRR
   read 0 for 2026 in the mart and are hidden until filled in.
+
+
+## Next concrete actions
+
+1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
+   and `git push` **before the next nightly** — the nightly publishes the new marts to Neon, and Community Cloud runs
+   the page code from GitHub, so an unpushed commit leaves hosted pages showing per-league numbers under the old
+   sidebar text. Then `make sync-hosted` if you want it live now. Optional: OK a `metric_registry.csv` bump
+   (`expected_points`, `positional_strength` → 1.1, per-league note).
+1b. **Next agent**: `docs/HANDOFF.md` → Iteration 9 in `docs/PROJECT_PLAN.md`: **U-10** (scoring summary line; the
+   raw diff into an expander), then U-11 / U-12 / M-05 / M-06.
+2. **Andrew**: reset the Neon owner password (it was pasted in chat) and update `.env`; optionally `LEAGUE_LAB_APP_PASSWORD` / `LEAGUE_LAB_FEEDBACK_URL` in the Streamlit secrets.
+3. **Andrew (decisions)**: O03 refresh time, O05 backup destination, review of the Edge pages (U04), acceptance (H03).
+4. **Next engineering** (Andrew's call): R-07 an ML challenger on the same harness (only kept if it beats the baseline);
+   R-08 rest-of-season projections + lineup optimizer; P2-14 defensive participation for CB context; Phase 3 ops hardening; Phase 4 hosting.
+
+## Source-license notes
+
+nflverse (attribution), dynastyprocess crosswalk (MIT), ffverse/ffopportunity (MIT), Pro-Football-Reference
+data via nflverse (see nflverse terms), Sleeper API (public read-only). FTN (Phase 2) CC-BY-SA 4.0.
+

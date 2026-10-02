@@ -483,6 +483,8 @@ def trends(league_id: str, *, position: str | None = None, limit: int | None = N
     page = decorate(df.drop(columns=["rostered_by_roster_id", "rostered_by_team"]), ctx)
     met = query(f"select {', '.join(METRIC_COLS)} from analytics.mart_player_trends where season = %s and gsis_id = any(%s) "
                 "order by direction in ('up', 'down') desc, abs(z) desc nulls last", (season, ids)) if ids else pd.DataFrame()
+    if metrics == "none":                    # the screens filter and sort on the phone and never read the metrics (716 KB saved)
+        met = met.iloc[0:0]
     if not met.empty and metrics != "all":
         early = (met["direction"] != "insufficient").groupby(met["gsis_id"]).transform("sum") == 0
         met = met[met["direction"].isin(["up", "down"]) | early]

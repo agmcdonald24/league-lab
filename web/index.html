@@ -43,7 +43,7 @@
               url = "/api/ros?league=" + enc(league) + "&position=" + pos + "&limit=50";
             } else if (path === "/record" || path === "/about") url = "/api/record?league=" + enc(league);
             // Wave G research screens (src/lib/api.ts researchPaths)
-            else if (path === "/trends") url = "/api/trends?league=" + enc(league) + "&view=all&limit=200";
+            else if (path === "/trends") url = "/api/trends?league=" + enc(league) + "&view=all&limit=200&metrics=none&min_games=2";
             else if (path === "/matchups") url = "/api/matchups/defense?league=" + enc(league) + (team ? "&team=" + team : "");
             else if (path === "/players" || path === "/compare" && !(q.get("a") && q.get("b"))) url = "/api/players?league=" + enc(league) + "&sort=points&dir=desc&limit=500";
             else if (path === "/receivers") url = "/api/receivers?league=" + enc(league) + "&limit=150";

@@ -952,6 +952,22 @@ TEAM_ROWS_SQL = """select week, role, slot, slot_type, slot_order, bench_rank, s
 WEEKLY_SQL = """select distinct on (week) week, lineup_value, bench_value from ops.lineup_totals
                 where league_id = %s and season = %s and roster_id = %s and week between %s and %s and not is_realised
                 order by week, run_at desc"""
+WEEKLY_LEAGUE_SQL = """select distinct on (week, roster_id) week, roster_id, lineup_value from ops.lineup_totals
+                       where league_id = %s and season = %s and week between %s and %s and not is_realised
+                       order by week, roster_id, run_at desc"""
+
+
+def _week_league(allw: pd.DataFrame, week: int, mine) -> dict | None:
+    """The league behind a week's lineup value: median, best, the roster's rank (1 = best) and the count."""
+    if allw is None or allw.empty or mine is None:
+        return None
+    g = pd.to_numeric(allw.loc[allw["week"] == int(week), "lineup_value"], errors="coerce").dropna()
+    if g.empty:
+        return None
+    return {"median": round(float(g.median()), 2), "best": round(float(g.max()), 2), "n": int(g.size),
+            "rank": int((g > float(mine)).sum()) + 1}
+
+
 PROFILE_SQL = "select * from analytics.mart_league_manager_profile where league_id = %s"
 KEEPER_SQL = """select k.sleeper_player_id, k.gsis_id, k.player_name, k.position, a.acquired_label as acquired, k.games_played,
                        k.ppg_std, k.position_rank_ppg, k.expected_per_game, k.diff_per_game
@@ -1087,12 +1103,22 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
                            key=lambda r: (r.get("lineup_value_rank") or 99, r["roster_id"]))
     ss = slots[slots["roster_id"] == int(team_id)] if not slots.empty else slots
     b = bio(list(rows["gsis_id"]) + (list(ss["top_gsis_id"]) if not ss.empty else []))
+    # the league behind each slot (G4's screen: "· 3rd", "League average x, best y"): every roster's starter strength
+    def _slot_league(slot_type: str, mine_value) -> dict | None:
+        if slots.empty or "starter_strength" not in slots:
+            return None
+        g = pd.to_numeric(slots.loc[slots["slot_type"] == slot_type, "starter_strength"], errors="coerce").dropna()
+        if g.empty or mine_value is None:
+            return None
+        return {"avg": round(float(g.mean()), 2), "best": round(float(g.max()), 2), "n": int(g.size),
+                "rank": int((g > float(mine_value)).sum()) + 1}
     out["slot_strength"] = [{"slot_type": r["slot_type"], "slots": _int(r["slots"]), "empty_slots": _int(r["empty_slots"]),
                              "top": None if not isinstance(r["top_player_name"], str) else
                              {**_player(None, r["top_gsis_id"], r["top_player_name"], r["top_position"], None, b),
                               "slot": r["top_slot"], "value": _num(r["top_value"]), "is_locked": _bool(r["top_is_locked"])},
                              "starter_strength": _num(r["starter_strength"]), "replacement_name": _str(r["replacement_name"]),
-                             "replacement_value": _num(r["replacement_value"])} for _, r in ss.iterrows()]
+                             "replacement_value": _num(r["replacement_value"]),
+                             "league": _slot_league(r["slot_type"], _num(r["starter_strength"]))} for _, r in ss.iterrows()]
     order = {"starter": 0, "empty": 0, "bench": 1, "unplayable": 2}
     rows = rows.assign(_o=rows["role"].map(order)).sort_values(["_o", "slot_order", "bench_rank", "player_value"],
                                                                ascending=[True, True, True, False], na_position="last")
@@ -1104,7 +1130,9 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
                      for _, r in rows.iterrows()]
     if is_house:
         wk = query(WEEKLY_SQL, (league_id, season, int(team_id), int(v["horizon_first_week"]), int(v["horizon_last_week"])))
-        out["weekly"] = [{"week": int(r.week), "lineup_value": _num(r.lineup_value), "bench_value": _num(r.bench_value)}
+        allw = query(WEEKLY_LEAGUE_SQL, (league_id, season, int(v["horizon_first_week"]), int(v["horizon_last_week"])))
+        out["weekly"] = [{"week": int(r.week), "lineup_value": _num(r.lineup_value), "bench_value": _num(r.bench_value),
+                          "league": _week_league(allw, int(r.week), _num(r.lineup_value))}
                          for r in wk.itertuples()]
         p = prof[prof["roster_id"] == int(team_id)] if not prof.empty else prof
         if not p.empty:
@@ -1115,8 +1143,11 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
                                    "expected_per_game": _num(r["expected_per_game"]), "diff_per_game": _num(r["diff_per_game"])}
                                   for _, r in keeper.iterrows()]} if not keeper.empty else None
     else:
+        allw = pd.DataFrame([{"week": w, "roster_id": rid, "lineup_value": _num(lw.total(rid, w).get("lineup_value"))}
+                             for w in lw.weeks for rid in lw.roster_ids])
         out["weekly"] = [{"week": w, "lineup_value": _num(lw.total(team_id, w).get("lineup_value")),
-                          "bench_value": _num(lw.total(team_id, w).get("bench_value"))} for w in lw.weeks]
+                          "bench_value": _num(lw.total(team_id, w).get("bench_value")),
+                          "league": _week_league(allw, w, _num(lw.total(team_id, w).get("lineup_value")))} for w in lw.weeks]
         rec = A.records(lw.rosters).get(int(team_id))
         out["season"] = rec
         out["keeper"] = None

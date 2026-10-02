@@ -591,7 +591,7 @@ export interface Games {
 
 const q = encodeURIComponent;
 export const researchPaths = {
-  trends: (league: string) => `/api/trends?league=${q(league)}&view=all&limit=200`,
+  trends: (league: string) => `/api/trends?league=${q(league)}&view=all&limit=200&metrics=none&min_games=2`,
   defense: (league: string, team: number | null) => `/api/matchups/defense?league=${q(league)}${team != null ? `&team=${team}` : ""}`,
   cb: (league: string, team: number) => `/api/matchups/cb?league=${q(league)}&team=${team}`,
   players: (league: string) => `/api/players?league=${q(league)}&sort=points&dir=desc&limit=500`,

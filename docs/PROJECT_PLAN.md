@@ -394,6 +394,9 @@ pictures, real charts, and a UI that does not leave "a ton to be desired". "Our 
 Order: G1–G4 in parallel (four Opus devs, one round); the PO integrates, one scoped QA pass, ship; then the
 non-commercial beta on a host (the Dockerfile).
 
+**Delivered 2026-10-02** (STATUS § "Wave G"): all four rows. Next: Andrew's look at the real thing on his Mac (real
+headshots, real Sleeper), his design notes, the beta host; Wave H on Sleeper's answer.
+
 ### Iteration 14 — the customer app (agreed 2026-10-02, Wave F)
 
 Andrew's go, 2026-10-02, after reading `docs/ANY_LEAGUE.md`. Sleeper's API terms (his quote): free for

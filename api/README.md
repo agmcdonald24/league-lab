@@ -105,6 +105,8 @@ in the league's own scoring. `LEAGUE_LAB_BOARD_SOURCE=borrow|nfl_wide` forces on
 
 ## Research (G1)
 
+`GET /api/matchups/defense?league=&position=&team=` also returns `team` and `starters` (each starter of that roster with his slot, the defense he faces and `is_home`) when `team` is given — the heatmap rings them (integration, Wave G).
+
 Plan G1 (Wave G): the research pages of the Streamlit console (`3_Trends.py`, `5_Matchups.py`, `9_Players.py`,
 `10_Receivers.py`) as JSON for **any** Sleeper league — `league_lab_api/research.py`, helpers in
 `src/league_lab/research.py`, tests in `tests/test_research.py`. Every route takes `league=` (+ `source=sleeper` to serve

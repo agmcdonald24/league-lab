@@ -1,7 +1,7 @@
 # Streamlit Community Cloud installs from the entrypoint directory's dependency file first (plan S-03),
 # so this file — the explorer's runtime only, no dbt / ingestion — wins over the repo's uv.lock there.
 # Versions match uv.lock. Locally, `make sync` (uv) is what you use; never pip install this by hand.
-# release: wave-f — this line changes with every release. Community Cloud restarts the app only when this
+# release: wave-g — this line changes with every release. Community Cloud restarts the app only when this
 # file changes; a push that changes app/lib/*.py without it hot-reloads the pages against the OLD library
 # modules still in memory (ImportError / unexpected keyword on every page until someone clicks Reboot).
 streamlit==1.64.0
