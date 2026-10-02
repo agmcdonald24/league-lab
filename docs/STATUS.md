@@ -3173,6 +3173,11 @@ placeholder test above.
   ran a `postgres:17` service. Fix: both to 18. The Mac (Homebrew 17) is unaffected: its tables are "kept", it never
   dumps from Neon in normal operation. Next: push, re-run; if green, remove `LEAGUE_LAB_MAC_WRITES_HOSTED=1` from the
   Mac's `.env` the same day (the Mac's 08:00 and Actions' 07:37 must not both publish).
+  **Run #5 (`bded338`): green in 23 m 42 s** — restore-state 26 s (the record came down from Neon), nflverse history
+  52 s, weather 7 m 39 s (first run, no archive), dbt-build 9 m 00 s (641 pass, 3 warn), project 3 m 58 s,
+  projection-marts 10 s, sync-hosted 18 s; `verified: all 79 relations the pages and the API read are on the hosted
+  copy (the API's 66 included; 202 MB)`. The beta's `/api/status` showed the new load times minutes later.
+  GitHub Actions is now the writer in fact, not only by design; the Mac flag comes out of `.env` the same evening.
 
 ### H2 2026-10-02 — one writer, the record kept, the hosted relation audit (branch `dev/H2`, clone `league_lab_h2`)
 

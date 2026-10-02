@@ -181,9 +181,10 @@ the Mac being awake. The Mac keeps its own database (last section).
    Without `LEAGUE_LAB_HOSTED_ADMIN_URL` a run builds everything and publishes nothing (a dry run,
    flagged with a warning).
 3. Run it once by hand (next section) and watch it. The first run finds no archive in the cache
-   and downloads the whole history from GitHub releases (~280 MB; about a minute more than a normal
-   run: 23 MB/s from a sandbox, faster from a runner). Budget 15–20 minutes, plus ~15 if the hosted
-   copy has no backtests yet (below).
+   and downloads the whole history from GitHub releases (~280 MB, 52 s on a runner) and every season's weather
+   (7 m 39 s: the one step that is slow without the archive). Measured 2026-10-02 (run #5, the first green one):
+   **23 m 42 s** end to end, `dbt-build` 9 m 00 s, `project` 3 m 58 s, `sync-hosted` 18 s; add ~15 min if the hosted
+   copy has no backtests yet (below). Normal nights replay the archive and take about 15.
 4. Nothing to do on the Mac: its launchd job stops publishing by itself (last section). **One writer**: two
    syncs at once drop each other's schemas mid-restore, and a Mac publish would replace the record kept here.
 

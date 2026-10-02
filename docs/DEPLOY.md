@@ -3,9 +3,9 @@
 > **Done on 2026-10-02.** The beta is live at **https://league-lab.onrender.com** (Render Blueprint `league-lab`,
 > service `srv-db01bl60tbcc73fpbuh0`, Starter, Ohio). Steps 1–8 below are the record of how, and what to redo if
 > the service is ever recreated. Day to day: a merge to `main` reaches the server by itself ("How a new version
-> reaches the server"); if something is off, "When it breaks". **Neon is published by the Mac's 08:00 job today**,
-> not by GitHub's nightly (its secrets were never set; the scheduled run fails at its first check each night and
-> writes nothing) — `docs/HANDOFF.md` § "Where things stand".
+> reaches the server"); if something is off, "When it breaks". **Neon is published by GitHub's nightly** (07:37 ET;
+> its secrets were set and its first green run was #5 on 2026-10-02, after the runner moved to Postgres 18 to match
+> Neon) — `docs/HOSTING.md` § 5.
 
 This puts the phone app and its API at one web address your league-mates open on their phones. You do it once, in
 about 30 minutes, from a browser and one terminal command. After that, every change merged to `main` reaches the
@@ -30,13 +30,12 @@ You need three things you already have:
 * The Neon project the Streamlit app reads (`docs/HOSTING.md` § 1).
 * The beta password your league-mates already use for the Streamlit app.
 
-**The copy on Neon must hold the current tables.** Today the Mac's 08:00 launchd refresh publishes them
-(`LEAGUE_LAB_MAC_WRITES_HOSTED=1` in the Mac's `.env`). GitHub's nightly can take over once its three secrets exist
-(GitHub → **Settings** → **Secrets and variables** → **Actions**: `LEAGUE_LAB_SLEEPER_LEAGUE_ID`,
-`LEAGUE_LAB_HOSTED_ADMIN_URL`, `LEAGUE_LAB_HOSTED_APP_PASSWORD` — the last two are the values in the Mac's `.env`);
-then run it once by hand (**Actions** → **nightly** → **Run workflow** → `main`, about 15 minutes) and remove the
-flag from the Mac's `.env`. With a stale copy My Week, the player card and the matchup screens fail or show old
-numbers; `/api/status` shows when each source was loaded.
+**The copy on Neon must hold the current tables.** GitHub's nightly publishes them (its three secrets — GitHub →
+**Settings** → **Secrets and variables** → **Actions**: `LEAGUE_LAB_SLEEPER_LEAGUE_ID`, `LEAGUE_LAB_HOSTED_ADMIN_URL`,
+`LEAGUE_LAB_HOSTED_APP_PASSWORD` — exist since 2026-10-02; the last two are the values in the Mac's `.env`, pasted
+without the quotes). If the copy is ever stale: **Actions** → **nightly** → **Run workflow** → `main` (about 15
+minutes; the first run on an empty cache took 24). With a stale copy My Week, the player card and the matchup
+screens fail or show old numbers; `/api/status` shows when each source was loaded.
 
 ## 1. Copy the database address (Neon, 3 minutes)
 
@@ -188,7 +187,7 @@ need no deploy at all: the nightly publishes them to Neon and the server picks t
 | Render says **Deploy failed** | Render → **Events** → the failed deploy → **Logs**: the first line with `ERROR` says why. The previous version is still live. Send the log to the PO, or **Rollback** on the last good deploy in **Events**. |
 | GitHub shows a red **image** check | Actions → **image** → the run: the failing step names it. Render waits; nothing changed on the server. |
 | `/api/health` says `"database": "unreachable: …"` | The database address is wrong or Neon is down. Render → **Environment** → check `LEAGUE_LAB_APP_DB_URL` against step 1 (role `league_lab_app`, `-pooler`, `sslmode=require`); status.neon.tech. The server tries again every minute. |
-| `as_of` in `/api/health` is days old | Nothing has published Neon. Today that is the Mac's 08:00 job: was the Mac awake? `logs/nightly.log` in the repo on the Mac says; `make refresh` there publishes now (the Mac's `.env` has `LEAGUE_LAB_MAC_WRITES_HOSTED=1`). Once GitHub's nightly has its secrets: Actions → **nightly** (`docs/HOSTING.md` § Reading a failed run). |
+| `as_of` in `/api/health` is days old (it is re-read hourly) | Nothing has published Neon: GitHub → Actions → **nightly** — the red run names the step (`docs/HOSTING.md` § Reading a failed run); **Run workflow** again once fixed. Stop-gap for days without Actions: `LEAGUE_LAB_MAC_WRITES_HOSTED=1` in the Mac's `.env` and disable the workflow (HOSTING.md § launchd), never both publishing. |
 | Render says **Deploy failed** in ten seconds with `COPY … not found` | A path the Dockerfile copies is kept out of the build: `.dockerignore` must list it (`!app/pages/` and so on), and no `api/Dockerfile.dockerignore` may exist — `api/tests/test_build_context.py` checks both; run `cd api && uv run pytest -q tests/test_build_context.py`. |
 | A page says **the numbers are not ready yet** | The nightly is publishing right now (one or two minutes, around 08:00 New York), or a table is missing on Neon. Reload in two minutes; if it stays, run the nightly by hand. |
 | **busy, try again in a minute** | The server's Sleeper allowance (300 calls a minute) is spent. It refills within a minute. |
