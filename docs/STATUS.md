@@ -3055,7 +3055,6 @@ placeholder test above.
 nflverse (attribution), dynastyprocess crosswalk (MIT), ffverse/ffopportunity (MIT), Pro-Football-Reference
 data via nflverse (see nflverse terms), Sleeper API (public read-only). FTN (Phase 2) CC-BY-SA 4.0.
 
-## Wave G (Iteration 15)
 
 ### G3 2026-10-02 — the design system and the research screens (web)
 

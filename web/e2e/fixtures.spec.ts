@@ -416,7 +416,7 @@ test("the decisions tabs say what is coming; the bottom bar on a phone, the top 
   else expect(bar.y).toBeLessThan(80);
   await tap(page, page.getByTestId("tab-decisions"), isMobile);
   await expect(page).toHaveURL(/\/waivers\?/);
-  await expect(page.getByTestId("coming")).toContainText("Waivers");
+  await expect(page.getByTestId("waivers")).toBeVisible();
   for (const s of ["trades", "team", "league"]) await expect(page.getByTestId(`sub-${s}`)).toBeVisible();
   await tap(page, page.getByTestId("tab-research"), isMobile);
   await expect(page).toHaveURL(/\/trends\?/);
