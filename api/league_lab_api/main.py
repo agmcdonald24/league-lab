@@ -223,6 +223,57 @@ def status(response: Response):
     return _json(out, response)
 
 
+# ---- G2 decisions (Wave G): waivers, trades, the Team Hub, the league - a house league from the marts, any other on demand
+#   /api/waivers?league=&team=&position=&limit=&offset=   the claims that improve a lineup + the priced free agents
+#   POST /api/trades/evaluate {league, team, partner, give, get}   both rosters before / after, fit, market, verdict
+#   /api/trades/partners?league=&team=&want=              the partner finder (the best trade both lineups gain from)
+#   /api/team?league=&team=                               Team Hub: roster value, ranks, slot strength, the horizon
+#   /api/league?league=&team=&limit=&offset=              standings, all-play and luck, transactions
+from . import decisions  # noqa: E402 - the block stays self-contained (G1 / G2 append to this file in parallel)
+
+
+class TradeBody(BaseModel):
+    league: str
+    team: int
+    partner: int | None = None
+    give: list[str] = []
+    get: list[str] = []
+
+
+@app.exception_handler(decisions.BadRequest)
+async def _bad_request(_req: Request, exc: decisions.BadRequest):
+    return JSONResponse({"error": str(exc), "detail": str(exc)}, status_code=400, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/waivers", dependencies=[Depends(require_auth)])
+def waivers(league: str, response: Response, team: int | None = None, position: str | None = None, limit: int = 50,
+            offset: int = 0, source: str | None = None):
+    return _json(decisions.waivers(league, team, position, limit, offset, source=source), response)
+
+
+@app.post("/api/trades/evaluate", dependencies=[Depends(require_auth)])
+def trades_evaluate(body: TradeBody, response: Response, source: str | None = None):
+    out = decisions.evaluate(body.league, body.team, body.partner, body.give, body.get, source=source)
+    response.headers["Cache-Control"] = "no-store"
+    return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/trades/partners", dependencies=[Depends(require_auth)])
+def trades_partners(league: str, team: int, response: Response, want: str | None = None, source: str | None = None):
+    return _json(decisions.partners(league, team, want, source=source), response)
+
+
+@app.get("/api/team", dependencies=[Depends(require_auth)])
+def team_hub(league: str, team: int, response: Response, source: str | None = None):
+    return _json(decisions.team(league, team, source=source), response)
+
+
+@app.get("/api/league", dependencies=[Depends(require_auth)])
+def league_page(league: str, response: Response, team: int | None = None, limit: int = 50, offset: int = 0,
+                source: str | None = None):
+    return _json(decisions.league(league, team, limit, offset, source=source), response)
+
+
 # ---------------------------------------------------------------- the web app
 ASSET_CACHE = "public, max-age=31536000, immutable"     # vite's hashed file names
 SHELL_CACHE = "no-cache"                                # index.html, sw.js, manifest: revalidate every load

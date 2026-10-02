@@ -182,8 +182,19 @@ On Andrew's rosters, week 4: dynasty 12 (25 players) P10 0.52, P25 0.36, P50 0.3
   week: the same players, totals and ranks as `mart_player_ros_projection` for a house league); `/api/record`
   (house leagues). The board reads F1's NFL-wide tables when they hold the week (`anyleague.NFL_WIDE`), else
   borrows; Sleeper's calls go through one cached, rate-limited client (`sleeper_client.py`, `docs/SLEEPER_TERMS.md`).
-  Next: the waiver wire (free agents = the directory minus every roster, priced the same way), search on demand,
-  Trade Finder (`trades.py` already sums lineup value; it needs the same `LineupInputs`).
+  **Wave G (G2, done 2026-10-02): the decisions on demand** — `/api/waivers`, `POST /api/trades/evaluate`,
+  `/api/trades/partners`, `/api/team`, `/api/league` (`api/league_lab_api/decisions.py`). Every roster of the league is
+  solved for the horizon on ONE `LineupInputs` (`anyleague.league_weeks`: the nightly's cost per league, rosters × 4
+  lineups, ~0.1–0.2 s of solving after the board is priced), the free agents are Sleeper's directory minus every roster
+  (`anyleague.free_agents`: `player_id_map`, the nightly's filter) valued by `lineup._proposed_player`, the waiver sweep
+  is the nightly's own per-roster step (`waivers.sweep_roster`), trades run `trades.evaluate` / `partners` on a
+  `RosterBoard` of the solved rows (`anyleague.horizon_frame`: `mart_league_roster_horizon`'s columns and rules), and the
+  league's standings / all-play / transactions come from Sleeper's played weeks (`Sleeper.season_matchups`, 1 h) and
+  `/transactions/{round}` (`Sleeper.transactions`, 1 h). A house league on this path reproduces every row of
+  `mart_waiver_moves`, the Trade Finder's numbers, the roster marts and the standings (api/tests/test_decisions.py).
+  Calls per league: league + rosters + users (+ the daily directory) for waivers / trades / team; + one per played
+  week and one per round for the league page (cached an hour). Next: search on demand, the draft / keeper facts for
+  an unknown league (they need its history).
 
 ## Sleeper's API
 
@@ -197,6 +208,7 @@ Read-only, no key, documented limit: stay under **1,000 calls a minute** or the 
 | `GET /v1/league/{league_id}/rosters` | every 5–15 min while someone looks | 10–20 KB |
 | `GET /v1/league/{league_id}/users` | daily | 2–5 KB |
 | `GET /v1/league/{league_id}/matchups/{week}` | the opponent; Sleeper's weekly lineup | 10–30 KB |
+| `GET /v1/league/{league_id}/transactions/{round}` | the league page's transactions (Wave G), hourly | 5–60 KB |
 | `GET /v1/players/nfl` | once a day, for everyone | ~15 MB (12k players) |
 | `GET /v1/state/nfl` | hourly | < 1 KB |
 
