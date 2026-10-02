@@ -47,25 +47,27 @@
   const href = (id: string, roster: number | null) => `/?league=${encodeURIComponent(id)}${roster !== null ? `&team=${roster}` : ""}`;
 </script>
 
-<main class="space-y-5 px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-10" data-testid="leagues">
+<main class="mx-auto max-w-xl space-y-5 px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-10" data-testid="leagues">
   <header class="space-y-1">
     {#if current}
-      <a href={withContext("/", { league: current, team: prefs.team(current) })} class="ll-link inline-block py-1 text-[15px]" data-testid="to-week"
+      <a href={withContext("/", { league: current, team: prefs.team(current) })} class="ll-link inline-block py-1 text-base" data-testid="to-week"
         >‹ My week</a
       >
     {/if}
-    <h1 class="text-2xl font-bold">League Lab</h1>
-    <p class="text-[15px] leading-snug text-zinc-600 dark:text-zinc-300">
+    <h1 class="flex items-center gap-2 text-3xl font-extrabold tracking-tight">
+      <span class="grid h-9 w-9 place-items-center rounded-sm bg-accent text-sm font-black text-on-accent">LL</span>League Lab
+    </h1>
+    <p class="text-base leading-snug text-ink-2">
       Who to start this week and what each player is worth, in your Sleeper league's scoring.
     </p>
   </header>
 
   <form class="space-y-2" onsubmit={submit} data-testid="username-form">
-    <label class="block text-[15px] font-semibold" for="ll-username">Your Sleeper username</label>
+    <label class="ll-label block" for="ll-username">Your Sleeper username</label>
     <div class="flex gap-2">
       <input
         id="ll-username"
-        class="min-w-0 flex-1 rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-base dark:border-zinc-700 dark:bg-zinc-900"
+        class="ll-input flex-1 py-2.5"
         type="text"
         autocomplete="username"
         autocapitalize="none"
@@ -76,27 +78,27 @@
         data-testid="username"
       />
       <button
-        class="shrink-0 rounded-xl bg-green-700 px-4 py-2.5 font-semibold text-white disabled:opacity-60"
+        class="shrink-0 rounded-md bg-accent px-4 py-2.5 font-bold text-on-accent disabled:opacity-60"
         disabled={busy || !username.trim()}
         data-testid="username-go">{busy ? "Looking…" : "Find my leagues"}</button
       >
     </div>
-    <p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
+    <p class="text-sm leading-snug text-ink-3">
       No password to Sleeper: League Lab only reads what Sleeper shows anyone (your leagues, rosters and scoring).
     </p>
-    {#if error}<p class="text-[15px] text-red-700 dark:text-red-400" data-testid="username-error">{error}</p>{/if}
+    {#if error}<p class="text-base text-bad" data-testid="username-error">{error}</p>{/if}
   </form>
 
   {#if mine}
     <section class="space-y-2" data-testid="league-list">
       <div class="flex items-baseline justify-between gap-2">
-        <h2 class="text-[15px] font-semibold">
+        <h2 class="ll-label">
           {mine.user.display_name || mine.user.username}'s leagues, {mine.season}
         </h2>
-        <button type="button" class="text-[13px] text-green-700 underline dark:text-green-400" onclick={notMe} data-testid="not-me">Not you?</button>
+        <button type="button" class="text-sm text-accent underline" onclick={notMe} data-testid="not-me">Not you?</button>
       </div>
       {#if mine.leagues.length === 0}
-        <p class="rounded-2xl bg-zinc-100 p-4 text-[15px] dark:bg-zinc-900" data-testid="no-leagues">
+        <p class="rounded-lg bg-raised p-4 text-base" data-testid="no-leagues">
           {mine.user.username} has no Sleeper football leagues this season. A league you join shows up here.
         </p>
       {/if}
@@ -105,19 +107,19 @@
           <li>
             <a
               href={href(l.league_id, l.roster_id)}
-              class="block rounded-2xl border p-4 {l.league_id === current
-                ? 'border-green-700 ring-1 ring-green-700 dark:border-green-500 dark:ring-green-500'
-                : 'border-zinc-200 dark:border-zinc-800'}"
+              class="relative block overflow-hidden rounded-lg border bg-surface p-4 pl-5 {l.league_id === current ? 'border-accent ring-1 ring-accent' : 'border-line'}"
+              style="box-shadow:var(--ll-shadow)"
               data-testid="league-row"
               data-league={l.league_id}
             >
-              <div class="text-[16px] leading-snug font-semibold">{l.name}</div>
-              {#if leagueLine(l)}<div class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">{leagueLine(l)}</div>{/if}
-              <div class="mt-1 text-[14px] leading-snug">
+              <span class="absolute inset-y-0 left-0 w-1 {l.league_id === current ? 'bg-accent' : 'bg-line-strong'}" aria-hidden="true"></span>
+              <div class="text-lg leading-snug font-bold">{l.name}</div>
+              {#if leagueLine(l)}<div class="text-sm leading-snug text-ink-3">{leagueLine(l)}</div>{/if}
+              <div class="mt-1 text-sm leading-snug text-ink-2">
                 {#if l.roster_id !== null}
                   Your team: <strong>{l.team_name ?? `team ${l.roster_id}`}</strong>
                 {:else}
-                  <span class="text-amber-800 dark:text-amber-300">You have no team in this league: pick the team to see after you open it.</span>
+                  <span class="text-warn">You have no team in this league: pick the team to see after you open it.</span>
                 {/if}
               </div>
             </a>

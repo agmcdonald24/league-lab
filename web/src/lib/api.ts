@@ -598,3 +598,8 @@ export const researchPaths = {
   compare: (league: string, a: string, b: string) => `/api/compare?league=${q(league)}&a=${q(a)}&b=${q(b)}`,
   games: (gsis: string, league: string, season: number) => `/api/player/${q(gsis)}/games?league=${q(league)}&season=${season}`,
 };
+
+/** Wave G: the contract adds the picture to the player card (dim_player.headshot_url; null = a silhouette). */
+export interface PlayerCard {
+  headshot_url?: string | null;
+}

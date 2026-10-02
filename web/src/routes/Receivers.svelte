@@ -59,6 +59,10 @@
     { key: "avg_offense_snap_pct", label: "Snaps", max: 1, show: (v) => fmt.pct(v) },
   ];
 
+  // routes are estimated after the season: until then the route numbers come as null or 0 (unknown is not zero)
+  const ROUTES = new Set<keyof ReceiverRow>(["route_participation", "tprr_proxy", "yprr_proxy"]);
+  const known = (p: ReceiverRow, k: keyof ReceiverRow) => p[k] !== null && !(ROUTES.has(k) && !p[k]);
+
   function pick(p: ReceiverRow) {
     setParams({ pick: p.gsis_id });
     if (window.innerWidth < 900) document.querySelector('[data-testid="receivers-detail"]')?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -144,7 +148,7 @@
             />
             <Card title="His role vs the top 12" testid="role-bars">
               <div class="space-y-3">
-                {#each METRICS.filter((m) => picked[m.key] !== null) as m (m.key)}
+                {#each METRICS.filter((m) => known(picked, m.key)) as m (m.key)}
                   <Bar
                     label={m.label}
                     value={picked[m.key] as number}

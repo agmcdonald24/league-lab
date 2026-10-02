@@ -41,7 +41,13 @@
               var pos = (q.get("position") || "ALL").toUpperCase();
               if (["QB", "RB", "WR", "TE", "K", "DEF", "ALL"].indexOf(pos) < 0) pos = "ALL";
               url = "/api/ros?league=" + enc(league) + "&position=" + pos + "&limit=50";
-            } else if (path === "/record") url = "/api/record?league=" + enc(league);
+            } else if (path === "/record" || path === "/about") url = "/api/record?league=" + enc(league);
+            // Wave G research screens (src/lib/api.ts researchPaths)
+            else if (path === "/trends") url = "/api/trends?league=" + enc(league) + "&view=all&limit=200";
+            else if (path === "/matchups") url = "/api/matchups/defense?league=" + enc(league) + (team ? "&team=" + team : "");
+            else if (path === "/players" || path === "/compare" && !(q.get("a") && q.get("b"))) url = "/api/players?league=" + enc(league) + "&sort=points&dir=desc&limit=500";
+            else if (path === "/receivers") url = "/api/receivers?league=" + enc(league) + "&limit=150";
+            else if (path === "/compare") url = "/api/compare?league=" + enc(league) + "&a=" + enc(q.get("a")) + "&b=" + enc(q.get("b"));
           }
           if (url) window.__llPrefetch = { url: url, res: fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" } }) };
         } catch (e) {}

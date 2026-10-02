@@ -8,16 +8,21 @@
   import Coming from "./components/Coming.svelte";
   import Login from "./components/Login.svelte";
   import TopBar, { sectionOf } from "./components/TopBar.svelte";
-  import AboutPage from "./routes/About.svelte";
   import LeaguesPage from "./routes/Leagues.svelte";
   import MyWeekPage from "./routes/MyWeek.svelte";
   import PlayerPage from "./routes/Player.svelte";
-  import ComparePage from "./routes/Compare.svelte";
-  import MatchupsPage from "./routes/Matchups.svelte";
-  import PlayersPage from "./routes/Players.svelte";
-  import ReceiversPage from "./routes/Receivers.svelte";
   import RosPage from "./routes/Ros.svelte";
-  import TrendsPage from "./routes/Trends.svelte";
+  // the research screens and About load on first use (their own chunks): My Week's first screen stays small
+  const LAZY = {
+    trends: () => import("./routes/Trends.svelte"),
+    matchups: () => import("./routes/Matchups.svelte"),
+    players: () => import("./routes/Players.svelte"),
+    receivers: () => import("./routes/Receivers.svelte"),
+    compare: () => import("./routes/Compare.svelte"),
+    about: () => import("./routes/About.svelte"),
+  } as const;
+  type LazyName = keyof typeof LAZY;
+  const isLazy = (n: string): n is LazyName => n in LAZY;
 
   let phase = $state<"loading" | "login" | "ready" | "error">("loading");
   let house = $state<League[]>([]);
@@ -127,8 +132,12 @@
   <div class="ll-under-bar mx-auto max-w-6xl px-4 pt-4" data-section={sectionOf(r.name)}>
     {#if r.name === "ros"}
       <RosPage {options} {league} {team} onauth={needLogin} />
-    {:else if r.name === "about"}
-      <AboutPage {options} {league} {team} onauth={needLogin} />
+    {:else if isLazy(r.name)}
+      {#await LAZY[r.name]()}
+        <div class="space-y-3" aria-label="Loading" data-testid="loading"><div class="ll-skel h-8 w-1/2"></div><div class="ll-skel h-40"></div></div>
+      {:then m}
+        <m.default {options} {league} {team} onauth={needLogin} />
+      {/await}
     {:else if r.name === "waivers"}
       <Coming title="Waivers" what="Who to claim this week, who to drop for him, and what he adds to your lineup now and over the next four weeks." />
     {:else if r.name === "trades"}
@@ -137,16 +146,6 @@
       <Coming title="Your team" what="Where your roster ranks in the league, slot by slot, and how it holds up over the season." />
     {:else if r.name === "league"}
       <Coming title="The league" what="Standings, the record against everyone, luck, the managers and the latest moves." />
-    {:else if r.name === "trends"}
-      <TrendsPage {options} {league} {team} onauth={needLogin} />
-    {:else if r.name === "matchups"}
-      <MatchupsPage {options} {league} {team} onauth={needLogin} />
-    {:else if r.name === "players"}
-      <PlayersPage {options} {league} {team} onauth={needLogin} />
-    {:else if r.name === "receivers"}
-      <ReceiversPage {options} {league} {team} onauth={needLogin} />
-    {:else if r.name === "compare"}
-      <ComparePage {options} {league} {team} onauth={needLogin} />
     {:else}
       <MyWeekPage {options} {league} {team} {mine} {status} onauth={needLogin} />
     {/if}

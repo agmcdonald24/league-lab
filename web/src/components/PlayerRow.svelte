@@ -1,7 +1,7 @@
 <script lang="ts">
   // One player in a list: headshot (a silhouette without one) · name · position + team badges · one line of context
-  // · an optional headline number on the right. "Yours" gets the accent edge. With `onselect` the row picks him for
-  // the detail pane (desktop list + detail); the name stays a link to his card.
+  // · an optional headline number on the right. "Yours" gets the accent edge. With `onselect` a tap on the row picks
+  // him for the detail pane (list + detail); a tap on the name opens his card.
   import type { Snippet } from "svelte";
   import Headshot from "./Headshot.svelte";
   import PosBadge from "./PosBadge.svelte";
@@ -48,9 +48,7 @@
 <div
   class="relative flex min-h-14 items-center gap-3 px-3 py-2 {selected ? 'bg-accent-soft' : ''} {onselect ? 'cursor-pointer hover:bg-raised' : ''}"
   onclick={(e) => {
-    if (!onselect) return;
-    if ((e.target as Element).closest("a") && window.innerWidth < 900) return; // a phone follows the link
-    if ((e.target as Element).closest("a")) e.preventDefault();
+    if (!onselect || (e.target as Element).closest("a")) return; // the name is a link: it opens his card
     onselect();
   }}
   data-testid={testid}
