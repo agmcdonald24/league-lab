@@ -331,7 +331,8 @@ export const paths = {
   record: (league: string) => `/api/record?league=${encodeURIComponent(league)}`,
 };
 
-// ---- G3 (Wave G): the research routes (G1's contract; shapes pinned by web/fixtures/*_<league>.json)
+// ---- G3 (Wave G): the research screens' shapes. G1's answers reach them through lib/shapes.ts (the one mapping layer);
+// the fixtures (web/fixtures/*_<league>.json) are G1's saved answers (make_research_fixtures.py)
 
 /** The player fields every research row carries (joined from dim_player). */
 export interface PlayerHead {
@@ -415,7 +416,7 @@ export interface DefenseMatrix {
   weeks_used: number | null;
   positions: string[];
   teams: DefenseCell[];
-  starters?: Starter[]; // with team=: your starters this week and the defense each faces (a G3 request to G1)
+  starters?: Starter[]; // with team=: your starters this week and the defense each faces (added to G1 at integration)
 }
 
 /** GET /api/matchups/cb?league=&team= — mart_cb_matchups (+ mart_cb_rankings, the projection) for your receivers */

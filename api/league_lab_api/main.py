@@ -238,8 +238,8 @@ def trends(league: str, response: Response, position: str = "ALL", limit: int = 
 
 
 @app.get("/api/matchups/defense", dependencies=[Depends(require_auth)])
-def matchups_defense(league: str, response: Response, position: str = "ALL", source: str | None = None):
-    return _json(research.matchups_defense(league, position=position, source=source), response)
+def matchups_defense(league: str, response: Response, position: str = "ALL", source: str | None = None, team: int | None = None):
+    return _json(research.matchups_defense(league, position=position, source=source, team=team), response)
 
 
 @app.get("/api/matchups/cb", dependencies=[Depends(require_auth)])

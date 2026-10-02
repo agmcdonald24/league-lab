@@ -9,6 +9,7 @@
   import { withContext } from "../lib/md";
   import { ownerWord } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
+  import { toCompare, toPlayers } from "../lib/shapes";
   import { route, setParams } from "../lib/router.svelte";
   import { fmt, teamLabel } from "../lib/theme";
   import Card from "../components/Card.svelte";
@@ -17,8 +18,8 @@
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
-  const pool = new Remote<Players>();
-  const cmp = new Remote<Compare>();
+  const pool = new Remote<Players>(toPlayers);
+  const cmp = new Remote<Compare>(toCompare);
   $effect(() => pool.load(researchPaths.players(league), onauth));
 
   const ctx = $derived({ league, team });

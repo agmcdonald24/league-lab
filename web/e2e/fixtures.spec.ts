@@ -273,9 +273,9 @@ const dyn = (path: string, extra = "") => `${path}?league=${DYNASTY}&team=12${ex
 
 test("Trends: the answer first (due / running hot), the gap bars, filters in the URL, a name opens his card with its chart", async ({ page, isMobile }, info) => {
   await page.goto(dyn("/trends"));
-  await expect(page.getByTestId("answer")).toContainText("Due to pick up: Baker Mayfield (14.9 a game on work worth 25.3).");
+  await expect(page.getByTestId("answer")).toContainText("Due to pick up: Jameis Winston (3.6 a game on work worth 15.3)."); // G1's rows (fixtures saved from the API)
   await expect(page.getByTestId("answer")).toContainText("Running hot: Jaxon Smith-Njigba (39.4 a game on work worth 20.0).");
-  await expect(page.getByTestId("card-due")).toContainText("−10.4");
+  await expect(page.getByTestId("card-due")).toContainText("−11.7");
   await expect(page.getByTestId("card-hot")).toContainText("+19.4");
   await expect(page.getByTestId("tab-research")).toHaveAttribute("aria-current", "page");
   await expect(page.getByTestId("sub-trends")).toHaveAttribute("aria-current", "page");
@@ -290,7 +290,7 @@ test("Trends: the answer first (due / running hot), the gap bars, filters in the
   }
   await tap(page, page.getByTestId("view-due"), isMobile);
   await expect(page).toHaveURL(/view=due/);
-  await expect(rows.first()).toContainText("Baker Mayfield");
+  await expect(rows.first()).toContainText("Jameis Winston");
   await tap(page, page.getByTestId("who-mine"), isMobile);
   await expect(page).toHaveURL(/who=mine/);
   const n = await rows.count();
@@ -326,14 +326,14 @@ test("Matchups: your starters' best and toughest, the heatmap with your cells ri
   await expect(cbs).toHaveCount(4);
   await expect(cbs.nth(1)).toContainText("Parker Washington vs CIN: likely across from DJ Turner II (right corner, #18 of 74, shutdown)");
   await expect(cbs.nth(1).getByTestId("side-bar")).toContainText("Left 47%");
-  await expect(cbs.nth(2)).toContainText("tight ends mostly draw linebackers and safeties");
+  await expect(cbs.nth(3)).toContainText("tight ends mostly draw linebackers and safeties");
   await noSidewaysScroll(page);
   void isMobile;
 });
 
 test("Players: the points leader, search, position, sort, whose — and no sideways table on a phone", async ({ page, isMobile }) => {
   await page.goto(dyn("/players"));
-  await expect(page.getByTestId("players-answer")).toContainText("Most points: Josh Allen, 99.3 (49.6 a game) in Forever Unclean Dynasty scoring · 396 players.");
+  await expect(page.getByTestId("players-answer")).toContainText("Most points: Josh Allen, 99.3 (49.6 a game) in Forever Unclean Dynasty scoring · 428 players.");
   const table = page.getByTestId("players-table");
   await expect(table.getByTestId("players-table-row")).toHaveCount(50);
   const visibleHeads = await table.locator("thead th:visible").count();
@@ -356,7 +356,7 @@ test("Players: the points leader, search, position, sort, whose — and no sidew
 
 test("Receivers: the biggest share first, role bars against the top-12 yardstick, TE switch", async ({ page, isMobile }) => {
   await page.goto(dyn("/receivers"));
-  await expect(page.getByTestId("receivers-answer")).toContainText("Biggest share of his team's targets: Jaxon Smith-Njigba (44%; the top-12 WRs average 30%).");
+  await expect(page.getByTestId("receivers-answer")).toContainText("Biggest share of his team's targets: Jaxon Smith-Njigba (44%; the top-12 WRs average 29%).");
   const detail = page.getByTestId("receivers-detail");
   await expect(detail).toBeVisible(); // stacked on a phone (the answer first), on the right at 1300
   await expect(detail.getByTestId("role-bars").getByTestId("bar")).toHaveCount(6); // routes are filled in after the season: not a 0

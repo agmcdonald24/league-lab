@@ -8,6 +8,7 @@
   import { withContext } from "../lib/md";
   import { rankWord } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
+  import { toCb, toDefense } from "../lib/shapes";
   import { fmt, seqFill, seqInk, SERIES, teamLabel } from "../lib/theme";
   import Card from "../components/Card.svelte";
   import Expander from "../components/Expander.svelte";
@@ -18,8 +19,8 @@
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
-  const d = new Remote<DefenseMatrix>();
-  const c = new Remote<CbMatchups>();
+  const d = new Remote<DefenseMatrix>(toDefense);
+  const c = new Remote<CbMatchups>(toCb);
   $effect(() => d.load(researchPaths.defense(league, team), onauth));
   $effect(() => c.load(team === null ? null : researchPaths.cb(league, team), onauth));
 
@@ -191,7 +192,7 @@
 
       <Card title="Defense vs position" testid="defense">
         <p class="mb-3 text-sm leading-snug text-ink-2">
-          Points each defense gives up a game to each position{d.data.weeks_used ? `, weeks 1–${d.data.weeks_used}` : ""}, one scale for every league.
+          Points each defense gives up a game to each position{d.data.weeks_used ? `, weeks 1–${d.data.weeks_used}` : ""}, in {leagueName} scoring.
           Stronger color = gives up more = the matchup you want.{#if starters.length}&nbsp;Ringed: your starters' matchups this week (their defenses come first).{/if}
         </p>
         <Heatmap {rows} {cols} cell={heatCell} {marked} lowLabel="gives up fewer" highLabel="gives up more" />
@@ -206,7 +207,7 @@
             "- **Start the receiver whose likely corner ranks lower** when two options are close; don't bench a star for a tough corner: his targets matter more, and the projection already counts the defense.\n" +
             "- The side bar shows where his targets have gone since the start of last season (the offense's left, middle, right); the highlighted side is the one the named corner covers.\n" +
             "- Tight ends mostly draw linebackers and safeties, so they get no cornerback call.\n" +
-            `- Three weeks is a small sample: a defense's rank moves a lot early. Points here are on one scale for every league, not ${leagueName}'s.`}
+            `- A few weeks is a small sample: a defense's rank moves a lot early. Points here are in ${leagueName} scoring.`}
         />
       </div>
     </Expander>

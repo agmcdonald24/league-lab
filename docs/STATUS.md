@@ -2846,6 +2846,29 @@ included).
 
 ## Wave G (Iteration 15)
 
+### Integration (PO) 2026-10-02 — G3's research screens on G1's real answers (branch `integration/wave-g`)
+
+The research screens were built on fixtures from an assumed contract; they now read G1's answers through one mapping
+layer, `web/src/lib/shapes.ts` (`Remote` takes the mapper): trends `gap_direction` → `direction`, `role_alert.kind_label`
+→ `label`; defense `points_allowed_per_game_std` / `rank_std` / `points_allowed_per_game_l4` → `points_allowed_pg` /
+`rank` / `points_allowed_pg_l4`, `direction` (softer / stiffer) → `trend`, `weeks_used` [1, 2, 3] → 3; players `ppg` →
+`points_per_game`; receivers `games` / `points_per_game` / `snap_pct` / `form_week` → `games_played` / `ppg` /
+`avg_offense_snap_pct` / `through_week`; compare `projection.*`, `season` (totals ÷ games), `last3`, `next4[0]` →
+the side's `proj_points`…, `season_stats`, `form`, `opponent` / `opp_rank`. Two API additions where the screen could not
+derive the number: `/api/matchups/defense?team=` returns `starters` (that roster's current starters + slot, the defense
+each faces from `dim_game`; none set on Sleeper → the lineup My week proposes, which also fills `/api/matchups/cb`'s
+`is_starter` for the Test League) and compare's `season` carries `rushing_tds` / `receiving_tds` (the screen's
+touchdowns a game); 3 tests added (`test_matchups_defense_starters` × 3 leagues, one assert in `test_compare_route`).
+The Matchups copy no longer says "one scale for every league" (G1 prices defense points in the league's scoring). The
+research fixtures are now saved from the API (`web/fixtures/make_research_fixtures.py`, minus trends' `metrics` and
+receivers' `context`); 6 e2e expectations follow the real numbers. Live walk on :8690 (phone 390 × 844 dark, three
+leagues, + desktop 1300 × 900 once; 54 screens incl. one evaluated trade): 0 console errors, 0 failed requests, 0
+"undefined" / "NaN" / "[object Object]" / "null", 0 sideways scroll. Gates: api 138 passed, web lint + build green,
+fixture e2e 52 passed, ruff clean. Open: G2's live `/api/team` has no `slot_strength[].league` / `weekly[].league` and
+`/api/waivers` no `positions` (G4's fixtures add them as "requested"), so live the Team Hub shows no league rank /
+average beside each slot and week (Waivers' tabs fall back correctly); `api/README.md` does not yet list `team=` /
+`starters` on `/api/matchups/defense`.
+
 ### G1 2026-10-02 — the research, on demand (branch `dev/G1`, clone `league_lab_g1`)
 
 **What.** Seven routes in `api/league_lab_api/research.py` (routes block `# ---- G1 research` in `main.py`), pure

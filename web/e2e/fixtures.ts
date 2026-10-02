@@ -73,7 +73,7 @@ export async function serveFixtures(context: BrowserContext, opts: { gate?: bool
       const a = sides[q.get("a") ?? ""];
       const b = sides[q.get("b") ?? ""];
       if (!a || !b) return err(route, 404, "No numbers for that player in this league yet.");
-      body = JSON.stringify({ a, b });
+      body = JSON.stringify({ ...(sides._meta as object), a, b }); // saved sides of real answers + the answer's league block
     } else if ((m = p.match(/^\/api\/player\/([^/]+)\/games$/))) {
       const all = JSON.parse(file(`games_${q.get("league")}.json`) ?? "{}") as Record<string, { season: number }[]>;
       const rows = all[decodeURIComponent(m[1])];

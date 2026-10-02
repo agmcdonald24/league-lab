@@ -531,7 +531,65 @@ PROFILE_REF = {"points_allowed_pg": "points_allowed_pg_ref", "offense_baseline_p
                "rank_points": "rank_points_ref", "rank_adjusted": "rank_adjusted_ref"}
 
 
-def matchups_defense(league_id: str, *, position: str | None = None, source: str | None = None) -> dict:
+BENCH_SLOTS = {"BN", "IR", "TAXI", "RES"}
+
+
+def starter_slots(ctx: Ctx, team: int) -> list[tuple[str, str | None]]:
+    """One roster's current starters as (gsis_id, slot), in lineup order: house league = mart_player_availability's
+    is_current_starter (no slot); any other league = Sleeper's `starters`, each paired with the league's starting slot
+    (none set on Sleeper: the lineup My week proposes)."""
+    if ctx.house:
+        st = query("""select gsis_id from analytics.mart_player_availability where league_id = %s and rostered_by_roster_id = %s
+                      and is_current_starter and gsis_id is not null order by gsis_id""", (ctx.league_id, int(team)))
+        # the slot (and lineup order) where My week's lineup starts him too; the rest after, by position
+        lr = cards.lineup_rows(ctx.league_id, ctx.season, int(ctx.week), int(team)) if ctx.week is not None else pd.DataFrame()
+        lr = lr[(lr["role"] == "starter") & lr["gsis_id"].notna()] if not lr.empty else lr
+        slot_of = {str(r["gsis_id"]): (int(r["slot_order"]), r["slot"]) for _, r in lr.iterrows()} if not lr.empty else {}
+        ids = sorted(st["gsis_id"], key=lambda g: slot_of.get(g, (99, None))[0])
+        return [(g, slot_of.get(g, (99, None))[1]) for g in ids]
+    sids = [str(p) for r in ctx.rosters if int(r["roster_id"]) == int(team) for p in (r.get("starters") or [])]
+    slots = [s for s in ctx.slots if str(s).upper() not in BENCH_SLOTS]
+    slot_of = dict(zip(sids, slots, strict=False)) if len(slots) == len(sids) else {}
+    idm = query("select sleeper_id, gsis_id from analytics.player_id_map where sleeper_id = any(%s)", (sorted(set(sids)),))
+    gsis_of = dict(zip(idm["sleeper_id"].astype(str), idm["gsis_id"], strict=False)) if not idm.empty else {}
+    out = [(gsis_of[s], slot_of.get(s)) for s in sids if s in gsis_of]
+    if not out and ctx.week is not None and any(int(r["roster_id"]) == int(team) for r in ctx.rosters):
+        # no lineup set on Sleeper: the lineup My week proposes (ondemand: the nightly's solver on this league)
+        from .ondemand import PlayerContext
+        rows = PlayerContext(ctx.league_id).lineup(int(team), int(ctx.week))
+        if not rows.empty:
+            st = rows[(rows["role"] == "starter") & rows["gsis_id"].notna()]
+            out = [(str(r["gsis_id"]), r.get("slot")) for _, r in st.iterrows()]
+    return out
+
+
+STARTER_GAME_SQL = """select g.home_team, g.away_team from analytics.dim_game g
+                      where g.season = %s and g.week = %s and g.season_type = 'REG' and %s in (g.home_team, g.away_team)"""
+
+
+def defense_starters(ctx: Ctx, team: int, positions: list[str]) -> list[dict]:
+    """Your starters this week at the heatmap's positions and the defense each faces (the cells the screen rings)."""
+    pairs = starter_slots(ctx, team)
+    if not pairs or ctx.week is None:
+        return []
+    df = decorate(pd.DataFrame({"gsis_id": [g for g, _ in pairs], "slot": [s for _, s in pairs]}), ctx)
+    out = []
+    for r in _records(df):
+        if r.get("position") not in positions:
+            continue
+        team_abbr, opp, home = r.get("team"), None, None
+        if isinstance(team_abbr, str) and team_abbr:
+            g = query(STARTER_GAME_SQL, (ctx.season, int(ctx.week), team_abbr))
+            if not g.empty:
+                home = bool(g.iloc[0]["home_team"] == team_abbr)
+                opp = g.iloc[0]["away_team"] if home else g.iloc[0]["home_team"]
+        out.append({k: r.get(k) for k in ("gsis_id", "player_name", "position", "team", "headshot_url", "slot")}
+                   | {"opponent": opp, "is_home": home})
+    return out
+
+
+def matchups_defense(league_id: str, *, position: str | None = None, source: str | None = None,
+                     team: int | None = None) -> dict:
     ctx = context(league_id, source)
     starts = [p for p in POSITIONS if p in {s.upper() for s in ctx.slots}] or list(SKILL)
     pos = _positions(position, POSITIONS, default=starts)
@@ -565,7 +623,8 @@ def matchups_defense(league_id: str, *, position: str | None = None, source: str
     n_def = int(rows.groupby("position")["defense"].nunique().max()) if not rows.empty else 0
     return {**ctx.meta(), "season": season, "profile_week": week, "positions": pos, "n_defenses": n_def,
             "weeks_used": [int(w) for w in played["week"]] if not played.empty else [],
-            "teams": _records(rows), "howto": DVP_HOWTO, "scoring_note": REF_NOTE.format(ref=reference_name())}
+            "teams": _records(rows), "howto": DVP_HOWTO, "scoring_note": REF_NOTE.format(ref=reference_name()),
+            **({"team": team, "starters": defense_starters(ctx, int(team), pos)} if team is not None else {})}
 
 
 # ------------------------------------------------------------------------------ /api/matchups/cb
@@ -626,14 +685,7 @@ def matchups_cb(league_id: str, *, team: int | None = None, limit: int | None = 
             if int(team) not in known and (ctx.house or int(team) not in {int(r["roster_id"]) for r in ctx.rosters}):
                 raise NotFound(f"no team {team} in league {ctx.league_id}")
         ids = list(mine["gsis_id"])
-        if ctx.house:
-            st = query("""select gsis_id from analytics.mart_player_availability where league_id = %s and rostered_by_roster_id = %s
-                          and is_current_starter""", (ctx.league_id, int(team)))
-            starters = set(st["gsis_id"])
-        else:
-            sids = {str(p) for r in ctx.rosters if int(r["roster_id"]) == int(team) for p in (r.get("starters") or [])}
-            idm = query("select gsis_id from analytics.player_id_map where sleeper_id = any(%s)", (sorted(sids),))
-            starters = set(idm["gsis_id"]) if not idm.empty else set()
+        starters = {g for g, _ in starter_slots(ctx, int(team))}
         cbm = query("select * from analytics.mart_cb_matchups where season = %s and week = %s and gsis_id = any(%s)",
                     (ctx.season, int(week), ids)) if ids else pd.DataFrame()
     else:
@@ -976,7 +1028,7 @@ def player_games(league_id: str, gsis: str, *, season: int | None = None, season
 # ------------------------------------------------------------------------------ /api/compare
 SEASON_PG_COLS = ["games_played", "targets_per_game", "carries_per_game", "dropbacks_per_game", "catch_rate", "yards_per_target",
                   "yards_per_carry", "adot", "completion_rate", "yards_per_attempt", "passing_yards", "passing_tds", "rushing_yards",
-                  "receiving_yards", "receptions", "targets", "carries", "attempts"]
+                  "rushing_tds", "receiving_yards", "receiving_tds", "receptions", "targets", "carries", "attempts"]
 USAGE_COLS = ["target_share", "carry_share", "air_yards_share", "first_read_target_share", "avg_offense_snap_pct",
               "red_zone_target_share", "red_zone_carry_share", "route_participation"]
 FORM_COLS = ["target_share_l3", "carry_share_l3", "air_yards_share_l3", "snap_pct_l3", "first_read_share_l3", "targets_l3",

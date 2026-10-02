@@ -9,6 +9,7 @@
   import { withContext } from "../lib/md";
   import { ownerWord, whoFilter, type Who } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
+  import { toReceivers } from "../lib/shapes";
   import { route, setParams } from "../lib/router.svelte";
   import { fmt } from "../lib/theme";
   import Bar from "../components/Bar.svelte";
@@ -23,7 +24,7 @@
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
-  const r = new Remote<Receivers>();
+  const r = new Remote<Receivers>(toReceivers);
   $effect(() => r.load(researchPaths.receivers(league), onauth));
 
   const ctx = $derived({ league, team });

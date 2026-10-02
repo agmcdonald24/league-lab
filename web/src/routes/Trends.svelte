@@ -9,6 +9,7 @@
   import { withContext } from "../lib/md";
   import { gapWords, NEAR, ownerWord, whoFilter, workLine, type Who } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
+  import { toTrends } from "../lib/shapes";
   import { navigate, route, setParams } from "../lib/router.svelte";
   import { fmt, SERIES } from "../lib/theme";
   import Bar from "../components/Bar.svelte";
@@ -25,7 +26,7 @@
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
-  const r = new Remote<Trends>();
+  const r = new Remote<Trends>(toTrends);
   $effect(() => r.load(researchPaths.trends(league), onauth));
 
   const ctx = $derived({ league, team });

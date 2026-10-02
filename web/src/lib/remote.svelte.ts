@@ -15,6 +15,12 @@ export class Remote<T> {
   error = $state<string | null>(null);
   loading = $state(false);
   #path: string | null = null;
+  #map: (raw: unknown) => T;
+
+  /** `map`: the API's answer → the screen's shape (lib/shapes.ts); default as is. */
+  constructor(map?: (raw: unknown) => T) {
+    this.#map = map ?? ((raw) => raw as T);
+  }
 
   /** Load `path` (null clears). `keep`: hold the previous answer on screen while the new one loads (no flash). */
   load(path: string | null, onauth: () => void, keep = false): void {
@@ -24,19 +30,19 @@ export class Remote<T> {
       this.data = null;
       return;
     }
-    const hit = peek<T>(path);
+    const hit = peek<unknown>(path);
     if (hit !== undefined) {
-      this.data = hit;
+      this.data = this.#map(hit);
       this.loading = false;
       restoreScroll();
       return;
     }
     if (!keep) this.data = null;
     this.loading = true;
-    get<T>(path)
+    get<unknown>(path)
       .then((d) => {
         if (this.#path !== path) return;
-        this.data = d;
+        this.data = this.#map(d);
         this.loading = false;
         restoreScroll();
       })

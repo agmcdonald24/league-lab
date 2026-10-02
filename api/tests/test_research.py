@@ -196,6 +196,32 @@ def test_matchups_defense_route(client, sql, league):
     assert client.get(f"/api/matchups/defense?league={league}&position=XX").status_code == 404
 
 
+
+@pytest.mark.parametrize("league", [*HOUSE, TEST_LEAGUE])
+def test_matchups_defense_starters(client, sql, league):
+    """With team=: that roster's current starters at the heatmap's positions and the defense each faces this week (the
+    cells the Matchups screen rings) — the same starters /api/matchups/cb marks is_starter."""
+    team = ANDREW.get(league, 3)
+    d = client.get(f"/api/matchups/defense?league={league}&team={team}").json()
+    assert "starters" not in client.get(f"/api/matchups/defense?league={league}").json()
+    st = d["starters"]
+    assert st and d["team"] == team and all({"gsis_id", "player_name", "position", "team", "headshot_url", "slot", "opponent",
+                                             "is_home"} <= set(s) for s in st)
+    assert all(s["position"] in d["positions"] for s in st)
+    cb = client.get(f"/api/matchups/cb?league={league}&team={team}&limit=500").json()
+    cb_starters = {m["gsis_id"] for m in cb["matchups"] if m["is_starter"]}
+    assert cb_starters <= {s["gsis_id"] for s in st}
+    for s in st:
+        if s["opponent"] is None:
+            continue
+        g = sql("""select home_team, away_team from analytics.dim_game where season = %s and week = %s and season_type = 'REG'
+                   and %s in (home_team, away_team)""", (d["season"], d["week"], s["team"]))[0]
+        assert s["opponent"] == (g["away_team"] if s["is_home"] else g["home_team"])
+        assert s["is_home"] == (g["home_team"] == s["team"])
+    if league == TEST_LEAGUE:
+        assert all(s["slot"] for s in st)
+
+
 # ------------------------------------------------------------------------------ /api/matchups/cb
 @pytest.mark.parametrize("league", HOUSE)
 def test_matchups_cb_route(client, sql, league):
@@ -279,6 +305,7 @@ def test_compare_route(client, league):
     assert set(a) == set(b) and PLAYER_KEYS <= set(a)
     assert {"projection", "season", "usage", "last3", "ros", "next4", "matchup"} <= set(a)
     assert set(a["season"]) == set(b["season"]) and len(a["next4"]) == 4
+    assert {"passing_tds", "rushing_tds", "receiving_tds"} <= set(a["season"])   # the screen's touchdowns a game
     card = client.get(f"/api/player/{CHASE}?league={league}").json()                 # same numbers everywhere
     assert a["projection"]["proj_points"] == pytest.approx(card["proj_points"]) and a["ros"] == card["ros"]
     assert d["verdict"] and [r["what"] for r in d["table"]][:3] == ["Projection", "Floor – ceiling", "Opponent"]
