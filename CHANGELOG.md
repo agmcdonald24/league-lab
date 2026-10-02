@@ -4,6 +4,9 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-02 — Wave H
 
+- **Hotfix: the nightly on GitHub Actions.** Its first real run (#4, secrets set) failed in `restore-state`: Neon runs
+  Postgres 18.6 and the runner installed `postgresql-client-17`, whose `pg_dump` refuses a newer server. The runner's
+  service and client are now 18 (`nightly.yml`); HOSTING.md says so and has the row for next time.
 - **Hotfix: the build context.** `api/Dockerfile.dockerignore` (a pre-Wave H duplicate that BuildKit preferred over
   the root `.dockerignore`) kept `app/pages` out of the image and failed the first Render build; it is deleted, and
   `api/tests/test_build_context.py` keeps the Dockerfile's `COPY` sources and `.dockerignore` in step.

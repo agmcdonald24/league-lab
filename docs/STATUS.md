@@ -3167,6 +3167,12 @@ placeholder test above.
   GitHub nightly has never completed (secrets unset), so `LEAGUE_LAB_MAC_WRITES_HOSTED=1` is set in the Mac's `.env`
   and the Mac's 08:00 job publishes Neon; `docs/HANDOFF.md` says so. Not run: `scripts/smoke.sh` itself (neither the
   sandbox nor the Mac's shell can reach `onrender.com`; the same checks ran from the browser).
+* **GitHub nightly, 2026-10-02 evening**: Andrew set the three secrets and ran the workflow by hand (#4): the secrets
+  check passed, `migrate ok`, then `restore-state FAILED` — `pg_dump: error: aborting because of server version
+  mismatch; server version: 18.6, pg_dump version: 17.11`. Neon is Postgres 18; `nightly.yml` installed client 17 and
+  ran a `postgres:17` service. Fix: both to 18. The Mac (Homebrew 17) is unaffected: its tables are "kept", it never
+  dumps from Neon in normal operation. Next: push, re-run; if green, remove `LEAGUE_LAB_MAC_WRITES_HOSTED=1` from the
+  Mac's `.env` the same day (the Mac's 08:00 and Actions' 07:37 must not both publish).
 
 ### H2 2026-10-02 — one writer, the record kept, the hosted relation audit (branch `dev/H2`, clone `league_lab_h2`)
 

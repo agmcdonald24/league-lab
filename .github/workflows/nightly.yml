@@ -1,4 +1,4 @@
-# The nightly pipeline on a GitHub-hosted runner (plan B6 / I-01): a throwaway Postgres 17, the raw
+# The nightly pipeline on a GitHub-hosted runner (plan B6 / I-01): a throwaway Postgres 18, the raw
 # archive from the Actions cache, live Sleeper + nflverse for the current season, dbt build,
 # projection v2, Sleeper's own projections (fetch-projections, plan E1) and the hosted sync to Neon.
 # Every step lives in scripts/nightly.sh, the same script the Mac runs, so a failure here reproduces locally.
@@ -49,7 +49,10 @@ jobs:
     timeout-minutes: 120
     services:
       postgres:
-        image: postgres:17
+        # 18, the same major as Neon (18.6 on 2026-10-02): restore-state dumps FROM Neon with this runner's pg_dump,
+        # and pg_dump refuses a server newer than itself ("server version mismatch" ended run #4). Keep the service,
+        # the client below and Neon on one major; when Neon moves up, move both here.
+        image: postgres:18
         env:
           # superuser of a container that lives for this job only, reachable only from this runner
           POSTGRES_PASSWORD: postgres
@@ -74,20 +77,20 @@ jobs:
       - name: Python environment (uv.lock)
         run: uv sync --locked
 
-      - name: PostgreSQL 17 client (pg_dump must match the service's major version)
+      - name: PostgreSQL 18 client (pg_dump must be at least Neon's major, and match the service's)
         run: |
-          # the runner ships PostgreSQL 16 tools; pg_dump 16 refuses a 17 server
+          # the runner ships PostgreSQL 16 tools; pg_dump refuses any server newer than itself (Neon is 18)
           if [ ! -x /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh ]; then
             sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-common
           fi
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y > /dev/null
-          sudo apt-get install -y -qq postgresql-client-17 > /dev/null
-          echo /usr/lib/postgresql/17/bin >> "$GITHUB_PATH"
+          sudo apt-get install -y -qq postgresql-client-18 > /dev/null
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
 
       - name: Season
         id: season
         run: |
-          /usr/lib/postgresql/17/bin/pg_dump --version
+          /usr/lib/postgresql/18/bin/pg_dump --version
           echo "season=$(uv run python -c 'from league_lab.ingest.nflverse import current_nfl_season; print(current_nfl_season())')" >> "$GITHUB_OUTPUT"
 
       # The archive (data/raw, ~280 MB: every nflverse file and Sleeper payload ever fetched) is what

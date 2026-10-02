@@ -27,8 +27,10 @@ or the archive.
 
 Either provider works; both have a free tier that fits (~320 MB today, +≈30 MB per season; Neon's cap is 0.5 GB).
 
-**Neon** (recommended: cheap, Postgres 17, no sleeping issues for a read-only workload)
-1. neon.tech → sign up → New project → name `league-lab`, region closest to you, Postgres 17.
+**Neon** (recommended: cheap, no sleeping issues for a read-only workload). The project runs **Postgres 18** (18.6 on
+2026-10-02; the Actions runner's service and client follow it — `nightly.yml`; the Mac's own Homebrew 17 is fine: it
+never dumps from Neon in normal operation).
+1. neon.tech → sign up → New project → name `league-lab`, region closest to you, the current Postgres.
 2. Dashboard → *Connection string* → choose the **owner** role (`neondb_owner`) → copy the URL.
    It looks like `postgresql://neondb_owner:...@ep-...-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require`.
    Use the **direct** (non-pooler) host for the sync; either for the app.
@@ -156,7 +158,8 @@ key is modelled wrong).
 ## 5. Nightly on GitHub Actions
 
 `.github/workflows/nightly.yml` runs the whole nightly on a free GitHub runner: a throwaway
-Postgres 17, the raw archive restored from the Actions cache, live Sleeper + nflverse for the
+Postgres 18 (Neon's major: restore-state dumps from Neon with the runner's `pg_dump`, which refuses a newer server),
+the raw archive restored from the Actions cache, live Sleeper + nflverse for the
 current season, `dbt build`, projection v2, Sleeper's own projections, and the sync to Neon. Every step is in
 `scripts/nightly.sh`, the same script the Mac runs (`make nightly`), so anything that fails there
 can be reproduced on the Mac. **It is the one writer of the hosted copy** (Wave H): the beta must not depend on
@@ -219,6 +222,7 @@ about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; t
   | `save-record` | the archive directory is not writable | The night carried on and published; the cache just has no fresh copy of the record that night |
   | `sync-hosted` | Neon unreachable, or a wrong `HOSTED_*` secret; or the copy would be over the size budget (`over the 480 MB budget`, nothing touched); or a relation a page or the API reads is missing after the restore (`missing relations the readers name`) | Check the two secrets; re-run. Over the budget: § 4 "Size". If the restore died midway, pages say "marts not built yet" until a sync completes (§4) |
   | *Roles, database and .env* (before the pipeline) | a missing or malformed secret | The annotation names it |
+  | `restore-state` with `pg_dump: error: aborting because of server version mismatch` | Neon moved to a newer Postgres major than the runner's client | In `nightly.yml`, raise `image: postgres:<N>` and `postgresql-client-<N>` / `/usr/lib/postgresql/<N>/bin` to Neon's major (run #4, 2026-10-02: Neon 18.6 vs client 17) |
 
 ### The archive cache
 
