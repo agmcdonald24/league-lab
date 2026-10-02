@@ -1,0 +1,502 @@
+{
+ "league_id": "1389709692405551104",
+ "league_name": "League of Scrubs",
+ "source": "database",
+ "model": {
+  "answer": "**League Lab trains its own model**: these are not Sleeper's or ESPN's projections. It predicts each player's stat line from what was known before kickoff, then your league's scoring turns the line into points.",
+  "sections": [
+   {
+    "key": "learned",
+    "title": "What it learned from",
+    "text": "The regular-season games QBs, RBs, WRs and TEs played from 2016 to last season (over 50,000 of them), each with only what was known before kickoff: his season and last-3-game numbers, his share of his team's targets, carries and snaps, how often he was the quarterback's first look, last season, the opponent's defense against his position, the Vegas line, home or away, the injury report, who starts at quarterback and whether his team's top target is out."
+   },
+   {
+    "key": "predicts",
+    "title": "What it predicts",
+    "text": "The stat line, not points. For each position there is one small model per stat: targets, catches, receiving yards and touchdowns, carries, rushing yards and touchdowns, and for quarterbacks pass attempts, passing yards, touchdowns and interceptions. Each is a gradient-boosted model: a few hundred small decision trees, each one fixing the mistakes of the ones before it. Then **League of Scrubs**'s scoring turns the stat line into points, which is why the same player projects differently in each league."
+   },
+   {
+    "key": "ranges",
+    "title": "The ranges",
+    "text": "**Most weeks**, **floor** and **ceiling** come from separate models that learned how far off the projection usually is for a player like this one, then widened or narrowed until they held on seasons they had never seen: half his weeks land in the most-weeks range, 8 in 10 between the floor and the ceiling."
+   },
+   {
+    "key": "graded",
+    "title": "How it was graded",
+    "text": "Trained on the past, graded on seasons it never saw: each season from 2021 to 2025 was predicted by a model trained only on the seasons before it. The grade is the **order score** (Spearman: how well the projected order of players matched the order they really finished in, 1 = perfect, 0 = no better than random) and the **average miss** in points."
+   },
+   {
+    "key": "unknown",
+    "title": "What it does not know",
+    "text": "Injury news after the morning refresh, the weather, how the game actually goes (a blowout sends starters to the bench early), and coaching decisions made during the week. Check the news before kickoff."
+   }
+  ]
+ },
+ "importance": {
+  "model_version": "v3.0",
+  "eval_season": 2025,
+  "fit_seasons": "2016-2024",
+  "scored_in": "League of Scrubs",
+  "scored_in_league_id": "1389709692405551104",
+  "how_measured": "How we measured it: a copy of the model trained on 2016 to 2024 projected the 2025 season, which it had never seen. Then we scrambled one input at a time (shuffled it between players, so it tells the model nothing) and counted how much bigger the average miss got, in points per player per game (League of Scrubs scoring). Bigger = the model leans on it more. Inputs that move together (targets and catches, a season and its last 3 games) share the credit, so each looks a little smaller than it is.",
+  "unit": "Points of error added per player per game when that input is scrambled.",
+  "positions": [
+   {
+    "position": "QB",
+    "baseline_mae": 5.456991832407758,
+    "top": "Is he the projected starter?",
+    "lead": "For QBs the model leans most on **is he the projected starter?**. Next: *points Vegas expects his team to score* · *pass attempts per game, last 3 games*. It misses a QB by 5.5 points a game on average; scrambling the top input adds 1.83 to that.",
+    "features": [
+     {
+      "rank": 1,
+      "feature_label": "Is he the projected starter?",
+      "importance": 1.8317527775180475
+     },
+     {
+      "rank": 2,
+      "feature_label": "Points Vegas expects his team to score",
+      "importance": 0.17521678243198355
+     },
+     {
+      "rank": 3,
+      "feature_label": "Pass attempts per game, last 3 games",
+      "importance": 0.11765543031805077
+     },
+     {
+      "rank": 4,
+      "feature_label": "Rushing yards per game, season",
+      "importance": 0.08689119195669245
+     },
+     {
+      "rank": 5,
+      "feature_label": "Passing yards per game, last 3 games",
+      "importance": 0.08164059018233231
+     },
+     {
+      "rank": 6,
+      "feature_label": "Games he has played with this week's QB",
+      "importance": 0.07067556777721276
+     },
+     {
+      "rank": 7,
+      "feature_label": "Snap share, last 3 games",
+      "importance": 0.03807735252181192
+     },
+     {
+      "rank": 8,
+      "feature_label": "Snap share, season",
+      "importance": 0.03739957960773541
+     },
+     {
+      "rank": 9,
+      "feature_label": "Pass attempts per game, season",
+      "importance": 0.03703975853595907
+     },
+     {
+      "rank": 10,
+      "feature_label": "Carries per game, last season",
+      "importance": 0.03408141553955648
+     }
+    ]
+   },
+   {
+    "position": "RB",
+    "baseline_mae": 4.244636051462056,
+    "top": "Share of his team's carries, last 3 games",
+    "lead": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: *rushing yards per game, season* · *share of his team's targets, season*. It misses a RB by 4.2 points a game on average; scrambling the top input adds 0.34 to that.",
+    "features": [
+     {
+      "rank": 1,
+      "feature_label": "Share of his team's carries, last 3 games",
+      "importance": 0.33717569309344453
+     },
+     {
+      "rank": 2,
+      "feature_label": "Rushing yards per game, season",
+      "importance": 0.11975420125276645
+     },
+     {
+      "rank": 3,
+      "feature_label": "Share of his team's targets, season",
+      "importance": 0.059335564863136625
+     },
+     {
+      "rank": 4,
+      "feature_label": "Top ball carrier on his team out this week",
+      "importance": 0.05363573882419228
+     },
+     {
+      "rank": 5,
+      "feature_label": "Rushing yards per game, last season",
+      "importance": 0.051657571159873863
+     },
+     {
+      "rank": 6,
+      "feature_label": "Snap share, last 3 games",
+      "importance": 0.04935635563028136
+     },
+     {
+      "rank": 7,
+      "feature_label": "Carries per game, last season",
+      "importance": 0.04837488696005412
+     },
+     {
+      "rank": 8,
+      "feature_label": "Points Vegas expects his team to score",
+      "importance": 0.046256052076276435
+     },
+     {
+      "rank": 9,
+      "feature_label": "Points per game, last season",
+      "importance": 0.03465882938197087
+     },
+     {
+      "rank": 10,
+      "feature_label": "Share of his team's carries, season",
+      "importance": 0.023707069401529245
+     }
+    ]
+   },
+   {
+    "position": "WR",
+    "baseline_mae": 3.8858209613577066,
+    "top": "Snap share, last 3 games",
+    "lead": "For WRs the model leans most on **snap share, last 3 games**. Next: *expected points per game (what his touches are worth), season* · *receiving yards per game, last season*. It misses a WR by 3.9 points a game on average; scrambling the top input adds 0.11 to that.",
+    "features": [
+     {
+      "rank": 1,
+      "feature_label": "Snap share, last 3 games",
+      "importance": 0.110761328060795
+     },
+     {
+      "rank": 2,
+      "feature_label": "Expected points per game (what his touches are worth), season",
+      "importance": 0.03695294561638116
+     },
+     {
+      "rank": 3,
+      "feature_label": "Receiving yards per game, last season",
+      "importance": 0.03433028605644219
+     },
+     {
+      "rank": 4,
+      "feature_label": "Points per game, last season",
+      "importance": 0.03399660684346708
+     },
+     {
+      "rank": 5,
+      "feature_label": "Share of the team's targets out this week",
+      "importance": 0.022839445112221135
+     },
+     {
+      "rank": 6,
+      "feature_label": "Receiving yards per game, season",
+      "importance": 0.02026804700282554
+     },
+     {
+      "rank": 7,
+      "feature_label": "Points per game, season",
+      "importance": 0.01921341425814669
+     },
+     {
+      "rank": 8,
+      "feature_label": "Catches per game, season",
+      "importance": 0.018368937833713694
+     },
+     {
+      "rank": 9,
+      "feature_label": "Points per game, last 5 games",
+      "importance": 0.01591170770558046
+     },
+     {
+      "rank": 10,
+      "feature_label": "Share of his team's targets, last 3 games",
+      "importance": 0.014782018616041092
+     }
+    ]
+   },
+   {
+    "position": "TE",
+    "baseline_mae": 2.972047524090324,
+    "top": "Share of his team's targets, season",
+    "lead": "For TEs the model leans most on **share of his team's targets, season**. Next: *snap share, last 3 games* · *receiving yards per game, last season*. It misses a TE by 3.0 points a game on average; scrambling the top input adds 0.20 to that.",
+    "features": [
+     {
+      "rank": 1,
+      "feature_label": "Share of his team's targets, season",
+      "importance": 0.19829093481597876
+     },
+     {
+      "rank": 2,
+      "feature_label": "Snap share, last 3 games",
+      "importance": 0.09749485970599263
+     },
+     {
+      "rank": 3,
+      "feature_label": "Receiving yards per game, last season",
+      "importance": 0.09123288357845585
+     },
+     {
+      "rank": 4,
+      "feature_label": "Targets per game, season",
+      "importance": 0.030724196150558658
+     },
+     {
+      "rank": 5,
+      "feature_label": "Share of his team's air yards (throws downfield), last 3 games",
+      "importance": 0.030143729776216422
+     },
+     {
+      "rank": 6,
+      "feature_label": "Points Vegas expects his team to score",
+      "importance": 0.028503432923241867
+     },
+     {
+      "rank": 7,
+      "feature_label": "Snap share, season",
+      "importance": 0.023325426000758754
+     },
+     {
+      "rank": 8,
+      "feature_label": "Expected points per game, last season",
+      "importance": 0.022062313227105345
+     },
+     {
+      "rank": 9,
+      "feature_label": "Catches per game, season",
+      "importance": 0.021474254090972433
+     },
+     {
+      "rank": 10,
+      "feature_label": "Expected points per game, last 3 games",
+      "importance": 0.017533191693034224
+     }
+    ]
+   }
+  ],
+  "source": "app/pages/4_Rankings.py (What it leans on most)"
+ },
+ "grades": {
+  "scored_in": "League of Scrubs",
+  "scored_in_league_id": "1389709692405551104",
+  "season": 2026,
+  "weeks": "weeks 1–2",
+  "backtest_seasons": "2021–2025",
+  "season_model_version": "v2.0",
+  "backtest_model_version": "v3.0",
+  "answer": "The board scored like the backtest on NFL 2026's complete weeks 1–2 (League of Scrubs scoring, players who played), next to the walk-forward backtest (2021–2025). Week 3 is still being played; it counts once its last game is in.",
+  "positions": [
+   {
+    "position": "QB",
+    "season": {
+     "weeks_scored": 2,
+     "spearman": 0.427,
+     "mae": 6.62,
+     "coverage_80": 0.764
+    },
+    "backtest": {
+     "spearman": 0.542,
+     "mae": 5.86,
+     "coverage_80": 0.778
+    },
+    "by_season": [
+     {
+      "season": 2021,
+      "weeks": 18,
+      "spearman": 0.584,
+      "mae": 5.43,
+      "coverage_80": 0.815
+     },
+     {
+      "season": 2022,
+      "weeks": 18,
+      "spearman": 0.575,
+      "mae": 5.2,
+      "coverage_80": 0.805
+     },
+     {
+      "season": 2023,
+      "weeks": 18,
+      "spearman": 0.601,
+      "mae": 5.28,
+      "coverage_80": 0.74
+     },
+     {
+      "season": 2024,
+      "weeks": 18,
+      "spearman": 0.579,
+      "mae": 5.72,
+      "coverage_80": 0.763
+     },
+     {
+      "season": 2025,
+      "weeks": 18,
+      "spearman": 0.6,
+      "mae": 5.4,
+      "coverage_80": 0.785
+     }
+    ]
+   },
+   {
+    "position": "RB",
+    "season": {
+     "weeks_scored": 2,
+     "spearman": 0.685,
+     "mae": 4.15,
+     "coverage_80": 0.808
+    },
+    "backtest": {
+     "spearman": 0.661,
+     "mae": 4.29,
+     "coverage_80": 0.798
+    },
+    "by_season": [
+     {
+      "season": 2021,
+      "weeks": 18,
+      "spearman": 0.623,
+      "mae": 4.47,
+      "coverage_80": 0.806
+     },
+     {
+      "season": 2022,
+      "weeks": 18,
+      "spearman": 0.659,
+      "mae": 4.25,
+      "coverage_80": 0.813
+     },
+     {
+      "season": 2023,
+      "weeks": 18,
+      "spearman": 0.678,
+      "mae": 4.1,
+      "coverage_80": 0.828
+     },
+     {
+      "season": 2024,
+      "weeks": 18,
+      "spearman": 0.683,
+      "mae": 4.2,
+      "coverage_80": 0.806
+     },
+     {
+      "season": 2025,
+      "weeks": 18,
+      "spearman": 0.7,
+      "mae": 4.23,
+      "coverage_80": 0.787
+     }
+    ]
+   },
+   {
+    "position": "WR",
+    "season": {
+     "weeks_scored": 2,
+     "spearman": 0.535,
+     "mae": 4.24,
+     "coverage_80": 0.783
+    },
+    "backtest": {
+     "spearman": 0.61,
+     "mae": 4.07,
+     "coverage_80": 0.809
+    },
+    "by_season": [
+     {
+      "season": 2021,
+      "weeks": 18,
+      "spearman": 0.611,
+      "mae": 4.21,
+      "coverage_80": 0.81
+     },
+     {
+      "season": 2022,
+      "weeks": 18,
+      "spearman": 0.592,
+      "mae": 4.13,
+      "coverage_80": 0.802
+     },
+     {
+      "season": 2023,
+      "weeks": 18,
+      "spearman": 0.627,
+      "mae": 4.05,
+      "coverage_80": 0.811
+     },
+     {
+      "season": 2024,
+      "weeks": 18,
+      "spearman": 0.631,
+      "mae": 4.1,
+      "coverage_80": 0.793
+     },
+     {
+      "season": 2025,
+      "weeks": 18,
+      "spearman": 0.609,
+      "mae": 3.87,
+      "coverage_80": 0.81
+     }
+    ]
+   },
+   {
+    "position": "TE",
+    "season": {
+     "weeks_scored": 2,
+     "spearman": 0.549,
+     "mae": 3.38,
+     "coverage_80": 0.757
+    },
+    "backtest": {
+     "spearman": 0.554,
+     "mae": 3.01,
+     "coverage_80": 0.808
+    },
+    "by_season": [
+     {
+      "season": 2021,
+      "weeks": 18,
+      "spearman": 0.551,
+      "mae": 3.14,
+      "coverage_80": 0.835
+     },
+     {
+      "season": 2022,
+      "weeks": 18,
+      "spearman": 0.486,
+      "mae": 3.12,
+      "coverage_80": 0.789
+     },
+     {
+      "season": 2023,
+      "weeks": 18,
+      "spearman": 0.557,
+      "mae": 2.83,
+      "coverage_80": 0.809
+     },
+     {
+      "season": 2024,
+      "weeks": 18,
+      "spearman": 0.566,
+      "mae": 2.99,
+      "coverage_80": 0.792
+     },
+     {
+      "season": 2025,
+      "weeks": 18,
+      "spearman": 0.617,
+      "mae": 2.97,
+      "coverage_80": 0.816
+     }
+    ]
+   }
+  ],
+  "howto": [
+   "**Order score** (Spearman): how well the projected order of players matched the order they really finished in, 1 = perfect, 0 = no better than random. Around 0.5–0.6 is good for one week of fantasy football.",
+   "**Average miss** (MAE): how many points the projection missed by, on average, per player per game.",
+   "**Inside the range** (coverage): how often the real score landed between the floor and the ceiling. The aim is 8 weeks in 10.",
+   "**This season** scores the weeks already played on the board as it stood before kickoff; **backtest** is the same score on 2021 to 2025, each season predicted by a model trained only on the seasons before it. A few weeks are a small sample: one odd Sunday moves them a lot."
+  ],
+  "source": "app/pages/4_Rankings.py (How the model is doing this season; Backtest)"
+ }
+}

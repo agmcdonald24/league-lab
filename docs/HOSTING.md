@@ -1,20 +1,27 @@
 # Hosting League Lab for the league (beta)
 
 Goal: a link leaguemates can open. Cost: **$0** on free tiers. One nightly pipeline
-(`scripts/nightly.sh`) refreshes the data and publishes the marts to a hosted Postgres; it runs on
-GitHub Actions (§5; the Mac is then optional) or on your Mac (launchd, 08:00). Streamlit Community
-Cloud serves the explorer from GitHub against that database.
+(`scripts/nightly.sh`) refreshes the data and publishes the marts to a hosted Postgres (Neon).
+**One writer (Wave H): only GitHub Actions publishes** (§5, every morning at 07:37 New York time); the
+Mac's launchd job (08:00) runs the same pipeline for the Mac's own database — the research console
+(`make app`), the weekly packs — and does not publish. The product API on the server (`docs/DEPLOY.md`)
+and Streamlit Community Cloud read that database with a read-only role.
 
 ```
-GitHub Actions (§5) or Mac: scripts/nightly.sh
-  archive replay → live fetch → dbt build → project → sync_to_hosted.sh ──► hosted Postgres (marts only, ~300 MB)
-                                                                                    ▲
-GitHub repo ──► Streamlit Community Cloud (app/Home.py) ────────────────────────────┘  read-only role
+GitHub Actions (§5): scripts/nightly.sh                                   the ONE writer
+  archive replay → live fetch → dbt build → project → Sleeper's projections
+  → save the record → sync_to_hosted.sh ──► hosted Postgres (Neon; marts + ops, ~200 MB)
+                                                  ▲               ▲
+              the API on the server (DEPLOY.md) ──┘               └── Streamlit Community Cloud (app/Home.py)
+                                                  read-only role (league_lab_app)
+Mac (launchd 08:00): scripts/refresh.sh = the same nightly + a backup, into the Mac's own database; no publish
 ```
 
-What leaves your machine: the analytics marts the pages and packs read (the script derives the list
-from the code — 40 relations, ~320 MB), the seeds and the `ops` schema — never `raw`, `staging`,
-`intermediate`, the play-level tables, `.env` or the archive.
+What leaves the runner: every analytics relation the readers of the hosted copy name — the Streamlit console
+(`app/`, the weekly packs) and the product API (`api/` and the `src/league_lab` modules it imports) — found
+in the code, not listed by hand (§ "What the hosted copy holds"); the views and what they read; the seeds and
+the `ops` schema (the decision record) — never `raw`, `staging`, `intermediate`, the play-level tables, `.env`
+or the archive.
 
 ## 1. Hosted Postgres (15 minutes)
 
@@ -36,14 +43,16 @@ LEAGUE_LAB_HOSTED_ADMIN_URL=postgresql://neondb_owner:...@ep-....neon.tech/neond
 LEAGUE_LAB_HOSTED_APP_PASSWORD=<a long random password for the read-only app role>
 ```
 
-Publish:
+Publish the first copy from the Mac (before the GitHub nightly exists, the Mac is the writer — say so):
 
 ```bash
-make sync-hosted        # ~1-3 minutes: dumps the marts the pages read, creates the read-only role, restores
+LEAGUE_LAB_MAC_WRITES_HOSTED=1 make sync-hosted   # ~1-3 minutes: dumps the marts the readers name, creates the read-only role, restores
 ```
 
-Every `make refresh` (and the nightly launchd job) now ends with the same sync. If the sync fails
-the local data is untouched; run `make sync-hosted` again.
+From then on GitHub Actions publishes every morning (§5). Without `LEAGUE_LAB_MAC_WRITES_HOSTED=1` the
+sync refuses on the Mac ("GitHub Actions is the one writer", exit 7, nothing touched): a publish from the
+Mac would replace the decision record GitHub keeps on the hosted copy with the Mac's. If the sync fails the
+local data is untouched; run it again.
 
 The app's connection string is the same host and database with the **app** role:
 
@@ -91,8 +100,12 @@ The URL is `https://<app-name>.streamlit.app`; you can rename it in the app sett
 
 ```
 LEAGUE_LAB_SLEEPER_LEAGUE_ID=1389709692405551104,<other league id>     # in .env; first id = reference scoring
-make ingest-sleeper && make build && make sync-hosted
+make ingest-sleeper && make build                                        # the Mac's own database
 ```
+
+For the hosted copy: GitHub → Settings → Secrets and variables → Actions → `LEAGUE_LAB_SLEEPER_LEAGUE_ID` →
+**Update** with the same list, then Actions → nightly → **Run workflow** (§5). (Any league works in the
+product app without this: it reads Sleeper on demand. A house league gets the nightly's marts too.)
 
 The league id is the number in the Sleeper URL (`sleeper.com/leagues/<id>/...`). Its whole chain of
 previous seasons is fetched too. Leaguemates of the second league pick it in the sidebar; the link
@@ -107,8 +120,8 @@ key is modelled wrong).
 
 ## 4. What to expect
 
-* **Freshness** = the last nightly run + sync (the banner on every page says when): GitHub Actions
-  starts at 07:37 New York time (§5); the Mac's launchd job at 08:00, or when the Mac wakes.
+* **Freshness** = the last GitHub nightly (the banner on every page says when): it starts at 07:37 New
+  York time (§5) and publishes by about 08:00. The Mac's launchd job no longer publishes.
 * **Cold start**: Community Cloud sleeps an app after a few days without visitors; the first
   visitor waits ~30 s. Neon free tier suspends compute after 5 minutes idle; the first query
   waits ~1 s.
@@ -118,17 +131,22 @@ key is modelled wrong).
   ~$19/month; before that, the play-level tables are already excluded and `fct_player_game` can be
   slimmed.
 * **Size (Neon free tier: 512 MB per project).** On 2026-09-30 the full history no longer fit and a sync died
-  mid-restore at that limit. The sync now publishes the heavy per-player-game tables (`fct_player_game`,
-  `mart_player_week_rankings`, `mart_player_context`, `mart_player_recent_form`, `mart_player_expected_points`,
-  `mart_player_trends`, `mart_player_season`, `mart_receiver_vs_cb`) for the newest `LEAGUE_LAB_HOSTED_SEASONS`
-  seasons only (default 3); everything else goes in full. The hosted copy went from >512 MB to ~265 MB. The Mac
-  keeps the full history, so Players / Receivers / Trends season pickers on the hosted app list the last three
-  seasons. The sync prints the expected size and warns above 440 MB; lower the window or trim the list if it does.
+  mid-restore at that limit. The sync publishes the heavy per-player-game tables (`fct_player_game`,
+  `fct_player_game_league`, `mart_player_week_features`, `mart_player_week_rankings`, `mart_player_context`,
+  `mart_player_recent_form`, `mart_player_expected_points`, `mart_player_trends`, `mart_player_season`,
+  `mart_receiver_vs_cb`) for the newest `LEAGUE_LAB_HOSTED_SEASONS` seasons only (default 3: 2024–2026); everything
+  else goes in full. **~200 MB** on 2026-10-02 (sandbox, the PO's data: 101.6 MB windowed + 98.3 MB in full,
+  `ops` 30 MB of it; the database 200 MB) — down from ~265 MB + F1's 14 MB, because the two tables Wave H added to
+  the window (`fct_player_game_league` 52 MB, `mart_player_week_features` 68 MB in full) are only ever read for
+  recent seasons. The Mac keeps the full history, so season pickers on the hosted apps list the last three
+  seasons. The sync prints the expected size before it touches anything, warns above 440 MB and **refuses above
+  480 MB** (`LEAGUE_LAB_HOSTED_MAX_MB`; exit 6, the hosted copy keeps the last publication): lower the window or
+  add a table to the list if it does. +≈30 MB a season.
 * **A refresh in progress**: the sync drops the previous copy and restores the new one (free
   tiers cannot hold two copies at once — Neon caps a project at 0.5 GB), so for the length of the
   restore (a minute or two) pages say "marts not built on this machine yet" instead of failing.
-  The nightly job runs around 08:00, before anyone is looking. If a restore ever fails midway, run
-  `make sync-hosted` again; local data is never touched, and the small `ops` schema (the decision
+  The nightly job runs around 07:40, before anyone is looking. If a restore ever fails midway, re-run the
+  workflow (Actions → nightly → Run workflow); local data is never touched, and the small `ops` schema (the decision
   record the GitHub nightly restores from here) is swapped inside the restore transaction, so it
   is never half-gone.
 * **Security model**: the hosted role is read-only (`default_transaction_read_only`), sees only the
@@ -139,9 +157,10 @@ key is modelled wrong).
 
 `.github/workflows/nightly.yml` runs the whole nightly on a free GitHub runner: a throwaway
 Postgres 17, the raw archive restored from the Actions cache, live Sleeper + nflverse for the
-current season, `dbt build`, projection v2, and the sync to Neon. Every step is in
+current season, `dbt build`, projection v2, Sleeper's own projections, and the sync to Neon. Every step is in
 `scripts/nightly.sh`, the same script the Mac runs (`make nightly`), so anything that fails there
-can be reproduced on the Mac. Once it runs green, the Mac is optional.
+can be reproduced on the Mac. **It is the one writer of the hosted copy** (Wave H): the beta must not depend on
+the Mac being awake. The Mac keeps its own database (last section).
 
 ### Set it up once (5 minutes)
 
@@ -162,8 +181,8 @@ can be reproduced on the Mac. Once it runs green, the Mac is optional.
    and downloads the whole history from GitHub releases (~280 MB; about a minute more than a normal
    run: 23 MB/s from a sandbox, faster from a runner). Budget 15–20 minutes, plus ~15 if the hosted
    copy has no backtests yet (below).
-4. Decide what the Mac does (last section below). **One writer**: two syncs at once drop each
-   other's schemas mid-restore.
+4. Nothing to do on the Mac: its launchd job stops publishing by itself (last section). **One writer**: two
+   syncs at once drop each other's schemas mid-restore, and a Mac publish would replace the record kept here.
 
 ### Run it by hand
 
@@ -195,10 +214,10 @@ about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; t
   | `fetch-nflverse-history` | a partial or empty cache and a download failed | Re-run (button on the run page). Stops before the build so a copy with holes in the history is never published |
   | `dbt-build` | a test failed on new data | The failing test is in the log and in `run_results.dbt-build.json`; reproduce with `make build` on the Mac. The hosted copy keeps the previous night |
   | `backtests`, `projection-marts` | projection code or its data | Reproduce with `make project`. Nothing was published |
-  | `restore-state` | the hosted copy could not be read, or the decision record (`ops.projections`, `ops.projection_drift`) did not copy | Nothing was published: refitting every played week blind and publishing it would overwrite the record with refit values. Check Neon and the `HOSTED_*` secrets; re-run. A hosted copy that is reachable but has lost the record is repaired from the archive's copy (`data/raw/record/`, in the cache) without stopping |
+  | `restore-state` | the hosted copy could not be read, or the decision record (`ops.projections`, `ops.projection_drift`, and the NFL-wide boards `ops.projection_lines`, `ops.projection_ranges`, `ops.kd_lines`, `ops.kd_ranges`) did not copy | Nothing was published: refitting every played week blind and publishing it would overwrite the record with refit values. Check Neon and the `HOSTED_*` secrets; re-run. A hosted copy that is reachable but has lost the record — or never had one of its tables (a warning, not a failure) — is repaired from the archive's copy (`data/raw/record/`, in the cache) without stopping |
   | `project` | projection code or its data | Reproduce with `make project`. The night carried on with the previous projections and lineups (on the runner: the ones restore-state copied back from the hosted copy) and published them again. It stops before publishing only when no projections exist anywhere yet |
   | `save-record` | the archive directory is not writable | The night carried on and published; the cache just has no fresh copy of the record that night |
-  | `sync-hosted` | Neon unreachable, or a wrong `HOSTED_*` secret | Check the two secrets; re-run. If the restore died midway, pages say "marts not built yet" until a sync completes (§4) |
+  | `sync-hosted` | Neon unreachable, or a wrong `HOSTED_*` secret; or the copy would be over the size budget (`over the 480 MB budget`, nothing touched); or a relation a page or the API reads is missing after the restore (`missing relations the readers name`) | Check the two secrets; re-run. Over the budget: § 4 "Size". If the restore died midway, pages say "marts not built yet" until a sync completes (§4) |
   | *Roles, database and .env* (before the pipeline) | a missing or malformed secret | The annotation names it |
 
 ### The archive cache
@@ -221,24 +240,76 @@ about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; t
   data: the next run downloads the history again and Sleeper's live fetch reloads the whole chain.
 
 What the archive cannot rebuild: the two backtests behind the Rankings scoreboards
-(`league-lab backtest`, `backtest-v2`), the **decision record** (`ops.projections`: a league-week's
-board is frozen at its first kickoff and never rewritten, plan B5; and the drift history scored on
-it, `ops.projection_drift`) and last night's lineups (`ops.lineups`, `ops.lineup_totals`). The
-runner's database is new every night, so it copies all of them back from the hosted copy (where
-the previous sync put them: the sync publishes the whole `ops` schema) before the build. Without
-that restore every played week would be refit from scratch each night and the "kickoff board"
-share on Rankings would read 0%. The record gets two more protections, because nothing can
-recompute it: the night **stops** when the hosted copy cannot be read or the copy fails (nothing is
-published, so nothing is overwritten), and after every successful `project` the two record tables
-are also written to `data/raw/record/` — inside the cached archive — so a hosted copy that has lost
-them (a restore that died midway, though the sync now swaps `ops` inside its transaction) is
-repaired from that copy. The backtests are recomputed only when neither place has them (the first
+(`league-lab backtest`, `backtest-v2`), the **decision record** — `ops.projections` (a house league-week's
+board is frozen at its first kickoff and never rewritten, plan B5), the drift history scored on it
+(`ops.projection_drift`) and, since Wave H, the NFL-wide boards the product API prices every league from
+(`ops.projection_lines`, `ops.projection_ranges`, `ops.kd_lines`, `ops.kd_ranges`, frozen the same way, plan F1)
+— and last night's lineups (`ops.lineups`, `ops.lineup_totals`). The runner's database is new every night, so it
+copies all of them back from the hosted copy (where the previous sync put them: the sync publishes the whole
+`ops` schema) before the build. Without that restore every played week would be refit from scratch each night
+and the "kickoff board" share on Rankings would read 0%.
+
+**The record rule** (`RECORD_TABLES` in `scripts/nightly.sh`). The six record tables get more protection,
+because nothing can recompute them:
+
+1. **Cannot read the hosted copy** (Neon down, a wrong secret): the night **stops** before anything is built
+   or published, so nothing is overwritten. Re-run when Neon answers.
+2. **A copy that fails midway** (fewer rows arrive than the hosted copy has): the night stops too.
+3. **The hosted copy is reachable but has lost a record table's rows** (a restore that died midway, though the
+   sync now swaps `ops` inside its transaction): after every successful `project` the record tables are also
+   written to `data/raw/record/` — inside the cached archive (~5 MB compressed) — and that copy is used.
+4. **The hosted copy does not have the table at all** (it was never published there: the first night after a
+   table joins the record, or a hosted copy older than the table): said so in the log, and treated like case 3
+   — a database that has rows keeps them ("kept (the hosted copy does not have this table yet: the next sync
+   publishes it)"), else the archive's copy, else the record starts that night with an Actions warning (played
+   weeks come back as refit values, except the frozen QB–TE lines and the two house leagues' ranges, which
+   `project` re-seeds from `ops.projections`). Stopping there instead would stop every night until someone
+   published the table by hand. In the sandbox (2026-10-02): a fresh database against a hosted copy without
+   the four NFL-wide tables restored the other 11 tables and went on (the pre-Wave-H code stopped the night at
+   `ops.projection_lines: relation does not exist`); with the archive's copy present it restored 9,911 / 49,555
+   / 1,088 / 5,440 rows from it; against an unreachable hosted copy it still stops.
+
+Not in the record: `raw.sleeper_projections` (Sleeper's own projections, the other side of "Our record"). The
+hosted copy never holds `raw`, and its durable copy is already the archive — every snapshot is one file in
+`data/raw/sleeper/projections/`, written once, kept in the Actions cache, replayed into the table every night
+(`replay-projections`). A database dump next to them would live and die with the same cache. The second copy
+is the Mac's own archive: its local nightly pulls the same snapshots.
+
+The backtests are recomputed only when neither place has them (the first
 run, if the hosted copy never had them), when the projection model's version changed, or when a
 manual run ticks *"Recompute both backtests"*; `backtest-v2` then adds about 15 minutes to that
 run. The lineups are restored only so a night whose `project` fails republishes a consistent copy;
 `project` re-solves them from the frozen projections and Sleeper's rosters. A licensed routes file imported on the Mac
 (`import-routes`) is not in the archive either; while GitHub publishes, the pages show the routes
 proxy.
+
+### What the hosted copy holds (the relation audit)
+
+`scripts/sync_to_hosted.sh` publishes what the readers of the hosted copy name, found in the code by
+`scripts/hosted_relations.py` (the one place the rule lives):
+
+* **Readers**: the Streamlit console (`app/*.py`, `app/pages`, `app/lib`, the weekly packs) and the product API
+  (`api/league_lab_api/*.py`, the `app/lib` modules and page functions it loads, and every `src/league_lab`
+  module it imports, followed import by import: `anyleague`, `research`, `decisions`, `sleeper_client`,
+  `waivers`, `trades`, `lineup`, `roster_value`, `kdef`, `scoring`, `config` today). The walk stops at the model
+  fit and the loaders (`projections`, `rankings`, `feature_groups`, `experiments`, `ingest`): a route imports
+  constants and pricing from them, never their input tables.
+* **Names**: every `analytics.` / `analytics_seeds.` / `ops.<name>` in those files, plus the bare names in
+  `missing_relations(...)` / `require_relations(...)` checks.
+* **Published**: those analytics relations, every analytics view and what the views read, `analytics_seeds`
+  and `ops` whole — except E4's experiment tables `ops.player_prior_oof` / `ops.player_prior_oof_pred` (large,
+  rebuilt by the experiment harness when missing, read by no one).
+* **Checked**: after the restore every name a reader uses must be on the hosted copy, or the run fails
+  (`verified: all 79 relations the pages and the API read are on the hosted copy (the API's 63 included …)`).
+  Names in `raw` / `staging` / `intermediate` are printed as "named in shared pipeline code, never published":
+  today they are nightly-only functions in shared modules (`lineup.load_inputs`, `waivers.load_and_sweep` /
+  `upside_stashes`, `kdef.load_frame`, `anyleague.write_fixtures`). A route that calls one of them fails on the
+  server — the line is there so it is seen first.
+
+`./scripts/sync_to_hosted.sh --relations` prints all of it — the API's list, the console's count, the closure
+and the size — from the local database only (no hosted settings needed, nothing written). On 2026-10-02: the
+API reads 63 relations (50 analytics + `analytics_seeds.reference_scorings` + 12 `ops`), the console 71; 62
+analytics relations published of 74.
 
 ### Weather in the nightly (plan D3)
 
@@ -280,11 +351,16 @@ again afterwards: the endpoint then answers the later numbers). `scripts/nightly
 `replay-projections` (after `replay-weather`: every archived snapshot back into `raw.sleeper_projections`, soft,
 skipped while `data/raw/sleeper/projections` does not exist) and `fetch-projections` (after `project`, before
 `save-record`: one pull of the next week to kick off, `uv run league-lab ingest sleeper-projections`; soft; skipped
-with `NIGHTLY_SLEEPER_OFFLINE=1`); `mart_projection_record` is in the projection-marts `--select`. One call a night
+with `NIGHTLY_SLEEPER_OFFLINE=1`, which the workflow never sets); `mart_projection_record` is in the
+projection-marts `--select`. **Before the freeze, checked (Wave H)**: a week freezes at its first kickoff —
+Thursday 8:15–8:30 PM ET in 161 of the 190 regular-season weeks 2016–2026 (`dim_game`), never earlier than
+12:30 PM ET (Thanksgiving) — and the Actions run starts at 07:37 ET (06:37 in winter), so that morning's snapshot
+is saved 5+ hours before kickoff even when GitHub starts a scheduled run late. A dropped run (GitHub drops some
+under load) leaves the previous night's snapshot as the one the record uses. No secret is needed for it. One call a night
 to `api.sleeper.com` (not the documented v1 API: if Sleeper moves it, the step fails softly and Data Status shows
 `sleeper / projections_pull` failing; point `LEAGUE_LAB_SLEEPER_PROJECTIONS_URL` at the new host). The Thursday
-morning run (07:37 ET on Actions, 08:00 on the Mac) is the snapshot the record uses for that week, the same run
-whose board is frozen. Archive: `data/raw/sleeper/projections/<season>/<week>_<stamp>.json.gz`, an estimated 0.2–0.4 MB a pull
+morning run (07:37 ET on Actions; the Mac's 08:00 pull only feeds the Mac's own database) is the snapshot the
+hosted record uses for that week, the same run whose board is frozen. Archive: `data/raw/sleeper/projections/<season>/<week>_<stamp>.json.gz`, an estimated 0.2–0.4 MB a pull
 (the real answer has not been seen from the sandbox), an unchanged answer adds nothing — under 30 MB a season
 in the Actions cache; like the
 weather forecasts, a lost cache cannot rebuild these snapshots.
@@ -303,18 +379,48 @@ minutes ever run out, GitHub stops runs until the month resets rather than charg
 have set up a paid budget (Settings → Billing). Logs and artifacts are a few MB (500 MB of
 artifact storage is included).
 
-### The Mac's launchd job
+### The Mac's launchd job (one writer, Wave H)
 
-Optional once the Actions run is green. Pick one:
+GitHub Actions is the only writer of the hosted copy. The Mac's launchd job (`scripts/refresh.sh`, 08:00) keeps
+running the same nightly for **the Mac's own database** — the research console (`make app`), the weekly packs
+(`make weekly-pack`), backtests and experiments, the full history (the hosted copy keeps three seasons of the
+per-game tables), a local backup, and a second archive of Sleeper's projection snapshots — and **does not
+publish**: off GitHub Actions, `nightly.sh` skips `sync-hosted` ("GitHub Actions is the one writer of the hosted
+copy") and `make sync-hosted` refuses (exit 7, nothing touched). It still *reads* the hosted copy when the Mac's
+`.env` has `LEAGUE_LAB_HOSTED_ADMIN_URL`: a state table the Mac's database lost is copied back from there.
 
-* **Retire it**: `launchctl unload ~/Library/LaunchAgents/com.leaguelab.refresh.plist && rm ~/Library/LaunchAgents/com.leaguelab.refresh.plist`
-  (the reinstall lines are in `docs/SETUP_RUNBOOK.md` § 2).
-* **Keep it for local data only** (your own database for `make app`, weekly packs, backtests):
-  delete `LEAGUE_LAB_HOSTED_ADMIN_URL` from the Mac's `.env`. The job keeps refreshing the Mac
-  and never publishes.
+**The switch, once (5 minutes)** — GitHub first, so the beta never goes a morning without a publish:
 
-`make sync-hosted` from the Mac still works as a manual fallback, while no Actions run is in
-progress (the Actions tab shows it).
+1. GitHub → the repository → **Settings → Secrets and variables → Actions**: three secrets are listed —
+   `LEAGUE_LAB_SLEEPER_LEAGUE_ID`, `LEAGUE_LAB_HOSTED_ADMIN_URL`, `LEAGUE_LAB_HOSTED_APP_PASSWORD` (names only; the
+   values are hidden). Missing one: add it (§ "Set it up once").
+2. **Actions → nightly → Run workflow** (branch `main`) and wait for the green tick (~15 minutes). Its summary page
+   ends with `verified: all … relations the pages and the API read are on the hosted copy`.
+3. On the Mac: `git pull`. From the next 08:00 run on, `logs/nightly.log` says `step sync-hosted: skipped (GitHub
+   Actions is the one writer of the hosted copy …)`. Keep `LEAGUE_LAB_HOSTED_ADMIN_URL` and
+   `LEAGUE_LAB_HOSTED_APP_PASSWORD` in the Mac's `.env` (the restore and the fallback below use them).
+
+If step 2 cannot go green yet, add `LEAGUE_LAB_MAC_WRITES_HOSTED=1` to the Mac's `.env` before step 3 (the Mac keeps
+publishing, as before) and disable the workflow until it can.
+* **Turn it on** (GitHub Actions down for days, or the minutes ran out): first stop GitHub — **Actions → nightly
+  → ⋯ (top right) → Disable workflow** — then add one line to the Mac's `.env`:
+
+  ```
+  LEAGUE_LAB_MAC_WRITES_HOSTED=1
+  ```
+
+  The next 08:00 run (or `make refresh` now) publishes. One publish by hand without the line:
+  `LEAGUE_LAB_MAC_WRITES_HOSTED=1 make sync-hosted` (while no Actions run is in progress — the Actions tab shows it).
+* **Turn it off again**: delete the line from `.env`, then **Actions → nightly → Enable workflow** and **Run
+  workflow** once. The first GitHub run restores the record from the hosted copy, which the Mac has been
+  publishing meanwhile, so nothing is lost; never let both publish (the second overwrites the first's record).
+* **Retire the job** (the Mac's own database is not needed): `launchctl unload
+  ~/Library/LaunchAgents/com.leaguelab.refresh.plist && rm ~/Library/LaunchAgents/com.leaguelab.refresh.plist`
+  (the reinstall lines are in `docs/SETUP_RUNBOOK.md` § 2). The beta does not notice.
+
+The two records drift apart a little: the Mac's 08:00 board and GitHub's 07:37 board for the same week are built
+from the same data minutes apart, and each freezes its own at kickoff. The hosted one (GitHub's) is the record
+the beta shows; the Mac's is the research console's.
 
 ## Licences to keep in mind when sharing
 

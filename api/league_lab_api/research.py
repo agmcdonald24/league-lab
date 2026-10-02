@@ -1135,3 +1135,49 @@ def compare(league_id: str, a: str, b: str, *, source: str | None = None) -> dic
                         "context: what each opponent allowed to the position in its games before this week, one scale for "
                         "every league; (#1) = gives up the most of 32.") if ctx.week else None,
             "howto": COMPARE_HOWTO, "scoring_note": REF_NOTE.format(ref=reference_name())}
+
+
+# ------------------------------------------------------------------------------ /api/search for any league (Wave H, H1)
+SEARCH_POSITIONS = ("QB", "RB", "WR", "TE", "K", "DEF")
+SEARCH_LIMIT = 25
+
+
+def search_on_demand(league_id: str, q: str, *, source: str | None = None) -> list[dict]:
+    """`/api/search` for a league the database does not hold: Sleeper's player directory (`sleeper().players()`, cached
+    a day) searched by name the way `player.search` searches `mart_player_availability` (letters only, case-blind),
+    mapped to gsis ids through `player_id_map`, whose team he is on from the league's rosters now; the same shape.
+    Order: players with an NFL team first, then by name (the house search orders by points per game, which a league
+    the database has never scored does not have)."""
+    ctx = context(league_id, "sleeper" if source is None else source)
+    needle = _norm(q)
+    if len((q or "").strip()) < 2 or not needle:
+        return []
+    try:
+        players = A.sleeper().players()
+    except A.SleeperUnavailable as exc:
+        raise SleeperDown(str(exc)) from exc
+    hits = []
+    for sid, p in players.items():
+        pos = p.get("position")
+        if pos not in SEARCH_POSITIONS:
+            continue
+        name = p.get("full_name") or " ".join(x for x in (p.get("first_name"), p.get("last_name")) if x)
+        if pos == "DEF" and not name:
+            name = f"{p.get('first_name') or sid} {p.get('last_name') or ''}".strip()
+        if needle in _norm(name):
+            hits.append((str(sid), name, pos, p.get("team")))
+    hits.sort(key=lambda h: (h[3] is None, h[1], h[0]))
+    hits = hits[:SEARCH_LIMIT]
+    sids = [h[0] for h in hits]
+    idm = query("select sleeper_id, gsis_id from analytics.player_id_map where sleeper_id = any(%s)", (sids,)) if sids else None
+    gsis_of = dict(zip(idm["sleeper_id"], idm["gsis_id"], strict=False)) if idm is not None and not idm.empty else {}
+    owner = {str(p): int(r["roster_id"]) for r in ctx.rosters for p in (r.get("players") or [])}
+    out = []
+    for sid, name, pos, team in hits:
+        rid = owner.get(sid)
+        tname = ctx.names.get(rid, {}).get("team_name") if rid is not None else None
+        out.append({"gsis_id": gsis_of.get(sid) or (sid if pos == "DEF" else None), "sleeper_id": sid, "player_name": name,
+                    "position": pos, "nfl_team": team, "rostered_by_team": tname, "rostered_by_roster_id": rid,
+                    "is_free_agent": rid is None,
+                    "label": f"{name} · {pos} · {team or 'no team'} · " + ("free agent" if rid is None else f"{tname}")})
+    return out

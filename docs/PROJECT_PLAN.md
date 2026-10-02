@@ -392,6 +392,9 @@ licence.
 Order: H0–H2 in parallel (three Opus devs, one round, 2 hours); the PO integrates, ships; Andrew deploys from
 `docs/DEPLOY.md`.
 
+**Delivered 2026-10-02** (STATUS § "Wave H"): all three rows. Next: Andrew runs the nightly workflow once, deploys on
+Render from `docs/DEPLOY.md`, shares the beta; **Wave I** (accounts, Stripe) on Sleeper's licence.
+
 ### Iteration 15 — the lab in the app (agreed 2026-10-02, Wave G)
 
 Andrew, after running the Wave F app against real Sleeper ("it works … extremely bare bones"): the lab IS the pitch —

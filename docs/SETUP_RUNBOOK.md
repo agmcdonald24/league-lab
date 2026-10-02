@@ -56,13 +56,16 @@ launchctl load ~/Library/LaunchAgents/com.leaguelab.refresh.plist
 
 Runs at 08:00 local time; launchd runs a missed job the next time the Mac wakes. `scripts/refresh.sh`
 is `scripts/nightly.sh` (the pipeline GitHub Actions runs: archive replay, live Sleeper + current NFL
-season, dbt build, projections, hosted sync) plus a backup. Logs go to `logs/nightly.log` (every step
+season, dbt build, projections, Sleeper's projections) plus a backup, into **the Mac's own database** (the
+research console, `make app`, the weekly packs). Logs go to `logs/nightly.log` (every step
 with its time and a summary) and `logs/refresh.log`. It refuses to start while another run holds
 `.state/refresh.lock` (one writer; a lock left by a killed run is recognised by its pid and removed).
 Manual `make refresh` is always fine.
 
-**Or run it on GitHub instead** and let the Mac sleep: `docs/HOSTING.md` § 5 "Nightly on GitHub Actions"
-(three repository secrets, then this job is optional: unload it, or keep it with the hosted sync off).
+**The hosted copy is GitHub's job** (Wave H: one writer): `docs/HOSTING.md` § 5 "Nightly on GitHub Actions"
+(three repository secrets). This job does not publish to it — `sync-hosted` is skipped off GitHub Actions —
+unless `LEAGUE_LAB_MAC_WRITES_HOSTED=1` is in `.env` (the fallback while Actions is down; disable the workflow
+first). How to turn that on and off: HOSTING.md § "The Mac's launchd job".
 
 ### Upgrading an existing install (new datasets or models)
 

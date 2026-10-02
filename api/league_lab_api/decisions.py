@@ -455,6 +455,7 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
         out["as_of"] = mv["as_of"].iloc[0] if "as_of" in mv else None
         out["inputs_current"] = _bool(mv["inputs_current"].iloc[0]) if "inputs_current" in mv else None
     out["free_agents"] = _free_agents(league_id, season, int(week), position, limit, is_house, od_info, ros)
+    out.update(waiver_extras(league_id, team, int(week), is_house, od_info, position))      # H1 (Wave H)
     if not is_house:
         out["on_demand"] = {k: v for k, v in od_info.items() if k not in ("lw", "fa")}
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
@@ -1419,3 +1420,219 @@ def league(league_id: str, team: int | None = None, limit: int = 50, offset: int
                     "source": "quoted from app/pages/8_League.py (the first line)"}
     out["timings_ms"] = {"total": round((time.perf_counter() - t0) * 1000, 1)}
     return out
+
+
+# ================================================================================== Wave H (H1): the upside stash, buy low / sell high
+# /api/waivers carries two more regions the Streamlit pages show: the upside stash (the Waiver Wire's third card region,
+# app/lib/signals.py upside_cards: mart_waiver_upside) and buy low / sell high (the Trade Finder's two lists,
+# roster_value.trade_candidates on the league's horizon board, the candidates' PPG - xPPG in the league's scoring).
+import json  # noqa: E402 - the H1 block stays self-contained
+
+from league_lab.scoring import compute_points as _compute_points  # noqa: E402
+
+from . import research as RS  # noqa: E402
+from .applib import signals as SG  # noqa: E402
+from .db import missing_relations  # noqa: E402
+
+UPSIDE_TITLE = "Upside stash: his role is growing before his points do"
+UPSIDE_SQL = SG.UPSIDE_SQL
+# the Trade Finder's candidates (app/pages/6_Trade_Finder.py `avail`): rostered QB-TE with two games of expected points
+CANDIDATES_SQL = """select sleeper_id as sleeper_player_id, gsis_id, player_name, position, rostered_by_roster_id, games_with_expected,
+                           ppg_std, expected_per_game, diff_per_game
+                    from analytics.mart_player_availability
+                    where league_id = %s and not is_free_agent and position in ('QB','RB','WR','TE')
+                      and coalesce(games_with_expected, 0) >= 2 and diff_per_game is not null"""
+SCENARIO_SQL = """select s.league_id, s.week, s.gsis_id, s.position, s.base_points, s.larger_points, s.points_gain,
+                         s.with_alert_points, s.presentation, s.alert_week, s.since_week, s.games_held, s.confidence, s.kind,
+                         s.trigger_kind, s.trigger_name, s.cause_text, s.change_text, s.expires_after_week, s.expiry_rule,
+                         s.backtest_n, s.backtest_hit_rate, s.base_line, s.larger_line
+                  from ops.player_scenarios as s where s.season = %s and s.week >= %s order by s.week, s.league_id"""
+TRADE_POSITIONS = ("QB", "RB", "WR", "TE")
+# quoted from app/pages/6_Trade_Finder.py ("How to read the buy-low and sell-high lists")
+TRADE_HOWTO = (
+    "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG − xPPG**, points minus expected points "
+    "per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your "
+    "players scoring *more* than their work supports.",
+    "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your "
+    "bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for "
+    "this week and the next four, in your league's scoring.",
+    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other "
+    "team than to his own: an easier ask when you buy, a better sale when you sell.",
+    "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade "
+    "Finder.",
+)
+UPSIDE_HOWTO = (
+    "**Upside stash**: a free agent whose role grew in his last one to three games (more snaps, targets or carries: a "
+    "teammate out, a new starter) before his points caught up. **If it holds** is his projection with the bigger role: a "
+    "what-if, not a forecast.",
+    "**Lineup gain if it holds** adds up this week and the next three in your lineup; most stashes add nothing yet, which is "
+    "why they are stashes, not starters.",
+)
+
+
+def _nan_none(r: dict) -> dict:
+    return {k: (None if isinstance(v, float) and math.isnan(v) else v) for k, v in r.items()}
+
+
+def _stash(r: dict, b: dict) -> dict:
+    """One mart_waiver_upside row as the screen's card: the player, the drop, the numbers, the page's sentences."""
+    r = _nan_none(r)
+    add = _player(r.get("add_sleeper_id"), r.get("add_gsis_id"), r.get("add_name"), r.get("add_position"), r.get("add_team"), b)
+    drop = (_player(r.get("drop_sleeper_id"), r.get("drop_gsis_id"), r.get("drop_name"), r.get("drop_position"), None, b)
+            if _str(r.get("drop_name")) else None)
+    return {"rank": _int(r.get("upside_rank")), "add": add, "drop": drop, "base_value": _num(r.get("base_value")),
+            "scenario_value": _num(r.get("scenario_value")), "points_gain": _num(r.get("points_gain")),
+            "holds_weekly_gain": _num(r.get("holds_weekly_gain")), "holds_horizon_gain": _num(r.get("holds_horizon_gain")),
+            "holds_slot": _str(r.get("holds_slot")), "drop_horizon_loss": _num(r.get("drop_horizon_loss")),
+            "change_text": _str(r.get("change_text")), "cause_text": _str(r.get("cause_text")),
+            "since_week": _int(r.get("since_week")), "games_held": _int(r.get("games_held")), "kind": _str(r.get("kind")),
+            "headline": SG.stash_headline(r), "lines": SG.upside_detail(r)}
+
+
+def _scenario_on_demand(r: dict, scoring: dict, league_name: str, week: int) -> dict:
+    """An NFL-wide alert with its stat-line what-if priced in this league's scoring (compute_points on both lines)."""
+    r = _nan_none(r)
+    lines = {}
+    for k in ("base_line", "larger_line"):
+        v = r.get(k)
+        line = v if isinstance(v, dict) else (json.loads(v) if isinstance(v, str) else None)
+        lines[k] = None if line is None else round(float(_compute_points({**line, "position": r.get("position")}, scoring)), 2)
+    base, big = lines["base_line"], lines["larger_line"]
+    gain = None if base is None or big is None else round(big - base, 2)
+    row = {**r, "base_points": base, "larger_points": big, "points_gain": gain, "presentation": None, "week": r.get("week")}
+    return {"base_value": base, "scenario_value": big, "points_gain": gain, "week": _int(r.get("week")),
+            "change_text": _str(r.get("change_text")), "cause_text": _str(r.get("cause_text")),
+            "since_week": _int(r.get("since_week")), "games_held": _int(r.get("games_held")), "kind": _str(r.get("kind")),
+            "headline": None, "lines": [x for x in (SG.scenario_phrase(row, league_name), SG.alert_lines(r)) if x]}
+
+
+def _upside(league_id: str, team: int | None, week: int, is_house: bool, od_info: dict) -> dict:
+    if team is None:
+        return {"title": UPSIDE_TITLE, "stashes": [], "why": None, "howto": UPSIDE_HOWTO}
+    if is_house:
+        if missing_relations(("mart_waiver_upside",)):
+            return {"title": UPSIDE_TITLE, "stashes": [], "howto": UPSIDE_HOWTO,
+                    "why": "Upside stashes (a player whose role is growing before his points do) arrive with the nightly update."}
+        up = query(UPSIDE_SQL, (league_id, int(team), int(week)))
+        rows = up.to_dict("records")
+        b = bio([r.get("add_gsis_id") for r in rows] + [r.get("drop_gsis_id") for r in rows])
+        out = [_stash(r, b) for r in rows]
+        why = None if out else (f"No upside stash for week {week}: no free agent's role grew in his last one to three games "
+                                "without already making the lists above (see Trends for every role change).")
+        return {"title": UPSIDE_TITLE, "stashes": out, "why": why, "howto": UPSIDE_HOWTO, "source": "mart_waiver_upside"}
+    # any other league: the alert and the stat-line what-if are NFL-wide; the lineup gains are the nightly's per house league
+    fa = od_info.get("fa")
+    why = ("The role alert and the what-if are NFL-wide, priced here in your league's scoring; what claiming him adds to your "
+           "lineup if the role holds is worked out each night for the leagues League Lab updates, not on request.")
+    has = query("select to_regclass('ops.player_scenarios') is not null as ok", ())
+    if fa is None or fa.empty or not bool(has["ok"].iloc[0]):
+        return {"title": UPSIDE_TITLE, "stashes": [], "why": why, "howto": UPSIDE_HOWTO, "source": "on demand"}
+    league, _, _ = _sleeper_league(league_id)
+    scoring = A.league_scoring(league)[0]
+    sc = query(SCENARIO_SQL, (int(league["season"]), int(week)))
+    free = {g: s for g, s in zip(fa["gsis_id"], fa["sleeper_id"], strict=True) if isinstance(g, str)}
+    seen, rows = set(), []
+    for r in sc.to_dict("records"):
+        if r["gsis_id"] in free and r["gsis_id"] not in seen:
+            seen.add(r["gsis_id"])
+            rows.append(r)
+    name = str(league.get("name") or "your league")
+    b = bio([r["gsis_id"] for r in rows])
+    stashes = []
+    for r in rows:
+        s = _scenario_on_demand(r, scoring, name, int(week))
+        meta = fa[fa["gsis_id"] == r["gsis_id"]].iloc[0]
+        s["add"] = _player(free[r["gsis_id"]], r["gsis_id"], meta["player_name"], r["position"], _str(meta.get("nfl_team")), b)
+        s["headline"] = SG.stash_headline({"add_name": meta["player_name"], "add_position": r["position"], **_nan_none(r)})
+        s.update({"drop": None, "holds_weekly_gain": None, "holds_horizon_gain": None, "holds_slot": None})
+        stashes.append(s)
+    stashes.sort(key=lambda s: (-(s["points_gain"] or 0), -(s["scenario_value"] or 0), s["add"]["player_name"] or ""))
+    for i, s in enumerate(stashes, 1):
+        s["rank"] = i
+    return {"title": UPSIDE_TITLE, "stashes": stashes, "why": why, "howto": UPSIDE_HOWTO, "source": "on demand"}
+
+
+def _trade_lists(league_id: str, team: int, is_house: bool, od_info: dict) -> dict:
+    """roster_value.trade_candidates for the roster: buy low (other rosters, PPG - xPPG < 0) and sell high (his own, > 0),
+    each with the lineup gain / loss this week and over the horizon and the fit; the best per position."""
+    if is_house:
+        hz = query(HORIZON_SQL, (league_id,))
+        if hz.empty:
+            return {"buy_low": [], "sell_high": [], "why": "No lineups for the weeks ahead yet."}
+        slots = list(ui.league_seasons(league_id).set_index("league_id").loc[league_id, "roster_positions"] or [])
+        cands = query(CANDIDATES_SQL, (league_id,))
+        names = _members(league_id)
+    else:
+        lw = od_info.get("lw")
+        if lw is None:
+            return {"buy_low": [], "sell_high": [], "why": None}
+        hz = A.horizon_frame(lw)
+        slots = list(lw.slots)
+        ctx = RS.context(league_id, "sleeper")
+        ls = RS.league_season(ctx, ctx.season)
+        ls = ls[(ls["games_with_expected"].fillna(0) >= 2) & ls["diff_per_game"].notna()]
+        who = hz.drop_duplicates("sleeper_player_id")[["sleeper_player_id", "gsis_id", "player_name", "position"]]
+        who = who[who["position"].isin(TRADE_POSITIONS) & who["gsis_id"].notna()]
+        cands = who.merge(ls[["gsis_id", "games_with_expected", "ppg", "expected_per_game", "diff_per_game"]], on="gsis_id")
+        cands = cands.rename(columns={"ppg": "ppg_std"})
+        names = lw.names
+    board = RosterBoard(hz.to_dict("records"), tuple(slots))
+    from league_lab.roster_value import trade_candidates
+    buy, sell = trade_candidates(board, int(team), cands.to_dict("records"))
+    weeks = board.weeks
+    span = f"weeks {weeks[0]}–{weeks[-1]}" if len(weeks) > 1 else f"week {weeks[0]}" if weeks else ""
+    b = bio([d.get("gsis_id") for d in buy + sell])
+
+    def row(d: dict, other_key: str) -> dict:
+        d = _nan_none(d)
+        p = _player(d.get("sleeper_player_id"), d.get("gsis_id"), d.get("player_name"), d.get("position"), None, b)
+        other = _int(d.get(other_key))
+        return {"player": p, "roster_id": other, "team_name": (names.get(other) or {}).get("team_name") if other is not None else None,
+                "ppg": _num(d.get("ppg_std")), "xppg": _num(d.get("expected_per_game")), "diff_per_game": _num(d.get("diff_per_game")),
+                "gain_week": _num(d.get("gain_week")), "gain_horizon": _num(d.get("gain_horizon")),
+                "loss_week": _num(d.get("loss_week")), "loss_horizon": _num(d.get("loss_horizon")),
+                "fit_week": _num(d.get("fit_week")), "fit_horizon": _num(d.get("fit_horizon"))}
+    buy_rows, sell_rows = [row(d, "owner") for d in buy], [row(d, "partner") for d in sell]
+    best = {}
+    for pos in TRADE_POSITIONS:          # the page's best_by_position: the first with a positive fit over the horizon
+        top = next((r for r in buy_rows if r["player"]["position"] == pos and (r["fit_horizon"] or 0) > 0), None)
+        if top is not None:
+            best[pos] = top
+    top_buy = max(best.values(), key=lambda r: (r["fit_horizon"], r["gain_horizon"]), default=None)
+    top_sell = next((r for r in sell_rows if (r["fit_horizon"] or 0) > 0), None)
+    wk = weeks[0] if weeks else None
+    # quoted from app/pages/6_Trade_Finder.py (the buy-low / sell-high cards)
+    if top_buy is None:
+        buy_line = f"**Buy low:** nobody scoring below his usage would add more to your lineup than he is worth to his own over {span}."
+    else:
+        t = top_buy
+        buy_line = (f"**Buy low: ask {t['team_name']} about {t['player']['player_name']} ({t['player']['position']}).** "
+                    f"He scores {abs(t['diff_per_game']):.1f} a game below what his usage is worth, adds **{t['gain_week']:+.1f}** "
+                    f"to your week-{wk} lineup and costs them **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** over {span}).")
+    if top_sell is None:
+        sell_line = (f"**Sell high:** none of your players scoring above his usage is worth more to another lineup than to "
+                     f"yours over {span}.")
+    else:
+        t = top_sell
+        sell_line = (f"**Sell high: shop {t['player']['player_name']} ({t['player']['position']}) to {t['team_name']}.** "
+                     f"He scores {t['diff_per_game']:.1f} a game above what his usage is worth. Their week-{wk} lineup "
+                     f"gains **{t['gain_week']:+.1f}**, yours loses **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** "
+                     f"over {span}).")
+    return {"buy_low": buy_rows, "sell_high": sell_rows, "best_buy_by_position": best, "buy_line": buy_line,
+            "sell_line": sell_line, "weeks": span, "howto": TRADE_HOWTO,
+            "source": "app/pages/6_Trade_Finder.py (roster_value.trade_candidates; the card sentences quoted)",
+            "points_source": "mart_player_availability" if is_house else "priced on request (research.league_season)"}
+
+
+def waiver_extras(league_id: str, team: int | None, week: int, is_house: bool, od_info: dict, position: str) -> dict:
+    """The upside stash and buy low / sell high for /api/waivers (filtered to `position` when one is asked)."""
+    t0 = time.perf_counter()
+    up = _upside(league_id, team, week, is_house, od_info)
+    trades = _trade_lists(league_id, int(team), is_house, od_info) if team is not None else {"buy_low": [], "sell_high": []}
+    if position != "ALL":
+        up["stashes"] = [s for s in up["stashes"] if s["add"]["position"] == position]
+        for k in ("buy_low", "sell_high"):
+            trades[k] = [r for r in trades.get(k, []) if r["player"]["position"] == position]
+    for k in ("buy_low", "sell_high"):
+        trades[k] = trades.get(k, [])[:25]
+    return {"upside": up, "trade_lists": trades, "extras_ms": round((time.perf_counter() - t0) * 1000, 1)}

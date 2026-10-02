@@ -1,0 +1,124 @@
+# The server image (plan H0, Wave H): on every push to main that touches what the image holds, build api/Dockerfile
+# from the repository root, start it once (health + the web app, as the unprivileged user, on Render's port), and push
+# it to GitHub's container registry as ghcr.io/<owner>/league-lab:<commit> and :main.
+#
+# Render builds the same Dockerfile from the repository itself (render.yaml: runtime docker) and, with
+# autoDeployTrigger: checksPass, deploys a commit only after this check is green - so a Dockerfile that does not
+# build never reaches the server. The image here is the reproducible copy of each commit: roll back to it, run it
+# anywhere (docker run), or switch the Render service to it (docs/DEPLOY.md § "Deploying the built image instead":
+# set the RENDER_DEPLOY_HOOK_URL secret and the last step tells Render to pull this commit's image).
+name: image
+
+on:
+  push:
+    branches: [main]
+    # the same list as render.yaml's buildFilter: a docs-only or dbt-only push builds nothing
+    paths:
+      - "api/**"
+      - "app/lib/**"
+      - "app/pages/**"
+      - "src/league_lab/**"
+      - "web/**"
+      - ".dockerignore"
+      - "render.yaml"
+      - ".github/workflows/image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+# a newer push to main replaces a build still running for an older one
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Image name (the registry wants lower case)
+        id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/league-lab" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build api/Dockerfile (the web app + the API, one image)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: api/Dockerfile
+          load: true
+          push: false
+          build-args: |
+            LEAGUE_LAB_VERSION=${{ github.sha }}
+          tags: |
+            ${{ steps.name.outputs.image }}:${{ github.sha }}
+            ${{ steps.name.outputs.image }}:main
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.description=League Lab - the API and the phone web app
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start the image once (no database here - health must still answer, the app must be served)
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}:${{ github.sha }}
+          SHA: ${{ github.sha }}
+        run: |
+          # Render passes PORT; 10000 is its default. No database: /api/health says so and still answers 200.
+          docker run -d --name league-lab -p 8080:10000 -e PORT=10000 \
+            -e LEAGUE_LAB_APP_DB_URL='postgresql://nobody:x@127.0.0.1:1/none' "$IMAGE"
+          for _ in $(seq 1 30); do curl -sf http://localhost:8080/api/health > health.json && break; sleep 2; done
+          docker logs league-lab
+          cat health.json
+          python3 - "$SHA" <<'PY'
+          import json, sys
+          h = json.load(open("health.json"))
+          assert h["ok"] is True and h["version"] == sys.argv[1], h
+          assert h["database"].startswith("unreachable"), h
+          PY
+          curl -sf http://localhost:8080/ | grep -q "<title>League Lab</title>"
+          test "$(docker exec league-lab id -un)" = nobody
+          docker exec league-lab sh -c 'touch "$LEAGUE_LAB_CACHE_DIR/.w" && ! touch /srv/api/.w 2>/dev/null'
+          docker image ls "${IMAGE%%:*}"
+
+      - name: Push to ghcr.io (:<commit> and :main)
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}
+        run: docker push --all-tags "$IMAGE"
+
+      - name: Tell Render to deploy this image (only when the RENDER_DEPLOY_HOOK_URL secret is set)
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          IMAGE: ${{ steps.name.outputs.image }}:${{ github.sha }}
+        if: env.RENDER_DEPLOY_HOOK_URL != ''
+        # the hook URL already carries ?key=…; -G appends imgURL (encoded) to it, -X POST keeps it a POST
+        run: curl -fsS -X POST -G --data-urlencode "imgURL=${IMAGE}" "$RENDER_DEPLOY_HOOK_URL" > /dev/null && echo "Render asked to deploy ${IMAGE}"
+
+      - name: Summary
+        if: always()
+        env:
+          IMAGE: ${{ steps.name.outputs.image }}
+          SHA: ${{ github.sha }}
+        run: |
+          {
+            echo "### League Lab image"
+            echo "\`${IMAGE}:${SHA}\` and \`${IMAGE}:main\`"
+            echo
+            echo "Run it: \`docker run -p 8080:8080 -e LEAGUE_LAB_APP_DB_URL=... -e LEAGUE_LAB_APP_PASSWORD=... ${IMAGE}:${SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

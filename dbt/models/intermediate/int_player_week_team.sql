@@ -1,3 +1,5 @@
+{{ config(post_hook="analyze {{ this }}") }}
+-- Wave H (H2): int_player_week_universe planned on this table before autovacuum analysed it (396 s of an 8 min build)
 -- Historical team affiliation per player-week from weekly rosters, deduplicated to one row per
 -- (gsis_id, season, week). nflverse occasionally emits two rows for one id in a week (e.g. a
 -- 2019 id collision between two players); we keep the row whose name matches the nflverse

@@ -18,9 +18,10 @@ depends on it; the nightly does not change.
 | `GET /api/my-week?league=&team=` | Home's My Week: the record line, the league line, the cards (numbers **and** the cards' own text), the lineup (4 columns), the full lineup (+ bench, can't play), "How to read this", movers | `cards.lineup_rows` / `decisions` / `decision_cards` / `league_line` / `lineup_frame` / `howto_cards`; Home's two inline queries copied |
 | `GET /api/my-week?league=<any Sleeper id>&team=` (plan E3) | **a league the database does not have** is served on demand: Sleeper's league / rosters / users, the NFL-wide stat lines priced in its scoring, ranges from the nearest fitted scoring, the lineup solved per request; same JSON plus `source: "sleeper"` and `on_demand` (range reference, unmapped players and scoring keys, K / DEF source, timings). `source=sleeper` forces it for a known league. 404 for a league Sleeper does not have, 502 when Sleeper does not answer | `league_lab.anyleague` (`lineup.build`, `scoring.compute_points`), `ondemand.py`, the cards via `myweek.cards_from_rows`; design `docs/ANY_LEAGUE.md` |
 | `GET /api/player/{gsis}?league=&team=` | the player card: header + Usage, Projection, Availability, Value, Signals as ordered blocks, + `ros`, `missing`, `source` (F3). Any Sleeper league: built on demand (`source=sleeper` forces it for a house league) | `pages/0_Player.py`'s queries and sentences, copied verbatim; `cards.alternative` / `bench_gap`, `signals.*`; on demand `ondemand.PlayerContext` |
-| `GET /api/ros?league=&position=QB\|RB\|WR\|TE\|K\|DEF\|ALL&limit=50` (F3) | rest of season, sorted by points | `mart_player_ros_projection` (house league) or `anyleague.ros_table` (priced on request) |
+| `GET /api/ros?league=&position=QB\|RB\|WR\|TE\|K\|DEF\|ALL&limit=50` (F3) | rest of season, sorted by points | `mart_player_ros_projection` (house league) or `anyleague.ros_table` (priced on request; H1: the whole window in one round of queries, cached 10 min) |
 | `GET /api/record?league=` (F3) | our record vs Sleeper's projections, week by week + the season | `mart_projection_record` (house leagues; `available: false` elsewhere) |
-| `GET /api/search?league=&q=` | the player card's search box (25 hits) | the page's query |
+| `GET /api/search?league=&q=` | the player card's search box (25 hits) | the page's query; **any other league (H1)**: Sleeper's directory by name, `player_id_map`, whose team from the league's rosters (+ `sleeper_id`, `rostered_by_roster_id`) |
+| `GET /api/about?league=` (H1) | About the numbers: the model's words, what it leans on most, its grades (below, § "About and the waiver extras (H1)") | `mart_projection_importance`, `mart_projection_drift`, `mart_projection_backtest` |
 | `GET /api/status` | the freshness line, the stale-injury warning, + `sleeper` (cache ages, the call budget) and `board_source` (F3) | `ui.freshness_banner()`, `Sleeper.stats()` |
 | `GET /api/docs` | OpenAPI page | — |
 | anything else | the web app (`web/dist`): a real file, else `index.html` | — |
@@ -301,6 +302,40 @@ Scrubs 2 each giving their best starter to roster 1 (house and on demand; the ma
 point on demand); `mart_league_roster_value` / `_rankings` / `_slot_strength` / this week's `_horizon` rows; the
 standings, all-play (luck) and transactions. The Test League answers every route. Latency: STATUS § "Wave G" → G2.
 
+## About and the waiver extras (H1)
+
+Wave H, plan row H1 (`league_lab_api/about.py`, routes block `# ---- H1` in `main.py`; `decisions.waiver_extras`;
+`research.search_on_demand`).
+
+* **`GET /api/about?league=`** → `league_id`, `league_name`, `source`, `model` {`answer`, `sections` [{key, title, text}]
+  — the About screen's cards, quoted from `4_Rankings.py`'s "The model"}, `importance` {`model_version`, `eval_season`,
+  `fit_seasons`, `scored_in` (+ `_league_id`), `how_measured` (the page's caption), `unit`, `positions` [{position,
+  baseline_mae, top, lead (the page's sentence), features [{rank, feature_label, importance}] (top 10)}]} from
+  `mart_projection_importance` (model = 'component', component = 'total', the newest version), `grades` {`answer`,
+  `season`, `weeks`, `backtest_seasons`, `season_model_version`, `backtest_model_version`, `howto`, `positions`
+  [{position, season {weeks_scored, spearman, mae, coverage_80}, backtest {spearman, mae, coverage_80}, by_season
+  [{season, weeks, spearman, mae, coverage_80}]}]} from `mart_projection_drift` (this season's played weeks next to the
+  backtest) and `mart_projection_backtest` (`is_current`, scorer `v2_points`). Importance and grades are measured per
+  house league's scoring: any other league reads the closest house scoring (`research.expected_ref`) and `why` says so
+  (the Test League → League of Scrubs). Cached 10 minutes.
+* **`/api/waivers` + `upside`** {`title`, `stashes` [{rank, add, drop, base_value, scenario_value, points_gain,
+  holds_weekly_gain, holds_horizon_gain, holds_slot, drop_horizon_loss, change_text, cause_text, since_week, games_held,
+  kind, headline, lines}], `why`, `howto`, `source`}: a house league = `mart_waiver_upside` for the roster and the
+  decision week with `app/lib/signals.py`'s `stash_headline` / `upside_detail`; any other league = Sleeper's free agents
+  with an NFL-wide role alert in `ops.player_scenarios`, the what-if re-priced in the league's scoring with
+  `scoring.compute_points` on the `base_line` / `larger_line` the table keeps (`scenario_phrase` / `alert_lines` words);
+  the lineup gains if it holds are the nightly's per house league, so they are null and `why` says so.
+* **`/api/waivers` + `trade_lists`** {`buy_low`, `sell_high` [{player, roster_id (owner / best fit), team_name, ppg, xppg,
+  diff_per_game, gain_week, gain_horizon, loss_week, loss_horizon, fit_week, fit_horizon}] (25 each, `position=` filters),
+  `best_buy_by_position`, `buy_line` / `sell_line` (the Trade Finder's cards, quoted), `weeks`, `howto`, `source`,
+  `points_source`}: `roster_value.trade_candidates` on the league's horizon board — house: `mart_league_roster_horizon` +
+  `mart_player_availability`'s PPG − xPPG (the Trade Finder's own query); on demand: `anyleague.horizon_frame` + the
+  league's season table priced on request (`research.league_season`). `extras_ms` times both.
+* **`/api/search` for any league**: same shape as the house search plus `sleeper_id` / `rostered_by_roster_id`; players
+  with an NFL team first, then by name (the house search orders by points per game).
+
+Tests: `tests/test_h1.py` (14).
+
 ## Run it locally
 
 ```bash
@@ -352,28 +387,32 @@ without them).
 
 ## Deploy (one service, the static app included)
 
-`api/Dockerfile` builds the web app and the API into one image; build it from the repository root:
+**How to put it on a server: `docs/DEPLOY.md`** (Render, step by step, written for Andrew; plan H0, Wave H).
+
+* `render.yaml` (a Render Blueprint): one web service, Docker, built by Render from `api/Dockerfile` with the
+  repository root as context, Starter ($7 a month), health check `/api/health`, deployed after GitHub's checks pass.
+* `.github/workflows/image.yml`: every push to `main` that touches the image builds it, starts it once (health, the
+  web app, runs as `nobody`) and pushes `ghcr.io/<owner>/league-lab:<sha>` and `:main`.
+* `api/Dockerfile`: the web app (Node 22) → the Python environment (uv, no dev dependencies) → `python:3.13-slim` with
+  `api/league_lab_api`, `app/lib`, `app/pages` (the Waiver Wire's and Trade Finder's sentence functions), `src/league_lab`
+  and `web/dist`; user `nobody`, writes only `LEAGUE_LAB_CACHE_DIR`; listens on `$PORT`, else 8080. `.dockerignore`
+  sends nothing else to the build.
+* `scripts/smoke.sh <base-url> [password] [sleeper-username]`: one line per check, exit 1 on any failure.
+* `GET /api/health` (no password) → `{"ok": true, "version": "<LEAGUE_LAB_VERSION, else RENDER_GIT_COMMIT, else git
+  sha, else dev>", "as_of": "<max(ops.projections.fitted_at)>", "board_source": "auto", "database": "ok" |
+  "unreachable: <error class>"}`; always 200 while the process runs; the database is read on a short connection of
+  its own at most once an hour (once a minute while it fails), so the host's frequent checks never keep Neon awake.
 
 ```bash
-docker build -f api/Dockerfile -t league-lab-web .
-docker run -p 8000:8000 -e LEAGUE_LAB_APP_DB_URL='postgresql://league_lab_app:…@…neon.tech/neondb?sslmode=require' \
-           -e LEAGUE_LAB_APP_PASSWORD='…' league-lab-web
+docker build -f api/Dockerfile -t league-lab .          # from the repository root
+docker run -p 8080:8080 -e LEAGUE_LAB_APP_DB_URL='postgresql://league_lab_app:…@…-pooler….neon.tech/neondb?sslmode=require' \
+           -e LEAGUE_LAB_APP_PASSWORD='…' league-lab
 ```
 
-* **Render** (free web service: 512 MB, sleeps after 15 minutes without traffic, ~1 minute to wake; $7/month
-  for always on): New → Web Service → the GitHub repo → Runtime *Docker*, Dockerfile path `api/Dockerfile`,
-  build context `.` → Environment: the two variables above → health check path `/api/health`.
-* **Fly.io** (no free allowance; a shared-cpu-1x 256 MB machine ≈ $2–3/month always on, less with
-  auto-stop): `fly launch --dockerfile api/Dockerfile` from the repository root, `fly secrets set
-  LEAGUE_LAB_APP_DB_URL=… LEAGUE_LAB_APP_PASSWORD=…`.
-* **Railway** (Hobby $5/month including $5 of usage; a free plan of 0.5 GB RAM and one project): New project →
-  Deploy from GitHub → set `RAILWAY_DOCKERFILE_PATH=api/Dockerfile` and the two variables.
-* **Cloud Run** (2 million requests, 180,000 vCPU-seconds and 360,000 GiB-seconds free a month; scales to
-  zero, a cold start of a few seconds): `gcloud run deploy league-lab --source .` with the Dockerfile path set.
+Neon does not change: the API reads the same published marts with the same read-only role (the pooled address). The
+nightly does not change either. A push to `main` redeploys the service; there is no restart stamp to bump
+(`app/requirements.txt`'s rule is Streamlit Community Cloud's). Fly.io, Railway and Cloud Run run the same image
+(`$PORT` honoured); `docs/DEPLOY.md` covers Render only.
 
-Neon does not change: the API reads the same published marts with the same read-only role. The nightly does
-not change either (it publishes marts; the API has no state of its own). A push to GitHub redeploys the
-service; there is no restart stamp to bump (`app/requirements.txt`'s rule is Streamlit Community Cloud's).
-
-If `app/lib/cards.py` ever imports from `league_lab.*` (the `src/` package), copy `src/` into the image too
-(the stand-in already puts `src/` on the path) and add that module's dependencies to `api/pyproject.toml`.
+If `app/lib` or a page the API reads starts importing a new package, add it to `api/pyproject.toml` (`uv add`), and a
+new file the API reads at run time to the Dockerfile's `COPY` lines and `.dockerignore`.

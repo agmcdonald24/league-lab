@@ -1,0 +1,17 @@
+# What `docker build -f api/Dockerfile .` may see from the repository (plan H0): only what the image copies.
+# Everything else (data/, .env, backups, dbt, the archive, node_modules) never leaves the machine or the runner.
+*
+!api/pyproject.toml
+!api/uv.lock
+!api/league_lab_api/
+!app/lib/
+!app/pages/
+!src/league_lab/
+!web/
+**/__pycache__
+**/*.pyc
+web/node_modules
+web/dist
+web/test-results
+web/playwright-report
+web/.vite

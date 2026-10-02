@@ -3123,6 +3123,292 @@ placeholder test above.
   read 0 for 2026 in the mart and are hidden until filled in.
 
 
+## Wave H (Iteration 16)
+
+### PO merge — Wave H, 2026-10-02
+
+* **Delivered** (three Opus devs, 30–40 min each): H0 the deploy kit (`render.yaml`, the Dockerfile proven stage by stage
+  and fixed — `app/pages` was missing from the image and broke `/api/waivers` and trades; `$PORT`; `nobody`; 260 MB python
+  stage; `.github/workflows/image.yml` builds, starts and checks the image and pushes it to GHCR; `scripts/smoke.sh`;
+  `docs/DEPLOY.md` as Andrew's walk-through: Render Starter, $7/month, Ohio next to Neon); H1 the gaps (upside stash and
+  buy-low / sell-high on Waivers, `/api/about` with "what it leans on most" and the grades, the rest-of-season board in
+  one round of queries — dynasty cold 1,079 → 249 ms, `/api/search` for any league); H2 one writer (GitHub Actions
+  publishes the hosted copy, the Mac's launchd no longer does unless `LEAGUE_LAB_MAC_WRITES_HOSTED=1`; `sync_to_hosted.sh`
+  refuses elsewhere), the NFL-wide boards in `RECORD_TABLES` with a first-night rule that cannot stop the night, the
+  relation closure derived in one place (`scripts/hosted_relations.py`: the API's 63 relations + the console's 71;
+  `mart_kd_week` / `mart_kd_team_game` added), the hosted copy windowed to ~200 MB, a full nightly dry run in the sandbox
+  (exit 0, 14 min).
+* **PO**: the integrated API walked against a hosted-shaped copy (H2's scratch target, app role): every route 200 for
+  both house leagues and the Test League, including H1's on-demand upside stash (it reads `ops.player_scenarios`, which
+  is published — H2's warning about `staging.stg_sleeper__players` concerned the nightly's own functions, which the API
+  does not call); `int_player_week_team` gets `analyze` after build (H2 measured 396 s of the nightly's 8-minute dbt
+  build lost to a plan made before statistics existed); `docs/HANDOFF.md` says who writes now. Checks: `api` 155 passed,
+  web lint 0 / 0, build, 58 fixture e2e, shellcheck + actionlint clean, root `pytest` green.
+* **Andrew's path to the beta** (`docs/DEPLOY.md`): GitHub secrets present → run the nightly workflow once (publishes
+  the current tables; the copy on Neon today predates the new app) → Render Blueprint with the read-only Neon URL and the
+  beta password → `scripts/smoke.sh https://<address> '<password>'` → share the link. Not verified from the sandbox:
+  a real `docker build`, GHCR, Render's acceptance of `autoDeployTrigger` / `buildFilter` / `region: ohio` (fallbacks in
+  the doc), Render's current prices.
+
+### H2 2026-10-02 — one writer, the record kept, the hosted relation audit (branch `dev/H2`, clone `league_lab_h2`)
+
+* **One writer.** GitHub Actions' nightly is the only writer of the hosted copy (the beta must not depend on the Mac
+  being awake). Off Actions, `nightly.sh` skips `sync-hosted` ("GitHub Actions is the one writer of the hosted copy")
+  and `sync_to_hosted.sh` refuses with exit 7 before touching anything, unless `LEAGUE_LAB_MAC_WRITES_HOSTED=1` (the
+  fallback while Actions is down: disable the workflow first) or the target is a local simulation
+  (`LEAGUE_LAB_HOSTED_ALLOW_LOCAL=1` and a local URL). The Mac's launchd `refresh.sh` keeps building the Mac's own
+  database (the research console, packs, backtests, the full history, a second archive of Sleeper's snapshots) and
+  still *reads* the hosted copy in `restore-state`. Gate cases (stub runners on the real block): no URL → skip; Mac
+  with URL → skip; Actions → run; Mac + flag → run; local simulation → run. `make sync-hosted` with a Neon-shaped URL
+  off Actions → exit 7 (test). The workflow needs no new secret (`LEAGUE_LAB_SLEEPER_LEAGUE_ID`,
+  `LEAGUE_LAB_HOSTED_ADMIN_URL`, `LEAGUE_LAB_HOSTED_APP_PASSWORD`); `fetch-projections` runs there (never offline),
+  after `project`, before `save-record`. Before the freeze: the first kickoff of a week is Thursday 8:15–8:30 PM ET in
+  161 of 190 regular-season weeks 2016–2026 and never earlier than 12:30 PM ET (Thanksgiving) (`dim_game`); the run
+  starts 07:37 ET (06:37 in winter) — 5+ hours early.
+* **The record kept.** `RECORD_TABLES` = `ops.projections`, `ops.projection_drift` + F1's `ops.projection_lines`,
+  `ops.projection_ranges`, `ops.kd_lines`, `ops.kd_ranges` (still in `STATE_TABLES` too). `restore_state` now asks the
+  hosted copy once which state tables it has: unreachable → a record table stops the night (as before); reachable
+  but the table was never published there (the first night after a table joins the record, or a hosted copy older
+  than it) → said so, then this database's rows (kept), else the archive's copy, else the record starts that night
+  with a warning — instead of stopping every night. A failed archive restore now fails the step (before, `run_step`'s
+  `||` context swallowed it). Isolated runs of the real functions (`harness.sh` in the hand-back), fresh migrated
+  database:
+
+  | case | hosted copy | archive | result |
+  |---|---|---|---|
+  | A | `league_lab_hosted` (no F1 tables, no `feature_experiments`) | none | 11 tables restored; the 4 F1 tables "not on the hosted copy (never published there)" → "no copy in the archive" warning; **returned 0** (the pre-H2 function with the same RECORD_TABLES: **returned 1**, `relation "ops.projection_lines" does not exist`) |
+  | B | same | `save_record` of the clone | the 4 F1 tables restored from the archive: 9,911 / 49,555 / 1,088 / 5,440 rows; 0 |
+  | C | unreachable (port 5999) | none | stops at `ops.projections`: "refusing to refit every played week blind"; 1 |
+  | D | `league_lab_hosted_h2` | none | all 16 tables restored; the record tables content-equal to the source (jsonb md5; column order differs from a fresh migrate); 0 |
+  | E | `league_lab_hosted` | — (clone with rows) | the 4 F1 tables "N rows here, kept (the hosted copy does not have this table yet: the next sync publishes it)"; 0 |
+
+  `save_record` writes the 6 tables in 1.8 s: 1.9 MB + 4 KB + 564 KB + 2.3 MB + 148 KB + 84 KB gzipped (~5 MB in the
+  Actions cache). Not carried: `raw.sleeper_projections` — the hosted copy never holds `raw`, and its durable copy is
+  the archive itself (one file per snapshot, replayed nightly); a dump next to it would sit in the same cache.
+* **The hosted relation audit.** The closure is derived in one place, `scripts/hosted_relations.py`: readers = the
+  console (`app/`, `reports.py`) and the API (`api/league_lab_api/*.py`, the `app/lib` modules and page functions it
+  loads, every `src/league_lab` module it imports, followed import by import — `anyleague`, `research`, `decisions`,
+  `sleeper_client`, `waivers`, `trades`, `lineup`, `roster_value`, `kdef`, `scoring`, `config`; the walk stops at the
+  model fit and loaders); names = `analytics.` / `analytics_seeds.` / `ops.<x>` plus bare names in
+  `missing_relations` / `require_relations`. Against `league_lab`: the API reads **63 relations** (50 analytics +
+  `analytics_seeds.reference_scorings` + 12 ops); the console 71. Added to the closure by the API side: **`mart_kd_week`,
+  `mart_kd_team_game`** (4.5 MB; named by `lineup.py`); every other relation the API reads was already published
+  (the sandbox's `league_lab_hosted` predates `mart_player_role_alerts`, `mart_player_ros_projection`,
+  `mart_projection_record` and F1's tables; a sync today publishes them). The window now also covers
+  **`fct_player_game_league`** (52 MB in full; the API joins it to the windowed `fct_player_game`, Matchups reads last
+  season on) and **`mart_player_week_features`** (68 MB; read for the current season only). Left out of `ops`:
+  `ops.player_prior_oof` / `_oof_pred` (E4's harness; absent on the PO's copy, read by no one). After the restore the
+  sync fails (exit 5) if any relation a reader names is missing. `src/league_lab/signals.py` (in the brief's list) is
+  the nightly's writer; the API reads its output through `ops` and `app/lib/signals.py`.
+  Sync of `league_lab` into `league_lab_hosted_h2`: **198.5 MB estimated → 200 MB database** (101.6 MB windowed + 98.3
+  MB in full; `ops` 30 MB), restore 4 s, `verified: all 79 relations the pages and the API read are on the hosted copy
+  (the API's 63 included …)`. Budget: warns above 440 MB, **refuses above 480 MB** before touching the hosted copy
+  (`LEAGUE_LAB_HOSTED_MAX_MB`, exit 6; with the budget set to 100 MB: exit 6, the target's 80 tables / 202 MB
+  unchanged, no `hosted_slim` left behind). Every GET route against it in-process (TestClient, the app role, Sleeper
+  fixtures; Scrubs 2, dynasty 12, Test League 3; 16 routes each): **47 × 200, 0 × 5xx, 0 "not built"**; the one 404 is
+  `/api/search` for the Test League (H1's row).
+* **Dry run** (`NIGHTLY_SLEEPER_OFFLINE=1 NIGHTLY_WEATHER_OFFLINE=1`, clone `league_lab_h2` of `league_lab` with
+  `raw.nfl_pbp`, `raw.nfl_pbp_participation`, `analytics.bridge_play_participation`, `intermediate.int_play_context_long`
+  dropped, a scratch copy of the archive, hosted target `league_lab_hosted_h2`; env overrides instead of editing `.env`):
+  **exit 0, 13 m 57 s**. migrate 2 s · restore-state 1 s (16 kept) · replay-sleeper 3 s · replay-nflverse-history 2 s ·
+  replay-nflverse-current 2 s · replay-weather / replay-projections skipped (no archive) · fetch-sleeper skipped
+  (offline) · fetch-nflverse-current 12 s (live) · fetch-weather skipped · **dbt-build 8 m 41 s** (`PASS=610 WARN=3
+  ERROR=0`) · backtests 1 s (kept) · **project 4 m 23 s** · fetch-projections skipped (offline) · save-record 1 s ·
+  projection-marts 13 s (`PASS=139`) · drift 0 s (26 rows written by `project`) · backup skipped · **sync-hosted 14 s**
+  (211.2 MB estimated, 206 MB database, `verified: all 79 …`). Skipped models for the dropped tables, through the new
+  `NIGHTLY_DBT_EXCLUDE` (sandbox only): `source:raw.nfl_pbp source:raw.nfl_pbp_participation stg_nflverse__pbp+1
+  stg_nflverse__pbp_participation+1 bridge_play_participation+1 int_play_context_long+1` = 11 models (the two pbp
+  staging views, `fct_play`, `bridge_play_participation`, `int_play_context_long`, `int_player_game_pbp`,
+  `int_team_game_pbp`, `int_target_participation`, `int_defender_game_coverage_snaps`, `mart_coverage`,
+  `mart_player_context`) + the two source tests; their tables stay as cloned. The record through the night: frozen
+  rows (`frozen_source` not null) md5-identical in `league_lab`, the clone after the night and the published copy —
+  `ops.projections` 4,780 (1,226 kickoff), `projection_lines` 2,358 (581), `projection_ranges` 11,790 (1,162),
+  `kd_lines` 256, `kd_ranges` 1,280.
+* **Found (PO, dbt)**: `int_player_week_universe` took **396 s** of the 8 m 41 s build — planned right after
+  `int_player_week_team` was rebuilt, before autovacuum analysed it (autoanalyze 17:00:56 UTC, the query started
+  ~17:00:28); EXPLAIN with statistics is a cheap hash join. A fresh database in Actions has the same order. An
+  `analyze {{ this }}` post-hook on `int_player_week_team` (the universe model has one for itself) should take ~6
+  minutes off every night.
+* **Checks**: shellcheck clean on `nightly.sh`, `refresh.sh`, `sync_to_hosted.sh`; actionlint clean on `nightly.yml`;
+  `tests/test_nightly_relations.py` 6 passed (record ⊆ state, the API's readers follow its imports, every relation a
+  route reads is named, `OPS_EXCLUDE` read by no one, the sync's exit 7 off Actions ×2); ruff clean.
+* **Open**: the live Sleeper and Open-Meteo steps and the Neon restore (no network here); the Mac's launchd behaviour
+  (no Mac) — the gate is the same block; `docs/HANDOFF.md` lines 13–14, 84, 135 still say the Mac syncs (PO's file).
+
+### H0 2026-10-02 — the deploy kit (branch `dev/H0`)
+
+Plan row H0: everything Andrew needs to put the API + the web app on a server, written for him to do himself.
+
+**Files.** New: `render.yaml`, `.github/workflows/image.yml`, `scripts/smoke.sh`, `docs/DEPLOY.md`, `.dockerignore`,
+`api/tests/test_h0.py`. Changed: `api/Dockerfile`, `api/league_lab_api/main.py` (block `# ---- H0 health`),
+`api/README.md` § Deploy (rewritten short, points at DEPLOY.md), `api/tests/test_f3.py` (one assertion pinned the old
+`{"ok": true}` health body), this section, `CHANGELOG.md`.
+
+**Design.** Render builds `api/Dockerfile` from the repository (Blueprint `runtime: docker`, root context, Starter
+$7/month, region `ohio` = Neon's us-east-2, one instance, health check `/api/health`, `autoDeployTrigger: checksPass`,
+`buildFilter` = what the image holds). The GitHub workflow builds the same image on every such push to `main`, starts
+it once (health without a database, the app's page, user `nobody`, the cache writable and the code not) and pushes
+`ghcr.io/<owner>/league-lab:<sha>` + `:main`; Render waits for that green check, so a Dockerfile that does not build
+never reaches the server. Chosen over Render pulling the GHCR image because it needs no registry token and no deploy
+hook secret (two fewer things for Andrew to create); the switch is five documented steps and the workflow already
+calls `RENDER_DEPLOY_HOOK_URL` when that secret exists. No Render disk: the server writes only Sleeper's ~15 MB player
+directory (a day), and a disk costs money, needs a root-owned mount the `nobody` user cannot write, and turns off
+zero-downtime deploys; a redeploy costs one Sleeper call.
+
+**The image, proven without a Docker daemon** (each stage's commands run in
+`scratchpad/waveH/h0/img/`, the context = the tracked files the `.dockerignore` whitelist lets through):
+
+* Node stage: `npm ci --no-audit --no-fund` (175 packages, 3 s) + `npm run build` (vite 8.3.2, 21 assets, 404 KB
+  `dist`) on a copy of `web/`'s tracked files — green.
+* Python stage: `uv sync --frozen --no-dev --no-install-project` (uv 0.8.17 = the image's pinned
+  `ghcr.io/astral-sh/uv:0.8.17`, CPython 3.13, `UV_COMPILE_BYTECODE=1`) on `api/pyproject.toml` + `uv.lock`: 12 s,
+  no pytest / ruff / httpx in the `.venv`; the packages' own `tests` directories removed (−86 MB: `.venv` 344 → 260 MB).
+* Final stage, laid out as the `COPY` lines say (`/srv/api/.venv`, `/srv/api/league_lab_api`, `/srv/app/lib`,
+  `/srv/app/pages`, `/srv/src/league_lab`, `/srv/web/dist`, `compileall`, `/srv/cache` owned by `nobody`), started
+  with the image's exact `CMD` under `env -i` (only the image's `ENV` + `render.yaml`'s values) as uid `nobody`
+  (`setpriv`), `PORT=8701`: listens on 8701 (`$PORT` honoured; 8080 without it); `/api/health` answers; the cache
+  directory is writable by `nobody` and the code is not (`PermissionError`).
+* **Fixed — `app/pages` was not in the image**: `decisions.page_functions` reads `app/pages/2_Waiver_Wire.py` and
+  `6_Trade_Finder.py` at run time. With the old `COPY` lines: `/api/waivers` (Scrubs 2) **500** and
+  `POST /api/trades/evaluate` **500** (`FileNotFoundError`); with `COPY app/pages`: 200 / 200.
+* Also changed: the default port 8000 → 8080 (`EXPOSE 8080`), uv and its cache no longer in the final image (a
+  separate `py` stage), `PYTHONDONTWRITEBYTECODE=1` + the code compiled at build time (`nobody` cannot write
+  `__pycache__`), `ARG LEAGUE_LAB_VERSION` → `/api/health`'s version, `chown nobody:nogroup`.
+* Not run: `docker build` itself (no daemon). The workflow's first run on GitHub is the first real build; its "Start the
+  image once" step checks what is proven here.
+
+**`/api/health`** (marked block in `main.py`): `{"ok": true, "version", "as_of": max(ops.projections.fitted_at),
+"board_source", "database": "ok" | "unreachable: <class>"}`, no password, `Cache-Control: no-store`, always 200 while
+the process runs (a host restart would not fix a database); `as_of` read on its own 5-second connection at most once
+an hour (once a minute while failing), one refresh at a time, so Render's frequent checks neither keep Neon's compute
+awake nor wait on the pool. `version`: `LEAGUE_LAB_VERSION`, else `RENDER_GIT_COMMIT`, else `git rev-parse`, else `dev`.
+`api/tests/test_h0.py` (3 tests): the body against independent SQL, the Render fallback, gate on + database down.
+
+**The API run against the hosted copy** (`league_lab_hosted`, read-only role, the Test League from fixtures, port
+8701, the image layout above). Every route the web app calls (`web/src/lib`'s query strings: 19 per league for
+dynasty 12, Scrubs 2, Test League 3, + session / health / status / leagues / username / `/` / an app route = 64):
+
+| Database | Routes 2xx | Failures |
+|---|---|---|
+| `league_lab` (the full copy) | 63 / 64 | `/api/search` for the Test League: 404 "no current-season league" (search is house-only; H1's row) |
+| `league_lab_hosted` (as published) | 36 / 64 | 21 × 500, 6 × 503, the 404 above |
+| a scratch clone of it + the relations below (`league_lab_hosted_h0`, dropped afterwards) | 63 / 64 | the 404 above; no SQL error left in the Postgres log |
+
+**Missing from the hosted copy** (for H2 — the sync script's closure; each was found by the route walk and the server
+log, then confirmed by adding it to the clone):
+
+* Route-breaking:
+  * `analytics.mart_player_ros_projection` (table) — 503 on `/api/ros` and `/api/waivers` for both house leagues.
+  * Stale shape, the relation is there: `ops.projections` lacks `p25`, `p75`; `analytics.mart_player_week_projections`
+    lacks `p25`, `p75`, `actual_inside_50` — **500** on `/api/my-week`, `/api/player/{gsis}`, `/api/matchups/defense`,
+    `/api/matchups/cb`, `/api/compare` for all three leagues, and on `/api/ros`, `/api/waivers`,
+    `/api/trades/evaluate`, `/api/trades/partners`, `/api/team` for the Test League (the borrowed board reads
+    `ops.projections`). A sync of a current build carries these (the sync copies whole tables): run the nightly once
+    before the deploy (DEPLOY.md "Before you start"). Same staleness, no route of today failing (H1's `/api/about` reads
+    the grades): `analytics.mart_projection_backtest` (`coverage_50`, `interval_score`, `interval_width_50`,
+    `is_current`), `ops.projection_backtest` (`coverage_50`, `interval_width_50`, `pinball_25`, `pinball_75`),
+    `analytics.mart_player_week_features` (10 `pn_*` columns).
+* Silent (200, a weaker answer; the error is caught):
+  * `ops.projection_lines`, `ops.projection_ranges`, `ops.kd_lines`, `ops.kd_ranges`,
+    `analytics_seeds.reference_scorings` — F1's NFL-wide board: without them every non-house league is priced from the
+    borrowed board (`/api/status` `board_source_in_use`: `nfl_wide` once added).
+  * `analytics.mart_kd_week` — K / DEF on the on-demand path (`anyleague`: "K / DEF unvalued, reported").
+  * `analytics.mart_projection_record` — `/api/record` for a house league answers without the record.
+  * `analytics.mart_player_role_alerts` (a view) and the one relation it reads that the hosted copy lacks,
+    `analytics.fct_team_game` (2 MB) — Trends' role alerts and the player card's signals come back empty (8 alerts for
+    dynasty once added).
+
+**Smoke script** (`scripts/smoke.sh <base-url> [password] [sleeper-username]`, one line per check, `shellcheck`
+clean): against the patched clone with Sleeper's full player directory (12,229 players from `raw.sleeper_player`, as
+fixtures) — 11 / 11 ok, exit 0 (health, the app's page, 401 without / 401 wrong / 200 login, status, house leagues,
+rosters, My Week Scrubs 1, `test_manager`'s leagues, My Week Test League 1 on demand). Against `league_lab_hosted` as
+published — 2 FAIL (both My Week: 500), exit 1. No server / no password: stops with one FAIL line, exit 1.
+
+**Measured** (the image layout, uid `nobody`, the sandbox's two shared cores): memory 149 MB after start, 284–288 MB
+peak after the 64 routes twice with the full player directory (Starter has 512 MB); the 64 routes 9.6 s cold in total
+(slowest 1.44 s: a player card on demand), 2.4 s warm (slowest 0.32 s).
+
+**Checks.** `cd api && uv run pytest -q`: **139 passed, 2 skipped** (3.9 min); `uv run ruff check src tests app
+api/league_lab_api api/tests`: clean; `actionlint` (1.7.12, with shellcheck): clean on both workflows; `shellcheck
+scripts/smoke.sh`: clean; `render.yaml` parses (PyYAML).
+
+**Not verified here** (no Docker daemon, no internet): a real `docker build` / push (the workflow's first run is),
+Render's acceptance of the Blueprint fields (`autoDeployTrigger: checksPass`, `buildFilter`, `region: ohio` — DEPLOY.md
+says what to do if Render rejects one), the docker/* action versions (`setup-buildx-action@v3`, `login-action@v3`,
+`build-push-action@v6`), the GHCR package's visibility, the deploy hook's `imgURL` parameter, the prices (Render
+Starter $7, Standard $25; read 2026-10-02 from memory of Render's pricing, not the live page).
+
+### H1 2026-10-02 — the gaps: upside stash and buy low / sell high on Waivers, "What it leans on most" on About, rest of season in one round of queries, search for any league (branch `dev/H1`, clone `league_lab_h1`)
+
+**What.**
+* `/api/waivers` gains `upside` (the Waiver Wire's third card region: `mart_waiver_upside` with `app/lib/signals.py`'s
+  `stash_headline` / `upside_detail`; any other league: Sleeper's free agents with an NFL-wide role alert in
+  `ops.player_scenarios`, the what-if re-priced in the league's scoring with `scoring.compute_points` on the
+  `base_line` / `larger_line` the table keeps, `why` saying the lineup gains are the nightly's per house league) and
+  `trade_lists` (the Trade Finder's buy-low / sell-high: `roster_value.trade_candidates` on the horizon board —
+  `mart_league_roster_horizon` + `mart_player_availability` for a house league, `anyleague.horizon_frame` + the season
+  table priced on request otherwise; best by position, the page's two card sentences quoted). `decisions.waiver_extras`.
+* `GET /api/about?league=` (`api/league_lab_api/about.py`): the model's words, `importance`
+  (`mart_projection_importance`: component / total, newest version, top 10 per position, the page's "how we measured it"
+  caption and per-position sentence) and `grades` (`mart_projection_drift` this season next to the backtest,
+  `mart_projection_backtest` per past season, current model). Any other league reads the closest house scoring
+  (`research.expected_ref`) and says so in `why`.
+* `anyleague.ros_table`: on the NFL-wide board the whole window is read in one round of queries (`load_window`: lines,
+  ranges — only the exact reference scoring's when there is one —, K / DEF lines and ranges, status, references), every
+  week's stat lines priced in one vectorised pass (`compute_points_frame`: the same terms in the same order, equal to
+  `compute_points` bit for bit — `price_lines` uses it everywhere), each week's reference and ranges and K / DEF chosen
+  by `price_week`'s rules over the whole window at once (`skill_window`, `kd_window`); a week the NFL-wide tables do not
+  hold, or the borrowed board, is priced week by week as before. The answer is cached 10 minutes (the priced weeks' rule).
+* `/api/search` for a league the database does not hold: Sleeper's directory (`sleeper().players()`, cached) by name,
+  `player_id_map`, whose team from the league's rosters (`research.search_on_demand`); house leagues unchanged.
+* Web: Waivers draws the upside stash (up to three cards: the player, the what-if, the page's lines, "as he is" / "lineup
+  gain if it holds" tiles) and "Buy low, sell high" (the two sentences, best by position, your sell-high players, the full
+  buy-low list in an expander); "How to read this" gains three lines. About draws "What it leans on most" (a position
+  switch, one bar per input, the lead sentence, how it was measured) and "How the model is doing" (per position: order
+  score, average miss, inside the range — this season vs the backtest — and weeks scored; "How to read the grades").
+  Fixtures saved from the API (`web/fixtures/save_h1_fixtures.py`: `upside` / `trade_lists` added to the 17 saved
+  waivers files, `about_<league>.json` × 3); `e2e/fixtures.ts` serves `/api/about`; `e2e/h1/fixtures.spec.ts` (3 tests ×
+  phone / desktop).
+
+**Evidence.**
+* Rest of season on demand, NFL-wide board (`ondemand.ros_on_demand`, every cache emptied incl. the query cache; median
+  of 3; load ≈ 0.5), cold / warm ms: dynasty 1,079 / 114 → **249 / 2**; Scrubs (K + DEF) 1,237 / 146 → **336 / 3**;
+  Test League (no exact reference: five references' ranges read) 1,698 / 181 → **531 / 2** (min 487). In the test run:
+  211 / 326 / 439 ms. Parity: `test_f3.py::test_ros_on_demand_reproduces_the_mart` (both boards, both leagues; 0.011)
+  green; new `test_ros_window_equals_the_week_by_week_path` (all three leagues): the one-round answer = the week-by-week
+  `price_week` path on every column, every player, to 1e-9, the same references.
+* `compute_points_frame` = `compute_points` bit for bit on every 2026 stat line in the three fixture scorings and the five
+  reference scorings (TE premium included).
+* `/api/about`: importance = the mart rows (labels, values, order) per position; grades = `mart_projection_drift`
+  (this season, backtest) and `mart_projection_backtest` per season, both house leagues; the Test League reads Scrubs'
+  (`why`); unknown league 404. Note: importance is measured on League of Scrubs only in this copy, so the dynasty shows
+  Scrubs' rows with `scored_in` = League of Scrubs.
+* `/api/waivers`: `upside` = `mart_waiver_upside` row for row (dynasty 12: 3 stashes, Scrubs 2: 3); `trade_lists` = the
+  Trade Finder's lists computed independently (`trade_candidates` on the mart board + the page's candidate query): same
+  players, same order, fit to 0.01; dynasty 12 on demand (`source=sleeper`) = the house buy-low list (fit and PPG − xPPG
+  to 0.01); the Test League's stashes priced in its full-PPR scoring = `compute_points(larger_line)` (Myles Price 3.48 =
+  dynasty's full-PPR price, Scrubs' half PPR 2.90). Latency (TestClient, first call): dynasty 12 577 ms (extras 213),
+  Scrubs 2 769 (212), Test League 4,599 (1,183: the season table priced on request, then cached 10 minutes).
+* `/api/search` on the Test League: "brown" → A.J. Brown (gsis 00-0035676, the fixture roster that holds him), free
+  agents flagged; one letter → []; the house search unchanged.
+* Checks: `cd api && uv run pytest -q` **152 passed** (138 + 14 new in `tests/test_h1.py`; one earlier run under load:
+  150 passed, 2 skipped); `uv run ruff check src tests app api/league_lab_api api/tests` clean; web `npm run lint` 0 / 0,
+  `npm run build`, `npm run e2e:fixtures` **58 passed** (52 + 6); root `uv run pytest -q` **829 passed, 1 skipped**.
+
+**Decisions for the PO.**
+* Buy low / sell high are the Trade Finder's lists (players on other rosters / yours, by PPG − xPPG, with the lineup fit),
+  shown on Waivers as asked; the web Trade Finder still has none (one component to reuse).
+* The on-demand stash carries no lineup gain (the nightly's `upside_for_roster` could run on `league_weeks` the way
+  `sweep_roster` does — a follow-up, ~1 s per request); the stash list is every free agent with a live alert, ordered by
+  the what-if's gain.
+* The keeper table on demand (task 5) was not attempted (time box): `/api/team` keeps the honest `keeper_why` line.
+* `price_week` now prices with the vectorised `price_lines` too (bit for bit equal): My Week / the player card get faster
+  cold.
+
+**Open.** Real Sleeper (fixtures only); the Test League's on-demand waivers stay ~4–5 s cold (the season table and the
+board); the hosted copy (`league_lab_hosted`) has no `ops.projection_lines` yet (H2's relation audit), so there the rest
+of season borrows week by week as before.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

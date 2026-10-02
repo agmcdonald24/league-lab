@@ -2,6 +2,37 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave H
+
+- **One writer, the record kept, the hosted relation audit (H2).** GitHub Actions' nightly is the only writer of the
+  hosted copy: off Actions `nightly.sh` skips `sync-hosted` and `sync_to_hosted.sh` refuses (exit 7) unless
+  `LEAGUE_LAB_MAC_WRITES_HOSTED=1`, so the Mac's launchd refresh builds only the Mac's database. The NFL-wide boards
+  (`ops.projection_lines` / `_ranges`, `ops.kd_lines` / `_ranges`) join the decision record (`RECORD_TABLES`: restored
+  hard, saved to the archive); a record table the hosted copy has never had is said so and taken from this database
+  or the archive instead of stopping the night. What the hosted copy holds is derived in one place,
+  `scripts/hosted_relations.py`, from the Streamlit console AND the product API (`api/`, the `src/league_lab` modules
+  it imports): the API's 63 relations verified after every publish; `fct_player_game_league` and
+  `mart_player_week_features` join the three-season window and E4's experiment tables stay out — ~200 MB, with a
+  480 MB refusal before anything is touched (`docs/HOSTING.md` § 5).
+
+- **The deploy kit (H0).** `docs/DEPLOY.md` walks Andrew through putting the API and the phone app on Render ($7 a
+  month, Starter): `render.yaml` (a Blueprint: one Docker web service built from `api/Dockerfile`, health check
+  `/api/health`, the two secrets asked for, deployed after GitHub's checks pass), `.github/workflows/image.yml` (every
+  push to `main` builds the image, starts it once and pushes `ghcr.io/<owner>/league-lab:<sha>` and `:main`),
+  `scripts/smoke.sh <url> [password] [username]` (one line per check, exit 1 on a failure) and `/api/health` now
+  answering the version, the database's newest projection fit (`as_of`) and whether the database answers. The image
+  was proven stage by stage without Docker and fixed: `app/pages` was missing (Waivers and Trades would have failed on
+  the server), it listens on `$PORT` (else 8080), runs as `nobody`, ships no uv / dev dependencies / package test
+  suites, and `.dockerignore` keeps `data/` and `.env` out of the build. On the sandbox's copy of Neon, My Week, the
+  player card, Matchups, Compare and rest of season fail until the nightly publishes the current tables
+  (`docs/STATUS.md` § Wave H, H0 lists them).
+
+- **The gaps Wave G left (H1).** Waivers shows the upside stash (a free agent whose role grew before his points did, with
+  the what-if) and buy low / sell high (the Trade Finder's lists, best by position) for any league; About shows what the
+  projection leans on most (bars per position) and its grades (this season vs the backtest) from the new `/api/about`;
+  rest of season for any league is read in one round of queries and priced in one pass (cold 1.1–1.7 s → 0.25–0.53 s);
+  the player search works for any Sleeper league (Sleeper's directory).
+
 ## 2026-10-02 — Wave G
 
 - **The research for any league (G1).** Seven API routes serve the research pages as JSON for any Sleeper league —

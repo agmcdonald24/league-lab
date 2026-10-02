@@ -10,8 +10,8 @@ For the next agent (Claude Code or any other) picking this repo up. Read in this
   side (`LEAGUE_LAB_SLEEPER_LEAGUE_ID=<reference>,<other>`), the Phase 2 play-by-play layer, the
   OLS baseline rankings with backtest, and **Projection v2** (per-league stat-line projections with
   a calibrated floor/ceiling, walk-forward validated 2021–2025). The app is live on Streamlit
-  Community Cloud against a Neon Postgres that `make sync-hosted` refreshes; the Mac runs the
-  nightly refresh (launchd 08:00) which now ends with `league-lab project` and the hosted sync.
+  Community Cloud against a Neon Postgres copy that **GitHub Actions' nightly** publishes (Wave H: the one
+  writer); the Mac's launchd refresh (08:00) builds the local copy and no longer syncs to Neon.
 * Two leagues: **League of Scrubs** (reference; 10 teams, half PPR, K + DEF) and **Forever Unclean
   Dynasty** (12 teams, superflex, full PPR, 6-pt pass TD, yardage and long-TD bonuses, no K/DEF).
   Since **S-01a** (done 2026-09-27) league pages price every player in the selected league's own
@@ -67,6 +67,12 @@ compare, game logs) and the decisions (waivers, trades, team hub, league) for an
 (`docs/DESIGN.md`: dark-first, team colors, the player card as the unit, an inline-SVG chart kit), every screen in the
 web app, "About the numbers" (the model explanation + the record). Same run commands as Wave F.
 
+**Iteration 16 (Wave H) delivered 2026-10-02 — the beta on a server**: the deploy kit (`render.yaml`, the Dockerfile,
+`image.yml`, `scripts/smoke.sh`, `docs/DEPLOY.md`), the gaps (upside stash, buy low / sell high, About's "what it leans
+on most", one-query rest of season, search for any league), one writer (GitHub Actions publishes the hosted copy; the
+Mac's launchd builds locally only), the NFL-wide boards in the record, the hosted relation closure in
+`scripts/hosted_relations.py`. **Next: Andrew deploys** (`docs/DEPLOY.md`); Wave I (accounts, Stripe) on Sleeper's licence.
+
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a
 league-mate would notice also gets a plain-words entry in `app/whats_new.md` (Home's "What's new"), and
@@ -81,7 +87,7 @@ make build                                  # dbt seed + run + test (migrate fir
 make project                                # projection v2 for this season, then its marts
 make backtest-v2                            # only when the model or its features change (~12 min)
 make app                                    # http://127.0.0.1:8501
-make sync-hosted                            # publish to Neon (drop-then-restore; ~2 min window)
+make sync-hosted                            # refuses on the Mac since Wave H (Actions publishes); LEAGUE_LAB_MAC_WRITES_HOSTED=1 overrides
 ```
 
 Headless page check that catches most regressions before a browser does:
