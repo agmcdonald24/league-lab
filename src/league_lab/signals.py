@@ -1209,6 +1209,17 @@ def signals_after_project(conn: psycopg.Connection, season: int, train: pd.DataF
     try:
         alerts = refresh_alerts(conn, season)
         run.alerts = len(alerts)
+        # B5: a week whose first game has kicked off keeps the board it was published with (ops.projections,
+        # frozen_source = 'kickoff'); a refit cannot reproduce that base, so no scenario is written for it (the
+        # first `project` after week 4's freeze wrote 24 week-4 rows off the refit and failed the mart's
+        # scenario_base_is_the_projection test on the Mac, 2026-10-02)
+        with conn.cursor() as cur:
+            cur.execute("select distinct week from ops.projections where season = %s and frozen_source = 'kickoff'", (season,))
+            frozen_weeks = sorted(int(r[0]) for r in cur.fetchall())
+        if frozen_weeks:
+            target = target[~target["week"].isin(frozen_weeks)]
+            pred = pred[~pred["week"].isin(frozen_weeks)]
+            log.info("scenarios skip the frozen weeks %s (the board is locked at kickoff)", frozen_weeks)
         sc = scenarios(conn, season, train, target, pred, scorings, alerts, run, base_tol)
         _write(conn, "ops.player_scenarios", sc, SCENARIO_COLUMNS, "season = %s", (season,))
         run.seconds = time.perf_counter() - t0

@@ -2419,6 +2419,11 @@ The PO accepted D5's recommendation: `qb` at QB (5 inputs), `teammates` at RB / 
   (7) `/api/player` mirrors the Player page's rest-of-season line and how-to (the parity tests caught the gap).
 * **Checks**: `uv run pytest -q` 821 passed; `api` 51 passed; headless 41 runs ALL OK; ruff clean; the new models
   built on the PO's database (PASS=57).
+* **Hotfix after the Mac run (2026-10-02 01:53 ET)**: the first `make project` after week 4 froze failed
+  `scenario_base_is_the_projection` (24 rows): `signals_after_project` built the week-4 scenarios off the refit
+  while the board for a kicked-off week keeps its kickoff numbers (B5). Scenarios now skip frozen weeks
+  (reproduced by freezing week 4 on the PO's copy: 24 week-4 rows → 0, base = stored projection to 0.00e+00 on the
+  14 remaining rows, the mart's 10 tests pass). The nightly would have stopped at `projection-marts` the same way.
 * **Leads the PO is NOT shipping yet** (E4): `player_prior` as a *linear correction* (RB MAE −0.054, WR −0.040, TE
   −0.014, 3 of 3 seasons; the control — a constant shift — makes MAE worse) and `rookie_prior_early` at RB / WR for
   weeks 1–4 (+0.005–0.008 Spearman, 3 of 3). Both need a `projections.py` change and recalibrated ranges → v3.1
