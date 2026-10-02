@@ -15,6 +15,18 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `mart_player_week_features` join the three-season window and E4's experiment tables stay out — ~200 MB, with a
   480 MB refusal before anything is touched (`docs/HOSTING.md` § 5).
 
+- **The deploy kit (H0).** `docs/DEPLOY.md` walks Andrew through putting the API and the phone app on Render ($7 a
+  month, Starter): `render.yaml` (a Blueprint: one Docker web service built from `api/Dockerfile`, health check
+  `/api/health`, the two secrets asked for, deployed after GitHub's checks pass), `.github/workflows/image.yml` (every
+  push to `main` builds the image, starts it once and pushes `ghcr.io/<owner>/league-lab:<sha>` and `:main`),
+  `scripts/smoke.sh <url> [password] [username]` (one line per check, exit 1 on a failure) and `/api/health` now
+  answering the version, the database's newest projection fit (`as_of`) and whether the database answers. The image
+  was proven stage by stage without Docker and fixed: `app/pages` was missing (Waivers and Trades would have failed on
+  the server), it listens on `$PORT` (else 8080), runs as `nobody`, ships no uv / dev dependencies / package test
+  suites, and `.dockerignore` keeps `data/` and `.env` out of the build. On the sandbox's copy of Neon, My Week, the
+  player card, Matchups, Compare and rest of season fail until the nightly publishes the current tables
+  (`docs/STATUS.md` § Wave H, H0 lists them).
+
 ## 2026-10-02 — Wave G
 
 - **The research for any league (G1).** Seven API routes serve the research pages as JSON for any Sleeper league —
