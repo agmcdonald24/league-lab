@@ -215,7 +215,7 @@
             <p class="mt-3 text-xs text-ink-3">How much a better lineup would have added, {data.weeks_scored} week{data.weeks_scored === 1 ? "" : "s"}. High numbers mark managers who don't sweat start / sit: useful to know when you trade with them.</p>
           </Card>
         {:else}
-          <p class="ll-empty text-sm" data-testid="no-profiles">Points left on the bench and the draft need the league's past weeks in League Lab's database: they show for the leagues it keeps every night.</p>
+          <p class="ll-empty text-sm" data-testid="no-profiles">Points left on the bench need every lineup of the league's past weeks: they show for the leagues League Lab keeps every night.</p>
         {/if}
       </div>
     </div>
@@ -254,7 +254,11 @@
 
       <Card title={data.draft ? `The draft · ${draftRounds.length} rounds` : "The draft"} pad={false} testid="draft">
         {#if !data.draft}
-          <p class="px-4 pb-4 text-base text-ink-2" data-testid="no-draft">Sleeper has no draft for this league this season (or it has not happened yet).</p>
+          <p class="px-4 pb-4 text-base text-ink-2" data-testid="no-draft">
+            {data.source === "sleeper"
+              ? "The draft review needs the league's history: it shows for the leagues League Lab keeps every night."
+              : "No draft for this league this season yet."}
+          </p>
         {:else}
           {#snippet pick(d: NonNullable<LeagueView["draft"]>[number])}
             <li class="flex items-center gap-2 px-3 py-1.5" data-testid="pick">
