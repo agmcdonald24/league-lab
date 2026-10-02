@@ -9,7 +9,7 @@
   import { withContext } from "../lib/md";
   import { gapWords, NEAR, ownerWord, whoFilter, workLine, type Who } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
-  import { route, setParams } from "../lib/router.svelte";
+  import { navigate, route, setParams } from "../lib/router.svelte";
   import { fmt, SERIES } from "../lib/theme";
   import Bar from "../components/Bar.svelte";
   import Card from "../components/Card.svelte";
@@ -153,7 +153,7 @@
                   context={`${fmt.pts(p.ppg)} a game · worth ${fmt.pts(p.xppg)}`}
                   yours={team !== null && p.rostered_by_roster_id === team}
                   selected={picked?.gsis_id === p.gsis_id}
-                  onselect={() => setParams({ pick: p.gsis_id })}
+                  onselect={() => (window.innerWidth < 900 ? navigate(href(p)) : setParams({ pick: p.gsis_id }))}
                 >
                   {#snippet trailing()}{@render gapBar(p)}{/snippet}
                 </PlayerRow>

@@ -16,7 +16,7 @@
       disabled={!m.help}
       onclick={() => (open = open === m.label ? null : m.label)}
     >
-      <div class="ll-label truncate">
+      <div class="ll-label leading-tight break-words">
         {m.label}{#if m.help}<span class="ml-1 text-ink-3" aria-hidden="true">ⓘ</span>{/if}
       </div>
       <div class="mt-0.5 text-2xl leading-tight font-bold tracking-tight">{m.value ?? "—"}</div>

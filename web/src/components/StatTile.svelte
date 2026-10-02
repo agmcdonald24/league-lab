@@ -30,7 +30,7 @@
 
 <div class="relative min-w-0 rounded-md bg-raised px-3 py-2.5" data-testid={testid ?? "stat-tile"}>
   {#if accent}<span class="absolute inset-x-3 top-0 h-0.5 rounded-b" style="background:{accent}" aria-hidden="true"></span>{/if}
-  <div class="ll-label truncate">{label}</div>
+  <div class="ll-label leading-tight break-words">{label}</div>
   <div class="mt-0.5 flex items-baseline gap-1">
     <span class="font-bold tracking-tight text-ink {size === 'lg' ? 'text-num' : size === 'sm' ? 'text-lg' : 'text-2xl'} leading-none" data-testid="stat-value"
       >{shown}</span
