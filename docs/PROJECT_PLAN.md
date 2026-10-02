@@ -376,6 +376,22 @@ card can say "A projects more, B wins more often" — centre the ranges on the p
 decide on week-5 drift); the experiment record is the seed `feature_experiments.csv` (re-export after a new harness
 run); Andrew's front-end decision (D7); P-01; Iteration 11 operations.
 
+### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
+
+Andrew ran the Wave G app on his Mac ("Oh hell yea … proceed"). Next: put the non-commercial beta on a host so his
+league-mates can use it on their phones (allowed by Sleeper's terms; nothing is charged), make the nightly the one
+writer of what the app reads, and close the gaps Wave G listed. Accounts and payments stay **Wave I**, on Sleeper's
+licence.
+
+| ID | Task | Acceptance |
+|----|------|------------|
+| H0 | **Deploy kit**: `render.yaml` (one web service from `api/Dockerfile`, health check `/api/health`, env: `LEAGUE_LAB_APP_DB_URL` = Neon's read-only URL, `LEAGUE_LAB_APP_PASSWORD`, `LEAGUE_LAB_API_SECRET`, `LEAGUE_LAB_CACHE_DIR`, `LEAGUE_LAB_SLEEPER_PER_MIN`), the Dockerfile proven to build the web app inside the image (no daemon here: a dry run of each stage's commands), a GitHub Actions job that builds the image on every push to `main` and pushes it to GHCR (so Render can pull a built image, or build itself — pick one, say why), `scripts/smoke.sh <url>` (health, status, a league by username with fixtures off, a My Week), `docs/DEPLOY.md` as a walk-through Andrew does himself (Render account → Blueprint → secrets → deploy → the URL → add to the phone's home screen; what it costs; what to do when it breaks), and the API run against the sandbox's hosted copy (`league_lab_hosted`, the exact schema Neon has) with every route green. | Smoke script green against a local run on the hosted copy; the deploy doc complete; Actions workflow lint-clean (`actionlint`). |
+| H1 | **The gaps**: buy-low / sell-high lists and the upside stash on Waivers (`/api/waivers` + the screen; `mart_waiver_upside`, `ops.player_scenarios` on demand where the data is NFL-wide, else house leagues only, said so), "What it leans on most" on About (`/api/about` from `mart_projection_importance` + the backtest grades; the screen's section), the rest-of-season board in one query (cold 1.8 s → < 0.5 s), `/api/search` for an unknown league (the directory), the keeper table on demand where the league's transactions allow it (else the honest line). | Each with a test; latency before / after for the ROS board; fixture e2e for the two screens. |
+| H2 | **One writer, the record kept**: the GitHub Actions nightly becomes the only writer of the hosted copy (launchd on the Mac stops writing to Neon or is retired — `docs/HOSTING.md` says which and how), `ops.projection_*` / `ops.kd_*` into `RECORD_TABLES` now that the hosted copy has them, the hosted relation audit (every relation the API and `anyleague` / `research` / `decisions` read must be in `sync_to_hosted.sh`'s closure — add the missing ones; the Neon 512 MB budget stays), `fetch-projections` (Sleeper's projections) confirmed in the nightly before the freeze, and the nightly's `restore_state` honouring the new record tables. | Nightly dry run in the sandbox (`NIGHTLY_SLEEPER_OFFLINE=1 NIGHTLY_WEATHER_OFFLINE=1`) green; the sync into a scratch target lists every relation the API reads; size printed; HOSTING.md current. |
+
+Order: H0–H2 in parallel (three Opus devs, one round, 2 hours); the PO integrates, ships; Andrew deploys from
+`docs/DEPLOY.md`.
+
 ### Iteration 15 — the lab in the app (agreed 2026-10-02, Wave G)
 
 Andrew, after running the Wave F app against real Sleeper ("it works … extremely bare bones"): the lab IS the pitch —
