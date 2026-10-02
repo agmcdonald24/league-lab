@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave G
+
+- **The research for any league (G1).** Seven API routes serve the research pages as JSON for any Sleeper league —
+  `/api/trends` (over- vs under-performing: points vs expected points per game, the trend tags, role alerts),
+  `/api/matchups/defense` (points allowed by defense × position: the heatmap's cells, the trend, the defense profile),
+  `/api/matchups/cb` (the cornerback lines, the corners, his points vs shutdown corners), `/api/players` (season tables:
+  filter, sort, page, search), `/api/receivers` (the Receivers page's window, recent form, first reads, context splits),
+  `/api/compare` (two players with the same keys) and `/api/player/{gsis}/games` (the card's chart) — with headshots,
+  teams and whose roster on every player row, and every point in the league's own scoring: the league marts for a house
+  league, priced on request with `scoring.compute_points` elsewhere (identical to the marts on every 2024–26 game of both
+  house leagues); reference-scored fields keep the mart's name + `_ref` (`api/README.md` § Research (G1)).
+
 ## 2026-10-02 — Wave F
 
 - **NFL-wide model outputs (F1).** `league-lab project` fits the ranges per reference scoring (new seed

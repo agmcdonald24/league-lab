@@ -2844,6 +2844,89 @@ included).
 * **Not verified.** Real Sleeper (no network here), F3's real responses for the new routes (fixtures only), a real
   iPhone (Chromium with the iPhone 13 profile).
 
+## Wave G (Iteration 15)
+
+### G1 2026-10-02 — the research, on demand (branch `dev/G1`, clone `league_lab_g1`)
+
+**What.** Seven routes in `api/league_lab_api/research.py` (routes block `# ---- G1 research` in `main.py`), pure
+helpers in `src/league_lab/research.py`, tests `api/tests/test_research.py` (24), the JSON in `api/README.md`
+§ Research (G1): `/api/trends`, `/api/matchups/defense`, `/api/matchups/cb`, `/api/players`, `/api/receivers`,
+`/api/compare`, `/api/player/{gsis}/games`. `anyleague.py`, `player.py`, `ondemand.py`, `applib.py`, `app/` unchanged
+(read / imported only: `anyleague.price_week` / `league_scoring` / `team_names` / `check_id`, `player.SCHED_SQL`,
+`ondemand.PlayerContext` / `ros_card`; `app/lib/matchups.py` loaded unchanged for the cornerback and comparison
+sentences, `signals.py` for the role alerts).
+
+**Design.**
+* One frame per league-season: every `fct_player_game` row with `points` / `points_expected` in the league's scoring
+  (`research.league_games`) — `fct_player_game_league` for a house league; for any other league the stat columns
+  priced with `scoring.compute_points` (position passed; `research.price_games`) and cached 10 minutes per scoring.
+* Everything a screen derives from per-game points is the same arithmetic over that frame, each a Python twin of its
+  dbt model: `season_table` (`mart_league_player_season`, numeric rounding reproduced in integer cents),
+  `trend_windows` (`mart_player_trends`' points / expected-points windows), `defense_allowed`
+  (`mart_defense_vs_position_current` + `mart_defense_trends`).
+* Expected points on demand: a house league's `points_expected` + the scoring difference on the 7 expected stats the
+  published mart carries (`price_expected`); exact when the leagues agree on interceptions / fumbles / 2-pt tries
+  (`expected_reference` picks such a league: the Test League → Scrubs, exact).
+* Reference-scored mart fields are renamed `<column>_ref`; the league's own number takes the plain name next to it.
+* Rostered-by: `mart_player_availability` (house) or Sleeper's rosters through `player_id_map` (`ondemand.ros`'s rule).
+
+**Evidence.**
+* `cd api && uv run pytest -q`: **105 passed, 2 skipped** (81 + 2 skipped before; the 2 skips are F3's NFL-wide-table
+  tests, which need `f1_tables.sql` in the clone). `uv run ruff check src tests app api/league_lab_api api/tests`: clean.
+* Pricing parity (the acceptance), every game, on demand (`source=sleeper`, the Sleeper fixtures' scoring) vs the house
+  path (the league marts): dynasty and Scrubs × 2024 / 2025 / 2026 = 18,961 / 19,400 / 2,291 games each — max |points|
+  **0.0000**, max |expected points| **0.0000**; the season table (1,996 / 2,019 / 1,311 players, every
+  `mart_league_player_season` column) max diff **0.0000**; points allowed 2026 (160 defense × position rows) max diff
+  0.0000, 0 rank differences. Against the marts with independent SQL: `price_games` = `fct_player_game_league.points`
+  on every 2025 and 2026 row (test); `season_table` = `mart_league_player_season` (2025, every column, both leagues);
+  for the reference league `trend_windows` = `mart_player_trend_tags` (596 players 2025, ≤ 0.0001) and
+  `defense_allowed` = `mart_defense_trends` (160 rows, every direction) and `mart_defense_vs_position_current` (exact).
+* Hand-checked per route (both house leagues): trends' `ppg` / `xppg` / `gap` = `mart_league_player_season`,
+  `points_l3_ref` / `momentum` = `mart_player_trend_tags`; defense's league points allowed = a hand `avg(sum(points))`
+  over `fct_player_game_league`, `_ref` = the mart; cb rows = the roster's WR / TE in `mart_cb_matchups`, `proj_points` =
+  `mart_player_week_projections`; players' `points` / `ppg` = `mart_league_player_season`, `_ref` and stats =
+  `mart_player_season`, paging / sort / search; receivers' target share = Σ targets / Σ team targets and league points
+  per game = `fct_player_game_league`; compare's projection and rest of season = `/api/player`'s; games' `points` /
+  `expected_points` = `fct_player_game_league` per game. Test League: every route 200, `source: sleeper`, a receiver's
+  points = the Scrubs points + 0.5 a catch (full vs half PPR) on every 2025 game. Errors: 404 (bad id, a league Sleeper
+  lacks, an unknown player, a bad position, a team not in the league), 400 (bad sort / view / weeks), 502 (Sleeper down,
+  unknown league; a house league still answers).
+* Expected points priced from the other house league (the approximation when no league matches): dynasty from Scrubs,
+  2025 REG, 5,283 games: QBs off by 0.60 a game on average (max 2.03: the −2 vs −1 interception weight × expected
+  interceptions), 0.3% of the other rows off by more than 0.01.
+* Latency (ms, cold = every cache emptied incl. the Sleeper client / warm; TestClient; load average 5–7 on two shared
+  cores, so cold numbers are pessimistic):
+
+  | route | dynasty | Scrubs | Test League (on demand) |
+  |---|---|---|---|
+  | `/api/trends` | 385 / 65 | 194 / 43 | 349 / 74 |
+  | `/api/matchups/defense` | 386 / 33 | 256 / 33 | 658 / 49 |
+  | `/api/matchups/cb?team=` | 140 / 90 | 92 / 51 | 311 / 102 |
+  | `/api/players` (2026) | 83 / 26 | 55 / 20 | 428 / 46 |
+  | `/api/players?season=2025` | 76 / 24 | 61 / 20 | 1,704 / 42 (pricing a full season) |
+  | `/api/receivers` | 125 / 58 | 103 / 53 | 254 / 163 |
+  | `/api/compare` | 355 / 36 | 335 / 42 | 4,106 / 404 (the on-demand card's rest of season: 14 weeks priced) |
+  | `/api/player/{gsis}/games` | 40 / 15 | 31 / 14 | 80 / 43 |
+
+**Decisions for the PO.**
+* `/api/trends` names the gap fields as the contract does (`ppg`, `xppg`, `gap`, `gap_direction`) rather than
+  `expected_per_game` / `diff_per_game`; `/api/players` keeps `mart_league_player_season`'s names (`points`, `ppg`,
+  `expected_per_game`, `diff_per_game`, `position_rank_ppg`).
+* `team` / `position` keep the mart's value when the row has one (the season's team), `dim_player`'s otherwise.
+* `/api/matchups/cb`'s `is_starter` is Sleeper's current lineup (`is_current_starter` / the roster's `starters`), not the
+  proposed lineup the Streamlit page prefers: it only orders the list and picks the summary lines.
+* Errors: a parameter the route cannot use answers **400** `{"error"}` (new; the contract lists 404 / 502 / 503).
+* The heatmap rows cover the positions the league starts among QB, RB, WR, TE, K (no DEF rows: the mart has none).
+* `metrics` on a trends row: the moved metrics (up / down), every metric while he has fewer than four games
+  (the early read), `metrics=all` always; points metrics are flagged `ref_scored`.
+* Not re-priced (reference scoring, `_ref`): `mart_player_trends`' `points` / `expected_points` metric rows,
+  `expected_points_z`, `mart_defense_position_profile`'s point fields and the ranks on them (`rank_points_ref`,
+  `rank_adjusted_ref`; the comparison verdict reads them, as the page does), `mart_player_recent_form`'s
+  `points_per_game_std_ref`.
+
+**Open.** Real Sleeper (fixtures only here); a hosted copy keeps 3 seasons of `fct_player_game` (older `season=`
+answers empty); every relation the routes read is one an `app/` page names, so `sync_to_hosted.sh` publishes it.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

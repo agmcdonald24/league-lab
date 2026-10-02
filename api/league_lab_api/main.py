@@ -36,7 +36,7 @@ from league_lab import anyleague as A
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import auth, db, myweek, ondemand, player
+from . import auth, db, myweek, ondemand, player, research
 from .applib import cards, ui
 from .db import DataNotReady, query
 from .myweek import NotFound
@@ -221,6 +221,57 @@ def status(response: Response):
     except Exception as exc:  # noqa: BLE001 - a status line, never a failure
         out["board_source_in_use"] = f"unknown ({exc.__class__.__name__})"
     return _json(out, response)
+
+
+# ---- G1 research (plan G1, Wave G: league_lab_api/research.py; README § Research (G1)) ---------------------------
+@app.exception_handler(research.BadRequest)
+async def _bad_request(_req: Request, exc: research.BadRequest):
+    return JSONResponse({"error": str(exc), "detail": str(exc)}, status_code=400, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/trends", dependencies=[Depends(require_auth)])
+def trends(league: str, response: Response, position: str = "ALL", limit: int = 50, view: str = "all",
+           season: int | None = None, who: str = "all", team: int | None = None, min_games: int = 1,
+           sort: str | None = None, dir: str | None = None, metrics: str = "moved", source: str | None = None):
+    return _json(research.trends(league, position=position, limit=limit, view=view, season=season, who=who, team=team,
+                                 min_games=min_games, sort=sort, dir=dir, metrics=metrics, source=source), response)
+
+
+@app.get("/api/matchups/defense", dependencies=[Depends(require_auth)])
+def matchups_defense(league: str, response: Response, position: str = "ALL", source: str | None = None):
+    return _json(research.matchups_defense(league, position=position, source=source), response)
+
+
+@app.get("/api/matchups/cb", dependencies=[Depends(require_auth)])
+def matchups_cb(league: str, response: Response, team: int | None = None, limit: int = 50, source: str | None = None):
+    return _json(research.matchups_cb(league, team=team, limit=limit, source=source), response)
+
+
+@app.get("/api/players", dependencies=[Depends(require_auth)])
+def players(league: str, response: Response, season: int | None = None, position: str = "ALL", sort: str | None = None,
+            dir: str | None = None, limit: int = 50, offset: int = 0, q: str | None = None, season_type: str = "REG",
+            min_games: int = 1, source: str | None = None):
+    return _json(research.players(league, season=season, position=position, sort=sort, dir=dir, limit=limit, offset=offset,
+                                  q=q, season_type=season_type, min_games=min_games, source=source), response)
+
+
+@app.get("/api/receivers", dependencies=[Depends(require_auth)])
+def receivers(league: str, response: Response, season: int | None = None, limit: int = 50, season_type: str = "REG",
+              weeks: str | None = None, players: str | None = None, context: str = "half", source: str | None = None):
+    return _json(research.receivers(league, season=season, limit=limit, season_type=season_type, weeks=weeks,
+                                    players=players, context_type=context, source=source), response)
+
+
+@app.get("/api/compare", dependencies=[Depends(require_auth)])
+def compare(league: str, a: str, b: str, response: Response, source: str | None = None):
+    return _json(research.compare(league, a, b, source=source), response)
+
+
+@app.get("/api/player/{gsis}/games", dependencies=[Depends(require_auth)])
+def player_games(gsis: str, league: str, response: Response, season: int | None = None, season_type: str = "ALL",
+                 source: str | None = None):
+    return _json(research.player_games(league, gsis, season=season, season_type=season_type, source=source), response)
+# ---- end G1 research
 
 
 # ---------------------------------------------------------------- the web app
