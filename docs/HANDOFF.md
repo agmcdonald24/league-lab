@@ -9,9 +9,15 @@ For the next agent (Claude Code or any other) picking this repo up. Read in this
 * Everything through **Wave A of Iteration 9** is built, tested and committed: two Sleeper leagues side by
   side (`LEAGUE_LAB_SLEEPER_LEAGUE_ID=<reference>,<other>`), the Phase 2 play-by-play layer, the
   OLS baseline rankings with backtest, and **Projection v2** (per-league stat-line projections with
-  a calibrated floor/ceiling, walk-forward validated 2021–2025). The app is live on Streamlit
-  Community Cloud against a Neon Postgres copy that **GitHub Actions' nightly** publishes (Wave H: the one
-  writer); the Mac's launchd refresh (08:00) builds the local copy and no longer syncs to Neon.
+  a calibrated floor/ceiling, walk-forward validated 2021–2025). The Streamlit console is live on Streamlit
+  Community Cloud and **the beta (FastAPI + Svelte, any Sleeper league) is live on Render:
+  `https://league-lab.onrender.com`** (Blueprint `league-lab` from `render.yaml`, Starter, Ohio; deployed
+  2026-10-02, every route and screen checked on the server — `docs/STATUS.md` § "Deploy"). Both read the
+  Neon Postgres copy. **Who writes Neon today: the Mac.** Wave H made GitHub Actions' nightly the one writer,
+  but that workflow has never run to completion — its three secrets (`LEAGUE_LAB_SLEEPER_LEAGUE_ID`,
+  `LEAGUE_LAB_HOSTED_ADMIN_URL`, `LEAGUE_LAB_HOSTED_APP_PASSWORD`) were never set — so the Mac's `.env`
+  carries `LEAGUE_LAB_MAC_WRITES_HOSTED=1` and its 08:00 launchd refresh keeps publishing. Set the secrets
+  and remove the flag to switch; until then a Mac asleep at 08:00 means a stale copy (`/api/status` says).
 * Two leagues: **League of Scrubs** (reference; 10 teams, half PPR, K + DEF) and **Forever Unclean
   Dynasty** (12 teams, superflex, full PPR, 6-pt pass TD, yardage and long-TD bonuses, no K/DEF).
   Since **S-01a** (done 2026-09-27) league pages price every player in the selected league's own
@@ -87,7 +93,7 @@ make build                                  # dbt seed + run + test (migrate fir
 make project                                # projection v2 for this season, then its marts
 make backtest-v2                            # only when the model or its features change (~12 min)
 make app                                    # http://127.0.0.1:8501
-make sync-hosted                            # refuses on the Mac since Wave H (Actions publishes); LEAGUE_LAB_MAC_WRITES_HOSTED=1 overrides
+make sync-hosted                            # Wave H: refuses off Actions unless LEAGUE_LAB_MAC_WRITES_HOSTED=1 (set on the Mac: it is the writer today)
 ```
 
 Headless page check that catches most regressions before a browser does:

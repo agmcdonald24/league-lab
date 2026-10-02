@@ -1,5 +1,12 @@
 # Putting League Lab on a server (the beta)
 
+> **Done on 2026-10-02.** The beta is live at **https://league-lab.onrender.com** (Render Blueprint `league-lab`,
+> service `srv-db01bl60tbcc73fpbuh0`, Starter, Ohio). Steps 1–8 below are the record of how, and what to redo if
+> the service is ever recreated. Day to day: a merge to `main` reaches the server by itself ("How a new version
+> reaches the server"); if something is off, "When it breaks". **Neon is published by the Mac's 08:00 job today**,
+> not by GitHub's nightly (its secrets were never set; the scheduled run fails at its first check each night and
+> writes nothing) — `docs/HANDOFF.md` § "Where things stand".
+
 This puts the phone app and its API at one web address your league-mates open on their phones. You do it once, in
 about 30 minutes, from a browser and one terminal command. After that, every change merged to `main` reaches the
 server by itself.
@@ -23,10 +30,13 @@ You need three things you already have:
 * The Neon project the Streamlit app reads (`docs/HOSTING.md` § 1).
 * The beta password your league-mates already use for the Streamlit app.
 
-**Run the nightly once after this release is merged** (GitHub → **Actions** → **nightly** → **Run workflow** →
-`main` → **Run workflow**, then wait about 15 minutes for the green tick). The copy on Neon today was published before
-the new app's tables and columns existed (`docs/STATUS.md` § Wave H, H0 lists them); with that copy My Week, the player
-card and the matchup screens fail. One nightly run publishes the current set.
+**The copy on Neon must hold the current tables.** Today the Mac's 08:00 launchd refresh publishes them
+(`LEAGUE_LAB_MAC_WRITES_HOSTED=1` in the Mac's `.env`). GitHub's nightly can take over once its three secrets exist
+(GitHub → **Settings** → **Secrets and variables** → **Actions**: `LEAGUE_LAB_SLEEPER_LEAGUE_ID`,
+`LEAGUE_LAB_HOSTED_ADMIN_URL`, `LEAGUE_LAB_HOSTED_APP_PASSWORD` — the last two are the values in the Mac's `.env`);
+then run it once by hand (**Actions** → **nightly** → **Run workflow** → `main`, about 15 minutes) and remove the
+flag from the Mac's `.env`. With a stale copy My Week, the player card and the matchup screens fail or show old
+numbers; `/api/status` shows when each source was loaded.
 
 ## 1. Copy the database address (Neon, 3 minutes)
 
@@ -178,7 +188,8 @@ need no deploy at all: the nightly publishes them to Neon and the server picks t
 | Render says **Deploy failed** | Render → **Events** → the failed deploy → **Logs**: the first line with `ERROR` says why. The previous version is still live. Send the log to the PO, or **Rollback** on the last good deploy in **Events**. |
 | GitHub shows a red **image** check | Actions → **image** → the run: the failing step names it. Render waits; nothing changed on the server. |
 | `/api/health` says `"database": "unreachable: …"` | The database address is wrong or Neon is down. Render → **Environment** → check `LEAGUE_LAB_APP_DB_URL` against step 1 (role `league_lab_app`, `-pooler`, `sslmode=require`); status.neon.tech. The server tries again every minute. |
-| `as_of` in `/api/health` is days old | The nightly has not published. GitHub → Actions → **nightly** (`docs/HOSTING.md` § Reading a failed run). |
+| `as_of` in `/api/health` is days old | Nothing has published Neon. Today that is the Mac's 08:00 job: was the Mac awake? `logs/nightly.log` in the repo on the Mac says; `make refresh` there publishes now (the Mac's `.env` has `LEAGUE_LAB_MAC_WRITES_HOSTED=1`). Once GitHub's nightly has its secrets: Actions → **nightly** (`docs/HOSTING.md` § Reading a failed run). |
+| Render says **Deploy failed** in ten seconds with `COPY … not found` | A path the Dockerfile copies is kept out of the build: `.dockerignore` must list it (`!app/pages/` and so on), and no `api/Dockerfile.dockerignore` may exist — `api/tests/test_build_context.py` checks both; run `cd api && uv run pytest -q tests/test_build_context.py`. |
 | A page says **the numbers are not ready yet** | The nightly is publishing right now (one or two minutes, around 08:00 New York), or a table is missing on Neon. Reload in two minutes; if it stays, run the nightly by hand. |
 | **busy, try again in a minute** | The server's Sleeper allowance (300 calls a minute) is spent. It refills within a minute. |
 | The site does not load at all | Render → the service: **Live**? If not, **Manual Deploy** → **Deploy latest commit**. Still not: **Manual Deploy** → **Clear build cache & deploy**. |

@@ -3156,6 +3156,17 @@ placeholder test above.
   deleted; `api/tests/test_build_context.py` fails if a `<Dockerfile>.dockerignore` reappears, if a path the Dockerfile
   copies is untracked or excluded by `.dockerignore`, or if `.env` / `data/` / `dbt/` would get in. (The sandbox has no
   Docker; the two ignore files diverged unseen.)
+  Second build (`d4e101e`, after GitHub's `image` workflow passed in 2 m 37 s — `autoDeployTrigger: checksPass` held
+  Render until then): 1 m 04 s, Live. Checked on the server from the app's own origin (the `scripts/smoke.sh` checks
+  plus Team / Waivers / ROS / Record / About / Trends / League for both house leagues): 22 of 22 ok, slowest 1.01 s
+  (dynasty waivers), `/api/health` `version d4e101eb33df, as_of 2026-10-02T16:12Z, database ok`, `board_source_in_use
+  nfl_wide` (Neon has the NFL-wide boards), the gate 401 without / with a wrong password, a Sleeper-username lookup live
+  from Render (7 calls, 0 refused), `/api/search` 79 ms. Screens walked at 375 px: Leagues, My Week, Team, Waivers,
+  Trends, About, Rest of Season — headshots, charts and numbers present. Record says "no week on the record yet"
+  (right: week 4 is the first archived-before-kickoff week and is not scored until Tuesday). Writer reality: the
+  GitHub nightly has never completed (secrets unset), so `LEAGUE_LAB_MAC_WRITES_HOSTED=1` is set in the Mac's `.env`
+  and the Mac's 08:00 job publishes Neon; `docs/HANDOFF.md` says so. Not run: `scripts/smoke.sh` itself (neither the
+  sandbox nor the Mac's shell can reach `onrender.com`; the same checks ran from the browser).
 
 ### H2 2026-10-02 — one writer, the record kept, the hosted relation audit (branch `dev/H2`, clone `league_lab_h2`)
 

@@ -392,8 +392,12 @@ licence.
 Order: H0–H2 in parallel (three Opus devs, one round, 2 hours); the PO integrates, ships; Andrew deploys from
 `docs/DEPLOY.md`.
 
-**Delivered 2026-10-02** (STATUS § "Wave H"): all three rows. Next: Andrew runs the nightly workflow once, deploys on
-Render from `docs/DEPLOY.md`, shares the beta; **Wave I** (accounts, Stripe) on Sleeper's licence.
+**Delivered 2026-10-02** (STATUS § "Wave H"): all three rows. **Deployed 2026-10-02** (STATUS § "Deploy"): the PO
+drove Render through the browser (Andrew pasted the two secrets and pushed); one hotfix (`d4e101e`, a stale
+`api/Dockerfile.dockerignore` kept `app/pages` out of the image); **https://league-lab.onrender.com** live, 22 of 22
+checks on the server, every screen walked at phone width. Open: the GitHub nightly needs its three secrets before it
+can take over from the Mac as Neon's writer; Andrew shares the link. Next: **Wave I** (accounts, Stripe) on Sleeper's
+licence; until then, what the beta users say.
 
 ### Iteration 15 — the lab in the app (agreed 2026-10-02, Wave G)
 
