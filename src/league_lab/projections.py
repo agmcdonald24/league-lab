@@ -777,6 +777,10 @@ def _with_kd_rows(conn: psycopg.Connection, pred: pd.DataFrame, season: int) -> 
     kd = kd_rows_after_project(conn, season)
     if kd.empty:
         return pred
+    # one fitted_at per run: the freeze relabels a league-week with frozen_at = its fitted_at, and
+    # assert_frozen_projections_precede_kickoff holds every row to it (kd stamped its own now() a few
+    # seconds later, which left the QB-TE rows of a frozen week with frozen_at <> fitted_at: Mac, 2026-10-02)
+    kd = kd.assign(fitted_at=pred["fitted_at"].iloc[0]) if "fitted_at" in kd and len(pred) else kd
     out = pd.concat([pred, kd], ignore_index=True)
     out.attrs = pred.attrs
     return out
@@ -1010,9 +1014,17 @@ def _write_projections(conn: psycopg.Connection, pred: pd.DataFrame, season: int
         stored = pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
         plan = freeze_plan(pred, stored, kickoffs, now)
         for r in plan[plan["relabel"]].itertuples(index=False):
-            cur.execute("""update ops.projections set frozen_source = %s, frozen_at = %s
+            # a kickoff row's frozen_at is its own fitted_at (the plan's value is the league-week's max, which
+            # differs when two batches were stamped seconds apart); a refit row carries none
+            cur.execute("""update ops.projections
+                           set frozen_source = %s, frozen_at = case when %s = 'kickoff' then fitted_at end
                            where season = %s and league_id = %s and week = %s and frozen_source is null""",
-                        (r.frozen_source, r.frozen_at, season, r.league_id, int(r.week)))
+                        (r.frozen_source, r.frozen_source, season, r.league_id, int(r.week)))
+        # repair rows frozen by the older relabel (frozen_at = the league-week's max fitted_at): idempotent
+        cur.execute("""update ops.projections set frozen_at = fitted_at
+                       where season = %s and frozen_source = 'kickoff' and frozen_at is distinct from fitted_at""", (season,))
+        if cur.rowcount:
+            log.info("freeze labels repaired: %s kickoff rows now carry their own fitted_at", cur.rowcount)
     writes = plan[plan["action"] == "write"]
     rows = pred.merge(writes[["league_id", "week", "frozen_source", "frozen_at"]], on=["league_id", "week"], how="inner")
     rows["frozen_at"] = rows["frozen_at"].astype(object).where(rows["frozen_at"].notna(), None)

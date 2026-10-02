@@ -2424,6 +2424,13 @@ The PO accepted D5's recommendation: `qb` at QB (5 inputs), `teammates` at RB / 
   while the board for a kicked-off week keeps its kickoff numbers (B5). Scenarios now skip frozen weeks
   (reproduced by freezing week 4 on the PO's copy: 24 week-4 rows → 0, base = stored projection to 0.00e+00 on the
   14 remaining rows, the mart's 10 tests pass). The nightly would have stopped at `projection-marts` the same way.
+* **Hotfix 2 (2026-10-02 02:39 ET, `make build`)**: `assert_frozen_projections_precede_kickoff` failed on 595 rows —
+  the first week frozen with K / DEF rows present. `kdef` stamped its rows with its own `now()` seconds after the
+  QB–TE batch, and the freeze relabel wrote the league-week's max `fitted_at` as every row's `frozen_at`, so the
+  QB–TE rows of Scrubs week 4 had `frozen_at <> fitted_at`. Fix: one `fitted_at` per run (the K / DEF rows take the
+  QB–TE stamp), the relabel sets `frozen_at = fitted_at` per row, and `_write_projections` repairs rows frozen by
+  the old relabel (idempotent; logged). Reproduced on the PO's copy (581 rows), `project` repaired them, the test
+  passes, new weeks carry one `fitted_at`.
 * **Leads the PO is NOT shipping yet** (E4): `player_prior` as a *linear correction* (RB MAE −0.054, WR −0.040, TE
   −0.014, 3 of 3 seasons; the control — a constant shift — makes MAE worse) and `rookie_prior_early` at RB / WR for
   weeks 1–4 (+0.005–0.008 Spearman, 3 of 3). Both need a `projections.py` change and recalibrated ranges → v3.1
