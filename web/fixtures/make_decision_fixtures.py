@@ -193,6 +193,10 @@ WAIVER_HOWTO = [
 ]
 
 
+def mv_team(lid: str, roster: int) -> str:
+    return teams(lid)[roster]["team_name"]
+
+
 def waivers(lid: str, roster: int, info: dict) -> dict[str, dict]:
     mv = q(f"""select {MOVE_COLS} from analytics.mart_waiver_moves where league_id = %s and roster_id = %s and season = %s
                order by move_rank nulls first""", (lid, roster, SEASON))
@@ -250,7 +254,7 @@ def waivers(lid: str, roster: int, info: dict) -> dict[str, dict]:
         rr = ros.get(r["gsis_id"] or r["sleeper_id"] or "", {})
         r.update({"ros_points": rr.get("ros_points"), "ros_games": rr.get("ros_games"), "ros_rank_pos": rr.get("ros_rank_pos")})
     base = {"league_id": lid, "league_name": info["league_name"], "season": SEASON, "week": week,
-            "horizon_last_week": int(mv[0]["horizon_last_week"]), "roster_id": roster, "lineup_value": v["lineup_value"],
+            "horizon_last_week": int(mv[0]["horizon_last_week"]), "roster_id": roster, "team_name": mv_team(lid, roster), "lineup_value": v["lineup_value"],
             "weakest": weakest, "moves": out_moves, "positions": positions, "inputs_current": mv[0]["inputs_current"],
             "on_current_lineup": mv[0]["on_current_lineup"], "as_of": mv[0]["as_of"], "howto": WAIVER_HOWTO}
     files = {}

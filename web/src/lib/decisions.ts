@@ -144,11 +144,15 @@ export function allPlayRecord(r: AllPlayRow): string {
   return `${Math.round(r.all_play_wins)}-${Math.round(r.all_play_losses)}`;
 }
 
-/** "Waiver add", "Free-agent drop", "Trade" … in plain words. */
+/** A move's kind in plain words ("waiver claim", "free agent", "trade"). */
+export function moveKind(type: string): string {
+  return ({ waiver: "waiver claim", free_agent: "free agent", trade: "trade", commissioner: "commissioner" } as Record<string, string>)[type] ?? type;
+}
+
+/** One player's side of a move: "Add" / "Drop"; in a trade "Gets" / "Gives". */
 export function moveWords(type: string, action: string): string {
-  const t: Record<string, string> = { waiver: "Waiver", free_agent: "Free agent", trade: "Trade", commissioner: "Commissioner" };
-  const a: Record<string, string> = { add: "add", drop: "drop" };
-  return type === "trade" ? (action === "add" ? "Trade: gets" : "Trade: gives") : `${t[type] ?? type} ${a[action] ?? action}`;
+  if (type === "trade") return action === "add" ? "Gets" : "Gives";
+  return action === "add" ? "Add" : action === "drop" ? "Drop" : action;
 }
 
 // ------------------------------------------------------------------ trades
@@ -171,4 +175,13 @@ export function parseIds(s: string | null): string[] {
     .split(",")
     .map((x) => x.trim())
     .filter((x) => /^[\w-]+$/.test(x));
+}
+
+/** The screens' error line (the Wave F pages' words). */
+export function errorWords(e: unknown): string {
+  const status = typeof e === "object" && e !== null && "status" in e ? (e as { status: number }).status : null;
+  if (status === 404) return "League Lab cannot find this for your league on Sleeper. Pick another league or team above.";
+  if (status === 502) return "Sleeper did not answer. Try again in a minute.";
+  if (status === 503) return "The numbers are not ready yet. Try again in a few minutes.";
+  return e instanceof Error ? e.message : String(e);
 }

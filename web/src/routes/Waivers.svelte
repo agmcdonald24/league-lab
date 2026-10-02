@@ -1,0 +1,237 @@
+<script lang="ts">
+  // Waivers (plan G4; app/pages/2_Waiver_Wire.py on GET /api/waivers): the answer first ("Claim A, drop B: +3.4 this
+  // week at TE, +9.0 over the next 4 weeks"), the moves as cards, then the free agents by position — each with his
+  // headshot, this week's projection and its range, rest of season — list on the left, the picked one on the right
+  // (desktop), then "How to read this". The position switch rewrites the URL in place (no Back step).
+  import { get, peek, Unauthorized, decisionPaths, type FreeAgent, type Waivers } from "../lib/api";
+  import type { LeagueOption } from "../lib/leagues";
+  import { md, withContext } from "../lib/md";
+  import { errorWords, f1, f2, rangeWords, s1, slotLabel, waiverAnswer, waiverHeadline } from "../lib/decisions";
+  import { restoreScroll, route, setParams } from "../lib/router.svelte";
+  import { fmt, team as teamColors } from "../lib/theme";
+  import Card from "../components/Card.svelte";
+  import Expander from "../components/Expander.svelte";
+  import Headshot from "../components/Headshot.svelte";
+  import ListDetail from "../components/ListDetail.svelte";
+  import Meter from "../components/Meter.svelte";
+  import PlayerRow from "../components/PlayerRow.svelte";
+  import PosBadge from "../components/PosBadge.svelte";
+  import ScreenHead from "../components/ScreenHead.svelte";
+  import StatTile from "../components/StatTile.svelte";
+  import Tabs from "../components/Tabs.svelte";
+  import TeamBadge from "../components/TeamBadge.svelte";
+  import MoveCard from "./decisions/MoveCard.svelte";
+  import RangeBar from "./decisions/RangeBar.svelte";
+
+  let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
+
+  let data = $state<Waivers | null>(null);
+  let error = $state<string | null>(null);
+  let picked = $state<string | null>(null);
+
+  const ctx = $derived({ league, team });
+  const position = $derived((route.current.params.get("position") ?? "ALL").toUpperCase());
+  const leagueName = $derived(options.find((o) => o.league_id === league)?.name ?? "this league");
+
+  $effect(() => {
+    const l = league;
+    const t = team;
+    const p = position;
+    error = null;
+    if (t === null) {
+      data = null;
+      return;
+    }
+    const path = decisionPaths.waivers(l, t, p);
+    const hit = peek<Waivers>(path);
+    if (hit) {
+      data = hit;
+      restoreScroll();
+      return;
+    }
+    if (data && (data.league_id !== l || data.roster_id !== t)) data = null; // another team: no stale answer
+    get<Waivers>(path)
+      .then((d) => {
+        if (league !== l || team !== t || position !== p) return;
+        data = d;
+        restoreScroll();
+      })
+      .catch((e) => {
+        if (league !== l || team !== t || position !== p) return;
+        if (e instanceof Unauthorized) onauth();
+        else error = errorWords(e);
+      });
+  });
+
+  const moves = $derived((data?.moves ?? []).filter((m) => m.list_kind !== "nothing"));
+  const cards = $derived(moves.filter((m) => m.card_title).slice(0, 3));
+  const more = $derived(moves.filter((m) => !cards.includes(m)));
+  const top = $derived(moves.find((m) => m.list_kind === "start_now") ?? moves[0] ?? null);
+  const lead = $derived(data ? waiverAnswer(data.moves, data.week, data.horizon_last_week, data.lineup_value) : null);
+  const gainMax = $derived(Math.max(0.5, ...moves.flatMap((m) => (m.week_gains ?? []).map((g) => g ?? 0))));
+  const fas = $derived(data?.free_agents ?? []);
+  const fa = $derived<FreeAgent | null>(fas.find((f) => (f.gsis_id ?? f.sleeper_id) === picked) ?? fas[0] ?? null);
+  const scale = $derived(Math.max(10, ...fas.map((f) => f.p90 ?? f.proj_points ?? 0)));
+  const tabs = $derived(["ALL", ...(data?.positions ?? ["QB", "RB", "WR", "TE"])].map((p) => ({ key: p, label: p === "ALL" ? "All" : p })));
+  const span = $derived(data ? data.horizon_last_week - data.week + 1 : 4);
+  const wk = $derived(data?.week ?? 0);
+
+  function faContext(f: FreeAgent): string {
+    const bits = [rangeWords(f.p25, f.p75, f.p10, f.p90), f.ros_points != null ? `rest of season ${fmt.whole(f.ros_points)}` : null];
+    if (f.opponent) bits.push(`vs ${f.opponent}`);
+    return bits.filter(Boolean).join(" · ");
+  }
+</script>
+
+<main class="space-y-4" data-testid="waivers">
+  {#if team === null}
+    <p class="ll-empty" data-testid="pick-team-first">Pick your team above: this screen then opens with the claims that improve that roster's lineup, each with the player to drop.</p>
+  {:else if error}
+    <p class="ll-error" data-testid="error">{error}</p>
+  {:else if !data}
+    <div class="space-y-3" aria-label="Loading" data-testid="loading">
+      <div class="ll-skel h-24"></div>
+      <div class="ll-skel h-48"></div>
+    </div>
+  {:else}
+    <ScreenHead eyebrow={`Waivers · week ${data.week}`} title={`Best claims for ${data.team_name ?? "your team"}`}>
+      {#snippet answer()}
+        {#if lead}
+          <p data-testid="waiver-answer"><strong class="text-ink">{lead.title}</strong>{#if lead.text}{" " + lead.text}{/if}</p>
+        {/if}
+      {/snippet}
+    </ScreenHead>
+
+    <div class="grid grid-cols-2 gap-2 wide:grid-cols-4" data-testid="waiver-tiles">
+      <StatTile label="This week" value={top ? s1(top.weekly_gain) : "+0.0"} caption={top ? `${top.add_name}` : "no claim helps"} />
+      <StatTile label={`Next ${span} weeks`} value={top ? s1(top.horizon_gain) : "+0.0"} caption={`weeks ${data.week}–${data.horizon_last_week}`} />
+      <StatTile label="Your lineup" value={f1(data.lineup_value)} caption={top && top.weekly_gain > 0 ? `→ ${f1(top.lineup_after)} with the claim` : `week ${data.week}, in ${leagueName} scoring`} />
+      <StatTile
+        label="Closest call"
+        value={data.weakest?.slot ? slotLabel(data.weakest.slot) : "—"}
+        caption={data.weakest?.player_name
+          ? data.weakest.replacement_name
+            ? `${data.weakest.player_name} over ${data.weakest.replacement_name} by ${f2(data.weakest.margin)}`
+            : `${data.weakest.player_name}: nobody on the bench can fill in`
+          : "no starter is a decision this week"}
+      />
+    </div>
+
+    {#if data.inputs_current === false || data.on_current_lineup === false}
+      <p class="rounded-lg bg-warn-soft p-3 text-sm text-ink" data-testid="stale">
+        These claims were computed before the latest {data.inputs_current === false ? "rosters or injury reports" : "lineup"}: a player may already be gone. They refresh with the nightly update.
+      </p>
+    {/if}
+
+    {#if cards.length}
+      <div class="grid grid-cols-1 gap-3 wide:grid-cols-3" data-testid="waiver-moves">
+        {#each cards as m (m.add_sleeper_id ?? m.add_name)}<MoveCard move={m} {ctx} {gainMax} headline={waiverHeadline(m) !== lead?.title} />{/each}
+      </div>
+    {/if}
+    {#if more.length}
+      <Expander title={`${more.length} more claims that help, best first`} testid="more-moves">
+        <ul class="-mx-3 divide-y divide-line" data-testid="more-list">
+          {#each more as m (m.add_sleeper_id ?? m.add_name)}
+            <li>
+              <PlayerRow
+                player={{ gsis_id: m.add_gsis_id, player_name: m.add_name ?? "", position: m.add_position, team: m.add_team, headshot_url: m.add_headshot_url }}
+                href={m.add_gsis_id ? withContext(`/player/${m.add_gsis_id}`, ctx) : null}
+                context={m.drop_name ? `drop ${m.drop_name} · ${s1(m.weekly_gain)} this week` : `no drop · ${s1(m.weekly_gain)} this week`}
+                value={s1(m.horizon_gain)}
+                valueLabel={`${span} weeks`}
+                testid="more-move"
+              />
+            </li>
+          {/each}
+        </ul>
+        <p class="mt-2 text-sm text-ink-3">One row per player: the drop that costs your lineup least. Start-now claims gain this week; the others help later.</p>
+      </Expander>
+    {/if}
+
+    <section class="space-y-3" data-testid="free-agents">
+      <div class="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 class="text-xl font-bold">Free agents</h2>
+        <p class="text-sm text-ink-3">Week {data.week} projection in {leagueName} scoring, with its range</p>
+      </div>
+      <Tabs items={tabs} current={position} onpick={(p) => setParams({ position: p === "ALL" ? null : p })} size="sm" label="Position" testid="fa-pos" />
+      {#if !fas.length}
+        <p class="ll-empty">No free agent at this position has a projection this week.</p>
+      {:else}
+        <ListDetail>
+          {#snippet list()}
+            <Card pad={false} testid="fa-list">
+              <ul class="divide-y divide-line">
+                {#each fas as f, i (f.gsis_id ?? f.sleeper_id ?? i)}
+                  <li>
+                    <PlayerRow
+                      player={{ ...f, player_name: f.player_name ?? "" }}
+                      href={f.gsis_id ? withContext(`/player/${f.gsis_id}`, ctx) : null}
+                      rank={i + 1}
+                      context={faContext(f)}
+                      value={f1(f.proj_points)}
+                      valueLabel={`Wk ${wk}`}
+                      selected={fa === f}
+                      onselect={() => (picked = f.gsis_id ?? f.sleeper_id ?? null)}
+                      testid="fa-row"
+                    />
+                    <div class="px-3 pb-2 pl-[4.75rem]"><RangeBar value={f.proj_points} p10={f.p10} p25={f.p25} p75={f.p75} p90={f.p90} max={scale} /></div>
+                  </li>
+                {/each}
+              </ul>
+            </Card>
+          {/snippet}
+          {#snippet detail()}
+            {#if fa}
+              <div class="hidden wide:block">
+                <Card accent={teamColors(fa.team).accent} testid="fa-detail">
+                  <div class="flex items-center gap-4">
+                    <Headshot url={fa.headshot_url} name={fa.player_name ?? ""} team={fa.team} size={88} eager />
+                    <div class="min-w-0 flex-1">
+                      <div class="text-2xl leading-tight font-extrabold tracking-tight">{fa.player_name}</div>
+                      <div class="mt-1 flex items-center gap-1.5">
+                        <PosBadge pos={fa.position} size="md" />
+                        {#if fa.position !== "DEF"}<TeamBadge team={fa.team} size="md" />{/if}
+                        {#if fa.injury_status}<span class="rounded-sm bg-warn-soft px-1.5 text-sm font-semibold text-warn">{fa.injury_status}</span>{/if}
+                      </div>
+                      <div class="mt-1 text-sm text-ink-3">
+                        {fa.opponent ? `Week ${wk} vs ${fa.opponent}` : `Week ${wk}`}{fa.opp_rank_std ? ` · #${fa.opp_rank_std} vs ${fa.position} (1 = gives up the most)` : ""}
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <div class="tabnum text-hero font-extrabold tracking-tight" data-testid="fa-proj">{f1(fa.proj_points)}</div>
+                      <div class="ll-label mt-1">Week {wk} projection</div>
+                    </div>
+                  </div>
+                  <div class="mt-4">
+                    <RangeBar value={fa.proj_points} p10={fa.p10} p25={fa.p25} p75={fa.p75} p90={fa.p90} max={scale} />
+                    <p class="mt-1.5 text-sm text-ink-2">
+                      {#if fa.p25 != null && fa.p75 != null}Most weeks {Math.round(fa.p25)}–{Math.round(fa.p75)} (half his weeks land there).{/if}
+                      {#if fa.p10 != null && fa.p90 != null}A bad week to a good week: {Math.round(fa.p10)}–{Math.round(fa.p90)} (8 weeks in 10).{/if}
+                    </p>
+                  </div>
+                  <div class="mt-4 grid grid-cols-3 gap-2">
+                    <StatTile label="Rest of season" value={fmt.whole(fa.ros_points)} caption={fa.ros_rank_pos ? `${fa.position}${fa.ros_rank_pos} in this league` : null} size="sm" />
+                    <StatTile label="Points a game" value={f1(fa.ppg_std)} caption={fa.games_played != null ? `${fa.games_played} games` : null} size="sm" />
+                    <StatTile label="Expected a game" value={f1(fa.expected_per_game)} caption="what his work is worth" size="sm" />
+                  </div>
+                  {#if fa.position !== "QB" && fa.position !== "K" && fa.position !== "DEF"}
+                    <div class="mt-4 grid grid-cols-2 gap-4">
+                      <Meter label="Target share, last 3" value={fa.target_share_l3} />
+                      <Meter label="Snaps, last 3" value={fa.snap_pct_l3} />
+                    </div>
+                  {/if}
+                  {#if fa.tags}<p class="mt-3 text-sm text-ink-3">{fa.tags}</p>{/if}
+                  {#if fa.gsis_id}<a class="ll-link mt-3 inline-block text-base" href={withContext(`/player/${fa.gsis_id}`, ctx)}>Open his card</a>{/if}
+                </Card>
+              </div>
+            {/if}
+          {/snippet}
+        </ListDetail>
+      {/if}
+    </section>
+
+    <Expander title="How to read this" testid="howto">
+      <div class="text-base leading-snug">{@html md((data.howto ?? []).map((h) => `- ${h}`).join("\n"))}</div>
+    </Expander>
+  {/if}
+</main>

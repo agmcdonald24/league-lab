@@ -424,6 +424,7 @@ export interface Waivers {
   week: number;
   horizon_last_week: number;
   roster_id: number;
+  team_name?: string;
   position: string;
   positions: string[];
   lineup_value: number | null;
@@ -693,12 +694,12 @@ export interface LeagueView {
   source?: "database" | "sleeper";
 }
 
-const q = encodeURIComponent;
+const encG4 = encodeURIComponent;
 export const decisionPaths = {
-  waivers: (league: string, team: number, position = "ALL") => `/api/waivers?league=${q(league)}&team=${team}&position=${q(position)}`,
-  team: (league: string, team: number) => `/api/team?league=${q(league)}&team=${team}`,
-  league: (league: string) => `/api/league?league=${q(league)}`,
-  partners: (league: string, team: number, want = "ALL") => `/api/trades/partners?league=${q(league)}&team=${team}&want=${q(want)}`,
+  waivers: (league: string, team: number, position = "ALL") => `/api/waivers?league=${encG4(league)}&team=${team}&position=${encG4(position)}`,
+  team: (league: string, team: number) => `/api/team?league=${encG4(league)}&team=${team}`,
+  league: (league: string) => `/api/league?league=${encG4(league)}`,
+  partners: (league: string, team: number, want = "ALL") => `/api/trades/partners?league=${encG4(league)}&team=${team}&want=${encG4(want)}`,
   evaluate: () => "/api/trades/evaluate",
 };
 
