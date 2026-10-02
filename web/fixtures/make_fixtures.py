@@ -4,7 +4,7 @@
     (cd api && uv run uvicorn league_lab_api.main:app --port 8681) &
     PGPASSWORD=… python3 web/fixtures/make_fixtures.py            # API=http://localhost:8681 DB=league_lab_f2
 
-Three kinds of file (web/fixtures/README.md lists them):
+Three kinds of file (web/README.md § "Fixtures" lists them):
 * SAVED from today's API (routes that exist): /api/leagues, rosters, My Week (dynasty roster 12, Scrubs roster 2,
   week 4), the player cards of both lineups, search, status. The contract's new My Week fields are added on top:
   `source: "database"` and the `opponent` object (the clone has no week-4 matchups, so the opponent is picked

@@ -1,3 +1,8 @@
+<script lang="ts" module>
+  /** The league select's last option: the sign-in / league picker screen. */
+  export const OTHER = "__leagues";
+</script>
+
 <script lang="ts">
   import type { Roster } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
@@ -28,6 +33,7 @@
     {#each leagues as l (l.league_id)}
       <option value={l.league_id}>{l.name}</option>
     {/each}
+    <option value={OTHER}>Other leagues (your Sleeper username)…</option>
   </select>
   <label class="sr-only" for="ll-team">Team</label>
   <select

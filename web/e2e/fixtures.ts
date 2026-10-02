@@ -1,4 +1,4 @@
-// The API on fixtures (web/fixtures/*.json, see web/fixtures/README.md): every /api call of a browser context is
+// The API on fixtures (web/fixtures/*.json, see web/README.md § "Fixtures"): every /api call of a browser context is
 // answered here (Playwright route interception), so the e2e checks and the first-content measurement run with no
 // API, no database and no Sleeper. The beta password gate is simulated (password FIXTURE_PASSWORD) when `gate` is on.
 import type { BrowserContext, Route } from "@playwright/test";

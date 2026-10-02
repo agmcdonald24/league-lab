@@ -1,6 +1,7 @@
 <script lang="ts">
   import { ApiError, get, paths, peek, Unauthorized, type Hit, type PlayerCard, type Section, type SectionKey } from "../lib/api";
   import { withContext } from "../lib/md";
+  import { learnLeagueName } from "../lib/names.svelte";
   import { back, navigate, restoreScroll, route } from "../lib/router.svelte";
   import Expander from "../components/Expander.svelte";
   import Md from "../components/Md.svelte";
@@ -57,6 +58,7 @@
       .then((d) => {
         if (gsis !== id || league !== l) return;
         data = d;
+        learnLeagueName(d.league_id, d.league_name);
         restoreScroll();
       })
       .catch((e) => {

@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { ApiError, clearCache, get, paths, Unauthorized, type League, type Status, type UserLeagues } from "./lib/api";
   import { leagueOptions, type LeagueOption } from "./lib/leagues";
+  import { leagueNames } from "./lib/names.svelte";
   import { prefs } from "./lib/prefs";
   import { interceptLinks, route, setParams } from "./lib/router.svelte";
   import Login from "./components/Login.svelte";
@@ -23,7 +24,7 @@
   // league: the URL's (a shared link: ANY Sleeper league, the API serves it on demand), else the one picked on this
   // phone. None → the sign-in screen (a Sleeper username → the league picker).
   const league = $derived(r.params.get("league") || prefs.league() || null);
-  const options = $derived<LeagueOption[]>(leagueOptions(mine, house, league));
+  const options = $derived<LeagueOption[]>(leagueOptions(mine, house, league, leagueNames));
   // team: the URL's (it belongs to the URL's league), else the one picked in this league on this phone, else the
   // user's own team in that league (pre-selected from the username's league list).
   const team = $derived.by(() => {

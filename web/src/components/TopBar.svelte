@@ -5,8 +5,8 @@
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
   import { prefs } from "../lib/prefs";
-  import { route, setParams } from "../lib/router.svelte";
-  import Picker from "./Picker.svelte";
+  import { navigate, route, setParams } from "../lib/router.svelte";
+  import Picker, { OTHER } from "./Picker.svelte";
 
   let {
     options,
@@ -27,6 +27,7 @@
   });
 
   function pickLeague(l: string) {
+    if (l === OTHER) return navigate("/leagues");
     prefs.setLeague(l);
     const t = prefs.team(l) ?? options.find((o) => o.league_id === l)?.roster_id ?? null;
     setParams({ league: l, team: t === null ? null : String(t) }); // other parameters (the position) stay
@@ -47,19 +48,16 @@
 
 <header class="space-y-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
   <Picker leagues={options} {league} {rosters} {team} onleague={pickLeague} onteam={pickTeam} />
-  <nav class="flex items-center gap-1 text-[14px]" aria-label="Screens" data-testid="tabs">
+  <nav class="flex gap-1 rounded-full bg-zinc-100 p-1 text-[14px] dark:bg-zinc-900" aria-label="Screens" data-testid="tabs">
     {#each tabs as t (t.name)}
       <a
         href={t.href}
-        class="rounded-full px-3 py-1.5 font-medium {route.current.name === t.name
+        class="flex min-h-9 flex-1 items-center justify-center rounded-full px-2 font-medium whitespace-nowrap {route.current.name === t.name
           ? 'bg-green-700 text-white dark:bg-green-600'
           : 'text-zinc-700 dark:text-zinc-300'}"
         aria-current={route.current.name === t.name ? "page" : undefined}
         data-testid={`tab-${t.name}`}>{t.label}</a
       >
     {/each}
-    <a href="/leagues" class="ml-auto shrink-0 px-1 py-1.5 text-[13px] text-green-700 underline dark:text-green-400" data-testid="tab-leagues"
-      >Leagues</a
-    >
   </nav>
 </header>

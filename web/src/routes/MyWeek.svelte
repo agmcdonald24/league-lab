@@ -2,6 +2,7 @@
   import { ApiError, get, paths, peek, Unauthorized, type MyWeek, type Status, type UserLeagues } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
+  import { learnLeagueName } from "../lib/names.svelte";
   import { opponentLine, recordLine } from "../lib/week";
   import { restoreScroll } from "../lib/router.svelte";
   import Expander from "../components/Expander.svelte";
@@ -50,6 +51,7 @@
     const hit = peek<MyWeek>(path);
     if (hit) {
       data = hit;
+      learnLeagueName(hit.league_id, hit.league_name);
       loading = false;
       restoreScroll();
       return;
@@ -59,6 +61,7 @@
       .then((d) => {
         if (league !== l || team !== t) return;
         data = d;
+        learnLeagueName(d.league_id, d.league_name);
         loading = false;
         restoreScroll();
       })

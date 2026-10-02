@@ -159,7 +159,7 @@ test("a house league through the picker: opponent, a card's name, all five secti
   await tap(page, page.locator(`[data-testid="league-row"][data-league="${DYNASTY}"]`), isMobile);
   await expect(page.getByTestId("team-name")).toHaveText("Shake & Bake");
   await expect(page.getByTestId("record-line")).toHaveText("0-2, #10 in the league");
-  await expect(page.getByTestId("opponent-line")).toHaveText("Week 4 vs 2 da Moon wit Love, projects 111 — you project 111");
+  await expect(page.getByTestId("opponent-line")).toHaveText("Week 4 vs 2 da Moon wit Love, projects 110.7 — you project 111.2");
   await shot(page, "week_dyn12", project, false);
   const name = page.getByTestId("decision-card").first().locator("a").first();
   const who = (await name.textContent())!.trim();
@@ -198,6 +198,12 @@ test("a shared link wins (no username needed); Scrubs: K and DEF in rest of seas
   await tap(page, page.getByTestId("tab-record"), isMobile);
   await expect(page.getByTestId("record-empty")).toContainText("No week on the record yet.");
   await shot(page, "record_scrubs_empty", project, false);
+  // the league select's last option opens the sign-in / picker; "‹ My week" comes back to the same team
+  await page.getByTestId("pick-league").selectOption("__leagues");
+  await expect(page).toHaveURL(/\/leagues$/);
+  await expect(page.getByTestId("username-form")).toBeVisible();
+  await tap(page, page.getByTestId("to-week"), isMobile);
+  await expect(page.getByTestId("team-name")).toHaveText("MacZaddy");
 });
 
 test("no team in a league (commissioner only): said in plain words, pick a team, then My Week", async ({ page, isMobile }, info) => {
@@ -237,6 +243,8 @@ test("dark mode follows the system", async ({ browser }, info) => {
   const page = await ctx.newPage();
   await page.goto(`/?league=${TEST_LEAGUE}&team=3`);
   await expect(page.getByTestId("decision-card").first()).toBeVisible();
+  // a linked league in neither list (no username here) is named from My Week's answer
+  await expect(page.getByTestId("pick-league").locator("option:checked")).toHaveText("Test League");
   expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).not.toBe("rgb(255, 255, 255)");
   await shot(page, "week_test_dark", info.project.name, false);
   await ctx.close();

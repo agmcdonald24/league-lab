@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave F
+
+- **Web app, phase 1 (F2).** `web/`: sign in with a Sleeper username → the user's leagues this season (own team
+  pre-selected, remembered on the phone) → My Week for any league with the week's opponent ("Week 4 vs **X**,
+  projects 108 — you project 134"), the player card with the rest-of-season line (sections the API lists in
+  `missing` left out and named), new screens Rest of season (`/ros`) and Our record (`/record`); built against the
+  Wave F API contract with fixtures (`web/fixtures/`, a fictional any-league "Test League"), Playwright on fixtures at
+  390 / 1300 px (14 passed), first content ≈ 0.1 s on fixtures.
+
 ## 2026-10-02 — Wave E
 
 - **Model tests (E4), no production change.** Four feature groups through the harness, 2023–2025, both leagues —

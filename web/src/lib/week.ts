@@ -12,7 +12,7 @@ export function recordLine(d: MyWeek): string {
   return (opponentObject(d) ? parts.filter((p) => !/^week \d+ vs /.test(p)) : parts).join(" · ");
 }
 
-/** "Week 5 vs **Team**, projects 108 — you project 112" (both projections whole points, as in the plan's example);
+/** "Week 5 vs **Team**, projects 108 — you project 112" (whole points, as in the plan's example);
  * just "Week 5 vs **Team**" when a value is missing; "" without a matchup (a bye week, the playoffs not reached). */
 export function opponentLine(d: MyWeek): string {
   const o = opponentObject(d);
@@ -21,8 +21,11 @@ export function opponentLine(d: MyWeek): string {
   const theirs = o.lineup_value;
   const ours = d.lineup_value ?? null;
   if (theirs !== null && theirs !== undefined) {
-    s += `, projects ${Math.round(theirs)}`;
-    if (ours !== null) s += ` — you project ${Math.round(ours)}`;
+    // whole points; one decimal when whole points would hide a real difference (110.69 vs 111.15)
+    const fine = ours !== null && Math.round(theirs) === Math.round(ours) && Math.abs(theirs - ours) >= 0.05;
+    const f = (v: number) => (fine ? v.toFixed(1) : String(Math.round(v)));
+    s += `, projects ${f(theirs)}`;
+    if (ours !== null) s += ` — you project ${f(ours)}`;
   }
   return s;
 }

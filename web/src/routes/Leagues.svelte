@@ -3,6 +3,7 @@
   // season, each a real link to its My Week with the user's own team pre-selected. Remembered on this phone.
   import { ApiError, get, paths, Unauthorized, type UserLeagues } from "../lib/api";
   import { leagueLine } from "../lib/leagues";
+  import { withContext } from "../lib/md";
   import { prefs } from "../lib/prefs";
 
   let {
@@ -48,6 +49,11 @@
 
 <main class="space-y-5 px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-10" data-testid="leagues">
   <header class="space-y-1">
+    {#if current}
+      <a href={withContext("/", { league: current, team: prefs.team(current) })} class="ll-link inline-block py-1 text-[15px]" data-testid="to-week"
+        >‹ My week</a
+      >
+    {/if}
     <h1 class="text-2xl font-bold">League Lab</h1>
     <p class="text-[15px] leading-snug text-zinc-600 dark:text-zinc-300">
       Who to start this week and what each player is worth, in your Sleeper league's scoring.

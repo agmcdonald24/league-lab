@@ -2665,6 +2665,56 @@ Design for Andrew and the PO: `docs/ANY_LEAGUE.md`. Nothing in `app/`, `dbt/`, t
   path; a K / DEF in a scoring no fitted league shares is unvalued; Sleeper's terms for commercial use are Andrew's
   to check. No `--select` appended; no seeds or metrics touched.
 
+## Wave F (Iteration 14)
+
+### F2 2026-10-02 — the web app, phase 1: any Sleeper manager's screens (branch `dev/F2`, clone `league_lab_f2`)
+
+* **What.** `web/` now opens with **"Your Sleeper username"** (after the beta password, which stays) →
+  `GET /api/leagues?username=` → the league picker (name, size + scoring, "Your team: …"; "You have no team in this
+  league" for `roster_id: null`) → **My Week** for any league with the **opponent of the week** ("Week 4 vs **Hail
+  Marys**, projects 108 — you project 134") → the **player card** (+ the rest-of-season line, sections in `missing`
+  left out and named) → **Rest of season** (`/ros`: the answer, "Yours", Rank · Player · Points · Games · Playoffs;
+  K / DEF only where the league starts them; All = overall) → **Our record** (`/record`: the summary sentences, two
+  numbers, the start/sit table; the Streamlit page's empty states). Username and league list remembered on the
+  phone; a `?league=&team=` link still wins and works for any league id. Three tabs under the picker; "Other leagues
+  (your Sleeper username)…" is the league select's last option; a linked league in neither list is named from My
+  Week's answer.
+* **Built against the contract with fixtures.** `web/fixtures/`: 36 response files + 47 player cards (796 KB),
+  rebuilt by `web/fixtures/make_fixtures.py` — saved from the API on the clone (leagues, rosters, My Week dynasty 12
+  / Scrubs 2 week 4, every lineup player's card, search, status) with the contract's new fields added (`source`,
+  the `opponent` object, `ros`, `missing`), `/api/ros` from `mart_player_ros_projection` in the contract's shape
+  (19 files), `/api/record` (Scrubs: the clone's real empty answer; dynasty: three hand-written scored weeks — the
+  mart is empty on the clone), and the fictional **Test League** `9000000000000000001` (10 made-up teams; team 3's
+  roster of real players with their week-4 Scrubs-scoring projections; `source: "sleeper"`, `missing: ["value"]`,
+  record `available: false`). `e2e/fixtures.ts` answers every `/api` call from them (route interception, the gate
+  simulated).
+* **Evidence.** `npm run e2e:fixtures`: **14 passed** (7 tests × phone 390 × 844 / desktop 1300 × 900, ~20 s): the
+  full path password → username → picker → My Week → tap a player → card → Back (scroll position equal) → rest of
+  season → record on the Test League, one history entry per tap, no popup, no sideways scroll, ≤ 5 columns, the first
+  card inside the first screen, no "not in the database" anywhere. The spike's live-API suite (`npm run e2e` against
+  the API on :8681): **22 passed, 2 skipped** (the gated pair needs a password API). `npm run measure:fixtures` (7
+  loads each, cold, median): first content **92 ms phone / 97 ms desktop** (Test League), 105 / 111 ms (dynasty 12) —
+  limit 500 ms. `npm run lint`: 0 errors, 0 warnings (106 files). Build: 100.8 KB JS (34.5 KB gzipped) + 21.8 KB CSS
+  (5.3 KB). Worked example: the WR answer "Puka Nacua, 185 points over 12 games (likely 150–219) · playoffs: 30" =
+  the mart's 184.66 / 12 / 150.0 / 219.3 / 30.3 rounded half up; the dynasty opponent line "projects 110.7 — you
+  project 111.2" = roster 11's week-4 starters in `ops.lineups` (110.69) vs My Week's `lineup_value` 111.15 (one
+  decimal because whole points would both read 111).
+* **Decisions for the PO.** (1) `/` with nothing remembered now opens the sign-in, not the reference league. (2)
+  The rest-of-season answer, "Yours", its caption and how-to, and Our record's sentences are assembled in
+  `web/src/lib/ros.ts` / `record.ts` with the Streamlit pages' words (`4_Rankings.py`, `13_Record.py`): the contract
+  sends numbers only. The port rule wants them in `app/lib` and sent by the API (PO: move the Record page's sentences
+  to `app/lib/record.py`, the Rankings ROS answer to `app/lib/ros.py`). (3) Expanders remember being open per page,
+  so Back can restore the scroll of a page whose expanders were open (desktop failed without it).
+* **Assumed (requests to F3).** `/api/leagues/{id}/rosters` answers for an unknown league; `/api/ros` adds
+  `positions` (else the UI reads K / DEF from My Week's lineup), `rank` for `position=ALL` (else list order), the
+  playoff window and `weeks_with_lines`; `/api/record`'s `summary` is the season `ALL` row and `weeks` the
+  `scope = 'week'` rows; the player card keeps the `ros.card_line` sentence in the Projection section (or sends
+  `ros.line`); errors may be `{"error"}` or today's `{"detail"}` (both read); `opponent` may be today's string
+  (then the record line keeps "week N vs **X**"). Usernames are sent as typed (trimmed): F3 should match them
+  case-insensitively.
+* **Not verified.** Real Sleeper (no network here), F3's real responses for the new routes (fixtures only), a real
+  iPhone (Chromium with the iPhone 13 profile).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

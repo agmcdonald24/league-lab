@@ -13,7 +13,12 @@ export interface LeagueOption {
   mine: boolean; // from the user's own list (so "no team" is known, not just unknown)
 }
 
-export function leagueOptions(mine: UserLeagues | null, house: League[], current: string | null): LeagueOption[] {
+export function leagueOptions(
+  mine: UserLeagues | null,
+  house: League[],
+  current: string | null,
+  names: Record<string, string> = {},
+): LeagueOption[] {
   const out: LeagueOption[] = mine
     ? mine.leagues.map((l) => ({
         league_id: l.league_id,
@@ -34,7 +39,7 @@ export function leagueOptions(mine: UserLeagues | null, house: League[], current
         mine: false,
       }));
   if (current && !out.some((o) => o.league_id === current)) {
-    out.push({ league_id: current, name: "This league", scoring_label: null, total_rosters: null, roster_id: null, team_name: null, mine: false });
+    out.push({ league_id: current, name: names[current] ?? "This league", scoring_label: null, total_rosters: null, roster_id: null, team_name: null, mine: false });
   }
   return out;
 }
