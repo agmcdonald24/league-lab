@@ -1,10 +1,42 @@
 // A small router on the History API: "/" (My Week, or the sign-in when no league is known), "/leagues" (sign in with a
-// Sleeper username, pick a league), "/player/<gsis>", "/ros" (rest of season), "/record" (our record).
+// Sleeper username, pick a league), "/player/<gsis>", "/ros" (rest of season), "/about" (about the numbers + the
+// record; "/record" still opens it), the research screens ("/trends", "/matchups", "/players", "/receivers",
+// "/compare") and the decisions screens ("/waivers", "/trades", "/team", "/league"; Wave G, G4).
 // * A tap on a same-site link is handled here (no reload, same session, one history entry).
 // * Changing the league or team rewrites the URL in place (replace), so Back goes to the previous PAGE.
 // * Each history entry remembers its scroll position; Back restores it.
 
-export type RouteName = "week" | "player" | "leagues" | "ros" | "record";
+export type RouteName =
+  | "week"
+  | "player"
+  | "leagues"
+  | "ros"
+  | "about"
+  | "trends"
+  | "matchups"
+  | "players"
+  | "receivers"
+  | "compare"
+  | "waivers"
+  | "trades"
+  | "team"
+  | "league";
+
+const NAMED: Record<string, RouteName> = {
+  "/leagues": "leagues",
+  "/ros": "ros",
+  "/about": "about",
+  "/record": "about", // Wave F links: "Our record" folded into "About the numbers"
+  "/trends": "trends",
+  "/matchups": "matchups",
+  "/players": "players",
+  "/receivers": "receivers",
+  "/compare": "compare",
+  "/waivers": "waivers",
+  "/trades": "trades",
+  "/team": "team",
+  "/league": "league",
+};
 
 export interface Route {
   name: RouteName;
@@ -17,8 +49,7 @@ function parse(): Route {
   const path = location.pathname.replace(/\/+$/, "") || "/";
   const m = path.match(/^\/player\/([^/]+)$/);
   const depth = typeof history.state?.depth === "number" ? history.state.depth : 0;
-  const named: Record<string, RouteName> = { "/leagues": "leagues", "/ros": "ros", "/record": "record" };
-  const name: RouteName = m ? "player" : (named[path] ?? "week");
+  const name: RouteName = m ? "player" : (NAMED[path] ?? "week");
   return { name, gsis: m ? decodeURIComponent(m[1]) : null, params: new URLSearchParams(location.search), depth };
 }
 

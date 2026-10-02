@@ -10,7 +10,7 @@ import { cpus, loadavg } from "node:os";
 import { join } from "node:path";
 import { DYNASTY, serveFixtures, TEST_LEAGUE } from "./fixtures";
 
-const BASE = process.env.MEASURE_FIXTURES_URL ?? "http://localhost:8584";
+const BASE = process.env.MEASURE_FIXTURES_URL ?? `http://localhost:${process.env.FIXTURES_PORT ?? 8584}`;
 const LOADS = Number(process.env.MEASURE_LOADS ?? 5);
 const LIMIT_MS = 500;
 const OUT = join(import.meta.dirname, ".out");

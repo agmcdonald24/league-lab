@@ -1,10 +1,13 @@
 <script lang="ts">
   import { ApiError, get, paths, peek, Unauthorized, type Hit, type PlayerCard, type Section, type SectionKey } from "../lib/api";
-  import { withContext } from "../lib/md";
+  import { plain, withContext } from "../lib/md";
   import { learnLeagueName } from "../lib/names.svelte";
   import { back, navigate, restoreScroll, route } from "../lib/router.svelte";
+  import { fmt, teamLabel } from "../lib/theme";
   import Expander from "../components/Expander.svelte";
+  import GameLog from "../components/GameLog.svelte";
   import Md from "../components/Md.svelte";
+  import PlayerCardView from "../components/PlayerCard.svelte";
   import SectionBox from "../components/Section.svelte";
 
   let { gsis, league, team, onauth }: { gsis: string; league: string | null; team: number | null; onauth: () => void } = $props();
@@ -38,6 +41,14 @@
   const sections = $derived(
     data ? order.map((k) => ({ key: k, sec: k === "projection" ? projection(data!) : data!.sections[k] })).filter((x) => !!x.sec) : [],
   );
+  // the header line without the position and team the badges already show ("WR · DET · WR1 on the depth chart …")
+  const headLine = $derived.by(() => {
+    if (!data) return "";
+    const parts = plain(data.header).split(" · ");
+    const drop = new Set([data.position, data.team ?? "", teamLabel(data.team) ?? ""]);
+    while (parts.length && drop.has(parts[0])) parts.shift();
+    return parts.join(" · ");
+  });
   const missing = $derived((data?.missing ?? []).filter((k) => !data?.sections[k as SectionKey]).map((k) => NAMES[k] ?? k));
 
   $effect(() => {
@@ -99,10 +110,11 @@
   }
 </script>
 
-<header class="relative flex items-center gap-2 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
+<header class="border-b border-line bg-surface pt-[env(safe-area-inset-top)]">
+<div class="relative mx-auto flex max-w-6xl items-center gap-2 px-4 py-2">
   <button
     type="button"
-    class="flex min-h-11 shrink-0 items-center gap-1 rounded-xl px-2 text-[15px] font-medium text-green-700 dark:text-green-400"
+    class="flex min-h-11 shrink-0 items-center gap-1 rounded-md px-2 text-base font-semibold text-accent"
     onclick={() => back(home)}
     data-testid="back"
   >
@@ -111,7 +123,7 @@
   <label class="sr-only" for="ll-search">Find a player</label>
   <input
     id="ll-search"
-    class="min-w-0 flex-1 rounded-xl border border-zinc-300 bg-white px-3 py-2 text-base dark:border-zinc-700 dark:bg-zinc-900"
+    class="ll-input flex-1"
     type="search"
     placeholder="Find another player"
     autocomplete="off"
@@ -121,16 +133,16 @@
   />
   {#if searched}
     <ul
-      class="absolute top-full right-4 left-4 z-10 max-h-[60vh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+      class="absolute top-full right-4 left-4 z-30 max-h-[60vh] overflow-y-auto rounded-lg border border-line bg-surface shadow-lg"
       data-testid="search-results"
     >
       {#if hits.length === 0}
-        <li class="p-3 text-sm text-zinc-500">No QB, RB, WR, TE or K named like “{searched}” in this season's pool.</li>
+        <li class="p-3 text-sm text-ink-3">No QB, RB, WR, TE or K named like “{searched}” in this season's pool.</li>
       {/if}
       {#each hits as h (h.gsis_id)}
         <li>
           <a
-            class="block min-h-11 px-3 py-2.5 text-[15px]"
+            class="block min-h-11 px-3 py-2.5 text-base hover:bg-raised"
             href={withContext(`/player/${h.gsis_id}`, ctx)}
             onclick={(e) => {
               e.preventDefault();
@@ -141,30 +153,45 @@
       {/each}
     </ul>
   {/if}
+</div>
 </header>
 
-<main class="space-y-3 px-4 pb-10" data-testid="player">
+<main class="mx-auto max-w-6xl space-y-3 px-4 pt-4 pb-10" data-testid="player">
   {#if error}
-    <p class="rounded-2xl border border-red-200 p-4 text-[15px] text-red-800 dark:border-red-900 dark:text-red-300">{error}</p>
+    <p class="ll-error">{error}</p>
   {:else if !data}
-    <div class="animate-pulse space-y-3" aria-label="Loading" data-testid="loading">
-      <div class="h-7 w-2/3 rounded bg-zinc-200 dark:bg-zinc-800"></div>
-      <div class="h-4 w-5/6 rounded bg-zinc-200 dark:bg-zinc-800"></div>
-      {#each [0, 1, 2] as i (i)}<div class="h-28 rounded-2xl bg-zinc-100 dark:bg-zinc-900"></div>{/each}
+    <div class="space-y-3" aria-label="Loading" data-testid="loading">
+      <div class="ll-skel h-32"></div>
+      {#each [0, 1, 2] as i (i)}<div class="ll-skel h-28"></div>{/each}
     </div>
   {:else}
-    <section class="space-y-1">
-      <h1 class="text-2xl leading-tight font-bold" data-testid="player-name">{data.player_name}</h1>
-      <p class="text-[14px] leading-snug text-zinc-600 dark:text-zinc-300"><Md text={data.header} {ctx} /></p>
-    </section>
-    {#each sections as x (x.key)}
-      <SectionBox section={x.sec!} {ctx} testid={`section-${x.key}`} />
-    {/each}
+    <h1 class="sr-only" data-testid="player-name">{data.player_name}</h1>
+    <PlayerCardView
+      player={{ gsis_id: data.gsis_id, player_name: data.player_name, position: data.position, team: data.team, headshot_url: data.headshot_url ?? null }}
+      number={fmt.pts(data.proj_points)}
+      numberLabel={data.week ? `Week ${data.week}` : "Projection"}
+      line={headLine}
+      context={data.injury_status ?? null}
+      testid="player-header"
+    />
+    <div class="grid grid-cols-1 gap-3 wide:grid-cols-2 wide:items-start">
+      <div class="space-y-3">
+        {#each sections.slice(0, 1) as x (x.key)}
+          <SectionBox section={x.sec!} {ctx} testid={`section-${x.key}`} />
+        {/each}
+        {#if league}<GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={data.league_name} />{/if}
+      </div>
+      <div class="space-y-3">
+        {#each sections.slice(1) as x (x.key)}
+          <SectionBox section={x.sec!} {ctx} testid={`section-${x.key}`} />
+        {/each}
+      </div>
+    </div>
     {#if missing.length}
-      <p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400" data-testid="missing">
+      <p class="text-sm leading-snug text-ink-3" data-testid="missing">
         Not shown for {data.league_name} yet: {missing.join(", ")}.
       </p>
     {/if}
-    <Expander title="How to read this" testid="howto"><Md text={data.howto} {ctx} block class="text-[14px] leading-snug" /></Expander>
+    <Expander title="How to read this" testid="howto"><Md text={data.howto} {ctx} block class="text-base leading-snug" /></Expander>
   {/if}
 </main>
