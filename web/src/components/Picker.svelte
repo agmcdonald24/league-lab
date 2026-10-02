@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { League, Roster } from "../lib/api";
+  import type { Roster } from "../lib/api";
+  import type { LeagueOption } from "../lib/leagues";
 
   let {
     leagues,
@@ -9,7 +10,7 @@
     onleague,
     onteam,
   }: {
-    leagues: League[];
+    leagues: LeagueOption[];
     league: string | null;
     rosters: Roster[];
     team: number | null;
@@ -25,7 +26,7 @@
   <label class="sr-only" for="ll-league">League</label>
   <select id="ll-league" class={sel} value={league ?? ""} onchange={(e) => onleague(e.currentTarget.value)} data-testid="pick-league">
     {#each leagues as l (l.league_id)}
-      <option value={l.league_id}>{l.league_name}</option>
+      <option value={l.league_id}>{l.name}</option>
     {/each}
   </select>
   <label class="sr-only" for="ll-team">Team</label>

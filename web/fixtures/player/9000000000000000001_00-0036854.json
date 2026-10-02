@@ -1,0 +1,107 @@
+{
+ "gsis_id": "00-0036854",
+ "player_name": "Evan McPherson",
+ "position": "K",
+ "team": "CIN",
+ "header": "K · CIN · on **Fixture Falcons** (fixture_user)",
+ "league_id": "9000000000000000001",
+ "league_name": "Test League",
+ "season": 2026,
+ "week": 4,
+ "rostered_by_roster_id": 3,
+ "is_free_agent": false,
+ "injury_status": null,
+ "locked": false,
+ "proj_points": 8.23,
+ "sections": {
+  "usage": {
+   "title": "**Usage** — his kicks this season",
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "Field goals **6 of 6**, long 58 · extra points **5 of 5** in 2 games this season."
+    }
+   ]
+  },
+  "projection": {
+   "title": "**Projection** — week 4, Test League scoring",
+   "blocks": [
+    {
+     "kind": "metrics",
+     "metrics": [
+      {
+       "label": "Projected",
+       "value": "8.2",
+       "delta": null,
+       "trend": null,
+       "help": null
+      },
+      {
+       "label": "Floor",
+       "value": "2.6",
+       "delta": null,
+       "trend": null,
+       "help": "One week in ten he scores less"
+      },
+      {
+       "label": "Ceiling",
+       "value": "14.2",
+       "delta": null,
+       "trend": null,
+       "help": "One week in ten he scores more"
+      }
+     ]
+    },
+    {
+     "kind": "markdown",
+     "text": "Rest of season: **90 points** over 12 games (likely 70–110), **K26** in this league · playoffs (weeks 15–16): 15"
+    },
+    {
+     "kind": "caption",
+     "text": "Week by week (weeks 4–16, through this league's final): wk 4 8.2 · 5 7.6 · 6 bye · 7 7.4 · 8 7.6 · 9 7.4 · 10 7.7 · 11 7.3 · 12 7.3 · 13 7.4 · 14 7.4 · 15 7.4 · 16 7.2. Only week 4 has betting lines yet: the later weeks lean on his usage and the schedule."
+    },
+    {
+     "kind": "markdown",
+     "text": "Next: week 4 vs JAX — JAX ranks **#20** of 32 vs K (1 = gives up the most)"
+    },
+    {
+     "kind": "caption",
+     "text": "Next 4: wk 4 vs JAX (#20) · wk 5 @ MIA (#16) · wk 6 BYE · wk 7 @ BAL (#8)"
+    }
+   ]
+  },
+  "availability": {
+   "title": "**Availability**",
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "Rostered by **Fixture Falcons** (fixture_user).  \nNo injury designation.  \nBye: week 6.  \nWeek 4 kickoff Sun Oct 4, 1:00 PM ET — not locked yet."
+    }
+   ]
+  },
+  "signals": {
+   "title": "**Signals** — has his role changed lately?",
+   "blocks": [
+    {
+     "kind": "unavailable",
+     "text": "unavailable: role alerts cover quarterbacks, running backs, receivers and tight ends (a kicker's work is his team's)."
+    }
+   ]
+  }
+ },
+ "howto": "- **Usage** is the work he gets: his share of his team's targets or carries, of its plays, of the quarterback's first looks and of the red-zone chances. The arrow is the last 3 games: up means a growing role.\n- **Projection** is this week's projected points in Test League scoring. **Most weeks** is the range half his weeks land in (a quarter below, a quarter above); the **floor** and **ceiling** are a bad week and a good week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. The opponent's rank is 1 for the defense that gives up the most to his position.\n- **Rest of season** adds up his projection for every week left in this league's season, up to its final: use it for trades and waivers, where the next four weeks are not the whole story. His bye is a week with no game, not a low score. *Likely* is the range 8 seasons in 10 would land in if every week were its own roll of the dice; a role change or an injury moves the weeks together, so the real range is wider. The rank is among every player at his position in this league, rostered or not. Only this week has betting lines yet: the later weeks lean on his usage and the schedule.\n- **Availability** says whose team he is on (or that he is a free agent), his injury status, and whether his game has started.\n- **Value** compares what he scores with what his work is usually worth (above = running hot, below = due), and says where he sits in his team's best lineup this week and how much that lineup would lose without him.",
+ "viewer_roster_id": null,
+ "missing": [
+  "value"
+ ],
+ "ros": {
+  "points": 89.85,
+  "games": 12,
+  "p10": 69.7,
+  "p90": 110.0,
+  "pos_rank": 26,
+  "playoff_points": 14.59,
+  "from_week": 4,
+  "last_week": 16
+ }
+}

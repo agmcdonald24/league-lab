@@ -1,0 +1,52 @@
+[
+ {
+  "roster_id": 1,
+  "team_name": "Bench Mob",
+  "manager_name": "benchmob"
+ },
+ {
+  "roster_id": 3,
+  "team_name": "Fixture Falcons",
+  "manager_name": "fixture_user"
+ },
+ {
+  "roster_id": 10,
+  "team_name": "Fourth and Long",
+  "manager_name": "fourthlong"
+ },
+ {
+  "roster_id": 7,
+  "team_name": "Goal Line Stand",
+  "manager_name": "goalline"
+ },
+ {
+  "roster_id": 8,
+  "team_name": "Hail Marys",
+  "manager_name": "hailmary"
+ },
+ {
+  "roster_id": 4,
+  "team_name": "Kickoff Kings",
+  "manager_name": "kickoffkings"
+ },
+ {
+  "roster_id": 5,
+  "team_name": "Practice Squad",
+  "manager_name": "psquad"
+ },
+ {
+  "roster_id": 9,
+  "team_name": "Red Zone Regulars",
+  "manager_name": "redzone"
+ },
+ {
+  "roster_id": 6,
+  "team_name": "Two-Point Tries",
+  "manager_name": "twopoint"
+ },
+ {
+  "roster_id": 2,
+  "team_name": "Waiver Wire Warriors",
+  "manager_name": "wwwarriors"
+ }
+]

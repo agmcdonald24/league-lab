@@ -1,47 +1,48 @@
 <script lang="ts">
-  import { ApiError, get, paths, peek, Unauthorized, type League, type MyWeek, type Roster, type Status } from "../lib/api";
+  import { ApiError, get, paths, peek, Unauthorized, type MyWeek, type Status, type UserLeagues } from "../lib/api";
+  import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
-  import { prefs } from "../lib/prefs";
-  import { restoreScroll, setParams } from "../lib/router.svelte";
+  import { opponentLine, recordLine } from "../lib/week";
+  import { restoreScroll } from "../lib/router.svelte";
   import Expander from "../components/Expander.svelte";
   import LineupTable from "../components/LineupTable.svelte";
   import Md from "../components/Md.svelte";
-  import Picker from "../components/Picker.svelte";
+  import TopBar from "../components/TopBar.svelte";
 
   let {
-    leagues,
+    options,
     league,
     team,
+    mine,
     status,
     onauth,
-  }: { leagues: League[]; league: string | null; team: number | null; status: Status | null; onauth: () => void } = $props();
+  }: {
+    options: LeagueOption[];
+    league: string;
+    team: number | null;
+    mine: UserLeagues | null;
+    status: Status | null;
+    onauth: () => void;
+  } = $props();
 
-  let rosters = $state<Roster[]>([]);
   let data = $state<MyWeek | null>(null);
   let error = $state<string | null>(null);
   let loading = $state(false);
 
   const ctx = $derived({ league, team });
-  const leagueRow = $derived(leagues.find((l) => l.league_id === league) ?? null);
-  // Home's line "**Team** · 0-2, #10 in the league · week 4 vs **X**" without the team (shown as the heading)
-  const record = $derived(data ? data.summary.split(" · ").slice(1).join(" · ") : "");
-
-  $effect(() => {
-    const l = league;
-    if (!l) return;
-    rosters = peek<Roster[]>(paths.rosters(l)) ?? [];
-    get<Roster[]>(paths.rosters(l))
-      .then((r) => {
-        if (league === l) rosters = r;
-      })
-      .catch((e) => e instanceof Unauthorized && onauth());
-  });
+  const leagueRow = $derived(options.find((l) => l.league_id === league) ?? null);
+  // the user signed in with a username and has no team in this league (a commissioner-only league)
+  const noTeamHere = $derived(!!mine && !!leagueRow?.mine && leagueRow.roster_id === null);
+  // Home's line "**Team** · 0-2, #10 in the league · week 4 vs **X**" without the team (shown as the heading); the
+  // opponent gets its own line when the API sends the contract's object
+  const record = $derived(data ? recordLine(data) : "");
+  const versus = $derived(data ? opponentLine(data) : "");
 
   $effect(() => {
     const l = league;
     const t = team;
     error = null;
-    if (!l || t === null) {
+    if (t === null) {
       data = null;
       return;
     }
@@ -64,35 +65,29 @@
       .catch((e) => {
         if (league !== l || team !== t) return;
         loading = false;
+        data = null;
         if (e instanceof Unauthorized) onauth();
-        else if (e instanceof ApiError && e.status === 404) {
-          data = null;
-          error = "That team is not in this league. Pick your team above.";
-        } else error = e instanceof Error ? e.message : String(e);
+        else if (e instanceof ApiError && e.status === 404) error = "That team is not in this league. Pick your team above.";
+        else if (e instanceof ApiError && e.status === 502) error = "Sleeper did not answer. Try again in a minute.";
+        else if (e instanceof ApiError && e.status === 503) error = "The numbers are not ready yet. Try again in a few minutes.";
+        else error = e instanceof Error ? e.message : String(e);
       });
   });
-
-  function pickLeague(l: string) {
-    prefs.setLeague(l);
-    const t = prefs.team(l);
-    setParams({ league: l, team: t === null ? null : String(t) });
-  }
-
-  function pickTeam(t: number | null) {
-    if (!league) return;
-    prefs.setTeam(league, t);
-    setParams({ league, team: t === null ? null : String(t) });
-  }
 </script>
 
-<header class="px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
-  <Picker {leagues} {league} {rosters} {team} onleague={pickLeague} onteam={pickTeam} />
-</header>
+<TopBar {options} {league} {team} {onauth} />
 
 <main class="space-y-4 px-4 pb-10" data-testid="my-week">
   {#if team === null}
     <div class="rounded-2xl border border-dashed border-zinc-300 p-4 text-[15px] dark:border-zinc-700" data-testid="pick-prompt">
-      Pick your team above to see your week: the lineup to start and the closest calls.
+      {#if noTeamHere}
+        <p data-testid="no-team">
+          You have no team in <strong>{leagueRow?.name}</strong> (you may run it without playing in it). Pick the team to see above: its
+          lineup to start and its closest calls.
+        </p>
+      {:else}
+        Pick your team above to see your week: the lineup to start and the closest calls.
+      {/if}
       {#if leagueRow?.scoring_label}<p class="mt-1 text-sm text-zinc-500">{leagueRow.scoring_label}</p>{/if}
     </div>
   {:else if error}
@@ -109,7 +104,8 @@
         {data.week ? `My week · week ${data.week}` : "My week"}
       </p>
       <h1 class="text-2xl leading-tight font-bold" data-testid="team-name">{data.team_name}</h1>
-      {#if record}<p class="text-[14px] text-zinc-600 dark:text-zinc-300"><Md text={record} {ctx} /></p>{/if}
+      {#if record}<p class="text-[14px] text-zinc-600 dark:text-zinc-300" data-testid="record-line"><Md text={record} {ctx} /></p>{/if}
+      {#if versus}<p class="text-[15px] leading-snug" data-testid="opponent-line"><Md text={versus} {ctx} /></p>{/if}
       {#if data.league_line}<p class="text-[14px] text-zinc-600 dark:text-zinc-300" data-testid="league-line"><Md text={data.league_line} {ctx} /></p>{/if}
       {#if status?.warning}
         <details class="text-[13px] text-amber-800 dark:text-amber-300" data-testid="stale-warning">
