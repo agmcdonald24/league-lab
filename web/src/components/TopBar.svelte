@@ -133,15 +133,15 @@
   </div>
   {#if sub.length}
     <div class="mx-auto max-w-6xl px-4 pb-2">
-      <nav class="flex gap-1 overflow-x-auto" aria-label={section === "research" ? "Research" : "Decisions"} data-testid="subtabs">
+      <nav class="flex gap-1 rounded-md border border-line bg-page p-1 wide:inline-flex wide:border-0 wide:bg-transparent wide:p-0" aria-label={section === "research" ? "Research" : "Decisions"} data-testid="subtabs">
         {#each sub as s (s.name)}
           <a
             href={href(`/${s.name}`)}
-            class="inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-sm font-semibold {here === s.name
-              ? 'border-accent bg-accent-soft text-ink'
-              : 'border-line text-ink-2 hover:text-ink'}"
+            class="inline-flex min-h-9 min-w-0 flex-1 items-center justify-center rounded-sm px-1 text-[13px] font-semibold wide:flex-none wide:rounded-full wide:border wide:px-3.5 {here === s.name
+              ? 'bg-raised text-ink wide:border-accent wide:bg-accent-soft'
+              : 'text-ink-3 hover:text-ink wide:border-line wide:text-ink-2'}"
             aria-current={here === s.name ? "page" : undefined}
-            data-testid={`sub-${s.name}`}>{s.label}</a
+            data-testid={`sub-${s.name}`}><span class="truncate">{s.label}</span></a
           >
         {/each}
       </nav>

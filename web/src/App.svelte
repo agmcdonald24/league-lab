@@ -12,7 +12,12 @@
   import LeaguesPage from "./routes/Leagues.svelte";
   import MyWeekPage from "./routes/MyWeek.svelte";
   import PlayerPage from "./routes/Player.svelte";
+  import ComparePage from "./routes/Compare.svelte";
+  import MatchupsPage from "./routes/Matchups.svelte";
+  import PlayersPage from "./routes/Players.svelte";
+  import ReceiversPage from "./routes/Receivers.svelte";
   import RosPage from "./routes/Ros.svelte";
+  import TrendsPage from "./routes/Trends.svelte";
 
   let phase = $state<"loading" | "login" | "ready" | "error">("loading");
   let house = $state<League[]>([]);
@@ -132,8 +137,16 @@
       <Coming title="Your team" what="Where your roster ranks in the league, slot by slot, and how it holds up over the season." />
     {:else if r.name === "league"}
       <Coming title="The league" what="Standings, the record against everyone, luck, the managers and the latest moves." />
-    {:else if r.name === "trends" || r.name === "matchups" || r.name === "players" || r.name === "receivers" || r.name === "compare"}
-      <Coming title={r.name[0].toUpperCase() + r.name.slice(1)} what="On its way in this release." />
+    {:else if r.name === "trends"}
+      <TrendsPage {options} {league} {team} onauth={needLogin} />
+    {:else if r.name === "matchups"}
+      <MatchupsPage {options} {league} {team} onauth={needLogin} />
+    {:else if r.name === "players"}
+      <PlayersPage {options} {league} {team} onauth={needLogin} />
+    {:else if r.name === "receivers"}
+      <ReceiversPage {options} {league} {team} onauth={needLogin} />
+    {:else if r.name === "compare"}
+      <ComparePage {options} {league} {team} onauth={needLogin} />
     {:else}
       <MyWeekPage {options} {league} {team} {mine} {status} onauth={needLogin} />
     {/if}

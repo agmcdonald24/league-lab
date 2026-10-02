@@ -16,6 +16,7 @@
     context,
     href,
     compact = false,
+    stacked = false,
     extra,
     testid = "player-card",
   }: {
@@ -26,6 +27,7 @@
     context?: string | null;
     href?: string | null;
     compact?: boolean;
+    stacked?: boolean; // a narrow column (Compare on a phone): the face on top, then the number, then the name
     extra?: Snippet;
     testid?: string;
   } = $props();
@@ -40,6 +42,24 @@
   data-testid={testid}
 >
   <span class="absolute inset-x-0 top-0 h-1" style="background:{c.accent}" aria-hidden="true"></span>
+  {#if stacked}
+    <div class="flex flex-col items-center p-3 text-center">
+      <Headshot url={player.headshot_url} name={player.player_name} team={player.team} size={64} eager />
+      {#if number !== undefined}
+        {#if numberLabel}<div class="ll-label mt-2">{numberLabel}</div>{/if}
+        <div class="text-3xl font-extrabold tracking-tight text-ink" data-testid="card-number">{number ?? "—"}</div>
+      {/if}
+      {#if name[0]}<div class="mt-1 w-full truncate text-xs leading-tight font-medium text-ink-2">{name[0]}</div>{/if}
+      <h2 class="w-full truncate text-lg leading-tight font-extrabold tracking-tight uppercase" data-testid="card-name">
+        {#if href}<a class="ll-name" {href}>{name[1]}</a>{:else}{name[1]}{/if}
+      </h2>
+      <div class="mt-1 flex flex-wrap items-center justify-center gap-1">
+        <PosBadge pos={player.position} />
+        {#if player.position !== "DEF"}<TeamBadge team={player.team} />{/if}
+      </div>
+      {#if context}<div class="mt-1 w-full truncate text-xs text-ink-3">{context}</div>{/if}
+    </div>
+  {:else}
   <div class="flex items-start gap-3 {compact ? 'p-3' : 'p-4'}">
     {#if number !== undefined}
       <div class="shrink-0 text-center">
@@ -49,7 +69,7 @@
     {/if}
     <div class="min-w-0 flex-1">
       {#if name[0]}<div class="truncate text-sm leading-tight font-medium text-ink-2">{name[0]}</div>{/if}
-      <h2 class="truncate {compact ? 'text-xl' : 'text-2xl'} leading-tight font-extrabold tracking-tight uppercase" data-testid="card-name">
+      <h2 class="{compact ? 'text-xl' : 'text-2xl'} leading-tight font-extrabold tracking-tight break-words uppercase" data-testid="card-name">
         {#if href}<a class="ll-name" {href}>{name[1]}</a>{:else}{name[1]}{/if}
       </h2>
       <div class="mt-1 flex flex-wrap items-center gap-1.5">
@@ -60,6 +80,7 @@
     </div>
     <Headshot url={player.headshot_url} name={player.player_name} team={player.team} size={compact ? 56 : 76} eager />
   </div>
+  {/if}
   {#if line}
     <p class="border-t border-line px-4 py-2 text-sm leading-snug text-ink-2" data-testid="card-line">{line}</p>
   {/if}
