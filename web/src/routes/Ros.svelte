@@ -8,8 +8,10 @@
   import { answerLine, rankOf, weeksSpan, whole, yoursLine } from "../lib/ros";
   import { restoreScroll, route, setParams } from "../lib/router.svelte";
   import Expander from "../components/Expander.svelte";
+  import Chips from "../components/Chips.svelte";
+  import PosBadge from "../components/PosBadge.svelte";
+  import TeamBadge from "../components/TeamBadge.svelte";
   import Md from "../components/Md.svelte";
-  import TopBar from "../components/TopBar.svelte";
 
   let {
     options,
@@ -87,80 +89,75 @@
   const label = (p: string) => (p === "ALL" ? "All" : p);
 </script>
 
-<TopBar {options} {league} {team} {onauth} />
 
-<main class="space-y-4 px-4 pb-10" data-testid="ros">
-  <div class="flex flex-wrap gap-1.5" role="group" aria-label="Position" data-testid="ros-positions">
-    {#each positions as p (p)}
-      <button
-        type="button"
-        class="min-h-9 rounded-full border px-3 text-[14px] font-medium {p === position
-          ? 'border-green-700 bg-green-700 text-white dark:border-green-600 dark:bg-green-600'
-          : 'border-zinc-300 dark:border-zinc-700'}"
-        aria-pressed={p === position}
-        onclick={() => pick(p)}
-        data-testid={`ros-pos-${p}`}>{label(p)}</button
-      >
-    {/each}
-  </div>
+<main class="space-y-4" data-testid="ros">
+  <header class="space-y-1.5">
+    <p class="text-label font-bold tracking-[0.08em] text-accent uppercase">Rest of season · {leagueName}</p>
+    <h1 class="text-2xl leading-tight font-extrabold tracking-tight wide:text-3xl">Who scores the most from here</h1>
+  </header>
+  <Chips label="Position" testid="ros-pos" current={position} onpick={pick} items={positions.map((p) => ({ key: p, label: label(p) }))} />
 
   {#if error}
-    <p class="rounded-2xl border border-red-200 p-4 text-[15px] text-red-800 dark:border-red-900 dark:text-red-300">{error}</p>
+    <p class="ll-error">{error}</p>
   {:else if !data}
-    <div class="animate-pulse space-y-3" aria-label="Loading" data-testid="loading">
-      <div class="h-16 rounded-2xl bg-zinc-100 dark:bg-zinc-900"></div>
-      {#each [0, 1, 2, 3, 4] as i (i)}<div class="h-8 rounded bg-zinc-100 dark:bg-zinc-900"></div>{/each}
+    <div class="space-y-3" aria-label="Loading" data-testid="loading">
+      <div class="ll-skel h-16"></div>
+      {#each [0, 1, 2, 3, 4] as i (i)}<div class="ll-skel h-8"></div>{/each}
     </div>
   {:else if players.length === 0}
-    <p class="rounded-2xl bg-zinc-100 p-4 text-[15px] dark:bg-zinc-900" data-testid="ros-empty">
+    <p class="rounded-lg bg-raised p-4 text-base" data-testid="ros-empty">
       No weeks left in {leagueName}'s season: rest-of-season totals come back with next season's schedule.
     </p>
   {:else}
-    <section class="space-y-1.5 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800" data-testid="ros-answer">
-      <p class="text-[16px] leading-snug"><Md text={answerLine(players[0], position)} {ctx} /></p>
-      {#if team !== null}<p class="text-[15px] leading-snug" data-testid="ros-yours">{yoursLine(players, team, position)}</p>{/if}
-      <p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
+    <section class="relative space-y-1.5 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)" data-testid="ros-answer">
+      <p class="text-lg leading-snug"><Md text={answerLine(players[0], position)} {ctx} /></p>
+      {#if team !== null}<p class="text-base leading-snug" data-testid="ros-yours">{yoursLine(players, team, position)}</p>{/if}
+      <p class="text-sm leading-snug text-ink-3">
         {span ? `${span[0].toUpperCase()}${span.slice(1)}` : "The weeks left"} in {leagueName} scoring, up to the league's final. A bye
         is a week with no game: he plays one fewer. Ranked among everyone at the position, rostered or free agent.
         {#if data?.lines_note}{" " + data.lines_note}{/if}
       </p>
+      <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true"></span>
     </section>
 
-    <table class="w-full table-fixed border-collapse text-[15px]" data-testid="ros-table">
+    <div class="overflow-hidden rounded-lg border border-line bg-surface" style="box-shadow:var(--ll-shadow)">
+    <table class="w-full table-fixed border-collapse text-base" data-testid="ros-table">
       <thead>
-        <tr class="border-b border-zinc-200 text-left text-[11px] tracking-wide text-zinc-500 uppercase dark:border-zinc-800 dark:text-zinc-400">
-          <th class="w-[2.75rem] py-1.5 pr-1 font-medium">Rank</th>
-          <th class="py-1.5 pr-1 font-medium">Player</th>
-          <th class="w-[3.5rem] py-1.5 text-right font-medium">Points</th>
-          <th class="w-[3.5rem] py-1.5 text-right font-medium">Games</th>
-          <th class="w-[4.25rem] py-1.5 text-right font-medium">Playoffs</th>
+        <tr class="ll-label border-b border-line bg-raised text-left">
+          <th class="w-[2.75rem] py-2 pr-1 pl-3 font-semibold">Rank</th>
+          <th class="py-2 pr-1 font-semibold">Player</th>
+          <th class="w-[3.75rem] py-2 text-right font-semibold">Points</th>
+          <th class="hidden w-[3.75rem] py-2 text-right font-semibold sm:table-cell">Games</th>
+          <th class="w-[4.75rem] py-2 pr-3 text-right font-semibold">Playoffs</th>
         </tr>
       </thead>
       <tbody>
         {#each players as p, i (p.gsis_id ?? `${p.player_name}-${i}`)}
           {@const yours = team !== null && p.rostered_by_roster_id === team}
-          <tr class="border-b border-zinc-100 align-top last:border-0 dark:border-zinc-800/70 {yours ? 'bg-green-50 dark:bg-green-950/40' : ''}">
-            <td class="tabnum py-2 pr-1 text-zinc-500 dark:text-zinc-400">{rankOf(p, i, position) ?? "—"}</td>
+          <tr class="border-b border-line align-middle last:border-0 {yours ? 'bg-accent-soft' : ''}">
+            <td class="tabnum py-2 pr-1 pl-3 font-semibold text-ink-3">{rankOf(p, i, position) ?? "—"}</td>
             <td class="py-2 pr-1 leading-snug break-words">
               {#if p.gsis_id}
-                <a class="ll-link" href={withContext(`/player/${p.gsis_id}`, ctx)}>{p.player_name}</a>
+                <a class="ll-name font-semibold" href={withContext(`/player/${p.gsis_id}`, ctx)}>{p.player_name}</a>
               {:else}
                 {p.player_name}
               {/if}
-              <div class="text-[12px] text-zinc-500 dark:text-zinc-400">
-                {[position === "ALL" ? p.position : null, p.team, yours ? "yours" : (p.rostered_by_team ?? "free agent")].filter(Boolean).join(" · ")}
+              <div class="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-ink-3">
+                <PosBadge pos={p.position} />{#if p.position !== "DEF"}<TeamBadge team={p.team} />{/if}
+                <span class="truncate {yours ? 'font-semibold text-accent' : ''}">{yours ? "yours" : (p.rostered_by_team ?? "free agent")}</span>
               </div>
             </td>
-            <td class="tabnum py-2 text-right font-medium">{whole(p.ros_points) ?? "—"}</td>
-            <td class="tabnum py-2 text-right">{p.ros_games ?? "—"}</td>
-            <td class="tabnum py-2 text-right">{whole(p.playoff_points) ?? "—"}</td>
+            <td class="tabnum py-2 text-right font-bold">{whole(p.ros_points) ?? "—"}<span class="block text-[11px] font-normal text-ink-3 sm:hidden">{p.ros_games ?? "—"} g</span></td>
+            <td class="tabnum hidden py-2 text-right text-ink-2 sm:table-cell">{p.ros_games ?? "—"}</td>
+            <td class="tabnum py-2 pr-3 text-right text-ink-2">{whole(p.playoff_points) ?? "—"}</td>
           </tr>
         {/each}
       </tbody>
     </table>
+    </div>
 
     <Expander title="How to read this" testid="howto">
-      <div class="text-[14px] leading-snug">
+      <div class="text-base leading-snug">
         {@html md(
           "- **Rest of season** adds up every week left in your league's season, up to its final: the list for trades and waivers.\n" +
             "- A bye is a week with no game: he plays one fewer, it is not a low score.\n" +

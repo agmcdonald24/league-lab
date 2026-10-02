@@ -103,6 +103,204 @@ hold the week, else E3's borrowing from `ops.projections`. A league's ranges com
 mapped keys equal its own, else the nearest by median |log(price ratio)|; K / DEF are priced from their stat lines
 in the league's own scoring. `LEAGUE_LAB_BOARD_SOURCE=borrow|nfl_wide` forces one (a kill switch).
 
+## Research (G1)
+
+`GET /api/matchups/defense?league=&position=&team=` also returns `team` and `starters` (each starter of that roster with his slot, the defense he faces and `is_home`) when `team` is given — the heatmap rings them (integration, Wave G).
+
+Plan G1 (Wave G): the research pages of the Streamlit console (`3_Trends.py`, `5_Matchups.py`, `9_Players.py`,
+`10_Receivers.py`) as JSON for **any** Sleeper league — `league_lab_api/research.py`, helpers in
+`src/league_lab/research.py`, tests in `tests/test_research.py`. Every route takes `league=` (+ `source=sleeper` to serve
+a house league through the on-demand path), sits behind the beta gate, and answers errors as above plus **400**
+`{"error": "<plain words>"}` for a parameter it cannot use (`sort=nope`, `view=sideways`, `weeks=x`).
+
+**The rules.** A row carries the mart's columns under the mart's names (`docs/DATA_MODEL.md`), plus `headshot_url`,
+`team`, `position` (`dim_player`; the mart's own team / position when it has one) and `rostered_by_roster_id` /
+`rostered_by_team` in this league (house league: `mart_player_availability`; else Sleeper's rosters via
+`player_id_map`). **Points are this league's scoring** wherever a point appears: a house league reads
+`fct_player_game_league` / `mart_league_player_season` / `mart_player_week_projections`; any other league prices
+`fct_player_game`'s stat columns per request with `scoring.compute_points` (position passed) — equal to the house
+league's marts to the cent on every 2025 and 2026 game (tested). The NFL research marts are scored in the **reference
+league's** scoring (League of Scrubs): such a field is renamed `<column>_ref`, and this league's number sits next to it
+under the plain name. Every response opens with the league block:
+
+```jsonc
+{"league_id": "1321941740235550720", "league_name": "Forever Unclean Dynasty", "week": 4,
+ "season": 2026,              // the season of the rows (a route's season=); the league's own: league_season
+ "league_season": 2026,
+ "source": "database" | "sleeper", "points_source": "league marts" | "priced on request (scoring.compute_points)",
+ // on demand only: the house league whose expected points this league's are priced from, and whether exactly
+ "expected_points_reference": "1389709692405551104", "expected_points_exact": true,
+ "howto": "- **…** markdown bullets: the page's \"How to read this\"", "scoring_note": "Fields ending in `_ref` …"}
+```
+
+**Expected points on demand.** The published expected line (`mart_player_expected_points`) carries 7 expected stats
+(receptions, receiving / rushing / passing yards and TDs). A league's expected points = a house league's
+(`fct_player_game_league.points_expected`, the full line) + the difference of the two scorings on those 7 columns:
+exact when the two agree on interceptions, fumbles and 2-point tries (`expected_points_exact`; the Test League and any
+half-PPR-style league with −1 per interception match Scrubs), otherwise off by that weight × the expected count
+(dynasty priced from Scrubs, 2025: 0.60 a game for QBs on average, at most 2.03; 0.3% of the other rows off by more than 0.01).
+
+**Not re-priced (reference scoring only, `_ref`):** `mart_player_trends` values of the metrics `points` /
+`expected_points` (flagged `ref_scored: true` in `metrics`), `mart_player_trend_tags.expected_points_z`,
+`mart_defense_position_profile`'s `points_allowed_pg_ref`, `offense_baseline_pg_ref`, `adjusted_points_pg_ref`,
+`league_points_pg_ref` and the ranks on them (`rank_points_ref`, `rank_adjusted_ref`: the comparison verdict reads
+these, as on the page), `mart_cb_matchups` has no points; the cornerback "best corners" split is re-priced.
+
+```jsonc
+// GET /api/trends?league=&position=ALL|QB|RB,WR…&view=all|over|under&season=&who=all|fa|rostered|team&team=
+//                &min_games=1&sort=&dir=&limit=50&metrics=moved|all
+// default order: view=over → gap desc, under → gap asc, all → momentum desc
+{… league block, "season": 2026, "view": "over", "positions": ["QB","RB","WR","TE"], "total": 167,
+ "early_read": true, "notice": "No player in this list has four games yet (NFL 2026). …",   // null from game four
+ "players": [{
+   // mart_player_trend_tags (reference-scored points renamed _ref)
+   "gsis_id": "00-0038543", "player_name": "Jaxon Smith-Njigba", "position": "WR", "team": "SEA", "games": 2,
+   "latest_week": 2, "tags": "not enough games yet", "momentum": null, "opportunity_trend": "insufficient",
+   "target_share_l3": 0.44, "snap_share_l3": 0.785, …, "points_l3_ref": 30.1, "points_change_ref": null,
+   "expected_points_l3_ref": 16.51, "expected_points_change_ref": null, "expected_points_z": null,
+   // over- vs under-performing, this league's scoring (mart_league_player_season: ppg, expected_per_game, diff_per_game)
+   "league_games": 2, "ppg": 39.35, "xppg": 20.01, "gap": 19.35, "gap_direction": "over", "games_with_expected": 2,
+   // the trend windows re-priced in this league's scoring (mart_player_trends' rule: last 3 appearances vs before)
+   "points_l3": 39.35, "points_prior": null, "points_change": null, "expected_points_l3": 20.01, …,
+   "headshot_url": "https://static.www.nfl.com/…", "rostered_by_roster_id": 9, "rostered_by_team": "…", "is_free_agent": false,
+   "metrics": [{"metric": "adot", "metric_label": "aDOT", "display_kind": "num1", "games_with_metric": 2, "value_prior": null,
+                "value_l3": 8.95, "value_season": 8.95, "value_latest": 11.0, "change": null, "z": null,
+                "slope_per_game": 4.09, "direction": "insufficient", "confidence": null, "ref_scored": false}, …],
+                // mart_player_trends: the moved metrics (or every metric while he has < 4 games; metrics=all: always)
+   "role_alert": null | {"direction": "up", "kind": "absence_beneficiary", "kind_label": "Filling in", "headline": "…",
+                         "lines": "Why: …", "cause_text": "…", "change_text": "…", "games_held": 1, "since_week": 2, …}}],
+ "role_alerts": [   // the page's first section: this week's live alerts (mart_player_role_alerts.is_live) in this league
+   {"gsis_id": "00-0041489", "player_name": "Germie Bernard", "position": "WR", "team": "PIT", "direction": "up",
+    "kind_label": "Filling in", "headline": "Filling in: Germie Bernard — snap share 4% → 79%, …",
+    "lines": "Why: Michael Pittman out injured. It ends when …", "who": "on <team>" | "free agent" | "on your team", …}],
+ "howto_sections": [{"title": "How to read role alerts", "text": "- …"}]}
+
+// GET /api/matchups/defense?league=&position=ALL|QB|…   (ALL = the positions the league starts, of QB RB WR TE K)
+{… league block, "season": 2026, "profile_week": 4, "positions": ["QB","RB","WR","TE"], "n_defenses": 32,
+ "weeks_used": [1, 2, 3],
+ "teams": [{   // one row per defense × position, sorted by position then rank_std: the heatmap's cells
+   "defense": "CAR", "position": "RB", "season": 2026, "games": 2, "through_week": 2, "games_l4": 2,
+   // mart_defense_vs_position_current's columns in THIS league's scoring (+ the mart's own as _ref)
+   "points_allowed_per_game_std": 40.3, "rank_std": 1, "points_allowed_per_game_l4": 40.3, "rank_l4": 1,
+   "points_allowed_per_game_std_ref": 34.3, "rank_std_ref": 1, "points_allowed_per_game_l4_ref": 34.3, "rank_l4_ref": 1,
+   // mart_defense_trends' rule in this league's scoring (+ the mart's own as _ref): softer / stiffer / steady / insufficient
+   "allowed_l3": 40.3, "allowed_prior": null, "allowed_season": 40.3, "change": null, "z": null, "direction": "insufficient",
+   "allowed_l3_ref": 34.3, "allowed_prior_ref": null, "change_ref": null, "z_ref": null, "direction_ref": "insufficient",
+   // mart_defense_position_profile as of this week (games before it)
+   "opps_allowed_pg": 32.0, "targets_allowed_pg": 4.5, "carries_allowed_pg": 27.5, "yards_per_opp_allowed": 6.34,
+   "td_rate_allowed": 0.0625, "gives_up": "volume and big plays", "rank_opportunity": 7, "rank_efficiency": 1,
+   "rank_td_rate": 4, "rank_targets": 22, "rank_carries": 4, "points_allowed_pg_ref": 34.3,
+   "offense_baseline_pg_ref": 25.64, "adjusted_points_pg_ref": 4.33, "league_points_pg_ref": 18.99,
+   "rank_points_ref": 1, "rank_adjusted_ref": 5}]}
+
+// GET /api/matchups/cb?league=&team=<roster_id>&limit=50   (no team: every rostered WR / TE of the league)
+{… league block, "team": 12,
+ "summary": ["**Amon-Ra St. Brown** vs CAR: no clear side (…): **Mike Jackson (left corner, #37 of 74, solid)** or …"],
+ "caption": "Likely across from him = …",
+ "matchups": [{   // every mart_cb_matchups column for the week (lcb_*, rcb_*, nb_*, likely_cover_*, cover_rank, side_share …)
+   "gsis_id": "00-0036963", "player_name": "Amon-Ra St. Brown", "position": "WR", "team": "DET", "week": 4, "opponent": "CAR",
+   "call_status": "called", "call_strength": "even", "likely_cover_name": "Mike Jackson", "cover_rank": 37, …,
+   "is_starter": true,                                   // Sleeper's current starters (house: mart_player_availability)
+   "proj_points": 15.2, "p10": 6.1, "p25": 9.6, "p75": 20.0, "p90": 25.3,       // this league's scoring (the card's numbers)
+   "line": "**Amon-Ra St. Brown** vs CAR: …",          // app/lib/matchups.cb_line
+   "lean": "Since the start of 2025, 199 of his targets had a direction: …",   // lean_text (null for a tight end)
+   "corners": [{"gsis_id": "…", "defender_name": "Mike Jackson", "depth_position": "Left", "quality_rank": 37,
+                "quality_label": "solid", "rank_this_season": 41, "rank_last_4": 30, "passer_rating_allowed": 88.1, …}],
+   "faced": [{"defender_name": "…", "defense": "ATL", "games": 1, "targets": 10, "receptions": 5, "receiving_yards": 101,
+              "defender_snap_share": 1.0, "share_of_targets": null, "evidence": "same_game"}],   // mart_receiver_vs_cb, this season
+   "cover_split": {"ppg_vs_shutdown": 8.3, "games_vs_shutdown": 3, "ppg_vs_rest": 10.7, "games_vs_rest": 14,
+                   "text": "vs shutdown corners 8.3 a game (3 games), vs the rest 10.7 a game (14 games)"} | null,  // WRs, league scoring
+   "headshot_url": "…", "rostered_by_roster_id": 12, "rostered_by_team": "…"}]}
+
+// GET /api/players?league=&season=&position=ALL|QB|RB|WR|TE|K&season_type=REG|POST&min_games=1&q=&sort=points&dir=desc
+//                 &limit=50&offset=0          (sort = any returned column; limit ≤ 500)
+{… league block, "season": 2025, "season_type": "REG", "positions": ["RB"], "total": 145, "offset": 0,
+ "columns": ["carries", "carry_share", …],      // the page's stat columns for the position(s), in its order
+ "players": [{"gsis_id": "00-0033280", "player_name": "Christian McCaffrey", "position": "RB", "teams": "SF", "games_played": 17,
+              "carries": 311, "carry_share": 0.6466, …,                                   // mart_player_season
+              "points": 416.6, "ppg": 24.51, "expected_per_game": 25.51, "diff_per_game": -1.01, "position_rank_ppg": 1,
+              "points_current_scoring_ref": 365.6, "points_current_scoring_per_game_ref": 21.51,
+              "headshot_url": "…", "team": "SF", "rostered_by_roster_id": 5, "rostered_by_team": "Team 5"}]}
+
+// GET /api/receivers?league=&season=&season_type=REG&weeks=1-18&limit=50&players=<gsis,gsis>&context=half|score_state|
+//                   down_distance|field_zone|qb|none        (no players: the page's candidates, 10+ targets, most first)
+{… league block, "season": 2026, "season_type": "REG", "weeks": [1, 18], "context_type": "half",
+ "yardsticks": {"WR": {"target_share": 0.27, "targets_per_game": 9.1, …}, "TE": {…}},   // the season's top-12 averages
+ "receivers": [{"gsis_id": "…", "player_name": "…", "position": "WR", "team": "…",
+   // the window (app/pages/10_Receivers.py summarize(): numerators and denominators summed over the same games)
+   "games": 3, "targets": 30, "team_targets": 120, "target_share": 0.25, "air_yards_share": 0.39, "adot": 13.9,
+   "receptions": 15, "receiving_yards": 253, "yac_per_rec": 6.5, "receiving_tds": 1, "snap_pct": 0.93, "targets_per_game": 10,
+   "points_per_game": 16.43, "points_per_game_ref": 12.93,                       // league scoring / reference
+   "first_read_target_share": 0.31, "first_read_rate_of_targets": 0.83, "route_participation": null, "tprr_proxy": null, …,
+   // mart_player_recent_form at his latest game in the window
+   "form_week": 3, "target_share_l3": 0.25, "target_share_l5": 0.25, "target_share_std": 0.25, "snap_pct_l3": 0.93,
+   "points_per_game_l3": 16.43, "points_per_game_l3_ref": 12.93, "points_per_game_std_ref": 12.93,
+   "context": [{"bucket": "H1", "bucket_label": "1st half", "games": 3, "targets": 14, "target_share": 0.24, …}],  // mart_player_context
+   "rostered_by_roster_id": 3, "rostered_by_team": "…", "headshot_url": "…"}]}
+
+// GET /api/compare?league=&a=<gsis>&b=<gsis>      (404 for an unknown player)
+{… league block,
+ "a": {"gsis_id": "00-0036900", "player_name": "Ja'Marr Chase", "position": "WR", "team": "CIN", "headshot_url": "…",
+       "rostered_by_roster_id": 8, "rostered_by_team": "Taco Corp.",
+       "projection": {"proj_points": 15.19, "p10": 5.75, "p25": 8.69, "p75": 21.44, "p90": 29.16},   // = /api/player's
+       "season": {"games_played": 2, "targets_per_game": 6.5, "catch_rate": 0.69, …, "ppg": 14.85, "xppg": 12.1, "gap": 2.75,
+                  "position_rank_ppg": 21, "ppg_ref": 12.6},
+       "usage": {"target_share": 0.2, "carry_share": 0.0, "air_yards_share": 0.29, "first_read_target_share": 0.24,
+                 "avg_offense_snap_pct": 0.91, "red_zone_target_share": 0.29, "red_zone_carry_share": 0.0, "route_participation": null},
+       "last3": {"target_share_l3": 0.2, "snap_pct_l3": 0.91, "games_l3": 2, …, "points_per_game_l3": 14.85, "points_per_game_l3_ref": 12.6},
+       "ros": {"points": 193.65, "games": 13, "p10": 152.2, "p90": 235.1, "pos_rank": 12, …},          // = /api/player's
+       "next4": [{"week": 4, "bye": false, "opponent": "JAX", "is_home": true, "kickoff_at": "…", "opp_rank": 15, "opp_rank_ref": 18}, …],
+       "matchup": {"games": 2, "targets_allowed_pg": 15.5, "gives_up": "big plays", "rank_targets": 24, …,
+                   "points_allowed_pg_ref": 24.45, "rank_points_ref": 18, "adjusted_points_pg_ref": 1.95, "rank_adjusted_ref": 12}},
+ "b": {… the same keys …},
+ "verdict": "Chase projects 5.08 more (15.19 vs 10.11); the matchups are about even.",   // matchups.comparison_verdict
+ "table": [{"what": "Projection", "a": "15.19", "b": "10.11"}, …],                       // matchups.comparison_rows
+ "caption": "Week 4. The projection decides: …"}
+
+// GET /api/player/{gsis}/games?league=&season=2026&season_type=ALL|REG|POST     (404 for an unknown player)
+{… league block, "player": {"gsis_id", "player_name", "position", "team", "headshot_url", "rostered_by_roster_id", "rostered_by_team"},
+ "season": 2026, "season_type": "ALL",
+ "games": [{"game_id": "2026_01_TB_CIN", "season": 2026, "season_type": "REG", "week": 1, "game_date": "2026-09-13", "team": "CIN",
+            "opponent": "TB", "is_home": true, "played": true, "roster_status": "ACT",
+            "targets": 7, "receptions": 5, "receiving_yards": 51, …, "offense_snap_pct": 0.93,   // fct_player_game's stat columns
+            "points": 12.1, "expected_points": 11.3,               // this league's scoring (null expected: no ffverse row)
+            "points_ref": 9.6, "expected_points_ref": 9.1}]}
+```
+
+Latency (cold = every cache emptied, warm = the second call; TestClient, the sandbox's two shared cores):
+`docs/STATUS.md` § Wave G, G1.
+
+## Decisions (G2)
+
+Wave G, plan row G2 (`league_lab_api/decisions.py`, routes block `# ---- G2 decisions` in `main.py`). Every route takes
+`league=` and `team=` where "yours" matters, sits behind the gate, and is served **from the marts for a house league**
+and **on demand for any other Sleeper league** (`source=sleeper` forces the on-demand path for a house league: the
+parity tests use it). Player objects carry `sleeper_id`, `gsis_id`, `player_name`, `position`, `team`, `headshot_url`
+(dim_player; a defense: its code, no headshot). Errors: 404 unknown league / team / position, 400 a package the
+engines cannot evaluate (`{"error": …}`), 502 Sleeper down, 503 busy / not ready.
+
+| Endpoint | What | House league | Any league (on demand) |
+|---|---|---|---|
+| `GET /api/waivers?league=&team=&position=&limit=&offset=` | `week`, `weakest` {slot, player, value, margin, replacement}, `cards` (the page's top claim / best cover / flyer), `notice` (the "nothing beats what you have" sentence), `moves` (one per free agent, its best drop: the free agent with projection + range + rest of season, the drop, gains this week / over the horizon / per week, the seat, `words` {headline, lines, why} = the Waiver Wire page's own `_headline` / `_card` / `_why`), `free_agents` (priced, best projection first) | `mart_waiver_moves`, `mart_league_roster_value`, `mart_player_week_projections`, `mart_player_ros_projection` | every roster solved for the horizon (`anyleague.league_weeks`: one `LineupInputs`, `lineup.build`), free agents = Sleeper's directory − every roster (`anyleague.free_agents`: `player_id_map`, the nightly's filter), valued by `lineup._proposed_player`, `waivers.sweep_roster` (the nightly's per-roster step) |
+| `POST /api/trades/evaluate` `{league, team, partner, give: [ids], get: [ids]}` | `before` / `after` (this week, the horizon, depth, by week, both sides), `fit` {this_week, next_4, words}, `market` {give, get, season points, replacement per position, words, the moving players' market line}, `verdict`, `headline`, `ros` (the package's rest of season + sentence), `ranks` (league rank before → after), `size_words` (cuts / the open-spot fill), `lineups` (this week's lineup after, slot by slot with the change, starts / sits, the closest call), `sides` (everything `trades.Side` holds). Ids: Sleeper ids (a gsis id is accepted) | the Trade Finder's calls: `RosterBoard(mart_league_roster_horizon)`, `MARKET_SQL`, `REPLACEMENT_SQL`, `trades.evaluate` (+ the page's free-agent pool for an opened spot) | the same calls on `anyleague.horizon_frame` (the mart's columns and rules); market = Σ this week → week 18 of the projection rounded to the cent, priced week by week; replacement = the best free agent's |
+| `GET /api/trades/partners?league=&team=&want=QB\|RB\|WR\|TE\|K\|DEF` | the partner finder: per team its best 1-for-1 and 2-for-1 that raise both lineups (`is_best`), gains both ways this week and over the horizon, market in / out; `words.headline` (the page's best-partner card); `want` = only packages that bring that position | `trades.partners` on the page's board (cached 10 min, like the page) | the same on the on-demand board (cached 2 min) |
+| `GET /api/team?league=&team=` | `value` (mart_league_roster_value's row), `ranks` (lineup / horizon / depth: value, rank, of n), `league` (every roster's three values and ranks), `slot_strength`, `roster` (this week's rows: slot, value, margin, acquired), `weekly` (the horizon's lineup values), `season` (record, luck, bench …), `keeper` (acquisition / keeper facts), `words` (the Team Hub's first two cards, quoted) | `mart_league_roster_value` / `_rankings` / `_slot_strength` / `_horizon`, `ops.lineup_totals`, `mart_league_manager_profile`, `mart_league_keeper_candidates` | every roster solved (the ranks need the whole league: rosters × 4 lineups per request, ~0.1–0.2 s of solving); `season` = Sleeper's record; no keeper facts (they need the league's history) |
+| `GET /api/league?league=&team=&limit=&offset=` | `standings`, `all_play` (luck), `all_play_week`, `transactions` (paged, newest first, `transactions_total`), `profiles`, `draft`, `roster_rankings`, `words.headline` (the League page's luck / bench line, quoted) | `mart_league_standings` / `_all_play` / `_all_play_week` / `_manager_profile` / `_transactions` / `_draft` / `_roster_rankings` | Sleeper's played weeks (`Sleeper.season_matchups`: `/league/{id}/matchups/{w}` for w ≤ `last_scored_leg`, cached 1 h) and `/league/{id}/transactions/{round}` (`Sleeper.transactions`, 1 h), the marts' SQL rules in Python; profiles / draft / roster rankings are house-only (`not_on_demand` says so) |
+
+**Words.** The Waiver Wire's and the Trade Finder's sentences live in functions inside the pages, which cannot be
+imported (they run Streamlit): `decisions.page_functions` compiles just the named function definitions from the page's
+source (`ast`; nothing else runs) with the Streamlit stand-in, so the API's sentences are the page's (a wording change
+reaches both). The Team Hub's and League's first lines are top-level page code: they are quoted in `decisions.py`
+(`team_words`, `league_words`, marked), each response's `words.source` says which. `trades.verdict` / `fit_line` /
+`fairness_line` and `app/lib/ros.py` (`package_sentence`) are called directly.
+
+**Parity** (`tests/test_decisions.py`, 28 tests): on demand, both house leagues reproduce **every row** of
+`mart_waiver_moves` for Scrubs 2 (433 moves), Scrubs 5 (393), dynasty 12 ("nothing") and dynasty 2 (gains, ranks, best
+drops, seats, rest-of-season tie-breaks: 0.00 gap); the Trade Finder's before / after / fit / verdict for dynasty 12 and
+Scrubs 2 each giving their best starter to roster 1 (house and on demand; the market exact on the house path, ± 1 whole
+point on demand); `mart_league_roster_value` / `_rankings` / `_slot_strength` / this week's `_horizon` rows; the
+standings, all-play (luck) and transactions. The Test League answers every route. Latency: STATUS § "Wave G" → G2.
+
 ## Run it locally
 
 ```bash

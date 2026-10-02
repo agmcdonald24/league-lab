@@ -1,0 +1,1137 @@
+"""The research, on demand (plan G1, Iteration 15, Wave G): Trends, Matchups (defense vs position, cornerbacks),
+Players, Receivers, two players side by side and a player's game log — for ANY Sleeper league.
+
+Rules (the brief's contract):
+* a route returns the mart's rows with the mart's column names (`docs/DATA_MODEL.md`), plus `headshot_url`, `team`
+  and `position` on every player row (`dim_player`), plus `rostered_by_roster_id` / `rostered_by_team` in this league
+  (a house league: `mart_player_availability`; any other league: Sleeper's rosters through `player_id_map`);
+* points in the league's scoring wherever a point appears: a house league reads its league marts
+  (`fct_player_game_league`, `mart_league_player_season`, `mart_player_week_projections`), any other league is priced
+  on request from the NFL-wide stat columns (`league_lab.research.price_games` = `scoring.compute_points` with the
+  position; equal to the league marts to the cent for a house league: api/tests/test_research.py);
+* the NFL research marts are scored in the reference league's scoring: such a field is named `<mart column>_ref`, and
+  the league's own number sits next to it under the mart's name where it can be priced (README § Research (G1) lists
+  the fields that cannot);
+* the "How to read this" words of each Streamlit page travel in `howto` (markdown bullets), so the screen reuses them;
+  `app/lib/matchups.py` (pure: the cornerback and comparison sentences) and `app/lib/signals.py` (the role alerts)
+  write the sentences, as on the pages.
+
+`source=sleeper` serves a house league through the on-demand path (the parity tests use it).
+"""
+
+from __future__ import annotations
+
+import importlib.util
+import re
+import sys
+import time
+from dataclasses import dataclass, field
+
+import numpy as np
+import pandas as pd
+from league_lab import anyleague as A
+from league_lab import research as R
+
+from .applib import cards, links, signals
+from .applib import ros as ROS
+from .db import missing_relations, query
+from .myweek import NotFound, known_league, league_row
+from .ondemand import SleeperDown, ros_card
+from .settings import APP_LIB
+
+
+class BadRequest(ValueError):
+    """A parameter the route cannot use (400, {"error": "<plain words>"})."""
+
+
+def _load_matchups():
+    """app/lib/matchups.py (pure: pandas + math) under a private name, unchanged — the Matchups page's sentences."""
+    name = "league_lab_api._applib_matchups"
+    if name in sys.modules:
+        return sys.modules[name]
+    spec = importlib.util.spec_from_file_location(name, APP_LIB / "matchups.py")
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+M = _load_matchups()
+SKILL = ("QB", "RB", "WR", "TE")
+POSITIONS = ("QB", "RB", "WR", "TE", "K")
+MAX_LIMIT = 500
+PRICED_TTL_S = 600
+
+
+def _limit(limit: int | None, default: int = 50) -> int:
+    try:
+        n = int(limit if limit is not None else default)
+    except (TypeError, ValueError) as exc:
+        raise BadRequest("limit must be a number") from exc
+    return max(1, min(n, MAX_LIMIT))
+
+
+def _positions(position: str | None, allowed=POSITIONS, default=None) -> list[str]:
+    p = (position or "ALL").upper()
+    if p == "ALL":
+        return list(default or allowed)
+    out = [x.strip() for x in p.split(",") if x.strip()]
+    bad = [x for x in out if x not in allowed]
+    if bad:
+        raise NotFound(f"no position {', '.join(bad)} ({', '.join(allowed)} or ALL)")
+    return out
+
+
+# counts, ranks, ids and weeks that a merge turned into floats (39.0) go back to whole numbers
+INT_COL = re.compile(r"(^|_)(rank|games|week|season|roster_id|n|count|targets|receptions|carries|attempts|completions|"
+                     r"snaps|tds|yards|made|att|long|first_season|last_season)($|_)|^n_|_rank$|^rank_|^games")
+
+
+def _records(df: pd.DataFrame) -> list[dict]:
+    if df is None or df.empty:
+        return []
+    df = df.copy()
+    for c in df.columns:
+        if df[c].dtype.kind == "f" and INT_COL.search(str(c)) and "share" not in c and "per_" not in c and "_pg" not in c:
+            v = df[c].dropna()
+            if not v.empty and (v == v.round()).all():
+                df[c] = df[c].astype("Int64")
+    return df.to_dict("records")
+
+
+def _grouped(df: pd.DataFrame, key: str) -> dict[str, list[dict]]:
+    """Rows of `df` as records grouped by `key` (the key dropped), converted once."""
+    out: dict[str, list[dict]] = {}
+    if df is None or df.empty:
+        return out
+    for r in _records(df):
+        out.setdefault(r.pop(key), []).append(r)
+    return out
+
+
+# ------------------------------------------------------------------------------ the league
+@dataclass
+class Ctx:
+    """One league as the research routes need it: a house league (the database scores it) or any Sleeper league."""
+    league_id: str
+    season: int
+    league_name: str
+    house: bool
+    scoring: dict
+    slots: list[str]
+    week: int | None
+    rosters: list = field(default_factory=list)
+    names: dict = field(default_factory=dict)
+    _rostered: pd.DataFrame | None = None
+
+    @property
+    def source(self) -> str:
+        return "database" if self.house else "sleeper"
+
+    def meta(self) -> dict:
+        out = {"league_id": self.league_id, "league_name": self.league_name, "season": self.season,
+               "league_season": self.season, "week": self.week, "source": self.source,
+               "points_source": "league marts" if self.house else "priced on request (scoring.compute_points)"}
+        if not self.house:
+            ref, exact = expected_ref(self)
+            out["expected_points_reference"] = ref
+            out["expected_points_exact"] = exact
+        return out
+
+
+def context(league_id: str, source: str | None = None) -> Ctx:
+    if source != "sleeper" and known_league(league_id):
+        lrow = league_row(league_id)
+        ls = query("select scoring_settings, roster_positions from analytics.dim_league_season where league_id = %s",
+                   (league_id,)).iloc[0]
+        scoring = {k: float(v) for k, v in (ls["scoring_settings"] or {}).items() if v is not None}
+        season = int(lrow["season"])
+        return Ctx(league_id, season, str(lrow["league_name"]), True, scoring, [str(s) for s in ls["roster_positions"] or []],
+                   cards.decision_week(season))
+    try:
+        lid = A.check_id(league_id)
+        cl = A.sleeper()
+        lg = cl.league(lid)
+        rosters, users = cl.rosters(lid), cl.users(lid)
+    except A.LeagueNotFound as exc:
+        raise NotFound(str(exc)) from exc
+    except A.SleeperUnavailable as exc:
+        raise SleeperDown(str(exc)) from exc
+    scoring, slots = A.league_scoring(lg)
+    season = int(lg["season"])
+    return Ctx(lid, season, str(lg.get("name") or f"League {lid}"), False, scoring, slots, cards.decision_week(season),
+               rosters, A.team_names(rosters, users))
+
+
+def rostered(ctx: Ctx) -> pd.DataFrame:
+    """gsis_id -> rostered_by_roster_id, rostered_by_team, is_free_agent (this league's rosters now)."""
+    if ctx._rostered is not None:
+        return ctx._rostered
+    if ctx.house:
+        df = query("""select gsis_id, rostered_by_roster_id, rostered_by_team, coalesce(is_free_agent, false) as is_free_agent
+                      from analytics.mart_player_availability where league_id = %s and gsis_id is not null""", (ctx.league_id,))
+    else:
+        sids = sorted({str(p) for r in ctx.rosters for p in (r.get("players") or [])})
+        idm = query("select sleeper_id, gsis_id from analytics.player_id_map where sleeper_id = any(%s)", (sids,))
+        gsis_of = dict(zip(idm["sleeper_id"], idm["gsis_id"], strict=False)) if not idm.empty else {}
+        rows = []
+        for r in ctx.rosters:
+            rid = int(r["roster_id"])
+            for p in r.get("players") or []:
+                g = gsis_of.get(str(p))
+                if g:
+                    rows.append({"gsis_id": g, "rostered_by_roster_id": rid,
+                                 "rostered_by_team": ctx.names.get(rid, {}).get("team_name"), "is_free_agent": False})
+        df = pd.DataFrame(rows, columns=["gsis_id", "rostered_by_roster_id", "rostered_by_team", "is_free_agent"])
+    df = df.drop_duplicates("gsis_id")
+    ctx._rostered = df
+    return df
+
+
+DIM_SQL = """select gsis_id, player_name as dim_player_name, position as dim_position, latest_team as dim_team, headshot_url
+             from analytics.dim_player where gsis_id = any(%s)"""
+
+
+def decorate(df: pd.DataFrame, ctx: Ctx, id_col: str = "gsis_id") -> pd.DataFrame:
+    """+ headshot_url, team, position (dim_player; the mart's own team / position when it has one) and whose team he is
+    on in this league (rostered_by_roster_id, rostered_by_team; null = nobody's)."""
+    if df.empty:
+        for c in ("headshot_url", "team", "position", "rostered_by_roster_id", "rostered_by_team"):
+            if c not in df:
+                df[c] = pd.Series(dtype=object)
+        return df
+    ids = sorted({str(x) for x in df[id_col].dropna()})
+    dim = query(DIM_SQL, (ids,))
+    out = df.merge(dim, left_on=id_col, right_on="gsis_id", how="left", suffixes=("", "_dim"))
+    if id_col != "gsis_id" and "gsis_id_dim" in out:
+        out = out.drop(columns=["gsis_id_dim"])
+    for col, src in (("team", "dim_team"), ("position", "dim_position"), ("player_name", "dim_player_name")):
+        out[col] = out[col].where(out[col].notna(), out[src]) if col in out else out[src]
+    out = out.drop(columns=[c for c in ("dim_team", "dim_position", "dim_player_name") if c in out])
+    ro = rostered(ctx)[["gsis_id", "rostered_by_roster_id", "rostered_by_team"]]
+    out = out.drop(columns=[c for c in ("rostered_by_roster_id", "rostered_by_team") if c in out])
+    out = out.merge(ro.rename(columns={"gsis_id": "_rid"}), left_on=id_col, right_on="_rid", how="left").drop(columns="_rid")
+    out["rostered_by_roster_id"] = out["rostered_by_roster_id"].astype("Int64")
+    return out
+
+
+# ------------------------------------------------------------------------------ points in the league's scoring
+GAME_KEYS = ("p.gsis_id, p.game_id, p.season, p.season_type, p.week, p.team, p.opponent_team, p.position, p.player_name, "
+             "p.played, p.has_stat_row")
+HOUSE_GAMES_SQL = f"""select {GAME_KEYS}, l.points, l.points_expected, coalesce(l.expected_known, false) as expected_known
+    from analytics.fct_player_game p
+    left join analytics.fct_player_game_league l on l.league_id = %s and l.gsis_id = p.gsis_id and l.game_id = p.game_id
+    where p.season = %s {{where}}"""
+PRICE_GAMES_SQL = f"""select {GAME_KEYS}, {", ".join("p." + c for c in R.PRICE_COLUMNS)},
+           {", ".join("e." + c for c in R.EXPECTED_COLUMNS.values())},
+           r.points_expected as ref_expected, coalesce(r.expected_known, false) as expected_known
+    from analytics.fct_player_game p
+    left join analytics.mart_player_expected_points e on e.gsis_id = p.gsis_id and e.game_id = p.game_id
+    left join analytics.fct_player_game_league r on r.league_id = %s and r.gsis_id = p.gsis_id and r.game_id = p.game_id
+    where p.season = %s {{where}}"""
+GAMES_OUT = ["gsis_id", "game_id", "season", "season_type", "week", "team", "opponent_team", "position", "player_name",
+             "played", "has_stat_row", "points", "points_expected", "expected_known"]
+_priced: dict[tuple, tuple[float, pd.DataFrame]] = {}
+
+
+def house_scorings() -> dict[str, dict]:
+    df = query("select league_id, scoring_settings from analytics.dim_league_season where is_current_season")
+    return {str(r.league_id): {k: float(v) for k, v in (r.scoring_settings or {}).items() if v is not None}
+            for r in df.itertuples()}
+
+
+def expected_ref(ctx: Ctx) -> tuple[str | None, bool]:
+    return R.expected_reference(ctx.scoring, house_scorings())
+
+
+def league_games(ctx: Ctx, season: int, gsis: list[str] | None = None) -> pd.DataFrame:
+    """Every NFL game row of `season` (fct_player_game, regular season and playoffs) with `points` and
+    `points_expected` in this league's scoring: the league mart for a house league, priced on request otherwise
+    (a whole season is cached 10 minutes per scoring; one player's games are priced on the spot)."""
+    where, params = ("and p.gsis_id = any(%s)", (list(gsis),)) if gsis is not None else ("", ())
+    if ctx.house:
+        return query(HOUSE_GAMES_SQL.format(where=where), (ctx.league_id, int(season), *params))[GAMES_OUT]
+    ref, _exact = expected_ref(ctx)
+    key = (A._scoring_key(ctx.scoring), ref, int(season))
+    now = time.monotonic()
+    if gsis is None:
+        hit = _priced.get(key)
+        if hit is not None and hit[0] > now:
+            return hit[1].copy()
+    df = query(PRICE_GAMES_SQL.format(where=where), (ref, int(season), *params))
+    scorings = house_scorings()
+    df["points"] = R.price_games(df, ctx.scoring)
+    df["points_expected"] = R.price_expected(df, ctx.scoring, scorings.get(ref, {})) if ref else np.nan
+    df["points_expected"] = df["points_expected"].where(df["expected_known"].astype(bool))
+    out = df[GAMES_OUT]
+    if gsis is None:
+        if len(_priced) > 50:
+            _priced.clear()
+        _priced[key] = (now + PRICED_TTL_S, out)
+        return out.copy()
+    return out
+
+
+def clear_priced() -> None:
+    _priced.clear()
+    _memo.clear()
+
+
+_memo: dict[tuple, tuple[float, pd.DataFrame]] = {}
+
+
+def _ctx_key(ctx: Ctx) -> tuple:
+    return ("house", ctx.league_id) if ctx.house else ("priced", A._scoring_key(ctx.scoring), expected_ref(ctx)[0])
+
+
+def memo(kind: str, ctx: Ctx, season: int, fn) -> pd.DataFrame:
+    """A derived per-season frame (season table, trend windows, points allowed), kept 10 minutes like the priced games."""
+    key = (kind, _ctx_key(ctx), int(season))
+    now = time.monotonic()
+    hit = _memo.get(key)
+    if hit is not None and hit[0] > now:
+        return hit[1].copy()
+    df = fn()
+    if len(_memo) > 200:
+        _memo.clear()
+    _memo[key] = (now + PRICED_TTL_S, df)
+    return df.copy()
+
+
+LPS_COLS = ["gsis_id", "games_played", "points", "ppg", "points_per_game_l3", "points_per_game_l5", "games_with_expected",
+            "points_expected", "expected_per_game", "diff_per_game", "position_rank_points", "position_rank_ppg"]
+
+
+def league_season(ctx: Ctx, season: int) -> pd.DataFrame:
+    """mart_league_player_season's columns for this league and season (house: the mart; else the same arithmetic over
+    the priced games: `research.season_table`)."""
+    if ctx.house:
+        return query(f"select {', '.join(LPS_COLS)} from analytics.mart_league_player_season where league_id = %s and season = %s",
+                     (ctx.league_id, int(season)))
+    def build() -> pd.DataFrame:
+        g = league_games(ctx, season)
+        return R.season_table(g[g["season_type"] == "REG"])[LPS_COLS]
+    return memo("season", ctx, season, build)
+
+
+def league_dvp(ctx: Ctx, season: int) -> pd.DataFrame:
+    """Points allowed by defense × position in this league's scoring (`research.defense_allowed`)."""
+    def build() -> pd.DataFrame:
+        g = league_games(ctx, season)
+        return R.defense_allowed(g[g["season_type"] == "REG"])
+    return memo("dvp", ctx, season, build)
+
+
+def league_trend_windows(ctx: Ctx, season: int) -> pd.DataFrame:
+    def build() -> pd.DataFrame:
+        g = league_games(ctx, season)
+        return R.trend_windows(g[g["season_type"] == "REG"])
+    return memo("trends", ctx, season, build)
+
+
+def projections(ctx: Ctx, week: int | None, gsis: list[str]) -> pd.DataFrame:
+    """This week's projection + range in the league's scoring (house: mart_player_week_projections, the card's numbers;
+    else the NFL-wide lines priced on request: anyleague.price_week, as /api/player on demand)."""
+    cols = ["gsis_id", "proj_points", "p10", "p25", "p75", "p90"]
+    if week is None or not gsis:
+        return pd.DataFrame(columns=cols)
+    if ctx.house:
+        return query("""select gsis_id, proj_points, p10, p25, p75, p90 from analytics.mart_player_week_projections
+                        where league_id = %s and season = %s and week = %s and gsis_id = any(%s)""",
+                     (ctx.league_id, ctx.season, int(week), list(gsis)))[cols]
+    pr = A.price_week(query, ctx.league_id, ctx.scoring, ctx.slots, ctx.season, int(week))
+    ids = [g for g in gsis if g in pr.proj.index]
+    if not ids:
+        return pd.DataFrame(columns=cols)
+    rg = pr.ranges.reindex(ids)
+    return pd.DataFrame({"gsis_id": ids, "proj_points": [round(float(pr.proj[g]), 2) for g in ids],
+                         **{q: rg[q].to_numpy() for q in ("p10", "p25", "p75", "p90")}})[cols]
+
+
+def _sort(df: pd.DataFrame, sort: str | None, direction: str | None, default: str, default_dir: str = "desc") -> pd.DataFrame:
+    col = sort or default
+    if col not in df.columns:
+        raise BadRequest(f"cannot sort by {col}")
+    d = (direction or default_dir).lower()
+    if d not in ("asc", "desc"):
+        raise BadRequest("dir is asc or desc")
+    key = df[col]
+    if key.dtype == object:
+        num = pd.to_numeric(key, errors="coerce")
+        key = key.astype(str).str.lower() if num.isna().all() and key.notna().any() else num
+    return df.assign(_k=key).sort_values(["_k", "player_name"] if "player_name" in df else ["_k"],
+                                         ascending=[d == "asc", True] if "player_name" in df else [d == "asc"],
+                                         na_position="last").drop(columns="_k")
+
+
+def _norm(s) -> str:
+    return re.sub(r"[^a-z]", "", str(s or "").lower())
+
+
+# ------------------------------------------------------------------------------ /api/trends
+TRENDS_HOWTO = (
+    "- **Use it to spot a role change before the points show up**: add the risers off waivers, and think about moving the fallers.\n"
+    "- Each player's last **3 games** are compared with his games before that. A number is called **up** or **down** only when the "
+    "change is big enough to matter (say, 3 points of target share) *and* bigger than his normal week-to-week swing.\n"
+    "- **Strength** says how unusual the change is for him: 1 is worth a look, 2 is a clear change. **Momentum** averages that over "
+    "his work (targets, snaps, carries, how far downfield he is targeted, expected points) and ignores his fantasy points on "
+    "purpose: three touchdowns can happen without the role changing at all.\n"
+    "- **Trend** names what moved: \"↑ targets, ↑ snaps\" is more work; \"↑ targets, ↑ aDOT\" (targeted deeper downfield) is a "
+    "different, deeper role.\n"
+    "- Nothing is called a trend before a player's fourth game; until then the page shows an *early read* and says so.\n"
+    "- **Over / under**: points per game in this league's scoring against expected points per game (what his targets and "
+    "carries are usually worth). Above = running hot, below = due.")
+ROLE_HOWTO = (
+    "- **Act on a bigger role before the points show up**: a free agent here is a stash (Waiver Wire values him for your "
+    "lineup); one of your bench players here may be worth a start. A smaller role is a reason to bench or sell.\n"
+    "- An alert means his share of the snaps, the targets or the carries jumped (or fell) in his last one to three games, well "
+    "past his usual week-to-week swing, and held in every one of those games. A single big game is not an alert: three "
+    "touchdowns can happen without the role changing.\n"
+    "- **Why** is the reason we can name: an injured starter (he is filling in), a benching or a depth-chart move, a trade. "
+    "\"The coaches changed his role\" means none of those: fine, but check the news.\n"
+    "- **Held**: one game is a first look, three games is his role now. A fill-in's role ends when the starter returns: the "
+    "card says so once the starter is off the injury report.\n"
+    "- How often they last: in the 2025 season, 67% of the bigger roles and 64% of the smaller ones were still there three "
+    "games later (a fill-in counted only while the starter stayed out).")
+EARLY_READ = ("No player in this list has four games yet (NFL {season}). Trends are not called before game four because three "
+              "data points cannot be separated from noise. The `metrics` are an **early read** — latest game versus the "
+              "season so far — which is exactly as unreliable as it sounds.")
+REF_NOTE = ("Fields ending in `_ref` are in the reference league's scoring ({ref}), one scale for every league and season; "
+            "the same field without `_ref` is this league's scoring.")
+
+TAG_COLS = ["gsis_id", "player_name", "position", "team", "games", "latest_week", "tags", "momentum", "opportunity_trend",
+            "n_up", "n_down", "target_share_l3", "target_share_change", "target_share_z", "snap_share_l3", "snap_share_change",
+            "snap_share_z", "carry_share_change", "carry_share_z", "air_yards_share_change", "adot_change",
+            "expected_points_l3", "expected_points_change", "expected_points_z", "points_l3", "points_change"]
+TREND_REF = {"expected_points_l3": "expected_points_l3_ref", "expected_points_change": "expected_points_change_ref",
+             "points_l3": "points_l3_ref", "points_change": "points_change_ref"}
+METRIC_COLS = ["gsis_id", "metric", "metric_label", "display_kind", "games_with_metric", "value_prior", "value_l3", "value_season",
+               "value_latest", "change", "z", "slope_per_game", "direction", "confidence"]
+ALERT_COLS = ("gsis_id, player_name, position, team, direction, direction_label, kind, cause_text, since_week, week, games_held, "
+              "change_text, trigger_name, trigger_status, trigger_ended, expires_after_week, z, confidence, primary_metric")
+
+
+def reference_name() -> str:
+    ref = query("select league_name from analytics.dim_league_season where is_reference_league")
+    return str(ref["league_name"].iloc[0]) if not ref.empty else "the reference league"
+
+
+def _alert(r: dict, roster_id: int | None = None) -> dict:
+    out = {k: r.get(k) for k in ("direction", "direction_label", "kind", "cause_text", "change_text", "games_held", "since_week",
+                                 "week", "z", "confidence", "primary_metric", "trigger_name", "trigger_status", "expires_after_week")}
+    out["kind_label"] = signals.kind_label(r)
+    out["headline"] = links(signals.alert_headline(r, r.get("player_name")))
+    out["lines"] = links(signals.alert_lines(r))
+    if "rostered_by_team" in r:
+        out["who"] = signals.who_has_him(r, roster_id) or None
+    return out
+
+
+def role_alerts(ctx: Ctx, season: int, gsis: list[str] | None = None) -> pd.DataFrame:
+    if missing_relations(("mart_player_role_alerts",)):
+        return pd.DataFrame()
+    where, params = ("and gsis_id = any(%s)", (list(gsis),)) if gsis is not None else ("", ())
+    return query(f"select {ALERT_COLS} from analytics.mart_player_role_alerts where season = %s and is_live {where} "
+                 "order by direction = 'up' desc, kind in ('role_up', 'role_down'), abs(z) desc, player_name",
+                 (int(season), *params))
+
+
+def trends(league_id: str, *, position: str | None = None, limit: int | None = None, view: str = "all",
+           season: int | None = None, who: str = "all", team: int | None = None, min_games: int = 1,
+           sort: str | None = None, dir: str | None = None, metrics: str = "moved", source: str | None = None) -> dict:
+    ctx = context(league_id, source)
+    view = (view or "all").lower()
+    if view not in ("over", "under", "all"):
+        raise BadRequest("view is over, under or all")
+    who = (who or "all").lower()
+    if who not in ("all", "fa", "rostered", "team"):
+        raise BadRequest("who is all, fa, rostered or team")
+    if who == "team" and team is None:
+        raise BadRequest("who=team needs team=<roster_id>")
+    n = _limit(limit)
+    season = int(season or ctx.season)
+    pos = _positions(position, SKILL)
+    tags = query(f"select {', '.join(TAG_COLS)} from analytics.mart_player_trend_tags where season = %s and position = any(%s)",
+                 (season, pos)).rename(columns=TREND_REF)
+    ls = league_season(ctx, season).rename(columns={"expected_per_game": "xppg", "diff_per_game": "gap",
+                                                     "games_played": "league_games"})
+    df = tags.merge(ls[["gsis_id", "league_games", "ppg", "xppg", "gap", "games_with_expected"]], on="gsis_id", how="left")
+    tw = league_trend_windows(ctx, season)
+    tw[tw.columns[1:]] = tw[tw.columns[1:]].astype(float).round(2)
+    df = df.merge(tw.drop(columns=["games"]), on="gsis_id", how="left")
+    df["gap_direction"] = np.select([df["gap"] > 0, df["gap"] < 0, df["gap"] == 0], ["over", "under", "even"], default=None)
+    df["gap_direction"] = df["gap_direction"].where(df["gap"].notna(), None)
+    ro = rostered(ctx)
+    df = df.merge(ro, on="gsis_id", how="left")
+    df["is_free_agent"] = df["rostered_by_roster_id"].isna()
+    if who == "fa":
+        df = df[df["is_free_agent"]]
+    elif who == "rostered":
+        df = df[~df["is_free_agent"]]
+    elif who == "team":
+        df = df[df["rostered_by_roster_id"] == int(team)]
+    df = df[df["games"] >= int(min_games or 1)]
+    if view == "over":
+        df = df[df["gap"] > 0]
+    elif view == "under":
+        df = df[df["gap"] < 0]
+    default_sort, default_dir = {"over": ("gap", "desc"), "under": ("gap", "asc"), "all": ("momentum", "desc")}[view]
+    total = int(len(df))
+    df = _sort(df, sort, dir, default_sort, default_dir if sort is None else "desc").head(n)
+    ids = list(df["gsis_id"])
+    page = decorate(df.drop(columns=["rostered_by_roster_id", "rostered_by_team"]), ctx)
+    met = query(f"select {', '.join(METRIC_COLS)} from analytics.mart_player_trends where season = %s and gsis_id = any(%s) "
+                "order by direction in ('up', 'down') desc, abs(z) desc nulls last", (season, ids)) if ids else pd.DataFrame()
+    if metrics == "none":                    # the screens filter and sort on the phone and never read the metrics (716 KB saved)
+        met = met.iloc[0:0]
+    if not met.empty and metrics != "all":
+        early = (met["direction"] != "insufficient").groupby(met["gsis_id"]).transform("sum") == 0
+        met = met[met["direction"].isin(["up", "down"]) | early]
+    if not met.empty:
+        met["ref_scored"] = met["metric"].isin(["points", "expected_points"])
+    by_player = _grouped(met, "gsis_id")
+    al = role_alerts(ctx, season, ids) if ids else pd.DataFrame()
+    alerts = {r["gsis_id"]: _alert(r) for r in _records(al)}
+    players = []
+    for r in _records(page):
+        r["metrics"] = by_player.get(r["gsis_id"], [])
+        r["role_alert"] = alerts.get(r["gsis_id"])
+        players.append(r)
+    # the page's first section: this week's role alerts among this league's players (rostered or free agents)
+    every = role_alerts(ctx, season)
+    if not every.empty:
+        every = every[every["position"].isin(pos)].merge(ro, on="gsis_id", how="left")
+        every["is_free_agent"] = every["rostered_by_roster_id"].isna()
+        if ctx.house:   # the page joins mart_player_availability: players in this league's pool
+            pool = query("select gsis_id from analytics.mart_player_availability where league_id = %s", (ctx.league_id,))
+            every = every[every["gsis_id"].isin(set(pool["gsis_id"]))]
+    alert_rows = [{**{k: r.get(k) for k in ("gsis_id", "player_name", "position", "team")}, **_alert(r, team)}
+                  for r in _records(every)]
+    enough = (tags["opportunity_trend"] != "insufficient").any() if not tags.empty else False
+    return {**ctx.meta(), "season": season, "view": view, "positions": pos, "total": total,
+            "early_read": not bool(enough), "notice": None if enough else EARLY_READ.format(season=season),
+            "players": players, "role_alerts": alert_rows,
+            "howto": TRENDS_HOWTO, "howto_sections": [{"title": "How to read role alerts", "text": ROLE_HOWTO}],
+            "scoring_note": REF_NOTE.format(ref=reference_name())}
+
+
+# ------------------------------------------------------------------------------ /api/matchups/defense
+DVP_HOWTO = (
+    "- **Start players against the defenses at the top** of the \"gives up the most\" list; be wary of the bottom one.\n"
+    "- **Pts allowed/G** is the fantasy points each defense gives up to that position per game this season, in this league's "
+    "scoring. **Rank** 1 = gives up the most (the matchup you want), 32 = the stingiest.\n"
+    "- The **(L4)** columns use only the defense's last 4 games: they catch an injury or a new scheme sooner.\n"
+    "- Early in the season these ranks jump around; from about week 6 they settle.\n"
+    "- **Softer** means the defense has given up more to that position over its last 3 games than before: a better matchup "
+    "than its season rank says. **Stiffer** means it has tightened up. Only changes bigger than the defense's normal "
+    "week-to-week swing count; a defense needs four games before it shows a direction.")
+PROFILE_COLS = ["opps_allowed_pg", "targets_allowed_pg", "carries_allowed_pg", "yards_per_opp_allowed", "td_rate_allowed",
+                "gives_up", "rank_opportunity", "rank_efficiency", "rank_td_rate", "rank_targets", "rank_carries", "n_defenses"]
+PROFILE_REF = {"points_allowed_pg": "points_allowed_pg_ref", "offense_baseline_pg": "offense_baseline_pg_ref",
+               "adjusted_points_pg": "adjusted_points_pg_ref", "league_points_pg": "league_points_pg_ref",
+               "rank_points": "rank_points_ref", "rank_adjusted": "rank_adjusted_ref"}
+
+
+BENCH_SLOTS = {"BN", "IR", "TAXI", "RES"}
+
+
+def starter_slots(ctx: Ctx, team: int) -> list[tuple[str, str | None]]:
+    """One roster's current starters as (gsis_id, slot), in lineup order: house league = mart_player_availability's
+    is_current_starter (no slot); any other league = Sleeper's `starters`, each paired with the league's starting slot
+    (none set on Sleeper: the lineup My week proposes)."""
+    if ctx.house:
+        st = query("""select gsis_id from analytics.mart_player_availability where league_id = %s and rostered_by_roster_id = %s
+                      and is_current_starter and gsis_id is not null order by gsis_id""", (ctx.league_id, int(team)))
+        # the slot (and lineup order) where My week's lineup starts him too; the rest after, by position
+        lr = cards.lineup_rows(ctx.league_id, ctx.season, int(ctx.week), int(team)) if ctx.week is not None else pd.DataFrame()
+        lr = lr[(lr["role"] == "starter") & lr["gsis_id"].notna()] if not lr.empty else lr
+        slot_of = {str(r["gsis_id"]): (int(r["slot_order"]), r["slot"]) for _, r in lr.iterrows()} if not lr.empty else {}
+        ids = sorted(st["gsis_id"], key=lambda g: slot_of.get(g, (99, None))[0])
+        return [(g, slot_of.get(g, (99, None))[1]) for g in ids]
+    sids = [str(p) for r in ctx.rosters if int(r["roster_id"]) == int(team) for p in (r.get("starters") or [])]
+    slots = [s for s in ctx.slots if str(s).upper() not in BENCH_SLOTS]
+    slot_of = dict(zip(sids, slots, strict=False)) if len(slots) == len(sids) else {}
+    idm = query("select sleeper_id, gsis_id from analytics.player_id_map where sleeper_id = any(%s)", (sorted(set(sids)),))
+    gsis_of = dict(zip(idm["sleeper_id"].astype(str), idm["gsis_id"], strict=False)) if not idm.empty else {}
+    out = [(gsis_of[s], slot_of.get(s)) for s in sids if s in gsis_of]
+    if not out and ctx.week is not None and any(int(r["roster_id"]) == int(team) for r in ctx.rosters):
+        # no lineup set on Sleeper: the lineup My week proposes (ondemand: the nightly's solver on this league)
+        from .ondemand import PlayerContext
+        rows = PlayerContext(ctx.league_id).lineup(int(team), int(ctx.week))
+        if not rows.empty:
+            st = rows[(rows["role"] == "starter") & rows["gsis_id"].notna()]
+            out = [(str(r["gsis_id"]), r.get("slot")) for _, r in st.iterrows()]
+    return out
+
+
+STARTER_GAME_SQL = """select g.home_team, g.away_team from analytics.dim_game g
+                      where g.season = %s and g.week = %s and g.season_type = 'REG' and %s in (g.home_team, g.away_team)"""
+
+
+def defense_starters(ctx: Ctx, team: int, positions: list[str]) -> list[dict]:
+    """Your starters this week at the heatmap's positions and the defense each faces (the cells the screen rings)."""
+    pairs = starter_slots(ctx, team)
+    if not pairs or ctx.week is None:
+        return []
+    df = decorate(pd.DataFrame({"gsis_id": [g for g, _ in pairs], "slot": [s for _, s in pairs]}), ctx)
+    out = []
+    for r in _records(df):
+        if r.get("position") not in positions:
+            continue
+        team_abbr, opp, home = r.get("team"), None, None
+        if isinstance(team_abbr, str) and team_abbr:
+            g = query(STARTER_GAME_SQL, (ctx.season, int(ctx.week), team_abbr))
+            if not g.empty:
+                home = bool(g.iloc[0]["home_team"] == team_abbr)
+                opp = g.iloc[0]["away_team"] if home else g.iloc[0]["home_team"]
+        out.append({k: r.get(k) for k in ("gsis_id", "player_name", "position", "team", "headshot_url", "slot")}
+                   | {"opponent": opp, "is_home": home})
+    return out
+
+
+def matchups_defense(league_id: str, *, position: str | None = None, source: str | None = None,
+                     team: int | None = None) -> dict:
+    ctx = context(league_id, source)
+    starts = [p for p in POSITIONS if p in {s.upper() for s in ctx.slots}] or list(SKILL)
+    pos = _positions(position, POSITIONS, default=starts)
+    cur = query("""select defense, season, position, through_week, games, points_allowed_per_game_std, points_allowed_per_game_l4,
+                          games_l4, rank_std, rank_l4 from analytics.mart_defense_vs_position_current where position = any(%s)""",
+                (pos,))
+    season = int(cur["season"].max()) if not cur.empty else ctx.season
+    lg = league_dvp(ctx, season)
+    lg = lg[lg["position"].isin(pos)]
+    ref = cur.rename(columns={"points_allowed_per_game_std": "points_allowed_per_game_std_ref",
+                              "points_allowed_per_game_l4": "points_allowed_per_game_l4_ref",
+                              "rank_std": "rank_std_ref", "rank_l4": "rank_l4_ref"})
+    rows = lg.drop(columns=["allowed_l3", "allowed_prior", "allowed_season", "change", "z", "direction"]).merge(
+        ref[["defense", "position", "points_allowed_per_game_std_ref", "points_allowed_per_game_l4_ref", "rank_std_ref",
+             "rank_l4_ref"]], on=["defense", "position"], how="outer")
+    trend = lg[["defense", "position", "allowed_l3", "allowed_prior", "allowed_season", "change", "z", "direction"]]
+    dt = query("""select defense, position, allowed_l3 as allowed_l3_ref, allowed_prior as allowed_prior_ref,
+                         change as change_ref, z as z_ref, direction as direction_ref
+                  from analytics.mart_defense_trends where season = %s""", (season,))
+    rows = rows.merge(trend, on=["defense", "position"], how="left").merge(dt, on=["defense", "position"], how="left")
+    week = ctx.week if ctx.season == season else None
+    if week is not None and not missing_relations(("mart_defense_position_profile",)):
+        prof = query(f"""select defense, position, {', '.join(PROFILE_COLS)}, {', '.join(PROFILE_REF)}
+                         from analytics.mart_defense_position_profile where season = %s and week = %s and position = any(%s)""",
+                     (season, int(week), pos)).rename(columns=PROFILE_REF)
+        rows = rows.merge(prof, on=["defense", "position"], how="left")
+    rows["season"] = season
+    rows = rows.sort_values(["position", "rank_std", "defense"], na_position="last")
+    played = query("select distinct week from analytics.dim_game where season = %s and season_type = 'REG' and is_final "
+                   "order by week", (season,))
+    n_def = int(rows.groupby("position")["defense"].nunique().max()) if not rows.empty else 0
+    return {**ctx.meta(), "season": season, "profile_week": week, "positions": pos, "n_defenses": n_def,
+            "weeks_used": [int(w) for w in played["week"]] if not played.empty else [],
+            "teams": _records(rows), "howto": DVP_HOWTO, "scoring_note": REF_NOTE.format(ref=reference_name()),
+            **({"team": team, "starters": defense_starters(ctx, int(team), pos)} if team is not None else {})}
+
+
+# ------------------------------------------------------------------------------ /api/matchups/cb
+CB_HOWTO = (
+    "- **Start the receiver whose likely corner ranks lower** when two options are close; don't bench a star for a "
+    "tough corner: his targets matter more, and the projection already counts the defense.\n"
+    "- **Likely across from him** is a guess from where his targets go (to the offense's left or right): the outside "
+    "corner on that side (throws to the offense's left meet the defense's right corner). Public data has no receiver "
+    "alignment and no coverage assignments. Checked on last season: when a receiver's targets leaned clearly to one "
+    "side (15 points or more), the corner we named was charged with about 1 in 5 of his targets and the other outside "
+    "corner about 1 in 7, no more than any other throw; with a closer split it was about 1 in 5 against 1 in 6 — "
+    "either could be across from him, so the card names both.\n"
+    "- **What public data can't tell you**: who covered whom on a play, whether a corner follows the top receiver around "
+    "(our best test for that caught 1 of 6 well-known shadow corners last season, so we don't flag it), or who "
+    "lines up in the slot.\n"
+    "- **CB rank** = among starting corners since the start of last season (at least 20 pass plays in coverage a team "
+    "game), on three numbers weighed equally: how often he is thrown at per pass play, yards per throw at him "
+    "adjusted for the offenses he faced, and the quarterback rating on those throws. Shutdown = the top quarter, "
+    "target = the bottom quarter, solid = the middle half.\n"
+    "- Tight ends mostly draw linebackers and safeties, so they get no cornerback call. Coverage numbers come from "
+    "Pro-Football-Reference's charting (2018 on), a few days after each game.")
+CORNER_COLS = ("gsis_id, window_label, defender_name, quality_rank, quality_label, n_ranked, targets_per_coverage_snap, "
+               "adj_yards_per_target, yards_per_target_allowed, passer_rating_allowed, round(coverage_snaps)::int as coverage_snaps, "
+               "targets, is_ranked")
+FACED_COLS = ("receiver_gsis_id, defender_gsis_id, defender_name, defense, games, targets, receptions, receiving_yards, "
+              "receiving_tds, defender_snap_share, share_of_targets, evidence")
+
+
+def _corners(season: int, ids: list[str]) -> dict[str, dict]:
+    if not ids:
+        return {}
+    c = query(f"select {CORNER_COLS} from analytics.mart_cb_rankings where season = %s and gsis_id = any(%s)", (season, ids))
+    if c.empty:
+        return {}
+    two = c[c["window_label"] == "two_seasons"].drop(columns="window_label")
+    for w, col in (("season", "rank_this_season"), ("last_4", "rank_last_4")):
+        two = two.merge(c.loc[c["window_label"] == w, ["gsis_id", "quality_rank"]].rename(columns={"quality_rank": col}),
+                        on="gsis_id", how="left")
+    return {r["gsis_id"]: r for r in _records(two)}
+
+
+def matchups_cb(league_id: str, *, team: int | None = None, limit: int | None = None, source: str | None = None) -> dict:
+    ctx = context(league_id, source)
+    n = _limit(limit)
+    week = ctx.week
+    if week is None:
+        return {**ctx.meta(), "team": team, "matchups": [], "summary": [], "notice": "The regular season is over.",
+                "howto": CB_HOWTO}
+    if missing_relations(("mart_cb_matchups", "mart_cb_rankings", "mart_receiver_vs_cb")):
+        return {**ctx.meta(), "team": team, "matchups": [], "summary": [],
+                "notice": "This section arrives with the next data refresh.", "howto": CB_HOWTO}
+    ro = rostered(ctx)
+    starters: set[str] = set()
+    if team is not None:
+        mine = ro[ro["rostered_by_roster_id"] == int(team)]
+        if mine.empty and not (ro["rostered_by_roster_id"] == int(team)).any():
+            known = set(ro["rostered_by_roster_id"].dropna().astype(int))
+            if int(team) not in known and (ctx.house or int(team) not in {int(r["roster_id"]) for r in ctx.rosters}):
+                raise NotFound(f"no team {team} in league {ctx.league_id}")
+        ids = list(mine["gsis_id"])
+        starters = {g for g, _ in starter_slots(ctx, int(team))}
+        cbm = query("select * from analytics.mart_cb_matchups where season = %s and week = %s and gsis_id = any(%s)",
+                    (ctx.season, int(week), ids)) if ids else pd.DataFrame()
+    else:
+        cbm = query("select * from analytics.mart_cb_matchups where season = %s and week = %s and gsis_id = any(%s)",
+                    (ctx.season, int(week), list(ro["gsis_id"])))
+    if cbm.empty:
+        return {**ctx.meta(), "team": team, "matchups": [], "summary": [],
+                "notice": "No receivers on this roster." if team is not None else "No rostered receivers have a game this week.",
+                "howto": CB_HOWTO}
+    cbm["is_starter"] = cbm["gsis_id"].isin(starters)
+    pj = projections(ctx, week, list(cbm["gsis_id"]))
+    cbm = cbm.merge(pj, on="gsis_id", how="left")
+    cbm = cbm.sort_values(["is_starter", "proj_points"], ascending=[False, False], na_position="last").head(n)
+    corner_ids = sorted({x for c in ("lcb_gsis_id", "rcb_gsis_id", "nb_gsis_id") for x in cbm[c].dropna()})
+    corners = _corners(ctx.season, corner_ids)
+    faced = query(f"select {FACED_COLS} from analytics.mart_receiver_vs_cb where season = %s and receiver_gsis_id = any(%s) "
+                  "order by defense, defender_snap_share desc nulls last, targets desc", (ctx.season, list(cbm["gsis_id"])))
+    faced_by = _grouped(faced, "receiver_gsis_id")
+    # his points per game vs a shutdown corner vs the rest, this league's scoring (the page's "best corners" split)
+    wr = list(cbm.loc[cbm["position"] == "WR", "gsis_id"])
+    split = {}
+    if wr:
+        called = query("""select gsis_id, player_name, season, week, game_id, opponent, likely_cover_name, cover_rank, cover_label
+                          from analytics.mart_cb_matchups where gsis_id = any(%s) and call_status = 'called' and season >= %s
+                            and (season < %s or week < %s) order by gsis_id, season, week""",
+                       (wr, ctx.season - 1, ctx.season, int(week)))
+        if not called.empty:
+            pts = pd.concat([league_games(ctx, s, wr) for s in sorted(set(called["season"].astype(int)))])
+            pts = pts[pts["played"].fillna(False).astype(bool)][["gsis_id", "game_id", "points"]]
+            sg = called.merge(pts, on=["gsis_id", "game_id"], how="inner")
+            split = {r["gsis_id"]: {k: r[k] for k in ("ppg_vs_shutdown", "games_vs_shutdown", "ppg_vs_rest", "games_vs_rest")}
+                     | {"text": M.cover_split_text(r)} for r in _records(M.cover_split(sg))}
+    page = decorate(cbm, ctx)
+    out = []
+    for r in _records(page):
+        r["line"] = links(M.cb_line(r))
+        r["lean"] = M.lean_text(r) if r["call_status"] != "tight end" else None
+        r["corners"] = [corners[i] | {"depth_position": side, "listed_name": r.get(f"{s}_name")}
+                        for s, side in (("lcb", "Left"), ("rcb", "Right"), ("nb", "Slot"))
+                        for i in [r.get(f"{s}_gsis_id")] if isinstance(i, str) and i in corners]
+        r["faced"] = faced_by.get(r["gsis_id"], [])
+        r["cover_split"] = split.get(r["gsis_id"])
+        out.append(r)
+    st_rows = [r for r in out if r["is_starter"]]
+    n_cb = next((int(r["cb_n_ranked"]) for r in st_rows if r.get("cb_n_ranked") is not None and not pd.isna(r["cb_n_ranked"])), None)
+    caption = ("Likely across from him = the outside corner on the side more of his targets go: a lean, not an assignment "
+               "(nobody publishes who covers whom). "
+               + (f"#1 of {n_cb} = the starting corner hardest to throw on since the start of {ctx.season - 1}; shutdown = "
+                  "the top quarter, target = the bottom quarter." if n_cb else ""))
+    return {**ctx.meta(), "team": team, "matchups": out, "summary": [r["line"] for r in st_rows], "caption": caption,
+            "howto": CB_HOWTO}
+
+
+# ------------------------------------------------------------------------------ /api/players
+POSITION_COLUMNS = {   # app/pages/9_Players.py
+    "QB": ["attempts", "completions", "completion_rate", "passing_yards", "yards_per_attempt", "passing_tds",
+           "passing_interceptions", "sacks_suffered", "dropbacks", "scrambles", "carries", "rushing_yards", "rushing_tds"],
+    "RB": ["carries", "carry_share", "red_zone_carry_share", "rushing_yards", "yards_per_carry", "rushing_tds", "targets", "target_share",
+           "first_read_target_share", "route_participation", "tprr_proxy", "receptions", "receiving_yards", "receiving_tds", "avg_offense_snap_pct"],
+    "WR": ["targets", "target_share", "first_read_target_share", "air_yards_share", "adot", "route_participation", "tprr_proxy", "yprr_proxy",
+           "red_zone_target_share", "receptions", "catch_rate", "receiving_yards", "yards_per_target", "yac_per_reception", "receiving_tds", "avg_offense_snap_pct"],
+    "TE": ["targets", "target_share", "first_read_target_share", "air_yards_share", "adot", "route_participation", "tprr_proxy", "yprr_proxy",
+           "red_zone_target_share", "receptions", "catch_rate", "receiving_yards", "yards_per_target", "receiving_tds", "avg_offense_snap_pct"],
+    "K": ["fg_att", "fg_made", "fg_pct", "fg_made_under_40", "fg_made_40_49", "fg_made_50p", "fg_long", "pat_att", "pat_made"],
+}
+PLAYERS_HOWTO = (
+    "- Season totals for every player at a position, ranked by fantasy points in this league's scoring. Use it to compare "
+    "anyone with anyone, this year or past years.\n"
+    "- **Target %**, **Carry %** and **Air-yard %** are his share of his *team's* targets, carries and downfield throws in the games "
+    "he played: a player who missed games is not marked down for it.\n"
+    "- **1st-read share** (2022 on) is how often he is the quarterback's first look. **Route %** is how often he is on the field when "
+    "the quarterback drops back to pass; **TPRR / YPRR** are targets and yards per route. Those three are estimates from completed "
+    "seasons and run a little low. **Snap %** counts every play, runs included.\n"
+    "- A blank cell means the number could not be worked out (no targets, no snaps recorded, a season before charting), never zero.")
+
+
+def _league_points_season(ctx: Ctx, season: int, season_type: str) -> pd.DataFrame:
+    """gsis_id -> points, ppg, games (this league's scoring) for a regular season (mart_league_player_season's numbers)
+    or the playoffs (the same arithmetic over the POST game rows)."""
+    if season_type == "REG":
+        return league_season(ctx, season)[["gsis_id", "points", "ppg", "expected_per_game", "diff_per_game", "position_rank_ppg"]]
+    g = league_games(ctx, season)
+    st = R.season_table(g[g["season_type"] == season_type])
+    return st[["gsis_id", "points", "ppg", "expected_per_game", "diff_per_game", "position_rank_ppg"]]
+
+
+def players(league_id: str, *, season: int | None = None, position: str | None = None, sort: str | None = None,
+            dir: str | None = None, limit: int | None = None, offset: int = 0, q: str | None = None,
+            season_type: str = "REG", min_games: int = 1, source: str | None = None) -> dict:
+    ctx = context(league_id, source)
+    season = int(season or ctx.season)
+    st = (season_type or "REG").upper()
+    if st not in ("REG", "POST"):
+        raise BadRequest("season_type is REG or POST")
+    pos = _positions(position, POSITIONS)
+    cols = list(dict.fromkeys(c for p in pos for c in POSITION_COLUMNS[p]))
+    df = query(f"""select gsis_id, player_name, position, teams, games_played, {', '.join(cols)},
+                          points_current_scoring as points_current_scoring_ref,
+                          points_current_scoring_per_game as points_current_scoring_per_game_ref
+                   from analytics.mart_player_season
+                   where position = any(%s) and season = %s and season_type = %s and games_played >= %s""",
+               (pos, season, st, int(min_games or 1)))
+    df = df.merge(_league_points_season(ctx, season, st), on="gsis_id", how="left")
+    if q and len(q.strip()) >= 2:
+        df = df[df["player_name"].map(_norm).str.contains(_norm(q), regex=False)]
+    total = int(len(df))
+    off = max(0, int(offset or 0))
+    df = _sort(df, sort, dir, "points").iloc[off: off + _limit(limit)]
+    page = decorate(df, ctx)
+    return {**ctx.meta(), "season": season, "season_type": st, "positions": pos, "columns": cols,
+            "total": total, "offset": off, "players": _records(page), "howto": PLAYERS_HOWTO,
+            "scoring_note": REF_NOTE.format(ref=reference_name())}
+
+
+# ------------------------------------------------------------------------------ /api/receivers
+RECEIVER_GAME_COLS = ("gsis_id, player_name, position, week, team, opponent_team, played, offense_snap_pct, snaps_known, targets, "
+                      "team_targets, receptions, receiving_yards, receiving_air_yards, team_air_yards, receiving_yards_after_catch, "
+                      "receiving_tds, target_share, air_yards_share, adot, points_current_scoring, charted_targets, "
+                      "first_read_targets, designed_targets, checkdown_targets, team_first_read_targets, team_charted_targets, "
+                      "routes_proxy, team_dropbacks_with_participation, game_id")
+CONTEXTS = ("half", "score_state", "down_distance", "field_zone", "qb")
+CONTEXT_ORDER = {"half": ["H1", "H2", "OT"], "score_state": ["trailing_9plus", "trailing_1_8", "tied", "leading_1_8", "leading_9plus"],
+                 "down_distance": ["1st", "2nd_short", "2nd_medium", "2nd_long", "3rd_4th_short", "3rd_4th_medium", "3rd_4th_long"],
+                 "field_zone": ["own_half", "opp_half", "red_zone_11_20", "inside_10"]}
+CONTEXT_WORDS = {"trailing_9plus": "Trailing 9+", "trailing_1_8": "Trailing 1–8", "tied": "Tied", "leading_1_8": "Leading 1–8",
+                 "leading_9plus": "Leading 9+", "2nd_short": "2nd & short (≤3)", "2nd_medium": "2nd & medium (4–6)",
+                 "2nd_long": "2nd & long (7+)", "3rd_4th_short": "3rd/4th & short (≤3)", "3rd_4th_medium": "3rd/4th & medium (4–6)",
+                 "3rd_4th_long": "3rd/4th & long (7+)", "own_half": "Own half", "opp_half": "Opp. half (21–50)",
+                 "red_zone_11_20": "Red zone (11–20)", "inside_10": "Inside the 10", "H1": "1st half", "H2": "2nd half",
+                 "OT": "Overtime", "1st": "1st down"}
+YS_METRICS = ["target_share", "targets_per_game", "air_yards_share", "adot", "yac_per_reception", "avg_offense_snap_pct",
+              "first_read_target_share", "route_participation", "tprr_proxy", "yprr_proxy"]
+
+
+def _div(a, b):
+    a, b = pd.to_numeric(a, errors="coerce"), pd.to_numeric(b, errors="coerce")
+    return a / b.where(b != 0)
+
+
+def summarize(games: pd.DataFrame) -> pd.DataFrame:
+    """app/pages/10_Receivers.py's summarize(): sum numerators and denominators over the same games, then divide;
+    + first reads and the routes proxy the same way; `points` in this league's scoring, `points_ref` the reference's."""
+    df = games.assign(_snap=games["offense_snap_pct"].where(games["snaps_known"].fillna(False).astype(bool)),
+                      _played=games["played"].fillna(False).astype(bool))
+    num = ["targets", "team_targets", "receptions", "receiving_yards", "receiving_air_yards", "team_air_yards",
+           "receiving_yards_after_catch", "receiving_tds", "points", "points_current_scoring", "charted_targets",
+           "first_read_targets", "designed_targets", "checkdown_targets"]
+    for c in num:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+    p = df[df["_played"]]
+    g = df.groupby("gsis_id")
+    out = pd.DataFrame({
+        "games": g["_played"].sum(),
+        **{c: g[c].sum(min_count=1) for c in ("targets", "team_targets", "receptions", "receiving_yards", "receiving_air_yards",
+                                              "team_air_yards", "receiving_tds", "charted_targets", "first_read_targets",
+                                              "designed_targets", "checkdown_targets")},
+        "yac": g["receiving_yards_after_catch"].sum(min_count=1),
+        "points": g["points"].sum(min_count=1),
+        "points_ref": g["points_current_scoring"].sum(min_count=1),
+        "snap_pct": g["_snap"].mean(),
+        "team_first_read_targets": p.groupby("gsis_id")["team_first_read_targets"].sum(min_count=1),
+        "routes_proxy": pd.to_numeric(df["routes_proxy"], errors="coerce").groupby(df["gsis_id"]).sum(min_count=1),
+        "team_dropbacks_with_participation": pd.to_numeric(df["team_dropbacks_with_participation"].where(df["routes_proxy"].notna()),
+                                                           errors="coerce").groupby(df["gsis_id"]).sum(min_count=1),
+    })
+    out["target_share"] = _div(out["targets"], out["team_targets"])
+    out["air_yards_share"] = _div(out["receiving_air_yards"], out["team_air_yards"])
+    out["adot"] = _div(out["receiving_air_yards"], out["targets"])
+    out["yac_per_rec"] = _div(out["yac"], out["receptions"])
+    out["targets_per_game"] = _div(out["targets"], out["games"])
+    out["points_per_game"] = _div(out["points"], out["games"])
+    out["points_per_game_ref"] = _div(out["points_ref"], out["games"])
+    out["first_read_target_share"] = _div(out["first_read_targets"], out["team_first_read_targets"])
+    out["first_read_rate_of_targets"] = _div(out["first_read_targets"], out["charted_targets"])
+    out["route_participation"] = _div(out["routes_proxy"], out["team_dropbacks_with_participation"])
+    out["tprr_proxy"] = _div(g["targets"].sum().where(out["routes_proxy"].notna()), out["routes_proxy"])
+    out["yprr_proxy"] = _div(g["receiving_yards"].sum().where(out["routes_proxy"].notna()), out["routes_proxy"])
+    return out.reset_index()
+
+
+def _yardsticks(season: int, season_type: str) -> dict:
+    ys = query(f"""select position, games_played, points_current_scoring_per_game as ppg, {', '.join(YS_METRICS)}
+                   from analytics.mart_player_season where season = %s and season_type = %s and position in ('WR', 'TE')
+                   and games_played > 0""", (season, season_type))
+    if ys.empty:
+        return {}
+    ys = ys[ys["games_played"] >= max(1, int(ys["games_played"].max()) // 2)]
+    top = ys.sort_values("ppg", ascending=False).groupby("position").head(12)
+    return {p: {m: (None if pd.isna(v) else float(v)) for m, v in t[YS_METRICS].apply(pd.to_numeric, errors="coerce").mean().items()}
+            for p, t in top.groupby("position")}
+
+
+def _pct(v, fallback: str) -> str:
+    return f"{v:.0%}" if v is not None else fallback
+
+
+def receivers_howto(season: int, ys: dict) -> str:
+    wr, te = ys.get("WR", {}), ys.get("TE", {})
+    label = f"the {season} top-12"
+    return (
+        "- **Start the receiver the offense is built around, not last week's box score.** The yardsticks are what "
+        f"{label} at each position average (the 12 with the most points a game, one scale for every league).\n"
+        "- **Target %** (his share of his team's targets). Why it matters: targets turn into points more reliably than anything "
+        "else, and a share holds when the team throws more or less. Yardstick: the top-12 wide receivers average "
+        f"{_pct(wr.get('target_share'), '28%')}, tight ends {_pct(te.get('target_share'), '21%')}; under 15% is a depth piece.\n"
+        "- **Targets/G** is the same thing as a count. Why it matters: it is the volume behind the share. Yardstick: "
+        f"{format(wr.get('targets_per_game') or 9.2, '.1f')} for the top-12 wide receivers, "
+        f"{format(te.get('targets_per_game') or 6.3, '.1f')} for tight ends.\n"
+        "- **Air-yard %** (his share of the yards his team's throws travel in the air). Why it matters: it says who gets the deep, "
+        f"valuable targets, the ones that become long touchdowns. Yardstick: {_pct(wr.get('air_yards_share'), '35%')} for the "
+        "top-12 wide receivers; 30%+ is the main downfield option.\n"
+        "- **aDOT** (how far downfield his targets travel, on average) is a style, not a grade. Why it matters: 12+ yards means big "
+        "weeks and duds; under 8 means short, steady catches (worth more in full PPR). **YAC/Rec** (yards after the catch per "
+        "catch): 5+ means he makes yards on his own.\n"
+        "- **Snap %** (share of plays he is on the field) is the ceiling on everything else. Why it matters: he cannot be targeted "
+        "from the sideline. 80%+ is a full-time starter. On the field 95% of the time but only 12% of the targets means he is out "
+        "there, not in the plan: don't count on him.\n"
+        "- **First-read share**: when the quarterback throws to the receiver he looked at first, how often it is this player — the "
+        f"strongest usage sign we have. Yardstick: {label} wide receivers average {_pct(wr.get('first_read_target_share'), '35%')}, "
+        f"tight ends {_pct(te.get('first_read_target_share'), '22%')}; above 30% is the offense's first choice. Charting by FTN "
+        "Data (CC BY-SA 4.0) starts in 2022; earlier seasons show blank, not zero.\n"
+        "- **Route %** is how often he is on the field when the quarterback drops back to pass; **TPRR** (targets per route) above "
+        "25% is WR1 territory; **YPRR** (yards per route) 2.0+ is a top-24 receiver. These are estimates that run 10–15% low, "
+        "published after the season: the current season is blank until then.\n"
+        "- **Recent form**: last 3 well above the season number is the earliest sign of a bigger role you can get from the box "
+        "score; last 3 well below it is the warning sign.\n"
+        "- **Context splits**: his share of the team's targets by half, score, down, field zone or quarterback. A share that jumps "
+        "only when his team trails by 9+ is garbage time; one that holds when leading is in the plan whatever the score.")
+
+
+def receivers(league_id: str, *, season: int | None = None, limit: int | None = None, season_type: str = "REG",
+              weeks: str | None = None, players: str | None = None, context_type: str = "half",
+              source: str | None = None) -> dict:
+    ctx = context(league_id, source)
+    season = int(season or ctx.season)
+    st = (season_type or "REG").upper()
+    if st not in ("REG", "POST"):
+        raise BadRequest("season_type is REG or POST")
+    lo, hi = (19, 22) if st == "POST" else (1, 18)
+    if weeks:
+        m = re.fullmatch(r"\s*(\d{1,2})\s*-\s*(\d{1,2})\s*", weeks)
+        if not m:
+            raise BadRequest("weeks is a range like 1-6")
+        lo, hi = int(m.group(1)), int(m.group(2))
+    ctype = (context_type or "half").lower()
+    if ctype not in (*CONTEXTS, "none"):
+        raise BadRequest(f"context is one of {', '.join(CONTEXTS)} or none")
+    n = _limit(limit)
+    if players:
+        ids = [x.strip() for x in players.split(",") if x.strip()][:MAX_LIMIT]
+    else:   # the page's candidates: receivers with 10+ targets, most targets first
+        cand = query("""select gsis_id from analytics.mart_player_season where season = %s and season_type = %s
+                        and position in ('WR', 'TE', 'RB') and targets >= 10 order by targets desc, gsis_id""", (season, st))
+        ids = list(cand["gsis_id"].head(n))
+    if not ids:
+        return {**ctx.meta(), "season": season, "season_type": st, "weeks": [lo, hi], "receivers": [],
+                "yardsticks": {}, "howto": receivers_howto(season, {})}
+    games = query(f"select {RECEIVER_GAME_COLS} from analytics.fct_player_game where season = %s and season_type = %s "
+                  "and gsis_id = any(%s) and week between %s and %s order by gsis_id, week", (season, st, ids, lo, hi))
+    lp = league_games(ctx, season, ids)[["gsis_id", "game_id", "points"]]
+    games = games.merge(lp, on=["gsis_id", "game_id"], how="left")
+    summ = summarize(games) if not games.empty else pd.DataFrame(columns=["gsis_id"])
+    rf = query("""select gsis_id, week, target_share_l3, target_share_l5, target_share_std, targets_l3, team_targets_l3,
+                         snap_pct_l3, points_per_game_l3 as points_per_game_l3_ref, points_per_game_std as points_per_game_std_ref
+                  from analytics.mart_player_recent_form where season = %s and season_type = %s and gsis_id = any(%s)
+                    and week between %s and %s""", (season, st, ids, lo, hi))
+    latest = rf.sort_values("week").groupby("gsis_id").tail(1).rename(columns={"week": "form_week"}) if not rf.empty else rf
+    # the league's points per game over his last 3 appearances in the window (mart_player_recent_form's rule)
+    pl = games[games["played"].fillna(False).astype(bool)].sort_values("week")
+    l3 = pl.groupby("gsis_id").tail(3).groupby("gsis_id")["points"].mean().round(2).rename("points_per_game_l3")
+    df = pd.DataFrame({"gsis_id": ids}).merge(summ, on="gsis_id", how="left").merge(latest, on="gsis_id", how="left")
+    df = df.merge(l3.reset_index(), on="gsis_id", how="left")
+    df = decorate(df, ctx)
+    ctx_rows: dict[str, list] = {}
+    if ctype != "none":
+        cx = query("""select c.gsis_id, c.context_type,
+                             case when c.context_type = 'qb' then coalesce(q.player_name, c.bucket) else c.bucket end as bucket,
+                             c.bucket as bucket_key, c.games, c.targets, c.team_targets, c.target_share, c.first_read_targets,
+                             c.team_first_read_targets, c.first_read_target_share, c.receptions, c.receiving_yards,
+                             c.yards_per_target, c.adot, c.carries, c.team_carries, c.carry_share, c.routes_proxy, c.team_dropbacks,
+                             c.route_participation, c.tprr_proxy, c.yprr_proxy
+                      from analytics.mart_player_context c
+                      left join analytics.dim_player q on q.gsis_id = c.bucket and c.context_type = 'qb'
+                      where c.season = %s and c.season_type = %s and c.gsis_id = any(%s) and c.context_type = %s""",
+                   (season, st, ids, ctype))
+        if not cx.empty:
+            order = {b: i for i, b in enumerate(CONTEXT_ORDER.get(ctype, []))}
+            cx = cx.assign(_o=cx["bucket_key"].map(order)).sort_values(["gsis_id", "_o", "bucket"]).drop(columns="_o")
+            cx["bucket_label"] = cx["bucket"].map(lambda b: CONTEXT_WORDS.get(b, b))
+            ctx_rows = _grouped(cx, "gsis_id")
+    out = []
+    for r in _records(df):
+        r["context"] = ctx_rows.get(r["gsis_id"], [])
+        out.append(r)
+    ys = _yardsticks(season, st)
+    return {**ctx.meta(), "season": season, "season_type": st, "weeks": [lo, hi], "context_type": ctype,
+            "receivers": out, "yardsticks": ys, "howto": receivers_howto(season, ys),
+            "scoring_note": REF_NOTE.format(ref=reference_name())}
+
+
+# ------------------------------------------------------------------------------ /api/player/{gsis}/games
+GAME_STAT_COLS = ["completions", "attempts", "passing_yards", "passing_tds", "passing_interceptions", "sacks_suffered", "carries",
+                  "rushing_yards", "rushing_tds", "targets", "receptions", "receiving_yards", "receiving_tds", "receiving_air_yards",
+                  "receiving_yards_after_catch", "fumbles_lost_total", "target_share", "carry_share", "air_yards_share", "adot",
+                  "first_read_target_share", "red_zone_targets", "red_zone_carries", "offense_snaps", "offense_snap_pct",
+                  "fg_made", "fg_att", "fg_long", "pat_made", "pat_att"]
+
+
+def player_header(gsis: str, ctx: Ctx) -> dict:
+    d = decorate(pd.DataFrame({"gsis_id": [gsis]}), ctx)
+    r = _records(d)[0]
+    if not isinstance(r.get("player_name"), str):
+        raise NotFound(f"No player with id `{gsis}`.")
+    return {k: r.get(k) for k in ("gsis_id", "player_name", "position", "team", "headshot_url", "rostered_by_roster_id",
+                                  "rostered_by_team")}
+
+
+def player_games(league_id: str, gsis: str, *, season: int | None = None, season_type: str | None = None,
+                 source: str | None = None) -> dict:
+    ctx = context(league_id, source)
+    head = player_header(gsis, ctx)
+    season = int(season or ctx.season)
+    st = (season_type or "ALL").upper()
+    if st not in ("REG", "POST", "ALL"):
+        raise BadRequest("season_type is REG, POST or ALL")
+    g = query(f"""select p.gsis_id, p.game_id, p.season, p.season_type, p.week, p.game_date, p.team, p.opponent_team as opponent,
+                         p.is_home, p.played, p.roster_status, {', '.join('p.' + c for c in GAME_STAT_COLS)},
+                         p.points_current_scoring as points_ref, e.points_expected as expected_points_ref
+                  from analytics.fct_player_game p
+                  left join analytics.mart_player_expected_points e on e.gsis_id = p.gsis_id and e.game_id = p.game_id
+                  where p.gsis_id = %s and p.season = %s and (%s = 'ALL' or p.season_type = %s)
+                  order by p.season_type desc, p.week""", (gsis, season, st, st))
+    lp = league_games(ctx, season, [gsis])[["game_id", "points", "points_expected"]].rename(
+        columns={"points_expected": "expected_points"})
+    g = g.merge(lp, on="game_id", how="left").drop(columns=["gsis_id"])
+    return {**ctx.meta(), **{"player": head}, "season": season, "season_type": st, "games": _records(g),
+            "scoring_note": REF_NOTE.format(ref=reference_name())}
+
+
+# ------------------------------------------------------------------------------ /api/compare
+SEASON_PG_COLS = ["games_played", "targets_per_game", "carries_per_game", "dropbacks_per_game", "catch_rate", "yards_per_target",
+                  "yards_per_carry", "adot", "completion_rate", "yards_per_attempt", "passing_yards", "passing_tds", "rushing_yards",
+                  "rushing_tds", "receiving_yards", "receiving_tds", "receptions", "targets", "carries", "attempts"]
+USAGE_COLS = ["target_share", "carry_share", "air_yards_share", "first_read_target_share", "avg_offense_snap_pct",
+              "red_zone_target_share", "red_zone_carry_share", "route_participation"]
+FORM_COLS = ["target_share_l3", "carry_share_l3", "air_yards_share_l3", "snap_pct_l3", "first_read_share_l3", "targets_l3",
+             "carries_l3", "games_l3"]
+COMPARE_HOWTO = (
+    "- **Use it for a close call**: pick any two players; the same rows on both sides.\n"
+    "- **Projection** is the same number as the lineup cards and the player card. **Floor – ceiling** is the range 8 weeks in "
+    "10 land in: take the higher floor when you only need a steady game, the higher ceiling when you need a big one.\n"
+    "- **Targets / carries allowed** say whether a defense lets the position get the ball a lot (volume). **Yards per target or "
+    "carry** and **touchdown rate** say whether it gives up big plays.\n"
+    "- **Vs the offenses faced**: points it allowed beyond what the same offenses score against everyone else, shrunk toward "
+    "zero early in the season. \"The matchup leans\" uses this rank: 6 or more places apart, else the matchups are about even.\n"
+    "- Matchups move a projection less than role does: when the lineup and the matchup disagree, go with the lineup.")
+
+
+def _side(ctx: Ctx, gsis: str, dvp: pd.DataFrame, pc=None) -> dict:
+    from .player import SCHED_SQL
+    head = player_header(gsis, ctx)
+    pos, team = head["position"], head["team"]
+    week = ctx.week
+    out: dict = {**head}
+    # this week's projection + range, the card's numbers
+    if ctx.house:
+        pj = projections(ctx, week, [gsis])
+        out["projection"] = _records(pj.drop(columns="gsis_id"))[0] if not pj.empty else None
+    else:
+        pr = pc.projection(gsis, pos, week) if pc is not None and week is not None else pd.DataFrame()
+        out["projection"] = ({k: pr.iloc[0][k] for k in ("proj_points", "p10", "p25", "p75", "p90")} if not pr.empty else None)
+    # season per game, usage (NFL-wide), the league's points per game
+    s = query(f"""select {', '.join(SEASON_PG_COLS + USAGE_COLS)}, points_current_scoring_per_game as ppg_ref
+                  from analytics.mart_player_season where gsis_id = %s and season = %s and season_type = 'REG'""", (gsis, ctx.season))
+    srow = _records(s)[0] if not s.empty else {}
+    ls = league_season(ctx, ctx.season)
+    lrow = _records(ls[ls["gsis_id"] == gsis])
+    lrow = lrow[0] if lrow else {}
+    out["season"] = {**{k: srow.get(k) for k in SEASON_PG_COLS}, "ppg": lrow.get("ppg"), "xppg": lrow.get("expected_per_game"),
+                     "gap": lrow.get("diff_per_game"), "position_rank_ppg": lrow.get("position_rank_ppg"),
+                     "ppg_ref": srow.get("ppg_ref")}
+    out["usage"] = {k: srow.get(k) for k in USAGE_COLS}
+    f = query(f"""select {', '.join(FORM_COLS)}, points_per_game_l3 as points_per_game_l3_ref from analytics.mart_player_recent_form
+                  where gsis_id = %s and season = %s and season_type = 'REG' order by week desc limit 1""", (gsis, ctx.season))
+    frow = _records(f)[0] if not f.empty else {}
+    out["last3"] = {**{k: frow.get(k) for k in FORM_COLS}, "points_per_game_l3": lrow.get("points_per_game_l3"),
+                    "points_per_game_l3_ref": frow.get("points_per_game_l3_ref")}
+    # rest of season (the card's block)
+    if ctx.house:
+        rr = (query(f"select {ROS.ROS_COLUMNS} from analytics.mart_player_ros_projection where league_id = %s and gsis_id = %s",
+                    (ctx.league_id, gsis)) if not missing_relations((ROS.RELATION,)) else pd.DataFrame())
+    else:
+        rr = pc.ros(gsis, pos) if pc is not None and week is not None else pd.DataFrame()
+    out["ros"] = ros_card(rr.iloc[0]) if rr is not None and not rr.empty else None
+    # the next 4 opponents with their rank vs his position (league scoring; the card's reference rank as `_ref`)
+    sched = query(SCHED_SQL, (team, team, team, pos, ctx.season, team)) if isinstance(team, str) and team else pd.DataFrame()
+    nxt = []
+    rk = dvp[dvp["position"] == pos].set_index("defense")["rank_std"] if not dvp.empty else pd.Series(dtype=float)
+    if week is not None and not sched.empty:
+        last = max(18, int(sched["week"].max()))
+        for w in range(week, min(week + 4, last + 1)):
+            gw = sched[sched["week"] == w]
+            if gw.empty:
+                nxt.append({"week": w, "bye": True, "opponent": None, "is_home": None, "opp_rank": None, "opp_rank_ref": None})
+            else:
+                gg = gw.iloc[0]
+                nxt.append({"week": w, "bye": False, "opponent": gg["opponent"], "is_home": bool(gg["is_home"]),
+                            "kickoff_at": gg["kickoff_at"], "opp_rank": rk.get(gg["opponent"]), "opp_rank_ref": gg["opp_rank"]})
+    out["next4"] = nxt
+    # the comparison table's inputs: this week's opponent's profile vs his position (app/lib/matchups.py)
+    opp = nxt[0] if nxt and not nxt[0]["bye"] else None
+    prof = {}
+    if opp is not None and week is not None and not missing_relations(("mart_defense_position_profile",)):
+        p = query("""select * from analytics.mart_defense_position_profile where season = %s and week = %s and defense = %s
+                     and position = %s""", (ctx.season, int(week), opp["opponent"], pos))
+        prof = _records(p)[0] if not p.empty else {}
+    proj = out["projection"] or {}
+    out["_cmp"] = {"gsis_id": gsis, "player_name": head["player_name"], "position": pos,
+                   "opponent": opp["opponent"] if opp else None, "is_home": opp["is_home"] if opp else None,
+                   "proj_points": proj.get("proj_points"), "p10": proj.get("p10"), "p90": proj.get("p90"), **prof}
+    out["matchup"] = ({k: prof.get(k) for k in ("games", "opps_allowed_pg", "targets_allowed_pg", "carries_allowed_pg",
+                                                "yards_per_opp_allowed", "td_rate_allowed", "gives_up", "rank_opportunity",
+                                                "rank_efficiency", "rank_td_rate", "rank_targets", "rank_carries", "n_defenses")}
+                      | {"points_allowed_pg_ref": prof.get("points_allowed_pg"), "rank_points_ref": prof.get("rank_points"),
+                         "adjusted_points_pg_ref": prof.get("adjusted_points_pg"), "rank_adjusted_ref": prof.get("rank_adjusted")}
+                      if prof else None)
+    return out
+
+
+def compare(league_id: str, a: str, b: str, *, source: str | None = None) -> dict:
+    if not a or not b:
+        raise BadRequest("compare needs a=<gsis_id> and b=<gsis_id>")
+    ctx = context(league_id, source)
+    dvp = league_dvp(ctx, ctx.season)
+    pc = None
+    if not ctx.house:
+        from .ondemand import PlayerContext
+        pc = PlayerContext(ctx.league_id)
+    sa, sb = _side(ctx, a, dvp, pc), _side(ctx, b, dvp, pc)
+    ca, cb = sa.pop("_cmp"), sb.pop("_cmp")
+    table = M.comparison_rows(ca, cb)
+    rows = [{"what": r["What"], "a": r.iloc[1], "b": r.iloc[2]} for _, r in table.iterrows()]
+    return {**ctx.meta(), "a": sa, "b": sb, "verdict": M.comparison_verdict(ca, cb), "table": rows,
+            "caption": (f"Week {ctx.week}. The projection decides: it already counts the opponent. The defense rows are "
+                        "context: what each opponent allowed to the position in its games before this week, one scale for "
+                        "every league; (#1) = gives up the most of 32.") if ctx.week else None,
+            "howto": COMPARE_HOWTO, "scoring_note": REF_NOTE.format(ref=reference_name())}

@@ -29,6 +29,8 @@ const err = (route: Route, status: number, error: string) => json(route, status,
 /** Answer /api/* from the fixture files. `gate`: start signed out (the password screen first). */
 export async function serveFixtures(context: BrowserContext, opts: { gate?: boolean } = {}): Promise<FixtureApi> {
   const api: FixtureApi = { calls: [], signedIn: !opts.gate };
+  // headshots (static.www.nfl.com): never fetched by a test — the app falls back to the silhouette
+  await context.route(/^https:\/\/static\.www\.nfl\.com\//, (route) => route.abort());
   await context.route(/\/api\//, async (route) => {
     const req = route.request();
     const url = new URL(req.url());
@@ -60,6 +62,25 @@ export async function serveFixtures(context: BrowserContext, opts: { gate?: bool
     else if (p === "/api/status") body = file("status.json");
     else if (p === "/api/ros") body = file(`ros_${q.get("league")}_${(q.get("position") ?? "ALL").toUpperCase()}.json`);
     else if (p === "/api/record") body = file(`record_${q.get("league")}.json`);
+    // ---- G3 research routes (Wave G): one file per league (the screens filter and sort on the phone)
+    else if (p === "/api/trends") body = file(`trends_${q.get("league")}.json`);
+    else if (p === "/api/matchups/defense") body = file(`matchups_defense_${q.get("league")}_${q.get("team")}.json`) ?? file(`matchups_defense_${q.get("league")}.json`);
+    else if (p === "/api/matchups/cb") body = file(`matchups_cb_${q.get("league")}_${q.get("team")}.json`);
+    else if (p === "/api/players") body = file(`players_${q.get("league")}.json`);
+    else if (p === "/api/receivers") body = file(`receivers_${q.get("league")}.json`);
+    else if (p === "/api/compare") {
+      const sides = JSON.parse(file(`compare_${q.get("league")}.json`) ?? "{}") as Record<string, unknown>;
+      const a = sides[q.get("a") ?? ""];
+      const b = sides[q.get("b") ?? ""];
+      if (!a || !b) return err(route, 404, "No numbers for that player in this league yet.");
+      body = JSON.stringify({ ...(sides._meta as object), a, b }); // saved sides of real answers + the answer's league block
+    } else if ((m = p.match(/^\/api\/player\/([^/]+)\/games$/))) {
+      const all = JSON.parse(file(`games_${q.get("league")}.json`) ?? "{}") as Record<string, { season: number }[]>;
+      const rows = all[decodeURIComponent(m[1])];
+      if (!rows) return err(route, 404, "No games for that player.");
+      const season = Number(q.get("season"));
+      body = JSON.stringify({ games: season ? rows.filter((r) => r.season === season) : rows });
+    }
     if (body === null) return err(route, 404, `no fixture for ${p}${url.search}`);
     return json(route, 200, body);
   });

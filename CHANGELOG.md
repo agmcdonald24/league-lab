@@ -2,6 +2,37 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave G
+
+- **The research for any league (G1).** Seven API routes serve the research pages as JSON for any Sleeper league —
+  `/api/trends` (over- vs under-performing: points vs expected points per game, the trend tags, role alerts),
+  `/api/matchups/defense` (points allowed by defense × position: the heatmap's cells, the trend, the defense profile),
+  `/api/matchups/cb` (the cornerback lines, the corners, his points vs shutdown corners), `/api/players` (season tables:
+  filter, sort, page, search), `/api/receivers` (the Receivers page's window, recent form, first reads, context splits),
+  `/api/compare` (two players with the same keys) and `/api/player/{gsis}/games` (the card's chart) — with headshots,
+  teams and whose roster on every player row, and every point in the league's own scoring: the league marts for a house
+  league, priced on request with `scoring.compute_points` elsewhere (identical to the marts on every 2024–26 game of both
+  house leagues); reference-scored fields keep the mart's name + `_ref` (`api/README.md` § Research (G1)).
+
+- **The decisions, on demand (G2).** `/api/waivers` (the claims that improve your lineup, each with its drop, the gains
+  and the Waiver Wire's own sentences; the priced free agents), `POST /api/trades/evaluate` (both lineups before / after,
+  fit, market, verdict) and `/api/trades/partners` (the partner finder, `want=` a position), `/api/team` (roster value,
+  ranks, slot strength, the horizon) and `/api/league` (standings, all-play and luck, transactions) — from the marts for
+  the house leagues and computed on request for any Sleeper league (every roster solved; free agents = Sleeper's
+  directory minus the rosters; Sleeper's played weeks and transactions), reproducing every mart row to the cent.
+
+- **A design system and the research screens in the app (G3).** Dark first (light from the system), the player card
+  as the unit (headshot, a big number, position and team badges), team accents for all 32 teams, one hand-rolled chart
+  kit (`docs/DESIGN.md`); one bar with five tabs (a bottom bar on a phone); new Trends (who is due, who is running hot),
+  Matchups (defense-vs-position heatmap, cornerbacks), Players, Receivers, Compare, the player card's points-by-week
+  chart; "Our record" folded into About the numbers (`/about`); fixture e2e at 390 / 1300 px, light and dark (34 passed).
+
+- **The decision screens (G4).** Waivers, Trade Finder, Team and League in the web app under Decisions, on G2's
+  routes and G3's design system: each opens with its answer (the top claim, the best trade partner, your lineup's rank,
+  your luck), player cards with headshots, bars against the league (slot strength, the next four weeks, luck, the
+  market), a trade evaluated as you tick players (both lineups before / after, the verdict) and shared as a link; free
+  agents by position with their range; fixture e2e at 390 / 1300 px, light and dark (18 passed).
+
 ## 2026-10-02 — Wave F
 
 - **NFL-wide model outputs (F1).** `league-lab project` fits the ranges per reference scoring (new seed

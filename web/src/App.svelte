@@ -6,11 +6,24 @@
   import { prefs } from "./lib/prefs";
   import { interceptLinks, route, setParams } from "./lib/router.svelte";
   import Login from "./components/Login.svelte";
+  import TopBar, { sectionOf } from "./components/TopBar.svelte";
   import LeaguesPage from "./routes/Leagues.svelte";
   import MyWeekPage from "./routes/MyWeek.svelte";
   import PlayerPage from "./routes/Player.svelte";
-  import RecordPage from "./routes/Record.svelte";
   import RosPage from "./routes/Ros.svelte";
+  // ---- G4 decisions: the four screens, each loaded on first use (src/lib/decisionPages.ts)
+  import { decisionPage, isDecision } from "./lib/decisionPages";
+  // the research screens and About load on first use (their own chunks): My Week's first screen stays small
+  const LAZY = {
+    trends: () => import("./routes/Trends.svelte"),
+    matchups: () => import("./routes/Matchups.svelte"),
+    players: () => import("./routes/Players.svelte"),
+    receivers: () => import("./routes/Receivers.svelte"),
+    compare: () => import("./routes/Compare.svelte"),
+    about: () => import("./routes/About.svelte"),
+  } as const;
+  type LazyName = keyof typeof LAZY;
+  const isLazy = (n: string): n is LazyName => n in LAZY;
 
   let phase = $state<"loading" | "login" | "ready" | "error">("loading");
   let house = $state<League[]>([]);
@@ -99,25 +112,42 @@
   });
 </script>
 
-<div class="mx-auto max-w-xl">
-  {#if phase === "login"}
-    <Login onok={signedIn} />
-  {:else if phase === "error"}
-    <div class="m-4 rounded-2xl border border-red-200 p-4 text-[15px] text-red-800 dark:border-red-900 dark:text-red-300">
+{#if phase === "login"}
+  <Login onok={signedIn} />
+{:else if phase === "error"}
+  <div class="mx-auto max-w-xl p-4">
+    <div class="ll-error">
       Cannot reach League Lab right now ({failure}). Try again in a minute.
-      <button class="mt-3 block rounded-xl bg-green-700 px-4 py-2 font-semibold text-white" onclick={signedIn}>Try again</button>
+      <button class="mt-3 block rounded-md bg-accent px-4 py-2 font-semibold text-on-accent" onclick={signedIn}>Try again</button>
     </div>
-  {:else if phase === "loading" && !league}
-    <div class="m-4 h-40 animate-pulse rounded-2xl bg-zinc-100 dark:bg-zinc-900" aria-label="Loading"></div>
-  {:else if r.name === "leagues" || !league}
-    <LeaguesPage {mine} current={league} onuser={signedInUser} onauth={needLogin} />
-  {:else if r.name === "player" && r.gsis}
-    <PlayerPage gsis={r.gsis} {league} {team} onauth={needLogin} />
-  {:else if r.name === "ros"}
-    <RosPage {options} {league} {team} onauth={needLogin} />
-  {:else if r.name === "record"}
-    <RecordPage {options} {league} {team} onauth={needLogin} />
-  {:else}
-    <MyWeekPage {options} {league} {team} {mine} {status} onauth={needLogin} />
-  {/if}
-</div>
+  </div>
+{:else if phase === "loading" && !league}
+  <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>
+{:else if r.name === "leagues" || !league}
+  <LeaguesPage {mine} current={league} onuser={signedInUser} onauth={needLogin} />
+{:else if r.name === "player" && r.gsis}
+  <PlayerPage gsis={r.gsis} {league} {team} onauth={needLogin} />
+{:else}
+  <!-- the league's screens: one bar (picker + tabs), then the screen -->
+  <TopBar {options} {league} {team} onauth={needLogin} />
+  <div class="ll-under-bar mx-auto max-w-6xl px-4 pt-4" data-section={sectionOf(r.name)}>
+    {#if r.name === "ros"}
+      <RosPage {options} {league} {team} onauth={needLogin} />
+    {:else if isLazy(r.name)}
+      {#await LAZY[r.name]()}
+        <div class="space-y-3" aria-label="Loading" data-testid="loading"><div class="ll-skel h-8 w-1/2"></div><div class="ll-skel h-40"></div></div>
+      {:then m}
+        <m.default {options} {league} {team} onauth={needLogin} />
+      {/await}
+    {:else if isDecision(r.name)}
+      <!-- G4 decisions: Waivers, Trades, Team, League -->
+      {#await decisionPage(r.name)}
+        <div class="ll-skel h-40" aria-label="Loading"></div>
+      {:then Page}
+        <Page {options} {league} {team} onauth={needLogin} />
+      {/await}
+    {:else}
+      <MyWeekPage {options} {league} {team} {mine} {status} onauth={needLogin} />
+    {/if}
+  </div>
+{/if}

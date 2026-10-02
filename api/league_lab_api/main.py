@@ -36,7 +36,7 @@ from league_lab import anyleague as A
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import auth, db, myweek, ondemand, player
+from . import auth, db, myweek, ondemand, player, research
 from .applib import cards, ui
 from .db import DataNotReady, query
 from .myweek import NotFound
@@ -221,6 +221,107 @@ def status(response: Response):
     except Exception as exc:  # noqa: BLE001 - a status line, never a failure
         out["board_source_in_use"] = f"unknown ({exc.__class__.__name__})"
     return _json(out, response)
+
+
+# ---- G1 research (plan G1, Wave G: league_lab_api/research.py; README § Research (G1)) ---------------------------
+@app.exception_handler(research.BadRequest)
+async def _bad_request(_req: Request, exc: research.BadRequest):
+    return JSONResponse({"error": str(exc), "detail": str(exc)}, status_code=400, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/trends", dependencies=[Depends(require_auth)])
+def trends(league: str, response: Response, position: str = "ALL", limit: int = 50, view: str = "all",
+           season: int | None = None, who: str = "all", team: int | None = None, min_games: int = 1,
+           sort: str | None = None, dir: str | None = None, metrics: str = "moved", source: str | None = None):
+    return _json(research.trends(league, position=position, limit=limit, view=view, season=season, who=who, team=team,
+                                 min_games=min_games, sort=sort, dir=dir, metrics=metrics, source=source), response)
+
+
+@app.get("/api/matchups/defense", dependencies=[Depends(require_auth)])
+def matchups_defense(league: str, response: Response, position: str = "ALL", source: str | None = None, team: int | None = None):
+    return _json(research.matchups_defense(league, position=position, source=source, team=team), response)
+
+
+@app.get("/api/matchups/cb", dependencies=[Depends(require_auth)])
+def matchups_cb(league: str, response: Response, team: int | None = None, limit: int = 50, source: str | None = None):
+    return _json(research.matchups_cb(league, team=team, limit=limit, source=source), response)
+
+
+@app.get("/api/players", dependencies=[Depends(require_auth)])
+def players(league: str, response: Response, season: int | None = None, position: str = "ALL", sort: str | None = None,
+            dir: str | None = None, limit: int = 50, offset: int = 0, q: str | None = None, season_type: str = "REG",
+            min_games: int = 1, source: str | None = None):
+    return _json(research.players(league, season=season, position=position, sort=sort, dir=dir, limit=limit, offset=offset,
+                                  q=q, season_type=season_type, min_games=min_games, source=source), response)
+
+
+@app.get("/api/receivers", dependencies=[Depends(require_auth)])
+def receivers(league: str, response: Response, season: int | None = None, limit: int = 50, season_type: str = "REG",
+              weeks: str | None = None, players: str | None = None, context: str = "half", source: str | None = None):
+    return _json(research.receivers(league, season=season, limit=limit, season_type=season_type, weeks=weeks,
+                                    players=players, context_type=context, source=source), response)
+
+
+@app.get("/api/compare", dependencies=[Depends(require_auth)])
+def compare(league: str, a: str, b: str, response: Response, source: str | None = None):
+    return _json(research.compare(league, a, b, source=source), response)
+
+
+@app.get("/api/player/{gsis}/games", dependencies=[Depends(require_auth)])
+def player_games(gsis: str, league: str, response: Response, season: int | None = None, season_type: str = "ALL",
+                 source: str | None = None):
+    return _json(research.player_games(league, gsis, season=season, season_type=season_type, source=source), response)
+# ---- end G1 research
+
+# ---- G2 decisions (Wave G): waivers, trades, the Team Hub, the league - a house league from the marts, any other on demand
+#   /api/waivers?league=&team=&position=&limit=&offset=   the claims that improve a lineup + the priced free agents
+#   POST /api/trades/evaluate {league, team, partner, give, get}   both rosters before / after, fit, market, verdict
+#   /api/trades/partners?league=&team=&want=              the partner finder (the best trade both lineups gain from)
+#   /api/team?league=&team=                               Team Hub: roster value, ranks, slot strength, the horizon
+#   /api/league?league=&team=&limit=&offset=              standings, all-play and luck, transactions
+from . import decisions  # noqa: E402 - the block stays self-contained (G1 / G2 append to this file in parallel)
+
+
+class TradeBody(BaseModel):
+    league: str
+    team: int
+    partner: int | None = None
+    give: list[str] = []
+    get: list[str] = []
+
+
+@app.exception_handler(decisions.BadRequest)
+async def _bad_request(_req: Request, exc: decisions.BadRequest):
+    return JSONResponse({"error": str(exc), "detail": str(exc)}, status_code=400, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/waivers", dependencies=[Depends(require_auth)])
+def waivers(league: str, response: Response, team: int | None = None, position: str | None = None, limit: int = 50,
+            offset: int = 0, source: str | None = None):
+    return _json(decisions.waivers(league, team, position, limit, offset, source=source), response)
+
+
+@app.post("/api/trades/evaluate", dependencies=[Depends(require_auth)])
+def trades_evaluate(body: TradeBody, response: Response, source: str | None = None):
+    out = decisions.evaluate(body.league, body.team, body.partner, body.give, body.get, source=source)
+    response.headers["Cache-Control"] = "no-store"
+    return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/trades/partners", dependencies=[Depends(require_auth)])
+def trades_partners(league: str, team: int, response: Response, want: str | None = None, source: str | None = None):
+    return _json(decisions.partners(league, team, want, source=source), response)
+
+
+@app.get("/api/team", dependencies=[Depends(require_auth)])
+def team_hub(league: str, team: int, response: Response, source: str | None = None):
+    return _json(decisions.team(league, team, source=source), response)
+
+
+@app.get("/api/league", dependencies=[Depends(require_auth)])
+def league_page(league: str, response: Response, team: int | None = None, limit: int = 50, offset: int = 0,
+                source: str | None = None):
+    return _json(decisions.league(league, team, limit, offset, source=source), response)
 
 
 # ---------------------------------------------------------------- the web app

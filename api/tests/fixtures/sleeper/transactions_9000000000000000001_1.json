@@ -1,0 +1,133 @@
+[
+ {
+  "adds": {
+   "13696": 1
+  },
+  "consenter_ids": [
+   1
+  ],
+  "created": 1757691200000,
+  "creator": null,
+  "draft_picks": [],
+  "drops": {
+   "10213": 1
+  },
+  "leg": 1,
+  "metadata": null,
+  "roster_ids": [
+   1
+  ],
+  "settings": {
+   "waiver_bid": 10
+  },
+  "status": "complete",
+  "status_updated": null,
+  "transaction_id": "900000000000001",
+  "type": "waiver",
+  "waiver_budget": []
+ },
+ {
+  "adds": {
+   "3214": 2
+  },
+  "consenter_ids": [
+   2
+  ],
+  "created": 1757777600000,
+  "creator": null,
+  "draft_picks": [],
+  "drops": {
+   "8121": 2
+  },
+  "leg": 1,
+  "metadata": null,
+  "roster_ids": [
+   2
+  ],
+  "settings": null,
+  "status": "complete",
+  "status_updated": null,
+  "transaction_id": "900000000000002",
+  "type": "free_agent",
+  "waiver_budget": []
+ },
+ {
+  "adds": {
+   "11474": 3
+  },
+  "consenter_ids": [
+   3
+  ],
+  "created": 1757604800000,
+  "creator": null,
+  "draft_picks": [],
+  "drops": {
+   "13279": 3
+  },
+  "leg": 1,
+  "metadata": null,
+  "roster_ids": [
+   3
+  ],
+  "settings": {
+   "waiver_bid": 4
+  },
+  "status": "complete",
+  "status_updated": null,
+  "transaction_id": "900000000000003",
+  "type": "waiver",
+  "waiver_budget": []
+ },
+ {
+  "adds": {
+   "6045": 4
+  },
+  "consenter_ids": [
+   4
+  ],
+  "created": 1757691200000,
+  "creator": null,
+  "draft_picks": [],
+  "drops": {
+   "11646": 4
+  },
+  "leg": 1,
+  "metadata": null,
+  "roster_ids": [
+   4
+  ],
+  "settings": null,
+  "status": "complete",
+  "status_updated": null,
+  "transaction_id": "900000000000004",
+  "type": "free_agent",
+  "waiver_budget": []
+ },
+ {
+  "adds": {
+   "12761": 5
+  },
+  "consenter_ids": [
+   5
+  ],
+  "created": 1757777600000,
+  "creator": null,
+  "draft_picks": [],
+  "drops": {
+   "9493": 5
+  },
+  "leg": 1,
+  "metadata": null,
+  "roster_ids": [
+   5
+  ],
+  "settings": {
+   "waiver_bid": 18
+  },
+  "status": "complete",
+  "status_updated": null,
+  "transaction_id": "900000000000005",
+  "type": "waiver",
+  "waiver_budget": []
+ }
+]

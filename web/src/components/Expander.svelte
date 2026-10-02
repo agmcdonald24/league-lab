@@ -13,13 +13,13 @@
 </script>
 
 <details
-  class="rounded-2xl border border-zinc-200 dark:border-zinc-800"
+  class="rounded-lg border border-line bg-surface"
   data-testid={testid}
   open={opened.get(key) ?? false}
   ontoggle={(e) => opened.set(key, e.currentTarget.open)}
 >
-  <summary class="flex min-h-11 items-center gap-2 px-4 py-2.5 text-[15px] font-medium">
-    <span class="chev text-zinc-400" aria-hidden="true">›</span>
+  <summary class="flex min-h-11 items-center gap-2 px-4 py-2.5 text-base font-semibold">
+    <span class="chev text-ink-3" aria-hidden="true">›</span>
     <span>{title}</span>
   </summary>
   <div class="px-4 pb-4">{@render children()}</div>

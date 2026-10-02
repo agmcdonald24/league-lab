@@ -2844,6 +2844,285 @@ included).
 * **Not verified.** Real Sleeper (no network here), F3's real responses for the new routes (fixtures only), a real
   iPhone (Chromium with the iPhone 13 profile).
 
+## Wave G (Iteration 15)
+
+### PO merge — Wave G, 2026-10-02
+
+* **Delivered** (four Opus devs in parallel, 35–58 min each; one 23-minute integration pass that reconciled G3's assumed
+  research shapes with G1's real ones in one mapping layer, `web/src/lib/shapes.ts`, and re-saved the research fixtures from
+  the live API): G1 the research routes for any league (trends, defense heatmap, cornerbacks, players, receivers, compare,
+  game logs; priced-on-request points equal the league marts to 0.0000 on 40,652 games); G2 the decisions for any league
+  (waivers, trade evaluate / partners, team hub, league — the nightly's own code paths, mart parity row for row); G3 the
+  design system (dark-first tokens, team colors, the player card as the unit, a 1 KB inline-SVG chart kit, one bar on every
+  screen) + the five research screens + "About the numbers" (the record folded in, as Andrew asked); G4 the four decision
+  screens. Live walk of 54 screens against the integrated API: 0 console errors, 0 failed requests, no sideways scroll.
+* **PO fixes after integration**: `/api/team` carries the league behind each slot (`league: {avg, best, rank, n}`) and each
+  week (`{median, best, rank, n}`) — G4's screen had these only in its fixtures; `/api/trends` takes `metrics=none` (the
+  screens never read the metric rows: 716 KB → ~60 KB) and the app asks for `min_games=2` so a one-game player is not "due";
+  the defense route documented; the STATUS sections ordered.
+* **Checks**: `api` 138 passed; web lint 0 / 0, build, 52 fixture e2e; ruff clean; root `pytest` unchanged (no `src` model
+  code touched beyond `waivers.sweep_roster`, re-verified against `ops.waiver_moves` row for row).
+* **Open**: real headshots and real Sleeper only on the Mac (the sandbox reaches neither); buy-low / sell-high lists and
+  the upside stash on Waivers; the keeper table on demand; "What it leans on most" on About needs a route; the cornerback
+  starters follow Sleeper's current lineup; the one-query rest-of-season board; Wave H (accounts, Stripe, hosting) waits
+  on Sleeper's licence — the non-commercial beta can be hosted meanwhile (`api/Dockerfile`).
+
+### Integration (PO) 2026-10-02 — G3's research screens on G1's real answers (branch `integration/wave-g`)
+
+The research screens were built on fixtures from an assumed contract; they now read G1's answers through one mapping
+layer, `web/src/lib/shapes.ts` (`Remote` takes the mapper): trends `gap_direction` → `direction`, `role_alert.kind_label`
+→ `label`; defense `points_allowed_per_game_std` / `rank_std` / `points_allowed_per_game_l4` → `points_allowed_pg` /
+`rank` / `points_allowed_pg_l4`, `direction` (softer / stiffer) → `trend`, `weeks_used` [1, 2, 3] → 3; players `ppg` →
+`points_per_game`; receivers `games` / `points_per_game` / `snap_pct` / `form_week` → `games_played` / `ppg` /
+`avg_offense_snap_pct` / `through_week`; compare `projection.*`, `season` (totals ÷ games), `last3`, `next4[0]` →
+the side's `proj_points`…, `season_stats`, `form`, `opponent` / `opp_rank`. Two API additions where the screen could not
+derive the number: `/api/matchups/defense?team=` returns `starters` (that roster's current starters + slot, the defense
+each faces from `dim_game`; none set on Sleeper → the lineup My week proposes, which also fills `/api/matchups/cb`'s
+`is_starter` for the Test League) and compare's `season` carries `rushing_tds` / `receiving_tds` (the screen's
+touchdowns a game); 3 tests added (`test_matchups_defense_starters` × 3 leagues, one assert in `test_compare_route`).
+The Matchups copy no longer says "one scale for every league" (G1 prices defense points in the league's scoring). The
+research fixtures are now saved from the API (`web/fixtures/make_research_fixtures.py`, minus trends' `metrics` and
+receivers' `context`); 6 e2e expectations follow the real numbers. Live walk on :8690 (phone 390 × 844 dark, three
+leagues, + desktop 1300 × 900 once; 54 screens incl. one evaluated trade): 0 console errors, 0 failed requests, 0
+"undefined" / "NaN" / "[object Object]" / "null", 0 sideways scroll. Gates: api 138 passed, web lint + build green,
+fixture e2e 52 passed, ruff clean. Open: G2's live `/api/team` has no `slot_strength[].league` / `weekly[].league` and
+`/api/waivers` no `positions` (G4's fixtures add them as "requested"), so live the Team Hub shows no league rank /
+average beside each slot and week (Waivers' tabs fall back correctly); `api/README.md` does not yet list `team=` /
+`starters` on `/api/matchups/defense`.
+
+### G1 2026-10-02 — the research, on demand (branch `dev/G1`, clone `league_lab_g1`)
+
+**What.** Seven routes in `api/league_lab_api/research.py` (routes block `# ---- G1 research` in `main.py`), pure
+helpers in `src/league_lab/research.py`, tests `api/tests/test_research.py` (24), the JSON in `api/README.md`
+§ Research (G1): `/api/trends`, `/api/matchups/defense`, `/api/matchups/cb`, `/api/players`, `/api/receivers`,
+`/api/compare`, `/api/player/{gsis}/games`. `anyleague.py`, `player.py`, `ondemand.py`, `applib.py`, `app/` unchanged
+(read / imported only: `anyleague.price_week` / `league_scoring` / `team_names` / `check_id`, `player.SCHED_SQL`,
+`ondemand.PlayerContext` / `ros_card`; `app/lib/matchups.py` loaded unchanged for the cornerback and comparison
+sentences, `signals.py` for the role alerts).
+
+**Design.**
+* One frame per league-season: every `fct_player_game` row with `points` / `points_expected` in the league's scoring
+  (`research.league_games`) — `fct_player_game_league` for a house league; for any other league the stat columns
+  priced with `scoring.compute_points` (position passed; `research.price_games`) and cached 10 minutes per scoring.
+* Everything a screen derives from per-game points is the same arithmetic over that frame, each a Python twin of its
+  dbt model: `season_table` (`mart_league_player_season`, numeric rounding reproduced in integer cents),
+  `trend_windows` (`mart_player_trends`' points / expected-points windows), `defense_allowed`
+  (`mart_defense_vs_position_current` + `mart_defense_trends`).
+* Expected points on demand: a house league's `points_expected` + the scoring difference on the 7 expected stats the
+  published mart carries (`price_expected`); exact when the leagues agree on interceptions / fumbles / 2-pt tries
+  (`expected_reference` picks such a league: the Test League → Scrubs, exact).
+* Reference-scored mart fields are renamed `<column>_ref`; the league's own number takes the plain name next to it.
+* Rostered-by: `mart_player_availability` (house) or Sleeper's rosters through `player_id_map` (`ondemand.ros`'s rule).
+
+**Evidence.**
+* `cd api && uv run pytest -q`: **105 passed, 2 skipped** (81 + 2 skipped before; the 2 skips are F3's NFL-wide-table
+  tests, which need `f1_tables.sql` in the clone). `uv run ruff check src tests app api/league_lab_api api/tests`: clean.
+* Pricing parity (the acceptance), every game, on demand (`source=sleeper`, the Sleeper fixtures' scoring) vs the house
+  path (the league marts): dynasty and Scrubs × 2024 / 2025 / 2026 = 18,961 / 19,400 / 2,291 games each — max |points|
+  **0.0000**, max |expected points| **0.0000**; the season table (1,996 / 2,019 / 1,311 players, every
+  `mart_league_player_season` column) max diff **0.0000**; points allowed 2026 (160 defense × position rows) max diff
+  0.0000, 0 rank differences. Against the marts with independent SQL: `price_games` = `fct_player_game_league.points`
+  on every 2025 and 2026 row (test); `season_table` = `mart_league_player_season` (2025, every column, both leagues);
+  for the reference league `trend_windows` = `mart_player_trend_tags` (596 players 2025, ≤ 0.0001) and
+  `defense_allowed` = `mart_defense_trends` (160 rows, every direction) and `mart_defense_vs_position_current` (exact).
+* Hand-checked per route (both house leagues): trends' `ppg` / `xppg` / `gap` = `mart_league_player_season`,
+  `points_l3_ref` / `momentum` = `mart_player_trend_tags`; defense's league points allowed = a hand `avg(sum(points))`
+  over `fct_player_game_league`, `_ref` = the mart; cb rows = the roster's WR / TE in `mart_cb_matchups`, `proj_points` =
+  `mart_player_week_projections`; players' `points` / `ppg` = `mart_league_player_season`, `_ref` and stats =
+  `mart_player_season`, paging / sort / search; receivers' target share = Σ targets / Σ team targets and league points
+  per game = `fct_player_game_league`; compare's projection and rest of season = `/api/player`'s; games' `points` /
+  `expected_points` = `fct_player_game_league` per game. Test League: every route 200, `source: sleeper`, a receiver's
+  points = the Scrubs points + 0.5 a catch (full vs half PPR) on every 2025 game. Errors: 404 (bad id, a league Sleeper
+  lacks, an unknown player, a bad position, a team not in the league), 400 (bad sort / view / weeks), 502 (Sleeper down,
+  unknown league; a house league still answers).
+* Expected points priced from the other house league (the approximation when no league matches): dynasty from Scrubs,
+  2025 REG, 5,283 games: QBs off by 0.60 a game on average (max 2.03: the −2 vs −1 interception weight × expected
+  interceptions), 0.3% of the other rows off by more than 0.01.
+* Latency (ms, cold = every cache emptied incl. the Sleeper client / warm; TestClient; load average 5–7 on two shared
+  cores, so cold numbers are pessimistic):
+
+  | route | dynasty | Scrubs | Test League (on demand) |
+  |---|---|---|---|
+  | `/api/trends` | 385 / 65 | 194 / 43 | 349 / 74 |
+  | `/api/matchups/defense` | 386 / 33 | 256 / 33 | 658 / 49 |
+  | `/api/matchups/cb?team=` | 140 / 90 | 92 / 51 | 311 / 102 |
+  | `/api/players` (2026) | 83 / 26 | 55 / 20 | 428 / 46 |
+  | `/api/players?season=2025` | 76 / 24 | 61 / 20 | 1,704 / 42 (pricing a full season) |
+  | `/api/receivers` | 125 / 58 | 103 / 53 | 254 / 163 |
+  | `/api/compare` | 355 / 36 | 335 / 42 | 4,106 / 404 (the on-demand card's rest of season: 14 weeks priced) |
+  | `/api/player/{gsis}/games` | 40 / 15 | 31 / 14 | 80 / 43 |
+
+**Decisions for the PO.**
+* `/api/trends` names the gap fields as the contract does (`ppg`, `xppg`, `gap`, `gap_direction`) rather than
+  `expected_per_game` / `diff_per_game`; `/api/players` keeps `mart_league_player_season`'s names (`points`, `ppg`,
+  `expected_per_game`, `diff_per_game`, `position_rank_ppg`).
+* `season` at the top of a response is the season of its rows (`season=`); the league's own is `league_season`.
+* `team` / `position` keep the mart's value when the row has one (the season's team), `dim_player`'s otherwise.
+* `/api/matchups/cb`'s `is_starter` is Sleeper's current lineup (`is_current_starter` / the roster's `starters`), not the
+  proposed lineup the Streamlit page prefers: it only orders the list and picks the summary lines.
+* Errors: a parameter the route cannot use answers **400** `{"error"}` (new; the contract lists 404 / 502 / 503).
+* The heatmap rows cover the positions the league starts among QB, RB, WR, TE, K (no DEF rows: the mart has none).
+* `metrics` on a trends row: the moved metrics (up / down), every metric while he has fewer than four games
+  (the early read), `metrics=all` always; points metrics are flagged `ref_scored`.
+* Not re-priced (reference scoring, `_ref`): `mart_player_trends`' `points` / `expected_points` metric rows,
+  `expected_points_z`, `mart_defense_position_profile`'s point fields and the ranks on them (`rank_points_ref`,
+  `rank_adjusted_ref`; the comparison verdict reads them, as the page does), `mart_player_recent_form`'s
+  `points_per_game_std_ref`.
+
+**Open.** Real Sleeper (fixtures only here); a hosted copy keeps 3 seasons of `fct_player_game` (older `season=`
+answers empty); every relation the routes read is one an `app/` page names, so `sync_to_hosted.sh` publishes it.
+
+### G2 2026-10-02 — the decisions, on demand (`/api/waivers`, `/api/trades/evaluate`, `/api/trades/partners`, `/api/team`, `/api/league`)
+
+* **What**: `api/league_lab_api/decisions.py` + the routes block `# ---- G2 decisions` in `main.py` (contract: the Wave G
+  brief; `api/README.md` § "Decisions (G2)"). A house league is served from its marts (the numbers the Streamlit pages
+  show); any other Sleeper league — or `source=sleeper` for a house league — is computed on request with the nightly's
+  own engines. New on-demand entry points: `anyleague.league_weeks` (every roster × the horizon on ONE `LineupInputs`,
+  `lineup.build`; the whole week's board priced into it, so a free agent is valued by `lineup._proposed_player` exactly
+  as B1 values him), `anyleague.horizon_frame` (`mart_league_roster_horizon`'s columns and rules: top at slot type, the
+  replacement matched to the cent), `anyleague.free_agents` (Sleeper's directory − every roster, `player_id_map`, the
+  nightly's filter: active NFL roster, not Out / IR, a started position; NFL status from the marts' NFL-wide columns,
+  else the directory's); `waivers.sweep_roster` (the per-roster step of `load_and_sweep`, extracted unchanged: the
+  nightly calls it too); `trades.partners(want=)` (None = unchanged); `Sleeper.season_matchups` / `Sleeper.transactions`
+  (cached an hour). Words: the Waiver Wire's `_headline` / `_card` / `_why` and the Trade Finder's `size_words` /
+  `closest` / `lineup_frame` are compiled from the page files (`decisions.page_functions`: the named `def`s only, via
+  `ast`); Team Hub / League first lines quoted (marked); `trades.verdict` / `fit_line` / `fairness_line`,
+  `app/lib/ros.py` called directly.
+* **Parity (clone `league_lab_g2`, week 4, as_of = the nightly's)** — `api/tests/test_decisions.py`, 28 tests:
+  * Waivers on demand vs `mart_waiver_moves`, **every row**: Scrubs 2 433 / 433 moves, Scrubs 5 393 / 393, dynasty 2
+    24 / 24, dynasty 1 14 / 14 (script), dynasty 12 the one "nothing" row; max gap 0.00 on weekly / horizon gain, lineup
+    before / after, add value, drop value, drop / add rest-of-season points, drop horizon loss; 0 differences in move
+    rank, add rank, best drop, list, seat, displaced starter, no-evidence flag, open spots (K and DEF free agents
+    included: Scrubs' top claim is the Giants DEF). The extraction left the nightly identical: `load_and_sweep` re-run
+    on Scrubs 2 / 5 and dynasty 12 = `ops.waiver_moves` row for row; root `tests/test_waivers.py`, `test_trades.py`,
+    `test_roster_value.py`, `test_lineup.py`, `test_trade_finder_page.py`: 510 passed.
+  * Trade Finder (dynasty 12 and Scrubs 2 each give their best unlocked starter to roster 1 for roster 1's): before /
+    after per week, depth, fit this week / next 4, verdict and the fit sentence = the page's calls (`RosterBoard` on
+    `mart_league_roster_horizon`, `MARKET_SQL`, `REPLACEMENT_SQL`, `trades.evaluate`) to 0.01, on the house path and on
+    demand; market exact on the house path, ± 1 whole point allowed on demand (dynasty: identical). Example (dynasty 12, the
+    partner finder's best: Bo Nix + Isaiah Likely for Breece Hall): you 111.15 → 114.74 this week, 446.96 → 469.02
+    over weeks 4–7; them +5.63 / +21.97; market 228 out / 112 in — identical on both paths. Partners: the same
+    packages and gains on both paths.
+  * Team: `mart_league_roster_value` (lineup 111.15 / bench 79.83 / horizon 446.96 for dynasty 12), every roster's
+    three ranks (`_rankings`), `_slot_strength` (top player, strength, replacement) and this week's `_horizon` rows,
+    house and on demand, to 0.01.
+  * League: `mart_league_standings` (W-L-T, standing, PF / PA / avg / sd / best / worst, lineup efficiency),
+    `mart_league_all_play` (all-play wins, rank, win %, expected wins, luck, top-half weeks), `_all_play_week` and
+    `mart_league_transactions` (Scrubs: every transaction × action × player × roster × status × bid), house and from
+    Sleeper's weeks 1–2 + rounds 1–3 (fixtures from `raw.sleeper_*`: `api/tests/fixtures/make_g2_fixtures.py`).
+  * Test League (fictional, 10 teams, K and DEF): every route answers (team 3: moves or "nothing", partners, a trade,
+    the hub with 10 ranked rosters, standings from hand-made weeks 1–2, 20 transactions incl. a trade and a failed
+    claim). Roster 1 of the Test League is over the roster limit in the F3 fixture, so its waivers say "no single claim
+    is legal" (the engine's rule) — the tests use team 3.
+* **Latency** (TestClient, this sandbox, four devs on two cores; cold = every cache emptied incl. the priced board):
+  | Route | dynasty 12 (marts) | Scrubs 2 (marts) | dynasty 12 on demand | Scrubs 2 on demand | Test League 3 |
+  |---|---|---|---|---|---|
+  | waivers | 140 / 24 ms | 229 / 73 | 3,600 / 32 | 5,459 / 83 | 2,345 / 31 |
+  | partners | 959 / 12 | 1,245 / 36 | 4,868 / 17 | 3,993 / 12 | 2,759 / 15 |
+  | evaluate | 174 / 82 | 317 / 83 | 4,117 / 132 | 3,839 / 73 | 2,425 / 21 |
+  | team | 226 / 51 | 443 / 92 | 1,368 / 28 | 985 / 20 | 873 / 23 |
+  | league | 116 / 26 | 293 / 116 | 131 / 93 | 83 / 59 | 94 / 77 |
+  Cold on demand is the board priced for 15 weeks (rest of season and the market, ~0.7–1.5 s), every roster solved for
+  4 weeks (0.1–0.2 s), the waiver sweep (0.3 s for 381 free agents, 121 past the bar) and the partner search (~1 s);
+  warm answers come from 2-minute caches (10 minutes on a house league, like the page's `st.cache_data`).
+* **Checks**: `cd api && uv run pytest -q` 109 passed, 2 skipped (83 before + 28 new: 111 collected); `uv run ruff check
+  src tests app api/league_lab_api api/tests` clean.
+* **Deviations (decisions for the PO)**: (1) `waivers.load_and_sweep`'s per-roster block moved into `sweep_roster`
+  (same code; the nightly's numbers re-checked row for row) so the on-demand path IS the nightly's rule, not a copy.
+  (2) `moves` lists one row per free agent (his best drop, the page's list); every drop of a free agent is not served
+  (an `all=1` is easy if G4 needs it). (3) The house free-agent list reads `mart_player_availability` (the page's
+  browse population, Out / IR / NFL IR hidden); on demand it is the directory filter above. (4) Not on demand (they
+  need the league's history in the database): keeper / acquisition facts on `/api/team`, manager profiles, the draft
+  and the roster-rankings table on `/api/league` (`not_on_demand` says so; the rankings are on `/api/team`).
+  (5) `players_nfl.json` grew by the 530 free agents of the house leagues (210 KB) so the directory-minus-rosters rule
+  is testable; weeks 1–2 matchups and rounds 1–3 transactions added for all three leagues (no user ids, no notes).
+  (6) The Team Hub's and League's first-line sentences are quoted, not captured (top-level page code).
+* **Not verified / open**: no Sleeper from the sandbox (the live `/transactions/{round}` and played-week calls are
+  untested against the real host; the fixture shapes are Sleeper's as archived in `raw.sleeper_*`). The on-demand
+  market prices every week from the NFL-wide board (identical to `ops.projections` on this copy). Commands for Andrew
+  (Mac): `cd api && uv run pytest -q`; `uv run uvicorn league_lab_api.main:app --port 8581`, then
+  `/api/waivers?league=<id>&team=<roster>`, `/api/team?…`, `/api/league?…`, `/api/trades/partners?…` and
+  `curl -X POST localhost:8581/api/trades/evaluate -H 'content-type: application/json' -d '{"league": "<id>", "team": 2,
+  "partner": 1, "give": ["<sleeper id>"], "get": ["<sleeper id>"]}'` (with the beta cookie when the gate is on).
+
+### G4 2026-10-02 — the decision screens: Waivers, Trade Finder, Team Hub, League (branch `dev/G4`)
+
+**What.** Four screens under the Decisions tab of the web app, on G2's routes and in G3's design system (merged
+`dev/G3` once at the 45-minute mark: `api.ts` had both teams' appended blocks in conflict, both kept): **Waivers**
+(`/waivers`: the top claim's sentence first, tiles, the moves as cards with week-by-week gain bars and the drop, the
+free agents by position with this week's projection and its range on one track, list + player card at 1300 px),
+**Trade Finder** (`/trades`: the best partner first with "Try this trade"; partner select and both rosters as tick
+lists; the package POSTed as soon as both sides have a player: verdict, fit tiles, market and rest-of-season bars,
+league rank and roster-size lines, both lineups after the trade; the partner finder by position; the package is the
+URL), **Team** (`/team`: the answer, value / next 4 weeks / depth / record tiles with ranks, strength by slot vs the
+league as bars with the league average as the tick, the next four weeks vs the league's middle, every roster's lineup
+value, the roster as player rows), **League** (`/league`: luck first, standings with all-play, who has been lucky as
+diverging bars, bench points, the weekly scoring rank grid, the latest moves, the draft). Each screen is its own chunk
+(`web/src/lib/decisionPages.ts`). `web/README.md` § "The decision screens".
+
+**Contract.** G2 committed its routes during the round (`1d618ba`), so the screens read G2's real shapes and the
+fixtures are **saved from G2's API** run from a scratch export of `dev/G2` on the G4 clone (`web/fixtures/
+save_decision_fixtures.py`; the Test League on G2's on-demand path with its Sleeper fixtures, team names mapped to the
+web fixtures'). Requested of G2 (added by the saver from G2's own answers): `/api/team` `slot_strength[].league`,
+`weekly[].league`; `/api/waivers` `positions`; the league name on `/api/league`.
+
+**Evidence.** `npm run lint` clean (eslint + svelte-check 0 / 0 + tsc); `npm run build` (main chunk 22 KB gzip;
+Waivers 6.9, Trades 7.9, Team 4.6, League 5.8 KB gzip, loaded on first use). Fixture e2e
+(`e2e/decisions/fixtures.spec.ts`, 18 tests: 4 screens × light / dark × 390 × 844 / 1300 × 900 + the Decisions tab):
+18 passed; every number checked is read from the fixture served (waiver gains, lineup values, ranks, slot bars,
+luck, verdicts, fit / market / rest-of-season, POST body = the package). With F2's and G3's specs: 50 passed, 2 failed
+— G3's "the decisions tabs say what is coming" expects the `Coming` placeholder that G4 replaces (one line for the PO:
+`getByTestId("coming")` → `getByTestId("waivers")`). Answer visible after a cold open on fixtures (median of 5):
+phone 198–335 ms, desktop 218–301 ms. Screenshots `g4_<screen>_<league>_<phone|desktop>_<light|dark>.png` (40).
+
+**Open.** Buy-low / sell-high lists and the upside-stash cards (not in G2's contract); the keeper / acquisition table
+(G2 sends `keeper.rows`; the screen shows the acquisition line and each starter's "acquired"); the Test League's
+fixture rosters differ between G2's Sleeper fixtures and F2's web fixtures (names mapped, rosters not); G3's
+placeholder test above.
+
+### G3 2026-10-02 — the design system and the research screens (web)
+
+* **What**: a design system (`docs/DESIGN.md`): `web/src/app.css` tokens (dark first, light from the system; surfaces,
+  ink, accent, deltas, chart roles, a type scale with 11 px uppercase labels and 36 / 48 px numbers, radii, a 900 px
+  `wide` breakpoint), `web/src/lib/theme.ts` (all 32 teams' primary + accent in nflverse codes, position colors from the
+  dataviz palette's slots, `seqFill`, `fmt`), a hand-rolled chart kit (`lib/chart.ts` + LineChart, Heatmap, Sparkline,
+  Bar, Meter: inline SVG, ~1 KB, tokens only), and the components TopBar (one bar for every league screen: the picker +
+  My week · Rest of season · Research · Decisions · About, a bottom bar on a phone), Card, PlayerCard, PlayerRow,
+  Headshot (silhouette fallback), PosBadge, TeamBadge, StatTile, Table (columns past three show from 640 px), ListDetail,
+  Tabs, Chips, ScreenHead, Coming, GameLog. The tokens + core components were committed at minute 11 (`4251a09`) for
+  G4's merge.
+* **Screens**: new Trends (over / under: the gap as a diverging bar per player, due / running hot cards, list + detail
+  with the game log), Matchups (your starters' ranks, the defense-vs-position heatmap with your cells ringed, the
+  cornerbacks with `cb_line` and the side bar), Players (sortable, headshots, search / position / NFL team / whose),
+  Receivers (role bars against the top-12 yardstick, the recent share), Compare (opens on My Week's closest call;
+  paired bars; the next 4 weeks); the player card gets a PlayerCard header and **Points by week** (points vs expected,
+  2026 / 2025); "Our record" became **About the numbers** (`/about`, `/record` still opens it): the Rankings page's
+  "The model" words in six cards, then the record. My Week, Rest of season and Leagues restyled; Decisions' four tabs
+  show a "coming" card for G4's screens. Research screens and About are lazy chunks (4–6 KB gzipped each).
+* **Contract (G1)**: `web/src/lib/api.ts` `// ---- G3` block = the shapes the screens read; fixtures built from the
+  clone's marts by `web/fixtures/make_research_fixtures.py` for dynasty 12, Scrubs 2 and the Test League (Scrubs'
+  numbers, its own owners). **Requests to G1 / the PO**: `/api/matchups/defense?team=` adds `starters` (the team's
+  starters and the defense each faces: the heatmap's rings and the answer); `/api/trends` rows carry `ppg`, `xppg`,
+  `gap`, `direction` ("over" / "under" / "even", ±0.5) and `role_alert` with `label` (`kind_label`); `/api/matchups/cb`
+  rows carry `line` (`cb_line`), `lean` (`lean_text`), `is_starter`, the week's `proj_points` / `p25` / `p75`;
+  `/api/compare` sides: `season_stats`, `form`, `usage`, `ros`, `next4` (the same keys on both sides);
+  `/api/receivers` adds `yardsticks` {WR, TE}; `/api/player/{gsis}` adds `headshot_url`. The screens ask
+  `/api/trends?view=all&limit=200`, `/api/players?…&limit=500` and filter / sort on the phone.
+* **Evidence**: `npm run lint` 0 errors 0 warnings; `npm run build` (first screen ≈ 45 KB gzipped JS + 6.7 KB CSS);
+  `npm run e2e:fixtures` **34 passed** (Wave F's 7 tests updated for the About tab + 10 new, each on the phone 390 × 844
+  and desktop 1300 × 900: Trends, Matchups, Players, Receivers, Compare, the Test League's research, headshots,
+  the bars, and every screen in light and in dark with no sideways scroll); `npm run measure:fixtures` My Week first
+  content 102 / 95 ms phone, 100 / 98 desktop (Test League), 98 / 89, 120 / 120 (dynasty) — limit 500; research
+  screens on fixtures (scratch measurement, median of 5 cold): Trends 168 / 160, Matchups 130 / 135, Players 150 / 180,
+  Receivers 126 / 133, Compare 122 / 106, player card 84 / 83, About 94 / 96 ms (phone / desktop). Same numbers:
+  Compare's 8.7 / 8.2 = My Week's card (8.68 vs 8.22); the player card's 18.1 = the lineup's 18.13; Trends' gap =
+  `mart_player_availability.diff_per_game`.
+* **Not verified**: real headshots (the sandbox cannot reach static.www.nfl.com; tests abort them, so every screenshot
+  shows the silhouette); the screens against G1's real API (fixtures only); an iPhone's SF Pro (screenshots are DejaVu,
+  wider). Open: "What it leans on most" (feature importance) is not on About (no route); route participation / TPRR
+  read 0 for 2026 in the mart and are hidden until filled in.
+
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
@@ -2862,3 +3141,4 @@ included).
 
 nflverse (attribution), dynastyprocess crosswalk (MIT), ffverse/ffopportunity (MIT), Pro-Football-Reference
 data via nflverse (see nflverse terms), Sleeper API (public read-only). FTN (Phase 2) CC-BY-SA 4.0.
+

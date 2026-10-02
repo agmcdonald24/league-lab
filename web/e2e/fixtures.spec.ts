@@ -132,9 +132,10 @@ test("a stranger: password → username → picker → My Week → player → Ba
   await noSidewaysScroll(page);
   await shot(page, "ros_test", project, false);
 
-  // 8. our record: an unknown league has none, said in plain words
-  await tap(page, page.getByTestId("tab-record"), isMobile);
-  await expect(page).toHaveURL(new RegExp(`/record\\?league=${TEST_LEAGUE}`));
+  // 8. about the numbers (the record folded in, Wave G): an unknown league has none, said in plain words
+  await tap(page, page.getByTestId("tab-about"), isMobile);
+  await expect(page).toHaveURL(new RegExp(`/about\\?league=${TEST_LEAGUE}`));
+  await expect(page.getByTestId("model-learned")).toBeVisible();
   await expect(page.getByTestId("record-empty")).toContainText("No record for Test League. The record is kept for the leagues the nightly scores.");
   await noSidewaysScroll(page);
   await shot(page, "record_test", project, false);
@@ -177,7 +178,7 @@ test("a house league through the picker: opponent, a card's name, all five secti
   await tap(page, page.getByTestId("ros-pos-WR"), isMobile);
   await expect(page.getByTestId("ros-yours")).toContainText("Amon-Ra St. Brown");
   await shot(page, "ros_dyn12", project, false);
-  await tap(page, page.getByTestId("tab-record"), isMobile);
+  await tap(page, page.getByTestId("tab-about"), isMobile);
   await expect(page.getByTestId("record-answer")).toContainText("Through week 3, we called 63 of 107 start/sit calls right; Sleeper's numbers called 58.");
   await expect(page.getByTestId("record-answer")).toContainText("Where we and Sleeper disagreed (19 calls), we were right 12 times and Sleeper 7.");
   await expect(page.getByTestId("record-table").locator("tbody tr")).toHaveCount(3);
@@ -195,7 +196,9 @@ test("a shared link wins (no username needed); Scrubs: K and DEF in rest of seas
   await expect(page.getByTestId("ros-pos-K")).toBeVisible();
   await tap(page, page.getByTestId("ros-pos-K"), isMobile);
   await expect(page.getByTestId("ros-answer")).toContainText("#1 K for the rest of the season:");
-  await tap(page, page.getByTestId("tab-record"), isMobile);
+  await page.goto(`/record?league=${SCRUBS}&team=2`); // a Wave F link still opens it
+  await expect(page.getByTestId("about")).toBeVisible();
+  await expect(page.getByTestId("tab-about")).toHaveAttribute("aria-current", "page");
   await expect(page.getByTestId("record-empty")).toContainText("No week on the record yet.");
   await shot(page, "record_scrubs_empty", project, false);
   // the league select's last option opens the sign-in / picker; "‹ My week" comes back to the same team
@@ -261,3 +264,193 @@ test.describe("with the service worker", () => {
   await expect.poll(() => page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration())), { timeout: 10_000 }).toBe(true);
 });
 });
+
+// ---- G3 (Wave G): the design system's screens — research (Trends, Matchups, Players, Receivers, Compare), the player
+// card's game log, About the numbers — on fixtures, at 390 × 844 and 1300 × 900, light and dark.
+const G3_SHOTS = process.env.G3_SHOTS_DIR ?? SHOTS;
+mkdirSync(G3_SHOTS, { recursive: true });
+const dyn = (path: string, extra = "") => `${path}?league=${DYNASTY}&team=12${extra}`;
+
+test("Trends: the answer first (due / running hot), the gap bars, filters in the URL, a name opens his card with its chart", async ({ page, isMobile }, info) => {
+  await page.goto(dyn("/trends"));
+  await expect(page.getByTestId("answer")).toContainText("Due to pick up: Jameis Winston (3.6 a game on work worth 15.3)."); // G1's rows (fixtures saved from the API)
+  await expect(page.getByTestId("answer")).toContainText("Running hot: Jaxon Smith-Njigba (39.4 a game on work worth 20.0).");
+  await expect(page.getByTestId("card-due")).toContainText("−11.7");
+  await expect(page.getByTestId("card-hot")).toContainText("+19.4");
+  await expect(page.getByTestId("tab-research")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("sub-trends")).toHaveAttribute("aria-current", "page");
+  const rows = page.getByTestId("trends-list").getByTestId("player-row");
+  await expect(rows).toHaveCount(30);
+  await expect(rows.first().getByTestId("gap")).toHaveText("+19.4");
+  await noSidewaysScroll(page);
+  if (isMobile) await expect(page.getByTestId("trends-detail")).toBeHidden();
+  else {
+    await expect(page.getByTestId("trends-detail")).toBeVisible(); // list + detail at 1300
+    await expect(page.getByTestId("trends-detail").getByTestId("game-log").getByTestId("line-chart")).toBeVisible();
+  }
+  await tap(page, page.getByTestId("view-due"), isMobile);
+  await expect(page).toHaveURL(/view=due/);
+  await expect(rows.first()).toContainText("Jameis Winston");
+  await tap(page, page.getByTestId("who-mine"), isMobile);
+  await expect(page).toHaveURL(/who=mine/);
+  const n = await rows.count();
+  expect(n).toBeGreaterThan(0);
+  for (let i = 0; i < n; i++) await expect(rows.nth(i)).toHaveAttribute("data-yours", "1");
+  await shot(page, "g3_trends_filtered", info.project.name, false);
+  // one tap on a name → his card (same tab), the game log: points by week vs expected, a legend for the two
+  const name = rows.filter({ hasText: "Emanuel Wilson" }).locator("a").first();
+  const who = (await name.textContent())!.trim();
+  await tap(page, name, isMobile);
+  await expect(page.getByTestId("player-name")).toHaveText(who);
+  await expect(page.getByTestId("player-header")).toBeVisible();
+  const log = page.getByTestId("game-log");
+  await expect(log.getByTestId("legend")).toContainText("Expected points");
+  await expect(log.getByTestId("game-log-answer")).toContainText("points a game");
+  await expect(log.locator("svg circle").first()).toBeVisible();
+  await tap(page, log.getByTestId("game-log-season-2025"), isMobile); // last season: more weeks
+  await expect.poll(() => log.locator("svg circle").count()).toBeGreaterThan(3);
+  await noSidewaysScroll(page);
+});
+
+test("Matchups: your starters' best and toughest, the heatmap with your cells ringed, the cornerbacks your receivers face", async ({ page, isMobile }) => {
+  await page.goto(dyn("/matchups"));
+  await expect(page.getByTestId("matchups-answer")).toContainText(
+    "Best matchup in your lineup: Jacory Croskey-Merritt (RB) vs IND, #2 vs RB; toughest: Denzel Boston (WR) vs PIT, #31 vs WR.",
+  );
+  await expect(page.getByTestId("starters").getByTestId("player-row")).toHaveCount(8);
+  await expect(page.getByTestId("heatmap").getByTestId("heat-row")).toHaveCount(32);
+  await expect(page.getByTestId("heatmap").locator("thead th")).toHaveText(["", "QB", "RB", "WR", "TE"]); // the dynasty starts no kicker
+  expect(await page.getByTestId("heat-marked").count()).toBeGreaterThanOrEqual(6);
+  await expect(page.getByTestId("heatmap").getByTestId("heat-row").first()).toHaveAttribute("data-row", /IND|LAC|CAR|NO|CIN|DEN|PIT|SF/); // yours first
+  const cbs = page.locator('[data-testid="cb-section"] > [data-testid="cb-card"]'); // your starters (the bench is behind an expander)
+  await expect(cbs).toHaveCount(4);
+  await expect(cbs.nth(1)).toContainText("Parker Washington vs CIN: likely across from DJ Turner II (right corner, #18 of 74, shutdown)");
+  await expect(cbs.nth(1).getByTestId("side-bar")).toContainText("Left 47%");
+  await expect(cbs.nth(3)).toContainText("tight ends mostly draw linebackers and safeties");
+  await noSidewaysScroll(page);
+  void isMobile;
+});
+
+test("Players: the points leader, search, position, sort, whose — and no sideways table on a phone", async ({ page, isMobile }) => {
+  await page.goto(dyn("/players"));
+  await expect(page.getByTestId("players-answer")).toContainText("Most points: Josh Allen, 99.3 (49.6 a game) in Forever Unclean Dynasty scoring · 428 players.");
+  const table = page.getByTestId("players-table");
+  await expect(table.getByTestId("players-table-row")).toHaveCount(50);
+  const visibleHeads = await table.locator("thead th:visible").count();
+  if (isMobile) expect(visibleHeads).toBe(3);
+  else expect(visibleHeads).toBeGreaterThanOrEqual(8);
+  await noSidewaysScroll(page);
+  await tap(page, page.getByTestId("pos-WR"), isMobile);
+  await expect(page).toHaveURL(/position=WR/);
+  await expect(page.getByTestId("players-answer")).toContainText("Most points: Jaxon Smith-Njigba");
+  await tap(page, page.getByTestId("sort-points_per_game"), isMobile);
+  await expect(page).toHaveURL(/sort=points_per_game&dir=desc/);
+  await page.getByTestId("players-search").fill("st. brown");
+  await expect(table.getByTestId("players-table-row")).toHaveCount(1);
+  await expect(table.getByTestId("players-table-row")).toContainText("Amon-Ra St. Brown");
+  await expect(table.getByTestId("players-table-row")).toHaveClass(/bg-accent-soft/); // yours
+  await page.getByTestId("players-search").fill("");
+  await tap(page, page.getByTestId("who-mine"), isMobile);
+  await expect(page.getByTestId("players-answer")).toContainText("Most points: Amon-Ra St. Brown");
+});
+
+test("Receivers: the biggest share first, role bars against the top-12 yardstick, TE switch", async ({ page, isMobile }) => {
+  await page.goto(dyn("/receivers"));
+  await expect(page.getByTestId("receivers-answer")).toContainText("Biggest share of his team's targets: Jaxon Smith-Njigba (44%; the top-12 WRs average 29%).");
+  const detail = page.getByTestId("receivers-detail");
+  await expect(detail).toBeVisible(); // stacked on a phone (the answer first), on the right at 1300
+  await expect(detail.getByTestId("role-bars").getByTestId("bar")).toHaveCount(6); // routes are filled in after the season: not a 0
+  await expect(detail.getByTestId("role-bars")).not.toContainText("On the field for pass plays");
+  await expect(detail.getByTestId("role-bars")).toContainText("Share of his team's targets");
+  await tap(page, page.getByTestId("receivers-list").getByTestId("player-row").nth(1).locator(".ll-label, [data-testid=row-value]").first(), isMobile);
+  await expect(page).toHaveURL(/pick=/);
+  await tap(page, page.getByTestId("pos-TE"), isMobile);
+  await expect(page.getByTestId("receivers-answer")).toContainText("top-12 TEs average");
+  await noSidewaysScroll(page);
+});
+
+test("Compare: opens on your closest call (same numbers as My Week), paired bars, pick another player", async ({ page, isMobile }) => {
+  await page.goto(dyn("/compare"));
+  await expect(page).toHaveURL(/a=00-0038797&b=00-0036919/); // My Week's first card: Emanuel Wilson over Kenny Gainwell
+  await expect(page.getByTestId("compare-answer")).toContainText("Emanuel Wilson projects 8.7, Kenny Gainwell 8.2 in week 4");
+  await expect(page.getByTestId("compare-card-a").getByTestId("card-name")).toHaveText("Wilson"); // shown in capitals (CSS)
+  await expect(page.getByTestId("compare-card-b").getByTestId("card-name")).toHaveText("Gainwell");
+  expect(await page.getByTestId("compare-group").count()).toBeGreaterThanOrEqual(4);
+  await expect(page.getByTestId("compare-group").first().getByTestId("pair").first().getByTestId("pair-a")).toHaveText("8.7");
+  await expect(page.getByTestId("compare-next").locator("tbody tr")).toHaveCount(4);
+  await noSidewaysScroll(page);
+  await page.getByTestId("compare-search-b").fill("kittle");
+  await tap(page, page.getByTestId("compare-hits-b").getByRole("button", { name: /George Kittle/ }), isMobile);
+  await expect(page).toHaveURL(/b=00-0033288/);
+  await expect(page.getByTestId("compare-answer")).toContainText("George Kittle 10.4");
+});
+
+test("the Test League (no database): Trends, Matchups and Compare answer on fixtures", async ({ page, isMobile }) => {
+  await page.goto(`/trends?league=${TEST_LEAGUE}&team=3`);
+  await expect(page.getByTestId("trends-answer")).toBeVisible();
+  await tap(page, page.getByTestId("sub-matchups"), isMobile);
+  await expect(page).toHaveURL(new RegExp(`/matchups\\?league=${TEST_LEAGUE}&team=3$`));
+  await expect(page.getByTestId("heatmap").locator("thead th")).toHaveText(["", "QB", "RB", "WR", "TE", "K"]);
+  await expect(page.getByTestId("matchups-answer")).toContainText("Best matchup in your lineup:");
+  await tap(page, page.getByTestId("sub-compare"), isMobile);
+  await expect(page.getByTestId("compare-answer")).toContainText("projects");
+  await noSidewaysScroll(page);
+});
+
+test("headshots: a picture when it loads, the silhouette when it does not", async ({ page }) => {
+  // one picture served (a tiny PNG); every other headshot is aborted by the fixture server → silhouette
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+  await page.route(/zvo9xatffmqn9lnukpgk/, (r) => r.fulfill({ status: 200, contentType: "image/png", body: png }));
+  await page.goto(dyn("/matchups"));
+  const nix = page.getByTestId("starters").getByTestId("player-row").first();
+  await expect(nix).toContainText("Bo Nix");
+  await expect.poll(() => nix.locator("img").evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth)).toBe(1);
+  await expect(page.getByTestId("starters").getByTestId("player-row").nth(1).getByTestId("silhouette")).toBeVisible();
+});
+
+test("the decisions tabs say what is coming; the bottom bar on a phone, the top bar on a desktop", async ({ page, isMobile }) => {
+  await page.goto(dyn("/"));
+  await expect(page.getByTestId("decision-card").first()).toBeVisible();
+  const bar = (await page.getByTestId("tabs").boundingBox())!;
+  if (isMobile) expect(bar.y + bar.height).toBeGreaterThan(page.viewportSize()!.height - 2);
+  else expect(bar.y).toBeLessThan(80);
+  await tap(page, page.getByTestId("tab-decisions"), isMobile);
+  await expect(page).toHaveURL(/\/waivers\?/);
+  await expect(page.getByTestId("waivers")).toBeVisible();
+  for (const s of ["trades", "team", "league"]) await expect(page.getByTestId(`sub-${s}`)).toBeVisible();
+  await tap(page, page.getByTestId("tab-research"), isMobile);
+  await expect(page).toHaveURL(/\/trends\?/);
+});
+
+// every screen, light and dark, at this project's size: no sideways scroll, the screen's answer on screen; screenshots
+const SCREENS: { name: string; url: string; ready: string }[] = [
+  { name: "week", url: dyn("/"), ready: "decision-card" },
+  { name: "ros", url: dyn("/ros", "&position=WR"), ready: "ros-answer" },
+  { name: "player", url: `/player/00-0036963?league=${DYNASTY}&team=12`, ready: "game-log-answer" },
+  { name: "trends", url: dyn("/trends"), ready: "trends-answer" },
+  { name: "matchups", url: dyn("/matchups"), ready: "cb-card" },
+  { name: "players", url: dyn("/players"), ready: "players-table" },
+  { name: "receivers", url: dyn("/receivers"), ready: "receivers-detail" },
+  { name: "compare", url: dyn("/compare"), ready: "compare-group" },
+  { name: "about", url: dyn("/about"), ready: "record-answer" },
+  { name: "leagues", url: "/leagues", ready: "username-form" },
+];
+for (const scheme of ["light", "dark"] as const) {
+  test(`every screen in ${scheme}: no sideways scroll, the answer on screen (screenshots)`, async ({ browser }, info) => {
+    test.setTimeout(120_000);
+    const ctx = await browser.newContext({ ...info.project.use, colorScheme: scheme });
+    await serveFixtures(ctx);
+    const page = await ctx.newPage();
+    for (const s of SCREENS) {
+      await page.goto(s.url);
+      await expect(page.getByTestId(s.ready).first()).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      await noSidewaysScroll(page);
+      const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+      if (scheme === "dark") expect(bg, `${s.name}: dark background`).toBe("rgb(10, 13, 19)");
+      else expect(bg, `${s.name}: light background`).toBe("rgb(242, 244, 247)");
+      await page.screenshot({ path: join(G3_SHOTS, `g3_${s.name}_${info.project.name}_${scheme}.png`), fullPage: true });
+    }
+    await ctx.close();
+  });
+}
