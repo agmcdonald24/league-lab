@@ -330,3 +330,276 @@ export const paths = {
     `/api/ros?league=${encodeURIComponent(league)}&position=${encodeURIComponent(position)}&limit=${limit}`,
   record: (league: string) => `/api/record?league=${encodeURIComponent(league)}`,
 };
+
+// ---- G3 (Wave G): the research routes (G1's contract; shapes pinned by web/fixtures/*_<league>.json)
+
+/** The player fields every research row carries (joined from dim_player). */
+export interface PlayerHead {
+  gsis_id: string;
+  player_name: string;
+  position: string;
+  team: string | null;
+  headshot_url: string | null;
+}
+
+export interface Owned {
+  rostered_by_roster_id: number | null;
+  rostered_by_team: string | null;
+}
+
+export interface RoleAlert {
+  direction: "up" | "down";
+  kind: string;
+  direction_label: string | null;
+  label: string | null; // app/lib/signals.kind_label: "Filling in", "Bigger role" …
+  change_text: string | null;
+  cause_text: string | null;
+  games_held: number | null;
+}
+
+/** GET /api/trends?league=&view=over|under|all&position=&limit= — mart_player_trend_tags + actual vs expected */
+export interface TrendRow extends PlayerHead, Owned {
+  games: number | null;
+  latest_week: number | null;
+  tags: string | null;
+  momentum: number | null;
+  opportunity_trend: string | null;
+  n_up: number | null;
+  n_down: number | null;
+  target_share_l3: number | null;
+  target_share_change: number | null;
+  snap_share_l3: number | null;
+  snap_share_change: number | null;
+  carry_share_change: number | null;
+  expected_points_l3: number | null;
+  expected_points_change: number | null;
+  points_l3: number | null;
+  points_change: number | null;
+  games_with_expected: number | null;
+  ppg: number | null; // points a game, this league's scoring
+  xppg: number | null; // expected points a game (what his work is usually worth)
+  gap: number | null; // ppg − xppg
+  direction: "over" | "under" | "even";
+  role_alert: RoleAlert | null;
+}
+
+export interface Trends {
+  league_id: string;
+  season: number;
+  week: number | null;
+  players: TrendRow[];
+}
+
+/** GET /api/matchups/defense?league=&team= — mart_defense_vs_position_current per team × position */
+export interface DefenseCell {
+  defense: string;
+  position: string;
+  games: number | null;
+  points_allowed_pg: number | null;
+  rank: number | null; // 1 = gives up the most to the position (the matchup you want)
+  points_allowed_pg_l4: number | null;
+  rank_l4: number | null;
+  trend: "up" | "down" | "steady" | null;
+}
+
+export interface Starter extends PlayerHead {
+  opponent: string | null;
+  is_home: boolean | null;
+  slot: string | null;
+}
+
+export interface DefenseMatrix {
+  league_id: string;
+  season: number;
+  week: number | null;
+  weeks_used: number | null;
+  positions: string[];
+  teams: DefenseCell[];
+  starters?: Starter[]; // with team=: your starters this week and the defense each faces (a G3 request to G1)
+}
+
+/** GET /api/matchups/cb?league=&team= — mart_cb_matchups (+ mart_cb_rankings, the projection) for your receivers */
+export interface CbMatchup extends PlayerHead, Owned {
+  opponent: string | null;
+  is_home: boolean | null;
+  call_status: string | null; // called | too few targets | tight end | no depth chart yet
+  call_strength: string | null; // clear | lean
+  alignment_lean: string | null;
+  located_targets: number | null;
+  left_share: number | null;
+  middle_share: number | null;
+  right_share: number | null;
+  side_share: number | null;
+  other_side_share: number | null;
+  likely_cover_gsis_id: string | null;
+  likely_cover_name: string | null;
+  likely_cover_slot: string | null;
+  cover_rank: number | null;
+  cover_label: string | null; // shutdown | solid | target
+  other_cover_name: string | null;
+  other_cover_slot: string | null;
+  cb_n_ranked: number | null;
+  shadow_flag: boolean | null;
+  games_vs_cover: number | null;
+  targets_vs_cover: number | null;
+  receptions_vs_cover: number | null;
+  yards_vs_cover: number | null;
+  tds_vs_cover: number | null;
+  line: string; // app/lib/matchups.cb_line (markdown)
+  lean: string | null; // app/lib/matchups.lean_text
+  proj_points: number | null;
+  p25: number | null;
+  p75: number | null;
+  is_starter: boolean;
+}
+
+export interface CbMatchups {
+  league_id: string;
+  season: number;
+  week: number | null;
+  matchups: CbMatchup[];
+}
+
+/** GET /api/players?league=&season=&limit= — mart_player_season + points in this league's scoring */
+export interface SeasonRow extends PlayerHead, Owned {
+  games_played: number | null;
+  points: number | null;
+  points_per_game: number | null;
+  targets: number | null;
+  target_share: number | null;
+  receptions: number | null;
+  receiving_yards: number | null;
+  receiving_tds: number | null;
+  carries: number | null;
+  carry_share: number | null;
+  rushing_yards: number | null;
+  rushing_tds: number | null;
+  attempts: number | null;
+  passing_yards: number | null;
+  passing_tds: number | null;
+  passing_interceptions: number | null;
+  avg_offense_snap_pct: number | null;
+  adot: number | null;
+  first_read_target_share: number | null;
+  route_participation: number | null;
+}
+
+export interface Players {
+  league_id: string;
+  season: number;
+  total: number;
+  players: SeasonRow[];
+}
+
+/** GET /api/receivers?league=&season= — mart_player_season usage + mart_player_recent_form, with the yardsticks */
+export interface ReceiverRow extends PlayerHead, Owned {
+  games_played: number | null;
+  ppg: number | null;
+  target_share: number | null;
+  targets_per_game: number | null;
+  air_yards_share: number | null;
+  adot: number | null;
+  first_read_target_share: number | null;
+  route_participation: number | null;
+  tprr_proxy: number | null;
+  yprr_proxy: number | null;
+  avg_offense_snap_pct: number | null;
+  target_share_l3: number | null;
+  target_share_l5: number | null;
+  snap_pct_l3: number | null;
+  route_participation_l3: number | null;
+  first_read_share_l3: number | null;
+}
+
+export type Yardstick = Partial<Record<keyof ReceiverRow | "ppg", number | null>>;
+
+export interface Receivers {
+  league_id: string;
+  season: number;
+  through_week: number | null;
+  yardsticks: Record<string, Yardstick>; // WR / TE: the top 12's averages (WORDS.md "yardstick")
+  receivers: ReceiverRow[];
+}
+
+/** GET /api/compare?league=&a=&b= — the same keys on both sides */
+export interface CompareSide extends PlayerHead, Owned {
+  week: number | null;
+  proj_points: number | null;
+  p10: number | null;
+  p25: number | null;
+  p75: number | null;
+  p90: number | null;
+  opponent: string | null;
+  opp_rank: number | null;
+  injury_status: string | null;
+  season_stats: {
+    games_played: number | null;
+    ppg: number | null;
+    xppg: number | null;
+    targets_per_game: number | null;
+    carries_per_game: number | null;
+    receiving_yards_pg: number | null;
+    rushing_yards_pg: number | null;
+    passing_yards_pg: number | null;
+    tds_pg: number | null;
+  };
+  form: { games_l3: number | null; ppg_l3: number | null; target_share_l3: number | null; carry_share_l3: number | null; snap_pct_l3: number | null };
+  usage: {
+    target_share: number | null;
+    carry_share: number | null;
+    snap_pct: number | null;
+    route_participation: number | null;
+    first_read_target_share: number | null;
+    air_yards_share: number | null;
+  };
+  ros: { points: number | null; games: number | null; p10: number | null; p90: number | null; pos_rank: number | null; playoff_points: number | null } | null;
+  next4: { week: number; opponent: string | null; is_home: boolean | null; opp_rank: number | null }[];
+}
+
+export interface Compare {
+  a: CompareSide;
+  b: CompareSide;
+}
+
+/** GET /api/player/{gsis}/games?league=&season= — fct_player_game, points in this league's scoring */
+export interface GameRow {
+  season: number;
+  week: number;
+  opponent: string | null;
+  is_home: boolean | null;
+  played: boolean | null;
+  offense_snap_pct: number | null;
+  targets: number | null;
+  receptions: number | null;
+  receiving_yards: number | null;
+  receiving_tds: number | null;
+  carries: number | null;
+  rushing_yards: number | null;
+  rushing_tds: number | null;
+  attempts: number | null;
+  passing_yards: number | null;
+  passing_tds: number | null;
+  passing_interceptions: number | null;
+  points: number | null;
+  expected_points: number | null;
+}
+
+export interface Games {
+  games: GameRow[];
+}
+
+const q = encodeURIComponent;
+export const researchPaths = {
+  trends: (league: string) => `/api/trends?league=${q(league)}&view=all&limit=200`,
+  defense: (league: string, team: number | null) => `/api/matchups/defense?league=${q(league)}${team != null ? `&team=${team}` : ""}`,
+  cb: (league: string, team: number) => `/api/matchups/cb?league=${q(league)}&team=${team}`,
+  players: (league: string) => `/api/players?league=${q(league)}&sort=points&dir=desc&limit=500`,
+  receivers: (league: string) => `/api/receivers?league=${q(league)}&limit=150`,
+  compare: (league: string, a: string, b: string) => `/api/compare?league=${q(league)}&a=${q(a)}&b=${q(b)}`,
+  games: (gsis: string, league: string, season: number) => `/api/player/${q(gsis)}/games?league=${q(league)}&season=${season}`,
+};
+
+/** Wave G: the contract adds the picture to the player card (dim_player.headshot_url; null = a silhouette). */
+export interface PlayerCard {
+  headshot_url?: string | null;
+}

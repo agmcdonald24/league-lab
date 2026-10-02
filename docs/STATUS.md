@@ -3019,3 +3019,47 @@ answers empty); every relation the routes read is one an `app/` page names, so `
 
 nflverse (attribution), dynastyprocess crosswalk (MIT), ffverse/ffopportunity (MIT), Pro-Football-Reference
 data via nflverse (see nflverse terms), Sleeper API (public read-only). FTN (Phase 2) CC-BY-SA 4.0.
+
+## Wave G (Iteration 15)
+
+### G3 2026-10-02 — the design system and the research screens (web)
+
+* **What**: a design system (`docs/DESIGN.md`): `web/src/app.css` tokens (dark first, light from the system; surfaces,
+  ink, accent, deltas, chart roles, a type scale with 11 px uppercase labels and 36 / 48 px numbers, radii, a 900 px
+  `wide` breakpoint), `web/src/lib/theme.ts` (all 32 teams' primary + accent in nflverse codes, position colors from the
+  dataviz palette's slots, `seqFill`, `fmt`), a hand-rolled chart kit (`lib/chart.ts` + LineChart, Heatmap, Sparkline,
+  Bar, Meter: inline SVG, ~1 KB, tokens only), and the components TopBar (one bar for every league screen: the picker +
+  My week · Rest of season · Research · Decisions · About, a bottom bar on a phone), Card, PlayerCard, PlayerRow,
+  Headshot (silhouette fallback), PosBadge, TeamBadge, StatTile, Table (columns past three show from 640 px), ListDetail,
+  Tabs, Chips, ScreenHead, Coming, GameLog. The tokens + core components were committed at minute 11 (`4251a09`) for
+  G4's merge.
+* **Screens**: new Trends (over / under: the gap as a diverging bar per player, due / running hot cards, list + detail
+  with the game log), Matchups (your starters' ranks, the defense-vs-position heatmap with your cells ringed, the
+  cornerbacks with `cb_line` and the side bar), Players (sortable, headshots, search / position / NFL team / whose),
+  Receivers (role bars against the top-12 yardstick, the recent share), Compare (opens on My Week's closest call;
+  paired bars; the next 4 weeks); the player card gets a PlayerCard header and **Points by week** (points vs expected,
+  2026 / 2025); "Our record" became **About the numbers** (`/about`, `/record` still opens it): the Rankings page's
+  "The model" words in six cards, then the record. My Week, Rest of season and Leagues restyled; Decisions' four tabs
+  show a "coming" card for G4's screens. Research screens and About are lazy chunks (4–6 KB gzipped each).
+* **Contract (G1)**: `web/src/lib/api.ts` `// ---- G3` block = the shapes the screens read; fixtures built from the
+  clone's marts by `web/fixtures/make_research_fixtures.py` for dynasty 12, Scrubs 2 and the Test League (Scrubs'
+  numbers, its own owners). **Requests to G1 / the PO**: `/api/matchups/defense?team=` adds `starters` (the team's
+  starters and the defense each faces: the heatmap's rings and the answer); `/api/trends` rows carry `ppg`, `xppg`,
+  `gap`, `direction` ("over" / "under" / "even", ±0.5) and `role_alert` with `label` (`kind_label`); `/api/matchups/cb`
+  rows carry `line` (`cb_line`), `lean` (`lean_text`), `is_starter`, the week's `proj_points` / `p25` / `p75`;
+  `/api/compare` sides: `season_stats`, `form`, `usage`, `ros`, `next4` (the same keys on both sides);
+  `/api/receivers` adds `yardsticks` {WR, TE}; `/api/player/{gsis}` adds `headshot_url`. The screens ask
+  `/api/trends?view=all&limit=200`, `/api/players?…&limit=500` and filter / sort on the phone.
+* **Evidence**: `npm run lint` 0 errors 0 warnings; `npm run build` (first screen ≈ 45 KB gzipped JS + 6.7 KB CSS);
+  `npm run e2e:fixtures` **34 passed** (Wave F's 7 tests updated for the About tab + 10 new, each on the phone 390 × 844
+  and desktop 1300 × 900: Trends, Matchups, Players, Receivers, Compare, the Test League's research, headshots,
+  the bars, and every screen in light and in dark with no sideways scroll); `npm run measure:fixtures` My Week first
+  content 102 / 95 ms phone, 100 / 98 desktop (Test League), 98 / 89, 120 / 120 (dynasty) — limit 500; research
+  screens on fixtures (scratch measurement, median of 5 cold): Trends 168 / 160, Matchups 130 / 135, Players 150 / 180,
+  Receivers 126 / 133, Compare 122 / 106, player card 84 / 83, About 94 / 96 ms (phone / desktop). Same numbers:
+  Compare's 8.7 / 8.2 = My Week's card (8.68 vs 8.22); the player card's 18.1 = the lineup's 18.13; Trends' gap =
+  `mart_player_availability.diff_per_game`.
+* **Not verified**: real headshots (the sandbox cannot reach static.www.nfl.com; tests abort them, so every screenshot
+  shows the silhouette); the screens against G1's real API (fixtures only); an iPhone's SF Pro (screenshots are DejaVu,
+  wider). Open: "What it leans on most" (feature importance) is not on About (no route); route participation / TPRR
+  read 0 for 2026 in the mart and are hidden until filled in.

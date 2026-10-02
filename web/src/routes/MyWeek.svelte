@@ -8,7 +8,6 @@
   import Expander from "../components/Expander.svelte";
   import LineupTable from "../components/LineupTable.svelte";
   import Md from "../components/Md.svelte";
-  import TopBar from "../components/TopBar.svelte";
 
   let {
     options,
@@ -80,11 +79,10 @@
   });
 </script>
 
-<TopBar {options} {league} {team} {onauth} />
 
-<main class="space-y-4 px-4 pb-10" data-testid="my-week">
+<main class="space-y-4" data-testid="my-week">
   {#if team === null}
-    <div class="rounded-2xl border border-dashed border-zinc-300 p-4 text-[15px] dark:border-zinc-700" data-testid="pick-prompt">
+    <div class="ll-empty" data-testid="pick-prompt">
       {#if noTeamHere}
         <p data-testid="no-team">
           You have no team in <strong>{leagueRow?.name}</strong> (you may run it without playing in it). Pick the team to see above: its
@@ -93,27 +91,27 @@
       {:else}
         Pick your team above to see your week: the lineup to start and the closest calls.
       {/if}
-      {#if leagueRow?.scoring_label}<p class="mt-1 text-sm text-zinc-500">{leagueRow.scoring_label}</p>{/if}
+      {#if leagueRow?.scoring_label}<p class="mt-1 text-sm text-ink-3">{leagueRow.scoring_label}</p>{/if}
     </div>
   {:else if error}
-    <p class="rounded-2xl border border-red-200 p-4 text-[15px] text-red-800 dark:border-red-900 dark:text-red-300">{error}</p>
+    <p class="ll-error">{error}</p>
   {:else if !data}
-    <div class="animate-pulse space-y-3" aria-label="Loading" data-testid="loading">
-      <div class="h-7 w-2/3 rounded bg-zinc-200 dark:bg-zinc-800"></div>
-      <div class="h-4 w-1/2 rounded bg-zinc-200 dark:bg-zinc-800"></div>
-      {#each [0, 1, 2] as i (i)}<div class="h-24 rounded-2xl bg-zinc-100 dark:bg-zinc-900"></div>{/each}
+    <div class="space-y-3" aria-label="Loading" data-testid="loading">
+      <div class="ll-skel h-7 w-2/3"></div>
+      <div class="ll-skel h-4 w-1/2"></div>
+      {#each [0, 1, 2] as i (i)}<div class="ll-skel h-24"></div>{/each}
     </div>
   {:else}
     <section class="space-y-1" class:opacity-60={loading}>
-      <p class="text-[12px] font-semibold tracking-wide text-green-700 uppercase dark:text-green-400">
+      <p class="text-label font-bold tracking-[0.08em] text-accent uppercase">
         {data.week ? `My week · week ${data.week}` : "My week"}
       </p>
-      <h1 class="text-2xl leading-tight font-bold" data-testid="team-name">{data.team_name}</h1>
-      {#if record}<p class="text-[14px] text-zinc-600 dark:text-zinc-300" data-testid="record-line"><Md text={record} {ctx} /></p>{/if}
-      {#if versus}<p class="text-[15px] leading-snug" data-testid="opponent-line"><Md text={versus} {ctx} /></p>{/if}
-      {#if data.league_line}<p class="text-[14px] text-zinc-600 dark:text-zinc-300" data-testid="league-line"><Md text={data.league_line} {ctx} /></p>{/if}
+      <h1 class="text-2xl leading-tight font-extrabold tracking-tight wide:text-3xl" data-testid="team-name">{data.team_name}</h1>
+      {#if record}<p class="text-sm text-ink-2" data-testid="record-line"><Md text={record} {ctx} /></p>{/if}
+      {#if versus}<p class="text-base leading-snug" data-testid="opponent-line"><Md text={versus} {ctx} /></p>{/if}
+      {#if data.league_line}<p class="text-sm text-ink-2" data-testid="league-line"><Md text={data.league_line} {ctx} /></p>{/if}
       {#if status?.warning}
-        <details class="text-[13px] text-amber-800 dark:text-amber-300" data-testid="stale-warning">
+        <details class="text-sm text-warn" data-testid="stale-warning">
           <summary class="inline-flex items-center gap-1">⚠️ Injury news may be stale <span class="chev" aria-hidden="true">›</span></summary>
           <p class="mt-1 leading-snug">{status.warning}</p>
         </details>
@@ -121,63 +119,69 @@
     </section>
 
     {#if data.week !== null}
-      <section class="space-y-2.5">
-        <h2 class="text-[15px] font-semibold">The calls that matter</h2>
-        {#if data.cards.length === 0 && data.notice}
-          <p class="rounded-2xl bg-zinc-100 p-4 text-[15px] dark:bg-zinc-900" data-testid="no-calls"><Md text={data.notice} {ctx} /></p>
-        {/if}
-        {#each data.cards as c (c.slot)}
-          <article class="space-y-1.5 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800" data-testid="decision-card">
-            {#each c.blocks as b, i (i)}
-              {#if b.kind === "caption"}
-                <p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400"><Md text={b.text} {ctx} /></p>
-              {:else}
-                <p class="text-[15px] leading-snug"><Md text={b.text} {ctx} /></p>
-              {/if}
-            {/each}
-          </article>
-        {/each}
-      </section>
+      <div class="grid grid-cols-1 gap-4 wide:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] wide:items-start">
+        <section class="space-y-2.5">
+          <h2 class="ll-label">The calls that matter</h2>
+          {#if data.cards.length === 0 && data.notice}
+            <p class="rounded-lg bg-raised p-4 text-base" data-testid="no-calls"><Md text={data.notice} {ctx} /></p>
+          {/if}
+          {#each data.cards as c (c.slot)}
+            <article class="relative space-y-1.5 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)" data-testid="decision-card">
+              {#each c.blocks as b, i (i)}
+                {#if b.kind === "caption"}
+                  <p class="text-sm leading-snug text-ink-3"><Md text={b.text} {ctx} /></p>
+                {:else}
+                  <p class="text-base leading-snug"><Md text={b.text} {ctx} /></p>
+                {/if}
+              {/each}
+              <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true"></span>
+            </article>
+          {/each}
+        </section>
 
-      <section class="space-y-2">
-        <h2 class="text-[15px] font-semibold">Your lineup</h2>
-        {#if data.lineup.length}
-          <LineupTable rows={data.lineup} {ctx} testid="lineup" />
-        {:else}
-          <p class="text-sm text-zinc-500">No proposed lineup for this week yet.</p>
-        {/if}
-      </section>
+        <div class="space-y-3">
+          <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)">
+            <h2 class="ll-label">Your lineup</h2>
+            {#if data.lineup.length}
+              <LineupTable rows={data.lineup} {ctx} testid="lineup" />
+            {:else}
+              <p class="text-sm text-ink-3">No proposed lineup for this week yet.</p>
+            {/if}
+          </section>
 
-      <Expander title="Your full lineup: every slot, how close each call is, the bench, and who can't play" testid="lineup-full">
-        <LineupTable rows={data.lineup_full} full {ctx} testid="lineup-full-table" />
-      </Expander>
-      {#if data.howto}
-        <Expander title="How to read this" testid="howto"><Md text={data.howto} {ctx} block class="text-[14px] leading-snug" /></Expander>
-      {/if}
-      <Expander title="Movers on your roster (last 3 games vs before)" testid="movers">
-        {#if data.movers.length === 0}
-          <p class="text-sm text-zinc-500">
-            No trend calls yet — nothing is called before a player's fourth game.
-          </p>
-        {:else}
-          <ul class="divide-y divide-zinc-100 text-[15px] dark:divide-zinc-800">
-            {#each data.movers as m, i (i)}
-              <li class="py-2">
-                {#if m.gsis_id}<a class="ll-link" href={withContext(`/player/${m.gsis_id}`, ctx)}>{m.player_name}</a>{:else}{m.player_name}{/if}
-                <span class="text-zinc-500"> · {m.position}</span>
-                {#if m.momentum !== null}<span class="tabnum float-right text-zinc-600 dark:text-zinc-300">{m.momentum > 0 ? "+" : ""}{m.momentum.toFixed(2)}</span>{/if}
-                <div class="text-[13px] text-zinc-500">{m.tags ?? ""}</div>
-              </li>
-            {/each}
-          </ul>
-        {/if}
-      </Expander>
+          <Expander title="Your full lineup: every slot, how close each call is, the bench, and who can't play" testid="lineup-full">
+            <LineupTable rows={data.lineup_full} full {ctx} testid="lineup-full-table" />
+          </Expander>
+          {#if data.howto}
+            <Expander title="How to read this" testid="howto"><Md text={data.howto} {ctx} block class="text-base leading-snug" /></Expander>
+          {/if}
+          <Expander title="Movers on your roster (last 3 games vs before)" testid="movers">
+            {#if data.movers.length === 0}
+              <p class="text-sm text-ink-3">No trend calls yet — nothing is called before a player's fourth game.</p>
+            {:else}
+              <ul class="divide-y divide-line text-base">
+                {#each data.movers as m, i (i)}
+                  <li class="py-2">
+                    {#if m.gsis_id}<a class="ll-link" href={withContext(`/player/${m.gsis_id}`, ctx)}>{m.player_name}</a>{:else}{m.player_name}{/if}
+                    <span class="text-ink-3"> · {m.position}</span>
+                    {#if m.momentum !== null}<span class="tabnum float-right text-ink-2">{m.momentum > 0 ? "+" : ""}{m.momentum.toFixed(2)}</span>{/if}
+                    <div class="text-sm text-ink-3">{m.tags ?? ""}</div>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </Expander>
+          <a class="block rounded-lg border border-line bg-surface p-4 text-base font-semibold" href={withContext("/trends?who=mine", ctx)} data-testid="to-research"
+            >Who on your roster is due, who is running hot <span class="text-accent">›</span></a
+          >
+        </div>
+      </div>
     {:else if data.notice}
-      <p class="rounded-2xl bg-zinc-100 p-4 dark:bg-zinc-900">{data.notice}</p>
+      <p class="rounded-lg bg-raised p-4">{data.notice}</p>
     {/if}
   {/if}
 
   {#if status?.freshness}
-    <footer class="pt-2 text-[12px] leading-snug text-zinc-500 dark:text-zinc-400"><Md text={status.freshness} /></footer>
+    <footer class="pt-2 text-xs leading-snug text-ink-3"><Md text={status.freshness} /></footer>
   {/if}
 </main>

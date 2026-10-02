@@ -5,6 +5,7 @@ import { defineConfig } from "@playwright/test";
 // With MEASURE_FIXTURES=1 (npm run measure:fixtures): the web app alone on fixtures (e2e/measure-fixtures.spec.ts,
 // plan F2: first content ≤ 500 ms), served by `vite preview` on :8584 (started here). Writes measure_fixtures.*.
 const fixtures = !!process.env.MEASURE_FIXTURES;
+const port = Number(process.env.FIXTURES_PORT ?? 8584);
 
 export default defineConfig({
   testDir: "e2e",
@@ -14,6 +15,6 @@ export default defineConfig({
   reporter: [["list"]],
   use: { browserName: "chromium", trace: "off", actionTimeout: 30_000, navigationTimeout: 60_000 },
   webServer: fixtures
-    ? { command: "npx vite preview --port 8584 --strictPort", url: "http://localhost:8584/", reuseExistingServer: true, timeout: 60_000 }
+    ? { command: `npx vite preview --port ${port} --strictPort`, url: `http://localhost:${port}/`, reuseExistingServer: true, timeout: 60_000 }
     : undefined,
 });

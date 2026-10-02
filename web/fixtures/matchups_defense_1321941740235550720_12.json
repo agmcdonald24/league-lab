@@ -1,0 +1,1376 @@
+{
+ "league_id": "1321941740235550720",
+ "season": 2026,
+ "week": 4,
+ "weeks_used": 3,
+ "positions": [
+  "QB",
+  "RB",
+  "WR",
+  "TE"
+ ],
+ "teams": [
+  {
+   "defense": "ARI",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 17.83,
+   "rank": 15,
+   "points_allowed_pg_l4": 17.83,
+   "rank_l4": 15,
+   "trend": "steady"
+  },
+  {
+   "defense": "ARI",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 12.45,
+   "rank": 27,
+   "points_allowed_pg_l4": 12.45,
+   "rank_l4": 27,
+   "trend": "steady"
+  },
+  {
+   "defense": "ARI",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 10.8,
+   "rank": 14,
+   "points_allowed_pg_l4": 10.8,
+   "rank_l4": 14,
+   "trend": "steady"
+  },
+  {
+   "defense": "ARI",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 34.65,
+   "rank": 5,
+   "points_allowed_pg_l4": 34.65,
+   "rank_l4": 5,
+   "trend": "steady"
+  },
+  {
+   "defense": "ATL",
+   "position": "QB",
+   "games": 3,
+   "points_allowed_pg": 18.57,
+   "rank": 14,
+   "points_allowed_pg_l4": 18.57,
+   "rank_l4": 14,
+   "trend": "steady"
+  },
+  {
+   "defense": "ATL",
+   "position": "RB",
+   "games": 3,
+   "points_allowed_pg": 10.47,
+   "rank": 31,
+   "points_allowed_pg_l4": 10.47,
+   "rank_l4": 31,
+   "trend": "steady"
+  },
+  {
+   "defense": "ATL",
+   "position": "TE",
+   "games": 3,
+   "points_allowed_pg": 14.2,
+   "rank": 6,
+   "points_allowed_pg_l4": 14.2,
+   "rank_l4": 6,
+   "trend": "steady"
+  },
+  {
+   "defense": "ATL",
+   "position": "WR",
+   "games": 3,
+   "points_allowed_pg": 31.3,
+   "rank": 12,
+   "points_allowed_pg_l4": 31.3,
+   "rank_l4": 12,
+   "trend": "steady"
+  },
+  {
+   "defense": "BAL",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 16.21,
+   "rank": 18,
+   "points_allowed_pg_l4": 16.21,
+   "rank_l4": 18,
+   "trend": "steady"
+  },
+  {
+   "defense": "BAL",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 17.55,
+   "rank": 16,
+   "points_allowed_pg_l4": 17.55,
+   "rank_l4": 16,
+   "trend": "steady"
+  },
+  {
+   "defense": "BAL",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 9.35,
+   "rank": 16,
+   "points_allowed_pg_l4": 9.35,
+   "rank_l4": 16,
+   "trend": "steady"
+  },
+  {
+   "defense": "BAL",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 24.5,
+   "rank": 17,
+   "points_allowed_pg_l4": 24.5,
+   "rank_l4": 17,
+   "trend": "steady"
+  },
+  {
+   "defense": "BUF",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 23.12,
+   "rank": 6,
+   "points_allowed_pg_l4": 23.12,
+   "rank_l4": 6,
+   "trend": "steady"
+  },
+  {
+   "defense": "BUF",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 27.35,
+   "rank": 6,
+   "points_allowed_pg_l4": 27.35,
+   "rank_l4": 6,
+   "trend": "steady"
+  },
+  {
+   "defense": "BUF",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 12.3,
+   "rank": 11,
+   "points_allowed_pg_l4": 12.3,
+   "rank_l4": 11,
+   "trend": "steady"
+  },
+  {
+   "defense": "BUF",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 35.8,
+   "rank": 3,
+   "points_allowed_pg_l4": 35.8,
+   "rank_l4": 3,
+   "trend": "steady"
+  },
+  {
+   "defense": "CAR",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 19.83,
+   "rank": 10,
+   "points_allowed_pg_l4": 19.83,
+   "rank_l4": 10,
+   "trend": "steady"
+  },
+  {
+   "defense": "CAR",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 34.3,
+   "rank": 1,
+   "points_allowed_pg_l4": 34.3,
+   "rank_l4": 1,
+   "trend": "steady"
+  },
+  {
+   "defense": "CAR",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 7.75,
+   "rank": 24,
+   "points_allowed_pg_l4": 7.75,
+   "rank_l4": 24,
+   "trend": "steady"
+  },
+  {
+   "defense": "CAR",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 22.75,
+   "rank": 21,
+   "points_allowed_pg_l4": 22.75,
+   "rank_l4": 21,
+   "trend": "steady"
+  },
+  {
+   "defense": "CHI",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 20.58,
+   "rank": 9,
+   "points_allowed_pg_l4": 20.58,
+   "rank_l4": 9,
+   "trend": "steady"
+  },
+  {
+   "defense": "CHI",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 22.7,
+   "rank": 10,
+   "points_allowed_pg_l4": 22.7,
+   "rank_l4": 10,
+   "trend": "steady"
+  },
+  {
+   "defense": "CHI",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 8.25,
+   "rank": 21,
+   "points_allowed_pg_l4": 8.25,
+   "rank_l4": 21,
+   "trend": "steady"
+  },
+  {
+   "defense": "CHI",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 22.95,
+   "rank": 20,
+   "points_allowed_pg_l4": 22.95,
+   "rank_l4": 20,
+   "trend": "steady"
+  },
+  {
+   "defense": "CIN",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 14.33,
+   "rank": 23,
+   "points_allowed_pg_l4": 14.33,
+   "rank_l4": 23,
+   "trend": "steady"
+  },
+  {
+   "defense": "CIN",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 14.25,
+   "rank": 24,
+   "points_allowed_pg_l4": 14.25,
+   "rank_l4": 24,
+   "trend": "steady"
+  },
+  {
+   "defense": "CIN",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 14.25,
+   "rank": 5,
+   "points_allowed_pg_l4": 14.25,
+   "rank_l4": 5,
+   "trend": "steady"
+  },
+  {
+   "defense": "CIN",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 19.7,
+   "rank": 25,
+   "points_allowed_pg_l4": 19.7,
+   "rank_l4": 25,
+   "trend": "steady"
+  },
+  {
+   "defense": "CLE",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 19.49,
+   "rank": 11,
+   "points_allowed_pg_l4": 19.49,
+   "rank_l4": 11,
+   "trend": "steady"
+  },
+  {
+   "defense": "CLE",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 14.65,
+   "rank": 21,
+   "points_allowed_pg_l4": 14.65,
+   "rank_l4": 21,
+   "trend": "steady"
+  },
+  {
+   "defense": "CLE",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 8.5,
+   "rank": 19,
+   "points_allowed_pg_l4": 8.5,
+   "rank_l4": 19,
+   "trend": "steady"
+  },
+  {
+   "defense": "CLE",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 33.85,
+   "rank": 7,
+   "points_allowed_pg_l4": 33.85,
+   "rank_l4": 7,
+   "trend": "steady"
+  },
+  {
+   "defense": "DAL",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 25.04,
+   "rank": 5,
+   "points_allowed_pg_l4": 25.04,
+   "rank_l4": 5,
+   "trend": "steady"
+  },
+  {
+   "defense": "DAL",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 22.15,
+   "rank": 11,
+   "points_allowed_pg_l4": 22.15,
+   "rank_l4": 11,
+   "trend": "steady"
+  },
+  {
+   "defense": "DAL",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 14.1,
+   "rank": 7,
+   "points_allowed_pg_l4": 14.1,
+   "rank_l4": 7,
+   "trend": "steady"
+  },
+  {
+   "defense": "DAL",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 24.15,
+   "rank": 19,
+   "points_allowed_pg_l4": 24.15,
+   "rank_l4": 19,
+   "trend": "steady"
+  },
+  {
+   "defense": "DEN",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 14.91,
+   "rank": 22,
+   "points_allowed_pg_l4": 14.91,
+   "rank_l4": 22,
+   "trend": "steady"
+  },
+  {
+   "defense": "DEN",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 28.35,
+   "rank": 5,
+   "points_allowed_pg_l4": 28.35,
+   "rank_l4": 5,
+   "trend": "steady"
+  },
+  {
+   "defense": "DEN",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 7.45,
+   "rank": 25,
+   "points_allowed_pg_l4": 7.45,
+   "rank_l4": 25,
+   "trend": "steady"
+  },
+  {
+   "defense": "DEN",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 17.15,
+   "rank": 28,
+   "points_allowed_pg_l4": 17.15,
+   "rank_l4": 28,
+   "trend": "steady"
+  },
+  {
+   "defense": "DET",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 33.01,
+   "rank": 1,
+   "points_allowed_pg_l4": 33.01,
+   "rank_l4": 1,
+   "trend": "steady"
+  },
+  {
+   "defense": "DET",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 20.7,
+   "rank": 12,
+   "points_allowed_pg_l4": 20.7,
+   "rank_l4": 12,
+   "trend": "steady"
+  },
+  {
+   "defense": "DET",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 25.35,
+   "rank": 1,
+   "points_allowed_pg_l4": 25.35,
+   "rank_l4": 1,
+   "trend": "steady"
+  },
+  {
+   "defense": "DET",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 35.45,
+   "rank": 4,
+   "points_allowed_pg_l4": 35.45,
+   "rank_l4": 4,
+   "trend": "steady"
+  },
+  {
+   "defense": "GB",
+   "position": "QB",
+   "games": 3,
+   "points_allowed_pg": 16.82,
+   "rank": 17,
+   "points_allowed_pg_l4": 16.82,
+   "rank_l4": 17,
+   "trend": "steady"
+  },
+  {
+   "defense": "GB",
+   "position": "RB",
+   "games": 3,
+   "points_allowed_pg": 29.17,
+   "rank": 4,
+   "points_allowed_pg_l4": 29.17,
+   "rank_l4": 4,
+   "trend": "steady"
+  },
+  {
+   "defense": "GB",
+   "position": "TE",
+   "games": 3,
+   "points_allowed_pg": 9.37,
+   "rank": 15,
+   "points_allowed_pg_l4": 9.37,
+   "rank_l4": 15,
+   "trend": "steady"
+  },
+  {
+   "defense": "GB",
+   "position": "WR",
+   "games": 3,
+   "points_allowed_pg": 29.7,
+   "rank": 13,
+   "points_allowed_pg_l4": 29.7,
+   "rank_l4": 13,
+   "trend": "steady"
+  },
+  {
+   "defense": "HOU",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 25.92,
+   "rank": 4,
+   "points_allowed_pg_l4": 25.92,
+   "rank_l4": 4,
+   "trend": "steady"
+  },
+  {
+   "defense": "HOU",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 10.7,
+   "rank": 29,
+   "points_allowed_pg_l4": 10.7,
+   "rank_l4": 29,
+   "trend": "steady"
+  },
+  {
+   "defense": "HOU",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 9.1,
+   "rank": 18,
+   "points_allowed_pg_l4": 9.1,
+   "rank_l4": 18,
+   "trend": "steady"
+  },
+  {
+   "defense": "HOU",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 36.7,
+   "rank": 1,
+   "points_allowed_pg_l4": 36.7,
+   "rank_l4": 1,
+   "trend": "steady"
+  },
+  {
+   "defense": "IND",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 26.97,
+   "rank": 3,
+   "points_allowed_pg_l4": 26.97,
+   "rank_l4": 3,
+   "trend": "steady"
+  },
+  {
+   "defense": "IND",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 31.7,
+   "rank": 2,
+   "points_allowed_pg_l4": 31.7,
+   "rank_l4": 2,
+   "trend": "steady"
+  },
+  {
+   "defense": "IND",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 15.1,
+   "rank": 4,
+   "points_allowed_pg_l4": 15.1,
+   "rank_l4": 4,
+   "trend": "steady"
+  },
+  {
+   "defense": "IND",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 36.45,
+   "rank": 2,
+   "points_allowed_pg_l4": 36.45,
+   "rank_l4": 2,
+   "trend": "steady"
+  },
+  {
+   "defense": "JAX",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 15.06,
+   "rank": 21,
+   "points_allowed_pg_l4": 15.06,
+   "rank_l4": 21,
+   "trend": "steady"
+  },
+  {
+   "defense": "JAX",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 15.45,
+   "rank": 19,
+   "points_allowed_pg_l4": 15.45,
+   "rank_l4": 19,
+   "trend": "steady"
+  },
+  {
+   "defense": "JAX",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 9.25,
+   "rank": 17,
+   "points_allowed_pg_l4": 9.25,
+   "rank_l4": 17,
+   "trend": "steady"
+  },
+  {
+   "defense": "JAX",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 24.45,
+   "rank": 18,
+   "points_allowed_pg_l4": 24.45,
+   "rank_l4": 18,
+   "trend": "steady"
+  },
+  {
+   "defense": "KC",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 9.42,
+   "rank": 30,
+   "points_allowed_pg_l4": 9.42,
+   "rank_l4": 30,
+   "trend": "steady"
+  },
+  {
+   "defense": "KC",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 18.45,
+   "rank": 15,
+   "points_allowed_pg_l4": 18.45,
+   "rank_l4": 15,
+   "trend": "steady"
+  },
+  {
+   "defense": "KC",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 12.85,
+   "rank": 8,
+   "points_allowed_pg_l4": 12.85,
+   "rank_l4": 8,
+   "trend": "steady"
+  },
+  {
+   "defense": "KC",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 15.9,
+   "rank": 30,
+   "points_allowed_pg_l4": 15.9,
+   "rank_l4": 30,
+   "trend": "steady"
+  },
+  {
+   "defense": "LA",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 13.22,
+   "rank": 26,
+   "points_allowed_pg_l4": 13.22,
+   "rank_l4": 26,
+   "trend": "steady"
+  },
+  {
+   "defense": "LA",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 13.9,
+   "rank": 25,
+   "points_allowed_pg_l4": 13.9,
+   "rank_l4": 25,
+   "trend": "steady"
+  },
+  {
+   "defense": "LA",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 5.45,
+   "rank": 27,
+   "points_allowed_pg_l4": 5.45,
+   "rank_l4": 27,
+   "trend": "steady"
+  },
+  {
+   "defense": "LA",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 25.65,
+   "rank": 15,
+   "points_allowed_pg_l4": 25.65,
+   "rank_l4": 15,
+   "trend": "steady"
+  },
+  {
+   "defense": "LAC",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 18.85,
+   "rank": 12,
+   "points_allowed_pg_l4": 18.85,
+   "rank_l4": 12,
+   "trend": "steady"
+  },
+  {
+   "defense": "LAC",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 14.5,
+   "rank": 22,
+   "points_allowed_pg_l4": 14.5,
+   "rank_l4": 22,
+   "trend": "steady"
+  },
+  {
+   "defense": "LAC",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 12.7,
+   "rank": 9,
+   "points_allowed_pg_l4": 12.7,
+   "rank_l4": 9,
+   "trend": "steady"
+  },
+  {
+   "defense": "LAC",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 33.65,
+   "rank": 8,
+   "points_allowed_pg_l4": 33.65,
+   "rank_l4": 8,
+   "trend": "steady"
+  },
+  {
+   "defense": "LV",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 13.79,
+   "rank": 24,
+   "points_allowed_pg_l4": 13.79,
+   "rank_l4": 24,
+   "trend": "steady"
+  },
+  {
+   "defense": "LV",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 14.7,
+   "rank": 20,
+   "points_allowed_pg_l4": 14.7,
+   "rank_l4": 20,
+   "trend": "steady"
+  },
+  {
+   "defense": "LV",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 8.3,
+   "rank": 20,
+   "points_allowed_pg_l4": 8.3,
+   "rank_l4": 20,
+   "trend": "steady"
+  },
+  {
+   "defense": "LV",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 17.1,
+   "rank": 29,
+   "points_allowed_pg_l4": 17.1,
+   "rank_l4": 29,
+   "trend": "steady"
+  },
+  {
+   "defense": "MIA",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 22.04,
+   "rank": 7,
+   "points_allowed_pg_l4": 22.04,
+   "rank_l4": 7,
+   "trend": "steady"
+  },
+  {
+   "defense": "MIA",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 29.2,
+   "rank": 3,
+   "points_allowed_pg_l4": 29.2,
+   "rank_l4": 3,
+   "trend": "steady"
+  },
+  {
+   "defense": "MIA",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 11.1,
+   "rank": 13,
+   "points_allowed_pg_l4": 11.1,
+   "rank_l4": 13,
+   "trend": "steady"
+  },
+  {
+   "defense": "MIA",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 18.55,
+   "rank": 27,
+   "points_allowed_pg_l4": 18.55,
+   "rank_l4": 27,
+   "trend": "steady"
+  },
+  {
+   "defense": "MIN",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 15.68,
+   "rank": 20,
+   "points_allowed_pg_l4": 15.68,
+   "rank_l4": 20,
+   "trend": "steady"
+  },
+  {
+   "defense": "MIN",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 11.9,
+   "rank": 28,
+   "points_allowed_pg_l4": 11.9,
+   "rank_l4": 28,
+   "trend": "steady"
+  },
+  {
+   "defense": "MIN",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 8.1,
+   "rank": 22,
+   "points_allowed_pg_l4": 8.1,
+   "rank_l4": 22,
+   "trend": "steady"
+  },
+  {
+   "defense": "MIN",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 32.1,
+   "rank": 10,
+   "points_allowed_pg_l4": 32.1,
+   "rank_l4": 10,
+   "trend": "steady"
+  },
+  {
+   "defense": "NE",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 9.29,
+   "rank": 31,
+   "points_allowed_pg_l4": 9.29,
+   "rank_l4": 31,
+   "trend": "steady"
+  },
+  {
+   "defense": "NE",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 14.35,
+   "rank": 23,
+   "points_allowed_pg_l4": 14.35,
+   "rank_l4": 23,
+   "trend": "steady"
+  },
+  {
+   "defense": "NE",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 4.45,
+   "rank": 29,
+   "points_allowed_pg_l4": 4.45,
+   "rank_l4": 29,
+   "trend": "steady"
+  },
+  {
+   "defense": "NE",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 21.9,
+   "rank": 22,
+   "points_allowed_pg_l4": 21.9,
+   "rank_l4": 22,
+   "trend": "steady"
+  },
+  {
+   "defense": "NO",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 16.12,
+   "rank": 19,
+   "points_allowed_pg_l4": 16.12,
+   "rank_l4": 19,
+   "trend": "steady"
+  },
+  {
+   "defense": "NO",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 26.2,
+   "rank": 7,
+   "points_allowed_pg_l4": 26.2,
+   "rank_l4": 7,
+   "trend": "steady"
+  },
+  {
+   "defense": "NO",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 8.1,
+   "rank": 22,
+   "points_allowed_pg_l4": 8.1,
+   "rank_l4": 22,
+   "trend": "steady"
+  },
+  {
+   "defense": "NO",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 28.35,
+   "rank": 14,
+   "points_allowed_pg_l4": 28.35,
+   "rank_l4": 14,
+   "trend": "steady"
+  },
+  {
+   "defense": "NYG",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 21.69,
+   "rank": 8,
+   "points_allowed_pg_l4": 21.69,
+   "rank_l4": 8,
+   "trend": "steady"
+  },
+  {
+   "defense": "NYG",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 23.75,
+   "rank": 9,
+   "points_allowed_pg_l4": 23.75,
+   "rank_l4": 9,
+   "trend": "steady"
+  },
+  {
+   "defense": "NYG",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 11.9,
+   "rank": 12,
+   "points_allowed_pg_l4": 11.9,
+   "rank_l4": 12,
+   "trend": "steady"
+  },
+  {
+   "defense": "NYG",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 31.4,
+   "rank": 11,
+   "points_allowed_pg_l4": 31.4,
+   "rank_l4": 11,
+   "trend": "steady"
+  },
+  {
+   "defense": "NYJ",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 12.75,
+   "rank": 27,
+   "points_allowed_pg_l4": 12.75,
+   "rank_l4": 27,
+   "trend": "steady"
+  },
+  {
+   "defense": "NYJ",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 10.6,
+   "rank": 30,
+   "points_allowed_pg_l4": 10.6,
+   "rank_l4": 30,
+   "trend": "steady"
+  },
+  {
+   "defense": "NYJ",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 4.25,
+   "rank": 30,
+   "points_allowed_pg_l4": 4.25,
+   "rank_l4": 30,
+   "trend": "steady"
+  },
+  {
+   "defense": "NYJ",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 20.65,
+   "rank": 23,
+   "points_allowed_pg_l4": 20.65,
+   "rank_l4": 23,
+   "trend": "steady"
+  },
+  {
+   "defense": "PHI",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 18.84,
+   "rank": 13,
+   "points_allowed_pg_l4": 18.84,
+   "rank_l4": 13,
+   "trend": "steady"
+  },
+  {
+   "defense": "PHI",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 16.7,
+   "rank": 17,
+   "points_allowed_pg_l4": 16.7,
+   "rank_l4": 17,
+   "trend": "steady"
+  },
+  {
+   "defense": "PHI",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 3.6,
+   "rank": 31,
+   "points_allowed_pg_l4": 3.6,
+   "rank_l4": 31,
+   "trend": "steady"
+  },
+  {
+   "defense": "PHI",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 24.6,
+   "rank": 16,
+   "points_allowed_pg_l4": 24.6,
+   "rank_l4": 16,
+   "trend": "steady"
+  },
+  {
+   "defense": "PIT",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 8.37,
+   "rank": 32,
+   "points_allowed_pg_l4": 8.37,
+   "rank_l4": 32,
+   "trend": "steady"
+  },
+  {
+   "defense": "PIT",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 24,
+   "rank": 8,
+   "points_allowed_pg_l4": 24,
+   "rank_l4": 8,
+   "trend": "steady"
+  },
+  {
+   "defense": "PIT",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 4.5,
+   "rank": 28,
+   "points_allowed_pg_l4": 4.5,
+   "rank_l4": 28,
+   "trend": "steady"
+  },
+  {
+   "defense": "PIT",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 12.5,
+   "rank": 31,
+   "points_allowed_pg_l4": 12.5,
+   "rank_l4": 31,
+   "trend": "steady"
+  },
+  {
+   "defense": "SEA",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 10.16,
+   "rank": 28,
+   "points_allowed_pg_l4": 10.16,
+   "rank_l4": 28,
+   "trend": "steady"
+  },
+  {
+   "defense": "SEA",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 13.15,
+   "rank": 26,
+   "points_allowed_pg_l4": 13.15,
+   "rank_l4": 26,
+   "trend": "steady"
+  },
+  {
+   "defense": "SEA",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 12.45,
+   "rank": 10,
+   "points_allowed_pg_l4": 12.45,
+   "rank_l4": 10,
+   "trend": "steady"
+  },
+  {
+   "defense": "SEA",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 10.3,
+   "rank": 32,
+   "points_allowed_pg_l4": 10.3,
+   "rank_l4": 32,
+   "trend": "steady"
+  },
+  {
+   "defense": "SF",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 9.5,
+   "rank": 29,
+   "points_allowed_pg_l4": 9.5,
+   "rank_l4": 29,
+   "trend": "steady"
+  },
+  {
+   "defense": "SF",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 18.6,
+   "rank": 14,
+   "points_allowed_pg_l4": 18.6,
+   "rank_l4": 14,
+   "trend": "steady"
+  },
+  {
+   "defense": "SF",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 3.35,
+   "rank": 32,
+   "points_allowed_pg_l4": 3.35,
+   "rank_l4": 32,
+   "trend": "steady"
+  },
+  {
+   "defense": "SF",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 19.55,
+   "rank": 26,
+   "points_allowed_pg_l4": 19.55,
+   "rank_l4": 26,
+   "trend": "steady"
+  },
+  {
+   "defense": "TB",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 17.44,
+   "rank": 16,
+   "points_allowed_pg_l4": 17.44,
+   "rank_l4": 16,
+   "trend": "steady"
+  },
+  {
+   "defense": "TB",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 16,
+   "rank": 18,
+   "points_allowed_pg_l4": 16,
+   "rank_l4": 18,
+   "trend": "steady"
+  },
+  {
+   "defense": "TB",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 18.35,
+   "rank": 3,
+   "points_allowed_pg_l4": 18.35,
+   "rank_l4": 3,
+   "trend": "steady"
+  },
+  {
+   "defense": "TB",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 19.9,
+   "rank": 24,
+   "points_allowed_pg_l4": 19.9,
+   "rank_l4": 24,
+   "trend": "steady"
+  },
+  {
+   "defense": "TEN",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 13.73,
+   "rank": 25,
+   "points_allowed_pg_l4": 13.73,
+   "rank_l4": 25,
+   "trend": "steady"
+  },
+  {
+   "defense": "TEN",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 20,
+   "rank": 13,
+   "points_allowed_pg_l4": 20,
+   "rank_l4": 13,
+   "trend": "steady"
+  },
+  {
+   "defense": "TEN",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 7.15,
+   "rank": 26,
+   "points_allowed_pg_l4": 7.15,
+   "rank_l4": 26,
+   "trend": "steady"
+  },
+  {
+   "defense": "TEN",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 33.95,
+   "rank": 6,
+   "points_allowed_pg_l4": 33.95,
+   "rank_l4": 6,
+   "trend": "steady"
+  },
+  {
+   "defense": "WAS",
+   "position": "QB",
+   "games": 2,
+   "points_allowed_pg": 27.24,
+   "rank": 2,
+   "points_allowed_pg_l4": 27.24,
+   "rank_l4": 2,
+   "trend": "steady"
+  },
+  {
+   "defense": "WAS",
+   "position": "RB",
+   "games": 2,
+   "points_allowed_pg": 8.95,
+   "rank": 32,
+   "points_allowed_pg_l4": 8.95,
+   "rank_l4": 32,
+   "trend": "steady"
+  },
+  {
+   "defense": "WAS",
+   "position": "TE",
+   "games": 2,
+   "points_allowed_pg": 20,
+   "rank": 2,
+   "points_allowed_pg_l4": 20,
+   "rank_l4": 2,
+   "trend": "steady"
+  },
+  {
+   "defense": "WAS",
+   "position": "WR",
+   "games": 2,
+   "points_allowed_pg": 32.65,
+   "rank": 9,
+   "points_allowed_pg_l4": 32.65,
+   "rank_l4": 9,
+   "trend": "steady"
+  }
+ ],
+ "starters": [
+  {
+   "gsis_id": "00-0039732",
+   "player_name": "Bo Nix",
+   "position": "QB",
+   "team": "DEN",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+   "opponent": "SF",
+   "is_home": false,
+   "slot": "QB"
+  },
+  {
+   "gsis_id": "00-0040242",
+   "player_name": "Jacory Croskey-Merritt",
+   "position": "RB",
+   "team": "WAS",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+   "opponent": "IND",
+   "is_home": true,
+   "slot": "RB1"
+  },
+  {
+   "gsis_id": "00-0038797",
+   "player_name": "Emanuel Wilson",
+   "position": "RB",
+   "team": "SEA",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/uorruvczsxzvffpbxu8z",
+   "opponent": "LAC",
+   "is_home": true,
+   "slot": "RB2"
+  },
+  {
+   "gsis_id": "00-0036963",
+   "player_name": "Amon-Ra St. Brown",
+   "position": "WR",
+   "team": "DET",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fd8nwhm6pvxfyzphzl6i",
+   "opponent": "CAR",
+   "is_home": false,
+   "slot": "WR1"
+  },
+  {
+   "gsis_id": "00-0038606",
+   "player_name": "Parker Washington",
+   "position": "WR",
+   "team": "JAX",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+   "opponent": "CIN",
+   "is_home": false,
+   "slot": "WR2"
+  },
+  {
+   "gsis_id": "00-0033288",
+   "player_name": "George Kittle",
+   "position": "TE",
+   "team": "SF",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
+   "opponent": "DEN",
+   "is_home": true,
+   "slot": "TE"
+  },
+  {
+   "gsis_id": "00-0041037",
+   "player_name": "Denzel Boston",
+   "position": "WR",
+   "team": "CLE",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+   "opponent": "PIT",
+   "is_home": true,
+   "slot": "FLEX"
+  },
+  {
+   "gsis_id": "00-0039917",
+   "player_name": "Michael Penix Jr.",
+   "position": "QB",
+   "team": "ATL",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
+   "opponent": "NO",
+   "is_home": false,
+   "slot": "Superflex"
+  }
+ ]
+}

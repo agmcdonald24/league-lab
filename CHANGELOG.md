@@ -21,6 +21,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   the house leagues and computed on request for any Sleeper league (every roster solved; free agents = Sleeper's
   directory minus the rosters; Sleeper's played weeks and transactions), reproducing every mart row to the cent.
 
+- **A design system and the research screens in the app (G3).** Dark first (light from the system), the player card
+  as the unit (headshot, a big number, position and team badges), team accents for all 32 teams, one hand-rolled chart
+  kit (`docs/DESIGN.md`); one bar with five tabs (a bottom bar on a phone); new Trends (who is due, who is running hot),
+  Matchups (defense-vs-position heatmap, cornerbacks), Players, Receivers, Compare, the player card's points-by-week
+  chart; "Our record" folded into About the numbers (`/about`); fixture e2e at 390 / 1300 px, light and dark (34 passed).
+
 ## 2026-10-02 — Wave F
 
 - **NFL-wide model outputs (F1).** `league-lab project` fits the ranges per reference scoring (new seed

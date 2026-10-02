@@ -1,25 +1,162 @@
 @import "tailwindcss";
 
-/* Phone first: 390 px is the design width; one column; the system's light or dark. */
-@theme {
+/* League Lab design system (docs/DESIGN.md). Dark first, a light mode from the system; phone first (390 px), the
+   width used from 900 px (list + detail). Every color is a token below (--ll-*), exposed to Tailwind as
+   bg-surface / text-ink-2 / border-line / … so a component never names a raw color and both modes swap in one place. */
+
+@theme inline {
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --color-brand: #15803d;
+
+  /* surfaces: page < surface (a card) < raised (a tile inside a card); sunken = a track, an input */
+  --color-page: var(--ll-page);
+  --color-surface: var(--ll-surface);
+  --color-raised: var(--ll-raised);
+  --color-sunken: var(--ll-sunken);
+  --color-line: var(--ll-line);
+  --color-line-strong: var(--ll-line-strong);
+  /* ink: primary / secondary / muted (labels, axes) */
+  --color-ink: var(--ll-ink);
+  --color-ink-2: var(--ll-ink-2);
+  --color-ink-3: var(--ll-ink-3);
+  /* the app's own accent (links, the picked tab, "yours") and the text on it */
+  --color-accent: var(--ll-accent);
+  --color-accent-soft: var(--ll-accent-soft);
+  --color-on-accent: var(--ll-on-accent);
+  /* deltas and states: always with a sign or an icon, never color alone */
+  --color-good: var(--ll-good);
+  --color-bad: var(--ll-bad);
+  --color-warn: var(--ll-warn);
+  --color-warn-soft: var(--ll-warn-soft);
+  --color-bad-soft: var(--ll-bad-soft);
+  /* chart roles */
+  --color-series-1: var(--ll-series-1);
+  --color-hot: var(--ll-div-hot);
+  --color-due: var(--ll-div-due);
+  --color-grid: var(--ll-grid);
+
+  /* type scale: small uppercase labels, body, big numbers */
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1rem;
+  --text-label--letter-spacing: 0.08em;
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.0625rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-num: 2.25rem; /* a card's headline number */
+  --text-num--line-height: 1;
+  --text-hero: 3rem; /* the one number a screen leads with */
+  --text-hero--line-height: 1;
+
+  /* radii: panels are crisp (the references), chips are pills */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+
+  --breakpoint-wide: 56.25rem; /* 900 px: list + detail side by side */
 }
 
+/* ---- light (the system's light mode) */
 :root {
   color-scheme: light dark;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+
+  --ll-page: #f2f4f7;
+  --ll-surface: #ffffff;
+  --ll-raised: #f5f7fa;
+  --ll-sunken: #e9edf2;
+  --ll-line: rgba(11, 14, 20, 0.1);
+  --ll-line-strong: rgba(11, 14, 20, 0.2);
+  --ll-ink: #0b0e14;
+  --ll-ink-2: #454e63;
+  --ll-ink-3: #687186;
+  --ll-accent: #15803d;
+  --ll-accent-soft: rgba(21, 128, 61, 0.1);
+  --ll-on-accent: #ffffff;
+  --ll-good: #006300;
+  --ll-bad: #b42318;
+  --ll-warn: #8a4b00;
+  --ll-warn-soft: rgba(250, 178, 25, 0.16);
+  --ll-bad-soft: rgba(208, 59, 59, 0.1);
+
+  --ll-series-1: #2a78d6;
+  --ll-div-hot: #eb6834;
+  --ll-div-due: #2a78d6;
+  --ll-seq-lo: #f3f7fd;
+  --ll-seq-hi: #184f95;
+  --ll-seq-ink-strong: #ffffff;
+  --ll-grid: #e3e6ec;
+  --ll-axis: #c3c8d2;
+
+  --ll-pos-qb: #e87ba4;
+  --ll-pos-rb: #1baf7a;
+  --ll-pos-wr: #2a78d6;
+  --ll-pos-te: #eb6834;
+  --ll-pos-k: #4a3aa7;
+  --ll-pos-def: #eda100;
+
+  --ll-shadow: 0 1px 2px rgba(11, 14, 20, 0.06), 0 4px 16px rgba(11, 14, 20, 0.05);
+  --ll-bar-h: 3.5rem; /* the phone's bottom tab bar */
+}
+
+/* ---- dark (designed first: deep navy panels, bright ink, team colors as light) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ll-page: #0a0d13;
+    --ll-surface: #121721;
+    --ll-raised: #1a2130;
+    --ll-sunken: #0d1118;
+    --ll-line: rgba(255, 255, 255, 0.08);
+    --ll-line-strong: rgba(255, 255, 255, 0.16);
+    --ll-ink: #f3f5f9;
+    --ll-ink-2: #b8c0cf;
+    --ll-ink-3: #838da0;
+    --ll-accent: #3fd17a;
+    --ll-accent-soft: rgba(63, 209, 122, 0.12);
+    --ll-on-accent: #04140a;
+    --ll-good: #3fd17a;
+    --ll-bad: #ff7a7a;
+    --ll-warn: #fbbf3c;
+    --ll-warn-soft: rgba(250, 178, 25, 0.12);
+    --ll-bad-soft: rgba(255, 122, 122, 0.1);
+
+    --ll-series-1: #3987e5;
+    --ll-div-hot: #f07a45;
+    --ll-div-due: #3987e5;
+    --ll-seq-lo: #151c28;
+    --ll-seq-hi: #86b6ef;
+    --ll-seq-ink-strong: #0b0e14;
+    --ll-grid: #222a38;
+    --ll-axis: #364052;
+
+    --ll-pos-qb: #d55181;
+    --ll-pos-rb: #199e70;
+    --ll-pos-wr: #3987e5;
+    --ll-pos-te: #d95926;
+    --ll-pos-k: #9085e9;
+    --ll-pos-def: #c98500;
+
+    --ll-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
 }
 
 html,
 body {
-  @apply bg-white text-zinc-900 antialiased dark:bg-[#0b0f0d] dark:text-zinc-100;
+  @apply bg-page text-ink antialiased;
   overflow-x: hidden;
 }
 
+/* ---- small shared pieces (components use utilities; these are the few patterns repeated in markdown output) */
+.ll-label {
+  @apply text-label font-semibold text-ink-3 uppercase;
+}
+
 .ll-link {
-  @apply text-green-700 underline decoration-green-700/30 underline-offset-2 dark:text-green-400 dark:decoration-green-400/40;
+  @apply text-accent underline decoration-current/30 underline-offset-2;
   /* a thumb-sized hit area (QA, Wave F: 18 px links at 390 px) without changing the line's layout */
   position: relative;
 }
@@ -28,6 +165,19 @@ body {
   position: absolute;
   inset: -0.6rem 0;
 }
+/* a name that is a link but reads as a name (rows, cards): underline on hover only */
+.ll-name {
+  @apply text-ink no-underline;
+  position: relative;
+}
+.ll-name:hover {
+  @apply underline decoration-current/40 underline-offset-2;
+}
+.ll-name::after {
+  content: "";
+  position: absolute;
+  inset: -0.5rem 0;
+}
 
 .ll-list {
   @apply list-disc space-y-1.5 pl-5;
@@ -35,6 +185,17 @@ body {
 
 .tabnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* the page's error / empty boxes */
+.ll-error {
+  @apply rounded-lg border border-bad/30 bg-bad-soft p-4 text-base text-ink;
+}
+.ll-empty {
+  @apply rounded-lg border border-dashed border-line-strong p-4 text-base text-ink-2;
+}
+.ll-skel {
+  @apply animate-pulse rounded-lg bg-raised;
 }
 
 details > summary {
@@ -49,4 +210,31 @@ details > summary .chev {
 }
 details[open] > summary .chev {
   transform: rotate(90deg);
+}
+
+/* inputs and selects share one look */
+.ll-input {
+  @apply min-w-0 rounded-md border border-line-strong bg-sunken px-3 py-2 text-base text-ink placeholder:text-ink-3;
+}
+.ll-input:focus-visible {
+  @apply outline-2 outline-offset-1 outline-accent;
+}
+
+/* the phone's bottom tab bar leaves room under the page */
+.ll-under-bar {
+  padding-bottom: calc(var(--ll-bar-h) + env(safe-area-inset-bottom) + 1.5rem);
+}
+@media (min-width: 56.25rem) {
+  .ll-under-bar {
+    padding-bottom: 2.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
