@@ -2844,6 +2844,43 @@ included).
 * **Not verified.** Real Sleeper (no network here), F3's real responses for the new routes (fixtures only), a real
   iPhone (Chromium with the iPhone 13 profile).
 
+## Wave G (Iteration 15)
+
+### G4 2026-10-02 — the decision screens: Waivers, Trade Finder, Team Hub, League (branch `dev/G4`)
+
+**What.** Four screens under the Decisions tab of the web app, on G2's routes and in G3's design system (merged
+`dev/G3` once at the 45-minute mark: `api.ts` had both teams' appended blocks in conflict, both kept): **Waivers**
+(`/waivers`: the top claim's sentence first, tiles, the moves as cards with week-by-week gain bars and the drop, the
+free agents by position with this week's projection and its range on one track, list + player card at 1300 px),
+**Trade Finder** (`/trades`: the best partner first with "Try this trade"; partner select and both rosters as tick
+lists; the package POSTed as soon as both sides have a player: verdict, fit tiles, market and rest-of-season bars,
+league rank and roster-size lines, both lineups after the trade; the partner finder by position; the package is the
+URL), **Team** (`/team`: the answer, value / next 4 weeks / depth / record tiles with ranks, strength by slot vs the
+league as bars with the league average as the tick, the next four weeks vs the league's middle, every roster's lineup
+value, the roster as player rows), **League** (`/league`: luck first, standings with all-play, who has been lucky as
+diverging bars, bench points, the weekly scoring rank grid, the latest moves, the draft). Each screen is its own chunk
+(`web/src/lib/decisionPages.ts`). `web/README.md` § "The decision screens".
+
+**Contract.** G2 committed its routes during the round (`1d618ba`), so the screens read G2's real shapes and the
+fixtures are **saved from G2's API** run from a scratch export of `dev/G2` on the G4 clone (`web/fixtures/
+save_decision_fixtures.py`; the Test League on G2's on-demand path with its Sleeper fixtures, team names mapped to the
+web fixtures'). Requested of G2 (added by the saver from G2's own answers): `/api/team` `slot_strength[].league`,
+`weekly[].league`; `/api/waivers` `positions`; the league name on `/api/league`.
+
+**Evidence.** `npm run lint` clean (eslint + svelte-check 0 / 0 + tsc); `npm run build` (main chunk 22 KB gzip;
+Waivers 6.9, Trades 7.9, Team 4.6, League 5.8 KB gzip, loaded on first use). Fixture e2e
+(`e2e/decisions/fixtures.spec.ts`, 18 tests: 4 screens × light / dark × 390 × 844 / 1300 × 900 + the Decisions tab):
+18 passed; every number checked is read from the fixture served (waiver gains, lineup values, ranks, slot bars,
+luck, verdicts, fit / market / rest-of-season, POST body = the package). With F2's and G3's specs: 50 passed, 2 failed
+— G3's "the decisions tabs say what is coming" expects the `Coming` placeholder that G4 replaces (one line for the PO:
+`getByTestId("coming")` → `getByTestId("waivers")`). Answer visible after a cold open on fixtures (median of 5):
+phone 198–335 ms, desktop 218–301 ms. Screenshots `g4_<screen>_<league>_<phone|desktop>_<light|dark>.png` (40).
+
+**Open.** Buy-low / sell-high lists and the upside-stash cards (not in G2's contract); the keeper / acquisition table
+(G2 sends `keeper.rows`; the screen shows the acquisition line and each starter's "acquired"); the Test League's
+fixture rosters differ between G2's Sleeper fixtures and F2's web fixtures (names mapped, rosters not); G3's
+placeholder test above.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

@@ -50,7 +50,11 @@
   const allPlay = $derived(new Map((data?.all_play ?? []).map((r) => [r.roster_id, r])));
   const luck = $derived([...(data?.all_play ?? [])].filter((r) => r.luck_wins != null).sort((a, b) => (b.luck_wins ?? 0) - (a.luck_wins ?? 0)));
   const luckMax = $derived(Math.max(0.5, ...luck.map((r) => Math.abs(r.luck_wins ?? 0))));
-  const leagueName = $derived(options.find((o) => o.league_id === league)?.name ?? "The league");
+  // the league's name from the picker (the API does not send it; a shared link to a league never opened here: "The league")
+  const leagueName = $derived.by(() => {
+    const n = options.find((o) => o.league_id === league)?.name;
+    return n && n !== "This league" ? n : "The league";
+  });
   const bench = $derived([...(data?.profiles ?? [])].sort((a, b) => (b.total_bench_points_left ?? 0) - (a.total_bench_points_left ?? 0)));
   const benchMax = $derived(Math.max(1, ...bench.map((r) => r.total_bench_points_left ?? 0)));
   // one card per transaction (a trade or an add + drop is one move)

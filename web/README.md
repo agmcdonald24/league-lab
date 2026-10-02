@@ -145,3 +145,56 @@ of its own; it talks to the API on the same origin.
 | `public/` | manifest, icons (`scripts/make-icons.py`), service worker |
 | `fixtures/` | the API's answers for the fixture tests, and `make_fixtures.py` |
 | `e2e/` | `fixtures.spec.ts` + `fixtures.ts` (on fixtures), `measure-fixtures.spec.ts`, the spike's `app.spec.ts` (live API) and side-by-side `measure.spec.ts` |
+
+## The decision screens (Wave G, plan G4)
+
+Under the **Decisions** tab (G3's navigation): four screens on G2's routes, each opening with the answer, in G3's
+components (`docs/DESIGN.md`). Each loads on first use in its own chunk (`src/lib/decisionPages.ts`), so the first
+screen stays as small as Wave F measured it.
+
+| Screen | URL | What |
+|---|---|---|
+| Waivers | `/waivers?league=&team=&position=` | the answer first (the top claim's sentence, `2_Waiver_Wire.py` `_headline`: "Claim A (TE), drop B: +3.4 this week at TE, +9.0 over the next 4 weeks", or "Nothing beats what you have."), four tiles (this week, next 4 weeks, your lineup → with the claim, the closest call), the moves as cards (top claim, best cover for a coming week, a flyer: the free agent's headshot and badges, the gain as the big number, what each of the next four weeks gains as small bars, the drop, the card's lines), the other claims in an expander, then **free agents by position** (All / QB / RB / WR / TE, K and DEF when the league starts them): one row each with this week's projection, its range on one track (most weeks as the band, a bad week to a good week as the line, the projection as the tick) and rest of season; from 900 px the picked one is a player card on the right (range, rest of season, points and expected points a game, target and snap shares). "How to read this" |
+| Trade Finder | `/trades?league=&team=&partner=&give=&get=&want=` | the answer first: the **best partner** (the trade that raises both lineups the most, `trades.partners`) with "Try this trade"; **Try a trade**: the partner select, both rosters as tick lists (`/api/team` for each side), and the package evaluated as soon as both sides have a player (POST `/api/trades/evaluate`): the headline and the **verdict** (`trades.verdict`, the engine's words), the fit as four tiles (you / them, this week / over the weeks, before → after), the market and rest of season as bars (give vs get), the roster-size line, both lineups after the trade slot by slot (new players marked, the change per slot), week by week in an expander; **Who should I trade with?** (Any / QB / RB / WR / TE) as cards with "Try it". The package is the URL (Sleeper ids): a copied link opens the same trade |
+| Team | `/team?league=&team=` | the answer first ("Week 4: your best lineup projects 111.2, 11th of 12 in the league."), tiles (lineup value, next 4 weeks, depth, record, each with its rank), the closest call and how the starters were acquired, **strength by slot vs the league** (bars: your best starter at the slot, the league's average as the tick, orange below it), the next four weeks against the league's middle team, every roster's lineup value (yours marked), the roster as player rows (slot, margin, how he was acquired) |
+| League | `/league?league=&team=` | the answer first (`8_League.py`: "You've been the unluckiest team by schedule (−0.9 wins); your bench has left 49 points unstarted …"; without a team, the league's luckiest and unluckiest), standings with the all-play record, **who has been lucky** (diverging bars around 0), points left on the bench, the weekly scoring rank (last 5 weeks on a phone, 10 on a desktop), the latest moves (one card per transaction), the draft where Sleeper has it (two rounds, the rest in an expander; pick → position rank by points so far) |
+
+**The contract they read** is G2's (`api/league_lab_api/decisions.py` on `dev/G2`, `api/README.md` § G2): the
+fixtures are its own answers, SAVED from G2's routes running on a clone (`fixtures/save_decision_fixtures.py`, see
+below), so the shapes match by construction. Rows carry the marts' column names, player objects carry `headshot_url`
+/ `team` / `position`, the pages' sentences come as `words` (`words.headline`, `words.lines`, `fit.words`,
+`market.words`, `ros.words`, `size_words`, `ranks.words`, `notice`) and the screens show them as they come; where a
+sentence is missing the screen writes it (`src/lib/decisions.ts`, the Streamlit pages' words). **Requested of G2**
+(the saver adds them from G2's own answers, so the numbers are G2's): on `/api/team`, `slot_strength[].league = {avg,
+best, rank, n}` (every roster's best starter at the slot: the "vs the league" bars) and `weekly[].league = {median,
+best, rank, n}`; on `/api/waivers`, `positions` (the free-agent tabs; without it: QB RB WR TE, plus K / DEF when the
+list has them). Not in the contract and asked for: the league's name on `/api/league` (the screen takes it from the
+league picker).
+
+**Fixtures**: `fixtures/{waivers_<league>_<team>_<POS>, trades_evaluate_<league>_<team>_<partner>_<give>_<get>,
+trades_partners_<league>_<team>_<WANT>, team_<league>_<roster>, league_<league>[_<team>]}.json` — dynasty roster 12,
+Scrubs roster 2 and the Test League's team 3; every roster's Team (the partner picker reads the partner's roster
+there); two trades per league (the best partner's, and one by hand). The house leagues come from their marts, the
+Test League from G2's on-demand path (its Sleeper fixtures), its teams renamed to the web fixtures' names ("Team 3" →
+"Fixture Falcons"). Rebuild: G2's API on a clone, then the saver:
+
+```bash
+cd api && LEAGUE_LAB_SLEEPER_FIXTURES=$PWD/tests/fixtures/sleeper uv run uvicorn league_lab_api.main:app --port 8694 &
+API=http://localhost:8694 python3 web/fixtures/save_decision_fixtures.py
+```
+
+Served by `e2e/decisions-fixtures.ts` (registered after `serveFixtures`; nfl.com headshots answered 404 at once, so the
+silhouette shows offline).
+
+**Check**: `npm run e2e:fixtures` runs `e2e/decisions/fixtures.spec.ts` with F2's and G3's (the four screens × phone / desktop
+× light / dark, numbers read from the fixtures, nothing past the screen's right edge, the Decisions tab); alone, on its own
+port: `E2E_PORT=8594 npx playwright test --config playwright.g4.config.ts`. Screenshots `g4_*` in `SHOTS_DIR`.
+
+| Path | What |
+|---|---|
+| `src/routes/Waivers.svelte`, `Trades.svelte`, `Team.svelte`, `League.svelte` | the four screens |
+| `src/routes/decisions/MoveCard.svelte`, `RangeBar.svelte` | a waiver move as a card; a projection and its range on one track |
+| `src/lib/decisions.ts` | the screens' words (waiver headline, team answer and closest call, luck line, partner line) and number formats |
+| `src/lib/decisionPages.ts` | the four screens loaded on first use |
+| `src/lib/api.ts` (`// ---- G4`) | G2's shapes as types, `decisionPaths`, `postEvaluate` |
+| `fixtures/save_decision_fixtures.py`, `e2e/decisions-fixtures.ts`, `e2e/decisions/fixtures.spec.ts`, `playwright.g4.config.ts` | the fixtures' saver, their routes, the e2e, the e2e alone on its own port |

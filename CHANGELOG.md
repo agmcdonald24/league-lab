@@ -2,6 +2,14 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave G
+
+- **The decision screens (G4).** Waivers, Trade Finder, Team and League in the web app under Decisions, on G2's
+  routes and G3's design system: each opens with its answer (the top claim, the best trade partner, your lineup's rank,
+  your luck), player cards with headshots, bars against the league (slot strength, the next four weeks, luck, the
+  market), a trade evaluated as you tick players (both lineups before / after, the verdict) and shared as a link; free
+  agents by position with their range; fixture e2e at 390 / 1300 px, light and dark (18 passed).
+
 ## 2026-10-02 — Wave F
 
 - **NFL-wide model outputs (F1).** `league-lab project` fits the ranges per reference scoring (new seed

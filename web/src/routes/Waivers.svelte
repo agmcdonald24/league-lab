@@ -30,7 +30,11 @@
 
   const ctx = $derived({ league, team });
   const position = $derived((route.current.params.get("position") ?? "ALL").toUpperCase());
-  const leagueName = $derived(options.find((o) => o.league_id === league)?.name ?? "this league");
+  // "in League of Scrubs scoring" (WORDS.md: name the league's scoring); a league the picker does not know: "your league's"
+  const scoring = $derived.by(() => {
+    const n = options.find((o) => o.league_id === league)?.name;
+    return n && n !== "This league" ? `${n} scoring` : "your league's scoring";
+  });
 
   $effect(() => {
     const l = league;
@@ -120,7 +124,7 @@
     <div class="grid grid-cols-2 gap-2 wide:grid-cols-4" data-testid="waiver-tiles">
       <StatTile label="This week" value={top ? s1(top.weekly_gain) : "+0.0"} caption={top ? `${top.add.player_name}` : "no claim helps"} />
       <StatTile label={`Next ${span} weeks`} value={top ? s1(top.horizon_gain) : "+0.0"} caption={span > 1 ? `weeks ${wk}–${last}` : `week ${wk}`} />
-      <StatTile label="Your lineup" value={f1(data.lineup_value)} caption={top && top.weekly_gain > 0 ? `→ ${f1(top.lineup_after)} with the claim` : `week ${wk}, in ${leagueName} scoring`} />
+      <StatTile label="Your lineup" value={f1(data.lineup_value)} caption={top && top.weekly_gain > 0 ? `→ ${f1(top.lineup_after)} with the claim` : `week ${wk}, in ${scoring}`} />
       <StatTile
         label="Closest call"
         value={data.weakest?.slot ? slotLabel(data.weakest.slot) : "—"}
@@ -168,7 +172,7 @@
     <section class="space-y-3" data-testid="free-agents">
       <div class="flex flex-wrap items-baseline justify-between gap-2">
         <h2 class="text-xl font-bold">Free agents</h2>
-        <p class="text-sm text-ink-3">Week {wk} projection in {leagueName} scoring, with its range</p>
+        <p class="text-sm text-ink-3">Week {wk} projection in {scoring}, with its range</p>
       </div>
       <Tabs items={tabs} current={position} onpick={(p) => setParams({ position: p === "ALL" ? null : p })} size="sm" label="Position" testid="fa-pos" />
       {#if !fas.length}
