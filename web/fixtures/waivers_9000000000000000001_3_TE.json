@@ -898,5 +898,316 @@
   "TE",
   "K",
   "DEF"
- ]
+ ],
+ "upside": {
+  "title": "Upside stash: his role is growing before his points do",
+  "stashes": [
+   {
+    "base_value": 3.29,
+    "scenario_value": 3.29,
+    "points_gain": 0.0,
+    "week": 5,
+    "change_text": "snap share 26% → 68%",
+    "cause_text": "Chig Okonkwo out injured",
+    "since_week": 2,
+    "games_held": 1,
+    "kind": "absence_beneficiary",
+    "headline": "Upside stash: Ben Sinnott (TE) — snap share 26% → 68% since week 2, Chig Okonkwo out injured",
+    "lines": [
+     "The projection already counts most of it: 3.3 in week 5 if the new role holds, 3.3 as he is. Treat it as a what-if, not a forecast: on 2023–2025, after 285 alerts like this, the what-if was closer to what happened next than the projection 46% of the time — it beat the projection less than half the time, so lean on the projection.",
+     "Why: Chig Okonkwo out injured. It ends when Chig Okonkwo returns (check again after week 5)."
+    ],
+    "add": {
+     "sleeper_id": "11596",
+     "gsis_id": "00-0039912",
+     "player_name": "Ben Sinnott",
+     "position": "TE",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ilkrv6dqajndnlsbmv8f"
+    },
+    "drop": null,
+    "holds_weekly_gain": null,
+    "holds_horizon_gain": null,
+    "holds_slot": null,
+    "rank": 5
+   }
+  ],
+  "why": "The role alert and the what-if are NFL-wide, priced here in your league's scoring; what claiming him adds to your lineup if the role holds is worked out each night for the leagues League Lab updates, not on request.",
+  "howto": [
+   "**Upside stash**: a free agent whose role grew in his last one to three games (more snaps, targets or carries: a teammate out, a new starter) before his points caught up. **If it holds** is his projection with the bigger role: a what-if, not a forecast.",
+   "**Lineup gain if it holds** adds up this week and the next three in your lineup; most stashes add nothing yet, which is why they are stashes, not starters."
+  ],
+  "source": "on demand"
+ },
+ "trade_lists": {
+  "buy_low": [
+   {
+    "player": {
+     "sleeper_id": "12517",
+     "gsis_id": "00-0040126",
+     "player_name": "Colston Loveland",
+     "position": "TE",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cnxiyi76jeahgx94nh6d"
+    },
+    "roster_id": 7,
+    "team_name": "Goal Line Stand",
+    "ppg": 0.65,
+    "xppg": 6.12,
+    "diff_per_game": -5.47,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 0.0,
+    "loss_horizon": 0.0,
+    "fit_week": 0.0,
+    "fit_horizon": 0.0
+   },
+   {
+    "player": {
+     "sleeper_id": "7553",
+     "gsis_id": "00-0036970",
+     "player_name": "Kyle Pitts",
+     "position": "TE",
+     "team": "ATL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xczipzxvytnmvgznhhb4"
+    },
+    "roster_id": 10,
+    "team_name": "Fourth and Long",
+    "ppg": 1.33,
+    "xppg": 3.03,
+    "diff_per_game": -1.69,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 0.0,
+    "loss_horizon": 0.0,
+    "fit_week": 0.0,
+    "fit_horizon": 0.0
+   },
+   {
+    "player": {
+     "sleeper_id": "12487",
+     "gsis_id": "00-0040737",
+     "player_name": "Terrance Ferguson",
+     "position": "TE",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg"
+    },
+    "roster_id": 8,
+    "team_name": "Hail Marys",
+    "ppg": 8.7,
+    "xppg": 8.95,
+    "diff_per_game": -0.25,
+    "gain_week": 0.0,
+    "gain_horizon": 0.0,
+    "loss_week": 0.0,
+    "loss_horizon": 0.0,
+    "fit_week": 0.0,
+    "fit_horizon": 0.0
+   },
+   {
+    "player": {
+     "sleeper_id": "9484",
+     "gsis_id": "00-0038996",
+     "player_name": "Tucker Kraft",
+     "position": "TE",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/n6vu44jbq31rydoaadaq"
+    },
+    "roster_id": 8,
+    "team_name": "Hail Marys",
+    "ppg": 6.53,
+    "xppg": 8.81,
+    "diff_per_game": -2.28,
+    "gain_week": 0.17,
+    "gain_horizon": 0.33,
+    "loss_week": 2.32,
+    "loss_horizon": 8.13,
+    "fit_week": -2.15,
+    "fit_horizon": -7.8
+   },
+   {
+    "player": {
+     "sleeper_id": "10859",
+     "gsis_id": "00-0039065",
+     "player_name": "Sam LaPorta",
+     "position": "TE",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu"
+    },
+    "roster_id": 1,
+    "team_name": "Bench Mob",
+    "ppg": 13.5,
+    "xppg": 14.51,
+    "diff_per_game": -1.01,
+    "gain_week": 3.67,
+    "gain_horizon": 7.66,
+    "loss_week": 5.65,
+    "loss_horizon": 15.93,
+    "fit_week": -1.98,
+    "fit_horizon": -8.27
+   },
+   {
+    "player": {
+     "sleeper_id": "5012",
+     "gsis_id": "00-0034753",
+     "player_name": "Mark Andrews",
+     "position": "TE",
+     "team": "BAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/u4xzz7tclch0tpzm9hhz"
+    },
+    "roster_id": 2,
+    "team_name": "Waiver Wire Warriors",
+    "ppg": 9.9,
+    "xppg": 10.64,
+    "diff_per_game": -0.74,
+    "gain_week": 0.79,
+    "gain_horizon": 1.47,
+    "loss_week": 10.31,
+    "loss_horizon": 11.39,
+    "fit_week": -9.52,
+    "fit_horizon": -9.92
+   },
+   {
+    "player": {
+     "sleeper_id": "4217",
+     "gsis_id": "00-0033288",
+     "player_name": "George Kittle",
+     "position": "TE",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx"
+    },
+    "roster_id": 10,
+    "team_name": "Fourth and Long",
+    "ppg": 10.6,
+    "xppg": 10.91,
+    "diff_per_game": -0.31,
+    "gain_week": 0.84,
+    "gain_horizon": 3.44,
+    "loss_week": 3.48,
+    "loss_horizon": 15.34,
+    "fit_week": -2.64,
+    "fit_horizon": -11.9
+   }
+  ],
+  "sell_high": [
+   {
+    "player": {
+     "sleeper_id": "7600",
+     "gsis_id": "00-0036894",
+     "player_name": "Pat Freiermuth",
+     "position": "TE",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7"
+    },
+    "roster_id": 4,
+    "team_name": "Kickoff Kings",
+    "ppg": 11.5,
+    "xppg": 8.7,
+    "diff_per_game": 2.81,
+    "gain_week": 0.0,
+    "gain_horizon": 3.82,
+    "loss_week": 0.0,
+    "loss_horizon": 0.69,
+    "fit_week": 0.0,
+    "fit_horizon": 3.13
+   },
+   {
+    "player": {
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d"
+    },
+    "roster_id": 4,
+    "team_name": "Kickoff Kings",
+    "ppg": 18.05,
+    "xppg": 16.04,
+    "diff_per_game": 2.02,
+    "gain_week": 2.01,
+    "gain_horizon": 9.46,
+    "loss_week": 9.52,
+    "loss_horizon": 13.84,
+    "fit_week": -7.51,
+    "fit_horizon": -4.38
+   }
+  ],
+  "best_buy_by_position": {
+   "QB": {
+    "player": {
+     "sleeper_id": "11560",
+     "gsis_id": "00-0039918",
+     "player_name": "Caleb Williams",
+     "position": "QB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt"
+    },
+    "roster_id": 7,
+    "team_name": "Goal Line Stand",
+    "ppg": 22.99,
+    "xppg": 23.0,
+    "diff_per_game": -0.01,
+    "gain_week": 0.0,
+    "gain_horizon": 6.45,
+    "loss_week": 0.0,
+    "loss_horizon": 0.98,
+    "fit_week": 0.0,
+    "fit_horizon": 5.47
+   },
+   "RB": {
+    "player": {
+     "sleeper_id": "8138",
+     "gsis_id": "00-0037248",
+     "player_name": "James Cook",
+     "position": "RB",
+     "team": "BUF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/anjbznqb9i21wzcgrtbs"
+    },
+    "roster_id": 6,
+    "team_name": "Two-Point Tries",
+    "ppg": 15.4,
+    "xppg": 16.68,
+    "diff_per_game": -1.28,
+    "gain_week": 7.24,
+    "gain_horizon": 17.81,
+    "loss_week": 6.66,
+    "loss_horizon": 15.68,
+    "fit_week": 0.58,
+    "fit_horizon": 2.13
+   },
+   "WR": {
+    "player": {
+     "sleeper_id": "12501",
+     "gsis_id": "00-0040667",
+     "player_name": "Matthew Golden",
+     "position": "WR",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dbjki6b0swksr7mk17wk"
+    },
+    "roster_id": 7,
+    "team_name": "Goal Line Stand",
+    "ppg": 15.43,
+    "xppg": 16.71,
+    "diff_per_game": -1.27,
+    "gain_week": 2.73,
+    "gain_horizon": 11.15,
+    "loss_week": 0.0,
+    "loss_horizon": 0.56,
+    "fit_week": 2.73,
+    "fit_horizon": 10.59
+   }
+  },
+  "buy_line": "**Buy low: ask Goal Line Stand about Matthew Golden (WR).** He scores 1.3 a game below what his usage is worth, adds **+2.7** to your week-4 lineup and costs them **0.0** (fit **+10.6** over weeks 4–7).",
+  "sell_line": "**Sell high: shop Jared Goff (QB) to Practice Squad.** He scores 0.7 a game above what his usage is worth. Their week-4 lineup gains **+0.8**, yours loses **0.0** (fit **+13.5** over weeks 4–7).",
+  "weeks": "weeks 4–7",
+  "howto": [
+   "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG − xPPG**, points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports.",
+   "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week and the next four, in your league's scoring.",
+   "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
+   "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade Finder."
+  ],
+  "source": "app/pages/6_Trade_Finder.py (roster_value.trade_candidates; the card sentences quoted)",
+  "points_source": "priced on request (research.league_season)"
+ }
 }

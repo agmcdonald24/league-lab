@@ -14,7 +14,8 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/player/{gsis}?league=&team=     the player card's sections (any league: on demand, plan F3) + rest of season
     /api/ros?league=&position=&limit=    rest of season: the mart for a house league, priced on request otherwise (F3)
     /api/record?league=                  our record vs Sleeper's projections (house leagues; F3)
-    /api/search?league=&q=               the player card's search box
+    /api/search?league=&q=               the player card's search box (any league: Sleeper's directory, H1)
+    /api/about?league=                   About the numbers: the model, what it leans on most, its grades (H1)
     /api/status                          the freshness line, the stale-injury warning, Sleeper's cache ages + budget
 Errors are {"error": "<plain words>"} (plus the older "detail"): 404 unknown league / team / player / user,
 502 Sleeper did not answer, 503 the numbers are not ready yet / busy (our Sleeper budget).
@@ -205,7 +206,9 @@ def record(league: str, response: Response):
 
 
 @app.get("/api/search", dependencies=[Depends(require_auth)])
-def search(league: str, q: str, response: Response):
+def search(league: str, q: str, response: Response, source: str | None = None):
+    if source == "sleeper" or not myweek.known_league(league):     # H1: any league - Sleeper's directory (research.py)
+        return _json(research.search_on_demand(league, q), response)
     return _json(player.search(league, q), response)
 
 
@@ -323,6 +326,16 @@ def league_page(league: str, response: Response, team: int | None = None, limit:
                 source: str | None = None):
     return _json(decisions.league(league, team, limit, offset, source=source), response)
 
+
+# ---- H1 (Wave H): "About the numbers" - the model, what it leans on most, its grades (league_lab_api/about.py)
+#   /api/about?league=          importance (mart_projection_importance) + grades (mart_projection_drift / _backtest)
+from . import about as about_mod  # noqa: E402 - the block stays self-contained (Wave H devs append in parallel)
+
+
+@app.get("/api/about", dependencies=[Depends(require_auth)])
+def about(league: str, response: Response, source: str | None = None):
+    return _json(about_mod.about(league, source=source), response)
+# ---- end H1
 
 # ---------------------------------------------------------------- the web app
 ASSET_CACHE = "public, max-age=31536000, immutable"     # vite's hashed file names

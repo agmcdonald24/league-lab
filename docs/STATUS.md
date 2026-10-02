@@ -3123,6 +3123,79 @@ placeholder test above.
   read 0 for 2026 in the mart and are hidden until filled in.
 
 
+## Wave H (Iteration 16)
+
+### H1 2026-10-02 — the gaps: upside stash and buy low / sell high on Waivers, "What it leans on most" on About, rest of season in one round of queries, search for any league (branch `dev/H1`, clone `league_lab_h1`)
+
+**What.**
+* `/api/waivers` gains `upside` (the Waiver Wire's third card region: `mart_waiver_upside` with `app/lib/signals.py`'s
+  `stash_headline` / `upside_detail`; any other league: Sleeper's free agents with an NFL-wide role alert in
+  `ops.player_scenarios`, the what-if re-priced in the league's scoring with `scoring.compute_points` on the
+  `base_line` / `larger_line` the table keeps, `why` saying the lineup gains are the nightly's per house league) and
+  `trade_lists` (the Trade Finder's buy-low / sell-high: `roster_value.trade_candidates` on the horizon board —
+  `mart_league_roster_horizon` + `mart_player_availability` for a house league, `anyleague.horizon_frame` + the season
+  table priced on request otherwise; best by position, the page's two card sentences quoted). `decisions.waiver_extras`.
+* `GET /api/about?league=` (`api/league_lab_api/about.py`): the model's words, `importance`
+  (`mart_projection_importance`: component / total, newest version, top 10 per position, the page's "how we measured it"
+  caption and per-position sentence) and `grades` (`mart_projection_drift` this season next to the backtest,
+  `mart_projection_backtest` per past season, current model). Any other league reads the closest house scoring
+  (`research.expected_ref`) and says so in `why`.
+* `anyleague.ros_table`: on the NFL-wide board the whole window is read in one round of queries (`load_window`: lines,
+  ranges — only the exact reference scoring's when there is one —, K / DEF lines and ranges, status, references), every
+  week's stat lines priced in one vectorised pass (`compute_points_frame`: the same terms in the same order, equal to
+  `compute_points` bit for bit — `price_lines` uses it everywhere), each week's reference and ranges and K / DEF chosen
+  by `price_week`'s rules over the whole window at once (`skill_window`, `kd_window`); a week the NFL-wide tables do not
+  hold, or the borrowed board, is priced week by week as before. The answer is cached 10 minutes (the priced weeks' rule).
+* `/api/search` for a league the database does not hold: Sleeper's directory (`sleeper().players()`, cached) by name,
+  `player_id_map`, whose team from the league's rosters (`research.search_on_demand`); house leagues unchanged.
+* Web: Waivers draws the upside stash (up to three cards: the player, the what-if, the page's lines, "as he is" / "lineup
+  gain if it holds" tiles) and "Buy low, sell high" (the two sentences, best by position, your sell-high players, the full
+  buy-low list in an expander); "How to read this" gains three lines. About draws "What it leans on most" (a position
+  switch, one bar per input, the lead sentence, how it was measured) and "How the model is doing" (per position: order
+  score, average miss, inside the range — this season vs the backtest — and weeks scored; "How to read the grades").
+  Fixtures saved from the API (`web/fixtures/save_h1_fixtures.py`: `upside` / `trade_lists` added to the 17 saved
+  waivers files, `about_<league>.json` × 3); `e2e/fixtures.ts` serves `/api/about`; `e2e/h1/fixtures.spec.ts` (3 tests ×
+  phone / desktop).
+
+**Evidence.**
+* Rest of season on demand, NFL-wide board (`ondemand.ros_on_demand`, every cache emptied incl. the query cache; median
+  of 3; load ≈ 0.5), cold / warm ms: dynasty 1,079 / 114 → **249 / 2**; Scrubs (K + DEF) 1,237 / 146 → **336 / 3**;
+  Test League (no exact reference: five references' ranges read) 1,698 / 181 → **531 / 2** (min 487). In the test run:
+  211 / 326 / 439 ms. Parity: `test_f3.py::test_ros_on_demand_reproduces_the_mart` (both boards, both leagues; 0.011)
+  green; new `test_ros_window_equals_the_week_by_week_path` (all three leagues): the one-round answer = the week-by-week
+  `price_week` path on every column, every player, to 1e-9, the same references.
+* `compute_points_frame` = `compute_points` bit for bit on every 2026 stat line in the three fixture scorings and the five
+  reference scorings (TE premium included).
+* `/api/about`: importance = the mart rows (labels, values, order) per position; grades = `mart_projection_drift`
+  (this season, backtest) and `mart_projection_backtest` per season, both house leagues; the Test League reads Scrubs'
+  (`why`); unknown league 404. Note: importance is measured on League of Scrubs only in this copy, so the dynasty shows
+  Scrubs' rows with `scored_in` = League of Scrubs.
+* `/api/waivers`: `upside` = `mart_waiver_upside` row for row (dynasty 12: 3 stashes, Scrubs 2: 3); `trade_lists` = the
+  Trade Finder's lists computed independently (`trade_candidates` on the mart board + the page's candidate query): same
+  players, same order, fit to 0.01; dynasty 12 on demand (`source=sleeper`) = the house buy-low list (fit and PPG − xPPG
+  to 0.01); the Test League's stashes priced in its full-PPR scoring = `compute_points(larger_line)` (Myles Price 3.48 =
+  dynasty's full-PPR price, Scrubs' half PPR 2.90). Latency (TestClient, first call): dynasty 12 577 ms (extras 213),
+  Scrubs 2 769 (212), Test League 4,599 (1,183: the season table priced on request, then cached 10 minutes).
+* `/api/search` on the Test League: "brown" → A.J. Brown (gsis 00-0035676, the fixture roster that holds him), free
+  agents flagged; one letter → []; the house search unchanged.
+* Checks: `cd api && uv run pytest -q` **152 passed** (138 + 14 new in `tests/test_h1.py`; one earlier run under load:
+  150 passed, 2 skipped); `uv run ruff check src tests app api/league_lab_api api/tests` clean; web `npm run lint` 0 / 0,
+  `npm run build`, `npm run e2e:fixtures` **58 passed** (52 + 6); root `uv run pytest -q` **829 passed, 1 skipped**.
+
+**Decisions for the PO.**
+* Buy low / sell high are the Trade Finder's lists (players on other rosters / yours, by PPG − xPPG, with the lineup fit),
+  shown on Waivers as asked; the web Trade Finder still has none (one component to reuse).
+* The on-demand stash carries no lineup gain (the nightly's `upside_for_roster` could run on `league_weeks` the way
+  `sweep_roster` does — a follow-up, ~1 s per request); the stash list is every free agent with a live alert, ordered by
+  the what-if's gain.
+* The keeper table on demand (task 5) was not attempted (time box): `/api/team` keeps the honest `keeper_why` line.
+* `price_week` now prices with the vectorised `price_lines` too (bit for bit equal): My Week / the player card get faster
+  cold.
+
+**Open.** Real Sleeper (fixtures only); the Test League's on-demand waivers stay ~4–5 s cold (the season table and the
+board); the hosted copy (`league_lab_hosted`) has no `ops.projection_lines` yet (H2's relation audit), so there the rest
+of season borrows week by week as before.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

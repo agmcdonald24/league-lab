@@ -95,7 +95,10 @@
     "- **This week** is what the claim adds this week; **the next 4 weeks** add up this week and the next three, so covering a bye counts, and so do the games the dropped player would have started.\n" +
     "- **Who to drop**: the player your lineup misses least over those four weeks. We never suggest dropping someone we have no projection for yet: unknown is not zero.\n" +
     "- **Only the next four weeks count.** In a dynasty league, a young player's future is not in these numbers: look twice before dropping one.\n" +
-    "- **Free agents** are ranked by this week's projection in your league's scoring. **Most weeks** is the band half his weeks land in; the thin line is a bad week to a good week (8 weeks in 10); the tick is the projection. **Rest of season** adds up every week left to your league's final.";
+    "- **Free agents** are ranked by this week's projection in your league's scoring. **Most weeks** is the band half his weeks land in; the thin line is a bad week to a good week (8 weeks in 10); the tick is the projection. **Rest of season** adds up every week left to your league's final.\n" +
+    "- **Upside stash**: a free agent whose role grew in his last one to three games (more snaps, targets or carries: a teammate out, a new starter) before his points caught up. **If it holds** is his projection with the bigger role: a what-if, not a forecast. **Lineup gain if it holds** adds up this week and the next three; most stashes add nothing yet, which is why they are stashes, not starters.\n" +
+    "- **Buy low**: players on other teams scoring *less* than their work is worth (points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports.\n" +
+    "- **Fit** is what the new team gains minus what the old team loses over the next four weeks. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell. To see a whole offer, use the Trade Finder.";
 
   function faContext(f: FreeAgent): string {
     const bits = [rangeWords(f.p25, f.p75, f.p10, f.p90), f.ros_points != null ? `rest of season ${fmt.whole(f.ros_points)}` : null];
@@ -167,6 +170,111 @@
         </ul>
         <p class="mt-2 text-sm text-ink-3">One row per player: the drop that costs your lineup least. Start-now claims gain this week; the others help later.</p>
       </Expander>
+    {/if}
+
+    <!-- H1 (Wave H): the upside stash (2_Waiver_Wire.py's third card region) and buy low / sell high (the Trade Finder's lists) -->
+    {#if data.upside}
+      <section class="space-y-3" data-testid="upside">
+        <h2 class="text-xl font-bold">Upside stash</h2>
+        <p class="text-sm text-ink-3">{data.upside.title}.</p>
+        {#if data.upside.stashes.length}
+          <div class="grid grid-cols-1 gap-3 wide:grid-cols-3">
+            {#each data.upside.stashes.slice(0, 3) as u (u.add.sleeper_id ?? u.add.gsis_id)}
+              <Card testid="stash">
+                <PlayerRow
+                  player={{ ...u.add, player_name: u.add.player_name ?? "" }}
+                  href={u.add.gsis_id ? withContext(`/player/${u.add.gsis_id}`, ctx) : null}
+                  context={u.change_text ? `${u.change_text} since week ${u.since_week}` : null}
+                  value={f1(u.scenario_value)}
+                  valueLabel="If it holds"
+                  testid="stash-player"
+                />
+                <p class="mt-2 text-base font-semibold leading-snug" data-testid="stash-headline"><Md text={u.headline} {ctx} /></p>
+                <ul class="mt-1 space-y-1 text-sm leading-snug text-ink-2" data-testid="stash-lines">
+                  {#each u.lines as line, i (i)}<li><Md text={line} {ctx} /></li>{/each}
+                </ul>
+                {#if u.holds_horizon_gain != null}
+                  <div class="mt-2 grid grid-cols-2 gap-2">
+                    <StatTile label="As he is" value={f1(u.base_value)} caption={`week ${wk}`} size="sm" />
+                    <StatTile label="Lineup gain if it holds" value={s1(u.holds_horizon_gain)} caption={span > 1 ? `weeks ${wk}–${last}` : `week ${wk}`} size="sm" />
+                  </div>
+                {/if}
+              </Card>
+            {/each}
+          </div>
+          {#if data.upside.stashes.length > 3}
+            <p class="text-sm text-ink-3" data-testid="stash-more">{data.upside.stashes.length - 3} more stashes: {data.upside.stashes.slice(3).map((u) => u.add.player_name).join(", ")}.</p>
+          {/if}
+        {/if}
+        {#if data.upside.why}<p class="text-sm leading-snug text-ink-3" data-testid="stash-why">{data.upside.why}</p>{/if}
+      </section>
+    {/if}
+
+    {#if data.trade_lists && (data.trade_lists.buy_line || data.trade_lists.buy_low.length)}
+      {@const tl = data.trade_lists}
+      <section class="space-y-3" data-testid="buy-sell">
+        <h2 class="text-xl font-bold">Buy low, sell high</h2>
+        <p class="text-sm text-ink-3">Players scoring below (or above) what their work is worth, in {scoring}: trades to ask about.</p>
+        <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
+          <Card title="Buy low" testid="buy-low">
+            {#if tl.buy_line}<p class="text-base leading-snug" data-testid="buy-line"><Md text={tl.buy_line} {ctx} /></p>{/if}
+            {#if tl.best_buy_by_position && Object.keys(tl.best_buy_by_position).length}
+              <h3 class="ll-label mt-3">Best by position</h3>
+              <ul class="-mx-4 divide-y divide-line">
+                {#each Object.entries(tl.best_buy_by_position) as [pos, r] (pos)}
+                  <li>
+                    <PlayerRow
+                      player={{ ...r.player, player_name: r.player.player_name ?? "" }}
+                      href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
+                      context={`${r.team_name ?? "another team"} · ${s1(r.diff_per_game)} a game vs his work · you gain ${s1(r.gain_week)} this week`}
+                      value={s1(r.fit_horizon)}
+                      valueLabel="Fit"
+                      testid="buy-best"
+                    />
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </Card>
+          <Card title="Sell high" testid="sell-high">
+            {#if tl.sell_line}<p class="text-base leading-snug" data-testid="sell-line"><Md text={tl.sell_line} {ctx} /></p>{/if}
+            {#if tl.sell_high.length}
+              <ul class="-mx-4 mt-2 divide-y divide-line">
+                {#each tl.sell_high.slice(0, 4) as r (r.player.sleeper_id ?? r.player.gsis_id)}
+                  <li>
+                    <PlayerRow
+                      player={{ ...r.player, player_name: r.player.player_name ?? "" }}
+                      href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
+                      context={`${s1(r.diff_per_game)} a game vs his work · best fit ${r.team_name ?? "—"}`}
+                      value={s1(r.fit_horizon)}
+                      valueLabel="Fit"
+                      testid="sell-row"
+                    />
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </Card>
+        </div>
+        {#if tl.buy_low.length}
+          <Expander title={`Buy low · ${tl.buy_low.length} players scoring below their usage`} testid="buy-list">
+            <ul class="-mx-3 divide-y divide-line">
+              {#each tl.buy_low as r, i (`${r.player.sleeper_id}|${i}`)}
+                <li>
+                  <PlayerRow
+                    player={{ ...r.player, player_name: r.player.player_name ?? "" }}
+                    href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
+                    context={`${r.team_name ?? "—"} · PPG ${f1(r.ppg)} vs ${f1(r.xppg)} expected · you gain ${s1(r.gain_week)}, they lose ${f1(r.loss_week)}`}
+                    value={s1(r.fit_horizon)}
+                    valueLabel={tl.weeks ? `Fit ${tl.weeks}` : "Fit"}
+                    testid="buy-row"
+                  />
+                </li>
+              {/each}
+            </ul>
+          </Expander>
+        {/if}
+      </section>
     {/if}
 
     <section class="space-y-3" data-testid="free-agents">

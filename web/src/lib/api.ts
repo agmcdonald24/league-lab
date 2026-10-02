@@ -962,3 +962,102 @@ export async function postEvaluate(body: { league: string; team: number; partner
   }
   return (await res.json()) as TradeEval;
 }
+
+// ---- H1 (Wave H): the upside stash and buy low / sell high on /api/waivers; GET /api/about ---------------------------
+/** One upside stash (mart_waiver_upside; on demand: the NFL-wide alert with its what-if priced in the league's scoring). */
+export interface UpsideStash {
+  rank: number | null;
+  add: DPlayer;
+  drop: DPlayer | null;
+  base_value: number | null;
+  scenario_value: number | null;
+  points_gain: number | null;
+  holds_weekly_gain: number | null; // null on demand (worked out each night for the house leagues)
+  holds_horizon_gain: number | null;
+  holds_slot: string | null;
+  change_text: string | null;
+  cause_text: string | null;
+  since_week: number | null;
+  games_held: number | null;
+  kind: string | null;
+  headline: string;
+  lines: string[];
+}
+
+/** One row of the Trade Finder's buy-low / sell-high lists (roster_value.trade_candidates). */
+export interface TradeListRow {
+  player: DPlayer;
+  roster_id: number | null; // buy low: his owner; sell high: the roster that gains most
+  team_name: string | null;
+  ppg: number | null;
+  xppg: number | null;
+  diff_per_game: number | null;
+  gain_week: number | null;
+  gain_horizon: number | null;
+  loss_week: number | null;
+  loss_horizon: number | null;
+  fit_week: number | null;
+  fit_horizon: number | null;
+}
+
+// declaration merging: the H1 fields of GET /api/waivers
+export interface Waivers {
+  upside?: { title: string; stashes: UpsideStash[]; why: string | null; howto: string[]; source?: string };
+  trade_lists?: {
+    buy_low: TradeListRow[];
+    sell_high: TradeListRow[];
+    best_buy_by_position?: Record<string, TradeListRow>;
+    buy_line?: string;
+    sell_line?: string;
+    weeks?: string;
+    howto?: string[];
+    why?: string | null;
+  };
+}
+
+export interface ImportanceFeature {
+  rank: number;
+  feature_label: string;
+  importance: number | null;
+}
+
+export interface GradeNumbers {
+  spearman: number | null;
+  mae: number | null;
+  coverage_80: number | null;
+}
+
+/** GET /api/about: the model, what it leans on most (mart_projection_importance), its grades (drift + backtest). */
+export interface AboutAnswer {
+  league_id: string;
+  league_name: string;
+  source: "database" | "sleeper";
+  why?: string;
+  model: { answer: string; sections: { key: string; title: string; text: string }[] };
+  importance: {
+    model_version: string | null;
+    eval_season: number;
+    fit_seasons: string | null;
+    scored_in: string | null;
+    how_measured: string;
+    unit: string;
+    positions: { position: string; baseline_mae: number | null; top: string; lead: string; features: ImportanceFeature[] }[];
+  } | null;
+  grades: {
+    scored_in: string | null;
+    season: number | null;
+    weeks: string | null;
+    backtest_seasons: string | null;
+    answer: string;
+    howto: string[];
+    positions: {
+      position: string;
+      season: GradeNumbers & { weeks_scored: number };
+      backtest: GradeNumbers;
+      by_season: (GradeNumbers & { season: number; weeks: number })[];
+    }[];
+  } | null;
+}
+
+export const aboutPath = (league: string) => `/api/about?league=${encodeURIComponent(league)}`;
+// ---- end H1
