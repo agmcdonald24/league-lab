@@ -3123,6 +3123,111 @@ placeholder test above.
   read 0 for 2026 in the mart and are hidden until filled in.
 
 
+## Wave H (Iteration 16)
+
+### H0 2026-10-02 — the deploy kit (branch `dev/H0`)
+
+Plan row H0: everything Andrew needs to put the API + the web app on a server, written for him to do himself.
+
+**Files.** New: `render.yaml`, `.github/workflows/image.yml`, `scripts/smoke.sh`, `docs/DEPLOY.md`, `.dockerignore`,
+`api/tests/test_h0.py`. Changed: `api/Dockerfile`, `api/league_lab_api/main.py` (block `# ---- H0 health`),
+`api/README.md` § Deploy (rewritten short, points at DEPLOY.md), `api/tests/test_f3.py` (one assertion pinned the old
+`{"ok": true}` health body), this section, `CHANGELOG.md`.
+
+**Design.** Render builds `api/Dockerfile` from the repository (Blueprint `runtime: docker`, root context, Starter
+$7/month, region `ohio` = Neon's us-east-2, one instance, health check `/api/health`, `autoDeployTrigger: checksPass`,
+`buildFilter` = what the image holds). The GitHub workflow builds the same image on every such push to `main`, starts
+it once (health without a database, the app's page, user `nobody`, the cache writable and the code not) and pushes
+`ghcr.io/<owner>/league-lab:<sha>` + `:main`; Render waits for that green check, so a Dockerfile that does not build
+never reaches the server. Chosen over Render pulling the GHCR image because it needs no registry token and no deploy
+hook secret (two fewer things for Andrew to create); the switch is five documented steps and the workflow already
+calls `RENDER_DEPLOY_HOOK_URL` when that secret exists. No Render disk: the server writes only Sleeper's ~15 MB player
+directory (a day), and a disk costs money, needs a root-owned mount the `nobody` user cannot write, and turns off
+zero-downtime deploys; a redeploy costs one Sleeper call.
+
+**The image, proven without a Docker daemon** (each stage's commands run in
+`scratchpad/waveH/h0/img/`, the context = the tracked files the `.dockerignore` whitelist lets through):
+
+* Node stage: `npm ci --no-audit --no-fund` (175 packages, 3 s) + `npm run build` (vite 8.3.2, 21 assets, 404 KB
+  `dist`) on a copy of `web/`'s tracked files — green.
+* Python stage: `uv sync --frozen --no-dev --no-install-project` (uv 0.8.17 = the image's pinned
+  `ghcr.io/astral-sh/uv:0.8.17`, CPython 3.13, `UV_COMPILE_BYTECODE=1`) on `api/pyproject.toml` + `uv.lock`: 12 s,
+  no pytest / ruff / httpx in the `.venv`; the packages' own `tests` directories removed (−86 MB: `.venv` 344 → 260 MB).
+* Final stage, laid out as the `COPY` lines say (`/srv/api/.venv`, `/srv/api/league_lab_api`, `/srv/app/lib`,
+  `/srv/app/pages`, `/srv/src/league_lab`, `/srv/web/dist`, `compileall`, `/srv/cache` owned by `nobody`), started
+  with the image's exact `CMD` under `env -i` (only the image's `ENV` + `render.yaml`'s values) as uid `nobody`
+  (`setpriv`), `PORT=8701`: listens on 8701 (`$PORT` honoured; 8080 without it); `/api/health` answers; the cache
+  directory is writable by `nobody` and the code is not (`PermissionError`).
+* **Fixed — `app/pages` was not in the image**: `decisions.page_functions` reads `app/pages/2_Waiver_Wire.py` and
+  `6_Trade_Finder.py` at run time. With the old `COPY` lines: `/api/waivers` (Scrubs 2) **500** and
+  `POST /api/trades/evaluate` **500** (`FileNotFoundError`); with `COPY app/pages`: 200 / 200.
+* Also changed: the default port 8000 → 8080 (`EXPOSE 8080`), uv and its cache no longer in the final image (a
+  separate `py` stage), `PYTHONDONTWRITEBYTECODE=1` + the code compiled at build time (`nobody` cannot write
+  `__pycache__`), `ARG LEAGUE_LAB_VERSION` → `/api/health`'s version, `chown nobody:nogroup`.
+* Not run: `docker build` itself (no daemon). The workflow's first run on GitHub is the first real build; its "Start the
+  image once" step checks what is proven here.
+
+**`/api/health`** (marked block in `main.py`): `{"ok": true, "version", "as_of": max(ops.projections.fitted_at),
+"board_source", "database": "ok" | "unreachable: <class>"}`, no password, `Cache-Control: no-store`, always 200 while
+the process runs (a host restart would not fix a database); `as_of` read on its own 5-second connection at most once
+an hour (once a minute while failing), one refresh at a time, so Render's frequent checks neither keep Neon's compute
+awake nor wait on the pool. `version`: `LEAGUE_LAB_VERSION`, else `RENDER_GIT_COMMIT`, else `git rev-parse`, else `dev`.
+`api/tests/test_h0.py` (3 tests): the body against independent SQL, the Render fallback, gate on + database down.
+
+**The API run against the hosted copy** (`league_lab_hosted`, read-only role, the Test League from fixtures, port
+8701, the image layout above). Every route the web app calls (`web/src/lib`'s query strings: 19 per league for
+dynasty 12, Scrubs 2, Test League 3, + session / health / status / leagues / username / `/` / an app route = 64):
+
+| Database | Routes 2xx | Failures |
+|---|---|---|
+| `league_lab` (the full copy) | 63 / 64 | `/api/search` for the Test League: 404 "no current-season league" (search is house-only; H1's row) |
+| `league_lab_hosted` (as published) | 36 / 64 | 21 × 500, 6 × 503, the 404 above |
+| a scratch clone of it + the relations below (`league_lab_hosted_h0`, dropped afterwards) | 63 / 64 | the 404 above; no SQL error left in the Postgres log |
+
+**Missing from the hosted copy** (for H2 — the sync script's closure; each was found by the route walk and the server
+log, then confirmed by adding it to the clone):
+
+* Route-breaking:
+  * `analytics.mart_player_ros_projection` (table) — 503 on `/api/ros` and `/api/waivers` for both house leagues.
+  * Stale shape, the relation is there: `ops.projections` lacks `p25`, `p75`; `analytics.mart_player_week_projections`
+    lacks `p25`, `p75`, `actual_inside_50` — **500** on `/api/my-week`, `/api/player/{gsis}`, `/api/matchups/defense`,
+    `/api/matchups/cb`, `/api/compare` for all three leagues, and on `/api/ros`, `/api/waivers`,
+    `/api/trades/evaluate`, `/api/trades/partners`, `/api/team` for the Test League (the borrowed board reads
+    `ops.projections`). A sync of a current build carries these (the sync copies whole tables): run the nightly once
+    before the deploy (DEPLOY.md "Before you start"). Same staleness, no route of today failing (H1's `/api/about` reads
+    the grades): `analytics.mart_projection_backtest` (`coverage_50`, `interval_score`, `interval_width_50`,
+    `is_current`), `ops.projection_backtest` (`coverage_50`, `interval_width_50`, `pinball_25`, `pinball_75`),
+    `analytics.mart_player_week_features` (10 `pn_*` columns).
+* Silent (200, a weaker answer; the error is caught):
+  * `ops.projection_lines`, `ops.projection_ranges`, `ops.kd_lines`, `ops.kd_ranges`,
+    `analytics_seeds.reference_scorings` — F1's NFL-wide board: without them every non-house league is priced from the
+    borrowed board (`/api/status` `board_source_in_use`: `nfl_wide` once added).
+  * `analytics.mart_kd_week` — K / DEF on the on-demand path (`anyleague`: "K / DEF unvalued, reported").
+  * `analytics.mart_projection_record` — `/api/record` for a house league answers without the record.
+  * `analytics.mart_player_role_alerts` (a view) and the one relation it reads that the hosted copy lacks,
+    `analytics.fct_team_game` (2 MB) — Trends' role alerts and the player card's signals come back empty (8 alerts for
+    dynasty once added).
+
+**Smoke script** (`scripts/smoke.sh <base-url> [password] [sleeper-username]`, one line per check, `shellcheck`
+clean): against the patched clone with Sleeper's full player directory (12,229 players from `raw.sleeper_player`, as
+fixtures) — 11 / 11 ok, exit 0 (health, the app's page, 401 without / 401 wrong / 200 login, status, house leagues,
+rosters, My Week Scrubs 1, `test_manager`'s leagues, My Week Test League 1 on demand). Against `league_lab_hosted` as
+published — 2 FAIL (both My Week: 500), exit 1. No server / no password: stops with one FAIL line, exit 1.
+
+**Measured** (the image layout, uid `nobody`, the sandbox's two shared cores): memory 149 MB after start, 284–288 MB
+peak after the 64 routes twice with the full player directory (Starter has 512 MB); the 64 routes 9.6 s cold in total
+(slowest 1.44 s: a player card on demand), 2.4 s warm (slowest 0.32 s).
+
+**Checks.** `cd api && uv run pytest -q`: **139 passed, 2 skipped** (3.9 min); `uv run ruff check src tests app
+api/league_lab_api api/tests`: clean; `actionlint` (1.7.12, with shellcheck): clean on both workflows; `shellcheck
+scripts/smoke.sh`: clean; `render.yaml` parses (PyYAML).
+
+**Not verified here** (no Docker daemon, no internet): a real `docker build` / push (the workflow's first run is),
+Render's acceptance of the Blueprint fields (`autoDeployTrigger: checksPass`, `buildFilter`, `region: ohio` — DEPLOY.md
+says what to do if Render rejects one), the docker/* action versions (`setup-buildx-action@v3`, `login-action@v3`,
+`build-push-action@v6`), the GHCR package's visibility, the deploy hook's `imgURL` parameter, the prices (Render
+Starter $7, Standard $25; read 2026-10-02 from memory of Render's pricing, not the live page).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

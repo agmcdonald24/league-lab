@@ -465,5 +465,5 @@ def test_static_web_app_from_a_placeholder_dist(client, tmp_path, monkeypatch):
     a = client.get("/assets/app-123.js")
     assert a.status_code == 200 and "immutable" in a.headers["cache-control"]
     assert client.get("/assets/missing.js").status_code == 404
-    assert client.get("/api/health").json() == {"ok": True}
+    assert client.get("/api/health").json()["ok"] is True          # the full shape: test_h0.py (Wave H)
     assert client.get("/../../etc/passwd").status_code in (200, 404) and "root:" not in client.get("/../../etc/passwd").text

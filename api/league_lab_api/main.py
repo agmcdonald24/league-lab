@@ -130,9 +130,67 @@ class Login(BaseModel):
     password: str
 
 
+# ---- H0 health (plan H0, Wave H): what the host's health check and scripts/smoke.sh read --------------------------
+#   GET /api/health (no password) → {"ok": true, "version": "<release stamp or git sha>", "as_of": "<the newest
+#   ops.projections.fitted_at>", "board_source": "auto" | "nfl_wide" | "borrow", "database": "ok" | "unreachable: …"}
+#   Always 200 while the process runs: the host restarts a process whose health check fails, and a restart does not
+#   fix a database that is waking up or down — the database's state is in the body, and the smoke script fails on it.
+#   as_of is read on its own short connection at most once an hour (once a minute while it fails): a health check
+#   every few seconds must neither keep Neon's compute awake nor wait on the pool. version: LEAGUE_LAB_VERSION (the
+#   image's build argument: the commit the GitHub workflow built), else Render's RENDER_GIT_COMMIT, else this
+#   checkout's `git rev-parse`, else "dev".
+import os as _os  # noqa: E402 - the block stays self-contained
+import subprocess as _subprocess  # noqa: E402
+import threading as _threading  # noqa: E402
+import time as _time  # noqa: E402
+
+import psycopg as _psycopg  # noqa: E402
+
+from .settings import ROOT as _ROOT  # noqa: E402
+from .settings import app_dsn as _app_dsn  # noqa: E402
+
+_HEALTH_TTL_S, _HEALTH_RETRY_S = 3600.0, 60.0
+_health_state: dict = {"as_of": None, "database": "not checked yet", "next": 0.0, "version": None}
+_health_lock = _threading.Lock()
+
+
+def _version() -> str:
+    if _health_state["version"] is None:
+        stamp = _os.environ.get("LEAGUE_LAB_VERSION", "").strip()
+        if not stamp or stamp == "dev":
+            stamp = _os.environ.get("RENDER_GIT_COMMIT", "").strip()[:12]
+        if not stamp:
+            try:
+                stamp = _subprocess.run(["git", "-C", str(_ROOT), "rev-parse", "--short=12", "HEAD"], capture_output=True,
+                                        text=True, timeout=2, check=True).stdout.strip()
+            except (OSError, _subprocess.SubprocessError):
+                stamp = ""
+        _health_state["version"] = stamp or "dev"
+    return _health_state["version"]
+
+
+def _refresh_as_of() -> None:
+    """The newest fitted_at of the decision record, on a short connection of its own (5 s to connect)."""
+    try:
+        with _psycopg.connect(_app_dsn(), connect_timeout=5, autocommit=True) as conn:
+            row = conn.execute("select max(fitted_at) from ops.projections").fetchone()
+        _health_state.update(as_of=None if row is None or row[0] is None else row[0].isoformat(), database="ok",
+                             next=_time.monotonic() + _HEALTH_TTL_S)
+    except _psycopg.Error as exc:
+        _health_state.update(database=f"unreachable: {exc.__class__.__name__}", next=_time.monotonic() + _HEALTH_RETRY_S)
+
+
 @app.get("/api/health", include_in_schema=False)
-def health() -> dict:
-    return {"ok": True}
+def health(response: Response) -> dict:
+    response.headers["Cache-Control"] = "no-store"
+    if _time.monotonic() >= _health_state["next"] and _health_lock.acquire(blocking=False):
+        try:                                # one refresh at a time; the others answer with the last value
+            _refresh_as_of()
+        finally:
+            _health_lock.release()
+    return {"ok": True, "version": _version(), "as_of": _health_state["as_of"], "board_source": A.board_source(),
+            "database": _health_state["database"]}
+# ---- end H0 health
 
 
 @app.get("/api/session")

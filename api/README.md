@@ -352,28 +352,32 @@ without them).
 
 ## Deploy (one service, the static app included)
 
-`api/Dockerfile` builds the web app and the API into one image; build it from the repository root:
+**How to put it on a server: `docs/DEPLOY.md`** (Render, step by step, written for Andrew; plan H0, Wave H).
+
+* `render.yaml` (a Render Blueprint): one web service, Docker, built by Render from `api/Dockerfile` with the
+  repository root as context, Starter ($7 a month), health check `/api/health`, deployed after GitHub's checks pass.
+* `.github/workflows/image.yml`: every push to `main` that touches the image builds it, starts it once (health, the
+  web app, runs as `nobody`) and pushes `ghcr.io/<owner>/league-lab:<sha>` and `:main`.
+* `api/Dockerfile`: the web app (Node 22) → the Python environment (uv, no dev dependencies) → `python:3.13-slim` with
+  `api/league_lab_api`, `app/lib`, `app/pages` (the Waiver Wire's and Trade Finder's sentence functions), `src/league_lab`
+  and `web/dist`; user `nobody`, writes only `LEAGUE_LAB_CACHE_DIR`; listens on `$PORT`, else 8080. `.dockerignore`
+  sends nothing else to the build.
+* `scripts/smoke.sh <base-url> [password] [sleeper-username]`: one line per check, exit 1 on any failure.
+* `GET /api/health` (no password) → `{"ok": true, "version": "<LEAGUE_LAB_VERSION, else RENDER_GIT_COMMIT, else git
+  sha, else dev>", "as_of": "<max(ops.projections.fitted_at)>", "board_source": "auto", "database": "ok" |
+  "unreachable: <error class>"}`; always 200 while the process runs; the database is read on a short connection of
+  its own at most once an hour (once a minute while it fails), so the host's frequent checks never keep Neon awake.
 
 ```bash
-docker build -f api/Dockerfile -t league-lab-web .
-docker run -p 8000:8000 -e LEAGUE_LAB_APP_DB_URL='postgresql://league_lab_app:…@…neon.tech/neondb?sslmode=require' \
-           -e LEAGUE_LAB_APP_PASSWORD='…' league-lab-web
+docker build -f api/Dockerfile -t league-lab .          # from the repository root
+docker run -p 8080:8080 -e LEAGUE_LAB_APP_DB_URL='postgresql://league_lab_app:…@…-pooler….neon.tech/neondb?sslmode=require' \
+           -e LEAGUE_LAB_APP_PASSWORD='…' league-lab
 ```
 
-* **Render** (free web service: 512 MB, sleeps after 15 minutes without traffic, ~1 minute to wake; $7/month
-  for always on): New → Web Service → the GitHub repo → Runtime *Docker*, Dockerfile path `api/Dockerfile`,
-  build context `.` → Environment: the two variables above → health check path `/api/health`.
-* **Fly.io** (no free allowance; a shared-cpu-1x 256 MB machine ≈ $2–3/month always on, less with
-  auto-stop): `fly launch --dockerfile api/Dockerfile` from the repository root, `fly secrets set
-  LEAGUE_LAB_APP_DB_URL=… LEAGUE_LAB_APP_PASSWORD=…`.
-* **Railway** (Hobby $5/month including $5 of usage; a free plan of 0.5 GB RAM and one project): New project →
-  Deploy from GitHub → set `RAILWAY_DOCKERFILE_PATH=api/Dockerfile` and the two variables.
-* **Cloud Run** (2 million requests, 180,000 vCPU-seconds and 360,000 GiB-seconds free a month; scales to
-  zero, a cold start of a few seconds): `gcloud run deploy league-lab --source .` with the Dockerfile path set.
+Neon does not change: the API reads the same published marts with the same read-only role (the pooled address). The
+nightly does not change either. A push to `main` redeploys the service; there is no restart stamp to bump
+(`app/requirements.txt`'s rule is Streamlit Community Cloud's). Fly.io, Railway and Cloud Run run the same image
+(`$PORT` honoured); `docs/DEPLOY.md` covers Render only.
 
-Neon does not change: the API reads the same published marts with the same read-only role. The nightly does
-not change either (it publishes marts; the API has no state of its own). A push to GitHub redeploys the
-service; there is no restart stamp to bump (`app/requirements.txt`'s rule is Streamlit Community Cloud's).
-
-If `app/lib/cards.py` ever imports from `league_lab.*` (the `src/` package), copy `src/` into the image too
-(the stand-in already puts `src/` on the path) and add that module's dependencies to `api/pyproject.toml`.
+If `app/lib` or a page the API reads starts importing a new package, add it to `api/pyproject.toml` (`uv add`), and a
+new file the API reads at run time to the Dockerfile's `COPY` lines and `.dockerignore`.

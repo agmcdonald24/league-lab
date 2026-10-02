@@ -1,0 +1,52 @@
+# Render Blueprint (plan H0, Wave H): the League Lab beta server - the API and the phone web app, one service.
+# How to use it, step by step, what it costs and what to do when it breaks: docs/DEPLOY.md.
+#
+# Render builds api/Dockerfile from this repository (the repository root is the build context) and deploys each
+# commit on main after GitHub's checks pass (.github/workflows/image.yml builds and starts the same image first).
+# The image the workflow pushes to ghcr.io is the alternative (DEPLOY.md § "Deploying the built image instead").
+services:
+  - type: web
+    name: league-lab
+    runtime: docker
+    dockerfilePath: ./api/Dockerfile
+    dockerContext: .
+    branch: main
+    # Starter: 512 MB, 0.5 CPU, always on, $7 a month (the free plan sleeps after 15 idle minutes: a minute to wake).
+    # Measured (DEPLOY.md): ~150 MB after start, ~290 MB after every screen of three leagues with Sleeper's full
+    # player directory in memory.
+    plan: starter
+    # Put the server next to the database: Neon's us-east-2 (Ohio) = Render's ohio. Neon in us-east-1 → virginia,
+    # us-west-2 → oregon, eu-central-1 → frankfurt (DEPLOY.md step 1 says where Neon shows it).
+    region: ohio
+    # one process: one Sleeper call budget and one cache (docs/SLEEPER_TERMS.md)
+    numInstances: 1
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    # a push that changes none of these (docs, dbt, the Streamlit pages) does not rebuild the server
+    buildFilter:
+      paths:
+        - api/**
+        - app/lib/**
+        - app/pages/**
+        - src/league_lab/**
+        - web/**
+        - .dockerignore
+        - render.yaml
+    # No disk: the only file the server writes is Sleeper's player directory (~15 MB), kept a day under
+    # LEAGUE_LAB_CACHE_DIR. Render's own disk is wiped on a deploy or a restart, which costs one call to Sleeper -
+    # a paid disk ($0.25/GB a month, and it turns off zero-downtime deploys) would save one call a deploy.
+    envVars:
+      - key: LEAGUE_LAB_APP_DB_URL
+        sync: false     # Render asks for it: Neon's read-only URL (role league_lab_app, pooled, sslmode=require)
+      - key: LEAGUE_LAB_APP_PASSWORD
+        sync: false     # Render asks for it: the beta password (the one the Streamlit app uses)
+      - key: LEAGUE_LAB_API_SECRET
+        generateValue: true   # signs the sign-in cookie; Render makes one up (a new password then keeps people signed in)
+      - key: LEAGUE_LAB_CACHE_DIR
+        value: /srv/cache
+      - key: LEAGUE_LAB_SLEEPER_PER_MIN
+        value: "300"
+      - key: LEAGUE_LAB_BOARD_SOURCE
+        value: auto
+      - key: PYTHONUNBUFFERED
+        value: "1"
