@@ -8,18 +8,16 @@
   import { md, withContext } from "../lib/md";
   import { errorWords, f1, f2, rangeWords, s1, slotLabel, waiverAnswer, waiverHeadline } from "../lib/decisions";
   import { restoreScroll, route, setParams } from "../lib/router.svelte";
-  import { fmt, team as teamColors } from "../lib/theme";
+  import { fmt } from "../lib/theme";
   import Card from "../components/Card.svelte";
   import Expander from "../components/Expander.svelte";
-  import Headshot from "../components/Headshot.svelte";
   import ListDetail from "../components/ListDetail.svelte";
   import Meter from "../components/Meter.svelte";
+  import PlayerCard from "../components/PlayerCard.svelte";
   import PlayerRow from "../components/PlayerRow.svelte";
-  import PosBadge from "../components/PosBadge.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
   import StatTile from "../components/StatTile.svelte";
   import Tabs from "../components/Tabs.svelte";
-  import TeamBadge from "../components/TeamBadge.svelte";
   import MoveCard from "./decisions/MoveCard.svelte";
   import RangeBar from "./decisions/RangeBar.svelte";
 
@@ -183,46 +181,36 @@
           {#snippet detail()}
             {#if fa}
               <div class="hidden wide:block">
-                <Card accent={teamColors(fa.team).accent} testid="fa-detail">
-                  <div class="flex items-center gap-4">
-                    <Headshot url={fa.headshot_url} name={fa.player_name ?? ""} team={fa.team} size={88} eager />
-                    <div class="min-w-0 flex-1">
-                      <div class="text-2xl leading-tight font-extrabold tracking-tight">{fa.player_name}</div>
-                      <div class="mt-1 flex items-center gap-1.5">
-                        <PosBadge pos={fa.position} size="md" />
-                        {#if fa.position !== "DEF"}<TeamBadge team={fa.team} size="md" />{/if}
-                        {#if fa.injury_status}<span class="rounded-sm bg-warn-soft px-1.5 text-sm font-semibold text-warn">{fa.injury_status}</span>{/if}
+                <PlayerCard
+                  player={{ ...fa, player_name: fa.player_name ?? "" }}
+                  number={f1(fa.proj_points)}
+                  numberLabel={`Week ${wk}`}
+                  context={[fa.injury_status, fa.opponent ? `vs ${fa.opponent}` : null, fa.opp_rank_std ? `#${fa.opp_rank_std} vs ${fa.position}` : null].filter(Boolean).join(" · ")}
+                  line={[
+                    fa.p25 != null && fa.p75 != null ? `Most weeks ${Math.round(fa.p25)}–${Math.round(fa.p75)} (half his weeks land there).` : null,
+                    fa.p10 != null && fa.p90 != null ? `A bad week to a good week: ${Math.round(fa.p10)}–${Math.round(fa.p90)} (8 weeks in 10).` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  href={fa.gsis_id ? withContext(`/player/${fa.gsis_id}`, ctx) : null}
+                  testid="fa-detail"
+                >
+                  {#snippet extra()}
+                    <RangeBar value={fa!.proj_points} p10={fa!.p10} p25={fa!.p25} p75={fa!.p75} p90={fa!.p90} max={scale} />
+                    <div class="mt-3 grid grid-cols-3 gap-2">
+                      <StatTile label="Rest of season" value={fmt.whole(fa!.ros_points)} caption={fa!.ros_rank_pos ? `${fa!.position}${fa!.ros_rank_pos} in this league` : null} size="sm" />
+                      <StatTile label="Points a game" value={f1(fa!.ppg_std)} caption={fa!.games_played != null ? `${fa!.games_played} games` : null} size="sm" />
+                      <StatTile label="Expected a game" value={f1(fa!.expected_per_game)} caption="what his work is worth" size="sm" />
+                    </div>
+                    {#if fa!.position !== "QB" && fa!.position !== "K" && fa!.position !== "DEF"}
+                      <div class="mt-3 grid grid-cols-2 gap-4">
+                        <Meter label="Target share, last 3" value={fa!.target_share_l3} />
+                        <Meter label="Snaps, last 3" value={fa!.snap_pct_l3} />
                       </div>
-                      <div class="mt-1 text-sm text-ink-3">
-                        {fa.opponent ? `Week ${wk} vs ${fa.opponent}` : `Week ${wk}`}{fa.opp_rank_std ? ` · #${fa.opp_rank_std} vs ${fa.position} (1 = gives up the most)` : ""}
-                      </div>
-                    </div>
-                    <div class="text-right">
-                      <div class="tabnum text-hero font-extrabold tracking-tight" data-testid="fa-proj">{f1(fa.proj_points)}</div>
-                      <div class="ll-label mt-1">Week {wk} projection</div>
-                    </div>
-                  </div>
-                  <div class="mt-4">
-                    <RangeBar value={fa.proj_points} p10={fa.p10} p25={fa.p25} p75={fa.p75} p90={fa.p90} max={scale} />
-                    <p class="mt-1.5 text-sm text-ink-2">
-                      {#if fa.p25 != null && fa.p75 != null}Most weeks {Math.round(fa.p25)}–{Math.round(fa.p75)} (half his weeks land there).{/if}
-                      {#if fa.p10 != null && fa.p90 != null}A bad week to a good week: {Math.round(fa.p10)}–{Math.round(fa.p90)} (8 weeks in 10).{/if}
-                    </p>
-                  </div>
-                  <div class="mt-4 grid grid-cols-3 gap-2">
-                    <StatTile label="Rest of season" value={fmt.whole(fa.ros_points)} caption={fa.ros_rank_pos ? `${fa.position}${fa.ros_rank_pos} in this league` : null} size="sm" />
-                    <StatTile label="Points a game" value={f1(fa.ppg_std)} caption={fa.games_played != null ? `${fa.games_played} games` : null} size="sm" />
-                    <StatTile label="Expected a game" value={f1(fa.expected_per_game)} caption="what his work is worth" size="sm" />
-                  </div>
-                  {#if fa.position !== "QB" && fa.position !== "K" && fa.position !== "DEF"}
-                    <div class="mt-4 grid grid-cols-2 gap-4">
-                      <Meter label="Target share, last 3" value={fa.target_share_l3} />
-                      <Meter label="Snaps, last 3" value={fa.snap_pct_l3} />
-                    </div>
-                  {/if}
-                  {#if fa.tags}<p class="mt-3 text-sm text-ink-3">{fa.tags}</p>{/if}
-                  {#if fa.gsis_id}<a class="ll-link mt-3 inline-block text-base" href={withContext(`/player/${fa.gsis_id}`, ctx)}>Open his card</a>{/if}
-                </Card>
+                    {/if}
+                    {#if fa!.tags}<p class="mt-3 text-sm text-ink-3">{fa!.tags}</p>{/if}
+                  {/snippet}
+                </PlayerCard>
               </div>
             {/if}
           {/snippet}

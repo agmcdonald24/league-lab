@@ -105,10 +105,11 @@ for (const scheme of SCHEMES) {
       await expect(rows.first()).toContainText(wr.free_agents[0].player_name);
       if (info.project.name === "desktop") {
         // list + detail: the picked free agent on the right
-        await expect(page.getByTestId("fa-detail")).toContainText(wr.free_agents[0].player_name);
-        await expect(page.getByTestId("fa-proj")).toHaveText(f1(wr.free_agents[0].proj_points));
+        const last = (n: string) => n.split(" ").slice(-1)[0];
+        await expect(page.getByTestId("fa-detail").getByTestId("card-name")).toContainText(last(wr.free_agents[0].player_name));
+        await expect(page.getByTestId("fa-detail").getByTestId("card-number")).toHaveText(f1(wr.free_agents[0].proj_points));
         await rows.nth(1).click({ position: { x: 300, y: 20 } });
-        await expect(page.getByTestId("fa-detail")).toContainText(wr.free_agents[1].player_name);
+        await expect(page.getByTestId("fa-detail").getByTestId("card-name")).toContainText(last(wr.free_agents[1].player_name));
       } else {
         await expect(page.getByTestId("fa-detail")).toBeHidden();
       }
@@ -177,6 +178,9 @@ for (const scheme of SCHEMES) {
       const luckiest = [...l.all_play].sort((a, b) => b.luck_wins - a.luck_wins)[0];
       await expect(page.getByTestId("luck-bar").first()).toContainText(luckiest.team_name);
       await expect(page.getByTestId("luck-bar").first().getByTestId("bar-value")).toHaveText(`${sg(luckiest.luck_wins)} wins`);
+      // weekly scoring rank: every team, best average first; your row marked
+      await expect(page.getByTestId("rank-row")).toHaveCount(l.standings.length);
+      await expect(page.getByTestId("rank-row").filter({ hasText: "(you)" })).toHaveCount(1);
       await expect(page.getByTestId("move").first()).toContainText(l.transactions[0].player_name);
       await expect(page.locator('[data-testid="pick"]:visible')).toHaveCount(l.standings.length * 2);
       await expect(page.getByTestId("pick").first()).toContainText(l.draft[0].player_name);

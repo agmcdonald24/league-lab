@@ -7,7 +7,7 @@
   import { md, withContext } from "../lib/md";
   import { allPlayRecord, errorWords, f1, luckLine, moveKind, moveWords, s1 } from "../lib/decisions";
   import { restoreScroll } from "../lib/router.svelte";
-  import { fmt } from "../lib/theme";
+  import { fmt, seqFill, seqInk } from "../lib/theme";
   import Bar from "../components/Bar.svelte";
   import Card from "../components/Card.svelte";
   import Expander from "../components/Expander.svelte";
@@ -65,6 +65,36 @@
     return [d.slice(0, n), d.slice(n)];
   });
 
+  // weekly scoring rank (8_League.py's heatmap): teams by their average rank, one column per week; more = a better week
+  const n = $derived(data?.standings.length ?? 0);
+  const weekCols = $derived([...new Set((data?.weeks ?? []).map((w) => w.week))].sort((a, b) => a - b).map((w) => ({ key: String(w), label: `Wk ${w}` })));
+  const rankRows = $derived.by(() => {
+    const by: Record<number, { name: string; sum: number; k: number }> = {};
+    for (const w of data?.weeks ?? []) {
+      const r = (by[w.roster_id] ??= { name: w.team_name, sum: 0, k: 0 });
+      r.sum += w.week_points_rank;
+      r.k += 1;
+    }
+    return Object.entries(by)
+      .sort((a, b) => a[1].sum / a[1].k - b[1].sum / b[1].k)
+      .map(([id, r]) => ({ key: id, label: Number(id) === team ? `${r.name} (you)` : r.name }));
+  });
+  function rankCell(row: string, col: string) {
+    const w = data?.weeks.find((x) => String(x.roster_id) === row && String(x.week) === col);
+    if (!w) return { t: null, display: "—", title: "no score" };
+    return {
+      t: n > 1 ? (n - w.week_points_rank) / (n - 1) : 0.5,
+      display: String(w.week_points_rank),
+      title: `${w.team_name} · week ${w.week}: ${f1(w.points)} points, rank ${w.week_points_rank}${w.result ? `, ${w.result}` : ""}`,
+    };
+  }
+
+  /** A week column older than the last 5 is hidden on a phone, older than the last 10 everywhere. */
+  function colClass(i: number): string {
+    const back = weekCols.length - i;
+    return back > 10 ? "hidden" : back > 5 ? "hidden wide:block" : "";
+  }
+
   function when(iso: string): string {
     const d = new Date(iso);
     return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -88,6 +118,7 @@
     </ScreenHead>
 
     <div class="grid grid-cols-1 gap-4 wide:grid-cols-2 wide:items-start">
+      <div class="min-w-0 space-y-4">
       <Card title="Standings" pad={false} testid="standings">
         <div class="grid grid-cols-[1.75rem_minmax(0,1fr)_3.25rem_3.75rem_3.75rem] items-center gap-x-2 px-3 pt-1 pb-1.5 text-label font-semibold tracking-[0.08em] text-ink-3 uppercase">
           <span class="text-right">#</span><span>Team</span><span class="text-right">W-L</span><span class="text-right">Points</span><span class="text-right" title="Your record if you had played every team every week">All-play</span>
@@ -114,6 +145,34 @@
           {/each}
         </ol>
       </Card>
+
+      {#if weekCols.length}
+        <Card title="Weekly scoring rank" testid="week-ranks">
+          <!-- the last 5 weeks on a phone, the last 10 from 900 px: the grid never scrolls sideways -->
+          <div
+            class="grid grid-cols-[minmax(0,1fr)_repeat(var(--cp),2.25rem)] gap-[2px] wide:grid-cols-[minmax(0,11rem)_repeat(var(--cw),minmax(2.25rem,3.5rem))]"
+            style="--cp:{Math.min(5, weekCols.length)};--cw:{Math.min(10, weekCols.length)}"
+            data-testid="rank-grid"
+          >
+            <span></span>
+            {#each weekCols as c, i (c.key)}<span class="ll-label pb-1 text-center {colClass(i)}">{c.label}</span>{/each}
+            {#each rankRows as r (r.key)}
+              {@const yours = Number(r.key) === team}
+              <span class="truncate pr-2 text-sm leading-8 {yours ? 'font-bold text-ink' : 'text-ink-2'}" data-testid="rank-row">{r.label}</span>
+              {#each weekCols as c, i (c.key)}
+                {@const x = rankCell(r.key, c.key)}
+                <span
+                  class="tabnum h-8 rounded-sm text-center text-sm leading-8 font-semibold {yours ? 'ring-2 ring-accent ring-inset' : ''} {colClass(i)}"
+                  style="background:{x.t === null ? 'var(--ll-sunken)' : seqFill(0.08 + x.t * 0.92)};color:{x.t === null ? 'var(--ll-ink-3)' : seqInk(0.08 + x.t * 0.92)}"
+                  title={x.title}>{x.display}</span
+                >
+              {/each}
+            {/each}
+          </div>
+          <p class="mt-2 text-xs text-ink-3">Where each team's score ranked that week (1 = the week's top score; darker = higher). A team that keeps landing near the top but keeps losing is unlucky; the opposite is riding a soft schedule.</p>
+        </Card>
+      {/if}
+      </div>
 
       <div class="space-y-4">
         <Card title="Who has been lucky" testid="luck">
