@@ -376,6 +376,24 @@ card can say "A projects more, B wins more often" — centre the ranges on the p
 decide on week-5 drift); the experiment record is the seed `feature_experiments.csv` (re-export after a new harness
 run); Andrew's front-end decision (D7); P-01; Iteration 11 operations.
 
+### Iteration 15 — the lab in the app (agreed 2026-10-02, Wave G)
+
+Andrew, after running the Wave F app against real Sleeper ("it works … extremely bare bones"): the lab IS the pitch —
+all the data in one place, dig in and compare, the matchup information, over- vs under-performing — plus player
+pictures, real charts, and a UI that does not leave "a ton to be desired". "Our record" is not a top-level screen
+(it moves into "About the numbers"; the nightly keeps scoring). Accounts / payments / hosting become **Wave H**
+(waits on Sleeper's licence); a non-commercial beta on a host is allowed meanwhile.
+
+| ID | Task | Acceptance |
+|----|------|------------|
+| G1 | **The research, on demand** (API): routes serving the research marts for ANY league — `/api/trends` (over- vs under-performing: actual vs expected points, `mart_player_trends` / `mart_player_expected_points` / `mart_player_trend_tags`, role alerts), `/api/matchups/defense` (`mart_defense_position_profile`, `mart_defense_vs_position_current`), `/api/matchups/cb` (`mart_cb_matchups`, `mart_cb_rankings`, `mart_receiver_vs_cb`), `/api/players` (`mart_player_season`, filters, sort, paging), `/api/receivers` (`mart_player_context`, `mart_player_recent_form`), `/api/compare?a=&b=` (two players side by side: season, last 3, usage, projection, schedule), `/api/player/{gsis}/games` (the game log for charts: `fct_player_game` + the league's points per game priced on request from the stat columns with `scoring.compute_points`). Points shown in the user's scoring where a point appears; NFL stats are NFL-wide. Headshot / team on every player row (`dim_player.headshot_url`). | Each route pinned by a test against the marts for both house leagues; the priced-on-request points equal `fct_player_game_league` for a house league (to 0.01); latency per route; `api/README.md`. |
+| G2 | **The decisions, on demand** (API): `/api/waivers` (free agents = Sleeper's directory − the league's rosters, priced; `waivers.py`'s claim-vs-weakest-starter / best-bench rule on the on-demand lineup), `/api/trades` (`trades.py` on `LineupInputs` for any two rosters: evaluate a package, find partners), `/api/team` (Team Hub: roster value and slot strength vs the league, the horizon), `/api/league` (standings, all-play and luck from Sleeper's season matchups, transactions). | For both house leagues each route reproduces the marts (`mart_waiver_moves`, the trade evaluator's numbers, `mart_league_roster_rankings` / `_slot_strength`, `mart_league_standings` / `_all_play`) to 0.01; the fictional Test League returns answers; latency. |
+| G3 | **Design system + the research screens** (web): tokens (type, spacing, color, light / dark), components (top bar, cards, tables, tabs, player row with headshot + team, stat tiles, one chart kit), the pass over the five existing screens, "Our record" folded into "About the numbers" with the model explanation; new screens Trends, Matchups (defense heatmap, cornerbacks), Players, Receivers, Compare, and the game-log chart on the player card. Charts: one library, read as one system (the dataviz references in the brief). Andrew's references arrive mid-round. | Fixture e2e for every screen at 390 and 1300 px, light and dark; lint clean; first content ≤ 500 ms; screenshots; a `docs/DESIGN.md` with the tokens and rules. |
+| G4 | **The decision screens** (web): Waivers, Trade Finder (evaluate a package; find partners), Team Hub, League (standings, luck, transactions) on G2's contract, in G3's components (coordinate through the PO: G3 publishes its components first, G4 builds on them). | Fixture e2e per screen; numbers equal the fixtures; lint clean. |
+
+Order: G1–G4 in parallel (four Opus devs, one round); the PO integrates, one scoped QA pass, ship; then the
+non-commercial beta on a host (the Dockerfile).
+
 ### Iteration 14 — the customer app (agreed 2026-10-02, Wave F)
 
 Andrew's go, 2026-10-02, after reading `docs/ANY_LEAGUE.md`. Sleeper's API terms (his quote): free for
