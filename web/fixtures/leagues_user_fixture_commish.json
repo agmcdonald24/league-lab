@@ -1,0 +1,22 @@
+{
+ "user": {
+  "user_id": "900000000000000099",
+  "username": "fixture_commish",
+  "display_name": "Fixture Commish",
+  "avatar": null
+ },
+ "season": 2026,
+ "leagues": [
+  {
+   "league_id": "9000000000000000001",
+   "name": "Test League",
+   "season": 2026,
+   "total_rosters": 10,
+   "scoring_label": "10-team redraft · half PPR · 4‑pt pass TD",
+   "roster_id": null,
+   "team_name": null,
+   "status": "in_season",
+   "in_database": false
+  }
+ ]
+}

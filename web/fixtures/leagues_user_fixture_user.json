@@ -1,0 +1,44 @@
+{
+ "user": {
+  "user_id": "900000000000000003",
+  "username": "fixture_user",
+  "display_name": "Fixture User",
+  "avatar": null
+ },
+ "season": 2026,
+ "leagues": [
+  {
+   "league_id": "1321941740235550720",
+   "name": "Forever Unclean Dynasty",
+   "season": 2026,
+   "total_rosters": 12,
+   "scoring_label": "12-team superflex dynasty · full PPR · 6‑pt pass TD · yardage bonuses",
+   "roster_id": 12,
+   "team_name": "Shake & Bake",
+   "status": "in_season",
+   "in_database": true
+  },
+  {
+   "league_id": "1389709692405551104",
+   "name": "League of Scrubs",
+   "season": 2026,
+   "total_rosters": 10,
+   "scoring_label": "10-team redraft · half PPR · 4‑pt pass TD",
+   "roster_id": 2,
+   "team_name": "MacZaddy",
+   "status": "in_season",
+   "in_database": true
+  },
+  {
+   "league_id": "9000000000000000001",
+   "name": "Test League",
+   "season": 2026,
+   "total_rosters": 10,
+   "scoring_label": "10-team redraft · half PPR · 4‑pt pass TD",
+   "roster_id": 3,
+   "team_name": "Fixture Falcons",
+   "status": "in_season",
+   "in_database": false
+  }
+ ]
+}

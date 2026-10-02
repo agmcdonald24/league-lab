@@ -1,20 +1,25 @@
-// A two-route router on the History API: "/" (My Week) and "/player/<gsis>".
+// A small router on the History API: "/" (My Week, or the sign-in when no league is known), "/leagues" (sign in with a
+// Sleeper username, pick a league), "/player/<gsis>", "/ros" (rest of season), "/record" (our record).
 // * A tap on a same-site link is handled here (no reload, same session, one history entry).
 // * Changing the league or team rewrites the URL in place (replace), so Back goes to the previous PAGE.
 // * Each history entry remembers its scroll position; Back restores it.
 
+export type RouteName = "week" | "player" | "leagues" | "ros" | "record";
+
 export interface Route {
-  name: "week" | "player";
+  name: RouteName;
   gsis: string | null;
   params: URLSearchParams;
   depth: number; // how many in-app pages are behind this one (0 = the app was opened here)
 }
 
 function parse(): Route {
-  const path = location.pathname;
-  const m = path.match(/^\/player\/([^/]+)\/?$/);
+  const path = location.pathname.replace(/\/+$/, "") || "/";
+  const m = path.match(/^\/player\/([^/]+)$/);
   const depth = typeof history.state?.depth === "number" ? history.state.depth : 0;
-  return { name: m ? "player" : "week", gsis: m ? decodeURIComponent(m[1]) : null, params: new URLSearchParams(location.search), depth };
+  const named: Record<string, RouteName> = { "/leagues": "leagues", "/ros": "ros", "/record": "record" };
+  const name: RouteName = m ? "player" : (named[path] ?? "week");
+  return { name, gsis: m ? decodeURIComponent(m[1]) : null, params: new URLSearchParams(location.search), depth };
 }
 
 export const route = $state<{ current: Route }>({ current: parse() });

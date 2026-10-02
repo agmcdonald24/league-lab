@@ -17,19 +17,32 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <script>
       // Start the first screen's API call now, in parallel with the app's own download (src/lib/api.ts picks it up).
-      // Same rule as the app: the URL's league / team, else the ones remembered on this phone.
+      // Same rule as the app: the URL's league / team, else the ones remembered on this phone. With no league yet
+      // (the sign-in screen) and a Sleeper username remembered, the user's league list. The URLs must match
+      // src/lib/api.ts `paths` exactly.
       (function () {
         try {
           var q = new URLSearchParams(location.search);
           var ls = window.localStorage;
+          var enc = encodeURIComponent;
+          var path = location.pathname.replace(/\/+$/, "") || "/";
           var league = q.get("league") || ls.getItem("ll.league");
-          if (!league) return;
-          var team = q.get("team") || ls.getItem("ll.team." + league);
-          if (team && !/^\d+$/.test(team)) team = null;
-          var m = location.pathname.match(/^\/player\/([^/]+)\/?$/);
           var url = null;
-          if (m) url = "/api/player/" + m[1] + "?league=" + encodeURIComponent(league) + (team ? "&team=" + team : "");
-          else if (location.pathname === "/" && team) url = "/api/my-week?league=" + encodeURIComponent(league) + "&team=" + team;
+          if (!league) {
+            var user = ls.getItem("ll.user");
+            if (user && (path === "/" || path === "/leagues")) url = "/api/leagues?username=" + enc(user);
+          } else {
+            var team = q.get("team") || ls.getItem("ll.team." + league);
+            if (team && !/^\d+$/.test(team)) team = null;
+            var m = path.match(/^\/player\/([^/]+)$/);
+            if (m) url = "/api/player/" + m[1] + "?league=" + enc(league) + (team ? "&team=" + team : "");
+            else if (path === "/" && team) url = "/api/my-week?league=" + enc(league) + "&team=" + team;
+            else if (path === "/ros") {
+              var pos = (q.get("position") || "ALL").toUpperCase();
+              if (["QB", "RB", "WR", "TE", "K", "DEF", "ALL"].indexOf(pos) < 0) pos = "ALL";
+              url = "/api/ros?league=" + enc(league) + "&position=" + pos + "&limit=50";
+            } else if (path === "/record") url = "/api/record?league=" + enc(league);
+          }
           if (url) window.__llPrefetch = { url: url, res: fetch(url, { credentials: "same-origin", headers: { Accept: "application/json" } }) };
         } catch (e) {}
       })();

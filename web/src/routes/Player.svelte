@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { ApiError, get, paths, peek, Unauthorized, type Hit, type PlayerCard } from "../lib/api";
+  import { ApiError, get, paths, peek, Unauthorized, type Hit, type PlayerCard, type Section, type SectionKey } from "../lib/api";
   import { withContext } from "../lib/md";
+  import { learnLeagueName } from "../lib/names.svelte";
   import { back, navigate, restoreScroll, route } from "../lib/router.svelte";
   import Expander from "../components/Expander.svelte";
   import Md from "../components/Md.svelte";
@@ -17,7 +18,27 @@
   const ctx = $derived({ league, team });
   const home = $derived(withContext("/", ctx));
   // The card's answer first: this week's projection and where he sits in the lineup, then the rest.
-  const order = ["projection", "value", "availability", "usage", "signals"] as const;
+  const order: SectionKey[] = ["projection", "value", "availability", "usage", "signals"];
+  const NAMES: Record<string, string> = { usage: "Usage", projection: "Projection", availability: "Availability", value: "Value", signals: "Signals" };
+  const RANKED = ["QB", "RB", "WR", "TE", "K", "DEF"];
+
+  // The Projection section plus the rest-of-season line: the API's sentence (app/lib/ros.py card_line) is in the
+  // section today; `ros.line` is added when the API sends it separately and the section does not already have it.
+  // Then a link to the rest-of-season list at his position.
+  function projection(d: PlayerCard): Section | undefined {
+    const sec = d.sections.projection;
+    if (!sec) return sec;
+    const blocks = [...sec.blocks];
+    const has = blocks.some((b) => (b.text ?? "").startsWith("Rest of season"));
+    if (!has && d.ros?.line) blocks.push({ kind: "markdown", text: d.ros.line });
+    if ((has || d.ros) && RANKED.includes(d.position))
+      blocks.push({ kind: "caption", text: `[Every ${d.position} for the rest of the season](/ros?position=${d.position})` });
+    return { ...sec, blocks };
+  }
+  const sections = $derived(
+    data ? order.map((k) => ({ key: k, sec: k === "projection" ? projection(data!) : data!.sections[k] })).filter((x) => !!x.sec) : [],
+  );
+  const missing = $derived((data?.missing ?? []).filter((k) => !data?.sections[k as SectionKey]).map((k) => NAMES[k] ?? k));
 
   $effect(() => {
     const id = gsis;
@@ -37,12 +58,15 @@
       .then((d) => {
         if (gsis !== id || league !== l) return;
         data = d;
+        learnLeagueName(d.league_id, d.league_name);
         restoreScroll();
       })
       .catch((e) => {
         if (gsis !== id) return;
         if (e instanceof Unauthorized) onauth();
-        else error = e instanceof ApiError && e.status === 404 ? `No player with id ${id}. Search for him above.` : String(e);
+        else if (e instanceof ApiError && e.status === 404) error = `No player with id ${id}. Search for him above.`;
+        else if (e instanceof ApiError && e.status === 502) error = "Sleeper did not answer. Try again in a minute.";
+        else error = e instanceof Error ? e.message : String(e);
       });
   });
 
@@ -133,9 +157,14 @@
       <h1 class="text-2xl leading-tight font-bold" data-testid="player-name">{data.player_name}</h1>
       <p class="text-[14px] leading-snug text-zinc-600 dark:text-zinc-300"><Md text={data.header} {ctx} /></p>
     </section>
-    {#each order as key (key)}
-      <SectionBox section={data.sections[key]} {ctx} testid={`section-${key}`} />
+    {#each sections as x (x.key)}
+      <SectionBox section={x.sec!} {ctx} testid={`section-${x.key}`} />
     {/each}
+    {#if missing.length}
+      <p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400" data-testid="missing">
+        Not shown for {data.league_name} yet: {missing.join(", ")}.
+      </p>
+    {/if}
     <Expander title="How to read this" testid="howto"><Md text={data.howto} {ctx} block class="text-[14px] leading-snug" /></Expander>
   {/if}
 </main>

@@ -1,0 +1,195 @@
+{
+ "gsis_id": "00-0039150",
+ "player_name": "Bryce Young",
+ "position": "QB",
+ "team": "CAR",
+ "header": "QB · CAR · QB1 on the depth chart · on **MacZaddy** (amcdonald24)",
+ "league_id": "1389709692405551104",
+ "league_name": "League of Scrubs",
+ "season": 2026,
+ "week": 4,
+ "rostered_by_roster_id": 2,
+ "is_free_agent": false,
+ "injury_status": null,
+ "locked": false,
+ "proj_points": 17.25,
+ "sections": {
+  "usage": {
+   "title": "**Usage** — his share of the team's opportunities",
+   "blocks": [
+    {
+     "kind": "metrics",
+     "metrics": [
+      {
+       "label": "Passes / game",
+       "value": "36.5",
+       "delta": null,
+       "trend": null,
+       "help": null
+      },
+      {
+       "label": "Carry share",
+       "value": "6.8%",
+       "delta": null,
+       "trend": null,
+       "help": null
+      },
+      {
+       "label": "Snap share",
+       "value": "92.0%",
+       "delta": null,
+       "trend": null,
+       "help": null
+      },
+      {
+       "label": "Red-zone share",
+       "value": "25.0%",
+       "delta": null,
+       "trend": null,
+       "help": null
+      }
+     ]
+    },
+    {
+     "kind": "caption",
+     "text": "Season to date, 2 games. Trend: not enough games yet. Trends are called from a player's fourth game."
+    }
+   ]
+  },
+  "projection": {
+   "title": "**Projection** — week 4, League of Scrubs scoring",
+   "blocks": [
+    {
+     "kind": "metrics",
+     "metrics": [
+      {
+       "label": "Projected",
+       "value": "17.2",
+       "delta": null,
+       "trend": null,
+       "help": null
+      },
+      {
+       "label": "Most weeks",
+       "value": "14–26",
+       "delta": null,
+       "trend": null,
+       "help": "Half his weeks land in this range: a quarter below it, a quarter above"
+      },
+      {
+       "label": "Floor",
+       "value": "8.8",
+       "delta": null,
+       "trend": null,
+       "help": "One week in ten he scores less"
+      },
+      {
+       "label": "Ceiling",
+       "value": "28.8",
+       "delta": null,
+       "trend": null,
+       "help": "One week in ten he scores more"
+      }
+     ]
+    },
+    {
+     "kind": "markdown",
+     "text": "Stat line: 31 passes for 243 yds, 1.8 TD, 0.7 INT · 2.7 carries for 8 yds, 0.09 TD"
+    },
+    {
+     "kind": "markdown",
+     "text": "Rest of season: **173 points** over 12 games (likely 142–205), **QB28** in this league · playoffs (weeks 15–16): 28"
+    },
+    {
+     "kind": "caption",
+     "text": "Week by week (weeks 4–16, through this league's final): wk 4 17.2 · 5 bye · 6 14.3 · 7 14.5 · 8 14.8 · 9 14.3 · 10 14.1 · 11 14.0 · 12 14.1 · 13 14.1 · 14 14.0 · 15 14.0 · 16 13.9. Only week 4 has betting lines yet: the later weeks lean on his usage and the schedule."
+    },
+    {
+     "kind": "markdown",
+     "text": "Next: week 4 vs DET — DET ranks **#1** of 32 vs QB (1 = gives up the most)"
+    },
+    {
+     "kind": "caption",
+     "text": "Next 4: wk 4 vs DET (#1) · wk 5 BYE · wk 6 @ PHI (#13) · wk 7 vs TB (#16)"
+    }
+   ]
+  },
+  "availability": {
+   "title": "**Availability**",
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "Rostered by **MacZaddy** (amcdonald24), on the bench in Sleeper.  \nNo injury designation.  \nBye: week 5.  \nWeek 4 kickoff Sun Oct 4, 8:20 PM ET — not locked yet."
+    }
+   ]
+  },
+  "value": {
+   "title": "**Value** — League of Scrubs scoring",
+   "blocks": [
+    {
+     "kind": "metrics",
+     "metrics": [
+      {
+       "label": "Points / game",
+       "value": "28.3",
+       "delta": null,
+       "trend": null,
+       "help": "This season, 2 games, League of Scrubs scoring"
+      },
+      {
+       "label": "Expected",
+       "value": "27.6",
+       "delta": "+0.7",
+       "trend": "up",
+       "help": "Expected points per game: what his targets and carries were worth on average (depth, field position). The arrow is points per game above or below that: above = he beat his opportunity"
+      },
+      {
+       "label": "Rank",
+       "value": "QB2",
+       "delta": null,
+       "trend": null,
+       "help": "By points per game among all players at the position"
+      },
+      {
+       "label": "Last season",
+       "value": "14.3",
+       "delta": null,
+       "trend": null,
+       "help": "Points per game in 2025, 16 games, this league's scoring; QB29"
+      }
+     ]
+    },
+    {
+     "kind": "markdown",
+     "text": "Week 4: **on MacZaddy's bench** (2 of 5), 17.25. To start at QB he would have to beat [Patrick Mahomes](/player/00-0033873) (20.26), 3.01 more."
+    }
+   ]
+  },
+  "signals": {
+   "title": "**Signals** — has his role changed lately?",
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "Role: **no role change detected** in his last three games: his share of the snaps, targets and carries is where it has been.  \nUpside: nothing beyond the projection above."
+    },
+    {
+     "kind": "caption",
+     "text": "A role alert needs his share of the snaps, targets or carries to jump (or fall) well past his usual swing, in every one of his last one to three games. The what-if re-runs the same projection with his last three games at the new level, in League of Scrubs scoring."
+    }
+   ]
+  }
+ },
+ "howto": "- **Usage** is the work he gets: his share of his team's targets or carries, of its plays, of the quarterback's first looks and of the red-zone chances. The arrow is the last 3 games: up means a growing role.\n- **Projection** is this week's projected points in League of Scrubs scoring. **Most weeks** is the range half his weeks land in (a quarter below, a quarter above); the **floor** and **ceiling** are a bad week and a good week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. The opponent's rank is 1 for the defense that gives up the most to his position.\n- **Rest of season** adds up his projection for every week left in this league's season, up to its final: use it for trades and waivers, where the next four weeks are not the whole story. His bye is a week with no game, not a low score. *Likely* is the range 8 seasons in 10 would land in if every week were its own roll of the dice; a role change or an injury moves the weeks together, so the real range is wider. The rank is among every player at his position in this league, rostered or not. Only this week has betting lines yet: the later weeks lean on his usage and the schedule.\n- **Availability** says whose team he is on (or that he is a free agent), his injury status, and whether his game has started.\n- **Value** compares what he scores with what his work is usually worth (above = running hot, below = due), and says where he sits in his team's best lineup this week and how much that lineup would lose without him.",
+ "viewer_roster_id": null,
+ "ros": {
+  "points": 173.38,
+  "games": 12,
+  "p10": 142.1,
+  "p90": 204.6,
+  "pos_rank": 28,
+  "playoff_points": 27.9,
+  "from_week": 4,
+  "last_week": 16
+ },
+ "missing": []
+}
