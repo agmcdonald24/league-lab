@@ -1,0 +1,206 @@
+{
+ "league_id": "1321941740235550720",
+ "team": 12,
+ "week": 4,
+ "span": "weeks 4–7",
+ "want": "QB",
+ "partners": [
+  {
+   "roster_id": 8,
+   "team_name": "Taco Corp.",
+   "manager_name": "JMason978",
+   "shape": "1-for-1",
+   "give": [
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "value": 19.78,
+     "reason": null,
+     "market_price": 216,
+     "season_points": 282,
+     "ros_points": 261.36,
+     "ros_rank_pos": 16
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "3163",
+     "gsis_id": "00-0033106",
+     "player_name": "Jared Goff",
+     "position": "QB",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kaicbot8qhzrvddilbtp",
+     "value": 23.97,
+     "reason": null,
+     "market_price": 236,
+     "season_points": 301,
+     "ros_points": 280.33,
+     "ros_rank_pos": 8
+    }
+   ],
+   "my_week": 4.19,
+   "my_horizon": 4.43,
+   "their_week": -4.19,
+   "their_horizon": 4.73,
+   "market_out": 216,
+   "market_in": 236,
+   "is_best": false
+  },
+  {
+   "roster_id": 2,
+   "team_name": "Hakuna Nacua",
+   "manager_name": "bmason1122",
+   "shape": "1-for-2",
+   "give": [
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "value": 9.7,
+     "reason": null,
+     "market_price": 27,
+     "season_points": 129,
+     "ros_points": 119.41,
+     "ros_rank_pos": 40
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "9758",
+     "gsis_id": "00-0039163",
+     "player_name": "C.J. Stroud",
+     "position": "QB",
+     "team": "HOU",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tt4zrtxlhifaljhj0rn7",
+     "value": 24.2,
+     "reason": null,
+     "market_price": 222,
+     "season_points": 288,
+     "ros_points": 268.19,
+     "ros_rank_pos": 14
+    },
+    {
+     "sleeper_id": "11625",
+     "gsis_id": "00-0039890",
+     "player_name": "Adonai Mitchell",
+     "position": "WR",
+     "team": "NYJ",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hwwacoa3pqapd7pgahfx",
+     "value": 11.57,
+     "reason": null,
+     "market_price": 37,
+     "season_points": 163,
+     "ros_points": 151.13,
+     "ros_rank_pos": 29
+    }
+   ],
+   "my_week": 3.95,
+   "my_horizon": 3.78,
+   "their_week": 0.84,
+   "their_horizon": 4.21,
+   "market_out": 27,
+   "market_in": 259,
+   "is_best": true
+  },
+  {
+   "roster_id": 2,
+   "team_name": "Hakuna Nacua",
+   "manager_name": "bmason1122",
+   "shape": "1-for-1",
+   "give": [
+    {
+     "sleeper_id": "11435",
+     "gsis_id": "00-0038797",
+     "player_name": "Emanuel Wilson",
+     "position": "RB",
+     "team": "SEA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/uorruvczsxzvffpbxu8z",
+     "value": 8.68,
+     "reason": null,
+     "market_price": 17,
+     "season_points": 119,
+     "ros_points": 110.99,
+     "ros_rank_pos": 42
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "9758",
+     "gsis_id": "00-0039163",
+     "player_name": "C.J. Stroud",
+     "position": "QB",
+     "team": "HOU",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tt4zrtxlhifaljhj0rn7",
+     "value": 24.2,
+     "reason": null,
+     "market_price": 222,
+     "season_points": 288,
+     "ros_points": 268.19,
+     "ros_rank_pos": 14
+    }
+   ],
+   "my_week": 4.97,
+   "my_horizon": 3.77,
+   "their_week": -0.18,
+   "their_horizon": 1.95,
+   "market_out": 17,
+   "market_in": 222,
+   "is_best": false
+  },
+  {
+   "roster_id": 9,
+   "team_name": "Them GriDDy Njigba’s",
+   "manager_name": "PhillyRoc",
+   "shape": "1-for-1",
+   "give": [
+    {
+     "sleeper_id": "96",
+     "gsis_id": "00-0023459",
+     "player_name": "Aaron Rodgers",
+     "position": "QB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dypvakakxhccxs67tb0y",
+     "value": null,
+     "reason": "game started (bench)",
+     "market_price": 213,
+     "season_points": 279,
+     "ros_points": 259.83,
+     "ros_rank_pos": 17
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "5849",
+     "gsis_id": "00-0035228",
+     "player_name": "Kyler Murray",
+     "position": "QB",
+     "team": "MIN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/btfruyf33adgnjzpcuen",
+     "value": 22.12,
+     "reason": null,
+     "market_price": 35,
+     "season_points": 100,
+     "ros_points": 94.28,
+     "ros_rank_pos": 33
+    }
+   ],
+   "my_week": 3.35,
+   "my_horizon": 1.71,
+   "their_week": -4.35,
+   "their_horizon": 1.82,
+   "market_out": 213,
+   "market_in": 35,
+   "is_best": false
+  }
+ ],
+ "none": [
+  "masonbrandonn"
+ ]
+}

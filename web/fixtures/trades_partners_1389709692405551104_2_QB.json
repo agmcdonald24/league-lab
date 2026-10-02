@@ -1,0 +1,69 @@
+{
+ "league_id": "1389709692405551104",
+ "team": 2,
+ "week": 4,
+ "span": "weeks 4–7",
+ "want": "QB",
+ "partners": [
+  {
+   "roster_id": 4,
+   "team_name": "Scrote Squad",
+   "manager_name": "nirajp75",
+   "shape": "1-for-2",
+   "give": [
+    {
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "position": "RB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "value": 11.28,
+     "reason": null,
+     "market_price": 43,
+     "season_points": 170,
+     "ros_points": 145.43,
+     "ros_rank_pos": 17
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "8228",
+     "gsis_id": "00-0037228",
+     "player_name": "Jaylen Warren",
+     "position": "RB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dkiteytgnxar1mpaxcxv",
+     "value": null,
+     "reason": "game started (bench)",
+     "market_price": 16,
+     "season_points": 144,
+     "ros_points": 123.28,
+     "ros_rank_pos": 23
+    },
+    {
+     "sleeper_id": "8183",
+     "gsis_id": "00-0037834",
+     "player_name": "Brock Purdy",
+     "position": "QB",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
+     "value": 17.59,
+     "reason": null,
+     "market_price": 0,
+     "season_points": 234,
+     "ros_points": 200.64,
+     "ros_rank_pos": 10
+    }
+   ],
+   "my_week": -2.08,
+   "my_horizon": 5.69,
+   "their_week": 3.09,
+   "their_horizon": 4.46,
+   "market_out": 43,
+   "market_in": 16,
+   "is_best": true
+  }
+ ],
+ "none": []
+}

@@ -1,0 +1,305 @@
+{
+ "league_id": "1389709692405551104",
+ "team": 2,
+ "week": 4,
+ "span": "weeks 4–7",
+ "want": "WR",
+ "partners": [
+  {
+   "roster_id": 3,
+   "team_name": "Run Bijan Run",
+   "manager_name": "Tate524",
+   "shape": "1-for-2",
+   "give": [
+    {
+     "sleeper_id": "9487",
+     "gsis_id": "00-0038606",
+     "player_name": "Parker Washington",
+     "position": "WR",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+     "value": 12.16,
+     "reason": null,
+     "market_price": 52,
+     "season_points": 175,
+     "ros_points": 149.15,
+     "ros_rank_pos": 11
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7611",
+     "gsis_id": "00-0036875",
+     "player_name": "Rhamondre Stevenson",
+     "position": "RB",
+     "team": "NE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zmpuirvuw4r04inxth5i",
+     "value": 10.45,
+     "reason": null,
+     "market_price": 8,
+     "season_points": 135,
+     "ros_points": 115.3,
+     "ros_rank_pos": 30
+    },
+    {
+     "sleeper_id": "11834",
+     "gsis_id": "00-0039424",
+     "player_name": "Devaughn Vele",
+     "position": "WR",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fa3dwsu8nxzkbf2knczm",
+     "value": 9.82,
+     "reason": null,
+     "market_price": 14,
+     "season_points": 136,
+     "ros_points": 116.54,
+     "ros_rank_pos": 26
+    }
+   ],
+   "my_week": -1.61,
+   "my_horizon": 6.68,
+   "their_week": 1.71,
+   "their_horizon": 6.4,
+   "market_out": 52,
+   "market_in": 22,
+   "is_best": true
+  },
+  {
+   "roster_id": 1,
+   "team_name": "Daejon Loves PR team",
+   "manager_name": "AlexanderN",
+   "shape": "1-for-2",
+   "give": [
+    {
+     "sleeper_id": "9487",
+     "gsis_id": "00-0038606",
+     "player_name": "Parker Washington",
+     "position": "WR",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+     "value": 12.16,
+     "reason": null,
+     "market_price": 52,
+     "season_points": 175,
+     "ros_points": 149.15,
+     "ros_rank_pos": 11
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "8137",
+     "gsis_id": "00-0037247",
+     "player_name": "George Pickens",
+     "position": "WR",
+     "team": "DAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cbpyykoguf7rsxezqzvk",
+     "value": 10.78,
+     "reason": null,
+     "market_price": 18,
+     "season_points": 141,
+     "ros_points": 120.54,
+     "ros_rank_pos": 24
+    },
+    {
+     "sleeper_id": "12489",
+     "gsis_id": "00-0040730",
+     "player_name": "RJ Harvey",
+     "position": "RB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/szxmro5enrxlscvv67xg",
+     "value": 8.65,
+     "reason": null,
+     "market_price": 0,
+     "season_points": 118,
+     "ros_points": 101.75,
+     "ros_rank_pos": 39
+    }
+   ],
+   "my_week": -1.38,
+   "my_horizon": 6.78,
+   "their_week": 1.38,
+   "their_horizon": 5.41,
+   "market_out": 52,
+   "market_in": 18,
+   "is_best": true
+  },
+  {
+   "roster_id": 8,
+   "team_name": "MikeDaddy",
+   "manager_name": "mmelody333",
+   "shape": "1-for-2",
+   "give": [
+    {
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "position": "RB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "value": 11.28,
+     "reason": null,
+     "market_price": 43,
+     "season_points": 170,
+     "ros_points": 145.43,
+     "ros_rank_pos": 17
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "11620",
+     "gsis_id": "00-0039919",
+     "player_name": "Rome Odunze",
+     "position": "WR",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/niewdl2p2325kpohbw9v",
+     "value": 7.57,
+     "reason": null,
+     "market_price": 0,
+     "season_points": 107,
+     "ros_points": 91.15,
+     "ros_rank_pos": 56
+    },
+    {
+     "sleeper_id": "12534",
+     "gsis_id": "00-0040236",
+     "player_name": "Kyle Monangai",
+     "position": "RB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/bkkk3uuouhcobydqawro",
+     "value": 10.3,
+     "reason": null,
+     "market_price": 13,
+     "season_points": 141,
+     "ros_points": 121.18,
+     "ros_rank_pos": 25
+    }
+   ],
+   "my_week": -0.98,
+   "my_horizon": 5.23,
+   "their_week": 0.98,
+   "their_horizon": 5.19,
+   "market_out": 43,
+   "market_in": 13,
+   "is_best": true
+  },
+  {
+   "roster_id": 6,
+   "team_name": "GoodGameBuddy",
+   "manager_name": "Chazk92",
+   "shape": "1-for-2",
+   "give": [
+    {
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "value": 20.26,
+     "reason": null,
+     "market_price": 17,
+     "season_points": 261,
+     "ros_points": 224.83,
+     "ros_rank_pos": 1
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "11581",
+     "gsis_id": "00-0039811",
+     "player_name": "MarShawn Lloyd",
+     "position": "RB",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xp8sd4enimuk4zd0aqgu",
+     "value": 8.02,
+     "reason": null,
+     "market_price": 0,
+     "season_points": 112,
+     "ros_points": 96.77,
+     "ros_rank_pos": 41
+    },
+    {
+     "sleeper_id": "13346",
+     "gsis_id": "00-0041037",
+     "player_name": "Denzel Boston",
+     "position": "WR",
+     "team": "CLE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+     "value": 9.3,
+     "reason": null,
+     "market_price": 27,
+     "season_points": 149,
+     "ros_points": 127.61,
+     "ros_rank_pos": 18
+    }
+   ],
+   "my_week": -2.09,
+   "my_horizon": 4.92,
+   "their_week": 5.52,
+   "their_horizon": 5.3,
+   "market_out": 17,
+   "market_in": 27,
+   "is_best": true
+  },
+  {
+   "roster_id": 10,
+   "team_name": "GIBB ME ANOTA ONE",
+   "manager_name": "Kouskous1111",
+   "shape": "1-for-2",
+   "give": [
+    {
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "position": "RB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "value": 11.28,
+     "reason": null,
+     "market_price": 43,
+     "season_points": 170,
+     "ros_points": 145.43,
+     "ros_rank_pos": 17
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "13287",
+     "gsis_id": "00-0041027",
+     "player_name": "Jeremiyah Love",
+     "position": "RB",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b12gtjsylmql5v7iyyla",
+     "value": 9.78,
+     "reason": null,
+     "market_price": 11,
+     "season_points": 139,
+     "ros_points": 119.23,
+     "ros_rank_pos": 26
+    },
+    {
+     "sleeper_id": "13279",
+     "gsis_id": "00-0041438",
+     "player_name": "Carnell Tate",
+     "position": "WR",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ghpmpzcnigxrdbyvcxke",
+     "value": 7.23,
+     "reason": null,
+     "market_price": 0,
+     "season_points": 107,
+     "ros_points": 91.38,
+     "ros_rank_pos": 55
+    }
+   ],
+   "my_week": -1.5,
+   "my_horizon": 5.37,
+   "their_week": 1.5,
+   "their_horizon": 4.61,
+   "market_out": 43,
+   "market_in": 11,
+   "is_best": true
+  }
+ ],
+ "none": []
+}

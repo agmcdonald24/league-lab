@@ -1,0 +1,400 @@
+{
+ "league_id": "9000000000000000001",
+ "team": 3,
+ "partner": 7,
+ "partner_team_name": "Goal Line Stand",
+ "week": 4,
+ "weeks": [
+  4,
+  5,
+  6,
+  7
+ ],
+ "span": "weeks 4–7",
+ "give": [
+  {
+   "sleeper_id": "4046",
+   "gsis_id": "00-0033873",
+   "player_name": "Patrick Mahomes",
+   "position": "QB",
+   "team": "KC",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+   "value": 20.26,
+   "reason": null,
+   "market_price": 17,
+   "season_points": 261,
+   "ros_points": 224.83,
+   "ros_rank_pos": 1
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "3198",
+   "gsis_id": "00-0032764",
+   "player_name": "Derrick Henry",
+   "position": "RB",
+   "team": "BAL",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tm79x0iknqg6hms3ypyt",
+   "value": 17.39,
+   "reason": null,
+   "market_price": 92,
+   "season_points": 220,
+   "ros_points": 188.2,
+   "ros_rank_pos": 8
+  }
+ ],
+ "before": {
+  "mine": {
+   "week": 117.02,
+   "horizon": 425.55,
+   "bench": 42.35
+  },
+  "theirs": {
+   "week": 124.06,
+   "horizon": 452.47,
+   "bench": 50.43
+  }
+ },
+ "after": {
+  "mine": {
+   "week": 122.6,
+   "horizon": 448.59,
+   "bench": 51.15
+  },
+  "theirs": {
+   "week": 118.04,
+   "horizon": 432.41,
+   "bench": 42.33
+  }
+ },
+ "fit": {
+  "mine": {
+   "week": 5.58,
+   "horizon": 23.04
+  },
+  "theirs": {
+   "week": -6.02,
+   "horizon": -20.06
+  },
+  "line": "**Fit** (what the best lineups gain): you **+5.6** this week and **+23.0** over weeks 4–7; them **-6.0** and **-20.1**."
+ },
+ "market": {
+  "give": 17,
+  "get": 92,
+  "about_even": false,
+  "unknown": [],
+  "line": "**Market** (season points above the best free agent at the position): you give **17**, you get **92**: you get 75 more.",
+  "replacement": {
+   "DEF": 110,
+   "K": 127,
+   "QB": 244,
+   "RB": 128,
+   "TE": 109,
+   "WR": 122
+  }
+ },
+ "ros": {
+  "give": 225,
+  "get": 188,
+  "window": "weeks 4–16"
+ },
+ "verdict": "Helps you +5.6 this week (+23.0 over weeks 4–7), costs them 6.0 (20.1 over weeks 4–7); the market says you're getting more: expect a no.",
+ "headline": "**You give Patrick Mahomes; you get Derrick Henry.**",
+ "sides": {
+  "mine": {
+   "roster_id": 3,
+   "week_before": 117.02,
+   "week_after": 122.6,
+   "horizon_before": 425.55,
+   "horizon_after": 448.59,
+   "gain_week": 5.58,
+   "gain_horizon": 23.04,
+   "bench_before": 42.35,
+   "bench_after": 51.15,
+   "closest_after": {
+    "player_name": "Tyler Shough",
+    "slot": "QB",
+    "margin": 0.92
+   },
+   "cuts": [],
+   "opened": 0,
+   "price_out": 17,
+   "price_in": 92,
+   "lineup": [
+    {
+     "slot": "QB",
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "is_new": false,
+     "value": 18.17,
+     "change": -2.09
+    },
+    {
+     "slot": "RB1",
+     "sleeper_id": "3198",
+     "gsis_id": "00-0032764",
+     "player_name": "Derrick Henry",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tm79x0iknqg6hms3ypyt",
+     "is_new": true,
+     "value": 17.39,
+     "change": 4.59
+    },
+    {
+     "slot": "RB2",
+     "sleeper_id": "8150",
+     "gsis_id": "00-0037840",
+     "player_name": "Kyren Williams",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+     "is_new": false,
+     "value": 12.8,
+     "change": 1.52
+    },
+    {
+     "slot": "WR1",
+     "sleeper_id": "12526",
+     "gsis_id": "00-0040124",
+     "player_name": "Tetairoa McMillan",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gilgvjemumd6kpc9eiku",
+     "is_new": false,
+     "value": 12.75,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "sleeper_id": "6794",
+     "gsis_id": "00-0036322",
+     "player_name": "Justin Jefferson",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+     "is_new": false,
+     "value": 12.68,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "sleeper_id": "1466",
+     "gsis_id": "00-0030506",
+     "player_name": "Travis Kelce",
+     "position": "TE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+     "is_new": false,
+     "value": 10.14,
+     "change": null
+    },
+    {
+     "slot": "FLEX1",
+     "sleeper_id": "9487",
+     "gsis_id": "00-0038606",
+     "player_name": "Parker Washington",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+     "is_new": false,
+     "value": 12.16,
+     "change": null
+    },
+    {
+     "slot": "FLEX2",
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "is_new": false,
+     "value": 11.28,
+     "change": 1.56
+    },
+    {
+     "slot": "K",
+     "sleeper_id": "6650",
+     "gsis_id": "00-0035358",
+     "player_name": "Chase McLaughlin",
+     "position": "K",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+     "is_new": false,
+     "value": 8.07,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "sleeper_id": "KC",
+     "gsis_id": null,
+     "player_name": "Kansas City Chiefs",
+     "position": "DEF",
+     "headshot_url": null,
+     "is_new": false,
+     "value": 7.16,
+     "change": null
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 7,
+   "week_before": 124.06,
+   "week_after": 118.04,
+   "horizon_before": 452.47,
+   "horizon_after": 432.41,
+   "gain_week": -6.02,
+   "gain_horizon": -20.06,
+   "bench_before": 50.43,
+   "bench_after": 42.33,
+   "closest_after": {
+    "player_name": "Deebo Samuel Sr.",
+    "slot": "FLEX2",
+    "margin": 0.3
+   },
+   "cuts": [],
+   "opened": 0,
+   "price_out": 92,
+   "price_in": 17,
+   "lineup": [
+    {
+     "slot": "QB",
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "is_new": true,
+     "value": 20.26,
+     "change": 2.24
+    },
+    {
+     "slot": "RB1",
+     "sleeper_id": "5892",
+     "gsis_id": "00-0035685",
+     "player_name": "David Montgomery",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/csz0c9roa4pqsccothxg",
+     "is_new": false,
+     "value": 10.93,
+     "change": -6.46
+    },
+    {
+     "slot": "RB2",
+     "sleeper_id": "13286",
+     "gsis_id": "00-0041512",
+     "player_name": "Jadarian Price",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toy90i08oumgbdlvctja",
+     "is_new": false,
+     "value": 10.01,
+     "change": -0.92
+    },
+    {
+     "slot": "WR1",
+     "sleeper_id": "7547",
+     "gsis_id": "00-0036963",
+     "player_name": "Amon-Ra St. Brown",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fd8nwhm6pvxfyzphzl6i",
+     "is_new": false,
+     "value": 15.0,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "sleeper_id": "2133",
+     "gsis_id": "00-0031381",
+     "player_name": "Davante Adams",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tdzluk4xau3arxqk9zsl",
+     "is_new": false,
+     "value": 12.22,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "sleeper_id": "5001",
+     "gsis_id": "00-0034383",
+     "player_name": "Dalton Schultz",
+     "position": "TE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ym8sbkev8l4scnrc0vd8",
+     "is_new": false,
+     "value": 10.28,
+     "change": null
+    },
+    {
+     "slot": "FLEX1",
+     "sleeper_id": "6801",
+     "gsis_id": "00-0036410",
+     "player_name": "Tee Higgins",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gpwtyv3viwy9q4ewderl",
+     "is_new": false,
+     "value": 11.08,
+     "change": null
+    },
+    {
+     "slot": "FLEX2",
+     "sleeper_id": "5872",
+     "gsis_id": "00-0035719",
+     "player_name": "Deebo Samuel Sr.",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ntgyhqg6hq7fanhhsqiw",
+     "is_new": false,
+     "value": 9.13,
+     "change": -0.88
+    },
+    {
+     "slot": "K",
+     "sleeper_id": "2747",
+     "gsis_id": "00-0031492",
+     "player_name": "Jason Myers",
+     "position": "K",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zcd7q9loflr0t5bsvzig",
+     "is_new": false,
+     "value": 8.59,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "sleeper_id": "MIN",
+     "gsis_id": null,
+     "player_name": "Minnesota Vikings",
+     "position": "DEF",
+     "headshot_url": null,
+     "is_new": false,
+     "value": 10.54,
+     "change": null
+    }
+   ]
+  }
+ },
+ "weekly": [
+  {
+   "week": 4,
+   "you_before": 117.02,
+   "you_after": 122.6,
+   "them_before": 124.06,
+   "them_after": 118.04
+  },
+  {
+   "week": 5,
+   "you_before": 100.63,
+   "you_after": 106.57,
+   "them_before": 116.17,
+   "them_after": 109.86
+  },
+  {
+   "week": 6,
+   "you_before": 112.3,
+   "you_after": 113.56,
+   "them_before": 99.66,
+   "them_after": 94.38
+  },
+  {
+   "week": 7,
+   "you_before": 95.6,
+   "you_after": 105.86,
+   "them_before": 112.58,
+   "them_after": 110.13
+  }
+ ],
+ "source": "sleeper"
+}

@@ -1,0 +1,430 @@
+{
+ "league_id": "9000000000000000001",
+ "team": 3,
+ "partner": 2,
+ "partner_team_name": "Waiver Wire Warriors",
+ "week": 4,
+ "weeks": [
+  4,
+  5,
+  6,
+  7
+ ],
+ "span": "weeks 4–7",
+ "give": [
+  {
+   "sleeper_id": "9487",
+   "gsis_id": "00-0038606",
+   "player_name": "Parker Washington",
+   "position": "WR",
+   "team": "JAX",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+   "value": 12.16,
+   "reason": null,
+   "market_price": 52,
+   "season_points": 175,
+   "ros_points": 149.15,
+   "ros_rank_pos": 11
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "7611",
+   "gsis_id": "00-0036875",
+   "player_name": "Rhamondre Stevenson",
+   "position": "RB",
+   "team": "NE",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zmpuirvuw4r04inxth5i",
+   "value": 10.45,
+   "reason": null,
+   "market_price": 8,
+   "season_points": 135,
+   "ros_points": 115.3,
+   "ros_rank_pos": 30
+  },
+  {
+   "sleeper_id": "11834",
+   "gsis_id": "00-0039424",
+   "player_name": "Devaughn Vele",
+   "position": "WR",
+   "team": "NO",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fa3dwsu8nxzkbf2knczm",
+   "value": 9.82,
+   "reason": null,
+   "market_price": 14,
+   "season_points": 136,
+   "ros_points": 116.54,
+   "ros_rank_pos": 26
+  }
+ ],
+ "before": {
+  "mine": {
+   "week": 117.02,
+   "horizon": 425.55,
+   "bench": 42.35
+  },
+  "theirs": {
+   "week": 130.24,
+   "horizon": 503.44,
+   "bench": 44.69
+  }
+ },
+ "after": {
+  "mine": {
+   "week": 115.41,
+   "horizon": 432.23,
+   "bench": 42.88
+  },
+  "theirs": {
+   "week": 131.95,
+   "horizon": 509.84,
+   "bench": 34.87
+  }
+ },
+ "fit": {
+  "mine": {
+   "week": -1.61,
+   "horizon": 6.68
+  },
+  "theirs": {
+   "week": 1.71,
+   "horizon": 6.4
+  },
+  "line": "**Fit** (what the best lineups gain): you **-1.6** this week and **+6.7** over weeks 4–7; them **+1.7** and **+6.4**."
+ },
+ "market": {
+  "give": 52,
+  "get": 22,
+  "about_even": false,
+  "unknown": [],
+  "line": "**Market** (season points above the best free agent at the position): you give **52**, you get **22**: you give 30 more.",
+  "replacement": {
+   "DEF": 110,
+   "K": 127,
+   "QB": 244,
+   "RB": 128,
+   "TE": 109,
+   "WR": 122
+  }
+ },
+ "ros": {
+  "give": 149,
+  "get": 232,
+  "window": "weeks 4–16"
+ },
+ "verdict": "Helps you +6.7 over weeks 4–7 (-1.6 this week), them +1.7 (+6.4 over weeks 4–7); the market says you're giving up more: worth offering.",
+ "headline": "**You give Parker Washington; you get Rhamondre Stevenson and Devaughn Vele.**",
+ "sides": {
+  "mine": {
+   "roster_id": 3,
+   "week_before": 117.02,
+   "week_after": 115.41,
+   "horizon_before": 425.55,
+   "horizon_after": 432.23,
+   "gain_week": -1.61,
+   "gain_horizon": 6.68,
+   "bench_before": 42.35,
+   "bench_after": 42.88,
+   "closest_after": {
+    "player_name": "Devaughn Vele",
+    "slot": "FLEX2",
+    "margin": 0.1
+   },
+   "cuts": [
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "value": 9.19,
+     "reason": null,
+     "market_price": 0,
+     "season_points": 122,
+     "ros_points": 104.84,
+     "ros_rank_pos": 38,
+     "horizon_loss": 0.0
+    }
+   ],
+   "opened": 0,
+   "price_out": 52,
+   "price_in": 22,
+   "lineup": [
+    {
+     "slot": "QB",
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "is_new": false,
+     "value": 20.26,
+     "change": null
+    },
+    {
+     "slot": "RB1",
+     "sleeper_id": "8150",
+     "gsis_id": "00-0037840",
+     "player_name": "Kyren Williams",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+     "is_new": false,
+     "value": 12.8,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "is_new": false,
+     "value": 11.28,
+     "change": null
+    },
+    {
+     "slot": "WR1",
+     "sleeper_id": "12526",
+     "gsis_id": "00-0040124",
+     "player_name": "Tetairoa McMillan",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gilgvjemumd6kpc9eiku",
+     "is_new": false,
+     "value": 12.75,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "sleeper_id": "6794",
+     "gsis_id": "00-0036322",
+     "player_name": "Justin Jefferson",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+     "is_new": false,
+     "value": 12.68,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "sleeper_id": "1466",
+     "gsis_id": "00-0030506",
+     "player_name": "Travis Kelce",
+     "position": "TE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+     "is_new": false,
+     "value": 10.14,
+     "change": null
+    },
+    {
+     "slot": "FLEX1",
+     "sleeper_id": "7611",
+     "gsis_id": "00-0036875",
+     "player_name": "Rhamondre Stevenson",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zmpuirvuw4r04inxth5i",
+     "is_new": true,
+     "value": 10.45,
+     "change": -1.71
+    },
+    {
+     "slot": "FLEX2",
+     "sleeper_id": "11834",
+     "gsis_id": "00-0039424",
+     "player_name": "Devaughn Vele",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fa3dwsu8nxzkbf2knczm",
+     "is_new": true,
+     "value": 9.82,
+     "change": 0.1
+    },
+    {
+     "slot": "K",
+     "sleeper_id": "6650",
+     "gsis_id": "00-0035358",
+     "player_name": "Chase McLaughlin",
+     "position": "K",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+     "is_new": false,
+     "value": 8.07,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "sleeper_id": "KC",
+     "gsis_id": null,
+     "player_name": "Kansas City Chiefs",
+     "position": "DEF",
+     "headshot_url": null,
+     "is_new": false,
+     "value": 7.16,
+     "change": null
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 2,
+   "week_before": 130.24,
+   "week_after": 131.95,
+   "horizon_before": 503.44,
+   "horizon_after": 509.84,
+   "gain_week": 1.71,
+   "gain_horizon": 6.4,
+   "bench_before": 44.69,
+   "bench_after": 34.87,
+   "closest_after": {
+    "player_name": "Zay Flowers",
+    "slot": "FLEX2",
+    "margin": 1.43
+   },
+   "cuts": [],
+   "opened": 1,
+   "price_out": 22,
+   "price_in": 52,
+   "lineup": [
+    {
+     "slot": "QB",
+     "sleeper_id": "421",
+     "gsis_id": "00-0026498",
+     "player_name": "Matthew Stafford",
+     "position": "QB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+     "is_new": false,
+     "value": 16.96,
+     "change": null
+    },
+    {
+     "slot": "RB1",
+     "sleeper_id": "9509",
+     "gsis_id": "00-0038542",
+     "player_name": "Bijan Robinson",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/esii5yb8yn9edboi4mlq",
+     "is_new": false,
+     "value": 21.32,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "sleeper_id": "8151",
+     "gsis_id": "00-0038134",
+     "player_name": "Kenneth Walker III",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vk6nruaqdewdglofcwwg",
+     "is_new": false,
+     "value": 17.73,
+     "change": null
+    },
+    {
+     "slot": "WR1",
+     "sleeper_id": "8112",
+     "gsis_id": "00-0037238",
+     "player_name": "Drake London",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mcllowcfrmmdeo4zy3g1",
+     "is_new": false,
+     "value": 12.85,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "sleeper_id": "9487",
+     "gsis_id": "00-0038606",
+     "player_name": "Parker Washington",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+     "is_new": true,
+     "value": 12.16,
+     "change": 0.88
+    },
+    {
+     "slot": "TE",
+     "sleeper_id": "4217",
+     "gsis_id": "00-0033288",
+     "player_name": "George Kittle",
+     "position": "TE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
+     "is_new": false,
+     "value": 8.53,
+     "change": null
+    },
+    {
+     "slot": "FLEX1",
+     "sleeper_id": "6790",
+     "gsis_id": "00-0036275",
+     "player_name": "D'Andre Swift",
+     "position": "RB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/owpmwzoilitcodc6cmxo",
+     "is_new": false,
+     "value": 14.13,
+     "change": null
+    },
+    {
+     "slot": "FLEX2",
+     "sleeper_id": "9997",
+     "gsis_id": "00-0039064",
+     "player_name": "Zay Flowers",
+     "position": "WR",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xzhto2dejy2pflkfx40c",
+     "is_new": false,
+     "value": 11.28,
+     "change": 0.83
+    },
+    {
+     "slot": "K",
+     "sleeper_id": "13545",
+     "gsis_id": null,
+     "player_name": "Trey Smack",
+     "position": "K",
+     "headshot_url": null,
+     "is_new": false,
+     "value": 7.72,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "sleeper_id": "BAL",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens",
+     "position": "DEF",
+     "headshot_url": null,
+     "is_new": false,
+     "value": 9.27,
+     "change": null
+    }
+   ]
+  }
+ },
+ "weekly": [
+  {
+   "week": 4,
+   "you_before": 117.02,
+   "you_after": 115.41,
+   "them_before": 130.24,
+   "them_after": 131.95
+  },
+  {
+   "week": 5,
+   "you_before": 100.63,
+   "you_after": 98.1,
+   "them_before": 120.41,
+   "them_after": 122.94
+  },
+  {
+   "week": 6,
+   "you_before": 112.3,
+   "you_after": 109.59,
+   "them_before": 127.52,
+   "them_after": 130.14
+  },
+  {
+   "week": 7,
+   "you_before": 95.6,
+   "you_after": 109.13,
+   "them_before": 125.27,
+   "them_after": 124.81
+  }
+ ],
+ "source": "sleeper"
+}

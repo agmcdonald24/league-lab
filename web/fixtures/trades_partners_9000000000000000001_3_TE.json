@@ -1,0 +1,70 @@
+{
+ "league_id": "9000000000000000001",
+ "team": 3,
+ "week": 4,
+ "span": "weeks 4–7",
+ "want": "TE",
+ "partners": [
+  {
+   "roster_id": 7,
+   "team_name": "Goal Line Stand",
+   "manager_name": "goalline",
+   "shape": "1-for-2",
+   "give": [
+    {
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "position": "RB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "value": 11.28,
+     "reason": null,
+     "market_price": 43,
+     "season_points": 170,
+     "ros_points": 145.43,
+     "ros_rank_pos": 17
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "9484",
+     "gsis_id": "00-0038996",
+     "player_name": "Tucker Kraft",
+     "position": "TE",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/n6vu44jbq31rydoaadaq",
+     "value": 7.96,
+     "reason": null,
+     "market_price": 0,
+     "season_points": 106,
+     "ros_points": 91.02,
+     "ros_rank_pos": 12
+    },
+    {
+     "sleeper_id": "13286",
+     "gsis_id": "00-0041512",
+     "player_name": "Jadarian Price",
+     "position": "RB",
+     "team": "SEA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toy90i08oumgbdlvctja",
+     "value": 10.01,
+     "reason": null,
+     "market_price": 4,
+     "season_points": 131,
+     "ros_points": 112.63,
+     "ros_rank_pos": 31
+    }
+   ],
+   "my_week": -1.27,
+   "my_horizon": 5.64,
+   "their_week": 1.27,
+   "their_horizon": 7.41,
+   "market_out": 43,
+   "market_in": 4,
+   "is_best": true
+  }
+ ],
+ "none": [],
+ "source": "sleeper"
+}
