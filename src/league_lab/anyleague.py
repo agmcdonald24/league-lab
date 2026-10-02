@@ -115,6 +115,7 @@ NFL_WIDE = {
     "lines": "ops.projection_lines",
     "ranges": "ops.projection_ranges",
     "kd_lines": "ops.kd_lines",
+    "kd_ranges": "ops.kd_ranges",            # F1: K / DEF priced points + range per reference scoring (unit_id key)
     "references": "analytics_seeds.reference_scorings",
     "scoring_name": "scoring_name",          # projection_ranges' reference column
     "kd_unit": "unit_id",                    # kd_lines' unit key (a kicker's gsis_id; a defense's Sleeper id)
@@ -170,6 +171,12 @@ from (select distinct on (position, {NFL_WIDE['kd_unit']}) *
       order by position, {NFL_WIDE['kd_unit']}, {_FRESHEST}) as l
 left join analytics.mart_kd_week as u
   on u.position = l.position and u.unit_id = l.{NFL_WIDE['kd_unit']} and u.season = l.season and u.week = l.week
+"""
+KD_RANGES_SQL = f"""
+select distinct on ({NFL_WIDE['scoring_name']}, position, {NFL_WIDE['kd_unit']})
+       {NFL_WIDE['scoring_name']} as scoring_name, position, {NFL_WIDE['kd_unit']} as unit_id, proj_points, p10, p90
+from {NFL_WIDE['kd_ranges']} where season = %s and week = %s
+order by {NFL_WIDE['scoring_name']}, position, {NFL_WIDE['kd_unit']}, {_FRESHEST}
 """
 REFERENCES_SQL = (f"select {NFL_WIDE['ref_name']} as name, {NFL_WIDE['ref_label']} as label, "
                   f"{NFL_WIDE['ref_scoring']} as scoring_settings from {NFL_WIDE['references']} order by 1")
@@ -269,8 +276,12 @@ def _load_nfl_wide(query: Query, season: int, week: int) -> Board:
     rg = _floats(query(RANGES_SQL, (int(season), int(week))), ["proj_points", *QUANTILES])
     skill = rg[rg["position"].isin(SKILL)]
     fitted = {n: g.set_index("gsis_id")[["proj_points", *QUANTILES]] for n, g in skill.groupby("scoring_name")}
-    kdr = rg[rg["position"].isin(("K", "DEF"))]
-    kd_fitted = {n: g.set_index("gsis_id")[["proj_points", "p10", "p90"]] for n, g in kdr.groupby("scoring_name")}
+    # F1 keeps the K / DEF priced points and ranges in ops.kd_ranges (unit_id key), not in projection_ranges
+    try:
+        kdr = _floats(query(KD_RANGES_SQL, (int(season), int(week))), ["proj_points", "p10", "p90"])
+    except Exception:  # noqa: BLE001 - no K / DEF ranges yet: the offsets fall back to nothing (K / DEF unranged)
+        kdr = pd.DataFrame(columns=["scoring_name", "position", "unit_id", "proj_points", "p10", "p90"])
+    kd_fitted = {n: g.set_index("unit_id")[["proj_points", "p10", "p90"]] for n, g in kdr.groupby("scoring_name")}
     refs = query(REFERENCES_SQL, ())
     scorings, labels = {}, {}
     for r in refs.itertuples():
@@ -289,6 +300,8 @@ def _load_nfl_wide(query: Query, season: int, week: int) -> Board:
 def price_lines(line: pd.DataFrame, scoring: Mapping[str, float]) -> pd.Series:
     """League points of every stat line: ``compute_points`` (bonuses included), exactly as ``projections.price``."""
     stats = line[list(STAT_LINE)].rename(columns=STAT_LINE).fillna(0.0)
+    if "position" in line:          # F1: a position premium (bonus_rec_te, …) prices only when the row carries the position
+        stats["position"] = line["position"].to_numpy()
     return pd.Series([compute_points(r, scoring) for r in stats.to_dict("records")], index=line.index, dtype=float)
 
 

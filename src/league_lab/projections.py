@@ -328,6 +328,11 @@ def _oof_lines(x: np.ndarray, d: pd.DataFrame, position: str, scorings: dict[str
     return lines
 
 
+def _short(key: str) -> str:
+    """A league id's last six digits in a log line; a reference scoring's name as it is."""
+    return key[-6:] if str(key).isdigit() else str(key)
+
+
 def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[str, dict[str, float]]],
                  features: list[str] | None = None) -> PositionModel:
     """``features`` (plan D1 harness): the input columns; default the position's production inputs
@@ -382,8 +387,8 @@ def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[s
                                             for t in range(len(TIER_QUANTILES) + 1))
     log.info("fit %s: %s rows, %s components, %s quantile models, calibration season %s, widening 80%% by tier %s, 50%% by tier %s",
              position, len(d), len(m.components), len(m.quantiles), cal_season,
-             {k[-6:]: [round(v, 2) for v in t] for k, t in m.conformal_tiers.items()},
-             {k[-6:]: [round(v, 2) for v in t] for k, t in m.conformal_50_tiers.items()})
+             {_short(k): [round(v, 2) for v in t] for k, t in m.conformal_tiers.items()},
+             {_short(k): [round(v, 2) for v in t] for k, t in m.conformal_50_tiers.items()})
     return m
 
 

@@ -125,6 +125,22 @@ def leagues_for_user(username: str) -> dict:
         raise SleeperDown(str(exc)) from exc
 
 
+def rosters_for_league(league_id: str) -> list[dict]:
+    """The team picker's options for a league the database does not have (F2's request): Sleeper's rosters
+    and users, named the way dim_league_member names them (team name, else display name)."""
+    sl = A.sleeper()
+    try:
+        sl.league(league_id)                      # 404 for an id Sleeper does not have (before the rosters call)
+        rosters, users = sl.rosters(league_id), sl.users(league_id)
+    except A.LeagueNotFound as exc:
+        raise NotFound(f"no Sleeper league {league_id}") from exc
+    except A.SleeperUnavailable as exc:
+        raise SleeperDown(str(exc)) from exc
+    names = A.team_names(rosters, users)
+    out = [{"roster_id": rid, "team_name": n["team_name"], "manager_name": n["manager_name"]} for rid, n in names.items()]
+    return sorted(out, key=lambda r: (r["team_name"] or "", r["roster_id"]))
+
+
 # ---------------------------------------------------------------- plan F3: rest of season
 ROS_MART_SQL = """select {cols}, a.rostered_by_roster_id, a.rostered_by_team
                    from analytics.mart_player_ros_projection r

@@ -314,7 +314,17 @@ def test_fictional_league_prices_and_solves_with_k_and_def(client, monkeypatch, 
         _, dsc = A.kd_values(A.league_scoring(json.loads((SLEEPER_FIXTURES / f"league_{SCRUBS}.json").read_text()))[0], "DEF", b)
         both = dfr.set_index("unit_id")["proj_points"].astype(float).to_frame("t").join(
             dsc.set_index("unit_id")["proj_points"].astype(float).rename("s"))
-        assert (both["t"] - 2 * both["s"]).abs().max() <= 0.011               # the synthetic line is sacks only
+        # the Test League pays 2 a sack (Scrubs 1) and 12 for a shutout: its DEF prices are its lines priced in THIS
+        # scoring, never Scrubs' — re-priced by hand from the board's lines (F1's real ops.kd_lines carry every stat,
+        # so "2 × Scrubs" only holds for a sacks-only line)
+        from league_lab import kdef
+        lines = b.kd[b.kd["position"] == "DEF"].copy()
+        for c in [f"proj_{x}" for x in kdef.DEF_LINE]:
+            lines[c] = pd.to_numeric(lines[c], errors="coerce") if c in lines else 0.0
+        hand = pd.Series(np.asarray(kdef.price(lines.reset_index(drop=True), "DEF", league["scoring_settings"], "proj_"), dtype=float),
+                         index=lines["unit_id"].to_numpy())
+        assert (both["t"] - hand.reindex(both.index)).abs().max() <= 0.011
+        assert (both["t"] - both["s"]).abs().max() > 0.5                  # a different scoring gives different values
     else:
         assert d["on_demand"]["kd_value_source"] == {"K": None, "DEF": None}
     assert d["opponent"]["roster_id"] == 2 and d["opponent"]["lineup_value"] is not None

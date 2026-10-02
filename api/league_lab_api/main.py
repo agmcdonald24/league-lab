@@ -170,7 +170,9 @@ def leagues(response: Response, username: str | None = None):
 
 
 @app.get("/api/leagues/{league_id}/rosters", dependencies=[Depends(require_auth)])
-def rosters(league_id: str, response: Response):
+def rosters(league_id: str, response: Response, source: str | None = None):
+    if source == "sleeper" or not myweek.known_league(league_id):
+        return _json(ondemand.rosters_for_league(league_id), response)
     return _json(myweek.rosters(league_id), response)
 
 
