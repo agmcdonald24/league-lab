@@ -1,7 +1,7 @@
 <script lang="ts">
   // Research · Compare (Wave G): two players side by side. It opens on your closest call this week (My Week's first
   // card), or the two best at a position; a search on each side picks anyone. The answer first (this week's
-  // projections and the rest of the season), then the two cards, then paired bars (each in its player's team color,
+  // projections and the rest of the season), then the two cards, then paired bars (blue for the first, orange for the second,
   // the better number in bold): this week, the season, the last 3 games, usage, the rest of the season, the next 4
   // opponents. GET /api/compare (the same keys on both sides); the search runs on /api/players (already loaded).
   import { get, paths, peek, researchPaths, type Compare, type CompareSide, type MyWeek, type Players, type SeasonRow } from "../lib/api";
@@ -10,7 +10,7 @@
   import { ownerWord } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
   import { route, setParams } from "../lib/router.svelte";
-  import { fmt, team as teamColors, teamLabel } from "../lib/theme";
+  import { fmt, teamLabel } from "../lib/theme";
   import Card from "../components/Card.svelte";
   import PlayerCard from "../components/PlayerCard.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
@@ -52,11 +52,10 @@
 
   const A = $derived(cmp.data?.a ?? null);
   const B = $derived(cmp.data?.b ?? null);
-  const colorA = $derived(teamColors(A?.team).accent);
-  const colorB = $derived.by(() => {
-    const c = teamColors(B?.team).accent;
-    return c === colorA ? "var(--ll-ink-3)" : c; // teammates: the second in gray, so the two stay apart
-  });
+  // the two sides wear the chart kit's first two series colors (blue, orange: a validated pair), not team colors:
+  // two teams' colors can be the same, or read as good / bad (green vs red); the cards keep the team accents
+  const colorA = "var(--ll-series-1)";
+  const colorB = "var(--ll-div-hot)";
 
   // ---- the search on each side
   let qa = $state("");
@@ -227,6 +226,11 @@
       {/each}
     </div>
 
+    <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-ink-2" data-testid="compare-legend">
+      <span class="inline-flex items-center gap-1.5"><span class="h-2 w-4 rounded-sm" style="background:{colorA}"></span>{A.player_name}</span>
+      <span class="inline-flex items-center gap-1.5"><span class="h-2 w-4 rounded-sm" style="background:{colorB}"></span>{B.player_name}</span>
+      <span class="text-ink-3">the better number in bold</span>
+    </div>
     <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
       {#each GROUPS as g (g.title)}
         {@const ps = shownPairs(g.pairs)}

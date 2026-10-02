@@ -80,7 +80,7 @@ team bar). A free agent is neutral gray. `teamLabel("LA")` → `LAR`.
   `pad={false}` for a list inside, an `action` snippet on the title's right.
 - **PlayerRow** — one player in a list: `<PlayerRow player={p} href={withContext(`/player/${p.gsis_id}`, ctx)} context="WR4 · yours"
   value={fmt.pts(p.proj)} valueLabel="proj" yours={p.rostered_by_roster_id === team} />`; `rank`, `selected`,
-  `onselect` (desktop list + detail: a click picks him for the right pane; a phone follows the link), a `trailing`
+  `onselect` (list + detail: a tap on the row picks him for the detail pane; a tap on the name opens his card), a `trailing`
   snippet (a bar instead of the number). `player` = `{ gsis_id, player_name, position, team, headshot_url }` — the
   contract's player fields.
 - **PlayerCard** — the unit: `<PlayerCard player={p} number={fmt.pts(p.proj)} numberLabel="Week 5" line="7.1 targets a game · 26% share"
@@ -99,7 +99,18 @@ team bar). A free agent is neutral gray. `teamLabel("LA")` → `LAR`.
 - **ListDetail** — `<ListDetail>{#snippet list()}…{/snippet}{#snippet detail()}…{/snippet}</ListDetail>`: two columns from
   900 px (the detail sticky), stacked on a phone (`detailFirst` puts the detail on top).
 - **Tabs** — a segmented row: links (`href`, shareable, one history entry) or buttons (`onpick`); `fill` shares the row.
+- **Chips** — a row of filter chips: `<Chips label="Position" testid="pos" current={pos} onpick={(p) => setParams({ position: p })} items={…} />`
+  (put filters in the URL with `setParams`: shareable, no Back step).
 - **Coming** — a screen on its way: `<Coming title="Waivers" what="…" />` (the Decisions tabs until G4's screens land).
+- **GameLog** — the player card's chart card (fetches `/api/player/{gsis}/games`, 2026 / 2025, the answer above the chart):
+  `<GameLog gsis={id} {league} season={2026} {onauth} leagueName="…" />`.
+
+**Loading a screen's data**: `const r = new Remote<T>(); $effect(() => r.load(path, onauth));` (`lib/remote.svelte.ts`):
+the cached answer at once (Back renders synchronously), the error in plain words, `keep` holds the old answer while a
+new one loads (no skeleton flash). **For G4's screens**: render inside `App.svelte`'s container (no `TopBar` of your
+own); wire a route by replacing its `<Coming …>` line in `App.svelte` with a lazy import like the research screens'
+(`LAZY` map); start with `ScreenHead` + the answer; use `PlayerCard` / `PlayerRow` / `Bar` for the free agents and the
+trade sides.
 - Wave F pieces restyled on the tokens: **Section** (the player card's sections), **Metrics** (now StatTiles),
   **Expander**, **LineupTable**, **Md**, **Picker**, **Login**.
 
@@ -120,6 +131,10 @@ light and dark come for free. The rules (the dataviz references):
   cells carry an accent ring and a dot; a scale legend under it.
 - **Bar** / **Meter** as above (≤ 8 px thick, square at the baseline, rounded at the data end); **Sparkline** for a
   tile's last games (muted ink, the last point in series 1).
+- **Paired bars** (Compare): the first player in series 1 (blue), the second in the diverging warm (orange), a legend
+  above, the better number bold. Not team colors: two teams can share a color, or read as good / bad (green vs red).
+- **Over / under** (Trends): one diverging bar per player from a middle zero, warm (orange) = running hot, cool (blue) =
+  due; the signed number beside it.
 - Never: two y-axes, a number on every point, a 9th color, dashed gridlines, a pie for close values, color as the only
   carrier of a value (each value is printed somewhere: a label, the readout, the table).
 

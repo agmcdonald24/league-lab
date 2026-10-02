@@ -10,7 +10,7 @@
   import { ownerWord, whoFilter, type Who } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
   import { route, setParams } from "../lib/router.svelte";
-  import { fmt, team as teamColors } from "../lib/theme";
+  import { fmt } from "../lib/theme";
   import Bar from "../components/Bar.svelte";
   import Card from "../components/Card.svelte";
   import Chips from "../components/Chips.svelte";
@@ -136,7 +136,7 @@
       {/snippet}
       {#snippet detail()}
         {#if picked}
-          {@const accent = teamColors(picked.team).accent}
+          {@const accent = "var(--ll-series-1)"}
           <div class="space-y-3" data-testid="receivers-detail">
             <PlayerCard
               player={picked}

@@ -124,11 +124,11 @@
     <table class="w-full table-fixed border-collapse text-base" data-testid="ros-table">
       <thead>
         <tr class="ll-label border-b border-line bg-raised text-left">
-          <th class="w-[3rem] py-2 pr-1 pl-3 font-semibold">Rank</th>
+          <th class="w-[2.75rem] py-2 pr-1 pl-3 font-semibold">Rank</th>
           <th class="py-2 pr-1 font-semibold">Player</th>
           <th class="w-[3.75rem] py-2 text-right font-semibold">Points</th>
-          <th class="w-[3.5rem] py-2 text-right font-semibold">Games</th>
-          <th class="w-[4.5rem] py-2 pr-3 text-right font-semibold">Playoffs</th>
+          <th class="hidden w-[3.75rem] py-2 text-right font-semibold sm:table-cell">Games</th>
+          <th class="w-[4.75rem] py-2 pr-3 text-right font-semibold">Playoffs</th>
         </tr>
       </thead>
       <tbody>
@@ -147,8 +147,8 @@
                 <span class="truncate {yours ? 'font-semibold text-accent' : ''}">{yours ? "yours" : (p.rostered_by_team ?? "free agent")}</span>
               </div>
             </td>
-            <td class="tabnum py-2 text-right font-bold">{whole(p.ros_points) ?? "—"}</td>
-            <td class="tabnum py-2 text-right text-ink-2">{p.ros_games ?? "—"}</td>
+            <td class="tabnum py-2 text-right font-bold">{whole(p.ros_points) ?? "—"}<span class="block text-[11px] font-normal text-ink-3 sm:hidden">{p.ros_games ?? "—"} g</span></td>
+            <td class="tabnum hidden py-2 text-right text-ink-2 sm:table-cell">{p.ros_games ?? "—"}</td>
             <td class="tabnum py-2 pr-3 text-right text-ink-2">{whole(p.playoff_points) ?? "—"}</td>
           </tr>
         {/each}

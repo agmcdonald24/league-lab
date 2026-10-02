@@ -36,7 +36,7 @@ export function aboutSections(leagueName: string): AboutSection[] {
       text:
         "**Most weeks**, **floor** and **ceiling** come from separate models that learned how far off the projection usually is for a player like this one, then " +
         "widened or narrowed until they held on seasons they had never seen, separately for cheap, mid-priced and expensive projections: half his weeks land in the " +
-        "*most weeks* range, 8 in 10 between the floor (a bad week: 1 week in 10 lands below it) and the ceiling (a good week: 1 week in 10 lands above it).",
+        "most-weeks range, 8 in 10 between the floor (a bad week: 1 week in 10 lands below it) and the ceiling (a good week: 1 week in 10 lands above it).",
     },
     {
       key: "graded",
