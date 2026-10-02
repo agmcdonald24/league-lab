@@ -2,6 +2,26 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-02 — Wave F
+
+- **NFL-wide model outputs (F1).** `league-lab project` fits the ranges per reference scoring (new seed
+  `reference_scorings.csv`: `scrubs`, `dynasty`, `ppr`, `standard`, `te_premium`) and writes `ops.projection_lines`,
+  `ops.projection_ranges`, `ops.kd_lines`, `ops.kd_ranges` under the B5 freeze; the house leagues' `ops.projections`
+  is derived from them (identical numbers, tested); `bonus_rec_te` priced in Python; METRICS § "NFL-wide outputs".
+
+- **The API for any Sleeper league (F3).** `/api/leagues?username=` (a user's leagues and their team in each), the
+  week's opponent on `/api/my-week` (Sleeper's matchups; his best lineup solved), the player card and `/api/ros` for any
+  league (priced on request; a house league reproduces the marts to the cent), `/api/record`; F1's NFL-wide tables
+  read when present (`anyleague.NFL_WIDE`), K / DEF priced in any scoring; the Sleeper client with caches, the player
+  directory on disk and a 300-calls-a-minute budget (`docs/SLEEPER_TERMS.md`); JSON errors `{"error": …}`.
+
+- **Web app, phase 1 (F2).** `web/`: sign in with a Sleeper username → the user's leagues this season (own team
+  pre-selected, remembered on the phone) → My Week for any league with the week's opponent ("Week 4 vs **X**,
+  projects 108 — you project 134"), the player card with the rest-of-season line (sections the API lists in
+  `missing` left out and named), new screens Rest of season (`/ros`) and Our record (`/record`); built against the
+  Wave F API contract with fixtures (`web/fixtures/`, a fictional any-league "Test League"), Playwright on fixtures at
+  390 / 1300 px (14 passed), first content ≈ 0.1 s on fixtures.
+
 ## 2026-10-02 — Wave E
 
 - **Model tests (E4), no production change.** Four feature groups through the harness, 2023–2025, both leagues —

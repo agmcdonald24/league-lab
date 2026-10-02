@@ -34,6 +34,12 @@ def _metric(label: str, value: str, delta: str | None = None, trend: str | None 
     return {"label": label, "value": value, "delta": delta, "trend": trend, "help": help}
 
 
+MISSING_WORDS = {   # what a card leaves out for a league the nightly does not score, in plain words (QA, Wave F)
+    "value.points_per_game": "his points per game in this league",
+    "signals.upside": "the what-if line when a teammate is out",
+}
+
+
 def _section(title: str) -> dict:
     """One bordered box of the page: its title, then its blocks in the page's order —
     {kind: "metrics", metrics: [...]}, {kind: "markdown" | "caption", text}, {kind: "unavailable", text}."""
@@ -140,19 +146,41 @@ HOWTO = (
 )
 
 
-def player_card(league_id: str, gsis: str) -> dict:
-    lrow = league_row(league_id)
-    season, league_name = int(lrow["season"]), str(lrow["league_name"])
+VALUE_FIELDS = ("ppg", "expected_per_game", "diff_per_game", "position_rank_ppg", "league_games", "prev_ppg", "prev_rank",
+                "prev_games")
+
+
+def player_card(league_id: str, gsis: str, od=None) -> dict:
+    """The card for a house league (the database path), or — ``od``: an ``ondemand.PlayerContext`` — for any Sleeper
+    league (plan F3): the NFL-wide parts (usage, injury, role alerts) from the database, the league's own parts
+    (projection and range priced in its scoring, rest of season, whose team he is on, his lineup spot) on demand,
+    and what needs the league's scored history (points per game, the what-if in its scoring) listed in ``missing``."""
+    missing: list[str] = []
+    if od is None:
+        lrow = league_row(league_id)
+        season, league_name, prof_league = int(lrow["season"]), str(lrow["league_name"]), league_id
+    else:
+        season, league_name, prof_league = od.season, od.league_name, od.profile_league
     week = cards.decision_week(season)                                                   # 1
-    prof = query(PROFILE_SQL, (league_id, season, season, league_id, season, league_id, season, gsis))   # 2
+    prof = query(PROFILE_SQL, (prof_league, season, season, prof_league, season, prof_league, season, gsis))   # 2
     if prof.empty:
         raise NotFound(f"No player with id `{gsis}`. Search for him above.")
     p = prof.iloc[0]
+    if od is not None:                       # this league's rosters, not the profile league's; no league-scored history
+        p = p.copy()
+        for k, v in od.availability(gsis).items():
+            p[k] = v
+        for k in VALUE_FIELDS:
+            p[k] = None
     pos, team = p["position"], p["team"]
-    proj = query(PROJ_SQL, (league_id, gsis, season, week if week is not None else -1))  # 3
+    proj = (query(PROJ_SQL, (league_id, gsis, season, week if week is not None else -1)) if od is None    # 3
+            else od.projection(gsis, pos, week))
     sched = query(SCHED_SQL, (team, team, team, pos, season, team)) if isinstance(team, str) and team else pd.DataFrame()   # 4
     rostered = is_num(p["rostered_by_roster_id"])
-    rows = cards.lineup_rows(league_id, season, week, int(p["rostered_by_roster_id"])) if rostered and week else pd.DataFrame()   # 5
+    if od is None:
+        rows = cards.lineup_rows(league_id, season, week, int(p["rostered_by_roster_id"])) if rostered and week else pd.DataFrame()   # 5
+    else:
+        rows = od.lineup(int(p["rostered_by_roster_id"]), week) if rostered and week else pd.DataFrame()
 
     # ---------------------------------------------------------- header
     where = (f"on **{p['rostered_by_team']}** ({p['rostered_by_manager']})" if rostered
@@ -240,11 +268,14 @@ def player_card(league_id: str, gsis: str) -> dict:
             why = f"{status}."
         unav(projection, why)
     # plan E2: rest of season, one line after the stat line (the page's block, same query, same sentences)
-    if week is not None and not missing_relations((ROS.RELATION,)):
-        ros = query(f"select {ROS.ROS_COLUMNS} from analytics.mart_player_ros_projection where league_id = %s and gsis_id = %s",
-                    (league_id, gsis))
+    ros_out = None
+    if week is not None and (od is not None or not missing_relations((ROS.RELATION,))):
+        ros = (query(f"select {ROS.ROS_COLUMNS} from analytics.mart_player_ros_projection where league_id = %s and gsis_id = %s",
+                     (league_id, gsis)) if od is None else od.ros(gsis, pos))
         if not ros.empty:
             rr = ros.iloc[0]
+            from .ondemand import ros_card
+            ros_out = ros_card(rr)
             md(projection, ROS.card_line(rr))
             cap(projection, f"Week by week ({ROS.weeks_span(rr['from_week'], rr['last_week'])}, through this league's final): "
                             f"{ROS.weeks_words(rr)}. {ROS.lines_note(rr)}")
@@ -306,7 +337,9 @@ def player_card(league_id: str, gsis: str) -> dict:
 
     # ---------------------------------------------------------- 4. value
     value = _section(f"**Value** — {league_name} scoring")
-    if is_num(p["ppg"]) and is_num(p["league_games"]) and int(p["league_games"]) > 0:
+    if od is not None:
+        missing.append("value.points_per_game")        # needs this league's scored games: not kept for a new league
+    elif is_num(p["ppg"]) and is_num(p["league_games"]) and int(p["league_games"]) > 0:
         vm: list[dict] = []
         vm.append(_metric("Points / game", f"{float(p['ppg']):.1f}",
                                         help=f"This season, {int(p['league_games'])} games, {league_name} scoring"))
@@ -391,22 +424,25 @@ def player_card(league_id: str, gsis: str) -> dict:
     elif missing_relations(("mart_player_role_alerts", "mart_player_scenarios")):
         unav(sig_sec, "role alerts arrive with the nightly update; they are not on this copy yet.")
     else:
-        sig = query(SIGNALS_SQL, (league_id, league_id, week if week is not None else 0, gsis, season))
+        sig = query(SIGNALS_SQL, (prof_league, prof_league, week if week is not None else 0, gsis, season))
         if sig.empty:
             md(sig_sec, "Role: **no role change detected** in his last three games: his share of the snaps, targets and "
                                     "carries is where it has been.  \nUpside: nothing beyond the projection above.")
         else:
             r = sig.iloc[0]
             md(sig_sec, f"Role: **{signals.alert_headline(r, p['player_name'])}**. {signals.alert_lines(r)}")
-            if r["direction"] == "up" and is_num(r["larger_points"]):
+            if od is not None:
+                missing.append("signals.upside")       # the what-if is priced per house league in the nightly
+            elif r["direction"] == "up" and is_num(r["larger_points"]):
                 md(sig_sec, "Upside: " + signals.scenario_phrase(r, league_name))
             elif r["direction"] == "up":
                 md(sig_sec, "Upside: no what-if for the coming weeks (no game to project, or the reason has ended).")
             else:
                 md(sig_sec, "Upside: none: his role shrank, and the projection above already leans on his last three games.")
         cap(sig_sec, "A role alert needs his share of the snaps, targets or carries to jump (or fall) well past his usual swing, "
-                              "in every one of his last one to three games. The what-if re-runs the same projection with his last three "
-                              f"games at the new level, in {league_name} scoring.")
+                              "in every one of his last one to three games." + (
+                              " The what-if re-runs the same projection with his last three "
+                              f"games at the new level, in {league_name} scoring." if od is None else ""))
 
     return {
         "gsis_id": p["gsis_id"], "player_name": p["player_name"], "position": pos, "team": team if isinstance(team, str) else None,
@@ -416,4 +452,7 @@ def player_card(league_id: str, gsis: str) -> dict:
         "proj_points": float(proj.iloc[0]["proj_points"]) if not proj.empty else None,
         "sections": {"usage": usage, "projection": projection, "availability": availability, "value": value, "signals": sig_sec},
         "howto": HOWTO.format(league=league_name),
+        "ros": ros_out, "missing": [MISSING_WORDS.get(k, k) for k in missing], "missing_keys": missing,
+        "source": "database" if od is None else "sleeper",
+        **({} if od is None else {"on_demand": od.meta()}),
     }

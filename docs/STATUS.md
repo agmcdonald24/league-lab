@@ -2665,6 +2665,185 @@ Design for Andrew and the PO: `docs/ANY_LEAGUE.md`. Nothing in `app/`, `dbt/`, t
   path; a K / DEF in a scoring no fitted league shares is unvalued; Sleeper's terms for commercial use are Andrew's
   to check. No `--select` appended; no seeds or metrics touched.
 
+## Wave F (Iteration 14)
+
+### PO merge — Wave F, 2026-10-02
+
+* **Delivered** (three Opus devs in parallel, ~25–40 min each; one 11-minute QA walk through the built app against the
+  API): F1 the NFL-wide outputs (`reference_scorings` seed — scrubs, dynasty, ppr, standard, te_premium; `ops.projection_lines`
+  9,911 rows, `ops.projection_ranges` 5 × 9,911, `ops.kd_lines` 1,088, `ops.kd_ranges` 5,440 on the PO's copy; the house
+  leagues' `ops.projections` unchanged to the last digit; the freeze applies to all four tables; `project` 1.3–2× longer);
+  F3 the API for any league (`/api/leagues?username=`, the opponent, `/api/player` and `/api/ros` on demand, `/api/record`,
+  the Sleeper client with caches and a 300/min token bucket, the Dockerfile serving `web/dist`, `docs/SLEEPER_TERMS.md`);
+  F2 the web app phase 1 (sign in with a Sleeper username → league picker → My Week → player card → Rest of season →
+  Our record; 14 fixture e2e, first content ~100 ms on fixtures, 34.5 KB gzipped).
+* **Integration**: F3 expected the K / DEF ranges as rows of `projection_ranges`; F1 keeps them in `ops.kd_ranges`
+  (`unit_id` key) — the reader now has both (`anyleague.NFL_WIDE["kd_ranges"]`); the pricer passes the position so a
+  TE premium prices; `/api/leagues/{id}/rosters` serves an unknown league from Sleeper (F2's team picker); the fictional
+  league's DEF test re-pinned to a hand re-pricing of F1's real lines (it assumed F3's synthetic sacks-only line). On the
+  NFL-wide board both house leagues reproduce the marts (lineup 111.15 / 117.02, slots, values, margins; `api` 83 passed
+  on both boards; the default `auto` picks `nfl_wide` once the tables hold the week).
+* **QA findings fixed by the PO**: (HIGH) Rest of season showed every defense as a free agent in a house league —
+  the availability join used `gsis_id`, which a defense lacks; it joins on the Sleeper id for them; (MED) the betting-line
+  caveat on `/api/ros` + the screen; `missing` on a player card in plain words (`missing_keys` keeps the keys); the record
+  page's "the nightly" / "whose were closer" / the promise to a league that gets no record; (LOW) the Movers line's
+  Trends-page reference gone from the app, a league Sleeper does not have is a 404 on `/api/record` and says so in the
+  app, link hit areas ~44 px, `/api/status` says which board is in use. Left: the fixture team names differ between
+  screens (pseudonymised fixtures, not a bug); one Back-button skip seen once after switching leagues twice (not
+  reproduced); 1300 px walk for the house leagues not repeated.
+* **Checks**: root `pytest` 829 passed; `api` 83 passed; web lint 0 / 0, build, 14 fixture e2e; dbt 130 PASS on the
+  projection marts + the four new tests; ruff clean.
+* **Open for Wave G** (waits on Sleeper's licensing answer): accounts, payments, hosting (the Dockerfile is ready; no
+  daemon here to build it), a shared cache / bucket across processes, `ops.projection_*` into `RECORD_TABLES` after
+  the first hosted sync, Trade Finder and waivers on demand, search for an unknown league, the one-query ROS board.
+
+### F1 2026-10-02 — NFL-wide model outputs (reference scorings, `ops.projection_lines` / `_ranges`, `ops.kd_lines` / `_ranges`)
+
+* **What**: `league-lab project` fits the residual ranges per **reference scoring** (seed `reference_scorings.csv`:
+  `scrubs`, `dynasty` — the house leagues' settings copied from `dim_league_season` — `ppr`, `standard`,
+  `te_premium`) instead of per house league, and writes the stat line once for the NFL (`ops.projection_lines`), the
+  ranges per reference scoring (`ops.projection_ranges`), the K / DEF lines (`ops.kd_lines`) and their priced ranges
+  and offsets per reference scoring (`ops.kd_ranges`), all under the B5 freeze. The house leagues' `ops.projections`
+  is derived from the same numbers (line priced in the league's scoring + the ranges of the reference that IS the
+  league; a league no reference is would be fitted on its own). `bonus_rec_te` (and the RB / WR catch premiums) are
+  priced by `compute_points` when the row carries the position — Python only; the SQL macro and the seed are
+  unchanged (`unmapped_keys` still reports them). Docs: METRICS § "NFL-wide outputs", DATA_MODEL § ops,
+  ANY_LEAGUE § "What changes elsewhere".
+* **Evidence (clone `league_lab_f1`, 2026-10-02, week 4 kicked off 00:15 UTC)**:
+  * Rows: `projection_lines` 9,911 (weeks 1–3 `refit` v2.0 1,777, week 4 `kickoff` v3.0 581 frozen_at 2026-10-01
+    19:25:19, weeks 5–18 live 7,553); `projection_ranges` 49,555 (5 × 9,911; `scrubs` / `dynasty` weeks 1–4 copied
+    from the record with its labels, `ppr` / `standard` / `te_premium` weeks 1–4 ranged around the stored line,
+    `refit`); `kd_lines` 1,088 (K 544, DEF 544; weeks 1–4 `refit`); `kd_ranges` 5,440 (5 scorings × K / DEF × 544).
+  * House rows = NFL-wide rows, every week 1–18: 9,911 QB–TE rows per league, max gap 0 on the 12 components and on
+    proj_points / P10–P90 (P25 / P75 NULL on the same rows), 0 label / fitted_at mismatches, 0 rows on one side only;
+    lines × the league's scoring (`compute_points`) = `ops.projections.proj_points` max gap 0 (both leagues); the SQL
+    `league_points` re-pricing of the lines = `projection_ranges.proj_points` at 1e-9 for `scrubs` / `dynasty`: 0
+    violations. Scrubs K / DEF: 896 rows = `kd_ranges` `scrubs` and = `kd_lines` × Scrubs' scoring, gap 0 (week 4's
+    kickoff rows included: the refit line reproduces them exactly). TE premium: `te_premium` − `ppr` = 0.5 × projected
+    TE catches (≤ 0.0096, two 2-decimal roundings), 0 at QB / RB / WR.
+  * No change to the house leagues' numbers: `ops.projections` after F1 vs before (same data, a snapshot taken after
+    a pre-F1 run): 20,718 rows, max value gap 0; only `fitted_at` of the 15,938 rewritten rows (weeks 5–18) moved;
+    weeks 1–4 untouched (labels, `frozen_at`, `fitted_at`).
+  * Week 4 frozen in every table (table above); dbt: `assert_frozen_nfl_wide_precede_kickoff`,
+    `assert_projection_ranges_price_the_lines`, `assert_house_projections_are_the_nfl_wide_rows`,
+    `assert_frozen_projections_precede_kickoff`, the four sources' one-row-per-key tests, the seed's tests — 17 PASS;
+    each new test fails on a one-row mutation (range +0.01 → 1; a line +1e-6 → 2; a live row labelled `kickoff` → 544).
+  * Runtime of `project` (OMP_NUM_THREADS=1, shared cores): 233 s before, 463 s after (1.99×; the fits 2:50 → 6:10);
+    a second run 312 s (1.34×, less contention). The second run kept weeks 1–4 in all four tables and rewrote 5–18.
+  * The freeze on the new tables: writing the same rows twice leaves all four tables md5-identical; a write at week
+    5's first kickoff + 1 h labels week 5 `kickoff` in every table (543 / 2,715 / 60 / 300 rows, frozen_at =
+    fitted_at) and keeps its values against a refit that changed them (scripts in the hand-back).
+  * `backtest-v2` unchanged (not run): it calls `league_scorings` and the same `fit_position` / `predict_position`;
+    the only change on that path is the position riding along into `compute_points`, which neither house scoring
+    weights — the same path reproduced `ops.projections` to 0 above.
+* **Nightly**: the four tables are in `STATE_TABLES` (restored from the hosted copy on a fresh database), not in
+  `RECORD_TABLES`: `restore_state` stops the night when a record table cannot be read on the hosted copy, and the
+  hosted copy has no such tables until the first sync after the merge, so adding them now would stop the first
+  night on the Mac and in Actions. If a restore fails, `project` re-seeds the frozen QB–TE lines and the house
+  ranges from `ops.projections` (a record table); only the `ppr` / `standard` / `te_premium` ranges and the K / DEF
+  lines of frozen weeks would come back as `refit` values. Promote them to `RECORD_TABLES` once one sync has
+  published them (Wave G, when customers' frozen weeks become a record).
+
+### F3 2026-10-02 — the API for any league
+
+**What a Sleeper manager gets from the API now, for any league.** Type a Sleeper username → their leagues this season
+and their team in each (`/api/leagues?username=`); My Week with **this week's opponent** and his best lineup value;
+the player card, rest of season (`/api/ros`) priced in their league's scoring; the record for the house leagues. A
+house league gives the same numbers on demand as from the nightly (tested to the cent, opponent and rest of season
+included).
+
+* **Sleeper client** (`src/league_lab/sleeper_client.py`, split out of `anyleague`): caches by kind (player directory a
+  day, on disk in `LEAGUE_LAB_CACHE_DIR`; league / users a day; rosters 10 min; matchups 5 min; user lookups 1 h),
+  the last good answer on failure, a token bucket of 300 calls/min (503 `{"error": "busy, try again in a minute"}`),
+  `/api/status` → `sleeper` (calls, bucket, cache ages per kind, the directory file's age). Budget per active league:
+  `docs/SLEEPER_TERMS.md` (4 calls a first open, 0.3 calls/min kept open, ~1,000 open leagues per process).
+* **F1's read path** (`anyleague.load_board`): `ops.projection_lines` / `ops.projection_ranges` / `ops.kd_lines` /
+  `reference_scorings` when they hold the week (names in `anyleague.NFL_WIDE`, the one place), else E3's borrowing.
+  A league's range reference: exact match on the mapped keys (rounded to 3 places), else the nearest by median
+  |log price ratio| over the reference set. K / DEF priced from their stat lines with `kdef.price` in the league's own
+  scoring (the API now depends on `pydantic-settings`: `kdef` → `rankings` → `config`). Tested in this clone with the
+  tables built by `api/tests/fixtures/f1_tables.sql` (DDL F3 expects + a fill from `ops.projections`; the K / DEF
+  lines are synthetic — `ops.projections` keeps no K / DEF line — PAT-only kickers, sack-only defenses that price back
+  to the Scrubs values).
+* **Evidence** (week 4, this clone): `cd api && uv run pytest -q` **81 passed, 2 skipped** (51 before + 30 in
+  `tests/test_f3.py`); `uv run ruff check src tests app api/league_lab_api api/tests` clean.
+  - NFL-wide board, both house leagues: starters, slots, values, margins, bench and lineup value equal the marts
+    (≤ 0.005), ranges equal (≤ 0.011, an exact reference: `half_ppr_4pt_kdef`, `sf_ppr_6pt_bonuses`); Scrubs K / DEF
+    from lines = the nightly's. Borrowed board unchanged (E3's numbers: roster P90 gap 1.09 / 0.98).
+  - Opponent (fixture: week-3 pairings as week 4): Scrubs 2 vs roster 6, **120.31** on demand = `ops.lineup_totals`;
+    dynasty 12 vs roster 1, **131.91** = `ops.lineup_totals`; both boards.
+  - Rest of season on demand vs `mart_player_ros_projection`: the **same players** (645 Scrubs incl. K / DEF, 581
+    dynasty), ros_points / playoff_points ≤ 0.011, games, position and overall ranks identical — so the on-demand
+    `pos_rank` is the mart's population (every projected player on an active NFL roster, rostered or not); P90 ≤ 0.11 on
+    the NFL-wide board, mean gap 0.99 / 1.40 on the borrowed one. Bijan Robinson, Scrubs: 236.25 over 12 games,
+    196.5–276.0, RB1, playoffs 39.18 — mart and on demand.
+  - Test League (fictional, full PPR 4-pt, sack 2 / fgm_50p 6 / pts_allow_0 12, K + DEF): solved, K and DEF valued from
+    lines (a defense prices at 2 × its Scrubs value: sack 2); on the borrowed board its K / DEF stay unvalued and
+    reported. `/api/leagues?username=test_manager`: 3 leagues, rosters 12 / 2 / 1, labels = `dim_league_season`'s.
+  - Latency (this sandbox, three devs on two cores; fixtures, so no Sleeper time): `/api/my-week` on demand cold
+    483–571 ms / warm 112–137 ms (opponent solve 18–62 ms cold, 5–14 warm); `/api/leagues?username=` 107 ms cold;
+    `/api/ros` on demand cold 1.5–1.8 s (14 weekly boards) / warm 0.13–0.34 s, house league 9 ms; `/api/player` on
+    demand 1.2 s cold (includes rest of season) / 0.6 s; `/api/record` 3–14 ms; `/api/status` 13 ms.
+* **Decisions for the PO**: (1) the database path's opponent also asks Sleeper's matchups (the nightly's
+  `fct_league_matchup` has no week-4 rows yet), falling back to the table; `summary` stays Home.py's copy (parity).
+  (2) Errors carry `error` (contract) and keep `detail` (the D7 web client). (3) `opponent` adds `matchup_id`. (4) On
+  demand the player card lists `missing` (`value.points_per_game`, `signals.upside`) and reads the NFL-wide columns
+  (usage, injury, role alerts) from the first house league's marts. (5) Rest-of-season windows for a new league use
+  ceil(log2(playoff teams)) rounds (the mart's fallback; the bracket call is not spent). (6) Fixture user ids are
+  pseudonymised (`91…`) in the current fixtures (earlier commits still hold the real ids).
+* **Open**: `/api/search` for an unknown league (the card's search box) is not on demand yet; the ROS board loads
+  week by week (one query for all weeks would cut the cold 1.5 s); the Sleeper winners-bracket call for exact playoff
+  rounds; a shared cache / bucket for several processes (Wave G); F1's real column names at integration
+  (`anyleague.NFL_WIDE`).
+
+### F2 2026-10-02 — the web app, phase 1: any Sleeper manager's screens (branch `dev/F2`, clone `league_lab_f2`)
+
+* **What.** `web/` now opens with **"Your Sleeper username"** (after the beta password, which stays) →
+  `GET /api/leagues?username=` → the league picker (name, size + scoring, "Your team: …"; "You have no team in this
+  league" for `roster_id: null`) → **My Week** for any league with the **opponent of the week** ("Week 4 vs **Hail
+  Marys**, projects 108 — you project 134") → the **player card** (+ the rest-of-season line, sections in `missing`
+  left out and named) → **Rest of season** (`/ros`: the answer, "Yours", Rank · Player · Points · Games · Playoffs;
+  K / DEF only where the league starts them; All = overall) → **Our record** (`/record`: the summary sentences, two
+  numbers, the start/sit table; the Streamlit page's empty states). Username and league list remembered on the
+  phone; a `?league=&team=` link still wins and works for any league id. Three tabs under the picker; "Other leagues
+  (your Sleeper username)…" is the league select's last option; a linked league in neither list is named from My
+  Week's answer.
+* **Built against the contract with fixtures.** `web/fixtures/`: 36 response files + 47 player cards (796 KB),
+  rebuilt by `web/fixtures/make_fixtures.py` — saved from the API on the clone (leagues, rosters, My Week dynasty 12
+  / Scrubs 2 week 4, every lineup player's card, search, status) with the contract's new fields added (`source`,
+  the `opponent` object, `ros`, `missing`), `/api/ros` from `mart_player_ros_projection` in the contract's shape
+  (19 files), `/api/record` (Scrubs: the clone's real empty answer; dynasty: three hand-written scored weeks — the
+  mart is empty on the clone), and the fictional **Test League** `9000000000000000001` (10 made-up teams; team 3's
+  roster of real players with their week-4 Scrubs-scoring projections; `source: "sleeper"`, `missing: ["value"]`,
+  record `available: false`). `e2e/fixtures.ts` answers every `/api` call from them (route interception, the gate
+  simulated).
+* **Evidence.** `npm run e2e:fixtures`: **14 passed** (7 tests × phone 390 × 844 / desktop 1300 × 900, ~20 s): the
+  full path password → username → picker → My Week → tap a player → card → Back (scroll position equal) → rest of
+  season → record on the Test League, one history entry per tap, no popup, no sideways scroll, ≤ 5 columns, the first
+  card inside the first screen, no "not in the database" anywhere. The spike's live-API suite (`npm run e2e` against
+  the API on :8681): **22 passed, 2 skipped** (the gated pair needs a password API). `npm run measure:fixtures` (7
+  loads each, cold, median): first content **92 ms phone / 97 ms desktop** (Test League), 105 / 111 ms (dynasty 12) —
+  limit 500 ms. `npm run lint`: 0 errors, 0 warnings (107 files). Build: 100.8 KB JS (34.5 KB gzipped) + 21.8 KB CSS
+  (5.3 KB). Worked example: the WR answer "Puka Nacua, 185 points over 12 games (likely 150–219) · playoffs: 30" =
+  the mart's 184.66 / 12 / 150.0 / 219.3 / 30.3 rounded half up; the dynasty opponent line "projects 110.7 — you
+  project 111.2" = roster 11's week-4 starters in `ops.lineups` (110.69) vs My Week's `lineup_value` 111.15 (one
+  decimal because whole points would both read 111).
+* **Decisions for the PO.** (1) `/` with nothing remembered now opens the sign-in, not the reference league. (2)
+  The rest-of-season answer, "Yours", its caption and how-to, and Our record's sentences are assembled in
+  `web/src/lib/ros.ts` / `record.ts` with the Streamlit pages' words (`4_Rankings.py`, `13_Record.py`): the contract
+  sends numbers only. The port rule wants them in `app/lib` and sent by the API (PO: move the Record page's sentences
+  to `app/lib/record.py`, the Rankings ROS answer to `app/lib/ros.py`). (3) Expanders remember being open per page,
+  so Back can restore the scroll of a page whose expanders were open (desktop failed without it).
+* **Assumed (requests to F3).** `/api/leagues/{id}/rosters` answers for an unknown league; `/api/ros` adds
+  `positions` (else the UI reads K / DEF from My Week's lineup), `rank` for `position=ALL` (else list order), the
+  playoff window and `weeks_with_lines`; `/api/record`'s `summary` is the season `ALL` row and `weeks` the
+  `scope = 'week'` rows; the player card keeps the `ros.card_line` sentence in the Projection section (or sends
+  `ros.line`); errors may be `{"error"}` or today's `{"detail"}` (both read); `opponent` may be today's string
+  (then the record line keeps "week N vs **X**"). Usernames are sent as typed (trimmed): F3 should match them
+  case-insensitively.
+* **Not verified.** Real Sleeper (no network here), F3's real responses for the new routes (fixtures only), a real
+  iPhone (Chromium with the iPhone 13 profile).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

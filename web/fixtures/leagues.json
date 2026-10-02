@@ -1,0 +1,16 @@
+[
+ {
+  "league_id": "1389709692405551104",
+  "league_name": "League of Scrubs",
+  "season": 2026,
+  "scoring_label": "10-team redraft · half PPR · 4‑pt pass TD",
+  "is_reference_league": true
+ },
+ {
+  "league_id": "1321941740235550720",
+  "league_name": "Forever Unclean Dynasty",
+  "season": 2026,
+  "scoring_label": "12-team superflex dynasty · full PPR · 6‑pt pass TD · yardage bonuses",
+  "is_reference_league": false
+ }
+]

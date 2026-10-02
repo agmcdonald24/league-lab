@@ -490,13 +490,62 @@ def predict_kd(m: KDModel, rows: pd.DataFrame, scorings: Mapping[str, tuple[str,
         o = keys.copy()
         o["league_id"] = league_id
         o["proj_points"] = price(line, m.position, scoring, "proj_")
-        lo, mid, hi = m.offsets.get(league_id, (0.0, 0.0, 0.0))
-        qs = np.sort(np.column_stack([o["proj_points"] + lo, o["proj_points"] + mid, o["proj_points"] + hi]), axis=1)
-        o["p10"], o["p50"], o["p90"] = np.clip(qs[:, 0], 0, None), qs[:, 1], qs[:, 2]
-        o["p90"] = np.maximum(o["p90"], o["proj_points"])
-        o["p50"] = np.clip(o["p50"], o["p10"], o["p90"])
+        o["p10"], o["p50"], o["p90"] = interval(o["proj_points"].to_numpy(dtype=float), m.offsets.get(league_id, (0.0, 0.0, 0.0)))
         frames.append(o)
     return pd.concat(frames, ignore_index=True), lines
+
+
+def interval(proj: np.ndarray, offsets: tuple[float, float, float]) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """P10 / P50 / P90 of priced K / DEF lines: the projection plus the scoring's fitted offsets, sorted, P10
+    floored at 0, P90 at least the projection, P50 kept between them (the rule of ``predict_kd`` and of
+    ``ops.kd_ranges``; plan F1 hands it to the on-demand path)."""
+    proj = np.asarray(proj, dtype=float)
+    lo, mid, hi = offsets
+    qs = np.sort(np.column_stack([proj + lo, proj + mid, proj + hi]), axis=1)
+    p10, p50, p90 = np.clip(qs[:, 0], 0, None), qs[:, 1], qs[:, 2]
+    p90 = np.maximum(p90, proj)
+    p50 = np.clip(p50, p10, p90)
+    return p10, p50, p90
+
+
+def weighs(scoring: Mapping[str, float], position: str) -> bool:
+    """Does ``scoring`` pay anything for a ``position`` (K / DEF) stat line? (A scoring that does not would price
+    every unit 0: that is no projection, so ``ops.kd_ranges`` has no rows for it.)"""
+    if position == "K":
+        return any(abs(v) > 0 for v in k_coefficients(scoring).values())
+    return any(float(scoring.get(k) or 0) != 0 for k in [*DEF_STAT_MAP, *(b for b, _, _ in PTS_ALLOW_BUCKETS)])
+
+
+# plan F1: the league-free K / DEF line as ops.kd_lines stores it (K columns NULL on a DEF row and vice versa)
+KD_LINE_COLUMNS = [f"proj_{c}" for c in K_LINE + DEF_LINE]
+KD_RANGE_COLUMNS = ["scoring_name", "season", "week", "position", "unit_id", "model_version", "fitted_at", "proj_points",
+                    "p10", "p50", "p90", "off_p10", "off_p50", "off_p90"]
+
+
+def ranges_from_lines(lines: pd.DataFrame, scorings: Mapping[str, tuple[str, dict[str, float]]],
+                      offsets: Mapping[tuple[str, str], tuple[float, float, float]]) -> pd.DataFrame:
+    """Plan F1, ``ops.kd_ranges``: one row per scoring x unit-week of ``lines`` (``ops.kd_lines`` rows): the line
+    priced in the scoring (``price``) and ``interval`` with the scoring's offsets for the position
+    (``offsets[(scoring, position)]``, kept as ``off_p10`` / ``off_p50`` / ``off_p90``). A (scoring, position)
+    without offsets, or whose scoring pays nothing for the position (``weighs``), has no rows."""
+    frames = []
+    for pos in KD_POSITIONS:
+        ln = lines[lines["position"] == pos].reset_index(drop=True)
+        if ln.empty:
+            continue
+        for name, (_, scoring) in scorings.items():
+            if (name, pos) not in offsets or not weighs(scoring, pos):
+                continue
+            off = offsets[(name, pos)]
+            o = ln[["season", "week", "position", "unit_id", *[c for c in ("model_version", "fitted_at") if c in ln]]].copy()
+            o["scoring_name"] = name
+            o["proj_points"] = price(ln, pos, scoring, "proj_")
+            o["p10"], o["p50"], o["p90"] = interval(o["proj_points"].to_numpy(dtype=float), off)
+            o["off_p10"], o["off_p50"], o["off_p90"] = off
+            frames.append(o)
+    if not frames:
+        return pd.DataFrame(columns=KD_RANGE_COLUMNS)
+    return pd.concat(frames, ignore_index=True).reindex(columns=KD_RANGE_COLUMNS)
 
 
 # ------------------------------------------------------------------------------ baselines (the yardsticks and the fallback)
@@ -537,41 +586,72 @@ PROJECTION_COLUMNS = ["model_version", "fitted_at", "train_seasons", "league_id"
                       "proj_points", "p10", "p50", "p90"]
 
 
+@dataclass
+class KDRun:
+    """What ``project_kd_run`` produced: the house leagues' rows for ``ops.projections`` (``pred``), the league-free
+    lines (``lines``: ``ops.kd_lines`` minus the freeze labels), the fitted offsets per (scoring key, position)
+    for the reference scorings (``offsets``) and the references themselves; empty when nothing was fitted."""
+    pred: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=PROJECTION_COLUMNS))
+    lines: pd.DataFrame = field(default_factory=pd.DataFrame)
+    offsets: dict[tuple[str, str], tuple[float, float, float]] = field(default_factory=dict)
+    references: dict[str, tuple[str, dict[str, float]]] = field(default_factory=dict)
+
+
 def project_kd(conn: psycopg.Connection, season: int, seasons: list[int] | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """K and DEF rows for ``ops.projections`` (every unit-week of ``season``, per league that starts
     the position) and their league-free stat lines. Fitted on every season before ``season``."""
+    run = project_kd_run(conn, season, {}, seasons)
+    return run.pred, run.lines
+
+
+def project_kd_run(conn: psycopg.Connection, season: int, references: Mapping[str, tuple[str, dict[str, float]]],
+                   seasons: list[int] | None = None, fitted_at: datetime | None = None) -> KDRun:
+    """``project_kd`` plus the NFL-wide outputs (plan F1): the offsets are fitted for the house leagues that start
+    the position (their ``ops.projections`` rows, exactly as before) AND for every reference scoring that pays for
+    the position (``ops.kd_ranges``); the components are fitted once, so the leagues' rows do not change. The
+    lines carry ``model_version`` / ``fitted_at`` / ``train_seasons`` (one ``fitted_at`` for the run)."""
     leagues = kd_leagues(conn)
-    if not any(leagues.values()):
-        return pd.DataFrame(columns=PROJECTION_COLUMNS), pd.DataFrame()
+    refs = {p: {n: v for n, v in references.items() if weighs(v[1], p)} for p in KD_POSITIONS}
+    if not any(leagues.values()) and not any(refs.values()):
+        return KDRun()
+    fitted_at = fitted_at or datetime.now(UTC)
     with conn.cursor() as cur:
         cur.execute("select distinct season from analytics.mart_kd_week where played order by 1")
         have = [int(r[0]) for r in cur.fetchall()]
     train_seasons = [s for s in (seasons or have) if s < season]
     frame = load_frame(conn, [*train_seasons, season])
     target = frame[frame["season"] == season]
-    preds, lines = [], []
+    preds, lines, offsets = [], [], {}
     for pos in KD_POSITIONS:
         scorings = leagues[pos]
-        if not scorings:
+        if not scorings and not refs[pos]:
             continue
         for lid, (name, scoring) in scorings.items():
             if pos == "DEF" and (miss := unmodelled_def_keys(scoring)):
                 log.info("kd %s (%s): D/ST keys not projected (price 0): %s", name, lid[-6:], ", ".join(miss))
         rows = target[target["position"] == pos]
         if KD_SHIP.get(pos, "model") == "model":
-            m = fit_kd(frame[frame["season"] < season], pos, scorings)
-            p, ln = predict_kd(m, rows, scorings)
+            m = fit_kd(frame[frame["season"] < season], pos, {**scorings, **refs[pos]})
+            p, ln = predict_kd(m, rows, scorings or refs[pos])     # the lines do not depend on the scorings
+            if not scorings:                                        # no house league starts it: no ops.projections rows
+                p = pd.DataFrame(columns=PROJECTION_COLUMNS)
             p["train_seasons"] = m.train_seasons
-        else:
-            p, ln = ppg_projection(frame, rows, pos, scorings, season)
+            ln = ln.assign(train_seasons=m.train_seasons)
+            offsets.update({(n, pos): m.offsets[n] for n in refs[pos]})
+        else:   # a season-PPG fallback has no stat line: nothing NFL-wide for the position
+            p, ln = ppg_projection(frame, rows, pos, scorings, season) if scorings else (pd.DataFrame(columns=PROJECTION_COLUMNS), None)
         preds.append(p)
-        lines.append(ln)
-    pred = pd.concat(preds, ignore_index=True)
-    pred["gsis_id"] = pred["unit_id"]
-    pred["model_version"], pred["fitted_at"] = KD_MODEL_VERSION, datetime.now(UTC)
-    log.info("kd projections: %s rows for %s (%s)", len(pred), season,
-             ", ".join(f"{p}: {n}" for p, n in pred.groupby("position").size().items()))
-    return pred[PROJECTION_COLUMNS], pd.concat(lines, ignore_index=True)
+        if ln is not None and len(ln):
+            lines.append(ln)
+    pred = pd.concat(preds, ignore_index=True) if preds else pd.DataFrame(columns=PROJECTION_COLUMNS)
+    pred["gsis_id"] = pred["unit_id"] if "unit_id" in pred else pred.get("gsis_id")
+    pred["model_version"], pred["fitted_at"] = KD_MODEL_VERSION, fitted_at
+    ln_all = pd.concat(lines, ignore_index=True) if lines else pd.DataFrame(columns=["position", "unit_id", "season", "week"])
+    ln_all = ln_all.reindex(columns=["position", "unit_id", "season", "week", "train_seasons", *KD_LINE_COLUMNS])
+    ln_all["model_version"], ln_all["fitted_at"] = KD_MODEL_VERSION, fitted_at
+    log.info("kd projections: %s rows for %s (%s); %s league-free lines, offsets for %s reference scoring x position",
+             len(pred), season, ", ".join(f"{p}: {n}" for p, n in pred.groupby("position").size().items()), len(ln_all), len(offsets))
+    return KDRun(pred[PROJECTION_COLUMNS], ln_all, offsets, dict(references))
 
 
 def ppg_projection(frame: pd.DataFrame, rows: pd.DataFrame, position: str, scorings: Mapping[str, tuple[str, dict[str, float]]],
@@ -598,20 +678,26 @@ def ppg_projection(frame: pd.DataFrame, rows: pd.DataFrame, position: str, scori
 
 
 def rows_after_project(conn: psycopg.Connection, season: int) -> pd.DataFrame:
-    """Called by ``projections.project``: the K / DEF rows to write with the v2 rows. A failure is
-    logged and yields no rows (the lineups then value K / DEF by PPG as before) - never fatal."""
+    """The K / DEF rows to write with the v2 rows (``run_after_project`` without reference scorings)."""
+    return run_after_project(conn, season, {}).pred
+
+
+def run_after_project(conn: psycopg.Connection, season: int, references: Mapping[str, tuple[str, dict[str, float]]],
+                      fitted_at: datetime | None = None) -> KDRun:
+    """Called by ``projections.project``: the K / DEF rows to write with the v2 rows, and (plan F1) the league-free
+    lines and reference offsets for ``ops.kd_lines`` / ``ops.kd_ranges``. A failure is logged and yields nothing
+    (the lineups then value K / DEF by PPG as before) - never fatal."""
     try:
         with conn.cursor() as cur:
             cur.execute("select to_regclass('analytics.mart_kd_week') is not null and to_regclass('analytics.mart_kd_team_game') is not null")
             if not cur.fetchone()[0]:
                 log.warning("kd: analytics.mart_kd_week is not built (run `make build`); no K / DEF projections this run")
-                return pd.DataFrame(columns=PROJECTION_COLUMNS)
-        pred, _ = project_kd(conn, season)
-        return pred
+                return KDRun()
+        return project_kd_run(conn, season, references, fitted_at=fitted_at)
     except Exception:
         conn.rollback()
         log.exception("K / DEF projections failed (the v2 rows are written without them)")
-        return pd.DataFrame(columns=PROJECTION_COLUMNS)
+        return KDRun()
 
 
 # ------------------------------------------------------------------------------ walk-forward backtest
@@ -736,6 +822,7 @@ def run_backtest(seasons: str, out: Path | None = None, weather: bool = False) -
         return backtest_kd(conn, parse_seasons(seasons), out, weather=weather)
 
 
-__all__ = ["DEF_STAT_MAP", "KD_MODEL_VERSION", "KD_POSITIONS", "KD_SHIP", "PTS_ALLOW_BUCKETS", "WEATHER_FEATURES", "backtest_kd", "build_features",
-           "fit_kd", "kicker_asof", "pa_probabilities", "ppg_baselines", "predict_kd", "price_def", "price_k", "project_kd",
-           "rows_after_project", "team_asof", "verdict"]
+__all__ = ["DEF_STAT_MAP", "KD_LINE_COLUMNS", "KD_MODEL_VERSION", "KD_POSITIONS", "KD_RANGE_COLUMNS", "KD_SHIP", "PTS_ALLOW_BUCKETS",
+           "WEATHER_FEATURES", "KDRun", "backtest_kd", "build_features", "fit_kd", "interval", "kicker_asof", "pa_probabilities",
+           "ppg_baselines", "predict_kd", "price_def", "price_k", "project_kd", "project_kd_run", "ranges_from_lines",
+           "rows_after_project", "run_after_project", "team_asof", "verdict", "weighs"]

@@ -10,5 +10,5 @@
     "noUnusedLocals": true,
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "playwright.config.ts", "playwright.measure.config.ts", "e2e/**/*.ts", "src/lib/md.ts"]
+  "include": ["vite.config.ts", "playwright.config.ts", "playwright.measure.config.ts", "playwright.fixtures.config.ts", "e2e/**/*.ts", "src/lib/md.ts"]
 }

@@ -23,6 +23,32 @@ export interface League {
   is_reference_league: boolean;
 }
 
+/** GET /api/leagues?username= (Wave F contract): the user's leagues this season. */
+export interface SleeperUser {
+  user_id: string;
+  username: string;
+  display_name: string | null;
+  avatar: string | null;
+}
+
+export interface UserLeague {
+  league_id: string;
+  name: string;
+  season: number;
+  total_rosters: number | null;
+  scoring_label: string | null;
+  roster_id: number | null; // the user's own team in that league; null = no team (a commissioner-only league)
+  team_name: string | null;
+  status: string | null;
+  in_database: boolean;
+}
+
+export interface UserLeagues {
+  user: SleeperUser;
+  season: number;
+  leagues: UserLeague[];
+}
+
 export interface Roster {
   roster_id: number;
   team_name: string;
@@ -63,6 +89,14 @@ export interface Mover {
   momentum: number | null;
 }
 
+/** The week's opponent (Wave F contract); today's database path still sends the team name as a string. */
+export interface Opponent {
+  roster_id: number | null;
+  team_name: string;
+  manager: string | null;
+  lineup_value: number | null;
+}
+
 export interface MyWeek {
   league_id: string;
   league_name: string;
@@ -73,7 +107,8 @@ export interface MyWeek {
   manager_name: string | null;
   week: number | null;
   record: { wins: number; losses: number; standing: number } | null;
-  opponent: string | null;
+  opponent: Opponent | string | null;
+  source?: "database" | "sleeper";
   summary: string;
   league_line: string;
   lineup_value?: number | null;
@@ -105,8 +140,83 @@ export interface PlayerCard {
   injury_status: string | null;
   locked: boolean;
   proj_points: number | null;
-  sections: { usage: Section; projection: Section; availability: Section; value: Section; signals: Section };
+  sections: Partial<Record<SectionKey, Section>>;
   howto: string;
+  /** Wave F: rest of season (numbers; the sentence is in the Projection section, or `line` when the API sends it) */
+  ros?: Ros | null;
+  /** Wave F: sections the API could not build for this league (omitted, said in one line) */
+  missing?: string[];
+}
+
+export type SectionKey = "usage" | "projection" | "availability" | "value" | "signals";
+
+export interface Ros {
+  points: number | null;
+  games: number | null;
+  p10: number | null;
+  p90: number | null;
+  pos_rank: number | null;
+  playoff_points: number | null;
+  from_week: number | null;
+  last_week: number | null;
+  line?: string | null; // requested of F3: ros.card_line(), the Streamlit card's sentence
+}
+
+/** GET /api/ros?league=&position=&limit= (Wave F contract) */
+export interface RosPlayer {
+  gsis_id: string | null;
+  player_name: string;
+  position: string;
+  team: string | null;
+  ros_points: number | null;
+  ros_games: number | null;
+  playoff_points: number | null;
+  p10: number | null;
+  p90: number | null;
+  pos_rank: number | null;
+  rank?: number | null; // the overall rank on position=ALL, if the API sends it (else the list order)
+  rostered_by_roster_id: number | null;
+  rostered_by_team: string | null;
+}
+
+export interface RosList {
+  league_id: string;
+  from_week: number | null;
+  lines_note?: string | null;   // the betting-line caveat (QA, Wave F)
+  last_week: number | null;
+  players: RosPlayer[];
+  positions?: string[]; // requested of F3: the positions this league starts (K / DEF only when it has them)
+}
+
+/** One row of analytics.mart_projection_record (GET /api/record) */
+export interface RecordRow {
+  scope?: string;
+  week: number | null;
+  position: string;
+  status: string | null;
+  n_both?: number | null;
+  n_players?: number | null;
+  ours_spearman?: number | null;
+  sleeper_spearman?: number | null;
+  ours_mae?: number | null;
+  sleeper_mae?: number | null;
+  pairs_listed?: number | null;
+  pairs_n?: number | null;
+  pairs_ours_right?: number | null;
+  pairs_sleeper_right?: number | null;
+  pairs_both_right?: number | null;
+  pairs_disagree?: number | null;
+  pairs_ours_right_disagree?: number | null;
+  league_name?: string | null;
+}
+
+export interface RecordAnswer {
+  available?: boolean;
+  why?: string;
+  league_id?: string;
+  from_week?: number | null;
+  weeks?: RecordRow[];
+  summary?: RecordRow | null;
 }
 
 export interface Hit {
@@ -169,7 +279,8 @@ export async function get<T>(path: string): Promise<T> {
     if (!res.ok) {
       let detail = res.statusText;
       try {
-        detail = (await res.json()).detail ?? detail;
+        const body = await res.json();
+        detail = body.error ?? body.detail ?? detail;
       } catch {
         /* not JSON */
       }
@@ -214,4 +325,8 @@ export const paths = {
     `/api/player/${encodeURIComponent(gsis)}?league=${encodeURIComponent(league)}${team != null ? `&team=${team}` : ""}`,
   search: (league: string, q: string) => `/api/search?league=${encodeURIComponent(league)}&q=${encodeURIComponent(q)}`,
   status: () => "/api/status",
+  userLeagues: (username: string) => `/api/leagues?username=${encodeURIComponent(username)}`,
+  ros: (league: string, position: string, limit = 50) =>
+    `/api/ros?league=${encodeURIComponent(league)}&position=${encodeURIComponent(position)}&limit=${limit}`,
+  record: (league: string) => `/api/record?league=${encodeURIComponent(league)}`,
 };

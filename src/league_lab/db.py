@@ -259,13 +259,15 @@ def migrate(conn: psycopg.Connection) -> None:
     are created here too, from the writer's own DDL, so a fresh or upgraded database passes `dbt build`'s
     source tests BEFORE the first `project` (the Mac hit this: `make build` ran before `make project` and
     three sources did not exist yet)."""
-    from . import experiments, lineup, signals, waivers  # local: those modules import this one
+    # local: those modules import this one
+    from . import experiments, lineup, projections, signals, waivers
 
     with conn.cursor() as cur:
         for schema in SCHEMAS:
             cur.execute(sql.SQL("create schema if not exists {}").format(sql.Identifier(schema)))
         cur.execute(OPS_DDL)
-        for ddl in (*lineup.DDL.values(), waivers.UPSIDE_DDL, *signals.DDL.values(), experiments.DDL):   # D1: ops.feature_experiments
+        for ddl in (*lineup.DDL.values(), waivers.UPSIDE_DDL, *signals.DDL.values(), experiments.DDL,   # D1: ops.feature_experiments
+                    *projections.NFL_DDL.values()):   # F1: ops.projection_lines / projection_ranges / kd_lines / kd_ranges
             cur.execute(ddl)
     conn.commit()
     # plan D3: raw.nfl_weather + the stadium reference (dbt resolves venues before any weather is fetched)

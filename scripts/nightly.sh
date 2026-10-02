@@ -230,7 +230,7 @@ dbt_step() {  # dbt_step <name> <dbt args...>
 # (2) a failed copy stops the night too; (3) after `project`, the record is also written to the
 # archive ($RAW_DIR/record/, so it rides the Actions cache): if the hosted copy is reachable but
 # has lost it (a restore that died midway), the archive's copy is used instead.
-STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals ops.waiver_moves ops.waiver_upside ops.player_role_alerts ops.player_scenarios ops.feature_experiments"
+STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals ops.waiver_moves ops.waiver_upside ops.player_role_alerts ops.player_scenarios ops.feature_experiments ops.projection_lines ops.projection_ranges ops.kd_lines ops.kd_ranges"
 RECORD_TABLES="ops.projections ops.projection_drift"
 RECORD_DIR="$RAW_DIR/record"   # one <schema>.<table>.sql.gz per record table
 

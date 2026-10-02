@@ -449,6 +449,80 @@ Scope difference from the backtest: the backtest scores every player who played,
 rankable ones (Out / Doubtful / IR who played anyway are left out, as on the board). A few weeks are a small sample: read a gap to the backtest as a
 question, not a verdict, until mid-season.
 
+### NFL-wide outputs (plan F1, Wave F, 2026-10-02): reference scorings, `ops.projection_lines` / `_ranges`, `ops.kd_lines` / `_ranges`
+
+The stat line is league-independent (`docs/ANY_LEAGUE.md`), so `league-lab project` now writes it once for the NFL
+and the ranges once per **reference scoring**, not per house league. Same model (v3.0 / kd1.0), same fits.
+
+**Reference scorings** (`dbt/seeds/reference_scorings.csv` → `analytics_seeds.reference_scorings`: `name`, `label`,
+`scoring_settings` jsonb; read by `projections.reference_scorings`, the seed file when the table is not built yet):
+
+| `name` | label | what it is |
+|---|---|---|
+| `scrubs` | Half PPR, 4-pt pass TD | League of Scrubs' `scoring_settings`, copied from `dim_league_season` on 2026-10-02 (Sleeper's defaults at half PPR; K and DEF keys) |
+| `dynasty` | Full PPR, 6-pt pass TD, yardage and long-TD bonuses | Forever Unclean Dynasty's, copied the same day (−2 per INT, 0.05 per passing yard, 300/400-yard, 100/200-yard and 40+ TD bonuses) |
+| `ppr` | Full PPR, 4-pt pass TD | Sleeper's defaults (= `scrubs`) with 1 point per catch |
+| `standard` | Standard (no points per catch), 4-pt pass TD | Sleeper's defaults with 0 per catch |
+| `te_premium` | Full PPR plus 0.5 per tight-end catch, 4-pt pass TD | `ppr` + `bonus_rec_te` 0.5 |
+
+**What is fitted.** The residual quantile models (P10 / P25 / P50 / P75 / P90 and the per-tier conformal widening)
+are fitted once per reference scoring (`PositionModel.quantiles[(scoring_name, q)]`); the component models once
+(they are league-free). Each regressor has its own seed, so a reference's models are exactly what a league with that
+scoring had before (the log's per-tier widening for `scrubs` / `dynasty` equals League of Scrubs' / Forever Unclean's
+before F1, to the printed digit). A house league is matched to the reference that **is** its scoring
+(`projections.exact_reference`: the same non-zero weights, within 1e-9, on the keys a projected QB–TE line can carry
+— `scoring.priced_keys(scoring, ALL_COMPONENTS)`; kicking, 2-point, long-TD and defense keys do not decide). A house
+league no reference is (its commissioner changed the scoring) is fitted on its own, as before F1, with a warning:
+add its scoring to the seed. Cost: the residual models are most of `project`; five scorings instead of two.
+
+**The tables** (one copy for every league; the B5 freeze applies to each, below):
+
+| Table | Grain | Columns |
+|---|---|---|
+| `ops.projection_lines` | season × week × gsis_id (QB–TE) | `model_version`, `fitted_at`, `train_seasons`, `position`, the 12 `proj_*` components, `frozen_at`, `frozen_source` |
+| `ops.projection_ranges` | scoring_name × season × week × gsis_id | `position`, `model_version`, `fitted_at`, `proj_points` (the line priced in the scoring, `scoring.compute_points`, bonuses included), `p10`, `p25`, `p50`, `p75`, `p90`, `frozen_at`, `frozen_source` |
+| `ops.kd_lines` | season × week × position × unit_id (K, DEF) | `model_version` (kd1.0), `fitted_at`, `train_seasons`, the K line (`proj_fg_made_0_19` … `proj_fg_made_50p`, `proj_fg_missed` and its split `proj_fg_missed_*`, `proj_pat_made`, `proj_pat_missed`) or the DEF line (`proj_sacks`, `proj_interceptions`, `proj_fumble_recoveries`, `proj_forced_fumbles`, `proj_def_tds`, `proj_st_tds`, `proj_safeties`, `proj_blocked_kicks`, `proj_points_allowed`, the bucket probabilities `proj_pa_0` … `proj_pa_35p`), the other position's columns NULL; freeze labels |
+| `ops.kd_ranges` | scoring_name × season × week × position × unit_id | `proj_points` = `kdef.price` of the line in the scoring, `p10` / `p50` / `p90` = `kdef.interval(proj_points, offsets)`, the offsets `off_p10` / `off_p50` / `off_p90` (fitted per scoring × position on the out-of-fold residuals, constant over the season); no rows for a scoring that pays nothing for the position |
+
+`unit_id` is the kicker's gsis_id or the Sleeper defense id (`KC`, `LAR`) — `ops.projections.gsis_id` of the same K /
+DEF row. **Pricing a K / DEF in any scoring**: `proj = kdef.price(line, position, scoring, "proj_")`, then
+`kdef.interval(proj, (off_p10, off_p50, off_p90))` with the offsets of the reference the league is matched to (sort,
+P10 ≥ 0, P90 ≥ the projection, P10 ≤ P50 ≤ P90).
+
+**The house leagues' `ops.projections`** (the Streamlit console, drift, the backtest's record, lineups, waivers read
+it) is derived from the same numbers: QB–TE rows = the line priced in the league's own scoring (`proj_points`) and
+the P10–P90 of the reference the league is (`projections.house_rows`, which refuses a reference whose price of the
+line differs by more than 1e-6); K / DEF rows = `kdef.predict_kd` in the league's scoring from the same lines and
+the same offset fit as `ops.kd_ranges`. Tests: `assert_house_projections_are_the_nfl_wide_rows` (line, P10–P90,
+label and `fitted_at` equal to 1e-9 for every week, no row on one side only), `assert_projection_ranges_price_the_lines`
+(`proj_points` = the line re-priced by the SQL `league_points` macro, 1e-6, `scrubs` and `dynasty`).
+
+**The freeze (B5) on the new tables.** The same `freeze_plan`, relabel and repair as `ops.projections`, with one
+`fitted_at` and one `now` per run for every table. Freeze unit: the week for the line tables, the scoring × week
+for the range tables (a reference added mid-season gets its own labels). A started unit with nothing stored (the
+tables' first run; a reference added mid-season) is filled so the tables agree with each other and with the record:
+the QB–TE lines from `ops.projections`' rows of the week (the first house league's, labels and `fitted_at` kept); a
+reference that is a house league takes that league's `ops.projections` ranges; any other reference is ranged around
+the stored line by the current models and the week's as-of features (`predict_position(..., lines=...)`), labelled
+`refit`. K / DEF: the record holds priced points only, so a started week with no stored line gets the current
+line, labelled `refit`; `ops.kd_ranges` is always the stored line priced plus the offsets. On the first run
+(2026-10-02): weeks 1–3 (`refit`, v2.0) and 4 (`kickoff`, v3.0) came from the record. Test:
+`assert_frozen_nfl_wide_precede_kickoff` (the five rules of `assert_frozen_projections_precede_kickoff`, per unit).
+
+**TE premium (and the RB / WR catch premiums).** `scoring.SLEEPER_POSITION_MAP` (`bonus_rec_te`, `bonus_rec_rb`,
+`bonus_rec_wr`): `compute_points` pays the weight per catch when the stats row carries the player's `position`
+(`projections.price` passes it; a row without one prices it 0, exactly as before). They are not in `MAPPED_KEYS` or
+`scoring_stat_map`: the SQL `league_points` macro has no position to condition on, so `unmapped_keys` still reports
+them and `assert_unmapped_scoring_keys_are_known` still flags a house league that enables one. `te_premium`'s
+ranges therefore exist in Python only (the SQL pricing test covers `scrubs` and `dynasty`).
+
+**Rules for the seed.** A reference scoring's settings are never edited once published — frozen weeks were priced
+in them; add a new `name` instead (a house league whose commissioner changes the scoring stops matching its
+reference and is fitted on its own until a reference for the new scoring is added). The two comparison tests
+(`assert_projection_ranges_price_the_lines`, `assert_house_projections_are_the_nfl_wide_rows`) and the
+`scoring_name` relationship test are `warn`: the nightly's full `dbt build` runs before `project`, and an error
+there would stop the night before the refit that repairs the live weeks. The freeze test is `error`, like B5's.
+
 ### Projection v3 (v3.0, 2026-10-01; Wave D): personnel inputs by position
 
 v3 is v2 (every input, hyperparameter and interval model above; D6's 50% range and per-tier conformal widening, §

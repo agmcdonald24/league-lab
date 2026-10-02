@@ -98,6 +98,28 @@ mart, the page, the drift and the hosted copy need no second copy or "prefer the
 add the two columns to an existing table (`alter table … add column if not exists`).
 **Plan D6 (Wave D, 2026-10-01): `p25` / `p75`**, the 50% range ("most weeks"), fitted and split-conformal
 calibrated like `p10` / `p90` (`docs/METRICS.md` § Ranges and decisions); `p10 <= p25 <= p50 <= p75 <= p90`.
+**Plan F1 (Wave F, 2026-10-02):** the house leagues' QB–TE rows are derived from the NFL-wide tables below (the
+line priced in the league's scoring, the ranges of the reference scoring the league is), their K / DEF rows from
+the same `kdef` fit as `ops.kd_ranges` — the Streamlit console keeps reading this table unchanged.
+
+**NFL-wide model outputs (plan F1, Wave F, 2026-10-02)** — written by `league-lab project`
+(`projections.write_nfl_wide`), one copy for every league; each carries `frozen_at` / `frozen_source` under the B5
+rule (freeze unit: the week for the line tables, scoring × week for the range tables;
+`assert_frozen_nfl_wide_precede_kickoff`). Created by `league-lab db migrate`; restored by the nightly as state
+(`STATE_TABLES`). Definitions: `docs/METRICS.md` § "NFL-wide outputs".
+
+* `ops.projection_lines` — season × week × gsis_id (QB–TE): `model_version`, `fitted_at`, `train_seasons`,
+  `position`, the 12 `proj_*` components (the league-independent stat line).
+* `ops.projection_ranges` — scoring_name × season × week × gsis_id: `position`, `model_version`, `fitted_at`,
+  `proj_points` (the line priced in the reference scoring), `p10`, `p25`, `p50`, `p75`, `p90`. `scoring_name` →
+  `analytics_seeds.reference_scorings.name` (seed `reference_scorings.csv`: `name`, `label`, `scoring_settings`
+  jsonb — `scrubs`, `dynasty`, `ppr`, `standard`, `te_premium`).
+* `ops.kd_lines` — season × week × position × unit_id (K, DEF; `unit_id` = `ops.projections.gsis_id` of the K / DEF
+  row = `mart_kd_week.unit_id`): `model_version` (kd1.0), `fitted_at`, `train_seasons`, the K line
+  (`proj_fg_made_*`, `proj_fg_missed`, `proj_fg_missed_*`, `proj_pat_made`, `proj_pat_missed`) or the DEF line
+  (`proj_sacks` … `proj_blocked_kicks`, `proj_points_allowed`, `proj_pa_0` … `proj_pa_35p`).
+* `ops.kd_ranges` — scoring_name × season × week × position × unit_id: `model_version`, `fitted_at`, `proj_points`,
+  `p10`, `p50`, `p90`, and the scoring's fitted offsets `off_p10` / `off_p50` / `off_p90`.
 NULL on rows written before D6 (2026 weeks 1–3 are frozen with P10 / P50 / P90 only, and so is any week that
 kicked off before the first D6 refit) and on K / DEF rows (kd1.0 has no 50% range). Added the B5 way: the
 migration, the writer's DDL and the mart's pre-hook each `alter table … add column if not exists`.

@@ -2,7 +2,7 @@
   "name": "league-lab-web",
   "private": true,
   "version": "0.1.0",
-  "description": "League Lab phone web app (plan D7 spike): My Week and the player card over the read-only API",
+  "description": "League Lab phone web app (plan D7 spike, Wave F phase 1): sign in with a Sleeper username, My Week, the player card, rest of season and our record for any Sleeper league, over the API",
   "type": "module",
   "scripts": {
     "dev": "vite --port 8582 --host 0.0.0.0",
@@ -11,7 +11,9 @@
     "typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings && tsc --noEmit -p tsconfig.node.json",
     "lint": "eslint . && npm run typecheck",
     "e2e": "playwright test",
-    "measure": "playwright test --config playwright.measure.config.ts"
+    "measure": "playwright test --config playwright.measure.config.ts",
+    "e2e:fixtures": "playwright test --config playwright.fixtures.config.ts",
+    "measure:fixtures": "MEASURE_FIXTURES=1 playwright test --config playwright.measure.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
