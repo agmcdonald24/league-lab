@@ -376,6 +376,23 @@ card can say "A projects more, B wins more often" — centre the ranges on the p
 decide on week-5 drift); the experiment record is the seed `feature_experiments.csv` (re-export after a new harness
 run); Andrew's front-end decision (D7); P-01; Iteration 11 operations.
 
+### Iteration 14 — the customer app (agreed 2026-10-02, Wave F)
+
+Andrew's go, 2026-10-02, after reading `docs/ANY_LEAGUE.md`. Sleeper's API terms (his quote): free for
+non-commercial use; **commercial use needs a licence from Sleeper** — so the beta (his two leagues, newsletter
+readers) is fine, and nothing is charged for until Sleeper answers (he contacts them now; Wave G waits on it).
+The app: FastAPI (`api/`) + Svelte (`web/`, the D7 spike), any Sleeper league through the on-demand path,
+phone-first; Streamlit stays as the research console.
+
+| ID | Task | Acceptance |
+|----|------|------------|
+| F1 | **NFL-wide model outputs** (E3's proposal 1): seed `dbt/seeds/reference_scorings.csv` (Scrubs half PPR 4-pt, dynasty full PPR 6-pt + bonuses, full PPR 4-pt, standard, TE premium), `projections.py` fits the residual ranges per reference scoring instead of per env league and writes `ops.projection_lines` (one row per player-week: model version, the 12 components, freeze columns) + `ops.projection_ranges` (one row per scoring × player-week: priced points, p10–p90); `kdef.py` writes `ops.kd_lines` (league-free K / DEF lines + the per-scoring offsets); B5 freeze applies to both; `ops.projections` for the house leagues keeps being written (the Streamlit console's reader); the nightly's `project` step writes all of it. | `project` on the PO's copy writes both tables; every house-league `ops.projections` row equals the lines × its scoring (points to 1e-9) and its ranges equal the matching reference scoring's; `assert_frozen_projections_precede_kickoff`-style tests on the new tables; `backtest-v2` unchanged; runtime ≤ 2.5× today's `project`. |
+| F2 | **The web app, phase 1** (`web/`): sign in with a Sleeper username → league picker (the user's leagues this season, the team pre-selected) → My Week for ANY league (the on-demand path) with the opponent of the week → the player card in the user's scoring → "Our record" and rest of season where the API has them; the beta password gate stays; installable, 390 px first; the "How to read this" words from `app/lib`. Built against the API contract in the brief (fixtures for the endpoints F3 builds). | Playwright e2e: a username → leagues → My Week → player → back, on fixtures, at 390 and 1300 px; typecheck + lint clean; first content ≤ 500 ms on the measure config; screenshots. |
+| F3 | **The API for any league** (`api/`): `GET /api/leagues?username=` (Sleeper user → leagues this season, the user's roster in each), the opponent of the week on `/api/my-week` (matchups call), `/api/player/{gsis}` on demand for an unknown league (price + range in the user's scoring; availability from the on-demand rosters), `/api/ros` (rest of season priced on request from the NFL-wide lines), `/api/record` (house leagues; `not_available` elsewhere); the shared Sleeper cache (player directory daily on disk; league / users daily; rosters 5–15 min; matchups 5 min) and a token bucket well under 1,000 calls/min; reads `ops.projection_lines` / `ops.projection_ranges` / `ops.kd_lines` when present (F1's contract, fixture until merged), else E3's fallback; a Dockerfile that serves `web/dist` + the API; `docs/SLEEPER_TERMS.md`. | `api` tests green incl. new ones on fixtures (both house leagues on demand reproduce the marts; a third, fictional league prices and solves); rate limiter and caches unit-tested; `docker build` succeeds (no daemon here: the Dockerfile is reviewed and `uvicorn` serves `web/dist` locally). |
+
+Order: F1–F3 in parallel (three Opus devs, one round); the PO integrates, one scoped QA pass, ship. **Wave G**
+(accounts, Stripe, hosting, one nightly writer) waits for Sleeper's licensing answer.
+
 ### Iteration 13 — from a lab to a product: proof, rest of season, any league (agreed 2026-10-01, Wave E)
 
 Andrew's direction (2026-10-01): a tool the fantasy population would pay $4–5 a month or ~$20 a season for,
