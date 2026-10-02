@@ -1,0 +1,294 @@
+{
+ "league_id": "9000000000000000001",
+ "source": "sleeper",
+ "roster_id": 3,
+ "want": "TE",
+ "week": 4,
+ "span": "weeks 4–7",
+ "partners": [
+  {
+   "partner": 7,
+   "partner_team": "Goal Line Stand",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+     "this_week": 9.52,
+     "cannot_play": null,
+     "market_price": 2,
+     "season_points": 141,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "13287",
+     "gsis_id": "00-0041027",
+     "player_name": "Jeremiyah Love",
+     "position": "RB",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b12gtjsylmql5v7iyyla",
+     "this_week": 11.07,
+     "cannot_play": null,
+     "market_price": 10,
+     "season_points": 156,
+     "roster_id": 3
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "5001",
+     "gsis_id": "00-0034383",
+     "player_name": "Dalton Schultz",
+     "position": "TE",
+     "team": "HOU",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ym8sbkev8l4scnrc0vd8",
+     "this_week": 12.98,
+     "cannot_play": null,
+     "market_price": 31,
+     "season_points": 170,
+     "roster_id": 7
+    }
+   ],
+   "you_gain_week": 3.46,
+   "you_gain_horizon": 7.14,
+   "they_gain_week": -2.86,
+   "they_gain_horizon": 5.21,
+   "price_out": 12,
+   "price_in": 31
+  },
+  {
+   "partner": 9,
+   "partner_team": "Red Zone Regulars",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+     "this_week": 9.52,
+     "cannot_play": null,
+     "market_price": 2,
+     "season_points": 141,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "13287",
+     "gsis_id": "00-0041027",
+     "player_name": "Jeremiyah Love",
+     "position": "RB",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b12gtjsylmql5v7iyyla",
+     "this_week": 11.07,
+     "cannot_play": null,
+     "market_price": 10,
+     "season_points": 156,
+     "roster_id": 3
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "1466",
+     "gsis_id": "00-0030506",
+     "player_name": "Travis Kelce",
+     "position": "TE",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+     "this_week": 12.46,
+     "cannot_play": null,
+     "market_price": 26,
+     "season_points": 164,
+     "roster_id": 9
+    }
+   ],
+   "you_gain_week": 2.94,
+   "you_gain_horizon": 3.96,
+   "they_gain_week": -1.02,
+   "they_gain_horizon": 1.29,
+   "price_out": 12,
+   "price_in": 26
+  },
+  {
+   "partner": 2,
+   "partner_team": "Waiver Wire Warriors",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "5967",
+     "gsis_id": "00-0035261",
+     "player_name": "Tony Pollard",
+     "position": "RB",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mb2xdrqiys6ktlcuah2n",
+     "this_week": 9.97,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 143,
+     "roster_id": 3
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "12506",
+     "gsis_id": "00-0040663",
+     "player_name": "Harold Fannin Jr.",
+     "position": "TE",
+     "team": "CLE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fxublmpnxx9uggsddwik",
+     "this_week": null,
+     "cannot_play": "game started (bench)",
+     "market_price": 3,
+     "season_points": 141,
+     "roster_id": 2
+    }
+   ],
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 0.4,
+   "they_gain_week": 0.0,
+   "they_gain_horizon": 0.97,
+   "price_out": 0,
+   "price_in": 3
+  },
+  {
+   "partner": 2,
+   "partner_team": "Waiver Wire Warriors",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "5967",
+     "gsis_id": "00-0035261",
+     "player_name": "Tony Pollard",
+     "position": "RB",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mb2xdrqiys6ktlcuah2n",
+     "this_week": 9.97,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 143,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "7600",
+     "gsis_id": "00-0036894",
+     "player_name": "Pat Freiermuth",
+     "position": "TE",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
+     "this_week": null,
+     "cannot_play": "game started (bench)",
+     "market_price": 0,
+     "season_points": 116,
+     "roster_id": 3
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "12506",
+     "gsis_id": "00-0040663",
+     "player_name": "Harold Fannin Jr.",
+     "position": "TE",
+     "team": "CLE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fxublmpnxx9uggsddwik",
+     "this_week": null,
+     "cannot_play": "game started (bench)",
+     "market_price": 3,
+     "season_points": 141,
+     "roster_id": 2
+    }
+   ],
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 0.4,
+   "they_gain_week": 0.0,
+   "they_gain_horizon": 1.06,
+   "price_out": 0,
+   "price_in": 3
+  },
+  {
+   "partner": 1,
+   "partner_team": "Bench Mob",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+     "this_week": 9.52,
+     "cannot_play": null,
+     "market_price": 2,
+     "season_points": 141,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "3163",
+     "gsis_id": "00-0033106",
+     "player_name": "Jared Goff",
+     "position": "QB",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kaicbot8qhzrvddilbtp",
+     "this_week": 18.02,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 229,
+     "roster_id": 3
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "10859",
+     "gsis_id": "00-0039065",
+     "player_name": "Sam LaPorta",
+     "position": "TE",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+     "this_week": 13.19,
+     "cannot_play": null,
+     "market_price": 35,
+     "season_points": 173,
+     "roster_id": 1
+    }
+   ],
+   "you_gain_week": 3.67,
+   "you_gain_horizon": 5.15,
+   "they_gain_week": -0.39,
+   "they_gain_horizon": 0.15,
+   "price_out": 2,
+   "price_in": 35
+  }
+ ],
+ "no_trade_with": [
+  "Kickoff Kings",
+  "Practice Squad",
+  "Two-Point Tries",
+  "Hail Marys",
+  "Fourth and Long"
+ ],
+ "words": {
+  "headline": "**Best partner: Goal Line Stand (goalline).** Your [Isaiah Likely](/player/00-0037838) and [Jeremiyah Love](/player/00-0041027) for their [Dalton Schultz](/player/00-0034383): you **+3.5** this week and **+7.1** over weeks 4–7, them **-2.9** and **+5.2**.",
+  "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"
+ },
+ "search": {
+  "bar_sets": 26,
+  "candidates": 644,
+  "evaluated": 13,
+  "seconds": 0.102
+ }
+}

@@ -5,13 +5,14 @@
   import { leagueNames } from "./lib/names.svelte";
   import { prefs } from "./lib/prefs";
   import { interceptLinks, route, setParams } from "./lib/router.svelte";
-  import Coming from "./components/Coming.svelte";
   import Login from "./components/Login.svelte";
   import TopBar, { sectionOf } from "./components/TopBar.svelte";
   import LeaguesPage from "./routes/Leagues.svelte";
   import MyWeekPage from "./routes/MyWeek.svelte";
   import PlayerPage from "./routes/Player.svelte";
   import RosPage from "./routes/Ros.svelte";
+  // ---- G4 decisions: the four screens, each loaded on first use (src/lib/decisionPages.ts)
+  import { decisionPage, isDecision } from "./lib/decisionPages";
   // the research screens and About load on first use (their own chunks): My Week's first screen stays small
   const LAZY = {
     trends: () => import("./routes/Trends.svelte"),
@@ -138,14 +139,13 @@
       {:then m}
         <m.default {options} {league} {team} onauth={needLogin} />
       {/await}
-    {:else if r.name === "waivers"}
-      <Coming title="Waivers" what="Who to claim this week, who to drop for him, and what he adds to your lineup now and over the next four weeks." />
-    {:else if r.name === "trades"}
-      <Coming title="Trades" what="Build a trade and see what it does to both lineups, this week and for the rest of the season." />
-    {:else if r.name === "team"}
-      <Coming title="Your team" what="Where your roster ranks in the league, slot by slot, and how it holds up over the season." />
-    {:else if r.name === "league"}
-      <Coming title="The league" what="Standings, the record against everyone, luck, the managers and the latest moves." />
+    {:else if isDecision(r.name)}
+      <!-- G4 decisions: Waivers, Trades, Team, League -->
+      {#await decisionPage(r.name)}
+        <div class="ll-skel h-40" aria-label="Loading"></div>
+      {:then Page}
+        <Page {options} {league} {team} onauth={needLogin} />
+      {/await}
     {:else}
       <MyWeekPage {options} {league} {team} {mine} {status} onauth={needLogin} />
     {/if}

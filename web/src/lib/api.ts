@@ -603,3 +603,361 @@ export const researchPaths = {
 export interface PlayerCard {
   headshot_url?: string | null;
 }
+
+// ---- G4: the decision screens (Wave G, plan G4) on G2's routes: /api/waivers, /api/trades/evaluate,
+// /api/trades/partners, /api/team, /api/league. The shapes are G2's (dev/G2 `api/league_lab_api/decisions.py`; the
+// fixtures are its saved answers): rows carry the marts' column names, player objects carry headshot_url / team /
+// position, and the pages' sentences come as `words`. Fields marked "requested" are asked of G2 (the fixtures add them).
+
+/** A player on a decision screen (G2's `_player`). */
+export interface DPlayer {
+  sleeper_id: string | null;
+  gsis_id: string | null;
+  player_name: string | null;
+  position: string | null;
+  team: string | null;
+  headshot_url: string | null;
+}
+
+export interface WaiverAdd extends DPlayer {
+  projection: number | null;
+  value_source: string | null;
+  p10: number | null;
+  p25: number | null;
+  p75: number | null;
+  p90: number | null;
+  report_status: string | null;
+  reason: string | null;
+  games_played: number | null;
+  is_no_evidence: boolean | null;
+  ros_points: number | null;
+  ros_rank_pos: number | null;
+  season_points_left: number | null;
+}
+
+export interface WaiverDrop extends DPlayer {
+  projection: number | null;
+  is_starter: boolean | null;
+  horizon_loss: number | null;
+  season_points_left: number | null;
+  ros_points: number | null;
+}
+
+/** One row of mart_waiver_moves (or the on-demand sweep), nested: the free agent, the drop, the gains, the card's words. */
+export interface WaiverMove {
+  move_rank: number | null;
+  add_rank: number | null;
+  list_kind: "start_now" | "cover" | "nothing";
+  is_best_drop: boolean | null;
+  add: WaiverAdd;
+  drop: WaiverDrop | null;
+  weekly_gain: number;
+  horizon_gain: number;
+  week_gains: (number | null)[] | null;
+  add_horizon_gain: number | null;
+  lineup_before: number | null;
+  lineup_after: number | null;
+  add_slot: string | null;
+  fills_empty_slot: boolean | null;
+  displaced: (DPlayer & { projection: number | null; slot: string | null }) | null;
+  open_roster_spots: number | null;
+  words: { headline: string; lines: string[]; why: string | null; source?: string };
+}
+
+export interface FreeAgent extends DPlayer {
+  projection: number | null;
+  p10: number | null;
+  p25: number | null;
+  p75: number | null;
+  p90: number | null;
+  injury_status: string | null;
+  games_played: number | null;
+  ros_points: number | null;
+  ros_rank_pos: number | null;
+  ppg_std?: number | null;
+  expected_per_game?: number | null;
+  diff_per_game?: number | null;
+  target_share_l3?: number | null;
+  snap_pct_l3?: number | null;
+}
+
+export interface Waivers {
+  league_id: string;
+  source: "database" | "sleeper";
+  roster_id: number;
+  team_name?: string | null;
+  position: string;
+  week: number | null;
+  horizon_last_week?: number | null;
+  lineup_value?: number | null;
+  weakest: { slot: string; player: DPlayer; value: number | null; margin: number | null; replacement_name: string | null; replacement_value: number | null } | null;
+  moves: WaiverMove[];
+  total_moves: number;
+  cards: { title: string; add_sleeper_id: string; drop_sleeper_id: string | null; move_rank: number | null; move: WaiverMove }[];
+  notice: string | null; // markdown: "Nothing beats what you have." …
+  free_agents: FreeAgent[];
+  as_of?: string | null;
+  inputs_current?: boolean | null;
+  on_current_lineup?: boolean | null;
+  positions?: string[]; // requested: the positions the league starts (the free-agent tabs)
+}
+
+/** A player in a trade (G2's TradeContext.player). */
+export interface TradePlayer extends DPlayer {
+  sleeper_id: string;
+  this_week: number | null;
+  cannot_play: string | null;
+  market_price: number | null;
+  season_points: number | null;
+  roster_id: number | null;
+  goes_to?: string;
+}
+
+export interface LineupState {
+  this_week: number;
+  horizon: number;
+  bench: number | null;
+  by_week: number[];
+}
+
+export interface TradeSide {
+  roster_id: number;
+  team_name: string;
+  gain_week: number;
+  gain_horizon: number;
+  cuts: { player: TradePlayer; horizon_loss: number; season_points: number | null }[];
+  opened: number;
+  limit: number;
+}
+
+export interface TradeEval {
+  league_id: string;
+  source: "database" | "sleeper";
+  roster_id: number;
+  partner: number;
+  partner_team: string;
+  week: number;
+  weeks: number[];
+  span: string; // "weeks 4–7"
+  give: TradePlayer[];
+  get: TradePlayer[];
+  before: { mine: LineupState; theirs: LineupState };
+  after: { mine: LineupState; theirs: LineupState };
+  fit: { this_week: { mine: number; theirs: number }; next_4: { mine: number; theirs: number }; words: string };
+  market: { give: number | null; get: number | null; unknown: string[]; replacement: Record<string, { season_points: number; player_name: string | null }>; words: string; players: TradePlayer[] };
+  verdict: string;
+  headline: string; // markdown: "**You give …; you get ….** <verdict>"
+  ros: { give: number | null; get: number | null; window: string | null; words: string | null } | null;
+  ranks?: { words: string | null } | null;
+  size_words: string | null;
+  sides: { mine: TradeSide; theirs: TradeSide };
+  lineups: Record<"mine" | "theirs", { slots: { slot: string; player_name: string | null; gsis_id: string | null; value: number | null; change: number | null }[]; notes: string[]; closest_call: string | null }>;
+}
+
+export interface PartnerRow {
+  partner: number;
+  partner_team: string;
+  shape: string;
+  kind?: string;
+  is_best: boolean;
+  give: TradePlayer[];
+  get: TradePlayer[];
+  you_gain_week: number;
+  you_gain_horizon: number;
+  they_gain_week: number;
+  they_gain_horizon: number;
+  price_out: number | null;
+  price_in: number | null;
+}
+
+export interface Partners {
+  league_id: string;
+  roster_id: number;
+  want: string | null;
+  week: number;
+  span: string;
+  partners: PartnerRow[];
+  no_trade_with: string[];
+  words: { headline: string | null };
+}
+
+/** Team Hub: mart_league_roster_value / _rankings / _slot_strength / _horizon for one roster (+ every roster's values). */
+export interface TeamRosterRow extends DPlayer {
+  role: "starter" | "bench" | "unplayable" | "empty";
+  slot: string | null;
+  slot_type: string | null;
+  bench_rank: number | null;
+  value: number | null;
+  value_source: string | null;
+  margin: number | null;
+  is_locked: boolean | null;
+  report_status: string | null;
+  reason: string | null;
+  acquired: string | null;
+  acquired_how: string | null;
+}
+
+export interface TeamSlot {
+  slot_type: string;
+  slots: number;
+  empty_slots: number | null;
+  top: (DPlayer & { slot: string | null; value: number | null; is_locked: boolean | null }) | null;
+  starter_strength: number | null;
+  replacement_name: string | null;
+  replacement_value: number | null;
+  league?: { avg: number | null; best: number | null; rank: number | null; n: number }; // requested
+}
+
+export interface TeamRank {
+  value: number;
+  league_rank: number;
+  n_rosters: number;
+  horizon: string;
+  rank_label: string;
+}
+
+export interface Team {
+  league_id: string;
+  source: "database" | "sleeper";
+  roster_id: number;
+  team_name: string;
+  manager_name: string | null;
+  week: number;
+  value: {
+    week: number;
+    horizon_weeks: number;
+    week_label: string;
+    horizon_label: string;
+    lineup_value: number;
+    bench_value: number;
+    horizon_value: number;
+    empty_slots: string | null;
+    n_unvalued: number | null;
+    n_locked: number | null;
+    n_questionable: number | null;
+    weakest_slot: string | null;
+    weakest_margin: number | null;
+    weakest_player_name: string | null;
+    weakest_gsis_id: string | null;
+    weakest_position: string | null;
+    weakest_value: number | null;
+    weakest_replacement_name: string | null;
+    weakest_replacement_value: number | null;
+    worst_week: number | null;
+    worst_week_value: number | null;
+  };
+  ranks: Partial<Record<"lineup_value" | "horizon_value" | "bench_value", TeamRank>>;
+  league: { roster_id: number; team_name: string; is_me: boolean; lineup_value: number; horizon_value: number; bench_value: number; lineup_value_rank: number }[];
+  slot_strength: TeamSlot[];
+  roster: TeamRosterRow[];
+  weekly: { week: number; lineup_value: number | null; bench_value: number | null; league?: { median: number | null; best: number | null; rank: number | null; n: number } }[];
+  season: { wins: number; losses: number; standing: number | null; all_play_win_pct?: number | null; luck_wins?: number | null; avg_bench_points_left?: number | null } | null;
+  words: { lineup: string[]; horizon: string[] } | null;
+}
+
+export interface StandingRow {
+  standing: number;
+  roster_id: number;
+  team_name: string;
+  manager_name: string | null;
+  wins: number;
+  losses: number;
+  ties: number | null;
+  points_for: number | null;
+  points_against: number | null;
+}
+
+export interface AllPlayRow {
+  roster_id: number;
+  team_name: string;
+  wins: number;
+  losses: number;
+  all_play_wins: number;
+  all_play_losses: number;
+  all_play_win_pct: number | null;
+  expected_wins: number | null;
+  luck_wins: number | null;
+}
+
+export interface TransactionRow {
+  created_at: string;
+  week: number | null;
+  transaction_id: string;
+  transaction_type: string; // waiver / free_agent / trade / commissioner
+  status: string;
+  action: string; // add / drop
+  roster_id: number | null;
+  team_name: string | null;
+  sleeper_player_id: string | null;
+  gsis_id: string | null;
+  player_name: string | null;
+  position: string | null;
+  team: string | null;
+  headshot_url: string | null;
+  waiver_bid: number | null;
+}
+
+export interface DraftPick {
+  pick_no: number;
+  round: number;
+  draft_slot: number | null;
+  roster_id: number | null;
+  team_name: string | null;
+  gsis_id: string | null;
+  player_name: string | null;
+  position: string | null;
+  drafted_team: string | null;
+  headshot_url?: string | null;
+  is_keeper: boolean | null;
+  position_rank_by_pick: number | null;
+  position_rank_by_points: number | null;
+}
+
+export interface LeagueView {
+  league_id: string;
+  source: "database" | "sleeper";
+  season: number;
+  weeks_scored: number;
+  standings: StandingRow[];
+  all_play: AllPlayRow[];
+  all_play_week: { week: number; roster_id: number; team_name: string; points: number; result: string | null; week_points_rank: number }[];
+  profiles: { roster_id: number; team_name: string; total_bench_points_left: number | null }[] | null; // null: not on demand
+  transactions: TransactionRow[];
+  transactions_total?: number;
+  draft: DraftPick[] | null;
+  not_on_demand?: string | null;
+  words: { headline: string | null } | null;
+}
+
+const encG4 = encodeURIComponent;
+export const decisionPaths = {
+  waivers: (league: string, team: number, position = "ALL") => `/api/waivers?league=${encG4(league)}&team=${team}&position=${encG4(position)}`,
+  team: (league: string, team: number) => `/api/team?league=${encG4(league)}&team=${team}`,
+  league: (league: string, team: number | null) => `/api/league?league=${encG4(league)}${team != null ? `&team=${team}` : ""}`,
+  // "any position" is no `want` at all (G2 answers 400 to want=ALL)
+  partners: (league: string, team: number, want = "ALL") =>
+    `/api/trades/partners?league=${encG4(league)}&team=${team}${want === "ALL" ? "" : `&want=${encG4(want)}`}`,
+  evaluate: () => "/api/trades/evaluate",
+};
+
+/** POST /api/trades/evaluate (not cached: a package is evaluated once per tap). */
+export async function postEvaluate(body: { league: string; team: number; partner: number; give: string[]; get: string[] }): Promise<TradeEval> {
+  const res = await fetch(decisionPaths.evaluate(), {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (res.status === 401) throw new Unauthorized("sign in");
+  if (!res.ok) {
+    let detail = res.statusText;
+    try {
+      const b = await res.json();
+      detail = b.error ?? b.detail ?? detail;
+    } catch {
+      /* not JSON */
+    }
+    throw new ApiError(res.status, detail);
+  }
+  return (await res.json()) as TradeEval;
+}
