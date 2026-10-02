@@ -144,7 +144,10 @@ def rosters_for_league(league_id: str) -> list[dict]:
 # ---------------------------------------------------------------- plan F3: rest of season
 ROS_MART_SQL = """select {cols}, a.rostered_by_roster_id, a.rostered_by_team
                    from analytics.mart_player_ros_projection r
-                   left join analytics.mart_player_availability a on a.league_id = r.league_id and a.gsis_id = r.gsis_id
+                   left join analytics.mart_player_availability a
+                          on a.league_id = r.league_id
+                         and ((r.gsis_id is not null and a.gsis_id = r.gsis_id)
+                              or (r.gsis_id is null and a.sleeper_id = r.player_key))   -- a defense: its Sleeper id is the team code (QA, Wave F)
                    where r.league_id = %s and (%s = 'ALL' or r.position = %s)
                    order by r.ros_points desc, r.player_key limit %s"""
 POSITIONS = ("QB", "RB", "WR", "TE", "K", "DEF", "ALL")
@@ -215,6 +218,7 @@ def ros(league_id: str, position: str = "ALL", limit: int = 50) -> dict:
                 "from_week": None if head is None else int(head["from_week"]),
                 "last_week": None if head is None else int(head["last_week"]),
                 "playoff_week_start": None if head is None or _num(head["playoff_week_start"]) is None else int(head["playoff_week_start"]),
+                "lines_note": None if head is None else ROS.lines_note(head).replace("his usage", "usage"),   # QA: the betting-line caveat
                 "pos_rank_note": POS_RANK_NOTE, "players": [_ros_player(r) for _, r in df.iterrows()]}
     league, df = ros_on_demand(league_id)
     client = A.sleeper()
@@ -234,6 +238,7 @@ def ros(league_id: str, position: str = "ALL", limit: int = 50) -> dict:
             "from_week": None if df.empty else int(df["from_week"].iloc[0]),
             "last_week": None if df.empty else int(df["last_week"].iloc[0]),
             "playoff_week_start": None if df.empty or df["playoff_week_start"].iloc[0] is None else int(df["playoff_week_start"].iloc[0]),
+            "lines_note": None if df.empty else ROS.lines_note(df.iloc[0]).replace("his usage", "usage"),
             "pos_rank_note": POS_RANK_NOTE + "; priced on request from the NFL-wide board (the same population as "
                              "the mart's for a house league: tested)",
             "players": [_ros_player(r, roster_of, names) for _, r in df.iterrows()]}
@@ -242,7 +247,7 @@ def ros(league_id: str, position: str = "ALL", limit: int = 50) -> dict:
 # ---------------------------------------------------------------- plan F3: our record (house leagues)
 RECORD_SQL = """select * from analytics.mart_projection_record where league_id = %s and season = %s
                 order by scope, week, position"""
-RECORD_WHY = "the record is kept for the leagues the nightly scores"
+RECORD_WHY = "we keep the record for the leagues we score every morning; yours is not one of them yet"
 
 
 def record(league_id: str) -> dict:
@@ -253,6 +258,12 @@ def record(league_id: str) -> dict:
     except A.LeagueNotFound as exc:
         raise NotFound(str(exc)) from exc
     if not known_league(league_id):
+        try:
+            A.sleeper().league(league_id)             # 404 for an id Sleeper does not have (the contract)
+        except A.LeagueNotFound as exc:
+            raise NotFound(f"no Sleeper league {league_id}") from exc
+        except A.SleeperUnavailable:
+            pass                                      # Sleeper down: still an honest "not kept" answer
         return {"league_id": league_id, "available": False, "why": RECORD_WHY}
     season = int(league_row(league_id)["season"])
     rec = query(RECORD_SQL, (league_id, season)) if not missing_relations(("mart_projection_record",)) else pd.DataFrame()

@@ -34,6 +34,12 @@ def _metric(label: str, value: str, delta: str | None = None, trend: str | None 
     return {"label": label, "value": value, "delta": delta, "trend": trend, "help": help}
 
 
+MISSING_WORDS = {   # what a card leaves out for a league the nightly does not score, in plain words (QA, Wave F)
+    "value.points_per_game": "his points per game in this league",
+    "signals.upside": "the what-if line when a teammate is out",
+}
+
+
 def _section(title: str) -> dict:
     """One bordered box of the page: its title, then its blocks in the page's order —
     {kind: "metrics", metrics: [...]}, {kind: "markdown" | "caption", text}, {kind: "unavailable", text}."""
@@ -446,6 +452,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "proj_points": float(proj.iloc[0]["proj_points"]) if not proj.empty else None,
         "sections": {"usage": usage, "projection": projection, "availability": availability, "value": value, "signals": sig_sec},
         "howto": HOWTO.format(league=league_name),
-        "ros": ros_out, "missing": missing, "source": "database" if od is None else "sleeper",
+        "ros": ros_out, "missing": [MISSING_WORDS.get(k, k) for k in missing], "missing_keys": missing,
+        "source": "database" if od is None else "sleeper",
         **({} if od is None else {"on_demand": od.meta()}),
     }

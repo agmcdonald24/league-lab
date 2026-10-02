@@ -182,6 +182,7 @@ export interface RosPlayer {
 export interface RosList {
   league_id: string;
   from_week: number | null;
+  lines_note?: string | null;   // the betting-line caveat (QA, Wave F)
   last_week: number | null;
   players: RosPlayer[];
   positions?: string[]; // requested of F3: the positions this league starts (K / DEF only when it has them)

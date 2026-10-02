@@ -122,6 +122,7 @@
       <p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
         {span ? `${span[0].toUpperCase()}${span.slice(1)}` : "The weeks left"} in {leagueName} scoring, up to the league's final. A bye
         is a week with no game: he plays one fewer. Ranked among everyone at the position, rostered or free agent.
+        {#if data?.lines_note}{" " + data.lines_note}{/if}
       </p>
     </section>
 

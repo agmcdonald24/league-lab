@@ -70,7 +70,9 @@
         loading = false;
         data = null;
         if (e instanceof Unauthorized) onauth();
-        else if (e instanceof ApiError && e.status === 404) error = "That team is not in this league. Pick your team above.";
+        else if (e instanceof ApiError && e.status === 404)
+          error = /league/i.test(e.message) && !/team/i.test(e.message) ? "Sleeper has no league with that id. Check the link, or pick a league above."
+                                                                       : "That team is not in this league. Pick your team above.";
         else if (e instanceof ApiError && e.status === 502) error = "Sleeper did not answer. Try again in a minute.";
         else if (e instanceof ApiError && e.status === 503) error = "The numbers are not ready yet. Try again in a few minutes.";
         else error = e instanceof Error ? e.message : String(e);
@@ -155,7 +157,7 @@
       <Expander title="Movers on your roster (last 3 games vs before)" testid="movers">
         {#if data.movers.length === 0}
           <p class="text-sm text-zinc-500">
-            No trend calls yet — nothing is called before a player's fourth game. The Trends page shows an early read.
+            No trend calls yet — nothing is called before a player's fourth game.
           </p>
         {:else}
           <ul class="divide-y divide-zinc-100 text-[15px] dark:divide-zinc-800">

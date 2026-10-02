@@ -37,7 +37,8 @@ from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from . import auth, db, myweek, ondemand, player
-from .db import DataNotReady
+from .applib import cards, ui
+from .db import DataNotReady, query
 from .myweek import NotFound
 from .settings import web_dist
 
@@ -213,6 +214,12 @@ def status(response: Response):
     out = myweek.status()
     out["sleeper"] = A.sleeper().stats()
     out["board_source"] = A.board_source()
+    try:                                    # QA: the setting is "auto"; say which board the current week really uses
+        season = int(ui.current_season())
+        week = cards.decision_week(season)
+        out["board_source_in_use"] = None if week is None else A.load_board(query, season, week).source
+    except Exception as exc:  # noqa: BLE001 - a status line, never a failure
+        out["board_source_in_use"] = f"unknown ({exc.__class__.__name__})"
     return _json(out, response)
 
 

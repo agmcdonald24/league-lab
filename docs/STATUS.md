@@ -2667,6 +2667,36 @@ Design for Andrew and the PO: `docs/ANY_LEAGUE.md`. Nothing in `app/`, `dbt/`, t
 
 ## Wave F (Iteration 14)
 
+### PO merge — Wave F, 2026-10-02
+
+* **Delivered** (three Opus devs in parallel, ~25–40 min each; one 11-minute QA walk through the built app against the
+  API): F1 the NFL-wide outputs (`reference_scorings` seed — scrubs, dynasty, ppr, standard, te_premium; `ops.projection_lines`
+  9,911 rows, `ops.projection_ranges` 5 × 9,911, `ops.kd_lines` 1,088, `ops.kd_ranges` 5,440 on the PO's copy; the house
+  leagues' `ops.projections` unchanged to the last digit; the freeze applies to all four tables; `project` 1.3–2× longer);
+  F3 the API for any league (`/api/leagues?username=`, the opponent, `/api/player` and `/api/ros` on demand, `/api/record`,
+  the Sleeper client with caches and a 300/min token bucket, the Dockerfile serving `web/dist`, `docs/SLEEPER_TERMS.md`);
+  F2 the web app phase 1 (sign in with a Sleeper username → league picker → My Week → player card → Rest of season →
+  Our record; 14 fixture e2e, first content ~100 ms on fixtures, 34.5 KB gzipped).
+* **Integration**: F3 expected the K / DEF ranges as rows of `projection_ranges`; F1 keeps them in `ops.kd_ranges`
+  (`unit_id` key) — the reader now has both (`anyleague.NFL_WIDE["kd_ranges"]`); the pricer passes the position so a
+  TE premium prices; `/api/leagues/{id}/rosters` serves an unknown league from Sleeper (F2's team picker); the fictional
+  league's DEF test re-pinned to a hand re-pricing of F1's real lines (it assumed F3's synthetic sacks-only line). On the
+  NFL-wide board both house leagues reproduce the marts (lineup 111.15 / 117.02, slots, values, margins; `api` 83 passed
+  on both boards; the default `auto` picks `nfl_wide` once the tables hold the week).
+* **QA findings fixed by the PO**: (HIGH) Rest of season showed every defense as a free agent in a house league —
+  the availability join used `gsis_id`, which a defense lacks; it joins on the Sleeper id for them; (MED) the betting-line
+  caveat on `/api/ros` + the screen; `missing` on a player card in plain words (`missing_keys` keeps the keys); the record
+  page's "the nightly" / "whose were closer" / the promise to a league that gets no record; (LOW) the Movers line's
+  Trends-page reference gone from the app, a league Sleeper does not have is a 404 on `/api/record` and says so in the
+  app, link hit areas ~44 px, `/api/status` says which board is in use. Left: the fixture team names differ between
+  screens (pseudonymised fixtures, not a bug); one Back-button skip seen once after switching leagues twice (not
+  reproduced); 1300 px walk for the house leagues not repeated.
+* **Checks**: root `pytest` 829 passed; `api` 83 passed; web lint 0 / 0, build, 14 fixture e2e; dbt 130 PASS on the
+  projection marts + the four new tests; ruff clean.
+* **Open for Wave G** (waits on Sleeper's licensing answer): accounts, payments, hosting (the Dockerfile is ready; no
+  daemon here to build it), a shared cache / bucket across processes, `ops.projection_*` into `RECORD_TABLES` after
+  the first hosted sync, Trade Finder and waivers on demand, search for an unknown league, the one-query ROS board.
+
 ### F1 2026-10-02 — NFL-wide model outputs (reference scorings, `ops.projection_lines` / `_ranges`, `ops.kd_lines` / `_ranges`)
 
 * **What**: `league-lab project` fits the residual ranges per **reference scoring** (seed `reference_scorings.csv`:

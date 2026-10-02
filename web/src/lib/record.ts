@@ -4,7 +4,7 @@ import type { RecordAnswer, RecordRow } from "./api";
 
 export const STARTS =
   "The record starts the first week Sleeper's projections are archived before kickoff: every week we save " +
-  "Sleeper's numbers next to ours before the first game, then check after the games whose were closer.";
+  "Sleeper's numbers next to ours before the first game, then check after the games whose numbers were closer.";
 
 const n = (v: number | null | undefined): number => (v === null || v === undefined || Number.isNaN(v) ? 0 : Math.trunc(v));
 const plural = (k: number, word: string) => `${k} ${word}${k === 1 ? "" : "s"}`;
@@ -26,14 +26,14 @@ export function recordView(d: RecordAnswer, fallbackName: string): RecordView {
   const leagueName = weeks.find((w) => w.league_name)?.league_name ?? d.summary?.league_name ?? fallbackName;
   const base: RecordView = { kind: "empty", lines: [], caption: "", metrics: [], calls: [], byPosition: [], leagueName };
   if (d.available === false) {
-    const why = d.why ?? "the record is kept for the leagues the nightly scores";
-    return { ...base, kind: "unavailable", lines: [`**No record for ${fallbackName}.** ${why[0].toUpperCase()}${why.slice(1)}.`], caption: STARTS };
+    const why = d.why ?? "we keep the record for the leagues we score every morning; yours is not one of them yet";
+    return { ...base, kind: "unavailable", lines: [`**No record for ${fallbackName}.** ${why[0].toUpperCase()}${why.slice(1)}.`], caption: "" };
   }
   if (!weeks.length) {
     return {
       ...base,
       lines: [
-        `**No week on the record yet.** ${STARTS} Sleeper is only asked from the nightly refresh, so the first week that refresh runs ` +
+        `**No week on the record yet.** ${STARTS} Sleeper's numbers are saved by the morning refresh, so the first week it runs ` +
           "before a Thursday kickoff is the first week here. Nothing is filled in after the fact.",
       ],
     };
@@ -109,7 +109,7 @@ export const RECORD_HOWTO = (leagueName: string) =>
   "- **Use it to decide how much to trust us.** If we call more start/sit decisions right than Sleeper's free numbers, " +
   "follow the cards on close calls; if not, treat them as a second opinion.\n" +
   "- **What is compared.** Every week, before the first game kicks off, we save our projections and Sleeper's (the ones " +
-  `in the Sleeper app). After the games we check whose were closer. Both are counted in ${leagueName} scoring: ` +
+  `in the Sleeper app). After the games we check whose numbers were closer. Both are counted in ${leagueName} scoring: ` +
   "Sleeper's stat line (yards, catches, touchdowns) is counted your league's way, not Sleeper's default.\n" +
   "- **Start/sit calls** are the three closest calls per team each week, the ones on the My Week cards (start A over B). " +
   "We said start A; Sleeper's call is whichever of the two it projected higher. The right call is whoever scored more.\n" +

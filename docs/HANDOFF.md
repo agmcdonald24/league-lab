@@ -54,6 +54,14 @@ app on the D7 stack (FastAPI + Svelte; Streamlit stays as the research console) 
 reference scorings + `ops.projection_lines` / `ops.projection_ranges`; then Wave G (accounts, payments, hosting,
 one nightly writer). Andrew checks Sleeper's commercial terms before anything is sold.
 
+**Iteration 14 (Wave F) delivered 2026-10-02 — the customer app, phase 1**: NFL-wide model outputs (`ops.projection_lines`
+/ `_ranges` per reference scoring, `ops.kd_lines` / `_ranges`), the API for any Sleeper league (`/api/leagues?username=`,
+on-demand My Week with the opponent, player card, rest of season, record; Sleeper client with caches + token bucket;
+Dockerfile serving `web/dist`), the web app (username → picker → My Week → player → rest of season → record). Sleeper's
+API terms: free for non-commercial use, a licence for commercial use — Andrew has asked; **Wave G** (accounts, Stripe,
+hosting, one nightly writer) waits for the answer. Run it: `cd web && npm ci && npm run build`, then
+`cd api && uv sync && uv run uvicorn league_lab_api.main:app --port 8581` → http://localhost:8581/.
+
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a
 league-mate would notice also gets a plain-words entry in `app/whats_new.md` (Home's "What's new"), and

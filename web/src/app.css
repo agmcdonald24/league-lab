@@ -20,6 +20,13 @@ body {
 
 .ll-link {
   @apply text-green-700 underline decoration-green-700/30 underline-offset-2 dark:text-green-400 dark:decoration-green-400/40;
+  /* a thumb-sized hit area (QA, Wave F: 18 px links at 390 px) without changing the line's layout */
+  position: relative;
+}
+.ll-link::after {
+  content: "";
+  position: absolute;
+  inset: -0.6rem 0;
 }
 
 .ll-list {

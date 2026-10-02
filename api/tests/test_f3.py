@@ -395,7 +395,7 @@ def test_player_card_any_league(client, sql):
     gsis = sql("select gsis_id from analytics.player_id_map where sleeper_id = %s", (sid,))[0]["gsis_id"]
     d = client.get(f"/api/player/{gsis}?league={TEST_LEAGUE}&team=1").json()
     assert d["source"] == "sleeper" and d["league_name"] == "Test League" and d["rostered_by_roster_id"] == 1
-    assert "value.points_per_game" in d["missing"]
+    assert "value.points_per_game" in d["missing_keys"] and all(" " in m for m in d["missing"])   # plain words on the card
     assert set(d["ros"]) == {"points", "games", "p10", "p90", "pos_rank", "playoff_points", "from_week", "last_week"}
     assert d["sections"]["availability"]["blocks"][0]["text"].startswith("Rostered by **Team 1**")
 
@@ -428,7 +428,7 @@ def test_record_route(client, sql):
     assert d["available"] is True and len(d["weeks"]) == n and set(d) >= {"league_id", "from_week", "weeks", "summary"}
     u = client.get(f"/api/record?league={TEST_LEAGUE}")
     assert u.status_code == 200 and u.json() == {"league_id": TEST_LEAGUE, "available": False,
-                                                 "why": "the record is kept for the leagues the nightly scores"}
+                                                 "why": "we keep the record for the leagues we score every morning; yours is not one of them yet"}
     assert client.get("/api/record?league=abc").status_code == 404
 
 

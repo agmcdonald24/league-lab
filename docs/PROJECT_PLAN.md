@@ -393,6 +393,10 @@ phone-first; Streamlit stays as the research console.
 Order: F1–F3 in parallel (three Opus devs, one round); the PO integrates, one scoped QA pass, ship. **Wave G**
 (accounts, Stripe, hosting, one nightly writer) waits for Sleeper's licensing answer.
 
+**Delivered 2026-10-02** (STATUS § "Wave F"): all three rows; the app runs locally from the API (`cd api && uv run
+uvicorn league_lab_api.main:app --port 8581` after `cd web && npm ci && npm run build`); the nightly writes the NFL-wide
+tables from the next `project`. Open: Sleeper's licence (Andrew asked), then Wave G.
+
 ### Iteration 13 — from a lab to a product: proof, rest of season, any league (agreed 2026-10-01, Wave E)
 
 Andrew's direction (2026-10-01): a tool the fantasy population would pay $4–5 a month or ~$20 a season for,
