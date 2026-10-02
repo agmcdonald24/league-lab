@@ -14,6 +14,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   league, priced on request with `scoring.compute_points` elsewhere (identical to the marts on every 2024–26 game of both
   house leagues); reference-scored fields keep the mart's name + `_ref` (`api/README.md` § Research (G1)).
 
+- **The decisions, on demand (G2).** `/api/waivers` (the claims that improve your lineup, each with its drop, the gains
+  and the Waiver Wire's own sentences; the priced free agents), `POST /api/trades/evaluate` (both lineups before / after,
+  fit, market, verdict) and `/api/trades/partners` (the partner finder, `want=` a position), `/api/team` (roster value,
+  ranks, slot strength, the horizon) and `/api/league` (standings, all-play and luck, transactions) — from the marts for
+  the house leagues and computed on request for any Sleeper league (every roster solved; free agents = Sleeper's
+  directory minus the rosters; Sleeper's played weeks and transactions), reproducing every mart row to the cent.
+
 ## 2026-10-02 — Wave F
 
 - **NFL-wide model outputs (F1).** `league-lab project` fits the ranges per reference scoring (new seed

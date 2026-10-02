@@ -48,7 +48,7 @@ import math
 import os
 import re
 import time
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -888,6 +888,314 @@ def ros_table(query: Query, league_id: str, league: Mapping, from_week: int, las
     out = out.reset_index(drop=True)
     out.attrs["references"] = sorted(r for r in refs if r)
     return out[cols]
+
+
+# ------------------------------------------------------------------------------ Wave G (G2): every roster, several weeks
+# The decisions on demand (api/league_lab_api/decisions.py): waivers, trades and the Team Hub need every roster of a
+# league solved for the horizon (this week and the next three), exactly as the nightly solves the house leagues into
+# ops.lineups: ONE LineupInputs for the whole league (every roster, every horizon week, the whole week's board priced
+# so a free agent is valued by the same `lineup._proposed_player`), solved by `lineup.build`. The cost is the nightly's
+# per league: rosters x weeks solves with margins (12 x 4 = 48 for the dynasty), plus the board priced per week (cached).
+LAST_WEEK_SQL = "select max(week) as w from analytics.dim_game where season = %s and season_type = 'REG'"
+GAMES_IN_SQL = """select week, home_team, away_team, kickoff_at from analytics.dim_game
+                  where season = %s and week = any(%s) and season_type = 'REG'"""
+# the NFL-wide status of players (the house leagues' mart rows carry the same NFL columns for every player): NFL
+# roster status, the injury report, games played this season - the free-agent filter of the nightly (waivers.py)
+NFL_STATUS_SQL = """select distinct on (sleeper_id) sleeper_id, gsis_id, player_name, position, nfl_team, roster_status,
+                           injury_status, games_played
+                    from analytics.mart_player_availability where sleeper_id = any(%s)
+                    order by sleeper_id, league_id"""
+HORIZON = 4
+LEAGUE_WEEKS_TTL_S = 300                       # rosters change with waivers and trades (Sleeper's rosters: 10 minutes)
+_league_weeks: dict[tuple, tuple[float, LeagueWeeks]] = {}
+
+
+@dataclass
+class LeagueWeeks:
+    """One league solved on request: every roster's lineup rows (``rows``: ops.lineups' columns) and totals for the
+    horizon ``weeks``, the inputs that solved them (``inp``: ``lineup._proposed_player`` values any player of the board
+    the same way, a free agent included), the priced weeks (``priced``: the horizon, plus the rest of the season when
+    asked) and the Sleeper payloads."""
+    league: dict
+    league_id: str
+    season: int
+    weeks: list[int]
+    rest_weeks: list[int]
+    slots: list[str]
+    scoring: dict[str, float]
+    rosters: list[dict]
+    users: list[dict]
+    names: dict[int, dict]
+    players: dict[str, dict]
+    priced: dict[int, Priced]
+    inp: LU.LineupInputs
+    gsis_of: dict[str, str]
+    dp: pd.DataFrame
+    rows: list[dict]
+    totals: list[dict]
+    as_of: datetime
+    timings_ms: dict[str, float] = field(default_factory=dict)
+    sleeper_calls: int = 0
+    cache: dict = field(default_factory=dict)            # derived frames (horizon_frame), built once per solve
+
+    @property
+    def roster_ids(self) -> list[int]:
+        return sorted(int(r["roster_id"]) for r in self.rosters)
+
+    def roster_rows(self, roster_id: int, week: int) -> list[dict]:
+        return [r for r in self.rows if int(r["roster_id"]) == int(roster_id) and int(r["week"]) == int(week)]
+
+    def total(self, roster_id: int, week: int) -> dict:
+        return next((t for t in self.totals if int(t["roster_id"]) == int(roster_id) and int(t["week"]) == int(week)), {})
+
+    def player_row(self, sid: str, *, gsis: str | None = None, position: str | None = None) -> dict:
+        """The row ``lineup._proposed_player`` reads for a player who is on no roster (a free agent)."""
+        sp = self.players.get(str(sid)) or {}
+        return {"sleeper_player_id": str(sid), "gsis_id": gsis if gsis is not None else self.gsis_of.get(str(sid)),
+                "position": position or sp.get("position"), "nfl_team": sp.get("team"), "is_starter": False, "slot": None}
+
+    def value(self, sid: str, week: int, row: dict | None = None) -> LU.Player:
+        """The player as B1 carries him on a roster that week (a free agent: no IR / taxi, not a starter)."""
+        return LU._proposed_player(self.inp, self.league_id, int(week), row or self.player_row(sid), None, {},
+                                   int(week) > int(self.weeks[0]) - 1, self.as_of)
+
+
+def _sleeper_name(sp: Mapping, sid: str) -> str:
+    return sp.get("full_name") or " ".join(x for x in (sp.get("first_name"), sp.get("last_name")) if x) or str(sid)
+
+
+def league_inputs(query: Query, league_id: str, season: int, rosters: list[dict], players: Mapping[str, dict],
+                  priced: Mapping[int, Priced], slots: list[str], weeks: list[int], *,
+                  extra_sids: Iterable[str] = ()) -> tuple[LU.LineupInputs, dict[str, str], pd.DataFrame]:
+    """(LineupInputs for every roster of the league over ``weeks``, sid -> gsis, dim_player rows): ``_solve_roster``'s
+    assembly for the whole league; every priced week's board goes into ``proj`` / ``kd_proj`` (so ``extra_sids``, the
+    free agents, are valued by the same rule), the schedule of every priced week into ``games`` (byes)."""
+    rostered = [str(p) for r in rosters for p in (r.get("players") or [])]
+    pids = sorted(set(rostered) | {str(x) for x in extra_sids})
+    idm = query(IDMAP_SQL, (pids,)) if pids else pd.DataFrame(columns=["sleeper_id", "gsis_id"])
+    gsis_of = {str(k): v for k, v in zip(idm["sleeper_id"], idm["gsis_id"], strict=False) if v} if not idm.empty else {}
+    gs = sorted({gsis_of[s] for s in rostered if s in gsis_of})
+    dp = query(DIM_PLAYER_SQL, (gs,)).set_index("gsis_id") if gs else pd.DataFrame(columns=["player_name", "latest_team"])
+    current: dict[int, list[dict]] = {}
+    sleeper_meta: dict[str, dict] = {}
+    for sid in pids:
+        sp = players.get(sid) or {}
+        sleeper_meta[sid] = {"sleeper_player_id": sid, "position": sp.get("position"),
+                             "fantasy_positions": sp.get("fantasy_positions"), "team": sp.get("team")}
+    for roster in rosters:
+        rid = int(roster["roster_id"])
+        reserve, taxi = {str(x) for x in roster.get("reserve") or []}, {str(x) for x in roster.get("taxi") or []}
+        current[rid] = [{"sleeper_player_id": sid, "gsis_id": gsis_of.get(sid),
+                         "player_name": _sleeper_name(players.get(sid) or {}, sid),
+                         "position": (players.get(sid) or {}).get("position"), "nfl_team": (players.get(sid) or {}).get("team"),
+                         "is_on_ir": sid in reserve, "is_on_taxi": sid in taxi}
+                        for sid in [str(p) for p in (roster.get("players") or [])]]
+    proj_map: dict[tuple, dict] = {}
+    kd_proj: dict[tuple, dict] = {}
+    k_team: dict[tuple, dict] = {}
+    for w, pr in priced.items():
+        st = pr.board.status
+        cols = [c for c in ("team", "report_status", "roster_status") if c in st]
+        sd = st[cols].to_dict("index") if not st.empty else {}
+        for g, v in pr.proj.items():
+            s = sd.get(g) or {}
+            proj_map[(league_id, int(w), g)] = {"proj_points": round(float(v), 2), "team": s.get("team"),
+                                                "report_status": s.get("report_status"), "roster_status": s.get("roster_status")}
+        for pos, rows_ in pr.kd.items():
+            by_team: dict[str, list[dict]] = {}
+            for r in rows_.itertuples():
+                v = {"proj_points": None if pd.isna(r.proj_points) else float(r.proj_points), "team": r.team,
+                     "report_status": r.report_status, "roster_status": r.roster_status}
+                kd_proj[(league_id, int(w), r.unit_id)] = v
+                if pos == "K" and isinstance(r.team, str) and r.team:
+                    by_team.setdefault(r.team, []).append(v)
+            k_team.update({(league_id, int(w), tm): v[0] for tm, v in by_team.items() if len(v) == 1})
+    g = query(GAMES_IN_SQL, (int(season), sorted(int(w) for w in priced)))
+    games: dict[int, dict[str, datetime | None]] = {int(w): {} for w in priced}
+    for r in g.itertuples():
+        games[int(r.week)][r.home_team] = r.kickoff_at
+        games[int(r.week)][r.away_team] = r.kickoff_at
+    mv = sorted({m for pr in priced.values() for m in pr.board.line["model_version"].dropna()})
+    inp = LU.LineupInputs(
+        season=int(season),
+        leagues=[{"league_id": league_id, "roster_positions": slots, "last_scored_leg": min(weeks) - 1,
+                  "roster_ids": sorted(current)}],
+        weeks={league_id: [int(w) for w in weeks]}, proj=proj_map, weekly={}, current={league_id: current},
+        sleeper=sleeper_meta, k_ppg={}, games=games, model_version=",".join(mv),
+        starters={(league_id, int(r["roster_id"])): [str(s) for s in (r.get("starters") or [])] for r in rosters},
+        kd_proj=kd_proj, k_team_proj=k_team)
+    return inp, gsis_of, dp
+
+
+def horizon_weeks(query: Query, season: int, week: int, n: int = HORIZON) -> list[int]:
+    """This week and the next ``n - 1`` regular-season weeks (fewer at the end of the season)."""
+    last = query(LAST_WEEK_SQL, (int(season),))
+    last_w = int(last["w"].iloc[0]) if not last.empty and pd.notna(last["w"].iloc[0]) else int(week)
+    return [w for w in range(int(week), int(week) + n) if w <= last_w]
+
+
+def league_weeks(query: Query, league_id: str, week: int, *, client: Sleeper | None = None, as_of: datetime | None = None,
+                 exclude_reference: str | None = None, rest: bool = False, extra_sids: Iterable[str] = (),
+                 cache: bool = True) -> LeagueWeeks:
+    """Every roster of a Sleeper league solved for the horizon from ``week`` (``lineup.build`` on one LineupInputs);
+    ``rest`` also prices every later regular-season week (rest-of-season sums), ``extra_sids`` (free agents) are mapped
+    and valued too. Cached ``LEAGUE_WEEKS_TTL_S`` per (league, rosters, week, as_of given or not, board)."""
+    t0 = time.perf_counter()
+    sl = client or sleeper()
+    calls0 = sl.calls
+    league_id = check_id(league_id)
+    league = sl.league(league_id)
+    rosters, users, players = sl.rosters(league_id), sl.users(league_id), sl.players()
+    t1 = time.perf_counter()
+    season = int(league["season"])
+    extra = tuple(sorted({str(x) for x in extra_sids}))
+    key = (league_id, int(week), json.dumps(rosters, sort_keys=True, default=str), _scoring_key(league.get("scoring_settings") or {}),
+           None if as_of is None else as_of.isoformat(), exclude_reference, bool(rest), extra, board_source())
+    now = time.monotonic()
+    hit = _league_weeks.get(key) if cache else None
+    if hit is not None and hit[0] > now:
+        return hit[1]
+    scoring, slots = league_scoring(league)
+    weeks = horizon_weeks(query, season, int(week))
+    if not weeks:
+        raise LeagueNotFound(f"no regular-season week {week} in {season}")
+    last = query(LAST_WEEK_SQL, (season,))
+    rest_weeks = list(range(int(week), int(last["w"].iloc[0]) + 1)) if rest else list(weeks)
+    priced = {w: price_week(query, league_id, scoring, slots, season, w, exclude_reference=exclude_reference)
+              for w in sorted(set(weeks) | set(rest_weeks))}
+    t2 = time.perf_counter()
+    when = as_of or datetime.now(UTC)
+    inp, gsis_of, dp = league_inputs(query, league_id, season, rosters, players, priced, slots, weeks, extra_sids=extra)
+    rows, totals, _ = LU.build(inp, as_of=when)
+    t3 = time.perf_counter()
+    out = LeagueWeeks(league=league, league_id=league_id, season=season, weeks=weeks, rest_weeks=rest_weeks, slots=slots,
+                      scoring=scoring, rosters=rosters, users=users, names=team_names(rosters, users), players=players,
+                      priced=priced, inp=inp, gsis_of=gsis_of, dp=dp, rows=rows, totals=totals, as_of=when,
+                      timings_ms={"sleeper": round((t1 - t0) * 1000, 1), "price": round((t2 - t1) * 1000, 1),
+                                  "solve": round((t3 - t2) * 1000, 1), "total": round((t3 - t0) * 1000, 1)},
+                      sleeper_calls=sl.calls - calls0)
+    if cache:
+        if len(_league_weeks) > 64:
+            _league_weeks.clear()
+        _league_weeks[key] = (now + LEAGUE_WEEKS_TTL_S, out)
+    return out
+
+
+def clear_league_weeks() -> None:
+    _league_weeks.clear()
+
+
+def horizon_frame(lw: LeagueWeeks) -> pd.DataFrame:
+    """The solved rows in ``mart_league_roster_horizon``'s columns and rules (names from dim_player, else Sleeper's
+    directory; eligibility from Sleeper; ``is_top_at_slot_type``: the best-valued starter of each slot type;
+    ``replacement_*``: the bench player worth value - margin, matched to the cent, the better bench rank first) -
+    what ``roster_value.RosterBoard`` and the Team Hub read."""
+    cols = ["roster_id", "team_name", "manager_name", "week", "this_week", "horizon_first_week", "horizon_last_week",
+            "horizon_weeks", "is_this_week", "role", "slot", "slot_type", "slot_order", "bench_rank", "sleeper_player_id",
+            "gsis_id", "player_name", "position", "fantasy_positions", "player_value", "value_source", "lineup_margin",
+            "is_locked", "report_status", "reason", "is_top_at_slot_type", "replacement_sleeper_player_id",
+            "replacement_name", "replacement_value"]
+    if not lw.rows:
+        return pd.DataFrame(columns=cols)
+    if "horizon_frame" in lw.cache:
+        return lw.cache["horizon_frame"].copy()
+    df = pd.DataFrame(lw.rows)
+    w0, w1 = min(lw.weeks), max(lw.weeks)
+
+    def name(r) -> str | None:
+        g = r["gsis_id"]
+        if isinstance(g, str) and g in lw.dp.index and isinstance(lw.dp.loc[g, "player_name"], str):
+            return lw.dp.loc[g, "player_name"]
+        sid = r["sleeper_player_id"]
+        if not isinstance(sid, str):
+            return None
+        return _sleeper_name(lw.players.get(sid) or {}, sid)
+
+    df["player_name"] = df.apply(name, axis=1)
+    df["fantasy_positions"] = [((lw.players.get(s) or {}).get("fantasy_positions") or ([p] if isinstance(p, str) else None))
+                               if isinstance(s, str) else None for s, p in zip(df["sleeper_player_id"], df["position"], strict=True)]
+    df["team_name"] = df["roster_id"].map(lambda r: lw.names.get(int(r), {}).get("team_name"))
+    df["manager_name"] = df["roster_id"].map(lambda r: lw.names.get(int(r), {}).get("manager_name"))
+    df["this_week"], df["horizon_first_week"], df["horizon_last_week"], df["horizon_weeks"] = w0, w0, w1, len(lw.weeks)
+    df["is_this_week"] = df["week"] == w0
+    df = df.rename(columns={"value": "player_value", "margin": "lineup_margin"})
+    for c in ("player_value", "lineup_margin"):
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+    df["is_locked"] = df["is_locked"].fillna(False).astype(bool)
+    st = df[df["role"] == "starter"].copy()
+    st["_v"] = st["player_value"].fillna(-1e18)
+    st = st.sort_values(["roster_id", "week", "slot_type", "_v", "slot_order"], ascending=[True, True, True, False, True])
+    top = st.groupby(["roster_id", "week", "slot_type"]).head(1).index
+    df["is_top_at_slot_type"] = df.index.isin(top)
+    # the replacement: the bench player worth value - margin (to the cent), the better bench rank first
+    df["replacement_sleeper_player_id"] = None
+    df["replacement_name"] = None
+    df["replacement_value"] = np.nan
+    bench = df[(df["role"] == "bench") & (df["player_value"].round(2) * 100).round().gt(0)].copy()
+    bench["_c"] = (bench["player_value"] * 100).round().astype("int64")
+    bench = bench.sort_values(["roster_id", "week", "_c", "bench_rank"])
+    first = bench.drop_duplicates(["roster_id", "week", "_c"]).set_index(["roster_id", "week", "_c"])
+    for i, r in df[(df["role"] == "starter") & df["lineup_margin"].notna()].iterrows():
+        c = round((float(r["player_value"]) - float(r["lineup_margin"])) * 100)
+        if c <= 0:
+            continue
+        k = (r["roster_id"], r["week"], int(c))
+        if k in first.index:
+            b = first.loc[k]
+            df.at[i, "replacement_sleeper_player_id"] = b["sleeper_player_id"]
+            df.at[i, "replacement_name"] = b["player_name"]
+            df.at[i, "replacement_value"] = float(b["player_value"])
+    lw.cache["horizon_frame"] = df[cols]
+    return df[cols].copy()
+
+
+def free_agents(query: Query, league_id: str, rosters: list[dict], players: Mapping[str, dict], slots: list[str]) -> pd.DataFrame:
+    """The league's free agents: Sleeper's player directory minus every roster, mapped by ``player_id_map`` (never by
+    name; a team defense keeps its Sleeper id), with the nightly's waiver filter (``waivers.load_and_sweep``): on an
+    active NFL roster, not Out / IR, a position the league starts. NFL status from the house marts' NFL-wide columns
+    (``NFL_STATUS_SQL``), else Sleeper's directory (``status`` Active, its ``injury_status``)."""
+    cols = ["sleeper_id", "gsis_id", "player_name", "position", "nfl_team", "roster_status", "injury_status", "games_played"]
+    taken = {str(p) for r in rosters for p in (r.get("players") or [])}
+    starts = {s.type for s in LU.parse_slots(slots)[0]}
+    cands = []
+    for sid, sp in players.items():
+        sid = str(sid)
+        if sid in taken or not isinstance(sp, dict):
+            continue
+        pos = frozenset(sp.get("fantasy_positions") or ([sp["position"]] if sp.get("position") else []))
+        if not any(pos & LU.SLOT_ELIGIBILITY[t] for t in starts):
+            continue
+        cands.append(sid)
+    if not cands:
+        return pd.DataFrame(columns=cols)
+    idm = query(IDMAP_SQL, (cands,))
+    gsis_of = dict(zip(idm["sleeper_id"].astype(str), idm["gsis_id"], strict=False)) if not idm.empty else {}
+    nfl = query(NFL_STATUS_SQL, (cands,))
+    nfl = nfl.set_index("sleeper_id") if not nfl.empty else pd.DataFrame(columns=cols[1:])
+    out = []
+    for sid in cands:
+        sp = players.get(sid) or {}
+        position = sp.get("position")
+        if sid in nfl.index:
+            n = nfl.loc[sid]
+            rs, inj, gp = n["roster_status"], n["injury_status"], n["games_played"]
+            team = n["nfl_team"] if isinstance(n["nfl_team"], str) else sp.get("team")
+            position = n["position"] if isinstance(n["position"], str) else position
+            if isinstance(n["player_name"], str):
+                sp = {**sp, "full_name": n["player_name"]}
+        else:
+            rs = "ACT" if (position == "DEF" or (sp.get("team") and str(sp.get("status") or "").lower() == "active")) else None
+            inj, gp, team = sp.get("injury_status"), None, sp.get("team")
+        gsis = gsis_of.get(sid)
+        if position != "DEF" and gsis is None:
+            continue                                   # unmapped: never joined by name
+        if rs != "ACT" or inj in ("Out", "IR"):
+            continue
+        out.append({"sleeper_id": sid, "gsis_id": gsis, "player_name": _sleeper_name(sp, sid),
+                    "position": position, "nfl_team": team, "roster_status": rs,
+                    "injury_status": None if inj is None or (isinstance(inj, float) and math.isnan(inj)) else inj,
+                    "games_played": None if gp is None or (isinstance(gp, float) and math.isnan(gp)) else int(gp)})
+    return pd.DataFrame(out, columns=cols)
 
 
 # ------------------------------------------------------------------------------ the league picker (a Sleeper username)

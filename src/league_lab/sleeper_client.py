@@ -5,7 +5,7 @@ place. Sleeper's API is free, read-only and keyless; it asks for **under 1,000 c
 
 * **Caches** (``TTL_S``): the player directory (~15 MB) a day, on disk under ``LEAGUE_LAB_CACHE_DIR`` (default
   ``<repo>/.cache/``, git-ignored) so a restart does not re-download it; a league's settings and its users a day;
-  rosters 10 minutes; matchups 5 minutes; a username lookup and a user's league list an hour; the NFL state an hour.
+  rosters 10 minutes; matchups 5 minutes (a played week's matchups and a round's transactions an hour: Wave G); a username lookup and a user's league list an hour; the NFL state an hour.
 * **Stale on error**: an expired entry is kept; when Sleeper fails (or the bucket is empty) the last good answer is
   served instead of an error, and the response is no older than the last success.
 * **Token bucket** (``TokenBucket``): ``LEAGUE_LAB_SLEEPER_PER_MIN`` calls a minute (default 300, under a third of
@@ -13,7 +13,8 @@ place. Sleeper's API is free, read-only and keyless; it asks for **under 1,000 c
   nothing cached raises ``SleeperBusy`` (the API answers 503 ``{"error": "busy, try again in a minute"}``).
   One process holds one bucket (``anyleague.sleeper()``, the process-wide client); several processes need a shared one (Wave G).
 * **Fixtures**: ``LEAGUE_LAB_SLEEPER_FIXTURES=<dir>`` reads ``league_<id>.json``, ``rosters_<id>.json``,
-  ``users_<id>.json``, ``matchups_<id>_<week>.json``, ``user_<username>.json``, ``user_leagues_<user_id>.json``,
+  ``users_<id>.json``, ``matchups_<id>_<week>.json``, ``transactions_<id>_<round>.json`` (Wave G), ``user_<username>.json``,
+  ``user_leagues_<user_id>.json``,
   ``players_nfl.json`` instead of the network (tests and this sandbox never call Sleeper). Fixture reads go through
   the same caches and the same bucket, so the tests exercise both.
 * **Clock**: ``clock`` (monotonic seconds) and ``wall`` (epoch seconds, for the disk file's age) are injectable:
@@ -52,6 +53,8 @@ TTL_S: dict[str, float] = {
     "user": 3600,               # username -> user id
     "user_leagues": 3600,       # a user's leagues this season
     "state": 3600,              # the NFL week Sleeper is on
+    "season_matchups": 3600,    # Wave G (G2): a played week's matchups (standings, all-play, luck): settled
+    "transactions": 3600,       # Wave G (G2): a round's transactions (claims, drops, trades)
 }
 
 _ID = re.compile(r"^\d{1,24}$")
@@ -168,8 +171,8 @@ class Sleeper:
             if not f.exists():
                 if fixture.startswith(("league_", "user_")) and not fixture.startswith("user_leagues_"):
                     return None                # what Sleeper answers for an id / username it does not have
-                if fixture.startswith("matchups_"):
-                    return []                  # a week Sleeper has no pairings for
+                if fixture.startswith(("matchups_", "transactions_")):
+                    return []                  # a week Sleeper has no pairings (or no transactions) for
                 raise SleeperUnavailable(f"no fixture {f}")
             return json.loads(f.read_text())
         req = urllib.request.Request(f"{self.base}{path}", headers={"User-Agent": "league-lab/api"})
@@ -260,6 +263,20 @@ class Sleeper:
         league_id = check_id(league_id)
         return list(self._get(f"/league/{league_id}/matchups/{int(week)}", f"matchups_{league_id}_{int(week)}.json",
                               "matchups") or [])
+
+    def season_matchups(self, league_id: str, through_week: int) -> dict[int, list[dict]]:
+        """Wave G (G2): every played week's matchups, weeks 1..``through_week`` (``/league/<id>/matchups/<week>`` each,
+        cached an hour: a played week is settled), for standings, all-play and luck in a league the database lacks."""
+        league_id = check_id(league_id)
+        return {w: list(self._get(f"/league/{league_id}/matchups/{w}", f"matchups_{league_id}_{w}.json", "season_matchups") or [])
+                for w in range(1, int(through_week) + 1)}
+
+    def transactions(self, league_id: str, round_: int) -> list[dict]:
+        """Wave G (G2): one round's transactions (``/league/<id>/transactions/<round>``: waiver claims, free-agent adds,
+        drops, trades; a round is a week), cached an hour."""
+        league_id = check_id(league_id)
+        return list(self._get(f"/league/{league_id}/transactions/{int(round_)}", f"transactions_{league_id}_{int(round_)}.json",
+                              "transactions") or [])
 
     def players(self) -> dict[str, dict]:
         return dict(self._get("/players/nfl", "players_nfl.json", "players") or {})

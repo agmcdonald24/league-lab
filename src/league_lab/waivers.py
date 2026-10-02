@@ -502,7 +502,6 @@ def load_and_sweep(conn: psycopg.Connection, season: int, as_of: datetime | None
         slot_types = {s.type for s in parse_slots(slots)[0]}
         hz = horizon[lid]
         week0 = hz[0]
-        limit = sum(1 for s in slots if str(s).upper() not in NOT_ROSTER_SPOTS)
         # the free agents, as B1 would carry each of them in each horizon week
         adds: dict[str, list[Player | None]] = {}
         fa_meta: dict[str, dict] = {}
@@ -525,88 +524,111 @@ def load_and_sweep(conn: psycopg.Connection, season: int, as_of: datetime | None
                 continue
             stats["rosters"] += 1
             week_rows = [by_roster_week.get((lid, w, roster_id), []) for w in hz]
-            players = [[_roster_player(r, inp.sleeper) for r in wr] for wr in week_rows]
-            info = {r["sleeper_player_id"]: r for wr in reversed(week_rows) for r in wr}
             tot0 = totals_by.get((lid, week0, roster_id))
             if tot0 is None or not week_rows[0]:
                 continue
-            # the roster as Sleeper has it today: IR / taxi are not droppable and do not take a spot
-            cur_rows = inp.current.get(lid, {}).get(roster_id, [])
-            active = [r for r in cur_rows if not r.get("is_on_ir") and not r.get("is_on_taxi")]
-            open_spots = limit - len(active)
-            in_week0 = {r["sleeper_player_id"]: r for r in week_rows[0]}
-            droppable = [r["sleeper_player_id"] for r in active
-                         if r["sleeper_player_id"] in in_week0 and not in_week0[r["sleeper_player_id"]]["is_locked"]
-                         and in_week0[r["sleeper_player_id"]]["reason"] != "game started (bench)"]
-            pool = {a: seq for a, seq in adds.items() if a not in info}
-            if open_spots < 0:
-                moves = []                                      # over the limit: no single add/drop is legal
-            elif unpruned:
-                moves = roster_moves_unpruned(slots, players, pool, droppable, open_spots > 0)
-            else:
-                moves = roster_moves(slots, players, pool, droppable, open_spots > 0, stats=stats)
-            # the solver on ops.lineups must reproduce ops.lineup_totals (same players, same values)
-            chk = solve(players[0], slots, margins=False).total
-            if abs(chk - float(tot0["lineup_value"])) > 0.005:
-                stats["lineup_mismatch"] += 1
-                log.warning("waivers: %s roster %s week %s re-solves to %.2f, ops.lineup_totals says %.2f",
-                            lid, roster_id, week0, chk, float(tot0["lineup_value"]))
+
+            def add_ros_of(sid: str, lid=lid, lg=lg, rest=rest, add_ros=add_ros, fa_meta=fa_meta) -> float:
+                if sid not in add_ros:   # his projected points over the rest of the season, weeks he can play
+                    ps = [_proposed_player(inp, lid, w, fa_meta[sid]["_row"], None, obs_ppg, w > int(lg["last_scored_leg"]), as_of)
+                          for w in rest]
+                    add_ros[sid] = sum(p.value for p in ps if p.playable and not _unvalued(p))
+                return add_ros[sid]
             key = {"run_at": run_at, "as_of": as_of, "model_version": tot0["model_version"], "league_id": lid,
                    "season": season, "week": week0, "roster_id": roster_id, "horizon_weeks": len(hz),
-                   "horizon_last_week": hz[-1], "open_roster_spots": open_spots, "inputs_fingerprint": fps.get(lid)}
-            if not moves:
-                rows.append({**key, "list_kind": "nothing", "lineup_before": _r2(chk), "lineup_after": _r2(chk),
-                             "weekly_gain": 0.0, "horizon_gain": 0.0})
-                continue
-            # each player's projected points over the rest of the season, weeks he can play (starting or
-            # not): among equally good moves the drop with the fewest is named (the least useful player)
-            ros: dict[str | None, float] = defaultdict(float)
-            for w in rest:
-                for r in by_roster_week.get((lid, w, roster_id), []):
-                    if r["value"] is not None and r["role"] in ("starter", "bench") and r["value_source"] != UNVALUED:
-                        ros[r["sleeper_player_id"]] += float(r["value"])
-            starters0 = {r["sleeper_player_id"] for r in week_rows[0] if r["role"] == "starter"}
-            for m in moves:
-                if m.add not in add_ros:   # his projected points over the rest of the season, weeks he can play
-                    ps = [_proposed_player(inp, lid, w, fa_meta[m.add]["_row"], None, obs_ppg, w > int(lg["last_scored_leg"]), as_of)
-                          for w in rest]
-                    add_ros[m.add] = sum(p.value for p in ps if p.playable and not _unvalued(p))
-            for m, rank, is_best, add_rank in rank_moves(moves, ros):
-                fa = fa_meta[m.add]
-                a0 = adds[m.add][0]
-                d = info.get(m.drop) if m.drop else None
-                disp = info.get(m.displaced) if m.displaced else None
-                disp0 = in_week0.get(m.displaced) if m.displaced else None
-                rows.append({
-                    **key, "list_kind": list_kind(m), "move_rank": rank, "add_rank": add_rank, "is_best_drop": is_best,
-                    "add_sleeper_id": m.add, "add_gsis_id": fa["gsis_id"], "add_name": fa["player_name"],
-                    "add_position": fa["position"], "add_value": _r2(a0.value) if a0 is not None and a0.value is not None else None,
-                    "add_value_source": a0.value_source if a0 is not None else None,
-                    "add_reason": a0.reason if a0 is not None and not a0.playable else None,
-                    "add_report_status": a0.status if a0 is not None else None,
-                    "add_games_played": int(fa["games_played"]) if fa["games_played"] is not None else None,
-                    "is_no_evidence": not fa["games_played"],
-                    "drop_sleeper_id": m.drop, "drop_gsis_id": d["gsis_id"] if d else None,
-                    "drop_name": d["player_name"] if d else None, "drop_position": d["position"] if d else None,
-                    "drop_value": _r2(_num(in_week0[m.drop]["value"])) if m.drop else None,
-                    "drop_ros_points": _r2(ros.get(m.drop, 0.0)) if m.drop else None,
-                    "add_ros_points": _r2(add_ros[m.add]), "rest_of_season_weeks": len(rest),
-                    "drop_horizon_loss": _r2(sum(m.drop_loss)) if m.drop else None,
-                    "drop_is_starter": (m.drop in starters0) if m.drop else None,
-                    "weekly_gain": _r2(m.weekly_gain), "horizon_gain": _r2(m.horizon_gain),
-                    "week_gains": [_r2(g) for g in m.week_gains], "add_horizon_gain": _r2(sum(m.add_alone)),
-                    "lineup_before": _r2(m.lineup_before), "lineup_after": _r2(m.lineup_after),
-                    "add_slot": m.add_slot, "add_slot_type": m.add_slot_type,
-                    "fills_empty_slot": m.add_slot is not None and m.displaced is None,
-                    "displaced_sleeper_id": m.displaced, "displaced_gsis_id": disp["gsis_id"] if disp else None,
-                    "displaced_name": disp["player_name"] if disp else None,
-                    "displaced_position": disp["position"] if disp else None,
-                    "displaced_value": _r2(_num(disp0["value"])) if disp0 else None,
-                    "displaced_slot": disp0["slot"] if disp0 else None,
-                })
+                   "horizon_last_week": hz[-1], "inputs_fingerprint": fps.get(lid)}
+            rows += sweep_roster(slots, week_rows, inp.current.get(lid, {}).get(roster_id, []), adds, fa_meta,
+                                 [r for w in rest for r in by_roster_week.get((lid, w, roster_id), [])], len(rest), add_ros_of, key,
+                                 inp.sleeper, lineup_value=float(tot0["lineup_value"]), stats=stats, unpruned=unpruned)
     stats["sweep_seconds"] = time.perf_counter() - t_sweep
     stats["rows"] = len(rows)
     return rows, stats, decision
+
+
+def sweep_roster(slots: Sequence[str], week_rows: Sequence[Sequence[Mapping]], cur_rows: Sequence[Mapping],
+                 adds: Mapping[str, Sequence[Player | None]], fa_meta: Mapping[str, Mapping], rest_rows: Sequence[Mapping],
+                 rest_weeks: int, add_ros_of, key: Mapping, sleeper: Mapping[str, dict], *, lineup_value: float | None = None,
+                 stats: dict | None = None, unpruned: bool = False) -> list[dict]:
+    """One roster's ``ops.waiver_moves`` rows (``load_and_sweep``'s per-roster step; Wave G's on-demand path calls it
+    with lineups solved on request). ``week_rows`` = the roster's lineup rows per horizon week (ops.lineups' columns,
+    no empty slots), ``cur_rows`` = today's roster (IR / taxi flags), ``adds`` = every free agent as B1 carries him per
+    horizon week, ``fa_meta`` = sid -> gsis_id / player_name / position / games_played, ``rest_rows`` = the roster's
+    lineup rows over the ``rest_weeks`` weeks of the rest of the season (each player's rest-of-season points: the drop's
+    tie-break), ``add_ros_of(sid)`` = a free agent's rest-of-season points, ``key`` = the run / league / week columns,
+    ``lineup_value`` = the stored lineup value the re-solve must reproduce (logged when it does not)."""
+    stats = stats if stats is not None else {"lineup_mismatch": 0}
+    lid, roster_id, week0 = key["league_id"], key["roster_id"], key["week"]
+    limit = sum(1 for s in slots if str(s).upper() not in NOT_ROSTER_SPOTS)
+    players = [[_roster_player(r, sleeper) for r in wr] for wr in week_rows]
+    info = {r["sleeper_player_id"]: r for wr in reversed(week_rows) for r in wr}
+    rows: list[dict] = []
+    # the roster as Sleeper has it today: IR / taxi are not droppable and do not take a spot
+    active = [r for r in cur_rows if not r.get("is_on_ir") and not r.get("is_on_taxi")]
+    open_spots = limit - len(active)
+    in_week0 = {r["sleeper_player_id"]: r for r in week_rows[0]}
+    droppable = [r["sleeper_player_id"] for r in active
+                 if r["sleeper_player_id"] in in_week0 and not in_week0[r["sleeper_player_id"]]["is_locked"]
+                 and in_week0[r["sleeper_player_id"]]["reason"] != "game started (bench)"]
+    pool = {a: seq for a, seq in adds.items() if a not in info}
+    if open_spots < 0:
+        moves = []                                      # over the limit: no single add/drop is legal
+    elif unpruned:
+        moves = roster_moves_unpruned(slots, players, pool, droppable, open_spots > 0)
+    else:
+        moves = roster_moves(slots, players, pool, droppable, open_spots > 0, stats=stats)
+    # the solver on ops.lineups must reproduce ops.lineup_totals (same players, same values)
+    chk = solve(players[0], slots, margins=False).total
+    if lineup_value is not None and abs(chk - float(lineup_value)) > 0.005:
+        stats["lineup_mismatch"] = stats.get("lineup_mismatch", 0) + 1
+        log.warning("waivers: %s roster %s week %s re-solves to %.2f, ops.lineup_totals says %.2f",
+                    lid, roster_id, week0, chk, float(lineup_value))
+    key = {**key, "open_roster_spots": open_spots}
+    if not moves:
+        rows.append({**key, "list_kind": "nothing", "lineup_before": _r2(chk), "lineup_after": _r2(chk),
+                     "weekly_gain": 0.0, "horizon_gain": 0.0})
+        return rows
+    # each player's projected points over the rest of the season, weeks he can play (starting or
+    # not): among equally good moves the drop with the fewest is named (the least useful player)
+    ros: dict[str | None, float] = defaultdict(float)
+    for r in rest_rows:
+        if r["value"] is not None and r["role"] in ("starter", "bench") and r["value_source"] != UNVALUED:
+            ros[r["sleeper_player_id"]] += float(r["value"])
+    starters0 = {r["sleeper_player_id"] for r in week_rows[0] if r["role"] == "starter"}
+    add_ros = {m.add: add_ros_of(m.add) for m in moves}
+    for m, rank, is_best, add_rank in rank_moves(moves, ros):
+        fa = fa_meta[m.add]
+        a0 = adds[m.add][0]
+        d = info.get(m.drop) if m.drop else None
+        disp = info.get(m.displaced) if m.displaced else None
+        disp0 = in_week0.get(m.displaced) if m.displaced else None
+        rows.append({
+            **key, "list_kind": list_kind(m), "move_rank": rank, "add_rank": add_rank, "is_best_drop": is_best,
+            "add_sleeper_id": m.add, "add_gsis_id": fa["gsis_id"], "add_name": fa["player_name"],
+            "add_position": fa["position"], "add_value": _r2(a0.value) if a0 is not None and a0.value is not None else None,
+            "add_value_source": a0.value_source if a0 is not None else None,
+            "add_reason": a0.reason if a0 is not None and not a0.playable else None,
+            "add_report_status": a0.status if a0 is not None else None,
+            "add_games_played": int(fa["games_played"]) if fa["games_played"] is not None else None,
+            "is_no_evidence": not fa["games_played"],
+            "drop_sleeper_id": m.drop, "drop_gsis_id": d["gsis_id"] if d else None,
+            "drop_name": d["player_name"] if d else None, "drop_position": d["position"] if d else None,
+            "drop_value": _r2(_num(in_week0[m.drop]["value"])) if m.drop else None,
+            "drop_ros_points": _r2(ros.get(m.drop, 0.0)) if m.drop else None,
+            "add_ros_points": _r2(add_ros[m.add]), "rest_of_season_weeks": rest_weeks,
+            "drop_horizon_loss": _r2(sum(m.drop_loss)) if m.drop else None,
+            "drop_is_starter": (m.drop in starters0) if m.drop else None,
+            "weekly_gain": _r2(m.weekly_gain), "horizon_gain": _r2(m.horizon_gain),
+            "week_gains": [_r2(g) for g in m.week_gains], "add_horizon_gain": _r2(sum(m.add_alone)),
+            "lineup_before": _r2(m.lineup_before), "lineup_after": _r2(m.lineup_after),
+            "add_slot": m.add_slot, "add_slot_type": m.add_slot_type,
+            "fills_empty_slot": m.add_slot is not None and m.displaced is None,
+            "displaced_sleeper_id": m.displaced, "displaced_gsis_id": disp["gsis_id"] if disp else None,
+            "displaced_name": disp["player_name"] if disp else None,
+            "displaced_position": disp["position"] if disp else None,
+            "displaced_value": _r2(_num(disp0["value"])) if disp0 else None,
+            "displaced_slot": disp0["slot"] if disp0 else None,
+        })
+    return rows
 
 
 def _write(conn: psycopg.Connection, season: int, rows: list[dict]) -> None:
@@ -695,7 +717,7 @@ def run_verify(league_id: str, roster_id: int, season: int | None = None) -> dic
 
 
 __all__ = ["DDL", "FINGERPRINT_SQL", "HORIZON", "MOVE_COLUMNS", "MoveResult", "WaiverRun", "entry_bar", "prepare",
-           "rank_moves", "roster_moves", "roster_moves_unpruned", "run_verify", "run_waivers", "verify_roster",
+           "rank_moves", "roster_moves", "roster_moves_unpruned", "run_verify", "run_waivers", "sweep_roster", "verify_roster",
            "waiver_moves", "waivers_after_project"]
 
 

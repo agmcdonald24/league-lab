@@ -607,9 +607,12 @@ def _best(search: _Search, cands: list[tuple[float, tuple[str, ...], tuple[str, 
     return best
 
 
-def partner(search: _Search, them: int, shapes: Sequence[str] = ("1-for-1", "2-for-1", "1-for-2")) -> Partner:
+def partner(search: _Search, them: int, shapes: Sequence[str] = ("1-for-1", "2-for-1", "1-for-2"),
+            want: str | None = None) -> Partner:
     board, me, weeks = search.board, search.me, search.weeks
     mine, theirs = tradeable(board, me, weeks), tradeable(board, them, weeks)
+    if want is not None:      # Wave G (G2): only packages that bring me a player at this position
+        theirs = [b for b in theirs if position_of(board, b) == want]
     me_full, them_full = search.bars(me), search.bars(them)
     # a player the other side cannot use (adds nothing to its full roster in any week) can only move as a
     # throw-in: a package's gain for the receiver is at most what its players add to the full roster
@@ -652,14 +655,16 @@ def partner(search: _Search, them: int, shapes: Sequence[str] = ("1-for-1", "2-f
 
 def partners(board: RosterBoard, me: int, *, weeks: Iterable[int] | None = None,
              shapes: Sequence[str] = ("1-for-1", "2-for-1", "1-for-2"), stats: dict | None = None,
-             rosters: Iterable[int] | None = None) -> list[Partner]:
+             rosters: Iterable[int] | None = None, want: str | None = None) -> list[Partner]:
     """Every other roster (or those in ``rosters``) with its best 1-for-1 and 2-for-1 (see the module
-    docstring), best partner first; rosters with no trade that raises both lineups come last (``best`` None)."""
+    docstring), best partner first; rosters with no trade that raises both lineups come last (``best`` None).
+    ``want`` (Wave G, the API's partner finder): only packages in which every player I get plays that position
+    (the search is the same, on fewer of their players; None = every package, the page's sweep)."""
     t0 = time.perf_counter()
     weeks = tuple(int(w) for w in (weeks or board.weeks))
     search = _Search(board, int(me), weeks, stats if stats is not None else {})
     only = None if rosters is None else {int(r) for r in rosters}
-    out = [partner(search, r, shapes) for r in board.rosters if r != int(me) and (only is None or r in only)]
+    out = [partner(search, r, shapes, want) for r in board.rosters if r != int(me) and (only is None or r in only)]
     out.sort(key=lambda p: (p.best is None, p.best.order() if p.best is not None else (), p.roster_id))
     search.stats["seconds"] = time.perf_counter() - t0
     return out

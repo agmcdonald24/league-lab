@@ -268,6 +268,37 @@ these, as on the page), `mart_cb_matchups` has no points; the cornerback "best c
 Latency (cold = every cache emptied, warm = the second call; TestClient, the sandbox's two shared cores):
 `docs/STATUS.md` § Wave G, G1.
 
+## Decisions (G2)
+
+Wave G, plan row G2 (`league_lab_api/decisions.py`, routes block `# ---- G2 decisions` in `main.py`). Every route takes
+`league=` and `team=` where "yours" matters, sits behind the gate, and is served **from the marts for a house league**
+and **on demand for any other Sleeper league** (`source=sleeper` forces the on-demand path for a house league: the
+parity tests use it). Player objects carry `sleeper_id`, `gsis_id`, `player_name`, `position`, `team`, `headshot_url`
+(dim_player; a defense: its code, no headshot). Errors: 404 unknown league / team / position, 400 a package the
+engines cannot evaluate (`{"error": …}`), 502 Sleeper down, 503 busy / not ready.
+
+| Endpoint | What | House league | Any league (on demand) |
+|---|---|---|---|
+| `GET /api/waivers?league=&team=&position=&limit=&offset=` | `week`, `weakest` {slot, player, value, margin, replacement}, `cards` (the page's top claim / best cover / flyer), `notice` (the "nothing beats what you have" sentence), `moves` (one per free agent, its best drop: the free agent with projection + range + rest of season, the drop, gains this week / over the horizon / per week, the seat, `words` {headline, lines, why} = the Waiver Wire page's own `_headline` / `_card` / `_why`), `free_agents` (priced, best projection first) | `mart_waiver_moves`, `mart_league_roster_value`, `mart_player_week_projections`, `mart_player_ros_projection` | every roster solved for the horizon (`anyleague.league_weeks`: one `LineupInputs`, `lineup.build`), free agents = Sleeper's directory − every roster (`anyleague.free_agents`: `player_id_map`, the nightly's filter), valued by `lineup._proposed_player`, `waivers.sweep_roster` (the nightly's per-roster step) |
+| `POST /api/trades/evaluate` `{league, team, partner, give: [ids], get: [ids]}` | `before` / `after` (this week, the horizon, depth, by week, both sides), `fit` {this_week, next_4, words}, `market` {give, get, season points, replacement per position, words, the moving players' market line}, `verdict`, `headline`, `ros` (the package's rest of season + sentence), `ranks` (league rank before → after), `size_words` (cuts / the open-spot fill), `lineups` (this week's lineup after, slot by slot with the change, starts / sits, the closest call), `sides` (everything `trades.Side` holds). Ids: Sleeper ids (a gsis id is accepted) | the Trade Finder's calls: `RosterBoard(mart_league_roster_horizon)`, `MARKET_SQL`, `REPLACEMENT_SQL`, `trades.evaluate` (+ the page's free-agent pool for an opened spot) | the same calls on `anyleague.horizon_frame` (the mart's columns and rules); market = Σ this week → week 18 of the projection rounded to the cent, priced week by week; replacement = the best free agent's |
+| `GET /api/trades/partners?league=&team=&want=QB\|RB\|WR\|TE\|K\|DEF` | the partner finder: per team its best 1-for-1 and 2-for-1 that raise both lineups (`is_best`), gains both ways this week and over the horizon, market in / out; `words.headline` (the page's best-partner card); `want` = only packages that bring that position | `trades.partners` on the page's board (cached 10 min, like the page) | the same on the on-demand board (cached 2 min) |
+| `GET /api/team?league=&team=` | `value` (mart_league_roster_value's row), `ranks` (lineup / horizon / depth: value, rank, of n), `league` (every roster's three values and ranks), `slot_strength`, `roster` (this week's rows: slot, value, margin, acquired), `weekly` (the horizon's lineup values), `season` (record, luck, bench …), `keeper` (acquisition / keeper facts), `words` (the Team Hub's first two cards, quoted) | `mart_league_roster_value` / `_rankings` / `_slot_strength` / `_horizon`, `ops.lineup_totals`, `mart_league_manager_profile`, `mart_league_keeper_candidates` | every roster solved (the ranks need the whole league: rosters × 4 lineups per request, ~0.1–0.2 s of solving); `season` = Sleeper's record; no keeper facts (they need the league's history) |
+| `GET /api/league?league=&team=&limit=&offset=` | `standings`, `all_play` (luck), `all_play_week`, `transactions` (paged, newest first, `transactions_total`), `profiles`, `draft`, `roster_rankings`, `words.headline` (the League page's luck / bench line, quoted) | `mart_league_standings` / `_all_play` / `_all_play_week` / `_manager_profile` / `_transactions` / `_draft` / `_roster_rankings` | Sleeper's played weeks (`Sleeper.season_matchups`: `/league/{id}/matchups/{w}` for w ≤ `last_scored_leg`, cached 1 h) and `/league/{id}/transactions/{round}` (`Sleeper.transactions`, 1 h), the marts' SQL rules in Python; profiles / draft / roster rankings are house-only (`not_on_demand` says so) |
+
+**Words.** The Waiver Wire's and the Trade Finder's sentences live in functions inside the pages, which cannot be
+imported (they run Streamlit): `decisions.page_functions` compiles just the named function definitions from the page's
+source (`ast`; nothing else runs) with the Streamlit stand-in, so the API's sentences are the page's (a wording change
+reaches both). The Team Hub's and League's first lines are top-level page code: they are quoted in `decisions.py`
+(`team_words`, `league_words`, marked), each response's `words.source` says which. `trades.verdict` / `fit_line` /
+`fairness_line` and `app/lib/ros.py` (`package_sentence`) are called directly.
+
+**Parity** (`tests/test_decisions.py`, 28 tests): on demand, both house leagues reproduce **every row** of
+`mart_waiver_moves` for Scrubs 2 (433 moves), Scrubs 5 (393), dynasty 12 ("nothing") and dynasty 2 (gains, ranks, best
+drops, seats, rest-of-season tie-breaks: 0.00 gap); the Trade Finder's before / after / fit / verdict for dynasty 12 and
+Scrubs 2 each giving their best starter to roster 1 (house and on demand; the market exact on the house path, ± 1 whole
+point on demand); `mart_league_roster_value` / `_rankings` / `_slot_strength` / this week's `_horizon` rows; the
+standings, all-play (luck) and transactions. The Test League answers every route. Latency: STATUS § "Wave G" → G2.
+
 ## Run it locally
 
 ```bash

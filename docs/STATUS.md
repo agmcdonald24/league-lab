@@ -2928,6 +2928,79 @@ sentences, `signals.py` for the role alerts).
 **Open.** Real Sleeper (fixtures only here); a hosted copy keeps 3 seasons of `fct_player_game` (older `season=`
 answers empty); every relation the routes read is one an `app/` page names, so `sync_to_hosted.sh` publishes it.
 
+### G2 2026-10-02 — the decisions, on demand (`/api/waivers`, `/api/trades/evaluate`, `/api/trades/partners`, `/api/team`, `/api/league`)
+
+* **What**: `api/league_lab_api/decisions.py` + the routes block `# ---- G2 decisions` in `main.py` (contract: the Wave G
+  brief; `api/README.md` § "Decisions (G2)"). A house league is served from its marts (the numbers the Streamlit pages
+  show); any other Sleeper league — or `source=sleeper` for a house league — is computed on request with the nightly's
+  own engines. New on-demand entry points: `anyleague.league_weeks` (every roster × the horizon on ONE `LineupInputs`,
+  `lineup.build`; the whole week's board priced into it, so a free agent is valued by `lineup._proposed_player` exactly
+  as B1 values him), `anyleague.horizon_frame` (`mart_league_roster_horizon`'s columns and rules: top at slot type, the
+  replacement matched to the cent), `anyleague.free_agents` (Sleeper's directory − every roster, `player_id_map`, the
+  nightly's filter: active NFL roster, not Out / IR, a started position; NFL status from the marts' NFL-wide columns,
+  else the directory's); `waivers.sweep_roster` (the per-roster step of `load_and_sweep`, extracted unchanged: the
+  nightly calls it too); `trades.partners(want=)` (None = unchanged); `Sleeper.season_matchups` / `Sleeper.transactions`
+  (cached an hour). Words: the Waiver Wire's `_headline` / `_card` / `_why` and the Trade Finder's `size_words` /
+  `closest` / `lineup_frame` are compiled from the page files (`decisions.page_functions`: the named `def`s only, via
+  `ast`); Team Hub / League first lines quoted (marked); `trades.verdict` / `fit_line` / `fairness_line`,
+  `app/lib/ros.py` called directly.
+* **Parity (clone `league_lab_g2`, week 4, as_of = the nightly's)** — `api/tests/test_decisions.py`, 28 tests:
+  * Waivers on demand vs `mart_waiver_moves`, **every row**: Scrubs 2 433 / 433 moves, Scrubs 5 393 / 393, dynasty 2
+    24 / 24, dynasty 1 14 / 14 (script), dynasty 12 the one "nothing" row; max gap 0.00 on weekly / horizon gain, lineup
+    before / after, add value, drop value, drop / add rest-of-season points, drop horizon loss; 0 differences in move
+    rank, add rank, best drop, list, seat, displaced starter, no-evidence flag, open spots (K and DEF free agents
+    included: Scrubs' top claim is the Giants DEF). The extraction left the nightly identical: `load_and_sweep` re-run
+    on Scrubs 2 / 5 and dynasty 12 = `ops.waiver_moves` row for row; root `tests/test_waivers.py`, `test_trades.py`,
+    `test_roster_value.py`, `test_lineup.py`, `test_trade_finder_page.py`: 510 passed.
+  * Trade Finder (dynasty 12 and Scrubs 2 each give their best unlocked starter to roster 1 for roster 1's): before /
+    after per week, depth, fit this week / next 4, verdict and the fit sentence = the page's calls (`RosterBoard` on
+    `mart_league_roster_horizon`, `MARKET_SQL`, `REPLACEMENT_SQL`, `trades.evaluate`) to 0.01, on the house path and on
+    demand; market exact on the house path, ± 1 whole point allowed on demand (dynasty: identical). Example (dynasty 12, the
+    partner finder's best: Bo Nix + Isaiah Likely for Breece Hall): you 111.15 → 114.74 this week, 446.96 → 469.02
+    over weeks 4–7; them +5.63 / +21.97; market 228 out / 112 in — identical on both paths. Partners: the same
+    packages and gains on both paths.
+  * Team: `mart_league_roster_value` (lineup 111.15 / bench 79.83 / horizon 446.96 for dynasty 12), every roster's
+    three ranks (`_rankings`), `_slot_strength` (top player, strength, replacement) and this week's `_horizon` rows,
+    house and on demand, to 0.01.
+  * League: `mart_league_standings` (W-L-T, standing, PF / PA / avg / sd / best / worst, lineup efficiency),
+    `mart_league_all_play` (all-play wins, rank, win %, expected wins, luck, top-half weeks), `_all_play_week` and
+    `mart_league_transactions` (Scrubs: every transaction × action × player × roster × status × bid), house and from
+    Sleeper's weeks 1–2 + rounds 1–3 (fixtures from `raw.sleeper_*`: `api/tests/fixtures/make_g2_fixtures.py`).
+  * Test League (fictional, 10 teams, K and DEF): every route answers (team 3: moves or "nothing", partners, a trade,
+    the hub with 10 ranked rosters, standings from hand-made weeks 1–2, 20 transactions incl. a trade and a failed
+    claim). Roster 1 of the Test League is over the roster limit in the F3 fixture, so its waivers say "no single claim
+    is legal" (the engine's rule) — the tests use team 3.
+* **Latency** (TestClient, this sandbox, four devs on two cores; cold = every cache emptied incl. the priced board):
+  | Route | dynasty 12 (marts) | Scrubs 2 (marts) | dynasty 12 on demand | Scrubs 2 on demand | Test League 3 |
+  |---|---|---|---|---|---|
+  | waivers | 140 / 24 ms | 229 / 73 | 3,600 / 32 | 5,459 / 83 | 2,345 / 31 |
+  | partners | 959 / 12 | 1,245 / 36 | 4,868 / 17 | 3,993 / 12 | 2,759 / 15 |
+  | evaluate | 174 / 82 | 317 / 83 | 4,117 / 132 | 3,839 / 73 | 2,425 / 21 |
+  | team | 226 / 51 | 443 / 92 | 1,368 / 28 | 985 / 20 | 873 / 23 |
+  | league | 116 / 26 | 293 / 116 | 131 / 93 | 83 / 59 | 94 / 77 |
+  Cold on demand is the board priced for 15 weeks (rest of season and the market, ~0.7–1.5 s), every roster solved for
+  4 weeks (0.1–0.2 s), the waiver sweep (0.3 s for 381 free agents, 121 past the bar) and the partner search (~1 s);
+  warm answers come from 2-minute caches (10 minutes on a house league, like the page's `st.cache_data`).
+* **Checks**: `cd api && uv run pytest -q` 109 passed, 2 skipped (83 before + 28 new: 111 collected); `uv run ruff check
+  src tests app api/league_lab_api api/tests` clean.
+* **Deviations (decisions for the PO)**: (1) `waivers.load_and_sweep`'s per-roster block moved into `sweep_roster`
+  (same code; the nightly's numbers re-checked row for row) so the on-demand path IS the nightly's rule, not a copy.
+  (2) `moves` lists one row per free agent (his best drop, the page's list); every drop of a free agent is not served
+  (an `all=1` is easy if G4 needs it). (3) The house free-agent list reads `mart_player_availability` (the page's
+  browse population, Out / IR / NFL IR hidden); on demand it is the directory filter above. (4) Not on demand (they
+  need the league's history in the database): keeper / acquisition facts on `/api/team`, manager profiles, the draft
+  and the roster-rankings table on `/api/league` (`not_on_demand` says so; the rankings are on `/api/team`).
+  (5) `players_nfl.json` grew by the 530 free agents of the house leagues (210 KB) so the directory-minus-rosters rule
+  is testable; weeks 1–2 matchups and rounds 1–3 transactions added for all three leagues (no user ids, no notes).
+  (6) The Team Hub's and League's first-line sentences are quoted, not captured (top-level page code).
+* **Not verified / open**: no Sleeper from the sandbox (the live `/transactions/{round}` and played-week calls are
+  untested against the real host; the fixture shapes are Sleeper's as archived in `raw.sleeper_*`). The on-demand
+  market prices every week from the NFL-wide board (identical to `ops.projections` on this copy). Commands for Andrew
+  (Mac): `cd api && uv run pytest -q`; `uv run uvicorn league_lab_api.main:app --port 8581`, then
+  `/api/waivers?league=<id>&team=<roster>`, `/api/team?…`, `/api/league?…`, `/api/trades/partners?…` and
+  `curl -X POST localhost:8581/api/trades/evaluate -H 'content-type: application/json' -d '{"league": "<id>", "team": 2,
+  "partner": 1, "give": ["<sleeper id>"], "get": ["<sleeper id>"]}'` (with the beta cookie when the gate is on).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
