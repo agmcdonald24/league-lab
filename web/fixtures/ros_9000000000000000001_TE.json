@@ -15,7 +15,62 @@
    "p90": 174.1,
    "pos_rank": 1,
    "rostered_by_roster_id": 3,
-   "rostered_by_team": "Fixture Falcons"
+   "rostered_by_team": "Fixture Falcons",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/psasp10nn5pcvkli9kil",
+   "bye_weeks": [
+    14
+   ],
+   "ros_points_per_game": 12.07,
+   "per_game": {
+    "targets": 8.17,
+    "receptions": 5.91,
+    "receiving_yards": 69.35,
+    "tds": 0.37
+   },
+   "why": {
+    "per": "game",
+    "points": 12.07,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 8.17,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "8.2 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 5.91,
+      "each": 0.5,
+      "points": 2.95,
+      "words": "5.9 catches × 0.5 = +3.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 69.35,
+      "each": 0.1,
+      "points": 6.93,
+      "words": "69 receiving yards × 0.1 = +6.9"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.37,
+      "each": 6.0,
+      "points": 2.21,
+      "words": "0.37 receiving TDs × 6 = +2.2"
+     }
+    ],
+    "sentence": "8.2 targets → 5.9 catches → 69 yards → 0.37 TDs → 12.1 points a game × 12 games = 145",
+    "games": 12,
+    "total": 144.79
+   },
+   "market_points": null,
+   "week_points": 12.45,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039065",
@@ -29,7 +84,70 @@
    "p90": 145.1,
    "pos_rank": 2,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 10.09,
+   "per_game": {
+    "targets": 6.65,
+    "receptions": 4.62,
+    "receiving_yards": 56.07,
+    "tds": 0.37
+   },
+   "why": {
+    "per": "game",
+    "points": 10.09,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 6.65,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "6.6 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.62,
+      "each": 0.5,
+      "points": 2.31,
+      "words": "4.6 catches × 0.5 = +2.3"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 56.07,
+      "each": 0.1,
+      "points": 5.61,
+      "words": "56 receiving yards × 0.1 = +5.6"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.37,
+      "each": 6.0,
+      "points": 2.23,
+      "words": "0.37 receiving TDs × 6 = +2.2"
+     },
+     {
+      "stat": "rest",
+      "label": "the small pieces and rounding",
+      "value": null,
+      "each": null,
+      "points": -0.06,
+      "words": "the small pieces and rounding: -0.1"
+     }
+    ],
+    "sentence": "6.6 targets → 4.6 catches → 56 yards → 0.37 TDs → 10.1 points a game × 12 games = 121",
+    "games": 12,
+    "total": 121.06
+   },
+   "market_points": null,
+   "week_points": 10.88,
+   "market_words": null
   },
   {
    "gsis_id": "00-0034383",
@@ -43,7 +161,62 @@
    "p90": 136.6,
    "pos_rank": 3,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ym8sbkev8l4scnrc0vd8",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 9.5,
+   "per_game": {
+    "targets": 7.39,
+    "receptions": 5.33,
+    "receiving_yards": 51.95,
+    "tds": 0.28
+   },
+   "why": {
+    "per": "game",
+    "points": 9.5,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 7.39,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.4 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 5.33,
+      "each": 0.5,
+      "points": 2.66,
+      "words": "5.3 catches × 0.5 = +2.7"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 51.95,
+      "each": 0.1,
+      "points": 5.2,
+      "words": "52 receiving yards × 0.1 = +5.2"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.28,
+      "each": 6.0,
+      "points": 1.67,
+      "words": "0.28 receiving TDs × 6 = +1.7"
+     }
+    ],
+    "sentence": "7.4 targets → 5.3 catches → 52 yards → 0.28 TDs → 9.5 points a game × 12 games = 114",
+    "games": 12,
+    "total": 113.95
+   },
+   "market_points": null,
+   "week_points": 10.28,
+   "market_words": null
   },
   {
    "gsis_id": "00-0030506",
@@ -57,7 +230,62 @@
    "p90": 132.6,
    "pos_rank": 4,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 9.31,
+   "per_game": {
+    "targets": 6.97,
+    "receptions": 4.8,
+    "receiving_yards": 53.0,
+    "tds": 0.27
+   },
+   "why": {
+    "per": "game",
+    "points": 9.31,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 6.97,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.0 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.8,
+      "each": 0.5,
+      "points": 2.4,
+      "words": "4.8 catches × 0.5 = +2.4"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 53.0,
+      "each": 0.1,
+      "points": 5.3,
+      "words": "53 receiving yards × 0.1 = +5.3"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.27,
+      "each": 6.0,
+      "points": 1.64,
+      "words": "0.27 receiving TDs × 6 = +1.6"
+     }
+    ],
+    "sentence": "7.0 targets → 4.8 catches → 53 yards → 0.27 TDs → 9.3 points a game × 12 games = 112",
+    "games": 12,
+    "total": 111.78
+   },
+   "market_points": null,
+   "week_points": 10.14,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040128",
@@ -71,7 +299,70 @@
    "p90": 136.0,
    "pos_rank": 5,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/f1mfwwrr3qvnxuiackgq",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 9.26,
+   "per_game": {
+    "targets": 5.83,
+    "receptions": 4.37,
+    "receiving_yards": 57.62,
+    "tds": 0.23
+   },
+   "why": {
+    "per": "game",
+    "points": 9.26,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 5.83,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.8 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.37,
+      "each": 0.5,
+      "points": 2.19,
+      "words": "4.4 catches × 0.5 = +2.2"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 57.62,
+      "each": 0.1,
+      "points": 5.76,
+      "words": "58 receiving yards × 0.1 = +5.8"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.23,
+      "each": 6.0,
+      "points": 1.38,
+      "words": "0.23 receiving TDs × 6 = +1.4"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.03,
+      "each": -2.0,
+      "points": -0.06,
+      "words": "0.03 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "5.8 targets → 4.4 catches → 58 yards → 0.23 TDs → 9.3 points a game × 12 games = 111",
+    "games": 12,
+    "total": 111.14
+   },
+   "market_points": null,
+   "week_points": 11.19,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033288",
@@ -85,7 +376,62 @@
    "p90": 130.8,
    "pos_rank": 6,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 8.91,
+   "per_game": {
+    "targets": 5.99,
+    "receptions": 3.68,
+    "receiving_yards": 46.83,
+    "tds": 0.4
+   },
+   "why": {
+    "per": "game",
+    "points": 8.91,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 5.99,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "6.0 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.68,
+      "each": 0.5,
+      "points": 1.84,
+      "words": "3.7 catches × 0.5 = +1.8"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 46.83,
+      "each": 0.1,
+      "points": 4.68,
+      "words": "47 receiving yards × 0.1 = +4.7"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.4,
+      "each": 6.0,
+      "points": 2.42,
+      "words": "0.40 receiving TDs × 6 = +2.4"
+     }
+    ],
+    "sentence": "6.0 targets → 3.7 catches → 47 yards → 0.40 TDs → 8.9 points a game × 12 games = 107",
+    "games": 12,
+    "total": 106.91
+   },
+   "market_points": null,
+   "week_points": 8.53,
+   "market_words": null
   },
   {
    "gsis_id": "00-0038933",
@@ -99,7 +445,70 @@
    "p90": 125.0,
    "pos_rank": 7,
    "rostered_by_roster_id": 3,
-   "rostered_by_team": "Fixture Falcons"
+   "rostered_by_team": "Fixture Falcons",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z7k857flehljboaixj8m",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 8.49,
+   "per_game": {
+    "targets": 6.29,
+    "receptions": 3.83,
+    "receiving_yards": 50.83,
+    "tds": 0.26
+   },
+   "why": {
+    "per": "game",
+    "points": 8.49,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 6.29,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "6.3 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.83,
+      "each": 0.5,
+      "points": 1.92,
+      "words": "3.8 catches × 0.5 = +1.9"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 50.83,
+      "each": 0.1,
+      "points": 5.08,
+      "words": "51 receiving yards × 0.1 = +5.1"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.26,
+      "each": 6.0,
+      "points": 1.54,
+      "words": "0.26 receiving TDs × 6 = +1.5"
+     },
+     {
+      "stat": "rest",
+      "label": "the small pieces and rounding",
+      "value": null,
+      "each": null,
+      "points": -0.05,
+      "words": "the small pieces and rounding: -0.1"
+     }
+    ],
+    "sentence": "6.3 targets → 3.8 catches → 51 yards → 0.26 TDs → 8.5 points a game × 12 games = 102",
+    "games": 12,
+    "total": 101.84
+   },
+   "market_points": null,
+   "week_points": 9.61,
+   "market_words": null
   },
   {
    "gsis_id": "00-0034753",
@@ -113,7 +522,70 @@
    "p90": 117.6,
    "pos_rank": 8,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/u4xzz7tclch0tpzm9hhz",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 8.03,
+   "per_game": {
+    "targets": 6.04,
+    "receptions": 4.12,
+    "receiving_yards": 44.3,
+    "tds": 0.27
+   },
+   "why": {
+    "per": "game",
+    "points": 8.03,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 6.04,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "6.0 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.12,
+      "each": 0.5,
+      "points": 2.06,
+      "words": "4.1 catches × 0.5 = +2.1"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 44.3,
+      "each": 0.1,
+      "points": 4.43,
+      "words": "44 receiving yards × 0.1 = +4.4"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.27,
+      "each": 6.0,
+      "points": 1.6,
+      "words": "0.27 receiving TDs × 6 = +1.6"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.03,
+      "each": -2.0,
+      "points": -0.06,
+      "words": "0.03 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "6.0 targets → 4.1 catches → 44 yards → 0.27 TDs → 8.0 points a game × 12 games = 96",
+    "games": 12,
+    "total": 96.4
+   },
+   "market_points": null,
+   "week_points": 8.25,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040663",
@@ -127,7 +599,62 @@
    "p90": 117.5,
    "pos_rank": 9,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fxublmpnxx9uggsddwik",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 7.96,
+   "per_game": {
+    "targets": 5.87,
+    "receptions": 4.15,
+    "receiving_yards": 44.83,
+    "tds": 0.24
+   },
+   "why": {
+    "per": "game",
+    "points": 7.96,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 5.87,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.9 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.15,
+      "each": 0.5,
+      "points": 2.08,
+      "words": "4.2 catches × 0.5 = +2.1"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 44.83,
+      "each": 0.1,
+      "points": 4.48,
+      "words": "45 receiving yards × 0.1 = +4.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.24,
+      "each": 6.0,
+      "points": 1.44,
+      "words": "0.24 receiving TDs × 6 = +1.4"
+     }
+    ],
+    "sentence": "5.9 targets → 4.2 catches → 45 yards → 0.24 TDs → 8.0 points a game × 12 games = 96",
+    "games": 12,
+    "total": 95.51
+   },
+   "market_points": null,
+   "week_points": 6.94,
+   "market_words": null
   },
   {
    "gsis_id": "00-0037838",
@@ -141,7 +668,62 @@
    "p90": 120.8,
    "pos_rank": 10,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 7.91,
+   "per_game": {
+    "targets": 5.88,
+    "receptions": 4.36,
+    "receiving_yards": 41.51,
+    "tds": 0.27
+   },
+   "why": {
+    "per": "game",
+    "points": 7.91,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 5.88,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.9 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.36,
+      "each": 0.5,
+      "points": 2.18,
+      "words": "4.4 catches × 0.5 = +2.2"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 41.51,
+      "each": 0.1,
+      "points": 4.15,
+      "words": "42 receiving yards × 0.1 = +4.2"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.27,
+      "each": 6.0,
+      "points": 1.62,
+      "words": "0.27 receiving TDs × 6 = +1.6"
+     }
+    ],
+    "sentence": "5.9 targets → 4.4 catches → 42 yards → 0.27 TDs → 7.9 points a game × 12 games = 95",
+    "games": 12,
+    "total": 94.92
+   },
+   "market_points": null,
+   "week_points": 7.38,
+   "market_words": null
   },
   {
    "gsis_id": "00-0038129",
@@ -155,7 +737,62 @@
    "p90": 114.8,
    "pos_rank": 11,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yanr6h9aplae3jyzimf7",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 7.86,
+   "per_game": {
+    "targets": 5.8,
+    "receptions": 4.22,
+    "receiving_yards": 44.45,
+    "tds": 0.22
+   },
+   "why": {
+    "per": "game",
+    "points": 7.86,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 5.8,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.8 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.22,
+      "each": 0.5,
+      "points": 2.11,
+      "words": "4.2 catches × 0.5 = +2.1"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 44.45,
+      "each": 0.1,
+      "points": 4.44,
+      "words": "44 receiving yards × 0.1 = +4.4"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.22,
+      "each": 6.0,
+      "points": 1.34,
+      "words": "0.22 receiving TDs × 6 = +1.3"
+     }
+    ],
+    "sentence": "5.8 targets → 4.2 catches → 44 yards → 0.22 TDs → 7.9 points a game × 12 games = 94",
+    "games": 12,
+    "total": 94.31
+   },
+   "market_points": null,
+   "week_points": 7.86,
+   "market_words": null
   },
   {
    "gsis_id": "00-0038996",
@@ -169,7 +806,62 @@
    "p90": 111.9,
    "pos_rank": 12,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/n6vu44jbq31rydoaadaq",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 7.58,
+   "per_game": {
+    "targets": 5.21,
+    "receptions": 3.39,
+    "receiving_yards": 43.44,
+    "tds": 0.27
+   },
+   "why": {
+    "per": "game",
+    "points": 7.58,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 5.21,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.2 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.39,
+      "each": 0.5,
+      "points": 1.7,
+      "words": "3.4 catches × 0.5 = +1.7"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 43.44,
+      "each": 0.1,
+      "points": 4.34,
+      "words": "43 receiving yards × 0.1 = +4.3"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.27,
+      "each": 6.0,
+      "points": 1.59,
+      "words": "0.27 receiving TDs × 6 = +1.6"
+     }
+    ],
+    "sentence": "5.2 targets → 3.4 catches → 43 yards → 0.27 TDs → 7.6 points a game × 12 games = 91",
+    "games": 12,
+    "total": 91.02
+   },
+   "market_points": null,
+   "week_points": 7.96,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036040",
@@ -183,7 +875,62 @@
    "p90": 112.5,
    "pos_rank": 13,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ahzqkvhjot6lygwr4ccb",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 7.37,
+   "per_game": {
+    "targets": 5.49,
+    "receptions": 3.34,
+    "receiving_yards": 39.98,
+    "tds": 0.28
+   },
+   "why": {
+    "per": "game",
+    "points": 7.37,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 5.49,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.5 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.34,
+      "each": 0.5,
+      "points": 1.67,
+      "words": "3.3 catches × 0.5 = +1.7"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 39.98,
+      "each": 0.1,
+      "points": 4.0,
+      "words": "40 receiving yards × 0.1 = +4.0"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.28,
+      "each": 6.0,
+      "points": 1.71,
+      "words": "0.28 receiving TDs × 6 = +1.7"
+     }
+    ],
+    "sentence": "5.5 targets → 3.3 catches → 40 yards → 0.28 TDs → 7.4 points a game × 12 games = 88",
+    "games": 12,
+    "total": 88.42
+   },
+   "market_points": null,
+   "week_points": 8.33,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039066",
@@ -197,7 +944,62 @@
    "p90": 107.6,
    "pos_rank": 14,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/twnkr9uq1phvukxb5jmh",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 7.23,
+   "per_game": {
+    "targets": 5.38,
+    "receptions": 3.78,
+    "receiving_yards": 41.38,
+    "tds": 0.21
+   },
+   "why": {
+    "per": "game",
+    "points": 7.23,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 5.38,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.4 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.78,
+      "each": 0.5,
+      "points": 1.89,
+      "words": "3.8 catches × 0.5 = +1.9"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 41.38,
+      "each": 0.1,
+      "points": 4.14,
+      "words": "41 receiving yards × 0.1 = +4.1"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.21,
+      "each": 6.0,
+      "points": 1.24,
+      "words": "0.21 receiving TDs × 6 = +1.2"
+     }
+    ],
+    "sentence": "5.4 targets → 3.8 catches → 41 yards → 0.21 TDs → 7.2 points a game × 12 games = 87",
+    "games": 12,
+    "total": 86.82
+   },
+   "market_points": null,
+   "week_points": 7.2,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035229",
@@ -211,7 +1013,70 @@
    "p90": 105.7,
    "pos_rank": 15,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rs8o65x0u0n9xzde0fd6",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 7.0,
+   "per_game": {
+    "targets": 5.32,
+    "receptions": 3.65,
+    "receiving_yards": 37.87,
+    "tds": 0.24
+   },
+   "why": {
+    "per": "game",
+    "points": 7.0,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 5.32,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.3 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.65,
+      "each": 0.5,
+      "points": 1.83,
+      "words": "3.7 catches × 0.5 = +1.8"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 37.87,
+      "each": 0.1,
+      "points": 3.79,
+      "words": "38 receiving yards × 0.1 = +3.8"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.24,
+      "each": 6.0,
+      "points": 1.43,
+      "words": "0.24 receiving TDs × 6 = +1.4"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.03,
+      "each": -2.0,
+      "points": -0.06,
+      "words": "0.03 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "5.3 targets → 3.7 catches → 38 yards → 0.24 TDs → 7.0 points a game × 12 games = 84",
+    "games": 12,
+    "total": 84.02
+   },
+   "market_points": null,
+   "week_points": 7.68,
+   "market_words": null
   },
   {
    "gsis_id": "00-0034351",
@@ -225,7 +1090,62 @@
    "p90": 104.4,
    "pos_rank": 16,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/bafepstxu7vvxb9v5vua",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 6.93,
+   "per_game": {
+    "targets": 4.61,
+    "receptions": 3.03,
+    "receiving_yards": 35.41,
+    "tds": 0.32
+   },
+   "why": {
+    "per": "game",
+    "points": 6.93,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 4.61,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.6 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.03,
+      "each": 0.5,
+      "points": 1.51,
+      "words": "3.0 catches × 0.5 = +1.5"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 35.41,
+      "each": 0.1,
+      "points": 3.54,
+      "words": "35 receiving yards × 0.1 = +3.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.32,
+      "each": 6.0,
+      "points": 1.91,
+      "words": "0.32 receiving TDs × 6 = +1.9"
+     }
+    ],
+    "sentence": "4.6 targets → 3.0 catches → 35 yards → 0.32 TDs → 6.9 points a game × 12 games = 83",
+    "games": 12,
+    "total": 83.11
+   },
+   "market_points": null,
+   "week_points": 6.41,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033090",
@@ -239,7 +1159,62 @@
    "p90": 102.8,
    "pos_rank": 17,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cvlunbqgztudbhjrug7l",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 6.83,
+   "per_game": {
+    "targets": 4.84,
+    "receptions": 3.47,
+    "receiving_yards": 37.18,
+    "tds": 0.23
+   },
+   "why": {
+    "per": "game",
+    "points": 6.83,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 4.84,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.8 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.47,
+      "each": 0.5,
+      "points": 1.74,
+      "words": "3.5 catches × 0.5 = +1.7"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 37.18,
+      "each": 0.1,
+      "points": 3.72,
+      "words": "37 receiving yards × 0.1 = +3.7"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.23,
+      "each": 6.0,
+      "points": 1.39,
+      "words": "0.23 receiving TDs × 6 = +1.4"
+     }
+    ],
+    "sentence": "4.8 targets → 3.5 catches → 37 yards → 0.23 TDs → 6.8 points a game × 12 games = 82",
+    "games": 12,
+    "total": 81.91
+   },
+   "market_points": null,
+   "week_points": 6.95,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036894",
@@ -253,7 +1228,70 @@
    "p90": 103.4,
    "pos_rank": 18,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pyrdsypgggjshiaygkr7",
+   "bye_weeks": [
+    9
+   ],
+   "ros_points_per_game": 6.69,
+   "per_game": {
+    "targets": 5.03,
+    "receptions": 3.33,
+    "receiving_yards": 35.28,
+    "tds": 0.26
+   },
+   "why": {
+    "per": "game",
+    "points": 6.69,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 5.03,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.0 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.33,
+      "each": 0.5,
+      "points": 1.67,
+      "words": "3.3 catches × 0.5 = +1.7"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 35.28,
+      "each": 0.1,
+      "points": 3.53,
+      "words": "35 receiving yards × 0.1 = +3.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.26,
+      "each": 6.0,
+      "points": 1.57,
+      "words": "0.26 receiving TDs × 6 = +1.6"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.03,
+      "each": -2.0,
+      "points": -0.06,
+      "words": "0.03 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "5.0 targets → 3.3 catches → 35 yards → 0.26 TDs → 6.7 points a game × 12 games = 80",
+    "games": 12,
+    "total": 80.23
+   },
+   "market_points": null,
+   "week_points": 6.19,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040126",
@@ -267,7 +1305,62 @@
    "p90": 100.9,
    "pos_rank": 19,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cnxiyi76jeahgx94nh6d",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 6.63,
+   "per_game": {
+    "targets": 3.77,
+    "receptions": 3.09,
+    "receiving_yards": 35.33,
+    "tds": 0.26
+   },
+   "why": {
+    "per": "game",
+    "points": 6.63,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.77,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.8 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.09,
+      "each": 0.5,
+      "points": 1.55,
+      "words": "3.1 catches × 0.5 = +1.5"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 35.33,
+      "each": 0.1,
+      "points": 3.53,
+      "words": "35 receiving yards × 0.1 = +3.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.26,
+      "each": 6.0,
+      "points": 1.59,
+      "words": "0.26 receiving TDs × 6 = +1.6"
+     }
+    ],
+    "sentence": "3.8 targets → 3.1 catches → 35 yards → 0.26 TDs → 6.6 points a game × 12 games = 80",
+    "games": 12,
+    "total": 79.59
+   },
+   "market_points": null,
+   "week_points": 6.36,
+   "market_words": null
   },
   {
    "gsis_id": "00-0038935",
@@ -281,7 +1374,62 @@
    "p90": 98.1,
    "pos_rank": 20,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/devxzxwf1sfficgncggm",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 6.44,
+   "per_game": {
+    "targets": 4.18,
+    "receptions": 2.94,
+    "receiving_yards": 35.39,
+    "tds": 0.24
+   },
+   "why": {
+    "per": "game",
+    "points": 6.44,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 4.18,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.2 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.94,
+      "each": 0.5,
+      "points": 1.47,
+      "words": "2.9 catches × 0.5 = +1.5"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 35.39,
+      "each": 0.1,
+      "points": 3.54,
+      "words": "35 receiving yards × 0.1 = +3.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.24,
+      "each": 6.0,
+      "points": 1.44,
+      "words": "0.24 receiving TDs × 6 = +1.4"
+     }
+    ],
+    "sentence": "4.2 targets → 2.9 catches → 35 yards → 0.24 TDs → 6.4 points a game × 12 games = 77",
+    "games": 12,
+    "total": 77.32
+   },
+   "market_points": null,
+   "week_points": 6.64,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040584",
@@ -295,7 +1443,62 @@
    "p90": 94.7,
    "pos_rank": 21,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hewm6ztgka7xkbl6ybvb",
+   "bye_weeks": [
+    9
+   ],
+   "ros_points_per_game": 6.3,
+   "per_game": {
+    "targets": 4.21,
+    "receptions": 3.14,
+    "receiving_yards": 35.18,
+    "tds": 0.21
+   },
+   "why": {
+    "per": "game",
+    "points": 6.3,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 4.21,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.2 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.14,
+      "each": 0.5,
+      "points": 1.57,
+      "words": "3.1 catches × 0.5 = +1.6"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 35.18,
+      "each": 0.1,
+      "points": 3.52,
+      "words": "35 receiving yards × 0.1 = +3.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.21,
+      "each": 6.0,
+      "points": 1.24,
+      "words": "0.21 receiving TDs × 6 = +1.2"
+     }
+    ],
+    "sentence": "4.2 targets → 3.1 catches → 35 yards → 0.21 TDs → 6.3 points a game × 12 games = 76",
+    "games": 12,
+    "total": 75.6
+   },
+   "market_points": null,
+   "week_points": 5.91,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040737",
@@ -309,7 +1512,70 @@
    "p90": 92.9,
    "pos_rank": 22,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 6.12,
+   "per_game": {
+    "targets": 4.72,
+    "receptions": 3.23,
+    "receiving_yards": 33.47,
+    "tds": 0.2
+   },
+   "why": {
+    "per": "game",
+    "points": 6.12,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 4.72,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.7 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.23,
+      "each": 0.5,
+      "points": 1.61,
+      "words": "3.2 catches × 0.5 = +1.6"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 33.47,
+      "each": 0.1,
+      "points": 3.35,
+      "words": "33 receiving yards × 0.1 = +3.3"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.2,
+      "each": 6.0,
+      "points": 1.22,
+      "words": "0.20 receiving TDs × 6 = +1.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.03,
+      "each": -2.0,
+      "points": -0.06,
+      "words": "0.03 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "4.7 targets → 3.2 catches → 33 yards → 0.20 TDs → 6.1 points a game × 12 games = 73",
+    "games": 12,
+    "total": 73.4
+   },
+   "market_points": null,
+   "week_points": 5.79,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039338",
@@ -323,7 +1589,62 @@
    "p90": 93.3,
    "pos_rank": 23,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/waorceny0ggpaeckaol8",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 6.02,
+   "per_game": {
+    "targets": 4.32,
+    "receptions": 2.85,
+    "receiving_yards": 33.98,
+    "tds": 0.2
+   },
+   "why": {
+    "per": "game",
+    "points": 6.02,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 4.32,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.3 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.85,
+      "each": 0.5,
+      "points": 1.42,
+      "words": "2.8 catches × 0.5 = +1.4"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 33.98,
+      "each": 0.1,
+      "points": 3.4,
+      "words": "34 receiving yards × 0.1 = +3.4"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.2,
+      "each": 6.0,
+      "points": 1.22,
+      "words": "0.20 receiving TDs × 6 = +1.2"
+     }
+    ],
+    "sentence": "4.3 targets → 2.8 catches → 34 yards → 0.20 TDs → 6.0 points a game × 12 games = 72",
+    "games": 12,
+    "total": 72.22
+   },
+   "market_points": null,
+   "week_points": 6.02,
+   "market_words": null
   },
   {
    "gsis_id": "00-0034829",
@@ -337,7 +1658,62 @@
    "p90": 92.8,
    "pos_rank": 24,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dykckg6we3cnw9yhpggi",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 6.0,
+   "per_game": {
+    "targets": 4.32,
+    "receptions": 2.75,
+    "receiving_yards": 33.97,
+    "tds": 0.21
+   },
+   "why": {
+    "per": "game",
+    "points": 6.0,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 4.32,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.3 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.75,
+      "each": 0.5,
+      "points": 1.38,
+      "words": "2.8 catches × 0.5 = +1.4"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 33.97,
+      "each": 0.1,
+      "points": 3.4,
+      "words": "34 receiving yards × 0.1 = +3.4"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.21,
+      "each": 6.0,
+      "points": 1.26,
+      "words": "0.21 receiving TDs × 6 = +1.3"
+     }
+    ],
+    "sentence": "4.3 targets → 2.8 catches → 34 yards → 0.21 TDs → 6.0 points a game × 12 games = 72",
+    "games": 12,
+    "total": 71.99
+   },
+   "market_points": null,
+   "week_points": 6.19,
+   "market_words": null
   },
   {
    "gsis_id": "00-0038041",
@@ -351,7 +1727,70 @@
    "p90": 89.1,
    "pos_rank": 25,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xpykb0tbosfwsn6dqstb",
+   "bye_weeks": [
+    14
+   ],
+   "ros_points_per_game": 5.94,
+   "per_game": {
+    "targets": 4.75,
+    "receptions": 3.2,
+    "receiving_yards": 30.71,
+    "tds": 0.22
+   },
+   "why": {
+    "per": "game",
+    "points": 5.94,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 4.75,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.8 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.2,
+      "each": 0.5,
+      "points": 1.6,
+      "words": "3.2 catches × 0.5 = +1.6"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 30.71,
+      "each": 0.1,
+      "points": 3.07,
+      "words": "31 receiving yards × 0.1 = +3.1"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.22,
+      "each": 6.0,
+      "points": 1.34,
+      "words": "0.22 receiving TDs × 6 = +1.3"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.03,
+      "each": -2.0,
+      "points": -0.05,
+      "words": "0.03 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "4.8 targets → 3.2 catches → 31 yards → 0.22 TDs → 5.9 points a game × 12 games = 71",
+    "games": 12,
+    "total": 71.33
+   },
+   "market_points": null,
+   "week_points": 5.91,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036970",
@@ -365,7 +1804,62 @@
    "p90": 93.9,
    "pos_rank": 26,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xczipzxvytnmvgznhhb4",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 5.8,
+   "per_game": {
+    "targets": 3.99,
+    "receptions": 2.62,
+    "receiving_yards": 31.44,
+    "tds": 0.23
+   },
+   "why": {
+    "per": "game",
+    "points": 5.8,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.99,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.0 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.62,
+      "each": 0.5,
+      "points": 1.31,
+      "words": "2.6 catches × 0.5 = +1.3"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 31.44,
+      "each": 0.1,
+      "points": 3.14,
+      "words": "31 receiving yards × 0.1 = +3.1"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.23,
+      "each": 6.0,
+      "points": 1.38,
+      "words": "0.23 receiving TDs × 6 = +1.4"
+     }
+    ],
+    "sentence": "4.0 targets → 2.6 catches → 31 yards → 0.23 TDs → 5.8 points a game × 12 games = 70",
+    "games": 12,
+    "total": 69.61
+   },
+   "market_points": null,
+   "week_points": 5.61,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040736",
@@ -379,7 +1873,62 @@
    "p90": 77.5,
    "pos_rank": 27,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xittx9gih104lw1atfiv",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 5.12,
+   "per_game": {
+    "targets": 3.78,
+    "receptions": 2.89,
+    "receiving_yards": 27.95,
+    "tds": 0.15
+   },
+   "why": {
+    "per": "game",
+    "points": 5.12,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.78,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.8 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.89,
+      "each": 0.5,
+      "points": 1.45,
+      "words": "2.9 catches × 0.5 = +1.4"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 27.95,
+      "each": 0.1,
+      "points": 2.79,
+      "words": "28 receiving yards × 0.1 = +2.8"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.15,
+      "each": 6.0,
+      "points": 0.91,
+      "words": "0.15 receiving TDs × 6 = +0.9"
+     }
+    ],
+    "sentence": "3.8 targets → 2.9 catches → 28 yards → 0.15 TDs → 5.1 points a game × 12 games = 61",
+    "games": 12,
+    "total": 61.43
+   },
+   "market_points": null,
+   "week_points": 5.02,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039793",
@@ -393,7 +1942,62 @@
    "p90": 76.7,
    "pos_rank": 28,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i0esiguve9if4ts5mm1q",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 4.96,
+   "per_game": {
+    "targets": 2.66,
+    "receptions": 2.37,
+    "receiving_yards": 30.34,
+    "tds": 0.13
+   },
+   "why": {
+    "per": "game",
+    "points": 4.96,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.66,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.7 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.37,
+      "each": 0.5,
+      "points": 1.18,
+      "words": "2.4 catches × 0.5 = +1.2"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 30.34,
+      "each": 0.1,
+      "points": 3.03,
+      "words": "30 receiving yards × 0.1 = +3.0"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.13,
+      "each": 6.0,
+      "points": 0.76,
+      "words": "0.13 receiving TDs × 6 = +0.8"
+     }
+    ],
+    "sentence": "2.7 targets → 2.4 catches → 30 yards → 0.13 TDs → 5.0 points a game × 12 games = 60",
+    "games": 12,
+    "total": 59.5
+   },
+   "market_points": null,
+   "week_points": 5.24,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033881",
@@ -407,7 +2011,70 @@
    "p90": 74.9,
    "pos_rank": 29,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/nucl2dxmpvhlywhyro8o",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 4.85,
+   "per_game": {
+    "targets": 3.59,
+    "receptions": 2.58,
+    "receiving_yards": 25.2,
+    "tds": 0.18
+   },
+   "why": {
+    "per": "game",
+    "points": 4.85,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.59,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.6 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.58,
+      "each": 0.5,
+      "points": 1.29,
+      "words": "2.6 catches × 0.5 = +1.3"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 25.2,
+      "each": 0.1,
+      "points": 2.52,
+      "words": "25 receiving yards × 0.1 = +2.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.18,
+      "each": 6.0,
+      "points": 1.1,
+      "words": "0.18 receiving TDs × 6 = +1.1"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.04,
+      "each": -2.0,
+      "points": -0.07,
+      "words": "0.04 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "3.6 targets → 2.6 catches → 25 yards → 0.18 TDs → 4.8 points a game × 12 games = 58",
+    "games": 12,
+    "total": 58.18
+   },
+   "market_points": null,
+   "week_points": 4.66,
+   "market_words": null
   },
   {
    "gsis_id": "00-0037252",
@@ -421,7 +2088,70 @@
    "p90": 74.3,
    "pos_rank": 30,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kw4cwgjl4kywh6le4sfh",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 4.72,
+   "per_game": {
+    "targets": 3.2,
+    "receptions": 2.46,
+    "receiving_yards": 25.43,
+    "tds": 0.17
+   },
+   "why": {
+    "per": "game",
+    "points": 4.72,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.2,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.2 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.46,
+      "each": 0.5,
+      "points": 1.23,
+      "words": "2.5 catches × 0.5 = +1.2"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 25.43,
+      "each": 0.1,
+      "points": 2.54,
+      "words": "25 receiving yards × 0.1 = +2.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.17,
+      "each": 6.0,
+      "points": 1.02,
+      "words": "0.17 receiving TDs × 6 = +1.0"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.03,
+      "each": -2.0,
+      "points": -0.07,
+      "words": "0.03 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "3.2 targets → 2.5 catches → 25 yards → 0.17 TDs → 4.7 points a game × 12 games = 57",
+    "games": 12,
+    "total": 56.66
+   },
+   "market_points": null,
+   "week_points": 4.46,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036244",
@@ -435,7 +2165,62 @@
    "p90": 74.3,
    "pos_rank": 31,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qsyrgtfjj06wryahnxc9",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 4.7,
+   "per_game": {
+    "targets": 2.85,
+    "receptions": 2.31,
+    "receiving_yards": 25.15,
+    "tds": 0.18
+   },
+   "why": {
+    "per": "game",
+    "points": 4.7,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.85,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.9 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.31,
+      "each": 0.5,
+      "points": 1.15,
+      "words": "2.3 catches × 0.5 = +1.2"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 25.15,
+      "each": 0.1,
+      "points": 2.51,
+      "words": "25 receiving yards × 0.1 = +2.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.18,
+      "each": 6.0,
+      "points": 1.06,
+      "words": "0.18 receiving TDs × 6 = +1.1"
+     }
+    ],
+    "sentence": "2.9 targets → 2.3 catches → 25 yards → 0.18 TDs → 4.7 points a game × 12 games = 56",
+    "games": 12,
+    "total": 56.36
+   },
+   "market_points": null,
+   "week_points": 4.67,
+   "market_words": null
   },
   {
    "gsis_id": "00-0031610",
@@ -449,7 +2234,70 @@
    "p90": 71.8,
    "pos_rank": 32,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/loyehiyzcu2lexjk7plq",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 4.48,
+   "per_game": {
+    "targets": 3.13,
+    "receptions": 2.07,
+    "receiving_yards": 24.95,
+    "tds": 0.17
+   },
+   "why": {
+    "per": "game",
+    "points": 4.48,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.13,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.1 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.07,
+      "each": 0.5,
+      "points": 1.03,
+      "words": "2.1 catches × 0.5 = +1.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 24.95,
+      "each": 0.1,
+      "points": 2.5,
+      "words": "25 receiving yards × 0.1 = +2.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.17,
+      "each": 6.0,
+      "points": 1.02,
+      "words": "0.17 receiving TDs × 6 = +1.0"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.05,
+      "each": -2.0,
+      "points": -0.09,
+      "words": "0.05 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "3.1 targets → 2.1 catches → 25 yards → 0.17 TDs → 4.5 points a game × 12 games = 54",
+    "games": 12,
+    "total": 53.76
+   },
+   "market_points": null,
+   "week_points": 4.64,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035644",
@@ -463,7 +2311,70 @@
    "p90": 70.3,
    "pos_rank": 33,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lijnonbrcmplvkcb5kqv",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 4.43,
+   "per_game": {
+    "targets": 3.68,
+    "receptions": 2.34,
+    "receiving_yards": 24.06,
+    "tds": 0.15
+   },
+   "why": {
+    "per": "game",
+    "points": 4.43,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.68,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.7 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.34,
+      "each": 0.5,
+      "points": 1.17,
+      "words": "2.3 catches × 0.5 = +1.2"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 24.06,
+      "each": 0.1,
+      "points": 2.41,
+      "words": "24 receiving yards × 0.1 = +2.4"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.15,
+      "each": 6.0,
+      "points": 0.9,
+      "words": "0.15 receiving TDs × 6 = +0.9"
+     },
+     {
+      "stat": "rest",
+      "label": "the small pieces and rounding",
+      "value": null,
+      "each": null,
+      "points": -0.05,
+      "words": "the small pieces and rounding: -0.1"
+     }
+    ],
+    "sentence": "3.7 targets → 2.3 catches → 24 yards → 0.15 TDs → 4.4 points a game × 12 games = 53",
+    "games": 12,
+    "total": 53.22
+   },
+   "market_points": null,
+   "week_points": 4.93,
+   "market_words": null
   },
   {
    "gsis_id": "00-0037809",
@@ -477,7 +2388,70 @@
    "p90": 70.3,
    "pos_rank": 34,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pzcez6pi9tpdqkmjjnzk",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 4.42,
+   "per_game": {
+    "targets": 3.35,
+    "receptions": 2.44,
+    "receiving_yards": 24.36,
+    "tds": 0.13
+   },
+   "why": {
+    "per": "game",
+    "points": 4.42,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.35,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.3 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.44,
+      "each": 0.5,
+      "points": 1.22,
+      "words": "2.4 catches × 0.5 = +1.2"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 24.36,
+      "each": 0.1,
+      "points": 2.44,
+      "words": "24 receiving yards × 0.1 = +2.4"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.13,
+      "each": 6.0,
+      "points": 0.79,
+      "words": "0.13 receiving TDs × 6 = +0.8"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.03,
+      "each": -2.0,
+      "points": -0.06,
+      "words": "0.03 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "3.3 targets → 2.4 catches → 24 yards → 0.13 TDs → 4.4 points a game × 12 games = 53",
+    "games": 12,
+    "total": 53.0
+   },
+   "market_points": null,
+   "week_points": 4.6,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036290",
@@ -491,7 +2465,62 @@
    "p90": 70.7,
    "pos_rank": 35,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ysnui8mzlu2fo70ub0yt",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 4.4,
+   "per_game": {
+    "targets": 2.95,
+    "receptions": 2.02,
+    "receiving_yards": 24.07,
+    "tds": 0.17
+   },
+   "why": {
+    "per": "game",
+    "points": 4.4,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.95,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.9 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.02,
+      "each": 0.5,
+      "points": 1.01,
+      "words": "2.0 catches × 0.5 = +1.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 24.07,
+      "each": 0.1,
+      "points": 2.41,
+      "words": "24 receiving yards × 0.1 = +2.4"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.17,
+      "each": 6.0,
+      "points": 1.0,
+      "words": "0.17 receiving TDs × 6 = +1.0"
+     }
+    ],
+    "sentence": "2.9 targets → 2.0 catches → 24 yards → 0.17 TDs → 4.4 points a game × 12 games = 53",
+    "games": 12,
+    "total": 52.79
+   },
+   "market_points": null,
+   "week_points": 4.23,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040189",
@@ -505,7 +2534,62 @@
    "p90": 68.3,
    "pos_rank": 36,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/r8b4oghjwhw8x9nv1wbs",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 4.37,
+   "per_game": {
+    "targets": 3.18,
+    "receptions": 1.95,
+    "receiving_yards": 24.73,
+    "tds": 0.16
+   },
+   "why": {
+    "per": "game",
+    "points": 4.37,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.18,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.2 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.95,
+      "each": 0.5,
+      "points": 0.97,
+      "words": "1.9 catches × 0.5 = +1.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 24.73,
+      "each": 0.1,
+      "points": 2.47,
+      "words": "25 receiving yards × 0.1 = +2.5"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.16,
+      "each": 6.0,
+      "points": 0.95,
+      "words": "0.16 receiving TDs × 6 = +0.9"
+     }
+    ],
+    "sentence": "3.2 targets → 1.9 catches → 25 yards → 0.16 TDs → 4.4 points a game × 12 games = 52",
+    "games": 12,
+    "total": 52.44
+   },
+   "market_points": null,
+   "week_points": 4.19,
+   "market_words": null
   },
   {
    "gsis_id": "00-0041032",
@@ -519,7 +2603,70 @@
    "p90": 68.1,
    "pos_rank": 37,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mnswulwto4yqkgmugoiq",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 4.28,
+   "per_game": {
+    "targets": 3.39,
+    "receptions": 2.71,
+    "receiving_yards": 21.26,
+    "tds": 0.15
+   },
+   "why": {
+    "per": "game",
+    "points": 4.28,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.39,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.4 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.71,
+      "each": 0.5,
+      "points": 1.35,
+      "words": "2.7 catches × 0.5 = +1.4"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 21.26,
+      "each": 0.1,
+      "points": 2.13,
+      "words": "21 receiving yards × 0.1 = +2.1"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.15,
+      "each": 6.0,
+      "points": 0.9,
+      "words": "0.15 receiving TDs × 6 = +0.9"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.04,
+      "each": -2.0,
+      "points": -0.08,
+      "words": "0.04 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "3.4 targets → 2.7 catches → 21 yards → 0.15 TDs → 4.3 points a game × 12 games = 51",
+    "games": 12,
+    "total": 51.39
+   },
+   "market_points": null,
+   "week_points": 4.21,
+   "market_words": null
   },
   {
    "gsis_id": "00-0037005",
@@ -533,7 +2680,70 @@
    "p90": 68.5,
    "pos_rank": 38,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/t7wjikfv09d3o1q7wjdx",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 4.26,
+   "per_game": {
+    "targets": 3.32,
+    "receptions": 2.25,
+    "receiving_yards": 22.1,
+    "tds": 0.16
+   },
+   "why": {
+    "per": "game",
+    "points": 4.26,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.32,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.3 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.25,
+      "each": 0.5,
+      "points": 1.13,
+      "words": "2.3 catches × 0.5 = +1.1"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 22.1,
+      "each": 0.1,
+      "points": 2.21,
+      "words": "22 receiving yards × 0.1 = +2.2"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.16,
+      "each": 6.0,
+      "points": 0.97,
+      "words": "0.16 receiving TDs × 6 = +1.0"
+     },
+     {
+      "stat": "rest",
+      "label": "the small pieces and rounding",
+      "value": null,
+      "each": null,
+      "points": -0.05,
+      "words": "the small pieces and rounding: -0.1"
+     }
+    ],
+    "sentence": "3.3 targets → 2.3 catches → 22 yards → 0.16 TDs → 4.3 points a game × 12 games = 51",
+    "games": 12,
+    "total": 51.14
+   },
+   "market_points": null,
+   "week_points": 4.5,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039847",
@@ -547,7 +2757,62 @@
    "p90": 66.3,
    "pos_rank": 39,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fv2jbzlocr1o3ahkru43",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 4.2,
+   "per_game": {
+    "targets": 3.07,
+    "receptions": 2.0,
+    "receiving_yards": 24.42,
+    "tds": 0.13
+   },
+   "why": {
+    "per": "game",
+    "points": 4.2,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.07,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.1 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.0,
+      "each": 0.5,
+      "points": 1.0,
+      "words": "2.0 catches × 0.5 = +1.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 24.42,
+      "each": 0.1,
+      "points": 2.44,
+      "words": "24 receiving yards × 0.1 = +2.4"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.13,
+      "each": 6.0,
+      "points": 0.8,
+      "words": "0.13 receiving TDs × 6 = +0.8"
+     }
+    ],
+    "sentence": "3.1 targets → 2.0 catches → 24 yards → 0.13 TDs → 4.2 points a game × 12 games = 50",
+    "games": 12,
+    "total": 50.44
+   },
+   "market_points": null,
+   "week_points": 4.16,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035249",
@@ -561,7 +2826,62 @@
    "p90": 62.6,
    "pos_rank": 40,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/awdb5xedlbq0ebpptgzb",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 3.94,
+   "per_game": {
+    "targets": 2.6,
+    "receptions": 2.08,
+    "receiving_yards": 21.22,
+    "tds": 0.14
+   },
+   "why": {
+    "per": "game",
+    "points": 3.94,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.6,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.6 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.08,
+      "each": 0.5,
+      "points": 1.04,
+      "words": "2.1 catches × 0.5 = +1.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 21.22,
+      "each": 0.1,
+      "points": 2.12,
+      "words": "21 receiving yards × 0.1 = +2.1"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.14,
+      "each": 6.0,
+      "points": 0.81,
+      "words": "0.14 receiving TDs × 6 = +0.8"
+     }
+    ],
+    "sentence": "2.6 targets → 2.1 catches → 21 yards → 0.14 TDs → 3.9 points a game × 12 games = 47",
+    "games": 12,
+    "total": 47.29
+   },
+   "market_points": null,
+   "week_points": 4.31,
+   "market_words": null
   },
   {
    "gsis_id": "00-0032392",
@@ -575,7 +2895,62 @@
    "p90": 60.7,
    "pos_rank": 41,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dd0j9ccd8fxokl48alzg",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 3.86,
+   "per_game": {
+    "targets": 3.03,
+    "receptions": 2.07,
+    "receiving_yards": 21.24,
+    "tds": 0.12
+   },
+   "why": {
+    "per": "game",
+    "points": 3.86,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 3.03,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.0 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.07,
+      "each": 0.5,
+      "points": 1.03,
+      "words": "2.1 catches × 0.5 = +1.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 21.24,
+      "each": 0.1,
+      "points": 2.12,
+      "words": "21 receiving yards × 0.1 = +2.1"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.12,
+      "each": 6.0,
+      "points": 0.74,
+      "words": "0.12 receiving TDs × 6 = +0.7"
+     }
+    ],
+    "sentence": "3.0 targets → 2.1 catches → 21 yards → 0.12 TDs → 3.9 points a game × 12 games = 46",
+    "games": 12,
+    "total": 46.27
+   },
+   "market_points": null,
+   "week_points": 3.67,
+   "market_words": null
   },
   {
    "gsis_id": "00-0041558",
@@ -589,7 +2964,62 @@
    "p90": 60.6,
    "pos_rank": 42,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jqkmmguw4934lyjgvuip",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 3.85,
+   "per_game": {
+    "targets": 2.87,
+    "receptions": 1.98,
+    "receiving_yards": 20.7,
+    "tds": 0.14
+   },
+   "why": {
+    "per": "game",
+    "points": 3.85,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.87,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.9 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.98,
+      "each": 0.5,
+      "points": 0.99,
+      "words": "2.0 catches × 0.5 = +1.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 20.7,
+      "each": 0.1,
+      "points": 2.07,
+      "words": "21 receiving yards × 0.1 = +2.1"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.14,
+      "each": 6.0,
+      "points": 0.83,
+      "words": "0.14 receiving TDs × 6 = +0.8"
+     }
+    ],
+    "sentence": "2.9 targets → 2.0 catches → 21 yards → 0.14 TDs → 3.9 points a game × 12 games = 46",
+    "games": 12,
+    "total": 46.23
+   },
+   "market_points": null,
+   "week_points": 3.85,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039814",
@@ -603,7 +3033,62 @@
    "p90": 58.0,
    "pos_rank": 43,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ifkhcxze7lnxkpzjvsmk",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 3.67,
+   "per_game": {
+    "targets": 2.72,
+    "receptions": 2.21,
+    "receiving_yards": 18.23,
+    "tds": 0.13
+   },
+   "why": {
+    "per": "game",
+    "points": 3.67,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.72,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.7 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.21,
+      "each": 0.5,
+      "points": 1.1,
+      "words": "2.2 catches × 0.5 = +1.1"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 18.23,
+      "each": 0.1,
+      "points": 1.82,
+      "words": "18.2 receiving yards × 0.1 = +1.8"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.13,
+      "each": 6.0,
+      "points": 0.77,
+      "words": "0.13 receiving TDs × 6 = +0.8"
+     }
+    ],
+    "sentence": "2.7 targets → 2.2 catches → 18.2 yards → 0.13 TDs → 3.7 points a game × 12 games = 44",
+    "games": 12,
+    "total": 44.0
+   },
+   "market_points": null,
+   "week_points": 3.96,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035689",
@@ -617,7 +3102,62 @@
    "p90": 58.3,
    "pos_rank": 44,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/k8bi9ppahwfmoxs8ij4w",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 3.65,
+   "per_game": {
+    "targets": 2.35,
+    "receptions": 1.84,
+    "receiving_yards": 19.19,
+    "tds": 0.14
+   },
+   "why": {
+    "per": "game",
+    "points": 3.65,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.35,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.4 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.84,
+      "each": 0.5,
+      "points": 0.92,
+      "words": "1.8 catches × 0.5 = +0.9"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 19.19,
+      "each": 0.1,
+      "points": 1.92,
+      "words": "19.2 receiving yards × 0.1 = +1.9"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.14,
+      "each": 6.0,
+      "points": 0.84,
+      "words": "0.14 receiving TDs × 6 = +0.8"
+     }
+    ],
+    "sentence": "2.4 targets → 1.8 catches → 19.2 yards → 0.14 TDs → 3.7 points a game × 12 games = 44",
+    "games": 12,
+    "total": 43.81
+   },
+   "market_points": null,
+   "week_points": 3.89,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035631",
@@ -631,7 +3171,70 @@
    "p90": 56.6,
    "pos_rank": 45,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mmxrr2k7gdfowqpyxtr7",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 3.58,
+   "per_game": {
+    "targets": 2.58,
+    "receptions": 2.02,
+    "receiving_yards": 18.5,
+    "tds": 0.13
+   },
+   "why": {
+    "per": "game",
+    "points": 3.58,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.58,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.6 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.02,
+      "each": 0.5,
+      "points": 1.01,
+      "words": "2.0 catches × 0.5 = +1.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 18.5,
+      "each": 0.1,
+      "points": 1.85,
+      "words": "18.5 receiving yards × 0.1 = +1.9"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.13,
+      "each": 6.0,
+      "points": 0.77,
+      "words": "0.13 receiving TDs × 6 = +0.8"
+     },
+     {
+      "stat": "rest",
+      "label": "the small pieces and rounding",
+      "value": null,
+      "each": null,
+      "points": -0.05,
+      "words": "the small pieces and rounding: -0.1"
+     }
+    ],
+    "sentence": "2.6 targets → 2.0 catches → 18.5 yards → 0.13 TDs → 3.6 points a game × 12 games = 43",
+    "games": 12,
+    "total": 43.0
+   },
+   "market_points": null,
+   "week_points": 3.87,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033246",
@@ -645,7 +3248,62 @@
    "p90": 54.4,
    "pos_rank": 46,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gbsnomwbzavt5124vvaz",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 3.38,
+   "per_game": {
+    "targets": 2.47,
+    "receptions": 1.68,
+    "receiving_yards": 18.38,
+    "tds": 0.12
+   },
+   "why": {
+    "per": "game",
+    "points": 3.38,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.47,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.5 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.68,
+      "each": 0.5,
+      "points": 0.84,
+      "words": "1.7 catches × 0.5 = +0.8"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 18.38,
+      "each": 0.1,
+      "points": 1.84,
+      "words": "18.4 receiving yards × 0.1 = +1.8"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.12,
+      "each": 6.0,
+      "points": 0.74,
+      "words": "0.12 receiving TDs × 6 = +0.7"
+     }
+    ],
+    "sentence": "2.5 targets → 1.7 catches → 18.4 yards → 0.12 TDs → 3.4 points a game × 12 games = 41",
+    "games": 12,
+    "total": 40.57
+   },
+   "market_points": null,
+   "week_points": 3.36,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033110",
@@ -659,7 +3317,70 @@
    "p90": 53.2,
    "pos_rank": 47,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/x1d4osiefibd04df6gow",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 3.34,
+   "per_game": {
+    "targets": 2.23,
+    "receptions": 1.38,
+    "receiving_yards": 18.8,
+    "tds": 0.14
+   },
+   "why": {
+    "per": "game",
+    "points": 3.34,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.23,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.2 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.38,
+      "each": 0.5,
+      "points": 0.69,
+      "words": "1.4 catches × 0.5 = +0.7"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 18.8,
+      "each": 0.1,
+      "points": 1.88,
+      "words": "18.8 receiving yards × 0.1 = +1.9"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.14,
+      "each": 6.0,
+      "points": 0.82,
+      "words": "0.14 receiving TDs × 6 = +0.8"
+     },
+     {
+      "stat": "rest",
+      "label": "the small pieces and rounding",
+      "value": null,
+      "each": null,
+      "points": -0.05,
+      "words": "the small pieces and rounding: -0.1"
+     }
+    ],
+    "sentence": "2.2 targets → 1.4 catches → 18.8 yards → 0.14 TDs → 3.3 points a game × 12 games = 40",
+    "games": 12,
+    "total": 40.1
+   },
+   "market_points": null,
+   "week_points": 3.37,
+   "market_words": null
   },
   {
    "gsis_id": "00-0041503",
@@ -673,7 +3394,62 @@
    "p90": 53.4,
    "pos_rank": 48,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/bxglkvzpx2y40u25xaso",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 3.32,
+   "per_game": {
+    "targets": 2.25,
+    "receptions": 1.7,
+    "receiving_yards": 17.35,
+    "tds": 0.12
+   },
+   "why": {
+    "per": "game",
+    "points": 3.32,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.25,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.3 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.7,
+      "each": 0.5,
+      "points": 0.85,
+      "words": "1.7 catches × 0.5 = +0.8"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 17.35,
+      "each": 0.1,
+      "points": 1.74,
+      "words": "17.4 receiving yards × 0.1 = +1.7"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.12,
+      "each": 6.0,
+      "points": 0.74,
+      "words": "0.12 receiving TDs × 6 = +0.7"
+     }
+    ],
+    "sentence": "2.3 targets → 1.7 catches → 17.4 yards → 0.12 TDs → 3.3 points a game × 12 games = 40",
+    "games": 12,
+    "total": 39.81
+   },
+   "market_points": null,
+   "week_points": 3.54,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033858",
@@ -687,7 +3463,70 @@
    "p90": 54.8,
    "pos_rank": 49,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/egd6llghj3n5wfdrqacw",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 3.23,
+   "per_game": {
+    "targets": 2.88,
+    "receptions": 1.82,
+    "receiving_yards": 16.31,
+    "tds": 0.12
+   },
+   "why": {
+    "per": "game",
+    "points": 3.23,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.88,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.9 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.82,
+      "each": 0.5,
+      "points": 0.91,
+      "words": "1.8 catches × 0.5 = +0.9"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 16.31,
+      "each": 0.1,
+      "points": 1.63,
+      "words": "16.3 receiving yards × 0.1 = +1.6"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.12,
+      "each": 6.0,
+      "points": 0.74,
+      "words": "0.12 receiving TDs × 6 = +0.7"
+     },
+     {
+      "stat": "rest",
+      "label": "the small pieces and rounding",
+      "value": null,
+      "each": null,
+      "points": -0.05,
+      "words": "the small pieces and rounding: -0.1"
+     }
+    ],
+    "sentence": "2.9 targets → 1.8 catches → 16.3 yards → 0.12 TDs → 3.2 points a game × 12 games = 39",
+    "games": 12,
+    "total": 38.72
+   },
+   "market_points": null,
+   "week_points": 3.32,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036628",
@@ -701,7 +3540,131 @@
    "p90": 50.7,
    "pos_rank": 50,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/sqaiwpind6kk4ns4acql",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 3.21,
+   "per_game": {
+    "targets": 2.69,
+    "receptions": 1.96,
+    "receiving_yards": 15.61,
+    "tds": 0.12
+   },
+   "why": {
+    "per": "game",
+    "points": 3.21,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.69,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.7 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.96,
+      "each": 0.5,
+      "points": 0.98,
+      "words": "2.0 catches × 0.5 = +1.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 15.61,
+      "each": 0.1,
+      "points": 1.56,
+      "words": "15.6 receiving yards × 0.1 = +1.6"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.12,
+      "each": 6.0,
+      "points": 0.71,
+      "words": "0.12 receiving TDs × 6 = +0.7"
+     }
+    ],
+    "sentence": "2.7 targets → 2.0 catches → 15.6 yards → 0.12 TDs → 3.2 points a game × 12 games = 39",
+    "games": 12,
+    "total": 38.57
+   },
+   "market_points": null,
+   "week_points": 3.25,
+   "market_words": null
   }
- ]
+ ],
+ "piece_columns": {
+  "QB": [
+   "attempts",
+   "passing_yards",
+   "passing_tds",
+   "passing_interceptions"
+  ],
+  "RB": [
+   "carries",
+   "rushing_yards",
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ],
+  "WR": [
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ],
+  "TE": [
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ]
+ },
+ "leans_on": {
+  "QB": {
+   "features": [
+    "is he the projected starter?",
+    "points Vegas expects his team to score",
+    "pass attempts per game, last 3 games"
+   ],
+   "words": "For QBs the model leans most on **is he the projected starter?**. Next: points Vegas expects his team to score · pass attempts per game, last 3 games.",
+   "scored_in": "League of Scrubs"
+  },
+  "RB": {
+   "features": [
+    "share of his team's carries, last 3 games",
+    "rushing yards per game, season",
+    "share of his team's targets, season"
+   ],
+   "words": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: rushing yards per game, season · share of his team's targets, season.",
+   "scored_in": "League of Scrubs"
+  },
+  "WR": {
+   "features": [
+    "snap share, last 3 games",
+    "expected points per game (what his touches are worth), season",
+    "receiving yards per game, last season"
+   ],
+   "words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+   "scored_in": "League of Scrubs"
+  },
+  "TE": {
+   "features": [
+    "share of his team's targets, season",
+    "snap share, last 3 games",
+    "receiving yards per game, last season"
+   ],
+   "words": "For TEs the model leans most on **share of his team's targets, season**. Next: snap share, last 3 games · receiving yards per game, last season.",
+   "scored_in": "League of Scrubs"
+  }
+ },
+ "market_week": 4,
+ "market_note": "Sleeper's number is this week's, in this league's scoring, where Sleeper has one; the list's totals are ours.",
+ "howto_rankings": "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are down reads lower than his name; a quarterback who starts and throws 35 times a game counts like any starter while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is far from it, open his card and read why before you trade on it."
 }

@@ -246,11 +246,34 @@ def rosters(league_id: str, response: Response, source: str | None = None):
 # ---- end I0-B
 
 
+# ---- IA-3 (Wave I-A): `market_points` on My Week's lineup rows (Sleeper's number for the week, this league's
+# scoring; None where the market mart has no row — why.market_points)
+def why_market_rows(out: dict, league: str, *, house: bool) -> dict:
+    from . import why
+    try:
+        rows = [r for k in ("lineup", "lineup_full") for r in (out.get(k) or [])]
+        if not rows:
+            return out
+        if house:
+            season, scoring = ondemand._scoring_of(league, None, True)
+        else:
+            season, scoring = ondemand._scoring_of(league, ondemand.A.sleeper().league(league), False)
+        week = out.get("week")
+        m = why.market_points(season, week, [r.get("gsis_id") for r in rows], scoring)
+    except Exception:  # noqa: BLE001 - My Week never fails for the market line
+        m = {}
+    for k in ("lineup", "lineup_full"):
+        for r in out.get(k) or []:
+            r["market_points"] = m.get(str(r.get("gsis_id"))) if r.get("gsis_id") else None
+    return out
+# ---- end IA-3
+
+
 @app.get("/api/my-week", dependencies=[Depends(require_auth)])
 def my_week(league: str, team: int, response: Response, source: str | None = None):
     if source == "sleeper" or not myweek.known_league(league):
-        return _json(ondemand.my_week(league, team), response)
-    return _json(myweek.my_week(league, team), response)
+        return _json(why_market_rows(ondemand.my_week(league, team), league, house=False), response)   # ---- IA-3
+    return _json(why_market_rows(myweek.my_week(league, team), league, house=True), response)         # ---- IA-3
 
 
 @app.get("/api/player/{gsis}", dependencies=[Depends(require_auth)])

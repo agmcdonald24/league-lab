@@ -3490,6 +3490,43 @@ was "running hot". Cause: availability came only from nflverse's injury file via
   19); web lint / build clean; `e2e:fixtures` 60 passed (58 + 2: `web/e2e/i0a/`); parity tests untouched and green.
 - **Off switch**: `LEAGUE_LAB_AVAILABILITY=off`; off in fixture mode unless `LEAGUE_LAB_ESPN_FIXTURES` is set.
 
+## Wave I-A (Iteration 17, part A)
+
+### IA-3 2026-10-03 — the rankings: more to see, and "why this number" (dev/IA3)
+
+* **Rest of season** (`Ros.svelte`, `ros.ts`): headshot, bye ("bye 11 ·" before the owner), games left, ROS points, a
+  floor–ceiling range bar (from 640 px), playoffs, and the position's stat line a game as columns from 900 px; every
+  column sorts (header buttons, `aria-sort`, ▲ / ▼); a `›` on every row opens the pieces as tiles, the facts line,
+  "Why this number" and — where it exists — the market line and what the model leans on for the position. A phone
+  (375) shows rank · name · points · `›`. "How to read the rankings" (`about.RANKINGS_HOWTO`, also `/api/about`
+  `rankings_howto`) sits under the answer.
+* **API** (`ondemand.ros_rows` / `ros_more`, marked IA-3): rows + `headshot_url`, `bye_weeks`, `ros_points_per_game`,
+  `per_game`, `why` (pieces, sentence, games, total), `market_points`, `week_points`, `market_words`; the answer +
+  `piece_columns`, `leans_on`, `market_week`, `market_note`, `howto_rankings`. House leagues sum
+  `mart_player_week_projections`' per-week lines over the weeks `weeks_json` counts (byes out, the mart's window);
+  any other league reads `anyleague._ros_table`'s new `ros_<stat>` sums (the stat line now rides through
+  `skill_window` / `_priced_frames`). `/api/player` + `why` / `market` / `leans_on` (top-level keys: the sections stay
+  the page's, parity untouched); `/api/my-week` rows + `market_points` (`main.why_market_rows`, marked).
+* **The pieces** (`why.py`): per-unit prices from the league's scoring (`weights`: every stat key, position premiums);
+  each listed piece is rounded to the cent and a remainder line ("yardage bonuses …" / "the small pieces and
+  rounding") makes the list add up; a remainder under 0.05 is no line.
+* **The market** (`why.market_points`): `mart_projection_record` holds per-position aggregates, not player rows, and
+  the API role cannot read `raw`; so the market reads a proposed league-free mart `analytics.mart_market_line`
+  (docs/DATA_MODEL.md), priced per league with `scoring.compute_points`. Not built (dbt is the PO's): every answer says
+  `market_points: null` and the card "Sleeper's number for this week is not in yet." Checked live in this clone: the
+  proposed SQL built from the hand-built Sleeper fixture (`tests/fixtures/sleeper_projections`, 29 players) gave
+  `market_points` on 28 ROS rows per league (Scrubs, dynasty, Test League), the card and My Week; table and rows
+  removed afterwards.
+* Timings (in process, warm): `/api/ros` Scrubs ALL 114 ms, WR 22 ms (the per-week line sums vectorised); Test League
+  ALL ~2.0 s cold (the window board), WR 65 ms warm. Answer ~80–100 KB uncompressed for 50 rows.
+* Checks: `api/tests/test_ia3.py` 13 (the pieces add up for 10 rows × 4 positions × Scrubs / dynasty / Test League;
+  market null without the mart, empty mart, failing read; present and priced per league with a constructed mart on
+  `/api/ros`, `/api/player`, `/api/my-week`; the gap words; the honesty paragraph is one text); `test_f3`'s ROS key
+  set updated; API suite 237 passed; root 834 passed, 2 skipped; ruff clean; web lint / build clean;
+  `npm run e2e:fixtures` 74 passed (66 + 8 in `web/e2e/ia3/`; `fixtures.spec.ts`' ROS header list updated).
+  Fixtures: `web/fixtures/save_ia3_fixtures.py` adds the new fields to `ros_*.json` / `player/*.json` in place
+  (numbers untouched; a row whose total differs keeps no pieces).
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

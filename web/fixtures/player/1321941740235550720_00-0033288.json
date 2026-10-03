@@ -191,5 +191,72 @@
   "from_week": 4,
   "last_week": 17
  },
- "missing": []
+ "missing": [],
+ "why": {
+  "per": "week",
+  "points": 10.36,
+  "pieces": [
+   {
+    "stat": "targets",
+    "label": "targets",
+    "value": 5.8,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "5.8 targets (no points on their own)"
+   },
+   {
+    "stat": "receptions",
+    "label": "catches",
+    "value": 3.7,
+    "each": 1.0,
+    "points": 3.7,
+    "words": "3.7 catches × 1 = +3.7"
+   },
+   {
+    "stat": "receiving_yards",
+    "label": "receiving yards",
+    "value": 45.2,
+    "each": 0.1,
+    "points": 4.52,
+    "words": "45 receiving yards × 0.1 = +4.5"
+   },
+   {
+    "stat": "receiving_tds",
+    "label": "receiving TDs",
+    "value": 0.37,
+    "each": 6.0,
+    "points": 2.22,
+    "words": "0.37 receiving TDs × 6 = +2.2"
+   },
+   {
+    "stat": "rest",
+    "label": "the small pieces and rounding",
+    "value": null,
+    "each": null,
+    "points": -0.08,
+    "words": "the small pieces and rounding: -0.1"
+   }
+  ],
+  "sentence": "5.8 targets → 3.7 catches → 45 yards → 0.37 TDs → 10.4 points this week",
+  "games": null,
+  "total": null
+ },
+ "market": {
+  "market_points": null,
+  "ours": 10.36,
+  "ratio": null,
+  "week": 4,
+  "words": null,
+  "why": "Sleeper's number for this week is not in yet.",
+  "far": false
+ },
+ "leans_on": {
+  "features": [
+   "share of his team's targets, season",
+   "snap share, last 3 games",
+   "receiving yards per game, last season"
+  ],
+  "words": "For TEs the model leans most on **share of his team's targets, season**. Next: snap share, last 3 games · receiving yards per game, last season.",
+  "scored_in": "League of Scrubs"
+ }
 }

@@ -151,5 +151,72 @@
   "playoff_points": 27.19,
   "from_week": 4,
   "last_week": 16
+ },
+ "why": {
+  "per": "week",
+  "points": 13.47,
+  "pieces": [
+   {
+    "stat": "targets",
+    "label": "targets",
+    "value": 9.3,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "9.3 targets (no points on their own)"
+   },
+   {
+    "stat": "receptions",
+    "label": "catches",
+    "value": 6.2,
+    "each": 0.5,
+    "points": 3.1,
+    "words": "6.2 catches × 0.5 = +3.1"
+   },
+   {
+    "stat": "receiving_yards",
+    "label": "receiving yards",
+    "value": 78.8,
+    "each": 0.1,
+    "points": 7.88,
+    "words": "79 receiving yards × 0.1 = +7.9"
+   },
+   {
+    "stat": "receiving_tds",
+    "label": "receiving TDs",
+    "value": 0.41,
+    "each": 6.0,
+    "points": 2.46,
+    "words": "0.41 receiving TDs × 6 = +2.5"
+   },
+   {
+    "stat": "rushing_yards",
+    "label": "rushing yards",
+    "value": 0.6,
+    "each": 0.1,
+    "points": 0.06,
+    "words": "0.60 rushing yards × 0.1 = +0.1"
+   }
+  ],
+  "sentence": "9.3 targets → 6.2 catches → 79 yards → 0.41 TDs → 13.5 points this week",
+  "games": null,
+  "total": null
+ },
+ "market": {
+  "market_points": null,
+  "ours": 13.47,
+  "ratio": null,
+  "week": 4,
+  "words": null,
+  "why": "Sleeper's number for this week is not in yet.",
+  "far": false
+ },
+ "leans_on": {
+  "features": [
+   "snap share, last 3 games",
+   "expected points per game (what his touches are worth), season",
+   "receiving yards per game, last season"
+  ],
+  "words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+  "scored_in": "League of Scrubs"
  }
 }

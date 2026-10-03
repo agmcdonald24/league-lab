@@ -151,5 +151,64 @@
   "playoff_points": 16.84,
   "from_week": 4,
   "last_week": 16
+ },
+ "why": {
+  "per": "week",
+  "points": 9.61,
+  "pieces": [
+   {
+    "stat": "targets",
+    "label": "targets",
+    "value": 6.3,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "6.3 targets (no points on their own)"
+   },
+   {
+    "stat": "receptions",
+    "label": "catches",
+    "value": 3.8,
+    "each": 0.5,
+    "points": 1.9,
+    "words": "3.8 catches × 0.5 = +1.9"
+   },
+   {
+    "stat": "receiving_yards",
+    "label": "receiving yards",
+    "value": 55.0,
+    "each": 0.1,
+    "points": 5.5,
+    "words": "55 receiving yards × 0.1 = +5.5"
+   },
+   {
+    "stat": "receiving_tds",
+    "label": "receiving TDs",
+    "value": 0.37,
+    "each": 6.0,
+    "points": 2.22,
+    "words": "0.37 receiving TDs × 6 = +2.2"
+   }
+  ],
+  "sentence": "6.3 targets → 3.8 catches → 55 yards → 0.37 TDs → 9.6 points this week",
+  "games": null,
+  "total": null
+ },
+ "market": {
+  "market_points": null,
+  "ours": 9.61,
+  "ratio": null,
+  "week": 4,
+  "words": null,
+  "why": "Sleeper's number for this week is not in yet.",
+  "far": false
+ },
+ "leans_on": {
+  "features": [
+   "share of his team's targets, season",
+   "snap share, last 3 games",
+   "receiving yards per game, last season"
+  ],
+  "words": "For TEs the model leans most on **share of his team's targets, season**. Next: snap share, last 3 games · receiving yards per game, last season.",
+  "scored_in": "League of Scrubs"
  }
 }

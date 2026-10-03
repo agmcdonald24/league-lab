@@ -127,7 +127,10 @@ test("a stranger: password → username → picker → My Week → player → Ba
     "#1 WR for the rest of the season: Puka Nacua, 185 points over 12 games (likely 150–219) · playoffs: 30.",
   );
   await expect(page.getByTestId("ros-yours")).toContainText("Yours: #3 Jaxon Smith-Njigba 178");
-  expect(await page.getByTestId("ros-table").locator("thead th").allTextContents()).toEqual(["Rank", "Player", "Points", "Games", "Playoffs"]);
+  // IA-3 (Wave I-A): sortable headers (the sorted one marked), the range, the pieces from 900 px, the expand column
+  expect((await page.getByTestId("ros-table").locator("thead th").allTextContents()).map((t) => t.trim())).toEqual(
+    ["Rank▲", "Player", "Games", "Points", "Likely", "Playoffs", "Tgt", "Rec", "Rec yd", "TD", "More"],
+  );
   await expect(page.getByTestId("ros-table").locator("tbody tr")).toHaveCount(50);
   await noSidewaysScroll(page);
   await shot(page, "ros_test", project, false);
