@@ -1504,3 +1504,70 @@ export interface UpsideStash {
   drop_cost?: (Partial<DropCost> & { cost: number | null }) | null;
 }
 // ---- end IF-1
+
+// ---- IF-3 (Wave I-F, the decision-quality review § Priority 1): the matchup evidence object (research.matchup_evidence)
+// on /api/compare (`a` / `b`), the player card (`matchup_evidence`) and /api/matchups/cb rows (receivers only). Three
+// parts kept apart — the history, what changed in the defense's corners, the implication — plus the forecast's treatment
+// ("contextual only; not in the forecast": the projection has no opponent-personnel input) and the two sentences.
+export interface EvidencePerson {
+  gsis_id: string;
+  name: string;
+}
+export interface MatchupEvidence {
+  gsis_id: string;
+  player_name: string;
+  position: string;
+  season: number;
+  week: number;
+  opponent: string;
+  opponent_name: string;
+  is_home: boolean | null;
+  history: {
+    rank_most: number | null; // 1 = gives up the most
+    tough_rank: number | null; // 1 = gives up the fewest
+    n: number | null;
+    words: string | null; // "gives up the 2nd-fewest points to receivers"
+    games: number | null;
+    period: string | null; // "2026, weeks 1–3"
+    points_allowed_pg: number | null;
+    scoring: string;
+    adjusted: boolean;
+    adjusted_words: string;
+    adjusted_rank: { rank_most: number | null; n: number | null; words: string | null; scoring: string } | null;
+  };
+  changed: {
+    kind: "changed" | "same" | "unknown" | "not_checked";
+    depth_chart_at: string | null;
+    regulars: (EvidencePerson & { share: number; coverage_snaps: number; games: number })[];
+    listed: (EvidencePerson & { slot: string })[];
+    missing: (EvidencePerson & {
+      status: string | null;
+      code: string | null;
+      source: string | null;
+      as_of: string | null;
+      date_words?: string | null;
+      note: string | null;
+      reason: "status" | "depth chart";
+    })[];
+    expected: (EvidencePerson & { slot: string; replaces: string | null; is_new: boolean; rank: number | null; rank_words?: string })[];
+    words: string | null;
+  };
+  implication: { kind: "less_representative" | "stands" | "unknown" | "unchecked"; words: string };
+  forecast_treatment: { kind: "contextual"; words: string; detail: string; features: string[] };
+  matchup_uncertain: boolean;
+  caveat: string | null;
+  sentences: string[];
+}
+export interface CompareSide {
+  matchup_evidence?: MatchupEvidence | null;
+}
+export interface Compare {
+  verdict?: string;
+}
+export interface PlayerCard {
+  matchup_evidence?: MatchupEvidence | null;
+}
+export interface CbMatchup {
+  matchup_evidence?: MatchupEvidence | null;
+}
+// ---- end IF-3

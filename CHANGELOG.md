@@ -13,6 +13,14 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 - IF-1: waiver drops are valued before they are prescribed — each drop's cost in pieces (lineup loss with the claim, depth, later starts, season value above the waiver wire, upside); the cheapest drop per claim, one alternative and why (Carlson for McPherson, not Harrison); "No claim is worth a roster spot this week"; stashes say "watch" instead of a drop; `best_waiver_move` for the trade finder.
 
+- **IF-3 (matchup evidence and current personnel).** A defense's rank against receivers now comes with the corners it
+  was earned with: Compare, the player card / pane (under "Next:") and Matchups' cornerback rows say the history
+  (games, period, scoring, not adjusted for the offenses faced), what changed (a regular corner on IR / out per the
+  ESPN–Sleeper overlay with its source and date, or no longer on the depth chart; who starts instead, ranked or
+  "unranked (insufficient snaps)"), what it means ("the historical rank is less representative this week") and that the
+  forecast does not know it ("contextual only; not in the forecast"). A changed defense never breaks a coin flip or
+  leans the compare's verdict; `cards.decision_cards` carries `matchup_uncertain` for My Week. No number moved.
+
 ## 2026-10-03 — Wave I-E
 
 - **PO (integration).** The trade verdict says what each starting lineup gains and what the season value says —
