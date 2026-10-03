@@ -4495,3 +4495,69 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   sources and https links, stale → [], outage → [] and 200, off → [] and 0 calls, fixture mode without ESPN → [],
   Waivers + Trends → 0 news calls). `web/e2e/n1/` 5 × phone (375) / desktop: the line on the page and in the pane,
   no line without news, ESPN's own story, About's sentence.
+
+## Wave I-E (Iteration 17, part E)
+
+### IE-1 2026-10-03 — the weekly action list, Waivers this week first, the effect dial, the cheaper package
+
+* **Why**: the third outside review (`docs/reviews/2026-10-03-mfl-70587-usability-review.md`, § P1 "weekly action
+  list", "waiver horizons", "interest dial", "unnecessary extra assets"): a manager who does not enjoy analytics must
+  see what to do, why, who starts instead and whether anything is submitted, without the methodology.
+* **My Week** (`myweek.build_actions`, both paths; `GET /api/my-week` gains `actions`, `set_line`, `next_lock`,
+  `edit_link`, `nothing_submitted`, `platform_name`; each card gains `key`, `alt_key`, `tiebreak`, `action`): at most
+  three actions, the most urgent first — `change` (the submitted lineup — Sleeper's `starters`, MFL's through the
+  translation — differs from the suggested one by ≥ 0.5 projected points or starts a player who cannot play), `close`
+  (a coin flip with an injury status in it), `move` (Waivers' new `home_action`: the claim that adds most to this
+  week's starters, ≥ 0.5, added by the page when there is room). Cards that share a player are ONE action
+  (union-find over the keys; the submitted lineup's differences join them). The suggested lineup is the best lineup
+  except where a coin flip's tiebreaker is an injury (`cards.tiebreak`, the same pieces as the card's sentence): the
+  healthy player starts. A clear / lean call already in the lineup, and a difference under 0.5 with nobody hurt, are
+  not actions: the `set_line` says the rest is set. Nothing at all submitted → one action ("Set your MFL lineup").
+  The page: the action (one sentence, players linked), the reason and what could change it, "Already in your MFL
+  lineup — nothing to change." / "Not in your Sleeper lineup yet …", the lock ("before Sun 4:05 PM ET": the first
+  kickoff among the players the action swaps), "Why? The numbers behind it" (the old cards' sentences and small print,
+  Compare), then the set line, **Open MFL to edit your lineup ↗** (`<host>/<year>/options?L=<id>&O=02`) / **Open
+  Sleeper …** (`sleeper.com/leagues/<id>`), and "League Lab never changes your lineup or claims; it tells you what to
+  do in your league's app." An answer without `actions` (recorded before this wave) still renders the old cards.
+* **Waivers** (`decisions._ie1_present` at the end of `waiver_views`): every card gains `lead` ("Falcons defense instead
+  of Jaguars: about 1 more starter point this week"), `total_words` ("+12.8 over weeks 4–7 in total") and
+  `alternative_to` (an earlier card that takes the same spot this week: "Instead of Devaughn Vele:"); the claim card's
+  big number is this week's gain, labelled "this week", the window's total the second line; the screen's answer is
+  `answer` ("The three strongest claims are below, each with what it adds this week.") — not the first card again;
+  Help now lists what the three do not already show; `not_additive` under the three.
+* **The dial** (`decisions.interest` → `effect_label`, `need_words`; `Dial.svelte`): "Effect on their starters" —
+  Makes their lineup weaker (< −0.05) · About even (−0.05–2) · Improves their lineup (2–6) · Improves it a lot (> 6),
+  the need it fills ("It starts at their WR/TE over Wan'Dale Robinson."); no 0–100 on screen, no "interest", no "hard
+  to say no". Same number, same thresholds, same needle. METRICS § renamed (ti1.1).
+* **The Finder** (`decisions._ie1_cheaper`): a two-for-one whose single-player sub-package reaches the same gain for
+  you (< 0.05) and still raises both lineups is led by that one-for-one (`is_best`, the headline, `cheaper_than`); the
+  two-for-one names the extra player `optional` with his rest-of-season points.
+* **Evidence — the review's roster, MFL 70587 team 8 (overlay on).** Before: three cards — "WR/TE 3: McConkey or
+  Addison — a coin flip (Go with Addison: McConkey is questionable)", "WR/TE 2: Nabers or Addison — a coin flip (Go
+  with Nabers on the matchup)", "RB2: Keep McCaffrey over Tuten (clear)". After: **1 lineup action** — "≈ Close call ·
+  WR/TE 2 · WR/TE 3 · before Sun 4:05 PM ET — Keep Addison and Nabers ahead of McConkey for now. Their projections are
+  close (within 0.5 points); McConkey's questionable status breaks the tie. Check his status again before kickoff. ✓
+  Already in your MFL lineup — nothing to change." (both cards behind its Why?), then "+ Waiver claim · WR/TE 2 — Claim
+  Dalton Schultz: about 3 more starter points this week." (+8.1 over weeks 4–7 in total), "✓ The rest of your lineup
+  is set — nothing to change.", the MFL link, the nothing-submitted line. Cards' numbers unchanged (6.88 / 6.60 / 0.28,
+  7.11 / 6.60 / 0.51, 15.45 / 9.72 / 5.73; lineup 30.40 … 10.81).
+* **Evidence — League of Scrubs roster 2 (overlay on).** Before: three cards — "FLEX2: Wilson or Croskey-Merritt — a
+  coin flip", "FLEX1: Keep Tuten over Croskey-Merritt", "RB2: Keep Hampton over Croskey-Merritt" — none said that
+  Sleeper's lineup still starts Justin Jefferson (Out). After: "⚠︎ Change needed · FLEX2 · before Sun 9:30 AM ET —
+  Start Wilson at FLEX (or Croskey-Merritt: a coin flip) in place of Jefferson. Jefferson is out; the change is worth
+  about 9 more projected points this week. Wilson and Croskey-Merritt are level by the projection; the matchup leans
+  Croskey-Merritt. → Not in your Sleeper lineup yet: make the change in Sleeper." (the three cards behind its Why?),
+  the set line, the Sleeper link. Waivers' claim (Reichard for McLaughlin, about 2 more starter points this week) is
+  not added: it drops Croskey-Merritt, whom the action names (a claim is added only when it neither adds nor drops a
+  player an action names).
+* **The review's package** (`give=[mfl:0682, 12490] get=[10229]`, team 8 ↔ 12, on the fixture): −8.58 this week and
+  −2.42 over weeks 4–7 for Big Mac Attack with Tuten and without him (+23.15 / +21.35 for Madeyes Revenge): Tuten is the
+  optional asset. On the Finder (team 12 → Knight Train): "Rashee Rice for Cincinnati Bengals QB" (+19.8) now leads,
+  "Adding RJ Harvey does not change your gain; it costs you RB depth (RJ Harvey: 97 season points)" on the two-for-one.
+* **Tests**: `api/tests/test_ie1.py` (10: both rosters' actions, the rules on hand-built frames — set lineup, tiny
+  difference, an Out starter first and at most three, unknown submitted lineup — Waivers this week first / cumulative
+  / no triple copy / alternatives / `home_action`, the dial's words and need, the cheaper package on 70587 team 12, the
+  review's own package); `test_ia2.py` dial buckets and caption updated (the words changed, the numbers did not);
+  `test_ic4.py`'s RB2 claim read from the top three (Help now starts after them). `web/e2e/ie1/` 5 × phone (375) /
+  desktop (1300) on answers recorded from the API (`web/fixtures/ie1/api_ie1.json`); `e2e/ia2` no longer reads the
+  0–100 text. Root `uv run pytest` 986 passed (cards.py: the tiebreaker as data, the card text unchanged).

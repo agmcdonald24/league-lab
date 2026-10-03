@@ -71,7 +71,7 @@ for (const league of [TEST_LEAGUE, DYNASTY, SCRUBS]) {
     const dial = page.getByTestId("dial");
     await expect(page.getByTestId("dial-label")).toHaveText(a.interest.label);
     await expect(dial).toHaveAttribute("data-score", String(a.interest.score));
-    await expect(page.getByTestId("dial-score")).toHaveText(String(a.interest.score));
+    await expect(page.getByTestId("dial-score")).toHaveCount(0); // IE-1: no 0–100 score on screen (the needle keeps it)
     await expect(dial).toContainText(a.interest.caption);
     await expect(page.getByTestId("dial-you")).toContainText(a.span);
     await expect(page.getByTestId("verdict")).toHaveText(plain(a.verdict));

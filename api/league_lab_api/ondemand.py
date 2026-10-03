@@ -30,7 +30,18 @@ from league_lab.lineup import UNVALUED, Player  # ---- IB-3
 from . import availability, why
 from .applib import cards, ui
 from .db import query
-from .myweek import NotFound, _num, _str, cards_from_rows, current_starters, howto, lineup
+from .myweek import (  # IE-1
+    NOTHING_SUBMITTED,
+    NotFound,
+    _num,
+    _str,
+    build_actions,
+    cards_from_rows,
+    current_starters,
+    edit_link,
+    howto,
+    lineup,
+)
 
 MOVERS_SQL = """select t.gsis_id, t.player_name, t.position, t.tags, t.momentum
                 from analytics.mart_player_trend_tags t
@@ -113,8 +124,12 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna() if not rows.empty else pd.Series(dtype=float)
     out["lineup_value"] = None if lv.empty else float(lv.iloc[0])
     t1 = time.perf_counter()
-    out["notice"], out["cards"] = cards_from_rows(league_id, int(roster_id), week, season, rows,         # ---- IB-0
-                                                  current=current_starters(league_id, int(roster_id), house=False))
+    cur = current_starters(league_id, int(roster_id), house=False)                                        # ---- IB-0
+    out["notice"], out["cards"] = cards_from_rows(league_id, int(roster_id), week, season, rows, current=cur)
+    # ---- IE-1: the actions (at most three), the set line, where to make the change, nothing is submitted from here
+    out.update(build_actions(rows, out["cards"], cur, league_id))
+    out.update({"edit_link": edit_link(league_id, league), "nothing_submitted": NOTHING_SUBMITTED})
+    # ---- end IE-1
     t2 = time.perf_counter()
     out["lineup"], out["lineup_full"] = lineup(rows)
     out["howto"] = howto()

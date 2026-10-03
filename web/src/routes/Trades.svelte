@@ -12,6 +12,7 @@
   import { md, withContext } from "../lib/md";
   import { errorWords, f1, partnerLine, s1, windowOf } from "../lib/decisions";
   import { paneAt, partnerReason } from "../lib/decisions";
+  import { effectTone } from "../lib/decisions"; // ---- IE-1: the effect on their starters
   import { navigate, route, setParams } from "../lib/router.svelte";
   import Card from "../components/Card.svelte";
   import Expander from "../components/Expander.svelte";
@@ -179,7 +180,7 @@
                 <span class="min-w-0 truncate text-lg font-bold">{p.partner_team}</span>
                 {#if p.interest}
                   <span class="shrink-0 text-sm" data-testid="partner-label"
-                    ><span class="ll-label">They</span> <strong class={p.interest.label === "No deal" ? "text-bad" : p.interest.label === "Maybe" ? "text-warn" : "text-good"}>{p.interest.label}</strong></span
+                    ><span class="ll-label">Their starters</span> <strong class={effectTone(p.interest.label)}>{p.interest.label}</strong></span
                   >
                 {:else}
                   <span class="ll-label shrink-0">{p.shape}</span>
@@ -196,6 +197,9 @@
                     <span class="ll-label">you · {finder.span}</span>
                   </div>
                   <p class="mt-1.5 text-sm leading-snug text-ink-2" data-testid="partner-reason">{partnerReason(p, finder.span)}</p>
+                  <!-- ---- IE-1: the least costly package first; the extra asset named as optional (what it costs you) -->
+                  {#if p.cheaper_than}<p class="mt-1 text-sm leading-snug font-semibold text-good" data-testid="partner-cheaper">{p.cheaper_than.words}</p>{/if}
+                  {#if p.optional}<p class="mt-1 text-sm leading-snug text-ink-2" data-testid="partner-optional">{p.optional.words}</p>{/if}
                 </div>
                 <button type="button" class="min-h-10 shrink-0 rounded-md bg-accent px-4 text-sm font-semibold text-on-accent" onclick={() => tryTrade(p)} data-testid="try-partner">Try it</button>
               </div>
@@ -291,10 +295,10 @@
     <Expander title="How to read this" testid="howto">
       <div class="text-base leading-snug">
         {@html md(
-          "- **Who to call**: the first line names the team where one trade raises *both* lineups the most over the weeks you picked above, and the trade. Teams are ranked by the smaller of the two gains, so the other manager has a reason to say yes too.\n" +
+          "- **Who to call**: the first line names the team where one trade raises *both* starting lineups the most over the weeks you picked above, and the trade. Teams are ranked by the smaller of the two gains. When a smaller package gets you the same gain, it comes first and the extra player is shown as optional, with what he costs you.\n" +
             "- **The weeks**: this week, the next four (the default: far enough to matter, near enough to trust), the rest of the season (every week to this league's final) or the playoffs. A longer span sees more of the season and is less sure.\n" +
             "- **Left out**: a trade that gives away much more rest-of-season value than it brings back (over a quarter of what you give), or that works only because our projection for a player you give is far under Sleeper's (under 65% of it), is never suggested, however much it helps the lineups.\n" +
-            "- **Try it** opens the trade calculator with the trade filled in: tick players both ways and the dial shows how much the other team would want it.\n" +
+            "- **Try it** opens the trade calculator with the trade filled in: tick players both ways and the dial shows the **effect on their starters** — what the other team's best lineup gains or loses over the weeks you picked, by our numbers (about even under 2 points, improves 2 to 6, a lot over 6). It is lineup fit, not a guess at whether they would accept.\n" +
             "- **Fit** is what the starting lineups gain. **Market** is what the players are worth on the market: their projected points for the rest of the season above the best free agent at their position. They are never added together: a player can be worth a lot and still sit on your bench. The verdict reads both. It knows nothing of draft picks, next season or what the other manager believes.\n" +
             "- **Roster size**: if a team gets more players than it gives, it has to cut someone: the player it would miss least, and that loss is in the numbers.\n" +
             "- **Buy low**: players on other teams scoring *less* than their work is worth (points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports. **Fit** is what the new team gains minus what the old team loses over the next four weeks.",

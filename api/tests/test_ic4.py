@@ -231,10 +231,13 @@ def test_rb2_claim_first_when_hall_and_price_are_out(client, overlay):
     r = client.get(f"/api/waivers?league={KEY}&team=1")
     assert r.status_code == 200, r.text[:300]
     d = r.json()
-    first = d["views"]["help"]["moves"][0]
+    # IE-1 (Wave I-E, the casual-user review: no triple copy): Help now lists what the three strongest do not already
+    # show, so the RB2 claim that leads the three is not repeated as Help now's first row; it leads the three
+    first = d["top3"][0]
     assert first["move"]["add"]["position"] == "RB" and first["move"]["fills_empty_slot"] is True
     assert first["reason"] == "Fills your empty RB2 this week."
-    assert d["top3"][0]["move"]["add"]["player_name"] == first["move"]["add"]["player_name"]
-    words = " ".join(c["reason"] for c in d["views"]["help"]["moves"])
+    assert first["lead"].startswith(f"{first['move']['add']['player_name']} fills your empty RB2: ")
+    assert all(c["move"]["add"]["player_name"] != first["move"]["add"]["player_name"] for c in d["views"]["help"]["moves"])
+    words = " ".join(c["reason"] for c in [*d["top3"], *d["views"]["help"]["moves"]])
     assert "TMPK" not in words and "TMQB" not in words                           # the unit slots in words
     print(f"\nHelp now first: {first['move']['words']['headline']} — {first['reason']}")

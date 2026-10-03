@@ -1114,7 +1114,7 @@ export type TradeWindow = "week" | "next4" | "ros" | "playoffs";
 /** The dial: the other manager's interest 0–100 by our numbers over the window, the label, your gain. */
 export interface Interest {
   score: number;
-  label: "No deal" | "Maybe" | "Likely" | "Hard to say no";
+  label: EffectLabel; // IE-1: the effect on their starters (was "No deal" | "Maybe" | "Likely" | "Hard to say no")
   their_gain: number;
   you: number | null;
   caption: string; // "by our numbers over weeks 4–7"
@@ -1352,3 +1352,64 @@ export interface PlayerCard {
   news?: NewsItem[];
 }
 // ---- end N1
+
+// ---- IE-1 (Wave I-E, the casual-user review): My Week's actions (at most three, the most urgent first; INTERFACES.md
+// § IE-1), the cards' keys and tiebreaker, Waivers' this-week-first card fields and `home_action`, the dial as the effect
+// on their starters, the Finder's cheaper package. Additive: declaration merging.
+export type EffectLabel = "Makes their lineup weaker" | "About even" | "Improves their lineup" | "Improves it a lot";
+export type ActionKind = "change" | "close" | "move";
+export interface ActionPlayer {
+  key: string | null;
+  name: string;
+  link?: string;
+}
+export interface WeekAction {
+  kind: ActionKind;
+  urgency: 1 | 2 | 3;
+  slots: (string | null)[];
+  slot_label: string;
+  action: string; // markdown: the action in one sentence (layer 1)
+  reason: string; // why, who moves, what could change it (layer 2)
+  start: ActionPlayer[];
+  sit: ActionPlayer[];
+  submitted: boolean | null; // the suggested starters are already in the submitted lineup (null: unknown)
+  submitted_words: string | null;
+  lock: { kickoff: string; words: string } | null; // "before Sun 1:00 PM ET"
+  cards: number[]; // indexes into MyWeek.cards: the analysis behind "Why?" (layer 3)
+  gain: number | null;
+  href: string | null; // "/waivers" for a claim
+  drop?: ActionPlayer | null; // a claim's drop
+}
+export interface MyWeek {
+  actions?: WeekAction[];
+  set_line?: string | null;
+  next_lock?: { kickoff: string; words: string; players: string[] } | null;
+  edit_link?: { label: string; url: string; platform: string } | null;
+  nothing_submitted?: string;
+  platform_name?: string;
+}
+export interface DecisionCard {
+  key?: string | null;
+  alt_key?: string | null;
+  tiebreak?: { kind: string; pick: string; side: "me" | "alt" } | null;
+  action?: number | null;
+}
+export interface WaiverCard {
+  lead?: string; // "Bears defense instead of Jaguars: about 2 more starter points this week"
+  total_words?: string | null; // "+12.4 over weeks 4–7 in total"
+  alternative_to?: string | null; // an earlier card that takes the same spot this week
+}
+export interface Waivers {
+  answer?: string | null;
+  not_additive?: string;
+  home_action?: WeekAction | null;
+}
+export interface Interest {
+  title?: string; // "Effect on their starters"
+  need?: string | null; // "fills their empty RB2"
+}
+export interface PartnerRow {
+  optional?: { sleeper_id: string; player_name: string; season_points: number | null; words: string } | null;
+  cheaper_than?: { give: string[]; words: string } | null;
+}
+// ---- end IE-1
