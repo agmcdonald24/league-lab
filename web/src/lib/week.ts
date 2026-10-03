@@ -17,15 +17,20 @@ export function recordLine(d: MyWeek): string {
 export function opponentLine(d: MyWeek): string {
   const o = opponentObject(d);
   if (!o || !o.team_name || d.week === null) return "";
-  let s = `Week ${d.week} vs **${o.team_name}**`;
-  const theirs = o.lineup_value;
   const ours = d.lineup_value ?? null;
+  // I-C: a double header (MFL leagues can play twice in a week): "vs **A** and **B** — they project 98 and 104"
+  const more = (o.also ?? []).filter((x) => x && x.team_name);
+  let s = `Week ${d.week} vs **${o.team_name}**` + more.map((x) => ` and **${x.team_name}**`).join("");
+  const theirs = o.lineup_value;
   if (theirs !== null && theirs !== undefined) {
     // whole points; one decimal when whole points would hide a real difference (110.69 vs 111.15)
     const fine = ours !== null && Math.round(theirs) === Math.round(ours) && Math.abs(theirs - ours) >= 0.05;
     const f = (v: number) => (fine ? v.toFixed(1) : String(Math.round(v)));
-    s += `, projects ${f(theirs)}`;
+    const vals = [theirs, ...more.map((x) => x.lineup_value)].filter((v): v is number => v !== null && v !== undefined);
+    s += more.length ? ` (a double header) — they project ${vals.map(f).join(" and ")}` : `, projects ${f(theirs)}`;
     if (ours !== null) s += ` — you project ${f(ours)}`;
+  } else if (more.length) {
+    s += " (a double header)";
   }
   return s;
 }

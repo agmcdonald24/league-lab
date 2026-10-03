@@ -398,11 +398,29 @@ def _limit(s: Any) -> tuple[int, int]:
     return int(txt or 0), int(txt or 0)
 
 
+def slot_name(name: Any) -> str | None:
+    """IC-2 (Wave I-C): an MFL starter position -> the slot name League Lab solves (``lineup.parse_slots`` reads it):
+    the league's own word, upper-cased, with MFL's spellings of Sleeper's positions (``PK`` -> ``K``, ``Def`` ->
+    ``DEF``); combined slots (``WR+TE``, ``RB+WR+TE``) and team units (``TMQB``, ``TMPK``, ``TMDEF``) kept as they
+    are. None for an IDP or unknown position (reported, not solved)."""
+    # lazy: the solver module (scipy) only when a league is translated
+    from .lineup import slot_eligibility
+    raw = str(name or "").strip()
+    if not raw:
+        return None
+    up = raw.upper()
+    canon = {"PK": "K", "DEF": "DEF", "D": "DEF"}.get(up, up)
+    if "+" in canon:
+        canon = "+".join({"PK": "K", "DEF": "DEF"}.get(x.strip(), x.strip()) for x in canon.split("+"))
+    return canon if slot_eligibility(canon) is not None else None
+
+
 def slots(league: Mapping) -> tuple[list[str], dict]:
-    """MFL's ``starters`` (``count`` and per-position ``limit`` "1" or "2-4") -> Sleeper ``roster_positions``: every
-    position at its minimum, the remaining starters as ``FLEX`` (RB/WR/TE) — ``SUPER_FLEX`` when QB has a range —
-    ``PK`` -> ``K``, ``Def`` -> ``DEF``; the bench = ``rosterSize`` - starters. IDP positions are left out (said in
-    the note). Returns (slots, note: {idp: [...], flex: n, super_flex: n, bench: n, approximated: bool})."""
+    """MFL's ``starters`` (``count`` and per-position ``limit`` "1" or "2-4") -> ``roster_positions``: every position
+    at its minimum under the league's own name (``slot_name``: ``TMQB``, ``WR+TE``, ``TMPK``; ``PK`` -> ``K``, ``Def``
+    -> ``DEF``), the remaining starters as ``FLEX`` (RB/WR/TE) — ``SUPER_FLEX`` when QB has a range —; the bench =
+    ``rosterSize`` - starters. IDP positions are left out (said in the note). Returns (slots, note: {idp: [...],
+    flex: n, super_flex: n, bench: n, approximated: bool, ranges, units: [...]})."""
     st = league.get("starters") or {}
     rows = _as_list(st.get("position"))
     count = int(st.get("count") or 0)
@@ -413,10 +431,7 @@ def slots(league: Mapping) -> tuple[list[str], dict]:
     for r in rows:
         name = str(r.get("name") or "")
         lo, hi = _limit(r.get("limit"))
-        if name in IDP:
-            idp.append(name)
-            continue
-        pos = POS.get(name) or POS.get(name.upper())
+        pos = None if name in IDP else slot_name(name)          # IC-2: the league's own slot names
         if pos is None:
             idp.append(name)
             continue
@@ -431,13 +446,17 @@ def slots(league: Mapping) -> tuple[list[str], dict]:
     if "QB" in ranged and extra > 0:
         sf = min(extra, ranged["QB"][1] - ranged["QB"][0])
     flex = extra - sf
-    order = {"QB": 0, "RB": 1, "WR": 2, "TE": 3, "K": 5, "DEF": 6}
-    out = sorted(fixed, key=lambda p: order.get(p, 9))
-    out = [p for p in out if p not in ("K", "DEF")] + ["FLEX"] * flex + ["SUPER_FLEX"] * sf + [p for p in out if p in ("K", "DEF")]
+    # QB-like slots first, then RB / WR / TE and the combined slots, K, DEF last (Sleeper's order; MFL's own order
+    # inside a group)
+    order = {"QB": 0, "TMQB": 0, "RB": 1, "WR": 2, "TE": 3, "K": 5, "TMPK": 5, "DEF": 6, "TMDEF": 6}
+    tail = ("K", "TMPK", "DEF", "TMDEF")
+    out = sorted(fixed, key=lambda p: order.get(p, 4))
+    out = [p for p in out if p not in tail] + ["FLEX"] * flex + ["SUPER_FLEX"] * sf + [p for p in out if p in tail]
     roster_size = int(league.get("rosterSize") or 0)
     bench = max(0, roster_size - count) if roster_size else 0
     note = {"idp": idp, "flex": flex, "super_flex": sf, "bench": bench,
-            "approximated": bool(ranged), "ranges": {k: f"{a}-{b}" for k, (a, b) in ranged.items()}}
+            "approximated": bool(ranged), "ranges": {k: f"{a}-{b}" for k, (a, b) in ranged.items()},
+            "units": sorted({p for p in fixed if p.startswith("TM")})}
     return out + ["BN"] * bench, note
 
 
@@ -648,8 +667,19 @@ def scoring(rules: Mapping) -> tuple[dict[str, float], dict]:
                 sc[key] = round(rec_by_pos[p] - rec_all, 6)
     if idp_groups:
         unpriced["IDP"] = "individual defensive players (" + ", ".join(idp_groups) + ")"
+    # ---- IC-1 (Wave I-C): the rules as a ScoringSpec (scoring.from_mfl) — the truth every pricing path reads
+    # (``anyleague.league_scoring``); the flat dict above stays for the old readers, filled from the spec where the
+    # I0-B translation found no Sleeper key (70587's TDs by distance and "1/10" yards came back empty).
+    from .scoring import flat_from_spec, from_mfl
+    spec = from_mfl(rules)
+    for k, v in flat_from_spec(spec).items():
+        if not sc.get(k):
+            sc[k] = v
     return sc, {"approximated": approx, "unpriced": sorted(unpriced.values()), "unpriced_events": sorted(unpriced),
-                "idp_groups": idp_groups}
+                "idp_groups": idp_groups, "spec": spec.to_json(),
+                "spec_unpriced": [f"{u['name']} ({u['event']})" for u in spec.unpriced],
+                "spec_approximated": list(spec.approximated)}
+    # ---- /IC-1
 
 
 # --- franchises, rosters, starters, schedule ------------------------------------------------------------------

@@ -5,6 +5,7 @@
   import { paneLink, type PaneOptions } from "../lib/pane.svelte";
   import { AVAILABILITY_CHIPS } from "../lib/shapes";
   import Headshot from "./Headshot.svelte";
+  import TeamBadge from "./TeamBadge.svelte";
 
   // IB-1 (Wave I-B): `pane` — a tap on a name opens the research pane (lib/pane.svelte.ts) with these options
   let {
@@ -20,6 +21,10 @@
   const reason = (r: LineupRow) => (r as LineupRow & { reason?: string | null }).reason ?? "";
   // IA-1: "J. Jefferson" under 640 px (unique initials within this list; a defense keeps its name), the whole name above
   const names = $derived(rows.map((r) => r.player_name));
+  // ---- IC-2 (Wave I-C): a team unit (MyFantasyLeague's team QB / kicker) has no face: its team's badge instead
+  const UNIT_POSITIONS = new Set(["TMQB", "TMPK"]);
+  const isUnit = (r: LineupRow) => UNIT_POSITIONS.has(r.position ?? "");
+  // ---- end IC-2
 </script>
 
 <table class="w-full table-fixed border-collapse text-base" data-testid={testid}>
@@ -37,7 +42,9 @@
         <td class="py-1.5 pr-1 text-sm font-semibold text-ink-3">{r.slot}</td>
         <td class="py-1.5 pr-1 leading-snug">
           <div class="flex min-w-0 items-center gap-2">
-            {#if r.player_name}<Headshot url={r.headshot_url ?? null} team={r.team ?? null} size={32} />{/if}
+            {#if r.player_name && isUnit(r)}<span class="inline-flex w-8 shrink-0 justify-center" data-testid="unit-badge"
+                ><TeamBadge team={r.team ?? null} /></span
+              >{:else if r.player_name}<Headshot url={r.headshot_url ?? null} team={r.team ?? null} size={32} />{/if}
             <div class="min-w-0 break-words">
               {#if r.gsis_id && r.player_name}
                 <a

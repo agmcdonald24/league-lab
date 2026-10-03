@@ -189,7 +189,7 @@ def test_leagues_by_username(client, sql):
     assert by[TEST_LEAGUE]["team_name"] == "Team 1" and by[TEST_LEAGUE]["total_rosters"] == 10
     for x in d["leagues"]:
         assert set(x) == {"league_id", "name", "season", "total_rosters", "scoring_label", "roster_id", "team_name",
-                          "status", "in_database"}
+                          "status", "in_database", "card"}          # ---- IC-3: + the league card (read-backs)
     # the house leagues' labels are dim_league_season's (the SQL rule, ported)
     labels = {r["league_id"]: r["scoring_label"] for r in sql(
         "select league_id, scoring_label from analytics.dim_league_season where league_id = any(%s)", ([SCRUBS, DYNASTY],))}

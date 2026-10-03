@@ -576,6 +576,13 @@ def _free_agents(league_id: str, season: int, week: int, position: str, limit: i
                 k = kd.set_index("unit_id")
                 for c in ("proj_points", "p10", "p90"):
                     df.loc[m, c] = key[m].map(pd.to_numeric(k[c], errors="coerce"))
+            # ---- IC-2: a team unit (MFL's TMQB / TMPK) is priced by its team (A.price_units), not by an id
+            m = df["position"].isin(A.LU.UNITS)
+            for i in df.index[m]:
+                u = A.unit_value(pr, df.at[i, "position"], df.at[i, "nfl_team"]) or {}
+                for c in ("proj_points", "p10", "p25", "p75", "p90"):
+                    df.at[i, c] = u.get(c, np.nan)
+            # ---- end IC-2
     if df.empty:
         return []
     df = df.assign(_p=pd.to_numeric(df["proj_points"], errors="coerce")).sort_values(["_p", "player_name"], ascending=[False, True],

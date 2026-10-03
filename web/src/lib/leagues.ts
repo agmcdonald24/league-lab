@@ -87,3 +87,70 @@ export interface MflSearch {
 
 export const mflSearchPath = (text: string) => `/api/leagues?mfl_search=${encodeURIComponent(text.trim())}`;
 export const isMflSearch = (v: MflLeague | MflSearch): v is MflSearch => "matches" in v;
+
+// ---- IC-3 (Wave I-C): the Leagues card tells the truth. `card` rides on `/api/leagues?mfl=` and on each
+// `/api/leagues?username=` row: the lineup League Lab solves and the scoring it prices, read back in the league's own
+// words, what is not priced; the scoring check (IC-1's GET /api/league/scoring-check?league=) loads after the card.
+export interface LeagueCard {
+  lineup: { text: string; slots: string[]; unread: string[]; unread_text?: string; bench: number };
+  scoring: {
+    text: string;
+    pieces: string[];
+    not_priced: string[];
+    not_priced_text?: string;
+    approximated: string[];
+    source: "spec" | "settings";
+  };
+  check_path: string;
+}
+
+export interface CheckMiss {
+  player: string;
+  position?: string | null;
+  theirs: number;
+  ours: number;
+  gap: number;
+  likely_rule?: string | null;
+}
+
+export interface ScoringCheck {
+  league: string;
+  week: number;
+  n: number;
+  within_0_1?: number;
+  within_1: number;
+  misses: CheckMiss[];
+  suspect_rules?: unknown[];
+  words?: string;
+}
+
+// declaration merging: the MFL answer and the Sleeper rows carry the card (older answers have none)
+export interface MflLeague {
+  card?: LeagueCard;
+}
+export type WithCard = { card?: LeagueCard | null };
+
+const pts = (v: number) => (Math.round(v * 10) / 10).toString().replace("-", "−");
+
+/** "Week 2 check: we match your league's points for 141 of 146 players within 1 point." */
+export function checkLine(c: ScoringCheck): string {
+  if (!c.n) return `Week ${c.week}: no scored players to check yet.`;
+  const all = c.within_1 === c.n;
+  return `Week ${c.week} check: we match your league's points for ${all ? `all ${c.n}` : `${c.within_1} of ${c.n}`} players within 1 point.`;
+}
+
+/** MFL writes names "Last, First" ("Patriots, New England"): said the usual way round. */
+export const firstLast = (name: string) => name.replace(/^([^,]+), (.+)$/, "$2 $1");
+
+/** "Saquon Barkley: league 23, ours 13 — sacks (one more or fewer than our stat line)" (the check's rule family
+ * prefix, "count:" / "distance:", is the check's own key, not words). */
+export function missLine(m: CheckMiss): string {
+  const rule = (m.likely_rule ?? "").replace(/^[a-z_]+:/, "").trim();
+  return `${firstLast(m.player)}: league ${pts(m.theirs)}, ours ${pts(m.ours)}${rule ? ` \u2014 ${rule}` : ""}`;
+}
+
+/** The misses worth naming (more than 1 point apart), biggest first. */
+export function bigMisses(c: ScoringCheck, n = 3): CheckMiss[] {
+  return [...c.misses].filter((m) => Math.abs(m.gap) > 1).sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap)).slice(0, n);
+}
+// ---- end IC-3

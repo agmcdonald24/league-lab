@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import logging
 import math
+import re
 import time
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping, Sequence
@@ -63,8 +64,18 @@ from scipy.optimize import linear_sum_assignment
 log = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------ slots
+# ---- IC-2 (Wave I-C): a slot is an eligibility set. Sleeper's names (below), generic combined names "A+B[+C]" (the
+# MyFantasyLeague translation: "WR+TE", "RB+WR+TE", "QB+RB+WR+TE"; Sleeper never emits them) and the team units
+# "TMQB" / "TMPK" (MFL's team quarterback / kicker: one "player" per NFL team) and "TMDEF" (= a team defense, DEF).
 SKILL = frozenset({"QB", "RB", "WR", "TE"})
-SLOT_ELIGIBILITY: dict[str, frozenset[str]] = {
+UNITS = frozenset({"TMQB", "TMPK"})                  # team units that are positions of their own (TMDEF is a DEF)
+UNIT_PRICES_AS = {"TMQB": "QB", "TMPK": "K", "TMDEF": "DEF"}   # the position whose scoring rules price a unit
+UNIT_WORDS = {"TMQB": "QB", "TMPK": "kicker", "TMDEF": "defense"}
+# a slot-name part -> the position it admits (MFL's PK / Def spellings; TMDEF is a team defense)
+POSITION_ALIASES = {"QB": "QB", "RB": "RB", "WR": "WR", "TE": "TE", "K": "K", "PK": "K", "DEF": "DEF", "D": "DEF",
+                    "DST": "DEF", "D/ST": "DEF", "TMDEF": "DEF", "TMQB": "TMQB", "TMPK": "TMPK"}
+IDP_POSITIONS = frozenset({"DL", "LB", "DB", "DT", "DE", "CB", "S", "IDP", "IDP_FLEX"})   # not modelled: reported
+_BASE_ELIGIBILITY: dict[str, frozenset[str]] = {
     "QB": frozenset({"QB"}),
     "RB": frozenset({"RB"}),
     "WR": frozenset({"WR"}),
@@ -76,8 +87,54 @@ SLOT_ELIGIBILITY: dict[str, frozenset[str]] = {
     "REC_FLEX": frozenset({"WR", "TE"}),
     "WRRB_FLEX": frozenset({"RB", "WR"}),
 }
+
+
+def slot_eligibility(name: str | None) -> frozenset[str] | None:
+    """The positions a slot admits, or None for a slot that is not modelled (IDP, unknown names: reported, never
+    guessed). Sleeper's names; ``PK`` / ``Def`` / ``TMDEF``; the units ``TMQB`` / ``TMPK`` (only their own unit);
+    ``A+B[+C]`` = the union of the parts (``WR+TE`` -> {WR, TE}); a combined name with an IDP or unknown part is
+    not modelled (``DT+DE``, ``LB+DB``)."""
+    s = str(name or "").strip().upper()
+    if not s:
+        return None
+    if s in _BASE_ELIGIBILITY:
+        return _BASE_ELIGIBILITY[s]
+    if s in POSITION_ALIASES:
+        return frozenset({POSITION_ALIASES[s]})
+    if "+" in s or "/" in s:
+        parts = [x.strip() for x in re.split(r"[+/]", s) if x.strip()]
+        out: set[str] = set()
+        for x in parts:
+            pos = POSITION_ALIASES.get(x)
+            if pos is None:
+                return None
+            out.add(pos)
+        return frozenset(out) if out else None
+    return None
+
+
+class _Eligibility(dict):
+    """``SLOT_ELIGIBILITY``: Sleeper's slot names as before, and any name ``slot_eligibility`` understands on lookup
+    (``SLOT_ELIGIBILITY["WR+TE"]``, ``.get("TMQB")``), so every reader of slot types keeps working on an MFL league."""
+
+    def __missing__(self, key):
+        e = slot_eligibility(key)
+        if e is None:
+            raise KeyError(key)
+        return e
+
+    def get(self, key, default=None):
+        e = slot_eligibility(key) if key is not None else None
+        return default if e is None else e
+
+    def __contains__(self, key) -> bool:
+        return isinstance(key, str) and slot_eligibility(key) is not None
+
+
+SLOT_ELIGIBILITY: dict[str, frozenset[str]] = _Eligibility(_BASE_ELIGIBILITY)
 IGNORED_SLOTS = frozenset({"IDP_FLEX", "DL", "LB", "DB"})   # IDP is not modelled: dropped, reported
 NOT_SLOTS = frozenset({"BN", "IR", "TAXI"})                  # roster spots, not starting slots
+NO_SLOT = "No slot for"                                      # the reason's prefix: no slot in this league admits him
 EPS = 1e-9    # per filled slot: among equal totals prefer the lineup that fills more slots
 EPS2 = 1e-12  # per valued starter: then prefer a valued player (even at 0) over an unvalued one
 UNVALUED = "unvalued"
@@ -85,27 +142,60 @@ UNVALUED = "unvalued"
 SLEEPER_TO_NFLVERSE_TEAM = {"LAR": "LA"}
 
 
+def no_slot_reason(position: str | None) -> str:
+    """"No slot for a TMQB in this league": a player no starting slot admits. Not "can't play" (he is not hurt,
+    on a bye or locked): the league's lineup has no place for his position."""
+    p = str(position or "player")
+    return f"{NO_SLOT} {'an' if p[:1] in 'AEFHILMNORSX' else 'a'} {p} in this league"
+
+
+def is_no_slot(reason: str | None) -> bool:
+    return isinstance(reason, str) and reason.startswith(NO_SLOT)
+
+
 @dataclass(frozen=True, slots=True)
 class Slot:
-    label: str   # unique within a lineup: QB, RB1, RB2, FLEX1, SUPER_FLEX (numbered only when repeated)
-    type: str    # the Sleeper slot name: RB, FLEX, ...
-    order: int   # 1-based position among the starting slots (roster_positions order)
+    label: str               # unique within a lineup, the league's own name: QB, RB1, WR+TE2, TMQB, SUPER_FLEX
+    type: str                # the slot's name (upper case): RB, FLEX, WR+TE, TMQB ...
+    elig: frozenset[str]     # the positions that may start here (FLEX {RB, WR, TE}; WR+TE {WR, TE}; TMDEF {DEF})
+    order: int               # 1-based position among the starting slots (roster_positions order)
 
 
 def parse_slots(roster_positions: Iterable[str]) -> tuple[list[Slot], list[str]]:
-    """Sleeper ``roster_positions`` -> the starting slots (BN / IR / TAXI dropped) and the slot
-    names that are not modelled (IDP, anything unknown), which are reported, never guessed."""
+    """``roster_positions`` (Sleeper's, or the MFL translation's) -> the starting slots (BN / IR / TAXI dropped) and
+    the slot names that are not modelled (IDP, anything unknown), which are reported, never guessed."""
     kept, ignored = [], []
     for raw in roster_positions:
-        s = str(raw).upper()
+        s = str(raw).strip().upper()
         if s in NOT_SLOTS:
             continue
-        (kept if s in SLOT_ELIGIBILITY else ignored).append(s)
+        (kept if slot_eligibility(s) is not None else ignored).append(s)
     counts, seen, out = Counter(kept), Counter(), []
     for i, t in enumerate(kept, 1):
         seen[t] += 1
-        out.append(Slot(f"{t}{seen[t]}" if counts[t] > 1 else t, t, i))
+        out.append(Slot(f"{t}{seen[t]}" if counts[t] > 1 else t, t, slot_eligibility(t), i))
     return out, ignored
+
+
+def align_starters(roster_positions: Iterable[str], starters: Iterable[tuple[str, Iterable[str]]]) -> list[str]:
+    """A starters list in no slot order (MFL's: ids only) -> Sleeper's ``starters`` array: one id per starting slot of
+    ``roster_positions`` (BN / IR / TAXI out, IDP slots keep their place), "0" for an empty slot. ``starters``:
+    (id, positions) pairs, seated by a maximum matching that prefers the narrowest slot (a WR at WR before WR+TE
+    before FLEX), so ``starter_slots`` reads the slot each starter really holds. A starter no open slot admits is
+    left out of the array."""
+    positions = [str(x).strip().upper() for x in roster_positions if str(x).strip().upper() not in NOT_SLOTS]
+    elig = [slot_eligibility(t) or frozenset() for t in positions]
+    out = ["0"] * len(positions)
+    pairs = [(str(i), frozenset(p or ())) for i, p in starters]
+    if not pairs or not positions:
+        return out
+    w = np.array([[(1.0 + 1.0 / max(1, len(e))) if (e & pos) else 0.0 for e in elig] for _, pos in pairs])
+    rows, cols = linear_sum_assignment(w, maximize=True)
+    for i, j in zip(rows, cols, strict=True):
+        if w[i, j] > 0:
+            out[j] = pairs[i][0]
+    return out
+# ---- end IC-2
 
 
 def starter_slots(roster_positions: Iterable[str], starters: Iterable[str] | None) -> dict[str, str]:
@@ -188,6 +278,17 @@ class Lineup:
     def starter_ids(self) -> list[str]:
         return [s.player.id for s in self.starts if s.player is not None]
 
+    # ---- IC-2: a player no slot admits is listed with the unplayable (the rows keep role "unplayable", so every
+    # reader leaves him out of the lineup), but he is not "can't play": ``no_slot`` / ``cannot_play`` split them
+    @property
+    def no_slot(self) -> tuple[Player, ...]:
+        return tuple(p for p in self.unplayable if is_no_slot(p.reason))
+
+    @property
+    def cannot_play(self) -> tuple[Player, ...]:
+        return tuple(p for p in self.unplayable if not is_no_slot(p.reason))
+    # ---- end IC-2
+
     @property
     def weakest(self) -> Start | None:
         """The filled, unlocked, valued slot with the smallest margin (ties: the lower value). An
@@ -215,14 +316,14 @@ def _match(values: np.ndarray, elig: np.ndarray, tie: np.ndarray) -> tuple[float
     return float(values[used].sum()), assign
 
 
-def _canonical(assign: np.ndarray, values: np.ndarray, elig: np.ndarray, types: list[str]) -> np.ndarray:
+def _canonical(assign: np.ndarray, values: np.ndarray, elig: np.ndarray, sets: list[frozenset[str]]) -> np.ndarray:
     """Same starters, same total, readable seating: the better players in the narrower slots
     (Jefferson at WR and the WR3 at FLEX, not the other way round). A second assignment over the
     chosen starters only; any eligible seating of them is legal and scores the same."""
     starters = assign[assign >= 0]
     if len(starters) < 2:
         return assign
-    spec = np.array([1.0 / len(SLOT_ELIGIBILITY[t]) for t in types])
+    spec = np.array([1.0 / max(1, len(e)) for e in sets])      # IC-2: the slot's eligibility set
     se = elig[starters]
     w = np.where(se, 1e6 + (np.maximum(values[starters], 0.0) + 1.0)[:, None] * spec[None, :], 0.0)
     rows, cols = linear_sum_assignment(w, maximize=True)
@@ -238,6 +339,7 @@ def solve(players: Sequence[Player | Mapping], slots: Iterable[str], *, margins:
     ``players`` (``Player`` or mappings with its fields). See the module docstring."""
     slot_list, ignored = parse_slots(slots)
     types = [s.type for s in slot_list]
+    sets = [s.elig for s in slot_list]                 # IC-2: eligibility is the slot's set
     open_cols = list(range(len(slot_list)))
     unplayable: list[Player] = []
     locked: dict[int, Player] = {}
@@ -257,21 +359,21 @@ def solve(players: Sequence[Player | Mapping], slots: Iterable[str], *, margins:
                 locked[j] = p
         elif not p.playable:
             unplayable.append(p if p.reason else replace(p, reason="cannot play"))
-        elif not any(p.positions & SLOT_ELIGIBILITY[t] for t in set(types)):
-            unplayable.append(replace(given, playable=False, reason=f"no {p.position} slot in this lineup"))
+        elif not any(p.positions & e for e in set(sets)):
+            unplayable.append(replace(given, playable=False, reason=no_slot_reason(p.position)))   # IC-2: not "can't play"
         else:
             pool.append(p)
 
     cols = np.array(open_cols, dtype=np.intp)
     vals = np.array([p.value for p in pool], dtype=float)
     tie = np.array([EPS + (0.0 if p.value_source == UNVALUED else EPS2) for p in pool], dtype=float)
-    elig = np.array([[bool(p.positions & SLOT_ELIGIBILITY[types[j]]) for j in open_cols] for p in pool],
+    elig = np.array([[bool(p.positions & sets[j]) for j in open_cols] for p in pool],
                     dtype=bool).reshape(len(pool), len(open_cols))
     free_total, assign = _match(vals, elig, tie)
     locked_total = sum(p.value for p in locked.values() if p.value is not None and math.isfinite(p.value))
 
     chosen: dict[int, tuple[int, float | None]] = {}
-    for k, i in enumerate(_canonical(assign, vals, elig, [types[j] for j in open_cols])):
+    for k, i in enumerate(_canonical(assign, vals, elig, [sets[j] for j in open_cols])):
         if i < 0:
             continue
         margin = None
@@ -369,6 +471,9 @@ class LineupInputs:
     # (league, week, nflverse team) -> that team's kicker projection when exactly one K of the team is
     # projected that week: the value of a Sleeper kicker without an NFL id (unmapped rookie)
     k_team_proj: dict[tuple[str, int, str], dict] = field(default_factory=dict)
+    # IC-2: team units (MFL's TMQB / TMPK). (league, week, unit position, nflverse team) -> proj_points, team,
+    # report_status (the unit's QB / kicker); a unit's player row carries the team, never a gsis id
+    unit_proj: dict[tuple[str, int, str, str], dict] = field(default_factory=dict)
 
 
 def _frame(cur: psycopg.Cursor, sql: str, params: tuple = ()) -> list[dict]:
@@ -542,6 +647,11 @@ def _proposed_player(inp: LineupInputs, league_id: str, week: int, row: dict, cu
             base = replace(base, value=inp.k_ppg[(league_id, gsis)], value_source="season_ppg")
         elif (league_id, sid) in obs_ppg:
             base = replace(base, value=obs_ppg[(league_id, sid)], value_source="observed_ppg")
+    elif positions & UNITS:
+        # IC-2: a team unit (TMQB / TMPK) is valued from its team's line this week (anyleague prices it)
+        up = inp.unit_proj.get((league_id, week, next(iter(positions & UNITS)), team)) if team else None
+        if up is not None and up.get("proj_points") is not None:
+            base = replace(base, value=up["proj_points"], value_source="proj_points")
     elif "DEF" in positions:
         kp = inp.kd_proj.get((league_id, week, sid))
         if kp is not None and kp["proj_points"] is not None:
@@ -583,6 +693,8 @@ def _proposed_player(inp: LineupInputs, league_id: str, week: int, row: dict, cu
             if kp["report_status"] in ("Out", "Doubtful"):
                 return out(kp["report_status"])
         return base if base.value is not None else unvalued
+    if positions & UNITS:            # IC-2: a unit can't play only on a bye (above); no line this week: unvalued
+        return base if base.value is not None else unvalued
     return base  # no slot for his position: solve() says so
 
 
@@ -612,7 +724,7 @@ def _emit(lu: Lineup, key: dict, names: dict[str, dict]) -> tuple[list[dict], di
         "weakest_slot": w.slot.label if w else None, "weakest_margin": _r2(w.margin) if w else None,
         "weakest_sleeper_player_id": w.player.id if w else None,
         "n_players": len(starters) + len(lu.bench) + len(lu.unplayable), "n_bench": len(lu.bench),
-        "n_unplayable": len(lu.unplayable), "n_locked": sum(s.locked for s in lu.starts),
+        "n_unplayable": len(lu.cannot_play), "n_locked": sum(s.locked for s in lu.starts),   # IC-2: no-slot not counted
         "n_questionable": sum(p.status == "Questionable" for p in starters),
         "n_ppg_valued": sum(p.value_source in PPG_SOURCES for p in starters),
         "n_unvalued": sum(p.value_source == UNVALUED for p in starters),

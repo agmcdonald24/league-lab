@@ -24,6 +24,8 @@ starter's value minus the margin. Almost always that is the best bench player el
 
 from __future__ import annotations
 
+import re
+
 import pandas as pd
 import streamlit as st
 
@@ -53,15 +55,47 @@ TOL = 0.011
 COIN_FLIP, LEAN = 1.0, 3.0
 
 SLOT_WORDS = {"SUPER_FLEX": "Superflex", "REC_FLEX": "WR/TE flex", "WRRB_FLEX": "RB/WR flex"}
+# ---- IC-2 (Wave I-C): the league's own slot names (MyFantasyLeague): combined slots "WR+TE1" and the team units
+UNIT_SLOT_WORDS = {"TMQB": "team QB", "TMPK": "team K", "TMDEF": "team DEF"}
+_COMBINED = re.compile(r"^([A-Z]+(?:\+[A-Z]+)+)(\d*)$")
+_UNIT = re.compile(r"^(TMQB|TMPK|TMDEF)(\d*)$")
+# positions a combined slot's parts admit (lineup.POSITION_ALIASES' offense / kicking / defense part)
+_PART = {"QB": "QB", "RB": "RB", "WR": "WR", "TE": "TE", "K": "K", "PK": "K", "DEF": "DEF", "TMDEF": "DEF",
+         "TMQB": "TMQB", "TMPK": "TMPK"}
+
+
+def slot_elig(slot_type: str | None) -> frozenset[str]:
+    """lineup.slot_eligibility for the slot types a lineup row carries (this module cannot import the solver):
+    Sleeper's names, ``A+B[+C]`` (the union of the parts), the units ``TMQB`` / ``TMPK`` / ``TMDEF`` (= DEF);
+    tests/test_lineup_ic2.py keeps the two equal."""
+    t = str(slot_type or "").upper()
+    if t in SLOT_ELIGIBILITY:
+        return SLOT_ELIGIBILITY[t]
+    if t in _PART:
+        return frozenset({_PART[t]})
+    if "+" in t:
+        parts = [_PART.get(x) for x in t.split("+")]
+        return frozenset(parts) if parts and all(parts) else frozenset()
+    return frozenset()
+# ---- end IC-2
 
 
 def slot_label(slot: str | None) -> str:
-    """RB2, FLEX, Superflex, FLEX2 ... as a manager reads them."""
+    """RB2, FLEX, Superflex, FLEX2 ... as a manager reads them; IC-2: "WR+TE1" -> "WR/TE 1", "TMQB" -> "team QB"."""
     if not slot:
         return ""
     for key, word in SLOT_WORDS.items():
         if slot.startswith(key):
             return word + slot[len(key):]
+    # ---- IC-2
+    m = _UNIT.match(slot)
+    if m:
+        return UNIT_SLOT_WORDS[m.group(1)] + (f" {m.group(2)}" if m.group(2) else "")
+    m = _COMBINED.match(slot)
+    if m:
+        words = "/".join({"PK": "K"}.get(x, x) for x in m.group(1).split("+"))
+        return words + (f" {m.group(2)}" if m.group(2) else "")
+    # ---- end IC-2
     return slot
 
 
@@ -171,7 +205,7 @@ def lineup_rows(league_id: str, season: int, week: int, roster_id: int) -> pd.Da
 
 # ------------------------------------------------------------------------------ pure logic
 def _eligible(position: str | None, slot_type: str | None) -> bool:
-    return bool(position) and position in SLOT_ELIGIBILITY.get(slot_type or "", frozenset())
+    return bool(position) and position in slot_elig(slot_type)          # IC-2: combined slots and units too
 
 
 def alternative(starter: pd.Series, rows: pd.DataFrame) -> dict:
@@ -604,6 +638,15 @@ def lineup_frame(rows: pd.DataFrame) -> pd.DataFrame:
     return lu
 
 
+NO_SLOT = "No slot for"          # IC-2: lineup.NO_SLOT, the reason of a player no slot of the league admits
+
+
+def no_slot_or_cant(reason) -> str:
+    """The list's word for a player out of the lineup: "No slot" (the league's lineup has no place for his position;
+    he is not hurt) or "Can't play" (injury, bye, IR, locked)."""
+    return "No slot" if isinstance(reason, str) and reason.startswith(NO_SLOT) else "Can't play"
+
+
 def lineup_table(rows: pd.DataFrame, full: bool = False) -> None:
     """Render the proposed lineup: four columns (slot, player, value, flag); `full` adds the margin and
     lists the bench and the players who cannot play (for an expander)."""
@@ -623,7 +666,7 @@ def lineup_table(rows: pd.DataFrame, full: bool = False) -> None:
         return
     rest = rows[rows["role"] != "starter"].copy()
     rest["slot"] = rest.apply(lambda r: f"Bench {int(r['bench_rank'])}" if r["role"] == "bench" and pd.notna(r["bench_rank"])
-                              else "Can't play", axis=1)
+                              else no_slot_or_cant(r.get("reason")), axis=1)          # IC-2
     rest["flag"] = rest.apply(lambda r: r["reason"] if r["role"] == "unplayable" else ("locked (game started)" if r["locked_now"]
                               else _flag(r["report_status"])), axis=1)
     rest = rest.rename(columns={"value": "player_value", "margin": "lineup_margin"})

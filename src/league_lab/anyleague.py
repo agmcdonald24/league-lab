@@ -59,7 +59,13 @@ import pandas as pd
 from . import lineup as LU
 from .scoring import (  # noqa: F401 - compute_points: the reference the vector form equals
     MAPPED_KEYS,
+    LeagueScoring,
+    ScoringSpec,
     compute_points,
+    ev_pricing,
+    expected_frame,
+    kd_flat,
+    spec_of,
     unmapped_keys,
 )
 from .sleeper_client import (  # noqa: F401 - re-exported: the API and the tests import them from here
@@ -310,13 +316,27 @@ def _load_nfl_wide(query: Query, season: int, week: int) -> Board:
                  labels, kd_fitted)
 
 
-def price_lines(line: pd.DataFrame, scoring: Mapping[str, float]) -> pd.Series:
+def price_lines(line: pd.DataFrame, scoring: Mapping[str, float] | ScoringSpec) -> pd.Series:
     """League points of every stat line: ``compute_points`` (bonuses included), exactly as ``projections.price`` —
-    computed for every row at once (``compute_points_frame``: the same terms in the same order, so equal bit for bit)."""
+    computed for every row at once (``compute_points_frame``: the same terms in the same order, so equal bit for bit).
+
+    Wave I-C (IC-1): the league's ``ScoringSpec`` decides. A Sleeper spec prices through the flat path above (a
+    house league still reproduces its nightly ``proj_points`` to the bit) unless ``LEAGUE_LAB_EV_PRICING=1``; any
+    other spec (MFL's per-position rules, TDs by distance, ``1/10`` yards) prices with ``scoring.expected_frame``
+    per row position (units through ``ScoringSpec.rules_for``: TMQB -> QB's rules)."""
     stats = line[list(STAT_LINE)].rename(columns=STAT_LINE).apply(pd.to_numeric, errors="coerce").fillna(0.0)
     if "position" in line:          # F1: a position premium (bonus_rec_te, …) prices only when the row carries the position
         stats["position"] = line["position"].to_numpy()
-    return pd.Series(compute_points_frame(stats, scoring), index=line.index, dtype=float)
+    # ---- IC-1: pricing on the spec
+    spec = scoring if isinstance(scoring, ScoringSpec) else getattr(scoring, "spec", None)
+    if spec is not None and (spec.flat is None or ev_pricing()):
+        pos = line["position"].to_numpy() if "position" in line else None
+        # an MFL league has no nightly to reproduce: its flat bands are priced at their probability (a projected
+        # 249 vs 251 passing yards is not a 10-point difference); a Sleeper spec only under the flag
+        return pd.Series(expected_frame(stats, spec, pos, ev=True), index=line.index, dtype=float)
+    flat = spec.flat if spec is not None else scoring
+    # ---- /IC-1
+    return pd.Series(compute_points_frame(stats, flat), index=line.index, dtype=float)
 
 
 def compute_points_frame(stats: pd.DataFrame, scoring: Mapping[str, float]) -> np.ndarray:
@@ -358,6 +378,9 @@ def compute_points_frame(stats: pd.DataFrame, scoring: Mapping[str, float]) -> n
 def _mapped(scoring: Mapping[str, float]) -> dict[str, float]:
     """The scoring keys the stat line prices (scoring.MAPPED_KEYS), non-zero, rounded to 3 places (Sleeper stores
     float32: 0.05000000074505806 is 0.05) — what "the same scoring" means for choosing a reference."""
+    sp = getattr(scoring, "spec", None)   # ---- IC-1: a non-Sleeper spec never equals a reference's flat keys
+    if sp is not None and sp.flat is None:
+        return {"__spec__": sp.key()}
     return {k: round(float(w), 3) for k, w in scoring.items() if k in MAPPED_KEYS and w and round(float(w), 3) != 0}
 
 
@@ -473,7 +496,8 @@ def kd_values(scoring: Mapping[str, float], position: str, board: Board) -> tupl
     line_cols = [f"proj_{c}" for c in (kdef.K_LINE if position == "K" else kdef.DEF_LINE)]
     for c in line_cols:
         rows[c] = pd.to_numeric(rows[c], errors="coerce") if c in rows else 0.0
-    rows["proj_points"] = kdef.price(rows.reset_index(drop=True), position, scoring, "proj_")
+    flat = kd_flat(spec_of(scoring), position)       # ---- IC-1: K / DEF keys from the spec (Sleeper: unchanged)
+    rows["proj_points"] = kdef.price(rows.reset_index(drop=True), position, flat, "proj_")   # (kdef.price reads a spec too)
     # the range: the reference with the closest K (DEF) prices; its offsets kept as they are (fixed per scoring)
     proj = rows.set_index("unit_id")["proj_points"].astype(float)
     ref = choose_reference(proj, {n: f for n, f in board.kd_fitted.items() if not f.empty})
@@ -508,7 +532,24 @@ def scoring_report(scoring: Mapping[str, float], slots: list[str]) -> dict[str, 
         cols = {SLEEPER_BONUS_MAP[k][0]} if k in SLEEPER_BONUS_MAP else set(_PY_EXPR.get(k, ()))
         if not cols <= line_cols:
             not_proj.append(k)
-    return {"unmapped": sorted(unm), "not_projected": sorted(not_proj)}
+    # ---- IC-1: the spec's own account — ``priced`` (the read-back), ``approximated`` (the words), ``unpriced``
+    spec = spec_of(scoring)
+    approx = list(spec.approximated)
+    if spec.flat is None:          # an MFL spec: the flat keys above are a summary, the spec's lists are the truth
+        unm = [f"{u['name']} ({u['event']})" for u in spec.unpriced]
+        not_proj = sorted({s for p in ("QB", "RB", "WR", "TE") if (r := spec.rules_for(p)) is not None
+                           for s in [*r.rates, *r.bands, *r.steps] if s not in line_cols}
+                          | {f for p in ("QB", "RB", "WR", "TE") if (r := spec.rules_for(p)) is not None
+                             for f in r.distance if f in ("return_tds", "fumble_recovery_tds")})
+    if any(r.distance for p, r in spec.positions.items() if p in ("QB", "RB", "WR", "TE")) and (spec.flat is None or ev_pricing()):
+        approx.append("touchdowns by distance on a projection: the projected touchdowns × the share of touchdowns that "
+                      "long at the position (placeholder shares until the measured ones land)")
+    if any(r.steps for r in spec.positions.values()):
+        approx.append("yards paid per whole 10 (or 20): a projection prices the expected whole tens (a 57-yard "
+                      "projection is worth about 5.2, not 5.7)")
+    return {"unmapped": sorted(unm), "not_projected": sorted(not_proj), "priced": spec.readback(),
+            "approximated": approx, "unpriced": [f"{u['name']} ({u['event']})" for u in spec.unpriced]}
+    # ---- /IC-1
 
 
 def team_names(rosters: list[dict], users: list[dict]) -> dict[int, dict]:
@@ -575,6 +616,9 @@ class Priced:
     kd: dict[str, pd.DataFrame]
     kd_sources: dict[str, str | None]
     timings_ms: dict[str, float] = field(default_factory=dict)
+    # IC-2: team units (MFL's TMQB / TMPK) priced this week: one row per (position, nflverse team) — proj_points,
+    # p10…p90, the starter whose range it carries (``price_units``); empty in a league without unit slots
+    units: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=UNIT_COLUMNS))
 
 
 PRICED_TTL_S = 600                         # the board changes once a night; a league's scoring almost never
@@ -582,15 +626,17 @@ _priced: dict[tuple, tuple[float, Priced]] = {}
 
 
 def _scoring_key(scoring: Mapping[str, float]) -> str:
-    return json.dumps({k: round(float(v), 6) for k, v in sorted(scoring.items())})
+    sp = getattr(scoring, "spec", None)   # ---- IC-1: two MFL leagues with one flat summary may differ in the spec
+    extra = {"__spec__": sp.key()} if sp is not None and sp.flat is None else {}
+    return json.dumps({k: round(float(v), 6) for k, v in sorted(scoring.items())} | extra)
 
 
 def price_week(query: Query, league_id: str, scoring: Mapping[str, float], slots: list[str], season: int, week: int, *,
                board: Board | None = None, exclude_reference: str | None = None, cache: bool = True) -> Priced:
     """Price a week's board in a league's scoring (skill lines, ranges, K / DEF) — cached 10 minutes per (scoring,
     slots' K / DEF, week, exclusion) in-process, so the rest-of-season sum and every request of the same league reuse it."""
-    starts = tuple(p for p in ("K", "DEF") if p in {str(x).upper() for x in slots})
-    key = (str(league_id), _scoring_key(scoring), starts, int(season), int(week), exclude_reference, board_source())
+    starts, units = kd_starts(slots), unit_starts(slots)          # IC-2: from the slots' eligibility sets
+    key = (str(league_id), _scoring_key(scoring), starts, units, int(season), int(week), exclude_reference, board_source())
     now = time.monotonic()
     hit = _priced.get(key) if cache and board is None else None
     if hit is not None and hit[0] > now:
@@ -598,7 +644,7 @@ def price_week(query: Query, league_id: str, scoring: Mapping[str, float], slots
     t0 = time.perf_counter()
     b = board or load_board(query, season, week)
     t1 = time.perf_counter()
-    out = price_board(b, league_id, scoring, starts, exclude_reference=exclude_reference, t0=t0, t1=t1)
+    out = price_board(b, league_id, scoring, starts, exclude_reference=exclude_reference, t0=t0, t1=t1, units=units)
     if cache and board is None:
         if len(_priced) > 500:
             _priced.clear()
@@ -607,7 +653,8 @@ def price_week(query: Query, league_id: str, scoring: Mapping[str, float], slots
 
 
 def price_board(b: Board, league_id: str, scoring: Mapping[str, float], starts: tuple[str, ...], *,
-                exclude_reference: str | None = None, t0: float | None = None, t1: float | None = None) -> Priced:
+                exclude_reference: str | None = None, t0: float | None = None, t1: float | None = None,
+                units: tuple[str, ...] = ()) -> Priced:
     """One week's board priced in a league's scoring (``price_week``'s body): the skill lines, the reference's ranges,
     K / DEF."""
     t0 = time.perf_counter() if t0 is None else t0
@@ -625,10 +672,126 @@ def price_board(b: Board, league_id: str, scoring: Mapping[str, float], starts: 
     kd, kd_src = {}, {}
     for pos in starts:
         kd_src[pos], kd[pos] = kd_values(scoring, pos, b)
+    unit_rows = price_units(b, scoring, proj, ranges, kd, units) if units else pd.DataFrame(columns=UNIT_COLUMNS)  # IC-2
     t4 = time.perf_counter()
     return Priced(str(league_id), int(b.season), int(b.week), b, proj, ranges, ref, kd, kd_src,
                   {"board": round((t1 - t0) * 1000, 1), "price": round((t2 - t1) * 1000, 1),
-                   "ranges": round((t3 - t2) * 1000, 1), "kd": round((t4 - t3) * 1000, 1)})
+                   "ranges": round((t3 - t2) * 1000, 1), "kd": round((t4 - t3) * 1000, 1)}, unit_rows)
+
+
+# ---- IC-2 (Wave I-C): slots as eligibility sets, team units priced from their team's lines
+UNIT_COLUMNS = ["position", "team", "proj_points", *QUANTILES, "starter_gsis", "starter_name", "n_players"]
+UNIT_SKIP_STATUS = ("Out", "Doubtful")              # a quarterback who will not play is not part of his team's unit
+UNIT_QB_RULE = "starter"                            # TMQB = the starter's line ("sum": every playing QB's; unit_lines)
+
+
+def slot_positions(slots: Iterable[str]) -> frozenset[str]:
+    """Every position some starting slot admits (``lineup.parse_slots``' eligibility sets)."""
+    return frozenset().union(*(s.elig for s in LU.parse_slots(slots)[0]))
+
+
+def kd_starts(slots: Iterable[str]) -> tuple[str, ...]:
+    """The K / DEF frames a league needs priced: K for a K slot or a team kicker (TMPK is priced from the team's
+    kicker), DEF for a DEF / TMDEF slot."""
+    el = slot_positions(slots)
+    return tuple(p for p in ("K", "DEF") if p in el or (p == "K" and "TMPK" in el))
+
+
+def unit_starts(slots: Iterable[str]) -> tuple[str, ...]:
+    el = slot_positions(slots)
+    return tuple(u for u in ("TMQB", "TMPK") if u in el)
+
+
+def unit_lines(b: Board, proj: pd.Series | None = None, rule: str | None = None) -> pd.DataFrame:
+    """TMQB's stat line per NFL team (nflverse code, the index). ``rule`` (default ``UNIT_QB_RULE``):
+
+    * ``starter`` — the line of the team's best-projected quarterback who can play (by ``proj``, this league's points,
+      when given, else passing yards; Out / Doubtful / NFL injured reserve left out unless that leaves none);
+    * ``sum`` — the sum of the team's playing quarterbacks' lines (the brief's first reading). Measured on the week-4
+      board the backups' lines are not near 0 (KC +6.5 points, ATL +13.1 over the starter in a 4-pt pass TD scoring):
+      each line is projected on its own, so the sum counts the team's passing volume more than once.
+
+    ``position`` "TMQB" (the spec prices it with the QB rules: ``lineup.UNIT_PRICES_AS``); ``starter_gsis``: the
+    quarterback whose range the unit carries; ``n_players``: the quarterbacks in the line."""
+    rule = rule or UNIT_QB_RULE
+    cols = ["position", *STAT_LINE, "starter_gsis", "n_players"]
+    qb = b.line[b.line["position"] == "QB"]
+    if qb.empty or b.status is None or b.status.empty or "team" not in b.status:
+        return pd.DataFrame(columns=cols)
+    st = b.status.reindex(qb.index)
+    team = st["team"]
+    out_ = pd.Series(False, index=qb.index)
+    if "report_status" in st:
+        out_ |= st["report_status"].isin(UNIT_SKIP_STATUS)
+    if "roster_status" in st:
+        out_ |= st["roster_status"].eq("RES")
+    rank = (proj.reindex(qb.index) if proj is not None else qb["proj_passing_yards"]).astype(float).fillna(-1e9)
+    rows = {}
+    for t, idx in qb.groupby(team).groups.items():
+        if not isinstance(t, str) or not t:
+            continue
+        keep = [g for g in idx if not out_.get(g, False)] or list(idx)
+        starter = rank.loc[keep].idxmax()
+        keep = keep if rule == "sum" else [starter]
+        line = qb.loc[keep, list(STAT_LINE)].apply(pd.to_numeric, errors="coerce").fillna(0.0).sum()
+        rows[t] = {"position": "TMQB", **line.to_dict(), "starter_gsis": starter, "n_players": len(keep)}
+    return pd.DataFrame.from_dict(rows, orient="index", columns=cols)
+
+
+def price_units(b: Board, scoring: Mapping[str, float], proj: pd.Series, ranges: pd.DataFrame,
+                kd: Mapping[str, pd.DataFrame], units: Iterable[str]) -> pd.DataFrame:
+    """The week's team units in this league's scoring, one row per (position, nflverse team): TMQB = ``unit_lines``
+    priced through ``price_lines`` (the same entry point as every stat line: IC-1's spec prices it as QB), its range
+    the starter's shifted onto the unit's points; TMPK = the team's kicker from ``kd_values`` (K by team, the best
+    projected when there are two), his range. TMDEF is a DEF (``kd_values``)."""
+    out = []
+    if "TMQB" in units:
+        ul = unit_lines(b, proj)
+        if not ul.empty:
+            pts = price_lines(ul, scoring)
+            for t, r in ul.iterrows():
+                g = r["starter_gsis"]
+                row = {"position": "TMQB", "team": t, "proj_points": round(float(pts[t]), 2), "starter_gsis": g,
+                       "starter_name": b.status.at[g, "player_name"] if "player_name" in b.status and g in b.status.index else None,
+                       "n_players": int(r["n_players"])}
+                for q in QUANTILES:
+                    v = ranges.at[g, q] if g in ranges.index and q in ranges else np.nan
+                    pg = proj.get(g, np.nan)
+                    row[q] = (round(max(0.0, float(pts[t]) + float(v) - float(pg)), 2)
+                              if pd.notna(v) and pd.notna(pg) else np.nan)
+                out.append(row)
+    if "TMPK" in units:
+        k = kd.get("K")
+        if k is not None and not k.empty:
+            k = k.assign(_p=pd.to_numeric(k["proj_points"], errors="coerce")).dropna(subset=["_p"])
+            k = k[k["team"].map(lambda x: isinstance(x, str) and bool(x))]
+            for t, g in k.sort_values("_p", ascending=False).groupby("team", sort=False):
+                r = g.iloc[0]
+                out.append({"position": "TMPK", "team": t, "proj_points": round(float(r["_p"]), 2),
+                            "p10": pd.to_numeric(r.get("p10"), errors="coerce"), "p25": np.nan, "p50": np.nan,
+                            "p75": np.nan, "p90": pd.to_numeric(r.get("p90"), errors="coerce"),
+                            "starter_gsis": r["unit_id"], "starter_name": r.get("player_name"), "n_players": len(g)})
+    return pd.DataFrame(out, columns=UNIT_COLUMNS)
+
+
+def unit_map(league_id: str, priced: Mapping[int, Priced]) -> dict[tuple[str, int, str, str], dict]:
+    """``LineupInputs.unit_proj`` from the priced weeks: (league, week, unit position, nflverse team) -> the value."""
+    out = {}
+    for w, pr in priced.items():
+        for r in pr.units.itertuples():
+            out[(league_id, int(w), r.position, r.team)] = {"proj_points": None if pd.isna(r.proj_points) else float(r.proj_points),
+                                                            "team": r.team, "report_status": None, "roster_status": None}
+    return out
+
+
+def unit_value(pr: Priced, position: str, team: str | None) -> dict | None:
+    """One unit's priced row this week (``team`` in Sleeper's or nflverse's code), or None."""
+    if not team or pr.units.empty:
+        return None
+    t = LU._team(team)
+    m = pr.units[(pr.units["position"] == position) & (pr.units["team"] == t)]
+    return None if m.empty else m.iloc[0].to_dict()
+# ---- end IC-2
 
 
 def clear_priced() -> None:
@@ -657,7 +820,7 @@ def _solve_roster(query: Query, league_id: str, roster: dict, players: Mapping[s
         sleeper_meta[sid] = {"sleeper_player_id": sid, "position": position, "fantasy_positions": sp.get("fantasy_positions"),
                              "team": sp.get("team")}
         gsis = gsis_of.get(sid)
-        if gsis is None and position != "DEF":
+        if gsis is None and position != "DEF" and position not in LU.UNITS:     # IC-2: a team unit has no gsis by design
             unmapped.append({"sleeper_player_id": sid, "player_name": name, "position": position, "team": sp.get("team")})
         current.append({"sleeper_player_id": sid, "gsis_id": gsis, "player_name": name, "position": position,
                         "nfl_team": sp.get("team"), "is_on_ir": sid in reserve, "is_on_taxi": sid in taxi})
@@ -695,14 +858,29 @@ def _solve_roster(query: Query, league_id: str, roster: dict, players: Mapping[s
         weeks={league_id: [int(week)]}, proj=proj_map, weekly={}, current={league_id: {roster_id: current}},
         sleeper=sleeper_meta, k_ppg={}, games=games, model_version=",".join(sorted(set(b.line["model_version"].dropna()))),
         starters={(league_id, roster_id): [str(s) for s in (roster.get("starters") or [])]},
-        kd_proj=kd_proj, k_team_proj=k_team)
+        kd_proj=kd_proj, k_team_proj=k_team, unit_proj=unit_map(league_id, {int(week): pr}))   # IC-2: team units
     rows, totals, _ = LU.build(inp, as_of=as_of)
     return rows, totals, unmapped, dp, g
 
 
 def league_scoring(league: Mapping) -> tuple[dict[str, float], list[str]]:
-    scoring = {k: float(v) for k, v in (league.get("scoring_settings") or {}).items() if v is not None}
+    """(the flat ``scoring_settings`` as a ``LeagueScoring`` carrying the league's ``ScoringSpec``, the slots)."""
+    scoring = LeagueScoring({k: float(v) for k, v in (league.get("scoring_settings") or {}).items() if v is not None})
+    scoring.spec = league_spec(league)
     return scoring, [str(s) for s in league.get("roster_positions") or []]
+
+
+# ---- IC-1 (Wave I-C): the league's scoring spec
+def league_spec(league: Mapping) -> ScoringSpec:
+    """``league["scoring_spec"]`` (JSON) when the translation put one there, else MFL's report's ``spec``, else the
+    Sleeper settings compiled (``scoring.from_sleeper``)."""
+    from .scoring import ScoringSpec as _S
+    from .scoring import from_sleeper
+    raw = league.get("scoring_spec") or ((league.get("mfl") or {}).get("scoring") or {}).get("spec")
+    if raw:
+        return _S.from_json(raw)
+    return from_sleeper({k: float(v) for k, v in (league.get("scoring_settings") or {}).items() if v is not None})
+# ---- /IC-1
 
 
 def lineup_rows(query: Query, league_id: str, roster_id: int, week: int, *, as_of: datetime | None = None,
@@ -732,7 +910,8 @@ def lineup_rows(query: Query, league_id: str, roster_id: int, week: int, *, as_o
     t["priced"] = time.perf_counter()
     rows, totals, unmapped, dp, g = _solve_roster(query, league_id, roster, players, pr, slots, as_of)
     t["solve"] = time.perf_counter()
-    frame = _cards_frame(query, rows, totals[0] if totals else {}, pr.ranges, pr.board, dp, g, as_of)
+    frame = _cards_frame(query, rows, totals[0] if totals else {}, pr.ranges, pr.board, dp, g, as_of,
+                         units=pr.units, players=players)                                          # IC-2
     t["frame"] = time.perf_counter()
     marks = list(t)
     timings = {f"{marks[i]}": round((t[marks[i]] - t[marks[i - 1]]) * 1000, 1) for i in range(1, len(marks))}
@@ -754,33 +933,43 @@ def opponent(query: Query | None, league_id: str, roster_id: int, week: int, *, 
     sl = client or sleeper()
     league_id = check_id(league_id)
     ms = sl.matchups(league_id, int(week))
-    mine = next((m for m in ms if int(m.get("roster_id", -1)) == int(roster_id)), None)
-    if mine is None or mine.get("matchup_id") is None:
-        return None
-    opp = next((m for m in ms if m.get("matchup_id") == mine.get("matchup_id")
-                and int(m.get("roster_id", -1)) != int(roster_id)), None)
-    if opp is None:
+    # Wave I-C (PO): a league can play a double header (MFL 70587 plays twice in weeks 2, 4, 6–9, 11 and 13): one
+    # matchup row per game for the same roster — the first opponent is the answer, the rest ride in ``also``
+    mines = [m for m in ms if int(m.get("roster_id", -1)) == int(roster_id) and m.get("matchup_id") is not None]
+    opps = [o for mine in mines for o in ms
+            if o.get("matchup_id") == mine.get("matchup_id") and int(o.get("roster_id", -1)) != int(roster_id)]
+    if not mines or not opps:
         return None
     rosters, users = sl.rosters(league_id), sl.users(league_id)
-    oid = int(opp["roster_id"])
-    names = team_names(rosters, users).get(oid, {})
-    out = {"roster_id": oid, "team_name": names.get("team_name"), "manager": names.get("manager_name"),
-           "matchup_id": int(mine["matchup_id"]), "lineup_value": None}
+    names = team_names(rosters, users)
+    pr = None
     if solve and query is not None:
         league = sl.league(league_id)
+        scoring, slots = league_scoring(league)
+        pr = price_week(query, league_id, scoring, slots, int(league["season"]), int(week),
+                        exclude_reference=exclude_reference)
+
+    def one(opp: dict) -> dict:
+        oid = int(opp["roster_id"])
+        nm = names.get(oid, {})
+        d = {"roster_id": oid, "team_name": nm.get("team_name"), "manager": nm.get("manager_name"),
+             "matchup_id": int(opp["matchup_id"]), "lineup_value": None}
         roster = next((r for r in rosters if int(r.get("roster_id", -1)) == oid), None)
-        if roster is not None:
-            scoring, slots = league_scoring(league)
-            pr = price_week(query, league_id, scoring, slots, int(league["season"]), int(week),
-                            exclude_reference=exclude_reference)
+        if pr is not None and roster is not None:
             _, totals, _, _, _ = _solve_roster(query, league_id, roster, sl.players(), pr, slots, as_of or datetime.now(UTC))
             if totals and totals[0].get("lineup_value") is not None:
-                out["lineup_value"] = round(float(totals[0]["lineup_value"]), 2)
+                d["lineup_value"] = round(float(totals[0]["lineup_value"]), 2)
+        return d
+
+    out = one(opps[0])
+    if len(opps) > 1:
+        out["also"] = [one(o) for o in opps[1:]]
     return out
 
 
 def _cards_frame(query: Query, rows: list[dict], tot: dict, ranges: pd.DataFrame, b: Board, dp: pd.DataFrame,
-                 games: pd.DataFrame, as_of: datetime) -> pd.DataFrame:
+                 games: pd.DataFrame, as_of: datetime, *, units: pd.DataFrame | None = None,
+                 players: Mapping[str, dict] | None = None) -> pd.DataFrame:
     """ops.lineups-shaped rows -> the frame LINEUP_SQL returns (starters incl. empty slots, bench, can't play;
     team, range, kickoff, opponent, the opponent's rank vs the position)."""
     cols = ["role", "slot", "slot_type", "slot_order", "bench_rank", "gsis_id", "sleeper_player_id", "player_name", "position",
@@ -817,11 +1006,21 @@ def _cards_frame(query: Query, rows: list[dict], tot: dict, ranges: pd.DataFrame
             return dp.loc[g, "latest_team"]
         if r["position"] == "DEF":
             return LU.SLEEPER_TO_NFLVERSE_TEAM.get(r["sleeper_player_id"], r["sleeper_player_id"])
+        if r["position"] in LU.UNITS:                  # IC-2: a team unit's team is its directory row's
+            return LU._team(((players or {}).get(r["sleeper_player_id"]) or {}).get("team"))
         return None
     df["team"] = df.apply(team, axis=1)
     for q in QUANTILES:
         df[q] = df["gsis_id"].map(lambda g, q=q: ranges.at[g, q] if isinstance(g, str) and g in ranges.index else np.nan)
         df[q] = pd.to_numeric(df[q], errors="coerce")
+    # ---- IC-2: a team unit's range (its starter's, shifted onto the unit's points)
+    if units is not None and not units.empty:
+        uk = units.set_index(["position", "team"])
+        m = df["position"].isin(LU.UNITS)
+        for q in QUANTILES:
+            df.loc[m, q] = [pd.to_numeric(uk[q].get((p, t), np.nan), errors="coerce") if isinstance(t, str) else np.nan
+                            for p, t in zip(df.loc[m, "position"], df.loc[m, "team"], strict=True)]
+    # ---- end IC-2
     sched = {}
     for r in games.sort_values("kickoff_at").itertuples():
         sched.setdefault(r.home_team, (r.kickoff_at, r.away_team))
@@ -1345,7 +1544,7 @@ def league_inputs(query: Query, league_id: str, season: int, rosters: list[dict]
         weeks={league_id: [int(w) for w in weeks]}, proj=proj_map, weekly={}, current={league_id: current},
         sleeper=sleeper_meta, k_ppg={}, games=games, model_version=",".join(mv),
         starters={(league_id, int(r["roster_id"])): [str(s) for s in (r.get("starters") or [])] for r in rosters},
-        kd_proj=kd_proj, k_team_proj=k_team)
+        kd_proj=kd_proj, k_team_proj=k_team, unit_proj=unit_map(league_id, priced))           # IC-2: team units
     return inp, gsis_of, dp
 
 
@@ -1479,6 +1678,12 @@ def free_agents(query: Query, league_id: str, rosters: list[dict], players: Mapp
     cols = ["sleeper_id", "gsis_id", "player_name", "position", "nfl_team", "roster_status", "injury_status", "games_played"]
     taken = {str(p) for r in rosters for p in (r.get("players") or [])}
     starts = {s.type for s in LU.parse_slots(slots)[0]}
+    # ---- IC-2: team units (MFL's TMQB / TMPK) are free agents too, one per (unit, team): a team whose unit a roster
+    # here carries is taken; of two rows for one free unit (its MFL id, the placeholder) the MFL id is kept
+    unit_taken = {((players.get(x) or {}).get("position"), (players.get(x) or {}).get("team")) for x in taken
+                  if (players.get(x) or {}).get("position") in LU.UNITS}
+    unit_seen: dict[tuple, str] = {}
+    # ---- end IC-2
     cands = []
     for sid, sp in players.items():
         sid = str(sid)
@@ -1487,6 +1692,13 @@ def free_agents(query: Query, league_id: str, rosters: list[dict], players: Mapp
         pos = frozenset(sp.get("fantasy_positions") or ([sp["position"]] if sp.get("position") else []))
         if not any(pos & LU.SLOT_ELIGIBILITY[t] for t in starts):
             continue
+        if pos & LU.UNITS:                                                      # IC-2
+            u = (sp.get("position"), sp.get("team"))
+            if u in unit_taken or (u in unit_seen and sp.get("mfl_id") is None):
+                continue
+            if u in unit_seen:
+                cands.remove(unit_seen[u])
+            unit_seen[u] = sid
         cands.append(sid)
     if not cands:
         return pd.DataFrame(columns=cols)
@@ -1509,7 +1721,7 @@ def free_agents(query: Query, league_id: str, rosters: list[dict], players: Mapp
             rs = "ACT" if (position == "DEF" or (sp.get("team") and str(sp.get("status") or "").lower() == "active")) else None
             inj, gp, team = sp.get("injury_status"), None, sp.get("team")
         gsis = gsis_of.get(sid)
-        if position != "DEF" and gsis is None:
+        if position != "DEF" and position not in LU.UNITS and gsis is None:   # IC-2: a unit has no gsis by design
             continue                                   # unmapped: never joined by name
         if rs != "ACT" or inj in ("Out", "IR"):
             continue

@@ -250,7 +250,7 @@ def test_leagues_mfl_card_and_private_404(client):
     d = r.json()
     assert d["platform"] == "mfl" and d["league"]["league_id"] == KEY and d["roster_id"] == 4
     assert len(d["teams"]) == 12 and d["unmapped"] == [] and d["mapped"] == d["players"] == 216
-    assert "FLEX" in d["scoring_note"] and "Not counted" in d["scoring_note"]
+    assert "FLEX" in d["scoring_note"] and "not projected" in d["scoring_note"]   # I-C: the spec's words
     bad = client.get("/api/leagues", params={"mfl": "99999999"})
     assert bad.status_code == 404 and "Ask the commissioner to allow API access" in bad.json()["error"]
     assert client.get("/api/my-week?league=mfl:99999999&team=1").status_code == 404

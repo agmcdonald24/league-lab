@@ -103,8 +103,22 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   with Compare / Evaluate add-drop / Add to trade), Waivers short (top 3 + views, the best alternative before a drop),
   the calculator's pinned verdict, Favorable / Neutral / Difficult with one rank direction and corner certainty,
   **Value to my lineup** leading Season (`/api/ros?view=lineup`), the card's default content.
-  Next: usage tracking, the news feed, v3.1 behind a backtest (expected-bonus pricing, the fringe level, cold starts),
-  Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
+* **Wave I-C (2026-10-03, Saturday afternoon, dad's league)**: scoring and rosters are dynamic. A league's rules
+  are data per position (`scoring.ScoringSpec`: rates, flat bands at any threshold, TDs and kicks by distance, MFL's
+  whole-unit steps, premiums; `from_sleeper` / `from_mfl`; `anyleague.league_spec(league)`; the spec travels as
+  `scoring_spec` next to the flat `scoring_settings` every old reader keeps) — actual lines priced exactly
+  (`price_detail`), projected lines in expectation (`expected_frame` with `scoring_ev`'s threshold curves and
+  TD-distance shares; MFL specs always, Sleeper specs behind `LEAGUE_LAB_EV_PRICING`, **off** until the nightly
+  prices with the same engine so the player page and My Week agree). **The scoring check**
+  (`/api/league/scoring-check?league=&week=`, `scoring_audit.check`): our points against the league's own for every
+  rostered player of a played week — Scrubs and the dynasty 100% to the tenth (2026 weeks 1–2; the SQL macro agrees),
+  MFL 70587 155 / 156 within a point. Slots are eligibility sets (`lineup.Slot`, `WR+TE`, `TMQB` / `TMPK` / `TMDEF`)
+  and MFL team units are players priced from the team's starter; the Leagues card reads the lineup and the scoring
+  back in the league's own words and shows the check; double headers name both opponents. dbt: `fct_player_game`
+  (and the league twins) carry `pass/rush/rec_tds_10p`. Fixtures: `api/tests/fixtures/mfl/70587/`.
+  **Next: the nightly on the spec (v3.1)** — `projections.price` through `expected_frame`, the harness re-run (M2's
+  numbers say yes: season totals better at every position), then `LEAGUE_LAB_EV_PRICING` on by default; usage
+  tracking; the news feed; Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a

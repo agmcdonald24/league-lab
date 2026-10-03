@@ -41,6 +41,7 @@ recv as (
         count(*) filter (where p.is_target and c.is_drop)            as drops,
         count(*) filter (where p.is_target and c.is_catchable_ball)  as catchable_targets,
         count(*) filter (where p.is_target and c.is_contested_ball)  as contested_targets,
+        count(*) filter (where p.pass_touchdown and p.yards_gained >= 10) as rec_tds_10p,
         count(*) filter (where p.pass_touchdown and p.yards_gained >= 40) as rec_tds_40p,
         count(*) filter (where p.pass_touchdown and p.yards_gained >= 50) as rec_tds_50p
     from plays as p
@@ -59,6 +60,7 @@ rush as (
         count(*) filter (where p.is_rush_attempt and p.is_red_zone)  as red_zone_carries,
         count(*) filter (where p.is_rush_attempt and p.yardline_100 <= 10) as inside_10_carries,
         count(*) filter (where p.is_rush_attempt and p.yardline_100 <= 5)  as inside_5_carries,
+        count(*) filter (where p.rush_touchdown and p.yards_gained >= 10) as rush_tds_10p,
         count(*) filter (where p.rush_touchdown and p.yards_gained >= 40) as rush_tds_40p,
         count(*) filter (where p.rush_touchdown and p.yards_gained >= 50) as rush_tds_50p
     from plays as p
@@ -71,6 +73,7 @@ passer as (
     select
         p.passer_player_id                                           as gsis_id,
         p.game_id,
+        count(*) filter (where p.pass_touchdown and p.yards_gained >= 10) as pass_tds_10p,
         count(*) filter (where p.pass_touchdown and p.yards_gained >= 40) as pass_tds_40p,
         count(*) filter (where p.pass_touchdown and p.yards_gained >= 50) as pass_tds_50p
     from plays as p
@@ -156,11 +159,15 @@ select
     qb.dropbacks,
     qb.sacks_taken,
     qb.scramble_dropbacks,
-    -- long touchdowns (Sleeper *_td_40p / *_td_50p keys); 0 when the game has plays, NULL never (keys come from plays)
+    -- long touchdowns (Sleeper *_td_40p / *_td_50p keys; the 10-yard cut for MFL's touchdowns by distance, Wave I-C);
+    -- 0 when the game has plays, NULL never (keys come from plays)
+    coalesce(passer.pass_tds_10p, 0)            as pass_tds_10p,
     coalesce(passer.pass_tds_40p, 0)            as pass_tds_40p,
     coalesce(passer.pass_tds_50p, 0)            as pass_tds_50p,
+    coalesce(rush.rush_tds_10p, 0)              as rush_tds_10p,
     coalesce(rush.rush_tds_40p, 0)              as rush_tds_40p,
     coalesce(rush.rush_tds_50p, 0)              as rush_tds_50p,
+    coalesce(recv.rec_tds_10p, 0)               as rec_tds_10p,
     coalesce(recv.rec_tds_40p, 0)               as rec_tds_40p,
     coalesce(recv.rec_tds_50p, 0)               as rec_tds_50p,
     part.plays_on_field,

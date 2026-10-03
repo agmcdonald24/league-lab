@@ -69,3 +69,23 @@ seeds:
     columns:
       - name: weight
         tests: [not_null]
+
+  - name: scoring_distributions
+    description: >
+      Wave I-C (M2). GENERATED from src/league_lab/scoring_ev.py (seed_rows(); tests/test_scoring_ev.py fails if
+      they diverge) — do not edit by hand. The threshold curves (gamma / normal parameters per stat and position)
+      and the touchdown-distance shares expected-value pricing reads; the server reads the module's constants, the
+      seed is the record.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [kind, stat, position, param]
+    columns:
+      - name: kind
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [curve, td_share]
+      - name: value
+        tests: [not_null]

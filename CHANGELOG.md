@@ -2,6 +2,42 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-C
+
+- **PO (integration).** `fct_player_game` and its league twins carry the 10-yard touchdown cut (`*_tds_10p`), so
+  MFL's touchdowns by distance are exact on actual lines without play-by-play on the server; the card's scoring
+  read-back names the stat and the position of every rule ("1 pt per 20 passing yards · +10 at 100 rushing (RB) /
+  receiving (RB/WR)"); a double-header week names both opponents and both totals on My Week; the MFL note reads the
+  spec's words; M2's seed is in dbt. Expected-value pricing is on for MFL leagues and waits, for Sleeper leagues, on
+  the nightly pricing with the same engine (v3.1).
+
+- **IC-3: the Leagues card tells the truth.** After a pick, an MFL league's card and every Sleeper league row read
+  back the lineup and the scoring League Lab uses, in the league's own words, say what is not priced, and show the
+  scoring check; dad's league 70587 is a fixture end to end; the audit of Scrubs and the dynasty: the scoring
+  matches Sleeper's to 0.1 (865 / 865 in weeks 1–2), the dynasty's bonuses are what the projections miss.
+
+- **M2: the numbers expected-value pricing needs.** `league_lab.scoring_ev` prices the rules a projected line
+  cannot price all or nothing, for example "+10 at 100 yards", TDs paid 6 / 9 / 12 by distance, or "1 point per whole
+  10 yards". It has P(yards or catches ≥ any threshold | the projection), fitted on 2019–2025 out-of-sample lines,
+  and the share of TDs by distance, measured on every TD play of 2019–2025 (no placeholders). The constants are in
+  the module, with the seed `scoring_distributions.csv` proposed. On the dynasty scoring, expected bonuses take the
+  top-6 RB / WR miss from +1.3 / +1.7 to +0.3 / +0.7 points a week and make season totals closer at every position.
+
+- **IC-1: a real scoring engine, and the scoring check that proves it.** A league's rules are now data per position
+  (`scoring.ScoringSpec`, compiled from Sleeper's settings and MyFantasyLeague's rules: TDs by distance, "1/10" yards,
+  flat bonuses at any threshold, FG by distance, team units, premiums; unknown events listed by name). Projections of
+  an MFL league price on it (dad's 70587 had priced its TDs and yards at 0); the house leagues' numbers are unchanged
+  to the bit. `/api/league/scoring-check` compares our points with the league's own for a played week: Scrubs and the
+  dynasty 100% to the tenth in weeks 1–2 (the SQL macro agrees everywhere), 70587 162 / 163 and 156 / 156 within a point.
+
+- **IC-2: slots as eligibility sets, team units as players.** A slot is the set of positions it admits
+  (`lineup.Slot(label, type, elig, order)`): Sleeper's names, MyFantasyLeague's combined slots (`WR+TE`, `RB+WR+TE`) and
+  team units (`TMQB`, `TMPK`, `TMDEF`) in the league's own words ("WR/TE 1", "team QB"). A rostered MFL team QB / kicker
+  is a player with its NFL team, priced from the team's starting quarterback's line / its kicker; Waivers lists the
+  unrostered ones. MFL's starters are seated in the slot that admits them (a started TE no longer lands at RB2). A
+  player no slot admits reads "No slot for a K in this league", never "Can't play". Dad's league 70587, team 1, week 4
+  (fixture): 3 slots and 13.34 before, 8 slots and 38.65 now.
+
 ## 2026-10-03 — Wave I-B
 
 - **PO merge.** IB-2's "who starts" reads IB-0's roster context (one overlay pass); the API suite answers MFL from

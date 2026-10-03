@@ -259,8 +259,10 @@ def test_k_and_def_present_and_absent():
     lu = check(ps[:1], ["QB", "K", "DEF"])                        # no K or DEF on the roster: empty, reported
     assert lu.empty_slots == ["K", "DEF"]
     lu = check(ps, DYNASTY)                                        # no K / DEF slot: they cannot play here
-    assert {p.id: p.reason for p in lu.unplayable} == {"k1": "no K slot in this lineup", "k2": "no K slot in this lineup",
-                                                       "d1": "no DEF slot in this lineup"}
+    # IC-2: worded "No slot for a K in this league" (was "no K slot in this lineup"), and not "can't play"
+    assert {p.id: p.reason for p in lu.unplayable} == {"k1": "No slot for a K in this league", "k2": "No slot for a K in this league",
+                                                       "d1": "No slot for a DEF in this league"}
+    assert {p.id for p in lu.no_slot} == {"k1", "k2", "d1"} and lu.cannot_play == ()
     lu = solve([Player(id="k", position="K", value=None), P("q", "QB", 9)], DYNASTY)   # no K slot and no value:
     assert (lu.unplayable[0].value, lu.unplayable[0].value_source) == (None, None)  # unknown stays NULL
 
@@ -471,7 +473,7 @@ def test_build_locks_todays_starters_when_the_week_has_no_sleeper_list():
     # the rest is solved: Sleeper's RB starter Hunt (KC, not started) is free to move and loses RB to Cook;
     # the empty ("0") WR slot is filled by Rice; the K stays; the IDP has no modelled slot
     assert (r["rb"]["slot"], r["wk"]["slot"], r["k"]["slot"], r["r"]["role"]) == ("RB", "WR", "K", "bench")
-    assert not r["r"]["is_locked"] and r["idp"]["reason"] == "no DL slot in this lineup"
+    assert not r["r"]["is_locked"] and r["idp"]["reason"] == "No slot for a DL in this league"
     t = totals[0]
     rest = solve([Player(id=i, position=pos, value=v) for i, pos, v in [("r", "RB", 6.0), ("rb", "RB", 14.0), ("wk", "WR", 9.0), ("k", "K", 8.0)]],
                  ["RB", "WR", "K"])                                # the open slots once QB, FLEX and DEF are locked

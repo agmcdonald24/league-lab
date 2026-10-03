@@ -120,6 +120,7 @@ export interface Opponent {
   manager: string | null;
   lineup_value: number | null;
   changes?: string[]; // ---- IB-0: his lineup through the same overlay (who moved and why)
+  also?: Opponent[]; // ---- I-C: a double header's other opponent(s) (MFL leagues can play twice in a week)
 }
 
 export interface MyWeek {

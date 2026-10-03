@@ -123,6 +123,72 @@ in every league. The metric-registry versions for `expected_points` and `positio
 read 1.0: the seed was out of bounds for S-01a (see `docs/STATUS.md`). `scoring_diff_vs_reference`
 still lists the keys where a league differs; the sidebar shows it under a one-line notice.
 
+## Scoring spec (Wave I-C, IC-1, 2026-10-03; `league_lab.scoring.ScoringSpec`, `league_lab.scoring_audit`)
+
+A league's rules as data, **per position**: what Sleeper's flat `scoring_settings` and MyFantasyLeague's position
+groups both compile to (`from_sleeper`, `from_mfl`). It travels with the league (`league_scoring(league)` returns
+the flat dict as a `LeagueScoring` carrying `.spec`; an MFL league's `mfl.scoring.spec` is its JSON); the flat dict
+stays for the old readers (for MFL it is a summary, `flat_from_spec`).
+
+| Part | Meaning | Example (MFL 70587 "Make Football Great Again") |
+|---|---|---|
+| `rates` | points per unit of a stat | `passing_interceptions: -3`, `fumbles_lost_total: -3`, 2-pt `2`; no `receptions` (no PPR) |
+| `bands` | flat points once a game when `low ≤ stat < high + 1` (MFL's whole-number ranges) | RB `rushing_yards: (100, None, 10)`; WR / TE / QB `(75, None, 10)` rushing; TE `(75, None, 10)` receiving; QB `(250, None, 10)` passing; DEF `points_allowed: (0, 0, 10), (1, 3, 8)` |
+| `distance` | per **play** by its length; every band holding the length pays (MFL's are disjoint; Sleeper's long-TD bonuses overlap the base rate) | `rushing_tds / receiving_tds / passing_tds / return_tds / fumble_recovery_tds: (0, 9, 6), (10, 39, 9), (40, 110, 12)`; K `fg_made: (0, 39, 3), (40, 49, 5), (50, 59, 10), (60, 99, 15)` |
+| `steps` | MFL's `a/b` over a range: `base + a · floor((v − origin) / b)` while `low ≤ v ≤ high`; `thresholdPoints` t → base t, origin = the range's low | `rushing_yards: Step(10, None, 1, 10)` (1 a whole 10), QB `passing_yards: Step(20, None, 1, 20)` |
+| `premiums` | per unit on top of `rates` for one position | Sleeper `bonus_rec_te 0.5` → TE `receptions: 0.5` |
+| `unpriced` | events no stat line carries, with the platform's code and name | MFL `UY` "punt return yards"; Sleeper `def_st_ff` "special-teams forced fumble"; IDP groups |
+
+Positions are QB RB WR TE K DEF; a unit prices with the position it stands for (`rules_for`: `TMQB` → QB, `TMPK` → K,
+`TMDEF` / `Def` → DEF). Sleeper applies every key to every player, so its QB / RB / WR / TE / K (and `*`, a row with no
+position) share one rule set; that is what keeps the house leagues' parity with the SQL macro.
+
+**Actual lines** (`price_detail` / `compute_points_spec`, the scoring check): exact. A touchdown's length comes from
+play-by-play (`analytics.fct_play`: `yards_gained` of the scoring play, passer / receiver / rusher) when the row's
+count matches; else the row's `*_tds_40p / _50p` counts are exact at 40 and 50 and the split below 40 is interpolated
+with the distance shares — said per row (`approximated_rows`). Proposed for the PO (dbt): `*_tds_10p` in
+`int_player_game_pbp` → `fct_player_game`; the spec reads them when present and the check then needs no play-by-play.
+
+**Projected lines** (`expected_frame`, what `price_lines` uses for any non-Sleeper spec, and for a Sleeper spec only
+under `LEAGUE_LAB_EV_PRICING=1`):
+* rates and premiums linear;
+* `steps` at the **expected whole units** (`expected_floor_units`: Σ_j P(X ≥ origin + j·b)), not linear. MFL pays per
+  whole 10; the brief suggested linear for an expectation, but M2 measured linear 0.3–0.5 a game too high per
+  yardage stat on a 70587-style scoring (weekly bias QB −0.87 → −0.09 with the floor) — so the floor's expectation;
+* a flat band at its probability, points × P(low ≤ X < high + 1 | projected mean) — M2's fitted curves
+  (`scoring_ev.prob_at_least`), else (marked fallback) a normal with sd = a + b × mean (`SPREAD_FALLBACK`,
+  placeholders). An MFL league always prices bands this way (a projected 249 vs 251 passing yards is not a 10-point
+  difference); a Sleeper league keeps all-or-nothing on the mean until M2's yes;
+* a distance band = projected TDs × Σ band points × the share of that family's TDs in the band at the position
+  (`scoring_ev.td_distance_share`, else the placeholder shares `TD_SHARE_FALLBACK`: receiving ≥ 10 yd 0.55, ≥ 40 0.12;
+  rushing 0.35 / 0.06; passing 0.60 / 0.14 — not measured here).
+
+**K and DEF** price through kd1.0 (`kdef.price`) on a Sleeper-shaped dict from the spec (`kd_flat`): a Sleeper spec
+hands back its own settings (no change); MFL: FG by distance onto Sleeper's buckets (50+ = the 50–59 band),
+points-allowed bands onto Sleeper's by the average over each bucket's points (70587: 1–3 → 8 is 4.0 on 1–6), a
+defensive / return TD at its expected points by distance.
+
+**Parity.** For a Sleeper spec, `price_lines` is the flat path bit for bit (`compute_points_frame` on the same dict),
+so the house leagues' projections did not move; `tests/test_scoring_spec.py` holds `compute_points_spec ==
+compute_points` on every `tests/test_scoring.py` row and on 2,000 random lines each for Scrubs, the dynasty and a TE
+premium + long-TD scoring (`compute_points` = the SQL macro, `tests/test_scoring.py`).
+
+**The scoring check** (`scoring_audit.check`, `GET /api/league/scoring-check?league=&week=`, cached a day): for a
+complete week (the clone: weeks 1–2), every rostered player's points as the platform scored them (Sleeper:
+`analytics.league_player_week.points_observed`, else `staging.stg_sleeper__matchup_players`, else the matchups call's
+`players_points`; MFL: `weeklyResults` per-player `score`) against `price_detail` on his `fct_player_game` line (a
+`TMQB` = the team's QBs' summed line, `TMPK` the team's kickers', a defense `mart_kd_week`'s outcome line). `n` counts
+rostered players matched to an NFL player who played or scored; `within_0_1`, `within_1`; each miss has
+`likely_rule` — one of our pieces whose removal closes the gap to within a point (`band:rushing_yards:100`), one
+event of a rate we may have counted differently (`count:sacks`), a touchdown or 2-pt we cannot see, or
+`unexplained`; `suspect_rules` counts them. House leagues also compare with the dbt macro's twin
+(`fct_player_game_league.points`): `sql: {n, agree, disagree}`.
+
+Results on the clone (2026-09-26 snapshot): League of Scrubs week 1 146 / 146 within 0.1, week 2 144 / 144; the
+dynasty 219 / 219 and 228 / 228; the SQL macro agrees on all of them (136 + 133, 219 + 228); the Test League 151 / 151
+and 144 / 144 (by construction); MFL 70587 week 1 162 / 163 within 1 (161 to the tenth; the miss: Kansas City's
+defense, 14 vs 12 — one sack more in MFL's count), week 2 156 / 156 (155 to the tenth).
+
 ## Play-by-play metrics (v1.0, Phase 2, 2026-09-26)
 
 Source: nflfastR play-by-play (`fct_play`, one row per play, 2016+), NFL participation
@@ -2141,6 +2207,194 @@ fitted on earlier seasons. The curves are scoring-free. Dynasty 2023–2025: top
 +0.61 (QB −0.34 → −1.23); weekly MAE +0.02 to +0.03, because a mean correction of a skewed bonus does not help a
 median loss; Spearman ±0.005. It is right for totals (rest of season, trades) and does not help weekly start/sit.
 It belongs in the pricing of a projected line (v3.1 candidate), not in a points map.
+
+## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
+
+**Why.** A projected line is a set of means. A linear rule (points per yard, per catch, per TD) prices a mean
+exactly. A flat bonus does not: "+10 at 100 rushing yards" on a projected 85-yard line pays nothing all or nothing,
+yet that back crosses 100 in about one game in three (P = 0.33). Its expected value is 10 × P(yards ≥ 100 | 85). A TD
+paid by distance (MFL 70587: 6 / 9 / 12 for 0–9 / 10–39 / 40+ yards) is the same problem: the line projects TDs, not
+their lengths. MFL's "1 point per 10 yards" pays per *whole* 10, so its expectation is below the linear price.
+`scoring_ev` holds the distributions that turn these rules into expected points. They are fitted offline and kept
+as constants in the module (no database, no refit at import); `seed_rows()` writes `dbt/seeds/scoring_distributions.csv`
+from them, and `tests/test_scoring_ev.py` pins the two equal. `run_fit()` refits both (about 6 CPU-minutes).
+
+**Threshold curves** (`prob_at_least(stat, position, mean, threshold)`, `prob_in_band`, `expected_band_points`).
+P(stat ≥ t in one game | the projection's mean), for passing / rushing / receiving yards and receptions. Two
+families, both monotone in the mean by construction:
+
+* *gamma* (rushing and receiving yards, receptions): m′ = scale × mean, shape k = k0 + k1 × m′, scale θ = m′ / k,
+  P(X ≥ t) = Q(k, (t − 0.5) / θ). The 0.5 is the continuity correction of an integer stat. Shape and scale both rise
+  with the mean (k0, k1 ≥ 0), and a gamma is stochastically increasing in both. The relative spread falls as
+  1 / √(k1 × m′): a big projection is relatively less noisy.
+* *normal* (passing yards): μ = scale × mean, sd = sd0 + sd1 × μ, P = Φ((μ − t + 0.5) / sd). Its derivative in the
+  mean is proportional to sd0 + sd1 × t > 0. The fit puts sd at a flat 79 yards.
+
+Each curve is fitted per position × stat on the walk-forward out-of-sample lines (`calibration.oof_rows(lines=True)`:
+the production model, fitted on 2016..S−1, projecting S = 2019–2025; 39,622 played player-weeks). The fit minimises
+the log loss of 1{actual ≥ t} over the thresholds leagues use (passing 150–400; rushing and receiving 25–200;
+receptions 2–12). The curve is fitted to exactly what it prices. A position × stat with fewer than 1,500 rows
+(TE rushing, QB receiving) takes the pooled curve. It replaces M1's isotonic curves (`calibration.fit_bonus_curves`),
+which exist only at fixed thresholds and need the fitting rows at run time.
+
+The two were compared on 2023–2025, each fitted on 2019–2022, by log loss summed over the thresholds (lower is
+better). Gamma against isotonic: QB rushing 0.742 vs 0.777, RB rushing 1.553 vs 1.581, RB receiving 0.622 vs 0.625,
+WR receiving 1.620 vs 1.620, TE receiving 1.063 vs 1.069, receptions RB 1.884 vs 1.894, WR 2.579 vs 2.579 and
+TE 2.292 vs 2.307. For QB passing the normal scores 2.004, against 2.059 for a gamma and 2.010 for isotonic. A gamma
+puts a 400-yard game at 3.4%, the normal at 1.7%; 0.9% happened. Mean predicted against observed (2023–2025, fitted
+earlier):
+
+| | RB rush ≥ 100 | WR rec ≥ 100 | WR rec ≥ 75 | TE rec ≥ 100 | QB pass ≥ 250 | QB pass ≥ 300 |
+|---|---|---|---|---|---|---|
+| all rows | 0.068 / 0.064 | 0.066 / 0.063 | 0.135 / 0.134 | 0.017 / 0.015 | 0.310 / 0.297 | 0.155 / 0.127 |
+| top eighth of the projection | 0.248 / 0.235 | 0.234 / 0.239 | 0.414 / 0.436 | 0.077 / 0.072 | 0.599 / 0.565 | 0.358 / 0.292 |
+
+QB passing bonuses come out about 20% high in 2023–2025, at every window length tried (2, 3 or every earlier
+season). This is not the curve: passing in that era fell below what the QB lines project, so the QB projection runs
+high (M1: the Scrubs top 6 are −0.98).
+
+**TD distances** (`td_distance_share(family, position, low, high)`, `td_survival`, `expected_td_distance_points`).
+The clone has no `raw.nfl_pbp`, but `analytics.fct_play` has every play of 2016–2026 with `yards_gained` and the TD
+flags, so **the 10-yard split is measured, not a placeholder.** Distance is `yards_gained` of the scoring play (a
+pass: air + run after the catch), the definition dbt uses for `*_tds_40p` (`int_player_game_pbp.sql`). With it, the
+2019–2025 counts reproduce `fct_player_game`'s exactly: 5,632 receiving and 3,462 rushing TDs, and 673 / 397
+receiving TDs of 40+ / 50+ and 213 rushing TDs of 40+. Return and defensive TDs take the return yards from nflverse's play description ("… for 61 yards,
+TOUCHDOWN"; 0 for a recovery in the end zone). Survival shares S(d) are stored at 5, 10, 20, 30, 40, 50, 60, 70 and
+80 yards, log-linear between knots (to 0 at 110). A position with n < 100 TDs is shrunk toward its family's pooled
+share by (n × own + 30 × pooled) / (n + 30) ("shrunk"). Missed field goals returned (1 TD in 7 seasons) take the
+kick-return shares ("proxy"). The spec's pooled families are there too: `return_tds` (kick and punt returns,
+103 TDs) and `def_tds` (interception, fumble and blocked or missed kick returns, 430 TDs). So is `fg_made`, made field
+goals by distance from `fct_player_game`'s buckets (6,170 makes; exact at 20 / 30 / 40 / 50 / 60 yards). The K line
+projects makes by bucket up to 50+, so this splits 50–59 from 60+ and prices a made FG of unknown length. MFL's
+event codes PS RS RC KO PR IR DR BF BP MF FG are accepted as the family. Regular seasons 2019–2025:
+
+| Family | Position | TDs | ≥ 10 yd | ≥ 20 | ≥ 40 | ≥ 50 | median yd |
+|---|---|---|---|---|---|---|---|
+| passing | QB | 5,583 | 0.547 | 0.314 | 0.120 | 0.071 | 11 |
+| receiving | WR | 3,476 | 0.604 | 0.387 | 0.166 | 0.098 | 13 |
+| receiving | TE | 1,418 | 0.432 | 0.182 | 0.035 | 0.018 | 8 |
+| receiving | RB | 664 | 0.536 | 0.248 | 0.068 | 0.048 | 10 |
+| receiving | all | 5,632 | 0.548 | 0.315 | 0.119 | 0.070 | 11 |
+| rushing | RB | 2,549 | 0.258 | 0.141 | 0.071 | 0.047 | 3 |
+| rushing | QB | 714 | 0.216 | 0.067 | 0.021 | 0.010 | 3 |
+| rushing | WR | 126 | 0.595 | 0.294 | 0.103 | 0.048 | 14.5 |
+| rushing | all | 3,462 | 0.259 | 0.131 | 0.062 | 0.039 | 3 |
+| interception return | DEF | 247 | 0.960 | 0.874 | 0.494 | 0.360 | 39 |
+| fumble return | DEF | 149 | 0.711 | 0.597 | 0.309 | 0.215 | 27 |
+| blocked punt / FG return | DEF | 33 | 0.697 | 0.545 | 0.303 | 0.273 | 21 |
+| punt return | all | 54 | 0.926 | 0.926 | 0.907 | 0.870 | 75 |
+| kick return | all | 49 | 0.939 | 0.939 | 0.939 | 0.837 | 99 |
+| all defensive returns (`def_tds`) | DEF | 430 | 0.853 | 0.753 | 0.416 | 0.305 | — |
+| made field goals (`fg_made`) | K | 6,170 | 1.000 | 0.996 | 0.433 | 0.162 | — (≥ 60: 0.005) |
+
+The plan's fallback constants were close for receiving (≥ 10: 0.55, ≥ 40: 0.12) but high for rushing (0.35 against
+0.26 measured) and for passing (0.60 / 0.14 against 0.55 / 0.12). Under 70587's 6 / 9 / 12, one expected TD is worth
+6.99 for an RB's rush, 8.31 for a WR's catch, 7.42 for a TE's catch, 8.00 for a QB's pass and 10.36 for an
+interception return. Its FG bands (0–39 / 40–49 / 50–59 / 60+ = 3 / 5 / 10 / 15) split made kicks
+0.567 / 0.271 / 0.157 / 0.005, which is 4.70 points per made FG of unknown length.
+
+**Per whole unit** (`expected_floor_units(stat, position, mean, per, start=0)`). MFL's `1/10` is
+E[floor((X − start) / per)] = Σ_j P(X ≥ start + j × per). The linear price is high by about the expected remainder.
+For an RB projected 85 rushing yards it is 8.20 points, against 8.50 linear. For a TE projected 35 receiving yards it
+is 3.03 against 3.50, and for a QB projected 250 passing yards at 1 per 20 it is 11.76 against 12.50 (the curve's
+scale of 0.98 included).
+
+**Does it help.** The test re-prices the walk-forward projected lines in Forever Unclean Dynasty's scoring (3 / 6 at
+100 / 200 rushing and receiving yards and 300 / 400 passing, 2 per 40+ TD). Before is the production price: bonuses
+all or nothing on the projected line, 40+ TDs 0. After uses expected bonuses and the expected 40+ TD bonus,
+projected TDs × S(40). The curves and shares for season S are fitted only on seasons before S. Actual is the league's
+points from the outcome line plus the 40+ TD bonuses from `fct_player_game` (2-point conversions are in neither).
+The rank is by each price within the week × position. 2023–2025:
+
+| Position | Bucket | n | Bias before | Bias after | MAE before | MAE after |
+|---|---|---|---|---|---|---|
+| QB | top 6 | 324 | +0.07 | −1.39 | 9.02 | 9.11 |
+| QB | 7–12 | 324 | +0.82 | −0.57 | 9.14 | 9.19 |
+| QB | 13–24 | 648 | +1.24 | +0.45 | 8.31 | 8.38 |
+| QB | 25+ | 725 | +0.58 | +0.23 | 6.27 | 6.23 |
+| RB | top 6 | 324 | +1.34 | +0.31 | 8.09 | 8.17 |
+| RB | 7–12 | 324 | +1.29 | +0.93 | 6.95 | 6.96 |
+| RB | 13–24 | 648 | +1.40 | +0.83 | 6.38 | 6.35 |
+| RB | 25+ | 3,199 | −0.24 | −0.34 | 3.77 | 3.79 |
+| WR | top 6 | 324 | +1.65 | +0.70 | 8.66 | 8.91 |
+| WR | 7–12 | 324 | +0.31 | −0.63 | 7.56 | 7.38 |
+| WR | 13–24 | 648 | +0.82 | +0.27 | 7.30 | 7.37 |
+| WR | 25+ | 5,818 | −0.22 | −0.39 | 4.19 | 4.23 |
+| TE | top 6 | 324 | +0.91 | +0.65 | 6.30 | 6.34 |
+| TE | 7–12 | 324 | +0.41 | +0.07 | 5.15 | 5.08 |
+| TE | 13–24 | 648 | +0.80 | +0.80 | 4.46 | 4.50 |
+| TE | 25+ | 2,370 | −0.03 | −0.05 | 2.64 | 2.64 |
+
+Over all rows, bias goes QB +0.75 → −0.09, RB +0.22 → −0.03, WR −0.02 → −0.29 and TE +0.24 → +0.17. MAE goes
++0.01 to +0.03 and Spearman moves by ±0.001. With M1's definition of actual (no 40+ bonuses), the top 6 reproduce
+M1's numbers: RB +1.19 → +0.31 (isotonic +0.42) and WR +1.43 → +0.65 (isotonic +0.61). The expected bonus per row
+matches what was paid (expected / realized, yardage bonuses):
+
+| | QB | RB | WR | TE |
+|---|---|---|---|---|
+| yardage bonuses | 0.547 / 0.416 | 0.217 / 0.203 | 0.205 / 0.193 | 0.053 / 0.045 |
+| 40+ TD bonus | 0.297 / 0.275 | 0.041 / 0.050 | 0.076 / 0.065 | 0.013 / 0.012 |
+| before (all or nothing) | 0.007 | 0.007 | 0.004 | 0.000 |
+
+The all-or-nothing price pays almost no bonus at all, because a projected line rarely reaches 100 yards.
+
+*Season totals* add up each player-season's played weeks, the sum rest of season and trades use. The rank is by
+each projected total within the season × position. 2023–2025:
+
+| Position | Bucket | n | Bias before | Bias after | MAE before | MAE after |
+|---|---|---|---|---|---|---|
+| QB | top 6 | 18 | +30.4 | +7.8 | 48.0 | 42.3 |
+| QB | 7–12 | 18 | +19.9 | +0.1 | 44.3 | 40.4 |
+| QB | 13–24 | 36 | +19.1 | +4.8 | 41.4 | 39.9 |
+| QB | all | 243 | +6.2 | −0.7 | 24.1 | 23.3 |
+| RB | top 6 | 18 | +45.3 | +32.1 | 57.0 | 55.3 |
+| RB | 7–12 | 18 | +32.6 | +27.5 | 38.6 | 33.7 |
+| RB | 13–24 | 36 | +26.7 | +16.7 | 36.9 | 31.0 |
+| RB | all | 455 | +2.1 | −0.3 | 17.6 | 16.9 |
+| WR | top 6 | 18 | +38.5 | +22.4 | 56.6 | 52.4 |
+| WR | 7–12 | 18 | +18.1 | +6.0 | 35.0 | 35.8 |
+| WR | 13–24 | 36 | +20.2 | +10.5 | 31.1 | 27.8 |
+| WR | all | 687 | −0.2 | −3.0 | 18.4 | 18.3 |
+| TE | top 6 | 18 | +28.6 | +24.3 | 39.8 | 37.8 |
+| TE | 7–12 | 18 | +8.6 | +6.4 | 29.8 | 29.2 |
+| TE | 13–24 | 36 | +15.6 | +12.2 | 25.9 | 23.5 |
+| TE | all | 381 | +2.3 | +1.7 | 12.8 | 12.6 |
+
+The large positive bias of the top buckets is a selection effect of ranking by a projected total: the totals with
+the most played weeks, and players who beat their line, end up on top. It is the same before and after.
+
+*A 70587-style scoring.* The same rows were priced in a scoring built like dad's league: TDs 6 / 9 / 12 by distance;
+yards 1 per 10, QB passing 1 per 20; +10 at 100 rushing, 100 receiving (TE 75) and 250 passing (QB); INT −3; fumble
+lost −3; no point per catch. Actual applies MFL's whole-10 rule and the real TD distances (`fct_play`). The flat
+price is TDs at 6 with all-or-nothing bonuses. The placeholder price uses the plan's fallback shares. EV uses the
+curves, the measured shares and linear yards. EV + floor adds `expected_floor_units`. Weekly bias / MAE, and season
+total MAE, over all rows, 2023–2025:
+
+| Position | Flat | Placeholder | EV | EV + floor | Season MAE flat → EV + floor |
+|---|---|---|---|---|---|
+| QB | +2.63 / 11.39 | −0.09 / 11.49 | −0.87 / 11.26 | −0.09 / 11.22 | 39.9 → 33.3 |
+| RB | +0.36 / 5.09 | −0.05 / 5.19 | −0.65 / 5.31 | +0.06 / 5.04 | 21.4 → 18.5 |
+| WR | +0.53 / 4.69 | +0.10 / 4.82 | −0.61 / 5.02 | −0.14 / 4.82 | 20.8 → 18.4 |
+| TE | +0.45 / 3.30 | +0.16 / 3.40 | −0.23 / 3.50 | +0.20 / 3.32 | 13.9 → 12.3 |
+
+**Decision (for the PO).** Turn EV pricing on for projected lines in every league whose rules have flat bonuses,
+distance-banded TDs or whole-unit rates. A league without them prices exactly as before. The reasons:
+
+* Season totals improve at every position. In dynasty, MAE per player-season goes −0.8 QB, −0.7 RB, −0.1 WR and
+  −0.2 TE, and −0.6 to −5.9 in 11 of the 12 top-24 buckets (WR 7–12: +0.8). In a 70587-style league it goes −1.6
+  to −6.6 against flat.
+* The top-6 weekly bias falls from +1.34 / +1.65 / +0.91 to +0.31 / +0.70 / +0.65 (RB / WR / TE).
+* Weekly start/sit is unaffected: Spearman ±0.001, and weekly MAE +0.01 to +0.03. A mean is not a median, so the
+  MAE of a skewed bonus does not improve.
+
+The one cost is the QB top 6, whose weekly bias goes from +0.07 to −1.39. The all-or-nothing price was hiding the
+QB line's own over-projection behind a missing bonus. The fix belongs in the QB model (M1's v3.1 list), not in a
+bonus priced at 0.
+
+**Not covered.** 2-point conversions are not projected. Return TDs are not projected: their shares exist for a
+league's actual lines and a team defense's rules, but no line projects them. Kickers' FG distance bands stay in
+`kdef`. The curves are conditional on the production model (v3.0): a new model version needs `run_fit()` (the
+seed's `version` changes).
 
 ## Deferred (status in registry)
 
