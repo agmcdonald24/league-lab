@@ -2209,11 +2209,10 @@ def _starts_soon(league_id: str, team: int, season: int, week: int, is_house: bo
     out: dict[str, dict] = {}
     rows = None
     try:
-        if is_house:
-            rows, _ = availability.apply_to_rows(cards.lineup_rows(league_id, season, week, int(team)))
-        else:
-            od = _od(A.lineup_rows, query, league_id, int(team), int(week))
-            rows, _ = availability.apply_to_rows(od.rows, build_as_of=availability.build_time())
+        # PO merge (Wave I-B): this week = IB-0's one roster context (the same rows My Week, Team and the calculator
+        # read, cached for the overlay's interval), instead of a second overlay pass of our own
+        rc = availability.roster_context(league_id, int(team), int(week), house=is_house)
+        rows = rc.rows if rc is not None else None
     except (NotFound, SleeperDown, A.SleeperBusy):
         rows = None
     if rows is not None and not rows.empty:
