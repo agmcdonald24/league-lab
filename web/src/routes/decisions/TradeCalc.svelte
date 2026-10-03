@@ -12,7 +12,7 @@
   // clip sideways with overflow-x: hidden, which turns off position: sticky for the whole page.) The page leads with the decision and
   // the lineup impact (this week / the window); the explanation (market, rest of season, ranks, roster size, week by
   // week) is behind "Why?" and both lineups behind "Lineups", collapsed. A name in the lists opens the research pane.
-  import { ApiError, decisionPaths, evaluateIn, get, paths, peek, Unauthorized, type Roster, type Team, type TeamRosterRow, type TradeEval, type TradeWindow } from "../../lib/api";
+  import { ApiError, decisionPaths, evaluateIn, get, paths, peek, Unauthorized, type Roster, type Team, type TeamRosterRow, type TradeEval, type TradeLineupX, type TradeWindow } from "../../lib/api";
   import type { LeagueOption } from "../../lib/leagues";
   import { md, withContext } from "../../lib/md";
   import { errorWords, f1, f2, names, parseIds, s1, slotLabel } from "../../lib/decisions";
@@ -176,6 +176,11 @@
       .join(" + ")}`,
   );
   const labelTone = (l: string) => (l === "No deal" ? "text-bad" : l === "Maybe" ? "text-warn" : "text-good");
+  // ---- IE-2: the result through the starting lineup — the package's names with positions, a starter's points in one
+  // decimal, the lineup rows' per-player change (the answer's; a slot move is none)
+  const posOf = (p: { position?: string | null; team?: string | null }) => [p.position, p.team].filter(Boolean).join(" · ");
+  const lx = (l: TradeEval["lineups"]["mine"]) => l as TradeLineupX;
+  // ---- end IE-2
   // a name in the roster lists: the research pane (IB-1, "Add to trade"), else nothing (the checkbox is the row's tap)
   function paneFor(side: "give" | "get", r: TeamRosterRow) {
     openPlayer(r.gsis_id, { from: "trade", context: { sleeper_id: r.sleeper_id, side, partner: side === "get" ? partner : null, name: r.player_name } }, () => {});
@@ -262,8 +267,24 @@
         </li>
       {/each}
     </ul>
-    {#each l.notes as note, i (i)}<p class="px-4 pt-2 text-xs text-ink-2">{note}</p>{/each}
-    {#if l.closest_call}<p class="px-4 py-2 text-xs text-ink-3">Closest call after: {l.closest_call}.</p>{/if}
+    <!-- ---- IE-2: the starters who left (their points as the change), the slot moves as detail (no points) -->
+    {#if lx(l).out?.length}
+      <ul class="divide-y divide-line border-t border-line" data-testid="lineup-out">
+        {#each lx(l).out ?? [] as row, i (`out-${i}`)}
+          <li class="grid min-h-11 grid-cols-[4.5rem_minmax(0,1fr)_3.25rem_3.25rem] items-center gap-2 px-3 py-1 text-ink-2">
+            <span class="text-sm font-semibold">{row.slot}</span>
+            <span class="min-w-0 truncate text-base"><s>{row.player_name}</s> <span class="text-sm">({row.why})</span></span>
+            <span class="tabnum text-right text-base">{f2(row.value)}</span>
+            <span class="tabnum text-right text-sm text-bad">{s1(row.change)}</span>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    {#if lx(l).total}<p class="px-4 pt-2 text-sm text-ink" data-testid="lineup-total">Lineup total: {f2(lx(l).total!.before)} → {f2(lx(l).total!.after)} ({s1(lx(l).total!.change)}). The changes are by player: a starter who only moves to another {lx(l).reshuffled?.length ? "numbered slot" : "slot"} shows none.</p>{/if}
+    {#if lx(l).reshuffled?.length}<p class="px-4 pt-1 text-sm text-ink-2" data-testid="lineup-reshuffled">Slot moves only (no points): {lx(l).reshuffled!.join("; ")}.</p>{/if}
+    <!-- ---- end IE-2 -->
+    {#each l.notes as note, i (i)}<p class="px-4 pt-2 text-sm text-ink-2">{note}</p>{/each}
+    {#if l.closest_call}<p class="px-4 py-2 text-sm text-ink-2">Closest call after: {l.closest_call}.</p>{/if}
   </Card>
 {/snippet}
 
@@ -312,9 +333,9 @@
           <div class="min-w-0">
             <div class="grid grid-cols-2 gap-2" data-testid="fit-tiles">
               <StatTile label="You · this week" value={s1(r.fit.this_week.mine)} caption={`${f2(r.before.mine.this_week)} → ${f2(r.after.mine.this_week)}`} size="sm" />
-              <StatTile label={`You · ${r.span}`} value={s1(r.fit.next_4.mine)} caption={`${f1(r.before.mine.horizon)} → ${f1(r.after.mine.horizon)}`} size="sm" />
+              <StatTile label={r.window === "week" ? `You · ${r.span}` : `You · ${r.span} in total`} value={s1(r.fit.next_4.mine)} caption={`${f1(r.before.mine.horizon)} → ${f1(r.after.mine.horizon)}`} size="sm" />
               <StatTile label={`${r.partner_team} · this week`} value={s1(r.fit.this_week.theirs)} caption={`${f2(r.before.theirs.this_week)} → ${f2(r.after.theirs.this_week)}`} size="sm" />
-              <StatTile label={`${r.partner_team} · ${r.span}`} value={s1(r.fit.next_4.theirs)} caption={`${f1(r.before.theirs.horizon)} → ${f1(r.after.theirs.horizon)}`} size="sm" />
+              <StatTile label={r.window === "week" ? `${r.partner_team} · ${r.span}` : `${r.partner_team} · ${r.span} in total`} value={s1(r.fit.next_4.theirs)} caption={`${f1(r.before.theirs.horizon)} → ${f1(r.after.theirs.horizon)}`} size="sm" />
             </div>
             <p class="mt-3 text-lg leading-snug font-semibold text-ink" data-testid="verdict">{r.verdict}</p>
             {#if r.sanity}
@@ -322,6 +343,50 @@
             {/if}
           </div>
         </div>
+        <!-- ---- IE-2 result: what the trade does, through your starting lineup (the review: assets and cut → the effect →
+             who starts and who sits → backup coverage → their side → the window and the alternatives); the arithmetic is
+             under "How we calculated this" -->
+        {#if r.effect_words}
+          <div class="mt-4 space-y-3 border-t border-line pt-3" data-testid="trade-story">
+            <dl class="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-2 gap-y-1 text-base" data-testid="trade-assets">
+              <dt class="font-semibold text-ink-2">You give</dt>
+              <dd class="min-w-0">{#each r.give as p, i (p.sleeper_id)}{i ? ", " : ""}<strong>{p.player_name}</strong> <span class="text-sm text-ink-2">({posOf(p)})</span>{/each}</dd>
+              <dt class="font-semibold text-ink-2">You get</dt>
+              <dd class="min-w-0">{#each r.get as p, i (p.sleeper_id)}{i ? ", " : ""}<strong>{p.player_name}</strong> <span class="text-sm text-ink-2">({posOf(p)})</span>{/each}</dd>
+              {#each r.cut ?? [] as c (c.player.sleeper_id)}
+                <dt class="font-semibold text-bad">Cut</dt>
+                <dd class="min-w-0" data-testid="trade-cut">{c.words}</dd>
+              {/each}
+            </dl>
+            <p class="text-lg leading-snug font-semibold text-ink" data-testid="trade-effect">{r.effect_words}</p>
+            <div data-testid="trade-starters">
+              <h3 class="ll-label mb-1">Your starters this week</h3>
+              <ul class="space-y-1 text-base">
+                {#each r.starters_in ?? [] as x (x.player.sleeper_id)}
+                  <li class="flex items-baseline gap-2" data-testid="starter-in"><span class="w-10 shrink-0 font-semibold text-good">In</span><span class="min-w-0 flex-1"><strong>{x.player.player_name}</strong> at {x.slot} <span class="text-sm text-ink-2">({x.how === "trade" ? "from the trade" : "from your bench"})</span></span><span class="tabnum shrink-0">{f1(x.value)}</span></li>
+                {/each}
+                {#each r.starters_out ?? [] as x (x.player.sleeper_id)}
+                  <li class="flex items-baseline gap-2" data-testid="starter-out"><span class="w-10 shrink-0 font-semibold text-bad">Out</span><span class="min-w-0 flex-1"><strong>{x.player.player_name}</strong> from {x.slot} <span class="text-sm text-ink-2">({x.why})</span></span><span class="tabnum shrink-0">{f1(x.value)}</span></li>
+                {/each}
+                {#if !(r.starters_in ?? []).length && !(r.starters_out ?? []).length}
+                  <li class="text-ink-2">The same players start this week.</li>
+                {/if}
+              </ul>
+              {#if lx(r.lineups.mine).total}
+                {@const t = lx(r.lineups.mine).total!}
+                <p class="mt-1 text-sm text-ink-2" data-testid="trade-total">Starting lineup this week: {f1(t.before)} → <strong class="text-ink">{f1(t.after)}</strong> ({s1(t.change)} projected points)</p>
+              {/if}
+            </div>
+            {#if r.backup_words}<p class="text-base text-ink" data-testid="trade-backup">{r.backup_words}</p>{/if}
+            {#if r.their_change}
+              <p class="text-base text-ink" data-testid="trade-their-side">{r.their_change.effect_words} <span class="text-ink-2">{r.their_change.lineup_words}</span></p>
+            {/if}
+            {#if r.hold_words}
+              <p class="text-base text-ink" data-testid="trade-hold"><span class="font-semibold">The alternatives{r.window_words ? ` (${r.window_words})` : ""}:</span> {r.hold_words}</p>
+            {/if}
+          </div>
+        {/if}
+        <!-- ---- end IE-2 result -->
       </Card>
     {/if}
 
@@ -363,12 +428,12 @@
 
     {#if shown && give.length && getIds.length && !evalError}
       {@const r = shown}
-      <Expander title="Why?" testid="why">
+      <Expander title="How we calculated this" testid="why">
       {#if verdictLess(r)}<p class="mb-3 text-base leading-snug" data-testid="why-headline"><Md text={verdictLess(r)} {ctx} /></p>{/if}
       <Card testid="trade-details">
         <div class="grid gap-4 wide:grid-cols-2">
           <div data-testid="market">
-            <div class="ll-label mb-2">Market: season points above a free agent</div>
+            <div class="ll-label mb-2">Projected value above available replacements</div>
             <div class="space-y-2">
               <Bar label="You give" value={r.market.give} max={mmax} display={fmt.whole(r.market.give)} color="var(--ll-div-hot)" />
               <Bar label="You get" value={r.market.get} max={mmax} display={fmt.whole(r.market.get)} />
@@ -388,6 +453,7 @@
             </div>
           {/if}
         </div>
+        {#if r.fit.words}<p class="mt-3 text-sm text-ink-2" data-testid="fit-words"><Md text={r.fit.words} {ctx} /></p>{/if}
         {#if r.ranks?.words}<p class="mt-3 text-sm text-ink-2" data-testid="rank-change"><Md text={r.ranks.words} {ctx} /></p>{/if}
         {#if r.size_words}<p class="mt-2 text-sm text-ink-2" data-testid="roster-size"><Md text={r.size_words} {ctx} /></p>{/if}
       </Card>
@@ -429,10 +495,11 @@
     <Expander title="How to read this" testid="howto">
       <div class="text-base leading-snug">
         {@html md(
-          "- **The dial** is how much the other team would want this trade: what *their* best lineup gains over the weeks you picked, by our numbers. **No deal**: their lineup loses (or gains nothing). **Maybe**: under 2 points. **Likely**: 2 to 6. **Hard to say no**: more than 6. It is our projection's view, not theirs: a manager who rates his players higher than we do may still say no.\n" +
-            "- **You** under the dial is what *your* best lineup gains over the same weeks.\n" +
+          "- **Effect on their starters** is what *their* best lineup gains over the weeks you picked, by our numbers: **Makes their lineup weaker** (it loses points), **About even** (under 2 points), **Improves their lineup** (2 to 6), **Improves it a lot** (more than 6). It describes their lineup, not their answer: we cannot know how another manager rates his players.\n" +
+            "- **You** under it is what *your* best lineup gains over the same weeks: the improvement to your starting lineup, the best lineup each week, added up (+9.5 over weeks 4–7 is in total, not per week).\n" +
             `- **The weeks**: ${windowWhy(win, span)} Pick another span above: this week, the next four, the rest of the season (every week to this league's final) or the playoffs.\n` +
-            "- **Market** is what the players are worth on the market: their projected points for the rest of the season above the best free agent at their position. It is never added to the lineup gains: a player can be worth a lot and still sit on your bench.\n" +
+            "- **Your starters this week** lists who enters your starting lineup and who leaves it. A starter who only moves from one numbered slot to another (WR/TE 2 to WR/TE 3) is not a change: the gain is the lineup total's difference.\n" +
+            "- **Projected value above available replacements** is their projected points for the rest of the season above the best free agent at their position. It is not a trade price, and it is never added to the lineup gains: a player can be worth a lot and still sit on your bench.\n" +
             "- **Roster size**: if a team gets more players than it gives, it has to cut someone: the player it would miss least, and that loss is in the numbers.\n" +
             "- Copy the page's link to share a trade: the link opens the same trade, over the same weeks.",
         )}

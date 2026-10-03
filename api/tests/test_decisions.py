@@ -203,10 +203,11 @@ def test_trade_evaluate_reproduces_the_trade_finder(client, sql, league):
         assert d["fit"]["next_4"]["theirs"] == pytest.approx(page.theirs.gain_horizon, abs=0.01)
         span = d["span"]
         assert d["verdict"] == T.verdict(page, span)
-        assert strip_links(d["fit"]["words"]) == T.fit_line(page, span)
+        # IE-2: the console's sentence through the review's dictionary (the label changes, the numbers stay)
+        assert strip_links(d["fit"]["words"]) == decisions.dictionary_words(T.fit_line(page, span))
         if not source:                        # the market: MARKET_SQL / REPLACEMENT_SQL exactly
             assert (d["market"]["give"], d["market"]["get"]) == (page.mine.price_out, page.mine.price_in)
-            assert strip_links(d["market"]["words"]) == T.fairness_line(page)
+            assert strip_links(d["market"]["words"]) == decisions.dictionary_words(T.fairness_line(page))
         else:                                 # priced on request from the NFL-wide board: the same whole points (± 1)
             assert abs(d["market"]["give"] - page.mine.price_out) <= 1 and abs(d["market"]["get"] - page.mine.price_in) <= 1
         assert d["ros"] is None or d["ros"]["words"].startswith("Rest of season")

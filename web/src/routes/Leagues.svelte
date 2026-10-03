@@ -133,7 +133,17 @@
 <!-- ---- IC-3: the card's read-backs and the scoring check -->
 {#snippet readback(card: LeagueCard, id: string)}
   {@const ck = checks[id]}
-  <div class="space-y-1 text-sm leading-snug" data-testid="league-card" data-league={id}>
+  <!-- ---- IE-2 (Wave I-E): the read-back collapsed to one status line (the review: league and team first, the scoring
+       formula and the check behind it); open, the full read-back and the check as before -->
+  {@const estimated = card.scoring.approximated.length > 0 || !!card.scoring.not_priced_text}
+  {@const platform = id.startsWith("mfl:") ? "MFL" : "Sleeper"}
+  <details class="text-sm leading-snug" data-testid="league-card" data-league={id}>
+    <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-base text-ink-2" data-testid="scoring-status">
+      <span class="chev text-ink-3" aria-hidden="true">›</span>
+      <span>{estimated ? `Custom ${platform} scoring — some pieces are estimated` : `${platform} scoring, read exactly`}</span>
+    </summary>
+    <div class="space-y-1 pb-1">
+    <!-- ---- end IE-2 -->
     <p class="font-semibold text-ink" data-testid="card-lineup">{card.lineup.text}</p>
     {#if card.lineup.unread_text}<p class="text-warn" data-testid="card-unread">{card.lineup.unread_text}</p>{/if}
     <p class="text-ink-2" data-testid="card-scoring"><span class="font-semibold text-ink">Scoring:</span> {card.scoring.text}</p>
@@ -152,11 +162,17 @@
       <p class="text-ink-3" data-testid="card-check">The scoring check is not available for this league yet.</p>
     {:else if ck}
       {@const misses = bigMisses(ck)}
-      <p class={ck.within_1 === ck.n ? "text-good" : "text-ink-2"} data-testid="card-check">
-        {checkLine(ck)}{misses.length ? ` The misses: ${misses.map(missLine).join("; ")}.` : ""}
-      </p>
+      <p class={ck.within_1 === ck.n ? "text-good" : "text-ink-2"} data-testid="card-check">{checkLine(ck)}</p>
+      <!-- ---- IE-2: the check stays one line; the misses behind it -->
+      {#if misses.length}
+        <details class="text-ink-2" data-testid="card-misses">
+          <summary class="cursor-pointer py-1">The misses ({misses.length})</summary>
+          <p>{misses.map(missLine).join("; ")}.</p>
+        </details>
+      {/if}
     {/if}
-  </div>
+    </div>
+  </details>
 {/snippet}
 <!-- ---- end IC-3 -->
 
@@ -242,14 +258,7 @@
         <div class="text-lg leading-snug font-bold">{v.league.name} <span class="text-sm font-semibold text-ink-3">MFL</span></div>
         {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
       </div>
-      {#if v.card}{@render readback(v.card, v.league.league_id)}{:else}
-        <p class="text-sm leading-snug text-ink-2" data-testid="mfl-note">{v.scoring_note}</p>
-      {/if}
-      {#if v.unmapped.length}
-        <p class="text-sm leading-snug text-warn" data-testid="mfl-unmapped">
-          {v.unmapped.length} of {v.players} players have no projection here yet: {v.unmapped.map((u) => u.name ?? u.mfl_id).join(", ")}.
-        </p>
-      {/if}
+      <!-- ---- IE-2: the team picker first (it was below the scoring read-back, under the first desktop screen) -->
       <h2 class="ll-label pt-1">Which team is yours?</h2>
       <ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
         {#each v.teams as t (t.roster_id)}
@@ -264,6 +273,15 @@
           </li>
         {/each}
       </ul>
+      {#if v.card}{@render readback(v.card, v.league.league_id)}{:else}
+        <p class="text-sm leading-snug text-ink-2" data-testid="mfl-note">{v.scoring_note}</p>
+      {/if}
+      {#if v.unmapped.length}
+        <p class="text-sm leading-snug text-warn" data-testid="mfl-unmapped">
+          {v.unmapped.length} of {v.players} players have no projection here yet: {v.unmapped.map((u) => u.name ?? u.mfl_id).join(", ")}.
+        </p>
+      {/if}
+      <!-- ---- end IE-2 -->
     </section>
   {:else if mflFound}
     <!-- I0-C: the leagues the name matched; tapping one loads its card and the team picker -->
