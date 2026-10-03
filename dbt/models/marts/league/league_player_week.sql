@@ -19,9 +19,9 @@ idmap as (select sleeper_id, gsis_id from {{ ref('player_id_map') }}),
 stats as (
     -- weekly stats plus the play-by-play long-touchdown counts the bonus scoring keys need
     select w.*,
-           coalesce(b.pass_tds_40p, 0) as pass_tds_40p, coalesce(b.pass_tds_50p, 0) as pass_tds_50p,
-           coalesce(b.rush_tds_40p, 0) as rush_tds_40p, coalesce(b.rush_tds_50p, 0) as rush_tds_50p,
-           coalesce(b.rec_tds_40p, 0)  as rec_tds_40p,  coalesce(b.rec_tds_50p, 0)  as rec_tds_50p
+           coalesce(b.pass_tds_10p, 0) as pass_tds_10p, coalesce(b.pass_tds_40p, 0) as pass_tds_40p, coalesce(b.pass_tds_50p, 0) as pass_tds_50p,
+           coalesce(b.rush_tds_10p, 0) as rush_tds_10p, coalesce(b.rush_tds_40p, 0) as rush_tds_40p, coalesce(b.rush_tds_50p, 0) as rush_tds_50p,
+           coalesce(b.rec_tds_10p, 0)  as rec_tds_10p,  coalesce(b.rec_tds_40p, 0)  as rec_tds_40p,  coalesce(b.rec_tds_50p, 0)  as rec_tds_50p
     from {{ ref('stg_nflverse__player_stats_week') }} as w
     left join {{ ref('int_player_game_pbp') }} as b on b.gsis_id = w.gsis_id and b.game_id = w.game_id
 )

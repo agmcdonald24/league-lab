@@ -78,7 +78,7 @@
    "unmapped": [],
    "players": 167,
    "mapped": 167,
-   "scoring_note": "Lineup read as TMQB, 2 RB, 3 WR+TE, TMPK, DEF. Passing yards: MyFantasyLeague's yardage bands from 20, 250 yards have no Sleeper bonus; the band below them is extended. Rushing yards: MyFantasyLeague's yardage bands from 10, 75 yards have no Sleeper bonus; the band below them is extended. Receiving yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Passing yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Rushing yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Receiving yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Passing yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Rushing yards: MyFantasyLeague's yardage bands from 10, 75 yards have no Sleeper bonus; the band below them is extended. Receiving yards: MyFantasyLeague's yardage bands from 10, 100 yards have no Sleeper bonus; the band below them is extended. Points allowed: MyFantasyLeague's bands 0-0, 1-3 are mapped onto Sleeper's (0, 1-6, 7-13, 14-20, 21-27, 28-34, 35+) by the average over each band. Passing yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Rushing yards: MyFantasyLeague's yardage bands from 10, 100 yards have no Sleeper bonus; the band below them is extended. Receiving yards: MyFantasyLeague's yardage bands from 10, 100 yards have no Sleeper bonus; the band below them is extended. Passing yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Rushing yards: MyFantasyLeague's yardage bands from 10, 75 yards have no Sleeper bonus; the band below them is extended. Receiving yards: MyFantasyLeague's yardage bands from 10, 75 yards have no Sleeper bonus; the band below them is extended. Not counted in the projections: FR, KO, MF (defense), PR, blocked FG return TD (defense), blocked punt return TD (defense), defensive return TD (defense), interception return TD (defense).",
+   "scoring_note": "Lineup read as team QB, 2 RB, 3 WR/TE, team K, DEF. Points allowed on a projection: the league's bands (0, 1–3) are spread over the defense projection's (0, 1–6, 7–13 …) by the average over each. Kicks of 50+ yards on a projection: priced at the 50–59 band (10); the projection does not split off 60+. Return touchdowns are not projected (they count on actual lines). 2-point conversions are not projected.",
    "card": {
     "lineup": {
      "text": "Your lineup: TMQB · 2 RB · 3 WR/TE · TMPK · DEF",
@@ -96,19 +96,23 @@
      "bench": 6
     },
     "scoring": {
-     "text": "TDs by distance 6 / 9 / 12 · 1 pt per 10 yards · +10 at 75 yards · +10 at 100 yards · +10 at 250 yards · INT −3 · FG by distance 3 / 5 / 10 / 15 · DEF points allowed 0 → 10, 1–3 → 8",
+     "text": "TDs by distance 6 / 9 / 12 (0–9 / 10–39 / 40+ yards) · 1 pt per 10 rushing / receiving yards · 1 pt per 20 passing yards · +10 at 75 rushing (QB/WR/TE) / receiving (TE) · +10 at 100 rushing (RB) / receiving (RB/WR) · +10 at 250 passing · INT −3 · fumble lost −3 · FG by distance 3 / 5 / 10 / 15 · DEF points allowed 0 → 10, 1–3 → 8",
      "pieces": [
-      "TDs by distance 6 / 9 / 12",
-      "1 pt per 10 yards",
-      "+10 at 75 yards · +10 at 100 yards · +10 at 250 yards",
+      "TDs by distance 6 / 9 / 12 (0–9 / 10–39 / 40+ yards)",
+      "1 pt per 10 rushing / receiving yards",
+      "1 pt per 20 passing yards",
+      "+10 at 75 rushing (QB/WR/TE) / receiving (TE) · +10 at 100 rushing (RB) / receiving (RB/WR) · +10 at 250 passing",
       "INT −3",
+      "fumble lost −3",
       "FG by distance 3 / 5 / 10 / 15",
       "DEF points allowed 0 → 10, 1–3 → 8"
      ],
      "not_priced": [],
      "approximated": [
       "points allowed on a projection: the league's bands (0, 1–3) are spread over the defense projection's (0, 1–6, 7–13 …) by the average over each",
-      "kicks of 50+ yards on a projection: priced at the 50–59 band (10); the projection does not split off 60+"
+      "kicks of 50+ yards on a projection: priced at the 50–59 band (10); the projection does not split off 60+",
+      "return touchdowns are not projected (they count on actual lines)",
+      "2-point conversions are not projected"
      ],
      "source": "spec"
     },
@@ -130,7 +134,9 @@
    "spec_unpriced": [],
    "spec_approximated": [
     "points allowed on a projection: the league's bands (0, 1–3) are spread over the defense projection's (0, 1–6, 7–13 …) by the average over each",
-    "kicks of 50+ yards on a projection: priced at the 50–59 band (10); the projection does not split off 60+"
+    "kicks of 50+ yards on a projection: priced at the 50–59 band (10); the projection does not split off 60+",
+    "return touchdowns are not projected (they count on actual lines)",
+    "2-point conversions are not projected"
    ],
    "n": 156,
    "within_0_1": 155,
@@ -164,7 +170,7 @@
    "theirs_from": "MyFantasyLeague weeklyResults",
    "unmatched": [],
    "sql": null,
-   "ms": 168.9,
+   "ms": 95.5,
    "words": "Week 2 check: we match the league's own points for 155 of 156 players within 1 point (99%), 155 to the tenth. The misses: Patriots, New England (theirs 31, ours 32.36: approximated (no play-by-play length for this touchdown) by distance). 2 players' touchdowns by distance were approximated (no play-by-play length).",
    "name": "Make Football Great Again"
   }
@@ -256,11 +262,21 @@
     "manager": "Big Mac Attack",
     "matchup_id": 2,
     "lineup_value": 115.41,
+    "also": [
+     {
+      "roster_id": 7,
+      "team_name": "Klaby Crew",
+      "manager": "Klaby Crew",
+      "matchup_id": 7,
+      "lineup_value": 114.23,
+      "changes": []
+     }
+    ],
     "changes": []
    },
    "source": "sleeper",
    "availability": {
-    "checked_at": "2026-10-03T17:57:20.367483Z",
+    "checked_at": "2026-10-03T18:23:32.692622Z",
     "changes": [
      "Breece Hall is out (quadriceps) — nobody on your bench can play RB2: it stays empty",
      "Jadarian Price is out (chest) — he was on your bench; the lineup does not change"
@@ -704,21 +720,21 @@
      "DEF": "lines"
     },
     "stat_line_mismatches": 0,
-    "sleeper_calls": 0,
+    "sleeper_calls": 4,
     "timings_ms": {
-     "sleeper": 3.5,
-     "priced": 260,
-     "solve": 15,
-     "frame": 24.2,
-     "total": 302.7,
-     "priced.board": 76.5,
-     "priced.price": 40.5,
-     "priced.ranges": 19.4,
-     "priced.kd": 123.1,
-     "opponent": 7,
-     "cards": 267.7,
-     "rest": 12,
-     "request_total": 301.5
+     "sleeper": 4.8,
+     "priced": 256.6,
+     "solve": 15.1,
+     "frame": 21.5,
+     "total": 298,
+     "priced.board": 62.4,
+     "priced.price": 37.2,
+     "priced.ranges": 16.8,
+     "priced.kd": 139.7,
+     "opponent": 17.4,
+     "cards": 262.5,
+     "rest": 22.2,
+     "request_total": 368.8
     },
     "board_source": "nfl_wide",
     "opponent_note": null,
@@ -728,7 +744,7 @@
      "defense": 12,
      "unit": 34
     },
-    "mfl_scoring_note": "Lineup read as TMQB, 2 RB, 3 WR+TE, TMPK, DEF. Passing yards: MyFantasyLeague's yardage bands from 20, 250 yards have no Sleeper bonus; the band below them is extended. Rushing yards: MyFantasyLeague's yardage bands from 10, 75 yards have no Sleeper bonus; the band below them is extended. Receiving yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Passing yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Rushing yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Receiving yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Passing yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Rushing yards: MyFantasyLeague's yardage bands from 10, 75 yards have no Sleeper bonus; the band below them is extended. Receiving yards: MyFantasyLeague's yardage bands from 10, 100 yards have no Sleeper bonus; the band below them is extended. Points allowed: MyFantasyLeague's bands 0-0, 1-3 are mapped onto Sleeper's (0, 1-6, 7-13, 14-20, 21-27, 28-34, 35+) by the average over each band. Passing yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Rushing yards: MyFantasyLeague's yardage bands from 10, 100 yards have no Sleeper bonus; the band below them is extended. Receiving yards: MyFantasyLeague's yardage bands from 10, 100 yards have no Sleeper bonus; the band below them is extended. Passing yards: MyFantasyLeague's yardage bands from 10 yards have no Sleeper bonus; the band below them is extended. Rushing yards: MyFantasyLeague's yardage bands from 10, 75 yards have no Sleeper bonus; the band below them is extended. Receiving yards: MyFantasyLeague's yardage bands from 10, 75 yards have no Sleeper bonus; the band below them is extended. Not counted in the projections: FR, KO, MF (defense), PR, blocked FG return TD (defense), blocked punt return TD (defense), defensive return TD (defense), interception return TD (defense)."
+    "mfl_scoring_note": "Lineup read as team QB, 2 RB, 3 WR/TE, team K, DEF. Points allowed on a projection: the league's bands (0, 1–3) are spread over the defense projection's (0, 1–6, 7–13 …) by the average over each. Kicks of 50+ yards on a projection: priced at the 50–59 band (10); the projection does not split off 60+. Return touchdowns are not projected (they count on actual lines). 2-point conversions are not projected."
    },
    "platform": "mfl"
   }
@@ -1427,10 +1443,10 @@
    "on_demand": {
     "cost": "every roster solved for 4 weeks: 12 x 4 = 48 lineups (the ranks need the whole league)",
     "timings_ms": {
-     "sleeper": 5.7,
-     "price": 675,
-     "solve": 87.6,
-     "total": 768.4
+     "sleeper": 7.5,
+     "price": 1.6,
+     "solve": 116.3,
+     "total": 125.4
     }
    },
    "roster_context": {
@@ -1443,12 +1459,12 @@
      "Breece Hall is out (quadriceps) — nobody on your bench can play RB2: it stays empty",
      "Jadarian Price is out (chest) — he was on your bench; the lineup does not change"
     ],
-    "checked_at": "2026-10-03T17:57:20.367483Z",
-    "as_of_build": "2026-10-03T17:57:20.388508Z"
+    "checked_at": "2026-10-03T18:23:32.692622Z",
+    "as_of_build": "2026-10-03T18:23:32.716742Z"
    },
    "timings_ms": {
-    "data": 10.9,
-    "total": 123
+    "data": 43.2,
+    "total": 209.6
    }
   }
  },
@@ -1577,8 +1593,8 @@
       "reason": null,
       "games_played": 3,
       "is_no_evidence": false,
-      "ros_points": 190.39,
-      "ros_rank_pos": 3,
+      "ros_points": 159.81,
+      "ros_rank_pos": 1,
       "season_points_left": 159.81
      },
      "drop": {
@@ -1813,7 +1829,7 @@
       "reason": "game started (bench)",
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 187.86,
+      "ros_points": 154.51,
       "ros_rank_pos": 6,
       "season_points_left": 143.53
      },
@@ -1884,8 +1900,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 178.97,
-      "ros_rank_pos": 18,
+      "ros_points": 145.99,
+      "ros_rank_pos": 17,
       "season_points_left": 145.99
      },
      "drop": {
@@ -1955,8 +1971,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 176.36,
-      "ros_rank_pos": 21,
+      "ros_points": 144.18,
+      "ros_rank_pos": 24,
       "season_points_left": 144.18
      },
      "drop": {
@@ -2033,8 +2049,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 182.38,
-      "ros_rank_pos": 15,
+      "ros_points": 153.94,
+      "ros_rank_pos": 7,
       "season_points_left": 153.94
      },
      "drop": {
@@ -2111,8 +2127,8 @@
       "reason": null,
       "games_played": 3,
       "is_no_evidence": false,
-      "ros_points": 176.88,
-      "ros_rank_pos": 20,
+      "ros_points": 145.81,
+      "ros_rank_pos": 19,
       "season_points_left": 145.81
      },
      "drop": {
@@ -2268,8 +2284,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 188.6,
-      "ros_rank_pos": 4,
+      "ros_points": 151.53,
+      "ros_rank_pos": 9,
       "season_points_left": 151.53
      },
      "drop": {
@@ -2418,8 +2434,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 179.43,
-      "ros_rank_pos": 17,
+      "ros_points": 148.14,
+      "ros_rank_pos": 15,
       "season_points_left": 148.14
      },
      "drop": {
@@ -2575,8 +2591,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 174.2,
-      "ros_rank_pos": 26,
+      "ros_points": 143.25,
+      "ros_rank_pos": 25,
       "season_points_left": 143.25
      },
      "drop": {
@@ -2646,8 +2662,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 184.28,
-      "ros_rank_pos": 12,
+      "ros_points": 145.82,
+      "ros_rank_pos": 18,
       "season_points_left": 145.82
      },
      "drop": {
@@ -2724,8 +2740,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 181.2,
-      "ros_rank_pos": 16,
+      "ros_points": 150,
+      "ros_rank_pos": 13,
       "season_points_left": 150
      },
      "drop": {
@@ -2795,8 +2811,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 176.29,
-      "ros_rank_pos": 22,
+      "ros_points": 146.66,
+      "ros_rank_pos": 16,
       "season_points_left": 146.66
      },
      "drop": {
@@ -2938,8 +2954,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 169.3,
-      "ros_rank_pos": 29,
+      "ros_points": 133.27,
+      "ros_rank_pos": 32,
       "season_points_left": 133.27
      },
      "drop": {
@@ -3081,8 +3097,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 174.43,
-      "ros_rank_pos": 25,
+      "ros_points": 141.05,
+      "ros_rank_pos": 27,
       "season_points_left": 141.05
      },
      "drop": {
@@ -3224,8 +3240,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 182.38,
-      "ros_rank_pos": 14,
+      "ros_points": 144.24,
+      "ros_rank_pos": 22,
       "season_points_left": 144.24
      },
      "drop": {
@@ -3517,8 +3533,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 166.39,
-      "ros_rank_pos": 31,
+      "ros_points": 135.92,
+      "ros_rank_pos": 30,
       "season_points_left": 135.92
      },
      "drop": {
@@ -3811,8 +3827,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 165.6,
-      "ros_rank_pos": 32,
+      "ros_points": 134.84,
+      "ros_rank_pos": 31,
       "season_points_left": 134.84
      },
      "drop": {
@@ -4170,8 +4186,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 170.26,
-      "ros_rank_pos": 28,
+      "ros_points": 137.68,
+      "ros_rank_pos": 29,
       "season_points_left": 137.68
      },
      "drop": {
@@ -4397,8 +4413,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 186.16,
-      "ros_rank_pos": 7,
+      "ros_points": 150.87,
+      "ros_rank_pos": 10,
       "season_points_left": 150.87
      },
      "drop": {
@@ -4468,8 +4484,8 @@
       "reason": null,
       "games_played": 2,
       "is_no_evidence": false,
-      "ros_points": 178.18,
-      "ros_rank_pos": 19,
+      "ros_points": 145.36,
+      "ros_rank_pos": 21,
       "season_points_left": 145.36
      },
      "drop": {
@@ -5231,7 +5247,7 @@
        "reason": "game started (bench)",
        "games_played": 2,
        "is_no_evidence": false,
-       "ros_points": 187.86,
+       "ros_points": 154.51,
        "ros_rank_pos": 6,
        "season_points_left": 143.53
       },
@@ -5604,8 +5620,8 @@
      "p90": 23.89,
      "injury_status": null,
      "games_played": 3,
-     "ros_points": 176.88,
-     "ros_rank_pos": 20
+     "ros_points": 145.81,
+     "ros_rank_pos": 19
     },
     {
      "sleeper_id": "ATL",
@@ -5621,8 +5637,8 @@
      "p90": 23.7,
      "injury_status": null,
      "games_played": 3,
-     "ros_points": 190.39,
-     "ros_rank_pos": 3
+     "ros_points": 159.81,
+     "ros_rank_pos": 1
     },
     {
      "sleeper_id": "CHI",
@@ -5638,8 +5654,8 @@
      "p90": 23.65,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 179.43,
-     "ros_rank_pos": 17
+     "ros_points": 148.14,
+     "ros_rank_pos": 15
     },
     {
      "sleeper_id": "mfl:TMPK-TB",
@@ -5672,8 +5688,8 @@
      "p90": 22.77,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 182.38,
-     "ros_rank_pos": 15
+     "ros_points": 153.94,
+     "ros_rank_pos": 7
     },
     {
      "sleeper_id": "BUF",
@@ -5689,8 +5705,8 @@
      "p90": 22.71,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 182.38,
-     "ros_rank_pos": 14
+     "ros_points": 144.24,
+     "ros_rank_pos": 22
     },
     {
      "sleeper_id": "CLE",
@@ -5706,7 +5722,7 @@
      "p90": 22.67,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 187.86,
+     "ros_points": 154.51,
      "ros_rank_pos": 6
     },
     {
@@ -5740,8 +5756,8 @@
      "p90": 22.09,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 184.28,
-     "ros_rank_pos": 12
+     "ros_points": 145.82,
+     "ros_rank_pos": 18
     },
     {
      "sleeper_id": "NYG",
@@ -5757,8 +5773,8 @@
      "p90": 22.03,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 176.36,
-     "ros_rank_pos": 21
+     "ros_points": 144.18,
+     "ros_rank_pos": 24
     },
     {
      "sleeper_id": "mfl:TMPK-PHI",
@@ -5808,8 +5824,8 @@
      "p90": 21.94,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 178.97,
-     "ros_rank_pos": 18
+     "ros_points": 145.99,
+     "ros_rank_pos": 17
     },
     {
      "sleeper_id": "mfl:TMPK-CLE",
@@ -5876,8 +5892,8 @@
      "p90": 21.48,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 188.6,
-     "ros_rank_pos": 4
+     "ros_points": 151.53,
+     "ros_rank_pos": 9
     },
     {
      "sleeper_id": "mfl:TMPK-DEN",
@@ -5910,8 +5926,8 @@
      "p90": 21.42,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 174.2,
-     "ros_rank_pos": 26
+     "ros_points": 143.25,
+     "ros_rank_pos": 25
     },
     {
      "sleeper_id": "SF",
@@ -5927,8 +5943,8 @@
      "p90": 21.41,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 165.6,
-     "ros_rank_pos": 32
+     "ros_points": 134.84,
+     "ros_rank_pos": 31
     },
     {
      "sleeper_id": "mfl:TMPK-ARI",
@@ -6012,8 +6028,8 @@
      "p90": 21.22,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 186.16,
-     "ros_rank_pos": 7
+     "ros_points": 150.87,
+     "ros_rank_pos": 10
     },
     {
      "sleeper_id": "mfl:TMPK-NYJ",
@@ -6063,8 +6079,8 @@
      "p90": 21,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 170.26,
-     "ros_rank_pos": 28
+     "ros_points": 137.68,
+     "ros_rank_pos": 29
     },
     {
      "sleeper_id": "TB",
@@ -6080,8 +6096,8 @@
      "p90": 21,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 181.2,
-     "ros_rank_pos": 16
+     "ros_points": 150,
+     "ros_rank_pos": 13
     },
     {
      "sleeper_id": "WAS",
@@ -6097,8 +6113,8 @@
      "p90": 20.88,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 174.43,
-     "ros_rank_pos": 25
+     "ros_points": 141.05,
+     "ros_rank_pos": 27
     },
     {
      "sleeper_id": "11834",
@@ -6131,8 +6147,8 @@
      "p90": 20.82,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 178.18,
-     "ros_rank_pos": 19
+     "ros_points": 145.36,
+     "ros_rank_pos": 21
     },
     {
      "sleeper_id": "LV",
@@ -6148,8 +6164,8 @@
      "p90": 20.65,
      "injury_status": null,
      "games_played": 2,
-     "ros_points": 166.39,
-     "ros_rank_pos": 31
+     "ros_points": 135.92,
+     "ros_rank_pos": 30
     },
     {
      "sleeper_id": "mfl:TMPK-BUF",
@@ -6206,7 +6222,7 @@
    "team_name": "Knight Train",
    "horizon_last_week": 7,
    "lineup_value": 82.94,
-   "as_of": "2026-10-03T17:57:26.692066+00:00",
+   "as_of": "2026-10-03T18:23:48.929758+00:00",
    "inputs_current": true,
    "upside": {
     "title": "Upside stash: his role is growing before his points do",
@@ -6306,9 +6322,9 @@
     ],
     "source": "on demand"
    },
-   "extras_ms": 7.4,
+   "extras_ms": 7.7,
    "availability": {
-    "checked_at": "2026-10-03T17:57:20.367483Z",
+    "checked_at": "2026-10-03T18:23:32.692622Z",
     "claims_left_out": [
      {
       "player_name": "Adonai Mitchell",
@@ -6328,8 +6344,8 @@
      "Breece Hall is out (quadriceps) — nobody on your bench can play RB2: it stays empty",
      "Jadarian Price is out (chest) — he was on your bench; the lineup does not change"
     ],
-    "checked_at": "2026-10-03T17:57:20.367483Z",
-    "as_of_build": "2026-10-03T17:57:20.388508Z"
+    "checked_at": "2026-10-03T18:23:32.692622Z",
+    "as_of_build": "2026-10-03T18:23:32.716742Z"
    },
    "top3": [
     {
@@ -6437,8 +6453,8 @@
        "reason": null,
        "games_played": 3,
        "is_no_evidence": false,
-       "ros_points": 190.39,
-       "ros_rank_pos": 3,
+       "ros_points": 159.81,
+       "ros_rank_pos": 1,
        "season_points_left": 159.81
       },
       "drop": {
@@ -7000,8 +7016,8 @@
          "reason": null,
          "games_played": 3,
          "is_no_evidence": false,
-         "ros_points": 176.88,
-         "ros_rank_pos": 20,
+         "ros_points": 145.81,
+         "ros_rank_pos": 19,
          "season_points_left": 145.81
         },
         "drop": {
@@ -7162,8 +7178,8 @@
          "reason": null,
          "games_played": 3,
          "is_no_evidence": false,
-         "ros_points": 190.39,
-         "ros_rank_pos": 3,
+         "ros_points": 159.81,
+         "ros_rank_pos": 1,
          "season_points_left": 159.81
         },
         "drop": {
@@ -7257,8 +7273,8 @@
          "reason": null,
          "games_played": 2,
          "is_no_evidence": false,
-         "ros_points": 176.36,
-         "ros_rank_pos": 21,
+         "ros_points": 144.18,
+         "ros_rank_pos": 24,
          "season_points_left": 144.18
         },
         "drop": {
@@ -7340,7 +7356,7 @@
          "reason": "game started (bench)",
          "games_played": 2,
          "is_no_evidence": false,
-         "ros_points": 187.86,
+         "ros_points": 154.51,
          "ros_rank_pos": 6,
          "season_points_left": 143.53
         },
@@ -7416,8 +7432,8 @@
          "reason": null,
          "games_played": 3,
          "is_no_evidence": false,
-         "ros_points": 190.39,
-         "ros_rank_pos": 3,
+         "ros_points": 159.81,
+         "ros_rank_pos": 1,
          "season_points_left": 159.81
         },
         "drop": {
@@ -7499,8 +7515,8 @@
          "reason": null,
          "games_played": 2,
          "is_no_evidence": false,
-         "ros_points": 176.29,
-         "ros_rank_pos": 22,
+         "ros_points": 146.66,
+         "ros_rank_pos": 16,
          "season_points_left": 146.66
         },
         "drop": {
@@ -7575,8 +7591,8 @@
          "reason": null,
          "games_played": 2,
          "is_no_evidence": false,
-         "ros_points": 174.2,
-         "ros_rank_pos": 26,
+         "ros_points": 143.25,
+         "ros_rank_pos": 25,
          "season_points_left": 143.25
         },
         "drop": {
@@ -7651,8 +7667,8 @@
          "reason": null,
          "games_played": 2,
          "is_no_evidence": false,
-         "ros_points": 188.6,
-         "ros_rank_pos": 4,
+         "ros_points": 151.53,
+         "ros_rank_pos": 9,
          "season_points_left": 151.53
         },
         "drop": {
@@ -7727,8 +7743,8 @@
          "reason": null,
          "games_played": 2,
          "is_no_evidence": false,
-         "ros_points": 178.97,
-         "ros_rank_pos": 18,
+         "ros_points": 145.99,
+         "ros_rank_pos": 17,
          "season_points_left": 145.99
         },
         "drop": {
@@ -7803,8 +7819,8 @@
          "reason": null,
          "games_played": 2,
          "is_no_evidence": false,
-         "ros_points": 174.43,
-         "ros_rank_pos": 25,
+         "ros_points": 141.05,
+         "ros_rank_pos": 27,
          "season_points_left": 141.05
         },
         "drop": {
@@ -7867,7 +7883,7 @@
      "count": 49
     }
    },
-   "views_ms": 29.2,
+   "views_ms": 29.6,
    "on_demand": {
     "week": 4,
     "weeks": [
@@ -7879,17 +7895,17 @@
     "free_agents": 321,
     "survivors": 51,
     "timings_ms": {
-     "league.sleeper": 6.5,
-     "league.price": 2650.1,
-     "league.solve": 145,
-     "league.total": 2801.5,
-     "free_agents": 79.4,
-     "sweep": 188.4,
-     "total": 3069.3
+     "league.sleeper": 3.9,
+     "league.price": 3371.7,
+     "league.solve": 149.6,
+     "league.total": 3525.1,
+     "free_agents": -3476.2,
+     "sweep": 198.3,
+     "total": 247.2
     }
    },
    "timings_ms": {
-    "request_total": 263.8
+    "request_total": 342.5
    }
   }
  },
@@ -13271,55 +13287,201 @@
      "market_words": null
     },
     {
-     "gsis_id": null,
-     "player_key": "PIT",
-     "player_name": "Pittsburgh Steelers",
-     "position": "DEF",
-     "team": "PIT",
-     "ros_points": 193.86,
+     "gsis_id": "00-0036358",
+     "player_key": "00-0036358",
+     "player_name": "CeeDee Lamb",
+     "position": "WR",
+     "team": "DAL",
+     "ros_points": 190.66,
      "ros_games": 14,
-     "playoff_points": 54.64,
-     "p10": 154.7,
-     "p90": 233,
-     "pos_rank": 1,
-     "rostered_by_roster_id": 10,
-     "rostered_by_team": "Just One More",
+     "playoff_points": 54.79,
+     "p10": 153.8,
+     "p90": 227.5,
+     "pos_rank": 5,
+     "rostered_by_roster_id": 11,
+     "rostered_by_team": "Hang-Over",
      "injury_status": null,
-     "headshot_url": null,
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
      "bye_weeks": [
-      9
+      14
      ],
-     "ros_points_per_game": 13.85,
-     "per_game": {},
-     "why": null,
+     "ros_points_per_game": 13.62,
+     "per_game": {
+      "targets": 9.27,
+      "receptions": 6.08,
+      "receiving_yards": 75.4,
+      "tds": 0.52
+     },
+     "why": {
+      "per": "game",
+      "points": 13.62,
+      "pieces": [
+       {
+        "stat": "targets",
+        "label": "targets",
+        "value": 9.27,
+        "each": 0,
+        "points": 0,
+        "words": "9.3 targets (no points on their own)"
+       },
+       {
+        "stat": "receptions",
+        "label": "catches",
+        "value": 6.08,
+        "each": 0,
+        "points": 0,
+        "words": "6.1 catches (no points on their own)"
+       },
+       {
+        "stat": "receiving_yards",
+        "label": "receiving yards",
+        "value": 75.4,
+        "each": 0.1,
+        "points": 7.54,
+        "words": "75 receiving yards × 0.1 = +7.5"
+       },
+       {
+        "stat": "receiving_tds",
+        "label": "receiving TDs",
+        "value": 0.51,
+        "each": 8.3061,
+        "points": 4.26,
+        "words": "0.51 receiving TDs × 8.30607 = +4.3"
+       },
+       {
+        "stat": "rushing_yards",
+        "label": "rushing yards",
+        "value": 0.61,
+        "each": 0.1,
+        "points": 0.06,
+        "words": "0.61 rushing yards × 0.1 = +0.1"
+       },
+       {
+        "stat": "fumbles_lost_total",
+        "label": "fumbles lost",
+        "value": 0.03,
+        "each": -3,
+        "points": -0.08,
+        "words": "0.03 fumbles lost × -3 = -0.1"
+       },
+       {
+        "stat": "rest",
+        "label": "yardage bonuses (a big game pays extra in this league)",
+        "value": null,
+        "each": null,
+        "points": 1.84,
+        "words": "yardage bonuses (a big game pays extra in this league): +1.8"
+       }
+      ],
+      "sentence": "9.3 targets → 6.1 catches → 75 yards → 0.52 TDs → 13.6 points a game × 14 games = 191",
+      "games": 14,
+      "total": 190.66
+     },
      "market_points": null,
-     "week_points": 15.31,
+     "week_points": 13.33,
      "market_words": null
     },
     {
-     "gsis_id": null,
-     "player_key": "JAX",
-     "player_name": "Jacksonville Jaguars",
-     "position": "DEF",
-     "team": "JAX",
-     "ros_points": 190.88,
+     "gsis_id": "00-0037238",
+     "player_key": "00-0037238",
+     "player_name": "Drake London",
+     "position": "WR",
+     "team": "ATL",
+     "ros_points": 189.1,
      "ros_games": 14,
-     "playoff_points": 53.48,
-     "p10": 151.7,
-     "p90": 230,
-     "pos_rank": 2,
-     "rostered_by_roster_id": 8,
-     "rostered_by_team": "Big Mac Attack",
+     "playoff_points": 54.29,
+     "p10": 147.7,
+     "p90": 230.5,
+     "pos_rank": 6,
+     "rostered_by_roster_id": 9,
+     "rostered_by_team": "Rock33",
      "injury_status": null,
-     "headshot_url": null,
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mcllowcfrmmdeo4zy3g1",
      "bye_weeks": [
-      7
+      11
      ],
-     "ros_points_per_game": 13.63,
-     "per_game": {},
-     "why": null,
+     "ros_points_per_game": 13.51,
+     "per_game": {
+      "targets": 8.32,
+      "receptions": 5.53,
+      "receiving_yards": 72.43,
+      "tds": 0.56
+     },
+     "why": {
+      "per": "game",
+      "points": 13.51,
+      "pieces": [
+       {
+        "stat": "targets",
+        "label": "targets",
+        "value": 8.32,
+        "each": 0,
+        "points": 0,
+        "words": "8.3 targets (no points on their own)"
+       },
+       {
+        "stat": "receptions",
+        "label": "catches",
+        "value": 5.53,
+        "each": 0,
+        "points": 0,
+        "words": "5.5 catches (no points on their own)"
+       },
+       {
+        "stat": "receiving_yards",
+        "label": "receiving yards",
+        "value": 72.43,
+        "each": 0.1,
+        "points": 7.24,
+        "words": "72 receiving yards × 0.1 = +7.2"
+       },
+       {
+        "stat": "receiving_tds",
+        "label": "receiving TDs",
+        "value": 0.55,
+        "each": 8.3061,
+        "points": 4.58,
+        "words": "0.55 receiving TDs × 8.30607 = +4.6"
+       },
+       {
+        "stat": "rushing_yards",
+        "label": "rushing yards",
+        "value": 1.29,
+        "each": 0.1,
+        "points": 0.13,
+        "words": "1.3 rushing yards × 0.1 = +0.1"
+       },
+       {
+        "stat": "rushing_tds",
+        "label": "rushing TDs",
+        "value": 0.01,
+        "each": 7.8773,
+        "points": 0.06,
+        "words": "0.01 rushing TDs × 7.87731 = +0.1"
+       },
+       {
+        "stat": "fumbles_lost_total",
+        "label": "fumbles lost",
+        "value": 0.02,
+        "each": -3,
+        "points": -0.07,
+        "words": "0.02 fumbles lost × -3 = -0.1"
+       },
+       {
+        "stat": "rest",
+        "label": "yardage bonuses (a big game pays extra in this league)",
+        "value": null,
+        "each": null,
+        "points": 1.57,
+        "words": "yardage bonuses (a big game pays extra in this league): +1.6"
+       }
+      ],
+      "sentence": "8.3 targets → 5.5 catches → 72 yards → 0.56 TDs → 13.5 points a game × 14 games = 189",
+      "games": 14,
+      "total": 189.1
+     },
      "market_points": null,
-     "week_points": 13.08,
+     "week_points": 12.61,
      "market_words": null
     }
    ]
@@ -18243,68 +18405,6 @@
      "market_words": null
     },
     {
-     "gsis_id": null,
-     "player_key": "ATL",
-     "player_name": "Atlanta Falcons",
-     "position": "DEF",
-     "team": "ATL",
-     "ros_points": 190.39,
-     "ros_games": 14,
-     "playoff_points": 54.69,
-     "p10": 151.2,
-     "p90": 229.5,
-     "pos_rank": 3,
-     "rostered_by_roster_id": null,
-     "rostered_by_team": null,
-     "injury_status": null,
-     "lineup_points": 29.98,
-     "lineup_weeks": 10,
-     "lineup_kind": "fa",
-     "lineup_why": "Free agent: would start for you in 10 of 15 weeks left, +30 points to your lineup.",
-     "lineup_rank": 47,
-     "headshot_url": null,
-     "bye_weeks": [
-      11
-     ],
-     "ros_points_per_game": 13.6,
-     "per_game": {},
-     "why": null,
-     "market_points": null,
-     "week_points": 14.43,
-     "market_words": null
-    },
-    {
-     "gsis_id": null,
-     "player_key": "CLE",
-     "player_name": "Cleveland Browns",
-     "position": "DEF",
-     "team": "CLE",
-     "ros_points": 187.86,
-     "ros_games": 14,
-     "playoff_points": 54.35,
-     "p10": 148.7,
-     "p90": 227,
-     "pos_rank": 6,
-     "rostered_by_roster_id": null,
-     "rostered_by_team": null,
-     "injury_status": null,
-     "lineup_points": 29.63,
-     "lineup_weeks": 8,
-     "lineup_kind": "fa",
-     "lineup_why": "Free agent: would start for you in 8 of 15 weeks left, +30 points to your lineup.",
-     "lineup_rank": 48,
-     "headshot_url": null,
-     "bye_weeks": [
-      11
-     ],
-     "ros_points_per_game": 13.42,
-     "per_game": {},
-     "why": null,
-     "market_points": null,
-     "week_points": 13.76,
-     "market_words": null
-    },
-    {
      "gsis_id": "00-0039890",
      "player_key": "00-0039890",
      "player_name": "Adonai Mitchell",
@@ -18323,7 +18423,7 @@
      "lineup_weeks": 13,
      "lineup_kind": "fa",
      "lineup_why": "Free agent: would start for you in 13 of 15 weeks left, +30 points to your lineup.",
-     "lineup_rank": 49,
+     "lineup_rank": 47,
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hwwacoa3pqapd7pgahfx",
      "bye_weeks": [
       13
@@ -18415,7 +18515,7 @@
      "lineup_weeks": 14,
      "lineup_kind": "others",
      "lineup_why": "On Uh, Winning!: would start for you in 14 of 15 weeks left, +28 points to your lineup.",
-     "lineup_rank": 50,
+     "lineup_rank": 48,
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/byiptqggtglvy5qrw5wp",
      "bye_weeks": [
       6
@@ -18495,6 +18595,190 @@
      "market_points": null,
      "week_points": 9.69,
      "market_words": null
+    },
+    {
+     "gsis_id": "00-0031588",
+     "player_key": "00-0031588",
+     "player_name": "Stefon Diggs",
+     "position": "WR",
+     "team": "WAS",
+     "ros_points": 122.04,
+     "ros_games": 14,
+     "playoff_points": 35.07,
+     "p10": 91.4,
+     "p90": 152.7,
+     "pos_rank": 29,
+     "rostered_by_roster_id": 3,
+     "rostered_by_team": "Uh, Winning!",
+     "injury_status": null,
+     "lineup_points": 26.62,
+     "lineup_weeks": 14,
+     "lineup_kind": "others",
+     "lineup_why": "On Uh, Winning!: would start for you in 14 of 15 weeks left, +27 points to your lineup.",
+     "lineup_rank": 49,
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cemcexmscsarpvwhafln",
+     "bye_weeks": [
+      7
+     ],
+     "ros_points_per_game": 8.72,
+     "per_game": {
+      "targets": 7.41,
+      "receptions": 4.42,
+      "receiving_yards": 53.75,
+      "tds": 0.34
+     },
+     "why": {
+      "per": "game",
+      "points": 8.72,
+      "pieces": [
+       {
+        "stat": "targets",
+        "label": "targets",
+        "value": 7.41,
+        "each": 0,
+        "points": 0,
+        "words": "7.4 targets (no points on their own)"
+       },
+       {
+        "stat": "receptions",
+        "label": "catches",
+        "value": 4.42,
+        "each": 0,
+        "points": 0,
+        "words": "4.4 catches (no points on their own)"
+       },
+       {
+        "stat": "receiving_yards",
+        "label": "receiving yards",
+        "value": 53.75,
+        "each": 0.1,
+        "points": 5.37,
+        "words": "54 receiving yards × 0.1 = +5.4"
+       },
+       {
+        "stat": "receiving_tds",
+        "label": "receiving TDs",
+        "value": 0.34,
+        "each": 8.3061,
+        "points": 2.83,
+        "words": "0.34 receiving TDs × 8.30607 = +2.8"
+       },
+       {
+        "stat": "fumbles_lost_total",
+        "label": "fumbles lost",
+        "value": 0.02,
+        "each": -3,
+        "points": -0.06,
+        "words": "0.02 fumbles lost × -3 = -0.1"
+       },
+       {
+        "stat": "rest",
+        "label": "yardage bonuses (a big game pays extra in this league)",
+        "value": null,
+        "each": null,
+        "points": 0.58,
+        "words": "yardage bonuses (a big game pays extra in this league): +0.6"
+       }
+      ],
+      "sentence": "7.4 targets → 4.4 catches → 54 yards → 0.34 TDs → 8.7 points a game × 14 games = 122",
+      "games": 14,
+      "total": 122.04
+     },
+     "market_points": null,
+     "week_points": 8.51,
+     "market_words": null
+    },
+    {
+     "gsis_id": "00-0034383",
+     "player_key": "00-0034383",
+     "player_name": "Dalton Schultz",
+     "position": "TE",
+     "team": "HOU",
+     "ros_points": 122.02,
+     "ros_games": 14,
+     "playoff_points": 33.43,
+     "p10": 92.8,
+     "p90": 151.3,
+     "pos_rank": 5,
+     "rostered_by_roster_id": null,
+     "rostered_by_team": null,
+     "injury_status": null,
+     "lineup_points": 26.46,
+     "lineup_weeks": 14,
+     "lineup_kind": "fa",
+     "lineup_why": "Free agent: would start for you in 14 of 15 weeks left, +26 points to your lineup.",
+     "lineup_rank": 50,
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ym8sbkev8l4scnrc0vd8",
+     "bye_weeks": [
+      8
+     ],
+     "ros_points_per_game": 8.72,
+     "per_game": {
+      "targets": 7.39,
+      "receptions": 5.33,
+      "receiving_yards": 51.8,
+      "tds": 0.28
+     },
+     "why": {
+      "per": "game",
+      "points": 8.72,
+      "pieces": [
+       {
+        "stat": "targets",
+        "label": "targets",
+        "value": 7.39,
+        "each": 0,
+        "points": 0,
+        "words": "7.4 targets (no points on their own)"
+       },
+       {
+        "stat": "receptions",
+        "label": "catches",
+        "value": 5.33,
+        "each": 0,
+        "points": 0,
+        "words": "5.3 catches (no points on their own)"
+       },
+       {
+        "stat": "receiving_yards",
+        "label": "receiving yards",
+        "value": 51.8,
+        "each": 0.1,
+        "points": 5.18,
+        "words": "52 receiving yards × 0.1 = +5.2"
+       },
+       {
+        "stat": "receiving_tds",
+        "label": "receiving TDs",
+        "value": 0.28,
+        "each": 7.4151,
+        "points": 2.07,
+        "words": "0.28 receiving TDs × 7.4151 = +2.1"
+       },
+       {
+        "stat": "fumbles_lost_total",
+        "label": "fumbles lost",
+        "value": 0.02,
+        "each": -3,
+        "points": -0.07,
+        "words": "0.02 fumbles lost × -3 = -0.1"
+       },
+       {
+        "stat": "rest",
+        "label": "yardage bonuses (a big game pays extra in this league)",
+        "value": null,
+        "each": null,
+        "points": 1.54,
+        "words": "yardage bonuses (a big game pays extra in this league): +1.5"
+       }
+      ],
+      "sentence": "7.4 targets → 5.3 catches → 52 yards → 0.28 TDs → 8.7 points a game × 14 games = 122",
+      "games": 14,
+      "total": 122.02
+     },
+     "market_points": null,
+     "week_points": 9.88,
+     "market_words": null
     }
    ]
   }
@@ -18537,14 +18821,15 @@
        "bench": 13
       },
       "scoring": {
-       "text": "1 per catch · 6-pt TDs, long-TD bonus +2 at 40 yards · 10 yards a point · +3 at 100 yards · +6 at 200 yards · +3 at 300 yards · 6-pt pass TD · INT −2 · FG by distance 3 / 3 / 4 / 5 / 6 · DEF points allowed 0 → 30, 1–6 → 15, 7–13 → 10",
+       "text": "1 per catch · 6-pt TDs, long-TD bonus +2 at 40 yards · 1 pt per 10 rushing / receiving yards · 1 pt per 20 passing yards · +3 at 100 rushing / receiving · +6 at 200 rushing / receiving · +3 at 300 passing · +6 at 400 passing · INT −2 · fumble lost −2 · FG by distance 3 / 3 / 4 / 5 / 6 · DEF points allowed 0 → 30, 1–6 → 15, 7–13 → 10",
        "pieces": [
         "1 per catch",
         "6-pt TDs, long-TD bonus +2 at 40 yards",
-        "10 yards a point",
-        "+3 at 100 yards · +6 at 200 yards · +3 at 300 yards",
-        "6-pt pass TD",
+        "1 pt per 10 rushing / receiving yards",
+        "1 pt per 20 passing yards",
+        "+3 at 100 rushing / receiving · +6 at 200 rushing / receiving · +3 at 300 passing · +6 at 400 passing",
         "INT −2",
+        "fumble lost −2",
         "FG by distance 3 / 3 / 4 / 5 / 6",
         "DEF points allowed 0 → 30, 1–6 → 15, 7–13 → 10"
        ],
@@ -18593,12 +18878,14 @@
        "bench": 5
       },
       "scoring": {
-       "text": "0.5 per catch · 10 yards a point · 4-pt pass TD · INT −1 · FG by distance 3 / 3 / 3 / 4 / 5 · DEF points allowed 0 → 10, 1–6 → 7, 7–13 → 4",
+       "text": "0.5 per catch · 6-pt TDs (pass 4) · 1 pt per 10 rushing / receiving yards · 1 pt per 25 passing yards · INT −1 · fumble lost −2 · FG by distance 3 / 3 / 3 / 4 / 5 · DEF points allowed 0 → 10, 1–6 → 7, 7–13 → 4",
        "pieces": [
         "0.5 per catch",
-        "10 yards a point",
-        "4-pt pass TD",
+        "6-pt TDs (pass 4)",
+        "1 pt per 10 rushing / receiving yards",
+        "1 pt per 25 passing yards",
         "INT −1",
+        "fumble lost −2",
         "FG by distance 3 / 3 / 3 / 4 / 5",
         "DEF points allowed 0 → 10, 1–6 → 7, 7–13 → 4"
        ],
@@ -18644,12 +18931,14 @@
        "bench": 6
       },
       "scoring": {
-       "text": "1 per catch · 10 yards a point · 4-pt pass TD · INT −1 · FG by distance 3 / 3 / 3 / 4 / 6 · DEF points allowed 0 → 12, 1–6 → 7, 7–13 → 4",
+       "text": "1 per catch · 6-pt TDs (pass 4) · 1 pt per 10 rushing / receiving yards · 1 pt per 25 passing yards · INT −1 · fumble lost −2 · FG by distance 3 / 3 / 3 / 4 / 6 · DEF points allowed 0 → 12, 1–6 → 7, 7–13 → 4",
        "pieces": [
         "1 per catch",
-        "10 yards a point",
-        "4-pt pass TD",
+        "6-pt TDs (pass 4)",
+        "1 pt per 10 rushing / receiving yards",
+        "1 pt per 25 passing yards",
         "INT −1",
+        "fumble lost −2",
         "FG by distance 3 / 3 / 3 / 4 / 6",
         "DEF points allowed 0 → 12, 1–6 → 7, 7–13 → 4"
        ],
@@ -18706,41 +18995,9 @@
     "agree": 228,
     "disagree": []
    },
-   "ms": 142.1,
+   "ms": 139.3,
    "words": "Week 2 check: we match the league's own points for 228 of 228 players within 1 point (100%), 228 to the tenth.",
    "name": "Forever Unclean Dynasty"
-  }
- },
- "/api/league/scoring-check?league=9000000000000000001": {
-  "status": 200,
-  "body": {
-   "league": "9000000000000000001",
-   "week": 2,
-   "season": 2026,
-   "source": "sleeper",
-   "scored_weeks": [
-    1,
-    2
-   ],
-   "spec_unpriced": [
-    "special-teams forced fumble (def_st_ff)",
-    "fumble recovered on special teams (def_st_fum_rec)",
-    "special-teams forced fumble (st_ff)",
-    "special-teams fumble recovery (st_fum_rec)"
-   ],
-   "spec_approximated": [],
-   "n": 144,
-   "within_0_1": 144,
-   "within_1": 144,
-   "misses": [],
-   "suspect_rules": [],
-   "approximated_rows": 0,
-   "theirs_from": "sleeper matchups",
-   "unmatched": [],
-   "sql": null,
-   "ms": 168.1,
-   "words": "Week 2 check: we match the league's own points for 144 of 144 players within 1 point (100%), 144 to the tenth.",
-   "name": "Test League"
   }
  },
  "/api/league/scoring-check?league=1389709692405551104": {
@@ -18774,9 +19031,41 @@
     "agree": 133,
     "disagree": []
    },
-   "ms": 157.1,
+   "ms": 157.3,
    "words": "Week 2 check: we match the league's own points for 144 of 144 players within 1 point (100%), 144 to the tenth.",
    "name": "League of Scrubs"
+  }
+ },
+ "/api/league/scoring-check?league=9000000000000000001": {
+  "status": 200,
+  "body": {
+   "league": "9000000000000000001",
+   "week": 2,
+   "season": 2026,
+   "source": "sleeper",
+   "scored_weeks": [
+    1,
+    2
+   ],
+   "spec_unpriced": [
+    "special-teams forced fumble (def_st_ff)",
+    "fumble recovered on special teams (def_st_fum_rec)",
+    "special-teams forced fumble (st_ff)",
+    "special-teams fumble recovery (st_fum_rec)"
+   ],
+   "spec_approximated": [],
+   "n": 144,
+   "within_0_1": 144,
+   "within_1": 144,
+   "misses": [],
+   "suspect_rules": [],
+   "approximated_rows": 0,
+   "theirs_from": "sleeper matchups",
+   "unmatched": [],
+   "sql": null,
+   "ms": 114.3,
+   "words": "Week 2 check: we match the league's own points for 144 of 144 players within 1 point (100%), 144 to the tenth.",
+   "name": "Test League"
   }
  }
 }

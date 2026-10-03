@@ -2,8 +2,8 @@
 
 For one league and one scored week, every rostered player's **actual** points as the platform scored them against
 ours: ``scoring.price_detail`` (the league's ``ScoringSpec``) on the player's actual stat line from
-``analytics.fct_player_game`` (gsis through ``analytics.player_id_map`` for Sleeper, the nflverse id table for MFL),
-with the touchdowns' lengths from ``analytics.fct_play``. The platform's points:
+``analytics.fct_player_game`` (gsis through ``analytics.player_id_map`` for Sleeper, the nflverse id table for MFL;
+its ``*_tds_10p/40p/50p`` counts make MFL's touchdown-distance bands exact). The platform's points:
 
 * Sleeper, a house league: ``staging.stg_sleeper__matchup_players.points`` (Sleeper's ``players_points``);
   any other Sleeper league (or a week the copy lacks): the on-demand ``/matchups/<week>`` call's ``players_points``.
@@ -57,20 +57,6 @@ STATS_SQL = """
 select g.*
 from analytics.fct_player_game g
 where g.season = %s and g.week = %s and g.season_type = 'REG' and (g.gsis_id = any(%s) or g.team = any(%s))"""
-# touchdown lengths (yards gained on the scoring play) per player and family, from play-by-play
-LENGTHS_SQL = """
-select gsis_id, family, array_agg(yards_gained::int order by play_id) as lengths from (
-  select passer_player_id as gsis_id, 'passing_tds' as family, yards_gained, play_id
-    from analytics.fct_play where season = %s and week = %s and pass_touchdown and not is_no_play
-  union all
-  select receiver_player_id, 'receiving_tds', yards_gained, play_id
-    from analytics.fct_play where season = %s and week = %s and pass_touchdown and not is_no_play
-         and td_player_id = receiver_player_id
-  union all
-  select rusher_player_id, 'rushing_tds', yards_gained, play_id
-    from analytics.fct_play where season = %s and week = %s and rush_touchdown and not is_no_play
-         and td_player_id = rusher_player_id
-) t where gsis_id is not null group by 1, 2"""
 DEF_SQL = """
 select unit_id, team, out_sacks as sacks, out_interceptions as interceptions, out_fumble_recoveries as fumble_recoveries,
        out_forced_fumbles as forced_fumbles, out_def_tds as def_tds, out_st_tds as st_tds, out_safeties as safeties,
@@ -171,27 +157,12 @@ def _sleeper_points(client, league_id: str, week: int, query: Query | None = Non
     return pd.DataFrame(rows, columns=["sleeper_player_id", "roster_id", "points", "is_starter"]), "sleeper matchups"
 
 
-def _lengths(query: Query, season: int, week: int) -> dict[tuple[str, str], list[int]]:
-    try:
-        d = query(LENGTHS_SQL, (season, week) * 3)
-    except Exception:  # noqa: BLE001 - no play-by-play in this copy: the long-TD counts and the shares
-        return {}
-    return {(str(r.gsis_id), str(r.family)): [int(x) for x in (r.lengths or [])] for r in d.itertuples()}
-
-
-def _stat_line(row: Mapping, lengths: Mapping[tuple[str, str], list[int]], gsis: str) -> dict:
+def _stat_line(row: Mapping) -> dict:
     line = {c: _num(row.get(c)) for c in STAT_COLS}
-    for c in TEN_YARD_CUTS:                  # once fct_player_game carries them, the < 40 split is exact without pbp
+    for c in TEN_YARD_CUTS:                  # the 10-yard cut (fct_player_game since Wave I-C); older copies approximate it
         if row.get(c) is not None:
             line[c] = _num(row.get(c))
     line["position"] = row.get("position")
-    for fam, col in (("passing_tds", "passing_tds"), ("rushing_tds", "rushing_tds"), ("receiving_tds", "receiving_tds")):
-        ls = lengths.get((gsis, fam))
-        n = int(round(line.get(col, 0)))
-        if n == 0:
-            line[f"{fam}_lengths"] = []
-        elif ls is not None and len(ls) == n:
-            line[f"{fam}_lengths"] = ls
     return line
 
 
@@ -283,11 +254,10 @@ def check(query: Query, league: Mapping, week: int | None, *, client=None, playe
                               f"{', '.join(map(str, weeks)) or 'none'}); the check needs a finished week."))
         out["words"] = _words(out)
         return out
-    lengths = _lengths(query, season, week)
     if lid.startswith("mfl:"):
-        rows, unmatched, theirs_src = _mfl_rows(query, league, week, season, lengths, mfl_client)
+        rows, unmatched, theirs_src = _mfl_rows(query, league, week, season, mfl_client)
     else:
-        rows, unmatched, theirs_src = _sleeper_rows(query, league, week, season, lengths, client)
+        rows, unmatched, theirs_src = _sleeper_rows(query, league, week, season, client)
     res = compare(rows, spec)
     out.update(res)
     out["theirs_from"] = theirs_src
@@ -298,7 +268,7 @@ def check(query: Query, league: Mapping, week: int | None, *, client=None, playe
     return out
 
 
-def _sleeper_rows(query, league, week, season, lengths, client):
+def _sleeper_rows(query, league, week, season, client):
     from . import anyleague as A
     lid = str(league["league_id"])
     client = client or A.sleeper()
@@ -335,11 +305,11 @@ def _sleeper_rows(query, league, week, season, lengths, client):
                 unmatched.append({"player": sid, "gsis_id": g, "theirs": theirs, "why": "no stat row this week"})
             continue
         rows.append({"player": st.get("player_name"), "position": st.get("position"), "gsis_id": g, "theirs": theirs,
-                     "line": _stat_line(st, lengths, g)})
+                     "line": _stat_line(st)})
     return rows, unmatched, src
 
 
-def _mfl_rows(query, league, week, season, lengths, mfl_client):
+def _mfl_rows(query, league, week, season, mfl_client):
     from . import mfl_client as M
     from . import player_ids as PI
     lid = str(league["league_id"]).removeprefix("mfl:")
@@ -369,7 +339,7 @@ def _mfl_rows(query, league, week, season, lengths, mfl_client):
         if pos in ("TMQB", "TMPK"):
             team = _nflverse(M.TEAM.get(str(p.get("team") or "").upper(), str(p.get("team") or "").upper()))
             want = "QB" if pos == "TMQB" else "K"
-            lines = [_stat_line(r, lengths, str(r["gsis_id"])) for r in recs if r.get("team") == team and r.get("position") == want]
+            lines = [_stat_line(r) for r in recs if r.get("team") == team and r.get("position") == want]
             rows.append({"player": name, "position": pos, "theirs": theirs, "unit": team,
                          "line": _sum_lines(lines) if lines else {"position": pos}})
             continue
@@ -393,7 +363,7 @@ def _mfl_rows(query, league, week, season, lengths, mfl_client):
                 unmatched.append({"player": name, "gsis_id": g, "theirs": theirs, "why": "no stat row this week"})
             continue
         rows.append({"player": st.get("player_name") or name, "position": M.POS.get(pos, pos) or st.get("position"),
-                     "gsis_id": g, "theirs": theirs, "line": _stat_line(st, lengths, g)})
+                     "gsis_id": g, "theirs": theirs, "line": _stat_line(st)})
     del nfl_team
     return rows, unmatched, "MyFantasyLeague weeklyResults"
 

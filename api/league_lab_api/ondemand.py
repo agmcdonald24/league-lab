@@ -86,10 +86,11 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
                                   solve=False)
     if opp is not None:
         try:
-            octx = availability.roster_context(league_id, int(opp["roster_id"]), week, house=False, as_of=as_of,
-                                               exclude_reference=exclude_reference, client=client)
-            opp["lineup_value"] = octx.lineup_value
-            opp["changes"] = octx.changes
+            for o in (opp, *opp.get("also", [])):          # I-C: a double header's second opponent too
+                octx = availability.roster_context(league_id, int(o["roster_id"]), week, house=False, as_of=as_of,
+                                                   exclude_reference=exclude_reference, client=client)
+                o["lineup_value"] = octx.lineup_value
+                o["changes"] = octx.changes
         except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
             opp_note = opp_note or "sleeper_unavailable"
     # ---- end IB-0
@@ -774,6 +775,16 @@ _SLOT_WORDS = {"QB": "QB", "RB": "RB", "WR": "WR", "TE": "TE", "FLEX": "FLEX", "
                "DEF": "DEF"}
 
 
+def _slot_word(slot: str) -> str:
+    if slot in _SLOT_WORDS:
+        return _SLOT_WORDS[slot]
+    try:  # IC-2: the league's own names ("WR+TE" -> "WR/TE", "TMQB" -> "team QB")
+        from .applib import cards
+        return str(cards.slot_label(slot)).rstrip("0123456789 ") or slot
+    except Exception:  # noqa: BLE001 - words only
+        return slot
+
+
 def mfl_scoring_note(league: dict) -> str:
     """The plain-words note under an MFL league's card: how its lineup and scoring were read."""
     m = league.get("mfl") or {}
@@ -781,7 +792,7 @@ def mfl_scoring_note(league: dict) -> str:
     counts: dict[str, int] = {}
     for x in slots:
         counts[x] = counts.get(x, 0) + 1
-    lineup = ", ".join(f"{n} {_SLOT_WORDS.get(k, k)}" if n > 1 else _SLOT_WORDS.get(k, k) for k, n in counts.items())
+    lineup = ", ".join(f"{n} {_slot_word(k)}" if n > 1 else _slot_word(k) for k, n in counts.items())
     bits = [f"Lineup read as {lineup}."]
     sn = m.get("slots") or {}
     if sn.get("ranges"):
@@ -790,10 +801,14 @@ def mfl_scoring_note(league: dict) -> str:
     if sn.get("idp"):
         bits.append("Defensive players (" + ", ".join(sn["idp"]) + ") are not projected here; those spots are left out.")
     rep = m.get("scoring") or {}
-    for a in rep.get("approximated") or []:
+    # Wave I-C: the spec's words when the translation carries them (the flat compiler's `approximated` / `unpriced`
+    # describe the Sleeper-shaped copy, which no longer prices the league)
+    approx = rep.get("spec_approximated") if "spec_approximated" in rep else rep.get("approximated")
+    unpriced = rep.get("spec_unpriced") if "spec_unpriced" in rep else rep.get("unpriced")
+    for a in approx or []:
         bits.append(a[:1].upper() + a[1:] + ".")
-    if rep.get("unpriced"):
-        bits.append("Not counted in the projections: " + ", ".join(rep["unpriced"]) + ".")
+    if unpriced:
+        bits.append("Not counted in the projections: " + ", ".join(str(u.get("name") or u.get("code") or u) if isinstance(u, dict) else str(u) for u in unpriced) + ".")
     return " ".join(bits)
 
 

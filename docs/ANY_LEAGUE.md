@@ -405,14 +405,14 @@ NFL stats) → `{league, week, n, within_0_1, within_1, misses: [{player, positi
 pieces}], suspect_rules, sql, unmatched, theirs_from, spec_unpriced, spec_approximated, words}`. A week our stats do
 not hold yet answers `n: 0` with the sentence. Cached a day in process.
 
-**Not done / for the PO.** The 10-yard touchdown split on actual lines reads play-by-play (`analytics.fct_play`)
-until `fct_player_game` carries `*_tds_10p` (proposed). `scripts/hosted_relations.py` now finds `analytics.fct_play`
-(and `staging.stg_sleeper__matchup_players`, the fallback) in the API's closure: `fct_play` is 233 MB whole, so it
-belongs in `sync_to_hosted.sh`'s `SLIM_TABLES` (a window of seasons) before the next publish — or, better, the
-`*_tds_10p` columns and the lengths query dropped. Without lengths the check approximates the < 40-yard split
-(70587: 128 / 163 and 122 / 156 within 1 point instead of 162 / 163 and 156 / 156; the house leagues are unaffected:
-their long-TD bonuses start at 40). Return yards, IDP, and the defense's distance on a return TD (priced at its
-expected points) are not priced from actual lines.
+**The 10-yard split (PO, at integration).** `fct_player_game` (and `fct_player_game_league`, `league_player_week`,
+from `int_player_game_pbp`) now carry `pass/rush/rec_tds_10p` next to `_40p` / `_50p`, so MFL's 0–9 / 10–39 / 40+
+bands are exact on actual lines and the check reads no play-by-play (IC-1's `analytics.fct_play` lengths query is
+gone: 233 MB whole, it would have broken the hosted copy's 480 MB budget). A copy built before this change has no
+`*_tds_10p` column, and the check approximates the < 40-yard split with M2's shares and says so (70587: 128 / 163
+and 122 / 156 within 1 point instead of 162 / 163 and 156 / 156; the house leagues are unaffected — their long-TD
+bonuses start at 40). Return yards, IDP, and the defense's distance on a return TD (priced at its expected points)
+are not priced from actual lines.
 
 ## Slots and team units (Wave I-C, IC-2, 2026-10-03)
 

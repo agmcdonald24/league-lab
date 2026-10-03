@@ -371,38 +371,113 @@ def _band_text(b: Band) -> str:
     return f"{int(lo)}+" if hi is None else (f"{int(lo)}" if lo == hi else f"{int(lo)}–{int(hi)}")
 
 
-def readback(spec: ScoringSpec) -> list[str]:
-    """The league's scoring in a few plain pieces (the Leagues card's one line): the offense's rules (WR's, else the
-    first skill position's), then what differs by position, then K and DEF."""
-    pieces: list[str] = []
-    off = next((spec.positions[p] for p in ("WR", "RB", "TE", "QB", "*") if p in spec.positions), None)
-    if off is not None:
-        rec = off.rates.get("receptions", 0.0)
-        te = spec.positions.get("TE")
-        te_rec = (te.rates.get("receptions", 0.0) + te.premiums.get("receptions", 0.0)) if te else rec
-        if rec:
-            pieces.append(f"{_fmt(rec)} per catch" + (f" (TE {_fmt(te_rec)})" if te_rec != rec else ""))
-        td = off.distance.get("receiving_tds") or off.distance.get("rushing_tds")
-        if td and all(b[0] > 0 for b in td):
-            pieces.append(f"{_fmt(off.rates.get('receiving_tds', 6))}-pt TDs, long-TD bonus +{_fmt(td[0][2])} at {int(td[0][0])} yards")
-        elif td:
-            pieces.append("TDs by distance " + " / ".join(_fmt(b[2]) for b in td))
-        y = off.rates.get("receiving_yards") or off.rates.get("rushing_yards")
-        st = (off.steps.get("receiving_yards") or off.steps.get("rushing_yards") or [None])[0]
+YARD_WORDS = {"passing_yards": "passing", "rushing_yards": "rushing", "receiving_yards": "receiving"}
+YARD_HOME = {"passing_yards": ("QB",), "rushing_yards": ("RB", "QB"), "receiving_yards": ("WR", "TE", "RB")}
+TD_WORDS = {"passing_tds": "pass", "rushing_tds": "rush", "receiving_tds": "catch"}
+
+
+def _yard_rule(spec: ScoringSpec, stat: str) -> str | None:
+    """How ``stat`` pays, from the position that owns it: ``"1 pt per 10"`` (a rate of 0.1, or a whole-unit step
+    of 1 per 10), ``"1.5 a yard"`` (a rate above 1), or None when nothing pays it."""
+    for pos in (*YARD_HOME[stat], "*"):
+        r = spec.positions.get(pos)
+        if r is None:
+            continue
+        st = (r.steps.get(stat) or [None])[0]
         if st is not None:
-            pieces.append(f"{_fmt(st.per)} pt per {_fmt(st.unit)} yards")
-        elif y:
-            pieces.append(f"{_fmt(round(1 / y, 2))} yards a point" if y < 1 else f"{_fmt(y)} a yard")
-        bon = sorted({(int(b[0]), b[2]) for p in ("QB", "RB", "WR", "TE", "*") if p in spec.positions
-                      for s, bs in spec.positions[p].bands.items() if s.endswith("_yards") for b in bs})
-        if bon:
-            pieces.append(" · ".join(f"+{_fmt(pts)} at {lo} yards" for lo, pts in bon[:3]))
-    qb = spec.positions.get("QB")
-    if qb is not None:
-        if qb.rates.get("passing_tds"):
-            pieces.append(f"{_fmt(qb.rates['passing_tds'])}-pt pass TD")
-        if qb.rates.get("passing_interceptions"):
-            pieces.append(f"INT {_fmt(qb.rates['passing_interceptions'])}")
+            return f"{_fmt(st.per)} pt per {_fmt(st.unit)}"
+        y = r.rates.get(stat)
+        if y:
+            return f"1 pt per {_fmt(round(1 / y, 2))}" if y < 1 else f"{_fmt(y)} a yard"
+    return None
+
+
+def _td_rule(spec: ScoringSpec, fam: str) -> tuple[str, str] | None:
+    """(kind, text) for a touchdown family: ``("flat", "6")``, ``("distance", "6 / 9 / 12")`` or
+    ``("bonus", "6, +2 at 40 yards")``."""
+    for pos in (*YARD_HOME[fam.replace("_tds", "_yards")], "*"):
+        r = spec.positions.get(pos)
+        if r is None:
+            continue
+        td, flat = r.distance.get(fam), r.rates.get(fam)
+        if td and all(b[0] > 0 for b in td):
+            return "bonus", f"{_fmt(flat or 6)}, +{_fmt(td[0][2])} at {int(td[0][0])} yards"
+        if td:
+            edges = [_band_text((b[0], None if (b[1] is None or b[1] >= 99) else b[1], b[2])) for b in td]
+            return "distance", " / ".join(_fmt(b[2]) for b in td) + " (" + " / ".join(edges) + " yards)"
+        if flat:
+            return "flat", _fmt(flat)
+    return None
+
+
+def _td_head(kind: str, text: str) -> str:
+    if kind == "flat":
+        return f"{text}-pt TDs"
+    if kind == "distance":
+        return f"TDs by distance {text}"
+    base, bonus = text.split(",", 1)
+    return f"{base}-pt TDs, long-TD bonus{bonus}"
+
+
+def readback(spec: ScoringSpec) -> list[str]:
+    """The league's scoring in a few plain pieces (the Leagues card's one line): catches, touchdowns, yards, the
+    flat yardage bonuses (which stat, which positions), turnovers, then K and DEF. Every number is the league's."""
+    pieces: list[str] = []
+    skill = [p for p in ("QB", "RB", "WR", "TE") if p in spec.positions] or (["*"] if "*" in spec.positions else [])
+    off = next((spec.positions[p] for p in ("WR", "RB", "TE", "QB", "*") if p in spec.positions), None)
+    if off is None:
+        return pieces
+    rec = off.rates.get("receptions", 0.0)
+    te = spec.positions.get("TE")
+    te_rec = (te.rates.get("receptions", 0.0) + te.premiums.get("receptions", 0.0)) if te else rec
+    if rec:
+        pieces.append(f"{_fmt(rec)} per catch" + (f" (TE {_fmt(te_rec)})" if te_rec != rec else ""))
+    # touchdowns: one piece when every family reads the same, else each family
+    tds = {fam: v for fam in ("rushing_tds", "receiving_tds", "passing_tds") if (v := _td_rule(spec, fam))}
+    if tds:
+        if len(set(tds.values())) == 1:
+            pieces.append(_td_head(*next(iter(tds.values()))))
+        elif tds.get("rushing_tds") and tds.get("rushing_tds") == tds.get("receiving_tds"):
+            pv = tds.get("passing_tds")
+            pieces.append(_td_head(*tds["rushing_tds"]) + (f" (pass {pv[1]})" if pv else ""))
+        else:
+            pieces.append(" · ".join(f"{TD_WORDS[f]} TD {v[1]}" for f, v in tds.items()))
+    # yards: rushing / receiving together when they agree, passing on its own when it differs
+    yr = {st: _yard_rule(spec, st) for st in ("rushing_yards", "receiving_yards", "passing_yards")}
+    if yr["rushing_yards"] and yr["rushing_yards"] == yr["receiving_yards"]:
+        same_pass = yr["passing_yards"] == yr["rushing_yards"]
+        pieces.append(yr["rushing_yards"] + (" yards" if same_pass else " rushing / receiving yards"))
+        if yr["passing_yards"] and not same_pass:
+            pieces.append(yr["passing_yards"] + " passing yards")
+    else:
+        for st, v in yr.items():
+            if v:
+                pieces.append(f"{v} {YARD_WORDS[st]} yards")
+    # flat yardage bonuses: by threshold and points, naming the stat, and the positions when not all of them pay it
+    bon: dict[tuple[int, float], dict[str, list[str]]] = {}
+    for pos in skill:
+        for st, bs in spec.positions[pos].bands.items():
+            if st in YARD_WORDS:
+                for b in bs:
+                    bon.setdefault((int(b[0]), float(b[2])), {}).setdefault(st, []).append(pos)
+    if bon:
+        words = []
+        for (lo, pts), stats in sorted(bon.items()):
+            parts = []
+            for st in ("rushing_yards", "receiving_yards", "passing_yards"):
+                if st not in stats:
+                    continue
+                carriers = [p for p in skill if p in YARD_HOME[st]]
+                tag = "" if set(stats[st]) >= set(carriers) else f" ({'/'.join(stats[st])})"
+                parts.append(YARD_WORDS[st] + tag)
+            words.append(f"+{_fmt(pts)} at {lo} " + " / ".join(parts))
+        pieces.append(" · ".join(words[:5]))
+    qb = spec.positions.get("QB") or spec.positions.get("*")
+    if qb is not None and qb.rates.get("passing_interceptions"):
+        pieces.append(f"INT {_fmt(qb.rates['passing_interceptions'])}")
+    fl = off.rates.get("fumbles_lost_total") or off.rates.get("fumbles_lost")
+    if fl:
+        pieces.append(f"fumble lost {_fmt(fl)}")
     k = spec.positions.get("K")
     if k is not None and k.distance.get("fg_made"):
         pieces.append("FG by distance " + " / ".join(_fmt(b[2]) for b in k.distance["fg_made"]))
@@ -653,6 +728,13 @@ def from_mfl(rules: Mapping) -> ScoringSpec:
     if p50 and p60 and p50 != p60:
         approx.append(f"kicks of 50+ yards on a projection: priced at the 50–59 band ({_fmt(p50[0])}); the projection "
                       "does not split off 60+")
+    # what no projection carries: return touchdowns (kick / punt returns by a skill player) and 2-point conversions
+    # are priced on actual lines (the scoring check) but a projected line has none
+    if any(any(k in r.distance or k in r.rates for k in ("return_tds", "special_teams_tds", "st_tds"))
+           for p, r in out.items() if p in ("QB", "RB", "WR", "TE", "*")):
+        approx.append("return touchdowns are not projected (they count on actual lines)")
+    if any(k.endswith("_2pt_conversions") for r in out.values() for k in r.rates):
+        approx.append("2-point conversions are not projected")
     if idp:
         unpriced["IDP"] = {"event": "IDP", "name": "individual defensive players (" + ", ".join(sorted(set(idp))) + ")",
                            "positions": "|".join(sorted(set(idp)))}

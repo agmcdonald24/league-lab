@@ -6,7 +6,7 @@
 * The Test League (``9000000000000000001``): ``players_points`` in its week 1-2 matchups fixtures were built with the
   pre-spec flat engine (``fixtures/make_ic1_fixtures.py``), so the check is 100% within 0.1 by construction.
 * Dad's league MFL 70587: MFL's ``weeklyResults`` per-player scores (IC-3's fixtures) against the spec compiled from
-  its rules; ``fixtures/ic1/db_playerids_70587.csv`` is the nflverse id table trimmed to that league's players.
+  its rules; ``fixtures/ff/db_playerids.csv`` (the shared nflverse id table) carries that league's players (the team units' ids map to nothing).
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ DAD = "mfl:70587"
 @pytest.fixture
 def mfl_70587(monkeypatch):
     monkeypatch.setenv(M.FIXTURES_ENV, str(FX / "mfl"))
-    monkeypatch.setenv(PI.CSV_ENV, str(FX / "ic1" / "db_playerids_70587.csv"))
+    monkeypatch.setenv(PI.CSV_ENV, str(FX / "ff" / "db_playerids.csv"))
     monkeypatch.setenv(M.YEAR_ENV, "2026")
     PI.reset()
     A._default = None
@@ -119,7 +119,7 @@ def test_league_spec_from_the_mfl_translation(mfl_70587):
     sc, _ = A.league_scoring(lg)
     assert sc.spec.key() == spec.key()
     rep = A.scoring_report(sc, lg["roster_positions"])
-    assert rep["priced"][0] == "TDs by distance 6 / 9 / 12" and rep["unpriced"] == []
+    assert rep["priced"][0].startswith("TDs by distance 6 / 9 / 12") and rep["unpriced"] == []
     assert any("distance" in a for a in rep["approximated"])
     # the flat summary is filled for the old readers (the I0-B translation found nothing for 70587's offense)
     assert lg["scoring_settings"]["rush_yd"] == 0.1 and lg["scoring_settings"]["pass_td"] == 6.0

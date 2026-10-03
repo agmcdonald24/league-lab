@@ -243,11 +243,14 @@ def test_json_round_trip(dad):
 
 def test_readback_in_plain_words(dad):
     rb = dad.readback()
-    assert rb[0] == "TDs by distance 6 / 9 / 12" and "1 pt per 10 yards" in rb
-    assert "+10 at 75 yards · +10 at 100 yards · +10 at 250 yards" in rb and "INT −3" in rb
-    assert "FG by distance 3 / 5 / 10 / 15" in rb
+    assert rb[0] == "TDs by distance 6 / 9 / 12 (0–9 / 10–39 / 40+ yards)"
+    assert "1 pt per 10 rushing / receiving yards" in rb and "1 pt per 20 passing yards" in rb
+    # the bonuses name the stat, and the positions when not every position that carries the stat pays it (PO, I-C)
+    assert "+10 at 75 rushing (QB/WR/TE) / receiving (TE) · +10 at 100 rushing (RB) / receiving (RB/WR) · +10 at 250 passing" in rb
+    assert "INT −3" in rb and "fumble lost −3" in rb and "FG by distance 3 / 5 / 10 / 15" in rb
     scrubs = from_sleeper(SCRUBS).readback()
-    assert scrubs[0] == "0.5 per catch" and "4-pt pass TD" in scrubs
+    assert scrubs[0] == "0.5 per catch" and "6-pt TDs (pass 4)" in scrubs
+    assert "1 pt per 10 rushing / receiving yards" in scrubs and "1 pt per 25 passing yards" in scrubs
 
 
 # ------------------------------------------------------------------ projected lines: expected value

@@ -933,28 +933,37 @@ def opponent(query: Query | None, league_id: str, roster_id: int, week: int, *, 
     sl = client or sleeper()
     league_id = check_id(league_id)
     ms = sl.matchups(league_id, int(week))
-    mine = next((m for m in ms if int(m.get("roster_id", -1)) == int(roster_id)), None)
-    if mine is None or mine.get("matchup_id") is None:
-        return None
-    opp = next((m for m in ms if m.get("matchup_id") == mine.get("matchup_id")
-                and int(m.get("roster_id", -1)) != int(roster_id)), None)
-    if opp is None:
+    # Wave I-C (PO): a league can play a double header (MFL 70587 plays twice in weeks 2, 4, 6–9, 11 and 13): one
+    # matchup row per game for the same roster — the first opponent is the answer, the rest ride in ``also``
+    mines = [m for m in ms if int(m.get("roster_id", -1)) == int(roster_id) and m.get("matchup_id") is not None]
+    opps = [o for mine in mines for o in ms
+            if o.get("matchup_id") == mine.get("matchup_id") and int(o.get("roster_id", -1)) != int(roster_id)]
+    if not mines or not opps:
         return None
     rosters, users = sl.rosters(league_id), sl.users(league_id)
-    oid = int(opp["roster_id"])
-    names = team_names(rosters, users).get(oid, {})
-    out = {"roster_id": oid, "team_name": names.get("team_name"), "manager": names.get("manager_name"),
-           "matchup_id": int(mine["matchup_id"]), "lineup_value": None}
+    names = team_names(rosters, users)
+    pr = None
     if solve and query is not None:
         league = sl.league(league_id)
+        scoring, slots = league_scoring(league)
+        pr = price_week(query, league_id, scoring, slots, int(league["season"]), int(week),
+                        exclude_reference=exclude_reference)
+
+    def one(opp: dict) -> dict:
+        oid = int(opp["roster_id"])
+        nm = names.get(oid, {})
+        d = {"roster_id": oid, "team_name": nm.get("team_name"), "manager": nm.get("manager_name"),
+             "matchup_id": int(opp["matchup_id"]), "lineup_value": None}
         roster = next((r for r in rosters if int(r.get("roster_id", -1)) == oid), None)
-        if roster is not None:
-            scoring, slots = league_scoring(league)
-            pr = price_week(query, league_id, scoring, slots, int(league["season"]), int(week),
-                            exclude_reference=exclude_reference)
+        if pr is not None and roster is not None:
             _, totals, _, _, _ = _solve_roster(query, league_id, roster, sl.players(), pr, slots, as_of or datetime.now(UTC))
             if totals and totals[0].get("lineup_value") is not None:
-                out["lineup_value"] = round(float(totals[0]["lineup_value"]), 2)
+                d["lineup_value"] = round(float(totals[0]["lineup_value"]), 2)
+        return d
+
+    out = one(opps[0])
+    if len(opps) > 1:
+        out["also"] = [one(o) for o in opps[1:]]
     return out
 
 

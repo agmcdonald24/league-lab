@@ -501,7 +501,9 @@ publishes it once the local database has it.
 `scoring_stat_map` (seed, generated from `league_lab.scoring`) maps Sleeper keys to nflverse
 column expressions, with a `kind`: `stat` rows are `+`-joined weekly-stat columns; `bonus` rows
 are either a play-by-play long-touchdown count (`pass_tds_40p` …, joined from
-`int_player_game_pbp` onto the stats row by the scoring models) or a per-game threshold
+`int_player_game_pbp` onto the stats row by the scoring models; the same join carries `pass/rush/rec_tds_10p`
+since Wave I-C, the 10-yard cut MFL's touchdowns by distance need — read by `scoring.price_detail`, not by the
+macro) or a per-game threshold
 `column:low:high`. The `league_points(scoring_jsonb, alias, include_bonuses=true)` macro builds
 `Σ weight × expression`; expected points pass `include_bonuses=false`.
 `zero_stat_columns(have)` emits `0 as <col>` for every seed column a relation lacks so a partial line
