@@ -17,7 +17,11 @@ unchanged. MFL's export API is public for leagues that allow it (docs/MFL_TERMS.
   ``LeagueNotFound(PRIVATE_SENTENCE)``.
 * **Fixtures**: ``LEAGUE_LAB_MFL_FIXTURES=<dir>`` reads ``<dir>/<league>/<kind>.json`` (``league``, ``rules``,
   ``rosters``, ``schedule``, ``leagueStandings``, ``liveScoring_<w>``, ``weeklyResults_<w>``) and
-  ``<dir>/players.json``, ``<dir>/injuries_<w>.json`` instead of the network, through the same caches and bucket.
+  ``<dir>/players.json``, ``<dir>/injuries_<w>.json``, ``<dir>/leagueSearch_<slug>.json`` instead of the network,
+  through the same caches and bucket.
+* **Search by name** (Wave I-0, I0-C): ``league_search(text)`` — MFL's public ``TYPE=leagueSearch`` (the ``api.``
+  host, cached 10 minutes, the same bucket) -> this season's leagues whose name has the text, best matches first.
+  MFL's ``homeURL`` lacks the colon after ``https``: the link is rebuilt from the id (``home_url``).
 
 The translation (pure functions, tested on fixtures): ``slots`` (MFL's starter limits -> Sleeper slots),
 ``scoring`` (MFL rules -> Sleeper scoring keys + what is approximated or unpriced), ``franchise_rows``,
@@ -56,6 +60,7 @@ PRIVATE_SENTENCE = ("MyFantasyLeague would not share this league: it may be priv
 TTL_S: dict[str, float] = {
     "league": 24 * 3600, "rules": 24 * 3600, "rosters": 10 * 60, "schedule": 5 * 60, "live_scoring": 5 * 60,
     "weekly_results": 10 * 60, "standings": 10 * 60, "players": 24 * 3600, "injuries": 3600,
+    "search": 10 * 60,                                                     # I0-C: leagueSearch
 }
 _LEAGUE = re.compile(r"^\d{1,8}$")
 _HOST = re.compile(r"^https://(api|www\d{1,3})\.myfantasyleague\.com$")
@@ -78,8 +83,10 @@ def check_league(league_id: str | int) -> str:
 
 def parse_link(text: str) -> tuple[str, str | None, int | None]:
     """A pasted MFL link (or a bare id) -> (league id, franchise id or None, year or None).
-    ``https://www45.myfantasyleague.com/2026/home/21861#0`` / ``…/options?L=21861&F=0004`` / ``21861``."""
+    ``https://www45.myfantasyleague.com/2026/home/21861#0`` / ``…/options?L=21861&F=0004`` / ``21861`` / ``mfl:21861``."""
     s = (text or "").strip()
+    if s.lower().startswith("mfl:"):                                     # I0-C: a league key from the search list
+        s = s[4:].strip()
     if _LEAGUE.match(s):
         return s, None, None
     m = re.search(r"myfantasyleague\.com/(\d{4})/[a-z_]+/(\d{1,8})", s)
@@ -93,6 +100,41 @@ def parse_link(text: str) -> tuple[str, str | None, int | None]:
     if fid is not None and not re.match(r"^\d{4}$", fid):
         fid = None
     return lid, fid, year
+
+
+# ---- I0-C (Wave I-0): find a league by its name (MFL's public leagueSearch)
+SEARCH_MIN = 3            # characters: shorter text is not sent to MFL
+SEARCH_MAX = 25           # matches the API shows
+_HOME = re.compile(r"^https?:?//(www\d{1,3})\.myfantasyleague\.com/(\d{4})/home/(\d{1,8})/?$", re.I)
+
+
+def search_text(text: str | None) -> str:
+    """The search text as sent to MFL (and cached): spaces collapsed, lower case (MFL matches without case), 60 max."""
+    return " ".join(str(text or "").split()).lower()[:60]
+
+
+def search_slug(text: str | None) -> str:
+    """Fixture file name part: ``leagueSearch_<slug>.json`` (``addicts``, ``addicts_1_redraft``)."""
+    return re.sub(r"[^a-z0-9]+", "_", search_text(text)).strip("_")
+
+
+def looks_like_link(text: str | None) -> bool:
+    """A link, a league id or a ``mfl:`` key (answered as ``?mfl=`` does), rather than a league's name."""
+    s = (text or "").strip().lower()
+    return bool(_LEAGUE.match(s)) or "myfantasyleague.com" in s or "://" in s or s.startswith("mfl:")
+
+
+def rank_matches(rows: list[dict], text: str) -> list[dict]:
+    """Best first: the exact name, then names that start with the text, then a word that starts with it, then the
+    rest; MFL's order (by league id) within each group."""
+    q = search_text(text)
+    word = re.compile(r"(^|[^a-z0-9])" + re.escape(q))
+
+    def rank(r: dict) -> int:
+        n = " ".join(r["name"].split()).lower()
+        return 0 if n == q else 1 if n.startswith(q) else 2 if word.search(n) else 3
+    return sorted(rows, key=rank)
+# ---- end I0-C
 
 
 def _year() -> int:
@@ -282,6 +324,45 @@ class MFL:
         extra = {"W": int(week)} if week else None
         d = self._get("injuries", "injuries", None, extra, fixture=f"injuries_{int(week or 0)}.json", api_host=True) or {}
         return _as_list((d.get("injuries") or {}).get("injury"))
+
+    # ---- I0-C (Wave I-0)
+    def league_search(self, text: str) -> list[dict]:
+        """MFL's public league search -> this season's leagues whose name has ``text``, best matches first:
+        ``[{id, name, year, home_url}]``. Fewer than ``SEARCH_MIN`` characters: ``[]`` without a call. MFL's
+        ``homeURL`` (``https//www45…``, no colon) is never passed on: ``home_url`` is rebuilt from the id, on the
+        league's own ``www4N`` host when the ``homeURL`` names it (remembered for the league's next calls), else
+        ``www``. An ``error`` body or (fixture mode) no file is "no match"; MFL down raises ``MFLUnavailable``."""
+        q = search_text(text)
+        if len(q) < SEARCH_MIN:
+            return []
+        try:
+            d = self._get("leagueSearch", "search", None, {"SEARCH": q}, fixture=f"leagueSearch_{search_slug(q)}.json",
+                          api_host=True)
+        except LeagueNotFound:
+            return []
+        except MFLUnavailable:
+            if self.fixtures is not None and self._fetch is None:
+                return []
+            raise
+        lg = d.get("leagues") if isinstance(d, dict) else None
+        out: list[dict] = []
+        seen: set[str] = set()
+        for r in _as_list(lg.get("league")) if isinstance(lg, dict) else []:
+            if not isinstance(r, dict):
+                continue
+            lid, year = str(r.get("id") or "").strip(), str(r.get("year") or "").strip()
+            if not _LEAGUE.match(lid) or year != str(self.year) or lid in seen:
+                continue
+            seen.add(lid)
+            name = " ".join(html.unescape(str(r.get("name") or "")).split()) or f"MFL league {lid}"
+            m = _HOME.match(str(r.get("homeURL") or "").strip())
+            host = "https://www.myfantasyleague.com"
+            if m and m.group(3) == lid:
+                host = f"https://{m.group(1).lower()}.myfantasyleague.com"
+                self.hosts.setdefault(lid, host)
+            out.append({"id": lid, "name": name, "year": int(year), "home_url": f"{host}/{self.year}/home/{lid}"})
+        return rank_matches(out, q)
+    # ---- end I0-C
 
     def stats(self) -> dict:
         now = self.clock()

@@ -225,9 +225,12 @@ def logout(response: Response) -> dict:
 
 # ---------------------------------------------------------------- data (read-only)
 # ---- I0-B (Wave I-0): `?mfl=<league link or id>` = a MyFantasyLeague league (ondemand.mfl_league); league keys may be
-# `mfl:<id>` (anyleague.check_id accepts both; known_league is false for them: always served on demand)
+# `mfl:<id>` (anyleague.check_id accepts both; known_league is false for them: always served on demand).
+# I0-C: `?mfl_search=<link, id or the league's name>` (ondemand.mfl_search): a link or an id answers as `?mfl=`.
 @app.get("/api/leagues", dependencies=[Depends(require_auth)])
-def leagues(response: Response, username: str | None = None, mfl: str | None = None):
+def leagues(response: Response, username: str | None = None, mfl: str | None = None, mfl_search: str | None = None):
+    if mfl_search is not None:
+        return _json(ondemand.mfl_search(mfl_search), response)
     if mfl is not None:
         return _json(ondemand.mfl_league(mfl), response)
     if username is None:

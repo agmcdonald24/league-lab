@@ -465,4 +465,33 @@ def mfl_league(text: str) -> dict:
     unmapped = sl.mfl.unmapped(key)
     return {"platform": "mfl", "league": lg, "teams": teams, "roster_id": pick, "unmapped": unmapped,
             "players": n_players, "mapped": n_players - len(unmapped), "scoring_note": mfl_scoring_note(league)}
+
+
+# I0-C: one box, a link / an id / the league's name. `/api/leagues?mfl_search=<text>`: a link, an id or an `mfl:` key
+# answers exactly as `?mfl=` (mfl_league); a name answers MFL's public league search, this season only, at most 25.
+def mfl_search(text: str) -> dict:
+    from league_lab import mfl_client as M
+    t = " ".join(str(text or "").split())
+    if M.looks_like_link(t):
+        return mfl_league(t)
+    client = A.sleeper().mfl.client
+    base = {"platform": "mfl", "query": t, "season": client.year}
+    if len(t) < M.SEARCH_MIN:
+        return {**base, "matches": [], "total": 0,
+                "note": f"Type at least {M.SEARCH_MIN} letters of your league's name, or paste the league link."}
+    try:
+        rows = client.league_search(t)
+    except A.SleeperUnavailable as exc:
+        raise SleeperDown(str(exc)) from exc
+    shown = rows[:M.SEARCH_MAX]
+    matches = [{"league_id": f"mfl:{r['id']}", "name": r["name"], "year": r["year"], "home_url": r["home_url"]}
+               for r in shown]
+    if not rows:
+        note = (f"No MyFantasyLeague league this season has “{t}” in its name. Check the spelling as it appears in "
+                "the MFL app, or paste the league link.")
+    elif len(rows) > len(shown):
+        note = f"The first {len(shown)} of {len(rows)} leagues with “{t}” in the name: type more of it to narrow the list."
+    else:
+        note = f"{len(rows)} {'league has' if len(rows) == 1 else 'leagues have'} “{t}” in the name. Tap yours."
+    return {**base, "matches": matches, "total": len(rows), "note": note}
 # ---- end I0-B

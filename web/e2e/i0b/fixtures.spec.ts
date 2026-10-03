@@ -23,8 +23,9 @@ test.beforeEach(async ({ context }) => {
     const q = url.searchParams;
     const send = (status: number, body: string) =>
       route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body });
-    if (url.pathname === "/api/leagues" && q.has("mfl")) {
-      return q.get("mfl")!.includes("21861") ? send(200, read("league_21861.json")) : send(404, read("private.json"));
+    // I0-C: the box now asks ?mfl_search= (a link answers exactly as ?mfl= does)
+    if (url.pathname === "/api/leagues" && (q.has("mfl") || q.has("mfl_search"))) {
+      return (q.get("mfl") ?? q.get("mfl_search"))!.includes("21861") ? send(200, read("league_21861.json")) : send(404, read("private.json"));
     }
     if (url.pathname === "/api/leagues/mfl%3A21861/rosters" || url.pathname === "/api/leagues/mfl:21861/rosters")
       return send(200, read("rosters_21861.json"));
@@ -37,7 +38,7 @@ test.beforeEach(async ({ context }) => {
 test("MyFantasyLeague: paste the league link → pick the team → My Week; the switcher says MFL", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("leagues")).toBeVisible();
-  await expect(page.getByText("On MyFantasyLeague? Paste your league link")).toBeVisible();
+  await expect(page.getByText("On MyFantasyLeague? Find your league")).toBeVisible(); // I0-C: the box also takes a name
 
   // a league MFL will not share: the sentence, no card
   await page.getByTestId("mfl-link").fill("https://www45.myfantasyleague.com/2026/home/99999999");

@@ -3538,3 +3538,26 @@ the translation rules: docs/ANY_LEAGUE.md § "MyFantasyLeague"; calls and contac
 * Checks: ruff clean; API suite 175 passed, 2 skipped (176 with the unmapped-starter test added after); root suite 834 passed, 2 skipped; web lint / build clean;
   `npm run e2e:fixtures` 60 passed
   (the new `e2e/i0b/fixtures.spec.ts`, phone + desktop).
+
+### I0-C 2026-10-03 — find an MFL league by its name (branch `dev/I0C`, clone `league_lab_i0b` read-only)
+
+**Why.** Andrew's dad uses the MFL phone app and may know only his league's name. **What.** The one MFL box on the
+Leagues screen takes a link, an id or the name. `mfl_client.MFL.league_search(text)` (MFL's public
+`TYPE=leagueSearch`, `api.` host, cached 10 minutes, the same bucket; fewer than 3 characters → no call; an `error`
+body or no fixture file → no match) → this season's leagues, best first, `home_url` rebuilt from the id (MFL's
+`homeURL` lacks the colon: `https//www45…`). `GET /api/leagues?mfl_search=<text>`: a link / id / `mfl:` key answers
+exactly as `?mfl=`; a name → `{platform, query, season, matches (≤ 25), total, note}`. Web: copy "Paste your league
+link, or type your league's name as it appears in the MFL app."; the matches as a list (name + "MFL · 2026"); tap →
+the league card and the team picker ("‹ Not this league" back to the list) → My Week; remembered as before. The box is
+now `type="text"` (it was `type="url"`, which made the browser refuse a bare id or a link without `https://`).
+
+**Evidence.** Fixture `api/tests/fixtures/mfl/leagueSearch_addicts.json`: the live answer for `SEARCH=addicts`
+(browser pane, own tab, one page, closed after; 72 leagues, all 2026, every `homeURL` `https//…`), trimmed to MFL's
+first 30. `api/tests/test_i0c.py` 27 passed (parsing, ranking, 10-minute cache, the 3-character rule with no call,
+empty / error / single-object / last-season answers, a link / id / `mfl:` key in the box equal to `?mfl=`, the private
+404, MFL down → 502, `https//` and `homeURL` absent from the response). `web/e2e/i0c/fixtures.spec.ts` (phone + desktop:
+type "addicts" → 25 of 30 → pick → 12 teams → My Week; no match; two letters; a bare id → the card).
+Checks: ruff clean; API suite 224 passed (197 + 27) with `LEAGUE_LAB_ESPN_FIXTURES` unset — with this worktree's `.env`
+(the ESPN fixture feed has Jefferson Out, so the overlay moves the house lineups) 8 house-league parity tests fail
+exactly as on `main`, none touched by I0-C; root suite 834 passed, 2 skipped; web lint / build clean;
+`npm run e2e:fixtures` 66 passed (62 + 4). I0-B's e2e: label and mock follow the box (`?mfl_search=`).
