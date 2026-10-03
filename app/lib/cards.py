@@ -389,6 +389,13 @@ def _as_him(clause: str, name: str) -> str:
     return clause
 
 
+def is_coin_flip(d) -> bool:
+    """The card's own rule for "too close to call": under CLOSE_PWIN when the odds exist, else a margin under COIN_FLIP."""
+    pw = _num(d.get("p_win") if hasattr(d, "get") else d["p_win"])
+    margin = _num(d.get("margin") if hasattr(d, "get") else d["margin"]) or 0.0
+    return (pw < CLOSE_PWIN) if pw is not None else margin < COIN_FLIP
+
+
 def reason_line(d: dict, facts: dict | None = None, nicks: dict | None = None) -> str:
     """The card's one-sentence reason. `facts` = {gsis_id: REASON_SQL row}, `nicks` = {team: nickname}; both optional
     (without them the sentence uses only the card's own matchup and injury columns)."""
@@ -404,9 +411,7 @@ def reason_line(d: dict, facts: dict | None = None, nicks: dict | None = None) -
     # every piece seen from the starter's side: + = a reason to start him, - = a reason to start the other player
     both = [(s, k, c, a) for s, k, c in mine] + [(-s, k, c, b) for s, k, c in theirs]
     margin = _num(d.get("margin")) or 0.0
-    pw = _num(d.get("p_win"))
-    close = (pw < CLOSE_PWIN) if pw is not None else margin < COIN_FLIP
-    if close:
+    if is_coin_flip(d):
         gap = "the projection has them level" if margin < 0.05 else f"the projection says {a} by {margin:.1f}"
         head = f"Too close to call: {gap}, the ranges say either"
         # the tiebreaker: an injury first, then the matchups, the roles, the betting lines (the side they add up for)
@@ -473,7 +478,12 @@ def render_decision(d: pd.Series | dict, why: str | None = None) -> None:
             st.markdown(f"**{slot}: start {me}** — {d['how']}.")
             return
         alt = player_link(d["alt_gsis_id"], d["alt_name"])
-        st.markdown(f"**{slot}: start {me} over {alt}**")
+        if is_coin_flip(d):
+            # PO, Wave I-A: a coin flip is said as one ("A or B"), so the reason's tiebreaker ("Go with B on the
+            # matchup") never contradicts the headline; the lineup table still shows the projection's pick
+            st.markdown(f"**{slot}: {me} or {alt} — a coin flip**")
+        else:
+            st.markdown(f"**{slot}: start {me} over {alt}**")
         if why:
             # Wave I-A (Andrew: "reasons why"): the matchup, the role, the injury, the gap — a sentence a manager reads
             st.markdown(why)

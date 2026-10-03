@@ -3492,6 +3492,45 @@ was "running hot". Cause: availability came only from nflverse's injury file via
 
 ## Wave I-A (Iteration 17, part A)
 
+### PO merge — Wave I-A, 2026-10-03 (Saturday, 01:40–03:20 ET)
+
+* **Delivered** (four Opus devs in parallel, 27–46 min each): IA-1 the words — every call on My Week gets a reason
+  sentence from the data it has (matchup rank + home/away, carry / target share moves, the injury, the betting line,
+  the gap; `cards.reason_line`, shared with the console), short names + headshots on the phone lineup, "Your lineup",
+  Trends renamed "Below and above expectation" with a sentence and a stat strip per row, TEs out of the cornerback
+  section, "Choose a player" on Compare; IA-2 the decisions — the trade calculator as its own link, the interest dial
+  (their gain over the window → 0–100, four labels, "by our numbers over weeks 4–7"), the window control (this week /
+  next 4 / rest of season / playoffs on evaluate and partners), lineups shown once, buy low / sell high moved to
+  Trades (`/api/trades/lists`), the sanity bound (`trades.sanity`: no suggestion gives away > 25% more ROS value than
+  it gets; none that only works because ours is < 65% of the market's) — the Jefferson-for-Lloyd case is refused;
+  IA-3 the rankings — headshot / bye / games / range bar / the projected pieces per row with a tap-to-expand on the
+  phone, "why this number" (the pieces × the scoring = the points, within 0.05 on 40 rows) on the ROS row and the
+  player card, the market line ("Sleeper has him at 16.2") where a snapshot exists, the "How to read the rankings"
+  paragraph (ROS and About); M1 the diagnosis — **no star penalty**: top-6 bias 2023–2025 QB −0.98 / RB +0.34 /
+  WR +0.51 / TE +0.45 in Scrubs scoring, slope ≈ 0 above the starter line; the dynasty top is under by 0.7–1.4
+  mostly because yardage bonuses are paid all-or-nothing on the projected line; the real miss is a fringe projected
+  0.3–0.6 too high; Andrew's gap is a *level* gap with the market (ours under Sleeper's for 75–100% of the top 24 at
+  RB / WR / TE by 1–3 points a week; Bowers is a cold start at 49% of the market). A walk-forward two-piece
+  calibration (`calibration.py`, flag `LEAGUE_LAB_PROJECTION_CALIBRATION`, **off**) gains only at the WR fringe
+  (MAE −0.07); the ROS top 12 does not move. v3.1 leads: expected-bonus pricing, the fringe level, cold starts.
+* **PO**: four merges (doc conflicts kept both; headings deduped; `api.ts` both blocks); **`analytics.mart_market_line`
+  built** from IA-3's proposal (both IA-2 and IA-3 found `mart_projection_record` carries no per-player Sleeper
+  rows and the hosted copy never holds `raw`): the latest snapshot per week, league-free, priced per league by
+  `why.market_points`; the trade finder's `market_week` now reads it through `why` (the raw read is gone), and the
+  hosted closure picks the mart up from `why.py`'s SQL (`scripts/hosted_relations.py`: `api analytics.mart_market_line`).
+  It is empty in the sandbox; on Neon it fills from the nightly's `fetch-projections` — which pulls the *next* week to
+  kick off, so week 4 has no market line and week 5 on does (the UI says "not in yet"). A coin flip now reads as one
+  in the headline ("FLEX2: Wilson or Croskey-Merritt — a coin flip") so IA-1's tiebreaker ("Go with Croskey-Merritt
+  on the matchup") never contradicts it — `cards.is_coin_flip`, both apps, the root test's regex widened, the saved
+  web fixtures updated in place. About shows "How to read the rankings"; the tab reads "Calculator" (the long label
+  scrolled the row at 375); three `metric_registry` rows (trade_interest, calibration_bias, market_line). Checks: API
+  269 passed, root 848 passed, web lint / build clean, 100 fixture e2e, ruff clean. QA walk in full fixture mode: My
+  Week cards carry `why` on house, Test and MFL leagues; partners over the ROS window 4.6 s cold (house) with 66
+  packages set aside; evaluate over the playoffs window with the dial; `/api/trades/lists`; ROS rows with the pieces;
+  the player card's why; About's how-to; Trends 28 left out; waivers without the trade lists.
+* **Not verified until the deploy**: the market line on Neon (first rows after the Saturday nightly, week 5);
+  the ROS-window partner search on Render for the dynasty league (~5 s cold here); real headshots in the lineup.
+
 ### IA-3 2026-10-03 — the rankings: more to see, and "why this number" (dev/IA3)
 
 * **Rest of season** (`Ros.svelte`, `ros.ts`): headshot, bye ("bye 11 ·" before the owner), games left, ROS points, a

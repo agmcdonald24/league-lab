@@ -4,6 +4,9 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-03 — Wave I-A
 
+- **PO merge.** `analytics.mart_market_line` (Sleeper's latest projected line per player-week, league-free; the API
+  prices it per league — the trade finder's market rule reads it too); a coin flip reads "A or B — a coin flip";
+  About shows "How to read the rankings"; the Decisions tab says "Calculator"; three metric-registry rows.
 - **IA-1: say it like a person would.** My Week's cards say why in one sentence under the call — the matchup ("he is
   at home against the Colts, who give up the 2nd-most points to running backs"), his share of his team's carries or
   targets moving, an injury, the betting line — and a coin flip says "Too close to call" and names the tiebreaker;

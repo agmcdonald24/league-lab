@@ -921,44 +921,30 @@ def interest(their_gain: float | None, my_gain: float | None, span: str) -> dict
             "you": None if my_gain is None else round(float(my_gain), 2), "caption": f"by our numbers over {span}"}
 
 
-SLEEPER_LINE_COLS = ("attempts", "completions", "carries", "targets", "passing_yards", "passing_tds", "passing_interceptions",
-                     "passing_2pt_conversions", "rushing_yards", "rushing_tds", "rushing_2pt_conversions", "receptions",
-                     "receiving_yards", "receiving_tds", "receiving_2pt_conversions", "fumbles_total", "fumbles_lost_total",
-                     "fumble_recovery_tds", "special_teams_tds", "pass_tds_40p", "pass_tds_50p", "rush_tds_40p",
-                     "rush_tds_50p", "rec_tds_40p", "rec_tds_50p")
-# Sleeper's own projection this week (the source of mart_projection_record's Sleeper side: its per-player prices are a
-# CTE of that mart, not a column): the latest snapshot of the week, skill players with a stat line, by Sleeper id
-SLEEPER_PROJ_SQL = f"""select distinct on (player_id) player_id, position, {', '.join(SLEEPER_LINE_COLS)}
-                      from raw.sleeper_projections
-                      where season = %s and week = %s and season_type = 'regular' and position in ('QB','RB','WR','TE')
-                        and player_id ~ '^[0-9]+$'
-                        and coalesce(attempts, carries, targets, passing_yards, rushing_yards, receiving_yards, receptions,
-                                     passing_tds, rushing_tds, receiving_tds) is not null
-                      order by player_id, fetched_at desc"""
 SCORING_SQL = "select scoring_settings from analytics.dim_league_season where league_id = %s order by season desc limit 1"
 
 
 def market_week(ctx: TradeContext) -> dict[str, float]:
-    """Sleeper id -> Sleeper's projection this week in this league's scoring (mart_projection_record's pricing:
-    league_points = compute_points on the stat line). Empty when the database holds no snapshot for the week."""
+    """Sleeper id -> Sleeper's projection this week in this league's scoring. PO merge (Wave I-A): read through IA-3's
+    ``why.market_points`` — ``analytics.mart_market_line`` (built by dbt from raw.sleeper_projections, on the hosted
+    copy too) priced with ``scoring.compute_points`` — instead of ``raw`` directly, which the hosted copy never holds.
+    Empty when the mart has no row for the week; rule (b) is then not applied and the response says so."""
     if "market_week" in ctx.window_cache:
         return ctx.window_cache["market_week"]
     out: dict[str, float] = {}
     try:
-        rows = query(SLEEPER_PROJ_SQL, (int(ctx.season), int(ctx.this_week)))
-        if not rows.empty:
-            if ctx.lw is not None:
-                scoring = dict(ctx.lw.scoring)
-            else:
-                sc = query(SCORING_SQL, (ctx.league_id,))
-                raw = sc["scoring_settings"].iloc[0] if not sc.empty else {}
-                raw = json.loads(raw) if isinstance(raw, str) else (raw or {})
-                scoring = {k: float(v) for k, v in raw.items() if v is not None}
-            for r in rows.to_dict("records"):
-                line = {k: (0.0 if r.get(k) is None or (isinstance(r.get(k), float) and math.isnan(r[k])) else float(r[k]))
-                        for k in SLEEPER_LINE_COLS}
-                out[str(r["player_id"])] = round(float(_compute_points({**line, "position": r["position"]}, scoring)), 2)
-    except Exception:  # noqa: BLE001 - no snapshot table / no rows: rule (b) is not applied, the response says so
+        from . import why as _why
+        if ctx.lw is not None:
+            scoring = dict(ctx.lw.scoring)
+        else:
+            sc = query(SCORING_SQL, (ctx.league_id,))
+            raw = sc["scoring_settings"].iloc[0] if not sc.empty else {}
+            raw = json.loads(raw) if isinstance(raw, str) else (raw or {})
+            scoring = {k: float(v) for k, v in raw.items() if v is not None}
+        gs = {str(sid): ctx.gsis(sid) for sid in ctx.info.index}
+        pts = _why.market_points(ctx.season, ctx.this_week, [g for g in gs.values() if g], scoring)
+        out = {sid: float(pts[str(g)]) for sid, g in gs.items() if g and str(g) in pts}
+    except Exception:  # noqa: BLE001 - no mart / no rows: rule (b) is not applied, the response says so
         out = {}
     ctx.window_cache["market_week"] = out
     return out

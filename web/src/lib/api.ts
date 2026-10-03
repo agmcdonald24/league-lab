@@ -1050,6 +1050,7 @@ export interface AboutAnswer {
   league_name: string;
   source: "database" | "sleeper";
   why?: string;
+  rankings_howto?: string; // ---- IA-3 (PO merge): "How to read the rankings", the same text as /api/ros howto_rankings
   model: { answer: string; sections: { key: string; title: string; text: string }[] };
   importance: {
     model_version: string | null;

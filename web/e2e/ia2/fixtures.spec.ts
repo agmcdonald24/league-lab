@@ -40,7 +40,7 @@ test("the trade calculator is its own link in the Decisions row", async ({ page,
   await page.goto(`/trades?league=${DYNASTY}&team=12`);
   await expect(page.getByTestId("trades")).toBeVisible();
   const go = page.getByTestId("sub-trade-calc");
-  await expect(go).toHaveText("Trade calculator");
+  await expect(go).toHaveText("Calculator");
   if (isMobile) await go.tap();
   else await go.click();
   await expect(page).toHaveURL(new RegExp(`/trade-calc\\?league=${DYNASTY}&team=12`));
