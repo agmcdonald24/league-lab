@@ -10,6 +10,7 @@
   import { navigate } from "../lib/router.svelte";
   import { fmt } from "../lib/theme";
   import GameLog from "./GameLog.svelte";
+  import NewsLine from "./NewsLine.svelte"; // ---- N1
   import PlayerCardView from "./PlayerCard.svelte";
   import SectionBox from "./Section.svelte";
 
@@ -146,7 +147,11 @@
           <p class="text-sm leading-snug font-semibold text-ink-2" data-testid="pane-why">{data.why.sentence}</p>
         {/if}
         {#each sections as x (x.key)}
-          <SectionBox section={x.sec} {ctx} testid={`pane-section-${x.key}`} />
+          <SectionBox section={x.sec} {ctx} testid={`pane-section-${x.key}`}>
+            <!-- ---- N1 (Wave I-D): the news line under the availability lines -->
+            {#if x.key === "availability"}<NewsLine card={data} testid="pane-news" />{/if}
+            <!-- ---- end N1 -->
+          </SectionBox>
         {/each}
         <GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={data.league_name} />
       {/if}

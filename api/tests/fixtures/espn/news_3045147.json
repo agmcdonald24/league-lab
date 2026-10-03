@@ -1,0 +1,145 @@
+{
+ "_fixture": "ESPN fantasy player news, GET https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=3045147&limit=5, captured through the browser pane; story bodies, images, video, categories and author details emptied (we never store or show them)",
+ "timestamp": "2026-10-03T18:47:21Z",
+ "resultsOffset": 0,
+ "status": "success",
+ "resultsLimit": 5,
+ "resultsCount": 5,
+ "feed": [
+  {
+   "id": 63542528,
+   "nowId": "23-63542528",
+   "contentKey": "63542528-23-1-1",
+   "dataSourceIdentifier": "b8d6af2db94b9",
+   "type": "Rotowire",
+   "headline": "The Cardinals are placing Conner (foot) on injured reserve with a designation to return, John Gambadoro of Arizona Sports 98.7 FM Phoenix reports.",
+   "description": "The Cardinals are placing Conner (foot) on injured reserve with a designation to return, John Gambadoro of Arizona Sports 98.7 FM Phoenix reports.",
+   "categorized": "2026-08-31T20:30:10Z",
+   "lastModified": "2026-08-30T21:50:54Z",
+   "published": "2026-08-30T21:50:54Z",
+   "images": [],
+   "story": "",
+   "allowContentReactions": false,
+   "allowSearch": false,
+   "isLiveBlog": false,
+   "links": {
+    "api": {
+     "self": {}
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=63542528"
+    }
+   },
+   "premium": false,
+   "playerId": 3045147
+  },
+  {
+   "id": 63488328,
+   "nowId": "23-63488328",
+   "contentKey": "63488328-23-1-1",
+   "dataSourceIdentifier": "d7e26f915ab45",
+   "type": "Rotowire",
+   "headline": "Cardinals coach Mike LaFleur said Wednesday that it's \"too early to tell\" if Conner (foot) will be ready for Week 1 against the Chargers, Theo Mackie of The Arizona Republic reports.",
+   "description": "Cardinals coach Mike LaFleur said Wednesday that it's \"too early to tell\" if Conner (foot) will be ready for Week 1 against the Chargers, Theo Mackie of The Arizona Republic reports.",
+   "categorized": "2026-08-27T06:05:09Z",
+   "lastModified": "2026-08-26T19:13:51Z",
+   "published": "2026-08-26T19:13:51Z",
+   "images": [],
+   "story": "",
+   "allowContentReactions": false,
+   "allowSearch": false,
+   "isLiveBlog": false,
+   "links": {
+    "api": {
+     "self": {}
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=63488328"
+    }
+   },
+   "premium": false,
+   "playerId": 3045147
+  },
+  {
+   "id": 63469728,
+   "nowId": "23-63469728",
+   "contentKey": "63469728-23-1-1",
+   "dataSourceIdentifier": "68a9c342b62f2",
+   "type": "Rotowire",
+   "headline": "Conner (foot) didn't take part in Monday's practice, Theo Mackie of The Arizona Republic reports.",
+   "description": "Conner (foot) didn't take part in Monday's practice, Theo Mackie of The Arizona Republic reports.",
+   "categorized": "2026-08-24T23:20:10Z",
+   "lastModified": "2026-08-24T23:17:12Z",
+   "published": "2026-08-24T23:17:12Z",
+   "images": [],
+   "story": "",
+   "allowContentReactions": false,
+   "allowSearch": false,
+   "isLiveBlog": false,
+   "links": {
+    "api": {
+     "self": {}
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=63469728"
+    }
+   },
+   "premium": false,
+   "playerId": 3045147
+  },
+  {
+   "id": 63365428,
+   "nowId": "23-63365428",
+   "contentKey": "63365428-23-1-1",
+   "dataSourceIdentifier": "7f51339c12716",
+   "type": "Rotowire",
+   "headline": "Head coach Mike LaFleur said Saturday that there is no timeline for Conner (foot) to participate in 11-on-11 drills in training camp practice, Darren Urban of the Cardinals' official site reports.",
+   "description": "Head coach Mike LaFleur said Saturday that there is no timeline for Conner (foot) to participate in 11-on-11 drills in training camp practice, Darren Urban of the Cardinals' official site reports.",
+   "categorized": "2026-08-16T01:15:09Z",
+   "lastModified": "2026-08-15T15:51:47Z",
+   "published": "2026-08-15T15:51:47Z",
+   "images": [],
+   "story": "",
+   "allowContentReactions": false,
+   "allowSearch": false,
+   "isLiveBlog": false,
+   "links": {
+    "api": {
+     "self": {}
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=63365428"
+    }
+   },
+   "premium": false,
+   "playerId": 3045147
+  },
+  {
+   "id": 63358228,
+   "nowId": "23-63358228",
+   "contentKey": "63358228-23-1-1",
+   "dataSourceIdentifier": "24d671547d97c",
+   "type": "Rotowire",
+   "headline": "Conner (foot) did not play in Thursday's 27-14 preseason win over the Raiders.",
+   "description": "Conner (foot) did not play in Thursday's 27-14 preseason win over the Raiders.",
+   "categorized": "2026-08-15T18:05:09Z",
+   "lastModified": "2026-08-15T00:20:33Z",
+   "published": "2026-08-15T00:20:33Z",
+   "images": [],
+   "story": "",
+   "allowContentReactions": false,
+   "allowSearch": false,
+   "isLiveBlog": false,
+   "links": {
+    "api": {
+     "self": {}
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=63358228"
+    }
+   },
+   "premium": false,
+   "playerId": 3045147
+  }
+ ]
+}

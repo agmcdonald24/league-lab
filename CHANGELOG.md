@@ -2,6 +2,13 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-D
+
+- **N1: the news line on the card.** The player page and the research pane show the newest ESPN headline under the
+  availability lines — "News · 2 h ago · *Jefferson (ankle) has been ruled out…* · RotoWire via ESPN ›", linked out —
+  from ESPN's public player news, read when a card is opened (one player, cached an hour, 15 minutes on game days),
+  nothing older than 14 days, nothing of the story kept; `LEAGUE_LAB_NEWS=off` turns it off (`docs/ESPN_TERMS.md`).
+
 ## 2026-10-03 — Wave I-C
 
 - **PO (integration).** `fct_player_game` and its league twins carry the 10-yard touchdown cut (`*_tds_10p`), so

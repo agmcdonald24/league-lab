@@ -326,6 +326,28 @@ Pinned by `api/tests/test_ib0.py`: My Week = Waivers = Team = the calculator's "
 Test League, the on-demand path and MFL, with the fixture feed on and off. Not covered: a free agent who only becomes
 worth a claim because of the overlay (the build's move list is re-priced, not re-searched — the next nightly finds him).
 
+## News
+
+*(Wave I-D, N1, 2026-10-03 — `src/league_lab/news_feed.py`, `api/league_lab_api/news.py`; terms and the feed's shape
+in `docs/ESPN_TERMS.md`.)* Andrew asked in his first review for the player news next to the numbers. The card now
+carries ESPN's latest headlines for the player, on the house leagues and on any league alike (Sleeper, MFL; a team
+unit's card is its starter's):
+
+- **The feed**: ESPN's public fantasy player news (`site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=
+  <espn_id>&limit=5`, no key): RotoWire's per-player blurbs and ESPN's own stories, newest first. Read **on demand,
+  one athlete per card opened**, never in bulk (Trends' and Waivers' rows do not read it); cached per athlete an hour
+  (15 minutes on a game day) in `LEAGUE_LAB_CACHE_DIR/espn_news/<espn_id>.json`, holding only the headline, date,
+  source and link; a token bucket of 60 reads a minute per process; a failed read serves the last copy, or no line.
+- **His ESPN id**: the id table (`db_playerids.csv`, read backwards: the same table the availability overlay maps ESPN
+  athletes with), else Sleeper's directory `espn_id`. No id: no line.
+- **On the card**: `news: [{headline, date, source, url}]` on `/api/player/{gsis}` — at most 3, newest first, none
+  older than 14 days (so no line when the newest is older); `[]` when the feed is off or out (never an error). The
+  page and the pane show one line under the availability lines: "**News** · 2 h ago · *headline* · RotoWire via ESPN ›"
+  (`web/src/components/NewsLine.svelte`; the newest only, cut at a word to 110 characters, linked out in a new tab).
+- **Switches**: `LEAGUE_LAB_NEWS=off` (default on); off in fixture mode unless `LEAGUE_LAB_ESPN_FIXTURES` is set
+  (`news_<espn_id>.json`, age measured from the recorded answer's `timestamp`). `/api/status` → `news` (calls,
+  failures, cached athletes).
+
 ## MyFantasyLeague (Wave I-0, I0-B, 2026-10-03)
 
 **Design.** The rest of the code only sees Sleeper shapes. A league key with a platform prefix (`mfl:21861`; Sleeper

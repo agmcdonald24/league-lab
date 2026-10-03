@@ -1306,3 +1306,16 @@ export interface Waivers {
   default_view?: WaiverView;
 }
 // ---- end IB-2
+
+// ---- N1 (Wave I-D): the news line on the card — ESPN's latest headlines for him (api/league_lab_api/news.py): at most
+// 3, newest first, none older than 14 days; [] when there is none or the feed is off / out. Only the headline is sent.
+export interface NewsItem {
+  headline: string;
+  date: string; // ISO UTC, ESPN's `published`
+  source: string; // "RotoWire via ESPN" | "ESPN"
+  url: string; // https, an espn.com page (the story, or his ESPN player page)
+}
+export interface PlayerCard {
+  news?: NewsItem[];
+}
+// ---- end N1

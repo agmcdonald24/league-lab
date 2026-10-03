@@ -1,0 +1,172 @@
+{
+ "_fixture": "ESPN fantasy player news, GET https://site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=4262921&limit=5, captured through the browser pane; story bodies, images, video, categories and author details emptied (we never store or show them)",
+ "timestamp": "2026-10-03T18:47:20Z",
+ "resultsOffset": 0,
+ "status": "success",
+ "resultsLimit": 5,
+ "resultsCount": 5,
+ "feed": [
+  {
+   "id": 64044628,
+   "nowId": "23-64044628",
+   "contentKey": "64044628-23-1-1",
+   "dataSourceIdentifier": "e473e39631c08",
+   "type": "Rotowire",
+   "headline": "Jefferson (ankle) has been already been ruled out for Sunday's game against the Dolphins, but the Vikings are hopeful that the superstar wide receiver will return for Week 5 against the Saints, Jeremy Fowler of ESPN reports.",
+   "description": "Jefferson (ankle) has been already been ruled out for Sunday's game against the Dolphins, but the Vikings are hopeful that the superstar wide receiver will return for Week 5 against the Saints, Jeremy Fowler of ESPN reports.",
+   "categorized": "2026-10-03T13:35:11Z",
+   "lastModified": "2026-10-03T13:33:00Z",
+   "published": "2026-10-03T13:33:00Z",
+   "images": [],
+   "story": "",
+   "allowContentReactions": false,
+   "allowSearch": false,
+   "isLiveBlog": false,
+   "links": {
+    "api": {
+     "self": {}
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=64044628"
+    }
+   },
+   "premium": false,
+   "playerId": 4262921
+  },
+  {
+   "id": 50077553,
+   "nowId": "1-50077553",
+   "contentKey": "50077553-1-6-1",
+   "dataSourceIdentifier": "171b0f16f2d6b",
+   "publishedkey": "FFSundayInactives-50077553",
+   "type": "Story",
+   "feedDisplayType": "Default",
+   "headline": "Fantasy football Week 4 inactives: Daniels, DeVonta to sit; McConkey questionable",
+   "description": "Updated inactives and analysis based on the latest reports and official announcements leading up to kickoff.",
+   "title": "Fantasy football Week 4 inactives: Who's in and who's out?",
+   "linkText": "Inactives watch: Daniels, DeVonta to sit; McConkey questionable",
+   "categorized": "2026-10-03T01:00:01Z",
+   "originallyPosted": "2026-10-02T23:00:00Z",
+   "lastModified": "2026-10-03T00:59:53Z",
+   "published": "2026-10-03T00:59:53Z",
+   "pageName": "FFSundayInactives-50077553",
+   "root": "ffl/2026",
+   "section": "Fantasy NFL",
+   "images": [],
+   "authors": [
+    {
+     "displayName": "Michael F. Florio"
+    }
+   ],
+   "story": "",
+   "allowAMP": true,
+   "allowComments": true,
+   "allowContentReactions": true,
+   "allowSearch": true,
+   "byline": "Michael F. Florio",
+   "isLiveBlog": false,
+   "links": {
+    "api": {
+     "self": {
+      "href": "https://content.core.api.espn.com/v1/sports/news/50077553"
+     }
+    },
+    "app": {
+     "sportscenter": {
+      "href": "sportscenter://x-callback-url/showStory?uid=50077553"
+     }
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=50077553"
+    },
+    "web": {
+     "href": "https://www.espn.com/fantasy/football/story/_/page/FFSundayInactives-50077553/fantasy-football-injuries-nfl-week-4-inactive-active"
+    }
+   },
+   "premium": false,
+   "video": [],
+   "playerId": 4262921
+  },
+  {
+   "id": 64030628,
+   "nowId": "23-64030628",
+   "contentKey": "64030628-23-1-1",
+   "dataSourceIdentifier": "24a0005c0ff46",
+   "type": "Rotowire",
+   "headline": "Jefferson (ankle) has been ruled out for Sunday's game versus the Dolphins.",
+   "description": "Jefferson (ankle) has been ruled out for Sunday's game versus the Dolphins.",
+   "categorized": "2026-10-02T18:40:30Z",
+   "lastModified": "2026-10-02T18:35:16Z",
+   "published": "2026-10-02T18:35:16Z",
+   "images": [],
+   "story": "",
+   "allowContentReactions": false,
+   "allowSearch": false,
+   "isLiveBlog": false,
+   "links": {
+    "api": {
+     "self": {}
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=64030628"
+    }
+   },
+   "premium": false,
+   "playerId": 4262921
+  },
+  {
+   "id": 64030028,
+   "nowId": "23-64030028",
+   "contentKey": "64030028-23-1-1",
+   "dataSourceIdentifier": "e05dc1a4d610c",
+   "type": "Rotowire",
+   "headline": "Jefferson (ankle) remained absent from Friday's practice, Kevin Seifert of ESPN.com reports.",
+   "description": "Jefferson (ankle) remained absent from Friday's practice, Kevin Seifert of ESPN.com reports.",
+   "categorized": "2026-10-02T18:35:10Z",
+   "lastModified": "2026-10-02T17:26:41Z",
+   "published": "2026-10-02T17:26:41Z",
+   "images": [],
+   "story": "",
+   "allowContentReactions": false,
+   "allowSearch": false,
+   "isLiveBlog": false,
+   "links": {
+    "api": {
+     "self": {}
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=64030028"
+    }
+   },
+   "premium": false,
+   "playerId": 4262921
+  },
+  {
+   "id": 64018028,
+   "nowId": "23-64018028",
+   "contentKey": "64018028-23-1-1",
+   "dataSourceIdentifier": "9ea3b6ea27ffe",
+   "type": "Rotowire",
+   "headline": "Jefferson (ankle) officially didn't participate in Thursday's practice.",
+   "description": "Jefferson (ankle) officially didn't participate in Thursday's practice.",
+   "categorized": "2026-10-02T18:35:10Z",
+   "lastModified": "2026-10-01T21:07:37Z",
+   "published": "2026-10-01T21:07:37Z",
+   "images": [],
+   "story": "",
+   "allowContentReactions": false,
+   "allowSearch": false,
+   "isLiveBlog": false,
+   "links": {
+    "api": {
+     "self": {}
+    },
+    "mobile": {
+     "href": "http://m.espn.go.com/wireless/story?storyId=64018028"
+    }
+   },
+   "premium": false,
+   "playerId": 4262921
+  }
+ ]
+}

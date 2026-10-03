@@ -52,6 +52,12 @@
     {/each}
   </div>
 
+  <!-- ---- N1 (Wave I-D): where the card's news line comes from (docs/ESPN_TERMS.md) -->
+  <p class="text-sm leading-snug text-ink-3" data-testid="about-news-source">
+    The news line on a player's card is the latest headline from ESPN's public player news (RotoWire's updates and ESPN's own stories), with its source and a link to ESPN; League Lab keeps none of it.
+  </p>
+  <!-- ---- end N1 -->
+
   {#if imp}
     <section class="space-y-3" data-testid="importance">
       <h2 class="text-xl font-extrabold tracking-tight">What it leans on most</h2>
