@@ -24,10 +24,43 @@ function projection(d: PlayerCard): Section | undefined {
 }
 
 export function cardSections(d: PlayerCard): { key: SectionKey; sec: Section }[] {
-  return SECTION_ORDER.map((k) => ({ key: k, sec: k === "projection" ? projection(d) : d.sections[k] })).filter(
-    (x): x is { key: SectionKey; sec: Section } => !!x.sec,
-  );
+  return SECTION_ORDER.map((k) => ({ key: k, sec: k === "projection" ? projection(d) : d.sections[k] }))
+    .filter((x): x is { key: SectionKey; sec: Section } => !!x.sec)
+    .map((x) => ({ key: x.key, sec: dictionary(x.sec) })); // ---- IE-2
 }
+
+// ---- IE-2 (Wave I-E): the review's metric dictionary on the card (docs/WORDS.md § "The dictionary"). The API's card is
+// the console's player page (the parity tests pin its labels), so the product's words are applied here: the label
+// and its help change, the value never does. Applied to the tiles' labels / help and the "How to read this" text.
+export const CARD_WORDS: Record<string, { label: string; help?: string }> = {
+  Projected: { label: "Projected points this week", help: "A forecast in this league's scoring, not a guarantee" },
+  "Most weeks": { label: "Typical range", help: "The middle 50% of his modeled outcomes: a quarter of weeks below it, a quarter above" },
+  Floor: { label: "Low-end outcome", help: "A modeled bad week: one week in ten he scores less (not his minimum)" },
+  Ceiling: { label: "High-end outcome", help: "A modeled good week: one week in ten he scores more (not his maximum)" },
+  Expected: {
+    label: "From past opportunities",
+    help: "Points suggested by his past opportunities: what his targets and carries were worth, looking back — not this week's forecast. The arrow is the observed gap.",
+  },
+  "Target share": { label: "Share of team passes", help: "Share of his team's passes thrown to him (targets), in the games he played" },
+};
+
+export function dictionary(sec: Section): Section {
+  return {
+    ...sec,
+    blocks: sec.blocks.map((b) =>
+      b.metrics ? { ...b, metrics: b.metrics.map((m) => (CARD_WORDS[m.label] ? { ...m, label: CARD_WORDS[m.label].label, help: CARD_WORDS[m.label].help ?? m.help } : m)) } : b,
+    ),
+  };
+}
+
+/** The card's "How to read this" in the dictionary's words. */
+export function howtoWords(t: string | null | undefined): string {
+  return (t ?? "")
+    .replace(/\*\*Most weeks\*\*/g, "**Typical range** (the middle 50% of outcomes)")
+    .replace(/the \*\*floor\*\* and \*\*ceiling\*\* are a bad week and a good week/g, "the **low-end** and **high-end outcomes** are a modeled bad week and good week, not his minimum or maximum")
+    .replace(/\*\*Projection\*\* is this week's projected points/g, "**Projected points this week** is a forecast, not a guarantee,");
+}
+// ---- end IE-2
 
 /** The header line without the position and team the badges already show ("WR · DET · WR1 on the depth chart …"). */
 export function cardHeadLine(d: PlayerCard): string {

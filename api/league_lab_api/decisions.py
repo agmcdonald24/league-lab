@@ -1219,6 +1219,7 @@ def evaluate(league_id: str, team: int, partner: int | None, give, get, *, sourc
                             if k in {s.fill.player_id for s in (me, th) if s.fill is not None}},
            "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, "
                            "lineup_frame); app/lib/ros.py (package_sentence)"}
+    out.update(trade_story(ctx, out, now, trade, board, weeks, window))      # ---- IE-2: through the starting lineup
     t3 = time.perf_counter()
     out["timings_ms"] = {"context": round((t1 - t0) * 1000, 1), "evaluate": round((t2 - t1) * 1000, 1),
                          "words": round((t3 - t2) * 1000, 1), "total": round((t3 - t0) * 1000, 1)}
@@ -1244,6 +1245,179 @@ class _View:
 def _names(ctx: TradeContext, ids) -> str:
     parts = [ctx.link(p) for p in ids]
     return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+
+
+# ---- IE-2 (Wave I-E): the trade explained through the starting lineup (review § "explain trades through starting-
+# lineup changes"). The answer leads with who enters your starters and who leaves — by MEMBERSHIP: a starter who only
+# slides from WR/TE 2 to WR/TE 3 is in neither list and shows no change of his own —, the required cut, the backup
+# coverage the trade takes, the other side in the same words, the window named, and the comparison with standing pat
+# and with the best free agent for the same need. Every number here is one the evaluation already made (the lineups'
+# totals, the sides' gains, `trades.best_fill` on today's roster); nothing is re-priced. The arithmetic (the market,
+# rest of season, ranks, roster size) moves under "How we calculated this" on the page; `how` lists it.
+DICTIONARY = (("**Fit** (what the best lineups gain)", "**Improvement to your starting lineup** (best lineup each week)"),
+              ("**Market** (season points above the best free agent at the position)",
+               "**Projected value above available replacements** (season points above the best free agent at the position)"))
+
+
+def dictionary_words(text: str | None) -> str | None:
+    """The review's metric dictionary on a sentence the shared trade functions wrote (docs/WORDS.md § "The
+    dictionary"): the label changes, the numbers stay."""
+    if not text:
+        return text
+    for old, new in DICTIONARY:
+        text = text.replace(old, new)
+    return text
+
+
+def _who(ctx: TradeContext, pid) -> str:
+    """'Rice'; a team unit by its short name ('Texans QB'); a defense keeps its name."""
+    n = ctx.name(pid)
+    return unit_short(n) if ctx.pos(pid) in ("TMQB", "TMPK", "TMDEF") or n.endswith((" QB", " K")) else _last(n)
+
+
+def _and(parts: list[str]) -> str:
+    return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
+
+
+def _membership(ctx: TradeContext, side: T.Side) -> dict:
+    """This week's starters in / out by membership, and the slot moves (detail only, no points)."""
+    if side.lineup_before is None or side.lineup_after is None:
+        return {"in": [], "out": [], "moved": []}
+    before = {s.player.id: s for s in side.lineup_before.starts if s.player is not None}
+    after = {s.player.id: s for s in side.lineup_after.starts if s.player is not None}
+    cut = {c.player_id for c in side.cuts}
+    ins = [{"player": ctx.player(p), "slot": cards.slot_label(s.slot.type), "value": T._r2(s.value or 0.0),
+            "how": "trade" if p in side.gets else "bench"} for p, s in after.items() if p not in before]
+    outs = [{"player": ctx.player(p), "slot": cards.slot_label(s.slot.type), "value": T._r2(s.value or 0.0),
+             "why": "traded" if p in side.gives else "cut" if p in cut else "to the bench"}
+            for p, s in before.items() if p not in after]
+    moved = [f"{_who(ctx, p)} {cards.slot_label(before[p].slot.label)} → {cards.slot_label(s.slot.label)}"
+             for p, s in after.items() if p in before and before[p].slot.label != s.slot.label]
+    return {"in": ins, "out": outs, "moved": moved}
+
+
+def _lineup_words(ctx: TradeContext, m: dict, partner_team: str) -> str:
+    ins = [f"{_who(ctx, x['player']['sleeper_id'])} starts at {x['slot']}" for x in m["in"]]
+    why = {"traded": f"goes to {partner_team}", "cut": "is cut", "to the bench": "to the bench"}
+    outs = [f"{_who(ctx, x['player']['sleeper_id'])} {why[x['why']]}" for x in m["out"]]
+    if not ins and not outs:
+        return "The same players start this week."
+    return "; ".join(p for p in (_and(ins) if ins else "", _and(outs) if outs else "") if p) + "."
+
+
+def _more(x: float | None, when: str, *, whole: bool = False) -> str:
+    """'about 3.4 more points this week' / 'about 10 fewer in total over weeks 4–7' / 'no change this week'."""
+    if x is None:
+        return f"not known {when}"
+    if abs(x) < 0.05:
+        return f"no change {when}"
+    n = f"{abs(x):.0f}" if whole and abs(x) >= 0.5 else f"{abs(x):.1f}"
+    return f"about {n} {'more' if x > 0 else 'fewer'} {'points ' if not whole else ''}{when}".replace("  ", " ")
+
+
+def _effect(whose: str, week_gain: float, window_gain: float, window: str, span: str) -> str:
+    if window == "week":
+        return f"{whose} starting lineup: {_more(week_gain, 'this week')}."
+    return (f"{whose} starting lineup: {_more(week_gain, 'this week')}, "
+            f"{_more(window_gain, f'in total over {span}', whole=True)}.")
+
+
+def _backup(ctx: TradeContext, side: T.Side) -> str | None:
+    """The backup coverage the trade takes (players who sat on your bench this week and leave the roster) or adds."""
+    if side.lineup_before is None or side.lineup_after is None:
+        return None
+    gone = set(side.gives) | {c.player_id for c in side.cuts}
+    before_bench = [p for p in side.lineup_before.bench]
+    after_bench = [p for p in side.lineup_after.bench]
+    lost = [p for p in before_bench if p.id in gone]
+    added = [p for p in after_bench if p.id in set(side.gets)]
+    bits = []
+    for p in lost:
+        left = [q for q in after_bench if q.position == p.position]
+        rest = (f"{len(left)} {p.position} left on your bench" if left else f"no {p.position} left on your bench")
+        bits.append(f"you lose {_who(ctx, p.id)}, a backup {p.position} ({rest})")
+    for p in added:
+        bits.append(f"{_who(ctx, p.id)} joins your bench as a backup {p.position}")
+    return ("Backup coverage: " + "; ".join(bits) + ".") if bits else None
+
+
+def _hold(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], team: int, need: list[str], my_gain: float,
+          window: str, span: str, now_total: float) -> dict:
+    """Standing pat, and the best free agent at the positions the trade brings in (`trades.best_fill` on today's
+    roster: what he adds to your best lineup each week; a claim also needs a roster spot)."""
+    when = "this week" if window == "week" else f"in total over {span}"
+    out = {"hold": f"Standing pat keeps your starting lineup at {now_total:.1f} projected points "
+                   f"this week.", "waiver": None, "waiver_gain": None}
+    try:
+        pool, meta = ctx.fa_pool(weeks)
+    except Exception:  # noqa: BLE001 - the comparison is a side line, never the evaluation's failure
+        return out
+    pool = {k: v for k, v in pool.items() if not need or (meta.get(k, {}).get("position") in need)}
+    if not pool:
+        return out
+    fill = T.best_fill(board, weeks, [board.pool(team, w) for w in weeks], pool)
+    if fill is None:
+        out["waiver"] = f"No free agent at {_and(sorted(need))} improves your starting lineup {when}."
+        out["waiver_gain"] = 0.0
+        return out
+    g = fill.horizon_gain if window != "week" else fill.week_gain
+    name = (meta.get(fill.player_id) or {}).get("player_name") or str(fill.player_id)
+    cmp = ("about as much as this trade" if abs(g - my_gain) < 0.5 else
+           "more than this trade, without giving anyone up" if g > my_gain else "less than this trade")
+    n = f"{g:.1f}" if window == "week" or g < 0.5 else f"{g:.0f}"
+    out["waiver"] = (f"The best free agent for the same need, {name} ({(meta.get(fill.player_id) or {}).get('position')}), "
+                     f"adds about {n} points to your starting lineup {when}: {cmp} (a claim also needs a roster spot).")
+    out["waiver_gain"] = T._r2(g)
+    out["waiver_player"] = {"sleeper_id": fill.player_id, **(meta.get(fill.player_id) or {})}
+    return out
+
+
+def trade_story(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, board: RosterBoard, weeks: tuple[int, ...],
+                window: str) -> dict:
+    """The answer's IE-2 fields (INTERFACES.md § IE-2) and the lineups' per-player change."""
+    span, partner_team = out["span"], out["partner_team"]
+    mine, theirs = _membership(ctx, now.mine), _membership(ctx, now.theirs)
+    # the lineups: each row's change is the PLAYER's own (new starter: his value; a starter who changed slot: none);
+    # the starters who left are their own rows; the changes add up to the lineup total's change
+    for who, side, m in (("mine", now.mine, mine), ("theirs", now.theirs, theirs)):
+        lu = out["lineups"].get(who)
+        if lu is None or side.lineup_before is None or side.lineup_after is None:
+            continue
+        before = {s.player.id for s in side.lineup_before.starts if s.player is not None}
+        for row, s in zip(lu["slots"], side.lineup_after.starts, strict=False):
+            pid = s.player.id if s.player is not None else None
+            row["change"] = None if pid is None or pid in before else T._r2(s.value or 0.0)
+            row["status"] = "new" if pid is not None and pid in side.gets else "in" if pid is not None and pid not in before else None
+        lu["out"] = [{"slot": x["slot"], "player_name": x["player"]["player_name"], "gsis_id": x["player"]["gsis_id"],
+                      "value": x["value"], "change": -x["value"], "why": x["why"]} for x in m["out"]]
+        lu["reshuffled"] = m["moved"]
+        lu["total"] = {"before": T._r2(side.lineup_before.total), "after": T._r2(side.lineup_after.total),
+                       "change": T._r2(side.lineup_after.total - side.lineup_before.total)}
+    me, th = trade.mine, trade.theirs
+    need = sorted({x["player"]["position"] for x in mine["in"] if x["how"] == "trade"} or {ctx.pos(p) for p in me.gets})
+    hold = _hold(ctx, board, tuple(weeks), int(out["roster_id"]), [p for p in need if p], me.gain_horizon if window != "week"
+                 else now.mine.gain_week, window, span, now.mine.before[0])
+    cuts = [{"player": ctx.player(c.player_id), "season_points": None if c.market is None else T.whole(c.market),
+             "words": f"You must cut {ctx.name(c.player_id)} to make room"
+                      + (f" (he costs your lineup {c.horizon_loss:.1f} over {span})." if c.horizon_loss >= 0.05 else
+                         " (he does not start for you: no lineup points lost).")} for c in me.cuts]
+    effect = _effect("Your", now.mine.gain_week, me.gain_horizon, window, span)
+    their_effect = _effect(f"{partner_team}'s", now.theirs.gain_week, th.gain_horizon, window, span)
+    out["fit"]["words"] = dictionary_words(out["fit"]["words"])
+    out["market"]["words"] = dictionary_words(out["market"]["words"])
+    return {
+        "starters_in": mine["in"], "starters_out": mine["out"], "cut": cuts,
+        "effect_words": effect, "lineup_words": _lineup_words(ctx, mine, partner_team), "backup_words": _backup(ctx, now.mine),
+        "their_change": {"gain_week": now.theirs.gain_week, "gain_window": th.gain_horizon, "starters_in": theirs["in"],
+                         "starters_out": theirs["out"], "effect_words": their_effect,
+                         "lineup_words": _lineup_words(ctx, theirs, "you")},
+        "window_words": "this week" if window == "week" else f"over {span} in total",
+        "hold_words": " ".join(x for x in (hold["hold"], hold["waiver"]) if x),
+        "hold": hold,
+        "how": {"fit": out["fit"]["words"], "market": out["market"]["words"], "ros": (out.get("ros") or {}).get("words"),
+                "size": out["size_words"], "ranks": (out.get("ranks") or {}).get("words")},
+    }
+# ---- end IE-2
 
 
 def _rank_change(ctx: TradeContext, me: int, them: int, ms: T.Side, ts: T.Side, rank_words, *,

@@ -1372,3 +1372,38 @@ export function unavailableOf(e: unknown): UnavailableAsset[] {
   return Array.isArray(b?.unavailable) ? b.unavailable : [];
 }
 // ---- end IE-0
+
+// ---- IE-2 (Wave I-E): the trade explained through the starting lineup (POST /api/trades/evaluate, decisions.trade_story):
+// who enters your starters and who leaves — by membership, a starter who only changes slot number is in neither list —,
+// the required cut, the backup coverage, the other side in the same words, the window named and the comparison with
+// standing pat / the best free agent for the same need. `lineups.<side>` gains the starters who left (`out`), the slot
+// moves (`reshuffled`, detail only) and the total; a slot row's `change` is the player's own (null: he only moved slot).
+export interface StarterMove {
+  player: TradePlayer;
+  slot: string; // "WR/TE", "team QB" (the league's words, unnumbered)
+  value: number; // this week's projected points
+  how?: "trade" | "bench";
+  why?: "traded" | "cut" | "to the bench";
+}
+export interface TradeLineupX {
+  slots: { slot: string; player_name: string | null; gsis_id: string | null; value: number | null; change: number | null; status?: "new" | "in" | null }[];
+  notes: string[];
+  closest_call: string | null;
+  out?: { slot: string; player_name: string; gsis_id: string | null; value: number; change: number; why: string }[];
+  reshuffled?: string[];
+  total?: { before: number; after: number; change: number };
+}
+export interface TradeEval {
+  starters_in?: StarterMove[];
+  starters_out?: StarterMove[];
+  cut?: { player: TradePlayer; season_points: number | null; words: string }[];
+  effect_words?: string;
+  lineup_words?: string;
+  backup_words?: string | null;
+  their_change?: { gain_week: number; gain_window: number; starters_in: StarterMove[]; starters_out: StarterMove[]; effect_words: string; lineup_words: string };
+  window_words?: string;
+  hold_words?: string;
+  hold?: { hold: string; waiver: string | null; waiver_gain: number | null };
+  how?: { fit: string | null; market: string | null; ros: string | null; size: string | null; ranks: string | null };
+}
+// ---- end IE-2

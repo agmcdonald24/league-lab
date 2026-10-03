@@ -13,6 +13,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   no Sleeper market line, and state points per game once with its source; a team unit's badge is its team, never
   "Free agent".
 
+- **IE-2: a trade in starting-lineup words.** The calculator leads with what you give and get, one sentence on the
+  effect ("about 3.4 more points this week, about 10 more in total over weeks 4–7"), who starts and who sits by name
+  (a starter who only moves from WR/TE 2 to WR/TE 3 is not a change), the backup coverage lost, the other side, and
+  standing pat / the best free agent for the same need; the arithmetic is under "How we calculated this". The review's
+  metric dictionary (`docs/WORDS.md`), the setup screen with the team picker first and the scoring one status line,
+  supporting text at ≥ 4.97:1 in both themes, labels 12 px.
+
 ## 2026-10-03 — Wave I-D
 
 - **PO (integration).** dbt's `assert_projection_ranges_price_the_lines` re-prices `scrubs` only: the dynasty's

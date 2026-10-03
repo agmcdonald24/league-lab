@@ -105,6 +105,39 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | points per game on an on-demand card (IE-0) | one statement with its source: "Points per game: 10.5 over 2 games, reconstructed in this league's MFL scoring from his stat lines" (the chart's number) |
 | no NFL team (IE-0, `TeamBadge`) | no chip; never "FA" / "Free agent" for a missing team ("Free agent" is a player nobody in the league has) |
 
+## The dictionary (Wave I-E, the casual-user review)
+
+The outside review of 2026-10-03 (`docs/reviews/2026-10-03-mfl-70587-usability-review.md` § "use a consistent metric
+dictionary") walked the app as a manager who knows football and does not enjoy analytics. These words win over the
+older rows above wherever a term appears — pages, cards, the research pane, Season, the Finder, the calculator, the
+help texts. The meaning column is what the words must keep true. Other developers append rows; nobody renames one
+without changing every page that shows it.
+
+| Old wording or display | The words we use | Short form (tiles, tight rows) | Meaning that must stay true |
+|---|---|---|---|
+| Proj / projected | **Projected points this week** | Projected this week | A forecast in the selected league's scoring, not a guarantee. One decimal by default. |
+| You +9.5, weeks 4–7 | **About 10 extra starter points total over weeks 4–7** | +9.5 over weeks 4–7 in total | The sum of the change in the best legal starting lineup each week. Not 9.5 per week, not the incoming players' points. |
+| Fit | **Improvement to your starting lineup** (weeks 4–7, best lineup each week) | Lineup improvement | Name the weeks, and whether the baseline is the best lineup (it is, everywhere today) or the submitted one. |
+| Expected / work worth / xPPG | **Points suggested by his past opportunities** | From past opportunities | Looking back: what his targets and carries were worth. Not the upcoming-week forecast; said beside the chart. |
+| Market (our projection-derived score) | **Projected value above available replacements** | Value above replacement | From our projections, not observed trade prices; respects the league's eligible replacement slots. Sleeper's own number stays "Sleeper's projection". |
+| Most weeks | **Typical range** (the middle 50% of outcomes) | Typical range | The middle 50% of modeled outcomes; "most" overstated it. |
+| Floor / ceiling | **Low-end / high-end outcome** | Low-end / high-end | Modeled percentiles (1 week in 10 below / above), not the minimum or maximum possible score. |
+| Target share | **Share of team passes thrown to him** | Share of team passes | 20% = about one in five team targets in the games shown; keep the period. |
+| Depth | **Backup coverage** (for <position>) | Backup coverage | Say which position the backup protects; a bench-only lineup sum is not an insurance value. |
+| TMQB / TMPK / WR+TE2 | **Team QB / Team kicker / Receiver or tight end** | team QB / team K / WR/TE 2 | The league's roster rules, the same names on every page. |
+| Interest (the trade dial) | **Effect on their starters** (IE-1: "Makes their lineup weaker" · "About even" · "Improves their lineup" · "Improves it a lot") | Effect on their starters | Their lineup's projected gain over the window, never an acceptance probability. |
+| Above / below expectation | "{n} above / below what his opportunities suggest" | above / below his opportunities | The observed gap and its evidence; never "due" or "cool off". |
+| Why? (the trade's arithmetic) | **How we calculated this** | How we calculated this | Under it: the scoring pieces ("0.42 rushing TDs × 6.98715"), the value above replacements, rest of season, ranks, roster size. |
+
+**A trade, in words** (IE-2, `decisions.trade_story`): the package and any cut → one sentence on the effect ("Your
+starting lineup: about 3.4 more points this week, about 10 more in total over weeks 4–7.") → who starts and who sits
+by name ("Rice starts at WR/TE; McConkey to the bench.") — a starter who only moves from WR/TE 2 to WR/TE 3 is not a
+change → the backup coverage it takes ("you lose Tuten, a backup RB") → the other side in the same words → standing
+pat and the best free agent for the same need. "About N" is a whole number in a total, one decimal for this week.
+
+**Freshness**: "Updated 2:51 PM ET" (the exact time on hover / tap); feed names only in the data details; the MFL
+roster's freshness its own line.
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

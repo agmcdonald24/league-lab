@@ -4547,3 +4547,42 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   `Player.svelte` / `GameLog`); MFL's official per-player scores (`weeklyResults`) are not read for points per game —
   the reconstruction is labelled as such; a given player whose game has kicked off stays in this week's lineup (the
   engine's lock rule) — the words do not say so yet.
+
+
+### IE-2 2026-10-03 — trades through lineup changes, the dictionary, the setup order, less effort
+
+* **Trade answer** (`decisions.trade_story`, `# ---- IE-2` block; `evaluate` calls it once): `starters_in` /
+  `starters_out` by starter membership (this week's lineups before / after), `cut`, `effect_words`, `lineup_words`,
+  `backup_words`, `their_change`, `window_words`, `hold_words` (+ `hold`: standing pat; the best free agent at the
+  incoming positions by `trades.best_fill` on today's roster), `how`. `lineups.<side>.slots[].change` is the player's
+  own (null for a starter who only changed slot number), `lineups.<side>.out` the starters who left (their value as a
+  negative change), `reshuffled` the slot moves (detail, no points), `total`. The changes add up to the lineup total's
+  change. No number moved: Tuten for Rice (70587, 8 ↔ 12) is +3.36 this week / +9.52 weeks 4–7, them −2.05 / −2.67,
+  before and after. Before: Nabers (WR/TE 2 → WR/TE 3) +0.23 and Rice +3.13 on the slot rows; after: Rice +10.24,
+  McConkey −6.88 (to the bench), Nabers none.
+* **Calculator** (`TradeCalc.svelte`, under the verdict in the result card): You give / You get (+ the cut) → the effect
+  sentence → "Your starters this week" (In / Out by name, the total before → after) → backup coverage → their side →
+  the alternatives; "Why?" is now "How we calculated this" (the improvement line, value above replacements, rest of
+  season, ranks, roster size, week by week); the lineup detail shows the starters who left and the slot moves.
+* **Dictionary**: `docs/WORDS.md` § "The dictionary" (the review's table with the meaning column; the trade in words;
+  freshness). Applied: the trade answer's `fit.words` / `market.words` labels (`decisions.dictionary_words`, the
+  console's sentence functions unchanged), the calculator's labels and "How to read this", the player card / pane tiles
+  (`card.ts` `CARD_WORDS`: Projected points this week, Typical range, Low-end / High-end outcome, From past
+  opportunities, Share of team passes) and the card's "How to read this" (`howtoWords`). The API's player card keeps the
+  console's labels (`test_parity` pins them).
+* **Setup** (`Leagues.svelte`): the MFL card shows the league, then "Which team is yours?", then the read-back
+  collapsed to one status line ("Custom MFL scoring — some pieces are estimated" / "… scoring, read exactly"); open,
+  the read-back and the check, the check one line, its misses behind "The misses (n)". Team picker y = 483 px at 1300
+  (status line 788), 519 px at 375.
+* **Less effort**: `--ll-ink-3` light #687186 → #5c6579, dark #838da0 → #8b95a8: ink-3 on page / surface / raised /
+  sunken = 5.30 / 5.85 / 5.45 / 4.97 light (was 4.44 / 4.89 / 4.56 / 4.16), 6.45 / 5.95 / 5.34 / 6.27 dark (was
+  5.82 / 5.37 / 4.82 / 5.66); `text-label` 11 → 12 px; the player page's scoring pieces under "How we calculated this".
+* **Tests**: `api/tests/test_ie2.py` (6: the answer's fields on the review's case, no gain from slot renumbering on the
+  fixture and on a constructed board, the dictionary in the trade words, the full package's lineup story, the
+  this-week window); `test_decisions.py` (the parity compares through `dictionary_words`); `web/e2e/ie2/` (3 × 375 /
+  1300: the result's order, the lineup detail, the setup order, the contrast from the CSS variables), recorded in
+  `web/fixtures/mfl/api_70587_ie2.json`. API 383 passed, 3 clone failures (`test_ic1` ×2, `test_ic_po` ×1), 2 skipped;
+  web lint / typecheck / build clean; fixture e2e 156 passed.
+* **Open**: the compact schedule table (week · opponent · projected), status next to the name on every row, "Updated
+  2:51 PM ET" and the MFL roster's freshness line, the My Week footer limitation line, the dictionary on the console
+  cards (`app/lib/cards.py` "Most weeks:", IE-1's) / Waivers / Compare / Receivers / Trends / About.

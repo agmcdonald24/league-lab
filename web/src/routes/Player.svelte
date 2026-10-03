@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ApiError, get, paths, peek, Unauthorized, type PlayerCard } from "../lib/api";
-  import { cardHeadLine, cardMissing, cardSections } from "../lib/card";
+  import { cardHeadLine, cardMissing, cardSections, howtoWords } from "../lib/card";
   import { withContext } from "../lib/md";
   import { learnLeagueName } from "../lib/names.svelte";
   import { back, restoreScroll, route } from "../lib/router.svelte";
@@ -96,10 +96,15 @@
                 {#if data.why}
                   <p class="ll-label text-accent">Why this number</p>
                   <p class="text-base leading-snug font-semibold" data-testid="player-why-sentence">{data.why.sentence}</p>
-                  <ul class="space-y-0.5 text-sm text-ink-2" data-testid="player-why-pieces">
-                    {#each data.why.pieces as w (w.stat)}<li class="tabnum">{w.words}</li>{/each}
-                  </ul>
-                  <p class="text-xs text-ink-3">His projected stat line, each piece counted in {data.league_name} scoring: they add up to the {fmt.pts(data.why.points)}.</p>
+                  <!-- ---- IE-2 (Wave I-E): the scoring arithmetic ("0.42 rushing TDs × 6.98715") is audit detail, not the
+                       first answer about a player: under "How we calculated this", collapsed -->
+                  <Expander title="How we calculated this" testid="player-how">
+                    <ul class="space-y-0.5 text-sm text-ink-2" data-testid="player-why-pieces">
+                      {#each data.why.pieces as w (w.stat)}<li class="tabnum">{w.words}</li>{/each}
+                    </ul>
+                    <p class="mt-1 text-sm text-ink-2">His projected stat line, each piece counted in {data.league_name} scoring: they add up to the {fmt.pts(data.why.points)}.</p>
+                  </Expander>
+                  <!-- ---- end IE-2 -->
                 {/if}
                 {#if data.market?.words}
                   <p class="text-base leading-snug {data.market.far ? 'font-semibold' : ''}" data-testid="player-market">{data.market.words}</p>
@@ -132,6 +137,6 @@
         Not shown for {data.league_name} yet: {missing.join(", ")}.
       </p>
     {/if}
-    <Expander title="How to read this" testid="howto"><Md text={data.howto} {ctx} block class="text-base leading-snug" /></Expander>
+    <Expander title="How to read this" testid="howto"><Md text={howtoWords(data.howto)} {ctx} block class="text-base leading-snug" /></Expander>
   {/if}
 </main>

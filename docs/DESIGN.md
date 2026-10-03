@@ -22,7 +22,7 @@ to Tailwind through `@theme inline`, so components write `bg-surface text-ink-2 
 | raised | `bg-raised` | `#1a2130` | `#f5f7fa` | a tile inside a card, a table header, hover |
 | sunken | `bg-sunken` | `#0d1118` | `#e9edf2` | a bar's track, an input |
 | line / line-strong | `border-line` | 8 % / 16 % white | 10 % / 20 % ink | hairlines |
-| ink / ink-2 / ink-3 | `text-ink` … | `#f3f5f9` / `#b8c0cf` / `#838da0` | `#0b0e14` / `#454e63` / `#687186` | text: primary / secondary / labels, axes |
+| ink / ink-2 / ink-3 | `text-ink` … | `#f3f5f9` / `#b8c0cf` / `#8b95a8` | `#0b0e14` / `#454e63` / `#5c6579` | text: primary / secondary / labels, axes. IE-2: ink-3 ≥ 4.5:1 on every surface in both modes (light 4.97–5.85, dark 5.34–6.45; was 4.16–4.89 / 4.82–5.82) |
 | accent | `bg-accent text-on-accent`, `text-accent`, `bg-accent-soft` | `#3fd17a` | `#15803d` | the picked tab, links, "yours" |
 | good / bad / warn | `text-good` … | `#3fd17a` / `#ff7a7a` / `#fbbf3c` | `#006300` / `#b42318` / `#8a4b00` | deltas and states, always with ▲ ▼ or an icon |
 | series-1 | `--ll-series-1` | `#3987e5` | `#2a78d6` | a chart's main series (actual points) |
@@ -34,7 +34,7 @@ to Tailwind through `@theme inline`, so components write `bg-surface text-ink-2 
 The chart hues are the dataviz reference palette's validated slots (blue, orange, aqua, yellow, magenta, violet) in
 both modes; nothing is eyeballed.
 
-**Type** (system sans everywhere; no web font, nothing to download before the first screen): `text-label` 11 px
+**Type** (system sans everywhere; no web font, nothing to download before the first screen): `text-label` 12 px (IE-2: was 11 px)
 uppercase, tracked 0.08 em, semibold (`.ll-label`) · `text-xs` 12 · `text-sm` 13 · `text-base` 15 (body) · `text-lg` 17
 · `text-xl` 20 · `text-2xl` 24 (a screen's title) · `text-3xl` 30 · `text-num` 36 (a card's headline number) ·
 `text-hero` 48 (the one number a screen leads with, at most one). Big numbers use proportional figures; columns of
