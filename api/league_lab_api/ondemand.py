@@ -140,7 +140,7 @@ def leagues_for_user(username: str) -> dict:
     from .myweek import known_league
     season = ui.current_season()
     try:
-        return A.user_leagues(username, int(season), in_database=known_league)
+        return with_cards(A.user_leagues(username, int(season), in_database=known_league))  # ---- IC-3: the cards
     except A.LeagueNotFound as exc:
         raise NotFound("no such Sleeper user") from exc
     except A.SleeperUnavailable as exc:
@@ -826,7 +826,8 @@ def mfl_league(text: str) -> dict:
     n_players = sum(len(r.get("players") or []) for r in rosters)
     unmapped = sl.mfl.unmapped(key)
     return {"platform": "mfl", "league": lg, "teams": teams, "roster_id": pick, "unmapped": unmapped,
-            "players": n_players, "mapped": n_players - len(unmapped), "scoring_note": mfl_scoring_note(league)}
+            "players": n_players, "mapped": n_players - len(unmapped), "scoring_note": mfl_scoring_note(league),
+            "card": league_card(key, league)}  # ---- IC-3: the read-backs
 
 
 # I0-C: one box, a link / an id / the league's name. `/api/leagues?mfl_search=<text>`: a link, an id or an `mfl:` key
@@ -857,3 +858,199 @@ def mfl_search(text: str) -> dict:
         note = f"{len(rows)} {'league has' if len(rows) == 1 else 'leagues have'} “{t}” in the name. Tap yours."
     return {**base, "matches": matches, "total": len(rows), "note": note}
 # ---- end I0-B
+
+
+# ---- IC-3 (Wave I-C): the Leagues card tells the truth. After a pick (an MFL league's card, each Sleeper league row)
+# the card reads back, in the league's own words, the lineup League Lab will solve ("Your lineup: TMQB · 2 RB · 3 WR/TE ·
+# TMPK · DEF"), the scoring it will price ("TDs by distance 6 / 9 / 12 · 1 pt per 10 yards · +10 at 100 yards · INT −3"),
+# what it does not price, and where the scoring check lives (IC-1's `/api/league/scoring-check`; the web loads it, so
+# the card never waits on it). The scoring words come from IC-1's `ScoringSpec.readback()` when the spec is there
+# (guarded import), else from the flat `scoring_settings` (today's readers); the slots from `lineup.parse_slots`
+# (IC-2's eligibility sets or today's names: both carry `.type`).
+MINUS = "−"
+_CARD_SLOT_WORDS = {"SUPER_FLEX": "superflex", "REC_FLEX": "WR/TE flex", "WRRB_FLEX": "RB/WR flex", "IDP_FLEX": "IDP flex",
+                    "FLEX": "FLEX", "PK": "K", "TMDEF": "DEF"}
+_UNPRICED_WORDS = {"pass_fd": "passing first downs", "rush_fd": "rushing first downs", "rec_fd": "receiving first downs",
+                   "pass_att": "pass attempts", "pass_cmp": "completions", "pass_inc": "incompletions",
+                   "rush_att": "carries", "pass_sack": "sacks taken", "kr_yd": "kick return yards",
+                   "pr_yd": "punt return yards", "rec_tgt": "targets", "pass_int_td": "pick-sixes thrown",
+                   "fum": "fumbles (any)"}
+
+
+def _num_words(v: float) -> str:
+    s = f"{abs(float(v)):.2f}".rstrip("0").rstrip(".")
+    return (MINUS if float(v) < 0 else "") + s
+
+
+def slot_word(name: str) -> str:
+    """A slot in plain words, the league's own name kept: WR+TE -> "WR/TE", SUPER_FLEX -> "superflex", TMQB stays."""
+    n = str(name).upper()
+    if n in _CARD_SLOT_WORDS:
+        return _CARD_SLOT_WORDS[n]
+    if "+" in n:
+        return "/".join(_CARD_SLOT_WORDS.get(p, p) for p in n.split("+"))
+    return n
+
+
+def lineup_readback(league: dict) -> dict:
+    """The starting lineup League Lab solves for this league, in its own words, grouped in order ("2 RB"); the
+    slots it does not solve (IDP, or an MFL starter the translation could not read) are named, never dropped."""
+    from league_lab.lineup import NOT_SLOTS, parse_slots
+    positions = [str(x) for x in league.get("roster_positions") or []]
+    slots, ignored = parse_slots(positions)
+    groups: list[list] = []
+    for s in slots:
+        w = slot_word(getattr(s, "type", s))
+        if groups and groups[-1][0] == w:
+            groups[-1][1] += 1
+        else:
+            groups.append([w, 1])
+    parts = [f"{n} {w}" if n > 1 else w for w, n in groups]
+    unread = list(dict.fromkeys(slot_word(x) for x in ignored))
+    m = league.get("mfl") or {}
+    for x in ((m.get("slots") or {}).get("idp") or []):                 # MFL starters the slot translation dropped
+        if slot_word(x) not in unread:
+            unread.append(slot_word(x))
+    text = "Your lineup: " + (" · ".join(parts) if parts else "no starting spots read")
+    out = {"text": text, "slots": [getattr(s, "label", str(s)) for s in slots], "unread": unread,
+           "bench": sum(1 for x in positions if x.upper() in NOT_SLOTS)}
+    if unread:
+        out["unread_text"] = "Not in the lineup League Lab solves: " + ", ".join(unread) + "."
+    return out
+
+
+def _league_spec(league: dict):
+    """IC-1's ScoringSpec for the league (guarded: None until that module is in the tree)."""
+    try:
+        from league_lab import anyleague as _A
+        if hasattr(_A, "league_spec"):
+            return _A.league_spec(league)
+        from league_lab.scoring import ScoringSpec, from_sleeper  # type: ignore[attr-defined]
+        if league.get("scoring_spec"):
+            return ScoringSpec.from_json(league["scoring_spec"])
+        return from_sleeper(league.get("scoring_settings") or {})
+    except (ImportError, AttributeError, KeyError, TypeError, ValueError):
+        return None
+
+
+def _per(v: float) -> str:
+    """0.1 -> "1 pt per 10", 0.04 -> "1 pt per 25", 0.5 -> "0.5 per"."""
+    v = float(v)
+    if 0 < v < 1 and abs(1 / v - round(1 / v)) < 1e-6:
+        return f"1 pt per {round(1 / v)}"
+    return f"{_num_words(v)} per"
+
+
+def flat_readback(sc: dict, roster_positions: list[str] | None = None) -> list[str]:
+    """Today's flat Sleeper-shaped dict in plain words (the fallback until the spec is in the tree)."""
+    from league_lab.scoring import SLEEPER_BONUS_MAP, SLEEPER_LONG_TD_MAP
+    g = lambda k: round(float(sc.get(k) or 0), 3)  # noqa: E731
+    out: list[str] = []
+    rec = g("rec")
+    out.append({0: "no points per catch", 0.5: "half PPR", 1: "full PPR"}.get(rec) or f"{_num_words(rec)} per catch")
+    if g("bonus_rec_te"):
+        out.append(f"TE +{_num_words(g('bonus_rec_te'))} per catch")
+    if g("pass_td"):
+        td = f"pass TD {_num_words(g('pass_td'))}"
+        if g("rush_td") and g("rush_td") == g("rec_td"):
+            td += f", rush / catch TD {_num_words(g('rush_td'))}"
+        out.append(td)
+    yd = []
+    if g("pass_yd"):
+        yd.append(f"{_per(g('pass_yd'))} passing yards")
+    if g("rush_yd") and g("rush_yd") == g("rec_yd"):
+        yd.append(f"{_per(g('rush_yd'))} rushing / receiving yards")
+    else:
+        yd += [f"{_per(g(k))} {w} yards" for k, w in (("rush_yd", "rushing"), ("rec_yd", "receiving")) if g(k)]
+    out += yd
+    bonus: dict[str, list[str]] = {}
+    for k, (col, low, _high, _d) in SLEEPER_BONUS_MAP.items():
+        if g(k):
+            bonus.setdefault(col.replace("_yards", ""), []).append(f"+{_num_words(g(k))} at {low}")
+    for col, bits in bonus.items():
+        out.append(f"{', '.join(bits)} {col} yards")
+    longs = {g(k) for k in SLEEPER_LONG_TD_MAP if k.endswith("_40p") and g(k)}
+    if len(longs) == 1:
+        out.append(f"+{_num_words(next(iter(longs)))} for a 40+ yard TD")
+    elif longs:
+        out.append("bonuses for 40+ yard TDs")
+    if g("pass_int"):
+        out.append(f"INT {_num_words(g('pass_int'))}")
+    if g("fum_lost"):
+        out.append(f"fumble lost {_num_words(g('fum_lost'))}")
+    slots = [str(x).upper() for x in roster_positions or []]
+    fg = [g(k) for k in ("fgm_0_19", "fgm_20_29", "fgm_30_39", "fgm_40_49", "fgm_50p")]
+    if any(fg) and (not slots or "K" in slots):
+        steps = [v for i, v in enumerate(fg) if v and (i == 0 or v != fg[i - 1])]
+        out.append("FG " + " / ".join(_num_words(v) for v in steps) + " by distance" if len(steps) > 1 else f"FG {_num_words(steps[0])}")
+    if (not slots or "DEF" in slots) and any(k.startswith("pts_allow") and g(k) for k in sc):
+        out.append(f"DEF: sacks {_num_words(g('sack'))}, takeaways {_num_words(g('int'))}, points allowed by band"
+                   if g("sack") else "DEF: points allowed by band")
+    return out
+
+
+def _projection_gaps(sc: dict) -> list[str]:
+    """What today's projections leave out of a Sleeper-shaped scoring (the audit's finding; the spec's expected-value
+    pricing closes these when it lands)."""
+    from league_lab.scoring import SLEEPER_BONUS_MAP, SLEEPER_LONG_TD_MAP
+    out = []
+    if any(float(sc.get(k) or 0) for k in SLEEPER_LONG_TD_MAP):
+        out.append("40+ yard touchdown bonuses are paid in your league but not in the projections")
+    if any(float(sc.get(k) or 0) for k in SLEEPER_BONUS_MAP):
+        out.append("yardage bonuses count in a projection only when the projected yards reach the line (all or nothing)")
+    if any(float(sc.get(k) or 0) for k in ("pass_2pt", "rush_2pt", "rec_2pt")):
+        out.append("2-point conversions are not projected")
+    return out
+
+
+def scoring_readback(league: dict) -> dict:
+    """The scoring in one line of plain words + what is not priced. From IC-1's spec when present (source "spec"), else
+    from the flat `scoring_settings` (source "settings": the projection's own view today)."""
+    from league_lab.kdef import DEF_KEY_PREFIXES
+    from league_lab.scoring import SLEEPER_POSITION_MAP, unmapped_keys
+    spec = _league_spec(league)
+    sc = {k: v for k, v in (league.get("scoring_settings") or {}).items() if v}
+    if spec is not None and hasattr(spec, "readback"):
+        pieces = list(spec.readback())
+        not_priced = [str(u.get("name") or u.get("event")) if isinstance(u, dict) else str(u) for u in (spec.unpriced or [])]
+        approximated = [str(a) for a in (getattr(spec, "approximated", None) or [])]
+        source = "spec"
+    else:
+        pieces = flat_readback(sc, league.get("roster_positions"))
+        is_def = lambda k: k.startswith(DEF_KEY_PREFIXES)  # noqa: E731
+        not_priced = [_UNPRICED_WORDS.get(k, k.replace("_", " ")) for k in unmapped_keys(sc)
+                      if k not in SLEEPER_POSITION_MAP and not is_def(k)]
+        rep = (league.get("mfl") or {}).get("scoring") or {}
+        not_priced += [str(x) for x in rep.get("unpriced") or [] if str(x) not in not_priced]
+        approximated = list(dict.fromkeys(str(a) for a in rep.get("approximated") or []))
+        approximated += [g for g in _projection_gaps(sc) if g not in approximated]
+        source = "settings"
+    not_priced = list(dict.fromkeys(not_priced))
+    out = {"text": " · ".join(pieces) if pieces else "No scoring rules read for this league", "pieces": pieces,
+           "not_priced": not_priced, "approximated": approximated, "source": source}
+    if not_priced:
+        out["not_priced_text"] = "Not counted in the projections: " + ", ".join(not_priced) + "."
+    return out
+
+
+def check_path(league_id: str) -> str:
+    from urllib.parse import quote
+    return f"/api/league/scoring-check?league={quote(str(league_id), safe='')}"
+
+
+def league_card(league_id: str, league: dict) -> dict:
+    """`card` on `/api/leagues?mfl=` and on each `/api/leagues?username=` row."""
+    return {"lineup": lineup_readback(league), "scoring": scoring_readback(league), "check_path": check_path(league_id)}
+
+
+def with_cards(answer: dict) -> dict:
+    """`leagues_for_user`'s answer with a card per league (the league payload is cached a day: no extra call once
+    the rows were read). A league Sleeper will not give us now keeps `card: null`."""
+    sl = A.sleeper()
+    for row in answer.get("leagues") or []:
+        try:
+            row["card"] = league_card(row["league_id"], sl.league(row["league_id"]))
+        except (A.LeagueNotFound, A.SleeperUnavailable, KeyError, TypeError, ValueError):
+            row["card"] = None
+    return answer
+# ---- end IC-3
