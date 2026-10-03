@@ -248,6 +248,18 @@ SQL
 } | psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction
 echo "restored in $(( $(date +%s) - t0 )) s"
 
+# ---- U-1 (Wave I-F): usage tracking — docs/HOSTING.md § "Usage". The `usage` schema is never dropped above (only
+# analytics, analytics_seeds and ops are); scripts/hosted_usage.sql creates usage.events if missing and grants the
+# app role INSERT + SELECT on that one table (its default_transaction_read_only stays on). Idempotent, a few ms, its
+# own transaction after the restore, the same owner connection as above (no new secret). A failure here never fails
+# the publish: the marts are already restored, and usage is never load-bearing.
+if psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction -f scripts/hosted_usage.sql; then
+  echo "usage: $(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select count(*) || ' events kept, ' || pg_size_pretty(pg_total_relation_size('usage.events')) from usage.events" 2>/dev/null || echo '?')"
+else
+  echo "WARNING: scripts/hosted_usage.sql failed: screen views are not counted until a sync applies it (the publish itself is fine)" >&2
+fi
+# ---- end U-1
+
 echo "verifying ..."
 psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -At -c "
   select 'analytics tables: ' || count(*) from information_schema.tables where table_schema = 'analytics';" \

@@ -403,6 +403,7 @@ def reason_pieces(d: dict, side: str, f: dict, nicks: dict) -> list[tuple[float,
     home = f.get("is_home")
     home = None if home is None or (isinstance(home, float) and pd.isna(home)) else bool(home)
     where = "at home against" if home is True else "on the road against" if home is False else "against"
+    n_before = len(out)                                                      # ---- IF-3
     if isinstance(opp, str) and opp and rank is not None:
         r = int(rank)
         plural = POS_PLURAL.get(pos or "", "his position")
@@ -413,6 +414,11 @@ def reason_pieces(d: dict, side: str, f: dict, nicks: dict) -> list[tuple[float,
             k = 33 - r
             fewest = "the fewest" if k == 1 else f"the {_ordinal(k)}-fewest"
             out.append(((16.5 - r) / 15.5, "matchup", f"{name} is {where} {_nick(opp, nicks)}, who give up {fewest} points to {plural}"))
+    # ---- IF-3: the defense's regular corners changed: the rank stays a fact on the card but is never a reason (score 0,
+    # its own kind: `_tiebreak` never picks it, `reason_line` never leads with it)
+    if f.get("personnel_caveat") and len(out) > n_before and out[-1][1] == "matchup":
+        out[-1] = (0.0, "matchup_caveat", f"{out[-1][2]}, but {f['personnel_caveat']}")
+    # ---- end IF-3
     implied = _num(f.get("implied_team_total"))
     team = _nick(d.get(side + "team"), nicks)
     if implied is not None and team and pos in SKILL:
@@ -480,6 +486,9 @@ def reason_line(d: dict, facts: dict | None = None, nicks: dict | None = None) -
     if is_coin_flip(d):
         gap = "the projection has them level" if margin < 0.05 else f"the projection says {a} by {margin:.1f}"
         head = f"Too close to call: {gap}, the ranges say either"
+        cav = [c for c in ((facts.get(d.get(k)) or {}).get("personnel_caveat") for k in ("gsis_id", "alt_gsis_id")) if c]
+        if cav:                                                          # ---- IF-3: the old rank does not settle it
+            head += f"; the matchup rank does not settle it this week: {'; '.join(cav)}"
         tb = _tiebreak(both, a, b)                                       # ---- IE-1: the tiebreaker, its own function
         if tb is not None:
             return f"{head}. Go with {tb['pick']}{tb['words']}: {tb['text']}."
@@ -507,7 +516,10 @@ TIE_KINDS = (("injury", ""), ("matchup", " on the matchup"), ("role", " on the r
 def _tiebreak(both: list, a: str, b: str) -> dict | None:
     """The coin flip's tiebreaker: an injury first, then the matchups, the roles, the betting lines (the side they add up
     for). {kind, pick (a short name), side ('me' | 'alt'), words, text} or None (nothing splits them)."""
+    uncertain = any(p[1] == "matchup_caveat" for p in both)              # ---- IF-3: never the matchup then
     for kind, words in TIE_KINDS:
+        if kind == "matchup" and uncertain:
+            continue
         ps = [p for p in both if p[1] == kind]
         net = sum(p[0] for p in ps)
         if not ps or abs(net) < 0.5:
@@ -516,7 +528,7 @@ def _tiebreak(both: list, a: str, b: str) -> dict | None:
         clause = max((p for p in ps if (p[0] > 0) == (net > 0)), key=lambda p: abs(p[0]))
         text = _as_him(clause[2], pick) if clause[3] == pick else clause[2]
         return {"kind": kind, "pick": pick, "side": "me" if net > 0 else "alt", "words": words, "text": text,
-                "clause": clause[2]}
+                "clause": clause[2], "matchup_uncertain": uncertain}                # ---- IF-3
     return None
 
 
@@ -533,8 +545,197 @@ def tiebreak(d: dict, facts: dict | None = None, nicks: dict | None = None) -> d
     d["_short_me"], d["_short_alt_"] = a, b
     mine = reason_pieces(d, "", facts.get(d.get("gsis_id")) or {}, nicks)
     theirs = reason_pieces(d, "alt_", facts.get(d.get("alt_gsis_id")) or {}, nicks)
-    return _tiebreak([(s, k, c, a) for s, k, c in mine] + [(-s, k, c, b) for s, k, c in theirs], a, b)
+    tb = _tiebreak([(s, k, c, a) for s, k, c in mine] + [(-s, k, c, b) for s, k, c in theirs], a, b)
+    if tb is not None:                                                   # ---- IF-3: the card's flag, either player
+        tb["matchup_uncertain"] = tb["matchup_uncertain"] or matchup_uncertain(d, facts)
+    return tb
 # ---- end IE-1
+
+
+# ---- IF-3 (Wave I-F, the decision-quality review § Priority 1): a defense's rank against receivers was earned by the
+# corners who played its games; when they are not the corners expected this week, the rank is less representative and
+# must not settle a close call. `corner_personnel` compares, per defense and week:
+#   * the regulars: its corners with at least REGULAR_SHARE of the leading corner's coverage snaps this season
+#     (mart_cb_rankings, window "season": the games played so far; at most three);
+#   * the listed starters: its depth chart as of the game (mart_cb_matchups' left / right / slot corner, rank 1);
+#   * who cannot play: `STATUSES` (the API sets it to the availability overlay, availability.now: ESPN / Sleeper with
+#     the date; the console has no overlay and reads the depth chart only). A listed starter who cannot play gives his
+#     spot to the next corner at that spot on the same depth chart (mart_matchup_cb_context, depth rank 2+).
+# kind: "changed" (a regular is missing: he cannot play, or the depth chart no longer starts him), "same", "unknown"
+# (no depth chart before the game, or no games this season). Receivers only: corners are what the evidence covers.
+# No number moves: the projection is untouched; a changed defense only stops the matchup rank breaking a tie.
+STATUSES = None                  # callable(list[gsis]) -> {gsis: {status, code, cannot_play, source, as_of, note}}
+REGULAR_SHARE = 0.5
+OUT_WORDS = {"IR": "on injured reserve", "OUT": "out", "DOUBTFUL": "doubtful", "PUP": "on the PUP list", "NFI": "on the NFI list",
+             "SUS": "suspended", "INACTIVE": "inactive"}
+REGULARS_SQL = """
+select latest_team as defense, gsis_id, defender_name, coverage_snaps::float as coverage_snaps, games_at_cb, team_games
+from analytics.mart_cb_rankings
+where season = %s and window_label = 'season' and latest_team = any(%s) and coverage_snaps > 0
+"""
+LISTED_SQL = """
+select distinct on (opponent) opponent as defense, depth_chart_at, lcb_gsis_id, lcb_name, rcb_gsis_id, rcb_name, nb_gsis_id, nb_name
+from analytics.mart_cb_matchups
+where season = %s and week = %s and opponent = any(%s)
+order by opponent, depth_chart_at desc nulls last
+"""
+BACKUPS_SQL = """
+select defense, snapshot_at, gsis_id, defender_name, depth_position, depth_rank
+from analytics.mart_matchup_cb_context
+where defense = any(%s) and depth_position in ('LCB', 'RCB', 'NB')
+order by defense, depth_position, depth_rank
+"""
+CB_RANK_SQL = """
+select gsis_id, quality_rank, quality_label, n_ranked from analytics.mart_cb_rankings
+where season = %s and window_label = 'two_seasons' and gsis_id = any(%s)
+"""
+
+
+def _names(people: list[dict]) -> str:
+    """'Horn' / 'Horn and Jackson' / 'Evans, Lee and Smith-Wade' (last names)."""
+    ns = [last_name(p.get("name")) or str(p.get("name") or "") for p in people]
+    return ns[0] if len(ns) == 1 else f"{', '.join(ns[:-1])} and {ns[-1]}" if ns else ""
+
+
+def corner_personnel(defenses, season: int, week: int, statuses: dict | None = None) -> dict[str, dict]:
+    """{defense: {kind, depth_chart_at, regulars, listed, expected, missing}} for the defenses' games of `week`."""
+    defs = sorted({str(x) for x in defenses if isinstance(x, str) and x})
+    if not defs or season is None or week is None:
+        return {}
+    if missing_relations(("mart_cb_rankings", "mart_cb_matchups")):
+        return {d: {"kind": "unknown", "why": "no corner data on this copy", "regulars": [], "listed": [], "expected": [],
+                    "missing": [], "depth_chart_at": None} for d in defs}
+    reg = query(REGULARS_SQL, (int(season), defs))
+    lst = query(LISTED_SQL, (int(season), int(week), defs))
+    bk = pd.DataFrame() if missing_relations(("mart_matchup_cb_context",)) else query(BACKUPS_SQL, (defs,))   # optional
+    listed_of = {r["defense"]: r for r in lst.to_dict("records")} if not lst.empty else {}
+    ids: set[str] = set()
+    pre: dict[str, dict] = {}
+    for d in defs:
+        rr = reg[reg["defense"] == d] if not reg.empty else reg
+        regulars = []
+        if not rr.empty:
+            top = float(rr["coverage_snaps"].max())
+            rr = rr[rr["coverage_snaps"] >= REGULAR_SHARE * top].sort_values("coverage_snaps", ascending=False).head(3)
+            regulars = [{"gsis_id": r["gsis_id"], "name": r["defender_name"], "share": round(float(r["coverage_snaps"]) / top, 2),
+                         "coverage_snaps": round(float(r["coverage_snaps"]), 1), "games": int(r["games_at_cb"] or 0)}
+                        for r in rr.to_dict("records")]
+        L = listed_of.get(d)
+        at = None if L is None or pd.isna(L.get("depth_chart_at")) else L["depth_chart_at"]
+        listed = [] if at is None else [{"gsis_id": L[f"{s}_gsis_id"], "name": L[f"{s}_name"], "slot": s.upper()}
+                                        for s in ("lcb", "rcb", "nb") if isinstance(L.get(f"{s}_gsis_id"), str)]
+        backups: dict[str, list[dict]] = {}
+        if at is not None and not bk.empty:
+            b = bk[(bk["defense"] == d) & (bk["depth_rank"] > 1)]
+            b = b[pd.to_datetime(b["snapshot_at"], utc=True) == pd.to_datetime(at, utc=True)]   # the same depth chart only
+            for r in b.to_dict("records"):
+                backups.setdefault(r["depth_position"], []).append({"gsis_id": r["gsis_id"], "name": r["defender_name"]})
+        pre[d] = {"regulars": regulars, "listed": listed, "backups": backups, "depth_chart_at": at}
+        ids |= {p["gsis_id"] for p in regulars + listed} | {p["gsis_id"] for v in backups.values() for p in v}
+    if statuses is None and STATUSES is not None and ids:
+        try:
+            statuses = STATUSES(sorted(ids))
+        except Exception:  # noqa: BLE001 - the overlay is never load-bearing: the depth chart alone still answers
+            statuses = {}
+    statuses = statuses or {}
+
+    def out_of(g) -> dict | None:
+        s = statuses.get(g)
+        return s if s and s.get("cannot_play") else None
+
+    out: dict[str, dict] = {}
+    for d, p in pre.items():
+        regulars, listed = p["regulars"], p["listed"]
+        if p["depth_chart_at"] is None or not regulars:
+            out[d] = {"kind": "unknown", "why": "no depth chart before this game" if p["depth_chart_at"] is None
+                      else "no games this season yet", "regulars": regulars, "listed": listed, "expected": [],
+                      "missing": [], "depth_chart_at": p["depth_chart_at"]}
+            continue
+        expected = []
+        for c in listed:
+            if out_of(c["gsis_id"]) is None:
+                expected.append({**c, "replaces": None})
+                continue
+            nxt = next((b for b in p["backups"].get(c["slot"], []) if out_of(b["gsis_id"]) is None
+                        and b["gsis_id"] not in {e["gsis_id"] for e in expected}), None)
+            if nxt is not None:
+                expected.append({**nxt, "slot": c["slot"], "replaces": c["name"]})
+        exp_ids = {e["gsis_id"] for e in expected}
+        reg_ids = {r["gsis_id"] for r in regulars}
+        missing = []
+        for r in regulars:
+            if r["gsis_id"] in exp_ids:
+                continue
+            s = out_of(r["gsis_id"])
+            missing.append({"gsis_id": r["gsis_id"], "name": r["name"],
+                            "status": None if s is None else s.get("status"), "code": None if s is None else s.get("code"),
+                            "source": None if s is None else s.get("source"), "as_of": None if s is None else s.get("as_of"),
+                            "note": None if s is None else s.get("note"),
+                            "reason": "status" if s is not None else "depth chart"})
+        for e in expected:
+            e["is_new"] = e["gsis_id"] not in reg_ids
+        out[d] = {"kind": "changed" if missing else "same", "regulars": regulars, "listed": listed, "expected": expected,
+                  "missing": missing, "depth_chart_at": p["depth_chart_at"]}
+    ranks = query(CB_RANK_SQL, (int(season), sorted({e["gsis_id"] for v in out.values() for e in v["expected"]})))
+    rk = {r["gsis_id"]: r for r in ranks.to_dict("records")} if not ranks.empty else {}
+    for v in out.values():
+        for e in v["expected"]:
+            r = rk.get(e["gsis_id"]) or {}
+            q = r.get("quality_rank")
+            e["rank"] = None if q is None or pd.isna(q) else int(q)
+            e["label"] = r.get("quality_label") if e["rank"] is not None else None
+            e["n_ranked"] = None if r.get("n_ranked") is None or pd.isna(r.get("n_ranked")) else int(r["n_ranked"])
+    return out
+
+
+def missing_words(m: list[dict]) -> str:
+    """'Horn and Jackson are on injured reserve' / 'Horn is out; Jackson is not on the depth chart's starting spots'."""
+    by: dict[str, list[dict]] = {}
+    for x in m:
+        by.setdefault(OUT_WORDS.get(str(x.get("code")), "") if x["reason"] == "status" else "no longer listed as a starter", []).append(x)
+    parts = []
+    for what, people in by.items():
+        verb = "is" if len(people) == 1 else "are"
+        parts.append(f"{_names(people)} {verb} {what or 'unable to play'}")
+    return "; ".join(parts)
+
+
+def personnel_caveat(p: dict | None, place: str) -> str | None:
+    """The card's short words for a changed defense: "Carolina's starting corners changed (Horn and Jackson are on
+    injured reserve)". None unless kind == "changed"."""
+    if not p or p.get("kind") != "changed":
+        return None
+    n, k = len(p["regulars"]), len(p["missing"])
+    who = (f"{place}'s starting corners changed" if k >= 2 and k == n else
+           f"{k} of {place}'s {n} regular corners changed" if k >= 2 else f"one of {place}'s regular corners changed")
+    return f"{who} ({missing_words(p['missing'])})"
+
+
+def personnel_facts(dec: pd.DataFrame, season, week) -> dict[str, dict]:
+    """{receiver gsis: {kind, caveat, defense}} for the WRs on a set of cards (one corner read for every defense)."""
+    if dec is None or dec.empty or season is None or week is None:
+        return {}
+    pairs = []
+    for d in dec.to_dict("records"):
+        for side in ("", "alt_"):
+            g, pos, opp = d.get(side + "gsis_id"), d.get(side + "position"), d.get(side + "opponent")
+            if isinstance(g, str) and pos == "WR" and isinstance(opp, str) and opp:
+                pairs.append((g, opp))
+    if not pairs:
+        return {}
+    pers = corner_personnel({o for _, o in pairs}, int(season), int(week))
+    places = query("select team_abbr, team_name, team_nick from analytics.dim_team where team_abbr = any(%s)",
+                   (sorted({o for _, o in pairs}),))
+    place = {r["team_abbr"]: str(r["team_name"]).removesuffix(" " + str(r["team_nick"])).strip() or r["team_abbr"]
+             for r in places.to_dict("records")} if not places.empty else {}
+    return {g: {"kind": pers.get(o, {}).get("kind", "unknown"), "defense": o,
+                "caveat": personnel_caveat(pers.get(o), place.get(o, o))} for g, o in pairs}
+
+
+def matchup_uncertain(d: dict, facts: dict) -> bool:
+    """A card whose receiver faces a defense whose regular corners changed: the matchup rank does not settle it."""
+    return any(bool((facts.get(d.get(k)) or {}).get("personnel_caveat")) for k in ("gsis_id", "alt_gsis_id"))
+# ---- end IF-3
 
 
 def reason_facts(dec: pd.DataFrame, season: int | None, week: int | None) -> tuple[dict, dict]:
@@ -548,15 +749,32 @@ def reason_facts(dec: pd.DataFrame, season: int | None, week: int | None) -> tup
     df = query(REASON_SQL, (ids, s, w, s, w)) if ids else pd.DataFrame()
     nk = query(TEAM_NICK_SQL)
     facts = {r["gsis_id"]: r for r in df.to_dict("records")} if not df.empty else {}
+    for g, p in personnel_facts(dec, s, w).items():                     # ---- IF-3: the opponent's corners now
+        facts.setdefault(g, {"gsis_id": g}).update(personnel_kind=p["kind"], personnel_caveat=p["caveat"])
     return facts, dict(zip(nk["team_abbr"], nk["team_nick"], strict=False)) if not nk.empty else {}
 # ---- end IA-1
 
 
 # ------------------------------------------------------------------------------ rendering
+# ---- IF-4 (Wave I-F, the decision-quality review's table: "Matchup rank direction changes between screens"): one direction
+# everywhere, always said in words — "2nd-fewest WR points allowed" (rank 31 of 32), "5th-most RB points allowed" (rank 5)
+def rank_words(rank, position, n: int = 32) -> str:
+    """The opponent's rank against the position (1 = gives up the most) in words; '' when unknown."""
+    if rank is None or (isinstance(rank, float) and pd.isna(rank)):
+        return ""
+    k, n = int(rank), int(n or 32)
+    pos = str(position or "").upper() or "his position's"
+    if k <= (n + 1) // 2:
+        return f"the most {pos} points allowed" if k == 1 else f"{_ordinal(k)}-most {pos} points allowed"
+    f = n + 1 - k
+    return f"the fewest {pos} points allowed" if f == 1 else f"{_ordinal(f)}-fewest {pos} points allowed"
+# ---- end IF-4
+
+
 def _matchup(name: str, opp, rank, position) -> str:
     if opp is None or (isinstance(opp, float) and pd.isna(opp)):
         return ""
-    r = f" (#{int(rank)} vs {position})" if rank is not None and pd.notna(rank) else ""
+    r = f" ({rank_words(rank, position)})" if rank is not None and pd.notna(rank) else ""        # IF-4: was "(#31 vs WR)"
     return f"{name} vs {opp}{r}"
 
 
@@ -602,7 +820,7 @@ def render_decision(d: pd.Series | dict, why: str | None = None) -> None:
                              f"{D.percent(1 - pw)}% of the time — {D.words(1 - pw)}. {numbers}")
             (m1, w1), (m2, w2) = range_text(d), range_text(d, "alt_")
             if m1 and m2:
-                extra.append(f"Most weeks: {d['player_name']} {m1}, {d['alt_name']} {m2}.")
+                extra.append(f"Typical range (the middle 50%): {d['player_name']} {m1}, {d['alt_name']} {m2}.")   # IF-4
             if w1 and w2:
                 extra.append(f"A bad week to a good week: {d['player_name']} {w1}, {d['alt_name']} {w2}.")
         else:
@@ -645,6 +863,7 @@ def decision_cards(league_id: str, roster_id: int, week: int, season: int | None
     facts, nicks = reason_facts(dec, season if season is not None else league_season(league_id), week)
     dec["why"] = [reason_line(d, facts, nicks) for d in dec.to_dict("records")]
     dec["tiebreak"] = [tiebreak(d, facts, nicks) for d in dec.to_dict("records")]       # ---- IE-1 (the actions read it)
+    dec["matchup_uncertain"] = [matchup_uncertain(d, facts) for d in dec.to_dict("records")]   # ---- IF-3 (IF-4 reads it)
     for _, d in dec.iterrows():
         render_decision(d, d["why"])
     return dec
@@ -751,13 +970,13 @@ def howto_cards() -> None:
             "and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n"
             "- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip "
             "the two can disagree (under 50% but more points): the card then says both.\n"
-            "- **Most weeks** is the range half of his weeks land in (a quarter below, a quarter above). **A bad week to a "
+            "- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a "
             "good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) "
             f"falls back on the points: under {COIN_FLIP:.0f} point apart is a coin flip, under {LEAN:.0f} a lean.\n"
             "- The named player is the one who would really come in: your best bench player for that spot, or, when "
             "moving a teammate over works better, the card says who moves.\n"
-            "- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the "
-            "matchup you want), 32 = the fewest.\n"
+            "- **5th-fewest WR points allowed** is the opponent's rank against that position this season, said one way "
+            "everywhere: the most points allowed is the matchup you want, the fewest the toughest.\n"
             "- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can "
             "replace, like your only kicker."
         )

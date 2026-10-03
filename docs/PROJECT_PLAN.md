@@ -579,6 +579,13 @@ trades against the alternatives, IF-3 the matchup evidence, IF-4 the home / draw
 leftovers, **U-1 usage tracking** (the planned next item, carried alongside). The event store (`ops.events`) is
 designed in IF-3's hand-back, not built; the deeper analytics and the validation harness stay on the list after
 Monday's flip and v3.1.
+**I-F delivered 2026-10-04 00:10 ET** (STATUS § "Wave I-F": 995 root / 462 API / 192 e2e). The four engine findings
+are fixed with the review's own cases as tests (drop cost in pieces, the ladder against the best waiver move, the
+matchup evidence with an honest forecast treatment, the discoverable close call), the language table is done, usage
+tracking is in (the table appears on Neon at the next nightly; no new secret). Next: Monday's flip of
+`LEAGUE_LAB_EV_PRICING`; then `ops.events` (IF-3's design), the finder's raw-total filter on season value, team units'
+season value, the validation harness the review asks for (frozen as-of inputs, decision regret, news-affected cases),
+v3.1, Wave J.
 
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 

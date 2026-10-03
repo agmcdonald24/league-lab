@@ -13,6 +13,7 @@
   import { route, setParams } from "../lib/router.svelte";
   import { fmt, teamLabel } from "../lib/theme";
   import Card from "../components/Card.svelte";
+  import MatchupEvidence from "../components/MatchupEvidence.svelte"; // ---- IF-3
   import PlayerCard from "../components/PlayerCard.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
 
@@ -79,6 +80,11 @@
     get: Pick;
     show: (v: number | null | undefined) => string;
     lowerIsBetter?: boolean;
+    // ---- IF-4 (the decision-quality review: "Comparison bolds 'the better number' across RB and WR rows"): `points` =
+    // a number that bears on the call whatever the positions (projected points, the range, points a game, the rest of
+    // the season); the usage rows are bolded only between two players of the same position (more carries for an RB is
+    // not a reason he beats a WR)
+    points?: boolean;
   }
   const yards: Pick = (s) =>
     s.position === "QB" ? s.season_stats.passing_yards_pg : (s.season_stats.receiving_yards_pg ?? 0) + (s.season_stats.rushing_yards_pg ?? 0);
@@ -86,16 +92,16 @@
     {
       title: "This week",
       pairs: [
-        { label: "Projection", get: (s) => s.proj_points, show: (v) => fmt.pts(v) },
-        { label: "A bad week (floor)", get: (s) => s.p10, show: (v) => fmt.pts(v) },
-        { label: "A good week (ceiling)", get: (s) => s.p90, show: (v) => fmt.pts(v) },
+        { label: "Projected points this week", get: (s) => s.proj_points, show: (v) => fmt.pts(v), points: true },
+        { label: "Low-end outcome (1 week in 10 below)", get: (s) => s.p10, show: (v) => fmt.pts(v), points: true },
+        { label: "High-end outcome (1 week in 10 above)", get: (s) => s.p90, show: (v) => fmt.pts(v), points: true },
       ],
     },
     {
       title: "This season",
       pairs: [
-        { label: "Points a game", get: (s) => s.season_stats.ppg, show: (v) => fmt.pts(v) },
-        { label: "Expected points a game", get: (s) => s.season_stats.xppg, show: (v) => fmt.pts(v) },
+        { label: "Points a game", get: (s) => s.season_stats.ppg, show: (v) => fmt.pts(v), points: true },
+        { label: "Points suggested by his past opportunities", get: (s) => s.season_stats.xppg, show: (v) => fmt.pts(v), points: true },
         { label: "Targets a game", get: (s) => s.season_stats.targets_per_game, show: (v) => fmt.pts(v) },
         { label: "Carries a game", get: (s) => s.season_stats.carries_per_game, show: (v) => fmt.pts(v) },
         { label: "Yards a game", get: yards, show: (v) => fmt.pts(v) },
@@ -105,8 +111,8 @@
     {
       title: "Last 3 games",
       pairs: [
-        { label: "Points a game", get: (s) => s.form.ppg_l3, show: (v) => fmt.pts(v) },
-        { label: "Target share", get: (s) => s.form.target_share_l3, show: (v) => fmt.pct(v) },
+        { label: "Points a game", get: (s) => s.form.ppg_l3, show: (v) => fmt.pts(v), points: true },
+        { label: "Share of team passes", get: (s) => s.form.target_share_l3, show: (v) => fmt.pct(v) },
         { label: "Carry share", get: (s) => s.form.carry_share_l3, show: (v) => fmt.pct(v) },
         { label: "Snaps", get: (s) => s.form.snap_pct_l3, show: (v) => fmt.pct(v) },
       ],
@@ -114,7 +120,7 @@
     {
       title: "Usage this season",
       pairs: [
-        { label: "Target share", get: (s) => s.usage.target_share, show: (v) => fmt.pct(v) },
+        { label: "Share of team passes", get: (s) => s.usage.target_share, show: (v) => fmt.pct(v) },
         { label: "Carry share", get: (s) => s.usage.carry_share, show: (v) => fmt.pct(v) },
         { label: "Air-yard share", get: (s) => s.usage.air_yards_share, show: (v) => fmt.pct(v) },
         { label: "First-read share", get: (s) => s.usage.first_read_target_share, show: (v) => fmt.pct(v) },
@@ -124,15 +130,33 @@
     {
       title: "Rest of season",
       pairs: [
-        { label: "Points", get: (s) => s.ros?.points, show: (v) => fmt.whole(v) },
+        { label: "Points", get: (s) => s.ros?.points, show: (v) => fmt.whole(v), points: true },
         { label: "Games", get: (s) => s.ros?.games, show: (v) => fmt.whole(v) },
         { label: "Rank at his position", get: (s) => s.ros?.pos_rank, show: (v) => (v == null ? "—" : `#${v}`), lowerIsBetter: true },
-        { label: "Playoff weeks", get: (s) => s.ros?.playoff_points, show: (v) => fmt.whole(v) },
+        { label: "Playoff weeks", get: (s) => s.ros?.playoff_points, show: (v) => fmt.whole(v), points: true },
       ],
     },
   ];
   const shownPairs = (ps: Pair[]) => (A && B ? ps.filter((p) => (p.get(A) ?? 0) !== 0 || (p.get(B) ?? 0) !== 0) : []);
-  const range = (s: CompareSide) => (s.p25 != null && s.p75 != null ? `most weeks ${fmt.whole(s.p25)}–${fmt.whole(s.p75)}` : "");
+  // ---- IF-4: the dictionary's "Typical range" (was "most weeks"); bold only where it bears on the call (above); the
+  // season and the last three games are one section when the season IS the last three games (the sample size once)
+  const range = (s: CompareSide) => (s.p25 != null && s.p75 != null ? `Typical range ${fmt.whole(s.p25)}–${fmt.whole(s.p75)}` : "");
+  const samePosition = $derived(!!A && !!B && A.position === B.position);
+  const bolds = (p: Pair) => !!p.points || p.label === "Rank at his position" || samePosition;
+  const games = (s: CompareSide) => s.season_stats.games_played ?? null;
+  const sameWindow = $derived(!!A && !!B && [A, B].every((s) => games(s) !== null && (games(s) ?? 0) <= 3 && s.form.games_l3 === games(s)));
+  const groupTitle = (t: string) => {
+    if (!A || !B) return t;
+    if (t === "This season") {
+      const ga = games(A);
+      const gb = games(B);
+      const n = ga === gb ? (ga === null ? "" : ` (${ga} game${ga === 1 ? "" : "s"})`) : ` (${ga ?? "—"} and ${gb ?? "—"} games)`;
+      return `${t}${n}`;
+    }
+    return t;
+  };
+  const shownGroups = $derived(sameWindow ? GROUPS.filter((g) => g.title !== "Last 3 games") : GROUPS);
+  // ---- end IF-4
 </script>
 
 {#snippet picker(side: "a" | "b", label: string)}
@@ -163,8 +187,8 @@
   {@const va = p.get(A!) ?? null}
   {@const vb = p.get(B!) ?? null}
   {@const top = Math.max(Math.abs(va ?? 0), Math.abs(vb ?? 0)) || 1}
-  {@const aWins = va !== null && vb !== null && va !== vb && (p.lowerIsBetter ? va < vb : va > vb)}
-  {@const bWins = va !== null && vb !== null && va !== vb && !aWins}
+  {@const aWins = bolds(p) && va !== null && vb !== null && va !== vb && (p.lowerIsBetter ? va < vb : va > vb)}
+  {@const bWins = bolds(p) && va !== null && vb !== null && va !== vb && !aWins}
   <div class="py-2" data-testid="pair">
     <div class="mb-1 text-center text-xs font-semibold text-ink-3">{p.label}</div>
     <div class="grid grid-cols-2 items-center gap-2">
@@ -221,22 +245,42 @@
             testid={`compare-card-${i === 0 ? "a" : "b"}`}
           />
           <p class="text-center text-xs leading-snug text-ink-3">
-            {range(s)}{#if s.opponent}{range(s) ? " · " : ""}{s.next4.find((w) => w.week === s.week)?.is_home === false ? "at" : "vs"} {teamLabel(s.opponent)}{s.opp_rank ? ` (#${s.opp_rank} vs ${s.position})` : ""}{/if}
+            {range(s)}{#if s.opponent}{range(s) ? " · " : ""}{s.next4.find((w) => w.week === s.week)?.is_home === false ? "at" : "vs"} {teamLabel(s.opponent)}{s.opp_rank ? ` (#${s.opp_rank} vs ${s.position})` : ""}{/if}{#if s.matchup_evidence?.matchup_uncertain}<span class="ml-1 font-semibold text-warn" data-testid="compare-corners-changed"
+                >· corners changed</span
+              >{/if}
           </p>
         </div>
       {/each}
     </div>
 
+    <!-- ---- IF-3: the matchup evidence, both sides: the history, what changed in the defense, what it means this week -->
+    {#if A.matchup_evidence || B.matchup_evidence}
+      <Card title="The matchups this week" testid="compare-evidence">
+        <div class="grid grid-cols-1 gap-4 wide:grid-cols-2">
+          {#each [A, B] as s, i (i)}
+            {#if s.matchup_evidence}
+              <div class="border-l-4 pl-3" style="border-color:{i === 0 ? colorA : colorB}">
+                <MatchupEvidence ev={s.matchup_evidence} who={s.player_name} testid={`compare-evidence-${i === 0 ? "a" : "b"}`} />
+              </div>
+            {/if}
+          {/each}
+        </div>
+      </Card>
+    {/if}
+    <!-- ---- end IF-3 -->
+
     <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-ink-2" data-testid="compare-legend">
       <span class="inline-flex items-center gap-1.5"><span class="h-2 w-4 rounded-sm" style="background:{colorA}"></span>{A.player_name}</span>
       <span class="inline-flex items-center gap-1.5"><span class="h-2 w-4 rounded-sm" style="background:{colorB}"></span>{B.player_name}</span>
-      <span class="text-ink-3">the better number in bold</span>
+      <span class="text-ink-3" data-testid="compare-bold-rule"
+        >{samePosition ? "the better number in bold" : "bold: the better number in points (usage is not compared across positions)"}</span
+      >
     </div>
     <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
-      {#each GROUPS as g (g.title)}
+      {#each shownGroups as g (g.title)}
         {@const ps = shownPairs(g.pairs)}
         {#if ps.length}
-          <Card title={g.title} testid="compare-group">
+          <Card title={groupTitle(g.title)} testid="compare-group">
             <div class="divide-y divide-line">{#each ps as p (p.label)}{@render pairRow(p)}{/each}</div>
           </Card>
         {/if}

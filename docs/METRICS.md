@@ -1006,6 +1006,38 @@ roster covered). Rows of a league whose rosters or statuses changed since the mo
 R-13); anything beyond the four weeks (a dynasty rookie's future: the page says to look twice); two-for-one
 moves; the add's own injury risk beyond the report status; K values are season points per game so far (small
 samples early in the season).
+
+### Drop cost (IF-1, Wave I-F, 2026-10-03; `waivers.choose_drops`, `drop_pieces`, `DropCost`)
+
+The decision-quality review (Priority 2): B3 named, among equally good moves, the drop with the fewest projected
+points, so a bench WR who does not start in the next four weeks was the drop for every claim ("he sits anyway"),
+even for a kicker claim whose incumbent kicker becomes redundant. A drop now has a **cost**, per (add, drop) pair,
+the most (never the sum) of five pieces, each in points of the league's scoring:
+
+| Piece | Definition |
+|---|---|
+| `lineup_loss` | his starts over the horizon the move gives up **with the add on the roster**: the add's gain alone − the move's gain (Carlson for McPherson: 0, Carlson takes the K slot) |
+| `depth_lost` | Σ over the horizon weeks he sits: max(0, his projection − the best free agent's at his position that week) × the chance a starter he can cover misses (1 − (1 − r)^n, n = starters at his position, r = `ABSENCE_RATE`: QB 0.06, RB 0.12, WR 0.10, TE 0.09, K 0.02, DEF 0 — documented constants, not yet fitted to the availability history) |
+| `future_starts` | Σ over the weeks after the horizon he starts in today's roster's best lineup: what the lineup loses when he is replaced by the best free agent at his position (that free agent's season points ÷ the weeks left less a bye). Measured without the add: a free agent at the add's position is at least as good as the add, so the add can only lower it |
+| `season_value` | `trades.price_by_player`'s rule: max(0, rest-of-season points − the best free agent's at his position) (`MARKET_SQL` / `REPLACEMENT_SQL`; on demand `market_points` / `replacement_level`; a team unit against the best free unit). A 1-QB wire holds starting QBs (a QB3 is worth ~0), a superflex wire does not |
+| `upside` | Σ over the horizon of a role scenario's extra points (`ops.player_scenarios.points_gain`), when he has one |
+
+**Net gain** = the move's lineup gain − (cost − lineup_loss) — the roster value the lineup numbers do not already
+count; over the horizon it equals the add's gain alone − the cost. **The best drop per add** is the cheapest
+(equal costs: the starter the add replaces this week — `drop_is_incumbent` —, then the fewest rest-of-season points).
+Moves are ordered by net horizon gain, then net weekly gain. **Worthwhile** (`is_worthwhile`): net ≥ 1 this week
+(`WORTH_WEEK`) or ≥ 3 over the horizon (`WORTH_HORIZON`); when no claim is, Waivers says "No claim is worth a roster
+spot this week" instead of a claim. A **stash** recommends its drop only when the scenario's lineup gain beats the
+drop's own cost; otherwise "watch" and what would change it.
+
+**Columns** (`ops.waiver_moves`, added by `_write`'s `alter table … add column if not exists`): `drop_cost`,
+`drop_cost_piece`, `drop_lineup_loss`, `drop_depth_lost`, `drop_future_starts`, `drop_future_start_weeks`,
+`drop_season_value`, `drop_season_points`, `drop_replacement_points`, `drop_upside`, `drop_is_incumbent`,
+`net_weekly_gain`, `net_horizon_gain`, `is_worthwhile`. A mart built before them is re-ranked on read by the API
+with the season value (and upside) only.
+
+**Not modelled.** Trade value from a real market; injury-specific absence rates (constants); the add's own future
+starts beyond the horizon (only the drop's); a probability on the role scenario (it is a what-if).
 ### Decision cards (B4, 2026-09-30; `app/lib/cards.py`, Home "My week", Matchups, the player card)
 
 No new number: a card restates B1's lineup for one roster-week. **Which week**: the first regular-season
@@ -1311,6 +1343,51 @@ most; `quality_rank`: 1 = hardest to throw on) and the console keeps its words.
   to throw on", the nearer end) with the certainty beside it; no "shutdown" badge.
 * Tests: `api/tests/test_ib3.py` (the cut points, the scaling with n, the words, the corner rules; on both house
   leagues: `tough_rank` 1 = the fewest points allowed, difficult at the small ranks on both routes).
+
+### Current personnel (pers1.0, IF-3, Wave I-F, 2026-10-03; `cards.corner_personnel`, `research.matchup_evidence`)
+
+A defense's rank against receivers was earned by the corners who played its games. When they are not the corners
+expected this week, the rank is less representative and must not settle a close call. The **matchup evidence**
+(`/api/compare` `a|b.matchup_evidence`, the player card's `matchup_evidence`, `/api/matchups/cb` rows) keeps three
+parts apart:
+
+* **History**: the rank the screen shows — Compare and Matchups: this league's scoring (`research.league_dvp`,
+  `rank_std`); the card: `mart_defense_vs_position_current` (the reference league's scoring, the card's "Next:" line) —
+  with its games, period ("2026, weeks 1–3"), scoring, and **not adjusted for the offenses it faced**; the
+  opponent-adjusted rank (`mart_defense_position_profile.rank_adjusted`, reference scoring) beside it.
+* **What changed** (receivers only; corners are what the evidence covers):
+  * *regulars* = the defense's corners with at least **50% of the leading corner's coverage snaps** this season
+    (`mart_cb_rankings`, window `season` — the games played so far, latest, not as-of; at most three);
+  * *listed* = its depth chart as of the game: `mart_cb_matchups`' left / right / slot corner (rank 1, the latest
+    snapshot before kickoff);
+  * *cannot play* = the availability overlay (`availability.now`: ESPN / Sleeper, the newer wins; Out, Doubtful, IR,
+    PUP, NFI, suspended, inactive) with its source and date. A listed starter who cannot play gives his spot to the
+    next corner at that spot **on the same depth chart** (`mart_matchup_cb_context`, depth rank 2+);
+  * *missing* = a regular who is not expected: he cannot play (status, source, date) or the depth chart no longer
+    starts him ("no longer listed as a starter"); *expected* = the corners who start, each with his two-season rank
+    in words or "unranked (insufficient snaps)", `is_new` when he is not a regular, `replaces` when he took a spot.
+  * kind: `changed` (a regular is missing), `same`, `unknown` (no depth chart before the game, or no games this
+    season); `not_checked` for QB / RB / TE.
+* **Implication**: `less_representative` ("the historical rank is less representative this week: both starting
+  corners changed" — the words count them), `stands` ("the same corners"), `unknown`, `unchecked`.
+* **Forecast treatment**: **contextual only; not in the forecast.** The projection's opponent inputs
+  (`projections.BASE_FEATURES`) are `opp_allowed_std`, `opp_allowed_l4`, `opp_rank_std`, `f_opp_allowed_diff`,
+  `league_allowed_avg` (the points this defense has allowed to the position) and the betting lines
+  (`implied_team_total`, `spread_line`, `total_line`); the personnel group (`pn_*`) is the player's own team. Nothing
+  says who plays corner. `api/tests/test_if3.py` parses the feature list: an opponent-personnel input fails it.
+
+**What it changes.** No number. A receiver whose opponent's corners changed: the card's matchup piece
+(`cards.reason_pieces`) stays a fact but scores 0 under its own kind (`matchup_caveat`), so `cards._tiebreak` never
+breaks a coin flip on the matchup (either player's) and the coin flip says "the matchup rank does not settle it this
+week: Carolina's starting corners changed (Jackson and Horn are on injured reserve)"; the compare's verdict keeps the
+projection's head and drops the matchup lean for the same words; `cards.decision_cards`' frame carries
+`matchup_uncertain` (My Week's "No clear upgrade" words, IF-4). The console's cards read the depth chart only (no
+overlay); the API sets `cards.STATUSES = availability.now`.
+
+**Known limits.** The regulars come from the latest season window (a replay of an old week sees later games); a
+corner who changed teams counts for his latest team; the overlay's entry is the status and its date, not the team's
+announcement URL (`ops.events`, designed in the IF-3 hand-back, would carry it); one corner of two missing is already
+"less representative" (no threshold is invented for "how much").
 
 ## "Value to my lineup" (IB-3, Wave I-B, 2026-10-03; `ondemand.lineup_values`, `/api/ros?view=lineup&team=`)
 
@@ -2169,6 +2246,31 @@ player Sleeper lists; not Sleeper's own scoring (its line is counted the league'
   latest snapshot, priced in the league's scoring); (a) rest of season — Σ rest-of-season points given − Σ received >
   25% of Σ given (the rest-of-season board). Either sets the package aside and the search takes the next best.
   Unknown is not zero: a player without the number is not judged.
+
+- **Against the alternatives** (ta1.0, IF-2, Wave I-F, 2026-10-03 — the decision-quality review § Priority 3: the
+  Finder's headline, +9.8 over weeks 4–7 on the live server, lost to a free Arizona team QB claim, +11.4, for an open
+  spot, and nothing said so). One ladder per roster and window, the same weeks and scoring: **standing pat** (0), **the
+  best legal waiver move** (`decisions.best_alternative`: IF-1's `best_waiver_move` — the claim's starter gain net of
+  the drop's cost — when it is in `decisions`, over the next four weeks; else, and for the other windows, the open-spot
+  fill on today's free agents, `ctx.fa_pool` + `trades.best_fill`, and with no open spot the best add for each droppable
+  player with his lineup loss netted out), **the trade**. `beyond_alternative` = the trade's starter points over the
+  window (this week's for the one-week window) − the alternative's; `beats_alternative` when it is ≥ 0.05. **Ranking**:
+  the trades that beat the alternative first, then by `beyond_alternative` (= by your gain, the alternative being one
+  number per roster and window), the bigger package never above its cheaper equal (IE-1); `rank` 1 is the headline —
+  the headline and the first card are the same trade (they were not: the headline was the best partner's best package,
+  the first card that partner's one-for-one). Was: partners by the smaller of the two gains, then the sum
+  (`Package.order`; the search itself is unchanged and still finds, per partner, the package both sides gain most from).
+  A trade below the alternative is marked (`demoted`) and keeps a reason only from the numbers (`other_objective`: more
+  this week than the claim by ≥ 0.5; more season value above replacement coming in, not about even; in the calculator,
+  the bench's best lineup up ≥ 2 this week) — never invented. A trade that takes the open roster spot the claim needs
+  says so. **The strip**: per week, each side's best-lineup change (`trades.package_weeks`, `package_gains`' code); its
+  sums are the gains. **The value concepts** (`trades.VALUE_CONCEPTS`), never added to one another: projected points
+  (one player, one week), starter points (the best legal lineup's change over the window), backup coverage (the bench's
+  best lineup), **season value above replacement** (`price_by_player`: the fairness test; package size named — the
+  roster spots freed or used — and the players it cannot count), rest-of-season projected points (the raw totals,
+  labelled "all positions added up — not a fairness test"). The calculator's warning (`calc_sanity`) is on season value
+  above replacement (given − received > 25% of given, every player priced); the Finder's sanity bound on suggestions
+  (rule (a), the raw rest-of-season totals) is unchanged.
 
 ## Calibration of the top (cal1.0, Wave I-A M1, 2026-10-03; `league_lab.calibration`, flag `LEAGUE_LAB_PROJECTION_CALIBRATION`, off)
 

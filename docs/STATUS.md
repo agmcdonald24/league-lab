@@ -4724,3 +4724,284 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   `test_ic4.py`'s RB2 claim read from the top three (Help now starts after them). `web/e2e/ie1/` 5 × phone (375) /
   desktop (1300) on answers recorded from the API (`web/fixtures/ie1/api_ie1.json`); `e2e/ia2` no longer reads the
   0–100 text. Root `uv run pytest` 986 passed (cards.py: the tiebreaker as data, the card text unchanged).
+
+## Wave I-F (Iteration 17, part F)
+
+### PO merge — Wave I-F, 2026-10-03 (Saturday night, 22:00–00:10 ET)
+
+* **Why**: the fourth outside review (`docs/reviews/2026-10-03-decision-quality-review.md`; plan § 17 "Fifth") —
+  decision quality on `f6315ae`: four engine-level findings (the free drop, the trade that loses to a waiver claim,
+  the matchup rank used as a tiebreaker while the corners changed, the hidden coin flip) and a table of language
+  fixes. Andrew: "next wave plus see this too" — the planned usage tracking rode along.
+* **Delivered** (five Opus devs in parallel, 55–65 min each): **IF-1** a drop's cost in pieces (`waivers.drop_cost`:
+  lineup loss over the horizon; depth lost = his margin over the best free agent at the position × the position's
+  absence rate; starts after the horizon above a replacement; season points above the best free agent
+  (`trades.price_by_player`'s rule); a role scenario's upside — the **max**, never the sum), the best drop per claim
+  the cheapest with the incumbent first on a tie, net gain = lineup gain − (cost − lineup loss), a claim worthwhile at
+  net ≥ 1 this week or ≥ 3 over the horizon, "no claim is worth a roster spot this week", stashes a watchlist
+  (`watch`, no drop, what would change it); one `choose_drops` for the nightly writer, the on-demand sweep and the
+  API reading an older mart (14 cost columns on `ops.waiver_moves`). GoodGameBuddy: "Claim Carlson, drop Marvin
+  Harrison Jr." → "Drop McPherson: Carlson replaces him at K. Dropping Harrison Jr. instead gives the same gain: he
+  projects 79 season points, 43 fewer than the best free-agent WR …"; the roster's claims drop {McPherson, Cousins,
+  Harrison} instead of {Harrison}; no gain number moved. **IF-2** the ladder per objective — standing pat, the best
+  legal waiver move (IF-1's `best_waiver_move`, else `trades.best_fill`), the trade — and the finder ranked by **gain
+  beyond the best alternative** ("+14.6 over weeks 4–7: 1.8 more than your best waiver move (the Atlanta Falcons
+  defense claim gives +12.8 for an open spot)"; a trade below it is demoted and keeps a reason only when the numbers
+  give one), the headline = the first card, the ordering said in one line, the value concepts named and kept apart
+  (projected points · starter points · backup coverage · season value above replacement = the fairness test, package-
+  size aware · rest-of-season projected points "all positions added up — not a fairness test"), `WeekStrip.svelte`
+  (both sides' weeks). **IF-3** `research.matchup_evidence` — history (the rank in words with games, period, scoring,
+  "not adjusted"), what changed (the depth-chart corners vs the season's coverage-snap regulars; a missing regular's
+  status from the overlay with source and date; the replacements' rank or "unranked"), the implication, and an
+  honest `forecast_treatment` ("contextual only; not in the forecast" — a test parses `projections.BASE_FEATURES` and
+  fails if an opponent-personnel input appears); on Compare, the card / pane (under "Next:"), Matchups' corner rows;
+  the coin flip's matchup tiebreak is gone when the corners changed ("the matchup rank does not settle it this week:
+  Carolina's starting corners changed (Jackson and Horn are on injured reserve)"); the `ops.events` design in the
+  hand-back. **IF-4** `review` lines on My Week ("Tuten or Williams at FLEX: a coin flip, 0.3 points apart; your
+  lineup has Williams — no clear upgrade. Compare ›"; `set_line` "No clear upgrade elsewhere."), "What changed" (the
+  overlay's moves + the starters' news of the last 24 h, "Nothing has changed since the morning build."), the pane
+  trimmed to the decision parts with the ledger / schedule / game log behind expanders, every table row (bench-only
+  expander; "Margin" → "4.63 over Lloyd" / "no eligible reserve"; one rank direction in words — "12th-fewest WR
+  points allowed"; Compare bolds points rows only; the duplicated three-game sections collapsed; "Typical range (the
+  middle 50%)" everywhere incl. the console; metric-tile definitions; "not enough games to say" / "role steady over
+  N games"; the observed gap instead of "expect him to pick up"; the player-specific news item first, "League news"
+  second), the I-E leftovers (the Schedule table, "Updated 7 d ago ›" with the exact time, the dictionary on
+  Receivers / Trends / Compare / About / Waivers). **U-1** usage tracking: `usage.events` (at · screen · league key ·
+  team number · platform · version · a daily random session id; database checks refuse anything else; no name,
+  username or IP), `scripts/hosted_usage.sql` (idempotent, run by the sync after the restore; the `usage` schema is
+  never dropped), the app role keeps `default_transaction_read_only` — the insert runs `BEGIN; SET TRANSACTION READ
+  WRITE; INSERT; COMMIT` on its own connection from a queue + one writer thread (a failure never fails a page),
+  `POST /api/usage` (204, cookie `ll_usage` to New York midnight, a 1/s bucket with bursts of 5, `LEAGUE_LAB_USAGE=off`),
+  `GET /api/usage/summary`, `lib/usage.ts` (`sendBeacon`), About's notice, the console's Usage page.
+* **PO**: merges U1 → IF1 → IF3 → IF2 → IF4 (`api.ts` four blocks kept; `player.py`: IF-3's evidence and IF-4's
+  schedule on the same card). Then: (1) `mart_waiver_moves` carries IF-1's 14 cost columns (pre_hook `alter table …
+  add column if not exists`, the select) — rebuilt here; the rows fill at the next nightly (`choose_drops` in the
+  writer), the API re-ranks older rows on read (the parity test's "built before the cost" check now also covers an
+  empty column); (2) the Compare verdict's adjusted ranks in words with one direction ("9th-most WR points allowed by
+  his defense once the offenses it faced are counted, 9th-fewest … by Worthy's"); (3) the pane's matchup sentences
+  ride in the projection section's blocks (IF-3's `matchupBlocks` under "Next:"; IF-4's placeholder noted); (4)
+  three registry rows (`drop_cost`, `trade_beyond_alternative`, `matchup_personnel`). Checks: **root 995** (987
+  before), **API 462** (406), **web lint / typecheck / build clean, 192 fixture e2e** (172), ruff clean; the hosted
+  closure gains `mart_matchup_cb_context` (the next nightly carries it) and nothing heavy. QA walk (the merged API on
+  the main database and the fixtures): GoodGameBuddy's Waivers = "Stroud instead of Cousins … Drop Cousins" and
+  "Carlson instead of McPherson … Drop McPherson" with Harrison's season value named; team 8's finder = the headline
+  is card 1 with "+1.8 beyond the Atlanta Falcons defense claim", cards 2–3 demoted; the Williams / Tuten compare
+  carries the evidence object; GoodGameBuddy's My Week (IF-4's recording): the "No clear upgrade" review card, "No
+  clear upgrade elsewhere.", "Open Sleeper to edit your lineup", "What changed", the margin words on every starter.
+* **Decisions kept**: IF-1's absence rates are documented constants, not fitted; the 1 / 3-point worthwhile bar also
+  hides small no-drop claims; IF-2 leaves the finder's own raw-total sanity filter (changing it changes which trades
+  are suggested — next time, with the season-value test); team units have no season value on demand (named "Not
+  counted"); IF-3's "one missing regular = less representative" with no threshold; receivers only; U-1's grant is
+  INSERT + SELECT (the summary reads), the row keeps the team number (a league + team is a known manager, no name is
+  stored — About says "which league and team"), the bucket not a strict 1/s.
+* **Open**: the Carlson / McPherson case on the live server shows the new drop at the next nightly for the house path
+  (the API re-ranks the old rows meanwhile: Harrison's season value is 0 on the clone, so McPherson wins on the
+  tie-break); the nightly stash writer's drop rule (the API decides claim / watch on read); the raw-total finder
+  filter; team units' season value; the separate MFL roster-freshness line; a bench player projected 0.00 shows
+  "0.00" (Jacobs on GoodGameBuddy's bench — "unknown is not zero" wants a dash: next pass); `ops.events` (designed);
+  usage retention; the console Home's page guide lacks the Usage page.
+
+
+### U-1 2026-10-03 — usage tracking (plan § 17 E; branch `dev/U1`, clone `league_lab_m1`)
+
+* **The store.** `scripts/hosted_usage.sql` (new, plain SQL, idempotent): schema `usage`, table `usage.events (at
+  timestamptz, screen text, league_key text, roster_id int, platform text, version text, session text)` with checks
+  that refuse anything but a route word, a league key, a team number, `sleeper`/`mfl`, a release stamp and a 32-hex
+  id; an index on `at`; `USAGE` on the schema and `INSERT, SELECT` on the table for `league_lab_app` (no update /
+  delete). The sync's marked block runs it after the restore, in its own transaction, on the same owner connection —
+  no new secret — and a failure only warns. The sync drops `analytics`, `analytics_seeds`, `ops` only: in a rolled-back
+  transaction on the clone, the three `drop schema … cascade` left `usage.events` and its row in place.
+* **The write.** `POST /api/usage {screen, league, roster_id}` → 204 always (gated; `LEAGUE_LAB_USAGE=off` writes
+  nothing and sets no cookie). The server adds the time, the platform (`platforms.platform`), `/api/health`'s version
+  and the day's session (`ll_usage`: random 32-hex, HttpOnly, SameSite=Lax, path `/api/usage`, Max-Age = seconds to
+  midnight New York). The row goes on a bounded queue (1,000) that one writer thread drains: `db.write_one` = `BEGIN;
+  SET TRANSACTION READ WRITE; INSERT; COMMIT` on its own connection (`application_name` `league-lab-usage`), one
+  retry on a dropped connection; the role keeps `default_transaction_read_only = on` (a plain INSERT as the role still
+  fails: `ReadOnlySqlTransaction`). Limits: a token bucket per session (1 a second, bursts of 5 — a strict 1/s dropped
+  the About view after My Week on the live server: 2 beacons, 1 row) and 20 a second in all.
+* **The web.** `web/src/lib/usage.ts` `countView` (sendBeacon, `text/plain`; keepalive fetch otherwise; the same
+  screen + league + team twice in a row counts once), one marked `$effect` in `App.svelte` (after sign-in only); the
+  notice at the foot of About (one marked line in IF-4's file).
+* **Reading it.** `GET /api/usage/summary?days=7` (gated, `no-store`): views per screen per day, views / leagues /
+  sessions per day, by screen, totals, the process counters; `ready: false` before the table exists. The console's
+  page `app/pages/99_Usage.py` (the same questions, 7 / 14 / 30 days, the answer first).
+* **Evidence.** The live API on :8754 (gate on, fixtures): no beta cookie → 401; signed in, a `text/plain` POST →
+  204 + `Set-Cookie: ll_usage=…; HttpOnly; Max-Age=17420; Path=/api/usage; SameSite=lax` at 19:09 ET (4 h 50 min to
+  midnight); the rows carry `waivers · 1389709692405551104 · 6 · sleeper · 19d01fab9735 · <id>` and `trades ·
+  mfl:70587 · 8 · mfl`, the `x-forwarded-for` IP nowhere. The built web app against it (Playwright, 375 and 1300): sign in → My Week → About →
+  Back = 3 beacons (`ping`), 3 rows, 0 limited, 0 failed. Size: 168 bytes a row with its index (10,000 rows = 1.6 MB).
+* **Tests.** `api/tests/test_u1.py` (21; the database ones apply the SQL file themselves, twice, and delete their
+  rows); `web/e2e/u1/` 2 × phone (375) / desktop (1300) on fixtures. `cd api && uv run pytest`: 423 passed, 2
+  skipped, 3 failed — the three clone scoring checks (`test_ic1` × 2, `test_ic_po`: no `*_tds_10p` columns);
+  `npm run e2e:fixtures` 176 passed (172 + 4); lint / typecheck / build clean; ruff clean. Local setup: `docs/HOSTING.md` § "Usage",
+  `docs/SETUP_RUNBOOK.md` (one optional line). The clone `league_lab_m1` is owned by `postgres`: the pipeline role was
+  granted `CREATE` on it (as on the Mac, where it owns the database) so the test can apply the file.
+
+### IF-1 2026-10-03 — value the bench before prescribing drops (review § Priority 2)
+
+- **Engine** (`src/league_lab/waivers.py`): `DropCost` / `drop_cost` / `drop_pieces` / `choose_drops`. A drop costs the
+  most (never the sum) of `lineup_loss` (with the add on the roster), `depth_lost`, `future_starts` (above the wire),
+  `season_value` (`price_by_player`'s rule, against the best free agent at his position) and `upside`; the best drop
+  per claim is the cheapest (ties: the starter the claim replaces, then the fewest points); moves ordered by net gain;
+  `is_worthwhile` = net ≥ 1 this week or ≥ 3 over the horizon. `sweep_roster` (nightly + on demand) writes 14 new
+  columns (`COST_COLUMNS`; `_write` adds them with `alter table … add column if not exists`; `MOVE_COLUMNS` = the
+  base DDL, unchanged). Definitions: `docs/METRICS.md` § "Drop cost".
+- **API** (`decisions.py`, `# ---- IF-1` blocks): every move carries `drop_cost` (pieces), `net_weekly_gain`,
+  `net_horizon_gain`, `is_worthwhile`, `alternative_drop`, `drop_why`; `no_worthwhile_move` ("No claim is worth a
+  roster spot this week"); stash rows `stash_action` / `watch_words`; a mart without the cost columns is re-ranked on
+  read (season value + upside); `best_waiver_move(league, team)` for IF-2. "He sits anyway" is gone.
+- **Roster 6 (GoodGameBuddy), before → after** (clone 2026-09-26): Carlson's best drop Harrison → **McPherson**
+  ("Drop McPherson: Carlson replaces him at K. Dropping Harrison Jr. instead gives the same gain: he projects 79
+  season points, 43 fewer than the best free-agent WR (0 above the waiver wire); McPherson goes first …"); the best drops
+  of the listed claims {Harrison} → {McPherson, Cousins, Harrison}; the three strongest 3 → 2 (the Falcons defense,
+  +0.44 over weeks 4–7, is under the worthwhile bar); the home action "Claim C.J. Stroud,
+  drop Marvin Harrison Jr." → "…, drop Kirk Cousins"; every stash "drop Harrison" → "watch" (no drop: the scenario
+  adds +0.0 over weeks 4–7). Gains unchanged (13.46 / 9.82 …): only the drop, the order and the words moved.
+- **Tests**: `tests/test_waivers_if1.py` (8, synthetic), `api/tests/test_if1.py` (6, needs_db on roster 6 — the engine
+  in memory, read-only, the API's rows monkeypatched); `test_ib2.py` words updated ("he sits anyway" → the cost words);
+  `test_decisions.py`'s mart-vs-on-demand parity re-ranks a pre-IF-1 mart with the on-demand pieces.
+- **Not done**: the mart's select (PO, `mart_waiver_moves.sql`: add the 14 columns) and the nightly re-run; the nightly
+  stash writer (`upside_for_roster`) still picks its drop by B3's rule (the API decides claim / watch on read);
+  absence rates are documented constants, not fitted; no `web/e2e/if1/` (the screen changes are the cost line's
+  words and the stash's watch line).
+
+### IF-3 2026-10-03 — historical matchup evidence connected to current personnel (review § Priority 1)
+
+* **Why**: the decision-quality review (`docs/reviews/2026-10-03-decision-quality-review.md` § Priority 1): Williams vs
+  Tuten (Scrubs roster 6, week 4) showed Carolina's WR rank with no word that its starting corners Jaycee Horn and Mike
+  Jackson had gone on injured reserve (Panthers, Sept 30), while Matchups listed the replacements as unranked.
+* **What**: `research.matchup_evidence` (the object in `INTERFACES.md` § IF-3; `docs/METRICS.md` § Matchups "Current
+  personnel"): `history` (rank, games, period, scoring, not opponent-adjusted, the adjusted rank beside it), `changed`
+  (`cards.corner_personnel`: the regulars — ≥ 50% of the leading corner's coverage snaps this season — vs the depth
+  chart as of the game; a listed starter who cannot play per the overlay gives his spot to the next corner on the same
+  depth chart; missing regulars with status, source and date), `implication` (less representative / stands / unknown /
+  unchecked), `forecast_treatment` "contextual only; not in the forecast" (the projection's opponent inputs are
+  `opp_allowed_std`, `opp_allowed_l4`, `opp_rank_std`, `f_opp_allowed_diff`, `league_allowed_avg` and the betting lines;
+  the `pn_*` personnel inputs are the player's own team — a test parses `BASE_FEATURES`), two sentences. On
+  `/api/compare` (both sides; the verdict drops a matchup lean from a less representative rank), the player card
+  (`matchup_evidence`, shown under "Next:" by `lib/card.ts`), `/api/matchups/cb` rows (WR). The cards: a changed
+  defense's matchup piece scores 0 under its own kind, `_tiebreak` never picks the matchup then, the coin flip says "the
+  matchup rank does not settle it this week: Carolina's starting corners changed (…)", and `decision_cards`' frame
+  carries `matchup_uncertain` (IF-4's "No clear upgrade" words). The API sets `cards.STATUSES = availability.now`; the
+  console reads the depth chart only. Web: `components/MatchupEvidence.svelte` (the two sentences, a "Corners changed"
+  badge, "The evidence" behind a disclosure) on Compare ("The matchups this week") and Matchups' cornerback rows (when
+  changed); "· corners changed" beside the rank under each compare card. No number moves.
+* **The review's case** (main-database clone 2026-09-26 + the as-of overlay fixture `api/tests/fixtures/espn_if3`:
+  Horn and Jackson IR, ESPN, Sep 30): before — "Williams projects 0.26 more (9.98 vs 9.72); the matchup leans Williams:
+  his defense ranks #17 vs WRs once the offenses it faced are counted, Tuten's #24 vs RBs."; after — "Williams projects
+  0.26 more (9.98 vs 9.72); the matchup rank does not settle it this week: Carolina's starting corners changed (Jackson
+  and Horn are on injured reserve)." with Evans (left, for Jackson), Lee (right) and Smith-Wade (slot, for Horn)
+  expected, Evans and Lee "unranked (insufficient snaps)". Without the overlay the clone's depth chart still starts
+  Jackson and Horn: "the historical rank stands: the same corners". Projections unchanged (9.98 / 9.72).
+* **Tests**: `api/tests/test_if3.py` 10 (the forecast's feature list; the coin flip before / after on the review's live
+  numbers; the matchup piece as a fact, not a reason; the words; the compare / card / cornerback rows / cards' flag on
+  the clone with the fixture overlay; the "stands" case; the depth-chart-already-moved path on stand-in SQL). API suite
+  410 passed, 3 failed (the three known clone scoring checks: `test_ic1` ×2, `test_ic_po` ×1), 4 skipped.
+  `web/e2e/if3/` 4 (Compare and the pane's matchup section, phone 375 / desktop 1300) on answers recorded from the API
+  (`web/fixtures/if3/api_if3.json`, team and manager names replaced).
+* **Not done / for the PO**: the `ops.events` store is a design (the hand-back), not built; the hosted copy gets
+  `mart_matchup_cb_context` (read for the first time) on the next nightly publish (until then the replacement corners
+  are not named; the depth chart diff still works); receivers only (no front-seven check for running backs).
+
+### IF-2 2026-10-03 — trades compete with the simpler alternatives (branch `dev/IF2`, clone `league_lab_i0b`)
+
+* **Why**: the decision-quality review § Priority 3 (`docs/reviews/2026-10-03-decision-quality-review.md`): the
+  Finder's headline (+9.8 over weeks 4–7 live) lost to a free claim for an open spot (+11.4) and nothing said so; the
+  headline and the first card were different trades; the calculator said "you get more season value" next to "492
+  rest-of-season points for 164" without naming either concept.
+* **Delivered**: one ladder per roster and window (`decisions.best_alternative`: standing pat, the best legal waiver
+  move — IF-1's `best_waiver_move` when merged, guarded; today the open-spot fill / best add-drop on `ctx.fa_pool`);
+  the Finder ranks trades by `beyond_alternative` (those that beat it first), `rank` 1 = the headline = the first card,
+  `demoted` + "the trade does not beat it on starter points" + a reason only from the numbers (`other_objective`),
+  `ordering.words`, a week strip per card (`strip`: both sides, `trades.package_weeks`); the calculator carries
+  `alternative`, `beyond_alternative`, `alternative_words`, `strip`, `values` (the five concepts,
+  `trades.VALUE_CONCEPTS`), the raw rest-of-season line labelled "all positions added up — not a fairness test", the
+  warning on season value above replacement (`calc_sanity`). Web: `Trades.svelte` (the first card is the headline,
+  the alternative line, the ordering line, the mark, the strip), `TradeCalc.svelte` result (the alternative, the
+  strip, the labels), `decisions/WeekStrip.svelte` (new).
+* **Evidence** (70587 team 8, fixtures + ESPN overlay, `api/tests/test_if2.py` 13 passed): best alternative = the
+  Atlanta Falcons defense for the open spot, +12.81 over weeks 4–7 (1.20 / 0.80 / 0.48 / 10.33) = the Waivers
+  screen's top claim. Finder top three **before**: Houston Texans QB → Kansas City Chiefs QB (+1.76 / +5.53; the first
+  card), Chicago Bears QB → Kansas City Chiefs QB + Rice (+5.12 / +14.59; the headline), Corum → Downs (+1.43 / +5.80).
+  **After**: Bears QB → KC QB + Rice (+14.59, beyond +1.78; headline = first card), McCaffrey → Achane + Coker (+7.99,
+  beyond −4.82, below the claim; "more season value above replacement: 121 for 61"), Corum → Downs + Johnston (+6.66,
+  −6.15). The review's headline trade (Houston QB → Rice + Carolina QB) on the fixture: +1.70 / +7.86 (live +1.0 /
+  +9.8) → "the trade does not beat it on starter points" (−4.95). "Houston QB + Tuten for Rice": the warning was "you
+  give 493 rest-of-season points for 134: 359 more, over 25% of what you give"; now none (Houston QB has no season
+  value: not judged), the raw line labelled, "Season value above replacement: you give 14, you get 7 (about even). You
+  give 2 players for 1: 1 roster spot freed. Not counted (no season projection): Houston Texans QB." Trade gains
+  unchanged everywhere. `web/e2e/if2/` 2 × phone (375) / desktop on answers recorded from the API
+  (`web/fixtures/if2/api_if2.json`).
+* **Open**: team units (TMQB / TMPK) have no season value on demand (no `market` row), so the verdict's "season value"
+  clause and the warning leave them out (the words now say so); the Finder's sanity rule (a) is still the raw
+  rest-of-season totals (a PO call: switch it to season value above replacement — it would change which trades are
+  suggested); IF-1's `best_waiver_move` covers the next four weeks only (the other windows use the fill).
+
+
+### IF-4 2026-10-03 — clarity that exposes the difficult decisions (the decision-quality review § Priority 4 and its table; branch `dev/IF4`, clone `league_lab_i0a`, read only)
+
+* **Why**: the fourth outside review (`docs/reviews/2026-10-03-decision-quality-review.md` § Priority 4): GoodGameBuddy's
+  home said "nothing to change" while Williams vs Tuten at FLEX was 0.22 apart — "No clear upgrade" is the accurate
+  conclusion; a correct optimizer output does not remove the uncertainty. Plus the table of language fixes and the
+  I-E leftovers.
+* **My Week** (`myweek.build_actions`, both paths): `review` — one **No clear upgrade** line per coin-flip card with
+  nobody hurt that the submitted lineup already follows (or differs from by under half a point), smallest margin
+  first, at most 3: "Tuten or Williams at FLEX: a coin flip, 0.3 points apart; your lineup has Williams — no clear
+  upgrade." + Compare ›; IF-3's `matchup_uncertain` (read from `cards.decision_cards`' column or the tiebreak) adds
+  "the matchup rank does not settle it". `set_line`: "No clear upgrade elsewhere." when review lines exist, "The rest
+  of your lineup is set." (the "— nothing to change" tail dropped) with actions, "Your lineup is set — nothing to
+  change." only when there is neither. `changed` — **What changed**: the overlay's moves since the build (source,
+  checked time) then the news of the week's players (the best lineup's starters and the submitted lineup) from the
+  last 24 hours, the item about him first (`news.recent`: the feed's cache and bucket, reads side by side, a 1 s
+  budget), at most five; "Nothing has changed since the morning build." otherwise. Each starter row gains
+  `margin_vs` / `margin_words` ("over Lloyd" from `cards.alternative`; "no eligible reserve: the slot would be empty").
+  `/api/status` gains `updated_at`.
+* **Web**: My Week renders the review lines after the actions, the set line, What changed under the edit link, the
+  starters' table with the margin and its comparator, the bench expander with the bench and who can't play only, the
+  footer "Updated 7 d ago ›" (the exact ET time and the feed names on tap); the lineup card no longer repeats the
+  overlay's moves (What changed carries them; an answer recorded before keeps them there). The **pane** leads with projection,
+  availability (+ news), signals, usage, the value's lineup line; "Week by week and season numbers", "Schedule" and
+  "Game by game this season" behind expanders (`card.ts paneSplit`). The **player page** gains "Schedule"
+  (`ScheduleTable.svelte`: week · opponent · projected, from the card's new `schedule`, the board's own numbers).
+  **Compare**: bold only where it bears on the call (points rows always, usage rows only between two players of the
+  same position; the legend says so), "Typical range 9–16", "Low-end / High-end outcome", "Share of team passes", "This season
+  (2 games)" with the duplicated "Last 3 games" section dropped when it is the same games. **About / Waivers / decisions.ts / the console's
+  cards**: "Typical range (the middle 50%)" for "Most weeks". The card's role line (`card.ts roleWords`, on the web:
+  the API's card is pinned to the console page): "not enough games to say — 2 games so far …" before game 4, "role
+  steady over N games" after; empty metric tiles defined ("Not available for this player …", first-read and red-zone
+  denominators). The news line shows the item about him first (`news.ordered`: RotoWire, or the headline names him);
+  an article-level headline is labelled "League news". The game log and Trends: "1.2 below what his opportunities
+  suggest: an observed gap, not a forecast" (no "expect him to pick up", no "buy him while he is cheap"). The matchup
+  rank in words: `cards.rank_words` / `lib/words.ts rankWords` ("12th-fewest WR points allowed"); applied to the
+  console cards' small print and the schedule table — Compare's and Matchups' `#` lines are IF-3's (INTERFACES.md).
+  Receivers / Trends: the dictionary's "Share of team passes", "Points suggested by his past opportunities".
+* **Evidence — the review's case** (Scrubs roster 6 on the clone, built from its own rows: on 2026-09-26 Tuten was on
+  roster 2, so his real row takes CeeDee Lamb's FLEX slot; Sleeper's lineup = the optimizer's). **Before** (`19d01fa`'s
+  `build_actions` on the same frame): actions none, set line "Your lineup is set — nothing to change.", no review.
+  **After**: actions none, review "Tuten or Williams at FLEX: a coin flip, 0.3 points apart; your lineup has Williams —
+  no clear upgrade.", set line "No clear upgrade elsewhere.". Cards before = after: FLEX2 Jameson Williams 9.98 /
+  Tuten 9.72 / 0.26 coin flip; RB1 Javonte Williams 12.65 / Lloyd 8.02 / 4.63; FLEX1 Olave 15.16 / Tuten 9.72 / 5.18
+  (on the clone Williams projects above Tuten; on the review's day it was Tuten 10.02 / Williams 9.80 — the line names
+  whoever the lineup has). Roster 6's real lineup: QB Cousins 14.74 "no eligible reserve" (was "Margin 14.74"), RB1
+  "4.63 over Lloyd". Roster 2 with the ESPN fixture: What changed = "Justin Jefferson is out (ankle) — Michael Wilson
+  starts at FLEX2", "Terrance Ferguson is on injured reserve (ankle) …" (Injury report (ESPN)), then "Justin
+  Jefferson: Jefferson (ankle) has been already been ruled out … · RotoWire via ESPN". Jefferson's card news: the
+  inactives story ("… DeVonta to sit …", newest-but-one) moves behind his two RotoWire items and reads "league". No
+  number moved.
+* **Tests**: `api/tests/test_if4.py` (7: the roster-6 case end to end (needs_db), the review rules on hand-built frames,
+  What changed from the overlay fixture (needs_db), the empty words, the news order, `for_card` / `recent` on the
+  fixture, the recorder of the e2e answers (skipped unless `IF4_RECORD=1`)); `test_ie1.py` set-line words updated
+  (3 asserts: the tail; the tiny-difference case now has its review line). `web/e2e/if4/` (3 × 375 / 1300: the review
+  line + set line + nothing changed + margins + bench-only + Updated; What changed; the pane's expanders, role words,
+  schedule; Compare's bold rule, Typical range, the season once) on `web/fixtures/if4/api_if4.json`;
+  `e2e/ib1`'s pane test opens the game log's expander first. Checks: **API 409 passed, 3 failed** (the three clone
+  scoring-check tests: `test_ic1` ×2, `test_ic_po` ×1), 3 skipped (the recorder +2 as before); `test_n1`'s card order
+  updated (the item about him first, `about` on each item); **root 986 passed, 2 skipped**; ruff clean; web lint /
+  typecheck / build clean; **fixture e2e 180** (172 + 8: the full run 177 + the one IB-1 selector fix, then `if4` /
+  `ib1` / `i0a` / `ie1` / `ia1` re-run green on the final build).
+* **Open**: the MFL roster's own freshness line (I-E leftover) — not done; "status next to the name on every row" is
+  the existing flag line under the name (OUT / IR chip, Questionable, locked, bye reason) — unchanged; Compare's and
+  Matchups' `#21` / "#2 toughest" lines and the card's "Next: … ranks **#21** of 32" are IF-3's matchup lines (they
+  take `rankWords` / `history.words`); IF-3's `MatchupEvidence` goes into the pane's projection section (a marked
+  comment shows where); the What changed news reads up to ~10 ESPN copies on a cold My Week (the feed's bucket and
+  cache; at most 1 s waited).

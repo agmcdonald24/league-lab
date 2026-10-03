@@ -51,7 +51,10 @@
     <p class="mb-3 text-base leading-snug" data-testid="game-log-answer">
       <strong>{ppg?.toFixed(1)} points a game</strong> over {points.length} game{points.length === 1 ? "" : "s"}{#if xppg !== null}
         &nbsp;on work worth <strong>{xppg.toFixed(1)}</strong>
-        ({ppg! - xppg >= 0 ? "above expectation: expect him to cool off" : "below expectation: expect him to pick up"}){/if}, in {leagueName} scoring.
+        <!-- ---- IF-4 (the decision-quality review: '"Expect him to pick up" follows below-expected historical scoring'): the
+             observed gap and its uncertainty, no promise of regression -->
+        ({Math.abs(ppg! - xppg).toFixed(1)} {ppg! - xppg >= 0 ? "above" : "below"} what his opportunities suggest over {points.length} game{points.length === 1 ? "" : "s"}:
+        an observed gap, not a forecast){/if}, in {leagueName} scoring.
     </p>
     <LineChart {points} actualLabel="Points" expectedLabel="Expected points" />
   {/if}

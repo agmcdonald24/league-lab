@@ -1468,3 +1468,223 @@ export interface PartnerRow {
   cheaper_than?: { give: string[]; words: string } | null;
 }
 // ---- end IE-1
+
+// ---- IF-1 (Wave I-F): the drop's cost in pieces, the net gain, one alternative drop and why; "no worthwhile move";
+// stashes stay a watchlist (INTERFACES.md § IF-1). Additive: declaration merging.
+export interface DropCost {
+  lineup_loss: number | null;
+  depth_lost: number | null;
+  future_starts: number | null;
+  future_start_weeks: number | null;
+  season_value: number | null;
+  season_points: number | null;
+  replacement_points: number | null;
+  upside: number | null;
+  cost: number | null;
+  piece: "lineup_loss" | "season_value" | "future_starts" | "depth_lost" | "upside" | null;
+  is_incumbent?: boolean | null;
+}
+
+export interface WaiverMove {
+  drop_cost?: DropCost | null;
+  net_weekly_gain?: number | null;
+  net_horizon_gain?: number | null;
+  is_worthwhile?: boolean | null;
+  drop_why?: string | null;
+  alternative_drop?: { player: DPlayer; cost: number | null; piece: string | null; net_horizon_gain: number | null; words: string | null } | null;
+}
+
+export interface Waivers {
+  no_worthwhile_move?: { words: string; best_net_week: number; best_net_horizon: number; add: string | null; drop: string | null } | null;
+}
+
+export interface UpsideStash {
+  stash_action?: "claim" | "watch";
+  watch_words?: string | null;
+  drop_cost?: (Partial<DropCost> & { cost: number | null }) | null;
+}
+// ---- end IF-1
+
+// ---- IF-3 (Wave I-F, the decision-quality review § Priority 1): the matchup evidence object (research.matchup_evidence)
+// on /api/compare (`a` / `b`), the player card (`matchup_evidence`) and /api/matchups/cb rows (receivers only). Three
+// parts kept apart — the history, what changed in the defense's corners, the implication — plus the forecast's treatment
+// ("contextual only; not in the forecast": the projection has no opponent-personnel input) and the two sentences.
+export interface EvidencePerson {
+  gsis_id: string;
+  name: string;
+}
+export interface MatchupEvidence {
+  gsis_id: string;
+  player_name: string;
+  position: string;
+  season: number;
+  week: number;
+  opponent: string;
+  opponent_name: string;
+  is_home: boolean | null;
+  history: {
+    rank_most: number | null; // 1 = gives up the most
+    tough_rank: number | null; // 1 = gives up the fewest
+    n: number | null;
+    words: string | null; // "gives up the 2nd-fewest points to receivers"
+    games: number | null;
+    period: string | null; // "2026, weeks 1–3"
+    points_allowed_pg: number | null;
+    scoring: string;
+    adjusted: boolean;
+    adjusted_words: string;
+    adjusted_rank: { rank_most: number | null; n: number | null; words: string | null; scoring: string } | null;
+  };
+  changed: {
+    kind: "changed" | "same" | "unknown" | "not_checked";
+    depth_chart_at: string | null;
+    regulars: (EvidencePerson & { share: number; coverage_snaps: number; games: number })[];
+    listed: (EvidencePerson & { slot: string })[];
+    missing: (EvidencePerson & {
+      status: string | null;
+      code: string | null;
+      source: string | null;
+      as_of: string | null;
+      date_words?: string | null;
+      note: string | null;
+      reason: "status" | "depth chart";
+    })[];
+    expected: (EvidencePerson & { slot: string; replaces: string | null; is_new: boolean; rank: number | null; rank_words?: string })[];
+    words: string | null;
+  };
+  implication: { kind: "less_representative" | "stands" | "unknown" | "unchecked"; words: string };
+  forecast_treatment: { kind: "contextual"; words: string; detail: string; features: string[] };
+  matchup_uncertain: boolean;
+  caveat: string | null;
+  sentences: string[];
+}
+export interface CompareSide {
+  matchup_evidence?: MatchupEvidence | null;
+}
+export interface Compare {
+  verdict?: string;
+}
+export interface PlayerCard {
+  matchup_evidence?: MatchupEvidence | null;
+}
+export interface CbMatchup {
+  matchup_evidence?: MatchupEvidence | null;
+}
+// ---- end IF-3
+
+// ---- IF-2 (Wave I-F, the decision-quality review § Priority 3): trades compete with the simpler alternatives — the
+// ladder (standing pat, the best legal waiver move, the trade) over the same weeks; each trade's starter points beyond
+// the best alternative; the week strip for both sides; the value concepts named and kept apart. Additive.
+export interface TradeAlternative {
+  kind: "waiver" | "stand_pat";
+  player: { sleeper_id: string; gsis_id: string | null; player_name: string; position: string | null } | null;
+  drop: { sleeper_id: string; gsis_id: string | null; player_name: string; position: string | null } | null;
+  open_spot: boolean;
+  gain_week: number;
+  gain_window: number; // net of the drop's cost when IF-1's move is the source
+  by_week: number[];
+  weeks: number[];
+  span: string;
+  words: string; // "the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot"
+  source: string;
+}
+export interface WeekStrip {
+  weeks: number[];
+  mine: number[]; // your starter points gained per week
+  theirs: number[];
+}
+export interface VersusAlternative {
+  beyond_alternative?: number; // your starter points over the window minus the best alternative's
+  beats_alternative?: boolean;
+  alternative_words?: string;
+  other_objective?: { kind: "this_week" | "season_value" | "depth"; words: string } | null;
+  strip?: WeekStrip;
+}
+export interface ValueConcept {
+  label: string;
+  words: string | null;
+  fairness?: boolean;
+}
+export interface PartnerRow extends VersusAlternative {
+  rank?: number;
+  demoted?: boolean;
+}
+export interface Partners {
+  best_alternative?: TradeAlternative;
+  alternatives?: TradeAlternative[];
+  ordering?: { key: string; words: string };
+}
+export interface TradeEval extends VersusAlternative {
+  alternative?: TradeAlternative;
+  values?: {
+    projected_points: ValueConcept;
+    starter_points: ValueConcept & { mine: number; theirs: number };
+    depth: ValueConcept & { mine: { before: number | null; after: number | null }; theirs: { before: number | null; after: number | null } };
+    season_value: ValueConcept & { give: number | null; get: number | null; unknown: string[] };
+    ros_points: ValueConcept & { give: number | null; get: number | null; window: string | null };
+  };
+}
+// ---- end IF-2
+
+// ---- IF-4 (Wave I-F, the decision-quality review § Priority 4): My Week's "Decisions worth reviewing" (a close call the
+// submitted lineup already follows: "No clear upgrade") and "What changed" (INTERFACES.md § IF-4). Additive.
+export interface ReviewPlayer {
+  key: string;
+  name: string;
+  link: string;
+  gsis_id: string | null;
+  value: number | null;
+}
+export interface ReviewLine {
+  kind: "no_clear_upgrade";
+  slot: string | null;
+  slot_label: string;
+  start: ReviewPlayer; // the one the submitted lineup starts (ours when unknown)
+  other: ReviewPlayer;
+  margin: number | null;
+  strength: string;
+  matchup_uncertain: boolean;
+  words: string; // markdown: "Williams or Tuten at FLEX: a coin flip, 0.2 points apart; your lineup has Tuten — no clear upgrade."
+  submitted: boolean | null;
+  compare: { a: string; b: string } | null;
+  cards: number[];
+}
+export interface ChangedLine {
+  kind: "status" | "news";
+  gsis_id: string | null;
+  player_name?: string | null;
+  text: string;
+  source: string | null;
+  at: string | null;
+  url: string | null;
+  about?: "player" | "league";
+}
+export interface MyWeek {
+  review?: ReviewLine[];
+  changed?: { lines: ChangedLine[]; empty: string };
+}
+export interface DecisionCard {
+  matchup_uncertain?: boolean;
+}
+export interface NewsItem {
+  about?: "player" | "league"; // the item about him first; "league" = an article-level headline (labelled)
+}
+export interface Status {
+  updated_at?: string | null; // the newest load of the data the screens read (ISO UTC)
+}
+export interface ScheduleRow {
+  week: number;
+  opponent: string | null; // null = bye
+  is_home: boolean | null;
+  opp_rank: number | null; // 1 = gives up the most to his position
+  proj: number | null; // the rest-of-season board's number for that week (null = none: unknown, not 0)
+}
+export interface LineupRow {
+  margin_vs?: string | null; // the bench player who would come in for him
+  margin_words?: string; // "over Lloyd" / "no eligible reserve: the slot would be empty" / "" (no margin)
+}
+export interface PlayerCard {
+  schedule?: ScheduleRow[];
+  games_played?: number | null;
+}
+// ---- end IF-4

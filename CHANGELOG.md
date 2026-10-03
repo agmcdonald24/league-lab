@@ -2,6 +2,47 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-F
+
+- **PO (integration).** `mart_waiver_moves` carries the drop's cost pieces (the rows fill at the next nightly; older
+  rows are re-ranked on read); the Compare verdict's adjusted ranks read in one direction in words ("9th-fewest WR
+  points allowed by Worthy's"); three registry rows (`drop_cost`, `trade_beyond_alternative`, `matchup_personnel`).
+
+- **U-1 (usage tracking).** The web app counts screen views — which screen, which league and team number, when —
+  in `usage.events` on the hosted copy (a schema the nightly never drops; `scripts/hosted_usage.sql`, run by the sync
+  after the restore): `POST /api/usage` (beacon, 204, behind the password, 1 a second per browser-day with bursts of 5,
+  `LEAGUE_LAB_USAGE=off` stops it), one explicit read-write transaction on its own connection while the app role stays
+  read-only; no names, usernames or IP addresses. Read it on the console's Usage page or `GET /api/usage/summary`;
+  About says so in one line.
+
+- IF-1: waiver drops are valued before they are prescribed — each drop's cost in pieces (lineup loss with the claim, depth, later starts, season value above the waiver wire, upside); the cheapest drop per claim, one alternative and why (Carlson for McPherson, not Harrison); "No claim is worth a roster spot this week"; stashes say "watch" instead of a drop; `best_waiver_move` for the trade finder.
+
+- **IF-3 (matchup evidence and current personnel).** A defense's rank against receivers now comes with the corners it
+  was earned with: Compare, the player card / pane (under "Next:") and Matchups' cornerback rows say the history
+  (games, period, scoring, not adjusted for the offenses faced), what changed (a regular corner on IR / out per the
+  ESPN–Sleeper overlay with its source and date, or no longer on the depth chart; who starts instead, ranked or
+  "unranked (insufficient snaps)"), what it means ("the historical rank is less representative this week") and that the
+  forecast does not know it ("contextual only; not in the forecast"). A changed defense never breaks a coin flip or
+  leans the compare's verdict; `cards.decision_cards` carries `matchup_uncertain` for My Week. No number moved.
+
+- **IF-2: trades compete with the simpler alternatives.** The Trade Finder ranks trades by the starter points they add
+  beyond your best waiver move over the same weeks, says it ("+14.6 over weeks 4–7: 1.8 more than your best waiver
+  move"), marks the ones that do not beat it ("Below your best waiver move") and keeps a reason only from the numbers;
+  the headline is the first card; every card and the calculator show the week-by-week strip for both sides. The
+  calculator names its numbers (projected points, starter points, backup coverage, season value above replacement)
+  and labels the raw rest-of-season totals "not a fairness test".
+
+- **IF-4 (the decision-quality review § Priority 4).** My Week keeps a close call in view when the lineup already
+  follows it — "Tuten or Williams at FLEX: a coin flip, 0.3 points apart; your lineup has Williams — no clear upgrade.
+  Compare ›" and "No clear upgrade elsewhere." instead of "nothing to change" —, adds What changed (the injury
+  report's moves and the week's news from the last 24 hours, the source and the time on each), names each margin's
+  comparator ("over Lloyd" / "no eligible reserve"), shows only the bench in the bench expander and "Updated … ago"
+  in the footer; the pane leads with the decision (the week by week, the season numbers, the new schedule table and
+  the game log behind expanders); Compare bolds only what bears on the call; "Typical range" everywhere; the role line
+  says "not enough games to say" or "role steady over N games"; empty tiles are defined; the news line shows the item
+  about him first ("League news" for an article-level headline); the matchup rank in words ("12th-fewest WR points
+  allowed"); no "expect him to pick up". No number moved.
+
 ## 2026-10-03 — Wave I-E
 
 - **PO (integration).** The trade verdict says what each starting lineup gains and what the season value says —

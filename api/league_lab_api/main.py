@@ -19,6 +19,7 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/about?league=                   About the numbers: the model, what it leans on most, its grades (H1)
     /api/status                          the freshness line, the stale-injury warning, Sleeper's cache ages + budget
     /api/league/scoring-check?league=&week=  our points vs the league's own for a scored week (Wave I-C, IC-1)
+    POST /api/usage, /api/usage/summary  ---- U-1: one count per screen view (its own read-write transaction), the counts
 Errors are {"error": "<plain words>"} (plus the older "detail"): 404 unknown league / team / player / user,
 502 Sleeper did not answer, 503 the numbers are not ready yet / busy (our Sleeper budget).
 Everything else is the web app (web/dist): a real file, else index.html (the app routes itself).
@@ -493,6 +494,36 @@ def scoring_check(league: str, response: Response, week: int | None = None):
     _scoring_checks[key] = (_t.monotonic() + SCORING_CHECK_TTL_S, out)
     return _json(out, response)
 # ---- end IC-1
+
+# ---- U-1 (Wave I-F): usage tracking (league_lab_api/usage.py; docs/HOSTING.md § "Usage")
+#   POST /api/usage {screen, league, roster_id}   one row in usage.events per screen view; always 204. The server adds
+#                                                 the time, the platform, the version and the day's session cookie.
+#   GET  /api/usage/summary?days=7                views per screen per day, leagues and sessions per day (the PO's QA)
+from . import usage as usage_mod  # noqa: E402 - the block stays self-contained
+
+
+@app.post("/api/usage", status_code=204, dependencies=[Depends(require_auth)], include_in_schema=False)
+async def usage_count(request: Request):
+    resp = Response(status_code=204, headers={"Cache-Control": "no-store"})
+    if not usage_mod.enabled():
+        return resp
+    body = await request.body()
+    session = usage_mod.session_from(request.cookies.get(usage_mod.COOKIE))
+    if session is None:
+        session = usage_mod.new_session()
+        secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
+        resp.set_cookie(usage_mod.COOKIE, session, max_age=usage_mod.seconds_left_today(), httponly=True,
+                        samesite="lax", secure=secure, path="/api/usage")
+    if usage_mod.allow(session):
+        usage_mod.submit(usage_mod.event(usage_mod.parse(body), version=_version(), session=session))   # its own thread
+    return resp
+
+
+@app.get("/api/usage/summary", dependencies=[Depends(require_auth)])
+def usage_summary(response: Response, days: int = 7):
+    response.headers["Cache-Control"] = "no-store"
+    return JSONResponse(clean(usage_mod.summary(days)), headers={"Cache-Control": "no-store"})
+# ---- end U-1
 
 
 # ---------------------------------------------------------------- the web app

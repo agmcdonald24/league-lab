@@ -343,6 +343,154 @@ def roster_moves_unpruned(slots: Sequence[str], weeks: Sequence[Sequence[Player]
     return out
 
 
+# ------------------------------------------------------------------------------ IF-1: the drop's cost, in pieces
+# (Wave I-F, the decision-quality review § "value the bench before prescribing drops"). B3 named the drop with the
+# fewest projected points among equally good moves, so a bench WR who does not start in the next four weeks was a free
+# drop for every claim ("he sits anyway"). A drop now costs the most of five pieces, each in points of this league's
+# scoring (never their sum — they overlap):
+#   lineup_loss   his starts over the horizon the move gives up WITH the add on the roster (add's gain alone − the
+#                 move's gain): Carlson for McPherson gives up nothing — Carlson takes the K slot;
+#   depth_lost    Σ over the horizon weeks he sits: max(0, his projection − the best free agent's at his position) × the
+#                 chance a starter he can cover misses that week (1 − (1 − ABSENCE_RATE[pos])^starters at his position);
+#   future_starts Σ over the weeks after the horizon: what the lineup (with the add) loses without him beyond the best
+#                 free agent at his position (his season points over the weeks left: a bye the wire covers costs 0);
+#   season_value  trades.price_by_player's rule: max(0, his rest-of-season points − the best free agent's at his
+#                 position) — the replacement baseline (a 1-QB league's wire holds starting QBs, a superflex one does
+#                 not; a team unit / DEF against the best free unit);
+#   upside        a role scenario's extra points over the horizon (ops.player_scenarios), when he has one.
+# net gain = the move's lineup gain − (cost − lineup_loss): the roster value the lineup numbers do not already count.
+# Per add the best drop is the cheapest (equal costs: the starter the add replaces — "Carlson replaces McPherson at
+# K" —, then the fewest rest-of-season points). A move is worthwhile when its net gain is ≥ WORTH_WEEK this week or
+# ≥ WORTH_HORIZON over the horizon.
+ABSENCE_RATE = {"QB": 0.06, "RB": 0.12, "WR": 0.10, "TE": 0.09, "K": 0.02, "DEF": 0.0}  # a starter's weekly miss rate
+WORTH_WEEK, WORTH_HORIZON = 1.0, 3.0
+COST_PIECES = ("lineup_loss", "season_value", "future_starts", "depth_lost", "upside")   # the tie order of `piece`
+COST_COLUMNS = ["drop_cost", "drop_cost_piece", "drop_lineup_loss", "drop_depth_lost", "drop_future_starts",
+                "drop_future_start_weeks", "drop_season_value", "drop_season_points", "drop_replacement_points",
+                "drop_upside", "drop_is_incumbent", "net_weekly_gain", "net_horizon_gain", "is_worthwhile"]
+
+
+@dataclass(frozen=True)
+class DropCost:
+    """What dropping one player costs a move (see the block comment). A piece that could not be measured is None
+    (unknown, not 0): the cost is the most of the pieces that were."""
+    lineup_loss: float = 0.0
+    depth_lost: float | None = None
+    future_starts: float | None = None
+    future_start_weeks: int | None = None
+    season_value: float | None = None
+    upside: float | None = None
+
+    @property
+    def cost(self) -> float:
+        return max(float(v) for v in (self.lineup_loss, self.depth_lost, self.future_starts, self.season_value,
+                                      self.upside, 0.0) if v is not None)
+
+    @property
+    def piece(self) -> str | None:
+        """The piece that sets the cost (None: every piece is 0)."""
+        c = self.cost
+        if round(c, 2) <= 0:
+            return None
+        return next(k for k in COST_PIECES if getattr(self, k) is not None and round(float(getattr(self, k)), 2) == round(c, 2))
+
+    def as_dict(self) -> dict:
+        return {"lineup_loss": _r2(self.lineup_loss), "depth_lost": _rn(self.depth_lost), "future_starts": _rn(self.future_starts),
+                "future_start_weeks": self.future_start_weeks, "season_value": _rn(self.season_value),
+                "upside": _rn(self.upside), "cost": _r2(self.cost), "piece": self.piece}
+
+
+def _rn(x) -> float | None:
+    return None if x is None or (isinstance(x, float) and math.isnan(x)) else _r2(float(x))
+
+
+def season_value(points: float | None, replacement: float | None) -> float | None:
+    """``trades.price_by_player``'s rule for one player: max(0, season points − the best free agent's at his
+    position); a position with no free agent projected has replacement 0; no season points: unknown (None)."""
+    if points is None or (isinstance(points, float) and math.isnan(points)):
+        return None
+    return max(0.0, float(points) - float(replacement or 0.0))
+
+
+def cover_chance(position: str | None, starters_at_position: int) -> float:
+    """The chance at least one of ``starters_at_position`` starters at this position misses a given week."""
+    r = ABSENCE_RATE.get(str(position or ""), 0.0)
+    return 1.0 - (1.0 - r) ** max(0, int(starters_at_position))
+
+
+def depth_lost(values: Sequence[float | None], best_free: Sequence[float | None], sits: Sequence[bool],
+               position: str | None, starters_at_position: Sequence[int]) -> float:
+    """Σ over the weeks he sits: max(0, his value − the best free agent's at his position) × ``cover_chance``."""
+    out = 0.0
+    for v, f, s, k in zip(values, best_free, sits, starters_at_position, strict=True):
+        if s and v is not None:
+            out += max(0.0, float(v) - float(f or 0.0)) * cover_chance(position, k)
+    return out
+
+
+def drop_cost(lineup_loss: float, *, depth: float | None = None, future: float | None = None, future_weeks: int | None = None,
+              season: float | None = None, upside: float | None = None) -> DropCost:
+    return DropCost(max(0.0, float(lineup_loss or 0.0)), depth, future, future_weeks, season, upside)
+
+
+def _f(v) -> float | None:
+    if v is None:
+        return None
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return None
+    return None if math.isnan(x) else x
+
+
+def choose_drops(rows: Sequence[Mapping]) -> list[dict]:
+    """One roster's move rows (``ops.waiver_moves``' columns) with the drop's cost, the net gains and the ranks set:
+    per add the best drop is the cheapest; moves ordered by net horizon gain, then net weekly gain. The value pieces
+    are read from the rows (``drop_depth_lost``, ``drop_future_starts``, ``drop_season_value``, ``drop_upside``: None =
+    not measured); the lineup loss from the row's own gains. The nightly writer, the on-demand sweep and the API's read
+    of an older mart all call it; a 'nothing' row passes through."""
+    rows = [dict(r) for r in rows]
+    moves = [r for r in rows if r.get("list_kind") != "nothing" and isinstance(r.get("add_sleeper_id"), str)]
+    if not moves:
+        return rows
+    incumbent: dict[str, str] = {}
+    for r in moves:                     # the starter the add pushes out this week (a row that drops someone else)
+        disp, d = r.get("displaced_sleeper_id"), r.get("drop_sleeper_id")
+        if isinstance(disp, str) and disp != d and (_f(r.get("weekly_gain")) or 0.0) > 0:
+            incumbent.setdefault(r["add_sleeper_id"], disp)
+    for r in moves:
+        d = r.get("drop_sleeper_id") if isinstance(r.get("drop_sleeper_id"), str) else None
+        wg, hg = _f(r.get("weekly_gain")) or 0.0, _f(r.get("horizon_gain")) or 0.0
+        if d is None:
+            dc = DropCost(0.0, None, None, None, None, None)
+        else:
+            alone = _f(r.get("add_horizon_gain"))
+            ll = (alone - hg) if alone is not None else (_f(r.get("drop_horizon_loss")) or 0.0)
+            dc = drop_cost(ll, depth=_f(r.get("drop_depth_lost")), future=_f(r.get("drop_future_starts")),
+                           future_weeks=None if _f(r.get("drop_future_start_weeks")) is None else int(_f(r["drop_future_start_weeks"])),
+                           season=_f(r.get("drop_season_value")), upside=_f(r.get("drop_upside")))
+        excess = dc.cost - dc.lineup_loss
+        r.update({"drop_cost": _r2(dc.cost) if d else None, "drop_cost_piece": dc.piece if d else None,
+                  "drop_lineup_loss": _r2(dc.lineup_loss) if d else None,
+                  "drop_is_incumbent": (d is not None and incumbent.get(r["add_sleeper_id"]) == d) if d else None,
+                  "net_weekly_gain": _r2(wg - excess), "net_horizon_gain": _r2(hg - excess)})
+        r["is_worthwhile"] = bool(r["net_weekly_gain"] >= WORTH_WEEK or r["net_horizon_gain"] >= WORTH_HORIZON)
+
+    def order(r: dict) -> tuple:
+        d = r.get("drop_sleeper_id") if isinstance(r.get("drop_sleeper_id"), str) else None
+        return (-round(r["net_horizon_gain"], 2), -round(r["net_weekly_gain"], 2), d is not None,
+                round(_f(r.get("drop_cost")) or 0.0, 2), not bool(r.get("drop_is_incumbent")),
+                round(_f(r.get("drop_ros_points")) or 0.0, 2), r["add_sleeper_id"], d or "")
+    ranked = sorted(moves, key=order)
+    best: dict[str, int] = {}
+    for i, r in enumerate(ranked, 1):
+        is_best = r["add_sleeper_id"] not in best
+        if is_best:
+            best[r["add_sleeper_id"]] = len(best) + 1
+        r.update({"move_rank": i, "is_best_drop": is_best, "add_rank": best[r["add_sleeper_id"]] if is_best else None})
+    return [r for r in rows if r.get("list_kind") == "nothing" or not isinstance(r.get("add_sleeper_id"), str)] + ranked
+
+
 # ------------------------------------------------------------------------------ ranking and rows
 def rank_moves(moves: Sequence[MoveResult], drop_points: Mapping[str | None, float]) -> list[tuple[MoveResult, int, bool, int | None]]:
     """(move, move_rank, is_best_drop, add_rank). Order: horizon gain, then this week's gain; among
@@ -383,6 +531,13 @@ DDL = {
         displaced_position text, displaced_value double precision, displaced_slot text, open_roster_spots integer,
         inputs_fingerprint text)""",
 }
+# IF-1: the drop's cost columns, added to a table created before them (``_write`` runs these first)
+COST_DDL = [f"alter table ops.waiver_moves add column if not exists {c} {t}" for c, t in (
+    ("drop_cost", "double precision"), ("drop_cost_piece", "text"), ("drop_lineup_loss", "double precision"),
+    ("drop_depth_lost", "double precision"), ("drop_future_starts", "double precision"), ("drop_future_start_weeks", "integer"),
+    ("drop_season_value", "double precision"), ("drop_season_points", "double precision"),
+    ("drop_replacement_points", "double precision"), ("drop_upside", "double precision"), ("drop_is_incumbent", "boolean"),
+    ("net_weekly_gain", "double precision"), ("net_horizon_gain", "double precision"), ("is_worthwhile", "boolean"))]
 MOVE_COLUMNS = ["run_at", "as_of", "model_version", "league_id", "season", "week", "roster_id", "horizon_weeks",
                 "horizon_last_week", "list_kind", "move_rank", "add_rank", "is_best_drop", "add_sleeper_id", "add_gsis_id",
                 "add_name", "add_position", "add_value", "add_value_source", "add_reason", "add_report_status",
@@ -391,6 +546,7 @@ MOVE_COLUMNS = ["run_at", "as_of", "model_version", "league_id", "season", "week
                 "week_gains", "add_horizon_gain", "lineup_before", "lineup_after", "add_slot", "add_slot_type",
                 "fills_empty_slot", "displaced_sleeper_id", "displaced_gsis_id", "displaced_name", "displaced_position",
                 "displaced_value", "displaced_slot", "open_roster_spots", "inputs_fingerprint"]
+ALL_COLUMNS = [*MOVE_COLUMNS, *COST_COLUMNS]   # IF-1: what the writer stores (MOVE_COLUMNS = the base DDL, kept identical)
 
 # The legality inputs of a league at the time the moves were computed: who is rostered where (IR /
 # taxi included) and each player's free-agent / NFL-roster / injury status. `mart_waiver_moves` and
@@ -485,6 +641,7 @@ def load_and_sweep(conn: psycopg.Connection, season: int, as_of: datetime | None
                                 from staging.stg_sleeper__players where sleeper_player_id = any(%s)""", (fa_sids,)):
             inp.sleeper[r["sleeper_player_id"]] = r
         fps = {r["league_id"]: r["fp"] for r in _frame(cur, FINGERPRINT_SQL)}
+        values = {lid: value_inputs(cur, lid, season, decision[lid], horizon[lid][-1]) for lid in decision}   # ---- IF-1
     totals_by = {(t["league_id"], int(t["week"]), int(t["roster_id"])): t for t in totals}
     by_roster_week: dict[tuple[str, int, int], list[dict]] = defaultdict(list)
     for r in lrows:
@@ -539,23 +696,48 @@ def load_and_sweep(conn: psycopg.Connection, season: int, as_of: datetime | None
                    "horizon_last_week": hz[-1], "inputs_fingerprint": fps.get(lid)}
             rows += sweep_roster(slots, week_rows, inp.current.get(lid, {}).get(roster_id, []), adds, fa_meta,
                                  [r for w in rest for r in by_roster_week.get((lid, w, roster_id), [])], len(rest), add_ros_of, key,
-                                 inp.sleeper, lineup_value=float(tot0["lineup_value"]), stats=stats, unpruned=unpruned)
+                                 inp.sleeper, lineup_value=float(tot0["lineup_value"]), stats=stats, unpruned=unpruned,
+                                 **values.get(lid, {}))
     stats["sweep_seconds"] = time.perf_counter() - t_sweep
     stats["rows"] = len(rows)
     return rows, stats, decision
 
 
+UPSIDE_POINTS_SQL = """select gsis_id, sum(points_gain)::double precision as upside from ops.player_scenarios
+                       where league_id = %s and season = %s and week between %s and %s and points_gain > 0 group by gsis_id"""
+
+
+def value_inputs(cur: psycopg.Cursor, league_id: str, season: int, week: int, last: int) -> dict:
+    """IF-1: a house league's drop-value inputs for ``sweep_roster`` — the market (rest-of-season points per player key),
+    the replacement per position (``trades.MARKET_SQL`` / ``REPLACEMENT_SQL``, the Trade Finder's prices) and each
+    role scenario's extra points over the horizon (``ops.player_scenarios``, when the table exists)."""
+    from .trades import MARKET_SQL, REPLACEMENT_SQL  # trades imports this module: imported here
+    market = {r["player_key"]: float(r["season_points"]) for r in _frame(cur, MARKET_SQL, (league_id, season, week))
+              if r["season_points"] is not None}
+    repl = {r["position"]: float(r["replacement"]) for r in _frame(cur, REPLACEMENT_SQL, (league_id, season, week, league_id))
+            if r["replacement"] is not None}
+    cur.execute("select to_regclass('ops.player_scenarios') is not null")
+    up = ({r["gsis_id"]: float(r["upside"]) for r in _frame(cur, UPSIDE_POINTS_SQL, (league_id, season, week, last))}
+          if cur.fetchone()[0] else {})
+    return {"market": market, "replacement": repl, "upside": up}
+
+
 def sweep_roster(slots: Sequence[str], week_rows: Sequence[Sequence[Mapping]], cur_rows: Sequence[Mapping],
                  adds: Mapping[str, Sequence[Player | None]], fa_meta: Mapping[str, Mapping], rest_rows: Sequence[Mapping],
                  rest_weeks: int, add_ros_of, key: Mapping, sleeper: Mapping[str, dict], *, lineup_value: float | None = None,
-                 stats: dict | None = None, unpruned: bool = False) -> list[dict]:
+                 stats: dict | None = None, unpruned: bool = False, market: Mapping[str, float] | None = None,
+                 replacement: Mapping[str, float] | None = None, upside: Mapping[str, float] | None = None) -> list[dict]:
     """One roster's ``ops.waiver_moves`` rows (``load_and_sweep``'s per-roster step; Wave G's on-demand path calls it
     with lineups solved on request). ``week_rows`` = the roster's lineup rows per horizon week (ops.lineups' columns,
     no empty slots), ``cur_rows`` = today's roster (IR / taxi flags), ``adds`` = every free agent as B1 carries him per
     horizon week, ``fa_meta`` = sid -> gsis_id / player_name / position / games_played, ``rest_rows`` = the roster's
     lineup rows over the ``rest_weeks`` weeks of the rest of the season (each player's rest-of-season points: the drop's
     tie-break), ``add_ros_of(sid)`` = a free agent's rest-of-season points, ``key`` = the run / league / week columns,
-    ``lineup_value`` = the stored lineup value the re-solve must reproduce (logged when it does not)."""
+    ``lineup_value`` = the stored lineup value the re-solve must reproduce (logged when it does not). IF-1: ``market`` =
+    player key (gsis id; a DEF's Sleeper id) -> rest-of-season points (``trades.MARKET_SQL``), ``replacement`` = position
+    -> the best free agent's (``trades.REPLACEMENT_SQL``), ``upside`` = player key -> a role scenario's extra points over
+    the horizon; None: the season points from ``rest_rows`` and the replacement from ``add_ros_of``. ``rest_rows`` carry
+    ``week`` (the future starts); the rows come out of ``choose_drops``."""
     stats = stats if stats is not None else {"lineup_mismatch": 0}
     lid, roster_id, week0 = key["league_id"], key["roster_id"], key["week"]
     limit = sum(1 for s in slots if str(s).upper() not in NOT_ROSTER_SPOTS)
@@ -628,18 +810,111 @@ def sweep_roster(slots: Sequence[str], week_rows: Sequence[Sequence[Mapping]], c
             "displaced_value": _r2(_num(disp0["value"])) if disp0 else None,
             "displaced_slot": disp0["slot"] if disp0 else None,
         })
-    return rows
+    # ---- IF-1: the drop's value pieces (per player: the add does not change them), then the cost-ordered ranks
+    pieces = drop_pieces(slots, players, rest_rows, adds, fa_meta, info, sleeper, {r["drop_sleeper_id"] for r in rows if r.get("drop_sleeper_id")},
+                         key.get("horizon_last_week"), rest_weeks, add_ros_of, market=market, replacement=replacement, upside=upside)
+    for r in rows:
+        r.update(pieces.get(r.get("drop_sleeper_id"), {}))
+    return choose_drops(rows)
+
+
+def _rest_player(r: Mapping, sleeper: Mapping[str, dict], position: str | None) -> Player:
+    """A rest-of-season lineup row (ops.lineups' columns; the on-demand rows carry fewer) as the solver's Player."""
+    sp = sleeper.get(r["sleeper_player_id"]) or {}
+    fp = tuple(sp["fantasy_positions"]) if sp.get("fantasy_positions") else None
+    return Player(id=r["sleeper_player_id"], position=r.get("position") or position or "", value=_num(r.get("value")),
+                  playable=r.get("role") in ("starter", "bench"), locked_slot=None, value_source=r.get("value_source"),
+                  reason=r.get("reason"), status=r.get("report_status"), fantasy_positions=fp)
+
+
+def drop_pieces(slots: Sequence[str], players: Sequence[Sequence[Player]], rest_rows: Sequence[Mapping],
+                adds: Mapping[str, Sequence[Player | None]], fa_meta: Mapping[str, Mapping], info: Mapping[str, Mapping],
+                sleeper: Mapping[str, dict], drops: set[str], horizon_last: int | None, rest_weeks: int, add_ros_of, *,
+                market: Mapping[str, float] | None = None, replacement: Mapping[str, float] | None = None,
+                upside: Mapping[str, float] | None = None) -> dict[str, dict]:
+    """IF-1: per drop candidate, the ``ops.waiver_moves`` value columns (``drop_depth_lost``, ``drop_future_starts``,
+    ``drop_future_start_weeks``, ``drop_season_value``, ``drop_season_points``, ``drop_replacement_points``,
+    ``drop_upside``); see the block comment above ``DropCost``."""
+    if not drops:
+        return {}
+    pos_of = {sid: (info.get(sid) or {}).get("position") for sid in drops}
+
+    def pkey(sid: str) -> str:
+        g = (info.get(sid) or {}).get("gsis_id")
+        return str(g) if isinstance(g, str) and g else sid
+    # season points: the market's (every projected week left) or, without one, the lineup rows' (weeks he can play)
+    ros: dict[str, float] = defaultdict(float)
+    for r in rest_rows:
+        if r.get("value") is not None and r.get("role") in ("starter", "bench") and r.get("value_source") != UNVALUED:
+            ros[r["sleeper_player_id"]] += float(r["value"])
+    repl_cache: dict[str, float] = {}
+
+    def repl(pos: str | None) -> float:
+        if replacement is not None:
+            return float(replacement.get(str(pos or ""), 0.0) or 0.0)
+        if pos not in repl_cache:
+            repl_cache[pos] = max((add_ros_of(a) for a, m in fa_meta.items() if m.get("position") == pos), default=0.0)
+        return repl_cache[pos]
+    # the horizon weeks: who sits, the best free agent per position, the starters per position
+    lus = [solve(ps, slots, margins=False) for ps in players]
+    best_free: list[dict[str, float]] = []
+    for h in range(len(players)):
+        bf: dict[str, float] = {}
+        for a, seq in adds.items():
+            p = seq[h] if h < len(seq) else None
+            p = _norm(p) if p is not None else None
+            pos = (fa_meta.get(a) or {}).get("position")
+            if p is not None and pos and p.value is not None:
+                bf[pos] = max(bf.get(pos, 0.0), float(p.value))
+        best_free.append(bf)
+    # the weeks after the horizon: each week's roster as the rest-of-season rows have it
+    post: dict[int, list[Player]] = defaultdict(list)
+    for r in rest_rows:
+        w = r.get("week")
+        if w is not None and horizon_last is not None and int(w) > int(horizon_last):
+            post[int(w)].append(_rest_player(r, sleeper, (info.get(r["sleeper_player_id"]) or {}).get("position")))
+    post_lu = {w: solve(ps, slots, margins=False) for w, ps in sorted(post.items())}
+    weeks_left = max(1, int(rest_weeks) - 1)                 # the weeks left less a bye: a free agent's average week
+    out: dict[str, dict] = {}
+    for sid in drops:
+        pos = pos_of.get(sid)
+        k = pkey(sid)
+        pts = _f(market.get(k)) if market is not None else (ros.get(sid) if sid in ros else None)
+        rp = repl(pos)
+        vals, sits, n_at = [], [], []
+        for ps, lu in zip(players, lus, strict=True):
+            me = next((p for p in ps if p.id == sid), None)
+            vals.append(me.value if me is not None and me.playable and not _unvalued(me) else None)
+            sits.append(me is not None and me.playable and sid not in set(lu.starter_ids))
+            n_at.append(sum(1 for s in lu.starts if s.player is not None and s.player.position == pos))
+        depth = depth_lost(vals, [bf.get(pos) for bf in best_free], sits, pos, n_at)
+        fut, fut_w = 0.0, 0
+        sp = sleeper.get(sid) or {}
+        fps = tuple(sp["fantasy_positions"]) if sp.get("fantasy_positions") else None
+        for w, lu in post_lu.items():
+            if sid not in set(lu.starter_ids):
+                continue
+            fut_w += 1
+            fa = Player(id="__free_agent__", position=pos or "", value=rp / weeks_left, playable=True,
+                        value_source="replacement", fantasy_positions=fps)
+            fut += max(0.0, lu.total - solve([q for q in post[w] if q.id != sid] + [fa], slots, margins=False).total)
+        up = _f((upside or {}).get(k)) if upside is not None else None
+        out[sid] = {"drop_depth_lost": _r2(depth), "drop_future_starts": _r2(fut) if post_lu else None,
+                    "drop_future_start_weeks": fut_w if post_lu else None,
+                    "drop_season_value": _rn(season_value(pts, rp)), "drop_season_points": _rn(pts),
+                    "drop_replacement_points": _r2(rp), "drop_upside": _rn(up) if up is not None and up > 0 else None}
+    return out
 
 
 def _write(conn: psycopg.Connection, season: int, rows: list[dict]) -> None:
     """Replace the season's rows in one transaction."""
     with conn.cursor() as cur:
-        for ddl in DDL.values():
+        for ddl in [*DDL.values(), *COST_DDL]:
             cur.execute(ddl)
         cur.execute("delete from ops.waiver_moves where season = %s", (season,))
-        with cur.copy(f"copy ops.waiver_moves ({', '.join(MOVE_COLUMNS)}) from stdin") as cp:
+        with cur.copy(f"copy ops.waiver_moves ({', '.join(ALL_COLUMNS)}) from stdin") as cp:
             for d in rows:
-                cp.write_row([d.get(c) for c in MOVE_COLUMNS])
+                cp.write_row([d.get(c) for c in ALL_COLUMNS])
     conn.commit()
 
 
@@ -654,11 +929,11 @@ def waiver_moves(conn: psycopg.Connection, season: int | None = None, as_of: dat
             season = cur.fetchone()[0]
     if season is None:
         log.warning("waivers: ops.lineup_totals is empty (run `league-lab project` first)")
-        return WaiverRun(None, pd.DataFrame(columns=MOVE_COLUMNS), 0.0, 0.0)
+        return WaiverRun(None, pd.DataFrame(columns=ALL_COLUMNS), 0.0, 0.0)
     season = int(season)
     rows, stats, decision = load_and_sweep(conn, season, as_of)
     _write(conn, season, rows)
-    run = WaiverRun(season, pd.DataFrame(rows, columns=MOVE_COLUMNS), time.perf_counter() - t0,
+    run = WaiverRun(season, pd.DataFrame(rows, columns=ALL_COLUMNS), time.perf_counter() - t0,
                     stats.get("sweep_seconds", 0.0), stats, decision)
     moves = int((run.rows["list_kind"] != "nothing").sum()) if len(run.rows) else 0
     upside_after_waivers(conn, season)    # R-12: the upside stash list (ops.waiver_upside); logged, never fatal
@@ -691,7 +966,7 @@ def verify_roster(conn: psycopg.Connection, league_id: str, roster_id: int, seas
     t1 = time.perf_counter()
     full, _, _ = load_and_sweep(conn, season, only=(league_id, roster_id), unpruned=True)
     t2 = time.perf_counter()
-    cols = [c for c in MOVE_COLUMNS if c not in ("run_at",)]
+    cols = [c for c in ALL_COLUMNS if c not in ("run_at",)]
 
     def canon(rows: list[dict]) -> list[tuple]:
         return sorted(tuple(str(r.get(c)) for c in cols) for r in rows)
@@ -716,7 +991,7 @@ def run_verify(league_id: str, roster_id: int, season: int | None = None) -> dic
         return verify_roster(conn, league_id, roster_id, season)
 
 
-__all__ = ["DDL", "FINGERPRINT_SQL", "HORIZON", "MOVE_COLUMNS", "MoveResult", "WaiverRun", "entry_bar", "prepare",
+__all__ = ["ALL_COLUMNS", "COST_COLUMNS", "DDL", "DropCost", "FINGERPRINT_SQL", "choose_drops", "drop_cost", "drop_pieces", "HORIZON", "MOVE_COLUMNS", "MoveResult", "WaiverRun", "entry_bar", "prepare",
            "rank_moves", "roster_moves", "roster_moves_unpruned", "run_verify", "run_waivers", "sweep_roster", "verify_roster",
            "waiver_moves", "waivers_after_project"]
 

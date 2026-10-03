@@ -7,8 +7,9 @@ export const NEAR = 0.5; // points a game: closer than this to his work is "abou
 
 export function gapWords(gap: number | null | undefined): string {
   if (gap === null || gap === undefined) return "no expected points yet";
-  if (gap > NEAR) return "above expectation: expect him to cool off";
-  if (gap < -NEAR) return "below expectation: expect him to pick up";
+  // ---- IF-4 (the decision-quality review: no promise of regression): the observed gap, said as one
+  if (gap > NEAR) return `${fmt.pts(gap)} above what his opportunities suggest: an observed gap, not a forecast`;
+  if (gap < -NEAR) return `${fmt.pts(-gap)} below what his opportunities suggest: an observed gap, not a forecast`;
   return "about what his work is worth";
 }
 

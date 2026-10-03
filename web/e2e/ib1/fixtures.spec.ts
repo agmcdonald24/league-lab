@@ -218,6 +218,8 @@ test("the search field opens the pane; × closes it; another name swaps it in pl
   await expect(page.getByTestId("pane")).toBeVisible();
   await expect(page.getByTestId("pane")).toHaveAttribute("data-from", "search");
   await expect(page.getByTestId("pane-card")).toContainText("St. Brown");
+  // IF-4 (the decision-quality review: the drawer focused on the decision): the game log is behind its expander
+  await tap(page, page.getByTestId("pane").getByTestId("pane-gamelog").locator("summary").first(), isMobile);
   await expect(page.getByTestId("pane").getByTestId("game-log")).toBeVisible();
   await expect(page.getByTestId("search-results")).toHaveCount(0);
   await noSidewaysScroll(page);

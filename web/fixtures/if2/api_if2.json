@@ -1,0 +1,4613 @@
+{
+ "/api/leagues/mfl%3A70587/rosters": {
+  "status": 200,
+  "body": [
+   {
+    "roster_id": 4,
+    "team_name": "Bad Mojo",
+    "manager_name": null
+   },
+   {
+    "roster_id": 8,
+    "team_name": "Big Mac Attack",
+    "manager_name": null
+   },
+   {
+    "roster_id": 2,
+    "team_name": "Blitzburg",
+    "manager_name": null
+   },
+   {
+    "roster_id": 11,
+    "team_name": "Hang-Over",
+    "manager_name": null
+   },
+   {
+    "roster_id": 10,
+    "team_name": "Just One More",
+    "manager_name": null
+   },
+   {
+    "roster_id": 7,
+    "team_name": "Klaby Crew",
+    "manager_name": null
+   },
+   {
+    "roster_id": 1,
+    "team_name": "Knight Train",
+    "manager_name": null
+   },
+   {
+    "roster_id": 12,
+    "team_name": "Madeyes Revenge",
+    "manager_name": null
+   },
+   {
+    "roster_id": 5,
+    "team_name": "Millertime",
+    "manager_name": null
+   },
+   {
+    "roster_id": 9,
+    "team_name": "Rock33",
+    "manager_name": null
+   },
+   {
+    "roster_id": 6,
+    "team_name": "Stick it to the Man",
+    "manager_name": null
+   },
+   {
+    "roster_id": 3,
+    "team_name": "Uh, Winning!",
+    "manager_name": null
+   }
+  ]
+ },
+ "/api/trades/lists?league=mfl%3A70587&team=8": {
+  "status": 200,
+  "body": {
+   "buy_low": [
+    {
+     "player": {
+      "sleeper_id": "5846",
+      "gsis_id": "00-0035640",
+      "player_name": "DK Metcalf",
+      "position": "WR",
+      "team": "PIT",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kxql4sjfelubhxawu2zh"
+     },
+     "roster_id": 5,
+     "team_name": "Millertime",
+     "ppg": 3.35,
+     "xppg": 9.42,
+     "diff_per_game": -6.07,
+     "gain_week": 0,
+     "gain_horizon": 9.77,
+     "loss_week": 0,
+     "loss_horizon": 3.17,
+     "fit_week": 0,
+     "fit_horizon": 6.6
+    },
+    {
+     "player": {
+      "sleeper_id": "12501",
+      "gsis_id": "00-0040667",
+      "player_name": "Matthew Golden",
+      "position": "WR",
+      "team": "GB",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dbjki6b0swksr7mk17wk"
+     },
+     "roster_id": 9,
+     "team_name": "Rock33",
+     "ppg": 10.43,
+     "xppg": 11.26,
+     "diff_per_game": -0.83,
+     "gain_week": 3.02,
+     "gain_horizon": 12.59,
+     "loss_week": 1.64,
+     "loss_horizon": 6.51,
+     "fit_week": 1.38,
+     "fit_horizon": 6.08
+    },
+    {
+     "player": {
+      "sleeper_id": "10232",
+      "gsis_id": "00-0038559",
+      "player_name": "Michael Wilson",
+      "position": "WR",
+      "team": "ARI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n"
+     },
+     "roster_id": 9,
+     "team_name": "Rock33",
+     "ppg": 3.7,
+     "xppg": 5.71,
+     "diff_per_game": -2.01,
+     "gain_week": 1.38,
+     "gain_horizon": 7.56,
+     "loss_week": 0,
+     "loss_horizon": 1.48,
+     "fit_week": 1.38,
+     "fit_horizon": 6.08
+    },
+    {
+     "player": {
+      "sleeper_id": "8130",
+      "gsis_id": "00-0037744",
+      "player_name": "Trey McBride",
+      "position": "TE",
+      "team": "ARI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/psasp10nn5pcvkli9kil"
+     },
+     "roster_id": 10,
+     "team_name": "Just One More",
+     "ppg": 12.8,
+     "xppg": 13.04,
+     "diff_per_game": -0.24,
+     "gain_week": 6.41,
+     "gain_horizon": 23.93,
+     "loss_week": 4.98,
+     "loss_horizon": 18.13,
+     "fit_week": 1.43,
+     "fit_horizon": 5.8
+    },
+    {
+     "player": {
+      "sleeper_id": "8137",
+      "gsis_id": "00-0037247",
+      "player_name": "George Pickens",
+      "position": "WR",
+      "team": "DAL",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cbpyykoguf7rsxezqzvk"
+     },
+     "roster_id": 10,
+     "team_name": "Just One More",
+     "ppg": 3.4,
+     "xppg": 7.45,
+     "diff_per_game": -4.05,
+     "gain_week": 3.13,
+     "gain_horizon": 10.13,
+     "loss_week": 1.7,
+     "loss_horizon": 4.33,
+     "fit_week": 1.43,
+     "fit_horizon": 5.8
+    },
+    {
+     "player": {
+      "sleeper_id": "9500",
+      "gsis_id": "00-0038997",
+      "player_name": "Josh Downs",
+      "position": "WR",
+      "team": "IND",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z3wahaxpmc6d5lcxgh60"
+     },
+     "roster_id": 10,
+     "team_name": "Just One More",
+     "ppg": 5.45,
+     "xppg": 5.53,
+     "diff_per_game": -0.08,
+     "gain_week": 1.43,
+     "gain_horizon": 5.8,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 1.43,
+     "fit_horizon": 5.8
+    },
+    {
+     "player": {
+      "sleeper_id": "6801",
+      "gsis_id": "00-0036410",
+      "player_name": "Tee Higgins",
+      "position": "WR",
+      "team": "CIN",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gpwtyv3viwy9q4ewderl"
+     },
+     "roster_id": 9,
+     "team_name": "Rock33",
+     "ppg": 7.7,
+     "xppg": 8.87,
+     "diff_per_game": -1.17,
+     "gain_week": 4.18,
+     "gain_horizon": 11.91,
+     "loss_week": 2.8,
+     "loss_horizon": 6.13,
+     "fit_week": 1.38,
+     "fit_horizon": 5.78
+    },
+    {
+     "player": {
+      "sleeper_id": "4217",
+      "gsis_id": "00-0033288",
+      "player_name": "George Kittle",
+      "position": "TE",
+      "team": "SF",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx"
+     },
+     "roster_id": 12,
+     "team_name": "Madeyes Revenge",
+     "ppg": 7.6,
+     "xppg": 7.93,
+     "diff_per_game": -0.33,
+     "gain_week": 1.31,
+     "gain_horizon": 8.55,
+     "loss_week": 0,
+     "loss_horizon": 3.89,
+     "fit_week": 1.31,
+     "fit_horizon": 4.66
+    },
+    {
+     "player": {
+      "sleeper_id": "5045",
+      "gsis_id": "00-0034348",
+      "player_name": "Courtland Sutton",
+      "position": "WR",
+      "team": "DEN",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kqwmqcrlrwmqcvfuguhs"
+     },
+     "roster_id": 7,
+     "team_name": "Klaby Crew",
+     "ppg": 1.8,
+     "xppg": 4.39,
+     "diff_per_game": -2.59,
+     "gain_week": 1.11,
+     "gain_horizon": 3.73,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 1.11,
+     "fit_horizon": 3.73
+    },
+    {
+     "player": {
+      "sleeper_id": "9484",
+      "gsis_id": "00-0038996",
+      "player_name": "Tucker Kraft",
+      "position": "TE",
+      "team": "GB",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/n6vu44jbq31rydoaadaq"
+     },
+     "roster_id": 9,
+     "team_name": "Rock33",
+     "ppg": 3.53,
+     "xppg": 4.91,
+     "diff_per_game": -1.37,
+     "gain_week": 0.71,
+     "gain_horizon": 2.98,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0.71,
+     "fit_horizon": 2.98
+    },
+    {
+     "player": {
+      "sleeper_id": "12526",
+      "gsis_id": "00-0040124",
+      "player_name": "Tetairoa McMillan",
+      "position": "WR",
+      "team": "CAR",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gilgvjemumd6kpc9eiku"
+     },
+     "roster_id": 11,
+     "team_name": "Hang-Over",
+     "ppg": 7.3,
+     "xppg": 13.44,
+     "diff_per_game": -6.14,
+     "gain_week": 6.14,
+     "gain_horizon": 17.59,
+     "loss_week": 5.65,
+     "loss_horizon": 15.04,
+     "fit_week": 0.49,
+     "fit_horizon": 2.55
+    },
+    {
+     "player": {
+      "sleeper_id": "9754",
+      "gsis_id": "00-0038544",
+      "player_name": "Quentin Johnston",
+      "position": "WR",
+      "team": "LAC",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lyvsrjh4mjb4dqwp6shm"
+     },
+     "roster_id": 10,
+     "team_name": "Just One More",
+     "ppg": 1.55,
+     "xppg": 4.91,
+     "diff_per_game": -3.36,
+     "gain_week": 0.12,
+     "gain_horizon": 1.48,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0.12,
+     "fit_horizon": 1.48
+    },
+    {
+     "player": {
+      "sleeper_id": "11624",
+      "gsis_id": "00-0039894",
+      "player_name": "Xavier Worthy",
+      "position": "WR",
+      "team": "KC",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/u6fmnffwteccoxn3uguq"
+     },
+     "roster_id": 5,
+     "team_name": "Millertime",
+     "ppg": 5.15,
+     "xppg": 8.17,
+     "diff_per_game": -3.02,
+     "gain_week": 0.38,
+     "gain_horizon": 1.41,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0.38,
+     "fit_horizon": 1.41
+    },
+    {
+     "player": {
+      "sleeper_id": "5927",
+      "gsis_id": "00-0035659",
+      "player_name": "Terry McLaurin",
+      "position": "WR",
+      "team": "WAS",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmfl2zruajmkrtcg4zxp"
+     },
+     "roster_id": 4,
+     "team_name": "Bad Mojo",
+     "ppg": 3.2,
+     "xppg": 9.42,
+     "diff_per_game": -6.22,
+     "gain_week": 0.43,
+     "gain_horizon": 0.43,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0.43,
+     "fit_horizon": 0.43
+    },
+    {
+     "player": {
+      "sleeper_id": "5012",
+      "gsis_id": "00-0034753",
+      "player_name": "Mark Andrews",
+      "position": "TE",
+      "team": "BAL",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/u4xzz7tclch0tpzm9hhz"
+     },
+     "roster_id": 4,
+     "team_name": "Bad Mojo",
+     "ppg": 4.9,
+     "xppg": 5.85,
+     "diff_per_game": -0.95,
+     "gain_week": 0.59,
+     "gain_horizon": 2.66,
+     "loss_week": 0.16,
+     "loss_horizon": 2.29,
+     "fit_week": 0.43,
+     "fit_horizon": 0.37
+    },
+    {
+     "player": {
+      "sleeper_id": "12519",
+      "gsis_id": "00-0040735",
+      "player_name": "Luther Burden III",
+      "position": "WR",
+      "team": "CHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/iyuwdz7pbowdkwzq2tg5"
+     },
+     "roster_id": 1,
+     "team_name": "Knight Train",
+     "ppg": 3.35,
+     "xppg": 6.39,
+     "diff_per_game": -3.04,
+     "gain_week": 0.05,
+     "gain_horizon": 0.88,
+     "loss_week": 0,
+     "loss_horizon": 0.55,
+     "fit_week": 0.05,
+     "fit_horizon": 0.33
+    },
+    {
+     "player": {
+      "sleeper_id": "12514",
+      "gsis_id": "00-0040129",
+      "player_name": "Emeka Egbuka",
+      "position": "WR",
+      "team": "TB",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z224kbzs62rjuykc0vha"
+     },
+     "roster_id": 1,
+     "team_name": "Knight Train",
+     "ppg": 6.8,
+     "xppg": 8.21,
+     "diff_per_game": -1.41,
+     "gain_week": 2.6,
+     "gain_horizon": 11.09,
+     "loss_week": 2.55,
+     "loss_horizon": 11,
+     "fit_week": 0.05,
+     "fit_horizon": 0.09
+    },
+    {
+     "player": {
+      "sleeper_id": "6806",
+      "gsis_id": "00-0036158",
+      "player_name": "J.K. Dobbins",
+      "position": "RB",
+      "team": "DEN",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cevotvl3ho5h1mioruyg"
+     },
+     "roster_id": 6,
+     "team_name": "Stick it to the Man",
+     "ppg": 3.6,
+     "xppg": 9.27,
+     "diff_per_game": -5.67,
+     "gain_week": 0,
+     "gain_horizon": 0,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0,
+     "fit_horizon": 0
+    },
+    {
+     "player": {
+      "sleeper_id": "12474",
+      "gsis_id": "00-0040583",
+      "player_name": "Woody Marks",
+      "position": "RB",
+      "team": "HOU",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/y5ntpcenhhhv98uz2fys"
+     },
+     "roster_id": 9,
+     "team_name": "Rock33",
+     "ppg": 3.75,
+     "xppg": 6.87,
+     "diff_per_game": -3.12,
+     "gain_week": 0,
+     "gain_horizon": 0,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0,
+     "fit_horizon": 0
+    },
+    {
+     "player": {
+      "sleeper_id": "11581",
+      "gsis_id": "00-0039811",
+      "player_name": "MarShawn Lloyd",
+      "position": "RB",
+      "team": "GB",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xp8sd4enimuk4zd0aqgu"
+     },
+     "roster_id": 2,
+     "team_name": "Blitzburg",
+     "ppg": 3.7,
+     "xppg": 6.57,
+     "diff_per_game": -2.87,
+     "gain_week": 0,
+     "gain_horizon": 0,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0,
+     "fit_horizon": 0
+    },
+    {
+     "player": {
+      "sleeper_id": "12512",
+      "gsis_id": "00-0040784",
+      "player_name": "Quinshon Judkins",
+      "position": "RB",
+      "team": "CLE",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ojtce2im0wp2ltyel0vc"
+     },
+     "roster_id": 3,
+     "team_name": "Uh, Winning!",
+     "ppg": 4.9,
+     "xppg": 7.75,
+     "diff_per_game": -2.85,
+     "gain_week": 0,
+     "gain_horizon": 0,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0,
+     "fit_horizon": 0
+    },
+    {
+     "player": {
+      "sleeper_id": "7567",
+      "gsis_id": "00-0036919",
+      "player_name": "Kenny Gainwell",
+      "position": "RB",
+      "team": "TB",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/eo62l8ec8e3lzt86ihth"
+     },
+     "roster_id": 9,
+     "team_name": "Rock33",
+     "ppg": 1.65,
+     "xppg": 3.65,
+     "diff_per_game": -2,
+     "gain_week": 0,
+     "gain_horizon": 0,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0,
+     "fit_horizon": 0
+    },
+    {
+     "player": {
+      "sleeper_id": "8136",
+      "gsis_id": "00-0037256",
+      "player_name": "Rachaad White",
+      "position": "RB",
+      "team": "WAS",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wtdhs50gcl2p6vngsnre"
+     },
+     "roster_id": 10,
+     "team_name": "Just One More",
+     "ppg": 5.5,
+     "xppg": 6.79,
+     "diff_per_game": -1.29,
+     "gain_week": 0,
+     "gain_horizon": 0,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0,
+     "fit_horizon": 0
+    },
+    {
+     "player": {
+      "sleeper_id": "7553",
+      "gsis_id": "00-0036970",
+      "player_name": "Kyle Pitts",
+      "position": "TE",
+      "team": "ATL",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xczipzxvytnmvgznhhb4"
+     },
+     "roster_id": 11,
+     "team_name": "Hang-Over",
+     "ppg": 0.67,
+     "xppg": 1.69,
+     "diff_per_game": -1.02,
+     "gain_week": 0,
+     "gain_horizon": 0,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0,
+     "fit_horizon": 0
+    },
+    {
+     "player": {
+      "sleeper_id": "12718",
+      "gsis_id": "00-0040590",
+      "player_name": "Konata Mumpfield",
+      "position": "WR",
+      "team": "LA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cehkowkvb4aujslmppbj"
+     },
+     "roster_id": 1,
+     "team_name": "Knight Train",
+     "ppg": 0.6,
+     "xppg": 1.56,
+     "diff_per_game": -0.96,
+     "gain_week": 0,
+     "gain_horizon": 0,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0,
+     "fit_horizon": 0
+    }
+   ],
+   "sell_high": [
+    {
+     "player": {
+      "sleeper_id": "11586",
+      "gsis_id": "00-0039738",
+      "player_name": "Blake Corum",
+      "position": "RB",
+      "team": "LA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/axzqbqjkrbwfzodwwakq"
+     },
+     "roster_id": 10,
+     "team_name": "Just One More",
+     "ppg": 7.3,
+     "xppg": 5.81,
+     "diff_per_game": 1.49,
+     "gain_week": 0,
+     "gain_horizon": 8.89,
+     "loss_week": 0,
+     "loss_horizon": 0,
+     "fit_week": 0,
+     "fit_horizon": 8.89
+    },
+    {
+     "player": {
+      "sleeper_id": "6813",
+      "gsis_id": "00-0036223",
+      "player_name": "Jonathan Taylor",
+      "position": "RB",
+      "team": "IND",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yw46ky6akdm7h7siofu8"
+     },
+     "roster_id": 2,
+     "team_name": "Blitzburg",
+     "ppg": 23.15,
+     "xppg": 18.63,
+     "diff_per_game": 4.53,
+     "gain_week": 10.51,
+     "gain_horizon": 42.68,
+     "loss_week": 9.45,
+     "loss_horizon": 39.79,
+     "fit_week": 1.06,
+     "fit_horizon": 2.89
+    },
+    {
+     "player": {
+      "sleeper_id": "11635",
+      "gsis_id": "00-0039915",
+      "player_name": "Ladd McConkey",
+      "position": "WR",
+      "team": "LAC",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/q2sk7yforrkiusvruo1o"
+     },
+     "roster_id": 2,
+     "team_name": "Blitzburg",
+     "ppg": 8.85,
+     "xppg": 7.49,
+     "diff_per_game": 1.36,
+     "gain_week": 1.85,
+     "gain_horizon": 4,
+     "loss_week": 0.28,
+     "loss_horizon": 8.67,
+     "fit_week": 1.57,
+     "fit_horizon": -4.67
+    },
+    {
+     "player": {
+      "sleeper_id": "8167",
+      "gsis_id": "00-0038124",
+      "player_name": "Christian Watson",
+      "position": "WR",
+      "team": "GB",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tumeg4d32sirkab2xzu5"
+     },
+     "roster_id": 6,
+     "team_name": "Stick it to the Man",
+     "ppg": 19.47,
+     "xppg": 12.55,
+     "diff_per_game": 6.92,
+     "gain_week": 5.79,
+     "gain_horizon": 25.05,
+     "loss_week": 6.1,
+     "loss_horizon": 38.36,
+     "fit_week": -0.31,
+     "fit_horizon": -13.31
+    }
+   ],
+   "best_buy_by_position": {
+    "WR": {
+     "player": {
+      "sleeper_id": "5846",
+      "gsis_id": "00-0035640",
+      "player_name": "DK Metcalf",
+      "position": "WR",
+      "team": "PIT",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kxql4sjfelubhxawu2zh"
+     },
+     "roster_id": 5,
+     "team_name": "Millertime",
+     "ppg": 3.35,
+     "xppg": 9.42,
+     "diff_per_game": -6.07,
+     "gain_week": 0,
+     "gain_horizon": 9.77,
+     "loss_week": 0,
+     "loss_horizon": 3.17,
+     "fit_week": 0,
+     "fit_horizon": 6.6
+    },
+    "TE": {
+     "player": {
+      "sleeper_id": "8130",
+      "gsis_id": "00-0037744",
+      "player_name": "Trey McBride",
+      "position": "TE",
+      "team": "ARI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/psasp10nn5pcvkli9kil"
+     },
+     "roster_id": 10,
+     "team_name": "Just One More",
+     "ppg": 12.8,
+     "xppg": 13.04,
+     "diff_per_game": -0.24,
+     "gain_week": 6.41,
+     "gain_horizon": 23.93,
+     "loss_week": 4.98,
+     "loss_horizon": 18.13,
+     "fit_week": 1.43,
+     "fit_horizon": 5.8
+    }
+   },
+   "buy_line": "**Buy low: ask Millertime about DK Metcalf (WR).** He scores 6.1 a game below what his usage is worth, adds **+0.0** to your week-4 lineup and costs them **0.0** (fit **+6.6** over weeks 4–7).",
+   "sell_line": "**Sell high: shop Blake Corum (RB) to Just One More.** He scores 1.5 a game above what his usage is worth. Their week-4 lineup gains **+0.0**, yours loses **0.0** (fit **+8.9** over weeks 4–7).",
+   "weeks": "weeks 4–7",
+   "howto": [
+    "**Buy low**: players on other teams scoring *less* than their work is worth (**PPG − xPPG**, points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports.",
+    "**You gain** is how much your best lineup goes up with him (a WR who beats your FLEX counts; a QB who would sit on your bench adds nothing). **They lose** is how much their lineup drops without him, 0 if he sits on their bench. Both are for this week and the next four, in your league's scoring.",
+    "**Fit** is what the new team gains minus what the old team loses. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell.",
+    "These lists look at one player at a time. To see a whole offer, with what you send back and who gets cut, use the Trade Finder."
+   ],
+   "source": "sleeper",
+   "points_source": "priced on request (research.league_season)",
+   "league_id": "mfl:70587",
+   "roster_id": 8,
+   "position": "ALL",
+   "timings_ms": {
+    "total": 0
+   }
+  }
+ },
+ "/api/trades/partners?league=mfl%3A70587&team=8": {
+  "status": 200,
+  "body": {
+   "league_id": "mfl:70587",
+   "source": "sleeper",
+   "roster_id": 8,
+   "want": null,
+   "week": 4,
+   "span": "weeks 4–7",
+   "weeks": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "window": "next4",
+   "window_label": "Next 4",
+   "window_why": "the next four weeks: far enough to matter, near enough to trust",
+   "partners": [
+    {
+     "partner": 12,
+     "partner_team": "Madeyes Revenge",
+     "shape": "1-for-2",
+     "kind": "2-for-1",
+     "is_best": true,
+     "give": [
+      {
+       "sleeper_id": "mfl:0671",
+       "gsis_id": null,
+       "player_name": "Chicago Bears QB",
+       "position": "TMQB",
+       "team": "CHI",
+       "headshot_url": null,
+       "this_week": 18.46,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 8,
+       "unit": true
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "mfl:0662",
+       "gsis_id": null,
+       "player_name": "Kansas City Chiefs QB",
+       "position": "TMQB",
+       "team": "KC",
+       "headshot_url": null,
+       "this_week": 32.16,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 12,
+       "unit": true
+      },
+      {
+       "sleeper_id": "10229",
+       "gsis_id": "00-0039067",
+       "player_name": "Rashee Rice",
+       "position": "WR",
+       "team": "KC",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+       "this_week": 10.24,
+       "cannot_play": null,
+       "market_price": 7,
+       "season_points": 134,
+       "roster_id": 12
+      }
+     ],
+     "you_gain_week": 5.12,
+     "you_gain_horizon": 14.59,
+     "they_gain_week": -5.47,
+     "they_gain_horizon": 14.62,
+     "interest": {
+      "score": 100,
+      "label": "Improves it a lot",
+      "their_gain": 14.62,
+      "you": 14.59,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 0,
+     "price_in": 7,
+     "beyond_alternative": 1.78,
+     "beats_alternative": true,
+     "alternative_words": "+14.6 over weeks 4–7: 1.8 more than your best waiver move (the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot). The trade also takes the open roster spot the claim would use.",
+     "other_objective": null,
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       5.12,
+       -0.46,
+       5.32,
+       4.61
+      ],
+      "theirs": [
+       -5.47,
+       26.28,
+       -4.11,
+       -2.08
+      ]
+     },
+     "rank": 1,
+     "demoted": false
+    },
+    {
+     "partner": 5,
+     "partner_team": "Millertime",
+     "shape": "1-for-2",
+     "kind": "2-for-1",
+     "is_best": true,
+     "give": [
+      {
+       "sleeper_id": "4034",
+       "gsis_id": "00-0033280",
+       "player_name": "Christian McCaffrey",
+       "position": "RB",
+       "team": "SF",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+       "this_week": 15.45,
+       "cannot_play": null,
+       "market_price": 61,
+       "season_points": 186,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "9226",
+       "gsis_id": "00-0039040",
+       "player_name": "De'Von Achane",
+       "position": "RB",
+       "team": "MIA",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xk1xwio0bryfxo1ylweu",
+       "this_week": 0,
+       "cannot_play": "IR",
+       "market_price": 107,
+       "season_points": 231,
+       "roster_id": 5
+      },
+      {
+       "sleeper_id": "11646",
+       "gsis_id": "00-0039491",
+       "player_name": "Jalen Coker",
+       "position": "WR",
+       "team": "CAR",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yynz8rxen6tsvhojggiv",
+       "this_week": 10.42,
+       "cannot_play": null,
+       "market_price": 14,
+       "season_points": 141,
+       "roster_id": 5
+      }
+     ],
+     "you_gain_week": -2.19,
+     "you_gain_horizon": 7.99,
+     "they_gain_week": 5.49,
+     "they_gain_horizon": 6.16,
+     "interest": {
+      "score": 76,
+      "label": "Improves it a lot",
+      "their_gain": 6.16,
+      "you": 7.99,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 61,
+     "price_in": 121,
+     "beyond_alternative": -4.82,
+     "beats_alternative": false,
+     "alternative_words": "+8.0 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points. It brings in more season value above replacement: 121 for 61 — the season beyond these weeks. The trade also takes the open roster spot the claim would use.",
+     "other_objective": {
+      "kind": "season_value",
+      "words": "It brings in more season value above replacement: 121 for 61 — the season beyond these weeks."
+     },
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       -2.19,
+       3.39,
+       -0.9,
+       7.69
+      ],
+      "theirs": [
+       5.49,
+       -3.39,
+       8.2,
+       -4.14
+      ]
+     },
+     "rank": 2,
+     "demoted": true
+    },
+    {
+     "partner": 10,
+     "partner_team": "Just One More",
+     "shape": "1-for-2",
+     "kind": "2-for-1",
+     "is_best": true,
+     "give": [
+      {
+       "sleeper_id": "11586",
+       "gsis_id": "00-0039738",
+       "player_name": "Blake Corum",
+       "position": "RB",
+       "team": "LA",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/axzqbqjkrbwfzodwwakq",
+       "this_week": 9.13,
+       "cannot_play": null,
+       "market_price": 3,
+       "season_points": 127,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "9500",
+       "gsis_id": "00-0038997",
+       "player_name": "Josh Downs",
+       "position": "WR",
+       "team": "IND",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z3wahaxpmc6d5lcxgh60",
+       "this_week": 8.31,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 115,
+       "roster_id": 10
+      },
+      {
+       "sleeper_id": "9754",
+       "gsis_id": "00-0038544",
+       "player_name": "Quentin Johnston",
+       "position": "WR",
+       "team": "LAC",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lyvsrjh4mjb4dqwp6shm",
+       "this_week": 7,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 103,
+       "roster_id": 10
+      }
+     ],
+     "you_gain_week": 1.43,
+     "you_gain_horizon": 6.66,
+     "they_gain_week": 0,
+     "they_gain_horizon": 8.89,
+     "interest": {
+      "score": 87,
+      "label": "Improves it a lot",
+      "their_gain": 8.89,
+      "you": 6.66,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 3,
+     "price_in": 0,
+     "beyond_alternative": -6.15,
+     "beats_alternative": false,
+     "alternative_words": "+6.7 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points. The trade also takes the open roster spot the claim would use.",
+     "other_objective": null,
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       1.43,
+       1.7,
+       1.34,
+       2.19
+      ],
+      "theirs": [
+       0,
+       0,
+       0,
+       8.89
+      ]
+     },
+     "rank": 3,
+     "demoted": true
+    },
+    {
+     "partner": 10,
+     "partner_team": "Just One More",
+     "shape": "1-for-1",
+     "kind": "1-for-1",
+     "is_best": false,
+     "give": [
+      {
+       "sleeper_id": "11586",
+       "gsis_id": "00-0039738",
+       "player_name": "Blake Corum",
+       "position": "RB",
+       "team": "LA",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/axzqbqjkrbwfzodwwakq",
+       "this_week": 9.13,
+       "cannot_play": null,
+       "market_price": 3,
+       "season_points": 127,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "9500",
+       "gsis_id": "00-0038997",
+       "player_name": "Josh Downs",
+       "position": "WR",
+       "team": "IND",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z3wahaxpmc6d5lcxgh60",
+       "this_week": 8.31,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 115,
+       "roster_id": 10
+      }
+     ],
+     "you_gain_week": 1.43,
+     "you_gain_horizon": 5.8,
+     "they_gain_week": 0,
+     "they_gain_horizon": 8.89,
+     "interest": {
+      "score": 87,
+      "label": "Improves it a lot",
+      "their_gain": 8.89,
+      "you": 5.8,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 3,
+     "price_in": 0,
+     "beyond_alternative": -7.01,
+     "beats_alternative": false,
+     "alternative_words": "+5.8 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points.",
+     "other_objective": null,
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       1.43,
+       1.17,
+       1.01,
+       2.19
+      ],
+      "theirs": [
+       0,
+       0,
+       0,
+       8.89
+      ]
+     },
+     "rank": 4,
+     "demoted": true
+    },
+    {
+     "partner": 12,
+     "partner_team": "Madeyes Revenge",
+     "shape": "1-for-1",
+     "kind": "1-for-1",
+     "is_best": false,
+     "give": [
+      {
+       "sleeper_id": "mfl:0682",
+       "gsis_id": null,
+       "player_name": "Houston Texans QB",
+       "position": "TMQB",
+       "team": "HOU",
+       "headshot_url": null,
+       "this_week": 30.4,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 8,
+       "unit": true
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "mfl:0662",
+       "gsis_id": null,
+       "player_name": "Kansas City Chiefs QB",
+       "position": "TMQB",
+       "team": "KC",
+       "headshot_url": null,
+       "this_week": 32.16,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 12,
+       "unit": true
+      }
+     ],
+     "you_gain_week": 1.76,
+     "you_gain_horizon": 5.53,
+     "they_gain_week": -1.76,
+     "they_gain_horizon": 16.66,
+     "interest": {
+      "score": 100,
+      "label": "Improves it a lot",
+      "their_gain": 16.66,
+      "you": 5.53,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 0,
+     "price_in": 0,
+     "beyond_alternative": -7.28,
+     "beats_alternative": false,
+     "alternative_words": "+5.5 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points. It gives more this week: +1.8 against the claim's +1.2.",
+     "other_objective": {
+      "kind": "this_week",
+      "words": "It gives more this week: +1.8 against the claim's +1.2."
+     },
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       1.76,
+       0,
+       2.98,
+       0.79
+      ],
+      "theirs": [
+       -1.76,
+       25.82,
+       -3.79,
+       -3.61
+      ]
+     },
+     "rank": 5,
+     "demoted": true
+    },
+    {
+     "partner": 5,
+     "partner_team": "Millertime",
+     "shape": "1-for-1",
+     "kind": "1-for-1",
+     "is_best": false,
+     "give": [
+      {
+       "sleeper_id": "12490",
+       "gsis_id": "00-0040719",
+       "player_name": "Bhayshul Tuten",
+       "position": "RB",
+       "team": "JAX",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+       "this_week": 9.72,
+       "cannot_play": null,
+       "market_price": 14,
+       "season_points": 138,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "10236",
+       "gsis_id": "00-0038933",
+       "player_name": "Dalton Kincaid",
+       "position": "TE",
+       "team": "BUF",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z7k857flehljboaixj8m",
+       "this_week": 10.03,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 116,
+       "roster_id": 5
+      }
+     ],
+     "you_gain_week": 3.15,
+     "you_gain_horizon": 4.73,
+     "they_gain_week": 0.15,
+     "they_gain_horizon": 4.61,
+     "interest": {
+      "score": 66,
+      "label": "Improves their lineup",
+      "their_gain": 4.61,
+      "you": 4.73,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 14,
+     "price_in": 0,
+     "beyond_alternative": -8.08,
+     "beats_alternative": false,
+     "alternative_words": "+4.7 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points. It gives more this week: +3.1 against the claim's +1.2.",
+     "other_objective": {
+      "kind": "this_week",
+      "words": "It gives more this week: +3.1 against the claim's +1.2."
+     },
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       3.15,
+       0.21,
+       1.37,
+       0
+      ],
+      "theirs": [
+       0.15,
+       0,
+       4.46,
+       0
+      ]
+     },
+     "rank": 6,
+     "demoted": true
+    },
+    {
+     "partner": 7,
+     "partner_team": "Klaby Crew",
+     "shape": "1-for-2",
+     "kind": "2-for-1",
+     "is_best": true,
+     "give": [
+      {
+       "sleeper_id": "8167",
+       "gsis_id": "00-0038124",
+       "player_name": "Christian Watson",
+       "position": "WR",
+       "team": "GB",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tumeg4d32sirkab2xzu5",
+       "this_week": 12.7,
+       "cannot_play": null,
+       "market_price": 52,
+       "season_points": 179,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "7564",
+       "gsis_id": "00-0036900",
+       "player_name": "Ja'Marr Chase",
+       "position": "WR",
+       "team": "CIN",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qya3dtjb5kgofcuj2tuw",
+       "this_week": 11.84,
+       "cannot_play": null,
+       "market_price": 31,
+       "season_points": 158,
+       "roster_id": 7
+      },
+      {
+       "sleeper_id": "8146",
+       "gsis_id": "00-0037740",
+       "player_name": "Garrett Wilson",
+       "position": "WR",
+       "team": "NYJ",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/upxwxmhdd8xluztgqwhe",
+       "this_week": 9.63,
+       "cannot_play": null,
+       "market_price": 21,
+       "season_points": 149,
+       "roster_id": 7
+      }
+     ],
+     "you_gain_week": 1.89,
+     "you_gain_horizon": 4.45,
+     "they_gain_week": 0.86,
+     "they_gain_horizon": 2.41,
+     "interest": {
+      "score": 53,
+      "label": "Improves their lineup",
+      "their_gain": 2.41,
+      "you": 4.45,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 52,
+     "price_in": 52,
+     "beyond_alternative": -8.36,
+     "beats_alternative": false,
+     "alternative_words": "+4.5 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points. It gives more this week: +1.9 against the claim's +1.2. The trade also takes the open roster spot the claim would use.",
+     "other_objective": {
+      "kind": "this_week",
+      "words": "It gives more this week: +1.9 against the claim's +1.2."
+     },
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       1.89,
+       1.86,
+       -2.09,
+       2.79
+      ],
+      "theirs": [
+       0.86,
+       -0.86,
+       2.09,
+       0.32
+      ]
+     },
+     "rank": 7,
+     "demoted": true
+    },
+    {
+     "partner": 9,
+     "partner_team": "Rock33",
+     "shape": "1-for-2",
+     "kind": "2-for-1",
+     "is_best": true,
+     "give": [
+      {
+       "sleeper_id": "mfl:0732",
+       "gsis_id": null,
+       "player_name": "Houston Texans K",
+       "position": "TMPK",
+       "team": "HOU",
+       "headshot_url": null,
+       "this_week": 12.89,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 8,
+       "unit": true
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "6801",
+       "gsis_id": "00-0036410",
+       "player_name": "Tee Higgins",
+       "position": "WR",
+       "team": "CIN",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gpwtyv3viwy9q4ewderl",
+       "this_week": 11.06,
+       "cannot_play": null,
+       "market_price": 22,
+       "season_points": 149,
+       "roster_id": 9
+      },
+      {
+       "sleeper_id": "mfl:0723",
+       "gsis_id": null,
+       "player_name": "Green Bay Packers K",
+       "position": "TMPK",
+       "team": "GB",
+       "headshot_url": null,
+       "this_week": 9.54,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 9,
+       "unit": true
+      }
+     ],
+     "you_gain_week": 0.83,
+     "you_gain_horizon": 3.23,
+     "they_gain_week": 0.55,
+     "they_gain_horizon": 2.55,
+     "interest": {
+      "score": 53,
+      "label": "Improves their lineup",
+      "their_gain": 2.55,
+      "you": 3.23,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 0,
+     "price_in": 22,
+     "beyond_alternative": -9.58,
+     "beats_alternative": false,
+     "alternative_words": "+3.2 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points. It brings in more season value above replacement: 22 for 0 — the season beyond these weeks. The trade also takes the open roster spot the claim would use.",
+     "other_objective": {
+      "kind": "season_value",
+      "words": "It brings in more season value above replacement: 22 for 0 — the season beyond these weeks."
+     },
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       0.83,
+       0.6,
+       -1.03,
+       2.83
+      ],
+      "theirs": [
+       0.55,
+       1.24,
+       1.03,
+       -0.27
+      ]
+     },
+     "rank": 8,
+     "demoted": true
+    },
+    {
+     "partner": 9,
+     "partner_team": "Rock33",
+     "shape": "1-for-1",
+     "kind": "1-for-1",
+     "is_best": false,
+     "give": [
+      {
+       "sleeper_id": "11586",
+       "gsis_id": "00-0039738",
+       "player_name": "Blake Corum",
+       "position": "RB",
+       "team": "LA",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/axzqbqjkrbwfzodwwakq",
+       "this_week": 9.13,
+       "cannot_play": null,
+       "market_price": 3,
+       "season_points": 127,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "9484",
+       "gsis_id": "00-0038996",
+       "player_name": "Tucker Kraft",
+       "position": "TE",
+       "team": "GB",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/n6vu44jbq31rydoaadaq",
+       "this_week": 7.59,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 100,
+       "roster_id": 9
+      }
+     ],
+     "you_gain_week": 0.71,
+     "you_gain_horizon": 2.98,
+     "they_gain_week": 0.27,
+     "they_gain_horizon": 0.29,
+     "interest": {
+      "score": 29,
+      "label": "About even",
+      "their_gain": 0.29,
+      "you": 2.98,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 3,
+     "price_in": 0,
+     "beyond_alternative": -9.83,
+     "beats_alternative": false,
+     "alternative_words": "+3.0 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points.",
+     "other_objective": null,
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       0.71,
+       0,
+       0.3,
+       1.97
+      ],
+      "theirs": [
+       0.27,
+       0.02,
+       0,
+       0
+      ]
+     },
+     "rank": 9,
+     "demoted": true
+    },
+    {
+     "partner": 1,
+     "partner_team": "Knight Train",
+     "shape": "2-for-1",
+     "kind": "2-for-1",
+     "is_best": true,
+     "give": [
+      {
+       "sleeper_id": "mfl:0671",
+       "gsis_id": null,
+       "player_name": "Chicago Bears QB",
+       "position": "TMQB",
+       "team": "CHI",
+       "headshot_url": null,
+       "this_week": 18.46,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 8,
+       "unit": true
+      },
+      {
+       "sleeper_id": "12490",
+       "gsis_id": "00-0040719",
+       "player_name": "Bhayshul Tuten",
+       "position": "RB",
+       "team": "JAX",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+       "this_week": 9.72,
+       "cannot_play": null,
+       "market_price": 14,
+       "season_points": 138,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "mfl:0675",
+       "gsis_id": null,
+       "player_name": "Tampa Bay Buccaneers QB",
+       "position": "TMQB",
+       "team": "TB",
+       "headshot_url": null,
+       "this_week": 26.57,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 1,
+       "unit": true
+      }
+     ],
+     "you_gain_week": 0,
+     "you_gain_horizon": 2.93,
+     "they_gain_week": 9.72,
+     "they_gain_horizon": 7.38,
+     "interest": {
+      "score": 81,
+      "label": "Improves it a lot",
+      "their_gain": 7.38,
+      "you": 2.93,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 14,
+     "price_in": 0,
+     "beyond_alternative": -9.88,
+     "beats_alternative": false,
+     "alternative_words": "+2.9 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points.",
+     "other_objective": null,
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       0,
+       3.15,
+       2.05,
+       -2.27
+      ],
+      "theirs": [
+       9.72,
+       -2.56,
+       -2.05,
+       2.27
+      ]
+     },
+     "rank": 10,
+     "demoted": true
+    },
+    {
+     "partner": 7,
+     "partner_team": "Klaby Crew",
+     "shape": "1-for-1",
+     "kind": "1-for-1",
+     "is_best": false,
+     "give": [
+      {
+       "sleeper_id": "12490",
+       "gsis_id": "00-0040719",
+       "player_name": "Bhayshul Tuten",
+       "position": "RB",
+       "team": "JAX",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+       "this_week": 9.72,
+       "cannot_play": null,
+       "market_price": 14,
+       "season_points": 138,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "2216",
+       "gsis_id": "00-0031408",
+       "player_name": "Mike Evans",
+       "position": "WR",
+       "team": "SF",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zc4ujpmndyxrbiyyjomz",
+       "this_week": 7.56,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 106,
+       "roster_id": 7
+      }
+     ],
+     "you_gain_week": 0.68,
+     "you_gain_horizon": 2.82,
+     "they_gain_week": 0,
+     "they_gain_horizon": 0.17,
+     "interest": {
+      "score": 27,
+      "label": "About even",
+      "their_gain": 0.17,
+      "you": 2.82,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 14,
+     "price_in": 0,
+     "beyond_alternative": -9.99,
+     "beats_alternative": false,
+     "alternative_words": "+2.8 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points.",
+     "other_objective": null,
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       0.68,
+       0.17,
+       0.36,
+       1.61
+      ],
+      "theirs": [
+       0,
+       0,
+       0.17,
+       0
+      ]
+     },
+     "rank": 11,
+     "demoted": true
+    },
+    {
+     "partner": 1,
+     "partner_team": "Knight Train",
+     "shape": "1-for-1",
+     "kind": "1-for-1",
+     "is_best": false,
+     "give": [
+      {
+       "sleeper_id": "11586",
+       "gsis_id": "00-0039738",
+       "player_name": "Blake Corum",
+       "position": "RB",
+       "team": "LA",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/axzqbqjkrbwfzodwwakq",
+       "this_week": 9.13,
+       "cannot_play": null,
+       "market_price": 3,
+       "season_points": 127,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "8126",
+       "gsis_id": "00-0038117",
+       "player_name": "Wan'Dale Robinson",
+       "position": "WR",
+       "team": "TEN",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yzcvyhmilvxedfjfjglc",
+       "this_week": 7.36,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 98,
+       "roster_id": 1
+      }
+     ],
+     "you_gain_week": 0.48,
+     "you_gain_horizon": 1.77,
+     "they_gain_week": 8.7,
+     "they_gain_horizon": 8.33,
+     "interest": {
+      "score": 85,
+      "label": "Improves it a lot",
+      "their_gain": 8.33,
+      "you": 1.77,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 3,
+     "price_in": 0,
+     "beyond_alternative": -11.04,
+     "beats_alternative": false,
+     "alternative_words": "+1.8 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points.",
+     "other_objective": null,
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       0.48,
+       0.2,
+       0.12,
+       0.97
+      ],
+      "theirs": [
+       8.7,
+       0.08,
+       -0.22,
+       -0.23
+      ]
+     },
+     "rank": 12,
+     "demoted": true
+    },
+    {
+     "partner": 11,
+     "partner_team": "Hang-Over",
+     "shape": "1-for-2",
+     "kind": "2-for-1",
+     "is_best": true,
+     "give": [
+      {
+       "sleeper_id": "mfl:0732",
+       "gsis_id": null,
+       "player_name": "Houston Texans K",
+       "position": "TMPK",
+       "team": "HOU",
+       "headshot_url": null,
+       "this_week": 12.89,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 8,
+       "unit": true
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "7525",
+       "gsis_id": "00-0036912",
+       "player_name": "DeVonta Smith",
+       "position": "WR",
+       "team": "PHI",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/k724kq3hyv7jc0y9s03x",
+       "this_week": 0,
+       "cannot_play": "Out",
+       "market_price": 54,
+       "season_points": 182,
+       "roster_id": 11
+      },
+      {
+       "sleeper_id": "mfl:0712",
+       "gsis_id": null,
+       "player_name": "Kansas City Chiefs K",
+       "position": "TMPK",
+       "team": "KC",
+       "headshot_url": null,
+       "this_week": 11.21,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 11,
+       "unit": true
+      }
+     ],
+     "you_gain_week": -1.68,
+     "you_gain_horizon": 1.4,
+     "they_gain_week": 1.68,
+     "they_gain_horizon": 0.14,
+     "interest": {
+      "score": 27,
+      "label": "About even",
+      "their_gain": 0.14,
+      "you": 1.4,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 0,
+     "price_in": 54,
+     "beyond_alternative": -11.41,
+     "beats_alternative": false,
+     "alternative_words": "+1.4 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points. It brings in more season value above replacement: 54 for 0 — the season beyond these weeks. The trade also takes the open roster spot the claim would use.",
+     "other_objective": {
+      "kind": "season_value",
+      "words": "It brings in more season value above replacement: 54 for 0 — the season beyond these weeks."
+     },
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       -1.68,
+       -6.45,
+       5.62,
+       3.91
+      ],
+      "theirs": [
+       1.68,
+       5.93,
+       -5.02,
+       -2.45
+      ]
+     },
+     "rank": 13,
+     "demoted": true
+    },
+    {
+     "partner": 4,
+     "partner_team": "Bad Mojo",
+     "shape": "1-for-1",
+     "kind": "1-for-1",
+     "is_best": false,
+     "give": [
+      {
+       "sleeper_id": "11586",
+       "gsis_id": "00-0039738",
+       "player_name": "Blake Corum",
+       "position": "RB",
+       "team": "LA",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/axzqbqjkrbwfzodwwakq",
+       "this_week": 9.13,
+       "cannot_play": null,
+       "market_price": 3,
+       "season_points": 127,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "5927",
+       "gsis_id": "00-0035659",
+       "player_name": "Terry McLaurin",
+       "position": "WR",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmfl2zruajmkrtcg4zxp",
+       "this_week": 7.31,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 97,
+       "roster_id": 4
+      }
+     ],
+     "you_gain_week": 0.43,
+     "you_gain_horizon": 0.43,
+     "they_gain_week": 0,
+     "they_gain_horizon": 0.03,
+     "interest": {
+      "score": 25,
+      "label": "About even",
+      "their_gain": 0.03,
+      "you": 0.43,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 3,
+     "price_in": 0,
+     "beyond_alternative": -12.38,
+     "beats_alternative": false,
+     "alternative_words": "+0.4 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points.",
+     "other_objective": null,
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       0.43,
+       0,
+       0,
+       0
+      ],
+      "theirs": [
+       0,
+       0.03,
+       0,
+       0
+      ]
+     },
+     "rank": 14,
+     "demoted": true
+    },
+    {
+     "partner": 4,
+     "partner_team": "Bad Mojo",
+     "shape": "1-for-2",
+     "kind": "2-for-1",
+     "is_best": true,
+     "give": [
+      {
+       "sleeper_id": "11635",
+       "gsis_id": "00-0039915",
+       "player_name": "Ladd McConkey",
+       "position": "WR",
+       "team": "LAC",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/q2sk7yforrkiusvruo1o",
+       "this_week": 6.88,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 102,
+       "roster_id": 8
+      }
+     ],
+     "get": [
+      {
+       "sleeper_id": "5927",
+       "gsis_id": "00-0035659",
+       "player_name": "Terry McLaurin",
+       "position": "WR",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmfl2zruajmkrtcg4zxp",
+       "this_week": 7.31,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 97,
+       "roster_id": 4
+      },
+      {
+       "sleeper_id": "5844",
+       "gsis_id": "00-0035229",
+       "player_name": "T.J. Hockenson",
+       "position": "TE",
+       "team": "MIN",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rs8o65x0u0n9xzde0fd6",
+       "this_week": 6.75,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 83,
+       "roster_id": 4
+      }
+     ],
+     "you_gain_week": 0.43,
+     "you_gain_horizon": 0.14,
+     "they_gain_week": 0,
+     "they_gain_horizon": 0.23,
+     "interest": {
+      "score": 28,
+      "label": "About even",
+      "their_gain": 0.23,
+      "you": 0.14,
+      "caption": "their starters over weeks 4–7, by our numbers",
+      "title": "Effect on their starters",
+      "need": null
+     },
+     "price_out": 0,
+     "price_in": 0,
+     "beyond_alternative": -12.67,
+     "beats_alternative": false,
+     "alternative_words": "+0.1 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points. The trade also takes the open roster spot the claim would use.",
+     "other_objective": null,
+     "strip": {
+      "weeks": [
+       4,
+       5,
+       6,
+       7
+      ],
+      "mine": [
+       0.43,
+       -0.16,
+       -0.28,
+       0.15
+      ],
+      "theirs": [
+       0,
+       0,
+       0.23,
+       0
+      ]
+     },
+     "rank": 15,
+     "demoted": true
+    }
+   ],
+   "no_trade_with": [
+    "Blitzburg",
+    "Uh, Winning!",
+    "Stick it to the Man"
+   ],
+   "rejected": [
+    {
+     "partner_team": "Knight Train",
+     "give": [
+      "Bhayshul Tuten"
+     ],
+     "get": [
+      "Wan'Dale Robinson"
+     ],
+     "why": "you give 138 rest-of-season points for 98: 40 more, over 25% of what you give"
+    },
+    {
+     "partner_team": "Bad Mojo",
+     "give": [
+      "Blake Corum"
+     ],
+     "get": [
+      "T.J. Hockenson"
+     ],
+     "why": "you give 127 rest-of-season points for 83: 44 more, over 25% of what you give"
+    },
+    {
+     "partner_team": "Millertime",
+     "give": [
+      "Chicago Bears QB",
+      "Bhayshul Tuten"
+     ],
+     "get": [
+      "Jalen Coker"
+     ],
+     "why": "you give 484 rest-of-season points for 141: 343 more, over 25% of what you give"
+    }
+   ],
+   "rejected_count": 11,
+   "sanity": {
+    "ros_gap_share": 0.25,
+    "market_share": 0.65,
+    "ros_players": 166,
+    "market_players": 0,
+    "market_note": "Sleeper's week-4 projections are not in the database: the market check is not applied"
+   },
+   "words": {
+    "headline": "**Best partner: Madeyes Revenge.** Your Chicago Bears QB for their Kansas City Chiefs QB and [Rashee Rice](/player/00-0039067): you **+5.1** this week and **+14.6** over weeks 4–7, them **-5.5** and **+14.6**.",
+    "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
+    "alternative": "+14.6 over weeks 4–7: 1.8 more than your best waiver move (the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot). The trade also takes the open roster spot the claim would use."
+   },
+   "best_alternative": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "ATL",
+     "gsis_id": null,
+     "player_name": "Atlanta Falcons",
+     "position": "DEF"
+    },
+    "drop": null,
+    "open_spot": true,
+    "gain_week": 1.2,
+    "gain_window": 12.81,
+    "by_week": [
+     1.2,
+     0.8,
+     0.48,
+     10.33
+    ],
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "span": "weeks 4–7",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot"
+   },
+   "alternatives": [
+    {
+     "kind": "stand_pat",
+     "player": null,
+     "drop": null,
+     "open_spot": false,
+     "gain_week": 0,
+     "gain_window": 0,
+     "by_week": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "weeks": [
+      4,
+      5,
+      6,
+      7
+     ],
+     "span": "weeks 4–7",
+     "source": "stand pat",
+     "note": null,
+     "words": "standing pat: your lineup as it is (0)"
+    },
+    {
+     "kind": "waiver",
+     "player": {
+      "sleeper_id": "ATL",
+      "gsis_id": null,
+      "player_name": "Atlanta Falcons",
+      "position": "DEF"
+     },
+     "drop": null,
+     "open_spot": true,
+     "gain_week": 1.2,
+     "gain_window": 12.81,
+     "by_week": [
+      1.2,
+      0.8,
+      0.48,
+      10.33
+     ],
+     "weeks": [
+      4,
+      5,
+      6,
+      7
+     ],
+     "span": "weeks 4–7",
+     "source": "fa_pool fill",
+     "note": null,
+     "words": "the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot"
+    }
+   ],
+   "ordering": {
+    "key": "beyond_alternative",
+    "words": "Ranked by gain beyond your best waiver move over weeks 4–7 (Atlanta Falcons defense, +12.8); trades that do not beat it come last."
+   },
+   "search": {
+    "bar_sets": 146,
+    "candidates": 8467,
+    "evaluated": 144,
+    "seconds": 3.987
+   },
+   "timings_ms": {
+    "total": 237.7
+   }
+  }
+ },
+ "/api/team?league=mfl%3A70587&team=8": {
+  "status": 200,
+  "body": {
+   "league_id": "mfl:70587",
+   "source": "sleeper",
+   "roster_id": 8,
+   "team_name": "Big Mac Attack",
+   "manager_name": null,
+   "week": 4,
+   "value": {
+    "roster_id": 8,
+    "team_name": "Big Mac Attack",
+    "manager_name": null,
+    "week": 4,
+    "horizon_first_week": 4,
+    "horizon_last_week": 7,
+    "horizon_weeks": 4,
+    "week_label": "week 4",
+    "horizon_label": "weeks 4–7",
+    "lineup_value": 115.41,
+    "bench_value": 43.91,
+    "slots_total": 8,
+    "slots_filled": 8,
+    "empty_slots": null,
+    "n_unvalued": 0,
+    "n_locked": 0,
+    "n_questionable": 0,
+    "weakest_slot": "WR+TE3",
+    "weakest_margin": 0.28,
+    "weakest_player_name": "Ladd McConkey",
+    "weakest_gsis_id": "00-0039915",
+    "weakest_position": "WR",
+    "weakest_value": 6.88,
+    "weakest_replacement_name": "Jordan Addison",
+    "weakest_replacement_value": 6.6,
+    "horizon_value": 432.6,
+    "horizon_lineups": 4,
+    "worst_week": 7,
+    "worst_week_value": 96.71
+   },
+   "ranks": {
+    "lineup_value": {
+     "value": 115.41,
+     "league_rank": 5,
+     "n_rosters": 12,
+     "horizon": "week 4",
+     "rank_label": "5/12"
+    },
+    "horizon_value": {
+     "value": 432.6,
+     "league_rank": 6,
+     "n_rosters": 12,
+     "horizon": "weeks 4–7",
+     "rank_label": "6/12"
+    },
+    "bench_value": {
+     "value": 43.91,
+     "league_rank": 7,
+     "n_rosters": 12,
+     "horizon": "week 4",
+     "rank_label": "7/12"
+    }
+   },
+   "league": [
+    {
+     "roster_id": 4,
+     "team_name": "Bad Mojo",
+     "is_me": false,
+     "bench_value": 46.36,
+     "horizon_value": 455.46,
+     "lineup_value": 125.94,
+     "bench_value_rank": 6,
+     "horizon_value_rank": 1,
+     "lineup_value_rank": 1
+    },
+    {
+     "roster_id": 5,
+     "team_name": "Millertime",
+     "is_me": false,
+     "bench_value": 49.21,
+     "horizon_value": 453.9,
+     "lineup_value": 122.65,
+     "bench_value_rank": 5,
+     "horizon_value_rank": 2,
+     "lineup_value_rank": 2
+    },
+    {
+     "roster_id": 9,
+     "team_name": "Rock33",
+     "is_me": false,
+     "bench_value": 53.16,
+     "horizon_value": 447.26,
+     "lineup_value": 118.89,
+     "bench_value_rank": 3,
+     "horizon_value_rank": 3,
+     "lineup_value_rank": 3
+    },
+    {
+     "roster_id": 12,
+     "team_name": "Madeyes Revenge",
+     "is_me": false,
+     "bench_value": 50.15,
+     "horizon_value": 412.45,
+     "lineup_value": 117.46,
+     "bench_value_rank": 4,
+     "horizon_value_rank": 9,
+     "lineup_value_rank": 4
+    },
+    {
+     "roster_id": 8,
+     "team_name": "Big Mac Attack",
+     "is_me": true,
+     "bench_value": 43.91,
+     "horizon_value": 432.6,
+     "lineup_value": 115.41,
+     "bench_value_rank": 7,
+     "horizon_value_rank": 6,
+     "lineup_value_rank": 5
+    },
+    {
+     "roster_id": 11,
+     "team_name": "Hang-Over",
+     "is_me": false,
+     "bench_value": 41.15,
+     "horizon_value": 442.52,
+     "lineup_value": 115.07,
+     "bench_value_rank": 8,
+     "horizon_value_rank": 4,
+     "lineup_value_rank": 6
+    },
+    {
+     "roster_id": 7,
+     "team_name": "Klaby Crew",
+     "is_me": false,
+     "bench_value": 56.26,
+     "horizon_value": 422.67,
+     "lineup_value": 114.23,
+     "bench_value_rank": 1,
+     "horizon_value_rank": 7,
+     "lineup_value_rank": 7
+    },
+    {
+     "roster_id": 10,
+     "team_name": "Just One More",
+     "is_me": false,
+     "bench_value": 35.55,
+     "horizon_value": 437.85,
+     "lineup_value": 113.03,
+     "bench_value_rank": 10,
+     "horizon_value_rank": 5,
+     "lineup_value_rank": 8
+    },
+    {
+     "roster_id": 2,
+     "team_name": "Blitzburg",
+     "is_me": false,
+     "bench_value": 19.96,
+     "horizon_value": 418.16,
+     "lineup_value": 110.75,
+     "bench_value_rank": 12,
+     "horizon_value_rank": 8,
+     "lineup_value_rank": 9
+    },
+    {
+     "roster_id": 3,
+     "team_name": "Uh, Winning!",
+     "is_me": false,
+     "bench_value": 22.09,
+     "horizon_value": 408.96,
+     "lineup_value": 105.78,
+     "bench_value_rank": 11,
+     "horizon_value_rank": 10,
+     "lineup_value_rank": 10
+    },
+    {
+     "roster_id": 6,
+     "team_name": "Stick it to the Man",
+     "is_me": false,
+     "bench_value": 54.15,
+     "horizon_value": 372.02,
+     "lineup_value": 91.68,
+     "bench_value_rank": 2,
+     "horizon_value_rank": 11,
+     "lineup_value_rank": 11
+    },
+    {
+     "roster_id": 1,
+     "team_name": "Knight Train",
+     "is_me": false,
+     "bench_value": 40.8,
+     "horizon_value": 354.61,
+     "lineup_value": 82.94,
+     "bench_value_rank": 9,
+     "horizon_value_rank": 12,
+     "lineup_value_rank": 12
+    }
+   ],
+   "slot_strength": [
+    {
+     "slot_type": "TMQB",
+     "slots": 1,
+     "empty_slots": 0,
+     "top": {
+      "sleeper_id": "mfl:0682",
+      "gsis_id": null,
+      "player_name": "Houston Texans QB",
+      "position": "TMQB",
+      "team": "HOU",
+      "headshot_url": null,
+      "slot": "TMQB",
+      "value": 30.4,
+      "is_locked": false,
+      "unit": true,
+      "short_name": "Texans QB"
+     },
+     "starter_strength": 11.94,
+     "replacement_name": "Chicago Bears QB",
+     "replacement_value": 18.46,
+     "league": {
+      "avg": 9.65,
+      "best": 33.82,
+      "n": 12,
+      "rank": 3
+     },
+     "replacement_short": "Bears QB"
+    },
+    {
+     "slot_type": "RB",
+     "slots": 2,
+     "empty_slots": 0,
+     "top": {
+      "sleeper_id": null,
+      "gsis_id": "00-0036223",
+      "player_name": "Jonathan Taylor",
+      "position": "RB",
+      "team": "IND",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yw46ky6akdm7h7siofu8",
+      "slot": "RB1",
+      "value": 19.17,
+      "is_locked": false
+     },
+     "starter_strength": 9.45,
+     "replacement_name": "Bhayshul Tuten",
+     "replacement_value": 9.72,
+     "league": {
+      "avg": 8.22,
+      "best": 16.8,
+      "n": 12,
+      "rank": 6
+     }
+    },
+    {
+     "slot_type": "WR+TE",
+     "slots": 3,
+     "empty_slots": 0,
+     "top": {
+      "sleeper_id": null,
+      "gsis_id": "00-0038124",
+      "player_name": "Christian Watson",
+      "position": "WR",
+      "team": "GB",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tumeg4d32sirkab2xzu5",
+      "slot": "WR+TE1",
+      "value": 12.7,
+      "is_locked": false
+     },
+     "starter_strength": 6.1,
+     "replacement_name": "Jordan Addison",
+     "replacement_value": 6.6,
+     "league": {
+      "avg": 5.84,
+      "best": 10.91,
+      "n": 12,
+      "rank": 5
+     }
+    },
+    {
+     "slot_type": "TMPK",
+     "slots": 1,
+     "empty_slots": 0,
+     "top": {
+      "sleeper_id": "mfl:0732",
+      "gsis_id": null,
+      "player_name": "Houston Texans K",
+      "position": "TMPK",
+      "team": "HOU",
+      "headshot_url": null,
+      "slot": "TMPK",
+      "value": 12.89,
+      "is_locked": false,
+      "unit": true,
+      "short_name": "Texans K"
+     },
+     "starter_strength": 12.89,
+     "replacement_name": null,
+     "replacement_value": null,
+     "league": {
+      "avg": 10.74,
+      "best": 12.89,
+      "n": 11,
+      "rank": 1
+     }
+    },
+    {
+     "slot_type": "DEF",
+     "slots": 1,
+     "empty_slots": 0,
+     "top": {
+      "sleeper_id": null,
+      "gsis_id": null,
+      "player_name": "Jacksonville Jaguars",
+      "position": "DEF",
+      "team": null,
+      "headshot_url": null,
+      "slot": "DEF",
+      "value": 10.81,
+      "is_locked": false
+     },
+     "starter_strength": 10.81,
+     "replacement_name": null,
+     "replacement_value": null,
+     "league": {
+      "avg": 10.9,
+      "best": 14.77,
+      "n": 11,
+      "rank": 6
+     }
+    }
+   ],
+   "roster": [
+    {
+     "sleeper_id": "mfl:0682",
+     "gsis_id": null,
+     "player_name": "Houston Texans QB",
+     "position": "TMQB",
+     "team": "HOU",
+     "headshot_url": null,
+     "role": "starter",
+     "slot": "TMQB",
+     "slot_type": "TMQB",
+     "bench_rank": null,
+     "value": 30.4,
+     "value_source": "proj_points",
+     "margin": 11.94,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null,
+     "unit": true,
+     "short_name": "Texans QB"
+    },
+    {
+     "sleeper_id": "6813",
+     "gsis_id": "00-0036223",
+     "player_name": "Jonathan Taylor",
+     "position": "RB",
+     "team": "IND",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yw46ky6akdm7h7siofu8",
+     "role": "starter",
+     "slot": "RB1",
+     "slot_type": "RB",
+     "bench_rank": null,
+     "value": 19.17,
+     "value_source": "proj_points",
+     "margin": 9.45,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "4034",
+     "gsis_id": "00-0033280",
+     "player_name": "Christian McCaffrey",
+     "position": "RB",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/st82s2ytyzanatcmkqck",
+     "role": "starter",
+     "slot": "RB2",
+     "slot_type": "RB",
+     "bench_rank": null,
+     "value": 15.45,
+     "value_source": "proj_points",
+     "margin": 5.73,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "8167",
+     "gsis_id": "00-0038124",
+     "player_name": "Christian Watson",
+     "position": "WR",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tumeg4d32sirkab2xzu5",
+     "role": "starter",
+     "slot": "WR+TE1",
+     "slot_type": "WR+TE",
+     "bench_rank": null,
+     "value": 12.7,
+     "value_source": "proj_points",
+     "margin": 6.1,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "11632",
+     "gsis_id": "00-0039337",
+     "player_name": "Malik Nabers",
+     "position": "WR",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w3edoyyuomqlovvp9ixc",
+     "role": "starter",
+     "slot": "WR+TE2",
+     "slot_type": "WR+TE",
+     "bench_rank": null,
+     "value": 7.11,
+     "value_source": "proj_points",
+     "margin": 0.51,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "11635",
+     "gsis_id": "00-0039915",
+     "player_name": "Ladd McConkey",
+     "position": "WR",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/q2sk7yforrkiusvruo1o",
+     "role": "starter",
+     "slot": "WR+TE3",
+     "slot_type": "WR+TE",
+     "bench_rank": null,
+     "value": 6.88,
+     "value_source": "proj_points",
+     "margin": 0.28,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "mfl:0732",
+     "gsis_id": null,
+     "player_name": "Houston Texans K",
+     "position": "TMPK",
+     "team": "HOU",
+     "headshot_url": null,
+     "role": "starter",
+     "slot": "TMPK",
+     "slot_type": "TMPK",
+     "bench_rank": null,
+     "value": 12.89,
+     "value_source": "proj_points",
+     "margin": 12.89,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null,
+     "unit": true,
+     "short_name": "Texans K"
+    },
+    {
+     "sleeper_id": "JAX",
+     "gsis_id": null,
+     "player_name": "Jacksonville Jaguars",
+     "position": "DEF",
+     "team": "JAX",
+     "headshot_url": null,
+     "role": "starter",
+     "slot": "DEF",
+     "slot_type": "DEF",
+     "bench_rank": null,
+     "value": 10.81,
+     "value_source": "proj_points",
+     "margin": 10.81,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "mfl:0671",
+     "gsis_id": null,
+     "player_name": "Chicago Bears QB",
+     "position": "TMQB",
+     "team": "CHI",
+     "headshot_url": null,
+     "role": "bench",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": 1,
+     "value": 18.46,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null,
+     "unit": true,
+     "short_name": "Bears QB"
+    },
+    {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "role": "bench",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": 2,
+     "value": 9.72,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "11586",
+     "gsis_id": "00-0039738",
+     "player_name": "Blake Corum",
+     "position": "RB",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/axzqbqjkrbwfzodwwakq",
+     "role": "bench",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": 3,
+     "value": 9.13,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "9756",
+     "gsis_id": "00-0038994",
+     "player_name": "Jordan Addison",
+     "position": "WR",
+     "team": "MIN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mi4lzk9gvjrvo6rwdf1e",
+     "role": "bench",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": 4,
+     "value": 6.6,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "5859",
+     "gsis_id": "00-0035676",
+     "player_name": "A.J. Brown",
+     "position": "WR",
+     "team": "NE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qfhvjyssf0lwsh0kienp",
+     "role": "unplayable",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": null,
+     "value": 7.37,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": "NFL injured reserve",
+     "acquired": null,
+     "acquired_how": null
+    }
+   ],
+   "weekly": [
+    {
+     "week": 4,
+     "lineup_value": 115.41,
+     "bench_value": 43.91,
+     "league": {
+      "median": 114.65,
+      "best": 125.94,
+      "n": 12,
+      "rank": 5
+     }
+    },
+    {
+     "week": 5,
+     "lineup_value": 112.54,
+     "bench_value": 51.87,
+     "league": {
+      "median": 107.99,
+      "best": 118.23,
+      "n": 12,
+      "rank": 5
+     }
+    },
+    {
+     "week": 6,
+     "lineup_value": 107.94,
+     "bench_value": 43.68,
+     "league": {
+      "median": 102.46,
+      "best": 115.71,
+      "n": 12,
+      "rank": 3
+     }
+    },
+    {
+     "week": 7,
+     "lineup_value": 96.71,
+     "bench_value": 33.62,
+     "league": {
+      "median": 105.09,
+      "best": 115.5,
+      "n": 12,
+      "rank": 9
+     }
+    }
+   ],
+   "season": {
+    "wins": 2,
+    "losses": 2,
+    "standing": 8
+   },
+   "keeper": null,
+   "words": {
+    "lineup": [
+     "**Week 4: your best lineup projects 115.4** — 5th of 12 in the league (week 4).",
+     "Your closest call: **WR+TE3, Ladd McConkey over Jordan Addison by 0.28**."
+    ],
+    "horizon": [
+     "**Weeks 4–7: 432.6 projected** — 6th of 12 in the league (weeks 4–7).",
+     "Toughest week: week 7 (96.7).",
+     "**Depth: your bench alone would field 43.9** in week 4 — 7th of 12 in the league (week 4)."
+    ],
+    "source": "quoted from app/pages/1_Team_Hub.py (the first two cards)"
+   },
+   "keeper_why": "how each player joined the roster needs the league's history in the database (house leagues)",
+   "on_demand": {
+    "cost": "every roster solved for 4 weeks: 12 x 4 = 48 lineups (the ranks need the whole league)",
+    "timings_ms": {
+     "sleeper": 13.3,
+     "price": 2.3,
+     "solve": 956.1,
+     "total": 971.8
+    }
+   },
+   "roster_context": {
+    "league_id": "mfl:70587",
+    "roster_id": 8,
+    "week": 4,
+    "lineup_value": 115.41,
+    "changed": false,
+    "changes": [],
+    "checked_at": "2026-10-03T22:47:48.587652Z",
+    "as_of_build": "2026-10-03T22:47:49.355759Z"
+   },
+   "timings_ms": {
+    "data": 22.6,
+    "total": 374
+   }
+  }
+ },
+ "/api/team?league=mfl%3A70587&team=12": {
+  "status": 200,
+  "body": {
+   "league_id": "mfl:70587",
+   "source": "sleeper",
+   "roster_id": 12,
+   "team_name": "Madeyes Revenge",
+   "manager_name": null,
+   "week": 4,
+   "value": {
+    "roster_id": 12,
+    "team_name": "Madeyes Revenge",
+    "manager_name": null,
+    "week": 4,
+    "horizon_first_week": 4,
+    "horizon_last_week": 7,
+    "horizon_weeks": 4,
+    "week_label": "week 4",
+    "horizon_label": "weeks 4–7",
+    "lineup_value": 117.46,
+    "bench_value": 50.15,
+    "slots_total": 8,
+    "slots_filled": 8,
+    "empty_slots": null,
+    "n_unvalued": 0,
+    "n_locked": 0,
+    "n_questionable": 0,
+    "weakest_slot": "WR+TE3",
+    "weakest_margin": 0.08,
+    "weakest_player_name": "Tre Tucker",
+    "weakest_gsis_id": "00-0038563",
+    "weakest_position": "WR",
+    "weakest_value": 8.27,
+    "weakest_replacement_name": "George Kittle",
+    "weakest_replacement_value": 8.19,
+    "horizon_value": 412.45,
+    "horizon_lineups": 4,
+    "worst_week": 5,
+    "worst_week_value": 81.01
+   },
+   "ranks": {
+    "lineup_value": {
+     "value": 117.46,
+     "league_rank": 4,
+     "n_rosters": 12,
+     "horizon": "week 4",
+     "rank_label": "4/12"
+    },
+    "horizon_value": {
+     "value": 412.45,
+     "league_rank": 9,
+     "n_rosters": 12,
+     "horizon": "weeks 4–7",
+     "rank_label": "9/12"
+    },
+    "bench_value": {
+     "value": 50.15,
+     "league_rank": 4,
+     "n_rosters": 12,
+     "horizon": "week 4",
+     "rank_label": "4/12"
+    }
+   },
+   "league": [
+    {
+     "roster_id": 4,
+     "team_name": "Bad Mojo",
+     "is_me": false,
+     "bench_value": 46.36,
+     "horizon_value": 455.46,
+     "lineup_value": 125.94,
+     "bench_value_rank": 6,
+     "horizon_value_rank": 1,
+     "lineup_value_rank": 1
+    },
+    {
+     "roster_id": 5,
+     "team_name": "Millertime",
+     "is_me": false,
+     "bench_value": 49.21,
+     "horizon_value": 453.9,
+     "lineup_value": 122.65,
+     "bench_value_rank": 5,
+     "horizon_value_rank": 2,
+     "lineup_value_rank": 2
+    },
+    {
+     "roster_id": 9,
+     "team_name": "Rock33",
+     "is_me": false,
+     "bench_value": 53.16,
+     "horizon_value": 447.26,
+     "lineup_value": 118.89,
+     "bench_value_rank": 3,
+     "horizon_value_rank": 3,
+     "lineup_value_rank": 3
+    },
+    {
+     "roster_id": 12,
+     "team_name": "Madeyes Revenge",
+     "is_me": true,
+     "bench_value": 50.15,
+     "horizon_value": 412.45,
+     "lineup_value": 117.46,
+     "bench_value_rank": 4,
+     "horizon_value_rank": 9,
+     "lineup_value_rank": 4
+    },
+    {
+     "roster_id": 8,
+     "team_name": "Big Mac Attack",
+     "is_me": false,
+     "bench_value": 43.91,
+     "horizon_value": 432.6,
+     "lineup_value": 115.41,
+     "bench_value_rank": 7,
+     "horizon_value_rank": 6,
+     "lineup_value_rank": 5
+    },
+    {
+     "roster_id": 11,
+     "team_name": "Hang-Over",
+     "is_me": false,
+     "bench_value": 41.15,
+     "horizon_value": 442.52,
+     "lineup_value": 115.07,
+     "bench_value_rank": 8,
+     "horizon_value_rank": 4,
+     "lineup_value_rank": 6
+    },
+    {
+     "roster_id": 7,
+     "team_name": "Klaby Crew",
+     "is_me": false,
+     "bench_value": 56.26,
+     "horizon_value": 422.67,
+     "lineup_value": 114.23,
+     "bench_value_rank": 1,
+     "horizon_value_rank": 7,
+     "lineup_value_rank": 7
+    },
+    {
+     "roster_id": 10,
+     "team_name": "Just One More",
+     "is_me": false,
+     "bench_value": 35.55,
+     "horizon_value": 437.85,
+     "lineup_value": 113.03,
+     "bench_value_rank": 10,
+     "horizon_value_rank": 5,
+     "lineup_value_rank": 8
+    },
+    {
+     "roster_id": 2,
+     "team_name": "Blitzburg",
+     "is_me": false,
+     "bench_value": 19.96,
+     "horizon_value": 418.16,
+     "lineup_value": 110.75,
+     "bench_value_rank": 12,
+     "horizon_value_rank": 8,
+     "lineup_value_rank": 9
+    },
+    {
+     "roster_id": 3,
+     "team_name": "Uh, Winning!",
+     "is_me": false,
+     "bench_value": 22.09,
+     "horizon_value": 408.96,
+     "lineup_value": 105.78,
+     "bench_value_rank": 11,
+     "horizon_value_rank": 10,
+     "lineup_value_rank": 10
+    },
+    {
+     "roster_id": 6,
+     "team_name": "Stick it to the Man",
+     "is_me": false,
+     "bench_value": 54.15,
+     "horizon_value": 372.02,
+     "lineup_value": 91.68,
+     "bench_value_rank": 2,
+     "horizon_value_rank": 11,
+     "lineup_value_rank": 11
+    },
+    {
+     "roster_id": 1,
+     "team_name": "Knight Train",
+     "is_me": false,
+     "bench_value": 40.8,
+     "horizon_value": 354.61,
+     "lineup_value": 82.94,
+     "bench_value_rank": 9,
+     "horizon_value_rank": 12,
+     "lineup_value_rank": 12
+    }
+   ],
+   "slot_strength": [
+    {
+     "slot_type": "TMQB",
+     "slots": 1,
+     "empty_slots": 0,
+     "top": {
+      "sleeper_id": "mfl:0662",
+      "gsis_id": null,
+      "player_name": "Kansas City Chiefs QB",
+      "position": "TMQB",
+      "team": "KC",
+      "headshot_url": null,
+      "slot": "TMQB",
+      "value": 32.16,
+      "is_locked": false,
+      "unit": true,
+      "short_name": "Chiefs QB"
+     },
+     "starter_strength": 3.42,
+     "replacement_name": "Carolina Panthers QB",
+     "replacement_value": 28.74,
+     "league": {
+      "avg": 9.65,
+      "best": 33.82,
+      "n": 12,
+      "rank": 7
+     },
+     "replacement_short": "Panthers QB"
+    },
+    {
+     "slot_type": "RB",
+     "slots": 2,
+     "empty_slots": 0,
+     "top": {
+      "sleeper_id": null,
+      "gsis_id": "00-0039139",
+      "player_name": "Jahmyr Gibbs",
+      "position": "RB",
+      "team": "DET",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+      "slot": "RB1",
+      "value": 23.86,
+      "is_locked": false
+     },
+     "starter_strength": 16.8,
+     "replacement_name": "RJ Harvey",
+     "replacement_value": 7.06,
+     "league": {
+      "avg": 8.22,
+      "best": 16.8,
+      "n": 12,
+      "rank": 1
+     }
+    },
+    {
+     "slot_type": "WR+TE",
+     "slots": 3,
+     "empty_slots": 0,
+     "top": {
+      "sleeper_id": null,
+      "gsis_id": "00-0030506",
+      "player_name": "Travis Kelce",
+      "position": "TE",
+      "team": "KC",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+      "slot": "WR+TE1",
+      "value": 10.41,
+      "is_locked": false
+     },
+     "starter_strength": 2.22,
+     "replacement_name": "George Kittle",
+     "replacement_value": 8.19,
+     "league": {
+      "avg": 5.84,
+      "best": 10.91,
+      "n": 12,
+      "rank": 12
+     }
+    },
+    {
+     "slot_type": "TMPK",
+     "slots": 1,
+     "empty_slots": 0,
+     "top": {
+      "sleeper_id": "mfl:0731",
+      "gsis_id": null,
+      "player_name": "Baltimore Ravens K",
+      "position": "TMPK",
+      "team": "BAL",
+      "headshot_url": null,
+      "slot": "TMPK",
+      "value": 9.78,
+      "is_locked": false,
+      "unit": true,
+      "short_name": "Ravens K"
+     },
+     "starter_strength": 9.78,
+     "replacement_name": null,
+     "replacement_value": null,
+     "league": {
+      "avg": 10.74,
+      "best": 12.89,
+      "n": 11,
+      "rank": 10
+     }
+    },
+    {
+     "slot_type": "DEF",
+     "slots": 1,
+     "empty_slots": 0,
+     "top": {
+      "sleeper_id": null,
+      "gsis_id": null,
+      "player_name": "Philadelphia Eagles",
+      "position": "DEF",
+      "team": null,
+      "headshot_url": null,
+      "slot": "DEF",
+      "value": 7.77,
+      "is_locked": false
+     },
+     "starter_strength": 7.77,
+     "replacement_name": null,
+     "replacement_value": null,
+     "league": {
+      "avg": 10.9,
+      "best": 14.77,
+      "n": 11,
+      "rank": 11
+     }
+    }
+   ],
+   "roster": [
+    {
+     "sleeper_id": "mfl:0662",
+     "gsis_id": null,
+     "player_name": "Kansas City Chiefs QB",
+     "position": "TMQB",
+     "team": "KC",
+     "headshot_url": null,
+     "role": "starter",
+     "slot": "TMQB",
+     "slot_type": "TMQB",
+     "bench_rank": null,
+     "value": 32.16,
+     "value_source": "proj_points",
+     "margin": 3.42,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null,
+     "unit": true,
+     "short_name": "Chiefs QB"
+    },
+    {
+     "sleeper_id": "9221",
+     "gsis_id": "00-0039139",
+     "player_name": "Jahmyr Gibbs",
+     "position": "RB",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+     "role": "starter",
+     "slot": "RB1",
+     "slot_type": "RB",
+     "bench_rank": null,
+     "value": 23.86,
+     "value_source": "proj_points",
+     "margin": 16.8,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "6790",
+     "gsis_id": "00-0036275",
+     "player_name": "D'Andre Swift",
+     "position": "RB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/owpmwzoilitcodc6cmxo",
+     "role": "starter",
+     "slot": "RB2",
+     "slot_type": "RB",
+     "bench_rank": null,
+     "value": 14.97,
+     "value_source": "proj_points",
+     "margin": 7.91,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "1466",
+     "gsis_id": "00-0030506",
+     "player_name": "Travis Kelce",
+     "position": "TE",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+     "role": "starter",
+     "slot": "WR+TE1",
+     "slot_type": "WR+TE",
+     "bench_rank": null,
+     "value": 10.41,
+     "value_source": "proj_points",
+     "margin": 2.22,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "10229",
+     "gsis_id": "00-0039067",
+     "player_name": "Rashee Rice",
+     "position": "WR",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+     "role": "starter",
+     "slot": "WR+TE2",
+     "slot_type": "WR+TE",
+     "bench_rank": null,
+     "value": 10.24,
+     "value_source": "proj_points",
+     "margin": 2.05,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "10213",
+     "gsis_id": "00-0038563",
+     "player_name": "Tre Tucker",
+     "position": "WR",
+     "team": "LV",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hazzk3hrcequzosdgzgv",
+     "role": "starter",
+     "slot": "WR+TE3",
+     "slot_type": "WR+TE",
+     "bench_rank": null,
+     "value": 8.27,
+     "value_source": "proj_points",
+     "margin": 0.08,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "mfl:0731",
+     "gsis_id": null,
+     "player_name": "Baltimore Ravens K",
+     "position": "TMPK",
+     "team": "BAL",
+     "headshot_url": null,
+     "role": "starter",
+     "slot": "TMPK",
+     "slot_type": "TMPK",
+     "bench_rank": null,
+     "value": 9.78,
+     "value_source": "proj_points",
+     "margin": 9.78,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null,
+     "unit": true,
+     "short_name": "Ravens K"
+    },
+    {
+     "sleeper_id": "PHI",
+     "gsis_id": null,
+     "player_name": "Philadelphia Eagles",
+     "position": "DEF",
+     "team": "PHI",
+     "headshot_url": null,
+     "role": "starter",
+     "slot": "DEF",
+     "slot_type": "DEF",
+     "bench_rank": null,
+     "value": 7.77,
+     "value_source": "proj_points",
+     "margin": 7.77,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "mfl:0677",
+     "gsis_id": null,
+     "player_name": "Carolina Panthers QB",
+     "position": "TMQB",
+     "team": "CAR",
+     "headshot_url": null,
+     "role": "bench",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": 1,
+     "value": 28.74,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null,
+     "unit": true,
+     "short_name": "Panthers QB"
+    },
+    {
+     "sleeper_id": "4217",
+     "gsis_id": "00-0033288",
+     "player_name": "George Kittle",
+     "position": "TE",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
+     "role": "bench",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": 2,
+     "value": 8.19,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "12489",
+     "gsis_id": "00-0040730",
+     "player_name": "RJ Harvey",
+     "position": "RB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/szxmro5enrxlscvv67xg",
+     "role": "bench",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": 3,
+     "value": 7.06,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "8131",
+     "gsis_id": "00-0037838",
+     "player_name": "Isaiah Likely",
+     "position": "TE",
+     "team": "NYG",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+     "role": "bench",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": 4,
+     "value": 6.16,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": null,
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "7021",
+     "gsis_id": "00-0036139",
+     "player_name": "Rico Dowdle",
+     "position": "RB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mx2bxccuzmdvzbksypws",
+     "role": "unplayable",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": null,
+     "value": 7.9,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": "game started (bench)",
+     "acquired": null,
+     "acquired_how": null
+    },
+    {
+     "sleeper_id": "13274",
+     "gsis_id": "00-0041489",
+     "player_name": "Germie Bernard",
+     "position": "WR",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rsbtypbsvxux94vokb5q",
+     "role": "unplayable",
+     "slot": null,
+     "slot_type": null,
+     "bench_rank": null,
+     "value": 6.55,
+     "value_source": "proj_points",
+     "margin": null,
+     "is_locked": false,
+     "report_status": null,
+     "reason": "game started (bench)",
+     "acquired": null,
+     "acquired_how": null
+    }
+   ],
+   "weekly": [
+    {
+     "week": 4,
+     "lineup_value": 117.46,
+     "bench_value": 50.15,
+     "league": {
+      "median": 114.65,
+      "best": 125.94,
+      "n": 12,
+      "rank": 4
+     }
+    },
+    {
+     "week": 5,
+     "lineup_value": 81.01,
+     "bench_value": 22.5,
+     "league": {
+      "median": 107.99,
+      "best": 118.23,
+      "n": 12,
+      "rank": 12
+     }
+    },
+    {
+     "week": 6,
+     "lineup_value": 101.22,
+     "bench_value": 50.52,
+     "league": {
+      "median": 102.46,
+      "best": 115.71,
+      "n": 12,
+      "rank": 8
+     }
+    },
+    {
+     "week": 7,
+     "lineup_value": 112.76,
+     "bench_value": 59.13,
+     "league": {
+      "median": 105.09,
+      "best": 115.5,
+      "n": 12,
+      "rank": 3
+     }
+    }
+   ],
+   "season": {
+    "wins": 4,
+    "losses": 0,
+    "standing": 1
+   },
+   "keeper": null,
+   "words": {
+    "lineup": [
+     "**Week 4: your best lineup projects 117.5** — 4th of 12 in the league (week 4).",
+     "Your closest call: **WR+TE3, Tre Tucker over George Kittle by 0.08**."
+    ],
+    "horizon": [
+     "**Weeks 4–7: 412.4 projected** — 9th of 12 in the league (weeks 4–7).",
+     "Toughest week: week 5 (81.0).",
+     "**Depth: your bench alone would field 50.1** in week 4 — 4th of 12 in the league (week 4)."
+    ],
+    "source": "quoted from app/pages/1_Team_Hub.py (the first two cards)"
+   },
+   "keeper_why": "how each player joined the roster needs the league's history in the database (house leagues)",
+   "on_demand": {
+    "cost": "every roster solved for 4 weeks: 12 x 4 = 48 lineups (the ranks need the whole league)",
+    "timings_ms": {
+     "sleeper": 13.3,
+     "price": 2.3,
+     "solve": 956.1,
+     "total": 971.8
+    }
+   },
+   "roster_context": {
+    "league_id": "mfl:70587",
+    "roster_id": 12,
+    "week": 4,
+    "lineup_value": 117.46,
+    "changed": false,
+    "changes": [],
+    "checked_at": "2026-10-03T22:47:48.587652Z",
+    "as_of_build": "2026-10-03T22:47:49.572164Z"
+   },
+   "timings_ms": {
+    "data": 12.6,
+    "total": 356.8
+   }
+  }
+ },
+ "/api/trades/evaluate {\"league\":\"mfl:70587\",\"team\":8,\"partner\":12,\"give\":[\"mfl:0682\"],\"get\":[\"10229\",\"mfl:0677\"]}": {
+  "status": 200,
+  "body": {
+   "league_id": "mfl:70587",
+   "source": "sleeper",
+   "roster_id": 8,
+   "partner": 12,
+   "partner_team": "Madeyes Revenge",
+   "week": 4,
+   "weeks": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "span": "weeks 4–7",
+   "window": "next4",
+   "window_label": "Next 4",
+   "window_why": "the next four weeks: far enough to matter, near enough to trust",
+   "give": [
+    {
+     "sleeper_id": "mfl:0682",
+     "gsis_id": null,
+     "player_name": "Houston Texans QB",
+     "position": "TMQB",
+     "team": "HOU",
+     "headshot_url": null,
+     "this_week": 30.4,
+     "cannot_play": null,
+     "market_price": null,
+     "season_points": null,
+     "roster_id": 8,
+     "unit": true
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "10229",
+     "gsis_id": "00-0039067",
+     "player_name": "Rashee Rice",
+     "position": "WR",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+     "this_week": 10.24,
+     "cannot_play": null,
+     "market_price": 7,
+     "season_points": 134,
+     "roster_id": 12
+    },
+    {
+     "sleeper_id": "mfl:0677",
+     "gsis_id": null,
+     "player_name": "Carolina Panthers QB",
+     "position": "TMQB",
+     "team": "CAR",
+     "headshot_url": null,
+     "this_week": 28.74,
+     "cannot_play": null,
+     "market_price": null,
+     "season_points": null,
+     "roster_id": 12,
+     "unit": true
+    }
+   ],
+   "before": {
+    "mine": {
+     "this_week": 115.41,
+     "horizon": 432.6,
+     "bench": 43.91,
+     "by_week": [
+      115.41,
+      112.54,
+      107.94,
+      96.71
+     ]
+    },
+    "theirs": {
+     "this_week": 117.46,
+     "horizon": 412.45,
+     "bench": 50.15,
+     "by_week": [
+      117.46,
+      81.01,
+      101.22,
+      112.76
+     ]
+    }
+   },
+   "after": {
+    "mine": {
+     "this_week": 117.11,
+     "horizon": 440.46,
+     "bench": 50.79,
+     "by_week": [
+      117.11,
+      112.54,
+      110.28,
+      100.53
+     ]
+    },
+    "theirs": {
+     "this_week": 115.41,
+     "horizon": 433.8,
+     "bench": 43.62,
+     "by_week": [
+      115.41,
+      106.83,
+      100.09,
+      111.47
+     ]
+    }
+   },
+   "fit": {
+    "this_week": {
+     "mine": 1.7,
+     "theirs": -2.05
+    },
+    "window": {
+     "mine": 7.86,
+     "theirs": 21.35
+    },
+    "next_4": {
+     "mine": 7.86,
+     "theirs": 21.35
+    },
+    "words": "**Improvement to your starting lineup** (best lineup each week): you **+1.7** this week and **+7.9** over weeks 4–7; them **-2.0** and **+21.4**."
+   },
+   "interest": {
+    "score": 100,
+    "label": "Improves it a lot",
+    "their_gain": 21.35,
+    "you": 7.86,
+    "caption": "their starters over weeks 4–7, by our numbers",
+    "title": "Effect on their starters",
+    "need": null
+   },
+   "sanity": null,
+   "market": {
+    "give": 0,
+    "get": 7,
+    "season_points_give": 0,
+    "season_points_get": 134,
+    "unknown": [
+     "mfl:0682",
+     "mfl:0677"
+    ],
+    "replacement": {
+     "DEF": {
+      "season_points": 160,
+      "player_name": "Atlanta Falcons"
+     },
+     "RB": {
+      "season_points": 124,
+      "player_name": "Jacory Croskey-Merritt"
+     },
+     "TE": {
+      "season_points": 122,
+      "player_name": "Dalton Schultz"
+     },
+     "WR": {
+      "season_points": 127,
+      "player_name": "Devaughn Vele"
+     }
+    },
+    "words": "**Projected value above available replacements** (season points above the best free agent at the position): you give **0**, you get **7**: about even. 2 players in it have no projection yet and are not counted.",
+    "players": [
+     {
+      "sleeper_id": "mfl:0682",
+      "gsis_id": null,
+      "player_name": "Houston Texans QB",
+      "position": "TMQB",
+      "team": "HOU",
+      "headshot_url": null,
+      "this_week": 30.4,
+      "cannot_play": null,
+      "market_price": null,
+      "season_points": null,
+      "roster_id": 8,
+      "unit": true,
+      "goes_to": "Madeyes Revenge"
+     },
+     {
+      "sleeper_id": "10229",
+      "gsis_id": "00-0039067",
+      "player_name": "Rashee Rice",
+      "position": "WR",
+      "team": "KC",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+      "this_week": 10.24,
+      "cannot_play": null,
+      "market_price": 7,
+      "season_points": 134,
+      "roster_id": 12,
+      "goes_to": "You"
+     },
+     {
+      "sleeper_id": "mfl:0677",
+      "gsis_id": null,
+      "player_name": "Carolina Panthers QB",
+      "position": "TMQB",
+      "team": "CAR",
+      "headshot_url": null,
+      "this_week": 28.74,
+      "cannot_play": null,
+      "market_price": null,
+      "season_points": null,
+      "roster_id": 12,
+      "unit": true,
+      "goes_to": "You"
+     }
+    ]
+   },
+   "verdict": "Helps your lineup +1.7 this week (+7.9 over weeks 4–7), them +21.4 over weeks 4–7 (-2.0 this week); about even by season value: helps both lineups.",
+   "headline": "**You give Houston Texans QB; you get [Rashee Rice](/player/00-0039067) and Carolina Panthers QB.** Helps your lineup +1.7 this week (+7.9 over weeks 4–7), them +21.4 over weeks 4–7 (-2.0 this week); about even by season value: helps both lineups.",
+   "ros": {
+    "give": 355,
+    "get": 448,
+    "window": "weeks 4–18",
+    "words": "Rest-of-season projected points (weeks 4–18), all positions added up — not a fairness test: you give 355, you get 448.",
+    "label": "Rest-of-season projected points",
+    "fairness": false
+   },
+   "ranks": {
+    "lineup_value": {
+     "mine": [
+      6,
+      5
+     ],
+     "theirs": [
+      5,
+      6
+     ],
+     "n": 12
+    },
+    "horizon_value": {
+     "mine": [
+      6,
+      5
+     ],
+     "theirs": [
+      10,
+      7
+     ],
+     "n": 12
+    },
+    "bench_value": {
+     "mine": [
+      10,
+      6
+     ],
+     "theirs": [
+      7,
+      10
+     ],
+     "n": 12
+    },
+    "words": "League rank, week 4: you 6th → **5th** of 12, Madeyes Revenge 5th → 6th; weeks 4–7: you 6th → **5th** of 12, Madeyes Revenge 10th → 7th; depth: you 10th → **6th** of 12, Madeyes Revenge 7th → 10th."
+   },
+   "size_words": "Roster size: they open a spot: the best free agent for it is New Orleans Saints K (TMPK, +11.5 over weeks 4–7).",
+   "sides": {
+    "mine": {
+     "roster_id": 8,
+     "team_name": "Big Mac Attack",
+     "gives": [
+      {
+       "sleeper_id": "mfl:0682",
+       "gsis_id": null,
+       "player_name": "Houston Texans QB",
+       "position": "TMQB",
+       "team": "HOU",
+       "headshot_url": null,
+       "this_week": 30.4,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 8,
+       "unit": true
+      }
+     ],
+     "gets": [
+      {
+       "sleeper_id": "10229",
+       "gsis_id": "00-0039067",
+       "player_name": "Rashee Rice",
+       "position": "WR",
+       "team": "KC",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+       "this_week": 10.24,
+       "cannot_play": null,
+       "market_price": 7,
+       "season_points": 134,
+       "roster_id": 12
+      },
+      {
+       "sleeper_id": "mfl:0677",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers QB",
+       "position": "TMQB",
+       "team": "CAR",
+       "headshot_url": null,
+       "this_week": 28.74,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 12,
+       "unit": true
+      }
+     ],
+     "weeks": [
+      4,
+      5,
+      6,
+      7
+     ],
+     "before": {
+      "this_week": 115.41,
+      "horizon": 432.6,
+      "bench": 43.91,
+      "by_week": [
+       115.41,
+       112.54,
+       107.94,
+       96.71
+      ]
+     },
+     "after": {
+      "this_week": 117.11,
+      "horizon": 440.46,
+      "bench": 50.79,
+      "by_week": [
+       117.11,
+       112.54,
+       110.28,
+       100.53
+      ]
+     },
+     "gain_week": 1.7,
+     "gain_horizon": 7.86,
+     "cuts": [],
+     "limit": 14,
+     "size_before": 13,
+     "size_after": 14,
+     "opened": 0,
+     "fill": null,
+     "price_out": 0,
+     "price_in": 7,
+     "points_out": 0,
+     "points_in": 134,
+     "starts": [
+      {
+       "sleeper_id": "mfl:0677",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers QB",
+       "position": "TMQB",
+       "team": "CAR",
+       "headshot_url": null,
+       "this_week": 28.74,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 12,
+       "unit": true
+      },
+      {
+       "sleeper_id": "10229",
+       "gsis_id": "00-0039067",
+       "player_name": "Rashee Rice",
+       "position": "WR",
+       "team": "KC",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+       "this_week": 10.24,
+       "cannot_play": null,
+       "market_price": 7,
+       "season_points": 134,
+       "roster_id": 12
+      }
+     ],
+     "sits": [
+      {
+       "sleeper_id": "mfl:0682",
+       "gsis_id": null,
+       "player_name": "Houston Texans QB",
+       "position": "TMQB",
+       "team": "HOU",
+       "headshot_url": null,
+       "this_week": 30.4,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 8,
+       "unit": true
+      },
+      {
+       "sleeper_id": "11635",
+       "gsis_id": "00-0039915",
+       "player_name": "Ladd McConkey",
+       "position": "WR",
+       "team": "LAC",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/q2sk7yforrkiusvruo1o",
+       "this_week": 6.88,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 102,
+       "roster_id": 8
+      }
+     ]
+    },
+    "theirs": {
+     "roster_id": 12,
+     "team_name": "Madeyes Revenge",
+     "gives": [
+      {
+       "sleeper_id": "10229",
+       "gsis_id": "00-0039067",
+       "player_name": "Rashee Rice",
+       "position": "WR",
+       "team": "KC",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+       "this_week": 10.24,
+       "cannot_play": null,
+       "market_price": 7,
+       "season_points": 134,
+       "roster_id": 12
+      },
+      {
+       "sleeper_id": "mfl:0677",
+       "gsis_id": null,
+       "player_name": "Carolina Panthers QB",
+       "position": "TMQB",
+       "team": "CAR",
+       "headshot_url": null,
+       "this_week": 28.74,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 12,
+       "unit": true
+      }
+     ],
+     "gets": [
+      {
+       "sleeper_id": "mfl:0682",
+       "gsis_id": null,
+       "player_name": "Houston Texans QB",
+       "position": "TMQB",
+       "team": "HOU",
+       "headshot_url": null,
+       "this_week": 30.4,
+       "cannot_play": null,
+       "market_price": null,
+       "season_points": null,
+       "roster_id": 8,
+       "unit": true
+      }
+     ],
+     "weeks": [
+      4,
+      5,
+      6,
+      7
+     ],
+     "before": {
+      "this_week": 117.46,
+      "horizon": 412.45,
+      "bench": 50.15,
+      "by_week": [
+       117.46,
+       81.01,
+       101.22,
+       112.76
+      ]
+     },
+     "after": {
+      "this_week": 115.41,
+      "horizon": 433.8,
+      "bench": 43.62,
+      "by_week": [
+       115.41,
+       106.83,
+       100.09,
+       111.47
+      ]
+     },
+     "gain_week": -2.05,
+     "gain_horizon": 21.35,
+     "cuts": [],
+     "limit": 14,
+     "size_before": 14,
+     "size_after": 13,
+     "opened": 1,
+     "fill": {
+      "sleeper_id": "mfl:TMPK-NO",
+      "week_gains": [
+       3.57,
+       2.01,
+       1.75,
+       4.21
+      ],
+      "horizon_gain": 11.54
+     },
+     "price_out": 7,
+     "price_in": 0,
+     "points_out": 134,
+     "points_in": 0,
+     "starts": [
+      {
+       "sleeper_id": "4217",
+       "gsis_id": "00-0033288",
+       "player_name": "George Kittle",
+       "position": "TE",
+       "team": "SF",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
+       "this_week": 8.19,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 121,
+       "roster_id": 12
+      }
+     ],
+     "sits": [
+      {
+       "sleeper_id": "10229",
+       "gsis_id": "00-0039067",
+       "player_name": "Rashee Rice",
+       "position": "WR",
+       "team": "KC",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+       "this_week": 10.24,
+       "cannot_play": null,
+       "market_price": 7,
+       "season_points": 134,
+       "roster_id": 12
+      }
+     ]
+    }
+   },
+   "lineups": {
+    "mine": {
+     "slots": [
+      {
+       "slot": "team QB",
+       "player_name": "Carolina Panthers QB (new)",
+       "gsis_id": null,
+       "value": 28.74,
+       "change": 28.74,
+       "status": "new"
+      },
+      {
+       "slot": "RB1",
+       "player_name": "Jonathan Taylor",
+       "gsis_id": "00-0036223",
+       "value": 19.17,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "RB2",
+       "player_name": "Christian McCaffrey",
+       "gsis_id": "00-0033280",
+       "value": 15.45,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "WR/TE 1",
+       "player_name": "Christian Watson",
+       "gsis_id": "00-0038124",
+       "value": 12.7,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "WR/TE 2",
+       "player_name": "Rashee Rice (new)",
+       "gsis_id": "00-0039067",
+       "value": 10.24,
+       "change": 10.24,
+       "status": "new"
+      },
+      {
+       "slot": "WR/TE 3",
+       "player_name": "Malik Nabers",
+       "gsis_id": "00-0039337",
+       "value": 7.11,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "team K",
+       "player_name": "Houston Texans K",
+       "gsis_id": null,
+       "value": 12.89,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "DEF",
+       "player_name": "Jacksonville Jaguars",
+       "gsis_id": null,
+       "value": 10.81,
+       "change": null,
+       "status": null
+      }
+     ],
+     "notes": [
+      "Starts after the trade: Carolina Panthers QB (team QB, 28.74, new), Rashee Rice (WR/TE 2, 10.24, new).",
+      "Out of the lineup after the trade: Houston Texans QB (team QB, 30.40, traded), Ladd McConkey (WR/TE 3, 6.88, to the bench)."
+     ],
+     "closest_call": "Malik Nabers at WR/TE 3, 0.23 ahead of the next option",
+     "out": [
+      {
+       "slot": "team QB",
+       "player_name": "Houston Texans QB",
+       "gsis_id": null,
+       "value": 30.4,
+       "change": -30.4,
+       "why": "traded"
+      },
+      {
+       "slot": "WR/TE",
+       "player_name": "Ladd McConkey",
+       "gsis_id": "00-0039915",
+       "value": 6.88,
+       "change": -6.88,
+       "why": "to the bench"
+      }
+     ],
+     "reshuffled": [
+      "Nabers WR/TE 2 → WR/TE 3"
+     ],
+     "total": {
+      "before": 115.41,
+      "after": 117.11,
+      "change": 1.7
+     }
+    },
+    "theirs": {
+     "slots": [
+      {
+       "slot": "team QB",
+       "player_name": "Kansas City Chiefs QB",
+       "gsis_id": null,
+       "value": 32.16,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "RB1",
+       "player_name": "Jahmyr Gibbs",
+       "gsis_id": "00-0039139",
+       "value": 23.86,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "RB2",
+       "player_name": "D'Andre Swift",
+       "gsis_id": "00-0036275",
+       "value": 14.97,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "WR/TE 1",
+       "player_name": "Travis Kelce",
+       "gsis_id": "00-0030506",
+       "value": 10.41,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "WR/TE 2",
+       "player_name": "Tre Tucker",
+       "gsis_id": "00-0038563",
+       "value": 8.27,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "WR/TE 3",
+       "player_name": "George Kittle",
+       "gsis_id": "00-0033288",
+       "value": 8.19,
+       "change": 8.19,
+       "status": "in"
+      },
+      {
+       "slot": "team K",
+       "player_name": "Baltimore Ravens K",
+       "gsis_id": null,
+       "value": 9.78,
+       "change": null,
+       "status": null
+      },
+      {
+       "slot": "DEF",
+       "player_name": "Philadelphia Eagles",
+       "gsis_id": null,
+       "value": 7.77,
+       "change": null,
+       "status": null
+      }
+     ],
+     "notes": [
+      "Starts after the trade: George Kittle (WR/TE 3, 8.19, from the bench).",
+      "Out of the lineup after the trade: Rashee Rice (WR/TE 2, 10.24, traded)."
+     ],
+     "closest_call": "Kansas City Chiefs QB at team QB, 1.76 ahead of the next option",
+     "out": [
+      {
+       "slot": "WR/TE",
+       "player_name": "Rashee Rice",
+       "gsis_id": "00-0039067",
+       "value": 10.24,
+       "change": -10.24,
+       "why": "traded"
+      }
+     ],
+     "reshuffled": [
+      "Tucker WR/TE 3 → WR/TE 2"
+     ],
+     "total": {
+      "before": 117.46,
+      "after": 115.41,
+      "change": -2.05
+     }
+    }
+   },
+   "fill_players": {
+    "mfl:TMPK-NO": {
+     "player_name": "New Orleans Saints K",
+     "position": "TMPK",
+     "gsis_id": null,
+     "sleeper_id": "mfl:TMPK-NO"
+    }
+   },
+   "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)",
+   "starters_in": [
+    {
+     "player": {
+      "sleeper_id": "mfl:0677",
+      "gsis_id": null,
+      "player_name": "Carolina Panthers QB",
+      "position": "TMQB",
+      "team": "CAR",
+      "headshot_url": null,
+      "this_week": 28.74,
+      "cannot_play": null,
+      "market_price": null,
+      "season_points": null,
+      "roster_id": 12,
+      "unit": true
+     },
+     "slot": "team QB",
+     "value": 28.74,
+     "how": "trade"
+    },
+    {
+     "player": {
+      "sleeper_id": "10229",
+      "gsis_id": "00-0039067",
+      "player_name": "Rashee Rice",
+      "position": "WR",
+      "team": "KC",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+      "this_week": 10.24,
+      "cannot_play": null,
+      "market_price": 7,
+      "season_points": 134,
+      "roster_id": 12
+     },
+     "slot": "WR/TE",
+     "value": 10.24,
+     "how": "trade"
+    }
+   ],
+   "starters_out": [
+    {
+     "player": {
+      "sleeper_id": "mfl:0682",
+      "gsis_id": null,
+      "player_name": "Houston Texans QB",
+      "position": "TMQB",
+      "team": "HOU",
+      "headshot_url": null,
+      "this_week": 30.4,
+      "cannot_play": null,
+      "market_price": null,
+      "season_points": null,
+      "roster_id": 8,
+      "unit": true
+     },
+     "slot": "team QB",
+     "value": 30.4,
+     "why": "traded"
+    },
+    {
+     "player": {
+      "sleeper_id": "11635",
+      "gsis_id": "00-0039915",
+      "player_name": "Ladd McConkey",
+      "position": "WR",
+      "team": "LAC",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/q2sk7yforrkiusvruo1o",
+      "this_week": 6.88,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 102,
+      "roster_id": 8
+     },
+     "slot": "WR/TE",
+     "value": 6.88,
+     "why": "to the bench"
+    }
+   ],
+   "cut": [],
+   "effect_words": "Your starting lineup: about 1.7 more points this week, about 8 more in total over weeks 4–7.",
+   "lineup_words": "Panthers QB starts at team QB and Rice starts at WR/TE; Texans QB goes to Madeyes Revenge and McConkey to the bench.",
+   "backup_words": null,
+   "their_change": {
+    "gain_week": -2.05,
+    "gain_window": 21.35,
+    "starters_in": [
+     {
+      "player": {
+       "sleeper_id": "4217",
+       "gsis_id": "00-0033288",
+       "player_name": "George Kittle",
+       "position": "TE",
+       "team": "SF",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
+       "this_week": 8.19,
+       "cannot_play": null,
+       "market_price": 0,
+       "season_points": 121,
+       "roster_id": 12
+      },
+      "slot": "WR/TE",
+      "value": 8.19,
+      "how": "bench"
+     }
+    ],
+    "starters_out": [
+     {
+      "player": {
+       "sleeper_id": "10229",
+       "gsis_id": "00-0039067",
+       "player_name": "Rashee Rice",
+       "position": "WR",
+       "team": "KC",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+       "this_week": 10.24,
+       "cannot_play": null,
+       "market_price": 7,
+       "season_points": 134,
+       "roster_id": 12
+      },
+      "slot": "WR/TE",
+      "value": 10.24,
+      "why": "traded"
+     }
+    ],
+    "effect_words": "Madeyes Revenge's starting lineup: about 2.0 fewer points this week, about 21 more in total over weeks 4–7.",
+    "lineup_words": "Kittle starts at WR/TE; Rice goes to you."
+   },
+   "window_words": "over weeks 4–7 in total",
+   "hold_words": "Standing pat keeps your starting lineup at 115.4 projected points this week. The best free agent for the same need, Devaughn Vele (WR), adds about 9 points to your starting lineup in total over weeks 4–7: more than this trade, without giving anyone up (a claim also needs a roster spot).",
+   "hold": {
+    "hold": "Standing pat keeps your starting lineup at 115.4 projected points this week.",
+    "waiver": "The best free agent for the same need, Devaughn Vele (WR), adds about 9 points to your starting lineup in total over weeks 4–7: more than this trade, without giving anyone up (a claim also needs a roster spot).",
+    "waiver_gain": 9.08,
+    "waiver_player": {
+     "sleeper_id": "11834",
+     "player_name": "Devaughn Vele",
+     "position": "WR",
+     "gsis_id": "00-0039424"
+    }
+   },
+   "how": {
+    "fit": "**Improvement to your starting lineup** (best lineup each week): you **+1.7** this week and **+7.9** over weeks 4–7; them **-2.0** and **+21.4**.",
+    "market": "**Projected value above available replacements** (season points above the best free agent at the position): you give **0**, you get **7**: about even. 2 players in it have no projection yet and are not counted.",
+    "ros": "Rest-of-season projected points (weeks 4–18), all positions added up — not a fairness test: you give 355, you get 448.",
+    "size": "Roster size: they open a spot: the best free agent for it is New Orleans Saints K (TMPK, +11.5 over weeks 4–7).",
+    "ranks": "League rank, week 4: you 6th → **5th** of 12, Madeyes Revenge 5th → 6th; weeks 4–7: you 6th → **5th** of 12, Madeyes Revenge 10th → 7th; depth: you 10th → **6th** of 12, Madeyes Revenge 7th → 10th.",
+    "season_value": "Season value above replacement: you give 0, you get 7 (about even). You get 2 players for 1: 1 more roster spot used. Not counted (no season projection): Houston Texans QB, Carolina Panthers QB."
+   },
+   "alternative": {
+    "kind": "waiver",
+    "player": {
+     "sleeper_id": "ATL",
+     "gsis_id": null,
+     "player_name": "Atlanta Falcons",
+     "position": "DEF"
+    },
+    "drop": null,
+    "open_spot": true,
+    "gain_week": 1.2,
+    "gain_window": 12.81,
+    "by_week": [
+     1.2,
+     0.8,
+     0.48,
+     10.33
+    ],
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "span": "weeks 4–7",
+    "source": "fa_pool fill",
+    "note": null,
+    "words": "the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot"
+   },
+   "beyond_alternative": -4.95,
+   "beats_alternative": false,
+   "alternative_words": "+7.9 over weeks 4–7; the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot: the trade does not beat it on starter points. It gives more this week: +1.7 against the claim's +1.2. The trade also takes the open roster spot the claim would use.",
+   "other_objective": {
+    "kind": "this_week",
+    "words": "It gives more this week: +1.7 against the claim's +1.2."
+   },
+   "strip": {
+    "weeks": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "mine": [
+     1.7,
+     0,
+     2.34,
+     3.82
+    ],
+    "theirs": [
+     -2.05,
+     25.82,
+     -1.13,
+     -1.29
+    ]
+   },
+   "values": {
+    "projected_points": {
+     "label": "Projected points",
+     "words": "One player's forecast for one week, in this league's scoring (the lineup tables)."
+    },
+    "starter_points": {
+     "label": "Starter points",
+     "mine": 7.86,
+     "theirs": 21.35,
+     "this_week": {
+      "mine": 1.7,
+      "theirs": -2.05
+     },
+     "words": "Your starting lineup: about 1.7 more points this week, about 8 more in total over weeks 4–7."
+    },
+    "depth": {
+     "label": "Backup coverage",
+     "mine": {
+      "before": 43.91,
+      "after": 50.79
+     },
+     "theirs": {
+      "before": 50.15,
+      "after": 43.62
+     },
+     "words": null
+    },
+    "season_value": {
+     "label": "Season value above replacement",
+     "give": 0,
+     "get": 7,
+     "unknown": [
+      "Houston Texans QB",
+      "Carolina Panthers QB"
+     ],
+     "fairness": true,
+     "words": "Season value above replacement: you give 0, you get 7 (about even). You get 2 players for 1: 1 more roster spot used. Not counted (no season projection): Houston Texans QB, Carolina Panthers QB."
+    },
+    "ros_points": {
+     "label": "Rest-of-season projected points",
+     "give": 355,
+     "get": 448,
+     "window": "weeks 4–18",
+     "fairness": false,
+     "words": "Rest-of-season projected points (weeks 4–18), all positions added up — not a fairness test: you give 355, you get 448."
+    }
+   },
+   "timings_ms": {
+    "context": 0,
+    "evaluate": 152.6,
+    "words": 194.1,
+    "total": 346.7,
+    "league.sleeper": 46.6,
+    "league.price": 3902.2,
+    "league.solve": 2434.9,
+    "league.total": 6383.7
+   }
+  }
+ }
+}

@@ -59,10 +59,11 @@ export function waiverAnswer(w: Waivers): string {
   return `**Nothing beats what you have.**  \nNo free agent improves your lineup this week or over the next ${n} weeks (week-${w.week} lineup ${f1(w.lineup_value)}).`;
 }
 
-/** "most weeks 9–16" (P25–P75), else "a bad week to a good week 6–19" (P10–P90), else nothing. */
+/** "typical range 9–16" (P25–P75; IF-4: the dictionary's words, was "most weeks"), else "low-end to high-end 6–19"
+ * (P10–P90), else nothing. */
 export function rangeWords(p25?: number | null, p75?: number | null, p10?: number | null, p90?: number | null): string | null {
-  if (p25 != null && p75 != null) return `most weeks ${Math.round(p25)}–${Math.round(p75)}`;
-  if (p10 != null && p90 != null) return `a bad week to a good week ${Math.round(p10)}–${Math.round(p90)}`;
+  if (p25 != null && p75 != null) return `typical range ${Math.round(p25)}–${Math.round(p75)}`;
+  if (p10 != null && p90 != null) return `low-end to high-end ${Math.round(p10)}–${Math.round(p90)}`;
   return null;
 }
 

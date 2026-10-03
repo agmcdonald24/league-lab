@@ -4,7 +4,7 @@
   // name swaps the player); on a phone a sheet over the screen (Back, the backdrop, × or Escape close it). The API
   // other screens call: lib/pane.svelte.ts (openPane / paneLink); App.svelte mounts this once.
   import { ApiError, get, paths, peek, Unauthorized, type PlayerCard } from "../lib/api";
-  import { cardHeadLine, cardSections } from "../lib/card";
+  import { cardHeadLine, cardSections, paneSplit } from "../lib/card";
   import { learnLeagueName } from "../lib/names.svelte";
   import { closePane, openFullPage, pane, paneActions } from "../lib/pane.svelte";
   import { navigate } from "../lib/router.svelte";
@@ -13,6 +13,9 @@
   import NewsLine from "./NewsLine.svelte"; // ---- N1
   import PlayerCardView from "./PlayerCard.svelte";
   import SectionBox from "./Section.svelte";
+  import Expander from "./Expander.svelte"; // ---- IF-4
+  import Md from "./Md.svelte"; // ---- IF-4
+  import ScheduleTable from "./ScheduleTable.svelte"; // ---- IF-4
 
   let { league, team, onauth }: { league: string; team: number | null; onauth: () => void } = $props();
 
@@ -26,6 +29,15 @@
   const context = $derived(pane.context);
   const actions = $derived(gsis ? paneActions(gsis, from, context, ctx) : []);
   const sections = $derived(data ? cardSections(data) : []);
+  // ---- IF-4 (the decision-quality review: "Keep the drawer focused on the decision"): the pane leads with what the call
+  // needs — the projection and its range, where he stands, the news, his role — and puts the week-by-week line, the next
+  // four, the season tiles, the schedule and the game log behind expanders (the full page shows everything open)
+  const PANE_ORDER = ["projection", "availability", "signals", "usage", "value"];
+  const focused = $derived(
+    [...sections].sort((x, y) => PANE_ORDER.indexOf(x.key) - PANE_ORDER.indexOf(y.key)).map((x) => ({ key: x.key, ...paneSplit(x.key, x.sec) })),
+  );
+  const moreBlocks = $derived(focused.flatMap((x) => x.more));
+  // ---- end IF-4
   const headLine = $derived(data ? cardHeadLine(data) : "");
   const title = $derived(data?.player_name ?? context.name ?? "Player");
 
@@ -146,14 +158,38 @@
         {#if data.why}
           <p class="text-sm leading-snug font-semibold text-ink-2" data-testid="pane-why">{data.why.sentence}</p>
         {/if}
-        {#each sections as x (x.key)}
-          <SectionBox section={x.sec} {ctx} testid={`pane-section-${x.key}`}>
+        {#each focused as x (x.key)}
+          <SectionBox section={x.main} {ctx} testid={`pane-section-${x.key}`}>
             <!-- ---- N1 (Wave I-D): the news line under the availability lines -->
             {#if x.key === "availability"}<NewsLine card={data} testid="pane-news" />{/if}
             <!-- ---- end N1 -->
+            <!-- PO (I-F): the matchup evidence's two sentences ride in the projection section's blocks (lib/card.ts
+                 matchupBlocks, under the "Next:" line), so they are here without a component of their own -->
           </SectionBox>
         {/each}
-        <GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={data.league_name} />
+        <!-- ---- IF-4: the ledger and the methodology behind expanders -->
+        {#if moreBlocks.length}
+          <Expander title="Week by week and season numbers" testid="pane-more">
+            <div class="space-y-2" data-testid="pane-more-body">
+              {#each moreBlocks as b, i (i)}
+                {#if b.metrics}
+                  <ul class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+                    {#each b.metrics as m (m.label)}<li><span class="text-ink-3">{m.label}</span> <strong class="tabnum">{m.value ?? "—"}</strong></li>{/each}
+                  </ul>
+                {:else if b.text}
+                  <p class="text-sm leading-snug text-ink-2"><Md text={b.text} {ctx} /></p>
+                {/if}
+              {/each}
+            </div>
+          </Expander>
+        {/if}
+        {#if data.schedule?.length}
+          <Expander title="Schedule" testid="pane-schedule"><ScheduleTable rows={data.schedule} position={data.position} testid="pane-schedule-table" /></Expander>
+        {/if}
+        <Expander title="Game by game this season" testid="pane-gamelog">
+          <GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={data.league_name} />
+        </Expander>
+        <!-- ---- end IF-4 -->
       {/if}
     </div>
   </aside>

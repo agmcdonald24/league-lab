@@ -3,6 +3,26 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 4 · Better reasons: the drop, the alternative, the matchup
+
+- A waiver claim now says what the drop costs and why that player — the player he replaces goes first, and a bench
+  player who is worth more than anyone on the waiver wire is no longer a free drop ("Drop McPherson: Carlson
+  replaces him at K"). When no claim is worth a roster spot, it says so. Stashes are a watchlist until a scenario
+  is worth the drop.
+
+- Trades are ranked against your best waiver move over the same weeks: "+14.6 over weeks 4–7: 1.8 more than your
+  best waiver move". A trade that a free claim beats says so and drops down the list. The value words are kept
+  apart — projected points, starter points, backup coverage, season value above replacement — and both sides' weeks
+  are shown.
+
+- A matchup rank comes with what changed: when a defense's starting corners are out, the card says the historical
+  rank is less representative this week, names the replacements, and says that the forecast does not carry it. A
+  coin flip is never settled by a rank like that.
+
+- My Week keeps close calls in view: "Tuten or Williams at FLEX: a coin flip, 0.3 points apart — no clear upgrade"
+  instead of "nothing to change", plus "What changed" since the morning build. League Lab now counts screen views
+  (which screen, which league and team, when — nothing about you; About says so).
+
 ## Oct 3 · What to do this week, in three lines or fewer
 
 - My Week now opens with the actions that matter — at most three, the most urgent first: a change your submitted

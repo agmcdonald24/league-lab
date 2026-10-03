@@ -129,6 +129,18 @@ def test_waivers_on_demand_reproduce_every_mart_move(sql, league, team):
     mart = pd.DataFrame(sql("select * from analytics.mart_waiver_moves where league_id = %s and roster_id = %s", (league, team)))
     od, info = decisions._moves_on_demand(league, team, as_of=_as_of(sql, league))
     assert info["week"] == int(mart["week"].iloc[0]) and len(od) == len(mart)
+    if "drop_cost" not in mart or mart["drop_cost"].isna().all():
+        # IF-1: a mart built before the drop's cost (no column, or the column empty: the mart view carries the columns
+        # since the PO added them, the rows carry values from the next nightly): its ranks are B3's (fewest points); with the drop's value pieces
+        # (per player, the same inputs on both paths) `waivers.choose_drops` must give the on-demand ranks
+        from league_lab import waivers as W
+        cols = ["drop_depth_lost", "drop_future_starts", "drop_future_start_weeks", "drop_season_value", "drop_upside"]
+        pieces = od[od["drop_sleeper_id"].notna()].drop_duplicates("drop_sleeper_id").set_index("drop_sleeper_id")[cols]
+        recs = mart.to_dict("records")
+        for r in recs:
+            if isinstance(r.get("drop_sleeper_id"), str) and r["drop_sleeper_id"] in pieces.index:
+                r.update(pieces.loc[r["drop_sleeper_id"]].to_dict())
+        mart = pd.DataFrame(W.choose_drops(recs))
     key = ["list_kind", "add_sleeper_id", "drop_sleeper_id"]
     m = mart.sort_values(key, na_position="first").reset_index(drop=True)
     o = od.sort_values(key, na_position="first").reset_index(drop=True)
@@ -210,7 +222,10 @@ def test_trade_evaluate_reproduces_the_trade_finder(client, sql, league):
             assert strip_links(d["market"]["words"]) == decisions.dictionary_words(T.fairness_line(page))
         else:                                 # priced on request from the NFL-wide board: the same whole points (± 1)
             assert abs(d["market"]["give"] - page.mine.price_out) <= 1 and abs(d["market"]["get"] - page.mine.price_in) <= 1
-        assert d["ros"] is None or d["ros"]["words"].startswith("Rest of season")
+        # IF-2: the raw totals are labelled as such — "Rest-of-season projected points (…), all positions added up — not a
+        # fairness test" (the decision-quality review: they were read as a second value test)
+        assert d["ros"] is None or (d["ros"]["words"].startswith("Rest-of-season projected points")
+                                    and "not a fairness test" in d["ros"]["words"])
         assert d["lineups"]["mine"]["slots"] and d["size_words"].startswith("Roster size")
 
 
