@@ -28,7 +28,7 @@ from league_lab import anyleague as A
 from . import availability, why
 from .applib import cards, ui
 from .db import query
-from .myweek import NotFound, _num, _str, cards_from_rows, howto, lineup
+from .myweek import NotFound, _num, _str, cards_from_rows, current_starters, howto, lineup
 
 MOVERS_SQL = """select t.gsis_id, t.player_name, t.position, t.tags, t.momentum
                 from analytics.mart_player_trend_tags t
@@ -65,8 +65,12 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
             return {"league_id": league_id, "league_name": league.get("name"), "season": season, "roster_id": int(roster_id),
                     "week": None, "source": "sleeper", "cards": [], "lineup": [], "lineup_full": [],
                     "notice": "The regular season is over: no lineup decisions left."}
-        od = A.lineup_rows(query, league_id, int(roster_id), week, as_of=as_of, client=client,
-                           exclude_reference=exclude_reference)
+        # ---- I0-A + IB-0: the roster's context (the on-demand rows + the availability overlay: the board's statuses
+        # are the nightly's, newer news re-solves the lineup) - the rows Waivers, Team and the player card read too
+        ctx = availability.roster_context(league_id, int(roster_id), week, house=False, as_of=as_of,
+                                          exclude_reference=exclude_reference, client=client)
+        od = ctx.od
+        # ---- end I0-A + IB-0
         rosters, users = client.rosters(league_id), client.users(league_id)
     except A.LeagueNotFound as exc:
         raise NotFound(str(exc)) from exc
@@ -74,12 +78,20 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
         raise SleeperDown(str(exc)) from exc
     names = A.team_names(rosters, users).get(int(roster_id), {})
     rec = A.records(rosters).get(int(roster_id))
-    rows = od.rows
-    # ---- I0-A: the availability overlay (the board's statuses are the nightly's: newer news re-solves the lineup)
-    rows, avail = availability.apply_to_rows(rows, build_as_of=availability.build_time())
-    # ---- end I0-A
+    rows, avail = ctx.rows, ctx.meta
     t_opp = time.perf_counter()
-    opp, opp_note = opponent_safe(league_id, int(roster_id), week, as_of=as_of, exclude_reference=exclude_reference)
+    # ---- IB-0: the opponent's total through the same overlay (his roster's context)
+    opp, opp_note = opponent_safe(league_id, int(roster_id), week, as_of=as_of, exclude_reference=exclude_reference,
+                                  solve=False)
+    if opp is not None:
+        try:
+            octx = availability.roster_context(league_id, int(opp["roster_id"]), week, house=False, as_of=as_of,
+                                               exclude_reference=exclude_reference, client=client)
+            opp["lineup_value"] = octx.lineup_value
+            opp["changes"] = octx.changes
+        except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+            opp_note = opp_note or "sleeper_unavailable"
+    # ---- end IB-0
     t_opp = round((time.perf_counter() - t_opp) * 1000, 1)
     out: dict = {"league_id": league_id, "league_name": league.get("name"), "season": season,
                  "scoring_label": A.scoring_label(league),
@@ -96,7 +108,8 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna() if not rows.empty else pd.Series(dtype=float)
     out["lineup_value"] = None if lv.empty else float(lv.iloc[0])
     t1 = time.perf_counter()
-    out["notice"], out["cards"] = cards_from_rows(league_id, int(roster_id), week, season, rows)
+    out["notice"], out["cards"] = cards_from_rows(league_id, int(roster_id), week, season, rows,         # ---- IB-0
+                                                  current=current_starters(league_id, int(roster_id), house=False))
     t2 = time.perf_counter()
     out["lineup"], out["lineup_full"] = lineup(rows)
     out["howto"] = howto()
@@ -486,9 +499,10 @@ class PlayerContext:
         return df[df["player_key"] == gsis] if not df.empty else df
 
     def lineup(self, roster_id: int, week: int) -> pd.DataFrame:
-        try:
-            return A.lineup_rows(query, self.league_id, int(roster_id), int(week), client=self.client,
-                                 exclude_reference=self.exclude_reference).rows
+        try:                                     # ---- IB-0: the roster's context (the overlay applied), as My Week
+            self.context = availability.roster_context(self.league_id, int(roster_id), int(week), house=False,
+                                                       client=self.client, exclude_reference=self.exclude_reference)
+            return self.context.rows if self.context is not None else pd.DataFrame()
         except A.LeagueNotFound:
             return pd.DataFrame()
 

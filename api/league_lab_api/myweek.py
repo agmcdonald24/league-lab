@@ -137,10 +137,11 @@ def my_week(league_id: str, roster_id: int) -> dict:
                where m.league_id = %s and m.roster_id = %s and m.week = %s""",
         (league_id, roster_id, week),
     )
-    rows = cards.lineup_rows(league_id, season, week, roster_id)
-    # ---- I0-A: the availability overlay (statuses newer than the nightly build; the lineup re-solved when one changes)
-    rows, out["availability"] = availability.apply_to_rows(rows)
-    # ---- end I0-A
+    # ---- I0-A + IB-0: the roster's context (the nightly's rows + the availability overlay, re-solved when a status
+    # changed since the build) - the same rows Waivers, Team, the player card and the trade board read
+    ctx = availability.roster_context(league_id, int(roster_id), week, house=True)
+    rows, out["availability"] = ctx.rows, ctx.meta
+    # ---- end I0-A + IB-0
     bits = [f"**{me['team_name']}**"]
     if not prof.empty and pd.notna(prof.iloc[0]["wins"]):
         r = prof.iloc[0]
@@ -156,7 +157,8 @@ def my_week(league_id: str, roster_id: int) -> dict:
         lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna()
         out["lineup_value"] = None if lv.empty else float(lv.iloc[0])
     # the cards: numbers from decisions(), text from decision_cards() as drawn
-    out["notice"], out["cards"] = cards_from_rows(league_id, roster_id, week, season, rows)
+    out["notice"], out["cards"] = cards_from_rows(league_id, roster_id, week, season, rows,
+                                                  current=current_starters(league_id, int(roster_id), house=True))  # IB-0
     out["lineup"], out["lineup_full"] = lineup(rows)
     out["howto"] = howto()
     # ---- copied from app/Home.py (Movers on your roster)
@@ -197,17 +199,28 @@ def opponent(league_id: str, roster_id: int, season: int, week: int) -> dict | N
     mem = query("select team_name, manager_name from analytics.dim_league_member where league_id = %s and roster_id = %s",
                 (league_id, int(opp["roster_id"])))
     lv = query(LINEUP_TOTAL_SQL, (league_id, int(season), int(week), int(opp["roster_id"])))
+    # ---- IB-0: the opponent's total through the same overlay (his context), the nightly's total when he has no rows
+    octx = availability.roster_context(league_id, int(opp["roster_id"]), week, house=True)
+    total = octx.lineup_value if octx is not None and octx.lineup_value is not None else (
+        None if lv.empty else _num(lv.iloc[0]["lineup_value"]))
+    # ---- end IB-0
     return {"roster_id": int(opp["roster_id"]),
             "team_name": _str(mem.iloc[0]["team_name"]) if not mem.empty else opp.get("team_name"),
             "manager": _str(mem.iloc[0]["manager_name"]) if not mem.empty else opp.get("manager"),
             "matchup_id": opp.get("matchup_id"),
-            "lineup_value": None if lv.empty else _num(lv.iloc[0]["lineup_value"])}
+            "lineup_value": total,
+            "changes": octx.changes if octx is not None else []}                                   # IB-0
 
 
-def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows: pd.DataFrame) -> tuple[str | None, list[dict]]:
+def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows: pd.DataFrame,
+                    current: dict[str, str] | None = None) -> tuple[str | None, list[dict]]:
     """(the notice line, the cards) for a lineup frame in `cards.lineup_rows`' shape: the numbers from
     `cards.decisions(rows)`, the text from `cards.decision_cards(..., rows=rows)` as drawn. Shared by the database
-    path (`my_week`) and the on-demand path (`ondemand.my_week`), which builds the same frame without the marts."""
+    path (`my_week`) and the on-demand path (`ondemand.my_week`), which builds the same frame without the marts.
+    IB-0: ``current`` = the roster's lineup in Sleeper now ({Sleeper id: slot}): each card's ``status`` (change / set /
+    close) and ``strength`` come from `cards.decisions` (the column `cards.SLEEPER_STARTER` on a copy of the rows)."""
+    if current is not None and not rows.empty:                                                   # ---- IB-0
+        rows = rows.assign(**{cards.SLEEPER_STARTER: rows["sleeper_player_id"].map(lambda s: isinstance(s, str) and s in current)})
     dec = cards.decisions(rows, 3) if not rows.empty else pd.DataFrame()
     drawn_dec, calls = capture(cards.decision_cards, league_id, roster_id, week, season, rows=rows)
     # ---- IA-1: the card's reason sentence, as its own field too (the same words as its second block)
@@ -236,9 +249,43 @@ def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows
             "margin": _num(d["margin"]), "verdict": d["verdict"], "how": d["how"],
             "p_win": _num(d.get("p_win")),
             "why": links(whys[i]) if i < len(whys) and whys[i] else None,     # ---- IA-1
+            # ---- IB-0: the call's status (change / set / close; None when Sleeper's lineup is unknown), its strength
+            # (clear / lean / coin flip) and who of the two Sleeper starts now
+            "status": _str(d.get("status")), "strength": _str(d.get("strength")),
+            "in_sleeper_lineup": None if current is None else {"player": bool(d.get("sleeper_starter")),
+                                                               "alt": bool(d.get("alt_sleeper_starter"))},
             "blocks": blocks(drawn[i]) if i < len(drawn) else [],
         })
     return (notices[0] if notices else None), out
+
+
+# ---- IB-0: the roster's lineup in Sleeper right now (the card's status): Sleeper's roster `starters`, each paired with
+# the league's starting slot (`roster_positions` without the bench); a house league whose Sleeper call fails falls
+# back on the nightly's `mart_player_availability.is_current_starter` (the slot unknown: "").
+CURRENT_STARTERS_SQL = """select sleeper_id from analytics.mart_player_availability
+                          where league_id = %s and rostered_by_roster_id = %s and is_current_starter"""
+
+
+def current_starters(league_id: str, roster_id: int, *, house: bool) -> dict[str, str] | None:
+    from league_lab import anyleague as A
+    try:
+        sl = A.sleeper()
+        lid = A.check_id(league_id)
+        slots = [s for s in (sl.league(lid).get("roster_positions") or []) if s not in ("BN", "IR", "TAXI")]
+        r = next((x for x in sl.rosters(lid) if int(x.get("roster_id", -1)) == int(roster_id)), None)
+        if r is not None:
+            return {str(p): (slots[i] if i < len(slots) else "") for i, p in enumerate(r.get("starters") or [])
+                    if p not in (None, "", "0")}
+    except Exception:  # noqa: BLE001 - Sleeper busy / down / no such league: the nightly's flag, else unknown
+        pass
+    if not house:
+        return None
+    try:
+        df = query(CURRENT_STARTERS_SQL, (league_id, int(roster_id)))
+    except Exception:  # noqa: BLE001
+        return None
+    return {str(s): "" for s in df["sleeper_id"].dropna()} if not df.empty else None
+# ---- end IB-0
 
 
 def howto() -> str | None:

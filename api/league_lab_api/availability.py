@@ -37,6 +37,7 @@ from collections.abc import Iterable, Mapping
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from league_lab import anyleague as A
 from league_lab import injury_feed as F
@@ -719,3 +720,363 @@ def ros_overlay(players: list[dict]) -> list[dict]:
         a = av.get(p.get("gsis_id")) if p.get("gsis_id") else None
         p["injury_status"] = None if a is None else a["status"]
     return players
+
+
+# ------------------------------------------------------------------------------ IB-0: one availability truth
+# ---- IB-0 (Wave I-B): the roster context. The second review (2026-10-03) caught My Week saying "start Croskey-Merritt
+# (Jefferson is out)" while Waivers said "drop him: he would not start" and the totals read 115.75 vs 117.3: I0-A's
+# overlay re-solved the lineup on My Week only. ``roster_context`` is the one place a roster's week is read: the
+# nightly's rows (``cards.lineup_rows``; any other league: ``anyleague.lineup_rows``) + ``now()``, re-solved by
+# ``apply_to_rows`` when a status changed since the build. My Week, the opponent's total, Waivers, Team, the player
+# card and the trade finder's board all read it, so the lineup total is one number on every screen.
+CONTEXT_TTL_S = {"house": 600, "sleeper": 120}     # the query cache's 10 minutes; Sleeper's rosters move faster
+STATUS_OF_REASON = {"Out": "OUT", "Doubtful": "DOUBTFUL", "NFL injured reserve": "IR", "IR slot": "IR"}
+_ctx_cache: dict[tuple, tuple[float, RosterContext]] = {}
+_ctx_lock = threading.Lock()
+
+
+def clear_context() -> None:
+    with _ctx_lock:
+        _ctx_cache.clear()
+
+
+def _f(v) -> float | None:
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return None if math.isnan(f) else f
+
+
+def _s(v) -> str | None:
+    return v if isinstance(v, str) and v else None
+
+
+class RosterContext:
+    """One roster's week as every screen must see it. ``base`` = the build's rows (``cards.lineup_rows``' columns),
+    ``rows`` = the same with the overlay (statuses, chips, the re-solved lineup), ``meta`` = ``apply_to_rows``' block
+    (None when the overlay is off), ``od`` = the on-demand result (any league). Read-only: copy before changing."""
+
+    def __init__(self, league_id: str, roster_id: int, week: int, season: int, house: bool, base: pd.DataFrame,
+                 rows: pd.DataFrame, meta: dict | None, od=None) -> None:
+        self.league_id, self.roster_id, self.week, self.season, self.house = str(league_id), int(roster_id), int(week), season, house
+        self.base, self.rows, self.meta, self.od = base, rows, meta, od
+        self.changes: list[str] = list((meta or {}).get("changes") or [])
+        self.changed = bool(self.changes)              # one sentence per player whose playability moved: re-solved
+        self.checked_at = (meta or {}).get("checked_at")
+        self.as_of_build = _iso(_build_as_of(base)) if base is not None and not base.empty else None
+
+    def _head(self, col: str):
+        if self.rows is None or self.rows.empty or col not in self.rows:
+            return None
+        v = self.rows.loc[self.rows["role"] == "starter", col].dropna()
+        return None if v.empty else v.iloc[0]
+
+    @property
+    def lineup_value(self) -> float | None:
+        return _f(self._head("lineup_value"))
+
+    @property
+    def bench_value(self) -> float | None:
+        return _f(self._head("bench_value"))
+
+    @property
+    def weakest_slot(self) -> str | None:
+        return _s(self._head("weakest_slot"))
+
+    @property
+    def weakest_margin(self) -> float | None:
+        return _f(self._head("weakest_margin"))
+
+    def starters(self, frame: pd.DataFrame | None = None) -> dict[str, str]:
+        """{Sleeper id: slot} of the starters (the context's; ``frame`` = another frame, e.g. ``base``)."""
+        df = self.rows if frame is None else frame
+        if df is None or df.empty:
+            return {}
+        s = df[(df["role"] == "starter") & ~df["is_empty_slot"].astype(bool)]
+        return {str(r["sleeper_player_id"]): r["slot"] for _, r in s.iterrows() if isinstance(r["sleeper_player_id"], str)}
+
+    def row_of(self, key: str | None) -> pd.Series | None:
+        """His row (by gsis id or Sleeper id)."""
+        if not key or self.rows is None or self.rows.empty:
+            return None
+        if getattr(self, "_index", None) is None:
+            idx: dict[str, pd.Series] = {}
+            for _, r in self.rows.iterrows():
+                for k in (r["gsis_id"], r["sleeper_player_id"]):
+                    if isinstance(k, str) and k and k not in idx:
+                        idx[k] = r
+            self._index = idx
+        return self._index.get(str(key))
+
+    def replacement(self, r: pd.Series) -> pd.Series | None:
+        """The bench player who comes in if starter ``r`` sits (``horizon_frame``'s rule: worth value - margin to the
+        cent, the better bench rank first)."""
+        v, m = _f(r.get("value")), _f(r.get("margin"))
+        if v is None or m is None or round((v - m) * 100) <= 0:
+            return None
+        b = self.rows[(self.rows["role"] == "bench")].copy()
+        if b.empty:
+            return None
+        b = b[(pd.to_numeric(b["value"], errors="coerce") * 100).round() == round((v - m) * 100)]
+        return None if b.empty else b.sort_values("bench_rank").iloc[0]
+
+    def status_of(self, r: pd.Series) -> str:
+        """OUT / DOUBTFUL / IR / Q / ok (the brief's words)."""
+        if _s(r.get("chip")):
+            return str(r["chip"])
+        rep = _s(r.get("report_status"))
+        if r["role"] == "unplayable":
+            return STATUS_OF_REASON.get(_s(r.get("reason")) or "", STATUS_OF_REASON.get(rep or "", "OUT" if rep else "ok"))
+        return "Q" if rep == "Questionable" else ("DOUBTFUL" if rep == "Doubtful" else "ok")
+
+    def players(self) -> list[dict]:
+        if self.rows is None or self.rows.empty:
+            return []
+        out = []
+        for _, r in self.rows[~self.rows["is_empty_slot"].astype(bool)].iterrows():
+            out.append({"sleeper_id": _s(r.get("sleeper_player_id")), "gsis_id": _s(r.get("gsis_id")),
+                        "player_name": _s(r.get("player_name")), "position": _s(r.get("position")),
+                        "status": self.status_of(r), "can_play": r["role"] in ("starter", "bench"),
+                        "starter": r["role"] == "starter", "slot": _s(r.get("slot")), "value": _f(r.get("value")),
+                        "locked": bool(r.get("locked_now")), "reason": _s(r.get("why")) or _s(r.get("reason"))})
+        return out
+
+    def summary(self) -> dict:
+        """What a response carries: the total, who moved and why, the stamps."""
+        return {"league_id": self.league_id, "roster_id": self.roster_id, "week": self.week,
+                "lineup_value": self.lineup_value, "changed": self.changed, "changes": self.changes,
+                "checked_at": self.checked_at, "as_of_build": self.as_of_build}
+
+    def to_dict(self) -> dict:
+        return {**self.summary(), "bench_value": self.bench_value, "weakest_slot": self.weakest_slot,
+                "weakest_margin": self.weakest_margin, "players": self.players()}
+
+
+def roster_context(league_id: str, roster_id: int, week: int | None = None, *, house: bool | None = None,
+                   as_of: datetime | None = None, exclude_reference: str | None = None, client=None) -> RosterContext | None:
+    """The overlay-adjusted roster of one team for the week (None after the regular season). ``house`` = a league the
+    database keeps (default: ``myweek.known_league``; False = the on-demand path, as ``source=sleeper`` asks). Kept in
+    process for the overlay's own interval, at most the query cache's 10 minutes (2 on demand), keyed by the league,
+    the roster, the week, the overlay's stamp and the build; ``as_of`` / ``exclude_reference`` (tests) are never kept."""
+    from .applib import cards
+    from .myweek import known_league
+    league_id = str(league_id)
+    is_house = known_league(league_id) if house is None else bool(house)
+    if is_house:
+        season = cards.league_season(league_id)
+    else:
+        sl = client or A.sleeper()
+        league_id = A.check_id(league_id)
+        season = int(sl.league(league_id)["season"])
+    if season is None:
+        return None
+    week = cards.decision_week(int(season)) if week is None else int(week)
+    if week is None:
+        return None
+    on = enabled()
+    if on:
+        snapshot()                                  # the feed read first, so the stamp in the key is the one applied
+    key = (league_id, int(roster_id), int(week), is_house, on, _iso(checked_at()), _iso(build_time()))
+    keep = as_of is None and exclude_reference is None
+    ttl = min(CONTEXT_TTL_S["house" if is_house else "sleeper"], F.feed().interval_s() if on else 10 ** 9)
+    if keep:
+        with _ctx_lock:
+            hit = _ctx_cache.get(key)
+            if hit is not None and hit[0] > time.monotonic():
+                return hit[1]
+    od = None
+    if is_house:
+        base = cards.lineup_rows(league_id, int(season), int(week), int(roster_id))
+        rows, meta = apply_to_rows(base)
+    else:
+        od = A.lineup_rows(query, league_id, int(roster_id), int(week), as_of=as_of, client=client,
+                           exclude_reference=exclude_reference)
+        base = od.rows
+        rows, meta = apply_to_rows(base, build_as_of=build_time())
+    ctx = RosterContext(league_id, int(roster_id), int(week), int(season), is_house, base, rows, meta, od)
+    if keep:
+        with _ctx_lock:
+            if len(_ctx_cache) > 512:
+                _ctx_cache.clear()
+            _ctx_cache[key] = (time.monotonic() + ttl, ctx)
+    return ctx
+
+
+def contexts(league_id: str, roster_ids: Iterable[int], week: int | None = None, *, house: bool | None = None,
+             workers: int = 4) -> dict[int, RosterContext | None]:
+    """{roster id: context} for several rosters, read side by side (the house path's rows are one query each)."""
+    from concurrent.futures import ThreadPoolExecutor
+    rids = sorted({int(r) for r in roster_ids})
+    if len(rids) <= 1:
+        return {r: roster_context(league_id, r, week, house=house) for r in rids}
+    with ThreadPoolExecutor(max_workers=min(workers, len(rids))) as ex:
+        got = list(ex.map(lambda r: roster_context(league_id, r, week, house=house), rids))
+    return dict(zip(rids, got, strict=True))
+
+
+def touched(gsis_by_roster: Mapping[int, Iterable[str]]) -> set[int]:
+    """The rosters the overlay can move this week: one of their starters or bench players (the caller passes those)
+    cannot play now, by a copy newer than the build. The other rosters keep the build's lineup, so their context need
+    not be built (the league views' cost)."""
+    if not enabled():
+        return set()
+    ids = {g for gs in gsis_by_roster.values() for g in gs if isinstance(g, str) and g}
+    av = now(ids)
+    built = build_time()
+    hit = {g for g, a in av.items() if a["cannot_play"] and (built is None or (_ts(a.get("fetched_at")) or built) >= built)}
+    return {int(r) for r, gs in gsis_by_roster.items() if hit & {g for g in gs if isinstance(g, str)}}
+
+
+# ------------------------------------------------------------------------------ IB-0: Waivers on the context
+def _solver(rows: pd.DataFrame, players: Mapping | None, drop: str | None = None) -> list[LU.Player]:
+    """The solver's view of a lineup frame (``_resolve``'s rules): who can play, who is locked where."""
+    out = []
+    for i, r in rows.iterrows():
+        if r["role"] not in ("starter", "bench", "unplayable") or bool(r["is_empty_slot"]):
+            continue
+        pid = str(r["sleeper_player_id"]) if isinstance(r["sleeper_player_id"], str) else f"row{i}"
+        if pid == drop:
+            continue
+        unvalued = r.get("value_source") == LU.UNVALUED or r["value"] is None or pd.isna(r["value"])
+        base = dict(id=pid, position=r["position"], value=None if unvalued else float(r["value"]),
+                    value_source=r.get("value_source"), fantasy_positions=_fantasy_positions(players, r["sleeper_player_id"]),
+                    status=r["report_status"] if isinstance(r["report_status"], str) else None)
+        if r["role"] == "unplayable":
+            out.append(LU.Player(**base, playable=False, reason=r.get("reason") or "cannot play"))
+        elif bool(r.get("locked_now")):
+            if r["role"] == "starter":
+                out.append(LU.Player(**base, locked_slot=r["slot_type"]))
+            else:
+                out.append(LU.Player(**base, playable=False, reason="game started (bench)"))
+        else:
+            out.append(LU.Player(**base))
+    return out
+
+
+def _slots(rows: pd.DataFrame) -> list[str]:
+    return [str(t) for t in rows[rows["role"] == "starter"].sort_values("slot_order")["slot_type"]]
+
+
+def moves_on_context(mv: pd.DataFrame, ctx: RosterContext | None, players: Mapping | None = None) -> pd.DataFrame:
+    """``mart_waiver_moves``' rows (or the on-demand sweep's) with THIS week's part re-solved on the roster's context
+    when the overlay moved the lineup: each move's week gain, lineup before / after, seat, displaced starter and the
+    drop's cost this week come from ``lineup.solve`` on the context's players (the later weeks keep the build's);
+    the horizon gain and the drop's cost follow; moves that no longer gain are left out; the ranks are re-run with
+    ``waivers.rank_moves``' order. Unchanged when the overlay did not move this roster."""
+    if mv is None or mv.empty or ctx is None or not ctx.changed or "list_kind" not in mv:
+        return mv
+    from league_lab import waivers as W
+    if players is None:
+        try:
+            players = A.sleeper().players()
+        except (A.SleeperBusy, A.SleeperUnavailable):
+            players = {}
+    slots = _slots(ctx.rows)
+    if not slots:
+        return mv
+    now_p, base_p = _solver(ctx.rows, players), _solver(ctx.base, players)
+    before = LU.solve(now_p, slots, margins=False)
+    base_total = LU.solve(base_p, slots, margins=False).total
+    drop_now: dict[str, float] = {}
+    drop_base: dict[str, float] = {}
+    starters_now = set(before.starter_ids)
+    info = {str(r["sleeper_player_id"]): r for _, r in ctx.rows.iterrows() if isinstance(r["sleeper_player_id"], str)}
+
+    def loss(d: str, ps: list[LU.Player], total: float, memo: dict) -> float:
+        if d not in memo:
+            memo[d] = total - LU.solve([p for p in ps if p.id != d], slots, margins=False).total
+        return memo[d]
+
+    out = []
+    for r in mv.to_dict("records"):
+        if r["list_kind"] == "nothing" or not isinstance(r.get("add_sleeper_id"), str):
+            r["lineup_before"] = r["lineup_after"] = round(before.total, 2)
+            out.append(r)
+            continue
+        d = r["drop_sleeper_id"] if isinstance(r.get("drop_sleeper_id"), str) else None
+        av = _f(r.get("add_value"))
+        add = LU.Player(id=str(r["add_sleeper_id"]), position=r["add_position"], value=av,
+                        value_source=r.get("add_value_source") or "proj_points",
+                        playable=not isinstance(r.get("add_reason"), str), reason=_s(r.get("add_reason")),
+                        fantasy_positions=_fantasy_positions(players, r["add_sleeper_id"]))
+        after = LU.solve([p for p in now_p if p.id != d] + [add], slots, margins=False)
+        gains = [(_f(g) or 0.0) for g in (r["week_gains"] if isinstance(r.get("week_gains"), list | tuple | np.ndarray) else [])]
+        old0 = gains[0] if gains else (_f(r.get("weekly_gain")) or 0.0)
+        new0 = after.total - before.total
+        gains = [new0, *gains[1:]] if gains else [new0]
+        r["week_gains"] = [round(g, 2) for g in gains]
+        r["weekly_gain"] = round(new0, 2)
+        r["horizon_gain"] = round((_f(r.get("horizon_gain")) or 0.0) - old0 + new0, 2)
+        r["lineup_before"], r["lineup_after"] = round(before.total, 2), round(after.total, 2)
+        slot, stype, disp = W._seat(before, after, add.id, d)
+        r["add_slot"], r["fills_empty_slot"] = slot, slot is not None and disp is None
+        if "add_slot_type" in mv:
+            r["add_slot_type"] = stype
+        dr = info.get(disp) if disp else None
+        r["displaced_sleeper_id"] = disp
+        r["displaced_gsis_id"] = None if dr is None else _s(dr["gsis_id"])
+        r["displaced_name"] = None if dr is None else _s(dr["player_name"])
+        r["displaced_position"] = None if dr is None else _s(dr["position"])
+        r["displaced_value"] = None if dr is None else _f(dr["value"])
+        r["displaced_slot"] = None if dr is None else _s(dr["slot"])
+        if d is not None:
+            new_loss, old_loss = loss(d, now_p, before.total, drop_now), loss(d, base_p, base_total, drop_base)
+            r["drop_horizon_loss"] = round(max(0.0, (_f(r.get("drop_horizon_loss")) or 0.0) - old_loss + new_loss), 2)
+            r["drop_is_starter"] = d in starters_now
+        r["list_kind"] = "start_now" if round(new0, 2) > 0 else "cover"
+        if round(r["horizon_gain"], 2) > 0 or round(new0, 2) > 0:
+            out.append(r)
+    if not any(x["list_kind"] != "nothing" for x in out):
+        head = mv.iloc[0].to_dict()
+        for c in ("move_rank", "add_rank", "is_best_drop", "add_sleeper_id", "add_gsis_id", "add_name", "drop_sleeper_id",
+                  "drop_gsis_id", "drop_name", "week_gains"):
+            if c in head:
+                head[c] = None
+        head["list_kind"], head["weekly_gain"], head["horizon_gain"] = "nothing", 0.0, 0.0
+        head["lineup_before"] = head["lineup_after"] = round(before.total, 2)
+        return pd.DataFrame([head], columns=mv.columns).assign(lineup_value=round(before.total, 2))
+    df = pd.DataFrame(out, columns=mv.columns)
+    df = df.assign(_n=df["drop_sleeper_id"].map(lambda x: isinstance(x, str)),
+                   _p=pd.to_numeric(df.get("drop_ros_points"), errors="coerce").fillna(0.0).round(2),
+                   _h=-pd.to_numeric(df["horizon_gain"], errors="coerce").round(2),
+                   _w=-pd.to_numeric(df["weekly_gain"], errors="coerce").round(2),
+                   _d=df["drop_sleeper_id"].fillna(""))
+    df = df.sort_values(["_h", "_w", "_n", "_p", "add_sleeper_id", "_d"]).drop(columns=["_n", "_p", "_h", "_w", "_d"])
+    df = df.reset_index(drop=True)
+    df["move_rank"] = range(1, len(df) + 1)
+    first = ~df["add_sleeper_id"].duplicated()
+    df["is_best_drop"] = first
+    df["add_rank"] = None
+    df.loc[first, "add_rank"] = range(1, int(first.sum()) + 1)
+    if "lineup_value" in df:
+        df["lineup_value"] = round(before.total, 2)
+    return df
+
+
+def drop_words(move: dict, ctx: RosterContext | None) -> dict:
+    """A drop who starts this week by the context is never "would not start": ``starts_this_week`` / ``slot_this_week``
+    on the drop, and the page's sentence replaced when it says so (the page's rule is a loss over 0.05, so a starter
+    with an equal player behind him read "would not start")."""
+    d = move.get("drop")
+    if not d or ctx is None:
+        return move
+    r = ctx.row_of(d.get("gsis_id") or d.get("sleeper_id"))
+    starts = r is not None and r["role"] == "starter" and not bool(r["is_empty_slot"])
+    d["starts_this_week"] = bool(starts)
+    d["slot_this_week"] = _s(r["slot"]) if starts else None
+    if starts:
+        from .applib import cards
+        name, slot = d.get("player_name") or "He", cards.slot_label(r["slot"])
+        loss = _f(d.get("horizon_loss")) or 0.0
+        words = move.get("words") or {}
+
+        def fix(x: str) -> str:
+            if "would not start" not in x:
+                return x
+            span = x.split(" would not start for you in ", 1)[1].rstrip(".") if " would not start for you in " in x else None
+            return (f"{name} starts at {slot} for you this week, but the player behind him is as good: dropping him costs "
+                    f"your lineup {loss:.1f}" + (f" over {span}" if span else "") + " (already counted).")
+        words["lines"] = [fix(x) for x in words.get("lines") or []]
+    return move
+# ---- end IB-0

@@ -252,7 +252,39 @@ def decisions(rows: pd.DataFrame, n: int = 3) -> pd.DataFrame:
             "mover_slot": mover["slot"] if mover is not None else None,
             "how": a["how"],
         })
+        # ---- IB-0 (Wave I-B): the call's strength, and (when the rows say who Sleeper starts now) its status
+        d = out[-1]
+        d["strength"] = strength(d)
+        if SLEEPER_STARTER in rows:
+            d["sleeper_starter"], d["alt_sleeper_starter"] = bool(s.get(SLEEPER_STARTER)), bool(alt.get(SLEEPER_STARTER))
+        d["status"] = call_status(d) if SLEEPER_STARTER in rows else ("close" if is_coin_flip(d) else None)
+        # ---- end IB-0
     return pd.DataFrame(out)
+
+
+# ---- IB-0 (Wave I-B, the second review's #3): a call that needs a change vs one that is already set. ``status``:
+# "close" = a coin flip (``is_coin_flip``: either is fine), "set" = Sleeper already starts the recommended player and
+# not the other one, "change" = it does not (he sits in Sleeper, or the other one starts). Who Sleeper starts now is
+# the rows' ``SLEEPER_STARTER`` column (the API: Sleeper's roster ``starters``; a page may fill it from
+# ``mart_player_availability.is_current_starter``); without it the status is only known for a coin flip.
+# ``strength``: "clear" (3+ points apart, or he outscores the other player 70% of the time or more), "lean", "coin flip".
+SLEEPER_STARTER = "sleeper_starter"
+CLEAR_PWIN = 0.7
+
+
+def strength(d) -> str:
+    if is_coin_flip(d):
+        return "coin flip"
+    pw = _num(d.get("p_win"))
+    margin = _num(d.get("margin")) or 0.0
+    return "clear" if margin >= LEAN or (pw is not None and pw >= CLEAR_PWIN) else "lean"
+
+
+def call_status(d) -> str:
+    if is_coin_flip(d):
+        return "close"
+    return "set" if d.get("sleeper_starter") and not d.get("alt_sleeper_starter") else "change"
+# ---- end IB-0
 
 
 def bench_gap(player: pd.Series, rows: pd.DataFrame) -> pd.Series | None:

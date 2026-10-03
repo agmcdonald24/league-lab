@@ -3826,3 +3826,58 @@ twice doesn't make any sense", "some of the trades it's suggesting are crazy" (J
   changes some suggestions; window variants; `trades_lists_*`; `trade_lists` dropped from the waivers fixtures; the
   evaluate fixtures re-saved, plus one "tick" variant per league, `ia2_packages.json`); `web/e2e/ia2/` 16 (8 × phone
   at 375 px and desktop); G4's trades test and the tab-row test, H1's buy-low tests follow the move.
+
+## Wave I-B (Iteration 17, part B)
+
+### IB-0 2026-10-03 — one availability truth (branch `dev/IB0`, clone `league_lab_i0a`)
+
+The second review's #1: I0-A's overlay re-solved the lineup on My Week only; Waivers' "would not start", the Team Hub,
+the player card's lineup line and the trade board read the nightly's `ops.lineups`, so between a build and the next
+morning two screens disagreed (115.75 vs 117.3 on the live app).
+
+- **One context** (`api/league_lab_api/availability.py`, `# ---- IB-0`): `roster_context(league, roster, week)` = the
+  nightly's rows (`cards.lineup_rows`; any other league `anyleague.lineup_rows`) + `apply_to_rows` (the overlay, the
+  lineup re-solved by `lineup.solve` when a status changed since the build). Every rostered player's `status` (OUT /
+  DOUBTFUL / IR / Q / ok), `can_play`, `starter`, `slot`, `value`, `locked`; `lineup_value`, `changes`, `checked_at`,
+  `as_of_build`. Kept in process for the overlay's interval (at most 10 min; 2 min on demand), keyed by league, roster,
+  week, the overlay's stamp and the build. `touched()` names the rosters the overlay can move (a starter or bench player
+  who cannot play by a copy newer than the build); `contexts()` reads several side by side (4 threads).
+- **Readers**: My Week (both paths) and the opponent's projected total (his context; I0-A left it); Waivers (the total,
+  the weakest starter, and `moves_on_context`: each move's this-week gain, lineup before / after, seat, displaced
+  starter and the drop's cost re-solved on the context, the later weeks kept, moves that no longer gain dropped, the
+  ranks re-run with `waivers.rank_moves`' order, the page's sentences written after; `drop_words`: a drop who starts
+  this week carries `starts_this_week` / `slot_this_week` and is never "would not start"); the Team Hub (lineup / bench
+  / horizon value, the closest call, slot strengths, the roster, this week's league comparison and every rank, re-read
+  for each roster the overlay moved); the player card (its lineup line reads the context; Availability adds "Justin
+  Jefferson is out (ankle): he starts at FLEX2 this week" / "Not in this week's lineup: …" when the overlay moved his
+  roster, and the injury line shows the overlay's status when newer than the build); the trade board (this week's rows
+  of every roster the overlay moved are its context's, before I0-A's `horizon_overlay`). ROS and Trends unchanged
+  (already on the overlay).
+- **The card's status** (`app/lib/cards.py`, both apps): `cards.decisions` adds `strength` (clear: 3+ points or
+  p_win ≥ 0.7; coin flip: `is_coin_flip`; else lean) and, when the rows carry `cards.SLEEPER_STARTER` (who Sleeper
+  starts now), `status`: close (a coin flip) / set (Sleeper starts him and not the other player) / change. The API fills
+  the column from Sleeper's roster `starters` (house leagues fall back on `mart_player_availability.is_current_starter`);
+  each My Week card carries `status`, `strength`, `in_sleeper_lineup`. Rendering unchanged (IB-3 draws it).
+- **Croskey-Merritt on the clone** (Scrubs roster 2, 2026-10-02 build, ESPN fixture: Jefferson Out). Before (main):
+  My Week 113.54 (Michael Wilson 9.20 starts at FLEX2, Croskey-Merritt 9.19 bench 3) · Waivers 117.02, weakest FLEX2
+  Tuten 9.72, "Claim Alvin Kamara: +0.0 this week at FLEX2, +9.1 over the next 4 weeks" · Team 117.02 "6th of 10",
+  closest call "FLEX2, Tuten over Wilson by 0.52" · calculator before 113.54 · his card "on MacZaddy's bench (4 of 5) …
+  would have to beat Tuten (9.72), 0.53 more". After: all four 113.54 · Waivers weakest FLEX2 Wilson 9.20 over
+  Croskey-Merritt by 0.01, Kamara "+0.6 this week at FLEX1, +9.6" · Team "113.5 — 5th of 10", "FLEX2, Michael Wilson
+  over Jacory Croskey-Merritt by 0.01" · his card "on MacZaddy's bench (3 of 3) … would have to beat Michael Wilson
+  (9.20)". The review's case (Wilson Out too, `test_ib0`'s `wilson_out`): Croskey-Merritt starts at FLEX2, all four
+  113.53; his card "**Justin Jefferson is out (ankle): he starts at FLEX2 this week.**" and "starts at FLEX2 … he is
+  a must-start"; Waivers' only drop of him reads "Dropping Jacory Croskey-Merritt costs your lineup 9.2 over the next 4
+  weeks" (main: six moves said he "would not start"). Test League roster 10: 95.41 on all four (main: 123.09 on
+  Waivers / Team); dynasty 12: 111.15 (the opponent 131.91 → 130.88); MFL 21861 team 4: 116.80 (122.41 off).
+- **Evidence**: `api/tests/test_ib0.py` 21 passed (the four-screen equality × {Scrubs, dynasty, Test League, Scrubs on
+  demand, MFL} × overlay on / off; the opponent; the cache; Waivers never "would not start" for an overlay starter,
+  both paths; the player card, both paths; the trade board; status change / set / close on a frame and on the fixture
+  cards: set = Scrubs FLEX2 Tuten, change = dynasty Superflex Penix, close = dynasty RB2 E. Wilson; the drop sentence).
+  API suite 290 passed (269 + 21; I0-A's 19 green, parity green); root suite 847 passed, 2 skipped (the clone has no
+  `ops.player_prior_oof` / archived schedules); ruff clean; web lint / build clean (types only: `web/src/lib/api.ts`,
+  `// ---- IB-0` fields on `DecisionCard`, `Opponent`, `WaiverDrop`, `Waivers`, `Team`). Latency (shared sandbox, cold, Scrubs, overlay on vs off): Waivers ≈ 2.1 s vs 1.2 s, Team
+  ≈ 1.8 s vs 0.5 s (9 of 10 rosters touched by the fixture feed; read once, then kept); My Week unchanged.
+- **Not covered**: a free agent who becomes worth a claim only because of the overlay (the build's moves are re-priced,
+  not re-searched; the next nightly finds him); a player the build sat as Out who is back does not mark another roster
+  as touched on Team / the trade board (his own roster's context still re-solves).

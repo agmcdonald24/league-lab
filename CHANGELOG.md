@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-B
+
+- **IB-0: one availability truth.** Every screen now reads a roster's week from one place,
+  `availability.roster_context` (the nightly's lineup + the injury overlay, re-solved when a status changed since the
+  build): My Week and the opponent's projected total, Waivers (the total, the weakest starter, each move's this-week
+  gain and seat, the drop's cost — a player who starts because Jefferson is out is never "would not start"), the Team
+  Hub (lineup / bench / horizon values, the closest call, slot strengths, the roster, the league's ranks), the player
+  card (its lineup line, and "Justin Jefferson is out (ankle): he starts at FLEX2 this week" in Availability, the
+  overlay's injury status) and the trade board (the calculator's "before"). The lineup total is one number: Scrubs
+  roster 2 with Jefferson Out read 113.54 on My Week and 117.02 on Waivers and Team; all four screens now read 113.54
+  (Test League 95.41, was 123.09 on Waivers / Team). My Week's cards carry `status` (change / set / close, against
+  Sleeper's current lineup) and `strength` (clear / lean / coin flip) from `cards.decisions` for the web's card.
+
 ## 2026-10-03 — Wave I-A
 
 - **Nightly: a backup time.** GitHub dropped the 11:37 UTC scheduled run on 2026-10-03 (no run at all); a second cron
