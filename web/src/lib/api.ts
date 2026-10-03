@@ -1265,3 +1265,43 @@ export interface RosList {
   lineup_note?: string;
 }
 // ---- end IB-3
+
+// ---- IB-2 (Wave I-B): Waivers short — GET /api/waivers' `top3` (the three strongest moves, one reason each), the views
+// (Help now · Bye coverage · Stashes · All available; one answer carries them all: the chips switch without a request),
+// and on every move whose drop starts this week or next: `drop_starts` + `keep_alternative` (the best claim that keeps
+// him, or the line that none does). Additive: declaration merging.
+export type WaiverView = "help" | "bye" | "stash" | "all";
+
+/** One claim as the screen shows it: the move, one reason (a fact: the role, the bye, the slot), the claim's cost. */
+export interface WaiverCard {
+  move: WaiverMove;
+  reason: string;
+  cost: string;
+  gain: number | null; // the lineup gain over the horizon (gain_label: "weeks 4–7")
+  gain_label: string;
+  this_week: number | null;
+  week_gain?: number | null; // Bye coverage: the gain in the bye week (week_gain_label: "week 5")
+  week_gain_label?: string;
+}
+
+export interface WaiverViews {
+  help: { label: string; line: string | null; moves: WaiverCard[] };
+  bye: { label: string; line: string | null; week: number | null; on_bye: string[]; empty_slots: string[]; moves: WaiverCard[] };
+  stash: { label: string; count: number };
+  all: { label: string; count: number };
+}
+
+export interface WaiverMove {
+  drop_starts?: { weeks: number[]; slot: string | null; text: string } | null;
+  keep_alternative?: {
+    move: { add: DPlayer; drop: (DPlayer & { player_name: string | null }) | null; weekly_gain: number | null; horizon_gain: number | null } | null;
+    line: string;
+  } | null;
+}
+
+export interface Waivers {
+  top3?: WaiverCard[];
+  views?: WaiverViews;
+  default_view?: WaiverView;
+}
+// ---- end IB-2

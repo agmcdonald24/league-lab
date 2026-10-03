@@ -83,7 +83,9 @@
     ],
     "why": "helps wk 7",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 3,
@@ -155,6 +157,34 @@
     ],
     "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 6, 7; drop costs 21.6",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+   },
+   "drop_starts": {
+    "weeks": [
+     4
+    ],
+    "slot": "DEF",
+    "text": "Kansas City Chiefs starts for you this week"
+   },
+   "keep_alternative": {
+    "move": {
+     "add": {
+      "sleeper_id": "NYG",
+      "gsis_id": null,
+      "player_name": "New York Giants",
+      "position": "DEF",
+      "team": "NYG",
+      "headshot_url": null
+     },
+     "drop": {
+      "sleeper_id": "12533",
+      "gsis_id": "00-0040242",
+      "player_name": "Jacory Croskey-Merritt",
+      "position": "RB"
+     },
+     "weekly_gain": 0.64,
+     "horizon_gain": 9.66
+    },
+    "line": "Or drop Croskey-Merritt instead (he sits) and keep Kansas City Chiefs: +9.7 over weeks 4–7."
    }
   },
   {
@@ -228,7 +258,9 @@
     ],
     "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 6; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 9,
@@ -301,7 +333,9 @@
     ],
     "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 11,
@@ -373,6 +407,34 @@
     ],
     "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 6, 7; drop costs 21.6",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+   },
+   "drop_starts": {
+    "weeks": [
+     4
+    ],
+    "slot": "DEF",
+    "text": "Kansas City Chiefs starts for you this week"
+   },
+   "keep_alternative": {
+    "move": {
+     "add": {
+      "sleeper_id": "NYG",
+      "gsis_id": null,
+      "player_name": "New York Giants",
+      "position": "DEF",
+      "team": "NYG",
+      "headshot_url": null
+     },
+     "drop": {
+      "sleeper_id": "12533",
+      "gsis_id": "00-0040242",
+      "player_name": "Jacory Croskey-Merritt",
+      "position": "RB"
+     },
+     "weekly_gain": 0.64,
+     "horizon_gain": 9.66
+    },
+    "line": "Or: add New York Giants for a +9.7 gain over weeks 4–7 and keep Kansas City Chiefs (drop Croskey-Merritt, who sits)."
    }
   },
   {
@@ -445,7 +507,9 @@
     ],
     "why": "FLEX2 over Bhayshul Tuten (9.7); helps wk 7",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 17,
@@ -511,7 +575,9 @@
     ],
     "why": "helps wk 5, 6; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 19,
@@ -577,7 +643,9 @@
     ],
     "why": "helps wk 5, 6, 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 21,
@@ -643,7 +711,9 @@
     ],
     "why": "helps wk 5, 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 23,
@@ -716,7 +786,9 @@
     ],
     "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 25,
@@ -789,7 +861,9 @@
     ],
     "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 27,
@@ -861,6 +935,34 @@
     ],
     "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 6, 7; drop costs 21.6",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+   },
+   "drop_starts": {
+    "weeks": [
+     4
+    ],
+    "slot": "DEF",
+    "text": "Kansas City Chiefs starts for you this week"
+   },
+   "keep_alternative": {
+    "move": {
+     "add": {
+      "sleeper_id": "NYG",
+      "gsis_id": null,
+      "player_name": "New York Giants",
+      "position": "DEF",
+      "team": "NYG",
+      "headshot_url": null
+     },
+     "drop": {
+      "sleeper_id": "12533",
+      "gsis_id": "00-0040242",
+      "player_name": "Jacory Croskey-Merritt",
+      "position": "RB"
+     },
+     "weekly_gain": 0.64,
+     "horizon_gain": 9.66
+    },
+    "line": "Or: add New York Giants for a +9.7 gain over weeks 4–7 and keep Kansas City Chiefs (drop Croskey-Merritt, who sits)."
    }
   },
   {
@@ -927,7 +1029,9 @@
     ],
     "why": "helps wk 5, 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 38,
@@ -993,7 +1097,9 @@
     ],
     "why": "helps wk 5, 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 41,
@@ -1059,7 +1165,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 44,
@@ -1125,7 +1233,9 @@
     ],
     "why": "helps wk 5, 6, 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 46,
@@ -1191,7 +1301,9 @@
     ],
     "why": "helps wk 5, 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 49,
@@ -1257,7 +1369,9 @@
     ],
     "why": "helps wk 5, 6; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 51,
@@ -1323,7 +1437,9 @@
     ],
     "why": "helps wk 5; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 54,
@@ -1389,7 +1505,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 56,
@@ -1455,7 +1573,9 @@
     ],
     "why": "helps wk 5; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 58,
@@ -1521,7 +1641,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 60,
@@ -1587,7 +1709,9 @@
     ],
     "why": "helps wk 5; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 62,
@@ -1653,7 +1777,9 @@
     ],
     "why": "helps wk 5; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 66,
@@ -1719,7 +1845,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 70,
@@ -1785,7 +1913,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 73,
@@ -1851,7 +1981,9 @@
     ],
     "why": "helps wk 5; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 76,
@@ -1917,7 +2049,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 79,
@@ -1983,7 +2117,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 82,
@@ -2049,7 +2185,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 87,
@@ -2122,7 +2260,9 @@
     ],
     "why": "DEF over Kansas City Chiefs (7.2); helps wk 5; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 92,
@@ -2188,7 +2328,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 94,
@@ -2254,7 +2396,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 103,
@@ -2320,7 +2464,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 109,
@@ -2386,7 +2532,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 112,
@@ -2452,7 +2600,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 115,
@@ -2518,7 +2668,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 117,
@@ -2584,7 +2736,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 119,
@@ -2650,7 +2804,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 124,
@@ -2716,7 +2872,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 126,
@@ -2782,7 +2940,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 128,
@@ -2848,7 +3008,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 131,
@@ -2914,7 +3076,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 133,
@@ -2981,7 +3145,9 @@
     ],
     "why": "helps wk 7; no games yet; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 136,
@@ -3053,6 +3219,35 @@
     ],
     "why": "K over Chase McLaughlin (8.1); helps wk 5, 6, 7; drop costs 32.6",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+   },
+   "drop_starts": {
+    "weeks": [
+     4,
+     5
+    ],
+    "slot": "K",
+    "text": "Chase McLaughlin starts for you this week and next"
+   },
+   "keep_alternative": {
+    "move": {
+     "add": {
+      "sleeper_id": "5095",
+      "gsis_id": "00-0034161",
+      "player_name": "Daniel Carlson",
+      "position": "K",
+      "team": "NO",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gsvj7rtvqwbwdeho8whf"
+     },
+     "drop": {
+      "sleeper_id": "12533",
+      "gsis_id": "00-0040242",
+      "player_name": "Jacory Croskey-Merritt",
+      "position": "RB"
+     },
+     "weekly_gain": 1.79,
+     "horizon_gain": 4.03
+    },
+    "line": "Or drop Croskey-Merritt instead (he sits) and keep McLaughlin: +4.0 over weeks 4–7."
    }
   },
   {
@@ -3119,7 +3314,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 141,
@@ -3185,7 +3382,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 144,
@@ -3251,7 +3450,9 @@
     ],
     "why": "helps wk 7; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 146,
@@ -3318,7 +3519,9 @@
     ],
     "why": "helps wk 7; no games yet; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   },
   {
    "move_rank": 148,
@@ -3385,7 +3588,9 @@
     ],
     "why": "helps wk 7; no games yet; drop projects more for the season",
     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-   }
+   },
+   "drop_starts": null,
+   "keep_alternative": null
   }
  ],
  "total_moves": 121,
@@ -3465,6 +3670,34 @@
      ],
      "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 6, 7; drop costs 21.6",
      "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+    },
+    "drop_starts": {
+     "weeks": [
+      4
+     ],
+     "slot": "DEF",
+     "text": "Kansas City Chiefs starts for you this week"
+    },
+    "keep_alternative": {
+     "move": {
+      "add": {
+       "sleeper_id": "NYG",
+       "gsis_id": null,
+       "player_name": "New York Giants",
+       "position": "DEF",
+       "team": "NYG",
+       "headshot_url": null
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB"
+      },
+      "weekly_gain": 0.64,
+      "horizon_gain": 9.66
+     },
+     "line": "Or drop Croskey-Merritt instead (he sits) and keep Kansas City Chiefs: +9.7 over weeks 4–7."
     }
    }
   },
@@ -3536,7 +3769,9 @@
      ],
      "why": "helps wk 7",
      "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-    }
+    },
+    "drop_starts": null,
+    "keep_alternative": null
    }
   },
   {
@@ -3609,7 +3844,9 @@
      ],
      "why": "helps wk 7; no games yet; drop projects more for the season",
      "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
-    }
+    },
+    "drop_starts": null,
+    "keep_alternative": null
    }
   }
  ],
@@ -4853,5 +5090,1751 @@
    "**Lineup gain if it holds** adds up this week and the next three in your lineup; most stashes add nothing yet, which is why they are stashes, not starters."
   ],
   "source": "mart_waiver_upside"
- }
+ },
+ "top3": [
+  {
+   "move": {
+    "move_rank": 1,
+    "add_rank": 1,
+    "list_kind": "cover",
+    "is_best_drop": true,
+    "add": {
+     "sleeper_id": "8132",
+     "gsis_id": "00-0037263",
+     "player_name": "Tyler Allgeier",
+     "position": "RB",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/sp9lhhmpv4qy3xy2msxd",
+     "projection": 9.17,
+     "value_source": "proj_points",
+     "p10": 1.46,
+     "p25": 4.02,
+     "p75": 13.0,
+     "p90": 20.05,
+     "report_status": null,
+     "reason": null,
+     "games_played": 2,
+     "is_no_evidence": false,
+     "ros_points": 109.11,
+     "ros_rank_pos": 34,
+     "season_points_left": 126.91
+    },
+    "drop": {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "projection": 9.19,
+     "is_starter": false,
+     "horizon_loss": 0.0,
+     "season_points_left": 122.42,
+     "ros_points": 104.84
+    },
+    "weekly_gain": 0.0,
+    "horizon_gain": 9.85,
+    "week_gains": [
+     0.0,
+     0.0,
+     0.0,
+     9.85
+    ],
+    "add_horizon_gain": 9.85,
+    "lineup_before": 117.02,
+    "lineup_after": 117.02,
+    "add_slot": null,
+    "fills_empty_slot": false,
+    "displaced": null,
+    "open_roster_spots": 0,
+    "words": {
+     "headline": "Claim Tyler Allgeier (RB), drop Jacory Croskey-Merritt: +9.8 over the next 4 weeks, all in week 7",
+     "lines": [
+      "Tyler Allgeier projects 9.2 for week 4 in your league's scoring.",
+      "It helps in week 7, not this week, so there is time: claim him before then.",
+      "Jacory Croskey-Merritt would not start for you in the next 4 weeks."
+     ],
+     "why": "helps wk 7",
+     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+    },
+    "drop_starts": null,
+    "keep_alternative": null
+   },
+   "reason": "Fills your empty RB2 in week 7, when Croskey-Merritt, Hampton and 1 more are on a bye.",
+   "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+   "gain": 9.85,
+   "gain_label": "weeks 4–7",
+   "this_week": 0.0
+  },
+  {
+   "move": {
+    "move_rank": 3,
+    "add_rank": 2,
+    "list_kind": "start_now",
+    "is_best_drop": true,
+    "add": {
+     "sleeper_id": "NYG",
+     "gsis_id": null,
+     "player_name": "New York Giants",
+     "position": "DEF",
+     "team": "NYG",
+     "headshot_url": null,
+     "projection": 7.8,
+     "value_source": "proj_points",
+     "p10": null,
+     "p25": null,
+     "p75": null,
+     "p90": null,
+     "report_status": null,
+     "reason": null,
+     "games_played": 2,
+     "is_no_evidence": false,
+     "ros_points": 88.71,
+     "ros_rank_pos": 15,
+     "season_points_left": 103.25
+    },
+    "drop": {
+     "sleeper_id": "KC",
+     "gsis_id": null,
+     "player_name": "Kansas City Chiefs",
+     "position": "DEF",
+     "team": "KC",
+     "headshot_url": null,
+     "projection": 7.16,
+     "is_starter": true,
+     "horizon_loss": 21.64,
+     "season_points_left": 99.1,
+     "ros_points": 85.46
+    },
+    "weekly_gain": 0.64,
+    "horizon_gain": 9.66,
+    "week_gains": [
+     0.64,
+     7.0,
+     1.23,
+     0.79
+    ],
+    "add_horizon_gain": 9.66,
+    "lineup_before": 117.02,
+    "lineup_after": 117.66,
+    "add_slot": "DEF",
+    "fills_empty_slot": false,
+    "displaced": {
+     "player_name": "Kansas City Chiefs",
+     "position": "DEF",
+     "projection": 7.16,
+     "slot": "DEF",
+     "sleeper_id": "KC",
+     "gsis_id": null
+    },
+    "open_roster_spots": 0,
+    "words": {
+     "headline": "Claim New York Giants (DEF), drop Kansas City Chiefs: +0.6 this week at DEF, +9.7 over the next 4 weeks",
+     "lines": [
+      "New York Giants projects 7.8 for week 4 in your league's scoring. It starts at DEF; Kansas City Chiefs (7.2 this week) leaves your lineup.",
+      "Your week-4 lineup: 117.0 → 117.7.",
+      "Dropping Kansas City Chiefs costs your lineup 21.6 over the next 4 weeks (already counted)."
+     ],
+     "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 6, 7; drop costs 21.6",
+     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+    },
+    "drop_starts": {
+     "weeks": [
+      4
+     ],
+     "slot": "DEF",
+     "text": "Kansas City Chiefs starts for you this week"
+    },
+    "keep_alternative": {
+     "move": {
+      "add": {
+       "sleeper_id": "NYG",
+       "gsis_id": null,
+       "player_name": "New York Giants",
+       "position": "DEF",
+       "team": "NYG",
+       "headshot_url": null
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB"
+      },
+      "weekly_gain": 0.64,
+      "horizon_gain": 9.66
+     },
+     "line": "Or drop Croskey-Merritt instead (he sits) and keep Kansas City Chiefs: +9.7 over weeks 4–7."
+    }
+   },
+   "reason": "Starts at DEF this week over Kansas City Chiefs (7.2).",
+   "cost": "Drop Kansas City Chiefs: he starts for you this week.",
+   "gain": 9.66,
+   "gain_label": "weeks 4–7",
+   "this_week": 0.64
+  },
+  {
+   "move": {
+    "move_rank": 136,
+    "add_rank": 45,
+    "list_kind": "start_now",
+    "is_best_drop": true,
+    "add": {
+     "sleeper_id": "5095",
+     "gsis_id": "00-0034161",
+     "player_name": "Daniel Carlson",
+     "position": "K",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gsvj7rtvqwbwdeho8whf",
+     "projection": 9.86,
+     "value_source": "proj_points",
+     "p10": 4.2,
+     "p25": null,
+     "p75": null,
+     "p90": 15.84,
+     "report_status": null,
+     "reason": null,
+     "games_played": 2,
+     "is_no_evidence": false,
+     "ros_points": 108.65,
+     "ros_rank_pos": 2,
+     "season_points_left": 126.34
+    },
+    "drop": {
+     "sleeper_id": "6650",
+     "gsis_id": "00-0035358",
+     "player_name": "Chase McLaughlin",
+     "position": "K",
+     "team": "TB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+     "projection": 8.07,
+     "is_starter": true,
+     "horizon_loss": 32.65,
+     "season_points_left": 113.22,
+     "ros_points": 96.54
+    },
+    "weekly_gain": 1.79,
+    "horizon_gain": 4.03,
+    "week_gains": [
+     1.79,
+     0.32,
+     0.21,
+     1.71
+    ],
+    "add_horizon_gain": 4.03,
+    "lineup_before": 117.02,
+    "lineup_after": 118.81,
+    "add_slot": "K",
+    "fills_empty_slot": false,
+    "displaced": {
+     "player_name": "Chase McLaughlin",
+     "position": "K",
+     "projection": 8.07,
+     "slot": "K",
+     "sleeper_id": "6650",
+     "gsis_id": "00-0035358"
+    },
+    "open_roster_spots": 0,
+    "words": {
+     "headline": "Claim Daniel Carlson (K), drop Chase McLaughlin: +1.8 this week at K, +4.0 over the next 4 weeks",
+     "lines": [
+      "Daniel Carlson projects 9.9 for week 4 in your league's scoring. He starts at K; Chase McLaughlin (8.1 this week) leaves your lineup.",
+      "Your week-4 lineup: 117.0 → 118.8.",
+      "Dropping Chase McLaughlin costs your lineup 32.6 over the next 4 weeks (already counted)."
+     ],
+     "why": "K over Chase McLaughlin (8.1); helps wk 5, 6, 7; drop costs 32.6",
+     "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+    },
+    "drop_starts": {
+     "weeks": [
+      4,
+      5
+     ],
+     "slot": "K",
+     "text": "Chase McLaughlin starts for you this week and next"
+    },
+    "keep_alternative": {
+     "move": {
+      "add": {
+       "sleeper_id": "5095",
+       "gsis_id": "00-0034161",
+       "player_name": "Daniel Carlson",
+       "position": "K",
+       "team": "NO",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gsvj7rtvqwbwdeho8whf"
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB"
+      },
+      "weekly_gain": 1.79,
+      "horizon_gain": 4.03
+     },
+     "line": "Or drop Croskey-Merritt instead (he sits) and keep McLaughlin: +4.0 over weeks 4–7."
+    }
+   },
+   "reason": "Starts at K this week over McLaughlin (8.1).",
+   "cost": "Drop Chase McLaughlin: he starts for you this week and next.",
+   "gain": 4.03,
+   "gain_label": "weeks 4–7",
+   "this_week": 1.79
+  }
+ ],
+ "views": {
+  "help": {
+   "label": "Help now",
+   "line": "Claims that raise this week's lineup (117.0), the biggest gain first.",
+   "moves": [
+    {
+     "move": {
+      "move_rank": 169,
+      "add_rank": 59,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "11792",
+       "gsis_id": "00-0039404",
+       "player_name": "Will Reichard",
+       "position": "K",
+       "team": "MIN",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wv1h4umuddkfss96uutw",
+       "projection": 10.28,
+       "value_source": "proj_points",
+       "p10": 4.62,
+       "p25": null,
+       "p75": null,
+       "p90": 16.26,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 103.4,
+       "ros_rank_pos": 6,
+       "season_points_left": 120.2
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 2.21,
+      "horizon_gain": 3.27,
+      "week_gains": [
+       2.21,
+       0.56,
+       0.0,
+       0.5
+      ],
+      "add_horizon_gain": 3.27,
+      "lineup_before": 117.02,
+      "lineup_after": 119.23,
+      "add_slot": "K",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Chase McLaughlin",
+       "position": "K",
+       "projection": 8.07,
+       "slot": "K",
+       "sleeper_id": "6650",
+       "gsis_id": "00-0035358"
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Will Reichard (K), drop Jacory Croskey-Merritt: +2.2 this week at K, +3.3 over the next 4 weeks",
+       "lines": [
+        "Will Reichard projects 10.3 for week 4 in your league's scoring. He starts at K; **Chase McLaughlin** (K, projected 8.1) goes to your bench.",
+        "Your week-4 lineup: 117.0 → 119.2.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than Will Reichard over the rest of the season (122 vs 120 points)."
+       ],
+       "why": "K over Chase McLaughlin (8.1); helps wk 5, 7; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Starts at K this week over McLaughlin (8.1).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 3.27,
+     "gain_label": "weeks 4–7",
+     "this_week": 2.21
+    },
+    {
+     "move": {
+      "move_rank": 136,
+      "add_rank": 45,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "5095",
+       "gsis_id": "00-0034161",
+       "player_name": "Daniel Carlson",
+       "position": "K",
+       "team": "NO",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gsvj7rtvqwbwdeho8whf",
+       "projection": 9.86,
+       "value_source": "proj_points",
+       "p10": 4.2,
+       "p25": null,
+       "p75": null,
+       "p90": 15.84,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 108.65,
+       "ros_rank_pos": 2,
+       "season_points_left": 126.34
+      },
+      "drop": {
+       "sleeper_id": "6650",
+       "gsis_id": "00-0035358",
+       "player_name": "Chase McLaughlin",
+       "position": "K",
+       "team": "TB",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+       "projection": 8.07,
+       "is_starter": true,
+       "horizon_loss": 32.65,
+       "season_points_left": 113.22,
+       "ros_points": 96.54
+      },
+      "weekly_gain": 1.79,
+      "horizon_gain": 4.03,
+      "week_gains": [
+       1.79,
+       0.32,
+       0.21,
+       1.71
+      ],
+      "add_horizon_gain": 4.03,
+      "lineup_before": 117.02,
+      "lineup_after": 118.81,
+      "add_slot": "K",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Chase McLaughlin",
+       "position": "K",
+       "projection": 8.07,
+       "slot": "K",
+       "sleeper_id": "6650",
+       "gsis_id": "00-0035358"
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Daniel Carlson (K), drop Chase McLaughlin: +1.8 this week at K, +4.0 over the next 4 weeks",
+       "lines": [
+        "Daniel Carlson projects 9.9 for week 4 in your league's scoring. He starts at K; Chase McLaughlin (8.1 this week) leaves your lineup.",
+        "Your week-4 lineup: 117.0 → 118.8.",
+        "Dropping Chase McLaughlin costs your lineup 32.6 over the next 4 weeks (already counted)."
+       ],
+       "why": "K over Chase McLaughlin (8.1); helps wk 5, 6, 7; drop costs 32.6",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": {
+       "weeks": [
+        4,
+        5
+       ],
+       "slot": "K",
+       "text": "Chase McLaughlin starts for you this week and next"
+      },
+      "keep_alternative": {
+       "move": {
+        "add": {
+         "sleeper_id": "5095",
+         "gsis_id": "00-0034161",
+         "player_name": "Daniel Carlson",
+         "position": "K",
+         "team": "NO",
+         "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gsvj7rtvqwbwdeho8whf"
+        },
+        "drop": {
+         "sleeper_id": "12533",
+         "gsis_id": "00-0040242",
+         "player_name": "Jacory Croskey-Merritt",
+         "position": "RB"
+        },
+        "weekly_gain": 1.79,
+        "horizon_gain": 4.03
+       },
+       "line": "Or drop Croskey-Merritt instead (he sits) and keep McLaughlin: +4.0 over weeks 4–7."
+      }
+     },
+     "reason": "Starts at K this week over McLaughlin (8.1).",
+     "cost": "Drop Chase McLaughlin: he starts for you this week and next.",
+     "gain": 4.03,
+     "gain_label": "weeks 4–7",
+     "this_week": 1.79
+    },
+    {
+     "move": {
+      "move_rank": 11,
+      "add_rank": 5,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "CHI",
+       "gsis_id": null,
+       "player_name": "Chicago Bears",
+       "position": "DEF",
+       "team": "CHI",
+       "headshot_url": null,
+       "projection": 8.9,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 91.5,
+       "ros_rank_pos": 11,
+       "season_points_left": 106.9
+      },
+      "drop": {
+       "sleeper_id": "KC",
+       "gsis_id": null,
+       "player_name": "Kansas City Chiefs",
+       "position": "DEF",
+       "team": "KC",
+       "headshot_url": null,
+       "projection": 7.16,
+       "is_starter": true,
+       "horizon_loss": 21.64,
+       "season_points_left": 99.1,
+       "ros_points": 85.46
+      },
+      "weekly_gain": 1.74,
+      "horizon_gain": 9.48,
+      "week_gains": [
+       1.74,
+       7.14,
+       0.02,
+       0.58
+      ],
+      "add_horizon_gain": 9.48,
+      "lineup_before": 117.02,
+      "lineup_after": 118.76,
+      "add_slot": "DEF",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Kansas City Chiefs",
+       "position": "DEF",
+       "projection": 7.16,
+       "slot": "DEF",
+       "sleeper_id": "KC",
+       "gsis_id": null
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Chicago Bears (DEF), drop Kansas City Chiefs: +1.7 this week at DEF, +9.5 over the next 4 weeks",
+       "lines": [
+        "Chicago Bears projects 8.9 for week 4 in your league's scoring. It starts at DEF; Kansas City Chiefs (7.2 this week) leaves your lineup.",
+        "Your week-4 lineup: 117.0 → 118.8.",
+        "Dropping Kansas City Chiefs costs your lineup 21.6 over the next 4 weeks (already counted)."
+       ],
+       "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 6, 7; drop costs 21.6",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": {
+       "weeks": [
+        4
+       ],
+       "slot": "DEF",
+       "text": "Kansas City Chiefs starts for you this week"
+      },
+      "keep_alternative": {
+       "move": {
+        "add": {
+         "sleeper_id": "NYG",
+         "gsis_id": null,
+         "player_name": "New York Giants",
+         "position": "DEF",
+         "team": "NYG",
+         "headshot_url": null
+        },
+        "drop": {
+         "sleeper_id": "12533",
+         "gsis_id": "00-0040242",
+         "player_name": "Jacory Croskey-Merritt",
+         "position": "RB"
+        },
+        "weekly_gain": 0.64,
+        "horizon_gain": 9.66
+       },
+       "line": "Or: add New York Giants for a +9.7 gain over weeks 4–7 and keep Kansas City Chiefs (drop Croskey-Merritt, who sits)."
+      }
+     },
+     "reason": "Starts at DEF this week over Kansas City Chiefs (7.2).",
+     "cost": "Drop Kansas City Chiefs: he starts for you this week.",
+     "gain": 9.48,
+     "gain_label": "weeks 4–7",
+     "this_week": 1.74
+    },
+    {
+     "move": {
+      "move_rank": 248,
+      "add_rank": 87,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "650",
+       "gsis_id": "00-0025565",
+       "player_name": "Nick Folk",
+       "position": "K",
+       "team": "ATL",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+       "projection": 9.77,
+       "value_source": "proj_points",
+       "p10": 4.11,
+       "p25": null,
+       "p75": null,
+       "p90": 15.75,
+       "report_status": null,
+       "reason": null,
+       "games_played": 3,
+       "is_no_evidence": false,
+       "ros_points": 104.14,
+       "ros_rank_pos": 5,
+       "season_points_left": 121.79
+      },
+      "drop": {
+       "sleeper_id": "6650",
+       "gsis_id": "00-0035358",
+       "player_name": "Chase McLaughlin",
+       "position": "K",
+       "team": "TB",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+       "projection": 8.07,
+       "is_starter": true,
+       "horizon_loss": 32.65,
+       "season_points_left": 113.22,
+       "ros_points": 96.54
+      },
+      "weekly_gain": 1.7,
+      "horizon_gain": 2.0,
+      "week_gains": [
+       1.7,
+       0.07,
+       0.18,
+       0.05
+      ],
+      "add_horizon_gain": 2.0,
+      "lineup_before": 117.02,
+      "lineup_after": 118.72,
+      "add_slot": "K",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Chase McLaughlin",
+       "position": "K",
+       "projection": 8.07,
+       "slot": "K",
+       "sleeper_id": "6650",
+       "gsis_id": "00-0035358"
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Nick Folk (K), drop Chase McLaughlin: +1.7 this week at K, +2.0 over the next 4 weeks",
+       "lines": [
+        "Nick Folk projects 9.8 for week 4 in your league's scoring. He starts at K; Chase McLaughlin (8.1 this week) leaves your lineup.",
+        "Your week-4 lineup: 117.0 → 118.7.",
+        "Dropping Chase McLaughlin costs your lineup 32.6 over the next 4 weeks (already counted)."
+       ],
+       "why": "K over Chase McLaughlin (8.1); helps wk 5, 6, 7; drop costs 32.6",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": {
+       "weeks": [
+        4,
+        5
+       ],
+       "slot": "K",
+       "text": "Chase McLaughlin starts for you this week and next"
+      },
+      "keep_alternative": {
+       "move": {
+        "add": {
+         "sleeper_id": "5095",
+         "gsis_id": "00-0034161",
+         "player_name": "Daniel Carlson",
+         "position": "K",
+         "team": "NO",
+         "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gsvj7rtvqwbwdeho8whf"
+        },
+        "drop": {
+         "sleeper_id": "12533",
+         "gsis_id": "00-0040242",
+         "player_name": "Jacory Croskey-Merritt",
+         "position": "RB"
+        },
+        "weekly_gain": 1.79,
+        "horizon_gain": 4.03
+       },
+       "line": "Or: add Daniel Carlson for a +4.0 gain over weeks 4–7 and keep McLaughlin (drop Croskey-Merritt, who sits)."
+      }
+     },
+     "reason": "Starts at K this week over McLaughlin (8.1).",
+     "cost": "Drop Chase McLaughlin: he starts for you this week and next.",
+     "gain": 2.0,
+     "gain_label": "weeks 4–7",
+     "this_week": 1.7
+    },
+    {
+     "move": {
+      "move_rank": 181,
+      "add_rank": 64,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "3451",
+       "gsis_id": "00-0032726",
+       "player_name": "Ka'imi Fairbairn",
+       "position": "K",
+       "team": "HOU",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/nbrs7doetqydf2rzhjjl",
+       "projection": 9.74,
+       "value_source": "proj_points",
+       "p10": 4.08,
+       "p25": null,
+       "p75": null,
+       "p90": 15.72,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 106.13,
+       "ros_rank_pos": 4,
+       "season_points_left": 123.58
+      },
+      "drop": {
+       "sleeper_id": "6650",
+       "gsis_id": "00-0035358",
+       "player_name": "Chase McLaughlin",
+       "position": "K",
+       "team": "TB",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+       "projection": 8.07,
+       "is_starter": true,
+       "horizon_loss": 32.65,
+       "season_points_left": 113.22,
+       "ros_points": 96.54
+      },
+      "weekly_gain": 1.67,
+      "horizon_gain": 3.02,
+      "week_gains": [
+       1.67,
+       0.51,
+       0.26,
+       0.58
+      ],
+      "add_horizon_gain": 3.02,
+      "lineup_before": 117.02,
+      "lineup_after": 118.69,
+      "add_slot": "K",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Chase McLaughlin",
+       "position": "K",
+       "projection": 8.07,
+       "slot": "K",
+       "sleeper_id": "6650",
+       "gsis_id": "00-0035358"
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Ka'imi Fairbairn (K), drop Chase McLaughlin: +1.7 this week at K, +3.0 over the next 4 weeks",
+       "lines": [
+        "Ka'imi Fairbairn projects 9.7 for week 4 in your league's scoring. He starts at K; Chase McLaughlin (8.1 this week) leaves your lineup.",
+        "Your week-4 lineup: 117.0 → 118.7.",
+        "Dropping Chase McLaughlin costs your lineup 32.6 over the next 4 weeks (already counted)."
+       ],
+       "why": "K over Chase McLaughlin (8.1); helps wk 5, 6, 7; drop costs 32.6",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": {
+       "weeks": [
+        4,
+        5
+       ],
+       "slot": "K",
+       "text": "Chase McLaughlin starts for you this week and next"
+      },
+      "keep_alternative": {
+       "move": {
+        "add": {
+         "sleeper_id": "5095",
+         "gsis_id": "00-0034161",
+         "player_name": "Daniel Carlson",
+         "position": "K",
+         "team": "NO",
+         "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gsvj7rtvqwbwdeho8whf"
+        },
+        "drop": {
+         "sleeper_id": "12533",
+         "gsis_id": "00-0040242",
+         "player_name": "Jacory Croskey-Merritt",
+         "position": "RB"
+        },
+        "weekly_gain": 1.79,
+        "horizon_gain": 4.03
+       },
+       "line": "Or: add Daniel Carlson for a +4.0 gain over weeks 4–7 and keep McLaughlin (drop Croskey-Merritt, who sits)."
+      }
+     },
+     "reason": "Starts at K this week over McLaughlin (8.1).",
+     "cost": "Drop Chase McLaughlin: he starts for you this week and next.",
+     "gain": 3.02,
+     "gain_label": "weeks 4–7",
+     "this_week": 1.67
+    },
+    {
+     "move": {
+      "move_rank": 9,
+      "add_rank": 4,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "HOU",
+       "gsis_id": null,
+       "player_name": "Houston Texans",
+       "position": "DEF",
+       "team": "HOU",
+       "headshot_url": null,
+       "projection": 8.23,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 93.56,
+       "ros_rank_pos": 4,
+       "season_points_left": 108.62
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 1.07,
+      "horizon_gain": 9.51,
+      "week_gains": [
+       1.07,
+       7.98,
+       0.0,
+       0.46
+      ],
+      "add_horizon_gain": 9.51,
+      "lineup_before": 117.02,
+      "lineup_after": 118.09,
+      "add_slot": "DEF",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Kansas City Chiefs",
+       "position": "DEF",
+       "projection": 7.16,
+       "slot": "DEF",
+       "sleeper_id": "KC",
+       "gsis_id": null
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Houston Texans (DEF), drop Jacory Croskey-Merritt: +1.1 this week at DEF, +9.5 over the next 4 weeks",
+       "lines": [
+        "Houston Texans projects 8.2 for week 4 in your league's scoring. It starts at DEF; **Kansas City Chiefs** (DEF, projected 7.2) goes to your bench.",
+        "Your week-4 lineup: 117.0 → 118.1.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than Houston Texans over the rest of the season (122 vs 109 points)."
+       ],
+       "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 7; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Starts at DEF this week over Kansas City Chiefs (7.2).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 9.51,
+     "gain_label": "weeks 4–7",
+     "this_week": 1.07
+    },
+    {
+     "move": {
+      "move_rank": 23,
+      "add_rank": 10,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "GB",
+       "gsis_id": null,
+       "player_name": "Green Bay Packers",
+       "position": "DEF",
+       "team": "GB",
+       "headshot_url": null,
+       "projection": 8.19,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 3,
+       "is_no_evidence": false,
+       "ros_points": 88.17,
+       "ros_rank_pos": 16,
+       "season_points_left": 103.15
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 1.03,
+      "horizon_gain": 8.61,
+      "week_gains": [
+       1.03,
+       7.43,
+       0.0,
+       0.15
+      ],
+      "add_horizon_gain": 8.61,
+      "lineup_before": 117.02,
+      "lineup_after": 118.05,
+      "add_slot": "DEF",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Kansas City Chiefs",
+       "position": "DEF",
+       "projection": 7.16,
+       "slot": "DEF",
+       "sleeper_id": "KC",
+       "gsis_id": null
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Green Bay Packers (DEF), drop Jacory Croskey-Merritt: +1.0 this week at DEF, +8.6 over the next 4 weeks",
+       "lines": [
+        "Green Bay Packers projects 8.2 for week 4 in your league's scoring. It starts at DEF; **Kansas City Chiefs** (DEF, projected 7.2) goes to your bench.",
+        "Your week-4 lineup: 117.0 → 118.0.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than Green Bay Packers over the rest of the season (122 vs 103 points)."
+       ],
+       "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 7; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Starts at DEF this week over Kansas City Chiefs (7.2).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 8.61,
+     "gain_label": "weeks 4–7",
+     "this_week": 1.03
+    },
+    {
+     "move": {
+      "move_rank": 3,
+      "add_rank": 2,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "NYG",
+       "gsis_id": null,
+       "player_name": "New York Giants",
+       "position": "DEF",
+       "team": "NYG",
+       "headshot_url": null,
+       "projection": 7.8,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 88.71,
+       "ros_rank_pos": 15,
+       "season_points_left": 103.25
+      },
+      "drop": {
+       "sleeper_id": "KC",
+       "gsis_id": null,
+       "player_name": "Kansas City Chiefs",
+       "position": "DEF",
+       "team": "KC",
+       "headshot_url": null,
+       "projection": 7.16,
+       "is_starter": true,
+       "horizon_loss": 21.64,
+       "season_points_left": 99.1,
+       "ros_points": 85.46
+      },
+      "weekly_gain": 0.64,
+      "horizon_gain": 9.66,
+      "week_gains": [
+       0.64,
+       7.0,
+       1.23,
+       0.79
+      ],
+      "add_horizon_gain": 9.66,
+      "lineup_before": 117.02,
+      "lineup_after": 117.66,
+      "add_slot": "DEF",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Kansas City Chiefs",
+       "position": "DEF",
+       "projection": 7.16,
+       "slot": "DEF",
+       "sleeper_id": "KC",
+       "gsis_id": null
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim New York Giants (DEF), drop Kansas City Chiefs: +0.6 this week at DEF, +9.7 over the next 4 weeks",
+       "lines": [
+        "New York Giants projects 7.8 for week 4 in your league's scoring. It starts at DEF; Kansas City Chiefs (7.2 this week) leaves your lineup.",
+        "Your week-4 lineup: 117.0 → 117.7.",
+        "Dropping Kansas City Chiefs costs your lineup 21.6 over the next 4 weeks (already counted)."
+       ],
+       "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 6, 7; drop costs 21.6",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": {
+       "weeks": [
+        4
+       ],
+       "slot": "DEF",
+       "text": "Kansas City Chiefs starts for you this week"
+      },
+      "keep_alternative": {
+       "move": {
+        "add": {
+         "sleeper_id": "NYG",
+         "gsis_id": null,
+         "player_name": "New York Giants",
+         "position": "DEF",
+         "team": "NYG",
+         "headshot_url": null
+        },
+        "drop": {
+         "sleeper_id": "12533",
+         "gsis_id": "00-0040242",
+         "player_name": "Jacory Croskey-Merritt",
+         "position": "RB"
+        },
+        "weekly_gain": 0.64,
+        "horizon_gain": 9.66
+       },
+       "line": "Or drop Croskey-Merritt instead (he sits) and keep Kansas City Chiefs: +9.7 over weeks 4–7."
+      }
+     },
+     "reason": "Starts at DEF this week over Kansas City Chiefs (7.2).",
+     "cost": "Drop Kansas City Chiefs: he starts for you this week.",
+     "gain": 9.66,
+     "gain_label": "weeks 4–7",
+     "this_week": 0.64
+    }
+   ]
+  },
+  "bye": {
+   "label": "Bye coverage",
+   "line": "Week 5: Kansas City Chiefs, Kelce, Mahomes and 2 more on a bye, and nobody on your bench can fill your DEF.",
+   "week": 5,
+   "on_bye": [
+    "Kansas City Chiefs",
+    "Travis Kelce",
+    "Patrick Mahomes",
+    "Bryce Young",
+    "Tetairoa McMillan"
+   ],
+   "empty_slots": [
+    "DEF"
+   ],
+   "moves": [
+    {
+     "move": {
+      "move_rank": 6,
+      "add_rank": 3,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "ATL",
+       "gsis_id": null,
+       "player_name": "Atlanta Falcons",
+       "position": "DEF",
+       "team": "ATL",
+       "headshot_url": null,
+       "projection": 7.72,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 3,
+       "is_no_evidence": false,
+       "ros_points": 92.94,
+       "ros_rank_pos": 6,
+       "season_points_left": 109.41
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 0.56,
+      "horizon_gain": 9.58,
+      "week_gains": [
+       0.56,
+       8.34,
+       0.68,
+       0.0
+      ],
+      "add_horizon_gain": 9.58,
+      "lineup_before": 117.02,
+      "lineup_after": 117.58,
+      "add_slot": "DEF",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Kansas City Chiefs",
+       "position": "DEF",
+       "projection": 7.16,
+       "slot": "DEF",
+       "sleeper_id": "KC",
+       "gsis_id": null
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Atlanta Falcons (DEF), drop Jacory Croskey-Merritt: +0.6 this week at DEF, +9.6 over the next 4 weeks",
+       "lines": [
+        "Atlanta Falcons projects 7.7 for week 4 in your league's scoring. It starts at DEF; **Kansas City Chiefs** (DEF, projected 7.2) goes to your bench.",
+        "Your week-4 lineup: 117.0 → 117.6.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than Atlanta Falcons over the rest of the season (122 vs 109 points)."
+       ],
+       "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 6; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye (+8.3 that week).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 9.58,
+     "gain_label": "weeks 4–7",
+     "this_week": 0.56,
+     "week_gain": 8.34,
+     "week_gain_label": "week 5"
+    },
+    {
+     "move": {
+      "move_rank": 17,
+      "add_rank": 7,
+      "list_kind": "cover",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "JAX",
+       "gsis_id": null,
+       "player_name": "Jacksonville Jaguars",
+       "position": "DEF",
+       "team": "JAX",
+       "headshot_url": null,
+       "projection": 6.6,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 95.03,
+       "ros_rank_pos": 2,
+       "season_points_left": 110.37
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 0.0,
+      "horizon_gain": 9.04,
+      "week_gains": [
+       0.0,
+       8.33,
+       0.71,
+       0.0
+      ],
+      "add_horizon_gain": 9.04,
+      "lineup_before": 117.02,
+      "lineup_after": 117.02,
+      "add_slot": null,
+      "fills_empty_slot": false,
+      "displaced": null,
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Jacksonville Jaguars (DEF), drop Jacory Croskey-Merritt: +9.0 over the next 4 weeks, all in weeks 5, 6",
+       "lines": [
+        "Jacksonville Jaguars projects 6.6 for week 4 in your league's scoring.",
+        "It helps in weeks 5, 6, not this week, so there is time: claim him before then.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than Jacksonville Jaguars over the rest of the season (122 vs 110 points)."
+       ],
+       "why": "helps wk 5, 6; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye (+8.3 that week).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 9.04,
+     "gain_label": "weeks 4–7",
+     "this_week": 0.0,
+     "week_gain": 8.33,
+     "week_gain_label": "week 5"
+    },
+    {
+     "move": {
+      "move_rank": 9,
+      "add_rank": 4,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "HOU",
+       "gsis_id": null,
+       "player_name": "Houston Texans",
+       "position": "DEF",
+       "team": "HOU",
+       "headshot_url": null,
+       "projection": 8.23,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 93.56,
+       "ros_rank_pos": 4,
+       "season_points_left": 108.62
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 1.07,
+      "horizon_gain": 9.51,
+      "week_gains": [
+       1.07,
+       7.98,
+       0.0,
+       0.46
+      ],
+      "add_horizon_gain": 9.51,
+      "lineup_before": 117.02,
+      "lineup_after": 118.09,
+      "add_slot": "DEF",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Kansas City Chiefs",
+       "position": "DEF",
+       "projection": 7.16,
+       "slot": "DEF",
+       "sleeper_id": "KC",
+       "gsis_id": null
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Houston Texans (DEF), drop Jacory Croskey-Merritt: +1.1 this week at DEF, +9.5 over the next 4 weeks",
+       "lines": [
+        "Houston Texans projects 8.2 for week 4 in your league's scoring. It starts at DEF; **Kansas City Chiefs** (DEF, projected 7.2) goes to your bench.",
+        "Your week-4 lineup: 117.0 → 118.1.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than Houston Texans over the rest of the season (122 vs 109 points)."
+       ],
+       "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 7; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye (+8.0 that week).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 9.51,
+     "gain_label": "weeks 4–7",
+     "this_week": 1.07,
+     "week_gain": 7.98,
+     "week_gain_label": "week 5"
+    },
+    {
+     "move": {
+      "move_rank": 25,
+      "add_rank": 11,
+      "list_kind": "start_now",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "NO",
+       "gsis_id": null,
+       "player_name": "New Orleans Saints",
+       "position": "DEF",
+       "team": "NO",
+       "headshot_url": null,
+       "projection": 7.72,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 91.62,
+       "ros_rank_pos": 10,
+       "season_points_left": 106.78
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 0.56,
+      "horizon_gain": 8.54,
+      "week_gains": [
+       0.56,
+       7.89,
+       0.0,
+       0.09
+      ],
+      "add_horizon_gain": 8.54,
+      "lineup_before": 117.02,
+      "lineup_after": 117.58,
+      "add_slot": "DEF",
+      "fills_empty_slot": false,
+      "displaced": {
+       "player_name": "Kansas City Chiefs",
+       "position": "DEF",
+       "projection": 7.16,
+       "slot": "DEF",
+       "sleeper_id": "KC",
+       "gsis_id": null
+      },
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim New Orleans Saints (DEF), drop Jacory Croskey-Merritt: +0.6 this week at DEF, +8.5 over the next 4 weeks",
+       "lines": [
+        "New Orleans Saints projects 7.7 for week 4 in your league's scoring. It starts at DEF; **Kansas City Chiefs** (DEF, projected 7.2) goes to your bench.",
+        "Your week-4 lineup: 117.0 → 117.6.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than New Orleans Saints over the rest of the season (122 vs 107 points)."
+       ],
+       "why": "DEF over Kansas City Chiefs (7.2); helps wk 5, 7; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye (+7.9 that week).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 8.54,
+     "gain_label": "weeks 4–7",
+     "this_week": 0.56,
+     "week_gain": 7.89,
+     "week_gain_label": "week 5"
+    },
+    {
+     "move": {
+      "move_rank": 21,
+      "add_rank": 9,
+      "list_kind": "cover",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "MIA",
+       "gsis_id": null,
+       "player_name": "Miami Dolphins",
+       "position": "DEF",
+       "team": "MIA",
+       "headshot_url": null,
+       "projection": 4.81,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 86.87,
+       "ros_rank_pos": 21,
+       "season_points_left": 101.15
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 0.0,
+      "horizon_gain": 8.63,
+      "week_gains": [
+       0.0,
+       7.72,
+       0.0,
+       0.91
+      ],
+      "add_horizon_gain": 8.63,
+      "lineup_before": 117.02,
+      "lineup_after": 117.02,
+      "add_slot": null,
+      "fills_empty_slot": false,
+      "displaced": null,
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Miami Dolphins (DEF), drop Jacory Croskey-Merritt: +8.6 over the next 4 weeks, all in weeks 5, 7",
+       "lines": [
+        "Miami Dolphins projects 4.8 for week 4 in your league's scoring.",
+        "It helps in weeks 5, 7, not this week, so there is time: claim him before then.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than Miami Dolphins over the rest of the season (122 vs 101 points)."
+       ],
+       "why": "helps wk 5, 7; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye (+7.7 that week).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 8.63,
+     "gain_label": "weeks 4–7",
+     "this_week": 0.0,
+     "week_gain": 7.72,
+     "week_gain_label": "week 5"
+    },
+    {
+     "move": {
+      "move_rank": 46,
+      "add_rank": 17,
+      "list_kind": "cover",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "DAL",
+       "gsis_id": null,
+       "player_name": "Dallas Cowboys",
+       "position": "DEF",
+       "team": "DAL",
+       "headshot_url": null,
+       "projection": 5.93,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 82.5,
+       "ros_rank_pos": 29,
+       "season_points_left": 95.94
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 0.0,
+      "horizon_gain": 7.78,
+      "week_gains": [
+       0.0,
+       7.67,
+       0.0,
+       0.11
+      ],
+      "add_horizon_gain": 7.78,
+      "lineup_before": 117.02,
+      "lineup_after": 117.02,
+      "add_slot": null,
+      "fills_empty_slot": false,
+      "displaced": null,
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Dallas Cowboys (DEF), drop Jacory Croskey-Merritt: +7.8 over the next 4 weeks, all in weeks 5, 7",
+       "lines": [
+        "Dallas Cowboys projects 5.9 for week 4 in your league's scoring.",
+        "It helps in weeks 5, 7, not this week, so there is time: claim him before then.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than Dallas Cowboys over the rest of the season (122 vs 96 points)."
+       ],
+       "why": "helps wk 5, 7; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye (+7.7 that week).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 7.78,
+     "gain_label": "weeks 4–7",
+     "this_week": 0.0,
+     "week_gain": 7.67,
+     "week_gain_label": "week 5"
+    },
+    {
+     "move": {
+      "move_rank": 32,
+      "add_rank": 13,
+      "list_kind": "cover",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "TB",
+       "gsis_id": null,
+       "player_name": "Tampa Bay Buccaneers",
+       "position": "DEF",
+       "team": "TB",
+       "headshot_url": null,
+       "projection": 6.35,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 91.68,
+       "ros_rank_pos": 9,
+       "season_points_left": 107.08
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 0.0,
+      "horizon_gain": 8.33,
+      "week_gains": [
+       0.0,
+       7.54,
+       0.0,
+       0.79
+      ],
+      "add_horizon_gain": 8.33,
+      "lineup_before": 117.02,
+      "lineup_after": 117.02,
+      "add_slot": null,
+      "fills_empty_slot": false,
+      "displaced": null,
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim Tampa Bay Buccaneers (DEF), drop Jacory Croskey-Merritt: +8.3 over the next 4 weeks, all in weeks 5, 7",
+       "lines": [
+        "Tampa Bay Buccaneers projects 6.3 for week 4 in your league's scoring.",
+        "It helps in weeks 5, 7, not this week, so there is time: claim him before then.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than Tampa Bay Buccaneers over the rest of the season (122 vs 107 points)."
+       ],
+       "why": "helps wk 5, 7; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye (+7.5 that week).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 8.33,
+     "gain_label": "weeks 4–7",
+     "this_week": 0.0,
+     "week_gain": 7.54,
+     "week_gain_label": "week 5"
+    },
+    {
+     "move": {
+      "move_rank": 38,
+      "add_rank": 14,
+      "list_kind": "cover",
+      "is_best_drop": true,
+      "add": {
+       "sleeper_id": "NYJ",
+       "gsis_id": null,
+       "player_name": "New York Jets",
+       "position": "DEF",
+       "team": "NYJ",
+       "headshot_url": null,
+       "projection": 6.28,
+       "value_source": "proj_points",
+       "p10": null,
+       "p25": null,
+       "p75": null,
+       "p90": null,
+       "report_status": null,
+       "reason": null,
+       "games_played": 2,
+       "is_no_evidence": false,
+       "ros_points": 84.27,
+       "ros_rank_pos": 28,
+       "season_points_left": 97.88
+      },
+      "drop": {
+       "sleeper_id": "12533",
+       "gsis_id": "00-0040242",
+       "player_name": "Jacory Croskey-Merritt",
+       "position": "RB",
+       "team": "WAS",
+       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+       "projection": 9.19,
+       "is_starter": false,
+       "horizon_loss": 0.0,
+       "season_points_left": 122.42,
+       "ros_points": 104.84
+      },
+      "weekly_gain": 0.0,
+      "horizon_gain": 8.06,
+      "week_gains": [
+       0.0,
+       7.51,
+       0.0,
+       0.55
+      ],
+      "add_horizon_gain": 8.06,
+      "lineup_before": 117.02,
+      "lineup_after": 117.02,
+      "add_slot": null,
+      "fills_empty_slot": false,
+      "displaced": null,
+      "open_roster_spots": 0,
+      "words": {
+       "headline": "Claim New York Jets (DEF), drop Jacory Croskey-Merritt: +8.1 over the next 4 weeks, all in weeks 5, 7",
+       "lines": [
+        "New York Jets projects 6.3 for week 4 in your league's scoring.",
+        "It helps in weeks 5, 7, not this week, so there is time: claim him before then.",
+        "Jacory Croskey-Merritt would not start for you in the next 4 weeks.",
+        "Careful: Jacory Croskey-Merritt projects more than New York Jets over the rest of the season (122 vs 98 points)."
+       ],
+       "why": "helps wk 5, 7; drop projects more for the season",
+       "source": "app/pages/2_Waiver_Wire.py (_card, _headline, _why)"
+      },
+      "drop_starts": null,
+      "keep_alternative": null
+     },
+     "reason": "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye (+7.5 that week).",
+     "cost": "Drop Jacory Croskey-Merritt: he sits anyway.",
+     "gain": 8.06,
+     "gain_label": "weeks 4–7",
+     "this_week": 0.0,
+     "week_gain": 7.51,
+     "week_gain_label": "week 5"
+    }
+   ]
+  },
+  "stash": {
+   "label": "Stashes",
+   "count": 3
+  },
+  "all": {
+   "label": "All available",
+   "count": 49
+  }
+ },
+ "default_view": "help"
 }

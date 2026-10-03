@@ -137,6 +137,23 @@ trade sides.
   call in one line (both names whole), the reason (last names), a "Compare these players" button, and the odds, ranges
   and numbers behind a "Why?" `<details>`.
 
+- **Wave I-B (IB-2) patterns.** *Claim card* (`routes/decisions/ClaimCard.svelte`, Waivers): the free agent (48 px
+  headshot, name, position + team, "drop X" in the context line), the lineup gain as the number with its span under it
+  (`ll-label`: "weeks 4–7", or "week 5" in Bye coverage), then ONE reason (body size: a fact — the role, the bye, the
+  slot), then the claim's cost (`text-sm text-ink-3`). A drop who starts for you this week or next adds a `bg-warn-soft`
+  box: "X starts for you this week." + the best claim that keeps him, or the line that none does — never one without
+  the other. `compact` = a list row (no frame) for a view's list. *Views behind chips*: a screen with several lists
+  shows ONE at a time — `Chips` under the lead cards, the view in the URL (`?view=`, rewritten in place; the default
+  leaves the URL), one answer carrying every view so a chip switches without a request (Waivers: Help now · Bye
+  coverage · Stashes · All available). The chip row must start within two phone screens (≤ 2 × 812 px at 375 px).
+  *Verdict bar* (the trade calculator): once the decision (the dial's row) scrolls off screen, a bar is pinned to the
+  top (`position: fixed`, `max-w-6xl` like the page, rounded at the bottom, `shadow-lg`): the package in last names,
+  the dial's label (state color + word) and score, "You +3.4"; open on desktop (the four tiles and the verdict), a tap
+  opens it on a phone (`aria-expanded`). Not `sticky`: `html, body { overflow-x: hidden }` makes `body` the sticky
+  container, so `position: sticky` never sticks on these pages (ListDetail's `wide:sticky` detail included) — use
+  fixed, or change the clip to `overflow-x: clip` (a design-system decision, not taken here). *Why? / Lineups*: the
+  explanation and the before / after lineups behind two `Expander`s, collapsed: a screen leads with the decision.
+
 ## Charts (one kit: `lib/chart.ts` + inline SVG)
 
 Hand-rolled (`linear`, `niceTicks`, `linePath`, `areaPath`; ~1 KB, no library, nothing to load before the first screen),

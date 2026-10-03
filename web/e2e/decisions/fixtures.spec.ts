@@ -79,27 +79,24 @@ const bestOf = (league: string, team: number) => {
 
 for (const scheme of SCHEMES) {
   test.describe(`${scheme}`, () => {
-    test(`waivers: the answer first, the moves as cards, free agents by position (${scheme})`, async ({ browser }, info) => {
+    test(`waivers: the answer first, the three strongest moves, free agents by position (${scheme})`, async ({ browser }, info) => {
       const { context, page } = await open(browser, info, scheme);
-      // League of Scrubs, roster 2: real claims (G2's answer from the marts)
+      // League of Scrubs, roster 2: real claims (G2's answer from the marts). IB-2: the answer is the first of the three
+      // strongest moves; the four tiles became one lineup line; the free agents are the "All available" view
       const w = fx(`waivers_${SCRUBS}_2_ALL.json`);
-      const top = w.cards.find((c: { title: string }) => c.title === "Top claim").move;
+      const top = w.top3[0].move;
       await page.goto(`/waivers?league=${SCRUBS}&team=2`);
       await expect(page.getByTestId("waiver-answer")).toHaveText(top.words.headline);
       expect(await isDark(page)).toBe(scheme === "dark");
-      const tiles = page.getByTestId("waiver-tiles").getByTestId("stat-value");
-      await expect(tiles.nth(0)).toHaveText(sg(top.weekly_gain));
-      await expect(tiles.nth(1)).toHaveText(sg(top.horizon_gain));
-      await expect(tiles.nth(2)).toHaveText(f1(w.lineup_value));
-      const cards = page.getByTestId("waiver-move");
-      await expect(cards).toHaveCount(w.cards.length);
-      await expect(cards.first()).toContainText(w.cards[0].title.toUpperCase(), { ignoreCase: true });
-      await expect(cards.first().getByTestId("move-add")).toHaveText(w.cards[0].move.add.player_name);
-      await expect(cards.first().getByTestId("move-drop")).toContainText(w.cards[0].move.drop.player_name);
-      // the top card's sentence is the screen's answer (not repeated); the others carry their own
-      await expect(cards.first().getByTestId("move-headline")).toHaveCount(0);
-      await expect(cards.nth(1).getByTestId("move-headline")).toHaveText(w.cards[1].move.words.headline);
-      await expect(cards.nth(1).getByTestId("move-lines")).toContainText(w.cards[1].move.words.lines[0]);
+      await expect(page.getByTestId("waiver-lineup")).toContainText(f1(w.lineup_value));
+      const cards = page.getByTestId("top-move");
+      await expect(cards).toHaveCount(w.top3.length);
+      await expect(cards.first().getByTestId("claim-add")).toHaveText(w.top3[0].move.add.player_name);
+      await expect(cards.first().getByTestId("claim-gain")).toHaveText(sg(w.top3[0].gain));
+      await expect(cards.first().getByTestId("claim-reason")).toHaveText(w.top3[0].reason);
+      await expect(page.getByTestId("waiver-move")).toHaveCount(0); // Wave G's big cards are gone
+      await page.getByTestId("views-all").click();
+      await expect(page).toHaveURL(/view=all/);
       // the free agents: the fixture's list, in its order, with this week's projection
       const rows = page.getByTestId("fa-row");
       await expect(rows).toHaveCount(w.free_agents.length);
@@ -126,16 +123,16 @@ for (const scheme of SCHEMES) {
       }
       // dynasty roster 12: nothing beats what he has (G2's notice, the page's words)
       const d = fx(`waivers_${DYNASTY}_12_ALL.json`);
-      await page.goto(`/waivers?league=${DYNASTY}&team=12`);
+      await page.goto(`/waivers?league=${DYNASTY}&team=12&view=all`);
       await expect(page.getByTestId("waiver-answer")).toHaveText(plain(d.notice));
-      await expect(page.getByTestId("waiver-move")).toHaveCount(0);
+      await expect(page.getByTestId("top-move")).toHaveCount(0);
       await expect(page.getByTestId("fa-pos-K")).toHaveCount(0); // a league without kickers has no K tab
       await expect(page.getByTestId("fa-row")).toHaveCount(d.free_agents.length);
       await noSidewaysScroll(page);
       await shot(page, "waivers_dynasty", info, scheme);
       // the Test League (no database behind it: G2's on-demand answer)
       const t = fx(`waivers_${TEST_LEAGUE}_3_ALL.json`);
-      await page.goto(`/waivers?league=${TEST_LEAGUE}&team=3`);
+      await page.goto(`/waivers?league=${TEST_LEAGUE}&team=3&view=all`);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Best claims for ${t.team_name}`);
       await expect(page.getByTestId("waiver-answer")).toHaveText(plain(t.notice));
       await expect(page.getByTestId("fa-row")).toHaveCount(t.free_agents.length);

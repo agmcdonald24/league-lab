@@ -465,6 +465,9 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
     out.update(waiver_extras(league_id, team, int(week), is_house, od_info, position))      # H1 (Wave H)
     out = availability.waivers_overlay(out)         # ---- I0-A: no claims of players who cannot play; one QB per team
     _waivers_on_context(out, rctx)                  # ---- IB-0: the total, the weakest starter, the drops' words
+    # ---- IB-2: the three strongest moves with one reason each, the views, the best alternative before a drop
+    out.update(waiver_views(league_id, team, season, int(week), mv, out, is_house, od_info, ros))
+    # ---- end IB-2
     if not is_house:
         out["on_demand"] = {k: v for k, v in od_info.items() if k not in ("lw", "fa")}
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
@@ -2148,3 +2151,319 @@ def trade_lists(league_id: str, team: int, position: str | None = None, *, sourc
                 "position": position, "timings_ms": {"total": round((time.perf_counter() - t0) * 1000, 1)}})
     return out
 # ---- end IA-2
+
+
+# ---- IB-2 (Wave I-B): Waivers short — the three strongest moves with one reason each, the views (Help now · Bye
+# coverage · Stashes · All available), the best waiver alternative before a drop of a player who starts.
+# One answer carries every view (the screen switches chips without asking again: instant on a phone, one cached answer
+# per position, the on-demand league solved once); `top3` and the views read the full move table (every add × drop),
+# so the alternative "keep him, drop someone who sits" is found among the moves the sweep already priced.
+VIEWS = ("help", "bye", "stash", "all")
+VIEW_LABELS = {"help": "Help now", "bye": "Bye coverage", "stash": "Stashes", "all": "All available"}
+VIEW_CAP = 8                                      # moves a view lists (the rest are in All available's free agents)
+GAIN_EPS = 0.05                                   # a gain under this is "+0.0": no gain (decisions.ts s1)
+
+
+NICKNAMES = frozenset("Cardinals Falcons Ravens Bills Panthers Bears Bengals Browns Cowboys Broncos Lions Packers Texans Colts "
+                      "Jaguars Chiefs Raiders Chargers Rams Dolphins Vikings Patriots Saints Giants Jets Eagles Steelers "
+                      "49ers Seahawks Buccaneers Titans Commanders".split())
+
+
+def _last(name: str | None) -> str:
+    """'Croskey-Merritt' from 'Jacory Croskey-Merritt'; a team defense keeps its name ('Kansas City Chiefs')."""
+    n = (name or "").strip()
+    if not n or len(n.split()) < 2 or n.split()[-1] in NICKNAMES:
+        return n
+    parts = n.split()
+    return " ".join(parts[1:]) if parts[-1] in ("Jr.", "Sr.", "II", "III", "IV") and len(parts) > 2 else parts[-1]
+
+
+def _name_list(ns: list[str], k: int = 2) -> str:
+    ns = [_last(n) for n in ns if n]
+    if len(ns) <= k:
+        return " and ".join(ns) if len(ns) <= 2 else ", ".join(ns[:-1]) + " and " + ns[-1]
+    return ", ".join(ns[:k]) + f" and {len(ns) - k} more"
+
+
+def _span_words(week: int, last: int) -> str:
+    return f"weeks {week}–{last}" if last > week else f"week {week}"
+
+
+def _horizon_rows(league_id: str, team: int, is_house: bool, od_info: dict) -> pd.DataFrame:
+    """The roster's solved lineup for this week and the next three (mart_league_roster_horizon; on demand the same
+    rows from the league solve): who starts, who is on a bye, which slot is left empty."""
+    if is_house:
+        return query(HORIZON_SQL + " and roster_id = %s", (league_id, int(team)))
+    lw = od_info.get("lw")
+    if lw is None:
+        return pd.DataFrame(columns=["week", "role", "slot", "sleeper_player_id", "player_name", "reason"])
+    hf = A.horizon_frame(lw)
+    return hf[hf["roster_id"] == int(team)]
+
+
+def _starts_soon(league_id: str, team: int, season: int, week: int, is_house: bool, h: pd.DataFrame) -> dict[str, dict]:
+    """sleeper id -> {weeks: [the weeks of this one and the next he starts], slot} for this roster. This week: the
+    lineup My Week shows (the nightly's rows, or the on-demand solve, with the availability overlay re-solved by
+    `availability.apply_to_rows` — so a player who starts because a teammate is Out counts as a starter); next week: the
+    horizon's solved lineup. Integration: IB-0's `availability.roster_context` is the same answer for this week."""
+    out: dict[str, dict] = {}
+    rows = None
+    try:
+        if is_house:
+            rows, _ = availability.apply_to_rows(cards.lineup_rows(league_id, season, week, int(team)))
+        else:
+            od = _od(A.lineup_rows, query, league_id, int(team), int(week))
+            rows, _ = availability.apply_to_rows(od.rows, build_as_of=availability.build_time())
+    except (NotFound, SleeperDown, A.SleeperBusy):
+        rows = None
+    if rows is not None and not rows.empty:
+        st = rows[(rows["role"] == "starter") & ~rows["is_empty_slot"].fillna(False).astype(bool)]
+        for sid, slot in zip(st["sleeper_player_id"], st["slot"], strict=True):
+            if isinstance(sid, str):
+                out.setdefault(sid, {"weeks": [], "slot": slot})["weeks"].append(int(week))
+    elif not h.empty:
+        st = h[(h["week"] == int(week)) & (h["role"] == "starter")]
+        for sid, slot in zip(st["sleeper_player_id"], st["slot"], strict=True):
+            if isinstance(sid, str):
+                out.setdefault(sid, {"weeks": [], "slot": slot})["weeks"].append(int(week))
+    if not h.empty:
+        nx = h[(h["week"] == int(week) + 1) & (h["role"] == "starter")]
+        for sid, slot in zip(nx["sleeper_player_id"], nx["slot"], strict=True):
+            if isinstance(sid, str):
+                out.setdefault(sid, {"weeks": [], "slot": slot})["weeks"].append(int(week) + 1)
+    return out
+
+
+def _when(weeks: list[int], week: int) -> str:
+    ws = sorted(set(weeks))
+    if ws == [week]:
+        return "this week"
+    if ws == [week + 1]:
+        return f"next week (week {week + 1})"
+    return "this week and next"
+
+
+def _drop_starts(m: dict, soon: dict[str, dict], week: int) -> dict | None:
+    d = m.get("drop") or {}
+    s = soon.get(str(d.get("sleeper_id"))) if d.get("sleeper_id") else None
+    if s is None:
+        return None
+    return {"weeks": sorted(set(s["weeks"])), "slot": _str(s.get("slot")),
+            "text": f"{d.get('player_name')} starts for you {_when(s['weeks'], week)}"}
+
+
+def _alternative(m: dict, mv: pd.DataFrame, soon: dict[str, dict], blocked: set[str], week: int, last: int) -> dict:
+    """The best claim at the same position that keeps the drop (its own drop sits, or no drop is needed): the line a
+    card shows before it suggests giving up a starter. None found: the line says so (never a starter's drop without it)."""
+    add, drop = m.get("add") or {}, m.get("drop") or {}
+    pos = add.get("position")
+    c = mv[(mv["add_position"] == pos) & (mv["list_kind"] != "nothing")] if not mv.empty else mv
+    if not c.empty:
+        keep = c["drop_sleeper_id"].map(lambda s: not isinstance(s, str) or s not in soon)
+        ok = c["add_gsis_id"].map(lambda g: not (isinstance(g, str) and g in blocked))
+        c = c[keep & ok]
+        c = c[pd.to_numeric(c["horizon_gain"], errors="coerce") >= GAIN_EPS]
+    keepname = _last(drop.get("player_name"))
+    span = _span_words(week, last)
+    if c.empty:
+        return {"move": None, "line": f"No free agent at {pos} helps without dropping a starter: keeping {keepname} "
+                                      f"costs nothing, so claim only if the gain is worth his spot."}
+    r = c.sort_values(["horizon_gain", "add_rank"], ascending=[False, True]).iloc[0]
+    alt = {"add": _player(r.get("add_sleeper_id"), r.get("add_gsis_id"), r.get("add_name"), r.get("add_position"),
+                          r.get("add_team"), bio([r.get("add_gsis_id"), r.get("drop_gsis_id")])),
+           "drop": None if not isinstance(r.get("drop_sleeper_id"), str) else {
+               "sleeper_id": r.get("drop_sleeper_id"), "gsis_id": _str(r.get("drop_gsis_id")),
+               "player_name": _str(r.get("drop_name")), "position": _str(r.get("drop_position"))},
+           "weekly_gain": _num(r.get("weekly_gain")), "horizon_gain": _num(r.get("horizon_gain"))}
+    g = alt["horizon_gain"] or 0.0
+    who = alt["drop"]["player_name"] if alt["drop"] else None
+    if alt["add"]["sleeper_id"] == add.get("sleeper_id"):
+        line = f"Or drop {_last(who)} instead (he sits) and keep {keepname}: +{g:.1f} over {span}."
+    else:
+        tail = f" (drop {_last(who)}, who sits)" if who else " (no drop: an open spot)"
+        line = f"Or: add {alt['add']['player_name']} for a +{g:.1f} gain over {span} and keep {keepname}{tail}."
+    return {"move": alt, "line": line}
+
+
+def _byes(h: pd.DataFrame) -> tuple[dict, dict[int, list[str]]]:
+    """{week: names on a bye — those who could play a slot left empty first}, {week: starting slots left empty} from
+    the horizon rows."""
+    if h.empty:
+        return {}, {}
+    by = h[(h["role"] == "unplayable") & (h["reason"] == "bye")]
+    em = h[h["role"] == "empty"]
+    empty = {int(w): [str(s) for s in g["slot"].dropna()] for w, g in em.groupby("week")}
+    types = {int(w): {str(t) for t in g["slot_type"].dropna()} for w, g in em.groupby("week")}
+    byes = {}
+    for w, g in by.groupby("week"):
+        ok = set().union(*(W.SLOT_ELIGIBILITY.get(t, frozenset()) for t in types.get(int(w), set()))) if types.get(int(w)) else set()
+        fit = [n for n, p in zip(g["player_name"], g["position"], strict=True) if isinstance(n, str) and p in ok]
+        byes[int(w)] = fit + [n for n in g["player_name"] if isinstance(n, str) and n not in fit]
+        byes[("fit", int(w))] = fit
+        byes[("pos", int(w))] = {n: p for n, p in zip(g["player_name"], g["position"], strict=True) if isinstance(n, str)}
+    return byes, empty
+
+
+def _bye_reason(m: dict, w: int, byes: dict, empty: dict, strict: bool = False) -> str | None:
+    who = byes.get(w) or []
+    pos = (m.get("add") or {}).get("position")
+    same = [n for n in who if pos and (byes.get(("pos", w)) or {}).get(n) == pos]  # his own position's bye first
+    fit = [n for n in who if n in set(byes.get(("fit", w)) or [])]            # then who could fill the empty slot
+    if strict and not (same or fit):
+        return None                       # nobody he could stand in for is on a bye: the bye is not the reason
+    who = same or fit or who
+    hole = empty.get(w)
+    g = (m.get("week_gains") or [None] * 99)[w - int(m.get("_week") or w)] if m.get("_week") else None
+    tail = f" (+{g:.1f} that week)" if isinstance(g, int | float) and g >= GAIN_EPS else ""
+    be = "is" if len(who) == 1 else "are"
+    if hole:
+        return f"Fills your empty {hole[0]} in week {w}, when {_name_list(who)} {be} on a bye{tail}."
+    return f"Covers week {w}, when {_name_list(who)} {be} on a bye{tail}."
+
+
+def _reason(m: dict, week: int, byes: dict, empty: dict, stash: dict) -> str:
+    """One fact for a claim (My Week's `why` style): the role, the bye, the slot — not the whole paragraph."""
+    add = m.get("add") or {}
+    s = stash.get(add.get("gsis_id") or "")
+    if s and s.get("change_text"):
+        return f"His role grew: {s['change_text']}" + (f" since week {s['since_week']}." if s.get("since_week") else ".")
+    gains = m.get("week_gains") or []
+    helped = [week + i for i, g in enumerate(gains) if g is not None and g > 0.005]
+    slot = m.get("add_slot")
+    if (m.get("weekly_gain") or 0) >= GAIN_EPS and slot:
+        if m.get("fills_empty_slot"):
+            return f"Fills your empty {slot} this week."
+        d = m.get("displaced") or {}
+        if d.get("player_name"):
+            p = d.get("projection")
+            return f"Starts at {slot} this week over {_last(d['player_name'])}" + (f" ({p:.1f})." if p is not None else ".")
+        return f"Starts at {slot} this week."
+    for w in helped:
+        if w in byes and w != week:
+            r = _bye_reason(m, w, byes, empty, strict=True)
+            if r:
+                return r
+    if m.get("add", {}).get("is_no_evidence"):
+        return "No games this season yet: a flyer on his role."
+    if helped:
+        return f"Helps in week{'s' if len(helped) > 1 else ''} {', '.join(str(w) for w in helped)}."
+    return "Adds to your lineup over the next weeks."
+
+
+def _cost(m: dict, week: int, last: int, starts: dict | None) -> str:
+    d = m.get("drop")
+    if not d:
+        return "No drop: you have an open roster spot."
+    name = d.get("player_name")
+    if starts:
+        return f"Drop {name}: he starts for you {_when(starts['weeks'], week)}."
+    loss = d.get("horizon_loss")
+    if loss is not None and loss > GAIN_EPS:
+        return f"Drop {name}: costs your lineup {loss:.1f} over {_span_words(week, last)}."
+    return f"Drop {name}: he sits anyway."
+
+
+def waiver_views(league_id: str, team: int | None, season: int, week: int, mv: pd.DataFrame, out: dict,
+                 is_house: bool, od_info: dict, ros: dict) -> dict:
+    """/api/waivers' `top3`, `views` and `default_view`; every move object in the answer that drops a player who starts
+    this week or next gets `drop_starts` and `keep_alternative` (the best claim that keeps him, or the line that none
+    does)."""
+    t0 = time.perf_counter()
+    last = _int(out.get("horizon_last_week")) or int(week)
+    span = _span_words(int(week), last)
+    stashes = (out.get("upside") or {}).get("stashes") or []
+    res: dict = {"top3": [], "default_view": "help", "views": {
+        "help": {"label": VIEW_LABELS["help"], "line": None, "moves": []},
+        "bye": {"label": VIEW_LABELS["bye"], "line": None, "week": None, "on_bye": [], "empty_slots": [], "moves": []},
+        "stash": {"label": VIEW_LABELS["stash"], "count": len(stashes)},
+        "all": {"label": VIEW_LABELS["all"], "count": len(out.get("free_agents") or [])}}}
+    if team is None or mv is None or mv.empty or (mv["list_kind"] == "nothing").all():
+        res["views"]["help"]["line"] = out.get("notice") or "No free agent improves your lineup."
+        res["views"]["bye"]["line"] = "No free agent improves your lineup in a bye week either."
+        res["views_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+        return res
+    h = _horizon_rows(league_id, int(team), is_house, od_info)
+    soon = _starts_soon(league_id, int(team), int(season), int(week), is_house, h)
+    byes, empty = _byes(h)
+    stash = {(s.get("add") or {}).get("gsis_id"): s for s in stashes if (s.get("add") or {}).get("gsis_id")}
+    gs = {g for g in mv["add_gsis_id"] if isinstance(g, str)}
+    blocked = set(availability.cannot_play(gs)) if gs else set()
+    best = mv[mv["is_best_drop"].fillna(False).astype(bool) & (mv["list_kind"] != "nothing")]
+    best = best[~best["add_gsis_id"].map(lambda g: isinstance(g, str) and g in blocked)]
+    proj = _week_ranges(league_id, season, int(week), best, is_house, od_info)
+    b = bio(list(best["add_gsis_id"]) + list(best["drop_gsis_id"]))
+    memo: dict[tuple, dict] = {}
+
+    def move_of(r: pd.Series) -> dict:
+        k = (r.get("add_sleeper_id"), _str(r.get("drop_sleeper_id")))
+        if k not in memo:
+            memo[k] = annotate(_move(r, int(week), b, proj, ros))
+        return memo[k]
+
+    def annotate(m: dict) -> dict:
+        st = _drop_starts(m, soon, int(week))
+        m["drop_starts"] = st
+        m["keep_alternative"] = _alternative(m, mv, soon, blocked, int(week), last) if st else None
+        return m
+
+    def qb_once(ms: list[dict]) -> list[dict]:
+        return availability.one_qb_per_team(ms)[0]
+
+    # the three strongest: the lineup gain over the horizon, one claim per position (two DEFs compete for one slot)
+    ranked = best.sort_values(["horizon_gain", "add_rank"], ascending=[False, True])
+    top, seen = [], set()
+    for _, r in ranked.iterrows():
+        if (_num(r.get("horizon_gain")) or 0) < GAIN_EPS or r.get("add_position") in seen:
+            continue
+        top.append(move_of(r))
+        seen.add(r.get("add_position"))
+        if len(top) >= 3:
+            break
+    top = qb_once(top)
+
+    def card(m: dict, reason: str | None = None, **extra) -> dict:
+        return {"move": m, "reason": reason or _reason(m, int(week), byes, empty, stash),
+                "cost": _cost(m, int(week), last, m.get("drop_starts")), "gain": m.get("horizon_gain"), "gain_label": span,
+                "this_week": m.get("weekly_gain"), **extra}
+    res["top3"] = [card(m) for m in top]
+    # Help now: this week's lineup gain, most first
+    now_rows = best[pd.to_numeric(best["weekly_gain"], errors="coerce") >= GAIN_EPS].sort_values(
+        ["weekly_gain", "horizon_gain"], ascending=[False, False])
+    help_moves = qb_once([move_of(r) for _, r in now_rows.head(VIEW_CAP * 2).iterrows()])[:VIEW_CAP]
+    lv = _num(out.get("lineup_value"))
+    res["views"]["help"].update({"moves": [card(m) for m in help_moves], "line": (
+        f"Claims that raise this week's lineup{f' ({lv:.1f})' if lv is not None else ''}, the biggest gain first."
+        if help_moves else f"No free agent beats this week's lineup{f' ({lv:.1f})' if lv is not None else ''}: "
+                           "the claims that help come later (Bye coverage).")})
+    # Bye coverage: the next week a bye leaves a starting slot empty (the roster cannot cover it)
+    later = sorted(w for w in empty if isinstance(w, int) and w > int(week) and byes.get(w))
+    bye = res["views"]["bye"]
+    if later:
+        w = later[0]
+        i = w - int(week)
+        cov = best.assign(_g=best["week_gains"].map(lambda g: _num(g[i]) if isinstance(g, list | tuple | np.ndarray)
+                                                     and len(g) > i else None))
+        cov = cov[pd.to_numeric(cov["_g"], errors="coerce") >= GAIN_EPS].sort_values(["_g", "horizon_gain"], ascending=False)
+        bye_moves = qb_once([move_of(r) for _, r in cov.head(VIEW_CAP * 2).iterrows()])[:VIEW_CAP]
+        slots = empty[w]
+        who = byes[w]
+        items = []
+        for m in bye_moves:
+            g = _num((m.get("week_gains") or [None] * (i + 1))[i])
+            items.append(card(m, _bye_reason({**m, "_week": int(week)}, w, byes, empty), week_gain=g, week_gain_label=f"week {w}"))
+        bye.update({"week": w, "on_bye": who, "empty_slots": slots, "moves": items,
+                    "line": f"Week {w}: {_name_list(who, 3)} on a bye, and nobody on your bench can fill your "
+                            f"{' and '.join(slots)}." + ("" if bye_moves else " No free agent fills it.")})
+    else:
+        cover = best[(best["list_kind"] == "cover")].sort_values(["horizon_gain", "add_rank"], ascending=[False, True])
+        bye_moves = qb_once([move_of(r) for _, r in cover.head(VIEW_CAP * 2).iterrows()])[:VIEW_CAP]
+        bye.update({"moves": [card(m) for m in bye_moves], "line": f"Your bench covers every bye through week {last}."
+                    + (" These claims still help in a later week." if bye_moves else "")})
+    res["default_view"] = "help" if help_moves or not bye["moves"] else "bye"
+    # every move object already in the answer: the same two fields (the old cards and the paged list)
+    for m in [*(out.get("moves") or []), *[c.get("move") or {} for c in out.get("cards") or []]]:
+        if m.get("add"):
+            annotate(m)
+    res["views_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+    return res
+# ---- end IB-2
