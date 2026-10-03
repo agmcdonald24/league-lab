@@ -32,7 +32,7 @@
     {#each leagues as l (l.league_id)}
       <option value={l.league_id}>{l.name}</option>
     {/each}
-    <option value={OTHER}>Other leagues (your Sleeper username)…</option>
+    <option value={OTHER}>Other leagues (Sleeper or MFL)…</option><!-- IE-0: both platforms -->
   </select>
   <label class="sr-only" for="ll-team">Team</label>
   <select

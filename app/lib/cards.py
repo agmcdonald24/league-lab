@@ -480,16 +480,9 @@ def reason_line(d: dict, facts: dict | None = None, nicks: dict | None = None) -
     if is_coin_flip(d):
         gap = "the projection has them level" if margin < 0.05 else f"the projection says {a} by {margin:.1f}"
         head = f"Too close to call: {gap}, the ranges say either"
-        # the tiebreaker: an injury first, then the matchups, the roles, the betting lines (the side they add up for)
-        for kind, words in (("injury", ""), ("matchup", " on the matchup"), ("role", " on the role"), ("line", " on the betting line")):
-            ps = [p for p in both if p[1] == kind]
-            net = sum(p[0] for p in ps)
-            if not ps or abs(net) < 0.5:
-                continue
-            pick = a if net > 0 else b
-            clause = max((p for p in ps if (p[0] > 0) == (net > 0)), key=lambda p: abs(p[0]))
-            text = _as_him(clause[2], pick) if clause[3] == pick else clause[2]
-            return f"{head}. Go with {pick}{words}: {text}."
+        tb = _tiebreak(both, a, b)                                       # ---- IE-1: the tiebreaker, its own function
+        if tb is not None:
+            return f"{head}. Go with {tb['pick']}{tb['words']}: {tb['text']}."
         return f"{head}. Check the news before kickoff."
     pro = max((p for p in both if p[0] >= STRONG and p[3] == a), key=lambda p: p[0], default=None)
     con = max((p for p in both if p[0] >= STRONG and p[3] == b), key=lambda p: p[0], default=None)
@@ -504,6 +497,44 @@ def reason_line(d: dict, facts: dict | None = None, nicks: dict | None = None) -
     if counter:
         return f"{counter[2]}, but the projection still has {'him' if counter[3] == a else a} {margin:.1f} points ahead."
     return f"Nothing in the matchups or the roles splits them: the projection has {a} {margin:.1f} points ahead."
+
+
+# ---- IE-1 (Wave I-E, the casual-user review): the coin flip's tiebreaker as data, so My Week's actions can say who
+# sits ("Keep Addison and Nabers ahead of McConkey for now") from the same pieces the card's sentence reads
+TIE_KINDS = (("injury", ""), ("matchup", " on the matchup"), ("role", " on the role"), ("line", " on the betting line"))
+
+
+def _tiebreak(both: list, a: str, b: str) -> dict | None:
+    """The coin flip's tiebreaker: an injury first, then the matchups, the roles, the betting lines (the side they add up
+    for). {kind, pick (a short name), side ('me' | 'alt'), words, text} or None (nothing splits them)."""
+    for kind, words in TIE_KINDS:
+        ps = [p for p in both if p[1] == kind]
+        net = sum(p[0] for p in ps)
+        if not ps or abs(net) < 0.5:
+            continue
+        pick = a if net > 0 else b
+        clause = max((p for p in ps if (p[0] > 0) == (net > 0)), key=lambda p: abs(p[0]))
+        text = _as_him(clause[2], pick) if clause[3] == pick else clause[2]
+        return {"kind": kind, "pick": pick, "side": "me" if net > 0 else "alt", "words": words, "text": text,
+                "clause": clause[2]}
+    return None
+
+
+def tiebreak(d: dict, facts: dict | None = None, nicks: dict | None = None) -> dict | None:
+    """`reason_line`'s tiebreaker for a coin-flip card (None for a card that is not one, or when nothing splits them)."""
+    d = {k: (None if not isinstance(v, (list, tuple, dict)) and pd.isna(v) else v) for k, v in dict(d).items()}
+    if not is_coin_flip(d):
+        return None
+    facts, nicks = facts or {}, nicks or {}
+    a_full, b_full = d.get("player_name") or "", d.get("alt_name") or ""
+    a, b = last_name(a_full, d.get("position")), last_name(b_full, d.get("alt_position"))
+    if a == b:
+        a, b = a_full, b_full
+    d["_short_me"], d["_short_alt_"] = a, b
+    mine = reason_pieces(d, "", facts.get(d.get("gsis_id")) or {}, nicks)
+    theirs = reason_pieces(d, "alt_", facts.get(d.get("alt_gsis_id")) or {}, nicks)
+    return _tiebreak([(s, k, c, a) for s, k, c in mine] + [(-s, k, c, b) for s, k, c in theirs], a, b)
+# ---- end IE-1
 
 
 def reason_facts(dec: pd.DataFrame, season: int | None, week: int | None) -> tuple[dict, dict]:
@@ -613,6 +644,7 @@ def decision_cards(league_id: str, roster_id: int, week: int, season: int | None
     # IA-1: one read for the reasons of every card (the betting line, the shares game by game, the team names)
     facts, nicks = reason_facts(dec, season if season is not None else league_season(league_id), week)
     dec["why"] = [reason_line(d, facts, nicks) for d in dec.to_dict("records")]
+    dec["tiebreak"] = [tiebreak(d, facts, nicks) for d in dec.to_dict("records")]       # ---- IE-1 (the actions read it)
     for _, d in dec.iterrows():
         render_decision(d, d["why"])
     return dec

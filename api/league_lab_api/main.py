@@ -260,7 +260,8 @@ def why_market_rows(out: dict, league: str, *, house: bool) -> dict:
         else:
             season, scoring = ondemand._scoring_of(league, ondemand.A.sleeper().league(league), False)
         week = out.get("week")
-        m = why.market_points(season, week, [r.get("gsis_id") for r in rows], scoring)
+        m = ({} if ondemand.A.platforms.is_mfl(league)                   # ---- IE-0: Sleeper's number, not on MFL
+             else why.market_points(season, week, [r.get("gsis_id") for r in rows], scoring))
     except Exception:  # noqa: BLE001 - My Week never fails for the market line
         m = {}
     for k in ("lineup", "lineup_full"):
@@ -406,7 +407,8 @@ class TradeBody(BaseModel):
 
 @app.exception_handler(decisions.BadRequest)
 async def _bad_request(_req: Request, exc: decisions.BadRequest):
-    return JSONResponse({"error": str(exc), "detail": str(exc)}, status_code=400, headers={"Cache-Control": "no-store"})
+    extra = {"unavailable": exc.items} if isinstance(exc, decisions.Unavailable) else {}      # ---- IE-0
+    return JSONResponse({"error": str(exc), "detail": str(exc), **extra}, status_code=400, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/waivers", dependencies=[Depends(require_auth)])

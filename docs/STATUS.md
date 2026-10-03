@@ -4495,3 +4495,232 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   sources and https links, stale → [], outage → [] and 200, off → [] and 0 calls, fixture mode without ESPN → [],
   Waivers + Trends → 0 news calls). `web/e2e/n1/` 5 × phone (375) / desktop: the line on the page and in the pane,
   no line without news, ESPN's own story, About's sentence.
+
+
+## Wave I-E (Iteration 17, part E)
+
+### PO merge — Wave I-E, 2026-10-03 (Saturday, 18:30–20:30 ET)
+
+* **Why**: the third outside review (`docs/reviews/2026-10-03-mfl-70587-usability-review.md`: a casual manager's
+  walk of dad's league on `042f199`, plan § 17 "Fourth"). Andrew: "just incorporate that … squeeze it in" without
+  losing the other waves. One round, three devs, the review as the specification.
+* **Delivered**: **IE-0 (P0)** — the trade calculator keeps every asset: `parseIds` had rejected the colon in a
+  provider key (`mfl:0682`, Houston Texans QB) and the picker silently filtered the rest, so the review's two-for-one
+  ran as Tuten-for-Rice; keys are opaque now, the URL / request / answer / summary / before-after lineups describe
+  one package (the review's own link: give `["mfl:0682","12490"]` → −8.6 this week, −2.4 over weeks 4–7 for Big Mac
+  Attack; them −2.0 / +23.2; "you open a spot"; the Bears QB in at team QB), an asset the analysis cannot price
+  answers 400 with its name and the calculator shows "Can't analyse X: why" with "Take out of the trade"; Waivers'
+  bye words come from the candidate's own evaluated move ("Starts at WR/TE 3 in week 7, when McConkey is on a bye";
+  a team QB can no longer "fill the empty DEF"); platform words ("on the bench in MFL", no Sleeper market line on an
+  MFL league, both platforms in the setup heading and the league menu), one points-per-game statement with its source,
+  `TeamBadge` never says "Free agent" for a missing NFL team. **IE-1 (P1)** — My Week is a weekly action list:
+  `GET /api/my-week` gains `actions` (≤ 3, by urgency: a change the submitted lineup needs → a close call with an
+  injury in it → the waiver claim that raises this week's starters), each in three layers (the sentence; the reason,
+  whether it is already in the submitted lineup, the lock time; "Why? The numbers behind it" = the old cards),
+  related calls combined ("Keep Addison and Nabers ahead of McConkey for now … McConkey's questionable status breaks
+  the tie. Check his status again before kickoff." — one action where there were two cards), `set_line` ("The rest
+  of your lineup is set — nothing to change"), `edit_link` ("Open MFL to edit your lineup" →
+  `<host>/<year>/options?L=<id>&O=02`, the franchise's Submit Lineup page behind MFL's login; Sleeper's league
+  page), `nothing_submitted` ("League Lab never changes your lineup or claims; it tells you what to do in your
+  league's app"); Scrubs roster 2: one **Change needed** action ("Start Wilson at FLEX … in place of Jefferson.
+  Jefferson is out … → Not in your Sleeper lineup yet"); Waivers' top three lead with this week's gain (the four-week
+  total second, "in total"), the hero sentence is not a card's, Help now starts after the three, alternatives are
+  labelled, "two claims do not add up beyond your 1 open roster spot"; the dial is **"Effect on their starters"**
+  (Makes their lineup weaker · About even · Improves their lineup · Improves it a lot, with the need it fills; no
+  0–100, no "interest"); the Finder leads with the cheaper package ("Same gain for you without RJ Harvey"; the extra
+  asset's cost in season points). **IE-2 (P1/P2)** — the trade result through the starting lineup (`trade_story`:
+  `starters_in` / `starters_out` by membership — a starter who only changes slot number is in neither —, the cut,
+  `effect_words`, `lineup_words` "Rice starts at WR/TE; McConkey to the bench", `backup_words`, `their_change`,
+  `window_words`, `hold_words` with the best free agent for the same need, `how` behind "How we calculated this";
+  the lineup rows' `change` is the player's own, null for a slot move: Nabers' "+0.23" for WR/TE 2 → 3 is gone, the
+  row changes add up to the total's change), the dictionary (`docs/WORDS.md` § "The dictionary": "Projected points
+  this week", "about 10 more in total over weeks 4–7", "Improvement to your starting lineup", "Points suggested by
+  his past opportunities", "Projected value above available replacements", "Typical range (the middle 50%)",
+  "Low-end / high-end outcome", "Share of team passes thrown to him", "Backup coverage", the unit words) on the card,
+  the pane, the calculator and the Finder; the setup screen with the team picker first and the scoring collapsed to
+  "Custom MFL scoring — some pieces are estimated ›"; supporting-text contrast 4.4–4.9 → 5.3–5.9 (light) and
+  4.8–5.8 → 5.3–6.5 (dark), small labels 11 → 12 px.
+* **PO**: merges IE0 → IE2 → IE1 (`api.ts` and `TradeCalc.svelte` conflicts: all three blocks kept; the dial's
+  "How to read this" bullet from IE-2 with IE-1's labels). Then: (1) **the trade verdict's words** — `trades.verdict`
+  said "expect a no" / "worth offering" / "a rebuilding team might take it" / "skip it", the acceptance guesses the
+  review asks to remove; it now says what each starting lineup gains and what the season value says ("Helps your
+  lineup +4.2 this week (+10.3 over weeks 4–7), costs their lineup 1.1 (3.0 over weeks 4–7); you give up more season
+  value: a lineup loss for them; the value is on their side"); (2) **the three strongest claims are ordered by this
+  week's gain** (they lead with it now — Schultz +3.0 first on team 8, the Falcons' bye cover +1.2 / +12.8 third);
+  (3) **the lineup table says what the call says**: when an injury tiebreak keeps the healthy player, the table (still
+  the best lineup on paper) read as the opposite — McConkey's row now says "Questionable — the call above keeps
+  Addison here for now" and Addison's bench row "starts for McConkey by the call above" (`myweek.annotate_swaps`,
+  `swaps` on the answer, `key` on every lineup row); (4) the e2e recordings for 70587 / IE re-recorded from the merged
+  API; `api/tests/test_ie_po.py` (2). Checks: **root 987**, **API 406** (380 before), **web lint / typecheck / build
+  clean, 172 fixture e2e** (150), ruff clean. QA walk (fixtures, overlay on): team 8's My Week = one close-call action
+  with both receivers, "✓ Already in your MFL lineup", the waiver claim, the set line, the green "Open MFL to edit your
+  lineup ↗" button and the nothing-submitted line (`ie1-team8-week-phone.png`); the review's trade link = a
+  two-for-one with the lineup story; `mfl:9999` → "Can't analyse mfl:9999: not a player League Lab knows in this
+  league."; Waivers' top three in this week's order.
+* **Decisions kept**: IE-1's 0.5-point bar for a "change" (a coin flip worth half a point with nobody hurt is a
+  change — a higher bar is a one-constant change, `ACTION_MIN_GAIN`); the waiver action priced on the best lineup
+  (it may say "over McConkey" while the close call keeps him off); the MFL edit link is MFL's login-gated Submit
+  Lineup page (verified: `O=02` redirects to the league's login; the public menu's own codes are O=01 franchise, 03
+  transactions, 06 starting lineups, 07 rosters, 09 rules) — dad confirms it lands on Submit Lineup once signed in;
+  "RotoWire via ESPN" unchanged; old e2e recordings that carry no `actions` still render the old cards (the layout
+  switch is by the answer's shape).
+* **Not done from the review (P2, next time)**: the compact schedule table on the card; injury / bye status next to
+  the name on every row; "Updated 2:51 PM ET" with the exact time behind it and a separate MFL roster freshness line;
+  the My Week footer note on estimated scoring pieces; the dictionary on Waivers / Compare / Receivers / Trends /
+  About and in the console's card words (`app/lib/cards.py` keeps "Most weeks:" for parity); the Trades buy-low /
+  sell-high "Fit" labels; a waiver deadline (unknown per league); the game-log chart's sentence does not say
+  "reconstructed"; MFL's official per-player scores (`weeklyResults`) are not read for points per game.
+
+
+### IE-0 2026-10-03 — MFL correct before a casual user relies on it (the review's P0 1–3; branch `dev/IE0`, clone `league_lab_i0b`)
+
+* **Why**: the third outside review (`docs/reviews/2026-10-03-mfl-70587-usability-review.md`, on dad's league MFL 70587,
+  Big Mac Attack) found the calculator dropping an MFL team-QB asset, a Waivers card saying a team QB "fills the empty
+  DEF slot", and Sleeper words on an MFL roster.
+* **P0 #1, the cause (reproduced before the fix)**: `web/src/lib/decisions.ts` `parseIds` kept only `/^[\w-]+$/`, so
+  `give=mfl:0682,12490` became `["12490"]`, and `TradeCalc.svelte` then filtered the keys to the rosters — silently.
+  The new e2e replayed on the base code: the review's link opens with Houston Texans QB unticked (`toBeChecked` fails),
+  the Finder's `mfl:0671,12490 → mfl:0675` opens with nothing on the get side (no verdict); the request carried
+  `give: ["12490"]`. The API itself always handled the key (`trades.parse_ids` splits on commas only).
+* **Delivered**: asset keys are opaque end to end (contract in the wave's INTERFACES.md § IE-0): `parseIds` accepts any
+  key without a comma or space (≤ 64), keeps order, drops repeats; the calculator keeps every key of the link, sends
+  all of them, names them in the summary ("Houston Texans QB + Bhayshul Tuten", the bar's "Texans QB + Tuten → Rice");
+  `POST /api/trades/evaluate` answers **400 with `unavailable: [{key, side, name, why}]`** for a key not on that side's
+  roster, unknown, or an IDP ("Can't analyse Malik Nabers: on Big Mac Attack's roster, not Madeyes Revenge's") and the
+  calculator shows that in place of the dial, with "Take out of the trade"; the answer's unit rows carry `team` and
+  `unit` (the Finder's too). **P0 #2**: `_bye_reason` is the candidate's own — "Fills your empty X" only when X's slot
+  type admits his position, "Starts at <slot> in week N, when <starter> is on a bye" only for a decision-week starter
+  whose slot he can play, else no bye words ("Would not start for you this week; helps in week 7."); this week's slot in
+  the league's words (`cards.slot_label`: "WR/TE 2", was "WR+TE2"); a team unit never "No games this season yet".
+  **P0 #3**: the card says "on the bench in MFL" / "starting in his MFL lineup", no "(None)" for a manager MFL does not
+  share, no Sleeper market line on an MFL card, the ROS list or My Week's rows (no "not in yet" either), `platform` on
+  the card; an on-demand card states points per game once — the chart's own number with its source ("10.5 over 2 games,
+  reconstructed in this league's MFL scoring from his stat lines"; was "not shown yet" beside a chart showing it);
+  `TeamBadge` shows no chip for a missing NFL team (was "FA", titled "Free agent") and is named for screen readers
+  ("Houston Texans"); the setup heading and the league menu name both platforms.
+* **Evidence (fixtures, overlay on)**: the review's package, team 8 ↔ 12, weeks 4–7 — **before** (what the calculator
+  asked): Tuten for Rice, you +3.36 this week / +9.52 over the window, them −2.05 / −2.67, "No deal" 14, "Roster size: no
+  change (1 for 1)", Houston Texans QB still at team QB; **after**: Houston Texans QB + Tuten for Rice, you −8.58 / −2.42,
+  them −2.05 / +23.15, "Hard to say no" 100, "you open a spot", team QB = Chicago Bears QB, "Out of the lineup after
+  the trade: Houston Texans QB (team QB, 30.40, traded)"; the Finder's `package_gains` on the same board −8.58 / −2.42 /
+  −2.05 / +23.15 (equal; the review's live +0.7 / +9.5 was another day's data). Waivers on team 8: every Help-now and
+  top-3 card names the slot of its solved move ("Starts at WR/TE 2 this week over McConkey (6.9)."); the review's
+  "Arizona Cardinals QB … fills the empty DEF in week 7" on the fixture's week-7 shape now reads "Would not start for
+  you this week; helps in week 7." Tuten's card: "Rostered by **Big Mac Attack**, on the bench in MFL", market none,
+  points per game 10.5 = the chart's (8.8, 12.2).
+* **Tests**: `api/tests/test_ie0.py` (8: opaque keys; the two-for-one end to end = the Finder; unit teams on the Finder;
+  unknown / wrong-side keys named; Help-now slots eligible and taken; no QB-to-DEF; Tuten's card; no MFL market).
+  `test_ib2::test_one_reason_is_one_fact` updated (its bye case had no position and expected the DEF words — the
+  review's bug; now a DEF, plus a QB in the same week that gets none); `test_f3::test_player_card_any_league` (points
+  per game is either shown or listed missing, never both). `web/e2e/ie0/` (3 × phone 375 / desktop 1300; recorded
+  into `web/fixtures/mfl/api_70587_ie0.json`, the POSTs keyed by body: `IE0_RECORD=…`). Checks: **API 385 passed, 3
+  failed** (the three clone scoring-check tests: `test_ic1` × 2, `test_ic_po` × 1), 2 skipped; **web lint / typecheck /
+  build clean, fixture e2e 156 passed** (150 + 6); ruff clean.
+* **Open**: the game-log chart's own sentence still says "in <league> scoring" without "reconstructed" (IE-2's
+  `Player.svelte` / `GameLog`); MFL's official per-player scores (`weeklyResults`) are not read for points per game —
+  the reconstruction is labelled as such; a given player whose game has kicked off stays in this week's lineup (the
+  engine's lock rule) — the words do not say so yet.
+
+
+### IE-2 2026-10-03 — trades through lineup changes, the dictionary, the setup order, less effort
+
+* **Trade answer** (`decisions.trade_story`, `# ---- IE-2` block; `evaluate` calls it once): `starters_in` /
+  `starters_out` by starter membership (this week's lineups before / after), `cut`, `effect_words`, `lineup_words`,
+  `backup_words`, `their_change`, `window_words`, `hold_words` (+ `hold`: standing pat; the best free agent at the
+  incoming positions by `trades.best_fill` on today's roster), `how`. `lineups.<side>.slots[].change` is the player's
+  own (null for a starter who only changed slot number), `lineups.<side>.out` the starters who left (their value as a
+  negative change), `reshuffled` the slot moves (detail, no points), `total`. The changes add up to the lineup total's
+  change. No number moved: Tuten for Rice (70587, 8 ↔ 12) is +3.36 this week / +9.52 weeks 4–7, them −2.05 / −2.67,
+  before and after. Before: Nabers (WR/TE 2 → WR/TE 3) +0.23 and Rice +3.13 on the slot rows; after: Rice +10.24,
+  McConkey −6.88 (to the bench), Nabers none.
+* **Calculator** (`TradeCalc.svelte`, under the verdict in the result card): You give / You get (+ the cut) → the effect
+  sentence → "Your starters this week" (In / Out by name, the total before → after) → backup coverage → their side →
+  the alternatives; "Why?" is now "How we calculated this" (the improvement line, value above replacements, rest of
+  season, ranks, roster size, week by week); the lineup detail shows the starters who left and the slot moves.
+* **Dictionary**: `docs/WORDS.md` § "The dictionary" (the review's table with the meaning column; the trade in words;
+  freshness). Applied: the trade answer's `fit.words` / `market.words` labels (`decisions.dictionary_words`, the
+  console's sentence functions unchanged), the calculator's labels and "How to read this", the player card / pane tiles
+  (`card.ts` `CARD_WORDS`: Projected points this week, Typical range, Low-end / High-end outcome, From past
+  opportunities, Share of team passes) and the card's "How to read this" (`howtoWords`). The API's player card keeps the
+  console's labels (`test_parity` pins them).
+* **Setup** (`Leagues.svelte`): the MFL card shows the league, then "Which team is yours?", then the read-back
+  collapsed to one status line ("Custom MFL scoring — some pieces are estimated" / "… scoring, read exactly"); open,
+  the read-back and the check, the check one line, its misses behind "The misses (n)". Team picker y = 483 px at 1300
+  (status line 788), 519 px at 375.
+* **Less effort**: `--ll-ink-3` light #687186 → #5c6579, dark #838da0 → #8b95a8: ink-3 on page / surface / raised /
+  sunken = 5.30 / 5.85 / 5.45 / 4.97 light (was 4.44 / 4.89 / 4.56 / 4.16), 6.45 / 5.95 / 5.34 / 6.27 dark (was
+  5.82 / 5.37 / 4.82 / 5.66); `text-label` 11 → 12 px; the player page's scoring pieces under "How we calculated this".
+* **Tests**: `api/tests/test_ie2.py` (6: the answer's fields on the review's case, no gain from slot renumbering on the
+  fixture and on a constructed board, the dictionary in the trade words, the full package's lineup story, the
+  this-week window); `test_decisions.py` (the parity compares through `dictionary_words`); `web/e2e/ie2/` (3 × 375 /
+  1300: the result's order, the lineup detail, the setup order, the contrast from the CSS variables), recorded in
+  `web/fixtures/mfl/api_70587_ie2.json`. API 383 passed, 3 clone failures (`test_ic1` ×2, `test_ic_po` ×1), 2 skipped;
+  web lint / typecheck / build clean; fixture e2e 156 passed.
+* **Open**: the compact schedule table (week · opponent · projected), status next to the name on every row, "Updated
+  2:51 PM ET" and the MFL roster's freshness line, the My Week footer limitation line, the dictionary on the console
+  cards (`app/lib/cards.py` "Most weeks:", IE-1's) / Waivers / Compare / Receivers / Trends / About.
+
+
+### IE-1 2026-10-03 — the weekly action list, Waivers this week first, the effect dial, the cheaper package
+
+* **Why**: the third outside review (`docs/reviews/2026-10-03-mfl-70587-usability-review.md`, § P1 "weekly action
+  list", "waiver horizons", "interest dial", "unnecessary extra assets"): a manager who does not enjoy analytics must
+  see what to do, why, who starts instead and whether anything is submitted, without the methodology.
+* **My Week** (`myweek.build_actions`, both paths; `GET /api/my-week` gains `actions`, `set_line`, `next_lock`,
+  `edit_link`, `nothing_submitted`, `platform_name`; each card gains `key`, `alt_key`, `tiebreak`, `action`): at most
+  three actions, the most urgent first — `change` (the submitted lineup — Sleeper's `starters`, MFL's through the
+  translation — differs from the suggested one by ≥ 0.5 projected points or starts a player who cannot play), `close`
+  (a coin flip with an injury status in it), `move` (Waivers' new `home_action`: the claim that adds most to this
+  week's starters, ≥ 0.5, added by the page when there is room). Cards that share a player are ONE action
+  (union-find over the keys; the submitted lineup's differences join them). The suggested lineup is the best lineup
+  except where a coin flip's tiebreaker is an injury (`cards.tiebreak`, the same pieces as the card's sentence): the
+  healthy player starts. A clear / lean call already in the lineup, and a difference under 0.5 with nobody hurt, are
+  not actions: the `set_line` says the rest is set. Nothing at all submitted → one action ("Set your MFL lineup").
+  The page: the action (one sentence, players linked), the reason and what could change it, "Already in your MFL
+  lineup — nothing to change." / "Not in your Sleeper lineup yet …", the lock ("before Sun 4:05 PM ET": the first
+  kickoff among the players the action swaps), "Why? The numbers behind it" (the old cards' sentences and small print,
+  Compare), then the set line, **Open MFL to edit your lineup ↗** (`<host>/<year>/options?L=<id>&O=02`) / **Open
+  Sleeper …** (`sleeper.com/leagues/<id>`), and "League Lab never changes your lineup or claims; it tells you what to
+  do in your league's app." An answer without `actions` (recorded before this wave) still renders the old cards.
+* **Waivers** (`decisions._ie1_present` at the end of `waiver_views`): every card gains `lead` ("Falcons defense instead
+  of Jaguars: about 1 more starter point this week"), `total_words` ("+12.8 over weeks 4–7 in total") and
+  `alternative_to` (an earlier card that takes the same spot this week: "Instead of Devaughn Vele:"); the claim card's
+  big number is this week's gain, labelled "this week", the window's total the second line; the screen's answer is
+  `answer` ("The three strongest claims are below, each with what it adds this week.") — not the first card again;
+  Help now lists what the three do not already show; `not_additive` under the three.
+* **The dial** (`decisions.interest` → `effect_label`, `need_words`; `Dial.svelte`): "Effect on their starters" —
+  Makes their lineup weaker (< −0.05) · About even (−0.05–2) · Improves their lineup (2–6) · Improves it a lot (> 6),
+  the need it fills ("It starts at their WR/TE over Wan'Dale Robinson."); no 0–100 on screen, no "interest", no "hard
+  to say no". Same number, same thresholds, same needle. METRICS § renamed (ti1.1).
+* **The Finder** (`decisions._ie1_cheaper`): a two-for-one whose single-player sub-package reaches the same gain for
+  you (< 0.05) and still raises both lineups is led by that one-for-one (`is_best`, the headline, `cheaper_than`); the
+  two-for-one names the extra player `optional` with his rest-of-season points.
+* **Evidence — the review's roster, MFL 70587 team 8 (overlay on).** Before: three cards — "WR/TE 3: McConkey or
+  Addison — a coin flip (Go with Addison: McConkey is questionable)", "WR/TE 2: Nabers or Addison — a coin flip (Go
+  with Nabers on the matchup)", "RB2: Keep McCaffrey over Tuten (clear)". After: **1 lineup action** — "≈ Close call ·
+  WR/TE 2 · WR/TE 3 · before Sun 4:05 PM ET — Keep Addison and Nabers ahead of McConkey for now. Their projections are
+  close (within 0.5 points); McConkey's questionable status breaks the tie. Check his status again before kickoff. ✓
+  Already in your MFL lineup — nothing to change." (both cards behind its Why?), then "+ Waiver claim · WR/TE 2 — Claim
+  Dalton Schultz: about 3 more starter points this week." (+8.1 over weeks 4–7 in total), "✓ The rest of your lineup
+  is set — nothing to change.", the MFL link, the nothing-submitted line. Cards' numbers unchanged (6.88 / 6.60 / 0.28,
+  7.11 / 6.60 / 0.51, 15.45 / 9.72 / 5.73; lineup 30.40 … 10.81).
+* **Evidence — League of Scrubs roster 2 (overlay on).** Before: three cards — "FLEX2: Wilson or Croskey-Merritt — a
+  coin flip", "FLEX1: Keep Tuten over Croskey-Merritt", "RB2: Keep Hampton over Croskey-Merritt" — none said that
+  Sleeper's lineup still starts Justin Jefferson (Out). After: "⚠︎ Change needed · FLEX2 · before Sun 9:30 AM ET —
+  Start Wilson at FLEX (or Croskey-Merritt: a coin flip) in place of Jefferson. Jefferson is out; the change is worth
+  about 9 more projected points this week. Wilson and Croskey-Merritt are level by the projection; the matchup leans
+  Croskey-Merritt. → Not in your Sleeper lineup yet: make the change in Sleeper." (the three cards behind its Why?),
+  the set line, the Sleeper link. Waivers' claim (Reichard for McLaughlin, about 2 more starter points this week) is
+  not added: it drops Croskey-Merritt, whom the action names (a claim is added only when it neither adds nor drops a
+  player an action names).
+* **The review's package** (`give=[mfl:0682, 12490] get=[10229]`, team 8 ↔ 12, on the fixture): −8.58 this week and
+  −2.42 over weeks 4–7 for Big Mac Attack with Tuten and without him (+23.15 / +21.35 for Madeyes Revenge): Tuten is the
+  optional asset. On the Finder (team 12 → Knight Train): "Rashee Rice for Cincinnati Bengals QB" (+19.8) now leads,
+  "Adding RJ Harvey does not change your gain; it costs you RB depth (RJ Harvey: 97 season points)" on the two-for-one.
+* **Tests**: `api/tests/test_ie1.py` (10: both rosters' actions, the rules on hand-built frames — set lineup, tiny
+  difference, an Out starter first and at most three, unknown submitted lineup — Waivers this week first / cumulative
+  / no triple copy / alternatives / `home_action`, the dial's words and need, the cheaper package on 70587 team 12, the
+  review's own package); `test_ia2.py` dial buckets and caption updated (the words changed, the numbers did not);
+  `test_ic4.py`'s RB2 claim read from the top three (Help now starts after them). `web/e2e/ie1/` 5 × phone (375) /
+  desktop (1300) on answers recorded from the API (`web/fixtures/ie1/api_ie1.json`); `e2e/ia2` no longer reads the
+  0–100 text. Root `uv run pytest` 986 passed (cards.py: the tiebreaker as data, the card text unchanged).

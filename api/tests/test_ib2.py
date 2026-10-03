@@ -70,16 +70,23 @@ def test_the_alternative_keeps_the_starter_or_says_none_does(monkeypatch):
 
 
 def test_one_reason_is_one_fact():
-    week, byes, empty = 4, {5: ["Kansas City Chiefs", "Travis Kelce"], ("fit", 5): ["Kansas City Chiefs"]}, {5: ["DEF"]}
+    # IE-0 (Wave I-E): the bye words are the candidate's own — he fills the empty DEF only as a defense (the slot's type
+    # admits him); a candidate of another position never borrows the team's need (the review's "team QB fills the DEF")
+    week, byes, empty = 4, {5: ["Kansas City Chiefs", "Travis Kelce"], ("fit", 5): ["Kansas City Chiefs"],
+                            ("pos", 5): {"Kansas City Chiefs": "DEF", "Travis Kelce": "TE"},
+                            ("empty_types", 5): {"DEF": "DEF"}}, {5: ["DEF"]}
     now = {"add": {"gsis_id": "x"}, "weekly_gain": 1.7, "add_slot": "FLEX2", "week_gains": [1.7, 0, 0, 0],
            "displaced": {"player_name": "Bhayshul Tuten", "projection": 9.72}}
     assert decisions._reason(now, week, byes, empty, {}) == "Starts at FLEX2 this week over Tuten (9.7)."
-    bye = {"add": {"gsis_id": "y"}, "weekly_gain": 0.0, "add_slot": None, "week_gains": [0, 8.3, 0, 0]}
+    bye = {"add": {"gsis_id": "y", "position": "DEF"}, "weekly_gain": 0.0, "add_slot": None, "week_gains": [0, 8.3, 0, 0]}
     assert decisions._reason(bye, week, byes, empty, {}) == "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye."
     # a gain in a bye week where nobody he could stand in for is away: not the bye's doing
     assert decisions._reason({**bye, "add": {"gsis_id": "y", "position": "QB"}}, week, {5: ["Travis Kelce"], ("fit", 5): [],
                                                                                             ("pos", 5): {"Travis Kelce": "TE"}},
-                             {}, {}) == "Helps in week 5."
+                             {}, {}) == "Would not start for you this week; helps in week 5."
+    # IE-0: the same week with the DEF empty — a QB still gets no DEF words
+    assert decisions._reason({**bye, "add": {"gsis_id": "y", "position": "QB"}}, week, byes, empty, {}) == (
+        "Would not start for you this week; helps in week 5.")
     stash = {"y": {"change_text": "snap share 41% → 78%", "since_week": 3}}
     assert decisions._reason(bye, week, byes, empty, stash) == "His role grew: snap share 41% → 78% since week 3."
     for r in (decisions._reason(now, week, byes, empty, {}), decisions._reason(bye, week, byes, empty, {})):
@@ -97,7 +104,9 @@ def test_top3_the_views_and_the_alternative_scrubs(client, sql):
     top = w["top3"]
     assert len(top) == 3
     assert len({c["move"]["add"]["position"] for c in top}) == 3                     # one claim per position
-    assert [c["gain"] for c in top] == sorted((c["gain"] for c in top), reverse=True)
+    # I-E (PO): the three lead with this week's gain and are ordered by it (the window total second); the set is still
+    # the three biggest window gains, one per position
+    assert [c["this_week"] for c in top] == sorted((c["this_week"] for c in top), reverse=True)
     for c in top:
         assert c["gain"] == c["move"]["horizon_gain"] and c["gain_label"] == f"weeks {wk}–{last}"
         assert c["reason"] and c["reason"].endswith(".") and c["reason"].count(". ") == 0   # one fact, one sentence
@@ -105,7 +114,7 @@ def test_top3_the_views_and_the_alternative_scrubs(client, sql):
     # the strongest is the biggest gain among the best-drop claims (mart_waiver_moves, independently)
     best = sql("""select max(horizon_gain) as g from analytics.mart_waiver_moves where league_id = %s and roster_id = %s
                   and is_best_drop and list_kind <> 'nothing'""", (SCRUBS, ANDREW[SCRUBS]))[0]["g"]
-    assert top[0]["gain"] == pytest.approx(best, abs=0.01)
+    assert max(c["gain"] for c in top) == pytest.approx(best, abs=0.01)
     # the views: one answer carries them all
     v = w["views"]
     assert set(v) == {"help", "bye", "stash", "all"} and w["default_view"] == "help"

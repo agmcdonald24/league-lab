@@ -123,10 +123,21 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   screen and the unit's card (`/api/player/mfl:0656`); the League screen's double headers and `/api/record` for MFL;
   Waivers fills an empty starting slot first; the player news line (`news_feed.py`, ESPN's public fantasy news
   endpoint, headline + link out, `LEAGUE_LAB_NEWS=off`; `docs/ESPN_TERMS.md`).
+* **Wave I-E (2026-10-03, Saturday evening, the casual-user review)**: the third outside review
+  (`docs/reviews/2026-10-03-mfl-70587-usability-review.md`) as the specification — the trade calculator keeps
+  provider-keyed assets (`mfl:0682`; `parseIds` had dropped the colon) and names what it cannot analyse; Waivers'
+  bye words come from the candidate's own move; platform words on MFL leagues; **My Week is a weekly action list**
+  (`actions` ≤ 3 by urgency, combined calls, `set_line`, `edit_link` "Open MFL to edit your lineup", `nothing_submitted`);
+  Waivers' top three lead with this week's gain; the dial is "Effect on their starters"; the Finder leads with the
+  cheaper package; the trade result is told through the starting lineup (`trade_story`: starters in / out by
+  membership, the cut, their side, the window, hold / waivers; no gains from slot renumbering); the dictionary
+  (`docs/WORDS.md` § "The dictionary"); the setup screen with the team picker first; contrast ≥ 5.3. PO: the verdict
+  without acceptance guesses, the lineup table's rows agreeing with the call (`annotate_swaps`).
   **Next: Monday's flip of `LEAGUE_LAB_EV_PRICING`** (STATUS § "Wave I-D" PO section: the nightly's env + a manual
   run first, then Render's env; week 5 is the record's first EV-priced week; M3's `pricing` column proposal for the
-  record goes with it). Then usage tracking; v3.1 (the ranges' target with the long-TD bonus, the fringe level, cold
-  starts); Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
+  record goes with it). Then the review's P2 leftovers (STATUS § "Wave I-E" "Not done"); usage tracking; v3.1 (the
+  ranges' target with the long-TD bonus, the fringe level, cold starts); Wave J (accounts, Stripe, ESPN) on Sleeper's
+  licence.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a

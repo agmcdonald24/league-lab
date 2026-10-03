@@ -3,6 +3,23 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 3 · What to do this week, in three lines or fewer
+
+- My Week now opens with the actions that matter — at most three, the most urgent first: a change your submitted
+  lineup needs, a close call with an injury in it, or the waiver claim that raises this week's starters. Each one
+  says who, why, whether it is already in your lineup, and the kickoff it has to beat; "Why? The numbers behind
+  it" holds the detail. When there is nothing to do it says so. A green button opens your league's app to make the
+  change — League Lab never changes your lineup or claims for you.
+
+- Trades are explained the way you would tell a friend: who starts, who sits, what you give up on the bench, what
+  the other team gets, over which weeks — and whether standing pat or a waiver claim does the same job. The dial is
+  now "Effect on their starters": what their lineup gains or loses, not a guess at their answer. Waiver cards lead
+  with this week's gain; the four-week total comes second and says "in total".
+
+- Plainer names everywhere: "Projected points this week", "Typical range (the middle 50% of outcomes)", "Low-end /
+  high-end outcome", "Share of team passes thrown to him", "Backup coverage", "Team QB / Team kicker". The setup
+  screen puts your team first and folds the scoring detail behind one line.
+
 ## Oct 3 · News on the card, and team QB / team K everywhere
 
 - Every player's card and the slide-up panel now carry a **News** line: his latest headline from ESPN's feed
@@ -78,7 +95,7 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
   best buy-low at each position. Tick players both ways and see both lineups this week and over four weeks, who
   starts and who sits, who has to be cut, where both teams would rank, and what the players are worth on the market
   (projected points for the rest of the season above the best free agent at their position), with a one-line
-  verdict like "Helps you +5.4 this week, them +6.8; about even: worth offering". Copy the link to share the trade.
+  verdict like "Helps your lineup +5.4 this week, them +6.8; about even by season value: helps both lineups". Copy the link to share the trade.
 - **Role alerts**: Trends now opens with the players whose role changed this week, and why (last October it would
   have said "Filling in: Rico Dowdle, snap share 36% → 67%, Chuba Hubbard out injured"). A player's own page says it too, with a what-if for
   his points if the new role holds, and Waiver Wire lists **upside stashes**: free agents whose role is growing

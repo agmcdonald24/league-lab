@@ -75,7 +75,10 @@
   const top3 = $derived(data?.top3 ?? []);
   const views = $derived(data?.views ?? null);
   const view = $derived(viewOf(route.current.params.get("view"), data?.default_view ?? "help"));
-  const lead = $derived(data ? (top3.length ? `**${waiverHeadline(top3[0].move, data.week ?? 0, data.horizon_last_week ?? 0)}**` : waiverAnswer(data)) : "");
+  // ---- IE-1: the answer is not the first card's move again (the API's `answer`: "The three strongest claims are below …")
+  const lead = $derived(
+    data ? (data.answer ? `**${data.answer}**` : top3.length ? `**${waiverHeadline(top3[0].move, data.week ?? 0, data.horizon_last_week ?? 0)}**` : waiverAnswer(data)) : "",
+  );
   const chips = $derived(
     VIEW_TABS.map((t) => ({ key: t.key, label: t.key === "stash" && views?.stash.count ? `${t.label} (${views.stash.count})` : t.label })),
   );
@@ -133,7 +136,8 @@
   // 2_Waiver_Wire.py's "How to read this", the screen's own words
   const HOWTO =
     "- **What a claim is worth**: we try every free agent against every player you could drop, rebuild your best lineup each time, and show how many points it adds. Same projections and same lineup as the rest of the app.\n" +
-    "- **This week** is what the claim adds this week; **the next 4 weeks** add up this week and the next three, so covering a bye counts, and so do the games the dropped player would have started.\n" +
+    "- **This week** (the big number on a card) is what the claim adds to this week's starters; **in total** adds up this week and the next three, so covering a bye counts, and so do the games the dropped player would have started. It is a total over the weeks, not a number per week.\n" +
+    "- **Each claim is weighed on its own** against your roster as it is: two claims do not simply add up (each may need its own drop, and two claims for the same spot help only once). **Instead of …** marks a claim for the same spot as one above.\n" +
     "- **Who to drop**: the player your lineup misses least over those four weeks. We never suggest dropping someone we have no projection for yet: unknown is not zero.\n" +
     "- **Only the next four weeks count.** In a dynasty league, a young player's future is not in these numbers: look twice before dropping one.\n" +
     "- **Free agents** are ranked by this week's projection in your league's scoring. **Most weeks** is the band half his weeks land in; the thin line is a bad week to a good week (8 weeks in 10); the tick is the projection. **Rest of season** adds up every week left to your league's final.\n" +
@@ -195,6 +199,7 @@
             <ClaimCard card={c} {ctx} rank={i + 1} testid="top-move" />
           {/each}
         </div>
+        {#if data.not_additive}<p class="text-sm leading-snug text-ink-2" data-testid="not-additive">{data.not_additive}</p>{/if}<!-- IE-1 -->
       </section>
     {/if}
 

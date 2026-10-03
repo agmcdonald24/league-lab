@@ -1,5 +1,5 @@
 // My Week's two header lines, from the API's own words and numbers.
-import type { MyWeek, Opponent } from "./api";
+import type { ActionKind, MyWeek, Opponent, Waivers, WeekAction } from "./api"; // IE-1: ActionKind, Waivers, WeekAction
 
 function opponentObject(d: MyWeek): Opponent | null {
   return d.opponent && typeof d.opponent === "object" ? d.opponent : null;
@@ -102,3 +102,24 @@ export function compareHref(c: Card): string | null {
   return c.gsis_id && c.alt_gsis_id ? `/compare?a=${encodeURIComponent(c.gsis_id)}&b=${encodeURIComponent(c.alt_gsis_id)}` : null;
 }
 // ---- end IB-3
+
+// ---- IE-1 (Wave I-E, the casual-user review § "weekly action list"): My Week's first layer — the API's actions (a
+// change the submitted lineup needs, then a close call), plus Waivers' `home_action` (a claim that changes this week's
+// starters) when there is room: at most three, the most urgent first.
+export const ACTION_WORD: Record<ActionKind, string> = { change: "Change needed", close: "Close call", move: "Waiver claim" };
+export const MAX_ACTIONS = 3;
+
+/** The actions to show: My Week's, then the claim from Waivers when there is room and it is not about a player an
+ * action already names (the one it adds, or the one it drops). */
+export function homeActions(d: MyWeek, w: Waivers | null | undefined): WeekAction[] {
+  const acts = [...(d.actions ?? [])];
+  const move = w?.home_action;
+  if (move && acts.length < MAX_ACTIONS) {
+    const named = new Set(acts.flatMap((a) => [...a.start, ...a.sit].map((p) => p.key)));
+    // not about a player an action already names: neither the one it adds nor the one it drops
+    const drop = move.drop?.key;
+    if (!move.start.some((p) => p.key && named.has(p.key)) && !(drop && named.has(drop))) acts.push(move);
+  }
+  return acts.slice(0, MAX_ACTIONS).sort((a, b) => a.urgency - b.urgency);
+}
+// ---- end IE-1

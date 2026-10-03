@@ -165,13 +165,19 @@ export function partnerLine(p: PartnerRow, span: string): string {
   );
 }
 
-/** Ids in a URL ("8131,11563"): the package is the link (6_Trade_Finder.py). */
+// ---- IE-0 (Wave I-E): asset keys are opaque — "8131", "HOU", "12490", "mfl:0682" (an MFL team QB), "mfl:TMQB-KC". The
+// old /^[\w-]+$/ dropped the colon, so the calculator opened the Finder's "Houston Texans QB + Tuten" as Tuten alone.
+// A key is anything without a comma or a space, at most 64 characters; blanks and repeats drop, the order is kept.
+const KEY = /^[^\s,]{1,64}$/;
+export const isAssetKey = (x: string): boolean => KEY.test(x);
+
+/** Ids in a URL ("8131,11563", "mfl:0682,12490"): the package is the link (6_Trade_Finder.py). */
 export function parseIds(s: string | null): string[] {
-  return (s ?? "")
-    .split(",")
-    .map((x) => x.trim())
-    .filter((x) => /^[\w-]+$/.test(x));
+  const out: string[] = [];
+  for (const x of (s ?? "").split(",").map((v) => v.trim())) if (isAssetKey(x) && !out.includes(x)) out.push(x);
+  return out;
 }
+// ---- end IE-0
 
 /** The screens' error line (the Wave F pages' words). */
 export function errorWords(e: unknown): string {
@@ -208,8 +214,8 @@ export function windowWhy(w: TradeWindow, span: string | null): string {
 }
 
 /** The dial's label from the other side's gain over the window (api decisions.py `interest`: the same thresholds). */
-export function interestLabel(theirGain: number): "No deal" | "Maybe" | "Likely" | "Hard to say no" {
-  return theirGain < 0.05 ? "No deal" : theirGain < 2 ? "Maybe" : theirGain <= 6 ? "Likely" : "Hard to say no";
+export function interestLabel(theirGain: number): EffectLabel {
+  return effectLabel(theirGain); // IE-1: the effect on their starters (was No deal / Maybe / Likely / Hard to say no)
 }
 // ---- end IA-2
 
@@ -269,3 +275,16 @@ export function openPlayer(gsis: string | null | undefined, opts: PaneOpts, go: 
   else go();
 }
 // ---- end IB-2
+
+// ---- IE-1 (Wave I-E, the casual-user review § "replace the interest dial"): the dial is the effect on their starters —
+// the partner's best-lineup gain over the window (api decisions.py `effect_label`: the same thresholds) — in outcome
+// words, never an acceptance claim. The tone: weaker = bad, about even = neutral, improves = good.
+import type { EffectLabel } from "./api";
+export const EFFECT_TITLE = "Effect on their starters";
+export function effectLabel(g: number): EffectLabel {
+  return g < -0.05 ? "Makes their lineup weaker" : g < 2 ? "About even" : g <= 6 ? "Improves their lineup" : "Improves it a lot";
+}
+export function effectTone(label: string): "text-bad" | "text-ink-2" | "text-good" {
+  return label === "Makes their lineup weaker" || label === "No deal" ? "text-bad" : label === "About even" || label === "Maybe" ? "text-ink-2" : "text-good";
+}
+// ---- end IE-1

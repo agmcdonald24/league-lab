@@ -544,6 +544,12 @@ the scoring arithmetic under "How we calculated this", a compact schedule table,
 header. The 116 / 157 week-3 check it cites is the hosted copy without the 10-yard columns (the nightly fixes it).
 **Wave I-E** (three devs, one round, squeezed in before Monday's flip): IE-0 the P0s, IE-1 the action list / waivers
 / the dial / the cheapest package, IE-2 the trade explanation / the dictionary / the setup order / P2.
+**I-E delivered 2026-10-03 20:30 ET** (STATUS § "Wave I-E": 987 root / 406 API / 172 e2e). All three P0s fixed with
+regression tests on the review's own cases; My Week is an action list with the open-league link and the
+nothing-submitted line; trades are explained through the starting lineup with the dictionary's words; the verdict and
+the dial describe lineups, not the other manager's answer. Left for a later pass (STATUS "Not done"): the schedule
+table, status next to names, "Updated hh:mm", the dictionary on the research screens. The other waves stand: Monday's
+flip of `LEAGUE_LAB_EV_PRICING`, usage tracking, v3.1, Wave J.
 
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 

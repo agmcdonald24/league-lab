@@ -264,9 +264,11 @@ export class Unauthorized extends Error {}
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  body: unknown; // ---- IE-0: the error's JSON (a trade's `unavailable` assets), when there is one
+  constructor(status: number, message: string, body: unknown = null) {
     super(message);
     this.status = status;
+    this.body = body;
   }
 }
 
@@ -996,13 +998,15 @@ export async function postEvaluate(body: { league: string; team: number; partner
   if (res.status === 401) throw new Unauthorized("sign in");
   if (!res.ok) {
     let detail = res.statusText;
+    let body: unknown = null;
     try {
       const b = await res.json();
+      body = b;
       detail = b.error ?? b.detail ?? detail;
     } catch {
       /* not JSON */
     }
-    throw new ApiError(res.status, detail);
+    throw new ApiError(res.status, detail, body); // ---- IE-0: the body carries `unavailable`
   }
   return (await res.json()) as TradeEval;
 }
@@ -1114,7 +1118,7 @@ export type TradeWindow = "week" | "next4" | "ros" | "playoffs";
 /** The dial: the other manager's interest 0–100 by our numbers over the window, the label, your gain. */
 export interface Interest {
   score: number;
-  label: "No deal" | "Maybe" | "Likely" | "Hard to say no";
+  label: EffectLabel; // IE-1: the effect on their starters (was "No deal" | "Maybe" | "Likely" | "Hard to say no")
   their_gain: number;
   you: number | null;
   caption: string; // "by our numbers over weeks 4–7"
@@ -1352,3 +1356,115 @@ export interface PlayerCard {
   news?: NewsItem[];
 }
 // ---- end N1
+
+// ---- IE-0 (Wave I-E): the trade calculator's asset keys (INTERFACES.md § IE-0). A key is opaque ("mfl:0682" like
+// "12490"); POST /api/trades/evaluate answers 400 with every asset it cannot analyse named — never a silent drop.
+export interface UnavailableAsset {
+  key: string;
+  side: "give" | "get";
+  name: string | null;
+  why: string; // "not on Big Mac Attack's roster", "not a player League Lab knows in this league", …
+}
+/** The `unavailable` list of a 400 from the evaluate call, or [] for any other error. */
+export function unavailableOf(e: unknown): UnavailableAsset[] {
+  if (!(e instanceof ApiError) || e.status !== 400) return [];
+  const b = e.body as { unavailable?: UnavailableAsset[] } | null;
+  return Array.isArray(b?.unavailable) ? b.unavailable : [];
+}
+// ---- end IE-0
+
+// ---- IE-2 (Wave I-E): the trade explained through the starting lineup (POST /api/trades/evaluate, decisions.trade_story):
+// who enters your starters and who leaves — by membership, a starter who only changes slot number is in neither list —,
+// the required cut, the backup coverage, the other side in the same words, the window named and the comparison with
+// standing pat / the best free agent for the same need. `lineups.<side>` gains the starters who left (`out`), the slot
+// moves (`reshuffled`, detail only) and the total; a slot row's `change` is the player's own (null: he only moved slot).
+export interface StarterMove {
+  player: TradePlayer;
+  slot: string; // "WR/TE", "team QB" (the league's words, unnumbered)
+  value: number; // this week's projected points
+  how?: "trade" | "bench";
+  why?: "traded" | "cut" | "to the bench";
+}
+export interface TradeLineupX {
+  slots: { slot: string; player_name: string | null; gsis_id: string | null; value: number | null; change: number | null; status?: "new" | "in" | null }[];
+  notes: string[];
+  closest_call: string | null;
+  out?: { slot: string; player_name: string; gsis_id: string | null; value: number; change: number; why: string }[];
+  reshuffled?: string[];
+  total?: { before: number; after: number; change: number };
+}
+export interface TradeEval {
+  starters_in?: StarterMove[];
+  starters_out?: StarterMove[];
+  cut?: { player: TradePlayer; season_points: number | null; words: string }[];
+  effect_words?: string;
+  lineup_words?: string;
+  backup_words?: string | null;
+  their_change?: { gain_week: number; gain_window: number; starters_in: StarterMove[]; starters_out: StarterMove[]; effect_words: string; lineup_words: string };
+  window_words?: string;
+  hold_words?: string;
+  hold?: { hold: string; waiver: string | null; waiver_gain: number | null };
+  how?: { fit: string | null; market: string | null; ros: string | null; size: string | null; ranks: string | null };
+}
+// ---- end IE-2
+
+// ---- IE-1 (Wave I-E, the casual-user review): My Week's actions (at most three, the most urgent first; INTERFACES.md
+// § IE-1), the cards' keys and tiebreaker, Waivers' this-week-first card fields and `home_action`, the dial as the effect
+// on their starters, the Finder's cheaper package. Additive: declaration merging.
+export type EffectLabel = "Makes their lineup weaker" | "About even" | "Improves their lineup" | "Improves it a lot";
+export type ActionKind = "change" | "close" | "move";
+export interface ActionPlayer {
+  key: string | null;
+  name: string;
+  link?: string;
+}
+export interface WeekAction {
+  kind: ActionKind;
+  urgency: 1 | 2 | 3;
+  slots: (string | null)[];
+  slot_label: string;
+  action: string; // markdown: the action in one sentence (layer 1)
+  reason: string; // why, who moves, what could change it (layer 2)
+  start: ActionPlayer[];
+  sit: ActionPlayer[];
+  submitted: boolean | null; // the suggested starters are already in the submitted lineup (null: unknown)
+  submitted_words: string | null;
+  lock: { kickoff: string; words: string } | null; // "before Sun 1:00 PM ET"
+  cards: number[]; // indexes into MyWeek.cards: the analysis behind "Why?" (layer 3)
+  gain: number | null;
+  href: string | null; // "/waivers" for a claim
+  drop?: ActionPlayer | null; // a claim's drop
+}
+export interface MyWeek {
+  actions?: WeekAction[];
+  set_line?: string | null;
+  next_lock?: { kickoff: string; words: string; players: string[] } | null;
+  edit_link?: { label: string; url: string; platform: string } | null;
+  nothing_submitted?: string;
+  platform_name?: string;
+}
+export interface DecisionCard {
+  key?: string | null;
+  alt_key?: string | null;
+  tiebreak?: { kind: string; pick: string; side: "me" | "alt" } | null;
+  action?: number | null;
+}
+export interface WaiverCard {
+  lead?: string; // "Bears defense instead of Jaguars: about 2 more starter points this week"
+  total_words?: string | null; // "+12.4 over weeks 4–7 in total"
+  alternative_to?: string | null; // an earlier card that takes the same spot this week
+}
+export interface Waivers {
+  answer?: string | null;
+  not_additive?: string;
+  home_action?: WeekAction | null;
+}
+export interface Interest {
+  title?: string; // "Effect on their starters"
+  need?: string | null; // "fills their empty RB2"
+}
+export interface PartnerRow {
+  optional?: { sleeper_id: string; player_name: string; season_points: number | null; words: string } | null;
+  cheaper_than?: { give: string[]; words: string } | null;
+}
+// ---- end IE-1

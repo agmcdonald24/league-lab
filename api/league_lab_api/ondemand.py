@@ -30,7 +30,19 @@ from league_lab.lineup import UNVALUED, Player  # ---- IB-3
 from . import availability, why
 from .applib import cards, ui
 from .db import query
-from .myweek import NotFound, _num, _str, cards_from_rows, current_starters, howto, lineup
+from .myweek import (  # IE-1 (+ annotate_swaps, PO I-E)
+    NOTHING_SUBMITTED,
+    NotFound,
+    _num,
+    _str,
+    annotate_swaps,
+    build_actions,
+    cards_from_rows,
+    current_starters,
+    edit_link,
+    howto,
+    lineup,
+)
 
 MOVERS_SQL = """select t.gsis_id, t.player_name, t.position, t.tags, t.momentum
                 from analytics.mart_player_trend_tags t
@@ -113,10 +125,15 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna() if not rows.empty else pd.Series(dtype=float)
     out["lineup_value"] = None if lv.empty else float(lv.iloc[0])
     t1 = time.perf_counter()
-    out["notice"], out["cards"] = cards_from_rows(league_id, int(roster_id), week, season, rows,         # ---- IB-0
-                                                  current=current_starters(league_id, int(roster_id), house=False))
+    cur = current_starters(league_id, int(roster_id), house=False)                                        # ---- IB-0
+    out["notice"], out["cards"] = cards_from_rows(league_id, int(roster_id), week, season, rows, current=cur)
+    # ---- IE-1: the actions (at most three), the set line, where to make the change, nothing is submitted from here
+    out.update(build_actions(rows, out["cards"], cur, league_id))
+    out.update({"edit_link": edit_link(league_id, league), "nothing_submitted": NOTHING_SUBMITTED})
+    # ---- end IE-1
     t2 = time.perf_counter()
     out["lineup"], out["lineup_full"] = lineup(rows)
+    annotate_swaps(out["lineup"], out["lineup_full"], out.get("swaps") or [])                              # ---- PO I-E
     out["howto"] = howto()
     gs = sorted({g for g in rows["gsis_id"].dropna()}) if not rows.empty else []
     mv = query(MOVERS_SQL, (season, gs)) if gs else pd.DataFrame()
@@ -372,7 +389,8 @@ def ros_rows(league_id: str, league: dict | None, df: pd.DataFrame, players: lis
     week = cards.decision_week(season) if season is not None else None
     from .applib import ros as ROS
     this_week = {str(r["player_key"]): dict(ROS.weeks_list(r)).get(week) for r in recs} if week is not None else {}
-    market = why.market_points(season, week, ids, scoring)
+    # ---- IE-0: the market line is Sleeper's number: an MFL league shows none (no "not in yet" either)
+    market = {} if A.platforms.is_mfl(league_id) else why.market_points(season, week, ids, scoring)
     for p in players:
         key = p.get("player_key") or p.get("gsis_id")
         g = p.get("ros_games") or 0
@@ -401,7 +419,8 @@ def ros_more(league_id: str, league: dict | None, df: pd.DataFrame, *, house: bo
     return {"piece_columns": {k: list(v) for k, v in why.COLUMNS.items()}, "howto_rankings": RANKINGS_HOWTO,
             "leans_on": why.leans_on(league_id if house else None, name),
             "market_week": cards.decision_week(season) if season is not None else None,
-            "market_note": ("Sleeper's number is this week's, in this league's scoring, where Sleeper has one; "
+            "market_note": (None if A.platforms.is_mfl(league_id) else                    # ---- IE-0: Sleeper's only
+                            "Sleeper's number is this week's, in this league's scoring, where Sleeper has one; "
                             "the list's totals are ours.")}
 # ---- end IA-3
 

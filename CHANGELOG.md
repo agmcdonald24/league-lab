@@ -2,6 +2,40 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-E
+
+- **PO (integration).** The trade verdict says what each starting lineup gains and what the season value says —
+  never a guess at the other manager's answer ("expect a no" / "worth offering" are gone); the three strongest
+  waiver claims are ordered by this week's gain, which they now lead with; when a close call's injury tiebreak keeps
+  the healthy player, the lineup table's two rows say so ("Questionable — the call above keeps Addison here for
+  now") instead of reading as the opposite; the 70587 e2e answers re-recorded.
+
+- **IE-0: MFL behaves correctly (the casual-user review's P0s).** The trade calculator keeps every asset of a package:
+  a provider key such as `mfl:0682` (the Houston Texans QB unit) is opaque from the link to the answer, so the Finder's
+  "Houston Texans QB + Tuten for Rice" opens as that two-for-one (it opened as Tuten alone and flipped the verdict); an
+  asset that cannot be analysed is named ("Can't analyse …: not on Madeyes Revenge's roster") with no verdict, never
+  dropped. Waivers' reasons come from the evaluated move: a candidate fills an empty slot only if he can play it (no
+  "team QB fills the empty DEF"), slots in the league's words ("WR/TE 2"). MFL leagues read "MFL", not "Sleeper", show
+  no Sleeper market line, and state points per game once with its source; a team unit's badge is its team, never
+  "Free agent".
+
+- **IE-2: a trade in starting-lineup words.** The calculator leads with what you give and get, one sentence on the
+  effect ("about 3.4 more points this week, about 10 more in total over weeks 4–7"), who starts and who sits by name
+  (a starter who only moves from WR/TE 2 to WR/TE 3 is not a change), the backup coverage lost, the other side, and
+  standing pat / the best free agent for the same need; the arithmetic is under "How we calculated this". The review's
+  metric dictionary (`docs/WORDS.md`), the setup screen with the team picker first and the scoring one status line,
+  supporting text at ≥ 4.97:1 in both themes, labels 12 px.
+
+- **IE-1: the weekly action list.** My Week opens with at most three actions, the most urgent first — a change your
+  submitted lineup needs before the next kickoff, a close call, a waiver claim that changes this week's starters —
+  each in one sentence with the reason under it and the numbers behind "Why?"; calls that share a player are one
+  decision ("Keep Addison and Nabers ahead of McConkey for now"); "Your lineup is set — nothing to change" is a whole
+  answer; every action says whether it is already in your MFL / Sleeper lineup, with "Open MFL to edit your lineup"
+  and the line that League Lab never submits anything. Waivers' cards lead with this week's starter points and say the
+  four-week number is a total; the answer, the three strongest and the Help now list no longer repeat one move. The
+  trade dial is "Effect on their starters" (no 0–100, no "interest"); the Finder leads with the cheaper package when an
+  extra player adds nothing for you. No projection, lineup total or gain changed.
+
 ## 2026-10-03 — Wave I-D
 
 - **PO (integration).** dbt's `assert_projection_ranges_price_the_lines` re-prices `scrubs` only: the dynasty's

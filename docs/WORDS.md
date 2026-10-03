@@ -99,6 +99,53 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | combined slot `WR+TE1` (IC-2, `cards.slot_label`) | "WR/TE 1" (the league's own slot, its parts joined by a slash; "RB/WR/TE 2") |
 | team unit `TMQB` / `TMPK` (IC-2) | "team QB" / "team K" in the slot column; the player is "Kansas City Chiefs QB" / "… K" (his team's quarterbacks / kicker as one player, MyFantasyLeague's) |
 | no eligible slot (IC-2, `lineup.no_slot_reason`) | **No slot** in the list, "No slot for a K in this league" as the reason — never "Can't play" (kept for injury, bye, IR, a locked bench player) |
+| asset key (IE-0, the calculator's `give` / `get`) | never on a page; a key the analysis cannot use reads "Can't analyse **Houston Texans QB** (you get): on Big Mac Attack's roster, not Madeyes Revenge's." with "Take out of the trade" |
+| a waiver reason in a later week (IE-0, `_bye_reason`) | only the candidate's own: "Fills your empty DEF in week 7, when Jacksonville Jaguars is on a bye" (a defense) · "Starts at WR/TE 3 in week 7, when McConkey is on a bye" (a starter he can stand in for) · else "Would not start for you this week; helps in week 7." |
+| the platform in a sentence (IE-0) | the league's own: "on the bench in MFL", "starting in his MFL lineup"; Sleeper's number (the market line) only on a Sleeper league |
+| points per game on an on-demand card (IE-0) | one statement with its source: "Points per game: 10.5 over 2 games, reconstructed in this league's MFL scoring from his stat lines" (the chart's number) |
+| no NFL team (IE-0, `TeamBadge`) | no chip; never "FA" / "Free agent" for a missing team ("Free agent" is a player nobody in the league has) |
+
+## The dictionary (Wave I-E, the casual-user review)
+
+The outside review of 2026-10-03 (`docs/reviews/2026-10-03-mfl-70587-usability-review.md` § "use a consistent metric
+dictionary") walked the app as a manager who knows football and does not enjoy analytics. These words win over the
+older rows above wherever a term appears — pages, cards, the research pane, Season, the Finder, the calculator, the
+help texts. The meaning column is what the words must keep true. Other developers append rows; nobody renames one
+without changing every page that shows it.
+
+| Old wording or display | The words we use | Short form (tiles, tight rows) | Meaning that must stay true |
+|---|---|---|---|
+| Proj / projected | **Projected points this week** | Projected this week | A forecast in the selected league's scoring, not a guarantee. One decimal by default. |
+| You +9.5, weeks 4–7 | **About 10 extra starter points total over weeks 4–7** | +9.5 over weeks 4–7 in total | The sum of the change in the best legal starting lineup each week. Not 9.5 per week, not the incoming players' points. |
+| Fit | **Improvement to your starting lineup** (weeks 4–7, best lineup each week) | Lineup improvement | Name the weeks, and whether the baseline is the best lineup (it is, everywhere today) or the submitted one. |
+| Expected / work worth / xPPG | **Points suggested by his past opportunities** | From past opportunities | Looking back: what his targets and carries were worth. Not the upcoming-week forecast; said beside the chart. |
+| Market (our projection-derived score) | **Projected value above available replacements** | Value above replacement | From our projections, not observed trade prices; respects the league's eligible replacement slots. Sleeper's own number stays "Sleeper's projection". |
+| Most weeks | **Typical range** (the middle 50% of outcomes) | Typical range | The middle 50% of modeled outcomes; "most" overstated it. |
+| Floor / ceiling | **Low-end / high-end outcome** | Low-end / high-end | Modeled percentiles (1 week in 10 below / above), not the minimum or maximum possible score. |
+| Target share | **Share of team passes thrown to him** | Share of team passes | 20% = about one in five team targets in the games shown; keep the period. |
+| Depth | **Backup coverage** (for <position>) | Backup coverage | Say which position the backup protects; a bench-only lineup sum is not an insurance value. |
+| TMQB / TMPK / WR+TE2 | **Team QB / Team kicker / Receiver or tight end** | team QB / team K / WR/TE 2 | The league's roster rules, the same names on every page. |
+| Interest (the trade dial) | **Effect on their starters** (IE-1: "Makes their lineup weaker" · "About even" · "Improves their lineup" · "Improves it a lot") | Effect on their starters | Their lineup's projected gain over the window, never an acceptance probability. |
+| Above / below expectation | "{n} above / below what his opportunities suggest" | above / below his opportunities | The observed gap and its evidence; never "due" or "cool off". |
+| Why? (the trade's arithmetic) | **How we calculated this** | How we calculated this | Under it: the scoring pieces ("0.42 rushing TDs × 6.98715"), the value above replacements, rest of season, ranks, roster size. |
+
+**A trade, in words** (IE-2, `decisions.trade_story`): the package and any cut → one sentence on the effect ("Your
+starting lineup: about 3.4 more points this week, about 10 more in total over weeks 4–7.") → who starts and who sits
+by name ("Rice starts at WR/TE; McConkey to the bench.") — a starter who only moves from WR/TE 2 to WR/TE 3 is not a
+change → the backup coverage it takes ("you lose Tuten, a backup RB") → the other side in the same words → standing
+pat and the best free agent for the same need. "About N" is a whole number in a total, one decimal for this week.
+
+**Freshness**: "Updated 2:51 PM ET" (the exact time on hover / tap); feed names only in the data details; the MFL
+roster's freshness its own line.
+
+| My Week's actions (IE-1, `myweek.build_actions`) | at most three, the most urgent first: **Change needed** ("Start Wilson at FLEX (or Croskey-Merritt: a coin flip) in place of Jefferson.") · **Close call** ("Keep Addison and Nabers ahead of McConkey for now.") · **Waiver claim** ("Claim Dalton Schultz: about 3 more starter points this week."); one sentence naming the players, then the reason and what could change it ("Check his status again before kickoff."); the numbers behind "Why? The numbers behind it" |
+| set line (IE-1) | "Your lineup is set — nothing to change." (a complete answer) / "The rest of your lineup is set — nothing to change." — never three reassurance cards |
+| submitted or not (IE-1) | "Already in your MFL lineup — nothing to change." / "Not in your Sleeper lineup yet: make the change in Sleeper." (the league's own app named); "Nothing is claimed from here: put the claim in on MFL." |
+| nothing is submitted from here (IE-1) | "League Lab never changes your lineup or claims; it tells you what to do in your league's app." beside **Open MFL to edit your lineup ↗** / **Open Sleeper to edit your lineup ↗** |
+| lock time (IE-1, `myweek.lock_words`) | "before Sun 1:00 PM ET": the first kickoff among the players an action swaps |
+| waiver card, this week first (IE-1, `decisions.claim_lead`) | "Falcons defense instead of Jaguars: about 1 more starter point this week" (the big number: this week's, labelled "this week"); then "+12.8 over weeks 4–7 in total" (a total over the weeks, never per week); "Instead of Devaughn Vele:" on a claim for the same spot; "Each claim is weighed on its own …: two claims do not add up beyond your 1 open roster spot" |
+| the trade dial (IE-1; was "Their interest" / No deal · Maybe · Likely · Hard to say no) | **Effect on their starters**: Makes their lineup weaker · About even · Improves their lineup · Improves it a lot; "It starts at their WR/TE over Robinson." (the need); no 0–100 number, never "interest" or "hard to say no" |
+| the cheaper package (IE-1) | "Same gain for you without RJ Harvey." on the lead; "Adding RJ Harvey does not change your gain; it costs you RB depth (RJ Harvey: 97 season points)." on the bigger package |
 
 ## Adding to it
 

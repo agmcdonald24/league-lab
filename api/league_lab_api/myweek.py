@@ -13,6 +13,7 @@ Same numbers and words as `app/Home.py`:
 from __future__ import annotations
 
 import math
+import re
 
 import pandas as pd
 
@@ -69,7 +70,8 @@ def rosters(league_id: str) -> list[dict]:
 def _lineup_row(r: pd.Series) -> dict:
     out = {"role": r["role"], "slot": r["slot"], "player_name": _str(r.get("player_name")),
            "gsis_id": _str(r.get("gsis_id")), "position": _str(r.get("position")),
-           "value": _num(r.get("value")), "margin": _num(r.get("margin")), "flag": _str(r.get("flag")) or ""}
+           "value": _num(r.get("value")), "margin": _num(r.get("margin")), "flag": _str(r.get("flag")) or "",
+           "key": _str(r.get("sleeper_player_id"))}        # PO (I-E): the roster key the actions use (annotate_swaps)
     # ---- I0-A: the availability overlay's chip (OUT / DOUBTFUL / IR) and its reason ("Out (ankle) · ESPN, Oct 2 2:35 PM ET")
     if _str(r.get("chip")):
         out["flag"], out["reason"] = r["chip"], _str(r.get("why"))
@@ -164,9 +166,12 @@ def my_week(league_id: str, roster_id: int) -> dict:
         lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna()
         out["lineup_value"] = None if lv.empty else float(lv.iloc[0])
     # the cards: numbers from decisions(), text from decision_cards() as drawn
-    out["notice"], out["cards"] = cards_from_rows(league_id, roster_id, week, season, rows,
-                                                  current=current_starters(league_id, int(roster_id), house=True))  # IB-0
+    cur = current_starters(league_id, int(roster_id), house=True)                                         # IB-0
+    out["notice"], out["cards"] = cards_from_rows(league_id, roster_id, week, season, rows, current=cur)
+    out.update(build_actions(rows, out["cards"], cur, league_id))                                          # ---- IE-1
+    out.update({"edit_link": edit_link(league_id), "nothing_submitted": NOTHING_SUBMITTED})               # ---- IE-1
     out["lineup"], out["lineup_full"] = lineup(rows)
+    annotate_swaps(out["lineup"], out["lineup_full"], out.get("swaps") or [])                              # ---- PO I-E
     out["howto"] = howto()
     # ---- copied from app/Home.py (Movers on your roster)
     mv = query(
@@ -247,6 +252,7 @@ def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows
         else:
             loose.append(c)
     notices = [b["text"] for b in blocks(loose) if b["kind"] in ("info", "warning", "markdown", "caption")]
+    ties = list(drawn_dec["tiebreak"]) if isinstance(drawn_dec, pd.DataFrame) and "tiebreak" in drawn_dec else []  # IE-1
     out = []
     for i, (_, d) in enumerate(dec.iterrows()):
         out.append({
@@ -263,7 +269,306 @@ def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows
                                                                "alt": bool(d.get("alt_sleeper_starter"))},
             "blocks": blocks(drawn[i]) if i < len(drawn) else [],
         })
+        # ---- IE-1: the two players' roster keys (Sleeper id / MFL key) and the coin flip's tiebreaker as data
+        tb = ties[i] if i < len(ties) and isinstance(ties[i], dict) else None
+        out[-1].update({"key": _str(d.get("sleeper_player_id")), "alt_key": _str(d.get("alt_sleeper_player_id")),
+                        "tiebreak": None if tb is None else {"kind": tb["kind"], "pick": tb["pick"], "side": tb["side"]},
+                        "action": None})
+        # ---- end IE-1
     return (notices[0] if notices else None), out
+
+
+# ---- IE-1 (Wave I-E, the casual-user review § "make the default experience a weekly action list"): My Week's first
+# layer. At most three actions, the most urgent first: a change the submitted lineup needs before the next kickoff, then
+# a close call (a status breaks the tie), then (the web adds it from /api/waivers' `home_action`) a claim that changes
+# this week's starters. Cards that share a player are ONE action ("Keep Addison and Nabers ahead of McConkey for now");
+# a clear / lean call the submitted lineup already follows is not an action (the `set_line` says so); a difference
+# under ACTION_MIN_GAIN projected points with nobody hurt is not one either. No number moves: the projections, the
+# lineup and the cards are the ones below; an action only names who starts and what the submitted lineup still needs.
+ACTION_MIN_GAIN = 0.5
+MAX_ACTIONS = 3
+NOTHING_SUBMITTED = "League Lab never changes your lineup or claims; it tells you what to do in your league's app."
+SET_ALL = "Your lineup is set — nothing to change."
+SET_REST = "The rest of your lineup is set — nothing to change."
+CANT_WORDS = {"OUT": "is out", "IR": "is on injured reserve", "PUP": "is on the PUP list", "SUS": "is suspended",
+              "DOUBTFUL": "is doubtful", "BYE": "is on a bye"}
+
+
+def platform_name(league_id: str) -> str:
+    from league_lab import platforms
+    return "MFL" if platforms.is_mfl(league_id) else "Sleeper"
+
+
+def edit_link(league_id: str, league: dict | None = None) -> dict:
+    """Where the manager changes his lineup: MFL's lineup page on the league's own host (`league["mfl"]["url"]` =
+    `<host>/<year>/home/<id>` → `<host>/<year>/options?L=<id>&O=02`, MFL's "Submit lineup"), Sleeper's league."""
+    name = platform_name(league_id)
+    if name == "MFL":
+        lid = str(league_id).split(":", 1)[-1]
+        home = str(((league or {}).get("mfl") or {}).get("url") or "")
+        base = home.rsplit("/home/", 1)[0] if "/home/" in home else ""
+        url = f"{base}/options?L={lid}&O=02" if base else f"https://www.myfantasyleague.com/{ui.current_season()}/home/{lid}"
+    else:
+        url = f"https://sleeper.com/leagues/{league_id}"
+    return {"label": f"Open {name} to edit your lineup", "url": url, "platform": name}
+
+
+def lock_words(ts) -> str | None:
+    """'before Sun 1:00 PM ET' for a kickoff (UTC)."""
+    if ts is None or (not isinstance(ts, str) and pd.isna(ts)):
+        return None
+    t = pd.Timestamp(ts)
+    t = (t.tz_localize("UTC") if t.tzinfo is None else t).tz_convert("America/New_York")
+    return f"before {t:%a} {t.hour % 12 or 12}:{t:%M} {'AM' if t.hour < 12 else 'PM'} ET"
+
+
+def _and(xs: list[str]) -> str:
+    return xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + " and " + xs[-1] if xs else ""
+
+
+def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, str] | None, league_id: str) -> dict:
+    """{actions, set_line, next_lock, platform_name} from the lineup rows, the cards (`cards_from_rows`, with their
+    IE-1 `key` / `alt_key` / `tiebreak`) and the submitted lineup ({key: slot}; None = unknown). Marks each card's
+    `action` (the index of the action it explains)."""
+    pname = platform_name(league_id)
+    res: dict = {"actions": [], "set_line": None, "next_lock": None, "platform_name": pname}
+    if rows is None or rows.empty:
+        return res
+    info: dict[str, dict] = {}
+    for r in rows.to_dict("records"):
+        k = _str(r.get("sleeper_player_id"))
+        if k and r.get("role") in ("starter", "bench", "unplayable") and not r.get("is_empty_slot"):
+            info[k] = r
+    best = [k for k, r in info.items() if r["role"] == "starter"]
+
+    def val(k) -> float:
+        return _num((info.get(k) or {}).get("value")) or 0.0
+
+    def plays(k) -> bool:
+        return k in info and info[k]["role"] != "unplayable"
+
+    def locked(k) -> bool:
+        return bool((info.get(k) or {}).get("locked_now"))
+
+    def status(k) -> str | None:
+        r = info.get(k) or {}
+        s = _str(r.get("chip")) or cards._flag(r.get("report_status"))
+        return s or None
+
+    def name(k, short=True) -> str:
+        r = info.get(k) or {}
+        full = _str(r.get("player_name")) or "a player no longer on your roster"
+        n = cards.last_name(full, r.get("position")) if short and r.get("position") not in ("DEF", "TMQB", "TMPK", "TMDEF") else full
+        g = _str(r.get("gsis_id"))
+        return f"[{n}](/player/{g})" if g else n
+
+    def plain(k) -> str:
+        r = info.get(k) or {}
+        full = _str(r.get("player_name")) or "a player no longer on your roster"
+        return cards.last_name(full, r.get("position")) if r.get("position") not in ("DEF", "TMQB", "TMPK", "TMDEF") else full
+
+    def cant_words(k) -> str:
+        r = info.get(k) or {}
+        s = (_str(r.get("chip")) or _str(r.get("report_status")) or "").upper()
+        why = str(r.get("reason") or "").lower()
+        return CANT_WORDS.get("BYE" if why == "bye" else s, f"can't play ({r.get('reason') or s.lower() or 'not active'})")
+
+    # the groups: cards that share a player (union-find over the keys); the submitted lineup's differences join them
+    parent: dict[str, str] = {}
+
+    def find(x: str) -> str:
+        while parent.setdefault(x, x) != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a: str | None, b: str | None) -> None:
+        if a and b:
+            parent[find(a)] = find(b)
+        elif a or b:
+            find(a or b)
+    for c in cards_out:
+        union(c.get("key"), c.get("alt_key"))
+    # the suggested lineup: the best lineup, except where a coin flip's tiebreaker is an injury (the healthy one starts:
+    # "McConkey's questionable status breaks the tie") - the card already says "Go with Addison"
+    suggested, swapped = set(best), set()
+    res["swaps"] = []           # PO (I-E): the lineup table says the same as the call (annotate_swaps)
+    for c in cards_out:
+        tb = c.get("tiebreak") or {}
+        if tb.get("kind") == "injury" and tb.get("side") == "alt" and c.get("alt_key") and c.get("key") in suggested \
+                and c["alt_key"] not in suggested and plays(c["alt_key"]) and not locked(c["key"]):
+            suggested.discard(c["key"])
+            suggested.add(c["alt_key"])
+            swapped.add(c["alt_key"])
+            res["swaps"].append({"in": c["alt_key"], "in_name": plain(c["alt_key"]), "out": c["key"], "out_name": plain(c["key"]),
+                                 "status": status(c["key"])})
+    known = current is not None
+    sub = set(current or {})
+    if known and best and not (sub & set(info)):
+        # nothing of this roster is in the submitted lineup (a new week MFL has no lineup for yet): ONE action, not eight
+        kicks = [info[k].get("kickoff_at") for k in best if not locked(k) and info[k].get("kickoff_at") is not None
+                 and not pd.isna(info[k].get("kickoff_at"))]
+        first = min(kicks) if kicks else None
+        lock = None if first is None else {"kickoff": pd.Timestamp(first).isoformat(), "words": lock_words(first)}
+        res["actions"] = [{"kind": "change", "urgency": 1, "slots": [], "slot_label": "",
+                           "action": f"Set your {pname} lineup: nothing is in it for this week yet.",
+                           "reason": "Start the lineup below (the best one by our projection) before the first kickoff.",
+                           "start": [{"key": k, "name": plain(k), "link": name(k)} for k in best], "sit": [],
+                           "submitted": False, "submitted_words": f"Not in your {pname} lineup yet: set it in {pname}.",
+                           "lock": lock, "cards": list(range(len(cards_out))), "gain": None, "href": None}]
+        for c in cards_out:
+            c["action"] = 0
+        res["next_lock"] = None if lock is None else {**lock, "players": []}
+        return res
+    pairs: list[tuple[str | None, str | None]] = []
+    if known:
+        ins = sorted((k for k in suggested if k not in sub and not locked(k)), key=lambda k: -val(k))
+        outs = sorted((k for k in sub if k not in suggested and not locked(k)), key=lambda k: (plays(k), val(k)))
+        for o in outs:
+            ok = cards.slot_elig(cards._PART.get(str(current.get(o) or "").upper()) or current.get(o)) if current.get(o) else frozenset()
+            pick = next((i for i in ins if ok and (info.get(i) or {}).get("position") in ok), ins[0] if ins else None)
+            if pick is not None:
+                ins.remove(pick)
+            pairs.append((pick, o))
+        pairs += [(i, None) for i in ins]
+        for i, o in pairs:
+            union(i, o)
+    groups: dict[str, set[str]] = {}
+    for k in list(parent):
+        groups.setdefault(find(k), set()).add(k)
+    acts, tiny = [], False
+    for members in groups.values():
+        g_cards = [i for i, c in enumerate(cards_out) if c.get("key") in members or c.get("alt_key") in members]
+        g_pairs = [p for p in pairs if p[0] in members or p[1] in members]
+        start = sorted((k for k in members if k in suggested), key=lambda k: (k not in swapped, -val(k)))
+        sit = sorted((k for k in members if k not in suggested), key=lambda k: -val(k))
+        submitted = None if not known else (all(k in sub or locked(k) for k in start) and not any(k in sub for k in sit))
+        cant = [k for k in sit if k in sub and not plays(k)]
+        gain = None if submitted is not False else round(sum(val(k) for k in start if k not in sub)
+                                                         - sum(val(k) for k in sit if k in sub and plays(k)), 2)
+        coin = [cards_out[i] for i in g_cards if cards_out[i].get("status") == "close" or cards_out[i].get("strength") == "coin flip"]
+        hurt = [k for k in members if status(k) and plays(k)]
+        if submitted is False and (cant or (gain or 0.0) >= ACTION_MIN_GAIN):
+            kind = "change"
+        elif coin and hurt:
+            kind = "close"
+        else:
+            tiny = tiny or submitted is False
+            continue
+        a = _action(kind, start, sit, submitted, gain, cant, coin, hurt, g_pairs, swapped, pname,
+                    name=name, plain=plain, status=status, cant_words=cant_words, val=val,
+                    slot_of=lambda k: re.sub(r"\s*\d+$", "", cards.slot_label(_str((info.get(k) or {}).get("slot")))))
+        # who the action's time hangs on: the swapped pairs, and the close calls (those with the hurt player first: the
+        # call between McConkey and Addison is open until Addison's kickoff, whatever time Nabers plays)
+        hot = [c for c in coin if c.get("key") in hurt or c.get("alt_key") in hurt] if kind == "close" else coin
+        involved = {k for p in g_pairs for k in p if k} | {k for c in (hot or coin) for k in (c.get("key"), c.get("alt_key")) if k}
+        kicks = [info[k].get("kickoff_at") for k in involved if k in info and not locked(k)
+                 and info[k].get("kickoff_at") is not None and not pd.isna(info[k].get("kickoff_at"))]
+        first = min(kicks) if kicks else None
+        a["lock"] = None if first is None else {"kickoff": pd.Timestamp(first).isoformat(), "words": lock_words(first)}
+        a["_lock_players"] = [plain(k) for k in sorted(involved, key=lambda k: -val(k))]
+        named = ({k for p in g_pairs for k in p if k} if kind == "change" and g_pairs else
+                 {k for c in coin for k in (c.get("key"), c.get("alt_key")) if k})
+        a["slots"] = sorted({str(info[k]["slot"]) for k in (named or members) if k in info and info[k]["role"] == "starter"
+                             and isinstance(info[k].get("slot"), str)}, key=str)
+        a["slot_label"] = " · ".join(cards.slot_label(s) for s in a["slots"])
+        a["cards"] = g_cards
+        a["_order"] = (a["urgency"], first if first is not None else pd.Timestamp.max.tz_localize("UTC"), -(gain or 0.0))
+        acts.append(a)
+    acts.sort(key=lambda a: a.pop("_order"))
+    more = acts[MAX_ACTIONS:]
+    acts = acts[:MAX_ACTIONS]
+    for n, a in enumerate(acts):
+        for i in a["cards"]:
+            cards_out[i]["action"] = n
+    res["actions"] = acts
+    if known:
+        if more:
+            res["set_line"] = f"{len(more)} more {'change' if len(more) == 1 else 'changes'}: the lineup below shows every slot."
+        else:
+            res["set_line"] = (SET_REST if acts else SET_ALL) + (
+                " (Where your lineup differs from ours, it is by less than half a point.)" if tiny else "")
+    locks = [(a["lock"]["kickoff"], a) for a in acts if a.get("lock")]
+    if locks:
+        k, a = min(locks, key=lambda x: x[0])
+        res["next_lock"] = {"kickoff": k, "words": a["lock"]["words"], "players": a.pop("_lock_players", [])}
+    for a in acts:
+        a.pop("_lock_players", None)
+    return res
+
+
+def annotate_swaps(lineup_rows: list[dict], full_rows: list[dict], swaps: list[dict]) -> None:
+    """PO (Wave I-E, the casual-user review): when a close call's injury tiebreak keeps the healthy player (the action
+    says "Keep Addison ahead of McConkey"), the lineup table below must not read as the opposite — its rows are the
+    best lineup on paper, so the two rows say so in words (the numbers stay: the table is still the best lineup)."""
+    for sw in swaps or []:
+        for rows in (lineup_rows, full_rows):
+            for r in rows:
+                k = r.get("sleeper_player_id") or r.get("key")
+                if k == sw["out"] and r.get("role") == "starter":
+                    st = (sw.get("status") or "questionable").lower()
+                    r["flag"] = f"{st.capitalize()} — the call above keeps {sw['in_name']} here for now"
+                elif k == sw["in"] and r.get("role") == "bench":
+                    r["flag"] = f"starts for {sw['out_name']} by the call above"
+
+
+def _action(kind, start, sit, submitted, gain, cant, coin, hurt, pairs, swapped, pname, *, name, plain, status,
+            cant_words, val, slot_of) -> dict:
+    """One action's words: layer 1 (`action`, one sentence naming the players) and layer 2 (`reason`: why, who moves,
+    what could change it), `submitted_words`."""
+    def who(ks):
+        return [{"key": k, "name": plain(k), "link": name(k)} for k in ks]
+    coin_alt = {}                    # a starter in a coin flip -> the bench player he is level with
+    for c in coin:
+        for a, b in ((c.get("key"), c.get("alt_key")), (c.get("alt_key"), c.get("key"))):
+            if a in start and b in sit and b not in cant:
+                coin_alt.setdefault(a, b)
+    if kind == "change":
+        bits, flips = [], []
+        for i, o in pairs:
+            alt = coin_alt.get(i) if coin_alt.get(i) not in (None, o) else None
+            at = f" at {slot_of(i)}" if i and slot_of(i) else ""
+            if i and o:
+                bits.append(f"{name(i)}{at}" + (f" (or {name(alt)}: a coin flip)" if alt else "") + f" in place of {name(o)}")
+            elif i:
+                bits.append(f"{name(i)}{at} (an open spot in your {pname} lineup)")
+            elif o:
+                bits.append(f"{name(o)} out of your lineup")
+            # the close call behind the swap: the starter and his bench double, or the two players swapped
+            flips += [c for c in coin if i in (c.get("key"), c.get("alt_key"))
+                      and ({c.get("key"), c.get("alt_key")} - {i}) & {alt, o} - {None}]
+        if not bits:
+            bits = [f"{_and([name(k) for k in start])} ahead of {_and([name(k) for k in sit])}"]
+        action = (f"Start {bits[0]}." if len(bits) == 1 else f"Make {len(bits)} changes: " + "; ".join(bits) + ".")
+        why = [f"{plain(k)} {cant_words(k)}" for k in cant]
+        if gain is not None and gain >= ACTION_MIN_GAIN:
+            k = int(round(gain))
+            why.append(f"the change is worth about {k} more projected point{'s' if k != 1 else ''} this week" if gain >= 1
+                       else "the change is worth about half a point this week")
+        reason = (why[0][0].upper() + why[0][1:] + ("; " + "; ".join(why[1:]) if why[1:] else "") + ".") if why else ""
+        if flips:
+            c = flips[0]
+            tb = c.get("tiebreak") or {}
+            a, b = plain(c["key"]), plain(c["alt_key"])
+            lean = {"matchup": "the matchup", "role": "the role", "line": "the betting line"}.get(tb.get("kind"))
+            reason += f" {a} and {b} are level by the projection" + (f"; {lean} leans {tb['pick']}." if lean else ".")
+            reason += " Check the news again before kickoff."
+        done = f"Not in your {pname} lineup yet: make the change in {pname}."
+    else:
+        keep = [k for k in start if k in swapped or any(k in (c.get("key"), c.get("alt_key")) for c in coin)]
+        verb = "Keep" if submitted else "Start"
+        action = f"{verb} {_and([name(k) for k in keep])} ahead of {_and([name(k) for k in sit])} for now."
+        margins = sorted(_num(c.get("margin")) or 0.0 for c in coin)
+        st_ = [k for k in hurt]
+        hurt_words = "; ".join(f"{plain(k)}'s {status(k).lower()} status breaks the tie" for k in st_[:2])
+        reason = (f"Their projections are close (within {max(margins):.1f} points); {hurt_words}. "
+                  f"Check {'his' if len(st_) == 1 else 'their'} status again before kickoff.")
+        done = (f"Already in your {pname} lineup — nothing to change." if submitted else
+                f"Not in your {pname} lineup yet: make the change in {pname}." if submitted is False else None)
+    return {"kind": kind, "urgency": 1 if kind == "change" else 2, "action": action, "reason": reason.strip(),
+            "start": who(start), "sit": who(sit), "submitted": submitted, "submitted_words": done,
+            "gain": gain if kind == "change" else None, "href": None}
+# ---- end IE-1
 
 
 # ---- IB-0: the roster's lineup in Sleeper right now (the card's status): Sleeper's roster `starters`, each paired with
