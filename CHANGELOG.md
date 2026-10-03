@@ -34,6 +34,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   A "How to read the rankings" paragraph tops the screen. `market_points` on `/api/ros`, `/api/player`, `/api/my-week`
   (null until the proposed `analytics.mart_market_line` is built; `why.py`).
 
+- **M1: are the stars under-projected? No.** Measured out of sample on 2023–2025, player-week by player-week: the top 6 at
+  each position land within about a point of their projection in a plain scoring (League of Scrubs: −0.98 QB to
+  +0.51 WR, changing sign by season). In the dynasty league's scoring the top 24 RB / WR / TE beat their projection
+  by 0.7–1.4 points, about two thirds of it the yardage bonuses (priced all-or-nothing on the projected line). Our
+  top 24 sits about 2 points a week under Sleeper's: a level gap, not a star gap. `src/league_lab/calibration.py`
+  (the per-row walk-forward, the bias tables, a monotone two-piece map, expected-bonus curves), wired into `project`
+  behind `LEAGUE_LAB_PROJECTION_CALIBRATION=1`, **off**: it helps only WR, by trimming the fringe. docs/METRICS.md
+  § "Calibration of the top".
+
 ## 2026-10-03 — Wave I-0
 
 - **I0-A: who can play, checked every 15 minutes on game days.** My Week no longer starts a player ruled out after the

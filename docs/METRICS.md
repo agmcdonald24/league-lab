@@ -2047,6 +2047,59 @@ player Sleeper lists; not Sleeper's own scoring (its line is counted the league'
   25% of Σ given (the rest-of-season board). Either sets the package aside and the search takes the next best.
   Unknown is not zero: a player without the number is not judged.
 
+## Calibration of the top (cal1.0, Wave I-A M1, 2026-10-03; `league_lab.calibration`, flag `LEAGUE_LAB_PROJECTION_CALIBRATION`, off)
+
+The question (Andrew, Iteration 17 B): does the model pull the best players toward the middle? If it did, the
+player-weeks it projects highest would beat their projection on average. Measured out of sample, per player-week.
+
+**Rows.** `ops.projection_backtest` keeps per-week scores only, so `calibration.oof_rows` re-runs the backtest's
+walk-forward (`fit_position` / `predict_position`, production inputs, trained on 2016..S−1) and keeps every
+player-week: projection, P10–P90, actual (the 12 components priced in the league's scoring, yardage bonuses
+included; 2-point and 40-yard-TD bonuses are not in the components). On 2023–2025 the rows reproduce every stored
+v3.0 cell of `ops.projection_backtest` exactly. `ops.calibration_oof` (an experiment clone, or
+`calibration.run_build_oof()`) stores the played rows for fitting.
+
+**Diagnosis** (`with_buckets`, `bias_table`). Bias = mean(actual − projected). It is computed per league × position ×
+rank bucket (top 6 / 7–12 / 13–24 / 25+ by projection within the week, among the played rows the harness scores)
+or × projected-points decile (within league × position). The standard error treats rows as independent, so it is
+a lower bound. Result, 2023–2025: in the Scrubs scoring (no bonuses) the top 6 miss by −0.98 (QB) to +0.51 (WR),
+changing sign by season. In the dynasty scoring the top 24 RB / WR / TE are +0.7 to +1.4, about two thirds of it the
+yardage bonuses: they are priced on the projected line all or nothing (a 104-yard line pays the 100-yard bonus, 99
+does not), but a top receiver crosses 100 in about a quarter of his games. Without bonuses the dynasty top-6 miss is
++0.5. Bottom half of every position: −0.3 to −0.6 (too high). Numbers and tables: STATUS § "Wave I-A" (M1).
+
+**The map** (`fit_map`, `apply_maps`). Per position × scoring, with knot = the 80th percentile of the fitting rows'
+projections: `cal(x) = x + level + s_lo·min(x − knot, 0) + s_hi·max(x − knot, 0)`. The coefficients come from least
+squares on actual − projected, with t-statistics clustered by player (a player's weeks are not independent). A
+coefficient is used in full at |t| ≥ 2 and scaled linearly to 0 at |t| ≤ 1, so noise gives the identity. Slopes stay
+within ±0.5, so the map is strictly increasing: the order within a position, and so Spearman and the top-N, never
+changes. Modes: `hinge` (level = s_lo = 0, s_hi ≥ 0) and `two_piece` (all three). The ranges move with the point,
+except a band at 0 stays at 0 (the point mass of zero-point games). Fewer than 1,500 fitting rows: identity.
+`walk_forward_calibrate` fits the map for season S on earlier seasons only (optionally the newest `window`).
+
+**Measured** (walk-forward, 2023–2025 and 2026 weeks 1–3, both house scorings; MAE, pinball, interval score,
+coverage, Spearman). `hinge` is the identity except dynasty WR (MAE +0.012). `two_piece` on the last 3 seasons
+passes the harness's MAE bar (−0.05) only at WR (−0.082 dynasty / −0.074 Scrubs, 3 of 3; 2026: −0.14 / −0.15), by
+lowering the fringe. RB −0.01 / −0.02 (2 of 3), TE ≈ 0, QB worse (+0.02 / +0.03). WR coverage rises to 0.85 because
+P10s reach the floor; the interval score moves −0.003. Fitted on every earlier season it is worse: the bias drifts
+by era.
+
+**Production, off by default.** With `LEAGUE_LAB_PROJECTION_CALIBRATION=1`, `project` fits `two_piece` maps for
+`CAL_POSITIONS` (WR) on the newest `WINDOW` (3) seasons of `ops.calibration_oof`. It applies them to the house
+leagues' `ops.projections` rows and to `ops.projection_ranges` of the reference scorings those leagues are.
+Kicked-off weeks keep their stored rows (B5), and `frozen_source` rows are never touched. The stat line
+(`ops.projection_lines`) is unchanged, so on-demand leagues, priced from the line at request time, are not
+calibrated. dbt's `assert_projection_ranges_price_the_lines` (warn) then flags the calibrated weeks, by design.
+Without `ops.calibration_oof` the flag logs a warning and changes nothing. The PO's call: leave it off (a WR-only
+gain that comes from the fringe).
+
+**Expected yardage bonuses** (`fit_bonus_curves`, `bonus_delta`; a measured proposal, not wired). Each bonus is
+priced at its probability: an isotonic P(yards ≥ threshold | projected yards) per position × stat × threshold,
+fitted on earlier seasons. The curves are scoring-free. Dynasty 2023–2025: top-6 bias RB +1.19 → +0.51, WR +1.43 →
++0.61 (QB −0.34 → −1.23); weekly MAE +0.02 to +0.03, because a mean correction of a skewed bonus does not help a
+median loss; Spearman ±0.005. It is right for totals (rest of season, trades) and does not help weekly start/sit.
+It belongs in the pricing of a projected line (v3.1 candidate), not in a points map.
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

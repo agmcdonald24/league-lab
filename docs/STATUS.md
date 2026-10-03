@@ -3527,6 +3527,72 @@ was "running hot". Cause: availability came only from nflverse's injury file via
   Fixtures: `web/fixtures/save_ia3_fixtures.py` adds the new fields to `ros_*.json` / `player/*.json` in place
   (numbers untouched; a row whose total differs keeps no pieces).
 
+### M1 2026-10-03 — is the top of the distribution under-projected? (branch `dev/M1`, clone `league_lab_m1`)
+
+Andrew: "I don't think anybody has Dak rated number one overall… what's the reasoning?", Jefferson at 10.0, Brissett
+top 8 rest of season. Diagnose first, calibrate only if the numbers call for it (PROJECT_PLAN § 17 B).
+
+* **Answer.** The model does not pull stars toward the middle. On 2023–2025, out of sample, the top 6 per position
+  in League of Scrubs' scoring (no bonuses) miss by QB −0.98 (too high), RB +0.34, WR +0.51 and TE +0.45. They change
+  sign by season (2019–2022: −0.27 / −0.67 / −0.06 / −0.51), and the miss does not grow above the starter line
+  (slope ≈ 0, |t| ≤ 1, clustered by player). In the dynasty scoring the top 24 RB / WR / TE are +0.7 to +1.4. About two
+  thirds of that is the yardage bonuses, priced all-or-nothing on the projected line: without them the dynasty top-6
+  miss is RB +0.47, WR +0.53, TE +0.59. What is real is small and not at the top. The bottom half of each position is
+  0.3–0.6 too high, and the starter line is about 0.5 low. Dak (QB2 in dynasty) and Brissett (QB9) are superflex and
+  6-point-TD arithmetic, and the market agrees on their week-4 numbers (Dak 23.8 vs Sleeper 23.3; Brissett 21.2 vs
+  20.5). Jefferson is 12.7 in Scrubs for week 4 in the clone (usage); Sleeper had him at 13.8–14.7 in weeks 1–3, and
+  he is Out now.
+* **Top-6 bias** (mean actual − projected, 2023–2025, 324 player-weeks each; per season 2023 / 2024 / 2025):
+
+  | | Scrubs | per season | Dynasty | per season | Dynasty without bonuses |
+  |---|---|---|---|---|---|
+  | QB | −0.98 | −1.27 / −1.05 / −0.63 | −0.34 | −0.59 / −0.27 / −0.18 | −1.01 |
+  | RB | +0.34 | −0.90 / +1.27 / +0.64 | +1.19 | −0.32 / +2.76 / +1.14 | +0.47 |
+  | WR | +0.51 | +1.57 / −0.46 / +0.40 | +1.43 | +2.77 / +0.33 / +1.19 | +0.53 |
+  | TE | +0.45 | +0.69 / −0.31 / +0.98 | +0.88 | +1.08 / +0.07 / +1.50 | +0.59 |
+
+* **Against the market** (Sleeper's lines for 2026 weeks 1–4, one read-only snapshot through the browser pane
+  2026-10-03, priced in both house scorings; `mart_projection_record` is empty in every sandbox database). Our
+  number is under Sleeper's for 75–100% of Sleeper's top 24 at RB / WR / TE, by 1.1–2.7 points a week, and about 1
+  point at QB. It is under 70% of Sleeper's for 4–21% at RB / WR and 12–29% at TE (Bowers week 4: 6.0 vs 12.2, a cold
+  start after missed games). On the weeks the clone has outcomes for (1–2 plus one week-3 game; 66–205 player-weeks
+  per position), the average bias is ours +0.9 to +1.2 vs Sleeper −0.5 to +0.3 at RB / TE, both within ±0.6 at QB / WR; MAE
+  is a tie (ours − Sleeper −0.45 to +0.20).
+* **Calibration built and measured** (`src/league_lab/calibration.py`). The per-row walk-forward (`oof_rows`) is
+  needed because `ops.projection_backtest` is per week; it reproduces every stored v3.0 cell exactly. The rest is the
+  bias tables, a monotone two-piece linear map per position × scoring (knot at the 80th percentile, coefficients
+  clustered by player and shrunk to 0 below |t| = 1, slopes within ±0.5, so the order never changes), walk-forward,
+  and expected-bonus curves. Results on 2023–2025 (and 2026 weeks 1–3): the *hinge* (top only, up only) is the
+  identity everywhere except dynasty WR (MAE +0.012). The *two-piece* on the last 3 seasons passes the MAE bar only
+  at WR (−0.082 dynasty / −0.074 Scrubs, 3 of 3; 2026 −0.14 / −0.15), by lowering the fringe. RB is −0.01 / −0.02,
+  TE ≈ 0, and QB worse (+0.02 / +0.03). *Expected bonuses* (dynasty): top-6 bias RB +1.19 → +0.51, WR +1.43 → +0.61,
+  but weekly MAE +0.02 to +0.03 (a mean fix of a skewed bonus does not help a median loss).
+* **Wired, off.** `LEAGUE_LAB_PROJECTION_CALIBRATION=1`: `project` (one marked block after `house_rows`) fits the
+  two-piece maps for WR on the newest 3 seasons of `ops.calibration_oof` (`calibration.run_build_oof()`, offline,
+  about 2 CPU-minutes) and applies them to the house leagues' rows and their reference ranges. Proven on the clone
+  (flag-on `project`, 2026): weeks 1–4 identical to before, freeze labels included; weeks 5–18 move only WR (dynasty
+  mean −0.18, range −0.77 to +0.53; Scrubs −0.39, −0.78 to +0.08); QB / RB / TE / K / DEF and the ppr / standard /
+  te_premium ranges unchanged. Known side effects, so it stays off: `signals_after_project`'s scenario check refuses
+  ("scenario base differs from the stored projection by 0.70", logged, not fatal), dbt's
+  `assert_projection_ranges_price_the_lines` (warn) would flag the calibrated weeks, and on-demand leagues (priced
+  from the line) do not see it. The clone was re-projected with the flag off afterwards.
+* **Rest of season, before → after** (top 12 of both house leagues). Unchanged under the flag: dynasty is 11 QBs and
+  Bijan; the Scrubs top 12 is RBs and QBs. Jefferson moves 196.8 → 203.7 (dynasty, #53 → #51) and 149.2 → 150.2
+  (Scrubs). Expected bonuses would lift dynasty's top by 7–13 points over 13 games, QBs included (Brissett #10 → #8),
+  with no new names in the top 12.
+* **For the PO.** (1) Leave the flag off. (2) IA-3's words: "under the market" is normal (about 2 points), and "well
+  under" belongs at < 70%. (3) v3.1 candidates: expected-bonus pricing in the pricing of a projected line, for
+  leagues with yardage bonuses; the starter-line level and the fringe as a model fix, not a map; a cold-start rule
+  for players back from injury. (4) A real pre-kickoff Sleeper record still needs the nightly's `fetch-projections`.
+* **Tests.** `tests/test_calibration.py` 13 passed (monotone in both modes, identity without bias, too few rows =
+  identity, a lifted top lowers MAE, the hinge never lowers, walk-forward uses earlier seasons only (2023's outcomes
+  scrambled give the same maps), bands move and keep their order, the flag-off hook is a no-op, the flag-on hook
+  moves only WR of the calibrated scorings, buckets and deciles, the harness's definitions, the bonus curves). Root
+  suite: see the hand-back. ruff clean.
+* **Deviations.** `REPORT.md` is not a file: the sandbox refuses report files from developer agents, so the full
+  report with every table is the hand-back text. The Sleeper comparison uses a post-game snapshot (Sleeper's
+  `updated_at` is just after each week's last game), not the pre-kickoff record.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
@@ -3599,7 +3665,6 @@ Checks: ruff clean; API suite 224 passed (197 + 27) with `LEAGUE_LAB_ESPN_FIXTUR
 exactly as on `main`, none touched by I0-C; root suite 834 passed, 2 skipped; web lint / build clean;
 `npm run e2e:fixtures` 66 passed (62 + 4). I0-B's e2e: label and mock follow the box (`?mfl_search=`).
 
-## Wave I-A (Iteration 17, part A)
 
 ### IA-1 2026-10-03 — say it like a person would: My Week, Trends, Matchups, Compare (branch `dev/IA1`, clone `league_lab_i0a`)
 
