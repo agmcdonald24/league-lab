@@ -4360,6 +4360,8 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   MFL league: `results` + `records` (= MFL's standings for all 12 teams). Matchups names NFL opponents only: unchanged.
 * **Waivers**: an empty starting slot's fill leads Help now and `top3` ("Fills your empty RB2 this week."; before,
   top3 led with a team K and a DEF); unit slots in words in the reasons.
-* **Checks**: `api/tests/test_ic4.py` 10 passed; API suite, ruff, web lint / typecheck / build, fixture e2e: see the
-  hand-back. `web/e2e/ic4/` (6: phone at 375, desktop 1300) on `web/fixtures/mfl/api_70587_ic4.json` (recorded from
+* **Checks**: `api/tests/test_ic4.py` 10 passed; API suite 358 passed, 4 skipped, 3 failed — the three scoring-check
+  tests of 70587 (`test_ic1` ×2, `test_ic_po` ×1), which fail identically on base `042f199` here: `league_lab_i0b` (the
+  09-26 snapshot) has no `*_tds_10p` columns; `test_f3::test_ros_route` gains the `unit` key. Root 967 passed, 2
+  skipped; ruff clean; web lint / typecheck 0 / 0, build ok; fixture e2e 140 passed (134 + 6). `web/e2e/ic4/` (6: phone at 375, desktop 1300) on `web/fixtures/mfl/api_70587_ic4.json` (recorded from
   this branch's API with `IC4_RECORD`, the ESPN overlay on).
