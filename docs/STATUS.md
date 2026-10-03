@@ -4133,10 +4133,12 @@ there's some issue between scoring and settings with my two leagues too". Design
   all-or-nothing on the projected mean. Priced in expectation (`LEAGUE_LAB_EV_PRICING=1` with M2's curves and shares,
   week 4): the dynasty's top 24 move QB +1.09, RB +0.53, WR +0.76, TE +0.20 a week (Josh Allen 30.24 → 31.68, Bijan
   Robinson 26.72 → 25.52: his 100-yard bonus was all-or-nothing). Scrubs has no bonuses: identical.
-* **Tests.** `tests/test_scoring_spec.py` 30 (70587 hand-computed: RB 120 yards + a 45-yard TD = 43, QB 45, WR / TE
+* **Tests.** `tests/test_scoring_audit.py` 5 (the check's counts, misses, `likely_rule`, words, unit sums);
+  `tests/test_scoring_spec.py` 31 (70587 hand-computed: RB 120 yards + a 45-yard TD = 43, QB 45, WR / TE
   thresholds, K 36, DEF; 21861 TE 1.5 and FG by the yard; IDP / unknown events unpriced; thresholdPoints; parity on
   `tests/test_scoring.py`'s rows and 2,000 random lines × 3 scorings; JSON; read-back; EV monotone; the fallback with
-  M2 absent; the 10-yard cut). `api/tests/test_ic1.py` 11 (the route for both house leagues weeks 1–2 with the SQL
+  M2 absent; the 10-yard cut; Sleeper keys beyond the flat engine — completions, attempts, carries, first downs,
+  25+ completions — priced on actual lines and shown as SQL disagreements, never silently). `api/tests/test_ic1.py` 11 (the route for both house leagues weeks 1–2 with the SQL
   twin, default week, week 3, the Test League, 70587 weeks 1–2, 404, the MFL league's spec and report, `price_lines`
   on the MFL spec + house parity). Both files also pass with M2's `scoring_ev.py` copied in (not committed).
 * **Fixtures.** `api/tests/fixtures/mfl/70587/` and `mfl/players.json` copied from IC-3's worktree unchanged;

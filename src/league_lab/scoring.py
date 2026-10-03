@@ -415,8 +415,11 @@ def readback(spec: ScoringSpec) -> list[str]:
 # ------------------------------------------------------------------------------------------- Sleeper -> spec
 SLEEPER_TO_STAT = {k: v[0] for k, v in SLEEPER_STAT_MAP.items() if "+" not in v[0] and not k.startswith(("fgm", "fgmiss"))}
 SLEEPER_TO_STAT.update({"fgmiss": "fg_missed+fg_blocked", "xpmiss": "pat_missed+pat_blocked",
+                        # stat keys the flat engine (and the SQL macro) leave out but an actual line carries: priced
+                        # on actual lines by the spec; the check shows them as SQL disagreements, never silently
                         "pass_fd": "passing_first_downs", "rush_fd": "rushing_first_downs",
-                        "rec_fd": "receiving_first_downs"})
+                        "rec_fd": "receiving_first_downs", "pass_cmp": "completions", "pass_att": "attempts",
+                        "rush_att": "carries", "rec_tgt": "targets", "pass_sack": "sacks_suffered"})
 SLEEPER_FG = {"fgm_0_19": ("fg_made", 0, 19), "fgm_20_29": ("fg_made", 20, 29), "fgm_30_39": ("fg_made", 30, 39),
               "fgm_40_49": ("fg_made", 40, 49), "fgm_50p": ("fg_made", 50, None),
               "fgmiss_0_19": ("fg_missed", 0, 19), "fgmiss_20_29": ("fg_missed", 20, 29),
@@ -430,13 +433,15 @@ SLEEPER_DEF = {"sack": "sacks", "int": "interceptions", "fum_rec": "fumble_recov
 SLEEPER_PA = {"pts_allow_0": (0, 0), "pts_allow_1_6": (1, 6), "pts_allow_7_13": (7, 13), "pts_allow_14_20": (14, 20),
               "pts_allow_21_27": (21, 27), "pts_allow_28_34": (28, 34), "pts_allow_35p": (35, None)}
 # keys a Sleeper league may weight that no stat line carries (kept in ``unpriced`` with Sleeper's own key)
+# flat once-a-game bonuses on a count the actual line carries (not in the flat engine / the SQL macro)
+SLEEPER_COUNT_BONUS = {"bonus_pass_cmp_25": ("completions", 25), "bonus_rush_att_20": ("carries", 20)}
 SLEEPER_UNPRICED_WORDS = {
-    "fum": None, "bonus_pass_cmp_25": "25+ completions", "bonus_rush_att_20": "20+ carries",
-    "bonus_rec_te": None, "def_2pt": "defensive 2-pt return", "def_st_fum_rec": "fumble recovered on special teams",
+    "def_2pt": "defensive 2-pt return", "def_st_fum_rec": "fumble recovered on special teams",
+    "bonus_rush_rec_yd_100": "100+ rushing and receiving yards combined",
+    "bonus_rush_rec_yd_200": "200+ rushing and receiving yards combined",
     "st_fum_rec": "special-teams fumble recovery", "st_ff": "special-teams forced fumble",
     "def_st_ff": "special-teams forced fumble", "yds_allow_0_100": "yards allowed", "qb_hit": "QB hits",
-    "tkl": "tackles", "tkl_loss": "tackles for loss", "pass_cmp": "completions", "pass_att": "pass attempts",
-    "pass_inc": "incompletions", "rush_att": "carries", "pass_sack": "sacks taken", "kr_yd": "kick return yards",
+    "tkl": "tackles", "tkl_loss": "tackles for loss", "kr_yd": "kick return yards",
     "pr_yd": "punt return yards", "idp_tkl": "IDP tackles",
 }
 
@@ -467,6 +472,12 @@ def from_sleeper(scoring: Mapping[str, float]) -> ScoringSpec:
         elif key in SLEEPER_TO_STAT:
             for col in SLEEPER_TO_STAT[key].split("+"):
                 player.rates[col] = player.rates.get(col, 0.0) + w
+        elif key in SLEEPER_COUNT_BONUS:
+            col, lo = SLEEPER_COUNT_BONUS[key]
+            player.bands.setdefault(col, []).append((float(lo), None, w))
+        elif key == "pass_inc":                  # an incompletion = an attempt that was not completed
+            player.rates["attempts"] = player.rates.get("attempts", 0.0) + w
+            player.rates["completions"] = player.rates.get("completions", 0.0) - w
         elif key in SLEEPER_DEF:
             dfn.rates[SLEEPER_DEF[key]] = dfn.rates.get(SLEEPER_DEF[key], 0.0) + w
         elif key in SLEEPER_PA:

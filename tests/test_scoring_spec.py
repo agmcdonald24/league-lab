@@ -318,3 +318,13 @@ def test_ten_yard_cut_makes_the_split_exact(dad):
     line = {"rushing_tds": 3, "rush_tds_10p": 2, "rush_tds_40p": 1, "rush_tds_50p": 0}
     pieces, approx = price_detail(line, dad, "RB")
     assert not approx and pieces["distance:rushing_tds"] == 6 + 9 + 12
+
+
+def test_sleeper_keys_beyond_the_flat_engine_are_priced_on_actual_lines():
+    sc = {"pass_cmp": 0.1, "pass_inc": -0.5, "rush_att": 0.1, "rec_fd": 0.5, "bonus_pass_cmp_25": 2.0,
+          "bonus_rush_rec_yd_100": 3.0, "tkl": 1.0}
+    sp = from_sleeper(sc)
+    line = {"completions": 26, "attempts": 36, "carries": 4, "receiving_first_downs": 2}
+    assert compute_points_spec(line, sp, "QB") == pytest.approx(2.6 - 5.0 + 0.4 + 1.0 + 2.0)
+    assert compute_points(line, sc) == 0                           # the flat engine (and the SQL macro) price none
+    assert {u["event"] for u in sp.unpriced} == {"bonus_rush_rec_yd_100", "tkl"}
