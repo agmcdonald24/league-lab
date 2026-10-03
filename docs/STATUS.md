@@ -4089,3 +4089,36 @@ nothing showed the waiver alternative before suggesting you give up a useful pla
   for the PO, DESIGN.md says so). The fixture savers' `os.environ.pop("LEAGUE_LAB_ESPN_FIXTURES")` is undone by
   `settings.py`'s `load_dotenv(override=False)` when the worktree's .env sets it: IA-2's saved answers were taken with
   the overlay on; `save_ib2_fixtures.py` sets the ESPN fixture explicitly so it reproduces.
+
+## Wave I-C (Iteration 17, part C)
+
+### IC-3 2026-10-03 — dad's league fixtures, the Leagues card tells the truth, the audit of Andrew's two leagues
+
+* **70587 fixtures** (`api/tests/fixtures/mfl/70587/`): MFL's own answers, byte for byte, fetched read-only through the
+  browser pane (league, rules, rosters, schedule, standings, weeklyResults 1–3, liveScoring 4); the 177 players they
+  name (rosters + every player in those results, units included) appended to the shared `fixtures/mfl/players.json`
+  (216 → 260 ids, every old id kept). Facts for the readers: the rules' groups are `QB PK WR RB TE Def` (the units
+  score by QB / PK), bonuses differ by group (QB PY 250 / RY 75; RB RY 100 / CY 100; WR RY 75 / CY 100; TE RY 75 /
+  CY 75), `precision 0`; **weeks 2, 4, 6–9, 11, 13 are double headers** (12 matchups: each franchise twice).
+* **The card** (`ondemand.league_card`, on `/api/leagues?mfl=` and on every `/api/leagues?username=` row): the lineup
+  League Lab solves read back in the league's own words (`Your lineup: TMQB · 2 RB · 3 WR/TE · TMPK · DEF` once IC-2's
+  slots are in; before, the starters it could not read are named: "Not in the lineup League Lab solves: TMQB, WR/TE,
+  TMPK."), the scoring in one line (IC-1's `ScoringSpec.readback()` when present, else the flat settings), what is
+  not priced, how the projections handle the scoring (the dynasty's long-TD and all-or-nothing yardage bonuses said in
+  words), and the scoring check (IC-1's `/api/league/scoring-check`, loaded by the web after the card shows; "not
+  available for this league yet" until then). Web: `Leagues.svelte` (snippet `readback`), `leagues.ts` (types,
+  `checkLine`, `missLine`).
+* **Audit** (the answer to "some issue between scoring and settings"): Sleeper's points vs `compute_points` on
+  `fct_player_game`, 2026 weeks 1–2: Scrubs 285 / 285, dynasty 580 / 580 within 0.1; SQL macro = Python on all 716
+  priced rows; 2024–2025: 14,624 / 14,629 (misses: a long-TD bonus on a lateral credited to the first receiver ×2,
+  an unpriced `st_fum_rec`, a 5-yard stat correction). The gap is in the projections: dynasty starters were paid 115
+  bonus points in weeks 1–2 (87 yardage, 28 long-TD); projections priced 9 (none of which hit). Pinned by
+  `api/tests/test_ic3.py::test_audit_house_leagues_weeks_1_2_match_sleeper`.
+* **E2E** `web/e2e/ic3/` on `web/fixtures/mfl/api_70587.json` (the API's answers, recorded with `IC3_RECORD=<api>`
+  from a trial merge of dev/IC3 + dev/IC1 + dev/IC2 + dev/M2 — code merged clean, docs only conflicted): paste 70587
+  → card ("Your lineup: TMQB · 2 RB · 3 WR/TE · TMPK · DEF"; "TDs by distance 6 / 9 / 12 · 1 pt per 10 yards · …";
+  "Week 2 check: … 155 of 156 players within 1 point") → Knight Train → My Week 8 slots (team QB Bengals 29.0, RB1
+  Hubbard 10.97, RB2 empty — Hall and Price Out —, WR/TE Egbuka 9.48 / Robinson 7.36 / Fannin 5.85, team K Chargers
+  10.02, DEF Lions 10.26 = 82.94) → Team / Waivers / Season answer; a Sleeper row's card. 375 (phone) and 1300 px.
+  IC-1's check on the trial: Scrubs weeks 1 / 2: 146 / 146, 144 / 144; dynasty 219 / 219, 228 / 228 (SQL = spec on
+  every row); 70587: 161 / 163, 155 / 156 within 1.

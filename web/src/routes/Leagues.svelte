@@ -3,6 +3,7 @@
   // season, each a real link to its My Week with the user's own team pre-selected. Remembered on this phone.
   import { ApiError, get, paths, Unauthorized, type UserLeagues } from "../lib/api";
   import { isMflSearch, leagueLine, mflPath, mflSearchPath, type MflLeague, type MflSearch } from "../lib/leagues";
+  import { bigMisses, checkLine, missLine, type LeagueCard, type ScoringCheck, type WithCard } from "../lib/leagues"; // ---- IC-3
   import { withContext } from "../lib/md";
   import { prefs } from "../lib/prefs";
 
@@ -101,7 +102,63 @@
       total_rosters: v.league.total_rosters, roster_id: rosterId, team_name: team?.team_name ?? null });
   }
   // ---- end I0-B
+
+  // ---- IC-3 (Wave I-C): the card's scoring check — IC-1's route, loaded after the card shows (never blocks it);
+  // a league the check cannot answer for yet says so in one line instead of a number.
+  type CheckState = ScoringCheck | "loading" | "none";
+  let checks = $state<Record<string, CheckState>>({});
+  async function loadCheck(id: string, path: string) {
+    if (checks[id]) return;
+    checks[id] = "loading";
+    try {
+      checks[id] = await get<ScoringCheck>(path);
+    } catch (err) {
+      if (err instanceof Unauthorized) onauth();
+      checks[id] = "none";
+    }
+  }
+  const cardOf = (l: object) => (l as WithCard).card ?? null;
+  $effect(() => {
+    if (mfl?.card) void loadCheck(mfl.league.league_id, mfl.card.check_path);
+  });
+  $effect(() => {
+    for (const l of (mine?.leagues ?? []).slice(0, 8)) {
+      const c = cardOf(l);
+      if (c) void loadCheck(l.league_id, c.check_path);
+    }
+  });
+  // ---- end IC-3
 </script>
+
+<!-- ---- IC-3: the card's read-backs and the scoring check -->
+{#snippet readback(card: LeagueCard, id: string)}
+  {@const ck = checks[id]}
+  <div class="space-y-1 text-sm leading-snug" data-testid="league-card" data-league={id}>
+    <p class="font-semibold text-ink" data-testid="card-lineup">{card.lineup.text}</p>
+    {#if card.lineup.unread_text}<p class="text-warn" data-testid="card-unread">{card.lineup.unread_text}</p>{/if}
+    <p class="text-ink-2" data-testid="card-scoring"><span class="font-semibold text-ink">Scoring:</span> {card.scoring.text}</p>
+    {#if card.scoring.not_priced_text}<p class="text-ink-3" data-testid="card-not-priced">{card.scoring.not_priced_text}</p>{/if}
+    {#if card.scoring.approximated.length}
+      <details class="text-ink-3" data-testid="card-approximated">
+        <summary class="cursor-pointer py-1">How the projections handle your scoring ({card.scoring.approximated.length})</summary>
+        <ul class="list-disc space-y-0.5 pl-5">
+          {#each card.scoring.approximated as a, i (i)}<li>{a[0].toUpperCase() + a.slice(1)}{a.endsWith(".") ? "" : "."}</li>{/each}
+        </ul>
+      </details>
+    {/if}
+    {#if ck === "loading"}
+      <p class="text-ink-3" data-testid="card-check">Checking last week's points…</p>
+    {:else if ck === "none"}
+      <p class="text-ink-3" data-testid="card-check">The scoring check is not available for this league yet.</p>
+    {:else if ck}
+      {@const misses = bigMisses(ck)}
+      <p class={ck.within_1 === ck.n ? "text-good" : "text-ink-2"} data-testid="card-check">
+        {checkLine(ck)}{misses.length ? ` The misses: ${misses.map(missLine).join("; ")}.` : ""}
+      </p>
+    {/if}
+  </div>
+{/snippet}
+<!-- ---- end IC-3 -->
 
 <main class="mx-auto max-w-xl space-y-5 px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-10" data-testid="leagues">
   <header class="space-y-1">
@@ -185,7 +242,9 @@
         <div class="text-lg leading-snug font-bold">{v.league.name} <span class="text-sm font-semibold text-ink-3">MFL</span></div>
         {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
       </div>
-      <p class="text-sm leading-snug text-ink-2" data-testid="mfl-note">{v.scoring_note}</p>
+      {#if v.card}{@render readback(v.card, v.league.league_id)}{:else}
+        <p class="text-sm leading-snug text-ink-2" data-testid="mfl-note">{v.scoring_note}</p>
+      {/if}
       {#if v.unmapped.length}
         <p class="text-sm leading-snug text-warn" data-testid="mfl-unmapped">
           {v.unmapped.length} of {v.players} players have no projection here yet: {v.unmapped.map((u) => u.name ?? u.mfl_id).join(", ")}.
@@ -286,6 +345,7 @@
                 {/if}
               </div>
             </a>
+            {#if cardOf(l)}<div class="px-1 pt-2">{@render readback(cardOf(l) as LeagueCard, l.league_id)}</div>{/if}
           </li>
         {/each}
       </ul>

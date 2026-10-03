@@ -2,6 +2,13 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-C
+
+- **IC-3: the Leagues card tells the truth.** After a pick, an MFL league's card and every Sleeper league row read
+  back the lineup and the scoring League Lab uses, in the league's own words, say what is not priced, and show the
+  scoring check; dad's league 70587 is a fixture end to end; the audit of Scrubs and the dynasty: the scoring
+  matches Sleeper's to 0.1 (865 / 865 in weeks 1–2), the dynasty's bonuses are what the projections miss.
+
 ## 2026-10-03 — Wave I-B
 
 - **PO merge.** IB-2's "who starts" reads IB-0's roster context (one overlay pass); the API suite answers MFL from
