@@ -3,6 +3,16 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 3 · News on the card, and team QB / team K everywhere
+
+- Every player's card and the slide-up panel now carry a **News** line: his latest headline from ESPN's feed
+  (most are RotoWire's blurbs), how long ago, and a link out. Nothing else is stored — the headline refreshes
+  every hour, every 15 minutes on game days.
+
+- Leagues with a team quarterback or team kicker spot (MyFantasyLeague) see them on Season (rest of season per
+  team, priced from each week's starter), on Team, and in a week where you play two opponents the League screen
+  shows both games.
+
 ## Oct 3 · Your league's scoring, read back to you — and checked
 
 - Pick a league and the card now tells you what League Lab read: your lineup in your league's own words ("TMQB · 2

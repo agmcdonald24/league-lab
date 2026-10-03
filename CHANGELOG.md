@@ -4,6 +4,11 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-03 — Wave I-D
 
+- **PO (integration).** dbt's `assert_projection_ranges_price_the_lines` re-prices `scrubs` only: the dynasty's
+  bonuses are priced at their probability under `LEAGUE_LAB_EV_PRICING`, which the SQL macro cannot express
+  (`tests/test_projections_ev.py` pins the nightly and the request side equal). The flag stays off until Monday;
+  STATUS § "Wave I-D" has the flip's order.
+
 - **M3: the nightly on the scoring spec.** One function prices every projected line, in the nightly and on request
   (`scoring.price_projected`), so turning on expected-value pricing (`LEAGUE_LAB_EV_PRICING`, still off) moves the
   player page, Trends, the record and My Week together. Off, nothing changes; on, the dynasty's yardage and 40+ TD

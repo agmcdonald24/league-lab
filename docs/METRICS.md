@@ -561,7 +561,9 @@ the P10–P90 of the reference the league is (`projections.house_rows`, which re
 line differs by more than 1e-6); K / DEF rows = `kdef.predict_kd` in the league's scoring from the same lines and
 the same offset fit as `ops.kd_ranges`. Tests: `assert_house_projections_are_the_nfl_wide_rows` (line, P10–P90,
 label and `fitted_at` equal to 1e-9 for every week, no row on one side only), `assert_projection_ranges_price_the_lines`
-(`proj_points` = the line re-priced by the SQL `league_points` macro, 1e-6, `scrubs` and `dynasty`).
+(`proj_points` = the line re-priced by the SQL `league_points` macro, 1e-6, `scrubs` only since Wave I-D: the dynasty's
+bonuses are priced at their probability by `scoring.price_projected` under `LEAGUE_LAB_EV_PRICING`, which the macro
+cannot express — `tests/test_projections_ev.py` pins its nightly and request-side prices equal instead).
 
 **The freeze (B5) on the new tables.** The same `freeze_plan`, relabel and repair as `ops.projections`, with one
 `fitted_at` and one `now` per run for every table. Freeze unit: the week for the line tables, the scoring × week

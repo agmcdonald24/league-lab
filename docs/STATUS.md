@@ -4334,6 +4334,66 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
 
 ## Wave I-D (Iteration 17, part D)
 
+### PO merge — Wave I-D, 2026-10-03 (Saturday, 16:00–17:45 ET)
+
+* **Why**: Wave I-C left three threads: expected-value pricing proven but off for Sleeper leagues because the
+  nightly still priced flat (two numbers for one player otherwise); the team units half-done past My Week; the
+  player news line from Andrew's first review. Andrew: "keep plowing forward".
+* **Delivered** (three Opus devs in parallel, 40–80 min each): **M3** one pricing entry point for projected lines,
+  `scoring.price_projected(stats, scoring, position, *, ev=None)` (`pricing_engine` → `flat` / `ev` / `spec`): the
+  nightly's `projections.price` (every `proj_` path: `predict_position`, `_oof_lines`, `_line_points`, `house_rows`,
+  `calibration.oof_rows`, signals' what-ifs) and the request side's `anyleague.price_lines` call it, so the flag
+  moves both at once — pinned bit for bit on 500 week-4 lines for the dynasty, Scrubs and the Test League under
+  either flag state (`tests/test_projections_ev.py`, 19); actual (`out_`) lines stay exact; `projected_view(flat)`
+  keeps the flat engine's keys so only *how* a bonus is priced changes. The harness both ways (`oof_rows`, 2023–2025,
+  17.5 min a run): flag off reproduces all 432 stored v3.0 backtest cells to 0.0; flag on leaves Scrubs identical to
+  the bit and moves the dynasty — season-total MAE QB 24.1 → 23.3, RB 17.6 → 16.9, WR 18.4 → 18.3, TE 12.8 → 12.6;
+  top-6 weekly bias RB +1.34 → +0.36, WR +1.65 → +0.74; coverage unchanged; weekly MAE +0.007 … +0.041
+  (METRICS § "Expected-value pricing" → "On the nightly"). **IC-4** units everywhere: rest-of-season rows per unit and
+  NFL team (`unit_window`, each week priced by that week's starter; 32 + 32 rows; "Value to my lineup" against the 30
+  free units), a unit's card = its starter's card named as the unit ("Cincinnati Bengals QB — priced from Joe
+  Burrow's line"), the Team Hub's slot strength with the unit's team and badge, the League screen's matchups with
+  both games of a double header (all-play counts a team once a week; the record every game; `/api/record` for MFL
+  = the league's results + records, equal to MFL's standings for all 12 teams), MFL manager names when the export
+  carries `owner_name` (70587 / 21861 / 10015 do not: null, not the team name repeated), Waivers' Help now puts the
+  claim that fills an empty starting slot first ("Fills your empty RB2 this week."). **N1** the news line:
+  `news_feed.py` on ESPN's public fantasy news endpoint (`site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?
+  playerId=`; headline / date / source / url only, cached an hour or 15 min on game days, 60/min, `LEAGUE_LAB_NEWS=off`,
+  an outage = no line) → `/api/player` `news` (≤ 3, ≤ 14 days) → one line under Availability on the page and in the
+  pane ("**News** · 2 h ago · *headline* · RotoWire via ESPN ›", link out to espn.com); `docs/ESPN_TERMS.md`.
+* **PO**: merges M3 → IC4 → N1 (doc conflicts kept both; `api.ts` both blocks). dbt's
+  `assert_projection_ranges_price_the_lines` now re-prices `scrubs` only — the dynasty's bonuses are priced at their
+  probability under the flag, which the SQL macro cannot express (the Python parity test covers it). Checks: **root
+  987 passed** (968 before), **API 380** (353), **web lint / typecheck / build clean, 150 fixture e2e** (134), ruff
+  clean. QA walk (fixtures, overlay on): Jefferson's pane shows the news line with the 110-character cut and the
+  source; `/api/ros?position=TMQB` on 70587 = 32 team-QB rows with "Priced from Dak Prescott's line"; Waivers' top 3
+  for Knight Train leads with "Fills your empty RB2 this week."; the League screen's week 4 = 12 games, Knight
+  Train's two first.
+* **The flag stays off this weekend.** `LEAGUE_LAB_EV_PRICING` flips **Monday** (never the morning of a game day),
+  in this order so the two sides never disagree for more than the length of one nightly run: (1) add
+  `LEAGUE_LAB_EV_PRICING: "1"` to the nightly's env in `.github/workflows/nightly.yml` and run it by hand
+  (`workflow_dispatch`; ~20 min: the board is re-priced and published); (2) add the same env var to the Render API
+  service (`render.yaml` `envVars`, a redeploy); week 4 is frozen and keeps its flat rows, so **week 5 is the
+  record's first EV-priced week**. Expected: Scrubs, the Test League and every bonus-free league unchanged to the
+  bit (0 of 8,134 player-weeks move); MFL unchanged (already in expectation); the dynasty's top 24 +0.66 a week
+  (QB +1.01, RB +0.71, WR +0.73, TE +0.18), rest of season +8 to +12 for the top 24 (Josh Allen 30.24 → 31.68, ROS
+  281 → 291; Puka Nacua 18.22 → 19.65; a line already past a threshold drops: Bijan Robinson 26.72 → 25.52, Derrick
+  Henry 21.25 → 19.95). Rollback: unset both, re-run the nightly. M3's proposal for the record — a nullable
+  `pricing` column (`flat` / `ev`) on `ops.projections`, `ops.projection_ranges`, `ops.projection_backtest`, carried
+  by `mart_projection_record` — goes with the flip.
+* **Decisions kept**: "RotoWire via ESPN" as the source name (most items are RotoWire's); RotoWire items link to the
+  player's ESPN page (they carry no web link); the news bucket is its own 60/min next to the injuries' 2/min; the
+  first open of a card each hour fetches inline (≤ 3 s); the news line ships **on** (Andrew asked for it; the terms
+  doc records what is and is not known — ESPN's Terms of Use were not readable from the sandbox); a unit's ROS
+  rows are keyed by the league's directory (`mfl:0656`, `mfl:TMQB-KC`) so ownership and the trade board find them.
+* **Open**: the residual (range) models' target carries no long-TD bonus (ranges 0.01–0.3 a game low, both flag
+  states; v3.1); `why.py`'s "Sleeper's projection" and the record's market line still price all or nothing;
+  `scoring_ev`'s curves are in-sample for 2023–25 (they match M2's walk-forward within 0.1); DEF slot-strength top
+  has `team: null` (predates); four Knight Train lineup-view week counts moved by one when units entered the board
+  past the horizon (Fannin 12 → 11 weeks, 0.28 points — not investigated); the IC-3 recording replays pre-IC-4
+  answers (still passes); a shared ESPN bucket and a background news refresh.
+
+
 ### M3 2026-10-03 — the nightly on the spec (branch `dev/M3`, clone `league_lab_m1`)
 
 * **Why**: Wave I-C measured expected-value pricing (M2) and kept it off for Sleeper leagues because the nightly priced
