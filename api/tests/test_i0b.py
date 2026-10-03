@@ -158,6 +158,22 @@ def test_unmapped_starter_is_kept_and_reported(monkeypatch, tmp_path):
     assert "mfl:14836" not in sl.players()
 
 
+def test_unmapped_starter_stays_in_the_lineup_rows(monkeypatch, tmp_path):
+    """No table row and no unique name match: the starter stays on the roster and in the starters as mfl:<id>, with his
+    MFL name in the directory, and is listed as unmapped — never silently dropped."""
+    rows = IDS.read_text().splitlines()
+    (tmp_path / "ids.csv").write_text("\n".join([rows[0]] + [r for r in rows[1:] if not r.startswith("14836,")]) + "\n")
+    monkeypatch.setenv(PI.CSV_ENV, str(tmp_path / "ids.csv"))
+    monkeypatch.setattr(P, "_norm", lambda name: "no-match:" + (name or ""))
+    PI.reset()
+    A._default = None
+    sl = A.sleeper()
+    r9 = next(r for r in sl.rosters(KEY) if r["roster_id"] == 9)
+    assert "mfl:14836" in r9["players"] and "mfl:14836" in r9["starters"]
+    assert sl.mfl.unmapped(KEY) == [{"mfl_id": "14836", "name": "Justin Jefferson", "position": "WR"}]
+    assert sl.players()["mfl:14836"]["full_name"] == "Justin Jefferson"
+
+
 def test_private_league_is_not_found_with_the_sentence():
     with pytest.raises(A.LeagueNotFound) as exc:
         A.sleeper().league("mfl:99999999")

@@ -3485,6 +3485,6 @@ the translation rules: docs/ANY_LEAGUE.md § "MyFantasyLeague"; calls and contac
   saved fixtures (SHA-256 of the canonical JSON); live scoring week 4 differs only in player order (same starters);
   the live rules parse to the same scoring; the final code on the live copy: 216 / 216 mapped (full 12,518-row table),
   10 starters per team.
-* Checks: ruff clean; API suite 175 passed, 2 skipped; root suite 834 passed, 2 skipped; web lint / build clean;
+* Checks: ruff clean; API suite 175 passed, 2 skipped (176 with the unmapped-starter test added after); root suite 834 passed, 2 skipped; web lint / build clean;
   `npm run e2e:fixtures` 60 passed
   (the new `e2e/i0b/fixtures.spec.ts`, phone + desktop).
