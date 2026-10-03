@@ -4,6 +4,8 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-03 — Wave I-B
 
+- **PO merge.** IB-2's "who starts" reads IB-0's roster context (one overlay pass); the API suite answers MFL from
+  fixtures for every test.
 - **IB-0: one availability truth.** Every screen now reads a roster's week from one place,
   `availability.roster_context` (the nightly's lineup + the injury overlay, re-solved when a status changed since the
   build): My Week and the opponent's projected total, Waivers (the total, the weakest starter, each move's this-week

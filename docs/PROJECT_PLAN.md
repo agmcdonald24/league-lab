@@ -472,7 +472,8 @@ PO's reading: #1 is the I0-A overlay applied on My Week only (confirmed live: th
 `ops.lineups`) — a trust bug, fixed first (IB-0); #2–#7 adopted as written. **Wave I-B** = IB-0 (one availability
 truth + the card status), IB-1 (navigation by task, the research pane everywhere, the player page keeps the nav),
 IB-2 (Waivers short with views, the sticky trade verdict, the best alternative before a drop), IB-3 (matchup meaning
-first, "Value to my lineup", the card's default content). Still after: usage tracking, the news feed, v3.1.
+first, "Value to my lineup", the card's default content). **I-B delivered 2026-10-03 13:00 ET** (STATUS § "Wave I-B":
+316 API / 848 root / 130 e2e). Still after: usage tracking, the news feed, v3.1.
 
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 

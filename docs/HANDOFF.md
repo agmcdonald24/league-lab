@@ -96,9 +96,15 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   priced per league by `api/league_lab_api/why.py`), "How to read the rankings". M1: **no star penalty** (STATUS §
   "Wave I-A" M1): the gap Andrew sees is a level gap with the market (ours ~1–3 under Sleeper's top 24) plus an
   over-projected fringe; `calibration.py` exists behind `LEAGUE_LAB_PROJECTION_CALIBRATION` (off; WR fringe only).
-  Next: I-B (usage tracking, the news feed, the overlay on `/api/team` and the opponent's total), v3.1 behind a
-  backtest (expected-bonus pricing, the fringe level, cold starts), Wave J (accounts, Stripe, ESPN) on Sleeper's
-  licence.
+* **Wave I-B (2026-10-03, Saturday midday, the second review)**: one availability truth
+  (`availability.roster_context` — every screen reads the same overlay-adjusted roster; one lineup total everywhere;
+  the cards' `status` / `strength`), navigation by task (My Team · Waivers · Trades · Players; About in the ⋯ menu; the
+  player page inside the frame; the research pane `PlayerPane.svelte` / `lib/pane.svelte.ts` from any player name
+  with Compare / Evaluate add-drop / Add to trade), Waivers short (top 3 + views, the best alternative before a drop),
+  the calculator's pinned verdict, Favorable / Neutral / Difficult with one rank direction and corner certainty,
+  **Value to my lineup** leading Season (`/api/ros?view=lineup`), the card's default content.
+  Next: usage tracking, the news feed, v3.1 behind a backtest (expected-bonus pricing, the fringe level, cold starts),
+  Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a
