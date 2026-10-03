@@ -305,6 +305,27 @@ sentences under "Your lineup", the chip on the player row.
 **Switches**: `LEAGUE_LAB_AVAILABILITY=off` turns it off; in fixture mode (`LEAGUE_LAB_SLEEPER_FIXTURES`) it is off
 unless `LEAGUE_LAB_ESPN_FIXTURES` points at a feed file — no test and no sandbox run calls ESPN.
 
+**One context (Wave I-B, IB-0, 2026-10-03).** The second review caught My Week saying "start Croskey-Merritt
+(Jefferson is out)" while Waivers said "drop him: he would not start", with two lineup totals: the overlay re-solved My
+Week only. Now `availability.roster_context(league, roster, week)` is the one read of a roster's week — the nightly's
+rows (`cards.lineup_rows`; any other league `anyleague.lineup_rows`) with the overlay applied by `apply_to_rows` (the
+lineup re-solved by `lineup.solve` when a status changed since the build) — kept in process for the overlay's interval
+(at most the query cache's 10 minutes; 2 on demand), keyed by league, roster, week, the overlay's stamp and the build.
+It carries every rostered player's `status` (OUT / DOUBTFUL / IR / Q / ok), `can_play`, `starter`, `slot`, `value`,
+`locked`, and `lineup_value`, `changes`, `checked_at`, `as_of_build`. Readers: My Week (both paths) and the
+opponent's projected total (his own context); Waivers (the total, the weakest starter, and every move's this-week part
+re-solved on the context — `availability.moves_on_context`: the week gain, the seat, the displaced starter, the drop's
+cost; the later weeks keep the build's; moves that no longer gain go, the ranks are re-run — and a drop who starts this
+week is never "would not start": `starts_this_week` / `slot_this_week` on the drop); the Team Hub (lineup / bench /
+horizon values, the weakest starter, the slot strengths, the roster, this week's league comparison and ranks — every
+roster the overlay moved is re-read, `availability.touched`); the player card (its lineup sentence reads the context;
+the Availability section says "Justin Jefferson is out (ankle): he starts at FLEX2 this week" or "Not in this week's
+lineup: …", and the injury line shows the overlay's status when it is newer than the build); the trade board (this
+week's rows of every roster the overlay moved are the context's, so the calculator's "before" is My Week's total).
+Pinned by `api/tests/test_ib0.py`: My Week = Waivers = Team = the calculator's "before" for both house leagues, the
+Test League, the on-demand path and MFL, with the fixture feed on and off. Not covered: a free agent who only becomes
+worth a claim because of the overlay (the build's move list is re-priced, not re-searched — the next nightly finds him).
+
 ## MyFantasyLeague (Wave I-0, I0-B, 2026-10-03)
 
 **Design.** The rest of the code only sees Sleeper shapes. A league key with a platform prefix (`mfl:21861`; Sleeper

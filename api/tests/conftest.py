@@ -90,6 +90,8 @@ def _fresh_cache(monkeypatch):
     db.clear_cache()
     A._default = None
     A.clear_priced()
+    from league_lab_api import availability
+    availability.clear_context()                  # IB-0: the roster contexts are kept in process
     yield
     A._default = None
     A.clear_priced()

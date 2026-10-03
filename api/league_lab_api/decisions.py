@@ -436,6 +436,12 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
                                                         bio([s["gsis_id"]])),
                                       "value": _num(s["player_value"]), "margin": _num(tot.get("weakest_margin")),
                                       "replacement_name": _str(s["replacement_name"]), "replacement_value": _num(s["replacement_value"])}
+    # ---- IB-0: one availability truth - this week's part of every move re-solved on the roster's context (the
+    # overlay), so a player who starts because Jefferson is out is never "would not start" and the totals are My Week's
+    rctx = _waiver_context(league_id, team, int(week), is_house)
+    if rctx is not None and rctx.changed:
+        mv = availability.moves_on_context(mv, rctx)
+    # ---- end IB-0
     ros = _ros_of(_ros_frame(league_id, is_house))
     if not mv.empty:
         best = mv[mv["is_best_drop"].fillna(False).astype(bool)].sort_values("add_rank") if "is_best_drop" in mv else mv.iloc[0:0]
@@ -458,10 +464,51 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
     out["free_agents"] = _free_agents(league_id, season, int(week), position, limit, is_house, od_info, ros)
     out.update(waiver_extras(league_id, team, int(week), is_house, od_info, position))      # H1 (Wave H)
     out = availability.waivers_overlay(out)         # ---- I0-A: no claims of players who cannot play; one QB per team
+    _waivers_on_context(out, rctx)                  # ---- IB-0: the total, the weakest starter, the drops' words
     if not is_house:
         out["on_demand"] = {k: v for k, v in od_info.items() if k not in ("lw", "fa")}
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
     return out
+
+
+# ---- IB-0 (Wave I-B): Waivers on the roster's context (availability.roster_context): the lineup total, the weakest
+# starter (what a claim has to beat) and each drop's "starts this week" are the context's; the moves' numbers are
+# re-solved on it (availability.moves_on_context) before the page's sentences are written.
+def _waiver_context(league_id: str, team: int | None, week: int, is_house: bool):
+    if team is None:
+        return None
+    try:
+        return availability.roster_context(league_id, int(team), int(week), house=is_house)
+    except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+        return None
+
+
+def context_weakest(rctx) -> dict | None:
+    """The waivers' ``weakest`` block from the context: the weakest slot's starter, his margin, who comes in."""
+    if rctx is None or rctx.rows is None or rctx.rows.empty or not rctx.weakest_slot:
+        return None
+    st = rctx.rows[(rctx.rows["role"] == "starter") & (rctx.rows["slot"] == rctx.weakest_slot)]
+    if st.empty:
+        return None
+    w = st.iloc[0]
+    rep = rctx.replacement(w)
+    return {"slot": w["slot"], "player": _player(w["sleeper_player_id"], w["gsis_id"], w["player_name"], w["position"], None,
+                                                 bio([w["gsis_id"]])),
+            "value": _num(w["value"]), "margin": _num(w["margin"]),
+            "replacement_name": None if rep is None else _str(rep["player_name"]),
+            "replacement_value": None if rep is None else _num(rep["value"])}
+
+
+def _waivers_on_context(out: dict, rctx) -> None:
+    if rctx is None:
+        return
+    for m in [*(out.get("moves") or []), *[c.get("move") or {} for c in out.get("cards") or []]]:
+        availability.drop_words(m, rctx)
+    out["roster_context"] = rctx.summary()
+    if rctx.changed:
+        out["lineup_value"] = rctx.lineup_value
+        out["weakest"] = context_weakest(rctx) or out.get("weakest")
+# ---- end IB-0
 
 
 def _week_ranges(league_id: str, season: int, week: int, page: pd.DataFrame, is_house: bool, od_info: dict) -> dict:
@@ -615,6 +662,10 @@ class TradeContext:
                 self.replacement, self.repl_name = replacement_level(self.lw, fa, self.points)
             self.fa = fa
         # ---- I0-A: this week's availability on the board (an Out player is worth 0 this week; the board re-solves)
+        # ---- IB-0: this week's lineup on the board = each roster's context (the rosters the overlay moved): the roster
+        # view (who starts, where, his value) is My Week's; the board re-solves to the same total
+        self.horizon, self.contexts = board_on_context(self.league_id, self.is_house, self.horizon, self.this_week)
+        # ---- end IB-0
         self.horizon, self.out_now = availability.horizon_overlay(self.horizon, self.this_week)
         # ---- end I0-A
         self.first_w, self.last_w = first, last
@@ -685,6 +736,52 @@ class TradeContext:
                     pool.setdefault(r.sleeper_id, {})[int(w)] = p
             meta[r.sleeper_id] = {"player_name": r.player_name, "position": r.position, "gsis_id": r.gsis_id}
         return pool, meta
+
+
+# ---- IB-0 (Wave I-B): the trade board's this-week rows on the roster contexts (availability.roster_context)
+def board_on_context(league_id: str, is_house: bool, horizon: pd.DataFrame, this_week: int) -> tuple[pd.DataFrame, dict]:
+    """(the board's rows with this week's rows of every roster the overlay moved replaced by its context's — role, slot,
+    value, margin, lock, reason; the rest of each row as the board had it —, {roster id: context})."""
+    if horizon is None or horizon.empty or not availability.enabled():
+        return horizon, {}
+    wk = horizon["week"] == int(this_week)
+    tw = horizon[wk & horizon["gsis_id"].notna() & horizon["role"].isin(["starter", "bench"])]
+    by_roster = {int(r): list(g) for r, g in tw.groupby("roster_id")["gsis_id"]}
+    try:
+        ctxs = availability.contexts(league_id, availability.touched(by_roster), int(this_week), house=is_house)
+    except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+        return horizon, {}
+    ctxs = {rid: c for rid, c in ctxs.items() if c is not None and c.changed and not c.rows.empty}
+    if not ctxs:
+        return horizon, ctxs
+    keep = horizon[~(wk & horizon["roster_id"].isin(list(ctxs)))]
+    add = []
+    for rid, c in ctxs.items():
+        old = horizon[wk & (horizon["roster_id"] == rid)]
+        if old.empty:
+            continue
+        by_sid = {str(r["sleeper_player_id"]): r.to_dict() for _, r in old.iterrows() if isinstance(r["sleeper_player_id"], str)}
+        template = {k: v for k, v in old.iloc[0].to_dict().items()}
+        for _, r in c.rows.iterrows():
+            empty = bool(r["is_empty_slot"])
+            sid = r["sleeper_player_id"] if isinstance(r["sleeper_player_id"], str) else None
+            base = dict(by_sid.get(str(sid), template)) if not empty else dict(template)
+            if empty or sid not in by_sid:
+                base.update({"sleeper_player_id": sid, "gsis_id": r["gsis_id"], "player_name": r["player_name"],
+                             "position": r["position"], "value_source": r["value_source"]})
+            base.update({"role": "empty" if empty else r["role"], "slot": r["slot"], "slot_type": r["slot_type"],
+                         "player_value": r["value"], "lineup_margin": r["margin"],
+                         "is_locked": bool(r.get("is_locked")) and r["role"] == "starter", "reason": r["reason"]})
+            for col, v in (("slot_order", r["slot_order"]), ("bench_rank", r["bench_rank"]), ("report_status", r["report_status"])):
+                if col in base:
+                    base[col] = v
+            add.append(base)
+    out = pd.concat([keep, pd.DataFrame(add, columns=horizon.columns)], ignore_index=True)
+    for col in ("player_value", "lineup_margin"):
+        out[col] = pd.to_numeric(out[col], errors="coerce")
+    out["is_locked"] = out["is_locked"].fillna(False).astype(bool)
+    return out, ctxs
+# ---- end IB-0
 
 
 def _house_fa_pool(league_id: str, season: int, weeks: tuple[int, ...]) -> tuple[dict, dict]:
@@ -1333,6 +1430,13 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
         rows["acquired_how_by_manager"] = None
         prof, keeper = pd.DataFrame(), pd.DataFrame()
     t1 = time.perf_counter()
+    # ---- IB-0: one availability truth - this week's lineup value, the weakest starter, the slot strengths and the
+    # roster are the roster context's (the overlay); the league's ranks are re-run on every roster the overlay moved
+    ctxs = _team_contexts(league_id, int(team_id), is_house, None if is_house else hf)
+    moved = {rid: c for rid, c in ctxs.items() if c is not None and c.changed}
+    if moved and not value.empty:
+        value, rankings, slots, rows = _team_on_context(int(team_id), moved, value, rankings, slots, rows)
+    # ---- end IB-0
     mine = value[value["roster_id"] == int(team_id)] if not value.empty else value
     out: dict = {"league_id": str(league_id), "source": "database" if is_house else "sleeper", "roster_id": int(team_id),
                  "team_name": names.get(int(team_id), {}).get("team_name"),
@@ -1408,9 +1512,140 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
         out["on_demand"] = {"cost": f"every roster solved for {len(lw.weeks)} weeks: {len(lw.roster_ids)} x {len(lw.weeks)} "
                                     f"= {len(lw.roster_ids) * len(lw.weeks)} lineups (the ranks need the whole league)",
                             "timings_ms": lw.timings_ms}
+    if moved:                                                                         # ---- IB-0
+        _weekly_on_context(out, moved, allw, int(team_id))
+    if ctxs.get(int(team_id)) is not None:
+        out["roster_context"] = ctxs[int(team_id)].summary()
     out["words"] = team_words(out, rows)
     out["timings_ms"] = {"data": round((t1 - t0) * 1000, 1), "total": round((time.perf_counter() - t0) * 1000, 1)}
     return out
+
+
+# ---- IB-0 (Wave I-B): the Team Hub on the roster contexts. The marts (and the on-demand solve) carry the build's
+# lineups; the overlay can move this week's. Mine is always read; another roster only when the overlay says one of its
+# players cannot play (availability.touched): its lineup value and bench value move, so the league's ranks do too.
+HORIZON_THIS_WEEK_SQL = """select roster_id, gsis_id from analytics.mart_league_roster_horizon
+                           where league_id = %s and is_this_week and gsis_id is not null and role in ('starter', 'bench')"""
+
+
+def _team_contexts(league_id: str, team_id: int, is_house: bool, hf: pd.DataFrame | None) -> dict:
+    if not availability.enabled():
+        return {}                                   # the build's lineups are the truth: the marts / the solve as they are
+    try:
+        if is_house:
+            ids = query(HORIZON_THIS_WEEK_SQL, (league_id,))
+        else:
+            ids = (hf[hf["is_this_week"] & hf["gsis_id"].notna() & hf["role"].isin(["starter", "bench"])][["roster_id", "gsis_id"]]
+                   if hf is not None else pd.DataFrame())
+        by_roster = ({int(r): list(g) for r, g in ids.groupby("roster_id")["gsis_id"]} if not ids.empty else {})
+        return availability.contexts(league_id, availability.touched(by_roster) | {int(team_id)}, house=is_house)
+    except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+        return {}
+
+
+def _team_rows(ctx, old: pd.DataFrame) -> pd.DataFrame:
+    """The roster's this-week rows (TEAM_ROWS_SQL's columns) from its context; how each player joined, from the old."""
+    acq = {}
+    if old is not None and not old.empty and "acquired_label" in old:
+        acq = {str(r["sleeper_player_id"]): (r.get("acquired_label"), r.get("acquired_how_by_manager")) for _, r in old.iterrows()}
+    out = []
+    for _, r in ctx.rows.iterrows():
+        empty = bool(r["is_empty_slot"])
+        sid = r["sleeper_player_id"] if isinstance(r["sleeper_player_id"], str) else None
+        a = acq.get(str(sid), (None, None))
+        out.append({"week": ctx.week, "role": "empty" if empty else r["role"], "slot": r["slot"], "slot_type": r["slot_type"],
+                    "slot_order": r["slot_order"], "bench_rank": r["bench_rank"], "sleeper_player_id": sid,
+                    "gsis_id": r["gsis_id"], "player_name": r["player_name"], "position": r["position"],
+                    "player_value": r["value"], "value_source": r["value_source"], "lineup_margin": r["margin"],
+                    "is_locked": bool(r.get("locked_now")), "report_status": r["report_status"], "reason": r["reason"],
+                    "acquired_label": a[0], "acquired_how_by_manager": a[1]})
+    df = pd.DataFrame(out)
+    for c in ("player_value", "lineup_margin", "slot_order", "bench_rank"):
+        df[c] = pd.to_numeric(df[c], errors="coerce")
+    return df
+
+
+def _slot_strength(ctx, team_id: int) -> list[dict]:
+    """mart_league_roster_slot_strength's rows for one roster from its context (the best-valued starter of each slot
+    type, his margin, the bench player worth value - margin)."""
+    st = ctx.rows[ctx.rows["role"] == "starter"]
+    out = []
+    for stype, g in st.groupby("slot_type"):
+        filled = g[~g["is_empty_slot"].astype(bool)].assign(_v=lambda x: pd.to_numeric(x["value"], errors="coerce").fillna(-1e18))
+        t = filled.sort_values(["_v", "slot_order"], ascending=[False, True]).iloc[0] if not filled.empty else None
+        rep = ctx.replacement(t) if t is not None else None
+        out.append({"roster_id": team_id, "slot_type": stype, "slots": len(g), "empty_slots": int(g["is_empty_slot"].astype(bool).sum()),
+                    "first_slot_order": int(g["slot_order"].min()), "top_slot": None if t is None else t["slot"],
+                    "top_gsis_id": None if t is None else t["gsis_id"], "top_player_name": None if t is None else t["player_name"],
+                    "top_position": None if t is None else t["position"], "top_value": None if t is None else _num(t["value"]),
+                    "top_is_locked": None if t is None else bool(t.get("locked_now")),
+                    "starter_strength": None if t is None else _num(t["margin"]),
+                    "replacement_name": None if rep is None else rep["player_name"],
+                    "replacement_value": None if rep is None else _num(rep["value"])})
+    return out
+
+
+def _team_on_context(team_id: int, moved: dict, value: pd.DataFrame, rankings: pd.DataFrame, slots: pd.DataFrame,
+                     rows: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    value = value.copy()
+    for rid, c in moved.items():
+        m = value["roster_id"] == rid
+        if not m.any() or c.lineup_value is None:
+            continue
+        old = _num(value.loc[m, "lineup_value"].iloc[0]) or 0.0
+        value.loc[m, "horizon_value"] = round((_num(value.loc[m, "horizon_value"].iloc[0]) or 0.0) - old + c.lineup_value, 2)
+        value.loc[m, "lineup_value"] = c.lineup_value
+        value.loc[m, "bench_value"] = c.bench_value
+        if rid == team_id:
+            w = context_weakest(c)
+            value.loc[m, "weakest_slot"] = c.weakest_slot
+            value.loc[m, "weakest_margin"] = c.weakest_margin
+            for k, v in (("weakest_player_name", None if w is None else w["player"]["player_name"]),
+                         ("weakest_gsis_id", None if w is None else w["player"]["gsis_id"]),
+                         ("weakest_position", None if w is None else w["player"]["position"]),
+                         ("weakest_value", None if w is None else w["value"]),
+                         ("weakest_replacement_name", None if w is None else w["replacement_name"]),
+                         ("weakest_replacement_value", None if w is None else w["replacement_value"])):
+                value[k] = value[k].astype(object)
+                value.loc[m, k] = v
+    if not rankings.empty:
+        rankings = rankings.copy()
+        for measure in ("lineup_value", "horizon_value", "bench_value"):
+            vv = {int(r): float(v) for r, v in zip(value["roster_id"], value[measure], strict=True) if _num(v) is not None}
+            ranks = _rank(vv)
+            m = rankings["measure"] == measure
+            for i in rankings.index[m]:
+                rid = int(rankings.at[i, "roster_id"])
+                if rid in vv:
+                    rankings.at[i, "value"], rankings.at[i, "league_rank"] = vv[rid], ranks[rid]
+                    rankings.at[i, "n_rosters"] = len(vv)
+                    rankings.at[i, "rank_label"] = f"{ranks[rid]}/{len(vv)}"
+    if team_id in moved:
+        c = moved[team_id]
+        rows = _team_rows(c, rows)
+        new = pd.DataFrame(_slot_strength(c, team_id))
+        slots = pd.concat([slots[slots["roster_id"] != team_id], new], ignore_index=True) if not slots.empty else new
+        slots = slots.sort_values(["roster_id", "first_slot_order"])
+    return value, rankings, slots, rows
+
+
+def _weekly_on_context(out: dict, moved: dict, allw: pd.DataFrame, team_id: int) -> None:
+    """This week's entry of the weekly list (and the league behind it) from the contexts; the toughest week after."""
+    allw = allw.copy() if allw is not None else pd.DataFrame()
+    for rid, c in moved.items():
+        if not allw.empty and c.lineup_value is not None:
+            allw.loc[(allw["week"] == c.week) & (allw["roster_id"] == rid), "lineup_value"] = c.lineup_value
+    me = moved.get(team_id)
+    for w in out.get("weekly") or []:
+        if me is not None and int(w["week"]) == me.week:
+            w["lineup_value"], w["bench_value"] = me.lineup_value, me.bench_value
+        w["league"] = _week_league(allw, int(w["week"]), w["lineup_value"])
+    v = out.get("value") or {}
+    lvs = [(int(w["week"]), w["lineup_value"]) for w in out.get("weekly") or [] if w["lineup_value"] is not None]
+    if me is not None and lvs and v:
+        worst = min(lvs, key=lambda x: (x[1], x[0]))
+        v["worst_week"], v["worst_week_value"] = worst[0], worst[1]
+# ---- end IB-0
 
 
 def team_words(out: dict, rows: pd.DataFrame) -> dict:

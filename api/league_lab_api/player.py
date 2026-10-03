@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import pandas as pd
 
+from . import availability as AV
 from .applib import cards, links, signals, ui
 from .applib import ros as ROS
 from .db import missing_relations, query
@@ -177,10 +178,15 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
             else od.projection(gsis, pos, week))
     sched = query(SCHED_SQL, (team, team, team, pos, season, team)) if isinstance(team, str) and team else pd.DataFrame()   # 4
     rostered = is_num(p["rostered_by_roster_id"])
+    # ---- IB-0: the roster's context (the nightly's rows + the availability overlay), the rows My Week shows   # 5
+    rctx = None
     if od is None:
-        rows = cards.lineup_rows(league_id, season, week, int(p["rostered_by_roster_id"])) if rostered and week else pd.DataFrame()   # 5
+        rctx = AV.roster_context(league_id, int(p["rostered_by_roster_id"]), week, house=True) if rostered and week else None
+        rows = rctx.rows if rctx is not None else pd.DataFrame()
     else:
         rows = od.lineup(int(p["rostered_by_roster_id"]), week) if rostered and week else pd.DataFrame()
+        rctx = getattr(od, "context", None)
+    # ---- end IB-0
 
     # ---------------------------------------------------------- header
     where = (f"on **{p['rostered_by_team']}** ({p['rostered_by_manager']})" if rostered
@@ -310,7 +316,11 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
     else:
         lines.append("Not in this season's player pool for this league.")
     inj = p["injury_status"] if isinstance(p["injury_status"], str) and p["injury_status"] else None
-    if inj:
+    ov = overlay_status(gsis, inj)                                                     # ---- IB-0
+    if ov is not None:
+        inj = ov["status"]
+        lines.append(f"⚠️ **{AV._why(ov)}**.")
+    elif inj:
         detail = f" ({p['injury']})" if isinstance(p["injury"], str) and p["injury"] else ""
         prac = f"; practice: {p['practice_status']}" if isinstance(p["practice_status"], str) and p["practice_status"] else ""
         lines.append(f"⚠️ **{inj}**{detail}{prac}.")
@@ -333,6 +343,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
             lines.append(f"Week {week} kickoff {kick:%a %b %-d, %-I:%M %p} ET — not locked yet.")
     elif week is not None and not sched.empty:
         lines.append(f"No game in week {week} (bye).")
+    lines += overlay_lines(rctx, gsis, p["player_name"])                               # ---- IB-0
     md(availability, "  \n".join(lines))
 
     # ---------------------------------------------------------- 4. value
@@ -458,6 +469,45 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "source": "database" if od is None else "sleeper",
         **({} if od is None else {"on_demand": od.meta()}),
     }
+
+
+# ---- IB-0 (Wave I-B): the Availability section under the overlay. When the overlay re-solved his roster's week and
+# he is in it, the section says what changed for him, in the context's words: "Justin Jefferson is out (ankle): he
+# starts at FLEX2 this week" (he came in), "Not in this week's lineup: Out (ankle) · ESPN, Oct 2 2:35 PM ET" (he went
+# out). Nothing is added when the overlay did not move his roster (the page's words stand: tests/test_parity.py).
+def overlay_status(gsis: str, nightly: str | None) -> dict | None:
+    """The overlay's entry for him when it says something the build did not (he cannot play, or he is questionable,
+    and the build had another status): "Out (ankle) · ESPN, Oct 2 2:35 PM ET". None when the overlay is off."""
+    if not AV.enabled():
+        return None
+    a = AV.now([gsis]).get(gsis)
+    if a is None or not (a["cannot_play"] or a["flagged"]) or a["status"] == nightly:
+        return None
+    return a
+
+
+def overlay_lines(rctx, gsis: str, name: str | None) -> list[str]:
+    if rctx is None or not rctx.changed:
+        return []
+    r = rctx.row_of(gsis)
+    if r is None:
+        return []
+    before = rctx.starters(rctx.base)
+    sid = str(r["sleeper_player_id"]) if isinstance(r["sleeper_player_id"], str) else None
+    out = []
+    if r["role"] == "starter" and sid not in before:
+        slot = cards.slot_label(r["slot"])
+        why = next((c.split(" — ")[0] for c in rctx.changes if f" — {name} starts at " in c), None)
+        out.append(f"**{why}: he starts at {slot} this week.**" if why else f"**He starts at {slot} this week** "
+                   "(the lineup was re-solved with the latest injury news).")
+    elif r["role"] == "unplayable" and sid in before:
+        why = next((c for c in rctx.changes if name and c.startswith(f"{name} ")), None)
+        out.append(f"**Not in this week's lineup**: {why}." if why else "**Not in this week's lineup**: he cannot play.")
+    elif r["role"] == "bench" and sid in before:
+        out.append(f"**On the bench this week**: the lineup was re-solved with the latest injury news "
+                   f"({'; '.join(rctx.changes)}).")
+    return out
+# ---- end IB-0
 
 
 # ---- IA-3 (Wave I-A): "why this number" on the card — top-level keys, so the sections stay the page's (test_parity):

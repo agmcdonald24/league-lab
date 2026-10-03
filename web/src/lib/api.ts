@@ -83,8 +83,27 @@ export interface DecisionCard {
   verdict: string;
   how: string;
   why?: string | null; // ---- IA-1: the reason sentence (also the card's second block)
+  // ---- IB-0: the call's status (Change needed / Already set / Close call; null when Sleeper's lineup is unknown),
+  // its strength, and who of the two Sleeper starts right now
+  status?: "change" | "set" | "close" | null;
+  strength?: "clear" | "lean" | "coin flip" | null;
+  in_sleeper_lineup?: { player: boolean; alt: boolean } | null;
+  // ---- end IB-0
   blocks: Block[];
 }
+
+// ---- IB-0: one availability truth - the roster context's summary that Waivers and Team carry (My Week: `availability`)
+export interface RosterContextSummary {
+  league_id: string;
+  roster_id: number;
+  week: number;
+  lineup_value: number | null;
+  changed: boolean;
+  changes: string[];
+  checked_at: string | null;
+  as_of_build: string | null;
+}
+// ---- end IB-0
 
 export interface Mover {
   gsis_id: string | null;
@@ -100,6 +119,7 @@ export interface Opponent {
   team_name: string;
   manager: string | null;
   lineup_value: number | null;
+  changes?: string[]; // ---- IB-0: his lineup through the same overlay (who moved and why)
 }
 
 export interface MyWeek {
@@ -659,6 +679,10 @@ export interface WaiverDrop extends DPlayer {
   horizon_loss: number | null;
   season_points_left: number | null;
   ros_points: number | null;
+  // ---- IB-0: he starts this week by the roster's context (the overlay), and where; never "would not start" then
+  starts_this_week?: boolean;
+  slot_this_week?: string | null;
+  // ---- end IB-0
 }
 
 /** One row of mart_waiver_moves (or the on-demand sweep), nested: the free agent, the drop, the gains, the card's words. */
@@ -709,6 +733,7 @@ export interface Waivers {
   horizon_last_week?: number | null;
   lineup_value?: number | null;
   weakest: { slot: string; player: DPlayer; value: number | null; margin: number | null; replacement_name: string | null; replacement_value: number | null } | null;
+  roster_context?: RosterContextSummary; // ---- IB-0
   moves: WaiverMove[];
   total_moves: number;
   cards: { title: string; add_sleeper_id: string; drop_sleeper_id: string | null; move_rank: number | null; move: WaiverMove }[];
@@ -841,6 +866,7 @@ export interface Team {
   team_name: string;
   manager_name: string | null;
   week: number;
+  roster_context?: RosterContextSummary; // ---- IB-0
   value: {
     week: number;
     horizon_weeks: number;
