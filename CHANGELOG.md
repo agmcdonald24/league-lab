@@ -10,6 +10,11 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   FLEX2"), the player row shows OUT / DOUBTFUL / IR, and "Injuries checked 2:40 PM" replaces the stale-news warning.
   Trends leave out Out / IR / PUP / suspended players; Waivers never suggest a player who cannot play or two QBs of
   one team; trades count an Out player as 0 this week; rest of season shows the status (`availability.py`).
+- **MyFantasyLeague, read-only, on demand (I0-B).** Paste an MFL league link on the Leagues screen, pick your team,
+  and the same My Week (and every other screen) runs on it: league keys `mfl:<id>`, `src/league_lab/mfl_client.py`
+  (caches by kind, 60 calls a minute, the league's host followed), `platforms.py` (MFL answered in Sleeper's shapes),
+  `player_ids.py` (the nflverse id table, downloaded once a day); `GET /api/leagues?mfl=`. League 21861: 216 of 216
+  rostered players mapped. docs/ANY_LEAGUE.md § "MyFantasyLeague", docs/MFL_TERMS.md.
 
 ## 2026-10-02 — Wave H
 

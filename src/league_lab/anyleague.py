@@ -72,7 +72,6 @@ from .sleeper_client import (  # noqa: F401 - re-exported: the API and the tests
     SleeperBusy,
     SleeperUnavailable,
     TokenBucket,
-    check_id,
     check_username,
 )
 
@@ -95,16 +94,26 @@ DEF_PROJECTED = re.compile(r"^(sack|int|fum_rec|ff|def_td|def_st_td|st_td|safe|b
 
 
 # ------------------------------------------------------------------------------ Sleeper (sleeper_client.py)
-_default: Sleeper | None = None
+# ---- I0-B (Wave I-0): league keys with a platform prefix (``mfl:21861``) -> platforms.Router, which answers every
+# call below in Sleeper's shapes (an MFL league is translated in platforms.py / mfl_client.py); Sleeper ids stay bare.
+from . import platforms  # noqa: E402 - the block stays self-contained
+from .mfl_client import FIXTURES_ENV as MFL_FIXTURES_ENV  # noqa: E402
+
+check_id = platforms.check_key          # a Sleeper id or an ``mfl:<id>`` key (sleeper_client.check_id: Sleeper only)
+_default: platforms.Router | None = None
 
 
-def sleeper() -> Sleeper:
-    """The process-wide client (one cache, one token bucket); rebuilt when the fixture setting changes (tests)."""
+def sleeper() -> platforms.Router:
+    """The process-wide client (one cache, one token bucket per platform); rebuilt when a fixture setting changes
+    (tests). Sleeper keys reach the Sleeper client untouched; ``mfl:`` keys the MyFantasyLeague translation."""
     global _default
-    fx = os.environ.get(FIXTURES_ENV)
-    if _default is None or str(_default.fixtures or "") != str(Path(fx) if fx else ""):
-        _default = Sleeper()
+    fx, mfx = os.environ.get(FIXTURES_ENV), os.environ.get(MFL_FIXTURES_ENV)
+    if (_default is None or str(_default.fixtures or "") != str(Path(fx) if fx else "")
+            or _default.mfl_fixtures != str(Path(mfx) if mfx else "")):
+        from .mfl_client import MFL
+        _default = platforms.Router(Sleeper(), MFL())
     return _default
+# ---- end I0-B
 
 
 # ------------------------------------------------------------------------------ the NFL-wide board
