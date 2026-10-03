@@ -444,7 +444,9 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
                               " The what-if re-runs the same projection with his last three "
                               f"games at the new level, in {league_name} scoring." if od is None else ""))
 
+    extra = why_block(league_id, gsis, pos, season, week, proj, od, league_name)        # ---- IA-3
     return {
+        **extra,                                                                           # ---- IA-3
         "gsis_id": p["gsis_id"], "player_name": p["player_name"], "position": pos, "team": team if isinstance(team, str) else None,
         "header": header, "league_id": league_id, "league_name": league_name, "season": season, "week": week,
         "rostered_by_roster_id": int(p["rostered_by_roster_id"]) if rostered else None,
@@ -456,3 +458,38 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "source": "database" if od is None else "sleeper",
         **({} if od is None else {"on_demand": od.meta()}),
     }
+
+
+# ---- IA-3 (Wave I-A): "why this number" on the card — top-level keys, so the sections stay the page's (test_parity):
+# `why` (this week's stat line x this league's scoring = the projection), `market` (Sleeper's number for the week in
+# this league's scoring, the gap in words; None and the reason when there is none), `leans_on` (the three inputs the
+# model leans on most for his position: About's rows, About's words).
+WEEK_LINE_SQL = """select proj_points, proj_targets, proj_receptions, proj_receiving_yards, proj_receiving_tds, proj_carries,
+                          proj_rushing_yards, proj_rushing_tds, proj_attempts, proj_passing_yards, proj_passing_tds,
+                          proj_passing_interceptions, proj_fumbles_lost
+                   from analytics.mart_player_week_projections
+                   where league_id = %s and gsis_id = %s and season = %s and week = %s"""
+
+
+def why_block(league_id: str, gsis: str, pos: str, season: int, week: int | None, proj: pd.DataFrame, od,
+              league_name: str) -> dict:
+    from . import why
+    try:
+        if od is None:
+            sc = query("select scoring_settings from analytics.dim_league_season where league_id = %s and is_current_season",
+                       (league_id,))
+            scoring = {k: float(v) for k, v in ((sc["scoring_settings"].iloc[0] or {}) if not sc.empty else {}).items()
+                       if v is not None}
+            line = query(WEEK_LINE_SQL, (league_id, gsis, season, week)) if week is not None else pd.DataFrame()
+        else:
+            scoring, line = od.scoring, proj
+        r = line.iloc[0].to_dict() if not line.empty else {}
+        ours = float(r["proj_points"]) if is_num(r.get("proj_points")) else None
+        explained = why.explain(why.line_of(r), ours, scoring, pos) if r else None
+        market = why.market_points(season, week, [gsis], scoring).get(gsis)
+        lean = why.leans_on(league_id if od is None else od.profile_league, league_name if od is None else None).get(pos)
+    except Exception:  # noqa: BLE001 - the card never fails for its extras
+        return {"why": None, "market": None, "leans_on": None}
+    return {"why": explained, "market": why.market_block(ours, market, week) if week is not None and pos in why.ORDER else None,
+            "leans_on": lean}
+# ---- end IA-3

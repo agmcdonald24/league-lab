@@ -191,5 +191,88 @@
   "from_week": 4,
   "last_week": 17
  },
- "missing": []
+ "missing": [],
+ "why": {
+  "per": "week",
+  "points": 10.23,
+  "pieces": [
+   {
+    "stat": "targets",
+    "label": "targets",
+    "value": 6.0,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "6.0 targets (no points on their own)"
+   },
+   {
+    "stat": "receptions",
+    "label": "catches",
+    "value": 4.3,
+    "each": 1.0,
+    "points": 4.3,
+    "words": "4.3 catches × 1 = +4.3"
+   },
+   {
+    "stat": "receiving_yards",
+    "label": "receiving yards",
+    "value": 43.9,
+    "each": 0.1,
+    "points": 4.39,
+    "words": "44 receiving yards × 0.1 = +4.4"
+   },
+   {
+    "stat": "receiving_tds",
+    "label": "receiving TDs",
+    "value": 0.23,
+    "each": 6.0,
+    "points": 1.38,
+    "words": "0.23 receiving TDs × 6 = +1.4"
+   },
+   {
+    "stat": "rushing_yards",
+    "label": "rushing yards",
+    "value": 1.7,
+    "each": 0.1,
+    "points": 0.17,
+    "words": "1.7 rushing yards × 0.1 = +0.2"
+   },
+   {
+    "stat": "rushing_tds",
+    "label": "rushing TDs",
+    "value": 0.01,
+    "each": 6.0,
+    "points": 0.06,
+    "words": "0.01 rushing TDs × 6 = +0.1"
+   },
+   {
+    "stat": "rest",
+    "label": "the small pieces and rounding",
+    "value": null,
+    "each": null,
+    "points": -0.07,
+    "words": "the small pieces and rounding: -0.1"
+   }
+  ],
+  "sentence": "6.0 targets → 4.3 catches → 44 yards → 0.24 TDs → 10.2 points this week",
+  "games": null,
+  "total": null
+ },
+ "market": {
+  "market_points": null,
+  "ours": 10.23,
+  "ratio": null,
+  "week": 4,
+  "words": null,
+  "why": "Sleeper's number for this week is not in yet.",
+  "far": false
+ },
+ "leans_on": {
+  "features": [
+   "snap share, last 3 games",
+   "expected points per game (what his touches are worth), season",
+   "receiving yards per game, last season"
+  ],
+  "words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+  "scored_in": "League of Scrubs"
+ }
 }

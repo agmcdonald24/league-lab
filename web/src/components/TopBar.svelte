@@ -13,6 +13,7 @@
   export const DECISIONS: { name: RouteName; label: string }[] = [
     { name: "waivers", label: "Waivers" },
     { name: "trades", label: "Trades" },
+    { name: "trade-calc", label: "Calculator" }, // ---- IA-2: its own link (PO: the short label keeps the row on one screen at 375)
     { name: "team", label: "Team" },
     { name: "league", label: "League" },
   ];

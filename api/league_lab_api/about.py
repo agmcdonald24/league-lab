@@ -54,6 +54,20 @@ def sections(league_name: str) -> list[dict]:
     ]
 
 
+# ---- IA-3 (Wave I-A): the rankings' honesty line ("How to read the rankings"): the ROS screen's top paragraph
+# (/api/ros `howto_rankings`) and About's (`rankings_howto`). Andrew's examples are its test: Dak #1 and Kyler #3 in a
+# superflex 6-point league, Brissett top-8 in the dynasty — understandable from it, not defended by it.
+RANKINGS_HOWTO = (
+    "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and "
+    "passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are "
+    "down reads lower than his name; a quarterback who starts and throws 35 times a game counts like any starter "
+    "while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the"
+    " list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is"
+    " far from it, open his card and read why before you trade on it."
+)
+# ---- end IA-3
+
+
 IMPORTANCE_SQL = """select i.position, i.feature_label, i.importance, i.importance_rank, i.baseline_mae, i.eval_season,
                            i.fit_seasons, i.model_version, i.league_id
                     from analytics.mart_projection_importance as i
@@ -215,7 +229,8 @@ def about(league_id: str, source: str | None = None) -> dict:
         lid, name = _measured_in(ctx)
         out = {"league_id": ctx.league_id, "league_name": ctx.league_name, "source": ctx.source,
                "model": {"answer": MODEL_ANSWER, "sections": sections(ctx.league_name)},
-               "importance": importance(lid, name), "grades": grades(lid, name)}
+               "importance": importance(lid, name), "grades": grades(lid, name),
+               "rankings_howto": RANKINGS_HOWTO}                                                   # ---- IA-3
         if not ctx.house:
             out["why"] = (f"The importance and the grades are measured once per house league's scoring each night. "
                           f"{ctx.league_name} reads {name or 'the closest league'}'s: the closest scoring League Lab measures."

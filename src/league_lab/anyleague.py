@@ -971,6 +971,10 @@ def skill_window(win: Window, weeks: list[int], scoring: Mapping[str, float],
     sk = pd.DataFrame({"week": ln["week"].astype(int).to_numpy(), "gsis_id": ln["gsis_id"].to_numpy(),
                        "position": ln["position"].to_numpy(),
                        "proj": price_lines(ln, scoring).to_numpy() if not ln.empty else np.array([], dtype=float)})
+    # ---- IA-3 (Wave I-A): the stat line rides along (the rest-of-season pieces: "why this number")
+    for c in STAT_LINE:
+        sk[c] = pd.to_numeric(ln[c], errors="coerce").to_numpy(dtype=float) if c in ln else np.nan
+    # ---- end IA-3
     rg = win.ranges
     present = rg.groupby("week")["scoring_name"].unique().to_dict() if not rg.empty else {}
     choice: dict[int, str] = {}
@@ -1047,6 +1051,7 @@ def kd_window(win: Window, weeks: list[int], scoring: Mapping[str, float], posit
 
 
 _ros_cache: dict[tuple, tuple[float, pd.DataFrame]] = {}
+ROS_LINE = [f"ros_{s}" for s in STAT_LINE.values()]   # ---- IA-3: the window's stat line (ros_targets … ros_fumbles_lost_total)
 
 
 def _week_lists(d: pd.DataFrame) -> pd.Series:
@@ -1103,6 +1108,11 @@ def _priced_frames(pr: Priced, w: int) -> list[pd.DataFrame]:
                        "p90": pr.ranges["p90"].reindex(pr.proj.index).to_numpy(dtype=float)})
     for c in ("team", "roster_status", "player_name", "implied_team_total"):
         sk[c] = st[c].reindex(pr.proj.index).to_numpy() if c in st else None
+    # ---- IA-3 (Wave I-A): the stat line rides along (the rest-of-season pieces)
+    for c in STAT_LINE:
+        sk[c] = (pd.to_numeric(pr.board.line[c], errors="coerce").reindex(pr.proj.index).to_numpy(dtype=float)
+                 if c in pr.board.line else np.nan)
+    # ---- end IA-3
     frames = [sk.assign(week=w)]
     for pos, kd in pr.kd.items():
         if not kd.empty:
@@ -1149,7 +1159,7 @@ def _ros_table(query: Query, league_id: str, scoring: dict[str, float], slots: l
     cols = ["player_key", "gsis_id", "position", "player_name", "team", "roster_status", "is_ranked", "from_week",
             "last_week", "playoff_week_start", "ros_games", "ros_points", "ros_points_per_game", "ros_p10", "ros_p90",
             "ros_sd", "playoff_games", "playoff_points", "ros_rank_pos", "ros_rank_all", "bye_weeks", "weeks_with_lines",
-            "weeks_json"]
+            "weeks_json", *ROS_LINE]                                                                  # ---- IA-3
     if not frames:
         return pd.DataFrame(columns=cols)
     d = pd.concat(frames, ignore_index=True)
@@ -1173,6 +1183,13 @@ def _ros_table(query: Query, league_id: str, scoring: dict[str, float], slots: l
         "weeks_json": _week_lists(d),
     })
     out["playoff_points"] = out["playoff_points"].fillna(0.0).round(2)
+    # ---- IA-3 (Wave I-A): the window's stat line, summed over the weeks counted (byes out): ros_<stat>; NULL for a
+    # kicker / defense (no stat line), never 0
+    comps = [c for c in STAT_LINE if c in d]
+    sums = grp[comps].sum(min_count=1) if comps else pd.DataFrame(index=out.index)
+    for comp, stat in STAT_LINE.items():
+        out[f"ros_{stat}"] = sums[comp].round(3) if comp in sums else np.nan
+    # ---- end IA-3
     for c in ("gsis_id", "position", "player_name", "team", "roster_status"):
         out[c] = first[c]
     out.index.name = None

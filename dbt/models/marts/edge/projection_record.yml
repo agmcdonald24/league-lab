@@ -109,3 +109,21 @@ models:
         description: Calls where the player Sleeper projected higher (in this league's scoring) outscored the other.
       - name: pairs_disagree
         description: Graded calls where Sleeper projected the bench player higher (or level); pairs_ours_right_disagree = how many of those we got right.
+
+  - name: mart_market_line
+    description: >
+      Wave I-A (IA-3, built by the PO): the market line — Sleeper's own projected stat line per player-week, league-free,
+      from the LATEST snapshot of each week in raw.sleeper_projections (mart_projection_record keeps the last
+      pre-kickoff one for the record; this is the freshest, for the week being decided). One row per season x week x
+      gsis_id (QB RB WR TE K). The API prices it in each league's scoring on request (api/league_lab_api/why.py
+      market_points): "Sleeper has him at 16.2" on the rankings, the player card and My Week, and the trade finder's
+      sanity bound. Empty until the nightly's fetch-projections has run for the season.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [season, week, gsis_id]
+    columns:
+      - name: gsis_id
+        tests: [not_null]
+      - name: fetched_at
+        tests: [not_null]

@@ -127,7 +127,10 @@ test("a stranger: password → username → picker → My Week → player → Ba
     "#1 WR for the rest of the season: Puka Nacua, 185 points over 12 games (likely 150–219) · playoffs: 30.",
   );
   await expect(page.getByTestId("ros-yours")).toContainText("Yours: #3 Jaxon Smith-Njigba 178");
-  expect(await page.getByTestId("ros-table").locator("thead th").allTextContents()).toEqual(["Rank", "Player", "Points", "Games", "Playoffs"]);
+  // IA-3 (Wave I-A): sortable headers (the sorted one marked), the range, the pieces from 900 px, the expand column
+  expect((await page.getByTestId("ros-table").locator("thead th").allTextContents()).map((t) => t.trim())).toEqual(
+    ["Rank▲", "Player", "Games", "Points", "Likely", "Playoffs", "Tgt", "Rec", "Rec yd", "TD", "More"],
+  );
   await expect(page.getByTestId("ros-table").locator("tbody tr")).toHaveCount(50);
   await noSidewaysScroll(page);
   await shot(page, "ros_test", project, false);
@@ -271,10 +274,11 @@ const G3_SHOTS = process.env.G3_SHOTS_DIR ?? SHOTS;
 mkdirSync(G3_SHOTS, { recursive: true });
 const dyn = (path: string, extra = "") => `${path}?league=${DYNASTY}&team=12${extra}`;
 
-test("Trends: the answer first (due / running hot), the gap bars, filters in the URL, a name opens his card with its chart", async ({ page, isMobile }, info) => {
+test("Trends: the answer first (below / above expectation), the gap bars, filters in the URL, a name opens his card with its chart", async ({ page, isMobile }, info) => {
   await page.goto(dyn("/trends"));
-  await expect(page.getByTestId("answer")).toContainText("Due to pick up: Jameis Winston (3.6 a game on work worth 15.3)."); // G1's rows (fixtures saved from the API)
-  await expect(page.getByTestId("answer")).toContainText("Running hot: Jaxon Smith-Njigba (39.4 a game on work worth 20.0).");
+  // G1's rows (fixtures saved from the API); IA-1's words: below / above expectation, the work and the reason in a sentence
+  await expect(page.getByTestId("answer")).toContainText("Below expectation: Jameis Winston (getting the throws and runs of a 15.3-point player, scoring 3.6).");
+  await expect(page.getByTestId("answer")).toContainText("Above expectation: Jaxon Smith-Njigba (getting the targets of a 20.0-point player, scoring 39.4: 4 touchdowns in 2 games on 6 red-zone targets).");
   await expect(page.getByTestId("card-due")).toContainText("−11.7");
   await expect(page.getByTestId("card-hot")).toContainText("+19.4");
   await expect(page.getByTestId("tab-research")).toHaveAttribute("aria-current", "page");
@@ -322,11 +326,11 @@ test("Matchups: your starters' best and toughest, the heatmap with your cells ri
   await expect(page.getByTestId("heatmap").locator("thead th")).toHaveText(["", "QB", "RB", "WR", "TE"]); // the dynasty starts no kicker
   expect(await page.getByTestId("heat-marked").count()).toBeGreaterThanOrEqual(6);
   await expect(page.getByTestId("heatmap").getByTestId("heat-row").first()).toHaveAttribute("data-row", /IND|LAC|CAR|NO|CIN|DEN|PIT|SF/); // yours first
-  const cbs = page.locator('[data-testid="cb-section"] > [data-testid="cb-card"]'); // your starters (the bench is behind an expander)
-  await expect(cbs).toHaveCount(4);
+  const cbs = page.locator('[data-testid="cb-section"] > [data-testid="cb-card"]'); // your starting receivers (the bench is behind an expander)
+  await expect(cbs).toHaveCount(3); // IA-1: the tight end is left out, not explained
   await expect(cbs.nth(1)).toContainText("Parker Washington vs CIN: likely across from DJ Turner II (right corner, #18 of 74, shutdown)");
   await expect(cbs.nth(1).getByTestId("side-bar")).toContainText("Left 47%");
-  await expect(cbs.nth(3)).toContainText("tight ends mostly draw linebackers and safeties");
+  await expect(page.getByTestId("cb-section")).not.toContainText("tight ends mostly draw linebackers and safeties");
   await noSidewaysScroll(page);
   void isMobile;
 });

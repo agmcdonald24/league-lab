@@ -1,0 +1,578 @@
+{
+ "league_id": "9000000000000000001",
+ "source": "sleeper",
+ "roster_id": 3,
+ "partner": 1,
+ "partner_team": "Bench Mob",
+ "week": 4,
+ "weeks": [
+  4
+ ],
+ "span": "week 4",
+ "window": "week",
+ "window_label": "This week",
+ "window_why": "this week only: the lineup you set for Sunday",
+ "give": [
+  {
+   "sleeper_id": "8144",
+   "gsis_id": "00-0037239",
+   "player_name": "Chris Olave",
+   "position": "WR",
+   "team": "NO",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/onmxufsprtvglhejg94o",
+   "this_week": 18.64,
+   "cannot_play": null,
+   "market_price": 106,
+   "season_points": 259,
+   "roster_id": 3
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "6786",
+   "gsis_id": "00-0036358",
+   "player_name": "CeeDee Lamb",
+   "position": "WR",
+   "team": "DAL",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
+   "this_week": 16.58,
+   "cannot_play": null,
+   "market_price": 81,
+   "season_points": 234,
+   "roster_id": 1
+  }
+ ],
+ "before": {
+  "mine": {
+   "this_week": 120.83,
+   "horizon": 120.83,
+   "bench": 66.88,
+   "by_week": [
+    120.83
+   ]
+  },
+  "theirs": {
+   "this_week": 121.16,
+   "horizon": 121.16,
+   "bench": 45.96,
+   "by_week": [
+    121.16
+   ]
+  }
+ },
+ "after": {
+  "mine": {
+   "this_week": 118.77,
+   "horizon": 118.77,
+   "bench": 57.76,
+   "by_week": [
+    118.77
+   ]
+  },
+  "theirs": {
+   "this_week": 123.22,
+   "horizon": 123.22,
+   "bench": 38.42,
+   "by_week": [
+    123.22
+   ]
+  }
+ },
+ "fit": {
+  "this_week": {
+   "mine": -2.06,
+   "theirs": 2.06
+  },
+  "window": {
+   "mine": -2.06,
+   "theirs": 2.06
+  },
+  "next_4": {
+   "mine": -2.06,
+   "theirs": 2.06
+  },
+  "words": "**Fit** (what the best lineups gain): you **-2.1** this week and **-2.1** over week 4; them **+2.1** and **+2.1**."
+ },
+ "interest": {
+  "score": 50,
+  "label": "Likely",
+  "their_gain": 2.06,
+  "you": -2.06,
+  "caption": "by our numbers over week 4"
+ },
+ "sanity": null,
+ "market": {
+  "give": 106,
+  "get": 81,
+  "season_points_give": 259,
+  "season_points_get": 234,
+  "unknown": [],
+  "replacement": {
+   "DEF": {
+    "season_points": 149,
+    "player_name": "Atlanta Falcons"
+   },
+   "K": {
+    "season_points": 133,
+    "player_name": "Daniel Carlson"
+   },
+   "QB": {
+    "season_points": 244,
+    "player_name": "Malik Willis"
+   },
+   "RB": {
+    "season_points": 146,
+    "player_name": "Alvin Kamara"
+   },
+   "TE": {
+    "season_points": 139,
+    "player_name": "Cade Otton"
+   },
+   "WR": {
+    "season_points": 153,
+    "player_name": "KC Concepcion"
+   }
+  },
+  "words": "**Market** (season points above the best free agent at the position): you give **106**, you get **81**: you give 25 more.",
+  "players": [
+   {
+    "sleeper_id": "8144",
+    "gsis_id": "00-0037239",
+    "player_name": "Chris Olave",
+    "position": "WR",
+    "team": "NO",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/onmxufsprtvglhejg94o",
+    "this_week": 18.64,
+    "cannot_play": null,
+    "market_price": 106,
+    "season_points": 259,
+    "roster_id": 3,
+    "goes_to": "Bench Mob"
+   },
+   {
+    "sleeper_id": "6786",
+    "gsis_id": "00-0036358",
+    "player_name": "CeeDee Lamb",
+    "position": "WR",
+    "team": "DAL",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
+    "this_week": 16.58,
+    "cannot_play": null,
+    "market_price": 81,
+    "season_points": 234,
+    "roster_id": 1,
+    "goes_to": "You"
+   }
+  ]
+ },
+ "verdict": "Does not help you (-2.1 this week, -2.1 over week 4), them +2.1 (+2.1 over week 4); the market says you're giving up more: skip it.",
+ "headline": "**You give [Chris Olave](/player/00-0037239); you get [CeeDee Lamb](/player/00-0036358).** Does not help you (-2.1 this week, -2.1 over week 4), them +2.1 (+2.1 over week 4); the market says you're giving up more: skip it.",
+ "ros": {
+  "give": 241,
+  "get": 217,
+  "window": "weeks 4–17",
+  "words": "Rest of season (weeks 4–17, through this league's final): you give **241** points, you get **217** (-24) — the players' plain totals, before the roster spot a lopsided trade frees or fills and before your lineup is re-solved (the verdict above counts both). Only this week has betting lines; later weeks lean on usage and the schedule."
+ },
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    7,
+    8
+   ],
+   "theirs": [
+    6,
+    5
+   ],
+   "n": 10
+  },
+  "bench_value": {
+   "mine": [
+    3,
+    4
+   ],
+   "theirs": [
+    2,
+    9
+   ],
+   "n": 10
+  },
+  "words": "League rank, week 4: you 7th → **8th** of 10, Bench Mob 6th → 5th; depth: you 3rd → **4th** of 10, Bench Mob 2nd → 9th."
+ },
+ "size_words": "Roster size: you must cut [Rome Odunze](/player/00-0039919) (WR, 128 season points; costs 0.0 over week 4) to stay at 15 players; they must cut [Brock Bowers](/player/00-0039338) (TE, 104 season points; costs 0.0 over week 4) to stay at 15 players.",
+ "sides": {
+  "mine": {
+   "roster_id": 3,
+   "team_name": "Fixture Falcons",
+   "gives": [
+    {
+     "sleeper_id": "8144",
+     "gsis_id": "00-0037239",
+     "player_name": "Chris Olave",
+     "position": "WR",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/onmxufsprtvglhejg94o",
+     "this_week": 18.64,
+     "cannot_play": null,
+     "market_price": 106,
+     "season_points": 259,
+     "roster_id": 3
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "6786",
+     "gsis_id": "00-0036358",
+     "player_name": "CeeDee Lamb",
+     "position": "WR",
+     "team": "DAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
+     "this_week": 16.58,
+     "cannot_play": null,
+     "market_price": 81,
+     "season_points": 234,
+     "roster_id": 1
+    }
+   ],
+   "weeks": [
+    4
+   ],
+   "before": {
+    "this_week": 120.83,
+    "horizon": 120.83,
+    "bench": 66.88,
+    "by_week": [
+     120.83
+    ]
+   },
+   "after": {
+    "this_week": 118.77,
+    "horizon": 118.77,
+    "bench": 57.76,
+    "by_week": [
+     118.77
+    ]
+   },
+   "gain_week": -2.06,
+   "gain_horizon": -2.06,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "11620",
+      "gsis_id": "00-0039919",
+      "player_name": "Rome Odunze",
+      "position": "WR",
+      "team": "CHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/niewdl2p2325kpohbw9v",
+      "this_week": 9.12,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 128,
+      "roster_id": 3
+     },
+     "horizon_loss": 0.0,
+     "season_points": 128
+    }
+   ],
+   "limit": 15,
+   "size_before": 16,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 106,
+   "price_in": 81,
+   "points_out": 259,
+   "points_in": 234,
+   "starts": [
+    {
+     "sleeper_id": "6786",
+     "gsis_id": "00-0036358",
+     "player_name": "CeeDee Lamb",
+     "position": "WR",
+     "team": "DAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
+     "this_week": 16.58,
+     "cannot_play": null,
+     "market_price": 81,
+     "season_points": 234,
+     "roster_id": 1
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "8144",
+     "gsis_id": "00-0037239",
+     "player_name": "Chris Olave",
+     "position": "WR",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/onmxufsprtvglhejg94o",
+     "this_week": 18.64,
+     "cannot_play": null,
+     "market_price": 106,
+     "season_points": 259,
+     "roster_id": 3
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 1,
+   "team_name": "Bench Mob",
+   "gives": [
+    {
+     "sleeper_id": "6786",
+     "gsis_id": "00-0036358",
+     "player_name": "CeeDee Lamb",
+     "position": "WR",
+     "team": "DAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
+     "this_week": 16.58,
+     "cannot_play": null,
+     "market_price": 81,
+     "season_points": 234,
+     "roster_id": 1
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "8144",
+     "gsis_id": "00-0037239",
+     "player_name": "Chris Olave",
+     "position": "WR",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/onmxufsprtvglhejg94o",
+     "this_week": 18.64,
+     "cannot_play": null,
+     "market_price": 106,
+     "season_points": 259,
+     "roster_id": 3
+    }
+   ],
+   "weeks": [
+    4
+   ],
+   "before": {
+    "this_week": 121.16,
+    "horizon": 121.16,
+    "bench": 45.96,
+    "by_week": [
+     121.16
+    ]
+   },
+   "after": {
+    "this_week": 123.22,
+    "horizon": 123.22,
+    "bench": 38.42,
+    "by_week": [
+     123.22
+    ]
+   },
+   "gain_week": 2.06,
+   "gain_horizon": 2.06,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "11604",
+      "gsis_id": "00-0039338",
+      "player_name": "Brock Bowers",
+      "position": "TE",
+      "team": "LV",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/waorceny0ggpaeckaol8",
+      "this_week": 7.54,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 104,
+      "roster_id": 1
+     },
+     "horizon_loss": 0.0,
+     "season_points": 104
+    }
+   ],
+   "limit": 15,
+   "size_before": 16,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 81,
+   "price_in": 106,
+   "points_out": 234,
+   "points_in": 259,
+   "starts": [
+    {
+     "sleeper_id": "8144",
+     "gsis_id": "00-0037239",
+     "player_name": "Chris Olave",
+     "position": "WR",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/onmxufsprtvglhejg94o",
+     "this_week": 18.64,
+     "cannot_play": null,
+     "market_price": 106,
+     "season_points": 259,
+     "roster_id": 3
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "6786",
+     "gsis_id": "00-0036358",
+     "player_name": "CeeDee Lamb",
+     "position": "WR",
+     "team": "DAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
+     "this_week": 16.58,
+     "cannot_play": null,
+     "market_price": 81,
+     "season_points": 234,
+     "roster_id": 1
+    }
+   ]
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Tyler Shough",
+     "gsis_id": "00-0040743",
+     "value": 18.17,
+     "change": null
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Bucky Irving",
+     "gsis_id": "00-0039361",
+     "value": 16.97,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "player_name": "D'Andre Swift",
+     "gsis_id": "00-0036275",
+     "value": 15.33,
+     "change": null
+    },
+    {
+     "slot": "WR1",
+     "player_name": "CeeDee Lamb (new)",
+     "gsis_id": "00-0036358",
+     "value": 16.58,
+     "change": -2.06
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Ladd McConkey",
+     "gsis_id": "00-0039915",
+     "value": 10.02,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "player_name": "Isaiah Likely",
+     "gsis_id": "00-0037838",
+     "value": 9.52,
+     "change": null
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "TreVeyon Henderson",
+     "gsis_id": "00-0040734",
+     "value": 11.54,
+     "change": null
+    },
+    {
+     "slot": "K",
+     "player_name": "Chase McLaughlin",
+     "gsis_id": "00-0035358",
+     "value": 8.53,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Baltimore Ravens",
+     "gsis_id": null,
+     "value": 12.11,
+     "change": null
+    }
+   ],
+   "notes": [
+    "Starts after the trade: CeeDee Lamb (WR1, 16.58, new).",
+    "Out of the lineup after the trade: Chris Olave (WR1, 18.64, traded)."
+   ],
+   "closest_call": "Tyler Shough at QB, 0.15 ahead of the next option"
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Kirk Cousins",
+     "gsis_id": "00-0029604",
+     "value": 14.74,
+     "change": null
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Derrick Henry",
+     "gsis_id": "00-0032764",
+     "value": 18.25,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Kyren Williams",
+     "gsis_id": "00-0037840",
+     "value": 13.94,
+     "change": null
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Chris Olave (new)",
+     "gsis_id": "00-0037239",
+     "value": 18.64,
+     "change": 2.06
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 14.6,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "player_name": "Sam LaPorta",
+     "gsis_id": "00-0039065",
+     "value": 13.19,
+     "change": null
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Cam Skattebo",
+     "gsis_id": "00-0040715",
+     "value": 13.86,
+     "change": null
+    },
+    {
+     "slot": "K",
+     "player_name": "Brandon Aubrey",
+     "gsis_id": "00-0037692",
+     "value": 8.52,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Philadelphia Eagles",
+     "gsis_id": null,
+     "value": 7.48,
+     "change": null
+    }
+   ],
+   "notes": [
+    "Starts after the trade: Chris Olave (WR1, 18.64, new).",
+    "Out of the lineup after the trade: CeeDee Lamb (WR1, 16.58, traded)."
+   ],
+   "closest_call": "Philadelphia Eagles at DEF, 0.56 ahead of the next option"
+  }
+ },
+ "fill_players": {},
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)"
+}

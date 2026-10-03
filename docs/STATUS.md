@@ -3490,6 +3490,148 @@ was "running hot". Cause: availability came only from nflverse's injury file via
   19); web lint / build clean; `e2e:fixtures` 60 passed (58 + 2: `web/e2e/i0a/`); parity tests untouched and green.
 - **Off switch**: `LEAGUE_LAB_AVAILABILITY=off`; off in fixture mode unless `LEAGUE_LAB_ESPN_FIXTURES` is set.
 
+## Wave I-A (Iteration 17, part A)
+
+### PO merge — Wave I-A, 2026-10-03 (Saturday, 01:40–03:20 ET)
+
+* **Delivered** (four Opus devs in parallel, 27–46 min each): IA-1 the words — every call on My Week gets a reason
+  sentence from the data it has (matchup rank + home/away, carry / target share moves, the injury, the betting line,
+  the gap; `cards.reason_line`, shared with the console), short names + headshots on the phone lineup, "Your lineup",
+  Trends renamed "Below and above expectation" with a sentence and a stat strip per row, TEs out of the cornerback
+  section, "Choose a player" on Compare; IA-2 the decisions — the trade calculator as its own link, the interest dial
+  (their gain over the window → 0–100, four labels, "by our numbers over weeks 4–7"), the window control (this week /
+  next 4 / rest of season / playoffs on evaluate and partners), lineups shown once, buy low / sell high moved to
+  Trades (`/api/trades/lists`), the sanity bound (`trades.sanity`: no suggestion gives away > 25% more ROS value than
+  it gets; none that only works because ours is < 65% of the market's) — the Jefferson-for-Lloyd case is refused;
+  IA-3 the rankings — headshot / bye / games / range bar / the projected pieces per row with a tap-to-expand on the
+  phone, "why this number" (the pieces × the scoring = the points, within 0.05 on 40 rows) on the ROS row and the
+  player card, the market line ("Sleeper has him at 16.2") where a snapshot exists, the "How to read the rankings"
+  paragraph (ROS and About); M1 the diagnosis — **no star penalty**: top-6 bias 2023–2025 QB −0.98 / RB +0.34 /
+  WR +0.51 / TE +0.45 in Scrubs scoring, slope ≈ 0 above the starter line; the dynasty top is under by 0.7–1.4
+  mostly because yardage bonuses are paid all-or-nothing on the projected line; the real miss is a fringe projected
+  0.3–0.6 too high; Andrew's gap is a *level* gap with the market (ours under Sleeper's for 75–100% of the top 24 at
+  RB / WR / TE by 1–3 points a week; Bowers is a cold start at 49% of the market). A walk-forward two-piece
+  calibration (`calibration.py`, flag `LEAGUE_LAB_PROJECTION_CALIBRATION`, **off**) gains only at the WR fringe
+  (MAE −0.07); the ROS top 12 does not move. v3.1 leads: expected-bonus pricing, the fringe level, cold starts.
+* **PO**: four merges (doc conflicts kept both; headings deduped; `api.ts` both blocks); **`analytics.mart_market_line`
+  built** from IA-3's proposal (both IA-2 and IA-3 found `mart_projection_record` carries no per-player Sleeper
+  rows and the hosted copy never holds `raw`): the latest snapshot per week, league-free, priced per league by
+  `why.market_points`; the trade finder's `market_week` now reads it through `why` (the raw read is gone), and the
+  hosted closure picks the mart up from `why.py`'s SQL (`scripts/hosted_relations.py`: `api analytics.mart_market_line`).
+  It is empty in the sandbox; on Neon it fills from the nightly's `fetch-projections` — which pulls the *next* week to
+  kick off, so week 4 has no market line and week 5 on does (the UI says "not in yet"). A coin flip now reads as one
+  in the headline ("FLEX2: Wilson or Croskey-Merritt — a coin flip") so IA-1's tiebreaker ("Go with Croskey-Merritt
+  on the matchup") never contradicts it — `cards.is_coin_flip`, both apps, the root test's regex widened, the saved
+  web fixtures updated in place. About shows "How to read the rankings"; the tab reads "Calculator" (the long label
+  scrolled the row at 375); three `metric_registry` rows (trade_interest, calibration_bias, market_line). Checks: API
+  269 passed, root 848 passed, web lint / build clean, 100 fixture e2e, ruff clean. QA walk in full fixture mode: My
+  Week cards carry `why` on house, Test and MFL leagues; partners over the ROS window 4.6 s cold (house) with 66
+  packages set aside; evaluate over the playoffs window with the dial; `/api/trades/lists`; ROS rows with the pieces;
+  the player card's why; About's how-to; Trends 28 left out; waivers without the trade lists.
+* **Not verified until the deploy**: the market line on Neon (first rows after the Saturday nightly, week 5);
+  the ROS-window partner search on Render for the dynasty league (~5 s cold here); real headshots in the lineup.
+
+### IA-3 2026-10-03 — the rankings: more to see, and "why this number" (dev/IA3)
+
+* **Rest of season** (`Ros.svelte`, `ros.ts`): headshot, bye ("bye 11 ·" before the owner), games left, ROS points, a
+  floor–ceiling range bar (from 640 px), playoffs, and the position's stat line a game as columns from 900 px; every
+  column sorts (header buttons, `aria-sort`, ▲ / ▼); a `›` on every row opens the pieces as tiles, the facts line,
+  "Why this number" and — where it exists — the market line and what the model leans on for the position. A phone
+  (375) shows rank · name · points · `›`. "How to read the rankings" (`about.RANKINGS_HOWTO`, also `/api/about`
+  `rankings_howto`) sits under the answer.
+* **API** (`ondemand.ros_rows` / `ros_more`, marked IA-3): rows + `headshot_url`, `bye_weeks`, `ros_points_per_game`,
+  `per_game`, `why` (pieces, sentence, games, total), `market_points`, `week_points`, `market_words`; the answer +
+  `piece_columns`, `leans_on`, `market_week`, `market_note`, `howto_rankings`. House leagues sum
+  `mart_player_week_projections`' per-week lines over the weeks `weeks_json` counts (byes out, the mart's window);
+  any other league reads `anyleague._ros_table`'s new `ros_<stat>` sums (the stat line now rides through
+  `skill_window` / `_priced_frames`). `/api/player` + `why` / `market` / `leans_on` (top-level keys: the sections stay
+  the page's, parity untouched); `/api/my-week` rows + `market_points` (`main.why_market_rows`, marked).
+* **The pieces** (`why.py`): per-unit prices from the league's scoring (`weights`: every stat key, position premiums);
+  each listed piece is rounded to the cent and a remainder line ("yardage bonuses …" / "the small pieces and
+  rounding") makes the list add up; a remainder under 0.05 is no line.
+* **The market** (`why.market_points`): `mart_projection_record` holds per-position aggregates, not player rows, and
+  the API role cannot read `raw`; so the market reads a proposed league-free mart `analytics.mart_market_line`
+  (docs/DATA_MODEL.md), priced per league with `scoring.compute_points`. Not built (dbt is the PO's): every answer says
+  `market_points: null` and the card "Sleeper's number for this week is not in yet." Checked live in this clone: the
+  proposed SQL built from the hand-built Sleeper fixture (`tests/fixtures/sleeper_projections`, 29 players) gave
+  `market_points` on 28 ROS rows per league (Scrubs, dynasty, Test League), the card and My Week; table and rows
+  removed afterwards.
+* Timings (in process, warm): `/api/ros` Scrubs ALL 114 ms, WR 22 ms (the per-week line sums vectorised); Test League
+  ALL ~2.0 s cold (the window board), WR 65 ms warm. Answer ~80–100 KB uncompressed for 50 rows.
+* Checks: `api/tests/test_ia3.py` 13 (the pieces add up for 10 rows × 4 positions × Scrubs / dynasty / Test League;
+  market null without the mart, empty mart, failing read; present and priced per league with a constructed mart on
+  `/api/ros`, `/api/player`, `/api/my-week`; the gap words; the honesty paragraph is one text); `test_f3`'s ROS key
+  set updated; API suite 237 passed; root 834 passed, 2 skipped; ruff clean; web lint / build clean;
+  `npm run e2e:fixtures` 74 passed (66 + 8 in `web/e2e/ia3/`; `fixtures.spec.ts`' ROS header list updated).
+  Fixtures: `web/fixtures/save_ia3_fixtures.py` adds the new fields to `ros_*.json` / `player/*.json` in place
+  (numbers untouched; a row whose total differs keeps no pieces).
+
+### M1 2026-10-03 — is the top of the distribution under-projected? (branch `dev/M1`, clone `league_lab_m1`)
+
+Andrew: "I don't think anybody has Dak rated number one overall… what's the reasoning?", Jefferson at 10.0, Brissett
+top 8 rest of season. Diagnose first, calibrate only if the numbers call for it (PROJECT_PLAN § 17 B).
+
+* **Answer.** The model does not pull stars toward the middle. On 2023–2025, out of sample, the top 6 per position
+  in League of Scrubs' scoring (no bonuses) miss by QB −0.98 (too high), RB +0.34, WR +0.51 and TE +0.45. They change
+  sign by season (2019–2022: −0.27 / −0.67 / −0.06 / −0.51), and the miss does not grow above the starter line
+  (slope ≈ 0, |t| ≤ 1, clustered by player). In the dynasty scoring the top 24 RB / WR / TE are +0.7 to +1.4. About two
+  thirds of that is the yardage bonuses, priced all-or-nothing on the projected line: without them the dynasty top-6
+  miss is RB +0.47, WR +0.53, TE +0.59. What is real is small and not at the top. The bottom half of each position is
+  0.3–0.6 too high, and the starter line is about 0.5 low. Dak (QB2 in dynasty) and Brissett (QB9) are superflex and
+  6-point-TD arithmetic, and the market agrees on their week-4 numbers (Dak 23.8 vs Sleeper 23.3; Brissett 21.2 vs
+  20.5). Jefferson is 12.7 in Scrubs for week 4 in the clone (usage); Sleeper had him at 13.8–14.7 in weeks 1–3, and
+  he is Out now.
+* **Top-6 bias** (mean actual − projected, 2023–2025, 324 player-weeks each; per season 2023 / 2024 / 2025):
+
+  | | Scrubs | per season | Dynasty | per season | Dynasty without bonuses |
+  |---|---|---|---|---|---|
+  | QB | −0.98 | −1.27 / −1.05 / −0.63 | −0.34 | −0.59 / −0.27 / −0.18 | −1.01 |
+  | RB | +0.34 | −0.90 / +1.27 / +0.64 | +1.19 | −0.32 / +2.76 / +1.14 | +0.47 |
+  | WR | +0.51 | +1.57 / −0.46 / +0.40 | +1.43 | +2.77 / +0.33 / +1.19 | +0.53 |
+  | TE | +0.45 | +0.69 / −0.31 / +0.98 | +0.88 | +1.08 / +0.07 / +1.50 | +0.59 |
+
+* **Against the market** (Sleeper's lines for 2026 weeks 1–4, one read-only snapshot through the browser pane
+  2026-10-03, priced in both house scorings; `mart_projection_record` is empty in every sandbox database). Our
+  number is under Sleeper's for 75–100% of Sleeper's top 24 at RB / WR / TE, by 1.1–2.7 points a week, and about 1
+  point at QB. It is under 70% of Sleeper's for 4–21% at RB / WR and 12–29% at TE (Bowers week 4: 6.0 vs 12.2, a cold
+  start after missed games). On the weeks the clone has outcomes for (1–2 plus one week-3 game; 66–205 player-weeks
+  per position), the average bias is ours +0.9 to +1.2 vs Sleeper −0.5 to +0.3 at RB / TE, both within ±0.6 at QB / WR; MAE
+  is a tie (ours − Sleeper −0.45 to +0.20).
+* **Calibration built and measured** (`src/league_lab/calibration.py`). The per-row walk-forward (`oof_rows`) is
+  needed because `ops.projection_backtest` is per week; it reproduces every stored v3.0 cell exactly. The rest is the
+  bias tables, a monotone two-piece linear map per position × scoring (knot at the 80th percentile, coefficients
+  clustered by player and shrunk to 0 below |t| = 1, slopes within ±0.5, so the order never changes), walk-forward,
+  and expected-bonus curves. Results on 2023–2025 (and 2026 weeks 1–3): the *hinge* (top only, up only) is the
+  identity everywhere except dynasty WR (MAE +0.012). The *two-piece* on the last 3 seasons passes the MAE bar only
+  at WR (−0.082 dynasty / −0.074 Scrubs, 3 of 3; 2026 −0.14 / −0.15), by lowering the fringe. RB is −0.01 / −0.02,
+  TE ≈ 0, and QB worse (+0.02 / +0.03). *Expected bonuses* (dynasty): top-6 bias RB +1.19 → +0.51, WR +1.43 → +0.61,
+  but weekly MAE +0.02 to +0.03 (a mean fix of a skewed bonus does not help a median loss).
+* **Wired, off.** `LEAGUE_LAB_PROJECTION_CALIBRATION=1`: `project` (one marked block after `house_rows`) fits the
+  two-piece maps for WR on the newest 3 seasons of `ops.calibration_oof` (`calibration.run_build_oof()`, offline,
+  about 2 CPU-minutes) and applies them to the house leagues' rows and their reference ranges. Proven on the clone
+  (flag-on `project`, 2026): weeks 1–4 identical to before, freeze labels included; weeks 5–18 move only WR (dynasty
+  mean −0.18, range −0.77 to +0.53; Scrubs −0.39, −0.78 to +0.08); QB / RB / TE / K / DEF and the ppr / standard /
+  te_premium ranges unchanged. Known side effects, so it stays off: `signals_after_project`'s scenario check refuses
+  ("scenario base differs from the stored projection by 0.70", logged, not fatal), dbt's
+  `assert_projection_ranges_price_the_lines` (warn) would flag the calibrated weeks, and on-demand leagues (priced
+  from the line) do not see it. The clone was re-projected with the flag off afterwards.
+* **Rest of season, before → after** (top 12 of both house leagues). Unchanged under the flag: dynasty is 11 QBs and
+  Bijan; the Scrubs top 12 is RBs and QBs. Jefferson moves 196.8 → 203.7 (dynasty, #53 → #51) and 149.2 → 150.2
+  (Scrubs). Expected bonuses would lift dynasty's top by 7–13 points over 13 games, QBs included (Brissett #10 → #8),
+  with no new names in the top 12.
+* **For the PO.** (1) Leave the flag off. (2) IA-3's words: "under the market" is normal (about 2 points), and "well
+  under" belongs at < 70%. (3) v3.1 candidates: expected-bonus pricing in the pricing of a projected line, for
+  leagues with yardage bonuses; the starter-line level and the fringe as a model fix, not a map; a cold-start rule
+  for players back from injury. (4) A real pre-kickoff Sleeper record still needs the nightly's `fetch-projections`.
+* **Tests.** `tests/test_calibration.py` 13 passed (monotone in both modes, identity without bias, too few rows =
+  identity, a lifted top lowers MAE, the hinge never lowers, walk-forward uses earlier seasons only (2023's outcomes
+  scrambled give the same maps), bands move and keep their order, the flag-off hook is a no-op, the flag-on hook
+  moves only WR of the calibrated scorings, buckets and deciles, the harness's definitions, the bonus curves). Root
+  suite: see the hand-back. ruff clean.
+* **Deviations.** `REPORT.md` is not a file: the sandbox refuses report files from developer agents, so the full
+  report with every table is the hand-back text. The Sleeper comparison uses a post-game snapshot (Sleeper's
+  `updated_at` is just after each week's last game), not the pre-kickoff record.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
@@ -3561,3 +3703,126 @@ Checks: ruff clean; API suite 224 passed (197 + 27) with `LEAGUE_LAB_ESPN_FIXTUR
 (the ESPN fixture feed has Jefferson Out, so the overlay moves the house lineups) 8 house-league parity tests fail
 exactly as on `main`, none touched by I0-C; root suite 834 passed, 2 skipped; web lint / build clean;
 `npm run e2e:fixtures` 66 passed (62 + 4). I0-B's e2e: label and mock follow the box (`?mfl_search=`).
+
+
+### IA-1 2026-10-03 — say it like a person would: My Week, Trends, Matchups, Compare (branch `dev/IA1`, clone `league_lab_i0a`)
+
+**Why.** Andrew's walk of the beta on his phone: "it's not very conversational", "names are squished on my iPhone",
+"put the pictures there", "I don't know if that's helpful week to week … reasons why". **What.**
+
+* **The card says why** (`app/lib/cards.py`, the console's words too): `reason_pieces` scores what the card can know
+  (+ = good for him this week): the injury tag and practice (`report_status`, `practice_status`), the matchup
+  (`opp_rank` vs his position, home / away: ≤ 10 "gives up the Nth-most", ≥ 23 "the Nth-fewest"), the betting line
+  (`implied_team_total` ≥ 26 / ≤ 18), his share of his team's carries (RB) or targets (WR / TE) game by game (a move of
+  10 points from one game to the next, or 6 over three games in a row), and the level of that share. `reason_line`
+  writes ONE sentence: the strongest piece for the starter and the strongest against the other player; with a
+  percentage under 55% (or under 1 point apart without one) "Too close to call: … the ranges say either. Go with X on
+  the matchup / the role / the betting line: …" (an injury first). `reason_facts` is the one extra read per set of
+  cards (`REASON_SQL`: `mart_player_week_features` for the decision week + `fct_player_game` shares this season, and
+  `dim_team`'s 32 nicknames), gsis-keyed, so the on-demand path (any Sleeper / MFL league) gets the same sentences.
+  The odds and the numbers ("… outscores … 51% of the time — a coin flip. 9.20 vs 9.19 projected: 0.01 apart.") moved
+  into the small print; "Too close to lose sleep over" went (the reason line says it). `/api/my-week` cards carry
+  `why` (= the second block). How to read this updated.
+* **My Week (web)**: `shortName()` in `names.svelte.ts`; `LineupTable` with a 32 px headshot on every row, short names
+  under 640 px, the flag and the margin under the name on a phone (the Flag column is gone: the name keeps the width);
+  `/api/my-week` lineup rows carry `headshot_url` and `team` (marked block in `myweek.py`, one `dim_player` read). The
+  header: "Your lineup" + "Starters, the bench, who can't play — tap a name for his card."; the expander under it is
+  "The bench and who can't play"; the Trends link "Who's above or below expectation ›".
+* **Trends**: "Below and above expectation" (title, answer, chips Below / Above, the cards, How to read this, the game
+  log's words, the detail); per row a strip under the name: targets and carries a game (last 3, the season), snaps
+  over the last 3, expected and actual points; the gap bar kept; the sentence "Getting the targets of a 20.0-point
+  player, scoring 39.4: 4 touchdowns in 2 games on 6 red-zone targets." (`research.trend_why` / `trend_cause`: red-zone
+  chances without a touchdown, touchdown passes, a quarterback change from `pn_qb_changed`, a share that moved 6+
+  points; no cause when none of those holds). One query (`WORK_SQL`) for the page's players.
+* **Matchups**: the cornerback section lists wide receivers only (the TE rows and the "tight ends draw linebackers"
+  sentence are gone, web side; the API and the console are unchanged), titled "The cornerbacks your receivers face"
+  (the section-title style), headshots on every receiver row (they were there via `PlayerRow`). **Compare**: "Choose a
+  player" on both pickers.
+
+**Before / after** (the API on `league_lab_i0a`, week 4; before = `main` at `63a351b`):
+
+| Card | Before (the headline under the call) | After (the reason line) |
+|---|---|---|
+| Scrubs 2, FLEX2 Wilson / Croskey-Merritt (a close call) | **Michael Wilson outscores Jacory Croskey-Merritt 51% of the time — a coin flip.** 9.20 vs 9.19 projected: 0.01 apart. | Too close to call: the projection has them level, the ranges say either. Go with Croskey-Merritt on the matchup: he is at home against the Colts, who give up the 2nd-most points to running backs. |
+| Scrubs 2, RB2 Hampton / Croskey-Merritt (a role drop) | **Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time — a lean.** 11.28 vs 9.19 projected: 2.09 apart. | Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game. |
+| Dynasty 12, TE Kittle / Likely (home, a tough defense) | **George Kittle projects 0.84 more on average; Isaiah Likely outscores him 53% of the time — a coin flip.** 10.36 vs 9.52 projected: 0.84 apart. Too close to lose sleep over — the projection says George Kittle, the ranges say either. | Too close to call: the projection says Kittle by 0.8, the ranges say either. Go with Likely on the matchup: Kittle is at home against the Broncos, who give up the 8th-fewest points to tight ends. |
+| Dynasty 12, Superflex Penix / Willis | **Michael Penix Jr. outscores Malik Willis 55% of the time — a lean.** | Vegas expects Willis's Dolphins to score only 16, and the projection has Penix 0.9 points ahead. |
+
+**Evidence.** `api/tests/test_ia1.py` 9 passed: `shortName` (13 cases, run under Node with type stripping), the reason
+on three cards built from the fixture weeks' numbers (home / away, a role drop with the three-in-a-row form, a close
+call) + an injury tiebreak with two Wilsons + no extra read, the API's cards on both house leagues (reason = second
+block, odds in the small print, headshot / team on every lineup row), the Trends sentences and the new row fields
+(targets a game checked against `fct_player_game`). `test_parity.py`: the reason line is pinned on both sides (page and
+API). Fixtures: `web/fixtures/save_ia1_fixtures.py` brings the saved My Week answers (three + I0-A's) and the three
+Trends answers to the new shapes in place (cards that the API answers today copied; others rebuilt from their own
+numbers). `web/e2e/ia1/fixtures.spec.ts` (375 × 812 and 1300 × 900): short names on the phone / whole on the desktop,
+a headshot per row, the header, every card's reason (body size > small print), Trends' words / strip / sentence,
+Matchups' title (bold) with no TE row, Compare's label. The shared spec's Trends and Matchups assertions follow the
+new words (4 → 3 cornerback cards: the TE is left out).
+
+**Decisions for the PO.** (1) On a coin flip the reason may name the *other* player as the tiebreak ("Go with
+Croskey-Merritt on the matchup") under "Start Wilson over Croskey-Merritt" — the brief's example; the headline stays
+the projection's call. (2) The expander under "Your lineup" is "The bench and who can't play" (two "Your lineup"
+titles would read as a repeat). (3) TEs are dropped from the cornerback section in the web only; `/api/matchups/cb`
+and the console keep them (parity). (4) The lineup's Flag column moved under the name at every width. (5)
+`mart_player_next_matchup` is not used: on the clone its `next_week` is 3 while the decision week is 4; the week's
+features (`mart_player_week_features`) carry home / away and the line for the decision week itself. (6) The console's
+"What's new" (`app/whats_new.md`) is not touched (only `cards.py` in `app/` is IA-1's).
+
+### IA-2 2026-10-03 — the decisions screens: the trade calculator, the interest dial, the window, the sanity bound (branch `dev/IA2`)
+
+Andrew's beta walk (2026-10-02): "a slider would be really cool", "why those four to seven weeks?", "showing the lineups
+twice doesn't make any sense", "some of the trades it's suggesting are crazy" (Justin Jefferson for MarShawn Lloyd).
+
+- **The window** (`decisions.py`, block "IA-2"): `window=week|next4|ros|playoffs` on `POST /api/trades/evaluate` (body)
+  and `GET /api/trades/partners` (query); default `next4` (the old behaviour, the old response keys kept). `week` = the
+  board's first week; `ros` / `playoffs` extend the board (`window_board`): one row per player and week past the next
+  four from the rest-of-season board (house: `mart_player_ros_projection.weeks_json`; on demand: `anyleague.ros_table`
+  through `ros_on_demand` — `load_window` + `skill_window`), on the bench (the solver picks the starters) or unplayable
+  on a bye; IR slot / taxi squad / NFL IR / no NFL team carried from the board's last week. `ros` = this week to the
+  league's final (`ros_window`), `playoffs` = `playoff_week_start` to the final. The response names the weeks (`span`,
+  `weeks`, `window_label`, `window_why`); `fit.window` (= `fit.next_4`, its name before) is the window's gain; this
+  week's numbers and lineups always come from this week (the playoffs window evaluates this week on its own; `_View`
+  feeds `trades.fit_line` / `verdict` both). The league-rank line compares the horizon only when the window is next4.
+- **The dial**: `interest(their_gain, my_gain, span)` → `{score 0–100, label, their_gain, you, caption}` on every
+  evaluate and every partner row. Labels: their window gain < 0.05 "No deal" (they lose, or gain nothing shown as
+  +0.0), < 2 "Maybe", 2–6 "Likely", > 6 "Hard to say no"; score piecewise linear through (−6, 0) (0, 25) (2, 50) (6, 75)
+  (12, 100), each label a quarter of the dial.
+- **The sanity bound** (`trades.sanity`, `trades.partners(..., allow=, rejected=)`): a package that would be a roster's
+  best is set aside, and the search goes on, when (b) a player you give has our projection this week under 65% of
+  Sleeper's ("the market disagrees with our number on <player> (ours x, Sleeper's y)") or (a) the rest-of-season points
+  you give exceed what comes back by more than 25% of what you give ("you give 149 rest-of-season points for 97: 52
+  more, over 25% of what you give" — Jefferson for Lloyd on Scrubs' board). Unknown is not zero: a player with no
+  number is not judged. `rejected` (three examples: partner, give, get, why) and `rejected_count` on
+  `/api/trades/partners`; `sanity` (the reason or null) on evaluate — the calculator says it, never hides the trade.
+  Sleeper's number: `mart_projection_record` holds no per-player rows (its Sleeper prices are a CTE), so `market_week`
+  reads its source, `raw.sleeper_projections` (the week's latest snapshot, skill players with a stat line, priced with
+  `compute_points` in the league's scoring — the mart's `league_points` rule). This clone holds no snapshot: rule (b)
+  is off here and the response says so (`sanity.market_note`); tested on a constructed board and with a monkeypatched
+  market on Scrubs.
+- **Buy low / sell high** left `/api/waivers` (`waiver_extras` returns the upside stash only) for
+  `GET /api/trades/lists?league=&team=&position=` (Wave H's `_trade_lists`, memoised; on demand on the trade context's
+  solve). test_h1's three list tests read the new route (same assertions).
+- **Web**: `/trade-calc` (`routes/decisions/TradeCalc.svelte`; a route in `router.svelte.ts`, a loader in
+  `decisionPages.ts`, "Trade calculator" in TopBar's Decisions row — the row lives in `TopBar.svelte`, so the marked
+  entry is there, not in `App.svelte`, which needed no change): window control → partner → the dial's row (Dial,
+  your gain, the four fit tiles, the verdict, the sanity line) → the pickers → market / rest of season / ranks / roster
+  size → your lineup, theirs under an expander → week by week. Every tick re-asks evaluate (250 ms debounce); the last
+  answer stays while the next is asked, so the needle swings. Trades keeps the best partner ("Try this trade" opens
+  the calculator with the package and the window in the link), the window control, the partner finder (with "N
+  lopsided trades left out"), and gains buy low / sell high under it. Waivers points to Trades. New design-system
+  entries: Dial, Window control (DESIGN.md § Charts).
+- Evidence (fixtures, next4 → week / ros / playoffs, the best package's window gains, mine / theirs): Scrubs 2 (Tuten
+  for Dowdle + Worthy) +9.74 / +10.29 "Hard to say no" (93) → −0.53 / +9.72 (90) · +3.50 / +18.72 (100, weeks 4–16) ·
+  −0.16 / +0.61 "Maybe" (33, weeks 15–16); Test League 3 (Love for Golden + C. Williams) +16.59 / +12.51 (100) →
+  "Maybe" 32 · 83 (weeks 4–17) · "Likely" 53 (weeks 15–17). Partner search on demand, cold (Test League): next4 5.6 s
+  (the league solve), week 0.4 s, ros 3.5 s, playoffs 0.7 s; Scrubs (house) 1.2 / 0.4 / 4.9 / 0.4 s; memoised 10 min
+  (house) / 2 min. Set aside by the bound (next4): Scrubs 8, dynasty 283 (mostly 2-for-1s giving two starters for one),
+  Test League 31.
+- Checks: `api/tests/test_ia2.py` 23 (dial buckets, the window on both routes for the Test League and both house
+  leagues, the constructed Jefferson-for-Lloyd board for both rules, the partner search unchanged without rules, both
+  rules on the Scrubs route, the lists moved, the Trade Finder's compiled sentences); API suite 247 passed; ruff clean;
+  web lint / build clean; fixtures re-saved by `web/fixtures/save_ia2_fixtures.py` (partners re-saved: the bound
+  changes some suggestions; window variants; `trades_lists_*`; `trade_lists` dropped from the waivers fixtures; the
+  evaluate fixtures re-saved, plus one "tick" variant per league, `ia2_packages.json`); `web/e2e/ia2/` 16 (8 × phone
+  at 375 px and desktop); G4's trades test and the tab-row test, H1's buy-low tests follow the move.

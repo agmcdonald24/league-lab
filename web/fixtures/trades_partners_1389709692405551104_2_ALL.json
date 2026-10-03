@@ -5,7 +5,129 @@
  "want": null,
  "week": 4,
  "span": "weeks 4–7",
+ "weeks": [
+  4,
+  5,
+  6,
+  7
+ ],
+ "window": "next4",
+ "window_label": "Next 4",
+ "window_why": "the next four weeks: far enough to matter, near enough to trust",
  "partners": [
+  {
+   "partner": 9,
+   "partner_team": "Negrodamus",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "this_week": 9.19,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 122,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7021",
+     "gsis_id": "00-0036139",
+     "player_name": "Rico Dowdle",
+     "position": "RB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mx2bxccuzmdvzbksypws",
+     "this_week": 0.0,
+     "cannot_play": "Out",
+     "market_price": 0,
+     "season_points": 124,
+     "roster_id": 9
+    }
+   ],
+   "you_gain_week": 0.0,
+   "you_gain_horizon": 8.93,
+   "they_gain_week": 9.19,
+   "they_gain_horizon": 8.76,
+   "interest": {
+    "score": 86,
+    "label": "Hard to say no",
+    "their_gain": 8.76,
+    "you": 8.93,
+    "caption": "by our numbers over weeks 4–7"
+   },
+   "price_out": 0,
+   "price_in": 0
+  },
+  {
+   "partner": 9,
+   "partner_team": "Negrodamus",
+   "shape": "1-for-2",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "this_week": 9.72,
+     "cannot_play": null,
+     "market_price": 9,
+     "season_points": 137,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7021",
+     "gsis_id": "00-0036139",
+     "player_name": "Rico Dowdle",
+     "position": "RB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mx2bxccuzmdvzbksypws",
+     "this_week": 0.0,
+     "cannot_play": "Out",
+     "market_price": 0,
+     "season_points": 124,
+     "roster_id": 9
+    },
+    {
+     "sleeper_id": "11624",
+     "gsis_id": "00-0039894",
+     "player_name": "Xavier Worthy",
+     "position": "WR",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/u6fmnffwteccoxn3uguq",
+     "this_week": 8.34,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 114,
+     "roster_id": 9
+    }
+   ],
+   "you_gain_week": -0.53,
+   "you_gain_horizon": 9.74,
+   "they_gain_week": 9.72,
+   "they_gain_horizon": 10.29,
+   "interest": {
+    "score": 93,
+    "label": "Hard to say no",
+    "their_gain": 10.29,
+    "you": 9.74,
+    "caption": "by our numbers over weeks 4–7"
+   },
+   "price_out": 9,
+   "price_in": 0
+  },
   {
    "partner": 3,
    "partner_team": "Run Bijan Run",
@@ -46,6 +168,13 @@
    "you_gain_horizon": 2.23,
    "they_gain_week": 0.83,
    "they_gain_horizon": 6.78,
+   "interest": {
+    "score": 78,
+    "label": "Hard to say no",
+    "their_gain": 6.78,
+    "you": 2.23,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 43,
    "price_in": 8
   },
@@ -98,111 +227,19 @@
      "roster_id": 3
     }
    ],
-   "you_gain_week": -1.61,
-   "you_gain_horizon": 6.68,
+   "you_gain_week": -1.09,
+   "you_gain_horizon": 7.2,
    "they_gain_week": 1.71,
    "they_gain_horizon": 6.4,
+   "interest": {
+    "score": 77,
+    "label": "Hard to say no",
+    "their_gain": 6.4,
+    "you": 7.2,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 52,
    "price_in": 22
-  },
-  {
-   "partner": 7,
-   "partner_team": "PSYCHO SILVERBACKS",
-   "shape": "1-for-1",
-   "kind": "1-for-1",
-   "is_best": false,
-   "give": [
-    {
-     "sleeper_id": "9487",
-     "gsis_id": "00-0038606",
-     "player_name": "Parker Washington",
-     "position": "WR",
-     "team": "JAX",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
-     "this_week": 12.16,
-     "cannot_play": null,
-     "market_price": 52,
-     "season_points": 175,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "5892",
-     "gsis_id": "00-0035685",
-     "player_name": "David Montgomery",
-     "position": "RB",
-     "team": "HOU",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/csz0c9roa4pqsccothxg",
-     "this_week": 10.93,
-     "cannot_play": null,
-     "market_price": 16,
-     "season_points": 144,
-     "roster_id": 7
-    }
-   ],
-   "you_gain_week": -1.23,
-   "you_gain_horizon": 4.85,
-   "they_gain_week": 1.23,
-   "they_gain_horizon": 4.5,
-   "price_out": 52,
-   "price_in": 16
-  },
-  {
-   "partner": 7,
-   "partner_team": "PSYCHO SILVERBACKS",
-   "shape": "1-for-2",
-   "kind": "2-for-1",
-   "is_best": true,
-   "give": [
-    {
-     "sleeper_id": "12507",
-     "gsis_id": "00-0040666",
-     "player_name": "Omarion Hampton",
-     "position": "RB",
-     "team": "LAC",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
-     "this_week": 11.28,
-     "cannot_play": null,
-     "market_price": 43,
-     "season_points": 170,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "9484",
-     "gsis_id": "00-0038996",
-     "player_name": "Tucker Kraft",
-     "position": "TE",
-     "team": "GB",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/n6vu44jbq31rydoaadaq",
-     "this_week": 7.96,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 106,
-     "roster_id": 7
-    },
-    {
-     "sleeper_id": "13286",
-     "gsis_id": "00-0041512",
-     "player_name": "Jadarian Price",
-     "position": "RB",
-     "team": "SEA",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toy90i08oumgbdlvctja",
-     "this_week": 10.01,
-     "cannot_play": null,
-     "market_price": 4,
-     "season_points": 131,
-     "roster_id": 7
-    }
-   ],
-   "you_gain_week": -1.27,
-   "you_gain_horizon": 5.64,
-   "they_gain_week": 1.27,
-   "they_gain_horizon": 7.41,
-   "price_out": 43,
-   "price_in": 4
   },
   {
    "partner": 1,
@@ -244,6 +281,13 @@
    "you_gain_horizon": 5.14,
    "they_gain_week": 1.41,
    "they_gain_horizon": 4.6,
+   "interest": {
+    "score": 66,
+    "label": "Likely",
+    "their_gain": 4.6,
+    "you": 5.14,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 52,
    "price_in": 18
   },
@@ -270,16 +314,16 @@
    ],
    "get": [
     {
-     "sleeper_id": "8137",
-     "gsis_id": "00-0037247",
-     "player_name": "George Pickens",
+     "sleeper_id": "5846",
+     "gsis_id": "00-0035640",
+     "player_name": "DK Metcalf",
      "position": "WR",
-     "team": "DAL",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cbpyykoguf7rsxezqzvk",
-     "this_week": 10.78,
-     "cannot_play": null,
-     "market_price": 18,
-     "season_points": 141,
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kxql4sjfelubhxawu2zh",
+     "this_week": null,
+     "cannot_play": "game started (bench)",
+     "market_price": 22,
+     "season_points": 145,
      "roster_id": 1
     },
     {
@@ -296,12 +340,19 @@
      "roster_id": 1
     }
    ],
-   "you_gain_week": -1.38,
-   "you_gain_horizon": 6.78,
-   "they_gain_week": 1.38,
-   "they_gain_horizon": 5.41,
+   "you_gain_week": -2.97,
+   "you_gain_horizon": 6.49,
+   "they_gain_week": 3.51,
+   "they_gain_horizon": 6.24,
+   "interest": {
+    "score": 76,
+    "label": "Hard to say no",
+    "their_gain": 6.24,
+    "you": 6.49,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 52,
-   "price_in": 18
+   "price_in": 22
   },
   {
    "partner": 8,
@@ -343,6 +394,13 @@
    "you_gain_horizon": 3.72,
    "they_gain_week": 0.98,
    "they_gain_horizon": 5.19,
+   "interest": {
+    "score": 70,
+    "label": "Likely",
+    "their_gain": 5.19,
+    "you": 3.72,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 43,
    "price_in": 13
   },
@@ -399,8 +457,128 @@
    "you_gain_horizon": 5.23,
    "they_gain_week": 0.98,
    "they_gain_horizon": 5.19,
+   "interest": {
+    "score": 70,
+    "label": "Likely",
+    "their_gain": 5.19,
+    "you": 5.23,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 43,
    "price_in": 13
+  },
+  {
+   "partner": 7,
+   "partner_team": "PSYCHO SILVERBACKS",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "position": "RB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "this_week": 11.28,
+     "cannot_play": null,
+     "market_price": 43,
+     "season_points": 170,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "5892",
+     "gsis_id": "00-0035685",
+     "player_name": "David Montgomery",
+     "position": "RB",
+     "team": "HOU",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/csz0c9roa4pqsccothxg",
+     "this_week": 10.93,
+     "cannot_play": null,
+     "market_price": 16,
+     "season_points": 144,
+     "roster_id": 7
+    }
+   ],
+   "you_gain_week": -0.35,
+   "you_gain_horizon": 4.93,
+   "they_gain_week": 0.35,
+   "they_gain_horizon": 4.42,
+   "interest": {
+    "score": 65,
+    "label": "Likely",
+    "their_gain": 4.42,
+    "you": 4.93,
+    "caption": "by our numbers over weeks 4–7"
+   },
+   "price_out": 43,
+   "price_in": 16
+  },
+  {
+   "partner": 7,
+   "partner_team": "PSYCHO SILVERBACKS",
+   "shape": "1-for-2",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "9487",
+     "gsis_id": "00-0038606",
+     "player_name": "Parker Washington",
+     "position": "WR",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+     "this_week": 12.16,
+     "cannot_play": null,
+     "market_price": 52,
+     "season_points": 175,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "6801",
+     "gsis_id": "00-0036410",
+     "player_name": "Tee Higgins",
+     "position": "WR",
+     "team": "CIN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gpwtyv3viwy9q4ewderl",
+     "this_week": 11.08,
+     "cannot_play": null,
+     "market_price": 29,
+     "season_points": 152,
+     "roster_id": 7
+    },
+    {
+     "sleeper_id": "11586",
+     "gsis_id": "00-0039738",
+     "player_name": "Blake Corum",
+     "position": "RB",
+     "team": "LA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/axzqbqjkrbwfzodwwakq",
+     "this_week": 8.83,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 122,
+     "roster_id": 7
+    }
+   ],
+   "you_gain_week": -1.08,
+   "you_gain_horizon": 7.33,
+   "they_gain_week": 1.08,
+   "they_gain_horizon": 5.05,
+   "interest": {
+    "score": 69,
+    "label": "Likely",
+    "their_gain": 5.05,
+    "you": 7.33,
+    "caption": "by our numbers over weeks 4–7"
+   },
+   "price_out": 52,
+   "price_in": 29
   },
   {
    "partner": 5,
@@ -410,40 +588,47 @@
    "is_best": false,
    "give": [
     {
-     "sleeper_id": "12490",
-     "gsis_id": "00-0040719",
-     "player_name": "Bhayshul Tuten",
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
      "position": "RB",
-     "team": "JAX",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
-     "this_week": 9.72,
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "this_week": 11.28,
      "cannot_play": null,
-     "market_price": 9,
-     "season_points": 137,
+     "market_price": 43,
+     "season_points": 170,
      "roster_id": 2
     }
    ],
    "get": [
     {
-     "sleeper_id": "SF",
-     "gsis_id": null,
-     "player_name": "San Francisco 49ers",
-     "position": "DEF",
-     "team": "SF",
-     "headshot_url": null,
-     "this_week": 6.86,
+     "sleeper_id": "5967",
+     "gsis_id": "00-0035261",
+     "player_name": "Tony Pollard",
+     "position": "RB",
+     "team": "TEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mb2xdrqiys6ktlcuah2n",
+     "this_week": 9.08,
      "cannot_play": null,
-     "market_price": 0,
-     "season_points": 92,
+     "market_price": 4,
+     "season_points": 131,
      "roster_id": 5
     }
    ],
-   "you_gain_week": -0.52,
-   "you_gain_horizon": 4.67,
-   "they_gain_week": 0.64,
-   "they_gain_horizon": 1.95,
-   "price_out": 9,
-   "price_in": 0
+   "you_gain_week": -2.09,
+   "you_gain_horizon": 1.02,
+   "they_gain_week": 2.2,
+   "they_gain_horizon": 4.75,
+   "interest": {
+    "score": 67,
+    "label": "Likely",
+    "their_gain": 4.75,
+    "you": 1.02,
+    "caption": "by our numbers over weeks 4–7"
+   },
+   "price_out": 43,
+   "price_in": 4
   },
   {
    "partner": 5,
@@ -498,6 +683,13 @@
    "you_gain_horizon": 6.48,
    "they_gain_week": 2.36,
    "they_gain_horizon": 5.03,
+   "interest": {
+    "score": 69,
+    "label": "Likely",
+    "their_gain": 5.03,
+    "you": 6.48,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 52,
    "price_in": 0
   },
@@ -509,16 +701,16 @@
    "is_best": false,
    "give": [
     {
-     "sleeper_id": "4046",
-     "gsis_id": "00-0033873",
-     "player_name": "Patrick Mahomes",
-     "position": "QB",
-     "team": "KC",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
-     "this_week": 20.26,
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "position": "RB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "this_week": 11.28,
      "cannot_play": null,
-     "market_price": 17,
-     "season_points": 261,
+     "market_price": 43,
+     "season_points": 170,
      "roster_id": 2
     }
    ],
@@ -538,10 +730,17 @@
     }
    ],
    "you_gain_week": -2.09,
-   "you_gain_horizon": 3.11,
-   "they_gain_week": 5.52,
-   "they_gain_horizon": 4.74,
-   "price_out": 17,
+   "you_gain_horizon": 4.99,
+   "they_gain_week": 0.0,
+   "they_gain_horizon": 0.94,
+   "interest": {
+    "score": 37,
+    "label": "Maybe",
+    "their_gain": 0.94,
+    "you": 4.99,
+    "caption": "by our numbers over weeks 4–7"
+   },
+   "price_out": 43,
    "price_in": 24
   },
   {
@@ -597,8 +796,128 @@
    "you_gain_horizon": 4.92,
    "they_gain_week": 5.52,
    "they_gain_horizon": 5.3,
+   "interest": {
+    "score": 71,
+    "label": "Likely",
+    "their_gain": 5.3,
+    "you": 4.92,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 17,
    "price_in": 27
+  },
+  {
+   "partner": 4,
+   "partner_team": "Scrote Squad",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "position": "RB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "this_week": 11.28,
+     "cannot_play": null,
+     "market_price": 43,
+     "season_points": 170,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "8228",
+     "gsis_id": "00-0037228",
+     "player_name": "Jaylen Warren",
+     "position": "RB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dkiteytgnxar1mpaxcxv",
+     "this_week": null,
+     "cannot_play": "game started (bench)",
+     "market_price": 16,
+     "season_points": 144,
+     "roster_id": 4
+    }
+   ],
+   "you_gain_week": -2.09,
+   "you_gain_horizon": 4.11,
+   "they_gain_week": 3.39,
+   "they_gain_horizon": 4.76,
+   "interest": {
+    "score": 67,
+    "label": "Likely",
+    "their_gain": 4.76,
+    "you": 4.11,
+    "caption": "by our numbers over weeks 4–7"
+   },
+   "price_out": 43,
+   "price_in": 16
+  },
+  {
+   "partner": 4,
+   "partner_team": "Scrote Squad",
+   "shape": "1-for-2",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12507",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "position": "RB",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "this_week": 11.28,
+     "cannot_play": null,
+     "market_price": 43,
+     "season_points": 170,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "8228",
+     "gsis_id": "00-0037228",
+     "player_name": "Jaylen Warren",
+     "position": "RB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dkiteytgnxar1mpaxcxv",
+     "this_week": null,
+     "cannot_play": "game started (bench)",
+     "market_price": 16,
+     "season_points": 144,
+     "roster_id": 4
+    },
+    {
+     "sleeper_id": "8183",
+     "gsis_id": "00-0037834",
+     "player_name": "Brock Purdy",
+     "position": "QB",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
+     "this_week": 17.59,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 234,
+     "roster_id": 4
+    }
+   ],
+   "you_gain_week": -2.09,
+   "you_gain_horizon": 5.68,
+   "they_gain_week": 3.39,
+   "they_gain_horizon": 4.76,
+   "interest": {
+    "score": 67,
+    "label": "Likely",
+    "their_gain": 4.76,
+    "you": 5.68,
+    "caption": "by our numbers over weeks 4–7"
+   },
+   "price_out": 43,
+   "price_in": 16
   },
   {
    "partner": 10,
@@ -640,6 +959,13 @@
    "you_gain_horizon": 3.49,
    "they_gain_week": 1.5,
    "they_gain_horizon": 4.61,
+   "interest": {
+    "score": 66,
+    "label": "Likely",
+    "their_gain": 4.61,
+    "you": 3.49,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 43,
    "price_in": 11
   },
@@ -696,217 +1022,66 @@
    "you_gain_horizon": 5.37,
    "they_gain_week": 1.5,
    "they_gain_horizon": 4.61,
+   "interest": {
+    "score": 66,
+    "label": "Likely",
+    "their_gain": 4.61,
+    "you": 5.37,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 43,
    "price_in": 11
-  },
-  {
-   "partner": 4,
-   "partner_team": "Scrote Squad",
-   "shape": "1-for-1",
-   "kind": "1-for-1",
-   "is_best": false,
-   "give": [
-    {
-     "sleeper_id": "12507",
-     "gsis_id": "00-0040666",
-     "player_name": "Omarion Hampton",
-     "position": "RB",
-     "team": "LAC",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
-     "this_week": 11.28,
-     "cannot_play": null,
-     "market_price": 43,
-     "season_points": 170,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "8228",
-     "gsis_id": "00-0037228",
-     "player_name": "Jaylen Warren",
-     "position": "RB",
-     "team": "PIT",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dkiteytgnxar1mpaxcxv",
-     "this_week": null,
-     "cannot_play": "game started (bench)",
-     "market_price": 16,
-     "season_points": 144,
-     "roster_id": 4
-    }
-   ],
-   "you_gain_week": -2.08,
-   "you_gain_horizon": 4.12,
-   "they_gain_week": 3.09,
-   "they_gain_horizon": 4.46,
-   "price_out": 43,
-   "price_in": 16
-  },
-  {
-   "partner": 4,
-   "partner_team": "Scrote Squad",
-   "shape": "1-for-2",
-   "kind": "2-for-1",
-   "is_best": true,
-   "give": [
-    {
-     "sleeper_id": "12507",
-     "gsis_id": "00-0040666",
-     "player_name": "Omarion Hampton",
-     "position": "RB",
-     "team": "LAC",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
-     "this_week": 11.28,
-     "cannot_play": null,
-     "market_price": 43,
-     "season_points": 170,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "8228",
-     "gsis_id": "00-0037228",
-     "player_name": "Jaylen Warren",
-     "position": "RB",
-     "team": "PIT",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dkiteytgnxar1mpaxcxv",
-     "this_week": null,
-     "cannot_play": "game started (bench)",
-     "market_price": 16,
-     "season_points": 144,
-     "roster_id": 4
-    },
-    {
-     "sleeper_id": "8183",
-     "gsis_id": "00-0037834",
-     "player_name": "Brock Purdy",
-     "position": "QB",
-     "team": "SF",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
-     "this_week": 17.59,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 234,
-     "roster_id": 4
-    }
-   ],
-   "you_gain_week": -2.08,
-   "you_gain_horizon": 5.69,
-   "they_gain_week": 3.09,
-   "they_gain_horizon": 4.46,
-   "price_out": 43,
-   "price_in": 16
-  },
-  {
-   "partner": 9,
-   "partner_team": "Negrodamus",
-   "shape": "1-for-1",
-   "kind": "1-for-1",
-   "is_best": false,
-   "give": [
-    {
-     "sleeper_id": "12490",
-     "gsis_id": "00-0040719",
-     "player_name": "Bhayshul Tuten",
-     "position": "RB",
-     "team": "JAX",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
-     "this_week": 9.72,
-     "cannot_play": null,
-     "market_price": 9,
-     "season_points": 137,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "6806",
-     "gsis_id": "00-0036158",
-     "player_name": "J.K. Dobbins",
-     "position": "RB",
-     "team": "DEN",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cevotvl3ho5h1mioruyg",
-     "this_week": 7.57,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 104,
-     "roster_id": 9
-    }
-   ],
-   "you_gain_week": -0.52,
-   "you_gain_horizon": 5.61,
-   "they_gain_week": 1.14,
-   "they_gain_horizon": 3.19,
-   "price_out": 9,
-   "price_in": 0
-  },
-  {
-   "partner": 9,
-   "partner_team": "Negrodamus",
-   "shape": "2-for-1",
-   "kind": "2-for-1",
-   "is_best": true,
-   "give": [
-    {
-     "sleeper_id": "9487",
-     "gsis_id": "00-0038606",
-     "player_name": "Parker Washington",
-     "position": "WR",
-     "team": "JAX",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
-     "this_week": 12.16,
-     "cannot_play": null,
-     "market_price": 52,
-     "season_points": 175,
-     "roster_id": 2
-    },
-    {
-     "sleeper_id": "12490",
-     "gsis_id": "00-0040719",
-     "player_name": "Bhayshul Tuten",
-     "position": "RB",
-     "team": "JAX",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
-     "this_week": 9.72,
-     "cannot_play": null,
-     "market_price": 9,
-     "season_points": 137,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "7543",
-     "gsis_id": "00-0036973",
-     "player_name": "Travis Etienne",
-     "position": "RB",
-     "team": "NO",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/pwko5dybmjie8qqo4qz2",
-     "this_week": 11.54,
-     "cannot_play": null,
-     "market_price": 26,
-     "season_points": 154,
-     "roster_id": 9
-    }
-   ],
-   "you_gain_week": -1.14,
-   "you_gain_horizon": 5.85,
-   "they_gain_week": 1.76,
-   "they_gain_horizon": 4.14,
-   "price_out": 61,
-   "price_in": 26
   }
  ],
  "no_trade_with": [],
+ "rejected": [
+  {
+   "partner_team": "Victory is Mine!",
+   "give": [
+    "Bhayshul Tuten"
+   ],
+   "get": [
+    "San Francisco 49ers"
+   ],
+   "why": "you give 117 rest-of-season points for 78: 39 more, over 25% of what you give"
+  },
+  {
+   "partner_team": "GoodGameBuddy",
+   "give": [
+    "Patrick Mahomes"
+   ],
+   "get": [
+    "Quinshon Judkins"
+   ],
+   "why": "you give 225 rest-of-season points for 130: 95 more, over 25% of what you give"
+  },
+  {
+   "partner_team": "GoodGameBuddy",
+   "give": [
+    "Bryce Young"
+   ],
+   "get": [
+    "MarShawn Lloyd"
+   ],
+   "why": "you give 173 rest-of-season points for 97: 77 more, over 25% of what you give"
+  }
+ ],
+ "rejected_count": 8,
+ "sanity": {
+  "ros_gap_share": 0.25,
+  "market_share": 0.65,
+  "ros_players": 155,
+  "market_players": 0,
+  "market_note": "Sleeper's week-4 projections are not in the database: the market check is not applied"
+ },
  "words": {
-  "headline": "**Best partner: Run Bijan Run (Tate524).** Your [Parker Washington](/player/00-0038606) for their [Rhamondre Stevenson](/player/00-0036875) and [Devaughn Vele](/player/00-0039424): you **-1.6** this week and **+6.7** over weeks 4–7, them **+1.7** and **+6.4**.",
+  "headline": "**Best partner: Negrodamus (mjhend93).** Your [Bhayshul Tuten](/player/00-0040719) for their [Rico Dowdle](/player/00-0036139) and [Xavier Worthy](/player/00-0039894): you **-0.5** this week and **+9.7** over weeks 4–7, them **+9.7** and **+10.3**.",
   "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"
  },
  "search": {
   "bar_sets": 143,
-  "candidates": 18593,
-  "evaluated": 98,
-  "seconds": 0.511
+  "candidates": 19387,
+  "evaluated": 91,
+  "seconds": 1.7
  }
 }

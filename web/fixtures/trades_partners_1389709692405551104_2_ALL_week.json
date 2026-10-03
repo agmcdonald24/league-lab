@@ -1,0 +1,428 @@
+{
+ "league_id": "1389709692405551104",
+ "source": "database",
+ "roster_id": 2,
+ "want": null,
+ "week": 4,
+ "span": "week 4",
+ "weeks": [
+  4
+ ],
+ "window": "week",
+ "window_label": "This week",
+ "window_why": "this week only: the lineup you set for Sunday",
+ "partners": [
+  {
+   "partner": 9,
+   "partner_team": "Negrodamus",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "this_week": 9.19,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 122,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7564",
+     "gsis_id": "00-0036900",
+     "player_name": "Ja'Marr Chase",
+     "position": "WR",
+     "team": "CIN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qya3dtjb5kgofcuj2tuw",
+     "this_week": 12.41,
+     "cannot_play": null,
+     "market_price": 47,
+     "season_points": 169,
+     "roster_id": 9
+    }
+   ],
+   "you_gain_week": 3.21,
+   "you_gain_horizon": 3.21,
+   "they_gain_week": 5.12,
+   "they_gain_horizon": 5.12,
+   "interest": {
+    "score": 70,
+    "label": "Likely",
+    "their_gain": 5.12,
+    "you": 3.21,
+    "caption": "by our numbers over week 4"
+   },
+   "price_out": 0,
+   "price_in": 47
+  },
+  {
+   "partner": 9,
+   "partner_team": "Negrodamus",
+   "shape": "2-for-1",
+   "kind": "2-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "this_week": 9.19,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 122,
+     "roster_id": 2
+    },
+    {
+     "sleeper_id": "12545",
+     "gsis_id": "00-0040743",
+     "player_name": "Tyler Shough",
+     "position": "QB",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "this_week": 18.17,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 212,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "4984",
+     "gsis_id": "00-0034857",
+     "player_name": "Josh Allen",
+     "position": "QB",
+     "team": "BUF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mjwbioajzldkq1vzoz2d",
+     "this_week": 24.42,
+     "cannot_play": null,
+     "market_price": 9,
+     "season_points": 254,
+     "roster_id": 9
+    }
+   ],
+   "you_gain_week": 4.16,
+   "you_gain_horizon": 4.16,
+   "they_gain_week": 2.94,
+   "they_gain_horizon": 2.94,
+   "interest": {
+    "score": 56,
+    "label": "Likely",
+    "their_gain": 2.94,
+    "you": 4.16,
+    "caption": "by our numbers over week 4"
+   },
+   "price_out": 0,
+   "price_in": 9
+  },
+  {
+   "partner": 6,
+   "partner_team": "GoodGameBuddy",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": false,
+   "give": [
+    {
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "this_week": 20.26,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 261,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "8144",
+     "gsis_id": "00-0037239",
+     "player_name": "Chris Olave",
+     "position": "WR",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/onmxufsprtvglhejg94o",
+     "this_week": 15.16,
+     "cannot_play": null,
+     "market_price": 89,
+     "season_points": 212,
+     "roster_id": 6
+    }
+   ],
+   "you_gain_week": 3.87,
+   "you_gain_horizon": 3.87,
+   "they_gain_week": 0.34,
+   "they_gain_horizon": 0.34,
+   "interest": {
+    "score": 29,
+    "label": "Maybe",
+    "their_gain": 0.34,
+    "you": 3.87,
+    "caption": "by our numbers over week 4"
+   },
+   "price_out": 17,
+   "price_in": 89
+  },
+  {
+   "partner": 6,
+   "partner_team": "GoodGameBuddy",
+   "shape": "1-for-2",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "this_week": 20.26,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 261,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7588",
+     "gsis_id": "00-0036997",
+     "player_name": "Javonte Williams",
+     "position": "RB",
+     "team": "DAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xvwroirev2kie6oiphtz",
+     "this_week": 12.65,
+     "cannot_play": null,
+     "market_price": 56,
+     "season_points": 184,
+     "roster_id": 6
+    },
+    {
+     "sleeper_id": "8148",
+     "gsis_id": "00-0037240",
+     "player_name": "Jameson Williams",
+     "position": "WR",
+     "team": "DET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/byiptqggtglvy5qrw5wp",
+     "this_week": 9.98,
+     "cannot_play": null,
+     "market_price": 8,
+     "season_points": 131,
+     "roster_id": 6
+    }
+   ],
+   "you_gain_week": 1.62,
+   "you_gain_horizon": 1.62,
+   "they_gain_week": 0.89,
+   "they_gain_horizon": 0.89,
+   "interest": {
+    "score": 36,
+    "label": "Maybe",
+    "their_gain": 0.89,
+    "you": 1.62,
+    "caption": "by our numbers over week 4"
+   },
+   "price_out": 17,
+   "price_in": 64
+  },
+  {
+   "partner": 3,
+   "partner_team": "Run Bijan Run",
+   "shape": "1-for-2",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "this_week": 20.26,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 261,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7611",
+     "gsis_id": "00-0036875",
+     "player_name": "Rhamondre Stevenson",
+     "position": "RB",
+     "team": "NE",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zmpuirvuw4r04inxth5i",
+     "this_week": 10.45,
+     "cannot_play": null,
+     "market_price": 8,
+     "season_points": 135,
+     "roster_id": 3
+    },
+    {
+     "sleeper_id": "9997",
+     "gsis_id": "00-0039064",
+     "player_name": "Zay Flowers",
+     "position": "WR",
+     "team": "BAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xzhto2dejy2pflkfx40c",
+     "this_week": 11.28,
+     "cannot_play": null,
+     "market_price": 25,
+     "season_points": 148,
+     "roster_id": 3
+    }
+   ],
+   "you_gain_week": 0.72,
+   "you_gain_horizon": 0.72,
+   "they_gain_week": 0.81,
+   "they_gain_horizon": 0.81,
+   "interest": {
+    "score": 35,
+    "label": "Maybe",
+    "their_gain": 0.81,
+    "you": 0.72,
+    "caption": "by our numbers over week 4"
+   },
+   "price_out": 17,
+   "price_in": 33
+  },
+  {
+   "partner": 8,
+   "partner_team": "MikeDaddy",
+   "shape": "1-for-2",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "this_week": 20.26,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 261,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "10229",
+     "gsis_id": "00-0039067",
+     "player_name": "Rashee Rice",
+     "position": "WR",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qhkbqrydjeur8zvrrmfl",
+     "this_week": 10.77,
+     "cannot_play": null,
+     "market_price": 21,
+     "season_points": 143,
+     "roster_id": 8
+    },
+    {
+     "sleeper_id": "12534",
+     "gsis_id": "00-0040236",
+     "player_name": "Kyle Monangai",
+     "position": "RB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/bkkk3uuouhcobydqawro",
+     "this_week": 10.3,
+     "cannot_play": null,
+     "market_price": 13,
+     "season_points": 141,
+     "roster_id": 8
+    }
+   ],
+   "you_gain_week": 0.06,
+   "you_gain_horizon": 0.06,
+   "they_gain_week": 0.02,
+   "they_gain_horizon": 0.02,
+   "interest": {
+    "score": 25,
+    "label": "No deal",
+    "their_gain": 0.02,
+    "you": 0.06,
+    "caption": "by our numbers over week 4"
+   },
+   "price_out": 17,
+   "price_in": 34
+  }
+ ],
+ "no_trade_with": [
+  "Daejon Loves PR team",
+  "Scrote Squad",
+  "Victory is Mine!",
+  "PSYCHO SILVERBACKS",
+  "GIBB ME ANOTA ONE"
+ ],
+ "rejected": [
+  {
+   "partner_team": "Daejon Loves PR team",
+   "give": [
+    "Patrick Mahomes",
+    "Bhayshul Tuten"
+   ],
+   "get": [
+    "Cam Skattebo"
+   ],
+   "why": "you give 342 rest-of-season points for 148: 194 more, over 25% of what you give"
+  },
+  {
+   "partner_team": "Daejon Loves PR team",
+   "give": [
+    "Bhayshul Tuten",
+    "Tyler Shough"
+   ],
+   "get": [
+    "TreVeyon Henderson"
+   ],
+   "why": "you give 299 rest-of-season points for 124: 175 more, over 25% of what you give"
+  },
+  {
+   "partner_team": "Daejon Loves PR team",
+   "give": [
+    "Michael Wilson",
+    "Tyler Shough"
+   ],
+   "get": [
+    "Emeka Egbuka"
+   ],
+   "why": "you give 295 rest-of-season points for 124: 171 more, over 25% of what you give"
+  }
+ ],
+ "rejected_count": 122,
+ "sanity": {
+  "ros_gap_share": 0.25,
+  "market_share": 0.65,
+  "ros_players": 155,
+  "market_players": 0,
+  "market_note": "Sleeper's week-4 projections are not in the database: the market check is not applied"
+ },
+ "words": {
+  "headline": "**Best partner: Negrodamus (mjhend93).** Your [Jacory Croskey-Merritt](/player/00-0040242) for their [Ja'Marr Chase](/player/00-0036900): you **+3.2** over week 4, them **+5.1**.",
+  "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"
+ },
+ "search": {
+  "bar_sets": 92,
+  "candidates": 5149,
+  "evaluated": 285,
+  "seconds": 0.508
+ }
+}

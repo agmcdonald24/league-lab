@@ -15,7 +15,17 @@
    "p90": 128.9,
    "pos_rank": 1,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rxbnhvnfjmheuryvdmuf",
+   "bye_weeks": [
+    9
+   ],
+   "ros_points_per_game": 9.06,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.89,
+   "market_words": null
   },
   {
    "gsis_id": "00-0034161",
@@ -29,7 +39,17 @@
    "p90": 128.8,
    "pos_rank": 2,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gsvj7rtvqwbwdeho8whf",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 9.05,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 9.86,
+   "market_words": null
   },
   {
    "gsis_id": "00-0037224",
@@ -43,7 +63,17 @@
    "p90": 126.8,
    "pos_rank": 3,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fvkop13kntnwv3amucpf",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 8.89,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.75,
+   "market_words": null
   },
   {
    "gsis_id": "00-0032726",
@@ -57,7 +87,17 @@
    "p90": 126.3,
    "pos_rank": 4,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/nbrs7doetqydf2rzhjjl",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 8.84,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 9.74,
+   "market_words": null
   },
   {
    "gsis_id": "00-0025565",
@@ -71,7 +111,17 @@
    "p90": 124.3,
    "pos_rank": 5,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qf6vaghxuoxqw0pyrvg3",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 8.68,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 9.77,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039404",
@@ -85,7 +135,17 @@
    "p90": 123.6,
    "pos_rank": 6,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wv1h4umuddkfss96uutw",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 8.62,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 10.28,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039409",
@@ -99,7 +159,17 @@
    "p90": 120.8,
    "pos_rank": 7,
    "rostered_by_roster_id": 9,
-   "rostered_by_team": "Negrodamus"
+   "rostered_by_team": "Negrodamus",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mc9goepr7mglrx6ek1fi",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 8.39,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.56,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036816",
@@ -113,7 +183,17 @@
    "p90": 120.5,
    "pos_rank": 8,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xjg7x98iyq5hlgjc62ot",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 8.36,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 6.7,
+   "market_words": null
   },
   {
    "gsis_id": "00-0032569",
@@ -127,7 +207,17 @@
    "p90": 119.8,
    "pos_rank": 9,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcglg5vsgbiyggwibgy0",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 8.3,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.62,
+   "market_words": null
   },
   {
    "gsis_id": "00-0037692",
@@ -141,7 +231,17 @@
    "p90": 118.6,
    "pos_rank": 10,
    "rostered_by_roster_id": 10,
-   "rostered_by_team": "GIBB ME ANOTA ONE"
+   "rostered_by_team": "GIBB ME ANOTA ONE",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/bgwg06zmyohjxvzznbf6",
+   "bye_weeks": [
+    14
+   ],
+   "ros_points_per_game": 8.2,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.22,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035269",
@@ -155,7 +255,17 @@
    "p90": 118.1,
    "pos_rank": 11,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/opglxpqmhu21eydoyvg2",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 8.16,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.99,
+   "market_words": null
   },
   {
    "gsis_id": "00-0031492",
@@ -169,7 +279,17 @@
    "p90": 117.6,
    "pos_rank": 12,
    "rostered_by_roster_id": 7,
-   "rostered_by_team": "PSYCHO SILVERBACKS"
+   "rostered_by_team": "PSYCHO SILVERBACKS",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zcd7q9loflr0t5bsvzig",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 8.12,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.59,
+   "market_words": null
   },
   {
    "gsis_id": "00-0038428",
@@ -183,7 +303,17 @@
    "p90": 117.1,
    "pos_rank": 13,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tkah6glpysuyq2a54gts",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 8.08,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.65,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040200",
@@ -197,7 +327,17 @@
    "p90": 116.8,
    "pos_rank": 14,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/x2fxn5qf6zkgmvedjpys",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 8.05,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.67,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039172",
@@ -211,7 +351,17 @@
    "p90": 116.8,
    "pos_rank": 15,
    "rostered_by_roster_id": 4,
-   "rostered_by_team": "Scrote Squad"
+   "rostered_by_team": "Scrote Squad",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/umhfee7ax7r8gjdt8okb",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 8.05,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.93,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035358",
@@ -225,7 +375,17 @@
    "p90": 116.7,
    "pos_rank": 16,
    "rostered_by_roster_id": 2,
-   "rostered_by_team": "MacZaddy"
+   "rostered_by_team": "MacZaddy",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 8.04,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.07,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033787",
@@ -239,7 +399,17 @@
    "p90": 116.3,
    "pos_rank": 17,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gxy1mhbnz1p2nufkg8qz",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 8.01,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.82,
+   "market_words": null
   },
   {
    "gsis_id": "00-0034173",
@@ -253,7 +423,17 @@
    "p90": 115.7,
    "pos_rank": 18,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/v3vtl2t4dfzkueanjfwc",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 7.96,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.37,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039498",
@@ -267,7 +447,17 @@
    "p90": 115.3,
    "pos_rank": 19,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yjmtai1e4eqbsw2yk6mh",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 7.93,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.26,
+   "market_words": null
   },
   {
    "gsis_id": "00-0031203",
@@ -281,7 +471,17 @@
    "p90": 115.0,
    "pos_rank": 20,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tz5ecjri52gwpoo9s7be",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 7.9,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.48,
+   "market_words": null
   },
   {
    "gsis_id": "00-0038905",
@@ -295,7 +495,17 @@
    "p90": 113.8,
    "pos_rank": 21,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/de3vz6xjjo9paba6encd",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 7.8,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.43,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033303",
@@ -309,7 +519,17 @@
    "p90": 113.6,
    "pos_rank": 22,
    "rostered_by_roster_id": 1,
-   "rostered_by_team": "Daejon Loves PR team"
+   "rostered_by_team": "Daejon Loves PR team",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yphf8avl8ji0ncdohabz",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 7.79,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.48,
+   "market_words": null
   },
   {
    "gsis_id": "00-0038567",
@@ -323,7 +543,17 @@
    "p90": 113.6,
    "pos_rank": 23,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gbfzwbzdl9wj582nh5g9",
+   "bye_weeks": [
+    14
+   ],
+   "ros_points_per_game": 7.79,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.27,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040899",
@@ -337,7 +567,17 @@
    "p90": 111.4,
    "pos_rank": 24,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zierx6p09ilfe0o0ckj7",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 7.6,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.72,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040074",
@@ -351,7 +591,17 @@
    "p90": 110.1,
    "pos_rank": 25,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kbwixtntqevptepedhll",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 7.5,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.01,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036854",
@@ -365,7 +615,17 @@
    "p90": 110.0,
    "pos_rank": 26,
    "rostered_by_roster_id": 6,
-   "rostered_by_team": "GoodGameBuddy"
+   "rostered_by_team": "GoodGameBuddy",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/t6fs7i54i4n7xjiayoz0",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 7.49,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.23,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035192",
@@ -379,7 +639,17 @@
    "p90": 109.7,
    "pos_rank": 27,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qyugyvvddildncveryob",
+   "bye_weeks": [
+    9
+   ],
+   "ros_points_per_game": 7.46,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 6.39,
+   "market_words": null
   },
   {
    "gsis_id": "00-0041182",
@@ -393,7 +663,17 @@
    "p90": 109.5,
    "pos_rank": 28,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dzlynw7seoaqck1r2il3",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 7.44,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 6.84,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040279",
@@ -407,7 +687,17 @@
    "p90": 108.4,
    "pos_rank": 29,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/giy8qnq6njxzwtqvqdsm",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 7.36,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 6.85,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039576",
@@ -421,7 +711,17 @@
    "p90": 107.1,
    "pos_rank": 30,
    "rostered_by_roster_id": 8,
-   "rostered_by_team": "MikeDaddy"
+   "rostered_by_team": "MikeDaddy",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/upbporhm1frqfpgalfrk",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 7.25,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.53,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036162",
@@ -435,7 +735,17 @@
    "p90": 106.9,
    "pos_rank": 31,
    "rostered_by_roster_id": 5,
-   "rostered_by_team": "Victory is Mine!"
+   "rostered_by_team": "Victory is Mine!",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rwidgp7jp8vxhssi7und",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 7.23,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.34,
+   "market_words": null
   },
   {
    "gsis_id": "00-0041145",
@@ -449,7 +759,86 @@
    "p90": 106.8,
    "pos_rank": 32,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rej45oauer8jysbtwbxm",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 7.22,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.26,
+   "market_words": null
   }
- ]
+ ],
+ "piece_columns": {
+  "QB": [
+   "attempts",
+   "passing_yards",
+   "passing_tds",
+   "passing_interceptions"
+  ],
+  "RB": [
+   "carries",
+   "rushing_yards",
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ],
+  "WR": [
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ],
+  "TE": [
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ]
+ },
+ "leans_on": {
+  "QB": {
+   "features": [
+    "is he the projected starter?",
+    "points Vegas expects his team to score",
+    "pass attempts per game, last 3 games"
+   ],
+   "words": "For QBs the model leans most on **is he the projected starter?**. Next: points Vegas expects his team to score · pass attempts per game, last 3 games.",
+   "scored_in": "League of Scrubs"
+  },
+  "RB": {
+   "features": [
+    "share of his team's carries, last 3 games",
+    "rushing yards per game, season",
+    "share of his team's targets, season"
+   ],
+   "words": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: rushing yards per game, season · share of his team's targets, season.",
+   "scored_in": "League of Scrubs"
+  },
+  "WR": {
+   "features": [
+    "snap share, last 3 games",
+    "expected points per game (what his touches are worth), season",
+    "receiving yards per game, last season"
+   ],
+   "words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+   "scored_in": "League of Scrubs"
+  },
+  "TE": {
+   "features": [
+    "share of his team's targets, season",
+    "snap share, last 3 games",
+    "receiving yards per game, last season"
+   ],
+   "words": "For TEs the model leans most on **share of his team's targets, season**. Next: snap share, last 3 games · receiving yards per game, last season.",
+   "scored_in": "League of Scrubs"
+  }
+ },
+ "market_week": 4,
+ "market_note": "Sleeper's number is this week's, in this league's scoring, where Sleeper has one; the list's totals are ours.",
+ "howto_rankings": "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are down reads lower than his name; a quarterback who starts and throws 35 times a game counts like any starter while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is far from it, open his card and read why before you trade on it."
 }

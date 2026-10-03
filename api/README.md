@@ -25,6 +25,7 @@ depends on it; the nightly does not change.
 | `GET /api/status` | the freshness line, the stale-injury warning, + `sleeper` (cache ages, the call budget) and `board_source` (F3) | `ui.freshness_banner()`, `Sleeper.stats()` |
 | `GET /api/leagues?mfl=<link or id>` | a MyFantasyLeague league on demand (I0-B): the league in Sleeper's shapes, its teams to pick from, `unmapped`, `scoring_note`; every other route then takes `league=mfl:<id>` | `platforms.MFLLeagues` |
 | *every lineup route* | `availability` (I0-A): `checked_at`, `changes` (who moved and why), `flags`; `/api/status.availability` has the feed's mode, ages and `n_out`; `/api/trends.availability.left_out`, `/api/waivers.availability` | `availability.py` |
+| *IA-1 (Wave I-A)* | `/api/my-week`: each card's `why` (the reason sentence, = its second block), each lineup row's `headshot_url` and `team`; `/api/trends`: per player `targets_pg_l3`, `targets_pg`, `carries_pg_l3`, `carries_pg`, `snap_pct_l3`, `rz_targets`, `rz_carries`, `tds`, `pass_tds`, `why`, `cause` | `cards.reason_line` / `reason_facts` (`mart_player_week_features`, `fct_player_game`, `dim_team`); `research.trend_work` / `trend_why` |
 | `GET /api/docs` | OpenAPI page | — |
 | anything else | the web app (`web/dist`): a real file, else `index.html` | — |
 

@@ -98,7 +98,8 @@ def test_my_week_is_the_mart(conn, league_id, roster_id):
             continue                                              # nobody on the bench can replace him: no card
         expected.append((slot, g, alt if alt is not None and abs((v - av) - m) < 0.011 else entering))
     expected = expected[:3]
-    cards = [m.value for m in at.markdown if re.match(r"\*\*[^*]+: start \[", m.value)]
+    # a close call reads "**TE: [A] or [B] — a coin flip**" since Wave I-A; a clear one "**TE: start [A] over [B]**"
+    cards = [m.value for m in at.markdown if re.match(r"\*\*[^*]+: (start )?\[", m.value)]
     shown = []
     for text in cards:
         slot = re.match(r"\*\*([^:]+):", text).group(1)

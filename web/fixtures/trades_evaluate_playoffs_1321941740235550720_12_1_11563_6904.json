@@ -1,0 +1,514 @@
+{
+ "league_id": "1321941740235550720",
+ "source": "database",
+ "roster_id": 12,
+ "partner": 1,
+ "partner_team": "Pitts n’ Titts",
+ "week": 4,
+ "weeks": [
+  15,
+  16,
+  17
+ ],
+ "span": "weeks 15–17",
+ "window": "playoffs",
+ "window_label": "Playoffs",
+ "window_why": "the weeks of this league's playoffs: what the trade does when it counts most",
+ "give": [
+  {
+   "sleeper_id": "11563",
+   "gsis_id": "00-0039732",
+   "player_name": "Bo Nix",
+   "position": "QB",
+   "team": "DEN",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+   "this_week": 19.78,
+   "cannot_play": null,
+   "market_price": 216,
+   "season_points": 282,
+   "roster_id": 12
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "6904",
+   "gsis_id": "00-0036389",
+   "player_name": "Jalen Hurts",
+   "position": "QB",
+   "team": "PHI",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+   "this_week": 20.15,
+   "cannot_play": null,
+   "market_price": 224,
+   "season_points": 290,
+   "roster_id": 1
+  }
+ ],
+ "before": {
+  "mine": {
+   "this_week": 111.15,
+   "horizon": 348.94,
+   "bench": 76.78,
+   "by_week": [
+    115.8,
+    116.38,
+    116.76
+   ]
+  },
+  "theirs": {
+   "this_week": 130.88,
+   "horizon": 362.52,
+   "bench": 48.74,
+   "by_week": [
+    120.16,
+    122.17,
+    120.19
+   ]
+  }
+ },
+ "after": {
+  "mine": {
+   "this_week": 111.52,
+   "horizon": 348.83,
+   "bench": 76.78,
+   "by_week": [
+    115.8,
+    116.27,
+    116.76
+   ]
+  },
+  "theirs": {
+   "this_week": 130.51,
+   "horizon": 362.45,
+   "bench": 48.74,
+   "by_week": [
+    120.41,
+    122.28,
+    119.76
+   ]
+  }
+ },
+ "fit": {
+  "this_week": {
+   "mine": 0.37,
+   "theirs": -0.37
+  },
+  "window": {
+   "mine": -0.11,
+   "theirs": -0.07
+  },
+  "next_4": {
+   "mine": -0.11,
+   "theirs": -0.07
+  },
+  "words": "**Fit** (what the best lineups gain): you **+0.4** this week and **-0.1** over weeks 15–17; them **-0.4** and **-0.1**."
+ },
+ "interest": {
+  "score": 25,
+  "label": "No deal",
+  "their_gain": -0.07,
+  "you": -0.11,
+  "caption": "by our numbers over weeks 15–17"
+ },
+ "sanity": null,
+ "market": {
+  "give": 216,
+  "get": 224,
+  "season_points_give": 282,
+  "season_points_get": 290,
+  "unknown": [],
+  "replacement": {
+   "QB": {
+    "season_points": 66,
+    "player_name": "Justin Fields"
+   },
+   "RB": {
+    "season_points": 102,
+    "player_name": "Kendre Miller"
+   },
+   "TE": {
+    "season_points": 128,
+    "player_name": "Michael Mayer"
+   },
+   "WR": {
+    "season_points": 126,
+    "player_name": "Kendrick Bourne"
+   }
+  },
+  "words": "**Market** (season points above the best free agent at the position): you give **216**, you get **224**: about even.",
+  "players": [
+   {
+    "sleeper_id": "11563",
+    "gsis_id": "00-0039732",
+    "player_name": "Bo Nix",
+    "position": "QB",
+    "team": "DEN",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+    "this_week": 19.78,
+    "cannot_play": null,
+    "market_price": 216,
+    "season_points": 282,
+    "roster_id": 12,
+    "goes_to": "Pitts n’ Titts"
+   },
+   {
+    "sleeper_id": "6904",
+    "gsis_id": "00-0036389",
+    "player_name": "Jalen Hurts",
+    "position": "QB",
+    "team": "PHI",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+    "this_week": 20.15,
+    "cannot_play": null,
+    "market_price": 224,
+    "season_points": 290,
+    "roster_id": 1,
+    "goes_to": "You"
+   }
+  ]
+ },
+ "verdict": "Does not help you (+0.4 this week, -0.1 over weeks 15–17), costs them 0.4 (0.1 over weeks 15–17); the market calls it about even: skip it.",
+ "headline": "**You give [Bo Nix](/player/00-0039732); you get [Jalen Hurts](/player/00-0036389).** Does not help you (+0.4 this week, -0.1 over weeks 15–17), costs them 0.4 (0.1 over weeks 15–17); the market calls it about even: skip it.",
+ "ros": {
+  "give": 261,
+  "get": 269,
+  "window": "weeks 4–17",
+  "words": "Rest of season (weeks 4–17, through this league's final): you give **261** points, you get **269** (+8) — the players' plain totals, before the roster spot a lopsided trade frees or fills and before your lineup is re-solved (the verdict above counts both). Only this week has betting lines; later weeks lean on usage and the schedule."
+ },
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    11,
+    11
+   ],
+   "theirs": [
+    3,
+    5
+   ],
+   "n": 12
+  },
+  "bench_value": {
+   "mine": [
+    3,
+    4
+   ],
+   "theirs": [
+    11,
+    11
+   ],
+   "n": 12
+  },
+  "words": "League rank, week 4: you 11th → **11th** of 12, Pitts n’ Titts 3rd → 5th; depth: you 3rd → **4th** of 12, Pitts n’ Titts 11th → 11th."
+ },
+ "size_words": "Roster size: no change (1 for 1).",
+ "sides": {
+  "mine": {
+   "roster_id": 12,
+   "team_name": "Shake & Bake",
+   "gives": [
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 19.78,
+     "cannot_play": null,
+     "market_price": 216,
+     "season_points": 282,
+     "roster_id": 12
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "6904",
+     "gsis_id": "00-0036389",
+     "player_name": "Jalen Hurts",
+     "position": "QB",
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+     "this_week": 20.15,
+     "cannot_play": null,
+     "market_price": 224,
+     "season_points": 290,
+     "roster_id": 1
+    }
+   ],
+   "weeks": [
+    15,
+    16,
+    17
+   ],
+   "before": {
+    "this_week": 115.8,
+    "horizon": 348.94,
+    "bench": 93.05,
+    "by_week": [
+     115.8,
+     116.38,
+     116.76
+    ]
+   },
+   "after": {
+    "this_week": 115.8,
+    "horizon": 348.83,
+    "bench": 92.8,
+    "by_week": [
+     115.8,
+     116.27,
+     116.76
+    ]
+   },
+   "gain_week": 0.0,
+   "gain_horizon": -0.11,
+   "cuts": [],
+   "limit": 21,
+   "size_before": 21,
+   "size_after": 21,
+   "opened": 0,
+   "fill": null,
+   "price_out": 216,
+   "price_in": 224,
+   "points_out": 282,
+   "points_in": 290,
+   "starts": [],
+   "sits": []
+  },
+  "theirs": {
+   "roster_id": 1,
+   "team_name": "Pitts n’ Titts",
+   "gives": [
+    {
+     "sleeper_id": "6904",
+     "gsis_id": "00-0036389",
+     "player_name": "Jalen Hurts",
+     "position": "QB",
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+     "this_week": 20.15,
+     "cannot_play": null,
+     "market_price": 224,
+     "season_points": 290,
+     "roster_id": 1
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 19.78,
+     "cannot_play": null,
+     "market_price": 216,
+     "season_points": 282,
+     "roster_id": 12
+    }
+   ],
+   "weeks": [
+    15,
+    16,
+    17
+   ],
+   "before": {
+    "this_week": 120.16,
+    "horizon": 362.52,
+    "bench": 56.75,
+    "by_week": [
+     120.16,
+     122.17,
+     120.19
+    ]
+   },
+   "after": {
+    "this_week": 120.41,
+    "horizon": 362.45,
+    "bench": 56.75,
+    "by_week": [
+     120.41,
+     122.28,
+     119.76
+    ]
+   },
+   "gain_week": 0.25,
+   "gain_horizon": -0.07,
+   "cuts": [],
+   "limit": 21,
+   "size_before": 21,
+   "size_after": 21,
+   "opened": 0,
+   "fill": null,
+   "price_out": 224,
+   "price_in": 216,
+   "points_out": 290,
+   "points_in": 282,
+   "starts": [
+    {
+     "sleeper_id": "11563",
+     "gsis_id": "00-0039732",
+     "player_name": "Bo Nix",
+     "position": "QB",
+     "team": "DEN",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+     "this_week": 19.78,
+     "cannot_play": null,
+     "market_price": 216,
+     "season_points": 282,
+     "roster_id": 12
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "6904",
+     "gsis_id": "00-0036389",
+     "player_name": "Jalen Hurts",
+     "position": "QB",
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+     "this_week": 20.15,
+     "cannot_play": null,
+     "market_price": 224,
+     "season_points": 290,
+     "roster_id": 1
+    }
+   ]
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Jalen Hurts (new)",
+     "gsis_id": "00-0036389",
+     "value": 20.15,
+     "change": 0.37
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Jacory Croskey-Merritt",
+     "gsis_id": "00-0040242",
+     "value": 9.7,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Emanuel Wilson",
+     "gsis_id": "00-0038797",
+     "value": 8.68,
+     "change": null
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Amon-Ra St. Brown",
+     "gsis_id": "00-0036963",
+     "value": 18.13,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 14.6,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "player_name": "George Kittle",
+     "gsis_id": "00-0033288",
+     "value": 10.36,
+     "change": null
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Denzel Boston (locked)",
+     "gsis_id": "00-0041037",
+     "value": 11.13,
+     "change": null
+    },
+    {
+     "slot": "Superflex",
+     "player_name": "Michael Penix Jr.",
+     "gsis_id": "00-0039917",
+     "value": 18.77,
+     "change": null
+    }
+   ],
+   "notes": [
+    "Starts after the trade: Jalen Hurts (QB, 20.15, new).",
+    "Out of the lineup after the trade: Bo Nix (QB, 19.78, traded)."
+   ],
+   "closest_call": "Emanuel Wilson at RB2, 0.46 ahead of the next option"
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Josh Allen",
+     "gsis_id": "00-0034857",
+     "value": 30.24,
+     "change": null
+    },
+    {
+     "slot": "RB1",
+     "player_name": "James Cook",
+     "gsis_id": "00-0037248",
+     "value": 18.78,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "player_name": "TreVeyon Henderson",
+     "gsis_id": "00-0040734",
+     "value": 11.54,
+     "change": null
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Nico Collins",
+     "gsis_id": "00-0036554",
+     "value": 17.04,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Christian Watson",
+     "gsis_id": "00-0038124",
+     "value": 14.86,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "player_name": "Kyle Pitts",
+     "gsis_id": "00-0036970",
+     "value": 6.88,
+     "change": null
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Kyle Monangai",
+     "gsis_id": "00-0040236",
+     "value": 11.39,
+     "change": null
+    },
+    {
+     "slot": "Superflex",
+     "player_name": "Bo Nix (new)",
+     "gsis_id": "00-0039732",
+     "value": 19.78,
+     "change": -0.37
+    }
+   ],
+   "notes": [
+    "Starts after the trade: Bo Nix (Superflex, 19.78, new).",
+    "Out of the lineup after the trade: Jalen Hurts (Superflex, 20.15, traded)."
+   ],
+   "closest_call": "Kyle Monangai at FLEX, 0.47 ahead of the next option"
+  }
+ },
+ "fill_players": {},
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)"
+}

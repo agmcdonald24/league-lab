@@ -12,6 +12,9 @@
   7
  ],
  "span": "weeks 4–7",
+ "window": "next4",
+ "window_label": "Next 4",
+ "window_why": "the next four weeks: far enough to matter, near enough to trust",
  "give": [
   {
    "sleeper_id": "8144",
@@ -55,11 +58,11 @@
    ]
   },
   "theirs": {
-   "this_week": 121.45,
-   "horizon": 481.93,
-   "bench": 70.12,
+   "this_week": 121.16,
+   "horizon": 481.64,
+   "bench": 45.96,
    "by_week": [
-    121.45,
+    121.16,
     122.37,
     118.73,
     119.38
@@ -79,11 +82,11 @@
    ]
   },
   "theirs": {
-   "this_week": 123.51,
-   "horizon": 490.28,
-   "bench": 59.82,
+   "this_week": 123.22,
+   "horizon": 489.99,
+   "bench": 45.96,
    "by_week": [
-    123.51,
+    123.22,
     124.68,
     120.54,
     121.55
@@ -95,12 +98,24 @@
    "mine": -2.06,
    "theirs": 2.06
   },
+  "window": {
+   "mine": -8.35,
+   "theirs": 8.35
+  },
   "next_4": {
    "mine": -8.35,
    "theirs": 8.35
   },
   "words": "**Fit** (what the best lineups gain): you **-2.1** this week and **-8.3** over weeks 4–7; them **+2.1** and **+8.3**."
  },
+ "interest": {
+  "score": 85,
+  "label": "Hard to say no",
+  "their_gain": 8.35,
+  "you": -8.35,
+  "caption": "by our numbers over weeks 4–7"
+ },
+ "sanity": null,
  "market": {
   "give": 106,
   "get": 81,
@@ -199,15 +214,15 @@
   "bench_value": {
    "mine": [
     3,
-    5
+    4
    ],
    "theirs": [
     2,
-    3
+    7
    ],
    "n": 10
   },
-  "words": "League rank, week 4: you 7th → **8th** of 10, Bench Mob 6th → 5th; weeks 4–7: you 6th → **6th** of 10, Bench Mob 3rd → 2nd; depth: you 3rd → **5th** of 10, Bench Mob 2nd → 3rd."
+  "words": "League rank, week 4: you 7th → **8th** of 10, Bench Mob 6th → 5th; weeks 4–7: you 6th → **6th** of 10, Bench Mob 3rd → 2nd; depth: you 3rd → **4th** of 10, Bench Mob 2nd → 7th."
  },
  "size_words": "Roster size: you must cut [Rome Odunze](/player/00-0039919) (WR, 128 season points; costs 0.0 over weeks 4–7) to stay at 15 players; they must cut [Alec Pierce](/player/00-0037664) (WR, 134 season points; costs 0.0 over weeks 4–7) to stay at 15 players.",
  "sides": {
@@ -373,22 +388,22 @@
     7
    ],
    "before": {
-    "this_week": 121.45,
-    "horizon": 481.93,
-    "bench": 70.12,
+    "this_week": 121.16,
+    "horizon": 481.64,
+    "bench": 45.96,
     "by_week": [
-     121.45,
+     121.16,
      122.37,
      118.73,
      119.38
     ]
    },
    "after": {
-    "this_week": 123.51,
-    "horizon": 490.28,
-    "bench": 59.82,
+    "this_week": 123.22,
+    "horizon": 489.99,
+    "bench": 45.96,
     "by_week": [
-     123.51,
+     123.22,
      124.68,
      120.54,
      121.55
@@ -405,8 +420,8 @@
       "position": "WR",
       "team": "IND",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qcg9t51wgp3hicavmkmy",
-      "this_week": 10.3,
-      "cannot_play": null,
+      "this_week": 0.0,
+      "cannot_play": "IR",
       "market_price": 0,
       "season_points": 134,
       "roster_id": 1
@@ -547,9 +562,9 @@
     },
     {
      "slot": "RB2",
-     "player_name": "Breece Hall",
-     "gsis_id": "00-0038120",
-     "value": 14.15,
+     "player_name": "Kyren Williams",
+     "gsis_id": "00-0037840",
+     "value": 13.94,
      "change": null
     },
     {
@@ -575,9 +590,9 @@
     },
     {
      "slot": "FLEX",
-     "player_name": "Kyren Williams",
-     "gsis_id": "00-0037840",
-     "value": 13.94,
+     "player_name": "Cam Skattebo",
+     "gsis_id": "00-0040715",
+     "value": 13.86,
      "change": null
     },
     {
@@ -599,7 +614,7 @@
     "Starts after the trade: Chris Olave (WR1, 18.64, new).",
     "Out of the lineup after the trade: CeeDee Lamb (WR1, 16.58, traded)."
    ],
-   "closest_call": "Kyren Williams at FLEX, 0.08 ahead of the next option"
+   "closest_call": "Philadelphia Eagles at DEF, 0.56 ahead of the next option"
   }
  },
  "fill_players": {},

@@ -435,8 +435,13 @@ dad on it this weekend; pulled forward from E). **I-A (one round, three devs)**:
 dial, the window control, usage tracking, the market flag. **Modelling**: the player-quality prior with a backtest,
 then re-rank. **Wave J**: accounts + ESPN.
 
-**I-0 delivered 2026-10-03** (STATUS § "Wave I-0"): the overlay (I0-A) and MFL (I0-B), merged, 197 API / 835 root /
-62 e2e green, QA-walked in fixture mode; deployed on Andrew's next push.
+**I-0 delivered 2026-10-03** (STATUS § "Wave I-0"): the overlay (I0-A), MFL (I0-B), MFL league search by name
+(I0-C); live on Render the same night, ESPN / MFL / the id table verified from the server.
+**I-A delivered 2026-10-03** (STATUS § "Wave I-A"): C (words, layout), D (calculator, dial, window, sanity bound,
+buy low / sell high on Trades), the rankings' pieces and "why this number" with the market line
+(`mart_market_line`), and M1's answer to B: no star penalty — a level gap with the market and an over-projected
+fringe; calibration built, measured, left off. Left for I-B: usage tracking; the news feed; `/api/team` and the
+opponent's total under the overlay; v3.1 (expected-bonus pricing, the fringe level, cold starts) behind a backtest.
 
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 

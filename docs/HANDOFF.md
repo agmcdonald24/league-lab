@@ -88,8 +88,17 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   (`src/league_lab/mfl_client.py`, `platforms.py` — MFL answered in Sleeper's shapes, so no screen changed —
   `player_ids.py`, the nflverse id table downloaded into `LEAGUE_LAB_CACHE_DIR` once a day); the Leagues screen takes
   an MFL league link and a team picker. `docs/ANY_LEAGUE.md` § "Availability" / § "MyFantasyLeague"; `docs/MFL_TERMS.md`.
-  Next: the rest of Iteration 17 (words, decisions screens, the quality prior); Wave J (accounts, Stripe, ESPN) on
-  Sleeper's licence.
+* **Wave I-A (2026-10-03, Saturday small hours)**: My Week's calls say why (`cards.reason_line`, shared with the
+  console; a coin flip reads "A or B — a coin flip"), short names + headshots on the phone, Trends = "Below and above
+  expectation" with reasons and a stat strip, the trade calculator as its own link with the interest dial and the
+  window control (`window=week|next4|ros|playoffs`), the partner finder's sanity bound (`trades.sanity`), buy low /
+  sell high on Trades, the rankings' pieces + "why this number" + the market line (`analytics.mart_market_line`,
+  priced per league by `api/league_lab_api/why.py`), "How to read the rankings". M1: **no star penalty** (STATUS §
+  "Wave I-A" M1): the gap Andrew sees is a level gap with the market (ours ~1–3 under Sleeper's top 24) plus an
+  over-projected fringe; `calibration.py` exists behind `LEAGUE_LAB_PROJECTION_CALIBRATION` (off; WR fringe only).
+  Next: I-B (usage tracking, the news feed, the overlay on `/api/team` and the opponent's total), v3.1 behind a
+  backtest (expected-bonus pricing, the fringe level, cold starts), Wave J (accounts, Stripe, ESPN) on Sleeper's
+  licence.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a

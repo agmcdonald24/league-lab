@@ -64,6 +64,10 @@ export interface LineupRow {
   value: number | null;
   margin: number | null;
   flag: string;
+  // ---- IA-1: the slot list's headshot and team (the player card unit's small size on every row)
+  headshot_url?: string | null;
+  team?: string | null;
+  // ---- end IA-1
 }
 
 export interface DecisionCard {
@@ -78,6 +82,7 @@ export interface DecisionCard {
   margin: number | null;
   verdict: string;
   how: string;
+  why?: string | null; // ---- IA-1: the reason sentence (also the card's second block)
   blocks: Block[];
 }
 
@@ -382,6 +387,18 @@ export interface TrendRow extends PlayerHead, Owned {
   gap: number | null; // ppg − xppg
   direction: "over" | "under" | "even";
   role_alert: RoleAlert | null;
+  // ---- IA-1: the work a game (last 3 games and the season), snaps over the last 3, the reason in a sentence
+  targets_pg_l3?: number | null;
+  targets_pg?: number | null;
+  carries_pg_l3?: number | null;
+  carries_pg?: number | null;
+  snap_pct_l3?: number | null;
+  rz_targets?: number | null;
+  rz_carries?: number | null;
+  tds?: number | null;
+  why?: string | null; // "Getting the targets of a 10.5-point player, scoring 3.6: no touchdowns on 4 red-zone targets."
+  cause?: string | null;
+  // ---- end IA-1
 }
 
 export interface Trends {
@@ -1033,6 +1050,7 @@ export interface AboutAnswer {
   league_name: string;
   source: "database" | "sleeper";
   why?: string;
+  rankings_howto?: string; // ---- IA-3 (PO merge): "How to read the rankings", the same text as /api/ros howto_rankings
   model: { answer: string; sections: { key: string; title: string; text: string }[] };
   importance: {
     model_version: string | null;
@@ -1061,3 +1079,115 @@ export interface AboutAnswer {
 
 export const aboutPath = (league: string) => `/api/about?league=${encodeURIComponent(league)}`;
 // ---- end H1
+
+// ---- IA-2 (Wave I-A): the trade calculator's window and interest dial, the partner finder's sanity bound, buy low /
+// sell high on Trades (GET /api/trades/lists; no longer on /api/waivers). Additive: declaration merging + new helpers.
+export type TradeWindow = "week" | "next4" | "ros" | "playoffs";
+
+/** The dial: the other manager's interest 0–100 by our numbers over the window, the label, your gain. */
+export interface Interest {
+  score: number;
+  label: "No deal" | "Maybe" | "Likely" | "Hard to say no";
+  their_gain: number;
+  you: number | null;
+  caption: string; // "by our numbers over weeks 4–7"
+}
+
+export interface TradeEval {
+  window?: TradeWindow;
+  window_label?: string;
+  window_why?: string;
+  interest?: Interest;
+  sanity?: string | null; // why the partner finder would not suggest this package (the market, rest of season), or null
+  // fit.next_4 is the window's gain (its name before IA-2; fit.window on the API carries the same numbers)
+}
+
+export interface PartnerRow {
+  interest?: Interest;
+}
+
+export interface Partners {
+  window?: TradeWindow;
+  window_label?: string;
+  window_why?: string;
+  weeks?: number[];
+  rejected?: { partner_team: string; give: string[]; get: string[]; why: string }[];
+  rejected_count?: number;
+  sanity?: { ros_gap_share: number; market_share: number; ros_players: number; market_players: number; market_note: string | null };
+}
+
+/** GET /api/trades/lists: buy low / sell high (Wave H's lists, moved from /api/waivers). */
+export type TradeLists = NonNullable<Waivers["trade_lists"]> & { league_id: string; roster_id: number; position: string };
+
+export const tradePaths = {
+  partners: (league: string, team: number, want = "ALL", window: TradeWindow = "next4") =>
+    decisionPaths.partners(league, team, want) + (window === "next4" ? "" : `&window=${window}`),
+  lists: (league: string, team: number) => `/api/trades/lists?league=${encodeURIComponent(league)}&team=${team}`,
+};
+
+/** POST /api/trades/evaluate over a window (next4, the default, is not sent: the body stays the G4 one). */
+export function evaluateIn(body: { league: string; team: number; partner: number; give: string[]; get: string[] }, window: TradeWindow): Promise<TradeEval> {
+  return postEvaluate(window === "next4" ? body : ({ ...body, window } as typeof body));
+}
+// ---- end IA-2
+
+// ---- IA-3 (Wave I-A): the rankings' pieces, "why this number", the market line (GET /api/ros, /api/player, /api/my-week)
+/** One piece of a projection: the stat, what it is worth in this league's scoring, said in words. */
+export interface WhyPiece {
+  stat: string; // "receptions" … or "rest" (bonuses / rounding: what a per-unit price cannot show)
+  label: string;
+  value: number | null;
+  each: number | null; // points per unit in this league's scoring
+  points: number;
+  words: string; // "5.5 catches × 0.5 = +2.7"
+}
+/** The stat line × the league's scoring = the points (per game over the window on /api/ros, this week on the card). */
+export interface Why {
+  per: "game" | "week";
+  points: number;
+  pieces: WhyPiece[];
+  sentence: string; // "8.9 targets → 5.5 catches → 96 yards → 0.48 TDs → 15.4 points a game × 12 games = 185"
+  games: number | null;
+  total: number | null;
+}
+export interface Market {
+  market_points: number | null; // Sleeper's projection for the week, in this league's scoring
+  ours: number | null;
+  ratio: number | null;
+  week: number | null;
+  words: string | null; // "Sleeper has him at 16.2." + the gap in words when ours is under 70% / over 140% of it
+  why: string | null; // why there is no market number
+  far: boolean;
+}
+export interface LeansOn {
+  features: string[];
+  words: string; // About's sentence: "For WRs the model leans most on **…**. Next: *…* · *…*."
+  scored_in: string | null;
+}
+export interface RosPlayer {
+  player_key?: string | null; // a defense's Sleeper id (gsis_id null)
+  headshot_url?: string | null;
+  bye_weeks?: number[];
+  ros_points_per_game?: number | null;
+  per_game?: Record<string, number | null>; // the table's columns for his position (per game, projected)
+  why?: Why | null;
+  market_points?: number | null; // this week's
+  week_points?: number | null; // this week's projection (ours), the market's comparison
+  market_words?: string | null; // "Sleeper has him at 16.2." + the gap in words when far
+}
+export interface RosList {
+  piece_columns?: Record<string, string[]>;
+  leans_on?: Record<string, LeansOn>;
+  market_week?: number | null;
+  market_note?: string;
+  howto_rankings?: string;
+}
+export interface LineupRow {
+  market_points?: number | null; // Sleeper's number for the week (null where the market has none)
+}
+export interface PlayerCard {
+  why?: Why | null;
+  market?: Market | null;
+  leans_on?: LeansOn | null;
+}
+// ---- end IA-3

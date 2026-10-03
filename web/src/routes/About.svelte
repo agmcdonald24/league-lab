@@ -91,6 +91,10 @@
         {/each}
       </div>
       <Expander title="How to read the grades" testid="grades-howto"><Md text={GRADES_HOWTO} block class="text-base leading-snug" /></Expander>
+      {#if ab.data?.rankings_howto}
+        <!-- IA-3 (PO merge): the same paragraph the rest-of-season screen shows under its answer -->
+        <Expander title="How to read the rankings" testid="rankings-howto"><Md text={ab.data.rankings_howto} block class="text-base leading-snug" /></Expander>
+      {/if}
     </section>
   {/if}
   {#if ab.data?.why}<p class="text-sm leading-snug text-ink-3" data-testid="about-why">{ab.data.why}</p>{/if}

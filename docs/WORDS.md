@@ -51,7 +51,7 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | feature | input; "what the model looks at" |
 | `targets_pg_l3` and the other inputs | `projections.FEATURE_LABELS` ("Targets per game, last 3 games") |
 | xPPG, expected points | expected points per game: what his targets and carries are usually worth |
-| PPG − xPPG | scoring above / below what his work is worth (below = due to pick up, above = due to cool off) |
+| PPG − xPPG | **below / above expectation** (IA-1; was "due" / "running hot"): "Getting the targets of a 10.5-point player, scoring 3.6" — then one cause the numbers support or none: "no touchdowns on 4 red-zone targets", "4 touchdown passes in 2 games", "his quarterback changed", "his share of the targets fell from 25% to 12%" |
 | target share, carry share | his share of his team's targets / carries |
 | snap % | share of plays he is on the field |
 | first-read share | how often he is the quarterback's first look |
@@ -60,6 +60,9 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | aDOT, air yards | how far downfield his targets travel |
 | implied team total | the points Vegas expects his team to score |
 | opp rank | the matchup rank: 1 = the defense that gives up the most to his position (the matchup you want) |
+| opp rank in a sentence (IA-1) | "the Colts, who give up the 2nd-most points to running backs" (rank ≤ 10) / "the 7th-fewest" (rank ≥ 23); the middle is not worth a sentence |
+| a decision card's reason (IA-1, `cards.reason_line`) | one sentence under the call: the strongest reason for the starter and the strongest against the other player ("Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game"); under 55% (or under 1 point apart without a percentage): "Too close to call: the projection says A by 0.5, the ranges say either. Go with B on the matchup: …" (injury first, then matchup, role, betting line); last names, whole names when two share one |
+| implied total in a sentence (IA-1) | "Vegas expects Willis's Dolphins to score only 16" (≤ 18) / "… to score 27" (≥ 26) |
 | z / Strength, "beyond noise" | how unusual the change is for him (1 = worth a look, 2 = clear); bigger than his usual week-to-week swing |
 | momentum | his role trend |
 | lineup value (B1) | the projected points of your best lineup |
@@ -83,6 +86,10 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | `ros_p10`–`ros_p90` (E2, weeks taken as independent) | likely: "(likely 190–273)"; the gloss "where 8 seasons in 10 would land if every week were its own roll of the dice; a role change or an injury moves the weeks together, so the real range is wider" |
 | `ros_rank_pos` (E2) | "WR4 in this league" (every player at the position, rostered or free agent); "not ranked (on injured reserve)" |
 | `weeks_with_lines` (E2) | "Only week 4 has betting lines yet: the later weeks lean on his usage and the schedule" |
+| stat-line pieces × scoring (IA-3) | "Why this number": "8.9 targets → 5.5 catches → 96 yards → 0.48 TDs → 15.4 points a game × 12 games = 185", then one line a piece ("5.5 catches × 0.5 = +2.7", "8.9 targets (no points on their own)"); what a per-unit price cannot show is its own line: "yardage bonuses (a big game pays extra in this league)" or "the small pieces and rounding" |
+| market line, `market_points` (IA-3) | "Sleeper has him at 16.2." (this week, this league's scoring); under 70% / over 140% of it: "We're well under (over) the market: our number follows his recent usage. Treat it with care."; none: "Sleeper's number for this week is not in yet." |
+| `piece_columns` (IA-3) | per game, projected: Att · Pass yd · Pass TD · INT (QB); Car · Rush yd · Tgt · Rec · Rec yd · TD (RB); Tgt · Rec · Rec yd · TD (WR / TE) |
+| the rankings' honesty line (IA-3, `about.RANKINGS_HOWTO`) | "How to read the rankings": from his work, not his name; superflex / 6-point passing TDs put quarterbacks on top by design; Sleeper's number is there to compare |
 | yardstick (Receivers, U-17) | what the season's top-12 at the position (the 12 with the most points a game) average |
 
 ## Adding to it

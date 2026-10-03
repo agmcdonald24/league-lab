@@ -73,7 +73,7 @@ from __future__ import annotations
 
 import math
 import time
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import combinations
 
@@ -542,6 +542,8 @@ class _Search:
     me: int
     weeks: tuple[int, ...]
     stats: dict = field(default_factory=dict)
+    allow: Callable[[Package], str | None] | None = None     # IA-2: None = keep; a reason = the package is set aside
+    rejected: list = field(default_factory=list)              # IA-2: (package, reason) set aside, in search order
 
     def __post_init__(self):
         self.incoming: dict[str, list[Player | None]] = {}
@@ -594,7 +596,8 @@ class _Search:
 
 def _best(search: _Search, cands: list[tuple[float, tuple[str, ...], tuple[str, ...]]]) -> Package | None:
     """Branch and bound over (upper bound, give, get): evaluate in bound order until the bound cannot reach
-    the best package found (or a cent)."""
+    the best package found (or a cent). With ``search.allow`` (IA-2): a package that would be the best so far but
+    fails the sanity rules is set aside (``search.rejected``) and the search goes on to the next."""
     best: Package | None = None
     search.stats["candidates"] = search.stats.get("candidates", 0) + len(cands)
     for ub, give, get in sorted(cands, key=lambda c: (-c[0], len(c[1]) + len(c[2]), c[1], c[2])):
@@ -603,6 +606,10 @@ def _best(search: _Search, cands: list[tuple[float, tuple[str, ...], tuple[str, 
             break
         pk = search.evaluate(give, get)
         if pk.mutual and (best is None or pk.order() < best.order()):
+            why = search.allow(pk) if search.allow is not None else None   # ---- IA-2: the sanity bound
+            if why:
+                search.rejected.append((pk, why))
+                continue
             best = pk
     return best
 
@@ -655,14 +662,18 @@ def partner(search: _Search, them: int, shapes: Sequence[str] = ("1-for-1", "2-f
 
 def partners(board: RosterBoard, me: int, *, weeks: Iterable[int] | None = None,
              shapes: Sequence[str] = ("1-for-1", "2-for-1", "1-for-2"), stats: dict | None = None,
-             rosters: Iterable[int] | None = None, want: str | None = None) -> list[Partner]:
+             rosters: Iterable[int] | None = None, want: str | None = None,
+             allow: Callable[[Package], str | None] | None = None, rejected: list | None = None) -> list[Partner]:
     """Every other roster (or those in ``rosters``) with its best 1-for-1 and 2-for-1 (see the module
     docstring), best partner first; rosters with no trade that raises both lineups come last (``best`` None).
     ``want`` (Wave G, the API's partner finder): only packages in which every player I get plays that position
-    (the search is the same, on fewer of their players; None = every package, the page's sweep)."""
+    (the search is the same, on fewer of their players; None = every package, the page's sweep).
+    ``allow`` (IA-2, the sanity bound): called on a package that would be a roster's best; a reason sets it aside
+    (appended to ``rejected`` as (package, reason)) and the search takes the next best. None: every package."""
     t0 = time.perf_counter()
     weeks = tuple(int(w) for w in (weeks or board.weeks))
-    search = _Search(board, int(me), weeks, stats if stats is not None else {})
+    search = _Search(board, int(me), weeks, stats if stats is not None else {}, allow=allow,
+                     rejected=rejected if rejected is not None else [])
     only = None if rosters is None else {int(r) for r in rosters}
     out = [partner(search, r, shapes, want) for r in board.rosters if r != int(me) and (only is None or r in only)]
     out.sort(key=lambda p: (p.best is None, p.best.order() if p.best is not None else (), p.roster_id))
@@ -717,6 +728,33 @@ def partners_exhaustive(board: RosterBoard, me: int, *, weeks: Iterable[int] | N
         out.append(Partner(int(them), one, two))
     out.sort(key=lambda p: (p.best is None, p.best.order() if p.best is not None else (), p.roster_id))
     return out
+
+
+# ------------------------------------------------------------------------------ IA-2: the sanity bound on suggestions
+# "Justin Jefferson for MarShawn Lloyd" must not be proposed: the lineup gain over a few weeks can hide a big loss of
+# season value, and our projection can sit far under the market's for a star whose usage dipped. Two rules on a
+# package the partner search would suggest (``partners(..., allow=...)``); the user's own trades are only flagged.
+ROS_GAP_SHARE = 0.25      # (a) refuse when what you give is worth this share more rest of season than what you get
+MARKET_SHARE = 0.65       # (b) refuse when our number for a player you give is under this share of Sleeper's
+
+
+def sanity(give: Sequence[str], get: Sequence[str], *, ros: Mapping[str, float], ours: Mapping[str, float],
+           market: Mapping[str, float], name: Callable[[str], str] = str) -> str | None:
+    """Why a package should not be suggested, or None. (b) the market: a player you give whose projection this week
+    (``ours``) is under ``MARKET_SHARE`` of Sleeper's (``market``, the same week in the league's scoring) - the
+    suggestion only works because our number is low; (a) rest of season: the rest-of-season points you give (the
+    rest-of-season board, this league's scoring) exceed what comes back by more than ``ROS_GAP_SHARE`` of what you
+    give. A player with no number is not judged (unknown is not zero): (a) needs every player of the package."""
+    for p in give:
+        o, m = ours.get(p), market.get(p)
+        if o is not None and m is not None and m > 0 and o < MARKET_SHARE * m:
+            return f"the market disagrees with our number on {name(p)} (ours {o:.1f} this week, Sleeper's {m:.1f})"
+    if give and get and all(p in ros for p in (*give, *get)):
+        out, inc = sum(float(ros[p]) for p in give), sum(float(ros[p]) for p in get)
+        if out > 0 and out - inc > ROS_GAP_SHARE * out:
+            return (f"you give {whole(out)} rest-of-season points for {whole(inc)}: {whole(out - inc)} more, over "
+                    f"{round(ROS_GAP_SHARE * 100)}% of what you give")
+    return None
 
 
 # ------------------------------------------------------------------------------ words and ranks
@@ -818,4 +856,4 @@ def clean_package(board: RosterBoard, me: int, them: int | None, give: Iterable[
 __all__ = ["MARKET_SQL", "REPLACEMENT_SQL", "Cut", "Fill", "Package", "Partner", "Side", "Trade", "about_even", "best_fill",
            "clean_package", "evaluate", "fairness_line", "fit_line", "market_by_player", "package_gains", "parse_ids",
            "partners", "partners_exhaustive", "position_of", "price_by_player", "rank_change", "ranks", "roster_limit",
-           "season_value", "tradeable", "two_for_one_counts", "verdict", "whole"]
+           "sanity", "season_value", "tradeable", "two_for_one_counts", "verdict", "whole"]

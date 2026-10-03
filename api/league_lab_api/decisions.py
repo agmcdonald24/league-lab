@@ -573,6 +573,7 @@ class TradeContext:
         self.league_id = str(league_id)
         self.is_house = house(league_id, source)
         self.free_agent_pool = None
+        self.window_cache: dict = {}        # ---- IA-2: the windows' boards, the ROS board, Sleeper's week
         if self.is_house:
             members = _members(self.league_id)
             self.names = members
@@ -785,9 +786,191 @@ def trade_context(league_id: str, source: str | None = None, *, as_of: datetime 
     return _memo(("trade_context", str(league_id), is_house), is_house, lambda: TradeContext(league_id, source))
 
 
+# ---- IA-2 (Wave I-A): the window, the interest dial, the sanity bound ---------------------------------------------
+# "Why weeks 4–7?" had no answer on the page. A trade is now priced over a window the user picks: this week, the next
+# four (the default: far enough to matter, near enough to trust), the rest of the season or the playoffs. The board
+# holds the next four weeks (mart_league_roster_horizon / the on-demand solve); a longer window adds a row per player
+# and week past them from the rest-of-season board (mart_player_ros_projection.weeks_json for a house league,
+# `anyleague.ros_table` - load_window + skill_window, one round of queries - on demand): his projection that week in
+# this league's scoring, on the bench (the solver picks the starters), or unplayable on a bye; a player in the IR
+# slot, on the taxi squad, on NFL injured reserve or with no NFL team stays so (his state in the board's last week:
+# the rest of season does not guess a return). The trade engine is the same; the gains are the window's.
+WINDOWS = ("week", "next4", "ros", "playoffs")
+WINDOW_LABELS = {"week": "This week", "next4": "Next 4", "ros": "Rest of season", "playoffs": "Playoffs"}
+WINDOW_WHY = {"week": "this week only: the lineup you set for Sunday",
+              "next4": "the next four weeks: far enough to matter, near enough to trust",
+              "ros": "every week left to this league's final, playoffs included: the longest view, the least sure",
+              "playoffs": "the weeks of this league's playoffs: what the trade does when it counts most"}
+CARRY_REASONS = frozenset({"IR slot", "taxi squad", "NFL injured reserve", "no NFL team"})
+ROS_WEEKS_SQL = """select player_key, ros_points, weeks_json, from_week, last_week, playoff_week_start
+                   from analytics.mart_player_ros_projection where league_id = %s"""
+
+
+def check_window(window: str | None) -> str:
+    w = (window or "next4").lower()
+    if w not in WINDOWS:
+        raise BadRequest(f"no window {window} (week, next4, ros or playoffs)")
+    return w
+
+
+def _weeks_json(v) -> list:
+    if isinstance(v, str):
+        import json as _json
+        v = _json.loads(v)
+    return list(v) if isinstance(v, list | tuple | np.ndarray) else []
+
+
+def ros_weeks(ctx: TradeContext) -> dict:
+    """The rest-of-season board for the context's league: {"points": key -> ros points, "weeks": key -> {week: pts},
+    "first", "last", "playoff_start"} (empty dicts / None when there is no board). Kept on the context."""
+    if "ros_weeks" in ctx.window_cache:
+        return ctx.window_cache["ros_weeks"]
+    try:
+        df = query(ROS_WEEKS_SQL, (ctx.league_id,)) if ctx.is_house else _ros_frame(ctx.league_id, False)
+    except Exception:  # noqa: BLE001 - no rest-of-season board: the longer windows say so, the others carry on
+        df = pd.DataFrame()
+    out: dict = {"points": {}, "weeks": {}, "first": None, "last": None, "playoff_start": None}
+    if df is not None and not df.empty:
+        head = df.iloc[0]
+        out["first"], out["last"] = _int(head.get("from_week")), _int(head.get("last_week"))
+        out["playoff_start"] = _int(head.get("playoff_week_start"))
+        for r in df.itertuples():
+            k = str(r.player_key)
+            if _num(r.ros_points) is not None:
+                out["points"][k] = float(r.ros_points)
+            out["weeks"][k] = {int(w): float(v) for w, v in _weeks_json(getattr(r, "weeks_json", None)) if v is not None}
+    ctx.window_cache["ros_weeks"] = out
+    return out
+
+
+def window_board(ctx: TradeContext, window: str) -> tuple[RosterBoard, tuple[int, ...], str]:
+    """(the board, the window's weeks, its span words: "weeks 4–16") for a window (see the block's comment)."""
+    window = check_window(window)
+    key = ("board", window)
+    if key in ctx.window_cache:
+        return ctx.window_cache[key]
+    weeks = list(ctx.board.weeks)
+    board = ctx.board
+    if window == "week":
+        weeks = [ctx.this_week]
+    elif window in ("ros", "playoffs"):
+        rw = ros_weeks(ctx)
+        if rw["last"] is None:
+            raise BadRequest("the rest-of-season board is not ready for this league yet: try the next four weeks")
+        last = int(rw["last"])
+        if window == "playoffs" and rw["playoff_start"] is None:
+            raise BadRequest("this league has no playoffs on Sleeper: try the rest of the season")
+        extra_weeks = [w for w in range(max(weeks) + 1, last + 1)]
+        rows = ctx.horizon.to_dict("records")
+        if extra_weeks:
+            lastw = max(weeks)
+            ident = {str(r["sleeper_player_id"]): r for r in rows
+                     if r.get("sleeper_player_id") is not None and int(r["week"]) == lastw}
+            for r in rows:                     # a player with no row in the last board week: his latest row
+                sid = r.get("sleeper_player_id")
+                if sid is not None and str(sid) not in ident:
+                    ident[str(sid)] = r
+            for sid, r in ident.items():
+                gs = r.get("gsis_id")
+                pk = str(gs) if isinstance(gs, str) and gs else sid
+                carry = r.get("reason") if r.get("role") == "unplayable" and r.get("reason") in CARRY_REASONS else None
+                by_week = rw["weeks"].get(pk, {})
+                for w in extra_weeks:
+                    v = by_week.get(w)
+                    base = {"roster_id": int(r["roster_id"]), "week": w, "sleeper_player_id": sid, "gsis_id": gs,
+                            "player_name": r.get("player_name"), "position": r.get("position"),
+                            "fantasy_positions": r.get("fantasy_positions"), "slot": None, "slot_type": None,
+                            "is_locked": False, "lineup_margin": None}
+                    if carry is not None or v is None:
+                        rows.append({**base, "role": "unplayable", "player_value": None, "value_source": None,
+                                     "reason": carry or "bye"})
+                    else:
+                        rows.append({**base, "role": "bench", "player_value": round(float(v), 2),
+                                     "value_source": "proj_points", "reason": None})
+            board = RosterBoard(rows, tuple(ctx.slots))
+        weeks = list(range(ctx.this_week, last + 1))
+        if window == "playoffs":
+            weeks = [w for w in weeks if w >= int(rw["playoff_start"])]
+            if not weeks:
+                raise BadRequest("this league's playoffs are over")
+    span = f"weeks {weeks[0]}–{weeks[-1]}" if len(weeks) > 1 else f"week {weeks[0]}"
+    out = (board, tuple(int(w) for w in weeks), span)
+    ctx.window_cache[key] = out
+    return out
+
+
+INTEREST_POINTS = ((-6.0, 0.0), (0.0, 25.0), (2.0, 50.0), (6.0, 75.0), (12.0, 100.0))
+
+
+def interest(their_gain: float | None, my_gain: float | None, span: str) -> dict:
+    """The dial: the other manager's interest 0-100 from his lineup gain over the window, by our numbers. "No deal" when
+    his side loses or gains nothing he would see (under 0.05, shown "+0.0"), "Maybe" under 2 points, "Likely" 2-6,
+    "Hard to say no" over 6. The needle: piecewise linear through (-6, 0) (0, 25) (2, 50) (6, 75) (12, 100), so each
+    label owns a quarter of the dial."""
+    g = float(their_gain or 0.0)
+    label = "No deal" if g < 0.05 else "Maybe" if g < 2 else "Likely" if g <= 6 else "Hard to say no"
+    pts = INTEREST_POINTS
+    if g <= pts[0][0]:
+        score = pts[0][1]
+    elif g >= pts[-1][0]:
+        score = pts[-1][1]
+    else:
+        score = next(y0 + (g - x0) * (y1 - y0) / (x1 - x0) for (x0, y0), (x1, y1) in zip(pts, pts[1:], strict=False)
+                     if x0 <= g <= x1)
+    return {"score": int(round(score)), "label": label, "their_gain": round(g, 2),
+            "you": None if my_gain is None else round(float(my_gain), 2), "caption": f"by our numbers over {span}"}
+
+
+SCORING_SQL = "select scoring_settings from analytics.dim_league_season where league_id = %s order by season desc limit 1"
+
+
+def market_week(ctx: TradeContext) -> dict[str, float]:
+    """Sleeper id -> Sleeper's projection this week in this league's scoring. PO merge (Wave I-A): read through IA-3's
+    ``why.market_points`` — ``analytics.mart_market_line`` (built by dbt from raw.sleeper_projections, on the hosted
+    copy too) priced with ``scoring.compute_points`` — instead of ``raw`` directly, which the hosted copy never holds.
+    Empty when the mart has no row for the week; rule (b) is then not applied and the response says so."""
+    if "market_week" in ctx.window_cache:
+        return ctx.window_cache["market_week"]
+    out: dict[str, float] = {}
+    try:
+        from . import why as _why
+        if ctx.lw is not None:
+            scoring = dict(ctx.lw.scoring)
+        else:
+            sc = query(SCORING_SQL, (ctx.league_id,))
+            raw = sc["scoring_settings"].iloc[0] if not sc.empty else {}
+            raw = json.loads(raw) if isinstance(raw, str) else (raw or {})
+            scoring = {k: float(v) for k, v in raw.items() if v is not None}
+        gs = {str(sid): ctx.gsis(sid) for sid in ctx.info.index}
+        pts = _why.market_points(ctx.season, ctx.this_week, [g for g in gs.values() if g], scoring)
+        out = {sid: float(pts[str(g)]) for sid, g in gs.items() if g and str(g) in pts}
+    except Exception:  # noqa: BLE001 - no mart / no rows: rule (b) is not applied, the response says so
+        out = {}
+    ctx.window_cache["market_week"] = out
+    return out
+
+
+def sanity_inputs(ctx: TradeContext) -> tuple[dict, dict, dict]:
+    """(ros, ours, market) keyed by Sleeper id for `trades.sanity`: rest-of-season points (the ROS board), our
+    projection this week (the board's value; a player who cannot play this week is not judged), Sleeper's."""
+    rw = ros_weeks(ctx)
+    ros, ours = {}, {}
+    for sid in ctx.info.index:
+        g = ctx.gsis(sid)
+        k = str(g) if g else str(sid)
+        if k in rw["points"]:
+            ros[str(sid)] = rw["points"][k]
+        v, why = ctx.week_value(sid)
+        if v is not None and why is None and str(sid) not in getattr(ctx, "out_now", {}):
+            ours[str(sid)] = float(v)
+    return ros, ours, market_week(ctx)
+# ---- end IA-2 (block 1)
+
+
 def evaluate(league_id: str, team: int, partner: int | None, give, get, *, source: str | None = None,
-             as_of: datetime | None = None) -> dict:
+             as_of: datetime | None = None, window: str | None = None) -> dict:
     t0 = time.perf_counter()
+    window = check_window(window)                                    # ---- IA-2: the window (default next4)
     ctx = trade_context(league_id, source, as_of=as_of)
     t1 = time.perf_counter()
     if int(team) not in ctx.board.rosters:
@@ -802,22 +985,26 @@ def evaluate(league_id: str, team: int, partner: int | None, give, get, *, sourc
         raise BadRequest(f"not on these rosters: {', '.join(bad)} (give: your players; get: theirs)")
     if not g or not t:
         raise BadRequest("a trade needs at least one player on each side")
+    board, weeks, span = window_board(ctx, window)
     try:
-        trade = T.evaluate(ctx.board, g, t, market=ctx.market, prices=ctx.prices)
+        trade = T.evaluate(board, g, t, weeks, market=ctx.market, prices=ctx.prices)
         fa_meta: dict = {}
         if trade.mine.opened or trade.theirs.opened:
-            pool, fa_meta = ctx.fa_pool(tuple(ctx.board.weeks))
-            trade = T.evaluate(ctx.board, g, t, market=ctx.market, prices=ctx.prices, free_agents=pool)
+            pool, fa_meta = ctx.fa_pool(weeks)
+            trade = T.evaluate(board, g, t, weeks, market=ctx.market, prices=ctx.prices, free_agents=pool)
+        # this week's lineups and gains: the window's first week, or (the playoffs) this week evaluated on its own
+        now = trade if weeks[0] == ctx.this_week else T.evaluate(board, g, t, (ctx.this_week,), market=ctx.market,
+                                                                  prices=ctx.prices)
     except ValueError as exc:
         raise BadRequest(str(exc)) from exc
     t2 = time.perf_counter()
     me, th = trade.mine, trade.theirs
-    span = ctx.span_words
+    view = trade if now is trade else _View(now, trade)              # fit / verdict: this week + the window
     # the page's own sentence functions (size_words, closest, lineup_frame) with its globals bound to this league
     ns = page_functions("6_Trade_Finder.py", TRADE_FUNCS, name=ctx.name, gsis=ctx.gsis, pos=ctx.pos, link=ctx.link,
                         player_link=ui.player_link, span_words=span, slot_label=cards.slot_label)
     lineups = {}
-    for who, side in (("mine", me), ("theirs", th)):
+    for who, side in (("mine", now.mine), ("theirs", now.theirs)):
         frame, notes = ns["lineup_frame"](side)
         lineups[who] = {"slots": [{"slot": r["slot"], "player_name": _str(r["player_name"]), "gsis_id": _str(r["gsis_id"]),
                                    "value": _num(r["trade_value"]),
@@ -826,25 +1013,39 @@ def evaluate(league_id: str, team: int, partner: int | None, give, get, *, sourc
                         "notes": [links(x) for x in notes], "closest_call": links(ns["closest"](side))}
     size = ns["size_words"](me, fa_meta, "you", "") + ns["size_words"](th, fa_meta, "they", "")
     size_words = ("Roster size: " + "; ".join(size) + ".") if size else f"Roster size: no change ({len(g)} for {len(t)})."
-    # league rank before / after (the page: mart_league_roster_rankings with the two rosters' values replaced)
-    rank = _rank_change(ctx, int(team), int(partner), me, th, ns["rank_words"])
+    # league rank before / after (the page: mart_league_roster_rankings with the two rosters' values replaced); the
+    # horizon rank compares the next four weeks only (the league's other rosters are valued over those)
+    rank = _rank_change(ctx, int(team), int(partner), now.mine, now.theirs, ns["rank_words"],
+                        horizon=(me, th) if window == "next4" else None)
     moving = [{**ctx.player(x), "goes_to": ctx.team(partner) if x in g else "You"} for x in [*g, *t]]
     repl = {p: {"season_points": T.whole(v), "player_name": ctx.repl_name.get(p)} for p, v in sorted(ctx.replacement.items())}
+    sides = {"mine": _side(ctx, me), "theirs": _side(ctx, th)}
+    state = {k: {w: {"this_week": T._r2(sn.before[0] if w == "before" else sn.after[0]),
+                     "horizon": s.before_horizon if w == "before" else s.after_horizon,
+                     "bench": sn.bench_before if w == "before" else sn.bench_after,
+                     "by_week": [T._r2(x) for x in (s.before if w == "before" else s.after)]}
+                 for w in ("before", "after")}
+             for k, s, sn in (("mine", me, now.mine), ("theirs", th, now.theirs))}
+    ros, ours, mkt = sanity_inputs(ctx)
     out = {"league_id": ctx.league_id, "source": "database" if ctx.is_house else "sleeper", "roster_id": int(team),
            "partner": int(partner), "partner_team": ctx.team(partner), "week": ctx.this_week, "weeks": list(trade.weeks),
-           "span": span, "give": [ctx.player(x) for x in g], "get": [ctx.player(x) for x in t],
-           "before": {"mine": _side(ctx, me)["before"], "theirs": _side(ctx, th)["before"]},
-           "after": {"mine": _side(ctx, me)["after"], "theirs": _side(ctx, th)["after"]},
-           "fit": {"this_week": {"mine": me.gain_week, "theirs": th.gain_week},
-                   "next_4": {"mine": me.gain_horizon, "theirs": th.gain_horizon},
-                   "words": links(T.fit_line(trade, span))},
+           "span": span, "window": window, "window_label": WINDOW_LABELS[window], "window_why": WINDOW_WHY[window],
+           "give": [ctx.player(x) for x in g], "get": [ctx.player(x) for x in t],
+           "before": {"mine": state["mine"]["before"], "theirs": state["theirs"]["before"]},
+           "after": {"mine": state["mine"]["after"], "theirs": state["theirs"]["after"]},
+           "fit": {"this_week": {"mine": now.mine.gain_week, "theirs": now.theirs.gain_week},
+                   "window": {"mine": me.gain_horizon, "theirs": th.gain_horizon},
+                   "next_4": {"mine": me.gain_horizon, "theirs": th.gain_horizon},     # the window's (its name before IA-2)
+                   "words": links(T.fit_line(view, span))},
+           "interest": interest(th.gain_horizon, me.gain_horizon, span),
+           "sanity": T.sanity(g, t, ros=ros, ours=ours, market=mkt, name=ctx.name),
            "market": {"give": me.price_out, "get": me.price_in, "season_points_give": me.points_out,
                       "season_points_get": me.points_in, "unknown": [*me.unknown_out, *me.unknown_in],
                       "replacement": repl, "words": links(T.fairness_line(trade)), "players": moving},
-           "verdict": links(T.verdict(trade, span)),
-           "headline": links(f"**You give {_names(ctx, g)}; you get {_names(ctx, t)}.** {T.verdict(trade, span)}"),
+           "verdict": links(T.verdict(view, span)),
+           "headline": links(f"**You give {_names(ctx, g)}; you get {_names(ctx, t)}.** {T.verdict(view, span)}"),
            "ros": _ros_package(ctx, g, t), "ranks": rank, "size_words": links(size_words),
-           "sides": {"mine": _side(ctx, me), "theirs": _side(ctx, th)}, "lineups": lineups,
+           "sides": sides, "lineups": lineups,
            "fill_players": {k: {**v, "sleeper_id": k} for k, v in fa_meta.items()
                             if k in {s.fill.player_id for s in (me, th) if s.fill is not None}},
            "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, "
@@ -857,13 +1058,29 @@ def evaluate(league_id: str, team: int, partner: int | None, give, get, *, sourc
     return out
 
 
+class _View:
+    """A trade read by `trades.fit_line` / `verdict` with this week's gains from one evaluation and the window's from
+    another (the playoffs window starts after this week): each side answers gain_week, gain_horizon and the prices."""
+
+    class _S:
+        def __init__(self, now: T.Side, win: T.Side):
+            self.gain_week, self.gain_horizon = now.gain_week, win.gain_horizon
+            self.price_out, self.price_in = win.price_out, win.price_in
+            self.unknown_out, self.unknown_in = win.unknown_out, win.unknown_in
+
+    def __init__(self, now: T.Trade, win: T.Trade):
+        self.mine, self.theirs = self._S(now.mine, win.mine), self._S(now.theirs, win.theirs)
+
+
 def _names(ctx: TradeContext, ids) -> str:
     parts = [ctx.link(p) for p in ids]
     return parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + " and " + parts[-1]
 
 
-def _rank_change(ctx: TradeContext, me: int, them: int, ms: T.Side, ts: T.Side, rank_words) -> dict:
-    """League rank before / after for this week, the horizon and depth (the page's rank lines)."""
+def _rank_change(ctx: TradeContext, me: int, them: int, ms: T.Side, ts: T.Side, rank_words, *,
+                 horizon: tuple[T.Side, T.Side] | None = None) -> dict:
+    """League rank before / after for this week, the horizon and depth (the page's rank lines). IA-2: ``ms`` / ``ts``
+    are this week's sides; ``horizon`` the next-four-weeks sides (None: another window, no horizon rank)."""
     if ctx.is_house:
         rk = query(RANKS_SQL, (ctx.league_id,))
         vals_by = {m: {int(r.roster_id): float(r.value) for r in rk[rk["measure"] == m].itertuples()}
@@ -871,9 +1088,11 @@ def _rank_change(ctx: TradeContext, me: int, them: int, ms: T.Side, ts: T.Side, 
     else:
         vals_by = _od_values(ctx.lw)
     out, bits = {}, []
-    for measure, a_me, a_th, when in (("lineup_value", ms.after[0], ts.after[0], f"week {ctx.this_week}"),
-                                      ("horizon_value", ms.after_horizon, ts.after_horizon, ctx.span_words),
-                                      ("bench_value", ms.bench_after, ts.bench_after, "depth")):
+    measures = [("lineup_value", ms.after[0], ts.after[0], f"week {ctx.this_week}")]
+    if horizon is not None:
+        measures.append(("horizon_value", horizon[0].after_horizon, horizon[1].after_horizon, ctx.span_words))
+    measures.append(("bench_value", ms.bench_after, ts.bench_after, "depth"))
+    for measure, a_me, a_th, when in measures:
         vals = vals_by.get(measure, {})
         if me in vals and them in vals and a_me is not None and a_th is not None:
             ch = T.rank_change(vals, {me: a_me, them: a_th})
@@ -898,10 +1117,14 @@ def _od_values(lw: A.LeagueWeeks) -> dict[str, dict[int, float]]:
 
 
 def partners(league_id: str, team: int, want: str | None = None, *, source: str | None = None,
-             as_of: datetime | None = None) -> dict:
+             as_of: datetime | None = None, window: str | None = None) -> dict:
     """The partner finder (the page's partner_sweep: `trades.partners`, the best 1-for-1 and 2-for-1 per team that raise
-    both lineups over the horizon), best partner first; `want` keeps the packages that bring you that position."""
+    both lineups over the window), best partner first; `want` keeps the packages that bring you that position.
+    IA-2: `window` (week | next4 | ros | playoffs, default next4) and the sanity bound (`trades.sanity`: a package that
+    gives away much more rest-of-season value than it brings back, or that works only because our number for a player
+    you give is far under Sleeper's, is set aside - `rejected` names three, `rejected_count` counts them)."""
     t0 = time.perf_counter()
+    window = check_window(window)
     want = (want or "").upper() or None
     if want is not None and want not in POSITIONS:
         raise NotFound(f"no position {want} (QB, RB, WR, TE, K or DEF)")
@@ -911,10 +1134,16 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
         ctx = trade_context(league_id, source, as_of=as_of)
         if int(team) not in ctx.board.rosters:
             raise NotFound(f"no team {team} in this league")
+        board, weeks, span = window_board(ctx, window)
+        ros, ours, mkt = sanity_inputs(ctx)
         stats: dict = {}
-        return ctx, T.partners(ctx.board, int(team), stats=stats, want=want), stats
-    ctx, found, stats = (search() if as_of is not None else
-                         _memo(("partners", str(league_id), int(team), want, is_house), is_house, search))
+        rejected: list = []
+        found = T.partners(board, int(team), weeks=weeks, stats=stats, want=want, rejected=rejected,
+                           allow=lambda pk: T.sanity(pk.give, pk.get, ros=ros, ours=ours, market=mkt, name=ctx.name))
+        return ctx, found, stats, (board, weeks, span), rejected, (ros, mkt)
+    ctx, found, stats, (board, weeks, span), rejected, (ros, mkt) = (
+        search() if as_of is not None else _memo(("partners", str(league_id), int(team), want, is_house, window), is_house, search))
+    starts_now = weeks[0] == ctx.this_week
     rows = []
     for p in found:
         for shape, pk in (("1-for-1", p.one_for_one), ("2-for-1", p.two_for_one)):
@@ -922,8 +1151,10 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
                 continue
             rows.append({"partner": p.roster_id, "partner_team": ctx.team(p.roster_id), "shape": pk.shape, "kind": shape,
                          "is_best": pk == p.best, "give": [ctx.player(x) for x in pk.give],
-                         "get": [ctx.player(x) for x in pk.get], "you_gain_week": pk.my_week, "you_gain_horizon": pk.my_horizon,
-                         "they_gain_week": pk.their_week, "they_gain_horizon": pk.their_horizon,
+                         "get": [ctx.player(x) for x in pk.get],
+                         "you_gain_week": pk.my_week if starts_now else None, "you_gain_horizon": pk.my_horizon,
+                         "they_gain_week": pk.their_week if starts_now else None, "they_gain_horizon": pk.their_horizon,
+                         "interest": interest(pk.their_horizon, pk.my_horizon, span),
                          "price_out": T.season_value(ctx.prices, pk.give)[0], "price_in": T.season_value(ctx.prices, pk.get)[0]})
     ranked = [p for p in found if p.best is not None]
     head = None
@@ -931,16 +1162,30 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
         pk = ranked[0].best
         m = ctx.names.get(ranked[0].roster_id, {}).get("manager_name")
         who = f"{ctx.team(ranked[0].roster_id)} ({m})" if m else ctx.team(ranked[0].roster_id)
-        # quoted from app/pages/6_Trade_Finder.py (the first card)
-        head = (f"**Best partner: {who}.** Your {_names(ctx, pk.give)} for their {_names(ctx, pk.get)}: you "
-                f"**{pk.my_week:+.1f}** this week and **{pk.my_horizon:+.1f}** over {ctx.span_words}, them "
-                f"**{pk.their_week:+.1f}** and **{pk.their_horizon:+.1f}**.")
+        # quoted from app/pages/6_Trade_Finder.py (the first card); a window that starts later has no "this week"
+        if starts_now and len(weeks) > 1:
+            head = (f"**Best partner: {who}.** Your {_names(ctx, pk.give)} for their {_names(ctx, pk.get)}: you "
+                    f"**{pk.my_week:+.1f}** this week and **{pk.my_horizon:+.1f}** over {span}, them "
+                    f"**{pk.their_week:+.1f}** and **{pk.their_horizon:+.1f}**.")
+        else:
+            head = (f"**Best partner: {who}.** Your {_names(ctx, pk.give)} for their {_names(ctx, pk.get)}: you "
+                    f"**{pk.my_horizon:+.1f}** over {span}, them **{pk.their_horizon:+.1f}**.")
     else:
         head = (f"**No trade raises both lineups.** Nobody in the league has a player who would improve your lineup over "
-                f"{ctx.span_words} and also needs one of yours. Try a trade you have in mind below.")
+                f"{span} and also needs one of yours. Try a trade you have in mind below.")
+    examples = []
+    for pk, why in rejected[:3]:
+        examples.append({"partner_team": ctx.team(pk.partner), "give": [ctx.name(x) for x in pk.give],
+                         "get": [ctx.name(x) for x in pk.get], "why": why})
     return {"league_id": ctx.league_id, "source": "database" if ctx.is_house else "sleeper", "roster_id": int(team),
-            "want": want, "week": ctx.this_week, "span": ctx.span_words, "partners": rows,
+            "want": want, "week": ctx.this_week, "span": span, "weeks": list(weeks), "window": window,
+            "window_label": WINDOW_LABELS[window], "window_why": WINDOW_WHY[window], "partners": rows,
             "no_trade_with": [ctx.team(p.roster_id) for p in found if p.best is None],
+            "rejected": examples, "rejected_count": len(rejected),
+            "sanity": {"ros_gap_share": T.ROS_GAP_SHARE, "market_share": T.MARKET_SHARE, "ros_players": len(ros),
+                       "market_players": len(mkt),
+                       "market_note": None if mkt else (f"Sleeper's week-{ctx.this_week} projections are not in the database: "
+                                                        "the market check is not applied")},
             "words": {"headline": links(head), "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"},
             "search": {k: (round(v, 3) if isinstance(v, float) else v) for k, v in stats.items()},
             "timings_ms": {"total": round((time.perf_counter() - t0) * 1000, 1)}}
@@ -1632,14 +1877,39 @@ def _trade_lists(league_id: str, team: int, is_house: bool, od_info: dict) -> di
 
 
 def waiver_extras(league_id: str, team: int | None, week: int, is_house: bool, od_info: dict, position: str) -> dict:
-    """The upside stash and buy low / sell high for /api/waivers (filtered to `position` when one is asked)."""
+    """The upside stash for /api/waivers (filtered to `position` when one is asked). IA-2: buy low / sell high left
+    Waivers for Trades (`trade_lists`, GET /api/trades/lists)."""
     t0 = time.perf_counter()
     up = _upside(league_id, team, week, is_house, od_info)
-    trades = _trade_lists(league_id, int(team), is_house, od_info) if team is not None else {"buy_low": [], "sell_high": []}
     if position != "ALL":
         up["stashes"] = [s for s in up["stashes"] if s["add"]["position"] == position]
-        for k in ("buy_low", "sell_high"):
-            trades[k] = [r for r in trades.get(k, []) if r["player"]["position"] == position]
+    return {"upside": up, "extras_ms": round((time.perf_counter() - t0) * 1000, 1)}
+
+
+# ---- IA-2: buy low / sell high on the Trades screen (GET /api/trades/lists): Wave H's lists, moved from /api/waivers
+def trade_lists(league_id: str, team: int, position: str | None = None, *, source: str | None = None) -> dict:
+    """roster_value.trade_candidates for the roster (`_trade_lists`): a house league from its horizon mart, any other
+    on the trade context's solve (the board the partner finder reads). Filtered to `position`, 25 rows a list."""
+    t0 = time.perf_counter()
+    position = (position or "ALL").upper()
+    if position not in (*TRADE_POSITIONS, "ALL"):
+        raise NotFound(f"no position {position} (QB, RB, WR, TE or ALL)")
+    is_house = house(league_id, source)
+
+    def build():
+        if is_house:
+            _team_check(_members(league_id), team)
+            return _trade_lists(league_id, int(team), True, {})
+        ctx = trade_context(league_id, source)
+        _team_check(ctx.names, team)
+        return _trade_lists(league_id, int(team), False, {"lw": ctx.lw})
+    out = dict(_memo(("trade_lists", str(league_id), int(team), is_house), is_house, build))
     for k in ("buy_low", "sell_high"):
-        trades[k] = trades.get(k, [])[:25]
-    return {"upside": up, "trade_lists": trades, "extras_ms": round((time.perf_counter() - t0) * 1000, 1)}
+        rows = out.get(k, [])
+        if position != "ALL":
+            rows = [r for r in rows if r["player"]["position"] == position]
+        out[k] = rows[:25]
+    out.update({"league_id": str(league_id), "source": "database" if is_house else "sleeper", "roster_id": int(team),
+                "position": position, "timings_ms": {"total": round((time.perf_counter() - t0) * 1000, 1)}})
+    return out
+# ---- end IA-2

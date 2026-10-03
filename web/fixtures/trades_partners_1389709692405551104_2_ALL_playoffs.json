@@ -1,0 +1,253 @@
+{
+ "league_id": "1389709692405551104",
+ "source": "database",
+ "roster_id": 2,
+ "want": null,
+ "week": 4,
+ "span": "weeks 15–16",
+ "weeks": [
+  15,
+  16
+ ],
+ "window": "playoffs",
+ "window_label": "Playoffs",
+ "window_why": "the weeks of this league's playoffs: what the trade does when it counts most",
+ "partners": [
+  {
+   "partner": 1,
+   "partner_team": "Daejon Loves PR team",
+   "shape": "1-for-2",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "KC",
+     "gsis_id": null,
+     "player_name": "Kansas City Chiefs",
+     "position": "DEF",
+     "team": "KC",
+     "headshot_url": null,
+     "this_week": 7.16,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 99,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "8137",
+     "gsis_id": "00-0037247",
+     "player_name": "George Pickens",
+     "position": "WR",
+     "team": "DAL",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cbpyykoguf7rsxezqzvk",
+     "this_week": 10.78,
+     "cannot_play": null,
+     "market_price": 18,
+     "season_points": 141,
+     "roster_id": 1
+    },
+    {
+     "sleeper_id": "PHI",
+     "gsis_id": null,
+     "player_name": "Philadelphia Eagles",
+     "position": "DEF",
+     "team": "PHI",
+     "headshot_url": null,
+     "this_week": 5.52,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 99,
+     "roster_id": 1
+    }
+   ],
+   "you_gain_week": null,
+   "you_gain_horizon": 0.37,
+   "they_gain_week": null,
+   "they_gain_horizon": 0.26,
+   "interest": {
+    "score": 28,
+    "label": "Maybe",
+    "their_gain": 0.26,
+    "you": 0.37,
+    "caption": "by our numbers over weeks 15–16"
+   },
+   "price_out": 0,
+   "price_in": 18
+  },
+  {
+   "partner": 7,
+   "partner_team": "PSYCHO SILVERBACKS",
+   "shape": "1-for-1",
+   "kind": "1-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "10232",
+     "gsis_id": "00-0038559",
+     "player_name": "Michael Wilson",
+     "position": "WR",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+     "this_week": 9.2,
+     "cannot_play": null,
+     "market_price": 9,
+     "season_points": 132,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "5872",
+     "gsis_id": "00-0035719",
+     "player_name": "Deebo Samuel Sr.",
+     "position": "WR",
+     "team": "SF",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ntgyhqg6hq7fanhhsqiw",
+     "this_week": 9.13,
+     "cannot_play": null,
+     "market_price": 7,
+     "season_points": 130,
+     "roster_id": 7
+    }
+   ],
+   "you_gain_week": null,
+   "you_gain_horizon": 0.13,
+   "they_gain_week": null,
+   "they_gain_horizon": 0.19,
+   "interest": {
+    "score": 27,
+    "label": "Maybe",
+    "their_gain": 0.19,
+    "you": 0.13,
+    "caption": "by our numbers over weeks 15–16"
+   },
+   "price_out": 9,
+   "price_in": 7
+  },
+  {
+   "partner": 8,
+   "partner_team": "MikeDaddy",
+   "shape": "1-for-2",
+   "kind": "2-for-1",
+   "is_best": true,
+   "give": [
+    {
+     "sleeper_id": "1466",
+     "gsis_id": "00-0030506",
+     "player_name": "Travis Kelce",
+     "position": "TE",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+     "this_week": 10.14,
+     "cannot_play": null,
+     "market_price": 21,
+     "season_points": 131,
+     "roster_id": 2
+    }
+   ],
+   "get": [
+    {
+     "sleeper_id": "7002",
+     "gsis_id": "00-0036040",
+     "player_name": "Juwan Johnson",
+     "position": "TE",
+     "team": "NO",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ahzqkvhjot6lygwr4ccb",
+     "this_week": 8.33,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 104,
+     "roster_id": 8
+    },
+    {
+     "sleeper_id": "12534",
+     "gsis_id": "00-0040236",
+     "player_name": "Kyle Monangai",
+     "position": "RB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/bkkk3uuouhcobydqawro",
+     "this_week": 10.3,
+     "cannot_play": null,
+     "market_price": 13,
+     "season_points": 141,
+     "roster_id": 8
+    }
+   ],
+   "you_gain_week": null,
+   "you_gain_horizon": 0.2,
+   "they_gain_week": null,
+   "they_gain_horizon": 0.12,
+   "interest": {
+    "score": 26,
+    "label": "Maybe",
+    "their_gain": 0.12,
+    "you": 0.2,
+    "caption": "by our numbers over weeks 15–16"
+   },
+   "price_out": 21,
+   "price_in": 13
+  }
+ ],
+ "no_trade_with": [
+  "Run Bijan Run",
+  "Scrote Squad",
+  "Victory is Mine!",
+  "GoodGameBuddy",
+  "Negrodamus",
+  "GIBB ME ANOTA ONE"
+ ],
+ "rejected": [
+  {
+   "partner_team": "Victory is Mine!",
+   "give": [
+    "Michael Wilson",
+    "Bhayshul Tuten"
+   ],
+   "get": [
+    "Tony Pollard"
+   ],
+   "why": "you give 230 rest-of-season points for 112: 118 more, over 25% of what you give"
+  },
+  {
+   "partner_team": "Victory is Mine!",
+   "give": [
+    "Travis Kelce",
+    "Tetairoa McMillan"
+   ],
+   "get": [
+    "Trey McBride"
+   ],
+   "why": "you give 259 rest-of-season points for 145: 115 more, over 25% of what you give"
+  },
+  {
+   "partner_team": "MikeDaddy",
+   "give": [
+    "Tyler Shough"
+   ],
+   "get": [
+    "Saquon Barkley"
+   ],
+   "why": "you give 182 rest-of-season points for 119: 63 more, over 25% of what you give"
+  }
+ ],
+ "rejected_count": 6,
+ "sanity": {
+  "ros_gap_share": 0.25,
+  "market_share": 0.65,
+  "ros_players": 155,
+  "market_players": 0,
+  "market_note": "Sleeper's week-4 projections are not in the database: the market check is not applied"
+ },
+ "words": {
+  "headline": "**Best partner: Daejon Loves PR team (AlexanderN).** Your Kansas City Chiefs for their [George Pickens](/player/00-0037247) and Philadelphia Eagles: you **+0.4** over weeks 15–16, them **+0.3**.",
+  "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"
+ },
+ "search": {
+  "bar_sets": 113,
+  "candidates": 6262,
+  "evaluated": 265,
+  "seconds": 0.977
+ }
+}

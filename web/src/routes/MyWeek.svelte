@@ -136,7 +136,10 @@
             <article class="relative space-y-1.5 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)" data-testid="decision-card">
               {#each c.blocks as b, i (i)}
                 {#if b.kind === "caption"}
-                  <p class="text-sm leading-snug text-ink-3"><Md text={b.text} {ctx} /></p>
+                  <p class="text-sm leading-snug text-ink-3" data-testid="card-small-print"><Md text={b.text} {ctx} /></p>
+                {:else if c.why && b.text === c.why}
+                  <!-- IA-1: the reason, in a sentence (the odds and the numbers are the small print under it) -->
+                  <p class="text-base leading-snug text-ink-2" data-testid="card-why"><Md text={b.text} {ctx} /></p>
                 {:else}
                   <p class="text-base leading-snug"><Md text={b.text} {ctx} /></p>
                 {/if}
@@ -148,7 +151,11 @@
 
         <div class="space-y-3">
           <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)">
-            <h2 class="ll-label">Your lineup</h2>
+            <!-- IA-1: one plain header (Andrew did not understand "Your full lineup: every slot, how close each call is …") -->
+            <div>
+              <h2 class="text-lg leading-tight font-bold" data-testid="lineup-head">Your lineup</h2>
+              <p class="text-sm leading-snug text-ink-3" data-testid="lineup-caption">Starters, the bench, who can't play — tap a name for his card.</p>
+            </div>
             {#if avail?.changes?.length}
               <ul class="space-y-1 text-sm leading-snug text-warn" data-testid="availability-changes">
                 {#each avail.changes as c, i (i)}<li>{c}</li>{/each}
@@ -161,7 +168,7 @@
             {/if}
           </section>
 
-          <Expander title="Your full lineup: every slot, how close each call is, the bench, and who can't play" testid="lineup-full">
+          <Expander title="The bench and who can't play" testid="lineup-full">
             <LineupTable rows={data.lineup_full} full {ctx} testid="lineup-full-table" />
           </Expander>
           {#if data.howto}
@@ -184,7 +191,7 @@
             {/if}
           </Expander>
           <a class="block rounded-lg border border-line bg-surface p-4 text-base font-semibold" href={withContext("/trends?who=mine", ctx)} data-testid="to-research"
-            >Who on your roster is due, who is running hot <span class="text-accent">›</span></a
+            >Who's above or below expectation <span class="text-accent">›</span></a
           >
         </div>
       </div>

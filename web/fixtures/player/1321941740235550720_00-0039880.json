@@ -191,5 +191,96 @@
   "from_week": 4,
   "last_week": 17
  },
- "missing": []
+ "missing": [],
+ "why": {
+  "per": "week",
+  "points": 10.16,
+  "pieces": [
+   {
+    "stat": "targets",
+    "label": "targets",
+    "value": 6.5,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "6.5 targets (no points on their own)"
+   },
+   {
+    "stat": "receptions",
+    "label": "catches",
+    "value": 3.9,
+    "each": 1.0,
+    "points": 3.9,
+    "words": "3.9 catches × 1 = +3.9"
+   },
+   {
+    "stat": "receiving_yards",
+    "label": "receiving yards",
+    "value": 48.1,
+    "each": 0.1,
+    "points": 4.81,
+    "words": "48 receiving yards × 0.1 = +4.8"
+   },
+   {
+    "stat": "receiving_tds",
+    "label": "receiving TDs",
+    "value": 0.19,
+    "each": 6.0,
+    "points": 1.14,
+    "words": "0.19 receiving TDs × 6 = +1.1"
+   },
+   {
+    "stat": "carries",
+    "label": "carries",
+    "value": 0.6,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "0.60 carries (no points on their own)"
+   },
+   {
+    "stat": "rushing_yards",
+    "label": "rushing yards",
+    "value": 3.1,
+    "each": 0.1,
+    "points": 0.31,
+    "words": "3.1 rushing yards × 0.1 = +0.3"
+   },
+   {
+    "stat": "rushing_tds",
+    "label": "rushing TDs",
+    "value": 0.01,
+    "each": 6.0,
+    "points": 0.06,
+    "words": "0.01 rushing TDs × 6 = +0.1"
+   },
+   {
+    "stat": "fumbles_lost_total",
+    "label": "fumbles lost",
+    "value": 0.03,
+    "each": -2.0,
+    "points": -0.06,
+    "words": "0.03 fumbles lost × -2 = -0.1"
+   }
+  ],
+  "sentence": "6.5 targets → 3.9 catches → 48 yards → 0.20 TDs → 10.2 points this week",
+  "games": null,
+  "total": null
+ },
+ "market": {
+  "market_points": null,
+  "ours": 10.16,
+  "ratio": null,
+  "week": 4,
+  "words": null,
+  "why": "Sleeper's number for this week is not in yet.",
+  "far": false
+ },
+ "leans_on": {
+  "features": [
+   "snap share, last 3 games",
+   "expected points per game (what his touches are worth), season",
+   "receiving yards per game, last season"
+  ],
+  "words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+  "scored_in": "League of Scrubs"
+ }
 }

@@ -474,6 +474,18 @@ the calls add up (both + ours only + Sleeper only + neither = `pairs_n`); both s
 kickoff; ranges of the scores. Read by `app/pages/13_Record.py` ("Our record"); published to the hosted copy
 (the sync picks up every `analytics.` relation a page names).
 
+### Proposed, not built: `mart_market_line` (IA-3, Wave I-A, 2026-10-03)
+
+The market line ("Sleeper has him at 16.2") needs Sleeper's number per player; `mart_projection_record` keeps only
+per-position aggregates, and the API's role cannot read `raw` (nor does the hosted copy hold it). Proposed (SQL in
+the IA-3 hand-back): one row per season × week × gsis_id (QB RB WR TE K), Sleeper's projected stat line from the
+latest snapshot of each week (`raw.sleeper_projections` → `player_id_map`), `sleeper_id`, `position`, `team`,
+`fetched_at`, `pts_ppr` / `pts_half_ppr` / `pts_std` and the line columns of `LINE_COLUMNS`. League-free: the API
+prices it per league (`api/league_lab_api/why.py` `market_points`: `scoring.compute_points`), so house and
+on-demand leagues get their own number from the same rows. Until it is built the API answers `market_points: null`
+(and says "Sleeper's number for this week is not in yet."); the API names the relation, and the hosted sync
+publishes it once the local database has it.
+
 ## Identity resolution
 
 1. Candidates: (gsis_id, sleeper_id) pairs from `nfl_ff_playerids` and from `sleeper_player.gsis_id`.

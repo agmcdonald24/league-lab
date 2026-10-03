@@ -191,5 +191,96 @@
   "from_week": 4,
   "last_week": 17
  },
- "missing": []
+ "missing": [],
+ "why": {
+  "per": "week",
+  "points": 3.77,
+  "pieces": [
+   {
+    "stat": "carries",
+    "label": "carries",
+    "value": 4.3,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "4.3 carries (no points on their own)"
+   },
+   {
+    "stat": "rushing_yards",
+    "label": "rushing yards",
+    "value": 18.9,
+    "each": 0.1,
+    "points": 1.89,
+    "words": "18.9 rushing yards × 0.1 = +1.9"
+   },
+   {
+    "stat": "rushing_tds",
+    "label": "rushing TDs",
+    "value": 0.08,
+    "each": 6.0,
+    "points": 0.48,
+    "words": "0.08 rushing TDs × 6 = +0.5"
+   },
+   {
+    "stat": "targets",
+    "label": "targets",
+    "value": 0.8,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "0.80 targets (no points on their own)"
+   },
+   {
+    "stat": "receptions",
+    "label": "catches",
+    "value": 0.7,
+    "each": 1.0,
+    "points": 0.7,
+    "words": "0.70 catches × 1 = +0.7"
+   },
+   {
+    "stat": "receiving_yards",
+    "label": "receiving yards",
+    "value": 6.7,
+    "each": 0.1,
+    "points": 0.67,
+    "words": "6.7 receiving yards × 0.1 = +0.7"
+   },
+   {
+    "stat": "receiving_tds",
+    "label": "receiving TDs",
+    "value": 0.02,
+    "each": 6.0,
+    "points": 0.12,
+    "words": "0.02 receiving TDs × 6 = +0.1"
+   },
+   {
+    "stat": "rest",
+    "label": "the small pieces and rounding",
+    "value": null,
+    "each": null,
+    "points": -0.09,
+    "words": "the small pieces and rounding: -0.1"
+   }
+  ],
+  "sentence": "4.3 carries → 18.9 rush yards → 0.80 targets → 0.70 catches → 6.7 yards → 0.10 TDs → 3.8 points this week",
+  "games": null,
+  "total": null
+ },
+ "market": {
+  "market_points": null,
+  "ours": 3.77,
+  "ratio": null,
+  "week": 4,
+  "words": null,
+  "why": "Sleeper's number for this week is not in yet.",
+  "far": false
+ },
+ "leans_on": {
+  "features": [
+   "share of his team's carries, last 3 games",
+   "rushing yards per game, season",
+   "share of his team's targets, season"
+  ],
+  "words": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: rushing yards per game, season · share of his team's targets, season.",
+  "scored_in": "League of Scrubs"
+ }
 }

@@ -3,7 +3,7 @@
 import type { Component } from "svelte";
 import type { LeagueOption } from "./leagues";
 
-export type DecisionRoute = "waivers" | "trades" | "team" | "league";
+export type DecisionRoute = "waivers" | "trades" | "team" | "league" | "trade-calc";
 type Page = Component<{ options: LeagueOption[]; league: string; team: number | null; onauth: () => void }>;
 
 const loaders: Record<DecisionRoute, () => Promise<{ default: Page }>> = {
@@ -11,6 +11,7 @@ const loaders: Record<DecisionRoute, () => Promise<{ default: Page }>> = {
   trades: () => import("../routes/Trades.svelte"),
   team: () => import("../routes/Team.svelte"),
   league: () => import("../routes/League.svelte"),
+  "trade-calc": () => import("../routes/decisions/TradeCalc.svelte"), // ---- IA-2: the trade calculator
 };
 const loaded = new Map<DecisionRoute, Promise<Page>>();
 

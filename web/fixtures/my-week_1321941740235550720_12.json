@@ -1,460 +1,517 @@
 {
- "league_id": "1321941740235550720",
- "league_name": "Forever Unclean Dynasty",
- "season": 2026,
- "scoring_label": "12-team superflex dynasty · full PPR · 6‑pt pass TD · yardage bonuses",
- "roster_id": 12,
- "team_name": "Shake & Bake",
- "manager_name": "amcdonald24",
- "week": 4,
- "record": {
-  "wins": 0,
-  "losses": 2,
-  "standing": 10
- },
- "opponent": {
-  "roster_id": 11,
-  "team_name": "2 da Moon wit Love",
-  "manager": "PhillyHub",
-  "lineup_value": 110.69
- },
- "summary": "**Shake & Bake** · 0-2, #10 in the league",
- "league_line": "Your best lineup projects **111.15** in week 4, 11th of 12 in the league.",
- "cards": [
-  {
-   "slot": "RB2",
-   "slot_label": "RB2",
-   "gsis_id": "00-0038797",
-   "player_name": "Emanuel Wilson",
-   "value": 8.68,
-   "alt_gsis_id": "00-0036919",
-   "alt_name": "Kenny Gainwell",
-   "alt_value": 8.22,
-   "margin": 0.46,
-   "verdict": "a coin flip",
-   "how": "best bench player who can play RB2",
-   "p_win": 0.5068,
-   "blocks": [
+  "league_id": "1321941740235550720",
+  "league_name": "Forever Unclean Dynasty",
+  "season": 2026,
+  "scoring_label": "12-team superflex dynasty · full PPR · 6‑pt pass TD · yardage bonuses",
+  "roster_id": 12,
+  "team_name": "Shake & Bake",
+  "manager_name": "amcdonald24",
+  "week": 4,
+  "record": {
+    "wins": 0,
+    "losses": 2,
+    "standing": 10
+  },
+  "opponent": {
+    "roster_id": 11,
+    "team_name": "2 da Moon wit Love",
+    "manager": "PhillyHub",
+    "lineup_value": 110.69
+  },
+  "summary": "**Shake & Bake** · 0-2, #10 in the league",
+  "league_line": "Your best lineup projects **111.15** in week 4, 11th of 12 in the league.",
+  "cards": [
     {
-     "kind": "markdown",
-     "text": "**RB2: start [Emanuel Wilson](/player/00-0038797) over [Kenny Gainwell](/player/00-0036919)**"
+      "slot": "RB2",
+      "slot_label": "RB2",
+      "gsis_id": "00-0038797",
+      "player_name": "Emanuel Wilson",
+      "value": 8.68,
+      "alt_gsis_id": "00-0036919",
+      "alt_name": "Kenny Gainwell",
+      "alt_value": 8.22,
+      "margin": 0.46,
+      "verdict": "a coin flip",
+      "how": "best bench player who can play RB2",
+      "p_win": 0.5068,
+      "blocks": [
+        {
+          "kind": "markdown",
+          "text": "**RB2: [Emanuel Wilson](/player/00-0038797) or [Kenny Gainwell](/player/00-0036919) — a coin flip**"
+        },
+        {
+          "kind": "markdown",
+          "text": "Too close to call: the projection says Wilson by 0.5, the ranges say either. Go with Gainwell on the matchup: he is at home against the Packers, who give up the 4th-most points to running backs."
+        },
+        {
+          "kind": "caption",
+          "text": "Emanuel Wilson outscores Kenny Gainwell 51% of the time — a coin flip. 8.68 vs 8.22 projected: 0.46 apart.  \nMost weeks: Emanuel Wilson 4–12, Kenny Gainwell 3–12.  \nA bad week to a good week: Emanuel Wilson 1–18, Kenny Gainwell 2–18.  \nEmanuel Wilson vs LAC (#22 vs RB) · Kenny Gainwell vs GB (#4 vs RB)"
+        }
+      ],
+      "why": "Too close to call: the projection says Wilson by 0.5, the ranges say either. Go with Gainwell on the matchup: he is at home against the Packers, who give up the 4th-most points to running backs."
     },
     {
-     "kind": "markdown",
-     "text": "**Emanuel Wilson outscores Kenny Gainwell 51% of the time — a coin flip.**"
+      "slot": "TE",
+      "slot_label": "TE",
+      "gsis_id": "00-0033288",
+      "player_name": "George Kittle",
+      "value": 10.36,
+      "alt_gsis_id": "00-0037838",
+      "alt_name": "Isaiah Likely",
+      "alt_value": 9.52,
+      "margin": 0.84,
+      "verdict": "a coin flip",
+      "how": "best bench player who can play TE",
+      "p_win": 0.465625,
+      "blocks": [
+        {
+          "kind": "markdown",
+          "text": "**TE: [George Kittle](/player/00-0033288) or [Isaiah Likely](/player/00-0037838) — a coin flip**"
+        },
+        {
+          "kind": "markdown",
+          "text": "Too close to call: the projection says Kittle by 0.8, the ranges say either. Go with Likely on the matchup: Kittle is at home against the Broncos, who give up the 8th-fewest points to tight ends."
+        },
+        {
+          "kind": "caption",
+          "text": "George Kittle projects 0.84 more on average; Isaiah Likely outscores him 53% of the time — a coin flip. 10.36 vs 9.52 projected: 0.84 apart.  \nMost weeks: George Kittle 4–15, Isaiah Likely 5–17.  \nA bad week to a good week: George Kittle 2–16, Isaiah Likely 3–19.  \nGeorge Kittle vs DEN (#25 vs TE) · Isaiah Likely vs ARI (#14 vs TE)"
+        }
+      ],
+      "why": "Too close to call: the projection says Kittle by 0.8, the ranges say either. Go with Likely on the matchup: Kittle is at home against the Broncos, who give up the 8th-fewest points to tight ends."
     },
     {
-     "kind": "markdown",
-     "text": "8.68 vs 8.22 projected: 0.46 apart."
-    },
-    {
-     "kind": "caption",
-     "text": "Most weeks: Emanuel Wilson 4–12, Kenny Gainwell 3–12.  \nA bad week to a good week: Emanuel Wilson 1–18, Kenny Gainwell 2–18.  \nEmanuel Wilson vs LAC (#22 vs RB) · Kenny Gainwell vs GB (#4 vs RB)"
+      "slot": "SUPER_FLEX",
+      "slot_label": "Superflex",
+      "gsis_id": "00-0039917",
+      "player_name": "Michael Penix Jr.",
+      "value": 18.77,
+      "alt_gsis_id": "00-0038128",
+      "alt_name": "Malik Willis",
+      "alt_value": 17.9,
+      "margin": 0.87,
+      "verdict": "a coin flip",
+      "how": "best bench player who can play Superflex",
+      "p_win": 0.55195,
+      "blocks": [
+        {
+          "kind": "markdown",
+          "text": "**Superflex: start [Michael Penix Jr.](/player/00-0039917) over [Malik Willis](/player/00-0038128)**"
+        },
+        {
+          "kind": "markdown",
+          "text": "Vegas expects Willis's Dolphins to score only 16, and the projection has Penix 0.9 points ahead."
+        },
+        {
+          "kind": "caption",
+          "text": "Michael Penix Jr. outscores Malik Willis 55% of the time — a lean. 18.77 vs 17.90 projected: 0.87 apart.  \nMost weeks: Michael Penix Jr. 12–26, Malik Willis 10–24.  \nA bad week to a good week: Michael Penix Jr. 6–32, Malik Willis 5–30.  \nMichael Penix Jr. vs NO (#19 vs QB) · Malik Willis vs MIN (#20 vs QB)"
+        }
+      ],
+      "why": "Vegas expects Willis's Dolphins to score only 16, and the projection has Penix 0.9 points ahead."
     }
-   ]
-  },
-  {
-   "slot": "TE",
-   "slot_label": "TE",
-   "gsis_id": "00-0033288",
-   "player_name": "George Kittle",
-   "value": 10.36,
-   "alt_gsis_id": "00-0037838",
-   "alt_name": "Isaiah Likely",
-   "alt_value": 9.52,
-   "margin": 0.84,
-   "verdict": "a coin flip",
-   "how": "best bench player who can play TE",
-   "p_win": 0.465625,
-   "blocks": [
+  ],
+  "notice": null,
+  "lineup": [
     {
-     "kind": "markdown",
-     "text": "**TE: start [George Kittle](/player/00-0033288) over [Isaiah Likely](/player/00-0037838)**"
+      "role": "starter",
+      "slot": "QB",
+      "player_name": "Bo Nix",
+      "gsis_id": "00-0039732",
+      "position": "QB",
+      "value": 19.78,
+      "margin": 1.88,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+      "team": "DEN"
     },
     {
-     "kind": "markdown",
-     "text": "**George Kittle projects 0.84 more on average; Isaiah Likely outscores him 53% of the time — a coin flip.**"
+      "role": "starter",
+      "slot": "RB1",
+      "player_name": "Jacory Croskey-Merritt",
+      "gsis_id": "00-0040242",
+      "position": "RB",
+      "value": 9.7,
+      "margin": 1.48,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+      "team": "WAS"
     },
     {
-     "kind": "markdown",
-     "text": "10.36 vs 9.52 projected: 0.84 apart. Too close to lose sleep over — the projection says George Kittle, the ranges say either."
+      "role": "starter",
+      "slot": "RB2",
+      "player_name": "Emanuel Wilson",
+      "gsis_id": "00-0038797",
+      "position": "RB",
+      "value": 8.68,
+      "margin": 0.46,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/uorruvczsxzvffpbxu8z",
+      "team": "SEA"
     },
     {
-     "kind": "caption",
-     "text": "Most weeks: George Kittle 4–15, Isaiah Likely 5–17.  \nA bad week to a good week: George Kittle 2–16, Isaiah Likely 3–19.  \nGeorge Kittle vs DEN (#25 vs TE) · Isaiah Likely vs ARI (#14 vs TE)"
+      "role": "starter",
+      "slot": "WR1",
+      "player_name": "Amon-Ra St. Brown",
+      "gsis_id": "00-0036963",
+      "position": "WR",
+      "value": 18.13,
+      "margin": 7.9,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fd8nwhm6pvxfyzphzl6i",
+      "team": "DET"
+    },
+    {
+      "role": "starter",
+      "slot": "WR2",
+      "player_name": "Parker Washington",
+      "gsis_id": "00-0038606",
+      "position": "WR",
+      "value": 14.6,
+      "margin": 4.37,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+      "team": "JAX"
+    },
+    {
+      "role": "starter",
+      "slot": "TE",
+      "player_name": "George Kittle",
+      "gsis_id": "00-0033288",
+      "position": "TE",
+      "value": 10.36,
+      "margin": 0.84,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
+      "team": "SF"
+    },
+    {
+      "role": "starter",
+      "slot": "FLEX",
+      "player_name": "Denzel Boston",
+      "gsis_id": "00-0041037",
+      "position": "WR",
+      "value": 11.13,
+      "margin": null,
+      "flag": "locked (game started)",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+      "team": "CLE"
+    },
+    {
+      "role": "starter",
+      "slot": "Superflex",
+      "player_name": "Michael Penix Jr.",
+      "gsis_id": "00-0039917",
+      "position": "QB",
+      "value": 18.77,
+      "margin": 0.87,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
+      "team": "ATL"
     }
-   ]
-  },
-  {
-   "slot": "SUPER_FLEX",
-   "slot_label": "Superflex",
-   "gsis_id": "00-0039917",
-   "player_name": "Michael Penix Jr.",
-   "value": 18.77,
-   "alt_gsis_id": "00-0038128",
-   "alt_name": "Malik Willis",
-   "alt_value": 17.9,
-   "margin": 0.87,
-   "verdict": "a coin flip",
-   "how": "best bench player who can play Superflex",
-   "p_win": 0.55195,
-   "blocks": [
+  ],
+  "lineup_full": [
     {
-     "kind": "markdown",
-     "text": "**Superflex: start [Michael Penix Jr.](/player/00-0039917) over [Malik Willis](/player/00-0038128)**"
+      "role": "starter",
+      "slot": "QB",
+      "player_name": "Bo Nix",
+      "gsis_id": "00-0039732",
+      "position": "QB",
+      "value": 19.78,
+      "margin": 1.88,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+      "team": "DEN"
     },
     {
-     "kind": "markdown",
-     "text": "**Michael Penix Jr. outscores Malik Willis 55% of the time — a lean.**"
+      "role": "starter",
+      "slot": "RB1",
+      "player_name": "Jacory Croskey-Merritt",
+      "gsis_id": "00-0040242",
+      "position": "RB",
+      "value": 9.7,
+      "margin": 1.48,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+      "team": "WAS"
     },
     {
-     "kind": "markdown",
-     "text": "18.77 vs 17.90 projected: 0.87 apart."
+      "role": "starter",
+      "slot": "RB2",
+      "player_name": "Emanuel Wilson",
+      "gsis_id": "00-0038797",
+      "position": "RB",
+      "value": 8.68,
+      "margin": 0.46,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/uorruvczsxzvffpbxu8z",
+      "team": "SEA"
     },
     {
-     "kind": "caption",
-     "text": "Most weeks: Michael Penix Jr. 12–26, Malik Willis 10–24.  \nA bad week to a good week: Michael Penix Jr. 6–32, Malik Willis 5–30.  \nMichael Penix Jr. vs NO (#19 vs QB) · Malik Willis vs MIN (#20 vs QB)"
+      "role": "starter",
+      "slot": "WR1",
+      "player_name": "Amon-Ra St. Brown",
+      "gsis_id": "00-0036963",
+      "position": "WR",
+      "value": 18.13,
+      "margin": 7.9,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fd8nwhm6pvxfyzphzl6i",
+      "team": "DET"
+    },
+    {
+      "role": "starter",
+      "slot": "WR2",
+      "player_name": "Parker Washington",
+      "gsis_id": "00-0038606",
+      "position": "WR",
+      "value": 14.6,
+      "margin": 4.37,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+      "team": "JAX"
+    },
+    {
+      "role": "starter",
+      "slot": "TE",
+      "player_name": "George Kittle",
+      "gsis_id": "00-0033288",
+      "position": "TE",
+      "value": 10.36,
+      "margin": 0.84,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vkicdglglkyukgyxtmpx",
+      "team": "SF"
+    },
+    {
+      "role": "starter",
+      "slot": "FLEX",
+      "player_name": "Denzel Boston",
+      "gsis_id": "00-0041037",
+      "position": "WR",
+      "value": 11.13,
+      "margin": null,
+      "flag": "locked (game started)",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ybkny6eh5eegq3bqmony",
+      "team": "CLE"
+    },
+    {
+      "role": "starter",
+      "slot": "Superflex",
+      "player_name": "Michael Penix Jr.",
+      "gsis_id": "00-0039917",
+      "position": "QB",
+      "value": 18.77,
+      "margin": 0.87,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
+      "team": "ATL"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 1",
+      "player_name": "Malik Willis",
+      "gsis_id": "00-0038128",
+      "position": "QB",
+      "value": 17.9,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/txvgdbwbryzyyqq6gfet",
+      "team": "MIA"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 2",
+      "player_name": "Chris Godwin Jr.",
+      "gsis_id": "00-0033921",
+      "position": "WR",
+      "value": 10.23,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ilkheljdx4hbjpisulke",
+      "team": "TB"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 3",
+      "player_name": "Malik Washington",
+      "gsis_id": "00-0039880",
+      "position": "WR",
+      "value": 10.16,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dmaiwnmaal9nrwfskl28",
+      "team": "MIA"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 4",
+      "player_name": "Isaiah Likely",
+      "gsis_id": "00-0037838",
+      "position": "TE",
+      "value": 9.52,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b1pahldt9ixp9lssxi2d",
+      "team": "NYG"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 5",
+      "player_name": "Jordan Addison",
+      "gsis_id": "00-0038994",
+      "position": "WR",
+      "value": 9.07,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mi4lzk9gvjrvo6rwdf1e",
+      "team": "MIN"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 6",
+      "player_name": "Kenny Gainwell",
+      "gsis_id": "00-0036919",
+      "position": "RB",
+      "value": 8.22,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/eo62l8ec8e3lzt86ihth",
+      "team": "TB"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 7",
+      "player_name": "Jonah Coleman",
+      "gsis_id": "00-0041496",
+      "position": "RB",
+      "value": 7.93,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qbauucaxakkhtxihuvmr",
+      "team": "DEN"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 8",
+      "player_name": "Pat Bryant",
+      "gsis_id": "00-0040134",
+      "position": "WR",
+      "value": 6.8,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/n91hznzkfpftxhqt1qd9",
+      "team": "DEN"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 9",
+      "player_name": "Tory Horton",
+      "gsis_id": "00-0040648",
+      "position": "WR",
+      "value": 4.9,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lmsun4qzmk1rkgt4kw76",
+      "team": "SEA"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 10",
+      "player_name": "Najee Harris",
+      "gsis_id": "00-0036893",
+      "position": "RB",
+      "value": 4.88,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/grfxgbvqnzz40r7rdtvk",
+      "team": "NYG"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 11",
+      "player_name": "Ollie Gordon II",
+      "gsis_id": "00-0040198",
+      "position": "RB",
+      "value": 3.83,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/bv33rgypaauv7sealwkr",
+      "team": "MIA"
+    },
+    {
+      "role": "bench",
+      "slot": "Bench 12",
+      "player_name": "Jaylen Wright",
+      "gsis_id": "00-0039874",
+      "position": "RB",
+      "value": 3.77,
+      "margin": null,
+      "flag": "",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/feeuommtlmpvuxvtb1zt",
+      "team": "MIA"
+    },
+    {
+      "role": "unplayable",
+      "slot": "Can't play",
+      "player_name": "Aaron Rodgers",
+      "gsis_id": "00-0023459",
+      "position": "QB",
+      "value": 19.08,
+      "margin": null,
+      "flag": "game started (bench)",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dypvakakxhccxs67tb0y",
+      "team": "PIT"
+    },
+    {
+      "role": "unplayable",
+      "slot": "Can't play",
+      "player_name": "Caleb Douglas",
+      "gsis_id": "00-0041523",
+      "position": "WR",
+      "value": 9.92,
+      "margin": null,
+      "flag": "taxi squad",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/stwypvmutplwvi1zzbmu",
+      "team": "MIA"
+    },
+    {
+      "role": "unplayable",
+      "slot": "Can't play",
+      "player_name": "Makai Lemon",
+      "gsis_id": "00-0040867",
+      "position": "WR",
+      "value": 6.76,
+      "margin": null,
+      "flag": "taxi squad",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ys2i2o7c0bl36xvlrojz",
+      "team": "PHI"
+    },
+    {
+      "role": "unplayable",
+      "slot": "Can't play",
+      "player_name": "Adam Randall",
+      "gsis_id": "00-0040888",
+      "position": "RB",
+      "value": 6.46,
+      "margin": null,
+      "flag": "IR slot",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cdr4vibcb4jxp8nswxl9",
+      "team": "BAL"
+    },
+    {
+      "role": "unplayable",
+      "slot": "Can't play",
+      "player_name": "Barion Brown",
+      "gsis_id": "00-0041099",
+      "position": "WR",
+      "value": 2.54,
+      "margin": null,
+      "flag": "taxi squad",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zakfmezzed4qotdrmbpc",
+      "team": "NO"
     }
-   ]
-  }
- ],
- "notice": null,
- "lineup": [
-  {
-   "role": "starter",
-   "slot": "QB",
-   "player_name": "Bo Nix",
-   "gsis_id": "00-0039732",
-   "position": "QB",
-   "value": 19.78,
-   "margin": 1.88,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "RB1",
-   "player_name": "Jacory Croskey-Merritt",
-   "gsis_id": "00-0040242",
-   "position": "RB",
-   "value": 9.7,
-   "margin": 1.48,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "RB2",
-   "player_name": "Emanuel Wilson",
-   "gsis_id": "00-0038797",
-   "position": "RB",
-   "value": 8.68,
-   "margin": 0.46,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "WR1",
-   "player_name": "Amon-Ra St. Brown",
-   "gsis_id": "00-0036963",
-   "position": "WR",
-   "value": 18.13,
-   "margin": 7.9,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "WR2",
-   "player_name": "Parker Washington",
-   "gsis_id": "00-0038606",
-   "position": "WR",
-   "value": 14.6,
-   "margin": 4.37,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "TE",
-   "player_name": "George Kittle",
-   "gsis_id": "00-0033288",
-   "position": "TE",
-   "value": 10.36,
-   "margin": 0.84,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "FLEX",
-   "player_name": "Denzel Boston",
-   "gsis_id": "00-0041037",
-   "position": "WR",
-   "value": 11.13,
-   "margin": null,
-   "flag": "locked (game started)"
-  },
-  {
-   "role": "starter",
-   "slot": "Superflex",
-   "player_name": "Michael Penix Jr.",
-   "gsis_id": "00-0039917",
-   "position": "QB",
-   "value": 18.77,
-   "margin": 0.87,
-   "flag": ""
-  }
- ],
- "lineup_full": [
-  {
-   "role": "starter",
-   "slot": "QB",
-   "player_name": "Bo Nix",
-   "gsis_id": "00-0039732",
-   "position": "QB",
-   "value": 19.78,
-   "margin": 1.88,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "RB1",
-   "player_name": "Jacory Croskey-Merritt",
-   "gsis_id": "00-0040242",
-   "position": "RB",
-   "value": 9.7,
-   "margin": 1.48,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "RB2",
-   "player_name": "Emanuel Wilson",
-   "gsis_id": "00-0038797",
-   "position": "RB",
-   "value": 8.68,
-   "margin": 0.46,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "WR1",
-   "player_name": "Amon-Ra St. Brown",
-   "gsis_id": "00-0036963",
-   "position": "WR",
-   "value": 18.13,
-   "margin": 7.9,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "WR2",
-   "player_name": "Parker Washington",
-   "gsis_id": "00-0038606",
-   "position": "WR",
-   "value": 14.6,
-   "margin": 4.37,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "TE",
-   "player_name": "George Kittle",
-   "gsis_id": "00-0033288",
-   "position": "TE",
-   "value": 10.36,
-   "margin": 0.84,
-   "flag": ""
-  },
-  {
-   "role": "starter",
-   "slot": "FLEX",
-   "player_name": "Denzel Boston",
-   "gsis_id": "00-0041037",
-   "position": "WR",
-   "value": 11.13,
-   "margin": null,
-   "flag": "locked (game started)"
-  },
-  {
-   "role": "starter",
-   "slot": "Superflex",
-   "player_name": "Michael Penix Jr.",
-   "gsis_id": "00-0039917",
-   "position": "QB",
-   "value": 18.77,
-   "margin": 0.87,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 1",
-   "player_name": "Malik Willis",
-   "gsis_id": "00-0038128",
-   "position": "QB",
-   "value": 17.9,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 2",
-   "player_name": "Chris Godwin Jr.",
-   "gsis_id": "00-0033921",
-   "position": "WR",
-   "value": 10.23,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 3",
-   "player_name": "Malik Washington",
-   "gsis_id": "00-0039880",
-   "position": "WR",
-   "value": 10.16,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 4",
-   "player_name": "Isaiah Likely",
-   "gsis_id": "00-0037838",
-   "position": "TE",
-   "value": 9.52,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 5",
-   "player_name": "Jordan Addison",
-   "gsis_id": "00-0038994",
-   "position": "WR",
-   "value": 9.07,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 6",
-   "player_name": "Kenny Gainwell",
-   "gsis_id": "00-0036919",
-   "position": "RB",
-   "value": 8.22,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 7",
-   "player_name": "Jonah Coleman",
-   "gsis_id": "00-0041496",
-   "position": "RB",
-   "value": 7.93,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 8",
-   "player_name": "Pat Bryant",
-   "gsis_id": "00-0040134",
-   "position": "WR",
-   "value": 6.8,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 9",
-   "player_name": "Tory Horton",
-   "gsis_id": "00-0040648",
-   "position": "WR",
-   "value": 4.9,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 10",
-   "player_name": "Najee Harris",
-   "gsis_id": "00-0036893",
-   "position": "RB",
-   "value": 4.88,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 11",
-   "player_name": "Ollie Gordon II",
-   "gsis_id": "00-0040198",
-   "position": "RB",
-   "value": 3.83,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "bench",
-   "slot": "Bench 12",
-   "player_name": "Jaylen Wright",
-   "gsis_id": "00-0039874",
-   "position": "RB",
-   "value": 3.77,
-   "margin": null,
-   "flag": ""
-  },
-  {
-   "role": "unplayable",
-   "slot": "Can't play",
-   "player_name": "Aaron Rodgers",
-   "gsis_id": "00-0023459",
-   "position": "QB",
-   "value": 19.08,
-   "margin": null,
-   "flag": "game started (bench)"
-  },
-  {
-   "role": "unplayable",
-   "slot": "Can't play",
-   "player_name": "Caleb Douglas",
-   "gsis_id": "00-0041523",
-   "position": "WR",
-   "value": 9.92,
-   "margin": null,
-   "flag": "taxi squad"
-  },
-  {
-   "role": "unplayable",
-   "slot": "Can't play",
-   "player_name": "Makai Lemon",
-   "gsis_id": "00-0040867",
-   "position": "WR",
-   "value": 6.76,
-   "margin": null,
-   "flag": "taxi squad"
-  },
-  {
-   "role": "unplayable",
-   "slot": "Can't play",
-   "player_name": "Adam Randall",
-   "gsis_id": "00-0040888",
-   "position": "RB",
-   "value": 6.46,
-   "margin": null,
-   "flag": "IR slot"
-  },
-  {
-   "role": "unplayable",
-   "slot": "Can't play",
-   "player_name": "Barion Brown",
-   "gsis_id": "00-0041099",
-   "position": "WR",
-   "value": 2.54,
-   "margin": null,
-   "flag": "taxi squad"
-  }
- ],
- "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls. The first line is **how often your starter outscores the other player** this week, from both players' ranges: 50–55% is a coin flip (go with the latest news), 55–65% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Most weeks** is the range half of his weeks land in (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the matchup you want), 32 = the fewest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
- "movers": [],
- "lineup_value": 111.15,
- "source": "database"
+  ],
+  "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls. The first line is **how often your starter outscores the other player** this week, from both players' ranges: 50–55% is a coin flip (go with the latest news), 55–65% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Most weeks** is the range half of his weeks land in (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the matchup you want), 32 = the fewest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
+  "movers": [],
+  "lineup_value": 111.15,
+  "source": "database"
 }

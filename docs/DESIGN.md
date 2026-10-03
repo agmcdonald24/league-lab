@@ -114,6 +114,18 @@ trade sides.
 - Wave F pieces restyled on the tokens: **Section** (the player card's sections), **Metrics** (now StatTiles),
   **Expander**, **LineupTable**, **Md**, **Picker**, **Login**.
 
+- **Wave I-A (IA-1) patterns.** *Short names*: `shortName(name, position, others)` (`lib/names.svelte.ts`) — "J. Jefferson"
+  under 640 px, the first name grown only when two in the same list would read the same ("Jam." / "Jav. Williams"), a
+  defense and a first name in initials ("D.J.") never shortened; the whole name stays in the link's `aria-label`.
+  *LineupTable*: a 32 px headshot on every row (the table-row size: a 40 px `PlayerRow` headshot leaves no room for the
+  name at 375 px); the flag (OUT chip, locked, injury tag) and, in the full list, the margin go under the name on a phone,
+  so the name keeps the width. *Section title* (a section that is not a `Card`): `<h2 class="text-lg font-bold
+  leading-tight">` with an optional one-line `text-sm text-ink-3` caption under it (My Week's "Your lineup", Matchups'
+  "The cornerbacks your receivers face"). *Decision card*: the call (bold) · the reason (body size, `text-ink-2`,
+  `data-testid="card-why"`) · the small print (`text-sm text-ink-3`: the odds, the numbers, the ranges, the matchups).
+  *A list row's numbers* (Trends): one header row of `ll-label`s over the list and a 5-column strip under each
+  `PlayerRow`, indented to the name (`pl-16`), the season value under the last-3 value on a phone.
+
 ## Charts (one kit: `lib/chart.ts` + inline SVG)
 
 Hand-rolled (`linear`, `niceTicks`, `linePath`, `areaPath`; ~1 KB, no library, nothing to load before the first screen),
@@ -135,6 +147,25 @@ light and dark come for free. The rules (the dataviz references):
   above, the better number bold. Not team colors: two teams can share a color, or read as good / bad (green vs red).
 - **Over / under** (Trends): one diverging bar per player from a middle zero, warm (orange) = running hot, cool (blue) =
   due; the signed number beside it.
+- **Dial** (IA-2, `routes/decisions/Dial.svelte`: the trade calculator's "their interest"): a half-circle gauge in four
+  equal bands (No deal · Maybe · Likely · Hard to say no) in the state tokens (bad / warn / good) at a 22 % wash, the
+  band the needle sits in at full strength; a needle in ink that swings (CSS transition, 450 ms) to the score 0–100 on
+  every change, never redrawn; under it the label in words (colored, never color alone), "72 / 100 · by our numbers
+  over weeks 4–7", and the second number small: "You · weeks 4–7 +3.4". One dial per screen, for one question (how
+  much would the other side want it); a share of a whole stays a Meter, a comparison a Bar.
+- **Window control** (IA-2, `routes/decisions/WindowControl.svelte`): which weeks a decision is priced over — This week ·
+  Next 4 · Rest of season · Playoffs — four equal cells in one row (a label wraps inside its cell at 375 px; the row
+  never scrolls), the picked one in accent, and one line under it that says why those weeks ("Weeks 4–7: the next four
+  weeks: far enough to matter, near enough to trust."). In the URL (`?window=`), the default (next 4) left out.
+
+- **Range bar in a table cell** (Rest of season, IA-3): the floor–ceiling span on a 0…list-max track (`bg-sunken`, ≤ 8 px),
+  the span in series 1 at 45 %, the projection a 3 px tick in series 1; the numbers printed under it ("150–219"). From
+  640 px; a phone reads the range in the expanded row.
+- **Tap-to-expand row** (Rest of season, IA-3): a `›` button (32 px, `aria-expanded`) at a row's end opens one full-width
+  row under it on `bg-raised`: StatTile-like tiles of the pieces, the facts line, "Why this number" (label in accent, the
+  chain sentence bold, one line a piece). The expand row spans exactly the columns showing at this width (a larger
+  `colspan` adds phantom columns to a fixed-layout table and squeezes the name). Sortable headers are buttons with
+  `aria-sort` and a ▲ / ▼ in accent; the default sort is marked too.
 - Never: two y-axes, a number on every point, a 9th color, dashed gridlines, a pie for close values, color as the only
   carrier of a value (each value is printed somewhere: a label, the readout, the table).
 

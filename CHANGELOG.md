@@ -2,6 +2,50 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-A
+
+- **PO merge.** `analytics.mart_market_line` (Sleeper's latest projected line per player-week, league-free; the API
+  prices it per league — the trade finder's market rule reads it too); a coin flip reads "A or B — a coin flip";
+  About shows "How to read the rankings"; the Decisions tab says "Calculator"; three metric-registry rows.
+- **IA-1: say it like a person would.** My Week's cards say why in one sentence under the call — the matchup ("he is
+  at home against the Colts, who give up the 2nd-most points to running backs"), his share of his team's carries or
+  targets moving, an injury, the betting line — and a coin flip says "Too close to call" and names the tiebreaker;
+  "outscores him 51% of the time" and the numbers are the small print (`cards.reason_line`, shared with the console).
+  The slot list shows a headshot on every row and short names on a phone ("J. Croskey-Merritt"), under one plain
+  header ("Your lineup"). Trends is "Below and above expectation", each row with targets / carries a game (last 3 and
+  the season), snaps, expected and actual points and a sentence ("Getting the targets of a 20.0-point player, scoring
+  39.4: 4 touchdowns in 2 games on 6 red-zone targets"). Matchups' cornerback section lists receivers only, under a
+  real title; Compare says "Choose a player".
+
+- **IA-2: the decisions screens.** The **trade calculator** is its own link (Decisions › Trade calculator, `/trade-calc`):
+  tick players both ways and an **interest dial** swings on every change to how much the other team would want it (No
+  deal · Maybe · Likely · Hard to say no, "by our numbers over weeks 4–7") with your own gain beside it; the lineups are
+  shown once (yours, then theirs under an expander). A **window control** (this week · next 4 · rest of season ·
+  playoffs) on the calculator and the partner suggestions says why those weeks; `window=` on `POST
+  /api/trades/evaluate` and `/api/trades/partners` (the longer windows extend the board with the rest-of-season board).
+  Partner suggestions have a **sanity bound**: none gives away over 25% more rest-of-season points than it brings back,
+  or works only because our number for a player you give is under 65% of Sleeper's ("Justin Jefferson for MarShawn
+  Lloyd" is refused); what was left out is counted (`rejected`). **Buy low / sell high** moved from Waivers to Trades
+  (`GET /api/trades/lists`; no longer in `/api/waivers`).
+
+- **IA-3: the rankings — more to see, and "why this number".** Rest of season shows each player's headshot, bye,
+  games left, a floor–ceiling range bar and the stat line a game (QB attempts · yards · TDs · INTs; RB carries · rush
+  yards · targets · catches · rec yards · TDs; WR / TE targets · catches · yards · TDs) as sortable columns from 900 px
+  and, everywhere, a tap-to-expand row with the pieces and "why this number" (the line × the league's scoring = the
+  points a game × games = the total). The player card's Projection gets the same list for this week, the market line
+  ("Sleeper has him at 16.2", the gap in words under 70% / over 140%) and the three inputs the model leans on most.
+  A "How to read the rankings" paragraph tops the screen. `market_points` on `/api/ros`, `/api/player`, `/api/my-week`
+  (null until the proposed `analytics.mart_market_line` is built; `why.py`).
+
+- **M1: are the stars under-projected? No.** Measured out of sample on 2023–2025, player-week by player-week: the top 6 at
+  each position land within about a point of their projection in a plain scoring (League of Scrubs: −0.98 QB to
+  +0.51 WR, changing sign by season). In the dynasty league's scoring the top 24 RB / WR / TE beat their projection
+  by 0.7–1.4 points, about two thirds of it the yardage bonuses (priced all-or-nothing on the projected line). Our
+  top 24 sits about 2 points a week under Sleeper's: a level gap, not a star gap. `src/league_lab/calibration.py`
+  (the per-row walk-forward, the bias tables, a monotone two-piece map, expected-bonus curves), wired into `project`
+  behind `LEAGUE_LAB_PROJECTION_CALIBRATION=1`, **off**: it helps only WR, by trimming the fringe. docs/METRICS.md
+  § "Calibration of the top".
+
 ## 2026-10-03 — Wave I-0
 
 - **I0-A: who can play, checked every 15 minutes on game days.** My Week no longer starts a player ruled out after the

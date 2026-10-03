@@ -15,7 +15,94 @@
    "p90": 258.0,
    "pos_rank": 1,
    "rostered_by_roster_id": 2,
-   "rostered_by_team": "MacZaddy"
+   "rostered_by_team": "MacZaddy",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 18.74,
+   "per_game": {
+    "attempts": 34.96,
+    "passing_yards": 234.66,
+    "passing_tds": 1.63,
+    "passing_interceptions": 1.0
+   },
+   "why": {
+    "per": "game",
+    "points": 18.74,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 34.96,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "35 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 234.66,
+      "each": 0.04,
+      "points": 9.39,
+      "words": "235 passing yards × 0.04 = +9.4"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.63,
+      "each": 4.0,
+      "points": 6.52,
+      "words": "1.6 passing TDs × 4 = +6.5"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 1.0,
+      "each": -1.0,
+      "points": -1.0,
+      "words": "1.00 interceptions × -1 = -1.0"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 4.14,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.1 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 23.43,
+      "each": 0.1,
+      "points": 2.34,
+      "words": "23 rushing yards × 0.1 = +2.3"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.29,
+      "each": 6.0,
+      "points": 1.73,
+      "words": "0.29 rushing TDs × 6 = +1.7"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.12,
+      "each": -2.0,
+      "points": -0.24,
+      "words": "0.12 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "35 passes → 235 pass yards → 1.6 pass TDs → 1.00 INTs → 18.7 points a game × 12 games = 225",
+    "games": 12,
+    "total": 224.83
+   },
+   "market_points": null,
+   "week_points": 20.26,
+   "market_words": null
   },
   {
    "gsis_id": "00-0034857",
@@ -29,7 +116,94 @@
    "p90": 261.4,
    "pos_rank": 2,
    "rostered_by_roster_id": 9,
-   "rostered_by_team": "Negrodamus"
+   "rostered_by_team": "Negrodamus",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mjwbioajzldkq1vzoz2d",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 18.24,
+   "per_game": {
+    "attempts": 27.58,
+    "passing_yards": 220.18,
+    "passing_tds": 1.27,
+    "passing_interceptions": 0.6
+   },
+   "why": {
+    "per": "game",
+    "points": 18.24,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 27.58,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "28 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 220.18,
+      "each": 0.04,
+      "points": 8.81,
+      "words": "220 passing yards × 0.04 = +8.8"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.27,
+      "each": 4.0,
+      "points": 5.06,
+      "words": "1.3 passing TDs × 4 = +5.1"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.6,
+      "each": -1.0,
+      "points": -0.6,
+      "words": "0.60 interceptions × -1 = -0.6"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 6.01,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "6.0 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 26.62,
+      "each": 0.1,
+      "points": 2.66,
+      "words": "27 rushing yards × 0.1 = +2.7"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.42,
+      "each": 6.0,
+      "points": 2.5,
+      "words": "0.42 rushing TDs × 6 = +2.5"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.1,
+      "each": -2.0,
+      "points": -0.2,
+      "words": "0.10 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "28 passes → 220 pass yards → 1.3 pass TDs → 0.60 INTs → 18.2 points a game × 12 games = 219",
+    "games": 12,
+    "total": 218.93
+   },
+   "market_points": null,
+   "week_points": 24.42,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033077",
@@ -43,7 +217,94 @@
    "p90": 253.2,
    "pos_rank": 3,
    "rostered_by_roster_id": 10,
-   "rostered_by_team": "GIBB ME ANOTA ONE"
+   "rostered_by_team": "GIBB ME ANOTA ONE",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yvscmqq1qki8zfsemmcd",
+   "bye_weeks": [
+    14
+   ],
+   "ros_points_per_game": 18.08,
+   "per_game": {
+    "attempts": 34.87,
+    "passing_yards": 254.08,
+    "passing_tds": 1.72,
+    "passing_interceptions": 0.92
+   },
+   "why": {
+    "per": "game",
+    "points": 18.08,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 34.87,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "35 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 254.08,
+      "each": 0.04,
+      "points": 10.16,
+      "words": "254 passing yards × 0.04 = +10.2"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.72,
+      "each": 4.0,
+      "points": 6.87,
+      "words": "1.7 passing TDs × 4 = +6.9"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.92,
+      "each": -1.0,
+      "points": -0.92,
+      "words": "0.92 interceptions × -1 = -0.9"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 3.57,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 18.32,
+      "each": 0.1,
+      "points": 1.83,
+      "words": "18.3 rushing yards × 0.1 = +1.8"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.08,
+      "each": 6.0,
+      "points": 0.48,
+      "words": "0.08 rushing TDs × 6 = +0.5"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.17,
+      "each": -2.0,
+      "points": -0.35,
+      "words": "0.17 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "35 passes → 254 pass yards → 1.7 pass TDs → 0.92 INTs → 18.1 points a game × 12 games = 217",
+    "games": 12,
+    "total": 216.94
+   },
+   "market_points": null,
+   "week_points": 18.48,
+   "market_words": null
   },
   {
    "gsis_id": "00-0034796",
@@ -57,7 +318,94 @@
    "p90": 250.4,
    "pos_rank": 4,
    "rostered_by_roster_id": 4,
-   "rostered_by_team": "Scrote Squad"
+   "rostered_by_team": "Scrote Squad",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/eno6s5qzl9grbfbfwhoa",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 17.96,
+   "per_game": {
+    "attempts": 31.88,
+    "passing_yards": 235.58,
+    "passing_tds": 1.47,
+    "passing_interceptions": 0.66
+   },
+   "why": {
+    "per": "game",
+    "points": 17.96,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 31.88,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "32 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 235.58,
+      "each": 0.04,
+      "points": 9.42,
+      "words": "236 passing yards × 0.04 = +9.4"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.47,
+      "each": 4.0,
+      "points": 5.9,
+      "words": "1.5 passing TDs × 4 = +5.9"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.66,
+      "each": -1.0,
+      "points": -0.66,
+      "words": "0.66 interceptions × -1 = -0.7"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 5.25,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.2 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 25.09,
+      "each": 0.1,
+      "points": 2.51,
+      "words": "25 rushing yards × 0.1 = +2.5"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.18,
+      "each": 6.0,
+      "points": 1.07,
+      "words": "0.18 rushing TDs × 6 = +1.1"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.14,
+      "each": -2.0,
+      "points": -0.29,
+      "words": "0.14 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "32 passes → 236 pass yards → 1.5 pass TDs → 0.66 INTs → 18.0 points a game × 12 games = 216",
+    "games": 12,
+    "total": 215.51
+   },
+   "market_points": null,
+   "week_points": 20.97,
+   "market_words": null
   },
   {
    "gsis_id": "00-0038128",
@@ -71,7 +419,94 @@
    "p90": 243.2,
    "pos_rank": 5,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/txvgdbwbryzyyqq6gfet",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 17.55,
+   "per_game": {
+    "attempts": 31.21,
+    "passing_yards": 216.75,
+    "passing_tds": 1.13,
+    "passing_interceptions": 0.53
+   },
+   "why": {
+    "per": "game",
+    "points": 17.55,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 31.21,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "31 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 216.75,
+      "each": 0.04,
+      "points": 8.67,
+      "words": "217 passing yards × 0.04 = +8.7"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.13,
+      "each": 4.0,
+      "points": 4.53,
+      "words": "1.1 passing TDs × 4 = +4.5"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.53,
+      "each": -1.0,
+      "points": -0.53,
+      "words": "0.53 interceptions × -1 = -0.5"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 5.12,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.1 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 35.36,
+      "each": 0.1,
+      "points": 3.54,
+      "words": "35 rushing yards × 0.1 = +3.5"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.29,
+      "each": 6.0,
+      "points": 1.74,
+      "words": "0.29 rushing TDs × 6 = +1.7"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.2,
+      "each": -2.0,
+      "points": -0.39,
+      "words": "0.20 fumbles lost × -2 = -0.4"
+     }
+    ],
+    "sentence": "31 passes → 217 pass yards → 1.1 pass TDs → 0.53 INTs → 17.5 points a game × 12 games = 211",
+    "games": 12,
+    "total": 210.57
+   },
+   "market_points": null,
+   "week_points": 14.63,
+   "market_words": null
   },
   {
    "gsis_id": "00-0034855",
@@ -85,7 +520,94 @@
    "p90": 236.5,
    "pos_rank": 6,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gjb8e69jtt1ffqf1afue",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 16.95,
+   "per_game": {
+    "attempts": 31.12,
+    "passing_yards": 223.9,
+    "passing_tds": 1.44,
+    "passing_interceptions": 0.57
+   },
+   "why": {
+    "per": "game",
+    "points": 16.95,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 31.12,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "31 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 223.9,
+      "each": 0.04,
+      "points": 8.96,
+      "words": "224 passing yards × 0.04 = +9.0"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.44,
+      "each": 4.0,
+      "points": 5.78,
+      "words": "1.4 passing TDs × 4 = +5.8"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.57,
+      "each": -1.0,
+      "points": -0.57,
+      "words": "0.57 interceptions × -1 = -0.6"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 3.69,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.7 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 17.49,
+      "each": 0.1,
+      "points": 1.75,
+      "words": "17.5 rushing yards × 0.1 = +1.7"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.21,
+      "each": 6.0,
+      "points": 1.27,
+      "words": "0.21 rushing TDs × 6 = +1.3"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.12,
+      "each": -2.0,
+      "points": -0.24,
+      "words": "0.12 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "31 passes → 224 pass yards → 1.4 pass TDs → 0.57 INTs → 16.9 points a game × 12 games = 203",
+    "games": 12,
+    "total": 203.39
+   },
+   "market_points": null,
+   "week_points": 16.91,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039163",
@@ -99,7 +621,94 @@
    "p90": 233.2,
    "pos_rank": 7,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tt4zrtxlhifaljhj0rn7",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 16.82,
+   "per_game": {
+    "attempts": 33.23,
+    "passing_yards": 244.72,
+    "passing_tds": 1.21,
+    "passing_interceptions": 1.03
+   },
+   "why": {
+    "per": "game",
+    "points": 16.82,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 33.23,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "33 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 244.72,
+      "each": 0.04,
+      "points": 9.79,
+      "words": "245 passing yards × 0.04 = +9.8"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.21,
+      "each": 4.0,
+      "points": 4.83,
+      "words": "1.2 passing TDs × 4 = +4.8"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 1.03,
+      "each": -1.0,
+      "points": -1.03,
+      "words": "1.0 interceptions × -1 = -1.0"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 4.34,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.3 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 16.87,
+      "each": 0.1,
+      "points": 1.69,
+      "words": "16.9 rushing yards × 0.1 = +1.7"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.31,
+      "each": 6.0,
+      "points": 1.85,
+      "words": "0.31 rushing TDs × 6 = +1.9"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.15,
+      "each": -2.0,
+      "points": -0.3,
+      "words": "0.15 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "33 passes → 245 pass yards → 1.2 pass TDs → 1.0 INTs → 16.8 points a game × 12 games = 202",
+    "games": 12,
+    "total": 201.82
+   },
+   "market_points": null,
+   "week_points": 19.29,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036389",
@@ -113,7 +722,94 @@
    "p90": 240.5,
    "pos_rank": 8,
    "rostered_by_roster_id": 1,
-   "rostered_by_team": "Daejon Loves PR team"
+   "rostered_by_team": "Daejon Loves PR team",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 16.8,
+   "per_game": {
+    "attempts": 30.35,
+    "passing_yards": 206.84,
+    "passing_tds": 1.3,
+    "passing_interceptions": 0.65
+   },
+   "why": {
+    "per": "game",
+    "points": 16.8,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 30.35,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "30 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 206.84,
+      "each": 0.04,
+      "points": 8.27,
+      "words": "207 passing yards × 0.04 = +8.3"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.3,
+      "each": 4.0,
+      "points": 5.19,
+      "words": "1.3 passing TDs × 4 = +5.2"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.65,
+      "each": -1.0,
+      "points": -0.65,
+      "words": "0.65 interceptions × -1 = -0.6"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 5.9,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.9 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 27.95,
+      "each": 0.1,
+      "points": 2.8,
+      "words": "28 rushing yards × 0.1 = +2.8"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.28,
+      "each": 6.0,
+      "points": 1.7,
+      "words": "0.28 rushing TDs × 6 = +1.7"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.25,
+      "each": -2.0,
+      "points": -0.51,
+      "words": "0.25 fumbles lost × -2 = -0.5"
+     }
+    ],
+    "sentence": "30 passes → 207 pass yards → 1.3 pass TDs → 0.65 INTs → 16.8 points a game × 12 games = 202",
+    "games": 12,
+    "total": 201.64
+   },
+   "market_points": null,
+   "week_points": 16.29,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039918",
@@ -127,7 +823,94 @@
    "p90": 240.9,
    "pos_rank": 9,
    "rostered_by_roster_id": 9,
-   "rostered_by_team": "Negrodamus"
+   "rostered_by_team": "Negrodamus",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 16.74,
+   "per_game": {
+    "attempts": 28.47,
+    "passing_yards": 200.51,
+    "passing_tds": 1.18,
+    "passing_interceptions": 0.65
+   },
+   "why": {
+    "per": "game",
+    "points": 16.74,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 28.47,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "28 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 200.51,
+      "each": 0.04,
+      "points": 8.02,
+      "words": "201 passing yards × 0.04 = +8.0"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.18,
+      "each": 4.0,
+      "points": 4.74,
+      "words": "1.2 passing TDs × 4 = +4.7"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.65,
+      "each": -1.0,
+      "points": -0.65,
+      "words": "0.65 interceptions × -1 = -0.6"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 5.77,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.8 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 34.09,
+      "each": 0.1,
+      "points": 3.41,
+      "words": "34 rushing yards × 0.1 = +3.4"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.27,
+      "each": 6.0,
+      "points": 1.6,
+      "words": "0.27 rushing TDs × 6 = +1.6"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.19,
+      "each": -2.0,
+      "points": -0.37,
+      "words": "0.19 fumbles lost × -2 = -0.4"
+     }
+    ],
+    "sentence": "28 passes → 201 pass yards → 1.2 pass TDs → 0.65 INTs → 16.7 points a game × 12 games = 201",
+    "games": 12,
+    "total": 200.9
+   },
+   "market_points": null,
+   "week_points": 8.83,
+   "market_words": null
   },
   {
    "gsis_id": "00-0037834",
@@ -141,7 +924,94 @@
    "p90": 239.6,
    "pos_rank": 10,
    "rostered_by_roster_id": 4,
-   "rostered_by_team": "Scrote Squad"
+   "rostered_by_team": "Scrote Squad",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 16.72,
+   "per_game": {
+    "attempts": 30.68,
+    "passing_yards": 236.08,
+    "passing_tds": 1.43,
+    "passing_interceptions": 0.88
+   },
+   "why": {
+    "per": "game",
+    "points": 16.72,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 30.68,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "31 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 236.08,
+      "each": 0.04,
+      "points": 9.44,
+      "words": "236 passing yards × 0.04 = +9.4"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.43,
+      "each": 4.0,
+      "points": 5.74,
+      "words": "1.4 passing TDs × 4 = +5.7"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.88,
+      "each": -1.0,
+      "points": -0.88,
+      "words": "0.88 interceptions × -1 = -0.9"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 4.02,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.0 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 16.94,
+      "each": 0.1,
+      "points": 1.69,
+      "words": "16.9 rushing yards × 0.1 = +1.7"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.18,
+      "each": 6.0,
+      "points": 1.07,
+      "words": "0.18 rushing TDs × 6 = +1.1"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.18,
+      "each": -2.0,
+      "points": -0.36,
+      "words": "0.18 fumbles lost × -2 = -0.4"
+     }
+    ],
+    "sentence": "31 passes → 236 pass yards → 1.4 pass TDs → 0.88 INTs → 16.7 points a game × 12 games = 201",
+    "games": 12,
+    "total": 200.64
+   },
+   "market_points": null,
+   "week_points": 17.59,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033119",
@@ -155,7 +1025,94 @@
    "p90": 232.4,
    "pos_rank": 11,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qjswiunczrn5xmdiqhlz",
+   "bye_weeks": [
+    14
+   ],
+   "ros_points_per_game": 16.7,
+   "per_game": {
+    "attempts": 32.73,
+    "passing_yards": 245.67,
+    "passing_tds": 1.6,
+    "passing_interceptions": 0.86
+   },
+   "why": {
+    "per": "game",
+    "points": 16.7,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 32.73,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "33 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 245.67,
+      "each": 0.04,
+      "points": 9.83,
+      "words": "246 passing yards × 0.04 = +9.8"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.6,
+      "each": 4.0,
+      "points": 6.39,
+      "words": "1.6 passing TDs × 4 = +6.4"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.86,
+      "each": -1.0,
+      "points": -0.86,
+      "words": "0.86 interceptions × -1 = -0.9"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.76,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.8 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 12.12,
+      "each": 0.1,
+      "points": 1.21,
+      "words": "12.1 rushing yards × 0.1 = +1.2"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.08,
+      "each": 6.0,
+      "points": 0.49,
+      "words": "0.08 rushing TDs × 6 = +0.5"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.18,
+      "each": -2.0,
+      "points": -0.36,
+      "words": "0.18 fumbles lost × -2 = -0.4"
+     }
+    ],
+    "sentence": "33 passes → 246 pass yards → 1.6 pass TDs → 0.86 INTs → 16.7 points a game × 12 games = 200",
+    "games": 12,
+    "total": 200.42
+   },
+   "market_points": null,
+   "week_points": 16.42,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039851",
@@ -169,7 +1126,94 @@
    "p90": 232.9,
    "pos_rank": 12,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/s1nmoon2xnrc3bnyulv4",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 16.68,
+   "per_game": {
+    "attempts": 28.9,
+    "passing_yards": 218.57,
+    "passing_tds": 1.34,
+    "passing_interceptions": 0.42
+   },
+   "why": {
+    "per": "game",
+    "points": 16.68,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 28.9,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "29 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 218.57,
+      "each": 0.04,
+      "points": 8.74,
+      "words": "219 passing yards × 0.04 = +8.7"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.34,
+      "each": 4.0,
+      "points": 5.38,
+      "words": "1.3 passing TDs × 4 = +5.4"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.42,
+      "each": -1.0,
+      "points": -0.42,
+      "words": "0.42 interceptions × -1 = -0.4"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 5.61,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 25.44,
+      "each": 0.1,
+      "points": 2.54,
+      "words": "25 rushing yards × 0.1 = +2.5"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.14,
+      "each": 6.0,
+      "points": 0.83,
+      "words": "0.14 rushing TDs × 6 = +0.8"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.19,
+      "each": -2.0,
+      "points": -0.39,
+      "words": "0.19 fumbles lost × -2 = -0.4"
+     }
+    ],
+    "sentence": "29 passes → 219 pass yards → 1.3 pass TDs → 0.42 INTs → 16.7 points a game × 12 games = 200",
+    "games": 12,
+    "total": 200.15
+   },
+   "market_points": null,
+   "week_points": 19.05,
+   "market_words": null
   },
   {
    "gsis_id": "00-0026498",
@@ -183,7 +1227,94 @@
    "p90": 234.9,
    "pos_rank": 13,
    "rostered_by_roster_id": 3,
-   "rostered_by_team": "Run Bijan Run"
+   "rostered_by_team": "Run Bijan Run",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jwpkjfrkzufdyh8u1mg7",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 16.67,
+   "per_game": {
+    "attempts": 32.71,
+    "passing_yards": 245.4,
+    "passing_tds": 1.75,
+    "passing_interceptions": 0.48
+   },
+   "why": {
+    "per": "game",
+    "points": 16.67,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 32.71,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "33 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 245.4,
+      "each": 0.04,
+      "points": 9.82,
+      "words": "245 passing yards × 0.04 = +9.8"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.75,
+      "each": 4.0,
+      "points": 7.01,
+      "words": "1.8 passing TDs × 4 = +7.0"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.48,
+      "each": -1.0,
+      "points": -0.48,
+      "words": "0.48 interceptions × -1 = -0.5"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.77,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.8 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 3.71,
+      "each": 0.1,
+      "points": 0.37,
+      "words": "3.7 rushing yards × 0.1 = +0.4"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.03,
+      "each": 6.0,
+      "points": 0.18,
+      "words": "0.03 rushing TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.11,
+      "each": -2.0,
+      "points": -0.21,
+      "words": "0.11 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "33 passes → 245 pass yards → 1.8 pass TDs → 0.48 INTs → 16.7 points a game × 12 games = 200",
+    "games": 12,
+    "total": 200.01
+   },
+   "market_points": null,
+   "week_points": 16.96,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036971",
@@ -197,7 +1328,94 @@
    "p90": 230.4,
    "pos_rank": 14,
    "rostered_by_roster_id": 7,
-   "rostered_by_team": "PSYCHO SILVERBACKS"
+   "rostered_by_team": "PSYCHO SILVERBACKS",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/k9uzdernqkx7oquy7dkg",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 16.49,
+   "per_game": {
+    "attempts": 31.98,
+    "passing_yards": 238.23,
+    "passing_tds": 1.55,
+    "passing_interceptions": 0.63
+   },
+   "why": {
+    "per": "game",
+    "points": 16.49,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 31.98,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "32 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 238.23,
+      "each": 0.04,
+      "points": 9.53,
+      "words": "238 passing yards × 0.04 = +9.5"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.55,
+      "each": 4.0,
+      "points": 6.22,
+      "words": "1.6 passing TDs × 4 = +6.2"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.63,
+      "each": -1.0,
+      "points": -0.63,
+      "words": "0.63 interceptions × -1 = -0.6"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 3.48,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.5 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 12.37,
+      "each": 0.1,
+      "points": 1.24,
+      "words": "12.4 rushing yards × 0.1 = +1.2"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.08,
+      "each": 6.0,
+      "points": 0.47,
+      "words": "0.08 rushing TDs × 6 = +0.5"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.17,
+      "each": -2.0,
+      "points": -0.34,
+      "words": "0.17 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "32 passes → 238 pass yards → 1.6 pass TDs → 0.63 INTs → 16.5 points a game × 12 games = 198",
+    "games": 12,
+    "total": 197.92
+   },
+   "market_points": null,
+   "week_points": 16.99,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033106",
@@ -211,7 +1429,94 @@
    "p90": 231.1,
    "pos_rank": 15,
    "rostered_by_roster_id": 7,
-   "rostered_by_team": "PSYCHO SILVERBACKS"
+   "rostered_by_team": "PSYCHO SILVERBACKS",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/kaicbot8qhzrvddilbtp",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 16.37,
+   "per_game": {
+    "attempts": 35.88,
+    "passing_yards": 248.55,
+    "passing_tds": 1.75,
+    "passing_interceptions": 0.8
+   },
+   "why": {
+    "per": "game",
+    "points": 16.37,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 35.88,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "36 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 248.55,
+      "each": 0.04,
+      "points": 9.94,
+      "words": "249 passing yards × 0.04 = +9.9"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.75,
+      "each": 4.0,
+      "points": 7.01,
+      "words": "1.8 passing TDs × 4 = +7.0"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.8,
+      "each": -1.0,
+      "points": -0.8,
+      "words": "0.80 interceptions × -1 = -0.8"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.48,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.5 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 3.92,
+      "each": 0.1,
+      "points": 0.39,
+      "words": "3.9 rushing yards × 0.1 = +0.4"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.03,
+      "each": 6.0,
+      "points": 0.16,
+      "words": "0.03 rushing TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.17,
+      "each": -2.0,
+      "points": -0.34,
+      "words": "0.17 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "36 passes → 249 pass yards → 1.8 pass TDs → 0.80 INTs → 16.4 points a game × 12 games = 196",
+    "games": 12,
+    "total": 196.43
+   },
+   "market_points": null,
+   "week_points": 18.02,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039910",
@@ -225,7 +1530,94 @@
    "p90": 233.0,
    "pos_rank": 16,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gfz8k5onuqjrche9ogqc",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 16.06,
+   "per_game": {
+    "attempts": 29.8,
+    "passing_yards": 187.95,
+    "passing_tds": 1.12,
+    "passing_interceptions": 0.6
+   },
+   "why": {
+    "per": "game",
+    "points": 16.06,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 29.8,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "30 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 187.95,
+      "each": 0.04,
+      "points": 7.52,
+      "words": "188 passing yards × 0.04 = +7.5"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.12,
+      "each": 4.0,
+      "points": 4.48,
+      "words": "1.1 passing TDs × 4 = +4.5"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.6,
+      "each": -1.0,
+      "points": -0.6,
+      "words": "0.60 interceptions × -1 = -0.6"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 6.0,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "6.0 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 34.47,
+      "each": 0.1,
+      "points": 3.45,
+      "words": "34 rushing yards × 0.1 = +3.4"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.26,
+      "each": 6.0,
+      "points": 1.58,
+      "words": "0.26 rushing TDs × 6 = +1.6"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.19,
+      "each": -2.0,
+      "points": -0.38,
+      "words": "0.19 fumbles lost × -2 = -0.4"
+     }
+    ],
+    "sentence": "30 passes → 188 pass yards → 1.1 pass TDs → 0.60 INTs → 16.1 points a game × 12 games = 193",
+    "games": 12,
+    "total": 192.71
+   },
+   "market_points": null,
+   "week_points": 15.66,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039732",
@@ -239,7 +1631,94 @@
    "p90": 222.1,
    "pos_rank": 17,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zvo9xatffmqn9lnukpgk",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 15.81,
+   "per_game": {
+    "attempts": 30.7,
+    "passing_yards": 231.72,
+    "passing_tds": 1.32,
+    "passing_interceptions": 0.59
+   },
+   "why": {
+    "per": "game",
+    "points": 15.81,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 30.7,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "31 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 231.72,
+      "each": 0.04,
+      "points": 9.27,
+      "words": "232 passing yards × 0.04 = +9.3"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.32,
+      "each": 4.0,
+      "points": 5.27,
+      "words": "1.3 passing TDs × 4 = +5.3"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.59,
+      "each": -1.0,
+      "points": -0.59,
+      "words": "0.59 interceptions × -1 = -0.6"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 3.32,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.3 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 14.98,
+      "each": 0.1,
+      "points": 1.5,
+      "words": "15.0 rushing yards × 0.1 = +1.5"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.11,
+      "each": 6.0,
+      "points": 0.66,
+      "words": "0.11 rushing TDs × 6 = +0.7"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.16,
+      "each": -2.0,
+      "points": -0.31,
+      "words": "0.16 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "31 passes → 232 pass yards → 1.3 pass TDs → 0.59 INTs → 15.8 points a game × 12 games = 190",
+    "games": 12,
+    "total": 189.77
+   },
+   "market_points": null,
+   "week_points": 15.47,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036355",
@@ -253,7 +1732,94 @@
    "p90": 218.6,
    "pos_rank": 18,
    "rostered_by_roster_id": 5,
-   "rostered_by_team": "Victory is Mine!"
+   "rostered_by_team": "Victory is Mine!",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/jnkspnntgebegzp4ghve",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 15.42,
+   "per_game": {
+    "attempts": 30.22,
+    "passing_yards": 209.42,
+    "passing_tds": 1.24,
+    "passing_interceptions": 0.69
+   },
+   "why": {
+    "per": "game",
+    "points": 15.42,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 30.22,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "30 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 209.42,
+      "each": 0.04,
+      "points": 8.38,
+      "words": "209 passing yards × 0.04 = +8.4"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.24,
+      "each": 4.0,
+      "points": 4.96,
+      "words": "1.2 passing TDs × 4 = +5.0"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.69,
+      "each": -1.0,
+      "points": -0.69,
+      "words": "0.69 interceptions × -1 = -0.7"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 4.11,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.1 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 20.03,
+      "each": 0.1,
+      "points": 2.0,
+      "words": "20 rushing yards × 0.1 = +2.0"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.17,
+      "each": 6.0,
+      "points": 1.02,
+      "words": "0.17 rushing TDs × 6 = +1.0"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.13,
+      "each": -2.0,
+      "points": -0.27,
+      "words": "0.13 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "30 passes → 209 pass yards → 1.2 pass TDs → 0.69 INTs → 15.4 points a game × 12 games = 185",
+    "games": 12,
+    "total": 185.01
+   },
+   "market_points": null,
+   "week_points": 13.86,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035710",
@@ -267,7 +1833,94 @@
    "p90": 215.2,
    "pos_rank": 19,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ohvvctuykzwrpqer7xgl",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 15.31,
+   "per_game": {
+    "attempts": 30.1,
+    "passing_yards": 224.22,
+    "passing_tds": 1.45,
+    "passing_interceptions": 0.77
+   },
+   "why": {
+    "per": "game",
+    "points": 15.31,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 30.1,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "30 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 224.22,
+      "each": 0.04,
+      "points": 8.97,
+      "words": "224 passing yards × 0.04 = +9.0"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.45,
+      "each": 4.0,
+      "points": 5.81,
+      "words": "1.5 passing TDs × 4 = +5.8"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.77,
+      "each": -1.0,
+      "points": -0.77,
+      "words": "0.77 interceptions × -1 = -0.8"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.69,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.7 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 10.03,
+      "each": 0.1,
+      "points": 1.0,
+      "words": "10.0 rushing yards × 0.1 = +1.0"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.1,
+      "each": 6.0,
+      "points": 0.57,
+      "words": "0.10 rushing TDs × 6 = +0.6"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.13,
+      "each": -2.0,
+      "points": -0.26,
+      "words": "0.13 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "30 passes → 224 pass yards → 1.5 pass TDs → 0.77 INTs → 15.3 points a game × 12 games = 184",
+    "games": 12,
+    "total": 183.71
+   },
+   "market_points": null,
+   "week_points": 18.0,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036264",
@@ -281,7 +1934,94 @@
    "p90": 215.9,
    "pos_rank": 20,
    "rostered_by_roster_id": 8,
-   "rostered_by_team": "MikeDaddy"
+   "rostered_by_team": "MikeDaddy",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/thz8stjkbjwddxqnozi5",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 15.2,
+   "per_game": {
+    "attempts": 32.27,
+    "passing_yards": 241.83,
+    "passing_tds": 1.34,
+    "passing_interceptions": 0.96
+   },
+   "why": {
+    "per": "game",
+    "points": 15.2,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 32.27,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "32 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 241.83,
+      "each": 0.04,
+      "points": 9.67,
+      "words": "242 passing yards × 0.04 = +9.7"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.34,
+      "each": 4.0,
+      "points": 5.36,
+      "words": "1.3 passing TDs × 4 = +5.4"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.96,
+      "each": -1.0,
+      "points": -0.96,
+      "words": "0.96 interceptions × -1 = -1.0"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.62,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 7.33,
+      "each": 0.1,
+      "points": 0.73,
+      "words": "7.3 rushing yards × 0.1 = +0.7"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.13,
+      "each": 6.0,
+      "points": 0.8,
+      "words": "0.13 rushing TDs × 6 = +0.8"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.19,
+      "each": -2.0,
+      "points": -0.39,
+      "words": "0.19 fumbles lost × -2 = -0.4"
+     }
+    ],
+    "sentence": "32 passes → 242 pass yards → 1.3 pass TDs → 0.96 INTs → 15.2 points a game × 12 games = 182",
+    "games": 12,
+    "total": 182.43
+   },
+   "market_points": null,
+   "week_points": 15.79,
+   "market_words": null
   },
   {
    "gsis_id": "00-0023459",
@@ -295,7 +2035,94 @@
    "p90": 213.2,
    "pos_rank": 21,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dypvakakxhccxs67tb0y",
+   "bye_weeks": [
+    9
+   ],
+   "ros_points_per_game": 15.19,
+   "per_game": {
+    "attempts": 34.88,
+    "passing_yards": 237.01,
+    "passing_tds": 1.48,
+    "passing_interceptions": 0.51
+   },
+   "why": {
+    "per": "game",
+    "points": 15.19,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 34.88,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "35 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 237.01,
+      "each": 0.04,
+      "points": 9.48,
+      "words": "237 passing yards × 0.04 = +9.5"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.48,
+      "each": 4.0,
+      "points": 5.93,
+      "words": "1.5 passing TDs × 4 = +5.9"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.51,
+      "each": -1.0,
+      "points": -0.51,
+      "words": "0.51 interceptions × -1 = -0.5"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.59,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 2.48,
+      "each": 0.1,
+      "points": 0.25,
+      "words": "2.5 rushing yards × 0.1 = +0.2"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.04,
+      "each": 6.0,
+      "points": 0.26,
+      "words": "0.04 rushing TDs × 6 = +0.3"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.11,
+      "each": -2.0,
+      "points": -0.22,
+      "words": "0.11 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "35 passes → 237 pass yards → 1.5 pass TDs → 0.51 INTs → 15.2 points a game × 12 games = 182",
+    "games": 12,
+    "total": 182.23
+   },
+   "market_points": null,
+   "week_points": 14.41,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040743",
@@ -309,7 +2136,94 @@
    "p90": 217.1,
    "pos_rank": 22,
    "rostered_by_roster_id": 2,
-   "rostered_by_team": "MacZaddy"
+   "rostered_by_team": "MacZaddy",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 15.16,
+   "per_game": {
+    "attempts": 30.52,
+    "passing_yards": 209.93,
+    "passing_tds": 1.21,
+    "passing_interceptions": 0.83
+   },
+   "why": {
+    "per": "game",
+    "points": 15.16,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 30.52,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "31 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 209.93,
+      "each": 0.04,
+      "points": 8.4,
+      "words": "210 passing yards × 0.04 = +8.4"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.21,
+      "each": 4.0,
+      "points": 4.84,
+      "words": "1.2 passing TDs × 4 = +4.8"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.83,
+      "each": -1.0,
+      "points": -0.83,
+      "words": "0.83 interceptions × -1 = -0.8"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 4.14,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.1 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 19.97,
+      "each": 0.1,
+      "points": 2.0,
+      "words": "20.0 rushing yards × 0.1 = +2.0"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.16,
+      "each": 6.0,
+      "points": 0.95,
+      "words": "0.16 rushing TDs × 6 = +0.9"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.1,
+      "each": -2.0,
+      "points": -0.19,
+      "words": "0.10 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "31 passes → 210 pass yards → 1.2 pass TDs → 0.83 INTs → 15.2 points a game × 12 games = 182",
+    "games": 12,
+    "total": 181.92
+   },
+   "market_points": null,
+   "week_points": 18.17,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040676",
@@ -323,7 +2237,94 @@
    "p90": 217.2,
    "pos_rank": 23,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/l7switu6stlwd2irm8yo",
+   "bye_weeks": [
+    9
+   ],
+   "ros_points_per_game": 15.06,
+   "per_game": {
+    "attempts": 31.58,
+    "passing_yards": 230.13,
+    "passing_tds": 1.23,
+    "passing_interceptions": 0.74
+   },
+   "why": {
+    "per": "game",
+    "points": 15.06,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 31.58,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "32 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 230.13,
+      "each": 0.04,
+      "points": 9.21,
+      "words": "230 passing yards × 0.04 = +9.2"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.23,
+      "each": 4.0,
+      "points": 4.91,
+      "words": "1.2 passing TDs × 4 = +4.9"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.74,
+      "each": -1.0,
+      "points": -0.74,
+      "words": "0.74 interceptions × -1 = -0.7"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 3.08,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.1 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 14.54,
+      "each": 0.1,
+      "points": 1.45,
+      "words": "14.5 rushing yards × 0.1 = +1.5"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.12,
+      "each": 6.0,
+      "points": 0.69,
+      "words": "0.12 rushing TDs × 6 = +0.7"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.23,
+      "each": -2.0,
+      "points": -0.47,
+      "words": "0.23 fumbles lost × -2 = -0.5"
+     }
+    ],
+    "sentence": "32 passes → 230 pass yards → 1.2 pass TDs → 0.74 INTs → 15.1 points a game × 12 games = 181",
+    "games": 12,
+    "total": 180.78
+   },
+   "market_points": null,
+   "week_points": 14.05,
+   "market_words": null
   },
   {
    "gsis_id": "00-0030565",
@@ -337,7 +2338,94 @@
    "p90": 215.5,
    "pos_rank": 24,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/zppfqqcyjfma14jjif3a",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 15.04,
+   "per_game": {
+    "attempts": 31.62,
+    "passing_yards": 226.03,
+    "passing_tds": 1.35,
+    "passing_interceptions": 0.71
+   },
+   "why": {
+    "per": "game",
+    "points": 15.04,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 31.62,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "32 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 226.03,
+      "each": 0.04,
+      "points": 9.04,
+      "words": "226 passing yards × 0.04 = +9.0"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.35,
+      "each": 4.0,
+      "points": 5.4,
+      "words": "1.4 passing TDs × 4 = +5.4"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.71,
+      "each": -1.0,
+      "points": -0.71,
+      "words": "0.71 interceptions × -1 = -0.7"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.58,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 10.15,
+      "each": 0.1,
+      "points": 1.02,
+      "words": "10.2 rushing yards × 0.1 = +1.0"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.09,
+      "each": 6.0,
+      "points": 0.55,
+      "words": "0.09 rushing TDs × 6 = +0.5"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.13,
+      "each": -2.0,
+      "points": -0.26,
+      "words": "0.13 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "32 passes → 226 pass yards → 1.4 pass TDs → 0.71 INTs → 15.0 points a game × 12 games = 180",
+    "games": 12,
+    "total": 180.46
+   },
+   "market_points": null,
+   "week_points": 14.79,
+   "market_words": null
   },
   {
    "gsis_id": "00-0029604",
@@ -351,7 +2439,94 @@
    "p90": 211.9,
    "pos_rank": 25,
    "rostered_by_roster_id": 6,
-   "rostered_by_team": "GoodGameBuddy"
+   "rostered_by_team": "GoodGameBuddy",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/za7cynvpwlsro1tsaijk",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 14.91,
+   "per_game": {
+    "attempts": 32.68,
+    "passing_yards": 236.45,
+    "passing_tds": 1.5,
+    "passing_interceptions": 0.87
+   },
+   "why": {
+    "per": "game",
+    "points": 14.91,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 32.68,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "33 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 236.45,
+      "each": 0.04,
+      "points": 9.46,
+      "words": "236 passing yards × 0.04 = +9.5"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.5,
+      "each": 4.0,
+      "points": 5.98,
+      "words": "1.5 passing TDs × 4 = +6.0"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.87,
+      "each": -1.0,
+      "points": -0.87,
+      "words": "0.87 interceptions × -1 = -0.9"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.13,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.1 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 3.7,
+      "each": 0.1,
+      "points": 0.37,
+      "words": "3.7 rushing yards × 0.1 = +0.4"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.03,
+      "each": 6.0,
+      "points": 0.17,
+      "words": "0.03 rushing TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.1,
+      "each": -2.0,
+      "points": -0.19,
+      "words": "0.10 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "33 passes → 236 pass yards → 1.5 pass TDs → 0.87 INTs → 14.9 points a game × 12 games = 179",
+    "games": 12,
+    "total": 178.92
+   },
+   "market_points": null,
+   "week_points": 14.74,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036442",
@@ -365,7 +2540,94 @@
    "p90": 207.8,
    "pos_rank": 26,
    "rostered_by_roster_id": 5,
-   "rostered_by_team": "Victory is Mine!"
+   "rostered_by_team": "Victory is Mine!",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gnnvcgui1cijybukk2w7",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 14.67,
+   "per_game": {
+    "attempts": 32.87,
+    "passing_yards": 227.01,
+    "passing_tds": 1.35,
+    "passing_interceptions": 0.8
+   },
+   "why": {
+    "per": "game",
+    "points": 14.67,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 32.87,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "33 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 227.01,
+      "each": 0.04,
+      "points": 9.08,
+      "words": "227 passing yards × 0.04 = +9.1"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.35,
+      "each": 4.0,
+      "points": 5.42,
+      "words": "1.4 passing TDs × 4 = +5.4"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.8,
+      "each": -1.0,
+      "points": -0.8,
+      "words": "0.80 interceptions × -1 = -0.8"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.29,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.3 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 7.77,
+      "each": 0.1,
+      "points": 0.78,
+      "words": "7.8 rushing yards × 0.1 = +0.8"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.09,
+      "each": 6.0,
+      "points": 0.54,
+      "words": "0.09 rushing TDs × 6 = +0.5"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.17,
+      "each": -2.0,
+      "points": -0.34,
+      "words": "0.17 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "33 passes → 227 pass yards → 1.4 pass TDs → 0.80 INTs → 14.7 points a game × 12 games = 176",
+    "games": 12,
+    "total": 176.07
+   },
+   "market_points": null,
+   "week_points": 17.32,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039917",
@@ -379,7 +2641,94 @@
    "p90": 208.7,
    "pos_rank": 27,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mip4kogkqxwkkya6mvmh",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 14.6,
+   "per_game": {
+    "attempts": 32.47,
+    "passing_yards": 253.73,
+    "passing_tds": 1.28,
+    "passing_interceptions": 1.14
+   },
+   "why": {
+    "per": "game",
+    "points": 14.6,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 32.47,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "32 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 253.73,
+      "each": 0.04,
+      "points": 10.15,
+      "words": "254 passing yards × 0.04 = +10.1"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.28,
+      "each": 4.0,
+      "points": 5.12,
+      "words": "1.3 passing TDs × 4 = +5.1"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 1.14,
+      "each": -1.0,
+      "points": -1.14,
+      "words": "1.1 interceptions × -1 = -1.1"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.87,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.9 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 4.42,
+      "each": 0.1,
+      "points": 0.44,
+      "words": "4.4 rushing yards × 0.1 = +0.4"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.04,
+      "each": 6.0,
+      "points": 0.23,
+      "words": "0.04 rushing TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.11,
+      "each": -2.0,
+      "points": -0.22,
+      "words": "0.11 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "32 passes → 254 pass yards → 1.3 pass TDs → 1.1 INTs → 14.6 points a game × 12 games = 175",
+    "games": 12,
+    "total": 175.16
+   },
+   "market_points": null,
+   "week_points": 14.7,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039150",
@@ -393,7 +2742,94 @@
    "p90": 204.6,
    "pos_rank": 28,
    "rostered_by_roster_id": 2,
-   "rostered_by_team": "MacZaddy"
+   "rostered_by_team": "MacZaddy",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 14.45,
+   "per_game": {
+    "attempts": 31.25,
+    "passing_yards": 224.74,
+    "passing_tds": 1.39,
+    "passing_interceptions": 1.14
+   },
+   "why": {
+    "per": "game",
+    "points": 14.45,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 31.25,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "31 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 224.74,
+      "each": 0.04,
+      "points": 8.99,
+      "words": "225 passing yards × 0.04 = +9.0"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.39,
+      "each": 4.0,
+      "points": 5.58,
+      "words": "1.4 passing TDs × 4 = +5.6"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 1.14,
+      "each": -1.0,
+      "points": -1.14,
+      "words": "1.1 interceptions × -1 = -1.1"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 3.04,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.0 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 7.64,
+      "each": 0.1,
+      "points": 0.76,
+      "words": "7.6 rushing yards × 0.1 = +0.8"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.08,
+      "each": 6.0,
+      "points": 0.48,
+      "words": "0.08 rushing TDs × 6 = +0.5"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.12,
+      "each": -2.0,
+      "points": -0.23,
+      "words": "0.12 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "31 passes → 225 pass yards → 1.4 pass TDs → 1.1 INTs → 14.4 points a game × 12 games = 173",
+    "games": 12,
+    "total": 173.38
+   },
+   "market_points": null,
+   "week_points": 17.25,
+   "market_words": null
   },
   {
    "gsis_id": "00-0032950",
@@ -407,7 +2843,94 @@
    "p90": 206.1,
    "pos_rank": 29,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vuolixdvigc8axelug66",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 14.44,
+   "per_game": {
+    "attempts": 31.31,
+    "passing_yards": 225.25,
+    "passing_tds": 1.33,
+    "passing_interceptions": 1.02
+   },
+   "why": {
+    "per": "game",
+    "points": 14.44,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 31.31,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "31 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 225.25,
+      "each": 0.04,
+      "points": 9.01,
+      "words": "225 passing yards × 0.04 = +9.0"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.33,
+      "each": 4.0,
+      "points": 5.34,
+      "words": "1.3 passing TDs × 4 = +5.3"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 1.02,
+      "each": -1.0,
+      "points": -1.02,
+      "words": "1.0 interceptions × -1 = -1.0"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.45,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.5 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 9.04,
+      "each": 0.1,
+      "points": 0.9,
+      "words": "9.0 rushing yards × 0.1 = +0.9"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.07,
+      "each": 6.0,
+      "points": 0.41,
+      "words": "0.07 rushing TDs × 6 = +0.4"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.1,
+      "each": -2.0,
+      "points": -0.21,
+      "words": "0.10 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "31 passes → 225 pass yards → 1.3 pass TDs → 1.0 INTs → 14.4 points a game × 12 games = 173",
+    "games": 12,
+    "total": 173.26
+   },
+   "market_points": null,
+   "week_points": 4.57,
+   "market_words": null
   },
   {
    "gsis_id": "00-0033537",
@@ -421,7 +2944,94 @@
    "p90": 205.7,
    "pos_rank": 30,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/private/f_auto,q_auto/league/otfs2docj6eahaebo5xn",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 14.32,
+   "per_game": {
+    "attempts": 29.37,
+    "passing_yards": 184.65,
+    "passing_tds": 1.22,
+    "passing_interceptions": 0.93
+   },
+   "why": {
+    "per": "game",
+    "points": 14.32,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 29.37,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "29 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 184.65,
+      "each": 0.04,
+      "points": 7.39,
+      "words": "185 passing yards × 0.04 = +7.4"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.22,
+      "each": 4.0,
+      "points": 4.88,
+      "words": "1.2 passing TDs × 4 = +4.9"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.93,
+      "each": -1.0,
+      "points": -0.93,
+      "words": "0.93 interceptions × -1 = -0.9"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 4.77,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.8 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 23.57,
+      "each": 0.1,
+      "points": 2.36,
+      "words": "24 rushing yards × 0.1 = +2.4"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.19,
+      "each": 6.0,
+      "points": 1.11,
+      "words": "0.19 rushing TDs × 6 = +1.1"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.24,
+      "each": -2.0,
+      "points": -0.48,
+      "words": "0.24 fumbles lost × -2 = -0.5"
+     }
+    ],
+    "sentence": "29 passes → 185 pass yards → 1.2 pass TDs → 0.93 INTs → 14.3 points a game × 12 games = 172",
+    "games": 12,
+    "total": 171.84
+   },
+   "market_points": null,
+   "week_points": 12.72,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035704",
@@ -435,7 +3045,94 @@
    "p90": 178.9,
    "pos_rank": 31,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vdixnkk1uglfpwowalf8",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 12.42,
+   "per_game": {
+    "attempts": 29.45,
+    "passing_yards": 202.28,
+    "passing_tds": 1.18,
+    "passing_interceptions": 1.26
+   },
+   "why": {
+    "per": "game",
+    "points": 12.42,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 29.45,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "29 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 202.28,
+      "each": 0.04,
+      "points": 8.09,
+      "words": "202 passing yards × 0.04 = +8.1"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.18,
+      "each": 4.0,
+      "points": 4.71,
+      "words": "1.2 passing TDs × 4 = +4.7"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 1.26,
+      "each": -1.0,
+      "points": -1.26,
+      "words": "1.3 interceptions × -1 = -1.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.52,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.5 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 9.02,
+      "each": 0.1,
+      "points": 0.9,
+      "words": "9.0 rushing yards × 0.1 = +0.9"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.05,
+      "each": 6.0,
+      "points": 0.3,
+      "words": "0.05 rushing TDs × 6 = +0.3"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.16,
+      "each": -2.0,
+      "points": -0.33,
+      "words": "0.16 fumbles lost × -2 = -0.3"
+     }
+    ],
+    "sentence": "29 passes → 202 pass yards → 1.2 pass TDs → 1.3 INTs → 12.4 points a game × 12 games = 149",
+    "games": 12,
+    "total": 149.01
+   },
+   "market_points": null,
+   "week_points": 13.8,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035228",
@@ -449,7 +3146,94 @@
    "p90": 100.4,
    "pos_rank": 32,
    "rostered_by_roster_id": 9,
-   "rostered_by_team": "Negrodamus"
+   "rostered_by_team": "Negrodamus",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/btfruyf33adgnjzpcuen",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 6.23,
+   "per_game": {
+    "attempts": 9.21,
+    "passing_yards": 54.02,
+    "passing_tds": 0.42,
+    "passing_interceptions": 0.2
+   },
+   "why": {
+    "per": "game",
+    "points": 6.23,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 9.21,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "9.2 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 54.02,
+      "each": 0.04,
+      "points": 2.16,
+      "words": "54 passing yards × 0.04 = +2.2"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.42,
+      "each": 4.0,
+      "points": 1.69,
+      "words": "0.42 passing TDs × 4 = +1.7"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.2,
+      "each": -1.0,
+      "points": -0.2,
+      "words": "0.20 interceptions × -1 = -0.2"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.39,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.4 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 19.16,
+      "each": 0.1,
+      "points": 1.92,
+      "words": "19.2 rushing yards × 0.1 = +1.9"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.13,
+      "each": 6.0,
+      "points": 0.77,
+      "words": "0.13 rushing TDs × 6 = +0.8"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.06,
+      "each": -2.0,
+      "points": -0.12,
+      "words": "0.06 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "9.2 passes → 54 pass yards → 0.42 pass TDs → 0.20 INTs → 6.2 points a game × 12 games = 75",
+    "games": 12,
+    "total": 74.71
+   },
+   "market_points": null,
+   "week_points": 17.76,
+   "market_words": null
   },
   {
    "gsis_id": "00-0031503",
@@ -463,7 +3247,94 @@
    "p90": 100.5,
    "pos_rank": 33,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/e5qyxnibbyawi0pvfpjl",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 6.13,
+   "per_game": {
+    "attempts": 12.85,
+    "passing_yards": 101.84,
+    "passing_tds": 0.57,
+    "passing_interceptions": 0.31
+   },
+   "why": {
+    "per": "game",
+    "points": 6.13,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 12.85,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "12.9 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 101.84,
+      "each": 0.04,
+      "points": 4.07,
+      "words": "102 passing yards × 0.04 = +4.1"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.57,
+      "each": 4.0,
+      "points": 2.26,
+      "words": "0.57 passing TDs × 4 = +2.3"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.31,
+      "each": -1.0,
+      "points": -0.31,
+      "words": "0.31 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.44,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.4 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 1.77,
+      "each": 0.1,
+      "points": 0.18,
+      "words": "1.8 rushing yards × 0.1 = +0.2"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.03,
+      "each": 6.0,
+      "points": 0.17,
+      "words": "0.03 rushing TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.12,
+      "each": -2.0,
+      "points": -0.24,
+      "words": "0.12 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "12.9 passes → 102 pass yards → 0.57 pass TDs → 0.31 INTs → 6.1 points a game × 12 games = 74",
+    "games": 12,
+    "total": 73.54
+   },
+   "market_points": null,
+   "week_points": 14.57,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036945",
@@ -477,7 +3348,94 @@
    "p90": 75.0,
    "pos_rank": 34,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/npjrombgxkc5vjkctcgy",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 4.26,
+   "per_game": {
+    "attempts": 4.56,
+    "passing_yards": 33.74,
+    "passing_tds": 0.12,
+    "passing_interceptions": 0.17
+   },
+   "why": {
+    "per": "game",
+    "points": 4.26,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 4.56,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.6 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 33.74,
+      "each": 0.04,
+      "points": 1.35,
+      "words": "34 passing yards × 0.04 = +1.3"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.12,
+      "each": 4.0,
+      "points": 0.47,
+      "words": "0.12 passing TDs × 4 = +0.5"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.17,
+      "each": -1.0,
+      "points": -0.17,
+      "words": "0.17 interceptions × -1 = -0.2"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.79,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.8 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 21.22,
+      "each": 0.1,
+      "points": 2.12,
+      "words": "21 rushing yards × 0.1 = +2.1"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.11,
+      "each": 6.0,
+      "points": 0.65,
+      "words": "0.11 rushing TDs × 6 = +0.6"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.08,
+      "each": -2.0,
+      "points": -0.15,
+      "words": "0.08 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "4.6 passes → 34 pass yards → 0.12 pass TDs → 0.17 INTs → 4.3 points a game × 12 games = 51",
+    "games": 12,
+    "total": 51.11
+   },
+   "market_points": null,
+   "week_points": 3.74,
+   "market_words": null
   },
   {
    "gsis_id": "00-0032268",
@@ -491,7 +3449,94 @@
    "p90": 71.8,
    "pos_rank": 35,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/grx6m1fmu1odltjo3y31",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 4.1,
+   "per_game": {
+    "attempts": 7.45,
+    "passing_yards": 60.07,
+    "passing_tds": 0.31,
+    "passing_interceptions": 0.31
+   },
+   "why": {
+    "per": "game",
+    "points": 4.1,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 7.45,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.5 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 60.07,
+      "each": 0.04,
+      "points": 2.4,
+      "words": "60 passing yards × 0.04 = +2.4"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.31,
+      "each": 4.0,
+      "points": 1.25,
+      "words": "0.31 passing TDs × 4 = +1.3"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.31,
+      "each": -1.0,
+      "points": -0.31,
+      "words": "0.31 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.75,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.7 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 7.15,
+      "each": 0.1,
+      "points": 0.71,
+      "words": "7.1 rushing yards × 0.1 = +0.7"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.03,
+      "each": 6.0,
+      "points": 0.2,
+      "words": "0.03 rushing TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.08,
+      "each": -2.0,
+      "points": -0.16,
+      "words": "0.08 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "7.5 passes → 60 pass yards → 0.31 pass TDs → 0.31 INTs → 4.1 points a game × 12 games = 49",
+    "games": 12,
+    "total": 49.22
+   },
+   "market_points": null,
+   "week_points": 5.27,
+   "market_words": null
   },
   {
    "gsis_id": "00-0035993",
@@ -505,7 +3550,94 @@
    "p90": 66.9,
    "pos_rank": 36,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fxyjf9d5qkwqjdd8ypvv",
+   "bye_weeks": [
+    13
+   ],
+   "ros_points_per_game": 3.72,
+   "per_game": {
+    "attempts": 6.95,
+    "passing_yards": 33.41,
+    "passing_tds": 0.23,
+    "passing_interceptions": 0.18
+   },
+   "why": {
+    "per": "game",
+    "points": 3.72,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 6.95,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.0 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 33.41,
+      "each": 0.04,
+      "points": 1.34,
+      "words": "33 passing yards × 0.04 = +1.3"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.23,
+      "each": 4.0,
+      "points": 0.91,
+      "words": "0.23 passing TDs × 4 = +0.9"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.18,
+      "each": -1.0,
+      "points": -0.18,
+      "words": "0.18 interceptions × -1 = -0.2"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.63,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 14.28,
+      "each": 0.1,
+      "points": 1.43,
+      "words": "14.3 rushing yards × 0.1 = +1.4"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.05,
+      "each": 6.0,
+      "points": 0.31,
+      "words": "0.05 rushing TDs × 6 = +0.3"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.04,
+      "each": -2.0,
+      "points": -0.09,
+      "words": "0.04 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "7.0 passes → 33 pass yards → 0.23 pass TDs → 0.18 INTs → 3.7 points a game × 12 games = 45",
+    "games": 12,
+    "total": 44.6
+   },
+   "market_points": null,
+   "week_points": 2.93,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040668",
@@ -519,7 +3651,94 @@
    "p90": 66.6,
    "pos_rank": 37,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/joe08hz6to2madpko8zl",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 3.66,
+   "per_game": {
+    "attempts": 7.15,
+    "passing_yards": 46.08,
+    "passing_tds": 0.29,
+    "passing_interceptions": 0.23
+   },
+   "why": {
+    "per": "game",
+    "points": 3.66,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 7.15,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.1 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 46.08,
+      "each": 0.04,
+      "points": 1.84,
+      "words": "46 passing yards × 0.04 = +1.8"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.29,
+      "each": 4.0,
+      "points": 1.14,
+      "words": "0.29 passing TDs × 4 = +1.1"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.23,
+      "each": -1.0,
+      "points": -0.23,
+      "words": "0.23 interceptions × -1 = -0.2"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.8,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.8 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 8.07,
+      "each": 0.1,
+      "points": 0.81,
+      "words": "8.1 rushing yards × 0.1 = +0.8"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.04,
+      "each": 6.0,
+      "points": 0.22,
+      "words": "0.04 rushing TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.06,
+      "each": -2.0,
+      "points": -0.11,
+      "words": "0.06 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "7.1 passes → 46 pass yards → 0.29 pass TDs → 0.23 INTs → 3.7 points a game × 12 games = 44",
+    "games": 12,
+    "total": 43.98
+   },
+   "market_points": null,
+   "week_points": 3.82,
+   "market_words": null
   },
   {
    "gsis_id": "00-0037012",
@@ -533,7 +3752,94 @@
    "p90": 65.8,
    "pos_rank": 38,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/j3psmvvxo13kmbgi60ej",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 3.65,
+   "per_game": {
+    "attempts": 7.36,
+    "passing_yards": 40.99,
+    "passing_tds": 0.18,
+    "passing_interceptions": 0.17
+   },
+   "why": {
+    "per": "game",
+    "points": 3.65,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 7.36,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.4 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 40.99,
+      "each": 0.04,
+      "points": 1.64,
+      "words": "41 passing yards × 0.04 = +1.6"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.18,
+      "each": 4.0,
+      "points": 0.72,
+      "words": "0.18 passing TDs × 4 = +0.7"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.17,
+      "each": -1.0,
+      "points": -0.17,
+      "words": "0.17 interceptions × -1 = -0.2"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.23,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.2 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 13.17,
+      "each": 0.1,
+      "points": 1.32,
+      "words": "13.2 rushing yards × 0.1 = +1.3"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.04,
+      "each": 6.0,
+      "points": 0.26,
+      "words": "0.04 rushing TDs × 6 = +0.3"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.05,
+      "each": -2.0,
+      "points": -0.11,
+      "words": "0.05 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "7.4 passes → 41 pass yards → 0.18 pass TDs → 0.17 INTs → 3.7 points a game × 12 games = 44",
+    "games": 12,
+    "total": 43.83
+   },
+   "market_points": null,
+   "week_points": 3.89,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039376",
@@ -547,7 +3853,94 @@
    "p90": 63.8,
    "pos_rank": 39,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gcgmcf4kex3jsl4rlrng",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 3.54,
+   "per_game": {
+    "attempts": 5.96,
+    "passing_yards": 39.88,
+    "passing_tds": 0.31,
+    "passing_interceptions": 0.19
+   },
+   "why": {
+    "per": "game",
+    "points": 3.54,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 5.96,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "6.0 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 39.88,
+      "each": 0.04,
+      "points": 1.6,
+      "words": "40 passing yards × 0.04 = +1.6"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.31,
+      "each": 4.0,
+      "points": 1.25,
+      "words": "0.31 passing TDs × 4 = +1.2"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.19,
+      "each": -1.0,
+      "points": -0.19,
+      "words": "0.19 interceptions × -1 = -0.2"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.88,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.9 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 7.97,
+      "each": 0.1,
+      "points": 0.8,
+      "words": "8.0 rushing yards × 0.1 = +0.8"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.03,
+      "each": 6.0,
+      "points": 0.2,
+      "words": "0.03 rushing TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.06,
+      "each": -2.0,
+      "points": -0.12,
+      "words": "0.06 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "6.0 passes → 40 pass yards → 0.31 pass TDs → 0.19 INTs → 3.5 points a game × 12 games = 42",
+    "games": 12,
+    "total": 42.44
+   },
+   "market_points": null,
+   "week_points": 3.8,
+   "market_words": null
   },
   {
    "gsis_id": "00-0026158",
@@ -561,7 +3954,94 @@
    "p90": 64.0,
    "pos_rank": 40,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dre1d2f2d6dxqohzn5l2",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 3.53,
+   "per_game": {
+    "attempts": 8.8,
+    "passing_yards": 55.35,
+    "passing_tds": 0.34,
+    "passing_interceptions": 0.27
+   },
+   "why": {
+    "per": "game",
+    "points": 3.53,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 8.8,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "8.8 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 55.35,
+      "each": 0.04,
+      "points": 2.21,
+      "words": "55 passing yards × 0.04 = +2.2"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.34,
+      "each": 4.0,
+      "points": 1.35,
+      "words": "0.34 passing TDs × 4 = +1.4"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.27,
+      "each": -1.0,
+      "points": -0.27,
+      "words": "0.27 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.33,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.3 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 0.78,
+      "each": 0.1,
+      "points": 0.08,
+      "words": "0.78 rushing yards × 0.1 = +0.1"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.04,
+      "each": 6.0,
+      "points": 0.24,
+      "words": "0.04 rushing TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.05,
+      "each": -2.0,
+      "points": -0.11,
+      "words": "0.05 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "8.8 passes → 55 pass yards → 0.34 pass TDs → 0.27 INTs → 3.5 points a game × 12 games = 42",
+    "games": 12,
+    "total": 42.4
+   },
+   "market_points": null,
+   "week_points": 2.72,
+   "market_words": null
   },
   {
    "gsis_id": "00-0039923",
@@ -575,7 +4055,94 @@
    "p90": 65.0,
    "pos_rank": 41,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/omybnfokapjw6jwb5dd3",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 3.53,
+   "per_game": {
+    "attempts": 7.13,
+    "passing_yards": 45.88,
+    "passing_tds": 0.26,
+    "passing_interceptions": 0.28
+   },
+   "why": {
+    "per": "game",
+    "points": 3.53,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 7.13,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.1 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 45.88,
+      "each": 0.04,
+      "points": 1.84,
+      "words": "46 passing yards × 0.04 = +1.8"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.26,
+      "each": 4.0,
+      "points": 1.06,
+      "words": "0.26 passing TDs × 4 = +1.1"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.28,
+      "each": -1.0,
+      "points": -0.28,
+      "words": "0.28 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.69,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.7 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 4.08,
+      "each": 0.1,
+      "points": 0.41,
+      "words": "4.1 rushing yards × 0.1 = +0.4"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.1,
+      "each": 6.0,
+      "points": 0.61,
+      "words": "0.10 rushing TDs × 6 = +0.6"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.05,
+      "each": -2.0,
+      "points": -0.1,
+      "words": "0.05 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "7.1 passes → 46 pass yards → 0.26 pass TDs → 0.28 INTs → 3.5 points a game × 12 games = 42",
+    "games": 12,
+    "total": 42.38
+   },
+   "market_points": null,
+   "week_points": 2.59,
+   "market_words": null
   },
   {
    "gsis_id": "00-0028118",
@@ -589,7 +4156,94 @@
    "p90": 62.3,
    "pos_rank": 42,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/whpztm9akd7yefplp37r",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 3.36,
+   "per_game": {
+    "attempts": 7.61,
+    "passing_yards": 38.31,
+    "passing_tds": 0.24,
+    "passing_interceptions": 0.25
+   },
+   "why": {
+    "per": "game",
+    "points": 3.36,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 7.61,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.6 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 38.31,
+      "each": 0.04,
+      "points": 1.53,
+      "words": "38 passing yards × 0.04 = +1.5"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.24,
+      "each": 4.0,
+      "points": 0.96,
+      "words": "0.24 passing TDs × 4 = +1.0"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.25,
+      "each": -1.0,
+      "points": -0.25,
+      "words": "0.25 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 2.12,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.1 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 8.64,
+      "each": 0.1,
+      "points": 0.86,
+      "words": "8.6 rushing yards × 0.1 = +0.9"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.06,
+      "each": 6.0,
+      "points": 0.35,
+      "words": "0.06 rushing TDs × 6 = +0.3"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.05,
+      "each": -2.0,
+      "points": -0.1,
+      "words": "0.05 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "7.6 passes → 38 pass yards → 0.24 pass TDs → 0.25 INTs → 3.4 points a game × 12 games = 40",
+    "games": 12,
+    "total": 40.28
+   },
+   "market_points": null,
+   "week_points": 3.02,
+   "market_words": null
   },
   {
    "gsis_id": "00-0036212",
@@ -603,7 +4257,94 @@
    "p90": 62.4,
    "pos_rank": 43,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmm4ohds7qci0vqoobhm",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 3.34,
+   "per_game": {
+    "attempts": 8.8,
+    "passing_yards": 53.02,
+    "passing_tds": 0.31,
+    "passing_interceptions": 0.27
+   },
+   "why": {
+    "per": "game",
+    "points": 3.34,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 8.8,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "8.8 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 53.02,
+      "each": 0.04,
+      "points": 2.12,
+      "words": "53 passing yards × 0.04 = +2.1"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.31,
+      "each": 4.0,
+      "points": 1.22,
+      "words": "0.31 passing TDs × 4 = +1.2"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.27,
+      "each": -1.0,
+      "points": -0.27,
+      "words": "0.27 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.24,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.2 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 1.31,
+      "each": 0.1,
+      "points": 0.13,
+      "words": "1.3 rushing yards × 0.1 = +0.1"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.04,
+      "each": 6.0,
+      "points": 0.24,
+      "words": "0.04 rushing TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.05,
+      "each": -2.0,
+      "points": -0.1,
+      "words": "0.05 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "8.8 passes → 53 pass yards → 0.31 pass TDs → 0.27 INTs → 3.3 points a game × 12 games = 40",
+    "games": 12,
+    "total": 40.11
+   },
+   "market_points": null,
+   "week_points": 3.15,
+   "market_words": null
   },
   {
    "gsis_id": "00-0041251",
@@ -617,7 +4358,94 @@
    "p90": 58.5,
    "pos_rank": 44,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hwhfl6i5drktwjvslfpn",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 3.09,
+   "per_game": {
+    "attempts": 6.28,
+    "passing_yards": 44.0,
+    "passing_tds": 0.24,
+    "passing_interceptions": 0.3
+   },
+   "why": {
+    "per": "game",
+    "points": 3.09,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 6.28,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "6.3 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 44.0,
+      "each": 0.04,
+      "points": 1.76,
+      "words": "44 passing yards × 0.04 = +1.8"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.24,
+      "each": 4.0,
+      "points": 0.98,
+      "words": "0.24 passing TDs × 4 = +1.0"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.3,
+      "each": -1.0,
+      "points": -0.3,
+      "words": "0.30 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.57,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 4.44,
+      "each": 0.1,
+      "points": 0.44,
+      "words": "4.4 rushing yards × 0.1 = +0.4"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.06,
+      "each": 6.0,
+      "points": 0.36,
+      "words": "0.06 rushing TDs × 6 = +0.4"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.07,
+      "each": -2.0,
+      "points": -0.15,
+      "words": "0.07 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "6.3 passes → 44 pass yards → 0.24 pass TDs → 0.30 INTs → 3.1 points a game × 12 games = 37",
+    "games": 12,
+    "total": 37.05
+   },
+   "market_points": null,
+   "week_points": 3.41,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040891",
@@ -631,7 +4459,94 @@
    "p90": 58.3,
    "pos_rank": 45,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qt8hajjwkvpynr8nwepz",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 3.08,
+   "per_game": {
+    "attempts": 6.16,
+    "passing_yards": 42.52,
+    "passing_tds": 0.26,
+    "passing_interceptions": 0.32
+   },
+   "why": {
+    "per": "game",
+    "points": 3.08,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 6.16,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "6.2 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 42.52,
+      "each": 0.04,
+      "points": 1.7,
+      "words": "43 passing yards × 0.04 = +1.7"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.26,
+      "each": 4.0,
+      "points": 1.02,
+      "words": "0.26 passing TDs × 4 = +1.0"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.32,
+      "each": -1.0,
+      "points": -0.32,
+      "words": "0.32 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.6,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 4.56,
+      "each": 0.1,
+      "points": 0.46,
+      "words": "4.6 rushing yards × 0.1 = +0.5"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.06,
+      "each": 6.0,
+      "points": 0.38,
+      "words": "0.06 rushing TDs × 6 = +0.4"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.07,
+      "each": -2.0,
+      "points": -0.14,
+      "words": "0.07 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "6.2 passes → 43 pass yards → 0.26 pass TDs → 0.32 INTs → 3.1 points a game × 12 games = 37",
+    "games": 12,
+    "total": 37.01
+   },
+   "market_points": null,
+   "week_points": 2.71,
+   "market_words": null
   },
   {
    "gsis_id": "00-0028986",
@@ -645,7 +4560,94 @@
    "p90": 57.6,
    "pos_rank": 46,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/weixhyzal4ntsyszyepu",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 3.04,
+   "per_game": {
+    "attempts": 5.77,
+    "passing_yards": 43.66,
+    "passing_tds": 0.22,
+    "passing_interceptions": 0.29
+   },
+   "why": {
+    "per": "game",
+    "points": 3.04,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 5.77,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.8 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 43.66,
+      "each": 0.04,
+      "points": 1.75,
+      "words": "44 passing yards × 0.04 = +1.7"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.22,
+      "each": 4.0,
+      "points": 0.89,
+      "words": "0.22 passing TDs × 4 = +0.9"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.29,
+      "each": -1.0,
+      "points": -0.29,
+      "words": "0.29 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.59,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 4.69,
+      "each": 0.1,
+      "points": 0.47,
+      "words": "4.7 rushing yards × 0.1 = +0.5"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.06,
+      "each": 6.0,
+      "points": 0.39,
+      "words": "0.06 rushing TDs × 6 = +0.4"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.07,
+      "each": -2.0,
+      "points": -0.15,
+      "words": "0.07 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "5.8 passes → 44 pass yards → 0.22 pass TDs → 0.29 INTs → 3.0 points a game × 12 games = 36",
+    "games": 12,
+    "total": 36.47
+   },
+   "market_points": null,
+   "week_points": 2.94,
+   "market_words": null
   },
   {
    "gsis_id": "00-0038416",
@@ -659,7 +4661,94 @@
    "p90": 52.5,
    "pos_rank": 47,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ymimvligfyrucu0v3p6a",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 3.02,
+   "per_game": {
+    "attempts": 7.57,
+    "passing_yards": 55.93,
+    "passing_tds": 0.2,
+    "passing_interceptions": 0.21
+   },
+   "why": {
+    "per": "game",
+    "points": 3.02,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 7.57,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.6 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 55.93,
+      "each": 0.04,
+      "points": 2.24,
+      "words": "56 passing yards × 0.04 = +2.2"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.2,
+      "each": 4.0,
+      "points": 0.8,
+      "words": "0.20 passing TDs × 4 = +0.8"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.21,
+      "each": -1.0,
+      "points": -0.21,
+      "words": "0.21 interceptions × -1 = -0.2"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.47,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.5 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 2.84,
+      "each": 0.1,
+      "points": 0.28,
+      "words": "2.8 rushing yards × 0.1 = +0.3"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.02,
+      "each": 6.0,
+      "points": 0.12,
+      "words": "0.02 rushing TDs × 6 = +0.1"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.11,
+      "each": -2.0,
+      "points": -0.21,
+      "words": "0.11 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "7.6 passes → 56 pass yards → 0.20 pass TDs → 0.21 INTs → 3.0 points a game × 12 games = 36",
+    "games": 12,
+    "total": 36.25
+   },
+   "market_points": null,
+   "week_points": 12.45,
+   "market_words": null
   },
   {
    "gsis_id": "00-0037077",
@@ -673,7 +4762,94 @@
    "p90": 57.2,
    "pos_rank": 48,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/sx77bippywnl0dx6m8q9",
+   "bye_weeks": [
+    14
+   ],
+   "ros_points_per_game": 3.02,
+   "per_game": {
+    "attempts": 5.75,
+    "passing_yards": 42.56,
+    "passing_tds": 0.23,
+    "passing_interceptions": 0.3
+   },
+   "why": {
+    "per": "game",
+    "points": 3.02,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 5.75,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.8 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 42.56,
+      "each": 0.04,
+      "points": 1.7,
+      "words": "43 passing yards × 0.04 = +1.7"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.23,
+      "each": 4.0,
+      "points": 0.91,
+      "words": "0.23 passing TDs × 4 = +0.9"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.3,
+      "each": -1.0,
+      "points": -0.3,
+      "words": "0.30 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.58,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 4.88,
+      "each": 0.1,
+      "points": 0.49,
+      "words": "4.9 rushing yards × 0.1 = +0.5"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.06,
+      "each": 6.0,
+      "points": 0.37,
+      "words": "0.06 rushing TDs × 6 = +0.4"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.08,
+      "each": -2.0,
+      "points": -0.15,
+      "words": "0.08 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "5.8 passes → 43 pass yards → 0.23 pass TDs → 0.30 INTs → 3.0 points a game × 12 games = 36",
+    "games": 12,
+    "total": 36.18
+   },
+   "market_points": null,
+   "week_points": 3.64,
+   "market_words": null
   },
   {
    "gsis_id": "00-0040203",
@@ -687,7 +4863,94 @@
    "p90": 57.1,
    "pos_rank": 49,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wzt7xj9ownxfit5igpcd",
+   "bye_weeks": [
+    9
+   ],
+   "ros_points_per_game": 3.01,
+   "per_game": {
+    "attempts": 5.89,
+    "passing_yards": 43.93,
+    "passing_tds": 0.23,
+    "passing_interceptions": 0.29
+   },
+   "why": {
+    "per": "game",
+    "points": 3.01,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 5.89,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.9 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 43.93,
+      "each": 0.04,
+      "points": 1.76,
+      "words": "44 passing yards × 0.04 = +1.8"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.23,
+      "each": 4.0,
+      "points": 0.91,
+      "words": "0.23 passing TDs × 4 = +0.9"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.29,
+      "each": -1.0,
+      "points": -0.29,
+      "words": "0.29 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.58,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 4.58,
+      "each": 0.1,
+      "points": 0.46,
+      "words": "4.6 rushing yards × 0.1 = +0.5"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.06,
+      "each": 6.0,
+      "points": 0.35,
+      "words": "0.06 rushing TDs × 6 = +0.3"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.07,
+      "each": -2.0,
+      "points": -0.15,
+      "words": "0.07 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "5.9 passes → 44 pass yards → 0.23 pass TDs → 0.29 INTs → 3.0 points a game × 12 games = 36",
+    "games": 12,
+    "total": 36.17
+   },
+   "market_points": null,
+   "week_points": 3.15,
+   "market_words": null
   },
   {
    "gsis_id": "00-0041565",
@@ -701,7 +4964,163 @@
    "p90": 57.1,
    "pos_rank": 50,
    "rostered_by_roster_id": null,
-   "rostered_by_team": null
+   "rostered_by_team": null,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/sphuqnfrtzwsgeugeycz",
+   "bye_weeks": [
+    9
+   ],
+   "ros_points_per_game": 3.01,
+   "per_game": {
+    "attempts": 5.89,
+    "passing_yards": 43.93,
+    "passing_tds": 0.23,
+    "passing_interceptions": 0.29
+   },
+   "why": {
+    "per": "game",
+    "points": 3.01,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 5.89,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "5.9 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 43.93,
+      "each": 0.04,
+      "points": 1.76,
+      "words": "44 passing yards × 0.04 = +1.8"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 0.23,
+      "each": 4.0,
+      "points": 0.91,
+      "words": "0.23 passing TDs × 4 = +0.9"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.29,
+      "each": -1.0,
+      "points": -0.29,
+      "words": "0.29 interceptions × -1 = -0.3"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 1.58,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 4.58,
+      "each": 0.1,
+      "points": 0.46,
+      "words": "4.6 rushing yards × 0.1 = +0.5"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.06,
+      "each": 6.0,
+      "points": 0.35,
+      "words": "0.06 rushing TDs × 6 = +0.3"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.07,
+      "each": -2.0,
+      "points": -0.15,
+      "words": "0.07 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "5.9 passes → 44 pass yards → 0.23 pass TDs → 0.29 INTs → 3.0 points a game × 12 games = 36",
+    "games": 12,
+    "total": 36.17
+   },
+   "market_points": null,
+   "week_points": 3.15,
+   "market_words": null
   }
- ]
+ ],
+ "piece_columns": {
+  "QB": [
+   "attempts",
+   "passing_yards",
+   "passing_tds",
+   "passing_interceptions"
+  ],
+  "RB": [
+   "carries",
+   "rushing_yards",
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ],
+  "WR": [
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ],
+  "TE": [
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ]
+ },
+ "leans_on": {
+  "QB": {
+   "features": [
+    "is he the projected starter?",
+    "points Vegas expects his team to score",
+    "pass attempts per game, last 3 games"
+   ],
+   "words": "For QBs the model leans most on **is he the projected starter?**. Next: points Vegas expects his team to score · pass attempts per game, last 3 games.",
+   "scored_in": "League of Scrubs"
+  },
+  "RB": {
+   "features": [
+    "share of his team's carries, last 3 games",
+    "rushing yards per game, season",
+    "share of his team's targets, season"
+   ],
+   "words": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: rushing yards per game, season · share of his team's targets, season.",
+   "scored_in": "League of Scrubs"
+  },
+  "WR": {
+   "features": [
+    "snap share, last 3 games",
+    "expected points per game (what his touches are worth), season",
+    "receiving yards per game, last season"
+   ],
+   "words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+   "scored_in": "League of Scrubs"
+  },
+  "TE": {
+   "features": [
+    "share of his team's targets, season",
+    "snap share, last 3 games",
+    "receiving yards per game, last season"
+   ],
+   "words": "For TEs the model leans most on **share of his team's targets, season**. Next: snap share, last 3 games · receiving yards per game, last season.",
+   "scored_in": "League of Scrubs"
+  }
+ },
+ "market_week": 4,
+ "market_note": "Sleeper's number is this week's, in this league's scoring, where Sleeper has one; the list's totals are ours.",
+ "howto_rankings": "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are down reads lower than his name; a quarterback who starts and throws 35 times a game counts like any starter while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is far from it, open his card and read why before you trade on it."
 }
