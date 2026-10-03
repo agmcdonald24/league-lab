@@ -81,8 +81,8 @@ def _run(sql: str, params: tuple) -> pd.DataFrame:
     return df
 
 
-def query(sql: str, params: tuple = ()) -> pd.DataFrame:
-    """Run a read-only query (cached 10 minutes); returns a fresh copy every time."""
+def query(sql: str, params: tuple = (), *, ttl: float | None = None) -> pd.DataFrame:
+    """Run a read-only query (cached 10 minutes, or ``ttl`` seconds); returns a fresh copy every time."""
     key = (sql, tuple(tuple(p) if isinstance(p, list) else p for p in params))
     now = time.monotonic()
     with _cache_lock:
@@ -91,7 +91,7 @@ def query(sql: str, params: tuple = ()) -> pd.DataFrame:
         return hit[1].copy()
     df = _run(sql, tuple(params))
     with _cache_lock:
-        _cache[key] = (now + CACHE_TTL_SECONDS, df)
+        _cache[key] = (now + (CACHE_TTL_SECONDS if ttl is None else ttl), df)
         if len(_cache) > 2000:                       # bounded: drop the expired, then the oldest half
             for k in [k for k, (exp, _) in _cache.items() if exp <= now] or list(_cache)[: len(_cache) // 2]:
                 _cache.pop(k, None)

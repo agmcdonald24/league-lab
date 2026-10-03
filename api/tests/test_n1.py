@@ -199,7 +199,8 @@ def test_card_news_from_the_fixture_feed(client, tmp_path, monkeypatch):
     assert d["news"][0]["source"] == "RotoWire via ESPN" and d["news"][1]["source"] == "ESPN"
     assert d["news"][2]["headline"] == "Jefferson (ankle) has been ruled out for Sunday's game versus the Dolphins."
     assert all(n["url"].startswith("https://www.espn.com/") for n in d["news"])
-    assert all(set(n) == {"headline", "date", "source", "url"} for n in d["news"])
+    # N2: ESPN's items carry `kind: "espn"` next to N1's four keys (new keys only)
+    assert all(set(n) == {"headline", "date", "source", "url", "kind"} and n["kind"] == "espn" for n in d["news"])
     st = client.get("/api/status").json()["news"]
     assert st["enabled"] is True and st["mode"] == "fixtures" and st["calls"] == 1
 
