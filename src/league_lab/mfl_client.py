@@ -648,8 +648,19 @@ def scoring(rules: Mapping) -> tuple[dict[str, float], dict]:
                 sc[key] = round(rec_by_pos[p] - rec_all, 6)
     if idp_groups:
         unpriced["IDP"] = "individual defensive players (" + ", ".join(idp_groups) + ")"
+    # ---- IC-1 (Wave I-C): the rules as a ScoringSpec (scoring.from_mfl) — the truth every pricing path reads
+    # (``anyleague.league_scoring``); the flat dict above stays for the old readers, filled from the spec where the
+    # I0-B translation found no Sleeper key (70587's TDs by distance and "1/10" yards came back empty).
+    from .scoring import flat_from_spec, from_mfl
+    spec = from_mfl(rules)
+    for k, v in flat_from_spec(spec).items():
+        if not sc.get(k):
+            sc[k] = v
     return sc, {"approximated": approx, "unpriced": sorted(unpriced.values()), "unpriced_events": sorted(unpriced),
-                "idp_groups": idp_groups}
+                "idp_groups": idp_groups, "spec": spec.to_json(),
+                "spec_unpriced": [f"{u['name']} ({u['event']})" for u in spec.unpriced],
+                "spec_approximated": list(spec.approximated)}
+    # ---- /IC-1
 
 
 # --- franchises, rosters, starters, schedule ------------------------------------------------------------------

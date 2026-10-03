@@ -55,7 +55,7 @@ import pandas as pd
 import psycopg
 
 from .rankings import _hit_rate, _spearman
-from .scoring import MAPPED_KEYS, SLEEPER_STAT_MAP
+from .scoring import MAPPED_KEYS, SLEEPER_STAT_MAP, ScoringSpec, kd_flat
 
 log = logging.getLogger(__name__)
 
@@ -171,6 +171,12 @@ def with_pa_buckets(df: pd.DataFrame, prefix: str) -> pd.DataFrame:
 
 
 def price(df: pd.DataFrame, position: str, scoring: Mapping[str, float], prefix: str) -> np.ndarray:
+    # ---- IC-1 (Wave I-C): a league's ScoringSpec (a ``LeagueScoring`` or the spec itself) prices through the
+    # Sleeper-shaped K / DEF keys it implies (``scoring.kd_flat``: a Sleeper spec hands back its own settings)
+    sp = scoring if isinstance(scoring, ScoringSpec) else getattr(scoring, "spec", None)
+    if sp is not None:
+        scoring = kd_flat(sp, position)
+    # ---- /IC-1
     return price_k(df, scoring, prefix) if position == "K" else price_def(df, scoring, prefix)
 
 

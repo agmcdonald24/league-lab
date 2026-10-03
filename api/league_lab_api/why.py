@@ -59,6 +59,25 @@ def weights(scoring: Mapping[str, float], position: str | None) -> dict[str, flo
     """stat -> points per unit in this scoring, for the projected stats: every stat key whose expression is one of
     them (``rec`` -> receptions …), plus a position premium for his position (``bonus_rec_te`` for a TE)."""
     out = dict.fromkeys(STAT_LINE.values(), 0.0)
+    # ---- IC-1 (Wave I-C): the pieces follow the league's ScoringSpec. A Sleeper spec keeps the flat reading below
+    # (the same per-unit values as before, bit for bit); any other (MFL's per-position rules) reads the position's
+    # rules: rates and premiums, "1/10" yards at a tenth a yard, a touchdown by distance at its expected points.
+    spec = S.spec_of(scoring) if scoring is not None else None
+    if spec is not None and (spec.flat is None or S.ev_pricing()):
+        r = spec.rules_for(position)
+        if r is None:
+            return out
+        for stat, w in [*r.rates.items(), *r.premiums.items()]:
+            if stat in out:
+                out[stat] += float(w)
+        for stat, sts in r.steps.items():
+            if stat in out:
+                out[stat] += sum(st.per / st.unit for st in sts if not st.base)
+        for fam, bs in r.distance.items():
+            if fam in out:
+                out[fam] += sum(b[2] * S._band_share(fam, position, b) for b in bs)
+        return out
+    # ---- /IC-1
     for key, w in (scoring or {}).items():
         try:
             w = float(w or 0)
@@ -76,6 +95,9 @@ def weights(scoring: Mapping[str, float], position: str | None) -> dict[str, flo
 
 
 def has_bonuses(scoring: Mapping[str, float]) -> bool:
+    sp = getattr(scoring, "spec", None)          # ---- IC-1: an MFL spec's flat yardage bands
+    if sp is not None and sp.flat is None:
+        return any(s.endswith("_yards") for r in sp.positions.values() for s in r.bands)
     return any(float((scoring or {}).get(k) or 0) for k in S.SLEEPER_BONUS_MAP)
 
 

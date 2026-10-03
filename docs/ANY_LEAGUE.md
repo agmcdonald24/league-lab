@@ -384,3 +384,33 @@ A private league is listed by the search like any other; opening it gives the ex
 **Not done.** MFL transactions (the League screen shows none), playoff brackets (the rest-of-season window assumes
 2^(weeks after the regular season) playoff teams), keeper / dynasty detection (every MFL league reads as redraft in
 the scoring label), MFL's own injury report (the availability overlay reads ESPN and Sleeper by player).
+
+## Scoring (Wave I-C, IC-1, 2026-10-03)
+
+**Why.** Dad's MFL league 70587 scores by position group, touchdowns by distance (6 / 9 / 12), yards "1/10" (QB
+passing "1/20"), +10 at the league's own thresholds (75 / 100 / 250 by position), no points per catch, FG by distance
+3 / 5 / 10 / 15, and team QB / kicker units. The I0-B translation into Sleeper keys came back with nothing for the
+offense; every projection priced the touchdowns and the yards at 0.
+
+**What.** `scoring.ScoringSpec` (docs/METRICS.md § "Scoring spec"): the rules per position, compiled from Sleeper's
+settings (`from_sleeper`) or MFL's rules (`from_mfl`), every unknown event listed as unpriced with its code and name.
+`anyleague.league_scoring(league)` carries it (`LeagueScoring.spec`; `league_spec(league)` reads
+`league["scoring_spec"]`, else the MFL report's `spec`, else compiles the Sleeper settings). Pricing reads the spec:
+`price_lines` (a Sleeper spec through the flat path, so the house leagues reproduce the nightly to the bit; any other
+in expectation, per row position, units through `rules_for`), `kd_values` (`kd_flat`), `scoring_report` (+ `priced`
+= the read-back, `approximated` in words, `unpriced`), `why.weights` (the pieces from the position's rules).
+
+**The check.** `GET /api/league/scoring-check?league=<id or mfl:id>&week=<n>` (default: the last complete week of our
+NFL stats) → `{league, week, n, within_0_1, within_1, misses: [{player, position, theirs, ours, gap, likely_rule,
+pieces}], suspect_rules, sql, unmatched, theirs_from, spec_unpriced, spec_approximated, words}`. A week our stats do
+not hold yet answers `n: 0` with the sentence. Cached a day in process.
+
+**Not done / for the PO.** The 10-yard touchdown split on actual lines reads play-by-play (`analytics.fct_play`)
+until `fct_player_game` carries `*_tds_10p` (proposed). `scripts/hosted_relations.py` now finds `analytics.fct_play`
+(and `staging.stg_sleeper__matchup_players`, the fallback) in the API's closure: `fct_play` is 233 MB whole, so it
+belongs in `sync_to_hosted.sh`'s `SLIM_TABLES` (a window of seasons) before the next publish — or, better, the
+`*_tds_10p` columns and the lengths query dropped. Without lengths the check approximates the < 40-yard split
+(70587: 128 / 163 and 122 / 156 within 1 point instead of 162 / 163 and 156 / 156; the house leagues are unaffected:
+their long-TD bonuses start at 40). Return yards, IDP, and the defense's distance on a return TD (priced at its
+expected points) are not priced from actual lines.
+

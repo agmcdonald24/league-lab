@@ -123,6 +123,72 @@ in every league. The metric-registry versions for `expected_points` and `positio
 read 1.0: the seed was out of bounds for S-01a (see `docs/STATUS.md`). `scoring_diff_vs_reference`
 still lists the keys where a league differs; the sidebar shows it under a one-line notice.
 
+## Scoring spec (Wave I-C, IC-1, 2026-10-03; `league_lab.scoring.ScoringSpec`, `league_lab.scoring_audit`)
+
+A league's rules as data, **per position**: what Sleeper's flat `scoring_settings` and MyFantasyLeague's position
+groups both compile to (`from_sleeper`, `from_mfl`). It travels with the league (`league_scoring(league)` returns
+the flat dict as a `LeagueScoring` carrying `.spec`; an MFL league's `mfl.scoring.spec` is its JSON); the flat dict
+stays for the old readers (for MFL it is a summary, `flat_from_spec`).
+
+| Part | Meaning | Example (MFL 70587 "Make Football Great Again") |
+|---|---|---|
+| `rates` | points per unit of a stat | `passing_interceptions: -3`, `fumbles_lost_total: -3`, 2-pt `2`; no `receptions` (no PPR) |
+| `bands` | flat points once a game when `low ≤ stat < high + 1` (MFL's whole-number ranges) | RB `rushing_yards: (100, None, 10)`; WR / TE / QB `(75, None, 10)` rushing; TE `(75, None, 10)` receiving; QB `(250, None, 10)` passing; DEF `points_allowed: (0, 0, 10), (1, 3, 8)` |
+| `distance` | per **play** by its length; every band holding the length pays (MFL's are disjoint; Sleeper's long-TD bonuses overlap the base rate) | `rushing_tds / receiving_tds / passing_tds / return_tds / fumble_recovery_tds: (0, 9, 6), (10, 39, 9), (40, 110, 12)`; K `fg_made: (0, 39, 3), (40, 49, 5), (50, 59, 10), (60, 99, 15)` |
+| `steps` | MFL's `a/b` over a range: `base + a · floor((v − origin) / b)` while `low ≤ v ≤ high`; `thresholdPoints` t → base t, origin = the range's low | `rushing_yards: Step(10, None, 1, 10)` (1 a whole 10), QB `passing_yards: Step(20, None, 1, 20)` |
+| `premiums` | per unit on top of `rates` for one position | Sleeper `bonus_rec_te 0.5` → TE `receptions: 0.5` |
+| `unpriced` | events no stat line carries, with the platform's code and name | MFL `UY` "punt return yards"; Sleeper `def_st_ff` "special-teams forced fumble"; IDP groups |
+
+Positions are QB RB WR TE K DEF; a unit prices with the position it stands for (`rules_for`: `TMQB` → QB, `TMPK` → K,
+`TMDEF` / `Def` → DEF). Sleeper applies every key to every player, so its QB / RB / WR / TE / K (and `*`, a row with no
+position) share one rule set; that is what keeps the house leagues' parity with the SQL macro.
+
+**Actual lines** (`price_detail` / `compute_points_spec`, the scoring check): exact. A touchdown's length comes from
+play-by-play (`analytics.fct_play`: `yards_gained` of the scoring play, passer / receiver / rusher) when the row's
+count matches; else the row's `*_tds_40p / _50p` counts are exact at 40 and 50 and the split below 40 is interpolated
+with the distance shares — said per row (`approximated_rows`). Proposed for the PO (dbt): `*_tds_10p` in
+`int_player_game_pbp` → `fct_player_game`; the spec reads them when present and the check then needs no play-by-play.
+
+**Projected lines** (`expected_frame`, what `price_lines` uses for any non-Sleeper spec, and for a Sleeper spec only
+under `LEAGUE_LAB_EV_PRICING=1`):
+* rates and premiums linear;
+* `steps` at the **expected whole units** (`expected_floor_units`: Σ_j P(X ≥ origin + j·b)), not linear. MFL pays per
+  whole 10; the brief suggested linear for an expectation, but M2 measured linear 0.3–0.5 a game too high per
+  yardage stat on a 70587-style scoring (weekly bias QB −0.87 → −0.09 with the floor) — so the floor's expectation;
+* a flat band at its probability, points × P(low ≤ X < high + 1 | projected mean) — M2's fitted curves
+  (`scoring_ev.prob_at_least`), else (marked fallback) a normal with sd = a + b × mean (`SPREAD_FALLBACK`,
+  placeholders). An MFL league always prices bands this way (a projected 249 vs 251 passing yards is not a 10-point
+  difference); a Sleeper league keeps all-or-nothing on the mean until M2's yes;
+* a distance band = projected TDs × Σ band points × the share of that family's TDs in the band at the position
+  (`scoring_ev.td_distance_share`, else the placeholder shares `TD_SHARE_FALLBACK`: receiving ≥ 10 yd 0.55, ≥ 40 0.12;
+  rushing 0.35 / 0.06; passing 0.60 / 0.14 — not measured here).
+
+**K and DEF** price through kd1.0 (`kdef.price`) on a Sleeper-shaped dict from the spec (`kd_flat`): a Sleeper spec
+hands back its own settings (no change); MFL: FG by distance onto Sleeper's buckets (50+ = the 50–59 band),
+points-allowed bands onto Sleeper's by the average over each bucket's points (70587: 1–3 → 8 is 4.0 on 1–6), a
+defensive / return TD at its expected points by distance.
+
+**Parity.** For a Sleeper spec, `price_lines` is the flat path bit for bit (`compute_points_frame` on the same dict),
+so the house leagues' projections did not move; `tests/test_scoring_spec.py` holds `compute_points_spec ==
+compute_points` on every `tests/test_scoring.py` row and on 2,000 random lines each for Scrubs, the dynasty and a TE
+premium + long-TD scoring (`compute_points` = the SQL macro, `tests/test_scoring.py`).
+
+**The scoring check** (`scoring_audit.check`, `GET /api/league/scoring-check?league=&week=`, cached a day): for a
+complete week (the clone: weeks 1–2), every rostered player's points as the platform scored them (Sleeper:
+`analytics.league_player_week.points_observed`, else `staging.stg_sleeper__matchup_players`, else the matchups call's
+`players_points`; MFL: `weeklyResults` per-player `score`) against `price_detail` on his `fct_player_game` line (a
+`TMQB` = the team's QBs' summed line, `TMPK` the team's kickers', a defense `mart_kd_week`'s outcome line). `n` counts
+rostered players matched to an NFL player who played or scored; `within_0_1`, `within_1`; each miss has
+`likely_rule` — one of our pieces whose removal closes the gap to within a point (`band:rushing_yards:100`), one
+event of a rate we may have counted differently (`count:sacks`), a touchdown or 2-pt we cannot see, or
+`unexplained`; `suspect_rules` counts them. House leagues also compare with the dbt macro's twin
+(`fct_player_game_league.points`): `sql: {n, agree, disagree}`.
+
+Results on the clone (2026-09-26 snapshot): League of Scrubs week 1 146 / 146 within 0.1, week 2 144 / 144; the
+dynasty 219 / 219 and 228 / 228; the SQL macro agrees on all of them (136 + 133, 219 + 228); the Test League 151 / 151
+and 144 / 144 (by construction); MFL 70587 week 1 162 / 163 within 1 (161 to the tenth; the miss: Kansas City's
+defense, 14 vs 12 — one sack more in MFL's count), week 2 156 / 156 (155 to the tenth).
+
 ## Play-by-play metrics (v1.0, Phase 2, 2026-09-26)
 
 Source: nflfastR play-by-play (`fct_play`, one row per play, 2016+), NFL participation

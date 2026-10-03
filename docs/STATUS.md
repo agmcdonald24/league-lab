@@ -4162,3 +4162,60 @@ nothing showed the waiver alternative before suggesting you give up a useful pla
   a known normal; thin positions pool; TD shares partition and decrease; aliases (TMQB, Def, MFL codes); shrinkage;
   the description parser; floor units; Sleeper bonus pricing per row = per frame; the pooled families; FG bands.
   Ruff clean; root suite 899 passed, 2 skipped.
+
+### IC-1 2026-10-03 — a real scoring engine, and the scoring check that proves it (branch `dev/IC1`, clone `league_lab_i0a`)
+
+Andrew: "We need to make this more dynamic to accommodate more league types and scoring settings", and "I think
+there's some issue between scoring and settings with my two leagues too". Design and contract: docs/METRICS.md §
+"Scoring spec"; docs/ANY_LEAGUE.md § "Scoring".
+
+* **The spec.** `scoring.ScoringSpec`: per position `rates`, `bands` (flat once in a range), `distance` (per play by
+  its length: TDs, FG), `steps` (MFL's `a/b`, whole units), `premiums`; `unpriced` with the platform's code and name;
+  JSON round trip; `rules_for` (units: TMQB → QB, TMPK → K, TMDEF / Def → DEF); `readback()` in plain words. Compilers
+  `from_sleeper` (every key the app has seen; the rest unpriced by key) and `from_mfl` (`*x`, `a/b`, `thresholdPoints`,
+  plain `n` in a range, the TD families PS RS RC PR KO DR FR (IR BF MF BP for the defense), FG bands and by the yard,
+  TPA bands, FC / IC / SK / SF / FF / BLK, position groups). 70587 compiles with nothing unpriced.
+* **Pricing on the spec.** `price_detail` / `compute_points_spec` (actual lines: exact; TD lengths from play-by-play,
+  else exact at 40 / 50 and the < 40 split approximated and said); `expected_frame` / `expected_points` (projected:
+  linear rates, MFL's whole units at their expectation, bands at their probability, distance by the share of TDs that
+  long; M2's `scoring_ev` imported guarded, the marked fallback tested). `anyleague` (marked `IC-1` blocks):
+  `league_scoring` carries the spec, `league_spec`, `price_lines` (Sleeper spec: the flat path bit for bit; MFL: in
+  expectation), `kd_values` (`kd_flat`), `_mapped` / `_scoring_key` (an MFL spec never borrows an exact reference),
+  `scoring_report` (+ `priced`, `approximated`, `unpriced`); `mfl_client.scoring` adds `spec` to its report and fills
+  the flat summary; `why.weights` reads the position's rules for a non-Sleeper spec; `kdef.price` takes a spec
+  (`kd_flat`), so the rest-of-season K / DEF path prices an MFL league's kickers and defenses by its rules too.
+* **Checks.** ruff clean; root 884 passed, 2 skipped; API 325 passed, 2 skipped; live on :8741 (app role): Scrubs
+  week 2 144 / 144 (111 ms), dynasty week 1 219 / 219, Test League week 2 144 / 144, `mfl:70587` weeks 1 / 2
+  162 / 163 and 156 / 156 (100–150 ms). Web untouched.
+* **The scoring check.** `scoring_audit.check` and `GET /api/league/scoring-check?league=&week=` (cached a day).
+  Weeks 1–2 of 2026 (the clone's complete weeks; week 3 is Thursday only and answers `n: 0` with the sentence):
+
+  | League | Week 1 within 1 / n (within 0.1) | Week 2 | SQL macro agrees |
+  |---|---|---|---|
+  | League of Scrubs (Sleeper) | 146 / 146 (146) | 144 / 144 (144) | 136 / 136, 133 / 133 |
+  | Forever Unclean Dynasty (Sleeper) | 219 / 219 (219) | 228 / 228 (228) | 219 / 219, 228 / 228 |
+  | Test League (fixture, by construction) | 151 / 151 (151) | 144 / 144 (144) | — |
+  | MFL 70587 "Make Football Great Again" | 162 / 163 (161) | 156 / 156 (155) | — |
+
+  The one 70587 miss: Kansas City's defense, MFL 14 vs ours 12, `likely_rule` "count:sacks" (one sack more in MFL's
+  count than nflverse's team line). The two 0.6 gaps: a defensive TD's distance (priced at its expected 9.6; no
+  length for return TDs). Every 70587 player, TMQB (22 a week) and TMPK (12) line is exact — the spec reads dad's
+  rules right: no PPR, whole tens (`floor(v / 10)` from 0, not from the range's low), 6 / 9 / 12 by length, the
+  position thresholds, FC = fumbles recovered.
+* **Andrew's two leagues.** The actual points are right to the cent in both, for every rostered player, and the SQL
+  macro agrees with the spec everywhere. What does not follow the settings is the **projection** of the dynasty's
+  bonuses: its long-TD bonuses (+2 at 40+ yards) price 0 on a projected line and its yardage bonuses are
+  all-or-nothing on the projected mean. Priced in expectation (`LEAGUE_LAB_EV_PRICING=1` with M2's curves and shares,
+  week 4): the dynasty's top 24 move QB +1.09, RB +0.53, WR +0.76, TE +0.20 a week (Josh Allen 30.24 → 31.68, Bijan
+  Robinson 26.72 → 25.52: his 100-yard bonus was all-or-nothing). Scrubs has no bonuses: identical.
+* **Tests.** `tests/test_scoring_audit.py` 5 (the check's counts, misses, `likely_rule`, words, unit sums);
+  `tests/test_scoring_spec.py` 32 (70587 hand-computed: RB 120 yards + a 45-yard TD = 43, QB 45, WR / TE
+  thresholds, K 36, DEF; 21861 TE 1.5 and FG by the yard; IDP / unknown events unpriced; thresholdPoints; parity on
+  `tests/test_scoring.py`'s rows and 2,000 random lines × 3 scorings; JSON; read-back; EV monotone; the fallback with
+  M2 absent; the 10-yard cut; Sleeper keys beyond the flat engine — completions, attempts, carries, first downs,
+  25+ completions — priced on actual lines and shown as SQL disagreements, never silently). `api/tests/test_ic1.py` 11 (the route for both house leagues weeks 1–2 with the SQL
+  twin, default week, week 3, the Test League, 70587 weeks 1–2, 404, the MFL league's spec and report, `price_lines`
+  on the MFL spec + house parity). Both files also pass with M2's `scoring_ev.py` copied in (not committed).
+* **Fixtures.** `api/tests/fixtures/mfl/70587/` and `mfl/players.json` copied from IC-3's worktree unchanged;
+  `fixtures/ic1/db_playerids_70587.csv` (the id table trimmed to 70587's 147 mapped players); the Test League's week 1–2
+  matchups gain `players_points` (`fixtures/make_ic1_fixtures.py`: the pre-spec flat engine on `fct_player_game`).

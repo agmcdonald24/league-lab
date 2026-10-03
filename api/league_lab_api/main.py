@@ -18,6 +18,7 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/search?league=&q=               the player card's search box (any league: Sleeper's directory, H1)
     /api/about?league=                   About the numbers: the model, what it leans on most, its grades (H1)
     /api/status                          the freshness line, the stale-injury warning, Sleeper's cache ages + budget
+    /api/league/scoring-check?league=&week=  our points vs the league's own for a scored week (Wave I-C, IC-1)
 Errors are {"error": "<plain words>"} (plus the older "detail"): 404 unknown league / team / player / user,
 502 Sleeper did not answer, 503 the numbers are not ready yet / busy (our Sleeper budget).
 Everything else is the web app (web/dist): a real file, else index.html (the app routes itself).
@@ -451,6 +452,42 @@ from . import about as about_mod  # noqa: E402 - the block stays self-contained 
 def about(league: str, response: Response, source: str | None = None):
     return _json(about_mod.about(league, source=source), response)
 # ---- end H1
+
+# ---- IC-1 (Wave I-C): the scoring check — our points against the league's own for a scored week
+#   /api/league/scoring-check?league=&week=     league_lab.scoring_audit.check (default: the last complete week)
+_scoring_checks: dict[tuple[str, int | None], tuple[float, dict]] = {}
+SCORING_CHECK_TTL_S = 24 * 3600.0        # a scored week does not change; the stat corrections land overnight
+
+
+@app.get("/api/league/scoring-check", dependencies=[Depends(require_auth)])
+def scoring_check(league: str, response: Response, week: int | None = None):
+    import time as _t
+
+    from league_lab import scoring_audit
+    key = (str(league), week)
+    hit = _scoring_checks.get(key)
+    if hit is not None and hit[0] > _t.monotonic():
+        return _json(hit[1], response)
+    try:
+        lid = A.check_id(league)
+        lg = A.sleeper().league(lid)
+    except A.LeagueNotFound as exc:
+        raise NotFound(str(exc)) from exc
+    except A.SleeperUnavailable as exc:
+        raise ondemand.SleeperDown(str(exc)) from exc
+    router = A.sleeper()
+    mfl = router.mfl.client if str(lid).startswith("mfl:") else None
+    try:
+        out = scoring_audit.check(query, lg, week, client=router, mfl_client=mfl)
+    except A.SleeperUnavailable as exc:
+        raise ondemand.SleeperDown(str(exc)) from exc
+    out["name"] = lg.get("name")
+    if len(_scoring_checks) > 200:
+        _scoring_checks.clear()
+    _scoring_checks[key] = (_t.monotonic() + SCORING_CHECK_TTL_S, out)
+    return _json(out, response)
+# ---- end IC-1
+
 
 # ---------------------------------------------------------------- the web app
 ASSET_CACHE = "public, max-age=31536000, immutable"     # vite's hashed file names

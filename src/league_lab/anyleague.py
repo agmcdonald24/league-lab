@@ -59,7 +59,13 @@ import pandas as pd
 from . import lineup as LU
 from .scoring import (  # noqa: F401 - compute_points: the reference the vector form equals
     MAPPED_KEYS,
+    LeagueScoring,
+    ScoringSpec,
     compute_points,
+    ev_pricing,
+    expected_frame,
+    kd_flat,
+    spec_of,
     unmapped_keys,
 )
 from .sleeper_client import (  # noqa: F401 - re-exported: the API and the tests import them from here
@@ -310,13 +316,27 @@ def _load_nfl_wide(query: Query, season: int, week: int) -> Board:
                  labels, kd_fitted)
 
 
-def price_lines(line: pd.DataFrame, scoring: Mapping[str, float]) -> pd.Series:
+def price_lines(line: pd.DataFrame, scoring: Mapping[str, float] | ScoringSpec) -> pd.Series:
     """League points of every stat line: ``compute_points`` (bonuses included), exactly as ``projections.price`` —
-    computed for every row at once (``compute_points_frame``: the same terms in the same order, so equal bit for bit)."""
+    computed for every row at once (``compute_points_frame``: the same terms in the same order, so equal bit for bit).
+
+    Wave I-C (IC-1): the league's ``ScoringSpec`` decides. A Sleeper spec prices through the flat path above (a
+    house league still reproduces its nightly ``proj_points`` to the bit) unless ``LEAGUE_LAB_EV_PRICING=1``; any
+    other spec (MFL's per-position rules, TDs by distance, ``1/10`` yards) prices with ``scoring.expected_frame``
+    per row position (units through ``ScoringSpec.rules_for``: TMQB -> QB's rules)."""
     stats = line[list(STAT_LINE)].rename(columns=STAT_LINE).apply(pd.to_numeric, errors="coerce").fillna(0.0)
     if "position" in line:          # F1: a position premium (bonus_rec_te, …) prices only when the row carries the position
         stats["position"] = line["position"].to_numpy()
-    return pd.Series(compute_points_frame(stats, scoring), index=line.index, dtype=float)
+    # ---- IC-1: pricing on the spec
+    spec = scoring if isinstance(scoring, ScoringSpec) else getattr(scoring, "spec", None)
+    if spec is not None and (spec.flat is None or ev_pricing()):
+        pos = line["position"].to_numpy() if "position" in line else None
+        # an MFL league has no nightly to reproduce: its flat bands are priced at their probability (a projected
+        # 249 vs 251 passing yards is not a 10-point difference); a Sleeper spec only under the flag
+        return pd.Series(expected_frame(stats, spec, pos, ev=True), index=line.index, dtype=float)
+    flat = spec.flat if spec is not None else scoring
+    # ---- /IC-1
+    return pd.Series(compute_points_frame(stats, flat), index=line.index, dtype=float)
 
 
 def compute_points_frame(stats: pd.DataFrame, scoring: Mapping[str, float]) -> np.ndarray:
@@ -358,6 +378,9 @@ def compute_points_frame(stats: pd.DataFrame, scoring: Mapping[str, float]) -> n
 def _mapped(scoring: Mapping[str, float]) -> dict[str, float]:
     """The scoring keys the stat line prices (scoring.MAPPED_KEYS), non-zero, rounded to 3 places (Sleeper stores
     float32: 0.05000000074505806 is 0.05) — what "the same scoring" means for choosing a reference."""
+    sp = getattr(scoring, "spec", None)   # ---- IC-1: a non-Sleeper spec never equals a reference's flat keys
+    if sp is not None and sp.flat is None:
+        return {"__spec__": sp.key()}
     return {k: round(float(w), 3) for k, w in scoring.items() if k in MAPPED_KEYS and w and round(float(w), 3) != 0}
 
 
@@ -473,7 +496,8 @@ def kd_values(scoring: Mapping[str, float], position: str, board: Board) -> tupl
     line_cols = [f"proj_{c}" for c in (kdef.K_LINE if position == "K" else kdef.DEF_LINE)]
     for c in line_cols:
         rows[c] = pd.to_numeric(rows[c], errors="coerce") if c in rows else 0.0
-    rows["proj_points"] = kdef.price(rows.reset_index(drop=True), position, scoring, "proj_")
+    flat = kd_flat(spec_of(scoring), position)       # ---- IC-1: K / DEF keys from the spec (Sleeper: unchanged)
+    rows["proj_points"] = kdef.price(rows.reset_index(drop=True), position, flat, "proj_")   # (kdef.price reads a spec too)
     # the range: the reference with the closest K (DEF) prices; its offsets kept as they are (fixed per scoring)
     proj = rows.set_index("unit_id")["proj_points"].astype(float)
     ref = choose_reference(proj, {n: f for n, f in board.kd_fitted.items() if not f.empty})
@@ -508,7 +532,24 @@ def scoring_report(scoring: Mapping[str, float], slots: list[str]) -> dict[str, 
         cols = {SLEEPER_BONUS_MAP[k][0]} if k in SLEEPER_BONUS_MAP else set(_PY_EXPR.get(k, ()))
         if not cols <= line_cols:
             not_proj.append(k)
-    return {"unmapped": sorted(unm), "not_projected": sorted(not_proj)}
+    # ---- IC-1: the spec's own account — ``priced`` (the read-back), ``approximated`` (the words), ``unpriced``
+    spec = spec_of(scoring)
+    approx = list(spec.approximated)
+    if spec.flat is None:          # an MFL spec: the flat keys above are a summary, the spec's lists are the truth
+        unm = [f"{u['name']} ({u['event']})" for u in spec.unpriced]
+        not_proj = sorted({s for p in ("QB", "RB", "WR", "TE") if (r := spec.rules_for(p)) is not None
+                           for s in [*r.rates, *r.bands, *r.steps] if s not in line_cols}
+                          | {f for p in ("QB", "RB", "WR", "TE") if (r := spec.rules_for(p)) is not None
+                             for f in r.distance if f in ("return_tds", "fumble_recovery_tds")})
+    if any(r.distance for p, r in spec.positions.items() if p in ("QB", "RB", "WR", "TE")) and (spec.flat is None or ev_pricing()):
+        approx.append("touchdowns by distance on a projection: the projected touchdowns × the share of touchdowns that "
+                      "long at the position (placeholder shares until the measured ones land)")
+    if any(r.steps for r in spec.positions.values()):
+        approx.append("yards paid per whole 10 (or 20): a projection prices the expected whole tens (a 57-yard "
+                      "projection is worth about 5.2, not 5.7)")
+    return {"unmapped": sorted(unm), "not_projected": sorted(not_proj), "priced": spec.readback(),
+            "approximated": approx, "unpriced": [f"{u['name']} ({u['event']})" for u in spec.unpriced]}
+    # ---- /IC-1
 
 
 def team_names(rosters: list[dict], users: list[dict]) -> dict[int, dict]:
@@ -582,7 +623,9 @@ _priced: dict[tuple, tuple[float, Priced]] = {}
 
 
 def _scoring_key(scoring: Mapping[str, float]) -> str:
-    return json.dumps({k: round(float(v), 6) for k, v in sorted(scoring.items())})
+    sp = getattr(scoring, "spec", None)   # ---- IC-1: two MFL leagues with one flat summary may differ in the spec
+    extra = {"__spec__": sp.key()} if sp is not None and sp.flat is None else {}
+    return json.dumps({k: round(float(v), 6) for k, v in sorted(scoring.items())} | extra)
 
 
 def price_week(query: Query, league_id: str, scoring: Mapping[str, float], slots: list[str], season: int, week: int, *,
@@ -701,8 +744,23 @@ def _solve_roster(query: Query, league_id: str, roster: dict, players: Mapping[s
 
 
 def league_scoring(league: Mapping) -> tuple[dict[str, float], list[str]]:
-    scoring = {k: float(v) for k, v in (league.get("scoring_settings") or {}).items() if v is not None}
+    """(the flat ``scoring_settings`` as a ``LeagueScoring`` carrying the league's ``ScoringSpec``, the slots)."""
+    scoring = LeagueScoring({k: float(v) for k, v in (league.get("scoring_settings") or {}).items() if v is not None})
+    scoring.spec = league_spec(league)
     return scoring, [str(s) for s in league.get("roster_positions") or []]
+
+
+# ---- IC-1 (Wave I-C): the league's scoring spec
+def league_spec(league: Mapping) -> ScoringSpec:
+    """``league["scoring_spec"]`` (JSON) when the translation put one there, else MFL's report's ``spec``, else the
+    Sleeper settings compiled (``scoring.from_sleeper``)."""
+    from .scoring import ScoringSpec as _S
+    from .scoring import from_sleeper
+    raw = league.get("scoring_spec") or ((league.get("mfl") or {}).get("scoring") or {}).get("spec")
+    if raw:
+        return _S.from_json(raw)
+    return from_sleeper({k: float(v) for k, v in (league.get("scoring_settings") or {}).items() if v is not None})
+# ---- /IC-1
 
 
 def lineup_rows(query: Query, league_id: str, roster_id: int, week: int, *, as_of: datetime | None = None,
