@@ -28,13 +28,17 @@ def _fresh():
 
 
 # ------------------------------------------------------------------------------ the dial (no database)
-@pytest.mark.parametrize("gain,label", [(-8.0, "No deal"), (-0.5, "No deal"), (0.0, "No deal"), (0.04, "No deal"),
-                                        (0.05, "Maybe"), (1.99, "Maybe"), (2.0, "Likely"), (6.0, "Likely"),
-                                        (6.01, "Hard to say no"), (40.0, "Hard to say no")])
+# IE-1 (Wave I-E, the casual-user review): the dial is the effect on their starters — outcome words, no acceptance claim
+# ("No deal" / "Maybe" / "Likely" / "Hard to say no" retired); the number, the needle and the 2 / 6 thresholds are unchanged
+@pytest.mark.parametrize("gain,label", [(-8.0, "Makes their lineup weaker"), (-0.5, "Makes their lineup weaker"),
+                                        (0.0, "About even"), (0.04, "About even"),
+                                        (0.05, "About even"), (1.99, "About even"), (2.0, "Improves their lineup"),
+                                        (6.0, "Improves their lineup"), (6.01, "Improves it a lot"), (40.0, "Improves it a lot")])
 def test_dial_buckets(gain, label):
     d = decisions.interest(gain, 3.4, "weeks 4–7")
     assert d["label"] == label and 0 <= d["score"] <= 100
-    assert d["caption"] == "by our numbers over weeks 4–7" and d["you"] == 3.4 and d["their_gain"] == round(gain, 2)
+    assert d["caption"] == "their starters over weeks 4–7, by our numbers" and d["you"] == 3.4 and d["their_gain"] == round(gain, 2)
+    assert d["title"] == "Effect on their starters"
 
 
 def test_dial_score_is_monotone_and_each_label_owns_a_quarter():
@@ -147,8 +151,8 @@ def test_window_on_partners_and_evaluate_test_league(client):
         assert e["window"] == w and e["span"] == out[w]["span"] and e["weeks"] == out[w]["weeks"]
         assert len(e["before"]["mine"]["by_week"]) == len(e["weeks"])
         assert e["fit"]["window"] == e["fit"]["next_4"]
-        assert e["interest"] == decisions.interest(e["fit"]["window"]["theirs"], e["fit"]["window"]["mine"], e["span"])
-        assert e["interest"]["caption"] == f"by our numbers over {e['span']}"
+        assert {**e["interest"], "need": None} == decisions.interest(e["fit"]["window"]["theirs"], e["fit"]["window"]["mine"], e["span"])
+        assert e["interest"]["caption"] == f"their starters over {e['span']}, by our numbers"          # IE-1
         assert e["fit"]["this_week"] == ev["next4"]["fit"]["this_week"]         # this week is this week, whatever the window
         assert e["lineups"]["mine"]["slots"] == ev["next4"]["lineups"]["mine"]["slots"]
     assert ev["week"]["fit"]["window"] == ev["week"]["fit"]["this_week"]

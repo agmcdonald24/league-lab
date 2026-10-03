@@ -214,8 +214,8 @@ export function windowWhy(w: TradeWindow, span: string | null): string {
 }
 
 /** The dial's label from the other side's gain over the window (api decisions.py `interest`: the same thresholds). */
-export function interestLabel(theirGain: number): "No deal" | "Maybe" | "Likely" | "Hard to say no" {
-  return theirGain < 0.05 ? "No deal" : theirGain < 2 ? "Maybe" : theirGain <= 6 ? "Likely" : "Hard to say no";
+export function interestLabel(theirGain: number): EffectLabel {
+  return effectLabel(theirGain); // IE-1: the effect on their starters (was No deal / Maybe / Likely / Hard to say no)
 }
 // ---- end IA-2
 
@@ -275,3 +275,16 @@ export function openPlayer(gsis: string | null | undefined, opts: PaneOpts, go: 
   else go();
 }
 // ---- end IB-2
+
+// ---- IE-1 (Wave I-E, the casual-user review § "replace the interest dial"): the dial is the effect on their starters —
+// the partner's best-lineup gain over the window (api decisions.py `effect_label`: the same thresholds) — in outcome
+// words, never an acceptance claim. The tone: weaker = bad, about even = neutral, improves = good.
+import type { EffectLabel } from "./api";
+export const EFFECT_TITLE = "Effect on their starters";
+export function effectLabel(g: number): EffectLabel {
+  return g < -0.05 ? "Makes their lineup weaker" : g < 2 ? "About even" : g <= 6 ? "Improves their lineup" : "Improves it a lot";
+}
+export function effectTone(label: string): "text-bad" | "text-ink-2" | "text-good" {
+  return label === "Makes their lineup weaker" || label === "No deal" ? "text-bad" : label === "About even" || label === "Maybe" ? "text-ink-2" : "text-good";
+}
+// ---- end IE-1

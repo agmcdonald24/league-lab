@@ -138,6 +138,15 @@ pat and the best free agent for the same need. "About N" is a whole number in a 
 **Freshness**: "Updated 2:51 PM ET" (the exact time on hover / tap); feed names only in the data details; the MFL
 roster's freshness its own line.
 
+| My Week's actions (IE-1, `myweek.build_actions`) | at most three, the most urgent first: **Change needed** ("Start Wilson at FLEX (or Croskey-Merritt: a coin flip) in place of Jefferson.") · **Close call** ("Keep Addison and Nabers ahead of McConkey for now.") · **Waiver claim** ("Claim Dalton Schultz: about 3 more starter points this week."); one sentence naming the players, then the reason and what could change it ("Check his status again before kickoff."); the numbers behind "Why? The numbers behind it" |
+| set line (IE-1) | "Your lineup is set — nothing to change." (a complete answer) / "The rest of your lineup is set — nothing to change." — never three reassurance cards |
+| submitted or not (IE-1) | "Already in your MFL lineup — nothing to change." / "Not in your Sleeper lineup yet: make the change in Sleeper." (the league's own app named); "Nothing is claimed from here: put the claim in on MFL." |
+| nothing is submitted from here (IE-1) | "League Lab never changes your lineup or claims; it tells you what to do in your league's app." beside **Open MFL to edit your lineup ↗** / **Open Sleeper to edit your lineup ↗** |
+| lock time (IE-1, `myweek.lock_words`) | "before Sun 1:00 PM ET": the first kickoff among the players an action swaps |
+| waiver card, this week first (IE-1, `decisions.claim_lead`) | "Falcons defense instead of Jaguars: about 1 more starter point this week" (the big number: this week's, labelled "this week"); then "+12.8 over weeks 4–7 in total" (a total over the weeks, never per week); "Instead of Devaughn Vele:" on a claim for the same spot; "Each claim is weighed on its own …: two claims do not add up beyond your 1 open roster spot" |
+| the trade dial (IE-1; was "Their interest" / No deal · Maybe · Likely · Hard to say no) | **Effect on their starters**: Makes their lineup weaker · About even · Improves their lineup · Improves it a lot; "It starts at their WR/TE over Robinson." (the need); no 0–100 number, never "interest" or "hard to say no" |
+| the cheaper package (IE-1) | "Same gain for you without RJ Harvey." on the lead; "Adding RJ Harvey does not change your gain; it costs you RB depth (RJ Harvey: 97 season points)." on the bigger package |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

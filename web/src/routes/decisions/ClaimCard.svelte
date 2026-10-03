@@ -25,8 +25,12 @@
 
   const m = $derived(c.move);
   // the number: the bye week's gain in Bye coverage, else the horizon's; this week's beside it when it differs
-  const big = $derived(c.week_gain ?? c.gain ?? m.horizon_gain);
-  const bigLabel = $derived(c.week_gain_label ?? c.gain_label);
+  // ---- IE-1 (the casual-user review: "make waiver horizons visually unambiguous"): with the API's `lead` the number is
+  // THIS week's starter gain (label "this week"); the window's total is the second line, said to be cumulative
+  const thisWeekFirst = $derived(!!c.lead && c.week_gain == null && (c.this_week ?? 0) >= 0.05);
+  const big = $derived(thisWeekFirst ? c.this_week : (c.week_gain ?? c.gain ?? m.horizon_gain));
+  const bigLabel = $derived(thisWeekFirst ? "this week" : (c.week_gain_label ?? (c.lead && c.total_words ? `${c.gain_label} in total` : c.gain_label)));
+  // ---- end IE-1
   const href = (g: string | null | undefined) => (g ? withContext(`/player/${g}`, ctx) : null);
   const paneOpts = $derived({ from: "waiver" as const, context: { add: m.add.sleeper_id, drop: m.drop?.sleeper_id ?? null, name: m.add.player_name } });
 </script>
@@ -52,9 +56,16 @@
       <div class="ll-label mt-1">{bigLabel}</div>
     </div>
   </div>
+  {#if c.lead}
+    <!-- ---- IE-1: this week's starter gain first, the window's total second and cumulative; an alternative says so -->
+    <p class="mt-2 text-base leading-snug font-semibold text-ink" data-testid="claim-lead">
+      {#if c.alternative_to}<span class="font-normal text-ink-2" data-testid="claim-alternative">Instead of {c.alternative_to}: </span>{/if}{c.lead}.
+    </p>
+    {#if c.total_words && thisWeekFirst}<p class="mt-0.5 text-sm leading-snug text-ink-2" data-testid="claim-total">{c.total_words}.</p>{/if}
+  {/if}
   <p class="mt-2 text-base leading-snug text-ink" data-testid="claim-reason">{c.reason}</p>
   <p class="mt-1 text-sm leading-snug text-ink-3" data-testid="claim-cost">
-    {c.cost}{#if c.this_week != null && c.this_week >= 0.05 && Math.abs(c.this_week - (big ?? 0)) >= 0.05}<span class="ml-1">{`· this week ${s1(c.this_week)}`}</span>{/if}
+    {c.cost}{#if !c.lead && c.this_week != null && c.this_week >= 0.05 && Math.abs(c.this_week - (big ?? 0)) >= 0.05}<span class="ml-1">{`· this week ${s1(c.this_week)}`}</span>{/if}
   </p>
   {#if m.drop_starts}
     <div class="mt-2 rounded-md bg-warn-soft px-3 py-2 text-sm leading-snug text-ink" data-testid="keep-alt">

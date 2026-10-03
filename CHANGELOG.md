@@ -20,6 +20,16 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   metric dictionary (`docs/WORDS.md`), the setup screen with the team picker first and the scoring one status line,
   supporting text at ≥ 4.97:1 in both themes, labels 12 px.
 
+- **IE-1: the weekly action list.** My Week opens with at most three actions, the most urgent first — a change your
+  submitted lineup needs before the next kickoff, a close call, a waiver claim that changes this week's starters —
+  each in one sentence with the reason under it and the numbers behind "Why?"; calls that share a player are one
+  decision ("Keep Addison and Nabers ahead of McConkey for now"); "Your lineup is set — nothing to change" is a whole
+  answer; every action says whether it is already in your MFL / Sleeper lineup, with "Open MFL to edit your lineup"
+  and the line that League Lab never submits anything. Waivers' cards lead with this week's starter points and say the
+  four-week number is a total; the answer, the three strongest and the Help now list no longer repeat one move. The
+  trade dial is "Effect on their starters" (no 0–100, no "interest"); the Finder leads with the cheaper package when an
+  extra player adds nothing for you. No projection, lineup total or gain changed.
+
 ## 2026-10-03 — Wave I-D
 
 - **PO (integration).** dbt's `assert_projection_ranges_price_the_lines` re-prices `scrubs` only: the dynasty's

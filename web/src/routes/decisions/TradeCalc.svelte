@@ -19,6 +19,7 @@
   import { errorWords, f1, f2, names, parseIds, s1, slotLabel } from "../../lib/decisions";
   import { windowOf, windowWhy } from "../../lib/decisions";
   import { openPlayer } from "../../lib/decisions";
+  import { effectTone } from "../../lib/decisions"; // ---- IE-1
   import { restoreScroll, route, setParams } from "../../lib/router.svelte";
   import { fmt } from "../../lib/theme";
   import Bar from "../../components/Bar.svelte";
@@ -195,7 +196,7 @@
     const next = (side === "give" ? give : getIds).filter((x) => x !== key);
     setParams({ [side]: next.length ? next.join(",") : null });
   }
-  const labelTone = (l: string) => (l === "No deal" ? "text-bad" : l === "Maybe" ? "text-warn" : "text-good");
+  const labelTone = (l: string) => effectTone(l); // ---- IE-1: the effect on their starters' tone
   // ---- IE-2: the result through the starting lineup — the package's names with positions, a starter's points in one
   // decimal, the lineup rows' per-player change (the answer's; a slot move is none)
   const posOf = (p: { position?: string | null; team?: string | null }) => [p.position, p.team].filter(Boolean).join(" · ");
@@ -320,7 +321,7 @@
         {#if shown}
           <p data-testid="trade-headline"><Md text={verdictLess(shown)} {ctx} /></p>
         {:else}
-          <p>Pick a team and tick players both ways. The dial shows how much they would want the trade, by our numbers.</p>
+          <p>Pick a team and tick players both ways. The dial shows the effect on their starters, by our numbers.</p>
         {/if}
       {/snippet}
     </ScreenHead>
@@ -360,7 +361,7 @@
       <Card tone="accent" testid="trade-result">
         <div class="grid items-center gap-4 wide:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]" data-testid="dial-row" aria-busy={evaluating} {@attach watchDial}>
           {#if r.interest}
-            <Dial score={r.interest.score} label={r.interest.label} caption={r.interest.caption} you={r.interest.you} youLabel={`You · ${r.span}`} busy={evaluating} />
+            <Dial score={r.interest.score} label={r.interest.label} caption={r.interest.caption} need={r.interest.need ?? null} you={r.interest.you} youLabel={`You · ${r.span}`} busy={evaluating} /><!-- IE-1: need -->
           {/if}
           <div class="min-w-0">
             <div class="grid grid-cols-2 gap-2" data-testid="fit-tiles">
@@ -433,8 +434,7 @@
             <button type="button" class="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-left text-sm" aria-expanded={open} onclick={() => (barOpen = !barOpen)} data-testid="verdict-bar-toggle">
               <span class="min-w-0 flex-1 truncate font-semibold text-ink" data-testid="verdict-bar-package">{pkgWords}</span>
               <span class="flex shrink-0 items-center gap-1.5" data-testid="dial-chip">
-                <strong class={labelTone(r.interest!.label)}>{r.interest!.label}</strong>
-                <span class="tabnum text-ink-3">{r.interest!.score}</span>
+                <strong class={labelTone(r.interest!.label)}>{r.interest!.label}</strong><!-- IE-1: no 0–100 score -->
                 <span class="ll-label">You</span><strong class="tabnum">{s1(r.interest!.you)}</strong>
               </span>
               <span class="chev shrink-0 text-ink-3 wide:hidden {open ? 'rotate-90' : ''}" aria-hidden="true">›</span>

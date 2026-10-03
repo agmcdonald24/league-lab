@@ -1,5 +1,7 @@
 <script lang="ts">
   import { ApiError, get, paths, peek, Unauthorized, type MyWeek, type Status, type UserLeagues } from "../lib/api";
+  import { decisionPaths, type Waivers } from "../lib/api"; // ---- IE-1
+  import { ACTION_WORD, homeActions } from "../lib/week"; // ---- IE-1
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
   import { learnLeagueName } from "../lib/names.svelte";
@@ -46,6 +48,28 @@
   const checked = $derived(
     checkedLine(avail?.checked_at ?? (status as (Status & { availability?: AvailabilityStatus }) | null)?.availability?.checked_at),
   );
+
+  // ---- IE-1: the actions (the API's, plus Waivers' claim when there is room: fetched after the page shows, never
+  // blocking it); `actions` undefined = an answer from before Wave I-E (the cards are shown as they were)
+  let waivers = $state<Waivers | null>(null);
+  $effect(() => {
+    const l = league;
+    const t = team;
+    waivers = null;
+    if (t === null || !data || data.actions === undefined) return;
+    const path = decisionPaths.waivers(l, t);
+    const hit = peek<Waivers>(path);
+    if (hit) {
+      waivers = hit;
+      return;
+    }
+    get<Waivers>(path)
+      .then((w) => league === l && team === t && (waivers = w))
+      .catch(() => {});
+  });
+  const actions = $derived(data && data.actions !== undefined ? homeActions(data, waivers) : null);
+  const allSet = $derived(!!actions && actions.length === 0);
+  // ---- end IE-1
 
   $effect(() => {
     const l = league;
@@ -131,6 +155,71 @@
     {#if data.week !== null}
       <div class="grid grid-cols-1 gap-4 wide:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] wide:items-start">
         <section class="space-y-2.5">
+          {#if actions}
+            <!-- ---- IE-1: the weekly action list — at most three actions, the most urgent first, each in three layers (the
+                 action, the reason and consequence, the analysis behind Why?); "your lineup is set" is a complete answer -->
+            <div class="space-y-2.5" data-testid="week-actions">
+              <h2 class="ll-label">This week</h2>
+              {#if allSet}
+                <p class="rounded-lg border border-line bg-surface p-4 text-lg leading-snug font-semibold" style="box-shadow:var(--ll-shadow)" data-testid="week-answer">
+                  <span class="text-good" aria-hidden="true">✓ </span>{data.set_line ?? (data.cards.length === 0 && data.notice ? "" : "Your lineup is set — nothing to change.")}
+                  {#if data.cards.length === 0 && data.notice}<Md text={data.notice} {ctx} />{/if}
+                </p>
+              {/if}
+              {#each actions as a, i (`${a.kind}-${i}`)}
+                {@const why = a.cards.map((k) => data!.cards[k]).filter(Boolean)}
+                <article class="relative space-y-2 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)"
+                  data-testid="action-card" data-kind={a.kind} data-submitted={a.submitted === null ? "unknown" : String(a.submitted)}>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="rounded-sm px-2 py-0.5 text-sm font-bold {a.kind === 'change' ? 'bg-warn-soft text-warn' : a.kind === 'close' ? 'bg-raised text-ink-2' : 'bg-accent-soft text-accent'}"
+                      data-testid="action-kind">{a.kind === "change" ? "⚠︎ " : a.kind === "close" ? "≈ " : "+ "}{ACTION_WORD[a.kind]}</span>
+                    {#if a.slot_label}<span class="ll-label text-ink-2" data-testid="action-slot">{a.slot_label}</span>{/if}
+                    {#if a.lock}<span class="ml-auto text-sm font-semibold text-ink-2" data-testid="action-lock">{a.lock.words}</span>{/if}
+                  </div>
+                  <p class="text-lg leading-snug font-semibold" data-testid="action-text"><Md text={a.action} {ctx} /></p>
+                  {#if a.reason}<p class="text-base leading-snug text-ink-2" data-testid="action-reason"><Md text={a.reason} {ctx} /></p>{/if}
+                  {#if a.submitted_words}
+                    <p class="text-sm leading-snug font-semibold {a.submitted ? 'text-good' : 'text-warn'}" data-testid="action-submitted">
+                      {a.submitted ? "✓ " : "→ "}{a.submitted_words}
+                    </p>
+                  {/if}
+                  {#if a.href}
+                    <a class="inline-flex min-h-9 items-center rounded-sm border border-line-strong px-3 text-sm font-semibold hover:bg-raised"
+                      href={withContext(a.href, ctx)} data-testid="action-open">See it on Waivers ›</a>
+                  {/if}
+                  {#if why.length}
+                    <details class="group" data-testid="action-why">
+                      <summary class="inline-flex min-h-9 cursor-pointer items-center gap-1 text-sm font-semibold text-accent">
+                        <span class="chev" aria-hidden="true">›</span>Why? The numbers behind it
+                      </summary>
+                      <div class="mt-1 space-y-3">
+                        {#each why as c (c.slot)}
+                          {@const cmp = compareHref(c)}
+                          <div class="space-y-1 border-t border-line pt-2" data-testid="action-call">
+                            <p class="text-base leading-snug"><span class="ll-label text-ink-3">{c.slot_label}</span> <Md text={cardCall(c, cardStatus(c, data!.lineup_full))} {ctx} /></p>
+                            {#if c.why}<p class="text-sm leading-snug text-ink-2"><Md text={c.why} {ctx} /></p>{/if}
+                            {#each whyBlocks(c) as b, j (j)}<p class="text-sm leading-snug text-ink-3"><Md text={b.text} {ctx} /></p>{/each}
+                            {#if cmp}<a class="ll-link text-sm" href={withContext(cmp, ctx)}>Compare these players ›</a>{/if}
+                          </div>
+                        {/each}
+                      </div>
+                    </details>
+                  {/if}
+                  <span class="absolute inset-y-0 left-0 w-1 {a.kind === 'change' ? 'bg-warn' : 'bg-accent'}" aria-hidden="true"></span>
+                </article>
+              {/each}
+              {#if !allSet && data.set_line}
+                <p class="px-1 text-base leading-snug text-ink-2" data-testid="set-line"><span class="text-good" aria-hidden="true">✓ </span>{data.set_line}</p>
+              {/if}
+              <div class="space-y-1 px-1" data-testid="where-to-change">
+                {#if data.edit_link}
+                  <a class="inline-flex min-h-10 items-center rounded-md bg-accent px-4 font-semibold text-on-accent" href={data.edit_link.url} target="_blank" rel="noopener noreferrer"
+                    data-testid="edit-link">{data.edit_link.label} ↗</a>
+                {/if}
+                {#if data.nothing_submitted}<p class="text-sm leading-snug text-ink-2" data-testid="nothing-submitted">{data.nothing_submitted}</p>{/if}
+              </div>
+            </div>
+          {:else}
           <h2 class="ll-label">The calls that matter</h2>
           {#if data.cards.length === 0 && data.notice}
             <p class="rounded-lg bg-raised p-4 text-base" data-testid="no-calls"><Md text={data.notice} {ctx} /></p>
@@ -177,6 +266,7 @@
               <span class="absolute inset-y-0 left-0 w-1 {st === 'change' ? 'bg-warn' : 'bg-accent'}" aria-hidden="true"></span>
             </article>
           {/each}
+          {/if}
         </section>
 
         <div class="space-y-3">
