@@ -3826,3 +3826,76 @@ twice doesn't make any sense", "some of the trades it's suggesting are crazy" (J
   changes some suggestions; window variants; `trades_lists_*`; `trade_lists` dropped from the waivers fixtures; the
   evaluate fixtures re-saved, plus one "tick" variant per league, `ia2_packages.json`); `web/e2e/ia2/` 16 (8 × phone
   at 375 px and desktop); G4's trades test and the tab-row test, H1's buy-low tests follow the move.
+
+## Wave I-B (Iteration 17, part B)
+
+### IB-2 2026-10-03 — Waivers short, the trade builder with the decision in view (branch `dev/IB2`, clone `league_lab_ia3`)
+
+The second review (#5): Waivers ran six desktop screens; the trade builder lost the verdict while you browsed rosters;
+nothing showed the waiver alternative before suggesting you give up a useful player.
+
+- **API** (`decisions.py`, block "IB-2", one hook line in `waivers` after I0-A's overlay): `/api/waivers` gains `top3`,
+  `views`, `default_view`. *Top 3*: the best-drop claims by lineup gain over the horizon, one per position (two defenses
+  compete for one slot), the overlay's "cannot play" and one-QB-per-team rules applied; each `{move, reason, cost, gain,
+  gain_label, this_week}`. *One reason* (`_reason`, one fact): the role ("Starts at K this week over McLaughlin (8.1)",
+  "Fills your empty RB2 …"), the bye ("Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye" — only when a
+  player he could stand in for is away), the stash's role change, the flyer, else the weeks it helps. *Cost*: "Drop X:
+  he sits anyway" / "costs your lineup 21.6 over weeks 4–7" / "he starts for you this week" / "No drop: an open spot".
+  *Views*: `help` (claims with this week's gain ≥ 0.05, most first, ≤ 8), `bye` (the next week after this one where a
+  bye leaves a starting slot empty — `mart_league_roster_horizon` / the on-demand solve's `role = 'empty'` — and the
+  claims that gain most that week; else "Your bench covers every bye through week N" + the cover claims), `stash` /
+  `all` (counts; the lists are the existing `upside` and `free_agents`). **One answer carries every view** (my call, not
+  `view=`): a chip switches with no request (instant on a phone, the on-demand league solved once, one cache entry per
+  position, the saved fixtures one per position as before). *The alternative before a drop*: every move object in the
+  answer (top 3, views, `moves`, `cards`) whose drop starts this week or next gets `drop_starts {weeks, slot, text}` and
+  `keep_alternative {move, line}` — the best claim at the same position whose drop sits (or needs no drop), from the
+  full add × drop table the sweep already priced: "Or drop Croskey-Merritt instead (he sits) and keep Kansas City
+  Chiefs: +9.7 over weeks 4–7"; none: "No free agent at DEF helps without dropping a starter …". "Starts" = this week
+  the lineup My Week shows (`cards.lineup_rows` / `anyleague.lineup_rows` + `availability.apply_to_rows`: a player who
+  starts because a teammate is Out counts), next week the horizon's solved lineup (`_starts_soon`; IB-0's
+  `roster_context` replaces its first half in integration).
+- **Web**: Waivers = the answer (the first move's sentence) + one lineup line (Wave G's four tiles folded into it) → the
+  three moves (`ClaimCard.svelte`: the claim, the gain, one reason, the cost, the warn box with the alternative) →
+  `Chips` Help now · Bye coverage · Stashes · All available (`?view=`, rewritten in place; the default leaves the URL)
+  → the view → "How to read this". `?add=&drop=` (the pane's "Evaluate add / drop") shows that claim first, or picks the
+  free agent in All available. Wave G's `MoveCard.svelte` and the "more claims" expander are gone (Help now is that
+  list). Trade calculator: the decision first (the dial's row: the dial, the four lineup-impact tiles, the verdict);
+  once it scrolls away a **verdict bar** is pinned to the top (the package in last names, the dial's label + score,
+  "You +x"; open on desktop, a tap opens it on a phone); "Why?" (the headline, market, rest of season, ranks, roster
+  size, week by week) and "Lineups" (yours, theirs under its own expander) collapsed. Trades' partner cards: the
+  package, "They: <label>", your gain over the window, one reason (`partnerReason`: who cannot play, who starts for you
+  this week, or when the gain comes), Try it (Wave G's two bars and the market line dropped). The research pane:
+  `decisions.ts` imports IB-1's `lib/pane.svelte.ts` through an eager `import.meta.glob` (a static import when the
+  file exists, `{}` when not — this branch builds without it): `paneAt` on the claim cards' and partner cards' names,
+  `openPlayer` on a free agent's row on a phone (desktop keeps the detail beside the list) and on a name in the
+  calculator's roster lists ("Add to trade": `{from: "trade", sleeper_id, side, partner}`); without the pane the links
+  stay links.
+- **Evidence** (this clone; the API suite's overlay off unless said): Scrubs roster 2 — top 3 Allgeier (RB, +9.85, "Fills
+  your empty RB2 in week 7 …", drop Croskey-Merritt: sits), New York Giants (DEF, +9.66, drop Kansas City Chiefs: he
+  starts this week → "Or drop Croskey-Merritt instead (he sits) and keep Kansas City Chiefs: +9.7 over weeks 4–7"),
+  Daniel Carlson (K, +4.03, drop McLaughlin: starts this week and next → keep him, drop Croskey-Merritt: +4.0); Help
+  now 8 (Reichard +2.21 this week first); Bye coverage week 5: the DEF slot empty (the Chiefs' bye), 8 DEF claims
+  (Falcons +8.3 that week); 4 of the 50 paged moves drop a starter, all 4 carry the line. Overlay case (Jefferson +
+  Michael Wilson forced Out): Croskey-Merritt starts this week, so every claim dropping him gets the warning and the
+  keep-him alternative; with the overlay off none does. Test League roster 9 (on demand): every claim drops Marvin
+  Harrison Jr., who sits — no line; with the WR / TE starters ahead of him forced Out, each says he starts and offers
+  the alternative; in the web fixture (the ESPN fixture's overlay on: Mayfield Out) the top claim is C.J. Stroud for Kyler
+  Murray, who starts — with "Or drop Harrison Jr. instead (he sits) and keep Murray: +22.1 over weeks 4–7". Dynasty 12 /
+  Test League 3: nothing to claim (`top3` empty, Help now says the notice). Page length
+  (default view): phone 375 × 812 — the chip row at 1113 px (Scrubs), 989 (Test League 9), 363 (dynasty), the bound
+  1624; desktop 1300 × 900 — Scrubs 2001 px tall (2.2 screens; the review counted six). Latency: `views_ms` 150 ms
+  (house), the on-demand starters re-use the league solve.
+- **Checks**: `api/tests/test_ib2.py` 7 (the alternative and its "none" line on a constructed table, one reason = one
+  fact, the top 3 / views / alternative on Scrubs against `mart_waiver_moves` and `mart_league_roster_horizon` read
+  independently, every Scrubs roster's invariant, dynasty's nothing, the Test League on demand with and without forced
+  Outs, the overlay case); API suite 276 passed (269 + 7); ruff clean; web lint / build clean; fixture e2e 114 (100 + 14:
+  `web/e2e/ib2/`, 7 × phone at 375 × 812 and desktop) — Wave G's waivers test, H1's stash tests (`&view=stash`) and
+  IA-2's calculator tests (the chip is in the verdict bar; the lineups open from "Lineups") follow the layout.
+  Fixtures: `web/fixtures/save_ib2_fixtures.py` merges `top3` / `views` / `default_view` and the two move fields into
+  the saved waivers answers (nothing else in them changes) and saves `waivers_9000000000000000001_9_ALL.json` whole.
+- **Found**: `html, body { overflow-x: hidden }` (`app.css`) makes `body` the sticky container, so `position: sticky`
+  never sticks on any screen (ListDetail's `wide:sticky` detail included; IA-2's bottom chip only ever showed in
+  place). The verdict bar uses `position: fixed`; `overflow-x: clip` would fix sticky everywhere (a design-system call
+  for the PO, DESIGN.md says so). The fixture savers' `os.environ.pop("LEAGUE_LAB_ESPN_FIXTURES")` is undone by
+  `settings.py`'s `load_dotenv(override=False)` when the worktree's .env sets it: IA-2's saved answers were taken with
+  the overlay on; `save_ib2_fixtures.py` sets the ESPN fixture explicitly so it reproduces.

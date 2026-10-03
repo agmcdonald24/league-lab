@@ -1,16 +1,20 @@
 <script lang="ts">
-  // Waivers (plan G4; app/pages/2_Waiver_Wire.py on GET /api/waivers): the answer first ("Claim A, drop B: +3.4 this
-  // week at TE, +9.0 over the next 4 weeks"), the moves as cards, the upside stash (IA-2: buy low / sell high moved to
-  // Trades), then the free agents by position — each with his
-  // headshot, this week's projection and its range, rest of season — list on the left, the picked one on the right
-  // (desktop), then "How to read this". The position switch rewrites the URL in place (no Back step).
-  import { get, peek, Unauthorized, decisionPaths, type FreeAgent, type Waivers } from "../lib/api";
+  // Waivers (plan G4; app/pages/2_Waiver_Wire.py on GET /api/waivers). IB-2 (Wave I-B): short — the answer first, the
+  // three strongest moves (one card each: the move, the lineup gain, one reason, the claim's cost; a drop who starts
+  // for you carries the best claim that keeps him), then ONE view at a time behind chips: Help now (this week's lineup
+  // gain) · Bye coverage (the next bye the roster cannot cover) · Stashes (the upside stash) · All available (the free
+  // agents by position — list on the left, the picked one on the right on desktop). The view and the position are the
+  // URL (?view=, ?position=; rewritten in place, no Back step); one answer carries every view, so a chip switches at
+  // once. ?add=<sleeper id>[&drop=] (the research pane's "Evaluate add / drop") shows the claim for him first.
+  import { get, peek, Unauthorized, decisionPaths, type FreeAgent, type WaiverCard, type Waivers } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { md, withContext } from "../lib/md";
-  import { errorWords, f1, f2, rangeWords, s1, slotLabel, waiverAnswer } from "../lib/decisions";
+  import { errorWords, f1, f2, rangeWords, s1, slotLabel, waiverAnswer, waiverHeadline } from "../lib/decisions";
+  import { openPlayer, VIEW_TABS, viewOf } from "../lib/decisions";
   import { restoreScroll, route, setParams } from "../lib/router.svelte";
   import { fmt } from "../lib/theme";
   import Card from "../components/Card.svelte";
+  import Chips from "../components/Chips.svelte";
   import Expander from "../components/Expander.svelte";
   import ListDetail from "../components/ListDetail.svelte";
   import Md from "../components/Md.svelte";
@@ -20,7 +24,7 @@
   import ScreenHead from "../components/ScreenHead.svelte";
   import StatTile from "../components/StatTile.svelte";
   import Tabs from "../components/Tabs.svelte";
-  import MoveCard from "./decisions/MoveCard.svelte";
+  import ClaimCard from "./decisions/ClaimCard.svelte";
   import RangeBar from "./decisions/RangeBar.svelte";
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
@@ -67,15 +71,51 @@
       });
   });
 
-  const cards = $derived(data?.cards ?? []);
-  const topCard = $derived(cards.find((c) => c.title === "Top claim") ?? null);
-  const shown = $derived(new Set(cards.map((c) => `${c.add_sleeper_id}|${c.drop_sleeper_id ?? ""}`)));
-  const more = $derived(
-    (data?.moves ?? []).filter((m) => m.list_kind !== "nothing" && m.is_best_drop !== false && !shown.has(`${m.add.sleeper_id}|${m.drop?.sleeper_id ?? ""}`)),
+  // ---- IB-2: the three strongest moves, the views
+  const top3 = $derived(data?.top3 ?? []);
+  const views = $derived(data?.views ?? null);
+  const view = $derived(viewOf(route.current.params.get("view"), data?.default_view ?? "help"));
+  const lead = $derived(data ? (top3.length ? `**${waiverHeadline(top3[0].move, data.week ?? 0, data.horizon_last_week ?? 0)}**` : waiverAnswer(data)) : "");
+  const chips = $derived(
+    VIEW_TABS.map((t) => ({ key: t.key, label: t.key === "stash" && views?.stash.count ? `${t.label} (${views.stash.count})` : t.label })),
   );
-  const top = $derived(topCard?.move ?? cards[0]?.move ?? null);
-  const lead = $derived(data ? waiverAnswer(data) : "");
-  const gainMax = $derived(Math.max(0.5, ...cards.flatMap((c) => (c.move.week_gains ?? []).map((g) => g ?? 0))));
+  // the research pane's "Evaluate add / drop" (?add=, ?drop=): the claim for him (any view's card, else the paged
+  // moves), else the free agent picked in All available
+  const focusAdd = $derived(route.current.params.get("add"));
+  const focusDrop = $derived(route.current.params.get("drop"));
+  const focus = $derived.by<WaiverCard | null>(() => {
+    if (!focusAdd || !data) return null;
+    const pool = [...top3, ...(views?.help.moves ?? []), ...(views?.bye.moves ?? [])];
+    const hit =
+      pool.find((c) => c.move.add.sleeper_id === focusAdd && (!focusDrop || c.move.drop?.sleeper_id === focusDrop)) ?? pool.find((c) => c.move.add.sleeper_id === focusAdd);
+    if (hit) return hit;
+    const m = data.moves.find((x) => x.add.sleeper_id === focusAdd);
+    if (!m) return null;
+    const cost = m.drop ? `Drop ${m.drop.player_name}.` : "No drop: you have an open roster spot.";
+    return { move: m, reason: m.words?.why ?? "", cost, gain: m.horizon_gain, gain_label: span > 1 ? `weeks ${wk}–${last}` : `week ${wk}`, this_week: m.weekly_gain };
+  });
+  const focusFa = $derived(focusAdd && !focus ? ((data?.free_agents ?? []).find((f) => f.sleeper_id === focusAdd) ?? null) : null);
+  $effect(() => {
+    if (focusFa) picked = focusFa.gsis_id ?? focusFa.sleeper_id ?? null;
+  });
+  // a free agent's row: the detail on the right (desktop); on a phone (no room for it) the research pane, when in the build
+  function pickFa(f: FreeAgent) {
+    picked = f.gsis_id ?? f.sleeper_id ?? null;
+    if (typeof matchMedia === "function" && !matchMedia("(min-width: 56.25rem)").matches)
+      openPlayer(f.gsis_id, { from: "waiver", context: { add: f.sleeper_id, name: f.player_name } }, () => {});
+  }
+  const one = (c: WaiverCard) => `${c.move.add.sleeper_id ?? ""}|${c.move.drop?.sleeper_id ?? ""}`;
+  // the lineup line under the answer (it replaces Wave G's four tiles: the screen is short)
+  const closest = $derived.by(() => {
+    const w = data?.weakest;
+    if (!w?.slot) return "";
+    const who = w.player?.player_name;
+    if (!who) return ` · closest call ${slotLabel(w.slot)}`;
+    return w.replacement_name
+      ? ` · closest call ${slotLabel(w.slot)}, ${who} over ${w.replacement_name} by ${f2(w.margin)}`
+      : ` · closest call ${slotLabel(w.slot)}, ${who} (nobody on the bench can fill in)`;
+  });
+  // ---- end IB-2
   const fas = $derived(data?.free_agents ?? []);
   const fa = $derived<FreeAgent | null>(fas.find((f) => (f.gsis_id ?? f.sleeper_id) === picked) ?? fas[0] ?? null);
   const scale = $derived(Math.max(10, ...fas.map((f) => f.p90 ?? f.projection ?? 0)));
@@ -97,6 +137,8 @@
     "- **Who to drop**: the player your lineup misses least over those four weeks. We never suggest dropping someone we have no projection for yet: unknown is not zero.\n" +
     "- **Only the next four weeks count.** In a dynasty league, a young player's future is not in these numbers: look twice before dropping one.\n" +
     "- **Free agents** are ranked by this week's projection in your league's scoring. **Most weeks** is the band half his weeks land in; the thin line is a bad week to a good week (8 weeks in 10); the tick is the projection. **Rest of season** adds up every week left to your league's final.\n" +
+    "- **The moves first** are the claims that add the most to your lineup over the next 4 weeks, one per position (two defenses compete for one spot). **Help now** lists the claims that raise this week's lineup; **Bye coverage** the next week a bye leaves a starting spot empty that your bench cannot fill; **Stashes** the upside stash; **All available** every free agent.\n" +
+    "- **Before you drop a starter**: when the drop starts for you this week or next, the card says so and shows the best claim that keeps him (its drop sits), or says none does.\n" +
     "- **Upside stash**: a free agent whose role grew in his last one to three games (more snaps, targets or carries: a teammate out, a new starter) before his points caught up. **If it holds** is his projection with the bigger role: a what-if, not a forecast. **Lineup gain if it holds** adds up this week and the next three; most stashes add nothing yet, which is why they are stashes, not starters.\n" +
     "- **Buy low / sell high** (players scoring below or above what their work is worth) are on the Trades screen now, next to the trades to ask about.";
 
@@ -122,22 +164,10 @@
       {#snippet answer()}
         <p data-testid="waiver-answer"><Md text={lead} {ctx} /></p>
       {/snippet}
+      <p class="text-sm text-ink-3" data-testid="waiver-lineup">
+        Your lineup this week: <strong class="tabnum text-ink">{f1(data.lineup_value)}</strong> in {scoring}{closest}.
+      </p>
     </ScreenHead>
-
-    <div class="grid grid-cols-2 gap-2 wide:grid-cols-4" data-testid="waiver-tiles">
-      <StatTile label="This week" value={top ? s1(top.weekly_gain) : "+0.0"} caption={top ? `${top.add.player_name}` : "no claim helps"} />
-      <StatTile label={`Next ${span} weeks`} value={top ? s1(top.horizon_gain) : "+0.0"} caption={span > 1 ? `weeks ${wk}–${last}` : `week ${wk}`} />
-      <StatTile label="Your lineup" value={f1(data.lineup_value)} caption={top && top.weekly_gain > 0 ? `→ ${f1(top.lineup_after)} with the claim` : `week ${wk}, in ${scoring}`} />
-      <StatTile
-        label="Closest call"
-        value={data.weakest?.slot ? slotLabel(data.weakest.slot) : "—"}
-        caption={data.weakest?.player?.player_name
-          ? data.weakest.replacement_name
-            ? `${data.weakest.player.player_name} over ${data.weakest.replacement_name} by ${f2(data.weakest.margin)}`
-            : `${data.weakest.player.player_name}: nobody on the bench can fill in`
-          : "no starter is a decision this week"}
-      />
-    </div>
 
     {#if data.inputs_current === false || data.on_current_lineup === false}
       <p class="rounded-lg bg-warn-soft p-3 text-sm text-ink" data-testid="stale">
@@ -145,108 +175,115 @@
       </p>
     {/if}
 
-    {#if cards.length}
-      <div class="grid grid-cols-1 gap-3 wide:grid-cols-3" data-testid="waiver-moves">
-        {#each cards as c (`${c.add_sleeper_id}|${c.drop_sleeper_id}`)}
-          <MoveCard move={c.move} title={c.title} week={wk} lastWeek={last} {ctx} {gainMax} headline={c !== topCard} />
-        {/each}
-      </div>
-    {/if}
-    {#if more.length}
-      <Expander title={`${more.length} more claims that help, best first`} testid="more-moves">
-        <ul class="-mx-3 divide-y divide-line" data-testid="more-list">
-          {#each more as m, i (`${m.add.sleeper_id}|${m.drop?.sleeper_id}|${i}`)}
-            <li>
-              <PlayerRow
-                player={{ ...m.add, player_name: m.add.player_name ?? "" }}
-                href={m.add.gsis_id ? withContext(`/player/${m.add.gsis_id}`, ctx) : null}
-                context={m.words?.why ?? (m.drop ? `drop ${m.drop.player_name} · ${s1(m.weekly_gain)} this week` : `no drop · ${s1(m.weekly_gain)} this week`)}
-                value={s1(m.horizon_gain)}
-                valueLabel={`${span} weeks`}
-                testid="more-move"
-              />
-            </li>
-          {/each}
-        </ul>
-        <p class="mt-2 text-sm text-ink-3">One row per player: the drop that costs your lineup least. Start-now claims gain this week; the others help later.</p>
-      </Expander>
+    {#if focus}
+      <!-- the research pane's "Evaluate add / drop" (?add=): the claim for him, first -->
+      <section class="space-y-2" data-testid="claim-focus">
+        <h2 class="ll-label">The claim you asked about</h2>
+        <ClaimCard card={focus} {ctx} focus testid="claim-focused" />
+      </section>
+    {:else if focusFa}
+      <p class="rounded-lg bg-raised p-3 text-sm text-ink" data-testid="claim-focus">
+        Claiming <strong>{focusFa.player_name}</strong> does not raise your lineup over {span > 1 ? `weeks ${wk}–${last}` : `week ${wk}`}: every player you could drop is worth more to it. He is picked in All available.
+      </p>
     {/if}
 
-    <!-- H1 (Wave H): the upside stash (2_Waiver_Wire.py's third card region) -->
-    {#if data.upside}
-      <section class="space-y-3" data-testid="upside">
-        <h2 class="text-xl font-bold">Upside stash</h2>
-        <p class="text-sm text-ink-3">{data.upside.title}.</p>
-        {#if data.upside.stashes.length}
-          <div class="grid grid-cols-1 gap-3 wide:grid-cols-3">
-            {#each data.upside.stashes.slice(0, 3) as u (u.add.sleeper_id ?? u.add.gsis_id)}
-              <Card testid="stash">
-                <PlayerRow
-                  player={{ ...u.add, player_name: u.add.player_name ?? "" }}
-                  href={u.add.gsis_id ? withContext(`/player/${u.add.gsis_id}`, ctx) : null}
-                  context={u.change_text ? `${u.change_text} since week ${u.since_week}` : null}
-                  value={f1(u.scenario_value)}
-                  valueLabel="If it holds"
-                  testid="stash-player"
-                />
-                <p class="mt-2 text-base font-semibold leading-snug" data-testid="stash-headline"><Md text={u.headline} {ctx} /></p>
-                <ul class="mt-1 space-y-1 text-sm leading-snug text-ink-2" data-testid="stash-lines">
-                  {#each u.lines as line, i (i)}<li><Md text={line} {ctx} /></li>{/each}
-                </ul>
-                {#if u.holds_horizon_gain != null}
-                  <div class="mt-2 grid grid-cols-2 gap-2">
-                    <StatTile label="As he is" value={f1(u.base_value)} caption={`week ${wk}`} size="sm" />
-                    <StatTile label="Lineup gain if it holds" value={s1(u.holds_horizon_gain)} caption={span > 1 ? `weeks ${wk}–${last}` : `week ${wk}`} size="sm" />
-                  </div>
-                {/if}
-              </Card>
-            {/each}
-          </div>
-          {#if data.upside.stashes.length > 3}
-            <p class="text-sm text-ink-3" data-testid="stash-more">{data.upside.stashes.length - 3} more stashes: {data.upside.stashes.slice(3).map((u) => u.add.player_name).join(", ")}.</p>
-          {/if}
-        {/if}
-        {#if data.upside.why}<p class="text-sm leading-snug text-ink-3" data-testid="stash-why">{data.upside.why}</p>{/if}
+    {#if top3.length}
+      <section class="space-y-2" data-testid="top3">
+        <h2 class="text-xl font-bold">{top3.length === 1 ? "The strongest move" : `The ${top3.length === 2 ? "two" : "three"} strongest moves`}</h2>
+        <div class="grid grid-cols-1 gap-3 wide:grid-cols-3">
+          {#each top3 as c, i (one(c))}
+            <ClaimCard card={c} {ctx} rank={i + 1} testid="top-move" />
+          {/each}
+        </div>
       </section>
     {/if}
 
-    <!-- IA-2: buy low / sell high moved to Trades (they are trades to ask about, not claims) -->
-    <p class="text-sm text-ink-3" data-testid="buy-sell-moved">
-      Buy low and sell high moved to <a class="ll-name font-semibold" href={withContext("/trades", ctx)}>Trades ›</a>
-    </p>
+    <!-- one view at a time (default: Help now, or Bye coverage when nothing helps this week) -->
+    <Chips items={chips} current={view} onpick={(v) => setParams({ view: v === (data?.default_view ?? "help") ? null : v })} label="View" testid="views" />
 
-    <section class="space-y-3" data-testid="free-agents">
-      <div class="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 class="text-xl font-bold">Free agents</h2>
+    {#if view === "help" || view === "bye"}
+      {@const v = view === "help" ? views?.help : views?.bye}
+      <section class="space-y-2" data-testid={`view-${view}`}>
+        {#if v?.line}<p class="text-base leading-snug text-ink-2" data-testid="view-line"><Md text={v.line} {ctx} /></p>{/if}
+        {#if v?.moves.length}
+          <Card pad={false}>
+            <ul class="divide-y divide-line" data-testid="view-list">
+              {#each v.moves as c (one(c))}<li><ClaimCard card={c} {ctx} compact testid="view-move" /></li>{/each}
+            </ul>
+          </Card>
+        {:else if !views}
+          <p class="ll-empty"><Md text={waiverAnswer(data)} {ctx} /></p>
+        {/if}
+      </section>
+    {:else if view === "stash"}
+      <!-- H1 (Wave H): the upside stash (2_Waiver_Wire.py's third card region) -->
+      <section class="space-y-3" data-testid="upside">
+        {#if data.upside}
+          <p class="text-sm text-ink-3">{data.upside.title}.</p>
+          {#if data.upside.stashes.length}
+            <div class="grid grid-cols-1 gap-3 wide:grid-cols-3">
+              {#each data.upside.stashes.slice(0, 3) as u (u.add.sleeper_id ?? u.add.gsis_id)}
+                <Card testid="stash">
+                  <PlayerRow
+                    player={{ ...u.add, player_name: u.add.player_name ?? "" }}
+                    href={u.add.gsis_id ? withContext(`/player/${u.add.gsis_id}`, ctx) : null}
+                    context={u.change_text ? `${u.change_text} since week ${u.since_week}` : null}
+                    value={f1(u.scenario_value)}
+                    valueLabel="If it holds"
+                    testid="stash-player"
+                  />
+                  <p class="mt-2 text-base font-semibold leading-snug" data-testid="stash-headline"><Md text={u.headline} {ctx} /></p>
+                  <ul class="mt-1 space-y-1 text-sm leading-snug text-ink-2" data-testid="stash-lines">
+                    {#each u.lines as line, i (i)}<li><Md text={line} {ctx} /></li>{/each}
+                  </ul>
+                  {#if u.holds_horizon_gain != null}
+                    <div class="mt-2 grid grid-cols-2 gap-2">
+                      <StatTile label="As he is" value={f1(u.base_value)} caption={`week ${wk}`} size="sm" />
+                      <StatTile label="Lineup gain if it holds" value={s1(u.holds_horizon_gain)} caption={span > 1 ? `weeks ${wk}–${last}` : `week ${wk}`} size="sm" />
+                    </div>
+                  {/if}
+                </Card>
+              {/each}
+            </div>
+            {#if data.upside.stashes.length > 3}
+              <p class="text-sm text-ink-3" data-testid="stash-more">{data.upside.stashes.length - 3} more stashes: {data.upside.stashes.slice(3).map((u) => u.add.player_name).join(", ")}.</p>
+            {/if}
+          {/if}
+          {#if data.upside.why}<p class="text-sm leading-snug text-ink-3" data-testid="stash-why">{data.upside.why}</p>{/if}
+        {:else}
+          <p class="ll-empty">No upside stash this week.</p>
+        {/if}
+      </section>
+    {:else}
+      <section class="space-y-3" data-testid="free-agents">
         <p class="text-sm text-ink-3">Week {wk} projection in {scoring}, with its range</p>
-      </div>
-      <Tabs items={tabs} current={position} onpick={(p) => setParams({ position: p === "ALL" ? null : p })} size="sm" label="Position" testid="fa-pos" />
-      {#if !fas.length}
-        <p class="ll-empty">No free agent at this position has a projection this week.</p>
-      {:else}
-        <ListDetail>
-          {#snippet list()}
-            <Card pad={false} testid="fa-list">
-              <ul class="divide-y divide-line">
-                {#each fas as f, i (f.gsis_id ?? f.sleeper_id ?? i)}
-                  <li>
-                    <PlayerRow
-                      player={{ ...f, player_name: f.player_name ?? "" }}
-                      href={f.gsis_id ? withContext(`/player/${f.gsis_id}`, ctx) : null}
-                      rank={i + 1}
-                      context={faContext(f)}
-                      value={f1(f.projection)}
-                      valueLabel={`Wk ${wk}`}
-                      selected={fa === f}
-                      onselect={() => (picked = f.gsis_id ?? f.sleeper_id ?? null)}
-                      testid="fa-row"
-                    />
-                    <div class="px-3 pb-2 pl-[4.75rem]"><RangeBar value={f.projection} p10={f.p10} p25={f.p25} p75={f.p75} p90={f.p90} max={scale} /></div>
-                  </li>
-                {/each}
-              </ul>
-            </Card>
-          {/snippet}
+        <Tabs items={tabs} current={position} onpick={(p) => setParams({ position: p === "ALL" ? null : p })} size="sm" label="Position" testid="fa-pos" />
+        {#if !fas.length}
+          <p class="ll-empty">No free agent at this position has a projection this week.</p>
+        {:else}
+          <ListDetail>
+            {#snippet list()}
+              <Card pad={false} testid="fa-list">
+                <ul class="divide-y divide-line">
+                  {#each fas as f, i (f.gsis_id ?? f.sleeper_id ?? i)}
+                    <li>
+                      <PlayerRow
+                        player={{ ...f, player_name: f.player_name ?? "" }}
+                        href={f.gsis_id ? withContext(`/player/${f.gsis_id}`, ctx) : null}
+                        rank={i + 1}
+                        context={faContext(f)}
+                        value={f1(f.projection)}
+                        valueLabel={`Wk ${wk}`}
+                        selected={fa === f}
+                        onselect={() => pickFa(f)}
+                        testid="fa-row"
+                      />
+                      <div class="px-3 pb-2 pl-[4.75rem]"><RangeBar value={f.projection} p10={f.p10} p25={f.p25} p75={f.p75} p90={f.p90} max={scale} /></div>
+                    </li>
+                  {/each}
+                </ul>
+              </Card>
+            {/snippet}
           {#snippet detail()}
             {#if fa}
               <div class="hidden wide:block">
@@ -288,8 +325,14 @@
             {/if}
           {/snippet}
         </ListDetail>
-      {/if}
-    </section>
+        {/if}
+      </section>
+    {/if}
+
+    <!-- IA-2: buy low / sell high moved to Trades (they are trades to ask about, not claims) -->
+    <p class="text-sm text-ink-3" data-testid="buy-sell-moved">
+      Buy low and sell high are on <a class="ll-name font-semibold" href={withContext("/trades", ctx)}>Trades ›</a>
+    </p>
 
     <Expander title="How to read this" testid="howto">
       <div class="text-base leading-snug">{@html md(HOWTO)}</div>

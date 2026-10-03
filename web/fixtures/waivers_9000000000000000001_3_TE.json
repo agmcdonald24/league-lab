@@ -938,5 +938,30 @@
    "**Lineup gain if it holds** adds up this week and the next three in your lineup; most stashes add nothing yet, which is why they are stashes, not starters."
   ],
   "source": "on demand"
- }
+ },
+ "top3": [],
+ "views": {
+  "help": {
+   "label": "Help now",
+   "line": "**Nothing beats what you have.**  \nNo free agent improves your lineup this week or over the next 4 weeks (week-4 lineup 120.8). Your roster is over the limit, so no single claim is legal.",
+   "moves": []
+  },
+  "bye": {
+   "label": "Bye coverage",
+   "line": "No free agent improves your lineup in a bye week either.",
+   "week": null,
+   "on_bye": [],
+   "empty_slots": [],
+   "moves": []
+  },
+  "stash": {
+   "label": "Stashes",
+   "count": 1
+  },
+  "all": {
+   "label": "All available",
+   "count": 48
+  }
+ },
+ "default_view": "help"
 }

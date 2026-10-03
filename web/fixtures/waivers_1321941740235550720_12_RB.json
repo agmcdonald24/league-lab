@@ -1145,5 +1145,30 @@
    "**Lineup gain if it holds** adds up this week and the next three in your lineup; most stashes add nothing yet, which is why they are stashes, not starters."
   ],
   "source": "mart_waiver_upside"
- }
+ },
+ "top3": [],
+ "views": {
+  "help": {
+   "label": "Help now",
+   "line": "**Nothing beats what you have.**  \nNo free agent improves your lineup this week or over the next 4 weeks (week-4 lineup 111.2).",
+   "moves": []
+  },
+  "bye": {
+   "label": "Bye coverage",
+   "line": "No free agent improves your lineup in a bye week either.",
+   "week": null,
+   "on_bye": [],
+   "empty_slots": [],
+   "moves": []
+  },
+  "stash": {
+   "label": "Stashes",
+   "count": 0
+  },
+  "all": {
+   "label": "All available",
+   "count": 48
+  }
+ },
+ "default_view": "help"
 }

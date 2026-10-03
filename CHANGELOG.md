@@ -2,6 +2,20 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-B
+
+- **IB-2: Waivers short, the trade builder with the decision in view.** Waivers opens with the three strongest moves
+  (one card each: the claim, the lineup gain over the next 4 weeks, one reason — "Starts at K this week over
+  McLaughlin (8.1)", "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye" — and the claim's cost),
+  then one view at a time behind chips: Help now · Bye coverage (the next bye your bench cannot cover) · Stashes · All
+  available (`/api/waivers` gains `top3`, `views`, `default_view`; one answer, so a chip switches at once). A claim
+  whose drop starts for you this week or next says so and shows the best claim that keeps him ("Or drop
+  Croskey-Merritt instead (he sits) and keep Kansas City Chiefs: +9.7 over weeks 4–7"), or that none does. The trade
+  calculator leads with the decision: once the dial scrolls away a verdict bar stays pinned at the top (the package,
+  the dial's label, your gain; a tap opens it on a phone); the explanation and the lineups are behind "Why?" and
+  "Lineups". Trades' suggestions: the package, the dial's label, your gain, one reason, Try it. Names on Waivers and
+  Trades open the research pane when it is in the build.
+
 ## 2026-10-03 — Wave I-A
 
 - **Nightly: a backup time.** GitHub dropped the 11:37 UTC scheduled run on 2026-10-03 (no run at all); a second cron
