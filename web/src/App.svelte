@@ -6,6 +6,8 @@
   import { prefs } from "./lib/prefs";
   import { interceptLinks, route, setParams } from "./lib/router.svelte";
   import Login from "./components/Login.svelte";
+  import PlayerPane from "./components/PlayerPane.svelte";
+  import { withContext } from "./lib/md";
   import TopBar, { sectionOf } from "./components/TopBar.svelte";
   import LeaguesPage from "./routes/Leagues.svelte";
   import MyWeekPage from "./routes/MyWeek.svelte";
@@ -125,29 +127,39 @@
   <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>
 {:else if r.name === "leagues" || !league}
   <LeaguesPage {mine} current={league} onuser={signedInUser} onauth={needLogin} />
-{:else if r.name === "player" && r.gsis}
-  <PlayerPage gsis={r.gsis} {league} {team} onauth={needLogin} />
 {:else}
-  <!-- the league's screens: one bar (picker + tabs), then the screen -->
+  <!-- the league's screens: one bar (picker + tabs + search), then the screen, the research pane beside it (900 px+) or
+       over it (a phone). IB-1: a player's page sits in the same frame (the tab bar stays). -->
   <TopBar {options} {league} {team} onauth={needLogin} />
-  <div class="ll-under-bar mx-auto max-w-6xl px-4 pt-4" data-section={sectionOf(r.name)}>
-    {#if r.name === "ros"}
-      <RosPage {options} {league} {team} onauth={needLogin} />
-    {:else if isLazy(r.name)}
-      {#await LAZY[r.name]()}
-        <div class="space-y-3" aria-label="Loading" data-testid="loading"><div class="ll-skel h-8 w-1/2"></div><div class="ll-skel h-40"></div></div>
-      {:then m}
-        <m.default {options} {league} {team} onauth={needLogin} />
-      {/await}
-    {:else if isDecision(r.name)}
-      <!-- G4 decisions: Waivers, Trades, Team, League -->
-      {#await decisionPage(r.name)}
-        <div class="ll-skel h-40" aria-label="Loading"></div>
-      {:then Page}
-        <Page {options} {league} {team} onauth={needLogin} />
-      {/await}
-    {:else}
-      <MyWeekPage {options} {league} {team} {mine} {status} onauth={needLogin} />
-    {/if}
+  <div class="wide:flex wide:items-start">
+    <div class="ll-under-bar mx-auto w-full max-w-6xl min-w-0 px-4 pt-4 wide:flex-1" data-section={sectionOf(r.name)}>
+      {#if r.name === "player" && r.gsis}
+        <PlayerPage gsis={r.gsis} {league} {team} onauth={needLogin} />
+      {:else if r.name === "ros"}
+        <RosPage {options} {league} {team} onauth={needLogin} />
+      {:else if isLazy(r.name)}
+        {#await LAZY[r.name]()}
+          <div class="space-y-3" aria-label="Loading" data-testid="loading"><div class="ll-skel h-8 w-1/2"></div><div class="ll-skel h-40"></div></div>
+        {:then m}
+          <m.default {options} {league} {team} onauth={needLogin} />
+        {/await}
+      {:else if isDecision(r.name)}
+        <!-- G4 decisions: Waivers, Trades, Team, League -->
+        {#await decisionPage(r.name)}
+          <div class="ll-skel h-40" aria-label="Loading"></div>
+        {:then Page}
+          <Page {options} {league} {team} onauth={needLogin} />
+        {/await}
+      {:else}
+        <MyWeekPage {options} {league} {team} {mine} {status} onauth={needLogin} />
+      {/if}
+      {#if sectionOf(r.name) === "myteam"}
+        <!-- IB-1: About the numbers left the tab bar: the overflow menu (⋯) and here, at the foot of My Team -->
+        <footer class="mt-6 border-t border-line pt-3 text-sm" data-testid="myteam-foot">
+          <a class="ll-link" href={withContext("/about", { league, team })} data-testid="foot-about">About the numbers and our record</a>
+        </footer>
+      {/if}
+    </div>
+    <PlayerPane {league} {team} onauth={needLogin} />
   </div>
 {/if}

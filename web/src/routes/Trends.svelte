@@ -11,7 +11,8 @@
   import { expectLine, gapWords, l3Season, NEAR, ownerWord, whoFilter, type Who } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
   import { toTrends } from "../lib/shapes";
-  import { navigate, route, setParams } from "../lib/router.svelte";
+  import { openPane } from "../lib/pane.svelte"; // ---- IB-1: on a phone a row opens the research pane (the sheet)
+  import { route, setParams } from "../lib/router.svelte";
   import { fmt, SERIES } from "../lib/theme";
   import Bar from "../components/Bar.svelte";
   import Card from "../components/Card.svelte";
@@ -180,7 +181,7 @@
                   context={ownerWord(p, team)}
                   yours={team !== null && p.rostered_by_roster_id === team}
                   selected={picked?.gsis_id === p.gsis_id}
-                  onselect={() => (window.innerWidth < 900 ? navigate(href(p)) : setParams({ pick: p.gsis_id }))}
+                  onselect={() => (window.innerWidth < 900 ? openPane(p.gsis_id, { from: "list", context: { name: p.player_name } }) : setParams({ pick: p.gsis_id }))}
                 >
                   {#snippet trailing()}{@render gapBar(p)}{/snippet}
                 </PlayerRow>

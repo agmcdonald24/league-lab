@@ -2,10 +2,18 @@
   import type { LineupRow } from "../lib/api";
   import { withContext, type LinkContext } from "../lib/md";
   import { shortName } from "../lib/names.svelte";
+  import { paneLink, type PaneOptions } from "../lib/pane.svelte";
   import { AVAILABILITY_CHIPS } from "../lib/shapes";
   import Headshot from "./Headshot.svelte";
 
-  let { rows, full = false, ctx, testid }: { rows: LineupRow[]; full?: boolean; ctx: LinkContext; testid: string } = $props();
+  // IB-1 (Wave I-B): `pane` — a tap on a name opens the research pane (lib/pane.svelte.ts) with these options
+  let {
+    rows,
+    full = false,
+    ctx,
+    testid,
+    pane,
+  }: { rows: LineupRow[]; full?: boolean; ctx: LinkContext; testid: string; pane?: (r: LineupRow) => PaneOptions } = $props();
   // injury / lock / empty-slot flags: under the name (IA-1; was a column only when some row had one)
   const num = (v: number | null) => (v === null || v === undefined ? "—" : v.toFixed(2));
   // I0-A: the availability overlay's reason for an OUT / DOUBTFUL / IR chip ("Out (ankle) · ESPN, Oct 2 2:35 PM ET")
@@ -32,7 +40,12 @@
             {#if r.player_name}<Headshot url={r.headshot_url ?? null} team={r.team ?? null} size={32} />{/if}
             <div class="min-w-0 break-words">
               {#if r.gsis_id && r.player_name}
-                <a class="ll-link" href={withContext(`/player/${r.gsis_id}`, ctx)} aria-label={r.player_name} data-testid="lineup-name"
+                <a
+                  class="ll-link"
+                  href={withContext(`/player/${r.gsis_id}`, ctx)}
+                  aria-label={r.player_name}
+                  data-testid="lineup-name"
+                  {@attach paneLink(pane ? r.gsis_id : null, pane?.(r))}
                   ><span class="sm:hidden" data-testid="short-name">{shortName(r.player_name, r.position, names)}</span><span class="hidden sm:inline"
                     >{r.player_name}</span
                   ></a

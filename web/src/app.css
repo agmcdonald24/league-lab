@@ -148,6 +148,9 @@ html,
 body {
   @apply bg-page text-ink antialiased;
   overflow-x: hidden;
+  /* IB-1: clip, not hidden — "hidden" on both makes <body> a scroll box, and a sticky element (the research pane, the
+     list + detail's detail) then never sticks to the screen. Browsers without clip keep hidden. */
+  overflow-x: clip;
 }
 
 /* ---- small shared pieces (components use utilities; these are the few patterns repeated in markdown output) */
