@@ -729,10 +729,10 @@
    "on_demand": {
     "cost": "every roster solved for 4 weeks: 12 x 4 = 48 lineups (the ranks need the whole league)",
     "timings_ms": {
-     "sleeper": 6.7,
-     "price": 1973.6,
-     "solve": 479.9,
-     "total": 2460.2
+     "sleeper": 3.6,
+     "price": 355.1,
+     "solve": 430.7,
+     "total": 789.3
     }
    },
    "roster_context": {
@@ -742,12 +742,12 @@
     "lineup_value": 115.41,
     "changed": false,
     "changes": [],
-    "checked_at": "2026-10-03T20:00:08.650053Z",
-    "as_of_build": "2026-10-03T20:00:09.267193Z"
+    "checked_at": "2026-10-03T20:57:08.175889Z",
+    "as_of_build": "2026-10-03T20:59:48.533884Z"
    },
    "timings_ms": {
-    "data": 17.3,
-    "total": 219.4
+    "data": 26.1,
+    "total": 217.8
    }
   }
  },
@@ -1436,10 +1436,10 @@
    "on_demand": {
     "cost": "every roster solved for 4 weeks: 12 x 4 = 48 lineups (the ranks need the whole league)",
     "timings_ms": {
-     "sleeper": 6.7,
-     "price": 1973.6,
-     "solve": 479.9,
-     "total": 2460.2
+     "sleeper": 3.6,
+     "price": 355.1,
+     "solve": 430.7,
+     "total": 789.3
     }
    },
    "roster_context": {
@@ -1449,12 +1449,12 @@
     "lineup_value": 117.46,
     "changed": false,
     "changes": [],
-    "checked_at": "2026-10-03T20:00:08.650053Z",
-    "as_of_build": "2026-10-03T20:00:09.307960Z"
+    "checked_at": "2026-10-03T20:57:08.175889Z",
+    "as_of_build": "2026-10-03T21:00:07.788388Z"
    },
    "timings_ms": {
-    "data": 42.5,
-    "total": 245.4
+    "data": 27.6,
+    "total": 241.5
    }
   }
  },
@@ -1572,10 +1572,12 @@
    },
    "interest": {
     "score": 14,
-    "label": "No deal",
+    "label": "Makes their lineup weaker",
     "their_gain": -2.67,
     "you": 9.52,
-    "caption": "by our numbers over weeks 4–7"
+    "caption": "their starters over weeks 4–7, by our numbers",
+    "title": "Effect on their starters",
+    "need": null
    },
    "sanity": null,
    "market": {
@@ -1634,8 +1636,8 @@
      }
     ]
    },
-   "verdict": "Helps you +3.4 this week (+9.5 over weeks 4–7), costs them 2.0 (2.7 over weeks 4–7); the market calls it about even: expect a no.",
-   "headline": "**You give [Bhayshul Tuten](/player/00-0040719); you get [Rashee Rice](/player/00-0039067).** Helps you +3.4 this week (+9.5 over weeks 4–7), costs them 2.0 (2.7 over weeks 4–7); the market calls it about even: expect a no.",
+   "verdict": "Helps your lineup +3.4 this week (+9.5 over weeks 4–7), costs their lineup 2.0 (2.7 over weeks 4–7); about even by season value: a lineup loss for them.",
+   "headline": "**You give [Bhayshul Tuten](/player/00-0040719); you get [Rashee Rice](/player/00-0039067).** Helps your lineup +3.4 this week (+9.5 over weeks 4–7), costs their lineup 2.0 (2.7 over weeks 4–7); about even by season value: a lineup loss for them.",
    "ros": {
     "give": 138,
     "get": 134,
@@ -2188,12 +2190,12 @@
    "timings_ms": {
     "context": 0,
     "evaluate": 8.4,
-    "words": 140.4,
-    "total": 148.8,
-    "league.sleeper": 6.3,
-    "league.price": 2977.8,
-    "league.solve": 151.4,
-    "league.total": 3135.5
+    "words": 83.8,
+    "total": 92.2,
+    "league.sleeper": 4.3,
+    "league.price": 1965.8,
+    "league.solve": 509.5,
+    "league.total": 2479.6
    }
   }
  },
@@ -2337,384 +2339,9 @@
     "2-point conversions are not projected"
    ],
    "n": 156,
-   "within_0_1": 110,
-   "within_1": 122,
+   "within_0_1": 155,
+   "within_1": 155,
    "misses": [
-    {
-     "player": "Jake Ferguson",
-     "position": "TE",
-     "gsis_id": "00-0038041",
-     "theirs": 22,
-     "ours": 18.48,
-     "gap": -3.52,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:receiving_yards": 4,
-      "distance:receiving_tds": 14.48
-     }
-    },
-    {
-     "player": "Rams, Los Angeles",
-     "position": "TMQB",
-     "gsis_id": null,
-     "theirs": 56,
-     "ours": 52.82,
-     "gap": -3.18,
-     "likely_rule": "rate:passing_interceptions",
-     "pieces": {
-      "rate:passing_interceptions": -3,
-      "band:passing_yards:250": 10,
-      "step:passing_yards": 16,
-      "distance:passing_tds": 29.82
-     }
-    },
-    {
-     "player": "Cowboys, Dallas",
-     "position": "TMQB",
-     "gsis_id": null,
-     "theirs": 58,
-     "ours": 54.82,
-     "gap": -3.18,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "band:passing_yards:250": 10,
-      "step:passing_yards": 13,
-      "step:rushing_yards": 2,
-      "distance:passing_tds": 29.82
-     }
-    },
-    {
-     "player": "Bengals, Cincinnati",
-     "position": "TMQB",
-     "gsis_id": null,
-     "theirs": 28,
-     "ours": 24.91,
-     "gap": -3.09,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:passing_yards": 10,
-      "distance:passing_tds": 14.91
-     }
-    },
-    {
-     "player": "Packers, Green Bay",
-     "position": "TMQB",
-     "gsis_id": null,
-     "theirs": 19,
-     "ours": 21.91,
-     "gap": 2.91,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:passing_yards": 7,
-      "distance:passing_tds": 14.91
-     }
-    },
-    {
-     "player": "Ja'Marr Chase",
-     "position": "WR",
-     "gsis_id": "00-0036900",
-     "theirs": 25,
-     "ours": 22.15,
-     "gap": -2.85,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:receiving_yards": 7,
-      "distance:receiving_tds": 15.15
-     }
-    },
-    {
-     "player": "Davante Adams",
-     "position": "WR",
-     "gsis_id": "00-0031381",
-     "theirs": 47,
-     "ours": 44.15,
-     "gap": -2.85,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "band:receiving_yards:100": 10,
-      "step:receiving_yards": 19,
-      "distance:receiving_tds": 15.15
-     }
-    },
-    {
-     "player": "TreVeyon Henderson",
-     "position": "RB",
-     "gsis_id": "00-0040734",
-     "theirs": 16,
-     "ours": 13.6,
-     "gap": -2.4,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:rushing_yards": 7,
-      "distance:rushing_tds": 6.6
-     }
-    },
-    {
-     "player": "Jonathan Taylor",
-     "position": "RB",
-     "gsis_id": "00-0036223",
-     "theirs": 28,
-     "ours": 26.2,
-     "gap": -1.8,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:rushing_yards": 9,
-      "step:receiving_yards": 4,
-      "distance:rushing_tds": 13.2
-     }
-    },
-    {
-     "player": "Travis Kelce",
-     "position": "TE",
-     "gsis_id": "00-0030506",
-     "theirs": 29,
-     "ours": 27.24,
-     "gap": -1.76,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "band:receiving_yards:75": 10,
-      "step:receiving_yards": 10,
-      "distance:receiving_tds": 7.24
-     }
-    },
-    {
-     "player": "George Kittle",
-     "position": "TE",
-     "gsis_id": "00-0033288",
-     "theirs": 27,
-     "ours": 25.24,
-     "gap": -1.76,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "band:receiving_yards:75": 10,
-      "step:receiving_yards": 8,
-      "distance:receiving_tds": 7.24
-     }
-    },
-    {
-     "player": "Dalton Kincaid",
-     "position": "TE",
-     "gsis_id": "00-0038933",
-     "theirs": 28,
-     "ours": 26.24,
-     "gap": -1.76,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "band:receiving_yards:75": 10,
-      "step:receiving_yards": 9,
-      "distance:receiving_tds": 7.24
-     }
-    },
-    {
-     "player": "Garrett Wilson",
-     "position": "WR",
-     "gsis_id": "00-0037740",
-     "theirs": 11,
-     "ours": 12.57,
-     "gap": 1.57,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:receiving_yards": 5,
-      "distance:receiving_tds": 7.57
-     }
-    },
-    {
-     "player": "Christian Watson",
-     "position": "WR",
-     "gsis_id": "00-0038124",
-     "theirs": 10,
-     "ours": 11.57,
-     "gap": 1.57,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:receiving_yards": 4,
-      "distance:receiving_tds": 7.57
-     }
-    },
-    {
-     "player": "Xavier Worthy",
-     "position": "WR",
-     "gsis_id": "00-0039894",
-     "theirs": 8,
-     "ours": 9.57,
-     "gap": 1.57,
-     "likely_rule": "step:receiving_yards",
-     "pieces": {
-      "step:receiving_yards": 2,
-      "distance:receiving_tds": 7.57
-     }
-    },
-    {
-     "player": "Emeka Egbuka",
-     "position": "WR",
-     "gsis_id": "00-0040129",
-     "theirs": 7,
-     "ours": 8.57,
-     "gap": 1.57,
-     "likely_rule": "step:receiving_yards",
-     "pieces": {
-      "step:receiving_yards": 1,
-      "distance:receiving_tds": 7.57
-     }
-    },
-    {
-     "player": "Chargers, Los Angeles",
-     "position": "TMQB",
-     "gsis_id": null,
-     "theirs": 12,
-     "ours": 10.46,
-     "gap": -1.54,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "rate:passing_interceptions": -6,
-      "step:passing_yards": 9,
-      "distance:passing_tds": 7.46
-     }
-    },
-    {
-     "player": "Ravens, Baltimore",
-     "position": "TMQB",
-     "gsis_id": null,
-     "theirs": 20,
-     "ours": 18.46,
-     "gap": -1.54,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "rate:passing_interceptions": -3,
-      "step:passing_yards": 11,
-      "step:rushing_yards": 3,
-      "distance:passing_tds": 7.46
-     }
-    },
-    {
-     "player": "Chuba Hubbard",
-     "position": "RB",
-     "gsis_id": "00-0036555",
-     "theirs": 12,
-     "ours": 13.51,
-     "gap": 1.51,
-     "likely_rule": "step:receiving_yards",
-     "pieces": {
-      "step:rushing_yards": 5,
-      "step:receiving_yards": 1,
-      "distance:receiving_tds": 7.51
-     }
-    },
-    {
-     "player": "MarShawn Lloyd",
-     "position": "RB",
-     "gsis_id": "00-0039811",
-     "theirs": 5,
-     "ours": 6.51,
-     "gap": 1.51,
-     "likely_rule": "step:rushing_yards",
-     "pieces": {
-      "rate:fumbles_lost_total": -3,
-      "step:rushing_yards": 2,
-      "distance:receiving_tds": 7.51
-     }
-    },
-    {
-     "player": "Kyren Williams",
-     "position": "RB",
-     "gsis_id": "00-0037840",
-     "theirs": 15,
-     "ours": 13.51,
-     "gap": -1.49,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "rate:fumbles_lost_total": -3,
-      "step:rushing_yards": 8,
-      "step:receiving_yards": 1,
-      "distance:receiving_tds": 7.51
-     }
-    },
-    {
-     "player": "Jahmyr Gibbs",
-     "position": "RB",
-     "gsis_id": "00-0039139",
-     "theirs": 20,
-     "ours": 18.51,
-     "gap": -1.49,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:rushing_yards": 5,
-      "step:receiving_yards": 6,
-      "distance:receiving_tds": 7.51
-     }
-    },
-    {
-     "player": "Broncos, Denver",
-     "position": "TMQB",
-     "gsis_id": null,
-     "theirs": 27,
-     "ours": 28.46,
-     "gap": 1.46,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "rate:passing_interceptions": -3,
-      "band:passing_yards:250": 10,
-      "step:passing_yards": 14,
-      "distance:passing_tds": 7.46
-     }
-    },
-    {
-     "player": "Buccaneers, Tampa Bay",
-     "position": "TMQB",
-     "gsis_id": null,
-     "theirs": 14,
-     "ours": 15.46,
-     "gap": 1.46,
-     "likely_rule": "step:rushing_yards",
-     "pieces": {
-      "rate:passing_interceptions": -3,
-      "step:passing_yards": 9,
-      "step:rushing_yards": 2,
-      "distance:passing_tds": 7.46
-     }
-    },
-    {
-     "player": "DeVonta Smith",
-     "position": "WR",
-     "gsis_id": "00-0036912",
-     "theirs": 30,
-     "ours": 28.57,
-     "gap": -1.43,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "band:receiving_yards:100": 10,
-      "step:receiving_yards": 11,
-      "distance:receiving_tds": 7.57
-     }
-    },
-    {
-     "player": "Chris Olave",
-     "position": "WR",
-     "gsis_id": "00-0037239",
-     "theirs": 17,
-     "ours": 15.57,
-     "gap": -1.43,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:receiving_yards": 8,
-      "distance:receiving_tds": 7.57
-     }
-    },
-    {
-     "player": "Chiefs, Kansas City",
-     "position": "TMQB",
-     "gsis_id": null,
-     "theirs": 51,
-     "ours": 52.37,
-     "gap": 1.37,
-     "likely_rule": "step:rushing_yards",
-     "pieces": {
-      "band:passing_yards:250": 10,
-      "step:passing_yards": 19,
-      "step:rushing_yards": 1,
-      "distance:passing_tds": 22.37
-     }
-    },
     {
      "player": "Patriots, New England",
      "position": "DEF",
@@ -2730,117 +2357,21 @@
       "band:points_allowed:1": 8,
       "distance:def_tds": 10.36
      }
-    },
-    {
-     "player": "Tyler Warren",
-     "position": "TE",
-     "gsis_id": "00-0040128",
-     "theirs": 8,
-     "ours": 9.24,
-     "gap": 1.24,
-     "likely_rule": "step:receiving_yards",
-     "pieces": {
-      "step:receiving_yards": 2,
-      "distance:receiving_tds": 7.24
-     }
-    },
-    {
-     "player": "Trey McBride",
-     "position": "TE",
-     "gsis_id": "00-0037744",
-     "theirs": 10,
-     "ours": 11.24,
-     "gap": 1.24,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:receiving_yards": 4,
-      "distance:receiving_tds": 7.24
-     }
-    },
-    {
-     "player": "Terrance Ferguson",
-     "position": "TE",
-     "gsis_id": "00-0040737",
-     "theirs": 11,
-     "ours": 12.24,
-     "gap": 1.24,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:receiving_yards": 5,
-      "distance:receiving_tds": 7.24
-     }
-    },
-    {
-     "player": "Sam LaPorta",
-     "position": "TE",
-     "gsis_id": "00-0039065",
-     "theirs": 11,
-     "ours": 12.24,
-     "gap": 1.24,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:receiving_yards": 5,
-      "distance:receiving_tds": 7.24
-     }
-    },
-    {
-     "player": "Christian McCaffrey",
-     "position": "RB",
-     "gsis_id": "00-0033280",
-     "theirs": 18,
-     "ours": 19.2,
-     "gap": 1.2,
-     "likely_rule": "step:rushing_yards",
-     "pieces": {
-      "step:rushing_yards": 2,
-      "step:receiving_yards": 4,
-      "distance:rushing_tds": 13.2
-     }
-    },
-    {
-     "player": "Bills, Buffalo",
-     "position": "TMQB",
-     "gsis_id": null,
-     "theirs": 57,
-     "ours": 58.11,
-     "gap": 1.11,
-     "likely_rule": "distance:approximated (no play-by-play length for this touchdown)",
-     "pieces": {
-      "step:passing_yards": 12,
-      "step:rushing_yards": 6,
-      "distance:passing_tds": 26.91,
-      "distance:rushing_tds": 13.2
-     }
     }
    ],
    "suspect_rules": [
     {
      "rule": "distance:approximated",
      "words": "approximated by distance",
-     "misses": 25
-    },
-    {
-     "rule": "step:receiving_yards",
-     "words": "receiving yards paid per whole unit",
-     "misses": 4
-    },
-    {
-     "rule": "step:rushing_yards",
-     "words": "rushing yards paid per whole unit",
-     "misses": 4
-    },
-    {
-     "rule": "rate:passing_interceptions",
-     "words": "passing interceptions",
      "misses": 1
     }
    ],
-   "approximated_rows": 50,
+   "approximated_rows": 2,
    "theirs_from": "MyFantasyLeague weeklyResults",
    "unmatched": [],
    "sql": null,
-   "ms": 290.6,
-   "words": "Week 2 check: we match the league's own points for 122 of 156 players within 1 point (78%), 110 to the tenth. The misses: Jake Ferguson (theirs 22, ours 18.48: approximated (no play-by-play length for this touchdown) by distance); Rams, Los Angeles (theirs 56, ours 52.82: passing interceptions); Cowboys, Dallas (theirs 58, ours 54.82: approximated (no play-by-play length for this touchdown) by distance)… 50 players' touchdowns by distance were approximated (no play-by-play length).",
+   "ms": 152.8,
+   "words": "Week 2 check: we match the league's own points for 155 of 156 players within 1 point (99%), 155 to the tenth. The misses: Patriots, New England (theirs 31, ours 32.36: approximated (no play-by-play length for this touchdown) by distance). 2 players' touchdowns by distance were approximated (no play-by-play length).",
    "name": "Make Football Great Again"
   }
  }

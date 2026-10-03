@@ -164,8 +164,8 @@ def test_k_for_wr_empties_the_k_slot_and_the_market_prices_the_kicker_near_zero(
     assert pr == {"mk": 0.0, "tw3": 40.0}
     t = evaluate(b, ["mk"], ["tw3"], market=mk, prices=pr)
     assert (t.mine.points_out, t.mine.points_in) == (112, 140) and (t.mine.price_out, t.mine.price_in) == (0, 40)
-    assert verdict(t, "week 4").startswith("Does not help you (-5.0 this week")
-    assert verdict(t, "week 4").endswith("the market says you're getting more: only worth it for the season value.")
+    assert verdict(t, "week 4").startswith("Does not help your lineup (-5.0 this week")
+    assert verdict(t, "week 4").endswith("you get more season value: not for your lineup; the value is on your side.")
     # the partner search never offers it (my lineup loses)
     assert all(p.best is None or (p.best.give, p.best.get) != (("mk",), ("tw3",)) for p in partners(b, 1))
 
@@ -507,24 +507,25 @@ def test_fit_line_market_line_and_verdict():
                                         "weeks 4–7; them **-1.1** and **-3.0**.")
     assert fairness_line(t) == ("**Market** (season points above the best free agent at the position): you give **85**, "
                                 "you get **60**: you give 25 more.")
-    # the plan's example: helps me, costs them, the market says I give up more -> they could take it for the value
-    assert verdict(t, "weeks 4–7") == ("Helps you +4.2 this week (+10.3 over weeks 4–7), costs them 1.1 (3.0 over weeks 4–7); "
-                                       "the market says you're giving up more: a rebuilding team might take it for the value.")
-    # helps me, costs them, I get more of the market too -> a no
+    # the plan's example: helps me, costs their lineup, I give up more season value (Wave I-E words: the lineup effect
+    # and the value, never a guess at the other manager's answer)
+    assert verdict(t, "weeks 4–7") == ("Helps your lineup +4.2 this week (+10.3 over weeks 4–7), costs their lineup 1.1 (3.0 over weeks 4–7); "
+                                       "you give up more season value: a lineup loss for them; the value is on their side.")
+    # helps me, costs them, I get more of the value too
     assert verdict(_trade(4.2, 10.3, -1.1, -3.0, 40, 70), "weeks 4–7").endswith(
-        "the market says you're getting more: expect a no.")
-    # both gain, about even (within 10 points / 10%) -> worth offering; both gain, they give up more -> they may ask for more
+        "you get more season value: a lineup loss for them.")
+    # both gain, about even (within 10 points / 10%); both gain, they give up more value
     s = verdict(_trade(3.0, 9.0, 1.0, 4.0, 100, 95), "weeks 4–7")
-    assert s.startswith("Helps you +3.0 this week (+9.0 over weeks 4–7), them +1.0 (+4.0 over weeks 4–7)")
-    assert s.endswith("about even: worth offering.")
-    assert verdict(_trade(3.0, 9.0, 1.0, 4.0, 40, 90), "weeks 4–7").endswith("they may ask for more.")
-    # does not help me: skip it, unless the market gives me more
-    assert verdict(_trade(-1.0, -3.0, 2.0, 5.0, 90, 40), "weeks 4–7").endswith("skip it.")
+    assert s.startswith("Helps your lineup +3.0 this week (+9.0 over weeks 4–7), them +1.0 (+4.0 over weeks 4–7)")
+    assert s.endswith("about even by season value: helps both lineups.")
+    assert verdict(_trade(3.0, 9.0, 1.0, 4.0, 40, 90), "weeks 4–7").endswith("helps both lineups, and they give up the value.")
+    # does not help me: not for my lineup, unless the value is on my side
+    assert verdict(_trade(-1.0, -3.0, 2.0, 5.0, 90, 40), "weeks 4–7").endswith("not worth it for your lineup.")
     s = verdict(_trade(0.0, 0.0, 2.0, 5.0, 40, 90), "weeks 4–7")
-    assert s.startswith("Does not help you (+0.0 this week, +0.0 over weeks 4–7)") and s.endswith("only worth it for the season value.")
+    assert s.startswith("Does not help your lineup (+0.0 this week, +0.0 over weeks 4–7)") and s.endswith("not for your lineup; the value is on your side.")
     # a lineup that gains over the horizon but not this week leads with the horizon
     assert verdict(_trade(-2.3, 0.8, -5.3, 4.5, 50, 45), "weeks 4–7").startswith(
-        "Helps you +0.8 over weeks 4–7 (-2.3 this week), them +4.5 over weeks 4–7 (-5.3 this week);")
+        "Helps your lineup +0.8 over weeks 4–7 (-2.3 this week), them +4.5 over weeks 4–7 (-5.3 this week);")
     # unknown players are named as not counted
     assert "1 player in it has no projection yet and is not counted." in fairness_line(_trade(1, 1, 1, 1, 10, 10, ("x",)))
     assert about_even(100, 91) and not about_even(100, 89) and about_even(20, 11) and not about_even(20, 9)

@@ -4,6 +4,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-03 — Wave I-E
 
+- **PO (integration).** The trade verdict says what each starting lineup gains and what the season value says —
+  never a guess at the other manager's answer ("expect a no" / "worth offering" are gone); the three strongest
+  waiver claims are ordered by this week's gain, which they now lead with; when a close call's injury tiebreak keeps
+  the healthy player, the lineup table's two rows say so ("Questionable — the call above keeps Addison here for
+  now") instead of reading as the opposite; the 70587 e2e answers re-recorded.
+
 - **IE-0: MFL behaves correctly (the casual-user review's P0s).** The trade calculator keeps every asset of a package:
   a provider key such as `mfl:0682` (the Houston Texans QB unit) is opaque from the link to the answer, so the Finder's
   "Houston Texans QB + Tuten for Rice" opens as that two-for-one (it opened as Tuten alone and flipped the verdict); an

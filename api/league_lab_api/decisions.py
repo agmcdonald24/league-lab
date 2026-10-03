@@ -3043,6 +3043,9 @@ def _ie1_present(res: dict, league_id: str, week: int, last: int, span: str) -> 
             "drop": {"key": (m.get("drop") or {}).get("sleeper_id"), "name": drop} if drop else None,
             "submitted": False, "submitted_words": f"Nothing is claimed from here: put the claim in on {pname}.",
             "lock": None, "cards": [], "gain": _num(first.get("this_week")), "href": "/waivers"}
+    # PO (I-E): the three strongest claims lead with this week's gain, so they are ordered by it (the window total
+    # second) — the review's "the current-week view should emphasize the current-week improvement"
+    res["top3"] = sorted(res["top3"], key=lambda c: (-(_num(c.get("this_week")) or 0.0), -(_num(c.get("gain")) or 0.0)))
     dress(res["top3"])
     dress(help_all)
     shown = {one(c) for c in res["top3"]}

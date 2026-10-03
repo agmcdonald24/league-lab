@@ -138,12 +138,18 @@ test("Waivers: this week's gain is the number, the four-week total is second and
   await expect(page.getByTestId("waiver-answer")).toHaveText("The three strongest claims are below, each with what it adds this week.");
   const top = page.getByTestId("top-move");
   await expect(top).toHaveCount(3);
+  // PO (I-E): the three are ordered by this week's gain — Schultz (+3.0) first; the Falcons' bye cover (+1.2 this week,
+  // +12.8 over the four weeks, cumulative) last; Vele is labelled the alternative to Schultz for the same spot
   const f = top.first();
-  await expect(f.getByTestId("claim-gain")).toHaveText("+1.2");
+  await expect(f.getByTestId("claim-gain")).toHaveText("+3.0");
   await expect(f).toContainText("this week");
-  await expect(f.getByTestId("claim-lead")).toHaveText("Falcons defense instead of Jaguars: about 1 more starter point this week.");
-  await expect(f.getByTestId("claim-total")).toHaveText("+12.8 over weeks 4–7 in total.");
-  await expect(top.nth(2).getByTestId("claim-alternative")).toHaveText("Instead of Devaughn Vele:");
+  await expect(f.getByTestId("claim-lead")).toHaveText("Dalton Schultz instead of Ladd McConkey: about 3 more starter points this week.");
+  await expect(f.getByTestId("claim-total")).toHaveText("+8.1 over weeks 4–7 in total.");
+  await expect(top.nth(1).getByTestId("claim-alternative")).toHaveText("Instead of Dalton Schultz:");
+  const falcons = top.nth(2);
+  await expect(falcons.getByTestId("claim-gain")).toHaveText("+1.2");
+  await expect(falcons.getByTestId("claim-lead")).toHaveText("Falcons defense instead of Jaguars: about 1 more starter point this week.");
+  await expect(falcons.getByTestId("claim-total")).toHaveText("+12.8 over weeks 4–7 in total.");
   await expect(page.getByTestId("not-additive")).toContainText("Each claim is weighed on its own");
   // Help now starts after the three: its first row is none of them, and not the answer either
   const row = page.getByTestId("view-move").first();

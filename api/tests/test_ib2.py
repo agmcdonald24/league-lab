@@ -104,7 +104,9 @@ def test_top3_the_views_and_the_alternative_scrubs(client, sql):
     top = w["top3"]
     assert len(top) == 3
     assert len({c["move"]["add"]["position"] for c in top}) == 3                     # one claim per position
-    assert [c["gain"] for c in top] == sorted((c["gain"] for c in top), reverse=True)
+    # I-E (PO): the three lead with this week's gain and are ordered by it (the window total second); the set is still
+    # the three biggest window gains, one per position
+    assert [c["this_week"] for c in top] == sorted((c["this_week"] for c in top), reverse=True)
     for c in top:
         assert c["gain"] == c["move"]["horizon_gain"] and c["gain_label"] == f"weeks {wk}–{last}"
         assert c["reason"] and c["reason"].endswith(".") and c["reason"].count(". ") == 0   # one fact, one sentence
@@ -112,7 +114,7 @@ def test_top3_the_views_and_the_alternative_scrubs(client, sql):
     # the strongest is the biggest gain among the best-drop claims (mart_waiver_moves, independently)
     best = sql("""select max(horizon_gain) as g from analytics.mart_waiver_moves where league_id = %s and roster_id = %s
                   and is_best_drop and list_kind <> 'nothing'""", (SCRUBS, ANDREW[SCRUBS]))[0]["g"]
-    assert top[0]["gain"] == pytest.approx(best, abs=0.01)
+    assert max(c["gain"] for c in top) == pytest.approx(best, abs=0.01)
     # the views: one answer carries them all
     v = w["views"]
     assert set(v) == {"help", "bye", "stash", "all"} and w["default_view"] == "help"

@@ -110,7 +110,8 @@ test("the review's link: Houston Texans QB + Tuten for Rice stays a two-for-one,
   await expect(calc.getByTestId("roster-size")).toContainText("you open a spot");
   await calc.getByTestId("lineups-x").locator("summary, button").first().click();
   const mineAfter = calc.getByTestId("lineups").getByTestId("lineup-after").first();
-  const teamQb = mineAfter.locator("li").filter({ hasText: /^\s*team QB/ });
+  // IE-2's after-lineup also lists the starters who left ("Houston Texans QB (traded)") under the same slot word
+  const teamQb = mineAfter.locator("li").filter({ hasText: /^\s*team QB/ }).first();
   await expect(teamQb).toContainText("Chicago Bears QB");
   await expect(mineAfter).toContainText("Rashee Rice (new)");
   await expect(mineAfter).toContainText("Out of the lineup after the trade: Houston Texans QB (team QB, 30.40, traded)");

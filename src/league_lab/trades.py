@@ -788,40 +788,42 @@ def fairness_line(trade: Trade) -> str:
 
 
 def verdict(trade: Trade, span: str) -> str:
-    """One sentence (T-02): whose lineup it helps, by how much, what the market says, and the likely answer.
-    The other manager says yes when his lineup gains over ``span`` and the price is about even or in his favour;
-    a trade that costs his lineup can only sell on market value (a rebuilding team); a trade that does not help
-    yours is not worth making for the lineup."""
+    """One sentence (T-02; words revised in Wave I-E after the casual-user review): whose starting lineup it helps,
+    by how much, and what the season value says — never a guess at the other manager's answer (we cannot know how he
+    rates his players). "Season value" is the projected season points above the best free agent at the position
+    (``docs/WORDS.md`` § The dictionary: "projected value above available replacements")."""
     m, t = trade.mine, trade.theirs
     me_w, me_h, th_w, th_h = m.gain_week, m.gain_horizon, t.gain_week, t.gain_horizon
     po, pi = m.price_out or 0, m.price_in or 0
     mine_up, theirs_up = me_h >= MIN_GAIN, th_h >= MIN_GAIN
     even = about_even(po, pi)
-    they_pay_more = not even and pi > po           # the market says they give up more than they get
-    market = ("the market calls it about even" if even else
-              "the market says you're giving up more" if po > pi else "the market says you're getting more")
+    they_pay_more = not even and pi > po           # by season value they give up more than they get
+    value = ("about even by season value" if even else
+             "you give up more season value" if po > pi else "you get more season value")
 
     if abs(th_w) < 0.05 and abs(th_h) < 0.05:
-        them = "no change for them"
+        them = "no change for their lineup"
     elif theirs_up and th_w <= -0.05:
         them = f"them {_s1(th_h)} over {span} ({_s1(th_w)} this week)"
     elif theirs_up:
         them = f"them {_s1(th_w)} ({_s1(th_h)} over {span})"
     elif th_w <= 0:
-        them = f"costs them {abs(th_w):.1f} ({abs(th_h):.1f} over {span})"
+        them = f"costs their lineup {abs(th_w):.1f} ({abs(th_h):.1f} over {span})"
     else:
         them = f"them {_s1(th_w)} but {_s1(th_h)} over {span}"
     if mine_up:
-        head = (f"Helps you {_s1(me_h)} over {span} ({_s1(me_w)} this week), {them}" if me_w <= -0.05
-                else f"Helps you {_s1(me_w)} this week ({_s1(me_h)} over {span}), {them}")
+        head = (f"Helps your lineup {_s1(me_h)} over {span} ({_s1(me_w)} this week), {them}" if me_w <= -0.05
+                else f"Helps your lineup {_s1(me_w)} this week ({_s1(me_h)} over {span}), {them}")
         if theirs_up:
-            answer = "they may ask for more" if they_pay_more else "worth offering"
+            answer = "helps both lineups, and they give up the value" if they_pay_more else "helps both lineups"
         else:
-            answer = "a rebuilding team might take it for the value" if (po > pi and not even) else "expect a no"
+            answer = ("a lineup loss for them; the value is on their side" if (po > pi and not even)
+                      else "a lineup loss for them")
     else:
-        head = f"Does not help you ({_s1(me_w)} this week, {_s1(me_h)} over {span}), {them}"
-        answer = "only worth it for the season value" if (pi > po and not even) else "skip it"
-    return f"{head}; {market}: {answer}."
+        head = f"Does not help your lineup ({_s1(me_w)} this week, {_s1(me_h)} over {span}), {them}"
+        answer = ("not for your lineup; the value is on your side" if (pi > po and not even)
+                  else "not worth it for your lineup")
+    return f"{head}; {value}: {answer}."
 
 
 def ranks(values: Mapping[int, float]) -> dict[int, int]:

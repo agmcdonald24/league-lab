@@ -30,11 +30,12 @@ from league_lab.lineup import UNVALUED, Player  # ---- IB-3
 from . import availability, why
 from .applib import cards, ui
 from .db import query
-from .myweek import (  # IE-1
+from .myweek import (  # IE-1 (+ annotate_swaps, PO I-E)
     NOTHING_SUBMITTED,
     NotFound,
     _num,
     _str,
+    annotate_swaps,
     build_actions,
     cards_from_rows,
     current_starters,
@@ -132,6 +133,7 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     # ---- end IE-1
     t2 = time.perf_counter()
     out["lineup"], out["lineup_full"] = lineup(rows)
+    annotate_swaps(out["lineup"], out["lineup_full"], out.get("swaps") or [])                              # ---- PO I-E
     out["howto"] = howto()
     gs = sorted({g for g in rows["gsis_id"].dropna()}) if not rows.empty else []
     mv = query(MOVERS_SQL, (season, gs)) if gs else pd.DataFrame()

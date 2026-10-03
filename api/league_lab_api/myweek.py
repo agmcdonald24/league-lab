@@ -70,7 +70,8 @@ def rosters(league_id: str) -> list[dict]:
 def _lineup_row(r: pd.Series) -> dict:
     out = {"role": r["role"], "slot": r["slot"], "player_name": _str(r.get("player_name")),
            "gsis_id": _str(r.get("gsis_id")), "position": _str(r.get("position")),
-           "value": _num(r.get("value")), "margin": _num(r.get("margin")), "flag": _str(r.get("flag")) or ""}
+           "value": _num(r.get("value")), "margin": _num(r.get("margin")), "flag": _str(r.get("flag")) or "",
+           "key": _str(r.get("sleeper_player_id"))}        # PO (I-E): the roster key the actions use (annotate_swaps)
     # ---- I0-A: the availability overlay's chip (OUT / DOUBTFUL / IR) and its reason ("Out (ankle) · ESPN, Oct 2 2:35 PM ET")
     if _str(r.get("chip")):
         out["flag"], out["reason"] = r["chip"], _str(r.get("why"))
@@ -170,6 +171,7 @@ def my_week(league_id: str, roster_id: int) -> dict:
     out.update(build_actions(rows, out["cards"], cur, league_id))                                          # ---- IE-1
     out.update({"edit_link": edit_link(league_id), "nothing_submitted": NOTHING_SUBMITTED})               # ---- IE-1
     out["lineup"], out["lineup_full"] = lineup(rows)
+    annotate_swaps(out["lineup"], out["lineup_full"], out.get("swaps") or [])                              # ---- PO I-E
     out["howto"] = howto()
     # ---- copied from app/Home.py (Movers on your roster)
     mv = query(
@@ -390,6 +392,7 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
     # the suggested lineup: the best lineup, except where a coin flip's tiebreaker is an injury (the healthy one starts:
     # "McConkey's questionable status breaks the tie") - the card already says "Go with Addison"
     suggested, swapped = set(best), set()
+    res["swaps"] = []           # PO (I-E): the lineup table says the same as the call (annotate_swaps)
     for c in cards_out:
         tb = c.get("tiebreak") or {}
         if tb.get("kind") == "injury" and tb.get("side") == "alt" and c.get("alt_key") and c.get("key") in suggested \
@@ -397,6 +400,8 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
             suggested.discard(c["key"])
             suggested.add(c["alt_key"])
             swapped.add(c["alt_key"])
+            res["swaps"].append({"in": c["alt_key"], "in_name": plain(c["alt_key"]), "out": c["key"], "out_name": plain(c["key"]),
+                                 "status": status(c["key"])})
     known = current is not None
     sub = set(current or {})
     if known and best and not (sub & set(info)):
@@ -490,6 +495,21 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
     for a in acts:
         a.pop("_lock_players", None)
     return res
+
+
+def annotate_swaps(lineup_rows: list[dict], full_rows: list[dict], swaps: list[dict]) -> None:
+    """PO (Wave I-E, the casual-user review): when a close call's injury tiebreak keeps the healthy player (the action
+    says "Keep Addison ahead of McConkey"), the lineup table below must not read as the opposite — its rows are the
+    best lineup on paper, so the two rows say so in words (the numbers stay: the table is still the best lineup)."""
+    for sw in swaps or []:
+        for rows in (lineup_rows, full_rows):
+            for r in rows:
+                k = r.get("sleeper_player_id") or r.get("key")
+                if k == sw["out"] and r.get("role") == "starter":
+                    st = (sw.get("status") or "questionable").lower()
+                    r["flag"] = f"{st.capitalize()} — the call above keeps {sw['in_name']} here for now"
+                elif k == sw["in"] and r.get("role") == "bench":
+                    r["flag"] = f"starts for {sw['out_name']} by the call above"
 
 
 def _action(kind, start, sit, submitted, gain, cant, coin, hurt, pairs, swapped, pname, *, name, plain, status,

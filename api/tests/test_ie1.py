@@ -194,12 +194,17 @@ def test_waivers_lead_with_this_week_and_say_the_total_is_cumulative(client):
         if (c["this_week"] or 0) >= 0.05:
             assert c["lead"].endswith("this week") and ("more starter point" in c["lead"])
         assert c["total_words"] is None or (c["total_words"].endswith("over weeks 4–7 in total"))
-    # the Falcons: about 1 more starter point this week first, the four-week +12.8 second and cumulative (unchanged gains)
-    f = top[0]
+    # PO (I-E): the three lead with this week's gain and are ordered by it — Schultz (+3.0) first; the Falcons' bye
+    # cover (+1.2 this week, +12.8 over the four weeks, cumulative) third (unchanged gains)
+    assert [c["this_week"] for c in top] == sorted((c["this_week"] for c in top), reverse=True)
+    s0 = top[0]
+    assert s0["lead"] == "Dalton Schultz instead of Ladd McConkey: about 3 more starter points this week"
+    assert s0["total_words"] == "+8.1 over weeks 4–7 in total" and s0["this_week"] == pytest.approx(3.0)
+    f = next(c for c in top if c["lead"].startswith("Falcons defense"))
     assert f["lead"] == "Falcons defense instead of Jaguars: about 1 more starter point this week"
     assert f["total_words"] == "+12.8 over weeks 4–7 in total" and f["gain"] == pytest.approx(12.81) and f["this_week"] == pytest.approx(1.2)
-    # alternatives are labelled: Schultz takes the same WR/TE spot this week as Vele, above him
-    assert top[2]["alternative_to"] == "Devaughn Vele" and top[1]["alternative_to"] is None
+    # alternatives are labelled: Vele takes the same WR/TE spot this week as Schultz, above him
+    assert top[1]["alternative_to"] == "Dalton Schultz" and top[0]["alternative_to"] is None
     # no triple copy: the answer is not a card's sentence, and Help now starts after the three
     assert w["answer"] == "The three strongest claims are below, each with what it adds this week."
     assert w["answer"] != help_[0]["lead"] and all(w["answer"] != c["lead"] for c in top)
