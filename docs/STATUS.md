@@ -4827,3 +4827,37 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
 * **Not done / for the PO**: the `ops.events` store is a design (the hand-back), not built; the hosted copy gets
   `mart_matchup_cb_context` (read for the first time) on the next nightly publish (until then the replacement corners
   are not named; the depth chart diff still works); receivers only (no front-seven check for running backs).
+
+### IF-2 2026-10-03 — trades compete with the simpler alternatives (branch `dev/IF2`, clone `league_lab_i0b`)
+
+* **Why**: the decision-quality review § Priority 3 (`docs/reviews/2026-10-03-decision-quality-review.md`): the
+  Finder's headline (+9.8 over weeks 4–7 live) lost to a free claim for an open spot (+11.4) and nothing said so; the
+  headline and the first card were different trades; the calculator said "you get more season value" next to "492
+  rest-of-season points for 164" without naming either concept.
+* **Delivered**: one ladder per roster and window (`decisions.best_alternative`: standing pat, the best legal waiver
+  move — IF-1's `best_waiver_move` when merged, guarded; today the open-spot fill / best add-drop on `ctx.fa_pool`);
+  the Finder ranks trades by `beyond_alternative` (those that beat it first), `rank` 1 = the headline = the first card,
+  `demoted` + "the trade does not beat it on starter points" + a reason only from the numbers (`other_objective`),
+  `ordering.words`, a week strip per card (`strip`: both sides, `trades.package_weeks`); the calculator carries
+  `alternative`, `beyond_alternative`, `alternative_words`, `strip`, `values` (the five concepts,
+  `trades.VALUE_CONCEPTS`), the raw rest-of-season line labelled "all positions added up — not a fairness test", the
+  warning on season value above replacement (`calc_sanity`). Web: `Trades.svelte` (the first card is the headline,
+  the alternative line, the ordering line, the mark, the strip), `TradeCalc.svelte` result (the alternative, the
+  strip, the labels), `decisions/WeekStrip.svelte` (new).
+* **Evidence** (70587 team 8, fixtures + ESPN overlay, `api/tests/test_if2.py` 13 passed): best alternative = the
+  Atlanta Falcons defense for the open spot, +12.81 over weeks 4–7 (1.20 / 0.80 / 0.48 / 10.33) = the Waivers
+  screen's top claim. Finder top three **before**: Houston Texans QB → Kansas City Chiefs QB (+1.76 / +5.53; the first
+  card), Chicago Bears QB → Kansas City Chiefs QB + Rice (+5.12 / +14.59; the headline), Corum → Downs (+1.43 / +5.80).
+  **After**: Bears QB → KC QB + Rice (+14.59, beyond +1.78; headline = first card), McCaffrey → Achane + Coker (+7.99,
+  beyond −4.82, below the claim; "more season value above replacement: 121 for 61"), Corum → Downs + Johnston (+6.66,
+  −6.15). The review's headline trade (Houston QB → Rice + Carolina QB) on the fixture: +1.70 / +7.86 (live +1.0 /
+  +9.8) → "the trade does not beat it on starter points" (−4.95). "Houston QB + Tuten for Rice": the warning was "you
+  give 493 rest-of-season points for 134: 359 more, over 25% of what you give"; now none (Houston QB has no season
+  value: not judged), the raw line labelled, "Season value above replacement: you give 14, you get 7 (about even). You
+  give 2 players for 1: 1 roster spot freed. Not counted (no season projection): Houston Texans QB." Trade gains
+  unchanged everywhere. `web/e2e/if2/` 2 × phone (375) / desktop on answers recorded from the API
+  (`web/fixtures/if2/api_if2.json`).
+* **Open**: team units (TMQB / TMPK) have no season value on demand (no `market` row), so the verdict's "season value"
+  clause and the warning leave them out (the words now say so); the Finder's sanity rule (a) is still the raw
+  rest-of-season totals (a PO call: switch it to season value above replacement — it would change which trades are
+  suggested); IF-1's `best_waiver_move` covers the next four weeks only (the other windows use the fill).

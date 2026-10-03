@@ -23,6 +23,7 @@
   import ScreenHead from "../components/ScreenHead.svelte";
   import Tabs from "../components/Tabs.svelte";
   import WindowControl from "./decisions/WindowControl.svelte";
+  import WeekStrip from "./decisions/WeekStrip.svelte"; // ---- IF-2: the week strip, both sides
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -105,7 +106,9 @@
     navigate(`/trade-calc?league=${enc(league)}&team=${team}&partner=${p.partner}&give=${ids(p.give)}&get=${ids(p.get)}${win === "next4" ? "" : `&window=${win}`}`);
   }
 
-  const top = $derived(best?.partners.find((p) => p.is_best) ?? best?.partners[0] ?? null);
+  // ---- IF-2: the headline is the first card (rank 1: the most starter points beyond your best waiver move)
+  // (an answer without IF-2's ordering — an older recording — keeps the old pick: the partner's best package)
+  const top = $derived(best?.ordering ? (best.partners[0] ?? null) : (best?.partners.find((p) => p.is_best) ?? best?.partners[0] ?? null));
   const wantTabs = [
     { key: "ALL", label: "Any" },
     { key: "QB", label: "QB" },
@@ -142,6 +145,8 @@
           <div class="ll-skel h-12" aria-label="Loading" data-testid="loading"></div>
         {:else if top}
           <p data-testid="best-partner"><Md text={best.words?.headline ?? `**Best partner: ${top.partner_team}.** ${partnerLine(top, best.span)}`} {ctx} /></p>
+          <!-- ---- IF-2: the trade against the best alternative (standing pat, the best waiver move) -->
+          {#if top.alternative_words}<p class="mt-1 text-base leading-snug {top.beats_alternative ? 'text-ink' : 'text-warn'}" data-testid="best-alternative">{top.alternative_words}</p>{/if}
         {:else}
           <p data-testid="best-partner"><strong class="text-ink">No trade raises both lineups.</strong> Nobody in the league has a player who would improve your lineup over {best.span} and also needs one of yours. Try one you have in mind in the <a class="ll-name" href={calcHref}>trade calculator</a>.</p>
         {/if}
@@ -165,7 +170,7 @@
     <section class="space-y-3" data-testid="finder">
       <div class="flex flex-wrap items-baseline justify-between gap-2">
         <h2 class="text-xl font-bold">Who should I trade with?</h2>
-        {#if finder}<p class="text-sm text-ink-3">Trades that raise both lineups over {finder.span}, best first</p>{/if}
+        {#if finder}<p class="text-sm text-ink-3" data-testid="finder-ordering">{finder.ordering?.words ?? `Trades that raise both lineups over ${finder.span}, best first`}</p>{/if}
       </div>
       <Tabs items={wantTabs} current={want} onpick={(w) => setParams({ want: w === "ALL" ? null : w })} size="sm" label="You want" testid="want" />
       {#if !finder}
@@ -190,6 +195,7 @@
                 <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"><span class="ll-label w-14">You get</span>{#each p.get as x (x.sleeper_id)}{@render face(x)}{/each}</div>
                 <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"><span class="ll-label w-14">You give</span>{#each p.give as x (x.sleeper_id)}{@render face(x)}{/each}</div>
               </div>
+              {#if p.strip}<div class="mt-2"><WeekStrip strip={p.strip} them={p.partner_team} testid="partner-strip" /></div>{/if}
               <div class="mt-3 flex items-end justify-between gap-3">
                 <div class="min-w-0">
                   <div class="flex items-baseline gap-2">
@@ -197,6 +203,8 @@
                     <span class="ll-label">you · {finder.span}</span>
                   </div>
                   <p class="mt-1.5 text-sm leading-snug text-ink-2" data-testid="partner-reason">{partnerReason(p, finder.span)}</p>
+                  <!-- ---- IF-2: against the best alternative; a trade that does not beat it is marked -->
+                  {#if p.alternative_words}<p class="mt-1 text-sm leading-snug {p.demoted ? 'text-warn' : 'text-ink'}" data-testid="partner-alternative">{#if p.demoted}<strong data-testid="partner-demoted">Below your best waiver move.</strong> {/if}{p.alternative_words}</p>{/if}
                   <!-- ---- IE-1: the least costly package first; the extra asset named as optional (what it costs you) -->
                   {#if p.cheaper_than}<p class="mt-1 text-sm leading-snug font-semibold text-good" data-testid="partner-cheaper">{p.cheaper_than.words}</p>{/if}
                   {#if p.optional}<p class="mt-1 text-sm leading-snug text-ink-2" data-testid="partner-optional">{p.optional.words}</p>{/if}
@@ -295,7 +303,8 @@
     <Expander title="How to read this" testid="howto">
       <div class="text-base leading-snug">
         {@html md(
-          "- **Who to call**: the first line names the team where one trade raises *both* starting lineups the most over the weeks you picked above, and the trade. Teams are ranked by the smaller of the two gains. When a smaller package gets you the same gain, it comes first and the extra player is shown as optional, with what he costs you.\n" +
+          "- **Who to call**: the first line and the first card are the same trade: of the trades that raise *both* starting lineups over the weeks you picked above, the one that adds the most **starter points beyond your best waiver move** (a free agent for an open spot, or for the player you would drop). A trade that does not beat that claim comes after those that do, marked, with any other reason the numbers give (more this week, more season value above replacement). When a smaller package gets you the same gain, it comes first and the extra player is shown as optional, with what he costs you.\n" +
+            "- **The strip** under each trade is the starter points it adds each week, for you and for them: a gain over four weeks can hide a loss this week.\n" +
             "- **The weeks**: this week, the next four (the default: far enough to matter, near enough to trust), the rest of the season (every week to this league's final) or the playoffs. A longer span sees more of the season and is less sure.\n" +
             "- **Left out**: a trade that gives away much more rest-of-season value than it brings back (over a quarter of what you give), or that works only because our projection for a player you give is far under Sleeper's (under 65% of it), is never suggested, however much it helps the lineups.\n" +
             "- **Try it** opens the trade calculator with the trade filled in: tick players both ways and the dial shows the **effect on their starters** — what the other team's best lineup gains or loses over the weeks you picked, by our numbers (about even under 2 points, improves 2 to 6, a lot over 6). It is lineup fit, not a guess at whether they would accept.\n" +

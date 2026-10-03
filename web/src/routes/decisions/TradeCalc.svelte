@@ -20,6 +20,7 @@
   import { windowOf, windowWhy } from "../../lib/decisions";
   import { openPlayer } from "../../lib/decisions";
   import { effectTone } from "../../lib/decisions"; // ---- IE-1
+  import WeekStrip from "./WeekStrip.svelte"; // ---- IF-2: the week strip, both sides
   import { restoreScroll, route, setParams } from "../../lib/router.svelte";
   import { fmt } from "../../lib/theme";
   import Bar from "../../components/Bar.svelte";
@@ -392,6 +393,17 @@
               {/each}
             </dl>
             <p class="text-lg leading-snug font-semibold text-ink" data-testid="trade-effect">{r.effect_words}</p>
+            <!-- ---- IF-2: the trade against the best alternative over the same weeks, and the weeks driving each gain -->
+            {#if r.alternative_words}
+              <p class="text-base leading-snug {r.beats_alternative ? 'text-ink' : 'text-warn'}" data-testid="trade-alternative"><span class="font-semibold">Against your best waiver move:</span> {r.alternative_words}</p>
+            {/if}
+            {#if r.strip && r.strip.weeks.length > 1}
+              <div data-testid="trade-strip-block">
+                <h3 class="ll-label mb-1">Starter points, week by week</h3>
+                <WeekStrip strip={r.strip} them={r.partner_team} testid="trade-strip" />
+              </div>
+            {/if}
+            <!-- ---- end IF-2 -->
             <div data-testid="trade-starters">
               <h3 class="ll-label mb-1">Your starters this week</h3>
               <ul class="space-y-1 text-base">
@@ -465,22 +477,23 @@
       <Card testid="trade-details">
         <div class="grid gap-4 wide:grid-cols-2">
           <div data-testid="market">
-            <div class="ll-label mb-2">Projected value above available replacements</div>
+            <div class="ll-label mb-2">{r.values?.season_value.label ?? "Projected value above available replacements"}</div><!-- IF-2 -->
             <div class="space-y-2">
               <Bar label="You give" value={r.market.give} max={mmax} display={fmt.whole(r.market.give)} color="var(--ll-div-hot)" />
               <Bar label="You get" value={r.market.get} max={mmax} display={fmt.whole(r.market.get)} />
             </div>
-            {#if r.market.words}<p class="mt-2 text-sm text-ink-2"><Md text={r.market.words} {ctx} /></p>{/if}
+            {#if r.values?.season_value.words}<p class="mt-2 text-sm text-ink-2" data-testid="season-value-words">{r.values.season_value.words} The fairness test.</p>
+            {:else if r.market.words}<p class="mt-2 text-sm text-ink-2"><Md text={r.market.words} {ctx} /></p>{/if}<!-- IF-2 -->
           </div>
           {#if r.ros}
             <div data-testid="ros">
-              <div class="ll-label mb-2">Rest of season{r.ros.window ? ` · ${r.ros.window}` : ""}</div>
+              <div class="ll-label mb-2">{r.values?.ros_points.label ?? "Rest of season"}{r.ros.window ? ` · ${r.ros.window}` : ""}</div><!-- IF-2 -->
               <div class="space-y-2">
                 <Bar label="You give" value={r.ros.give} max={rmax} display={fmt.whole(r.ros.give)} color="var(--ll-div-hot)" />
                 <Bar label="You get" value={r.ros.get} max={rmax} display={fmt.whole(r.ros.get)} />
               </div>
               <p class="mt-2 text-sm text-ink-2">
-                The players' plain totals up to this league's final ({(r.ros.get ?? 0) - (r.ros.give ?? 0) >= 0 ? "+" : "−"}{Math.abs((r.ros.get ?? 0) - (r.ros.give ?? 0))}), before the roster spot a lopsided trade frees or fills.
+                All positions added up — not a fairness test: a kicker's points and a receiver's count the same here, and a free agent could replace either. The fairness test is the season value above replacement.<!-- IF-2 -->
               </p>
             </div>
           {/if}
@@ -531,7 +544,8 @@
             "- **You** under it is what *your* best lineup gains over the same weeks: the improvement to your starting lineup, the best lineup each week, added up (+9.5 over weeks 4–7 is in total, not per week).\n" +
             `- **The weeks**: ${windowWhy(win, span)} Pick another span above: this week, the next four, the rest of the season (every week to this league's final) or the playoffs.\n` +
             "- **Your starters this week** lists who enters your starting lineup and who leaves it. A starter who only moves from one numbered slot to another (WR/TE 2 to WR/TE 3) is not a change: the gain is the lineup total's difference.\n" +
-            "- **Projected value above available replacements** is their projected points for the rest of the season above the best free agent at their position. It is not a trade price, and it is never added to the lineup gains: a player can be worth a lot and still sit on your bench.\n" +
+            "- **Four numbers, never added together** (IF-2): **projected points** (one player, one week), **starter points** (what enters your best legal lineup over the weeks), **backup coverage** (your bench's best lineup) and **season value above replacement** (rest-of-season projected points above the best free agent at the position: the fairness test). **Rest-of-season projected points** with all positions added up are shown for reference only: not a fairness test.\n" +
+            "- **Against your best waiver move**: the same weeks, the same scoring — the best claim (a free agent for an open spot, or for the player you would drop). A trade that does not beat it says so, and names any other reason the numbers give.\n" +
             "- **Roster size**: if a team gets more players than it gives, it has to cut someone: the player it would miss least, and that loss is in the numbers.\n" +
             "- Copy the page's link to share a trade: the link opens the same trade, over the same weeks.",
         )}
