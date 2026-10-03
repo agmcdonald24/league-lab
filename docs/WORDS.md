@@ -59,7 +59,7 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | TPRR / YPRR | targets / yards per route |
 | aDOT, air yards | how far downfield his targets travel |
 | implied team total | the points Vegas expects his team to score |
-| opp rank | the matchup rank: 1 = the defense that gives up the most to his position (the matchup you want) |
+| opp rank | the matchup rank: 1 = the defense that gives up the most to his position (the matchup you want); on the Matchups screen (IB-3) the tough rank instead, 1 = the toughest |
 | opp rank in a sentence (IA-1) | "the Colts, who give up the 2nd-most points to running backs" (rank ≤ 10) / "the 7th-fewest" (rank ≥ 23); the middle is not worth a sentence |
 | a decision card's reason (IA-1, `cards.reason_line`) | one sentence under the call: the strongest reason for the starter and the strongest against the other player ("Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game"); under 55% (or under 1 point apart without a percentage): "Too close to call: the projection says A by 0.5, the ranges say either. Go with B on the matchup: …" (injury first, then matchup, role, betting line); last names, whole names when two share one |
 | implied total in a sentence (IA-1) | "Vegas expects Willis's Dolphins to score only 16" (≤ 18) / "… to score 27" (≥ 26) |
@@ -90,6 +90,11 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | market line, `market_points` (IA-3) | "Sleeper has him at 16.2." (this week, this league's scoring); under 70% / over 140% of it: "We're well under (over) the market: our number follows his recent usage. Treat it with care."; none: "Sleeper's number for this week is not in yet." |
 | `piece_columns` (IA-3) | per game, projected: Att · Pass yd · Pass TD · INT (QB); Car · Rush yd · Tgt · Rec · Rec yd · TD (RB); Tgt · Rec · Rec yd · TD (WR / TE) |
 | the rankings' honesty line (IA-3, `about.RANKINGS_HOWTO`) | "How to read the rankings": from his work, not his name; superflex / 6-point passing TDs put quarterbacks on top by design; Sleeper's number is there to compare |
+| matchup tone (IB-3) | **Favorable / Neutral / Difficult**: the word in the state color, ▲ / ▼ beside it; "No read" when no ranked corner is named |
+| tough rank (IB-3) | one direction on the Matchups screen: "#1 = the toughest for the offense" ("#3 toughest vs RB", small and grey under the tone) |
+| cornerback certainty (IB-3, `call_strength`) | **likely** (his targets lean 15+ points to one side) · **unclear** (either outside corner) · **no call**; beside the tone, never a "shutdown" badge: "the 17th-hardest of 74 starting corners to throw on" |
+| value to my lineup (IB-3, `lineup_points`) | "Value to my lineup": what he adds to your best lineup over the weeks left; one of yours = what you lose without him; "Your QB2 only plays in week 7: 16 points over your next-best there", "Your backup QB never starts for you behind Mahomes: he adds nothing to your lineup (insurance only)", "Free agent: would start for you in 12 of 13 weeks left, +20 points to your lineup" |
+| card status (IB-3, IB-0's `status`) | **Change needed** (the call is not in your Sleeper lineup) · **Already set** · **Close call** (a coin flip); the strength word: Clear · Lean · Coin flip |
 | yardstick (Receivers, U-17) | what the season's top-12 at the position (the 12 with the most points a game) average |
 
 ## Adding to it

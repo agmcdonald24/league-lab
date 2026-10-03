@@ -44,7 +44,7 @@ test.beforeEach(async ({ context, page, isMobile }) => {
 });
 
 test("rest of season: the honesty line, headshots, the pieces, the expand row and the sort (Scrubs WR)", async ({ page, isMobile }, info) => {
-  await page.goto(`/ros?league=${SCRUBS}&team=2&position=WR`);
+  await page.goto(`/ros?league=${SCRUBS}&team=2&position=WR&view=points`); // IB-3: the scoring view
   await expect(page.getByTestId("ros-answer")).toBeVisible();
   const honesty = page.getByTestId("ros-honesty");
   await expect(honesty).toContainText("How to read the rankings.");
@@ -105,7 +105,7 @@ test("rest of season: the market line in the expanded row (added by hand: Sleepe
     body.players[0].market_words = words;
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...read(`ros_${SCRUBS}_WR.json`), players: body.players }) });
   });
-  await page.goto(`/ros?league=${SCRUBS}&team=2&position=WR`);
+  await page.goto(`/ros?league=${SCRUBS}&team=2&position=WR&view=points`); // IB-3: the scoring view
   await tap(page, page.getByTestId("ros-row").first().getByTestId("ros-toggle"), isMobile);
   await expect(page.getByTestId("ros-market")).toHaveText(`Week 4: ${words}`);
 });

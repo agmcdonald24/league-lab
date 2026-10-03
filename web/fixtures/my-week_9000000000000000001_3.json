@@ -123,7 +123,8 @@
       "margin": 6.83,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mjwbioajzldkq1vzoz2d",
-      "team": "BUF"
+      "team": "BUF",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -135,7 +136,8 @@
       "margin": 9.03,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
-      "team": "DET"
+      "team": "DET",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -147,7 +149,8 @@
       "margin": 4.61,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tm79x0iknqg6hms3ypyt",
-      "team": "BAL"
+      "team": "BAL",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -159,7 +162,8 @@
       "margin": 1.94,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yx1xjrupbqdknnjaq4a6",
-      "team": "SEA"
+      "team": "SEA",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -171,7 +175,8 @@
       "margin": 1.27,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fguybjrn1kwflxm5szwq",
-      "team": "HOU"
+      "team": "HOU",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -183,7 +188,8 @@
       "margin": 2.84,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/psasp10nn5pcvkli9kil",
-      "team": "ARI"
+      "team": "ARI",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -195,7 +201,8 @@
       "margin": 0.69,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
-      "team": "DAL"
+      "team": "DAL",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -207,7 +214,8 @@
       "margin": 8.23,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/t6fs7i54i4n7xjiayoz0",
-      "team": "CIN"
+      "team": "CIN",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -233,7 +241,8 @@
       "margin": 6.83,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mjwbioajzldkq1vzoz2d",
-      "team": "BUF"
+      "team": "BUF",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -245,7 +254,8 @@
       "margin": 9.03,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
-      "team": "DET"
+      "team": "DET",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -257,7 +267,8 @@
       "margin": 4.61,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tm79x0iknqg6hms3ypyt",
-      "team": "BAL"
+      "team": "BAL",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -269,7 +280,8 @@
       "margin": 1.94,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yx1xjrupbqdknnjaq4a6",
-      "team": "SEA"
+      "team": "SEA",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -281,7 +293,8 @@
       "margin": 1.27,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fguybjrn1kwflxm5szwq",
-      "team": "HOU"
+      "team": "HOU",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -293,7 +306,8 @@
       "margin": 2.84,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/psasp10nn5pcvkli9kil",
-      "team": "ARI"
+      "team": "ARI",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -305,7 +319,8 @@
       "margin": 0.69,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
-      "team": "DAL"
+      "team": "DAL",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -317,7 +332,8 @@
       "margin": 8.23,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/t6fs7i54i4n7xjiayoz0",
-      "team": "CIN"
+      "team": "CIN",
+      "is_current_starter": false
     },
     {
       "role": "starter",
@@ -341,7 +357,8 @@
       "margin": null,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
-      "team": "SF"
+      "team": "SF",
+      "is_current_starter": false
     },
     {
       "role": "bench",
@@ -353,7 +370,8 @@
       "margin": null,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
-      "team": "NYJ"
+      "team": "NYJ",
+      "is_current_starter": false
     },
     {
       "role": "bench",
@@ -365,7 +383,8 @@
       "margin": null,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xzhto2dejy2pflkfx40c",
-      "team": "BAL"
+      "team": "BAL",
+      "is_current_starter": false
     },
     {
       "role": "bench",
@@ -377,7 +396,8 @@
       "margin": null,
       "flag": "",
       "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z7k857flehljboaixj8m",
-      "team": "BUF"
+      "team": "BUF",
+      "is_current_starter": false
     }
   ],
   "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls. The first line is **how often your starter outscores the other player** this week, from both players' ranges: 50–55% is a coin flip (go with the latest news), 55–65% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Most weeks** is the range half of his weeks land in (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the matchup you want), 32 = the fewest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",

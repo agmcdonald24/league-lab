@@ -48,7 +48,9 @@
           "text": "Emanuel Wilson outscores Kenny Gainwell 51% of the time — a coin flip. 8.68 vs 8.22 projected: 0.46 apart.  \nMost weeks: Emanuel Wilson 4–12, Kenny Gainwell 3–12.  \nA bad week to a good week: Emanuel Wilson 1–18, Kenny Gainwell 2–18.  \nEmanuel Wilson vs LAC (#22 vs RB) · Kenny Gainwell vs GB (#4 vs RB)"
         }
       ],
-      "why": "Too close to call: the projection says Wilson by 0.5, the ranges say either. Go with Gainwell on the matchup: he is at home against the Packers, who give up the 4th-most points to running backs."
+      "why": "Too close to call: the projection says Wilson by 0.5, the ranges say either. Go with Gainwell on the matchup: he is at home against the Packers, who give up the 4th-most points to running backs.",
+      "status": "close",
+      "strength": "coin flip"
     },
     {
       "slot": "TE",
@@ -77,7 +79,9 @@
           "text": "George Kittle projects 0.84 more on average; Isaiah Likely outscores him 53% of the time — a coin flip. 10.36 vs 9.52 projected: 0.84 apart.  \nMost weeks: George Kittle 4–15, Isaiah Likely 5–17.  \nA bad week to a good week: George Kittle 2–16, Isaiah Likely 3–19.  \nGeorge Kittle vs DEN (#25 vs TE) · Isaiah Likely vs ARI (#14 vs TE)"
         }
       ],
-      "why": "Too close to call: the projection says Kittle by 0.8, the ranges say either. Go with Likely on the matchup: Kittle is at home against the Broncos, who give up the 8th-fewest points to tight ends."
+      "why": "Too close to call: the projection says Kittle by 0.8, the ranges say either. Go with Likely on the matchup: Kittle is at home against the Broncos, who give up the 8th-fewest points to tight ends.",
+      "status": "close",
+      "strength": "coin flip"
     },
     {
       "slot": "SUPER_FLEX",
@@ -106,7 +110,9 @@
           "text": "Michael Penix Jr. outscores Malik Willis 55% of the time — a lean. 18.77 vs 17.90 projected: 0.87 apart.  \nMost weeks: Michael Penix Jr. 12–26, Malik Willis 10–24.  \nA bad week to a good week: Michael Penix Jr. 6–32, Malik Willis 5–30.  \nMichael Penix Jr. vs NO (#19 vs QB) · Malik Willis vs MIN (#20 vs QB)"
         }
       ],
-      "why": "Vegas expects Willis's Dolphins to score only 16, and the projection has Penix 0.9 points ahead."
+      "why": "Vegas expects Willis's Dolphins to score only 16, and the projection has Penix 0.9 points ahead.",
+      "status": "change",
+      "strength": "lean"
     }
   ],
   "notice": null,

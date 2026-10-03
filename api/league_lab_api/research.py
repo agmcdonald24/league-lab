@@ -749,8 +749,140 @@ def matchups_defense(league_id: str, *, position: str | None = None, source: str
     n_def = int(rows.groupby("position")["defense"].nunique().max()) if not rows.empty else 0
     return {**ctx.meta(), "season": season, "profile_week": week, "positions": pos, "n_defenses": n_def,
             "weeks_used": [int(w) for w in played["week"]] if not played.empty else [],
-            "teams": _records(rows), "howto": DVP_HOWTO, "scoring_note": REF_NOTE.format(ref=reference_name()),
+            "teams": _records(defense_meaning(rows)), "howto": DVP_HOWTO,                        # ---- IB-3: tone, rank
+            "rank_note": RANK_NOTE, "scoring_note": REF_NOTE.format(ref=reference_name()),         # ---- IB-3
             **({"team": team, "starters": defense_starters(ctx, int(team), pos)} if team is not None else {})}
+
+
+# ---- IB-3 (Wave I-B): matchup meaning first. Every defense-vs-position cell and every cornerback call carries a tone
+# (favorable / neutral / difficult: the main signal on the screen), the rank runs ONE way on both routes (1 = the
+# toughest for the offense: the defense that gives up the fewest points to the position, the corner hardest to throw
+# on), the rank in words, and a cornerback call carries its certainty beside it (likely / unclear / no call: the
+# mart's call_strength). Thresholds: docs/METRICS.md § Matchups. The mart's own columns (rank_std: 1 = gives up the
+# most) and app/lib/matchups' sentence (`line`) are unchanged (the console and the parity tests read them).
+TONES = ("favorable", "neutral", "difficult")
+TONE_EDGE = 10 / 32          # the card's reason line (cards.reason_pieces): rank <= 10 "the Nth-most", >= 23 "the Nth-fewest"
+CERTAINTY = {"clear": "likely", "even": "unclear"}
+RANK_NOTE = ("#1 = the toughest for the offense: the defense that gives up the fewest points to the position, the "
+             "corner hardest to throw on.")
+LABEL_TONE = {"shutdown": "difficult", "solid": "neutral", "target": "favorable"}
+
+
+def _ordinal(k: int) -> str:
+    return f"{k}{'th' if 10 <= k % 100 <= 20 else {1: 'st', 2: 'nd', 3: 'rd'}.get(k % 10, 'th')}"
+
+
+def _rank(v) -> int | None:
+    return None if v is None or (isinstance(v, float) and np.isnan(v)) or pd.isna(v) else int(v)
+
+
+def tone_edge(n: int) -> int:
+    """How many ranks at each end of n count as favorable / difficult (10 of 32, the card's sentence rule)."""
+    return max(1, round(n * TONE_EDGE))
+
+
+def defense_tone(rank_most, n) -> str | None:
+    """The tone of a defense-vs-position matchup from the mart's rank (1 = gives up the most) among n defenses."""
+    r = _rank(rank_most)
+    if r is None or not n:
+        return None
+    e = tone_edge(int(n))
+    return "favorable" if r <= e else "difficult" if r >= int(n) + 1 - e else "neutral"
+
+
+def tough_rank(rank_most, n) -> int | None:
+    """The mart's rank turned the screen's way: 1 = gives up the fewest (the toughest for the offense)."""
+    r = _rank(rank_most)
+    return None if r is None or not n else int(n) + 1 - r
+
+
+def gives_up_words(rank_most, n) -> str | None:
+    """'gives up the 2nd-most' / 'gives up the 7th-fewest' (the nearer end; the card's words)."""
+    r = _rank(rank_most)
+    if r is None or not n:
+        return None
+    if r <= (int(n) + 1) / 2:
+        return "gives up the most" if r == 1 else f"gives up the {_ordinal(r)}-most"
+    k = int(n) + 1 - r
+    return "gives up the fewest" if k == 1 else f"gives up the {_ordinal(k)}-fewest"
+
+
+def defense_meaning(rows: pd.DataFrame) -> pd.DataFrame:
+    """The defense rows + n_ranked (defenses ranked at the position), tough_rank / tough_rank_l4 (1 = toughest),
+    tone, rank_words ('gives up the 2nd-most points to running backs')."""
+    if rows.empty:
+        return rows.assign(n_ranked=[], tough_rank=[], tough_rank_l4=[], tone=[], rank_words=[])
+    out = rows.copy()
+    n = out.groupby("position")["rank_std"].transform("count")
+    n4 = out.groupby("position")["rank_l4"].transform("count")
+    out["n_ranked"] = n.astype(int)
+    out["tough_rank"] = [tough_rank(r, k) for r, k in zip(out["rank_std"], n, strict=True)]
+    out["tough_rank_l4"] = [tough_rank(r, k) for r, k in zip(out["rank_l4"], n4, strict=True)]
+    out["tone"] = [defense_tone(r, k) for r, k in zip(out["rank_std"], n, strict=True)]
+    out["rank_words"] = [None if w is None else f"{w} points to {cards.POS_PLURAL.get(p, 'the position')}"
+                         for w, p in ((gives_up_words(r, k), p) for r, k, p in zip(out["rank_std"], n, out["position"], strict=True))]
+    return out
+
+
+def corner_words(rank, n) -> str | None:
+    """'the 17th-hardest of 74 starting corners to throw on' / 'the 9th-easiest of 74 …' (the nearer end)."""
+    r, n = _rank(rank), _rank(n)
+    if r is None or not n:
+        return None
+    if r <= (n + 1) / 2:
+        k = "the hardest" if r == 1 else f"the {_ordinal(r)}-hardest"
+    else:
+        e = n + 1 - r
+        k = "the easiest" if e == 1 else f"the {_ordinal(e)}-easiest"
+    return f"{k} of {n} starting corners to throw on"
+
+
+def cb_meaning(r: dict) -> dict:
+    """A cornerback call's tone, its certainty (likely: his targets lean 15+ points to one side; unclear: either outside
+    corner; no call), the named corners with their rank in words, and his history with them (app/lib/matchups)."""
+    status, strength = r.get("call_status"), r.get("call_strength")
+    n = r.get("cb_n_ranked")
+    certainty = CERTAINTY.get(str(strength)) if status == "called" else "no call"
+    named = []
+    if status == "called":
+        named.append({"name": r.get("likely_cover_name"), "slot": r.get("likely_cover_slot"), "rank": _rank(r.get("cover_rank")),
+                      "label": r.get("cover_label")})
+        if strength != "clear" and isinstance(r.get("other_cover_name"), str) and r.get("other_cover_name"):
+            s = str(r.get("other_cover_slot") or "").lower()
+            named.append({"name": r.get("other_cover_name"), "slot": r.get("other_cover_slot"), "rank": _rank(r.get(f"{s}_rank")),
+                          "label": r.get(f"{s}_label")})
+    for c in named:
+        c["side"] = M.SLOT_WORDS.get(str(c["slot"]), "corner")
+        c["words"] = corner_words(c["rank"], n) or "unranked: too few snaps to rank"
+        c["tone"] = LABEL_TONE.get(str(c["label"])) if c["rank"] is not None else None
+    tones = {c["tone"] for c in named if c["tone"] is not None}
+    if not tones:
+        tone = None                                   # no ranked corner named: no read (unknown is not neutral)
+    elif certainty == "likely":
+        tone = named[0]["tone"]
+    else:                                             # either corner: a tone only when every ranked one agrees
+        tone = next(iter(tones)) if len(tones) == 1 and all(c["tone"] is not None for c in named) else "neutral"
+    side = r.get("side_share")
+    other = r.get("other_side_share")
+
+    def pct(v) -> str:
+        return "?" if v is None or pd.isna(v) else f"{round(float(v) * 100)}%"
+
+    if certainty == "likely":
+        cw = f"likely: {pct(side)} of his targets go to that side, {pct(other)} to the other"
+    elif certainty == "unclear":
+        cw = f"unclear: {pct(side)} of his targets one way, {pct(other)} the other, so either corner"
+    elif status == "tight end":
+        cw = "no call: a tight end mostly draws linebackers and safeties"
+    elif status == "too few targets":
+        cw = "no call: too few targets with a direction to tell his side"
+    else:
+        cw = "no call: no depth chart yet"
+    who = M.last_name(r.get("likely_cover_name")) if status == "called" else ""
+    hist = M.cb_history(r, who).strip() if status == "called" else ""
+    return {"tone": tone, "certainty": certainty, "certainty_words": cw, "cover_rank_words": corner_words(r.get("cover_rank"), n),
+            "named_corners": named, "history": hist or None}
+# ---- end IB-3
 
 
 # ------------------------------------------------------------------------------ /api/matchups/cb
@@ -854,6 +986,7 @@ def matchups_cb(league_id: str, *, team: int | None = None, limit: int | None = 
                         for i in [r.get(f"{s}_gsis_id")] if isinstance(i, str) and i in corners]
         r["faced"] = faced_by.get(r["gsis_id"], [])
         r["cover_split"] = split.get(r["gsis_id"])
+        r.update(cb_meaning(r))                                  # ---- IB-3: the tone, the certainty, the rank in words
         out.append(r)
     st_rows = [r for r in out if r["is_starter"]]
     n_cb = next((int(r["cb_n_ranked"]) for r in st_rows if r.get("cb_n_ranked") is not None and not pd.isna(r["cb_n_ranked"])), None)
@@ -862,7 +995,7 @@ def matchups_cb(league_id: str, *, team: int | None = None, limit: int | None = 
                + (f"#1 of {n_cb} = the starting corner hardest to throw on since the start of {ctx.season - 1}; shutdown = "
                   "the top quarter, target = the bottom quarter." if n_cb else ""))
     return {**ctx.meta(), "team": team, "matchups": out, "summary": [r["line"] for r in st_rows], "caption": caption,
-            "howto": CB_HOWTO}
+            "rank_note": RANK_NOTE, "howto": CB_HOWTO}                                          # ---- IB-3
 
 
 # ------------------------------------------------------------------------------ /api/players

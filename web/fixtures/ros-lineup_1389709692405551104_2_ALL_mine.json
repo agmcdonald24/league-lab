@@ -1,0 +1,1649 @@
+{
+ "league_id": "1389709692405551104",
+ "source": "database",
+ "position": "ALL",
+ "view": "lineup",
+ "team": 2,
+ "who": "mine",
+ "from_week": 4,
+ "last_week": 16,
+ "playoff_week_start": 15,
+ "lines_note": "Only week 4 has betting lines yet: the later weeks lean on usage and the schedule.",
+ "pos_rank_note": "pos_rank is the player's rank at his position among every projected player on an active NFL roster in this league's scoring, rostered or not (mart_player_ros_projection's population)",
+ "window": {
+  "first": 4,
+  "last": 16,
+  "weeks": 13,
+  "span": "weeks 4–16"
+ },
+ "lineup_note": "Value to your lineup: what each player adds to your best lineup over the weeks left, week by week. For one of yours, what your lineup loses without him (his edge over the next-best who would start instead); for anyone else, what he would add if he were on your roster, nobody dropped. A backup who never starts adds nothing, however many points he scores somewhere else.",
+ "piece_columns": {
+  "QB": [
+   "attempts",
+   "passing_yards",
+   "passing_tds",
+   "passing_interceptions"
+  ],
+  "RB": [
+   "carries",
+   "rushing_yards",
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ],
+  "WR": [
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ],
+  "TE": [
+   "targets",
+   "receptions",
+   "receiving_yards",
+   "tds"
+  ]
+ },
+ "howto_rankings": "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are down reads lower than his name; a quarterback who starts and throws 35 times a game counts like any starter while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is far from it, open his card and read why before you trade on it.",
+ "leans_on": {
+  "QB": {
+   "features": [
+    "is he the projected starter?",
+    "points Vegas expects his team to score",
+    "pass attempts per game, last 3 games"
+   ],
+   "words": "For QBs the model leans most on **is he the projected starter?**. Next: points Vegas expects his team to score · pass attempts per game, last 3 games.",
+   "scored_in": "League of Scrubs"
+  },
+  "RB": {
+   "features": [
+    "share of his team's carries, last 3 games",
+    "rushing yards per game, season",
+    "share of his team's targets, season"
+   ],
+   "words": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: rushing yards per game, season · share of his team's targets, season.",
+   "scored_in": "League of Scrubs"
+  },
+  "WR": {
+   "features": [
+    "snap share, last 3 games",
+    "expected points per game (what his touches are worth), season",
+    "receiving yards per game, last season"
+   ],
+   "words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+   "scored_in": "League of Scrubs"
+  },
+  "TE": {
+   "features": [
+    "share of his team's targets, season",
+    "snap share, last 3 games",
+    "receiving yards per game, last season"
+   ],
+   "words": "For TEs the model leans most on **share of his team's targets, season**. Next: snap share, last 3 games · receiving yards per game, last season.",
+   "scored_in": "League of Scrubs"
+  }
+ },
+ "market_week": 4,
+ "market_note": "Sleeper's number is this week's, in this league's scoring, where Sleeper has one; the list's totals are ours.",
+ "players": [
+  {
+   "gsis_id": "00-0038606",
+   "player_key": "00-0038606",
+   "player_name": "Parker Washington",
+   "position": "WR",
+   "team": "JAX",
+   "ros_points": 149.15,
+   "ros_games": 12,
+   "playoff_points": 24.67,
+   "p10": 115.0,
+   "p90": 183.3,
+   "pos_rank": 11,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 38.19,
+   "lineup_weeks": 12,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 12 of 13 weeks left: 38 points more than your next-best option.",
+   "lineup_rank": 1,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 12.43,
+   "per_game": {
+    "targets": 7.69,
+    "receptions": 4.96,
+    "receiving_yards": 73.67,
+    "tds": 0.42
+   },
+   "why": {
+    "per": "game",
+    "points": 12.43,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 7.69,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.7 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.96,
+      "each": 0.5,
+      "points": 2.48,
+      "words": "5.0 catches × 0.5 = +2.5"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 73.67,
+      "each": 0.1,
+      "points": 7.37,
+      "words": "74 receiving yards × 0.1 = +7.4"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.41,
+      "each": 6.0,
+      "points": 2.49,
+      "words": "0.41 receiving TDs × 6 = +2.5"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 1.1,
+      "each": 0.1,
+      "points": 0.11,
+      "words": "1.1 rushing yards × 0.1 = +0.1"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.01,
+      "each": 6.0,
+      "points": 0.05,
+      "words": "0.01 rushing TDs × 6 = +0.1"
+     },
+     {
+      "stat": "rest",
+      "label": "the small pieces and rounding",
+      "value": null,
+      "each": null,
+      "points": -0.07,
+      "words": "the small pieces and rounding: -0.1"
+     }
+    ],
+    "sentence": "7.7 targets → 5.0 catches → 74 yards → 0.42 TDs → 12.4 points a game × 12 games = 149",
+    "games": 12,
+    "total": 149.15
+   },
+   "market_points": null,
+   "week_points": 12.16,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0040124",
+   "player_key": "00-0040124",
+   "player_name": "Tetairoa McMillan",
+   "position": "WR",
+   "team": "CAR",
+   "ros_points": 147.52,
+   "ros_games": 12,
+   "playoff_points": 24.46,
+   "p10": 112.8,
+   "p90": 182.2,
+   "pos_rank": 12,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 36.92,
+   "lineup_weeks": 12,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 12 of 13 weeks left: 37 points more than your next-best option.",
+   "lineup_rank": 2,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gilgvjemumd6kpc9eiku",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 12.29,
+   "per_game": {
+    "targets": 7.71,
+    "receptions": 4.75,
+    "receiving_yards": 69.88,
+    "tds": 0.49
+   },
+   "why": {
+    "per": "game",
+    "points": 12.29,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 7.71,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.7 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.75,
+      "each": 0.5,
+      "points": 2.38,
+      "words": "4.8 catches × 0.5 = +2.4"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 69.88,
+      "each": 0.1,
+      "points": 6.99,
+      "words": "70 receiving yards × 0.1 = +7.0"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.49,
+      "each": 6.0,
+      "points": 2.92,
+      "words": "0.49 receiving TDs × 6 = +2.9"
+     }
+    ],
+    "sentence": "7.7 targets → 4.8 catches → 70 yards → 0.49 TDs → 12.3 points a game × 12 games = 148",
+    "games": 12,
+    "total": 147.52
+   },
+   "market_points": null,
+   "week_points": 12.75,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0037840",
+   "player_key": "00-0037840",
+   "player_name": "Kyren Williams",
+   "position": "RB",
+   "team": "LA",
+   "ros_points": 149.57,
+   "ros_games": 12,
+   "playoff_points": 24.75,
+   "p10": 114.6,
+   "p90": 184.5,
+   "pos_rank": 15,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 36.24,
+   "lineup_weeks": 12,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 12 of 13 weeks left: 36 points more than your next-best option.",
+   "lineup_rank": 3,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 12.46,
+   "per_game": {
+    "carries": 13.58,
+    "rushing_yards": 61.84,
+    "targets": 2.98,
+    "receptions": 2.21,
+    "receiving_yards": 18.36,
+    "tds": 0.57
+   },
+   "why": {
+    "per": "game",
+    "points": 12.46,
+    "pieces": [
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 13.58,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "13.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 61.84,
+      "each": 0.1,
+      "points": 6.18,
+      "words": "62 rushing yards × 0.1 = +6.2"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.48,
+      "each": 6.0,
+      "points": 2.85,
+      "words": "0.48 rushing TDs × 6 = +2.9"
+     },
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.98,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.0 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.21,
+      "each": 0.5,
+      "points": 1.1,
+      "words": "2.2 catches × 0.5 = +1.1"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 18.36,
+      "each": 0.1,
+      "points": 1.84,
+      "words": "18.4 receiving yards × 0.1 = +1.8"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.1,
+      "each": 6.0,
+      "points": 0.59,
+      "words": "0.10 receiving TDs × 6 = +0.6"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.06,
+      "each": -2.0,
+      "points": -0.12,
+      "words": "0.06 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "13.6 carries → 62 rush yards → 3.0 targets → 2.2 catches → 18.4 yards → 0.57 TDs → 12.5 points a game × 12 games = 150",
+    "games": 12,
+    "total": 149.57
+   },
+   "market_points": null,
+   "week_points": 12.8,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0036322",
+   "player_key": "00-0036322",
+   "player_name": "Justin Jefferson",
+   "position": "WR",
+   "team": "MIN",
+   "ros_points": 149.19,
+   "ros_games": 12,
+   "playoff_points": 25.27,
+   "p10": 117.3,
+   "p90": 181.1,
+   "pos_rank": 10,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": "Out",
+   "lineup_points": 34.72,
+   "lineup_weeks": 11,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 11 of 13 weeks left: 35 points more than your next-best option.",
+   "lineup_rank": 4,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+   "bye_weeks": [
+    6
+   ],
+   "ros_points_per_game": 12.43,
+   "per_game": {
+    "targets": 8.21,
+    "receptions": 5.47,
+    "receiving_yards": 72.37,
+    "tds": 0.41
+   },
+   "why": {
+    "per": "game",
+    "points": 12.43,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 8.21,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "8.2 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 5.47,
+      "each": 0.5,
+      "points": 2.73,
+      "words": "5.5 catches × 0.5 = +2.7"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 72.37,
+      "each": 0.1,
+      "points": 7.24,
+      "words": "72 receiving yards × 0.1 = +7.2"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.41,
+      "each": 6.0,
+      "points": 2.48,
+      "words": "0.41 receiving TDs × 6 = +2.5"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.04,
+      "each": -2.0,
+      "points": -0.08,
+      "words": "0.04 fumbles lost × -2 = -0.1"
+     },
+     {
+      "stat": "rest",
+      "label": "the small pieces and rounding",
+      "value": null,
+      "each": null,
+      "points": 0.06,
+      "words": "the small pieces and rounding: +0.1"
+     }
+    ],
+    "sentence": "8.2 targets → 5.5 catches → 72 yards → 0.41 TDs → 12.4 points a game × 12 games = 149",
+    "games": 12,
+    "total": 149.19
+   },
+   "market_points": null,
+   "week_points": 12.68,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0040666",
+   "player_key": "00-0040666",
+   "player_name": "Omarion Hampton",
+   "position": "RB",
+   "team": "LAC",
+   "ros_points": 145.43,
+   "ros_games": 12,
+   "playoff_points": 25.16,
+   "p10": 109.2,
+   "p90": 181.7,
+   "pos_rank": 17,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 32.89,
+   "lineup_weeks": 12,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 12 of 13 weeks left: 33 points more than your next-best option.",
+   "lineup_rank": 5,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 12.12,
+   "per_game": {
+    "carries": 16.38,
+    "rushing_yards": 62.25,
+    "targets": 2.12,
+    "receptions": 2.06,
+    "receiving_yards": 12.44,
+    "tds": 0.62
+   },
+   "why": {
+    "per": "game",
+    "points": 12.12,
+    "pieces": [
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 16.38,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "16.4 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 62.25,
+      "each": 0.1,
+      "points": 6.23,
+      "words": "62 rushing yards × 0.1 = +6.2"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.57,
+      "each": 6.0,
+      "points": 3.42,
+      "words": "0.57 rushing TDs × 6 = +3.4"
+     },
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.12,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.1 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 2.06,
+      "each": 0.5,
+      "points": 1.03,
+      "words": "2.1 catches × 0.5 = +1.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 12.44,
+      "each": 0.1,
+      "points": 1.24,
+      "words": "12.4 receiving yards × 0.1 = +1.2"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.05,
+      "each": 6.0,
+      "points": 0.3,
+      "words": "0.05 receiving TDs × 6 = +0.3"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.06,
+      "each": -2.0,
+      "points": -0.11,
+      "words": "0.06 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "16.4 carries → 62 rush yards → 2.1 targets → 2.1 catches → 12.4 yards → 0.62 TDs → 12.1 points a game × 12 games = 145",
+    "games": 12,
+    "total": 145.43
+   },
+   "market_points": null,
+   "week_points": 11.28,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0030506",
+   "player_key": "00-0030506",
+   "player_name": "Travis Kelce",
+   "position": "TE",
+   "team": "KC",
+   "ros_points": 111.78,
+   "ros_games": 12,
+   "playoff_points": 17.32,
+   "p10": 91.0,
+   "p90": 132.6,
+   "pos_rank": 4,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 17.96,
+   "lineup_weeks": 12,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 12 of 13 weeks left: 18 points more than your next-best option.",
+   "lineup_rank": 6,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 9.31,
+   "per_game": {
+    "targets": 6.97,
+    "receptions": 4.8,
+    "receiving_yards": 53.0,
+    "tds": 0.27
+   },
+   "why": {
+    "per": "game",
+    "points": 9.31,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 6.97,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "7.0 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.8,
+      "each": 0.5,
+      "points": 2.4,
+      "words": "4.8 catches × 0.5 = +2.4"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 53.0,
+      "each": 0.1,
+      "points": 5.3,
+      "words": "53 receiving yards × 0.1 = +5.3"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.27,
+      "each": 6.0,
+      "points": 1.64,
+      "words": "0.27 receiving TDs × 6 = +1.6"
+     }
+    ],
+    "sentence": "7.0 targets → 4.8 catches → 53 yards → 0.27 TDs → 9.3 points a game × 12 games = 112",
+    "games": 12,
+    "total": 111.78
+   },
+   "market_points": null,
+   "week_points": 10.14,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0033873",
+   "player_key": "00-0033873",
+   "player_name": "Patrick Mahomes",
+   "position": "QB",
+   "team": "KC",
+   "ros_points": 224.83,
+   "ros_games": 12,
+   "playoff_points": 37.4,
+   "p10": 191.7,
+   "p90": 258.0,
+   "pos_rank": 1,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 8.88,
+   "lineup_weeks": 12,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 12 of 13 weeks left: 8.9 points more than your next-best option.",
+   "lineup_rank": 7,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 18.74,
+   "per_game": {
+    "attempts": 34.96,
+    "passing_yards": 234.66,
+    "passing_tds": 1.63,
+    "passing_interceptions": 1.0
+   },
+   "why": {
+    "per": "game",
+    "points": 18.74,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 34.96,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "35 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 234.66,
+      "each": 0.04,
+      "points": 9.39,
+      "words": "235 passing yards × 0.04 = +9.4"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.63,
+      "each": 4.0,
+      "points": 6.52,
+      "words": "1.6 passing TDs × 4 = +6.5"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 1.0,
+      "each": -1.0,
+      "points": -1.0,
+      "words": "1.00 interceptions × -1 = -1.0"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 4.14,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.1 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 23.43,
+      "each": 0.1,
+      "points": 2.34,
+      "words": "23 rushing yards × 0.1 = +2.3"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.29,
+      "each": 6.0,
+      "points": 1.73,
+      "words": "0.29 rushing TDs × 6 = +1.7"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.12,
+      "each": -2.0,
+      "points": -0.24,
+      "words": "0.12 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "35 passes → 235 pass yards → 1.6 pass TDs → 1.00 INTs → 18.7 points a game × 12 games = 225",
+    "games": 12,
+    "total": 224.83
+   },
+   "market_points": null,
+   "week_points": 20.26,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0040719",
+   "player_key": "00-0040719",
+   "player_name": "Bhayshul Tuten",
+   "position": "RB",
+   "team": "JAX",
+   "ros_points": 117.15,
+   "ros_games": 12,
+   "playoff_points": 18.83,
+   "p10": 83.8,
+   "p90": 150.5,
+   "pos_rank": 28,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 4.86,
+   "lineup_weeks": 11,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 11 of 13 weeks left: 4.9 points more than your next-best option.",
+   "lineup_rank": 8,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 9.76,
+   "per_game": {
+    "carries": 12.23,
+    "rushing_yards": 52.18,
+    "targets": 2.13,
+    "receptions": 1.48,
+    "receiving_yards": 11.38,
+    "tds": 0.47
+   },
+   "why": {
+    "per": "game",
+    "points": 9.76,
+    "pieces": [
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 12.23,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "12.2 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 52.18,
+      "each": 0.1,
+      "points": 5.22,
+      "words": "52 rushing yards × 0.1 = +5.2"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.37,
+      "each": 6.0,
+      "points": 2.22,
+      "words": "0.37 rushing TDs × 6 = +2.2"
+     },
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 2.13,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.1 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.48,
+      "each": 0.5,
+      "points": 0.74,
+      "words": "1.5 catches × 0.5 = +0.7"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 11.38,
+      "each": 0.1,
+      "points": 1.14,
+      "words": "11.4 receiving yards × 0.1 = +1.1"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.1,
+      "each": 6.0,
+      "points": 0.58,
+      "words": "0.10 receiving TDs × 6 = +0.6"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.05,
+      "each": -2.0,
+      "points": -0.1,
+      "words": "0.05 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "12.2 carries → 52 rush yards → 2.1 targets → 1.5 catches → 11.4 yards → 0.47 TDs → 9.8 points a game × 12 games = 117",
+    "games": 12,
+    "total": 117.15
+   },
+   "market_points": null,
+   "week_points": 9.72,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0038559",
+   "player_key": "00-0038559",
+   "player_name": "Michael Wilson",
+   "position": "WR",
+   "team": "ARI",
+   "ros_points": 113.04,
+   "ros_games": 12,
+   "playoff_points": 18.71,
+   "p10": 83.0,
+   "p90": 143.1,
+   "pos_rank": 29,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 2.0,
+   "lineup_weeks": 6,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 6 of 13 weeks left: 2.0 points more than your next-best option.",
+   "lineup_rank": 9,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+   "bye_weeks": [
+    14
+   ],
+   "ros_points_per_game": 9.42,
+   "per_game": {
+    "targets": 6.73,
+    "receptions": 4.09,
+    "receiving_yards": 51.82,
+    "tds": 0.37
+   },
+   "why": {
+    "per": "game",
+    "points": 9.42,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 6.73,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "6.7 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 4.09,
+      "each": 0.5,
+      "points": 2.05,
+      "words": "4.1 catches × 0.5 = +2.0"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 51.82,
+      "each": 0.1,
+      "points": 5.18,
+      "words": "52 receiving yards × 0.1 = +5.2"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.36,
+      "each": 6.0,
+      "points": 2.14,
+      "words": "0.36 receiving TDs × 6 = +2.1"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.01,
+      "each": 6.0,
+      "points": 0.06,
+      "words": "0.01 rushing TDs × 6 = +0.1"
+     }
+    ],
+    "sentence": "6.7 targets → 4.1 catches → 52 yards → 0.37 TDs → 9.4 points a game × 12 games = 113",
+    "games": 12,
+    "total": 113.04
+   },
+   "market_points": null,
+   "week_points": 9.2,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0035358",
+   "player_key": "00-0035358",
+   "player_name": "Chase McLaughlin",
+   "position": "K",
+   "team": "TB",
+   "ros_points": 96.54,
+   "ros_games": 12,
+   "playoff_points": 15.74,
+   "p10": 76.4,
+   "p90": 116.7,
+   "pos_rank": 16,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 0.0,
+   "lineup_weeks": 12,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 12 of 13 weeks left, but the best free agent at K projects as much: he adds nothing over the waiver wire.",
+   "lineup_rank": 10,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 8.04,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 8.07,
+   "market_words": null
+  },
+  {
+   "gsis_id": null,
+   "player_key": "KC",
+   "player_name": "Kansas City Chiefs",
+   "position": "DEF",
+   "team": "KC",
+   "ros_points": 85.46,
+   "ros_games": 12,
+   "playoff_points": 14.66,
+   "p10": 59.3,
+   "p90": 111.6,
+   "pos_rank": 24,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 0.0,
+   "lineup_weeks": 12,
+   "lineup_kind": "mine",
+   "lineup_why": "Starts for you in 12 of 13 weeks left, but the best free agent at DEF projects as much: he adds nothing over the waiver wire.",
+   "lineup_rank": 11,
+   "headshot_url": null,
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 7.12,
+   "per_game": {},
+   "why": null,
+   "market_points": null,
+   "week_points": 7.16,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0040737",
+   "player_key": "00-0040737",
+   "player_name": "Terrance Ferguson",
+   "position": "TE",
+   "team": "LA",
+   "ros_points": 73.4,
+   "ros_games": 12,
+   "playoff_points": 12.56,
+   "p10": 53.9,
+   "p90": 92.9,
+   "pos_rank": 22,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": "IR",
+   "lineup_points": 0.0,
+   "lineup_weeks": 2,
+   "lineup_kind": "mine",
+   "lineup_why": "Your bench TE only plays in weeks 5 and 7, and the best free agent would score as much then: he adds nothing to your lineup.",
+   "lineup_rank": 12,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 6.12,
+   "per_game": {
+    "targets": 4.72,
+    "receptions": 3.23,
+    "receiving_yards": 33.47,
+    "tds": 0.2
+   },
+   "why": {
+    "per": "game",
+    "points": 6.12,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 4.72,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.7 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.23,
+      "each": 0.5,
+      "points": 1.61,
+      "words": "3.2 catches × 0.5 = +1.6"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 33.47,
+      "each": 0.1,
+      "points": 3.35,
+      "words": "33 receiving yards × 0.1 = +3.3"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.2,
+      "each": 6.0,
+      "points": 1.22,
+      "words": "0.20 receiving TDs × 6 = +1.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.03,
+      "each": -2.0,
+      "points": -0.06,
+      "words": "0.03 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "4.7 targets → 3.2 catches → 33 yards → 0.20 TDs → 6.1 points a game × 12 games = 73",
+    "games": 12,
+    "total": 73.4
+   },
+   "market_points": null,
+   "week_points": 5.79,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0040743",
+   "player_key": "00-0040743",
+   "player_name": "Tyler Shough",
+   "position": "QB",
+   "team": "NO",
+   "ros_points": 181.92,
+   "ros_games": 12,
+   "playoff_points": 30.16,
+   "p10": 146.7,
+   "p90": 217.1,
+   "pos_rank": 22,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 0.0,
+   "lineup_weeks": 1,
+   "lineup_kind": "mine",
+   "lineup_why": "Your QB2 only plays in week 5, and the best free agent would score as much then: he adds nothing to your lineup.",
+   "lineup_rank": 13,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+   "bye_weeks": [
+    8
+   ],
+   "ros_points_per_game": 15.16,
+   "per_game": {
+    "attempts": 30.52,
+    "passing_yards": 209.92,
+    "passing_tds": 1.21,
+    "passing_interceptions": 0.83
+   },
+   "why": {
+    "per": "game",
+    "points": 15.16,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 30.52,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "31 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 209.92,
+      "each": 0.04,
+      "points": 8.4,
+      "words": "210 passing yards × 0.04 = +8.4"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.21,
+      "each": 4.0,
+      "points": 4.84,
+      "words": "1.2 passing TDs × 4 = +4.8"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 0.83,
+      "each": -1.0,
+      "points": -0.83,
+      "words": "0.83 interceptions × -1 = -0.8"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 4.14,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "4.1 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 19.97,
+      "each": 0.1,
+      "points": 2.0,
+      "words": "20.0 rushing yards × 0.1 = +2.0"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.16,
+      "each": 6.0,
+      "points": 0.95,
+      "words": "0.16 rushing TDs × 6 = +1.0"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.1,
+      "each": -2.0,
+      "points": -0.19,
+      "words": "0.10 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "31 passes → 210 pass yards → 1.2 pass TDs → 0.83 INTs → 15.2 points a game × 12 games = 182",
+    "games": 12,
+    "total": 181.92
+   },
+   "market_points": null,
+   "week_points": 18.17,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0039150",
+   "player_key": "00-0039150",
+   "player_name": "Bryce Young",
+   "position": "QB",
+   "team": "CAR",
+   "ros_points": 173.38,
+   "ros_games": 12,
+   "playoff_points": 27.9,
+   "p10": 142.1,
+   "p90": 204.6,
+   "pos_rank": 28,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 0.0,
+   "lineup_weeks": 0,
+   "lineup_kind": "mine",
+   "lineup_why": "Your backup QB never starts for you behind Mahomes: he adds nothing to your lineup (insurance only).",
+   "lineup_rank": 14,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+   "bye_weeks": [
+    5
+   ],
+   "ros_points_per_game": 14.45,
+   "per_game": {
+    "attempts": 31.25,
+    "passing_yards": 224.74,
+    "passing_tds": 1.4,
+    "passing_interceptions": 1.14
+   },
+   "why": {
+    "per": "game",
+    "points": 14.45,
+    "pieces": [
+     {
+      "stat": "attempts",
+      "label": "passes",
+      "value": 31.25,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "31 passes (no points on their own)"
+     },
+     {
+      "stat": "passing_yards",
+      "label": "passing yards",
+      "value": 224.74,
+      "each": 0.04,
+      "points": 8.99,
+      "words": "225 passing yards × 0.04 = +9.0"
+     },
+     {
+      "stat": "passing_tds",
+      "label": "passing TDs",
+      "value": 1.4,
+      "each": 4.0,
+      "points": 5.58,
+      "words": "1.4 passing TDs × 4 = +5.6"
+     },
+     {
+      "stat": "passing_interceptions",
+      "label": "interceptions",
+      "value": 1.14,
+      "each": -1.0,
+      "points": -1.14,
+      "words": "1.1 interceptions × -1 = -1.1"
+     },
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 3.04,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "3.0 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 7.64,
+      "each": 0.1,
+      "points": 0.76,
+      "words": "7.6 rushing yards × 0.1 = +0.8"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.08,
+      "each": 6.0,
+      "points": 0.48,
+      "words": "0.08 rushing TDs × 6 = +0.5"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.12,
+      "each": -2.0,
+      "points": -0.23,
+      "words": "0.12 fumbles lost × -2 = -0.2"
+     }
+    ],
+    "sentence": "31 passes → 225 pass yards → 1.4 pass TDs → 1.1 INTs → 14.4 points a game × 12 games = 173",
+    "games": 12,
+    "total": 173.38
+   },
+   "market_points": null,
+   "week_points": 17.25,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0040242",
+   "player_key": "00-0040242",
+   "player_name": "Jacory Croskey-Merritt",
+   "position": "RB",
+   "team": "WAS",
+   "ros_points": 104.84,
+   "ros_games": 12,
+   "playoff_points": 17.0,
+   "p10": 76.3,
+   "p90": 133.3,
+   "pos_rank": 38,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": null,
+   "lineup_points": 0.0,
+   "lineup_weeks": 0,
+   "lineup_kind": "mine",
+   "lineup_why": "On your bench in all 13 weeks left: he adds nothing to your lineup unless someone gets hurt.",
+   "lineup_rank": 15,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+   "bye_weeks": [
+    7
+   ],
+   "ros_points_per_game": 8.74,
+   "per_game": {
+    "carries": 12.52,
+    "rushing_yards": 48.36,
+    "targets": 1.37,
+    "receptions": 0.93,
+    "receiving_yards": 8.2,
+    "tds": 0.45
+   },
+   "why": {
+    "per": "game",
+    "points": 8.74,
+    "pieces": [
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 12.52,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "12.5 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 48.36,
+      "each": 0.1,
+      "points": 4.84,
+      "words": "48 rushing yards × 0.1 = +4.8"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.42,
+      "each": 6.0,
+      "points": 2.54,
+      "words": "0.42 rushing TDs × 6 = +2.5"
+     },
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 1.37,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.4 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 0.93,
+      "each": 0.5,
+      "points": 0.47,
+      "words": "0.93 catches × 0.5 = +0.5"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 8.2,
+      "each": 0.1,
+      "points": 0.82,
+      "words": "8.2 receiving yards × 0.1 = +0.8"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.03,
+      "each": 6.0,
+      "points": 0.17,
+      "words": "0.03 receiving TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.05,
+      "each": -2.0,
+      "points": -0.1,
+      "words": "0.05 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "12.5 carries → 48 rush yards → 1.4 targets → 0.93 catches → 8.2 yards → 0.45 TDs → 8.7 points a game × 12 games = 105",
+    "games": 12,
+    "total": 104.84
+   },
+   "market_points": null,
+   "week_points": 9.19,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0041496",
+   "player_key": "00-0041496",
+   "player_name": "Jonah Coleman",
+   "position": "RB",
+   "team": "DEN",
+   "ros_points": 83.96,
+   "ros_games": 12,
+   "playoff_points": 13.91,
+   "p10": 58.1,
+   "p90": 109.8,
+   "pos_rank": 46,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": "IR",
+   "lineup_points": 0.0,
+   "lineup_weeks": 0,
+   "lineup_kind": "mine",
+   "lineup_why": "On your bench in all 13 weeks left: he adds nothing to your lineup unless someone gets hurt.",
+   "lineup_rank": 16,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qbauucaxakkhtxihuvmr",
+   "bye_weeks": [
+    10
+   ],
+   "ros_points_per_game": 7.0,
+   "per_game": {
+    "carries": 9.06,
+    "rushing_yards": 36.49,
+    "targets": 1.96,
+    "receptions": 1.54,
+    "receiving_yards": 11.17,
+    "tds": 0.26
+   },
+   "why": {
+    "per": "game",
+    "points": 7.0,
+    "pieces": [
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 9.06,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "9.1 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 36.49,
+      "each": 0.1,
+      "points": 3.65,
+      "words": "36 rushing yards × 0.1 = +3.6"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.22,
+      "each": 6.0,
+      "points": 1.34,
+      "words": "0.22 rushing TDs × 6 = +1.3"
+     },
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 1.96,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "2.0 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.54,
+      "each": 0.5,
+      "points": 0.77,
+      "words": "1.5 catches × 0.5 = +0.8"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 11.17,
+      "each": 0.1,
+      "points": 1.12,
+      "words": "11.2 receiving yards × 0.1 = +1.1"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.03,
+      "each": 6.0,
+      "points": 0.18,
+      "words": "0.03 receiving TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.04,
+      "each": -2.0,
+      "points": -0.09,
+      "words": "0.04 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "9.1 carries → 36 rush yards → 2.0 targets → 1.5 catches → 11.2 yards → 0.26 TDs → 7.0 points a game × 12 games = 84",
+    "games": 12,
+    "total": 83.96
+   },
+   "market_points": null,
+   "week_points": 7.09,
+   "market_words": null
+  },
+  {
+   "gsis_id": "00-0039165",
+   "player_key": "00-0039165",
+   "player_name": "Zach Charbonnet",
+   "position": "RB",
+   "team": "SEA",
+   "ros_points": 71.71,
+   "ros_games": 12,
+   "playoff_points": 11.77,
+   "p10": 49.5,
+   "p90": 93.9,
+   "pos_rank": null,
+   "rostered_by_roster_id": 2,
+   "rostered_by_team": "MacZaddy",
+   "injury_status": "PUP",
+   "lineup_points": 0.0,
+   "lineup_weeks": 0,
+   "lineup_kind": "mine",
+   "lineup_why": "On your bench in all 13 weeks left: he adds nothing to your lineup unless someone gets hurt.",
+   "lineup_rank": 17,
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cuuyog0lpxfaj0y0huvp",
+   "bye_weeks": [
+    11
+   ],
+   "ros_points_per_game": 5.98,
+   "per_game": {
+    "carries": 8.57,
+    "rushing_yards": 30.21,
+    "targets": 1.73,
+    "receptions": 1.21,
+    "receiving_yards": 8.01,
+    "tds": 0.28
+   },
+   "why": {
+    "per": "game",
+    "points": 5.98,
+    "pieces": [
+     {
+      "stat": "carries",
+      "label": "carries",
+      "value": 8.57,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "8.6 carries (no points on their own)"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 30.21,
+      "each": 0.1,
+      "points": 3.02,
+      "words": "30 rushing yards × 0.1 = +3.0"
+     },
+     {
+      "stat": "rushing_tds",
+      "label": "rushing TDs",
+      "value": 0.24,
+      "each": 6.0,
+      "points": 1.43,
+      "words": "0.24 rushing TDs × 6 = +1.4"
+     },
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 1.73,
+      "each": 0.0,
+      "points": 0.0,
+      "words": "1.7 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 1.21,
+      "each": 0.5,
+      "points": 0.6,
+      "words": "1.2 catches × 0.5 = +0.6"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 8.01,
+      "each": 0.1,
+      "points": 0.8,
+      "words": "8.0 receiving yards × 0.1 = +0.8"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.04,
+      "each": 6.0,
+      "points": 0.25,
+      "words": "0.04 receiving TDs × 6 = +0.2"
+     },
+     {
+      "stat": "fumbles_lost_total",
+      "label": "fumbles lost",
+      "value": 0.06,
+      "each": -2.0,
+      "points": -0.11,
+      "words": "0.06 fumbles lost × -2 = -0.1"
+     }
+    ],
+    "sentence": "8.6 carries → 30 rush yards → 1.7 targets → 1.2 catches → 8.0 yards → 0.28 TDs → 6.0 points a game × 12 games = 72",
+    "games": 12,
+    "total": 71.71
+   },
+   "market_points": null,
+   "week_points": 6.05,
+   "market_words": null
+  }
+ ]
+}

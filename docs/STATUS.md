@@ -3826,3 +3826,60 @@ twice doesn't make any sense", "some of the trades it's suggesting are crazy" (J
   changes some suggestions; window variants; `trades_lists_*`; `trade_lists` dropped from the waivers fixtures; the
   evaluate fixtures re-saved, plus one "tick" variant per league, `ia2_packages.json`); `web/e2e/ia2/` 16 (8 × phone
   at 375 px and desktop); G4's trades test and the tab-row test, H1's buy-low tests follow the move.
+
+## Wave I-B (Iteration 17, part B)
+
+### IB-3 2026-10-03 — matchup meaning first, "Value to my lineup", the card's default content (branch `dev/IB3`, clone `league_lab_m1`)
+
+**Why.** The second review (#3, #6, #7): rank numbers led the Matchups screen and ran in opposite directions
+(defense #1 = gives up the most, corner #1 = hardest to throw on); a "shutdown" badge said more than a lean of the
+targets supports; the Season screen led with "who scores the most", so backup QBs ranked high with no word about
+their use to the roster; the My Week cards repeated names and numbers and did not say whether anything had to change.
+
+* **Matchups** (`research.py` IB-3 block: `defense_meaning`, `cb_meaning`; `Matchups.svelte`, `Heatmap … tones`,
+  `research.ts`): every defense-vs-position row gets `tone` (favorable / neutral / difficult: the 10 of 32 that give up
+  the most / the fewest, the card's reason-line cut), `tough_rank` (1 = gives up the fewest), `rank_words`; every
+  cornerback call gets `certainty` (likely / unclear / no call from `call_strength`), `tone` (the named corner's
+  quarter; an unclear call only when every named corner is ranked and agrees, else neutral; none when no ranked corner
+  is named), the corners with their rank in words ("the 18th-hardest of 74 starting corners to throw on"), `history`;
+  both answers `rank_note` ("#1 = the toughest for the offense"). The screen: a tone chip per starter (the word in the
+  state color, ▲ / ▼, the rank small and grey under it), the heatmap filled by tone with a three-tone legend, the
+  answer in words ("vs IND, who gives up the 2nd-most to RBs: favorable"), each cornerback card with the tone and its
+  certainty beside it and no shutdown badge. The mart columns and `app/lib/matchups`' `line` are unchanged (parity).
+* **Value to my lineup** (`ondemand.py` IB-3 block: `lineup_values`, `ros_lineup_view`; `GET /api/ros?view=lineup&team=
+  &who=all|mine|fa|others`; `Ros.svelte`, `ros.ts`): the ROS screen opens on it when a team is picked (a toggle: Value
+  to my lineup · Who scores the most; `?view=points` in the URL), with Everyone / Yours / Free agents / Other teams.
+  Definition (METRICS § "Value to my lineup"): the trade engine's ROS board, week by week; one of yours = what the
+  lineup loses without him (bench or the best free agent at his position fills in), anyone else = what he adds, nobody
+  dropped; one sentence per row. IA-3's pieces, "why this number" and the market line stay on both views.
+* **My Week card** (`MyWeek.svelte` card markup, `week.ts`): status chip first (Change needed / Already set / Close
+  call — `card.status ?? derived`: close on `is_coin_flip`'s rule, set / change from the lineup rows'
+  `is_current_starter` when the API sends it, no chip otherwise), the slot and the strength word (Clear / Lean / Coin
+  flip — `card.strength ?? derived`), the call in one line with both names, IA-1's reason (last names), "Compare these
+  players" (`/compare?a=&b=`), and the odds / ranges / numbers behind "Why?".
+
+**Numbers** (clone `league_lab_m1`, week 4). Scrubs roster 2, yours by value over weeks 4–16: Washington +38,
+McMillan +37, K. Williams +36, Jefferson +35, Hampton +33, Kelce +18, Mahomes +8.9 (a free agent QB is close), Tuten
++4.9, M. Wilson +2.0, then McLaughlin and the Chiefs 0 (a free kicker / defense projects as much: "Starts for you in
+12 of 13 weeks left, but the best free agent at K projects as much"), Ferguson 0, Shough 0 ("Your QB2 only plays in
+week 5, and the best free agent would score as much then"), Bryce Young 0 ("Your backup QB never starts for you
+behind Mahomes"). Everyone: Bijan Robinson +129 (on Run Bijan Run) first. Dynasty roster 12 (superflex): St. Brown
++93, Washington +56, Willis +29 … no bench QB called "QB2". Timings in process: Scrubs 3.1 s cold / 0.4 s warm, dynasty
+0.6 s, Test League (on demand) 6.7 s cold. Tones (Scrubs, 160 cells): 50 favorable / 61 neutral / 49 difficult.
+
+**Checks.** `api/tests/test_ib3.py` 19 passed (the cut points and their scaling, the words, the corner rules; on both
+house leagues one direction on both routes and a label beside every call; a backup QB below every starter for Scrubs 2
+and the Test League; the value machinery; 400 without a team; the saved cards carry change / set / close and the web's
+constants equal `cards.py`'s). API suite 288 passed (269 + 19); ruff clean; web lint / build clean; `npm run
+e2e:fixtures` 106 passed (100 + 6: `web/e2e/ib3/`, 3 × 375 / 1300). Shared specs follow the new defaults (the ROS tests tap "Who scores the most" or open
+`?view=points`; the Matchups answer and the cornerback line in the new words). Fixtures: `web/fixtures/save_ib3_fixtures.py`
+(matchups in place from the API's own functions; `ros-lineup_*` from the API in process; `status` / `strength` on the
+house leagues' saved cards as IB-0 computes them, `is_current_starter` on the Test League's rows so the web derives).
+
+**Decisions for the PO.** (1) A player of yours is valued against the bench *or* the best free agent at his position
+(a lone kicker is worth his edge over the waiver wire); the brief said "the margin over the next-best at his slot".
+(2) Anyone else's gain assumes a bench spot (nobody dropped), the trade engine's fill rule. (3) The lineup view is a
+`view=` on `/api/ros` (one screen, one route); it needs `team` (400 otherwise). (4) "Who scores the most" stays the
+view without a team. (5) Heatmap: the cell's fill is the tone, the number still printed (points a game), ▲ / ▼ in the
+cell. (6) The console and `cb_line` keep "#18 of 74, shutdown" (parity); the web composes its own corner lines.
+(7) `Heatmap.svelte` (no owner listed) got an additive `tones` prop.

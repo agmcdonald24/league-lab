@@ -1191,3 +1191,51 @@ export interface PlayerCard {
   leans_on?: LeansOn | null;
 }
 // ---- end IA-3
+
+// ---- IB-3 (Wave I-B): matchup meaning first (GET /api/matchups/defense, /api/matchups/cb): the tone, one rank
+// direction (1 = the toughest for the offense), the rank in words, a cornerback call's certainty
+export interface DefenseCell {
+  n_ranked?: number | null; // defenses ranked at the position
+  tough_rank?: number | null; // 1 = gives up the fewest (the toughest for the offense)
+  tough_rank_l4?: number | null;
+  tone?: "favorable" | "neutral" | "difficult" | null;
+  rank_words?: string | null; // "gives up the 2nd-most points to running backs"
+}
+export interface DefenseMatrix {
+  rank_note?: string;
+}
+export interface NamedCorner {
+  name: string | null;
+  slot: string | null; // LCB | RCB | NB
+  side: string; // "left corner"
+  rank: number | null; // 1 = the hardest to throw on
+  label: string | null; // shutdown | solid | target (the mart's)
+  words: string; // "the 17th-hardest of 74 starting corners to throw on" / "unranked: too few snaps to rank"
+  tone: "favorable" | "neutral" | "difficult" | null;
+}
+export interface CbMatchup {
+  tone?: "favorable" | "neutral" | "difficult" | null;
+  certainty?: "likely" | "unclear" | "no call" | null;
+  certainty_words?: string | null; // "likely: 47% of his targets go to that side, 29% to the other"
+  cover_rank_words?: string | null;
+  named_corners?: NamedCorner[];
+  history?: string | null; // "11 catches for 137 yards on 11 targets with Turner on the field (2023–25)."
+}
+// ---- end IB-3
+
+// ---- IB-3 (Wave I-B): "Value to my lineup" (GET /api/ros?view=lineup&team=&who=)
+export interface RosPlayer {
+  lineup_points?: number | null; // what he adds to (yours: what you lose without him in) your best lineup, the weeks left
+  lineup_weeks?: number | null; // the weeks he starts (or would) for you
+  lineup_kind?: "mine" | "fa" | "others" | null;
+  lineup_why?: string | null; // "Your QB2 only plays in week 7: 16 points over your next-best there."
+  lineup_rank?: number | null;
+}
+export interface RosList {
+  view?: "points" | "lineup";
+  team?: number;
+  who?: string;
+  window?: { first: number | null; last: number | null; weeks: number; span: string | null };
+  lineup_note?: string;
+}
+// ---- end IB-3
