@@ -3561,3 +3561,69 @@ Checks: ruff clean; API suite 224 passed (197 + 27) with `LEAGUE_LAB_ESPN_FIXTUR
 (the ESPN fixture feed has Jefferson Out, so the overlay moves the house lineups) 8 house-league parity tests fail
 exactly as on `main`, none touched by I0-C; root suite 834 passed, 2 skipped; web lint / build clean;
 `npm run e2e:fixtures` 66 passed (62 + 4). I0-B's e2e: label and mock follow the box (`?mfl_search=`).
+
+## Wave I-A (Iteration 17, part A)
+
+### IA-1 2026-10-03 — say it like a person would: My Week, Trends, Matchups, Compare (branch `dev/IA1`, clone `league_lab_i0a`)
+
+**Why.** Andrew's walk of the beta on his phone: "it's not very conversational", "names are squished on my iPhone",
+"put the pictures there", "I don't know if that's helpful week to week … reasons why". **What.**
+
+* **The card says why** (`app/lib/cards.py`, the console's words too): `reason_pieces` scores what the card can know
+  (+ = good for him this week): the injury tag and practice (`report_status`, `practice_status`), the matchup
+  (`opp_rank` vs his position, home / away: ≤ 10 "gives up the Nth-most", ≥ 23 "the Nth-fewest"), the betting line
+  (`implied_team_total` ≥ 26 / ≤ 18), his share of his team's carries (RB) or targets (WR / TE) game by game (a move of
+  10 points from one game to the next, or 6 over three games in a row), and the level of that share. `reason_line`
+  writes ONE sentence: the strongest piece for the starter and the strongest against the other player; with a
+  percentage under 55% (or under 1 point apart without one) "Too close to call: … the ranges say either. Go with X on
+  the matchup / the role / the betting line: …" (an injury first). `reason_facts` is the one extra read per set of
+  cards (`REASON_SQL`: `mart_player_week_features` for the decision week + `fct_player_game` shares this season, and
+  `dim_team`'s 32 nicknames), gsis-keyed, so the on-demand path (any Sleeper / MFL league) gets the same sentences.
+  The odds and the numbers ("… outscores … 51% of the time — a coin flip. 9.20 vs 9.19 projected: 0.01 apart.") moved
+  into the small print; "Too close to lose sleep over" went (the reason line says it). `/api/my-week` cards carry
+  `why` (= the second block). How to read this updated.
+* **My Week (web)**: `shortName()` in `names.svelte.ts`; `LineupTable` with a 32 px headshot on every row, short names
+  under 640 px, the flag and the margin under the name on a phone (the Flag column is gone: the name keeps the width);
+  `/api/my-week` lineup rows carry `headshot_url` and `team` (marked block in `myweek.py`, one `dim_player` read). The
+  header: "Your lineup" + "Starters, the bench, who can't play — tap a name for his card."; the expander under it is
+  "The bench and who can't play"; the Trends link "Who's above or below expectation ›".
+* **Trends**: "Below and above expectation" (title, answer, chips Below / Above, the cards, How to read this, the game
+  log's words, the detail); per row a strip under the name: targets and carries a game (last 3, the season), snaps
+  over the last 3, expected and actual points; the gap bar kept; the sentence "Getting the targets of a 20.0-point
+  player, scoring 39.4: 4 touchdowns in 2 games on 6 red-zone targets." (`research.trend_why` / `trend_cause`: red-zone
+  chances without a touchdown, touchdown passes, a quarterback change from `pn_qb_changed`, a share that moved 6+
+  points; no cause when none of those holds). One query (`WORK_SQL`) for the page's players.
+* **Matchups**: the cornerback section lists wide receivers only (the TE rows and the "tight ends draw linebackers"
+  sentence are gone, web side; the API and the console are unchanged), titled "The cornerbacks your receivers face"
+  (the section-title style), headshots on every receiver row (they were there via `PlayerRow`). **Compare**: "Choose a
+  player" on both pickers.
+
+**Before / after** (the API on `league_lab_i0a`, week 4; before = `main` at `63a351b`):
+
+| Card | Before (the headline under the call) | After (the reason line) |
+|---|---|---|
+| Scrubs 2, FLEX2 Wilson / Croskey-Merritt (a close call) | **Michael Wilson outscores Jacory Croskey-Merritt 51% of the time — a coin flip.** 9.20 vs 9.19 projected: 0.01 apart. | Too close to call: the projection has them level, the ranges say either. Go with Croskey-Merritt on the matchup: he is at home against the Colts, who give up the 2nd-most points to running backs. |
+| Scrubs 2, RB2 Hampton / Croskey-Merritt (a role drop) | **Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time — a lean.** 11.28 vs 9.19 projected: 2.09 apart. | Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game. |
+| Dynasty 12, TE Kittle / Likely (home, a tough defense) | **George Kittle projects 0.84 more on average; Isaiah Likely outscores him 53% of the time — a coin flip.** 10.36 vs 9.52 projected: 0.84 apart. Too close to lose sleep over — the projection says George Kittle, the ranges say either. | Too close to call: the projection says Kittle by 0.8, the ranges say either. Go with Likely on the matchup: Kittle is at home against the Broncos, who give up the 8th-fewest points to tight ends. |
+| Dynasty 12, Superflex Penix / Willis | **Michael Penix Jr. outscores Malik Willis 55% of the time — a lean.** | Vegas expects Willis's Dolphins to score only 16, and the projection has Penix 0.9 points ahead. |
+
+**Evidence.** `api/tests/test_ia1.py` 9 passed: `shortName` (13 cases, run under Node with type stripping), the reason
+on three cards built from the fixture weeks' numbers (home / away, a role drop with the three-in-a-row form, a close
+call) + an injury tiebreak with two Wilsons + no extra read, the API's cards on both house leagues (reason = second
+block, odds in the small print, headshot / team on every lineup row), the Trends sentences and the new row fields
+(targets a game checked against `fct_player_game`). `test_parity.py`: the reason line is pinned on both sides (page and
+API). Fixtures: `web/fixtures/save_ia1_fixtures.py` brings the saved My Week answers (three + I0-A's) and the three
+Trends answers to the new shapes in place (cards that the API answers today copied; others rebuilt from their own
+numbers). `web/e2e/ia1/fixtures.spec.ts` (375 × 812 and 1300 × 900): short names on the phone / whole on the desktop,
+a headshot per row, the header, every card's reason (body size > small print), Trends' words / strip / sentence,
+Matchups' title (bold) with no TE row, Compare's label. The shared spec's Trends and Matchups assertions follow the
+new words (4 → 3 cornerback cards: the TE is left out).
+
+**Decisions for the PO.** (1) On a coin flip the reason may name the *other* player as the tiebreak ("Go with
+Croskey-Merritt on the matchup") under "Start Wilson over Croskey-Merritt" — the brief's example; the headline stays
+the projection's call. (2) The expander under "Your lineup" is "The bench and who can't play" (two "Your lineup"
+titles would read as a repeat). (3) TEs are dropped from the cornerback section in the web only; `/api/matchups/cb`
+and the console keep them (parity). (4) The lineup's Flag column moved under the name at every width. (5)
+`mart_player_next_matchup` is not used: on the clone its `next_week` is 3 while the decision week is 4; the week's
+features (`mart_player_week_features`) carry home / away and the line for the decision week itself. (6) The console's
+"What's new" (`app/whats_new.md`) is not touched (only `cards.py` in `app/` is IA-1's).

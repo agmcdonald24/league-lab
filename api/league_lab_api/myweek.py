@@ -77,6 +77,9 @@ def _lineup_row(r: pd.Series) -> dict:
     return out
 
 
+HEADSHOT_SQL = "select gsis_id, headshot_url from analytics.dim_player where gsis_id = any(%s)"    # IA-1
+
+
 def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
     """(the four-column table: cards.lineup_frame, the full list: + bench and can't-play rows, as
     cards.lineup_table(full=True) builds them — that function draws the table itself, so its six lines are mirrored)."""
@@ -84,6 +87,11 @@ def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
         return [], []
     lu = cards.lineup_frame(rows)
     short = [_lineup_row(r) for _, r in lu.iterrows()]
+    # ---- IA-1: the headshot and the NFL team on every row (the player card unit's small size in the slot list)
+    ids = sorted({str(g) for g in rows["gsis_id"].dropna()})
+    heads = query(HEADSHOT_SQL, (ids,)) if ids else pd.DataFrame()
+    face = dict(zip(heads["gsis_id"], heads["headshot_url"], strict=False)) if not heads.empty else {}
+    # ---- end IA-1
     rest = rows[rows["role"] != "starter"].copy()
     if not rest.empty:
         rest["slot"] = rest.apply(lambda r: f"Bench {int(r['bench_rank'])}" if r["role"] == "bench" and pd.notna(r["bench_rank"])
@@ -91,6 +99,12 @@ def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
         rest["flag"] = rest.apply(lambda r: r["reason"] if r["role"] == "unplayable" else ("locked (game started)" if r["locked_now"]
                                   else cards._flag(r["report_status"])), axis=1)
     full = short + [_lineup_row(r) for _, r in rest.iterrows()]
+    # ---- IA-1
+    team_of = {str(r["gsis_id"]): _str(r.get("team")) for _, r in rows.iterrows() if _str(r.get("gsis_id"))}
+    for x in full:
+        x["headshot_url"] = _str(face.get(x["gsis_id"])) if x["gsis_id"] else None
+        x["team"] = team_of.get(x["gsis_id"]) if x["gsis_id"] else None
+    # ---- end IA-1
     return short, full
 
 
@@ -195,7 +209,10 @@ def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows
     `cards.decisions(rows)`, the text from `cards.decision_cards(..., rows=rows)` as drawn. Shared by the database
     path (`my_week`) and the on-demand path (`ondemand.my_week`), which builds the same frame without the marts."""
     dec = cards.decisions(rows, 3) if not rows.empty else pd.DataFrame()
-    _, calls = capture(cards.decision_cards, league_id, roster_id, week, season, rows=rows)
+    drawn_dec, calls = capture(cards.decision_cards, league_id, roster_id, week, season, rows=rows)
+    # ---- IA-1: the card's reason sentence, as its own field too (the same words as its second block)
+    whys = list(drawn_dec["why"]) if isinstance(drawn_dec, pd.DataFrame) and "why" in drawn_dec else []
+    # ---- end IA-1
     drawn: list[list[tuple]] = []
     loose: list[tuple] = []
     cur: list[tuple] | None = None
@@ -218,6 +235,7 @@ def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows
             "alt_gsis_id": _str(d["alt_gsis_id"]), "alt_name": _str(d["alt_name"]), "alt_value": _num(d["alt_value"]),
             "margin": _num(d["margin"]), "verdict": d["verdict"], "how": d["how"],
             "p_win": _num(d.get("p_win")),
+            "why": links(whys[i]) if i < len(whys) and whys[i] else None,     # ---- IA-1
             "blocks": blocks(drawn[i]) if i < len(drawn) else [],
         })
     return (notices[0] if notices else None), out

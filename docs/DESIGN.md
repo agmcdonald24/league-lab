@@ -114,6 +114,18 @@ trade sides.
 - Wave F pieces restyled on the tokens: **Section** (the player card's sections), **Metrics** (now StatTiles),
   **Expander**, **LineupTable**, **Md**, **Picker**, **Login**.
 
+- **Wave I-A (IA-1) patterns.** *Short names*: `shortName(name, position, others)` (`lib/names.svelte.ts`) — "J. Jefferson"
+  under 640 px, the first name grown only when two in the same list would read the same ("Jam." / "Jav. Williams"), a
+  defense and a first name in initials ("D.J.") never shortened; the whole name stays in the link's `aria-label`.
+  *LineupTable*: a 32 px headshot on every row (the table-row size: a 40 px `PlayerRow` headshot leaves no room for the
+  name at 375 px); the flag (OUT chip, locked, injury tag) and, in the full list, the margin go under the name on a phone,
+  so the name keeps the width. *Section title* (a section that is not a `Card`): `<h2 class="text-lg font-bold
+  leading-tight">` with an optional one-line `text-sm text-ink-3` caption under it (My Week's "Your lineup", Matchups'
+  "The cornerbacks your receivers face"). *Decision card*: the call (bold) · the reason (body size, `text-ink-2`,
+  `data-testid="card-why"`) · the small print (`text-sm text-ink-3`: the odds, the numbers, the ranges, the matchups).
+  *A list row's numbers* (Trends): one header row of `ll-label`s over the list and a 5-column strip under each
+  `PlayerRow`, indented to the name (`pl-16`), the season value under the last-3 value on a phone.
+
 ## Charts (one kit: `lib/chart.ts` + inline SVG)
 
 Hand-rolled (`linear`, `niceTicks`, `linePath`, `areaPath`; ~1 KB, no library, nothing to load before the first screen),
