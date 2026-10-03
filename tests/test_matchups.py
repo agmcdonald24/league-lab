@@ -345,8 +345,8 @@ def test_verdict_uses_the_adjusted_ranks_when_nothing_stands_out():
                rank_efficiency=14, rank_td_rate=20)
     b = player("Xavier Worthy", 10.6, 2.0, 21.0, gid="w", position="WR", rank_adjusted=24)
     assert comparison_verdict(a, b, {"gsis_id": "s", "alt_gsis_id": "w", "margin": 0.42}) == (
-        "The lineup says Sutton by 0.42; the matchup agrees: his defense ranks #9 vs WRs once the offenses it faced "
-        "are counted, Worthy's #24 vs WRs.")
+        "The lineup says Sutton by 0.42; the matchup agrees: 9th-most WR points allowed by his defense once the "
+        "offenses it faced are counted, 9th-fewest WR points allowed by Worthy's.")
 
 
 def test_history_with_no_catch_reads_zero_yards():

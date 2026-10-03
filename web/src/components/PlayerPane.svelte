@@ -163,8 +163,8 @@
             <!-- ---- N1 (Wave I-D): the news line under the availability lines -->
             {#if x.key === "availability"}<NewsLine card={data} testid="pane-news" />{/if}
             <!-- ---- end N1 -->
-            <!-- IF-4 → IF-3: the matchup context (IF-3's MatchupEvidence, its two sentences) belongs in the projection
-                 section here, the decision part of the pane -->
+            <!-- PO (I-F): the matchup evidence's two sentences ride in the projection section's blocks (lib/card.ts
+                 matchupBlocks, under the "Next:" line), so they are here without a component of their own -->
           </SectionBox>
         {/each}
         <!-- ---- IF-4: the ledger and the methodology behind expanders -->

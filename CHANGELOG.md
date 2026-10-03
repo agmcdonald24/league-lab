@@ -4,6 +4,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-03 — Wave I-F
 
+- **PO (integration).** `mart_waiver_moves` carries the drop's cost pieces (the rows fill at the next nightly; older
+  rows are re-ranked on read); the Compare verdict's adjusted ranks read in one direction in words ("9th-fewest WR
+  points allowed by Worthy's"); three registry rows (`drop_cost`, `trade_beyond_alternative`, `matchup_personnel`).
+
 - **U-1 (usage tracking).** The web app counts screen views — which screen, which league and team number, when —
   in `usage.events` on the hosted copy (a schema the nightly never drops; `scripts/hosted_usage.sql`, run by the sync
   after the restore): `POST /api/usage` (beacon, 204, behind the password, 1 a second per browser-day with bursts of 5,

@@ -402,10 +402,12 @@ def matchup_lean(a: dict, b: dict) -> tuple[str | None, str]:
     why = _reason(lean)
     if why:
         return str(lean.get("player_name")), f"his defense gives up {why}"
-    # no single thing stands out: say it with the opponent-adjusted ranks (the table's "Vs the offenses faced" row)
+    # no single thing stands out: say it with the opponent-adjusted ranks (the table's "Vs the offenses faced" row) —
+    # PO (I-F, the decision-quality review): one rank direction everywhere, in words (cards.rank_words), never a bare #
+    from .cards import rank_words
     return str(lean.get("player_name")), (
-        f"his defense ranks #{min(ra, rb)} vs {lean.get('position')}s once the offenses it faced are counted, "
-        f"{last_name(other.get('player_name'))}'s #{max(ra, rb)} vs {other.get('position')}s")
+        f"{rank_words(min(ra, rb), lean.get('position'))} by his defense once the offenses it faced are counted, "
+        f"{rank_words(max(ra, rb), other.get('position'))} by {last_name(other.get('player_name'))}'s")
 
 
 def comparison_verdict(a: dict, b: dict, decision: dict | None = None) -> str:

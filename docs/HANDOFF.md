@@ -133,11 +133,22 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   membership, the cut, their side, the window, hold / waivers; no gains from slot renumbering); the dictionary
   (`docs/WORDS.md` § "The dictionary"); the setup screen with the team picker first; contrast ≥ 5.3. PO: the verdict
   without acceptance guesses, the lineup table's rows agreeing with the call (`annotate_swaps`).
+* **Wave I-F (2026-10-03/04, Saturday night, the decision-quality review)**: the fourth outside review
+  (`docs/reviews/2026-10-03-decision-quality-review.md`) — a drop's cost in pieces (`waivers.drop_cost`, `choose_drops`,
+  14 columns on `ops.waiver_moves` and `mart_waiver_moves`; "Drop McPherson: Carlson replaces him at K"; stashes a
+  watchlist; "no claim is worth a roster spot"); the finder ranked by gain beyond the best alternative
+  (`decisions.best_alternative`, `beyond_alternative`, demotion, the value concepts named, `WeekStrip`); the matchup
+  evidence (`research.matchup_evidence`: history · what changed · implication · `forecast_treatment` "contextual
+  only"; the matchup tiebreak dropped when the corners changed); My Week's `review` lines ("No clear upgrade"),
+  "What changed", the pane trimmed, the language table, the I-E leftovers; **usage tracking** (`usage.events`,
+  `scripts/hosted_usage.sql` run by the sync, `POST /api/usage`, the console's Usage page — no new secret; the table
+  appears on Neon at the next nightly; `GET /api/usage/summary` says `ready`).
   **Next: Monday's flip of `LEAGUE_LAB_EV_PRICING`** (STATUS § "Wave I-D" PO section: the nightly's env + a manual
   run first, then Render's env; week 5 is the record's first EV-priced week; M3's `pricing` column proposal for the
-  record goes with it). Then the review's P2 leftovers (STATUS § "Wave I-E" "Not done"); usage tracking; v3.1 (the
-  ranges' target with the long-TD bonus, the fringe level, cold starts); Wave J (accounts, Stripe, ESPN) on Sleeper's
-  licence.
+  record goes with it). Then `ops.events` (IF-3's design in STATUS § "Wave I-F"), the finder's raw-total filter on
+  season value, team units' season value, the validation harness the review asks for (frozen as-of inputs, decision
+  regret, news-affected cases), v3.1 (the ranges' target with the long-TD bonus, the fringe level, cold starts); Wave J
+  (accounts, Stripe, ESPN) on Sleeper's licence.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a

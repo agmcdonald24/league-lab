@@ -4727,6 +4727,81 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
 
 ## Wave I-F (Iteration 17, part F)
 
+### PO merge — Wave I-F, 2026-10-03 (Saturday night, 22:00–00:10 ET)
+
+* **Why**: the fourth outside review (`docs/reviews/2026-10-03-decision-quality-review.md`; plan § 17 "Fifth") —
+  decision quality on `f6315ae`: four engine-level findings (the free drop, the trade that loses to a waiver claim,
+  the matchup rank used as a tiebreaker while the corners changed, the hidden coin flip) and a table of language
+  fixes. Andrew: "next wave plus see this too" — the planned usage tracking rode along.
+* **Delivered** (five Opus devs in parallel, 55–65 min each): **IF-1** a drop's cost in pieces (`waivers.drop_cost`:
+  lineup loss over the horizon; depth lost = his margin over the best free agent at the position × the position's
+  absence rate; starts after the horizon above a replacement; season points above the best free agent
+  (`trades.price_by_player`'s rule); a role scenario's upside — the **max**, never the sum), the best drop per claim
+  the cheapest with the incumbent first on a tie, net gain = lineup gain − (cost − lineup loss), a claim worthwhile at
+  net ≥ 1 this week or ≥ 3 over the horizon, "no claim is worth a roster spot this week", stashes a watchlist
+  (`watch`, no drop, what would change it); one `choose_drops` for the nightly writer, the on-demand sweep and the
+  API reading an older mart (14 cost columns on `ops.waiver_moves`). GoodGameBuddy: "Claim Carlson, drop Marvin
+  Harrison Jr." → "Drop McPherson: Carlson replaces him at K. Dropping Harrison Jr. instead gives the same gain: he
+  projects 79 season points, 43 fewer than the best free-agent WR …"; the roster's claims drop {McPherson, Cousins,
+  Harrison} instead of {Harrison}; no gain number moved. **IF-2** the ladder per objective — standing pat, the best
+  legal waiver move (IF-1's `best_waiver_move`, else `trades.best_fill`), the trade — and the finder ranked by **gain
+  beyond the best alternative** ("+14.6 over weeks 4–7: 1.8 more than your best waiver move (the Atlanta Falcons
+  defense claim gives +12.8 for an open spot)"; a trade below it is demoted and keeps a reason only when the numbers
+  give one), the headline = the first card, the ordering said in one line, the value concepts named and kept apart
+  (projected points · starter points · backup coverage · season value above replacement = the fairness test, package-
+  size aware · rest-of-season projected points "all positions added up — not a fairness test"), `WeekStrip.svelte`
+  (both sides' weeks). **IF-3** `research.matchup_evidence` — history (the rank in words with games, period, scoring,
+  "not adjusted"), what changed (the depth-chart corners vs the season's coverage-snap regulars; a missing regular's
+  status from the overlay with source and date; the replacements' rank or "unranked"), the implication, and an
+  honest `forecast_treatment` ("contextual only; not in the forecast" — a test parses `projections.BASE_FEATURES` and
+  fails if an opponent-personnel input appears); on Compare, the card / pane (under "Next:"), Matchups' corner rows;
+  the coin flip's matchup tiebreak is gone when the corners changed ("the matchup rank does not settle it this week:
+  Carolina's starting corners changed (Jackson and Horn are on injured reserve)"); the `ops.events` design in the
+  hand-back. **IF-4** `review` lines on My Week ("Tuten or Williams at FLEX: a coin flip, 0.3 points apart; your
+  lineup has Williams — no clear upgrade. Compare ›"; `set_line` "No clear upgrade elsewhere."), "What changed" (the
+  overlay's moves + the starters' news of the last 24 h, "Nothing has changed since the morning build."), the pane
+  trimmed to the decision parts with the ledger / schedule / game log behind expanders, every table row (bench-only
+  expander; "Margin" → "4.63 over Lloyd" / "no eligible reserve"; one rank direction in words — "12th-fewest WR
+  points allowed"; Compare bolds points rows only; the duplicated three-game sections collapsed; "Typical range (the
+  middle 50%)" everywhere incl. the console; metric-tile definitions; "not enough games to say" / "role steady over
+  N games"; the observed gap instead of "expect him to pick up"; the player-specific news item first, "League news"
+  second), the I-E leftovers (the Schedule table, "Updated 7 d ago ›" with the exact time, the dictionary on
+  Receivers / Trends / Compare / About / Waivers). **U-1** usage tracking: `usage.events` (at · screen · league key ·
+  team number · platform · version · a daily random session id; database checks refuse anything else; no name,
+  username or IP), `scripts/hosted_usage.sql` (idempotent, run by the sync after the restore; the `usage` schema is
+  never dropped), the app role keeps `default_transaction_read_only` — the insert runs `BEGIN; SET TRANSACTION READ
+  WRITE; INSERT; COMMIT` on its own connection from a queue + one writer thread (a failure never fails a page),
+  `POST /api/usage` (204, cookie `ll_usage` to New York midnight, a 1/s bucket with bursts of 5, `LEAGUE_LAB_USAGE=off`),
+  `GET /api/usage/summary`, `lib/usage.ts` (`sendBeacon`), About's notice, the console's Usage page.
+* **PO**: merges U1 → IF1 → IF3 → IF2 → IF4 (`api.ts` four blocks kept; `player.py`: IF-3's evidence and IF-4's
+  schedule on the same card). Then: (1) `mart_waiver_moves` carries IF-1's 14 cost columns (pre_hook `alter table …
+  add column if not exists`, the select) — rebuilt here; the rows fill at the next nightly (`choose_drops` in the
+  writer), the API re-ranks older rows on read (the parity test's "built before the cost" check now also covers an
+  empty column); (2) the Compare verdict's adjusted ranks in words with one direction ("9th-most WR points allowed by
+  his defense once the offenses it faced are counted, 9th-fewest … by Worthy's"); (3) the pane's matchup sentences
+  ride in the projection section's blocks (IF-3's `matchupBlocks` under "Next:"; IF-4's placeholder noted); (4)
+  three registry rows (`drop_cost`, `trade_beyond_alternative`, `matchup_personnel`). Checks: **root 995** (987
+  before), **API 462** (406), **web lint / typecheck / build clean, 192 fixture e2e** (172), ruff clean; the hosted
+  closure gains `mart_matchup_cb_context` (the next nightly carries it) and nothing heavy. QA walk (the merged API on
+  the main database and the fixtures): GoodGameBuddy's Waivers = "Stroud instead of Cousins … Drop Cousins" and
+  "Carlson instead of McPherson … Drop McPherson" with Harrison's season value named; team 8's finder = the headline
+  is card 1 with "+1.8 beyond the Atlanta Falcons defense claim", cards 2–3 demoted; the Williams / Tuten compare
+  carries the evidence object; GoodGameBuddy's My Week (IF-4's recording): the "No clear upgrade" review card, "No
+  clear upgrade elsewhere.", "Open Sleeper to edit your lineup", "What changed", the margin words on every starter.
+* **Decisions kept**: IF-1's absence rates are documented constants, not fitted; the 1 / 3-point worthwhile bar also
+  hides small no-drop claims; IF-2 leaves the finder's own raw-total sanity filter (changing it changes which trades
+  are suggested — next time, with the season-value test); team units have no season value on demand (named "Not
+  counted"); IF-3's "one missing regular = less representative" with no threshold; receivers only; U-1's grant is
+  INSERT + SELECT (the summary reads), the row keeps the team number (a league + team is a known manager, no name is
+  stored — About says "which league and team"), the bucket not a strict 1/s.
+* **Open**: the Carlson / McPherson case on the live server shows the new drop at the next nightly for the house path
+  (the API re-ranks the old rows meanwhile: Harrison's season value is 0 on the clone, so McPherson wins on the
+  tie-break); the nightly stash writer's drop rule (the API decides claim / watch on read); the raw-total finder
+  filter; team units' season value; the separate MFL roster-freshness line; a bench player projected 0.00 shows
+  "0.00" (Jacobs on GoodGameBuddy's bench — "unknown is not zero" wants a dash: next pass); `ops.events` (designed);
+  usage retention; the console Home's page guide lacks the Usage page.
+
+
 ### U-1 2026-10-03 — usage tracking (plan § 17 E; branch `dev/U1`, clone `league_lab_m1`)
 
 * **The store.** `scripts/hosted_usage.sql` (new, plain SQL, idempotent): schema `usage`, table `usage.events (at

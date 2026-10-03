@@ -129,8 +129,9 @@ def test_waivers_on_demand_reproduce_every_mart_move(sql, league, team):
     mart = pd.DataFrame(sql("select * from analytics.mart_waiver_moves where league_id = %s and roster_id = %s", (league, team)))
     od, info = decisions._moves_on_demand(league, team, as_of=_as_of(sql, league))
     assert info["week"] == int(mart["week"].iloc[0]) and len(od) == len(mart)
-    if "drop_cost" not in mart:
-        # IF-1: a mart built before the drop's cost: its ranks are B3's (fewest points); with the drop's value pieces
+    if "drop_cost" not in mart or mart["drop_cost"].isna().all():
+        # IF-1: a mart built before the drop's cost (no column, or the column empty: the mart view carries the columns
+        # since the PO added them, the rows carry values from the next nightly): its ranks are B3's (fewest points); with the drop's value pieces
         # (per player, the same inputs on both paths) `waivers.choose_drops` must give the on-demand ranks
         from league_lab import waivers as W
         cols = ["drop_depth_lost", "drop_future_starts", "drop_future_start_weeks", "drop_season_value", "drop_upside"]
