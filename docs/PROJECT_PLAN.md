@@ -505,6 +505,11 @@ Andrew's two leagues with numbers (IC-3's audit). Slots become eligibility sets 
 test fixture end to end. Four developers: IC-1 (the spec, compilers, pricing, the check), IC-2 (slots and units),
 IC-3 (70587 fixtures, the card's read-backs, the audit of Scrubs and the dynasty, e2e), M2 (the distributions:
 TD-distance shares and threshold probabilities, and whether expected-value pricing helps the backtest).
+**I-C delivered 2026-10-03 15:30 ET** (STATUS § "Wave I-C": 968 root / 353 API / 134 e2e). The audit's answer: both
+house leagues score exactly (285 / 285 and 580 / 580 player-weeks match Sleeper to the tenth); the dynasty's gap is
+the projections' all-or-nothing bonuses, which expected-value pricing closes — switched on for MFL leagues now, for
+Sleeper leagues once the nightly prices with the same engine (v3.1, next). Dad's league: 8 slots, the units priced,
+the check 155 / 156, double headers named.
 
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 

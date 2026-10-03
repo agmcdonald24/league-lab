@@ -3,6 +3,21 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 3 · Your league's scoring, read back to you — and checked
+
+- Pick a league and the card now tells you what League Lab read: your lineup in your league's own words ("TMQB · 2
+  RB · 3 WR/TE · TMPK · DEF") and your scoring in one line ("TDs by distance 6 / 9 / 12 · 1 pt per 10 rushing /
+  receiving yards · +10 at 100 rushing · INT −3 · FG by distance 3 / 5 / 10 / 15"), plus what the projections
+  cannot price yet. Under it, **the scoring check**: for the last played week, we count every rostered player your
+  league's way and compare with the points your league actually gave him — "we match your league's points for 155
+  of 156 players within 1 point", and the misses named with the rule behind them. In League of Scrubs and the
+  dynasty it is 100%.
+
+- MyFantasyLeague leagues with their own kind of scoring and lineup now work: touchdowns paid by distance, "1 point
+  per 10 yards", bonuses at any threshold, field goals by distance, team quarterback and team kicker spots, combined
+  spots like WR/TE, and weeks where you play two opponents. A team QB or team K is a player here, priced from that
+  team's starter.
+
 ## Oct 2 · Rest of season, and our record
 
 - A new page, **Our record**, keeps score on us: every week we save Sleeper's own projections before kickoff,

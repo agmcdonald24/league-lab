@@ -4092,6 +4092,78 @@ nothing showed the waiver alternative before suggesting you give up a useful pla
 
 ## Wave I-C (Iteration 17, part C)
 
+### PO merge — Wave I-C, 2026-10-03 (Saturday, 13:30–15:30 ET)
+
+* **Why**: Andrew's dad's league (MFL 70587, "Make Football Great Again") pulled in but the tool "basically doesn't
+  work for him" — `TMQB / RB / RB / WR+TE ×3 / TMPK / Def` read as "2 RB, DEF", a 15-point lineup, every WR "Can't
+  play", and its scoring (TDs by distance 6 / 9 / 12, `1/10` yards, +10 bonuses at the league's own thresholds, FG
+  3 / 5 / 10 / 15, team units) compiled to an **empty** `scoring_settings`. He also suspected the scoring of his own
+  two leagues. Plan § 17 "Third: dad's league" has the diagnosis.
+* **Delivered** (four Opus devs in parallel, 40–60 min each): **IC-1** `scoring.ScoringSpec` — the rules as data per
+  position (rates, flat bands, TDs and kicks by distance, MFL's whole-unit steps, premiums; `from_sleeper`,
+  `from_mfl`, `rules_for` for the units, JSON round trip, `readback()`), exact pricing of actual lines
+  (`price_detail`), expected-value pricing of projected lines (`expected_frame`: bands at their probability, distance
+  bands at the measured share of TDs that long, `1/10` at the expected whole tens), the scoring check
+  (`scoring_audit.check` → `GET /api/league/scoring-check?league=&week=`: our points against the platform's own for
+  every rostered player, misses named with the rule, the SQL macro compared on house leagues). **IC-2** slots as
+  eligibility sets (`lineup.Slot(label, type, elig, order)`: Sleeper names, `A+B[+C]`, `TMQB` / `TMPK` / `TMDEF`),
+  team units as players (`mfl:0656` "Cincinnati Bengals QB", priced from the team's starting quarterback's line /
+  the team's kicker; unrostered units on Waivers), MFL starters seated in the slot that admits them, "No slot for a
+  K in this league" apart from "Can't play". **IC-3** the 70587 fixtures (`api/tests/fixtures/mfl/70587/`), the
+  Leagues card's read-backs (`ondemand.league_card`: lineup, scoring, not priced, approximated, the check) on the MFL
+  card and every Sleeper row, the audit of Scrubs and the dynasty (below), the e2e. **M2** `scoring_ev`: threshold
+  curves (gamma for rushing / receiving yards and receptions, normal for passing yards, fitted on 39,622 out-of-sample
+  player-weeks 2019–2025), TD-distance shares measured on every TD play (`fct_play`: receiving ≥10 0.548 / ≥40 0.119,
+  rushing 0.259 / 0.062, passing 0.547 / 0.120; defensive and return families; FG bands 0.567 / 0.271 / 0.157 /
+  0.005), `expected_floor_units` for "1 per whole 10", the backtest (dynasty: top-6 weekly bias RB +1.34 → +0.31, WR
+  +1.65 → +0.70; season-total MAE better at every position; weekly MAE +0.01–0.03), seed `scoring_distributions.csv`.
+* **The audit of Andrew's two leagues (IC-3, the answer to "some issue between scoring and settings")**: our points
+  equal Sleeper's to the tenth for **285 / 285** Scrubs and **580 / 580** dynasty player-weeks in 2026 weeks 1–2, and
+  for 14,624 of 14,629 over 2024–2025 (the five: a long-TD bonus on a lateral credited to the first receiver, a
+  special-teams fumble recovery Sleeper pays and we do not price, a 5-yard stat correction); the SQL macro agrees on
+  every row. **The scoring is right. What is off is the dynasty's projections**: its +3 / +6 yardage bonuses and the
+  +2 long-TD bonus are priced all-or-nothing / at 0 on a projected line — starters earned 115 bonus points in weeks
+  1–2 (~4.8 a lineup a week), the projections priced almost none, concentrated on the stars (M1's +1.19 top-6 RB
+  bias is this). Expected-value pricing closes it (M2) and stays **off for Sleeper leagues** (`LEAGUE_LAB_EV_PRICING`)
+  until the nightly prices with the same engine, so the player page, Trends and the record (the nightly's
+  `proj_points`) never disagree with My Week (the on-demand `price_lines`) — the next modelling task (v3.1). MFL
+  leagues always price in expectation: they have no nightly to agree with.
+* **PO**: merges IC3 → M2 → IC1 → IC2 (doc conflicts kept both; no code conflicts). Then: (1) **the 10-yard TD cut
+  in dbt** — `int_player_game_pbp` → `fct_player_game` / `fct_player_game_league` / `league_player_week` carry
+  `pass/rush/rec_tds_10p` next to `_40p` / `_50p` (rebuilt here: 3,084 / 5,632 receiving TDs ≥ 10 yards 2019–2025 =
+  M2's 0.548), and IC-1's `fct_play` lengths query is gone — `hosted_relations.py` had put `analytics.fct_play`
+  (233 MB) in the API's closure, which would have blown the hosted copy's 480 MB budget; the check reads the counts
+  (70587 week 1: 161 / 163, week 2: 155 / 156 within a point; the misses are defensive return touchdowns, whose
+  length no team line carries). A copy built before this change approximates the < 40 split and says so. (2) **The
+  read-back names the stat and the position of every rule** (IC-3 found "10 yards a point" for Scrubs' 1-per-25
+  passing): 70587 → "TDs by distance 6 / 9 / 12 (0–9 / 10–39 / 40+ yards) · 1 pt per 10 rushing / receiving yards ·
+  1 pt per 20 passing yards · +10 at 75 rushing (QB/WR/TE) / receiving (TE) · +10 at 100 rushing (RB) / receiving
+  (RB/WR) · +10 at 250 passing · INT −3 · fumble lost −3 · FG by distance 3 / 5 / 10 / 15 · DEF points allowed 0 →
+  10, 1–3 → 8"; the spec says return touchdowns and 2-point conversions are not projected. (3) **Double headers**:
+  70587 plays twice in weeks 2, 4, 6–9, 11 and 13 — `anyleague.opponent` carries the second opponent in `also`, the
+  on-demand My Week runs both through the overlay, the header reads "Week 4 vs **Big Mac Attack** and **Klaby Crew**
+  (a double header) — they project 115 and 114 — you project 83". (4) The old I0-B `mfl_scoring_note` (the "Sleeper
+  bonus … extended" sentences, now wrong) reads the spec's words. (5) M2's seed wired (`dbt/seeds/schema.yml`,
+  `metric_registry` row `expected_value_pricing`). (6) IC-1's test-only id table folded into the shared
+  `fixtures/ff/db_playerids.csv`. (7) `api/tests/test_ic_po.py` (5). Checks: **root 968 passed** (848 before), **API
+  353** (316), **web lint / typecheck / build clean, 134 fixture e2e** (130), ruff clean; the 70587 e2e answers
+  re-recorded from the merged API (`IC3_RECORD`). QA walk (fixtures, overlay on): the card's read-backs and "Week 2
+  check: we match your league's points for 155 of 156 players within 1 point"; Knight Train's week = 8 slots in the
+  league's words, team QB 29.00 (Burrow's line in dad's scoring: 250 yards → 12 whole twenties, 1.7 TDs at the
+  measured 8.0 a TD, −2.1 INT, +5 for the 250-yard bonus at even odds), team K 10.02, RB2 empty with the reason (Hall
+  and Price Out in the ESPN fixture), the double-header line, a "Change needed · team QB" card.
+* **Decisions kept**: TMQB = the starting quarterback's line, not the team's sum (IC-2 measured the sum over-counts
+  KC 29.2 vs Mahomes 22.8); MFL's `1/10` priced at the expected whole tens (M2: linear was 0.3–0.5 a stat a game
+  high); flat bonuses by probability for MFL specs always, Sleeper specs behind the flag (above); the spec travels
+  in the league dict as `scoring_spec` next to the flat `scoring_settings` every old reader keeps; `scoring_report`
+  gains `priced` / `approximated` / `unpriced`.
+* **Open**: the nightly on the spec (then EV pricing on for Sleeper leagues, the harness re-run — v3.1); the
+  rest-of-season table has no unit rows and the Team Hub's slot strength names a unit without its team (IC-2); a
+  defensive touchdown's distance is priced at its expected value on actual lines; QB passing-yard bonuses project
+  20–30% high in 2023–2025 (the QB line itself, M1's list); the hosted copy carries the `*_tds_10p` columns from the
+  next nightly (until then 70587's check says "approximated" for the 10–39 band).
+
+
 ### IC-3 2026-10-03 — dad's league fixtures, the Leagues card tells the truth, the audit of Andrew's two leagues
 
 * **70587 fixtures** (`api/tests/fixtures/mfl/70587/`): MFL's own answers, byte for byte, fetched read-only through the

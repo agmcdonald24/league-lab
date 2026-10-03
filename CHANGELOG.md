@@ -4,6 +4,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-03 — Wave I-C
 
+- **PO (integration).** `fct_player_game` and its league twins carry the 10-yard touchdown cut (`*_tds_10p`), so
+  MFL's touchdowns by distance are exact on actual lines without play-by-play on the server; the card's scoring
+  read-back names the stat and the position of every rule ("1 pt per 20 passing yards · +10 at 100 rushing (RB) /
+  receiving (RB/WR)"); a double-header week names both opponents and both totals on My Week; the MFL note reads the
+  spec's words; M2's seed is in dbt. Expected-value pricing is on for MFL leagues and waits, for Sleeper leagues, on
+  the nightly pricing with the same engine (v3.1).
+
 - **IC-3: the Leagues card tells the truth.** After a pick, an MFL league's card and every Sleeper league row read
   back the lineup and the scoring League Lab uses, in the league's own words, say what is not priced, and show the
   scoring check; dad's league 70587 is a fixture end to end; the audit of Scrubs and the dynasty: the scoring
