@@ -184,4 +184,6 @@
       <Expander title="How to read the record" testid="howto"><Md text={RECORD_HOWTO(view.leagueName)} block class="text-base leading-snug" /></Expander>
     {/if}
   </section>
+  <!-- ---- U-1: the usage notice (lib/usage.ts; docs/HOSTING.md § "Usage") -->
+  <p class="mt-6 border-t border-line pt-3 text-sm text-ink-3" data-testid="usage-notice">League Lab counts screen views — which screen, which league and team, when — and nothing about you.</p>
 </main>

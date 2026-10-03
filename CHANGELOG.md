@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-F
+
+- **U-1 (usage tracking).** The web app counts screen views — which screen, which league and team number, when —
+  in `usage.events` on the hosted copy (a schema the nightly never drops; `scripts/hosted_usage.sql`, run by the sync
+  after the restore): `POST /api/usage` (beacon, 204, behind the password, 1 a second per browser-day with bursts of 5,
+  `LEAGUE_LAB_USAGE=off` stops it), one explicit read-write transaction on its own connection while the app role stays
+  read-only; no names, usernames or IP addresses. Read it on the console's Usage page or `GET /api/usage/summary`;
+  About says so in one line.
+
 ## 2026-10-03 — Wave I-E
 
 - **PO (integration).** The trade verdict says what each starting lineup gains and what the season value says —

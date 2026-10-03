@@ -555,3 +555,17 @@ standings for all 12 teams. The Matchups screen names NFL opponents only (no fan
 **Waivers with an empty starting slot**: the claim that fills it this week leads Help now and the three strongest
 (70587 week 4, the ESPN fixture overlay: Hall and Price Out → "Claim Jacory Croskey-Merritt (RB) … Fills your empty RB2
 this week."); a unit slot reads "team K" in the claim's reason ("Starts at team K this week over Chargers K (10.0).").
+
+## Usage (Wave I-F, U-1, 2026-10-03)
+
+Which screens get used, for any league the app serves — a house league, any Sleeper league, an MFL league alike: one
+row per screen view in `usage.events` on the hosted copy (`docs/HOSTING.md` § "Usage": the row, the write path, the
+rollout). The league is its key (`1389709692405551104`, `mfl:70587`) and the team its number in that league; the
+platform comes from the key. No name, username or IP address is kept, so a league the database has never seen adds
+nothing about its managers — only that its key was opened, on which screens, and how many browser-days.
+
+Per-league questions it answers on the console's Usage page or `GET /api/usage/summary`: how many leagues were opened
+each day (`leagues`) and which screens a day's views went to; the console also says how many of the window's leagues
+were MyFantasyLeague ones. Storage: 168 bytes a view with its index (measured) — at 10,000 leagues × 20 views a week
+≈ 34 MB a week, which is when the table needs a retention rule (a monthly roll-up into counts per screen per day,
+then delete the rows; not built — at the beta's size it is kilobytes).

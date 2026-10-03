@@ -25,6 +25,10 @@ What it does, in order (every step is safe to repeat):
 
 Then `make app` and open http://127.0.0.1:8501.
 
+Optional (Wave I-F, U-1): the screen-view counter's table, so the local API counts views and the console's Usage page
+has rows — `psql "$(uv run python -c 'from league_lab.config import get_settings; print(get_settings().pipeline_dsn())')" -v ON_ERROR_STOP=1 -f scripts/hosted_usage.sql`
+(idempotent; the hosted copy gets it from the nightly's sync — `docs/HOSTING.md` § "Usage").
+
 Flags: `--full` ingests every season from `LEAGUE_LAB_SEASONS_START` (2016) instead of the pilot;
 `--skip-ingest` stops after step 6.
 
