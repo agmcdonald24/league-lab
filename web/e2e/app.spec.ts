@@ -137,10 +137,13 @@ test("the league and team pick is remembered on this phone; picking does not add
 test("search on the player card", async ({ page, isMobile }) => {
   await page.goto(`/player/00-0035358?league=${DYNASTY}&team=12`);
   await expect(page.getByTestId("player-name")).toBeVisible();
+  // IB-1: the search field is the top bar's (a magnifier under 1280 px); a hit opens the research pane
+  if (!(await page.getByTestId("search").isVisible())) await tapOrClick(page, page.getByTestId("search-open"), isMobile);
   await page.getByTestId("search").fill("st brown");
   const hit = page.getByTestId("search-results").locator("a").first();
   await expect(hit).toContainText("Amon-Ra St. Brown");
   await tapOrClick(page, hit, isMobile);
+  await tapOrClick(page, page.getByTestId("pane-full"), isMobile);
   await expect(page.getByTestId("player-name")).toHaveText("Amon-Ra St. Brown");
   await expect(page).toHaveURL(new RegExp(`/player/00-0036963\\?league=${DYNASTY}&team=12$`));
 });

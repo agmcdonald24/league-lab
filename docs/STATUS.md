@@ -3632,6 +3632,41 @@ top 8 rest of season. Diagnose first, calibrate only if the numbers call for it 
   report with every table is the hand-back text. The Sleeper comparison uses a post-game snapshot (Sleeper's
   `updated_at` is just after each week's last game), not the pre-kickoff record.
 
+## Wave I-B (Iteration 17, part B)
+
+### IB-1 2026-10-03 — navigation by task, and the research pane everywhere (branch `dev/IB1`)
+
+- **Four tabs** (`TopBar.svelte` `SECTIONS`): **My Team** (This week `/` · Season `/ros` · Team `/team` · League
+  `/league`) · **Waivers** (`/waivers`) · **Trades** (Partners `/trades` · Calculator `/trade-calc`) · **Players**
+  (Trends · Matchups · Receivers · Compare · Players). Testids `tab-myteam|waivers|trades|players`; sub-tabs keep
+  `sub-<route>` (new: `sub-week`, `sub-ros`). Every path kept (bookmarks, `/record`). Phone: the four in the bottom bar,
+  the second row under the top bar.
+- **Top bar**: the **search field** (always open from 1280 px; a magnifier under that, the field then covers the row,
+  with Cancel) → a hit opens the pane; the **overflow menu** (⋯: About the numbers, Other leagues). About also at the
+  foot of every My Team screen (`foot-about`). The wordmark shows from 640 px (the picker needs the width at 375).
+- **The player's page keeps the frame** (`App.svelte` renders it under the top bar; its own header + search are gone,
+  "‹ Back" / "‹ My week" stays); the tab you came from stays lit.
+- **The research pane** (`components/PlayerPane.svelte` + `lib/pane.svelte.ts`, contract in
+  `scratchpad/waveIB/PANE_API.md`): `openPane(gsis, {from, context})`, `closePane()`, `paneLink(gsis, opts)` (an
+  attachment for a name link); `PlayerRow` / `PlayerCard` / `LineupTable` take a `pane` prop. From 900 px a sticky
+  25rem panel beside the screen; on a phone a bottom sheet (Back / × / the dim / Escape close it). Contents: the
+  player card unit, the actions, the card's sections (`lib/card.ts`, shared with the full page), his game log.
+  Actions: `lineup` → "Compare with my starter" (bench → the weakest starter he could replace) / "Compare with my best
+  bench option" (a starter) → `/compare?a=&b=`; `waiver` → "Evaluate add / drop" → `/waivers?add=&drop=` (IB-2 reads
+  `add`); `trade` → "Add to trade" → `/trade-calc` ticked; always "Full page". In the URL as `?pane=&from=`; the first
+  pane is a history entry (Back closes it), a swap replaces it, "Full page" replaces it (Back lands on the screen).
+- **Wired**: My Week's lineup and full-lineup names, Players' list names, the search field, Trends' rows on a phone
+  (the sheet instead of the page; desktop keeps Trends' own detail beside the list).
+- **Fix found on the way**: `html, body { overflow-x: hidden }` made `<body>` a scroll box, so no `sticky` element
+  stuck (ListDetail's detail never did either) → `overflow-x: clip` (hidden kept as the fallback).
+- **E2e renames (mechanical)**: `tab-ros` → `sub-ros`; `tab-about` → ⋯ then `menu-about`; `tab-research` →
+  `tab-players`; `tab-decisions` → `tab-waivers` / `tab-trades` / `tab-myteam`; a lineup name → the pane, then
+  `pane-full`; `app.spec.ts`'s search → the top bar's field then `pane-full`; `measure.spec.ts` taps the cards' names
+  only (the lineup's open the pane). The top bar's placeholder is "Search players" (IA-1 keeps "Find a player" off
+  Compare).
+- **Checks**: web lint (eslint + svelte-check 151 files, 0 / 0) and build clean; `npm run e2e:fixtures` 110 / 110
+  (100 existing + 10 new in `web/e2e/ib1/`, 375 and 1300 px). No API or Python change.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

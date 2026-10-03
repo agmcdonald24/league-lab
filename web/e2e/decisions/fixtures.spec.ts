@@ -271,19 +271,20 @@ for (const scheme of SCHEMES) {
   });
 }
 
-test("the Decisions tab reaches the four screens (one tap, same tab)", async ({ browser, isMobile }, info) => {
+test("the Waivers, Trades and My Team tabs reach the four decision screens (same tab)", async ({ browser, isMobile }, info) => {
   const { context, page } = await open(browser, info, "dark");
   await page.goto(`/?league=${DYNASTY}&team=12`);
   const go = async (testid: string) => (isMobile ? page.getByTestId(testid).first().tap() : page.getByTestId(testid).first().click());
-  await go("tab-decisions");
+  await go("tab-waivers"); // IB-1: the four tabs by task (My Team · Waivers · Trades · Players)
   await expect(page).toHaveURL(new RegExp(`/waivers\\?league=${DYNASTY}&team=12`));
   await expect(page.getByTestId("waivers")).toBeVisible();
-  for (const [sub, screen] of [
-    ["sub-trades", "trades"],
-    ["sub-trade-calc", "trade-calc"], // ---- IA-2: the trade calculator, its own link
-    ["sub-team", "team"],
-    ["sub-league", "league"],
+  for (const [tab, sub, screen] of [
+    ["tab-trades", "sub-trades", "trades"],
+    ["tab-trades", "sub-trade-calc", "trade-calc"], // ---- IA-2: the trade calculator, its own link
+    ["tab-myteam", "sub-team", "team"],
+    ["tab-myteam", "sub-league", "league"],
   ] as const) {
+    await go(tab);
     await go(sub);
     await expect(page.getByTestId(screen)).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`/${screen}\\?league=${DYNASTY}&team=12`));

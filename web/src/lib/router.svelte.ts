@@ -2,6 +2,8 @@
 // Sleeper username, pick a league), "/player/<gsis>", "/ros" (rest of season), "/about" (about the numbers + the
 // record; "/record" still opens it), the research screens ("/trends", "/matchups", "/players", "/receivers",
 // "/compare") and the decisions screens ("/waivers", "/trades", "/team", "/league"; Wave G, G4).
+// IB-1 (Wave I-B): the paths stay; the tab bar groups them by task (components/TopBar.svelte: My Team · Waivers ·
+// Trades · Players). The research pane is a query parameter on any screen (`?pane=<gsis>&from=…`, lib/pane.svelte.ts).
 // * A tap on a same-site link is handled here (no reload, same session, one history entry).
 // * Changing the league or team rewrites the URL in place (replace), so Back goes to the previous PAGE.
 // * Each history entry remembers its scroll position; Back restores it.
@@ -57,6 +59,8 @@ function parse(): Route {
 }
 
 export const route = $state<{ current: Route }>({ current: parse() });
+// the path on screen (popstate compares the new one to it: the pane's entries share the screen's path)
+let lastPath = typeof location !== "undefined" ? location.pathname : "/";
 
 if (typeof history !== "undefined") {
   history.scrollRestoration = "manual";
@@ -67,7 +71,14 @@ function saveScroll(): void {
   history.replaceState({ ...(history.state ?? {}), scroll: window.scrollY }, "");
 }
 
-export function navigate(href: string, opts: { replace?: boolean } = {}): void {
+export interface NavigateOptions {
+  replace?: boolean; // rewrite this history entry (no Back step)
+  keepScroll?: boolean; // a new entry on the same screen (the pane): the screen stays where it is
+  top?: boolean; // with `replace`: a new page in this entry (the pane's "Full page"), scrolled to the top
+  state?: Record<string, unknown>; // extra fields on the history entry (the pane marks the entries it pushed)
+}
+
+export function navigate(href: string, opts: NavigateOptions = {}): void {
   // eslint-disable-next-line svelte/prefer-svelte-reactivity -- parsed once, never observed
   const url = new URL(href, location.href);
   if (url.origin !== location.origin) {
@@ -76,13 +87,17 @@ export function navigate(href: string, opts: { replace?: boolean } = {}): void {
   }
   const target = url.pathname + url.search;
   if (opts.replace) {
-    history.replaceState({ ...(history.state ?? {}) }, "", target);
+    const extra = opts.top ? { scroll: 0 } : {};
+    history.replaceState({ ...(history.state ?? {}), ...extra, ...(opts.state ?? {}) }, "", target);
+    if (opts.top) window.scrollTo(0, 0);
   } else {
     saveScroll();
     const depth = (history.state?.depth ?? 0) + 1;
-    history.pushState({ depth, scroll: 0 }, "", target);
-    window.scrollTo(0, 0);
+    const scroll = opts.keepScroll ? window.scrollY : 0;
+    history.pushState({ depth, scroll, ...(opts.state ?? {}) }, "", target);
+    if (!opts.keepScroll) window.scrollTo(0, 0);
   }
+  lastPath = url.pathname;
   route.current = parse();
 }
 
@@ -109,7 +124,10 @@ let pendingScroll: number | null = null;
 
 if (typeof window !== "undefined") {
   window.addEventListener("popstate", () => {
-    pendingScroll = typeof history.state?.scroll === "number" ? history.state.scroll : 0;
+    // the same screen (the pane opened or closed over it): it never moved, nothing to restore
+    const samePage = location.pathname === lastPath;
+    pendingScroll = samePage ? null : typeof history.state?.scroll === "number" ? history.state.scroll : 0;
+    lastPath = location.pathname;
     route.current = parse();
   });
 }

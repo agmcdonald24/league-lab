@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-B
+
+- **IB-1: navigation by task, the research pane everywhere.** Four tabs — My Team (This week · Season · Team · League)
+  · Waivers · Trades (Partners · Calculator) · Players (Trends · Matchups · Receivers · Compare · Players) — every path
+  kept; a search field in the top bar; About the numbers in the ⋯ menu and at the foot of My Team; the player's page
+  keeps the tabs. A player's name on My Week's lineup, in Players' list, in a search hit (and a Trends row on a phone)
+  opens his card beside the screen (900 px+) or as a sheet (a phone) with "Compare with my starter" / "Evaluate add /
+  drop" / "Add to trade" by where it was opened, and "Full page". Sticky panels stick again (`overflow-x: clip`).
+
 ## 2026-10-03 — Wave I-A
 
 - **Nightly: a backup time.** GitHub dropped the 11:37 UTC scheduled run on 2026-10-03 (no run at all); a second cron

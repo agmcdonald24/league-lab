@@ -6,6 +6,7 @@
   import { checkedLine, opponentLine, recordLine } from "../lib/week";
   import type { Availability, AvailabilityStatus } from "../lib/shapes";
   import { restoreScroll } from "../lib/router.svelte";
+  import { lineupPane } from "../lib/pane.svelte"; // ---- IB-1: a lineup name opens the research pane
   import Expander from "../components/Expander.svelte";
   import LineupTable from "../components/LineupTable.svelte";
   import Md from "../components/Md.svelte";
@@ -162,14 +163,14 @@
               </ul>
             {/if}
             {#if data.lineup.length}
-              <LineupTable rows={data.lineup} {ctx} testid="lineup" />
+              <LineupTable rows={data.lineup} {ctx} testid="lineup" pane={(row) => lineupPane(row, data!.lineup_full)} />
             {:else}
               <p class="text-sm text-ink-3">No proposed lineup for this week yet.</p>
             {/if}
           </section>
 
           <Expander title="The bench and who can't play" testid="lineup-full">
-            <LineupTable rows={data.lineup_full} full {ctx} testid="lineup-full-table" />
+            <LineupTable rows={data.lineup_full} full {ctx} testid="lineup-full-table" pane={(row) => lineupPane(row, data!.lineup_full)} />
           </Expander>
           {#if data.howto}
             <Expander title="How to read this" testid="howto"><Md text={data.howto} {ctx} block class="text-base leading-snug" /></Expander>

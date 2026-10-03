@@ -3,6 +3,7 @@
   // · an optional headline number on the right. "Yours" gets the accent edge. With `onselect` a tap on the row picks
   // him for the detail pane (list + detail); a tap on the name opens his card.
   import type { Snippet } from "svelte";
+  import { paneLink, type PaneOptions } from "../lib/pane.svelte";
   import Headshot from "./Headshot.svelte";
   import PosBadge from "./PosBadge.svelte";
   import TeamBadge from "./TeamBadge.svelte";
@@ -27,6 +28,7 @@
     yours = false,
     selected = false,
     onselect,
+    pane,
     testid = "player-row",
   }: {
     player: RowPlayer;
@@ -40,6 +42,7 @@
     yours?: boolean;
     selected?: boolean;
     onselect?: () => void;
+    pane?: PaneOptions; // IB-1: a tap on the name opens the research pane (lib/pane.svelte.ts) instead of his page
     testid?: string;
   } = $props();
 </script>
@@ -61,7 +64,7 @@
   <div class="min-w-0 flex-1">
     <div class="flex min-w-0 items-center gap-1.5">
       {#if href}
-        <a class="ll-name truncate text-base font-semibold" {href}>{player.player_name}</a>
+        <a class="ll-name truncate text-base font-semibold" {href} {@attach paneLink(pane ? player.gsis_id : null, pane)}>{player.player_name}</a>
       {:else}
         <span class="truncate text-base font-semibold">{player.player_name}</span>
       {/if}
