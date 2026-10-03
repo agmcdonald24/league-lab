@@ -16,7 +16,8 @@ import { serveFixtures } from "../fixtures";
 const FILE = join(import.meta.dirname, "..", "..", "fixtures", "mfl", "api_70587.json");
 const RECORD = process.env.IC3_RECORD ?? "";
 type Saved = { status: number; body: unknown };
-const saved: Record<string, Saved> = existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
+// a recording starts empty (no stale answer survives a re-record); a replay reads the file
+const saved: Record<string, Saved> = !RECORD && existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
 const MINE = /mfl|70587|scoring-check|username=test_manager/i;
 const KEY = "mfl:70587";
 
@@ -100,17 +101,25 @@ test("dad's league 70587: the card reads back the lineup and the scoring, then K
   // pick Knight Train → My Week
   await page.getByTestId("mfl-team").filter({ hasText: "Knight Train" }).click();
   await expect(page.getByTestId("my-week")).toBeVisible();
-  const week = recorded<{ lineup: { slot: string; role: string; player_name: string | null; value: number | null }[] }>(
-    "/api/my-week?league=mfl%3A70587&team=1",
-  );
+  await expect(page.getByTestId("lineup")).toBeVisible(); // the week's answer is in (when recording: saved too)
+  type Row = { slot: string; role: string; player_name: string | null; position: string | null; value: number | null; flag: string };
+  const week = recorded<{ lineup: Row[]; lineup_full: Row[] }>("/api/my-week?league=mfl%3A70587&team=1");
   const starters = (week?.lineup ?? []).filter((r) => r.role === "starter");
   const rows = page.getByTestId("lineup").locator("tbody tr");
   if (week) await expect(rows).toHaveCount(week.lineup.length);
   if (lineupText.includes("TMQB")) {
-    // the acceptance: 8 slots, the units seated and priced, no WR "Can't play" for want of a slot
-    expect(starters.map((r) => r.slot.replace(/\d+$/, ""))).toEqual(["TMQB", "RB", "RB", "WR+TE", "WR+TE", "WR+TE", "TMPK", "DEF"]);
-    for (const r of starters) expect(r.value ?? 0, `${r.slot} ${r.player_name}`).toBeGreaterThan(0);
-    await expect(page.getByTestId("lineup")).toContainText("TMQB");
+    // the acceptance: 8 slots in the league's words, the units seated and priced; a seat is empty only when nobody
+    // eligible can play (injury / bye), never for want of a slot; no WR or unit is "Can't play" for want of a slot
+    expect(starters.map((r) => r.slot)).toEqual(["team QB", "RB1", "RB2", "WR/TE 1", "WR/TE 2", "WR/TE 3", "team K", "DEF"]);
+    for (const r of starters) {
+      if (r.player_name === null) expect(r.flag, r.slot).toMatch(/^EMPTY/);
+      else expect(r.value ?? 0, `${r.slot} ${r.player_name}`).toBeGreaterThan(0);
+    }
+    expect(starters.find((r) => r.slot === "team QB")?.position).toBe("TMQB");
+    expect(starters.find((r) => r.slot === "team K")?.position).toBe("TMPK");
+    for (const r of (week?.lineup_full ?? []).filter((x) => x.role === "unplayable"))
+      expect(["OUT", "IR", "BYE", "DOUBTFUL", "SUSPENDED", "PUP", "NA"], `${r.player_name} ${r.flag}`).toContain(r.flag.split(" ")[0].toUpperCase());
+    await expect(page.getByTestId("lineup")).toContainText("team QB");
   }
   await noSidewaysScroll(page);
   await page.screenshot({ path: join(process.env.SHOTS_DIR ?? "e2e/.out", `ic3-70587-week-${info.project.name}.png`), fullPage: true });

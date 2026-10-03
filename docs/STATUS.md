@@ -4114,6 +4114,11 @@ nothing showed the waiver alternative before suggesting you give up a useful pla
   an unpriced `st_fum_rec`, a 5-yard stat correction). The gap is in the projections: dynasty starters were paid 115
   bonus points in weeks 1–2 (87 yardage, 28 long-TD); projections priced 9 (none of which hit). Pinned by
   `api/tests/test_ic3.py::test_audit_house_leagues_weeks_1_2_match_sleeper`.
-* **E2E** `web/e2e/ic3/` on `web/fixtures/mfl/api_70587.json` (the API's answers recorded with `IC3_RECORD=<api>`;
-  re-record after the merge so the 8-slot assertions run): paste 70587 → card → Knight Train → My Week → Team /
-  Waivers / Season answer; a Sleeper row's card. 375 (phone) and 1300 px.
+* **E2E** `web/e2e/ic3/` on `web/fixtures/mfl/api_70587.json` (the API's answers, recorded with `IC3_RECORD=<api>`
+  from a trial merge of dev/IC3 + dev/IC1 + dev/IC2 + dev/M2 — code merged clean, docs only conflicted): paste 70587
+  → card ("Your lineup: TMQB · 2 RB · 3 WR/TE · TMPK · DEF"; "TDs by distance 6 / 9 / 12 · 1 pt per 10 yards · …";
+  "Week 2 check: … 155 of 156 players within 1 point") → Knight Train → My Week 8 slots (team QB Bengals 29.0, RB1
+  Hubbard 10.97, RB2 empty — Hall and Price Out —, WR/TE Egbuka 9.48 / Robinson 7.36 / Fannin 5.85, team K Chargers
+  10.02, DEF Lions 10.26 = 82.94) → Team / Waivers / Season answer; a Sleeper row's card. 375 (phone) and 1300 px.
+  IC-1's check on the trial: Scrubs weeks 1 / 2: 146 / 146, 144 / 144; dynasty 219 / 219, 228 / 228 (SQL = spec on
+  every row); 70587: 161 / 163, 155 / 156 within 1.

@@ -1015,6 +1015,15 @@ def scoring_readback(league: dict) -> dict:
         not_priced = [str(u.get("name") or u.get("event")) if isinstance(u, dict) else str(u) for u in (spec.unpriced or [])]
         approximated = [str(a) for a in (getattr(spec, "approximated", None) or [])]
         source = "spec"
+        # a Sleeper spec still prices projections on the flat path (all or nothing, no long-TD bonus) unless IC-1's
+        # LEAGUE_LAB_EV_PRICING is on: the card keeps saying so until it is
+        try:
+            from league_lab.scoring import ev_pricing  # type: ignore[attr-defined]
+            ev = bool(ev_pricing())
+        except ImportError:
+            ev = False
+        if getattr(spec, "flat", None) is not None and not ev:
+            approximated += [g for g in _projection_gaps(sc) if g not in approximated]
     else:
         pieces = flat_readback(sc, league.get("roster_positions"))
         is_def = lambda k: k.startswith(DEF_KEY_PREFIXES)  # noqa: E731

@@ -153,7 +153,7 @@
     {:else if ck}
       {@const misses = bigMisses(ck)}
       <p class={ck.within_1 === ck.n ? "text-good" : "text-ink-2"} data-testid="card-check">
-        {checkLine(ck)}{#if misses.length} The misses: {misses.map(missLine).join("; ")}.{/if}
+        {checkLine(ck)}{misses.length ? ` The misses: ${misses.map(missLine).join("; ")}.` : ""}
       </p>
     {/if}
   </div>

@@ -163,6 +163,18 @@ def test_scoring_readback_from_the_spec():
     assert any("per 10" in p for p in s["pieces"])                         # 1 pt per 10 yards
 
 
+@needs_ic1
+def test_spec_card_keeps_the_projection_gaps_until_ev_pricing(monkeypatch):
+    """IC-1 prices a Sleeper spec on the flat path unless LEAGUE_LAB_EV_PRICING is on: the dynasty's card keeps
+    saying the long-TD bonus is not projected and the yardage bonuses are all or nothing, and stops once EV is on."""
+    lg = A.sleeper().league(DYNASTY)
+    monkeypatch.setenv("LEAGUE_LAB_EV_PRICING", "0")
+    assert any("40+ yard touchdown bonuses" in a for a in O.scoring_readback(lg)["approximated"])
+    monkeypatch.setenv("LEAGUE_LAB_EV_PRICING", "1")
+    assert not any("40+ yard touchdown bonuses" in a for a in O.scoring_readback(lg)["approximated"])
+    assert not any("40+ yard" in a for a in O.scoring_readback(A.sleeper().league(SCRUBS))["approximated"])
+
+
 # ------------------------------------------------------------------ the card on the routes
 def test_mfl_card_on_the_route(client):
     r = client.get("/api/leagues", params={"mfl": "70587"})

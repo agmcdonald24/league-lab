@@ -139,9 +139,14 @@ export function checkLine(c: ScoringCheck): string {
   return `Week ${c.week} check: we match your league's points for ${all ? `all ${c.n}` : `${c.within_1} of ${c.n}`} players within 1 point.`;
 }
 
-/** "Saquon Barkley: league 23, ours 13 (a 10-yard bonus)" */
+/** MFL writes names "Last, First" ("Patriots, New England"): said the usual way round. */
+export const firstLast = (name: string) => name.replace(/^([^,]+), (.+)$/, "$2 $1");
+
+/** "Saquon Barkley: league 23, ours 13 — sacks (one more or fewer than our stat line)" (the check's rule family
+ * prefix, "count:" / "distance:", is the check's own key, not words). */
 export function missLine(m: CheckMiss): string {
-  return `${m.player}: league ${pts(m.theirs)}, ours ${pts(m.ours)}${m.likely_rule ? ` (${m.likely_rule})` : ""}`;
+  const rule = (m.likely_rule ?? "").replace(/^[a-z_]+:/, "").trim();
+  return `${firstLast(m.player)}: league ${pts(m.theirs)}, ours ${pts(m.ours)}${rule ? ` \u2014 ${rule}` : ""}`;
 }
 
 /** The misses worth naming (more than 1 point apart), biggest first. */
