@@ -85,7 +85,7 @@ test("Rest of season: Value to my lineup leads, a reason per row, whose players,
   const starters = names.map((n, i) => [n, i] as const).filter(([n]) => /Travis Kelce|Kyren Williams|Patrick Mahomes/.test(n));
   expect(starters.length).toBe(3);
   for (const [, i] of starters) expect(young).toBeGreaterThan(i);
-  await expect(rows.filter({ hasText: "Bryce Young" }).getByTestId("ros-lineup-why")).toContainText("backup QB");
+  await expect(page.getByTestId("ros-lineup-why").nth(young)).toContainText("backup QB"); // one reason row under each row
   // IA-3's pieces stay on this view
   await tap(page, page.getByTestId("ros-row").first().getByTestId("ros-toggle"), isMobile);
   await expect(page.getByTestId("ros-why")).toBeVisible();

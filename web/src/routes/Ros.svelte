@@ -231,7 +231,7 @@
           {@const k = rowKey(p, i)}
           {@const bar = rangeBar(p, maxP90)}
           {@const bye = byeWords(p.bye_weeks)}
-          <tr class="border-b border-line align-middle {open[k] ? '' : 'last:border-0'} {yours ? 'bg-accent-soft' : ''}" data-testid="ros-row">
+          <tr class="{isLineup && p.lineup_why ? '' : 'border-b'} border-line align-middle {open[k] ? '' : 'last:border-0'} {yours ? 'bg-accent-soft' : ''}" data-testid="ros-row">
             <td class="tabnum py-2 pr-1 pl-3 font-semibold text-ink-3">{rankAt.get(p) ?? "—"}</td>
             <td class="py-2 pr-1 leading-snug break-words">
               <div class="flex min-w-0 items-center gap-2">
@@ -247,7 +247,6 @@
                     {#if p.bye_weeks?.length}<span class="shrink-0 tabnum" data-testid="ros-bye">bye {p.bye_weeks.join(", ")} ·</span>{/if}
                     <span class="truncate {yours ? 'font-semibold text-accent' : ''}">{yours ? "yours" : (p.rostered_by_team ?? "free agent")}</span>
                   </div>
-                  {#if isLineup && p.lineup_why}<p class="mt-0.5 text-xs leading-snug text-ink-2" data-testid="ros-lineup-why">{p.lineup_why}</p>{/if}
                 </div>
               </div>
             </td>
@@ -277,6 +276,12 @@
               </button>
             </td>
           </tr>
+          {#if isLineup && p.lineup_why}
+            <!-- ---- IB-3: why he ranks here for this roster, the row's full width (the name column is narrow on a phone) -->
+            <tr class="border-b border-line {open[k] ? '' : 'last:border-0'} {yours ? 'bg-accent-soft' : ''}">
+              <td colspan={ncols} class="px-3 pt-0 pb-2 text-xs leading-snug text-ink-2 sm:pl-[4.25rem]" data-testid="ros-lineup-why">{p.lineup_why}</td>
+            </tr>
+          {/if}
           {#if open[k]}
             <tr class="border-b border-line {yours ? 'bg-accent-soft' : 'bg-raised'}" data-testid="ros-expand">
               <td colspan={ncols} class="px-3 pt-1 pb-3">
