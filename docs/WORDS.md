@@ -99,6 +99,11 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | combined slot `WR+TE1` (IC-2, `cards.slot_label`) | "WR/TE 1" (the league's own slot, its parts joined by a slash; "RB/WR/TE 2") |
 | team unit `TMQB` / `TMPK` (IC-2) | "team QB" / "team K" in the slot column; the player is "Kansas City Chiefs QB" / "… K" (his team's quarterbacks / kicker as one player, MyFantasyLeague's) |
 | no eligible slot (IC-2, `lineup.no_slot_reason`) | **No slot** in the list, "No slot for a K in this league" as the reason — never "Can't play" (kept for injury, bye, IR, a locked bench player) |
+| asset key (IE-0, the calculator's `give` / `get`) | never on a page; a key the analysis cannot use reads "Can't analyse **Houston Texans QB** (you get): on Big Mac Attack's roster, not Madeyes Revenge's." with "Take out of the trade" |
+| a waiver reason in a later week (IE-0, `_bye_reason`) | only the candidate's own: "Fills your empty DEF in week 7, when Jacksonville Jaguars is on a bye" (a defense) · "Starts at WR/TE 3 in week 7, when McConkey is on a bye" (a starter he can stand in for) · else "Would not start for you this week; helps in week 7." |
+| the platform in a sentence (IE-0) | the league's own: "on the bench in MFL", "starting in his MFL lineup"; Sleeper's number (the market line) only on a Sleeper league |
+| points per game on an on-demand card (IE-0) | one statement with its source: "Points per game: 10.5 over 2 games, reconstructed in this league's MFL scoring from his stat lines" (the chart's number) |
+| no NFL team (IE-0, `TeamBadge`) | no chip; never "FA" / "Free agent" for a missing team ("Free agent" is a player nobody in the league has) |
 
 ## Adding to it
 

@@ -189,7 +189,12 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
     # ---- end IB-0
 
     # ---------------------------------------------------------- header
-    where = (f"on **{p['rostered_by_team']}** ({p['rostered_by_manager']})" if rostered
+    # ---- IE-0 (Wave I-E): the league's platform in the words ("in his MFL lineup"), no "(None)" for a manager MFL
+    # does not share
+    plat = platform_word(league_id)
+    mgr = f" ({p['rostered_by_manager']})" if isinstance(p["rostered_by_manager"], str) and p["rostered_by_manager"] else ""
+    # ---- end IE-0
+    where = (f"on **{p['rostered_by_team']}**{mgr}" if rostered
              else "**free agent** in this league" if yes(p["is_free_agent"]) else "not in this season's player pool")
     depth = f" · {p['depth_pos']}{int(p['depth_rank'])} on the depth chart" if is_num(p["depth_rank"]) and isinstance(p["depth_pos"], str) else ""
     header = f"{pos} · {team or 'no NFL team'}{depth} · {where}"
@@ -309,8 +314,9 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
     availability = _section("**Availability**")
     lines: list[str] = []
     if rostered:
-        slot = "starting in his Sleeper lineup" if yes(p["is_current_starter"]) else ("on the IR slot" if yes(p["is_on_ir"]) else "on the bench in Sleeper")
-        lines.append(f"Rostered by **{p['rostered_by_team']}** ({p['rostered_by_manager']}), {slot}.")
+        slot = (f"starting in his {plat} lineup" if yes(p["is_current_starter"])                       # ---- IE-0
+                else ("on the IR slot" if yes(p["is_on_ir"]) else f"on the bench in {plat}"))
+        lines.append(f"Rostered by **{p['rostered_by_team']}**{mgr}, {slot}.")
     elif yes(p["is_free_agent"]):
         lines.append("**Free agent** — nobody in this league has him.")
     else:
@@ -348,7 +354,14 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
 
     # ---------------------------------------------------------- 4. value
     value = _section(f"**Value** — {league_name} scoring")
-    if od is not None:
+    od_ppg = od_points_per_game(league_id, gsis, season) if od is not None else None      # ---- IE-0
+    if od is not None and od_ppg is not None:
+        # ---- IE-0: one statement — the game-log chart's own number (his stat lines priced in this league's scoring),
+        # with its source; never "not shown yet" beside a chart that shows it
+        metrics(value, [_metric("Points / game", f"{od_ppg['ppg']:.1f}",
+                                help=f"This season, {od_ppg['games']} games: {od_ppg['source']}")])
+        cap(value, f"Points per game: {od_ppg['ppg']:.1f} over {od_ppg['games']} games, {od_ppg['source']}.")
+    elif od is not None:
         missing.append("value.points_per_game")        # needs this league's scored games: not kept for a new league
     elif is_num(p["ppg"]) and is_num(p["league_games"]) and int(p["league_games"]) > 0:
         vm: list[dict] = []
@@ -393,11 +406,11 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
                 if yes(m["locked_now"]):
                     lineup_line = f"Week {week}: **locked in at {where_slot}** for {team_name} (his game has started)."
                 elif m["value_source"] == "unvalued":
-                    lineup_line = f"Week {week}: **starts at {where_slot}** for {team_name} with no value yet (counted as 0 until Sleeper scores him here)."
+                    lineup_line = f"Week {week}: **starts at {where_slot}** for {team_name} with no value yet (counted as 0 until {plat} scores him here)."
                 else:
                     a = cards.alternative(m, rows)
                     alt = a["alt"]
-                    src = {"season_ppg": " (his points per game this season)", "observed_ppg": " (points per game Sleeper scored)"}.get(m["value_source"], "")
+                    src = {"season_ppg": " (his points per game this season)", "observed_ppg": f" (points per game {plat} scored)"}.get(m["value_source"], "")
                     head = f"Week {week}: **starts at {where_slot}** for {team_name}, {float(m['value']):.2f}{src}"
                     if alt is not None:
                         lineup_line = (f"{head} — without him the lineup loses **{float(m['margin']):.2f}** "
@@ -467,6 +480,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "howto": HOWTO.format(league=league_name),
         "ros": ros_out, "missing": [MISSING_WORDS.get(k, k) for k in missing], "missing_keys": missing,
         "source": "database" if od is None else "sleeper",
+        "platform": "mfl" if is_mfl_league(league_id) else "sleeper",           # ---- IE-0
         **({} if od is None else {"on_demand": od.meta()}),
         "news": news_block(p["gsis_id"]),                                                  # ---- N1
     }
@@ -538,6 +552,9 @@ def why_block(league_id: str, gsis: str, pos: str, season: int, week: int | None
         ours = float(r["proj_points"]) if is_num(r.get("proj_points")) else None
         explained = why.explain(why.line_of(r), ours, scoring, pos) if r else None
         market = why.market_points(season, week, [gsis], scoring).get(gsis)
+        if is_mfl_league(league_id):                    # ---- IE-0: the market line is Sleeper's: not on an MFL card
+            return {"why": explained, "market": None, "leans_on": why.leans_on(
+                od.profile_league if od is not None else league_id, None).get(pos)}
         lean = why.leans_on(league_id if od is None else od.profile_league, league_name if od is None else None).get(pos)
     except Exception:  # noqa: BLE001 - the card never fails for its extras
         return {"why": None, "market": None, "leans_on": None}
@@ -555,3 +572,33 @@ def news_block(gsis: str) -> list[dict]:
     except Exception:  # noqa: BLE001 - the card never fails for its news
         return []
 # ---- end N1
+
+
+# ---- IE-0 (Wave I-E): the league's platform in the card's words (the review's P0 #3: "On the bench in Sleeper" on an
+# MFL roster), and the one points-per-game statement of an on-demand league (the chart's number, with its source)
+def is_mfl_league(league_id) -> bool:
+    from league_lab import platforms
+    return platforms.is_mfl(league_id)
+
+
+def platform_word(league_id) -> str:
+    return "MFL" if is_mfl_league(league_id) else "Sleeper"
+
+
+def od_points_per_game(league_id: str, gsis: str, season: int) -> dict | None:
+    """{ppg, games, source} from his played games this regular season, priced in this league's scoring exactly as the
+    game-log chart prices them (`research.league_games`), or None when there is nothing to price."""
+    try:
+        from . import research as R
+        g = R.league_games(R.context(league_id, None), int(season), [gsis])
+        fg = query("""select game_id from analytics.fct_player_game where gsis_id = %s and season = %s
+                      and season_type = 'REG' and played""", (gsis, int(season)))
+        pts = g[g["game_id"].isin(set(fg["game_id"]))]["points"].dropna()
+    except Exception:  # noqa: BLE001 - the card never fails for this line: it is then listed as not shown
+        return None
+    if pts.empty:
+        return None
+    src = ("reconstructed in this league's MFL scoring from his stat lines" if is_mfl_league(league_id)
+           else "counted in this league's scoring from his stat lines")
+    return {"ppg": round(float(pts.mean()), 1), "games": int(len(pts)), "source": src}
+# ---- end IE-0

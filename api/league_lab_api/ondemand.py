@@ -372,7 +372,8 @@ def ros_rows(league_id: str, league: dict | None, df: pd.DataFrame, players: lis
     week = cards.decision_week(season) if season is not None else None
     from .applib import ros as ROS
     this_week = {str(r["player_key"]): dict(ROS.weeks_list(r)).get(week) for r in recs} if week is not None else {}
-    market = why.market_points(season, week, ids, scoring)
+    # ---- IE-0: the market line is Sleeper's number: an MFL league shows none (no "not in yet" either)
+    market = {} if A.platforms.is_mfl(league_id) else why.market_points(season, week, ids, scoring)
     for p in players:
         key = p.get("player_key") or p.get("gsis_id")
         g = p.get("ros_games") or 0
@@ -401,7 +402,8 @@ def ros_more(league_id: str, league: dict | None, df: pd.DataFrame, *, house: bo
     return {"piece_columns": {k: list(v) for k, v in why.COLUMNS.items()}, "howto_rankings": RANKINGS_HOWTO,
             "leans_on": why.leans_on(league_id if house else None, name),
             "market_week": cards.decision_week(season) if season is not None else None,
-            "market_note": ("Sleeper's number is this week's, in this league's scoring, where Sleeper has one; "
+            "market_note": (None if A.platforms.is_mfl(league_id) else                    # ---- IE-0: Sleeper's only
+                            "Sleeper's number is this week's, in this league's scoring, where Sleeper has one; "
                             "the list's totals are ours.")}
 # ---- end IA-3
 

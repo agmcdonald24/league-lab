@@ -399,7 +399,10 @@ def test_player_card_any_league(client, sql):
     gsis = sql("select gsis_id from analytics.player_id_map where sleeper_id = %s", (sid,))[0]["gsis_id"]
     d = client.get(f"/api/player/{gsis}?league={TEST_LEAGUE}&team=1").json()
     assert d["source"] == "sleeper" and d["league_name"] == "Test League" and d["rostered_by_roster_id"] == 1
-    assert "value.points_per_game" in d["missing_keys"] and all(" " in m for m in d["missing"])   # plain words on the card
+    # IE-0 (Wave I-E): points per game is priced from his stat lines like the game-log chart (one statement, with its
+    # source), so it is no longer listed as missing when he has played; whatever is missing is in plain words
+    ppg = [m for b in d["sections"]["value"]["blocks"] for m in (b.get("metrics") or []) if m["label"] == "Points / game"]
+    assert ("value.points_per_game" in d["missing_keys"]) != bool(ppg) and all(" " in m for m in d["missing"])
     assert set(d["ros"]) == {"points", "games", "p10", "p90", "pos_rank", "playoff_points", "from_week", "last_week"}
     assert d["sections"]["availability"]["blocks"][0]["text"].startswith("Rostered by **Team 1**")
 

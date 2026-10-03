@@ -50,7 +50,8 @@ export const TEAMS: Record<string, TeamColors> = {
 // other spellings (Sleeper, ESPN, old cities) → nflverse
 const ALIASES: Record<string, string> = { LAR: "LA", JAC: "JAX", WSH: "WAS", OAK: "LV", SD: "LAC", STL: "LA", ARZ: "ARI", BLT: "BAL", CLV: "CLE", HST: "HOU" };
 
-const NEUTRAL: TeamColors = { name: "Free agent", primary: "#4b5563", accent: "#7d8699" };
+// IE-0 (Wave I-E): a missing NFL team is not "Free agent" (the review: a rostered team QB read as one)
+const NEUTRAL: TeamColors = { name: "No NFL team", primary: "#4b5563", accent: "#7d8699" };
 
 export function teamKey(abbr: string | null | undefined): string | null {
   if (!abbr) return null;
