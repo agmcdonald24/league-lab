@@ -264,9 +264,11 @@ export class Unauthorized extends Error {}
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  body: unknown; // ---- IE-0: the error's JSON (a trade's `unavailable` assets), when there is one
+  constructor(status: number, message: string, body: unknown = null) {
     super(message);
     this.status = status;
+    this.body = body;
   }
 }
 
@@ -996,13 +998,15 @@ export async function postEvaluate(body: { league: string; team: number; partner
   if (res.status === 401) throw new Unauthorized("sign in");
   if (!res.ok) {
     let detail = res.statusText;
+    let body: unknown = null;
     try {
       const b = await res.json();
+      body = b;
       detail = b.error ?? b.detail ?? detail;
     } catch {
       /* not JSON */
     }
-    throw new ApiError(res.status, detail);
+    throw new ApiError(res.status, detail, body); // ---- IE-0: the body carries `unavailable`
   }
   return (await res.json()) as TradeEval;
 }
@@ -1352,3 +1356,19 @@ export interface PlayerCard {
   news?: NewsItem[];
 }
 // ---- end N1
+
+// ---- IE-0 (Wave I-E): the trade calculator's asset keys (INTERFACES.md § IE-0). A key is opaque ("mfl:0682" like
+// "12490"); POST /api/trades/evaluate answers 400 with every asset it cannot analyse named — never a silent drop.
+export interface UnavailableAsset {
+  key: string;
+  side: "give" | "get";
+  name: string | null;
+  why: string; // "not on Big Mac Attack's roster", "not a player League Lab knows in this league", …
+}
+/** The `unavailable` list of a 400 from the evaluate call, or [] for any other error. */
+export function unavailableOf(e: unknown): UnavailableAsset[] {
+  if (!(e instanceof ApiError) || e.status !== 400) return [];
+  const b = e.body as { unavailable?: UnavailableAsset[] } | null;
+  return Array.isArray(b?.unavailable) ? b.unavailable : [];
+}
+// ---- end IE-0

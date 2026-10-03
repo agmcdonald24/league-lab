@@ -2,6 +2,17 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-E
+
+- **IE-0: MFL behaves correctly (the casual-user review's P0s).** The trade calculator keeps every asset of a package:
+  a provider key such as `mfl:0682` (the Houston Texans QB unit) is opaque from the link to the answer, so the Finder's
+  "Houston Texans QB + Tuten for Rice" opens as that two-for-one (it opened as Tuten alone and flipped the verdict); an
+  asset that cannot be analysed is named ("Can't analyse …: not on Madeyes Revenge's roster") with no verdict, never
+  dropped. Waivers' reasons come from the evaluated move: a candidate fills an empty slot only if he can play it (no
+  "team QB fills the empty DEF"), slots in the league's words ("WR/TE 2"). MFL leagues read "MFL", not "Sleeper", show
+  no Sleeper market line, and state points per game once with its source; a team unit's badge is its team, never
+  "Free agent".
+
 ## 2026-10-03 — Wave I-D
 
 - **PO (integration).** dbt's `assert_projection_ranges_price_the_lines` re-prices `scrubs` only: the dynasty's

@@ -4495,3 +4495,55 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   sources and https links, stale → [], outage → [] and 200, off → [] and 0 calls, fixture mode without ESPN → [],
   Waivers + Trends → 0 news calls). `web/e2e/n1/` 5 × phone (375) / desktop: the line on the page and in the pane,
   no line without news, ESPN's own story, About's sentence.
+
+
+## Wave I-E (Iteration 17, part E)
+
+### IE-0 2026-10-03 — MFL correct before a casual user relies on it (the review's P0 1–3; branch `dev/IE0`, clone `league_lab_i0b`)
+
+* **Why**: the third outside review (`docs/reviews/2026-10-03-mfl-70587-usability-review.md`, on dad's league MFL 70587,
+  Big Mac Attack) found the calculator dropping an MFL team-QB asset, a Waivers card saying a team QB "fills the empty
+  DEF slot", and Sleeper words on an MFL roster.
+* **P0 #1, the cause (reproduced before the fix)**: `web/src/lib/decisions.ts` `parseIds` kept only `/^[\w-]+$/`, so
+  `give=mfl:0682,12490` became `["12490"]`, and `TradeCalc.svelte` then filtered the keys to the rosters — silently.
+  The new e2e replayed on the base code: the review's link opens with Houston Texans QB unticked (`toBeChecked` fails),
+  the Finder's `mfl:0671,12490 → mfl:0675` opens with nothing on the get side (no verdict); the request carried
+  `give: ["12490"]`. The API itself always handled the key (`trades.parse_ids` splits on commas only).
+* **Delivered**: asset keys are opaque end to end (contract in the wave's INTERFACES.md § IE-0): `parseIds` accepts any
+  key without a comma or space (≤ 64), keeps order, drops repeats; the calculator keeps every key of the link, sends
+  all of them, names them in the summary ("Houston Texans QB + Bhayshul Tuten", the bar's "Texans QB + Tuten → Rice");
+  `POST /api/trades/evaluate` answers **400 with `unavailable: [{key, side, name, why}]`** for a key not on that side's
+  roster, unknown, or an IDP ("Can't analyse Malik Nabers: on Big Mac Attack's roster, not Madeyes Revenge's") and the
+  calculator shows that in place of the dial, with "Take out of the trade"; the answer's unit rows carry `team` and
+  `unit` (the Finder's too). **P0 #2**: `_bye_reason` is the candidate's own — "Fills your empty X" only when X's slot
+  type admits his position, "Starts at <slot> in week N, when <starter> is on a bye" only for a decision-week starter
+  whose slot he can play, else no bye words ("Would not start for you this week; helps in week 7."); this week's slot in
+  the league's words (`cards.slot_label`: "WR/TE 2", was "WR+TE2"); a team unit never "No games this season yet".
+  **P0 #3**: the card says "on the bench in MFL" / "starting in his MFL lineup", no "(None)" for a manager MFL does not
+  share, no Sleeper market line on an MFL card, the ROS list or My Week's rows (no "not in yet" either), `platform` on
+  the card; an on-demand card states points per game once — the chart's own number with its source ("10.5 over 2 games,
+  reconstructed in this league's MFL scoring from his stat lines"; was "not shown yet" beside a chart showing it);
+  `TeamBadge` shows no chip for a missing NFL team (was "FA", titled "Free agent") and is named for screen readers
+  ("Houston Texans"); the setup heading and the league menu name both platforms.
+* **Evidence (fixtures, overlay on)**: the review's package, team 8 ↔ 12, weeks 4–7 — **before** (what the calculator
+  asked): Tuten for Rice, you +3.36 this week / +9.52 over the window, them −2.05 / −2.67, "No deal" 14, "Roster size: no
+  change (1 for 1)", Houston Texans QB still at team QB; **after**: Houston Texans QB + Tuten for Rice, you −8.58 / −2.42,
+  them −2.05 / +23.15, "Hard to say no" 100, "you open a spot", team QB = Chicago Bears QB, "Out of the lineup after
+  the trade: Houston Texans QB (team QB, 30.40, traded)"; the Finder's `package_gains` on the same board −8.58 / −2.42 /
+  −2.05 / +23.15 (equal; the review's live +0.7 / +9.5 was another day's data). Waivers on team 8: every Help-now and
+  top-3 card names the slot of its solved move ("Starts at WR/TE 2 this week over McConkey (6.9)."); the review's
+  "Arizona Cardinals QB … fills the empty DEF in week 7" on the fixture's week-7 shape now reads "Would not start for
+  you this week; helps in week 7." Tuten's card: "Rostered by **Big Mac Attack**, on the bench in MFL", market none,
+  points per game 10.5 = the chart's (8.8, 12.2).
+* **Tests**: `api/tests/test_ie0.py` (8: opaque keys; the two-for-one end to end = the Finder; unit teams on the Finder;
+  unknown / wrong-side keys named; Help-now slots eligible and taken; no QB-to-DEF; Tuten's card; no MFL market).
+  `test_ib2::test_one_reason_is_one_fact` updated (its bye case had no position and expected the DEF words — the
+  review's bug; now a DEF, plus a QB in the same week that gets none); `test_f3::test_player_card_any_league` (points
+  per game is either shown or listed missing, never both). `web/e2e/ie0/` (3 × phone 375 / desktop 1300; recorded
+  into `web/fixtures/mfl/api_70587_ie0.json`, the POSTs keyed by body: `IE0_RECORD=…`). Checks: **API 385 passed, 3
+  failed** (the three clone scoring-check tests: `test_ic1` × 2, `test_ic_po` × 1), 2 skipped; **web lint / typecheck /
+  build clean, fixture e2e 156 passed** (150 + 6); ruff clean.
+* **Open**: the game-log chart's own sentence still says "in <league> scoring" without "reconstructed" (IE-2's
+  `Player.svelte` / `GameLog`); MFL's official per-player scores (`weeklyResults`) are not read for points per game —
+  the reconstruction is labelled as such; a given player whose game has kicked off stays in this week's lineup (the
+  engine's lock rule) — the words do not say so yet.

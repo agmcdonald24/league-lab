@@ -13,6 +13,7 @@
   // the lineup impact (this week / the window); the explanation (market, rest of season, ranks, roster size, week by
   // week) is behind "Why?" and both lineups behind "Lineups", collapsed. A name in the lists opens the research pane.
   import { ApiError, decisionPaths, evaluateIn, get, paths, peek, Unauthorized, type Roster, type Team, type TeamRosterRow, type TradeEval, type TradeWindow } from "../../lib/api";
+  import { unavailableOf, type UnavailableAsset } from "../../lib/api"; // ---- IE-0
   import type { LeagueOption } from "../../lib/leagues";
   import { md, withContext } from "../../lib/md";
   import { errorWords, f1, f2, names, parseIds, s1, slotLabel } from "../../lib/decisions";
@@ -92,10 +93,20 @@
     (rows ?? []).filter((r) => r.role !== "empty" && r.sleeper_id).sort((a, b) => (b.value ?? -1) - (a.value ?? -1));
   const myPlayers = $derived(playable(mine?.roster));
   const theirPlayers = $derived(playable(theirs?.roster));
-  const give = $derived(parseIds(params.get("give")).filter((id) => myPlayers.some((r) => r.sleeper_id === id)));
-  const getIds = $derived(parseIds(params.get("get")).filter((id) => theirPlayers.some((r) => r.sleeper_id === id)));
+  // ---- IE-0 (Wave I-E): the package is the URL's keys, every one kept — a key is opaque ("mfl:0682", the Houston
+  // Texans QB unit, like "12490"). The review's P0 #1: `parseIds` dropped the colon and this filter dropped what was
+  // left off the rosters, so the Finder's "Houston Texans QB + Tuten for Rice" opened as Tuten alone. Now the request
+  // carries every key; one the API cannot analyse comes back named (`unavailable`) and shows instead of a verdict.
+  const give = $derived(parseIds(params.get("give")));
+  const getIds = $derived(parseIds(params.get("get")));
+  const loaded = $derived(mine !== null && theirs !== null && mine.roster_id === team && theirs.roster_id === partner);
+  let unavailable = $state<UnavailableAsset[]>([]);
+  const rowOf = (side: "give" | "get", key: string) => (side === "give" ? myPlayers : theirPlayers).find((r) => r.sleeper_id === key);
+  const nameOf = (side: "give" | "get", key: string) => rowOf(side, key)?.player_name ?? unavailable.find((u) => u.key === key)?.name ?? key;
+  const isUnitRow = (r: TeamRosterRow | undefined) => !!r && (r.unit === true || r.position === "TMQB" || r.position === "TMPK");
+  // ---- end IE-0
   const pkgKey = $derived(
-    partner !== null && give.length && getIds.length ? `${league}|${team}|${partner}|${[...give].sort()}|${[...getIds].sort()}|${win}` : "",
+    partner !== null && loaded && give.length && getIds.length ? `${league}|${team}|${partner}|${[...give].sort()}|${[...getIds].sort()}|${win}` : "",
   );
 
   // evaluate on every change (a 250 ms pause, so ticking two players asks once); the last answer stays on screen while
@@ -105,6 +116,7 @@
     if (!key || team === null || partner === null) {
       result = null;
       evalError = null;
+      unavailable = [];
       return;
     }
     if (key === resultKey && result) return;
@@ -118,12 +130,15 @@
           if (pkgKey !== key) return;
           result = r;
           resultKey = key;
+          unavailable = [];
           restoreScroll();
         })
         .catch((e) => {
           if (pkgKey !== key) return;
           result = null;
+          unavailable = unavailableOf(e); // ---- IE-0: named, never dropped
           if (e instanceof Unauthorized) onauth();
+          else if (unavailable.length) evalError = null;
           else evalError = e instanceof ApiError && e.status === 404 ? "This trade cannot be evaluated: a player is not on these rosters any more." : errorWords(e);
         })
         .finally(() => {
@@ -169,12 +184,17 @@
     const p = (n ?? "").trim().split(/\s+/);
     return p.length > 1 && !/^(Jr\.|Sr\.|II|III|IV)$/.test(p[p.length - 1]) ? p[p.length - 1] : p.length > 2 ? p[p.length - 2] : (n ?? "");
   };
-  const pkgWords = $derived(
-    `${myPlayers.filter((r) => give.includes(r.sleeper_id ?? "")).map((r) => lastName(r.player_name)).join(" + ")} → ${theirPlayers
-      .filter((r) => getIds.includes(r.sleeper_id ?? ""))
-      .map((r) => lastName(r.player_name))
-      .join(" + ")}`,
-  );
+  // ---- IE-0: every key of the package, in the link's order; a unit by its short name ("Texans QB", not "QB")
+  const shortOf = (side: "give" | "get", key: string) => {
+    const r = rowOf(side, key);
+    const n = nameOf(side, key);
+    return isUnitRow(r) ? n.split(/\s+/).slice(-2).join(" ") : r ? lastName(n) : n;
+  };
+  const pkgWords = $derived(`${give.map((k) => shortOf("give", k)).join(" + ")} → ${getIds.map((k) => shortOf("get", k)).join(" + ")}`);
+  function drop(side: "give" | "get", key: string) {
+    const next = (side === "give" ? give : getIds).filter((x) => x !== key);
+    setParams({ [side]: next.length ? next.join(",") : null });
+  }
   const labelTone = (l: string) => (l === "No deal" ? "text-bad" : l === "Maybe" ? "text-warn" : "text-good");
   // a name in the roster lists: the research pane (IB-1, "Add to trade"), else nothing (the checkbox is the row's tap)
   function paneFor(side: "give" | "get", r: TeamRosterRow) {
@@ -195,8 +215,9 @@
 {#snippet picker(side: "give" | "get", rows: TeamRosterRow[], picked: string[], title: string)}
   <Card {title} pad={false} testid={`pick-${side}`}>
     {#if picked.length}
+      <!-- IE-0: every key of the package in the link's order, the ones off this roster named as such -->
       <p class="-mt-1 px-4 pb-2 text-sm text-ink-2" data-testid={`picked-${side}`}>
-        {rows.filter((r) => picked.includes(r.sleeper_id ?? "")).map((r) => r.player_name).join(" + ")}
+        {#each picked as k, i (k)}{i ? " + " : ""}{nameOf(side, k)}{#if rows.length && !rowOf(side, k)}<span class="text-bad">&nbsp;(not on this roster)</span>{/if}{/each}
       </p>
     {/if}
     {#if !rows.length}
@@ -298,6 +319,17 @@
     <!-- the dial's row: their interest, your gain, the differences this week and over the window -->
     {#if !give.length || !getIds.length}
       <p class="ll-empty" data-testid="tick-both">Tick at least one player on each side: the dial shows how much they would want it.</p>
+    {:else if unavailable.length}
+      <!-- IE-0: an asset the analysis cannot use is named, with why, and there is no verdict (never a silent one-for-one) -->
+      <div class="ll-error space-y-2" role="alert" data-testid="unavailable">
+        {#each unavailable as u (u.side + u.key)}
+          <p class="flex flex-wrap items-center gap-x-3 gap-y-1" data-testid="unavailable-row" data-key={u.key}>
+            <span>Can't analyse <strong>{u.name ?? u.key}</strong> ({u.side === "give" ? "you give" : "you get"}): {u.why}.</span>
+            <button type="button" class="min-h-10 rounded-md border border-line-strong px-3 text-sm font-semibold" onclick={() => drop(u.side, u.key)} data-testid="unavailable-remove">Take out of the trade</button>
+          </p>
+        {/each}
+        <p class="text-sm">No verdict until every player in the trade can be analysed.</p>
+      </div>
     {:else if evalError}
       <p class="ll-error" data-testid="eval-error">{evalError}</p>
     {:else if !shown}

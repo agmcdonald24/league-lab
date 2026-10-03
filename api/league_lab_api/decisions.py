@@ -59,6 +59,18 @@ class BadRequest(ValueError):
     """A request the engines cannot answer as asked (a package with a player on neither roster ...): 400."""
 
 
+# ---- IE-0 (Wave I-E): a package with an asset the analysis cannot use answers 400 with every such asset named
+# (`unavailable`: key, side, name, why) — never a silent one-for-one (the review's P0 #1)
+IDP_POSITIONS = frozenset({"DL", "LB", "DB", "DT", "DE", "CB", "S", "IDP"})
+
+
+class Unavailable(BadRequest):
+    def __init__(self, items: list[dict]):
+        self.items = items
+        super().__init__("Can't analyse " + "; ".join(f"{i['name'] or i['key']}: {i['why']}" for i in items) + ".")
+# ---- end IE-0
+
+
 # ------------------------------------------------------------------------------ the pages' own sentence functions
 _page_code: dict[tuple[str, tuple[str, ...]], Any] = {}
 
@@ -659,6 +671,7 @@ class TradeContext:
             if week is None:
                 raise NotFound("the regular season is over: no trades to evaluate")
             players = _od(A.sleeper().players)
+            self.directory = players                     # ---- IE-0: a unit's team, an unknown key's name
             fa = A.free_agents(query, league["league_id"], rosters, players, A.league_scoring(league)[1]) if market else None
             self.lw = _od(A.league_weeks, query, league["league_id"], week, as_of=as_of, rest=market,
                           extra_sids=list(fa["sleeper_id"]) if fa is not None else ())
@@ -724,7 +737,50 @@ class TradeContext:
                   "season_points": T.whole(self.market[pid]) if pid in self.market else None, "roster_id": self.board.owner(pid)})
         if str(pid) in getattr(self, "out_now", {}):      # ---- I0-A: worth 0 this week, the status says why
             p["this_week"], p["cannot_play"] = 0.0, self.out_now[str(pid)]
+        # ---- IE-0: a team unit (MFL's TMQB / TMPK) carries its NFL team (the badge) and `unit`: a missing team is
+        # never read as "FA" on a rostered unit
+        if p.get("position") in UNIT_POSITIONS:
+            p["unit"] = True
+            p["team"] = p.get("team") or (self.directory_row(pid) or {}).get("team")
+        # ---- end IE-0
         return p
+
+    # ---- IE-0 (Wave I-E): asset keys are opaque ("mfl:0682", "12490", "HOU"); one the analysis cannot use is named
+    def directory_row(self, pid) -> dict | None:
+        d = getattr(self, "directory", None) or {}
+        row = d.get(str(pid)) if isinstance(d, dict) else None
+        return row if isinstance(row, dict) else None
+
+    def known_name(self, pid) -> str | None:
+        """His name from the board, else the league's directory (a player on no roster), else None (an unknown key)."""
+        if pid in self.info.index:
+            return self.name(pid)
+        row = self.directory_row(pid) or {}
+        name = row.get("player_name") or row.get("full_name") or " ".join(
+            x for x in (row.get("first_name"), row.get("last_name")) if x)
+        return str(name) if name else None
+
+    def unavailable(self, team: int, partner: int, give: list[str], get: list[str]) -> list[dict]:
+        """The keys the trade cannot be analysed with, each with its side, name and why (never a silent drop): not on
+        that side's roster, a key nobody knows, or a defensive player (IDP: the lineup solver does not price them)."""
+        out = []
+        for side, keys, rid in (("give", give, int(team)), ("get", get, int(partner))):
+            for k in keys:
+                name, owner = self.known_name(k), self.board.owner(k)
+                pos = self.pos(k) if k in self.info.index else str((self.directory_row(k) or {}).get("position") or "")
+                if owner == rid and pos in IDP_POSITIONS:
+                    why = f"League Lab does not price defensive players ({pos}) yet"
+                elif owner == rid:
+                    continue
+                elif name is None:
+                    why = "not a player League Lab knows in this league"
+                elif owner is not None:
+                    why = f"on {self.team(owner)}'s roster, not {self.team(rid)}'s"
+                else:
+                    why = f"not on {self.team(rid)}'s roster"
+                out.append({"key": str(k), "side": side, "name": name, "why": why})
+        return out
+    # ---- end IE-0
 
     def resolve(self, ids) -> list[str]:
         """Sleeper ids as the board keys them; a gsis id is accepted too (mapped through the board's rows)."""
@@ -1087,7 +1143,13 @@ def evaluate(league_id: str, team: int, partner: int | None, give, get, *, sourc
         partner = ctx.board.owner(get[0])
     if partner is None or int(partner) not in ctx.board.rosters or int(partner) == int(team):
         raise BadRequest("pick a trade partner: another team of this league")
-    g, t, bad = T.clean_package(ctx.board, int(team), int(partner), give, get)
+    # ---- IE-0: every key kept as sent (opaque: "mfl:0682" is a key like "12490"); one the analysis cannot use is named
+    gave, got = T.parse_ids(list(give)), T.parse_ids(list(get))
+    missing = ctx.unavailable(int(team), int(partner), gave, got)
+    if missing:
+        raise Unavailable(missing)
+    g, t, bad = T.clean_package(ctx.board, int(team), int(partner), gave, got)
+    # ---- end IE-0
     if bad:
         raise BadRequest(f"not on these rosters: {', '.join(bad)} (give: your players; get: theirs)")
     if not g or not t:
@@ -2415,24 +2477,54 @@ def _byes(h: pd.DataFrame) -> tuple[dict, dict[int, list[str]]]:
         byes[int(w)] = fit + [n for n in g["player_name"] if isinstance(n, str) and n not in fit]
         byes[("fit", int(w))] = fit
         byes[("pos", int(w))] = {n: p for n, p in zip(g["player_name"], g["position"], strict=True) if isinstance(n, str)}
+    # ---- IE-0: what an explanation needs to be the evaluated move's own — each empty slot's type that week, and the
+    # slot each player on a bye holds in the decision week (he is the starter the candidate would stand in for)
+    for w, g in em.groupby("week"):
+        byes[("empty_types", int(w))] = {str(s): str(t) for s, t in zip(g["slot"], g["slot_type"], strict=True)
+                                         if isinstance(s, str) and isinstance(t, str)}
+    first = int(h["week"].min())
+    st = h[(h["week"] == first) & (h["role"] == "starter")]
+    byes["starter_slot"] = {str(n): (str(s), str(t)) for n, s, t in zip(st["player_name"], st["slot"], st["slot_type"], strict=True)
+                            if isinstance(n, str) and isinstance(s, str) and isinstance(t, str)}
+    # ---- end IE-0
     return byes, empty
 
 
 def _bye_reason(m: dict, w: int, byes: dict, empty: dict, strict: bool = False) -> str | None:
-    who = byes.get(w) or []
+    """IE-0 (Wave I-E, the review's P0 #2): the bye words come from the evaluated move, never from the team's need alone
+    ("Arizona Cardinals QB fills the empty DEF in week 7" is impossible). The candidate fills an empty slot only when
+    that slot's type admits his position; he covers a bye only for a starter who holds a slot he can play; otherwise
+    there is no bye reason (None) and the card says when he helps. ``strict`` is kept for the callers (always strict)."""
+    del strict
     pos = (m.get("add") or {}).get("position")
-    same = [n for n in who if pos and (byes.get(("pos", w)) or {}).get(n) == pos]  # his own position's bye first
-    fit = [n for n in who if n in set(byes.get(("fit", w)) or [])]            # then who could fill the empty slot
-    if strict and not (same or fit):
-        return None                       # nobody he could stand in for is on a bye: the bye is not the reason
-    who = same or fit or who
-    hole = empty.get(w)
+    if not pos:
+        return None
+    elig = W.SLOT_ELIGIBILITY
     g = (m.get("week_gains") or [None] * 99)[w - int(m.get("_week") or w)] if m.get("_week") else None
     tail = f" (+{g:.1f} that week)" if isinstance(g, int | float) and g >= GAIN_EPS else ""
-    be = "is" if len(who) == 1 else "are"
-    if hole:
-        return f"Fills your empty {hole[0]} in week {w}, when {_name_list(who)} {be} on a bye{tail}."
-    return f"Covers week {w}, when {_name_list(who)} {be} on a bye{tail}."
+    on_bye = byes.get(w) or []
+    bpos = byes.get(("pos", w)) or {}
+    types = byes.get(("empty_types", w)) or {}
+    held = byes.get("starter_slot") or {}
+
+    def be(ns: list[str]) -> str:
+        return "is" if len(ns) == 1 else "are"
+    # 1. an empty starting slot he is eligible for: he fills it; the bye named is of a player who could have filled it
+    for hole in empty.get(w) or []:
+        t = types.get(hole)
+        ok = elig.get(t) if t else None
+        if ok and pos in ok:
+            who = [n for n in on_bye if bpos.get(n) in ok] or on_bye
+            words = cards.slot_label(hole)
+            return (f"Fills your empty {words} in week {w}, when {_name_list(who)} {be(who)} on a bye{tail}."
+                    if who else f"Fills your empty {words} in week {w}{tail}.")
+    # 2. a starter on a bye whose slot he can play: he stands in at that slot
+    cover = [(n, held[n]) for n in on_bye if n in held and pos in (elig.get(held[n][1]) or frozenset())]
+    if cover:
+        who = [n for n, _ in cover]
+        words = cards.slot_label(cover[0][1][0])
+        return f"Starts at {words} in week {w}, when {_name_list(who)} {be(who)} on a bye{tail}."
+    return None
 
 
 def _reason(m: dict, week: int, byes: dict, empty: dict, stash: dict) -> str:
@@ -2444,7 +2536,7 @@ def _reason(m: dict, week: int, byes: dict, empty: dict, stash: dict) -> str:
     gains = m.get("week_gains") or []
     helped = [week + i for i, g in enumerate(gains) if g is not None and g > 0.005]
     slot = m.get("add_slot")
-    slot = {"TMQB": "team QB", "TMPK": "team K"}.get(str(slot), slot)            # ---- IC-4: the unit slots in words
+    slot = cards.slot_label(slot) if slot else slot          # ---- IE-0: the league's words ("WR/TE 2", "team QB")
     if (m.get("weekly_gain") or 0) >= GAIN_EPS and slot:
         if m.get("fills_empty_slot"):
             return f"Fills your empty {slot} this week."
@@ -2459,10 +2551,13 @@ def _reason(m: dict, week: int, byes: dict, empty: dict, stash: dict) -> str:
             r = _bye_reason(m, w, byes, empty, strict=True)
             if r:
                 return r
-    if m.get("add", {}).get("is_no_evidence"):
+    unit = add.get("position") in UNIT_POSITIONS          # ---- IE-0: a team unit is priced from its starter's games
+    if add.get("is_no_evidence") and not unit:
         return "No games this season yet: a flyer on his role."
     if helped:
-        return f"Helps in week{'s' if len(helped) > 1 else ''} {', '.join(str(w) for w in helped)}."
+        now = "" if (m.get("weekly_gain") or 0) >= GAIN_EPS else "Would not start for you this week; "   # ---- IE-0
+        ws = f"week{'s' if len(helped) > 1 else ''} {', '.join(str(w) for w in helped)}"
+        return f"{now}helps in {ws}." if now else f"Helps in {ws}."
     return "Adds to your lineup over the next weeks."
 
 

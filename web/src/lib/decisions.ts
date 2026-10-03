@@ -165,13 +165,19 @@ export function partnerLine(p: PartnerRow, span: string): string {
   );
 }
 
-/** Ids in a URL ("8131,11563"): the package is the link (6_Trade_Finder.py). */
+// ---- IE-0 (Wave I-E): asset keys are opaque — "8131", "HOU", "12490", "mfl:0682" (an MFL team QB), "mfl:TMQB-KC". The
+// old /^[\w-]+$/ dropped the colon, so the calculator opened the Finder's "Houston Texans QB + Tuten" as Tuten alone.
+// A key is anything without a comma or a space, at most 64 characters; blanks and repeats drop, the order is kept.
+const KEY = /^[^\s,]{1,64}$/;
+export const isAssetKey = (x: string): boolean => KEY.test(x);
+
+/** Ids in a URL ("8131,11563", "mfl:0682,12490"): the package is the link (6_Trade_Finder.py). */
 export function parseIds(s: string | null): string[] {
-  return (s ?? "")
-    .split(",")
-    .map((x) => x.trim())
-    .filter((x) => /^[\w-]+$/.test(x));
+  const out: string[] = [];
+  for (const x of (s ?? "").split(",").map((v) => v.trim())) if (isAssetKey(x) && !out.includes(x)) out.push(x);
+  return out;
 }
+// ---- end IE-0
 
 /** The screens' error line (the Wave F pages' words). */
 export function errorWords(e: unknown): string {

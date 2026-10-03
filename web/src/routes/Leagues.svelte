@@ -171,7 +171,8 @@
       <span class="grid h-9 w-9 place-items-center rounded-sm bg-accent text-sm font-black text-on-accent">LL</span>League Lab
     </h1>
     <p class="text-base leading-snug text-ink-2">
-      Who to start this week and what each player is worth, in your Sleeper league's scoring.
+      <!-- IE-0 (Wave I-E): both platforms, not Sleeper only (the review's P0 #3) -->
+      Who to start this week and what each player is worth, in your league's own scoring — on Sleeper or MyFantasyLeague.
     </p>
   </header>
 
