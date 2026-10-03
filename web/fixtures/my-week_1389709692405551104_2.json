@@ -41,17 +41,14 @@
     },
     {
      "kind": "markdown",
-     "text": "**Bhayshul Tuten outscores Michael Wilson 55% of the time — a lean.**"
-    },
-    {
-     "kind": "markdown",
-     "text": "9.72 vs 9.20 projected: 0.52 apart."
+     "text": "Tuten is on the road against the Bengals, who give up the 9th-fewest points to running backs, but the projection still has him 0.5 points ahead."
     },
     {
      "kind": "caption",
-     "text": "Most weeks: Bhayshul Tuten 5–15, Michael Wilson 4–13.  \nA bad week to a good week: Bhayshul Tuten 2–22, Michael Wilson 2–19.  \nBhayshul Tuten vs CIN (#24 vs RB) · Michael Wilson vs NYG (#11 vs WR)"
+     "text": "Bhayshul Tuten outscores Michael Wilson 55% of the time — a lean. 9.72 vs 9.20 projected: 0.52 apart.  \nMost weeks: Bhayshul Tuten 5–15, Michael Wilson 4–13.  \nA bad week to a good week: Bhayshul Tuten 2–22, Michael Wilson 2–19.  \nBhayshul Tuten vs CIN (#24 vs RB) · Michael Wilson vs NYG (#11 vs WR)"
     }
-   ]
+   ],
+   "why": "Tuten is on the road against the Bengals, who give up the 9th-fewest points to running backs, but the projection still has him 0.5 points ahead."
   },
   {
    "slot": "RB2",
@@ -73,17 +70,14 @@
     },
     {
      "kind": "markdown",
-     "text": "**Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time — a lean.**"
-    },
-    {
-     "kind": "markdown",
-     "text": "11.28 vs 9.19 projected: 2.08 apart."
+     "text": "Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game."
     },
     {
      "kind": "caption",
-     "text": "Most weeks: Omarion Hampton 6–15, Jacory Croskey-Merritt 4–12.  \nA bad week to a good week: Omarion Hampton 3–23, Jacory Croskey-Merritt 1–19.  \nOmarion Hampton vs SEA (#26 vs RB) · Jacory Croskey-Merritt vs IND (#2 vs RB)"
+     "text": "Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time — a lean. 11.28 vs 9.19 projected: 2.09 apart.  \nMost weeks: Omarion Hampton 6–15, Jacory Croskey-Merritt 4–12.  \nA bad week to a good week: Omarion Hampton 3–23, Jacory Croskey-Merritt 1–19.  \nOmarion Hampton vs SEA (#26 vs RB) · Jacory Croskey-Merritt vs IND (#2 vs RB)"
     }
-   ]
+   ],
+   "why": "Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game."
   },
   {
    "slot": "QB",
@@ -105,17 +99,14 @@
     },
     {
      "kind": "markdown",
-     "text": "**Patrick Mahomes outscores Tyler Shough 55% of the time — a lean.**"
-    },
-    {
-     "kind": "markdown",
-     "text": "20.26 vs 18.17 projected: 2.09 apart."
+     "text": "Mahomes is on the road against the Raiders, who give up the 9th-fewest points to quarterbacks, but the projection still has him 2.1 points ahead."
     },
     {
      "kind": "caption",
-     "text": "Most weeks: Patrick Mahomes 16–24, Tyler Shough 15–24.  \nA bad week to a good week: Patrick Mahomes 9–29, Tyler Shough 10–30.  \nPatrick Mahomes vs LV (#24 vs QB) · Tyler Shough vs ATL (#14 vs QB)"
+     "text": "Patrick Mahomes outscores Tyler Shough 55% of the time — a lean. 20.26 vs 18.17 projected: 2.09 apart.  \nMost weeks: Patrick Mahomes 16–24, Tyler Shough 15–24.  \nA bad week to a good week: Patrick Mahomes 9–29, Tyler Shough 10–30.  \nPatrick Mahomes vs LV (#24 vs QB) · Tyler Shough vs ATL (#14 vs QB)"
     }
-   ]
+   ],
+   "why": "Mahomes is on the road against the Raiders, who give up the 9th-fewest points to quarterbacks, but the projection still has him 2.1 points ahead."
   }
  ],
  "notice": null,
@@ -128,7 +119,9 @@
    "position": "QB",
    "value": 20.26,
    "margin": 2.09,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+   "team": "KC"
   },
   {
    "role": "starter",
@@ -138,7 +131,9 @@
    "position": "RB",
    "value": 12.8,
    "margin": 3.6,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+   "team": "LA"
   },
   {
    "role": "starter",
@@ -148,7 +143,9 @@
    "position": "RB",
    "value": 11.28,
    "margin": 2.08,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+   "team": "LAC"
   },
   {
    "role": "starter",
@@ -158,7 +155,9 @@
    "position": "WR",
    "value": 12.75,
    "margin": 3.55,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gilgvjemumd6kpc9eiku",
+   "team": "CAR"
   },
   {
    "role": "starter",
@@ -168,7 +167,9 @@
    "position": "WR",
    "value": 12.68,
    "margin": 3.48,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+   "team": "MIN"
   },
   {
    "role": "starter",
@@ -178,7 +179,9 @@
    "position": "TE",
    "value": 10.14,
    "margin": 4.35,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+   "team": "KC"
   },
   {
    "role": "starter",
@@ -188,7 +191,9 @@
    "position": "WR",
    "value": 12.16,
    "margin": 2.96,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+   "team": "JAX"
   },
   {
    "role": "starter",
@@ -198,7 +203,9 @@
    "position": "RB",
    "value": 9.72,
    "margin": 0.52,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+   "team": "JAX"
   },
   {
    "role": "starter",
@@ -208,7 +215,9 @@
    "position": "K",
    "value": 8.07,
    "margin": 8.07,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+   "team": "TB"
   },
   {
    "role": "starter",
@@ -218,7 +227,9 @@
    "position": "DEF",
    "value": 7.16,
    "margin": 7.16,
-   "flag": ""
+   "flag": "",
+   "headshot_url": null,
+   "team": null
   }
  ],
  "lineup_full": [
@@ -230,7 +241,9 @@
    "position": "QB",
    "value": 20.26,
    "margin": 2.09,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+   "team": "KC"
   },
   {
    "role": "starter",
@@ -240,7 +253,9 @@
    "position": "RB",
    "value": 12.8,
    "margin": 3.6,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+   "team": "LA"
   },
   {
    "role": "starter",
@@ -250,7 +265,9 @@
    "position": "RB",
    "value": 11.28,
    "margin": 2.08,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+   "team": "LAC"
   },
   {
    "role": "starter",
@@ -260,7 +277,9 @@
    "position": "WR",
    "value": 12.75,
    "margin": 3.55,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gilgvjemumd6kpc9eiku",
+   "team": "CAR"
   },
   {
    "role": "starter",
@@ -270,7 +289,9 @@
    "position": "WR",
    "value": 12.68,
    "margin": 3.48,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+   "team": "MIN"
   },
   {
    "role": "starter",
@@ -280,7 +301,9 @@
    "position": "TE",
    "value": 10.14,
    "margin": 4.35,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+   "team": "KC"
   },
   {
    "role": "starter",
@@ -290,7 +313,9 @@
    "position": "WR",
    "value": 12.16,
    "margin": 2.96,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+   "team": "JAX"
   },
   {
    "role": "starter",
@@ -300,7 +325,9 @@
    "position": "RB",
    "value": 9.72,
    "margin": 0.52,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+   "team": "JAX"
   },
   {
    "role": "starter",
@@ -310,7 +337,9 @@
    "position": "K",
    "value": 8.07,
    "margin": 8.07,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+   "team": "TB"
   },
   {
    "role": "starter",
@@ -320,7 +349,9 @@
    "position": "DEF",
    "value": 7.16,
    "margin": 7.16,
-   "flag": ""
+   "flag": "",
+   "headshot_url": null,
+   "team": null
   },
   {
    "role": "bench",
@@ -330,7 +361,9 @@
    "position": "QB",
    "value": 18.17,
    "margin": null,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+   "team": "NO"
   },
   {
    "role": "bench",
@@ -340,7 +373,9 @@
    "position": "QB",
    "value": 17.25,
    "margin": null,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+   "team": "CAR"
   },
   {
    "role": "bench",
@@ -350,7 +385,9 @@
    "position": "WR",
    "value": 9.2,
    "margin": null,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+   "team": "ARI"
   },
   {
    "role": "bench",
@@ -360,7 +397,9 @@
    "position": "RB",
    "value": 9.19,
    "margin": null,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+   "team": "WAS"
   },
   {
    "role": "bench",
@@ -370,7 +409,9 @@
    "position": "TE",
    "value": 5.79,
    "margin": null,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg",
+   "team": "LA"
   },
   {
    "role": "unplayable",
@@ -380,7 +421,9 @@
    "position": "RB",
    "value": 7.09,
    "margin": null,
-   "flag": "IR slot"
+   "flag": "IR slot",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qbauucaxakkhtxihuvmr",
+   "team": "DEN"
   },
   {
    "role": "unplayable",
@@ -390,7 +433,9 @@
    "position": "RB",
    "value": 6.05,
    "margin": null,
-   "flag": "IR slot"
+   "flag": "IR slot",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cuuyog0lpxfaj0y0huvp",
+   "team": "SEA"
   }
  ],
  "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls. The first line is **how often your starter outscores the other player** this week, from both players' ranges: 50–55% is a coin flip (go with the latest news), 55–65% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Most weeks** is the range half of his weeks land in (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the matchup you want), 32 = the fewest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",

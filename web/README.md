@@ -198,3 +198,4 @@ port: `E2E_PORT=8594 npx playwright test --config playwright.g4.config.ts`. Scre
 | `src/lib/decisionPages.ts` | the four screens loaded on first use |
 | `src/lib/api.ts` (`// ---- G4`) | G2's shapes as types, `decisionPaths`, `postEvaluate` |
 | `fixtures/save_decision_fixtures.py`, `e2e/decisions-fixtures.ts`, `e2e/decisions/fixtures.spec.ts`, `playwright.g4.config.ts` | the fixtures' saver, their routes, the e2e, the e2e alone on its own port |
+| `fixtures/save_ia1_fixtures.py`, `e2e/ia1/fixtures.spec.ts` (IA-1) | brings the saved My Week and Trends answers to Wave I-A's shapes in place (cards' reasons, lineup headshots, Trends' work a game); the e2e for My Week, Trends, Matchups, Compare at 375 and 1300 |

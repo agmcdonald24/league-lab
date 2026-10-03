@@ -56,7 +56,8 @@
     return { v: t?.points_allowed_pg ?? null, display: t?.points_allowed_pg == null ? "—" : t.points_allowed_pg.toFixed(1), title: t?.rank ? `#${t.rank} vs ${col}` : undefined };
   };
 
-  const cbs = $derived(c.data?.matchups ?? []);
+  // IA-1: receivers only — a tight end mostly draws linebackers and safeties, so he is left out instead of explained
+  const cbs = $derived((c.data?.matchups ?? []).filter((m) => m.position !== "TE" && m.call_status !== "tight end"));
   const starterCbs = $derived(cbs.filter((m) => m.is_starter));
   const benchCbs = $derived(cbs.filter((m) => !m.is_starter));
 </script>
@@ -166,13 +167,13 @@
 
         {#if team !== null}
           <section class="space-y-2.5" data-testid="cb-section">
-            <h2 class="ll-label">Cornerbacks your receivers face</h2>
+            <h2 class="text-lg leading-tight font-bold" data-testid="cb-title">The cornerbacks your receivers face</h2>
             {#if c.error}
               <p class="ll-error">{c.error}</p>
             {:else if !c.data}
               <div class="ll-skel h-32"></div>
             {:else if cbs.length === 0}
-              <p class="ll-empty">No receivers on your roster with a game this week.</p>
+              <p class="ll-empty">No wide receivers on your roster with a game this week.</p>
             {:else}
               {#each starterCbs as m (m.gsis_id)}{@render cbCard(m)}{/each}
               <p class="text-xs leading-snug text-ink-3">
@@ -206,7 +207,6 @@
           text={"- **#1 vs RB** is the defense that gives up the most points a game to running backs: the matchup you want. #32 is the toughest.\n" +
             "- **Start the receiver whose likely corner ranks lower** when two options are close; don't bench a star for a tough corner: his targets matter more, and the projection already counts the defense.\n" +
             "- The side bar shows where his targets have gone since the start of last season (the offense's left, middle, right); the highlighted side is the one the named corner covers.\n" +
-            "- Tight ends mostly draw linebackers and safeties, so they get no cornerback call.\n" +
             `- A few weeks is a small sample: a defense's rank moves a lot early. Points here are in ${leagueName} scoring.`}
         />
       </div>

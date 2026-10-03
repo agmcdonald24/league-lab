@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-A
+
+- **IA-1: say it like a person would.** My Week's cards say why in one sentence under the call — the matchup ("he is
+  at home against the Colts, who give up the 2nd-most points to running backs"), his share of his team's carries or
+  targets moving, an injury, the betting line — and a coin flip says "Too close to call" and names the tiebreaker;
+  "outscores him 51% of the time" and the numbers are the small print (`cards.reason_line`, shared with the console).
+  The slot list shows a headshot on every row and short names on a phone ("J. Croskey-Merritt"), under one plain
+  header ("Your lineup"). Trends is "Below and above expectation", each row with targets / carries a game (last 3 and
+  the season), snaps, expected and actual points and a sentence ("Getting the targets of a 20.0-point player, scoring
+  39.4: 4 touchdowns in 2 games on 6 red-zone targets"). Matchups' cornerback section lists receivers only, under a
+  real title; Compare says "Choose a player".
+
 ## 2026-10-03 — Wave I-0
 
 - **I0-A: who can play, checked every 15 minutes on game days.** My Week no longer starts a player ruled out after the

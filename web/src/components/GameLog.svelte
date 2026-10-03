@@ -51,7 +51,7 @@
     <p class="mb-3 text-base leading-snug" data-testid="game-log-answer">
       <strong>{ppg?.toFixed(1)} points a game</strong> over {points.length} game{points.length === 1 ? "" : "s"}{#if xppg !== null}
         &nbsp;on work worth <strong>{xppg.toFixed(1)}</strong>
-        ({ppg! - xppg >= 0 ? "running hot: due to cool off" : "below his work: due to pick up"}){/if}, in {leagueName} scoring.
+        ({ppg! - xppg >= 0 ? "above expectation: expect him to cool off" : "below expectation: expect him to pick up"}){/if}, in {leagueName} scoring.
     </p>
     <LineChart {points} actualLabel="Points" expectedLabel="Expected points" />
   {/if}

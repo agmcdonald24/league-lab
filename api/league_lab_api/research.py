@@ -438,6 +438,111 @@ def role_alerts(ctx: Ctx, season: int, gsis: list[str] | None = None) -> pd.Data
                  (int(season), *params))
 
 
+# ---- IA-1: Trends in plain words — the work per game per row, and the reason in a sentence (Wave I-A)
+NEAR = 0.5            # points a game: closer than this to his work is "about what his work is worth" (web: research.ts)
+WORK_SQL = """
+with g as (
+    select p.gsis_id, p.week, p.targets, p.carries, p.offense_snap_pct, p.snaps_known, p.red_zone_targets,
+           p.red_zone_carries, coalesce(p.receiving_tds, 0) + coalesce(p.rushing_tds, 0) as tds, p.passing_tds,
+           p.target_share, p.carry_share, row_number() over (partition by p.gsis_id order by p.week desc) as rn
+    from analytics.fct_player_game p
+    where p.season = %s and p.season_type = 'REG' and p.played and p.gsis_id = any(%s)
+)
+select g.gsis_id, count(*) as work_games,
+       avg(g.targets) as targets_pg, avg(g.targets) filter (where g.rn <= 3) as targets_pg_l3,
+       avg(g.carries) as carries_pg, avg(g.carries) filter (where g.rn <= 3) as carries_pg_l3,
+       avg(g.offense_snap_pct) filter (where g.rn <= 3 and g.snaps_known) as snap_pct_l3,
+       sum(g.red_zone_targets) as rz_targets, sum(g.red_zone_carries) as rz_carries, sum(g.tds) as tds,
+       sum(g.passing_tds) as pass_tds,
+       array_agg(g.target_share::float order by g.week) as target_shares,
+       array_agg(g.carry_share::float order by g.week) as carry_shares,
+       bool_or(f.pn_qb_changed = 1) as qb_changed
+from g
+left join analytics.mart_player_week_features f on f.gsis_id = g.gsis_id and f.season = %s and f.week = %s
+group by g.gsis_id
+"""
+WORK_WORDS = {"QB": "the throws and runs", "RB": "the carries and targets", "WR": "the targets", "TE": "the targets"}
+WORK_COLS = ["targets_pg", "targets_pg_l3", "carries_pg", "carries_pg_l3", "snap_pct_l3", "rz_targets", "rz_carries",
+             "tds", "pass_tds"]
+
+
+def _f(v) -> float | None:
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return None if np.isnan(f) else f
+
+
+def _share_move(r: dict) -> tuple[str, float, float] | None:
+    """(word, first, last): his share of the team's targets (carries for a running back) from his first game of the season
+    to his last, when it moved 6 points or more; None otherwise."""
+    word, key = ("carries", "carry_shares") if r.get("position") == "RB" else ("targets", "target_shares")
+    vals = [x for x in (_f(v) for v in (r.get(key) or [])) if x is not None]
+    if len(vals) < 2 or abs(vals[-1] - vals[0]) < 0.06:
+        return None
+    return word, vals[0], vals[-1]
+
+
+def trend_cause(r: dict) -> str | None:
+    """One cause the numbers support, or None (we do not guess): touchdowns against red-zone chances, a quarterback
+    change, a share of the team's work that moved."""
+    gap, pos = _f(r.get("gap")), r.get("position")
+    if gap is None or abs(gap) <= NEAR:
+        return None
+    games = int(_f(r.get("work_games")) or 0)
+    tds = int(_f(r.get("tds")) or 0)
+    rz = int((_f(r.get("rz_targets")) or 0) + ((_f(r.get("rz_carries")) or 0) if pos in ("RB", "QB") else 0))
+    chances = ("red-zone target" if pos in ("WR", "TE") else "red-zone chance") + ("" if rz == 1 else "s")
+    move = _share_move(r)
+    if gap < 0:
+        if pos == "QB":
+            ptd = int(_f(r.get("pass_tds")) or 0)
+            if ptd == 0 and games >= 2:
+                return f"no touchdown passes in {games} games"
+        elif tds == 0 and rz >= 2:
+            return f"no touchdowns on {rz} {chances}"
+        if r.get("qb_changed") and pos != "QB":
+            return "his quarterback changed"
+        if move and move[2] < move[1]:
+            return f"his share of the {move[0]} fell from {move[1]:.0%} to {move[2]:.0%}"
+        return None
+    if pos == "QB":
+        ptd = int(_f(r.get("pass_tds")) or 0)
+        if games and ptd >= 2 * games:
+            return f"{ptd} touchdown passes in {games} games"
+    elif tds >= 2 and games and tds / games >= 0.6:
+        return f"{tds} touchdowns in {games} games" + (f" on {rz} {chances}" if rz else "")
+    if move and move[2] > move[1]:
+        return f"his share of the {move[0]} rose from {move[1]:.0%} to {move[2]:.0%}"
+    if r.get("qb_changed") and pos != "QB":
+        return "his quarterback changed"
+    return None
+
+
+def trend_why(r: dict) -> str | None:
+    """'Getting the targets of a 10.5-point player, scoring 3.6: no touchdowns on 4 red-zone targets.'"""
+    ppg, xppg = _f(r.get("ppg")), _f(r.get("xppg"))
+    if ppg is None or xppg is None:
+        return None
+    x = f"{xppg:.1f}"
+    an = "an" if x.startswith(("8", "11.", "18.")) else "a"            # an 8.4-point, an 11.2-point, an 18.6-point player
+    line = f"Getting {WORK_WORDS.get(r.get('position') or '', 'the work')} of {an} {x}-point player, scoring {ppg:.1f}"
+    cause = trend_cause(r)
+    return f"{line}: {cause}." if cause else f"{line}."
+
+
+def trend_work(season: int, week: int | None, ids: list[str]) -> pd.DataFrame:
+    """Per player: targets and carries a game (last 3 and the season), snap share over his last 3, red-zone chances,
+    touchdowns, his share of the team's work game by game, a quarterback change this week. One query."""
+    cols = ["gsis_id", "work_games", *WORK_COLS, "target_shares", "carry_shares", "qb_changed"]
+    if not ids:
+        return pd.DataFrame(columns=cols)
+    s = int(season)
+    return query(WORK_SQL, (s, list(ids), s, int(week) if week is not None else -1))[cols]
+# ---- end IA-1
+
+
 def trends(league_id: str, *, position: str | None = None, limit: int | None = None, view: str = "all",
            season: int | None = None, who: str = "all", team: int | None = None, min_games: int = 1,
            sort: str | None = None, dir: str | None = None, metrics: str = "moved", source: str | None = None) -> dict:
@@ -499,10 +604,21 @@ def trends(league_id: str, *, position: str | None = None, limit: int | None = N
     by_player = _grouped(met, "gsis_id")
     al = role_alerts(ctx, season, ids) if ids else pd.DataFrame()
     alerts = {r["gsis_id"]: _alert(r) for r in _records(al)}
+    # ---- IA-1: the work per game and the reason in a sentence
+    work = {r["gsis_id"]: r for r in trend_work(season, ctx.week, ids).to_dict("records")}
+    # ---- end IA-1
     players = []
     for r in _records(page):
         r["metrics"] = by_player.get(r["gsis_id"], [])
         r["role_alert"] = alerts.get(r["gsis_id"])
+        # ---- IA-1
+        w = work.get(r["gsis_id"], {})
+        for c in WORK_COLS:
+            v = _f(w.get(c))
+            r[c] = None if v is None else (round(v, 2) if c in ("snap_pct_l3",) else round(v, 1) if c.endswith(("_pg", "_l3")) else int(v))
+        r["why"] = trend_why({**r, **w})
+        r["cause"] = trend_cause({**r, **w})
+        # ---- end IA-1
         players.append(r)
     # the page's first section: this week's role alerts among this league's players (rostered or free agents)
     every = role_alerts(ctx, season)

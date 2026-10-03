@@ -199,8 +199,8 @@
   </ScreenHead>
 
   <div class="grid grid-cols-2 gap-2" data-testid="compare-pickers">
-    {@render picker("a", "Find a player")}
-    {@render picker("b", "Find a player")}
+    {@render picker("a", "Choose a player")}
+    {@render picker("b", "Choose a player")}
   </div>
 
   {#if cmp.error}

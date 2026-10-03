@@ -43,17 +43,14 @@
     },
     {
      "kind": "markdown",
-     "text": "**CeeDee Lamb outscores Breece Hall 54% of the time — a coin flip.**"
-    },
-    {
-     "kind": "markdown",
-     "text": "13.47 vs 12.78 projected: 0.69 apart."
+     "text": "Too close to call: the projection says Lamb by 0.7, the ranges say either. Go with Lamb on the matchup: he is on the road against the Texans, who give up the most points to receivers."
     },
     {
      "kind": "caption",
-     "text": "Most weeks: CeeDee Lamb 7–18, Breece Hall 7–18.  \nA bad week to a good week: CeeDee Lamb 5–23, Breece Hall 4–23.  \nCeeDee Lamb vs HOU (#1 vs WR) · Breece Hall vs CHI (#9 vs RB)"
+     "text": "CeeDee Lamb outscores Breece Hall 54% of the time — a coin flip. 13.47 vs 12.78 projected: 0.69 apart.  \nMost weeks: CeeDee Lamb 7–18, Breece Hall 7–18.  \nA bad week to a good week: CeeDee Lamb 5–23, Breece Hall 4–23.  \nCeeDee Lamb vs HOU (#1 vs WR) · Breece Hall vs CHI (#9 vs RB)"
     }
-   ]
+   ],
+   "why": "Too close to call: the projection says Lamb by 0.7, the ranges say either. Go with Lamb on the matchup: he is on the road against the Texans, who give up the most points to receivers."
   },
   {
    "slot": "RB2",
@@ -75,17 +72,14 @@
     },
     {
      "kind": "markdown",
-     "text": "**Derrick Henry outscores Breece Hall 61% of the time — a lean.**"
-    },
-    {
-     "kind": "markdown",
-     "text": "17.39 vs 12.78 projected: 4.61 apart."
+     "text": "Henry gets 68% of his team's carries, and the projection has him 4.6 points ahead."
     },
     {
      "kind": "caption",
-     "text": "Most weeks: Derrick Henry 12–23, Breece Hall 7–18.  \nA bad week to a good week: Derrick Henry 9–29, Breece Hall 4–23.  \nDerrick Henry vs TEN (#13 vs RB) · Breece Hall vs CHI (#9 vs RB)"
+     "text": "Derrick Henry outscores Breece Hall 61% of the time — a lean. 17.39 vs 12.78 projected: 4.61 apart.  \nMost weeks: Derrick Henry 12–23, Breece Hall 7–18.  \nA bad week to a good week: Derrick Henry 9–29, Breece Hall 4–23.  \nDerrick Henry vs TEN (#13 vs RB) · Breece Hall vs CHI (#9 vs RB)"
     }
-   ]
+   ],
+   "why": "Henry gets 68% of his team's carries, and the projection has him 4.6 points ahead."
   },
   {
    "slot": "TE",
@@ -107,17 +101,14 @@
     },
     {
      "kind": "markdown",
-     "text": "**Trey McBride outscores Dalton Kincaid 72% of the time — clear.**"
-    },
-    {
-     "kind": "markdown",
-     "text": "12.45 vs 9.61 projected: 2.84 apart."
+     "text": "McBride gets 37% of his team's targets; Kincaid is at home against the Patriots, who give up the 4th-fewest points to tight ends."
     },
     {
      "kind": "caption",
-     "text": "Most weeks: Trey McBride 7–16, Dalton Kincaid 5–14.  \nA bad week to a good week: Trey McBride 4–21, Dalton Kincaid 4–17.  \nTrey McBride vs NYG (#12 vs TE) · Dalton Kincaid vs NE (#29 vs TE)"
+     "text": "Trey McBride outscores Dalton Kincaid 72% of the time — clear. 12.45 vs 9.61 projected: 2.84 apart.  \nMost weeks: Trey McBride 7–16, Dalton Kincaid 5–14.  \nA bad week to a good week: Trey McBride 4–21, Dalton Kincaid 4–17.  \nTrey McBride vs NYG (#12 vs TE) · Dalton Kincaid vs NE (#29 vs TE)"
     }
-   ]
+   ],
+   "why": "McBride gets 37% of his team's targets; Kincaid is at home against the Patriots, who give up the 4th-fewest points to tight ends."
   }
  ],
  "notice": null,
@@ -130,7 +121,9 @@
    "position": "QB",
    "value": 24.42,
    "margin": 6.83,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mjwbioajzldkq1vzoz2d",
+   "team": "BUF"
   },
   {
    "role": "starter",
@@ -140,7 +133,9 @@
    "position": "RB",
    "value": 21.81,
    "margin": 9.03,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+   "team": "DET"
   },
   {
    "role": "starter",
@@ -150,7 +145,9 @@
    "position": "RB",
    "value": 17.39,
    "margin": 4.61,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tm79x0iknqg6hms3ypyt",
+   "team": "BAL"
   },
   {
    "role": "starter",
@@ -160,7 +157,9 @@
    "position": "WR",
    "value": 14.72,
    "margin": 1.94,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yx1xjrupbqdknnjaq4a6",
+   "team": "SEA"
   },
   {
    "role": "starter",
@@ -170,7 +169,9 @@
    "position": "WR",
    "value": 14.05,
    "margin": 1.27,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fguybjrn1kwflxm5szwq",
+   "team": "HOU"
   },
   {
    "role": "starter",
@@ -180,7 +181,9 @@
    "position": "TE",
    "value": 12.45,
    "margin": 2.84,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/psasp10nn5pcvkli9kil",
+   "team": "ARI"
   },
   {
    "role": "starter",
@@ -190,7 +193,9 @@
    "position": "WR",
    "value": 13.47,
    "margin": 0.69,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
+   "team": "DAL"
   },
   {
    "role": "starter",
@@ -200,7 +205,9 @@
    "position": "K",
    "value": 8.23,
    "margin": 8.23,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/t6fs7i54i4n7xjiayoz0",
+   "team": "CIN"
   },
   {
    "role": "starter",
@@ -210,7 +217,9 @@
    "position": "DEF",
    "value": 7.1,
    "margin": 7.1,
-   "flag": ""
+   "flag": "",
+   "headshot_url": null,
+   "team": null
   }
  ],
  "lineup_full": [
@@ -222,7 +231,9 @@
    "position": "QB",
    "value": 24.42,
    "margin": 6.83,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mjwbioajzldkq1vzoz2d",
+   "team": "BUF"
   },
   {
    "role": "starter",
@@ -232,7 +243,9 @@
    "position": "RB",
    "value": 21.81,
    "margin": 9.03,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cursejnmmp1i9hnxihkj",
+   "team": "DET"
   },
   {
    "role": "starter",
@@ -242,7 +255,9 @@
    "position": "RB",
    "value": 17.39,
    "margin": 4.61,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tm79x0iknqg6hms3ypyt",
+   "team": "BAL"
   },
   {
    "role": "starter",
@@ -252,7 +267,9 @@
    "position": "WR",
    "value": 14.72,
    "margin": 1.94,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yx1xjrupbqdknnjaq4a6",
+   "team": "SEA"
   },
   {
    "role": "starter",
@@ -262,7 +279,9 @@
    "position": "WR",
    "value": 14.05,
    "margin": 1.27,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fguybjrn1kwflxm5szwq",
+   "team": "HOU"
   },
   {
    "role": "starter",
@@ -272,7 +291,9 @@
    "position": "TE",
    "value": 12.45,
    "margin": 2.84,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/psasp10nn5pcvkli9kil",
+   "team": "ARI"
   },
   {
    "role": "starter",
@@ -282,7 +303,9 @@
    "position": "WR",
    "value": 13.47,
    "margin": 0.69,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
+   "team": "DAL"
   },
   {
    "role": "starter",
@@ -292,7 +315,9 @@
    "position": "K",
    "value": 8.23,
    "margin": 8.23,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/t6fs7i54i4n7xjiayoz0",
+   "team": "CIN"
   },
   {
    "role": "starter",
@@ -302,7 +327,9 @@
    "position": "DEF",
    "value": 7.1,
    "margin": 7.1,
-   "flag": ""
+   "flag": "",
+   "headshot_url": null,
+   "team": null
   },
   {
    "role": "bench",
@@ -312,7 +339,9 @@
    "position": "QB",
    "value": 17.59,
    "margin": null,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xs2fyj1sqdgwvt9ihbri",
+   "team": "SF"
   },
   {
    "role": "bench",
@@ -322,7 +351,9 @@
    "position": "RB",
    "value": 12.78,
    "margin": null,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
+   "team": "NYJ"
   },
   {
    "role": "bench",
@@ -332,7 +363,9 @@
    "position": "WR",
    "value": 11.28,
    "margin": null,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xzhto2dejy2pflkfx40c",
+   "team": "BAL"
   },
   {
    "role": "bench",
@@ -342,7 +375,9 @@
    "position": "TE",
    "value": 9.61,
    "margin": null,
-   "flag": ""
+   "flag": "",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z7k857flehljboaixj8m",
+   "team": "BUF"
   }
  ],
  "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls. The first line is **how often your starter outscores the other player** this week, from both players' ranges: 50–55% is a coin flip (go with the latest news), 55–65% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Most weeks** is the range half of his weeks land in (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the matchup you want), 32 = the fewest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",

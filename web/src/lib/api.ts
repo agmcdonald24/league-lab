@@ -64,6 +64,10 @@ export interface LineupRow {
   value: number | null;
   margin: number | null;
   flag: string;
+  // ---- IA-1: the slot list's headshot and team (the player card unit's small size on every row)
+  headshot_url?: string | null;
+  team?: string | null;
+  // ---- end IA-1
 }
 
 export interface DecisionCard {
@@ -78,6 +82,7 @@ export interface DecisionCard {
   margin: number | null;
   verdict: string;
   how: string;
+  why?: string | null; // ---- IA-1: the reason sentence (also the card's second block)
   blocks: Block[];
 }
 
@@ -382,6 +387,18 @@ export interface TrendRow extends PlayerHead, Owned {
   gap: number | null; // ppg − xppg
   direction: "over" | "under" | "even";
   role_alert: RoleAlert | null;
+  // ---- IA-1: the work a game (last 3 games and the season), snaps over the last 3, the reason in a sentence
+  targets_pg_l3?: number | null;
+  targets_pg?: number | null;
+  carries_pg_l3?: number | null;
+  carries_pg?: number | null;
+  snap_pct_l3?: number | null;
+  rz_targets?: number | null;
+  rz_carries?: number | null;
+  tds?: number | null;
+  why?: string | null; // "Getting the targets of a 10.5-point player, scoring 3.6: no touchdowns on 4 red-zone targets."
+  cause?: string | null;
+  // ---- end IA-1
 }
 
 export interface Trends {

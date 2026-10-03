@@ -51,7 +51,7 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | feature | input; "what the model looks at" |
 | `targets_pg_l3` and the other inputs | `projections.FEATURE_LABELS` ("Targets per game, last 3 games") |
 | xPPG, expected points | expected points per game: what his targets and carries are usually worth |
-| PPG − xPPG | scoring above / below what his work is worth (below = due to pick up, above = due to cool off) |
+| PPG − xPPG | **below / above expectation** (IA-1; was "due" / "running hot"): "Getting the targets of a 10.5-point player, scoring 3.6" — then one cause the numbers support or none: "no touchdowns on 4 red-zone targets", "4 touchdown passes in 2 games", "his quarterback changed", "his share of the targets fell from 25% to 12%" |
 | target share, carry share | his share of his team's targets / carries |
 | snap % | share of plays he is on the field |
 | first-read share | how often he is the quarterback's first look |
@@ -60,6 +60,9 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | aDOT, air yards | how far downfield his targets travel |
 | implied team total | the points Vegas expects his team to score |
 | opp rank | the matchup rank: 1 = the defense that gives up the most to his position (the matchup you want) |
+| opp rank in a sentence (IA-1) | "the Colts, who give up the 2nd-most points to running backs" (rank ≤ 10) / "the 7th-fewest" (rank ≥ 23); the middle is not worth a sentence |
+| a decision card's reason (IA-1, `cards.reason_line`) | one sentence under the call: the strongest reason for the starter and the strongest against the other player ("Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game"); under 55% (or under 1 point apart without a percentage): "Too close to call: the projection says A by 0.5, the ranges say either. Go with B on the matchup: …" (injury first, then matchup, role, betting line); last names, whole names when two share one |
+| implied total in a sentence (IA-1) | "Vegas expects Willis's Dolphins to score only 16" (≤ 18) / "… to score 27" (≥ 26) |
 | z / Strength, "beyond noise" | how unusual the change is for him (1 = worth a look, 2 = clear); bigger than his usual week-to-week swing |
 | momentum | his role trend |
 | lineup value (B1) | the projected points of your best lineup |

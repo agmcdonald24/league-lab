@@ -45,6 +45,10 @@ def test_my_week_is_the_home_page(client, league):
     assert len(page["cards"]) == len(api["cards"])
     for drawn, card in zip(page["cards"], api["cards"], strict=True):
         assert norm_blocks(drawn) == norm_blocks(card["blocks"])
+        # Wave I-A (IA-1): the reason sentence sits under the call on both (cards.reason_line), the odds in the small print
+        if card["alt_name"]:
+            assert norm_blocks(drawn)[1] == ("markdown", strip_links(card["why"]))
+            assert norm_blocks(drawn)[-1][0] == "caption" and "apart" in norm_blocks(drawn)[-1][1]
     if not api["cards"]:
         assert strip_links(page["notice"] or "") == strip_links(api["notice"] or "")
     # the record line and the league line are markdown lines of the page

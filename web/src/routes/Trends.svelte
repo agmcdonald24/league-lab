@@ -1,13 +1,14 @@
 <script lang="ts">
-  // Research · Trends (Wave G): over- vs under-performing. The answer first — who is due (scoring below what his work
-  // is worth) and who is running hot — then every player as a row with his gap as a bar (actual minus expected
-  // points a game, this league's scoring), filters for the view, the position and whose players. From 900 px the
+  // Research · Trends (Wave G; IA-1's words): below and above expectation. The answer first — who scores below what his
+  // work is worth and who scores above it, with the reason — then every player as a row with his gap as a bar (actual minus expected
+  // points a game, this league's scoring), his work a game under it (IA-1: targets and carries, last 3 and the season,
+  // snaps, expected and actual points) and the reason in a sentence; filters for the view, the position and whose players. From 900 px the
   // picked player's detail sits on the right: his card, the two numbers as bars, his role alert, his last 3 games, his
   // points by week. GET /api/trends (mart_player_trend_tags + actual vs expected + role alerts).
   import { researchPaths, type Trends, type TrendRow } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
-  import { gapWords, NEAR, ownerWord, whoFilter, workLine, type Who } from "../lib/research";
+  import { expectLine, gapWords, l3Season, NEAR, ownerWord, whoFilter, type Who } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
   import { toTrends } from "../lib/shapes";
   import { navigate, route, setParams } from "../lib/router.svelte";
@@ -48,6 +49,10 @@
   const span = $derived(Math.max(4, ...rows.map((p) => Math.abs(p.gap ?? 0))));
   const picked = $derived(rows.find((p) => p.gsis_id === params.get("pick")) ?? rows[0] ?? null);
   const href = (p: TrendRow) => withContext(`/player/${p.gsis_id}`, ctx);
+  // IA-1: "getting the targets of a 15.3-point player, scoring 3.6: no touchdowns on 4 red-zone targets"
+  const whyLine = (p: TrendRow) => (p.why ? p.why.replace(/\.$/, "") : expectLine(p));
+  const lower = (t: string) => t.charAt(0).toLowerCase() + t.slice(1);
+  const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
   const setView = (v: string) => setParams({ view: v === "all" ? null : v });
   const setPos = (p: string) => setParams({ position: p === "ALL" ? null : p });
@@ -69,12 +74,25 @@
   </div>
 {/snippet}
 
+{#snippet workStrip(p: TrendRow)}
+  {@const t = l3Season(p.targets_pg_l3, p.targets_pg)}
+  {@const c = l3Season(p.carries_pg_l3, p.carries_pg)}
+  <div class="grid grid-cols-5 gap-1 pr-3 pb-1 pl-16 text-sm text-ink-2" data-testid="trend-stats">
+    <span class="tabnum" data-testid="stat-targets">{t.l3}<span class="block text-xs text-ink-3 sm:inline">{` (${t.season})`}</span></span>
+    <span class="tabnum" data-testid="stat-carries">{c.l3}<span class="block text-xs text-ink-3 sm:inline">{` (${c.season})`}</span></span>
+    <span class="tabnum" data-testid="stat-snaps">{fmt.pct(p.snap_pct_l3)}</span>
+    <span class="tabnum" data-testid="stat-expected">{fmt.pts(p.xppg)}</span>
+    <span class="tabnum font-semibold text-ink" data-testid="stat-actual">{fmt.pts(p.ppg)}</span>
+  </div>
+  <p class="pr-3 pb-2.5 pl-16 text-sm leading-snug text-ink-2" data-testid="trend-why">{p.why ?? `${cap(expectLine(p))}.`}</p>
+{/snippet}
+
 {#snippet answerCard(p: TrendRow, label: string, testid: string)}
   <PlayerCard
     player={p}
     number={fmt.signed(p.gap)}
     numberLabel={label}
-    line={`${workLine(p.ppg, p.xppg)} · ${ownerWord(p, team)}`}
+    line={`${cap(expectLine(p))} · ${ownerWord(p, team)}`}
     href={href(p)}
     compact
     {testid}
@@ -82,11 +100,11 @@
 {/snippet}
 
 <main class="space-y-4" data-testid="trends">
-  <ScreenHead eyebrow="Research · Trends" title="Who is due, who is running hot">
+  <ScreenHead eyebrow="Research · Trends" title="Below and above expectation">
     {#snippet answer()}
       {#if r.data && (due || hot)}
-        {#if due}<strong>Due to pick up: {due.player_name}</strong> ({workLine(due.ppg, due.xppg)}).{/if}
-        {#if hot}<strong>Running hot: {hot.player_name}</strong> ({workLine(hot.ppg, hot.xppg)}).{/if}
+        {#if due}<strong>Below expectation: {due.player_name}</strong> ({lower(whyLine(due))}).{/if}
+        {#if hot}<strong>Above expectation: {hot.player_name}</strong> ({lower(whyLine(hot))}).{/if}
         Points a game in {leagueName} scoring.
       {:else if r.data}
         Nobody here scores far from what his work is worth yet.
@@ -104,8 +122,8 @@
   {:else}
     {#if due || hot}
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2" data-testid="trends-answer">
-        {#if due}{@render answerCard(due, "Due", "card-due")}{/if}
-        {#if hot}{@render answerCard(hot, "Hot", "card-hot")}{/if}
+        {#if due}{@render answerCard(due, "Below", "card-due")}{/if}
+        {#if hot}{@render answerCard(hot, "Above", "card-hot")}{/if}
       </div>
     {/if}
 
@@ -117,8 +135,8 @@
         onpick={setView}
         items={[
           { key: "all", label: "Everyone" },
-          { key: "due", label: "Due" },
-          { key: "hot", label: "Running hot" },
+          { key: "due", label: "Below" },
+          { key: "hot", label: "Above" },
         ]}
       />
       <Chips label="Position" testid="pos" current={position} onpick={setPos} items={["ALL", "QB", "RB", "WR", "TE"].map((p) => ({ key: p, label: p === "ALL" ? "All" : p }))} />
@@ -140,8 +158,16 @@
         <section class="overflow-hidden rounded-lg border border-line bg-surface" style="box-shadow:var(--ll-shadow)" data-testid="trends-list">
           <header class="flex items-baseline justify-between border-b border-line bg-raised px-3 py-2">
             <h2 class="ll-label">{rows.length} player{rows.length === 1 ? "" : "s"}</h2>
-            <span class="ll-label">vs his work</span>
+            <span class="ll-label">vs expectation</span>
           </header>
+          <!-- IA-1: the row's numbers, one header for the list (each row: last 3 games, the season in brackets) -->
+          <div class="grid grid-cols-5 gap-1 border-b border-line py-1.5 pr-3 pl-16 ll-label" data-testid="trend-stats-head">
+            <span title="Targets a game: his last 3 games (the season)">Tgt/g</span>
+            <span title="Carries a game: his last 3 games (the season)">Car/g</span>
+            <span title="Share of his team's plays he was on the field for, last 3 games">Snaps</span>
+            <span title="Expected points a game: what his targets and carries are usually worth">Exp</span>
+            <span title="Points a game, this league's scoring">Pts</span>
+          </div>
           {#if rows.length === 0}
             <p class="p-4 text-base text-ink-2" data-testid="trends-empty">No player matches these filters.</p>
           {/if}
@@ -151,13 +177,14 @@
                 <PlayerRow
                   player={p}
                   href={href(p)}
-                  context={`${fmt.pts(p.ppg)} a game · worth ${fmt.pts(p.xppg)}`}
+                  context={ownerWord(p, team)}
                   yours={team !== null && p.rostered_by_roster_id === team}
                   selected={picked?.gsis_id === p.gsis_id}
                   onselect={() => (window.innerWidth < 900 ? navigate(href(p)) : setParams({ pick: p.gsis_id }))}
                 >
                   {#snippet trailing()}{@render gapBar(p)}{/snippet}
                 </PlayerRow>
+                {@render workStrip(p)}
               </li>
             {/each}
           </ul>
@@ -174,8 +201,8 @@
             <PlayerCard
               player={picked}
               number={fmt.signed(picked.gap)}
-              numberLabel="vs work"
-              line={`${workLine(picked.ppg, picked.xppg)}: ${gapWords(picked.gap)}.`}
+              numberLabel="vs expectation"
+              line={`${whyLine(picked)}. ${cap(gapWords(picked.gap))}.`}
               context={ownerWord(picked, team)}
               href={href(picked)}
             >
@@ -210,9 +237,11 @@
       <div class="text-base leading-snug">
         <Md
           block
-          text={"- **Due** scores below what his work is worth: his targets and carries usually bring more points. Hold him, or buy him while he is cheap.\n" +
-            "- **Running hot** scores above what his work is worth (long touchdowns, a big play): expect him to cool off. A good time to sell.\n" +
+          text={"- **Below expectation** scores less than his work is usually worth: his targets and carries usually bring more points. Hold him, or buy him while he is cheap.\n" +
+            "- **Above expectation** scores more than his work is usually worth (touchdowns, a big play): expect him to cool off. A good time to sell.\n" +
             "- **Expected points a game** is what his targets and carries are usually worth, in your league's scoring; the bar is points a game minus that.\n" +
+            "- **The sentence under each name** says what his work is worth, what he scores, and one reason the numbers show: touchdowns against red-zone chances, a quarterback change, his share of his team's targets or carries moving. No reason means nothing stands out yet.\n" +
+            "- **Tgt/g, Car/g**: targets and carries a game over his last 3 games, the season in brackets. **Snaps**: his share of his team's plays over the last 3. **Exp, Pts**: expected and actual points a game.\n" +
             "- Three games is a small sample: a gap is a question to look into, not a verdict. Tap a name for his card and his points week by week."}
         />
       </div>
