@@ -41,7 +41,7 @@ import pandas as pd
 from league_lab import anyleague as A
 from league_lab import injury_feed as F
 from league_lab import lineup as LU
-from league_lab.sleeper_client import cache_dir
+from league_lab import player_ids
 
 from .db import query
 
@@ -113,23 +113,26 @@ def _iso(d: datetime | None) -> str | None:
     return None if d is None else d.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
-# ------------------------------------------------------------------------------ the id table (until player_ids.py)
-# ---- I0-A: a 30-line reader of db_playerids.csv; replace with I0-B's league_lab.player_ids.espn_to_gsis when it lands
+# ------------------------------------------------------------------------------ the id table (league_lab.player_ids)
+# ---- I0-A + I0-B (PO merge): ESPN athlete id -> gsis from the nflverse id table. Tests: the small copy next to the
+# ESPN fixtures (LEAGUE_LAB_ESPN_FIXTURES/db_playerids_espn.csv) or LEAGUE_LAB_PLAYER_IDS_CSV; the server: I0-B's
+# player_ids.table(), which downloads db_playerids.csv into LEAGUE_LAB_CACHE_DIR at most once a day.
 _ids: dict[str, tuple[float, dict[str, str]]] = {}
 
 
-def _ids_csv() -> Path | None:
-    for p in (os.environ.get(IDS_CSV_ENV), os.environ.get(F.FIXTURES_ENV) and Path(os.environ[F.FIXTURES_ENV]) / "db_playerids_espn.csv",
-              cache_dir() / "db_playerids.csv"):
-        if p and Path(p).exists():
-            return Path(p)
+def _fixture_csv() -> Path | None:
+    fx = os.environ.get(F.FIXTURES_ENV)
+    if fx and not os.environ.get(IDS_CSV_ENV):
+        p = Path(fx) / "db_playerids_espn.csv"
+        if p.exists():
+            return p
     return None
 
 
 def espn_to_gsis() -> dict[str, str]:
-    f = _ids_csv()
+    f = _fixture_csv()
     if f is None:
-        return {}
+        return player_ids.table().espn_gsis
     key, mtime = str(f), f.stat().st_mtime
     hit = _ids.get(key)
     if hit is not None and hit[0] == mtime:
@@ -145,7 +148,7 @@ def espn_to_gsis() -> dict[str, str]:
         return {}
     _ids[key] = (mtime, out)
     return out
-# ---- end I0-A id table
+# ---- end id table
 
 
 # ------------------------------------------------------------------------------ the merged snapshot

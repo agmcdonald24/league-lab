@@ -3440,6 +3440,31 @@ of season borrows week by week as before.
 
 ## Wave I-0 (Iteration 17, part 0)
 
+### PO merge — Wave I-0, 2026-10-03 (Friday night, for Sunday)
+
+* **Delivered** (two Opus devs in parallel, ~25 min each): I0-A the availability overlay (ESPN's public injuries
+  feed every 15 min on game days / hourly otherwise + Sleeper's daily directory, newest wins per player; applied at
+  request time: the lineup re-solved with `lineup.solve` when a starter can no longer play, "who moved and why"
+  sentences, OUT / DOUBTFUL / IR chips, "Injuries checked hh:mm", Trends / Waivers / trades / ROS exclusions, the
+  same-team-QB rule; `availability.py`, `injury_feed.py`); I0-B MyFantasyLeague on demand (`mfl:<id>` keys,
+  `mfl_client.py` with caches / 60 a minute / redirects followed, `platforms.py` answering MFL in Sleeper's shapes so no
+  screen changed, `player_ids.py` the nflverse id table downloaded once a day, `/api/leagues?mfl=`, the Leagues
+  screen's link box + team picker; league 21861: 216 of 216 rostered players mapped, the live JSON re-parsed through
+  the pane).
+* **PO**: merged on `integration/wave-i0` (two doc conflicts, both kept; one STATUS heading deduped); I0-A's
+  temporary CSV reader replaced by I0-B's `player_ids.table()` (the fixture copy next to the ESPN fixtures still wins
+  in tests). Checks: `api` 197 passed (159 + 19 + 19), root 835 passed, web lint / build clean, 62 fixture e2e
+  (58 + 2 + 2), ruff clean. QA walk of the integrated API in full fixture mode: every route 200 for `mfl:21861`
+  (team 4: lineup solved, opponent from MFL's schedule, Etienne IR → Kendre Miller at RB2 by the overlay), the house
+  league with Jefferson Out by the fixture feed: "Justin Jefferson is out (ankle) — Michael Wilson starts at FLEX2",
+  Jefferson on "Can't play" with the OUT chip and reason, no card names him, Trends left 28 out, status `warning`
+  null. Two devs used the browser pane for fixtures (own tabs, read-only).
+* **Not verified until the deploy**: Render reaching ESPN, MFL and GitHub raw (the id table); `/api/status →
+  availability.espn.mode: live`, `unmapped_espn` low, `sleeper.mfl.hosts` after the first MFL league; a private MFL
+  league's real refusal text (none found to test). Decisions taken: `/api/record` for MFL answers 200
+  `{available: false}` like any unkept Sleeper league (I0-B's choice, kept); Doubtful counts as cannot play (as the
+  nightly); the opponent's projected total is not overlay-adjusted yet; `/api/team` and Trends' role alerts untouched.
+
 ### I0-A 2026-10-02 — the availability overlay (what would be wrong at 1 PM Sunday)
 
 Branch `dev/I0A`. Andrew's beta walk: My Week said start Justin Jefferson, ruled Out at 2:35 PM ET; Jonah Coleman (IR)
