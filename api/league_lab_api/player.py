@@ -280,6 +280,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         unav(projection, why)
     # plan E2: rest of season, one line after the stat line (the page's block, same query, same sentences)
     ros_out = None
+    ros_weeks: dict[int, float] = {}                                                       # ---- IF-4 (the schedule table)
     if week is not None and (od is not None or not missing_relations((ROS.RELATION,))):
         ros = (query(f"select {ROS.ROS_COLUMNS} from analytics.mart_player_ros_projection where league_id = %s and gsis_id = %s",
                      (league_id, gsis)) if od is None else od.ros(gsis, pos))
@@ -287,6 +288,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
             rr = ros.iloc[0]
             from .ondemand import ros_card
             ros_out = ros_card(rr)
+            ros_weeks = dict(ROS.weeks_list(rr))                                               # ---- IF-4
             md(projection, ROS.card_line(rr))
             cap(projection, f"Week by week ({ROS.weeks_span(rr['from_week'], rr['last_week'])}, through this league's final): "
                             f"{ROS.weeks_words(rr)}. {ROS.lines_note(rr)}")
@@ -483,7 +485,31 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "platform": "mfl" if is_mfl_league(league_id) else "sleeper",           # ---- IE-0
         **({} if od is None else {"on_demand": od.meta()}),
         "news": news_block(p["gsis_id"]),                                                  # ---- N1
+        # ---- IF-4: the schedule table behind "Schedule" (week · opponent · projected, the card's own numbers) and the
+        # games he has played this season (the role words: "not enough games to say" / "role steady over N games")
+        "schedule": schedule_rows(sched, ros_weeks, week),
+        "games_played": int(p["games_played"]) if is_num(p["games_played"]) else None,
+        # ---- end IF-4
     }
+
+
+# ---- IF-4 (Wave I-F; the I-E review's leftover "the compact schedule table on the card"): one row a week from this week
+# to the season's last regular week: the opponent (home / away; None = bye), the matchup rank (1 = gives up the most to
+# his position) and the projection the rest-of-season board holds for that week (None = no projection: unknown, not 0)
+def schedule_rows(sched: pd.DataFrame, ros_weeks: dict[int, float], week: int | None) -> list[dict]:
+    if week is None or sched is None or sched.empty:
+        return []
+    last = max(ros_weeks) if ros_weeks else int(sched["week"].max())        # the league's final when the board has it
+    out = []
+    for w in range(int(week), last + 1):
+        gw = sched[sched["week"] == w]
+        g = None if gw.empty else gw.iloc[0]
+        out.append({"week": w, "opponent": None if g is None else str(g["opponent"]),
+                    "is_home": None if g is None else bool(g["is_home"]),
+                    "opp_rank": int(g["opp_rank"]) if g is not None and is_num(g["opp_rank"]) else None,
+                    "proj": round(float(ros_weeks[w]), 2) if w in ros_weeks else None})
+    return out
+# ---- end IF-4
 
 
 # ---- IB-0 (Wave I-B): the Availability section under the overlay. When the overlay re-solved his roster's week and

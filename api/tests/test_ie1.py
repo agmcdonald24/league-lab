@@ -84,7 +84,7 @@ def test_team8_one_receiver_decision_already_submitted(client):
     both = [c for c in d["cards"] if c["action"] == idx]
     assert {(c["player_name"], c["alt_name"]) for c in both} == {("Ladd McConkey", "Jordan Addison"), ("Malik Nabers", "Jordan Addison")}
     assert sorted(a["cards"]) == sorted(d["cards"].index(c) for c in both)
-    assert d["set_line"] == "The rest of your lineup is set — nothing to change."
+    assert d["set_line"] == myweek.SET_REST == "The rest of your lineup is set."      # IF-4: no "nothing to change" tail
     assert d["edit_link"]["label"] == "Open MFL to edit your lineup"
     assert d["edit_link"]["url"] == "https://www44.myfantasyleague.com/2026/options?L=70587&O=02"
     assert d["nothing_submitted"] == myweek.NOTHING_SUBMITTED and "never changes your lineup or claims" in d["nothing_submitted"]
@@ -114,7 +114,7 @@ def test_scrubs_roster2_a_change_before_the_first_lock(client):
     assert a["lock"]["words"] == "before Sun 9:30 AM ET"                          # Croskey-Merritt's London kickoff
     # the three cards that share Croskey-Merritt are one decision (no reassurance cards for Hampton and Tuten)
     assert len(acts) == 1 and sorted(a["cards"]) == [0, 1, 2] and all(c["action"] == 0 for c in d["cards"])
-    assert d["set_line"] == "The rest of your lineup is set — nothing to change."
+    assert d["set_line"] == myweek.SET_REST == "The rest of your lineup is set."      # IF-4: no "nothing to change" tail
     assert d["edit_link"] == {"label": "Open Sleeper to edit your lineup", "url": f"https://sleeper.com/leagues/{SCRUBS}",
                               "platform": "Sleeper"}
     assert d["next_lock"]["words"] == "before Sun 9:30 AM ET" and set(d["next_lock"]["players"]) == {"Jefferson", "Wilson", "Croskey-Merritt"}
@@ -157,7 +157,9 @@ def test_a_tiny_difference_is_not_an_action():
     # the submitted lineup starts 3 (8.0) where the best lineup starts 2 (8.3): 0.3 points, nobody hurt
     rows = _rows([("1", "RB1", "RB", 15.0), ("2", "WR1", "WR", 8.3)], [("3", "WR", 8.0)])
     res = myweek.build_actions(rows, [_card("2", "3", 0.3, "close", "coin flip")], {"1": "RB", "3": "WR"}, SCRUBS)
-    assert res["actions"] == [] and res["set_line"].startswith(myweek.SET_ALL) and "less than half a point" in res["set_line"]
+    # IF-4: the coin flip stays in view as a "No clear upgrade" line, so the set line says "No clear upgrade elsewhere"
+    assert res["actions"] == [] and res["set_line"].startswith(myweek.SET_ELSEWHERE) and "less than half a point" in res["set_line"]
+    assert [x["start"]["key"] for x in res["review"]] == ["3"]
 
 
 def test_an_out_starter_comes_first_and_at_most_three():

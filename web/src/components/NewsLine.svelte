@@ -7,13 +7,16 @@
 
   let { card, testid }: { card: Pick<PlayerCard, "news">; testid: string } = $props();
   const line = $derived(newsLine(card));
+  // ---- IF-4: the API puts the item about him first (RotoWire's blurb, or a headline that names him); an article-level
+  // headline that does not name him is labelled "League news" so it does not read as news about him
+  const league = $derived((card.news ?? []).find((x) => x.headline && x.url?.startsWith("https://"))?.about === "league");
   const SEP = " · ";
   const MORE = " ›";
 </script>
 
 {#if line}
   <p class="border-t border-line pt-2.5 text-sm leading-snug text-ink-2" data-testid={testid}>
-    <span class="font-semibold text-ink">News</span>{#if line.ago}<span class="text-ink-3">{SEP}{line.ago}</span>{/if}<span
+    <span class="font-semibold text-ink" data-testid={`${testid}-label`}>{league ? "League news" : "News"}</span>{#if line.ago}<span class="text-ink-3">{SEP}{line.ago}</span>{/if}<span
       class="text-ink-3">{SEP}</span
     ><em title={line.full} data-testid={`${testid}-headline`}>{line.headline}</em><span class="text-ink-3">{SEP}</span><a
       href={line.url}

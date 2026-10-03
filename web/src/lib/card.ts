@@ -26,8 +26,80 @@ function projection(d: PlayerCard): Section | undefined {
 export function cardSections(d: PlayerCard): { key: SectionKey; sec: Section }[] {
   return SECTION_ORDER.map((k) => ({ key: k, sec: k === "projection" ? projection(d) : d.sections[k] }))
     .filter((x): x is { key: SectionKey; sec: Section } => !!x.sec)
-    .map((x) => ({ key: x.key, sec: dictionary(x.sec) })); // ---- IE-2
+    .map((x) => ({ key: x.key, sec: dictionary(x.sec) })) // ---- IE-2
+    .map((x) => ({ key: x.key, sec: clearer(x.key, x.sec, d) })); // ---- IF-4
 }
+
+// ---- IF-4 (Wave I-F, the decision-quality review's table): the card's words made exact, on the web (the API's card is
+// the console's player page, pinned by the parity tests). (1) "No role change detected" never beside "not enough
+// games": the role line says which comparison is valid — "not enough games to say" before his fourth game (the same
+// rule as the trend call), else "role steady over N games"; absence of a detected change is not proof of stability.
+// (2) A metric tile with no value is defined and says it is not available for this player (first-read and red-zone
+// share with their denominators), instead of looking broken.
+const TILE_DEFS: Record<string, string> = {
+  "First-read share":
+    "How often he is the quarterback's first look: his first-read targets ÷ his team's charted dropbacks with a first read, in the games he played.",
+  "Red-zone share":
+    "His share of his team's red-zone chances (inside the opponent's 20): targets for a receiver or tight end, carries for a running back or quarterback, in the games he played.",
+  "Snap share": "Share of his team's offensive plays he was on the field for, in the games he played.",
+};
+const NOT_AVAILABLE = "Not available for this player: no charted plays for him yet (unknown, not zero).";
+
+function gamesFrom(d: PlayerCard): number | null {
+  if (typeof d.games_played === "number") return d.games_played;
+  const cap = (d.sections.usage?.blocks ?? []).map((b) => b.text ?? "").find((t) => /Season to date, \d+ game/.test(t));
+  const m = cap?.match(/Season to date, (\d+) game/);
+  return m ? Number(m[1]) : null;
+}
+
+export function roleWords(text: string, games: number | null): string {
+  const NO_CHANGE = /Role: \*\*no role change detected\*\* in his last three games: his share of the snaps, targets and carries is where it has been\./;
+  if (!NO_CHANGE.test(text)) return text;
+  const said =
+    games !== null && games < 4
+      ? `Role: **not enough games to say** — ${games} game${games === 1 ? "" : "s"} so far; a change is called against his own earlier games, from his fourth game.`
+      : `Role: **role steady over ${games ?? "his"} games** — no change in his share of the snaps, targets or carries past his usual swing in the last three.`;
+  return text.replace(NO_CHANGE, said);
+}
+
+function clearer(key: SectionKey, sec: Section, d: PlayerCard): Section {
+  if (key === "signals") {
+    const g = gamesFrom(d);
+    return { ...sec, blocks: sec.blocks.map((b) => (b.text ? { ...b, text: roleWords(b.text, g) } : b)) };
+  }
+  if (key === "usage") {
+    return {
+      ...sec,
+      blocks: sec.blocks.map((b) =>
+        b.metrics
+          ? {
+              ...b,
+              metrics: b.metrics.map((m) => {
+                const def = TILE_DEFS[m.label] ?? null;
+                const empty = m.value == null || m.value === "—" || m.value === "";
+                if (!def && !empty) return m;
+                return { ...m, value: empty ? "—" : m.value, help: [def ?? m.help, empty ? NOT_AVAILABLE : null].filter(Boolean).join(" ") };
+              }),
+            }
+          : b,
+      ),
+    };
+  }
+  return sec;
+}
+
+/** The pane's focus: the blocks a decision needs stay; the week-by-week line, the next-4 list, the rest-of-season link
+ * (projection) and the season tiles (value) go behind "More" in the pane (the full page shows everything). */
+export function paneSplit(key: SectionKey, sec: Section): { main: Section; more: Section["blocks"] } {
+  const isMore = (b: Section["blocks"][number]) => {
+    const t = b.text ?? "";
+    if (key === "projection") return /^Week by week/.test(t) || /^Next 4:/.test(t) || /^\[Every /.test(t);
+    if (key === "value") return !!b.metrics;
+    return false;
+  };
+  return { main: { ...sec, blocks: sec.blocks.filter((b) => !isMore(b)) }, more: sec.blocks.filter(isMore) };
+}
+// ---- end IF-4
 
 // ---- IE-2 (Wave I-E): the review's metric dictionary on the card (docs/WORDS.md § "The dictionary"). The API's card is
 // the console's player page (the parity tests pin its labels), so the product's words are applied here: the label

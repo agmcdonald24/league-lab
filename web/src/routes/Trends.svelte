@@ -166,7 +166,7 @@
             <span title="Targets a game: his last 3 games (the season)">Tgt/g</span>
             <span title="Carries a game: his last 3 games (the season)">Car/g</span>
             <span title="Share of his team's plays he was on the field for, last 3 games">Snaps</span>
-            <span title="Expected points a game: what his targets and carries are usually worth">Exp</span>
+            <span title="Points suggested by his past opportunities: what his targets and carries are usually worth">Exp</span>
             <span title="Points a game, this league's scoring">Pts</span>
           </div>
           {#if rows.length === 0}
@@ -211,7 +211,7 @@
                 {@const top = Math.max(picked.ppg ?? 0, picked.xppg ?? 0) * 1.15 || 1}
                 <div class="space-y-2.5">
                   <Bar label="Points a game" value={picked.ppg} max={top} display={fmt.pts(picked.ppg)} color={SERIES.actual} />
-                  <Bar label="Expected points a game (what his work is worth)" value={picked.xppg} max={top} display={fmt.pts(picked.xppg)} color={SERIES.expected} />
+                  <Bar label="Points suggested by his past opportunities" value={picked.xppg} max={top} display={fmt.pts(picked.xppg)} color={SERIES.expected} />
                 </div>
               {/snippet}
             </PlayerCard>
@@ -223,7 +223,7 @@
               </Card>
             {/if}
             <div class="grid grid-cols-3 gap-2">
-              <StatTile label="Target share, last 3" value={fmt.pct(picked.target_share_l3)} size="sm" />
+              <StatTile label="Share of team passes, last 3" value={fmt.pct(picked.target_share_l3)} size="sm" />
               <StatTile label="Snaps, last 3" value={fmt.pct(picked.snap_share_l3)} size="sm" />
               <StatTile label="Points, last 3" value={fmt.pts(picked.points_l3)} size="sm" />
             </div>
@@ -238,9 +238,9 @@
       <div class="text-base leading-snug">
         <Md
           block
-          text={"- **Below expectation** scores less than his work is usually worth: his targets and carries usually bring more points. Hold him, or buy him while he is cheap.\n" +
-            "- **Above expectation** scores more than his work is usually worth (touchdowns, a big play): expect him to cool off. A good time to sell.\n" +
-            "- **Expected points a game** is what his targets and carries are usually worth, in your league's scoring; the bar is points a game minus that.\n" +
+          text={"- **Below expectation** scores less than his opportunities suggest: his targets and carries usually bring more points. That is what happened, not a forecast — the gap may close or not; a buy needs a price, which this screen does not have.\n" +
+            "- **Above expectation** scores more than his opportunities suggest (touchdowns, a big play). It may not last; whether to sell depends on what he would fetch.\n" +
+            "- **Points suggested by his past opportunities** (expected points a game) is what his targets and carries are usually worth, in your league's scoring; the bar is points a game minus that.\n" +
             "- **The sentence under each name** says what his work is worth, what he scores, and one reason the numbers show: touchdowns against red-zone chances, a quarterback change, his share of his team's targets or carries moving. No reason means nothing stands out yet.\n" +
             "- **Tgt/g, Car/g**: targets and carries a game over his last 3 games, the season in brackets. **Snaps**: his share of his team's plays over the last 3. **Exp, Pts**: expected and actual points a game.\n" +
             "- Three games is a small sample: a gap is a question to look into, not a verdict. Tap a name for his card and his points week by week."}

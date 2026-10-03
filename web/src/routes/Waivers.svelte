@@ -140,7 +140,7 @@
     "- **Each claim is weighed on its own** against your roster as it is: two claims do not simply add up (each may need its own drop, and two claims for the same spot help only once). **Instead of …** marks a claim for the same spot as one above.\n" +
     "- **Who to drop**: the player your lineup misses least over those four weeks. We never suggest dropping someone we have no projection for yet: unknown is not zero.\n" +
     "- **Only the next four weeks count.** In a dynasty league, a young player's future is not in these numbers: look twice before dropping one.\n" +
-    "- **Free agents** are ranked by this week's projection in your league's scoring. **Most weeks** is the band half his weeks land in; the thin line is a bad week to a good week (8 weeks in 10); the tick is the projection. **Rest of season** adds up every week left to your league's final.\n" +
+    "- **Free agents** are ranked by this week's projection in your league's scoring. **Typical range** (the middle 50% of outcomes) is the band half his weeks land in; the thin line runs from the low-end to the high-end outcome (8 weeks in 10); the tick is the projection. **Rest of season** adds up every week left to your league's final.\n" +
     "- **The moves first** are the claims that add the most to your lineup over the next 4 weeks, one per position (two defenses compete for one spot). **Help now** lists the claims that raise this week's lineup; **Bye coverage** the next week a bye leaves a starting spot empty that your bench cannot fill; **Stashes** the upside stash; **All available** every free agent.\n" +
     "- **Before you drop a starter**: when the drop starts for you this week or next, the card says so and shows the best claim that keeps him (its drop sits), or says none does.\n" +
     "- **Upside stash**: a free agent whose role grew in his last one to three games (more snaps, targets or carries: a teammate out, a new starter) before his points caught up. **If it holds** is his projection with the bigger role: a what-if, not a forecast. **Lineup gain if it holds** adds up this week and the next three; most stashes add nothing yet, which is why they are stashes, not starters.\n" +
@@ -298,7 +298,7 @@
                   numberLabel={`Week ${wk}`}
                   context={fa.injury_status}
                   line={[
-                    fa.p25 != null && fa.p75 != null ? `Most weeks ${Math.round(fa.p25)}–${Math.round(fa.p75)} (half his weeks land there).` : null,
+                    fa.p25 != null && fa.p75 != null ? `Typical range ${Math.round(fa.p25)}–${Math.round(fa.p75)} (the middle 50% of outcomes).` : null,
                     fa.p10 != null && fa.p90 != null ? `A bad week to a good week: ${Math.round(fa.p10)}–${Math.round(fa.p90)} (8 weeks in 10).` : null,
                   ]
                     .filter(Boolean)
