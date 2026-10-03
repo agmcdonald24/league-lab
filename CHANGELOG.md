@@ -28,6 +28,17 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   calculator names its numbers (projected points, starter points, backup coverage, season value above replacement)
   and labels the raw rest-of-season totals "not a fairness test".
 
+- **IF-4 (the decision-quality review § Priority 4).** My Week keeps a close call in view when the lineup already
+  follows it — "Tuten or Williams at FLEX: a coin flip, 0.3 points apart; your lineup has Williams — no clear upgrade.
+  Compare ›" and "No clear upgrade elsewhere." instead of "nothing to change" —, adds What changed (the injury
+  report's moves and the week's news from the last 24 hours, the source and the time on each), names each margin's
+  comparator ("over Lloyd" / "no eligible reserve"), shows only the bench in the bench expander and "Updated … ago"
+  in the footer; the pane leads with the decision (the week by week, the season numbers, the new schedule table and
+  the game log behind expanders); Compare bolds only what bears on the call; "Typical range" everywhere; the role line
+  says "not enough games to say" or "role steady over N games"; empty tiles are defined; the news line shows the item
+  about him first ("League news" for an article-level headline); the matchup rank in words ("12th-fewest WR points
+  allowed"); no "expect him to pick up". No number moved.
+
 ## 2026-10-03 — Wave I-E
 
 - **PO (integration).** The trade verdict says what each starting lineup gains and what the season value says —

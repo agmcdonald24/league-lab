@@ -11,6 +11,7 @@
   import NewsLine from "../components/NewsLine.svelte"; // ---- N1
   import PlayerCardView from "../components/PlayerCard.svelte";
   import SectionBox from "../components/Section.svelte";
+  import ScheduleTable from "../components/ScheduleTable.svelte"; // ---- IF-4
 
   let { gsis, league, team, onauth }: { gsis: string; league: string | null; team: number | null; onauth: () => void } = $props();
 
@@ -120,6 +121,11 @@
             {#if x.key === "availability"}<NewsLine card={data} testid="player-news" />{/if}<!-- ---- N1 -->
           </SectionBox>
         {/each}
+        <!-- ---- IF-4: the compact schedule (week · opponent · projected) behind "Schedule" -->
+        {#if data.schedule?.length}
+          <Expander title="Schedule" testid="player-schedule"><ScheduleTable rows={data.schedule} position={data.position} /></Expander>
+        {/if}
+        <!-- ---- end IF-4 -->
         {#if league}<GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={data.league_name} />{/if}
       </div>
       <div class="space-y-3">

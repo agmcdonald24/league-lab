@@ -4861,3 +4861,72 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   clause and the warning leave them out (the words now say so); the Finder's sanity rule (a) is still the raw
   rest-of-season totals (a PO call: switch it to season value above replacement — it would change which trades are
   suggested); IF-1's `best_waiver_move` covers the next four weeks only (the other windows use the fill).
+
+
+### IF-4 2026-10-03 — clarity that exposes the difficult decisions (the decision-quality review § Priority 4 and its table; branch `dev/IF4`, clone `league_lab_i0a`, read only)
+
+* **Why**: the fourth outside review (`docs/reviews/2026-10-03-decision-quality-review.md` § Priority 4): GoodGameBuddy's
+  home said "nothing to change" while Williams vs Tuten at FLEX was 0.22 apart — "No clear upgrade" is the accurate
+  conclusion; a correct optimizer output does not remove the uncertainty. Plus the table of language fixes and the
+  I-E leftovers.
+* **My Week** (`myweek.build_actions`, both paths): `review` — one **No clear upgrade** line per coin-flip card with
+  nobody hurt that the submitted lineup already follows (or differs from by under half a point), smallest margin
+  first, at most 3: "Tuten or Williams at FLEX: a coin flip, 0.3 points apart; your lineup has Williams — no clear
+  upgrade." + Compare ›; IF-3's `matchup_uncertain` (read from `cards.decision_cards`' column or the tiebreak) adds
+  "the matchup rank does not settle it". `set_line`: "No clear upgrade elsewhere." when review lines exist, "The rest
+  of your lineup is set." (the "— nothing to change" tail dropped) with actions, "Your lineup is set — nothing to
+  change." only when there is neither. `changed` — **What changed**: the overlay's moves since the build (source,
+  checked time) then the news of the week's players (the best lineup's starters and the submitted lineup) from the
+  last 24 hours, the item about him first (`news.recent`: the feed's cache and bucket, reads side by side, a 1 s
+  budget), at most five; "Nothing has changed since the morning build." otherwise. Each starter row gains
+  `margin_vs` / `margin_words` ("over Lloyd" from `cards.alternative`; "no eligible reserve: the slot would be empty").
+  `/api/status` gains `updated_at`.
+* **Web**: My Week renders the review lines after the actions, the set line, What changed under the edit link, the
+  starters' table with the margin and its comparator, the bench expander with the bench and who can't play only, the
+  footer "Updated 7 d ago ›" (the exact ET time and the feed names on tap); the lineup card no longer repeats the
+  overlay's moves (What changed carries them; an answer recorded before keeps them there). The **pane** leads with projection,
+  availability (+ news), signals, usage, the value's lineup line; "Week by week and season numbers", "Schedule" and
+  "Game by game this season" behind expanders (`card.ts paneSplit`). The **player page** gains "Schedule"
+  (`ScheduleTable.svelte`: week · opponent · projected, from the card's new `schedule`, the board's own numbers).
+  **Compare**: bold only where it bears on the call (points rows always, usage rows only between two players of the
+  same position; the legend says so), "Typical range 9–16", "Low-end / High-end outcome", "Share of team passes", "This season
+  (2 games)" with the duplicated "Last 3 games" section dropped when it is the same games. **About / Waivers / decisions.ts / the console's
+  cards**: "Typical range (the middle 50%)" for "Most weeks". The card's role line (`card.ts roleWords`, on the web:
+  the API's card is pinned to the console page): "not enough games to say — 2 games so far …" before game 4, "role
+  steady over N games" after; empty metric tiles defined ("Not available for this player …", first-read and red-zone
+  denominators). The news line shows the item about him first (`news.ordered`: RotoWire, or the headline names him);
+  an article-level headline is labelled "League news". The game log and Trends: "1.2 below what his opportunities
+  suggest: an observed gap, not a forecast" (no "expect him to pick up", no "buy him while he is cheap"). The matchup
+  rank in words: `cards.rank_words` / `lib/words.ts rankWords` ("12th-fewest WR points allowed"); applied to the
+  console cards' small print and the schedule table — Compare's and Matchups' `#` lines are IF-3's (INTERFACES.md).
+  Receivers / Trends: the dictionary's "Share of team passes", "Points suggested by his past opportunities".
+* **Evidence — the review's case** (Scrubs roster 6 on the clone, built from its own rows: on 2026-09-26 Tuten was on
+  roster 2, so his real row takes CeeDee Lamb's FLEX slot; Sleeper's lineup = the optimizer's). **Before** (`19d01fa`'s
+  `build_actions` on the same frame): actions none, set line "Your lineup is set — nothing to change.", no review.
+  **After**: actions none, review "Tuten or Williams at FLEX: a coin flip, 0.3 points apart; your lineup has Williams —
+  no clear upgrade.", set line "No clear upgrade elsewhere.". Cards before = after: FLEX2 Jameson Williams 9.98 /
+  Tuten 9.72 / 0.26 coin flip; RB1 Javonte Williams 12.65 / Lloyd 8.02 / 4.63; FLEX1 Olave 15.16 / Tuten 9.72 / 5.18
+  (on the clone Williams projects above Tuten; on the review's day it was Tuten 10.02 / Williams 9.80 — the line names
+  whoever the lineup has). Roster 6's real lineup: QB Cousins 14.74 "no eligible reserve" (was "Margin 14.74"), RB1
+  "4.63 over Lloyd". Roster 2 with the ESPN fixture: What changed = "Justin Jefferson is out (ankle) — Michael Wilson
+  starts at FLEX2", "Terrance Ferguson is on injured reserve (ankle) …" (Injury report (ESPN)), then "Justin
+  Jefferson: Jefferson (ankle) has been already been ruled out … · RotoWire via ESPN". Jefferson's card news: the
+  inactives story ("… DeVonta to sit …", newest-but-one) moves behind his two RotoWire items and reads "league". No
+  number moved.
+* **Tests**: `api/tests/test_if4.py` (7: the roster-6 case end to end (needs_db), the review rules on hand-built frames,
+  What changed from the overlay fixture (needs_db), the empty words, the news order, `for_card` / `recent` on the
+  fixture, the recorder of the e2e answers (skipped unless `IF4_RECORD=1`)); `test_ie1.py` set-line words updated
+  (3 asserts: the tail; the tiny-difference case now has its review line). `web/e2e/if4/` (3 × 375 / 1300: the review
+  line + set line + nothing changed + margins + bench-only + Updated; What changed; the pane's expanders, role words,
+  schedule; Compare's bold rule, Typical range, the season once) on `web/fixtures/if4/api_if4.json`;
+  `e2e/ib1`'s pane test opens the game log's expander first. Checks: **API 409 passed, 3 failed** (the three clone
+  scoring-check tests: `test_ic1` ×2, `test_ic_po` ×1), 3 skipped (the recorder +2 as before); `test_n1`'s card order
+  updated (the item about him first, `about` on each item); **root 986 passed, 2 skipped**; ruff clean; web lint /
+  typecheck / build clean; **fixture e2e 180** (172 + 8: the full run 177 + the one IB-1 selector fix, then `if4` /
+  `ib1` / `i0a` / `ie1` / `ia1` re-run green on the final build).
+* **Open**: the MFL roster's own freshness line (I-E leftover) — not done; "status next to the name on every row" is
+  the existing flag line under the name (OUT / IR chip, Questionable, locked, bye reason) — unchanged; Compare's and
+  Matchups' `#21` / "#2 toughest" lines and the card's "Next: … ranks **#21** of 32" are IF-3's matchup lines (they
+  take `rankWords` / `history.words`); IF-3's `MatchupEvidence` goes into the pane's projection section (a marked
+  comment shows where); the What changed news reads up to ~10 ESPN copies on a cold My Week (the feed's bucket and
+  cache; at most 1 s waited).

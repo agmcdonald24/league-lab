@@ -1625,3 +1625,66 @@ export interface TradeEval extends VersusAlternative {
   };
 }
 // ---- end IF-2
+
+// ---- IF-4 (Wave I-F, the decision-quality review § Priority 4): My Week's "Decisions worth reviewing" (a close call the
+// submitted lineup already follows: "No clear upgrade") and "What changed" (INTERFACES.md § IF-4). Additive.
+export interface ReviewPlayer {
+  key: string;
+  name: string;
+  link: string;
+  gsis_id: string | null;
+  value: number | null;
+}
+export interface ReviewLine {
+  kind: "no_clear_upgrade";
+  slot: string | null;
+  slot_label: string;
+  start: ReviewPlayer; // the one the submitted lineup starts (ours when unknown)
+  other: ReviewPlayer;
+  margin: number | null;
+  strength: string;
+  matchup_uncertain: boolean;
+  words: string; // markdown: "Williams or Tuten at FLEX: a coin flip, 0.2 points apart; your lineup has Tuten — no clear upgrade."
+  submitted: boolean | null;
+  compare: { a: string; b: string } | null;
+  cards: number[];
+}
+export interface ChangedLine {
+  kind: "status" | "news";
+  gsis_id: string | null;
+  player_name?: string | null;
+  text: string;
+  source: string | null;
+  at: string | null;
+  url: string | null;
+  about?: "player" | "league";
+}
+export interface MyWeek {
+  review?: ReviewLine[];
+  changed?: { lines: ChangedLine[]; empty: string };
+}
+export interface DecisionCard {
+  matchup_uncertain?: boolean;
+}
+export interface NewsItem {
+  about?: "player" | "league"; // the item about him first; "league" = an article-level headline (labelled)
+}
+export interface Status {
+  updated_at?: string | null; // the newest load of the data the screens read (ISO UTC)
+}
+export interface ScheduleRow {
+  week: number;
+  opponent: string | null; // null = bye
+  is_home: boolean | null;
+  opp_rank: number | null; // 1 = gives up the most to his position
+  proj: number | null; // the rest-of-season board's number for that week (null = none: unknown, not 0)
+}
+export interface LineupRow {
+  margin_vs?: string | null; // the bench player who would come in for him
+  margin_words?: string; // "over Lloyd" / "no eligible reserve: the slot would be empty" / "" (no margin)
+}
+export interface PlayerCard {
+  schedule?: ScheduleRow[];
+  games_played?: number | null;
+}
+// ---- end IF-4

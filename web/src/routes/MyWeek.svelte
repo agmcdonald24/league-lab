@@ -10,6 +10,7 @@
   import { cardCall, cardStatus, cardStrength, compareHref, STATUS_WORD, STRENGTH_WORD, whyBlocks } from "../lib/week";
   import type { Availability, AvailabilityStatus } from "../lib/shapes";
   import { restoreScroll } from "../lib/router.svelte";
+  import { ago } from "../lib/card"; // ---- IF-4: "What changed" times
   import { lineupPane } from "../lib/pane.svelte"; // ---- IB-1: a lineup name opens the research pane
   import Expander from "../components/Expander.svelte";
   import LineupTable from "../components/LineupTable.svelte";
@@ -68,7 +69,22 @@
       .catch(() => {});
   });
   const actions = $derived(data && data.actions !== undefined ? homeActions(data, waivers) : null);
-  const allSet = $derived(!!actions && actions.length === 0);
+  // ---- IF-4: the close calls the lineup already follows ("No clear upgrade") and what changed since the morning build
+  const review = $derived(data?.review ?? []);
+  const changed = $derived(data?.changed ?? null);
+  const allSet = $derived(!!actions && actions.length === 0 && review.length === 0);
+  function reviewHref(r: { compare: { a: string; b: string } | null }): string | null {
+    return r.compare ? `/compare?a=${encodeURIComponent(r.compare.a)}&b=${encodeURIComponent(r.compare.b)}` : null;
+  }
+  const SEP = " · ";
+  function changedTime(iso: string | null): { ago: string; exact: string } | null {
+    if (!iso) return null;
+    const t = new Date(iso);
+    if (Number.isNaN(t.getTime())) return null;
+    const exact = t.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    return { ago: ago(iso), exact: `${exact} ET` };
+  }
+  // ---- end IF-4
   // ---- end IE-1
 
   $effect(() => {
@@ -208,6 +224,24 @@
                   <span class="absolute inset-y-0 left-0 w-1 {a.kind === 'change' ? 'bg-warn' : 'bg-accent'}" aria-hidden="true"></span>
                 </article>
               {/each}
+              <!-- ---- IF-4: Decisions worth reviewing — a close call the lineup already follows stays in view ("No clear
+                   upgrade", not "nothing to change"): the two names, the gap, who the lineup has, Compare -->
+              {#each review as r, i (`review-${i}`)}
+                {@const cmp = reviewHref(r)}
+                <article class="relative space-y-1.5 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)"
+                  data-testid="review-line" data-uncertain={String(r.matchup_uncertain)}>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="rounded-sm bg-raised px-2 py-0.5 text-sm font-bold text-ink-2" data-testid="review-kind">≈ No clear upgrade</span>
+                    {#if r.slot_label}<span class="ll-label text-ink-2">{r.slot_label}</span>{/if}
+                  </div>
+                  <p class="text-base leading-snug" data-testid="review-words"><Md text={r.words} {ctx} /></p>
+                  {#if cmp}
+                    <a class="inline-flex min-h-9 items-center text-sm font-semibold text-accent" href={withContext(cmp, ctx)} data-testid="review-compare">Compare ›</a>
+                  {/if}
+                  <span class="absolute inset-y-0 left-0 w-1 bg-line-strong" aria-hidden="true"></span>
+                </article>
+              {/each}
+              <!-- ---- end IF-4 -->
               {#if !allSet && data.set_line}
                 <p class="px-1 text-base leading-snug text-ink-2" data-testid="set-line"><span class="text-good" aria-hidden="true">✓ </span>{data.set_line}</p>
               {/if}
@@ -218,6 +252,31 @@
                 {/if}
                 {#if data.nothing_submitted}<p class="text-sm leading-snug text-ink-2" data-testid="nothing-submitted">{data.nothing_submitted}</p>{/if}
               </div>
+              {#if changed}
+                <!-- ---- IF-4: What changed — the overlay's moves since the morning build and the week's news from the last
+                     24 hours (at most five lines, the source and the time on each) -->
+                <section class="space-y-1.5 rounded-lg border border-line bg-surface p-4" data-testid="what-changed">
+                  <h2 class="ll-label">What changed</h2>
+                  {#if changed.lines.length === 0}
+                    <p class="text-sm text-ink-2" data-testid="changed-empty">{changed.empty}</p>
+                  {:else}
+                    <ul class="space-y-1.5">
+                      {#each changed.lines as l, i (i)}
+                        {@const when = changedTime(l.at)}
+                        <li class="text-sm leading-snug" data-testid="changed-line" data-kind={l.kind}>
+                          {#if l.kind === "news" && l.player_name}<span class="font-semibold">{l.player_name}:</span>{/if}
+                          <span class={l.kind === "status" ? "text-warn" : "text-ink"}>{l.text}</span>
+                          <span class="text-ink-3"
+                            >{SEP}{#if l.url}<a class="ll-link" href={l.url} target="_blank" rel="noopener noreferrer">{l.source ?? "source"} ↗</a
+                              >{:else}{l.source ?? ""}{/if}{#if when}{SEP}<time datetime={l.at} title={when.exact}>{when.ago}</time>{/if}</span
+                          >
+                        </li>
+                      {/each}
+                    </ul>
+                  {/if}
+                </section>
+              {/if}
+              <!-- ---- end IF-4 -->
             </div>
           {:else}
           <h2 class="ll-label">The calls that matter</h2>
@@ -276,20 +335,21 @@
               <h2 class="text-lg leading-tight font-bold" data-testid="lineup-head">Your lineup</h2>
               <p class="text-sm leading-snug text-ink-3" data-testid="lineup-caption">Starters, the bench, who can't play — tap a name for his card.</p>
             </div>
-            {#if avail?.changes?.length}
+            {#if avail?.changes?.length && !changed}<!-- IF-4: What changed carries them (an answer from before keeps them here) -->
               <ul class="space-y-1 text-sm leading-snug text-warn" data-testid="availability-changes">
                 {#each avail.changes as c, i (i)}<li>{c}</li>{/each}
               </ul>
             {/if}
             {#if data.lineup.length}
-              <LineupTable rows={data.lineup} {ctx} testid="lineup" pane={(row) => lineupPane(row, data!.lineup_full)} />
+              <LineupTable rows={data.lineup} {ctx} testid="lineup" margins pane={(row) => lineupPane(row, data!.lineup_full)} /><!-- IF-4: margins -->
             {:else}
               <p class="text-sm text-ink-3">No proposed lineup for this week yet.</p>
             {/if}
           </section>
 
+          <!-- ---- IF-4 (the review's table: the bench section repeated every starter first): the bench and who can't play only -->
           <Expander title="The bench and who can't play" testid="lineup-full">
-            <LineupTable rows={data.lineup_full} full {ctx} testid="lineup-full-table" pane={(row) => lineupPane(row, data!.lineup_full)} />
+            <LineupTable rows={data.lineup_full.filter((r) => r.role !== "starter")} full {ctx} testid="lineup-full-table" pane={(row) => lineupPane(row, data!.lineup_full)} />
           </Expander>
           {#if data.howto}
             <Expander title="How to read this" testid="howto"><Md text={data.howto} {ctx} block class="text-base leading-snug" /></Expander>
@@ -321,6 +381,20 @@
   {/if}
 
   {#if status?.freshness}
-    <footer class="pt-2 text-xs leading-snug text-ink-3"><Md text={status.freshness} /></footer>
+    <!-- ---- IF-4: "Updated 3 h ago" (the exact time and the feed names behind a tap) in place of the feed list -->
+    {@const upd = changedTime(status.updated_at ?? null)}
+    <footer class="pt-2 text-xs leading-snug text-ink-3" data-testid="freshness">
+      {#if upd}
+        <details data-testid="updated">
+          <summary class="inline-flex min-h-9 cursor-pointer items-center gap-1"
+            >Updated <time datetime={status.updated_at} title={upd.exact} data-testid="updated-ago">{upd.ago}</time> <span class="chev" aria-hidden="true">›</span></summary
+          >
+          <p class="mt-1" data-testid="updated-exact">Last data load {upd.exact}.</p>
+          <p class="mt-1"><Md text={status.freshness} /></p>
+        </details>
+      {:else}
+        <Md text={status.freshness} />
+      {/if}
+    </footer>
   {/if}
 </main>

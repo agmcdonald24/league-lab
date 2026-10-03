@@ -756,10 +756,25 @@ def reason_facts(dec: pd.DataFrame, season: int | None, week: int | None) -> tup
 
 
 # ------------------------------------------------------------------------------ rendering
+# ---- IF-4 (Wave I-F, the decision-quality review's table: "Matchup rank direction changes between screens"): one direction
+# everywhere, always said in words — "2nd-fewest WR points allowed" (rank 31 of 32), "5th-most RB points allowed" (rank 5)
+def rank_words(rank, position, n: int = 32) -> str:
+    """The opponent's rank against the position (1 = gives up the most) in words; '' when unknown."""
+    if rank is None or (isinstance(rank, float) and pd.isna(rank)):
+        return ""
+    k, n = int(rank), int(n or 32)
+    pos = str(position or "").upper() or "his position's"
+    if k <= (n + 1) // 2:
+        return f"the most {pos} points allowed" if k == 1 else f"{_ordinal(k)}-most {pos} points allowed"
+    f = n + 1 - k
+    return f"the fewest {pos} points allowed" if f == 1 else f"{_ordinal(f)}-fewest {pos} points allowed"
+# ---- end IF-4
+
+
 def _matchup(name: str, opp, rank, position) -> str:
     if opp is None or (isinstance(opp, float) and pd.isna(opp)):
         return ""
-    r = f" (#{int(rank)} vs {position})" if rank is not None and pd.notna(rank) else ""
+    r = f" ({rank_words(rank, position)})" if rank is not None and pd.notna(rank) else ""        # IF-4: was "(#31 vs WR)"
     return f"{name} vs {opp}{r}"
 
 
@@ -805,7 +820,7 @@ def render_decision(d: pd.Series | dict, why: str | None = None) -> None:
                              f"{D.percent(1 - pw)}% of the time — {D.words(1 - pw)}. {numbers}")
             (m1, w1), (m2, w2) = range_text(d), range_text(d, "alt_")
             if m1 and m2:
-                extra.append(f"Most weeks: {d['player_name']} {m1}, {d['alt_name']} {m2}.")
+                extra.append(f"Typical range (the middle 50%): {d['player_name']} {m1}, {d['alt_name']} {m2}.")   # IF-4
             if w1 and w2:
                 extra.append(f"A bad week to a good week: {d['player_name']} {w1}, {d['alt_name']} {w2}.")
         else:
@@ -955,13 +970,13 @@ def howto_cards() -> None:
             "and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n"
             "- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip "
             "the two can disagree (under 50% but more points): the card then says both.\n"
-            "- **Most weeks** is the range half of his weeks land in (a quarter below, a quarter above). **A bad week to a "
+            "- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a "
             "good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) "
             f"falls back on the points: under {COIN_FLIP:.0f} point apart is a coin flip, under {LEAN:.0f} a lean.\n"
             "- The named player is the one who would really come in: your best bench player for that spot, or, when "
             "moving a teammate over works better, the card says who moves.\n"
-            "- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the "
-            "matchup you want), 32 = the fewest.\n"
+            "- **5th-fewest WR points allowed** is the opponent's rank against that position this season, said one way "
+            "everywhere: the most points allowed is the matchup you want, the fewest the toughest.\n"
             "- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can "
             "replace, like your only kicker."
         )

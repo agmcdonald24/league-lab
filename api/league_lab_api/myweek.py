@@ -89,6 +89,12 @@ def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
         return [], []
     lu = cards.lineup_frame(rows)
     short = [_lineup_row(r) for _, r in lu.iterrows()]
+    # ---- IF-4 (the decision-quality review's table: '"Margin" repeats an entire projection when no eligible reserve
+    # exists'): each starter's margin names its comparator — the bench player who would come in (cards.alternative, the
+    # cards' own rule) or "no eligible reserve" (the slot would be empty: the margin is his whole projection)
+    for x, i in zip(short, lu.index, strict=True):
+        x.update(margin_comparator(rows.loc[i], rows))               # the row as the rows hold it (its own slot code)
+    # ---- end IF-4
     # ---- IA-1: the headshot and the NFL team on every row (the player card unit's small size in the slot list)
     ids = sorted({str(g) for g in rows["gsis_id"].dropna()})
     heads = query(HEADSHOT_SQL, (ids,)) if ids else pd.DataFrame()
@@ -170,6 +176,7 @@ def my_week(league_id: str, roster_id: int) -> dict:
     out["notice"], out["cards"] = cards_from_rows(league_id, roster_id, week, season, rows, current=cur)
     out.update(build_actions(rows, out["cards"], cur, league_id))                                          # ---- IE-1
     out.update({"edit_link": edit_link(league_id), "nothing_submitted": NOTHING_SUBMITTED})               # ---- IE-1
+    out["changed"] = what_changed(ctx.meta, rows, cur)                                                     # ---- IF-4
     out["lineup"], out["lineup_full"] = lineup(rows)
     annotate_swaps(out["lineup"], out["lineup_full"], out.get("swaps") or [])                              # ---- PO I-E
     out["howto"] = howto()
@@ -253,6 +260,9 @@ def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows
             loose.append(c)
     notices = [b["text"] for b in blocks(loose) if b["kind"] in ("info", "warning", "markdown", "caption")]
     ties = list(drawn_dec["tiebreak"]) if isinstance(drawn_dec, pd.DataFrame) and "tiebreak" in drawn_dec else []  # IE-1
+    # ---- IF-4: IF-3's flag (cards.decision_cards' column `matchup_uncertain`; absent = False)
+    mus = list(drawn_dec["matchup_uncertain"]) if isinstance(drawn_dec, pd.DataFrame) and "matchup_uncertain" in drawn_dec else []
+    # ---- end IF-4
     out = []
     for i, (_, d) in enumerate(dec.iterrows()):
         out.append({
@@ -275,6 +285,7 @@ def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows
                         "tiebreak": None if tb is None else {"kind": tb["kind"], "pick": tb["pick"], "side": tb["side"]},
                         "action": None})
         # ---- end IE-1
+        out[-1]["matchup_uncertain"] = i < len(mus) and _num(mus[i]) is not None and bool(mus[i])              # IF-4
     return (notices[0] if notices else None), out
 
 
@@ -289,7 +300,12 @@ ACTION_MIN_GAIN = 0.5
 MAX_ACTIONS = 3
 NOTHING_SUBMITTED = "League Lab never changes your lineup or claims; it tells you what to do in your league's app."
 SET_ALL = "Your lineup is set — nothing to change."
-SET_REST = "The rest of your lineup is set — nothing to change."
+# ---- IF-4 (the decision-quality review § Priority 4: "No clear upgrade" is more accurate than "nothing to change" when a
+# close call exists): the rest is "set" (no tail), and "No clear upgrade elsewhere" when the review lines are shown
+SET_REST = "The rest of your lineup is set."
+SET_ELSEWHERE = "No clear upgrade elsewhere."
+MAX_REVIEW = 3
+# ---- end IF-4
 CANT_WORDS = {"OUT": "is out", "IR": "is on injured reserve", "PUP": "is on the PUP list", "SUS": "is suspended",
               "DOUBTFUL": "is doubtful", "BYE": "is on a bye"}
 
@@ -331,7 +347,8 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
     IE-1 `key` / `alt_key` / `tiebreak`) and the submitted lineup ({key: slot}; None = unknown). Marks each card's
     `action` (the index of the action it explains)."""
     pname = platform_name(league_id)
-    res: dict = {"actions": [], "set_line": None, "next_lock": None, "platform_name": pname}
+    res: dict = {"actions": [], "set_line": None, "next_lock": None, "platform_name": pname,
+                 "review": []}                                                              # ---- IF-4
     if rows is None or rows.empty:
         return res
     info: dict[str, dict] = {}
@@ -437,6 +454,7 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
     for k in list(parent):
         groups.setdefault(find(k), set()).add(k)
     acts, tiny = [], False
+    review: list[dict] = []                                                                # ---- IF-4
     for members in groups.values():
         g_cards = [i for i, c in enumerate(cards_out) if c.get("key") in members or c.get("alt_key") in members]
         g_pairs = [p for p in pairs if p[0] in members or p[1] in members]
@@ -454,6 +472,7 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
             kind = "close"
         else:
             tiny = tiny or submitted is False
+            review += _review_items(coin, cards_out, sub if known else None, info, name=name, plain=plain)   # ---- IF-4
             continue
         a = _action(kind, start, sit, submitted, gain, cant, coin, hurt, g_pairs, swapped, pname,
                     name=name, plain=plain, status=status, cant_words=cant_words, val=val,
@@ -482,11 +501,15 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
         for i in a["cards"]:
             cards_out[i]["action"] = n
     res["actions"] = acts
+    # ---- IF-4: the close calls the lineup already follows, kept in view (the most uncertain first)
+    review.sort(key=lambda r: (r["margin"] if r["margin"] is not None else 99.0, r["slot"] or ""))
+    res["review"] = review[:MAX_REVIEW]
+    # ---- end IF-4
     if known:
         if more:
             res["set_line"] = f"{len(more)} more {'change' if len(more) == 1 else 'changes'}: the lineup below shows every slot."
         else:
-            res["set_line"] = (SET_REST if acts else SET_ALL) + (
+            res["set_line"] = (SET_ELSEWHERE if review else SET_REST if acts else SET_ALL) + (     # IF-4: SET_ELSEWHERE
                 " (Where your lineup differs from ours, it is by less than half a point.)" if tiny else "")
     locks = [(a["lock"]["kickoff"], a) for a in acts if a.get("lock")]
     if locks:
@@ -571,6 +594,90 @@ def _action(kind, start, sit, submitted, gain, cant, coin, hurt, pairs, swapped,
 # ---- end IE-1
 
 
+# ---- IF-4 (Wave I-F, the decision-quality review § Priority 4 "use clarity to expose the difficult decisions"): a close
+# call the submitted lineup already follows stays in view as a "No clear upgrade" line — not an action (nothing to do),
+# not "nothing to change" (a correct optimizer output does not remove the uncertainty). One line per coin-flip card with
+# nobody hurt in it, naming whom the submitted lineup starts ("our lineup" when it is unknown); IF-3's
+# `matchup_uncertain` on the card adds "the matchup rank does not settle it". No number moves: the margin is the card's.
+def _review_items(coin: list[dict], cards_out: list[dict], sub: set[str] | None, info: dict[str, dict], *,
+                  name, plain) -> list[dict]:
+    out = []
+    for c in coin:
+        k, alt = c.get("key"), c.get("alt_key")
+        if not k or not alt or k not in info or alt not in info:
+            continue
+        if sub is None:
+            start, other, whose = k, alt, "our lineup has"
+        elif (k in sub) == (alt in sub):
+            continue                     # both start (other slots) or neither does: not a choice between the two here
+        else:
+            start, other = (k, alt) if k in sub else (alt, k)
+            whose = "your lineup has"
+        slot = _str(c.get("slot")) or _str((info.get(k) or {}).get("slot"))
+        label = re.sub(r"\s*\d+$", "", cards.slot_label(slot)) if slot else ""
+        margin = _num(c.get("margin"))
+        mu = bool(c.get("matchup_uncertain") or (c.get("tiebreak") or {}).get("matchup_uncertain"))
+        gap = "level by the projection" if margin is None or margin < 0.05 else f"{margin:.1f} points apart"
+        words = (f"{name(other)} or {name(start)}{f' at {label}' if label else ''}: a coin flip, {gap}; {whose} {name(start)}"
+                 + ("; the matchup rank does not settle it" if mu else "") + " — no clear upgrade.")
+
+        def who(x: str) -> dict:
+            r = info.get(x) or {}
+            return {"key": x, "name": plain(x), "link": name(x), "gsis_id": _str(r.get("gsis_id")), "value": _num(r.get("value"))}
+        g_a, g_b = (info.get(other) or {}).get("gsis_id"), (info.get(start) or {}).get("gsis_id")
+        out.append({"kind": "no_clear_upgrade", "slot": slot, "slot_label": label, "start": who(start), "other": who(other),
+                    "margin": margin, "strength": _str(c.get("strength")) or "coin flip", "matchup_uncertain": mu,
+                    "words": words, "submitted": None if sub is None else True,
+                    "compare": {"a": _str(g_a), "b": _str(g_b)} if _str(g_a) and _str(g_b) else None,
+                    "cards": [i for i, x in enumerate(cards_out) if x is c]})
+    return out
+
+
+def margin_comparator(r: pd.Series, rows: pd.DataFrame) -> dict:
+    """{margin_vs: the bench player who would replace him (short name) | None, margin_words}: '' words when the row
+    has no margin (locked, an empty slot, no value)."""
+    if _num(r.get("margin")) is None or bool(r.get("is_empty_slot")) or bool(r.get("locked_now")):
+        return {"margin_vs": None, "margin_words": ""}
+    try:
+        a = cards.alternative(r, rows)
+    except (KeyError, TypeError, ValueError):
+        return {"margin_vs": None, "margin_words": ""}
+    alt = a.get("alt")
+    if alt is None:
+        return {"margin_vs": None, "margin_words": "no eligible reserve: the slot would be empty"}
+    nm = cards.last_name(_str(alt.get("player_name")) or "", alt.get("position"))
+    return {"margin_vs": nm, "margin_words": f"over {nm}"}          # (a teammate may slide over: the card says how)
+
+
+# What changed: the overlay's changes since the morning build (with the feed and the time it was checked) and the news
+# of this week's starters from the last 24 hours (the item about him first: news.recent), at most five lines.
+MAX_CHANGED = 5
+NOTHING_CHANGED = "Nothing has changed since the morning build."
+
+
+def what_changed(meta: dict | None, rows: pd.DataFrame | None, current: dict[str, str] | None = None) -> dict:
+    """{lines: [{kind: status | news, gsis_id, text, source, at, url}], empty}: the week's players = the best lineup's
+    starters and whoever the submitted lineup starts (``current``)."""
+    lines: list[dict] = []
+    at = (meta or {}).get("checked_at")
+    for text in (meta or {}).get("changes") or []:
+        lines.append({"kind": "status", "gsis_id": None, "text": str(text), "source": "Injury report (ESPN)", "at": at,
+                      "url": None})
+    if rows is not None and not rows.empty and len(lines) < MAX_CHANGED:
+        sub = set(current or {})
+        st_ = rows[((rows["role"] == "starter") | rows["sleeper_player_id"].map(lambda k: isinstance(k, str) and k in sub))
+                   & rows["gsis_id"].map(lambda g: isinstance(g, str) and bool(g))]
+        names = dict(zip(st_["gsis_id"], st_["player_name"], strict=False))
+        from . import news
+        for g, it in news.recent(list(names), names=names):
+            if len(lines) >= MAX_CHANGED:
+                break
+            lines.append({"kind": "news", "gsis_id": g, "player_name": _str(names.get(g)), "text": it["headline"],
+                          "source": it.get("source"), "at": it.get("date"), "url": it.get("url"), "about": it.get("about")})
+    return {"lines": lines[:MAX_CHANGED], "empty": NOTHING_CHANGED}
+# ---- end IF-4
+
+
 # ---- IB-0: the roster's lineup in Sleeper right now (the card's status): Sleeper's roster `starters`, each paired with
 # the league's starting slot (`roster_positions` without the bench); a house league whose Sleeper call fails falls
 # back on the nightly's `mart_player_availability.is_current_starter` (the slot unknown: "").
@@ -618,4 +725,21 @@ def status() -> dict:
     _, calls = capture(ui.freshness_banner)
     caption = next((c[1][0] for c in calls if c[0] == "caption" and c[1]), "")
     warning = next((c[1][0] for c in calls if c[0] == "warning" and c[1]), None)
-    return {"freshness": caption, "warning": warning}
+    return {"freshness": caption, "warning": warning, "updated_at": updated_at()}      # ---- IF-4: updated_at
+
+
+# ---- IF-4 (the I-E review's leftover: "Updated 2:51 PM ET", the exact time on tap, the feed names in the details): the
+# newest load of the data the screens read (the morning build's sources), ISO UTC; None when nothing was recorded
+UPDATED_SQL = "select max(last_loaded_at) as t from analytics.mart_data_status"
+
+
+def updated_at() -> str | None:
+    try:
+        df = query(UPDATED_SQL)
+    except Exception:  # noqa: BLE001 - a status line, never a failure
+        return None
+    if df.empty or df["t"].iloc[0] is None or pd.isna(df["t"].iloc[0]):
+        return None
+    return pd.Timestamp(df["t"].iloc[0]).tz_convert("UTC").isoformat() if pd.Timestamp(df["t"].iloc[0]).tzinfo else \
+        pd.Timestamp(df["t"].iloc[0]).tz_localize("UTC").isoformat()
+# ---- end IF-4

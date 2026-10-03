@@ -42,6 +42,7 @@ from .myweek import (  # IE-1 (+ annotate_swaps, PO I-E)
     edit_link,
     howto,
     lineup,
+    what_changed,
 )
 
 MOVERS_SQL = """select t.gsis_id, t.player_name, t.position, t.tags, t.momentum
@@ -131,6 +132,7 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     out.update(build_actions(rows, out["cards"], cur, league_id))
     out.update({"edit_link": edit_link(league_id, league), "nothing_submitted": NOTHING_SUBMITTED})
     # ---- end IE-1
+    out["changed"] = what_changed(avail, rows, cur)                                  # ---- IF-4: what changed (myweek)
     t2 = time.perf_counter()
     out["lineup"], out["lineup_full"] = lineup(rows)
     annotate_swaps(out["lineup"], out["lineup_full"], out.get("swaps") or [])                              # ---- PO I-E

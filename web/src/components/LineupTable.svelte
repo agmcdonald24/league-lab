@@ -14,7 +14,14 @@
     ctx,
     testid,
     pane,
-  }: { rows: LineupRow[]; full?: boolean; ctx: LinkContext; testid: string; pane?: (r: LineupRow) => PaneOptions } = $props();
+    margins = false,
+  }: { rows: LineupRow[]; full?: boolean; ctx: LinkContext; testid: string; pane?: (r: LineupRow) => PaneOptions; margins?: boolean } = $props();
+  // ---- IF-4 (the decision-quality review's table): the margin column only where a row has one, and each margin names
+  // its comparator ("4.63 over Lloyd"; "no eligible reserve" when the slot would be empty — the margin is then his whole
+  // projection, not a gap to a player); `margins` shows it on the starters' table
+  const showMargin = $derived((full || margins) && rows.some((r) => r.margin !== null && r.margin !== undefined));
+  const vsWords = (r: LineupRow) => r.margin_words ?? "";
+  // ---- end IF-4
   // injury / lock / empty-slot flags: under the name (IA-1; was a column only when some row had one)
   const num = (v: number | null) => (v === null || v === undefined ? "—" : v.toFixed(2));
   // I0-A: the availability overlay's reason for an OUT / DOUBTFUL / IR chip ("Out (ankle) · ESPN, Oct 2 2:35 PM ET")
@@ -33,7 +40,7 @@
       <th class="w-[4.25rem] py-1.5 pr-1 font-medium sm:w-[4.75rem]">Slot</th>
       <th class="py-1.5 pr-1 font-medium">Player</th>
       <th class="w-[3.25rem] py-1.5 text-right font-medium">Proj</th>
-      {#if full}<th class="hidden w-[3.75rem] py-1.5 text-right font-medium sm:table-cell">Margin</th>{/if}
+      {#if showMargin}<th class="hidden w-[7.5rem] py-1.5 text-right font-medium sm:table-cell" title="What your lineup loses without him, and who would come in">Margin</th>{/if}
     </tr>
   </thead>
   <tbody>
@@ -68,13 +75,19 @@
                       data-testid="avail-chip">{r.flag}</span
                     >{:else}{r.flag}{/if}</div
                 >{/if}
-              {#if full && r.margin !== null}<div class="tabnum text-xs text-ink-3 sm:hidden" data-testid="margin-line">margin {r.margin.toFixed(2)}</div>{/if}
+              {#if showMargin && r.margin !== null}<div class="tabnum text-xs text-ink-3 sm:hidden" data-testid="margin-line"
+                  >{#if vsWords(r).startsWith("no eligible")}no eligible reserve{:else}margin {r.margin.toFixed(2)}{vsWords(r) ? ` ${vsWords(r)}` : ""}{/if}</div
+                >{/if}
               {#if full && reason(r)}<div class="text-xs leading-snug text-ink-3" data-testid="avail-reason">{reason(r)}</div>{/if}
             </div>
           </div>
         </td>
         <td class="tabnum py-1.5 text-right font-semibold">{num(r.value)}</td>
-        {#if full}<td class="tabnum hidden py-1.5 text-right text-ink-2 sm:table-cell">{r.margin === null ? "" : r.margin.toFixed(2)}</td>{/if}
+        {#if showMargin}<td class="tabnum hidden py-1.5 text-right text-ink-2 sm:table-cell" data-testid="margin-cell"
+            >{#if r.margin !== null && vsWords(r).startsWith("no eligible")}<span class="text-xs text-ink-3">no eligible reserve</span>{:else if r.margin !== null}{r.margin.toFixed(
+                2,
+              )}{#if vsWords(r)}<span class="block text-xs text-ink-3">{vsWords(r)}</span>{/if}{/if}</td
+          >{/if}
       </tr>
     {/each}
   </tbody>

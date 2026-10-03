@@ -111,7 +111,7 @@
         <section class="overflow-hidden rounded-lg border border-line bg-surface" style="box-shadow:var(--ll-shadow)" data-testid="receivers-list">
           <header class="flex items-baseline justify-between border-b border-line bg-raised px-3 py-2">
             <h2 class="ll-label">{rows.length} {position}s</h2>
-            <span class="ll-label">Target share</span>
+            <span class="ll-label">Share of team passes</span><!-- IF-4: the dictionary -->
           </header>
           {#if rows.length === 0}<p class="p-4 text-ink-2">No receiver matches these filters.</p>{/if}
           <ul class="divide-y divide-line">
@@ -142,7 +142,7 @@
             <PlayerCard
               player={picked}
               number={fmt.pct(picked.target_share)}
-              numberLabel="Target share"
+              numberLabel="Share of team passes"
               line={`${fmt.pts(picked.targets_per_game)} targets a game · ${fmt.pts(picked.ppg)} points a game in ${leagueName} scoring · ${picked.games_played} games`}
               context={ownerWord(picked, team)}
               href={withContext(`/player/${picked.gsis_id}`, ctx)}
@@ -182,8 +182,8 @@
         <Md
           block
           text={"- **Use it to tell a real role from a busy stretch**: a receiver whose share of the targets is at or above the top-12 average is a weekly starter; one rising over his last 3 games is a waiver or trade target before his points catch up.\n" +
-            "- **Target share** is his share of his team's targets in the games he played. **Air yards** is how far downfield his targets travel; a big share means the big plays.\n" +
-            "- **First-read share** is how often he is the quarterback's first look. **On the field for pass plays** is an estimate, filled in after the season.\n" +
+            "- **Share of team passes** (target share) is his share of his team's targets in the games he played: 20% is about one in five. **Air yards** is how far downfield his targets travel; a big share means the big plays.\n" +
+            "- **First-read share** is how often he is the quarterback's first look: his first-read targets ÷ his team's charted dropbacks with a first read. **On the field for pass plays** is an estimate, filled in after the season.\n" +
             "- The tick on each bar is what the season's top 12 at his position average."}
         />
       </div>

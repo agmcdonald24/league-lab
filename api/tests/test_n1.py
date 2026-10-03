@@ -195,11 +195,14 @@ def _espn_fixtures(tmp_path, monkeypatch, *, stamp: str | None = None, files=(JJ
 def test_card_news_from_the_fixture_feed(client, tmp_path, monkeypatch):
     _espn_fixtures(tmp_path, monkeypatch)
     d = client.get(f"/api/player/{JEFFERSON}", params={"league": SCRUBS}).json()
-    assert [n["date"] for n in d["news"]] == ["2026-10-03T13:33:00Z", "2026-10-03T00:59:53Z", "2026-10-02T18:35:16Z"]
-    assert d["news"][0]["source"] == "RotoWire via ESPN" and d["news"][1]["source"] == "ESPN"
-    assert d["news"][2]["headline"] == "Jefferson (ankle) has been ruled out for Sunday's game versus the Dolphins."
+    # IF-4 (the decision-quality review): the three newest, the items about him first — the inactives story (Oct 3,
+    # "… DeVonta to sit; McConkey questionable", not about him) moves behind his two RotoWire blurbs, labelled "league"
+    assert [n["date"] for n in d["news"]] == ["2026-10-03T13:33:00Z", "2026-10-02T18:35:16Z", "2026-10-03T00:59:53Z"]
+    assert d["news"][0]["source"] == "RotoWire via ESPN" and d["news"][2]["source"] == "ESPN"
+    assert d["news"][1]["headline"] == "Jefferson (ankle) has been ruled out for Sunday's game versus the Dolphins."
+    assert [n["about"] for n in d["news"]] == ["player", "player", "league"]
     assert all(n["url"].startswith("https://www.espn.com/") for n in d["news"])
-    assert all(set(n) == {"headline", "date", "source", "url"} for n in d["news"])
+    assert all(set(n) == {"headline", "date", "source", "url", "about"} for n in d["news"])
     st = client.get("/api/status").json()["news"]
     assert st["enabled"] is True and st["mode"] == "fixtures" and st["calls"] == 1
 

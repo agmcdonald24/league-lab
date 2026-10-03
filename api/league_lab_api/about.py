@@ -40,9 +40,12 @@ def sections(league_name: str) -> list[dict]:
                  f"fixing the mistakes of the ones before it. Then **{league_name}**'s scoring turns the stat line into points, "
                  "which is why the same player projects differently in each league."},
         {"key": "ranges", "title": "The ranges",
-         "text": "**Most weeks**, **floor** and **ceiling** come from separate models that learned how far off the projection "
-                 "usually is for a player like this one, then widened or narrowed until they held on seasons they had never "
-                 "seen: half his weeks land in the most-weeks range, 8 in 10 between the floor and the ceiling."},
+         # IF-4: the dictionary's words (was "Most weeks", "floor", "ceiling")
+         "text": "The **typical range** (the middle 50% of outcomes) and the **low-end** and **high-end outcomes** come from "
+                 "separate models that learned how far off the projection usually is for a player like this one, then widened "
+                 "or narrowed until they held on seasons they had never seen: half his weeks land in the typical range (a "
+                 "quarter below it, a quarter above), 8 in 10 between the low-end outcome (1 week in 10 lands below it) and "
+                 "the high-end outcome (1 week in 10 lands above it)."},
         {"key": "graded", "title": "How it was graded",
          "text": "Trained on the past, graded on seasons it never saw: each season from 2021 to 2025 was predicted by a model "
                  "trained only on the seasons before it. The grade is the **order score** (Spearman: how well the projected "

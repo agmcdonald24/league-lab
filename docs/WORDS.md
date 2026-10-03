@@ -154,6 +154,29 @@ roster's freshness its own line.
 | the week strip (IF-2) | "Starter points, week by week": Week 4 · 5 · 6 · 7, a row for you and one for them, signed ("+5.1 −0.5 +5.3 +4.6") |
 | the value concepts (IF-2, `trades.VALUE_CONCEPTS`) | **Projected points** (one player, one week) · **Starter points** (what enters the best legal lineup over the weeks) · **Backup coverage** (the bench's best lineup) · **Season value above replacement** (the dictionary's "projected value above available replacements", rest of season: the fairness test — "Season value above replacement: you give 14, you get 7 (about even). You give 2 players for 1: 1 roster spot freed. Not counted (no season projection): Houston Texans QB.") · **Rest-of-season projected points** ("…, all positions added up — not a fairness test"): never added together; never "you give 493 rest-of-season points for 134" as a verdict |
 
+## Decision quality (Wave I-F, IF-4: the fourth review § Priority 4 and its table)
+
+The review of 2026-10-03 late evening (`docs/reviews/2026-10-03-decision-quality-review.md`): a correct optimizer output
+does not remove the uncertainty, and every label must say what it compares. These rows win over the older ones above.
+
+| Where | The words we use | Never |
+|---|---|---|
+| a close call the submitted lineup already follows (`myweek.build_actions` → `review`) | **No clear upgrade**: "Tuten or Williams at FLEX: a coin flip, 0.3 points apart; your lineup has Williams — no clear upgrade." + Compare ›; with IF-3's `matchup_uncertain`: "…; your lineup has Williams; the matchup rank does not settle it — no clear upgrade." ("our lineup has" when the submitted lineup is unknown) | "nothing to change" beside a close call |
+| the set line (IF-4) | "No clear upgrade elsewhere." (close calls are shown above it) · "The rest of your lineup is set." (an action is shown, no close call) · "Your lineup is set — nothing to change." (no action, no close call: a complete answer) | |
+| What changed (My Week) | the overlay's move ("Justin Jefferson is out (ankle) — Michael Wilson starts at FLEX2 · Injury report (ESPN) · 2 h ago") then the week's news from the last 24 hours ("Justin Jefferson: <RotoWire's headline> · RotoWire via ESPN ↗ · 5 h ago"), at most five; none: "Nothing has changed since the morning build." | a feed name without a time |
+| the news line (card, pane) | the item about him first (RotoWire's blurb, or a headline that names him); an article-level headline is labelled **League news** | a league story as "News" about him |
+| the matchup rank, anywhere (`cards.rank_words`, `lib/words.ts rankWords`) | "2nd-fewest WR points allowed" (31 of 32) · "5th-most RB points allowed" (5) · "the most / the fewest …" | a bare "#31", or a "#" whose direction changes by screen |
+| a starter's margin (My Week's lineup) | "4.63 over Lloyd" (the bench player who would come in: `cards.alternative`) · "no eligible reserve" (the slot would be empty: the number is his whole projection, not a gap) | "Margin" with no comparator |
+| the bench expander | the bench and who can't play only | the starters again |
+| Compare's bold | the better number where it bears on the call: projected points, the low-end / high-end outcome, points a game, the rest of the season; the usage rows only between two players of the same position ("bold: the better number in points (usage is not compared across positions)") | more carries for an RB bolded against a WR |
+| Compare's sections | "This season (2 games)" — the sample size once; the "Last 3 games" section dropped when it is the same games | the same numbers twice |
+| the range, everywhere (Compare, About, Waivers, the console's cards) | **Typical range** (the middle 50% of outcomes) · **Low-end / high-end outcome** | "most weeks", "floor", "ceiling" on a page |
+| the role line (card, pane) | before his fourth game "Role: **not enough games to say** — 2 games so far; a change is called against his own earlier games, from his fourth game."; after it "Role: **role steady over N games** — …" | "no role change detected" beside "not enough games" |
+| a metric tile with no value | its definition (first-read share: his first-read targets ÷ his team's charted dropbacks with a first read; red-zone share: his share of his team's red-zone targets / carries) + "Not available for this player: no charted plays for him yet (unknown, not zero)." | a greyed tile with no words |
+| below / above expectation (Trends, the game log) | "1.2 below what his opportunities suggest: an observed gap, not a forecast"; Trends' help: "a buy needs a price, which this screen does not have" | "expect him to pick up / cool off", "buy him while he is cheap" |
+| the drawer (research pane) | the projection and its range, where he stands, the news, his role, his usage, his lineup line; behind expanders: "Week by week and season numbers", "Schedule" (week · opponent · projected), "Game by game this season" | the whole player page |
+| freshness (My Week's footer) | "Updated 7 d ago ›" → "Last data load Sat, Sep 26, 5:26 PM ET." and the feed names | the feed list as the first line |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to
