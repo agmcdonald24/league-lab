@@ -165,6 +165,13 @@ current season, `dbt build`, projection v2, Sleeper's own projections, and the s
 can be reproduced on the Mac. **It is the one writer of the hosted copy** (Wave H): the beta must not depend on
 the Mac being awake. The Mac keeps its own database (last section).
 
+**PlayerWire's briefs (N2) — proposed: one writer per schema.** The hosted database also holds schema `playerwire`,
+written every 15 minutes by the Mac's `scripts/playerwire_sync.py` as role `playerwire_writer` (which can write
+nothing else); this nightly never dumps, drops, grants or audits it, and nothing in it references `analytics`. The
+rule above then reads "one writer per schema": Actions for `analytics`, `analytics_seeds` and `ops`, the Mac for
+`playerwire`. **Awaiting Andrew's confirmation**; the reasoning and the checks are in `docs/PLAYERWIRE.md` § "One
+writer per schema".
+
 ### Set it up once (5 minutes)
 
 1. The workflow has to be on `main`: GitHub runs schedules from the default branch only.

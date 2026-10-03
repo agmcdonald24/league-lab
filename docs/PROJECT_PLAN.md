@@ -620,6 +620,16 @@ the player-prior correction, rookie priors for weeks 1–4). Open: Andrew's firs
 | I-03 | Backup/restore drill (`scripts/restore_test.sh`), correction reconciliation job, footprint monitoring (P3-04…06) | |
 | I-04 | Orchestrator only if I-01 outgrows a Makefile + cron (P3-02) | |
 
+**N2 — PlayerWire briefs on the news line (built 2026-10-03, branch `playerwire-integration`; `docs/PLAYERWIRE.md`).**
+Andrew's own PlayerWire service (hand-reviewed, sourced player briefs; its read API runs only on his Mac) feeds the
+card's news line: the Mac replicates every published brief every 15 minutes into the hosted database's own schema
+`playerwire` (role `playerwire_writer`; `scripts/playerwire_sync.py`, launchd), and the API shows his briefs first —
+the brief's news under the headline, its source and a verification tag — with ESPN's headlines filling the rest.
+
+| ID | Task | Acceptance | Status |
+|---|---|---|---|
+| N2 | PlayerWire first on the news line | schema + writer role (idempotent SQL, `make playerwire-schema`); the sync (bootstrap, change pages, tombstones clear the text, cursor with its page, 410/409 resync, Retry-After; `--once`, `--dry-run`, `status`; launchd every 15 min); the API (ids through `player_id_map`, unmapped stored + counted, 14 days, ≤ 3, ESPN fills, `LEAGUE_LAB_PLAYERWIRE=off`, no schema → ESPN only, `/api/status` counts); the card (summary + tag, ESPN unchanged); tests offline | **built** 2026-10-03 (STATUS § "N2": 982 root / 173 API offline / 160 e2e); **waits on Andrew**: HOSTING.md § 5 → "one writer per schema", then the five set-up steps |
+
 ## Working conventions
 
 * Task IDs above are the ones to cite in handoffs and commits.

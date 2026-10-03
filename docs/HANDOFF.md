@@ -123,6 +123,9 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   screen and the unit's card (`/api/player/mfl:0656`); the League screen's double headers and `/api/record` for MFL;
   Waivers fills an empty starting slot first; the player news line (`news_feed.py`, ESPN's public fantasy news
   endpoint, headline + link out, `LEAGUE_LAB_NEWS=off`; `docs/ESPN_TERMS.md`).
+  **N2 (2026-10-03 evening, branch `playerwire-integration`)**: PlayerWire's briefs lead the news line (the Mac syncs
+  them every 15 minutes into Neon's own schema `playerwire` as role `playerwire_writer`; ESPN fills the rest;
+  `docs/PLAYERWIRE.md`). Waits on Andrew's yes to HOSTING.md § 5 as "one writer per schema", then five set-up steps.
   **Next: Monday's flip of `LEAGUE_LAB_EV_PRICING`** (STATUS § "Wave I-D" PO section: the nightly's env + a manual
   run first, then Render's env; week 5 is the record's first EV-priced week; M3's `pricing` column proposal for the
   record goes with it). Then usage tracking; v3.1 (the ranges' target with the long-TD bonus, the fringe level, cold

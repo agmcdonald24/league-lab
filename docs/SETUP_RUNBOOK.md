@@ -147,6 +147,10 @@ Reconciliation reports worth reading after the first real Sleeper load:
 | `LEAGUE_LAB_SEASONS_START` | first NFL season year to keep (2016) |
 | `LEAGUE_LAB_DATA_DIR` | where `raw/` lives (default `<repo>/data`) |
 | `DBT_PROFILES_DIR` | `config/dbt` |
+| `PLAYERWIRE_API_URL` | PlayerWire's read API on this Mac (default `http://127.0.0.1:8790`; N2, `docs/PLAYERWIRE.md`) |
+| `PLAYERWIRE_API_KEY` | PlayerWire's bearer key for League Lab (`python3 -m pw client create --name league-lab --scopes read`) |
+| `PLAYERWIRE_WRITER_PASSWORD` | the password `make playerwire-schema` sets for the hosted role `playerwire_writer` |
+| `PLAYERWIRE_HOSTED_URL` | `postgresql://playerwire_writer:<password>@<Neon host>/neondb?sslmode=require`: the briefs' writer (`make playerwire-sync`, launchd every 15 minutes) |
 
 Running plain `dbt` instead of `league-lab dbt` (from the repo root, so the relative
 `DBT_PROFILES_DIR` resolves): `set -a; source .env; set +a; dbt build --project-dir dbt`.

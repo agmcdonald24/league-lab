@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — N2: PlayerWire briefs on the news line
+
+- **N2: PlayerWire first, ESPN fills.** The player card's news line leads with Andrew's own PlayerWire briefs —
+  "News · 2 h ago · *Jefferson (ankle) ruled out for Sunday* · Minnesota Vikings via PlayerWire › OFFICIAL" with the
+  brief's one-sentence news under it — and ESPN's headlines fill the rest (`kind`, `summary`, `verification`,
+  `related` are new keys; N1's four stay). The briefs reach Neon from the Mac every 15 minutes
+  (`scripts/playerwire_sync.py`, launchd, role `playerwire_writer`, schema `playerwire`, which the nightly never
+  touches); a withdrawn brief loses its text on the next sync. Players are matched by Sleeper / gsis id through
+  `player_id_map`; briefs nobody maps to are kept and counted in `/api/status`. `LEAGUE_LAB_PLAYERWIRE=off` hides them.
+  Proposed for Andrew: HOSTING.md § 5 becomes "one writer per schema" (`docs/PLAYERWIRE.md`); nothing is installed
+  until he says yes.
+
 ## 2026-10-03 — Wave I-D
 
 - **PO (integration).** dbt's `assert_projection_ranges_price_the_lines` re-prices `scrubs` only: the dynasty's
