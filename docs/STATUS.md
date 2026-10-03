@@ -4089,3 +4089,43 @@ nothing showed the waiver alternative before suggesting you give up a useful pla
   for the PO, DESIGN.md says so). The fixture savers' `os.environ.pop("LEAGUE_LAB_ESPN_FIXTURES")` is undone by
   `settings.py`'s `load_dotenv(override=False)` when the worktree's .env sets it: IA-2's saved answers were taken with
   the overlay on; `save_ib2_fixtures.py` sets the ESPN fixture explicitly so it reproduces.
+
+## Wave I-C (Iteration 17, part C)
+
+### M2 2026-10-03 — the numbers expected-value pricing needs (branch `dev/M2`, clone `league_lab_m1`)
+
+* **What.** New `src/league_lab/scoring_ev.py`, pure and fitted offline. The constants live in the module; the seed
+  proposal `dbt/seeds/scoring_distributions.csv` (245 rows) is generated from them and pinned by a test. It has:
+  `prob_at_least(stat, position, mean, threshold)`, `prob_in_band` (high inclusive), `expected_band_points`,
+  `has_curve`, `td_distance_share(family, position, low, high)`, `td_survival`, `expected_td_distance_points`,
+  `td_share_source`, `expected_floor_units` (MFL's "1 per whole 10" in expectation), `sleeper_expected_bonus(_frame)`
+  (Sleeper's bonus keys in expectation) and `run_fit()`. Methods and every table: METRICS § "Expected-value
+  pricing".
+* **Threshold curves.** Gamma for rushing and receiving yards and receptions (shape k0 + k1 × mean); normal for
+  passing yards (sd 79). Both are monotone in the mean by construction. They are fitted on the walk-forward lines of
+  2019–2025 (39,622 player-weeks, `calibration.oof_rows(lines=True)`; `ops.calibration_oof` holds points only, so
+  the lines were rebuilt, about 45 s a season) by log loss at the thresholds leagues use. Out of sample (fitted
+  2019–2022, scored 2023–2025) they match or beat M1's isotonic curves at every position × stat, and they work at
+  any threshold (70587's 75 and 250).
+* **TD distances are measured, not placeholders.** `analytics.fct_play` (in every clone) has each TD's
+  `yards_gained`, the definition dbt uses for `*_tds_40p`, and reproduces `fct_player_game`'s TD and 40+ / 50+ counts
+  exactly. Survival shares at 5–80 yards per family × position, 2019–2025: receiving ≥ 10 / ≥ 40 = 0.548 / 0.119
+  (WR 0.604 / 0.166, TE 0.432 / 0.035); rushing 0.259 / 0.062 (RB 0.258 / 0.071); passing (QB) 0.547 / 0.120;
+  interception returns ≥ 40 = 0.494; fumble returns 0.309; punt and kick returns ≥ 0.9. The plan's fallback
+  rushing 0.35 and passing 0.60 / 0.14 are high.
+* **Does it help** (dynasty scoring, 2023–2025, curves fitted on earlier seasons only). The top-6 weekly bias goes
+  RB +1.34 → +0.31, WR +1.65 → +0.70, TE +0.91 → +0.65 and QB +0.07 → −1.39. Weekly MAE is +0.01 to +0.03 and
+  Spearman ±0.001. Season-total MAE per player goes QB 24.1 → 23.3, RB 17.6 → 16.9, WR 18.4 → 18.3 and
+  TE 12.8 → 12.6 (top 24: −0.6 to −5.9 in 11 of 12 buckets). Expected bonuses match those paid at RB / WR / TE
+  (0.217 / 0.205 / 0.053 per row expected, against 0.203 / 0.193 / 0.045 paid); QB passing comes out 0.55 against 0.42 (the
+  QB line runs high in 2023–2025). In a 70587-style scoring with floor-aware yards, weekly bias over all rows is
+  within ±0.20 at every position and season-total MAE falls 1.6–6.6 against flat pricing.
+* **For the PO.** (1) **Yes: turn EV pricing on** for projected lines in leagues with flat bonuses, distance TDs or
+  whole-unit rates; leagues without them are unchanged. The QB top-6 bias it exposes is the QB model's (M1's v3.1
+  list). (2) IC-1: price `per_unit_from` with `expected_floor_units`; linear is high by 0.3–0.5 per yardage stat per
+  game. (3) Wire the seed in `dbt/seeds/schema.yml` (proposal in the hand-back) or leave it unread: the module never
+  reads it.
+* **Tests.** `tests/test_scoring_ev.py`, 46 passed. They cover: the seed equals the constants; every curve is
+  monotone on a 2,500-point grid × 16 thresholds; edges and shapes; partitions; the fitter recovers a known gamma and
+  a known normal; thin positions pool; TD shares partition and decrease; aliases (TMQB, Def, MFL codes); shrinkage;
+  the description parser; floor units; Sleeper bonus pricing per row = per frame. Ruff clean.
