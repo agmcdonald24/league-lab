@@ -1,0 +1,365 @@
+<script lang="ts">
+  // IA-2 (Wave I-A): the trade calculator, its own link in the Decisions row (it was the Trades screen's "Try a trade").
+  // Pick a partner, tick players both ways (both rosters from GET /api/team); every change asks POST
+  // /api/trades/evaluate (a 250 ms pause, so ticking two players asks once) and the dial swings to the other manager's
+  // interest — by our numbers over the window — with your own gain beside it. The window (this week · next 4 · rest of
+  // season · playoffs) is a segmented control with one line saying why; the lineups are shown once (yours, then theirs
+  // under an expander). The package and the window are the URL (?partner=&give=&get=&window=), so a copied link opens
+  // the same trade.
+  import { ApiError, decisionPaths, evaluateIn, get, paths, peek, Unauthorized, type Roster, type Team, type TeamRosterRow, type TradeEval, type TradeWindow } from "../../lib/api";
+  import type { LeagueOption } from "../../lib/leagues";
+  import { md, withContext } from "../../lib/md";
+  import { errorWords, f1, f2, names, parseIds, s1, slotLabel } from "../../lib/decisions";
+  import { windowOf, windowWhy } from "../../lib/decisions";
+  import { restoreScroll, route, setParams } from "../../lib/router.svelte";
+  import { fmt } from "../../lib/theme";
+  import Bar from "../../components/Bar.svelte";
+  import Card from "../../components/Card.svelte";
+  import Expander from "../../components/Expander.svelte";
+  import Headshot from "../../components/Headshot.svelte";
+  import Md from "../../components/Md.svelte";
+  import PosBadge from "../../components/PosBadge.svelte";
+  import ScreenHead from "../../components/ScreenHead.svelte";
+  import StatTile from "../../components/StatTile.svelte";
+  import TeamBadge from "../../components/TeamBadge.svelte";
+  import Dial from "./Dial.svelte";
+  import WindowControl from "./WindowControl.svelte";
+
+  let { league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
+
+  const ctx = $derived({ league, team });
+  const params = $derived(route.current.params);
+  const win = $derived<TradeWindow>(windowOf(params.get("window")));
+
+  let rosters = $state<Roster[]>([]);
+  let mine = $state<Team | null>(null);
+  let theirs = $state<Team | null>(null);
+  let result = $state<TradeEval | null>(null);
+  let resultKey = $state("");
+  let evaluating = $state(false);
+  let evalError = $state<string | null>(null);
+  let error = $state<string | null>(null);
+
+  function fail(e: unknown) {
+    if (e instanceof Unauthorized) onauth();
+    else error = errorWords(e);
+  }
+
+  function load<T>(path: string, set: (v: T) => void, still: () => boolean) {
+    const hit = peek<T>(path);
+    if (hit) {
+      set(hit);
+      return;
+    }
+    get<T>(path)
+      .then((v) => still() && set(v))
+      .catch((e) => still() && fail(e));
+  }
+
+  $effect(() => {
+    const l = league;
+    const t = team;
+    error = null;
+    mine = null;
+    if (t === null) return;
+    load<Team>(decisionPaths.team(l, t), (v) => (mine = v), () => league === l && team === t);
+    load<Roster[]>(paths.rosters(l), (v) => (rosters = v), () => league === l);
+  });
+
+  const others = $derived(rosters.filter((r) => r.roster_id !== team));
+  const partner = $derived.by(() => {
+    const p = Number(params.get("partner"));
+    if (p && others.some((r) => r.roster_id === p)) return p;
+    return others[0]?.roster_id ?? null;
+  });
+
+  $effect(() => {
+    const l = league;
+    const p = partner;
+    theirs = null;
+    if (p === null) return;
+    load<Team>(decisionPaths.team(l, p), (v) => (theirs = v), () => league === l && partner === p);
+  });
+
+  const playable = (rows: TeamRosterRow[] | undefined) =>
+    (rows ?? []).filter((r) => r.role !== "empty" && r.sleeper_id).sort((a, b) => (b.value ?? -1) - (a.value ?? -1));
+  const myPlayers = $derived(playable(mine?.roster));
+  const theirPlayers = $derived(playable(theirs?.roster));
+  const give = $derived(parseIds(params.get("give")).filter((id) => myPlayers.some((r) => r.sleeper_id === id)));
+  const getIds = $derived(parseIds(params.get("get")).filter((id) => theirPlayers.some((r) => r.sleeper_id === id)));
+  const pkgKey = $derived(
+    partner !== null && give.length && getIds.length ? `${league}|${team}|${partner}|${[...give].sort()}|${[...getIds].sort()}|${win}` : "",
+  );
+
+  // evaluate on every change (a 250 ms pause, so ticking two players asks once); the last answer stays on screen while
+  // the next one is asked, so the dial swings from where it was
+  $effect(() => {
+    const key = pkgKey;
+    if (!key || team === null || partner === null) {
+      result = null;
+      evalError = null;
+      return;
+    }
+    if (key === resultKey && result) return;
+    const body = { league, team, partner, give: [...give], get: [...getIds] };
+    const w = win;
+    const timer = setTimeout(() => {
+      evaluating = true;
+      evalError = null;
+      evaluateIn(body, w)
+        .then((r) => {
+          if (pkgKey !== key) return;
+          result = r;
+          resultKey = key;
+          restoreScroll();
+        })
+        .catch((e) => {
+          if (pkgKey !== key) return;
+          result = null;
+          if (e instanceof Unauthorized) onauth();
+          else evalError = e instanceof ApiError && e.status === 404 ? "This trade cannot be evaluated: a player is not on these rosters any more." : errorWords(e);
+        })
+        .finally(() => {
+          if (pkgKey === key) evaluating = false;
+        });
+    }, 250);
+    return () => clearTimeout(timer);
+  });
+
+  function toggle(side: "give" | "get", id: string) {
+    const cur = side === "give" ? give : getIds;
+    const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+    setParams({ [side]: next.length ? next.join(",") : null });
+  }
+
+  const teamName = (id: number | null) => rosters.find((r) => r.roster_id === id)?.team_name ?? `Team ${id}`;
+  const verdictLess = (r: TradeEval) => (r.headline ?? `**You give ${names(r.give)}; you get ${names(r.get)}.**`).replace(r.verdict, "").trim();
+  const shown = $derived(pkgKey && result ? result : null); // the answer on screen (the last one while the next is asked)
+  const weekly = $derived(
+    shown ? shown.weeks.map((w, i) => ({ week: w, you_before: shown.before.mine.by_week[i], you_after: shown.after.mine.by_week[i], them_before: shown.before.theirs.by_week[i], them_after: shown.after.theirs.by_week[i] })) : [],
+  );
+  const mmax = $derived(Math.max(1, shown?.market.give ?? 0, shown?.market.get ?? 0));
+  const rmax = $derived(Math.max(1, shown?.ros?.give ?? 0, shown?.ros?.get ?? 0));
+  const href = (g: string | null | undefined) => (g ? withContext(`/player/${g}`, ctx) : null);
+  const span = $derived(shown?.span ?? null);
+  // the chip under the pickers shows the dial's reading only while the dial itself is off screen (no number twice)
+  let dialInView = $state(true);
+  function watchDial(el: HTMLElement) {
+    if (typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver((es) => (dialInView = es.some((e) => e.isIntersecting)), { threshold: 0.2 });
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      dialInView = true;
+    };
+  }
+</script>
+
+{#snippet picker(side: "give" | "get", rows: TeamRosterRow[], picked: string[], title: string)}
+  <Card {title} pad={false} testid={`pick-${side}`}>
+    {#if picked.length}
+      <p class="-mt-1 px-4 pb-2 text-sm text-ink-2" data-testid={`picked-${side}`}>
+        {rows.filter((r) => picked.includes(r.sleeper_id ?? "")).map((r) => r.player_name).join(" + ")}
+      </p>
+    {/if}
+    {#if !rows.length}
+      <div class="space-y-2 p-3"><div class="ll-skel h-10"></div><div class="ll-skel h-10"></div></div>
+    {:else}
+      <ul class="max-h-[26rem] divide-y divide-line overflow-y-auto">
+        {#each rows as r (r.sleeper_id)}
+          {@const on = picked.includes(r.sleeper_id ?? "")}
+          <li>
+            <label class="flex min-h-12 cursor-pointer items-center gap-2.5 px-3 py-1.5 {on ? 'bg-accent-soft' : 'hover:bg-raised'}" data-testid={`${side}-option`} data-id={r.sleeper_id}>
+              <input type="checkbox" class="h-5 w-5 shrink-0 accent-[var(--ll-accent)]" checked={on} onchange={() => toggle(side, r.sleeper_id ?? "")} />
+              <Headshot url={r.headshot_url} name={r.player_name ?? ""} team={r.team} size={32} />
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-base font-semibold">{r.player_name}</span>
+                <span class="flex items-center gap-1.5 text-xs text-ink-3">
+                  <PosBadge pos={r.position} />
+                  {#if r.position !== "DEF"}<TeamBadge team={r.team} />{/if}
+                  <span class="truncate">{r.role === "starter" ? slotLabel(r.slot) : r.role === "bench" ? "bench" : (r.reason ?? "out")}</span>
+                </span>
+              </span>
+              <span class="tabnum shrink-0 text-right text-base font-semibold">{r.role === "unplayable" ? "—" : f1(r.value)}</span>
+            </label>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+  </Card>
+{/snippet}
+
+{#snippet pickers()}
+  <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
+    {@render picker("give", myPlayers, give, "You give")}
+    {@render picker("get", theirPlayers, getIds, `You get · ${teamName(partner)}`)}
+  </div>
+{/snippet}
+
+{#snippet lineup(l: TradeEval["lineups"]["mine"], who: string, week: number)}
+  <Card title={`${who}, week ${week}`} pad={false} testid="lineup-after">
+    <ul class="divide-y divide-line">
+      {#each l.slots as row, i (`${row.slot}-${i}`)}
+        {@const isNew = (row.player_name ?? "").endsWith(" (new)")}
+        <li class="grid min-h-11 grid-cols-[4.5rem_minmax(0,1fr)_3.25rem_3.25rem] items-center gap-2 px-3 py-1 {isNew ? 'bg-accent-soft' : ''}">
+          <span class="text-sm font-semibold text-ink-3">{slotLabel(row.slot)}</span>
+          <span class="min-w-0 truncate text-base">
+            {#if href(row.gsis_id)}<a class="ll-name" href={href(row.gsis_id)}>{row.player_name ?? "—"}</a>{:else}{row.player_name ?? "—"}{/if}
+          </span>
+          <span class="tabnum text-right text-base">{f2(row.value)}</span>
+          <span class="tabnum text-right text-sm {row.change == null ? 'text-ink-3' : row.change > 0 ? 'text-good' : 'text-bad'}">{row.change == null ? "" : s1(row.change)}</span>
+        </li>
+      {/each}
+    </ul>
+    {#each l.notes as note, i (i)}<p class="px-4 pt-2 text-xs text-ink-2">{note}</p>{/each}
+    {#if l.closest_call}<p class="px-4 py-2 text-xs text-ink-3">Closest call after: {l.closest_call}.</p>{/if}
+  </Card>
+{/snippet}
+
+<main class="space-y-4" data-testid="trade-calc">
+  {#if team === null}
+    <p class="ll-empty" data-testid="pick-team-first">Pick your team above: the calculator then shows what a trade does to both lineups, and how much the other team would want it.</p>
+  {:else if error}
+    <p class="ll-error" data-testid="error">{error}</p>
+  {:else}
+    <ScreenHead eyebrow="Trades · calculator" title="Trade calculator">
+      {#snippet answer()}
+        {#if shown}
+          <p data-testid="trade-headline"><Md text={verdictLess(shown)} {ctx} /></p>
+        {:else}
+          <p>Pick a team and tick players both ways. The dial shows how much they would want the trade, by our numbers.</p>
+        {/if}
+      {/snippet}
+    </ScreenHead>
+
+    <!-- the window: which weeks the trade is priced over, and why -->
+    <WindowControl current={win} span={shown?.window === win ? shown.span : null} onpick={(w) => setParams({ window: w === "next4" ? null : w })} />
+
+    <div class="flex flex-wrap items-end justify-between gap-2">
+      <label class="flex min-w-0 items-center gap-2 text-sm text-ink-2">
+        <span class="shrink-0">Trade partner</span>
+        <select class="ll-input min-w-0" value={partner === null ? "" : String(partner)} onchange={(e) => setParams({ partner: e.currentTarget.value, get: null })} data-testid="partner">
+          {#each others as r (r.roster_id)}<option value={String(r.roster_id)}>{r.team_name}{r.manager_name ? ` (${r.manager_name})` : ""}</option>{/each}
+        </select>
+      </label>
+    </div>
+
+    <!-- the dial's row: their interest, your gain, the differences this week and over the window -->
+    {#if !give.length || !getIds.length}
+      <p class="ll-empty" data-testid="tick-both">Tick at least one player on each side: the dial shows how much they would want it.</p>
+    {:else if evalError}
+      <p class="ll-error" data-testid="eval-error">{evalError}</p>
+    {:else if !shown}
+      <div class="ll-skel h-48" aria-label="Re-solving both lineups" data-testid="evaluating"></div>
+    {:else}
+      {@const r = shown}
+      <Card tone="accent" testid="trade-result">
+        <div class="grid items-center gap-4 wide:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]" data-testid="dial-row" aria-busy={evaluating} {@attach watchDial}>
+          {#if r.interest}
+            <Dial score={r.interest.score} label={r.interest.label} caption={r.interest.caption} you={r.interest.you} youLabel={`You · ${r.span}`} busy={evaluating} />
+          {/if}
+          <div class="min-w-0">
+            <div class="grid grid-cols-2 gap-2" data-testid="fit-tiles">
+              <StatTile label="You · this week" value={s1(r.fit.this_week.mine)} caption={`${f2(r.before.mine.this_week)} → ${f2(r.after.mine.this_week)}`} size="sm" />
+              <StatTile label={`You · ${r.span}`} value={s1(r.fit.next_4.mine)} caption={`${f1(r.before.mine.horizon)} → ${f1(r.after.mine.horizon)}`} size="sm" />
+              <StatTile label={`${r.partner_team} · this week`} value={s1(r.fit.this_week.theirs)} caption={`${f2(r.before.theirs.this_week)} → ${f2(r.after.theirs.this_week)}`} size="sm" />
+              <StatTile label={`${r.partner_team} · ${r.span}`} value={s1(r.fit.next_4.theirs)} caption={`${f1(r.before.theirs.horizon)} → ${f1(r.after.theirs.horizon)}`} size="sm" />
+            </div>
+            <p class="mt-3 text-lg leading-snug font-semibold text-ink" data-testid="verdict">{r.verdict}</p>
+            {#if r.sanity}
+              <p class="mt-2 rounded-md bg-warn-soft p-2 text-sm text-ink" data-testid="sanity">We would not suggest this one: {r.sanity}.</p>
+            {/if}
+          </div>
+        </div>
+      </Card>
+    {/if}
+
+    {@render pickers()}
+    {#if shown?.interest && give.length && getIds.length && !dialInView}
+      <!-- the dial's reading, kept in view while the lists scroll (a phone: just above the tab bar) -->
+      <div
+        class="sticky bottom-[calc(var(--ll-bar-h)+env(safe-area-inset-bottom)+0.5rem)] z-20 mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2 text-sm shadow-lg wide:bottom-4"
+        data-testid="dial-chip"
+        aria-live="polite"
+      >
+        <span class="ll-label">Their interest</span>
+        <strong class={shown.interest.label === "No deal" ? "text-bad" : shown.interest.label === "Maybe" ? "text-warn" : "text-good"}>{shown.interest.label}</strong>
+        <span class="tabnum text-ink-3">{shown.interest.score}</span>
+        <span class="ll-label">You</span><strong class="tabnum">{s1(shown.interest.you)}</strong>
+      </div>
+    {/if}
+
+    {#if shown && give.length && getIds.length && !evalError}
+      {@const r = shown}
+      <Card testid="trade-details">
+        <div class="grid gap-4 wide:grid-cols-2">
+          <div data-testid="market">
+            <div class="ll-label mb-2">Market: season points above a free agent</div>
+            <div class="space-y-2">
+              <Bar label="You give" value={r.market.give} max={mmax} display={fmt.whole(r.market.give)} color="var(--ll-div-hot)" />
+              <Bar label="You get" value={r.market.get} max={mmax} display={fmt.whole(r.market.get)} />
+            </div>
+            {#if r.market.words}<p class="mt-2 text-sm text-ink-2"><Md text={r.market.words} {ctx} /></p>{/if}
+          </div>
+          {#if r.ros}
+            <div data-testid="ros">
+              <div class="ll-label mb-2">Rest of season{r.ros.window ? ` · ${r.ros.window}` : ""}</div>
+              <div class="space-y-2">
+                <Bar label="You give" value={r.ros.give} max={rmax} display={fmt.whole(r.ros.give)} color="var(--ll-div-hot)" />
+                <Bar label="You get" value={r.ros.get} max={rmax} display={fmt.whole(r.ros.get)} />
+              </div>
+              <p class="mt-2 text-sm text-ink-2">
+                The players' plain totals up to this league's final ({(r.ros.get ?? 0) - (r.ros.give ?? 0) >= 0 ? "+" : "−"}{Math.abs((r.ros.get ?? 0) - (r.ros.give ?? 0))}), before the roster spot a lopsided trade frees or fills.
+              </p>
+            </div>
+          {/if}
+        </div>
+        {#if r.ranks?.words}<p class="mt-3 text-sm text-ink-2" data-testid="rank-change"><Md text={r.ranks.words} {ctx} /></p>{/if}
+        {#if r.size_words}<p class="mt-2 text-sm text-ink-2" data-testid="roster-size"><Md text={r.size_words} {ctx} /></p>{/if}
+      </Card>
+
+      <!-- the lineups, once: yours, then theirs under an expander -->
+      {#if r.lineups}
+        <div class="grid grid-cols-1 gap-3 wide:grid-cols-2" data-testid="lineups">
+          {@render lineup(r.lineups.mine, "Your lineup", r.week)}
+          <Expander title={`${r.partner_team}'s lineup, week ${r.week}`} testid="lineup-theirs">
+            {@render lineup(r.lineups.theirs, `${r.partner_team}'s lineup`, r.week)}
+          </Expander>
+        </div>
+      {/if}
+
+      {#if weekly.length > 1}
+        <Expander title={`Week by week (${r.span})`} testid="weekly">
+          <table class="w-full table-fixed text-base" data-testid="weekly-table">
+            <thead>
+              <tr class="text-left text-label font-semibold tracking-[0.08em] text-ink-3 uppercase">
+                <th class="w-12 py-1">Week</th><th class="py-1 text-right">You now</th><th class="py-1 text-right">You after</th><th class="py-1 text-right">Them now</th><th class="py-1 text-right">Them after</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each weekly as w (w.week)}
+                <tr class="border-t border-line">
+                  <td class="py-1.5">{w.week}</td><td class="tabnum text-right">{f1(w.you_before)}</td><td class="tabnum text-right font-semibold">{f1(w.you_after)}</td><td class="tabnum text-right">{f1(w.them_before)}</td><td class="tabnum text-right font-semibold">{f1(w.them_after)}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+          <p class="mt-2 text-sm text-ink-3">Each week is re-solved on its own: byes, injuries and taxi squads as in that week's lineup.</p>
+        </Expander>
+      {/if}
+    {/if}
+
+    <Expander title="How to read this" testid="howto">
+      <div class="text-base leading-snug">
+        {@html md(
+          "- **The dial** is how much the other team would want this trade: what *their* best lineup gains over the weeks you picked, by our numbers. **No deal**: their lineup loses (or gains nothing). **Maybe**: under 2 points. **Likely**: 2 to 6. **Hard to say no**: more than 6. It is our projection's view, not theirs: a manager who rates his players higher than we do may still say no.\n" +
+            "- **You** under the dial is what *your* best lineup gains over the same weeks.\n" +
+            `- **The weeks**: ${windowWhy(win, span)} Pick another span above: this week, the next four, the rest of the season (every week to this league's final) or the playoffs.\n` +
+            "- **Market** is what the players are worth on the market: their projected points for the rest of the season above the best free agent at their position. It is never added to the lineup gains: a player can be worth a lot and still sit on your bench.\n" +
+            "- **Roster size**: if a team gets more players than it gives, it has to cut someone: the player it would miss least, and that loss is in the numbers.\n" +
+            "- Copy the page's link to share a trade: the link opens the same trade, over the same weeks.",
+        )}
+      </div>
+    </Expander>
+  {/if}
+</main>

@@ -1078,3 +1078,54 @@ export interface AboutAnswer {
 
 export const aboutPath = (league: string) => `/api/about?league=${encodeURIComponent(league)}`;
 // ---- end H1
+
+// ---- IA-2 (Wave I-A): the trade calculator's window and interest dial, the partner finder's sanity bound, buy low /
+// sell high on Trades (GET /api/trades/lists; no longer on /api/waivers). Additive: declaration merging + new helpers.
+export type TradeWindow = "week" | "next4" | "ros" | "playoffs";
+
+/** The dial: the other manager's interest 0–100 by our numbers over the window, the label, your gain. */
+export interface Interest {
+  score: number;
+  label: "No deal" | "Maybe" | "Likely" | "Hard to say no";
+  their_gain: number;
+  you: number | null;
+  caption: string; // "by our numbers over weeks 4–7"
+}
+
+export interface TradeEval {
+  window?: TradeWindow;
+  window_label?: string;
+  window_why?: string;
+  interest?: Interest;
+  sanity?: string | null; // why the partner finder would not suggest this package (the market, rest of season), or null
+  // fit.next_4 is the window's gain (its name before IA-2; fit.window on the API carries the same numbers)
+}
+
+export interface PartnerRow {
+  interest?: Interest;
+}
+
+export interface Partners {
+  window?: TradeWindow;
+  window_label?: string;
+  window_why?: string;
+  weeks?: number[];
+  rejected?: { partner_team: string; give: string[]; get: string[]; why: string }[];
+  rejected_count?: number;
+  sanity?: { ros_gap_share: number; market_share: number; ros_players: number; market_players: number; market_note: string | null };
+}
+
+/** GET /api/trades/lists: buy low / sell high (Wave H's lists, moved from /api/waivers). */
+export type TradeLists = NonNullable<Waivers["trade_lists"]> & { league_id: string; roster_id: number; position: string };
+
+export const tradePaths = {
+  partners: (league: string, team: number, want = "ALL", window: TradeWindow = "next4") =>
+    decisionPaths.partners(league, team, want) + (window === "next4" ? "" : `&window=${window}`),
+  lists: (league: string, team: number) => `/api/trades/lists?league=${encodeURIComponent(league)}&team=${team}`,
+};
+
+/** POST /api/trades/evaluate over a window (next4, the default, is not sent: the body stays the G4 one). */
+export function evaluateIn(body: { league: string; team: number; partner: number; give: string[]; get: string[] }, window: TradeWindow): Promise<TradeEval> {
+  return postEvaluate(window === "next4" ? body : ({ ...body, window } as typeof body));
+}
+// ---- end IA-2

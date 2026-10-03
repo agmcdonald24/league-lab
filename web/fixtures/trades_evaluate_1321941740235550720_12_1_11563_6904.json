@@ -12,6 +12,9 @@
   7
  ],
  "span": "weeks 4–7",
+ "window": "next4",
+ "window_label": "Next 4",
+ "window_why": "the next four weeks: far enough to matter, near enough to trust",
  "give": [
   {
    "sleeper_id": "11563",
@@ -46,7 +49,7 @@
   "mine": {
    "this_week": 111.15,
    "horizon": 446.96,
-   "bench": 79.83,
+   "bench": 76.78,
    "by_week": [
     111.15,
     118.12,
@@ -55,11 +58,11 @@
    ]
   },
   "theirs": {
-   "this_week": 131.91,
-   "horizon": 481.39,
-   "bench": 49.73,
+   "this_week": 130.88,
+   "horizon": 480.36,
+   "bench": 48.74,
    "by_week": [
-    131.91,
+    130.88,
     123.78,
     119.99,
     105.71
@@ -70,7 +73,7 @@
   "mine": {
    "this_week": 111.52,
    "horizon": 450.32,
-   "bench": 79.83,
+   "bench": 76.78,
    "by_week": [
     111.52,
     118.45,
@@ -79,11 +82,11 @@
    ]
   },
   "theirs": {
-   "this_week": 131.54,
-   "horizon": 478.03,
-   "bench": 49.73,
+   "this_week": 130.51,
+   "horizon": 477.0,
+   "bench": 48.74,
    "by_week": [
-    131.54,
+    130.51,
     123.45,
     118.69,
     104.35
@@ -95,12 +98,24 @@
    "mine": 0.37,
    "theirs": -0.37
   },
+  "window": {
+   "mine": 3.36,
+   "theirs": -3.36
+  },
   "next_4": {
    "mine": 3.36,
    "theirs": -3.36
   },
   "words": "**Fit** (what the best lineups gain): you **+0.4** this week and **+3.4** over weeks 4–7; them **-0.4** and **-3.4**."
  },
+ "interest": {
+  "score": 11,
+  "label": "No deal",
+  "their_gain": -3.36,
+  "you": 3.36,
+  "caption": "by our numbers over weeks 4–7"
+ },
+ "sanity": null,
  "market": {
   "give": 216,
   "get": 224,
@@ -173,7 +188,7 @@
    ],
    "theirs": [
     3,
-    3
+    5
    ],
    "n": 12
   },
@@ -191,7 +206,7 @@
   "bench_value": {
    "mine": [
     3,
-    3
+    4
    ],
    "theirs": [
     11,
@@ -199,7 +214,7 @@
    ],
    "n": 12
   },
-  "words": "League rank, week 4: you 11th → **11th** of 12, Pitts n’ Titts 3rd → 3rd; weeks 4–7: you 11th → **11th** of 12, Pitts n’ Titts 7th → 7th; depth: you 3rd → **3rd** of 12, Pitts n’ Titts 11th → 11th."
+  "words": "League rank, week 4: you 11th → **11th** of 12, Pitts n’ Titts 3rd → 5th; weeks 4–7: you 11th → **11th** of 12, Pitts n’ Titts 7th → 7th; depth: you 3rd → **4th** of 12, Pitts n’ Titts 11th → 11th."
  },
  "size_words": "Roster size: no change (1 for 1).",
  "sides": {
@@ -245,7 +260,7 @@
    "before": {
     "this_week": 111.15,
     "horizon": 446.96,
-    "bench": 79.83,
+    "bench": 76.78,
     "by_week": [
      111.15,
      118.12,
@@ -256,7 +271,7 @@
    "after": {
     "this_week": 111.52,
     "horizon": 450.32,
-    "bench": 79.83,
+    "bench": 76.78,
     "by_week": [
      111.52,
      118.45,
@@ -347,22 +362,22 @@
     7
    ],
    "before": {
-    "this_week": 131.91,
-    "horizon": 481.39,
-    "bench": 49.73,
+    "this_week": 130.88,
+    "horizon": 480.36,
+    "bench": 48.74,
     "by_week": [
-     131.91,
+     130.88,
      123.78,
      119.99,
      105.71
     ]
    },
    "after": {
-    "this_week": 131.54,
-    "horizon": 478.03,
-    "bench": 49.73,
+    "this_week": 130.51,
+    "horizon": 477.0,
+    "bench": 48.74,
     "by_week": [
-     131.54,
+     130.51,
      123.45,
      118.69,
      104.35
@@ -517,9 +532,9 @@
     },
     {
      "slot": "TE",
-     "player_name": "Dallas Goedert",
-     "gsis_id": "00-0034351",
-     "value": 7.91,
+     "player_name": "Kyle Pitts",
+     "gsis_id": "00-0036970",
+     "value": 6.88,
      "change": null
     },
     {

@@ -1,7 +1,7 @@
 // The decision screens' words (plan G4): the Streamlit pages' sentences, ported where the API does not send them
 // (app/pages/2_Waiver_Wire.py `_headline`, 1_Team_Hub.py's cards, 8_League.py's luck line, 6_Trade_Finder.py's
 // partner card). Numbers keep their units; unknown is not zero (docs/WORDS.md).
-import type { AllPlayRow, LeagueView, PartnerRow, Team, TradePlayer, WaiverMove, Waivers } from "./api";
+import type { AllPlayRow, LeagueView, PartnerRow, Team, TradePlayer, TradeWindow, WaiverMove, Waivers } from "./api";
 
 export const f1 = (x: number | null | undefined): string => (x == null ? "—" : x.toFixed(1));
 export const f2 = (x: number | null | undefined): string => (x == null ? "—" : x.toFixed(2));
@@ -178,3 +178,34 @@ export function errorWords(e: unknown): string {
   if (status === 503) return "The numbers are not ready yet. Try again in a few minutes.";
   return e instanceof Error ? e.message : String(e);
 }
+
+// ---- IA-2 (Wave I-A): the window a trade is priced over (api decisions.py WINDOWS / WINDOW_LABELS / WINDOW_WHY)
+export const WINDOW_TABS: { key: TradeWindow; label: string }[] = [
+  { key: "week", label: "This week" },
+  { key: "next4", label: "Next 4" },
+  { key: "ros", label: "Rest of season" },
+  { key: "playoffs", label: "Playoffs" },
+];
+const WINDOW_WHY: Record<TradeWindow, string> = {
+  week: "this week only: the lineup you set for Sunday",
+  next4: "the next four weeks: far enough to matter, near enough to trust",
+  ros: "every week left to this league's final, playoffs included: the longest view, the least sure",
+  playoffs: "the weeks of this league's playoffs: what the trade does when it counts most",
+};
+
+/** The URL's ?window= (anything else: the default, the next four weeks). */
+export function windowOf(v: string | null | undefined): TradeWindow {
+  return v === "week" || v === "ros" || v === "playoffs" ? v : "next4";
+}
+
+/** The window control's one line: "Weeks 4–7: the next four weeks: far enough to matter, near enough to trust." */
+export function windowWhy(w: TradeWindow, span: string | null): string {
+  const why = WINDOW_WHY[w];
+  return span ? `${span[0].toUpperCase()}${span.slice(1)}: ${why}.` : `${why[0].toUpperCase()}${why.slice(1)}.`;
+}
+
+/** The dial's label from the other side's gain over the window (api decisions.py `interest`: the same thresholds). */
+export function interestLabel(theirGain: number): "No deal" | "Maybe" | "Likely" | "Hard to say no" {
+  return theirGain < 0.05 ? "No deal" : theirGain < 2 ? "Maybe" : theirGain <= 6 ? "Likely" : "Hard to say no";
+}
+// ---- end IA-2

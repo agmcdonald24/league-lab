@@ -13,6 +13,7 @@
   export const DECISIONS: { name: RouteName; label: string }[] = [
     { name: "waivers", label: "Waivers" },
     { name: "trades", label: "Trades" },
+    { name: "trade-calc", label: "Trade calculator" }, // ---- IA-2: its own link
     { name: "team", label: "Team" },
     { name: "league", label: "League" },
   ];

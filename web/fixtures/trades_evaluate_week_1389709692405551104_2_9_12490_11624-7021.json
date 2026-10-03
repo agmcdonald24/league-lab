@@ -1,0 +1,625 @@
+{
+ "league_id": "1389709692405551104",
+ "source": "database",
+ "roster_id": 2,
+ "partner": 9,
+ "partner_team": "Negrodamus",
+ "week": 4,
+ "weeks": [
+  4
+ ],
+ "span": "week 4",
+ "window": "week",
+ "window_label": "This week",
+ "window_why": "this week only: the lineup you set for Sunday",
+ "give": [
+  {
+   "sleeper_id": "12490",
+   "gsis_id": "00-0040719",
+   "player_name": "Bhayshul Tuten",
+   "position": "RB",
+   "team": "JAX",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+   "this_week": 9.72,
+   "cannot_play": null,
+   "market_price": 9,
+   "season_points": 137,
+   "roster_id": 2
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "7021",
+   "gsis_id": "00-0036139",
+   "player_name": "Rico Dowdle",
+   "position": "RB",
+   "team": "PIT",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mx2bxccuzmdvzbksypws",
+   "this_week": 0.0,
+   "cannot_play": "Out",
+   "market_price": 0,
+   "season_points": 124,
+   "roster_id": 9
+  },
+  {
+   "sleeper_id": "11624",
+   "gsis_id": "00-0039894",
+   "player_name": "Xavier Worthy",
+   "position": "WR",
+   "team": "KC",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/u6fmnffwteccoxn3uguq",
+   "this_week": 8.34,
+   "cannot_play": null,
+   "market_price": 0,
+   "season_points": 114,
+   "roster_id": 9
+  }
+ ],
+ "before": {
+  "mine": {
+   "this_week": 113.54,
+   "horizon": 113.54,
+   "bench": 27.36,
+   "by_week": [
+    113.54
+   ]
+  },
+  "theirs": {
+   "this_week": 101.2,
+   "horizon": 101.2,
+   "bench": 26.1,
+   "by_week": [
+    101.2
+   ]
+  }
+ },
+ "after": {
+  "mine": {
+   "this_week": 113.01,
+   "horizon": 113.01,
+   "bench": 26.51,
+   "by_week": [
+    113.01
+   ]
+  },
+  "theirs": {
+   "this_week": 110.92,
+   "horizon": 110.92,
+   "bench": 17.76,
+   "by_week": [
+    110.92
+   ]
+  }
+ },
+ "fit": {
+  "this_week": {
+   "mine": -0.53,
+   "theirs": 9.72
+  },
+  "window": {
+   "mine": -0.53,
+   "theirs": 9.72
+  },
+  "next_4": {
+   "mine": -0.53,
+   "theirs": 9.72
+  },
+  "words": "**Fit** (what the best lineups gain): you **-0.5** this week and **-0.5** over week 4; them **+9.7** and **+9.7**."
+ },
+ "interest": {
+  "score": 90,
+  "label": "Hard to say no",
+  "their_gain": 9.72,
+  "you": -0.53,
+  "caption": "by our numbers over week 4"
+ },
+ "sanity": null,
+ "market": {
+  "give": 9,
+  "get": 0,
+  "season_points_give": 137,
+  "season_points_get": 238,
+  "unknown": [],
+  "replacement": {
+   "DEF": {
+    "season_points": 110,
+    "player_name": "Jacksonville Jaguars"
+   },
+   "K": {
+    "season_points": 127,
+    "player_name": "Chris Boswell"
+   },
+   "QB": {
+    "season_points": 244,
+    "player_name": "Malik Willis"
+   },
+   "RB": {
+    "season_points": 128,
+    "player_name": "Alvin Kamara"
+   },
+   "TE": {
+    "season_points": 109,
+    "player_name": "Cade Otton"
+   },
+   "WR": {
+    "season_points": 122,
+    "player_name": "Malik Washington"
+   }
+  },
+  "words": "**Market** (season points above the best free agent at the position): you give **9**, you get **0**: about even.",
+  "players": [
+   {
+    "sleeper_id": "12490",
+    "gsis_id": "00-0040719",
+    "player_name": "Bhayshul Tuten",
+    "position": "RB",
+    "team": "JAX",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+    "this_week": 9.72,
+    "cannot_play": null,
+    "market_price": 9,
+    "season_points": 137,
+    "roster_id": 2,
+    "goes_to": "Negrodamus"
+   },
+   {
+    "sleeper_id": "7021",
+    "gsis_id": "00-0036139",
+    "player_name": "Rico Dowdle",
+    "position": "RB",
+    "team": "PIT",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mx2bxccuzmdvzbksypws",
+    "this_week": 0.0,
+    "cannot_play": "Out",
+    "market_price": 0,
+    "season_points": 124,
+    "roster_id": 9,
+    "goes_to": "You"
+   },
+   {
+    "sleeper_id": "11624",
+    "gsis_id": "00-0039894",
+    "player_name": "Xavier Worthy",
+    "position": "WR",
+    "team": "KC",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/u6fmnffwteccoxn3uguq",
+    "this_week": 8.34,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 114,
+    "roster_id": 9,
+    "goes_to": "You"
+   }
+  ]
+ },
+ "verdict": "Does not help you (-0.5 this week, -0.5 over week 4), them +9.7 (+9.7 over week 4); the market calls it about even: skip it.",
+ "headline": "**You give [Bhayshul Tuten](/player/00-0040719); you get [Rico Dowdle](/player/00-0036139) and [Xavier Worthy](/player/00-0039894).** Does not help you (-0.5 this week, -0.5 over week 4), them +9.7 (+9.7 over week 4); the market calls it about even: skip it.",
+ "ros": {
+  "give": 117,
+  "get": 205,
+  "window": "weeks 4–16",
+  "words": "Rest of season (weeks 4–16, through this league's final): you give **117** points, you get **205** (+88) — the players' plain totals, before the roster spot a lopsided trade frees or fills and before your lineup is re-solved (the verdict above counts both). Only this week has betting lines; later weeks lean on usage and the schedule."
+ },
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    6,
+    7
+   ],
+   "theirs": [
+    5,
+    10
+   ],
+   "n": 10
+  },
+  "bench_value": {
+   "mine": [
+    4,
+    9
+   ],
+   "theirs": [
+    7,
+    10
+   ],
+   "n": 10
+  },
+  "words": "League rank, week 4: you 6th → **7th** of 10, Negrodamus 5th → 10th; depth: you 4th → **9th** of 10, Negrodamus 7th → 10th."
+ },
+ "size_words": "Roster size: you must cut [Terrance Ferguson](/player/00-0040737) (TE, 86 season points; costs 0.0 over week 4) to stay at 15 players; they open a spot: the best free agent for it is [Alvin Kamara](/player/00-0033906) (RB, +2.2 over week 4).",
+ "sides": {
+  "mine": {
+   "roster_id": 2,
+   "team_name": "MacZaddy",
+   "gives": [
+    {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "this_week": 9.72,
+     "cannot_play": null,
+     "market_price": 9,
+     "season_points": 137,
+     "roster_id": 2
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "7021",
+     "gsis_id": "00-0036139",
+     "player_name": "Rico Dowdle",
+     "position": "RB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mx2bxccuzmdvzbksypws",
+     "this_week": 0.0,
+     "cannot_play": "Out",
+     "market_price": 0,
+     "season_points": 124,
+     "roster_id": 9
+    },
+    {
+     "sleeper_id": "11624",
+     "gsis_id": "00-0039894",
+     "player_name": "Xavier Worthy",
+     "position": "WR",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/u6fmnffwteccoxn3uguq",
+     "this_week": 8.34,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 114,
+     "roster_id": 9
+    }
+   ],
+   "weeks": [
+    4
+   ],
+   "before": {
+    "this_week": 113.54,
+    "horizon": 113.54,
+    "bench": 27.36,
+    "by_week": [
+     113.54
+    ]
+   },
+   "after": {
+    "this_week": 113.01,
+    "horizon": 113.01,
+    "bench": 26.51,
+    "by_week": [
+     113.01
+    ]
+   },
+   "gain_week": -0.53,
+   "gain_horizon": -0.53,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "12487",
+      "gsis_id": "00-0040737",
+      "player_name": "Terrance Ferguson",
+      "position": "TE",
+      "team": "LA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg",
+      "this_week": 0.0,
+      "cannot_play": "IR",
+      "market_price": 0,
+      "season_points": 86,
+      "roster_id": 2
+     },
+     "horizon_loss": 0.0,
+     "season_points": 86
+    }
+   ],
+   "limit": 15,
+   "size_before": 15,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 9,
+   "price_in": 0,
+   "points_out": 137,
+   "points_in": 238,
+   "starts": [
+    {
+     "sleeper_id": "12533",
+     "gsis_id": "00-0040242",
+     "player_name": "Jacory Croskey-Merritt",
+     "position": "RB",
+     "team": "WAS",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "this_week": 9.19,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 122,
+     "roster_id": 2
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "this_week": 9.72,
+     "cannot_play": null,
+     "market_price": 9,
+     "season_points": 137,
+     "roster_id": 2
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 9,
+   "team_name": "Negrodamus",
+   "gives": [
+    {
+     "sleeper_id": "7021",
+     "gsis_id": "00-0036139",
+     "player_name": "Rico Dowdle",
+     "position": "RB",
+     "team": "PIT",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mx2bxccuzmdvzbksypws",
+     "this_week": 0.0,
+     "cannot_play": "Out",
+     "market_price": 0,
+     "season_points": 124,
+     "roster_id": 9
+    },
+    {
+     "sleeper_id": "11624",
+     "gsis_id": "00-0039894",
+     "player_name": "Xavier Worthy",
+     "position": "WR",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/u6fmnffwteccoxn3uguq",
+     "this_week": 8.34,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 114,
+     "roster_id": 9
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "this_week": 9.72,
+     "cannot_play": null,
+     "market_price": 9,
+     "season_points": 137,
+     "roster_id": 2
+    }
+   ],
+   "weeks": [
+    4
+   ],
+   "before": {
+    "this_week": 101.2,
+    "horizon": 101.2,
+    "bench": 26.1,
+    "by_week": [
+     101.2
+    ]
+   },
+   "after": {
+    "this_week": 110.92,
+    "horizon": 110.92,
+    "bench": 17.76,
+    "by_week": [
+     110.92
+    ]
+   },
+   "gain_week": 9.72,
+   "gain_horizon": 9.72,
+   "cuts": [],
+   "limit": 15,
+   "size_before": 15,
+   "size_after": 14,
+   "opened": 1,
+   "fill": {
+    "sleeper_id": "4035",
+    "week_gains": [
+     2.19
+    ],
+    "horizon_gain": 2.19
+   },
+   "price_out": 0,
+   "price_in": 9,
+   "points_out": 238,
+   "points_in": 137,
+   "starts": [
+    {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "this_week": 9.72,
+     "cannot_play": null,
+     "market_price": 9,
+     "season_points": 137,
+     "roster_id": 2
+    }
+   ],
+   "sits": []
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Patrick Mahomes",
+     "gsis_id": "00-0033873",
+     "value": 20.26,
+     "change": null
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Kyren Williams",
+     "gsis_id": "00-0037840",
+     "value": 12.8,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Omarion Hampton",
+     "gsis_id": "00-0040666",
+     "value": 11.28,
+     "change": null
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Tetairoa McMillan",
+     "gsis_id": "00-0040124",
+     "value": 12.75,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 12.16,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "player_name": "Travis Kelce",
+     "gsis_id": "00-0030506",
+     "value": 10.14,
+     "change": null
+    },
+    {
+     "slot": "FLEX1",
+     "player_name": "Michael Wilson",
+     "gsis_id": "00-0038559",
+     "value": 9.2,
+     "change": -0.52
+    },
+    {
+     "slot": "FLEX2",
+     "player_name": "Jacory Croskey-Merritt",
+     "gsis_id": "00-0040242",
+     "value": 9.19,
+     "change": -0.01
+    },
+    {
+     "slot": "K",
+     "player_name": "Chase McLaughlin",
+     "gsis_id": "00-0035358",
+     "value": 8.07,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Kansas City Chiefs",
+     "gsis_id": null,
+     "value": 7.16,
+     "change": null
+    }
+   ],
+   "notes": [
+    "Starts after the trade: Jacory Croskey-Merritt (FLEX2, 9.19, from the bench).",
+    "Out of the lineup after the trade: Bhayshul Tuten (FLEX1, 9.72, traded)."
+   ],
+   "closest_call": "Jacory Croskey-Merritt at FLEX2, 0.85 ahead of the next option"
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Josh Allen",
+     "gsis_id": "00-0034857",
+     "value": 24.42,
+     "change": null
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Bhayshul Tuten (new)",
+     "gsis_id": "00-0040719",
+     "value": 9.72,
+     "change": 2.15
+    },
+    {
+     "slot": "RB2",
+     "player_name": "J.K. Dobbins",
+     "gsis_id": "00-0036158",
+     "value": 7.57,
+     "change": 7.57
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Ja'Marr Chase",
+     "gsis_id": "00-0036900",
+     "value": 12.41,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Matthew Golden",
+     "gsis_id": "00-0040667",
+     "value": 10.52,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "player_name": "Sam LaPorta",
+     "gsis_id": "00-0039065",
+     "value": 10.88,
+     "change": null
+    },
+    {
+     "slot": "FLEX1",
+     "player_name": "Courtland Sutton",
+     "gsis_id": "00-0034348",
+     "value": 8.68,
+     "change": null
+    },
+    {
+     "slot": "FLEX2",
+     "player_name": "Mike Evans",
+     "gsis_id": "00-0031408",
+     "value": 8.58,
+     "change": null
+    },
+    {
+     "slot": "K",
+     "player_name": "Cam Little",
+     "gsis_id": "00-0039409",
+     "value": 8.56,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Seattle Seahawks",
+     "gsis_id": null,
+     "value": 9.58,
+     "change": null
+    }
+   ],
+   "notes": [
+    "Starts after the trade: Bhayshul Tuten (RB1, 9.72, new)."
+   ],
+   "closest_call": "Josh Allen at QB, 6.66 ahead of the next option"
+  }
+ },
+ "fill_players": {
+  "4035": {
+   "player_name": "Alvin Kamara",
+   "position": "RB",
+   "gsis_id": "00-0033906",
+   "sleeper_id": "4035"
+  }
+ },
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)"
+}

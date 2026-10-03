@@ -12,6 +12,9 @@
   7
  ],
  "span": "weeks 4–7",
+ "window": "next4",
+ "window_label": "Next 4",
+ "window_why": "the next four weeks: far enough to matter, near enough to trust",
  "give": [
   {
    "sleeper_id": "4046",
@@ -44,22 +47,22 @@
  ],
  "before": {
   "mine": {
-   "this_week": 117.02,
-   "horizon": 425.55,
-   "bench": 42.35,
+   "this_week": 113.54,
+   "horizon": 422.07,
+   "bench": 27.36,
    "by_week": [
-    117.02,
+    113.54,
     100.63,
     112.3,
     95.6
    ]
   },
   "theirs": {
-   "this_week": 114.97,
-   "horizon": 446.67,
-   "bench": 31.89,
+   "this_week": 109.43,
+   "horizon": 441.13,
+   "bench": 23.24,
    "by_week": [
-    114.97,
+    109.43,
     107.48,
     111.37,
     112.85
@@ -68,22 +71,22 @@
  },
  "after": {
   "mine": {
-   "this_week": 114.93,
-   "horizon": 422.16,
-   "bench": 41.43,
+   "this_week": 111.45,
+   "horizon": 418.68,
+   "bench": 26.44,
    "by_week": [
-    114.93,
+    111.45,
     102.34,
     110.36,
     94.53
    ]
   },
   "theirs": {
-   "this_week": 118.94,
-   "horizon": 436.36,
-   "bench": 31.89,
+   "this_week": 113.4,
+   "horizon": 430.82,
+   "bench": 23.24,
    "by_week": [
-    118.94,
+    113.4,
     90.19,
     113.31,
     113.92
@@ -95,12 +98,24 @@
    "mine": -2.09,
    "theirs": 3.97
   },
+  "window": {
+   "mine": -3.39,
+   "theirs": -10.31
+  },
   "next_4": {
    "mine": -3.39,
    "theirs": -10.31
   },
   "words": "**Fit** (what the best lineups gain): you **-2.1** this week and **-3.4** over weeks 4–7; them **+4.0** and **-10.3**."
  },
+ "interest": {
+  "score": 0,
+  "label": "No deal",
+  "their_gain": -10.31,
+  "you": -3.39,
+  "caption": "by our numbers over weeks 4–7"
+ },
+ "sanity": null,
  "market": {
   "give": 17,
   "get": 0,
@@ -177,11 +192,11 @@
   "lineup_value": {
    "mine": [
     6,
-    8
+    10
    ],
    "theirs": [
     8,
-    5
+    7
    ],
    "n": 10
   },
@@ -192,22 +207,22 @@
    ],
    "theirs": [
     5,
-    5
+    7
    ],
    "n": 10
   },
   "bench_value": {
    "mine": [
     4,
-    4
+    9
    ],
    "theirs": [
     8,
-    8
+    10
    ],
    "n": 10
   },
-  "words": "League rank, week 4: you 6th → **8th** of 10, Daejon Loves PR team 8th → 5th; weeks 4–7: you 9th → **10th** of 10, Daejon Loves PR team 5th → 5th; depth: you 4th → **4th** of 10, Daejon Loves PR team 8th → 8th."
+  "words": "League rank, week 4: you 6th → **10th** of 10, Daejon Loves PR team 8th → 7th; weeks 4–7: you 9th → **10th** of 10, Daejon Loves PR team 5th → 7th; depth: you 4th → **9th** of 10, Daejon Loves PR team 8th → 10th."
  },
  "size_words": "Roster size: no change (1 for 1).",
  "sides": {
@@ -251,22 +266,22 @@
     7
    ],
    "before": {
-    "this_week": 117.02,
-    "horizon": 425.55,
-    "bench": 42.35,
+    "this_week": 113.54,
+    "horizon": 422.07,
+    "bench": 27.36,
     "by_week": [
-     117.02,
+     113.54,
      100.63,
      112.3,
      95.6
     ]
    },
    "after": {
-    "this_week": 114.93,
-    "horizon": 422.16,
-    "bench": 41.43,
+    "this_week": 111.45,
+    "horizon": 418.68,
+    "bench": 26.44,
     "by_week": [
-     114.93,
+     111.45,
      102.34,
      110.36,
      94.53
@@ -355,22 +370,22 @@
     7
    ],
    "before": {
-    "this_week": 114.97,
-    "horizon": 446.67,
-    "bench": 31.89,
+    "this_week": 109.43,
+    "horizon": 441.13,
+    "bench": 23.24,
     "by_week": [
-     114.97,
+     109.43,
      107.48,
      111.37,
      112.85
     ]
    },
    "after": {
-    "this_week": 118.94,
-    "horizon": 436.36,
-    "bench": 31.89,
+    "this_week": 113.4,
+    "horizon": 430.82,
+    "bench": 23.24,
     "by_week": [
-     118.94,
+     113.4,
      90.19,
      113.31,
      113.92
@@ -453,9 +468,9 @@
     },
     {
      "slot": "WR2",
-     "player_name": "Justin Jefferson",
-     "gsis_id": "00-0036322",
-     "value": 12.68,
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 12.16,
      "change": null
     },
     {
@@ -467,16 +482,16 @@
     },
     {
      "slot": "FLEX1",
-     "player_name": "Parker Washington",
-     "gsis_id": "00-0038606",
-     "value": 12.16,
+     "player_name": "Bhayshul Tuten",
+     "gsis_id": "00-0040719",
+     "value": 9.72,
      "change": null
     },
     {
      "slot": "FLEX2",
-     "player_name": "Bhayshul Tuten",
-     "gsis_id": "00-0040719",
-     "value": 9.72,
+     "player_name": "Michael Wilson",
+     "gsis_id": "00-0038559",
+     "value": 9.2,
      "change": null
     },
     {
@@ -498,7 +513,7 @@
     "Starts after the trade: Tyler Shough (QB, 18.17, from the bench).",
     "Out of the lineup after the trade: Patrick Mahomes (QB, 20.26, traded)."
    ],
-   "closest_call": "Bhayshul Tuten at FLEX2, 0.52 ahead of the next option"
+   "closest_call": "Michael Wilson at FLEX2, 0.01 ahead of the next option"
   },
   "theirs": {
    "slots": [
@@ -518,9 +533,9 @@
     },
     {
      "slot": "RB2",
-     "player_name": "De'Von Achane",
-     "gsis_id": "00-0039040",
-     "value": 14.19,
+     "player_name": "Cam Skattebo",
+     "gsis_id": "00-0040715",
+     "value": 12.58,
      "change": null
     },
     {
@@ -546,16 +561,16 @@
     },
     {
      "slot": "FLEX1",
-     "player_name": "Cam Skattebo",
-     "gsis_id": "00-0040715",
-     "value": 12.58,
+     "player_name": "TreVeyon Henderson",
+     "gsis_id": "00-0040734",
+     "value": 10.75,
      "change": null
     },
     {
      "slot": "FLEX2",
-     "player_name": "TreVeyon Henderson",
-     "gsis_id": "00-0040734",
-     "value": 10.75,
+     "player_name": "RJ Harvey",
+     "gsis_id": "00-0040730",
+     "value": 8.65,
      "change": null
     },
     {
@@ -577,7 +592,7 @@
     "Starts after the trade: Patrick Mahomes (QB, 20.26, new).",
     "Out of the lineup after the trade: Jalen Hurts (QB, 16.29, traded)."
    ],
-   "closest_call": "Emeka Egbuka at WR2, 1.89 ahead of the next option"
+   "closest_call": "RJ Harvey at FLEX2, 0.17 ahead of the next option"
   }
  },
  "fill_players": {},

@@ -367,6 +367,7 @@ class TradeBody(BaseModel):
     partner: int | None = None
     give: list[str] = []
     get: list[str] = []
+    window: str | None = None          # ---- IA-2: week | next4 (default) | ros | playoffs
 
 
 @app.exception_handler(decisions.BadRequest)
@@ -382,14 +383,23 @@ def waivers(league: str, response: Response, team: int | None = None, position: 
 
 @app.post("/api/trades/evaluate", dependencies=[Depends(require_auth)])
 def trades_evaluate(body: TradeBody, response: Response, source: str | None = None):
-    out = decisions.evaluate(body.league, body.team, body.partner, body.give, body.get, source=source)
+    out = decisions.evaluate(body.league, body.team, body.partner, body.give, body.get, source=source, window=body.window)
     response.headers["Cache-Control"] = "no-store"
     return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/trades/partners", dependencies=[Depends(require_auth)])
-def trades_partners(league: str, team: int, response: Response, want: str | None = None, source: str | None = None):
-    return _json(decisions.partners(league, team, want, source=source), response)
+def trades_partners(league: str, team: int, response: Response, want: str | None = None, source: str | None = None,
+                    window: str | None = None):
+    return _json(decisions.partners(league, team, want, source=source, window=window), response)
+
+
+# ---- IA-2 (Wave I-A): buy low / sell high moved from /api/waivers to the Trades screen
+#   /api/trades/lists?league=&team=&position=               buy low (other rosters), sell high (yours), the best per position
+@app.get("/api/trades/lists", dependencies=[Depends(require_auth)])
+def trades_lists(league: str, team: int, response: Response, position: str | None = None, source: str | None = None):
+    return _json(decisions.trade_lists(league, team, position, source=source), response)
+# ---- end IA-2
 
 
 @app.get("/api/team", dependencies=[Depends(require_auth)])

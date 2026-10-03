@@ -12,6 +12,9 @@
   7
  ],
  "span": "weeks 4–7",
+ "window": "next4",
+ "window_label": "Next 4",
+ "window_why": "the next four weeks: far enough to matter, near enough to trust",
  "give": [
   {
    "sleeper_id": "13287",
@@ -48,8 +51,8 @@
    "position": "QB",
    "team": "CHI",
    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
-   "this_week": 8.83,
-   "cannot_play": null,
+   "this_week": 0.0,
+   "cannot_play": "Out",
    "market_price": 0,
    "season_points": 234,
    "roster_id": 7
@@ -70,7 +73,7 @@
   "theirs": {
    "this_week": 119.87,
    "horizon": 474.98,
-   "bench": 50.05,
+   "bench": 41.22,
    "by_week": [
     119.87,
     122.53,
@@ -108,12 +111,24 @@
    "mine": 2.73,
    "theirs": 0.6
   },
+  "window": {
+   "mine": 16.59,
+   "theirs": 12.51
+  },
   "next_4": {
    "mine": 16.59,
    "theirs": 12.51
   },
   "words": "**Fit** (what the best lineups gain): you **+2.7** this week and **+16.6** over weeks 4–7; them **+0.6** and **+12.5**."
  },
+ "interest": {
+  "score": 100,
+  "label": "Hard to say no",
+  "their_gain": 12.51,
+  "you": 16.59,
+  "caption": "by our numbers over weeks 4–7"
+ },
+ "sanity": null,
  "market": {
   "give": 10,
   "get": 26,
@@ -183,8 +198,8 @@
     "position": "QB",
     "team": "CHI",
     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
-    "this_week": 8.83,
-    "cannot_play": null,
+    "this_week": 0.0,
+    "cannot_play": "Out",
     "market_price": 0,
     "season_points": 234,
     "roster_id": 7,
@@ -277,8 +292,8 @@
      "position": "QB",
      "team": "CHI",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
-     "this_week": 8.83,
-     "cannot_play": null,
+     "this_week": 0.0,
+     "cannot_play": "Out",
      "market_price": 0,
      "season_points": 234,
      "roster_id": 7
@@ -414,8 +429,8 @@
      "position": "QB",
      "team": "CHI",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
-     "this_week": 8.83,
-     "cannot_play": null,
+     "this_week": 0.0,
+     "cannot_play": "Out",
      "market_price": 0,
      "season_points": 234,
      "roster_id": 7
@@ -445,7 +460,7 @@
    "before": {
     "this_week": 119.87,
     "horizon": 474.98,
-    "bench": 50.05,
+    "bench": 41.22,
     "by_week": [
      119.87,
      122.53,

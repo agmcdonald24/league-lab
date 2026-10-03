@@ -1,6 +1,7 @@
 <script lang="ts">
   // Waivers (plan G4; app/pages/2_Waiver_Wire.py on GET /api/waivers): the answer first ("Claim A, drop B: +3.4 this
-  // week at TE, +9.0 over the next 4 weeks"), the moves as cards, then the free agents by position — each with his
+  // week at TE, +9.0 over the next 4 weeks"), the moves as cards, the upside stash (IA-2: buy low / sell high moved to
+  // Trades), then the free agents by position — each with his
   // headshot, this week's projection and its range, rest of season — list on the left, the picked one on the right
   // (desktop), then "How to read this". The position switch rewrites the URL in place (no Back step).
   import { get, peek, Unauthorized, decisionPaths, type FreeAgent, type Waivers } from "../lib/api";
@@ -97,8 +98,7 @@
     "- **Only the next four weeks count.** In a dynasty league, a young player's future is not in these numbers: look twice before dropping one.\n" +
     "- **Free agents** are ranked by this week's projection in your league's scoring. **Most weeks** is the band half his weeks land in; the thin line is a bad week to a good week (8 weeks in 10); the tick is the projection. **Rest of season** adds up every week left to your league's final.\n" +
     "- **Upside stash**: a free agent whose role grew in his last one to three games (more snaps, targets or carries: a teammate out, a new starter) before his points caught up. **If it holds** is his projection with the bigger role: a what-if, not a forecast. **Lineup gain if it holds** adds up this week and the next three; most stashes add nothing yet, which is why they are stashes, not starters.\n" +
-    "- **Buy low**: players on other teams scoring *less* than their work is worth (points minus expected points per game, below zero). Their manager sees a bad box score; the work says it should turn around. **Sell high**: your players scoring *more* than their work supports.\n" +
-    "- **Fit** is what the new team gains minus what the old team loses over the next four weeks. A big positive fit means he matters more to the other team than to his own: an easier ask when you buy, a better sale when you sell. To see a whole offer, use the Trade Finder.";
+    "- **Buy low / sell high** (players scoring below or above what their work is worth) are on the Trades screen now, next to the trades to ask about.";
 
   function faContext(f: FreeAgent): string {
     const bits = [rangeWords(f.p25, f.p75, f.p10, f.p90), f.ros_points != null ? `rest of season ${fmt.whole(f.ros_points)}` : null];
@@ -172,7 +172,7 @@
       </Expander>
     {/if}
 
-    <!-- H1 (Wave H): the upside stash (2_Waiver_Wire.py's third card region) and buy low / sell high (the Trade Finder's lists) -->
+    <!-- H1 (Wave H): the upside stash (2_Waiver_Wire.py's third card region) -->
     {#if data.upside}
       <section class="space-y-3" data-testid="upside">
         <h2 class="text-xl font-bold">Upside stash</h2>
@@ -210,72 +210,10 @@
       </section>
     {/if}
 
-    {#if data.trade_lists && (data.trade_lists.buy_line || data.trade_lists.buy_low.length)}
-      {@const tl = data.trade_lists}
-      <section class="space-y-3" data-testid="buy-sell">
-        <h2 class="text-xl font-bold">Buy low, sell high</h2>
-        <p class="text-sm text-ink-3">Players scoring below (or above) what their work is worth, in {scoring}: trades to ask about.</p>
-        <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
-          <Card title="Buy low" testid="buy-low">
-            {#if tl.buy_line}<p class="text-base leading-snug" data-testid="buy-line"><Md text={tl.buy_line} {ctx} /></p>{/if}
-            {#if tl.best_buy_by_position && Object.keys(tl.best_buy_by_position).length}
-              <h3 class="ll-label mt-3">Best by position</h3>
-              <ul class="-mx-4 divide-y divide-line">
-                {#each Object.entries(tl.best_buy_by_position) as [pos, r] (pos)}
-                  <li>
-                    <PlayerRow
-                      player={{ ...r.player, player_name: r.player.player_name ?? "" }}
-                      href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
-                      context={`${r.team_name ?? "another team"} · ${s1(r.diff_per_game)} a game vs his work · you gain ${s1(r.gain_week)} this week`}
-                      value={s1(r.fit_horizon)}
-                      valueLabel="Fit"
-                      testid="buy-best"
-                    />
-                  </li>
-                {/each}
-              </ul>
-            {/if}
-          </Card>
-          <Card title="Sell high" testid="sell-high">
-            {#if tl.sell_line}<p class="text-base leading-snug" data-testid="sell-line"><Md text={tl.sell_line} {ctx} /></p>{/if}
-            {#if tl.sell_high.length}
-              <ul class="-mx-4 mt-2 divide-y divide-line">
-                {#each tl.sell_high.slice(0, 4) as r (r.player.sleeper_id ?? r.player.gsis_id)}
-                  <li>
-                    <PlayerRow
-                      player={{ ...r.player, player_name: r.player.player_name ?? "" }}
-                      href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
-                      context={`${s1(r.diff_per_game)} a game vs his work · best fit ${r.team_name ?? "—"}`}
-                      value={s1(r.fit_horizon)}
-                      valueLabel="Fit"
-                      testid="sell-row"
-                    />
-                  </li>
-                {/each}
-              </ul>
-            {/if}
-          </Card>
-        </div>
-        {#if tl.buy_low.length}
-          <Expander title={`Buy low · ${tl.buy_low.length} players scoring below their usage`} testid="buy-list">
-            <ul class="-mx-3 divide-y divide-line">
-              {#each tl.buy_low as r, i (`${r.player.sleeper_id}|${i}`)}
-                <li>
-                  <PlayerRow
-                    player={{ ...r.player, player_name: r.player.player_name ?? "" }}
-                    href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
-                    context={`${r.team_name ?? "—"} · PPG ${f1(r.ppg)} vs ${f1(r.xppg)} expected · you gain ${s1(r.gain_week)}, they lose ${f1(r.loss_week)}`}
-                    value={s1(r.fit_horizon)}
-                    valueLabel={tl.weeks ? `Fit ${tl.weeks}` : "Fit"}
-                    testid="buy-row"
-                  />
-                </li>
-              {/each}
-            </ul>
-          </Expander>
-        {/if}
-      </section>
-    {/if}
+    <!-- IA-2: buy low / sell high moved to Trades (they are trades to ask about, not claims) -->
+    <p class="text-sm text-ink-3" data-testid="buy-sell-moved">
+      Buy low and sell high moved to <a class="ll-name font-semibold" href={withContext("/trades", ctx)}>Trades ›</a>
+    </p>
 
     <section class="space-y-3" data-testid="free-agents">
       <div class="flex flex-wrap items-baseline justify-between gap-2">

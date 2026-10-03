@@ -1,0 +1,774 @@
+{
+ "league_id": "9000000000000000001",
+ "source": "sleeper",
+ "roster_id": 3,
+ "partner": 7,
+ "partner_team": "Goal Line Stand",
+ "week": 4,
+ "weeks": [
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17
+ ],
+ "span": "weeks 4–17",
+ "window": "ros",
+ "window_label": "Rest of season",
+ "window_why": "every week left to this league's final, playoffs included: the longest view, the least sure",
+ "give": [
+  {
+   "sleeper_id": "13287",
+   "gsis_id": "00-0041027",
+   "player_name": "Jeremiyah Love",
+   "position": "RB",
+   "team": "ARI",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b12gtjsylmql5v7iyyla",
+   "this_week": 11.07,
+   "cannot_play": null,
+   "market_price": 10,
+   "season_points": 156,
+   "roster_id": 3
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "12501",
+   "gsis_id": "00-0040667",
+   "player_name": "Matthew Golden",
+   "position": "WR",
+   "team": "GB",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dbjki6b0swksr7mk17wk",
+   "this_week": 12.75,
+   "cannot_play": null,
+   "market_price": 26,
+   "season_points": 179,
+   "roster_id": 7
+  },
+  {
+   "sleeper_id": "11560",
+   "gsis_id": "00-0039918",
+   "player_name": "Caleb Williams",
+   "position": "QB",
+   "team": "CHI",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
+   "this_week": 0.0,
+   "cannot_play": "Out",
+   "market_price": 0,
+   "season_points": 234,
+   "roster_id": 7
+  }
+ ],
+ "before": {
+  "mine": {
+   "this_week": 120.83,
+   "horizon": 1604.01,
+   "bench": 66.88,
+   "by_week": [
+    120.83,
+    120.86,
+    116.11,
+    116.87,
+    103.91,
+    114.35,
+    98.67,
+    117.13,
+    117.8,
+    104.9,
+    117.32,
+    116.6,
+    121.17,
+    117.49
+   ]
+  },
+  "theirs": {
+   "this_week": 119.87,
+   "horizon": 1659.83,
+   "bench": 41.22,
+   "by_week": [
+    119.87,
+    122.53,
+    117.02,
+    115.56,
+    121.35,
+    112.65,
+    124.35,
+    91.21,
+    121.22,
+    122.13,
+    123.32,
+    122.57,
+    120.79,
+    125.26
+   ]
+  }
+ },
+ "after": {
+  "mine": {
+   "this_week": 123.56,
+   "horizon": 1651.37,
+   "bench": 46.94,
+   "by_week": [
+    123.56,
+    123.84,
+    121.21,
+    122.65,
+    109.64,
+    117.71,
+    100.66,
+    117.6,
+    120.91,
+    108.2,
+    120.75,
+    119.73,
+    123.67,
+    121.24
+   ]
+  },
+  "theirs": {
+   "this_week": 120.47,
+   "horizon": 1667.8,
+   "bench": 38.94,
+   "by_week": [
+    120.47,
+    123.59,
+    117.66,
+    125.77,
+    120.94,
+    113.22,
+    124.72,
+    102.32,
+    121.79,
+    103.35,
+    122.8,
+    123.59,
+    121.96,
+    125.62
+   ]
+  }
+ },
+ "fit": {
+  "this_week": {
+   "mine": 2.73,
+   "theirs": 0.6
+  },
+  "window": {
+   "mine": 47.36,
+   "theirs": 7.97
+  },
+  "next_4": {
+   "mine": 47.36,
+   "theirs": 7.97
+  },
+  "words": "**Fit** (what the best lineups gain): you **+2.7** this week and **+47.4** over weeks 4–17; them **+0.6** and **+8.0**."
+ },
+ "interest": {
+  "score": 83,
+  "label": "Hard to say no",
+  "their_gain": 7.97,
+  "you": 47.36,
+  "caption": "by our numbers over weeks 4–17"
+ },
+ "sanity": null,
+ "market": {
+  "give": 10,
+  "get": 26,
+  "season_points_give": 156,
+  "season_points_get": 413,
+  "unknown": [],
+  "replacement": {
+   "DEF": {
+    "season_points": 149,
+    "player_name": "Atlanta Falcons"
+   },
+   "K": {
+    "season_points": 133,
+    "player_name": "Daniel Carlson"
+   },
+   "QB": {
+    "season_points": 244,
+    "player_name": "Malik Willis"
+   },
+   "RB": {
+    "season_points": 146,
+    "player_name": "Alvin Kamara"
+   },
+   "TE": {
+    "season_points": 139,
+    "player_name": "Cade Otton"
+   },
+   "WR": {
+    "season_points": 153,
+    "player_name": "KC Concepcion"
+   }
+  },
+  "words": "**Market** (season points above the best free agent at the position): you give **10**, you get **26**: you get 16 more.",
+  "players": [
+   {
+    "sleeper_id": "13287",
+    "gsis_id": "00-0041027",
+    "player_name": "Jeremiyah Love",
+    "position": "RB",
+    "team": "ARI",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b12gtjsylmql5v7iyyla",
+    "this_week": 11.07,
+    "cannot_play": null,
+    "market_price": 10,
+    "season_points": 156,
+    "roster_id": 3,
+    "goes_to": "Goal Line Stand"
+   },
+   {
+    "sleeper_id": "12501",
+    "gsis_id": "00-0040667",
+    "player_name": "Matthew Golden",
+    "position": "WR",
+    "team": "GB",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dbjki6b0swksr7mk17wk",
+    "this_week": 12.75,
+    "cannot_play": null,
+    "market_price": 26,
+    "season_points": 179,
+    "roster_id": 7,
+    "goes_to": "You"
+   },
+   {
+    "sleeper_id": "11560",
+    "gsis_id": "00-0039918",
+    "player_name": "Caleb Williams",
+    "position": "QB",
+    "team": "CHI",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
+    "this_week": 0.0,
+    "cannot_play": "Out",
+    "market_price": 0,
+    "season_points": 234,
+    "roster_id": 7,
+    "goes_to": "You"
+   }
+  ]
+ },
+ "verdict": "Helps you +2.7 this week (+47.4 over weeks 4–17), them +0.6 (+8.0 over weeks 4–17); the market says you're getting more: they may ask for more.",
+ "headline": "**You give [Jeremiyah Love](/player/00-0041027); you get [Matthew Golden](/player/00-0040667) and [Caleb Williams](/player/00-0039918).** Helps you +2.7 this week (+47.4 over weeks 4–17), them +0.6 (+8.0 over weeks 4–17); the market says you're getting more: they may ask for more.",
+ "ros": {
+  "give": 145,
+  "get": 384,
+  "window": "weeks 4–17",
+  "words": "Rest of season (weeks 4–17, through this league's final): you give **145** points, you get **384** (+239) — the players' plain totals, before the roster spot a lopsided trade frees or fills and before your lineup is re-solved (the verdict above counts both). Only this week has betting lines; later weeks lean on usage and the schedule."
+ },
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    7,
+    5
+   ],
+   "theirs": [
+    8,
+    8
+   ],
+   "n": 10
+  },
+  "bench_value": {
+   "mine": [
+    3,
+    6
+   ],
+   "theirs": [
+    7,
+    9
+   ],
+   "n": 10
+  },
+  "words": "League rank, week 4: you 7th → **5th** of 10, Goal Line Stand 8th → 8th; depth: you 3rd → **6th** of 10, Goal Line Stand 7th → 9th."
+ },
+ "size_words": "Roster size: you must cut [Rome Odunze](/player/00-0039919) (WR, 128 season points; costs 0.0 over weeks 4–17) to stay at 15 players; you must cut [Terry McLaurin](/player/00-0035659) (WR, 130 season points; costs 0.0 over weeks 4–17) to stay at 15 players.",
+ "sides": {
+  "mine": {
+   "roster_id": 3,
+   "team_name": "Fixture Falcons",
+   "gives": [
+    {
+     "sleeper_id": "13287",
+     "gsis_id": "00-0041027",
+     "player_name": "Jeremiyah Love",
+     "position": "RB",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b12gtjsylmql5v7iyyla",
+     "this_week": 11.07,
+     "cannot_play": null,
+     "market_price": 10,
+     "season_points": 156,
+     "roster_id": 3
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "12501",
+     "gsis_id": "00-0040667",
+     "player_name": "Matthew Golden",
+     "position": "WR",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dbjki6b0swksr7mk17wk",
+     "this_week": 12.75,
+     "cannot_play": null,
+     "market_price": 26,
+     "season_points": 179,
+     "roster_id": 7
+    },
+    {
+     "sleeper_id": "11560",
+     "gsis_id": "00-0039918",
+     "player_name": "Caleb Williams",
+     "position": "QB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
+     "this_week": 0.0,
+     "cannot_play": "Out",
+     "market_price": 0,
+     "season_points": 234,
+     "roster_id": 7
+    }
+   ],
+   "weeks": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+   ],
+   "before": {
+    "this_week": 120.83,
+    "horizon": 1604.01,
+    "bench": 66.88,
+    "by_week": [
+     120.83,
+     120.86,
+     116.11,
+     116.87,
+     103.91,
+     114.35,
+     98.67,
+     117.13,
+     117.8,
+     104.9,
+     117.32,
+     116.6,
+     121.17,
+     117.49
+    ]
+   },
+   "after": {
+    "this_week": 123.56,
+    "horizon": 1651.37,
+    "bench": 46.94,
+    "by_week": [
+     123.56,
+     123.84,
+     121.21,
+     122.65,
+     109.64,
+     117.71,
+     100.66,
+     117.6,
+     120.91,
+     108.2,
+     120.75,
+     119.73,
+     123.67,
+     121.24
+    ]
+   },
+   "gain_week": 2.73,
+   "gain_horizon": 47.36,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "11620",
+      "gsis_id": "00-0039919",
+      "player_name": "Rome Odunze",
+      "position": "WR",
+      "team": "CHI",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/niewdl2p2325kpohbw9v",
+      "this_week": 9.12,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 128,
+      "roster_id": 3
+     },
+     "horizon_loss": 0.0,
+     "season_points": 128
+    },
+    {
+     "player": {
+      "sleeper_id": "5927",
+      "gsis_id": "00-0035659",
+      "player_name": "Terry McLaurin",
+      "position": "WR",
+      "team": "WAS",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/tmfl2zruajmkrtcg4zxp",
+      "this_week": 9.77,
+      "cannot_play": null,
+      "market_price": 0,
+      "season_points": 130,
+      "roster_id": 3
+     },
+     "horizon_loss": 0.0,
+     "season_points": 130
+    }
+   ],
+   "limit": 15,
+   "size_before": 16,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 10,
+   "price_in": 26,
+   "points_out": 156,
+   "points_in": 413,
+   "starts": [
+    {
+     "sleeper_id": "12501",
+     "gsis_id": "00-0040667",
+     "player_name": "Matthew Golden",
+     "position": "WR",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dbjki6b0swksr7mk17wk",
+     "this_week": 12.75,
+     "cannot_play": null,
+     "market_price": 26,
+     "season_points": 179,
+     "roster_id": 7
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "11635",
+     "gsis_id": "00-0039915",
+     "player_name": "Ladd McConkey",
+     "position": "WR",
+     "team": "LAC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/q2sk7yforrkiusvruo1o",
+     "this_week": 10.02,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 145,
+     "roster_id": 3
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 7,
+   "team_name": "Goal Line Stand",
+   "gives": [
+    {
+     "sleeper_id": "12501",
+     "gsis_id": "00-0040667",
+     "player_name": "Matthew Golden",
+     "position": "WR",
+     "team": "GB",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dbjki6b0swksr7mk17wk",
+     "this_week": 12.75,
+     "cannot_play": null,
+     "market_price": 26,
+     "season_points": 179,
+     "roster_id": 7
+    },
+    {
+     "sleeper_id": "11560",
+     "gsis_id": "00-0039918",
+     "player_name": "Caleb Williams",
+     "position": "QB",
+     "team": "CHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/h4qs11kutwiw7whekmyt",
+     "this_week": 0.0,
+     "cannot_play": "Out",
+     "market_price": 0,
+     "season_points": 234,
+     "roster_id": 7
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "13287",
+     "gsis_id": "00-0041027",
+     "player_name": "Jeremiyah Love",
+     "position": "RB",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b12gtjsylmql5v7iyyla",
+     "this_week": 11.07,
+     "cannot_play": null,
+     "market_price": 10,
+     "season_points": 156,
+     "roster_id": 3
+    }
+   ],
+   "weeks": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17
+   ],
+   "before": {
+    "this_week": 119.87,
+    "horizon": 1659.83,
+    "bench": 41.22,
+    "by_week": [
+     119.87,
+     122.53,
+     117.02,
+     115.56,
+     121.35,
+     112.65,
+     124.35,
+     91.21,
+     121.22,
+     122.13,
+     123.32,
+     122.57,
+     120.79,
+     125.26
+    ]
+   },
+   "after": {
+    "this_week": 120.47,
+    "horizon": 1667.8,
+    "bench": 38.94,
+    "by_week": [
+     120.47,
+     123.59,
+     117.66,
+     125.77,
+     120.94,
+     113.22,
+     124.72,
+     102.32,
+     121.79,
+     103.35,
+     122.8,
+     123.59,
+     121.96,
+     125.62
+    ]
+   },
+   "gain_week": 0.6,
+   "gain_horizon": 7.97,
+   "cuts": [],
+   "limit": 15,
+   "size_before": 16,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 26,
+   "price_in": 10,
+   "points_out": 413,
+   "points_in": 156,
+   "starts": [
+    {
+     "sleeper_id": "13287",
+     "gsis_id": "00-0041027",
+     "player_name": "Jeremiyah Love",
+     "position": "RB",
+     "team": "ARI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/b12gtjsylmql5v7iyyla",
+     "this_week": 11.07,
+     "cannot_play": null,
+     "market_price": 10,
+     "season_points": 156,
+     "roster_id": 3
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "12490",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "team": "JAX",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "this_week": 10.47,
+     "cannot_play": null,
+     "market_price": 1,
+     "season_points": 147,
+     "roster_id": 7
+    }
+   ]
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Tyler Shough",
+     "gsis_id": "00-0040743",
+     "value": 18.17,
+     "change": null
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Bucky Irving",
+     "gsis_id": "00-0039361",
+     "value": 16.97,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "player_name": "D'Andre Swift",
+     "gsis_id": "00-0036275",
+     "value": 15.33,
+     "change": null
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Chris Olave",
+     "gsis_id": "00-0037239",
+     "value": 18.64,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Matthew Golden (new)",
+     "gsis_id": "00-0040667",
+     "value": 12.75,
+     "change": 2.73
+    },
+    {
+     "slot": "TE",
+     "player_name": "Isaiah Likely",
+     "gsis_id": "00-0037838",
+     "value": 9.52,
+     "change": null
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "TreVeyon Henderson",
+     "gsis_id": "00-0040734",
+     "value": 11.54,
+     "change": null
+    },
+    {
+     "slot": "K",
+     "player_name": "Chase McLaughlin",
+     "gsis_id": "00-0035358",
+     "value": 8.53,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Baltimore Ravens",
+     "gsis_id": null,
+     "value": 12.11,
+     "change": null
+    }
+   ],
+   "notes": [
+    "Starts after the trade: Matthew Golden (WR2, 12.75, new).",
+    "Out of the lineup after the trade: Ladd McConkey (WR2, 10.02, to the bench)."
+   ],
+   "closest_call": "Tyler Shough at QB, 0.15 ahead of the next option"
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Lamar Jackson",
+     "gsis_id": "00-0034796",
+     "value": 20.97,
+     "change": null
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Bijan Robinson",
+     "gsis_id": "00-0038542",
+     "value": 23.72,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Jeremiyah Love (new)",
+     "gsis_id": "00-0041027",
+     "value": 11.07,
+     "change": 0.6
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Christian Watson",
+     "gsis_id": "00-0038124",
+     "value": 14.86,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Davante Adams",
+     "gsis_id": "00-0031381",
+     "value": 14.67,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "player_name": "Dalton Schultz",
+     "gsis_id": "00-0034383",
+     "value": 12.98,
+     "change": null
+    },
+    {
+     "slot": "FLEX",
+     "player_name": "Zay Flowers",
+     "gsis_id": "00-0039064",
+     "value": 13.73,
+     "change": null
+    },
+    {
+     "slot": "K",
+     "player_name": "Evan McPherson",
+     "gsis_id": "00-0036854",
+     "value": 8.47,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "player_name": null,
+     "gsis_id": null,
+     "value": null,
+     "change": null
+    }
+   ],
+   "notes": [
+    "Starts after the trade: Jeremiyah Love (RB2, 11.07, new).",
+    "Out of the lineup after the trade: Bhayshul Tuten (RB2, 10.47, to the bench).",
+    "Empty after the trade: DEF (nobody left who can play there this week)."
+   ],
+   "closest_call": "Jeremiyah Love at RB2, 0.60 ahead of the next option"
+  }
+ },
+ "fill_players": {},
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)"
+}

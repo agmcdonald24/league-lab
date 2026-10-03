@@ -147,6 +147,16 @@ light and dark come for free. The rules (the dataviz references):
   above, the better number bold. Not team colors: two teams can share a color, or read as good / bad (green vs red).
 - **Over / under** (Trends): one diverging bar per player from a middle zero, warm (orange) = running hot, cool (blue) =
   due; the signed number beside it.
+- **Dial** (IA-2, `routes/decisions/Dial.svelte`: the trade calculator's "their interest"): a half-circle gauge in four
+  equal bands (No deal · Maybe · Likely · Hard to say no) in the state tokens (bad / warn / good) at a 22 % wash, the
+  band the needle sits in at full strength; a needle in ink that swings (CSS transition, 450 ms) to the score 0–100 on
+  every change, never redrawn; under it the label in words (colored, never color alone), "72 / 100 · by our numbers
+  over weeks 4–7", and the second number small: "You · weeks 4–7 +3.4". One dial per screen, for one question (how
+  much would the other side want it); a share of a whole stays a Meter, a comparison a Bar.
+- **Window control** (IA-2, `routes/decisions/WindowControl.svelte`): which weeks a decision is priced over — This week ·
+  Next 4 · Rest of season · Playoffs — four equal cells in one row (a label wraps inside its cell at 375 px; the row
+  never scrolls), the picked one in accent, and one line under it that says why those weeks ("Weeks 4–7: the next four
+  weeks: far enough to matter, near enough to trust."). In the URL (`?window=`), the default (next 4) left out.
 - Never: two y-axes, a number on every point, a 9th color, dashed gridlines, a pie for close values, color as the only
   carrier of a value (each value is printed somewhere: a label, the readout, the table).
 

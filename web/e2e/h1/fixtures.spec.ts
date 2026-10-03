@@ -37,7 +37,11 @@ test("waivers: the upside stash and buy low / sell high, with the screen's own w
       await expect(up.getByTestId("stash-player").first()).toContainText(st[0].scenario_value.toFixed(1));
       await expect(up.getByTestId("stash-lines").first()).toContainText(plain(st[0].lines[0]).slice(0, 30));
     }
-    const tl = w.trade_lists;
+    // IA-2: buy low / sell high moved to the Trades screen (GET /api/trades/lists); Waivers points there
+    await expect(page.getByTestId("buy-sell-moved")).toBeVisible();
+    await expect(page.getByTestId("buy-sell")).toHaveCount(0);
+    await page.goto(`/trades?league=${league}&team=${team}`);
+    const tl = fx(`trades_lists_${league}_${team}.json`);
     await expect(page.getByTestId("buy-line")).toContainText(plain(tl.buy_line).slice(0, 50));
     await expect(page.getByTestId("sell-line")).toContainText(plain(tl.sell_line).slice(0, 50));
     const best = Object.values(tl.best_buy_by_position) as { player: { player_name: string }; fit_horizon: number }[];
@@ -49,8 +53,10 @@ test("waivers: the upside stash and buy low / sell high, with the screen's own w
     await noSidewaysScroll(page);
   }
   await page.getByTestId("howto").locator("summary, button").first().click();
+  await expect(page.getByTestId("howto")).toContainText("Buy low"); // the Trades screen's (IA-2)
+  await page.goto(`/waivers?league=${DYNASTY}&team=12`);
+  await page.getByTestId("howto").locator("summary, button").first().click();
   await expect(page.getByTestId("howto")).toContainText("Upside stash");
-  await expect(page.getByTestId("howto")).toContainText("Buy low");
 });
 
 test("waivers on demand (Test League): the NFL-wide stash, said so; the trade lists", async ({ page }) => {
@@ -60,7 +66,8 @@ test("waivers on demand (Test League): the NFL-wide stash, said so; the trade li
   await expect(page.getByTestId("stash-why")).toContainText("not on request");
   await expect(page.getByTestId("stash")).toHaveCount(Math.min(3, w.upside.stashes.length));
   await expect(page.getByTestId("stash-headline").first()).toContainText(plain(w.upside.stashes[0].headline).slice(0, 40));
-  await expect(page.getByTestId("buy-line")).toContainText(plain(w.trade_lists.buy_line).slice(0, 50));
+  await page.goto(`/trades?league=${TEST_LEAGUE}&team=3`); // IA-2: the trade lists are on Trades
+  await expect(page.getByTestId("buy-line")).toContainText(plain(fx(`trades_lists_${TEST_LEAGUE}_3.json`).buy_line).slice(0, 50));
   await noSidewaysScroll(page);
 });
 

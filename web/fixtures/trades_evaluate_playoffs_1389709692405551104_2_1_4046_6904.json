@@ -1,0 +1,585 @@
+{
+ "league_id": "1389709692405551104",
+ "source": "database",
+ "roster_id": 2,
+ "partner": 1,
+ "partner_team": "Daejon Loves PR team",
+ "week": 4,
+ "weeks": [
+  15,
+  16
+ ],
+ "span": "weeks 15–16",
+ "window": "playoffs",
+ "window_label": "Playoffs",
+ "window_why": "the weeks of this league's playoffs: what the trade does when it counts most",
+ "give": [
+  {
+   "sleeper_id": "4046",
+   "gsis_id": "00-0033873",
+   "player_name": "Patrick Mahomes",
+   "position": "QB",
+   "team": "KC",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+   "this_week": 20.26,
+   "cannot_play": null,
+   "market_price": 17,
+   "season_points": 261,
+   "roster_id": 2
+  }
+ ],
+ "get": [
+  {
+   "sleeper_id": "6904",
+   "gsis_id": "00-0036389",
+   "player_name": "Jalen Hurts",
+   "position": "QB",
+   "team": "PHI",
+   "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+   "this_week": 16.29,
+   "cannot_play": null,
+   "market_price": 0,
+   "season_points": 234,
+   "roster_id": 1
+  }
+ ],
+ "before": {
+  "mine": {
+   "this_week": 113.54,
+   "horizon": 228.34,
+   "bench": 27.36,
+   "by_week": [
+    113.82,
+    114.52
+   ]
+  },
+  "theirs": {
+   "this_week": 109.43,
+   "horizon": 226.86,
+   "bench": 23.24,
+   "by_week": [
+    112.28,
+    114.58
+   ]
+  }
+ },
+ "after": {
+  "mine": {
+   "this_week": 111.45,
+   "horizon": 223.66,
+   "bench": 26.44,
+   "by_week": [
+    110.92,
+    112.74
+   ]
+  },
+  "theirs": {
+   "this_week": 113.4,
+   "horizon": 231.54,
+   "bench": 23.24,
+   "by_week": [
+    115.18,
+    116.36
+   ]
+  }
+ },
+ "fit": {
+  "this_week": {
+   "mine": -2.09,
+   "theirs": 3.97
+  },
+  "window": {
+   "mine": -4.68,
+   "theirs": 4.68
+  },
+  "next_4": {
+   "mine": -4.68,
+   "theirs": 4.68
+  },
+  "words": "**Fit** (what the best lineups gain): you **-2.1** this week and **-4.7** over weeks 15–16; them **+4.0** and **+4.7**."
+ },
+ "interest": {
+  "score": 67,
+  "label": "Likely",
+  "their_gain": 4.68,
+  "you": -4.68,
+  "caption": "by our numbers over weeks 15–16"
+ },
+ "sanity": null,
+ "market": {
+  "give": 17,
+  "get": 0,
+  "season_points_give": 261,
+  "season_points_get": 234,
+  "unknown": [],
+  "replacement": {
+   "DEF": {
+    "season_points": 110,
+    "player_name": "Jacksonville Jaguars"
+   },
+   "K": {
+    "season_points": 127,
+    "player_name": "Chris Boswell"
+   },
+   "QB": {
+    "season_points": 244,
+    "player_name": "Malik Willis"
+   },
+   "RB": {
+    "season_points": 128,
+    "player_name": "Alvin Kamara"
+   },
+   "TE": {
+    "season_points": 109,
+    "player_name": "Cade Otton"
+   },
+   "WR": {
+    "season_points": 122,
+    "player_name": "Malik Washington"
+   }
+  },
+  "words": "**Market** (season points above the best free agent at the position): you give **17**, you get **0**: you give 17 more.",
+  "players": [
+   {
+    "sleeper_id": "4046",
+    "gsis_id": "00-0033873",
+    "player_name": "Patrick Mahomes",
+    "position": "QB",
+    "team": "KC",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+    "this_week": 20.26,
+    "cannot_play": null,
+    "market_price": 17,
+    "season_points": 261,
+    "roster_id": 2,
+    "goes_to": "Daejon Loves PR team"
+   },
+   {
+    "sleeper_id": "6904",
+    "gsis_id": "00-0036389",
+    "player_name": "Jalen Hurts",
+    "position": "QB",
+    "team": "PHI",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+    "this_week": 16.29,
+    "cannot_play": null,
+    "market_price": 0,
+    "season_points": 234,
+    "roster_id": 1,
+    "goes_to": "You"
+   }
+  ]
+ },
+ "verdict": "Does not help you (-2.1 this week, -4.7 over weeks 15–16), them +4.0 (+4.7 over weeks 15–16); the market says you're giving up more: skip it.",
+ "headline": "**You give [Patrick Mahomes](/player/00-0033873); you get [Jalen Hurts](/player/00-0036389).** Does not help you (-2.1 this week, -4.7 over weeks 15–16), them +4.0 (+4.7 over weeks 15–16); the market says you're giving up more: skip it.",
+ "ros": {
+  "give": 225,
+  "get": 202,
+  "window": "weeks 4–16",
+  "words": "Rest of season (weeks 4–16, through this league's final): you give **225** points, you get **202** (-23) — the players' plain totals, before the roster spot a lopsided trade frees or fills and before your lineup is re-solved (the verdict above counts both). Only this week has betting lines; later weeks lean on usage and the schedule."
+ },
+ "ranks": {
+  "lineup_value": {
+   "mine": [
+    6,
+    10
+   ],
+   "theirs": [
+    8,
+    7
+   ],
+   "n": 10
+  },
+  "bench_value": {
+   "mine": [
+    4,
+    9
+   ],
+   "theirs": [
+    8,
+    10
+   ],
+   "n": 10
+  },
+  "words": "League rank, week 4: you 6th → **10th** of 10, Daejon Loves PR team 8th → 7th; depth: you 4th → **9th** of 10, Daejon Loves PR team 8th → 10th."
+ },
+ "size_words": "Roster size: you must cut [Terrance Ferguson](/player/00-0040737) (TE, 86 season points; costs 0.0 over weeks 15–16) to stay at 15 players.",
+ "sides": {
+  "mine": {
+   "roster_id": 2,
+   "team_name": "MacZaddy",
+   "gives": [
+    {
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "this_week": 20.26,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 261,
+     "roster_id": 2
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "6904",
+     "gsis_id": "00-0036389",
+     "player_name": "Jalen Hurts",
+     "position": "QB",
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+     "this_week": 16.29,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 234,
+     "roster_id": 1
+    }
+   ],
+   "weeks": [
+    15,
+    16
+   ],
+   "before": {
+    "this_week": 113.82,
+    "horizon": 228.34,
+    "bench": 39.05,
+    "by_week": [
+     113.82,
+     114.52
+    ]
+   },
+   "after": {
+    "this_week": 110.92,
+    "horizon": 223.66,
+    "bench": 32.65,
+    "by_week": [
+     110.92,
+     112.74
+    ]
+   },
+   "gain_week": -2.9,
+   "gain_horizon": -4.68,
+   "cuts": [
+    {
+     "player": {
+      "sleeper_id": "12487",
+      "gsis_id": "00-0040737",
+      "player_name": "Terrance Ferguson",
+      "position": "TE",
+      "team": "LA",
+      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg",
+      "this_week": 0.0,
+      "cannot_play": "IR",
+      "market_price": 0,
+      "season_points": 86,
+      "roster_id": 2
+     },
+     "horizon_loss": 0.0,
+     "season_points": 86
+    }
+   ],
+   "limit": 15,
+   "size_before": 16,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 17,
+   "price_in": 0,
+   "points_out": 261,
+   "points_in": 234,
+   "starts": [
+    {
+     "sleeper_id": "6904",
+     "gsis_id": "00-0036389",
+     "player_name": "Jalen Hurts",
+     "position": "QB",
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+     "this_week": 16.29,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 234,
+     "roster_id": 1
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "this_week": 20.26,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 261,
+     "roster_id": 2
+    }
+   ]
+  },
+  "theirs": {
+   "roster_id": 1,
+   "team_name": "Daejon Loves PR team",
+   "gives": [
+    {
+     "sleeper_id": "6904",
+     "gsis_id": "00-0036389",
+     "player_name": "Jalen Hurts",
+     "position": "QB",
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+     "this_week": 16.29,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 234,
+     "roster_id": 1
+    }
+   ],
+   "gets": [
+    {
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "this_week": 20.26,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 261,
+     "roster_id": 2
+    }
+   ],
+   "weeks": [
+    15,
+    16
+   ],
+   "before": {
+    "this_week": 112.28,
+    "horizon": 226.86,
+    "bench": 40.56,
+    "by_week": [
+     112.28,
+     114.58
+    ]
+   },
+   "after": {
+    "this_week": 115.18,
+    "horizon": 231.54,
+    "bench": 40.56,
+    "by_week": [
+     115.18,
+     116.36
+    ]
+   },
+   "gain_week": 2.9,
+   "gain_horizon": 4.68,
+   "cuts": [],
+   "limit": 15,
+   "size_before": 15,
+   "size_after": 15,
+   "opened": 0,
+   "fill": null,
+   "price_out": 0,
+   "price_in": 17,
+   "points_out": 234,
+   "points_in": 261,
+   "starts": [
+    {
+     "sleeper_id": "4046",
+     "gsis_id": "00-0033873",
+     "player_name": "Patrick Mahomes",
+     "position": "QB",
+     "team": "KC",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "this_week": 20.26,
+     "cannot_play": null,
+     "market_price": 17,
+     "season_points": 261,
+     "roster_id": 2
+    }
+   ],
+   "sits": [
+    {
+     "sleeper_id": "6904",
+     "gsis_id": "00-0036389",
+     "player_name": "Jalen Hurts",
+     "position": "QB",
+     "team": "PHI",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xow5yvxjeqa6witmofmp",
+     "this_week": 16.29,
+     "cannot_play": null,
+     "market_price": 0,
+     "season_points": 234,
+     "roster_id": 1
+    }
+   ]
+  }
+ },
+ "lineups": {
+  "mine": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Tyler Shough",
+     "gsis_id": "00-0040743",
+     "value": 18.17,
+     "change": -2.09
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Kyren Williams",
+     "gsis_id": "00-0037840",
+     "value": 12.8,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Omarion Hampton",
+     "gsis_id": "00-0040666",
+     "value": 11.28,
+     "change": null
+    },
+    {
+     "slot": "WR1",
+     "player_name": "Tetairoa McMillan",
+     "gsis_id": "00-0040124",
+     "value": 12.75,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "value": 12.16,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "player_name": "Travis Kelce",
+     "gsis_id": "00-0030506",
+     "value": 10.14,
+     "change": null
+    },
+    {
+     "slot": "FLEX1",
+     "player_name": "Bhayshul Tuten",
+     "gsis_id": "00-0040719",
+     "value": 9.72,
+     "change": null
+    },
+    {
+     "slot": "FLEX2",
+     "player_name": "Michael Wilson",
+     "gsis_id": "00-0038559",
+     "value": 9.2,
+     "change": null
+    },
+    {
+     "slot": "K",
+     "player_name": "Chase McLaughlin",
+     "gsis_id": "00-0035358",
+     "value": 8.07,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Kansas City Chiefs",
+     "gsis_id": null,
+     "value": 7.16,
+     "change": null
+    }
+   ],
+   "notes": [
+    "Starts after the trade: Tyler Shough (QB, 18.17, from the bench).",
+    "Out of the lineup after the trade: Patrick Mahomes (QB, 20.26, traded)."
+   ],
+   "closest_call": "Michael Wilson at FLEX2, 0.01 ahead of the next option"
+  },
+  "theirs": {
+   "slots": [
+    {
+     "slot": "QB",
+     "player_name": "Patrick Mahomes (new)",
+     "gsis_id": "00-0033873",
+     "value": 20.26,
+     "change": 3.97
+    },
+    {
+     "slot": "RB1",
+     "player_name": "Christian McCaffrey",
+     "gsis_id": "00-0033280",
+     "value": 16.48,
+     "change": null
+    },
+    {
+     "slot": "RB2",
+     "player_name": "Cam Skattebo",
+     "gsis_id": "00-0040715",
+     "value": 12.58,
+     "change": null
+    },
+    {
+     "slot": "WR1",
+     "player_name": "George Pickens",
+     "gsis_id": "00-0037247",
+     "value": 10.78,
+     "change": null
+    },
+    {
+     "slot": "WR2",
+     "player_name": "Emeka Egbuka",
+     "gsis_id": "00-0040129",
+     "value": 10.29,
+     "change": null
+    },
+    {
+     "slot": "TE",
+     "player_name": "Dalton Kincaid",
+     "gsis_id": "00-0038933",
+     "value": 9.61,
+     "change": null
+    },
+    {
+     "slot": "FLEX1",
+     "player_name": "TreVeyon Henderson",
+     "gsis_id": "00-0040734",
+     "value": 10.75,
+     "change": null
+    },
+    {
+     "slot": "FLEX2",
+     "player_name": "RJ Harvey",
+     "gsis_id": "00-0040730",
+     "value": 8.65,
+     "change": null
+    },
+    {
+     "slot": "K",
+     "player_name": "Harrison Butker",
+     "gsis_id": "00-0033303",
+     "value": 8.48,
+     "change": null
+    },
+    {
+     "slot": "DEF",
+     "player_name": "Philadelphia Eagles",
+     "gsis_id": null,
+     "value": 5.52,
+     "change": null
+    }
+   ],
+   "notes": [
+    "Starts after the trade: Patrick Mahomes (QB, 20.26, new).",
+    "Out of the lineup after the trade: Jalen Hurts (QB, 16.29, traded)."
+   ],
+   "closest_call": "RJ Harvey at FLEX2, 0.17 ahead of the next option"
+  }
+ },
+ "fill_players": {},
+ "words_source": "trades.verdict / fit_line / fairness_line; app/pages/6_Trade_Finder.py (size_words, closest, lineup_frame); app/lib/ros.py (package_sentence)"
+}
