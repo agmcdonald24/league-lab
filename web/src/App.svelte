@@ -15,6 +15,7 @@
   import RosPage from "./routes/Ros.svelte";
   // ---- G4 decisions: the four screens, each loaded on first use (src/lib/decisionPages.ts)
   import { decisionPage, isDecision } from "./lib/decisionPages";
+  import { countView } from "./lib/usage"; // ---- U-1: usage tracking (one count per screen view)
   // the research screens and About load on first use (their own chunks): My Week's first screen stays small
   const LAZY = {
     trends: () => import("./routes/Trends.svelte"),
@@ -58,6 +59,9 @@
     const want = { league, team: team === null ? null : String(team) };
     if (r.params.get("league") !== want.league || r.params.get("team") !== want.team) setParams(want);
   });
+
+  // ---- U-1: count the screen on screen (route, league, team) once signed in; never blocks rendering (lib/usage.ts)
+  $effect(() => void (phase === "ready" && countView(league ? r.name : "leagues", league, team)));
 
   async function boot() {
     try {

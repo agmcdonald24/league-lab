@@ -152,7 +152,8 @@ key is modelled wrong).
   record the GitHub nightly restores from here) is swapped inside the restore transaction, so it
   is never half-gone.
 * **Security model**: the hosted role is read-only (`default_transaction_read_only`), sees only the
-  three published schemas and has a 30 s statement timeout. The beta password is a closed door for
+  three published schemas and has a 30 s statement timeout. (U-1: plus `INSERT, SELECT` on the one table
+  `usage.events`, written in its own explicit read-write transaction — § "Usage".) The beta password is a closed door for
   a link, not authentication; use Community Cloud's private sharing if that matters.
 
 ## 5. Nightly on GitHub Actions
@@ -430,6 +431,72 @@ publishing, as before) and disable the workflow until it can.
 The two records drift apart a little: the Mac's 08:00 board and GitHub's 07:37 board for the same week are built
 from the same data minutes apart, and each freezes its own at kickoff. The hosted one (GitHub's) is the record
 the beta shows; the Mac's is the research console's.
+
+## Usage
+
+*(Wave I-F, U-1; plan § 17 E: "which screens get used".)* The phone web app counts screen views on the hosted copy,
+so the beta can be steered by what people open, not by guesses.
+
+**What a row holds** (`usage.events`, one row per screen view): `at` (the server's time), `screen` (the web router's
+route name: `week`, `waivers`, `trades`, `trade-calc`, `team`, `league`, `player`, `ros`, `about`, `trends`,
+`matchups`, `players`, `receivers`, `compare`, `leagues`; anything else is stored as `other`), `league_key`
+(`1389709692405551104`, `mfl:70587`), `roster_id` (the team number in that league), `platform` (`sleeper` / `mfl`,
+from the key), `version` (`/api/health`'s release), `session` (a random 32-hex id the server sets in the cookie
+`ll_usage`, which the browser keeps until midnight New York time). **Nothing about a person**: no name, username, IP
+address, user agent, login token, player or free text — the API keeps only allow-listed values and the table's
+checks refuse anything else. About says so in one line ("League Lab counts screen views — which screen, which league
+and team, when — and nothing about you").
+
+**How it is written.** `web/src/lib/usage.ts` sends `POST /api/usage {screen, league, roster_id}` once per screen
+view (a new route, league or team; a filter, a sort or the player pane is not a new view) with
+`navigator.sendBeacon` (a keepalive `fetch` where there is none), after the screen is drawn and never before sign-in.
+The route is behind the beta password like every other, answers 204 whatever happens, and only queues the row: one
+writer thread of its own inserts it (a bounded queue of 1,000; when the database is down the queue fills and further
+rows are dropped and counted), so a slow or sleeping database never holds a request or the server's request threads.
+The server's role `league_lab_app` stays `default_transaction_read_only = on`: the one insert runs in its own
+`BEGIN; SET TRANSACTION READ WRITE; INSERT; COMMIT` on its own connection (`db.write_one`), never on the read pool's
+connections; a failure is counted and logged (`usage: insert failed (<class>)`), never shown. Limits: one row a
+second per session, with bursts of five (tapping through tabs), and 20 rows a second from all sessions together.
+**Off switch**: `LEAGUE_LAB_USAGE=off` on the server (Render → Environment) — the route still answers 204, writes
+nothing and sets no cookie.
+
+**Where it lives.** Schema `usage` on the hosted copy, created by `scripts/hosted_usage.sql` (plain SQL, idempotent:
+the schema, the table, an index on `at`, and the app role's `USAGE` on the schema plus `INSERT, SELECT` on that one
+table — no update, no delete). The sync never drops it: it drops and restores `analytics`, `analytics_seeds` and
+`ops` only, then runs the file in its own transaction (`scripts/sync_to_hosted.sh`, block "U-1", after the restore;
+a failure there prints a warning and the publish stands). The sync's log line: `usage: <n> events kept, <size>`.
+Size: 168 bytes a row with its index (measured: 10,000 rows = 1.6 MB) — 10,000 views ≈ 1.6 MB of the 512 MB Neon
+budget (the sync's size check counts the marts only; the line above is how to watch it).
+
+**Reading it.**
+* The console: **Usage** (`app/pages/99_Usage.py`, last in the page list) — views per screen per day, views /
+  leagues / browser-days per day, the last 7 / 14 / 30 days (New York days).
+* The API: `GET /api/usage/summary?days=7` (behind the password; `no-store`) — `{enabled, ready, days,
+  views_by_screen_day, by_day: [{day, views, leagues, sessions}], by_screen, totals, process: {written, failed,
+  limited, dropped}}` (`process`: this server process's counters since it started). `ready: false` until the table
+  exists.
+* SQL on the hosted copy (owner role): `select screen, count(*) from usage.events where at > now() - interval '7 days'
+  group by 1 order by 2 desc;`
+
+**Rollout** (nothing new to configure — no new secret, no new variable, no workflow change):
+1. **PO**: merge to `main`. Render deploys the image once its check is green (`autoDeployTrigger: checksPass`); the
+   web app starts sending counts on its next load.
+2. **The next nightly** (07:37 ET by itself — or **Andrew**: Actions → nightly → Run workflow, to have it today) runs
+   the sync, which creates `usage.events` and its grants; the sync's log shows `usage: 0 events kept, 32 kB` (an
+   empty table: 32 kB). Until then every insert fails quietly (`process.failed` in the summary counts them) and
+   nothing else changes.
+3. **Check** (PO or Andrew, on the phone): About ends with the notice; `GET /api/usage/summary` (signed in) →
+   `ready: true`; open two screens, reload the summary: `totals.views` up by 2. Or the console's Usage page.
+
+**Local development.** The table in the local database too (the Mac's database is owned by the pipeline role):
+
+```bash
+psql "$(uv run python -c 'from league_lab.config import get_settings; print(get_settings().pipeline_dsn())')" \
+     -v ON_ERROR_STOP=1 -f scripts/hosted_usage.sql
+```
+
+Without it the local API counts nothing (each insert fails quietly) and the Usage page says how to set it up.
+`api/tests/test_u1.py` applies the file itself.
 
 ## Licences to keep in mind when sharing
 

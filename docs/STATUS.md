@@ -4724,3 +4724,40 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   `test_ic4.py`'s RB2 claim read from the top three (Help now starts after them). `web/e2e/ie1/` 5 × phone (375) /
   desktop (1300) on answers recorded from the API (`web/fixtures/ie1/api_ie1.json`); `e2e/ia2` no longer reads the
   0–100 text. Root `uv run pytest` 986 passed (cards.py: the tiebreaker as data, the card text unchanged).
+
+## Wave I-F (Iteration 17, part F)
+
+### U-1 2026-10-03 — usage tracking (plan § 17 E; branch `dev/U1`, clone `league_lab_m1`)
+
+* **The store.** `scripts/hosted_usage.sql` (new, plain SQL, idempotent): schema `usage`, table `usage.events (at
+  timestamptz, screen text, league_key text, roster_id int, platform text, version text, session text)` with checks
+  that refuse anything but a route word, a league key, a team number, `sleeper`/`mfl`, a release stamp and a 32-hex
+  id; an index on `at`; `USAGE` on the schema and `INSERT, SELECT` on the table for `league_lab_app` (no update /
+  delete). The sync's marked block runs it after the restore, in its own transaction, on the same owner connection —
+  no new secret — and a failure only warns. The sync drops `analytics`, `analytics_seeds`, `ops` only: in a rolled-back
+  transaction on the clone, the three `drop schema … cascade` left `usage.events` and its row in place.
+* **The write.** `POST /api/usage {screen, league, roster_id}` → 204 always (gated; `LEAGUE_LAB_USAGE=off` writes
+  nothing and sets no cookie). The server adds the time, the platform (`platforms.platform`), `/api/health`'s version
+  and the day's session (`ll_usage`: random 32-hex, HttpOnly, SameSite=Lax, path `/api/usage`, Max-Age = seconds to
+  midnight New York). The row goes on a bounded queue (1,000) that one writer thread drains: `db.write_one` = `BEGIN;
+  SET TRANSACTION READ WRITE; INSERT; COMMIT` on its own connection (`application_name` `league-lab-usage`), one
+  retry on a dropped connection; the role keeps `default_transaction_read_only = on` (a plain INSERT as the role still
+  fails: `ReadOnlySqlTransaction`). Limits: a token bucket per session (1 a second, bursts of 5 — a strict 1/s dropped
+  the About view after My Week on the live server: 2 beacons, 1 row) and 20 a second in all.
+* **The web.** `web/src/lib/usage.ts` `countView` (sendBeacon, `text/plain`; keepalive fetch otherwise; the same
+  screen + league + team twice in a row counts once), one marked `$effect` in `App.svelte` (after sign-in only); the
+  notice at the foot of About (one marked line in IF-4's file).
+* **Reading it.** `GET /api/usage/summary?days=7` (gated, `no-store`): views per screen per day, views / leagues /
+  sessions per day, by screen, totals, the process counters; `ready: false` before the table exists. The console's
+  page `app/pages/99_Usage.py` (the same questions, 7 / 14 / 30 days, the answer first).
+* **Evidence.** The live API on :8754 (gate on, fixtures): no beta cookie → 401; signed in, a `text/plain` POST →
+  204 + `Set-Cookie: ll_usage=…; HttpOnly; Max-Age=17420; Path=/api/usage; SameSite=lax` at 19:09 ET (4 h 50 min to
+  midnight); the rows carry `waivers · 1389709692405551104 · 6 · sleeper · 19d01fab9735 · <id>` and `trades ·
+  mfl:70587 · 8 · mfl`, the `x-forwarded-for` IP nowhere. The built web app against it (Playwright, 375 and 1300): sign in → My Week → About →
+  Back = 3 beacons (`ping`), 3 rows, 0 limited, 0 failed. Size: 168 bytes a row with its index (10,000 rows = 1.6 MB).
+* **Tests.** `api/tests/test_u1.py` (21; the database ones apply the SQL file themselves, twice, and delete their
+  rows); `web/e2e/u1/` 2 × phone (375) / desktop (1300) on fixtures. `cd api && uv run pytest`: 423 passed, 2
+  skipped, 3 failed — the three clone scoring checks (`test_ic1` × 2, `test_ic_po`: no `*_tds_10p` columns);
+  `npm run e2e:fixtures` 176 passed (172 + 4); lint / typecheck / build clean; ruff clean. Local setup: `docs/HOSTING.md` § "Usage",
+  `docs/SETUP_RUNBOOK.md` (one optional line). The clone `league_lab_m1` is owned by `postgres`: the pipeline role was
+  granted `CREATE` on it (as on the Mac, where it owns the database) so the test can apply the file.

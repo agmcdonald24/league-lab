@@ -2,6 +2,7 @@
 
 * The read-only application role (settings.app_dsn()); nothing here can write — the role is
   `default_transaction_read_only` on the hosted copy, and every statement is a SELECT.
+  (---- U-1: one exception, `write_one` below — the usage insert, its own read-write transaction on its own connection.)
 * `query(sql, params)` returns a DataFrame (Decimal columns as floats, like the app) and caches it for
   10 minutes keyed on the SQL and its parameters (the app's `st.cache_data(ttl=600)`). The data changes
   once a night, so a cached answer is the answer. Every call returns a copy: callers may add columns.
@@ -101,6 +102,58 @@ def query(sql: str, params: tuple = ()) -> pd.DataFrame:
 def scalar(sql: str, params: tuple = ()):
     df = query(sql, params)
     return None if df.empty else df.iloc[0, 0]
+
+
+# ---- U-1 (Wave I-F): the one write path — usage.events, never the read pool's connections ----------------------
+# The app role stays `default_transaction_read_only = on`. A usage insert opens its own explicit transaction on its
+# own connection (one, kept open and re-made when Neon has closed it): BEGIN; SET TRANSACTION READ WRITE; INSERT;
+# COMMIT. The read pool above never sees a read-write transaction. Any failure is swallowed by the caller
+# (usage.py): usage is never load-bearing. `fresh` reads without the 10-minute cache (the summary route).
+_writer: psycopg.Connection | None = None
+_writer_lock = threading.Lock()
+
+
+def _writer_conn() -> psycopg.Connection:
+    global _writer
+    if _writer is None or _writer.closed or _writer.broken:
+        _writer = psycopg.connect(app_dsn(), autocommit=True, connect_timeout=5, application_name="league-lab-usage")
+    return _writer
+
+
+def write_one(sql: str, params: tuple) -> None:
+    """One INSERT in its own read-write transaction on the writer connection; one retry on a dropped connection."""
+    global _writer
+    with _writer_lock:
+        for attempt in (1, 2):
+            try:
+                conn = _writer_conn()
+                with conn.transaction():                       # autocommit connection: an explicit BEGIN … COMMIT
+                    conn.execute("set transaction read write")
+                    conn.execute(sql, params)
+                return
+            except psycopg.OperationalError:
+                if _writer is not None:
+                    _writer.close()
+                _writer = None
+                if attempt == 2:
+                    raise
+
+
+def close_writer() -> None:
+    global _writer
+    with _writer_lock:
+        if _writer is not None:
+            _writer.close()
+            _writer = None
+
+
+atexit.register(close_writer)
+
+
+def fresh(sql: str, params: tuple = ()) -> pd.DataFrame:
+    """A read on the pool without the cache (the usage summary changes by the second)."""
+    return _run(sql, tuple(params))
+# ---- end U-1
 
 
 def missing_relations(names: tuple[str, ...]) -> list[str]:
