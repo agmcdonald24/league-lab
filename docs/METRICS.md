@@ -2217,7 +2217,8 @@ paid by distance (MFL 70587: 6 / 9 / 12 for 0–9 / 10–39 / 40+ yards) is the 
 their lengths. MFL's "1 point per 10 yards" pays per *whole* 10, so its expectation is below the linear price.
 `scoring_ev` holds the distributions that turn these rules into expected points. They are fitted offline and kept
 as constants in the module (no database, no refit at import); `seed_rows()` writes `dbt/seeds/scoring_distributions.csv`
-from them, and `tests/test_scoring_ev.py` pins the two equal. `run_fit()` refits both (about 6 CPU-minutes).
+from them, and `tests/test_scoring_ev.py` pins the two equal. `scoring_ev_fit.run_fit()` refits both (about 6 CPU-minutes; the fit lives in its own module so the
+server's import closure never names the play table — `scripts/hosted_relations.py`).
 
 **Threshold curves** (`prob_at_least(stat, position, mean, threshold)`, `prob_in_band`, `expected_band_points`).
 P(stat ≥ t in one game | the projection's mean), for passing / rushing / receiving yards and receptions. Two
@@ -2393,7 +2394,7 @@ bonus priced at 0.
 
 **Not covered.** 2-point conversions are not projected. Return TDs are not projected: their shares exist for a
 league's actual lines and a team defense's rules, but no line projects them. Kickers' FG distance bands stay in
-`kdef`. The curves are conditional on the production model (v3.0): a new model version needs `run_fit()` (the
+`kdef`. The curves are conditional on the production model (v3.0): a new model version needs `scoring_ev_fit.run_fit()` (the
 seed's `version` changes).
 
 ## Deferred (status in registry)

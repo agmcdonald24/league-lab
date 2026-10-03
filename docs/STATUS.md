@@ -4202,7 +4202,8 @@ nothing showed the waiver alternative before suggesting you give up a useful pla
   `prob_at_least(stat, position, mean, threshold)`, `prob_in_band` (high inclusive), `expected_band_points`,
   `has_curve`, `td_distance_share(family, position, low, high)`, `td_survival`, `expected_td_distance_points`,
   `td_share_source`, `expected_floor_units` (MFL's "1 per whole 10" in expectation), `sleeper_expected_bonus(_frame)`
-  (Sleeper's bonus keys in expectation) and `run_fit()`. Methods and every table: METRICS § "Expected-value
+  (Sleeper's bonus keys in expectation); `run_fit()` (the PO moved it to `scoring_ev_fit.py`: its play-table SQL
+  would have put `analytics.fct_play` in the hosted closure). Methods and every table: METRICS § "Expected-value
   pricing".
 * **Threshold curves.** Gamma for rushing and receiving yards and receptions (shape k0 + k1 × mean); normal for
   passing yards (sd 79). Both are monotone in the mean by construction. They are fitted on the walk-forward lines of
