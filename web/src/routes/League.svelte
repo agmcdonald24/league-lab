@@ -152,6 +152,28 @@
         </ol>
       </Card>
 
+      <!-- ---- IC-4 (Wave I-D): this week's matchups and the last scored week's, each game once (both games of a double header) -->
+      {#each data.matchups ?? [] as m (m.week)}
+        <Card title={m.played ? `Week ${m.week} results` : `Week ${m.week} matchups`} pad={false} testid={m.played ? "league-results" : "league-matchups"}>
+          {#if m.double_header}
+            <p class="px-3 pb-1 text-sm text-ink-2" data-testid="double-header">A double header: every team plays two games this week, each against its own opponent.</p>
+          {/if}
+          <ul class="divide-y divide-line">
+            {#each m.games as g (g.matchup_id)}
+              <li class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2 px-3 py-1.5 {g.mine ? 'bg-accent-soft' : ''}" data-testid="league-game" data-mine={g.mine ? "1" : undefined}>
+                {#each [g.a, g.b] as sd, j (j)}
+                  {#if j === 1}<span class="text-xs text-ink-3">vs</span>{/if}
+                  <span class="min-w-0 {j === 1 ? 'text-right' : ''}">
+                    <span class="line-clamp-2 text-base leading-tight break-words {sd.roster_id === team ? 'font-bold' : sd.result === 'W' ? 'font-semibold' : ''}">{sd.team_name}</span>
+                    {#if sd.points != null}<span class="tabnum block text-xs text-ink-3">{f1(sd.points)}{sd.result ? ` · ${sd.result}` : ""}</span>{/if}
+                  </span>
+                {/each}
+              </li>
+            {/each}
+          </ul>
+        </Card>
+      {/each}
+      <!-- ---- end IC-4 -->
       {#if weekCols.length}
         <Card title="Weekly scoring rank" testid="week-ranks">
           <!-- the last 5 weeks on a phone, the last 10 from 900 px: the grid never scrolls sideways -->

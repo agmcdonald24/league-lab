@@ -1495,6 +1495,8 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
                       "is_locked": _bool(r["is_locked"]), "report_status": _str(r["report_status"]), "reason": _str(r["reason"]),
                       "acquired": _str(r["acquired_label"]), "acquired_how": _str(r["acquired_how_by_manager"])}
                      for _, r in rows.iterrows()]
+    if not is_house:
+        units_named(out)                                                          # ---- IC-4
     if is_house:
         wk = query(WEEKLY_SQL, (league_id, season, int(team_id), int(v["horizon_first_week"]), int(v["horizon_last_week"])))
         allw = query(WEEKLY_LEAGUE_SQL, (league_id, season, int(v["horizon_first_week"]), int(v["horizon_last_week"])))
@@ -1658,6 +1660,41 @@ def _weekly_on_context(out: dict, moved: dict, allw: pd.DataFrame, team_id: int)
 # ---- end IB-0
 
 
+# ---- IC-4 (Wave I-D): a team unit is named with its team. The roster rows and the slot strength's best starter carry
+# the unit's team (the directory's Sleeper code: the badge), `unit: true` and the short name "Bengals QB".
+UNIT_POSITIONS = ("TMQB", "TMPK")
+
+
+def unit_short(name: str | None) -> str | None:
+    """"Cincinnati Bengals QB" -> "Bengals QB" (the nickname + the unit word)."""
+    parts = str(name or "").split()
+    return " ".join(parts[-2:]) if len(parts) >= 2 else (name or None)
+
+
+def units_named(out: dict) -> dict:
+    try:
+        d = A.sleeper().players()
+    except Exception:  # noqa: BLE001 - no directory: the rows keep their names
+        return out
+    by_name: dict[str, tuple[str, dict]] = {}
+    for r in out.get("roster") or []:
+        if r.get("position") in UNIT_POSITIONS and r.get("sleeper_id"):
+            row = d.get(str(r["sleeper_id"])) or {}
+            r["team"] = r.get("team") or row.get("team")
+            r["unit"], r["short_name"] = True, unit_short(r.get("player_name"))
+            by_name[str(r.get("player_name"))] = (str(r["sleeper_id"]), r)
+    for s in out.get("slot_strength") or []:
+        top = s.get("top")
+        if top and top.get("position") in UNIT_POSITIONS:
+            sid, r = by_name.get(str(top.get("player_name")), (None, {}))
+            top.update({"sleeper_id": top.get("sleeper_id") or sid, "team": top.get("team") or r.get("team"), "unit": True,
+                        "short_name": unit_short(top.get("player_name"))})
+        if s.get("replacement_name") and s.get("slot_type") in UNIT_POSITIONS:
+            s["replacement_short"] = unit_short(s["replacement_name"])
+    return out
+# ---- end IC-4
+
+
 def team_words(out: dict, rows: pd.DataFrame) -> dict:
     """The Team Hub's card sentences (quoted from app/pages/1_Team_Hub.py: top-level page code, not importable)."""
     v = out["value"]
@@ -1728,8 +1765,9 @@ def od_league_marts(league: dict, rosters: list[dict], users: list[dict], weeks:
             pts = round(float(m.get("points") or 0.0), 2)
             op = None if opp is None else round(float(opp.get("points") or 0.0), 2)
             res = None if op is None else ("W" if pts > op else "L" if pts < op else "T")
-            fm.append({"week": int(w), "roster_id": int(m["roster_id"]), "points": pts, "opponent_points": op, "result": res})
-    f = pd.DataFrame(fm, columns=["week", "roster_id", "points", "opponent_points", "result"])
+            fm.append({"week": int(w), "roster_id": int(m["roster_id"]), "points": pts, "opponent_points": op, "result": res,
+                       "opponent_roster_id": None if opp is None else int(opp["roster_id"])})          # ---- IC-4
+    f = pd.DataFrame(fm, columns=["week", "roster_id", "points", "opponent_points", "result", "opponent_roster_id"])
     if f.empty:
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     srows = []
@@ -1757,7 +1795,7 @@ def od_league_marts(league: dict, rosters: list[dict], users: list[dict], weeks:
     standings = standings.sort_values(["standing", "roster_id"]).reset_index(drop=True)
     wk = []
     for w, g in f.groupby("week"):
-        pts = g.set_index("roster_id")["points"]
+        pts = g.drop_duplicates("roster_id").set_index("roster_id")["points"]   # IC-4: a double header scores once
         for rid, p in pts.items():
             others = pts.drop(rid)
             r = g[g["roster_id"] == rid].iloc[0]
@@ -1768,24 +1806,80 @@ def od_league_marts(league: dict, rosters: list[dict], users: list[dict], weeks:
                        "week_points_rank": int(1 + (pts > p).sum()), "rosters_in_week": len(pts),
                        "week_median_others": float(others.median()) if len(others) else None})
     apw = pd.DataFrame(wk)
+    apw = double_header_weeks(apw, f, names)                                      # ---- IC-4
     ap = []
     for rid, g in apw.groupby("roster_id"):
         tot = int(g["all_play_wins"].sum() + g["all_play_losses"].sum() + g["all_play_ties"].sum())
-        wins = int((g["result"] == "W").sum())
+        fg = f[f["roster_id"] == rid]                         # IC-4: the games (two in a double-header week)
+        wins = int((fg["result"] == "W").sum())
         pct = g["all_play_wins"].sum() / tot if tot else None
+        games = len(fg)
         ap.append({"roster_id": int(rid), "team_name": names.get(int(rid), {}).get("team_name"),
-                   "manager_name": names.get(int(rid), {}).get("manager_name"), "games": len(g), "wins": wins,
-                   "losses": int((g["result"] == "L").sum()), "all_play_wins": int(g["all_play_wins"].sum()),
+                   "manager_name": names.get(int(rid), {}).get("manager_name"), "games": games, "wins": wins,
+                   "losses": int((fg["result"] == "L").sum()), "all_play_wins": int(g["all_play_wins"].sum()),
                    "all_play_losses": int(g["all_play_losses"].sum()), "all_play_ties": int(g["all_play_ties"].sum()),
                    "all_play_win_pct": None if pct is None else round(float(pct), 4),
-                   "expected_wins": None if pct is None else round(len(g) * float(pct), 2),
-                   "luck_wins": None if pct is None else round(wins - len(g) * float(pct), 2),
+                   "expected_wins": None if pct is None else round(games * float(pct), 2),
+                   "luck_wins": None if pct is None else round(wins - games * float(pct), 2),
                    "top_half_weeks": int((g["week_points_rank"] <= g["rosters_in_week"] / 2.0).sum()),
                    "avg_points_rank": round(float(g["week_points_rank"].mean()), 2)})
     all_play = pd.DataFrame(ap)
     all_play["all_play_rank"] = all_play["all_play_wins"].rank(method="min", ascending=False).astype(int)
     all_play = all_play.sort_values(["all_play_rank", "roster_id"]).reset_index(drop=True)
     return standings, all_play, apw.drop(columns=["all_play_ties", "rosters_in_week"])
+
+
+# ---- IC-4 (Wave I-D): double headers (MFL 70587 plays twice in weeks 2, 4, 6-9, 11 and 13). A team's week is one
+# score (all-play counts it once) and one or two games: `games` on its all-play row, its record from every game; the
+# League screen lists the matchups of this week and of the last scored week, each game once (both of a double header).
+def double_header_weeks(apw: pd.DataFrame, f: pd.DataFrame, names: dict) -> pd.DataFrame:
+    """Each (week, roster) all-play row gets `games` (opponent, scores, result per game) and, in a double-header week,
+    `result` "W/L"-style and `opponent_points` = the first game's."""
+    if apw.empty:
+        return apw
+    by = {(int(w), int(r)): g for (w, r), g in f.groupby(["week", "roster_id"])}
+    games, res, opp = [], [], []
+    for w, r in zip(apw["week"], apw["roster_id"], strict=True):
+        g = by.get((int(w), int(r)))
+        rows = [] if g is None else [{"opponent_roster_id": None if pd.isna(x.opponent_roster_id) else int(x.opponent_roster_id),
+                                      "opponent_team_name": names.get(int(x.opponent_roster_id), {}).get("team_name")
+                                      if not pd.isna(x.opponent_roster_id) else None,
+                                      "points": x.points, "opponent_points": x.opponent_points, "result": x.result}
+                                     for x in g.itertuples()]
+        games.append(rows)
+        res.append("/".join(str(x["result"]) for x in rows if x["result"]) or None)
+        opp.append(rows[0]["opponent_points"] if rows else None)
+    return apw.assign(games=games, result=res, opponent_points=opp)
+
+
+def week_matchups(week: int | None, ms: list[dict], names: dict, *, played: bool, me: int | None = None) -> dict | None:
+    """One week's games, each once: [{a, b}] with each side's roster_id, team_name, points (None before the games),
+    result; `double_header` when a team plays twice; `mine` = my games."""
+    if week is None or not ms:
+        return None
+    by: dict = {}
+    for m in ms:
+        if m.get("matchup_id") is not None:
+            by.setdefault(m["matchup_id"], []).append(m)
+    games = []
+    for mid, g in by.items():
+        if len(g) != 2:
+            continue
+        sides = []
+        for x, o in ((g[0], g[1]), (g[1], g[0])):
+            p, q = float(x.get("points") or 0.0), float(o.get("points") or 0.0)
+            sides.append({"roster_id": int(x["roster_id"]), "team_name": names.get(int(x["roster_id"]), {}).get("team_name"),
+                          "points": round(p, 2) if played else None,
+                          "result": ("W" if p > q else "L" if p < q else "T") if played else None})
+        games.append({"matchup_id": mid, "a": sides[0], "b": sides[1],
+                      "mine": me is not None and me in (sides[0]["roster_id"], sides[1]["roster_id"])})
+    games.sort(key=lambda x: (not x["mine"], x["matchup_id"]))
+    count: dict[int, int] = {}
+    for x in games:
+        for sd in (x["a"], x["b"]):
+            count[sd["roster_id"]] = count.get(sd["roster_id"], 0) + 1
+    return {"week": int(week), "played": played, "double_header": any(v > 1 for v in count.values()), "games": games}
+# ---- end IC-4
 
 
 def od_transactions(league_id: str, rounds: int, rosters: list[dict], users: list[dict], players: dict) -> pd.DataFrame:
@@ -1895,6 +1989,15 @@ def league(league_id: str, team: int | None = None, limit: int = 50, offset: int
         out["not_on_demand"] = ("manager profiles (bench points left, FAAB), the draft review and the roster rankings need the "
                                 "league's history in the database (house leagues); the roster rankings are on /api/team")
         out["on_demand"] = {"weeks_fetched": sorted(weeks), "transaction_rounds": max(last, int(cur or 0))}
+        # ---- IC-4: this week's games and the last scored week's (each game once; both games of a double header)
+        try:
+            this = _od(A.sleeper().matchups, lg["league_id"], int(cur)) if cur else []
+        except Exception:  # noqa: BLE001 - the matchups are a nicety on this screen
+            this = []
+        out["matchups"] = [m for m in (week_matchups(cur, this, names, played=False, me=team) if cur and cur != last else None,
+                                       week_matchups(last, weeks.get(last) or [], names, played=True, me=team) if last else None)
+                           if m is not None]
+        # ---- end IC-4
     n_weeks = int(apw["week"].nunique()) if not apw.empty else 0
     out["weeks_scored"] = n_weeks
     out["standings"] = _records(standings)
@@ -2341,13 +2444,15 @@ def _reason(m: dict, week: int, byes: dict, empty: dict, stash: dict) -> str:
     gains = m.get("week_gains") or []
     helped = [week + i for i, g in enumerate(gains) if g is not None and g > 0.005]
     slot = m.get("add_slot")
+    slot = {"TMQB": "team QB", "TMPK": "team K"}.get(str(slot), slot)            # ---- IC-4: the unit slots in words
     if (m.get("weekly_gain") or 0) >= GAIN_EPS and slot:
         if m.get("fills_empty_slot"):
             return f"Fills your empty {slot} this week."
         d = m.get("displaced") or {}
         if d.get("player_name"):
             p = d.get("projection")
-            return f"Starts at {slot} this week over {_last(d['player_name'])}" + (f" ({p:.1f})." if p is not None else ".")
+            who = unit_short(d["player_name"]) if d.get("position") in UNIT_POSITIONS else _last(d["player_name"])   # IC-4
+            return f"Starts at {slot} this week over {who}" + (f" ({p:.1f})." if p is not None else ".")
         return f"Starts at {slot} this week."
     for w in helped:
         if w in byes and w != week:
@@ -2431,6 +2536,16 @@ def waiver_views(league_id: str, team: int | None, season: int, week: int, mv: p
         if len(top) >= 3:
             break
     top = qb_once(top)
+    # ---- IC-4 (Wave I-D): an empty starting slot first — the claim that fills it this week leads the three and Help now
+    # (70587, overlay on: Hall and Price Out leave RB2 empty; "Fills your empty RB2 this week" comes before a kicker's +4)
+    fills = best[best["fills_empty_slot"].fillna(False).astype(bool)
+                 & (pd.to_numeric(best["weekly_gain"], errors="coerce") >= GAIN_EPS)] if "fills_empty_slot" in best else best.iloc[0:0]
+    fills = fills.sort_values(["weekly_gain", "horizon_gain"], ascending=[False, False])
+    if not fills.empty:
+        first = move_of(fills.iloc[0])
+        pos0 = (first.get("add") or {}).get("position")
+        top = [first, *[m for m in top if m is not first and (m.get("add") or {}).get("position") != pos0]][:3]
+    # ---- end IC-4
 
     def card(m: dict, reason: str | None = None, **extra) -> dict:
         return {"move": m, "reason": reason or _reason(m, int(week), byes, empty, stash),
@@ -2438,8 +2553,10 @@ def waiver_views(league_id: str, team: int | None, season: int, week: int, mv: p
                 "this_week": m.get("weekly_gain"), **extra}
     res["top3"] = [card(m) for m in top]
     # Help now: this week's lineup gain, most first
-    now_rows = best[pd.to_numeric(best["weekly_gain"], errors="coerce") >= GAIN_EPS].sort_values(
-        ["weekly_gain", "horizon_gain"], ascending=[False, False])
+    now_rows = best[pd.to_numeric(best["weekly_gain"], errors="coerce") >= GAIN_EPS]
+    now_rows = now_rows.assign(_fill=now_rows["fills_empty_slot"].fillna(False).astype(bool)          # ---- IC-4
+                               if "fills_empty_slot" in now_rows else False).sort_values(
+        ["_fill", "weekly_gain", "horizon_gain"], ascending=[False, False, False])
     help_moves = qb_once([move_of(r) for _, r in now_rows.head(VIEW_CAP * 2).iterrows()])[:VIEW_CAP]
     lv = _num(out.get("lineup_value"))
     res["views"]["help"].update({"moves": [card(m) for m in help_moves], "line": (

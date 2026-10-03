@@ -698,6 +698,20 @@ def franchise_names(league: Mapping, standings: list[dict] | None = None) -> dic
     return out
 
 
+# ---- IC-4 (Wave I-D): manager names. MFL's ``league`` export carries a franchise's ``owner_name`` only when the league
+# shows it to the caller (a commissioner's or an owner's signed-in request, or a league that publishes it); the public
+# export League Lab reads has none for 70587, 21861 or 10015 (checked live 2026-10-03). None = not shared.
+def franchise_owners(league: Mapping) -> dict[str, str]:
+    """franchise id -> its owner's name where the export carries one (``owner_name``)."""
+    out = {}
+    for f in _as_list((league.get("franchises") or {}).get("franchise")):
+        n = html.unescape(str(f.get("owner_name") or "")).strip()
+        if n:
+            out[str(f.get("id"))] = n
+    return out
+# ---- end IC-4
+
+
 def starters_by_franchise(live: Mapping | None, results: Mapping | None) -> dict[str, list[str]]:
     """franchise id -> its starters' MFL ids: the week's live scoring (``status == "starter"``) when it lists them,
     else a weekly result's ``starters`` string."""

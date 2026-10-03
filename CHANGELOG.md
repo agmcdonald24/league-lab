@@ -10,6 +10,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   bonuses are priced at their chance (top 24 about +0.7 a week, season totals closer at every position), Scrubs is
   unchanged to the bit.
 
+- **IC-4: the team units and the double header, finished.** Rest of season lists dad's league's team QBs and kickers
+  (each week priced from that week's starting quarterback or kicker, the bye a week off, the team's badge where the
+  face goes) and counts them against the free units in "Value to my lineup"; a unit opens its starter's card; the Team
+  Hub names it "Bengals QB"; MFL teams no longer show their name twice as the manager; the League screen lists a
+  double-header week's games, counts all-play once a week and the record from both games; Waivers puts the claim that
+  fills an empty starting slot first.
+
 ## 2026-10-03 — Wave I-C
 
 - **PO (integration).** `fct_player_game` and its league twins carry the 10-yard touchdown cut (`*_tds_10p`), so

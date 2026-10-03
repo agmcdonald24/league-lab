@@ -274,8 +274,9 @@ class MFLLeagues:
         except (M.MFLUnavailable, M.MFLBusy, LeagueNotFound):
             st = []
         names = M.franchise_names(lg, st)
-        return [{"user_id": fid, "display_name": names.get(fid), "metadata": {"team_name": names.get(fid)},
-                 "league_id": PREFIX + lid} for fid in M.franchise_ids(lg)]
+        owners = M.franchise_owners(lg)          # ---- IC-4: the manager's name when MFL shares it, else None
+        return [{"user_id": fid, "display_name": owners.get(fid), "metadata": {"team_name": names.get(fid)},
+                 "league_id": PREFIX + lid, "platform": "mfl"} for fid in M.franchise_ids(lg)]
 
     def _rid_of(self, lid: str) -> dict[str, int]:
         return {fid: i for i, fid in enumerate(M.franchise_ids(self.client.league(lid)), 1)}
