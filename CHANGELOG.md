@@ -15,6 +15,14 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   (Test League 95.41, was 123.09 on Waivers / Team). My Week's cards carry `status` (change / set / close, against
   Sleeper's current lineup) and `strength` (clear / lean / coin flip) from `cards.decisions` for the web's card.
 
+- **IB-3: matchup meaning first, "Value to my lineup", the card's default content.** Matchups lead with Favorable /
+  Neutral / Difficult (cells, starters, cornerback calls), every rank runs 1 = the toughest for the offense, a corner
+  call carries likely / unclear beside it and no shutdown badge (`/api/matchups/*`: `tone`, `tough_rank`, `rank_words`,
+  `certainty`, `named_corners`); the Season screen opens on "Value to my lineup" (`/api/ros?view=lineup&team=&who=`:
+  what each player adds to, or what you lose without him in, your best lineup over the weeks left, with a sentence);
+  My Week's cards: status chip (Change needed / Already set / Close call), the call, the strength, one reason,
+  "Compare these players", the numbers behind "Why?". `api/tests/test_ib3.py`, `web/e2e/ib3/`.
+
 ## 2026-10-03 — Wave I-A
 
 - **Nightly: a backup time.** GitHub dropped the 11:37 UTC scheduled run on 2026-10-03 (no run at all); a second cron

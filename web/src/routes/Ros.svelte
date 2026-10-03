@@ -11,6 +11,10 @@
   import { byeWords, PIECE_COLUMNS, PIECE_LABELS, pieceText, rangeBar, rangeWords, RANKINGS_HOWTO, sortPlayers, type SortKey } from "../lib/ros";
   import Headshot from "../components/Headshot.svelte";
   // ---- end IA-3
+  // ---- IB-3 (Wave I-B): "Value to my lineup" first (a view toggle at the top; the default with a team picked)
+  import { lineupAnswer, lineupPath, ROS_VIEWS, ROS_WHO, rosView, rosWho, valueText } from "../lib/ros";
+  import Tabs from "../components/Tabs.svelte";
+  // ---- end IB-3
   import { restoreScroll, route, setParams } from "../lib/router.svelte";
   import Expander from "../components/Expander.svelte";
   import Chips from "../components/Chips.svelte";
@@ -41,6 +45,11 @@
     return [...BASE, ...extra, "ALL"];
   });
   const leagueName = $derived(options.find((o) => o.league_id === league)?.name ?? "this league");
+  // ---- IB-3: the view and, in "Value to my lineup", whose players (in the URL: shareable, no Back step)
+  const view = $derived(rosView(route.current.params.get("view"), team));
+  const who = $derived(rosWho(route.current.params.get("who")));
+  const isLineup = $derived(view === "lineup" && team !== null);
+  // ---- end IB-3
   const players = $derived(data?.players ?? []);
   const span = $derived(data ? weeksSpan(data.from_week, data.last_week) : null);
 
@@ -64,7 +73,7 @@
     const l = league;
     const p = position;
     error = null;
-    const path = paths.ros(l, p);
+    const path = isLineup && team !== null ? lineupPath(l, p, team, who) : paths.ros(l, p); // ---- IB-3
     const hit = peek<RosList>(path);
     if (hit) {
       data = hit;
@@ -74,12 +83,12 @@
     data = null;
     get<RosList>(path)
       .then((d) => {
-        if (league !== l || position !== p) return;
+        if (league !== l || position !== p || path !== currentPath()) return;
         data = d;
         restoreScroll();
       })
       .catch((e) => {
-        if (league !== l || position !== p) return;
+        if (league !== l || position !== p || path !== currentPath()) return;
         if (e instanceof Unauthorized) onauth();
         else if (e instanceof ApiError && e.status === 404) error = "League Lab cannot find this league on Sleeper. Pick another above.";
         else if (e instanceof ApiError && e.status === 502) error = "Sleeper did not answer. Try again in a minute.";
@@ -91,6 +100,15 @@
   function pick(p: string) {
     setParams({ position: p });
   }
+  // ---- IB-3
+  const currentPath = () => (isLineup && team !== null ? lineupPath(league, position, team, who) : paths.ros(league, position));
+  function pickView(v: string) {
+    setParams({ view: v === "lineup" ? null : v, who: null });
+  }
+  function pickWho(w: string) {
+    setParams({ who: w === "all" ? null : w });
+  }
+  // ---- end IB-3
 
   // ---- IA-3: the sort (a header tap; again flips it), the open rows, the pieces of the screen's position
   let sortKey = $state<SortKey>("rank");
@@ -99,13 +117,15 @@
   $effect(() => {
     void position;
     void league;
+    void view; // ---- IB-3
+    void who; // ---- IB-3
     sortKey = "rank";
     sortDir = "asc";
     open = {};
   });
   const pieceCols = $derived(position === "ALL" ? [] : (data?.piece_columns?.[position] ?? PIECE_COLUMNS[position] ?? []));
-  const shown = $derived(sortPlayers(players, sortKey, sortDir, position));
-  const rankAt = $derived(new Map(players.map((p, i) => [p, rankOf(p, i, position)])));
+  const shown = $derived(sortPlayers(players, sortKey, sortDir, isLineup ? "LINEUP" : position));
+  const rankAt = $derived(new Map(players.map((p, i) => [p, isLineup ? (p.lineup_rank ?? i + 1) : rankOf(p, i, position)])));
   const maxP90 = $derived(Math.max(1, ...players.map((p) => p.p90 ?? p.ros_points ?? 0)));
   function sortBy(k: SortKey) {
     if (sortKey === k) sortDir = sortDir === "asc" ? "desc" : "asc";
@@ -119,7 +139,7 @@
   const rowKey = (p: RosPlayer, i: number) => p.gsis_id ?? p.player_key ?? `${p.player_name}-${i}`;
   // the expand row spans the columns showing at this width (a larger colspan adds phantom columns to a fixed table)
   let vw = $state(typeof window === "undefined" ? 390 : window.innerWidth);
-  const ncols = $derived(4 + (vw >= 640 ? 3 : 0) + (vw >= 900 ? pieceCols.length : 0));
+  const ncols = $derived(4 + (vw >= 640 ? 3 : 0) + (vw >= 900 ? pieceCols.length : 0) + (isLineup ? 1 : 0) - (isLineup && vw < 640 ? 1 : 0));
   function toggle(k: string) {
     open = { ...open, [k]: !open[k] };
   }
@@ -133,9 +153,18 @@
 <main class="space-y-4" data-testid="ros">
   <header class="space-y-1.5">
     <p class="text-label font-bold tracking-[0.08em] text-accent uppercase">Rest of season · {leagueName}</p>
-    <h1 class="text-2xl leading-tight font-extrabold tracking-tight wide:text-3xl">Who scores the most from here</h1>
+    <h1 class="text-2xl leading-tight font-extrabold tracking-tight wide:text-3xl" data-testid="ros-title">
+      {isLineup ? "Value to my lineup" : "Who scores the most from here"}
+    </h1>
   </header>
+  <!-- ---- IB-3: the view toggle (Value to my lineup leads; it needs a team) -->
+  {#if team !== null}
+    <Tabs items={ROS_VIEWS} current={view} onpick={pickView} fill size="sm" label="Rank by" testid="ros-view" />
+  {/if}
   <Chips label="Position" testid="ros-pos" current={position} onpick={pick} items={positions.map((p) => ({ key: p, label: label(p) }))} />
+  {#if isLineup}
+    <Chips label="Whose" testid="ros-who" current={who} onpick={pickWho} items={ROS_WHO} />
+  {/if}
 
   {#if error}
     <p class="ll-error">{error}</p>
@@ -150,8 +179,14 @@
     </p>
   {:else}
     <section class="relative space-y-1.5 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)" data-testid="ros-answer">
-      <p class="text-lg leading-snug"><Md text={answerLine(players[0], position)} {ctx} /></p>
-      {#if team !== null}<p class="text-base leading-snug" data-testid="ros-yours">{yoursLine(players, team, position)}</p>{/if}
+      {#if isLineup}
+        <!-- ---- IB-3: the lineup view's answer: the top row and why, then what the number means -->
+        <p class="text-lg leading-snug" data-testid="ros-lineup-answer"><Md text={lineupAnswer(players[0], data.window?.span ?? span)} {ctx} /></p>
+        {#if data.lineup_note}<p class="text-sm leading-snug text-ink-2" data-testid="ros-lineup-note">{data.lineup_note}</p>{/if}
+      {:else}
+        <p class="text-lg leading-snug"><Md text={answerLine(players[0], position)} {ctx} /></p>
+        {#if team !== null}<p class="text-base leading-snug" data-testid="ros-yours">{yoursLine(players, team, position)}</p>{/if}
+      {/if}
       <p class="text-sm leading-snug text-ink-3">
         {span ? `${span[0].toUpperCase()}${span.slice(1)}` : "The weeks left"} in {leagueName} scoring, up to the league's final. A bye
         is a week with no game: he plays one fewer. Ranked among everyone at the position, rostered or free agent.
@@ -179,8 +214,9 @@
         <tr class="border-b border-line bg-raised text-left text-ink-3">
           {@render head("rank", "Rank", "w-[3.75rem] pr-1 pl-3")}
           <th class="ll-label py-2 pr-1 font-semibold">Player</th>
+          {#if isLineup}{@render head("lineup_points", "Value", "w-[3.75rem] text-right", "What he adds to your lineup over the weeks left")}{/if}
           {@render head("ros_games", "Games", "hidden w-[3.5rem] text-right sm:table-cell", "Games left (byes out)")}
-          {@render head("ros_points", "Points", "w-[3.75rem] text-right", "Rest of season, this league's scoring")}
+          {@render head("ros_points", "Points", `w-[3.75rem] text-right ${isLineup ? "hidden sm:table-cell" : ""}`, "Rest of season, this league's scoring")}
           {@render head("range", "Likely", "hidden w-[7rem] pl-3 text-left sm:table-cell", "Where 8 seasons in 10 would land")}
           {@render head("playoff_points", "Playoffs", "hidden w-[4.5rem] text-right sm:table-cell", "Points in the playoff weeks")}
           {#each pieceCols as c (c)}
@@ -195,7 +231,7 @@
           {@const k = rowKey(p, i)}
           {@const bar = rangeBar(p, maxP90)}
           {@const bye = byeWords(p.bye_weeks)}
-          <tr class="border-b border-line align-middle {open[k] ? '' : 'last:border-0'} {yours ? 'bg-accent-soft' : ''}" data-testid="ros-row">
+          <tr class="{isLineup && p.lineup_why ? '' : 'border-b'} border-line align-middle {open[k] ? '' : 'last:border-0'} {yours ? 'bg-accent-soft' : ''}" data-testid="ros-row">
             <td class="tabnum py-2 pr-1 pl-3 font-semibold text-ink-3">{rankAt.get(p) ?? "—"}</td>
             <td class="py-2 pr-1 leading-snug break-words">
               <div class="flex min-w-0 items-center gap-2">
@@ -214,8 +250,11 @@
                 </div>
               </div>
             </td>
+            {#if isLineup}
+              <td class="tabnum py-2 text-right font-bold" data-testid="ros-value">{valueText(p.lineup_points)}<span class="block text-[11px] font-normal text-ink-3 sm:hidden">{whole(p.ros_points) ?? "—"} pts</span></td>
+            {/if}
             <td class="tabnum hidden py-2 text-right text-ink-2 sm:table-cell">{p.ros_games ?? "—"}</td>
-            <td class="tabnum py-2 text-right font-bold" data-testid="ros-points">{whole(p.ros_points) ?? "—"}<span class="block text-[11px] font-normal text-ink-3 sm:hidden">{p.ros_games ?? "—"} g</span></td>
+            <td class="tabnum py-2 text-right {isLineup ? 'hidden font-semibold text-ink-2 sm:table-cell' : 'font-bold'}" data-testid="ros-points">{whole(p.ros_points) ?? "—"}<span class="block text-[11px] font-normal text-ink-3 sm:hidden">{p.ros_games ?? "—"} g</span></td>
             <td class="hidden py-2 pl-3 sm:table-cell">
               {#if bar}
                 <div class="relative h-2 w-full rounded-full bg-sunken" aria-hidden="true">
@@ -237,6 +276,12 @@
               </button>
             </td>
           </tr>
+          {#if isLineup && p.lineup_why}
+            <!-- ---- IB-3: why he ranks here for this roster, the row's full width (the name column is narrow on a phone) -->
+            <tr class="border-b border-line {open[k] ? '' : 'last:border-0'} {yours ? 'bg-accent-soft' : ''}">
+              <td colspan={ncols} class="px-3 pt-0 pb-2 text-xs leading-snug text-ink-2 sm:pl-[4.25rem]" data-testid="ros-lineup-why">{p.lineup_why}</td>
+            </tr>
+          {/if}
           {#if open[k]}
             <tr class="border-b border-line {yours ? 'bg-accent-soft' : 'bg-raised'}" data-testid="ros-expand">
               <td colspan={ncols} class="px-3 pt-1 pb-3">

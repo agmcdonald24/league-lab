@@ -24,6 +24,7 @@ import time
 
 import pandas as pd
 from league_lab import anyleague as A
+from league_lab.lineup import UNVALUED, Player  # ---- IB-3
 
 from . import availability, why
 from .applib import cards, ui
@@ -227,9 +228,14 @@ def ros_on_demand(league_id: str, *, exclude_reference: str | None = None) -> tu
     return league, A.ros_table(query, league_id, league, first, last_week, pws, exclude_reference=exclude_reference)
 
 
-def ros(league_id: str, position: str = "ALL", limit: int = 50) -> dict:
+def ros(league_id: str, position: str = "ALL", limit: int = 50, *, view: str = "points", team: int | None = None,
+        who: str = "all") -> dict:
     from .applib import ros as ROS
     from .myweek import known_league
+    if (view or "points").lower() == "lineup":                                                  # ---- IB-3
+        return ros_lineup_view(league_id, team, position, limit, who)                            # ---- IB-3
+    if (view or "points").lower() not in VIEWS:                                                 # ---- IB-3
+        raise BadView(f"no view {view} (points or lineup)")                                     # ---- IB-3
     position = (position or "ALL").upper()
     if position not in POSITIONS:
         raise NotFound(f"no position {position} (QB, RB, WR, TE, K, DEF or ALL)")
@@ -374,6 +380,241 @@ def ros_more(league_id: str, league: dict | None, df: pd.DataFrame, *, house: bo
             "market_note": ("Sleeper's number is this week's, in this league's scoring, where Sleeper has one; "
                             "the list's totals are ours.")}
 # ---- end IA-3
+
+
+# ---- IB-3 (Wave I-B): "Value to my lineup" — the rest-of-season list ranked by what each player is worth to ONE roster's
+# best lineup over the weeks left (GET /api/ros?view=lineup&team=). The trade engine's rest-of-season board
+# (decisions.window_board(ctx, "ros"): every roster's rows week by week — the next four from the lineup horizon, the
+# weeks after from the rest-of-season board; byes, the IR slot, NFL injured reserve as there), solved per week with the
+# waiver engine's machinery (waivers.prepare / entry_bar / _what_if on lineup.solve's matching):
+#   * one of yours: what your lineup loses without him, week by week (his margin over the next-best who would take
+#     his place) — a backup QB behind a healthy starter in a one-QB league is 0 every week but his starter's bye;
+#   * anyone else (a free agent, or a player on another roster): what he would add, week by week, if he were on your
+#     roster (max(0, his value − the entry bar of the slots he can play): nobody dropped — a bench spot is assumed;
+#     a free agent's weeks are his rest-of-season projection, Out this week / injured reserve as the overlay says).
+# The sum is `lineup_points`; `lineup_weeks` counts the weeks he starts (or would); `lineup_why` says it in a line.
+VIEWS = ("points", "lineup")
+WHO = ("all", "mine", "fa", "others")
+UNPLAYABLE_NOW = frozenset({"OUT", "DOUBTFUL", "IR", "PUP", "SUSPENDED", "INACTIVE"})
+
+
+class BadView(ValueError):
+    """A view / team the lineup view cannot answer (400)."""
+
+
+def _weeks_words(ws: list[int]) -> str:
+    return f"week {ws[0]}" if len(ws) == 1 else "weeks " + ", ".join(str(w) for w in ws[:-1]) + f" and {ws[-1]}"
+
+
+def lineup_why(kind: str, pos: str | None, starts: list[int], n: int, pts: float, *, team_name: str | None = None,
+               starter: str | None = None, one_qb: bool = True) -> str:
+    """One line: why he ranks where he does for this roster (`starter`: the QB who starts for you, in a one-QB league)."""
+    k = len(starts)
+    p = f"{pts:.0f}" if pts >= 9.5 else f"{pts:.1f}"
+    if kind == "mine":
+        if k == 0:
+            if pos == "QB" and starter and one_qb:
+                return f"Your backup QB never starts for you behind {starter}: he adds nothing to your lineup (insurance only)."
+            return f"On your bench in all {n} weeks left: he adds nothing to your lineup unless someone gets hurt."
+        nothing = pts < 0.05
+        if k <= 3 and k < n:
+            role = "QB2" if pos == "QB" and one_qb else f"bench {pos}"
+            if nothing:
+                return (f"Your {role} only plays in {_weeks_words(starts)}, and the best free agent would score as much "
+                        "then: he adds nothing to your lineup.")
+            return f"Your {role} only plays in {_weeks_words(starts)}: {p} points over your next-best there."
+        every = f"all {n} weeks left" if k == n else f"{k} of {n} weeks left"
+        if nothing:
+            return (f"Starts for you in {every}, but the best free agent at {pos} projects as much: he adds nothing over "
+                    "the waiver wire.")
+        return f"Starts for you in {every}: {p} points more than your next-best option."
+    where = "Free agent" if kind == "fa" else f"On {team_name or 'another team'}"
+    if k == 0 or pts < 0.05:
+        return f"{where}: would not crack your lineup in any week left (your starters project more)."
+    every = f"all {n} weeks left" if k == n else f"{k} of {n} weeks left"
+    return f"{where}: would start for you in {every}, +{p} points to your lineup."
+
+
+def lineup_values(league_id: str, team: int, frame: pd.DataFrame, *, house: bool) -> tuple[dict[str, dict], dict]:
+    """player_key -> {lineup_points, lineup_weeks, kind, lineup_why} for every row of a rest-of-season frame, and the
+    window ({first, last, weeks}). `frame`: player_key, gsis_id, position, (rostered_by_roster_id), weeks_json /
+    ros_weeks' weeks."""
+    from league_lab import waivers as W
+
+    from . import decisions as D
+    ctx = D.trade_context(league_id, None if house else "sleeper")
+    me = int(team)
+    if me not in ctx.board.rosters:
+        raise NotFound(f"no team {team} in league {league_id}")
+    board, weeks, span = D.window_board(ctx, "ros")
+    rw = D.ros_weeks(ctx)
+    preps = [W.prepare(board.pool(me, w), board.slots) for w in weeks]
+    bars: list[dict] = [{} for _ in weeks]
+    sid_of = {}
+    for r in ctx.horizon[["sleeper_player_id", "gsis_id"]].dropna().itertuples():
+        sid_of[str(r.gsis_id)] = str(r.sleeper_player_id)
+    # the QB who starts most weeks for me (the backup's sentence)
+    qb_starts: dict[str, int] = {}
+    for pr in preps:
+        for st in pr.lineup.starts:
+            if st.player is not None and st.player.position == "QB":
+                qb_starts[st.player.id] = qb_starts.get(st.player.id, 0) + 1
+    top_qb = max(qb_starts, key=qb_starts.get) if qb_starts else None
+    one_qb = sum(1 for x in board.slots if str(x).upper() in ("QB", "SUPER_FLEX")) == 1
+    # the best free agent per position and week (rest-of-season board): who would fill the slot one of yours leaves
+    # empty (a lone kicker or defense is worth his edge over the waiver wire, not his whole projection)
+    pos_of = {}
+    try:
+        rf = D._ros_frame(ctx.league_id, ctx.is_house)
+        pos_of = dict(zip(rf["player_key"].astype(str), rf["position"], strict=True)) if not rf.empty else {}
+    except Exception:  # noqa: BLE001 - no positions: no replacement (the margin over the bench alone)
+        pos_of = {}
+    owned_keys = {str(g) for g, sd in sid_of.items() if board.owner(sd) is not None} | {
+        str(k) for k in pos_of if board.owner(str(k)) is not None}
+    repl: dict[tuple[str, int], float] = {}
+    for k, wk in rw["weeks"].items():
+        ps = pos_of.get(str(k))
+        if ps is None or str(k) in owned_keys:
+            continue
+        for w, v in wk.items():
+            if v is not None and v > repl.get((ps, int(w)), 0.0):
+                repl[(ps, int(w))] = float(v)
+    out: dict[str, dict] = {}
+    status = {}
+    if "injury_status" in frame:
+        status = {str(k): str(v).upper() for k, v in zip(frame["player_key"], frame["injury_status"], strict=True) if isinstance(v, str)}
+    for r in frame.to_dict("records"):
+        key = str(r["player_key"])
+        gs = r.get("gsis_id") if isinstance(r.get("gsis_id"), str) else None
+        sid = sid_of.get(gs, key) if gs else key
+        owner = board.owner(sid)
+        pos = r.get("position")
+        per: list[float] = []
+        starts: list[int] = []
+        if owner == me:
+            kind = "mine"
+            for w, pr in zip(weeks, preps, strict=True):
+                if sid in pr.index:
+                    without, _ = W._what_if(pr, None, sid)
+                    rv = repl.get((str(pos), int(w)))
+                    if rv:
+                        fill = W._norm(Player(id="__replacement__", position=pos, value=rv, value_source="proj_points"))
+                        without = max(without, W._what_if(pr, fill, sid)[0])
+                    loss = max(0.0, pr.total - without)
+                else:
+                    loss = 0.0
+                per.append(loss)
+                if sid in pr.starters:
+                    starts.append(w)
+        else:
+            kind = "others" if owner is not None else "fa"
+            st = status.get(key, "")
+            by_week = rw["weeks"].get(gs or key, {}) if owner is None else {}
+            for h, (w, pr) in enumerate(zip(weeks, preps, strict=True)):
+                if owner is not None:
+                    row = board.row(sid, w)
+                    p = incoming(row)
+                else:
+                    v = by_week.get(w)
+                    out_now = (h == 0 and st in UNPLAYABLE_NOW) or st in {"IR", "PUP", "SUSPENDED"}
+                    p = None if v is None or out_now else Player(id=sid, position=pos, value=float(v), value_source="proj_points")
+                if p is None or p.value is None or p.value_source == UNVALUED:
+                    per.append(0.0)
+                    continue
+                c = bars[h]
+                if p.positions not in c:
+                    c[p.positions] = W.entry_bar(pr, p.positions)
+                bar = c[p.positions]
+                g = 0.0 if bar is None else max(0.0, float(p.value) - bar)
+                per.append(g)
+                if g > 0.004:
+                    starts.append(w)
+        pts = round(sum(per), 2)
+        team_name = ctx.team(owner) if owner is not None and owner != me else None
+        starter = None
+        if kind == "mine" and pos == "QB" and top_qb and top_qb != sid:
+            starter = cards.last_name(ctx.name(top_qb))
+        out[key] = {"lineup_points": pts, "lineup_weeks": len(starts), "lineup_kind": kind,
+                    "lineup_why": lineup_why(kind, pos, starts, len(weeks), pts, team_name=team_name, starter=starter,
+                                             one_qb=one_qb)}
+    return out, {"first": weeks[0], "last": weeks[-1], "weeks": len(weeks), "span": span}
+
+
+def incoming(row):
+    from league_lab.roster_value import incoming_player
+    return incoming_player(row) if row is not None else None
+
+
+def ros_lineup_view(league_id: str, team: int | None, position: str = "ALL", limit: int = 50, who: str = "all") -> dict:
+    """GET /api/ros?view=lineup&team=: the rest-of-season answer, its rows ranked by `lineup_points` for the team."""
+    from .applib import ros as ROS
+    from .myweek import known_league
+    if team is None:
+        raise BadView("pick your team: the lineup view ranks players for one roster")
+    who = (who or "all").lower()
+    if who not in WHO:
+        raise BadView(f"no who={who} (all, mine, fa or others)")
+    position = (position or "ALL").upper()
+    if position not in POSITIONS:
+        raise NotFound(f"no position {position} (QB, RB, WR, TE, K, DEF or ALL)")
+    limit = max(1, min(int(limit), 500))
+    house = known_league(league_id)
+    if house:
+        cols = ", ".join(f"r.{c.strip()}" for c in ROS.ROS_COLUMNS.split(","))
+        df = query(ROS_MART_SQL.format(cols=cols), (league_id, position, position, 5000))
+        league = None
+        players = [_ros_player(r) for _, r in df.iterrows()]
+    else:
+        league, df = ros_on_demand(league_id)
+        client = A.sleeper()
+        rosters, users = client.rosters(league["league_id"]), client.users(league["league_id"])
+        sids = sorted({str(p) for r in rosters for p in (r.get("players") or [])})
+        idm = query("select sleeper_id, gsis_id from analytics.player_id_map where sleeper_id = any(%s)", (sids,))
+        gsis_of = dict(zip(idm["sleeper_id"], idm["gsis_id"], strict=False)) if not idm.empty else {}
+        roster_of = {gsis_of.get(str(p), str(p)): int(r["roster_id"]) for r in rosters for p in (r.get("players") or [])}
+        names = A.team_names(rosters, users)
+        if not df.empty and position != "ALL":
+            df = df[df["position"] == position]
+        df = df.sort_values(["ros_points", "player_key"], ascending=[False, True]) if not df.empty else df
+        players = [_ros_player(r, roster_of, names) for _, r in df.iterrows()]
+    head = df.iloc[0] if not df.empty else None
+    players = availability.ros_overlay(players)
+    frame = pd.DataFrame([{"player_key": p.get("player_key") or p.get("gsis_id"), "gsis_id": p.get("gsis_id"),
+                           "position": p.get("position"), "injury_status": p.get("injury_status")} for p in players])
+    vals, window = lineup_values(str(league["league_id"]) if league else league_id, int(team), frame, house=house) \
+        if not frame.empty else ({}, {"first": None, "last": None, "weeks": 0, "span": None})
+    for p in players:
+        p.update(vals.get(str(p.get("player_key") or p.get("gsis_id")), {"lineup_points": None, "lineup_weeks": None,
+                                                                           "lineup_kind": None, "lineup_why": None}))
+    if who != "all":
+        players = [p for p in players if p.get("lineup_kind") == who]
+    # value first; among equals (a starter a free agent could replace is worth 0 too) the one who starts more weeks,
+    # then the rest-of-season points
+    order = sorted(range(len(players)), key=lambda i: (-round(players[i].get("lineup_points") or 0.0, 2),
+                                                       -(players[i].get("lineup_weeks") or 0),
+                                                       -(players[i].get("ros_points") or 0.0), i))
+    for rank, i in enumerate(order, start=1):
+        players[i]["lineup_rank"] = rank
+    keep = [players[i] for i in order[:limit]]
+    keys = {str(p.get("player_key") or p.get("gsis_id")) for p in keep}
+    sub = df[[str(k) in keys for k in df["player_key"]]] if not df.empty else df
+    keep = ros_rows(str(league["league_id"]) if league else league_id, league, sub, keep, house=house)
+    return {"league_id": str(league["league_id"]) if league else league_id, "source": "database" if house else "sleeper",
+            "position": position, "view": "lineup", "team": int(team), "who": who,
+            "from_week": None if head is None else int(head["from_week"]),
+            "last_week": None if head is None else int(head["last_week"]),
+            "playoff_week_start": None if head is None or _num(head["playoff_week_start"]) is None else int(head["playoff_week_start"]),
+            "lines_note": None if head is None else ROS.lines_note(head).replace("his usage", "usage"),
+            "pos_rank_note": POS_RANK_NOTE, "window": window, "lineup_note": LINEUP_NOTE,
+            **ros_more(str(league["league_id"]) if league else league_id, league, sub, house=house),
+            "players": keep}
+
+
+LINEUP_NOTE = ("Value to your lineup: what each player adds to your best lineup over the weeks left, week by week. "
+               "For one of yours, what your lineup loses without him (his edge over the next-best who would start "
+               "instead); for anyone else, what he would add if he were on your roster, nobody dropped. A backup "
+               "who never starts adds nothing, however many points he scores somewhere else.")
+# ---- end IB-3
 
 
 # ---------------------------------------------------------------- plan F3: our record (house leagues)

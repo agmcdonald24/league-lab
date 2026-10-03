@@ -126,6 +126,17 @@ trade sides.
   *A list row's numbers* (Trends): one header row of `ll-label`s over the list and a 5-column strip under each
   `PlayerRow`, indented to the name (`pl-16`), the season value under the last-3 value on a phone.
 
+- **Wave I-B (IB-3) patterns.** *Tone chip* (Matchups): the signal of a matchup is a word — Favorable / Neutral /
+  Difficult — in the state color (good / ink-3 / bad) on its 22 % wash, ▲ / ▼ before it (color never alone); the rank
+  sits under it in 11 px `text-ink-3` ("#3 toughest vs RB"; a cornerback call's certainty — likely / unclear / no call —
+  takes that place). *Tone heatmap*: `Heatmap … tones` fills a cell with its tone's wash (30 %), prints ▲ / ▼ with the
+  number, and the legend names the three tones. *View toggle* (Season): `Tabs fill size="sm"` under the screen head
+  ("Value to my lineup" · "Who scores the most"), in the URL (`?view=points`; the default left out). *Decision card*
+  (My Week): the status chip first (Change needed on `bg-warn-soft`, Already set on `bg-accent-soft`, Close call on
+  `bg-raised`; the card's left rule turns warn on a change), the slot label and the strength word on the same row, the
+  call in one line (both names whole), the reason (last names), a "Compare these players" button, and the odds, ranges
+  and numbers behind a "Why?" `<details>`.
+
 ## Charts (one kit: `lib/chart.ts` + inline SVG)
 
 Hand-rolled (`linear`, `niceTicks`, `linePath`, `areaPath`; ~1 KB, no library, nothing to load before the first screen),
