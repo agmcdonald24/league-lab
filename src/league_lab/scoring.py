@@ -973,6 +973,118 @@ def expected_points(line: Mapping, spec: ScoringSpec, position: str | None = Non
     return float(expected_frame(df, spec, [position if position is not None else line.get("position")], ev=ev)[0])
 
 
+# ---- M3 (Wave I-D): ONE pricing entry point for a projected stat line — the nightly (``projections.price``, prefix
+# ``proj_``) and the request side (``anyleague.price_lines``) both call it, so a player is one number everywhere under
+# either state of ``LEAGUE_LAB_EV_PRICING``. Actual lines never come here: a bonus on an actual line is a fact.
+def compute_points_frame(stats, scoring: Mapping[str, float]):
+    """``[compute_points(r, scoring) for r in stats.to_dict("records")]`` for every row at once (Wave H, H1; moved here
+    from ``anyleague`` in Wave I-D): each scoring key's term added to the running total in ``scoring``'s order, as
+    ``compute_points`` adds it, then Python's ``round(…, 2)`` per row — the same floating-point operations, so the same
+    numbers bit for bit (tested), about 100x faster on a week's board."""
+    import numpy as np
+    n = len(stats)
+    pos = stats["position"].to_numpy() if "position" in stats else None
+
+    def col(c: str):
+        return stats[c].to_numpy(dtype=float) if c in stats else np.zeros(n)
+    total = np.zeros(n)
+    for key, weight in scoring.items():
+        if not weight:
+            continue
+        kind = MAPPED_KEYS.get(key)
+        if kind is None:
+            pk = SLEEPER_POSITION_MAP.get(key)
+            if pk is not None and pos is not None:
+                hit = pos == pk[1]
+                total = np.where(hit, total + col(pk[0]) * float(weight), total)
+            continue
+        if key in SLEEPER_BONUS_MAP:
+            c, low, high = SLEEPER_BONUS_MAP[key][:3]
+            v = col(c)
+            value = ((v >= low) & ((v < high) if high is not None else True)).astype(float)
+        else:
+            cols = _PY_EXPR[key]
+            value = col(cols[0])
+            for c in cols[1:]:
+                value = value + col(c)
+        total = total + value * float(weight)
+    return np.array([round(x, 2) for x in total.tolist()], dtype=float)
+
+
+def projected_view(flat: Mapping[str, float]) -> dict[str, float]:
+    """The keys the flat engine prices on a projected line (``MAPPED_KEYS`` + the position premiums), non-zero, in key
+    order. Expected-value pricing changes HOW a bonus is priced, never WHICH keys count: a key the flat engine leaves
+    off a projected line (``pass_att``, ``rush_att``, ``rec_tgt``, ``pass_inc`` — the line projects no completions —
+    the count bonuses) stays off. Sorted so two scorings with the same keys compile to the same arithmetic (a house
+    league and the reference it IS price a line identically, ``projections.house_rows``)."""
+    return {k: float(flat[k]) for k in sorted(flat) if flat[k] and (k in MAPPED_KEYS or k in SLEEPER_POSITION_MAP)}
+
+
+def ev_moves(flat: Mapping[str, float]) -> bool:
+    """Does expected-value pricing change this Sleeper scoring's projected prices? Only a yardage bonus
+    (``SLEEPER_BONUS_MAP``) or a long-TD bonus (``SLEEPER_LONG_TD_MAP``) does; every other key on a projected line is a
+    rate, priced exactly by the mean."""
+    return any(w and (k in SLEEPER_BONUS_MAP or k in SLEEPER_LONG_TD_MAP) for k, w in flat.items())
+
+
+_EV_SPECS: dict[str, ScoringSpec] = {}
+
+
+def _ev_spec(flat: Mapping[str, float]) -> ScoringSpec:
+    view = projected_view(flat)
+    key = _json.dumps(view)
+    sp = _EV_SPECS.get(key)
+    if sp is None:
+        if len(_EV_SPECS) > 256:
+            _EV_SPECS.clear()
+        sp = _EV_SPECS[key] = from_sleeper(view)
+    return sp
+
+
+def pricing_engine(scoring: Mapping[str, float] | ScoringSpec, *, ev: bool | None = None) -> str:
+    """Which engine ``price_projected`` uses for this scoring: ``flat`` (the flat engine, all or nothing on the mean),
+    ``ev`` (a Sleeper scoring with bonuses, the flag on) or ``spec`` (an MFL spec: always the expectation)."""
+    spec = scoring if isinstance(scoring, ScoringSpec) else getattr(scoring, "spec", None)
+    if isinstance(spec, ScoringSpec) and spec.flat is None:
+        return "spec"
+    flat = spec.flat if isinstance(spec, ScoringSpec) else scoring
+    on = ev_pricing() if ev is None else bool(ev)
+    return "ev" if on and ev_moves(flat) else "flat"
+
+
+def price_projected(stats, scoring: Mapping[str, float] | ScoringSpec, position=None, *, ev: bool | None = None):
+    """Points of every PROJECTED stat line (an ndarray, rounded to 2 per row). ``stats``: a frame of the flat engine's
+    stat columns (``targets`` … ``fumbles_lost_total``), optionally ``position``; ``position`` (a scalar or one per row)
+    overrides that column. ``scoring``: a flat Sleeper dict, a ``LeagueScoring`` (its ``spec``) or a ``ScoringSpec``.
+
+    * an MFL spec (``flat is None``): ``expected_frame(..., ev=True)``, always (unchanged since IC-1);
+    * a Sleeper scoring, ``ev`` off (``LEAGUE_LAB_EV_PRICING`` unset, the default): ``compute_points_frame`` — the
+      pre-Wave-I-D numbers, bit for bit;
+    * a Sleeper scoring, ``ev`` on: ``expected_frame(..., ev=True)`` on the spec of ``projected_view`` — a yardage bonus
+      at its probability, a long-TD bonus at the projected TDs × the share that long (M2's curves and shares) — when
+      the scoring has such a bonus (``ev_moves``); a scoring without one (Scrubs, the plain reference scorings) keeps
+      the flat engine, so it is unchanged to the bit by construction."""
+    import numpy as np
+    n = len(stats)
+    if position is None:
+        pos = stats["position"].to_numpy() if "position" in stats else None
+    elif np.ndim(position) == 0:
+        pos = np.array([position] * n, dtype=object)
+    else:
+        pos = np.asarray(position, dtype=object)
+    engine = pricing_engine(scoring, ev=ev)
+    spec = scoring if isinstance(scoring, ScoringSpec) else getattr(scoring, "spec", None)
+    if engine == "spec":
+        return expected_frame(stats, spec, pos, ev=True)
+    flat = spec.flat if isinstance(spec, ScoringSpec) else scoring
+    if engine == "ev":
+        return expected_frame(stats, _ev_spec(flat), pos, ev=True)
+    if pos is not None and (position is not None or "position" not in stats):
+        stats = stats.assign(position=pos)
+    return compute_points_frame(stats, flat)
+# ---- /M3
+
+
 # ------------------------------------------------------------------------------------------- spec -> flat (old readers)
 _FLAT_RATE = {"passing_yards": "pass_yd", "passing_tds": "pass_td", "passing_interceptions": "pass_int",
               "passing_2pt_conversions": "pass_2pt", "rushing_yards": "rush_yd", "rushing_tds": "rush_td",

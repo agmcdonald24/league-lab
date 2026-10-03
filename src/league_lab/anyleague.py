@@ -12,8 +12,9 @@ stat lines in ``ops.projections`` are the same for every league (0 of 8,134 2026
    (the league-specific columns are dropped); team / injury / roster status from ``mart_player_week_projections``
    (the same ``mart_player_week_features`` columns the lineup service reads); every fitted league's ranges are
    kept as candidate references for step 4.
-3. **Pricing**: ``scoring.compute_points`` on the stat line with the league's ``scoring_settings`` (bonuses
-   included) — the same function ``projections.price`` uses, so a known league reproduces ``proj_points`` exactly.
+3. **Pricing**: ``scoring.price_projected`` on the stat line in the league's scoring (Wave I-D: the flat engine, or
+   expected bonuses under ``LEAGUE_LAB_EV_PRICING``) — the same function ``projections.price`` uses, so a known
+   league reproduces ``proj_points`` exactly.
 4. **Ranges** (``approximate_ranges``): the per-league residual quantile models do not exist for a new league.
    The reference league's range around its own projection is scaled by the ratio of the two prices of the same
    stat line (``p_q = proj + (p_q,ref - proj_ref) x proj / proj_ref``); the reference is the fitted league whose
@@ -62,9 +63,11 @@ from .scoring import (  # noqa: F401 - compute_points: the reference the vector 
     LeagueScoring,
     ScoringSpec,
     compute_points,
+    compute_points_frame,  # ---- M3: moved to scoring (Wave I-D); re-exported, the API's tests import it from here
     ev_pricing,
     expected_frame,
     kd_flat,
+    price_projected,
     spec_of,
     unmapped_keys,
 )
@@ -317,61 +320,20 @@ def _load_nfl_wide(query: Query, season: int, week: int) -> Board:
 
 
 def price_lines(line: pd.DataFrame, scoring: Mapping[str, float] | ScoringSpec) -> pd.Series:
-    """League points of every stat line: ``compute_points`` (bonuses included), exactly as ``projections.price`` —
-    computed for every row at once (``compute_points_frame``: the same terms in the same order, so equal bit for bit).
+    """League points of every PROJECTED stat line, every row at once: ``scoring.price_projected`` — the one entry point
+    ``projections.price`` (the nightly) calls too, so a house league reproduces its nightly ``proj_points`` to the bit
+    under either state of ``LEAGUE_LAB_EV_PRICING``.
 
-    Wave I-C (IC-1): the league's ``ScoringSpec`` decides. A Sleeper spec prices through the flat path above (a
-    house league still reproduces its nightly ``proj_points`` to the bit) unless ``LEAGUE_LAB_EV_PRICING=1``; any
-    other spec (MFL's per-position rules, TDs by distance, ``1/10`` yards) prices with ``scoring.expected_frame``
-    per row position (units through ``ScoringSpec.rules_for``: TMQB -> QB's rules)."""
+    Wave I-C (IC-1): the league's ``ScoringSpec`` decides — an MFL spec (per-position rules, TDs by distance, ``1/10``
+    yards) prices with ``scoring.expected_frame`` per row position (units through ``ScoringSpec.rules_for``: TMQB ->
+    QB's rules). Wave I-D (M3): a Sleeper scoring (a flat dict or a ``LeagueScoring``) prices on the flat engine
+    (``compute_points_frame``) unless the flag is on AND it has a yardage or long-TD bonus (``scoring.ev_moves``)."""
     stats = line[list(STAT_LINE)].rename(columns=STAT_LINE).apply(pd.to_numeric, errors="coerce").fillna(0.0)
     if "position" in line:          # F1: a position premium (bonus_rec_te, …) prices only when the row carries the position
         stats["position"] = line["position"].to_numpy()
-    # ---- IC-1: pricing on the spec
-    spec = scoring if isinstance(scoring, ScoringSpec) else getattr(scoring, "spec", None)
-    if spec is not None and (spec.flat is None or ev_pricing()):
-        pos = line["position"].to_numpy() if "position" in line else None
-        # an MFL league has no nightly to reproduce: its flat bands are priced at their probability (a projected
-        # 249 vs 251 passing yards is not a 10-point difference); a Sleeper spec only under the flag
-        return pd.Series(expected_frame(stats, spec, pos, ev=True), index=line.index, dtype=float)
-    flat = spec.flat if spec is not None else scoring
-    # ---- /IC-1
-    return pd.Series(compute_points_frame(stats, flat), index=line.index, dtype=float)
-
-
-def compute_points_frame(stats: pd.DataFrame, scoring: Mapping[str, float]) -> np.ndarray:
-    """``[compute_points(r, scoring) for r in stats.to_dict("records")]`` for a frame with no missing values (Wave H,
-    H1): each scoring key's term added to the running total in ``scoring``'s order, as ``compute_points`` adds it, then
-    Python's ``round(…, 2)`` per row — the same floating-point operations, so the same numbers bit for bit (tested),
-    about 100x faster on a week's board."""
-    from .scoring import _PY_EXPR, SLEEPER_BONUS_MAP, SLEEPER_POSITION_MAP
-    n = len(stats)
-    pos = stats["position"].to_numpy() if "position" in stats else None
-
-    def col(c: str) -> np.ndarray:
-        return stats[c].to_numpy(dtype=float) if c in stats else np.zeros(n)
-    total = np.zeros(n)
-    for key, weight in scoring.items():
-        if not weight:
-            continue
-        kind = MAPPED_KEYS.get(key)
-        if kind is None:
-            pk = SLEEPER_POSITION_MAP.get(key)
-            if pk is not None and pos is not None:
-                hit = pos == pk[1]
-                total = np.where(hit, total + col(pk[0]) * float(weight), total)
-            continue
-        if key in SLEEPER_BONUS_MAP:
-            c, low, high = SLEEPER_BONUS_MAP[key][:3]
-            v = col(c)
-            value = ((v >= low) & ((v < high) if high is not None else True)).astype(float)
-        else:
-            cols = _PY_EXPR[key]
-            value = col(cols[0])
-            for c in cols[1:]:
-                value = value + col(c)
-        total = total + value * float(weight)
-    return np.array([round(x, 2) for x in total.tolist()], dtype=float)
+    # ---- M3 (Wave I-D): IC-1's own branch folded into the shared entry point
+    return pd.Series(price_projected(stats, scoring), index=line.index, dtype=float)
+    # ---- /M3
 
 
 # ------------------------------------------------------------------------------ ranges for a league the model never saw

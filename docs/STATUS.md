@@ -4331,3 +4331,43 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   slot names, the cards copy and words); `api/tests/test_ic2.py` (8: the translation, units as players, free units,
   My Week 8 slots with the units priced, Waivers' units, the rosters route and the Team Hub, a house league unchanged,
   every route on 70587). `tests/test_lineup.py`: the no-slot reason's new words (3 lines).
+
+## Wave I-D (Iteration 17, part D)
+
+### M3 2026-10-03 — the nightly on the spec (branch `dev/M3`, clone `league_lab_m1`)
+
+* **Why**: Wave I-C measured expected-value pricing (M2) and kept it off for Sleeper leagues because the nightly priced
+  projected lines with the flat engine and the request side re-priced them: one flag on one side only would have
+  shown the same player at two numbers (IB-0's trust bug).
+* **Delivered**: `scoring.price_projected(stats, scoring, position=None, *, ev=None)` — the one function that prices a
+  projected line, called by `projections.price(..., "proj_")` (every nightly path: `predict_position`, `_oof_lines`,
+  `_line_points`, `house_rows`, `calibration.oof_rows`, signals' what-ifs) and by `anyleague.price_lines` (IC-1's own
+  branch folded in) and the on-demand larger-role what-if (`decisions._scenario_on_demand`). Flag off (default): the
+  flat engine, bit for bit as before; flag on: a Sleeper scoring with a yardage or long-TD bonus prices them in
+  expectation (`expected_frame(ev=True)` on `projected_view(scoring)`: the flat engine's keys, sorted), a scoring
+  without one keeps the flat engine; an MFL spec: the expectation, always. Actual lines (`out_`) stay exact.
+  `compute_points_frame` moved from `anyleague` to `scoring` (re-exported). `pricing_engine(scoring)` says which.
+* **Evidence**: the harness both ways (`calibration.oof_rows`, ranges + lines, 2023–2025, both house leagues, one run
+  per flag state): flag off reproduces all 432 stored v3.0 cells of `ops.projection_backtest`; flag on, Scrubs is
+  identical to the bit in every column (projection, P10–P90, actual); the dynasty's season-total MAE per player
+  improves at every position (QB 24.1 → 23.3, RB 17.6 → 16.9, WR 18.4 → 18.3, TE 12.8 → 12.6; 11 of 12 top-24
+  buckets), the top-6 weekly bias RB +1.34 → +0.36, WR +1.65 → +0.74, TE +0.91 → +0.65 (QB +0.07 → −1.29: the QB
+  line's own over-projection), coverage holds (80% ±0.004, 50% ±0.008), Spearman ±0.002, weekly MAE +0.007–0.041.
+  Tables: docs/METRICS.md § "Expected-value pricing" → "On the nightly". On the clone's board: Scrubs moves 0 of
+  8,134 player-weeks; the dynasty's top 24 move +0.66 a week on average in week 5 (QB +1.01, RB +0.71, WR +0.73, TE
+  +0.18), rest of season +2.4 (TE) to +11.9 (QB); Josh Allen week 4 30.24 → 31.68.
+* **Tests**: `tests/test_projections_ev.py` (19: the flag's default and values; the engine per scoring; nightly =
+  request side bit for bit for the dynasty, Scrubs and the Test League, flag on and off, on synthetic lines and on 500
+  `ops.projection_lines` rows of week 4; flag off = the pre-change `compute_points`; actual lines untouched; flag on =
+  the expectation of the bonus keys; `house_rows` and `price_week` agree under either flag; the Scrubs pins, Josh
+  Allen 24.42 / 30.24 → 31.68, the dynasty's top-24 move per position within +0.2 … +1.6 and down only past a
+  threshold; the references without bonuses never move). `api/tests/test_m3.py` (2: the on-demand what-if).
+  `api/tests/test_ic1.py`: "equals the pre-spec frame" is now "with the flag off" (+ flag on: Scrubs unchanged, MFL
+  unchanged, the dynasty moves).
+* **Checks** (clone `league_lab_m1`): root **986 passed**, 2 skipped (968 + 19 new); API 350 passed, 4 skipped, 3 failed —
+  `test_ic1` dad's league weeks 1–2 and `test_ic_po`'s ten-yard cut fail identically on base `042f199`: the clone's
+  `fct_player_game` predates the PO's `*_tds_10p` columns (122 / 156 within a point, the approximated split); ruff clean.
+* **Open (PO)**: flip `LEAGUE_LAB_EV_PRICING=1` in the nightly's `.env` and on Render together, then run the nightly
+  (the first EV-priced week in the record is the first week not yet kicked off); limit dbt's
+  `assert_projection_ranges_price_the_lines` to the scorings `ev_moves` leaves flat; how the record names the engine
+  (proposal: a `pricing` column, below in the hand-back); the residual models' actual has no 40+ TD bonus (v3.1).

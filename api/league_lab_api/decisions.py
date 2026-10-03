@@ -1925,7 +1925,7 @@ def league(league_id: str, team: int | None = None, limit: int = 50, offset: int
 # roster_value.trade_candidates on the league's horizon board, the candidates' PPG - xPPG in the league's scoring).
 import json  # noqa: E402 - the H1 block stays self-contained
 
-from league_lab.scoring import compute_points as _compute_points  # noqa: E402
+from league_lab.scoring import price_projected as _price_projected  # noqa: E402 - M3 (Wave I-D)
 
 from . import research as RS  # noqa: E402
 from .applib import signals as SG  # noqa: E402
@@ -1993,7 +1993,12 @@ def _scenario_on_demand(r: dict, scoring: dict, league_name: str, week: int) -> 
     for k in ("base_line", "larger_line"):
         v = r.get(k)
         line = v if isinstance(v, dict) else (json.loads(v) if isinstance(v, str) else None)
-        lines[k] = None if line is None else round(float(_compute_points({**line, "position": r.get("position")}, scoring)), 2)
+        # ---- M3 (Wave I-D): a projected what-if prices like every projected line (``scoring.price_projected``: the flat
+        # engine, or expected bonuses under LEAGUE_LAB_EV_PRICING; an MFL spec in expectation) — flag off, the same
+        # number ``compute_points`` gave, to the bit
+        num = None if line is None else {c: float(x or 0) for c, x in line.items() if x is None or isinstance(x, (int, float))}
+        lines[k] = None if num is None else round(float(_price_projected(pd.DataFrame([num]), scoring, r.get("position"))[0]), 2)
+        # ---- /M3
     base, big = lines["base_line"], lines["larger_line"]
     gain = None if base is None or big is None else round(big - base, 2)
     row = {**r, "base_points": base, "larger_points": big, "points_gain": gain, "presentation": None, "week": r.get("week")}
