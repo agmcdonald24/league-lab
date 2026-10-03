@@ -157,6 +157,15 @@ light and dark come for free. The rules (the dataviz references):
   Next 4 · Rest of season · Playoffs — four equal cells in one row (a label wraps inside its cell at 375 px; the row
   never scrolls), the picked one in accent, and one line under it that says why those weeks ("Weeks 4–7: the next four
   weeks: far enough to matter, near enough to trust."). In the URL (`?window=`), the default (next 4) left out.
+
+- **Range bar in a table cell** (Rest of season, IA-3): the floor–ceiling span on a 0…list-max track (`bg-sunken`, ≤ 8 px),
+  the span in series 1 at 45 %, the projection a 3 px tick in series 1; the numbers printed under it ("150–219"). From
+  640 px; a phone reads the range in the expanded row.
+- **Tap-to-expand row** (Rest of season, IA-3): a `›` button (32 px, `aria-expanded`) at a row's end opens one full-width
+  row under it on `bg-raised`: StatTile-like tiles of the pieces, the facts line, "Why this number" (label in accent, the
+  chain sentence bold, one line a piece). The expand row spans exactly the columns showing at this width (a larger
+  `colspan` adds phantom columns to a fixed-layout table and squeezes the name). Sortable headers are buttons with
+  `aria-sort` and a ▲ / ▼ in accent; the default sort is marked too.
 - Never: two y-axes, a number on every point, a 9th color, dashed gridlines, a pie for close values, color as the only
   carrier of a value (each value is printed somewhere: a label, the readout, the table).
 

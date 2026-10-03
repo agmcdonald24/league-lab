@@ -151,5 +151,96 @@
   "playoff_points": 32.63,
   "from_week": 4,
   "last_week": 16
+ },
+ "why": {
+  "per": "week",
+  "points": 17.59,
+  "pieces": [
+   {
+    "stat": "attempts",
+    "label": "passes",
+    "value": 30.7,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "31 passes (no points on their own)"
+   },
+   {
+    "stat": "passing_yards",
+    "label": "passing yards",
+    "value": 240.8,
+    "each": 0.04,
+    "points": 9.63,
+    "words": "241 passing yards × 0.04 = +9.6"
+   },
+   {
+    "stat": "passing_tds",
+    "label": "passing TDs",
+    "value": 1.57,
+    "each": 4.0,
+    "points": 6.28,
+    "words": "1.6 passing TDs × 4 = +6.3"
+   },
+   {
+    "stat": "passing_interceptions",
+    "label": "interceptions",
+    "value": 0.88,
+    "each": -1.0,
+    "points": -0.88,
+    "words": "0.88 interceptions × -1 = -0.9"
+   },
+   {
+    "stat": "carries",
+    "label": "carries",
+    "value": 4.1,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "4.1 carries (no points on their own)"
+   },
+   {
+    "stat": "rushing_yards",
+    "label": "rushing yards",
+    "value": 17.8,
+    "each": 0.1,
+    "points": 1.78,
+    "words": "17.8 rushing yards × 0.1 = +1.8"
+   },
+   {
+    "stat": "rushing_tds",
+    "label": "rushing TDs",
+    "value": 0.18,
+    "each": 6.0,
+    "points": 1.08,
+    "words": "0.18 rushing TDs × 6 = +1.1"
+   },
+   {
+    "stat": "fumbles_lost_total",
+    "label": "fumbles lost",
+    "value": 0.16,
+    "each": -2.0,
+    "points": -0.32,
+    "words": "0.16 fumbles lost × -2 = -0.3"
+   }
+  ],
+  "sentence": "31 passes → 241 pass yards → 1.6 pass TDs → 0.88 INTs → 17.6 points this week",
+  "games": null,
+  "total": null
+ },
+ "market": {
+  "market_points": null,
+  "ours": 17.59,
+  "ratio": null,
+  "week": 4,
+  "words": null,
+  "why": "Sleeper's number for this week is not in yet.",
+  "far": false
+ },
+ "leans_on": {
+  "features": [
+   "is he the projected starter?",
+   "points Vegas expects his team to score",
+   "pass attempts per game, last 3 games"
+  ],
+  "words": "For QBs the model leans most on **is he the projected starter?**. Next: points Vegas expects his team to score · pass attempts per game, last 3 games.",
+  "scored_in": "League of Scrubs"
  }
 }

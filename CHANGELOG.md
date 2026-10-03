@@ -25,6 +25,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   Lloyd" is refused); what was left out is counted (`rejected`). **Buy low / sell high** moved from Waivers to Trades
   (`GET /api/trades/lists`; no longer in `/api/waivers`).
 
+- **IA-3: the rankings — more to see, and "why this number".** Rest of season shows each player's headshot, bye,
+  games left, a floor–ceiling range bar and the stat line a game (QB attempts · yards · TDs · INTs; RB carries · rush
+  yards · targets · catches · rec yards · TDs; WR / TE targets · catches · yards · TDs) as sortable columns from 900 px
+  and, everywhere, a tap-to-expand row with the pieces and "why this number" (the line × the league's scoring = the
+  points a game × games = the total). The player card's Projection gets the same list for this week, the market line
+  ("Sleeper has him at 16.2", the gap in words under 70% / over 140%) and the three inputs the model leans on most.
+  A "How to read the rankings" paragraph tops the screen. `market_points` on `/api/ros`, `/api/player`, `/api/my-week`
+  (null until the proposed `analytics.mart_market_line` is built; `why.py`).
+
 ## 2026-10-03 — Wave I-0
 
 - **I0-A: who can play, checked every 15 minutes on game days.** My Week no longer starts a player ruled out after the

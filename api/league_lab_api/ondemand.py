@@ -25,7 +25,7 @@ import time
 import pandas as pd
 from league_lab import anyleague as A
 
-from . import availability
+from . import availability, why
 from .applib import cards, ui
 from .db import query
 from .myweek import NotFound, _num, _str, cards_from_rows, howto, lineup
@@ -231,7 +231,9 @@ def ros(league_id: str, position: str = "ALL", limit: int = 50) -> dict:
                 "playoff_week_start": None if head is None or _num(head["playoff_week_start"]) is None else int(head["playoff_week_start"]),
                 "lines_note": None if head is None else ROS.lines_note(head).replace("his usage", "usage"),   # QA: the betting-line caveat
                 "pos_rank_note": POS_RANK_NOTE,
-                "players": availability.ros_overlay([_ros_player(r) for _, r in df.iterrows()])}      # ---- I0-A
+                **ros_more(league_id, None, df, house=True),                                       # ---- IA-3
+                "players": ros_rows(league_id, None, df, availability.ros_overlay(                 # ---- IA-3
+                    [_ros_player(r) for _, r in df.iterrows()]), house=True)}                      # ---- I0-A
     league, df = ros_on_demand(league_id)
     client = A.sleeper()
     rosters, users = client.rosters(league["league_id"]), client.users(league["league_id"])
@@ -253,7 +255,112 @@ def ros(league_id: str, position: str = "ALL", limit: int = 50) -> dict:
             "lines_note": None if df.empty else ROS.lines_note(df.iloc[0]).replace("his usage", "usage"),
             "pos_rank_note": POS_RANK_NOTE + "; priced on request from the NFL-wide board (the same population as "
                              "the mart's for a house league: tested)",
-            "players": availability.ros_overlay([_ros_player(r, roster_of, names) for _, r in df.iterrows()])}  # ---- I0-A
+            **ros_more(str(league["league_id"]), league, df, house=False),                         # ---- IA-3
+            "players": ros_rows(str(league["league_id"]), league, df, availability.ros_overlay(     # ---- IA-3
+                [_ros_player(r, roster_of, names) for _, r in df.iterrows()]), house=False)}       # ---- I0-A
+
+
+# ---- IA-3 (Wave I-A): the rankings' pieces (the stat line per game over the window), "why this number" (the pieces
+# x this league's scoring = the points), this week's market line (Sleeper's number, why.market_points), the headshot.
+# House league: the window's per-week lines from mart_player_week_projections (the weeks weeks_json counts, so byes
+# and the window are the mart's); any other league: anyleague._ros_table's ros_<stat> sums (the same priced frames).
+WEEK_LINES_SQL = """select gsis_id, week, proj_targets, proj_receptions, proj_receiving_yards, proj_receiving_tds,
+                           proj_carries, proj_rushing_yards, proj_rushing_tds, proj_attempts, proj_passing_yards,
+                           proj_passing_tds, proj_passing_interceptions, proj_fumbles_lost
+                    from analytics.mart_player_week_projections
+                    where league_id = %s and season = %s and week between %s and %s and gsis_id = any(%s)"""
+HEADSHOT_SQL = "select gsis_id, headshot_url from analytics.dim_player where gsis_id = any(%s)"
+HOUSE_SCORING_SQL = """select season, scoring_settings from analytics.dim_league_season
+                       where league_id = %s and is_current_season"""
+
+
+def _scoring_of(league_id: str, league: dict | None, house: bool) -> tuple[int | None, dict[str, float]]:
+    if house:
+        r = query(HOUSE_SCORING_SQL, (league_id,))
+        if r.empty:
+            return None, {}
+        sc = r["scoring_settings"].iloc[0] or {}
+        return int(r["season"].iloc[0]), {k: float(v) for k, v in sc.items() if v is not None}
+    scoring, _ = A.league_scoring(league or {})
+    return (int(league["season"]) if league else None), scoring
+
+
+def _house_lines(league_id: str, season: int, df: pd.DataFrame) -> dict[str, dict]:
+    """gsis -> the window's stat line summed over the weeks his rest of season counts (weeks_json's weeks)."""
+    from .applib import ros as ROS
+    ids = [g for g in df["gsis_id"] if isinstance(g, str) and g]
+    if not ids or df.empty:
+        return {}
+    wk = query(WEEK_LINES_SQL, (league_id, season, int(df["from_week"].min()), int(df["last_week"].max()), ids))
+    if wk.empty:
+        return {}
+    counted = {str(r["gsis_id"]): {w for w, _ in ROS.weeks_list(r)} for _, r in df.iterrows() if isinstance(r["gsis_id"], str)}
+    wk = wk[[int(w) in counted.get(str(g), set()) for g, w in zip(wk["gsis_id"], wk["week"], strict=True)]]
+    comps = [c for c in wk.columns if c.startswith("proj_")]
+    wk = wk.astype({c: float for c in comps}) if comps else wk
+    sums = wk.groupby("gsis_id")[comps].sum(min_count=1)
+    return {str(g): why.line_of(r) for g, r in sums.to_dict("index").items()}
+
+
+def _od_lines(df: pd.DataFrame) -> dict[str, dict]:
+    """player_key -> the window's stat line from anyleague's ros_<stat> sums."""
+    if df.empty or "ros_targets" not in df:
+        return {}
+    out = {}
+    for r in df.to_dict("records"):
+        out[str(r["player_key"])] = {stat: _num(r.get(f"ros_{stat}")) for stat in why.STAT_LINE.values()}
+    return out
+
+
+def ros_rows(league_id: str, league: dict | None, df: pd.DataFrame, players: list[dict], *, house: bool) -> list[dict]:
+    """Each row + headshot_url, bye_weeks, games-left words, ``per_game`` (the table's columns for his position),
+    ``why`` (the pieces of his points a game, then x games = the total) and ``market_points`` (this week's)."""
+    if not players:
+        return players
+    season, scoring = _scoring_of(league_id, league, house)
+    try:
+        lines = _house_lines(league_id, season, df) if house and season is not None else _od_lines(df)
+    except Exception:  # noqa: BLE001 - a mart without the stat-line columns: the list stays, the pieces go
+        lines = {}
+    ids = [p["gsis_id"] for p in players if p.get("gsis_id")]
+    heads = query(HEADSHOT_SQL, (ids,)) if ids else pd.DataFrame()
+    head = dict(zip(heads["gsis_id"], heads["headshot_url"], strict=False)) if not heads.empty else {}
+    recs = df.to_dict("records") if not df.empty else []
+    byes = {str(r["player_key"]): [int(w) for w in (r.get("bye_weeks") or [])] for r in recs}
+    week = cards.decision_week(season) if season is not None else None
+    from .applib import ros as ROS
+    this_week = {str(r["player_key"]): dict(ROS.weeks_list(r)).get(week) for r in recs} if week is not None else {}
+    market = why.market_points(season, week, ids, scoring)
+    for p in players:
+        key = p.get("player_key") or p.get("gsis_id")
+        g = p.get("ros_games") or 0
+        tot = lines.get(str(p.get("gsis_id") if house else key)) or {}
+        per = {s: (None if v is None else v / g) for s, v in tot.items()} if g else {}
+        ppg = (p["ros_points"] / g) if g and p.get("ros_points") is not None else None
+        p["headshot_url"] = _str(head.get(p.get("gsis_id")))
+        p["bye_weeks"] = byes.get(str(key), [])
+        p["ros_points_per_game"] = None if ppg is None else round(ppg, 2)
+        p["per_game"] = why.columns(per, p.get("position")) if per else {}
+        p["why"] = why.explain(per, ppg, scoring, p.get("position"), games=g, total=p.get("ros_points")) if per else None
+        p["market_points"] = market.get(str(p.get("gsis_id"))) if p.get("gsis_id") else None
+        p["week_points"] = this_week.get(str(key))
+        p["market_words"] = why.market_words(p["week_points"], p["market_points"])
+    return players
+
+
+def ros_more(league_id: str, league: dict | None, df: pd.DataFrame, *, house: bool) -> dict:
+    """The response's IA-3 keys: the piece columns per position, what the model leans on, the week the market line is
+    for, the scoring label the pieces are counted in."""
+    season, _ = _scoring_of(league_id, league, house) if not df.empty else (None, {})
+    name = (ui.current_leagues().set_index("league_id")["league_name"].get(league_id) if house
+            else (league or {}).get("name"))
+    from .about import RANKINGS_HOWTO
+    return {"piece_columns": {k: list(v) for k, v in why.COLUMNS.items()}, "howto_rankings": RANKINGS_HOWTO,
+            "leans_on": why.leans_on(league_id if house else None, name),
+            "market_week": cards.decision_week(season) if season is not None else None,
+            "market_note": ("Sleeper's number is this week's, in this league's scoring, where Sleeper has one; "
+                            "the list's totals are ours.")}
+# ---- end IA-3
 
 
 # ---------------------------------------------------------------- plan F3: our record (house leagues)

@@ -136,5 +136,8 @@
   "from_week": 4,
   "last_week": 16
  },
- "missing": []
+ "missing": [],
+ "why": null,
+ "market": null,
+ "leans_on": null
 }

@@ -177,7 +177,30 @@
     <div class="grid grid-cols-1 gap-3 wide:grid-cols-2 wide:items-start">
       <div class="space-y-3">
         {#each sections.slice(0, 1) as x (x.key)}
-          <SectionBox section={x.sec!} {ctx} testid={`section-${x.key}`} />
+          <SectionBox section={x.sec!} {ctx} testid={`section-${x.key}`}>
+            <!-- ---- IA-3 (Wave I-A): why this number, the market line, what the model leans on -->
+            {#if x.key === "projection" && (data.why || data.market || data.leans_on)}
+              <div class="space-y-1.5 border-t border-line pt-2.5" data-testid="player-why">
+                {#if data.why}
+                  <p class="ll-label text-accent">Why this number</p>
+                  <p class="text-base leading-snug font-semibold" data-testid="player-why-sentence">{data.why.sentence}</p>
+                  <ul class="space-y-0.5 text-sm text-ink-2" data-testid="player-why-pieces">
+                    {#each data.why.pieces as w (w.stat)}<li class="tabnum">{w.words}</li>{/each}
+                  </ul>
+                  <p class="text-xs text-ink-3">His projected stat line, each piece counted in {data.league_name} scoring: they add up to the {fmt.pts(data.why.points)}.</p>
+                {/if}
+                {#if data.market?.words}
+                  <p class="text-base leading-snug {data.market.far ? 'font-semibold' : ''}" data-testid="player-market">{data.market.words}</p>
+                {:else if data.market?.why}
+                  <p class="text-sm text-ink-3" data-testid="player-market-none">{data.market.why}</p>
+                {/if}
+                {#if data.leans_on}
+                  <p class="text-sm leading-snug text-ink-3" data-testid="player-leans"><Md text={data.leans_on.words} {ctx} /></p>
+                {/if}
+              </div>
+            {/if}
+            <!-- ---- end IA-3 -->
+          </SectionBox>
         {/each}
         {#if league}<GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={data.league_name} />{/if}
       </div>

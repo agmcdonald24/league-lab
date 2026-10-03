@@ -188,5 +188,104 @@
   "from_week": 4,
   "last_week": 17
  },
- "missing": []
+ "missing": [],
+ "why": {
+  "per": "week",
+  "points": 7.93,
+  "pieces": [
+   {
+    "stat": "carries",
+    "label": "carries",
+    "value": 9.1,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "9.1 carries (no points on their own)"
+   },
+   {
+    "stat": "rushing_yards",
+    "label": "rushing yards",
+    "value": 37.4,
+    "each": 0.1,
+    "points": 3.74,
+    "words": "37 rushing yards × 0.1 = +3.7"
+   },
+   {
+    "stat": "rushing_tds",
+    "label": "rushing TDs",
+    "value": 0.21,
+    "each": 6.0,
+    "points": 1.26,
+    "words": "0.21 rushing TDs × 6 = +1.3"
+   },
+   {
+    "stat": "targets",
+    "label": "targets",
+    "value": 2.1,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "2.1 targets (no points on their own)"
+   },
+   {
+    "stat": "receptions",
+    "label": "catches",
+    "value": 1.7,
+    "each": 1.0,
+    "points": 1.7,
+    "words": "1.7 catches × 1 = +1.7"
+   },
+   {
+    "stat": "receiving_yards",
+    "label": "receiving yards",
+    "value": 11.4,
+    "each": 0.1,
+    "points": 1.14,
+    "words": "11.4 receiving yards × 0.1 = +1.1"
+   },
+   {
+    "stat": "receiving_tds",
+    "label": "receiving TDs",
+    "value": 0.04,
+    "each": 6.0,
+    "points": 0.24,
+    "words": "0.04 receiving TDs × 6 = +0.2"
+   },
+   {
+    "stat": "fumbles_lost_total",
+    "label": "fumbles lost",
+    "value": 0.04,
+    "each": -2.0,
+    "points": -0.08,
+    "words": "0.04 fumbles lost × -2 = -0.1"
+   },
+   {
+    "stat": "rest",
+    "label": "the small pieces and rounding",
+    "value": null,
+    "each": null,
+    "points": -0.07,
+    "words": "the small pieces and rounding: -0.1"
+   }
+  ],
+  "sentence": "9.1 carries → 37 rush yards → 2.1 targets → 1.7 catches → 11.4 yards → 0.25 TDs → 7.9 points this week",
+  "games": null,
+  "total": null
+ },
+ "market": {
+  "market_points": null,
+  "ours": 7.93,
+  "ratio": null,
+  "week": 4,
+  "words": null,
+  "why": "Sleeper's number for this week is not in yet.",
+  "far": false
+ },
+ "leans_on": {
+  "features": [
+   "share of his team's carries, last 3 games",
+   "rushing yards per game, season",
+   "share of his team's targets, season"
+  ],
+  "words": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: rushing yards per game, season · share of his team's targets, season.",
+  "scored_in": "League of Scrubs"
+ }
 }
