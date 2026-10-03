@@ -15,6 +15,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   (caches by kind, 60 calls a minute, the league's host followed), `platforms.py` (MFL answered in Sleeper's shapes),
   `player_ids.py` (the nflverse id table, downloaded once a day); `GET /api/leagues?mfl=`. League 21861: 216 of 216
   rostered players mapped. docs/ANY_LEAGUE.md § "MyFantasyLeague", docs/MFL_TERMS.md.
+- **I0-C: find an MFL league by its name.** The MyFantasyLeague box on the Leagues screen takes a link, an id or the
+  league's name as it appears in the MFL app; a name lists this season's matching leagues (at most 25, "MFL · 2026"),
+  and tapping one opens the team picker as before. `GET /api/leagues?mfl_search=` (MFL's public league search, cached
+  10 minutes; a link or id answers as `?mfl=`), `mfl_client.MFL.league_search`.
 
 ## 2026-10-02 — Wave H
 

@@ -2,7 +2,7 @@
   // Sign in with a Sleeper username → the league picker (plan F2). One field; the answer is the user's leagues this
   // season, each a real link to its My Week with the user's own team pre-selected. Remembered on this phone.
   import { ApiError, get, paths, Unauthorized, type UserLeagues } from "../lib/api";
-  import { leagueLine, mflPath, type MflLeague } from "../lib/leagues";
+  import { isMflSearch, leagueLine, mflPath, mflSearchPath, type MflLeague, type MflSearch } from "../lib/leagues";
   import { withContext } from "../lib/md";
   import { prefs } from "../lib/prefs";
 
@@ -51,6 +51,8 @@
   let mflBusy = $state(false);
   let mflError = $state<string | null>(null);
   let mfl = $state<MflLeague | null>(null);
+  let mflFound = $state<MflSearch | null>(null); // I0-C: the leagues a name matched (the box takes a link, an id or a name)
+  let mflOpening = $state<string | null>(null);
   const mflSaved = $state(prefs.mflLeagues());
 
   async function findMfl(e: SubmitEvent) {
@@ -60,16 +62,37 @@
     mflBusy = true;
     mflError = null;
     mfl = null;
+    mflFound = null;
     try {
-      mfl = await get<MflLeague>(mflPath(t));
+      const v = await get<MflLeague | MflSearch>(mflSearchPath(t));
+      if (isMflSearch(v)) mflFound = v;
+      else mfl = v;
     } catch (err) {
-      if (err instanceof Unauthorized) onauth();
-      else if (err instanceof ApiError && err.status === 404) mflError = `${err.message}.`;
-      else if (err instanceof ApiError && err.status === 502) mflError = "MyFantasyLeague did not answer. Try again in a minute.";
-      else mflError = `Cannot reach League Lab right now (${err instanceof Error ? err.message : String(err)}). Try again in a minute.`;
+      mflFail(err);
     } finally {
       mflBusy = false;
     }
+  }
+
+  // I0-C: a league picked from the matches → its card and the team picker (the same as a pasted link)
+  async function openMfl(leagueId: string) {
+    mflOpening = leagueId;
+    mflError = null;
+    try {
+      mfl = await get<MflLeague>(mflPath(leagueId));
+    } catch (err) {
+      mflFail(err);
+    } finally {
+      mflOpening = null;
+    }
+  }
+
+  function mflFail(err: unknown) {
+    if (err instanceof Unauthorized) onauth();
+    else if (err instanceof ApiError && err.status === 404) mflError = `${err.message}.`;
+    else if (err instanceof ApiError && err.status === 502) mflError = "MyFantasyLeague did not answer. Try again in a minute.";
+    else if (err instanceof ApiError && err.status === 503) mflError = "League Lab is busy reading MyFantasyLeague. Try again in a minute.";
+    else mflError = `Cannot reach League Lab right now (${err instanceof Error ? err.message : String(err)}). Try again in a minute.`;
   }
 
   function pickMfl(v: MflLeague, rosterId: number) {
@@ -124,17 +147,17 @@
 
   <!-- I0-B: MyFantasyLeague -->
   <form class="space-y-2" onsubmit={findMfl} data-testid="mfl-form">
-    <label class="ll-label block" for="ll-mfl">On MyFantasyLeague? Paste your league link</label>
+    <label class="ll-label block" for="ll-mfl">On MyFantasyLeague? Find your league</label>
     <div class="flex gap-2">
       <input
         id="ll-mfl"
         class="ll-input min-w-0 flex-1 py-2.5"
-        type="url"
-        inputmode="url"
+        type="text"
+        enterkeyhint="search"
         autocapitalize="none"
         autocorrect="off"
         spellcheck="false"
-        placeholder="e.g. www45.myfantasyleague.com/2026/home/21861"
+        placeholder="Your league link or name"
         bind:value={mflText}
         data-testid="mfl-link"
       />
@@ -144,13 +167,20 @@
         data-testid="mfl-go">{mflBusy ? "Looking…" : "Find my league"}</button
       >
     </div>
-    <p class="text-sm leading-snug text-ink-3">The link from your league's home page. League Lab only reads what the league shares.</p>
+    <p class="text-sm leading-snug text-ink-3" data-testid="mfl-help">
+      Paste your league link, or type your league's name as it appears in the MFL app. League Lab only reads what the league shares.
+    </p>
     {#if mflError}<p class="text-base text-bad" data-testid="mfl-error">{mflError}</p>{/if}
   </form>
 
   {#if mfl}
     {@const v = mfl}
     <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="mfl-card">
+      {#if mflFound?.matches.length}
+        <button type="button" class="py-1 text-sm text-accent underline" onclick={() => (mfl = null)} data-testid="mfl-back"
+          >‹ Not this league</button
+        >
+      {/if}
       <div>
         <div class="text-lg leading-snug font-bold">{v.league.name} <span class="text-sm font-semibold text-ink-3">MFL</span></div>
         {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
@@ -175,6 +205,31 @@
           </li>
         {/each}
       </ul>
+    </section>
+  {:else if mflFound}
+    <!-- I0-C: the leagues the name matched; tapping one loads its card and the team picker -->
+    <section class="space-y-2" data-testid="mfl-matches">
+      <p class="text-sm leading-snug text-ink-2" data-testid="mfl-search-note">{mflFound.note}</p>
+      {#if mflFound.matches.length}
+        <ul class="space-y-2">
+          {#each mflFound.matches as m (m.league_id)}
+            <li>
+              <button
+                type="button"
+                class="block w-full rounded-lg border border-line bg-surface p-4 text-left disabled:opacity-60"
+                style="box-shadow:var(--ll-shadow)"
+                disabled={mflOpening !== null}
+                onclick={() => openMfl(m.league_id)}
+                data-testid="mfl-match"
+                data-league={m.league_id}
+              >
+                <div class="text-lg leading-snug font-bold break-words">{m.name}</div>
+                <div class="text-sm leading-snug text-ink-3">{mflOpening === m.league_id ? "Opening…" : `MFL · ${m.year}`}</div>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/if}
     </section>
   {:else if mflSaved.length}
     <ul class="space-y-2" data-testid="mfl-saved">

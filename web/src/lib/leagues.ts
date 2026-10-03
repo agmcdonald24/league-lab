@@ -73,3 +73,17 @@ export interface MflLeague {
 
 export const mflPath = (text: string) => `/api/leagues?mfl=${encodeURIComponent(text.trim())}`;
 export const isMfl = (league: string | null | undefined) => !!league && league.toLowerCase().startsWith("mfl:");
+
+// ---- I0-C (Wave I-0): one MFL box for a link, an id or the league's name. GET /api/leagues?mfl_search=<text>: a link or
+// an id answers as ?mfl= does (an MflLeague); a name answers this season's matches (at most 25) to pick from.
+export interface MflSearch {
+  platform: "mfl";
+  query: string;
+  season: number;
+  matches: { league_id: string; name: string; year: number; home_url: string }[];
+  total: number;
+  note: string;
+}
+
+export const mflSearchPath = (text: string) => `/api/leagues?mfl_search=${encodeURIComponent(text.trim())}`;
+export const isMflSearch = (v: MflLeague | MflSearch): v is MflSearch => "matches" in v;

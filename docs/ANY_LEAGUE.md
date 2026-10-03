@@ -347,6 +347,19 @@ share → 404 with the sentence in `docs/MFL_TERMS.md`; MFL down → 502 "MyFant
 league card (name, size, scoring, the note) with its teams → My Week. The pick is remembered on the phone
 (`ll.mflLeagues`) and the league switcher shows "· MFL" after the name.
 
+**Find a league by its name (I0-C, 2026-10-03).** MFL's phone app shows a league's name, not its link, so the one MFL
+box takes a link, an id **or the name**. `GET /api/leagues?mfl_search=<text>`: a link, an id or an `mfl:` key answers
+exactly as `?mfl=` does (the league card); a name goes to MFL's public search (`mfl_client.MFL.league_search`:
+`TYPE=leagueSearch&SEARCH=<text>` on the `api.` host, no login, cached 10 minutes, the same 60-a-minute bucket) and
+answers `{platform: "mfl", query, season, matches: [{league_id: "mfl:<id>", name, year, home_url}], total, note}` —
+this season only, at most 25, best first (the exact name, then names that start with the text, then a word that does,
+then the rest), fewer than 3 characters → no call and a note asking for more. MFL writes every `homeURL` as
+`https//www45…` (no colon): it is never passed on — `home_url` is rebuilt from the id on the `www4N` host the
+`homeURL` names (remembered for the league's next calls), else `www`. Web: the box's copy is "Paste your league link,
+or type your league's name as it appears in the MFL app."; a name lists the matches (name + "MFL · 2026"); tapping one
+loads the league card and the team picker ("‹ Not this league" goes back to the list); the pick is remembered as before.
+A private league is listed by the search like any other; opening it gives the existing "Ask the commissioner…" 404.
+
 **Not done.** MFL transactions (the League screen shows none), playoff brackets (the rest-of-season window assumes
 2^(weeks after the regular season) playoff teams), keeper / dynasty detection (every MFL league reads as redraft in
 the scoring label), MFL's own injury report (the availability overlay reads ESPN and Sleeper by player).
