@@ -2196,8 +2196,11 @@ receiving TDs of 40+ / 50+ and 213 rushing TDs of 40+. Return and defensive TDs 
 TOUCHDOWN"; 0 for a recovery in the end zone). Survival shares S(d) are stored at 5, 10, 20, 30, 40, 50, 60, 70 and
 80 yards, log-linear between knots (to 0 at 110). A position with n < 100 TDs is shrunk toward its family's pooled
 share by (n × own + 30 × pooled) / (n + 30) ("shrunk"). Missed field goals returned (1 TD in 7 seasons) take the
-kick-return shares ("proxy"). MFL's event codes PS RS RC KO PR IR DR BF BP MF are accepted as the family.
-Regular seasons 2019–2025:
+kick-return shares ("proxy"). The spec's pooled families are there too: `return_tds` (kick and punt returns,
+103 TDs) and `def_tds` (interception, fumble and blocked or missed kick returns, 430 TDs). So is `fg_made`, made field
+goals by distance from `fct_player_game`'s buckets (6,170 makes; exact at 20 / 30 / 40 / 50 / 60 yards). The K line
+projects makes by bucket up to 50+, so this splits 50–59 from 60+ and prices a made FG of unknown length. MFL's
+event codes PS RS RC KO PR IR DR BF BP MF FG are accepted as the family. Regular seasons 2019–2025:
 
 | Family | Position | TDs | ≥ 10 yd | ≥ 20 | ≥ 40 | ≥ 50 | median yd |
 |---|---|---|---|---|---|---|---|
@@ -2215,11 +2218,14 @@ Regular seasons 2019–2025:
 | blocked punt / FG return | DEF | 33 | 0.697 | 0.545 | 0.303 | 0.273 | 21 |
 | punt return | all | 54 | 0.926 | 0.926 | 0.907 | 0.870 | 75 |
 | kick return | all | 49 | 0.939 | 0.939 | 0.939 | 0.837 | 99 |
+| all defensive returns (`def_tds`) | DEF | 430 | 0.853 | 0.753 | 0.416 | 0.305 | — |
+| made field goals (`fg_made`) | K | 6,170 | 1.000 | 0.996 | 0.433 | 0.162 | — (≥ 60: 0.005) |
 
 The plan's fallback constants were close for receiving (≥ 10: 0.55, ≥ 40: 0.12) but high for rushing (0.35 against
 0.26 measured) and for passing (0.60 / 0.14 against 0.55 / 0.12). Under 70587's 6 / 9 / 12, one expected TD is worth
 6.99 for an RB's rush, 8.31 for a WR's catch, 7.42 for a TE's catch, 8.00 for a QB's pass and 10.36 for an
-interception return.
+interception return. Its FG bands (0–39 / 40–49 / 50–59 / 60+ = 3 / 5 / 10 / 15) split made kicks
+0.567 / 0.271 / 0.157 / 0.005, which is 4.70 points per made FG of unknown length.
 
 **Per whole unit** (`expected_floor_units(stat, position, mean, per, start=0)`). MFL's `1/10` is
 E[floor((X − start) / per)] = Σ_j P(X ≥ start + j × per). The linear price is high by about the expected remainder.

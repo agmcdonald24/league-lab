@@ -135,7 +135,7 @@ def test_fit_curves_pools_and_skips_thin_positions():
 
 
 # ---------------------------------------------------------------------------------------------- TD distances
-@pytest.mark.parametrize("family", E.TD_FAMILIES)
+@pytest.mark.parametrize("family", E.DISTANCE_FAMILIES)
 def test_td_shares_partition_and_survival_is_decreasing(family):
     for pos in ("QB", "RB", "WR", "TE", "DEF", "ALL"):
         parts = [E.td_distance_share(family, pos, lo, hi) for lo, hi, _ in DAD_TD_BANDS]
@@ -268,3 +268,32 @@ def test_expected_floor_units():
     assert isinstance(E.expected_floor_units("passing_yards", "QB", 250.0, 20), float)
     # no curve: the linear price
     assert E.expected_floor_units("fg_yards", "K", 95.0, 10) == pytest.approx(9.5)
+
+
+# ---------------------------------------------------------------------------------------------- pooled families, FG distance
+def test_pooled_families_for_the_spec():
+    for fam in ("return_tds", "def_tds", "fg_made"):
+        assert (fam, "ALL") in E.TD_SHARES and E.td_share_source(fam, "DEF") == "measured"
+    # def_tds pools interception, fumble and kick returns: between its members
+    ge40 = {f: E.td_distance_share(f, "DEF", 40, None) for f in ("int_return_tds", "fumble_return_tds", "def_tds")}
+    assert ge40["fumble_return_tds"] < ge40["def_tds"] < ge40["int_return_tds"]
+
+
+def test_fg_shares_mfl_bands():
+    bands = [(0, 39, 3), (40, 49, 5), (50, 59, 10), (60, None, 15)]   # MFL 70587's FG by distance
+    parts = [E.td_distance_share("FG", "TMPK", lo, hi) for lo, hi, _ in bands]
+    assert sum(parts) == pytest.approx(1.0, abs=1e-12)
+    surv, n, _ = E.TD_SHARES[("fg_made", "ALL")]
+    k = E.TD_KNOTS
+    # exact at fct_player_game's bucket edges
+    assert parts[0] == pytest.approx(1 - surv[k.index(40)]) and parts[1] == pytest.approx(surv[k.index(40)] - surv[k.index(50)])
+    assert parts[3] == pytest.approx(surv[k.index(60)]) and 0 < parts[3] < 0.02
+    assert E.expected_td_distance_points("fg_made", "K", 2.0, bands) == pytest.approx(2 * sum(p * b[2] for p, b in zip(parts, bands, strict=True)))
+
+
+def test_measure_fg_shares_synthetic():
+    made = {"fg_made_0_19": 0, "fg_made_20_29": 30, "fg_made_30_39": 30, "fg_made_40_49": 20, "fg_made_50_59": 15, "fg_made_60_": 5}
+    surv, n, src = E.measure_fg_shares(made)
+    assert n == 100 and src == "measured"
+    want = {5: 1.0, 10: 1.0, 20: 1.0, 30: 0.70, 40: 0.40, 50: 0.20, 60: 0.05, 70: 0.0, 80: 0.0}
+    assert dict(zip(E.TD_KNOTS, surv, strict=True)) == pytest.approx(want)

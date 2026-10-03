@@ -4095,7 +4095,7 @@ nothing showed the waiver alternative before suggesting you give up a useful pla
 ### M2 2026-10-03 — the numbers expected-value pricing needs (branch `dev/M2`, clone `league_lab_m1`)
 
 * **What.** New `src/league_lab/scoring_ev.py`, pure and fitted offline. The constants live in the module; the seed
-  proposal `dbt/seeds/scoring_distributions.csv` (245 rows) is generated from them and pinned by a test. It has:
+  proposal `dbt/seeds/scoring_distributions.csv` (272 rows) is generated from them and pinned by a test. It has:
   `prob_at_least(stat, position, mean, threshold)`, `prob_in_band` (high inclusive), `expected_band_points`,
   `has_curve`, `td_distance_share(family, position, low, high)`, `td_survival`, `expected_td_distance_points`,
   `td_share_source`, `expected_floor_units` (MFL's "1 per whole 10" in expectation), `sleeper_expected_bonus(_frame)`
@@ -4111,8 +4111,9 @@ nothing showed the waiver alternative before suggesting you give up a useful pla
   `yards_gained`, the definition dbt uses for `*_tds_40p`, and reproduces `fct_player_game`'s TD and 40+ / 50+ counts
   exactly. Survival shares at 5–80 yards per family × position, 2019–2025: receiving ≥ 10 / ≥ 40 = 0.548 / 0.119
   (WR 0.604 / 0.166, TE 0.432 / 0.035); rushing 0.259 / 0.062 (RB 0.258 / 0.071); passing (QB) 0.547 / 0.120;
-  interception returns ≥ 40 = 0.494; fumble returns 0.309; punt and kick returns ≥ 0.9. The plan's fallback
-  rushing 0.35 and passing 0.60 / 0.14 are high.
+  interception returns ≥ 40 = 0.494; fumble returns 0.309; punt and kick returns ≥ 0.9. The spec's pooled
+  `return_tds` and `def_tds`, and `fg_made` (made FGs by distance: 50–59 0.157, 60+ 0.005), are there too. The plan's
+  fallback rushing 0.35 and passing 0.60 / 0.14 are high.
 * **Does it help** (dynasty scoring, 2023–2025, curves fitted on earlier seasons only). The top-6 weekly bias goes
   RB +1.34 → +0.31, WR +1.65 → +0.70, TE +0.91 → +0.65 and QB +0.07 → −1.39. Weekly MAE is +0.01 to +0.03 and
   Spearman ±0.001. Season-total MAE per player goes QB 24.1 → 23.3, RB 17.6 → 16.9, WR 18.4 → 18.3 and
@@ -4125,7 +4126,8 @@ nothing showed the waiver alternative before suggesting you give up a useful pla
   list). (2) IC-1: price `per_unit_from` with `expected_floor_units`; linear is high by 0.3–0.5 per yardage stat per
   game. (3) Wire the seed in `dbt/seeds/schema.yml` (proposal in the hand-back) or leave it unread: the module never
   reads it.
-* **Tests.** `tests/test_scoring_ev.py`, 46 passed. They cover: the seed equals the constants; every curve is
+* **Tests.** `tests/test_scoring_ev.py`, 52 passed. They cover: the seed equals the constants; every curve is
   monotone on a 2,500-point grid × 16 thresholds; edges and shapes; partitions; the fitter recovers a known gamma and
   a known normal; thin positions pool; TD shares partition and decrease; aliases (TMQB, Def, MFL codes); shrinkage;
-  the description parser; floor units; Sleeper bonus pricing per row = per frame. Ruff clean.
+  the description parser; floor units; Sleeper bonus pricing per row = per frame; the pooled families; FG bands.
+  Ruff clean; root suite 899 passed, 2 skipped.
