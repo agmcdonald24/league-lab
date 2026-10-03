@@ -376,6 +376,64 @@ card can say "A projects more, B wins more often" — centre the ranges on the p
 decide on week-5 drift); the experiment record is the seed `feature_experiments.csv` (re-export after a new harness
 run); Andrew's front-end decision (D7); P-01; Iteration 11 operations.
 
+### Iteration 17 — what the first beta user said (draft, 2026-10-02 evening; not yet agreed)
+
+Andrew walked the live beta on his iPhone the evening it went up (League of Scrubs, week 4, Friday). His notes,
+organised by cause, with what the PO found behind each:
+
+**A. Freshness of availability (the one that embarrasses the app on Sunday).** My Week said "start Justin Jefferson
+over Croskey-Merritt"; Jefferson was ruled Out (ankle) at 2:35 PM ET Friday. The house-league path takes
+availability from the NFL injury report via nflverse (`mart_player_next_matchup.injury_status`), rebuilt once a day
+at 07:37 ET; the 5:29 PM run still had nothing for him (nflverse's file lags the report). Sleeper's directory had
+`Out` at 2:55 PM; ESPN's public injuries feed at 2:35 PM (`site.api.espn.com/apis/site/v2/sports/football/nfl/injuries`,
+no key, no once-a-day ask). Design: an **availability overlay** on the server — ESPN's feed every 15 min on game days
+and hourly otherwise, Sleeper's directory once a day at 5 PM ET (its terms ask for at most one call a day), mapped
+to gsis through the directory's `espn_id`; applied at request time to the lineup (re-optimise when a starter's
+status changed since the build — `lineup.py` already does this for on-demand leagues), to the cards, to Trends'
+lists (no Out / IR / PUP / suspended players in "due" or "hot": Jonah Coleman is on IR and was "hot"; Brissett was
+"due"), to Waivers and to trade values (an Out player is worth 0 for the weeks he misses). A "checked at hh:mm"
+stamp on My Week. Costs nothing; the projections themselves stay nightly (their inputs move slowly).
+
+**B. The model has no player-quality prior.** Jefferson projects 10.0 this week (a top-5 WR averages 15–18);
+Jacoby Brissett is the #8 rest-of-season asset in the dynasty league (292 points: ARI's starter, projected on
+volume); Dak #1 overall there (superflex + 6-pt pass TD puts QBs on top by design, but the order among QBs is
+volume, not quality); Gibbs vs Bijan; McBride over Bowers. The same flaw makes the trade finder propose "Jefferson
+for MarShawn Lloyd" as roughly even (+3.85 over weeks 4–7 for Andrew) — any human knows that is a laugher. This is
+the v3.1 lead "player-prior correction" (RB MAE −0.054 in the harness) and it is now the top modelling item.
+Companion: Sleeper's own projections are archived nightly for the record (`raw.sleeper_projections`) — use the gap
+between the model and the market as a flag on cards ("the market has him at 16; we say 10 — do not trade on our
+number alone") and as a sanity bound in the trade finder until the prior ships.
+
+**C. Words and layout (cheap, one round).** My Week: names squished on a phone → short names (J. Jefferson) +
+headshots in the slot list; "Your lineup — every slot, how close each call, the bench, who can't play" is not
+understood → a plainer header; the cards should say *why* (matchup, usage, injury) in a sentence, the "outscores
+him 60% of the time" line is not what a manager wants week to week. Trends: "Who's due / running hot" → "Below /
+above expectation", with the reason in plain words (what the opportunity was, what he scored). Matchups: drop TEs
+from the cornerback section instead of explaining why; "The cornerbacks your receivers face" bolder. Compare:
+"Choose a player". Rankings / rest of season: more stats in the table, headshots, and a per-player "why this
+number" (the stat-line pieces the model built it from — the data exists per stat model).
+
+**D. Decisions screens.** Waivers: never two QBs from the same NFL team (Brissett and his backup Carson Beck were
+both suggested — use the directory's `depth_chart_order`); "Buy low / sell high" moves from Waivers to Trades; the
+free-agent list is good. Trades: an **interest dial** that moves as the trade is edited (the evaluate route already
+returns both sides' week and horizon gains — map the partner's side to a 0–100 "their interest"), no lineups shown
+twice, a **window control** (this week / next 4 / rest of season / playoffs — "why weeks 4–7?" had no answer on the
+page; the ROS board already computes to the final), the trade calculator as its own link. Partner suggestions need
+the sanity bound from B.
+
+**E. Asked for, bigger.** Player news on the card (ESPN's public news feed per athlete is free; terms are a grey
+area — show the headline and link out, label the source; Rotoworld's is paid). Usage tracking (which screens get
+used: an insert-only role on one `ops.usage_events` table — screen, league id, time, no names — so the UI can follow
+use; the server's DB role is read-only by design, so this needs its own role). Other platforms: **MyFantasyLeague**
+(official JSON API; many leagues readable without login) and **ESPN** (unofficial API; private leagues need the
+user's `espn_s2`/`SWID` cookies, which means accounts and consent first) — both map to gsis through nflverse's
+`ff_playerids`; each is about a wave, ESPN after accounts (Wave J).
+
+Proposed order: **I-0 before Sunday**: the availability overlay for the house leagues (A) and the injured-player
+exclusions — the one thing that will be wrong at 1 PM Sunday. **I-A (one round, three devs)**: C + D except the
+dial. **I-B**: the dial, the window control, usage tracking, the market flag. **Modelling**: the player-quality
+prior with a backtest, then re-rank. **Wave J**: accounts + MFL / ESPN.
+
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 
 Andrew ran the Wave G app on his Mac ("Oh hell yea … proceed"). Next: put the non-commercial beta on a host so his
