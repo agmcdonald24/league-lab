@@ -326,6 +326,28 @@ Pinned by `api/tests/test_ib0.py`: My Week = Waivers = Team = the calculator's "
 Test League, the on-demand path and MFL, with the fixture feed on and off. Not covered: a free agent who only becomes
 worth a claim because of the overlay (the build's move list is re-priced, not re-searched — the next nightly finds him).
 
+## News
+
+*(Wave I-D, N1, 2026-10-03 — `src/league_lab/news_feed.py`, `api/league_lab_api/news.py`; terms and the feed's shape
+in `docs/ESPN_TERMS.md`.)* Andrew asked in his first review for the player news next to the numbers. The card now
+carries ESPN's latest headlines for the player, on the house leagues and on any league alike (Sleeper, MFL; a team
+unit's card is its starter's):
+
+- **The feed**: ESPN's public fantasy player news (`site.api.espn.com/apis/fantasy/v2/games/ffl/news/players?playerId=
+  <espn_id>&limit=5`, no key): RotoWire's per-player blurbs and ESPN's own stories, newest first. Read **on demand,
+  one athlete per card opened**, never in bulk (Trends' and Waivers' rows do not read it); cached per athlete an hour
+  (15 minutes on a game day) in `LEAGUE_LAB_CACHE_DIR/espn_news/<espn_id>.json`, holding only the headline, date,
+  source and link; a token bucket of 60 reads a minute per process; a failed read serves the last copy, or no line.
+- **His ESPN id**: the id table (`db_playerids.csv`, read backwards: the same table the availability overlay maps ESPN
+  athletes with), else Sleeper's directory `espn_id`. No id: no line.
+- **On the card**: `news: [{headline, date, source, url}]` on `/api/player/{gsis}` — at most 3, newest first, none
+  older than 14 days (so no line when the newest is older); `[]` when the feed is off or out (never an error). The
+  page and the pane show one line under the availability lines: "**News** · 2 h ago · *headline* · RotoWire via ESPN ›"
+  (`web/src/components/NewsLine.svelte`; the newest only, cut at a word to 110 characters, linked out in a new tab).
+- **Switches**: `LEAGUE_LAB_NEWS=off` (default on); off in fixture mode unless `LEAGUE_LAB_ESPN_FIXTURES` is set
+  (`news_<espn_id>.json`, age measured from the recorded answer's `timestamp`). `/api/status` → `news` (calls,
+  failures, cached athletes).
+
 ## MyFantasyLeague (Wave I-0, I0-B, 2026-10-03)
 
 **Design.** The rest of the code only sees Sleeper shapes. A league key with a platform prefix (`mfl:21861`; Sleeper
@@ -414,6 +436,25 @@ and 122 / 156 within 1 point instead of 162 / 163 and 156 / 156; the house leagu
 bonuses start at 40). Return yards, IDP, and the defense's distance on a return TD (priced at its expected points)
 are not priced from actual lines.
 
+**One entry point for a projected line (Wave I-D, M3, 2026-10-03).** `scoring.price_projected(stats, scoring,
+position=None, *, ev=None)` is the only function that prices a projected stat line, on both sides: the nightly
+(`projections.price(..., "proj_")` → `predict_position`, `house_rows`, the ranges' anchor, the harness, signals'
+what-ifs) and the request side (`price_lines` → My Week, Waivers, Trades, rest of season, the team units; the
+on-demand larger-role what-if in `decisions`). An actual line (`out_`, the scoring check) stays on the exact engine
+(`compute_points` / `price_detail`): its bonus happened or it did not. The engine:
+
+| Scoring | `LEAGUE_LAB_EV_PRICING` off (default) | on |
+|---|---|---|
+| Sleeper, no yardage / long-TD bonus (Scrubs, the Test League, the plain references) | flat engine | flat engine (unchanged to the bit) |
+| Sleeper with a yardage or long-TD bonus (the dynasty) | flat engine: bonus all or nothing on the mean, long TDs 0 | `expected_frame(ev=True)`: bonus × P(in band), long-TD bonus × projected TDs × share that long |
+| MFL spec | expectation | expectation |
+
+Under the flag only the bonus keys change price; which keys count does not (`scoring.projected_view`: a key the flat
+engine leaves off a projected line — `pass_att`, `rush_att`, `rec_tgt`, `pass_inc`, the count bonuses — stays off).
+The flag is read at call time in each process, so the nightly (GitHub Actions) and the API (Render) must carry the
+same value; a house league then reproduces its nightly `proj_points` to the bit under either value
+(`tests/test_projections_ev.py`). K / DEF (`kdef.price`) stay flat.
+
 ## Slots and team units (Wave I-C, IC-2, 2026-10-03)
 
 **Why.** Dad's league (MFL 70587, "Make Football Great Again") starts `TMQB ×1, RB ×2, WR+TE ×3, TMPK ×1, Def ×1`.
@@ -472,3 +513,45 @@ his face (`LineupTable.svelte`).
 **Not done.** Rest of season and the trade board value a unit through the solver's rows only (the ROS table has no
 unit rows yet); the Team Hub's slot-strength "top" carries the unit's name, not its team; `scoring_report` reads
 `"DEF" in slots` (a `TMDEF`-only league would list the defense keys as unmapped — IC-1's function).
+
+### Finished (Wave I-D, IC-4, 2026-10-03)
+
+**Rest of season has the units.** A league whose slots admit `TMQB` / `TMPK` gets one rest-of-season row per (unit,
+NFL team): 32 team QBs and 32 team kickers in dad's league. Each week of the window is priced by the week's own rule
+(`anyleague.unit_window` on the NFL-wide window, `units_priced_frame` on a week priced by `price_week`): the line of the
+team's best-projected quarterback who can play *that week* (`unit_lines(rule="starter")`, priced through `price_lines`
+as TMQB, so `UNIT_PRICES_AS` gives it the QB rules), or the team's best-projected kicker that week; the range is the
+starter's. A team's bye is a week off (the table's rule). Week 4 of the Bengals QB = My Week's 29.00, for every team and
+week (`test_ros_units_equal_the_weeks_unit_prices`). The rows are keyed by the league's directory — `mfl:0656` for a unit
+a roster carries, `mfl:TMQB-KC` for one on the waiver wire (`anyleague.unit_directory`) — so whose it is, the trade
+board's weeks past the horizon and "Value to my lineup" find them under the rosters' keys. In "Value to my lineup" a
+unit is counted against the units of its position on the waiver wire (the 30 unrostered), as a kicker is against the
+free kickers. The answer's row: `unit: true`, `priced_from` (the decision week's starter), `priced_from_words`
+("Priced from Joe Burrow's line (the team's starting QB each week)"); `?position=TMQB` / `TMPK`; the table shows the
+team's badge where a face goes, the chips say "Team QB" / "Team K".
+
+**A unit's card** (`/api/player/mfl:0656?league=mfl:70587`) is its starter's card — the quarterback (kicker) whose line
+prices it this week — named as the unit ("Cincinnati Bengals QB"; `unit.header` "Cincinnati Bengals QB — priced from
+Joe Burrow's line"), with the unit's roster ("on **Knight Train**") and the unit's rest of season.
+
+**The Team Hub names a unit with its team**: the slot strength's best starter carries `unit`, the team (the badge) and
+`short_name` ("Bengals QB"); the roster rows carry the unit's team; the slot reads "team QB" / "team K".
+
+**Manager names**: MFL's `league` export lists a franchise's `owner_name` only to a caller the league shows it to; the
+public export League Lab reads has none for 70587, 21861 or 10015 (checked live through the browser pane, 2026-10-03).
+`team_names` returns it as the manager name when it is there (`mfl_client.franchise_owners`) and **null** otherwise —
+never the team name repeated (the League screen's standings showed "Knight Train / Knight Train"). The picker and My
+Week's header ("**Knight Train** · <owner> · 1-3, #11") show it when it exists.
+
+**Double headers everywhere.** A double-header week is one score and two games for a team: the League screen's
+all-play counts each other team once a week (it counted a double-header week's teams twice: Klaby Crew 57-9 all-play
+over 3 weeks of 11 opponents, now 27-6), each team-week carries `games` (both opponents, "L/L"), the record comes from
+every game; `/api/league` lists this week's matchups and the last scored week's results (`matchups`, each game once:
+week 4 of 70587 = 12 games, Knight Train's two first). `/api/record` for an MFL league still keeps no projection record
+(`available: false`) and now answers the league's own results: every played week's games (MFL's schedule; its
+`weeklyResults` carry the same scores), two a team in a double-header week, and each team's record — equal to MFL's own
+standings for all 12 teams. The Matchups screen names NFL opponents only (no fantasy opponent): nothing to change.
+
+**Waivers with an empty starting slot**: the claim that fills it this week leads Help now and the three strongest
+(70587 week 4, the ESPN fixture overlay: Hall and Price Out → "Claim Jacory Croskey-Merritt (RB) … Fills your empty RB2
+this week."); a unit slot reads "team K" in the claim's reason ("Starts at team K this week over Chargers K (10.0).").

@@ -511,6 +511,15 @@ the projections' all-or-nothing bonuses, which expected-value pricing closes —
 Sleeper leagues once the nightly prices with the same engine (v3.1, next). Dad's league: 8 slots, the units priced,
 the check 155 / 156, double headers named.
 
+**I-D delivered 2026-10-03 17:45 ET** (STATUS § "Wave I-D": 987 root / 380 API / 150 e2e): the nightly prices
+through the same entry point as the request side (`scoring.price_projected`; the harness both ways, Scrubs
+unchanged to the bit, the dynasty's season totals better at every position), the team units on rest of season /
+the Team Hub / the League screen / the unit's card, the League screen's double headers and `/api/record` for MFL,
+Waivers filling an empty starting slot first, and the player news line (ESPN's public feed, headline + link out).
+**`LEAGUE_LAB_EV_PRICING` flips Monday** (STATUS § "Wave I-D" has the order: the nightly's env + a manual run, then
+Render's env; week 5 is the first EV-priced week of the record). Still after: usage tracking; v3.1's ranges with
+the long-TD bonus in the target, the fringe level, cold starts; Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
+
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 
 Andrew ran the Wave G app on his Mac ("Oh hell yea … proceed"). Next: put the non-commercial beta on a host so his

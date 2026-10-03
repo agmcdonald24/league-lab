@@ -57,7 +57,7 @@ from .config import PROJECT_ROOT, get_settings
 from .feature_groups import personnel as _PN
 from .lineup import lineups_after_project
 from .rankings import TOP_N, _hit_rate, _spearman, parse_seasons
-from .scoring import compute_points, priced_keys
+from .scoring import compute_points, price_projected, priced_keys, pricing_engine
 from .signals import signals_after_project
 from .waivers import waivers_after_project
 
@@ -243,6 +243,12 @@ def price(df: pd.DataFrame, scoring: dict[str, float], prefix: str, position: st
         rows["position"] = df["position"].to_numpy()
     elif position is not None:
         rows["position"] = position
+    # ---- M3 (Wave I-D): a PROJECTED line goes through the one entry point the request side calls too
+    # (``scoring.price_projected``: the flat engine, or its expected-value pricing under LEAGUE_LAB_EV_PRICING); an
+    # ACTUAL line (``out_``) stays on the exact engine — its bonus happened or it did not
+    if prefix == "proj_":
+        return pd.Series(price_projected(rows, scoring), index=df.index, dtype=float)
+    # ---- /M3
     return pd.Series([compute_points(r, scoring) for r in rows.to_dict("records")], index=df.index, dtype=float)
 
 
@@ -934,7 +940,8 @@ def house_rows(every: pd.DataFrame, leagues: dict[str, tuple[str, dict[str, floa
             raise ValueError(f"{name}: priced {gap:.3g} points away from reference {source[lid]!r} (the match is wrong)")
         o["league_id"], o["proj_points"] = lid, own
         frames.append(o)
-        log.info("%s (%s): ranges from %r; price of the line equal to it within %.1e", name, lid[-6:], source[lid], gap)
+        log.info("%s (%s): ranges from %r; price of the line equal to it within %.1e; pricing %s", name, lid[-6:],
+                 source[lid], gap, pricing_engine(scoring))   # M3: flat | ev (LEAGUE_LAB_EV_PRICING) | spec
     cols = ["model_version", "fitted_at", "train_seasons", "league_id", "season", "week", "gsis_id", "position",
             *[f"proj_{c}" for c in ALL_COMPONENTS], "proj_points", "p10", "p25", "p50", "p75", "p90"]
     return pd.concat(frames, ignore_index=True)[cols] if frames else pd.DataFrame(columns=cols)

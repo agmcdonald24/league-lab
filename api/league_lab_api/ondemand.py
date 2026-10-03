@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import time
 
+import numpy as np
 import pandas as pd
 from league_lab import anyleague as A
 from league_lab.lineup import UNVALUED, Player  # ---- IB-3
@@ -101,6 +102,8 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
                  "week": week, "record": rec, "opponent": opp, "source": "sleeper"}
     out["availability"] = avail                      # ---- I0-A
     bits = [f"**{out['team_name']}**"]
+    if out["manager_name"] and A.platforms.is_mfl(league_id):     # ---- IC-4: "Knight Train · <owner>" when MFL shares it
+        bits.append(out["manager_name"])
     if rec:
         bits.append(f"{rec['wins']}-{rec['losses']}, #{rec['standing']} in the league")
     if opp and opp.get("team_name"):
@@ -161,9 +164,8 @@ def rosters_for_league(league_id: str) -> list[dict]:
     except A.SleeperUnavailable as exc:
         raise SleeperDown(str(exc)) from exc
     names = A.team_names(rosters, users)
-    mfl = A.platforms.is_mfl(league_id)           # I0-B: MFL shares no manager names (the franchise name only)
-    out = [{"roster_id": rid, "team_name": n["team_name"], "manager_name": None if mfl else n["manager_name"]}
-           for rid, n in names.items()]
+    # IC-4: MFL's owner name when its league export shares it (team_names), else None (I0-B: was always None)
+    out = [{"roster_id": rid, "team_name": n["team_name"], "manager_name": n["manager_name"]} for rid, n in names.items()]
     return sorted(out, key=lambda r: (r["team_name"] or "", r["roster_id"]))
 
 
@@ -176,7 +178,7 @@ ROS_MART_SQL = """select {cols}, a.rostered_by_roster_id, a.rostered_by_team
                               or (r.gsis_id is null and a.sleeper_id = r.player_key))   -- a defense: its Sleeper id is the team code (QA, Wave F)
                    where r.league_id = %s and (%s = 'ALL' or r.position = %s)
                    order by r.ros_points desc, r.player_key limit %s"""
-POSITIONS = ("QB", "RB", "WR", "TE", "K", "DEF", "ALL")
+POSITIONS = ("QB", "RB", "WR", "TE", "K", "DEF", "TMQB", "TMPK", "ALL")   # IC-4: the team units
 POS_RANK_NOTE = ("pos_rank is the player's rank at his position among every projected player on an active NFL roster "
                  "in this league's scoring, rostered or not (mart_player_ros_projection's population)")
 
@@ -196,7 +198,27 @@ def _ros_player(r, roster_of: dict | None = None, team_of: dict | None = None) -
         rid = _num(r.get("rostered_by_roster_id"))
         out["rostered_by_roster_id"] = None if rid is None else int(rid)
         out["rostered_by_team"] = _str(r.get("rostered_by_team"))
+    out.update(_unit_bits(r))                                                    # ---- IC-4
     return out
+
+
+# ---- IC-4 (Wave I-D): a team unit's row in the rest of season (INTERFACES.md § IC-4): `unit`, the player its weeks are
+# priced from (the decision week's starting QB / kicker) and that said in words
+UNIT_WORDS = {"TMQB": "team QB", "TMPK": "team K"}
+
+
+def _unit_bits(r) -> dict:
+    unit = r.get("unit")
+    if not (isinstance(unit, bool | np.bool_) and bool(unit)):
+        return {"unit": False}
+    pos, g, name = _str(r.get("position")), _str(r.get("starter_gsis")), _str(r.get("starter_name"))
+    words = None
+    if name:
+        words = (f"Priced from {name}'s line (the team's starting QB each week)" if pos == "TMQB"
+                 else f"Priced from {name}'s line (the team's kicker each week)")
+    return {"unit": True, "priced_from": {"gsis_id": g, "player_name": name} if name else None,
+            "priced_from_words": words}
+# ---- end IC-4
 
 
 def ros_card(r) -> dict:
@@ -360,8 +382,9 @@ def ros_rows(league_id: str, league: dict | None, df: pd.DataFrame, players: lis
         p["headshot_url"] = _str(head.get(p.get("gsis_id")))
         p["bye_weeks"] = byes.get(str(key), [])
         p["ros_points_per_game"] = None if ppg is None else round(ppg, 2)
-        p["per_game"] = why.columns(per, p.get("position")) if per else {}
-        p["why"] = why.explain(per, ppg, scoring, p.get("position"), games=g, total=p.get("ros_points")) if per else None
+        wpos = A.LU.UNIT_PRICES_AS.get(p.get("position"), p.get("position"))      # ---- IC-4: a TMQB's pieces = a QB's
+        p["per_game"] = why.columns(per, wpos) if per else {}
+        p["why"] = why.explain(per, ppg, scoring, wpos, games=g, total=p.get("ros_points")) if per else None
         p["market_points"] = market.get(str(p.get("gsis_id"))) if p.get("gsis_id") else None
         p["week_points"] = this_week.get(str(key))
         p["market_words"] = why.market_words(p["week_points"], p["market_points"])
@@ -412,6 +435,7 @@ def lineup_why(kind: str, pos: str | None, starts: list[int], n: int, pts: float
     """One line: why he ranks where he does for this roster (`starter`: the QB who starts for you, in a one-QB league)."""
     k = len(starts)
     p = f"{pts:.0f}" if pts >= 9.5 else f"{pts:.1f}"
+    pos_w = UNIT_WORDS.get(pos or "", pos)                                       # ---- IC-4: "team QB", not TMQB
     if kind == "mine":
         if k == 0:
             if pos == "QB" and starter and one_qb:
@@ -419,14 +443,14 @@ def lineup_why(kind: str, pos: str | None, starts: list[int], n: int, pts: float
             return f"On your bench in all {n} weeks left: he adds nothing to your lineup unless someone gets hurt."
         nothing = pts < 0.05
         if k <= 3 and k < n:
-            role = "QB2" if pos == "QB" and one_qb else f"bench {pos}"
+            role = "QB2" if pos == "QB" and one_qb else f"bench {pos_w}"
             if nothing:
                 return (f"Your {role} only plays in {_weeks_words(starts)}, and the best free agent would score as much "
                         "then: he adds nothing to your lineup.")
             return f"Your {role} only plays in {_weeks_words(starts)}: {p} points over your next-best there."
         every = f"all {n} weeks left" if k == n else f"{k} of {n} weeks left"
         if nothing:
-            return (f"Starts for you in {every}, but the best free agent at {pos} projects as much: he adds nothing over "
+            return (f"Starts for you in {every}, but the best free agent at {pos_w} projects as much: he adds nothing over "
                     "the waiver wire.")
         return f"Starts for you in {every}: {p} points more than your next-best option."
     where = "Free agent" if kind == "fa" else f"On {team_name or 'another team'}"
@@ -638,6 +662,8 @@ def record(league_id: str) -> dict:
             raise NotFound(str(exc) if A.platforms.is_mfl(league_id) else f"no Sleeper league {league_id}") from exc
         except A.SleeperUnavailable:
             pass                                      # Sleeper down: still an honest "not kept" answer
+        if A.platforms.is_mfl(league_id):             # ---- IC-4: the league's own results, both games of a double header
+            return {"league_id": league_id, "available": False, "why": RECORD_WHY, **mfl_results(league_id)}
         return {"league_id": league_id, "available": False, "why": RECORD_WHY}
     season = int(league_row(league_id)["season"])
     rec = query(RECORD_SQL, (league_id, season)) if not missing_relations(("mart_projection_record",)) else pd.DataFrame()
@@ -657,6 +683,34 @@ def record(league_id: str) -> dict:
             "weeks": [row(r.to_dict()) for _, r in weeks.iterrows()], "summary": summary,
             "notice": None if not rec.empty else ("No week on the record yet: the record starts the first week Sleeper's "
                                                  "projections are archived before kickoff.")}
+
+
+# ---- IC-4 (Wave I-D): an MFL league's results on /api/record. We keep no projection record for a league we do not price
+# every night, but its own results are MFL's: every played week's games from the schedule (MFL's weeklyResults carry
+# the same scores), each game once — two per team in a double-header week — and each team's record from them.
+def mfl_results(league_id: str) -> dict:
+    from .decisions import week_matchups
+    try:
+        cl = A.sleeper()
+        lg = cl.league(league_id)
+        last = int((lg.get("settings") or {}).get("last_scored_leg") or 0)
+        names = A.team_names(cl.rosters(league_id), cl.users(league_id))
+        weeks = cl.season_matchups(league_id, last) if last > 0 else {}
+    except (A.LeagueNotFound, A.SleeperUnavailable, A.SleeperBusy):
+        return {"results": [], "records": []}
+    results = [m for w in sorted(weeks) if (m := week_matchups(w, weeks[w], names, played=True)) is not None]
+    rec: dict[int, dict] = {}
+    for m in results:
+        for g in m["games"]:
+            for sd in (g["a"], g["b"]):
+                r = rec.setdefault(sd["roster_id"], {"roster_id": sd["roster_id"], "team_name": sd["team_name"],
+                                                     "wins": 0, "losses": 0, "ties": 0, "games": 0})
+                r["games"] += 1
+                r[{"W": "wins", "L": "losses", "T": "ties"}[sd["result"]]] += 1
+    return {"results": results, "records": sorted(rec.values(), key=lambda r: (-r["wins"], r["losses"], r["roster_id"])),
+            "results_note": ("MyFantasyLeague's own results, week by week: each game once, two for every team in a "
+                             "double-header week.")}
+# ---- end IC-4
 
 
 # ---------------------------------------------------------------- plan F3: the player card for any league
@@ -755,7 +809,36 @@ class PlayerContext:
 
 def player_card(league_id: str, gsis: str, *, exclude_reference: str | None = None) -> dict:
     from . import player
+    if A.platforms.is_mfl(league_id) and A.platforms.is_mfl(gsis):          # ---- IC-4: a team unit's card
+        return unit_card(league_id, gsis, exclude_reference=exclude_reference)
     return player.player_card(league_id, gsis, od=PlayerContext(league_id, exclude_reference=exclude_reference))
+
+
+# ---- IC-4 (Wave I-D): a team unit (`mfl:0656`, `mfl:TMQB-KC`) answers with its starter's card — the quarterback (kicker)
+# whose line prices the unit this week (the rest of season's decision week) — named as the unit, with the unit's roster
+def unit_card(league_id: str, key: str, *, exclude_reference: str | None = None) -> dict:
+    from . import player
+    ctx = PlayerContext(league_id, exclude_reference=exclude_reference)
+    row = ctx.client.players().get(key) or {}
+    if not row.get("unit"):
+        raise NotFound(f"No player with id `{key}`. Search for him above.")
+    r = ctx.ros(key, str(row.get("position")))
+    g = _str(r["starter_gsis"].iloc[0]) if not r.empty and "starter_gsis" in r else None
+    if not g:
+        raise NotFound(f"No line prices {row.get('full_name') or key} this week (a bye, or no starter on the board).")
+    starter = _str(r["starter_name"].iloc[0]) or g
+    out = player.player_card(league_id, g, od=ctx)
+    name = row.get("full_name") or key
+    who = ctx.availability(key)
+    words = f"priced from {starter}'s line"
+    out["unit"] = {"key": key, "position": row.get("position"), "team": out.get("team") or row.get("team"), "name": name,
+                   "starter_gsis": g, "starter_name": starter, "words": words, "header": f"{name} — {words}"}
+    out.update({"player_name": name, "starter_name": starter, **{k: who[k] for k in ("rostered_by_roster_id", "is_free_agent")}})
+    rost = f"on **{who['rostered_by_team']}**" if who.get("rostered_by_team") else "**free agent** in this league"
+    out["header"] = " · ".join([UNIT_WORDS.get(str(row.get("position")), str(row.get("position"))), words, rost])
+    out["ros"] = ros_card(r.iloc[0]) if not r.empty else out.get("ros")
+    return out
+# ---- end IC-4
 
 
 # ---- I0-B (Wave I-0): MyFantasyLeague leagues (league_lab.platforms / mfl_client). The key is `mfl:<id>`; every
@@ -833,7 +916,8 @@ def mfl_league(text: str) -> dict:
     except A.SleeperUnavailable as exc:
         raise SleeperDown(str(exc)) from exc
     names = A.team_names(rosters, users)
-    teams = [{"roster_id": rid, "team_name": n["team_name"], "manager_name": None} for rid, n in sorted(names.items())]
+    teams = [{"roster_id": rid, "team_name": n["team_name"], "manager_name": n["manager_name"]}   # IC-4
+             for rid, n in sorted(names.items())]
     pick = next((r["roster_id"] for r in rosters if fid is not None and str(r.get("owner_id")) == fid), None)
     lg = {"league_id": key, "name": league.get("name"), "season": int(league["season"]),
           "total_rosters": league.get("total_rosters"), "scoring_label": A.scoring_label(league),

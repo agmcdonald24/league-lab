@@ -30,6 +30,12 @@
   }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
   const BASE = ["QB", "RB", "WR", "TE"];
+  // ---- IC-4 (Wave I-D): MyFantasyLeague's team units (a team QB / a team K): their own chips, the team's badge where
+  // a player's face goes, the line their weeks are priced from
+  const UNITS = ["TMQB", "TMPK"];
+  const UNIT_LABEL: Record<string, string> = { TMQB: "Team QB", TMPK: "Team K" };
+  const isUnit = (p: RosPlayer) => !!p.unit || UNITS.includes(p.position ?? "");
+  // ---- end IC-4
   let data = $state<RosList | null>(null);
   let error = $state<string | null>(null);
   let slots = $state<string[]>([]); // the league's lineup slots (from My Week): K / DEF tabs only when it has them
@@ -37,11 +43,11 @@
   const ctx = $derived({ league, team });
   const position = $derived.by(() => {
     const p = (route.current.params.get("position") ?? "ALL").toUpperCase();
-    return [...BASE, "K", "DEF", "ALL"].includes(p) ? p : "ALL";
+    return [...BASE, "K", "DEF", ...UNITS, "ALL"].includes(p) ? p : "ALL"; // IC-4: the team units
   });
   const positions = $derived.by(() => {
     if (data?.positions?.length) return [...data.positions.filter((p) => p !== "ALL"), "ALL"];
-    const extra = ["K", "DEF"].filter((p) => slots.includes(p) || position === p);
+    const extra = ["K", "DEF", ...UNITS].filter((p) => slots.includes(p) || position === p); // IC-4: TMQB / TMPK
     return [...BASE, ...extra, "ALL"];
   });
   const leagueName = $derived(options.find((o) => o.league_id === league)?.name ?? "this league");
@@ -144,7 +150,7 @@
     open = { ...open, [k]: !open[k] };
   }
   // ---- end IA-3
-  const label = (p: string) => (p === "ALL" ? "All" : p);
+  const label = (p: string) => (p === "ALL" ? "All" : (UNIT_LABEL[p] ?? p)); // IC-4
 </script>
 
 
@@ -235,15 +241,18 @@
             <td class="tabnum py-2 pr-1 pl-3 font-semibold text-ink-3">{rankAt.get(p) ?? "—"}</td>
             <td class="py-2 pr-1 leading-snug break-words">
               <div class="flex min-w-0 items-center gap-2">
-                <Headshot url={p.headshot_url ?? null} team={p.team} size={32} />
+                {#if isUnit(p)}<span class="inline-flex w-8 shrink-0 justify-center" data-testid="ros-unit-badge"><TeamBadge team={p.team} /></span
+                  >{:else}<Headshot url={p.headshot_url ?? null} team={p.team} size={32} />{/if}
                 <div class="min-w-0">
                   {#if p.gsis_id}
                     <a class="ll-name font-semibold" href={withContext(`/player/${p.gsis_id}`, ctx)}>{p.player_name}</a>
+                  {:else if isUnit(p) && p.player_key && p.priced_from}
+                    <a class="ll-name font-semibold" href={withContext(`/player/${p.player_key}`, ctx)} data-testid="ros-unit-name">{p.player_name}</a>
                   {:else}
                     {p.player_name}
                   {/if}
                   <div class="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-ink-3">
-                    <PosBadge pos={p.position} />{#if p.position !== "DEF"}<TeamBadge team={p.team} />{/if}
+                    <PosBadge pos={isUnit(p) ? (UNIT_LABEL[p.position ?? ""] ?? p.position) : p.position} />{#if p.position !== "DEF" && !isUnit(p)}<TeamBadge team={p.team} />{/if}
                     {#if p.bye_weeks?.length}<span class="shrink-0 tabnum" data-testid="ros-bye">bye {p.bye_weeks.join(", ")} ·</span>{/if}
                     <span class="truncate {yours ? 'font-semibold text-accent' : ''}">{yours ? "yours" : (p.rostered_by_team ?? "free agent")}</span>
                   </div>
@@ -297,6 +306,7 @@
                     </div>
                     <p class="text-xs text-ink-3">A game, projected over the {p.ros_games ?? 0} games left.</p>
                   {/if}
+                  {#if p.priced_from_words}<p class="text-sm text-ink-2" data-testid="ros-priced-from">{p.priced_from_words}.</p>{/if}
                   <p class="text-sm text-ink-2" data-testid="ros-facts">
                     {p.ros_games ?? 0} games left{bye ? ` (${bye})` : ""} · playoffs {whole(p.playoff_points) ?? "—"}{rangeWords(p) ? ` · likely ${rangeWords(p)}` : ""}
                   </p>

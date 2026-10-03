@@ -116,9 +116,17 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   and MFL team units are players priced from the team's starter; the Leagues card reads the lineup and the scoring
   back in the league's own words and shows the check; double headers name both opponents. dbt: `fct_player_game`
   (and the league twins) carry `pass/rush/rec_tds_10p`. Fixtures: `api/tests/fixtures/mfl/70587/`.
-  **Next: the nightly on the spec (v3.1)** — `projections.price` through `expected_frame`, the harness re-run (M2's
-  numbers say yes: season totals better at every position), then `LEAGUE_LAB_EV_PRICING` on by default; usage
-  tracking; the news feed; Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
+* **Wave I-D (2026-10-03, Saturday late afternoon)**: the nightly on the spec — `scoring.price_projected` is the one
+  entry point for projected lines, called by `projections.price` (every nightly path) and `anyleague.price_lines`
+  (the request side), so `LEAGUE_LAB_EV_PRICING` moves both at once (pinned bit for bit; the harness both ways in
+  METRICS § "Expected-value pricing" → "On the nightly"); the team units on rest of season, the Team Hub, the League
+  screen and the unit's card (`/api/player/mfl:0656`); the League screen's double headers and `/api/record` for MFL;
+  Waivers fills an empty starting slot first; the player news line (`news_feed.py`, ESPN's public fantasy news
+  endpoint, headline + link out, `LEAGUE_LAB_NEWS=off`; `docs/ESPN_TERMS.md`).
+  **Next: Monday's flip of `LEAGUE_LAB_EV_PRICING`** (STATUS § "Wave I-D" PO section: the nightly's env + a manual
+  run first, then Render's env; week 5 is the record's first EV-priced week; M3's `pricing` column proposal for the
+  record goes with it). Then usage tracking; v3.1 (the ranges' target with the long-TD bonus, the fringe level, cold
+  starts); Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a

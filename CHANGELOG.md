@@ -2,6 +2,31 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-D
+
+- **PO (integration).** dbt's `assert_projection_ranges_price_the_lines` re-prices `scrubs` only: the dynasty's
+  bonuses are priced at their probability under `LEAGUE_LAB_EV_PRICING`, which the SQL macro cannot express
+  (`tests/test_projections_ev.py` pins the nightly and the request side equal). The flag stays off until Monday;
+  STATUS § "Wave I-D" has the flip's order.
+
+- **M3: the nightly on the scoring spec.** One function prices every projected line, in the nightly and on request
+  (`scoring.price_projected`), so turning on expected-value pricing (`LEAGUE_LAB_EV_PRICING`, still off) moves the
+  player page, Trends, the record and My Week together. Off, nothing changes; on, the dynasty's yardage and 40+ TD
+  bonuses are priced at their chance (top 24 about +0.7 a week, season totals closer at every position), Scrubs is
+  unchanged to the bit.
+
+- **IC-4: the team units and the double header, finished.** Rest of season lists dad's league's team QBs and kickers
+  (each week priced from that week's starting quarterback or kicker, the bye a week off, the team's badge where the
+  face goes) and counts them against the free units in "Value to my lineup"; a unit opens its starter's card; the Team
+  Hub names it "Bengals QB"; MFL teams no longer show their name twice as the manager; the League screen lists a
+  double-header week's games, counts all-play once a week and the record from both games; Waivers puts the claim that
+  fills an empty starting slot first.
+
+- **N1: the news line on the card.** The player page and the research pane show the newest ESPN headline under the
+  availability lines — "News · 2 h ago · *Jefferson (ankle) has been ruled out…* · RotoWire via ESPN ›", linked out —
+  from ESPN's public player news, read when a card is opened (one player, cached an hour, 15 minutes on game days),
+  nothing older than 14 days, nothing of the story kept; `LEAGUE_LAB_NEWS=off` turns it off (`docs/ESPN_TERMS.md`).
+
 ## 2026-10-03 — Wave I-C
 
 - **PO (integration).** `fct_player_game` and its league twins carry the 10-yard touchdown cut (`*_tds_10p`), so

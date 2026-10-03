@@ -1306,3 +1306,49 @@ export interface Waivers {
   default_view?: WaiverView;
 }
 // ---- end IB-2
+
+// ---- IC-4 (Wave I-D): the team units and the double header, finished (INTERFACES.md § IC-4). Additive: declaration
+// merging. A unit's rest-of-season row (`unit`, the player its weeks are priced from); the Team Hub names a unit with
+// its team (`short_name` "Bengals QB", the badge); the League screen's matchups (each game once; both games of a
+// double header) and each team-week's games.
+export interface RosPlayer {
+  unit?: boolean;
+  priced_from?: { gsis_id: string | null; player_name: string | null } | null;
+  priced_from_words?: string | null; // "Priced from Joe Burrow's line (the team's starting QB each week)"
+}
+export interface DPlayer {
+  unit?: boolean;
+  short_name?: string | null;
+}
+export interface TeamSlot {
+  replacement_short?: string | null;
+}
+export interface MatchupSide {
+  roster_id: number;
+  team_name: string | null;
+  points: number | null; // null before the games
+  result: "W" | "L" | "T" | null;
+}
+export interface WeekMatchups {
+  week: number;
+  played: boolean;
+  double_header: boolean;
+  games: { matchup_id: number; a: MatchupSide; b: MatchupSide; mine: boolean }[];
+}
+export interface LeagueView {
+  matchups?: WeekMatchups[]; // this week's (not played yet) and the last scored week's
+}
+// ---- end IC-4
+
+// ---- N1 (Wave I-D): the news line on the card — ESPN's latest headlines for him (api/league_lab_api/news.py): at most
+// 3, newest first, none older than 14 days; [] when there is none or the feed is off / out. Only the headline is sent.
+export interface NewsItem {
+  headline: string;
+  date: string; // ISO UTC, ESPN's `published`
+  source: string; // "RotoWire via ESPN" | "ESPN"
+  url: string; // https, an espn.com page (the story, or his ESPN player page)
+}
+export interface PlayerCard {
+  news?: NewsItem[];
+}
+// ---- end N1

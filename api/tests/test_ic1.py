@@ -126,16 +126,28 @@ def test_league_spec_from_the_mfl_translation(mfl_70587):
 
 
 @needs_db
-def test_price_lines_on_the_mfl_spec_and_house_parity(mfl_70587):
+def test_price_lines_on_the_mfl_spec_and_house_parity(mfl_70587, monkeypatch):
     import pandas as pd
 
     from league_lab_api.db import query
     b = A.load_board(query, 2026, 4)
     dad, _ = A.league_scoring(A.sleeper().league(DAD))
     scrubs, _ = A.league_scoring(A.sleeper().league(SCRUBS))
+    dynasty, _ = A.league_scoring(A.sleeper().league(DYNASTY))
+    # M3 (Wave I-D): a Sleeper spec equals the pre-spec frame WITH THE FLAG OFF (the default); flag on, only a scoring
+    # with a yardage / long-TD bonus moves (the dynasty), Scrubs has none and stays equal to the bit
+    monkeypatch.setenv("LEAGUE_LAB_EV_PRICING", "0")
     p = A.price_lines(b.line, dad)
     flat = A.price_lines(b.line, dict(scrubs))            # the flat dict alone: the pre-spec path
     assert (A.price_lines(b.line, scrubs) == flat).all()  # a Sleeper spec prices bit for bit as before
+    dyn_off = A.price_lines(b.line, dynasty)
+    assert (dyn_off == A.price_lines(b.line, dict(dynasty))).all()
+    monkeypatch.setenv("LEAGUE_LAB_EV_PRICING", "1")
+    assert (A.price_lines(b.line, scrubs) == flat).all()
+    assert (A.price_lines(b.line, dad) == p).all()        # an MFL spec: the expectation under either flag
+    dyn_on = A.price_lines(b.line, dynasty)
+    assert (dyn_on == A.price_lines(b.line, dict(dynasty))).all() and (dyn_on - dyn_off).max() > 1.0
+    monkeypatch.setenv("LEAGUE_LAB_EV_PRICING", "0")
     top = pd.concat([b.line["position"], p.rename("p")], axis=1).groupby("position")["p"].max()
     assert top["QB"] > 30 and top["RB"] > 15 and top["WR"] > 8 and top["TE"] > 5    # no 15-point lineups
     units = b.line[b.line["position"] == "QB"].head(3).assign(position="TMQB")

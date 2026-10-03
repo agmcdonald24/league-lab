@@ -12,8 +12,9 @@ stat lines in ``ops.projections`` are the same for every league (0 of 8,134 2026
    (the league-specific columns are dropped); team / injury / roster status from ``mart_player_week_projections``
    (the same ``mart_player_week_features`` columns the lineup service reads); every fitted league's ranges are
    kept as candidate references for step 4.
-3. **Pricing**: ``scoring.compute_points`` on the stat line with the league's ``scoring_settings`` (bonuses
-   included) — the same function ``projections.price`` uses, so a known league reproduces ``proj_points`` exactly.
+3. **Pricing**: ``scoring.price_projected`` on the stat line in the league's scoring (Wave I-D: the flat engine, or
+   expected bonuses under ``LEAGUE_LAB_EV_PRICING``) — the same function ``projections.price`` uses, so a known
+   league reproduces ``proj_points`` exactly.
 4. **Ranges** (``approximate_ranges``): the per-league residual quantile models do not exist for a new league.
    The reference league's range around its own projection is scaled by the ratio of the two prices of the same
    stat line (``p_q = proj + (p_q,ref - proj_ref) x proj / proj_ref``); the reference is the fitted league whose
@@ -62,9 +63,11 @@ from .scoring import (  # noqa: F401 - compute_points: the reference the vector 
     LeagueScoring,
     ScoringSpec,
     compute_points,
+    compute_points_frame,  # ---- M3: moved to scoring (Wave I-D); re-exported, the API's tests import it from here
     ev_pricing,
     expected_frame,
     kd_flat,
+    price_projected,
     spec_of,
     unmapped_keys,
 )
@@ -317,61 +320,20 @@ def _load_nfl_wide(query: Query, season: int, week: int) -> Board:
 
 
 def price_lines(line: pd.DataFrame, scoring: Mapping[str, float] | ScoringSpec) -> pd.Series:
-    """League points of every stat line: ``compute_points`` (bonuses included), exactly as ``projections.price`` —
-    computed for every row at once (``compute_points_frame``: the same terms in the same order, so equal bit for bit).
+    """League points of every PROJECTED stat line, every row at once: ``scoring.price_projected`` — the one entry point
+    ``projections.price`` (the nightly) calls too, so a house league reproduces its nightly ``proj_points`` to the bit
+    under either state of ``LEAGUE_LAB_EV_PRICING``.
 
-    Wave I-C (IC-1): the league's ``ScoringSpec`` decides. A Sleeper spec prices through the flat path above (a
-    house league still reproduces its nightly ``proj_points`` to the bit) unless ``LEAGUE_LAB_EV_PRICING=1``; any
-    other spec (MFL's per-position rules, TDs by distance, ``1/10`` yards) prices with ``scoring.expected_frame``
-    per row position (units through ``ScoringSpec.rules_for``: TMQB -> QB's rules)."""
+    Wave I-C (IC-1): the league's ``ScoringSpec`` decides — an MFL spec (per-position rules, TDs by distance, ``1/10``
+    yards) prices with ``scoring.expected_frame`` per row position (units through ``ScoringSpec.rules_for``: TMQB ->
+    QB's rules). Wave I-D (M3): a Sleeper scoring (a flat dict or a ``LeagueScoring``) prices on the flat engine
+    (``compute_points_frame``) unless the flag is on AND it has a yardage or long-TD bonus (``scoring.ev_moves``)."""
     stats = line[list(STAT_LINE)].rename(columns=STAT_LINE).apply(pd.to_numeric, errors="coerce").fillna(0.0)
     if "position" in line:          # F1: a position premium (bonus_rec_te, …) prices only when the row carries the position
         stats["position"] = line["position"].to_numpy()
-    # ---- IC-1: pricing on the spec
-    spec = scoring if isinstance(scoring, ScoringSpec) else getattr(scoring, "spec", None)
-    if spec is not None and (spec.flat is None or ev_pricing()):
-        pos = line["position"].to_numpy() if "position" in line else None
-        # an MFL league has no nightly to reproduce: its flat bands are priced at their probability (a projected
-        # 249 vs 251 passing yards is not a 10-point difference); a Sleeper spec only under the flag
-        return pd.Series(expected_frame(stats, spec, pos, ev=True), index=line.index, dtype=float)
-    flat = spec.flat if spec is not None else scoring
-    # ---- /IC-1
-    return pd.Series(compute_points_frame(stats, flat), index=line.index, dtype=float)
-
-
-def compute_points_frame(stats: pd.DataFrame, scoring: Mapping[str, float]) -> np.ndarray:
-    """``[compute_points(r, scoring) for r in stats.to_dict("records")]`` for a frame with no missing values (Wave H,
-    H1): each scoring key's term added to the running total in ``scoring``'s order, as ``compute_points`` adds it, then
-    Python's ``round(…, 2)`` per row — the same floating-point operations, so the same numbers bit for bit (tested),
-    about 100x faster on a week's board."""
-    from .scoring import _PY_EXPR, SLEEPER_BONUS_MAP, SLEEPER_POSITION_MAP
-    n = len(stats)
-    pos = stats["position"].to_numpy() if "position" in stats else None
-
-    def col(c: str) -> np.ndarray:
-        return stats[c].to_numpy(dtype=float) if c in stats else np.zeros(n)
-    total = np.zeros(n)
-    for key, weight in scoring.items():
-        if not weight:
-            continue
-        kind = MAPPED_KEYS.get(key)
-        if kind is None:
-            pk = SLEEPER_POSITION_MAP.get(key)
-            if pk is not None and pos is not None:
-                hit = pos == pk[1]
-                total = np.where(hit, total + col(pk[0]) * float(weight), total)
-            continue
-        if key in SLEEPER_BONUS_MAP:
-            c, low, high = SLEEPER_BONUS_MAP[key][:3]
-            v = col(c)
-            value = ((v >= low) & ((v < high) if high is not None else True)).astype(float)
-        else:
-            cols = _PY_EXPR[key]
-            value = col(cols[0])
-            for c in cols[1:]:
-                value = value + col(c)
-        total = total + value * float(weight)
-    return np.array([round(x, 2) for x in total.tolist()], dtype=float)
+    # ---- M3 (Wave I-D): IC-1's own branch folded into the shared entry point
+    return pd.Series(price_projected(stats, scoring), index=line.index, dtype=float)
+    # ---- /M3
 
 
 # ------------------------------------------------------------------------------ ranges for a league the model never saw
@@ -560,7 +522,9 @@ def team_names(rosters: list[dict], users: list[dict]) -> dict[int, dict]:
         u = by_user.get(r.get("owner_id")) or {}
         tn = ((u.get("metadata") or {}).get("team_name") or "").strip() or None
         dn = u.get("display_name")
-        out[int(r["roster_id"])] = {"team_name": tn or dn or f"Roster {r['roster_id']}", "manager_name": dn or "unknown"}
+        # ---- IC-4: an MFL franchise without a shared owner name has no manager name (was the team name repeated)
+        out[int(r["roster_id"])] = {"team_name": tn or dn or f"Roster {r['roster_id']}",
+                                    "manager_name": dn or (None if u.get("platform") == "mfl" else "unknown")}
     return out
 
 
@@ -792,6 +756,114 @@ def unit_value(pr: Priced, position: str, team: str | None) -> dict | None:
     m = pr.units[(pr.units["position"] == position) & (pr.units["team"] == t)]
     return None if m.empty else m.iloc[0].to_dict()
 # ---- end IC-2
+
+
+# ---- IC-4 (Wave I-D): the team units in the rest of season. Each week of the window prices a unit by the week's own
+# rule (``price_units``: TMQB = the line of the team's best-projected quarterback who can play that week, priced
+# through ``price_lines`` as TMQB; TMPK = the team's best-projected kicker that week), its range the starter's; a bye is
+# a week off (``_ros_table`` drops a team's rows in a week it does not play). The rows are keyed by the league's
+# directory (a rostered unit under its MFL id, ``mfl:0656``; the others ``mfl:TMQB-KC``), so the trade board's
+# rest-of-season weeks and "Value to my lineup" find them under the key the rosters carry.
+UNIT_ROS_EXTRA = ["unit", "starter_gsis", "starter_name"]
+
+
+def unit_window(win: Window, weeks: list[int], scoring: Mapping[str, float], sk: pd.DataFrame, kfr: pd.DataFrame | None,
+                units: Iterable[str]) -> pd.DataFrame:
+    """The units' rows of ``weeks`` on the NFL-wide window (``_ros_table``'s fast path): ``sk`` = ``skill_window``'s
+    frame (the week's priced QB lines rank the starters and carry the ranges), ``kfr`` = ``kd_window(…, "K")``.
+    Columns: ``_kd_frame``'s + the stat line (TMQB: the starter's) + ``starter_gsis`` / ``starter_name``."""
+    from types import SimpleNamespace
+    units = tuple(units)
+    rows: list[dict] = []
+    if "TMQB" in units and not win.lines.empty and not sk.empty:
+        qb = win.lines[win.lines["week"].isin(weeks) & (win.lines["position"] == "QB")]
+        st = win.status if not win.status.empty else pd.DataFrame(columns=["week", "gsis_id"])
+        for w, lw in qb.groupby("week"):
+            line = lw.drop_duplicates("gsis_id").set_index("gsis_id")
+            status = st[st["week"] == w].drop_duplicates("gsis_id").set_index("gsis_id")
+            skw = sk[sk["week"] == w].drop_duplicates("gsis_id").set_index("gsis_id")
+            ul = unit_lines(SimpleNamespace(line=line, status=status), skw["proj_points"])
+            if ul.empty:
+                continue
+            pts = price_lines(ul, scoring)
+            for t, r in ul.iterrows():
+                g = r["starter_gsis"]
+                p = float(pts[t])
+                pg = skw["proj_points"].get(g, np.nan)
+                rng = {q: (round(max(0.0, p + float(skw.at[g, q]) - float(pg)), 2)
+                           if g in skw.index and pd.notna(skw.at[g, q]) and pd.notna(pg) else np.nan) for q in ("p10", "p90")}
+                rows.append({"player_key": f"TMQB-{t}", "gsis_id": None, "position": "TMQB", "proj_points": round(p, 2),
+                             **rng, "team": t, "roster_status": "ACT", "player_name": None, "implied_team_total": None,
+                             "week": int(w), **{c: float(r[c]) for c in STAT_LINE},
+                             "starter_gsis": g, "starter_name": status["player_name"].get(g) if "player_name" in status else None})
+    if "TMPK" in units and kfr is not None and not kfr.empty:
+        k = kfr.assign(_p=pd.to_numeric(kfr["proj_points"], errors="coerce")).dropna(subset=["_p"])
+        k = k[k["team"].map(lambda x: isinstance(x, str) and bool(x))]
+        for (w, t), g in k.sort_values("_p", ascending=False).groupby(["week", "team"], sort=False):
+            r = g.iloc[0]
+            rows.append({"player_key": f"TMPK-{t}", "gsis_id": None, "position": "TMPK", "proj_points": round(float(r["_p"]), 2),
+                         "p10": pd.to_numeric(r.get("p10"), errors="coerce"), "p90": pd.to_numeric(r.get("p90"), errors="coerce"),
+                         "team": t, "roster_status": "ACT", "player_name": None, "implied_team_total": None, "week": int(w),
+                         "starter_gsis": r["unit_id"], "starter_name": r.get("player_name")})
+    return pd.DataFrame(rows)
+
+
+def units_priced_frame(pr: Priced, w: int) -> pd.DataFrame:
+    """One week's ``Priced.units`` as rest-of-season rows (the slow path: ``price_week`` priced them)."""
+    if pr.units is None or pr.units.empty:
+        return pd.DataFrame()
+    u = pr.units
+    out = pd.DataFrame({"player_key": [f"{p}-{t}" for p, t in zip(u["position"], u["team"], strict=True)],
+                        "gsis_id": None, "position": u["position"].to_numpy(),
+                        "proj_points": pd.to_numeric(u["proj_points"]).round(2).to_numpy(),
+                        "p10": pd.to_numeric(u["p10"], errors="coerce").to_numpy(dtype=float),
+                        "p90": pd.to_numeric(u["p90"], errors="coerce").to_numpy(dtype=float),
+                        "team": u["team"].to_numpy(), "roster_status": "ACT", "player_name": None,
+                        "implied_team_total": None, "week": int(w),
+                        "starter_gsis": u["starter_gsis"].to_numpy(), "starter_name": u["starter_name"].to_numpy()})
+    line = pr.board.line
+    for c in STAT_LINE:            # TMQB: the starter's line (the pieces of "why this number"); TMPK: none
+        out[c] = [float(line.at[g, c]) if p == "TMQB" and g in line.index and pd.notna(line.at[g, c]) else np.nan
+                  for p, g in zip(out["position"], out["starter_gsis"], strict=True)]
+    return out
+
+
+def unit_directory(league_id: str) -> dict[tuple[str, str], dict]:
+    """(unit position, nflverse team) -> {player_key, player_name} from the league's directory: a unit a roster of THIS
+    league carries under its MFL id (``mfl:0656``), the others under ``mfl:TMQB-KC``. Empty for a league without units."""
+    if not platforms.is_mfl(league_id):
+        return {}
+    r = sleeper()
+    try:
+        r.rosters(league_id)                     # registers the league's units in the directory (cached calls)
+        mf = r.mfl
+    except (LeagueNotFound, SleeperUnavailable, SleeperBusy, AttributeError):
+        return {}
+    mine = {k for k, how in mf.mapping.get(platforms.mfl_id(league_id), {}).values() if how == "unit"}
+    out: dict[tuple[str, str], dict] = {}
+    for key, row in list(mf.extra_players.items()):
+        if not row.get("unit") or not row.get("team"):
+            continue
+        k = (str(row.get("position")), LU._team(row.get("team")))
+        if k not in out or key in mine:
+            out[k] = {"player_key": key, "player_name": row.get("full_name") or row.get("player_name")}
+    return out
+
+
+def unit_keys(league_id: str, out: pd.DataFrame) -> pd.DataFrame:
+    """Rename the rest-of-season frame's unit rows (``TMQB-CIN``) to the directory's keys and names."""
+    if out.empty or "unit" not in out or not out["unit"].fillna(False).astype(bool).any():
+        return out
+    d = unit_directory(league_id)
+    out = out.copy()
+    for i in out.index[out["unit"].fillna(False).astype(bool)]:
+        pos, team = out.at[i, "position"], out.at[i, "team"]
+        hit = d.get((str(pos), str(team)))
+        name = hit["player_name"] if hit else f"{team} {'QB' if pos == 'TMQB' else 'K'}"
+        out.at[i, "player_key"] = hit["player_key"] if hit else f"{platforms.PREFIX}{pos}-{team}"
+        out.at[i, "player_name"] = name
+    return out
+# ---- end IC-4
 
 
 def clear_priced() -> None:
@@ -1334,6 +1406,7 @@ def _ros_table(query: Query, league_id: str, scoring: dict[str, float], slots: l
     g = query(ROS_GAMES_SQL, (season,))
     plays = {(int(r.week), t) for r in g.itertuples() for t in (r.home_team, r.away_team)}
     starts = tuple(p for p in ("K", "DEF") if p in {str(x).upper() for x in slots})
+    units = unit_starts(slots)                                                   # ---- IC-4: TMQB / TMPK rows
     window = list(range(int(from_week), int(last_week) + 1))
     frames, refs = [], set()
     fast: list[int] = []
@@ -1349,16 +1422,27 @@ def _ros_table(query: Query, league_id: str, scoring: dict[str, float], slots: l
                 kd = kd_window(win, fast, scoring, pos)
                 if not kd.empty:
                     frames.append(_kd_frame(kd, pos))
+            if units:                                                            # ---- IC-4
+                kfr = kd_window(win, fast, scoring, "K") if "TMPK" in units else None
+                uf = unit_window(win, fast, scoring, sk, kfr, units)
+                if not uf.empty:
+                    frames.append(uf.assign(unit=True))                          # ---- end IC-4
     for w in window:
         if w in fast:
             continue
         pr = price_week(query, league_id, scoring, slots, season, w, exclude_reference=exclude_reference)
         refs.add(pr.reference)
-        frames.extend(_priced_frames(pr, w))
+        fr = _priced_frames(pr, w)
+        if "K" not in starts:                                                    # ---- IC-4: priced for TMPK only
+            fr = [f for f in fr if not (len(f) and (f["position"] == "K").all())]
+        uf = units_priced_frame(pr, w) if units else pd.DataFrame()
+        frames.extend(fr + ([uf.assign(unit=True)] if not uf.empty else []))     # ---- end IC-4
     cols = ["player_key", "gsis_id", "position", "player_name", "team", "roster_status", "is_ranked", "from_week",
             "last_week", "playoff_week_start", "ros_games", "ros_points", "ros_points_per_game", "ros_p10", "ros_p90",
             "ros_sd", "playoff_games", "playoff_points", "ros_rank_pos", "ros_rank_all", "bye_weeks", "weeks_with_lines",
             "weeks_json", *ROS_LINE]                                                                  # ---- IA-3
+    if units:
+        cols += UNIT_ROS_EXTRA                                                   # ---- IC-4
     if not frames:
         return pd.DataFrame(columns=cols)
     d = pd.concat(frames, ignore_index=True)
@@ -1391,6 +1475,10 @@ def _ros_table(query: Query, league_id: str, scoring: dict[str, float], slots: l
     # ---- end IA-3
     for c in ("gsis_id", "position", "player_name", "team", "roster_status"):
         out[c] = first[c]
+    if units:                                       # ---- IC-4: the decision week's starter / kicker of a unit
+        for c in UNIT_ROS_EXTRA:
+            out[c] = first[c] if c in first else None
+        out["unit"] = out["unit"].fillna(False).astype(bool)
     out.index.name = None
     out["player_key"] = out.index
     out["is_ranked"] = (out["position"] == "DEF") | (out["roster_status"].fillna("ACT") == "ACT")
@@ -1407,6 +1495,7 @@ def _ros_table(query: Query, league_id: str, scoring: dict[str, float], slots: l
     out["ros_rank_pos"] = ranked.groupby("position").cumcount() + 1
     out["ros_rank_all"] = pd.Series(np.arange(1, len(ranked) + 1), index=ranked.index)
     out = out.reset_index(drop=True)
+    out = unit_keys(league_id, out) if units else out                            # ---- IC-4
     out.attrs["references"] = sorted(r for r in refs if r)
     return out[cols]
 

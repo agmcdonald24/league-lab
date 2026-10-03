@@ -29,9 +29,12 @@ export function rankOf(p: RosPlayer, i: number, position: string): number | null
 }
 
 /** "**#1 WR for the rest of the season: Chris Olave, 241 points over 13 games** (likely 205–280) · playoffs: 52." */
+// ---- IC-4 (Wave I-D): MyFantasyLeague's team units in words
+const UNIT_WORDS: Record<string, string> = { TMQB: "team QB", TMPK: "team K" };
+// ---- end IC-4
 export function answerLine(top: RosPlayer, position: string): string {
-  const what = position === "ALL" ? "overall" : position;
-  const label = position === "ALL" ? `${top.player_name} (${top.position})` : top.player_name;
+  const what = position === "ALL" ? "overall" : (UNIT_WORDS[position] ?? position); // IC-4
+  const label = position === "ALL" ? `${top.player_name} (${UNIT_WORDS[top.position ?? ""] ?? top.position})` : top.player_name;
   const games = top.ros_games ?? 0;
   let s = `**#1 ${what} for the rest of the season: ${label}, ${whole(top.ros_points)} points over ${games} game${games === 1 ? "" : "s"}**`;
   const rng = rangeWords(top);
