@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- PlayerWire briefs → the hosted copy's `playerwire` schema, every 15 minutes (plan N2, docs/PLAYERWIRE.md).
+     The Mac is the one writer of schema `playerwire` (role playerwire_writer); GitHub Actions stays the one writer
+     of the marts. Needs PLAYERWIRE_API_KEY and PLAYERWIRE_HOSTED_URL in the repo's .env, and PlayerWire's API
+     running on this Mac (http://127.0.0.1:8790 unless PLAYERWIRE_API_URL says otherwise).
+     Install:  mkdir -p logs   # launchd needs the log directory to exist before it opens StandardOutPath
+               sed "s|__ROOT__|$PWD|g" scripts/launchd/com.leaguelab.playerwire-sync.plist > ~/Library/LaunchAgents/com.leaguelab.playerwire-sync.plist
+               launchctl load ~/Library/LaunchAgents/com.leaguelab.playerwire-sync.plist
+     Remove:   launchctl unload ~/Library/LaunchAgents/com.leaguelab.playerwire-sync.plist
+     A sleeping Mac skips the runs it sleeps through and catches up on wake (one run: a sync drains every change since
+     its cursor). Two runs never overlap: the second finds the advisory lock taken and exits 0. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.leaguelab.playerwire-sync</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>-lc</string>
+    <string>cd __ROOT__ &amp;&amp; uv run python scripts/playerwire_sync.py sync --once</string>
+  </array>
+  <key>StartInterval</key><integer>900</integer>
+  <key>StandardOutPath</key><string>__ROOT__/logs/playerwire-sync.log</string>
+  <key>StandardErrorPath</key><string>__ROOT__/logs/playerwire-sync.log</string>
+  <key>RunAtLoad</key><true/>
+</dict>
+</plist>
