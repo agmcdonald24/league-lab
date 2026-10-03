@@ -3438,6 +3438,33 @@ Starter $7, Standard $25; read 2026-10-02 from memory of Render's pricing, not t
 board); the hosted copy (`league_lab_hosted`) has no `ops.projection_lines` yet (H2's relation audit), so there the rest
 of season borrows week by week as before.
 
+## Wave I-0 (Iteration 17, part 0)
+
+### I0-A 2026-10-02 — the availability overlay (what would be wrong at 1 PM Sunday)
+
+Branch `dev/I0A`. Andrew's beta walk: My Week said start Justin Jefferson, ruled Out at 2:35 PM ET; Jonah Coleman (IR)
+was "running hot". Cause: availability came only from nflverse's injury file via the nightly (lags the report by hours).
+
+- **Sources** (`src/league_lab/injury_feed.py`, `api/league_lab_api/availability.py`): ESPN's public injuries feed
+  (15 min on game days per `dim_game`, hourly otherwise; parsed entries cached in `LEAGUE_LAB_CACHE_DIR/espn_injuries.json`
+  with `fetched_at`; last copy kept on failure; gzip; on the live server a stale copy is served while one thread reads
+  ESPN) + Sleeper's directory (unchanged daily cache). ESPN → gsis via the directory's `espn_id`, then the id table.
+- **Live numbers (browser pane, 2026-10-03T03:58Z)**: 800 entries, 32 teams, 8.7 MB; statuses Out / Questionable /
+  Active / Injured Reserve / Doubtful; fantasy statuses OUT, QUESTIONABLE, IR, IR-R, PUP-R, INACTIVE, DOUBTFUL. The athlete
+  id is only in `athlete.links[].href` (no `athlete.id`). Sleeper's `espn_id` maps 118 of ESPN's 400 skill entries; the
+  id table maps 158 of 158 in the fixture. Two "Justin Jefferson"s on the feed (MIN WR 4262921 Out; CLE LB 5150249).
+  Sleeper had Jefferson Out with `news_updated` 18:55 UTC — 20 min after ESPN.
+- **Applied**: My Week (both paths: re-solve with `lineup.solve`, chip + reason, `availability.changes`), Trends (left
+  out + count), Waivers (no claim / free agent who cannot play; drop who cannot play = 0 this week; one QB per NFL team
+  by `depth_chart_order`), trades (this week's board), rest of season (`injury_status`), `/api/status` (`availability`;
+  warning dropped when ESPN < 1 h old). Web: "Injuries checked 2:40 PM", the sentences under "Your lineup", the chip.
+- **Evidence**: `api/tests/test_i0a.py` 19 passed. Scrubs roster 2 on the clone with the fixture feed: "Justin Jefferson is
+  out (ankle) — Michael Wilson starts at FLEX2" (Wilson 9.20 vs Croskey-Merritt 9.19), lineup 117.02 → 113.54 = minus
+  Jefferson's margin 3.48 exactly; Test League roster 10: Jefferson out — Stefon Diggs starts at FLEX, RB1 / RB2 stay
+  empty (Etienne IR, Price Out) and say so. Trends (Scrubs): 38 players left out (IR, Out). API suite 178 passed (159 +
+  19); web lint / build clean; `e2e:fixtures` 60 passed (58 + 2: `web/e2e/i0a/`); parity tests untouched and green.
+- **Off switch**: `LEAGUE_LAB_AVAILABILITY=off`; off in fixture mode unless `LEAGUE_LAB_ESPN_FIXTURES` is set.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)

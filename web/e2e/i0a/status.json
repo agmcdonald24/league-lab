@@ -1,0 +1,20 @@
+{
+ "freshness": "**nflverse** loaded Sat Sep 26, 9:55 AM ET \u00b7 **sleeper** loaded Sat Sep 26, 5:26 PM ET \u00b7 NFL 2026 final games through 2026-09-24 (REG week 3) \u00b7 league scored through week 2",
+ "warning": null,
+ "availability": {
+  "enabled": true,
+  "checked_at": "2026-10-02T18:40:00Z",
+  "source_ages": {
+   "espn_s": 0,
+   "sleeper_s": 0
+  },
+  "n_out": 109,
+  "n_questionable": 40,
+  "unmapped_espn": 0
+ },
+ "sleeper": {
+  "mode": "fixtures"
+ },
+ "board_source": "auto",
+ "board_source_in_use": "nfl_wide"
+}

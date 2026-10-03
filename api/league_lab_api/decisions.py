@@ -43,6 +43,7 @@ from league_lab import waivers as W
 from league_lab.lineup import UNVALUED, Player
 from league_lab.roster_value import RosterBoard
 
+from . import availability
 from .applib import _StreamlitStandIn, blocks, capture, cards, links, ui
 from .applib import ros as ROS
 from .db import query
@@ -456,6 +457,7 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
         out["inputs_current"] = _bool(mv["inputs_current"].iloc[0]) if "inputs_current" in mv else None
     out["free_agents"] = _free_agents(league_id, season, int(week), position, limit, is_house, od_info, ros)
     out.update(waiver_extras(league_id, team, int(week), is_house, od_info, position))      # H1 (Wave H)
+    out = availability.waivers_overlay(out)         # ---- I0-A: no claims of players who cannot play; one QB per team
     if not is_house:
         out["on_demand"] = {k: v for k, v in od_info.items() if k not in ("lw", "fa")}
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
@@ -611,6 +613,9 @@ class TradeContext:
                 self.points = market_points(self.lw)
                 self.replacement, self.repl_name = replacement_level(self.lw, fa, self.points)
             self.fa = fa
+        # ---- I0-A: this week's availability on the board (an Out player is worth 0 this week; the board re-solves)
+        self.horizon, self.out_now = availability.horizon_overlay(self.horizon, self.this_week)
+        # ---- end I0-A
         self.first_w, self.last_w = first, last
         self.span_words = f"weeks {first}–{last}" if last > first else f"week {first}"
         self.board = RosterBoard(self.horizon.to_dict("records"), tuple(self.slots))
@@ -655,6 +660,8 @@ class TradeContext:
         v, why = self.week_value(pid)
         p.update({"this_week": v, "cannot_play": why, "market_price": T.whole(self.prices[pid]) if pid in self.prices else None,
                   "season_points": T.whole(self.market[pid]) if pid in self.market else None, "roster_id": self.board.owner(pid)})
+        if str(pid) in getattr(self, "out_now", {}):      # ---- I0-A: worth 0 this week, the status says why
+            p["this_week"], p["cannot_play"] = 0.0, self.out_now[str(pid)]
         return p
 
     def resolve(self, ids) -> list[str]:

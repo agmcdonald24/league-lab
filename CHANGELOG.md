@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-0
+
+- **I0-A: who can play, checked every 15 minutes on game days.** My Week no longer starts a player ruled out after the
+  nightly build: ESPN's injuries feed (15 min on game days, hourly otherwise) and Sleeper's directory are overlaid at
+  request time; the lineup is re-solved and says who moved ("Justin Jefferson is out (ankle) — Michael Wilson starts at
+  FLEX2"), the player row shows OUT / DOUBTFUL / IR, and "Injuries checked 2:40 PM" replaces the stale-news warning.
+  Trends leave out Out / IR / PUP / suspended players; Waivers never suggest a player who cannot play or two QBs of
+  one team; trades count an Out player as 0 this week; rest of season shows the status (`availability.py`).
+
 ## 2026-10-02 — Wave H
 
 - **Hotfix: the nightly on GitHub Actions.** Its first real run (#4, secrets set) failed in `restore-state`: Neon runs
