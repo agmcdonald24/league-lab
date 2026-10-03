@@ -520,6 +520,31 @@ Waivers filling an empty starting slot first, and the player news line (ESPN's p
 Render's env; week 5 is the first EV-priced week of the record). Still after: usage tracking; v3.1's ranges with
 the long-TD bonus in the target, the fringe level, cold starts; Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
 
+**Fourth: the casual-user review (2026-10-03 evening).** Andrew had an outside agent walk the live app (`042f199`,
+Wave I-C) "taking the perspective of my dad" — a manager who knows football and does not enjoy analytics — on MFL
+70587, team 8 "Big Mac Attack". Verbatim in `docs/reviews/2026-10-03-mfl-70587-usability-review.md`. Andrew: "just
+incorporate that. I don't want to lose sight of all the other waves and all the plans that we have … squeeze it in."
+Its findings, in its order: **P0** (1) the trade calculator drops an MFL team-QB asset from the Finder's package
+(`?give=mfl:0682,12490` opens with Tuten alone; the verdict flips to "No deal") — the PO's lead: `parseIds` in
+`web/src/lib/decisions.ts` rejects the colon in a provider key; (2) a Waivers card says "Arizona Cardinals QB fills
+the empty DEF slot in week 7" — the explanation is a team need pasted onto an unrelated candidate; (3) Sleeper words
+on an MFL roster ("on the bench in Sleeper", "Sleeper's number … not in yet", "your Sleeper username"), an FA badge
+on rostered team units, points-per-game shown and "not shown yet" at once. **P1** the default experience as a weekly
+action list (≤ 3 actions by urgency; "your lineup is set" as a valid answer; combine "Addison vs McConkey" and
+"Nabers vs McConkey" into one receiver decision; say whether the suggestion is already submitted; "Open MFL to edit
+your lineup"; nothing is submitted from here); trades explained through starting-lineup changes (who enters / leaves,
+the other side, the window, hold / waivers; no gains from slot renumbering); the interest dial → "Effect on their
+starters" with outcome labels (no acceptance claim); least-costly package first; a metric dictionary ("Projected
+points this week", "about 10 extra starter points total over the next four weeks", "Typical range (middle 50%)",
+"Low-end / high-end outcome", "Share of team passes thrown to him", "Backup coverage", "Team QB / Team kicker /
+Receiver or tight end"); waiver cards leading with this week's gain, the four-week total cumulative and second; the
+setup screen with the team picker first and the scoring collapsed to a status line. **P2** contrast and type,
+the scoring arithmetic under "How we calculated this", a compact schedule table, status next to the name, "Updated
+2:51 PM ET". Already answered by I-D before the review reached it: units on Season / Team, both games of a double
+header. The 116 / 157 week-3 check it cites is the hosted copy without the 10-yard columns (the nightly fixes it).
+**Wave I-E** (three devs, one round, squeezed in before Monday's flip): IE-0 the P0s, IE-1 the action list / waivers
+/ the dial / the cheapest package, IE-2 the trade explanation / the dictionary / the setup order / P2.
+
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 
 Andrew ran the Wave G app on his Mac ("Oh hell yea … proceed"). Next: put the non-commercial beta on a host so his
