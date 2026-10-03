@@ -414,6 +414,25 @@ and 122 / 156 within 1 point instead of 162 / 163 and 156 / 156; the house leagu
 bonuses start at 40). Return yards, IDP, and the defense's distance on a return TD (priced at its expected points)
 are not priced from actual lines.
 
+**One entry point for a projected line (Wave I-D, M3, 2026-10-03).** `scoring.price_projected(stats, scoring,
+position=None, *, ev=None)` is the only function that prices a projected stat line, on both sides: the nightly
+(`projections.price(..., "proj_")` → `predict_position`, `house_rows`, the ranges' anchor, the harness, signals'
+what-ifs) and the request side (`price_lines` → My Week, Waivers, Trades, rest of season, the team units; the
+on-demand larger-role what-if in `decisions`). An actual line (`out_`, the scoring check) stays on the exact engine
+(`compute_points` / `price_detail`): its bonus happened or it did not. The engine:
+
+| Scoring | `LEAGUE_LAB_EV_PRICING` off (default) | on |
+|---|---|---|
+| Sleeper, no yardage / long-TD bonus (Scrubs, the Test League, the plain references) | flat engine | flat engine (unchanged to the bit) |
+| Sleeper with a yardage or long-TD bonus (the dynasty) | flat engine: bonus all or nothing on the mean, long TDs 0 | `expected_frame(ev=True)`: bonus × P(in band), long-TD bonus × projected TDs × share that long |
+| MFL spec | expectation | expectation |
+
+Under the flag only the bonus keys change price; which keys count does not (`scoring.projected_view`: a key the flat
+engine leaves off a projected line — `pass_att`, `rush_att`, `rec_tgt`, `pass_inc`, the count bonuses — stays off).
+The flag is read at call time in each process, so the nightly (GitHub Actions) and the API (Render) must carry the
+same value; a house league then reproduces its nightly `proj_points` to the bit under either value
+(`tests/test_projections_ev.py`). K / DEF (`kdef.price`) stay flat.
+
 ## Slots and team units (Wave I-C, IC-2, 2026-10-03)
 
 **Why.** Dad's league (MFL 70587, "Make Football Great Again") starts `TMQB ×1, RB ×2, WR+TE ×3, TMPK ×1, Def ×1`.

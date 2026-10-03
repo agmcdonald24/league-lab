@@ -2,6 +2,14 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-D
+
+- **M3: the nightly on the scoring spec.** One function prices every projected line, in the nightly and on request
+  (`scoring.price_projected`), so turning on expected-value pricing (`LEAGUE_LAB_EV_PRICING`, still off) moves the
+  player page, Trends, the record and My Week together. Off, nothing changes; on, the dynasty's yardage and 40+ TD
+  bonuses are priced at their chance (top 24 about +0.7 a week, season totals closer at every position), Scrubs is
+  unchanged to the bit.
+
 ## 2026-10-03 — Wave I-C
 
 - **PO (integration).** `fct_player_game` and its league twins carry the 10-yard touchdown cut (`*_tds_10p`), so

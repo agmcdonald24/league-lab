@@ -2397,6 +2397,94 @@ league's actual lines and a team defense's rules, but no line projects them. Kic
 `kdef`. The curves are conditional on the production model (v3.0): a new model version needs `scoring_ev_fit.run_fit()` (the
 seed's `version` changes).
 
+### On the nightly (Wave I-D, M3, 2026-10-03; `scoring.price_projected`, flag `LEAGUE_LAB_EV_PRICING`, off)
+
+**One entry point.** `scoring.price_projected(stats, scoring, position=None, *, ev=None)` prices every projected
+stat line, on both sides: `projections.price(..., "proj_")` (the nightly: `predict_position`'s `proj_points` and the
+ranges' anchor, `_oof_lines`, `house_rows`, the harness, signals' what-ifs) and `anyleague.price_lines` (My Week,
+Waivers, Trades, rest of season, team units), plus the on-demand larger-role what-if (`decisions`). Actual lines
+(`out_`) stay on `compute_points`: a bonus on an actual line happened or it did not. The engine:
+
+* an MFL spec: `expected_frame(ev=True)`, always (unchanged);
+* a Sleeper scoring, flag off (the default): the flat engine (`compute_points_frame`) — the pre-wave numbers to the bit;
+* a Sleeper scoring, flag on, with a yardage or long-TD bonus (`ev_moves`): `expected_frame(ev=True)` on the spec of
+  `projected_view(scoring)` — the flat engine's keys only, sorted, so only HOW a bonus is priced changes, never which
+  keys count, and a house league prices exactly as the reference it is (`house_rows` checks it every night);
+* a Sleeper scoring, flag on, with no such bonus (Scrubs, the Test League, ppr / standard / te_premium): the flat
+  engine — unchanged to the bit by construction.
+
+The flag is read at call time in each process: the nightly and the API must carry the same value.
+
+**The ranges.** The P10 … P90 residual models are fitted around the priced line (`_quantile_features`). Under the flag
+the anchor moves by the expected bonus, and `project` refits every residual model on the new anchor every night, so
+the ranges are consistent after one nightly. Weeks already kicked off keep their stored rows and ranges (B5).
+
+**The harness, both ways.** `calibration.oof_rows` (ranges and lines; the walk-forward of `backtest-v2`, kept per
+row, because the rank buckets and the season totals need the rows), 2023–2025, both house leagues, one run per flag
+state (17.5 minutes each on two cores). Flag off, its weekly scores reproduce all 432 stored v3.0 cells of
+`ops.projection_backtest` exactly (Spearman, hit rate, MAE, 80% coverage). Flag on, **Scrubs is identical to the bit
+in every column** (projection, P10 … P90, actual) and the stat lines are identical in both runs. The dynasty, with
+actual = the 12 components priced + the 40+ TD bonuses Sleeper pays (`fct_player_game`; the harness's own actual
+omits them, see below):
+
+| Position | Spearman | Top-N hit rate | Weekly MAE | 80% coverage | 50% coverage |
+|---|---|---|---|---|---|
+| QB | 0.576 → 0.578 | 0.517 → 0.522 | 7.820 → 7.845 | 0.753 → 0.753 | 0.456 → 0.463 |
+| RB | 0.692 → 0.692 | 0.645 → 0.643 | 4.685 → 4.707 | 0.799 → 0.803 | 0.511 → 0.519 |
+| WR | 0.636 → 0.636 | 0.485 → 0.485 | 4.834 → 4.875 | 0.805 → 0.807 | 0.501 → 0.495 |
+| TE | 0.596 → 0.596 | 0.474 → 0.469 | 3.504 → 3.511 | 0.813 → 0.813 | 0.517 → 0.517 |
+
+Bias (actual − projected) and MAE by rank bucket within the week, and per player-season (the totals rest of season
+and trades use; ranked by projected total within the season × position):
+
+| Position | Bucket | n | Weekly bias | Weekly MAE | Seasons | Season bias | Season MAE |
+|---|---|---|---|---|---|---|---|
+| QB | top 6 | 324 | +0.07 → −1.29 | 9.02 → 9.10 | 18 | +30.4 → +9.0 | 48.0 → 42.4 |
+| QB | 7–12 | 324 | +0.82 → −0.54 | 9.14 → 9.19 | 18 | +19.9 → +1.1 | 44.3 → 40.4 |
+| QB | 13–24 | 648 | +1.24 → +0.45 | 8.31 → 8.34 | 36 | +19.1 → +5.5 | 41.4 → 39.8 |
+| QB | 25+ | 725 | +0.58 → +0.29 | 6.27 → 6.26 | 171 | −0.4 → −2.7 | 15.8 → 16.0 |
+| QB | all | | | | 243 | +6.2 → −0.4 | 24.1 → 23.3 |
+| RB | top 6 | 324 | +1.34 → +0.36 | 8.09 → 8.12 | 18 | +45.3 → +32.2 | 57.0 → 55.3 |
+| RB | 7–12 | 324 | +1.29 → +0.89 | 6.95 → 7.00 | 18 | +32.6 → +27.6 | 38.6 → 33.7 |
+| RB | 13–24 | 648 | +1.40 → +0.84 | 6.38 → 6.35 | 36 | +26.7 → +16.8 | 36.9 → 31.0 |
+| RB | 25+ | 3,199 | −0.24 → −0.34 | 3.77 → 3.79 | 383 | −3.6 → −4.8 | 13.0 → 13.0 |
+| RB | all | | | | 455 | +2.1 → −0.3 | 17.6 → 16.9 |
+| WR | top 6 | 324 | +1.65 → +0.74 | 8.66 → 8.90 | 18 | +38.5 → +23.0 | 56.6 → 52.4 |
+| WR | 7–12 | 324 | +0.31 → −0.60 | 7.56 → 7.38 | 18 | +18.1 → +6.5 | 35.0 → 35.8 |
+| WR | 13–24 | 648 | +0.82 → +0.29 | 7.30 → 7.38 | 36 | +20.2 → +10.9 | 31.1 → 27.9 |
+| WR | 25+ | 5,818 | −0.22 → −0.38 | 4.19 → 4.23 | 615 | −3.0 → −4.7 | 16.1 → 16.2 |
+| WR | all | | | | 687 | −0.2 → −2.9 | 18.4 → 18.3 |
+| TE | top 6 | 324 | +0.91 → +0.65 | 6.30 → 6.34 | 18 | +28.6 → +24.2 | 39.8 → 37.8 |
+| TE | 7–12 | 324 | +0.41 → +0.14 | 5.15 → 5.14 | 18 | +8.6 → +6.5 | 29.8 → 29.2 |
+| TE | 13–24 | 648 | +0.80 → +0.77 | 4.46 → 4.47 | 36 | +15.6 → +12.3 | 25.9 → 23.5 |
+| TE | 25+ | 2,370 | −0.03 → −0.05 | 2.64 → 2.64 | 309 | −1.2 → −1.1 | 8.7 → 8.9 |
+| TE | all | | | | 381 | +2.3 → +1.7 | 12.8 → 12.6 |
+
+Read: the season totals improve at every position (MAE −0.8 QB, −0.7 RB, −0.1 WR, −0.2 TE) and in 11 of the 12
+top-24 buckets (WR 7–12 +0.8); the top-6 weekly bias falls RB +1.34 → +0.36, WR +1.65 → +0.74, TE +0.91 → +0.65;
+both ranges hold their coverage (80%: 0.753–0.813, ±0.004; 50%: ±0.008); weekly start/sit is unchanged (Spearman
+±0.002, hit rate ±0.005, weekly MAE +0.007 to +0.041). The QB top 6 goes +0.07 → −1.29, as M2 found: the QB line's
+own over-projection (M1's v3.1 list), no longer hidden behind an unpaid bonus. With the harness's own actual (no 40+
+TD bonus) the story is the same: top-6 bias RB +1.19 → +0.21, WR +1.43 → +0.51, QB −0.34 → −1.67; coverage 80%
+0.758–0.813 → 0.759–0.813. These match M2's walk-forward (RB +0.31, WR +0.70, QB −1.39) within 0.1 although
+`scoring_ev`'s constants were fitted on 2019–2025, i.e. in sample for these seasons: the in-sample curves do not
+flatter the result.
+
+**On the week-4 board** (the clone's `ops.projection_lines`): Scrubs moves 0 of 8,134 player-weeks (weeks 4–18). The
+dynasty moves 8,037 of 8,134, by at most 1.63; the top 24 per position in week 5 by QB +1.01, RB +0.71, WR +0.73,
+TE +0.18 a week (96 players: +0.66; none down), rest of season (weeks 5–18) for the top 24 by QB +11.9, RB +8.5,
+WR +9.8, TE +2.4. A line projected past a threshold moves down: in week 4 two of the top 96 (Bijan Robinson
+26.72 → 25.52 — a 100+ rushing-yard projection the all-or-nothing price paid in full). Josh Allen, week 4:
+30.24 → 31.68.
+
+**Not covered.** The residual models learn from the harness's actual, which carries no 40+ TD bonus (the outcome
+columns of `mart_player_week_features` have no long-TD count): the ranges of a long-TD scoring sit below what Sleeper
+pays by the bonus's average, 0.01 (TE) to 0.3 (QB) a game (both flag states; v3.1: price the actual's long TDs). K / DEF stay flat (`kdef`).
+`dbt`'s `assert_projection_ranges_price_the_lines` (warn) re-prices the dynasty reference with the SQL macro (all
+or nothing): with the flag on it warns on every dynasty row, by design, until it is limited to the scorings
+`ev_moves` leaves flat. Sleeper's own projection in the record (`mart_projection_record`, `why`'s "Sleeper's
+projection") is still priced all or nothing.
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |
