@@ -443,6 +443,37 @@ buy low / sell high on Trades), the rankings' pieces and "why this number" with 
 fringe; calibration built, measured, left off. Left for I-B: usage tracking; the news feed; `/api/team` and the
 opponent's total under the overlay; v3.1 (expected-bonus pricing, the fringe level, cold starts) behind a backtest.
 
+**Second review (2026-10-03, another agent walked the live app; Andrew: "lets keep moving forward"), verbatim:**
+
+1. *Fix conflicting advice across screens first.* Jacory Croskey-Merritt: My Week says start him because Jefferson
+   is out; Waivers says drop him because he "would not start" over the next four weeks; his player page says he is on
+   the bench behind Jefferson while Availability says he is starting in the Sleeper lineup; the lineup total is
+   115.75 on My Week and 117.3 on Waivers. Every screen needs the same availability and roster context.
+2. *Make the main navigation match the tasks*: My Team · Waivers · Trades · Players, with player search always
+   available. "Decisions" hides two of the most valuable features; put the weekly lineup and season planning within
+   My Team; Trends, Matchups and receiving analytics within Players; move About out of the primary navigation.
+3. *Make My Week distinguish an actual change from reassurance*: a status per call — Change needed, Already set,
+   Close call. The default card = the recommendation, its strength, one reason, a Compare button; ranges and detail
+   behind "Why?". The current cards repeat names and overlapping numbers.
+4. *Extend the research pane pattern*: open the pane from lineup rows, waiver candidates and trade lists; the full
+   player page should keep the main navigation; contextual actions: Compare with my starter, Evaluate add/drop, Add
+   to trade.
+5. *Shorten Waivers* (six desktop screens): the three strongest moves first, views Help now · Bye coverage · Stashes
+   · All available; buy low / sell high into Trades. In the trade builder keep the package and verdict visible while
+   browsing rosters; lead with the decision and lineup impact; the explanation and before / after lineups on demand;
+   show the best waiver alternative before recommending giving up a useful player.
+6. *Make matchup meaning more prominent than rank numbers*: Favorable / Neutral / Difficult as the main signal, the
+   rank secondary; defense ranks and cornerback ranks run in opposite directions; put a cornerback assignment's
+   uncertainty label beside it; a "shutdown" badge conveys more certainty than the explanation supports.
+7. *Make "Value to my lineup" an obvious ranking view* on the rest-of-season screen, which leads with "Who scores the
+   most from here" and gives backup quarterbacks prominence without explaining their usefulness to the roster.
+
+PO's reading: #1 is the I0-A overlay applied on My Week only (confirmed live: the other screens read the nightly's
+`ops.lineups`) — a trust bug, fixed first (IB-0); #2–#7 adopted as written. **Wave I-B** = IB-0 (one availability
+truth + the card status), IB-1 (navigation by task, the research pane everywhere, the player page keeps the nav),
+IB-2 (Waivers short with views, the sticky trade verdict, the best alternative before a drop), IB-3 (matchup meaning
+first, "Value to my lineup", the card's default content). Still after: usage tracking, the news feed, v3.1.
+
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 
 Andrew ran the Wave G app on his Mac ("Oh hell yea … proceed"). Next: put the non-commercial beta on a host so his
