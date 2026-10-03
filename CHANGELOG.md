@@ -4,6 +4,8 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-03 — Wave I-A
 
+- **Nightly: a backup time.** GitHub dropped the 11:37 UTC scheduled run on 2026-10-03 (no run at all); a second cron
+  at 13:07 UTC now runs behind a `gate` job that skips when a nightly already succeeded today (`actions: read`).
 - **PO merge.** `analytics.mart_market_line` (Sleeper's latest projected line per player-week, league-free; the API
   prices it per league — the trade finder's market rule reads it too); a coin flip reads "A or B — a coin flip";
   About shows "How to read the rankings"; the Decisions tab says "Calculator"; three metric-registry rows.

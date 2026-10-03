@@ -198,8 +198,12 @@ From a terminal: `gh workflow run nightly` then `gh run watch`.
 
 It also runs by itself every day at **11:37 UTC = 07:37 in New York on daylight time** (06:37 on
 standard time, November to March; GitHub's cron has no time zones). GitHub may start a scheduled
-run a few minutes late. A run takes about 15 minutes (§ Cost), so the hosted copy is fresh by
-about 08:00 EDT. `concurrency: nightly` makes a second run wait for the first; they never overlap.
+run a few minutes late — and now and then it drops one outright (2026-10-03: no run, no log). So there is a
+**backup time, 13:07 UTC (09:07 EDT)**: a ten-second `gate` job first asks GitHub whether a nightly already
+succeeded today (UTC) and skips the rest when one has, so a normal day costs nothing; when the 11:37 run was
+dropped, the backup publishes by about 09:30 EDT. A manual run is never skipped. A run takes about 15 minutes
+(§ Cost), so the hosted copy is fresh by about 08:00 EDT. `concurrency: nightly` makes a second run wait for
+the first; they never overlap.
 
 ### Reading a failed run
 

@@ -19,6 +19,10 @@ on:
     # run on that morning is the last before it, 5+ hours early even if GitHub starts it late; a dropped run leaves
     # the previous night's board and snapshot as the frozen ones.
     - cron: "37 11 * * *"
+    # The backup (2026-10-03: GitHub dropped the 11:37 run outright - no run, no log - and Neon stayed a day old).
+    # 13:07 UTC = 09:07 EDT. The `gate` job below lets it through only when no nightly has succeeded today (UTC), so
+    # a normal morning costs it ten seconds; `concurrency: nightly` makes it wait if the 11:37 run is still going.
+    - cron: "7 13 * * *"
   workflow_dispatch:
     inputs:
       full:
@@ -32,6 +36,7 @@ on:
 
 permissions:
   contents: read
+  actions: read     # the gate job reads today's runs of this workflow
 
 # One writer (AGENTS.md rule 2; Wave H: the only writer of the hosted copy): a second run waits for the first;
 # never two syncs at once.
@@ -44,7 +49,34 @@ defaults:
     shell: bash
 
 jobs:
+  # Has a nightly already succeeded today (UTC)? Only the two scheduled times ask; a manual run always goes.
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      skip: ${{ steps.today.outputs.skip }}
+    steps:
+      - name: Today's successful runs of this workflow
+        id: today
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "skip=0" >> "$GITHUB_OUTPUT"; echo "a manual run: never skipped"; exit 0
+          fi
+          today="$(date -u +%Y-%m-%d)"
+          n="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/nightly.yml/runs?status=success&created=>=${today}T00:00:00Z&per_page=10" \
+                --jq "[.workflow_runs[] | select(.id != ${GITHUB_RUN_ID})] | length" 2>/dev/null || echo 0)"
+          if [ "${n:-0}" -gt 0 ]; then
+            echo "skip=1" >> "$GITHUB_OUTPUT"
+            echo "::notice title=already published today::$n successful nightly run(s) today; this scheduled run does nothing"
+          else
+            echo "skip=0" >> "$GITHUB_OUTPUT"; echo "no successful nightly today: running"
+          fi
+
   nightly:
+    needs: gate
+    if: needs.gate.outputs.skip != '1'
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     services:
