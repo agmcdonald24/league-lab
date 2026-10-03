@@ -9,6 +9,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   scoring check; dad's league 70587 is a fixture end to end; the audit of Scrubs and the dynasty: the scoring
   matches Sleeper's to 0.1 (865 / 865 in weeks 1–2), the dynasty's bonuses are what the projections miss.
 
+- **M2: the numbers expected-value pricing needs.** `league_lab.scoring_ev` prices the rules a projected line
+  cannot price all or nothing, for example "+10 at 100 yards", TDs paid 6 / 9 / 12 by distance, or "1 point per whole
+  10 yards". It has P(yards or catches ≥ any threshold | the projection), fitted on 2019–2025 out-of-sample lines,
+  and the share of TDs by distance, measured on every TD play of 2019–2025 (no placeholders). The constants are in
+  the module, with the seed `scoring_distributions.csv` proposed. On the dynasty scoring, expected bonuses take the
+  top-6 RB / WR miss from +1.3 / +1.7 to +0.3 / +0.7 points a week and make season totals closer at every position.
+
 ## 2026-10-03 — Wave I-B
 
 - **PO merge.** IB-2's "who starts" reads IB-0's roster context (one overlay pass); the API suite answers MFL from
