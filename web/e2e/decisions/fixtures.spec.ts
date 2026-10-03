@@ -219,9 +219,9 @@ for (const scheme of SCHEMES) {
       const ev = fx(evalFile(DYNASTY, 12, best.partner, ids(best.give), ids(best.get)));
       await page.goto(`/trades?league=${DYNASTY}&team=12`);
       await expect(page.getByTestId("best-partner")).toHaveText(plain(all.words.headline));
-      await expect(page.getByTestId("tick-both")).toBeVisible();
+      // IA-2: "Try this trade" opens the trade calculator (its own screen) with the package in the link
       await page.getByTestId("try-best").click();
-      await expect(page).toHaveURL(new RegExp(`partner=${best.partner}`));
+      await expect(page).toHaveURL(new RegExp(`/trade-calc\\?.*partner=${best.partner}`));
       await expect(page.getByTestId("verdict")).toHaveText(ev.verdict);
       expect(calls.evaluate.at(-1)).toEqual({ league: DYNASTY, team: 12, partner: best.partner, give: ids(best.give), get: ids(best.get) });
       const fit = page.getByTestId("fit-tiles").getByTestId("stat-value");
@@ -251,8 +251,9 @@ for (const scheme of SCHEMES) {
       for (const id of ids(other.give)) await page.locator(`[data-testid="give-option"][data-id="${id}"] input`).check();
       for (const id of ids(other.get)) await page.locator(`[data-testid="get-option"][data-id="${id}"] input`).check();
       await expect(page.getByTestId("verdict")).toHaveText(other.verdict);
-      // the partner finder: who has a RB for me
+      // the partner finder: who has a RB for me (back on the Trades screen)
       const rb = fx(`trades_partners_${DYNASTY}_12_RB.json`);
+      await page.goto(`/trades?league=${DYNASTY}&team=12`);
       await page.getByTestId("want-RB").click();
       await expect(page).toHaveURL(/want=RB/);
       await expect(page.getByTestId("partner-row")).toHaveCount(Math.min(12, rb.partners.length));
@@ -279,6 +280,7 @@ test("the Decisions tab reaches the four screens (one tap, same tab)", async ({ 
   await expect(page.getByTestId("waivers")).toBeVisible();
   for (const [sub, screen] of [
     ["sub-trades", "trades"],
+    ["sub-trade-calc", "trade-calc"], // ---- IA-2: the trade calculator, its own link
     ["sub-team", "team"],
     ["sub-league", "league"],
   ] as const) {

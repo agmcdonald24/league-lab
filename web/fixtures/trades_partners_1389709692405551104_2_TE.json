@@ -5,6 +5,15 @@
  "want": "TE",
  "week": 4,
  "span": "weeks 4–7",
+ "weeks": [
+  4,
+  5,
+  6,
+  7
+ ],
+ "window": "next4",
+ "window_label": "Next 4",
+ "window_why": "the next four weeks: far enough to matter, near enough to trust",
  "partners": [
   {
    "partner": 4,
@@ -42,10 +51,17 @@
      "roster_id": 4
     }
    ],
-   "you_gain_week": -0.52,
-   "you_gain_horizon": 3.29,
-   "they_gain_week": 1.53,
-   "they_gain_horizon": 2.02,
+   "you_gain_week": -0.53,
+   "you_gain_horizon": 3.28,
+   "they_gain_week": 1.83,
+   "they_gain_horizon": 2.32,
+   "interest": {
+    "score": 52,
+    "label": "Likely",
+    "their_gain": 2.32,
+    "you": 3.28,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 9,
    "price_in": 1
   },
@@ -98,68 +114,19 @@
      "roster_id": 4
     }
    ],
-   "you_gain_week": -0.52,
-   "you_gain_horizon": 3.29,
-   "they_gain_week": 1.53,
-   "they_gain_horizon": 2.02,
+   "you_gain_week": -0.53,
+   "you_gain_horizon": 3.28,
+   "they_gain_week": 1.83,
+   "they_gain_horizon": 2.32,
+   "interest": {
+    "score": 52,
+    "label": "Likely",
+    "their_gain": 2.32,
+    "you": 3.28,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 9,
    "price_in": 1
-  },
-  {
-   "partner": 9,
-   "partner_team": "Negrodamus",
-   "shape": "2-for-1",
-   "kind": "2-for-1",
-   "is_best": true,
-   "give": [
-    {
-     "sleeper_id": "12507",
-     "gsis_id": "00-0040666",
-     "player_name": "Omarion Hampton",
-     "position": "RB",
-     "team": "LAC",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
-     "this_week": 11.28,
-     "cannot_play": null,
-     "market_price": 43,
-     "season_points": 170,
-     "roster_id": 2
-    },
-    {
-     "sleeper_id": "12487",
-     "gsis_id": "00-0040737",
-     "player_name": "Terrance Ferguson",
-     "position": "TE",
-     "team": "LA",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg",
-     "this_week": 5.79,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 86,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "10859",
-     "gsis_id": "00-0039065",
-     "player_name": "Sam LaPorta",
-     "position": "TE",
-     "team": "DET",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wxlk7ysg2nfq6h6ntdcu",
-     "this_week": 10.88,
-     "cannot_play": null,
-     "market_price": 32,
-     "season_points": 141,
-     "roster_id": 9
-    }
-   ],
-   "you_gain_week": -0.4,
-   "you_gain_horizon": 0.99,
-   "they_gain_week": -2.39,
-   "they_gain_horizon": 3.33,
-   "price_out": 43,
-   "price_in": 32
   },
   {
    "partner": 7,
@@ -197,10 +164,17 @@
      "roster_id": 7
     }
    ],
-   "you_gain_week": -0.52,
-   "you_gain_horizon": 2.18,
-   "they_gain_week": 0.0,
-   "they_gain_horizon": 0.99,
+   "you_gain_week": -0.53,
+   "you_gain_horizon": 2.17,
+   "they_gain_week": 0.59,
+   "they_gain_horizon": 1.58,
+   "interest": {
+    "score": 45,
+    "label": "Maybe",
+    "their_gain": 1.58,
+    "you": 2.17,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 9,
    "price_in": 0
   },
@@ -244,122 +218,75 @@
    "you_gain_horizon": 1.6,
    "they_gain_week": 0.0,
    "they_gain_horizon": 0.55,
-   "price_out": 0,
-   "price_in": 0
-  },
-  {
-   "partner": 1,
-   "partner_team": "Daejon Loves PR team",
-   "shape": "2-for-1",
-   "kind": "2-for-1",
-   "is_best": true,
-   "give": [
-    {
-     "sleeper_id": "9228",
-     "gsis_id": "00-0039150",
-     "player_name": "Bryce Young",
-     "position": "QB",
-     "team": "CAR",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
-     "this_week": 17.25,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 202,
-     "roster_id": 2
-    },
-    {
-     "sleeper_id": "12487",
-     "gsis_id": "00-0040737",
-     "player_name": "Terrance Ferguson",
-     "position": "TE",
-     "team": "LA",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg",
-     "this_week": 5.79,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 86,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "12517",
-     "gsis_id": "00-0040126",
-     "player_name": "Colston Loveland",
-     "position": "TE",
-     "team": "CHI",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cnxiyi76jeahgx94nh6d",
-     "this_week": 6.36,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 93,
-     "roster_id": 1
-    }
-   ],
-   "you_gain_week": 0.0,
-   "you_gain_horizon": 0.96,
-   "they_gain_week": 0.96,
-   "they_gain_horizon": 0.54,
-   "price_out": 0,
-   "price_in": 0
-  },
-  {
-   "partner": 5,
-   "partner_team": "Victory is Mine!",
-   "shape": "1-for-1",
-   "kind": "1-for-1",
-   "is_best": true,
-   "give": [
-    {
-     "sleeper_id": "12533",
-     "gsis_id": "00-0040242",
-     "player_name": "Jacory Croskey-Merritt",
-     "position": "RB",
-     "team": "WAS",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
-     "this_week": 9.19,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 122,
-     "roster_id": 2
-    }
-   ],
-   "get": [
-    {
-     "sleeper_id": "8110",
-     "gsis_id": "00-0038041",
-     "player_name": "Jake Ferguson",
-     "position": "TE",
-     "team": "DAL",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xpykb0tbosfwsn6dqstb",
-     "this_week": 5.91,
-     "cannot_play": null,
-     "market_price": 0,
-     "season_points": 84,
-     "roster_id": 5
-    }
-   ],
-   "you_gain_week": 0.0,
-   "you_gain_horizon": 0.37,
-   "they_gain_week": 0.11,
-   "they_gain_horizon": 0.92,
+   "interest": {
+    "score": 32,
+    "label": "Maybe",
+    "their_gain": 0.55,
+    "you": 1.6,
+    "caption": "by our numbers over weeks 4–7"
+   },
    "price_out": 0,
    "price_in": 0
   }
  ],
  "no_trade_with": [
+  "Daejon Loves PR team",
   "Run Bijan Run",
+  "Victory is Mine!",
   "GoodGameBuddy",
-  "MikeDaddy"
+  "MikeDaddy",
+  "Negrodamus"
  ],
+ "rejected": [
+  {
+   "partner_team": "Daejon Loves PR team",
+   "give": [
+    "Bryce Young",
+    "Terrance Ferguson"
+   ],
+   "get": [
+    "Colston Loveland"
+   ],
+   "why": "you give 247 rest-of-season points for 80: 167 more, over 25% of what you give"
+  },
+  {
+   "partner_team": "Daejon Loves PR team",
+   "give": [
+    "Jacory Croskey-Merritt",
+    "Terrance Ferguson"
+   ],
+   "get": [
+    "Colston Loveland"
+   ],
+   "why": "you give 178 rest-of-season points for 80: 99 more, over 25% of what you give"
+  },
+  {
+   "partner_team": "Victory is Mine!",
+   "give": [
+    "Jacory Croskey-Merritt"
+   ],
+   "get": [
+    "Jake Ferguson"
+   ],
+   "why": "you give 105 rest-of-season points for 71: 34 more, over 25% of what you give"
+  }
+ ],
+ "rejected_count": 7,
+ "sanity": {
+  "ros_gap_share": 0.25,
+  "market_share": 0.65,
+  "ros_players": 155,
+  "market_players": 0,
+  "market_note": "Sleeper's week-4 projections are not in the database: the market check is not applied"
+ },
  "words": {
-  "headline": "**Best partner: Scrote Squad (nirajp75).** Your [Bhayshul Tuten](/player/00-0040719) for their [Isaiah Likely](/player/00-0037838): you **-0.5** this week and **+3.3** over weeks 4–7, them **+1.5** and **+2.0**.",
+  "headline": "**Best partner: Scrote Squad (nirajp75).** Your [Bhayshul Tuten](/player/00-0040719) for their [Isaiah Likely](/player/00-0037838): you **-0.5** this week and **+3.3** over weeks 4–7, them **+1.8** and **+2.3**.",
   "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)"
  },
  "search": {
   "bar_sets": 31,
-  "candidates": 1310,
-  "evaluated": 29,
-  "seconds": 0.135
+  "candidates": 1394,
+  "evaluated": 35,
+  "seconds": 0.42
  }
 }

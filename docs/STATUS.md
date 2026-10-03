@@ -3561,3 +3561,63 @@ Checks: ruff clean; API suite 224 passed (197 + 27) with `LEAGUE_LAB_ESPN_FIXTUR
 (the ESPN fixture feed has Jefferson Out, so the overlay moves the house lineups) 8 house-league parity tests fail
 exactly as on `main`, none touched by I0-C; root suite 834 passed, 2 skipped; web lint / build clean;
 `npm run e2e:fixtures` 66 passed (62 + 4). I0-B's e2e: label and mock follow the box (`?mfl_search=`).
+
+## Wave I-A (Iteration 17, part A)
+
+### IA-2 2026-10-03 — the decisions screens: the trade calculator, the interest dial, the window, the sanity bound (branch `dev/IA2`)
+
+Andrew's beta walk (2026-10-02): "a slider would be really cool", "why those four to seven weeks?", "showing the lineups
+twice doesn't make any sense", "some of the trades it's suggesting are crazy" (Justin Jefferson for MarShawn Lloyd).
+
+- **The window** (`decisions.py`, block "IA-2"): `window=week|next4|ros|playoffs` on `POST /api/trades/evaluate` (body)
+  and `GET /api/trades/partners` (query); default `next4` (the old behaviour, the old response keys kept). `week` = the
+  board's first week; `ros` / `playoffs` extend the board (`window_board`): one row per player and week past the next
+  four from the rest-of-season board (house: `mart_player_ros_projection.weeks_json`; on demand: `anyleague.ros_table`
+  through `ros_on_demand` — `load_window` + `skill_window`), on the bench (the solver picks the starters) or unplayable
+  on a bye; IR slot / taxi squad / NFL IR / no NFL team carried from the board's last week. `ros` = this week to the
+  league's final (`ros_window`), `playoffs` = `playoff_week_start` to the final. The response names the weeks (`span`,
+  `weeks`, `window_label`, `window_why`); `fit.window` (= `fit.next_4`, its name before) is the window's gain; this
+  week's numbers and lineups always come from this week (the playoffs window evaluates this week on its own; `_View`
+  feeds `trades.fit_line` / `verdict` both). The league-rank line compares the horizon only when the window is next4.
+- **The dial**: `interest(their_gain, my_gain, span)` → `{score 0–100, label, their_gain, you, caption}` on every
+  evaluate and every partner row. Labels: their window gain < 0.05 "No deal" (they lose, or gain nothing shown as
+  +0.0), < 2 "Maybe", 2–6 "Likely", > 6 "Hard to say no"; score piecewise linear through (−6, 0) (0, 25) (2, 50) (6, 75)
+  (12, 100), each label a quarter of the dial.
+- **The sanity bound** (`trades.sanity`, `trades.partners(..., allow=, rejected=)`): a package that would be a roster's
+  best is set aside, and the search goes on, when (b) a player you give has our projection this week under 65% of
+  Sleeper's ("the market disagrees with our number on <player> (ours x, Sleeper's y)") or (a) the rest-of-season points
+  you give exceed what comes back by more than 25% of what you give ("you give 149 rest-of-season points for 97: 52
+  more, over 25% of what you give" — Jefferson for Lloyd on Scrubs' board). Unknown is not zero: a player with no
+  number is not judged. `rejected` (three examples: partner, give, get, why) and `rejected_count` on
+  `/api/trades/partners`; `sanity` (the reason or null) on evaluate — the calculator says it, never hides the trade.
+  Sleeper's number: `mart_projection_record` holds no per-player rows (its Sleeper prices are a CTE), so `market_week`
+  reads its source, `raw.sleeper_projections` (the week's latest snapshot, skill players with a stat line, priced with
+  `compute_points` in the league's scoring — the mart's `league_points` rule). This clone holds no snapshot: rule (b)
+  is off here and the response says so (`sanity.market_note`); tested on a constructed board and with a monkeypatched
+  market on Scrubs.
+- **Buy low / sell high** left `/api/waivers` (`waiver_extras` returns the upside stash only) for
+  `GET /api/trades/lists?league=&team=&position=` (Wave H's `_trade_lists`, memoised; on demand on the trade context's
+  solve). test_h1's three list tests read the new route (same assertions).
+- **Web**: `/trade-calc` (`routes/decisions/TradeCalc.svelte`; a route in `router.svelte.ts`, a loader in
+  `decisionPages.ts`, "Trade calculator" in TopBar's Decisions row — the row lives in `TopBar.svelte`, so the marked
+  entry is there, not in `App.svelte`, which needed no change): window control → partner → the dial's row (Dial,
+  your gain, the four fit tiles, the verdict, the sanity line) → the pickers → market / rest of season / ranks / roster
+  size → your lineup, theirs under an expander → week by week. Every tick re-asks evaluate (250 ms debounce); the last
+  answer stays while the next is asked, so the needle swings. Trades keeps the best partner ("Try this trade" opens
+  the calculator with the package and the window in the link), the window control, the partner finder (with "N
+  lopsided trades left out"), and gains buy low / sell high under it. Waivers points to Trades. New design-system
+  entries: Dial, Window control (DESIGN.md § Charts).
+- Evidence (fixtures, next4 → week / ros / playoffs, the best package's window gains, mine / theirs): Scrubs 2 (Tuten
+  for Dowdle + Worthy) +9.74 / +10.29 "Hard to say no" (93) → −0.53 / +9.72 (90) · +3.50 / +18.72 (100, weeks 4–16) ·
+  −0.16 / +0.61 "Maybe" (33, weeks 15–16); Test League 3 (Love for Golden + C. Williams) +16.59 / +12.51 (100) →
+  "Maybe" 32 · 83 (weeks 4–17) · "Likely" 53 (weeks 15–17). Partner search on demand, cold (Test League): next4 5.6 s
+  (the league solve), week 0.4 s, ros 3.5 s, playoffs 0.7 s; Scrubs (house) 1.2 / 0.4 / 4.9 / 0.4 s; memoised 10 min
+  (house) / 2 min. Set aside by the bound (next4): Scrubs 8, dynasty 283 (mostly 2-for-1s giving two starters for one),
+  Test League 31.
+- Checks: `api/tests/test_ia2.py` 23 (dial buckets, the window on both routes for the Test League and both house
+  leagues, the constructed Jefferson-for-Lloyd board for both rules, the partner search unchanged without rules, both
+  rules on the Scrubs route, the lists moved, the Trade Finder's compiled sentences); API suite 247 passed; ruff clean;
+  web lint / build clean; fixtures re-saved by `web/fixtures/save_ia2_fixtures.py` (partners re-saved: the bound
+  changes some suggestions; window variants; `trades_lists_*`; `trade_lists` dropped from the waivers fixtures; the
+  evaluate fixtures re-saved, plus one "tick" variant per league, `ia2_packages.json`); `web/e2e/ia2/` 16 (8 × phone
+  at 375 px and desktop); G4's trades test and the tab-row test, H1's buy-low tests follow the move.

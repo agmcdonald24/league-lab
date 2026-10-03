@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-A
+
+- **IA-2: the decisions screens.** The **trade calculator** is its own link (Decisions › Trade calculator, `/trade-calc`):
+  tick players both ways and an **interest dial** swings on every change to how much the other team would want it (No
+  deal · Maybe · Likely · Hard to say no, "by our numbers over weeks 4–7") with your own gain beside it; the lineups are
+  shown once (yours, then theirs under an expander). A **window control** (this week · next 4 · rest of season ·
+  playoffs) on the calculator and the partner suggestions says why those weeks; `window=` on `POST
+  /api/trades/evaluate` and `/api/trades/partners` (the longer windows extend the board with the rest-of-season board).
+  Partner suggestions have a **sanity bound**: none gives away over 25% more rest-of-season points than it brings back,
+  or works only because our number for a player you give is under 65% of Sleeper's ("Justin Jefferson for MarShawn
+  Lloyd" is refused); what was left out is counted (`rejected`). **Buy low / sell high** moved from Waivers to Trades
+  (`GET /api/trades/lists`; no longer in `/api/waivers`).
+
 ## 2026-10-03 — Wave I-0
 
 - **I0-A: who can play, checked every 15 minutes on game days.** My Week no longer starts a player ruled out after the

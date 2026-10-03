@@ -20,7 +20,9 @@ export type RouteName =
   | "waivers"
   | "trades"
   | "team"
-  | "league";
+  | "league"
+  // ---- IA-2: the trade calculator, its own link in the Decisions row
+  | "trade-calc";
 
 const NAMED: Record<string, RouteName> = {
   "/leagues": "leagues",
@@ -36,6 +38,7 @@ const NAMED: Record<string, RouteName> = {
   "/trades": "trades",
   "/team": "team",
   "/league": "league",
+  "/trade-calc": "trade-calc", // ---- IA-2
 };
 
 export interface Route {

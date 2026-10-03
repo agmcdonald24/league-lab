@@ -2031,6 +2031,22 @@ the counts and calls; `week` = the last scored week, `first_week` = the first.
 player Sleeper lists; not Sleeper's own scoring (its line is counted the league's way); a few weeks are noise
 (the page says so under four weeks).
 
+## Trade interest and the sanity bound (ti1.0, IA-2, Wave I-A, 2026-10-03; `api/league_lab_api/decisions.py`, `league_lab.trades.sanity`)
+
+- **Window**: the weeks a trade is priced over — `week` (this week), `next4` (this week and the next three: the board's
+  horizon, the default), `ros` (this week to the league's final, `anyleague.ros_window`), `playoffs` (the league's
+  `playoff_week_start` to the final). Weeks past the board's four come from the rest-of-season board (each player's
+  projection that week in the league's scoring; a bye is unplayable; IR slot / taxi / NFL IR / no team as in the
+  board's last week). Gain over the window = Σ over its weeks of (best lineup after − before), both rosters re-solved.
+- **Their interest** (the dial): from the other team's gain over the window, g. Label: g < 0.05 "No deal", g < 2
+  "Maybe", 2 ≤ g ≤ 6 "Likely", g > 6 "Hard to say no". Score 0–100: piecewise linear through (−6, 0), (0, 25), (2, 50),
+  (6, 75), (12, 100), clamped. Our projection's view of their gain — not a probability, not the other manager's view.
+- **Sanity bound** on partner suggestions (never on a trade the user builds; the calculator only says it): (b) the
+  market — a player given whose projection this week is under 65% of Sleeper's (`raw.sleeper_projections`, the week's
+  latest snapshot, priced in the league's scoring); (a) rest of season — Σ rest-of-season points given − Σ received >
+  25% of Σ given (the rest-of-season board). Either sets the package aside and the search takes the next best.
+  Unknown is not zero: a player without the number is not judged.
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |

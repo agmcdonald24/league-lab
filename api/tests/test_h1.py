@@ -160,7 +160,8 @@ def test_waivers_buy_low_sell_high_is_the_trade_finders(client, sql, league):
     PPG - xPPG (computed here independently), the same players in the same order, the gains to 0.01."""
     decisions.clear_memo()
     team = ANDREW[league]
-    d = client.get("/api/waivers", params={"league": league, "team": team}).json()["trade_lists"]
+    # IA-2: the lists moved from /api/waivers to the Trades screen (GET /api/trades/lists), the numbers unchanged
+    d = client.get("/api/trades/lists", params={"league": league, "team": team}).json()
     hz = sql("select * from analytics.mart_league_roster_horizon where league_id = %s", (league,))
     slots = sql("select roster_positions from analytics.dim_league_season where league_id = %s and is_current_season",
                 (league,))[0]["roster_positions"]
@@ -194,7 +195,8 @@ def test_waivers_extras_on_demand(client):
         line = r["larger_line"] if isinstance(r["larger_line"], dict) else json.loads(r["larger_line"])
         assert s["scenario_value"] == pytest.approx(compute_points({**line, "position": r["position"]}, sc), abs=0.006)
         assert s["holds_horizon_gain"] is None and s["lines"] and s["headline"].startswith("Upside stash:")
-    tl = d["trade_lists"]
+    tl = client.get("/api/trades/lists", params={"league": TEST_LEAGUE, "team": 3}).json()      # IA-2: moved to Trades
+    assert "trade_lists" not in d
     assert tl["buy_low"] and tl["points_source"].startswith("priced on request")
     assert all(r["diff_per_game"] < 0 and r["roster_id"] != 3 for r in tl["buy_low"])
 
@@ -204,8 +206,8 @@ def test_waivers_trade_lists_on_demand_equal_the_house_path(client):
     """Dynasty 12 through the on-demand path (Sleeper's rosters, the board solved on request, PPG - xPPG priced from the
     stat columns) gives the house path's buy-low list."""
     decisions.clear_memo()
-    house = client.get("/api/waivers", params={"league": DYNASTY, "team": 12}).json()["trade_lists"]
-    od = client.get("/api/waivers", params={"league": DYNASTY, "team": 12, "source": "sleeper"}).json()["trade_lists"]
+    house = client.get("/api/trades/lists", params={"league": DYNASTY, "team": 12}).json()          # IA-2: moved to Trades
+    od = client.get("/api/trades/lists", params={"league": DYNASTY, "team": 12, "source": "sleeper"}).json()
     h = {r["player"]["sleeper_id"]: r for r in house["buy_low"][:10]}
     o = {r["player"]["sleeper_id"]: r for r in od["buy_low"]}
     assert set(h) <= set(o)
