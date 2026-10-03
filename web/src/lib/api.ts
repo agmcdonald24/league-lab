@@ -1344,9 +1344,14 @@ export interface LeagueView {
 // 3, newest first, none older than 14 days; [] when there is none or the feed is off / out. Only the headline is sent.
 export interface NewsItem {
   headline: string;
-  date: string; // ISO UTC, ESPN's `published`
-  source: string; // "RotoWire via ESPN" | "ESPN"
-  url: string; // https, an espn.com page (the story, or his ESPN player page)
+  date: string; // ISO UTC, ESPN's `published` (PlayerWire: the brief's `published_at`)
+  source: string; // "RotoWire via ESPN" | "ESPN" | "<publisher> via PlayerWire"
+  url: string; // https, an espn.com page (the story, or his ESPN player page); PlayerWire: the brief's first evidence link
+  // ---- N2: PlayerWire's hand-reviewed briefs come first (api/league_lab_api/playerwire.py); ESPN fills the rest
+  kind?: "playerwire" | "espn";
+  summary?: string | null; // PlayerWire only: the brief's news text
+  verification?: "official" | "reported" | "corroborated" | "disputed" | null; // PlayerWire only
+  related?: boolean; // PlayerWire only: he is named in the brief, not its subject
 }
 export interface PlayerCard {
   news?: NewsItem[];

@@ -61,9 +61,15 @@ export interface NewsLine {
   full: string;
   source: string;
   url: string;
+  // ---- N2: a PlayerWire brief's one-sentence news under the headline (null for ESPN), and its verification tag
+  summary: string | null; // cut at a word to SUMMARY_MAX characters
+  summaryFull: string | null;
+  verification: "official" | "reported" | "corroborated" | "disputed" | null;
 }
 
 export const NEWS_MAX = 110;
+export const SUMMARY_MAX = 220; // N2
+const VERIFICATION = new Set(["official", "reported", "corroborated", "disputed"]);
 
 export function shortHeadline(s: string, max: number = NEWS_MAX): string {
   const t = s.trim();
@@ -76,6 +82,17 @@ export function shortHeadline(s: string, max: number = NEWS_MAX): string {
 export function newsLine(d: Pick<PlayerCard, "news">, now: number = Date.now()): NewsLine | null {
   const n = (d.news ?? []).find((x) => x.headline && x.url?.startsWith("https://"));
   if (!n) return null;
-  return { ago: ago(n.date, now), headline: shortHeadline(n.headline), full: n.headline, source: n.source || "ESPN", url: n.url };
+  const summary = n.summary?.trim() || null;
+  const v = n.verification && VERIFICATION.has(n.verification) ? n.verification : null;
+  return {
+    ago: ago(n.date, now),
+    headline: shortHeadline(n.headline),
+    full: n.headline,
+    source: n.source || "ESPN",
+    url: n.url,
+    summary: summary ? shortHeadline(summary, SUMMARY_MAX) : null,
+    summaryFull: summary,
+    verification: v,
+  };
 }
 // ---- end N1
