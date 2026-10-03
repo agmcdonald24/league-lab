@@ -268,7 +268,8 @@ def _move(r: pd.Series, week: int, b: dict, proj: dict, ros: dict) -> dict:
                      "horizon_loss": _num(r.get("drop_horizon_loss")), "season_points_left": _num(r.get("drop_ros_points")),
                      "ros_points": (ros.get(dk) or {}).get("ros_points")})
     gains = r.get("week_gains")
-    return {"move_rank": _int(r.get("move_rank")), "add_rank": _int(r.get("add_rank")), "list_kind": r.get("list_kind"),
+    return {**if1_move_fields(r, drop),                                     # ---- IF-1: the drop's cost, the net gains
+            "move_rank": _int(r.get("move_rank")), "add_rank": _int(r.get("add_rank")), "list_kind": r.get("list_kind"),
             "is_best_drop": _bool(r.get("is_best_drop")), "add": add, "drop": drop,
             "weekly_gain": _num(r.get("weekly_gain")), "horizon_gain": _num(r.get("horizon_gain")),
             "week_gains": [_num(g) for g in gains] if isinstance(gains, list | tuple | np.ndarray) else None,
@@ -353,7 +354,8 @@ def _moves_on_demand(league_id: str, team: int, *, as_of: datetime | None = None
             row = {**cur, "is_starter": sid in slot_of, "slot": slot_of.get(sid)}
             p = A.LU._proposed_player(lw.inp, lid, w, row, row, {}, True, lw.as_of)
             rest_rows.append({"sleeper_player_id": sid, "value": None if p.value is None else round(float(p.value), 2),
-                              "role": "bench" if p.playable else "unplayable", "value_source": p.value_source})
+                              "role": "bench" if p.playable else "unplayable", "value_source": p.value_source,
+                              "week": int(w), "position": cur.get("position")})       # ---- IF-1: the future starts
     add_ros: dict[str, float] = {}
 
     def add_ros_of(sid: str) -> float:
@@ -367,10 +369,19 @@ def _moves_on_demand(league_id: str, team: int, *, as_of: datetime | None = None
            "season": season, "week": lw.weeks[0], "roster_id": int(team), "horizon_weeks": len(lw.weeks),
            "horizon_last_week": lw.weeks[-1], "inputs_fingerprint": None}
     stats: dict = {}
+    # ---- IF-1: the drop's season value against the Trade Finder's replacement (market_points / replacement_level)
+    points = market_points(lw)
+    repl, _ = replacement_level(lw, fa, points)
+    for r in fa.itertuples():                       # a team unit (MFL's TMQB / TMPK) against the best free unit
+        v = points.get(r.gsis_id if isinstance(r.gsis_id, str) else r.sleeper_id)
+        if r.position in UNIT_POSITIONS and v is not None:
+            repl[r.position] = max(repl.get(r.position, 0.0), float(v))
+    # ---- end IF-1
     rows = W.sweep_roster(lw.slots, week_rows, lw.inp.current[lid][int(team)], adds, fa_meta, rest_rows, len(lw.rest_weeks),
-                          add_ros_of, key, lw.inp.sleeper, lineup_value=tot0.get("lineup_value"), stats=stats)
+                          add_ros_of, key, lw.inp.sleeper, lineup_value=tot0.get("lineup_value"), stats=stats,
+                          market=points, replacement=repl)                                       # ---- IF-1
     t2 = time.perf_counter()
-    df = pd.DataFrame(rows, columns=W.MOVE_COLUMNS)
+    df = pd.DataFrame(rows, columns=W.ALL_COLUMNS)                  # IF-1: with the drop's cost
     if not df.empty:
         df["add_team"] = df["add_sleeper_id"].map(lambda s: (fa_meta.get(s) or {}).get("nfl_team") if isinstance(s, str) else None)
         df["lineup_value"] = tot0.get("lineup_value")
@@ -455,6 +466,7 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
     if rctx is not None and rctx.changed:
         mv = availability.moves_on_context(mv, rctx)
     # ---- end IB-0
+    mv = if1_choose(mv, league_id, is_house, season, int(week))      # ---- IF-1: the cheapest drop per claim, net gains
     ros = _ros_of(_ros_frame(league_id, is_house))
     if not mv.empty:
         best = mv[mv["is_best_drop"].fillna(False).astype(bool)].sort_values("add_rank") if "is_best_drop" in mv else mv.iloc[0:0]
@@ -481,6 +493,7 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
     # ---- IB-2: the three strongest moves with one reason each, the views, the best alternative before a drop
     out.update(waiver_views(league_id, team, season, int(week), mv, out, is_house, od_info, ros))
     # ---- end IB-2
+    out.setdefault("no_worthwhile_move", None)                                         # ---- IF-1
     if not is_house:
         out["on_demand"] = {k: v for k, v in od_info.items() if k not in ("lw", "fa")}
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
@@ -2840,12 +2853,17 @@ def _cost(m: dict, week: int, last: int, starts: dict | None) -> str:
     if not d:
         return "No drop: you have an open roster spot."
     name = d.get("player_name")
+    if m.get("drop_why") and (m.get("drop_cost") or {}).get("is_incumbent"):   # ---- IF-1: the claim takes his slot
+        return m["drop_why"]
     if starts:
-        return f"Drop {name}: he starts for you {_when(starts['weeks'], week)}."
+        return f"Drop {name}: he starts for you {_when(starts['weeks'], week)}." + (     # ---- IF-1: and why him
+            f" {m['drop_why_tail']}" if m.get("drop_why_tail") else "")
+    if m.get("drop_why"):                    # ---- IF-1: the cost-based reason ("he sits anyway" is never the whole reason)
+        return m["drop_why"]
     loss = d.get("horizon_loss")
     if loss is not None and loss > GAIN_EPS:
         return f"Drop {name}: costs your lineup {loss:.1f} over {_span_words(week, last)}."
-    return f"Drop {name}: he sits anyway."
+    return f"Drop {name}: he does not start for you over {_span_words(week, last)}."      # ---- IF-1: no "sits anyway"
 
 
 def waiver_views(league_id: str, team: int | None, season: int, week: int, mv: pd.DataFrame, out: dict,
@@ -2875,6 +2893,18 @@ def waiver_views(league_id: str, team: int | None, season: int, week: int, mv: p
     blocked = set(availability.cannot_play(gs)) if gs else set()
     best = mv[mv["is_best_drop"].fillna(False).astype(bool) & (mv["list_kind"] != "nothing")]
     best = best[~best["add_gsis_id"].map(lambda g: isinstance(g, str) and g in blocked)]
+    # ---- IF-1: only a claim worth its roster spot is offered (net gain = lineup gain − what the drop costs beyond it)
+    if1_stashes(out, mv, int(week), last)
+    res["no_worthwhile_move"] = if1_no_worthwhile(best, int(week), last)
+    if res["no_worthwhile_move"] is not None:
+        nw = res["no_worthwhile_move"]["words"]
+        res["views"]["help"]["line"] = res["views"]["bye"]["line"] = nw
+        res["views_ms"] = round((time.perf_counter() - t0) * 1000, 1)
+        res["home_action"], res["answer"] = None, nw
+        return res
+    if "is_worthwhile" in best:
+        best = best[best["is_worthwhile"].fillna(True).astype(bool)]
+    # ---- end IF-1
     proj = _week_ranges(league_id, season, int(week), best, is_house, od_info)
     b = bio(list(best["add_gsis_id"]) + list(best["drop_gsis_id"]))
     memo: dict[tuple, dict] = {}
@@ -2889,6 +2919,7 @@ def waiver_views(league_id: str, team: int | None, season: int, week: int, mv: p
         st = _drop_starts(m, soon, int(week))
         m["drop_starts"] = st
         m["keep_alternative"] = _alternative(m, mv, soon, blocked, int(week), last) if st else None
+        if1_annotate(m, mv, int(week), last)               # ---- IF-1: the alternative drop and the reason
         return m
 
     def qb_once(ms: list[dict]) -> list[dict]:
@@ -3066,3 +3097,240 @@ def _ie1_present(res: dict, league_id: str, week: int, last: int, span: str) -> 
                            + (f" beyond your {k} open roster spot{'s' if k != 1 else ''}" if k else "")
                            + ", and two claims for the same spot help only once.")
 # ---- end IE-1
+
+
+# ---- IF-1 (Wave I-F, the decision-quality review § "value the bench before prescribing drops"): every claim's drop is
+# the cheapest by `waivers.choose_drops` (the drop's cost = the most of his lineup loss with the add, his depth, his
+# starts after the horizon, his season value above the best free agent at his position, his role scenario — each
+# measured against the waiver wire), the card names the best drop, one alternative and why; a claim whose net gain
+# (lineup gain − what the drop costs beyond it) is under 1 this week and under 3 over the horizon is not offered ("No
+# claim is worth a roster spot this week"); a stash recommends no drop when the drop costs more than the scenario adds.
+COST_FIELDS = ("lineup_loss", "depth_lost", "future_starts", "future_start_weeks", "season_value", "season_points",
+               "replacement_points", "upside")
+
+
+def if1_choose(mv: pd.DataFrame, league_id: str, is_house: bool, season: int, week: int) -> pd.DataFrame:
+    """The move rows re-ranked by the drop's cost (``waivers.choose_drops``). Rows from a mart built before the cost
+    columns get the season value (and a role scenario's upside) here; their depth and later starts stay unknown."""
+    if mv is None or mv.empty or "list_kind" not in mv:
+        return mv
+    recs = mv.to_dict("records")
+    drops = [r for r in recs if isinstance(r.get("drop_sleeper_id"), str)]
+    if drops and is_house and all(W._f(r.get("drop_season_value")) is None for r in drops):
+        mr = query(T.MARKET_SQL, (league_id, season, week))
+        market = dict(zip(mr["player_key"], mr["season_points"], strict=True)) if not mr.empty else {}
+        rr = query(T.REPLACEMENT_SQL, (league_id, season, week, league_id))
+        repl = dict(zip(rr["position"], rr["replacement"], strict=True)) if not rr.empty else {}
+        has = query("select to_regclass('ops.player_scenarios') is not null as ok", ())
+        up = {}
+        if not has.empty and bool(has["ok"].iloc[0]):
+            last = _int(recs[0].get("horizon_last_week")) or week + W.HORIZON - 1
+            u = query(W.UPSIDE_POINTS_SQL, (league_id, season, week, last))
+            up = dict(zip(u["gsis_id"], u["upside"], strict=True)) if not u.empty else {}
+        for r in drops:
+            k = r.get("drop_gsis_id") if isinstance(r.get("drop_gsis_id"), str) else r["drop_sleeper_id"]
+            pts, rp = W._f(market.get(k)), W._f(repl.get(r.get("drop_position"))) or 0.0
+            r.update({"drop_season_points": pts, "drop_replacement_points": rp, "drop_season_value": W.season_value(pts, rp),
+                      "drop_upside": W._f(up.get(k)) if W._f(up.get(k)) else None})
+    out = W.choose_drops(recs)
+    cols = list(mv.columns) + [c for c in W.COST_COLUMNS + ["drop_season_points", "drop_replacement_points"] if c not in mv.columns]
+    return pd.DataFrame(out, columns=list(dict.fromkeys(cols)))
+
+
+def if1_move_fields(r, drop: dict | None) -> dict:
+    """A move's IF-1 fields: the drop's cost in pieces, the net gains, worth a roster spot or not."""
+    out = {"net_weekly_gain": _num(r.get("net_weekly_gain")), "net_horizon_gain": _num(r.get("net_horizon_gain")),
+           "is_worthwhile": _bool(r.get("is_worthwhile")), "drop_cost": None}
+    if drop is not None:
+        dc = {k: _num(r.get(f"drop_{k}")) for k in COST_FIELDS}
+        dc["future_start_weeks"] = _int(r.get("drop_future_start_weeks"))
+        dc.update({"cost": _num(r.get("drop_cost")), "piece": _str(r.get("drop_cost_piece")),
+                   "is_incumbent": _bool(r.get("drop_is_incumbent"))})
+        out["drop_cost"] = dc
+    return out
+
+
+def _nm(p: dict) -> str:
+    """'McPherson'; a defense 'Chiefs defense', a team unit 'Bengals QB'."""
+    return _who_short(p) if p.get("position") == "DEF" or p.get("position") in UNIT_POSITIONS else _last(p.get("player_name"))
+
+
+def _whole(x: float | None) -> str:
+    return "?" if x is None else f"{int(round(x))}"
+
+
+def _value_words(name: str, pos: str, dc: dict) -> str:
+    """'he projects 79 season points, 43 fewer than the best free-agent WR' / 'he is worth 8 season points above …'."""
+    sp, sv, rp = dc.get("season_points"), dc.get("season_value"), dc.get("replacement_points")
+    if sv is not None and sv >= 0.5:
+        return f"{name} is worth {_whole(sv)} season points above the best free-agent {pos}"
+    if sp is not None and rp is not None:
+        return f"{name} projects {_whole(sp)} season points, {_whole(max(0.0, rp - sp))} fewer than the best free-agent {pos} (0 above the waiver wire)"
+    return f"{name}'s season value is not known"
+
+
+def _piece_words(name: str, pos: str, dc: dict, span: str) -> str:
+    """What dropping him gives up, from the piece that sets his cost."""
+    p = dc.get("piece")
+    if p == "lineup_loss":
+        return f"{(dc.get('lineup_loss') or 0):.1f} lineup points over {span}"
+    if p == "season_value":
+        return f"a {pos} worth {_whole(dc.get('season_value'))} season points above the waiver wire"
+    if p == "future_starts":
+        n = dc.get("future_start_weeks") or 0
+        return f"{n} later start{'s' if n != 1 else ''} worth {(dc.get('future_starts') or 0):.1f} points the waiver wire cannot replace"
+    if p == "depth_lost":
+        return f"{(dc.get('depth_lost') or 0):.1f} points of {pos} injury cover over {span}"
+    if p == "upside":
+        return f"a role scenario worth {(dc.get('upside') or 0):.1f} points over {span} if it holds"
+    return "nothing the waiver wire cannot replace"
+
+
+def if1_drop_why(m: dict, alt: dict | None, week: int, last: int) -> tuple[str | None, str | None]:
+    """(the card's drop sentence, its alternative clause alone): the best drop, one alternative, and why."""
+    d, dc = m.get("drop") or {}, m.get("drop_cost") or {}
+    if not d:
+        return None, None
+    span, name, pos = _span_words(week, last), _nm(d), d.get("position") or ""
+    add = _nm(m.get("add") or {})
+    slot = cards.slot_label(m.get("add_slot")) if m.get("add_slot") else pos
+    if dc.get("is_incumbent"):
+        head = f"Drop {name}: {add} replaces him at {slot}."
+    elif not dc.get("piece"):
+        head = f"Drop {name}: the cheapest drop for this claim — {_value_words('he', pos, dc)}."
+    else:
+        head = f"Drop {name}: the cheapest drop for this claim, though it gives up {_piece_words(name, pos, dc, span)}."
+    tail = None
+    if alt is not None:
+        an, ap, ac = _nm(alt["player"]), alt["player"].get("position") or "", alt.get("cost_pieces") or {}
+        if (ac.get("cost") or 0.0) > (dc.get("cost") or 0.0) + 0.005:
+            tail = f"Dropping {an} instead would give up {_piece_words(an, ap, ac, span)}."
+        else:
+            tail = (f"Dropping {an} instead gives the same gain: {_value_words('he', ap, ac)}"
+                    + (f"; {name} goes first as the player {add} replaces." if dc.get("is_incumbent") else "."))
+    return " ".join(x for x in (head, tail) if x), tail
+
+
+def if1_annotate(m: dict, mv: pd.DataFrame, week: int, last: int) -> None:
+    """A move object's ``alternative_drop`` (the next-cheapest legal drop for the same claim) and ``drop_why``."""
+    m.setdefault("alternative_drop", None)
+    d = m.get("drop") or {}
+    add = (m.get("add") or {}).get("sleeper_id")
+    if not d or mv is None or mv.empty or "drop_cost" not in mv or not add:
+        return
+    rows = mv[(mv["add_sleeper_id"] == add) & mv["drop_sleeper_id"].map(lambda s: isinstance(s, str) and s != d.get("sleeper_id"))]
+    alt = None
+    if not rows.empty:
+        r = rows.sort_values("move_rank").iloc[0]
+        pieces = if1_move_fields(r, {})["drop_cost"]
+        alt = {"player": _player(r.get("drop_sleeper_id"), r.get("drop_gsis_id"), r.get("drop_name"), r.get("drop_position"), None, {}),
+               "cost": pieces.get("cost"), "piece": pieces.get("piece"), "net_horizon_gain": _num(r.get("net_horizon_gain")),
+               "net_weekly_gain": _num(r.get("net_weekly_gain")), "cost_pieces": pieces}
+    m["drop_why"], m["drop_why_tail"] = if1_drop_why(m, alt, week, last)
+    if alt is not None:
+        alt["words"] = m["drop_why_tail"]
+    m["alternative_drop"] = alt
+
+
+def if1_no_worthwhile(best: pd.DataFrame, week: int, last: int) -> dict | None:
+    """'No claim is worth a roster spot this week' when every claim's net gain is under 1 this week and 3 over the
+    horizon (None: some claim is worth it, or the rows carry no cost)."""
+    if best is None or best.empty or "is_worthwhile" not in best or best["is_worthwhile"].isna().all():
+        return None
+    if best["is_worthwhile"].fillna(True).astype(bool).any():
+        return None
+    r = best.assign(_n=pd.to_numeric(best["net_horizon_gain"], errors="coerce")).sort_values("_n", ascending=False).iloc[0]
+    nw, nh = _num(r.get("net_weekly_gain")) or 0.0, _num(r.get("net_horizon_gain")) or 0.0
+    drop = _str(r.get("drop_name"))
+    words = (f"No claim is worth a roster spot this week: the best, {r.get('add_name')}"
+             + (f" (dropping {_last(drop)})" if drop else "")
+             + f", adds {nw:+.1f} this week and {nh:+.1f} over {_span_words(week, last)} after what the drop costs — "
+               f"under {W.WORTH_WEEK:.0f} this week and {W.WORTH_HORIZON:.0f} over the weeks.")
+    return {"words": words, "best_net_week": round(nw, 2), "best_net_horizon": round(nh, 2), "add": _str(r.get("add_name")),
+            "drop": drop}
+
+
+def if1_stashes(out: dict, mv: pd.DataFrame, week: int, last: int) -> None:
+    """Stashes stay a watchlist: a stash row recommends its drop only when what the scenario adds to the lineup beats
+    what the drop costs (his own cost: the lineup loss alone, his depth, later starts, season value, upside);
+    otherwise ``stash_action`` 'watch', no drop, and what would change it."""
+    stashes = (out.get("upside") or {}).get("stashes") or []
+    if not stashes or mv is None or mv.empty or "drop_cost" not in mv:
+        return
+    span = _span_words(week, last)
+    own: dict[str, dict] = {}
+    for r in mv[mv["drop_sleeper_id"].map(lambda s: isinstance(s, str))].drop_duplicates("drop_sleeper_id").to_dict("records"):
+        alone = W._f(r.get("drop_horizon_loss")) or 0.0
+        dc = W.drop_cost(alone, depth=W._f(r.get("drop_depth_lost")), future=W._f(r.get("drop_future_starts")),
+                         season=W._f(r.get("drop_season_value")), upside=W._f(r.get("drop_upside")))
+        own[r["drop_sleeper_id"]] = {**dc.as_dict(), "season_points": W._f(r.get("drop_season_points")),
+                                     "replacement_points": W._f(r.get("drop_replacement_points"))}
+    for s in stashes:
+        gain = _num(s.get("holds_horizon_gain"))
+        if gain is None:
+            continue                                   # no lineup numbers (on demand): the card says why already
+        d = s.get("drop") or {}
+        dc = own.get(str(d.get("sleeper_id"))) if d else None
+        cost = (dc or {}).get("cost") or 0.0
+        s["drop_cost"] = dc
+        if gain - cost >= GAIN_EPS:
+            s["stash_action"], s["watch_words"] = "claim", None
+            continue
+        s["stash_action"], s["drop"] = "watch", None
+        dn = _last(d.get("player_name")) if d else None
+        s["watch_words"] = (f"Watch, no claim yet: if his role holds he adds {gain:+.1f} to your lineup over {span}"
+                            + (f", not more than dropping {dn} costs ({cost:.1f})" if dn else "")
+                            + f". Claim him when his role would put him in your lineup for more than {max(cost, GAIN_EPS):.1f}"
+                              " over the weeks, or when a roster spot opens.")
+
+
+def best_waiver_move(league_id: str, team: int, *, source: str | None = None, as_of: datetime | None = None) -> dict:
+    """IF-2's alternative (``INTERFACES.md`` § IF-1): the roster's best claim worth a roster spot — the largest net
+    gain over the waiver horizon (lineup gain − what its drop costs) — or 'stand pat' (all 0) when none is."""
+    is_house = house(league_id, source)
+    if is_house:
+        season, week = _season_week(league_id)
+        mv = query(MOVES_SQL, (league_id, int(team), league_id))
+        od_info: dict = {}
+    else:
+        league, _, _ = _sleeper_league(league_id)
+        season, week = _season_week(league_id, league)
+        mv, od_info = (_moves_on_demand(league_id, int(team), as_of=as_of) if as_of is not None else
+                       _memo(("moves", str(league_id), int(team)), False, lambda: _moves_on_demand(league_id, int(team))))
+        week = od_info.get("week") or week
+    stand = {"kind": "stand_pat", "player": None, "drop": None, "open_spot": False, "gain_week": 0.0, "gain_window": 0.0,
+             "starter_gain_week": 0.0, "starter_gain_window": 0.0, "by_week": [], "weeks": [], "span": None,
+             "drop_cost": None, "words": "Standing pat: no claim is worth a roster spot.", "source": "waivers.best_waiver_move"}
+    if mv is None or mv.empty or week is None:
+        return stand
+    week = int(mv["week"].iloc[0]) if "week" in mv and _int(mv["week"].iloc[0]) else int(week)
+    rctx = _waiver_context(league_id, int(team), week, is_house)
+    if rctx is not None and rctx.changed:
+        mv = availability.moves_on_context(mv, rctx)
+    mv = if1_choose(mv, league_id, is_house, int(season), week)
+    last = _int(mv["horizon_last_week"].iloc[0]) or week
+    weeks = list(range(week, last + 1))
+    stand.update({"weeks": weeks, "span": _span_words(week, last)})
+    best = mv[mv["is_best_drop"].fillna(False).astype(bool) & (mv["list_kind"] != "nothing")
+              & mv["is_worthwhile"].fillna(False).astype(bool)] if "is_worthwhile" in mv else mv.iloc[0:0]
+    gs = {g for g in best["add_gsis_id"] if isinstance(g, str)}
+    blocked = set(availability.cannot_play(gs)) if gs else set()
+    best = best[~best["add_gsis_id"].map(lambda g: isinstance(g, str) and g in blocked)]
+    if best.empty:
+        return stand
+    r = best.assign(_n=pd.to_numeric(best["net_horizon_gain"], errors="coerce"),
+                    _w=pd.to_numeric(best["net_weekly_gain"], errors="coerce")).sort_values(["_n", "_w"], ascending=False).iloc[0]
+    add = _player(r.get("add_sleeper_id"), r.get("add_gsis_id"), r.get("add_name"), r.get("add_position"), r.get("add_team"), {})
+    drop = (_player(r.get("drop_sleeper_id"), r.get("drop_gsis_id"), r.get("drop_name"), r.get("drop_position"), None, {})
+            if isinstance(r.get("drop_sleeper_id"), str) else None)
+    f = if1_move_fields(r, drop)
+    gains = r.get("week_gains")
+    nh, nw = f["net_horizon_gain"] or 0.0, f["net_weekly_gain"] or 0.0
+    span = _span_words(week, last)
+    words = (f"Claim {add['player_name']}" + (f", drop {drop['player_name']}" if drop else " (an open roster spot)")
+             + f": {nh:+.1f} over {span} ({nw:+.1f} this week)" + (" after what the drop costs." if drop else "."))
+    return {"kind": "waiver", "player": add, "drop": drop, "open_spot": drop is None, "gain_week": nw, "gain_window": nh,
+            "starter_gain_week": _num(r.get("weekly_gain")), "starter_gain_window": _num(r.get("horizon_gain")),
+            "by_week": [_num(g) for g in gains] if isinstance(gains, list | tuple | np.ndarray) else [],
+            "weeks": weeks, "span": span, "drop_cost": f["drop_cost"], "words": words, "source": "waivers.best_waiver_move"}
+# ---- end IF-1

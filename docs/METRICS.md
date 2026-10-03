@@ -1006,6 +1006,38 @@ roster covered). Rows of a league whose rosters or statuses changed since the mo
 R-13); anything beyond the four weeks (a dynasty rookie's future: the page says to look twice); two-for-one
 moves; the add's own injury risk beyond the report status; K values are season points per game so far (small
 samples early in the season).
+
+### Drop cost (IF-1, Wave I-F, 2026-10-03; `waivers.choose_drops`, `drop_pieces`, `DropCost`)
+
+The decision-quality review (Priority 2): B3 named, among equally good moves, the drop with the fewest projected
+points, so a bench WR who does not start in the next four weeks was the drop for every claim ("he sits anyway"),
+even for a kicker claim whose incumbent kicker becomes redundant. A drop now has a **cost**, per (add, drop) pair,
+the most (never the sum) of five pieces, each in points of the league's scoring:
+
+| Piece | Definition |
+|---|---|
+| `lineup_loss` | his starts over the horizon the move gives up **with the add on the roster**: the add's gain alone − the move's gain (Carlson for McPherson: 0, Carlson takes the K slot) |
+| `depth_lost` | Σ over the horizon weeks he sits: max(0, his projection − the best free agent's at his position that week) × the chance a starter he can cover misses (1 − (1 − r)^n, n = starters at his position, r = `ABSENCE_RATE`: QB 0.06, RB 0.12, WR 0.10, TE 0.09, K 0.02, DEF 0 — documented constants, not yet fitted to the availability history) |
+| `future_starts` | Σ over the weeks after the horizon he starts in today's roster's best lineup: what the lineup loses when he is replaced by the best free agent at his position (that free agent's season points ÷ the weeks left less a bye). Measured without the add: a free agent at the add's position is at least as good as the add, so the add can only lower it |
+| `season_value` | `trades.price_by_player`'s rule: max(0, rest-of-season points − the best free agent's at his position) (`MARKET_SQL` / `REPLACEMENT_SQL`; on demand `market_points` / `replacement_level`; a team unit against the best free unit). A 1-QB wire holds starting QBs (a QB3 is worth ~0), a superflex wire does not |
+| `upside` | Σ over the horizon of a role scenario's extra points (`ops.player_scenarios.points_gain`), when he has one |
+
+**Net gain** = the move's lineup gain − (cost − lineup_loss) — the roster value the lineup numbers do not already
+count; over the horizon it equals the add's gain alone − the cost. **The best drop per add** is the cheapest
+(equal costs: the starter the add replaces this week — `drop_is_incumbent` —, then the fewest rest-of-season points).
+Moves are ordered by net horizon gain, then net weekly gain. **Worthwhile** (`is_worthwhile`): net ≥ 1 this week
+(`WORTH_WEEK`) or ≥ 3 over the horizon (`WORTH_HORIZON`); when no claim is, Waivers says "No claim is worth a roster
+spot this week" instead of a claim. A **stash** recommends its drop only when the scenario's lineup gain beats the
+drop's own cost; otherwise "watch" and what would change it.
+
+**Columns** (`ops.waiver_moves`, added by `_write`'s `alter table … add column if not exists`): `drop_cost`,
+`drop_cost_piece`, `drop_lineup_loss`, `drop_depth_lost`, `drop_future_starts`, `drop_future_start_weeks`,
+`drop_season_value`, `drop_season_points`, `drop_replacement_points`, `drop_upside`, `drop_is_incumbent`,
+`net_weekly_gain`, `net_horizon_gain`, `is_worthwhile`. A mart built before them is re-ranked on read by the API
+with the season value (and upside) only.
+
+**Not modelled.** Trade value from a real market; injury-specific absence rates (constants); the add's own future
+starts beyond the horizon (only the drop's); a probability on the role scenario (it is a what-if).
 ### Decision cards (B4, 2026-09-30; `app/lib/cards.py`, Home "My week", Matchups, the player card)
 
 No new number: a card restates B1's lineup for one roster-week. **Which week**: the first regular-season

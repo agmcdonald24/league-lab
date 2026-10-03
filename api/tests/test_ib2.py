@@ -92,7 +92,9 @@ def test_one_reason_is_one_fact():
     for r in (decisions._reason(now, week, byes, empty, {}), decisions._reason(bye, week, byes, empty, {})):
         assert r.count(". ") == 0 and r.endswith(".")
     assert decisions._cost({"drop": None}, 4, 7, None) == "No drop: you have an open roster spot."
-    assert decisions._cost({"drop": {"player_name": "A B", "horizon_loss": 0.0}}, 4, 7, None) == "Drop A B: he sits anyway."
+    # IF-1 (Wave I-F): "he sits anyway" is never the whole reason — without the drop's cost the words say what is known
+    assert decisions._cost({"drop": {"player_name": "A B", "horizon_loss": 0.0}}, 4, 7, None) == \
+        "Drop A B: he does not start for you over weeks 4–7."
     assert decisions._cost({"drop": {"player_name": "A B"}}, 4, 7, {"weeks": [4, 5]}) == "Drop A B: he starts for you this week and next."
 
 
@@ -148,7 +150,8 @@ def test_top3_the_views_and_the_alternative_scrubs(client, sql):
             assert m.get("drop_starts") is None and m.get("keep_alternative") is None
     assert n_starts >= 2                                         # the Giants for the Chiefs, Carlson for McLaughlin
     giants = next(c for c in top if c["move"]["drop"] and c["move"]["drop"]["player_name"] == "Kansas City Chiefs")
-    assert giants["cost"] == "Drop Kansas City Chiefs: he starts for you this week."
+    # IF-1 (Wave I-F): the drop the claim replaces at his slot is named as such, with the alternative drop and why
+    assert giants["cost"].startswith("Drop Chiefs defense: Giants defense replaces him at DEF.")
     assert "keep Kansas City Chiefs" in giants["move"]["keep_alternative"]["line"]
 
 

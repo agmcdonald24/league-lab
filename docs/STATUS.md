@@ -4724,3 +4724,33 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   `test_ic4.py`'s RB2 claim read from the top three (Help now starts after them). `web/e2e/ie1/` 5 × phone (375) /
   desktop (1300) on answers recorded from the API (`web/fixtures/ie1/api_ie1.json`); `e2e/ia2` no longer reads the
   0–100 text. Root `uv run pytest` 986 passed (cards.py: the tiebreaker as data, the card text unchanged).
+
+## Wave I-F (Iteration 17, part F)
+
+### IF-1 2026-10-03 — value the bench before prescribing drops (review § Priority 2)
+
+- **Engine** (`src/league_lab/waivers.py`): `DropCost` / `drop_cost` / `drop_pieces` / `choose_drops`. A drop costs the
+  most (never the sum) of `lineup_loss` (with the add on the roster), `depth_lost`, `future_starts` (above the wire),
+  `season_value` (`price_by_player`'s rule, against the best free agent at his position) and `upside`; the best drop
+  per claim is the cheapest (ties: the starter the claim replaces, then the fewest points); moves ordered by net gain;
+  `is_worthwhile` = net ≥ 1 this week or ≥ 3 over the horizon. `sweep_roster` (nightly + on demand) writes 14 new
+  columns (`COST_COLUMNS`; `_write` adds them with `alter table … add column if not exists`; `MOVE_COLUMNS` = the
+  base DDL, unchanged). Definitions: `docs/METRICS.md` § "Drop cost".
+- **API** (`decisions.py`, `# ---- IF-1` blocks): every move carries `drop_cost` (pieces), `net_weekly_gain`,
+  `net_horizon_gain`, `is_worthwhile`, `alternative_drop`, `drop_why`; `no_worthwhile_move` ("No claim is worth a
+  roster spot this week"); stash rows `stash_action` / `watch_words`; a mart without the cost columns is re-ranked on
+  read (season value + upside); `best_waiver_move(league, team)` for IF-2. "He sits anyway" is gone.
+- **Roster 6 (GoodGameBuddy), before → after** (clone 2026-09-26): Carlson's best drop Harrison → **McPherson**
+  ("Drop McPherson: Carlson replaces him at K. Dropping Harrison Jr. instead gives the same gain: he projects 79
+  season points, 43 fewer than the best free-agent WR (0 above the waiver wire); McPherson goes first …"); the best drops
+  of the listed claims {Harrison} → {McPherson, Cousins, Harrison}; the three strongest 3 → 2 (the Falcons defense,
+  +0.44 over weeks 4–7, is under the worthwhile bar); the home action "Claim C.J. Stroud,
+  drop Marvin Harrison Jr." → "…, drop Kirk Cousins"; every stash "drop Harrison" → "watch" (no drop: the scenario
+  adds +0.0 over weeks 4–7). Gains unchanged (13.46 / 9.82 …): only the drop, the order and the words moved.
+- **Tests**: `tests/test_waivers_if1.py` (8, synthetic), `api/tests/test_if1.py` (6, needs_db on roster 6 — the engine
+  in memory, read-only, the API's rows monkeypatched); `test_ib2.py` words updated ("he sits anyway" → the cost words);
+  `test_decisions.py`'s mart-vs-on-demand parity re-ranks a pre-IF-1 mart with the on-demand pieces.
+- **Not done**: the mart's select (PO, `mart_waiver_moves.sql`: add the 14 columns) and the nightly re-run; the nightly
+  stash writer (`upside_for_roster`) still picks its drop by B3's rule (the API decides claim / watch on read);
+  absence rates are documented constants, not fitted; no `web/e2e/if1/` (the screen changes are the cost line's
+  words and the stash's watch line).

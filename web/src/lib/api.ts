@@ -1468,3 +1468,39 @@ export interface PartnerRow {
   cheaper_than?: { give: string[]; words: string } | null;
 }
 // ---- end IE-1
+
+// ---- IF-1 (Wave I-F): the drop's cost in pieces, the net gain, one alternative drop and why; "no worthwhile move";
+// stashes stay a watchlist (INTERFACES.md § IF-1). Additive: declaration merging.
+export interface DropCost {
+  lineup_loss: number | null;
+  depth_lost: number | null;
+  future_starts: number | null;
+  future_start_weeks: number | null;
+  season_value: number | null;
+  season_points: number | null;
+  replacement_points: number | null;
+  upside: number | null;
+  cost: number | null;
+  piece: "lineup_loss" | "season_value" | "future_starts" | "depth_lost" | "upside" | null;
+  is_incumbent?: boolean | null;
+}
+
+export interface WaiverMove {
+  drop_cost?: DropCost | null;
+  net_weekly_gain?: number | null;
+  net_horizon_gain?: number | null;
+  is_worthwhile?: boolean | null;
+  drop_why?: string | null;
+  alternative_drop?: { player: DPlayer; cost: number | null; piece: string | null; net_horizon_gain: number | null; words: string | null } | null;
+}
+
+export interface Waivers {
+  no_worthwhile_move?: { words: string; best_net_week: number; best_net_horizon: number; add: string | null; drop: string | null } | null;
+}
+
+export interface UpsideStash {
+  stash_action?: "claim" | "watch";
+  watch_words?: string | null;
+  drop_cost?: (Partial<DropCost> & { cost: number | null }) | null;
+}
+// ---- end IF-1
