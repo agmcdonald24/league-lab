@@ -175,3 +175,21 @@ export const toCompare = memo<Compare>((r) => {
   const week = num(r.week);
   return { ...(r as unknown as Compare), a: side((r.a ?? {}) as Raw, week), b: side((r.b ?? {}) as Raw, week) };
 });
+
+// ---- I0-A (Wave I-0): the availability overlay's blocks (additive). /api/my-week → `availability` (when ESPN's injuries
+// feed was last read, who moved and why in words, the questionable flags); /api/status → `availability` (the stamp, the
+// two sources' ages, how many players cannot play). The lineup rows of a player who cannot play carry flag OUT /
+// DOUBTFUL / IR and `reason` ("Out (ankle) · ESPN, Oct 2 2:35 PM ET").
+export interface Availability {
+  checked_at: string | null;
+  changes: string[];
+  flags: string[];
+  applied: number;
+}
+export interface AvailabilityStatus {
+  enabled: boolean;
+  checked_at: string | null;
+  source_ages: { espn_s: number | null; sleeper_s: number | null };
+  n_out: number | null;
+}
+export const AVAILABILITY_CHIPS = new Set(["OUT", "DOUBTFUL", "IR"]);

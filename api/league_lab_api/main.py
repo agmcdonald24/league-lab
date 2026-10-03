@@ -7,6 +7,7 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/login  /api/logout              the beta password → a signed cookie (or a bearer token)
     /api/leagues                         current-season leagues (ui.current_leagues)
     /api/leagues?username=               a Sleeper user's leagues this season, their team in each (plan F3)
+    /api/leagues?mfl=<link or id>        a MyFantasyLeague league: its card and team picker (Wave I-0, key mfl:<id>)
     /api/leagues/{league_id}/rosters     the team picker's options
     /api/my-week?league=&team=           Home's My Week: record line, the cards (numbers + the cards' own text), lineup;
                                          a league the database does not have is served on demand from Sleeper
@@ -37,7 +38,7 @@ from league_lab import anyleague as A
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import auth, db, myweek, ondemand, player, research
+from . import auth, availability, db, myweek, ondemand, player, research  # availability: I0-A
 from .applib import cards, ui
 from .db import DataNotReady, query
 from .myweek import NotFound
@@ -69,7 +70,8 @@ async def _not_found(_req: Request, exc: NotFound):
 
 @app.exception_handler(ondemand.SleeperDown)
 async def _sleeper_down(_req: Request, exc: ondemand.SleeperDown):
-    return JSONResponse({"error": "Sleeper did not answer", "detail": "Sleeper did not answer. Try again in a minute.",
+    who = "MyFantasyLeague" if "MyFantasyLeague" in str(exc) else "Sleeper"      # I0-B: an MFL league says so
+    return JSONResponse({"error": f"{who} did not answer", "detail": f"{who} did not answer. Try again in a minute.",
                          "cause": str(exc)}, status_code=502, headers={"Cache-Control": "no-store"})
 
 
@@ -222,8 +224,12 @@ def logout(response: Response) -> dict:
 
 
 # ---------------------------------------------------------------- data (read-only)
+# ---- I0-B (Wave I-0): `?mfl=<league link or id>` = a MyFantasyLeague league (ondemand.mfl_league); league keys may be
+# `mfl:<id>` (anyleague.check_id accepts both; known_league is false for them: always served on demand)
 @app.get("/api/leagues", dependencies=[Depends(require_auth)])
-def leagues(response: Response, username: str | None = None):
+def leagues(response: Response, username: str | None = None, mfl: str | None = None):
+    if mfl is not None:
+        return _json(ondemand.mfl_league(mfl), response)
     if username is None:
         return _json(myweek.leagues(), response)
     return _json(ondemand.leagues_for_user(username), response)
@@ -234,6 +240,7 @@ def rosters(league_id: str, response: Response, source: str | None = None):
     if source == "sleeper" or not myweek.known_league(league_id):
         return _json(ondemand.rosters_for_league(league_id), response)
     return _json(myweek.rosters(league_id), response)
+# ---- end I0-B
 
 
 @app.get("/api/my-week", dependencies=[Depends(require_auth)])
@@ -273,6 +280,14 @@ def search(league: str, q: str, response: Response, source: str | None = None):
 @app.get("/api/status", dependencies=[Depends(require_auth)])
 def status(response: Response):
     out = myweek.status()
+    # ---- I0-A: the availability overlay's stamp; the stale-injury warning goes when ESPN was read within the hour
+    try:
+        out["availability"] = availability.info()
+        if availability.fresh():
+            out["warning"] = None
+    except Exception as exc:  # noqa: BLE001 - a status line, never a failure
+        out["availability"] = {"enabled": availability.enabled(), "error": exc.__class__.__name__}
+    # ---- end I0-A
     out["sleeper"] = A.sleeper().stats()
     out["board_source"] = A.board_source()
     try:                                    # QA: the setting is "auto"; say which board the current week really uses

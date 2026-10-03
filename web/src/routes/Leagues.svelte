@@ -2,7 +2,7 @@
   // Sign in with a Sleeper username → the league picker (plan F2). One field; the answer is the user's leagues this
   // season, each a real link to its My Week with the user's own team pre-selected. Remembered on this phone.
   import { ApiError, get, paths, Unauthorized, type UserLeagues } from "../lib/api";
-  import { leagueLine } from "../lib/leagues";
+  import { leagueLine, mflPath, type MflLeague } from "../lib/leagues";
   import { withContext } from "../lib/md";
   import { prefs } from "../lib/prefs";
 
@@ -45,6 +45,39 @@
   }
 
   const href = (id: string, roster: number | null) => `/?league=${encodeURIComponent(id)}${roster !== null ? `&team=${roster}` : ""}`;
+
+  // ---- I0-B (Wave I-0): MyFantasyLeague — paste the league link, pick the team, the same My Week
+  let mflText = $state("");
+  let mflBusy = $state(false);
+  let mflError = $state<string | null>(null);
+  let mfl = $state<MflLeague | null>(null);
+  const mflSaved = $state(prefs.mflLeagues());
+
+  async function findMfl(e: SubmitEvent) {
+    e.preventDefault();
+    const t = mflText.trim();
+    if (!t) return;
+    mflBusy = true;
+    mflError = null;
+    mfl = null;
+    try {
+      mfl = await get<MflLeague>(mflPath(t));
+    } catch (err) {
+      if (err instanceof Unauthorized) onauth();
+      else if (err instanceof ApiError && err.status === 404) mflError = `${err.message}.`;
+      else if (err instanceof ApiError && err.status === 502) mflError = "MyFantasyLeague did not answer. Try again in a minute.";
+      else mflError = `Cannot reach League Lab right now (${err instanceof Error ? err.message : String(err)}). Try again in a minute.`;
+    } finally {
+      mflBusy = false;
+    }
+  }
+
+  function pickMfl(v: MflLeague, rosterId: number) {
+    const team = v.teams.find((t) => t.roster_id === rosterId);
+    prefs.rememberMfl({ league_id: v.league.league_id, name: v.league.name, scoring_label: v.league.scoring_label,
+      total_rosters: v.league.total_rosters, roster_id: rosterId, team_name: team?.team_name ?? null });
+  }
+  // ---- end I0-B
 </script>
 
 <main class="mx-auto max-w-xl space-y-5 px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-10" data-testid="leagues">
@@ -88,6 +121,81 @@
     </p>
     {#if error}<p class="text-base text-bad" data-testid="username-error">{error}</p>{/if}
   </form>
+
+  <!-- I0-B: MyFantasyLeague -->
+  <form class="space-y-2" onsubmit={findMfl} data-testid="mfl-form">
+    <label class="ll-label block" for="ll-mfl">On MyFantasyLeague? Paste your league link</label>
+    <div class="flex gap-2">
+      <input
+        id="ll-mfl"
+        class="ll-input min-w-0 flex-1 py-2.5"
+        type="url"
+        inputmode="url"
+        autocapitalize="none"
+        autocorrect="off"
+        spellcheck="false"
+        placeholder="e.g. www45.myfantasyleague.com/2026/home/21861"
+        bind:value={mflText}
+        data-testid="mfl-link"
+      />
+      <button
+        class="shrink-0 rounded-md bg-accent px-4 py-2.5 font-bold text-on-accent disabled:opacity-60"
+        disabled={mflBusy || !mflText.trim()}
+        data-testid="mfl-go">{mflBusy ? "Looking…" : "Find my league"}</button
+      >
+    </div>
+    <p class="text-sm leading-snug text-ink-3">The link from your league's home page. League Lab only reads what the league shares.</p>
+    {#if mflError}<p class="text-base text-bad" data-testid="mfl-error">{mflError}</p>{/if}
+  </form>
+
+  {#if mfl}
+    {@const v = mfl}
+    <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="mfl-card">
+      <div>
+        <div class="text-lg leading-snug font-bold">{v.league.name} <span class="text-sm font-semibold text-ink-3">MFL</span></div>
+        {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
+      </div>
+      <p class="text-sm leading-snug text-ink-2" data-testid="mfl-note">{v.scoring_note}</p>
+      {#if v.unmapped.length}
+        <p class="text-sm leading-snug text-warn" data-testid="mfl-unmapped">
+          {v.unmapped.length} of {v.players} players have no projection here yet: {v.unmapped.map((u) => u.name ?? u.mfl_id).join(", ")}.
+        </p>
+      {/if}
+      <h2 class="ll-label pt-1">Which team is yours?</h2>
+      <ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+        {#each v.teams as t (t.roster_id)}
+          <li>
+            <a
+              href={href(v.league.league_id, t.roster_id)}
+              onclick={() => pickMfl(v, t.roster_id)}
+              class="block rounded-md border px-3 py-2.5 text-base {t.roster_id === v.roster_id ? 'border-accent font-bold ring-1 ring-accent' : 'border-line'}"
+              data-testid="mfl-team"
+              data-roster={t.roster_id}>{t.team_name}</a
+            >
+          </li>
+        {/each}
+      </ul>
+    </section>
+  {:else if mflSaved.length}
+    <ul class="space-y-2" data-testid="mfl-saved">
+      {#each mflSaved as l (l.league_id)}
+        <li>
+          <a
+            href={href(l.league_id, l.roster_id)}
+            class="relative block overflow-hidden rounded-lg border bg-surface p-4 pl-5 {l.league_id === current ? 'border-accent ring-1 ring-accent' : 'border-line'}"
+            style="box-shadow:var(--ll-shadow)"
+            data-testid="league-row"
+            data-league={l.league_id}
+          >
+            <span class="absolute inset-y-0 left-0 w-1 {l.league_id === current ? 'bg-accent' : 'bg-line-strong'}" aria-hidden="true"></span>
+            <div class="text-lg leading-snug font-bold">{l.name} <span class="text-sm font-semibold text-ink-3">MFL</span></div>
+            {#if leagueLine(l)}<div class="text-sm leading-snug text-ink-3">{leagueLine(l)}</div>{/if}
+            {#if l.team_name}<div class="mt-1 text-sm leading-snug text-ink-2">Your team: <strong>{l.team_name}</strong></div>{/if}
+          </a>
+        </li>
+      {/each}
+    </ul>
+  {/if}
 
   {#if mine}
     <section class="space-y-2" data-testid="league-list">

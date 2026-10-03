@@ -430,9 +430,13 @@ user's `espn_s2`/`SWID` cookies, which means accounts and consent first) — bot
 `ff_playerids`; each is about a wave, ESPN after accounts (Wave J).
 
 Proposed order: **I-0 before Sunday**: the availability overlay for the house leagues (A) and the injured-player
-exclusions — the one thing that will be wrong at 1 PM Sunday. **I-A (one round, three devs)**: C + D except the
-dial. **I-B**: the dial, the window control, usage tracking, the market flag. **Modelling**: the player-quality
-prior with a backtest, then re-rank. **Wave J**: accounts + MFL / ESPN.
+exclusions — the one thing that will be wrong at 1 PM Sunday — **plus MyFantasyLeague on demand** (Andrew wants his
+dad on it this weekend; pulled forward from E). **I-A (one round, three devs)**: C + D except the dial. **I-B**: the
+dial, the window control, usage tracking, the market flag. **Modelling**: the player-quality prior with a backtest,
+then re-rank. **Wave J**: accounts + ESPN.
+
+**I-0 delivered 2026-10-03** (STATUS § "Wave I-0"): the overlay (I0-A) and MFL (I0-B), merged, 197 API / 835 root /
+62 e2e green, QA-walked in fixture mode; deployed on Andrew's next push.
 
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 

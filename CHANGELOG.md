@@ -2,6 +2,20 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-0
+
+- **I0-A: who can play, checked every 15 minutes on game days.** My Week no longer starts a player ruled out after the
+  nightly build: ESPN's injuries feed (15 min on game days, hourly otherwise) and Sleeper's directory are overlaid at
+  request time; the lineup is re-solved and says who moved ("Justin Jefferson is out (ankle) — Michael Wilson starts at
+  FLEX2"), the player row shows OUT / DOUBTFUL / IR, and "Injuries checked 2:40 PM" replaces the stale-news warning.
+  Trends leave out Out / IR / PUP / suspended players; Waivers never suggest a player who cannot play or two QBs of
+  one team; trades count an Out player as 0 this week; rest of season shows the status (`availability.py`).
+- **MyFantasyLeague, read-only, on demand (I0-B).** Paste an MFL league link on the Leagues screen, pick your team,
+  and the same My Week (and every other screen) runs on it: league keys `mfl:<id>`, `src/league_lab/mfl_client.py`
+  (caches by kind, 60 calls a minute, the league's host followed), `platforms.py` (MFL answered in Sleeper's shapes),
+  `player_ids.py` (the nflverse id table, downloaded once a day); `GET /api/leagues?mfl=`. League 21861: 216 of 216
+  rostered players mapped. docs/ANY_LEAGUE.md § "MyFantasyLeague", docs/MFL_TERMS.md.
+
 ## 2026-10-02 — Wave H
 
 - **Hotfix: the nightly on GitHub Actions.** Its first real run (#4, secrets set) failed in `restore-state`: Neon runs

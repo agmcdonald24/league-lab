@@ -16,6 +16,7 @@ import math
 
 import pandas as pd
 
+from . import availability
 from .applib import blocks, capture, cards, links, ui
 from .db import query
 
@@ -66,9 +67,14 @@ def rosters(league_id: str) -> list[dict]:
 
 
 def _lineup_row(r: pd.Series) -> dict:
-    return {"role": r["role"], "slot": r["slot"], "player_name": _str(r.get("player_name")),
-            "gsis_id": _str(r.get("gsis_id")), "position": _str(r.get("position")),
-            "value": _num(r.get("value")), "margin": _num(r.get("margin")), "flag": _str(r.get("flag")) or ""}
+    out = {"role": r["role"], "slot": r["slot"], "player_name": _str(r.get("player_name")),
+           "gsis_id": _str(r.get("gsis_id")), "position": _str(r.get("position")),
+           "value": _num(r.get("value")), "margin": _num(r.get("margin")), "flag": _str(r.get("flag")) or ""}
+    # ---- I0-A: the availability overlay's chip (OUT / DOUBTFUL / IR) and its reason ("Out (ankle) · ESPN, Oct 2 2:35 PM ET")
+    if _str(r.get("chip")):
+        out["flag"], out["reason"] = r["chip"], _str(r.get("why"))
+    # ---- end I0-A
+    return out
 
 
 def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
@@ -118,6 +124,9 @@ def my_week(league_id: str, roster_id: int) -> dict:
         (league_id, roster_id, week),
     )
     rows = cards.lineup_rows(league_id, season, week, roster_id)
+    # ---- I0-A: the availability overlay (statuses newer than the nightly build; the lineup re-solved when one changes)
+    rows, out["availability"] = availability.apply_to_rows(rows)
+    # ---- end I0-A
     bits = [f"**{me['team_name']}**"]
     if not prof.empty and pd.notna(prof.iloc[0]["wins"]):
         r = prof.iloc[0]
@@ -221,6 +230,8 @@ def howto() -> str | None:
 
 def known_league(league_id: str) -> bool:
     """Is this a current-season league of the database (else /api/my-week serves it on demand from Sleeper)?"""
+    if str(league_id or "").strip().lower().startswith("mfl:"):     # I0-B: a MyFantasyLeague key is always on demand
+        return False
     df = ui.current_leagues()
     return bool((df["league_id"] == str(league_id)).any())
 

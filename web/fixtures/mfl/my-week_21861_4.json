@@ -1,0 +1,456 @@
+{
+ "league_id": "mfl:21861",
+ "league_name": "Addicts 1 Redraft $300 No Trade",
+ "season": 2026,
+ "scoring_label": "12-team redraft \u00b7 full PPR \u00b7 4\u2011pt pass TD \u00b7 TE premium 0.5",
+ "roster_id": 4,
+ "team_name": "Matt and Doug's Team",
+ "manager_name": "Matt and Doug's Team",
+ "week": 4,
+ "record": {
+  "wins": 0,
+  "losses": 3,
+  "standing": 12
+ },
+ "opponent": {
+  "roster_id": 2,
+  "team_name": "Mahafaha",
+  "manager": "Mahafaha",
+  "matchup_id": 4,
+  "lineup_value": 126.21
+ },
+ "source": "sleeper",
+ "summary": "**Matt and Doug's Team** \u00b7 0-3, #12 in the league \u00b7 week 4 vs **Mahafaha**",
+ "league_line": "Your best lineup projects **122.41** in week 4.",
+ "lineup_value": 122.41,
+ "notice": null,
+ "cards": [
+  {
+   "slot": "QB",
+   "slot_label": "QB",
+   "gsis_id": "00-0026498",
+   "player_name": "Matthew Stafford",
+   "value": 19.7,
+   "alt_gsis_id": "00-0036389",
+   "alt_name": "Jalen Hurts",
+   "alt_value": 19.12,
+   "margin": 0.58,
+   "verdict": "a coin flip",
+   "how": "best bench player who can play QB",
+   "p_win": 0.488125,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**QB: start [Matthew Stafford](/player/00-0026498) over [Jalen Hurts](/player/00-0036389)**"
+    },
+    {
+     "kind": "markdown",
+     "text": "**Matthew Stafford projects 0.58 more on average; Jalen Hurts outscores him 51% of the time \u2014 a coin flip.**"
+    },
+    {
+     "kind": "markdown",
+     "text": "19.70 vs 19.12 projected: 0.58 apart. Too close to lose sleep over \u2014 the projection says Matthew Stafford, the ranges say either."
+    },
+    {
+     "kind": "caption",
+     "text": "Most weeks: Matthew Stafford 11\u201328, Jalen Hurts 13\u201329.  \nA bad week to a good week: Matthew Stafford 9\u201334, Jalen Hurts 8\u201333.  \nMatthew Stafford vs PHI (#13 vs QB) \u00b7 Jalen Hurts vs LA (#26 vs QB)"
+    }
+   ]
+  },
+  {
+   "slot": "FLEX2",
+   "slot_label": "FLEX2",
+   "gsis_id": "00-0038544",
+   "player_name": "Quentin Johnston",
+   "value": 10.01,
+   "alt_gsis_id": "00-0038618",
+   "alt_name": "Xavier Hutchinson",
+   "alt_value": 9.13,
+   "margin": 0.88,
+   "verdict": "a coin flip",
+   "how": "best bench player who can play FLEX2",
+   "p_win": 0.55055,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**FLEX2: start [Quentin Johnston](/player/00-0038544) over [Xavier Hutchinson](/player/00-0038618)**"
+    },
+    {
+     "kind": "markdown",
+     "text": "**Quentin Johnston outscores Xavier Hutchinson 55% of the time \u2014 a lean.**"
+    },
+    {
+     "kind": "markdown",
+     "text": "10.01 vs 9.13 projected: 0.88 apart."
+    },
+    {
+     "kind": "caption",
+     "text": "Most weeks: Quentin Johnston 5\u201315, Xavier Hutchinson 4\u201312.  \nA bad week to a good week: Quentin Johnston 2\u201319, Xavier Hutchinson 1\u201318.  \nQuentin Johnston vs SEA (#32 vs WR) \u00b7 Xavier Hutchinson vs DAL (#19 vs WR)"
+    }
+   ]
+  },
+  {
+   "slot": "FLEX1",
+   "slot_label": "FLEX1",
+   "gsis_id": "00-0033090",
+   "player_name": "Hunter Henry",
+   "value": 10.72,
+   "alt_gsis_id": "00-0038618",
+   "alt_name": "Xavier Hutchinson",
+   "alt_value": 9.13,
+   "margin": 1.59,
+   "verdict": "a lean",
+   "how": "best bench player who can play FLEX1",
+   "p_win": 0.55605,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**FLEX1: start [Hunter Henry](/player/00-0033090) over [Xavier Hutchinson](/player/00-0038618)**"
+    },
+    {
+     "kind": "markdown",
+     "text": "**Hunter Henry outscores Xavier Hutchinson 56% of the time \u2014 a lean.**"
+    },
+    {
+     "kind": "markdown",
+     "text": "10.72 vs 9.13 projected: 1.59 apart."
+    },
+    {
+     "kind": "caption",
+     "text": "Most weeks: Hunter Henry 5\u201315, Xavier Hutchinson 4\u201312.  \nA bad week to a good week: Hunter Henry 2\u201319, Xavier Hutchinson 1\u201318.  \nHunter Henry vs BUF (#11 vs TE) \u00b7 Xavier Hutchinson vs DAL (#19 vs WR)"
+    }
+   ]
+  }
+ ],
+ "lineup": [
+  {
+   "role": "starter",
+   "slot": "QB",
+   "player_name": "Matthew Stafford",
+   "gsis_id": "00-0026498",
+   "position": "QB",
+   "value": 19.7,
+   "margin": 0.58,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "RB1",
+   "player_name": "Travis Etienne",
+   "gsis_id": "00-0036973",
+   "position": "RB",
+   "value": 13.21,
+   "margin": 5.61,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "RB2",
+   "player_name": "Woody Marks",
+   "gsis_id": "00-0040583",
+   "position": "RB",
+   "value": 11.07,
+   "margin": 3.47,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "WR1",
+   "player_name": "Ja'Marr Chase",
+   "gsis_id": "00-0036900",
+   "position": "WR",
+   "value": 15.25,
+   "margin": 6.12,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "WR2",
+   "player_name": "Jameson Williams",
+   "gsis_id": "00-0037240",
+   "position": "WR",
+   "value": 11.86,
+   "margin": 2.73,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "TE",
+   "player_name": "Tucker Kraft",
+   "gsis_id": "00-0038996",
+   "position": "TE",
+   "value": 11.46,
+   "margin": 2.33,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "FLEX1",
+   "player_name": "Hunter Henry",
+   "gsis_id": "00-0033090",
+   "position": "TE",
+   "value": 10.72,
+   "margin": 1.59,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "FLEX2",
+   "player_name": "Quentin Johnston",
+   "gsis_id": "00-0038544",
+   "position": "WR",
+   "value": 10.01,
+   "margin": 0.88,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "K",
+   "player_name": "Jason Myers",
+   "gsis_id": "00-0031492",
+   "position": "K",
+   "value": 9.7,
+   "margin": 9.7,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "DEF",
+   "player_name": "Seattle Seahawks",
+   "gsis_id": null,
+   "position": "DEF",
+   "value": 9.43,
+   "margin": 9.43,
+   "flag": ""
+  }
+ ],
+ "lineup_full": [
+  {
+   "role": "starter",
+   "slot": "QB",
+   "player_name": "Matthew Stafford",
+   "gsis_id": "00-0026498",
+   "position": "QB",
+   "value": 19.7,
+   "margin": 0.58,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "RB1",
+   "player_name": "Travis Etienne",
+   "gsis_id": "00-0036973",
+   "position": "RB",
+   "value": 13.21,
+   "margin": 5.61,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "RB2",
+   "player_name": "Woody Marks",
+   "gsis_id": "00-0040583",
+   "position": "RB",
+   "value": 11.07,
+   "margin": 3.47,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "WR1",
+   "player_name": "Ja'Marr Chase",
+   "gsis_id": "00-0036900",
+   "position": "WR",
+   "value": 15.25,
+   "margin": 6.12,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "WR2",
+   "player_name": "Jameson Williams",
+   "gsis_id": "00-0037240",
+   "position": "WR",
+   "value": 11.86,
+   "margin": 2.73,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "TE",
+   "player_name": "Tucker Kraft",
+   "gsis_id": "00-0038996",
+   "position": "TE",
+   "value": 11.46,
+   "margin": 2.33,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "FLEX1",
+   "player_name": "Hunter Henry",
+   "gsis_id": "00-0033090",
+   "position": "TE",
+   "value": 10.72,
+   "margin": 1.59,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "FLEX2",
+   "player_name": "Quentin Johnston",
+   "gsis_id": "00-0038544",
+   "position": "WR",
+   "value": 10.01,
+   "margin": 0.88,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "K",
+   "player_name": "Jason Myers",
+   "gsis_id": "00-0031492",
+   "position": "K",
+   "value": 9.7,
+   "margin": 9.7,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "DEF",
+   "player_name": "Seattle Seahawks",
+   "gsis_id": null,
+   "position": "DEF",
+   "value": 9.43,
+   "margin": 9.43,
+   "flag": ""
+  },
+  {
+   "role": "bench",
+   "slot": "Bench 1",
+   "player_name": "Jalen Hurts",
+   "gsis_id": "00-0036389",
+   "position": "QB",
+   "value": 19.12,
+   "margin": null,
+   "flag": ""
+  },
+  {
+   "role": "bench",
+   "slot": "Bench 2",
+   "player_name": "Xavier Hutchinson",
+   "gsis_id": "00-0038618",
+   "position": "WR",
+   "value": 9.13,
+   "margin": null,
+   "flag": ""
+  },
+  {
+   "role": "bench",
+   "slot": "Bench 3",
+   "player_name": "Mike Gesicki",
+   "gsis_id": "00-0034829",
+   "position": "TE",
+   "value": 8.94,
+   "margin": null,
+   "flag": ""
+  },
+  {
+   "role": "bench",
+   "slot": "Bench 4",
+   "player_name": "Kendre Miller",
+   "gsis_id": "00-0038551",
+   "position": "RB",
+   "value": 7.6,
+   "margin": null,
+   "flag": ""
+  },
+  {
+   "role": "bench",
+   "slot": "Bench 5",
+   "player_name": "Justice Hill",
+   "gsis_id": "00-0034975",
+   "position": "RB",
+   "value": 6.57,
+   "margin": null,
+   "flag": ""
+  },
+  {
+   "role": "bench",
+   "slot": "Bench 6",
+   "player_name": "Josh Jacobs",
+   "gsis_id": "00-0035700",
+   "position": "RB",
+   "value": 0.0,
+   "margin": null,
+   "flag": ""
+  },
+  {
+   "role": "unplayable",
+   "slot": "Can't play",
+   "player_name": "A.J. Brown",
+   "gsis_id": "00-0035676",
+   "position": "WR",
+   "value": 11.0,
+   "margin": null,
+   "flag": "NFL injured reserve"
+  },
+  {
+   "role": "unplayable",
+   "slot": "Can't play",
+   "player_name": "Jordan Mason",
+   "gsis_id": "00-0037525",
+   "position": "RB",
+   "value": 10.7,
+   "margin": null,
+   "flag": "NFL injured reserve"
+  }
+ ],
+ "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls. The first line is **how often your starter outscores the other player** this week, from both players' ranges: 50\u201355% is a coin flip (go with the latest news), 55\u201365% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Most weeks** is the range half of his weeks land in (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the matchup you want), 32 = the fewest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
+ "movers": [],
+ "on_demand": {
+  "range_method": "ratio",
+  "range_reference_league": "te_premium",
+  "unmapped_players": [],
+  "unmapped_scoring_keys": [
+   "bonus_rec_te"
+  ],
+  "not_projected_keys": [
+   "fum_rec_td",
+   "pass_2pt",
+   "rec_2pt",
+   "rush_2pt",
+   "st_td"
+  ],
+  "kd_value_source": {
+   "K": "lines",
+   "DEF": "lines"
+  },
+  "stat_line_mismatches": 0,
+  "sleeper_calls": 1,
+  "timings_ms": {
+   "sleeper": 3.3,
+   "priced": 130.1,
+   "solve": 16.7,
+   "frame": 20.4,
+   "total": 170.5,
+   "priced.board": 64.6,
+   "priced.price": 3.1,
+   "priced.ranges": 12.3,
+   "priced.kd": 49.9,
+   "opponent": 13.7,
+   "cards": 64.7,
+   "rest": 13.6,
+   "request_total": 446.1
+  },
+  "board_source": "nfl_wide",
+  "opponent_note": null,
+  "mfl_unmapped": [],
+  "mfl_mapped_by": {
+   "table": 202,
+   "defense": 14
+  },
+  "mfl_scoring_note": "Lineup read as QB, 2 RB, 2 WR, TE, 2 FLEX, K, DEF. Your league lets you start 2-4 RBs, 2-4 WRs, 1-3 TEs: the spots beyond each minimum count as FLEX. Points allowed: MyFantasyLeague's bands 0-0, 1-6, 7-10, 11-99 are mapped onto Sleeper's (0, 1-6, 7-13, 14-20, 21-27, 28-34, 35+) by the average over each band. Field goals: MyFantasyLeague scores some by the yard; each Sleeper distance band is priced at its middle (17, 24.5, 34.5, 44.5 and 55 yards). Not counted in the projections: touchdowns (returns)."
+ },
+ "platform": "mfl"
+}

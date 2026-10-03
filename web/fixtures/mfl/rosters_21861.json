@@ -1,0 +1,62 @@
+[
+ {
+  "roster_id": 5,
+  "team_name": "AfroGoat",
+  "manager_name": null
+ },
+ {
+  "roster_id": 7,
+  "team_name": "Big Snake Trophies",
+  "manager_name": null
+ },
+ {
+  "roster_id": 10,
+  "team_name": "Bullseye",
+  "manager_name": null
+ },
+ {
+  "roster_id": 9,
+  "team_name": "Derby City",
+  "manager_name": null
+ },
+ {
+  "roster_id": 8,
+  "team_name": "Enigma",
+  "manager_name": null
+ },
+ {
+  "roster_id": 2,
+  "team_name": "Mahafaha",
+  "manager_name": null
+ },
+ {
+  "roster_id": 4,
+  "team_name": "Matt and Doug's Team",
+  "manager_name": null
+ },
+ {
+  "roster_id": 6,
+  "team_name": "Philly Special",
+  "manager_name": null
+ },
+ {
+  "roster_id": 12,
+  "team_name": "RAY DONOVAN",
+  "manager_name": null
+ },
+ {
+  "roster_id": 11,
+  "team_name": "Rick Love",
+  "manager_name": null
+ },
+ {
+  "roster_id": 1,
+  "team_name": "Salowism",
+  "manager_name": null
+ },
+ {
+  "roster_id": 3,
+  "team_name": "Wayne Fontes",
+  "manager_name": null
+ }
+]

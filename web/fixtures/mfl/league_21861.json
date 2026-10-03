@@ -1,0 +1,79 @@
+{
+ "platform": "mfl",
+ "league": {
+  "league_id": "mfl:21861",
+  "name": "Addicts 1 Redraft $300 No Trade",
+  "season": 2026,
+  "total_rosters": 12,
+  "scoring_label": "12-team redraft \u00b7 full PPR \u00b7 4\u2011pt pass TD \u00b7 TE premium 0.5",
+  "url": "https://www45.myfantasyleague.com/2026/home/21861",
+  "platform": "mfl"
+ },
+ "teams": [
+  {
+   "roster_id": 1,
+   "team_name": "Salowism",
+   "manager_name": null
+  },
+  {
+   "roster_id": 2,
+   "team_name": "Mahafaha",
+   "manager_name": null
+  },
+  {
+   "roster_id": 3,
+   "team_name": "Wayne Fontes",
+   "manager_name": null
+  },
+  {
+   "roster_id": 4,
+   "team_name": "Matt and Doug's Team",
+   "manager_name": null
+  },
+  {
+   "roster_id": 5,
+   "team_name": "AfroGoat",
+   "manager_name": null
+  },
+  {
+   "roster_id": 6,
+   "team_name": "Philly Special",
+   "manager_name": null
+  },
+  {
+   "roster_id": 7,
+   "team_name": "Big Snake Trophies",
+   "manager_name": null
+  },
+  {
+   "roster_id": 8,
+   "team_name": "Enigma",
+   "manager_name": null
+  },
+  {
+   "roster_id": 9,
+   "team_name": "Derby City",
+   "manager_name": null
+  },
+  {
+   "roster_id": 10,
+   "team_name": "Bullseye",
+   "manager_name": null
+  },
+  {
+   "roster_id": 11,
+   "team_name": "Rick Love",
+   "manager_name": null
+  },
+  {
+   "roster_id": 12,
+   "team_name": "RAY DONOVAN",
+   "manager_name": null
+  }
+ ],
+ "roster_id": null,
+ "unmapped": [],
+ "players": 216,
+ "mapped": 216,
+ "scoring_note": "Lineup read as QB, 2 RB, 2 WR, TE, 2 FLEX, K, DEF. Your league lets you start 2-4 RBs, 2-4 WRs, 1-3 TEs: the spots beyond each minimum count as FLEX. Points allowed: MyFantasyLeague's bands 0-0, 1-6, 7-10, 11-99 are mapped onto Sleeper's (0, 1-6, 7-13, 14-20, 21-27, 28-34, 35+) by the average over each band. Field goals: MyFantasyLeague scores some by the yard; each Sleeper distance band is priced at its middle (17, 24.5, 34.5, 44.5 and 55 yards). Not counted in the projections: touchdowns (returns)."
+}

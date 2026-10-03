@@ -3438,6 +3438,58 @@ Starter $7, Standard $25; read 2026-10-02 from memory of Render's pricing, not t
 board); the hosted copy (`league_lab_hosted`) has no `ops.projection_lines` yet (H2's relation audit), so there the rest
 of season borrows week by week as before.
 
+## Wave I-0 (Iteration 17, part 0)
+
+### PO merge — Wave I-0, 2026-10-03 (Friday night, for Sunday)
+
+* **Delivered** (two Opus devs in parallel, ~25 min each): I0-A the availability overlay (ESPN's public injuries
+  feed every 15 min on game days / hourly otherwise + Sleeper's daily directory, newest wins per player; applied at
+  request time: the lineup re-solved with `lineup.solve` when a starter can no longer play, "who moved and why"
+  sentences, OUT / DOUBTFUL / IR chips, "Injuries checked hh:mm", Trends / Waivers / trades / ROS exclusions, the
+  same-team-QB rule; `availability.py`, `injury_feed.py`); I0-B MyFantasyLeague on demand (`mfl:<id>` keys,
+  `mfl_client.py` with caches / 60 a minute / redirects followed, `platforms.py` answering MFL in Sleeper's shapes so no
+  screen changed, `player_ids.py` the nflverse id table downloaded once a day, `/api/leagues?mfl=`, the Leagues
+  screen's link box + team picker; league 21861: 216 of 216 rostered players mapped, the live JSON re-parsed through
+  the pane).
+* **PO**: merged on `integration/wave-i0` (two doc conflicts, both kept; one STATUS heading deduped); I0-A's
+  temporary CSV reader replaced by I0-B's `player_ids.table()` (the fixture copy next to the ESPN fixtures still wins
+  in tests). Checks: `api` 197 passed (159 + 19 + 19), root 835 passed, web lint / build clean, 62 fixture e2e
+  (58 + 2 + 2), ruff clean. QA walk of the integrated API in full fixture mode: every route 200 for `mfl:21861`
+  (team 4: lineup solved, opponent from MFL's schedule, Etienne IR → Kendre Miller at RB2 by the overlay), the house
+  league with Jefferson Out by the fixture feed: "Justin Jefferson is out (ankle) — Michael Wilson starts at FLEX2",
+  Jefferson on "Can't play" with the OUT chip and reason, no card names him, Trends left 28 out, status `warning`
+  null. Two devs used the browser pane for fixtures (own tabs, read-only).
+* **Not verified until the deploy**: Render reaching ESPN, MFL and GitHub raw (the id table); `/api/status →
+  availability.espn.mode: live`, `unmapped_espn` low, `sleeper.mfl.hosts` after the first MFL league; a private MFL
+  league's real refusal text (none found to test). Decisions taken: `/api/record` for MFL answers 200
+  `{available: false}` like any unkept Sleeper league (I0-B's choice, kept); Doubtful counts as cannot play (as the
+  nightly); the opponent's projected total is not overlay-adjusted yet; `/api/team` and Trends' role alerts untouched.
+
+### I0-A 2026-10-02 — the availability overlay (what would be wrong at 1 PM Sunday)
+
+Branch `dev/I0A`. Andrew's beta walk: My Week said start Justin Jefferson, ruled Out at 2:35 PM ET; Jonah Coleman (IR)
+was "running hot". Cause: availability came only from nflverse's injury file via the nightly (lags the report by hours).
+
+- **Sources** (`src/league_lab/injury_feed.py`, `api/league_lab_api/availability.py`): ESPN's public injuries feed
+  (15 min on game days per `dim_game`, hourly otherwise; parsed entries cached in `LEAGUE_LAB_CACHE_DIR/espn_injuries.json`
+  with `fetched_at`; last copy kept on failure; gzip; on the live server a stale copy is served while one thread reads
+  ESPN) + Sleeper's directory (unchanged daily cache). ESPN → gsis via the directory's `espn_id`, then the id table.
+- **Live numbers (browser pane, 2026-10-03T03:58Z)**: 800 entries, 32 teams, 8.7 MB; statuses Out / Questionable /
+  Active / Injured Reserve / Doubtful; fantasy statuses OUT, QUESTIONABLE, IR, IR-R, PUP-R, INACTIVE, DOUBTFUL. The athlete
+  id is only in `athlete.links[].href` (no `athlete.id`). Sleeper's `espn_id` maps 118 of ESPN's 400 skill entries; the
+  id table maps 158 of 158 in the fixture. Two "Justin Jefferson"s on the feed (MIN WR 4262921 Out; CLE LB 5150249).
+  Sleeper had Jefferson Out with `news_updated` 18:55 UTC — 20 min after ESPN.
+- **Applied**: My Week (both paths: re-solve with `lineup.solve`, chip + reason, `availability.changes`), Trends (left
+  out + count), Waivers (no claim / free agent who cannot play; drop who cannot play = 0 this week; one QB per NFL team
+  by `depth_chart_order`), trades (this week's board), rest of season (`injury_status`), `/api/status` (`availability`;
+  warning dropped when ESPN < 1 h old). Web: "Injuries checked 2:40 PM", the sentences under "Your lineup", the chip.
+- **Evidence**: `api/tests/test_i0a.py` 19 passed. Scrubs roster 2 on the clone with the fixture feed: "Justin Jefferson is
+  out (ankle) — Michael Wilson starts at FLEX2" (Wilson 9.20 vs Croskey-Merritt 9.19), lineup 117.02 → 113.54 = minus
+  Jefferson's margin 3.48 exactly; Test League roster 10: Jefferson out — Stefon Diggs starts at FLEX, RB1 / RB2 stay
+  empty (Etienne IR, Price Out) and say so. Trends (Scrubs): 38 players left out (IR, Out). API suite 178 passed (159 +
+  19); web lint / build clean; `e2e:fixtures` 60 passed (58 + 2: `web/e2e/i0a/`); parity tests untouched and green.
+- **Off switch**: `LEAGUE_LAB_AVAILABILITY=off`; off in fixture mode unless `LEAGUE_LAB_ESPN_FIXTURES` is set.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
@@ -3457,3 +3509,32 @@ of season borrows week by week as before.
 nflverse (attribution), dynastyprocess crosswalk (MIT), ffverse/ffopportunity (MIT), Pro-Football-Reference
 data via nflverse (see nflverse terms), Sleeper API (public read-only). FTN (Phase 2) CC-BY-SA 4.0.
 
+
+### I0-B 2026-10-03 — MyFantasyLeague, read-only, on demand (branch `dev/I0B`, clone `league_lab_i0b`)
+
+**What.** An MFL league is a key (`mfl:21861`), a client (`src/league_lab/mfl_client.py`) and a translation into
+Sleeper's shapes (`src/league_lab/platforms.py`: `anyleague.sleeper()` is now a `Router`; `anyleague.check_id`
+accepts both keys); the id table (`src/league_lab/player_ids.py`: `mfl_to_sleeper`, `mfl_to_gsis`, `espn_to_gsis`,
+`sleeper_to_gsis`, `download_if_stale()` once a day into `LEAGUE_LAB_CACHE_DIR`, `LEAGUE_LAB_PLAYER_IDS_CSV`
+override — I0-A's CSV reader in `availability.py` can switch to it). Routes: `GET /api/leagues?mfl=<link or id>`; every
+on-demand route answers for `mfl:` keys unchanged. Web: the Leagues screen's "On MyFantasyLeague? Paste your league
+link" → the league card with its teams → My Week; remembered on the phone; "· MFL" in the league switcher. Design and
+the translation rules: docs/ANY_LEAGUE.md § "MyFantasyLeague"; calls and contact: docs/MFL_TERMS.md.
+
+**Evidence (fixtures fetched 2026-10-03 through the browser pane; `api/tests/test_i0b.py`, 18 tests).**
+* 21861 slots: QB, RB, RB, WR, WR, TE, FLEX, FLEX, K, DEF + 8 BN. Scoring: pass_yd 0.05, pass_td 4, pass_int −1,
+  rec 1, bonus_rec_te 0.5, fgm 3 / 3 / 3.45 / 4.45 / 5.5, pts_allow 12 / 8 / 2.857 / 0…; label "12-team redraft ·
+  full PPR · 4‑pt pass TD · TE premium 0.5". IDP league 10015: DT / DE / LB / CB / S left out and said so; 19 events
+  listed as not counted (tackles, sacks (player), return yards…); yardage bands → bonus_*_yd_*.
+* Players: 216 of 216 rostered in 21861 mapped to Sleeper ids (202 by the id table, 14 defenses by team code).
+* Every route 200 for `mfl:21861` in fixture mode (my-week, team, waivers, trades/partners, trades/evaluate, ros,
+  league, search, about, trends, matchups/defense, matchups/cb, players, receivers, compare, player card, player
+  games, record (available: false), leagues/mfl:21861/rosters, status); `mfl:99999999` (MFL's own error body) → 404
+  "MyFantasyLeague would not share this league: … Ask the commissioner to allow API access".
+* The live re-test (pane, 2026-10-03 00:44 ET): league, rosters, schedule, standings, weekly results week 3 equal the
+  saved fixtures (SHA-256 of the canonical JSON); live scoring week 4 differs only in player order (same starters);
+  the live rules parse to the same scoring; the final code on the live copy: 216 / 216 mapped (full 12,518-row table),
+  10 starters per team.
+* Checks: ruff clean; API suite 175 passed, 2 skipped (176 with the unmapped-starter test added after); root suite 834 passed, 2 skipped; web lint / build clean;
+  `npm run e2e:fixtures` 60 passed
+  (the new `e2e/i0b/fixtures.spec.ts`, phone + desktop).

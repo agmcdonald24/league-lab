@@ -79,7 +79,17 @@ web app, "About the numbers" (the model explanation + the record). Same run comm
 `image.yml`, `scripts/smoke.sh`, `docs/DEPLOY.md`), the gaps (upside stash, buy low / sell high, About's "what it leans
 on most", one-query rest of season, search for any league), one writer (GitHub Actions publishes the hosted copy; the
 Mac's launchd builds locally only), the NFL-wide boards in the record, the hosted relation closure in
-`scripts/hosted_relations.py`. **Next: Andrew deploys** (`docs/DEPLOY.md`); Wave I (accounts, Stripe) on Sleeper's licence.
+`scripts/hosted_relations.py`. Deployed 2026-10-02 (`docs/DEPLOY.md`).
+* **Wave I-0 (2026-10-03, after Andrew's beta walk — plan § Iteration 17)**: My Week (house and on-demand) re-solves
+  the lineup at request time from an availability overlay — ESPN's public injuries feed (15 min on game days,
+  hourly otherwise) + Sleeper's daily directory — and says who moved and why; Trends / Waivers / trades / ROS exclude
+  players who cannot play (`api/league_lab_api/availability.py`, `src/league_lab/injury_feed.py`;
+  `LEAGUE_LAB_AVAILABILITY=off` disables it). **MyFantasyLeague** leagues work on demand with `mfl:<id>` keys
+  (`src/league_lab/mfl_client.py`, `platforms.py` — MFL answered in Sleeper's shapes, so no screen changed —
+  `player_ids.py`, the nflverse id table downloaded into `LEAGUE_LAB_CACHE_DIR` once a day); the Leagues screen takes
+  an MFL league link and a team picker. `docs/ANY_LEAGUE.md` § "Availability" / § "MyFantasyLeague"; `docs/MFL_TERMS.md`.
+  Next: the rest of Iteration 17 (words, decisions screens, the quality prior); Wave J (accounts, Stripe, ESPN) on
+  Sleeper's licence.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a

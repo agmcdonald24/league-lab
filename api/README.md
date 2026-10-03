@@ -23,6 +23,8 @@ depends on it; the nightly does not change.
 | `GET /api/search?league=&q=` | the player card's search box (25 hits) | the page's query; **any other league (H1)**: Sleeper's directory by name, `player_id_map`, whose team from the league's rosters (+ `sleeper_id`, `rostered_by_roster_id`) |
 | `GET /api/about?league=` (H1) | About the numbers: the model's words, what it leans on most, its grades (below, § "About and the waiver extras (H1)") | `mart_projection_importance`, `mart_projection_drift`, `mart_projection_backtest` |
 | `GET /api/status` | the freshness line, the stale-injury warning, + `sleeper` (cache ages, the call budget) and `board_source` (F3) | `ui.freshness_banner()`, `Sleeper.stats()` |
+| `GET /api/leagues?mfl=<link or id>` | a MyFantasyLeague league on demand (I0-B): the league in Sleeper's shapes, its teams to pick from, `unmapped`, `scoring_note`; every other route then takes `league=mfl:<id>` | `platforms.MFLLeagues` |
+| *every lineup route* | `availability` (I0-A): `checked_at`, `changes` (who moved and why), `flags`; `/api/status.availability` has the feed's mode, ages and `n_out`; `/api/trends.availability.left_out`, `/api/waivers.availability` | `availability.py` |
 | `GET /api/docs` | OpenAPI page | — |
 | anything else | the web app (`web/dist`): a real file, else `index.html` | — |
 
