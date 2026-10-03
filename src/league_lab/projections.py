@@ -856,6 +856,11 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     lines = nfl_lines(every)
     ranges = every[every["league_id"].isin(list(references))].rename(columns={"league_id": "scoring_name"})[RANGE_COLUMNS]
     pred = house_rows(every, leagues, source)
+    # ---- M1 (Wave I-A): calibration of the top -- a no-op unless LEAGUE_LAB_PROJECTION_CALIBRATION=1
+    # (docs/METRICS.md § "Calibration of the top"); the stat line is untouched, frozen weeks keep their rows (B5)
+    from . import calibration as _cal
+    pred, ranges = _cal.calibrate_outputs(conn, season, pred, ranges, source)
+    # ---- end M1
     # R-13: K and DEF rows (model kd1.0, leagues that start them) go through the same B5 writer; F1: their
     # league-free lines and the reference scorings' offsets go NFL-wide
     kd = KD.run_after_project(conn, season, references, fitted_at)
