@@ -475,6 +475,37 @@ IB-2 (Waivers short with views, the sticky trade verdict, the best alternative b
 first, "Value to my lineup", the card's default content). **I-B delivered 2026-10-03 13:00 ET** (STATUS § "Wave I-B":
 316 API / 848 root / 130 e2e). Still after: usage tracking, the news feed, v3.1.
 
+**Third: dad's league (2026-10-03 afternoon).** Andrew: "70587 is my dads league. It pulled in fine but they use
+different scoring and rosters so the tool basically doesn't work for him. I think theres some issue between scoring
+and settings with my two leagues too. We need to make this more dynamic to accomodate more league types and scoring
+settings." What the PO found, from MFL's own JSON for league 70587 ("Make Football Great Again", 12 teams, roster 14,
+no IR, regular season through week 14, base host `www44`) and the live app's answers:
+
+* **Starters** `TMQB ×1, RB ×2, WR+TE ×3, TMPK ×1, Def ×1`. `lineup.py` knew Sleeper's slot names only, so the
+  translation kept `RB` and `Def` and dropped the rest: the app read the lineup as "2 RB, DEF", seated a TE at RB2,
+  called every WR and both team units "Can't play", and priced the lineup at 15.16.
+* **Scoring by position group** (rules per `PK`, `QB`, `WR`, `RB`, `TE`, `Def`): touchdowns by distance for every
+  family (`PS/RS/RC/PR/KO/DR/IR/BF/MF/BP`: 0–9 yd = 6, 10–39 = 9, 40+ = 12); yards written `1/10` over a range
+  (`PY 10-999 1/10`, QB `20-999 1/20`; `RY`, `CY` `1/10`), flat bonuses at the league's own thresholds (`PY 250+ 10`,
+  `RY 100+ 10`, `CY 75+ or 100+ 10` by position); `IN −3`, `FL −3`, `P2/R2/C2 2`; `FG 0–39 3, 40–49 5, 50–59 10,
+  60+ 15`, `EP 1`; Def `FC 3, IC 3, SK 2, SF 4, TPA 0 → 10, 1–3 → 8`. The I0-B compiler understood `*x` per-unit
+  rules and a few Sleeper-shaped bands, so `scoring_settings` came back **empty** and every projection priced at 0
+  for the rules that matter.
+* **Team units**: `TMQB` and `TMPK` are MFL "players" (`0662` Kansas City Chiefs TMQB, …) with no gsis — 34 of them
+  on rosters, all unmapped.
+
+Design (**Wave I-C**): a `ScoringSpec` — the league's rules as data per position (rates, flat bands, TD-distance
+bands, `1/n` ranges, premiums), compiled from Sleeper's settings and from MFL's rules with every unknown event
+reported as unpriced; pricing on the spec for actual lines (exact) and projected lines (expected value: a band's
+points × the probability of reaching it, a distance band × the share of TDs that long — M2 measures both); a
+**scoring check** per league (`/api/league/scoring-check`) that compares our points with the platform's own for a
+scored week and names the rule behind each miss — the Leagues card shows it, and it answers the suspicion about
+Andrew's two leagues with numbers (IC-3's audit). Slots become eligibility sets (`WR+TE`, `RB+WR+TE`, `TMQB`,
+`TMPK`, `TMDEF`); team units become players priced from the team's quarterback / kicker lines. Dad's league is the
+test fixture end to end. Four developers: IC-1 (the spec, compilers, pricing, the check), IC-2 (slots and units),
+IC-3 (70587 fixtures, the card's read-backs, the audit of Scrubs and the dynasty, e2e), M2 (the distributions:
+TD-distance shares and threshold probabilities, and whether expected-value pricing helps the backtest).
+
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 
 Andrew ran the Wave G app on his Mac ("Oh hell yea … proceed"). Next: put the non-commercial beta on a host so his
