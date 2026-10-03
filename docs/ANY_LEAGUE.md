@@ -472,3 +472,45 @@ his face (`LineupTable.svelte`).
 **Not done.** Rest of season and the trade board value a unit through the solver's rows only (the ROS table has no
 unit rows yet); the Team Hub's slot-strength "top" carries the unit's name, not its team; `scoring_report` reads
 `"DEF" in slots` (a `TMDEF`-only league would list the defense keys as unmapped — IC-1's function).
+
+### Finished (Wave I-D, IC-4, 2026-10-03)
+
+**Rest of season has the units.** A league whose slots admit `TMQB` / `TMPK` gets one rest-of-season row per (unit,
+NFL team): 32 team QBs and 32 team kickers in dad's league. Each week of the window is priced by the week's own rule
+(`anyleague.unit_window` on the NFL-wide window, `units_priced_frame` on a week priced by `price_week`): the line of the
+team's best-projected quarterback who can play *that week* (`unit_lines(rule="starter")`, priced through `price_lines`
+as TMQB, so `UNIT_PRICES_AS` gives it the QB rules), or the team's best-projected kicker that week; the range is the
+starter's. A team's bye is a week off (the table's rule). Week 4 of the Bengals QB = My Week's 29.00, for every team and
+week (`test_ros_units_equal_the_weeks_unit_prices`). The rows are keyed by the league's directory — `mfl:0656` for a unit
+a roster carries, `mfl:TMQB-KC` for one on the waiver wire (`anyleague.unit_directory`) — so whose it is, the trade
+board's weeks past the horizon and "Value to my lineup" find them under the rosters' keys. In "Value to my lineup" a
+unit is counted against the units of its position on the waiver wire (the 30 unrostered), as a kicker is against the
+free kickers. The answer's row: `unit: true`, `priced_from` (the decision week's starter), `priced_from_words`
+("Priced from Joe Burrow's line (the team's starting QB each week)"); `?position=TMQB` / `TMPK`; the table shows the
+team's badge where a face goes, the chips say "Team QB" / "Team K".
+
+**A unit's card** (`/api/player/mfl:0656?league=mfl:70587`) is its starter's card — the quarterback (kicker) whose line
+prices it this week — named as the unit ("Cincinnati Bengals QB"; `unit.header` "Cincinnati Bengals QB — priced from
+Joe Burrow's line"), with the unit's roster ("on **Knight Train**") and the unit's rest of season.
+
+**The Team Hub names a unit with its team**: the slot strength's best starter carries `unit`, the team (the badge) and
+`short_name` ("Bengals QB"); the roster rows carry the unit's team; the slot reads "team QB" / "team K".
+
+**Manager names**: MFL's `league` export lists a franchise's `owner_name` only to a caller the league shows it to; the
+public export League Lab reads has none for 70587, 21861 or 10015 (checked live through the browser pane, 2026-10-03).
+`team_names` returns it as the manager name when it is there (`mfl_client.franchise_owners`) and **null** otherwise —
+never the team name repeated (the League screen's standings showed "Knight Train / Knight Train"). The picker and My
+Week's header ("**Knight Train** · <owner> · 1-3, #11") show it when it exists.
+
+**Double headers everywhere.** A double-header week is one score and two games for a team: the League screen's
+all-play counts each other team once a week (it counted a double-header week's teams twice: Klaby Crew 57-9 all-play
+over 3 weeks of 11 opponents, now 27-6), each team-week carries `games` (both opponents, "L/L"), the record comes from
+every game; `/api/league` lists this week's matchups and the last scored week's results (`matchups`, each game once:
+week 4 of 70587 = 12 games, Knight Train's two first). `/api/record` for an MFL league still keeps no projection record
+(`available: false`) and now answers the league's own results: every played week's games (MFL's schedule; its
+`weeklyResults` carry the same scores), two a team in a double-header week, and each team's record — equal to MFL's own
+standings for all 12 teams. The Matchups screen names NFL opponents only (no fantasy opponent): nothing to change.
+
+**Waivers with an empty starting slot**: the claim that fills it this week leads Help now and the three strongest
+(70587 week 4, the ESPN fixture overlay: Hall and Price Out → "Claim Jacory Croskey-Merritt (RB) … Fills your empty RB2
+this week."); a unit slot reads "team K" in the claim's reason ("Starts at team K this week over Chargers K (10.0).").

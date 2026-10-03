@@ -16,7 +16,10 @@ export function ordinal(n: number): string {
 }
 
 /** "Superflex" for SUPER_FLEX, "FLEX" stays; slot numbers kept ("RB2"). */
-export const slotLabel = (s: string | null | undefined): string => (s ?? "").replace("SUPER_FLEX", "Superflex");
+// ---- IC-4 (Wave I-D): the team units' slots in words, as cards.slot_label says them ("team QB", "team K")
+const UNIT_SLOT: Record<string, string> = { TMQB: "team QB", TMPK: "team K" };
+export const slotLabel = (s: string | null | undefined): string => UNIT_SLOT[s ?? ""] ?? (s ?? "").replace("SUPER_FLEX", "Superflex");
+// ---- end IC-4
 
 // ------------------------------------------------------------------ waivers
 function span(m: WaiverMove, week: number, last: number): string {

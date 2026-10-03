@@ -4331,3 +4331,35 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   slot names, the cards copy and words); `api/tests/test_ic2.py` (8: the translation, units as players, free units,
   My Week 8 slots with the units priced, Waivers' units, the rosters route and the Team Hub, a house league unchanged,
   every route on 70587). `tests/test_lineup.py`: the no-slot reason's new words (3 lines).
+
+
+## Wave I-D (Iteration 17, part D)
+
+### IC-4 2026-10-03 — the units and the double header, finished (branch `dev/IC4`, database `league_lab_i0b`)
+
+* **Rest of season with the team units** (`anyleague.py` `# ---- IC-4`: `unit_window`, `units_priced_frame`,
+  `unit_directory`, `unit_keys`; `_ros_table` marked lines): 70587's `/api/ros` has 32 TMQB + 32 TMPK rows, each week
+  priced by the week's rule (the week's best-projected playable QB through `price_lines` as TMQB; the team's best K),
+  byes off, keyed `mfl:0656` / `mfl:TMQB-KC`. Knight Train before: 11 rows, no unit; after: 14 — Buccaneers QB 368.98
+  (#9 of 32 team QBs, bye 10), Bengals QB 325.42 (#24, bye 6, week 4 = 29.00 = My Week), Chargers K 162.67 (#5, bye 7).
+  "Value to my lineup": Chargers K 2.75, Buccaneers QB 1.52 (starts 13 of 15 weeks), Bengals QB 0.00 (starts weeks 4
+  and 10 only); 30 free units counted as the waiver wire. `ondemand.py`: `unit` / `priced_from` / `priced_from_words`,
+  the QB pieces for a TMQB's "why", `position=TMQB|TMPK`, "team QB" in the lineup sentences; `unit_card`
+  (`/api/player/mfl:0656`). Web `Ros.svelte`: the team badge where the face goes, Team QB / Team K chips, the "Priced
+  from" line, a unit links to its card; `ros.ts` says "team QB" in the answer line.
+* **Team Hub** (`decisions.units_named`): the slot strength names a unit with its team ("team QB · [CIN] Bengals QB",
+  next man up "Buccaneers QB"); roster rows carry the unit's team. `decisions.ts` `slotLabel`: "team QB" / "team K".
+* **Manager names**: MFL's public league export has no `owner_name` (70587 / 21861 / 10015 checked live through the
+  pane; the fixture is unchanged, it equals the live export's franchise keys). `mfl_client.franchise_owners`;
+  `MFLLeagues.users` gives the owner as `display_name` or None; `team_names` → `manager_name` null for MFL (was the
+  team name repeated); the rosters route, `mfl_league` and My Week's summary carry it when it exists (tested with a
+  synthetic `owner_name`).
+* **Double headers**: `decisions.double_header_weeks` / `week_matchups` (`od_league_marts`: all-play once a week —
+  Klaby Crew 57-9 → 27-6; `games` per team-week; the record from every game); `/api/league` `matchups` (week 4: 12
+  games, double header; week 3 results: 6); `League.svelte` lists them (yours first, highlighted). `/api/record` for an
+  MFL league: `results` + `records` (= MFL's standings for all 12 teams). Matchups names NFL opponents only: unchanged.
+* **Waivers**: an empty starting slot's fill leads Help now and `top3` ("Fills your empty RB2 this week."; before,
+  top3 led with a team K and a DEF); unit slots in words in the reasons.
+* **Checks**: `api/tests/test_ic4.py` 10 passed; API suite, ruff, web lint / typecheck / build, fixture e2e: see the
+  hand-back. `web/e2e/ic4/` (6: phone at 375, desktop 1300) on `web/fixtures/mfl/api_70587_ic4.json` (recorded from
+  this branch's API with `IC4_RECORD`, the ESPN overlay on).

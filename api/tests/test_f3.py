@@ -378,7 +378,8 @@ def test_ros_route(client):
                                     "playoff_points", "p10", "p90", "pos_rank", "rostered_by_roster_id", "rostered_by_team",
                                     # IA-3 (Wave I-A): the pieces, why this number, the market line (test_ia3.py)
                                     "headshot_url", "bye_weeks", "ros_points_per_game", "per_game", "why", "market_points",
-                                    "week_points", "market_words"}
+                                    "week_points", "market_words",
+                                    "unit"}                                  # IC-4 (Wave I-D): a team unit's row says so
     u = client.get(f"/api/ros?league={TEST_LEAGUE}&position=ALL&limit=40").json()
     assert u["source"] == "sleeper" and u["last_week"] == 17 and len(u["players"]) == 40      # 6 playoff teams: 3 rounds
     pts = [p["ros_points"] for p in u["players"]]

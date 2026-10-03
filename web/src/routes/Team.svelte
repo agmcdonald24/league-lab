@@ -16,6 +16,7 @@
   import PlayerRow from "../components/PlayerRow.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
   import StatTile from "../components/StatTile.svelte";
+  import TeamBadge from "../components/TeamBadge.svelte"; // ---- IC-4: a team unit's badge
 
   let { league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -151,13 +152,19 @@
                     <span class="font-semibold text-ink">{slotLabel(s.slot_type)}{s.slots > 1 ? ` ×${s.slots}` : ""}</span>
                     {#if s.top?.player_name}
                       ·
-                      {#if s.top.gsis_id}<a class="ll-name" href={withContext(`/player/${s.top.gsis_id}`, ctx)}>{s.top.player_name}</a>{:else}{s.top.player_name}{/if}
+                      {#if s.top.unit}<!-- ---- IC-4: a team unit by its team: the badge, "Bengals QB" -->
+                        <span class="inline-flex items-center gap-1 align-middle" data-testid="slot-unit"><TeamBadge team={s.top.team} /><a
+                            class="ll-name"
+                            href={withContext(`/player/${encodeURIComponent(s.top.sleeper_id ?? "")}`, ctx)}>{s.top.short_name ?? s.top.player_name}</a
+                          ></span
+                        >
+                      {:else if s.top.gsis_id}<a class="ll-name" href={withContext(`/player/${s.top.gsis_id}`, ctx)}>{s.top.player_name}</a>{:else}{s.top.player_name}{/if}
                     {/if}
                   {/snippet}
                 </Bar>
                 <p class="mt-0.5 text-xs text-ink-3">
                   {#if s.league}League average {f1(s.league.avg)}, best {f1(s.league.best)}.{/if}
-                  Next man up: {s.replacement_name ? `${s.replacement_name} (${f1(s.replacement_value)})` : s.top?.is_locked ? "locked" : "nobody"}.
+                  Next man up: {s.replacement_name ? `${s.replacement_short ?? s.replacement_name} (${f1(s.replacement_value)})` : s.top?.is_locked ? "locked" : "nobody"}.
                 </p>
               </div>
             {/each}
@@ -208,7 +215,7 @@
                 {:else}
                   <PlayerRow
                     player={{ ...r, player_name: r.player_name ?? "" }}
-                    href={r.gsis_id ? withContext(`/player/${r.gsis_id}`, ctx) : null}
+                    href={r.gsis_id ? withContext(`/player/${r.gsis_id}`, ctx) : r.unit && r.sleeper_id ? withContext(`/player/${encodeURIComponent(r.sleeper_id)}`, ctx) : null}
                     context={rowContext(r)}
                     value={r.role === "unplayable" ? "—" : f1(r.value)}
                     valueLabel={r.role === "starter" ? "starts" : r.role === "bench" ? "bench" : "out"}
