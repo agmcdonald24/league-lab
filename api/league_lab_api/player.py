@@ -483,7 +483,27 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "platform": "mfl" if is_mfl_league(league_id) else "sleeper",           # ---- IE-0
         **({} if od is None else {"on_demand": od.meta()}),
         "news": news_block(p["gsis_id"]),                                                  # ---- N1
+        "matchup_evidence": card_matchup_evidence(league_id, p, pos, team, league_name, season, week),   # ---- IF-3
     }
+
+
+# ---- IF-3 (Wave I-F): the card's matchup section carries the matchup evidence (research.matchup_evidence): the history
+# as the card's "Next:" line ranks it (mart_defense_vs_position_current, the reference league's scoring), the corners
+# now, the implication and the forecast's treatment, in two sentences (lib/card.ts puts them under "Next:").
+def card_matchup_evidence(league_id: str, p, pos, team, league_name: str, season: int, week: int | None) -> dict | None:
+    if week is None or pos not in ("QB", "RB", "WR", "TE") or not isinstance(team, str) or not team:
+        return None
+    from . import research as RS
+    try:
+        ctx = RS.Ctx(league_id, int(season), league_name, True, {}, [], int(week))
+        ref = query("""select defense, position, games, through_week, points_allowed_per_game_std, rank_std
+                       from analytics.mart_defense_vs_position_current where season = %s and position = %s""", (int(season), pos))
+        return RS.matchup_evidence(ctx, str(p["gsis_id"]), int(week), dvp=ref,
+                                   head={"gsis_id": p["gsis_id"], "player_name": p["player_name"], "position": pos, "team": team},
+                                   scoring=f"{RS.reference_name()} scoring")
+    except Exception:  # noqa: BLE001 - context on the card is never load-bearing: the rest of the card stands
+        return None
+# ---- end IF-3
 
 
 # ---- IB-0 (Wave I-B): the Availability section under the overlay. When the overlay re-solved his roster's week and

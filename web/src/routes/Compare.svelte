@@ -13,6 +13,7 @@
   import { route, setParams } from "../lib/router.svelte";
   import { fmt, teamLabel } from "../lib/theme";
   import Card from "../components/Card.svelte";
+  import MatchupEvidence from "../components/MatchupEvidence.svelte"; // ---- IF-3
   import PlayerCard from "../components/PlayerCard.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
 
@@ -221,11 +222,29 @@
             testid={`compare-card-${i === 0 ? "a" : "b"}`}
           />
           <p class="text-center text-xs leading-snug text-ink-3">
-            {range(s)}{#if s.opponent}{range(s) ? " · " : ""}{s.next4.find((w) => w.week === s.week)?.is_home === false ? "at" : "vs"} {teamLabel(s.opponent)}{s.opp_rank ? ` (#${s.opp_rank} vs ${s.position})` : ""}{/if}
+            {range(s)}{#if s.opponent}{range(s) ? " · " : ""}{s.next4.find((w) => w.week === s.week)?.is_home === false ? "at" : "vs"} {teamLabel(s.opponent)}{s.opp_rank ? ` (#${s.opp_rank} vs ${s.position})` : ""}{/if}{#if s.matchup_evidence?.matchup_uncertain}<span class="ml-1 font-semibold text-warn" data-testid="compare-corners-changed"
+                >· corners changed</span
+              >{/if}
           </p>
         </div>
       {/each}
     </div>
+
+    <!-- ---- IF-3: the matchup evidence, both sides: the history, what changed in the defense, what it means this week -->
+    {#if A.matchup_evidence || B.matchup_evidence}
+      <Card title="The matchups this week" testid="compare-evidence">
+        <div class="grid grid-cols-1 gap-4 wide:grid-cols-2">
+          {#each [A, B] as s, i (i)}
+            {#if s.matchup_evidence}
+              <div class="border-l-4 pl-3" style="border-color:{i === 0 ? colorA : colorB}">
+                <MatchupEvidence ev={s.matchup_evidence} who={s.player_name} testid={`compare-evidence-${i === 0 ? "a" : "b"}`} />
+              </div>
+            {/if}
+          {/each}
+        </div>
+      </Card>
+    {/if}
+    <!-- ---- end IF-3 -->
 
     <div class="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-ink-2" data-testid="compare-legend">
       <span class="inline-flex items-center gap-1.5"><span class="h-2 w-4 rounded-sm" style="background:{colorA}"></span>{A.player_name}</span>

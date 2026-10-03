@@ -4724,3 +4724,43 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   `test_ic4.py`'s RB2 claim read from the top three (Help now starts after them). `web/e2e/ie1/` 5 × phone (375) /
   desktop (1300) on answers recorded from the API (`web/fixtures/ie1/api_ie1.json`); `e2e/ia2` no longer reads the
   0–100 text. Root `uv run pytest` 986 passed (cards.py: the tiebreaker as data, the card text unchanged).
+
+## Wave I-F (Iteration 17, part F)
+
+### IF-3 2026-10-03 — historical matchup evidence connected to current personnel (review § Priority 1)
+
+* **Why**: the decision-quality review (`docs/reviews/2026-10-03-decision-quality-review.md` § Priority 1): Williams vs
+  Tuten (Scrubs roster 6, week 4) showed Carolina's WR rank with no word that its starting corners Jaycee Horn and Mike
+  Jackson had gone on injured reserve (Panthers, Sept 30), while Matchups listed the replacements as unranked.
+* **What**: `research.matchup_evidence` (the object in `INTERFACES.md` § IF-3; `docs/METRICS.md` § Matchups "Current
+  personnel"): `history` (rank, games, period, scoring, not opponent-adjusted, the adjusted rank beside it), `changed`
+  (`cards.corner_personnel`: the regulars — ≥ 50% of the leading corner's coverage snaps this season — vs the depth
+  chart as of the game; a listed starter who cannot play per the overlay gives his spot to the next corner on the same
+  depth chart; missing regulars with status, source and date), `implication` (less representative / stands / unknown /
+  unchecked), `forecast_treatment` "contextual only; not in the forecast" (the projection's opponent inputs are
+  `opp_allowed_std`, `opp_allowed_l4`, `opp_rank_std`, `f_opp_allowed_diff`, `league_allowed_avg` and the betting lines;
+  the `pn_*` personnel inputs are the player's own team — a test parses `BASE_FEATURES`), two sentences. On
+  `/api/compare` (both sides; the verdict drops a matchup lean from a less representative rank), the player card
+  (`matchup_evidence`, shown under "Next:" by `lib/card.ts`), `/api/matchups/cb` rows (WR). The cards: a changed
+  defense's matchup piece scores 0 under its own kind, `_tiebreak` never picks the matchup then, the coin flip says "the
+  matchup rank does not settle it this week: Carolina's starting corners changed (…)", and `decision_cards`' frame
+  carries `matchup_uncertain` (IF-4's "No clear upgrade" words). The API sets `cards.STATUSES = availability.now`; the
+  console reads the depth chart only. Web: `components/MatchupEvidence.svelte` (the two sentences, a "Corners changed"
+  badge, "The evidence" behind a disclosure) on Compare ("The matchups this week") and Matchups' cornerback rows (when
+  changed); "· corners changed" beside the rank under each compare card. No number moves.
+* **The review's case** (main-database clone 2026-09-26 + the as-of overlay fixture `api/tests/fixtures/espn_if3`:
+  Horn and Jackson IR, ESPN, Sep 30): before — "Williams projects 0.26 more (9.98 vs 9.72); the matchup leans Williams:
+  his defense ranks #17 vs WRs once the offenses it faced are counted, Tuten's #24 vs RBs."; after — "Williams projects
+  0.26 more (9.98 vs 9.72); the matchup rank does not settle it this week: Carolina's starting corners changed (Jackson
+  and Horn are on injured reserve)." with Evans (left, for Jackson), Lee (right) and Smith-Wade (slot, for Horn)
+  expected, Evans and Lee "unranked (insufficient snaps)". Without the overlay the clone's depth chart still starts
+  Jackson and Horn: "the historical rank stands: the same corners". Projections unchanged (9.98 / 9.72).
+* **Tests**: `api/tests/test_if3.py` 10 (the forecast's feature list; the coin flip before / after on the review's live
+  numbers; the matchup piece as a fact, not a reason; the words; the compare / card / cornerback rows / cards' flag on
+  the clone with the fixture overlay; the "stands" case; the depth-chart-already-moved path on stand-in SQL). API suite
+  410 passed, 3 failed (the three known clone scoring checks: `test_ic1` ×2, `test_ic_po` ×1), 4 skipped.
+  `web/e2e/if3/` 4 (Compare and the pane's matchup section, phone 375 / desktop 1300) on answers recorded from the API
+  (`web/fixtures/if3/api_if3.json`, team and manager names replaced).
+* **Not done / for the PO**: the `ops.events` store is a design (the hand-back), not built; the hosted copy gets
+  `mart_matchup_cb_context` (read for the first time) on the next nightly publish (until then the replacement corners
+  are not named; the depth chart diff still works); receivers only (no front-seven check for running backs).

@@ -1312,6 +1312,51 @@ most; `quality_rank`: 1 = hardest to throw on) and the console keeps its words.
 * Tests: `api/tests/test_ib3.py` (the cut points, the scaling with n, the words, the corner rules; on both house
   leagues: `tough_rank` 1 = the fewest points allowed, difficult at the small ranks on both routes).
 
+### Current personnel (pers1.0, IF-3, Wave I-F, 2026-10-03; `cards.corner_personnel`, `research.matchup_evidence`)
+
+A defense's rank against receivers was earned by the corners who played its games. When they are not the corners
+expected this week, the rank is less representative and must not settle a close call. The **matchup evidence**
+(`/api/compare` `a|b.matchup_evidence`, the player card's `matchup_evidence`, `/api/matchups/cb` rows) keeps three
+parts apart:
+
+* **History**: the rank the screen shows — Compare and Matchups: this league's scoring (`research.league_dvp`,
+  `rank_std`); the card: `mart_defense_vs_position_current` (the reference league's scoring, the card's "Next:" line) —
+  with its games, period ("2026, weeks 1–3"), scoring, and **not adjusted for the offenses it faced**; the
+  opponent-adjusted rank (`mart_defense_position_profile.rank_adjusted`, reference scoring) beside it.
+* **What changed** (receivers only; corners are what the evidence covers):
+  * *regulars* = the defense's corners with at least **50% of the leading corner's coverage snaps** this season
+    (`mart_cb_rankings`, window `season` — the games played so far, latest, not as-of; at most three);
+  * *listed* = its depth chart as of the game: `mart_cb_matchups`' left / right / slot corner (rank 1, the latest
+    snapshot before kickoff);
+  * *cannot play* = the availability overlay (`availability.now`: ESPN / Sleeper, the newer wins; Out, Doubtful, IR,
+    PUP, NFI, suspended, inactive) with its source and date. A listed starter who cannot play gives his spot to the
+    next corner at that spot **on the same depth chart** (`mart_matchup_cb_context`, depth rank 2+);
+  * *missing* = a regular who is not expected: he cannot play (status, source, date) or the depth chart no longer
+    starts him ("no longer listed as a starter"); *expected* = the corners who start, each with his two-season rank
+    in words or "unranked (insufficient snaps)", `is_new` when he is not a regular, `replaces` when he took a spot.
+  * kind: `changed` (a regular is missing), `same`, `unknown` (no depth chart before the game, or no games this
+    season); `not_checked` for QB / RB / TE.
+* **Implication**: `less_representative` ("the historical rank is less representative this week: both starting
+  corners changed" — the words count them), `stands` ("the same corners"), `unknown`, `unchecked`.
+* **Forecast treatment**: **contextual only; not in the forecast.** The projection's opponent inputs
+  (`projections.BASE_FEATURES`) are `opp_allowed_std`, `opp_allowed_l4`, `opp_rank_std`, `f_opp_allowed_diff`,
+  `league_allowed_avg` (the points this defense has allowed to the position) and the betting lines
+  (`implied_team_total`, `spread_line`, `total_line`); the personnel group (`pn_*`) is the player's own team. Nothing
+  says who plays corner. `api/tests/test_if3.py` parses the feature list: an opponent-personnel input fails it.
+
+**What it changes.** No number. A receiver whose opponent's corners changed: the card's matchup piece
+(`cards.reason_pieces`) stays a fact but scores 0 under its own kind (`matchup_caveat`), so `cards._tiebreak` never
+breaks a coin flip on the matchup (either player's) and the coin flip says "the matchup rank does not settle it this
+week: Carolina's starting corners changed (Jackson and Horn are on injured reserve)"; the compare's verdict keeps the
+projection's head and drops the matchup lean for the same words; `cards.decision_cards`' frame carries
+`matchup_uncertain` (My Week's "No clear upgrade" words, IF-4). The console's cards read the depth chart only (no
+overlay); the API sets `cards.STATUSES = availability.now`.
+
+**Known limits.** The regulars come from the latest season window (a replay of an old week sees later games); a
+corner who changed teams counts for his latest team; the overlay's entry is the status and its date, not the team's
+announcement URL (`ops.events`, designed in the IF-3 hand-back, would carry it); one corner of two missing is already
+"less representative" (no threshold is invented for "how much").
+
 ## "Value to my lineup" (IB-3, Wave I-B, 2026-10-03; `ondemand.lineup_values`, `/api/ros?view=lineup&team=`)
 
 What a player is worth to **one roster's best lineup** over the weeks left (this week to the league's final), summed

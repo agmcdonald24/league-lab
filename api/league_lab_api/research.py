@@ -978,6 +978,10 @@ def matchups_cb(league_id: str, *, team: int | None = None, limit: int | None = 
                      | {"text": M.cover_split_text(r)} for r in _records(M.cover_split(sg))}
     page = decorate(cbm, ctx)
     out = []
+    # ---- IF-3: the corners now, for every defense on the page at once; this league's ranks (as on Compare)
+    pers = cards.corner_personnel(set(cbm.loc[cbm["position"] == "WR", "opponent"].dropna()), ctx.season, int(week))
+    dvp_l, memo_l = league_dvp(ctx, ctx.season), {}
+    # ---- end IF-3
     for r in _records(page):
         r["line"] = links(M.cb_line(r))
         r["lean"] = M.lean_text(r) if r["call_status"] != "tight end" else None
@@ -987,6 +991,10 @@ def matchups_cb(league_id: str, *, team: int | None = None, limit: int | None = 
         r["faced"] = faced_by.get(r["gsis_id"], [])
         r["cover_split"] = split.get(r["gsis_id"])
         r.update(cb_meaning(r))                                  # ---- IB-3: the tone, the certainty, the rank in words
+        # ---- IF-3: the defense's history next to its corners now (one corner read for every defense on the page)
+        r["matchup_evidence"] = (matchup_evidence(ctx, r["gsis_id"], int(week), dvp=dvp_l, head=r, personnel=pers,
+                                                  game=(r.get("opponent"), r.get("is_home")), memo=memo_l)
+                                 if r.get("position") == "WR" and isinstance(r.get("opponent"), str) else None)
         out.append(r)
     st_rows = [r for r in out if r["is_starter"]]
     n_cb = next((int(r["cb_n_ranked"]) for r in st_rows if r.get("cb_n_ranked") is not None and not pd.isna(r["cb_n_ranked"])), None)
@@ -1374,6 +1382,208 @@ def _side(ctx: Ctx, gsis: str, dvp: pd.DataFrame, pc=None) -> dict:
     return out
 
 
+# ---- IF-3 (Wave I-F, the decision-quality review § Priority 1): the matchup evidence object. Three parts kept apart —
+# `history` (the defense's rank against the position as computed: games, scoring, period, not adjusted for the offenses
+# it faced), `changed` (its corners now vs the corners that rank was earned with: `cards.corner_personnel`, the overlay's
+# status with its source and date), `implication` — plus `forecast_treatment`, said honestly: the projection's opponent
+# inputs are the defense's points allowed to the position and the betting lines (FORECAST_OPPONENT_FEATURES, checked
+# against league_lab.projections.BASE_FEATURES by api/tests/test_if3.py); nothing in it says who plays corner, so a corner
+# change is "contextual only; not in the forecast". No number moves: the evidence only stops an unrepresentative rank
+# from settling a close call (cards._tiebreak, the compare's verdict). docs/METRICS.md § Matchups "Current personnel".
+FORECAST_OPPONENT_FEATURES = ("opp_allowed_std", "opp_allowed_l4", "opp_rank_std", "f_opp_allowed_diff", "league_allowed_avg")
+FORECAST_LINE_FEATURES = ("implied_team_total", "spread_line", "total_line")
+FORECAST_WORDS = "contextual only; not in the forecast"
+FORECAST_DETAIL = ("The projection's opponent inputs are the points this defense has allowed to the position (the season, "
+                   "the last 4 games, its rank) and the betting lines; none of them says who plays corner.")
+IMPLICATION_WORDS = {
+    "less_representative": "the historical rank is less representative this week: {what}",
+    "stands": "the historical rank stands: the same corners",
+    "unknown": "unknown: {why}",
+    "unchecked": "the historical rank, without a personnel check: corners are checked for receivers only",
+}
+cards.STATUSES = availability.now          # the cards' corner check reads the overlay (ESPN / Sleeper, with the date)
+
+
+_PLACES: dict[str, str] = {}
+
+
+def _place(team: str | None) -> str:
+    """'Carolina' (dim_team's name without the nickname; 32 names, kept for the process)."""
+    if not isinstance(team, str) or not team:
+        return "the defense"
+    if not _PLACES:
+        t = query("select team_abbr, team_name, team_nick from analytics.dim_team")
+        _PLACES.update({r["team_abbr"]: str(r["team_name"]).removesuffix(" " + str(r["team_nick"])).strip() or r["team_abbr"]
+                        for r in _records(t)})
+    return _PLACES.get(team, team)
+
+
+def _date_words(iso) -> str | None:
+    """'Sep 30' (Eastern) from an overlay timestamp."""
+    if not iso:
+        return None
+    try:
+        t = pd.Timestamp(iso)
+        t = (t.tz_localize("UTC") if t.tzinfo is None else t).tz_convert("America/New_York")
+        return f"{t.strftime('%b')} {t.day}"
+    except (ValueError, TypeError):
+        return None
+
+
+def _history(ctx: Ctx, opp: str, pos: str, week: int, dvp: pd.DataFrame, scoring: str | None = None,
+             memo: dict | None = None) -> dict:
+    """The defense's rank against the position as the card and the compare show it (this league's scoring, raw points
+    allowed per game in its games so far) + the opponent-adjusted rank of the profile (reference scoring) beside it."""
+    d = dvp[dvp["position"] == pos] if not dvp.empty else dvp
+    n = int(d["rank_std"].notna().sum()) if not d.empty else 0
+    row = d[d["defense"] == opp] if not d.empty else d
+    r = _records(row)[0] if not row.empty else {}
+    rank, games, thru = _rank(r.get("rank_std")), _rank(r.get("games")), _rank(r.get("through_week"))
+    words = gives_up_words(rank, n)
+    out = {"defense": opp, "position": pos, "rank_most": rank, "tough_rank": tough_rank(rank, n), "n": n or None,
+           "words": None if words is None else f"{words} points to {cards.POS_PLURAL.get(pos, 'the position')}",
+           "games": games, "through_week": thru, "period": f"{ctx.season}, weeks 1–{thru}" if thru else None,
+           "points_allowed_pg": _f(r.get("points_allowed_per_game_std")), "scoring": scoring or f"{ctx.league_name} scoring",
+           "adjusted": False, "adjusted_words": "not adjusted for the offenses it faced", "adjusted_rank": None}
+    if not missing_relations(("mart_defense_position_profile",)):
+        key = ("profile", ctx.season, int(week), pos)
+        prof = (memo or {}).get(key)
+        if prof is None:
+            prof = query("""select defense, rank_adjusted, n_defenses from analytics.mart_defense_position_profile
+                            where season = %s and week = %s and position = %s""", (ctx.season, int(week), pos))
+            if memo is not None:
+                memo[key] = prof
+        p = prof[prof["defense"] == opp] if not prof.empty else prof
+        if not p.empty and _rank(p.iloc[0]["rank_adjusted"]) is not None:
+            ra, na = _rank(p.iloc[0]["rank_adjusted"]), _rank(p.iloc[0]["n_defenses"])
+            out["adjusted_rank"] = {"rank_most": ra, "n": na, "words": gives_up_words(ra, na),
+                                    "scoring": f"{reference_name()} scoring"}
+    return out
+
+
+def matchup_evidence(ctx: Ctx, gsis: str, week: int | None = None, *, dvp: pd.DataFrame | None = None,
+                     head: dict | None = None, personnel: dict | None = None, game: tuple | None = None,
+                     scoring: str | None = None, memo: dict | None = None) -> dict | None:
+    """The matchup evidence for one player's game in `week` (default: the decision week); None without a game (a bye,
+    no team, the season over). `dvp` = the ranks the screen shows (default: this league's, as on Compare; the card
+    passes the reference mart's with `scoring`); `personnel` = a `cards.corner_personnel` answer already read and
+    `game` = (opponent, is_home) already known (Matchups reads every defense at once); `memo` shares reads across rows."""
+    week = ctx.week if week is None else int(week)
+    if week is None:
+        return None
+    head = head or player_header(gsis, ctx)
+    pos, team = head.get("position"), head.get("team")
+    if pos not in ("QB", "RB", "WR", "TE") or not isinstance(team, str) or not team:
+        return None
+    if game is None:
+        g = query(STARTER_GAME_SQL, (ctx.season, int(week), team))
+        if g.empty:
+            return None
+        home = bool(g.iloc[0]["home_team"] == team)
+        opp = str(g.iloc[0]["away_team"] if home else g.iloc[0]["home_team"])
+    else:
+        opp, home = str(game[0]), None if game[1] is None or pd.isna(game[1]) else bool(game[1])
+    place = _place(opp)
+    hist = _history(ctx, opp, pos, int(week), league_dvp(ctx, ctx.season) if dvp is None else dvp, scoring, memo)
+    if pos == "WR":
+        p = (personnel if personnel is not None else cards.corner_personnel([opp], ctx.season, int(week))).get(opp) or {
+            "kind": "unknown", "why": "no corner data", "regulars": [], "listed": [], "expected": [], "missing": [],
+            "depth_chart_at": None}
+    else:
+        p = {"kind": "not_checked", "regulars": [], "listed": [], "expected": [], "missing": [], "depth_chart_at": None}
+    for e in p["expected"]:
+        e["rank_words"] = (corner_words(e["rank"], e.get("n_ranked")) if e.get("rank") is not None
+                           else "unranked (insufficient snaps)")
+    for m in p["missing"]:
+        m["date_words"] = _date_words(m.get("as_of"))
+    changed_words = _changed_words(p, place)
+    kind = {"changed": "less_representative", "same": "stands", "unknown": "unknown"}.get(p["kind"], "unchecked")
+    n, k = len(p["regulars"]), len(p["missing"])
+    what = ("both starting corners changed" if k == 2 and n == 2 else f"all {n} regular corners changed" if k == n
+            else f"{k} of its {n} regular corners changed" if k > 1 else "one of its regular corners changed")
+    impl = IMPLICATION_WORDS[kind].format(what=what, why=p.get("why") or "no depth chart")
+    implication = {"kind": kind, "words": impl}
+    treatment = {"kind": "contextual", "words": FORECAST_WORDS, "detail": FORECAST_DETAIL,
+                 "features": list(FORECAST_OPPONENT_FEATURES + FORECAST_LINE_FEATURES)}
+    ev = {"gsis_id": gsis, "player_name": head.get("player_name"), "position": pos, "season": ctx.season, "week": int(week),
+          "opponent": opp, "opponent_name": place, "is_home": home, "history": hist,
+          "changed": {"kind": p["kind"], "depth_chart_at": _iso_ts(p.get("depth_chart_at")), "regulars": p["regulars"],
+                      "listed": p["listed"], "missing": p["missing"], "expected": p["expected"], "words": changed_words},
+          "implication": implication, "forecast_treatment": treatment, "matchup_uncertain": kind == "less_representative",
+          "caveat": cards.personnel_caveat(p, place)}
+    ev["sentences"] = evidence_sentences(ev)
+    return ev
+
+
+def _iso_ts(v) -> str | None:
+    if v is None or (not isinstance(v, str) and pd.isna(v)):
+        return None
+    return pd.Timestamp(v).isoformat()
+
+
+def _changed_words(p: dict, place: str) -> str | None:
+    """'Horn and Jackson are on injured reserve (ESPN, Sep 30); Evans, Lee and Smith-Wade are expected to start, all
+    unranked (insufficient snaps)' / 'its regular corners Jackson and Horn are expected to start'."""
+    if p["kind"] == "changed":
+        src = sorted({f"{m['source']}, {m['date_words']}" if m.get("date_words") else str(m["source"])
+                      for m in p["missing"] if m.get("source")})
+        out = cards.missing_words(p["missing"]) + (f" ({'; '.join(src)})" if src else "")
+        new = [e for e in p["expected"] if e.get("is_new")]
+        if new:
+            unr = [e for e in new if e.get("rank") is None]
+            ranked = [f"{cards.last_name(e['name'])} {e['rank_words']}" for e in new if e.get("rank") is not None]
+            tail = (", all unranked (insufficient snaps)" if len(unr) == len(new) and len(new) > 1
+                    else ", unranked (insufficient snaps)" if len(unr) == len(new)
+                    else " (" + "; ".join(([f"{cards._names(unr)} unranked: insufficient snaps"] if unr else []) + ranked) + ")")
+            out += f"; {cards._names(new)} {'is' if len(new) == 1 else 'are'} expected to start{tail}"
+        return out
+    if p["kind"] == "same":
+        return f"its regular corners ({cards._names(p['regulars'])}) are expected to start"
+    if p["kind"] == "unknown":
+        return f"whether {place}'s corners changed is unknown: {p.get('why') or 'no depth chart'}"
+    return None
+
+
+def evidence_sentences(ev: dict) -> list[str]:
+    """The two sentences the screens show (the review's illustrative copy is the model): the history with what changed,
+    then the implication with the forecast's treatment."""
+    h, c, place = ev["history"], ev["changed"], ev["opponent_name"]
+    if h.get("words"):
+        bits = [x for x in (h.get("period") and h["period"].split(", ", 1)[-1],
+                            f"{h['games']} game{'s' if h['games'] != 1 else ''}" if h.get("games") else None,
+                            h.get("scoring"), h.get("adjusted_words")) if x]
+        s1 = f"{place} {h['words']} ({', '.join(bits)})"
+    else:
+        s1 = f"{place} has no games against {cards.POS_PLURAL.get(ev['position'], 'the position')} to rank yet"
+    kind = ev["implication"]["kind"]
+    if kind == "less_representative":
+        s1 += f", but with different corners: {c['words']}."
+        what = ev["implication"]["words"].split(": ", 1)[-1]
+        s2 = (f"The historical rank is less representative this week ({what}), so treat it cautiously: it does not settle "
+              f"a close call. Who plays corner is {FORECAST_WORDS}.")
+    elif kind == "stands":
+        s1 += f"; {c['words']}."
+        s2 = f"The rank stands: the same corners. Who plays corner is {FORECAST_WORDS} (the projection counts the points allowed)."
+    elif kind == "unknown":
+        s1 += "."
+        s2 = f"{c['words'][0].upper()}{c['words'][1:]}; who plays corner is {FORECAST_WORDS}."
+    else:
+        s1 += "."
+        s2 = (f"Who plays for {place}'s defense is checked for receivers (the corners) only; the projection counts the "
+              "points it has allowed.")
+    return [s1, s2]
+
+
+def personnel_verdict(verdict: str, evs: list[dict | None]) -> str:
+    """The compare's verdict when a side's matchup is less representative: the projection's head stays, the matchup
+    lean goes ('Tuten projects 0.22 more (10.02 vs 9.80); the matchup rank does not settle it this week: …')."""
+    cav = [e["caveat"] for e in evs if e and e.get("matchup_uncertain") and e.get("caveat")]
+    if not cav or verdict.startswith("No projection"):
+        return verdict
+    return f"{verdict.split('; ', 1)[0]}; the matchup rank does not settle it this week: {'; '.join(cav)}."
+# ---- end IF-3
+
+
 def compare(league_id: str, a: str, b: str, *, source: str | None = None) -> dict:
     if not a or not b:
         raise BadRequest("compare needs a=<gsis_id> and b=<gsis_id>")
@@ -1387,7 +1597,12 @@ def compare(league_id: str, a: str, b: str, *, source: str | None = None) -> dic
     ca, cb = sa.pop("_cmp"), sb.pop("_cmp")
     table = M.comparison_rows(ca, cb)
     rows = [{"what": r["What"], "a": r.iloc[1], "b": r.iloc[2]} for _, r in table.iterrows()]
-    return {**ctx.meta(), "a": sa, "b": sb, "verdict": M.comparison_verdict(ca, cb), "table": rows,
+    # ---- IF-3: the matchup evidence on both sides; a less representative rank never leans the verdict
+    for s in (sa, sb):
+        s["matchup_evidence"] = matchup_evidence(ctx, s["gsis_id"], dvp=dvp, head=s) if ctx.week is not None else None
+    verdict = personnel_verdict(M.comparison_verdict(ca, cb), [sa["matchup_evidence"], sb["matchup_evidence"]])
+    # ---- end IF-3
+    return {**ctx.meta(), "a": sa, "b": sb, "verdict": verdict, "table": rows,
             "caption": (f"Week {ctx.week}. The projection decides: it already counts the opponent. The defense rows are "
                         "context: what each opponent allowed to the position in its games before this week, one scale for "
                         "every league; (#1) = gives up the most of 32.") if ctx.week else None,

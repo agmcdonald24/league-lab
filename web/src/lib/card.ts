@@ -1,7 +1,7 @@
 // The player card's sections in the order the full page and the research pane show them (IB-1 lifted it from
 // routes/Player.svelte so the pane shows the same card): the answer first — this week's projection and where he sits
 // in the lineup — then the rest.
-import type { PlayerCard, Section, SectionKey } from "./api";
+import type { Block, PlayerCard, Section, SectionKey } from "./api";
 import { plain } from "./md";
 import { teamLabel } from "./theme";
 
@@ -18,6 +18,11 @@ function projection(d: PlayerCard): Section | undefined {
   const blocks = [...sec.blocks];
   const has = blocks.some((b) => (b.text ?? "").startsWith("Rest of season"));
   if (!has && d.ros?.line) blocks.push({ kind: "markdown", text: d.ros.line });
+  // ---- IF-3: the matchup evidence right under "Next: week 4 @ CAR …" (the line that gives the rank)
+  const next = blocks.findIndex((b) => (b.text ?? "").startsWith("Next: week"));
+  const ev = matchupBlocks(d);
+  if (ev.length) blocks.splice(next >= 0 ? next + 1 : blocks.length, 0, ...ev);
+  // ---- end IF-3
   if ((has || d.ros) && RANKED.includes(d.position))
     blocks.push({ kind: "caption", text: `[Every ${d.position} for the rest of the season](/ros?position=${d.position})` });
   return { ...sec, blocks };
@@ -112,3 +117,17 @@ export function newsLine(d: Pick<PlayerCard, "news">, now: number = Date.now()):
   return { ago: ago(n.date, now), headline: shortHeadline(n.headline), full: n.headline, source: n.source || "ESPN", url: n.url };
 }
 // ---- end N1
+
+// ---- IF-3 (Wave I-F, the decision-quality review § Priority 1): the card's matchup section — the matchup evidence
+// (research.matchup_evidence via the card's `matchup_evidence`) in two sentences under the "Next:" line: the defense's
+// history with the corners it was earned with, then what it means this week and the forecast's treatment ("contextual
+// only; not in the forecast"). A receiver whose opponent's corners changed gets "Corners changed." first; a position
+// without a personnel check gets the history sentence only (its second sentence would only say so).
+export function matchupBlocks(d: Pick<PlayerCard, "matchup_evidence">): Block[] {
+  const ev = d.matchup_evidence;
+  if (!ev?.sentences?.length) return [];
+  const out: Block[] = [{ kind: "caption", text: (ev.matchup_uncertain ? "**Corners changed.** " : "") + ev.sentences[0] }];
+  if (ev.sentences[1] && ev.implication.kind !== "unchecked") out.push({ kind: "caption", text: ev.sentences[1] });
+  return out;
+}
+// ---- end IF-3

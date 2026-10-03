@@ -15,6 +15,7 @@
   import Expander from "../components/Expander.svelte";
   import Heatmap from "../components/Heatmap.svelte";
   import Md from "../components/Md.svelte";
+  import MatchupEvidence from "../components/MatchupEvidence.svelte"; // ---- IF-3
   import PlayerRow from "../components/PlayerRow.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
 
@@ -144,6 +145,10 @@
       </p>
       {#if m.history}<p class="text-sm leading-snug text-ink-2" data-testid="cb-history">{m.history}</p>{/if}
       <!-- ---- end IB-3 -->
+      <!-- ---- IF-3: these corners vs the corners the defense's rank was earned with (shown when they changed) -->
+      {#if m.matchup_evidence?.matchup_uncertain}
+        <div class="rounded-md bg-warn-soft px-3 py-2"><MatchupEvidence ev={m.matchup_evidence} testid="cb-evidence" /></div>
+      {/if}
       {#if m.call_status !== "tight end"}
         <p class="ll-label">His targets by side (the offense's view)</p>
         {@render sideBar(m)}

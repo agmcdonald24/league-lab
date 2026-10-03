@@ -1,0 +1,980 @@
+{
+ "/api/compare?a=00-0037240&b=00-0040719&league=1389709692405551104": {
+  "status": 200,
+  "body": {
+   "league_id": "1389709692405551104",
+   "league_name": "League of Scrubs",
+   "season": 2026,
+   "league_season": 2026,
+   "week": 4,
+   "source": "database",
+   "points_source": "league marts",
+   "a": {
+    "gsis_id": "00-0037240",
+    "player_name": "Jameson Williams",
+    "position": "WR",
+    "team": "DET",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/byiptqggtglvy5qrw5wp",
+    "rostered_by_roster_id": 6,
+    "rostered_by_team": "Team 6",
+    "projection": {
+     "proj_points": 9.98,
+     "p10": 1.74,
+     "p25": 4.72,
+     "p75": 15.42,
+     "p90": 19.21
+    },
+    "season": {
+     "games_played": 2,
+     "targets_per_game": 6.5,
+     "carries_per_game": 0,
+     "dropbacks_per_game": null,
+     "catch_rate": 0.4615,
+     "yards_per_target": 6,
+     "yards_per_carry": null,
+     "adot": 13.62,
+     "completion_rate": null,
+     "yards_per_attempt": null,
+     "passing_yards": 0,
+     "passing_tds": 0,
+     "rushing_yards": 0,
+     "rushing_tds": 0,
+     "receiving_yards": 78,
+     "receiving_tds": 0,
+     "receptions": 6,
+     "targets": 13,
+     "carries": 0,
+     "attempts": 0,
+     "ppg": 5.4,
+     "xppg": 10.64,
+     "gap": -5.24,
+     "position_rank_ppg": 62,
+     "ppg_ref": 5.4
+    },
+    "usage": {
+     "target_share": 0.1688,
+     "carry_share": 0,
+     "air_yards_share": 0.3254,
+     "first_read_target_share": 0.2619,
+     "avg_offense_snap_pct": 0.905,
+     "red_zone_target_share": 0.0714,
+     "red_zone_carry_share": 0,
+     "route_participation": null
+    },
+    "last3": {
+     "target_share_l3": 0.1688,
+     "carry_share_l3": 0,
+     "air_yards_share_l3": 0.3254,
+     "snap_pct_l3": 0.905,
+     "first_read_share_l3": 0.2619,
+     "targets_l3": 13,
+     "carries_l3": 0,
+     "games_l3": 2,
+     "points_per_game_l3": 5.4,
+     "points_per_game_l3_ref": 5.4
+    },
+    "ros": {
+     "points": 112.27,
+     "games": 12,
+     "p10": 82.9,
+     "p90": 141.7,
+     "pos_rank": 30,
+     "playoff_points": 18.58,
+     "from_week": 4,
+     "last_week": 16
+    },
+    "next4": [
+     {
+      "week": 4,
+      "bye": false,
+      "opponent": "CAR",
+      "is_home": false,
+      "kickoff_at": "2026-10-05T00:20:00+00:00",
+      "opp_rank": 21,
+      "opp_rank_ref": 21
+     },
+     {
+      "week": 5,
+      "bye": false,
+      "opponent": "ARI",
+      "is_home": false,
+      "kickoff_at": "2026-10-11T20:25:00+00:00",
+      "opp_rank": 5,
+      "opp_rank_ref": 5
+     },
+     {
+      "week": 6,
+      "bye": true,
+      "opponent": null,
+      "is_home": null,
+      "opp_rank": null,
+      "opp_rank_ref": null
+     },
+     {
+      "week": 7,
+      "bye": false,
+      "opponent": "GB",
+      "is_home": true,
+      "kickoff_at": "2026-10-25T20:25:00+00:00",
+      "opp_rank": 13,
+      "opp_rank_ref": 13
+     }
+    ],
+    "matchup": {
+     "games": 2,
+     "opps_allowed_pg": 18.5,
+     "targets_allowed_pg": 17.5,
+     "carries_allowed_pg": 1,
+     "yards_per_opp_allowed": 7.7,
+     "td_rate_allowed": 0.027,
+     "gives_up": "about average",
+     "rank_opportunity": 14,
+     "rank_efficiency": 21,
+     "rank_td_rate": 24,
+     "rank_targets": 16,
+     "rank_carries": 6,
+     "n_defenses": 32,
+     "points_allowed_pg_ref": 22.75,
+     "rank_points_ref": 21,
+     "adjusted_points_pg_ref": 0.5,
+     "rank_adjusted_ref": 17
+    },
+    "matchup_evidence": {
+     "gsis_id": "00-0037240",
+     "player_name": "Jameson Williams",
+     "position": "WR",
+     "season": 2026,
+     "week": 4,
+     "opponent": "CAR",
+     "opponent_name": "Carolina",
+     "is_home": false,
+     "history": {
+      "defense": "CAR",
+      "position": "WR",
+      "rank_most": 21,
+      "tough_rank": 12,
+      "n": 32,
+      "words": "gives up the 12th-fewest points to receivers",
+      "games": 2,
+      "through_week": 2,
+      "period": "2026, weeks 1–2",
+      "points_allowed_pg": 22.75,
+      "scoring": "League of Scrubs scoring",
+      "adjusted": false,
+      "adjusted_words": "not adjusted for the offenses it faced",
+      "adjusted_rank": {
+       "rank_most": 17,
+       "n": 32,
+       "words": "gives up the 16th-fewest",
+       "scoring": "League of Scrubs scoring"
+      }
+     },
+     "changed": {
+      "kind": "changed",
+      "depth_chart_at": "2026-09-26T06:02:26+00:00",
+      "regulars": [
+       {
+        "gsis_id": "00-0035277",
+        "name": "Mike Jackson",
+        "share": 1,
+        "coverage_snaps": 77,
+        "games": 2
+       },
+       {
+        "gsis_id": "00-0036944",
+        "name": "Jaycee Horn",
+        "share": 0.91,
+        "coverage_snaps": 70.4,
+        "games": 2
+       }
+      ],
+      "listed": [
+       {
+        "gsis_id": "00-0035277",
+        "name": "Mike Jackson",
+        "slot": "LCB"
+       },
+       {
+        "gsis_id": "00-0041063",
+        "name": "Will Lee III",
+        "slot": "RCB"
+       },
+       {
+        "gsis_id": "00-0036944",
+        "name": "Jaycee Horn",
+        "slot": "NB"
+       }
+      ],
+      "missing": [
+       {
+        "gsis_id": "00-0035277",
+        "name": "Mike Jackson",
+        "status": "IR",
+        "code": "IR",
+        "source": "ESPN",
+        "as_of": "2026-09-30T20:15:00Z",
+        "note": "undisclosed",
+        "reason": "status",
+        "date_words": "Sep 30"
+       },
+       {
+        "gsis_id": "00-0036944",
+        "name": "Jaycee Horn",
+        "status": "IR",
+        "code": "IR",
+        "source": "ESPN",
+        "as_of": "2026-09-30T20:15:00Z",
+        "note": "undisclosed",
+        "reason": "status",
+        "date_words": "Sep 30"
+       }
+      ],
+      "expected": [
+       {
+        "gsis_id": "00-0038101",
+        "name": "Akayleb Evans",
+        "slot": "LCB",
+        "replaces": "Mike Jackson",
+        "is_new": true,
+        "rank": null,
+        "label": null,
+        "n_ranked": 74,
+        "rank_words": "unranked (insufficient snaps)"
+       },
+       {
+        "gsis_id": "00-0041063",
+        "name": "Will Lee III",
+        "slot": "RCB",
+        "replaces": null,
+        "is_new": true,
+        "rank": null,
+        "label": null,
+        "n_ranked": 74,
+        "rank_words": "unranked (insufficient snaps)"
+       },
+       {
+        "gsis_id": "00-0039380",
+        "name": "Chau Smith-Wade",
+        "slot": "NB",
+        "replaces": "Jaycee Horn",
+        "is_new": true,
+        "rank": 45,
+        "label": "solid",
+        "n_ranked": 74,
+        "rank_words": "the 30th-easiest of 74 starting corners to throw on"
+       }
+      ],
+      "words": "Jackson and Horn are on injured reserve (ESPN, Sep 30); Evans, Lee and Smith-Wade are expected to start (Evans and Lee unranked: insufficient snaps; Smith-Wade the 30th-easiest of 74 starting corners to throw on)"
+     },
+     "implication": {
+      "kind": "less_representative",
+      "words": "the historical rank is less representative this week: both starting corners changed"
+     },
+     "forecast_treatment": {
+      "kind": "contextual",
+      "words": "contextual only; not in the forecast",
+      "detail": "The projection's opponent inputs are the points this defense has allowed to the position (the season, the last 4 games, its rank) and the betting lines; none of them says who plays corner.",
+      "features": [
+       "opp_allowed_std",
+       "opp_allowed_l4",
+       "opp_rank_std",
+       "f_opp_allowed_diff",
+       "league_allowed_avg",
+       "implied_team_total",
+       "spread_line",
+       "total_line"
+      ]
+     },
+     "matchup_uncertain": true,
+     "caveat": "Carolina's starting corners changed (Jackson and Horn are on injured reserve)",
+     "sentences": [
+      "Carolina gives up the 12th-fewest points to receivers (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced), but with different corners: Jackson and Horn are on injured reserve (ESPN, Sep 30); Evans, Lee and Smith-Wade are expected to start (Evans and Lee unranked: insufficient snaps; Smith-Wade the 30th-easiest of 74 starting corners to throw on).",
+      "The historical rank is less representative this week (both starting corners changed), so treat it cautiously: it does not settle a close call. Who plays corner is contextual only; not in the forecast."
+     ]
+    }
+   },
+   "b": {
+    "gsis_id": "00-0040719",
+    "player_name": "Bhayshul Tuten",
+    "position": "RB",
+    "team": "JAX",
+    "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+    "rostered_by_roster_id": 2,
+    "rostered_by_team": "Team 2",
+    "projection": {
+     "proj_points": 9.72,
+     "p10": 1.99,
+     "p25": 5.25,
+     "p75": 14.65,
+     "p90": 21.52
+    },
+    "season": {
+     "games_played": 2,
+     "targets_per_game": 1.5,
+     "carries_per_game": 14,
+     "dropbacks_per_game": null,
+     "catch_rate": 1,
+     "yards_per_target": 6.33,
+     "yards_per_carry": 4.68,
+     "adot": -4.33,
+     "completion_rate": null,
+     "yards_per_attempt": null,
+     "passing_yards": 0,
+     "passing_tds": 0,
+     "rushing_yards": 131,
+     "rushing_tds": 1,
+     "receiving_yards": 19,
+     "receiving_tds": 0,
+     "receptions": 3,
+     "targets": 3,
+     "carries": 28,
+     "attempts": 0,
+     "ppg": 11.25,
+     "xppg": 11.45,
+     "gap": -0.2,
+     "position_rank_ppg": 21,
+     "ppg_ref": 11.25
+    },
+    "usage": {
+     "target_share": 0.0612,
+     "carry_share": 0.5,
+     "air_yards_share": -0.0239,
+     "first_read_target_share": 0,
+     "avg_offense_snap_pct": 0.5,
+     "red_zone_target_share": 0.2,
+     "red_zone_carry_share": 0.5,
+     "route_participation": null
+    },
+    "last3": {
+     "target_share_l3": 0.0612,
+     "carry_share_l3": 0.5,
+     "air_yards_share_l3": -0.0239,
+     "snap_pct_l3": 0.5,
+     "first_read_share_l3": 0,
+     "targets_l3": 3,
+     "carries_l3": 28,
+     "games_l3": 2,
+     "points_per_game_l3": 11.25,
+     "points_per_game_l3_ref": 11.25
+    },
+    "ros": {
+     "points": 117.15,
+     "games": 12,
+     "p10": 83.8,
+     "p90": 150.5,
+     "pos_rank": 28,
+     "playoff_points": 18.83,
+     "from_week": 4,
+     "last_week": 16
+    },
+    "next4": [
+     {
+      "week": 4,
+      "bye": false,
+      "opponent": "CIN",
+      "is_home": false,
+      "kickoff_at": "2026-10-04T17:00:00+00:00",
+      "opp_rank": 24,
+      "opp_rank_ref": 24
+     },
+     {
+      "week": 5,
+      "bye": false,
+      "opponent": "PHI",
+      "is_home": true,
+      "kickoff_at": "2026-10-11T13:30:00+00:00",
+      "opp_rank": 17,
+      "opp_rank_ref": 17
+     },
+     {
+      "week": 6,
+      "bye": false,
+      "opponent": "HOU",
+      "is_home": true,
+      "kickoff_at": "2026-10-18T13:30:00+00:00",
+      "opp_rank": 29,
+      "opp_rank_ref": 29
+     },
+     {
+      "week": 7,
+      "bye": true,
+      "opponent": null,
+      "is_home": null,
+      "opp_rank": null,
+      "opp_rank_ref": null
+     }
+    ],
+    "matchup": {
+     "games": 2,
+     "opps_allowed_pg": 21.5,
+     "targets_allowed_pg": 8,
+     "carries_allowed_pg": 13.5,
+     "yards_per_opp_allowed": 3.95,
+     "td_rate_allowed": 0.0233,
+     "gives_up": "little of either",
+     "rank_opportunity": 30,
+     "rank_efficiency": 22,
+     "rank_td_rate": 17,
+     "rank_targets": 1,
+     "rank_carries": 32,
+     "n_defenses": 32,
+     "points_allowed_pg_ref": 14.25,
+     "rank_points_ref": 24,
+     "adjusted_points_pg_ref": -2.5,
+     "rank_adjusted_ref": 24
+    },
+    "matchup_evidence": {
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "position": "RB",
+     "season": 2026,
+     "week": 4,
+     "opponent": "CIN",
+     "opponent_name": "Cincinnati",
+     "is_home": false,
+     "history": {
+      "defense": "CIN",
+      "position": "RB",
+      "rank_most": 24,
+      "tough_rank": 9,
+      "n": 32,
+      "words": "gives up the 9th-fewest points to running backs",
+      "games": 2,
+      "through_week": 2,
+      "period": "2026, weeks 1–2",
+      "points_allowed_pg": 14.25,
+      "scoring": "League of Scrubs scoring",
+      "adjusted": false,
+      "adjusted_words": "not adjusted for the offenses it faced",
+      "adjusted_rank": {
+       "rank_most": 24,
+       "n": 32,
+       "words": "gives up the 9th-fewest",
+       "scoring": "League of Scrubs scoring"
+      }
+     },
+     "changed": {
+      "kind": "not_checked",
+      "depth_chart_at": null,
+      "regulars": [],
+      "listed": [],
+      "missing": [],
+      "expected": [],
+      "words": null
+     },
+     "implication": {
+      "kind": "unchecked",
+      "words": "the historical rank, without a personnel check: corners are checked for receivers only"
+     },
+     "forecast_treatment": {
+      "kind": "contextual",
+      "words": "contextual only; not in the forecast",
+      "detail": "The projection's opponent inputs are the points this defense has allowed to the position (the season, the last 4 games, its rank) and the betting lines; none of them says who plays corner.",
+      "features": [
+       "opp_allowed_std",
+       "opp_allowed_l4",
+       "opp_rank_std",
+       "f_opp_allowed_diff",
+       "league_allowed_avg",
+       "implied_team_total",
+       "spread_line",
+       "total_line"
+      ]
+     },
+     "matchup_uncertain": false,
+     "caveat": null,
+     "sentences": [
+      "Cincinnati gives up the 9th-fewest points to running backs (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced).",
+      "Who plays for Cincinnati's defense is checked for receivers (the corners) only; the projection counts the points it has allowed."
+     ]
+    }
+   },
+   "verdict": "Williams projects 0.26 more (9.98 vs 9.72); the matchup rank does not settle it this week: Carolina's starting corners changed (Jackson and Horn are on injured reserve).",
+   "table": [
+    {
+     "what": "Projection",
+     "a": "9.98",
+     "b": "9.72"
+    },
+    {
+     "what": "Floor – ceiling",
+     "a": "1.7 – 19.2",
+     "b": "2.0 – 21.5"
+    },
+    {
+     "what": "Opponent",
+     "a": "@ CAR",
+     "b": "@ CIN"
+    },
+    {
+     "what": "Points allowed / game",
+     "a": "22.8 (#21)",
+     "b": "14.2 (#24)"
+    },
+    {
+     "what": "Targets allowed / game",
+     "a": "17.5 (#16)",
+     "b": "8.0 (#1)"
+    },
+    {
+     "what": "Carries allowed / game",
+     "a": "1.0 (#6)",
+     "b": "13.5 (#32)"
+    },
+    {
+     "what": "Yards per target or carry",
+     "a": "7.7 (#21)",
+     "b": "4.0 (#22)"
+    },
+    {
+     "what": "Touchdown rate",
+     "a": "2.7% (#24)",
+     "b": "2.3% (#17)"
+    },
+    {
+     "what": "Vs the offenses faced",
+     "a": "+0.5 (#17)",
+     "b": "-2.5 (#24)"
+    },
+    {
+     "what": "Gives up",
+     "a": "about average",
+     "b": "little of either"
+    }
+   ],
+   "caption": "Week 4. The projection decides: it already counts the opponent. The defense rows are context: what each opponent allowed to the position in its games before this week, one scale for every league; (#1) = gives up the most of 32.",
+   "howto": "- **Use it for a close call**: pick any two players; the same rows on both sides.\n- **Projection** is the same number as the lineup cards and the player card. **Floor – ceiling** is the range 8 weeks in 10 land in: take the higher floor when you only need a steady game, the higher ceiling when you need a big one.\n- **Targets / carries allowed** say whether a defense lets the position get the ball a lot (volume). **Yards per target or carry** and **touchdown rate** say whether it gives up big plays.\n- **Vs the offenses faced**: points it allowed beyond what the same offenses score against everyone else, shrunk toward zero early in the season. \"The matchup leans\" uses this rank: 6 or more places apart, else the matchups are about even.\n- Matchups move a projection less than role does: when the lineup and the matchup disagree, go with the lineup.",
+   "scoring_note": "Fields ending in `_ref` are in the reference league's scoring (League of Scrubs), one scale for every league and season; the same field without `_ref` is this league's scoring."
+  }
+ },
+ "/api/player/00-0037240?league=1389709692405551104&team=6": {
+  "status": 200,
+  "body": {
+   "why": {
+    "per": "week",
+    "points": 9.98,
+    "pieces": [
+     {
+      "stat": "targets",
+      "label": "targets",
+      "value": 6.1,
+      "each": 0,
+      "points": 0,
+      "words": "6.1 targets (no points on their own)"
+     },
+     {
+      "stat": "receptions",
+      "label": "catches",
+      "value": 3.7,
+      "each": 0.5,
+      "points": 1.85,
+      "words": "3.7 catches × 0.5 = +1.9"
+     },
+     {
+      "stat": "receiving_yards",
+      "label": "receiving yards",
+      "value": 56.4,
+      "each": 0.1,
+      "points": 5.64,
+      "words": "56 receiving yards × 0.1 = +5.6"
+     },
+     {
+      "stat": "receiving_tds",
+      "label": "receiving TDs",
+      "value": 0.41,
+      "each": 6,
+      "points": 2.46,
+      "words": "0.41 receiving TDs × 6 = +2.5"
+     },
+     {
+      "stat": "rushing_yards",
+      "label": "rushing yards",
+      "value": 0.8,
+      "each": 0.1,
+      "points": 0.08,
+      "words": "0.80 rushing yards × 0.1 = +0.1"
+     },
+     {
+      "stat": "rest",
+      "label": "the small pieces and rounding",
+      "value": null,
+      "each": null,
+      "points": -0.05,
+      "words": "the small pieces and rounding: -0.1"
+     }
+    ],
+    "sentence": "6.1 targets → 3.7 catches → 56 yards → 0.41 TDs → 10.0 points this week",
+    "games": null,
+    "total": null
+   },
+   "market": {
+    "market_points": null,
+    "ours": 9.98,
+    "ratio": null,
+    "week": 4,
+    "words": null,
+    "why": "Sleeper's number for this week is not in yet.",
+    "far": false
+   },
+   "leans_on": {
+    "features": [
+     "snap share, last 3 games",
+     "expected points per game (what his touches are worth), season",
+     "receiving yards per game, last season"
+    ],
+    "words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+    "scored_in": "League of Scrubs"
+   },
+   "gsis_id": "00-0037240",
+   "player_name": "Jameson Williams",
+   "position": "WR",
+   "team": "DET",
+   "header": "WR · DET · WR2 on the depth chart · on **Team 6** (Manager 6)",
+   "league_id": "1389709692405551104",
+   "league_name": "League of Scrubs",
+   "season": 2026,
+   "week": 4,
+   "rostered_by_roster_id": 6,
+   "is_free_agent": false,
+   "injury_status": null,
+   "locked": false,
+   "proj_points": 9.98,
+   "sections": {
+    "usage": {
+     "title": "**Usage** — his share of the team's opportunities",
+     "blocks": [
+      {
+       "kind": "metrics",
+       "metrics": [
+        {
+         "label": "Target share",
+         "value": "16.9%",
+         "delta": null,
+         "trend": null,
+         "help": null
+        },
+        {
+         "label": "First-read share",
+         "value": "26.2%",
+         "delta": null,
+         "trend": null,
+         "help": null
+        },
+        {
+         "label": "Snap share",
+         "value": "90.5%",
+         "delta": null,
+         "trend": null,
+         "help": null
+        },
+        {
+         "label": "Red-zone share",
+         "value": "7.1%",
+         "delta": null,
+         "trend": null,
+         "help": null
+        }
+       ]
+      },
+      {
+       "kind": "caption",
+       "text": "Season to date, 2 games. Trend: not enough games yet. Trends are called from a player's fourth game."
+      }
+     ]
+    },
+    "projection": {
+     "title": "**Projection** — week 4, League of Scrubs scoring",
+     "blocks": [
+      {
+       "kind": "metrics",
+       "metrics": [
+        {
+         "label": "Projected",
+         "value": "10.0",
+         "delta": null,
+         "trend": null,
+         "help": null
+        },
+        {
+         "label": "Most weeks",
+         "value": "5–15",
+         "delta": null,
+         "trend": null,
+         "help": "Half his weeks land in this range: a quarter below it, a quarter above"
+        },
+        {
+         "label": "Floor",
+         "value": "1.7",
+         "delta": null,
+         "trend": null,
+         "help": "One week in ten he scores less"
+        },
+        {
+         "label": "Ceiling",
+         "value": "19.2",
+         "delta": null,
+         "trend": null,
+         "help": "One week in ten he scores more"
+        }
+       ]
+      },
+      {
+       "kind": "markdown",
+       "text": "Stat line: 6.1 targets, 3.7 catches for 56 yds, 0.41 TD"
+      },
+      {
+       "kind": "markdown",
+       "text": "Rest of season: **112 points** over 12 games (likely 83–142), **WR30** in this league · playoffs (weeks 15–16): 19"
+      },
+      {
+       "kind": "caption",
+       "text": "Week by week (weeks 4–16, through this league's final): wk 4 10.0 · 5 9.6 · 6 bye · 7 9.3 · 8 9.3 · 9 9.2 · 10 9.2 · 11 9.2 · 12 9.2 · 13 9.3 · 14 9.3 · 15 9.3 · 16 9.3. Only week 4 has betting lines yet: the later weeks lean on his usage and the schedule."
+      },
+      {
+       "kind": "markdown",
+       "text": "Next: week 4 @ CAR — CAR ranks **#21** of 32 vs WR (1 = gives up the most)"
+      },
+      {
+       "kind": "caption",
+       "text": "Next 4: wk 4 @ CAR (#21) · wk 5 @ ARI (#5) · wk 6 BYE · wk 7 vs GB (#13)"
+      }
+     ]
+    },
+    "availability": {
+     "title": "**Availability**",
+     "blocks": [
+      {
+       "kind": "markdown",
+       "text": "Rostered by **Team 6** (Manager 6), starting in his Sleeper lineup.  \nNo injury designation.  \nBye: week 6.  \nWeek 4 kickoff Sun Oct 4, 8:20 PM ET — not locked yet."
+      }
+     ]
+    },
+    "value": {
+     "title": "**Value** — League of Scrubs scoring",
+     "blocks": [
+      {
+       "kind": "metrics",
+       "metrics": [
+        {
+         "label": "Points / game",
+         "value": "5.4",
+         "delta": null,
+         "trend": null,
+         "help": "This season, 2 games, League of Scrubs scoring"
+        },
+        {
+         "label": "Expected",
+         "value": "10.6",
+         "delta": "-5.2",
+         "trend": "down",
+         "help": "Expected points per game: what his targets and carries were worth on average (depth, field position). The arrow is points per game above or below that: above = he beat his opportunity"
+        },
+        {
+         "label": "Rank",
+         "value": "WR62",
+         "delta": null,
+         "trend": null,
+         "help": "By points per game among all players at the position"
+        },
+        {
+         "label": "Last season",
+         "value": "11.0",
+         "delta": null,
+         "trend": null,
+         "help": "Points per game in 2025, 17 games, this league's scoring; WR19"
+        }
+       ]
+      },
+      {
+       "kind": "markdown",
+       "text": "Week 4: **on Team 6's bench** (1 of 5), 9.98. To start at FLEX2 he would have to beat [CeeDee Lamb](/player/00-0036358) (13.47), 3.49 more."
+      }
+     ]
+    },
+    "signals": {
+     "title": "**Signals** — has his role changed lately?",
+     "blocks": [
+      {
+       "kind": "markdown",
+       "text": "Role: **no role change detected** in his last three games: his share of the snaps, targets and carries is where it has been.  \nUpside: nothing beyond the projection above."
+      },
+      {
+       "kind": "caption",
+       "text": "A role alert needs his share of the snaps, targets or carries to jump (or fall) well past his usual swing, in every one of his last one to three games. The what-if re-runs the same projection with his last three games at the new level, in League of Scrubs scoring."
+      }
+     ]
+    }
+   },
+   "howto": "- **Usage** is the work he gets: his share of his team's targets or carries, of its plays, of the quarterback's first looks and of the red-zone chances. The arrow is the last 3 games: up means a growing role.\n- **Projection** is this week's projected points in League of Scrubs scoring. **Most weeks** is the range half his weeks land in (a quarter below, a quarter above); the **floor** and **ceiling** are a bad week and a good week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. The opponent's rank is 1 for the defense that gives up the most to his position.\n- **Rest of season** adds up his projection for every week left in this league's season, up to its final: use it for trades and waivers, where the next four weeks are not the whole story. His bye is a week with no game, not a low score. *Likely* is the range 8 seasons in 10 would land in if every week were its own roll of the dice; a role change or an injury moves the weeks together, so the real range is wider. The rank is among every player at his position in this league, rostered or not. Only this week has betting lines yet: the later weeks lean on his usage and the schedule.\n- **Availability** says whose team he is on (or that he is a free agent), his injury status, and whether his game has started.\n- **Value** compares what he scores with what his work is usually worth (above = running hot, below = due), and says where he sits in his team's best lineup this week and how much that lineup would lose without him.",
+   "ros": {
+    "points": 112.27,
+    "games": 12,
+    "p10": 82.9,
+    "p90": 141.7,
+    "pos_rank": 30,
+    "playoff_points": 18.58,
+    "from_week": 4,
+    "last_week": 16
+   },
+   "missing": [],
+   "missing_keys": [],
+   "source": "database",
+   "platform": "sleeper",
+   "news": [],
+   "matchup_evidence": {
+    "gsis_id": "00-0037240",
+    "player_name": "Jameson Williams",
+    "position": "WR",
+    "season": 2026,
+    "week": 4,
+    "opponent": "CAR",
+    "opponent_name": "Carolina",
+    "is_home": false,
+    "history": {
+     "defense": "CAR",
+     "position": "WR",
+     "rank_most": 21,
+     "tough_rank": 12,
+     "n": 32,
+     "words": "gives up the 12th-fewest points to receivers",
+     "games": 2,
+     "through_week": 2,
+     "period": "2026, weeks 1–2",
+     "points_allowed_pg": 22.75,
+     "scoring": "League of Scrubs scoring",
+     "adjusted": false,
+     "adjusted_words": "not adjusted for the offenses it faced",
+     "adjusted_rank": {
+      "rank_most": 17,
+      "n": 32,
+      "words": "gives up the 16th-fewest",
+      "scoring": "League of Scrubs scoring"
+     }
+    },
+    "changed": {
+     "kind": "changed",
+     "depth_chart_at": "2026-09-26T06:02:26+00:00",
+     "regulars": [
+      {
+       "gsis_id": "00-0035277",
+       "name": "Mike Jackson",
+       "share": 1,
+       "coverage_snaps": 77,
+       "games": 2
+      },
+      {
+       "gsis_id": "00-0036944",
+       "name": "Jaycee Horn",
+       "share": 0.91,
+       "coverage_snaps": 70.4,
+       "games": 2
+      }
+     ],
+     "listed": [
+      {
+       "gsis_id": "00-0035277",
+       "name": "Mike Jackson",
+       "slot": "LCB"
+      },
+      {
+       "gsis_id": "00-0041063",
+       "name": "Will Lee III",
+       "slot": "RCB"
+      },
+      {
+       "gsis_id": "00-0036944",
+       "name": "Jaycee Horn",
+       "slot": "NB"
+      }
+     ],
+     "missing": [
+      {
+       "gsis_id": "00-0035277",
+       "name": "Mike Jackson",
+       "status": "IR",
+       "code": "IR",
+       "source": "ESPN",
+       "as_of": "2026-09-30T20:15:00Z",
+       "note": "undisclosed",
+       "reason": "status",
+       "date_words": "Sep 30"
+      },
+      {
+       "gsis_id": "00-0036944",
+       "name": "Jaycee Horn",
+       "status": "IR",
+       "code": "IR",
+       "source": "ESPN",
+       "as_of": "2026-09-30T20:15:00Z",
+       "note": "undisclosed",
+       "reason": "status",
+       "date_words": "Sep 30"
+      }
+     ],
+     "expected": [
+      {
+       "gsis_id": "00-0038101",
+       "name": "Akayleb Evans",
+       "slot": "LCB",
+       "replaces": "Mike Jackson",
+       "is_new": true,
+       "rank": null,
+       "label": null,
+       "n_ranked": 74,
+       "rank_words": "unranked (insufficient snaps)"
+      },
+      {
+       "gsis_id": "00-0041063",
+       "name": "Will Lee III",
+       "slot": "RCB",
+       "replaces": null,
+       "is_new": true,
+       "rank": null,
+       "label": null,
+       "n_ranked": 74,
+       "rank_words": "unranked (insufficient snaps)"
+      },
+      {
+       "gsis_id": "00-0039380",
+       "name": "Chau Smith-Wade",
+       "slot": "NB",
+       "replaces": "Jaycee Horn",
+       "is_new": true,
+       "rank": 45,
+       "label": "solid",
+       "n_ranked": 74,
+       "rank_words": "the 30th-easiest of 74 starting corners to throw on"
+      }
+     ],
+     "words": "Jackson and Horn are on injured reserve (ESPN, Sep 30); Evans, Lee and Smith-Wade are expected to start (Evans and Lee unranked: insufficient snaps; Smith-Wade the 30th-easiest of 74 starting corners to throw on)"
+    },
+    "implication": {
+     "kind": "less_representative",
+     "words": "the historical rank is less representative this week: both starting corners changed"
+    },
+    "forecast_treatment": {
+     "kind": "contextual",
+     "words": "contextual only; not in the forecast",
+     "detail": "The projection's opponent inputs are the points this defense has allowed to the position (the season, the last 4 games, its rank) and the betting lines; none of them says who plays corner.",
+     "features": [
+      "opp_allowed_std",
+      "opp_allowed_l4",
+      "opp_rank_std",
+      "f_opp_allowed_diff",
+      "league_allowed_avg",
+      "implied_team_total",
+      "spread_line",
+      "total_line"
+     ]
+    },
+    "matchup_uncertain": true,
+    "caveat": "Carolina's starting corners changed (Jackson and Horn are on injured reserve)",
+    "sentences": [
+     "Carolina gives up the 12th-fewest points to receivers (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced), but with different corners: Jackson and Horn are on injured reserve (ESPN, Sep 30); Evans, Lee and Smith-Wade are expected to start (Evans and Lee unranked: insufficient snaps; Smith-Wade the 30th-easiest of 74 starting corners to throw on).",
+     "The historical rank is less representative this week (both starting corners changed), so treat it cautiously: it does not settle a close call. Who plays corner is contextual only; not in the forecast."
+    ]
+   },
+   "viewer_roster_id": 6
+  }
+ }
+}
