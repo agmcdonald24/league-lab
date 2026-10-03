@@ -3,7 +3,8 @@
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
   import { learnLeagueName } from "../lib/names.svelte";
-  import { opponentLine, recordLine } from "../lib/week";
+  import { checkedLine, opponentLine, recordLine } from "../lib/week";
+  import type { Availability, AvailabilityStatus } from "../lib/shapes";
   import { restoreScroll } from "../lib/router.svelte";
   import Expander from "../components/Expander.svelte";
   import LineupTable from "../components/LineupTable.svelte";
@@ -37,6 +38,11 @@
   // opponent gets its own line when the API sends the contract's object
   const record = $derived(data ? recordLine(data) : "");
   const versus = $derived(data ? opponentLine(data) : "");
+  // I0-A: the availability overlay — when injuries were last checked, and who moved since the nightly build
+  const avail = $derived((data as (MyWeek & { availability?: Availability | null }) | null)?.availability ?? null);
+  const checked = $derived(
+    checkedLine(avail?.checked_at ?? (status as (Status & { availability?: AvailabilityStatus }) | null)?.availability?.checked_at),
+  );
 
   $effect(() => {
     const l = league;
@@ -110,6 +116,7 @@
       {#if record}<p class="text-sm text-ink-2" data-testid="record-line"><Md text={record} {ctx} /></p>{/if}
       {#if versus}<p class="text-base leading-snug" data-testid="opponent-line"><Md text={versus} {ctx} /></p>{/if}
       {#if data.league_line}<p class="text-sm text-ink-2" data-testid="league-line"><Md text={data.league_line} {ctx} /></p>{/if}
+      {#if checked}<p class="text-sm text-ink-3" data-testid="injuries-checked">{checked}</p>{/if}
       {#if status?.warning}
         <details class="text-sm text-warn" data-testid="stale-warning">
           <summary class="inline-flex items-center gap-1">⚠️ Injury news may be stale <span class="chev" aria-hidden="true">›</span></summary>
@@ -142,6 +149,11 @@
         <div class="space-y-3">
           <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)">
             <h2 class="ll-label">Your lineup</h2>
+            {#if avail?.changes?.length}
+              <ul class="space-y-1 text-sm leading-snug text-warn" data-testid="availability-changes">
+                {#each avail.changes as c, i (i)}<li>{c}</li>{/each}
+              </ul>
+            {/if}
             {#if data.lineup.length}
               <LineupTable rows={data.lineup} {ctx} testid="lineup" />
             {:else}

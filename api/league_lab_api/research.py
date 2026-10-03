@@ -32,6 +32,7 @@ import pandas as pd
 from league_lab import anyleague as A
 from league_lab import research as R
 
+from . import availability
 from .applib import cards, links, signals
 from .applib import ros as ROS
 from .db import missing_relations, query
@@ -476,6 +477,11 @@ def trends(league_id: str, *, position: str | None = None, limit: int | None = N
         df = df[df["gap"] > 0]
     elif view == "under":
         df = df[df["gap"] < 0]
+    # ---- I0-A: nobody who cannot play this week in "due" or "hot" (Out / IR / PUP / suspended: the availability overlay)
+    out_now = availability.cannot_play(list(df["gsis_id"]), availability.NOT_IN_TRENDS) if not df.empty else {}
+    left_out = [{"gsis_id": g, "player_name": a.get("name"), "status": a["status"]} for g, a in out_now.items()]
+    df = df[~df["gsis_id"].isin(set(out_now))]
+    # ---- end I0-A
     default_sort, default_dir = {"over": ("gap", "desc"), "under": ("gap", "asc"), "all": ("momentum", "desc")}[view]
     total = int(len(df))
     df = _sort(df, sort, dir, default_sort, default_dir if sort is None else "desc").head(n)
@@ -513,7 +519,9 @@ def trends(league_id: str, *, position: str | None = None, limit: int | None = N
             "early_read": not bool(enough), "notice": None if enough else EARLY_READ.format(season=season),
             "players": players, "role_alerts": alert_rows,
             "howto": TRENDS_HOWTO, "howto_sections": [{"title": "How to read role alerts", "text": ROLE_HOWTO}],
-            "scoring_note": REF_NOTE.format(ref=reference_name())}
+            "scoring_note": REF_NOTE.format(ref=reference_name()),
+            # ---- I0-A: how many the overlay left out, and who
+            "availability": {**availability.stamp(), "left_out": len(left_out), "left_out_players": left_out}}
 
 
 # ------------------------------------------------------------------------------ /api/matchups/defense

@@ -37,7 +37,7 @@ from league_lab import anyleague as A
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import auth, db, myweek, ondemand, player, research
+from . import auth, availability, db, myweek, ondemand, player, research  # availability: I0-A
 from .applib import cards, ui
 from .db import DataNotReady, query
 from .myweek import NotFound
@@ -273,6 +273,14 @@ def search(league: str, q: str, response: Response, source: str | None = None):
 @app.get("/api/status", dependencies=[Depends(require_auth)])
 def status(response: Response):
     out = myweek.status()
+    # ---- I0-A: the availability overlay's stamp; the stale-injury warning goes when ESPN was read within the hour
+    try:
+        out["availability"] = availability.info()
+        if availability.fresh():
+            out["warning"] = None
+    except Exception as exc:  # noqa: BLE001 - a status line, never a failure
+        out["availability"] = {"enabled": availability.enabled(), "error": exc.__class__.__name__}
+    # ---- end I0-A
     out["sleeper"] = A.sleeper().stats()
     out["board_source"] = A.board_source()
     try:                                    # QA: the setting is "auto"; say which board the current week really uses

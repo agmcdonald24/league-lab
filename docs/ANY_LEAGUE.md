@@ -267,3 +267,40 @@ three-quarters; the probabilities were calibrated at 40,000).
    the port rule in `docs/FRONTEND_DECISION.md`).
 4. **Waiver wire on request** (free agents = directory − rosters).
 5. **Accounts, payments, the shared cache, rate limiting** (Wave G), then Trade Finder.
+
+## Availability
+
+*(Wave I-0, I0-A — `api/league_lab_api/availability.py`, `src/league_lab/injury_feed.py`.)* The nightly build takes
+who can play from the NFL injury report via nflverse, once a day; nflverse lags the report by hours (Justin Jefferson
+was ruled Out at 2:35 PM ET Friday 2026-10-02; the 5:29 PM build still had nothing). The API now overlays two fresher
+sources at request time, on the house leagues and on any league alike:
+
+- **ESPN's public injuries feed** (`site.api.espn.com/apis/site/v2/sports/football/nfl/injuries`, no key): read every
+  15 minutes on a game day (a game that day in `analytics.dim_game`), hourly otherwise; the parsed entries (not the
+  8.7 MB body) cached in `LEAGUE_LAB_CACHE_DIR/espn_injuries.json` with `fetched_at`; a failed read keeps the last copy;
+  a token bucket of 2 reads a minute per process. The athlete id is in the entry's links (`/id/4262921/`), not a field.
+- **Sleeper's player directory** (already cached a day; its terms ask for one call a day — unchanged): `injury_status`
+  and `status`, dated by `news_updated`.
+
+ESPN athletes map to gsis through the directory's `espn_id` first, then the id table (`db_playerids.csv`:
+`LEAGUE_LAB_PLAYER_IDS_CSV`, else `LEAGUE_LAB_CACHE_DIR/db_playerids.csv`; I0-B's `player_ids.py` replaces the reader).
+Measured 2026-10-03 on the live feed: Sleeper's `espn_id` maps only 118 of ESPN's 400 skill-position entries (Sleeper
+has an `espn_id` on 223 of 866 skill players on a team) — the id table is not optional; it maps all 158 of the fixture's.
+
+**The rule**: per player the newer source wins (ESPN's `date`, Sleeper's `news_updated`; a Sleeper entry without
+`news_updated` never beats ESPN). Cannot play = Out, Doubtful, IR, PUP, NFI, Suspended, Inactive; Questionable plays
+and is flagged; Sleeper's `NA` is ignored (its meaning is unclear). In the lineup, a status from a copy read before the
+nightly build ran is ignored (the build saw that news or newer).
+
+**Where**: My Week (the lineup re-solved with `lineup.solve` from the rows' own values and slots when a starter or bench
+player can no longer play, or a player the build sat as Out can play again; the row gets chip OUT / DOUBTFUL / IR and
+a reason; `availability.changes` says who moved in a sentence; the cards follow the new rows), Trends (no Out / IR / PUP
+/ suspended player; `availability.left_out` says how many), Waivers (no claim or free agent who cannot play this week;
+a drop who cannot play this week costs 0 this week; never two QBs of one NFL team — Sleeper's `depth_chart_order`
+decides, else the better-ranked claim), trades (this week's board: an Out player is worth 0, `cannot_play` carries the
+status), rest of season (`injury_status`), `/api/status` (`availability`: stamp, source ages, how many cannot play; the
+stale-injury warning goes when ESPN was read within the hour). Web: "Injuries checked 2:40 PM" on My Week, the
+sentences under "Your lineup", the chip on the player row.
+
+**Switches**: `LEAGUE_LAB_AVAILABILITY=off` turns it off; in fixture mode (`LEAGUE_LAB_SLEEPER_FIXTURES`) it is off
+unless `LEAGUE_LAB_ESPN_FIXTURES` points at a feed file — no test and no sandbox run calls ESPN.

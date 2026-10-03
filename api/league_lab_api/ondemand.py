@@ -25,6 +25,7 @@ import time
 import pandas as pd
 from league_lab import anyleague as A
 
+from . import availability
 from .applib import cards, ui
 from .db import query
 from .myweek import NotFound, _num, _str, cards_from_rows, howto, lineup
@@ -74,6 +75,9 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     names = A.team_names(rosters, users).get(int(roster_id), {})
     rec = A.records(rosters).get(int(roster_id))
     rows = od.rows
+    # ---- I0-A: the availability overlay (the board's statuses are the nightly's: newer news re-solves the lineup)
+    rows, avail = availability.apply_to_rows(rows, build_as_of=availability.build_time())
+    # ---- end I0-A
     t_opp = time.perf_counter()
     opp, opp_note = opponent_safe(league_id, int(roster_id), week, as_of=as_of, exclude_reference=exclude_reference)
     t_opp = round((time.perf_counter() - t_opp) * 1000, 1)
@@ -81,6 +85,7 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
                  "scoring_label": A.scoring_label(league),
                  "roster_id": int(roster_id), "team_name": names.get("team_name"), "manager_name": _str(names.get("manager_name")),
                  "week": week, "record": rec, "opponent": opp, "source": "sleeper"}
+    out["availability"] = avail                      # ---- I0-A
     bits = [f"**{out['team_name']}**"]
     if rec:
         bits.append(f"{rec['wins']}-{rec['losses']}, #{rec['standing']} in the league")
@@ -219,7 +224,8 @@ def ros(league_id: str, position: str = "ALL", limit: int = 50) -> dict:
                 "last_week": None if head is None else int(head["last_week"]),
                 "playoff_week_start": None if head is None or _num(head["playoff_week_start"]) is None else int(head["playoff_week_start"]),
                 "lines_note": None if head is None else ROS.lines_note(head).replace("his usage", "usage"),   # QA: the betting-line caveat
-                "pos_rank_note": POS_RANK_NOTE, "players": [_ros_player(r) for _, r in df.iterrows()]}
+                "pos_rank_note": POS_RANK_NOTE,
+                "players": availability.ros_overlay([_ros_player(r) for _, r in df.iterrows()])}      # ---- I0-A
     league, df = ros_on_demand(league_id)
     client = A.sleeper()
     rosters, users = client.rosters(league["league_id"]), client.users(league["league_id"])
@@ -241,7 +247,7 @@ def ros(league_id: str, position: str = "ALL", limit: int = 50) -> dict:
             "lines_note": None if df.empty else ROS.lines_note(df.iloc[0]).replace("his usage", "usage"),
             "pos_rank_note": POS_RANK_NOTE + "; priced on request from the NFL-wide board (the same population as "
                              "the mart's for a house league: tested)",
-            "players": [_ros_player(r, roster_of, names) for _, r in df.iterrows()]}
+            "players": availability.ros_overlay([_ros_player(r, roster_of, names) for _, r in df.iterrows()])}  # ---- I0-A
 
 
 # ---------------------------------------------------------------- plan F3: our record (house leagues)

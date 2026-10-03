@@ -29,3 +29,13 @@ export function opponentLine(d: MyWeek): string {
   }
   return s;
 }
+
+/** I0-A: "Injuries checked 2:40 PM" (the viewer's local time; the weekday too when it was not today); "" without a stamp. */
+export function checkedLine(iso: string | null | undefined, now: Date = new Date()): string {
+  if (!iso) return "";
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return "";
+  const time = t.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const day = t.toDateString() === now.toDateString() ? "" : `${t.toLocaleDateString([], { weekday: "short" })} `;
+  return `Injuries checked ${day}${time}`;
+}

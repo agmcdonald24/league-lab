@@ -1,0 +1,414 @@
+{
+ "league_id": "1389709692405551104",
+ "league_name": "League of Scrubs",
+ "season": 2026,
+ "scoring_label": "10-team redraft \u00b7 half PPR \u00b7 4\u2011pt pass TD",
+ "roster_id": 2,
+ "team_name": "MacZaddy",
+ "manager_name": "amcdonald24",
+ "week": 4,
+ "record": {
+  "wins": 1,
+  "losses": 1,
+  "standing": 6
+ },
+ "opponent": {
+  "roster_id": 6,
+  "team_name": "GoodGameBuddy",
+  "manager": "Chazk92",
+  "matchup_id": 4,
+  "lineup_value": 120.31
+ },
+ "source": "database",
+ "summary": "**MacZaddy** \u00b7 1-1, #6 in the league",
+ "league_line": "Your best lineup projects **113.54** in week 4, 6th of 10 in the league.",
+ "cards": [
+  {
+   "slot": "FLEX2",
+   "slot_label": "FLEX2",
+   "gsis_id": "00-0038559",
+   "player_name": "Michael Wilson",
+   "value": 9.2,
+   "alt_gsis_id": "00-0040242",
+   "alt_name": "Jacory Croskey-Merritt",
+   "alt_value": 9.19,
+   "margin": 0.01,
+   "verdict": "a coin flip",
+   "how": "best bench player who can play FLEX2",
+   "p_win": 0.508825,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**FLEX2: start [Michael Wilson](/player/00-0038559) over [Jacory Croskey-Merritt](/player/00-0040242)**"
+    },
+    {
+     "kind": "markdown",
+     "text": "**Michael Wilson outscores Jacory Croskey-Merritt 51% of the time \u2014 a coin flip.**"
+    },
+    {
+     "kind": "markdown",
+     "text": "9.20 vs 9.19 projected: 0.01 apart."
+    },
+    {
+     "kind": "caption",
+     "text": "Most weeks: Michael Wilson 4\u201313, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Michael Wilson 2\u201319, Jacory Croskey-Merritt 1\u201319.  \nMichael Wilson vs NYG (#11 vs WR) \u00b7 Jacory Croskey-Merritt vs IND (#2 vs RB)"
+    }
+   ]
+  },
+  {
+   "slot": "FLEX1",
+   "slot_label": "FLEX1",
+   "gsis_id": "00-0040719",
+   "player_name": "Bhayshul Tuten",
+   "value": 9.72,
+   "alt_gsis_id": "00-0040242",
+   "alt_name": "Jacory Croskey-Merritt",
+   "alt_value": 9.19,
+   "margin": 0.53,
+   "verdict": "a coin flip",
+   "how": "best bench player who can play FLEX1",
+   "p_win": 0.56365,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**FLEX1: start [Bhayshul Tuten](/player/00-0040719) over [Jacory Croskey-Merritt](/player/00-0040242)**"
+    },
+    {
+     "kind": "markdown",
+     "text": "**Bhayshul Tuten outscores Jacory Croskey-Merritt 56% of the time \u2014 a lean.**"
+    },
+    {
+     "kind": "markdown",
+     "text": "9.72 vs 9.19 projected: 0.53 apart."
+    },
+    {
+     "kind": "caption",
+     "text": "Most weeks: Bhayshul Tuten 5\u201315, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Bhayshul Tuten 2\u201322, Jacory Croskey-Merritt 1\u201319.  \nBhayshul Tuten vs CIN (#24 vs RB) \u00b7 Jacory Croskey-Merritt vs IND (#2 vs RB)"
+    }
+   ]
+  },
+  {
+   "slot": "RB2",
+   "slot_label": "RB2",
+   "gsis_id": "00-0040666",
+   "player_name": "Omarion Hampton",
+   "value": 11.28,
+   "alt_gsis_id": "00-0040242",
+   "alt_name": "Jacory Croskey-Merritt",
+   "alt_value": 9.19,
+   "margin": 2.09,
+   "verdict": "a lean",
+   "how": "best bench player who can play RB2",
+   "p_win": 0.622075,
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**RB2: start [Omarion Hampton](/player/00-0040666) over [Jacory Croskey-Merritt](/player/00-0040242)**"
+    },
+    {
+     "kind": "markdown",
+     "text": "**Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time \u2014 a lean.**"
+    },
+    {
+     "kind": "markdown",
+     "text": "11.28 vs 9.19 projected: 2.09 apart."
+    },
+    {
+     "kind": "caption",
+     "text": "Most weeks: Omarion Hampton 6\u201315, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Omarion Hampton 3\u201323, Jacory Croskey-Merritt 1\u201319.  \nOmarion Hampton vs SEA (#26 vs RB) \u00b7 Jacory Croskey-Merritt vs IND (#2 vs RB)"
+    }
+   ]
+  }
+ ],
+ "notice": null,
+ "lineup": [
+  {
+   "role": "starter",
+   "slot": "QB",
+   "player_name": "Patrick Mahomes",
+   "gsis_id": "00-0033873",
+   "position": "QB",
+   "value": 20.26,
+   "margin": 2.09,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "RB1",
+   "player_name": "Kyren Williams",
+   "gsis_id": "00-0037840",
+   "position": "RB",
+   "value": 12.8,
+   "margin": 3.61,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "RB2",
+   "player_name": "Omarion Hampton",
+   "gsis_id": "00-0040666",
+   "position": "RB",
+   "value": 11.28,
+   "margin": 2.09,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "WR1",
+   "player_name": "Tetairoa McMillan",
+   "gsis_id": "00-0040124",
+   "position": "WR",
+   "value": 12.75,
+   "margin": 3.56,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "WR2",
+   "player_name": "Parker Washington",
+   "gsis_id": "00-0038606",
+   "position": "WR",
+   "value": 12.16,
+   "margin": 2.97,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "TE",
+   "player_name": "Travis Kelce",
+   "gsis_id": "00-0030506",
+   "position": "TE",
+   "value": 10.14,
+   "margin": 10.14,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "FLEX1",
+   "player_name": "Bhayshul Tuten",
+   "gsis_id": "00-0040719",
+   "position": "RB",
+   "value": 9.72,
+   "margin": 0.53,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "FLEX2",
+   "player_name": "Michael Wilson",
+   "gsis_id": "00-0038559",
+   "position": "WR",
+   "value": 9.2,
+   "margin": 0.01,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "K",
+   "player_name": "Chase McLaughlin",
+   "gsis_id": "00-0035358",
+   "position": "K",
+   "value": 8.07,
+   "margin": 8.07,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "DEF",
+   "player_name": "Kansas City Chiefs",
+   "gsis_id": null,
+   "position": "DEF",
+   "value": 7.16,
+   "margin": 7.16,
+   "flag": ""
+  }
+ ],
+ "lineup_full": [
+  {
+   "role": "starter",
+   "slot": "QB",
+   "player_name": "Patrick Mahomes",
+   "gsis_id": "00-0033873",
+   "position": "QB",
+   "value": 20.26,
+   "margin": 2.09,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "RB1",
+   "player_name": "Kyren Williams",
+   "gsis_id": "00-0037840",
+   "position": "RB",
+   "value": 12.8,
+   "margin": 3.61,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "RB2",
+   "player_name": "Omarion Hampton",
+   "gsis_id": "00-0040666",
+   "position": "RB",
+   "value": 11.28,
+   "margin": 2.09,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "WR1",
+   "player_name": "Tetairoa McMillan",
+   "gsis_id": "00-0040124",
+   "position": "WR",
+   "value": 12.75,
+   "margin": 3.56,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "WR2",
+   "player_name": "Parker Washington",
+   "gsis_id": "00-0038606",
+   "position": "WR",
+   "value": 12.16,
+   "margin": 2.97,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "TE",
+   "player_name": "Travis Kelce",
+   "gsis_id": "00-0030506",
+   "position": "TE",
+   "value": 10.14,
+   "margin": 10.14,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "FLEX1",
+   "player_name": "Bhayshul Tuten",
+   "gsis_id": "00-0040719",
+   "position": "RB",
+   "value": 9.72,
+   "margin": 0.53,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "FLEX2",
+   "player_name": "Michael Wilson",
+   "gsis_id": "00-0038559",
+   "position": "WR",
+   "value": 9.2,
+   "margin": 0.01,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "K",
+   "player_name": "Chase McLaughlin",
+   "gsis_id": "00-0035358",
+   "position": "K",
+   "value": 8.07,
+   "margin": 8.07,
+   "flag": ""
+  },
+  {
+   "role": "starter",
+   "slot": "DEF",
+   "player_name": "Kansas City Chiefs",
+   "gsis_id": null,
+   "position": "DEF",
+   "value": 7.16,
+   "margin": 7.16,
+   "flag": ""
+  },
+  {
+   "role": "bench",
+   "slot": "Bench 1",
+   "player_name": "Tyler Shough",
+   "gsis_id": "00-0040743",
+   "position": "QB",
+   "value": 18.17,
+   "margin": null,
+   "flag": ""
+  },
+  {
+   "role": "bench",
+   "slot": "Bench 2",
+   "player_name": "Bryce Young",
+   "gsis_id": "00-0039150",
+   "position": "QB",
+   "value": 17.25,
+   "margin": null,
+   "flag": ""
+  },
+  {
+   "role": "bench",
+   "slot": "Bench 3",
+   "player_name": "Jacory Croskey-Merritt",
+   "gsis_id": "00-0040242",
+   "position": "RB",
+   "value": 9.19,
+   "margin": null,
+   "flag": ""
+  },
+  {
+   "role": "unplayable",
+   "slot": "Can't play",
+   "player_name": "Justin Jefferson",
+   "gsis_id": "00-0036322",
+   "position": "WR",
+   "value": 12.68,
+   "margin": null,
+   "flag": "OUT",
+   "reason": "Out (ankle) \u00b7 ESPN, Oct 2 2:35 PM ET"
+  },
+  {
+   "role": "unplayable",
+   "slot": "Can't play",
+   "player_name": "Terrance Ferguson",
+   "gsis_id": "00-0040737",
+   "position": "TE",
+   "value": 5.79,
+   "margin": null,
+   "flag": "IR",
+   "reason": "IR (ankle) \u00b7 ESPN, Oct 2 5:56 PM ET"
+  },
+  {
+   "role": "unplayable",
+   "slot": "Can't play",
+   "player_name": "Jonah Coleman",
+   "gsis_id": "00-0041496",
+   "position": "RB",
+   "value": 7.09,
+   "margin": null,
+   "flag": "IR",
+   "reason": "IR (ankle) \u00b7 ESPN, Sep 26 4:36 PM ET"
+  },
+  {
+   "role": "unplayable",
+   "slot": "Can't play",
+   "player_name": "Zach Charbonnet",
+   "gsis_id": "00-0039165",
+   "position": "RB",
+   "value": 6.05,
+   "margin": null,
+   "flag": "IR",
+   "reason": "PUP (knee - acl) \u00b7 ESPN, Oct 2 5:12 PM ET"
+  }
+ ],
+ "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls. The first line is **how often your starter outscores the other player** this week, from both players' ranges: 50\u201355% is a coin flip (go with the latest news), 55\u201365% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Most weeks** is the range half of his weeks land in (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **#28 vs WR** is the opponent's rank against that position this season: 1 = gives up the most (the matchup you want), 32 = the fewest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
+ "movers": [],
+ "availability": {
+  "checked_at": "2026-10-02T18:40:00Z",
+  "changes": [
+   "Justin Jefferson is out (ankle) \u2014 Michael Wilson starts at FLEX2",
+   "Terrance Ferguson is on injured reserve (ankle) \u2014 he was on your bench; the lineup does not change"
+  ],
+  "flags": [],
+  "applied": 6
+ },
+ "lineup_value": 113.54
+}
