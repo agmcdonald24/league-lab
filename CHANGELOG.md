@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-C
+
+- **IC-1: a real scoring engine, and the scoring check that proves it.** A league's rules are now data per position
+  (`scoring.ScoringSpec`, compiled from Sleeper's settings and MyFantasyLeague's rules: TDs by distance, "1/10" yards,
+  flat bonuses at any threshold, FG by distance, team units, premiums; unknown events listed by name). Projections of
+  an MFL league price on it (dad's 70587 had priced its TDs and yards at 0); the house leagues' numbers are unchanged
+  to the bit. `/api/league/scoring-check` compares our points with the league's own for a played week: Scrubs and the
+  dynasty 100% to the tenth in weeks 1–2 (the SQL macro agrees everywhere), 70587 162 / 163 and 156 / 156 within a point.
+
 ## 2026-10-03 — Wave I-B
 
 - **PO merge.** IB-2's "who starts" reads IB-0's roster context (one overlay pass); the API suite answers MFL from
