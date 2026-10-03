@@ -110,6 +110,9 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
         "stat_line_mismatches": od.mismatched_lines, "sleeper_calls": od.sleeper_calls, "timings_ms": timings,
         "board_source": od.board_source, "opponent_note": opp_note,
     }
+    if A.platforms.is_mfl(league_id):              # I0-B: what the MyFantasyLeague translation could not carry
+        out["platform"] = "mfl"
+        out["on_demand"].update(mfl_extras(league_id, league))
     return out
 
 
@@ -130,14 +133,17 @@ def rosters_for_league(league_id: str) -> list[dict]:
     and users, named the way dim_league_member names them (team name, else display name)."""
     sl = A.sleeper()
     try:
+        league_id = A.check_id(league_id)         # I0-B: a Sleeper id or an mfl:<id> key
         sl.league(league_id)                      # 404 for an id Sleeper does not have (before the rosters call)
         rosters, users = sl.rosters(league_id), sl.users(league_id)
     except A.LeagueNotFound as exc:
-        raise NotFound(f"no Sleeper league {league_id}") from exc
+        raise NotFound(str(exc) if A.platforms.is_mfl(league_id) else f"no Sleeper league {league_id}") from exc
     except A.SleeperUnavailable as exc:
         raise SleeperDown(str(exc)) from exc
     names = A.team_names(rosters, users)
-    out = [{"roster_id": rid, "team_name": n["team_name"], "manager_name": n["manager_name"]} for rid, n in names.items()]
+    mfl = A.platforms.is_mfl(league_id)           # I0-B: MFL shares no manager names (the franchise name only)
+    out = [{"roster_id": rid, "team_name": n["team_name"], "manager_name": None if mfl else n["manager_name"]}
+           for rid, n in names.items()]
     return sorted(out, key=lambda r: (r["team_name"] or "", r["roster_id"]))
 
 
@@ -261,7 +267,7 @@ def record(league_id: str) -> dict:
         try:
             A.sleeper().league(league_id)             # 404 for an id Sleeper does not have (the contract)
         except A.LeagueNotFound as exc:
-            raise NotFound(f"no Sleeper league {league_id}") from exc
+            raise NotFound(str(exc) if A.platforms.is_mfl(league_id) else f"no Sleeper league {league_id}") from exc
         except A.SleeperUnavailable:
             pass                                      # Sleeper down: still an honest "not kept" answer
         return {"league_id": league_id, "available": False, "why": RECORD_WHY}
@@ -381,3 +387,76 @@ class PlayerContext:
 def player_card(league_id: str, gsis: str, *, exclude_reference: str | None = None) -> dict:
     from . import player
     return player.player_card(league_id, gsis, od=PlayerContext(league_id, exclude_reference=exclude_reference))
+
+
+# ---- I0-B (Wave I-0): MyFantasyLeague leagues (league_lab.platforms / mfl_client). The key is `mfl:<id>`; every
+# route above serves it unchanged (the translation answers in Sleeper's shapes). Here: the Leagues screen's card
+# (`/api/leagues?mfl=<link or id>`), the notes My Week adds, and the gsis -> Sleeper step of the id mapping.
+MFL_IDMAP_SQL = "select gsis_id, sleeper_id from analytics.player_id_map where gsis_id = any(%s) and sleeper_id is not null"
+
+
+def _gsis_to_sleeper(gsis_ids: list[str]) -> dict[str, str]:
+    df = query(MFL_IDMAP_SQL, (list(gsis_ids),))
+    return {} if df.empty else {str(g): str(s) for g, s in zip(df["gsis_id"], df["sleeper_id"], strict=False)}
+
+
+A.platforms.GSIS_LOOKUP = _gsis_to_sleeper
+
+_SLOT_WORDS = {"QB": "QB", "RB": "RB", "WR": "WR", "TE": "TE", "FLEX": "FLEX", "SUPER_FLEX": "superflex", "K": "K",
+               "DEF": "DEF"}
+
+
+def mfl_scoring_note(league: dict) -> str:
+    """The plain-words note under an MFL league's card: how its lineup and scoring were read."""
+    m = league.get("mfl") or {}
+    slots = [x for x in league.get("roster_positions") or [] if x != "BN"]
+    counts: dict[str, int] = {}
+    for x in slots:
+        counts[x] = counts.get(x, 0) + 1
+    lineup = ", ".join(f"{n} {_SLOT_WORDS.get(k, k)}" if n > 1 else _SLOT_WORDS.get(k, k) for k, n in counts.items())
+    bits = [f"Lineup read as {lineup}."]
+    sn = m.get("slots") or {}
+    if sn.get("ranges"):
+        rng = ", ".join(f"{v} {k}s" for k, v in sn["ranges"].items())
+        bits.append(f"Your league lets you start {rng}: the spots beyond each minimum count as FLEX.")
+    if sn.get("idp"):
+        bits.append("Defensive players (" + ", ".join(sn["idp"]) + ") are not projected here; those spots are left out.")
+    rep = m.get("scoring") or {}
+    for a in rep.get("approximated") or []:
+        bits.append(a[:1].upper() + a[1:] + ".")
+    if rep.get("unpriced"):
+        bits.append("Not counted in the projections: " + ", ".join(rep["unpriced"]) + ".")
+    return " ".join(bits)
+
+
+def mfl_extras(league_id: str, league: dict) -> dict:
+    mf = A.sleeper().mfl
+    return {"mfl_unmapped": mf.unmapped(league_id), "mfl_mapped_by": mf.mapped_by(league_id),
+            "mfl_scoring_note": mfl_scoring_note(league)}
+
+
+def mfl_league(text: str) -> dict:
+    """`/api/leagues?mfl=<link or id>`: the league card (name, size, scoring), its teams for the picker (MFL has no
+    username lookup without a login), the team an `F=0004` in the link names, the players without a Sleeper id."""
+    from league_lab.mfl_client import parse_link
+    try:
+        lid, fid, _year = parse_link(text)
+        key = A.check_id(f"mfl:{lid}")
+        sl = A.sleeper()
+        league = sl.league(key)
+        rosters, users = sl.rosters(key), sl.users(key)
+    except A.LeagueNotFound as exc:
+        raise NotFound(str(exc)) from exc
+    except A.SleeperUnavailable as exc:
+        raise SleeperDown(str(exc)) from exc
+    names = A.team_names(rosters, users)
+    teams = [{"roster_id": rid, "team_name": n["team_name"], "manager_name": None} for rid, n in sorted(names.items())]
+    pick = next((r["roster_id"] for r in rosters if fid is not None and str(r.get("owner_id")) == fid), None)
+    lg = {"league_id": key, "name": league.get("name"), "season": int(league["season"]),
+          "total_rosters": league.get("total_rosters"), "scoring_label": A.scoring_label(league),
+          "url": (league.get("mfl") or {}).get("url"), "platform": "mfl"}
+    n_players = sum(len(r.get("players") or []) for r in rosters)
+    unmapped = sl.mfl.unmapped(key)
+    return {"platform": "mfl", "league": lg, "teams": teams, "roster_id": pick, "unmapped": unmapped,
+            "players": n_players, "mapped": n_players - len(unmapped), "scoring_note": mfl_scoring_note(league)}
+# ---- end I0-B

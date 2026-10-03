@@ -3457,3 +3457,34 @@ of season borrows week by week as before.
 nflverse (attribution), dynastyprocess crosswalk (MIT), ffverse/ffopportunity (MIT), Pro-Football-Reference
 data via nflverse (see nflverse terms), Sleeper API (public read-only). FTN (Phase 2) CC-BY-SA 4.0.
 
+
+## Wave I-0 (Iteration 17, part 0)
+
+### I0-B 2026-10-03 — MyFantasyLeague, read-only, on demand (branch `dev/I0B`, clone `league_lab_i0b`)
+
+**What.** An MFL league is a key (`mfl:21861`), a client (`src/league_lab/mfl_client.py`) and a translation into
+Sleeper's shapes (`src/league_lab/platforms.py`: `anyleague.sleeper()` is now a `Router`; `anyleague.check_id`
+accepts both keys); the id table (`src/league_lab/player_ids.py`: `mfl_to_sleeper`, `mfl_to_gsis`, `espn_to_gsis`,
+`sleeper_to_gsis`, `download_if_stale()` once a day into `LEAGUE_LAB_CACHE_DIR`, `LEAGUE_LAB_PLAYER_IDS_CSV`
+override — I0-A's CSV reader in `availability.py` can switch to it). Routes: `GET /api/leagues?mfl=<link or id>`; every
+on-demand route answers for `mfl:` keys unchanged. Web: the Leagues screen's "On MyFantasyLeague? Paste your league
+link" → the league card with its teams → My Week; remembered on the phone; "· MFL" in the league switcher. Design and
+the translation rules: docs/ANY_LEAGUE.md § "MyFantasyLeague"; calls and contact: docs/MFL_TERMS.md.
+
+**Evidence (fixtures fetched 2026-10-03 through the browser pane; `api/tests/test_i0b.py`, 18 tests).**
+* 21861 slots: QB, RB, RB, WR, WR, TE, FLEX, FLEX, K, DEF + 8 BN. Scoring: pass_yd 0.05, pass_td 4, pass_int −1,
+  rec 1, bonus_rec_te 0.5, fgm 3 / 3 / 3.45 / 4.45 / 5.5, pts_allow 12 / 8 / 2.857 / 0…; label "12-team redraft ·
+  full PPR · 4‑pt pass TD · TE premium 0.5". IDP league 10015: DT / DE / LB / CB / S left out and said so; 19 events
+  listed as not counted (tackles, sacks (player), return yards…); yardage bands → bonus_*_yd_*.
+* Players: 216 of 216 rostered in 21861 mapped to Sleeper ids (202 by the id table, 14 defenses by team code).
+* Every route 200 for `mfl:21861` in fixture mode (my-week, team, waivers, trades/partners, trades/evaluate, ros,
+  league, search, about, trends, matchups/defense, matchups/cb, players, receivers, compare, player card, player
+  games, record (available: false), leagues/mfl:21861/rosters, status); `mfl:99999999` (MFL's own error body) → 404
+  "MyFantasyLeague would not share this league: … Ask the commissioner to allow API access".
+* The live re-test (pane, 2026-10-03 00:44 ET): league, rosters, schedule, standings, weekly results week 3 equal the
+  saved fixtures (SHA-256 of the canonical JSON); live scoring week 4 differs only in player order (same starters);
+  the live rules parse to the same scoring; the final code on the live copy: 216 / 216 mapped (full 12,518-row table),
+  10 starters per team.
+* Checks: ruff clean; API suite 175 passed, 2 skipped; root suite 834 passed, 2 skipped; web lint / build clean;
+  `npm run e2e:fixtures` 60 passed
+  (the new `e2e/i0b/fixtures.spec.ts`, phone + desktop).

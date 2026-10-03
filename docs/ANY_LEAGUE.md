@@ -267,3 +267,49 @@ three-quarters; the probabilities were calibrated at 40,000).
    the port rule in `docs/FRONTEND_DECISION.md`).
 4. **Waiver wire on request** (free agents = directory − rosters).
 5. **Accounts, payments, the shared cache, rate limiting** (Wave G), then Trade Finder.
+
+## MyFantasyLeague (Wave I-0, I0-B, 2026-10-03)
+
+**Design.** The rest of the code only sees Sleeper shapes. A league key with a platform prefix (`mfl:21861`; Sleeper
+ids stay bare) goes through `anyleague.sleeper()`, now a `platforms.Router`: Sleeper keys reach the Sleeper client
+untouched, `mfl:` keys reach `platforms.MFLLeagues`, which reads MFL (`mfl_client.MFL`: caches by kind, 60 calls a
+minute, redirects to the league's `www4N.` host followed and remembered, fixture mode `LEAGUE_LAB_MFL_FIXTURES`) and
+answers `league` / `users` / `rosters` / `matchups` / `season_matchups` / `transactions` / `players` in Sleeper's
+shapes. `anyleague.check_id` accepts both keys; `myweek.known_league` is false for `mfl:` (always on demand). Every
+on-demand route then serves the league unchanged: My Week, the player card, rest of season, waivers, trades, Team
+Hub, League, search, About, the research screens. `/api/record` answers as for any league we do not keep (200,
+`available: false`, the existing sentence).
+
+**Translation.**
+* *Lineup*: MFL's starter limits ("1", "2-4") → each position at its minimum, the rest of the starters as `FLEX`
+  (RB/WR/TE), `SUPER_FLEX` when QB has a range; `PK` → `K`, `Def` → `DEF`; bench = roster size − starters. IDP
+  positions are left out and said so.
+* *Scoring*: per-unit rules map to Sleeper keys (`#P` pass_td, `PY` pass_yd, `IN`, `P2`, `#R`, `RY`, `R2`, `#C`, `CY`,
+  `C2`, `CC` rec — a position's different `CC` rate is a premium on top: `bonus_rec_te`; `EP` xpm, `#FR` fum_rec_td,
+  defense `FC` ff, `IC` int, `SK` sack, `SF` safe, `#T` def / special-teams TD). Approximated and said so: `FG` by the
+  yard (each Sleeper distance band at its middle: 17, 24.5, 34.5, 44.5, 55 yards), points-allowed bands (the average
+  of MFL's points over each Sleeper band: MFL 7-10 = 5, 11+ = 0 → Sleeper 7-13 = 2.857), yardage bands with
+  `thresholdPoints` (→ `bonus_*_yd_*`), touchdowns scored by length (`PS` / `RS` / `RC` → the TD plus a `_40p` bonus).
+  Anything else (return yards, IDP tackles, …) is listed by name in the scoring note as "not counted".
+* *Teams*: franchise → user (`user_id` = franchise id, the franchise name as both display and team name; MFL shares
+  no manager names) and roster (`roster_id` 1..N in franchise order; starters from the week's live scoring, else last
+  week's results; IR and taxi from the roster statuses; wins / losses / points from the standings).
+* *Players*: MFL id → Sleeper id through the id table (`player_ids.py`), else → gsis → `analytics.player_id_map`,
+  else a defense by its team code (MFL `KCC` → `KC`…), else a unique name + position match in Sleeper's directory
+  (counted as `name` in `mfl_mapped_by`), else the player stays on the roster as `mfl:<id>` with his MFL name
+  (unvalued, listed in `unmapped`). League 21861 on 2026-10-03: 216 of 216 rostered players mapped (202 by the
+  table, 14 defenses by team code).
+
+**Routes.** `GET /api/leagues?mfl=<league link or id>` → `{platform: "mfl", league: {league_id: "mfl:21861", name,
+season, total_rosters, scoring_label, url}, teams: [{roster_id, team_name, manager_name: null}], roster_id (the
+team an `F=0004` in the link names), unmapped: [{mfl_id, name, position}], players, mapped, scoring_note}`. My Week
+adds `platform: "mfl"` and `on_demand.mfl_unmapped`, `mfl_mapped_by`, `mfl_scoring_note`. A league MFL will not
+share → 404 with the sentence in `docs/MFL_TERMS.md`; MFL down → 502 "MyFantasyLeague did not answer".
+
+**Web.** The Leagues screen: under the Sleeper username box, "On MyFantasyLeague? Paste your league link" → the
+league card (name, size, scoring, the note) with its teams → My Week. The pick is remembered on the phone
+(`ll.mflLeagues`) and the league switcher shows "· MFL" after the name.
+
+**Not done.** MFL transactions (the League screen shows none), playoff brackets (the rest-of-season window assumes
+2^(weeks after the regular season) playoff teams), keeper / dynasty detection (every MFL league reads as redraft in
+the scoring label), MFL's own injury report (the availability overlay reads ESPN and Sleeper by player).

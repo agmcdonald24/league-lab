@@ -221,6 +221,8 @@ def howto() -> str | None:
 
 def known_league(league_id: str) -> bool:
     """Is this a current-season league of the database (else /api/my-week serves it on demand from Sleeper)?"""
+    if str(league_id or "").strip().lower().startswith("mfl:"):     # I0-B: a MyFantasyLeague key is always on demand
+        return False
     df = ui.current_leagues()
     return bool((df["league_id"] == str(league_id)).any())
 
