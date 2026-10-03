@@ -497,7 +497,7 @@ def kd_values(scoring: Mapping[str, float], position: str, board: Board) -> tupl
     for c in line_cols:
         rows[c] = pd.to_numeric(rows[c], errors="coerce") if c in rows else 0.0
     flat = kd_flat(spec_of(scoring), position)       # ---- IC-1: K / DEF keys from the spec (Sleeper: unchanged)
-    rows["proj_points"] = kdef.price(rows.reset_index(drop=True), position, flat, "proj_")
+    rows["proj_points"] = kdef.price(rows.reset_index(drop=True), position, flat, "proj_")   # (kdef.price reads a spec too)
     # the range: the reference with the closest K (DEF) prices; its offsets kept as they are (fixed per scoring)
     proj = rows.set_index("unit_id")["proj_points"].astype(float)
     ref = choose_reference(proj, {n: f for n, f in board.kd_fitted.items() if not f.empty})

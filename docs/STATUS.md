@@ -4111,7 +4111,11 @@ there's some issue between scoring and settings with my two leagues too". Design
   `league_scoring` carries the spec, `league_spec`, `price_lines` (Sleeper spec: the flat path bit for bit; MFL: in
   expectation), `kd_values` (`kd_flat`), `_mapped` / `_scoring_key` (an MFL spec never borrows an exact reference),
   `scoring_report` (+ `priced`, `approximated`, `unpriced`); `mfl_client.scoring` adds `spec` to its report and fills
-  the flat summary; `why.weights` reads the position's rules for a non-Sleeper spec.
+  the flat summary; `why.weights` reads the position's rules for a non-Sleeper spec; `kdef.price` takes a spec
+  (`kd_flat`), so the rest-of-season K / DEF path prices an MFL league's kickers and defenses by its rules too.
+* **Checks.** ruff clean; root 884 passed, 2 skipped; API 325 passed, 2 skipped; live on :8741 (app role): Scrubs
+  week 2 144 / 144 (111 ms), dynasty week 1 219 / 219, Test League week 2 144 / 144, `mfl:70587` weeks 1 / 2
+  162 / 163 and 156 / 156 (100–150 ms). Web untouched.
 * **The scoring check.** `scoring_audit.check` and `GET /api/league/scoring-check?league=&week=` (cached a day).
   Weeks 1–2 of 2026 (the clone's complete weeks; week 3 is Thursday only and answers `n: 0` with the sentence):
 
@@ -4134,7 +4138,7 @@ there's some issue between scoring and settings with my two leagues too". Design
   week 4): the dynasty's top 24 move QB +1.09, RB +0.53, WR +0.76, TE +0.20 a week (Josh Allen 30.24 → 31.68, Bijan
   Robinson 26.72 → 25.52: his 100-yard bonus was all-or-nothing). Scrubs has no bonuses: identical.
 * **Tests.** `tests/test_scoring_audit.py` 5 (the check's counts, misses, `likely_rule`, words, unit sums);
-  `tests/test_scoring_spec.py` 31 (70587 hand-computed: RB 120 yards + a 45-yard TD = 43, QB 45, WR / TE
+  `tests/test_scoring_spec.py` 32 (70587 hand-computed: RB 120 yards + a 45-yard TD = 43, QB 45, WR / TE
   thresholds, K 36, DEF; 21861 TE 1.5 and FG by the yard; IDP / unknown events unpriced; thresholdPoints; parity on
   `tests/test_scoring.py`'s rows and 2,000 random lines × 3 scorings; JSON; read-back; EV monotone; the fallback with
   M2 absent; the 10-yard cut; Sleeper keys beyond the flat engine — completions, attempts, carries, first downs,

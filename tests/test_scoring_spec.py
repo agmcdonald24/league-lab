@@ -328,3 +328,12 @@ def test_sleeper_keys_beyond_the_flat_engine_are_priced_on_actual_lines():
     assert compute_points_spec(line, sp, "QB") == pytest.approx(2.6 - 5.0 + 0.4 + 1.0 + 2.0)
     assert compute_points(line, sc) == 0                           # the flat engine (and the SQL macro) price none
     assert {u["event"] for u in sp.unpriced} == {"bonus_rush_rec_yd_100", "tkl"}
+
+
+def test_kdef_price_reads_a_spec(dad):
+    from league_lab import kdef
+    df = pd.DataFrame([{"proj_fg_made_40_49": 1.0, "proj_fg_made_50p": 1.0, "proj_pat_made": 2.0}])
+    assert kdef.price(df, "K", dad, "proj_")[0] == 5 + 10 + 2
+    sc = S.LeagueScoring(SCRUBS)
+    sc.spec = from_sleeper(SCRUBS)
+    assert kdef.price(df, "K", sc, "proj_")[0] == kdef.price(df, "K", SCRUBS, "proj_")[0] == 4 + 5 + 2
