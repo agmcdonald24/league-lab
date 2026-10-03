@@ -630,6 +630,18 @@ def from_mfl(rules: Mapping) -> ScoringSpec:
         R.bands = {k: v for k, v in R.bands.items() if v}
         R.distance = {k: sorted(dict.fromkeys(b for b in v if b[2]), key=lambda t: t[0]) for k, v in R.distance.items()}
         R.distance = {k: v for k, v in R.distance.items() if v}
+    # what the K / DEF projection (kd1.0 on Sleeper's buckets, ``kd_flat``) approximates — the actual lines are exact
+    pa = (out.get("DEF") or Rules()).bands.get("points_allowed") or []
+    if pa and sorted((int(b[0]), None if b[1] is None else int(b[1])) for b in pa) != \
+            [(lo, hi) for lo, hi in SLEEPER_PA.values()][:len(pa)]:
+        approx.append("points allowed on a projection: the league's bands (" + ", ".join(_band_text(b) for b in pa)
+                      + ") are spread over the defense projection's (0, 1–6, 7–13 …) by the average over each")
+    fg = (out.get("K") or Rules()).distance.get("fg_made") or []
+    p50 = [b[2] for b in fg if _in_band(55, b)]
+    p60 = [b[2] for b in fg if _in_band(62, b)]
+    if p50 and p60 and p50 != p60:
+        approx.append(f"kicks of 50+ yards on a projection: priced at the 50–59 band ({_fmt(p50[0])}); the projection "
+                      "does not split off 60+")
     if idp:
         unpriced["IDP"] = {"event": "IDP", "name": "individual defensive players (" + ", ".join(sorted(set(idp))) + ")",
                            "positions": "|".join(sorted(set(idp)))}
