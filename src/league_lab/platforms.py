@@ -31,6 +31,46 @@ from .sleeper_client import LeagueNotFound, Sleeper
 from .sleeper_client import check_id as sleeper_check_id
 
 PREFIX = "mfl:"
+# ---- IC-2 (Wave I-C): MFL's team units. A rostered TMQB / TMPK is a "player" (one per NFL team) with no gsis id:
+# a directory row under ``mfl:<id>`` with its NFL team (Sleeper's code), valued from the team's quarterbacks / kicker
+# (anyleague prices it); a TMDEF is a team defense, mapped like ``Def`` (its Sleeper id is the team code).
+UNIT_POSITIONS = frozenset({"TMQB", "TMPK"})
+UNIT_WORDS = {"TMQB": "QB", "TMPK": "K"}
+
+
+def unit_name(name: str | None, position: str, team: str | None) -> str:
+    """"Kansas City Chiefs QB": MFL's name ("Chiefs, Kansas City" or "Kansas City Chiefs TMQB") as first-last, the
+    unit word (QB / K) in place of MFL's code."""
+    base = _first_last(str(name or "")).strip()
+    base = re.sub(rf"\s*\b(?:{position}|TM\w+)\b\s*$", "", base, flags=re.I).strip()
+    if not base:
+        base = team or "Team"
+    word = UNIT_WORDS.get(position, position)
+    return base if base.upper().endswith(f" {word}") else f"{base} {word}"
+
+
+# the 32 NFL teams (Sleeper's codes) and their names: an unrostered unit (a free agent) is listed under
+# ``mfl:<TMQB|TMPK>-<team>`` (its MFL id is only known once a roster carries it)
+NFL_TEAMS = {"ARI": "Arizona Cardinals", "ATL": "Atlanta Falcons", "BAL": "Baltimore Ravens", "BUF": "Buffalo Bills",
+             "CAR": "Carolina Panthers", "CHI": "Chicago Bears", "CIN": "Cincinnati Bengals", "CLE": "Cleveland Browns",
+             "DAL": "Dallas Cowboys", "DEN": "Denver Broncos", "DET": "Detroit Lions", "GB": "Green Bay Packers",
+             "HOU": "Houston Texans", "IND": "Indianapolis Colts", "JAX": "Jacksonville Jaguars", "KC": "Kansas City Chiefs",
+             "LAC": "Los Angeles Chargers", "LAR": "Los Angeles Rams", "LV": "Las Vegas Raiders", "MIA": "Miami Dolphins",
+             "MIN": "Minnesota Vikings", "NE": "New England Patriots", "NO": "New Orleans Saints", "NYG": "New York Giants",
+             "NYJ": "New York Jets", "PHI": "Philadelphia Eagles", "PIT": "Pittsburgh Steelers", "SEA": "Seattle Seahawks",
+             "SF": "San Francisco 49ers", "TB": "Tampa Bay Buccaneers", "TEN": "Tennessee Titans", "WAS": "Washington Commanders"}
+
+
+def unit_row(mfl_player_id: str, position: str, info: dict) -> dict:
+    """The directory row of a team unit (INTERFACES.md § IC-2): player_id / player_key ``mfl:<id>``, position TMQB /
+    TMPK, the Sleeper team code, the unit's name; ``unit`` True; no gsis id."""
+    key = f"{PREFIX}{mfl_player_id}"
+    team = M.defense_sleeper_id(info.get("team")) if info.get("team") else None
+    name = unit_name(info.get("name"), position, team)
+    return {"player_id": key, "player_key": key, "full_name": name, "player_name": name, "position": position,
+            "fantasy_positions": [position], "team": team, "status": "Active", "active": True, "injury_status": None,
+            "mfl_id": str(mfl_player_id), "unit": True}
+# ---- end IC-2
 # gsis ids -> Sleeper ids (the API sets it to read analytics.player_id_map); None: that step is skipped
 GSIS_LOOKUP: Callable[[list[str]], dict[str, str]] | None = None
 
@@ -128,10 +168,16 @@ class MFLLeagues:
                 info = {str(p.get("id")): p for p in self.client.players(rest)}
             except (M.MFLUnavailable, M.MFLBusy, LeagueNotFound):
                 info = {}
-            idx = self._index() if any(str((info.get(i) or {}).get("position")) not in ("Def", "TMDEF") for i in rest) else {}
+            idx = self._index() if any(str((info.get(i) or {}).get("position")) not in ("Def", "TMDEF", *UNIT_POSITIONS)
+                                       for i in rest) else {}
             for i in rest:
                 p = info.get(i) or {}
                 pos = M.POS.get(str(p.get("position") or ""), str(p.get("position") or "") or None)
+                if pos in UNIT_POSITIONS:          # ---- IC-2: a team unit (TMQB / TMPK) is a player of its own
+                    key = f"{PREFIX}{i}"
+                    self.extra_players[key] = unit_row(i, pos, p)
+                    out[i] = (key, "unit")
+                    continue
                 if pos == "DEF":
                     tid = M.defense_sleeper_id(p.get("team"))
                     if tid:
@@ -150,6 +196,24 @@ class MFLLeagues:
         with self._lock:
             self.mapping.setdefault(lid, {}).update(out)
         return out
+
+    def register_units(self, positions: set[str] | frozenset[str]) -> int:
+        """IC-2: every NFL team's unit of each position the league starts (TMQB / TMPK) in the directory, so the free
+        agents include the unrostered ones; a team whose unit a roster carries keeps that row (its MFL id). Returns
+        how many were added."""
+        have = {(r.get("position"), r.get("team")) for r in self.extra_players.values() if r.get("unit")}
+        n = 0
+        for pos in sorted(set(positions) & UNIT_POSITIONS):
+            for team, name in NFL_TEAMS.items():
+                if (pos, team) in have:
+                    continue
+                key = f"{PREFIX}{pos}-{team}"
+                if key not in self.extra_players:
+                    row = unit_row(f"{pos}-{team}", pos, {"name": name, "team": team})
+                    row["mfl_id"] = None
+                    self.extra_players[key] = row
+                    n += 1
+        return n
 
     def unmapped(self, key: str) -> list[dict]:
         """The rostered MFL players with no Sleeper id (``{mfl_id, name, position}``), and those matched by name."""
@@ -191,6 +255,8 @@ class MFLLeagues:
         return {"league_id": PREFIX + lid, "name": html.unescape(str(lg.get("name") or f"MFL league {lid}")).strip(),
                 "season": str(self.client.year), "season_type": "regular", "sport": "nfl", "status": "in_season",
                 "total_rosters": n, "roster_positions": slots, "scoring_settings": sc,
+                # ---- IC-2 for IC-1 (INTERFACES.md): the league's ScoringSpec as JSON when the compiler gives one
+                **({"scoring_spec": report["spec"]} if isinstance(report, dict) and report.get("spec") else {}),
                 "settings": {"playoff_week_start": (last_reg + 1) if last_reg and rounds else 0,
                              "playoff_teams": 2 ** rounds if rounds else 0, "playoff_round_type": 0,
                              "leg": week, "last_scored_leg": max(0, week - 1), "num_teams": n,
@@ -238,6 +304,19 @@ class MFLLeagues:
             settings = M.standings_settings(self.client.standings(lid))
         except (M.MFLUnavailable, M.MFLBusy, LeagueNotFound):
             settings = {}
+        # ---- IC-2: Sleeper's starters array is ordered like the starting slots ("0" = empty); MFL's lists ids only, so
+        # each starter is seated in the narrowest slot that admits him (the lock rule reads the slot from it)
+        from .lineup import align_starters, parse_slots
+        slot_list, _ = M.slots(self.client.league(lid))
+        d = self.directory()
+        unit_pos = set().union(*(x.elig for x in parse_slots(slot_list)[0])) & UNIT_POSITIONS
+        if unit_pos:
+            self.register_units(unit_pos)
+
+        def positions_of(sid: str) -> list[str]:
+            row = self.extra_players.get(sid) or d.get(sid) or {}
+            return list(row.get("fantasy_positions") or ([row["position"]] if row.get("position") else []))
+        # ---- end IC-2
         out = []
         for f in fr:
             fid = str(f.get("id"))
@@ -249,6 +328,8 @@ class MFLLeagues:
             taxi = [tr[str(p.get("id"))][0] for p in players if str(p.get("status")) == "TAXI_SQUAD"]
             on = set(str(p.get("id")) for p in players)
             starters = [tr[i][0] for i in starters_mfl.get(fid, []) if i in on and i in tr]
+            if starters:                                                     # IC-2
+                starters = align_starters(slot_list, [(x, positions_of(x)) for x in starters])
             out.append({"league_id": PREFIX + lid, "roster_id": rid_of[fid], "owner_id": fid, "co_owners": None,
                         "players": sid, "starters": starters, "reserve": reserve or None, "taxi": taxi or None,
                         "settings": settings.get(fid, {"wins": 0, "losses": 0, "ties": 0, "fpts": 0, "fpts_decimal": 0})})

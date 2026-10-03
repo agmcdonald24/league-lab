@@ -4089,3 +4089,44 @@ nothing showed the waiver alternative before suggesting you give up a useful pla
   for the PO, DESIGN.md says so). The fixture savers' `os.environ.pop("LEAGUE_LAB_ESPN_FIXTURES")` is undone by
   `settings.py`'s `load_dotenv(override=False)` when the worktree's .env sets it: IA-2's saved answers were taken with
   the overlay on; `save_ib2_fixtures.py` sets the ESPN fixture explicitly so it reproduces.
+
+## Wave I-C (Iteration 17, part C)
+
+### IC-2 2026-10-03 — slots as eligibility sets, team units as players (branch `dev/IC2`, clone `league_lab_i0b`)
+
+Dad's league (MFL 70587) starts `TMQB ×1, RB ×2, WR+TE ×3, TMPK ×1, Def ×1`; the translation kept `RB` and `Def`, so
+the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both team units "Can't play".
+
+- **Slots** (`lineup.py`, `# ---- IC-2`): `Slot(label, type, elig, order)`; `slot_eligibility(name)` reads Sleeper's
+  names, generic `A+B[+C]` (the union of the parts; an IDP part = not modelled, reported), `TMQB` {TMQB}, `TMPK`
+  {TMPK}, `TMDEF` {DEF}; `SLOT_ELIGIBILITY` answers any of them on lookup, so waivers / trades / availability / the
+  Team Hub read MFL slot types unchanged. The solver uses `slot.elig`. A player no slot admits: reason "No slot for a
+  K in this league" (was "no K slot in this lineup"), role still `unplayable`, `Lineup.no_slot` / `cannot_play`,
+  not counted in `n_unplayable`; listed as "No slot" (`cards.no_slot_or_cant`, My Week's full list).
+  `align_starters`: MFL's starters seated by a maximum matching in the narrowest slot that admits them (Sleeper's
+  `starters` array order), so the lock rule reads the right slot.
+- **MFL translation** (`mfl_client.slot_name` / `slots`): the league's own words (`TMQB`, `WR+TE`, `TMPK`; `PK` → `K`,
+  `Def` → `DEF`); note gains `units`. `platforms.MFLLeagues`: a rostered `TMQB` / `TMPK` id → a directory row
+  `mfl:<id>` (position, Sleeper team code, "Cincinnati Bengals QB", `unit: true`, no gsis; `mfl_mapped_by.unit`);
+  every other team's unit registered as `mfl:TMQB-<team>` for the free agents; `scoring_spec` carried for IC-1.
+- **Pricing** (`anyleague.py`, `# ---- IC-2`): `kd_starts` / `unit_starts` from the slots' sets; `price_units` →
+  `Priced.units`: TMQB = the line of the team's best-projected quarterback who can play, priced through `price_lines`
+  with `position = "TMQB"` (IC-1's spec: QB's rules), range = the starter's shifted; TMPK = the team's kicker from
+  `kd_values`. `LineupInputs.unit_proj`; `_proposed_player`: a unit is valued by (unit, team), can't play only on a
+  bye. `free_agents` keeps units (one per unit and team); Waivers prices them (`decisions._free_agents`, IC-2 block).
+  `_cards_frame`: a unit's team and range.
+- **Web / app**: `cards.slot_label` "WR/TE 1", "team QB", "team K"; `cards.slot_elig` (the solver-free copy);
+  `LineupTable.svelte` shows a unit's team badge.
+- **Evidence** (70587 fixture from IC-3, week 4, availability overlay off as in the tests; scoring = I0-B's compiler,
+  IC-1 replaces it): team 1 "Knight Train" before (base `7cd51b9`) 3 slots RB / RB / DEF, Fannin (TE) locked at RB2,
+  5 WR / TE and 3 units "Can't play", 13.34; after 8 slots: team QB Cincinnati Bengals QB 8.48 (= Joe Burrow's line
+  alone, 8.48), RB Jadarian Price 3.02, Breece Hall 2.97, WR/TE Egbuka 2.44, Burden 1.40, Fannin 1.10 (locked), team K
+  Los Angeles Chargers K 10.02 (= the LAC kicker's 10.02), DEF Detroit 9.22 = 38.65; bench TB QB unit 7.72, Hubbard,
+  Ferguson, Robinson, Mumpfield; can't play Lane (NFL IR) only. Free agents: 30 units (64 − 34 rostered). TMQB rule:
+  the backups' lines are not near 0 on the week-4 board (KC summed 29.24 vs Mahomes 22.78; ATL 30.35 vs Penix 17.22),
+  so the default is the starter's line (`UNIT_QB_RULE`), the sum available as `unit_lines(rule="sum")`.
+- **Tests**: `tests/test_lineup_ic2.py` (31: parse_slots for 70587 → 8 slots, eligibility table, solve seats the
+  units / RBs / WR+TE / DEF, no WR without a slot, no-slot words, Sleeper names unchanged, locks, align_starters, MFL
+  slot names, the cards copy and words); `api/tests/test_ic2.py` (8: the translation, units as players, free units,
+  My Week 8 slots with the units priced, Waivers' units, the rosters route and the Team Hub, a house league unchanged,
+  every route on 70587). `tests/test_lineup.py`: the no-slot reason's new words (3 lines).
