@@ -209,3 +209,60 @@ export function interestLabel(theirGain: number): "No deal" | "Maybe" | "Likely"
   return theirGain < 0.05 ? "No deal" : theirGain < 2 ? "Maybe" : theirGain <= 6 ? "Likely" : "Hard to say no";
 }
 // ---- end IA-2
+
+// ---- IB-2 (Wave I-B): Waivers' views, the partner card's one reason, the research pane behind a guard
+import type { Attachment } from "svelte/attachments";
+import type { WaiverView } from "./api";
+
+export const VIEW_TABS: { key: WaiverView; label: string }[] = [
+  { key: "help", label: "Help now" },
+  { key: "bye", label: "Bye coverage" },
+  { key: "stash", label: "Stashes" },
+  { key: "all", label: "All available" },
+];
+
+/** The URL's ?view= (anything else: the answer's default, else Help now). */
+export function viewOf(v: string | null | undefined, fallback: WaiverView = "help"): WaiverView {
+  return v === "help" || v === "bye" || v === "stash" || v === "all" ? v : fallback;
+}
+
+/** A partner suggestion's one reason (a fact, not the paragraph): when the gain comes, or who cannot play. */
+export function partnerReason(p: PartnerRow, span: string): string {
+  const out = p.get.find((x) => x.cannot_play);
+  if (out) return `${out.player_name} cannot play this week (${String(out.cannot_play).toLowerCase()}): the gain comes after it.`;
+  const starter = p.get.slice().sort((a, b) => (b.this_week ?? 0) - (a.this_week ?? 0))[0];
+  if (p.you_gain_week >= 0.05 && starter) return `${starter.player_name} starts for you this week: ${s1(p.you_gain_week)} now, ${s1(p.you_gain_horizon)} over ${span}.`;
+  if (p.you_gain_horizon >= 0.05) return `Nothing changes this week; your lineup gains ${s1(p.you_gain_horizon)} over ${span}.`;
+  return `Your lineup does not gain over ${span}: they do (${s1(p.they_gain_horizon)}).`;
+}
+
+// The research pane (IB-1's PlayerPane, web/src/lib/pane.svelte.ts, PANE_API.md). Behind a guard so this branch builds
+// without it: an eager glob is a static import when the file exists and {} when it does not. Without the pane a name
+// link stays a plain link to the full page (its href), and `openPlayer` goes to the full page.
+type PaneFrom = "lineup" | "waiver" | "trade" | "search" | "list";
+interface PaneOpts {
+  from?: PaneFrom;
+  context?: { name?: string | null; add?: string | null; drop?: string | null; sleeper_id?: string | null; side?: "give" | "get"; partner?: number | null };
+}
+interface PaneModule {
+  openPane?: (gsis: string, opts?: PaneOpts) => void;
+  paneLink?: (gsis: string | null | undefined, opts?: PaneOpts) => Attachment;
+}
+const paneModules = import.meta.glob<PaneModule>("./pane.svelte.ts", { eager: true });
+const pane: PaneModule | undefined = Object.values(paneModules)[0];
+
+/** True when the research pane is in the build (IB-1). */
+export const hasPane = (): boolean => typeof pane?.openPane === "function";
+
+/** The pane on a name link (`{@attach paneAt(gsis, {...})}`): a tap opens the pane, the href stays real. */
+export function paneAt(gsis: string | null | undefined, opts: PaneOpts): Attachment {
+  if (gsis && pane?.paneLink) return pane.paneLink(gsis, opts);
+  return () => {};
+}
+
+/** A whole-row tap: the pane when it is in the build, else the full page through `go` (the router's navigate). */
+export function openPlayer(gsis: string | null | undefined, opts: PaneOpts, go: () => void): void {
+  if (gsis && pane?.openPane) pane.openPane(gsis, opts);
+  else go();
+}
+// ---- end IB-2

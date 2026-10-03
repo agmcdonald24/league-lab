@@ -3632,6 +3632,88 @@ top 8 rest of season. Diagnose first, calibrate only if the numbers call for it 
   report with every table is the hand-back text. The Sleeper comparison uses a post-game snapshot (Sleeper's
   `updated_at` is just after each week's last game), not the pre-kickoff record.
 
+## Wave I-B (Iteration 17, part B)
+
+### PO merge — Wave I-B, 2026-10-03 (Saturday, 11:30–13:00 ET)
+
+* **Why**: a second reviewer walked the live beta (plan § 17 "Second review"); #1 was a trust bug the PO confirmed —
+  the I0-A overlay re-solved My Week only, so Waivers / Team / the player card / the trade board read the nightly's
+  lineup and could contradict My Week between builds. #2–#7 adopted as written.
+* **Delivered** (four Opus devs in parallel, 30–45 min each): IB-0 one availability truth —
+  `availability.roster_context(league, roster, week)` is the one read of a roster's week (the build's rows + the
+  overlay, re-solved with `lineup.solve`, cached for the overlay's interval); My Week, the opponent's total, Waivers
+  (total, weakest, drop words — never "would not start" for an overlay starter), Team, the player card's Availability
+  and the trade board all read it; `test_ib0.py` asserts one total on all four screens, overlay on and off, both
+  paths (Scrubs 113.54 / 117.02 / 117.02 / 113.54 before → 113.54 everywhere); the cards gain `status` (change / set /
+  close from Sleeper's current starters) and `strength`. IB-1 navigation by task — **My Team · Waivers · Trades ·
+  Players** (sub-tabs This week · Season · Team · League; Partners · Calculator; Trends · Matchups · Receivers · Compare
+  · Players), About in the ⋯ menu and the My Team footer, a search field in the top bar (a magnifier under 1280 px),
+  the player page inside the frame, and `PlayerPane.svelte` + `lib/pane.svelte.ts` (`openPane(gsis, {from,
+  context})`, a sheet on the phone / a 25 rem panel from 900 px, state in `?pane=&from=`, Back closes it) with the
+  contextual actions — Compare with my starter / Evaluate add / drop / Add to trade / Full page — wired on My Week's
+  lineup rows, Players, Trends' phone rows and the search field; `overflow-x: clip` so sticky works at last. IB-2
+  Waivers short — `top3` with one reason each and the claim's cost, views Help now · Bye coverage · Stashes · All
+  available (one answer, chips switch; the chip row within 1.1 phone screens on Scrubs, was ~6 desktop screens), the
+  "best alternative before a drop" line whenever the drop starts this week or next; the calculator leads with the dial
+  row and pins a verdict bar while the rosters scroll, Why? / Lineups collapsed; partner cards = package · label · gain
+  · one reason · Try it; `?add=&drop=` from the pane. IB-3 matchup meaning — Favorable / Neutral / Difficult as the
+  signal on every cell and corner (tone cut = the card's own rule, so a cell and a reason line agree), one rank
+  direction (`tough_rank`, 1 = fewest allowed; the rank in words), corner `certainty` beside the tone, no shutdown
+  badge; **Value to my lineup** leads Season (`/api/ros?view=lineup&team=&who=`: a player's gain to this roster over
+  the window, the bench *or* the best free agent filling in; a backup QB behind a healthy starter is 0 with the
+  sentence; Everyone / Yours / Free agents / Other teams); the My Week card = status chip · slot + strength · the
+  call · one reason · Compare these players · the small print behind Why?.
+* **PO**: merges in the order IB0 → IB3 → IB2 → IB1 (doc conflicts kept both; `decisions.py`: IB-0's context line then
+  IB-2's views; the ROS spec: IB-1's `sub-ros` then IB-3's `view=points` tap); IB-2's `_starts_soon` now reads IB-0's
+  `roster_context` for this week (one overlay pass, not two); the API suite sets `LEAGUE_LAB_MFL_FIXTURES` for every
+  test (IB-0's MFL cases had reached for the live host). Checks: API 316 passed, root 848, web lint / build clean,
+  **130 fixture e2e**, ruff clean. QA walk in fixture mode with Jefferson Out: My Week = Waivers = Team = 113.54,
+  the opponent 120.31 with his own changes, cards close / set / set with strengths, Waivers' top 3 with reasons,
+  Value to my lineup (Washington +38 … Jefferson +35), defense cells with tone + rank words, corner rows with tone +
+  certainty + the corners' words, the MFL league's cards with statuses.
+* **Decisions kept**: "set" = Sleeper starts the recommended player in any slot (RB1/RB2/FLEX swaps are one lineup);
+  Waivers re-prices the nightly's moves under the overlay but does not search again (a free agent who only matters
+  because of today's news waits for the next build); own players' lineup value counts the best free agent at the
+  position as the fill (a lone kicker is not worth his whole projection); the console keeps "#18 of 74, shutdown" for
+  parity while the web says it in words; the Test League fixture rosters carry no `starters`, so its cards all read
+  "change" in fixtures. Cold latency up on Waivers (~2.1 s) and Team (~1.8 s) when the overlay touches many rosters;
+  contexts are cached after the first read.
+* **Not verified until the deploy**: the sheet on real iOS Safari (88dvh, safe-area, swipe-back), the pinned verdict
+  bar under the notch, the fixed-vs-sticky bar after `overflow-x: clip`, Render latency on a Sunday with many Outs.
+
+### IB-1 2026-10-03 — navigation by task, and the research pane everywhere (branch `dev/IB1`)
+
+- **Four tabs** (`TopBar.svelte` `SECTIONS`): **My Team** (This week `/` · Season `/ros` · Team `/team` · League
+  `/league`) · **Waivers** (`/waivers`) · **Trades** (Partners `/trades` · Calculator `/trade-calc`) · **Players**
+  (Trends · Matchups · Receivers · Compare · Players). Testids `tab-myteam|waivers|trades|players`; sub-tabs keep
+  `sub-<route>` (new: `sub-week`, `sub-ros`). Every path kept (bookmarks, `/record`). Phone: the four in the bottom bar,
+  the second row under the top bar.
+- **Top bar**: the **search field** (always open from 1280 px; a magnifier under that, the field then covers the row,
+  with Cancel) → a hit opens the pane; the **overflow menu** (⋯: About the numbers, Other leagues). About also at the
+  foot of every My Team screen (`foot-about`). The wordmark shows from 640 px (the picker needs the width at 375).
+- **The player's page keeps the frame** (`App.svelte` renders it under the top bar; its own header + search are gone,
+  "‹ Back" / "‹ My week" stays); the tab you came from stays lit.
+- **The research pane** (`components/PlayerPane.svelte` + `lib/pane.svelte.ts`, contract in
+  `scratchpad/waveIB/PANE_API.md`): `openPane(gsis, {from, context})`, `closePane()`, `paneLink(gsis, opts)` (an
+  attachment for a name link); `PlayerRow` / `PlayerCard` / `LineupTable` take a `pane` prop. From 900 px a sticky
+  25rem panel beside the screen; on a phone a bottom sheet (Back / × / the dim / Escape close it). Contents: the
+  player card unit, the actions, the card's sections (`lib/card.ts`, shared with the full page), his game log.
+  Actions: `lineup` → "Compare with my starter" (bench → the weakest starter he could replace) / "Compare with my best
+  bench option" (a starter) → `/compare?a=&b=`; `waiver` → "Evaluate add / drop" → `/waivers?add=&drop=` (IB-2 reads
+  `add`); `trade` → "Add to trade" → `/trade-calc` ticked; always "Full page". In the URL as `?pane=&from=`; the first
+  pane is a history entry (Back closes it), a swap replaces it, "Full page" replaces it (Back lands on the screen).
+- **Wired**: My Week's lineup and full-lineup names, Players' list names, the search field, Trends' rows on a phone
+  (the sheet instead of the page; desktop keeps Trends' own detail beside the list).
+- **Fix found on the way**: `html, body { overflow-x: hidden }` made `<body>` a scroll box, so no `sticky` element
+  stuck (ListDetail's detail never did either) → `overflow-x: clip` (hidden kept as the fallback).
+- **E2e renames (mechanical)**: `tab-ros` → `sub-ros`; `tab-about` → ⋯ then `menu-about`; `tab-research` →
+  `tab-players`; `tab-decisions` → `tab-waivers` / `tab-trades` / `tab-myteam`; a lineup name → the pane, then
+  `pane-full`; `app.spec.ts`'s search → the top bar's field then `pane-full`; `measure.spec.ts` taps the cards' names
+  only (the lineup's open the pane). The top bar's placeholder is "Search players" (IA-1 keeps "Find a player" off
+  Compare).
+- **Checks**: web lint (eslint + svelte-check 151 files, 0 / 0) and build clean; `npm run e2e:fixtures` 110 / 110
+  (100 existing + 10 new in `web/e2e/ib1/`, 375 and 1300 px). No API or Python change.
+
 ## Next concrete actions
 
 1. **Andrew (S-01a)**: review the commit, then `make build` on the Mac (≈2.5 min; the 08:00 nightly would do it too)
@@ -3826,3 +3908,184 @@ twice doesn't make any sense", "some of the trades it's suggesting are crazy" (J
   changes some suggestions; window variants; `trades_lists_*`; `trade_lists` dropped from the waivers fixtures; the
   evaluate fixtures re-saved, plus one "tick" variant per league, `ia2_packages.json`); `web/e2e/ia2/` 16 (8 × phone
   at 375 px and desktop); G4's trades test and the tab-row test, H1's buy-low tests follow the move.
+
+## Wave I-B (Iteration 17, part B)
+
+### IB-0 2026-10-03 — one availability truth (branch `dev/IB0`, clone `league_lab_i0a`)
+
+The second review's #1: I0-A's overlay re-solved the lineup on My Week only; Waivers' "would not start", the Team Hub,
+the player card's lineup line and the trade board read the nightly's `ops.lineups`, so between a build and the next
+morning two screens disagreed (115.75 vs 117.3 on the live app).
+
+- **One context** (`api/league_lab_api/availability.py`, `# ---- IB-0`): `roster_context(league, roster, week)` = the
+  nightly's rows (`cards.lineup_rows`; any other league `anyleague.lineup_rows`) + `apply_to_rows` (the overlay, the
+  lineup re-solved by `lineup.solve` when a status changed since the build). Every rostered player's `status` (OUT /
+  DOUBTFUL / IR / Q / ok), `can_play`, `starter`, `slot`, `value`, `locked`; `lineup_value`, `changes`, `checked_at`,
+  `as_of_build`. Kept in process for the overlay's interval (at most 10 min; 2 min on demand), keyed by league, roster,
+  week, the overlay's stamp and the build. `touched()` names the rosters the overlay can move (a starter or bench player
+  who cannot play by a copy newer than the build); `contexts()` reads several side by side (4 threads).
+- **Readers**: My Week (both paths) and the opponent's projected total (his context; I0-A left it); Waivers (the total,
+  the weakest starter, and `moves_on_context`: each move's this-week gain, lineup before / after, seat, displaced
+  starter and the drop's cost re-solved on the context, the later weeks kept, moves that no longer gain dropped, the
+  ranks re-run with `waivers.rank_moves`' order, the page's sentences written after; `drop_words`: a drop who starts
+  this week carries `starts_this_week` / `slot_this_week` and is never "would not start"); the Team Hub (lineup / bench
+  / horizon value, the closest call, slot strengths, the roster, this week's league comparison and every rank, re-read
+  for each roster the overlay moved); the player card (its lineup line reads the context; Availability adds "Justin
+  Jefferson is out (ankle): he starts at FLEX2 this week" / "Not in this week's lineup: …" when the overlay moved his
+  roster, and the injury line shows the overlay's status when newer than the build); the trade board (this week's rows
+  of every roster the overlay moved are its context's, before I0-A's `horizon_overlay`). ROS and Trends unchanged
+  (already on the overlay).
+- **The card's status** (`app/lib/cards.py`, both apps): `cards.decisions` adds `strength` (clear: 3+ points or
+  p_win ≥ 0.7; coin flip: `is_coin_flip`; else lean) and, when the rows carry `cards.SLEEPER_STARTER` (who Sleeper
+  starts now), `status`: close (a coin flip) / set (Sleeper starts him and not the other player) / change. The API fills
+  the column from Sleeper's roster `starters` (house leagues fall back on `mart_player_availability.is_current_starter`);
+  each My Week card carries `status`, `strength`, `in_sleeper_lineup`. Rendering unchanged (IB-3 draws it).
+- **Croskey-Merritt on the clone** (Scrubs roster 2, 2026-10-02 build, ESPN fixture: Jefferson Out). Before (main):
+  My Week 113.54 (Michael Wilson 9.20 starts at FLEX2, Croskey-Merritt 9.19 bench 3) · Waivers 117.02, weakest FLEX2
+  Tuten 9.72, "Claim Alvin Kamara: +0.0 this week at FLEX2, +9.1 over the next 4 weeks" · Team 117.02 "6th of 10",
+  closest call "FLEX2, Tuten over Wilson by 0.52" · calculator before 113.54 · his card "on MacZaddy's bench (4 of 5) …
+  would have to beat Tuten (9.72), 0.53 more". After: all four 113.54 · Waivers weakest FLEX2 Wilson 9.20 over
+  Croskey-Merritt by 0.01, Kamara "+0.6 this week at FLEX1, +9.6" · Team "113.5 — 5th of 10", "FLEX2, Michael Wilson
+  over Jacory Croskey-Merritt by 0.01" · his card "on MacZaddy's bench (3 of 3) … would have to beat Michael Wilson
+  (9.20)". The review's case (Wilson Out too, `test_ib0`'s `wilson_out`): Croskey-Merritt starts at FLEX2, all four
+  113.53; his card "**Justin Jefferson is out (ankle): he starts at FLEX2 this week.**" and "starts at FLEX2 … he is
+  a must-start"; Waivers' only drop of him reads "Dropping Jacory Croskey-Merritt costs your lineup 9.2 over the next 4
+  weeks" (main: six moves said he "would not start"). Test League roster 10: 95.41 on all four (main: 123.09 on
+  Waivers / Team); dynasty 12: 111.15 (the opponent 131.91 → 130.88); MFL 21861 team 4: 116.80 (122.41 off).
+- **Evidence**: `api/tests/test_ib0.py` 21 passed (the four-screen equality × {Scrubs, dynasty, Test League, Scrubs on
+  demand, MFL} × overlay on / off; the opponent; the cache; Waivers never "would not start" for an overlay starter,
+  both paths; the player card, both paths; the trade board; status change / set / close on a frame and on the fixture
+  cards: set = Scrubs FLEX2 Tuten, change = dynasty Superflex Penix, close = dynasty RB2 E. Wilson; the drop sentence).
+  API suite 290 passed (269 + 21; I0-A's 19 green, parity green); root suite 847 passed, 2 skipped (the clone has no
+  `ops.player_prior_oof` / archived schedules); ruff clean; web lint / build clean (types only: `web/src/lib/api.ts`,
+  `// ---- IB-0` fields on `DecisionCard`, `Opponent`, `WaiverDrop`, `Waivers`, `Team`). Latency (shared sandbox, cold, Scrubs, overlay on vs off): Waivers ≈ 2.1 s vs 1.2 s, Team
+  ≈ 1.8 s vs 0.5 s (9 of 10 rosters touched by the fixture feed; read once, then kept); My Week unchanged.
+- **Not covered**: a free agent who becomes worth a claim only because of the overlay (the build's moves are re-priced,
+  not re-searched; the next nightly finds him); a player the build sat as Out who is back does not mark another roster
+  as touched on Team / the trade board (his own roster's context still re-solves).
+
+### IB-3 2026-10-03 — matchup meaning first, "Value to my lineup", the card's default content (branch `dev/IB3`, clone `league_lab_m1`)
+
+**Why.** The second review (#3, #6, #7): rank numbers led the Matchups screen and ran in opposite directions
+(defense #1 = gives up the most, corner #1 = hardest to throw on); a "shutdown" badge said more than a lean of the
+targets supports; the Season screen led with "who scores the most", so backup QBs ranked high with no word about
+their use to the roster; the My Week cards repeated names and numbers and did not say whether anything had to change.
+
+* **Matchups** (`research.py` IB-3 block: `defense_meaning`, `cb_meaning`; `Matchups.svelte`, `Heatmap … tones`,
+  `research.ts`): every defense-vs-position row gets `tone` (favorable / neutral / difficult: the 10 of 32 that give up
+  the most / the fewest, the card's reason-line cut), `tough_rank` (1 = gives up the fewest), `rank_words`; every
+  cornerback call gets `certainty` (likely / unclear / no call from `call_strength`), `tone` (the named corner's
+  quarter; an unclear call only when every named corner is ranked and agrees, else neutral; none when no ranked corner
+  is named), the corners with their rank in words ("the 18th-hardest of 74 starting corners to throw on"), `history`;
+  both answers `rank_note` ("#1 = the toughest for the offense"). The screen: a tone chip per starter (the word in the
+  state color, ▲ / ▼, the rank small and grey under it), the heatmap filled by tone with a three-tone legend, the
+  answer in words ("vs IND, who gives up the 2nd-most to RBs: favorable"), each cornerback card with the tone and its
+  certainty beside it and no shutdown badge. The mart columns and `app/lib/matchups`' `line` are unchanged (parity).
+* **Value to my lineup** (`ondemand.py` IB-3 block: `lineup_values`, `ros_lineup_view`; `GET /api/ros?view=lineup&team=
+  &who=all|mine|fa|others`; `Ros.svelte`, `ros.ts`): the ROS screen opens on it when a team is picked (a toggle: Value
+  to my lineup · Who scores the most; `?view=points` in the URL), with Everyone / Yours / Free agents / Other teams.
+  Definition (METRICS § "Value to my lineup"): the trade engine's ROS board, week by week; one of yours = what the
+  lineup loses without him (bench or the best free agent at his position fills in), anyone else = what he adds, nobody
+  dropped; one sentence per row. IA-3's pieces, "why this number" and the market line stay on both views.
+* **My Week card** (`MyWeek.svelte` card markup, `week.ts`): status chip first (Change needed / Already set / Close
+  call — `card.status ?? derived`: close on `is_coin_flip`'s rule, set / change from the lineup rows'
+  `is_current_starter` when the API sends it, no chip otherwise), the slot and the strength word (Clear / Lean / Coin
+  flip — `card.strength ?? derived`), the call in one line with both names, IA-1's reason (last names), "Compare these
+  players" (`/compare?a=&b=`), and the odds / ranges / numbers behind "Why?".
+
+**Numbers** (clone `league_lab_m1`, week 4). Scrubs roster 2, yours by value over weeks 4–16: Washington +38,
+McMillan +37, K. Williams +36, Jefferson +35, Hampton +33, Kelce +18, Mahomes +8.9 (a free agent QB is close), Tuten
++4.9, M. Wilson +2.0, then McLaughlin and the Chiefs 0 (a free kicker / defense projects as much: "Starts for you in
+12 of 13 weeks left, but the best free agent at K projects as much"), Ferguson 0, Shough 0 ("Your QB2 only plays in
+week 5, and the best free agent would score as much then"), Bryce Young 0 ("Your backup QB never starts for you
+behind Mahomes"). Everyone: Bijan Robinson +129 (on Run Bijan Run) first. Dynasty roster 12 (superflex): St. Brown
++93, Washington +56, Willis +29 … no bench QB called "QB2". Timings in process: Scrubs 3.1 s cold / 0.4 s warm, dynasty
+0.6 s, Test League (on demand) 6.7 s cold. Tones (Scrubs, 160 cells): 50 favorable / 61 neutral / 49 difficult.
+
+**Checks.** `api/tests/test_ib3.py` 19 passed (the cut points and their scaling, the words, the corner rules; on both
+house leagues one direction on both routes and a label beside every call; a backup QB below every starter for Scrubs 2
+and the Test League; the value machinery; 400 without a team; the saved cards carry change / set / close and the web's
+constants equal `cards.py`'s). API suite 288 passed (269 + 19); ruff clean; web lint / build clean; `npm run
+e2e:fixtures` 106 passed (100 + 6: `web/e2e/ib3/`, 3 × 375 / 1300). Shared specs follow the new defaults (the ROS tests tap "Who scores the most" or open
+`?view=points`; the Matchups answer and the cornerback line in the new words). Fixtures: `web/fixtures/save_ib3_fixtures.py`
+(matchups in place from the API's own functions; `ros-lineup_*` from the API in process; `status` / `strength` on the
+house leagues' saved cards as IB-0 computes them, `is_current_starter` on the Test League's rows so the web derives).
+
+**Decisions for the PO.** (1) A player of yours is valued against the bench *or* the best free agent at his position
+(a lone kicker is worth his edge over the waiver wire); the brief said "the margin over the next-best at his slot".
+(2) Anyone else's gain assumes a bench spot (nobody dropped), the trade engine's fill rule. (3) The lineup view is a
+`view=` on `/api/ros` (one screen, one route); it needs `team` (400 otherwise). (4) "Who scores the most" stays the
+view without a team. (5) Heatmap: the cell's fill is the tone, the number still printed (points a game), ▲ / ▼ in the
+cell. (6) The console and `cb_line` keep "#18 of 74, shutdown" (parity); the web composes its own corner lines.
+(7) `Heatmap.svelte` (no owner listed) got an additive `tones` prop.
+
+### IB-2 2026-10-03 — Waivers short, the trade builder with the decision in view (branch `dev/IB2`, clone `league_lab_ia3`)
+
+The second review (#5): Waivers ran six desktop screens; the trade builder lost the verdict while you browsed rosters;
+nothing showed the waiver alternative before suggesting you give up a useful player.
+
+- **API** (`decisions.py`, block "IB-2", one hook line in `waivers` after I0-A's overlay): `/api/waivers` gains `top3`,
+  `views`, `default_view`. *Top 3*: the best-drop claims by lineup gain over the horizon, one per position (two defenses
+  compete for one slot), the overlay's "cannot play" and one-QB-per-team rules applied; each `{move, reason, cost, gain,
+  gain_label, this_week}`. *One reason* (`_reason`, one fact): the role ("Starts at K this week over McLaughlin (8.1)",
+  "Fills your empty RB2 …"), the bye ("Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye" — only when a
+  player he could stand in for is away), the stash's role change, the flyer, else the weeks it helps. *Cost*: "Drop X:
+  he sits anyway" / "costs your lineup 21.6 over weeks 4–7" / "he starts for you this week" / "No drop: an open spot".
+  *Views*: `help` (claims with this week's gain ≥ 0.05, most first, ≤ 8), `bye` (the next week after this one where a
+  bye leaves a starting slot empty — `mart_league_roster_horizon` / the on-demand solve's `role = 'empty'` — and the
+  claims that gain most that week; else "Your bench covers every bye through week N" + the cover claims), `stash` /
+  `all` (counts; the lists are the existing `upside` and `free_agents`). **One answer carries every view** (my call, not
+  `view=`): a chip switches with no request (instant on a phone, the on-demand league solved once, one cache entry per
+  position, the saved fixtures one per position as before). *The alternative before a drop*: every move object in the
+  answer (top 3, views, `moves`, `cards`) whose drop starts this week or next gets `drop_starts {weeks, slot, text}` and
+  `keep_alternative {move, line}` — the best claim at the same position whose drop sits (or needs no drop), from the
+  full add × drop table the sweep already priced: "Or drop Croskey-Merritt instead (he sits) and keep Kansas City
+  Chiefs: +9.7 over weeks 4–7"; none: "No free agent at DEF helps without dropping a starter …". "Starts" = this week
+  the lineup My Week shows (`cards.lineup_rows` / `anyleague.lineup_rows` + `availability.apply_to_rows`: a player who
+  starts because a teammate is Out counts), next week the horizon's solved lineup (`_starts_soon`; IB-0's
+  `roster_context` replaces its first half in integration).
+- **Web**: Waivers = the answer (the first move's sentence) + one lineup line (Wave G's four tiles folded into it) → the
+  three moves (`ClaimCard.svelte`: the claim, the gain, one reason, the cost, the warn box with the alternative) →
+  `Chips` Help now · Bye coverage · Stashes · All available (`?view=`, rewritten in place; the default leaves the URL)
+  → the view → "How to read this". `?add=&drop=` (the pane's "Evaluate add / drop") shows that claim first, or picks the
+  free agent in All available. Wave G's `MoveCard.svelte` and the "more claims" expander are gone (Help now is that
+  list). Trade calculator: the decision first (the dial's row: the dial, the four lineup-impact tiles, the verdict);
+  once it scrolls away a **verdict bar** is pinned to the top (the package in last names, the dial's label + score,
+  "You +x"; open on desktop, a tap opens it on a phone); "Why?" (the headline, market, rest of season, ranks, roster
+  size, week by week) and "Lineups" (yours, theirs under its own expander) collapsed. Trades' partner cards: the
+  package, "They: <label>", your gain over the window, one reason (`partnerReason`: who cannot play, who starts for you
+  this week, or when the gain comes), Try it (Wave G's two bars and the market line dropped). The research pane:
+  `decisions.ts` imports IB-1's `lib/pane.svelte.ts` through an eager `import.meta.glob` (a static import when the
+  file exists, `{}` when not — this branch builds without it): `paneAt` on the claim cards' and partner cards' names,
+  `openPlayer` on a free agent's row on a phone (desktop keeps the detail beside the list) and on a name in the
+  calculator's roster lists ("Add to trade": `{from: "trade", sleeper_id, side, partner}`); without the pane the links
+  stay links.
+- **Evidence** (this clone; the API suite's overlay off unless said): Scrubs roster 2 — top 3 Allgeier (RB, +9.85, "Fills
+  your empty RB2 in week 7 …", drop Croskey-Merritt: sits), New York Giants (DEF, +9.66, drop Kansas City Chiefs: he
+  starts this week → "Or drop Croskey-Merritt instead (he sits) and keep Kansas City Chiefs: +9.7 over weeks 4–7"),
+  Daniel Carlson (K, +4.03, drop McLaughlin: starts this week and next → keep him, drop Croskey-Merritt: +4.0); Help
+  now 8 (Reichard +2.21 this week first); Bye coverage week 5: the DEF slot empty (the Chiefs' bye), 8 DEF claims
+  (Falcons +8.3 that week); 4 of the 50 paged moves drop a starter, all 4 carry the line. Overlay case (Jefferson +
+  Michael Wilson forced Out): Croskey-Merritt starts this week, so every claim dropping him gets the warning and the
+  keep-him alternative; with the overlay off none does. Test League roster 9 (on demand): every claim drops Marvin
+  Harrison Jr., who sits — no line; with the WR / TE starters ahead of him forced Out, each says he starts and offers
+  the alternative; in the web fixture (the ESPN fixture's overlay on: Mayfield Out) the top claim is C.J. Stroud for Kyler
+  Murray, who starts — with "Or drop Harrison Jr. instead (he sits) and keep Murray: +22.1 over weeks 4–7". Dynasty 12 /
+  Test League 3: nothing to claim (`top3` empty, Help now says the notice). Page length
+  (default view): phone 375 × 812 — the chip row at 1113 px (Scrubs), 989 (Test League 9), 363 (dynasty), the bound
+  1624; desktop 1300 × 900 — Scrubs 2001 px tall (2.2 screens; the review counted six). Latency: `views_ms` 150 ms
+  (house), the on-demand starters re-use the league solve.
+- **Checks**: `api/tests/test_ib2.py` 7 (the alternative and its "none" line on a constructed table, one reason = one
+  fact, the top 3 / views / alternative on Scrubs against `mart_waiver_moves` and `mart_league_roster_horizon` read
+  independently, every Scrubs roster's invariant, dynasty's nothing, the Test League on demand with and without forced
+  Outs, the overlay case); API suite 276 passed (269 + 7); ruff clean; web lint / build clean; fixture e2e 114 (100 + 14:
+  `web/e2e/ib2/`, 7 × phone at 375 × 812 and desktop) — Wave G's waivers test, H1's stash tests (`&view=stash`) and
+  IA-2's calculator tests (the chip is in the verdict bar; the lineups open from "Lineups") follow the layout.
+  Fixtures: `web/fixtures/save_ib2_fixtures.py` merges `top3` / `views` / `default_view` and the two move fields into
+  the saved waivers answers (nothing else in them changes) and saves `waivers_9000000000000000001_9_ALL.json` whole.
+- **Found**: `html, body { overflow-x: hidden }` (`app.css`) makes `body` the sticky container, so `position: sticky`
+  never sticks on any screen (ListDetail's `wide:sticky` detail included; IA-2's bottom chip only ever showed in
+  place). The verdict bar uses `position: fixed`; `overflow-x: clip` would fix sticky everywhere (a design-system call
+  for the PO, DESIGN.md says so). The fixture savers' `os.environ.pop("LEAGUE_LAB_ESPN_FIXTURES")` is undone by
+  `settings.py`'s `load_dotenv(override=False)` when the worktree's .env sets it: IA-2's saved answers were taken with
+  the overlay on; `save_ib2_fixtures.py` sets the ESPN fixture explicitly so it reproduces.

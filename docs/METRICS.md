@@ -1220,6 +1220,48 @@ scales compare), the number = points allowed per game; your starters' opponents 
 cell where your starter plays ringed; the other defenses by their mean rank across the positions. Ranked bars = one
 position, every defense ranked, yours solid and labelled with the value and rank. "Only your opponents" is on by
 default at the Phone level. The table behind both stays in the expander.
+## Matchups: the tone and one rank direction (IB-3, Wave I-B, 2026-10-03; `research.defense_meaning` / `cb_meaning`)
+
+The screen's main signal is a tone — **favorable / neutral / difficult** — and every rank on it runs one way:
+**1 = the toughest for the offense**. Display only: the marts keep their own ranks (`rank_std`: 1 = gives up the
+most; `quality_rank`: 1 = hardest to throw on) and the console keeps its words.
+
+* **Defense vs position** (`/api/matchups/defense`, each team × position row): `n_ranked` = the defenses ranked at
+  the position (`rank_std` not null); `tough_rank = n_ranked + 1 − rank_std` (1 = gives up the fewest points a game to
+  the position this season, this league's scoring); `tough_rank_l4` the same on the last-4 rank. **Tone**: edge =
+  round(n × 10 / 32) (10 of 32): `rank_std ≤ edge` → favorable, `rank_std ≥ n + 1 − edge` → difficult, else neutral —
+  the same cut as the decision card's reason line (`cards.reason_pieces`: rank ≤ 10 "gives up the Nth-most", ≥ 23
+  "the Nth-fewest"), so a card and a cell never disagree. `rank_words`: the nearer end in words ("gives up the
+  2nd-most points to running backs" / "the 3rd-fewest").
+* **Cornerbacks** (`/api/matchups/cb`, each receiver): `cover_rank` already runs 1 = hardest to throw on.
+  **Certainty** from the mart's call: `call_strength = 'clear'` (his located targets lean 15+ points to one side) →
+  *likely*; `'even'` → *unclear* (either outside corner, both named); no call (`tight end`, `too few targets`, `no depth
+  chart yet`) → *no call*. **Tone** from the named corner's quarter (`quality_label`: shutdown → difficult, solid →
+  neutral, target → favorable): on a *likely* call the likely corner's; on an *unclear* call the shared tone only when
+  every named corner is ranked and they agree, else neutral (never the stronger of the two); no ranked corner named →
+  none ("No read": unknown is not neutral). A corner's rank is said in words ("the 17th-hardest of 74 starting corners
+  to throw on", the nearer end) with the certainty beside it; no "shutdown" badge.
+* Tests: `api/tests/test_ib3.py` (the cut points, the scaling with n, the words, the corner rules; on both house
+  leagues: `tough_rank` 1 = the fewest points allowed, difficult at the small ranks on both routes).
+
+## "Value to my lineup" (IB-3, Wave I-B, 2026-10-03; `ondemand.lineup_values`, `/api/ros?view=lineup&team=`)
+
+What a player is worth to **one roster's best lineup** over the weeks left (this week to the league's final), summed
+week by week on the trade engine's rest-of-season board (`decisions.window_board(ctx, "ros")`: the four-week lineup
+horizon, then the rest-of-season per-week projections; byes, the IR slot, NFL injured reserve as there; IB-0's
+availability overlay through the board), each week solved with the waiver engine (`waivers.prepare` / `entry_bar` /
+`_what_if` on `lineup.solve`'s matching):
+
+* **one of yours**: what the lineup loses without him = total − max(the best lineup without him, the best lineup
+  without him plus the best free agent at his position that week) — his edge over the next-best who would take his
+  place, bench or waiver wire (a lone kicker is worth his edge over the best free kicker, not his whole projection);
+* **anyone else** (free agent or another roster's): what he adds if he were on your roster, nobody dropped (a bench
+  spot is assumed): Σ max(0, his value − the entry bar of the slots he can play). A free agent's weeks are his
+  rest-of-season projection; Out / Doubtful this week (the overlay) → nothing this week; IR / PUP / suspended → nothing.
+* `lineup_points` (≥ 0), `lineup_weeks` (weeks he starts, or would), `lineup_kind` (mine / fa / others), `lineup_why`
+  (one sentence). Ranked by `lineup_points`, then `lineup_weeks`, then rest-of-season points. A backup QB in a one-QB
+  league is 0 except in his starter's bye week (and 0 then too when a free agent would outscore him).
+
 ## Role alerts (ra1.1 rule, version ra1.2 since 2026-10-01; plan R-10, 2026-09-30; `league_lab.signals`, `ops.player_role_alerts`, `mart_player_role_alerts`)
 
 **Question.** Has a player's *role* changed in his last one to three games, and why — before his points show it?

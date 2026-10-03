@@ -20,6 +20,12 @@ async function tap(page: Page, loc: Locator, isMobile: boolean) {
   else await loc.click();
 }
 
+// IB-1 (Wave I-B): About the numbers is in the top bar's overflow menu (⋯), not a tab
+async function openAbout(page: Page, isMobile: boolean) {
+  await tap(page, page.getByTestId("overflow"), isMobile);
+  await tap(page, page.getByTestId("menu-about"), isMobile);
+}
+
 async function shot(page: Page, name: string, project: string, full = true) {
   await page.screenshot({ path: join(SHOTS, `f2_${name}_${project}.png`), fullPage: full });
 }
@@ -97,7 +103,9 @@ test("a stranger: password → username → picker → My Week → player → Ba
   const y = await page.evaluate(() => window.scrollY);
   expect(y).toBeGreaterThan(0);
   const h0 = await page.evaluate(() => history.length);
-  await tap(page, link, isMobile);
+  await tap(page, link, isMobile); // IB-1: a lineup name opens the research pane; "Full page" his page
+  await expect(page.getByTestId("pane")).toBeVisible();
+  await tap(page, page.getByTestId("pane-full"), isMobile);
   await expect(page).toHaveURL(new RegExp(`/player/00-0037744\\?league=${TEST_LEAGUE}&team=3$`));
   await expect(page.getByTestId("player-name")).toHaveText("Trey McBride");
   expect(await page.evaluate(() => history.length)).toBe(h0 + 1);
@@ -116,13 +124,17 @@ test("a stranger: password → username → picker → My Week → player → Ba
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(y);
 
   // 7. rest of season: the answer first, then yours, then the list; K / DEF because this league starts them
-  await tap(page, page.getByTestId("tab-ros"), isMobile);
+  await tap(page, page.getByTestId("sub-ros"), isMobile); // IB-1: My Team · Season
   await expect(page).toHaveURL(new RegExp(`/ros\\?league=${TEST_LEAGUE}&team=3$`));
+  // IB-3: "Value to my lineup" leads with a team picked; "Who scores the most" is the second view
+  await expect(page.getByTestId("ros-title")).toHaveText("Value to my lineup");
+  await tap(page, page.getByTestId("ros-view-points"), isMobile);
+  await expect(page).toHaveURL(new RegExp(`/ros\\?league=${TEST_LEAGUE}&team=3&view=points$`));
   await expect(page.getByTestId("ros-answer")).toContainText(/^#1 overall for the rest of the season: .+ \((QB|RB|WR|TE)\), \d+ points over \d+ games/);
   await expect(page.getByTestId("ros-pos-K")).toBeVisible();
   await expect(page.getByTestId("ros-pos-DEF")).toBeVisible();
   await tap(page, page.getByTestId("ros-pos-WR"), isMobile);
-  await expect(page).toHaveURL(new RegExp(`/ros\\?league=${TEST_LEAGUE}&team=3&position=WR$`));
+  await expect(page).toHaveURL(new RegExp(`/ros\\?league=${TEST_LEAGUE}&team=3&view=points&position=WR$`));
   await expect(page.getByTestId("ros-answer")).toContainText(
     "#1 WR for the rest of the season: Puka Nacua, 185 points over 12 games (likely 150–219) · playoffs: 30.",
   );
@@ -136,7 +148,7 @@ test("a stranger: password → username → picker → My Week → player → Ba
   await shot(page, "ros_test", project, false);
 
   // 8. about the numbers (the record folded in, Wave G): an unknown league has none, said in plain words
-  await tap(page, page.getByTestId("tab-about"), isMobile);
+  await openAbout(page, isMobile);
   await expect(page).toHaveURL(new RegExp(`/about\\?league=${TEST_LEAGUE}`));
   await expect(page.getByTestId("model-learned")).toBeVisible();
   await expect(page.getByTestId("record-empty")).toContainText("No record for Test League. The record is kept for the leagues the nightly scores.");
@@ -174,14 +186,15 @@ test("a house league through the picker: opponent, a card's name, all five secti
   await shot(page, "player_dyn12", project);
   await page.goBack();
   await expect(page.getByTestId("team-name")).toHaveText("Shake & Bake");
-  await tap(page, page.getByTestId("tab-ros"), isMobile);
+  await tap(page, page.getByTestId("sub-ros"), isMobile); // IB-1: My Team · Season
   await expect(page.getByTestId("ros-answer")).toBeVisible();
   await expect(page.getByTestId("ros-pos-K")).toHaveCount(0); // the dynasty starts no kicker / defense
   await expect(page.getByTestId("ros-pos-DEF")).toHaveCount(0);
+  await tap(page, page.getByTestId("ros-view-points"), isMobile); // IB-3: the scoring view (the lineup view leads)
   await tap(page, page.getByTestId("ros-pos-WR"), isMobile);
   await expect(page.getByTestId("ros-yours")).toContainText("Amon-Ra St. Brown");
   await shot(page, "ros_dyn12", project, false);
-  await tap(page, page.getByTestId("tab-about"), isMobile);
+  await openAbout(page, isMobile);
   await expect(page.getByTestId("record-answer")).toContainText("Through week 3, we called 63 of 107 start/sit calls right; Sleeper's numbers called 58.");
   await expect(page.getByTestId("record-answer")).toContainText("Where we and Sleeper disagreed (19 calls), we were right 12 times and Sleeper 7.");
   await expect(page.getByTestId("record-table").locator("tbody tr")).toHaveCount(3);
@@ -195,13 +208,14 @@ test("a shared link wins (no username needed); Scrubs: K and DEF in rest of seas
   await page.goto(`/?league=${SCRUBS}&team=2`);
   await expect(page.getByTestId("team-name")).toHaveText("MacZaddy");
   await expect(page.getByTestId("opponent-line")).toHaveText("Week 4 vs Daejon Loves PR team, projects 115 — you project 117");
-  await tap(page, page.getByTestId("tab-ros"), isMobile);
+  await tap(page, page.getByTestId("sub-ros"), isMobile); // IB-1: My Team · Season
+  await tap(page, page.getByTestId("ros-view-points"), isMobile); // IB-3: the scoring view (the lineup view leads)
   await expect(page.getByTestId("ros-pos-K")).toBeVisible();
   await tap(page, page.getByTestId("ros-pos-K"), isMobile);
   await expect(page.getByTestId("ros-answer")).toContainText("#1 K for the rest of the season:");
   await page.goto(`/record?league=${SCRUBS}&team=2`); // a Wave F link still opens it
   await expect(page.getByTestId("about")).toBeVisible();
-  await expect(page.getByTestId("tab-about")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("menu-about")).toHaveAttribute("aria-current", "page");
   await expect(page.getByTestId("record-empty")).toContainText("No week on the record yet.");
   await shot(page, "record_scrubs_empty", project, false);
   // the league select's last option opens the sign-in / picker; "‹ My week" comes back to the same team
@@ -281,7 +295,7 @@ test("Trends: the answer first (below / above expectation), the gap bars, filter
   await expect(page.getByTestId("answer")).toContainText("Above expectation: Jaxon Smith-Njigba (getting the targets of a 20.0-point player, scoring 39.4: 4 touchdowns in 2 games on 6 red-zone targets).");
   await expect(page.getByTestId("card-due")).toContainText("−11.7");
   await expect(page.getByTestId("card-hot")).toContainText("+19.4");
-  await expect(page.getByTestId("tab-research")).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("tab-players")).toHaveAttribute("aria-current", "page");
   await expect(page.getByTestId("sub-trends")).toHaveAttribute("aria-current", "page");
   const rows = page.getByTestId("trends-list").getByTestId("player-row");
   await expect(rows).toHaveCount(30);
@@ -319,7 +333,8 @@ test("Trends: the answer first (below / above expectation), the gap bars, filter
 test("Matchups: your starters' best and toughest, the heatmap with your cells ringed, the cornerbacks your receivers face", async ({ page, isMobile }) => {
   await page.goto(dyn("/matchups"));
   await expect(page.getByTestId("matchups-answer")).toContainText(
-    "Best matchup in your lineup: Jacory Croskey-Merritt (RB) vs IND, #2 vs RB; toughest: Denzel Boston (WR) vs PIT, #31 vs WR.",
+    // IB-3: the tone first, the rank in words (1 = toughest for the offense everywhere)
+    "Best matchup in your lineup: Jacory Croskey-Merritt (RB) vs IND, who gives up the 2nd-most to RBs: favorable. Toughest: Denzel Boston (WR) vs PIT, who gives up the 2nd-fewest to WRs: difficult.",
   );
   await expect(page.getByTestId("starters").getByTestId("player-row")).toHaveCount(8);
   await expect(page.getByTestId("heatmap").getByTestId("heat-row")).toHaveCount(32);
@@ -328,7 +343,7 @@ test("Matchups: your starters' best and toughest, the heatmap with your cells ri
   await expect(page.getByTestId("heatmap").getByTestId("heat-row").first()).toHaveAttribute("data-row", /IND|LAC|CAR|NO|CIN|DEN|PIT|SF/); // yours first
   const cbs = page.locator('[data-testid="cb-section"] > [data-testid="cb-card"]'); // your starting receivers (the bench is behind an expander)
   await expect(cbs).toHaveCount(3); // IA-1: the tight end is left out, not explained
-  await expect(cbs.nth(1)).toContainText("Parker Washington vs CIN: likely across from DJ Turner II (right corner, #18 of 74, shutdown)");
+  await expect(cbs.nth(1)).toContainText("Likely across from him: DJ Turner II (right corner): the 18th-hardest of 74 starting corners to throw on"); // IB-3
   await expect(cbs.nth(1).getByTestId("side-bar")).toContainText("Left 47%");
   await expect(page.getByTestId("cb-section")).not.toContainText("tight ends mostly draw linebackers and safeties");
   await noSidewaysScroll(page);
@@ -418,18 +433,21 @@ test("the decisions tabs say what is coming; the bottom bar on a phone, the top 
   const bar = (await page.getByTestId("tabs").boundingBox())!;
   if (isMobile) expect(bar.y + bar.height).toBeGreaterThan(page.viewportSize()!.height - 2);
   else expect(bar.y).toBeLessThan(80);
-  await tap(page, page.getByTestId("tab-decisions"), isMobile);
+  await tap(page, page.getByTestId("tab-waivers"), isMobile); // IB-1: the four tabs by task
   await expect(page).toHaveURL(/\/waivers\?/);
   await expect(page.getByTestId("waivers")).toBeVisible();
-  for (const s of ["trades", "team", "league"]) await expect(page.getByTestId(`sub-${s}`)).toBeVisible();
-  await tap(page, page.getByTestId("tab-research"), isMobile);
+  await tap(page, page.getByTestId("tab-trades"), isMobile);
+  for (const s of ["trades", "trade-calc"]) await expect(page.getByTestId(`sub-${s}`)).toBeVisible();
+  await tap(page, page.getByTestId("tab-myteam"), isMobile);
+  for (const s of ["team", "league"]) await expect(page.getByTestId(`sub-${s}`)).toBeVisible();
+  await tap(page, page.getByTestId("tab-players"), isMobile);
   await expect(page).toHaveURL(/\/trends\?/);
 });
 
 // every screen, light and dark, at this project's size: no sideways scroll, the screen's answer on screen; screenshots
 const SCREENS: { name: string; url: string; ready: string }[] = [
   { name: "week", url: dyn("/"), ready: "decision-card" },
-  { name: "ros", url: dyn("/ros", "&position=WR"), ready: "ros-answer" },
+  { name: "ros", url: dyn("/ros", "&position=WR&view=points"), ready: "ros-answer" }, // IB-3: the scoring view (lineup: ib3)
   { name: "player", url: `/player/00-0036963?league=${DYNASTY}&team=12`, ready: "game-log-answer" },
   { name: "trends", url: dyn("/trends"), ready: "trends-answer" },
   { name: "matchups", url: dyn("/matchups"), ready: "cb-card" },

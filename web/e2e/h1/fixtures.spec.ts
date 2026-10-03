@@ -26,7 +26,7 @@ test.beforeEach(async ({ context }) => {
 test("waivers: the upside stash and buy low / sell high, with the screen's own words (Scrubs, dynasty)", async ({ page }) => {
   for (const [league, team] of [[SCRUBS, 2], [DYNASTY, 12]] as const) {
     const w = fx(`waivers_${league}_${team}_ALL.json`);
-    await page.goto(`/waivers?league=${league}&team=${team}`);
+    await page.goto(`/waivers?league=${league}&team=${team}&view=stash`); // IB-2: the stash is a view
     await expect(page.getByTestId("waiver-answer")).toBeVisible();
     const up = page.getByTestId("upside");
     await expect(up).toBeVisible();
@@ -61,7 +61,7 @@ test("waivers: the upside stash and buy low / sell high, with the screen's own w
 
 test("waivers on demand (Test League): the NFL-wide stash, said so; the trade lists", async ({ page }) => {
   const w = fx(`waivers_${TEST_LEAGUE}_3_ALL.json`);
-  await page.goto(`/waivers?league=${TEST_LEAGUE}&team=3`);
+  await page.goto(`/waivers?league=${TEST_LEAGUE}&team=3&view=stash`); // IB-2: the stash is a view
   await expect(page.getByTestId("upside")).toBeVisible();
   await expect(page.getByTestId("stash-why")).toContainText("not on request");
   await expect(page.getByTestId("stash")).toHaveCount(Math.min(3, w.upside.stashes.length));

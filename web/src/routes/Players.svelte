@@ -9,6 +9,7 @@
   import { ownerWord, whoFilter, type Who } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
   import { toPlayers } from "../lib/shapes";
+  import { paneLink } from "../lib/pane.svelte"; // ---- IB-1: a name opens the research pane
   import { route, setParams } from "../lib/router.svelte";
   import { fmt, TEAMS, teamLabel } from "../lib/theme";
   import Chips from "../components/Chips.svelte";
@@ -152,7 +153,11 @@
           <div class="flex min-w-0 items-center gap-2.5">
             <Headshot url={p.headshot_url} name={p.player_name} team={p.team} size={34} />
             <div class="min-w-0">
-              <a class="ll-name block truncate font-semibold" href={withContext(`/player/${p.gsis_id}`, ctx)}>{p.player_name}</a>
+              <a
+                class="ll-name block truncate font-semibold"
+                href={withContext(`/player/${p.gsis_id}`, ctx)}
+                {@attach paneLink(p.gsis_id, { from: "list", context: { name: p.player_name } })}>{p.player_name}</a
+              >
               <div class="mt-0.5 flex items-center gap-1"><PosBadge pos={p.position} /><TeamBadge team={p.team} /></div>
             </div>
           </div>

@@ -81,11 +81,12 @@ export function pieceText(key: string, v: number | null | undefined): string {
   return v.toFixed(1);
 }
 
-export type SortKey = "rank" | "ros_points" | "ros_games" | "playoff_points" | "range" | `pg:${string}`;
+export type SortKey = "rank" | "ros_points" | "ros_games" | "playoff_points" | "range" | "lineup_points" | `pg:${string}`; // IB-3: lineup_points
 
-/** The value a column sorts by (null last either way). */
+/** The value a column sorts by (null last either way). `position` "LINEUP" = the lineup view (IB-3: its own rank). */
 export function sortValue(p: RosPlayer, key: SortKey, i: number, position: string): number | null {
-  if (key === "rank") return rankOf(p, i, position) ?? null;
+  if (key === "rank") return position === "LINEUP" ? (p.lineup_rank ?? i + 1) : (rankOf(p, i, position) ?? null);
+  if (key === "lineup_points") return p.lineup_points ?? null; // IB-3
   if (key === "range") return p.p10 === null || p.p90 === null ? null : p.p90 - p.p10;
   if (key.startsWith("pg:")) return p.per_game?.[key.slice(3)] ?? null;
   const v = p[key as "ros_points" | "ros_games" | "playoff_points"];
@@ -127,3 +128,43 @@ export const RANKINGS_HOWTO =
   "the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where " +
   "ours is far from it, open his card and read why before you trade on it.";
 // ---- end IA-3
+
+// ---- IB-3 (Wave I-B): "Value to my lineup" leads the Season screen (GET /api/ros?view=lineup&team=&who=): every
+// player ranked by what he adds to (or what you lose without him in) your best lineup over the weeks left
+export type RosView = "lineup" | "points";
+export type RosWho = "all" | "mine" | "fa" | "others";
+export const ROS_VIEWS: { key: RosView; label: string }[] = [
+  { key: "lineup", label: "Value to my lineup" },
+  { key: "points", label: "Who scores the most" },
+];
+export const ROS_WHO: { key: RosWho; label: string }[] = [
+  { key: "all", label: "Everyone" },
+  { key: "mine", label: "Yours" },
+  { key: "fa", label: "Free agents" },
+  { key: "others", label: "Other teams" },
+];
+/** The view in the URL (`?view=points`); "Value to my lineup" is the default when a team is picked. */
+export function rosView(param: string | null, team: number | null): RosView {
+  if (team === null) return "points";
+  return param === "points" ? "points" : "lineup";
+}
+export function rosWho(param: string | null): RosWho {
+  return (["all", "mine", "fa", "others"] as const).find((w) => w === param) ?? "all";
+}
+export const lineupPath = (league: string, position: string, team: number, who: RosWho, limit = 50) =>
+  `/api/ros?league=${encodeURIComponent(league)}&position=${encodeURIComponent(position)}&limit=${limit}&view=lineup&team=${team}` +
+  (who === "all" ? "" : `&who=${who}`);
+
+/** "+38" / "+4.9" / "0": what he adds to your lineup over the window (whole points from 10 up). */
+export function valueText(v: number | null | undefined): string {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  if (v < 0.05) return "0";
+  return `+${v >= 9.5 ? Math.round(v) : v.toFixed(1)}`;
+}
+
+/** The answer line of the lineup view: the top row and why. */
+export function lineupAnswer(top: RosPlayer, span: string | null): string {
+  const v = valueText(top.lineup_points);
+  return `**Most valuable to your lineup${span ? ` over ${span}` : ""}: ${top.player_name} (${top.position}), ${v} points.** ${top.lineup_why ?? ""}`.trim();
+}
+// ---- end IB-3

@@ -5,13 +5,14 @@
   // with for a WR") as a list, then buy low / sell high (IA-2: moved here from Waivers, GET /api/trades/lists).
   // IA-2: the weeks the suggestions are priced over are a segmented control (this week · next 4 · rest of season ·
   // playoffs; ?window=), with one line saying why; suggestions the sanity bound set aside are counted under the list.
+  // IB-2 (Wave I-B): each suggestion's card is the package, the dial's label, your gain and ONE reason (when the gain
+  // comes, or who cannot play); "Try it" opens the calculator. A name opens the research pane ("Add to trade").
   import { get, peek, Unauthorized, tradePaths, type Partners, type TradeLists, type TradePlayer, type TradeWindow } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { md, withContext } from "../lib/md";
   import { errorWords, f1, partnerLine, s1, windowOf } from "../lib/decisions";
+  import { paneAt, partnerReason } from "../lib/decisions";
   import { navigate, route, setParams } from "../lib/router.svelte";
-  import { fmt } from "../lib/theme";
-  import Bar from "../components/Bar.svelte";
   import Card from "../components/Card.svelte";
   import Expander from "../components/Expander.svelte";
   import Headshot from "../components/Headshot.svelte";
@@ -113,13 +114,17 @@
   ];
   const href = (g: string | null | undefined) => (g ? withContext(`/player/${g}`, ctx) : null);
   const calcHref = $derived(withContext("/trade-calc", ctx));
-  const theirWeek = (x: number | null | undefined) => (x == null ? "" : ` · this week you ${s1(x)}`);
 </script>
 
 {#snippet face(p: TradePlayer)}
   <span class="inline-flex min-w-0 items-center gap-1.5">
     <Headshot url={p.headshot_url} name={p.player_name ?? ""} team={p.team} size={28} />
-    {#if href(p.gsis_id)}<a class="ll-name truncate font-semibold" href={href(p.gsis_id)}>{p.player_name}</a>{:else}<span class="truncate font-semibold">{p.player_name}</span>{/if}
+    {#if href(p.gsis_id)}<a
+        class="ll-name truncate font-semibold"
+        href={href(p.gsis_id)}
+        {@attach paneAt(p.gsis_id, { from: "trade", context: { sleeper_id: p.sleeper_id, side: p.roster_id === team ? "give" : "get", partner: p.roster_id === team ? null : p.roster_id, name: p.player_name } })}
+        >{p.player_name}</a
+      >{:else}<span class="truncate font-semibold">{p.player_name}</span>{/if}
     <PosBadge pos={p.position} />
   </span>
 {/snippet}
@@ -167,25 +172,32 @@
       {:else if !finder.partners.length}
         <p class="ll-empty" data-testid="finder-empty">No trade that raises both lineups brings you {want === "ALL" ? "anyone" : `a ${want}`}. Try one you have in mind in the <a class="ll-name" href={calcHref}>trade calculator</a>.</p>
       {:else}
-        {@const gmax = Math.max(1, ...finder.partners.flatMap((p) => [p.you_gain_horizon, p.they_gain_horizon]))}
         <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
           {#each finder.partners.slice(0, 12) as p, i (`${p.partner}-${p.shape}-${i}`)}
             <Card testid="partner-row">
               <div class="flex items-baseline justify-between gap-2">
                 <span class="min-w-0 truncate text-lg font-bold">{p.partner_team}</span>
-                <span class="ll-label shrink-0">{p.shape}</span>
+                {#if p.interest}
+                  <span class="shrink-0 text-sm" data-testid="partner-label"
+                    ><span class="ll-label">They</span> <strong class={p.interest.label === "No deal" ? "text-bad" : p.interest.label === "Maybe" ? "text-warn" : "text-good"}>{p.interest.label}</strong></span
+                  >
+                {:else}
+                  <span class="ll-label shrink-0">{p.shape}</span>
+                {/if}
               </div>
               <div class="mt-2 space-y-1.5 text-base">
                 <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"><span class="ll-label w-14">You get</span>{#each p.get as x (x.sleeper_id)}{@render face(x)}{/each}</div>
                 <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"><span class="ll-label w-14">You give</span>{#each p.give as x (x.sleeper_id)}{@render face(x)}{/each}</div>
               </div>
-              <div class="mt-3 grid grid-cols-2 gap-3">
-                <Bar label={`You · ${finder.span}`} value={p.you_gain_horizon} max={gmax} display={s1(p.you_gain_horizon)} thick={6} />
-                <Bar label="Them" value={p.they_gain_horizon} max={gmax} display={s1(p.they_gain_horizon)} thick={6} />
-              </div>
-              <div class="mt-3 flex items-center justify-between gap-2">
-                <span class="text-xs text-ink-3">Market: give {fmt.whole(p.price_out)}, get {fmt.whole(p.price_in)}{theirWeek(p.you_gain_week)}{p.interest ? ` · they: ${p.interest.label}` : ""}</span>
-                <button type="button" class="min-h-9 shrink-0 rounded-md border border-line-strong px-3 text-sm font-semibold" onclick={() => tryTrade(p)} data-testid="try-partner">Try it</button>
+              <div class="mt-3 flex items-end justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="flex items-baseline gap-2">
+                    <span class="tabnum text-2xl leading-none font-extrabold {p.you_gain_horizon >= 0.05 ? 'text-good' : 'text-ink'}" data-testid="partner-gain">{s1(p.you_gain_horizon)}</span>
+                    <span class="ll-label">you · {finder.span}</span>
+                  </div>
+                  <p class="mt-1.5 text-sm leading-snug text-ink-2" data-testid="partner-reason">{partnerReason(p, finder.span)}</p>
+                </div>
+                <button type="button" class="min-h-10 shrink-0 rounded-md bg-accent px-4 text-sm font-semibold text-on-accent" onclick={() => tryTrade(p)} data-testid="try-partner">Try it</button>
               </div>
             </Card>
           {/each}

@@ -16,6 +16,17 @@ the left, detail on the right). Dark first, a light mode from the system.
 
 ## The screens
 
+**Navigation by task (Wave I-B, IB-1).** Four tabs — **My Team** (This week `/` · Season `/ros` · Team `/team` · League
+`/league`) · **Waivers** (`/waivers`) · **Trades** (Partners `/trades` · Calculator `/trade-calc`) · **Players** (Trends
+`/trends` · Matchups `/matchups` · Receivers `/receivers` · Compare `/compare` · Players `/players`) — the bottom bar on a
+phone, the top bar from 900 px; a tab's screens are the second row. The paths below did not move. The top bar also
+holds the **search field** (a magnifier under 1280 px; a hit opens the research pane) and the overflow menu (⋯: **About
+the numbers**, other leagues); About is also linked at the foot of every My Team screen. The player's page renders in
+the same frame (the tabs stay). **The research pane** (`?pane=<gsis>&from=…` on any screen): a lineup name on My Week,
+a name in Players' list, a search hit, a Trends row on a phone (and Waivers / Trades rows, IB-2) open the player's card
+beside the screen (900 px+) or as a sheet over it (a phone), with actions for where it was opened from — "Compare with
+my starter", "Evaluate add / drop", "Add to trade" — and always "Full page". `docs/DESIGN.md` § Navigation, § Pane.
+
 | Screen | URL | What |
 |---|---|---|
 | Password | any | the beta gate (when the API has `LEAGUE_LAB_APP_PASSWORD`); a right password sets an HttpOnly cookie for 180 days |
@@ -132,7 +143,9 @@ of its own; it talks to the API on the same origin.
 | `src/routes/Leagues.svelte` | sign in with a Sleeper username → the league picker |
 | `src/routes/MyWeek.svelte`, `Player.svelte`, `Ros.svelte`, `About.svelte` | My Week, the player card, rest of season, about the numbers (+ the record) |
 | `src/routes/Trends.svelte`, `Matchups.svelte`, `Players.svelte`, `Receivers.svelte`, `Compare.svelte` | the research screens (lazy chunks) |
-| `src/components/TopBar.svelte` | the picker + the five tabs (bottom bar on a phone) + the section's second row |
+| `src/components/TopBar.svelte` | the four tabs by task (bottom bar on a phone) + the tab's second row, the search field, the picker, the overflow menu (About) |
+| `src/components/PlayerPane.svelte`, `src/lib/pane.svelte.ts` | the research pane (IB-1): the markup (mounted once by `App.svelte`) and the API screens call — `openPane`, `paneLink`, the actions per `from` |
+| `src/lib/card.ts` | the player card's sections in order, its header line, the missing ones (the full page and the pane share them) |
 | `src/components/*` | the design system (`docs/DESIGN.md`): Card, PlayerCard, PlayerRow, Headshot, PosBadge, TeamBadge, StatTile, Bar, Meter, Table, ListDetail, Tabs, Chips, ScreenHead, Coming; the chart kit LineChart, Heatmap, Sparkline; GameLog; and Wave F's picker, lineup table, section card, metric tiles, expander, markdown, login |
 | `src/lib/api.ts` | the API's types (the Wave F contract, the G3 research block), fetch + five-minute memory cache, the prefetch hand-off |
 | `src/lib/theme.ts`, `chart.ts` | team accents (32 teams), position colors, chart roles, number formats; the chart kit's scale and paths |

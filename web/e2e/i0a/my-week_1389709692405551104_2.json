@@ -50,7 +50,9 @@
           "text": "Michael Wilson outscores Jacory Croskey-Merritt 51% of the time — a coin flip. 9.20 vs 9.19 projected: 0.01 apart.  \nMost weeks: Michael Wilson 4–13, Jacory Croskey-Merritt 4–12.  \nA bad week to a good week: Michael Wilson 2–19, Jacory Croskey-Merritt 1–19.  \nMichael Wilson vs NYG (#11 vs WR) · Jacory Croskey-Merritt vs IND (#2 vs RB)"
         }
       ],
-      "why": "Too close to call: the projection has them level, the ranges say either. Go with Croskey-Merritt on the matchup: he is at home against the Colts, who give up the 2nd-most points to running backs."
+      "why": "Too close to call: the projection has them level, the ranges say either. Go with Croskey-Merritt on the matchup: he is at home against the Colts, who give up the 2nd-most points to running backs.",
+      "status": "close",
+      "strength": "coin flip"
     },
     {
       "slot": "FLEX1",
@@ -79,7 +81,9 @@
           "text": "Bhayshul Tuten outscores Jacory Croskey-Merritt 56% of the time — a lean. 9.72 vs 9.19 projected: 0.53 apart.  \nMost weeks: Bhayshul Tuten 5–15, Jacory Croskey-Merritt 4–12.  \nA bad week to a good week: Bhayshul Tuten 2–22, Jacory Croskey-Merritt 1–19.  \nBhayshul Tuten vs CIN (#24 vs RB) · Jacory Croskey-Merritt vs IND (#2 vs RB)"
         }
       ],
-      "why": "Croskey-Merritt's share of the carries fell from 50% to 38% last game, and the projection has Tuten 0.5 points ahead."
+      "why": "Croskey-Merritt's share of the carries fell from 50% to 38% last game, and the projection has Tuten 0.5 points ahead.",
+      "status": "set",
+      "strength": "lean"
     },
     {
       "slot": "RB2",
@@ -108,7 +112,9 @@
           "text": "Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time — a lean. 11.28 vs 9.19 projected: 2.09 apart.  \nMost weeks: Omarion Hampton 6–15, Jacory Croskey-Merritt 4–12.  \nA bad week to a good week: Omarion Hampton 3–23, Jacory Croskey-Merritt 1–19.  \nOmarion Hampton vs SEA (#26 vs RB) · Jacory Croskey-Merritt vs IND (#2 vs RB)"
         }
       ],
-      "why": "Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game."
+      "why": "Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game.",
+      "status": "set",
+      "strength": "lean"
     }
   ],
   "notice": null,

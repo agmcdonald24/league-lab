@@ -202,7 +202,8 @@ async function tap(page: Page, loc: ReturnType<Page["locator"]>, mobile: boolean
 async function names(page: Page, app: App): Promise<{ name: string; locator: (p: Page) => ReturnType<Page["locator"]> }[]> {
   const seen = new Set<string>();
   const out: { name: string; locator: (p: Page) => ReturnType<Page["locator"]> }[] = [];
-  const scope = app.name === "web" ? '[data-testid="decision-card"] a, [data-testid="lineup"] a' : '[data-testid="stMarkdownContainer"] a[href^="Player?"]';
+  // IB-1: the web's lineup names open the research pane (not the page): the cards' names are the taps measured
+  const scope = app.name === "web" ? '[data-testid="decision-card"] a' : '[data-testid="stMarkdownContainer"] a[href^="Player?"]';
   for (const text of await page.locator(scope).allTextContents()) {
     const n = text.trim();
     if (n && !seen.has(n)) {

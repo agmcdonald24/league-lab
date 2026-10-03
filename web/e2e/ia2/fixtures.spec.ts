@@ -26,6 +26,13 @@ test.beforeEach(async ({ context, page }, info) => {
   if (info.project.name === "phone") await page.setViewportSize({ width: 375, height: 812 });
 });
 
+/** IB-2: is any part of the element on screen (the dial's row: when it is, the verdict bar is not shown). */
+const inView = (page: Page, testid: string) =>
+  page.evaluate((t) => {
+    const r = (document.querySelector(`[data-testid="${t}"]`) as HTMLElement).getBoundingClientRect();
+    return r.bottom > 0 && r.top < window.innerHeight;
+  }, testid);
+
 async function noSidewaysScroll(page: Page) {
   const { sw, iw } = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: window.innerWidth }));
   expect(sw, "page wider than the screen").toBeLessThanOrEqual(iw);
@@ -79,14 +86,18 @@ for (const league of [TEST_LEAGUE, DYNASTY, SCRUBS]) {
     expect(await page.evaluate(() => (window as unknown as { __noReload?: number }).__noReload)).toBe(1);
     expect(calls.evaluate.at(-1)).toEqual({ league, team, partner: pk.partner, give: pk.to.give, get: pk.to.get });
     await expect(page.getByTestId("verdict")).toHaveText(plain(b.verdict));
-    // ticking down in the lists, the dial is off screen: its reading follows in a chip (never both at once)
+    // ticking down in the lists, the dial is off screen: its reading follows in a chip (never both at once).
+    // IB-2: the chip is in the verdict bar pinned to the top of the screen (desktop: a short page may never scroll the
+    // dial away — then the dial itself is the reading in view)
     await page.getByTestId("dial-row").scrollIntoViewIfNeeded();
     await expect(page.getByTestId("dial-chip")).toHaveCount(0);
     await page.evaluate(() => {
       const el = document.querySelector('[data-testid="dial-row"]') as HTMLElement;
       window.scrollTo(0, el.getBoundingClientRect().bottom + window.scrollY + 40);
     });
-    await expect(page.getByTestId("dial-chip")).toContainText(b.interest.label);
+    if (info.project.name === "phone" || !(await page.getByTestId("dial-row").isVisible() && (await inView(page, "dial-row"))))
+      await expect(page.getByTestId("dial-chip")).toContainText(b.interest.label);
+    else await expect(page.getByTestId("dial-chip")).toHaveCount(0);
     await noSidewaysScroll(page);
     await shot(page, `calc_${league}`, info);
   });
@@ -134,6 +145,9 @@ test("the lineups are shown once: yours, then theirs under an expander", async (
   await page.goto(calcUrl(DYNASTY, pk.partner, pk.from.give, pk.from.get));
   await expect(page.getByTestId("verdict")).toHaveText(plain(ev.verdict));
   const lineups = page.getByTestId("lineups");
+  // IB-2: both lineups sit behind "Lineups", collapsed: open it
+  await expect(lineups.getByTestId("lineup-after").filter({ visible: true })).toHaveCount(0);
+  await page.getByTestId("lineups-x").locator("summary").first().click();
   await expect(lineups.getByTestId("lineup-after").filter({ visible: true })).toHaveCount(1);
   await expect(lineups.getByTestId("lineup-after").first()).toContainText(`Your lineup, week ${ev.week}`);
   await expect(page.getByText(`Your lineup, week ${ev.week}`)).toHaveCount(1);

@@ -2,6 +2,46 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-B
+
+- **IB-0: one availability truth.** Every screen now reads a roster's week from one place,
+  `availability.roster_context` (the nightly's lineup + the injury overlay, re-solved when a status changed since the
+  build): My Week and the opponent's projected total, Waivers (the total, the weakest starter, each move's this-week
+  gain and seat, the drop's cost — a player who starts because Jefferson is out is never "would not start"), the Team
+  Hub (lineup / bench / horizon values, the closest call, slot strengths, the roster, the league's ranks), the player
+  card (its lineup line, and "Justin Jefferson is out (ankle): he starts at FLEX2 this week" in Availability, the
+  overlay's injury status) and the trade board (the calculator's "before"). The lineup total is one number: Scrubs
+  roster 2 with Jefferson Out read 113.54 on My Week and 117.02 on Waivers and Team; all four screens now read 113.54
+  (Test League 95.41, was 123.09 on Waivers / Team). My Week's cards carry `status` (change / set / close, against
+  Sleeper's current lineup) and `strength` (clear / lean / coin flip) from `cards.decisions` for the web's card.
+
+- **IB-3: matchup meaning first, "Value to my lineup", the card's default content.** Matchups lead with Favorable /
+  Neutral / Difficult (cells, starters, cornerback calls), every rank runs 1 = the toughest for the offense, a corner
+  call carries likely / unclear beside it and no shutdown badge (`/api/matchups/*`: `tone`, `tough_rank`, `rank_words`,
+  `certainty`, `named_corners`); the Season screen opens on "Value to my lineup" (`/api/ros?view=lineup&team=&who=`:
+  what each player adds to, or what you lose without him in, your best lineup over the weeks left, with a sentence);
+  My Week's cards: status chip (Change needed / Already set / Close call), the call, the strength, one reason,
+  "Compare these players", the numbers behind "Why?". `api/tests/test_ib3.py`, `web/e2e/ib3/`.
+
+- **IB-2: Waivers short, the trade builder with the decision in view.** Waivers opens with the three strongest moves
+  (one card each: the claim, the lineup gain over the next 4 weeks, one reason — "Starts at K this week over
+  McLaughlin (8.1)", "Fills your empty DEF in week 5, when Kansas City Chiefs is on a bye" — and the claim's cost),
+  then one view at a time behind chips: Help now · Bye coverage (the next bye your bench cannot cover) · Stashes · All
+  available (`/api/waivers` gains `top3`, `views`, `default_view`; one answer, so a chip switches at once). A claim
+  whose drop starts for you this week or next says so and shows the best claim that keeps him ("Or drop
+  Croskey-Merritt instead (he sits) and keep Kansas City Chiefs: +9.7 over weeks 4–7"), or that none does. The trade
+  calculator leads with the decision: once the dial scrolls away a verdict bar stays pinned at the top (the package,
+  the dial's label, your gain; a tap opens it on a phone); the explanation and the lineups are behind "Why?" and
+  "Lineups". Trades' suggestions: the package, the dial's label, your gain, one reason, Try it. Names on Waivers and
+  Trades open the research pane when it is in the build.
+
+- **IB-1: navigation by task, the research pane everywhere.** Four tabs — My Team (This week · Season · Team · League)
+  · Waivers · Trades (Partners · Calculator) · Players (Trends · Matchups · Receivers · Compare · Players) — every path
+  kept; a search field in the top bar; About the numbers in the ⋯ menu and at the foot of My Team; the player's page
+  keeps the tabs. A player's name on My Week's lineup, in Players' list, in a search hit (and a Trends row on a phone)
+  opens his card beside the screen (900 px+) or as a sheet (a phone) with "Compare with my starter" / "Evaluate add /
+  drop" / "Add to trade" by where it was opened, and "Full page". Sticky panels stick again (`overflow-x: clip`).
+
 ## 2026-10-03 — Wave I-A
 
 - **Nightly: a backup time.** GitHub dropped the 11:37 UTC scheduled run on 2026-10-03 (no run at all); a second cron

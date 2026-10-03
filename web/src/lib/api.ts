@@ -83,8 +83,27 @@ export interface DecisionCard {
   verdict: string;
   how: string;
   why?: string | null; // ---- IA-1: the reason sentence (also the card's second block)
+  // ---- IB-0: the call's status (Change needed / Already set / Close call; null when Sleeper's lineup is unknown),
+  // its strength, and who of the two Sleeper starts right now
+  status?: "change" | "set" | "close" | null;
+  strength?: "clear" | "lean" | "coin flip" | null;
+  in_sleeper_lineup?: { player: boolean; alt: boolean } | null;
+  // ---- end IB-0
   blocks: Block[];
 }
+
+// ---- IB-0: one availability truth - the roster context's summary that Waivers and Team carry (My Week: `availability`)
+export interface RosterContextSummary {
+  league_id: string;
+  roster_id: number;
+  week: number;
+  lineup_value: number | null;
+  changed: boolean;
+  changes: string[];
+  checked_at: string | null;
+  as_of_build: string | null;
+}
+// ---- end IB-0
 
 export interface Mover {
   gsis_id: string | null;
@@ -100,6 +119,7 @@ export interface Opponent {
   team_name: string;
   manager: string | null;
   lineup_value: number | null;
+  changes?: string[]; // ---- IB-0: his lineup through the same overlay (who moved and why)
 }
 
 export interface MyWeek {
@@ -659,6 +679,10 @@ export interface WaiverDrop extends DPlayer {
   horizon_loss: number | null;
   season_points_left: number | null;
   ros_points: number | null;
+  // ---- IB-0: he starts this week by the roster's context (the overlay), and where; never "would not start" then
+  starts_this_week?: boolean;
+  slot_this_week?: string | null;
+  // ---- end IB-0
 }
 
 /** One row of mart_waiver_moves (or the on-demand sweep), nested: the free agent, the drop, the gains, the card's words. */
@@ -709,6 +733,7 @@ export interface Waivers {
   horizon_last_week?: number | null;
   lineup_value?: number | null;
   weakest: { slot: string; player: DPlayer; value: number | null; margin: number | null; replacement_name: string | null; replacement_value: number | null } | null;
+  roster_context?: RosterContextSummary; // ---- IB-0
   moves: WaiverMove[];
   total_moves: number;
   cards: { title: string; add_sleeper_id: string; drop_sleeper_id: string | null; move_rank: number | null; move: WaiverMove }[];
@@ -841,6 +866,7 @@ export interface Team {
   team_name: string;
   manager_name: string | null;
   week: number;
+  roster_context?: RosterContextSummary; // ---- IB-0
   value: {
     week: number;
     horizon_weeks: number;
@@ -1191,3 +1217,91 @@ export interface PlayerCard {
   leans_on?: LeansOn | null;
 }
 // ---- end IA-3
+
+// ---- IB-3 (Wave I-B): matchup meaning first (GET /api/matchups/defense, /api/matchups/cb): the tone, one rank
+// direction (1 = the toughest for the offense), the rank in words, a cornerback call's certainty
+export interface DefenseCell {
+  n_ranked?: number | null; // defenses ranked at the position
+  tough_rank?: number | null; // 1 = gives up the fewest (the toughest for the offense)
+  tough_rank_l4?: number | null;
+  tone?: "favorable" | "neutral" | "difficult" | null;
+  rank_words?: string | null; // "gives up the 2nd-most points to running backs"
+}
+export interface DefenseMatrix {
+  rank_note?: string;
+}
+export interface NamedCorner {
+  name: string | null;
+  slot: string | null; // LCB | RCB | NB
+  side: string; // "left corner"
+  rank: number | null; // 1 = the hardest to throw on
+  label: string | null; // shutdown | solid | target (the mart's)
+  words: string; // "the 17th-hardest of 74 starting corners to throw on" / "unranked: too few snaps to rank"
+  tone: "favorable" | "neutral" | "difficult" | null;
+}
+export interface CbMatchup {
+  tone?: "favorable" | "neutral" | "difficult" | null;
+  certainty?: "likely" | "unclear" | "no call" | null;
+  certainty_words?: string | null; // "likely: 47% of his targets go to that side, 29% to the other"
+  cover_rank_words?: string | null;
+  named_corners?: NamedCorner[];
+  history?: string | null; // "11 catches for 137 yards on 11 targets with Turner on the field (2023–25)."
+}
+// ---- end IB-3
+
+// ---- IB-3 (Wave I-B): "Value to my lineup" (GET /api/ros?view=lineup&team=&who=)
+export interface RosPlayer {
+  lineup_points?: number | null; // what he adds to (yours: what you lose without him in) your best lineup, the weeks left
+  lineup_weeks?: number | null; // the weeks he starts (or would) for you
+  lineup_kind?: "mine" | "fa" | "others" | null;
+  lineup_why?: string | null; // "Your QB2 only plays in week 7: 16 points over your next-best there."
+  lineup_rank?: number | null;
+}
+export interface RosList {
+  view?: "points" | "lineup";
+  team?: number;
+  who?: string;
+  window?: { first: number | null; last: number | null; weeks: number; span: string | null };
+  lineup_note?: string;
+}
+// ---- end IB-3
+
+// ---- IB-2 (Wave I-B): Waivers short — GET /api/waivers' `top3` (the three strongest moves, one reason each), the views
+// (Help now · Bye coverage · Stashes · All available; one answer carries them all: the chips switch without a request),
+// and on every move whose drop starts this week or next: `drop_starts` + `keep_alternative` (the best claim that keeps
+// him, or the line that none does). Additive: declaration merging.
+export type WaiverView = "help" | "bye" | "stash" | "all";
+
+/** One claim as the screen shows it: the move, one reason (a fact: the role, the bye, the slot), the claim's cost. */
+export interface WaiverCard {
+  move: WaiverMove;
+  reason: string;
+  cost: string;
+  gain: number | null; // the lineup gain over the horizon (gain_label: "weeks 4–7")
+  gain_label: string;
+  this_week: number | null;
+  week_gain?: number | null; // Bye coverage: the gain in the bye week (week_gain_label: "week 5")
+  week_gain_label?: string;
+}
+
+export interface WaiverViews {
+  help: { label: string; line: string | null; moves: WaiverCard[] };
+  bye: { label: string; line: string | null; week: number | null; on_bye: string[]; empty_slots: string[]; moves: WaiverCard[] };
+  stash: { label: string; count: number };
+  all: { label: string; count: number };
+}
+
+export interface WaiverMove {
+  drop_starts?: { weeks: number[]; slot: string | null; text: string } | null;
+  keep_alternative?: {
+    move: { add: DPlayer; drop: (DPlayer & { player_name: string | null }) | null; weekly_gain: number | null; horizon_gain: number | null } | null;
+    line: string;
+  } | null;
+}
+
+export interface Waivers {
+  top3?: WaiverCard[];
+  views?: WaiverViews;
+  default_view?: WaiverView;
+}
+// ---- end IB-2

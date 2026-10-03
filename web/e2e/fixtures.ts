@@ -60,6 +60,16 @@ export async function serveFixtures(context: BrowserContext, opts: { gate?: bool
     else if ((m = p.match(/^\/api\/player\/([^/]+)$/))) body = file(`player/${q.get("league")}_${decodeURIComponent(m[1])}.json`);
     else if (p === "/api/search") body = file(`search_${q.get("league")}.json`) ?? "[]";
     else if (p === "/api/status") body = file("status.json");
+    // ---- IB-3: "Value to my lineup" (view=lineup&team=&who=): its own files; a `who` without one filters the saved list
+    else if (p === "/api/ros" && q.get("view") === "lineup") {
+      const base = `ros-lineup_${q.get("league")}_${q.get("team")}_${(q.get("position") ?? "ALL").toUpperCase()}`;
+      const who = q.get("who");
+      body = file(`${base}${who && who !== "all" ? `_${who}` : ""}.json`);
+      if (body === null && who && who !== "all" && (body = file(`${base}.json`)) !== null) {
+        const d = JSON.parse(body) as { players: { lineup_kind?: string }[] };
+        body = JSON.stringify({ ...d, who, players: d.players.filter((r) => r.lineup_kind === who) });
+      }
+    } // ---- end IB-3
     else if (p === "/api/ros") body = file(`ros_${q.get("league")}_${(q.get("position") ?? "ALL").toUpperCase()}.json`);
     else if (p === "/api/record") body = file(`record_${q.get("league")}.json`);
     else if (p === "/api/about") body = file(`about_${q.get("league")}.json`); // H1 (Wave H)

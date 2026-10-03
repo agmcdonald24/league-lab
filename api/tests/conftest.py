@@ -82,6 +82,8 @@ def _fresh_cache(monkeypatch):
     the database path's opponent reads the matchups call too), the priced-week cache emptied."""
     from league_lab import anyleague as A
     monkeypatch.setenv(A.FIXTURES_ENV, str(SLEEPER_FIXTURES))
+    # Wave I-B (PO): MyFantasyLeague answers from the fixtures too — a test never calls MFL (test_ib0 reads mfl:21861)
+    monkeypatch.setenv("LEAGUE_LAB_MFL_FIXTURES", str(SLEEPER_FIXTURES.with_name("mfl")))
     # Wave I-0: the availability overlay stays off unless a test turns it on (test_i0a sets LEAGUE_LAB_ESPN_FIXTURES
     # itself); a developer's .env with the ESPN fixtures set would otherwise move the house lineups the parity
     # tests pin (Jefferson Out in the fixture feed)
@@ -90,6 +92,8 @@ def _fresh_cache(monkeypatch):
     db.clear_cache()
     A._default = None
     A.clear_priced()
+    from league_lab_api import availability
+    availability.clear_context()                  # IB-0: the roster contexts are kept in process
     yield
     A._default = None
     A.clear_priced()

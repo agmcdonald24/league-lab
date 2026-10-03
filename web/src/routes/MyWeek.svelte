@@ -4,8 +4,11 @@
   import { withContext } from "../lib/md";
   import { learnLeagueName } from "../lib/names.svelte";
   import { checkedLine, opponentLine, recordLine } from "../lib/week";
+  // ---- IB-3: the card's default content (status, the call, strength, one reason, Compare; the rest behind Why?)
+  import { cardCall, cardStatus, cardStrength, compareHref, STATUS_WORD, STRENGTH_WORD, whyBlocks } from "../lib/week";
   import type { Availability, AvailabilityStatus } from "../lib/shapes";
   import { restoreScroll } from "../lib/router.svelte";
+  import { lineupPane } from "../lib/pane.svelte"; // ---- IB-1: a lineup name opens the research pane
   import Expander from "../components/Expander.svelte";
   import LineupTable from "../components/LineupTable.svelte";
   import Md from "../components/Md.svelte";
@@ -133,18 +136,45 @@
             <p class="rounded-lg bg-raised p-4 text-base" data-testid="no-calls"><Md text={data.notice} {ctx} /></p>
           {/if}
           {#each data.cards as c (c.slot)}
-            <article class="relative space-y-1.5 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)" data-testid="decision-card">
-              {#each c.blocks as b, i (i)}
-                {#if b.kind === "caption"}
-                  <p class="text-sm leading-snug text-ink-3" data-testid="card-small-print"><Md text={b.text} {ctx} /></p>
-                {:else if c.why && b.text === c.why}
-                  <!-- IA-1: the reason, in a sentence (the odds and the numbers are the small print under it) -->
-                  <p class="text-base leading-snug text-ink-2" data-testid="card-why"><Md text={b.text} {ctx} /></p>
-                {:else}
-                  <p class="text-base leading-snug"><Md text={b.text} {ctx} /></p>
+            <!-- ---- IB-3: the status chip first, the call in one line (both names), the strength, IA-1's one reason (last
+                 names), Compare these players; the odds, the ranges and the numbers behind Why? -->
+            {@const st = cardStatus(c, data.lineup_full)}
+            {@const strength = cardStrength(c)}
+            {@const cmp = compareHref(c)}
+            {@const more = whyBlocks(c)}
+            <article class="relative space-y-2 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)"
+              data-testid="decision-card" data-status={st ?? "unknown"}>
+              <div class="flex flex-wrap items-center gap-1.5">
+                {#if st}
+                  <span class="rounded-sm px-2 py-0.5 text-sm font-bold {st === 'change' ? 'bg-warn-soft text-warn' : st === 'set' ? 'bg-accent-soft text-accent' : 'bg-raised text-ink-2'}"
+                    data-testid="card-status">{st === "change" ? "⚠︎ " : st === "set" ? "✓ " : "≈ "}{STATUS_WORD[st]}</span>
                 {/if}
-              {/each}
-              <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true"></span>
+                <span class="ll-label text-ink-3" data-testid="card-slot">{c.slot_label}</span>
+                <span class="ml-auto text-sm font-semibold text-ink-2" data-testid="card-strength">{STRENGTH_WORD[strength]}</span>
+              </div>
+              <p class="text-lg leading-snug" data-testid="card-call"><Md text={cardCall(c, st)} {ctx} /></p>
+              {#if c.why}
+                <p class="text-base leading-snug text-ink-2" data-testid="card-why"><Md text={c.why} {ctx} /></p>
+              {/if}
+              <div class="flex flex-wrap items-center gap-2 pt-0.5">
+                {#if cmp}
+                  <a class="inline-flex min-h-9 items-center rounded-sm border border-line-strong px-3 text-sm font-semibold hover:bg-raised"
+                    href={withContext(cmp, ctx)} data-testid="card-compare">Compare these players</a>
+                {/if}
+              </div>
+              {#if more.length}
+                <details class="group" data-testid="card-why-more">
+                  <summary class="inline-flex min-h-9 cursor-pointer items-center gap-1 text-sm font-semibold text-accent">
+                    <span class="chev" aria-hidden="true">›</span>Why?
+                  </summary>
+                  <div class="mt-1 space-y-1.5">
+                    {#each more as b, i (i)}
+                      <p class="text-sm leading-snug text-ink-3" data-testid="card-small-print"><Md text={b.text} {ctx} /></p>
+                    {/each}
+                  </div>
+                </details>
+              {/if}
+              <span class="absolute inset-y-0 left-0 w-1 {st === 'change' ? 'bg-warn' : 'bg-accent'}" aria-hidden="true"></span>
             </article>
           {/each}
         </section>
@@ -162,14 +192,14 @@
               </ul>
             {/if}
             {#if data.lineup.length}
-              <LineupTable rows={data.lineup} {ctx} testid="lineup" />
+              <LineupTable rows={data.lineup} {ctx} testid="lineup" pane={(row) => lineupPane(row, data!.lineup_full)} />
             {:else}
               <p class="text-sm text-ink-3">No proposed lineup for this week yet.</p>
             {/if}
           </section>
 
           <Expander title="The bench and who can't play" testid="lineup-full">
-            <LineupTable rows={data.lineup_full} full {ctx} testid="lineup-full-table" />
+            <LineupTable rows={data.lineup_full} full {ctx} testid="lineup-full-table" pane={(row) => lineupPane(row, data!.lineup_full)} />
           </Expander>
           {#if data.howto}
             <Expander title="How to read this" testid="howto"><Md text={data.howto} {ctx} block class="text-base leading-snug" /></Expander>

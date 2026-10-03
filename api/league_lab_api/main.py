@@ -287,8 +287,14 @@ def player_card(gsis: str, league: str, response: Response, team: int | None = N
 
 
 @app.get("/api/ros", dependencies=[Depends(require_auth)])
-def ros(league: str, response: Response, position: str = "ALL", limit: int = 50):
-    return _json(ondemand.ros(league, position, limit), response)
+def ros(league: str, response: Response, position: str = "ALL", limit: int = 50,
+        view: str = "points", team: int | None = None, who: str = "all"):          # ---- IB-3: view=lineup&team=
+    return _json(ondemand.ros(league, position, limit, view=view, team=team, who=who), response)
+
+
+@app.exception_handler(ondemand.BadView)                                              # ---- IB-3
+async def _bad_view(_req: Request, exc: ondemand.BadView):
+    return JSONResponse(status_code=400, content={"error": str(exc)})
 
 
 @app.get("/api/record", dependencies=[Depends(require_auth)])

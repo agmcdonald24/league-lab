@@ -48,7 +48,9 @@
      "text": "Bhayshul Tuten outscores Michael Wilson 55% of the time — a lean. 9.72 vs 9.20 projected: 0.52 apart.  \nMost weeks: Bhayshul Tuten 5–15, Michael Wilson 4–13.  \nA bad week to a good week: Bhayshul Tuten 2–22, Michael Wilson 2–19.  \nBhayshul Tuten vs CIN (#24 vs RB) · Michael Wilson vs NYG (#11 vs WR)"
     }
    ],
-   "why": "Tuten is on the road against the Bengals, who give up the 9th-fewest points to running backs, but the projection still has him 0.5 points ahead."
+   "why": "Tuten is on the road against the Bengals, who give up the 9th-fewest points to running backs, but the projection still has him 0.5 points ahead.",
+   "status": "set",
+   "strength": "lean"
   },
   {
    "slot": "RB2",
@@ -77,7 +79,9 @@
      "text": "Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time — a lean. 11.28 vs 9.19 projected: 2.09 apart.  \nMost weeks: Omarion Hampton 6–15, Jacory Croskey-Merritt 4–12.  \nA bad week to a good week: Omarion Hampton 3–23, Jacory Croskey-Merritt 1–19.  \nOmarion Hampton vs SEA (#26 vs RB) · Jacory Croskey-Merritt vs IND (#2 vs RB)"
     }
    ],
-   "why": "Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game."
+   "why": "Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game.",
+   "status": "set",
+   "strength": "lean"
   },
   {
    "slot": "QB",
@@ -106,7 +110,9 @@
      "text": "Patrick Mahomes outscores Tyler Shough 55% of the time — a lean. 20.26 vs 18.17 projected: 2.09 apart.  \nMost weeks: Patrick Mahomes 16–24, Tyler Shough 15–24.  \nA bad week to a good week: Patrick Mahomes 9–29, Tyler Shough 10–30.  \nPatrick Mahomes vs LV (#24 vs QB) · Tyler Shough vs ATL (#14 vs QB)"
     }
    ],
-   "why": "Mahomes is on the road against the Raiders, who give up the 9th-fewest points to quarterbacks, but the projection still has him 2.1 points ahead."
+   "why": "Mahomes is on the road against the Raiders, who give up the 9th-fewest points to quarterbacks, but the projection still has him 2.1 points ahead.",
+   "status": "set",
+   "strength": "lean"
   }
  ],
  "notice": null,

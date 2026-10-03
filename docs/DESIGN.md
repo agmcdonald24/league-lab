@@ -68,12 +68,13 @@ team bar). A free agent is neutral gray. `teamLabel("LA")` → `LAR`.
 </script>
 ```
 
-- **TopBar** — rendered ONCE by `App.svelte` for every league screen (pages do not render it): the wordmark, the league /
-  team picker, the five top-level tabs (My week · Rest of season · Research · Decisions · About) and, inside Research
-  or Decisions, a second row with their screens. On a phone the five tabs are a bottom bar (icons + short labels, one
-  tap each); from 900 px they sit in the top bar. Route names and the sections live in `TopBar.svelte`'s module
-  (`RESEARCH`, `DECISIONS`, `sectionOf`). The page content sits in `App.svelte`'s container (`max-w-6xl`, `px-4`,
-  room for the bottom bar): a page starts with its `<main>`, no side padding of its own.
+- **TopBar** — rendered ONCE by `App.svelte` for every league screen and the player's page (pages do not render it):
+  the four tabs by task, the search field, the league / team picker, the overflow menu (⋯) and the second row of the
+  tab's screens — see **§ Navigation**. The sections live in `TopBar.svelte`'s module (`SECTIONS`, `sectionOf`). The
+  page content sits in `App.svelte`'s container (`max-w-6xl`, `px-4`, room for the bottom bar): a page starts with its
+  `<main>`, no side padding of its own.
+- **PlayerPane** — the research pane (mounted ONCE by `App.svelte`; a screen calls `openPane` / `paneLink` from
+  `lib/pane.svelte.ts`) — see **§ Pane**.
 - **ScreenHead** — the top of a screen, the answer first:
   `<ScreenHead eyebrow="Research · Trends" title="Who is due, who is running hot">{#snippet answer()}…{/snippet}</ScreenHead>`
 - **Card** — the panel: `<Card title="Usage" accent={team(p.team).accent} testid="usage">…</Card>`; `tone="raised" | "accent"`,
@@ -126,6 +127,34 @@ trade sides.
   *A list row's numbers* (Trends): one header row of `ll-label`s over the list and a 5-column strip under each
   `PlayerRow`, indented to the name (`pl-16`), the season value under the last-3 value on a phone.
 
+- **Wave I-B (IB-3) patterns.** *Tone chip* (Matchups): the signal of a matchup is a word — Favorable / Neutral /
+  Difficult — in the state color (good / ink-3 / bad) on its 22 % wash, ▲ / ▼ before it (color never alone); the rank
+  sits under it in 11 px `text-ink-3` ("#3 toughest vs RB"; a cornerback call's certainty — likely / unclear / no call —
+  takes that place). *Tone heatmap*: `Heatmap … tones` fills a cell with its tone's wash (30 %), prints ▲ / ▼ with the
+  number, and the legend names the three tones. *View toggle* (Season): `Tabs fill size="sm"` under the screen head
+  ("Value to my lineup" · "Who scores the most"), in the URL (`?view=points`; the default left out). *Decision card*
+  (My Week): the status chip first (Change needed on `bg-warn-soft`, Already set on `bg-accent-soft`, Close call on
+  `bg-raised`; the card's left rule turns warn on a change), the slot label and the strength word on the same row, the
+  call in one line (both names whole), the reason (last names), a "Compare these players" button, and the odds, ranges
+  and numbers behind a "Why?" `<details>`.
+
+- **Wave I-B (IB-2) patterns.** *Claim card* (`routes/decisions/ClaimCard.svelte`, Waivers): the free agent (48 px
+  headshot, name, position + team, "drop X" in the context line), the lineup gain as the number with its span under it
+  (`ll-label`: "weeks 4–7", or "week 5" in Bye coverage), then ONE reason (body size: a fact — the role, the bye, the
+  slot), then the claim's cost (`text-sm text-ink-3`). A drop who starts for you this week or next adds a `bg-warn-soft`
+  box: "X starts for you this week." + the best claim that keeps him, or the line that none does — never one without
+  the other. `compact` = a list row (no frame) for a view's list. *Views behind chips*: a screen with several lists
+  shows ONE at a time — `Chips` under the lead cards, the view in the URL (`?view=`, rewritten in place; the default
+  leaves the URL), one answer carrying every view so a chip switches without a request (Waivers: Help now · Bye
+  coverage · Stashes · All available). The chip row must start within two phone screens (≤ 2 × 812 px at 375 px).
+  *Verdict bar* (the trade calculator): once the decision (the dial's row) scrolls off screen, a bar is pinned to the
+  top (`position: fixed`, `max-w-6xl` like the page, rounded at the bottom, `shadow-lg`): the package in last names,
+  the dial's label (state color + word) and score, "You +3.4"; open on desktop (the four tiles and the verdict), a tap
+  opens it on a phone (`aria-expanded`). Not `sticky`: `html, body { overflow-x: hidden }` makes `body` the sticky
+  container, so `position: sticky` never sticks on these pages (ListDetail's `wide:sticky` detail included) — use
+  fixed, or change the clip to `overflow-x: clip` (a design-system decision, not taken here). *Why? / Lineups*: the
+  explanation and the before / after lineups behind two `Expander`s, collapsed: a screen leads with the decision.
+
 ## Charts (one kit: `lib/chart.ts` + inline SVG)
 
 Hand-rolled (`linear`, `niceTicks`, `linePath`, `areaPath`; ~1 KB, no library, nothing to load before the first screen),
@@ -168,6 +197,60 @@ light and dark come for free. The rules (the dataviz references):
   `aria-sort` and a ▲ / ▼ in accent; the default sort is marked too.
 - Never: two y-axes, a number on every point, a 9th color, dashed gridlines, a pie for close values, color as the only
   carrier of a value (each value is printed somewhere: a label, the readout, the table).
+
+## Navigation (Wave I-B, IB-1)
+
+Four tabs by task — what the user came to do, not how we compute it:
+
+| Tab (`tab-<key>`) | Second row (`sub-<route>`) | Paths |
+|---|---|---|
+| **My Team** (`myteam`) | This week · Season · Team · League | `/` · `/ros` · `/team` · `/league` |
+| **Waivers** (`waivers`) | — (one screen; its views are chips inside it) | `/waivers` |
+| **Trades** (`trades`) | Partners · Calculator | `/trades` · `/trade-calc` |
+| **Players** (`players`) | Trends · Matchups · Receivers · Compare · Players | `/trends` · `/matchups` · `/receivers` · `/compare` · `/players` |
+
+- **Paths never move** (bookmarks, shared links, Wave F's `/record`): only the grouping and the labels change. A tab
+  opens its first screen; the second row shows the tab's screens, the one on screen marked (`aria-current="page"`).
+- **Phone**: the four tabs are the bottom bar (icon + label, thumb reach); the second row sits under the top bar and
+  scrolls inside itself when it does not fit (the page never scrolls sideways). The top row: the league / team picker,
+  the magnifier (the search field opens over the row, with Cancel), the overflow menu (⋯). The wordmark shows from
+  640 px (on a phone My Team is the way home and the picker needs the width).
+- **900 px+**: the tabs sit in the top bar; **1280 px+** the search field is always open (`data-testid="search"`).
+- **The search field** (every league screen and the player's page): two letters → `/api/search` → a hit opens the
+  research pane (`from: "search"`), Enter picks the first hit.
+- **About the numbers** (and the record) is not a tab: the overflow menu's first item (`menu-about`, marked when on
+  screen) and a link at the foot of every My Team screen (`foot-about`).
+- **The player's page** renders in the same frame (top bar, tabs, search): the tab you came from stays lit, its
+  second row is not shown (none of its screens is on screen). "‹ Back" goes where you came from; opened from a link
+  (nothing behind it in the app) it says "‹ My week" and goes there.
+
+## Pane (Wave I-B, IB-1)
+
+The research pane is how a player opens from anywhere a name is a means, not the destination: a lineup row, a waiver
+candidate, a trade list row, a search hit, a research list. His full page stays one tap away ("Full page").
+
+- **Layout**: from 900 px a panel beside the screen (`25rem`, sticky, the screen narrows and stays usable — another
+  name swaps the player in place); on a phone a **sheet** from the bottom (`88dvh` at most, a grab handle, the name +
+  × in a sticky head, the screen dimmed behind it; a tap on the dim, ×, Escape or Back closes it). The design
+  system's sheet is this one.
+- **Contents**: the player card unit (`PlayerCard`, this week's projection), the **actions**, the card's sections in
+  the full page's order (`lib/card.ts`: Projection, Value, Availability, Usage, Signals) with the Metrics tiles two to
+  a row, his game log. Nothing per-screen inside the pane.
+- **Actions by where it was opened from** (`from`): `lineup` → **Compare with my starter** (a bench player: the
+  weakest starter he could replace) or **Compare with my best bench option** (a starter: the best bench player who
+  fits his slot) → `/compare?a=&b=`; `waiver` → **Evaluate add / drop** → `/waivers?add=<sleeper id>[&drop=]`;
+  `trade` → **Add to trade** → `/trade-calc` with him ticked (added to the package when the calculator is open with
+  the same partner); always **Full page**. An action whose context is missing is not shown (never a dead button).
+- **API** (`lib/pane.svelte.ts`): `openPane(gsis, { from, context })`, `closePane()`, and `paneLink(gsis, opts)` — an
+  attachment for a name link (`{@attach paneLink(id, { from: "waiver", context: { add, drop } })}`): a plain tap opens
+  the pane, Cmd / Ctrl / middle click still opens the page. `PlayerRow` / `PlayerCard` / `LineupTable` take a `pane`
+  prop that does this for their name link.
+- **URL and history**: `?pane=<gsis>&from=<from>` on the screen's own path. The first pane is a new history entry
+  (Back closes it; the screen does not scroll), a swap replaces it, "Full page" replaces it with the player's page
+  (Back from there lands on the screen, not on the pane). The context lives in memory: after a reload only "Full page"
+  is offered.
+- `html, body` use `overflow-x: clip` (with `hidden` as the fallback): `hidden` on both made `<body>` a scroll box and
+  no sticky element (the pane, ListDetail's detail) stuck to the screen.
 
 ## Rules (what the references mean for us)
 

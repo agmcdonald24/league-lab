@@ -2,6 +2,7 @@
   // The unit (the references' player card): the headshot on his team's color, a big headline number with its label,
   // the name (first name small, LAST NAME big), position + team badges, one stat line. `compact` for a grid of cards.
   import type { Snippet } from "svelte";
+  import { paneLink, type PaneOptions } from "../lib/pane.svelte";
   import { splitName, team as teamColors } from "../lib/theme";
   import Headshot from "./Headshot.svelte";
   import PosBadge from "./PosBadge.svelte";
@@ -18,6 +19,7 @@
     compact = false,
     stacked = false,
     extra,
+    pane,
     testid = "player-card",
   }: {
     player: RowPlayer;
@@ -29,6 +31,7 @@
     compact?: boolean;
     stacked?: boolean; // a narrow column (Compare on a phone): the face on top, then the number, then the name
     extra?: Snippet;
+    pane?: PaneOptions; // IB-1: a tap on the name opens the research pane (lib/pane.svelte.ts) instead of his page
     testid?: string;
   } = $props();
 
@@ -51,7 +54,7 @@
       {/if}
       {#if name[0]}<div class="mt-1 w-full truncate text-xs leading-tight font-medium text-ink-2">{name[0]}</div>{/if}
       <h2 class="w-full truncate text-lg leading-tight font-extrabold tracking-tight uppercase" data-testid="card-name">
-        {#if href}<a class="ll-name" {href}>{name[1]}</a>{:else}{name[1]}{/if}
+        {#if href}<a class="ll-name" {href} {@attach paneLink(pane ? player.gsis_id : null, pane)}>{name[1]}</a>{:else}{name[1]}{/if}
       </h2>
       <div class="mt-1 flex flex-wrap items-center justify-center gap-1">
         <PosBadge pos={player.position} />
@@ -70,7 +73,7 @@
     <div class="min-w-0 flex-1">
       {#if name[0]}<div class="truncate text-sm leading-tight font-medium text-ink-2">{name[0]}</div>{/if}
       <h2 class="{compact ? 'text-xl' : 'text-2xl'} leading-tight font-extrabold tracking-tight break-words uppercase" data-testid="card-name">
-        {#if href}<a class="ll-name" {href}>{name[1]}</a>{:else}{name[1]}{/if}
+        {#if href}<a class="ll-name" {href} {@attach paneLink(pane ? player.gsis_id : null, pane)}>{name[1]}</a>{:else}{name[1]}{/if}
       </h2>
       <div class="mt-1 flex flex-wrap items-center gap-1.5">
         <PosBadge pos={player.position} size="md" />

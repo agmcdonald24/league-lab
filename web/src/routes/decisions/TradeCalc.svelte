@@ -6,11 +6,18 @@
   // season · playoffs) is a segmented control with one line saying why; the lineups are shown once (yours, then theirs
   // under an expander). The package and the window are the URL (?partner=&give=&get=&window=), so a copied link opens
   // the same trade.
+  // IB-2 (Wave I-B): the decision stays in view while you browse the rosters — once the dial's row scrolls away, the
+  // verdict bar is pinned to the top of the screen: the package, the dial's label, your gain; on desktop open (the four
+  // tiles and the verdict beside them), on a phone collapsed, a tap opens it. (Pinned with position: fixed — html / body
+  // clip sideways with overflow-x: hidden, which turns off position: sticky for the whole page.) The page leads with the decision and
+  // the lineup impact (this week / the window); the explanation (market, rest of season, ranks, roster size, week by
+  // week) is behind "Why?" and both lineups behind "Lineups", collapsed. A name in the lists opens the research pane.
   import { ApiError, decisionPaths, evaluateIn, get, paths, peek, Unauthorized, type Roster, type Team, type TeamRosterRow, type TradeEval, type TradeWindow } from "../../lib/api";
   import type { LeagueOption } from "../../lib/leagues";
   import { md, withContext } from "../../lib/md";
   import { errorWords, f1, f2, names, parseIds, s1, slotLabel } from "../../lib/decisions";
   import { windowOf, windowWhy } from "../../lib/decisions";
+  import { openPlayer } from "../../lib/decisions";
   import { restoreScroll, route, setParams } from "../../lib/router.svelte";
   import { fmt } from "../../lib/theme";
   import Bar from "../../components/Bar.svelte";
@@ -142,8 +149,38 @@
   const rmax = $derived(Math.max(1, shown?.ros?.give ?? 0, shown?.ros?.get ?? 0));
   const href = (g: string | null | undefined) => (g ? withContext(`/player/${g}`, ctx) : null);
   const span = $derived(shown?.span ?? null);
-  // the chip under the pickers shows the dial's reading only while the dial itself is off screen (no number twice)
+  // the bar (a phone) shows the dial's reading only while the dial itself is off screen (no number twice)
   let dialInView = $state(true);
+  let barOpen = $state(false);
+  let wideNow = $state(false);
+  $effect(() => {
+    if (dialInView) barOpen = false;
+  });
+  $effect(() => {
+    if (typeof matchMedia !== "function") return;
+    const mq = matchMedia("(min-width: 56.25rem)");
+    const set = () => (wideNow = mq.matches);
+    set();
+    mq.addEventListener("change", set);
+    return () => mq.removeEventListener("change", set);
+  });
+  // ---- IB-2: the package in a few words for the bar ("Jefferson → Lloyd + Pacheco")
+  const lastName = (n: string | null | undefined) => {
+    const p = (n ?? "").trim().split(/\s+/);
+    return p.length > 1 && !/^(Jr\.|Sr\.|II|III|IV)$/.test(p[p.length - 1]) ? p[p.length - 1] : p.length > 2 ? p[p.length - 2] : (n ?? "");
+  };
+  const pkgWords = $derived(
+    `${myPlayers.filter((r) => give.includes(r.sleeper_id ?? "")).map((r) => lastName(r.player_name)).join(" + ")} → ${theirPlayers
+      .filter((r) => getIds.includes(r.sleeper_id ?? ""))
+      .map((r) => lastName(r.player_name))
+      .join(" + ")}`,
+  );
+  const labelTone = (l: string) => (l === "No deal" ? "text-bad" : l === "Maybe" ? "text-warn" : "text-good");
+  // a name in the roster lists: the research pane (IB-1, "Add to trade"), else nothing (the checkbox is the row's tap)
+  function paneFor(side: "give" | "get", r: TeamRosterRow) {
+    openPlayer(r.gsis_id, { from: "trade", context: { sleeper_id: r.sleeper_id, side, partner: side === "get" ? partner : null, name: r.player_name } }, () => {});
+  }
+  // ---- end IB-2
   function watchDial(el: HTMLElement) {
     if (typeof IntersectionObserver === "undefined") return;
     const io = new IntersectionObserver((es) => (dialInView = es.some((e) => e.isIntersecting)), { threshold: 0.2 });
@@ -173,7 +210,21 @@
               <input type="checkbox" class="h-5 w-5 shrink-0 accent-[var(--ll-accent)]" checked={on} onchange={() => toggle(side, r.sleeper_id ?? "")} />
               <Headshot url={r.headshot_url} name={r.player_name ?? ""} team={r.team} size={32} />
               <span class="min-w-0 flex-1">
-                <span class="block truncate text-base font-semibold">{r.player_name}</span>
+                <span class="block truncate text-base font-semibold">
+                  {#if r.gsis_id}
+                    <a
+                      class="ll-name"
+                      href={href(r.gsis_id)}
+                      onclick={(e) => {
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+                        e.preventDefault();
+                        e.stopPropagation();
+                        paneFor(side, r);
+                      }}
+                      data-testid={`${side}-name`}>{r.player_name}</a
+                    >
+                  {:else}{r.player_name}{/if}
+                </span>
                 <span class="flex items-center gap-1.5 text-xs text-ink-3">
                   <PosBadge pos={r.position} />
                   {#if r.position !== "DEF"}<TeamBadge team={r.team} />{/if}
@@ -254,7 +305,7 @@
     {:else}
       {@const r = shown}
       <Card tone="accent" testid="trade-result">
-        <div class="grid items-center gap-4 wide:grid-cols-[minmax(0,16rem)_minmax(0,1fr)]" data-testid="dial-row" aria-busy={evaluating} {@attach watchDial}>
+        <div class="grid items-center gap-4 wide:grid-cols-[minmax(0,14rem)_minmax(0,1fr)]" data-testid="dial-row" aria-busy={evaluating} {@attach watchDial}>
           {#if r.interest}
             <Dial score={r.interest.score} label={r.interest.label} caption={r.interest.caption} you={r.interest.you} youLabel={`You · ${r.span}`} busy={evaluating} />
           {/if}
@@ -274,23 +325,46 @@
       </Card>
     {/if}
 
-    {@render pickers()}
+    <!-- IB-2: the verdict bar — pinned to the top once the dial has scrolled away (fixed: nothing in the flow moves when
+         it appears); open on desktop, a tap opens it on a phone -->
     {#if shown?.interest && give.length && getIds.length && !dialInView}
-      <!-- the dial's reading, kept in view while the lists scroll (a phone: just above the tab bar) -->
-      <div
-        class="sticky bottom-[calc(var(--ll-bar-h)+env(safe-area-inset-bottom)+0.5rem)] z-20 mx-auto flex w-fit max-w-full items-center gap-2 rounded-full border border-line-strong bg-surface px-4 py-2 text-sm shadow-lg wide:bottom-4"
-        data-testid="dial-chip"
-        aria-live="polite"
-      >
-        <span class="ll-label">Their interest</span>
-        <strong class={shown.interest.label === "No deal" ? "text-bad" : shown.interest.label === "Maybe" ? "text-warn" : "text-good"}>{shown.interest.label}</strong>
-        <span class="tabnum text-ink-3">{shown.interest.score}</span>
-        <span class="ll-label">You</span><strong class="tabnum">{s1(shown.interest.you)}</strong>
+      {@const r = shown}
+      {@const open = barOpen || wideNow}
+      <div class="pointer-events-none fixed inset-x-0 top-0 z-30 pt-[env(safe-area-inset-top)]" data-testid="verdict-bar-slot">
+        <div class="mx-auto max-w-6xl px-3">
+          <div class="pointer-events-auto rounded-b-lg border border-t-0 border-line-strong bg-surface shadow-lg" data-testid="verdict-bar" aria-live="polite">
+            <button type="button" class="flex min-h-12 w-full items-center gap-2 px-3 py-2 text-left text-sm" aria-expanded={open} onclick={() => (barOpen = !barOpen)} data-testid="verdict-bar-toggle">
+              <span class="min-w-0 flex-1 truncate font-semibold text-ink" data-testid="verdict-bar-package">{pkgWords}</span>
+              <span class="flex shrink-0 items-center gap-1.5" data-testid="dial-chip">
+                <strong class={labelTone(r.interest!.label)}>{r.interest!.label}</strong>
+                <span class="tabnum text-ink-3">{r.interest!.score}</span>
+                <span class="ll-label">You</span><strong class="tabnum">{s1(r.interest!.you)}</strong>
+              </span>
+              <span class="chev shrink-0 text-ink-3 wide:hidden {open ? 'rotate-90' : ''}" aria-hidden="true">›</span>
+            </button>
+            {#if open}
+              <div class="max-h-[60vh] overflow-y-auto border-t border-line px-3 pt-2 pb-3" data-testid="verdict-bar-detail">
+                <div class="grid grid-cols-2 gap-2 wide:grid-cols-4">
+                  <StatTile label="You · this week" value={s1(r.fit.this_week.mine)} caption={`${f2(r.before.mine.this_week)} → ${f2(r.after.mine.this_week)}`} size="sm" />
+                  <StatTile label={`You · ${r.span}`} value={s1(r.fit.next_4.mine)} caption={`${f1(r.before.mine.horizon)} → ${f1(r.after.mine.horizon)}`} size="sm" />
+                  <StatTile label={`${r.partner_team} · this week`} value={s1(r.fit.this_week.theirs)} size="sm" />
+                  <StatTile label={`${r.partner_team} · ${r.span}`} value={s1(r.fit.next_4.theirs)} size="sm" />
+                </div>
+                <p class="mt-2 text-base leading-snug font-semibold text-ink">{r.verdict}</p>
+                {#if r.sanity}<p class="mt-1 text-sm text-ink-2">We would not suggest this one: {r.sanity}.</p>{/if}
+              </div>
+            {/if}
+          </div>
+        </div>
       </div>
     {/if}
 
+    {@render pickers()}
+
     {#if shown && give.length && getIds.length && !evalError}
       {@const r = shown}
+      <Expander title="Why?" testid="why">
+      {#if verdictLess(r)}<p class="mb-3 text-base leading-snug" data-testid="why-headline"><Md text={verdictLess(r)} {ctx} /></p>{/if}
       <Card testid="trade-details">
         <div class="grid gap-4 wide:grid-cols-2">
           <div data-testid="market">
@@ -317,19 +391,9 @@
         {#if r.ranks?.words}<p class="mt-3 text-sm text-ink-2" data-testid="rank-change"><Md text={r.ranks.words} {ctx} /></p>{/if}
         {#if r.size_words}<p class="mt-2 text-sm text-ink-2" data-testid="roster-size"><Md text={r.size_words} {ctx} /></p>{/if}
       </Card>
-
-      <!-- the lineups, once: yours, then theirs under an expander -->
-      {#if r.lineups}
-        <div class="grid grid-cols-1 gap-3 wide:grid-cols-2" data-testid="lineups">
-          {@render lineup(r.lineups.mine, "Your lineup", r.week)}
-          <Expander title={`${r.partner_team}'s lineup, week ${r.week}`} testid="lineup-theirs">
-            {@render lineup(r.lineups.theirs, `${r.partner_team}'s lineup`, r.week)}
-          </Expander>
-        </div>
-      {/if}
-
       {#if weekly.length > 1}
-        <Expander title={`Week by week (${r.span})`} testid="weekly">
+        <div class="mt-3" data-testid="weekly">
+          <div class="ll-label mb-1">Week by week ({r.span})</div>
           <table class="w-full table-fixed text-base" data-testid="weekly-table">
             <thead>
               <tr class="text-left text-label font-semibold tracking-[0.08em] text-ink-3 uppercase">
@@ -345,6 +409,19 @@
             </tbody>
           </table>
           <p class="mt-2 text-sm text-ink-3">Each week is re-solved on its own: byes, injuries and taxi squads as in that week's lineup.</p>
+        </div>
+      {/if}
+      </Expander>
+
+      <!-- the lineups, once: yours, then theirs under an expander — both behind "Lineups", collapsed -->
+      {#if r.lineups}
+        <Expander title={`Lineups, week ${r.week}`} testid="lineups-x">
+          <div class="grid grid-cols-1 gap-3 wide:grid-cols-2" data-testid="lineups">
+            {@render lineup(r.lineups.mine, "Your lineup", r.week)}
+            <Expander title={`${r.partner_team}'s lineup, week ${r.week}`} testid="lineup-theirs">
+              {@render lineup(r.lineups.theirs, `${r.partner_team}'s lineup`, r.week)}
+            </Expander>
+          </div>
         </Expander>
       {/if}
     {/if}
