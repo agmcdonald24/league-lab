@@ -1468,3 +1468,57 @@ export interface PartnerRow {
   cheaper_than?: { give: string[]; words: string } | null;
 }
 // ---- end IE-1
+
+// ---- IF-2 (Wave I-F, the decision-quality review § Priority 3): trades compete with the simpler alternatives — the
+// ladder (standing pat, the best legal waiver move, the trade) over the same weeks; each trade's starter points beyond
+// the best alternative; the week strip for both sides; the value concepts named and kept apart. Additive.
+export interface TradeAlternative {
+  kind: "waiver" | "stand_pat";
+  player: { sleeper_id: string; gsis_id: string | null; player_name: string; position: string | null } | null;
+  drop: { sleeper_id: string; gsis_id: string | null; player_name: string; position: string | null } | null;
+  open_spot: boolean;
+  gain_week: number;
+  gain_window: number; // net of the drop's cost when IF-1's move is the source
+  by_week: number[];
+  weeks: number[];
+  span: string;
+  words: string; // "the Atlanta Falcons defense claim gives +12.8 over weeks 4–7 for an open spot"
+  source: string;
+}
+export interface WeekStrip {
+  weeks: number[];
+  mine: number[]; // your starter points gained per week
+  theirs: number[];
+}
+export interface VersusAlternative {
+  beyond_alternative?: number; // your starter points over the window minus the best alternative's
+  beats_alternative?: boolean;
+  alternative_words?: string;
+  other_objective?: { kind: "this_week" | "season_value" | "depth"; words: string } | null;
+  strip?: WeekStrip;
+}
+export interface ValueConcept {
+  label: string;
+  words: string | null;
+  fairness?: boolean;
+}
+export interface PartnerRow extends VersusAlternative {
+  rank?: number;
+  demoted?: boolean;
+}
+export interface Partners {
+  best_alternative?: TradeAlternative;
+  alternatives?: TradeAlternative[];
+  ordering?: { key: string; words: string };
+}
+export interface TradeEval extends VersusAlternative {
+  alternative?: TradeAlternative;
+  values?: {
+    projected_points: ValueConcept;
+    starter_points: ValueConcept & { mine: number; theirs: number };
+    depth: ValueConcept & { mine: { before: number | null; after: number | null }; theirs: { before: number | null; after: number | null } };
+    season_value: ValueConcept & { give: number | null; get: number | null; unknown: string[] };
+    ros_points: ValueConcept & { give: number | null; get: number | null; window: string | null };
+  };
+}
+// ---- end IF-2

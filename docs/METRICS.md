@@ -2170,6 +2170,31 @@ player Sleeper lists; not Sleeper's own scoring (its line is counted the league'
   25% of Σ given (the rest-of-season board). Either sets the package aside and the search takes the next best.
   Unknown is not zero: a player without the number is not judged.
 
+- **Against the alternatives** (ta1.0, IF-2, Wave I-F, 2026-10-03 — the decision-quality review § Priority 3: the
+  Finder's headline, +9.8 over weeks 4–7 on the live server, lost to a free Arizona team QB claim, +11.4, for an open
+  spot, and nothing said so). One ladder per roster and window, the same weeks and scoring: **standing pat** (0), **the
+  best legal waiver move** (`decisions.best_alternative`: IF-1's `best_waiver_move` — the claim's starter gain net of
+  the drop's cost — when it is in `decisions`, over the next four weeks; else, and for the other windows, the open-spot
+  fill on today's free agents, `ctx.fa_pool` + `trades.best_fill`, and with no open spot the best add for each droppable
+  player with his lineup loss netted out), **the trade**. `beyond_alternative` = the trade's starter points over the
+  window (this week's for the one-week window) − the alternative's; `beats_alternative` when it is ≥ 0.05. **Ranking**:
+  the trades that beat the alternative first, then by `beyond_alternative` (= by your gain, the alternative being one
+  number per roster and window), the bigger package never above its cheaper equal (IE-1); `rank` 1 is the headline —
+  the headline and the first card are the same trade (they were not: the headline was the best partner's best package,
+  the first card that partner's one-for-one). Was: partners by the smaller of the two gains, then the sum
+  (`Package.order`; the search itself is unchanged and still finds, per partner, the package both sides gain most from).
+  A trade below the alternative is marked (`demoted`) and keeps a reason only from the numbers (`other_objective`: more
+  this week than the claim by ≥ 0.5; more season value above replacement coming in, not about even; in the calculator,
+  the bench's best lineup up ≥ 2 this week) — never invented. A trade that takes the open roster spot the claim needs
+  says so. **The strip**: per week, each side's best-lineup change (`trades.package_weeks`, `package_gains`' code); its
+  sums are the gains. **The value concepts** (`trades.VALUE_CONCEPTS`), never added to one another: projected points
+  (one player, one week), starter points (the best legal lineup's change over the window), backup coverage (the bench's
+  best lineup), **season value above replacement** (`price_by_player`: the fairness test; package size named — the
+  roster spots freed or used — and the players it cannot count), rest-of-season projected points (the raw totals,
+  labelled "all positions added up — not a fairness test"). The calculator's warning (`calc_sanity`) is on season value
+  above replacement (given − received > 25% of given, every player priced); the Finder's sanity bound on suggestions
+  (rule (a), the raw rest-of-season totals) is unchanged.
+
 ## Calibration of the top (cal1.0, Wave I-A M1, 2026-10-03; `league_lab.calibration`, flag `LEAGUE_LAB_PROJECTION_CALIBRATION`, off)
 
 The question (Andrew, Iteration 17 B): does the model pull the best players toward the middle? If it did, the

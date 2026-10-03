@@ -855,7 +855,53 @@ def clean_package(board: RosterBoard, me: int, them: int | None, give: Iterable[
     return g, t, [p for p in give if p not in g] + [p for p in get if p not in t]
 
 
+# ---- IF-2 (Wave I-F, the decision-quality review § Priority 3): the value concepts, named and kept apart, and a
+# package's gains week by week. The review: "you get more season value" next to "492 rest-of-season points for 164"
+# described two concepts without naming them. Each number a trade shows belongs to exactly one of these; they are never
+# added to one another. The fairness test is season value above replacement (``price_by_player``), never the raw totals.
+VALUE_CONCEPTS = {
+    "projected_points": "Projected points",                  # one player, one week: a line
+    "starter_points": "Starter points",                      # what enters the best legal lineup, summed over the weeks
+    "depth": "Backup coverage",                              # the bench's own best lineup this week (B1's bench_value)
+    "season_value": "Season value above replacement",        # price_by_player: rest of season above the best free agent
+    "ros_points": "Rest-of-season projected points",         # the raw totals, all positions added up: not a fairness test
+}
+ROS_NOT_FAIRNESS = "all positions added up — not a fairness test"
+
+
+def package_weeks(board: RosterBoard, give: Sequence[str], get: Sequence[str],
+                  weeks: Sequence[int]) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    """(mine, theirs): per week of ``weeks``, the change of each side's best lineup (``package_gains``' code — cuts
+    included, no fill, no market); their sums are the package's horizon gains."""
+    give, get = _ids(give), _ids(get)
+    me, them = _owner(board, give, "give"), _owner(board, get, "get")
+    a = _side(board, me, give, get, weeks, None, None, detail=False)
+    b = _side(board, them, get, give, weeks, None, None, detail=False)
+    return (tuple(_r2(x - y) for x, y in zip(a.after, a.before, strict=True)),
+            tuple(_r2(x - y) for x, y in zip(b.after, b.before, strict=True)))
+
+
+def season_value_line(price_out: int | None, price_in: int | None, n_give: int, n_get: int,
+                      unknown: Sequence[str] = (), name: Callable[[str], str] = str) -> str:
+    """The fairness test in words: season value above replacement given and received (whole points, each side's sum),
+    the roster spots the package frees or uses (package size), and the players it cannot count (no season projection)."""
+    po, pi = price_out or 0, price_in or 0
+    lean = ("about even" if about_even(po, pi) else f"you get {pi - po} more" if pi > po else f"you give {po - pi} more")
+    line = f"Season value above replacement: you give {po}, you get {pi} ({lean})."
+    if n_get > n_give:
+        k = n_get - n_give
+        line += f" You get {n_get} players for {n_give}: {k} more roster spot{'s' if k > 1 else ''} used."
+    elif n_give > n_get:
+        k = n_give - n_get
+        line += f" You give {n_give} players for {n_get}: {k} roster spot{'s' if k > 1 else ''} freed."
+    if unknown:
+        line += f" Not counted (no season projection): {', '.join(name(p) for p in unknown)}."
+    return line
+# ---- end IF-2
+
+
 __all__ = ["MARKET_SQL", "REPLACEMENT_SQL", "Cut", "Fill", "Package", "Partner", "Side", "Trade", "about_even", "best_fill",
            "clean_package", "evaluate", "fairness_line", "fit_line", "market_by_player", "package_gains", "parse_ids",
            "partners", "partners_exhaustive", "position_of", "price_by_player", "rank_change", "ranks", "roster_limit",
-           "sanity", "season_value", "tradeable", "two_for_one_counts", "verdict", "whole"]
+           "sanity", "season_value", "tradeable", "two_for_one_counts", "verdict", "whole",
+           "VALUE_CONCEPTS", "package_weeks", "season_value_line"]          # ---- IF-2

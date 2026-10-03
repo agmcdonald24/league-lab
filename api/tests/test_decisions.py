@@ -210,7 +210,10 @@ def test_trade_evaluate_reproduces_the_trade_finder(client, sql, league):
             assert strip_links(d["market"]["words"]) == decisions.dictionary_words(T.fairness_line(page))
         else:                                 # priced on request from the NFL-wide board: the same whole points (± 1)
             assert abs(d["market"]["give"] - page.mine.price_out) <= 1 and abs(d["market"]["get"] - page.mine.price_in) <= 1
-        assert d["ros"] is None or d["ros"]["words"].startswith("Rest of season")
+        # IF-2: the raw totals are labelled as such — "Rest-of-season projected points (…), all positions added up — not a
+        # fairness test" (the decision-quality review: they were read as a second value test)
+        assert d["ros"] is None or (d["ros"]["words"].startswith("Rest-of-season projected points")
+                                    and "not a fairness test" in d["ros"]["words"])
         assert d["lineups"]["mine"]["slots"] and d["size_words"].startswith("Roster size")
 
 

@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-03 — Wave I-F
+
+- **IF-2: trades compete with the simpler alternatives.** The Trade Finder ranks trades by the starter points they add
+  beyond your best waiver move over the same weeks, says it ("+14.6 over weeks 4–7: 1.8 more than your best waiver
+  move"), marks the ones that do not beat it ("Below your best waiver move") and keeps a reason only from the numbers;
+  the headline is the first card; every card and the calculator show the week-by-week strip for both sides. The
+  calculator names its numbers (projected points, starter points, backup coverage, season value above replacement)
+  and labels the raw rest-of-season totals "not a fairness test".
+
 ## 2026-10-03 — Wave I-E
 
 - **PO (integration).** The trade verdict says what each starting lineup gains and what the season value says —
