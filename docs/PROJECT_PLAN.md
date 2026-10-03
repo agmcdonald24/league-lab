@@ -551,6 +551,35 @@ the dial describe lineups, not the other manager's answer. Left for a later pass
 table, status next to names, "Updated hh:mm", the dictionary on the research screens. The other waves stand: Monday's
 flip of `LEAGUE_LAB_EV_PRICING`, usage tracking, v3.1, Wave J.
 
+**Fifth: the decision-quality review (2026-10-03, late evening).** A fourth outside review walked `f6315ae` for
+decision quality — "What changes my decision, why, and how much should I trust it?" Verbatim in
+`docs/reviews/2026-10-03-decision-quality-review.md`. Andrew: "next wave plus see this too". It verifies Wave I-E's
+fixes (the team-QB trade, the dial, the starters in / out, the combined close call, this-week-first waivers) and
+sets four priorities: **(1)** connect historical matchup evidence to current personnel — Williams at Carolina reads
+"#31 of 32 vs WRs" while Carolina's two starting corners are on IR (Horn, Jackson; the app's own Matchups screen
+already names the replacements Lee and Evans, unranked) and nothing on the comparison reconciles the two: show the
+history, what changed (with source and date), and the implication, say whether the forecast carries it, and stop
+using an unqualified historical rank as a decisive tiebreaker; **(2)** value the bench before prescribing drops —
+GoodGameBuddy's "Claim Carlson, drop Marvin Harrison Jr." picks the same drop for every claim because the engine
+prices a bench player by his lineup points over four weeks (0 → free): evaluate the incumbent (McPherson) as the
+direct replacement, separate starter gain / depth lost / future starts / upside / flexibility, measure scarcity
+against available replacements, show the best drop and an alternative with the reason, keep watchlist candidates
+apart from claims, allow "no worthwhile move"; **(3)** trades compete with the simpler alternatives — the finder's
+headline (+9.8 over weeks 4–7) loses to the Arizona team QB claim (+11.4, an open spot) and the calculator mixes
+"season value" with raw rest-of-season totals ("492 for 164"): rank by gain beyond stand-pat and the best legal
+waiver move, name the value concepts, show both sides' starter changes and the weeks driving each gain, explain the
+ordering; **(4)** keep close calls discoverable ("No clear upgrade" rather than "nothing to change" when the
+submitted lineup equals the optimizer's), "what changed since your last visit", the drawer focused on the decision,
+and a table of language fixes (rank direction, "Typical range" everywhere, the bench expander, "Margin", bolding,
+duplicated sections, metric definitions, "No role change detected", "Expect him to pick up", player-relevant news).
+Plus: the analytics worth building next (role quality, matchup relevance, conditional upside, roster opportunity,
+the game objective) and model-validation gates (frozen as-of inputs, event timestamps, decision regret, the MFL
+grade's qualification next to the headline). **Wave I-F** (five devs, one round): IF-1 the drop valuation, IF-2
+trades against the alternatives, IF-3 the matchup evidence, IF-4 the home / drawer / language fixes + the I-E
+leftovers, **U-1 usage tracking** (the planned next item, carried alongside). The event store (`ops.events`) is
+designed in IF-3's hand-back, not built; the deeper analytics and the validation harness stay on the list after
+Monday's flip and v3.1.
+
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 
 Andrew ran the Wave G app on his Mac ("Oh hell yea … proceed"). Next: put the non-commercial beta on a host so his
