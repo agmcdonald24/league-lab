@@ -95,7 +95,7 @@ def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
     rest = rows[rows["role"] != "starter"].copy()
     if not rest.empty:
         rest["slot"] = rest.apply(lambda r: f"Bench {int(r['bench_rank'])}" if r["role"] == "bench" and pd.notna(r["bench_rank"])
-                                  else "Can't play", axis=1)
+                                  else cards.no_slot_or_cant(r.get("reason")), axis=1)     # ---- IC-2: "No slot"
         rest["flag"] = rest.apply(lambda r: r["reason"] if r["role"] == "unplayable" else ("locked (game started)" if r["locked_now"]
                                   else cards._flag(r["report_status"])), axis=1)
     full = short + [_lineup_row(r) for _, r in rest.iterrows()]
@@ -105,6 +105,13 @@ def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
         x["headshot_url"] = _str(face.get(x["gsis_id"])) if x["gsis_id"] else None
         x["team"] = team_of.get(x["gsis_id"]) if x["gsis_id"] else None
     # ---- end IA-1
+    # ---- IC-2: a team unit (MFL's team QB / kicker) or a defense has no gsis id: its team from its own row
+    team_no_id = {_str(r.get("player_name")): _str(r.get("team")) for _, r in rows.iterrows()
+                  if not _str(r.get("gsis_id")) and _str(r.get("player_name"))}
+    for x in full:
+        if not x["gsis_id"] and x["player_name"]:
+            x["team"] = team_no_id.get(x["player_name"])
+    # ---- end IC-2
     return short, full
 
 

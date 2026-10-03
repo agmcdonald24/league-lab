@@ -414,3 +414,61 @@ belongs in `sync_to_hosted.sh`'s `SLIM_TABLES` (a window of seasons) before the 
 their long-TD bonuses start at 40). Return yards, IDP, and the defense's distance on a return TD (priced at its
 expected points) are not priced from actual lines.
 
+## Slots and team units (Wave I-C, IC-2, 2026-10-03)
+
+**Why.** Dad's league (MFL 70587, "Make Football Great Again") starts `TMQB ×1, RB ×2, WR+TE ×3, TMPK ×1, Def ×1`.
+`lineup.py` knew Sleeper's slot names only, so the translation kept `RB` and `Def` and dropped the rest: the app read
+the lineup as "2 RB, DEF", seated a TE at RB2 (MFL's starters, in no slot order, were zipped onto the slots), called
+every WR and both team units "Can't play", and priced team 1 at 13.34 (week 4, fixture). Now: 8 slots, both units
+seated and priced, 38.65 (with the scoring I0-B compiled; IC-1's spec changes the numbers, not the seating).
+
+**Slots are eligibility sets** (`lineup.Slot(label, type, elig, order)`, `lineup.slot_eligibility(name)`):
+* Sleeper's names as before (`QB … DEF`, `FLEX`, `SUPER_FLEX`, `REC_FLEX`, `WRRB_FLEX`; `IDP_FLEX` / `DL` / `LB` / `DB`
+  reported, not solved);
+* generic combined names `A+B[+C]` = the union of the parts (`WR+TE` {WR, TE}, `RB+WR+TE`, `QB+RB+WR+TE`; `PK` = K,
+  `Def` = DEF). Sleeper never emits them; the MFL translation writes the league's own names (`mfl_client.slot_name`).
+  A combined name with an IDP or unknown part (`DT+DE`) is reported, not solved;
+* the team units `TMQB` (admits only a TMQB), `TMPK` (only a TMPK), `TMDEF` (= a team defense, DEF).
+
+The label is the league's own word ("WR+TE1", "TMQB"); `cards.slot_label` says it ("WR/TE 1", "team QB", "team K").
+`lineup.SLOT_ELIGIBILITY` answers any of these names on lookup (`SLOT_ELIGIBILITY["WR+TE"]`, `.get("TMQB")`), so every
+reader of slot types (waivers, the trade board, availability, the Team Hub's slot strength) works unchanged on an MFL
+league; `app/lib/cards.slot_elig` is the solver-free copy (a test keeps them equal).
+
+**"No slot" is not "can't play".** A player no starting slot of the league admits (a plain K in dad's league, a QB, a
+team unit in a Sleeper league) reads **"No slot for a K in this league"**, listed as "No slot" (My Week's full list,
+the Streamlit table); "Can't play" is kept for injury, bye, IR, a locked bench player. The rows keep `role =
+"unplayable"` (every reader leaves him out of the lineup), `Lineup.no_slot` / `Lineup.cannot_play` split them, and
+`ops.lineup_totals.n_unplayable` counts only the can't-play ones. The reason was "no K slot in this lineup" before.
+
+**MFL's starters, seated.** Sleeper's `starters` array is ordered like the starting slots ("0" = empty); MFL lists
+ids. `MFLLeagues.rosters` seats each starter in the narrowest slot that admits him (`lineup.align_starters`: a maximum
+matching), so the lock rule reads the slot a started player really holds (Fannin, Thursday night: WR+TE3, not RB2).
+
+**Team units are players.** A rostered MFL `TMQB` / `TMPK` id (`0651`… / `0701`…; MFL numbers them as its defenses
+`05xx` + 150 / + 200) becomes a directory row `{player_key: "mfl:0656", position: "TMQB", team: "CIN", player_name:
+"Cincinnati Bengals QB", unit: true}` (team = MFL's code in Sleeper's spelling, name = MFL's name + the unit word), with
+no gsis id and counted as `unit` in `mfl_mapped_by` (never "unmapped"). A `TMDEF` is a defense, as `Def` was.
+
+**Pricing** (`anyleague.price_units`, carried in `Priced.units`, one row per (unit, nflverse team)):
+* `TMQB` = the line of the team's best-projected quarterback who can play (Out / Doubtful / NFL IR skipped unless
+  none is left), priced through `price_lines` like every stat line with `position = "TMQB"` (`lineup.UNIT_PRICES_AS`
+  maps it to the QB rules for IC-1's spec); its range is the starter's, shifted onto the unit's points. The brief's
+  "sum of the team's quarterbacks' lines" is `unit_lines(rule="sum")`: on the week-4 board the backups' lines are not
+  near 0 (KC 29.24 summed vs Mahomes 22.78 alone, ATL 30.35 vs Penix 17.22, BUF 29.28 vs Allen 26.99 in a 4-pt pass
+  TD scoring) — each line is projected on its own, so the sum counts a team's passing more than once. Default
+  `UNIT_QB_RULE = "starter"`.
+* `TMPK` = the team's kicker from `kd_values(scoring, "K")` (the best projected when a team has two); his p10 / p90.
+* `TMDEF` = DEF as today.
+* A unit can't play only on a bye (the solver's bye rule by its team); a game kicked off locks it as any starter.
+
+**Free agents.** A league with unit slots lists every NFL team's units in the directory: the rostered ones under their
+MFL id, the others as `mfl:TMQB-KC` (the MFL id is known only once a roster carries the unit), one per (unit, team).
+`free_agents` keeps them (no gsis needed) and Waivers prices them by team (`unit_value`). 70587: 64 − 34 rostered = 30.
+
+**The web.** The slot words come from the API; a unit's row shows its team's badge (`TeamBadge`) where a player shows
+his face (`LineupTable.svelte`).
+
+**Not done.** Rest of season and the trade board value a unit through the solver's rows only (the ROS table has no
+unit rows yet); the Team Hub's slot-strength "top" carries the unit's name, not its team; `scoring_report` reads
+`"DEF" in slots` (a `TMDEF`-only league would list the defense keys as unmapped — IC-1's function).

@@ -23,6 +23,14 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   to the bit. `/api/league/scoring-check` compares our points with the league's own for a played week: Scrubs and the
   dynasty 100% to the tenth in weeks 1–2 (the SQL macro agrees everywhere), 70587 162 / 163 and 156 / 156 within a point.
 
+- **IC-2: slots as eligibility sets, team units as players.** A slot is the set of positions it admits
+  (`lineup.Slot(label, type, elig, order)`): Sleeper's names, MyFantasyLeague's combined slots (`WR+TE`, `RB+WR+TE`) and
+  team units (`TMQB`, `TMPK`, `TMDEF`) in the league's own words ("WR/TE 1", "team QB"). A rostered MFL team QB / kicker
+  is a player with its NFL team, priced from the team's starting quarterback's line / its kicker; Waivers lists the
+  unrostered ones. MFL's starters are seated in the slot that admits them (a started TE no longer lands at RB2). A
+  player no slot admits reads "No slot for a K in this league", never "Can't play". Dad's league 70587, team 1, week 4
+  (fixture): 3 slots and 13.34 before, 8 slots and 38.65 now.
+
 ## 2026-10-03 — Wave I-B
 
 - **PO merge.** IB-2's "who starts" reads IB-0's roster context (one overlay pass); the API suite answers MFL from

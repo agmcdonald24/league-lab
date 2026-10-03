@@ -153,7 +153,7 @@ for weeks Sleeper has scored), one row per starting slot and per rostered player
 `role` = `starter` | `empty` (a starting slot nobody on the roster is eligible for this week — or, in a
 realised lineup, only a negative scorer: player columns NULL) | `bench` (playable, not starting;
 `bench_rank` 1 = best value) | `unplayable` (`reason`: `bye`, `Out`, `Doubtful`, `NFL injured reserve`,
-`IR slot`, `taxi squad`, `game started (bench)`, `no NFL team`, `no <POS> slot in this lineup`, …). A
+`IR slot`, `taxi squad`, `game started (bench)`, `no NFL team`, `No slot for a <POS> in this league` (Wave I-C: not counted in `n_unplayable`), …). A
 playable player with no value yet is a starter or bench row with `value` 0, `value_source` `unvalued`
 and `reason` `no value yet` (seated only where nobody valued can play). Starting rows carry `slot` (unique label within
 the lineup: `QB`, `RB1`, `RB2`, `FLEX1`, `SUPER_FLEX`, … — numbered only when the slot repeats; same-type
