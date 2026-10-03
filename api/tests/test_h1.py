@@ -147,7 +147,9 @@ def test_waivers_upside_is_mart_waiver_upside(client, sql, league):
     for s, m in zip(st, mart, strict=True):
         assert s["scenario_value"] == pytest.approx(float(m["scenario_value"]))
         assert s["holds_horizon_gain"] == pytest.approx(float(m["holds_horizon_gain"]))
-        assert (s["drop"] or {}).get("player_name") == m["drop_name"]
+        # IF-1 (Wave I-F): a stash names its drop only when the scenario's lineup gain beats what the drop costs
+        assert (s["drop"] or {}).get("player_name") == (m["drop_name"] if s.get("stash_action") != "watch" else None)
+        assert s.get("stash_action") != "watch" or s["watch_words"].startswith("Watch, no claim yet")
         assert s["headline"].startswith(f"Upside stash: {m['add_name']}") and s["lines"]
     if not mart:
         assert d["upside"]["why"]

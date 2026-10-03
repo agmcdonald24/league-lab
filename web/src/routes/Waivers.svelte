@@ -241,6 +241,11 @@
                   <ul class="mt-1 space-y-1 text-sm leading-snug text-ink-2" data-testid="stash-lines">
                     {#each u.lines as line, i (i)}<li><Md text={line} {ctx} /></li>{/each}
                   </ul>
+                  <!-- ---- IF-1: a stash is a watchlist — no drop when the drop costs more than the scenario adds -->
+                  {#if u.stash_action === "watch" && u.watch_words}
+                    <p class="mt-2 rounded-md bg-accent-soft px-3 py-2 text-sm leading-snug text-ink" data-testid="stash-watch">{u.watch_words}</p>
+                  {/if}
+                  <!-- ---- end IF-1 -->
                   {#if u.holds_horizon_gain != null}
                     <div class="mt-2 grid grid-cols-2 gap-2">
                       <StatTile label="As he is" value={f1(u.base_value)} caption={`week ${wk}`} size="sm" />

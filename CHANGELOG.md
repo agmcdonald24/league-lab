@@ -11,6 +11,8 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   read-only; no names, usernames or IP addresses. Read it on the console's Usage page or `GET /api/usage/summary`;
   About says so in one line.
 
+- IF-1: waiver drops are valued before they are prescribed — each drop's cost in pieces (lineup loss with the claim, depth, later starts, season value above the waiver wire, upside); the cheapest drop per claim, one alternative and why (Carlson for McPherson, not Harrison); "No claim is worth a roster spot this week"; stashes say "watch" instead of a drop; `best_waiver_move` for the trade finder.
+
 ## 2026-10-03 — Wave I-E
 
 - **PO (integration).** The trade verdict says what each starting lineup gains and what the season value says —
