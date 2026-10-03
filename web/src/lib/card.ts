@@ -41,3 +41,41 @@ export function cardHeadLine(d: PlayerCard): string {
 export function cardMissing(d: PlayerCard): string[] {
   return (d.missing ?? []).filter((k) => !d.sections[k as SectionKey]).map((k) => NAMES[k] ?? k);
 }
+
+// ---- N1 (Wave I-D): the news line — "News · 2 h ago · <headline> · ESPN ›", the newest of `news` (the API keeps it
+// at most 14 days old). `now` is injectable (tests). Ages: "just now" under a minute, "N min ago", "N h ago", "N d ago".
+export function ago(iso: string, now: number = Date.now()): string {
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return "";
+  const min = Math.floor(Math.max(0, now - t) / 60_000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} min ago`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} h ago`;
+  return `${Math.floor(h / 24)} d ago`;
+}
+
+export interface NewsLine {
+  ago: string;
+  headline: string; // cut at a word to NEWS_MAX characters ("…"): a RotoWire blurb runs to 220
+  full: string;
+  source: string;
+  url: string;
+}
+
+export const NEWS_MAX = 110;
+
+export function shortHeadline(s: string, max: number = NEWS_MAX): string {
+  const t = s.trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max + 1);
+  const sp = cut.lastIndexOf(" ");
+  return `${(sp > max * 0.6 ? cut.slice(0, sp) : t.slice(0, max)).replace(/[\s,;:.\-–—]+$/, "")}…`;
+}
+
+export function newsLine(d: Pick<PlayerCard, "news">, now: number = Date.now()): NewsLine | null {
+  const n = (d.news ?? []).find((x) => x.headline && x.url?.startsWith("https://"));
+  if (!n) return null;
+  return { ago: ago(n.date, now), headline: shortHeadline(n.headline), full: n.headline, source: n.source || "ESPN", url: n.url };
+}
+// ---- end N1

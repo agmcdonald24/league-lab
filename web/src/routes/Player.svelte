@@ -8,6 +8,7 @@
   import Expander from "../components/Expander.svelte";
   import GameLog from "../components/GameLog.svelte";
   import Md from "../components/Md.svelte";
+  import NewsLine from "../components/NewsLine.svelte"; // ---- N1
   import PlayerCardView from "../components/PlayerCard.svelte";
   import SectionBox from "../components/Section.svelte";
 
@@ -111,13 +112,18 @@
               </div>
             {/if}
             <!-- ---- end IA-3 -->
+            {#if x.key === "availability"}<NewsLine card={data} testid="player-news" />{/if}<!-- ---- N1 -->
           </SectionBox>
         {/each}
         {#if league}<GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={data.league_name} />{/if}
       </div>
       <div class="space-y-3">
         {#each sections.slice(1) as x (x.key)}
-          <SectionBox section={x.sec} {ctx} testid={`section-${x.key}`} />
+          <SectionBox section={x.sec} {ctx} testid={`section-${x.key}`}>
+            <!-- ---- N1 (Wave I-D): the news line under the availability lines -->
+            {#if x.key === "availability"}<NewsLine card={data} testid="player-news" />{/if}
+            <!-- ---- end N1 -->
+          </SectionBox>
         {/each}
       </div>
     </div>

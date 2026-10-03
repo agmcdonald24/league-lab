@@ -468,6 +468,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "ros": ros_out, "missing": [MISSING_WORDS.get(k, k) for k in missing], "missing_keys": missing,
         "source": "database" if od is None else "sleeper",
         **({} if od is None else {"on_demand": od.meta()}),
+        "news": news_block(p["gsis_id"]),                                                  # ---- N1
     }
 
 
@@ -543,3 +544,14 @@ def why_block(league_id: str, gsis: str, pos: str, season: int, week: int | None
     return {"why": explained, "market": why.market_block(ours, market, week) if week is not None and pos in why.ORDER else None,
             "leans_on": lean}
 # ---- end IA-3
+
+
+# ---- N1 (Wave I-D): the news line — ESPN's latest headlines for him (league_lab_api/news.py): at most 3, newest
+# first, none older than 14 days; [] when the feed is off or out. A top-level key, so the sections stay the page's.
+def news_block(gsis: str) -> list[dict]:
+    try:
+        from . import news
+        return news.for_card(str(gsis))
+    except Exception:  # noqa: BLE001 - the card never fails for its news
+        return []
+# ---- end N1

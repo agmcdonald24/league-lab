@@ -39,7 +39,7 @@ from league_lab import anyleague as A
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from . import auth, availability, db, myweek, ondemand, player, research  # availability: I0-A
+from . import auth, availability, db, myweek, news, ondemand, player, research  # availability: I0-A; news: N1
 from .applib import cards, ui
 from .db import DataNotReady, query
 from .myweek import NotFound
@@ -321,6 +321,10 @@ def status(response: Response):
     except Exception as exc:  # noqa: BLE001 - a status line, never a failure
         out["availability"] = {"enabled": availability.enabled(), "error": exc.__class__.__name__}
     # ---- end I0-A
+    try:                                    # ---- N1: the news line's feed (calls, failures, cached athletes)
+        out["news"] = news.info()
+    except Exception as exc:  # noqa: BLE001 - a status line, never a failure
+        out["news"] = {"enabled": news.enabled(), "error": exc.__class__.__name__}
     out["sleeper"] = A.sleeper().stats()
     out["board_source"] = A.board_source()
     try:                                    # QA: the setting is "auto"; say which board the current week really uses

@@ -4403,3 +4403,35 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   09-26 snapshot) has no `*_tds_10p` columns; `test_f3::test_ros_route` gains the `unit` key. Root 967 passed, 2
   skipped; ruff clean; web lint / typecheck 0 / 0, build ok; fixture e2e 140 passed (134 + 6). `web/e2e/ic4/` (6: phone at 375, desktop 1300) on `web/fixtures/mfl/api_70587_ic4.json` (recorded from
   this branch's API with `IC4_RECORD`, the ESPN overlay on).
+
+### N1 2026-10-03 — the news line on the card (branch `dev/N1`, clone `league_lab_ia3`)
+
+* **Why**: Andrew's first review asked for the player's news next to the numbers.
+* **The feed, found through the browser pane** (read-only, no key): `site.api.espn.com/apis/fantasy/v2/games/ffl/news/
+  players?playerId=<espn_id>&limit=5` — newest first, RotoWire's per-player blurbs (`type: "Rotowire"`, no web link)
+  and ESPN's stories naming him (`Story` / `HeadlineNews` / `Media`, `links.web.href`); unknown id → `feed: []`. The
+  brief's candidates failed: `common/v3/.../athletes/<id>/news` 404 on both hosts, `site/v2/.../news?athletes=` ignores
+  the filter, `site/v2/.../athletes/<id>/news` always empty, `common/v3/.../overview` 241 KB a call. Recorded in
+  `docs/ESPN_TERMS.md` (with what the answer says about use: nothing; ESPN's Terms of Use not readable from here).
+  Fixtures `api/tests/fixtures/espn/news_4262921.json` (Jefferson, 5 items, newest 2026-10-03 13:33 UTC) and
+  `news_3045147.json` (Conner, newest 2026-08-30), bodies / images / video emptied.
+* **Feed client** `src/league_lab/news_feed.py` (injury_feed's pattern): keeps `{headline, date, source, url}` only
+  (source "RotoWire via ESPN" / "ESPN"; url = the story's https espn.com page, else his ESPN player page; any other
+  host is never passed on), per-athlete cache `LEAGUE_LAB_CACHE_DIR/espn_news/<id>.json` an hour / 15 minutes on game
+  days, bucket 60 a minute (`LEAGUE_LAB_ESPN_NEWS_PER_MIN`), fixtures `LEAGUE_LAB_ESPN_FIXTURES/news_<id>.json` (age
+  measured from the recorded answer's `timestamp`), a failure serves the last copy or nothing, `LEAGUE_LAB_NEWS=off`.
+* **API** `api/league_lab_api/news.py` + `# ---- N1` blocks in `player.py` (`news` top-level on every card: house,
+  on demand, MFL) and `main.py` (`/api/status` → `news`): at most 3, newest first, none older than 14 days; `[]` when
+  off / out / no ESPN id. ESPN id: the id table read backwards (`availability.espn_to_gsis`), else Sleeper's
+  directory. Off in fixture mode unless the ESPN fixtures are set (as the overlay).
+* **Web**: `components/NewsLine.svelte` — "**News** · 2 h ago · *headline* · RotoWire via ESPN ›" as the last line of
+  the Availability section on the page (`player-news`) and in the pane (`pane-news`); newest only, cut at a word to
+  110 characters (full headline in `title` / the link's label), link `target=_blank rel="noopener noreferrer"`.
+  `lib/card.ts` `ago` / `shortHeadline` / `newsLine`, `lib/api.ts` `NewsItem` (marked blocks). About gains one
+  sentence under the model cards (`about-news-source`).
+* **Tests**: `api/tests/test_n1.py` 15 (parse keeps 4 keys and drops the body; 3 / newest first / 14 days incl.
+  Conner stale; bad answers; cache 59 min hit, 61 min miss, 16 min on a game day; disk copy holds only the line and
+  survives a restart; outage → [] or the last copy; bucket; off switch; fixture clock; card: 3 items in order with
+  sources and https links, stale → [], outage → [] and 200, off → [] and 0 calls, fixture mode without ESPN → [],
+  Waivers + Trends → 0 news calls). `web/e2e/n1/` 5 × phone (375) / desktop: the line on the page and in the pane,
+  no line without news, ESPN's own story, About's sentence.
