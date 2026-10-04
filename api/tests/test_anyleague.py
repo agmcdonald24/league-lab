@@ -107,7 +107,7 @@ def test_pricing_reproduces_every_league_points_exactly():
     assert b.mismatched_lines == 0
     assert len(b.line) > 400
     for league, f in b.fitted.items():
-        mine = A.price_lines(b.line.loc[f.index], b.scorings[league])
+        mine = A.price_lines(b.line.loc[f.index], b.scorings[league], season=b.season, week=b.week)   # M4: the week's mode
         gap = (mine - f["proj_points"]).abs()
         assert gap.max() < 1e-9, f"{league}: {int((gap > 1e-9).sum())} rows priced differently, max {gap.max()}"
 

@@ -121,28 +121,42 @@ def test_my_week_total_equals_the_records_under_each_mode(sql, monkeypatch, leag
 
 
 # ------------------------------------------------------------------------------ "Sleeper's projection"
-@needs_db
-def test_sleeper_projection_is_priced_in_the_weeks_mode(sql, monkeypatch):
-    """Josh Allen's market line for week 4 (the fixture's invented line: 267 passing yards, 2.0 TDs): flat in the
-    frozen flat week = the old all-or-nothing price (compute_points); at the odds when forced; Scrubs the same both."""
-    if not sql("select 1 as x from analytics.mart_market_line where season = 2026 and week = 4 and gsis_id = %s", (ALLEN,)):
-        pytest.skip("no week-4 market line here (load tests/fixtures/sleeper_projections into raw.sleeper_projections)")
+def _allen_market(monkeypatch) -> dict:
+    """The market mart holding Josh Allen's week-4 line from the Sleeper projections fixture (invented: 267 passing
+    yards, 2.0 passing TDs), the way the API reads it (``why.MARKET_SQL``)."""
+    import json
+    from pathlib import Path
+
+    fx = Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "sleeper_projections" / "projections_2026_w04.json"
+    item = next(i for i in json.loads(fx.read_text()) if i.get("player_id") == "4984")
+    # = league_lab.ingest.sleeper_projections.STAT_COLUMNS (that module needs httpx, which the API's env does not carry)
+    cols = {"pass_att": "attempts", "pass_cmp": "completions", "rush_att": "carries", "rec_tgt": "targets",
+            **{k: S._PY_EXPR[k][0] for k in S.SLEEPER_STAT_MAP}, **{k: e for k, (e, _) in S.SLEEPER_LONG_TD_MAP.items()}}
+    line = {c: float(item["stats"][k]) for k, c in cols.items() if isinstance(item["stats"].get(k), (int, float))}
+    row = {"gsis_id": ALLEN, "sleeper_id": "4984", "season": 2026, "week": 4, "position": "QB", "team": "BUF",
+           "opponent": "NE", "fetched_at": "2026-10-01T12:15:00Z", **line}
+    df = pd.DataFrame([row])
+    monkeypatch.setattr(why, "missing_relations", lambda names: [])
+    monkeypatch.setattr(why, "query", lambda sql, params=(): df[df["gsis_id"].isin(params[2])].copy())
+    return {**line, "position": "QB"}
+
+
+def test_sleeper_projection_is_priced_in_the_weeks_mode(monkeypatch):
+    """Josh Allen's market line for week 4 in the dynasty: flat in a flat week = the old all-or-nothing price
+    (``compute_points``, 31.58); at the odds in an EV week (33.20: a 300-yard bonus within reach, a long TD's share);
+    the record decides per week, the env overrides; Scrubs (no bonus) 25.50 either way; a K stays flat."""
+    old = _allen_market(monkeypatch)
     dyn = A.league_scoring(A.sleeper().league(DYNASTY))[0]
     scr = A.league_scoring(A.sleeper().league(SCRUBS))[0]
-    line = db.query(why.MARKET_SQL, (2026, 4, [ALLEN]))
-    old = {k: (why._f(v) or 0.0) for k, v in line.iloc[0].items() if k not in ("gsis_id", "position", "fetched_at")}
-    old["position"] = "QB"
-    S.clear_pricing_cache()
-    label = _week_label(sql, DYNASTY, 2026, 4)
-    flat = why.market_points(2026, 4, [ALLEN], dyn)[ALLEN]
-    monkeypatch.setenv(FLAG, "1")
+    S.set_record_reader(lambda: [(2026, 4, pd.Timestamp("2026-10-01T19:25Z"), False),
+                                 (2026, 5, pd.Timestamp("2026-10-04T07:00Z"), True)])
+    flat = why.market_points(2026, 4, [ALLEN], dyn)[ALLEN]            # week 4 frozen flat: its own label
+    assert flat == round(S.compute_points(old, dyn), 2) == 31.58          # the pre-I-G number, to the cent
+    S.set_record_reader(lambda: [(2026, 4, pd.Timestamp("2026-10-04T07:00Z"), True)])
     ev = why.market_points(2026, 4, [ALLEN], dyn)[ALLEN]
-    monkeypatch.setenv(FLAG, "0")
-    assert why.market_points(2026, 4, [ALLEN], dyn)[ALLEN] == round(S.compute_points(old, dyn), 2)
-    if label == "flat":
-        assert flat == round(S.compute_points(old, dyn), 2)      # the frozen flat week: the pre-I-G number
-    assert ev > flat                                              # a 300-yard bonus within reach, a long TD's share
-    assert (flat, ev) == (31.58, 33.2), (flat, ev)              # before / after (the hand-back)
+    assert ev == 33.2                                                     # before / after (the hand-back)
+    monkeypatch.setenv(FLAG, "0")                                         # the env overrides the record
+    assert why.market_points(2026, 4, [ALLEN], dyn)[ALLEN] == 31.58
     for v in ("0", "1"):
         monkeypatch.setenv(FLAG, v)
-        assert why.market_points(2026, 4, [ALLEN], scr)[ALLEN] == round(S.compute_points(old, scr), 2)
+        assert why.market_points(2026, 4, [ALLEN], scr)[ALLEN] == round(S.compute_points(old, scr), 2) == 25.5

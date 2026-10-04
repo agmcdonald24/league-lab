@@ -26,9 +26,10 @@ def _scoring(league_id: str) -> dict:
 
 # ------------------------------------------------------------------------------ the vectorised pricing
 @needs_db
-def test_compute_points_frame_equals_compute_points_bit_for_bit():
+def test_compute_points_frame_equals_compute_points_bit_for_bit(monkeypatch):
     """price_lines (one vectorised pass) = compute_points row by row, to the last bit, on every 2026 stat line, in the
     three fixture leagues' scorings and every reference scoring (TE premium: the position premium)."""
+    monkeypatch.setenv("LEAGUE_LAB_EV_PRICING", "0")   # M4: the flat engine's parity (unset, the record's mode decides)
     lines = db.query(f"select gsis_id, position, {A._COMPS} from ops.projection_lines where season = 2026", ())
     if lines.empty:
         pytest.skip("no NFL-wide lines in this database")
