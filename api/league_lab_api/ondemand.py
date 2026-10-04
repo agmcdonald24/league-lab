@@ -21,6 +21,7 @@ record (`record`, house leagues only).
 from __future__ import annotations
 
 import time
+from datetime import UTC, datetime  # IG-3
 
 import numpy as np
 import pandas as pd
@@ -156,7 +157,23 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     if A.platforms.is_mfl(league_id):              # I0-B: what the MyFantasyLeague translation could not carry
         out["platform"] = "mfl"
         out["on_demand"].update(mfl_extras(league_id, league))
+        out.update(mfl_roster_freshness(client, league_id))                                       # ---- IG-3
     return out
+
+
+# ---- IG-3 (Wave I-G): an MFL league's own freshness line — when the rosters export this answer was built from was read
+# from MyFantasyLeague (the client's cache: rosters live 10 minutes). IF-4's "Updated …" line is the morning build's.
+def mfl_roster_freshness(client, league_id: str) -> dict:
+    """{roster_updated_at: ISO UTC | None, roster_source: 'MFL'} for an ``mfl:`` league; {} for a Sleeper one."""
+    if not A.platforms.is_mfl(league_id):
+        return {}
+    try:
+        t = client.mfl.client.fetched_at("rosters", A.platforms.mfl_id(league_id))
+    except Exception:  # noqa: BLE001 - a status line, never a failure
+        t = None
+    iso = None if t is None else datetime.fromtimestamp(float(t), UTC).replace(microsecond=0).isoformat()
+    return {"roster_updated_at": iso, "roster_source": "MFL"}
+# ---- end IG-3
 
 
 # ---------------------------------------------------------------- plan F3: the league picker by Sleeper username

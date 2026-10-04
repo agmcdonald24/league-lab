@@ -220,6 +220,22 @@ def grades(league_id: str | None, scored_in: str | None) -> dict | None:
             "source": "app/pages/4_Rankings.py (How the model is doing this season; Backtest)"}
 
 
+# ---- IG-3 (Wave I-G, the decision-quality review): the grades' qualification next to the headline grade, not below the
+# metrics — a league we do not score every night is graded in another league's scoring and has no projection record
+def grade_note(league_id: str, league_name: str | None, measured_in: str | None, house: bool) -> str | None:
+    """The one line under "How the model is doing" for a league we do not score (None for a house league)."""
+    if house:
+        return None
+    mine = league_name or "this league"
+    where = f"{measured_in}'s scoring" if measured_in else "another league's scoring"
+    if str(league_id or "").lower().startswith("mfl:"):
+        return (f"These grades use {where}, not {mine}'s, and there is no direct projection record for this "
+                "MyFantasyLeague league: read them as how the model does in general.")
+    return (f"These grades use {where}, not {mine}'s, and {APP_NAME} keeps no projection record for {mine} yet: read "
+            "them as how the model does in general.")
+# ---- end IG-3
+
+
 def about(league_id: str, source: str | None = None) -> dict:
     t0 = time.perf_counter()
     house = source != "sleeper" and known_league(str(league_id))
@@ -235,6 +251,7 @@ def about(league_id: str, source: str | None = None) -> dict:
                "model": {"answer": MODEL_ANSWER, "sections": sections(ctx.league_name)},
                "importance": importance(lid, name), "grades": grades(lid, name),
                "rankings_howto": RANKINGS_HOWTO}                                                   # ---- IA-3
+        out["grade_note"] = grade_note(ctx.league_id, ctx.league_name, name, ctx.house)                 # ---- IG-3
         if not ctx.house:
             out["why"] = (f"The importance and the grades are measured once per house league's scoring each night. "
                           f"{ctx.league_name} reads {name or 'the closest league'}'s: the closest scoring {APP_NAME} measures."

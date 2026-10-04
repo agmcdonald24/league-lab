@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { APP_NAME } from "../lib/brand"; // ---- IG-3
   import { ApiError, get, paths, peek, Unauthorized, type MyWeek, type Status, type UserLeagues } from "../lib/api";
   import { decisionPaths, type Waivers } from "../lib/api"; // ---- IE-1
   import { ACTION_WORD, homeActions } from "../lib/week"; // ---- IE-1
@@ -86,6 +87,13 @@
   }
   // ---- end IF-4
   // ---- end IE-1
+  // ---- IG-3: "2:51 AM ET" (today's clock time in New York; the exact day and time are on tap)
+  function clockET(iso: string): string {
+    const t = new Date(iso);
+    if (Number.isNaN(t.getTime())) return "";
+    return `${t.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" })} ET`;
+  }
+  // ---- end IG-3
 
   $effect(() => {
     const l = league;
@@ -380,6 +388,23 @@
     {/if}
   {/if}
 
+  <!-- ---- IG-3: an MFL league's own roster freshness ("MFL rosters updated 2:51 AM ET ›", the exact time on tap): when
+  the rosters export this answer was built from was read from MyFantasyLeague; IF-4's line below is the morning build's -->
+  {#if data?.roster_updated_at}
+    {@const mu = changedTime(data.roster_updated_at)}
+    {#if mu}
+      <details class="pt-2 text-xs leading-snug text-ink-3" data-testid="mfl-updated">
+        <summary class="inline-flex min-h-9 cursor-pointer items-center gap-1"
+          >{data.roster_source ?? "MFL"} rosters updated <time datetime={data.roster_updated_at} title={mu.exact} data-testid="mfl-updated-time">{clockET(data.roster_updated_at)}</time>
+          <span class="chev" aria-hidden="true">›</span></summary
+        >
+        <p class="mt-1" data-testid="mfl-updated-exact">
+          Rosters and lineups read from MyFantasyLeague {mu.exact} ({mu.ago}); {APP_NAME} reads them again after 10 minutes. The projections are the morning build's.
+        </p>
+      </details>
+    {/if}
+  {/if}
+  <!-- ---- end IG-3 -->
   {#if status?.freshness}
     <!-- ---- IF-4: "Updated 3 h ago" (the exact time and the feed names behind a tap) in place of the feed list -->
     {@const upd = changedTime(status.updated_at ?? null)}

@@ -90,6 +90,11 @@
     <section class="space-y-3" data-testid="grades">
       <h2 class="text-xl font-extrabold tracking-tight">How the model is doing</h2>
       <p class="text-base leading-snug" data-testid="grades-answer">{grades.answer}</p>
+      <!-- ---- IG-3: the grades' qualification next to the headline grade (a league we do not score every night) -->
+      {#if ab.data?.grade_note}
+        <p class="rounded-md bg-raised px-3 py-2 text-sm leading-snug text-ink" data-testid="grades-qualification">{ab.data.grade_note}</p>
+      {/if}
+      <!-- ---- end IG-3 -->
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 wide:grid-cols-4">
         {#each grades.positions as g (g.position)}
           <Card title={g.position} testid="grade-card">

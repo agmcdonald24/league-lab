@@ -171,6 +171,13 @@
       <p class="text-sm text-ink-3" data-testid="waiver-lineup">
         Your lineup this week: <strong class="tabnum text-ink">{f1(data.lineup_value)}</strong> in {scoring}{closest}.
       </p>
+      <!-- ---- IG-3: when claims run (the league's own settings) and when the next game starts -->
+      {#if data.deadline?.words}
+        <p class="text-sm leading-snug text-ink-3" data-testid="waiver-deadline">
+          {#if data.deadline.runs_at}<time datetime={data.deadline.runs_at}>{data.deadline.words}</time>{:else}{data.deadline.words}{/if}
+        </p>
+      {/if}
+      <!-- ---- end IG-3 -->
     </ScreenHead>
 
     {#if data.inputs_current === false || data.on_current_lineup === false}

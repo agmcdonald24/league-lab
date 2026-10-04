@@ -433,6 +433,7 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
         if od_info.get("week"):
             week = od_info["week"]
     out["week"] = week
+    out["deadline"] = None                                                                      # ---- IG-3
     if week is None:
         out["notice"] = "The regular season is over: no waiver claims left."
         return out
@@ -494,6 +495,7 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
     out.update(waiver_views(league_id, team, season, int(week), mv, out, is_house, od_info, ros))
     # ---- end IB-2
     out.setdefault("no_worthwhile_move", None)                                         # ---- IF-1
+    out["deadline"] = waivers_deadline_for(str(league_id), season, int(week), is_house)        # ---- IG-3
     if not is_house:
         out["on_demand"] = {k: v for k, v in od_info.items() if k not in ("lw", "fa")}
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
@@ -3661,3 +3663,155 @@ def best_waiver_move(league_id: str, team: int, *, source: str | None = None, as
             "by_week": [_num(g) for g in gains] if isinstance(gains, list | tuple | np.ndarray) else [],
             "weeks": weeks, "span": span, "drop_cost": f["drop_cost"], "words": words, "source": "waivers.best_waiver_move"}
 # ---- end IF-1
+
+
+# ---- IG-3 (Wave I-G): the waiver deadline — Waivers says when claims run, from the league's own settings, and when
+# the next game starts (players lock at their own kickoff; My Week's ``next_lock`` machinery). Sleeper: ``waiver_type``
+# 0 rolling / 1 reverse standings / 2 FAAB, ``daily_waivers`` (1 = every day), ``waiver_day_of_week`` (0 = Monday …
+# 6 = Sunday; Sleeper's default 2 = Wednesday, the one value measured), ``daily_waivers_hour`` (an hour of the day in
+# Pacific time: Sleeper's default 0 = midnight PT = 3:00 AM ET), ``waiver_clear_days``. MFL: the league export carries
+# ``currentWaiverType`` but no time — "see MFL". Unknown is not a time: a league without the settings says nothing.
+WAIVER_KIND = {0: "rolling", 1: "reverse_standings", 2: "faab"}
+WAIVER_KIND_WORDS = {"rolling": "rolling waivers", "reverse_standings": "waiver order by reverse standings",
+                     "faab": "FAAB blind bids", "fcfs": "first come, first served", "blind_bid": "blind bids",
+                     "blind_bid_fcfs": "blind bids, then first come, first served", "waiver_order": "waiver order",
+                     "none": "no free-agent moves"}
+DAY_NAMES = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+SLEEPER_WAIVER_TZ = "America/Los_Angeles"
+ET = "America/New_York"
+KICKOFFS_SQL = """select kickoff_at from analytics.dim_game where season = %s and week = %s and kickoff_at is not null
+                  order by kickoff_at"""
+
+
+def _clock(t: pd.Timestamp) -> str:
+    """'3:00 AM' for a time (any zone)."""
+    return f"{t.hour % 12 or 12}:{t:%M} {'AM' if t.hour < 12 else 'PM'}"
+
+
+def _sleeper_runs(settings: dict, now: pd.Timestamp) -> tuple[pd.Timestamp | None, str | None, bool | None]:
+    """(the next time claims run, its words in ET, daily) from a Sleeper league's settings; (None, None, …) when the
+    settings do not say."""
+    daily = settings.get("daily_waivers")
+    daily = None if daily is None else bool(int(daily))
+    hour, day = settings.get("daily_waivers_hour"), settings.get("waiver_day_of_week")
+    try:
+        hour = int(hour)
+    except (TypeError, ValueError):
+        return None, None, daily
+    if not 0 <= hour <= 23:
+        return None, None, daily
+    local = now.tz_convert(SLEEPER_WAIVER_TZ)
+    if daily:
+        nxt = local.normalize().replace(hour=hour)
+        if nxt <= local:
+            nxt = (local.normalize() + pd.Timedelta(days=1)).replace(hour=hour)
+        t = nxt.tz_convert(ET)
+        return t.tz_convert("UTC"), f"every day at {_clock(t)} ET", True
+    try:
+        day = int(day)
+    except (TypeError, ValueError):
+        return None, None, daily
+    if not 0 <= day <= 6:
+        return None, None, daily
+    nxt = (local.normalize() + pd.Timedelta(days=(day - local.weekday()) % 7)).replace(hour=hour)
+    if nxt <= local:
+        nxt += pd.Timedelta(days=7)
+    t = nxt.tz_convert(ET)
+    return t.tz_convert("UTC"), f"{DAY_NAMES[t.weekday()]} {_clock(t)} ET", False
+
+
+def mfl_waiver_kind(v: Any) -> str | None:
+    """MFL's ``currentWaiverType`` (FCFS, BBID, BBID_FCFS, WAIVER …) as one of WAIVER_KIND_WORDS' keys."""
+    s = str(v or "").strip().upper()
+    if not s:
+        return None
+    if s == "NONE":
+        return "none"
+    if s.startswith("BBID"):
+        return "blind_bid_fcfs" if "FCFS" in s else "blind_bid"
+    if s == "FCFS":
+        return "fcfs"
+    return "waiver_order" if "WAIVER" in s else None
+
+
+def next_kickoff(season: int | None, week: int | None, now: pd.Timestamp) -> dict | None:
+    """The decision week's next kickoff not yet played: {kickoff (ISO UTC), words 'Sunday 1:00 PM ET'}."""
+    if season is None or week is None:
+        return None
+    try:
+        g = query(KICKOFFS_SQL, (int(season), int(week)))
+    except Exception:  # noqa: BLE001 - a line on the page, never a failure
+        return None
+    ks = [pd.Timestamp(k) for k in g["kickoff_at"]] if not g.empty else []
+    ks = [(k.tz_localize("UTC") if k.tzinfo is None else k.tz_convert("UTC")) for k in ks]
+    up = [k for k in ks if k > now]
+    if not up:
+        return None
+    t = up[0].tz_convert(ET)
+    return {"kickoff": up[0].isoformat(), "words": f"{DAY_NAMES[t.weekday()]} {_clock(t)} ET"}
+
+
+def waiver_deadline(league: dict | None, *, platform: str = "sleeper", mfl_type: Any = None, season: int | None = None,
+                    week: int | None = None, now: datetime | pd.Timestamp | None = None, kind_fallback: int | None = None) -> dict | None:
+    """When claims run, in one line (``INTERFACES.md`` § IG-3). ``league`` = Sleeper's league dict (its ``settings``);
+    an MFL league passes ``platform='mfl'`` and the export's ``currentWaiverType`` as ``mfl_type``; ``kind_fallback`` =
+    the database's ``waiver_type`` when Sleeper's settings could not be read. None when nothing is known."""
+    now = pd.Timestamp(now or datetime.now(UTC))
+    now = now.tz_localize("UTC") if now.tzinfo is None else now.tz_convert("UTC")
+    settings = dict((league or {}).get("settings") or {})
+    runs_at = runs_words = daily = clear = None
+    if platform == "mfl":
+        kind, source = mfl_waiver_kind(mfl_type), "MFL league export"
+    else:
+        wt = settings.get("waiver_type", kind_fallback)
+        try:
+            kind = WAIVER_KIND.get(int(wt)) if wt is not None else None
+        except (TypeError, ValueError):
+            kind = None
+        runs_at, runs_words, daily = _sleeper_runs(settings, now)
+        try:
+            clear = int(settings["waiver_clear_days"]) if settings.get("waiver_clear_days") is not None else None
+        except (TypeError, ValueError):
+            clear = None
+        source = "Sleeper league settings"
+    lock = next_kickoff(season, week, now)
+    if kind is None and runs_words is None and platform != "mfl":
+        return None
+    kw = WAIVER_KIND_WORDS.get(kind) if kind else None
+    if platform == "mfl":
+        if kind == "fcfs":
+            head = "Free agents are first come, first served on MFL: a claim is yours as soon as MFL takes it"
+        elif kind == "none":
+            head = "This league takes no free-agent moves on MFL right now"
+        else:
+            head = f"Claims run on MFL's schedule for this league{f' ({kw})' if kw else ''}: see MFL for the time"
+    elif runs_words:
+        head = f"Claims run {runs_words}" + (f" ({kw})" if kw else "")
+    else:
+        head = f"Claims run on Sleeper's schedule ({kw}): see Sleeper for the time"
+    tail = f"; players lock at their own kickoff — the next game starts {lock['words']}." if lock else "."
+    return {"platform": platform, "kind": kind, "kind_words": kw, "daily": daily,
+            "runs_at": runs_at.isoformat() if runs_at is not None else None, "runs_words": runs_words,
+            "clear_days": clear, "lock": lock, "words": head + tail, "source": source}
+
+
+def waivers_deadline_for(league_id: str, season: int | None, week: int | None, is_house: bool) -> dict | None:
+    """The deadline for /api/waivers: Sleeper's league settings (the client's cache; a house league falls back to the
+    database's waiver type when Sleeper cannot be read), or the MFL export's waiver type. Never raises."""
+    try:
+        if A.platforms.is_mfl(league_id):
+            raw = A.sleeper().mfl.client.league(A.platforms.mfl_id(league_id))
+            return waiver_deadline(None, platform="mfl", mfl_type=(raw or {}).get("currentWaiverType"), season=season, week=week)
+        try:
+            league = A.sleeper().league(A.check_id(league_id))
+        except Exception:  # noqa: BLE001 - Sleeper down: the database's waiver type, no time
+            league = None
+        fallback = None
+        if league is None and is_house:
+            d = query("select waiver_type from analytics.dim_league_season where league_id = %s and is_current_season",
+                      (str(league_id),))
+            fallback = _int(d["waiver_type"].iloc[0]) if not d.empty else None
+        return waiver_deadline(league, season=season, week=week, kind_fallback=fallback)
+    except Exception:  # noqa: BLE001 - a line on the page, never a failure
+        return None
+# ---- end IG-3
