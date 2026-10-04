@@ -5259,3 +5259,119 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
      `sources.yml` row (PO).
   7. `test_if1::test_the_engine_drops_mcpherson_for_carlson` fails on any clone after a `project` run (its "before"
      is the pre-IF-1 mart). IG-3 rewrites the writer's drop rule and may want to re-pin it.
+
+### M5 2026-10-04 — v3.1: the ranges' target, the fringe level, cold starts, each behind the harness (branch `dev/M5`, database `league_lab` read only)
+
+Plan § 17 (v3.1 in "Next"); the brief's § M5. Andrew: "knock out a big chunk of the roadmap/backlog." Three model
+candidates from M1's and M3's lists, measured walk-forward, each judged by a rule fixed before the verdicts were read,
+each behind its own switch, **all off**; `MODEL_VERSION` stays `v3.0`; nothing was written to `league_lab`
+(every session `read_only`; the suites ran with `PGOPTIONS=-c default_transaction_read_only=on`).
+
+**The harness table** (the PO reads this first; Δ = candidate − v3.0, leagues averaged per season unless a league is
+named; "seasons" = seasons better of n; interval score = (pinball 10 + pinball 90) / 2, points, lower is better):
+
+| Group (switch) | Position | Δ Spearman | Δ MAE | Δ interval score | coverage 80% (v3.0 → cand.) | Seasons | Decision |
+|---|---|---|---|---|---|---|---|
+| ranges' target (`LEAGUE_LAB_RANGE_TARGET=graded`), 2023–25, graded actual | QB | 0 | 0 | dynasty −0.0066 / Scrubs −0.0036 | 0.751 → 0.756 / 0.761 → 0.761 (50%: 0.460 → 0.472 / 0.474 → 0.478) | 2 / 2 of 3 | **keep** (dynasty; Scrubs no change) |
+| | RB | 0 | 0 | +0.0002 / +0.0017 | 0.799 → 0.802 / 0.806 → 0.804 | 1 / 2 | drop (no change) |
+| | WR | 0 | 0 | **+0.0055** / +0.0013 | 0.805 → 0.805 / 0.805 → 0.808 | 0 / 2 | drop |
+| | TE | 0 | 0 | +0.0001 / −0.0007 | 0.813 → 0.814 / 0.806 → 0.812 | 1 / 3 | drop (no change) |
+| fringe level (`LEAGUE_LAB_FRINGE_LEVEL`), 2021–25 | QB | 0 | **+0.084** | +0.0031 | 0.760 → 0.760 | 0 of 5 | drop (hurts) |
+| | RB | 0 | −0.005 | −0.0003 | 0.804 → 0.827 | 2 of 5 | drop |
+| | WR | 0 | −0.021 | −0.0028 | 0.806 → 0.859 | 3 of 5 | drop |
+| | TE | 0 | +0.022 | +0.0009 | 0.809 → 0.833 | 1 of 5 | drop |
+| cold-start prior (`LEAGUE_LAB_COLD_START`), 2021–25; MAE on the cold rows / the whole board | QB | 0 | 0 / 0 | 0 | — | 0 of 5 | drop (the fit keeps the model) |
+| | RB | +0.0018 | **−0.159** / −0.009 | −0.0006 | — | 4 of 5 | **keep** |
+| | WR | +0.0034 | **−0.314** / −0.018 | −0.0008 | — | 5 of 5 | **keep** |
+| | TE | +0.0037 | **−0.298** / −0.017 | −0.0007 | — | 5 of 5 | **keep** |
+
+The rules. *Ranges* (`experiments.decide_ranges`, per league × position, on the graded actual): mean Δ interval
+score ≤ −0.005 and lower in ceil(2n/3) seasons, and coverage holds (78–82% / 48–52%, or — QB, already at 73–76% —
+no farther from nominal than v3.0 + 0.005; that clause was added on the first season's QB rows, before any verdict
+was read); |Δ| < 0.005 is "no change" (a drop). *Fringe*: `experiments.decide` (MAE −0.05 / Spearman +0.005 in
+ceil(2n/3) seasons) and the top-24 bias may not grow by > 0.02 in either league. *Cold start*: the cold rows' MAE
+falls by ≥ 0.05 in ceil(2n/3) seasons and `decide`'s "hurts" is false on the whole board.
+
+* **1. The ranges' target.** The residual models were fitted on the 12 components' price; the record grades
+  `fct_player_game_league.points`, which adds the 2-point conversions, the 40+ / 50+ TD bonuses, fumble-recovery and
+  special-teams TDs: per game QB +0.44 / RB +0.07 / WR +0.12 / TE +0.04 in the dynasty, +0.12 / +0.03 / +0.04 /
+  +0.03 in Scrubs (2024; M3's "0.01–0.3" was the long-TD part alone). `projections.graded_actual` reproduces
+  `fct_player_game_league.points` on all 5,735 played 2024 rows of each house league, to the cent. Under the switch
+  `load_frame` joins the outcome columns (`join_graded_extras`) and `fit_position` takes the residuals against the
+  graded actual (`range_actual`), the conformal widening too; the point projection is unchanged (asserted on every
+  harness fit). Result: a wash at RB / TE, worse at the dynasty's WR (its range 0.4 wider for no gain), better at
+  the dynasty's QB (the 80% range 1.1 points wider, interval score −0.0066, both coverages closer to nominal; per
+  season +0.0039 / −0.0069 / −0.0168). Kept at QB: `RANGE_TARGET_POSITIONS = ("QB",)`, so `=graded` applies at QB
+  only (`graded-all` everywhere — the harness's setting). A marginal keep (0.4% of the score; 2 of 3 seasons).
+* **2. The fringe level** (`calibration.fit_fringe`, fr1.0): weekly-rank tiers 25–36 / 37–60 / 61+, each tier's
+  shrunk, player-clustered mean residual, anchored at 0 at the top-24 cut, monotone (slope ≥ −0.5, floor at half the
+  line), fitted on the 3 seasons before. Order never changes (Spearman Δ = 0 exactly), the top 24 do not move
+  (top-24 bias within 0.02 everywhere). **Dropped everywhere**: the fringe's miss changes sign by era — fitted on
+  2018–2020 the levels are positive (QB +2.1, WR +0.3–0.6, TE +0.8), in 2021–2025 the 25+ bucket is QB +0.43 / +0.58
+  and RB / WR / TE −0.09 to −0.32. M1's over-projected fringe (2023–2025) is real for those seasons and not a stable
+  property a walk-forward can fit.
+* **3. Cold starts** (`calibration.fit_cold_prior`, cs1.0). Measured (2021–2025, dynasty, bias = actual − projected):
+  a player's first three career games RB −0.65, WR −0.85, TE −1.06, QB −0.35; the debut alone RB −1.79, WR −2.25,
+  TE −1.49 (a WR with no history projects about 6). Veterans' first three games on a new team: RB −0.51, WR −0.95,
+  TE −0.44 (not addressed: a lead). The fix: fewer than 3 played regular-season games (any listed position; a career
+  before 2016 is never cold) → w·model + (1 − w)·the position × draft-slot mean of cold starts (picks 1–32 / 33–64 /
+  65–128 / 129+ / undrafted, shrunk n / (n + 30)), w fitted per games-played step on the seasons before over a
+  0–1 grid; identity at 3 games. The fitted weights (2018–2024, dynasty): RB 0.0 / 1.0 / 0.8, WR 0.0 / 0.5 / 0.6,
+  TE 0.0 / 0.2 / 0.3, QB 1.0 — the model is worth nothing on a debut. Cold-row bias after: RB −0.35, WR −0.19,
+  TE −0.12. **Kept at RB / WR / TE** (`COLD_POSITIONS`).
+* **What the kept cold start would do as wired** (the main database's 2026 board, read only, weeks 5–18; weeks 1–4
+  are frozen): 2,754 of 19,822 QB–TE rows move, 120 players; dynasty mean RB −1.63 / TE −0.92 / WR −1.83 a week
+  (−8.58 to +5.48), Scrubs −1.42 / −0.83 / −1.51. Week 5, dynasty: Germie Bernard (WR, pick 47, one game) 9.93 →
+  4.85, Chip Trayanum (RB) 6.20 → 2.58, rookie TEs 3.7–3.8 → 2.7, Jordyn Tyson (WR, pick 8, no game
+  yet) 6.08 → 8.42, Omar Cooper Jr. (pick 30, one game) 3.09 → 7.89. Nothing was written.
+* **Not ready to switch on as wired** (the reason the switch stays off although kept): like cal1.0, the prior moves
+  the house leagues' `ops.projections` rows and their reference ranges, not the stat line, so on-demand requests
+  (priced from `ops.projection_lines`) would show the unblended number for exactly these players — IB-0's
+  two-numbers bug — and dbt's `assert_projection_ranges_price_the_lines` (warn) would flag them. It belongs on the
+  line (below, "For the PO").
+
+**Delivered.** `projections.py` (one M5 block after `TIER_MIN_ROWS`: the switch, `GRADED_EXTRAS`,
+`join_graded_extras`, `graded_actual`, `range_actual`, `RANGE_TARGET_POSITIONS`, the names of the other two
+switches; one line in `load_frame`, one in `fit_position` — away from M4's import / decorator / `pricing` / DDL
+spots). `calibration.py` (`calibrate_outputs` runs cal1.0 under its flag — body moved unchanged to `_cal10_outputs`
+— then `v31_outputs`; the fringe and cold-start fits, `career_games_before`, `cold_columns`; bands are written back
+column by column, `_put_bands` — cal1.0's `apply_maps` too: the cold blend's first version moved the point and not
+its range because the raw line was a view the write changed, found by the production-path test). `experiments.py`
+(an M5 block: `v31_rows`, `shared_component_fits`, `score_v31`, `paired_v31`, `decide_ranges`, `coverage_holds`).
+`tests/test_m5.py` (17). `dbt/seeds/feature_experiments.csv` +104 rows (`range_target_graded` 24, `fringe_level` 40,
+`cold_start_prior` 40; per-position decisions; `range_target_graded` scored on the graded actual, the other two on the
+harness's). METRICS § "Calibration of the top" → "v3.1"; CHANGELOG; `.gitignore` `scratch/`; INTERFACES § M5.
+No table, API, web or dbt-model change.
+
+**Commands.** `scratch/run_v31.py ranges 2023,2024,2025` and `points 2018..2025` (per-row walk-forward, rows to
+`scratch/rows/*.parquet`; ranges 5–40 min a season-position under load 10–20 — an `OMP_NUM_THREADS=2` process stalled
+23 min on one fit and was replaced by single-threaded ones), `scratch/analyze_v31.py` (tables → `scratch/tables`),
+`scratch/demo_cold.py RB,TE,WR` (the board, read only). Tests: `uv run pytest -q tests/test_m5.py` **17 passed**;
+root suite (read-only guard) **1029 passed, 3 skipped, 1 failed** — `test_experiments::test_no_peek_check_catches_
+planted_leaks` creates a temp table, which the guard refuses; run alone without it: passed (so 1030 / 3);
+API suite (read-only guard) **465 passed, 16 skipped**; `uv run ruff check src app tests api`: one error, B010 in
+`api/league_lab_api/research.py:61`, present on `main` 7222f98 (not M5's file).
+
+**Not done.** The ranges' target on 2021–2022 (the quantile refits did not fit the time box on the shared sandbox;
+2023–2025 is the harness's default). The cold-start prior on the stat line. New-team veterans. A dbt build of the
+seed (writes; not on `league_lab`).
+
+**Next.** v3.1 = the cold-start prior moved onto the line + the QB graded target, one bump, the record labelled.
+
+**For the PO.**
+1. **Merge**: independent of M4 (different spots in `projections.py`; no shared file otherwise). `calibration.py`'s
+   restructure keeps cal1.0 bit for bit (its 13 tests pass). The seed rows append to the end of
+   `feature_experiments.csv` (CRLF kept).
+2. **Nothing changes on merge**: three switches, all off. A kept change is a `MODEL_VERSION` note, not a bump: if you
+   take v3.1, it is (a) `LEAGUE_LAB_RANGE_TARGET=graded` in the nightly's `project` env (QB ranges, every reference
+   scoring; needs no table) and (b) the cold-start prior — **only after it moves onto the stat line** (scale the
+   line's components by blended / raw points in a reference scoring before `nfl_lines`, so `ops.projection_lines`,
+   `price_lines` and the record agree; ~a day's work, my estimate), plus `calibration.run_build_oof()` once where the
+   nightly runs (`ops.calibration_oof`, 3 seasons; the nightly restores `ops` from the hosted copy — check it travels).
+3. **Decisions you may want to reverse**: the ranges' QB keep is marginal (−0.0066 on 1.73, 2 of 3 seasons) — leaving
+   it off is defensible; the cold-start weights put ~0 on the model for a debut, which pulls a high-usage rookie hard
+   toward his draft slot (Bernard 9.93 → 4.85 after one game) — the harness says that is right on average, Andrew may
+   not like it for the player he just picked up; QB is excluded by the fit itself.
+4. **Leads for v3.2**: veterans on a new team are over-projected as much as rookies (WR −0.95); the point projection
+   itself prices none of the 2-point / long-TD points it is graded on (dynasty QB 0.44 a game; EV pricing covers the
+   long TDs in expectation, not 2-point conversions).

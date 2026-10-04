@@ -2325,6 +2325,148 @@ fitted on earlier seasons. The curves are scoring-free. Dynasty 2023–2025: top
 median loss; Spearman ±0.005. It is right for totals (rest of season, trades) and does not help weekly start/sit.
 It belongs in the pricing of a projected line (v3.1 candidate), not in a points map.
 
+### v3.1: the ranges' target, the fringe level, cold starts (Wave I-G M5, 2026-10-04; three switches, all off)
+
+Three candidates from M1's and M3's lists, each measured walk-forward and judged by a rule fixed before the verdicts
+were read (one amendment, made on the first season's QB rows: a range whose v3.0 coverage is already outside 78–82% —
+QB, about 73–76% — "holds" when it gets no farther from the nominal level). None changes the board unless its switch
+is on; none bumps `MODEL_VERSION`.
+
+**The harness.** `experiments.v31_rows` is the walk-forward of `backtest-v2`, kept per player-week (M1's `oof_rows`
+with both range targets): for each test season S, `fit_position` on 2016..S−1 with the production inputs, applied to
+S, in both house scorings. The two range targets share one set of component fits (`experiments.shared_component_fits`
+returns the models already fitted for the same rows), so the point projection is identical by construction and only
+the quantile models differ (checked on every fit). Every row carries both actuals: `actual` (the 12 components priced,
+what `score_predictions` has always graded) and `graded` (`projections.graded_actual`: the same plus the 2-point
+conversions, the 40+ / 50+ TD bonuses, fumble-recovery and special-teams TDs; equal to `fct_player_game_league.points`
+on every 2024 played row of both house leagues, 5,735 each, to the cent). Scores: `experiments.score_v31` (Spearman,
+top-N, MAE, the 80% and 50% ranges' coverage, width and interval score per league × week × position, the harness's
+definitions), paired by `paired_v31` (the season is the paired unit). Test seasons: the point corrections 2021–2025
+(the component-only walk-forward of 2018–2025 is cheap); the ranges 2023–2025, the harness's default — refitting the
+quantile models twice per season took 15–40 minutes a season on the shared sandbox, so 2021–2022 did not fit the time
+box. Rows: `scratch/rows` of the M5 run (not in git); the seed rows: `dbt/seeds/feature_experiments.csv`
+(`range_target_graded`, `fringe_level`, `cold_start_prior`).
+
+**1. The ranges' target** (`LEAGUE_LAB_RANGE_TARGET=graded`; `projections.range_actual`). The residual models were
+fitted on the components' price, so everything the record grades beyond the 12 components fell outside every range:
+per game the graded actual is above the components' price by QB 0.44 / RB 0.07 / WR 0.12 / TE 0.04 in the dynasty's
+scoring and QB 0.12 / RB 0.03 / WR 0.04 / TE 0.03 in Scrubs' (2024; Scrubs has no long-TD bonus, the gap there is
+2-point conversions). Under the switch `load_frame` joins the outcome columns (`outx_*`, `join_graded_extras`) and
+`fit_position` takes the residuals against the graded actual; the conformal widening is measured on the same target.
+Rule (`experiments.decide_ranges`, per league × position, both judged against the graded actual): keep when the mean
+paired change of the 80% interval score is at most −0.005 points and lower in ceil(2n/3) seasons, **and** the coverage
+holds (`coverage_holds`: 78–82% at 80% and 48–52% at 50%, or — QB, whose v3.0 range already covers about 73% — no
+farther from the nominal level than v3.0's plus 0.005); a mean change under 0.005 either way is "no change".
+
+Results (2023–2025, both house scorings, scored on the graded actual; the point projection, Spearman and MAE are
+identical by construction). Δ = graded target − v3.0; the interval score is (pinball 10 + pinball 90) / 2 in points
+(lower is better):
+
+| League | Position | Δ interval score 80% (seasons lower, of 3) | Δ interval score 50% | Δ width 80% | coverage 80%: v3.0 → graded | coverage 50%: v3.0 → graded | per league |
+|---|---|---|---|---|---|---|---|
+| dynasty | QB | −0.0066 (2) | −0.0036 | +1.09 | 0.751 → 0.756 | 0.460 → 0.472 | keep |
+| dynasty | RB | +0.0002 (1) | +0.0037 | +0.21 | 0.799 → 0.802 | 0.512 → 0.513 | no change |
+| dynasty | WR | +0.0055 (0) | +0.0029 | +0.40 | 0.805 → 0.805 | 0.502 → 0.504 | drop |
+| dynasty | TE | +0.0001 (1) | +0.0009 | +0.03 | 0.813 → 0.814 | 0.517 → 0.507 | no change |
+| Scrubs | QB | −0.0036 (2) | +0.0050 | +0.16 | 0.761 → 0.761 | 0.474 → 0.478 | no change |
+| Scrubs | RB | +0.0017 (2) | +0.0024 | +0.08 | 0.806 → 0.804 | 0.524 → 0.512 | no change |
+| Scrubs | WR | +0.0013 (2) | +0.0019 | +0.14 | 0.805 → 0.808 | 0.499 → 0.495 | no change |
+| Scrubs | TE | −0.0007 (3) | −0.0001 | +0.06 | 0.806 → 0.812 | 0.510 → 0.505 | no change |
+
+Per season (Δ interval score 80%, the graded target's coverage): dynasty QB +0.0039 (0.720) / −0.0069 (0.766) /
+−0.0168 (0.781); dynasty WR +0.0052 / +0.0081 / +0.0032. **Verdict: keep at QB, drop elsewhere.** The target matters
+where the ungraded part is large — a QB's 40+ pass TDs (2 points each in the dynasty) and 2-point passes, 0.44 a game —
+and there the 80% range is 1.1 points wider on average and gets closer to its nominal coverage in both bands; at
+RB / TE the extra is 0.03–0.07 a game and nothing moves; at WR in the dynasty the wider range costs more than it
+covers. `RANGE_TARGET_POSITIONS = ("QB",)`: the switch on applies at QB only (`graded-all`, the harness's setting,
+everywhere). Judged on the components' actual instead, every cell is within ±0.0061 (dynasty WR +0.0061, the only
+drop).
+
+**2. The fringe level** (`LEAGUE_LAB_FRINGE_LEVEL=1`; `calibration.fit_fringe`, fr1.0). M1 found the bottom half of
+every position 0.3–0.6 too high in 2023–2025. The correction: per position × scoring, tiers by weekly projected rank
+(25–36, 37–60, 61+; cut points = the median over the fitting weeks of the 24th / 36th / 60th projection, in points),
+each tier's level = its mean residual (actual − projected), player-clustered and shrunk like cal1.0 (0 at |t| ≤ 1, full
+at |t| ≥ 2), anchored at 0 at the top-24 cut, linear between the tiers' median projections, never falling faster than
+0.5 a point and never below half the line: strictly increasing, so the order within a position — Spearman, the top N —
+cannot change, and the top 24 do not move. Fitted on the 3 seasons before S (cal1.0's window; the bias drifts by era).
+Rule: `experiments.decide` on MAE / Spearman per position (the leagues averaged, the season paired) **and** the top-24
+bias may not grow by more than 0.02 in either league.
+
+Results (2021–2025; the interval columns 2023–2025, where the ranges exist):
+
+| Position | Δ MAE (seasons lower, of 5) | Δ Spearman | top-24 bias, dynasty: before → after | top-24 bias, Scrubs | Δ interval score | coverage 80%: before → after | decision |
+|---|---|---|---|---|---|---|---|
+| QB | +0.084 (0) | 0 | +0.32 → +0.30 | −0.26 → −0.27 | +0.0031 | 0.760 → 0.760 | drop (hurts) |
+| RB | −0.005 (2) | 0 | +0.98 → +0.98 | +0.49 → +0.49 | −0.0003 | 0.804 → 0.827 | drop |
+| WR | −0.021 (3) | 0 | +0.85 → +0.85 | +0.13 → +0.13 | −0.0028 | 0.806 → 0.859 | drop |
+| TE | +0.022 (1) | 0 | +0.37 → +0.38 | +0.19 → +0.19 | +0.0009 | 0.809 → 0.833 | drop |
+
+**Verdict: drop at every position.** The fringe's miss changes sign by era: fitted on 2018–2020 the levels are
+*positive* (the fringe then scored more than projected: QB +2.1, WR +0.3 to +0.6, TE +0.8), fitted on 2020–2022 they
+are near 0 at RB / WR / TE (QB still +1.0), and in 2021–2025 the 25+ bucket's miss is QB +0.43 to +0.58, RB −0.13 to −0.19,
+WR −0.28 to −0.32, TE −0.09 to −0.10. A level fitted on the seasons before cannot follow it; at QB it lifts the
+backups too far (25+ bucket +0.58 → −0.36 in the dynasty; MAE +0.08). M1's "over-projected fringe" is real in 2023–2025 and not a stable property of the
+model; the order is untouched either way (the map is monotone), so the board's decisions do not depend on it.
+
+**3. Cold starts** (`LEAGUE_LAB_COLD_START=1`; `calibration.fit_cold_prior`, cs1.0). A player with fewer than 3
+played regular-season games before the week (any position he was listed at; a career that began before 2016 is never
+cold) has no last-3 or season shares, and the model sees NaNs. Measured on 2021–2025 (played rows, the components'
+actual), cold starts are over-projected at every position, the debut most:
+
+| Dynasty scoring, 2021–2025 | career games 0–2: n, bias, MAE | a new team, games 0–2 | the rest |
+|---|---|---|---|
+| QB | 183, −0.35, 5.54 | 372, +0.09, 6.08 | 2,775, +0.50, 7.93 |
+| RB | 461, −0.65, 3.89 | 545, −0.51, 4.24 | 6,600, +0.30, 4.85 |
+| WR | 690, −0.85, 3.95 | 943, −0.95, 4.16 | 10,193, +0.06, 4.98 |
+| TE | 347, −1.06, 2.98 | 389, −0.44, 2.67 | 5,310, +0.19, 3.67 |
+
+By career game (dynasty, bias): the debut is the worst — RB −1.79, WR −2.25, TE −1.49, QB −0.48; game 2 RB +0.19,
+WR −0.12, TE −1.04; game 3 RB −0.20, WR −0.02, TE −0.60. A WR with no history gets about 6 points (the
+rookie WRs without a game in the 2026 week-5 board sit at 5.8–6.1); a debut scores about 2 less than projected. Scrubs' table is the same shape
+(RB −0.63, WR −0.76, TE −0.93). Veterans in their first games for a new team are over-projected too (RB −0.51, WR
+−0.95, TE −0.44): a lead, not addressed here (the draft-slot prior is a rookie's).
+
+The fix: per position × scoring, the mean actual of cold starts by draft slot (picks 1–32, 33–64, 65–128, 129+,
+undrafted; shrunk to the position's mean by n / (n + 30)), blended with the projection as w·model + (1 − w)·prior,
+w fitted per games-played step (0, 1, 2) on the seasons before S (2018..S−1) by absolute error over a 0.0–1.0 grid;
+at 3 games and beyond the blend is the identity. The ranges move with the point (`shift_bands`). Rule: the cold rows'
+MAE falls by at least 0.05 (the harness's bar) in ceil(2n/3) seasons (the leagues averaged), and the whole board is
+not hurt (`decide`'s "hurts").
+
+Results (2021–2025, the leagues averaged per season; "cold rows" = the blended player-weeks, the whole board =
+every played row; the interval columns 2023–2025):
+
+| Position | cold rows (both leagues) | cold Δ MAE (seasons lower, of 5) | cold bias: before → after | board Δ MAE | board Δ Spearman | board Δ interval score | decision |
+|---|---|---|---|---|---|---|---|
+| QB | 366 | 0.000 (0) | −0.30 → −0.30 | 0.000 | 0 | 0 | drop (the fit keeps the model: w = 1) |
+| RB | 922 | −0.159 (4) | −0.64 → −0.35 | −0.009 | +0.0018 | −0.0006 | keep |
+| WR | 1,380 | −0.314 (5) | −0.81 → −0.19 | −0.018 | +0.0034 | −0.0008 | keep |
+| TE | 694 | −0.298 (5) | −0.99 → −0.12 | −0.017 | +0.0037 | −0.0007 | keep |
+
+**Verdict: keep at RB / WR / TE.** The weights fitted on 2018–2024 (what 2025 used; the dynasty's, Scrubs' within
+0.1): RB 0.0 / 1.0 / 0.8 on the model at career games 0 / 1 / 2, WR 0.0 / 0.5 / 0.6, TE 0.0 / 0.2 / 0.3, QB 1.0
+throughout. The priors (dynasty, points a game, played weeks): WR picks 1–32 10.2, 33–64 6.1, 65–128 4.7, 129+ 3.6,
+undrafted 2.6; RB 9.0 / 6.1 / 5.7 / 3.3 / 3.8; TE 4.4 / 3.6 / 3.2 / 2.6 / 2.0. The order changes only among cold
+starts and the players around them, and for the better (whole-board Spearman +0.002 to +0.004).
+
+**In production.** All three switches are off. The ranges' target lives inside `fit_position` (the residual
+target), so `LEAGUE_LAB_RANGE_TARGET=graded` reaches every scoring the night it is turned on — at QB only
+(`RANGE_TARGET_POSITIONS`), in every reference scoring (the harness judged the two house scorings). `project` applies
+the fringe level and the cold-start prior through `calibration.calibrate_outputs` (after cal1.0's map) at the
+positions the harness kept — `FRINGE_POSITIONS` (none) and `COLD_POSITIONS` (RB, WR, TE) — fitted on
+`ops.calibration_oof` (`run_build_oof`, the 3 seasons before) and the game history (`fct_player_game`, every
+position's weeks; `dim_player.draft_pick`). Like cal1.0 they move the house leagues' rows and their reference
+ranges, not the stat line: on-demand leagues (priced from the line at request time) would not see them — the
+request side and the record would disagree for exactly the players the prior moves (IB-0's class of bug) — and
+dbt's `assert_projection_ranges_price_the_lines` (warn) would flag the moved rows. So the cold-start prior is kept by
+the harness but **not ready to switch on as wired**: it belongs on the stat line (scale the line's components by the
+blended / raw points of a reference scoring before `nfl_lines`, so `ops.projection_lines` and every request carry
+it), which is a v3.1 change for the PO to schedule. What it would do to the 2026 board as wired (the main database,
+read-only, weeks 5–18; weeks 1–4 are frozen): 2,754 of 19,822 QB–TE rows move, 120 players — mean −1.6 (RB) /
+−0.9 (TE) / −1.8 (WR) a week in the dynasty, from −8.6 to +5.5; e.g. Germie Bernard (WR, pick 47, one game) 9.93 → 4.85,
+Jordyn Tyson (WR, pick 8, no game yet) 6.08 → 8.42, rookie TEs 3.7–3.8 → 2.7. Turning any switch on is
+a model change (v3.1): the PO's call, with the version bump.
+
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
 **Why.** A projected line is a set of means. A linear rule (points per yard, per catch, per TD) prices a mean

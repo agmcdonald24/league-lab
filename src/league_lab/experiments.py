@@ -562,3 +562,205 @@ def run_many(groups: list[str], test_seasons: tuple[int, ...] = DEFAULT_TEST_SEA
         ctx = prepare(conn, specs, test_seasons, leagues)
         baseline(conn, ctx, force=force_baseline or BASELINE in groups)
         return ctx, [run_experiment(conn, spec, test_seasons, leagues, ctx=ctx, no_peek=reports[spec.name]) for spec in specs]
+
+
+# ---- M5 (Wave I-G): v3.1 harness hooks -- the ranges' target, the fringe level, cold starts (docs/METRICS.md
+# § "Calibration of the top" -> "v3.1"). Per-row walk-forward rows (``v31_rows``) scored in the harness's terms, with
+# both range targets fitted on one set of component models (``shared_component_fits``), plus the paired rules each
+# candidate is judged by. Read-only on the database; the rows go to files (the M5 run wrote ``scratch/``).
+V31_TEST_SEASONS = (2021, 2022, 2023, 2024, 2025)
+V31_IS_BAR = -0.005          # interval score (points): mean paired change at most this ...
+V31_COVERAGE_80 = (0.78, 0.82)
+V31_COVERAGE_50 = (0.48, 0.52)
+
+
+class shared_component_fits:   # noqa: N801 - a context manager used like a function
+    """Within the block, ``projections._fit_components`` returns the models it already fitted for the same rows (same
+    position, same feature matrix, same outcomes): two ``fit_position`` calls that differ only in the range target
+    then share their point projection exactly, and the second costs only its quantile models."""
+
+    def __enter__(self):
+        self.orig, self.cache, self.hits = P._fit_components, {}, 0
+
+        def fit(x, d, position):
+            outs = d[[f"out_{c}" for c in P.COMPONENTS[position]]].to_numpy(dtype=float)
+            key = (position, x.shape, hashlib.md5(np.ascontiguousarray(x).tobytes()).hexdigest(),
+                   hashlib.md5(np.ascontiguousarray(outs).tobytes()).hexdigest())
+            if key in self.cache:
+                self.hits += 1
+            else:
+                self.cache[key] = self.orig(x, d, position)
+            return self.cache[key]
+
+        P._fit_components = fit
+        return self
+
+    def __exit__(self, *exc):
+        P._fit_components = self.orig
+        return False
+
+
+class range_target:   # noqa: N801
+    """Set ``LEAGUE_LAB_RANGE_TARGET`` for the block (``graded-all`` or ``components``), restoring it after."""
+
+    def __init__(self, value: str):
+        self.value = value
+
+    def __enter__(self):
+        import os
+
+        self.before = os.environ.get(P.RANGE_TARGET_FLAG)
+        os.environ[P.RANGE_TARGET_FLAG] = self.value
+        return self
+
+    def __exit__(self, *exc):
+        import os
+
+        if self.before is None:
+            os.environ.pop(P.RANGE_TARGET_FLAG, None)
+        else:
+            os.environ[P.RANGE_TARGET_FLAG] = self.before
+        return False
+
+
+V31_META = ["gsis_id", "season", "week", "position", "player_name", "team", "played", "no_history", "games_to_date", "prev_games"]
+
+
+def v31_rows(frame: pd.DataFrame, test_seasons: list[int], scorings: dict[str, tuple[str, dict[str, float]]], first: int,
+             positions: tuple[str, ...] = P.POSITIONS, ranges: bool = True, sink=None) -> pd.DataFrame:
+    """Per test season S and position: the production model fitted on ``first``..S-1 (``fit_position``), applied to
+    S. One row per scoring x player-week with the point projection, the v3.0 ranges (residuals of the components'
+    price: ``p10`` .. ``p90``) and, with ``ranges``, the ranges fitted on the graded actual (``g_p10`` .. ``g_p90``),
+    plus both actuals (``actual`` = the components' price, the harness's; ``graded`` = what the record grades on).
+    ``frame`` must carry the ``outx_`` columns (``projections.join_graded_extras``). ``sink(season, position, rows)``
+    is called after each fit (the M5 run saved them as it went)."""
+    out = []
+    for s in test_seasons:
+        train = frame[(frame["season"] >= first) & (frame["season"] < s)]
+        test = frame[frame["season"] == s]
+        for pos in positions:
+            t0 = time.monotonic()
+            rows = test[test["position"] == pos]
+            with shared_component_fits() as cache:
+                if ranges:
+                    with range_target("components"):
+                        base = P.predict_position(P.fit_position(train, pos, scorings), rows, scorings)
+                    with range_target("graded-all"):
+                        alt = P.predict_position(P.fit_position(train, pos, scorings), rows, scorings)
+                    if not np.allclose(base["proj_points"].to_numpy(), alt["proj_points"].to_numpy(), atol=1e-9):
+                        raise AssertionError(f"{s} {pos}: the point projection moved with the range target")
+                    for b in ("p10", "p25", "p50", "p75", "p90"):
+                        base[f"g_{b}"] = alt[b].to_numpy()
+                else:
+                    d = train[(train["position"] == pos) & train["played"] & ~train["no_history"]]
+                    d = d.dropna(subset=[f"out_{c}" for c in P.COMPONENTS[pos]]).reset_index(drop=True)
+                    feats = list(P.FEATURES_BY_POSITION[pos])
+                    models = P._fit_components(P._matrix(d, feats), d, pos)
+                    x = P._matrix(rows, feats)
+                    base = rows[["gsis_id", "season", "week", "position"]].copy()
+                    base["season"], base["week"] = base["season"].astype(int), base["week"].astype(int)
+                    for c in P.ALL_COMPONENTS:
+                        base[f"proj_{c}"] = np.clip(models[c].predict(x), 0, None) if c in models else 0.0
+                    parts = []
+                    for lid, (_, scoring) in scorings.items():
+                        o = base.copy()
+                        o["league_id"], o["proj_points"] = lid, P.price(o, scoring, "proj_")
+                        parts.append(o)
+                    base = pd.concat(parts, ignore_index=True)
+            meta = rows[[c for c in V31_META if c in rows.columns]].copy()
+            meta["season"], meta["week"] = meta["season"].astype(int), meta["week"].astype(int)
+            ok = rows[[f"out_{c}" for c in P.ALL_COMPONENTS]].notna().all(axis=1) & rows["played"].astype(bool)
+            acts = []
+            for lid, (_, scoring) in scorings.items():
+                a = meta.drop(columns=["position"]).assign(league_id=lid, actual=np.nan, graded=np.nan)
+                if ok.any():
+                    a.loc[ok.to_numpy(), "actual"] = P.price(rows[ok], scoring, "out_").to_numpy()
+                    a.loc[ok.to_numpy(), "graded"] = P.graded_actual(rows[ok], scoring).to_numpy()
+                acts.append(a)
+            keep = [c for c in base.columns if not c.startswith("proj_") or c == "proj_points"]
+            res = base[keep].merge(pd.concat(acts, ignore_index=True), on=["gsis_id", "season", "week", "league_id"],
+                                   how="left", validate="one_to_one")
+            res["train_seasons"] = f"{first}-{s - 1}"
+            if sink is not None:
+                sink(s, pos, res)
+            out.append(res)
+            log.info("v31 rows: %s %s, %s rows, %.0f s (component fits shared: %s)", s, pos, len(res),
+                     time.monotonic() - t0, cache.hits)
+    return pd.concat(out, ignore_index=True)
+
+
+def score_v31(rows: pd.DataFrame, value: str = "proj_points", actual: str = "actual", bands: str = "",
+              min_players: int = 8) -> pd.DataFrame:
+    """Per league x season x week x position (played rows with ``actual`` known, at least ``min_players``): the
+    harness's terms -- Spearman, top-N hit rate, MAE of ``value``; the 80% and 50% ranges' coverage and interval score
+    ((pinball 10 + pinball 90) / 2; (pinball 25 + pinball 75) / 2) from the band columns ``<bands>p10`` ..."""
+    from .rankings import TOP_N, _hit_rate, _spearman
+
+    d = rows[rows[actual].notna() & rows[value].notna()]
+    out = []
+    for (lid, season, week, pos), g in d.groupby(["league_id", "season", "week", "position"]):
+        if len(g) < min_players:
+            continue
+        y = g[actual].to_numpy(dtype=float)
+        v = g[value].to_numpy(dtype=float)
+        rec = {"league_id": lid, "season": int(season), "week": int(week), "position": pos, "n_players": len(g),
+               "spearman": _spearman(g[value], g[actual]), "hit_rate": _hit_rate(g[value], g[actual], TOP_N[pos]),
+               "mae": float(np.mean(np.abs(v - y)))}
+        if f"{bands}p10" in g and g[f"{bands}p10"].notna().all():
+            b = {q: g[f"{bands}{q}"].to_numpy(dtype=float) for q in ("p10", "p25", "p50", "p75", "p90")}
+            rec |= {"coverage_80": float(((y >= b["p10"]) & (y <= b["p90"])).mean()),
+                    "coverage_50": float(((y >= b["p25"]) & (y <= b["p75"])).mean()),
+                    "interval_width": float(np.mean(b["p90"] - b["p10"])),
+                    "interval_score": (P._pinball(y, b["p10"], 0.1) + P._pinball(y, b["p90"], 0.9)) / 2,
+                    "interval_score_50": (P._pinball(y, b["p25"], 0.25) + P._pinball(y, b["p75"], 0.75)) / 2,
+                    "pinball_50": P._pinball(y, b["p50"], 0.5)}
+        out.append(rec)
+    return pd.DataFrame(out)
+
+
+V31_METRICS = ["spearman", "hit_rate", "mae", "coverage_80", "coverage_50", "interval_width", "interval_score", "interval_score_50"]
+
+
+def paired_v31(base: pd.DataFrame, alt: pd.DataFrame) -> pd.DataFrame:
+    """Two ``score_v31`` frames on the same weeks -> per league x season x position: the weekly means of each and the
+    change (alt - base), the season being the paired unit (as ``summarize_scores`` / ``decide``)."""
+    keys = ["league_id", "season", "week", "position"]
+    m = base.merge(alt, on=keys, suffixes=("_base", "_alt"))
+    g = m.groupby(["league_id", "season", "position"])
+    out = pd.DataFrame({"n_weeks": g.size(), "n_player_weeks": g["n_players_alt"].sum()})
+    for k in V31_METRICS:
+        if f"{k}_base" in m:
+            out[f"baseline_{k}"], out[k] = g[f"{k}_base"].mean(), g[f"{k}_alt"].mean()
+            out[f"delta_{k}"] = out[k] - out[f"baseline_{k}"]
+    return out.reset_index()
+
+
+def coverage_holds(cov: float, base: float, band: tuple[float, float], slack: float = 0.005) -> bool:
+    """Coverage holds when it is inside ``band`` (78-82% for the 80% range), or -- for a position whose v3.0 range is
+    already outside it (QB: about 73% at 80%) -- no farther from the nominal level than v3.0's plus ``slack``."""
+    nominal = (band[0] + band[1]) / 2
+    return band[0] <= cov <= band[1] or abs(cov - nominal) <= abs(base - nominal) + slack
+
+
+def decide_ranges(paired: pd.DataFrame) -> pd.DataFrame:
+    """The ranges' rule, per league x position (the leagues price differently, so each is judged on its own): keep when
+    the interval score improves -- mean change at most ``V31_IS_BAR`` and lower in ceil(2n/3) of the n seasons -- and
+    the coverage holds (``coverage_holds``, averaged over the seasons, for the 80% and the 50% range).
+    A change too small to clear the bar is 'no change' (identical within noise), never a keep."""
+    rows = []
+    for (lid, pos), g in paired.groupby(["league_id", "position"], sort=False):
+        n, need = len(g), seasons_needed(len(g))
+        d = g["delta_interval_score"].astype(float)
+        better = int((d < 0).sum())
+        c80, c50 = float(g["coverage_80"].mean()), float(g["coverage_50"].mean())
+        b80, b50 = float(g["baseline_coverage_80"].mean()), float(g["baseline_coverage_50"].mean())
+        holds = coverage_holds(c80, b80, V31_COVERAGE_80) and coverage_holds(c50, b50, V31_COVERAGE_50)
+        helps = d.mean() <= V31_IS_BAR and better >= need
+        decision = "keep" if helps and holds else "no change" if abs(d.mean()) < -V31_IS_BAR else "drop"
+        rows.append({"league_id": lid, "position": pos, "n_seasons": n, "delta_interval_score": float(d.mean()),
+                     "seasons_better": better, "coverage_80": c80, "coverage_50": c50,
+                     "baseline_coverage_80": float(g["baseline_coverage_80"].mean()),
+                     "baseline_coverage_50": float(g["baseline_coverage_50"].mean()),
+                     "delta_interval_score_50": float(g["delta_interval_score_50"].mean()), "decision": decision})
+    return pd.DataFrame(rows)
+# ---- /M5

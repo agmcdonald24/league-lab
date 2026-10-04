@@ -12,6 +12,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   are priced at their odds." The flip is the nightly's env alone (a separate commit: "M4: the flip"). Fixed on the
   way: the scenarios' base under expected-value pricing (it would have failed the first nightly after the flip).
 
+- **M5 — v3.1 measured, nothing switched on.** Three candidates through the walk-forward harness, each behind its own
+  switch (off): the ranges fitted on the graded points (`LEAGUE_LAB_RANGE_TARGET=graded`: the 2-point and long-TD
+  points the record grades were outside every range), a level for the fringe (`LEAGUE_LAB_FRINGE_LEVEL`) and a
+  draft-slot prior for a player's first games (`LEAGUE_LAB_COLD_START`). Kept: the graded target at QB (interval score
+  −0.007 in the dynasty, coverage closer to 80%) and the cold-start prior at RB / WR / TE (their first three career
+  games' MAE −0.16 / −0.31 / −0.30, 4–5 of 5 seasons); dropped: the fringe level (its miss changes sign by era). The
+  harness table and the rules: STATUS § "Wave I-G" (M5), METRICS § "Calibration of the top" → "v3.1"; the rows in
+  `dbt/seeds/feature_experiments.csv`.
+
 ## 2026-10-04 — the product is isuckatfantasy
 
 - **Renamed.** Everything a manager sees — the sign-in screen, the top bar, the home-screen icon and its mark ("isaf"),
