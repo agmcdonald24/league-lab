@@ -242,6 +242,12 @@ def brier(pairs: Sequence[tuple[float, float]]) -> float:
 # does not play at all (the ranges are "if he plays": an inactive starter scores 0, which the distribution does not
 # carry — the morning's statuses already sit him when he is ruled out).
 WEEK_ASSUMPTIONS = "assuming the players' weeks are independent except teammates and opponents"
+# The calibration (docs/METRICS.md § "Win probability" → "The week"; 2024-2025 house-league matchups, the managers' real
+# starters, walk-forward ranges): the raw probability is overconfident (the favourite predicted 62.9%, won 57.8%; "clear"
+# 73.2% vs 62.3%) — the ranges are "if he plays" and the weeks of different games are not independent. A logit shrink
+# ``p = sigmoid(WEEK_SHRINK * logit(p_raw))`` fitted on one season improves the other (Brier 2025 0.2452 -> 0.2412 with
+# 2024's 0.64; 2024 0.2405 -> 0.2379 with 2025's 0.54) and 2026 weeks 1-2 (0.2454 -> 0.2402); the pooled fit is used.
+WEEK_SHRINK = 0.59
 KD_POSITIONS = frozenset({"K", "DEF", "TMPK", "TMDEF"})
 UNIT_AS = {"TMQB": "QB"}          # an MFL team quarterback correlates like his starter
 
@@ -281,7 +287,8 @@ def lineup_win_probability(mine: Sequence[Mapping], theirs: Sequence[Mapping], *
     projection: the expected total, and his whole week when he has no range) and ``actual`` (his points when his game
     is in; None before). Empty slots carry nothing (leave them out, or value 0).
 
-    Returns ``p`` (None when neither side has a single range), ``mine`` / ``theirs`` (the expected totals: projections,
+    Returns ``p`` (calibrated: ``shrink_week`` of the Monte Carlo ``p_raw``; None when neither side has a single range),
+    ``mine`` / ``theirs`` (the expected totals: projections,
     actual points where the game is in — the numbers the page shows), ``sim_mine`` / ``sim_theirs`` (the
     distributions' means, a check), ``n_played`` / ``n_starters`` / ``opp_n_played`` / ``opp_n_starters``,
     ``n_no_range`` / ``opp_n_no_range`` (starters counted at their projection: no range) and the pairs correlated."""
@@ -319,10 +326,10 @@ def lineup_win_probability(mine: Sequence[Mapping], theirs: Sequence[Mapping], *
     out = {"mine": round(expected[0], 2), "theirs": round(expected[1], 2),
            "n_starters": counts[0]["n"], "n_played": counts[0]["played"], "n_no_range": counts[0]["no_range"],
            "opp_n_starters": counts[1]["n"], "opp_n_played": counts[1]["played"], "opp_n_no_range": counts[1]["no_range"],
-           "n_correlated_pairs": 0, "p": None, "sim_mine": None, "sim_theirs": None}
+           "n_correlated_pairs": 0, "p": None, "p_raw": None, "sim_mine": None, "sim_theirs": None}
     if m == 0:
         if counts[0]["n"] and counts[1]["n"] and counts[0]["played"] == counts[0]["n"] and counts[1]["played"] == counts[1]["n"]:
-            out["p"] = 1.0 if fixed[0] > fixed[1] else 0.0 if fixed[0] < fixed[1] else 0.5      # the week is over
+            out["p"] = out["p_raw"] = 1.0 if fixed[0] > fixed[1] else 0.0 if fixed[0] < fixed[1] else 0.5   # the week is over
         return out
     corr = np.eye(m)
     npairs = 0
@@ -350,9 +357,17 @@ def lineup_win_probability(mine: Sequence[Mapping], theirs: Sequence[Mapping], *
     u = np.clip(_std_normal_cdf(z), 1e-12, 1 - 1e-12)
     x = np.column_stack([dists[j].ppf(u[:, j]) for j in range(m)])
     tot = [fixed[s] + (x[:, plays[s]].sum(axis=1) if plays[s] else np.zeros(n)) for s in (0, 1)]
-    out["p"] = float(np.mean(tot[0] > tot[1]) + 0.5 * np.mean(tot[0] == tot[1]))
+    raw = float(np.mean(tot[0] > tot[1]) + 0.5 * np.mean(tot[0] == tot[1]))
+    out["p_raw"], out["p"] = raw, shrink_week(raw)
     out["sim_mine"], out["sim_theirs"] = round(float(tot[0].mean()), 2), round(float(tot[1].mean()), 2)
     return out
+
+
+def shrink_week(p: float, k: float = WEEK_SHRINK) -> float:
+    """The calibrated week probability from the raw Monte Carlo one (a logit shrink toward 50%; 0 and 1 stay)."""
+    if p <= 0.0 or p >= 1.0:
+        return float(p)
+    return float(1.0 / (1.0 + math.exp(-k * math.log(p / (1.0 - p)))))
 
 
 def week_words(p: float) -> str:

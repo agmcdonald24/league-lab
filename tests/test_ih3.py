@@ -42,7 +42,8 @@ def test_every_starter_higher_is_a_favorite():
     assert r["mine"] == pytest.approx(r["theirs"] + 9.0)
     # the closed form for two sums of independent normals (the piecewise-linear normal is close: within 0.02)
     sd = np.sqrt(2 * 9 * 36.0)
-    assert r["p"] == pytest.approx(norm.cdf(9.0 / sd), abs=0.02)
+    assert r["p_raw"] == pytest.approx(norm.cdf(9.0 / sd), abs=0.02)
+    assert r["p"] == pytest.approx(D.shrink_week(r["p_raw"])) and 0.5 < r["p"] < r["p_raw"]
     assert D.lineup_win_probability(theirs, mine)["p"] == pytest.approx(1 - r["p"], abs=0.01)
     assert D.week_words(r["p"]).endswith("favorite")
     assert D.week_words(1 - r["p"]).endswith("underdog")
@@ -86,7 +87,7 @@ def test_played_games_use_the_actual_points():
     assert r["mine"] == pytest.approx(sum(x["value"] for x in mine[1:]) + 35.0)
     assert r["theirs"] == pytest.approx(sum(x["value"] for x in theirs[1:]) + 4.0)
     sd = np.sqrt(2 * 8 * 36.0)
-    assert r["p"] == pytest.approx(norm.cdf(31.0 / sd), abs=0.02)
+    assert r["p_raw"] == pytest.approx(norm.cdf(31.0 / sd), abs=0.02)
     # a week that is over: certain
     done_m = [{**x, "actual": 10.0} for x in mine]
     done_t = [{**x, "actual": 9.0} for x in theirs]
@@ -107,6 +108,13 @@ def test_no_range_counts_the_projection_and_kickers_take_their_projection_as_med
     assert r["n_correlated_pairs"] == 0
     # nothing to draw (no ranges anywhere, nothing played): no probability
     assert D.lineup_win_probability([dst], [dst])["p"] is None
+
+
+def test_the_shrink_is_symmetric_and_keeps_certainty():
+    for p in (0.1, 0.3, 0.5, 0.62, 0.9):
+        assert D.shrink_week(p) == pytest.approx(1 - D.shrink_week(1 - p))
+        assert abs(D.shrink_week(p) - 0.5) <= abs(p - 0.5)
+    assert (D.shrink_week(0.0), D.shrink_week(1.0), D.shrink_week(0.5)) == (0.0, 1.0, 0.5)
 
 
 def test_inconsistent_correlations_are_repaired_and_fixed_seed():
