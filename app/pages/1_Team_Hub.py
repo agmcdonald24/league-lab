@@ -124,8 +124,8 @@ else:
         "on those two players before kickoff.",
         "**Next 4 weeks** adds up your best lineup for each of the next four weeks, byes and injuries included. Low here but high "
         "this week? Look for cover now.",
-        "**Depth** is the lineup your bench alone could put out. Low depth means one injury hurts: a trade or a claim for a starter "
-        "matters more to you than to most.",
+        "**Depth (bench lineup)** is the best legal lineup your bench alone could field if every starter sat: usable depth, not "  # II-4
+        "raw bench points. Low depth means one injury hurts: a trade or a claim for a starter matters more to you than to most.",
         "**Acquired** is how each player joined your team: draft pick, trade (and with whom), waivers or free agency. Dynasty "
         "rosters read the whole league history.",
         title="How to read this",
