@@ -5990,3 +5990,84 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
    `SLEEPER_WAIVER_TZ`); 180 days of usage.
 5. **Clone state**: `league_lab_i0b`'s `ops.waiver_moves` / `ops.waiver_upside` were rewritten at 05:00 and the two
    views rebuilt (IG-1 was told in INTERFACES); the `usage` schema was created there (empty).
+
+## Wave I-H (Iteration 18)
+
+### IH-2 2026-10-04 — the small opens from I-G: units' drop cost, the console's stash words, MFL freshness on Team, the waiver days, the Questionable line, `game_key` (branch `dev/IH2`, database `league_lab_i0b`)
+
+* **Task / plan**: Wave I-H brief § IH-2 (items 1–5); the I-G hand-backs' "Not done": IG-1 (the drop cost on units, the
+  verdict's lean), IG-3 (the console's stash words, the Team page's freshness, `daily_waivers_days`), IG-2 (`game_key`,
+  the Questionable designation). Plan § 17 (Iteration 18). Branch `dev/IH2` from `main` `ad4040e`.
+* **Delivered**
+  1. **Waivers' drop cost on team units** (`decisions._moves_on_demand`, `# ---- IH-2` in IF-1's block): `points.update`
+     + `repl.update` from IG-1's `unit_market(lw, fa)` — a dropped MFL team unit (TMQB / TMPK) has season points and a
+     replacement (the best **free unit of its kind**), and its later starts are measured against that unit (before:
+     against a free unit worth 0, so a unit's drop always cost its whole future). **The verdict's lean**
+     (`trades.verdict`, `# ---- IH-2`): a side with a player the season value cannot count says "season value not
+     compared (1 player in it has no season projection)" and leans nowhere (it leaned on the counted players' partial
+     sum; units are counted since IG-1).
+  2. **The console's stash words read `stash_action`** (`app/lib/signals.py`, `# ---- IH-2`): `upside_detail` names no
+     drop on a watch (the API hides it too — and the API's `lines` come from this same function, so the web's watch
+     cards lose the "Drop X: …" line they still carried under IG-3's watch box); the Waiver Wire card's caption says
+     "Upside stash · watch, no claim yet: …" / "· claim: …" and an `st.info` line says the call — the watch line is
+     **one source**: `signals.watch_words`, which `decisions.ig3_watch_words` now calls; the expander's drop column is
+     empty on a watch. A row written before IG-3's call keeps the older words.
+  3. **MFL's roster freshness on Team** (`decisions.team_roster_freshness` → `ondemand.mfl_roster_freshness`, My Week's
+     fields): `/api/team` for an `mfl:` league gains `roster_updated_at` / `roster_source`; `Team.svelte` (`<!-- ---- IH-2
+     -->`) shows "MFL rosters updated 12:16 PM ET ›" right under the roster, the exact day and time on tap.
+     **`daily_waivers_days` decoded** (`decisions.waiver_days`, `daily_days_words`, `deadline_days`; `_sleeper_runs`'
+     daily path skips the days off): "Claims run every day except Saturday at 5:00 AM ET (FAAB blind bids)" for the
+     dynasty; `deadline` gains `days` / `days_mask`.
+  4. **"What changed": a Questionable tag** (`myweek.questionable_lines`, `# ---- IH-2`, one call line in
+     `what_changed`): a week's player (the best lineup's starters + the submitted ones) tagged Questionable gets one
+     line — "Questionable: Flowers (hamstring) — your lineup is unchanged" — when the tag is news since the morning
+     build: a live QUESTIONABLE availability event of the last 24 hours (cited by it: source, time, URL, `event_id`),
+     else the overlay's own flag (a copy newer than the build moved him; cited by the overlay entry). A tag the build
+     knew is not a change; never a second line for a player who has one. No web change (a status line renders).
+  5. **`game_key` on availability events** (`events.week_games` / `game_key_for`, `# ---- IH-2`): the player's team's
+     nflverse `game_id` in the week in play — the week of the first kickoff no more than 12 hours ago (a Monday-night
+     status is still that week's; Tuesday's is the next week's); a bye, an unknown team or an unreadable schedule:
+     null. Read on the writer thread, cached an hour (a failed read: not retried for 5 minutes). The fingerprint is
+     unchanged (no duplicate rows from the new column).
+* **Interfaces**: INTERFACES.md § IH-2 (11:58), as built: no new keys on the moves (the numbers move); `deadline.days`,
+  `deadline.days_mask`; `/api/team` `roster_updated_at`, `roster_source` (MFL only); `changed.lines[]` `flag:
+  "questionable"` (+ `player_name`); `events.events.game_key`; `signals.with_call / stash_call / stash_call_words /
+  watch_words / short_name / STASH_CAPTION / UPSIDE_CALL_SQL`; `lib/api.ts` one `// ---- IH-2` block.
+* **Files**: `api/league_lab_api/{decisions,myweek,events}.py`, `src/league_lab/trades.py`, `app/lib/signals.py`,
+  `web/src/routes/Team.svelte`, `web/src/lib/api.ts`, `api/tests/test_ih2.py` (new, 21), `api/tests/twin_ih2.py` (new:
+  the console twin of the stash card, `streamlit_twin.py`'s pattern), `api/tests/test_ig3.py` (one re-pin, marked),
+  `web/e2e/ih2/fixtures.spec.ts` (new, 4 × phone / desktop), `web/fixtures/ih2/api_ih2.json` (the recording),
+  `docs/{WORDS,STATUS}.md`, `CHANGELOG.md`.
+* **Evidence — MFL 70587 (dad's league), Waivers before → after** (fixtures; `_moves_on_demand` and `/api/waivers`, the
+  code before = `ad4040e`):
+  - **Team 8 "Big Mac Attack"**: the answer **does not move** — the team has an open roster spot, so every best claim is
+    "no drop needed" (41 moves, all `drop: null`; the first stays the Atlanta Falcons defense, +1.2 this week, +12.81
+    over weeks 4–7); only the internal `move_rank` of the full table re-orders. The table behind it moves on its **35
+    unit-drop rows** (of 288): dropping the **Chicago Bears QB** (29 claims) cost **28.22 → about 4** (season points
+    345.93 vs the best free team QB's 378.22 = 0 above replacement; later starts 28.22 → 0.20), e.g. "Falcons defense,
+    drop the Bears QB": net +1.2 / +12.81 → … net horizon **−15.41 → +8.72**, and **24 of the 29 become worthwhile**
+    (still below the no-drop claim); **Houston Texans K** 118.55 → about 5 (2.14 for the Saints kicker claim; 166.01
+    season points vs the free kicker's 169.47); **Houston Texans QB** 29.15 → about 9.
+  - **Where the screen moves** (12 teams, every move compared): teams 1, 3, 5, 7, 8, 11 unchanged; on **2, 4, 6, 9, 10,
+    12** a kicker (or team QB) claim's drop changes from a player to the unit it replaces, the gains unchanged (cost 0
+    either way): team 2 "New Orleans Saints K" drop Cooper Kupp → **Jacksonville Jaguars K** (+2.55 / +17.06; also the
+    third of its three top moves), team 4 Jonathon Brooks → Detroit Lions K, team 6 Jakobi Meyers → Los Angeles Rams K
+    (and "Arizona Cardinals QB": → Philadelphia Eagles QB), team 9 Kenny Gainwell → Green Bay Packers K, team 10 Quentin
+    Johnston → Seattle Seahawks K / Denver Broncos QB, team 12 RJ Harvey → Baltimore Ravens K (6 kicker claims).
+    House leagues: no units, nothing moves.
+* **Evidence — the rest**: dynasty deadline "Claims run every day except Saturday at 5:00 AM ET (FAAB blind bids); …"
+  (Sunday 3:50 AM ET → the next run Sunday 5 AM; Friday 11 PM ET → Sunday, Saturday skipped); Scrubs (weekly) unchanged.
+  Dad's league Team 8: `roster_source` "MFL", read just now; Scrubs roster 6: no MFL keys. Scrubs roster 3 with the
+  ESPN fixtures' overlay: "Questionable: Flowers (hamstring) — your lineup is unchanged · Injury report (ESPN)" (once;
+  McLaurin, also flagged, is on the bench: no line); with the overlay on, Scrubs rosters 3, 4, 5, 8, 9 and dynasty 2, 3,
+  6 get one (Andrew's Scrubs 2 / dynasty 12: none). `game_key` on the clone's schedule: Saturday of week 4 →
+  `2026_04_MIA_MIN` for MIN; Tuesday after → week 5 (byes absent); Thursday night → `2026_04_PIT_CLE`. The console twin
+  (Scrubs roster 6, the clone: every stash a watch) and the API's first stash: the same lines, no drop named, the same
+  watch line word for word.
+* **Tests**: `api/tests/test_ih2.py` **20 passed, 1 skipped** (the recorder); with `test_ig3 test_ig1 test_if1 test_ig2
+  test_if4 test_h1`: 72 passed, 12 skipped, 1 failed — `test_h1::test_waivers_trade_lists_on_demand_equal_the_house_path`,
+  which fails identically on `ad4040e`'s code against this clone (below). Whole suites: see "Full runs" below. Ruff
+  `src app tests api` clean; web `npm run lint` (eslint + svelte-check + tsc) 0 errors, `npm run build` clean; e2e
+  `FIXTURES_PORT=8614 … e2e/ih2` **8 passed** (phone 375 / desktop 1300: the Team MFL line under the roster and its
+  exact time on tap, no line on a Sleeper Team page, the dynasty's waiver days, the Questionable line once; no sideways
+  scroll).
