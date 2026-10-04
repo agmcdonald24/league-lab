@@ -367,7 +367,8 @@ def test_the_week_in_play_on_the_clone():
 @needs_db
 @pytest.mark.skipif(not __import__("os").environ.get("IH2_RECORD"), reason="records web/fixtures/ih2/api_ih2.json: IH2_RECORD=1")
 def test_record_e2e_answers(client, mfl, overlay):  # noqa: F811
-    """The answers web/e2e/ih2 replays: dad's league team 8's Team page (the MFL line), the dynasty's Waivers (which days
+    """The answers web/e2e/ih2 replays: dad's league team 8's Team page (the MFL line) and Scrubs roster 6's (none), the
+    dynasty's Waivers (which days
     claims run), League of Scrubs roster 3's My Week (the Questionable line), the status."""
     from urllib.parse import urlencode
 
@@ -383,6 +384,7 @@ def test_record_e2e_answers(client, mfl, overlay):  # noqa: F811
     rec("/api/leagues", mfl_search="70587")
     rec("/api/leagues/mfl%3A70587/rosters")
     rec("/api/team", league=DAD, team=8)
+    rec("/api/team", league=SCRUBS, team=6)
     rec("/api/waivers", league=DYNASTY, team=12, position="ALL")
     rec("/api/my-week", league=SCRUBS, team=3)
     rec("/api/status")
