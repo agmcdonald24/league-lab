@@ -182,3 +182,27 @@ def test_mfl_team_qb_slot_is_the_units(client, _mfl):
     assert qb["league"]["best"] >= (qb["value"] or 0.0) - 1e-9
     assert all(s["league"]["best"] >= (s["value"] or 0.0) - 1e-9 for s in sb["slots"])
     assert {s["slot"] for s in sb["slots"] if s["slot_type"] == "WR+TE"} == {"WR+TE1", "WR+TE2", "WR+TE3"}
+
+
+# ------------------------------------------------------------------ the answers web/e2e/ii0 replays
+@needs_db
+@pytest.mark.skipif(not __import__("os").environ.get("II0_RECORD"), reason="records web/fixtures/ii0 (II0_RECORD=1)")
+def test_record_e2e_answers(client):
+    """League of Scrubs roster 2 (MacZaddy) on the clone: the Team screen (strength by slot) and the partner finder
+    (the stories). Re-record: cd api && II0_RECORD=1 PYTHONPATH=. uv run pytest -q tests/test_ii0.py -k record"""
+    import json
+    from urllib.parse import urlencode
+
+    from league_lab_api.settings import ROOT
+
+    def key(path: str, **q) -> str:
+        return path + ("?" + urlencode(sorted((k, str(v)) for k, v in q.items())) if q else "")
+
+    out: dict = {}
+    for path, q in (("/api/team", {"league": SCRUBS, "team": TEAM}), ("/api/trades/partners", {"league": SCRUBS, "team": TEAM})):
+        r = client.get(key(path, **q))
+        out[key(path, **q)] = {"status": r.status_code, "body": r.json()}
+    f = ROOT / "web" / "fixtures" / "ii0" / "api_ii0.json"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(out, indent=1, default=str) + "\n")
+    assert all(v["status"] == 200 for v in out.values()), {k: v["status"] for k, v in out.items()}
