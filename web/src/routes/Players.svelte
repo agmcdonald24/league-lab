@@ -64,6 +64,9 @@
   });
   const mode = $derived(params.get("mode") === "total" ? "total" : "game");
   const minGames = $derived(Math.max(1, Number(params.get("min") ?? "1") || 1));
+  // opportunities = targets + carries (+ pass attempts for a quarterback) in the window
+  const minOpp = $derived(Math.max(0, Number(params.get("minopp") ?? "0") || 0));
+  const opps = (p: StatsRow) => (num(p.targets) ?? 0) + (num(p.carries) ?? 0) + (p.position === "QB" ? (num(p.attempts) ?? 0) : 0);
 
   const r = new Remote<StatsFrame>();
   const path = $derived(
@@ -110,6 +113,7 @@
           (who === "others" && p.rostered_by_roster_id !== null && p.rostered_by_roster_id !== team)) &&
         (!nfl || teamLabel(p.team) === nfl || p.team === nfl) &&
         (p.games ?? 0) >= minGames &&
+        (minOpp === 0 || opps(p) >= minOpp) &&
         (!needle || norm(p.player_name).includes(needle)),
     );
     const key = sortCol ? field(sortCol) : "points";
@@ -127,7 +131,7 @@
   const shown = $derived(filtered.slice(0, limit));
   // a new set or filter starts at the top of the list again
   $effect(() => {
-    void [path, position, who, nfl, minGames];
+    void [path, position, who, nfl, minGames, minOpp];
     limit = 50;
   });
 
@@ -206,7 +210,7 @@
   }
   function openView(v: View) {
     const want = Object.fromEntries(new URLSearchParams(v.qs));
-    const clear = Object.fromEntries(["position", "who", "nfl", "window", "weeks", "mode", "min", "cols", "sort", "dir", "q"].map((k) => [k, null]));
+    const clear = Object.fromEntries(["position", "who", "nfl", "window", "weeks", "mode", "min", "minopp", "cols", "sort", "dir", "q"].map((k) => [k, null]));
     setParams({ ...clear, ...want });
     q = want.q ?? "";
   }
@@ -235,7 +239,7 @@
     {#snippet answer()}
       {#if leader && sortCol}
         <span data-testid="players-answer"
-          ><strong>Highest {title(sortCol).toLowerCase()}: {leader.player_name}, {show(sortCol, leader)}</strong>
+          ><strong>{dir === "asc" ? "Lowest" : "Highest"} {title(sortCol).toLowerCase()}: {leader.player_name}, {show(sortCol, leader)}</strong>
           ({leader.games} game{leader.games === 1 ? "" : "s"}{cols.some((c) => c.id === "receiving_yards") && sortCol.id !== "receiving_yards"
             ? `, ${fmt.pts(num(leader.receiving_yards_per_game))} receiving yards per game`
             : ""}) · {filtered.length} player{filtered.length === 1 ? "" : "s"} · {r.data?.window.label}.</span
@@ -249,14 +253,17 @@
   <div class="space-y-2.5">
     <label class="sr-only" for="ll-players-q">Find a player</label>
     <input id="ll-players-q" class="ll-input w-full" type="search" placeholder="Find a player" autocomplete="off" bind:value={q} oninput={onq} data-testid="players-search" />
-    <Chips
-      label="Position"
-      testid="pos"
-      current={position}
-      onpick={(p) => setParams({ position: p === "ALL" ? null : p, cols: null, sort: null, dir: null })}
-      items={POS}
-    />
-    <div class="flex flex-wrap items-center gap-2">
+    <!-- on a phone each chip row scrolls sideways inside itself (the page never does); from 640 px they wrap -->
+    <div class="ll-chiprow">
+      <Chips
+        label="Position"
+        testid="pos"
+        current={position}
+        onpick={(p) => setParams({ position: p === "ALL" ? null : p, cols: null, sort: null, dir: null })}
+        items={POS}
+      />
+    </div>
+    <div class="ll-chiprow">
       <Chips
         label="Whose"
         testid="who"
@@ -269,41 +276,51 @@
           { key: "others", label: "Other teams" },
         ]}
       />
+    </div>
+    <div class="flex flex-wrap items-center gap-2" data-testid="stats-window">
       <label class="sr-only" for="ll-players-nfl">NFL team</label>
-      <select id="ll-players-nfl" class="ll-input py-1.5 text-sm" value={nfl} onchange={(e) => setParams({ nfl: e.currentTarget.value || null })} data-testid="players-team">
+      <select id="ll-players-nfl" class="ll-input min-w-0 flex-1 py-1.5 text-sm sm:flex-none" value={nfl} onchange={(e) => setParams({ nfl: e.currentTarget.value || null })} data-testid="players-team">
         <option value="">Every NFL team</option>
         {#each Object.keys(TEAMS).map((k) => teamLabel(k)!).sort() as t (t)}<option value={t}>{t}</option>{/each}
       </select>
-    </div>
-    <div class="flex flex-wrap items-center gap-2" data-testid="stats-window">
       <label class="sr-only" for="ll-stats-window">Window</label>
-      <select id="ll-stats-window" class="ll-input py-1.5 text-sm" value={win} onchange={(e) => setParams({ window: e.currentTarget.value === "season" ? null : e.currentTarget.value })} data-testid="stats-window-pick">
+      <select id="ll-stats-window" class="ll-input min-w-0 flex-1 py-1.5 text-sm sm:flex-none" value={win} onchange={(e) => setParams({ window: e.currentTarget.value === "season" ? null : e.currentTarget.value })} data-testid="stats-window-pick">
         {#each WINDOWS as w (w.key)}<option value={w.key}>{w.label}</option>{/each}
       </select>
       {#if win === "weeks"}
-        <label class="text-sm text-ink-2" for="ll-stats-lo">Weeks</label>
-        <select id="ll-stats-lo" class="ll-input py-1.5 text-sm" value={range[0]} onchange={(e) => setParams({ weeks: `${Math.min(Number(e.currentTarget.value), range[1])}-${range[1]}` })} data-testid="stats-weeks-lo">
-          {#each Array.from({ length: weeksMax }, (_, i) => i + 1) as w (w)}<option value={w}>{w}</option>{/each}
-        </select>
-        <span class="text-sm text-ink-2">to</span>
-        <select class="ll-input py-1.5 text-sm" aria-label="to week" value={Math.min(range[1], weeksMax)} onchange={(e) => setParams({ weeks: `${range[0]}-${Math.max(Number(e.currentTarget.value), range[0])}` })} data-testid="stats-weeks-hi">
-          {#each Array.from({ length: weeksMax }, (_, i) => i + 1) as w (w)}<option value={w}>{w}</option>{/each}
-        </select>
+        <span class="flex items-center gap-1.5">
+          <label class="text-sm text-ink-2" for="ll-stats-lo">Weeks</label>
+          <select id="ll-stats-lo" class="ll-input py-1.5 text-sm" value={range[0]} onchange={(e) => setParams({ weeks: `${Math.min(Number(e.currentTarget.value), range[1])}-${range[1]}` })} data-testid="stats-weeks-lo">
+            {#each Array.from({ length: weeksMax }, (_, i) => i + 1) as w (w)}<option value={w}>{w}</option>{/each}
+          </select>
+          <span class="text-sm text-ink-2">to</span>
+          <select class="ll-input py-1.5 text-sm" aria-label="to week" value={Math.min(range[1], weeksMax)} onchange={(e) => setParams({ weeks: `${range[0]}-${Math.max(Number(e.currentTarget.value), range[0])}` })} data-testid="stats-weeks-hi">
+            {#each Array.from({ length: weeksMax }, (_, i) => i + 1) as w (w)}<option value={w}>{w}</option>{/each}
+          </select>
+        </span>
       {/if}
-      <Chips
-        label="Totals or per game"
-        testid="mode"
-        current={mode}
-        onpick={(m) => setParams({ mode: m === "game" ? null : m })}
-        items={[
-          { key: "game", label: "Per game" },
-          { key: "total", label: "Totals" },
-        ]}
-      />
-      <label class="text-sm text-ink-2" for="ll-stats-min">Min. games</label>
-      <select id="ll-stats-min" class="ll-input py-1.5 text-sm" value={minGames} onchange={(e) => setParams({ min: e.currentTarget.value === "1" ? null : e.currentTarget.value })} data-testid="stats-min">
-        {#each [1, 2, 3, 4, 5, 8, 10] as n (n)}<option value={n}>{n}</option>{/each}
-      </select>
+      <span class="flex items-center gap-2">
+        <Chips
+          label="Totals or per game"
+          testid="mode"
+          current={mode}
+          onpick={(m) => setParams({ mode: m === "game" ? null : m })}
+          items={[
+            { key: "game", label: "Per game" },
+            { key: "total", label: "Totals" },
+          ]}
+        />
+        <label class="text-sm whitespace-nowrap text-ink-2" for="ll-stats-min">Min. games</label>
+        <select id="ll-stats-min" class="ll-input py-1.5 text-sm" value={minGames} onchange={(e) => setParams({ min: e.currentTarget.value === "1" ? null : e.currentTarget.value })} data-testid="stats-min">
+          {#each [1, 2, 3, 4, 5, 8, 10] as n (n)}<option value={n}>{n}</option>{/each}
+        </select>
+      </span>
+      <span class="flex items-center gap-2" title="targets + carries (+ pass attempts for a quarterback) in the window">
+        <label class="text-sm whitespace-nowrap text-ink-2" for="ll-stats-minopp">Min. opportunities</label>
+        <select id="ll-stats-minopp" class="ll-input py-1.5 text-sm" value={minOpp} onchange={(e) => setParams({ minopp: e.currentTarget.value === "0" ? null : e.currentTarget.value })} data-testid="stats-minopp">
+          {#each [0, 5, 10, 20, 40, 80] as n (n)}<option value={n}>{n === 0 ? "any" : n}</option>{/each}
+        </select>
+      </span>
     </div>
     {#if r.data}
       <p class="text-sm text-ink-2" data-testid="stats-window-label">
@@ -376,7 +393,7 @@
     <div class="space-y-2" aria-label="Loading" data-testid="loading">{#each [0, 1, 2, 3, 4, 5] as i (i)}<div class="ll-skel h-12"></div>{/each}</div>
   {:else}
     <div class="ll-stats overflow-auto rounded-lg border border-line bg-surface {r.loading ? 'opacity-60' : ''}" style="box-shadow:var(--ll-shadow)" data-testid="stats-scroll">
-      <table class="border-collapse text-base" data-testid="players-table">
+      <table class="min-w-full border-collapse text-base" data-testid="players-table">
         <thead>
           <tr>
             <th class="ll-stick-x ll-label bg-raised px-2 py-2 pl-3 text-left" style="min-width:11rem">Player</th>
@@ -447,6 +464,16 @@
 </main>
 
 <style>
+  @media (max-width: 639px) {
+    .ll-chiprow :global([role="group"]) {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .ll-chiprow :global([role="group"] > button) {
+      flex-shrink: 0;
+    }
+  }
   /* the table scrolls inside its box (never the page): the header row and the player column stay put */
   .ll-stats {
     max-height: 75vh;

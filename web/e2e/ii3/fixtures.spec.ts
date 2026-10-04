@@ -93,6 +93,12 @@ test("windows: last 3 games played vs last 3 calendar weeks vs a week range; tot
   const games = await page.getByTestId("players-table").locator('[data-col="games"]').allTextContents();
   expect(games.length).toBeGreaterThan(0);
   expect(games.every((g) => Number(g) <= 2)).toBe(true);
+  // minimum opportunities (targets + carries in the window): fewer rows, every one over the bar
+  const rb = frame({ position: "RB", window: "weeks", weeks: "1-2" }).players;
+  const over = rb.filter((p) => ((p.targets as number) ?? 0) + ((p.carries as number) ?? 0) >= 20).length;
+  await page.getByTestId("stats-minopp").selectOption("20");
+  await expect(page).toHaveURL(/minopp=20/);
+  await expect(page.getByTestId("players-answer")).toContainText(`· ${over} players ·`);
   // totals ↔ per game: counts switch, shares keep their own denominators
   await expect(page.getByTestId("sort-carries")).toHaveText(/CAR\/G/i);
   await tap(page, page.getByTestId("mode-total"), isMobile);

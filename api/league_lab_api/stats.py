@@ -43,8 +43,10 @@ FCT_COLS = ["gsis_id", "game_id", "season", "season_type", "week", "team", "posi
             "charted_targets", "first_read_targets", "team_first_read_targets", "team_charted_targets", "catchable_targets",
             "red_zone_targets", "red_zone_carries", "inside_5_carries", "team_red_zone_targets", "team_red_zone_carries",
             "scrambles", "dropbacks"]
+# skill players + anyone with a carry (the team's inside-5 carries count every rusher; defenders' rows are not read)
 FCT_SQL = f"""select {", ".join(FCT_COLS)} from analytics.fct_player_game
-              where season = %s and season_type = %s and week between %s and %s"""
+              where season = %s and season_type = %s and week between %s and %s
+                and (position in ('QB', 'RB', 'WR', 'TE', 'FB') or coalesce(carries, 0) > 0)"""
 
 # counts summed over every game row of the player in the window (mart_player_season's sum(...))
 SUMS = ["completions", "attempts", "passing_yards", "passing_tds", "passing_interceptions", "sacks_suffered", "carries",
