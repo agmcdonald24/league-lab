@@ -150,6 +150,8 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     mv = query(MOVERS_SQL, (season, gs)) if gs else pd.DataFrame()
     out["movers"] = [{"gsis_id": _str(r.gsis_id), "player_name": r.player_name, "position": r.position,
                       "tags": _str(r.tags), "momentum": _num(r.momentum)} for r in mv.itertuples()]
+    out["win"] = win_on_demand(client, league_id, int(roster_id), season, week, rows, opp, as_of=as_of,      # ---- IH-3
+                               exclude_reference=exclude_reference)
     t3 = time.perf_counter()
     timings = dict(od.timings_ms)
     timings.update({"opponent": t_opp, "cards": round((t2 - t1) * 1000, 1), "rest": round((t3 - t2) * 1000, 1),
@@ -1283,3 +1285,40 @@ def with_cards(answer: dict) -> dict:
             row["card"] = None
     return answer
 # ---- end IC-3
+
+
+# ---- IH-3 (Wave I-H): `win` on the on-demand answer — the database path's `myweek.win` with the on-demand rows. The
+# ranges come with the priced board (`anyleague.lineup_rows` -> `_cards_frame`: the reference scoring's ranges shifted
+# onto this league's points; none when the league's ranges are not priced -> "no range for this league yet"). The
+# week's points for a starter whose game is in: Sleeper's matchups call (`players_points`, the league's own scoring,
+# cached with the opponent's call); an MFL league's live scores are not read yet (the line steps aside once a game is in).
+def week_points(client, league_id: str, week: int, roster_ids) -> dict[str, float] | None:
+    if A.platforms.is_mfl(league_id):
+        return None
+    try:
+        ms = client.matchups(league_id, int(week))
+    except (A.SleeperBusy, A.SleeperUnavailable):
+        return None
+    want = {int(r) for r in roster_ids}
+    out: dict[str, float] = {}
+    for m in ms or []:
+        if int(m.get("roster_id", -1)) in want:
+            for k, v in (m.get("players_points") or {}).items():
+                if v is not None:
+                    out[str(k)] = float(v)
+    return out
+
+
+def win_on_demand(client, league_id: str, roster_id: int, season: int, week: int, rows: pd.DataFrame, opp: dict | None,
+                  *, as_of=None, exclude_reference: str | None = None) -> dict | None:
+    from .myweek import win
+
+    def ctx(rid: int):
+        return availability.roster_context(league_id, int(rid), week, house=False, as_of=as_of,
+                                           exclude_reference=exclude_reference, client=client)
+    try:
+        return win(league_id, int(roster_id), season, week, rows, opp, house=False, context_fn=ctx,
+                   points_fn=lambda rids: week_points(client, league_id, week, rids))
+    except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+        return None
+# ---- end IH-3
