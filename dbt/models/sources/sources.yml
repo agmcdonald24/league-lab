@@ -198,6 +198,13 @@ sources:
               arguments:
                 combination_of_columns: [league_id, season, week, roster_id, add_sleeper_id]
 
+      - name: market_record
+        description: "Written by `league-lab project` (M6, Wave I-H; src/league_lab/projections.py market_record): per house league x season x week labelled 'ev' in ops.projections, Sleeper's last snapshot fetched before the week's first kickoff (raw.sleeper_projections), each QB/RB/WR/TE line priced at the odds in the league's scoring (scoring.price_projected, ev) -- sleeper_points; rewritten each run. mart_projection_record.sl_priced reads it first in an 'ev' week, the league_points macro otherwise."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [league_id, season, week, sleeper_id, fetched_at]
+
       # plan F1 (Wave F): the NFL-wide model outputs, one copy for every league (src/league_lab/projections.py
       # write_nfl_wide); the B5 freeze applies to each (assert_frozen_nfl_wide_precede_kickoff)
       - name: projection_lines

@@ -271,6 +271,12 @@ def migrate(conn: psycopg.Connection) -> None:
         for ddl in (*lineup.DDL.values(), waivers.UPSIDE_DDL, *signals.DDL.values(), experiments.DDL,   # D1: ops.feature_experiments
                     *projections.NFL_DDL.values()):   # F1: ops.projection_lines / projection_ranges / kd_lines / kd_ranges
             cur.execute(ddl)
+        # ---- M6 (Wave I-H): ops.calibration_oof exists on a fresh database, so the nightly's restore-state can fill it
+        from . import calibration
+        cur.execute(calibration.OOF_DDL)
+        cur.execute(calibration.OOF_MODEL_DDL)
+        cur.execute(projections.MARKET_RECORD_DDL)       # the record's Sleeper side at the odds (dbt reads it as a source)
+        # ---- end M6
     conn.commit()
     # plan D3: raw.nfl_weather + the stadium reference (dbt resolves venues before any weather is fetched)
     from .ingest import weather

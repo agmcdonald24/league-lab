@@ -888,6 +888,7 @@ LINE_MIN_RAW = 0.5               # a line priced under half a point has nothing 
 NEW_TEAM_N = 3                   # a veteran with fewer than this many games with his current team is "on a new team"
 NEW_TEAM_POSITIONS: tuple[str, ...] = ()      # where the harness kept the new-team blend (empty: measured, dropped)
 TEAM_GAMES_SQL = """select gsis_id, season, week, team from analytics.fct_player_game where season_type = 'REG' and played"""
+LAST_LINE_BLEND: pd.DataFrame | None = None     # the last ``blend_lines`` run's scaled player-weeks (``line_scales``)
 
 
 def line_scale(raw: np.ndarray, blended: np.ndarray) -> np.ndarray:
@@ -1041,7 +1042,8 @@ def blend_lines(conn: psycopg.Connection, season: int, every: pd.DataFrame, mode
     hit = every.set_index(keys).index.isin(plan.set_index(keys).index)
     out = pd.concat([every[~hit], moved[every.columns]], ignore_index=True)
     out.attrs = every.attrs
-    out.attrs["line_blend"] = plan
+    global LAST_LINE_BLEND
+    LAST_LINE_BLEND = plan      # the night's moves (a module global: a frame in ``attrs`` breaks pandas' concat)
     top = plan.assign(d=plan["blended"] - plan["raw"]).sort_values("d", key=np.abs, ascending=False).head(5)
     log.info("%s on the line: %s player-weeks scaled (%s); the five biggest in the anchor scoring: %s", LINE_VERSION,
              len(plan), plan["kind"].value_counts().to_dict(),

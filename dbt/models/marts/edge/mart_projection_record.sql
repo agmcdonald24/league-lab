@@ -3,7 +3,8 @@
     materialized='table',
     indexes=[{'columns': ['league_id', 'season', 'scope', 'week']}],
     pre_hook=["create table if not exists ops.lineup_totals (run_at timestamptz, as_of timestamptz, model_version text, league_id text, season integer, week integer, roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision, slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision, weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer, n_questionable integer, n_ppg_valued integer, inputs_fingerprint text, n_unvalued integer)",
-              "alter table ops.projections add column if not exists pricing text"]
+              "alter table ops.projections add column if not exists pricing text",
+              "create table if not exists ops.market_record (league_id text not null, season integer not null, week integer not null, sleeper_id text not null, position text, fetched_at timestamptz not null, sleeper_points double precision, pricing text not null, written_at timestamptz not null, primary key (league_id, season, week, sleeper_id, fetched_at))"]
 ) }}
 -- Plan E1, "Our record": League Lab's frozen board against Sleeper's own projections (the numbers every
 -- Sleeper user gets for free) and what really happened, per league x season x week x position, plus one
@@ -32,8 +33,10 @@
 -- * pricing (M4, Wave I-G): how OUR board's bonuses were priced that week — ops.projections.pricing ('flat': all
 --   or nothing on the projected line; 'ev': at their odds; NULL, rows before the column existed, = 'flat'); one label
 --   per league-week (every QB-TE row of a league-week is written by one build), 'mixed' if a week ever carries two;
---   season rows: the scored weeks' label, 'mixed' when they differ. Sleeper's side stays priced by the SQL macro
---   (all or nothing on its projected line) in either case — docs/METRICS.md § "The record's pricing column".
+--   season rows: the scored weeks' label, 'mixed' when they differ. Sleeper's side (M6, Wave I-H): in an 'ev'
+--   league-week, ops.market_record — the same snapshot's line priced at the odds by `league-lab project`
+--   (scoring.price_projected, what the card's "Sleeper's projection" shows) — else the SQL macro (all or nothing),
+--   so both sides of a week are priced the same way — docs/METRICS.md § "The record's pricing column".
 {%- set line_columns = ['attempts', 'completions', 'carries', 'targets', 'passing_yards', 'passing_tds',
     'passing_interceptions', 'passing_2pt_conversions', 'rushing_yards', 'rushing_tds', 'rushing_2pt_conversions',
     'receptions', 'receiving_yards', 'receiving_tds', 'receiving_2pt_conversions', 'fumbles_total', 'fumbles_lost_total',
@@ -101,10 +104,14 @@ weeks as (
 sl_priced as (
     select w.league_id, sl.season, sl.week, sl.player_id, sl.position, sl.company,
            case when sl.position = 'DEF' or sl.player_id !~ '^[0-9]+$' then null
-                else {{ league_points('l.scoring_settings', 'sl') }} end as sleeper_points
+                -- M6: an 'ev' week's line at the odds (the writer's row for this snapshot), else the macro
+                else coalesce(mr.sleeper_points, {{ league_points('l.scoring_settings', 'sl') }}) end as sleeper_points
     from weeks as w
     join sl on sl.season = w.season and sl.week = w.week
     join leagues as l on l.league_id = w.league_id
+    left join {{ source('ops', 'market_record') }} as mr
+        on w.pricing = 'ev' and mr.league_id = w.league_id and mr.season = sl.season and mr.week = sl.week
+       and mr.sleeper_id = sl.player_id and mr.fetched_at = sl.fetched_at
 ),
 
 outcome as (

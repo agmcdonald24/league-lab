@@ -1004,6 +1004,7 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
         log.exception("drift monitor failed (projections were written); run `league-lab drift` after `dbt build`")
     lineups_after_project(conn, season)   # B1: exact lineups on the fresh projections (a failure is logged, not fatal)
     waivers_after_project(conn, season)   # B3: waiver moves on those lineups (a failure is logged, not fatal)
+    market_record_after_project(conn, season, leagues)   # ---- M6: Sleeper's side of the record at the odds (soft)
     importance_after_project(conn, train, leagues, trained)   # U-15 (once per window; a failure is logged, not fatal)
     if nfl_error is not None:
         raise nfl_error
@@ -1587,3 +1588,86 @@ def run_drift(season: int | None = None) -> pd.DataFrame:
     s = get_settings()
     with psycopg.connect(s.pipeline_dsn(), autocommit=False) as conn:
         return drift(conn, season)
+
+
+# ---- M6 (Wave I-H): the record's Sleeper side at the odds (M4's proposal, docs/METRICS.md § "The record's pricing
+# column"). In a week our board priced its bonuses at their odds (``pricing = 'ev'``), Sleeper's line on the record was
+# still priced all or nothing by the SQL macro. ``ops.market_record`` holds Sleeper's last pre-kickoff line priced the
+# way ours was (``scoring.price_projected`` with ev=True, exactly what the card's "Sleeper's projection" shows that
+# week); ``mart_projection_record.sl_priced`` reads it first, the macro for every other league-week.
+MARKET_RECORD_TABLE = "ops.market_record"
+MARKET_RECORD_DDL = f"""create table if not exists {MARKET_RECORD_TABLE} (
+    league_id text not null, season integer not null, week integer not null, sleeper_id text not null,
+    position text, fetched_at timestamptz not null, sleeper_points double precision, pricing text not null,
+    written_at timestamptz not null, primary key (league_id, season, week, sleeper_id, fetched_at))"""
+MARKET_SNAPSHOT_SQL = """with kick as (select week, min(kickoff_at) as first_kickoff_at from analytics.dim_game
+                                       where season = %(season)s and season_type = 'REG' group by week)
+    select p.week, max(p.fetched_at) as fetched_at from raw.sleeper_projections as p join kick as k using (week)
+    where p.season = %(season)s and p.season_type = 'regular' and p.fetched_at < k.first_kickoff_at and p.week = any(%(weeks)s)
+    group by p.week"""
+EV_WEEKS_SQL = """select league_id, week from ops.projections where season = %s and position in ('QB', 'RB', 'WR', 'TE')
+                  group by league_id, week having bool_and(pricing = 'ev')"""
+
+
+def price_market(lines: pd.DataFrame, cols: list[str], scoring) -> np.ndarray:
+    """Sleeper's QB-TE lines (``cols`` = the snapshot's stat columns, plus ``position``) priced at the odds in
+    ``scoring`` -- ``scoring.price_projected(ev=True)``, the call ``why.market_points`` makes for an 'ev' week."""
+    stats = lines[cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    stats["position"] = lines["position"].to_numpy()
+    return np.asarray(price_projected(stats.reset_index(drop=True), scoring, ev=True), dtype=float)
+
+
+def market_record(conn: psycopg.Connection, season: int, leagues: dict[str, tuple[str, dict[str, float]]]) -> int:
+    """Rewrite ``ops.market_record`` for ``season``: every house league-week labelled 'ev' in ``ops.projections``, Sleeper's
+    last snapshot fetched before the week's first kickoff (the mart's rule), QB-TE lines priced at the odds in the
+    league's scoring. A K / DEF / flat week has no row (the macro prices it, as before). Returns the rows written."""
+    from .ingest import sleeper_projections as SP
+
+    with conn.cursor() as cur:
+        cur.execute(MARKET_RECORD_DDL)
+        cur.execute(EV_WEEKS_SQL, (season,))
+        ev = [(str(lid), int(wk)) for lid, wk in cur.fetchall() if str(lid) in leagues]
+        cur.execute(f"delete from {MARKET_RECORD_TABLE} where season = %s", (season,))
+        if not ev or conn.execute("select to_regclass('raw.sleeper_projections')").fetchone()[0] is None:
+            conn.commit()
+            return 0
+        cur.execute(MARKET_SNAPSHOT_SQL, {"season": season, "weeks": sorted({w for _, w in ev})})
+        snaps = {int(w): f for w, f in cur.fetchall()}
+        cols = list(SP.LINE_COLUMNS)
+        written, now, out = 0, datetime.now(UTC), []
+        for week, fetched in sorted(snaps.items()):
+            cur.execute(f"""select player_id, position, {', '.join(cols)} from raw.sleeper_projections
+                            where season = %s and season_type = 'regular' and week = %s and fetched_at = %s
+                              and position in ('QB', 'RB', 'WR', 'TE') and player_id ~ '^[0-9]+$'""", (season, week, fetched))
+            df = pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
+            if df.empty:
+                continue
+            for lid, wk in ev:
+                if wk != week:
+                    continue
+                pts = price_market(df, cols, leagues[lid][1])
+                out += [(lid, season, week, str(pid), pos, fetched, float(p), "ev", now)
+                        for pid, pos, p in zip(df["player_id"], df["position"], pts, strict=True)]
+        if out:
+            with cur.copy(f"""copy {MARKET_RECORD_TABLE} (league_id, season, week, sleeper_id, position, fetched_at,
+                              sleeper_points, pricing, written_at) from stdin""") as cp:
+                for rec in out:
+                    cp.write_row(rec)
+            written = len(out)
+    conn.commit()
+    log.info("%s: %s rows (%s EV league-weeks with a pre-kickoff snapshot)", MARKET_RECORD_TABLE, written,
+             sum(1 for _, w in ev if w in snaps))
+    return written
+
+
+def market_record_after_project(conn: psycopg.Connection, season: int,
+                                leagues: dict[str, tuple[str, dict[str, float]]]) -> int | None:
+    """``project``'s soft step: a failure is logged (the record's Sleeper side falls back to the macro), never fatal."""
+    try:
+        return market_record(conn, season, leagues)
+    except Exception:  # noqa: BLE001 - the record's comparator, not the board
+        conn.rollback()
+        log.exception("%s failed (projections were written); the record prices Sleeper's line with the macro",
+                      MARKET_RECORD_TABLE)
+        return None
+# ---- /M6

@@ -263,6 +263,11 @@ RECORD_DIR="$RAW_DIR/record"   # one <schema>.<table>.sql.gz per record table
 STATE_TABLES="$STATE_TABLES ops.lineup_record"
 RECORD_TABLES="$RECORD_TABLES ops.lineup_record"
 # ---- end V-1
+# ---- M6 (Wave I-H): the out-of-sample rows the cold-start prior is fitted on (`ops.calibration_oof`, the 3 newest
+# completed seasons; `calibration.ensure_oof` rebuilds them once a season or after a model bump, ~2-5 CPU-min). State,
+# not record: restored so the night does not refit them, and rebuilt when the hosted copy does not have them.
+STATE_TABLES="$STATE_TABLES ops.calibration_oof"
+# ---- end M6
 
 is_record() { case " $RECORD_TABLES " in *" $1 "*) return 0;; esac; return 1; }
 
@@ -478,6 +483,11 @@ DBT_EXCLUDE=()
 [ -n "${NIGHTLY_DBT_EXCLUDE:-}" ] && read -r -a DBT_EXCLUDE <<< "--exclude $NIGHTLY_DBT_EXCLUDE"
 hard dbt-build dbt_step dbt-build build ${DBT_EXCLUDE[@]+"${DBT_EXCLUDE[@]}"}
 hard backtests backtests
+# ---- M6 (Wave I-H): the cold-start prior's fitting rows, before `project` reads them (a no-op on a night they are current:
+# the newest 3 completed seasons of this MODEL_VERSION). Soft: without them `project` logs "stat lines unchanged" and
+# the board is the model's own lines (v3.0's numbers), never a failed night.
+SOFT_WHY="project leaves the cold starts' lines unblended (v3.0's numbers) until the rows exist" soft calibration-oof uv run python -c "import logging; logging.basicConfig(level=logging.INFO, format='%(message)s'); from league_lab.calibration import ensure_oof; ensure_oof()"
+# ---- end M6
 # projection v2. A failure is fatal only when there is no earlier board to fall back on (neither this
 # database nor the hosted copy had projections: publishing would blank the Rankings pages); otherwise
 # last night's projections stay (on a fresh database: the ones restore-state copied back).

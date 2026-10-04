@@ -311,7 +311,11 @@ def test_cold_start_on_moves_a_rookie_toward_his_draft_slot_and_never_a_veteran(
                          "proj_points": [5.0, 5.0], "p10": [1.0, 1.0], "p25": [3.0, 3.0], "p50": [5.0, 5.0],
                          "p75": [7.0, 7.0], "p90": [9.0, 9.0]})
     ranges = pred.drop(columns="league_id").assign(scoring_name="ref")
-    out, rng_out = C.calibrate_outputs(_FakeConn(games, draft), 2026, pred, ranges, {"L": "ref"})
+    # M6 (Wave I-H): production blends the stat line (calibration.blend_lines, tests/test_m6.py); M5's points wiring is
+    # kept behind ``cold_on_points`` for the harness's comparison, and calibrate_outputs no longer calls it
+    out, rng_out = C.v31_outputs(_FakeConn(games, draft), 2026, pred, ranges, {"L": "ref"}, cold_on_points=True)
+    same, _ = C.calibrate_outputs(_FakeConn(games, draft), 2026, pred, ranges, {"L": "ref"})
+    assert same["proj_points"].tolist() == pred["proj_points"].tolist()
     rook, vet = out.set_index("gsis_id").loc["rook"], out.set_index("gsis_id").loc["vet"]
     assert rook["proj_points"] > 8.0 and vet["proj_points"] == 5.0
     assert rook["p90"] - rook["proj_points"] == pytest.approx(4.0)        # the range moved with the point
