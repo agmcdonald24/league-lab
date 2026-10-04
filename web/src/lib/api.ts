@@ -1789,3 +1789,15 @@ export interface AboutAnswer {
   grade_note?: string | null; // the qualification shown right under the headline grade (a league we do not score)
 }
 // ---- end IG-3
+
+// ---- IH-2 (Wave I-H): the Team page's MFL roster freshness (the same fields as My Week's); which days daily waivers
+// run (INTERFACES.md § IH-2)
+export interface Team {
+  roster_updated_at?: string | null; // MFL: when the rosters export was read from MyFantasyLeague (ISO UTC)
+  roster_source?: string | null; // "MFL"
+}
+export interface WaiverDeadline {
+  days?: string[] | null; // the days daily waivers run (Monday first) when they skip a day; null: every day / weekly
+  days_mask?: number | null; // Sleeper's raw daily_waivers_days
+}
+// ---- end IH-2

@@ -2278,6 +2278,7 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
         out["on_demand"] = {"cost": f"every roster solved for {len(lw.weeks)} weeks: {len(lw.roster_ids)} x {len(lw.weeks)} "
                                     f"= {len(lw.roster_ids) * len(lw.weeks)} lineups (the ranks need the whole league)",
                             "timings_ms": lw.timings_ms}
+        out.update(team_roster_freshness(league_id))                                # ---- IH-2: MFL's own read time
     if moved:                                                                         # ---- IB-0
         _weekly_on_context(out, moved, allw, int(team_id))
     if ctxs.get(int(team_id)) is not None:
@@ -4020,4 +4021,13 @@ def deadline_days(settings: dict, daily: bool | None) -> dict:
     days = waiver_days(raw) if daily else None
     return {"days": None if days is None or len(days) == 7 else [DAY_NAMES[d] for d in sorted(days)],
             "days_mask": _int(raw) if raw is not None else None}
+
+
+# the Team page's roster freshness (IG-3's not-done): an MFL league's roster is MFL's export as read (the client's cache,
+# 10 minutes) — the same fields and function as My Week's (`ondemand.mfl_roster_freshness`); a Sleeper league: nothing
+def team_roster_freshness(league_id: str) -> dict:
+    if not A.platforms.is_mfl(league_id):
+        return {}
+    from .ondemand import mfl_roster_freshness
+    return mfl_roster_freshness(A.sleeper(), league_id)
 # ---- end IH-2
