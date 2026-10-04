@@ -950,7 +950,11 @@ def scenarios(conn: psycopg.Connection, season: int, train: pd.DataFrame, target
         comp_b = predict_lines(models, base_rows.iloc[idx], ref, pos)
         comp_s = predict_lines(models, scen.iloc[idx], ref, pos)
         for league_id, (_, scoring) in scorings.items():
-            pb, ps = price(comp_b, scoring, "proj_").to_numpy(), price(comp_s, scoring, "proj_").to_numpy()
+            # ---- M4 (Wave I-G): the position rides along, as in predict_position — expected-value pricing reads the
+            # position's curves (without it the pooled ones: the base missed the stored projection by 0.04 under
+            # LEAGUE_LAB_EV_PRICING=1 and the nightly's scenarios failed, so the flip would have failed the marts' test)
+            pb = price(comp_b, scoring, "proj_", position=pos).to_numpy()
+            ps = price(comp_s, scoring, "proj_", position=pos).to_numpy()
             for j, i in enumerate(idx):
                 out.append({"league_id": league_id, "i": i, "base_points": float(pb[j]), "larger_points": float(ps[j]),
                             **{f"b_{c}": float(comp_b[f"proj_{c}"].iloc[j]) for c in ALL_COMPONENTS},

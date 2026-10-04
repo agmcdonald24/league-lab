@@ -107,6 +107,20 @@ else:
         st.caption(f"The record runs from week {scored_weeks[0]} ({span(scored_weeks)} scored), in {league_name} scoring: "
                    f"the first week Sleeper's projections were saved before kickoff.{small}{pending}")
 
+# ---- M4 (Wave I-G): how the weeks were priced, one sentence (= the web's About; league_lab.scoring)
+if not weeks.empty and "pricing" in weeks:
+    from league_lab.scoring import LEAGUE_PRICING_SQL, record_pricing_sentence
+    _labels = {int(w): ("mixed" if g.fillna("flat").nunique() > 1 else (g.fillna("flat").iloc[0]))
+               for w, g in weeks.groupby("week")["pricing"]}
+    try:
+        _ev = query(LEAGUE_PRICING_SQL, (league_id, league_id))
+        _now = "ev" if not _ev.empty and bool(_ev.iloc[0]["ev"]) else "flat"
+    except Exception:  # noqa: BLE001 - no pricing column yet: every row is flat
+        _now = "flat"
+    if _sentence := record_pricing_sentence(_labels, _now):
+        st.caption(_sentence)
+# ---- end M4
+
 # ---------------------------------------------------------------- the tables
 # the record's columns are registered in lib/table.py (block "E1 record"); only the shared ones are relabelled here
 LABELS = {"weeks_scored": Col("Weeks", "int", "Weeks scored so far"), "position": Col("Pos")}

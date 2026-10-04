@@ -3,9 +3,10 @@
 -- the LATEST snapshot of each week fetched so far (raw.sleeper_projections; mart_projection_record keeps the last
 -- pre-kickoff one for the record — this is the freshest, for the week being decided). One row per season x week x
 -- gsis_id (QB RB WR TE K; a team defense is left out: its keys are unmapped, as in the record). The API prices the
--- line in each league's own scoring on request (`api/league_lab_api/why.py` market_points: scoring.compute_points,
--- the pricing of our own line, yardage bonuses and position premiums included), so a house league and any on-demand
--- league get their own number from the same rows. A listed player with no stat line (a backup, a player ruled out)
+-- line in each league's own scoring on request (`api/league_lab_api/why.py` market_points: scoring.price_projected,
+-- the pricing of our own line in the week's mode — M4, Wave I-G: flat = all or nothing on the projected line, the
+-- pre-I-G number; ev = a yardage bonus at its odds, a long TD at the projected TDs x the share that long; a K stays
+-- flat), so a house league and any on-demand league get their own number from the same rows. A listed player with no stat line (a backup, a player ruled out)
 -- is not a projection of 0 and is left out (the record's rule). Read by /api/ros, /api/player, /api/my-week.
 {%- set line_columns = ['attempts', 'completions', 'carries', 'targets', 'passing_yards', 'passing_tds',
     'passing_interceptions', 'passing_2pt_conversions', 'rushing_yards', 'rushing_tds', 'rushing_2pt_conversions',

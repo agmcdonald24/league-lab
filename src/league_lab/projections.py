@@ -57,7 +57,14 @@ from .config import PROJECT_ROOT, get_settings
 from .feature_groups import personnel as _PN
 from .lineup import lineups_after_project
 from .rankings import TOP_N, _hit_rate, _spearman, parse_seasons
-from .scoring import compute_points, price_projected, priced_keys, pricing_engine
+from .scoring import (  # ---- M4 (Wave I-G): the record's pricing column
+    compute_points,
+    pinned_writer,
+    price_projected,
+    priced_keys,
+    pricing_engine,
+    record_pricing_label,
+)
 from .signals import signals_after_project
 from .waivers import waivers_after_project
 
@@ -791,6 +798,7 @@ def walk_forward(frame: pd.DataFrame, test_seasons: list[int], scorings: dict[st
     return pd.concat(results, ignore_index=True), imps
 
 
+@pinned_writer   # ---- M4: the writer prices in the env's mode alone (never the record it writes)
 def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | None = None) -> pd.DataFrame:
     scorings = league_scorings(conn)
     all_seasons = available_seasons(conn)
@@ -801,6 +809,7 @@ def backtest(conn: psycopg.Connection, test_seasons: list[int], out_dir: Path | 
     res, imps = walk_forward(frame, test_seasons, scorings, first, baseline, importance_ref=ref_id)
     run_id = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     res["run_id"], res["run_at"], res["model_version"] = run_id, datetime.now(UTC), MODEL_VERSION
+    res["pricing"] = res["league_id"].map({lid: record_pricing_label(sc) for lid, (_, sc) in scorings.items()})  # ---- M4
     # the K / DEF rows (R-13, model kd1.0, `league-lab backtest-kd`) share the table: not this run's to delete
     # v3: only this model version's rows are replaced (v2.0's stay as its record; K / DEF rows are kd1.0's)
     _write(conn, "ops.projection_backtest", res, "season = any(%s) and model_version = %s", (test_seasons, MODEL_VERSION))
@@ -834,6 +843,7 @@ FREEZE_COLUMNS = ["frozen_at", "frozen_source"]
 HOUSE_TOL = 1e-6     # a house league's price of the line vs its reference's: identical by construction (checked)
 
 
+@pinned_writer   # ---- M4: the writer prices in the env's mode alone (never the record it writes)
 def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame:
     """Fit on every completed season before ``season`` and project every week of ``season``.
 
@@ -871,6 +881,10 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
     # league-free lines and the reference scorings' offsets go NFL-wide
     kd = KD.run_after_project(conn, season, references, fitted_at)
     pred = _with_kd_rows(pred, kd.pred)
+    # ---- M4 (Wave I-G): the record says how each row was priced (flat | ev; an MFL spec = ev; K / DEF: flat, kdef)
+    pred["pricing"] = pred["league_id"].map({lid: record_pricing_label(sc) for lid, (_, sc) in leagues.items()})
+    pred.loc[~pred["position"].isin(POSITIONS), "pricing"] = "flat"
+    # ---- /M4
     now = datetime.now(UTC)
     _write_projections(conn, pred, season, now)   # B5: weeks whose first game has kicked off are kept, not rewritten
     log.info("projections computed: %s rows for %s (%s leagues; ranges fitted in %s scorings: %s)", len(pred), season,
@@ -1068,7 +1082,8 @@ DDL = {
         alter table ops.projections add column if not exists frozen_at timestamptz;
         alter table ops.projections add column if not exists frozen_source text;
         alter table ops.projections add column if not exists p25 double precision;
-        alter table ops.projections add column if not exists p75 double precision""",
+        alter table ops.projections add column if not exists p75 double precision;
+        alter table ops.projections add column if not exists pricing text""",   # ---- M4: flat / ev (NULL = flat)
     "ops.projection_backtest": """create table if not exists ops.projection_backtest (
         run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
         position text, scorer text, n_players integer, spearman double precision, top_n integer, hit_rate double precision,
@@ -1077,7 +1092,8 @@ DDL = {
         alter table ops.projection_backtest add column if not exists coverage_50 double precision;
         alter table ops.projection_backtest add column if not exists interval_width_50 double precision;
         alter table ops.projection_backtest add column if not exists pinball_25 double precision;
-        alter table ops.projection_backtest add column if not exists pinball_75 double precision;""",
+        alter table ops.projection_backtest add column if not exists pinball_75 double precision;
+        alter table ops.projection_backtest add column if not exists pricing text;""",   # ---- M4: flat / ev (NULL = flat)
     "ops.projection_importance": """create table if not exists ops.projection_importance (
         model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision);
         alter table ops.projection_importance add column if not exists model text;
@@ -1116,6 +1132,7 @@ NFL_DDL = {
         scoring_name text, season integer, week integer, gsis_id text, position text, model_version text,
         fitted_at timestamptz, proj_points double precision, p10 double precision, p25 double precision,
         p50 double precision, p75 double precision, p90 double precision, frozen_at timestamptz, frozen_source text);
+        alter table ops.projection_ranges add column if not exists pricing text;   -- M4: flat / ev (NULL = flat)
         create index if not exists projection_ranges_idx on ops.projection_ranges (scoring_name, season, week, gsis_id)""",
     "ops.kd_lines": f"""create table if not exists ops.kd_lines (
         model_version text, fitted_at timestamptz, train_seasons text, season integer, week integer, position text,
@@ -1327,7 +1344,7 @@ def _lines_from_record(cur: psycopg.Cursor, season: int, weeks: list[int]) -> pd
 
 def _ranges_from_record(cur: psycopg.Cursor, season: int, league_id: str, week: int) -> pd.DataFrame:
     cur.execute("""select season, week, gsis_id, position, model_version, fitted_at, proj_points, p10, p25, p50, p75, p90,
-                          frozen_at, frozen_source
+                          frozen_at, frozen_source, pricing
                    from ops.projections where season = %s and league_id = %s and week = %s and position = any(%s)""",
                 (season, league_id, int(week), list(POSITIONS)))
     return pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
@@ -1388,7 +1405,12 @@ def write_nfl_wide(conn: psycopg.Connection, season: int, lines: pd.DataFrame, r
             parts.append(range_for(r.league_id, int(r.week), stored_lines[int(r.week)]).assign(frozen_source="refit", frozen_at=None))
             around_stored.append((r.league_id, int(r.week)))
     rows = pd.concat([p for p in parts if len(p)], ignore_index=True) if any(len(p) for p in parts) else pd.DataFrame(columns=RANGE_COLUMNS)
-    _replace(conn, "ops.projection_ranges", rows, RANGE_COLUMNS, plan, "scoring_name", season)
+    # ---- M4 (Wave I-G): tonight's rows say how tonight priced them; a unit taken from the record keeps its label
+    labels = {name: record_pricing_label(sc) for name, (_, sc) in references.items()}
+    rows = rows.assign(pricing=rows["pricing"] if "pricing" in rows else None)
+    rows["pricing"] = rows["pricing"].where(rows["pricing"].notna(), rows["scoring_name"].map(labels))
+    _replace(conn, "ops.projection_ranges", rows, [*RANGE_COLUMNS, "pricing"], plan, "scoring_name", season)
+    # ---- /M4
     summary["ops.projection_ranges"] = {"rows_written": len(rows), "live_units": len(live_units), "from_record": from_record,
                                         "refit_around_stored_line": around_stored, "kept_units": int((plan["action"] == "keep").sum())}
     # 3. K / DEF

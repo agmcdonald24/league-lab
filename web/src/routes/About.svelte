@@ -131,6 +131,8 @@
         {#if view.metrics.length}<Metrics metrics={view.metrics} />{/if}
         {#if view.caption}<p class="text-sm leading-snug text-ink-3">{view.caption}</p>{/if}
       </div>
+      <!-- ---- M4 (Wave I-G): how the weeks were priced, one sentence (GET /api/record `pricing.sentence`) -->
+      {#if r.data?.pricing?.sentence}<p class="text-sm leading-snug text-ink-3" data-testid="record-pricing">{r.data.pricing.sentence}</p>{/if}
 
       {#if view.calls.length}
         <div class="space-y-2">

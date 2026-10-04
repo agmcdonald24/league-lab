@@ -1693,3 +1693,19 @@ export interface PlayerCard {
   games_played?: number | null;
 }
 // ---- end IF-4
+
+// ---- M4 (Wave I-G): how the record's weeks were priced (GET /api/record `pricing`; INTERFACES.md § M4): `flat` = a
+// bonus counted only when the projected line reaches it, `ev` = at its odds; `sentence` is About's one line (null when
+// every week is flat and so is now — a league without a bonus to price)
+export interface RecordPricing {
+  now: "flat" | "ev";
+  by_week: Record<string, "flat" | "ev" | "mixed">;
+  sentence: string | null;
+}
+export interface RecordAnswer {
+  pricing?: RecordPricing;
+}
+export interface RecordRow {
+  pricing?: "flat" | "ev" | "mixed" | null;
+}
+// ---- end M4

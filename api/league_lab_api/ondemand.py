@@ -25,6 +25,7 @@ import time
 import numpy as np
 import pandas as pd
 from league_lab import anyleague as A
+from league_lab import scoring as S  # ---- M4 (Wave I-G): the pricing mode (record_pricing)
 from league_lab.lineup import UNVALUED, Player  # ---- IB-3
 
 from . import availability, why
@@ -701,10 +702,41 @@ def record(league_id: str) -> dict:
         summary = row(allr.iloc[0].to_dict()) if not allr.empty else {}
         summary["by_position"] = [row(r.to_dict()) for _, r in season_rows[season_rows["position"] != "ALL"].iterrows()]
     first = None if weeks.empty else int(weeks["week"].min())
-    return {"league_id": league_id, "available": True, "season": season, "from_week": first,
-            "weeks": [row(r.to_dict()) for _, r in weeks.iterrows()], "summary": summary,
-            "notice": None if not rec.empty else ("No week on the record yet: the record starts the first week Sleeper's "
-                                                 "projections are archived before kickoff.")}
+    out = {"league_id": league_id, "available": True, "season": season, "from_week": first,
+           "weeks": [row(r.to_dict()) for _, r in weeks.iterrows()], "summary": summary,
+           "notice": None if not rec.empty else ("No week on the record yet: the record starts the first week Sleeper's "
+                                                "projections are archived before kickoff.")}
+    out.update(record_pricing(league_id, season, out["weeks"]))       # ---- M4 (Wave I-G)
+    return out
+
+
+# ---- M4 (Wave I-G): the record says how each week was priced, and the request side prices as the record does.
+# `scoring.ev_pricing()` is a mode (the env overrides; else the newest build's `pricing` in ops.projections), read here
+# through this API's read-only query (INTERFACES.md § M4; docs/METRICS.md § "The record's pricing column").
+def _pricing_rows():
+    return query(S.RECORD_PRICING_SQL, (), ttl=60)
+
+
+S.set_record_reader(_pricing_rows)
+
+def record_pricing(league_id: str, season: int, weeks: list[dict]) -> dict:
+    """``pricing`` on every week row (the mart's label: flat / ev / mixed; NULL or a mart without the column = flat)
+    and the answer's ``pricing`` block: ``now`` (this league's newest build), ``by_week``, ``sentence``."""
+    by_week: dict[int, set] = {}
+    for w in weeks:
+        lab = w.get("pricing")
+        lab = lab if isinstance(lab, str) and lab in ("flat", "ev", "mixed") else "flat"
+        w["pricing"] = lab
+        by_week.setdefault(int(w["week"]), set()).add(lab)
+    labels = {wk: (next(iter(s)) if len(s) == 1 else "mixed") for wk, s in by_week.items()}
+    try:
+        df = query(S.LEAGUE_PRICING_SQL, (league_id, league_id))
+        now = "ev" if (not df.empty and bool(df.iloc[0]["ev"])) else "flat"
+    except Exception:  # noqa: BLE001 - no column yet (before the first I-G nightly): flat, as every row then was
+        now = "flat"
+    return {"pricing": {"now": now, "by_week": {str(k): v for k, v in sorted(labels.items())},
+                        "sentence": S.record_pricing_sentence(labels, now)}}
+# ---- end M4
 
 
 # ---- IC-4 (Wave I-D): an MFL league's results on /api/record. We keep no projection record for a league we do not price

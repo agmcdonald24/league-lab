@@ -2,7 +2,8 @@
 {{ config(
     materialized='table',
     indexes=[{'columns': ['league_id', 'season', 'scope', 'week']}],
-    pre_hook="create table if not exists ops.lineup_totals (run_at timestamptz, as_of timestamptz, model_version text, league_id text, season integer, week integer, roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision, slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision, weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer, n_questionable integer, n_ppg_valued integer, inputs_fingerprint text, n_unvalued integer)"
+    pre_hook=["create table if not exists ops.lineup_totals (run_at timestamptz, as_of timestamptz, model_version text, league_id text, season integer, week integer, roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision, slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision, weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer, n_questionable integer, n_ppg_valued integer, inputs_fingerprint text, n_unvalued integer)",
+              "alter table ops.projections add column if not exists pricing text"]
 ) }}
 -- Plan E1, "Our record": League Lab's frozen board against Sleeper's own projections (the numbers every
 -- Sleeper user gets for free) and what really happened, per league x season x week x position, plus one
@@ -28,6 +29,11 @@
 -- * A week is 'scored' once every game on its board has players in (drift's rule); before that it is
 --   'in_play': n_both is filled, the scores are NULL. Season rows average the scored weeks (weekly means,
 --   like drift) and sum the calls.
+-- * pricing (M4, Wave I-G): how OUR board's bonuses were priced that week — ops.projections.pricing ('flat': all
+--   or nothing on the projected line; 'ev': at their odds; NULL, rows before the column existed, = 'flat'); one label
+--   per league-week (every QB-TE row of a league-week is written by one build), 'mixed' if a week ever carries two;
+--   season rows: the scored weeks' label, 'mixed' when they differ. Sleeper's side stays priced by the SQL macro
+--   (all or nothing on its projected line) in either case — docs/METRICS.md § "The record's pricing column".
 {%- set line_columns = ['attempts', 'completions', 'carries', 'targets', 'passing_yards', 'passing_tds',
     'passing_interceptions', 'passing_2pt_conversions', 'rushing_yards', 'rushing_tds', 'rushing_2pt_conversions',
     'receptions', 'receiving_yards', 'receiving_tds', 'receiving_2pt_conversions', 'fumbles_total', 'fumbles_lost_total',
@@ -77,7 +83,7 @@ leagues as (
 -- ours: the board as published before the week's first kickoff
 board as (
     select p.league_id, p.season, p.week, p.gsis_id, p.position, round(p.proj_points::numeric, 2) as ours_points,
-           p.model_version, p.frozen_at
+           p.model_version, p.frozen_at, coalesce(p.pricing, 'flat') as pricing
     from {{ source('ops', 'projections') }} as p
     where p.frozen_source = 'kickoff' and p.position in ('QB', 'RB', 'WR', 'TE')
 ),
@@ -85,7 +91,8 @@ board as (
 -- the league-weeks on the record: both boards frozen before kickoff
 weeks as (
     select b.league_id, b.season, b.week, max(b.model_version) as model_version, max(b.frozen_at) as board_frozen_at,
-           s.fetched_at as sleeper_fetched_at, s.first_kickoff_at
+           s.fetched_at as sleeper_fetched_at, s.first_kickoff_at,
+           case when count(distinct b.pricing) > 1 then 'mixed' else max(b.pricing) end as pricing
     from board as b
     join snap as s using (season, week)
     group by b.league_id, b.season, b.week, s.fetched_at, s.first_kickoff_at
@@ -303,7 +310,7 @@ week_rows as (
            null::bigint as pairs_sleeper_right, null::bigint as pairs_both_right, null::bigint as pairs_neither_right,
            null::bigint as pairs_disagree, null::bigint as pairs_ours_right_disagree, null::bigint as pairs_push,
            null::bigint as pairs_no_sleeper,
-           w.model_version, w.board_frozen_at, w.sleeper_fetched_at, w.first_kickoff_at
+           w.model_version, w.board_frozen_at, w.sleeper_fetched_at, w.first_kickoff_at, w.pricing
     from week_status as w
     cross join (values ('QB'), ('RB'), ('WR'), ('TE')) as pos (position)
     join n_both as nb on nb.league_id = w.league_id and nb.season = w.season and nb.week = w.week and nb.position = pos.position
@@ -330,7 +337,7 @@ all_rows as (
            case when w.is_scored then pr.pairs_ours_right_disagree end as pairs_ours_right_disagree,
            case when w.is_scored then pr.pairs_push end as pairs_push,
            pr.pairs_no_sleeper,
-           w.model_version, w.board_frozen_at, w.sleeper_fetched_at, w.first_kickoff_at
+           w.model_version, w.board_frozen_at, w.sleeper_fetched_at, w.first_kickoff_at, w.pricing
     from week_status as w
     left join (
         select league_id, season, week, sum(n_players) as n_players,
@@ -360,7 +367,8 @@ season_rows as (
            sum(pairs_disagree)::bigint as pairs_disagree, sum(pairs_ours_right_disagree)::bigint as pairs_ours_right_disagree,
            sum(pairs_push)::bigint as pairs_push, sum(pairs_no_sleeper)::bigint as pairs_no_sleeper,
            string_agg(distinct model_version, ', ') as model_version, max(board_frozen_at) as board_frozen_at,
-           max(sleeper_fetched_at) as sleeper_fetched_at, max(first_kickoff_at) as first_kickoff_at
+           max(sleeper_fetched_at) as sleeper_fetched_at, max(first_kickoff_at) as first_kickoff_at,
+           case when count(distinct pricing) > 1 then 'mixed' else max(pricing) end as pricing
     from weekly
     where is_scored
     group by league_id, season, position
@@ -372,7 +380,7 @@ final as (
            ours_spearman, sleeper_spearman, ours_mae, sleeper_mae, ours_hit_rate, sleeper_hit_rate,
            pairs_listed, pairs_n, pairs_ours_right, pairs_sleeper_right, pairs_both_right, pairs_neither_right,
            pairs_disagree, pairs_ours_right_disagree, pairs_push, pairs_no_sleeper,
-           model_version, board_frozen_at, sleeper_fetched_at, first_kickoff_at
+           model_version, board_frozen_at, sleeper_fetched_at, first_kickoff_at, pricing
     from weekly
     union all
     select league_id, season, 'season' as scope, week, first_week, weeks_scored,
@@ -380,7 +388,7 @@ final as (
            ours_spearman, sleeper_spearman, ours_mae, sleeper_mae, ours_hit_rate, sleeper_hit_rate,
            pairs_listed, pairs_n, pairs_ours_right, pairs_sleeper_right, pairs_both_right, pairs_neither_right,
            pairs_disagree, pairs_ours_right_disagree, pairs_push, pairs_no_sleeper,
-           model_version, board_frozen_at, sleeper_fetched_at, first_kickoff_at
+           model_version, board_frozen_at, sleeper_fetched_at, first_kickoff_at, pricing
     from season_rows
 )
 
@@ -394,6 +402,6 @@ select f.league_id, l.league_name, f.season, f.scope, f.week, f.first_week, f.we
        f.pairs_neither_right::integer as pairs_neither_right, f.pairs_disagree::integer as pairs_disagree,
        f.pairs_ours_right_disagree::integer as pairs_ours_right_disagree, f.pairs_push::integer as pairs_push,
        f.pairs_no_sleeper::integer as pairs_no_sleeper,
-       f.model_version, f.board_frozen_at, f.sleeper_fetched_at, f.first_kickoff_at
+       f.model_version, f.board_frozen_at, f.sleeper_fetched_at, f.first_kickoff_at, f.pricing
 from final as f
 join leagues as l using (league_id)

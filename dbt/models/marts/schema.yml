@@ -120,6 +120,13 @@ models:
           - accepted_values:
               arguments:
                 values: ['kickoff', 'refit']
+      - name: pricing
+        description: "M4 (Wave I-G): how the row's bonuses were priced (ops.projections.pricing): 'flat' = all or nothing on the projected line (K / DEF always; every row written before the column existed), 'ev' = at their odds (the nightly's LEAGUE_LAB_EV_PRICING on, a scoring with a yardage or long-TD bonus; an MFL spec always)."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['flat', 'ev']
 
   - name: mart_kd_team_game
     description: "Plan R-13: team x regular-season game, played or scheduled: game context (implied totals, dome), the team's kicking (FG made by distance, misses incl. blocked, PATs), team defense and special teams (sacks, takeaways, TDs, safeties, blocked kicks, points allowed) and the offense an opposing defense faces. The K and D/ST projections' training facts."

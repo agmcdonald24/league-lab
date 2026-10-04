@@ -19,6 +19,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable, Mapping
 
+import numpy as np
 import pandas as pd
 from league_lab import anyleague as A
 from league_lab import scoring as S
@@ -203,8 +204,8 @@ def _market_lines(season: int, week: int, gsis_ids: list[str]) -> pd.DataFrame:
 
 def market_points(season: int | None, week: int | None, gsis_ids: Iterable[str | None], scoring: Mapping[str, float],
                   *, lines: pd.DataFrame | None = None) -> dict[str, float]:
-    """gsis_id -> Sleeper's projection for ``week`` in this scoring (``scoring.compute_points``, the pricing of our
-    own line); a player without a row is absent (the caller says None)."""
+    """gsis_id -> Sleeper's projection for ``week`` in this scoring (``scoring.price_projected``, the pricing of our
+    own line, in the week's mode — M4); a player without a row is absent (the caller says None)."""
     ids = sorted({str(g) for g in gsis_ids if g})
     if season is None or week is None or not ids:
         return {}
@@ -212,12 +213,24 @@ def market_points(season: int | None, week: int | None, gsis_ids: Iterable[str |
     if df is None or df.empty:
         return {}
     df = df[df["gsis_id"].isin(ids)].drop_duplicates("gsis_id", keep="first")
-    out: dict[str, float] = {}
-    for r in df.to_dict("records"):
-        stats = {k: (_f(v) or 0.0) for k, v in r.items() if k not in ("gsis_id", "position", "fetched_at")}
-        stats["position"] = r.get("position")
-        out[str(r["gsis_id"])] = round(S.compute_points(stats, scoring), 2)
-    return out
+    # ---- M4 (Wave I-G): Sleeper's line is a projected line, so it is priced like ours — ``scoring.price_projected``
+    # in the week's mode (``ev_for_week``: the record's label; a yardage bonus at its odds, a long TD at the projected
+    # TDs × the share that long, in EV mode; all or nothing in flat mode, the pre-I-G number to the cent)
+    if df.empty:
+        return {}
+    cols = [c for c in df.columns if c not in ("gsis_id", "sleeper_id", "position", "team", "opponent", "fetched_at",
+                                               "season", "week", "pts_ppr", "pts_half_ppr", "pts_std")]
+    stats = df[cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    stats["position"] = df["position"].to_numpy()
+    stats = stats.reset_index(drop=True)
+    skill = stats["position"].isin(["QB", "RB", "WR", "TE"]).to_numpy()   # a K stays flat, as ours does (kdef)
+    pts = np.zeros(len(stats))
+    if skill.any():
+        pts[skill] = S.price_projected(stats[skill], scoring, ev=S.ev_for_week(season, week))
+    if (~skill).any():
+        pts[~skill] = S.price_projected(stats[~skill], scoring, ev=False)
+    return {str(g): round(float(p), 2) for g, p in zip(df["gsis_id"].to_numpy(), pts, strict=True)}
+    # ---- /M4
 
 
 def market_words(ours: float | None, market: float | None, name: str | None = None) -> str | None:

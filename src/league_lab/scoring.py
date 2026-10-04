@@ -858,10 +858,199 @@ def compute_points_spec(stats: Mapping, spec: ScoringSpec | Mapping[str, float],
     return round(sum(pieces.values()), 2)
 
 
+# ---- M4 (Wave I-G): the pricing MODE. The record decides; the env overrides; the nightly writer pins the env.
+# docs/METRICS.md § "Expected-value pricing" → "The record's pricing column". Every reader of the mode (``ev_pricing``,
+# ``ev_for_week``) goes through ``pricing_mode`` / ``record_pricing``: one query, cached ten minutes per process.
+RECORD_TTL_S, RECORD_FAIL_TTL_S = 600.0, 60.0
+# per season × week: the newest fitted_at and whether any Sleeper league's row of it says 'ev' (an MFL spec is always
+# expected value, so it says nothing about the build's mode and is left out); NULL pricing = flat (rows before I-G)
+RECORD_PRICING_SQL = """select season, week, max(fitted_at) as fitted_at, coalesce(bool_or(pricing = 'ev'), false) as ev
+                        from ops.projections
+                        where not starts_with(league_id, 'mfl:') and position in ('QB', 'RB', 'WR', 'TE')
+                        group by season, week"""
+_PINNED: list[str] = []                       # the nightly writer's mode (a stack: ``pinned_pricing``)
+_RECORD: dict = {}                            # {"at": monotonic expiry, "weeks": {(season, week): bool}, "newest": ...}
+_RECORD_READER = None                         # () -> rows of RECORD_PRICING_SQL; None = league_lab.db (pipeline role)
+
+
+def _truthy(v: str) -> bool:
+    return v.strip().lower() in ("1", "true", "yes", "on")
+
+
+def env_pricing() -> str | None:
+    """``LEAGUE_LAB_EV_PRICING`` when set and non-empty (an override, either way): ``ev`` for 1 / true / yes / on,
+    ``flat`` for anything else; None when unset (the record decides)."""
+    v = _os.environ.get("LEAGUE_LAB_EV_PRICING")
+    if v is None or not v.strip():
+        return None
+    return "ev" if _truthy(v) else "flat"
+
+
+def set_record_reader(fn) -> None:
+    """Swap how the record is read: ``fn()`` returns the rows of ``RECORD_PRICING_SQL`` (a DataFrame or a list of
+    dicts / tuples ``(season, week, fitted_at, ev)``). The API registers its read-only ``db.query``; None = the
+    pipeline connection (``league_lab.db``). Clears the cache."""
+    global _RECORD_READER
+    _RECORD_READER = fn
+    clear_pricing_cache()
+
+
+def clear_pricing_cache() -> None:
+    _RECORD.clear()
+
+
+def _read_record_rows():
+    if _RECORD_READER is not None:
+        return _RECORD_READER()
+    import psycopg
+
+    from .config import get_settings
+    st, err = get_settings(), None
+    for dsn in (st.app_dsn, st.pipeline_dsn):      # the read-only role first (the console on Streamlit Cloud has only it)
+        try:
+            with psycopg.connect(dsn(), connect_timeout=3) as conn, conn.cursor() as cur:
+                cur.execute(RECORD_PRICING_SQL)
+                return [(r[0], r[1], r[2], r[3]) for r in cur.fetchall()]
+        except Exception as exc:  # noqa: BLE001 - the next role, then the caller's flat
+            err = exc
+    raise err if err is not None else RuntimeError("no database")
+
+
+def record_pricing() -> dict:
+    """The record's labels: ``{"weeks": {(season, week): "ev" | "flat"}, "newest": "ev" | "flat" | None,
+    "built_at": datetime | None, "ok": bool}`` — cached ten minutes (a failure, e.g. a database without the column:
+    nothing known, cached a minute; the caller then prices flat)."""
+    import time as _time
+    now = _time.monotonic()
+    if _RECORD and _RECORD["at"] > now:
+        return _RECORD["value"]
+    try:
+        rows = _read_record_rows()
+        recs = rows.to_dict("records") if hasattr(rows, "to_dict") else [
+            r if isinstance(r, Mapping) else dict(zip(("season", "week", "fitted_at", "ev"), r, strict=False)) for r in rows]
+        weeks = {(int(r["season"]), int(r["week"])): ("ev" if bool(r["ev"]) else "flat") for r in recs
+                 if r.get("season") is not None and r.get("week") is not None}
+        dated = [r for r in recs if r.get("fitted_at") is not None and str(r["fitted_at"]) not in ("NaT", "nan")]
+        built_at = max((r["fitted_at"] for r in dated), default=None)
+        newest = None
+        if built_at is not None:   # the newest build: the weeks it wrote carry its fitted_at
+            newest = "ev" if any(bool(r["ev"]) for r in dated if r["fitted_at"] == built_at) else "flat"
+        value, ttl = {"weeks": weeks, "newest": newest, "built_at": built_at, "ok": True}, RECORD_TTL_S
+    except Exception:  # noqa: BLE001 - no database, no table, no column (before the first I-G nightly): flat
+        value, ttl = {"weeks": {}, "newest": None, "built_at": None, "ok": False}, RECORD_FAIL_TTL_S
+    _RECORD.clear()
+    _RECORD.update({"at": now + ttl, "value": value})
+    return value
+
+
+class pinned_pricing:
+    """``with pinned_pricing("ev" | "flat" | None):`` — the nightly writer's mode for the build (None = the env, else
+    flat): the writer never follows the record it is writing, so a rollback is "unset the env, re-run the nightly"."""
+
+    def __init__(self, mode: str | None = None):
+        self.mode = mode if mode in ("ev", "flat") else (env_pricing() or "flat")
+
+    def __enter__(self):
+        _PINNED.append(self.mode)
+        return self.mode
+
+    def __exit__(self, *exc):
+        _PINNED.pop()
+        return False
+
+
+def pinned_writer(fn):
+    """Decorator for a nightly writer (``projections.project`` / ``backtest``): the whole call runs ``pinned_pricing()``."""
+    import functools
+
+    @functools.wraps(fn)
+    def run(*args, **kwargs):
+        with pinned_pricing():
+            return fn(*args, **kwargs)
+    return run
+
+
+def pricing_mode() -> dict:
+    """``{"mode": "flat" | "ev", "source": "pinned" | "env" | "record" | "default", "built_at": …}``: a pinned mode
+    (the nightly writer), else ``LEAGUE_LAB_EV_PRICING`` when set, else the newest build's label in
+    ``ops.projections``, else flat."""
+    if _PINNED:
+        return {"mode": _PINNED[-1], "source": "pinned", "built_at": None}
+    env = env_pricing()
+    if env is not None:
+        return {"mode": env, "source": "env", "built_at": None}
+    rec = record_pricing()
+    if rec["newest"] is not None:
+        return {"mode": rec["newest"], "source": "record", "built_at": rec["built_at"]}
+    return {"mode": "flat", "source": "default", "built_at": None}
+
+
 def ev_pricing() -> bool:
-    """``LEAGUE_LAB_EV_PRICING=1``: a projected line's flat bands are priced at their probability (off by default:
-    all-or-nothing on the projected mean, as every projection so far; M2 recommends the switch)."""
-    return _os.environ.get("LEAGUE_LAB_EV_PRICING", "0").strip().lower() in ("1", "true", "yes", "on")
+    """Is a projected line's flat band priced at its probability? M3's flag, now a MODE (``pricing_mode``): the
+    nightly writer's pinned mode; else ``LEAGUE_LAB_EV_PRICING`` when set (an override, either way); else the newest
+    build in the record (``ops.projections.pricing``); else flat."""
+    return pricing_mode()["mode"] == "ev"
+
+
+def ev_for_week(season: int | None, week: int | None) -> bool:
+    """The mode for pricing one week's lines: pinned / env as ``ev_pricing``; else the label of that week's rows in
+    the record (a frozen week keeps the label it was priced with); a week the record has no rows for: the newest
+    build's."""
+    if _PINNED or env_pricing() is not None or season is None or week is None:
+        return ev_pricing()
+    lab = record_pricing()["weeks"].get((int(season), int(week)))
+    return lab == "ev" if lab is not None else ev_pricing()
+
+
+def record_pricing_label(scoring) -> str:
+    """The ``pricing`` column's value for rows priced in this scoring now: ``pricing_engine`` with ``spec`` → ``ev``
+    (an MFL spec is always expected value)."""
+    e = pricing_engine(scoring)
+    return "flat" if e == "flat" else "ev"
+
+
+# one league's newest build: "now" in the record's sentence (the API's /api/record, the console's Record page)
+LEAGUE_PRICING_SQL = """select coalesce(bool_or(pricing = 'ev'), false) as ev from ops.projections
+                        where league_id = %s and position in ('QB', 'RB', 'WR', 'TE')
+                          and fitted_at = (select max(fitted_at) from ops.projections where league_id = %s)"""
+
+
+# the record's one sentence (About on the web, the console's Record page): GET /api/record `pricing.sentence`
+PRICING_WORDS = {"flat": "priced flat", "ev": "priced the bonuses at their odds", "mixed": "priced partly flat"}
+
+
+def _pricing_weeks(ws: list[int]) -> str:
+    return f"Week {ws[0]}" if len(ws) == 1 else f"Weeks {ws[0]}–{ws[-1]}"
+
+
+def record_pricing_sentence(by_week: dict[int, str], now: str) -> str | None:
+    """One sentence for the record: "Weeks 1–4 were priced flat; from week 5 the bonuses are priced at their odds."
+    None when every week is flat and so is now (nothing to say: a league without a bonus is always flat)."""
+    weeks = sorted(by_week)
+    if not weeks:
+        return None if now == "flat" else "The bonuses are priced at their odds (their chance of happening × the points)."
+    labels = [by_week[w] for w in weeks]
+    if all(lab == "flat" for lab in labels) and now == "flat":
+        return None
+    if all(lab == "ev" for lab in labels) and now == "ev":
+        return "Every week on the record priced the bonuses at their odds."
+    runs: list[tuple[str, list[int]]] = []
+    for w, lab in zip(weeks, labels, strict=True):
+        if runs and runs[-1][0] == lab and runs[-1][1][-1] == w - 1:
+            runs[-1][1].append(w)
+        else:
+            runs.append((lab, [w]))
+    if len(runs) == 1 and runs[0][0] == "flat" and now == "ev":
+        ws = runs[0][1]
+        return (f"{_pricing_weeks(ws)} {'was' if len(ws) == 1 else 'were'} priced flat; from week {ws[-1] + 1} the "
+                "bonuses are priced at their odds.")
+    if len(runs) == 2 and runs[0][0] == "flat" and runs[1][0] == "ev" and now == "ev":
+        ws = runs[0][1]
+        return (f"{_pricing_weeks(ws)} {'was' if len(ws) == 1 else 'were'} priced flat; from week {runs[1][1][0]} the "
+                "bonuses are priced at their odds.")
+    parts = [f"{_pricing_weeks(ws).lower() if i else _pricing_weeks(ws)} {PRICING_WORDS[lab]}" for i, (lab, ws) in enumerate(runs)]
+    return "; ".join(parts) + (f"; now {'at their odds' if now == 'ev' else 'flat'}." if runs[-1][0] != now else ".")
+# ---- /M4
 
 
 def _norm_sf(z):

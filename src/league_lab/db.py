@@ -100,6 +100,7 @@ alter table ops.projections add column if not exists frozen_source text;
 -- before it existed (2026 weeks 1-3 are frozen with P10/P50/P90 only).
 alter table ops.projections add column if not exists p25 double precision;
 alter table ops.projections add column if not exists p75 double precision;
+alter table ops.projections add column if not exists pricing text;  -- M4 (Wave I-G): flat | ev, NULL = flat
 create index if not exists projections_idx on ops.projections (league_id, season, week, position);
 create table if not exists ops.projection_backtest (
     run_id text, run_at timestamptz, model_version text, train_seasons text, league_id text, season integer, week integer,
@@ -112,6 +113,7 @@ alter table ops.projection_backtest add column if not exists coverage_50 double 
 alter table ops.projection_backtest add column if not exists interval_width_50 double precision;
 alter table ops.projection_backtest add column if not exists pinball_25 double precision;
 alter table ops.projection_backtest add column if not exists pinball_75 double precision;
+alter table ops.projection_backtest add column if not exists pricing text;  -- M4 (Wave I-G)
 create table if not exists ops.projection_importance (
     model_version text, run_at timestamptz, league_id text, position text, feature text, importance double precision
 );

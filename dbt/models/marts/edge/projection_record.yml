@@ -63,6 +63,13 @@ models:
           - accepted_values:
               arguments:
                 values: [QB, RB, WR, TE, ALL]
+      - name: pricing
+        description: "M4 (Wave I-G): how OUR board's bonuses were priced that week (ops.projections.pricing): 'flat' = all or nothing on the projected line (and every row written before the column existed), 'ev' = at their odds (expected value), 'mixed' = a week (or, on a season row, the scored weeks) carrying both. Sleeper's side is priced by the SQL macro (all or nothing) either way. docs/METRICS.md § \"The record's pricing column\"."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [flat, ev, mixed]
       - name: status
         description: "'scored' = every game on the week's board has players in; 'in_play' = both boards are frozen, the games are not all in (no scores yet)."
         tests:

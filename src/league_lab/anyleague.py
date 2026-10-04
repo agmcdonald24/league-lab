@@ -64,6 +64,7 @@ from .scoring import (  # noqa: F401 - compute_points: the reference the vector 
     ScoringSpec,
     compute_points,
     compute_points_frame,  # ---- M3: moved to scoring (Wave I-D); re-exported, the API's tests import it from here
+    ev_for_week,  # ---- M4 (Wave I-G): the mode the record sets, per week
     ev_pricing,
     expected_frame,
     kd_flat,
@@ -332,6 +333,21 @@ def price_lines(line: pd.DataFrame, scoring: Mapping[str, float] | ScoringSpec) 
     if "position" in line:          # F1: a position premium (bonus_rec_te, …) prices only when the row carries the position
         stats["position"] = line["position"].to_numpy()
     # ---- M3 (Wave I-D): IC-1's own branch folded into the shared entry point
+    # ---- M4 (Wave I-G): the mode follows the record (``scoring.ev_for_week``): a week the record holds is priced as
+    # its rows were (a frozen week keeps its label), any other week as the newest build; the env overrides
+    if "week" in line and "season" in line and len(line):
+        keys = line[["season", "week"]].apply(pd.to_numeric, errors="coerce")
+        modes = {(s_, w_): ev_for_week(s_, w_) for s_, w_ in
+                 {(int(a), int(b)) for a, b in keys.dropna().itertuples(index=False, name=None)}}
+        if len(set(modes.values())) > 1:
+            out = np.full(len(line), np.nan)
+            for (s_, w_), ev in modes.items():
+                sel = ((keys["season"] == s_) & (keys["week"] == w_)).to_numpy()
+                out[sel] = price_projected(stats[sel], scoring, ev=ev)
+            return pd.Series(out, index=line.index, dtype=float)
+        if modes:
+            return pd.Series(price_projected(stats, scoring, ev=next(iter(modes.values()))), index=line.index, dtype=float)
+    # ---- /M4
     return pd.Series(price_projected(stats, scoring), index=line.index, dtype=float)
     # ---- /M3
 
@@ -600,7 +616,8 @@ def price_week(query: Query, league_id: str, scoring: Mapping[str, float], slots
     """Price a week's board in a league's scoring (skill lines, ranges, K / DEF) — cached 10 minutes per (scoring,
     slots' K / DEF, week, exclusion) in-process, so the rest-of-season sum and every request of the same league reuse it."""
     starts, units = kd_starts(slots), unit_starts(slots)          # IC-2: from the slots' eligibility sets
-    key = (str(league_id), _scoring_key(scoring), starts, units, int(season), int(week), exclude_reference, board_source())
+    key = (str(league_id), _scoring_key(scoring), starts, units, int(season), int(week), exclude_reference, board_source(),
+           ev_for_week(season, week))   # ---- M4: a week priced in the other mode is another answer
     now = time.monotonic()
     hit = _priced.get(key) if cache and board is None else None
     if hit is not None and hit[0] > now:
