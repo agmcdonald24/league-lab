@@ -157,9 +157,14 @@ for (const scheme of SCHEMES) {
         await expect(tiles.nth(1)).toHaveText(f1(t.value.horizon_value));
         await expect(tiles.nth(2)).toHaveText(f1(t.value.bench_value));
         await expect(tiles.nth(3)).toHaveText(`${t.season.wins}-${t.season.losses}`);
-        await expect(page.getByTestId("slot-bar")).toHaveCount(t.slot_strength.length);
+        // ---- II-0: an answer with strength_by_slot draws one bar per slot ("12.8 · 8th of 10"); an older one per slot type
+        const sb = t.strength_by_slot?.slots as { value: number; league: { rank: number; n: number } }[] | undefined;
+        await expect(page.getByTestId("slot-bar")).toHaveCount(sb?.length ?? t.slot_strength.length);
         const s0 = t.slot_strength[0];
-        await expect(page.getByTestId("slot-bar").first().getByTestId("bar-value")).toHaveText(`${f1(s0.top.value)} · ${ord(s0.league.rank)}`);
+        await expect(page.getByTestId("slot-bar").first().getByTestId("bar-value")).toHaveText(
+          sb ? `${f1(sb[0].value)} · ${ord(sb[0].league.rank)} of ${sb[0].league.n}` : `${f1(s0.top.value)} · ${ord(s0.league.rank)}`,
+        );
+        // ---- end II-0
         await expect(page.getByTestId("week-bar")).toHaveCount(t.weekly.length);
         await expect(page.getByTestId("week-bar").first().getByTestId("bar-value")).toHaveText(
           `${f1(t.weekly[0].lineup_value)} · ${ord(t.weekly[0].league.rank)} of ${t.weekly[0].league.n}`,
