@@ -208,7 +208,8 @@ def test_waivers_lead_with_this_week_and_say_the_total_is_cumulative(client):
     # alternatives are labelled: Vele takes the same WR/TE spot this week as Schultz, above him
     assert top[1]["alternative_to"] == "Dalton Schultz" and top[0]["alternative_to"] is None
     # no triple copy: the answer is not a card's sentence, and Help now starts after the three
-    assert w["answer"] == "The three strongest claims are below, each with what it adds this week."
+    # PO (Wave I-I): the API's sentence is the web's `topIntro` — honest about when each claim helps
+    assert w["answer"] == "The three strongest claims below: each helps this week. Each card's total is its gain over weeks 4–7."
     assert w["answer"] != help_[0]["lead"] and all(w["answer"] != c["lead"] for c in top)
     key = lambda c: (c["move"]["add"]["sleeper_id"], (c["move"].get("drop") or {}).get("sleeper_id"))  # noqa: E731
     assert not ({key(c) for c in top} & {key(c) for c in help_})

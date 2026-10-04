@@ -486,7 +486,17 @@ def replacement_chain(players: Sequence[Player | Mapping], slots: Iterable[str],
         return None
     vacated = current[str(player_id)]
     rest = [p for p in ps if p.id != str(player_id)]
-    after = solve(rest, slots, margins=False)
+    # PO (integration): on a tie the re-solve keeps the lineup shown — a current starter gets a nudge (far below any
+    # real difference, above the solver's own tie-breaks) so two tied players (two DEFs at 0.0) never trade places and
+    # the chain never carries a phantom swap; the totals below are the real values, not the nudged ones.
+    KEEP = 1e-7
+    nudged = [replace(p, value=p.value + KEEP) if p.id in current and p.value is not None and math.isfinite(p.value)
+              and p.value_source != UNVALUED else p for p in rest]
+    after = solve(nudged, slots, margins=False)
+    real = {p.id: p.value for p in rest}
+    after_total = float(sum((real.get(s.player.id) or 0.0) for s in after.starts
+                            if s.player is not None and real.get(s.player.id) is not None
+                            and math.isfinite(real[s.player.id]) and s.player.value_source != UNVALUED))
     fixed = {}
     for s in after.starts:                      # a locked starter stays in the very slot he is shown in
         if s.player is not None and s.locked:
@@ -532,8 +542,8 @@ def replacement_chain(players: Sequence[Player | Mapping], slots: Iterable[str],
     # integ: when his slot's chain ends empty nobody replaces him (an "enters" then is a tie swap elsewhere)
     enters = None if empty is not None else next((c["player_id"] for c in chain if c["kind"] == "enters"), None)
     return {"player_id": str(player_id), "slot": vacated, "slot_type": by_label[vacated].type,
-            "cost": round(total_with - after.total, 6), "total_with": round(total_with, 6),
-            "total_without": round(after.total, 6), "legal": True, "chain": chain, "enters": enters, "empty_slot": empty,
+            "cost": round(total_with - after_total, 6), "total_with": round(total_with, 6),
+            "total_without": round(after_total, 6), "legal": True, "chain": chain, "enters": enters, "empty_slot": empty,
             "words": chain_words(chain)}
 
 

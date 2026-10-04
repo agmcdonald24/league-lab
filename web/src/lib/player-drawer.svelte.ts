@@ -21,6 +21,7 @@ import { get, forget, paths, peek, type PlayerCard, type Status } from "./api";
 import { withContext, type LinkContext } from "./md";
 import type { PaneContext, PaneFrom } from "./pane.svelte";
 import { navigate, route, setLinkHook, setParams } from "./router.svelte";
+import { track } from "./analytics"; // INF-1
 
 export type DrawerSection = "overview" | "usage" | "gamelog" | "news";
 export const DRAWER_SECTIONS: { key: DrawerSection; label: string }[] = [
@@ -136,6 +137,7 @@ export function openPlayer(key: string | null | undefined, opts: OpenPlayerOptio
   memo.origin = origin;
   if (open === key && (qs.get("from") ?? "list") === from) return; // already on screen: nothing to count
   emit(key, origin);
+  track("select_content", { content_type: "player", item_id: key, origin }); // INF-1
   if (open) {
     setParams({ pane: key, from });
     return;

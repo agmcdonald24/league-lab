@@ -4054,6 +4054,53 @@ def claim_lead(m: dict) -> str:
     return f"{add} starts at {slot}: {_about(g)} this week"
 
 
+def claim_horizon(c: dict, week: int) -> dict:
+    """When a claim helps — the web's `feed.horizonOf`, the same rules: `now` (this week's gain ≥ 0.05), `bye` (a `cover`
+    whose first gaining week is in the window), `later` (a first gaining week after this one), `stash` (no lineup gain
+    yet). `week` = the decision week; `move.week_gains[i]` = week + i."""
+    mv = c.get("move") or {}
+    tw = _num(c.get("this_week"))
+    if tw is None:
+        tw = _num(mv.get("weekly_gain")) or 0.0
+    if tw >= 0.05:
+        return {"key": "now", "week": week}
+    gains = mv.get("week_gains") or []
+    i = next((k for k, g in enumerate(gains) if (g or 0.0) >= 0.05), -1)
+    w = week + i if i >= 0 else None
+    if mv.get("list_kind") == "cover" and w is not None:
+        return {"key": "bye", "week": w}
+    if w is not None:
+        return {"key": "later", "week": w}
+    return {"key": "stash", "week": None}
+
+
+def top_intro(cards: list[dict], week: int, last: int) -> str:
+    """The intro above the top claims — the web's `feed.topIntro`, word for word: what each one does and over which weeks."""
+    if not cards:
+        return ""
+    hs = [claim_horizon(c, week) for c in cards]
+    n = len(cards)
+    head = "The strongest claim" if n == 1 else f"The {'two' if n == 2 else 'three'} strongest claims"
+    now = sum(1 for h in hs if h["key"] == "now")
+    bye = [h for h in hs if h["key"] == "bye"]
+    later = [h for h in hs if h["key"] == "later"]
+    stash = sum(1 for h in hs if h["key"] == "stash")
+    parts: list[str] = []
+    if now:
+        parts.append(("it helps this week" if n == 1 else "each helps this week") if now == n
+                     else f"{now} help{'s' if now == 1 else ''} this week")
+    if bye:
+        weeks = sorted({h["week"] for h in bye})
+        parts.append(f"{len(bye)} cover{'s' if len(bye) == 1 else ''} a bye (week{'' if len(bye) == 1 else 's'} "
+                     f"{', '.join(str(w) for w in weeks)})")
+    if later:
+        parts.append(f"{len(later)} help{'s' if len(later) == 1 else ''} later in the window")
+    if stash:
+        parts.append(f"{stash} {'is an upside stash' if stash == 1 else 'are upside stashes'}")
+    span = f"weeks {week}–{last}" if last > week else f"week {week}"
+    return f"{head} below: {', '.join(parts)}. Each card's total is its gain over {span}."
+
+
 def _ie1_present(res: dict, league_id: str, week: int, last: int, span: str) -> None:
     def total(c: dict) -> str | None:
         g = _num(c.get("gain"))
@@ -4110,8 +4157,10 @@ def _ie1_present(res: dict, league_id: str, week: int, last: int, span: str) -> 
     n = len(res["top3"])
     opens = [_int((c.get("move") or {}).get("open_roster_spots")) for c in [*res["top3"], *help_all]]
     k = max((o for o in opens if o is not None), default=None)
-    res["answer"] = (("The strongest claim is below." if n == 1 else f"The {'two' if n == 2 else 'three'} strongest claims are below,"
-                      " each with what it adds this week.") if n else None)
+    # ---- PO (Wave I-I, after II-4): the API's sentence is the web's `topIntro` — the console, the API and the web say the
+    # same thing about when each claim helps (never "each with what it adds this week" when one covers a bye or is a stash).
+    res["answer"] = top_intro(res["top3"], week, last) if n else None
+    # ---- end PO
     res["not_additive"] = ("Each claim is weighed on its own against your roster today: two claims do not add up"
                            + (f" beyond your {k} open roster spot{'s' if k != 1 else ''}" if k else "")
                            + ", and two claims for the same spot help only once.")

@@ -235,3 +235,24 @@ def test_week_story_a_window_that_starts_later_has_no_this_week():
     s = T.week_story([5, 6], [1.0, 2.0], "weeks 5–6", this_week=4)
     assert s["this_week"]["kind"] == "unknown" and "this week" not in s["words"]
     assert s["words"] == "Your lineup gains 3.0 over weeks 5–6 in total."
+
+
+# ---- PO (integration, Wave I-I): on a tie the re-solve keeps the lineup shown — two DEFs at 0.0 never trade places
+def test_tied_players_never_trade_places_in_the_chain():
+    roster = [P("QB1", "QB", 20.0), P("RB1", "RB", 12.0), P("RB2", "RB", 11.0), P("WR1", "WR", 12.0), P("WR2", "WR", 11.5),
+              P("TE1", "TE", 9.0), P("WR3", "WR", 9.5), P("RB3", "RB", 8.0), P("K1", "K", 7.0),
+              P("Rams", "DEF", 0.0), P("Chiefs", "DEF", 0.0), P("WR4", "WR", 6.0)]
+    current = {"QB1": "QB", "RB1": "RB1", "RB2": "RB2", "WR1": "WR1", "WR2": "WR2", "TE1": "TE", "WR3": "FLEX1",
+               "RB3": "FLEX2", "K1": "K", "Chiefs": "DEF"}
+    for pid in ("RB1", "WR1", "K1"):
+        ch = lu.replacement_chain(roster, SCRUBS, pid, current=current)
+        assert ch is not None and ch["legal"]
+        moved = {c["player_id"] for c in ch["chain"] if c["player_id"]}
+        assert not ({"Rams", "Chiefs"} & moved), (pid, ch["words"])
+        assert "DEF" not in ch["words"], (pid, ch["words"])
+    # the kicker has no reserve: the slot goes empty, nobody "enters"
+    k = lu.replacement_chain(roster, SCRUBS, "K1", current=current)
+    assert k["empty_slot"] == "K" and k["enters"] is None and k["words"] == "no legal move: K goes empty"
+    # the RB's chain: the FLEX RB slides up and the bench WR fills the open FLEX; the cost is the real values' difference
+    rb = lu.replacement_chain(roster, SCRUBS, "RB1", current=current)
+    assert rb["enters"] == "WR4" and rb["cost"] == pytest.approx(12.0 - 6.0)
