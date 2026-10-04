@@ -198,6 +198,18 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | a team unit's season value (MFL's team QB / team kicker) | **Season value above replacement**, against the best **free unit of the same kind** — "Houston Texans QB: 355 season points; the best free team QB, Arizona Cardinals QB, 378: 0 above" | a player as a team unit's replacement; "Not counted" for a unit that has a projection |
 | the Finder's "left out" (`sanity.words`) | "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's. A player with no season projection is not judged." · a row: "you give 20 season value above replacement for 3: 17 more, over 25% of what you give" | "rest-of-season points" as the reason (a volume gap: all positions added up) |
 
+## The stale state and the error states (Wave I-H, IH-1)
+
+| Where | The words we use | Never |
+|---|---|---|
+| the morning update did not run (My Week: one line above the actions; `league_lab/freshness.py`, 30 hours) | "Yesterday's numbers: the morning update did not run. Injury statuses are still live." — two or more mornings missed: "Numbers from Friday, Oct 2: the morning update has not run since. Injury statuses are still live." · the footer: "Updated 1 d ago · the morning update did not run ›" with the same sentence on tap | "stale data", "the nightly", "ETL", a time with no word on what it means for the numbers |
+| the same on the console's Data Status page (it has no live injury feed) | "… the morning update did not run. This console's injury tags are from that update too." | "Injury statuses are still live" on the console |
+| the API down (no answer; the host's own 502 / 503 / 504 page) | "Cannot reach isuckatfantasy right now. Check your connection, then try again." · "isuckatfantasy is not answering right now (error 502). It is usually back within a few minutes." + **Try again** | a spinner forever; "Failed to fetch"; "Bad Gateway" |
+| a 500 | **Something broke on our side** — "Our server hit an error (500). The status page says whether the data is up and when it was last updated." + "The status page: /api/status" + **Try again** | "Internal Server Error" |
+| still waiting (25 s, the request keeps going) | **Still waiting** — "isuckatfantasy is taking longer than usual to answer." + **Try again** | a skeleton with no end |
+| our own 502 / 503 | "Sleeper did not answer. Try again in a minute." (MyFantasyLeague's name for an MFL league) · "The numbers are not ready yet. Try again in a few minutes." · "Busy right now. Try again in a minute." | — |
+| a 401 after this browser was signed in (the cookie expired) | the password screen with "Signed out — sign in again." above "Private beta. Enter the password from your invite."; signing in goes back to the same screen | the plain password screen with no word on why |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

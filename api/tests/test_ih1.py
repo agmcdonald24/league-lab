@@ -71,6 +71,18 @@ def test_the_words():
     assert iso == naive == freshness.nightly_state(NOW - timedelta(hours=40), NOW)
 
 
+def test_the_words_never_claim_live_injuries_when_the_overlay_is_off(client, clock, monkeypatch):
+    monkeypatch.setenv("LEAGUE_LAB_AVAILABILITY", "off")
+    _health_as_of(monkeypatch, NOW - timedelta(hours=40))
+
+    def boom(*_a, **_k):
+        raise RuntimeError("no database here")
+
+    monkeypatch.setattr(main, "query", boom)
+    assert main._status_nightly()["words"] == ("Yesterday's numbers: the morning update did not run. "
+                                               "Injury statuses are from that update too.")
+
+
 # ------------------------------------------------------------------------------------------------ /api/health
 def test_health_says_stale_after_30_hours(client, clock, monkeypatch):
     _health_as_of(monkeypatch, NOW - timedelta(hours=40))
@@ -117,14 +129,25 @@ def _status_with_as_of(client, monkeypatch, as_of):
 
 @needs_db
 def test_status_carries_the_nightly_block(client, clock, monkeypatch):
+    """The route on the clone. The tests run the availability overlay off (conftest), so the words' tail is the
+    overlay-off one here; the production tail ("still live") is pinned by the next test."""
     _health_as_of(monkeypatch, None)
     s = _status_with_as_of(client, monkeypatch, NOW - timedelta(hours=40))
     assert s["nightly"] == {"as_of": (NOW - timedelta(hours=40)).isoformat(), "age_hours": 40.0, "stale": True,
-                            "limit_hours": 30, "words": WORDS}
+                            "limit_hours": 30, "words": WORDS.replace("are still live", "are from that update too")}
     assert isinstance(s["freshness"], str)                        # the footer's caption is untouched (IF-4)
     assert "warning" in s and "updated_at" in s
     # the newer as_of reached the health state: the two answers agree without waiting for the hourly read
     assert client.get("/api/health").json()["stale"] is True
+
+
+def test_status_words_with_the_overlay_on(clock, monkeypatch):
+    """Production (the overlay on): the brief's words, exactly. Only the block's builder runs (no route, no feed)."""
+    _health_as_of(monkeypatch, None)
+    monkeypatch.setattr(main.availability, "enabled", lambda: True)
+    monkeypatch.setattr(main, "query", lambda *_a, **_k: pd.DataFrame({"t": [pd.Timestamp(NOW - timedelta(hours=40))]}))
+    assert main._status_nightly() == {"as_of": (NOW - timedelta(hours=40)).isoformat(), "age_hours": 40.0,
+                                      "stale": True, "limit_hours": 30, "words": WORDS}
 
 
 @needs_db

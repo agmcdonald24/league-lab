@@ -223,7 +223,11 @@ def _status_nightly() -> dict:
         as_of = None if t is None else t.isoformat()
     except Exception:  # noqa: BLE001 - a status line, never a failure
         as_of = _health_state["as_of"]
-    return _freshness.nightly_state(as_of)
+    try:                                    # the words say injury statuses are live only when the overlay is on
+        live = availability.enabled()
+    except Exception:  # noqa: BLE001
+        live = False
+    return _freshness.nightly_state(as_of, live_injuries=live)
 # ---- end IH-1
 
 

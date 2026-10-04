@@ -22,6 +22,7 @@ from zoneinfo import ZoneInfo
 STALE_AFTER_HOURS = 30
 STALE_WORDS = "Yesterday's numbers: the morning update did not run. Injury statuses are still live."
 CONSOLE_TAIL = "This console's injury tags are from that update too."
+STALE_INJURIES_TAIL = "Injury statuses are from that update too."   # the API with its overlay switched off
 ET = ZoneInfo("America/New_York")
 
 
@@ -44,7 +45,7 @@ def _parse(as_of) -> datetime | None:
     return as_of if as_of.tzinfo else as_of.replace(tzinfo=UTC)
 
 
-def stale_words(as_of: datetime, now: datetime, *, console: bool = False) -> str:
+def stale_words(as_of: datetime, now: datetime, *, console: bool = False, live_injuries: bool = True) -> str:
     """The banner: "Yesterday's numbers …" when the last update is from yesterday (New York's calendar), else the
     day it is from ("Numbers from Friday, Oct 2: …") — two or more missed mornings."""
     day, today = as_of.astimezone(ET).date(), now.astimezone(ET).date()
@@ -52,11 +53,13 @@ def stale_words(as_of: datetime, now: datetime, *, console: bool = False) -> str
         first = "Yesterday's numbers: the morning update did not run."
     else:
         first = f"Numbers from {as_of.astimezone(ET):%A, %b %-d}: the morning update has not run since."
-    return f"{first} {CONSOLE_TAIL if console else 'Injury statuses are still live.'}"
+    tail = CONSOLE_TAIL if console else ("Injury statuses are still live." if live_injuries else STALE_INJURIES_TAIL)
+    return f"{first} {tail}"
 
 
-def nightly_state(as_of, now: datetime | None = None, *, console: bool = False) -> dict:
-    """The stale state of the published data (see the module's docstring)."""
+def nightly_state(as_of, now: datetime | None = None, *, console: bool = False, live_injuries: bool = True) -> dict:
+    """The stale state of the published data (see the module's docstring). `live_injuries`: the API's availability
+    overlay is on (ESPN and Sleeper read on request) — off (`LEAGUE_LAB_AVAILABILITY=off`), the words do not claim it."""
     t = _parse(as_of)
     if t is None:
         return {"as_of": None, "age_hours": None, "stale": None, "limit_hours": STALE_AFTER_HOURS, "words": None}
@@ -64,4 +67,4 @@ def nightly_state(as_of, now: datetime | None = None, *, console: bool = False) 
     age = max(0.0, (now - t).total_seconds() / 3600.0)
     stale = age > STALE_AFTER_HOURS
     return {"as_of": t.isoformat(), "age_hours": round(age, 1), "stale": stale, "limit_hours": STALE_AFTER_HOURS,
-            "words": stale_words(t, now, console=console) if stale else None}
+            "words": stale_words(t, now, console=console, live_injuries=live_injuries) if stale else None}
