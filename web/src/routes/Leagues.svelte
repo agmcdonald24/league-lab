@@ -7,6 +7,11 @@
   import { bigMisses, checkLine, missLine, type LeagueCard, type ScoringCheck, type WithCard } from "../lib/leagues"; // ---- IC-3
   import { withContext } from "../lib/md";
   import { prefs } from "../lib/prefs";
+  // ---- II-5 (Wave I-I): one setup flow — platform → league → team → My Week (lib/providers.ts)
+  import { route, setParams } from "../lib/router.svelte";
+  import { isMfl } from "../lib/leagues";
+  import type { Roster } from "../lib/api";
+  import { looksLikeSleeperLeague, providersPath, setupError, setupGet, sleeperLeaguePath, type FeatureKey, type Platform, type Providers, type SleeperLeague } from "../lib/providers";
 
   let {
     mine,
@@ -18,20 +23,30 @@
   let username = $state(prefs.user() ?? "");
   let busy = $state(false);
   let error = $state<string | null>(null);
+  let errorCode = $state<string | null>(null); // ---- II-5: the API's key (INTERFACES.md § II-5)
+  let errorFix = $state<string | null>(null); // ---- II-5: what to do next
 
   async function submit(e: SubmitEvent) {
     e.preventDefault();
     const u = username.trim();
     if (!u) return;
     busy = true;
-    error = null;
+    error = errorCode = errorFix = null;
+    sleeperLeague = null; // ---- II-5
     try {
-      const v = await get<UserLeagues>(paths.userLeagues(u));
+      // ---- II-5: a league link or id in the same box → that league's card and team picker (no username needed)
+      if (looksLikeSleeperLeague(u)) {
+        sleeperLeague = await setupGet<SleeperLeague>(sleeperLeaguePath(u));
+        return;
+      }
+      const v = await setupGet<UserLeagues>(paths.userLeagues(u)); // II-5: keeps the error's key (was get)
       prefs.setUser(u);
       prefs.setUserLeagues(v);
       onuser(v);
     } catch (err) {
+      const se = setupError(err); // ---- II-5: the API's specific words when it sends them
       if (err instanceof Unauthorized) onauth();
+      else if (se && err instanceof ApiError && err.status === 404) [error, errorCode, errorFix] = [se.words, se.code, se.fix];
       else if (err instanceof ApiError && err.status === 404) error = `Sleeper has no user called “${u}”. Check the spelling: it is the name you sign in to Sleeper with.`;
       else if (err instanceof ApiError && err.status === 502) error = "Sleeper did not answer. Try again in a minute.";
       else error = `Cannot reach ${APP_NAME} right now (${err instanceof Error ? err.message : String(err)}). Try again in a minute.`;
@@ -52,6 +67,8 @@
   let mflText = $state("");
   let mflBusy = $state(false);
   let mflError = $state<string | null>(null);
+  let mflErrorCode = $state<string | null>(null); // ---- II-5
+  let mflErrorFix = $state<string | null>(null); // ---- II-5
   let mfl = $state<MflLeague | null>(null);
   let mflFound = $state<MflSearch | null>(null); // I0-C: the leagues a name matched (the box takes a link, an id or a name)
   let mflOpening = $state<string | null>(null);
@@ -62,7 +79,7 @@
     const t = mflText.trim();
     if (!t) return;
     mflBusy = true;
-    mflError = null;
+    mflError = mflErrorCode = mflErrorFix = null; // II-5
     mfl = null;
     mflFound = null;
     try {
@@ -90,7 +107,11 @@
   }
 
   function mflFail(err: unknown) {
+    const se = setupError(err); // ---- II-5: the API's specific words and the fix
+    mflErrorCode = se?.code ?? null;
+    mflErrorFix = se?.fix ?? null;
     if (err instanceof Unauthorized) onauth();
+    else if (se && err instanceof ApiError && err.status === 404) mflError = se.words;
     else if (err instanceof ApiError && err.status === 404) mflError = `${err.message}.`;
     else if (err instanceof ApiError && err.status === 502) mflError = "MyFantasyLeague did not answer. Try again in a minute.";
     else if (err instanceof ApiError && err.status === 503) mflError = `${APP_NAME} is busy reading MyFantasyLeague. Try again in a minute.`;
@@ -103,6 +124,66 @@
       total_rosters: v.league.total_rosters, roster_id: rosterId, team_name: team?.team_name ?? null });
   }
   // ---- end I0-B
+
+  // ---- II-5 (Wave I-I): one setup flow (review § 9). One **Fantasy platform** choice (Sleeper / MyFantasyLeague;
+  // `?platform=` and remembered on this device) → the identifier (Sleeper: a username or a league link; MFL: a link, an
+  // id or the name) → the league → the team (pre-selected when the username owns one, a picker otherwise) → My Week.
+  // Specific errors with the fix (the API's `code` / `fix`); what the platform gives (GET /api/providers); no account.
+  const urlPlatform = route.current.params.get("platform");
+  let platform = $state<Platform>(
+    urlPlatform === "sleeper" || urlPlatform === "mfl" ? urlPlatform : (prefs.platform() ?? (prefs.mflLeagues().length && !prefs.userLeagues() ? "mfl" : "sleeper")),
+  );
+  let sleeperLeague = $state<SleeperLeague | null>(null);
+  let caps = $state<Providers | null>(null);
+  const FEATURES: FeatureKey[] = ["scoring", "roster_slots", "matchups", "players", "waivers", "transactions", "team_assets", "news"];
+  const STATUS_WORDS = { yes: "Yes", partial: "Partly", no: "Not yet" } as const;
+  const STEPS = [
+    { key: "platform", label: "Platform" },
+    { key: "league", label: "League" },
+    { key: "team", label: "Team" },
+    { key: "week", label: "My Week" },
+  ] as const;
+  const step = $derived(mfl || sleeperLeague ? "team" : "league");
+  const stepIndex = $derived(STEPS.findIndex((s) => s.key === step));
+
+  function choose(p: Platform) {
+    platform = p;
+    prefs.setPlatform(p);
+    if (route.current.name === "leagues") setParams({ platform: p });
+    error = errorCode = errorFix = null;
+    mflError = mflErrorCode = mflErrorFix = null;
+    sleeperLeague = null;
+  }
+
+  $effect(() => {
+    get<Providers>(providersPath)
+      .then((v) => (caps = v))
+      .catch(() => {}); // the "what works" lines are a nicety: the flow never waits on them
+  });
+
+  // a league the username has no team in (a commissioner's, a league they left): pick the team to see, here
+  let teamsOf = $state<Record<string, Roster[] | "loading" | "failed">>({});
+  async function loadTeams(id: string) {
+    if (teamsOf[id] && teamsOf[id] !== "failed") return;
+    teamsOf[id] = "loading";
+    try {
+      teamsOf[id] = await get<Roster[]>(paths.rosters(id));
+    } catch (err) {
+      if (err instanceof Unauthorized) onauth();
+      teamsOf[id] = "failed";
+    }
+  }
+
+  // a Sleeper league opened by its link is remembered like an MFL one (the switcher and the list below show it)
+  function pickSleeper(v: SleeperLeague, rosterId: number) {
+    const team = v.teams.find((t) => t.roster_id === rosterId);
+    prefs.rememberMfl({ league_id: v.league.league_id, name: v.league.name, scoring_label: v.league.scoring_label,
+      total_rosters: v.league.total_rosters, roster_id: rosterId, team_name: team?.team_name ?? null });
+  }
+  $effect(() => {
+    if (sleeperLeague?.card) void loadCheck(sleeperLeague.league.league_id, sleeperLeague.card.check_path);
+  });
+  // ---- end II-5
 
   // ---- IC-3 (Wave I-C): the card's scoring check — IC-1's route, loaded after the card shows (never blocks it);
   // a league the check cannot answer for yet says so in one line instead of a number.
@@ -193,8 +274,46 @@
     </p>
   </header>
 
+  <!-- ---- II-5 (Wave I-I): the steps, the one platform choice, then that platform's box -->
+  <ol class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm" aria-label="Setup" data-testid="setup-steps">
+    {#each STEPS as s, i (s.key)}
+      <li
+        class="rounded-full px-2.5 py-0.5 {i === stepIndex ? 'bg-accent font-bold text-on-accent' : i < stepIndex ? 'text-ink-2' : 'text-ink-3'}"
+        aria-current={i === stepIndex ? "step" : undefined}
+        data-step={s.key}
+      >
+        {i < stepIndex ? "✓ " : `${i + 1}. `}{s.label}
+      </li>
+      {#if i < STEPS.length - 1}<li class="text-ink-3" aria-hidden="true">›</li>{/if}
+    {/each}
+  </ol>
+
+  <fieldset class="space-y-2" data-testid="platform-pick">
+    <legend class="ll-label mb-2 block">Fantasy platform</legend>
+    <div class="grid grid-cols-2 gap-2">
+      {#each [["sleeper", "Sleeper"], ["mfl", "MyFantasyLeague"]] as [key, name] (key)}
+        <label
+          class="flex min-h-11 cursor-pointer items-center justify-center rounded-md border px-3 py-2 text-center text-base font-semibold has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent {platform === key ? 'border-accent bg-accent-soft text-ink ring-1 ring-accent' : 'border-line bg-surface text-ink-2'}"
+          data-testid="platform-{key}"
+        >
+          <input class="sr-only" type="radio" name="ll-platform" value={key} checked={platform === key} onchange={() => choose(key as Platform)} />
+          {name}
+        </label>
+      {/each}
+    </div>
+    <details class="text-sm leading-snug text-ink-3" data-testid="other-platforms">
+      <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1"><span class="chev" aria-hidden="true">›</span>ESPN or Yahoo?</summary>
+      <p class="pb-1">
+        Not supported yet. ESPN offers no way in for an outside app: a private ESPN league can only be read with your ESPN
+        login cookies, and {APP_NAME} will not ask for those. Yahoo needs an approved app and your Yahoo sign-in; that is
+        not set up yet.
+      </p>
+    </details>
+  </fieldset>
+
+  {#if platform === "sleeper"}
   <form class="space-y-2" onsubmit={submit} data-testid="username-form">
-    <label class="ll-label block" for="ll-username">Your Sleeper username</label>
+    <label class="ll-label block" for="ll-username">Your Sleeper username, or a league link</label>
     <div class="flex gap-2">
       <input
         id="ll-username"
@@ -204,7 +323,7 @@
         autocapitalize="none"
         autocorrect="off"
         spellcheck="false"
-        placeholder="e.g. the name on your Sleeper profile"
+        placeholder="Username or league link"
         bind:value={username}
         data-testid="username"
       />
@@ -217,12 +336,25 @@
     <p class="text-sm leading-snug text-ink-3">
       No password to Sleeper: {APP_NAME} only reads what Sleeper shows anyone (your leagues, rosters and scoring).
     </p>
-    {#if error}<p class="text-base text-bad" data-testid="username-error">{error}</p>{/if}
+    <!-- ---- II-5: where to find it, with an example -->
+    <details class="text-sm leading-snug text-ink-2" data-testid="setup-help">
+      <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3"><span class="chev" aria-hidden="true">›</span>Where do I find these?</summary>
+      <ul class="list-disc space-y-1 pb-1 pl-5">
+        <li><strong>Username</strong>: the name you sign in to Sleeper with — not your team's name.</li>
+        <li>
+          <strong>League link</strong>: open the league on sleeper.com; the address looks like
+          <span class="font-mono text-xs break-all">sleeper.com/leagues/<strong>1389709692405551104</strong>/team</span>. Paste it, or just
+          the long number (the league id).
+        </li>
+      </ul>
+    </details>
+    {#if error}<p class="text-base text-bad" role="alert" data-testid="username-error" data-code={errorCode}>{error}</p>{/if}
+    {#if error && errorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{errorFix}</p>{/if}
   </form>
-
+  {:else}
   <!-- I0-B: MyFantasyLeague -->
   <form class="space-y-2" onsubmit={findMfl} data-testid="mfl-form">
-    <label class="ll-label block" for="ll-mfl">On MyFantasyLeague? Find your league</label>
+    <label class="ll-label block" for="ll-mfl">Find your MyFantasyLeague league</label><!-- II-5: was "On MyFantasyLeague? …" -->
     <div class="flex gap-2">
       <input
         id="ll-mfl"
@@ -245,8 +377,71 @@
     <p class="text-sm leading-snug text-ink-3" data-testid="mfl-help">
       Paste your league link, or type your league's name as it appears in the MFL app. {APP_NAME} only reads what the league shares.
     </p>
-    {#if mflError}<p class="text-base text-bad" data-testid="mfl-error">{mflError}</p>{/if}
+    <!-- ---- II-5: where to find the league id, with an example -->
+    <details class="text-sm leading-snug text-ink-2" data-testid="setup-help">
+      <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3"><span class="chev" aria-hidden="true">›</span>Where do I find the league id?</summary>
+      <p class="pb-1">
+        Open your league on the MFL website: the number after <span class="font-mono text-xs">/home/</span> in the address is the league id —
+        <span class="font-mono text-xs break-all">www45.myfantasyleague.com/2026/home/<strong>70587</strong></span> is league 70587. Paste the
+        whole link or just the number. The MFL app hides the address: type the league's name instead.
+      </p>
+    </details>
+    {#if mflError}<p class="text-base text-bad" role="alert" data-testid="mfl-error" data-code={mflErrorCode}>{mflError}</p>{/if}
+    {#if mflError && mflErrorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{mflErrorFix}</p>{/if}
   </form>
+  {/if}
+
+  <!-- ---- II-5: what this platform gives (GET /api/providers): said, never substituted -->
+  {#if caps}
+    {@const pv = caps.providers.find((x) => x.provider === platform)}
+    {#if pv}
+      {@const gaps = FEATURES.filter((f) => pv.features[f]?.status === "no")}
+      <details class="text-sm leading-snug" data-testid="provider-caps" data-platform={platform}>
+        <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3">
+          <span class="chev" aria-hidden="true">›</span>
+          <span>What {APP_NAME} reads from {pv.short} leagues{gaps.length ? ` — ${gaps.length} not available yet` : ""}</span>
+        </summary>
+        <ul class="space-y-1.5 pb-1">
+          {#each FEATURES as f (f)}
+            {@const x = pv.features[f]}
+            <li class="flex gap-2" data-testid="cap" data-feature={f} data-status={x.status}>
+              <span class="w-14 shrink-0 text-xs font-semibold tracking-wide uppercase {x.status === 'yes' ? 'text-good' : x.status === 'partial' ? 'text-warn' : 'text-bad'}">{STATUS_WORDS[x.status]}</span>
+              <span class="min-w-0 text-ink-2">{#if x.status === "no"}{x.unavailable}.{:else}<strong class="text-ink">{x.label}</strong>: {x.words}.{/if}</span>
+            </li>
+          {/each}
+        </ul>
+      </details>
+    {/if}
+  {/if}
+  <p class="text-sm leading-snug text-ink-3" data-testid="setup-guest">No account needed: {APP_NAME} remembers your leagues on this device.</p>
+
+  <!-- ---- II-5: a Sleeper league opened by its link: the league, then "which team is yours?" -->
+  {#if sleeperLeague}
+    {@const v = sleeperLeague}
+    <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="sleeper-card">
+      <div>
+        <div class="text-lg leading-snug font-bold break-words">{v.league.name} <span class="text-sm font-semibold text-ink-3">Sleeper</span></div>
+        {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
+      </div>
+      <h2 class="ll-label pt-1">Which team is yours?</h2>
+      <ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2" data-testid="team-pick">
+        {#each v.teams as t (t.roster_id)}
+          <li>
+            <a
+              href={href(v.league.league_id, t.roster_id)}
+              onclick={() => pickSleeper(v, t.roster_id)}
+              class="block rounded-md border border-line px-3 py-2.5 text-base"
+              data-testid="team-option"
+              data-roster={t.roster_id}
+              >{t.team_name}{#if t.manager_name && t.manager_name !== t.team_name}<span class="block text-sm text-ink-3">{t.manager_name}</span>{/if}</a
+            >
+          </li>
+        {/each}
+      </ul>
+      {#if v.card}{@render readback(v.card, v.league.league_id)}{/if}
+    </section>
+  {/if}
+  <!-- ---- end II-5 -->
 
   {#if mfl}
     {@const v = mfl}
@@ -322,7 +517,7 @@
             data-league={l.league_id}
           >
             <span class="absolute inset-y-0 left-0 w-1 {l.league_id === current ? 'bg-accent' : 'bg-line-strong'}" aria-hidden="true"></span>
-            <div class="text-lg leading-snug font-bold">{l.name} <span class="text-sm font-semibold text-ink-3">MFL</span></div>
+            <div class="text-lg leading-snug font-bold">{l.name} <span class="text-sm font-semibold text-ink-3">{isMfl(l.league_id) ? "MFL" : "Sleeper"}</span></div><!-- II-5: a Sleeper league opened by its link too -->
             {#if leagueLine(l)}<div class="text-sm leading-snug text-ink-3">{leagueLine(l)}</div>{/if}
             {#if l.team_name}<div class="mt-1 text-sm leading-snug text-ink-2">Your team: <strong>{l.team_name}</strong></div>{/if}
           </a>
@@ -361,10 +556,33 @@
                 {#if l.roster_id !== null}
                   Your team: <strong>{l.team_name ?? `team ${l.roster_id}`}</strong>
                 {:else}
-                  <span class="text-warn">You have no team in this league: pick the team to see after you open it.</span>
+                  <span class="text-warn">You have no team in this league: pick the team to see below.</span><!-- II-5 -->
                 {/if}
               </div>
             </a>
+            <!-- ---- II-5: no team of yours in this league: pick the team to see, here (it was "after you open it") -->
+            {#if l.roster_id === null}
+              {@const tl = teamsOf[l.league_id]}
+              <details class="px-1 pt-1 text-base" data-testid="team-pick-open" ontoggle={(e) => e.currentTarget.open && loadTeams(l.league_id)}>
+                <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-accent"><span class="chev" aria-hidden="true">›</span>Pick the team to see</summary>
+                {#if tl === "loading" || tl === undefined}
+                  <p class="text-sm text-ink-3">Loading the teams…</p>
+                {:else if tl === "failed"}
+                  <p class="text-sm text-bad">The teams did not load. Close and open this again.</p>
+                {:else}
+                  <ul class="grid grid-cols-1 gap-1.5 pb-1 sm:grid-cols-2" data-testid="team-pick">
+                    {#each tl as t (t.roster_id)}
+                      <li>
+                        <a href={href(l.league_id, t.roster_id)} class="block rounded-md border border-line px-3 py-2.5" data-testid="team-option" data-roster={t.roster_id}
+                          >{t.team_name}</a
+                        >
+                      </li>
+                    {/each}
+                  </ul>
+                {/if}
+              </details>
+            {/if}
+            <!-- ---- end II-5 -->
             {#if cardOf(l)}<div class="px-1 pt-2">{@render readback(cardOf(l) as LeagueCard, l.league_id)}</div>{/if}
           </li>
         {/each}

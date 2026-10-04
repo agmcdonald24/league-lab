@@ -7,6 +7,7 @@ const KEY_USER = "ll.user"; // the Sleeper username typed on the sign-in screen
 const KEY_USER_LEAGUES = "ll.userLeagues"; // the last answer of /api/leagues?username= (the picker renders at once)
 const KEY_MFL = "ll.mflLeagues"; // I0-B: the MyFantasyLeague leagues opened on this phone (the switcher lists them)
 const keyTeam = (league: string) => `ll.team.${league}`;
+const KEY_PLATFORM = "ll.platform"; // ---- II-5: the setup screen's fantasy platform
 
 /** A MyFantasyLeague league remembered on this phone (from GET /api/leagues?mfl=). */
 export interface RememberedMfl {
@@ -79,4 +80,11 @@ export const prefs = {
     write(KEY_USER, null);
     write(KEY_USER_LEAGUES, null);
   },
+  // ---- II-5 (Wave I-I): the fantasy platform picked on the setup screen (the next visit opens on it)
+  platform: (): "sleeper" | "mfl" | null => {
+    const v = read(KEY_PLATFORM);
+    return v === "sleeper" || v === "mfl" ? v : null;
+  },
+  setPlatform: (p: "sleeper" | "mfl") => write(KEY_PLATFORM, p),
+  // ---- end II-5
 };
