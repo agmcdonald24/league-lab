@@ -1885,7 +1885,17 @@ def ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span
              team: int, give: list[str], get: list[str], *, source=None, as_of=None) -> dict:
     """The trade card (INTERFACES.md § II-1) for one package: you give / get, required drops, both lineup effects on the
     covered frame, depth and roster-spot cost, both sides' waiver alternatives, why they might consider it / refuse it,
-    the plausibility label, the guardrails, the legality checks and `credible`."""
+    the plausibility label, the guardrails, the legality checks and `credible`. Kept on the frame (the context's, per
+    window): a warm Finder or calculator answer does not re-price its cards; a copy is returned (the caller may mark it)."""
+    key = (int(team), tuple(give), tuple(get))
+    cards_ = frame.setdefault("cards", {})
+    if key not in cards_:
+        cards_[key] = _ii1_card(ctx, board, weeks, span, window, frame, team, give, get, source=source, as_of=as_of)
+    return dict(cards_[key])
+
+
+def _ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span: str, window: str, frame: dict,
+              team: int, give: list[str], get: list[str], *, source=None, as_of=None) -> dict:
     team = int(team)
     them = board.owner(get[0])
     mine = T.covered_side(board, team, give, get, weeks, frame["free"], ctx.market)
