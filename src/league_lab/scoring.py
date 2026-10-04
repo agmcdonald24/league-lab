@@ -869,7 +869,7 @@ RECORD_PRICING_SQL = """select season, week, max(fitted_at) as fitted_at, coales
                         where not starts_with(league_id, 'mfl:') and position in ('QB', 'RB', 'WR', 'TE')
                         group by season, week"""
 _PINNED: list[str] = []                       # the nightly writer's mode (a stack: ``pinned_pricing``)
-_RECORD: dict = {}                            # {"at": monotonic expiry, "weeks": {(season, week): bool}, "newest": ...}
+_RECORD: tuple = (0.0, None)                 # (monotonic expiry, record_pricing's value): one tuple, swapped whole
 _RECORD_READER = None                         # () -> rows of RECORD_PRICING_SQL; None = league_lab.db (pipeline role)
 
 
@@ -896,7 +896,8 @@ def set_record_reader(fn) -> None:
 
 
 def clear_pricing_cache() -> None:
-    _RECORD.clear()
+    global _RECORD
+    _RECORD = (0.0, None)
 
 
 def _read_record_rows():
@@ -921,9 +922,11 @@ def record_pricing() -> dict:
     "built_at": datetime | None, "ok": bool}`` — cached ten minutes (a failure, e.g. a database without the column:
     nothing known, cached a minute; the caller then prices flat)."""
     import time as _time
+    global _RECORD
     now = _time.monotonic()
-    if _RECORD and _RECORD["at"] > now:
-        return _RECORD["value"]
+    expiry, cached = _RECORD          # one read: the API's threads swap the tuple, never mutate it
+    if cached is not None and expiry > now:
+        return cached
     try:
         rows = _read_record_rows()
         recs = rows.to_dict("records") if hasattr(rows, "to_dict") else [
@@ -938,8 +941,7 @@ def record_pricing() -> dict:
         value, ttl = {"weeks": weeks, "newest": newest, "built_at": built_at, "ok": True}, RECORD_TTL_S
     except Exception:  # noqa: BLE001 - no database, no table, no column (before the first I-G nightly): flat
         value, ttl = {"weeks": {}, "newest": None, "built_at": None, "ok": False}, RECORD_FAIL_TTL_S
-    _RECORD.clear()
-    _RECORD.update({"at": now + ttl, "value": value})
+    _RECORD = (now + ttl, value)
     return value
 
 
