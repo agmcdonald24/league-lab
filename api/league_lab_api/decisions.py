@@ -2738,6 +2738,20 @@ def ig3_with_call(up: pd.DataFrame, league_id: str, team: int, week: int) -> pd.
     return up.merge(call, on="upside_rank", how="left")
 
 
+def ig3_apply_call(stashes: list[dict], week: int, last: int) -> None:
+    """The writer's call on the stash cards (idempotent): a watch shows no drop and the watch line; a claim keeps its
+    drop. Applied where the stashes are built (``_upside``: a roster with no claim never reaches ``if1_stashes``)."""
+    for s in stashes:
+        if s.get("stash_source") != "writer":
+            continue
+        if s["stash_action"] == "watch":
+            s["drop"], s["watch_words"] = None, ig3_watch_words(s, _span_words(int(week), int(last)))
+        else:
+            s["watch_words"] = None
+        cd = s.get("cheapest_drop") or {}
+        s["drop_cost"] = {"cost": cd.get("cost"), "piece": cd.get("piece")} if cd else None
+
+
 def ig3_watch_words(s: dict, span: str) -> str:
     """The watch line from the writer's numbers: what the role adds if it holds, after the cheapest drop's cost."""
     gain, net = _num(s.get("holds_horizon_gain")) or 0.0, _num(s.get("net_horizon_gain"))
@@ -2789,6 +2803,8 @@ def _upside(league_id: str, team: int | None, week: int, is_house: bool, od_info
         rows = up.to_dict("records")
         b = bio([r.get("add_gsis_id") for r in rows] + [r.get("drop_gsis_id") for r in rows])
         out = [_stash(r, b) for r in rows]
+        if rows:                                                                                    # ---- IG-3
+            ig3_apply_call(out, int(week), _int(rows[0].get("horizon_last_week")) or int(week) + W.HORIZON - 1)
         why = None if out else (f"No upside stash for week {week}: no free agent's role grew in his last one to three games "
                                 "without already making the lists above (see Trends for every role change).")
         return {"title": UPSIDE_TITLE, "stashes": out, "why": why, "howto": UPSIDE_HOWTO, "source": "mart_waiver_upside"}
@@ -3574,14 +3590,7 @@ def if1_stashes(out: dict, mv: pd.DataFrame, week: int, last: int) -> None:
     otherwise ``stash_action`` 'watch', no drop, and what would change it."""
     stashes = (out.get("upside") or {}).get("stashes") or []
     # ---- IG-3: the writer's call stands (it used choose_drops); only older rows are re-decided below
-    for s in stashes:
-        if s.get("stash_source") == "writer":
-            if s["stash_action"] == "watch":
-                s["drop"], s["watch_words"] = None, ig3_watch_words(s, _span_words(week, last))
-            else:
-                s["watch_words"] = None
-            cd = s.get("cheapest_drop") or {}
-            s["drop_cost"] = {"cost": cd.get("cost"), "piece": cd.get("piece")} if cd else None
+    ig3_apply_call(stashes, week, last)
     stashes = [s for s in stashes if s.get("stash_source") != "writer"]
     # ---- end IG-3
     if not stashes or mv is None or mv.empty or "drop_cost" not in mv:
