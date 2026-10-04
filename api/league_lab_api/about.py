@@ -64,7 +64,7 @@ def sections(league_name: str) -> list[dict]:
 RANKINGS_HOWTO = (
     "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and "
     "passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are "
-    "down reads lower than his name; a quarterback who starts and throws 35 times a game counts like any starter "
+    "down reads lower than his name; a quarterback who starts and throws 35 times per game counts like any starter "
     "while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the"
     " list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is"
     " far from it, open his card and read why before you trade on it."
@@ -150,7 +150,7 @@ def importance(league_id: str | None, scored_in: str | None) -> dict | None:
         base = _num(t["baseline_mae"].iloc[0])
         lead = (f"For {pos}s the model leans most on **{names[0]}**."
                 + (" Next: " + " · ".join(f"*{n}*" for n in names[1:3]) + "." if len(names) > 1 else "")
-                + (f" It misses a {pos} by {base:.1f} points a game on average; scrambling the top input adds "
+                + (f" It misses a {pos} by {base:.1f} points per game on average; scrambling the top input adds "
                    f"{float(t['importance'].iloc[0]):.2f} to that." if base is not None else ""))
         positions.append({"position": pos, "baseline_mae": base, "top": str(t["feature_label"].iloc[0]), "lead": lead,
                           "features": [{"rank": int(r.importance_rank), "feature_label": str(r.feature_label),

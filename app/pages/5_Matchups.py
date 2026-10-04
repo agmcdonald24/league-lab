@@ -390,7 +390,7 @@ else:
         st.caption((("◀ and a ringed cell = where your starters play this week: "
                      + "; ".join(f"{t} ({', '.join(f'{who} at {p}' for p, who in cells.items())})" for t, cells in marks.items()) + ". ")
                     if marks else "No starter of yours has a game at these positions this week. ")
-                   + "Darker = gives up more to that position (its rank of " + str(n_def) + "); the number is points a game. "
+                   + "Darker = gives up more to that position (its rank of " + str(n_def) + "); the number is points per game. "
                    + ("Your opponents only; switch it off for every defense." if only_mine else "Your opponents first, then the defenses that give up the most across positions."))
     else:
         default_pos = next((p for p in ("WR", "RB", "QB", "TE", "K") if p in dvp_positions), dvp_positions[0])

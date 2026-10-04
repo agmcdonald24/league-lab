@@ -3579,7 +3579,7 @@ def _trade_lists(league_id: str, team: int, is_house: bool, od_info: dict) -> di
     else:
         t = top_buy
         buy_line = (f"**Buy low: ask {t['team_name']} about {t['player']['player_name']} ({t['player']['position']}).** "
-                    f"He scores {abs(t['diff_per_game']):.1f} a game below what his usage is worth, adds **{t['gain_week']:+.1f}** "
+                    f"He scores {abs(t['diff_per_game']):.1f} per game below what his usage is worth, adds **{t['gain_week']:+.1f}** "
                     f"to your week-{wk} lineup and costs them **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** over {span}).")
     if top_sell is None:
         sell_line = (f"**Sell high:** none of your players scoring above his usage is worth more to another lineup than to "
@@ -3587,7 +3587,7 @@ def _trade_lists(league_id: str, team: int, is_house: bool, od_info: dict) -> di
     else:
         t = top_sell
         sell_line = (f"**Sell high: shop {t['player']['player_name']} ({t['player']['position']}) to {t['team_name']}.** "
-                     f"He scores {t['diff_per_game']:.1f} a game above what his usage is worth. Their week-{wk} lineup "
+                     f"He scores {t['diff_per_game']:.1f} per game above what his usage is worth. Their week-{wk} lineup "
                      f"gains **{t['gain_week']:+.1f}**, yours loses **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** "
                      f"over {span}).")
     return {"buy_low": buy_rows, "sell_high": sell_rows, "best_buy_by_position": best, "buy_line": buy_line,

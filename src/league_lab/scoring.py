@@ -1106,7 +1106,7 @@ def expected_floor_units(stat: str, position: str | None, mean, per: float, star
 def expected_frame(stats, spec: ScoringSpec, positions, *, ev: bool | None = None):
     """Projected lines (a DataFrame of stat columns, one position per row) -> expected points (ndarray): rates and
     premiums linear; MFL's ``a/b`` steps (paid per WHOLE unit) at the expected whole units with ``ev`` (M2 measured
-    linear 0.3-0.5 a game too high per yardage stat), linear without; a flat band = its points x P(in band) with
+    linear 0.3-0.5 per game too high per yardage stat), linear without; a flat band = its points x P(in band) with
     ``ev`` (else all-or-nothing on the mean); a distance band = the TD count x the band's points x the share of TDs
     that long (M2's measured shares, else the placeholders)."""
     import numpy as np
@@ -1132,7 +1132,7 @@ def expected_frame(stats, spec: ScoringSpec, positions, *, ev: bool | None = Non
             for st in sts:
                 if st.base:
                     t = t + np.where(v >= st.low, st.base + st.per / st.unit * (v - st.origin), 0.0)
-                elif ev:      # the expected whole units (M2: linear is ~0.3-0.5 a game too high per yardage stat)
+                elif ev:      # the expected whole units (M2: linear is ~0.3-0.5 per game too high per yardage stat)
                     t = t + st.per * expected_floor_units(s, p, v, st.unit, st.origin)
                 else:
                     t = t + st.per / st.unit * v

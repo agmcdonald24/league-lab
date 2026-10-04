@@ -192,7 +192,7 @@ def dvp_heatmap(frame: pd.DataFrame, positions: list[str], title: str, n_total: 
             rz.append(float(k) if ok else None)
             rt.append(f"{float(v):.1f}" if ok else "")
             mine = [s.split(" (")[0] for s in str(r.facing or "").split("; ") if s.endswith(f"({p})")]
-            rh.append((f"{r.defense} vs {p}s: {float(v):.1f} points a game, #{int(k)} of {n_total}" if ok else f"{r.defense} vs {p}s: no games")
+            rh.append((f"{r.defense} vs {p}s: {float(v):.1f} points per game, #{int(k)} of {n_total}" if ok else f"{r.defense} vs {p}s: no games")
                       + (f"<br>your {', '.join(mine)}" if mine else ""))
         z.append(rz)
         text.append(rt)

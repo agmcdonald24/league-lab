@@ -168,7 +168,7 @@ def explain(line: Mapping[str, float | None], points: float | None, scoring: Map
     tds = (_f(line.get("rushing_tds")) or 0.0) + (_f(line.get("receiving_tds")) or 0.0)
     if pos != "QB" and tds >= 0.01:
         chain.append(f"{tds:.2f} TDs")
-    per = "a game" if games else "this week"
+    per = "per game" if games else "this week"
     sentence = " → ".join([*chain, f"{float(points):.1f} points {per}"])
     if games and total is not None:
         sentence += f" × {games} game{'s' if games != 1 else ''} = {float(total):.0f}"

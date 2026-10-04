@@ -461,7 +461,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         sig = query(SIGNALS_SQL, (prof_league, prof_league, week if week is not None else 0, gsis, season))
         if sig.empty:
             md(sig_sec, "Role: **no role change detected** in his last three games: his share of the snaps, targets and "
-                                    "carries is where it has been.  \nUpside: nothing beyond the projection above.")
+                                    "carries is where it has been.  \nUpside: no additional modeled upside scenario available.")  # ---- II-4
         else:
             r = sig.iloc[0]
             md(sig_sec, f"Role: **{signals.alert_headline(r, p['player_name'])}**. {signals.alert_lines(r)}")

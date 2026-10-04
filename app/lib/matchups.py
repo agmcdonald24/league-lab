@@ -267,10 +267,10 @@ def cover_split(games: pd.DataFrame) -> pd.DataFrame:
 
 
 def cover_split_text(r) -> str:
-    """'vs shutdown corners 14.2 a game (5 games), vs the rest 17.9 (14)'."""
+    """'vs shutdown corners 14.2 per game (5 games), vs the rest 17.9 (14)'."""
     r = pd.Series(r)
     def part(ppg, g):
-        return "no games" if not int(g or 0) else f"{float(ppg):.1f} a game ({int(g)} game{'s' if int(g) != 1 else ''})"
+        return "no games" if not int(g or 0) else f"{float(ppg):.1f} per game ({int(g)} game{'s' if int(g) != 1 else ''})"
     return f"vs shutdown corners {part(r['ppg_vs_shutdown'], r['games_vs_shutdown'])}, vs the rest {part(r['ppg_vs_rest'], r['games_vs_rest'])}"
 
 

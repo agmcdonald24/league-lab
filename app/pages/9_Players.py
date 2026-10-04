@@ -68,7 +68,7 @@ with st.container(border=True):
         vol = PHONE[0]
         top_vol = season_df.sort_values(vol, ascending=False, na_position="last").iloc[0]
         st.markdown(f"**Most points: {lead['player_name']}, {float(lead['points_current_scoring'] or 0):.1f} "
-                    f"({float(lead['points_current_scoring_per_game'] or 0):.1f} a game).** "
+                    f"({float(lead['points_current_scoring_per_game'] or 0):.1f} per game).** "
                     + (f"Most {VOLUME_WORDS[vol]}: {top_vol['player_name']} ({int(top_vol[vol])}). " if pd.notna(top_vol[vol]) else "")
                     + f"{len(season_df)} players.")
 with st.expander("Season totals, every player", expanded=True):

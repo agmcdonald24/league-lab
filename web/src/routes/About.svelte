@@ -194,8 +194,8 @@
           <h3 class="ll-label">Our lineups against the ones started</h3>
           {#if dec.sentences?.edge}<p class="text-base leading-snug" data-testid="decisions-edge">{dec.sentences.edge}</p>{/if}
           <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <StatTile label="Our lineups would have added" value={signed(tot.edge)} unit="pts" caption={`${signed(tot.edge / tot.roster_weeks)} a team a week`} size="sm" testid="decisions-tile-edge" />
-            <StatTile label="Best lineup in hindsight" value={`+${tot.regret.toFixed(1)}`} unit="pts" caption={`${(tot.regret / tot.roster_weeks).toFixed(1)} a team a week over the one started`} size="sm" testid="decisions-tile-regret" />
+            <StatTile label="Our lineups would have added" value={signed(tot.edge)} unit="pts" caption={`${signed(tot.edge / tot.roster_weeks)} per team per week`} size="sm" testid="decisions-tile-edge" />
+            <StatTile label="Best lineup in hindsight" value={`+${tot.regret.toFixed(1)}`} unit="pts" caption={`${(tot.regret / tot.roster_weeks).toFixed(1)} per team per week over the one started`} size="sm" testid="decisions-tile-regret" />
             {#if cf && cf.n && cf.won !== null && cf.expected !== null}
               <StatTile label="Coin flips landed" value={`${Math.round((100 * cf.won) / cf.n)}%`} caption={`${Math.round((100 * cf.expected) / cf.n)}% expected · ${cf.n} calls`} size="sm" testid="decisions-tile-flips" />
             {/if}

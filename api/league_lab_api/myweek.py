@@ -224,6 +224,7 @@ def my_week(league_id: str, roster_id: int) -> dict:
     out.update(build_actions(rows, out["cards"], cur, league_id))                                          # ---- IE-1
     out.update({"edit_link": edit_link(league_id), "nothing_submitted": NOTHING_SUBMITTED})               # ---- IE-1
     out["changed"] = what_changed(ctx.meta, rows, cur)                                                     # ---- IF-4
+    out["clocks"] = clocks(ctx.meta, out["changed"])                                                      # ---- II-4
     out["lineup"], out["lineup_full"] = lineup(rows)
     annotate_swaps(out["lineup"], out["lineup_full"], out.get("swaps") or [])                              # ---- PO I-E
     out["howto"] = howto()
@@ -749,8 +750,156 @@ def what_changed(meta: dict | None, rows: pd.DataFrame | None, current: dict[str
                 line.update({"event_id": it["event_id"], "origin": "playerwire" if it.get("kind") == "playerwire" else "espn",
                              "verification": it.get("verification")})
             lines.append(line)
-    return {"lines": lines[:MAX_CHANGED], "empty": NOTHING_CHANGED}
+    return {"lines": decision_feed(lines[:MAX_CHANGED], meta, rows, current), "empty": NOTHING_CHANGED}  # ---- II-4
 # ---- end IF-4
+
+
+# ---- II-4 (Wave I-I; the product and analytics review § 7): "What changed" as a decision-impact feed. Every line keeps
+# IF-4 / IG-2 / IH-2's keys and gains five parts (INTERFACES.md § II-4; docs/WORDS.md § "News as a decision feed"):
+#   what_changed   — the sourced fact with its times: {text, source, event_at, published_at, checked_at}
+#   why_here       — where he is in this roster's week (starts at a slot / in the lineup you submitted / on your bench)
+#   decision_status — "changed" (the overlay re-solved the lineup around him), "watch" (a Questionable tag, an injury
+#                    item the report has not settled), "none" (no action currently indicated)
+#   forecast_status — "included" ONLY with a recorded update: the overlay's recorded status change (availability
+#                    `changes`, applied to this week's numbers); "contextual" for news, briefs, recaps and a Questionable
+#                    tag (the projection reads no news: IF-3's `forecast_treatment` model — the forecast's inputs are
+#                    listed, nothing in them is a headline); "pending" for an injury item published after the last
+#                    injury check (the next check may move him)
+#   next_step      — inspect the player / compare alternatives (a changed lineup)
+# plus `item_kind` ("development" | "recap": a game recap is ranked after every development) and `priority` (1 = most
+# urgent); the lines come sorted by it — changed, then watch, then none; developments before recaps; IF-4's order kept
+# within (a stable sort). The same event reported twice (one player, one fingerprint or the same headline) shows once.
+DECISION_WORDS = {"changed": "Recommendation changed", "watch": "Watch for confirmation",
+                  "none": "No action currently indicated"}
+FORECAST_WORDS = {"included": "Included in the current projection",
+                  "contextual": "Context only: not in the projection",
+                  "pending": "Update pending: the next injury check may move his projection"}
+INJURY_WORDS = re.compile(r"\b(injur\w*|questionable|doubtful|ruled out|out for|inactive|limited|did not practice|"
+                          r"DNP|sidelined|hamstring|ankle|knee|hip|groin|calf|concussion|shoulder|back|foot|toe|"
+                          r"illness|IR|injured reserve|game-time decision|week-to-week|day-to-day)\b", re.IGNORECASE)
+RECAP_WORDS = re.compile(r"\b(caught|hauled in|rushed|carried|completed|threw for|finished with|totaled|recorded|"
+                         r"\d+ (catches|receptions|carries|rushes|yards|touchdowns?))\b.*\b(win|loss|victory|defeat|"
+                         r"Sunday|Monday|Thursday|Saturday|game|week \d+)\b", re.IGNORECASE)
+
+
+def _why_here(g: str | None, rows: pd.DataFrame | None, current: dict[str, str] | None) -> str:
+    if not g or rows is None or rows.empty or "gsis_id" not in rows:
+        return "Your lineup this week"
+    r = rows[rows["gsis_id"] == g]
+    if r.empty:
+        return "Your lineup this week"
+    r = r.iloc[0]
+    sid = r.get("sleeper_player_id")
+    if r.get("role") == "starter":
+        return f"Starts at {cards.slot_label(r.get('slot'))} in your best lineup this week"
+    if isinstance(sid, str) and sid in (current or {}):
+        if r.get("role") == "unplayable":
+            return "In the lineup you submitted, and he cannot play this week"
+        return "In the lineup you submitted (not your best lineup)"
+    if r.get("role") == "unplayable":
+        return "On your roster, unable to play this week"
+    return "On your bench this week"
+
+
+def _item_kind(line: dict) -> str:
+    if line.get("kind") != "news":
+        return "development"
+    return "recap" if RECAP_WORDS.search(str(line.get("text") or "")) and not INJURY_WORDS.search(
+        str(line.get("text") or "")) else "development"
+
+
+def decision_parts(line: dict, meta: dict | None, rows: pd.DataFrame | None, current: dict[str, str] | None,
+                   recorded: set | None = None) -> dict:
+    """The five parts of one "What changed" line (see the block's head)."""
+    from .events import iso
+    g = line.get("gsis_id")
+    checked = (meta or {}).get("checked_at")
+    text = str(line.get("text") or "")
+    kind = _item_kind(line)
+    status = None
+    if g and rows is not None and not rows.empty and "report_status" in rows:
+        st = rows.loc[rows["gsis_id"] == g, "report_status"]
+        status = st.iloc[0] if not st.empty and isinstance(st.iloc[0], str) else None
+    if line.get("kind") == "status" and line.get("flag") == "questionable":
+        dec, fc = "watch", "contextual"
+        fc_words = "Context only: a Questionable tag does not change the projection"
+    elif line.get("kind") == "status":
+        # the overlay's own recorded change (availability `changes`): applied to this week's rows and re-solved
+        dec = "none" if "the lineup does not change" in text else "changed"
+        fc, fc_words = "included", "Included in the current projection: the injury report's status is applied to this week"
+    elif kind == "recap":
+        dec, fc, fc_words = "none", "contextual", "Context only: a game already played is in his stats, not news"
+    else:
+        injury = bool(INJURY_WORDS.search(text))
+        role = None
+        if g and rows is not None and not rows.empty and "role" in rows:
+            rl = rows.loc[rows["gsis_id"] == g, "role"]
+            role = rl.iloc[0] if not rl.empty else None
+        at, chk = iso(line.get("at")), iso(checked)
+        if injury and (g in (recorded or set()) or role == "unplayable"):
+            # the injury report's status for him is already applied to this week's rows (the overlay's recorded change,
+            # or the build's own report): the item is reflected, never counted twice
+            dec, fc = "none", "included"
+            fc_words = "Included in the current projection: his injury-report status is applied to this week"
+        elif injury and at and chk and at > chk:
+            dec, fc, fc_words = "watch", "pending", FORECAST_WORDS["pending"]
+        else:
+            dec = "watch" if injury or status in ("Questionable", "Doubtful") else "none"
+            fc, fc_words = "contextual", FORECAST_WORDS["contextual"]
+    name = line.get("player_name")
+    if not name and g and rows is not None and not rows.empty:
+        nm = rows.loc[rows["gsis_id"] == g, "player_name"]
+        name = nm.iloc[0] if not nm.empty and isinstance(nm.iloc[0], str) else None
+    who = cards.last_name(name) if name else None
+    if dec == "changed":
+        nxt = {"kind": "compare", "label": "Compare your options for the slot", "gsis_id": g}
+    elif g:
+        nxt = {"kind": "player", "label": f"Inspect {who}" if who else "Inspect the player", "gsis_id": g}
+    else:
+        nxt = {"kind": "player", "label": "See your lineup", "gsis_id": None}
+    status_line = line.get("kind") == "status"
+    return {"what_changed": {"text": text, "source": line.get("source"),
+                             "event_at": iso(line.get("at")) if status_line else None,
+                             "published_at": None if status_line else iso(line.get("at")),
+                             "checked_at": iso(checked)},
+            "why_here": _why_here(g, rows, current),
+            "decision_status": dec, "decision_words": DECISION_WORDS[dec],
+            "forecast_status": fc, "forecast_words": fc_words,
+            "next_step": nxt, "item_kind": kind}
+
+
+def decision_feed(lines: list[dict], meta: dict | None, rows: pd.DataFrame | None,
+                  current: dict[str, str] | None) -> list[dict]:
+    """The lines with their five parts, deduplicated (one event once) and ranked by decision relevance and urgency."""
+    seen: set = set()
+    out: list[dict] = []
+    recorded = {ln.get("gsis_id") for ln in lines if ln.get("kind") == "status" and ln.get("flag") != "questionable"
+                and ln.get("gsis_id")}
+    for ln in lines:
+        k = ln.get("event_id") or (ln.get("gsis_id"), re.sub(r"\W+", " ", str(ln.get("text") or "")).strip().lower())
+        if k in seen:
+            continue
+        seen.add(k)
+        try:
+            out.append({**ln, **decision_parts(ln, meta, rows, current, recorded)})
+        except Exception:  # noqa: BLE001 - the feed never fails My Week: the line as IF-4 had it
+            out.append(ln)
+    rank = {"changed": 0, "watch": 1, "none": 2}
+    out.sort(key=lambda x: (rank.get(x.get("decision_status"), 2), 1 if x.get("item_kind") == "recap" else 0))
+    for i, x in enumerate(out, start=1):
+        x["priority"] = i
+    return out
+
+
+def clocks(meta: dict | None, changed: dict | None) -> dict:
+    """The home's three stamps, apart (never a stale warning — PO 2026-10-04): the morning build's newest data load, the
+    injury report's last check, the newest news item's publication time among the lines."""
+    from .events import iso
+    news = [iso(x.get("at")) for x in (changed or {}).get("lines") or [] if x.get("kind") == "news" and x.get("at")]
+    news = [t for t in news if t]
+    return {"data_built": updated_at(), "injuries_checked": iso((meta or {}).get("checked_at")),
+            "news": max(news) if news else None}
+# ---- end II-4
 
 
 # ---- IG-2 (Wave I-G): "What changed" reads the event store. A status line cites its own source and the report's time

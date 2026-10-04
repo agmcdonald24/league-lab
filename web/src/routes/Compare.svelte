@@ -82,7 +82,7 @@
     show: (v: number | null | undefined) => string;
     lowerIsBetter?: boolean;
     // ---- IF-4 (the decision-quality review: "Comparison bolds 'the better number' across RB and WR rows"): `points` =
-    // a number that bears on the call whatever the positions (projected points, the range, points a game, the rest of
+    // a number that bears on the call whatever the positions (projected points, the range, points per game, the rest of
     // the season); the usage rows are bolded only between two players of the same position (more carries for an RB is
     // not a reason he beats a WR)
     points?: boolean;
@@ -101,18 +101,18 @@
     {
       title: "This season",
       pairs: [
-        { label: "Points a game", get: (s) => s.season_stats.ppg, show: (v) => fmt.pts(v), points: true },
+        { label: "Points per game", get: (s) => s.season_stats.ppg, show: (v) => fmt.pts(v), points: true },
         { label: "Points suggested by his past opportunities", get: (s) => s.season_stats.xppg, show: (v) => fmt.pts(v), points: true },
-        { label: "Targets a game", get: (s) => s.season_stats.targets_per_game, show: (v) => fmt.pts(v) },
-        { label: "Carries a game", get: (s) => s.season_stats.carries_per_game, show: (v) => fmt.pts(v) },
-        { label: "Yards a game", get: yards, show: (v) => fmt.pts(v) },
-        { label: "Touchdowns a game", get: (s) => s.season_stats.tds_pg, show: (v) => fmt.pts(v, 2) },
+        { label: "Targets per game", get: (s) => s.season_stats.targets_per_game, show: (v) => fmt.pts(v) },
+        { label: "Carries per game", get: (s) => s.season_stats.carries_per_game, show: (v) => fmt.pts(v) },
+        { label: "Yards per game", get: yards, show: (v) => fmt.pts(v) },
+        { label: "Touchdowns per game", get: (s) => s.season_stats.tds_pg, show: (v) => fmt.pts(v, 2) },
       ],
     },
     {
       title: "Last 3 games",
       pairs: [
-        { label: "Points a game", get: (s) => s.form.ppg_l3, show: (v) => fmt.pts(v), points: true },
+        { label: "Points per game", get: (s) => s.form.ppg_l3, show: (v) => fmt.pts(v), points: true },
         { label: "Share of team passes", get: (s) => s.form.target_share_l3, show: (v) => fmt.pct(v) },
         { label: "Carry share", get: (s) => s.form.carry_share_l3, show: (v) => fmt.pct(v) },
         { label: "Snaps", get: (s) => s.form.snap_pct_l3, show: (v) => fmt.pct(v) },

@@ -13,9 +13,13 @@
   import Headshot from "../components/Headshot.svelte";
   // ---- end IA-3
   // ---- IB-3 (Wave I-B): "Value to my lineup" first (a view toggle at the top; the default with a team picked)
-  import { lineupAnswer, lineupPath, ROS_VIEWS, ROS_WHO, rosView, rosWho, valueText } from "../lib/ros";
+  import { valueText } from "../lib/ros"; // ---- II-4: IB-3's view helpers (ROS_VIEWS, lineupPath …) gave way to SEASON_VIEWS
   import Tabs from "../components/Tabs.svelte";
   // ---- end IB-3
+  // ---- II-4 (Wave I-I): the three named views — My roster outlook (default) / Potential upgrades (before acquisition
+  // cost) / Rest-of-season projections — each with its counterfactual said at the top (GET /api/ros?view=…)
+  import { perGameText, PROJECTIONS_VIEW, SEASON_SHORT, SEASON_VIEWS, seasonAnswer, seasonPath, seasonView, UPGRADE_WHO, upgradeWho } from "../lib/ros";
+  // ---- end II-4
   import { restoreScroll, route, setParams } from "../lib/router.svelte";
   import Expander from "../components/Expander.svelte";
   import Chips from "../components/Chips.svelte";
@@ -53,9 +57,12 @@
   });
   const leagueName = $derived(options.find((o) => o.league_id === league)?.name ?? "this league");
   // ---- IB-3: the view and, in "Value to my lineup", whose players (in the URL: shareable, no Back step)
-  const view = $derived(rosView(route.current.params.get("view"), team));
-  const who = $derived(rosWho(route.current.params.get("who")));
-  const isLineup = $derived(view === "lineup" && team !== null);
+  const view = $derived(seasonView(route.current.params.get("view"), team)); // ---- II-4
+  const who = $derived(upgradeWho(route.current.params.get("who"))); // ---- II-4
+  const isLineup = $derived(view !== "projections" && team !== null); // ---- II-4: a value column (outlook / upgrades)
+  const viewLabel = $derived(SEASON_VIEWS.find((v) => v.key === view)?.label ?? "Rest-of-season projections"); // ---- II-4
+  const sv = $derived(data?.season_view ?? (view === "projections" ? PROJECTIONS_VIEW : null)); // ---- II-4: the counterfactual
+
   // ---- end IB-3
   const players = $derived(data?.players ?? []);
   const span = $derived(data ? weeksSpan(data.from_week, data.last_week) : null);
@@ -80,7 +87,7 @@
     const l = league;
     const p = position;
     error = null;
-    const path = isLineup && team !== null ? lineupPath(l, p, team, who) : paths.ros(l, p); // ---- IB-3
+    const path = seasonPath(l, p, team, view, who); // ---- II-4 (IB-3: lineupPath / paths.ros)
     const hit = peek<RosList>(path);
     if (hit) {
       data = hit;
@@ -108,9 +115,9 @@
     setParams({ position: p });
   }
   // ---- IB-3
-  const currentPath = () => (isLineup && team !== null ? lineupPath(league, position, team, who) : paths.ros(league, position));
+  const currentPath = () => seasonPath(league, position, team, view, who); // ---- II-4
   function pickView(v: string) {
-    setParams({ view: v === "lineup" ? null : v, who: null });
+    setParams({ view: v === "outlook" ? null : v, who: null }); // ---- II-4: My roster outlook is the default
   }
   function pickWho(w: string) {
     setParams({ who: w === "all" ? null : w });
@@ -146,7 +153,7 @@
   const rowKey = (p: RosPlayer, i: number) => p.gsis_id ?? p.player_key ?? `${p.player_name}-${i}`;
   // the expand row spans the columns showing at this width (a larger colspan adds phantom columns to a fixed table)
   let vw = $state(typeof window === "undefined" ? 390 : window.innerWidth);
-  const ncols = $derived(4 + (vw >= 640 ? 3 : 0) + (vw >= 900 ? pieceCols.length : 0) + (isLineup ? 1 : 0) - (isLineup && vw < 640 ? 1 : 0));
+  const ncols = $derived(4 + (vw >= 640 ? 3 : 0) + (vw >= 900 ? pieceCols.length : 0) + (isLineup ? 1 : 0) - (isLineup && vw < 640 ? 1 : 0) + (view === "projections" && vw >= 640 ? 1 : 0)); // II-4: per game
   function toggle(k: string) {
     open = { ...open, [k]: !open[k] };
   }
@@ -161,16 +168,17 @@
   <header class="space-y-1.5">
     <p class="text-label font-bold tracking-[0.08em] text-accent uppercase">Rest of season · {leagueName}</p>
     <h1 class="text-2xl leading-tight font-extrabold tracking-tight wide:text-3xl" data-testid="ros-title">
-      {isLineup ? "Value to my lineup" : "Who scores the most from here"}
+      {team !== null ? viewLabel : "Rest-of-season projections"}<!-- ---- II-4 -->
     </h1>
   </header>
   <!-- ---- IB-3: the view toggle (Value to my lineup leads; it needs a team) -->
   {#if team !== null}
-    <Tabs items={ROS_VIEWS} current={view} onpick={pickView} fill size="sm" label="Rank by" testid="ros-view" />
+    <!-- ---- II-4: the three named views (short labels on a phone; the heading carries the full name) -->
+    <Tabs items={SEASON_VIEWS.map((v) => ({ key: v.key, label: vw < 640 ? SEASON_SHORT[v.key] : v.label }))} current={view} onpick={pickView} fill size="sm" label="Season view" testid="ros-view" />
   {/if}
   <Chips label="Position" testid="ros-pos" current={position} onpick={pick} items={positions.map((p) => ({ key: p, label: label(p) }))} />
-  {#if isLineup}
-    <Chips label="Whose" testid="ros-who" current={who} onpick={pickWho} items={ROS_WHO} />
+  {#if view === "upgrades" && team !== null}<!-- ---- II-4: whose players (yours are My roster outlook) -->
+    <Chips label="Whose" testid="ros-who" current={who} onpick={pickWho} items={UPGRADE_WHO} />
   {/if}
 
   {#if error}
@@ -188,15 +196,22 @@
     <section class="relative space-y-1.5 overflow-hidden rounded-lg border border-line bg-surface p-4 pl-5" style="box-shadow:var(--ll-shadow)" data-testid="ros-answer">
       {#if isLineup}
         <!-- ---- IB-3: the lineup view's answer: the top row and why, then what the number means -->
-        <p class="text-lg leading-snug" data-testid="ros-lineup-answer"><Md text={lineupAnswer(players[0], data.window?.span ?? span)} {ctx} /></p>
-        {#if data.lineup_note}<p class="text-sm leading-snug text-ink-2" data-testid="ros-lineup-note">{data.lineup_note}</p>{/if}
+        <p class="text-lg leading-snug" data-testid="ros-lineup-answer"><Md text={seasonAnswer(view, players[0], data.window?.span ?? span)} {ctx} /></p>
       {:else}
         <p class="text-lg leading-snug"><Md text={answerLine(players[0], position)} {ctx} /></p>
         {#if team !== null}<p class="text-base leading-snug" data-testid="ros-yours">{yoursLine(players, team, position)}</p>{/if}
       {/if}
+      <!-- ---- II-4: the view's counterfactual, said once; an acquisition view names the costs it leaves out -->
+      {#if sv}
+        <p class="text-sm leading-snug text-ink-2" data-testid="ros-counterfactual"><span class="font-semibold text-ink">{sv.label}:</span> {sv.counterfactual}</p>
+        {#if sv.costs_not_included.length && view === "upgrades"}
+          <p class="text-sm leading-snug text-ink-2" data-testid="ros-costs">Not included: {sv.costs_not_included.join(", ")}.</p>
+        {/if}
+      {:else if isLineup && data.lineup_note}<p class="text-sm leading-snug text-ink-2" data-testid="ros-lineup-note">{data.lineup_note}</p>{/if}
+      <!-- ---- end II-4 -->
       <p class="text-sm leading-snug text-ink-3">
         {span ? `${span[0].toUpperCase()}${span.slice(1)}` : "The weeks left"} in {leagueName} scoring, up to the league's final. A bye
-        is a week with no game: he plays one fewer. Ranked among everyone at the position, rostered or free agent.
+        is a week with no game: he plays one fewer.{view === "projections" ? " Ranked among everyone at the position, rostered or free agent." : ""}<!-- II-4 -->
         {#if data?.lines_note}{" " + data.lines_note}{/if}
       </p>
       <span class="absolute inset-y-0 left-0 w-1 bg-accent" aria-hidden="true"></span>
@@ -221,13 +236,14 @@
         <tr class="border-b border-line bg-raised text-left text-ink-3">
           {@render head("rank", "Rank", "w-[3.75rem] pr-1 pl-3")}
           <th class="ll-label py-2 pr-1 font-semibold">Player</th>
-          {#if isLineup}{@render head("lineup_points", "Value", "w-[3.75rem] text-right", "What he adds to your lineup over the weeks left")}{/if}
+          {#if isLineup}{@render head("lineup_points", "Value", "w-[3.75rem] text-right", view === "upgrades" ? "What he would add to your lineup over the weeks left, before acquisition cost" : "What your lineup loses without him over the weeks left")}{/if}<!-- II-4 -->
           {@render head("ros_games", "Games", "hidden w-[3.5rem] text-right sm:table-cell", "Games left (byes out)")}
           {@render head("ros_points", "Points", `w-[3.75rem] text-right ${isLineup ? "hidden sm:table-cell" : ""}`, "Rest of season, this league's scoring")}
+          {#if view === "projections"}<th class="ll-label hidden w-[4.5rem] py-2 text-right font-semibold sm:table-cell" title="Points per game over the games left">Per game</th>{/if}<!-- II-4 -->
           {@render head("range", "Likely", "hidden w-[7rem] pl-3 text-left sm:table-cell", "Where 8 seasons in 10 would land")}
           {@render head("playoff_points", "Playoffs", "hidden w-[4.5rem] text-right sm:table-cell", "Points in the playoff weeks")}
           {#each pieceCols as c (c)}
-            {@render head(`pg:${c}`, PIECE_LABELS[c]?.[0] ?? c, "hidden w-[3.75rem] text-right wide:table-cell", `${PIECE_LABELS[c]?.[1] ?? c} a game, projected`)}
+            {@render head(`pg:${c}`, PIECE_LABELS[c]?.[0] ?? c, "hidden w-[3.75rem] text-right wide:table-cell", `${PIECE_LABELS[c]?.[1] ?? c} per game, projected`)}
           {/each}
           <th class="w-[2.25rem] py-2 pr-2"><span class="sr-only">More</span></th>
         </tr>
@@ -265,6 +281,7 @@
             {/if}
             <td class="tabnum hidden py-2 text-right text-ink-2 sm:table-cell">{p.ros_games ?? "—"}</td>
             <td class="tabnum py-2 text-right {isLineup ? 'hidden font-semibold text-ink-2 sm:table-cell' : 'font-bold'}" data-testid="ros-points">{whole(p.ros_points) ?? "—"}<span class="block text-[11px] font-normal text-ink-3 sm:hidden">{p.ros_games ?? "—"} g</span></td>
+            {#if view === "projections"}<td class="tabnum hidden py-2 text-right text-ink-2 sm:table-cell" data-testid="ros-per-game">{perGameText(p)}</td>{/if}<!-- II-4 -->
             <td class="hidden py-2 pl-3 sm:table-cell">
               {#if bar}
                 <div class="relative h-2 w-full rounded-full bg-sunken" aria-hidden="true">
@@ -289,7 +306,12 @@
           {#if isLineup && p.lineup_why}
             <!-- ---- IB-3: why he ranks here for this roster, the row's full width (the name column is narrow on a phone) -->
             <tr class="border-b border-line {open[k] ? '' : 'last:border-0'} {yours ? 'bg-accent-soft' : ''}">
-              <td colspan={ncols} class="px-3 pt-0 pb-2 text-xs leading-snug text-ink-2 sm:pl-[4.25rem]" data-testid="ros-lineup-why">{p.lineup_why}</td>
+              <td colspan={ncols} class="px-3 pt-0 pb-2 text-xs leading-snug text-ink-2 sm:pl-[4.25rem]" data-testid="ros-lineup-why">{p.lineup_why}
+                <!-- ---- II-4: injury cover apart (never in the value); an upgrade's next step (where its cost is priced) -->
+                {#if view === "outlook" && p.cover}<span class="mt-0.5 block text-ink-3" data-testid="ros-cover">{p.cover.words}</span>{/if}
+                {#if view === "upgrades" && p.acquire}<a class="ll-link mt-0.5 inline-block font-semibold" href={withContext(p.acquire.path, ctx)} data-testid="ros-acquire" data-kind={p.acquire.kind}>{p.acquire.words} ›</a>{/if}
+                <!-- ---- end II-4 -->
+              </td>
             </tr>
           {/if}
           {#if open[k]}
@@ -305,7 +327,7 @@
                         </div>
                       {/each}
                     </div>
-                    <p class="text-xs text-ink-3">A game, projected over the {p.ros_games ?? 0} games left.</p>
+                    <p class="text-xs text-ink-3">Per game, projected over the {p.ros_games ?? 0} games left.</p><!-- II-4 -->
                   {/if}
                   {#if p.priced_from_words}<p class="text-sm text-ink-2" data-testid="ros-priced-from">{p.priced_from_words}.</p>{/if}
                   <p class="text-sm text-ink-2" data-testid="ros-facts">
@@ -318,7 +340,7 @@
                       <ul class="space-y-0.5 text-sm text-ink-2">
                         {#each p.why.pieces as w (w.stat)}<li class="tabnum">{w.words}</li>{/each}
                       </ul>
-                      <p class="text-xs text-ink-3">Each piece counted in {leagueName} scoring: they add up to his points a game.</p>
+                      <p class="text-xs text-ink-3">Each piece counted in {leagueName} scoring: they add up to his points per game.</p><!-- II-4 -->
                     </div>
                   {:else if p.position === "K" || p.position === "DEF"}
                     <p class="text-sm text-ink-3">A kicker's or a defense's number comes from its team's scoring chances, not a stat line we can break down.</p>

@@ -38,7 +38,7 @@ ys_top = ys_rows.sort_values("ppg", ascending=False).groupby("position").head(12
 
 
 def ys(pos: str, metric: str) -> float | None:
-    """The average of this season's top 12 at the position (by points a game, one scale for every league)."""
+    """The average of this season's top 12 at the position (by points per game, one scale for every league)."""
     if ys_top.empty:
         return None
     v = pd.to_numeric(ys_top.loc[ys_top["position"] == pos, metric], errors="coerce").mean()
@@ -63,7 +63,7 @@ def leader(metric: str, spec: str) -> str | None:
     return f"{r['player_name']} ({format(float(r['_v']), spec)})"
 
 
-YS_LABEL = f"the {season} top-12"      # "the 2026 top-12 wide receivers": the 12 with the most points a game
+YS_LABEL = f"the {season} top-12"      # "the 2026 top-12 wide receivers": the 12 with the most points per game
 
 
 candidates = query(
@@ -130,7 +130,7 @@ with st.container(border=True):
         if not ad.empty and len(summary) > 1:
             bits.append(f"deepest role: {ad.iloc[0]['player_name']} (aDOT {ad.iloc[0]['adot']:.1f})")
         if not pp.empty and len(summary) > 1:
-            bits.append(f"most points a game: {pp.iloc[0]['player_name']} ({pp.iloc[0]['points_per_game']:.1f})")
+            bits.append(f"most points per game: {pp.iloc[0]['player_name']} ({pp.iloc[0]['points_per_game']:.1f})")
         st.markdown("; ".join(bits) + ".")
 def example(metric: str, spec: str) -> str | None:
     """ "Ja'Marr Chase, 27%": the selected receiver with the highest value, for a worked example from the table below."""
@@ -148,7 +148,7 @@ one_in = (f": about 1 throw in {max(1, round(1 / float(ts_top.iloc[0]['target_sh
           if not ts_top.empty and float(ts_top.iloc[0]["target_share"]) > 0 else "")
 howto(
     "**Start the receiver the offense is built around, not last week's box score.** Each number below is over the weeks you "
-    f"picked. The yardsticks are what {YS_LABEL} at each position average (the 12 with the most points a game, one scale for "
+    f"picked. The yardsticks are what {YS_LABEL} at each position average (the 12 with the most points per game, one scale for "
     "every league); the examples are from your selection.",
     "**Target %** (his share of his team's targets). Why it matters: targets turn into points more reliably than anything else, "
     "and a share holds when the team throws more or less. "
@@ -156,7 +156,7 @@ howto(
     + f"Yardstick: the top-12 wide receivers average {ys_pct('WR', 'target_share', '28%')}, tight ends "
     f"{ys_pct('TE', 'target_share', '21%')}; under 15% is a depth piece.",
     "**Targets/G** is the same thing as a count. Why it matters: it is the volume behind the share. "
-    + (f"Example: {ex_tpg} a game. " if ex_tpg else "")
+    + (f"Example: {ex_tpg} per game. " if ex_tpg else "")
     + f"Yardstick: {ys_num('WR', 'targets_per_game', '9.2')} for the top-12 wide receivers, "
     f"{ys_num('TE', 'targets_per_game', '6.3')} for tight ends.",
     "**Air-yard %** (his share of the yards his team's throws travel in the air). Why it matters: it says who gets the deep, "
@@ -185,7 +185,7 @@ chart_reading = {   # U-17: what a good position on the chart looks like
     "target_share": f"A good line sits high and flat: {ys_pct('WR', 'target_share', '28%')} or more week after week is what "
                     f"{YS_LABEL} wide receivers average. A line that steps up and stays up for two or three weeks is a new "
                     "role: add or start him before the points catch up (Trends lists them as role alerts).",
-    "targets": f"A good line stays at 8 or more a game ({YS_LABEL} wide receivers average {ys_num('WR', 'targets_per_game', '9.2')}). "
+    "targets": f"A good line stays at 8 or more per game ({YS_LABEL} wide receivers average {ys_num('WR', 'targets_per_game', '9.2')}). "
                "One spike is a game plan; three weeks at a new level is a role.",
     "air_yards_share": "A good line stays above 30%: he gets the deep, valuable throws. A drop while his targets hold means a "
                        "shorter role (fewer long touchdowns).",
@@ -202,7 +202,7 @@ st.caption(chart_reading[metric])
 st.subheader("Early vs late window")
 howto("**Use it to tell a new role from a busy stretch.** Pick two stretches of weeks and compare the same receivers across them.",
       "If his **Target %** moved, his role changed. If only **Team tgt** (all his team's targets) moved, his team just threw more "
-      "or less: the box score looks the same either way, this table tells them apart. Example: 5 targets a game both times, but "
+      "or less: the box score looks the same either way, this table tells them apart. Example: 5 targets per game both times, but "
       "18% → 26% of the team's: the offense now runs through him, and when the team throws more again, he gets more.",
       "A role change is worth acting on (add, start, or sell); a team that threw more for a few weeks usually goes back.")
 e1, e2 = st.columns(2)
@@ -220,7 +220,7 @@ st.subheader("Recent form — last 3 / last 5 games vs season")
 howto("**Use it to catch a role changing now.** Each receiver's share of his team's targets over his last 3 and last 5 games, "
       "next to his whole season.",
       "Last 3 well above the season number is the earliest sign of a bigger role you can get from the box score: a waiver add "
-      "or a player to start. Example: 17% for the season, 26% over the last 3: about 3 more targets a game if it holds.",
+      "or a player to start. Example: 17% for the season, 26% over the last 3: about 3 more targets per game if it holds.",
       "Last 3 well below it is the warning sign: check for an injury or a new receiver in the offense before you start him.",
       "Trends' **Role alerts** do this check for every player every week, with the snaps and the reason (a teammate out, a trade).")
 recent = query(

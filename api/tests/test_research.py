@@ -305,7 +305,7 @@ def test_compare_route(client, league):
     assert set(a) == set(b) and PLAYER_KEYS <= set(a)
     assert {"projection", "season", "usage", "last3", "ros", "next4", "matchup"} <= set(a)
     assert set(a["season"]) == set(b["season"]) and len(a["next4"]) == 4
-    assert {"passing_tds", "rushing_tds", "receiving_tds"} <= set(a["season"])   # the screen's touchdowns a game
+    assert {"passing_tds", "rushing_tds", "receiving_tds"} <= set(a["season"])   # the screen's touchdowns per game
     card = client.get(f"/api/player/{CHASE}?league={league}").json()                 # same numbers everywhere
     assert a["projection"]["proj_points"] == pytest.approx(card["proj_points"]) and a["ros"] == card["ros"]
     assert d["verdict"] and [r["what"] for r in d["table"]][:3] == ["Projection", "Floor – ceiling", "Opponent"]

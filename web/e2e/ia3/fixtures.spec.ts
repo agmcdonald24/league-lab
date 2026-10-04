@@ -79,7 +79,7 @@ test("rest of season: the honesty line, headshots, the pieces, the expand row an
   await tap(page, first.getByTestId("ros-toggle"), isMobile);
   await expect(page.getByTestId("ros-expand")).toHaveCount(0);
 
-  // the sort: Points twice = fewest first; on a desktop, targets a game
+  // the sort: Points twice = fewest first; on a desktop, targets per game
   await tap(page, page.getByTestId("ros-sort-ros_points"), isMobile);
   await tap(page, page.getByTestId("ros-sort-ros_points"), isMobile);
   const fewest = [...WR.players].sort((a, b) => (a.ros_points ?? 0) - (b.ros_points ?? 0))[0];

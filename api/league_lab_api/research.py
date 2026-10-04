@@ -445,7 +445,7 @@ def role_alerts(ctx: Ctx, season: int, gsis: list[str] | None = None) -> pd.Data
 
 
 # ---- IA-1: Trends in plain words — the work per game per row, and the reason in a sentence (Wave I-A)
-NEAR = 0.5            # points a game: closer than this to his work is "about what his work is worth" (web: research.ts)
+NEAR = 0.5            # points per game: closer than this to his work is "about what his work is worth" (web: research.ts)
 WORK_SQL = """
 with g as (
     select p.gsis_id, p.week, p.targets, p.carries, p.offense_snap_pct, p.snaps_known, p.red_zone_targets,
@@ -539,7 +539,7 @@ def trend_why(r: dict) -> str | None:
 
 
 def trend_work(season: int, week: int | None, ids: list[str]) -> pd.DataFrame:
-    """Per player: targets and carries a game (last 3 and the season), snap share over his last 3, red-zone chances,
+    """Per player: targets and carries per game (last 3 and the season), snap share over his last 3, red-zone chances,
     touchdowns, his share of the team's work game by game, a quarterback change this week. One query."""
     cols = ["gsis_id", "work_games", *WORK_COLS, "target_shares", "carry_shares", "qb_changed"]
     if not ids:
@@ -1228,7 +1228,7 @@ def receivers_howto(season: int, ys: dict) -> str:
     label = f"the {season} top-12"
     return (
         "- **Start the receiver the offense is built around, not last week's box score.** The yardsticks are what "
-        f"{label} at each position average (the 12 with the most points a game, one scale for every league).\n"
+        f"{label} at each position average (the 12 with the most points per game, one scale for every league).\n"
         "- **Target %** (his share of his team's targets). Why it matters: targets turn into points more reliably than anything "
         "else, and a share holds when the team throws more or less. Yardstick: the top-12 wide receivers average "
         f"{_pct(wr.get('target_share'), '28%')}, tight ends {_pct(te.get('target_share'), '21%')}; under 15% is a depth piece.\n"

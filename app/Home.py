@@ -146,10 +146,10 @@ if not mine.empty and pd.notna(mine["avg_bench_points_left"].iloc[0]):
     kb, nt = int(r["bench_rank"]), int(r["n_teams"])
     # the League page's wording for the same rank: "the most" / "the fewest", never "10th most of 10"
     bench_txt = "the most in the league" if kb == 1 else "the fewest in the league" if kb == nt else f"{ordinal(kb)} most of {nt}"
-    link(LEAGUE_PAGE, f"**Points left on your bench:** {float(r['avg_bench_points_left']):.1f} a week ({bench_txt})")
+    link(LEAGUE_PAGE, f"**Points left on your bench:** {float(r['avg_bench_points_left']):.1f} per week ({bench_txt})")
 elif not luck.dropna(subset=["avg_bench_points_left"]).empty:
     top = luck.dropna(subset=["avg_bench_points_left"]).sort_values("avg_bench_points_left", ascending=False).iloc[0]
-    link(LEAGUE_PAGE, f"**Points left on the bench:** {top['team_name']} leaves the most, {float(top['avg_bench_points_left']):.1f} a week")
+    link(LEAGUE_PAGE, f"**Points left on the bench:** {top['team_name']} leaves the most, {float(top['avg_bench_points_left']):.1f} per week")
 if roster_id is not None:
     ls = league_seasons(league_id)
     dynasty = not ls.empty and ls["league_type"].iloc[0] == "dynasty"

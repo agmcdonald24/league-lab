@@ -98,7 +98,7 @@ def _synthetic_train(n_per_season: int = 160, seed: int = 0) -> pd.DataFrame:
 
 
 def test_fit_position_fits_the_ranges_on_the_graded_actual_under_the_switch(monkeypatch):
-    """The point projection is the same either way; the residual models move by the graded extra (2 points a game)."""
+    """The point projection is the same either way; the residual models move by the graded extra (2 points per game)."""
     monkeypatch.setitem(P.HGB, "max_iter", 40)
     train = _synthetic_train()
     spec = {"t": ("t", {"rec": 1.0, "rec_yd": 0.1, "rec_td": 6.0, "rec_2pt": 2.0})}

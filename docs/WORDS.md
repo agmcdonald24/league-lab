@@ -93,7 +93,7 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | `ros_p10`–`ros_p90` (E2, weeks taken as independent) | likely: "(likely 190–273)"; the gloss "where 8 seasons in 10 would land if every week were its own roll of the dice; a role change or an injury moves the weeks together, so the real range is wider" |
 | `ros_rank_pos` (E2) | "WR4 in this league" (every player at the position, rostered or free agent); "not ranked (on injured reserve)" |
 | `weeks_with_lines` (E2) | "Only week 4 has betting lines yet: the later weeks lean on his usage and the schedule" |
-| stat-line pieces × scoring (IA-3) | "Why this number": "8.9 targets → 5.5 catches → 96 yards → 0.48 TDs → 15.4 points a game × 12 games = 185", then one line a piece ("5.5 catches × 0.5 = +2.7", "8.9 targets (no points on their own)"); what a per-unit price cannot show is its own line: "yardage bonuses (a big game pays extra in this league)" or "the small pieces and rounding" |
+| stat-line pieces × scoring (IA-3) | "Why this number": "8.9 targets → 5.5 catches → 96 yards → 0.48 TDs → 15.4 points per game × 12 games = 185", then one line a piece ("5.5 catches × 0.5 = +2.7", "8.9 targets (no points on their own)"); what a per-unit price cannot show is its own line: "yardage bonuses (a big game pays extra in this league)" or "the small pieces and rounding" |
 | market line, `market_points` (IA-3) | "Sleeper has him at 16.2." (this week, this league's scoring); under 70% / over 140% of it: "We're well under (over) the market: our number follows his recent usage. Treat it with care."; none: "Sleeper's number for this week is not in yet." |
 | `piece_columns` (IA-3) | per game, projected: Att · Pass yd · Pass TD · INT (QB); Car · Rush yd · Tgt · Rec · Rec yd · TD (RB); Tgt · Rec · Rec yd · TD (WR / TE) |
 | the rankings' honesty line (IA-3, `about.RANKINGS_HOWTO`) | "How to read the rankings": from his work, not his name; superflex / 6-point passing TDs put quarterbacks on top by design; Sleeper's number is there to compare |
@@ -102,7 +102,7 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | cornerback certainty (IB-3, `call_strength`) | **likely** (his targets lean 15+ points to one side) · **unclear** (either outside corner) · **no call**; beside the tone, never a "shutdown" badge: "the 17th-hardest of 74 starting corners to throw on" |
 | value to my lineup (IB-3, `lineup_points`) | "Value to my lineup": what he adds to your best lineup over the weeks left; one of yours = what you lose without him; "Your QB2 only plays in week 7: 16 points over your next-best there", "Your backup QB never starts for you behind Mahomes: he adds nothing to your lineup (insurance only)", "Free agent: would start for you in 12 of 13 weeks left, +20 points to your lineup" |
 | card status (IB-3, IB-0's `status`) | **Change needed** (the call is not in your Sleeper lineup) · **Already set** · **Close call** (a coin flip); the strength word: Clear · Lean · Coin flip |
-| yardstick (Receivers, U-17) | what the season's top-12 at the position (the 12 with the most points a game) average |
+| yardstick (Receivers, U-17) | what the season's top-12 at the position (the 12 with the most points per game) average |
 | combined slot `WR+TE1` (IC-2, `cards.slot_label`) | "WR/TE 1" (the league's own slot, its parts joined by a slash; "RB/WR/TE 2") |
 | team unit `TMQB` / `TMPK` (IC-2) | "team QB" / "team K" in the slot column; the player is "Kansas City Chiefs QB" / "… K" (his team's quarterbacks / kicker as one player, MyFantasyLeague's) |
 | no eligible slot (IC-2, `lineup.no_slot_reason`) | **No slot** in the list, "No slot for a K in this league" as the reason — never "Can't play" (kept for injury, bye, IR, a locked bench player) |
@@ -175,7 +175,7 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | the matchup rank, anywhere (`cards.rank_words`, `lib/words.ts rankWords`) | "2nd-fewest WR points allowed" (31 of 32) · "5th-most RB points allowed" (5) · "the most / the fewest …" | a bare "#31", or a "#" whose direction changes by screen |
 | a starter's margin (My Week's lineup) | "4.63 over Lloyd" (the bench player who would come in: `cards.alternative`) · "no eligible reserve" (the slot would be empty: the number is his whole projection, not a gap) | "Margin" with no comparator |
 | the bench expander | the bench and who can't play only | the starters again |
-| Compare's bold | the better number where it bears on the call: projected points, the low-end / high-end outcome, points a game, the rest of the season; the usage rows only between two players of the same position ("bold: the better number in points (usage is not compared across positions)") | more carries for an RB bolded against a WR |
+| Compare's bold | the better number where it bears on the call: projected points, the low-end / high-end outcome, points per game, the rest of the season; the usage rows only between two players of the same position ("bold: the better number in points (usage is not compared across positions)") | more carries for an RB bolded against a WR |
 | Compare's sections | "This season (2 games)" — the sample size once; the "Last 3 games" section dropped when it is the same games | the same numbers twice |
 | the range, everywhere (Compare, About, Waivers, the console's cards) | **Typical range** (the middle 50% of outcomes) · **Low-end / high-end outcome** | "most weeks", "floor", "ceiling" on a page |
 | the role line (card, pane) | before his fourth game "Role: **not enough games to say** — 2 games so far; a change is called against his own earlier games, from his fourth game."; after it "Role: **role steady over N games** — …" | "no role change detected" beside "not enough games" |
@@ -273,6 +273,56 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | ESPN / Yahoo (`other-platforms`) | "Not supported yet." and why in one sentence each (ESPN: only your login cookies, which we will not ask for; Yahoo: an approved app and your Yahoo sign-in) | a "coming soon" badge, a disabled ESPN button, "supported" for anything not built |
 | setup errors (`ondemand.SetupError`, the API's `code`) | `sleeper_user_unknown` "That Sleeper username does not exist: “x”." + the fix · `sleeper_username_invalid` "“x” cannot be a Sleeper username: they are letters, numbers and _ . - only." · `sleeper_league_unknown` "Sleeper has no football league 123…." · `sleeper_link_invalid` "That is not a Sleeper league link or id." · `mfl_league_private` "MFL league 70587 is private or does not exist. Ask the commissioner to allow API access to the league's data (MFL's league setup, the privacy option)." · `mfl_link_invalid` "That is not a MyFantasyLeague league link or id." — each with one line of what to do next (`fix`) | "Not found", "invalid input", an HTTP code, blaming the user |
 | what a platform gives (`platforms.capabilities`) | "What isuckatfantasy reads from MFL leagues — 1 not available yet" · Yes / Partly / Not yet · "Transactions: not available for MFL leagues yet." wherever a screen would otherwise show an empty list (League's Latest moves) | an empty list or "No completed moves" for data we do not read; a substitute from another source without saying so |
+
+## The copy standard (Wave I-I, II-4: the fifth review § 5–8)
+
+*(II-4 owns this section; the other tasks add rows to theirs.)* One way to say a rate, everywhere — headings, chart
+labels, tooltips, summaries, accessibility labels and generated text, the console too:
+
+1. **Rates say "per"**: **per game**, **per target**, **per route run**, **per attempt**, **per carry**, **per week**
+   ("8.9 targets per game", "yards per target", "+2.1 per week", "−1.2 per team per week"). Never "targets a game", <!-- copy-standard: keep -->
+   "points a game", "yards a target", "a team a week". A noun stays a noun ("a game in progress", "they share a game"). <!-- copy-standard: keep -->
+   Compact headers keep an abbreviation (Tgt/g, Car/g, YPRR) with the full name and definition in the tooltip.
+2. **Every rate names its denominator and how it adds up.** A share over several games is the **summed numerator ÷
+   the summed denominator over the same games** — never the average of weekly percentages.
+3. **A window says what it counts**: games played vs calendar weeks; a "last 5" with three games played says
+   "3 games", never five.
+4. **The help layer carries the sample** (games), **the source and coverage**, and **the refresh time**.
+5. **A share says share of what** (carries, targets, opportunities) and where (the red zone: inside the opponent's 20).
+6. **Expected points** is the opportunity-based estimate (what his targets and carries are usually worth); **projected
+   points** is the forecast for a coming week. Never one for the other.
+7. The sweep: `scripts/copy_standard.py` rewrites rate phrasing in every user-facing file and the tests that pin it
+   (idempotent; `--check` exits 1 while any is left). Run it after a merge.
+
+| Label | Meaning (numerator ÷ denominator) | How it adds up | What we have |
+|---|---|---|---|
+| Receiving yards per game | his receiving yards ÷ the games he played (a game counts when he took an offensive snap or had a pass, carry, target or kick: `fct_player_game.played`) | summed yards ÷ games played in the window | verified present (nflverse weekly stats) |
+| Target share | his targets ÷ his team's targets in the games he played (games he missed are out of both) | summed ÷ summed | verified present |
+| Carry share | his rush attempts ÷ his team's rush attempts in the games he played — every rusher, quarterbacks included, as nflverse's weekly stats count them; kneel-downs are not removed by us | summed ÷ summed | verified present (the card's tile has this definition: Kyren Williams's 47.5%) |
+| RB backfield carry share | his carries ÷ his team's running backs' carries in the same games — **apart** from carry share, which counts every rusher | summed ÷ summed | planned (not computed today) |
+| Route participation | routes run ÷ team dropbacks in the games with participation data | summed ÷ summed | the participation **proxy** only (nflverse participation ends at 2025; unavailable in-season) — labelled as a proxy where shown |
+| Targets per route run | targets ÷ routes run, both from the same games with route data | summed ÷ summed | proxy, 2025 and before; unavailable in-season |
+| Yards per route run | receiving yards ÷ routes run, the same games | summed ÷ summed | proxy, 2025 and before; unavailable in-season |
+| First-read target share | his first-read targets ÷ his team's charted first-read targets (FTN charting, from 2022; 2026 weeks 1–3) | summed ÷ summed, with the charting coverage beside it | derived from charted targeted plays — it is not every first-read assignment, and the words never imply it |
+| Red-zone share | **red-zone carry share** (RB, QB: his carries inside the opponent's 20 ÷ his team's) or **red-zone target share** (WR, TE: targets inside the 20 ÷ the team's) — never a combined percentage | summed ÷ summed | verified present (play-by-play) |
+| Expected fantasy points | what his targets and carries are usually worth (depth, field position), in the league's scoring — an opportunity-based estimate of the past | per game over the games played | verified present |
+| Projected points | the forecast for a coming week in the league's scoring (the range beside it) | one week; rest of season = the sum of the weeks left | verified present |
+
+### Season, news and the home (review § 6–8)
+
+| Where | The words we use | Never |
+|---|---|---|
+| Season's three views (`/api/ros?view=`) | **My roster outlook** (default): "Your players only. Each number is what your best lineup loses over the weeks left without him …" · **Potential upgrades**: "Before acquisition cost: what each player would add to your best lineup … with nobody dropped and nothing sent … This is not his trade value." + "Not included: the drop a free agent needs, the players a trade sends, a waiver claim that might be lost." · **Rest-of-season projections**: "Projected points in this league's scoring over the weeks left, whoever rosters him: no roster, no lineup and no cost considered." | "Value to my lineup" over everyone at once; a hypothetical starter-point gain called trade value or market value |
+| injury cover (My roster outlook, a reserve) | "Injury cover: if a starting RB misses a week, he projects +2.3 per week over the best free agent (6 bench weeks; not counted in his value above)." | adding cover into the lineup value |
+| an upgrade's next step | "Free agent: compare the add / drop on Waivers (the drop is the cost) ›" · "On Run Bijan Run: price a trade (what you send is subtracted) ›" | a trade value |
+| a news item's decision status | **Recommendation changed** · **Watch for confirmation** · **No action currently indicated** | "act now", a probability |
+| its forecast status | "Included in the current projection: the injury report's status is applied to this week" — only with a recorded update (the overlay's applied status, or the report already in the rows) · "Context only: not in the projection" (news, briefs; "a Questionable tag does not change the projection"; a recap: "a game already played is in his stats") · "Update pending: the next injury check may move his projection" (an injury item newer than the last check) | "included" for a headline alone; counting an injury twice (the item and the status) |
+| why it matters here | "Starts at WR1 in your best lineup this week" · "In the lineup you submitted, and he cannot play this week" · "On your bench this week" | — |
+| the home's clocks (the footer) | "Data built 1 d ago · Injuries checked 3:32 PM ET · News 2 h ago ›" (the exact times on tap) | "Updated 1 d ago" alone; a stale warning (PO 2026-10-04: never tell users the data is stale) |
+| Waivers' top claims | each card labelled **Helps this week (+3.0)** / **Covers a bye in week 7** / **Helps from week 6** / **Upside stash: no lineup gain yet**; the intro "The three strongest claims below: 2 help this week, 1 covers a bye (week 7). Each card's total is its gain over weeks 4–7."; "Vele and Schultz compete for the same roster spot (each drops McConkey): claim one of them." | "each with what it adds this week" when one adds nothing this week |
+| Team | **Depth (bench lineup)**: "the best legal lineup your bench alone could field this week if every starter sat: usable depth, not raw bench points" | "Depth (the bench alone)" undefined |
+| League | "Past luck says nothing about the weeks left: they depend on your points and the schedule ahead." · **Points left on the bench (hindsight)**: "the best lineup *knowing the final scores* … hindsight, not an avoidable mistake" | "It evens out over a season" |
+| the player card's role line | "Upside: no additional modeled upside scenario available." | "Upside: nothing beyond the projection above" (an absent scenario is not an absence of upside) |
 
 ## Adding to it
 

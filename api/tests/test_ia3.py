@@ -2,7 +2,7 @@
 
 * The pieces add up: for ten rows of each fixture league (League of Scrubs: the house path, per-week lines from
   mart_player_week_projections; the dynasty: yardage bonuses; the fictional Test League: on demand, anyleague's
-  ros_<stat> sums), the listed pieces sum to the points a game to the cent, the points a game x games is the rest
+  ros_<stat> sums), the listed pieces sum to the points per game to the cent, the points per game x games is the rest
   of season total, and in a scoring without bonuses the per-unit prices explain the number with no remainder line.
 * The market: `market_points` is None everywhere when the market mart is not built (this clone), when it is empty,
   and when its read fails — never an exception; present, priced in the league's own scoring, for the players a
@@ -49,7 +49,7 @@ def test_explain_adds_up_and_says_the_chain():
     e = why.explain(line, pts, SCRUBS_SCORING, "WR", games=12, total=pts * 12)
     assert abs(sum(p["points"] for p in e["pieces"]) - pts) < 0.011
     assert e["sentence"].startswith("8.9 targets → 5.5 catches → 96 yards → 0.48 TDs → ")
-    assert e["sentence"].endswith(f"points a game × 12 games = {pts * 12:.0f}")
+    assert e["sentence"].endswith(f"points per game × 12 games = {pts * 12:.0f}")
     words = [p["words"] for p in e["pieces"]]
     assert "5.5 catches × 0.5 = +2.7" in words and "8.9 targets (no points on their own)" in words
     assert "0.20 carries (no points on their own)" not in words                     # worth nothing here: left out
@@ -82,7 +82,7 @@ def test_the_honesty_paragraph_is_one_text():
     assert "".join(ast.literal_eval(x) for x in re.findall(r'"(?:[^"\\]|\\.)*"', body)) == about.RANKINGS_HOWTO
     t = about.RANKINGS_HOWTO
     # Andrew's examples: Dak #1 / Kyler #3 (superflex, 6-point passing TDs), Brissett top-8 (a starter's volume)
-    for words in ("not his name", "superflex", "6 points for a passing touchdown", "throws 35 times a game",
+    for words in ("not his name", "superflex", "6 points for a passing touchdown", "throws 35 times per game",
                   "volume beats reputation", "Sleeper's own number"):
         assert words in t
 
@@ -98,7 +98,7 @@ def _check_rows(rows: list[dict], *, no_rest: bool) -> int:
         assert abs(w["points"] * p["ros_games"] - p["ros_points"]) < 0.02 * p["ros_games"], p["player_name"]
         assert w["total"] == pytest.approx(p["ros_points"]) and w["games"] == p["ros_games"]
         if no_rest:          # no bonuses in this scoring: the per-unit prices explain the number (a remainder line
-            # is only the pieces too small to list, each under 0.05 a game, and the cents)
+            # is only the pieces too small to list, each under 0.05 per game, and the cents)
             assert all(abs(x["points"]) < 0.15 for x in w["pieces"] if x["stat"] == "rest"), (p["player_name"], w["pieces"])
         assert set(p["per_game"]) == set(why.COLUMNS[p["position"]])
         n += 1

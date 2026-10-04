@@ -19440,5 +19440,218 @@
    "words": "Week 2 check: we match the league's own points for 144 of 144 players within 1 point (100%), 144 to the tenth.",
    "name": "Test League"
   }
+ },
+ "/api/ros?league=mfl%3A70587&limit=50&position=ALL&team=1&view=outlook": {
+  "status": 200,
+  "body": {
+   "league_id": "mfl:70587",
+   "source": "sleeper",
+   "position": "ALL",
+   "view": "outlook",
+   "team": 1,
+   "who": "all",
+   "from_week": 4,
+   "last_week": 18,
+   "playoff_week_start": 15,
+   "lines_note": "Only week 4 has betting lines yet: the later weeks lean on usage and the schedule.",
+   "pos_rank_note": "pos_rank is the player's rank at his position among every projected player on an active NFL roster in this league's scoring, rostered or not (mart_player_ros_projection's population)",
+   "window": {
+    "first": 4,
+    "last": 18,
+    "weeks": 15,
+    "span": "weeks 4–18"
+   },
+   "lineup_note": "Value to your lineup: what each player adds to your best lineup over the weeks left, week by week. For one of yours, what your lineup loses without him (his edge over the next-best who would start instead); for anyone else, what he would add if he were on your roster, nobody dropped. A backup who never starts adds nothing, however many points he scores somewhere else.",
+   "piece_columns": {
+    "QB": [
+     "attempts",
+     "passing_yards",
+     "passing_tds",
+     "passing_interceptions"
+    ],
+    "RB": [
+     "carries",
+     "rushing_yards",
+     "targets",
+     "receptions",
+     "receiving_yards",
+     "tds"
+    ],
+    "WR": [
+     "targets",
+     "receptions",
+     "receiving_yards",
+     "tds"
+    ],
+    "TE": [
+     "targets",
+     "receptions",
+     "receiving_yards",
+     "tds"
+    ]
+   },
+   "howto_rankings": "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are down reads lower than his name; a quarterback who starts and throws 35 times a game counts like any starter while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where ours is far from it, open his card and read why before you trade on it.",
+   "leans_on": {
+    "QB": {
+     "features": [
+      "is he the projected starter?",
+      "points Vegas expects his team to score",
+      "pass attempts per game, last 3 games"
+     ],
+     "words": "For QBs the model leans most on **is he the projected starter?**. Next: points Vegas expects his team to score · pass attempts per game, last 3 games.",
+     "scored_in": "League of Scrubs"
+    },
+    "RB": {
+     "features": [
+      "share of his team's carries, last 3 games",
+      "rushing yards per game, season",
+      "share of his team's targets, season"
+     ],
+     "words": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: rushing yards per game, season · share of his team's targets, season.",
+     "scored_in": "League of Scrubs"
+    },
+    "WR": {
+     "features": [
+      "snap share, last 3 games",
+      "expected points per game (what his touches are worth), season",
+      "receiving yards per game, last season"
+     ],
+     "words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+     "scored_in": "League of Scrubs"
+    },
+    "TE": {
+     "features": [
+      "share of his team's targets, season",
+      "snap share, last 3 games",
+      "receiving yards per game, last season"
+     ],
+     "words": "For TEs the model leans most on **share of his team's targets, season**. Next: snap share, last 3 games · receiving yards per game, last season.",
+     "scored_in": "League of Scrubs"
+    }
+   },
+   "market_week": 4,
+   "market_note": null,
+   "players": [
+    {
+     "gsis_id": "00-0038120",
+     "player_key": "00-0038120",
+     "player_name": "Breece Hall",
+     "position": "RB",
+     "team": "NYJ",
+     "ros_points": 200.86,
+     "ros_games": 14,
+     "playoff_points": 57.42,
+     "p10": 158.7,
+     "p90": 243,
+     "pos_rank": 12,
+     "rostered_by_roster_id": 1,
+     "rostered_by_team": "Knight Train",
+     "unit": false,
+     "injury_status": "Out",
+     "lineup_points": 69.18,
+     "lineup_weeks": 13,
+     "lineup_kind": "mine",
+     "lineup_why": "Starts for you in 13 of 15 weeks left: 69 points more than your next-best option.",
+     "lineup_rank": 25,
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
+     "bye_weeks": [
+      13
+     ],
+     "ros_points_per_game": 14.35,
+     "per_game": {
+      "carries": 16.04,
+      "rushing_yards": 67.16,
+      "targets": 3.46,
+      "receptions": 2.78,
+      "receiving_yards": 19.27,
+      "tds": 0.68
+     },
+     "why": {
+      "per": "game",
+      "points": 14.35,
+      "pieces": [
+       {
+        "stat": "carries",
+        "label": "carries",
+        "value": 16.04,
+        "each": 0,
+        "points": 0,
+        "words": "16.0 carries (no points on their own)"
+       },
+       {
+        "stat": "rushing_yards",
+        "label": "rushing yards",
+        "value": 67.16,
+        "each": 0.1,
+        "points": 6.72,
+        "words": "67 rushing yards × 0.1 = +6.7"
+       },
+       {
+        "stat": "rushing_tds",
+        "label": "rushing TDs",
+        "value": 0.6,
+        "each": 6.9871,
+        "points": 4.2,
+        "words": "0.60 rushing TDs × 6.98715 = +4.2"
+       },
+       {
+        "stat": "targets",
+        "label": "targets",
+        "value": 3.46,
+        "each": 0,
+        "points": 0,
+        "words": "3.5 targets (no points on their own)"
+       },
+       {
+        "stat": "receptions",
+        "label": "catches",
+        "value": 2.78,
+        "each": 0,
+        "points": 0,
+        "words": "2.8 catches (no points on their own)"
+       },
+       {
+        "stat": "receiving_yards",
+        "label": "receiving yards",
+        "value": 19.27,
+        "each": 0.1,
+        "points": 1.93,
+        "words": "19.3 receiving yards × 0.1 = +1.9"
+       },
+       {
+        "stat": "receiving_tds",
+        "label": "receiving TDs",
+        "value": 0.08,
+        "each": 7.82,
+        "points": 0.64,
+        "words": "0.08 receiving TDs × 7.81995 = +0.6"
+       },
+       {
+        "stat": "fumbles_lost_total",
+        "label": "fumbles lost",
+        "value": 0.09,
+        "each": -3,
+        "points": -0.28,
+        "words": "0.09 fumbles lost × -3 = -0.3"
+       },
+       {
+        "stat": "rest",
+        "label": "yardage bonuses (a big game pays extra in this league)",
+        "value": null,
+        "each": null,
+        "points": 1.14,
+        "words": "yardage bonuses (a big game pays extra in this league): +1.1"
+       }
+      ],
+      "sentence": "16.0 carries → 67 rush yards → 3.5 targets → 2.8 catches → 19.3 yards → 0.68 TDs → 14.3 points a game × 14 games = 201",
+      "games": 14,
+      "total": 200.86
+     },
+     "market_points": null,
+     "week_points": 12.84,
+     "market_words": null
+    }
+   ]
+  }
  }
 }

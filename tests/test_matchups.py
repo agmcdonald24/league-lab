@@ -235,7 +235,7 @@ def test_cover_split_by_hand():
     assert s.loc["a", "ppg_vs_shutdown"] == 11.0 and s.loc["a", "games_vs_shutdown"] == 2
     assert s.loc["a", "ppg_vs_rest"] == round((20 + 30 + 8) / 3, 1) and s.loc["a", "games_vs_rest"] == 3   # unranked counts as rest
     assert pd.isna(s.loc["b", "ppg_vs_shutdown"]) and s.loc["b", "games_vs_shutdown"] == 0
-    assert cover_split_text(s.loc["b"]) == "vs shutdown corners no games, vs the rest 6.0 a game (2 games)"
+    assert cover_split_text(s.loc["b"]) == "vs shutdown corners no games, vs the rest 6.0 per game (2 games)"
     assert cover_split(pd.DataFrame()).empty
 
 

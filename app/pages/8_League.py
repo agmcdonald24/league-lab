@@ -160,8 +160,8 @@ else:
     howto("**Schedule luck**: each roster's win rate if it had played every other roster every week is the record its points deserve; "
           "luck is actual wins minus those expected wins. A 2-0 team with a big negative luck number is scoring like a 1-1 team and has been "
           "getting favourable draws.",
-          "**Points left on the bench** is how much a better lineup would have added. High numbers mark managers who don't sweat start/sit — "
-          "useful to know when you are trading with them.",
+          "**Points left on the bench (hindsight)** is how much the best lineup knowing the final scores would have added: hindsight, "  # II-4
+          "not an avoidable mistake. High numbers over many weeks mark managers who don't sweat start/sit — useful when trading with them.",
           "**Weekly scoring rank**: each cell is where the roster's score ranked that week (1 = top scorer, darker = better). A roster that keeps "
           "landing in the top half but keeps losing is unlucky; the opposite is riding a soft schedule.",
           title="How to read this")

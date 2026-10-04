@@ -108,7 +108,7 @@ def test_one_qb_and_superflex_value_the_qb3_differently():
 
 def test_later_starts_count_above_the_wire_only():
     """After the horizon the bench WR starts once (a starter's bye): 9 against the wire's 30/(6−1) = 6-point WR costs 3;
-    a K who starts every later week below the best free K (120/5 = 24 a week) costs nothing (the wire covers him)."""
+    a K who starts every later week below the best free K (120/5 = 24 per week) costs nothing (the wire covers him)."""
     bye = [p for p in roster() if p.id != "wr"] + [P("wr", "WR", None, playable=False, reason="bye")]
     rows = sweep(roster(), {"kfa": ("K", 8.0)}, market={"g-wrb": 99.0, "g-k": 90.0, "g-rbb": 30.0, "g-teb": 10.0},
                  replacement={"WR": 30.0, "K": 120.0, "RB": 90.0, "TE": 80.0}, post=[bye, roster()])
@@ -119,7 +119,7 @@ def test_later_starts_count_above_the_wire_only():
 
 
 def test_no_worthwhile_move_when_the_net_gain_is_small():
-    """A +0.5 a week claim (2.0 over the horizon) that must drop someone: not worth a roster spot (under 1 this week,
+    """A +0.5 per week claim (2.0 over the horizon) that must drop someone: not worth a roster spot (under 1 this week,
     under 3 over the horizon); the rows say so."""
     rows = sweep(roster(k_value=7.5), {"kfa": ("K", 8.0)}, market={"g-wrb": 99.0, "g-k": 90.0, "g-rbb": 30.0, "g-teb": 10.0},
                  replacement={"WR": 100.0, "K": 120.0, "RB": 90.0, "TE": 80.0})

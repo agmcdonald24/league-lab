@@ -1,7 +1,7 @@
 <script lang="ts">
   // Research · Trends (Wave G; IA-1's words): below and above expectation. The answer first — who scores below what his
   // work is worth and who scores above it, with the reason — then every player as a row with his gap as a bar (actual minus expected
-  // points a game, this league's scoring), his work a game under it (IA-1: targets and carries, last 3 and the season,
+  // points per game, this league's scoring), his work per game under it (IA-1: targets and carries, last 3 and the season,
   // snaps, expected and actual points) and the reason in a sentence; filters for the view, the position and whose players. From 900 px the
   // picked player's detail sits on the right: his card, the two numbers as bars, his role alert, his last 3 games, his
   // points by week. GET /api/trends (mart_player_trend_tags + actual vs expected + role alerts).
@@ -107,7 +107,7 @@
       {#if r.data && (due || hot)}
         {#if due}<strong>Below expectation: {due.player_name}</strong> ({lower(whyLine(due))}).{/if}
         {#if hot}<strong>Above expectation: {hot.player_name}</strong> ({lower(whyLine(hot))}).{/if}
-        Points a game in {leagueName} scoring.
+        Points per game in {leagueName} scoring.
       {:else if r.data}
         Nobody here scores far from what his work is worth yet.
       {/if}
@@ -167,11 +167,11 @@
           </header>
           <!-- IA-1: the row's numbers, one header for the list (each row: last 3 games, the season in brackets) -->
           <div class="grid grid-cols-5 gap-1 border-b border-line py-1.5 pr-3 pl-16 ll-label" data-testid="trend-stats-head">
-            <span title="Targets a game: his last 3 games (the season)">Tgt/g</span>
-            <span title="Carries a game: his last 3 games (the season)">Car/g</span>
+            <span title="Targets per game: his last 3 games (the season)">Tgt/g</span>
+            <span title="Carries per game: his last 3 games (the season)">Car/g</span>
             <span title="Share of his team's plays he was on the field for, last 3 games">Snaps</span>
             <span title="Points suggested by his past opportunities: what his targets and carries are usually worth">Exp</span>
-            <span title="Points a game, this league's scoring">Pts</span>
+            <span title="Points per game, this league's scoring">Pts</span>
           </div>
           {#if rows.length === 0}
             <p class="p-4 text-base text-ink-2" data-testid="trends-empty">No player matches these filters.</p>
@@ -214,7 +214,7 @@
               {#snippet extra()}
                 {@const top = Math.max(picked.ppg ?? 0, picked.xppg ?? 0) * 1.15 || 1}
                 <div class="space-y-2.5">
-                  <Bar label="Points a game" value={picked.ppg} max={top} display={fmt.pts(picked.ppg)} color={SERIES.actual} />
+                  <Bar label="Points per game" value={picked.ppg} max={top} display={fmt.pts(picked.ppg)} color={SERIES.actual} />
                   <Bar label="Points suggested by his past opportunities" value={picked.xppg} max={top} display={fmt.pts(picked.xppg)} color={SERIES.expected} />
                 </div>
               {/snippet}
@@ -244,9 +244,9 @@
           block
           text={"- **Below expectation** scores less than his opportunities suggest: his targets and carries usually bring more points. That is what happened, not a forecast — the gap may close or not; a buy needs a price, which this screen does not have.\n" +
             "- **Above expectation** scores more than his opportunities suggest (touchdowns, a big play). It may not last; whether to sell depends on what he would fetch.\n" +
-            "- **Points suggested by his past opportunities** (expected points a game) is what his targets and carries are usually worth, in your league's scoring; the bar is points a game minus that.\n" +
+            "- **Points suggested by his past opportunities** (expected points per game) is what his targets and carries are usually worth, in your league's scoring; the bar is points per game minus that.\n" +
             "- **The sentence under each name** says what his work is worth, what he scores, and one reason the numbers show: touchdowns against red-zone chances, a quarterback change, his share of his team's targets or carries moving. No reason means nothing stands out yet.\n" +
-            "- **Tgt/g, Car/g**: targets and carries a game over his last 3 games, the season in brackets. **Snaps**: his share of his team's plays over the last 3. **Exp, Pts**: expected and actual points a game.\n" +
+            "- **Tgt/g, Car/g**: targets and carries per game over his last 3 games, the season in brackets. **Snaps**: his share of his team's plays over the last 3. **Exp, Pts**: expected and actual points per game.\n" +
             "- Three games is a small sample: a gap is a question to look into, not a verdict. Tap a name for his card and his points week by week."}
         />
       </div>

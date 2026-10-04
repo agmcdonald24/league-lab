@@ -63,7 +63,7 @@ export function aboutSections(leagueName: string): AboutSection[] {
       text:
         "**Kept: who plays next to him.** The model knows who is starting at quarterback this week (and whether that is the quarterback a player's recent games were " +
         "played with), and whether his team's top target or top ball carrier is out. Graded the same way on 2021 to 2025, the quarterback order score went up by " +
-        "0.045 in every one of the five seasons and the average miss fell by about half a point a game; for running backs, receivers and tight ends the " +
+        "0.045 in every one of the five seasons and the average miss fell by about half a point per game; for running backs, receivers and tight ends the " +
         "top-teammate-out inputs add about 0.005 to the order score, in every season tested.  \n" +
         "**Left out**: the kickoff time and rest days, the weather, how fast and how often a team throws, injuries on the offensive line and a player's own injury " +
         "history. None made the projections better on seasons they had not seen (Vegas lines already price most of it). We keep a new input only when it helps in " +

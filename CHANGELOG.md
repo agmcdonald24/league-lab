@@ -50,6 +50,17 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   most, not built, never login cookies; Yahoo: after accounts and Yahoo's approval) and `docs/ACCOUNTS.md` (the model;
   sign-in by an emailed link, ~$0 at beta scale).
 
+- **II-4 — the copy standard, Season's three views, news as a decision feed.** Rates say "per game / per target / per
+  week" everywhere (`scripts/copy_standard.py`, WORDS.md § "The copy standard" with each metric's denominator; Carry
+  share defined on the card). Season is **My roster outlook** (default) / **Potential upgrades** (before acquisition
+  cost: the add / drop or the trade is the next step) / **Rest-of-season projections**, each with its counterfactual
+  said — the numbers unchanged; injury cover apart. My Week's "What changed" items say the decision status
+  (Recommendation changed / Watch for confirmation / No action currently indicated), the forecast status ("Included
+  in the current projection" only with a recorded update; context only; update pending), why it matters here and the
+  next step; the home runs decisions → changes → lineup status; three clocks (data built · injuries checked · news),
+  never a stale warning. Waivers' top claims say when they help (this week / a bye / later / stash) and name the
+  claims competing for one spot; Team's depth defined; League's luck and hindsight words.
+
 ## 2026-10-04 — Wave I-H
 
 - **PO (integration).** Five packages merged (M6, V-2, IH-1, IH-2, IH-3 below). On Andrew's word the stale banner

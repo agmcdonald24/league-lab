@@ -91,7 +91,7 @@
     "- **Lineup value** is the projected points of the best lineup you can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. The rank next to it is where that puts you in the league.\n" +
     "- **Margin** is how much your lineup loses without that starter. The smallest one is your **closest call**: check the news on those two players before kickoff.\n" +
     "- **Next 4 weeks** adds up your best lineup for each of the next four weeks, byes and injuries included. Low here but high this week? Look for cover now.\n" +
-    "- **Depth** is the lineup your bench alone could put out. Low depth means one injury hurts: a trade or a claim for a starter matters more to you than to most.\n" +
+    "- **Depth (bench lineup)** is the best legal lineup your bench alone could field this week if every starter sat: usable depth, not raw bench points — a surplus at one position counts only as far as it fits a slot. Low depth means one injury hurts: a trade or a claim for a starter matters more to you than to most.\n" + // ---- II-4
     "- **By slot**: each starting slot apart (RB1 and RB2, each FLEX): the player you start there, his projected points, against the player every other team starts at the same slot — the league's average (the tick) and its best (the end of the scale). An orange bar is below the average: that is where a claim or a trade helps most. Under the bars: each position's starters added up, and usable depth — the best lineup your bench alone could field, not the bench's raw points."; // ---- II-0
 
   function rowContext(r: TeamRosterRow): string {
@@ -136,7 +136,8 @@
     <div class="grid grid-cols-2 gap-2 wide:grid-cols-4" data-testid="team-tiles">
       <StatTile label="Lineup value" value={f1(data.value.lineup_value)} caption={rank("lineup_value") ? `${ordinal(rank("lineup_value")!.league_rank)} of ${rank("lineup_value")!.n_rosters} · ${data.value.week_label}` : null} size="lg" />
       <StatTile label={`Next ${data.value.horizon_weeks} weeks`} value={f1(data.value.horizon_value)} caption={rank("horizon_value") ? `${ordinal(rank("horizon_value")!.league_rank)} of ${rank("horizon_value")!.n_rosters} · ${data.value.horizon_label}` : null} size="lg" />
-      <StatTile label="Depth (the bench alone)" value={f1(data.value.bench_value)} caption={rank("bench_value") ? `${ordinal(rank("bench_value")!.league_rank)} of ${rank("bench_value")!.n_rosters}` : null} size="lg" />
+      <!-- ---- II-4: usable depth, defined (the best legal lineup the bench fields; not raw bench points) -->
+      <StatTile label="Depth (bench lineup)" value={f1(data.value.bench_value)} caption={rank("bench_value") ? `${ordinal(rank("bench_value")!.league_rank)} of ${rank("bench_value")!.n_rosters} · best legal lineup from the bench` : "best legal lineup from the bench"} size="lg" />
       <StatTile
         label="Record"
         value={data.season ? `${data.season.wins}-${data.season.losses}` : "—"}
@@ -386,7 +387,7 @@
           <p class="text-sm text-ink-2" data-testid="team-season">
             Season so far: {data.season.wins}-{data.season.losses}{data.season.all_play_win_pct != null ? ` · against everyone ${fmt.pct(data.season.all_play_win_pct)}` : ""}{data.season.luck_wins != null
               ? ` · luck ${data.season.luck_wins > 0 ? "+" : ""}${data.season.luck_wins.toFixed(2)} wins`
-              : ""}{data.season.avg_bench_points_left != null ? ` · ${f1(data.season.avg_bench_points_left)} a week left on the bench` : ""}.
+              : ""}{data.season.avg_bench_points_left != null ? ` · ${f1(data.season.avg_bench_points_left)} per week left on the bench (hindsight)` /* II-4 */ : ""}.
             <a class="ll-link" href={withContext("/league", ctx)}>The whole league</a>
           </p>
         {/if}

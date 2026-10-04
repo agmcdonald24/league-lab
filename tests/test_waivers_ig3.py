@@ -65,13 +65,13 @@ def test_a_bench_player_worth_keeping_is_not_the_free_drop():
 
 
 def test_claim_when_worth_a_roster_spot_if_it_holds():
-    """+2 a week for three weeks (6 over the horizon) clears the 3-point bar: claim, dropping the free bench player."""
+    """+2 per week for three weeks (6 over the horizon) clears the 3-point bar: claim, dropping the free bench player."""
     s = stash(11.0, pieces(bn2_value=30.0))
     assert s.choice["stash_action"] == "claim"
 
 
 def test_watch_when_under_the_bar():
-    """+0.5 a week if it holds (1.5 over the horizon): under 1 this week and 3 over the weeks — watch, no claim yet."""
+    """+0.5 per week if it holds (1.5 over the horizon): under 1 this week and 3 over the weeks — watch, no claim yet."""
     s = stash(9.5, pieces())
     assert s.holds_gains == pytest.approx((0.5, 0.5, 0.5, 0.0))
     assert s.choice["stash_action"] == "watch" and s.choice["net_horizon_gain"] == pytest.approx(1.5)

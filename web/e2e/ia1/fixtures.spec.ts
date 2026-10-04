@@ -91,7 +91,7 @@ test("My Week: the Test League's cards say why (a role, a matchup, a close call)
   await page.screenshot({ path: join(SHOTS, `ia1_week_test_${info.project.name}.png`), fullPage: false });
 });
 
-test("Trends: below and above expectation, the work a game on every row, the reason in a sentence", async ({ page, isMobile }, info) => {
+test("Trends: below and above expectation, the work per game on every row, the reason in a sentence", async ({ page, isMobile }, info) => {
   const t = fixture(`trends_${DYNASTY}.json`);
   await page.goto(dyn("/trends"));
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Below and above expectation");
