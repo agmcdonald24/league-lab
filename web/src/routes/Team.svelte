@@ -82,6 +82,7 @@
     const where = r.role === "starter" ? slotLabel(r.slot) + (r.is_locked ? " · locked" : "") : r.role === "bench" ? "Bench" : (REASON[r.reason ?? ""] ?? r.reason ?? "Out");
     const bits = [where];
     if (r.role === "starter" && r.margin != null) bits.push(`margin ${f2(r.margin)}`);
+    if (r.no_projection) bits.push("no projection"); // ---- IG-1: the dash in the number says it too
     if (r.report_status === "Questionable") bits.push("Questionable");
     if (r.acquired) bits.push(r.acquired);
     return bits.join(" · ");

@@ -220,3 +220,14 @@ export function matchupBlocks(d: Pick<PlayerCard, "matchup_evidence">): Block[] 
   return out;
 }
 // ---- end IF-3
+
+// ---- IG-1 (Wave I-G, AGENTS.md rule 5 "unknown is not zero"): a player with no projection row shows a dash and the
+// words "no projection" (the dictionary row), never "0.00"; the API sends null (INTERFACES.md § IG-1)
+export const NO_PROJECTION = "no projection";
+export const NO_PROJECTION_TITLE = "No projection for him this week: unknown, not 0";
+
+/** 12.34 / "—" for no number (unknown is not zero). */
+export function projText(v: number | null | undefined, digits = 2): string {
+  return v === null || v === undefined || Number.isNaN(v) ? "—" : v.toFixed(digits);
+}
+// ---- end IG-1
