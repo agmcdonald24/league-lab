@@ -24,7 +24,9 @@ def test_health_reports_the_version_and_the_databases_as_of(client, sql, fresh_h
     body = r.json()
     newest = sql("select max(fitted_at) as t from ops.projections")[0]["t"]
     assert body == {"ok": True, "version": "2026-10-02.h0", "as_of": newest.isoformat(),
-                    "board_source": body["board_source"], "database": "ok"}
+                    "board_source": body["board_source"], "database": "ok",
+                    "stale": body["stale"], "age_hours": body["age_hours"]}     # ---- IH-1: test_ih1.py pins these two
+    assert isinstance(body["stale"], bool) and body["age_hours"] >= 0
     assert body["board_source"] in ("auto", "nfl_wide", "borrow")
 
 

@@ -8,6 +8,19 @@ from lib.ui import setup
 
 setup("Data Status", icon="🧪")
 
+# ---- IH-1 (Wave I-H): the stale state, in the web app's words (league_lab/freshness.py: the newest projections'
+# fitted_at older than 30 hours = a missed morning update). The console reads only the nightly's rows, so its tail
+# says the injury tags are from that update too (the web app's overlay keeps reading the injury feeds live).
+from league_lab.freshness import nightly_state  # noqa: E402
+
+_asof = query("select max(fitted_at) as t from ops.projections")
+_nightly = nightly_state(None if _asof.empty or pd.isna(_asof["t"].iloc[0]) else pd.Timestamp(_asof["t"].iloc[0]),
+                         console=True)
+if _nightly["stale"]:
+    st.warning(f"{_nightly['words']} (The projections were last refit {_nightly['age_hours']:.0f} hours ago; "
+               f"the line shows after {_nightly['limit_hours']}.)")
+# ---- end IH-1
+
 st.subheader("Sources")
 howto("One row per source League Lab reads (NFL stats, Sleeper, charting). **Last loaded** says how fresh each one is.",
       "**Last status** is the latest attempt. A failed attempt never replaces good data, so a failure here means the numbers are "

@@ -65,3 +65,19 @@ grant select, insert on events.events to league_lab_app;
 grant update (superseded_by) on events.events to league_lab_app;
 grant usage on sequence events.events_id_seq to league_lab_app;
 revoke delete, truncate, references, trigger on events.events from league_lab_app;
+
+-- ---- IH-1 (Wave I-H): retention. Every run (the sync's "IG-2" block, once a night; locally scripts/init_db.sql) prunes
+-- what no reader needs any more, so the table stays bounded (IG-2's estimate: 30-80k rows a season, ~500 bytes each):
+--   * news and brief rows ingested more than 120 days ago that a newer item has superseded. "What changed" reads the
+--     last 24 hours and the card the live item; a player's newest item (live) is kept however old — one per player.
+--   * availability rows ingested more than 400 days ago, live or superseded: a season and its playoffs plus the next
+--     preseason, longer than the decision record's news-affected weeks look back (a status move before a kickoff of
+--     this season). A player still listed after his live row went comes back as a new move on the overlay's next copy.
+-- By ingested_at (the store's own clock: never in the future, never rewritten). The owner deletes; the app role still
+-- cannot (no DELETE grant). A pruned row may be named by a kept row's superseded_by: the readers only ask whether it is
+-- null (superseded or live), never join on it. Re-running deletes nothing more. docs/HOSTING.md § "Events" Retention.
+delete from events.events
+ where kind in ('news', 'brief') and superseded_by is not null and ingested_at < now() - interval '120 days';
+delete from events.events
+ where kind = 'availability' and ingested_at < now() - interval '400 days';
+-- ---- end IH-1
