@@ -601,7 +601,7 @@ class shared_component_fits:   # noqa: N801 - a context manager used like a func
 
 
 class range_target:   # noqa: N801
-    """Set ``LEAGUE_LAB_RANGE_TARGET`` for the block (``graded`` or ``components``), restoring it after."""
+    """Set ``LEAGUE_LAB_RANGE_TARGET`` for the block (``graded-all`` or ``components``), restoring it after."""
 
     def __init__(self, value: str):
         self.value = value
@@ -645,7 +645,7 @@ def v31_rows(frame: pd.DataFrame, test_seasons: list[int], scorings: dict[str, t
                 if ranges:
                     with range_target("components"):
                         base = P.predict_position(P.fit_position(train, pos, scorings), rows, scorings)
-                    with range_target("graded"):
+                    with range_target("graded-all"):
                         alt = P.predict_position(P.fit_position(train, pos, scorings), rows, scorings)
                     if not np.allclose(base["proj_points"].to_numpy(), alt["proj_points"].to_numpy(), atol=1e-9):
                         raise AssertionError(f"{s} {pos}: the point projection moved with the range target")

@@ -66,12 +66,17 @@ def test_range_actual_follows_the_switch(monkeypatch):
     monkeypatch.delenv(P.RANGE_TARGET_FLAG, raising=False)
     assert not P.range_target_graded()
     assert P.range_actual(d, SPEC).to_numpy() == pytest.approx(P.price(d, SPEC, "out_").to_numpy())
-    for on in ("graded", "1", "on"):
+    monkeypatch.setenv(P.RANGE_TARGET_FLAG, "graded-all")      # the harness's setting: every position
+    assert P.range_target_graded("WR")
+    assert P.range_actual(d, SPEC).to_numpy() == pytest.approx(P.graded_actual(d, SPEC).to_numpy())
+    for on in ("graded", "1", "on"):                           # production: the kept positions only (QB)
         monkeypatch.setenv(P.RANGE_TARGET_FLAG, on)
-        assert P.range_target_graded()
-        assert P.range_actual(d, SPEC).to_numpy() == pytest.approx(P.graded_actual(d, SPEC).to_numpy())
+        assert P.range_target_graded() and P.range_target_graded("QB") and not P.range_target_graded("WR")
+        qb, wr = d[d["position"] == "QB"], d[d["position"] == "WR"]
+        assert P.range_actual(qb, SPEC).to_numpy() == pytest.approx(P.graded_actual(qb, SPEC).to_numpy())
+        assert P.range_actual(wr, SPEC).to_numpy() == pytest.approx(P.price(wr, SPEC, "out_").to_numpy())
     monkeypatch.setenv(P.RANGE_TARGET_FLAG, "components")
-    assert not P.range_target_graded()
+    assert not P.range_target_graded() and not P.range_target_graded("QB")
 
 
 def _synthetic_train(n_per_season: int = 160, seed: int = 0) -> pd.DataFrame:
@@ -100,7 +105,7 @@ def test_fit_position_fits_the_ranges_on_the_graded_actual_under_the_switch(monk
     test = train[train["season"] == 2021].head(60)
     monkeypatch.delenv(P.RANGE_TARGET_FLAG, raising=False)
     base = P.predict_position(P.fit_position(train, "TE", spec), test, spec)
-    monkeypatch.setenv(P.RANGE_TARGET_FLAG, "graded")
+    monkeypatch.setenv(P.RANGE_TARGET_FLAG, "graded-all")
     alt = P.predict_position(P.fit_position(train, "TE", spec), test, spec)
     assert alt["proj_points"].to_numpy() == pytest.approx(base["proj_points"].to_numpy())
     shift = float((alt["p50"] - base["p50"]).mean())

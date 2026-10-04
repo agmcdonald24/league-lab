@@ -89,11 +89,21 @@ GRADED_EXTRAS = ("passing_2pt_conversions", "rushing_2pt_conversions", "receivin
                  "rush_tds_50p", "rec_tds_40p", "rec_tds_50p")
 
 
-def range_target_graded() -> bool:
-    """The switch: ``LEAGUE_LAB_RANGE_TARGET=graded`` (or 1 / true / on). Default: the components' price (v3.0)."""
+RANGE_TARGET_POSITIONS = ("QB",)   # where the harness kept it (2023-2025: the dynasty's QB interval score -0.0066, 2 of 3)
+
+
+def range_target_graded(position: str | None = None) -> bool:
+    """The switch: ``LEAGUE_LAB_RANGE_TARGET=graded`` (or 1 / true / on) fits the ranges on the graded actual at the
+    positions the harness kept (``RANGE_TARGET_POSITIONS``; ``position`` None = any of them); ``graded-all`` at every
+    position (the harness's setting). Default: the components' price everywhere (v3.0)."""
     import os
 
-    return os.environ.get(RANGE_TARGET_FLAG, "").strip().lower() in {"graded", "1", "true", "yes", "on"}
+    v = os.environ.get(RANGE_TARGET_FLAG, "").strip().lower()
+    if v in {"graded-all", "all"}:
+        return True
+    if v in {"graded", "1", "true", "yes", "on"}:
+        return position is None or position in RANGE_TARGET_POSITIONS
+    return False
 
 
 def join_graded_extras(conn: psycopg.Connection, df: pd.DataFrame, seasons: list[int]) -> pd.DataFrame:
@@ -124,8 +134,10 @@ def graded_actual(d: pd.DataFrame, scoring: dict[str, float]) -> pd.Series:
 
 
 def range_actual(d: pd.DataFrame, scoring: dict[str, float]) -> pd.Series:
-    """What the residual models are fitted on: the graded actual under the switch, else the components' price."""
-    return graded_actual(d, scoring) if range_target_graded() else price(d, scoring, "out_")
+    """What the residual models are fitted on: the graded actual under the switch (at a kept position: ``d`` is one
+    position's rows in ``fit_position``), else the components' price."""
+    position = str(d["position"].iloc[0]) if "position" in d.columns and len(d) else None
+    return graded_actual(d, scoring) if range_target_graded(position) else price(d, scoring, "out_")
 
 
 # The other two v3.1 switches (the corrections live in ``calibration``; ``project`` applies them through
