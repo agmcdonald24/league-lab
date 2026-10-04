@@ -136,7 +136,7 @@ test("Waivers, All available → WR: free agents open the drawer one after anoth
 });
 
 test("Receivers: names open the drawer one after another; × closes it and focus returns; the list and its pick stay", async ({ page, isMobile }, info) => {
-  await page.goto(scrubs("/receivers"));
+  await page.goto(scrubs("/receivers", "&view=cards"));
   const list = page.getByTestId("receivers-list");
   await expect(list).toBeVisible();
   for (const p of [PW, TMC, JJ]) {
@@ -148,7 +148,7 @@ test("Receivers: names open the drawer one after another; × closes it and focus
   await shot(page, "receivers", info);
   await tap(page, pane(page).getByTestId("pane-close"), isMobile);
   await expect(pane(page)).toHaveCount(0);
-  await expect(page).toHaveURL(new RegExp(`/receivers\\?league=${SCRUBS}&team=2$`));
+  await expect(page).toHaveURL(new RegExp(`/receivers\\?league=${SCRUBS}&team=2&view=cards$`));
   expect(await focusedText(page)).toBe(JJ.name);
   await expect(list).toBeVisible();
 });
@@ -243,7 +243,7 @@ test("the sections: Overview · Usage · Game log · News (tabs, arrow keys); Ex
 });
 
 test("Add to compare (a pair → Compare, the screen kept until then); Full player page keeps the league and team; a link in the drawer swaps it", async ({ page, isMobile }) => {
-  await page.goto(scrubs("/receivers"));
+  await page.goto(scrubs("/receivers", "&view=cards"));
   const list = page.getByTestId("receivers-list");
   await openNext(page, list.getByRole("link", { name: PW.name, exact: true }), isMobile);
   await tap(page, pane(page).getByTestId("drawer-compare"), isMobile);
@@ -266,13 +266,13 @@ test("Add to compare (a pair → Compare, the screen kept until then); Full play
   await expect(page.getByTestId("compare-answer")).toContainText("McMillan");
   await expect(pane(page)).toHaveCount(0);
   // Full player page: league + team kept; Back lands on the screen without the drawer
-  await page.goto(scrubs("/receivers"));
+  await page.goto(scrubs("/receivers", "&view=cards"));
   await openNext(page, list.getByRole("link", { name: JJ.name, exact: true }), isMobile);
   await tap(page, pane(page).getByTestId("pane-full"), isMobile);
   await expect(page).toHaveURL(new RegExp(`/player/${JJ.gsis}\\?league=${SCRUBS}&team=2$`));
   await expect(page.getByTestId("player-name")).toHaveText(JJ.name);
   await page.goBack();
-  await expect(page).toHaveURL(new RegExp(`/receivers\\?league=${SCRUBS}&team=2$`));
+  await expect(page).toHaveURL(new RegExp(`/receivers\\?league=${SCRUBS}&team=2&view=cards$`));
   await expect(pane(page)).toHaveCount(0);
 });
 
@@ -282,7 +282,7 @@ test("a slower, older answer never overwrites a newer pick; a card read once is 
     await new Promise((r) => setTimeout(r, 1500));
     await route.fallback();
   });
-  await page.goto(scrubs("/receivers"));
+  await page.goto(scrubs("/receivers", "&view=cards"));
   const list = page.getByTestId("receivers-list");
   await tap(page, list.getByRole("link", { name: PW.name, exact: true }), isMobile);
   await expect(pane(page).getByTestId("pane-loading")).toBeVisible();
@@ -316,7 +316,6 @@ const SCREENS: { path: string; extra?: string; screen: string; link: (page: Page
 test("Team, Season, League, Trades, Matchups and My Week: a player name opens the drawer on the same screen", async ({ page, isMobile }, info) => {
   test.setTimeout(240_000); // six screens
   for (const s of SCREENS) {
-    const t0 = Date.now();
     await page.goto(scrubs(s.path, s.extra ?? ""));
     await expect(page.getByTestId(s.screen)).toBeVisible();
     const link = s.link(page);
@@ -331,6 +330,5 @@ test("Team, Season, League, Trades, Matchups and My Week: a player name opens th
     if (s.path === "/team") await shot(page, "team", info);
     await page.keyboard.press("Escape");
     await expect(pane(page)).toHaveCount(0);
-    console.log(`${s.path}: ${Date.now() - t0} ms`);
   }
 });

@@ -64,8 +64,16 @@
     sections
       .filter((x) => PANE_ORDER.includes(x.key))
       .sort((x, y) => PANE_ORDER.indexOf(x.key) - PANE_ORDER.indexOf(y.key))
-      .map((x) => ({ key: x.key, ...paneSplit(x.key, x.sec) })),
+      .map((x) => ({ key: x.key, ...paneSplit(x.key, x.sec) }))
+      .map((x) => (x.key === "projection" && data?.why ? statLineToMore(x) : x)),
   );
+  // II-2: the "Stat line:" paragraph says what the one-line reason above already says (his projected stat line): in
+  // the drawer it goes behind "Week by week and season numbers" (the full page keeps it)
+  type Split = { key: string; main: { blocks: { text?: string | null }[] }; more: unknown[] };
+  function statLineToMore<T extends Split>(x: T): T {
+    const isStat = (b: { text?: string | null }) => (b.text ?? "").startsWith("Stat line:");
+    return { ...x, main: { ...x.main, blocks: x.main.blocks.filter((b) => !isStat(b)) }, more: [...x.main.blocks.filter(isStat), ...x.more] };
+  }
   const usage = $derived(sections.find((x) => x.key === "usage")?.sec ?? null);
   const moreBlocks = $derived(focused.flatMap((x) => x.more));
   // ---- end IF-4
