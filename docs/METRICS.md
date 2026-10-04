@@ -1388,6 +1388,16 @@ overlay); the API sets `cards.STATUSES = availability.now`.
 corner who changed teams counts for his latest team; the overlay's entry is the status and its date, not the team's
 announcement URL (`ops.events`, designed in the IF-3 hand-back, would carry it); one corner of two missing is already
 "less representative" (no threshold is invented for "how much").
+*Wave I-G (IG-2): the URL now carried.* The event store (`events.events`, `docs/HOSTING.md` § "Events") keeps each
+injury-report move with its source URL, so every missing regular with a status carries the stored event:
+`changed.missing[].event = {id, kind, source, url, at, status, headline}` and `changed.missing[].url`, with
+`changed.events` listing them (`research._cite_missing`: the opponent's live availability events, `events.for_team`,
+then the player's own, the last 60 days; the one that says he cannot play, his overlay status first). The URL is the
+source's: the player's ESPN page for an ESPN report (ESPN's injuries feed carries no story link); a Sleeper report has
+none. The team's own announcement (the Panthers' release) is still not read — no feed of team sites is licensed — so
+the citation is ESPN's (or Sleeper's) record of it, dated with the report's time. No event (the store off, empty,
+unreachable; a depth-chart change): `event` and `url` are null and the overlay's status, source and date stay. The
+words and the numbers do not change.
 
 ## "Value to my lineup" (IB-3, Wave I-B, 2026-10-03; `ondemand.lineup_values`, `/api/ros?view=lineup&team=`)
 

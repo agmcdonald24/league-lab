@@ -520,3 +520,31 @@ def test_the_readers_floor_the_window_to_the_minute(monkeypatch):
     assert events._since() == events.EPOCH
     assert research.EVENT_LOOKBACK == timedelta(days=60)
     assert myweek.MAX_CHANGED == 5
+
+
+# ------------------------------------------------------------------------------------------- the e2e's recorded answers (web/e2e/ig2)
+@needs_db
+@pytest.mark.skipif(not __import__("os").environ.get("IG2_RECORD"), reason="records web/fixtures/ig2/api_ig2.json: IG2_RECORD=1")
+def test_record_e2e_answers(client, on, overlay, briefs):
+    """My Week for Scrubs roster 2 with the store on (the second answer: the events stored, so the lines carry them) and
+    the status line, keyed like web/e2e/if4's recordings."""
+    import json
+    from urllib.parse import urlencode
+
+    def key(path: str, **q) -> str:
+        return path + ("?" + urlencode(sorted((k, str(v)) for k, v in q.items())) if q else "")
+
+    client.get(key("/api/my-week", league=SCRUBS, team=2))
+    events.flush(10)
+    db.clear_cache()
+    AV.clear_context()
+    out: dict = {}
+    for path, q in (("/api/my-week", {"league": SCRUBS, "team": 2}), ("/api/status", {})):
+        r = client.get(key(path, **q))
+        out[key(path, **q)] = {"status": r.status_code, "body": r.json()}
+    f = ROOT / "web" / "fixtures" / "ig2" / "api_ig2.json"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(out, indent=1, default=str) + "\n")
+    assert all(v["status"] == 200 for v in out.values()), {k: v["status"] for k, v in out.items()}
+    lines = out[key("/api/my-week", league=SCRUBS, team=2)]["body"]["changed"]["lines"]
+    assert any(x.get("origin") == "playerwire" for x in lines) and lines[0].get("event_id")

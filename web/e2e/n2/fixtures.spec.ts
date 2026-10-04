@@ -129,5 +129,5 @@ test("an ESPN item first: N1's line exactly, no summary, no tag", async ({ page,
 test("About says where the briefs come from", async ({ page }) => {
   await page.goto(`/about?league=${SCRUBS}&team=2`);
   await expect(page.getByTestId("about-news-playerwire")).toContainText("PlayerWire brief first");
-  await expect(page.getByTestId("about-news-source")).toContainText("isuckatfantasy keeps none of it.");
+  await expect(page.getByTestId("about-news-source")).toContainText("isuckatfantasy keeps only the headline, its date, the source and the link."); // IG-2
 });
