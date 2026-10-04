@@ -941,6 +941,65 @@ T-01; the waiver engine B3 handles add/drop pairs); a player on another roster's
 available to the receiving roster (a roster choice, not an injury); a locked player (game kicked off) counts 0
 both ways that week; a takeover within a season is dated to that season's start; the replacement's name is
 ambiguous only when two bench players have exactly the same value (either is a correct answer: same total).
+### Strength by slot, fixed (II-0, Wave I-I, 2026-10-04; `decisions.strength_by_slot`, `/api/team` `strength_by_slot`)
+
+**The bug** (the fifth review § 1): Team's "Strength by slot" drew the bar from one number and the league beside it
+from another. The bar was the roster's best starter at a slot type, **his projected points** (`top_value`: Puka 14.8);
+"league average 5.0 / best 7.3" and the rank were every roster's **starter strength** (`starter_strength` = that
+starter's margin over his replacement). A unit mismatch: on the clone's week 4 for MacZaddy, WR 12.75 sat against
+"average 4.13, best 6.83", QB 20.26 against "best 18.48" (a best below the member shown), FLEX 12.16 against "2.50 /
+5.18" — and the RB2, WR2 and FLEX2 slots were not shown at all (one bar per slot type).
+
+**The rule.** One metric, one population, every slot of the allotment apart:
+
+| Field | Definition | Population |
+|---|---|---|
+| a slot's value | this week's projected points (the league's scoring, the lineup's own `player_value`) of the player the roster starts at that slot; within a slot type the starters are ranked best first (RB1 ≥ RB2, FLEX1 ≥ FLEX2: the solver's order) | one per roster |
+| league average / best / worst / rank | over every roster's value at the **same slot** (each roster's RB1 against the others' RB1) — the bar's own numbers, so the best can never be below a member (a test) | the league's rosters (10 in Scrubs) |
+| an empty slot | 0 (it scores 0), counted in `n_empty`; the bar says "empty" | |
+| an unvalued starter (no projection) | unknown, not 0: left out of the population, his bar shows "—" | |
+| group total | a slot type's starters added up (RB1 + RB2; FLEX1 + FLEX2), with the league's average / best / rank over the same totals | one per roster × slot type |
+| usable depth | `bench_value`: the best legal lineup the bench alone could field this week (B2's "depth"); the raw bench total (the bench players' projections added up) is shown beside it, never as it — surplus at one position fits no starting slot | one per roster |
+
+The old `slot_strength` block (the recorded answers' shape) keeps its rows; its `league` line now reads `top_value`
+over every roster (the bar's metric), equal to `strength_by_slot`'s first slot of each type. The mart
+`mart_league_roster_slot_strength` is unchanged (its `starter_strength` column keeps the margin it always defined).
+On a roster the availability overlay moved, the population takes that roster's context rows (IB-0's rule).
+
+**Before → after** (the clone, League of Scrubs roster 2, week 4; bar · league average / best · rank):
+QB 20.26 · 9.63 / 18.48 · 9th → 20.26 · 18.32 / 24.42 · 3rd; WR 12.75 · 4.13 / 6.83 · 6th → WR1 12.75 · 13.02 / 15.55 ·
+6th and WR2 12.68 · 10.82 / 12.68 · 1st; RB 12.80 · 8.66 / 14.76 · 10th → RB1 12.80 · 16.52 / 21.81 · 8th and RB2 11.28
+· 12.94 / 17.73 · 8th; FLEX 12.16 · 2.50 / 5.18 · 4th → FLEX1 12.16 · 11.42 / 15.16 · 4th and FLEX2 9.72 · 10.03 / 13.47
+· 7th; TE 10.14 · 5.63 / 11.19 · 5th → 10.14 · 9.58 / 12.45 · 5th; K 8.07 · 8.17 / 8.93 · 7th (unchanged: a lone K's
+margin is his value); DEF 7.16 · 6.79 / 10.54 · 4th → 7.16 · 7.73 / 10.54 · 6th. Usable depth 42.35 (4th of 10); the raw
+bench total 59.60.
+
+### The legal replacement chain (II-0; `lineup.replacement_chain`, `cards.replacement_chain_rows`)
+
+"Losing Kyren costs 5.18, Malik Washington (WR) 7.56 comes in" was a true number with an unexplained (and possibly
+illegal) story: a WR cannot replace an RB. The chain is the re-solved legal lineup without him, as data: locks kept (a
+locked starter never moves, a locked bench player never enters), eligibility the slots' (FLEX, Superflex, MFL's
+combined slots and team units), seated to move as few players as possible, read from the slot he leaves: who fills it,
+who fills that player's old slot, … until someone comes off the bench or a slot goes empty. Words: "Bhayshul Tuten (RB)
+moves from FLEX to RB; Michael Wilson (WR) fills the open FLEX" (positions only: "RB moves from FLEX to RB; a WR fills
+the open FLEX"); no one: "no legal move: RB goes empty". `cost` = the lineup total − the re-solved total.
+
+The cards (`cards.alternative`), the player card's "without him the lineup loses x" and My Week's lineup margins read
+it. **A lock since the solve** (a game kicked off after the nightly solved the lineup: `locked_now` and not
+`is_locked`) makes the stored margin wrong — it assumed a now-locked player could move or come in; the card's number
+is then the chain's (`cards.chain_cost`), so the number and its words are one answer. Without a lock since the solve
+the stored margin stands (to the cent). On the clone at Sunday 15:45 ET (1 PM games locked): Omarion Hampton's margin
+2.08 → 11.28 ("no eligible reserve: the slot would be empty": every bench RB and WR is locked); before the kickoffs
+nothing moves.
+
+### One frame, one story (II-0; `trades.week_story`)
+
+The partner card said "Nothing changes this week; your lineup gains +7.2 over weeks 4–7" beside its own week strip's
+−0.5 (the sentence only counted a gain as a change). `trades.week_story(weeks, by_week, span, this_week=)` builds the
+words from the strip's numbers — "Your lineup loses 0.5 this week but gains 7.2 over weeks 4–7 in total (week 6 loses
+0.6)" — and every number in the words is a number the table shows (a test). Partner rows carry `story`; the calculator's
+answer carries `story` from its own `strip`.
+
 ## Waiver moves (B3, 2026-09-30; `league-lab waivers`, `ops.waiver_moves`, `mart_waiver_moves`)
 
 **Question.** For one roster: which free-agent claim (and which drop) improves the lineup, by how many points,

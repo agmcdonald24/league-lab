@@ -243,6 +243,16 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | no number (`win.note`) | "no range for this league yet" · "the week has started and this league's live scores are not read yet" (an MFL league after the first kickoff): the page shows nothing | a 50% stand-in |
 | the League screen, per team of a game this week | "53% · 120 expected" under each team; the note "How often each team wins, from both best lineups' ranges (assuming the players' weeks are independent except teammates and opponents)." | a favourite's name in bold as a pick |
 
+## The calculation audit (Wave I-I, II-0)
+
+| Where | The words we use | Never |
+|---|---|---|
+| Team, "Strength by slot vs the league" (`strength_by_slot`) | one bar per slot: "RB1 · Kyren Williams — 12.8 · 8th of 10", under it "League average 16.5, best 21.8 at RB1."; an empty slot "empty"; no projection "—" and "No projection for him yet: not ranked."; the card's line "Each bar is the player you start at that slot in week 4, his projected points; the tick is the league's average starter at the same slot, the end of the scale its best." | a league line in another unit than the bar (margins beside points); "RB" for two slots at once; a best below the bar |
+| Team, under the bars | "By position, starters added up: RB 24.1 (9th of 10, average 29.5) · …"; "Usable depth 42.4: the best lineup your bench alone could field this week (4th of 10). Your bench players' projections add up to 59.6, but only 42.4 of it fits the starting slots: the rest is surplus no starting slot could use." | raw bench points as depth |
+| the replacement chain (cards, the player card, My Week's margins) | "Bhayshul Tuten (RB) moves from FLEX to RB; Michael Wilson (WR) fills the open FLEX" · "an RB comes off the bench into RB" · "no legal move: RB goes empty" · the margin "over Michael Wilson (WR) after Tuten moves to RB1" | a WR named as an RB's replacement without the move that makes it legal; a locked player moving |
+| names on one roster (`cards.display_name`) | the last name ("Williams"), the full name when the roster has two (Parker Washington / Malik Washington) | "over Washington" with two Washingtons |
+| the partner card and the calculator (`trades.week_story`) | "Your lineup loses 0.5 this week but gains 7.2 over weeks 4–7 in total (week 6 loses 0.6)." · "Nothing changes this week; your lineup gains 2.0 over …" only when this week's number is under 0.05 either way | "Nothing changes this week" beside a −1.5 |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to
