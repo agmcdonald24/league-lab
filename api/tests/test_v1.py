@@ -31,8 +31,10 @@ def decisions(client, sql):
 
 def test_scrubs_weeks_1_and_2_are_graded(decisions, sql):
     assert decisions["available"] is True and decisions["season"] == 2026
-    assert [w["week"] for w in decisions["weeks"]] == [1, 2]
-    assert {w["record_source"] for w in decisions["weeks"]} == {"reconstructed"}
+    weeks = [w["week"] for w in decisions["weeks"]]
+    assert weeks[:2] == [1, 2]                     # the clone: exactly weeks 1-2; a later database: more
+    # 2026 weeks 1-4 were played before the record existed: rebuilt, and said so
+    assert {w["record_source"] for w in decisions["weeks"] if w["week"] <= 4} == {"reconstructed"}
     assert decisions["reconstructed_weeks"][:2] == [1, 2] and "rebuilt" in decisions["note"]
     assert all(w["rosters"] == 10 for w in decisions["weeks"])
     # the regret is never negative and the submitted points are Sleeper's matchup scores
@@ -45,7 +47,7 @@ def test_scrubs_weeks_1_and_2_are_graded(decisions, sql):
 
 def test_the_weeks_add_up_to_the_season_and_the_roster_weeks_to_the_week(decisions, sql):
     tot = decisions["season_totals"]
-    assert tot["weeks"] == 2 and tot["roster_weeks"] == 20
+    assert tot["weeks"] == len(decisions["weeks"]) and tot["roster_weeks"] == sum(w["rosters"] for w in decisions["weeks"])
     for k in ("submitted", "app", "optimum", "regret", "edge"):
         assert tot[k] == pytest.approx(sum(w[k] for w in decisions["weeks"]), abs=0.001), k
     rows = sql("""select week, round(sum(submitted_points), 2) as submitted, round(sum(app_points), 2) as app,
@@ -70,7 +72,7 @@ def test_the_calls_line_and_table(decisions, sql):
     assert 0 < cf["n"] <= n and decisions["sentences"]["calls"] == (
         f"The coin flips landed {round(100 * cf['won'] / cf['n'])}% for the side we leaned "
         f"({round(100 * cf['expected'] / cf['n'])}% expected, {cf['n']} calls).")
-    assert decisions["sentences"]["edge"].startswith("Weeks 1–2: had every team started our lineup")
+    assert "had every team started our lineup" in decisions["sentences"]["edge"]
 
 
 def test_the_api_grade_is_the_python_twin_on_the_source_tables(decisions):
