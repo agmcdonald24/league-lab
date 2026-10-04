@@ -242,12 +242,12 @@ def brier(pairs: Sequence[tuple[float, float]]) -> float:
 # does not play at all (the ranges are "if he plays": an inactive starter scores 0, which the distribution does not
 # carry — the morning's statuses already sit him when he is ruled out).
 WEEK_ASSUMPTIONS = "assuming the players' weeks are independent except teammates and opponents"
-# The calibration (docs/METRICS.md § "Win probability" → "The week"; 2024-2025 house-league matchups, the managers' real
+# The calibration (docs/METRICS.md § "Win probability — the week"; 2024-2025 house-league matchups, the managers' real
 # starters, walk-forward ranges centred on the projection): the raw probability is overconfident (the favourite
-# predicted 62.7%, won 57.5%) — the ranges are "if he plays", and weeks of different games are not independent. A logit
-# shrink ``p = sigmoid(WEEK_SHRINK * logit(p_raw))`` fitted on one season improves the other (Brier 2025 0.2436 ->
-# 0.2404 with 2024's 0.61; 2024 0.2417 -> 0.2384 with 2025's 0.58) and 2026 weeks 1-2 (0.2448 -> 0.2408); the pooled
-# fit is used.
+# predicted 62.7%, won 57.5%; "clear" 73% vs 63%) — the ranges are "if he plays", and weeks of different games are not
+# independent. A logit shrink ``p = sigmoid(WEEK_SHRINK * logit(p_raw))`` fitted on one season improves the other
+# (Brier 2025 0.2436 -> 0.2403 with 2024's 0.60; 2024 0.2424 -> 0.2387 with 2025's 0.585) and 2026 weeks 1-2
+# (0.2451 -> 0.2410); the pooled fit (0.593) is used, rounded.
 WEEK_SHRINK = 0.60
 KD_POSITIONS = frozenset({"K", "DEF", "TMPK", "TMDEF"})
 WEEK_DRAWS = 20_000      # a whole percent on the page: Monte Carlo error ±0.4 points at 50% (the calibration's draws too)

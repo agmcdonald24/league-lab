@@ -2193,8 +2193,8 @@ header gets one line per game ("Big Mac Attack: You're a clear underdog this wee
   mean is his projection** (shape kept, floored at 0). Why: the stored ranges are fitted apart from the point
   projection, so their means drift (as stored, a lineup's range means sum to 3.5 points above its projected total on
   the 2024–2025 walk-forward; ± several points on 2026 week 4 either way); centred, the probability agrees with the
-  expected totals printed next to it. Calibration is the same either way (Brier 0.2427 centred vs 0.2429 as stored,
-  raw).
+  expected totals printed next to it. Calibration is the same either way (2024–2025, raw: Brier 0.2430 centred vs
+  0.2432 as stored).
 * **One Gaussian copula over both lineups**: every pair that shares an NFL game gets D6's `pair_rho` — on either side
   (my WR and *their* QB who throws to him move together, which narrows the difference); pairs in different games are
   independent; a kicker, a defense or a team unit is independent of everyone (not measured). A correlation matrix that
@@ -2211,10 +2211,10 @@ header gets one line per game ("Big Mac Attack: You're a clear underdog this wee
   morning's statuses already sit the ruled-out), a game in progress (its full range), the opponent setting a lineup
   other than his best.
 * **The calibration shrink** (`WEEK_SHRINK = 0.60`): `p = sigmoid(0.60 × logit(p_raw))`. The raw Monte Carlo number is
-  overconfident (2024–2025: the favourite predicted 62.7%, won 57.5%; as stored, "clear" 73% vs 62%) — the "if he plays" ranges
+  overconfident (2024–2025: the favourite predicted 62.7%, won 57.5%; "clear" 73% vs 63%) — the "if he plays" ranges
   and the cross-game dependence it ignores. Fitted on one season, the shrink improves the other: Brier 2025 0.2436 →
-  **0.2404** with 2024's factor 0.61; 2024 0.2417 → **0.2384** with 2025's 0.58; 2026 weeks 1–2 0.2448 → 0.2408 with the
-  pooled 0.60. Whole percent 1–99 on the page (`percent`); a finished week is 0 or 1 (not shown: the week is over).
+  **0.2403** with 2024's factor 0.60; 2024 0.2424 → **0.2387** with 2025's 0.585; 2026 weeks 1–2 0.2451 → 0.2410 with
+  the pooled 0.593 (used rounded, 0.60). Whole percent 1–99 on the page (`percent`); a finished week is 0 or 1.
 * **Words** (`week_words`, D6's scale read from my side): 50–55% either way **a coin flip**, 55–65% **a slight
   favorite / underdog**, 65%+ **a clear favorite / underdog**.
 
@@ -2226,15 +2226,17 @@ matchup once, read from the favourite's side; 0 starters without a range. As shi
 
 | | Matchups | Brier | Favourite predicted | Favourite won | "The higher projection wins" |
 |---|---|---|---|---|---|
-| 2024–2025 | 308 | **0.2394** (coin flip 0.25) | 58.0% | 57.5% | 57.1% |
-| 2024 | 154 | 0.2384 | 58.3% | 56.5% | |
-| 2025 | 154 | 0.2404 | 57.6% | 58.4% | |
-| 2026 weeks 1–2 (frozen P10 / P50 / P90 rows) | 22 | 0.2408 | 58.6% | 63.6% | 63.6% |
+| 2024–2025 | 308 | **0.2395** (coin flip 0.25) | 58.0% | 57.5% | 57.1% |
+| 2024 | 154 | 0.2387 | 58.4% | 57.8% | |
+| 2025 | 154 | 0.2403 | 57.6% | 57.1% | |
+| 2026 weeks 1–2 (frozen P10 / P50 / P90 rows) | 22 | 0.2410 | 58.6% | 63.6% | 63.6% |
 
-2024–2025 by fifth of the prediction (equal counts): predicted 51.1 / 53.7 / 56.5 / 60.6 / 68.0%, won 50.0 / 58.1 /
-51.6 / 55.7 / 72.1%. By word: "a coin flip" 124 matchups, 52.4% predicted / 54.0% won; "slight" 142, 59.3% / 55.6%;
-"clear" 42, 69.9% / 73.8%. The honest reading: a fantasy week is close to a coin flip — the number beats "50%" by a
-little (Brier 0.239 vs 0.25) and is calibrated within a few points; it is not a forecast to bet on. 2026 has two graded
+2024–2025 by fifth of the prediction (equal counts): predicted 51.2 / 53.8 / 56.5 / 60.7 / 68.1%, won 50.0 / 56.5 /
+53.2 / 55.7 / 72.1%. By word: "a coin flip" 123 matchups, 52.5% predicted / 53.7% won; "slight" 141, 59.2% / 54.6%;
+"clear" 44, 69.7% / 77.3%. The honest reading: a fantasy week is close to a coin flip — the number beats "50%" by a
+little (Brier 0.239 vs 0.25) and is calibrated on average within a point; by band the "slight" weeks run about 5
+points hot and the "clear" ones about 8 points cold (44 matchups: noise of ±6), so the words are the safer read than
+the exact percent. It is not a forecast to bet on. 2026 has two graded
 weeks (22 matchups): too few to say more, and nothing in them is badly off, so the line shows the percentage (the
 "early: N weeks graded" fallback, `myweek.WIN_EARLY`, stays off).
 
