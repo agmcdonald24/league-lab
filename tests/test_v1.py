@@ -325,3 +325,33 @@ def test_record_rows_label_calls_and_never_mix_realised_rows():
     ranks = sorted(r["call_rank"] for r in out if r.get("call_rank") is not None)
     assert ranks == list(range(1, len(ranks) + 1)) and len(ranks) <= lineup.N_CALLS
     assert all(r["role"] == "starter" for r in out if r.get("call_rank") is not None)
+
+
+# ------------------------------------------------------------------------------ the console page (database; skipped without)
+def test_the_record_page_shows_our_lineups_against_the_ones_started():
+    """app/pages/13_Record.py on the database (.env): the new section renders the same season numbers as the summary."""
+    import sys
+
+    psycopg = pytest.importorskip("psycopg")
+    from league_lab.config import get_settings
+
+    try:
+        with psycopg.connect(get_settings().pipeline_dsn(), connect_timeout=3) as c:
+            if not c.execute("select to_regclass('analytics.mart_decision_record')").fetchone()[0]:
+                pytest.skip("mart_decision_record not built")
+    except psycopg.OperationalError as exc:
+        pytest.skip(f"no database: {exc}")
+    from streamlit.testing.v1 import AppTest
+
+    app = ROOT / "app"
+    if str(app) not in sys.path:
+        sys.path.insert(0, str(app))
+    at = AppTest.from_file(str(app / "pages" / "13_Record.py"), default_timeout=240)
+    at.query_params["league"] = "1389709692405551104"
+    at.query_params["team"] = "2"
+    at.run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert "Our lineups against the ones started" in [h.value for h in at.subheader]
+    labels = {m.label: m.value for m in at.metric}
+    assert "Our lineups would have added" in labels and labels["Best lineup in hindsight"].startswith("+")
+    assert any("had every team started our lineup" in m.value for m in at.markdown)

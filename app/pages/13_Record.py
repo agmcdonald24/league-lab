@@ -136,6 +136,58 @@ if not rec.empty:
         if calls.empty and ranks.empty:
             st.caption("No week scored yet" + (f": week {in_play[0]} counts once its last game is in." if in_play else "."))
 
+# ---- V-1 (Wave I-G): our lineups against the ones started — the decision record graded (league_lab.validation over
+# mart_decision_record / mart_decision_calls; the same block /api/record's `decisions` sends; METRICS § "The decision record")
+st.subheader("Our lineups against the ones started")
+if missing_relations(("mart_decision_record", "mart_decision_calls")):
+    st.caption("The decision record is not built on this database yet (`league-lab validate`, then the dbt marts).")
+else:
+    from league_lab import validation as V
+
+    s_ = int(season) if season is not None else None
+    dec = V.summary(query("select * from analytics.mart_decision_record where league_id = %s and season = %s order by week, roster_id",
+                          (league_id, s_)),
+                    query("select * from analytics.mart_decision_calls where league_id = %s and season = %s "
+                          "order by week, roster_id, call_rank", (league_id, s_)))
+    if not dec["available"]:
+        st.caption("Our lineups are graded against the ones started once a week on the record has been scored.")
+    else:
+        tot, cal = dec["season_totals"], dec["calls"]
+        with st.container(border=True):
+            st.markdown("  \n".join(x for x in (dec["sentences"]["edge"], dec["sentences"]["calls"]) if x))
+            with st.container(horizontal=True, wrap=True, gap="medium"):
+                st.metric("Our lineups would have added", f"{tot['edge']:+.1f} pts", width="content",
+                          help="Ours minus started, summed over every team and scored week: what following the lineups we "
+                               "recommended before kickoff would have added")
+                st.metric("Best lineup in hindsight", f"+{tot['regret']:.1f} pts", width="content",
+                          help="The best lineup each roster could have started knowing the scores, minus the one started")
+                cf = cal["coin_flips"]
+                if cf["n"]:
+                    st.metric("Coin flips landed", f"{100 * cf['won'] / cf['n']:.0f}%", width="content",
+                              delta=f"{100 * (cf['won'] - cf['expected']) / cf['n']:+.0f} pts vs expected", delta_color="off",
+                              help="The cards' closest calls (under 55%): how often the player we started outscored the one on the bench")
+            if dec["sentences"]["news"]:
+                st.caption(dec["sentences"]["news"])
+            if dec["note"]:
+                st.caption(dec["note"])
+        DEC_COLS = {"week": Col("Week", "int"), "record_source": Col("Record", "text", "kickoff = recorded before the week's "
+                    "first kickoff; reconstructed = rebuilt after the fact from the projections locked then"),
+                    "rosters": Col("Teams", "int"), "submitted": Col("Started", "num1", "Points of the lineups started"),
+                    "app": Col("Ours", "num1", "Points our recorded lineups would have scored"),
+                    "optimum": Col("Best", "num1", "Points of the best lineups in hindsight"),
+                    "edge": Col("Added", "signed1", "Ours minus started"), "regret": Col("Left on bench", "num1", "Best minus started"),
+                    "news_rosters": Col("News", "int", "Lineups with a starter whose injury report changed after our build")}
+        with st.expander("Our lineups week by week, and how the close calls landed"):
+            show(pd.DataFrame(dec["weeks"]), list(DEC_COLS), phone_cols=["week", "submitted", "app", "edge"], overrides=DEC_COLS)
+            if cal["table"]:
+                st.markdown(f"**The close calls: {cal['n']} graded, Brier score {cal['brier']:.3f}** (0 = perfect; 0.25 = "
+                            "a coin flip every time). Calls grouped by the percentage the card gave, lowest first:")
+                CAL_COLS = {"bin": Col("Group", "int"), "n": Col("Calls", "int"),
+                            "predicted": Col("We said", "pct", "The average percentage the cards gave the player we started"),
+                            "observed": Col("Landed", "pct", "How often he outscored the player on the bench (a tie counts half)")}
+                show(pd.DataFrame(cal["table"]), list(CAL_COLS), overrides=CAL_COLS)
+# ---- end V-1
+
 # ---------------------------------------------------------------- how to read this
 with st.expander("How to read this"):
     st.markdown(
