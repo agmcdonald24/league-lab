@@ -7,7 +7,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 - **M6 — v3.2: a rookie's first games are projected from his draft slot, on the stat line, and on by default.** M5's
   cold-start prior moved onto the line itself (`calibration.blend_lines`, before anything is priced): the house board,
   the NFL-wide line, the ranges and every on-demand league now carry the same number for a player in his first three
-  games (re-measured on the line: cold rows' MAE RB −0.16 / WR −0.32 / TE −0.29, 4–5 of 5 seasons — kept, so
+  games (re-measured on the line: cold rows' MAE RB −0.09 / WR −0.31 / TE −0.34, 4–5 of 5 seasons — kept, so
   `LEAGUE_LAB_COLD_START` defaults on). Veterans on a new team measured three ways, none kept (STATUS § M6). The nightly
   builds the prior's fitting rows itself (`calibration-oof`, a no-op once current; `ops.calibration_oof` travels).
   "Why this number" prices its pieces in the week's own mode. The record's Sleeper side is priced at the odds in an

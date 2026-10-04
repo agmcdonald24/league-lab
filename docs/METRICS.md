@@ -2670,7 +2670,25 @@ writes nothing. A rebuild is 3 seasons × 4 positions of component fits, about 2
 shared sandbox (34,592 rows). The table is in `STATE_TABLES` (restored from the hosted copy; the sync publishes all of
 `ops`), and `db migrate` creates it. Without rows `project` logs "stat lines unchanged" and publishes v3.0's lines.
 
-<!-- M6: the 2026 board -->
+**The 2026 board** (the clone `league_lab_m1`, flat mode; switch on against a switch-off build, which reproduces the
+morning's board to the bit):
+
+* **What moved**: 1,014 of 9,911 stat lines (78 players: RB 260, WR 260, TE 494 player-weeks) and 2,007 of 19,822 house
+  rows, weeks 5–18 only; frozen weeks 1–4 moved 0. Every scaled line is the model's × k to 2.2e-16.
+* **Mean change a row**: the dynasty RB −1.22, WR −2.26, TE −0.97; Scrubs RB −1.08, WR −1.86, TE −0.79. The range is
+  −3.53 to +2.78.
+* **The biggest moves** are undrafted WRs with no game (the model's "no history" 5–6 points → the undrafted prior,
+  2.1 in Scrubs / 2.6 in the dynasty).
+* **The names people roster**:
+  * Jordyn Tyson (WR, pick 8, no game) 6.08 → 8.62 in the dynasty;
+  * Jeremiyah Love (RB, pick 3, two games) 11.65 → 9.48;
+  * Jadarian Price (RB, pick 32) 10.70 → 8.86;
+  * Chip Trayanum 6.20 → 3.09;
+  * Germie Bernard (WR, one game) 9.93, unchanged: the 2023–2025 WR weights keep the model from the first game.
+* **Lineup totals**: 37 of 440 moved (dynasty mean −1.52, Scrubs −1.35, at most −2.50).
+* **One number everywhere**: My Week equals the record (M4's parity) for every roster starting a rookie, and a
+  rookie's line priced on request equals his stored projection.
+
 
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 

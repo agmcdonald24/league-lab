@@ -5990,3 +5990,238 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
    `SLEEPER_WAIVER_TZ`); 180 days of usage.
 5. **Clone state**: `league_lab_i0b`'s `ops.waiver_moves` / `ops.waiver_upside` were rewritten at 05:00 and the two
    views rebuilt (IG-1 was told in INTERFACES); the `usage` schema was created there (empty).
+
+## Wave I-H (Iteration 18)
+
+### M6 2026-10-04 — v3.2: the cold-start prior on the stat line, veterans on a new team, the market at the odds (branch `dev/M6`, clone `league_lab_m1`)
+
+* **Task**: Wave I-H M6 (`scratchpad/waveIH/BRIEF.md` § M6; plan § 17 "v3.1 → v3.2"); METRICS § "Calibration of the
+  top" → "v3.2" (new) and § "The record's pricing column" (the market record, built); INTERFACES.md § M6.
+* **Why**: M5 measured the cold-start prior and kept it at RB / WR / TE. But as wired it moved the house leagues'
+  points and not the stat line. Every request prices the line, so the house board and an on-demand league would have
+  shown two numbers for the same rookie (IB-0's bug). That is why it shipped off.
+
+**The harness table** (the PO reads this first). Δ = candidate − v3.0. "Flagged rows" are the cold starts (or the
+new-team veterans). MAE is the leagues' average per season. "Seasons" = seasons better, of 5 (2021–2025). Both house
+scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n/3) seasons, and `decide` not
+"hurts" on the board.
+
+| Group (switch) | Position | flagged rows (a league) | Δ MAE flagged (seasons) | flagged bias before → after | Δ MAE board | Δ Spearman board | Decision |
+|---|---|---|---|---|---|---|---|
+| **cold start on the line** (`LEAGUE_LAB_COLD_START`, cs1.1; priors on the 3 seasons before = production) | RB | 461 | **−0.092** (4 of 5) | −0.62 → −0.33 | −0.006 | +0.0012 | **keep** |
+| | WR | 690 | **−0.314** (5 of 5) | −0.80 → −0.12 | −0.018 | +0.0030 | **keep** |
+| | TE | 347 | **−0.341** (5 of 5) | −0.98 → +0.06 | −0.019 | +0.0028 | **keep** |
+| cold start on the line, priors on 2018..S−1 (M5's harness window) | RB / WR / TE | 461 / 690 / 347 | −0.159 (4) / −0.320 (5) / −0.291 (5) | −0.62 → −0.32 / −0.80 → −0.15 / −0.98 → −0.05 | −0.009 / −0.018 / −0.016 | +0.0018 / +0.0034 / +0.0034 | keep |
+| M5's wiring (points per scoring), re-run on the same rows | RB / WR / TE | 461 / 690 / 347 | −0.159 (4) / −0.314 (5) / −0.298 (5) | −0.62 → −0.33 / −0.80 → −0.17 / −0.98 → −0.08 | −0.009 / −0.018 / −0.017 | +0.0018 / +0.0034 / +0.0037 | (= M5's table: the harness is the same) |
+| new team: the cold blend keyed on games with the team (the brief's design) | RB | 542 | +0.028 (2) | −0.52 → −0.47 | +0.002 | +0.0002 | drop |
+| | WR | 943 | +0.011 (0) | −0.94 → −0.94 | +0.001 | +0.0002 | drop |
+| | TE | 389 | +0.030 (2) | −0.45 → −0.51 | +0.002 | −0.0005 | drop |
+| new team: a scale on the line fitted on MAE | RB | 542 | −0.283 (4) | −0.52 → **+1.00** | −0.020 | −0.0006 | **not kept** (the rule says keep; it projects the median: k at the 0.70 floor, the bias flips sign) |
+| | WR | 943 | −0.438 (5) | −0.94 → **+0.50** | −0.034 | −0.0006 | not kept (same) |
+| | TE | 389 | −0.242 (5) | −0.45 → **+0.47** | −0.015 | −0.0017 | not kept (same) |
+| new team: a mean-unbiased scale (Σ actual / Σ projected per step) | RB | 542 | −0.023 (3) | −0.52 → −0.39 | −0.001 | +0.0003 | drop |
+| | WR | 943 | −0.102 (4) | −0.94 → −0.65 | −0.008 | +0.0004 | not kept (passes; the third shape tried — a v3.3 lead) |
+| | TE | 389 | +0.031 (1) | −0.45 → −0.49 | +0.002 | −0.0008 | drop |
+
+* **Delivered**:
+  * **The blend on the line** (`calibration.blend_lines`, called by `projections.project` in a `# ---- M6` block
+    right before `nfl_lines`).
+    * For each cold RB / WR / TE player-week, one scale `k` = blended / raw points in the anchor scoring (the
+      reference league's), set from M5's prior and weights (`line_scales`).
+    * Every component of the model's line is multiplied by `k`. The scaled line is then priced and ranged by the
+      same models (`predict_position(..., lines=)`, the frozen-line path).
+    * So `ops.projection_lines`, `ops.projections`, `ops.projection_ranges` and every request agree to the cent, in
+      any scoring and either pricing mode.
+    * `calibrate_outputs` no longer blends points; M5's wiring stays reachable as `v31_outputs(..., cold_on_points=True)`
+      for the comparison.
+    * `signals.scenarios` follows the scaled line (`rescale_to_stored`; `run_signals` reads the stored line). Without
+      that, a rookie with a live role alert would fail `scenario_base_is_the_projection`, the class of bug M4 found
+      before the flip.
+  * **The switch**: `LEAGUE_LAB_COLD_START` defaults **on** (`COLD_DEFAULT = True`; `0` / `off` turns it off; only
+    the nightly writer reads it). The blend is the identity at 3 games, and for a line under half a point.
+  * **The fitting rows where the nightly runs**:
+    * `calibration.ensure_oof` rebuilds `ops.calibration_oof` (`run_build_oof`) only when the table does not hold the
+      newest 3 completed seasons of this `MODEL_VERSION`. It checks a new `model_version` column.
+    * The nightly's `calibration-oof` step (soft, before `project`; `scripts/nightly.sh` `# ---- M6`).
+    * `ops.calibration_oof` is in `STATE_TABLES`; `db migrate` creates it.
+  * **Veterans on a new team**:
+    * `team_games_before` (games with the current team in the current stint), `is_new_team`, `blend_frame`.
+    * Measured three ways, none kept (`NEW_TEAM_POSITIONS = ()`). The wiring is there for a kept position.
+  * **`why.weights` / `why.explain` per week**: `season` / `week` keyword arguments; the mode is
+    `scoring.ev_for_week`. `player.py`'s card passes them (one line, `# ---- M6`). A frozen flat week's "why this
+    number" pieces stay flat on the morning after the flip. The rest-of-season pieces (`ondemand.py`, not mine) keep
+    the newest mode, which is right for future weeks.
+  * **The record's Sleeper side at the odds** (M4's proposal):
+    * `projections.market_record` writes `ops.market_record` at the end of `project` (soft). For each house
+      league-week labelled `ev`, it stores Sleeper's last pre-kickoff line priced with `price_projected(ev=True)`
+      (`price_market`).
+    * `mart_projection_record.sl_priced` reads `coalesce(mr.sleeper_points, league_points(…))` on the same snapshot,
+      only in an `ev` week.
+    * A `sources.yml` row (with a uniqueness test). The mart's pre-hook and `db migrate` create the table.
+* **Interfaces**: INTERFACES.md § M6. There are no new columns on `ops.projection_lines` / `ops.projections` /
+  `ops.projection_ranges`. The moved columns, for a blended row: `proj_*`, `proj_points`, `p10..p90`. New:
+  * `ops.calibration_oof.model_version`;
+  * `ops.market_record`;
+  * `calibration.LAST_LINE_BLEND`, the last run's scaled player-weeks.
+
+* **Evidence**. Unless named, everything is on the clone `league_lab_m1`, flat mode (the env unset, as M4 left it).
+  * **The harness**:
+    * Rows: `scratchpad/m6/oof_lines.py`, the walk-forward of 2018–2025 with the stat line kept; RB / WR / TE;
+      8 seasons in 4 min.
+    * Tables: `harness.py` / `seed.py`, read only.
+    * Re-running M5's wiring reproduces M5's table to the third decimal.
+    * The seed: `feature_experiments.csv` +120 rows (`cold_start_line`, `new_team_blend`, `new_team_scale_mae`,
+      `new_team_scale_mean`, 30 each).
+  * **`ensure_oof`**: the first call rebuilt `ops.calibration_oof` to 2023–2025 (34,592 rows) in **598 s** on this
+    sandbox (load 5–10 on 2 CPUs; about 2–3 min alone). The second call took **2 s** and wrote nothing ("current").
+    Unit test: twice = once, `force` rewrites, a model bump rebuilds.
+  * **A full `project` with the switch at its default (on)**:
+    * Exit 0 in 1,478 s (load 14–16; the first try with `OMP_NUM_THREADS=2` stalled, as M5 saw, and was restarted
+      single-threaded).
+    * Log: "cs1.1 on the line: 1374 player-weeks scaled". That count includes weeks 1–4, which the writer then keeps
+      as frozen.
+    * Weights in the reference league, 2023–2025: RB 0.0 / 0.1 / 0.6, WR 0.0 / 1.0 / 1.0, TE 0.0 / 0.7 / 0.4.
+    * Scenarios: "base = stored projection to 0.00e+00 on 14 rows". No scenario player was a cold start on the
+      clone; `rescale_to_stored` has a unit test.
+  * **dbt on the clone**: the nightly's projection-marts selection plus `assert_projection_ranges_price_the_lines`,
+    `assert_house_projections_are_the_nfl_wide_rows`, `assert_frozen_nfl_wide_precede_kickoff`, the `ops.market_record`
+    source test and the seed: **PASS=155, WARN=0** (the warn test that would have flagged M5's wiring passes).
+  * **The 2026 board, before → after** (before = M4's flat build of this morning, which a switch-off build on this
+    code reproduces to the bit; after = the switch on):
+    * **Stat lines**: 1,014 of 9,911 moved (78 players; RB 260 / WR 260 / TE 494 player-weeks), weeks 5–18 only.
+      Frozen weeks 1–4 moved **0**. Every scaled line has every component × k (max |ratio − k| = 2.2e-16).
+    * **House rows**: 2,007 of 19,822 moved. The other 21 blended player-weeks have k within 0.002 of 1 and round
+      to the same cent.
+    * **Mean change a row**: the dynasty RB −1.22, WR −2.26, TE −0.97; Scrubs RB −1.08, WR −1.86, TE −0.79. The
+      range is −3.53 to +2.78.
+    * **The five biggest moves of week 5**: undrafted WRs with no game, the model's "no history" 5–6 points pulled to
+      the undrafted prior.
+      * The dynasty: Malik McClain 6.12 → 2.59, Brock Rechsteiner 6.08 → 2.60, Cole Burgess 6.05 → 2.58, Montorie
+        Foster Jr 5.85 → 2.59, Camden Brown 5.84 → 2.58.
+      * Scrubs: McClain 5.00 → 2.12, Burgess 4.97 → 2.12, Rechsteiner 4.95 → 2.12, Adam Randall (RB, pick 174)
+        5.38 → 2.62, Chip Trayanum (RB) 5.42 → 2.70.
+    * **M5's examples**, week 5:
+      * **Jordyn Tyson** (WR, pick 8, no game) 6.08 → **8.62** in the dynasty and 4.95 → **7.02** in Scrubs (P90
+        14.28 → 15.60).
+      * **Germie Bernard** (WR, pick 47, one game) **9.93 → 9.93**: the 2023–2025 fit keeps the model from a WR's
+        first game on. M5's 9.93 → 4.85 came from the 2018–2024 weights and does not happen.
+      * Omar Cooper Jr. (pick 30, one game) 3.09, unchanged.
+      * Chip Trayanum 6.20 → 3.09.
+    * **Rostered rookies, week 5**: 23 roster rows move.
+      * Jeremiyah Love (RB, pick 3): 11.65 → 9.48 in the dynasty, 10.35 → 8.43 in Scrubs.
+      * Jadarian Price (RB, pick 32): 10.70 → 8.86 / 9.71 → 8.04.
+      * Kaelon Black (RB, pick 90): 8.24 → 7.05.
+      * Andrew's dynasty roster 12: Adam Randall 6.14 → 2.99, Jonah Coleman 8.00 → 7.00 (bench). Week 4–6 totals
+        unchanged (111.15 / 118.12 / 107.51).
+      * Scrubs roster 2: unchanged (117.02 / 100.63 / 112.30).
+    * **Lineup totals** (the same code, switch off → on): 37 of 440 moved, all in weeks 5–18. The dynasty: 17, mean
+      −1.52 (−2.50 to −0.35). Scrubs: 20, mean −1.35 (−1.93 to −0.02). The largest is dynasty roster 9, week 10,
+      107.74 → 105.24.
+  * **One number everywhere**:
+    * `api/tests/test_m6.py` (needs_db, post-run clone): every week-5 rookie RB / WR / TE starter's line, priced on
+      request, equals his `ops.projections.proj_points` (abs 1e-9), in both leagues.
+    * **My Week = the record** (M4's parity, abs 0.005) for every roster starting a rookie: dynasty 7 (Kaelon Black,
+      blended), 9 (Jadarian Price, blended), 12 (Denzel Boston), and Scrubs 6 (Boston).
+    * `tests/test_m6.py`: the house rows and the request side's price of the line are equal **bit for bit**, switch
+      on and off × flat and EV, in a linear and a bonus scoring.
+  * **The record's Sleeper side**, demo on the clone, then reverted:
+    * Setup: the Sleeper projections fixture planted 12 h before week 4's kickoff and the dynasty's week 4 labelled
+      `ev`. `market_record` wrote 29 rows.
+    * The compiled mart's `sl_priced` equals `ops.market_record` on every QB–TE row. 28 of 29 moved off the macro,
+      mean +0.81. Josh Allen 31.58 → **33.20**, the card's "Sleeper's projection" at the odds (M4's number).
+      The K stays on the macro.
+    * Reverted: 581 labels back to NULL, the snapshot removed, `ops.market_record` empty.
+  * **Tests**:
+    * `tests/test_m6.py`: **15 passed**. Identity at N games; the scaled line toward the draft slot; parity bit for
+      bit × 4; the default; the points path no longer blends; no rows / no position; the anchor; the stint counter;
+      `ensure_oof` twice = once; the week's mode; the market pricing; the scenario rescale.
+    * `api/tests/test_m6.py`: **6 passed**.
+    * `tests/test_m5.py`: 17 passed (one test re-pointed).
+    * `api/tests/test_m4.py`: 8 passed.
+  * **Suites**:
+    * **Root**: 1,093 passed, 4 skipped, 2 failed. With the `test_m4` pin below, 1,094 pass and 1 fails. The failure is
+      `test_my_week::test_my_week_is_the_mart[Scrubs-2]` ("2 <= len(cards)"): Scrubs roster 2 has one card in
+      week 5 on this clone (one playable bench player; Coleman, Kelce, McMillan and Mahomes are unplayable). It
+      fails the same way with the switch off. `test_m4::test_m3_numbers_under_the_record_mode` pinned RB 0.71, and
+      the blend moves it to 0.72 (Love and Price are in the RB top 24). The pin now holds either build of the clone
+      to the cent.
+    * **API**: 505 passed, 11 skipped, 43 failed. All 43 are this clone's state, not M6:
+      * they fail identically with `main`'s code (`ad4040e`, a scratch worktree) on the same database;
+      * they fail identically after a **switch-off** `project` on the same code.
+      * They are pins on the main database's state (IF-1's McPherson / Carlson, IG-1's Finder pairs, IB-2's DEF
+        wording, MFL fixture leagues, `test_ic1`'s `*_tds_10p`). M4 saw 4 of them on this clone; I-G's merge added
+        the rest.
+  * **Switch off = v3.0 to the bit**: a `project` with `LEAGUE_LAB_COLD_START=0` (340 s, the box idle)
+    reproduces M4's board exactly: 0 of 20,718 house rows and 0 of 9,911 lines differ.
+  * **Same code, off → on**: the 37 lineup totals above, weeks 5–18 only. Against M4's morning build, 15 week-4
+    totals moved as well. That was the lineup service on today's code, not the blend: off → on moves none in week 4.
+  * **The clone ends on**: a third `project` with the default (336 s with the marts; dbt PASS=145, WARN=0). It
+    equals the first on-run to the bit (0 of 20,718 rows differ). On it, `api/tests/test_m6.py` + `test_m4.py` pass
+    14 / 14 and the root `test_m4.py` + `test_m5.py` + `test_m6.py` pass 51 / 51.
+  * **Lint**: `uv run ruff check src app tests api`: clean.
+
+* **Not done**:
+  * Ranges are not re-scored on the line. The harness rows are the component-only walk-forward; the scaled line's
+    range is the model's own range for that line.
+  * `MODEL_VERSION` stays `v3.0` (see For the PO 3).
+  * The mean-unbiased new-team scale at WR is a lead, not wired.
+  * The record's Sleeper side for a K stays the macro (flat, as ours).
+* **Next**: the PO merges and runs the nightly once by hand (the first night builds `ops.calibration_oof`, about
+  2–3 min on the runner). Then v3.3: the new-team WR scale with a rule fixed first, and the QB graded range target
+  (M5's marginal keep, still off).
+
+**For the PO**
+1. **Merge.** The files outside M6's list, each a marked block:
+   * `src/league_lab/signals.py` (`# ---- M6`, two blocks). Without them a rookie with a live role alert fails
+     `scenario_base_is_the_projection` on the first nightly.
+   * `src/league_lab/db.py` (`migrate` creates `ops.calibration_oof` and `ops.market_record`).
+   * `api/league_lab_api/player.py` (one line: the card passes the week to `why.explain`).
+   * `tests/test_m5.py` (one test points at M5's points path, `cold_on_points=True`).
+
+   `projections.py`: one block before `nfl_lines`, one line after `waivers_after_project`, and a block at the end of
+   the file; M4's and M5's spots are untouched. `feature_experiments.csv` gains 120 rows at the end (CRLF kept).
+   `CHANGELOG` adds a `## 2026-10-04 — Wave I-H` heading, as every dev will; keep one.
+2. **dbt**, in the nightly's projection-marts step:
+   * `mart_projection_record` (the `sl_priced` coalesce, one more pre-hook);
+   * the `sources.yml` row `ops.market_record` (**yours to accept**: the brief let me add it);
+   * the seed `feature_experiments`.
+
+   Nothing to apply by hand: `db migrate` and the mart's pre-hook create the tables.
+3. **`MODEL_VERSION` stays `v3.0`** (my call; reversible). The blend is a post-hoc correction with its own version
+   (`cs1.1`, logged every run), like cal1.0. A bump to `v3.2` would rerun `backtest-v2` in the nightly (minutes; it
+   would not measure the blend anyway), refit the importance and rebuild `ops.calibration_oof` (about 2–3 min). The
+   cost of not bumping: the record cannot tell blended weeks from unblended ones by `model_version`. If you want that
+   label, it is one constant plus `tests/test_personnel.py`'s pin.
+4. **The nightly**:
+   * Nothing to set: the switch defaults on, on the nightly writer only. Render gets nothing; the API never reads the
+     switch.
+   * The first run after the merge builds `ops.calibration_oof` (about 2–3 min on the runner, 10 min on this loaded
+     sandbox). Every later run reads two rows (2 s here).
+   * The hosted copy gains `ops.calibration_oof` (about 35k rows, ~3 MB) and `ops.market_record` (QB–TE × EV
+     league-weeks, about 600 rows a week for the dynasty).
+   * Rollback: `LEAGUE_LAB_COLD_START: "0"` on the `project` step's env (`.github/workflows/nightly.yml`, yours),
+     then re-run. Weeks that kicked off blended keep their rows (B5).
+   * The nightly prices at the odds (M4's flip). The blend is the same under EV: the parity tests cover both modes,
+     and only the anchor's scale is set in flat Scrubs, which EV does not move.
+   * `HOSTING.md`'s "What stops a night" table has no row for the new soft step (not my file). A proposed row:
+     `| calibration-oof | the cold-start prior's fitting rows could not be built | Nothing urgent: project publishes
+     the model's own lines for cold starts (v3.0's numbers) and logs "stat lines unchanged"; reproduce with uv run
+     python -c "from league_lab.calibration import ensure_oof; ensure_oof()" |`.
+5. **What moves on the first nightly**: weeks 5–18; week 4 is frozen. The numbers are in "Evidence" (the clone's
+   board).
+6. **Decisions Andrew may want to reverse**:
+   * **On by default**, now that the line carries it.
+   * **A debut is the draft slot's average.** The model gets weight 0 at career game 0. A first-round WR rookie with
+     no game goes up, an undrafted one goes down to about 2. From the first game on, the 2023–2025 fit keeps the
+     model at WR (weights 1.0 / 1.0 at games 1 / 2), so a rookie who played is not pulled back after one game.
+     That differs from M5's 2018–2024 example (Bernard 9.93 → 4.85, which does not happen now).
+   * **One scale per player-week**, set in the reference league's scoring and used by every league.
+   * Lines under half a point are not scaled.
+   * **The new-team MAE scale is rejected on principle** (it projects the median).
+7. **Clone state** (`league_lab_m1`):
+   * three `project` runs on today's code (on, off, on again); it ends on, in flat mode, with the projection marts
+     rebuilt;
+   * `ops.calibration_oof` rebuilt to 2023–2025 with `model_version`;
+   * `ops.market_record` created, 0 rows;
+   * the market demo's planted snapshot and week-4 labels reverted (581 rows back to NULL; `raw.sleeper_projections`
+     back to 0 rows).
