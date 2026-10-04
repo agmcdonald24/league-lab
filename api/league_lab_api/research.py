@@ -33,6 +33,7 @@ from league_lab import anyleague as A
 from league_lab import research as R
 
 from . import availability
+from .applib import PKG as APPLIB_PKG
 from .applib import cards, links, signals
 from .applib import ros as ROS
 from .db import missing_relations, query
@@ -46,8 +47,10 @@ class BadRequest(ValueError):
 
 
 def _load_matchups():
-    """app/lib/matchups.py (pure: pandas + math) under a private name, unchanged — the Matchups page's sentences."""
-    name = "league_lab_api._applib_matchups"
+    """app/lib/matchups.py (pure: pandas + math) unchanged, as a member of applib's private package — so its own
+    relative imports (``from .cards import rank_words``, the PO's I-F verdict words) resolve to the modules applib
+    loaded (``cards``), exactly as ``lib.matchups`` does on the console."""
+    name = f"{APPLIB_PKG}.matchups"
     if name in sys.modules:
         return sys.modules[name]
     spec = importlib.util.spec_from_file_location(name, APP_LIB / "matchups.py")
@@ -55,6 +58,7 @@ def _load_matchups():
     mod = importlib.util.module_from_spec(spec)
     sys.modules[name] = mod
     spec.loader.exec_module(mod)
+    setattr(sys.modules[APPLIB_PKG], "matchups", mod)
     return mod
 
 

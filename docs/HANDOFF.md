@@ -153,6 +153,12 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   "What changed", the pane trimmed, the language table, the I-E leftovers; **usage tracking** (`usage.events`,
   `scripts/hosted_usage.sql` run by the sync, `POST /api/usage`, the console's Usage page — no new secret; the table
   appears on Neon at the next nightly; `GET /api/usage/summary` says `ready`).
+
+* **N2 (2026-10-03 evening, branch `playerwire-integration`; merged 2026-10-04)**: PlayerWire's briefs lead the news line (the Mac syncs
+  them every 15 minutes into Neon's own schema `playerwire` as role `playerwire_writer`; ESPN fills the rest;
+  `docs/PLAYERWIRE.md`). Waits on Andrew's yes to HOSTING.md § 5 as "one writer per schema", then five set-up steps. Merged over
+  IF-4: ESPN's items keep IF-4's order and `about`; a PlayerWire brief is `about: "player"` (his by id); every item has `kind`.
+
   **Next: Monday's flip of `LEAGUE_LAB_EV_PRICING`** (STATUS § "Wave I-D" PO section: the nightly's env + a manual
   run first, then Render's env; week 5 is the record's first EV-priced week; M3's `pricing` column proposal for the
   record goes with it). Then `ops.events` (IF-3's design in STATUS § "Wave I-F"), the finder's raw-total filter on

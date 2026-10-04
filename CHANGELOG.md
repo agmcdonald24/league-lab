@@ -11,6 +11,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   console keep the name League Lab. The domain follows (Andrew).
 - **CI.** The image workflow's smoke step and `scripts/smoke.sh` check the served page for the product name (the
   rename's first run failed on the old title; the image was not pushed, so that deploy was by hand).
+- **N2 merged** (branch `playerwire-integration`, cut before Waves I-E/I-F; the PO resolved it): PlayerWire's briefs
+  lead the news line and ESPN fills the rest in IF-4's order — every item carries `kind` ("playerwire" | "espn") and
+  `about` (a brief is his by id: "player"); N2's own entry is below under 2026-10-03.
+- **Fixed.** Compare (`/api/research/compare`) answered 500 whenever both players had an adjusted rank: the PO's I-F
+  verdict words import `cards.rank_words` relative to `app/lib`, and the API loaded `matchups.py` outside applib's
+  package (`research._load_matchups`); it is a member of that package now, as on the console.
 
 ## 2026-10-03 — Wave I-F
 
@@ -86,6 +92,18 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   four-week number is a total; the answer, the three strongest and the Help now list no longer repeat one move. The
   trade dial is "Effect on their starters" (no 0–100, no "interest"); the Finder leads with the cheaper package when an
   extra player adds nothing for you. No projection, lineup total or gain changed.
+
+## 2026-10-03 — N2: PlayerWire briefs on the news line
+
+- **N2: PlayerWire first, ESPN fills.** The player card's news line leads with Andrew's own PlayerWire briefs —
+  "News · 2 h ago · *Jefferson (ankle) ruled out for Sunday* · Minnesota Vikings via PlayerWire › OFFICIAL" with the
+  brief's one-sentence news under it — and ESPN's headlines fill the rest (`kind`, `summary`, `verification`,
+  `related` are new keys; N1's four stay). The briefs reach Neon from the Mac every 15 minutes
+  (`scripts/playerwire_sync.py`, launchd, role `playerwire_writer`, schema `playerwire`, which the nightly never
+  touches); a withdrawn brief loses its text on the next sync. Players are matched by Sleeper / gsis id through
+  `player_id_map`; briefs nobody maps to are kept and counted in `/api/status`. `LEAGUE_LAB_PLAYERWIRE=off` hides them.
+  Proposed for Andrew: HOSTING.md § 5 becomes "one writer per schema" (`docs/PLAYERWIRE.md`); nothing is installed
+  until he says yes.
 
 ## 2026-10-03 — Wave I-D
 

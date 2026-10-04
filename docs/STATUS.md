@@ -4742,6 +4742,21 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   the rename missed (the image was never pushed, so Render had nothing to autodeploy; Andrew deployed by hand). Fixed
   to the product name (`.github/workflows/image.yml`; the image's OCI description names both), and the same check in
   `scripts/smoke.sh`. Nothing else in `.github/` or the ops scripts asserts the old name.
+* **N2 merged by the PO (2026-10-04, 02:00–02:40 ET)**: Andrew's Mac had `git merge playerwire-integration` stopped
+  on five conflicts (the branch left `16e4657`, before I-E, I-F and the rename). Resolved here and fast-forwarded there:
+  `news.py` — N2's `for_card` (PlayerWire first, ESPN fills) over IF-4's `ordered` / `about` / `recent` (ESPN's items
+  keep IF-4's order; a brief is `about: "player"`; every item has `kind`); `test_n1` pins both keys; `test_n2`'s three
+  pinned ESPN orders moved to IF-4's (his blurbs first, the inactives story last) and expect `about`; the N2 e2e's About
+  sentence reads the product name; CHANGELOG / HANDOFF / STATUS keep both sides (N2's section below I-F's). The web
+  side merged clean: IF-4's "League news" label and N2's summary / verification tag coexist on `NewsLine`. Checks: API
+  478 passed / 3 skipped (the N2 16 included), root `test_playerwire_sync` 36 + trades + matchups, ruff, svelte-check,
+  eslint, build, e2e n1 + n2 + if4 36 passed. **Found on the way**: `research._load_matchups` loaded `app/lib/matchups.py`
+  as `league_lab_api._applib_matchups`, so the PO's I-F `from .cards import rank_words` raised `ModuleNotFoundError`
+  — Compare answered 500 whenever both players had an adjusted rank (`test_if3::test_williams_compare…` caught it; the
+  I-F QA ran before that PO edit). Loaded as `league_lab_api._applib.matchups` now. Live had this from `8f80c96` until
+  this deploy. `hosted_relations.py` does not list schema `playerwire` (the sync never publishes or drops it; the app's
+  SQL joins `analytics.player_id_map`, already published). N2's set-up steps (`docs/PLAYERWIRE.md`; HOSTING § 5
+  "one writer per schema") stay Andrew's.
 
 ## Wave I-F (Iteration 17, part F)
 
@@ -5023,3 +5038,90 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   take `rankWords` / `history.words`); IF-3's `MatchupEvidence` goes into the pane's projection section (a marked
   comment shows where); the What changed news reads up to ~10 ESPN copies on a cold My Week (the feed's bucket and
   cache; at most 1 s waited).
+
+## N2 (Iteration 17) — PlayerWire briefs on the news line
+
+### N2 2026-10-03 — PlayerWire first, ESPN fills (branch `playerwire-integration`)
+
+* **Task**: N2 (plan § Iteration 17, "Still after: … the news feed"). Plan sections touched: § Iteration 17; HOSTING.md
+  § 5 (a proposed extension, below); ANY_LEAGUE.md § "News". Design and operations: `docs/PLAYERWIRE.md`.
+* **The § 5 question (Andrew)**: *a second writer on Neon — the Mac's `playerwire_sync.py`, as role
+  `playerwire_writer`, writing only schema `playerwire` — next to GitHub Actions as the only writer of `analytics`,
+  `analytics_seeds` and `ops` ("one writer per schema")?* Nothing is installed on Neon or the Mac until he says yes;
+  the API shows ESPN only while the schema does not exist.
+* **Schema + role** `scripts/init_playerwire_schema.sql` (`make playerwire-schema` = `playerwire_sync.py init-schema`,
+  psql with the password read by `\getenv`, never on argv): `playerwire.briefs` (PK `brief_id`; `version`, `status`,
+  `pw_player_id`, `primary_sleeper_id`, `primary_gsis_id`, `category`, `headline`, `news`, `analysis`,
+  `verification_status`, `published_at`, `updated_at`, `evidence_url`, `evidence_publisher`, `evidence_published_at`,
+  `payload` jsonb, `synced_at`, `deleted`, `deleted_reason`, `deleted_at`; check `briefs_withdrawn_text_gone`),
+  `playerwire.brief_players` (`brief_id`, `pw_player_id`, `sleeper_id`, `gsis_id`, `role`), `playerwire.sync_state`
+  (`id = 1`, cursor, watermarks, last sync / error). Owner `playerwire_writer`; `league_lab_app` gets USAGE + SELECT
+  + default privileges. Idempotent (run three times on the stand-in: notices only).
+* **Sync** `scripts/playerwire_sync.py` (stdlib HTTP + League Lab's own `psycopg` 3 and `python-dotenv` from
+  `uv.lock`; no new dependency): PlayerWire's reference consumer on Postgres — bootstrap from a pinned snapshot
+  (every page, then one transaction with the cursor; live rows the snapshot lacks → withdrawn
+  `absent_from_snapshot`), change pages (each with its cursor), version guards (never over a newer version, never
+  reviving a tombstone of the same or newer version), tombstones that keep the row and clear headline / news /
+  analysis / evidence (payload = the tombstone), 410 / 409 → bootstrap again (on a later snapshot page: restart the
+  snapshot), 429 / 503 → `Retry-After` (1–120 s, 5 tries), synthetic briefs skipped, an advisory lock, refuses any
+  role but `playerwire_writer`. `sync --once` (launchd), `--dry-run` (a scratch copy in memory), `status`,
+  `init-schema`. `scripts/launchd/com.leaguelab.playerwire-sync.plist` (every 900 s, `RunAtLoad`, the refresh plist's
+  `__ROOT__` convention, `logs/playerwire-sync.log`). Make: `playerwire-schema`, `playerwire-sync` (`DRY=1`),
+  `playerwire-status`; `make lint` now also lints `scripts/playerwire_sync.py`.
+* **API** `api/league_lab_api/playerwire.py` + `news.py`: `news` = PlayerWire's items first (his briefs and the briefs
+  naming him as related, mapped through `analytics.player_id_map` by Sleeper id, else gsis id, a disagreement shown to
+  nobody; live, published, 14 days, newest first, ≤ 3; `{headline, date, source: "<publisher> via PlayerWire", url,
+  summary, kind: "playerwire", verification, related}`), then ESPN's (`kind: "espn"`) to fill 3; ESPN not called when
+  PlayerWire fills all three. `LEAGUE_LAB_PLAYERWIRE=off`; `LEAGUE_LAB_NEWS=off` still turns the whole line off;
+  fixture mode off unless `LEAGUE_LAB_PLAYERWIRE_FIXTURES`. No schema / no grant / marts mid-restore → ESPN only, one
+  warning, a 60 s pause. Cached 60 s (`db.query` gained an optional `ttl`). `/api/status` → `news.playerwire`
+  (`rows`, `withdrawn`, `newest_published_at`, `unmapped`, `conflicting`, `last_sync_at`, `last_error`). The hosted
+  relation audit is unchanged (`playerwire` is not one of its schemas; `analytics.player_id_map` was already named).
+* **Web**: `NewsLine.svelte` — a brief's news under the headline (muted, full width, ≤ 220 characters at a word, the
+  whole text in `title`) and a verification tag after the source (`bg-accent-soft`; disputed `bg-warn-soft`); ESPN
+  items unchanged. `lib/api.ts` `NewsItem` (+ `kind`, `summary`, `verification`, `related`), `lib/card.ts`
+  `newsLine` (+ `summary`, `summaryFull`, `verification`, `SUMMARY_MAX`). About: one sentence
+  (`about-news-playerwire`). No "What's new" line yet: PlayerWire has no real source, so nobody sees a brief yet — add
+  it with the first real brief.
+* **Tests**: root `make pytest` **963 → 982 passed** (25 → 26 skipped: the Postgres end-to-end test without
+  `LEAGUE_LAB_PLAYERWIRE_TEST_DSN`), `make lint` green. `tests/test_playerwire_sync.py` 19 (+1 on Postgres): payload →
+  row and players; bootstrap in one commit; synthetic skipped; changes in order, stale versions, idempotent replay;
+  tombstone keeps the row with no text, cannot be revived by the same version, revived by a newer; tombstone for an
+  unseen brief; cursor only with a committed page (an injected failure on page 2); a failed bootstrap writes nothing;
+  410 → bootstrap and `absent_from_snapshot`; 409; 410 on a later snapshot page restarts it; wrong filter signature;
+  429 / 503 Retry-After (7, 120 cap, 1); 401 / outage errors; unreachable API; writer URL template carries no secret;
+  config errors; `--dry-run`; the schema SQL never names the marts and the nightly never names `playerwire`. API
+  (`cd api && uv run pytest`, no database here) **156 → 173 passed**, 224 → 223 skipped, the same 2 failures as
+  before this change (`test_ic3.py::test_user_leagues_carry_cards` / `test_check_route_wired` need a database and
+  lack `needs_db`); `api/tests/test_n2.py` 15 (+1 `needs_db` card test): PlayerWire first / newest first / ESPN not
+  asked at 3; ESPN fills to 3; no brief → ESPN as before; 14-day cutoff and bad dates; withdrawn hidden; unmapped and
+  conflicting hidden but counted; the identity rule; `LEAGUE_LAB_PLAYERWIRE=off` → ESPN only; `LEAGUE_LAB_NEWS=off` →
+  nothing; fixture mode never reads a database; the status block; the database path through a stand-in `query`
+  (one per brief, own over related, http link dropped, params and TTL); missing schema → ESPN only, logged once, the
+  pause, recovery; database status counts; the audit does not see `playerwire`. `test_n1.py`'s card-shape test now
+  expects `kind`. Web: `npm run lint` (eslint + svelte-check + tsc) green; `npm run e2e:fixtures` **160 passed** (150 at Wave I-D)
+  (`web/e2e/n2/` 5 × phone / desktop; N1's 10 unchanged).
+* **Evidence on real servers (this sandbox)**: a Postgres 16 cluster standing in for Neon (a non-superuser
+  `neondb_owner` with CREATEROLE, as on Neon): the schema SQL as that owner — exit 3 without the password, then
+  "playerwire schema ready: 3 tables, owner playerwire_writer", then again (notices only). Isolation:
+  `playerwire_writer` → `permission denied for schema analytics` (read and create) and `… schema public`;
+  `league_lab_app` insert → `cannot execute INSERT in a read-only transaction`. **PlayerWire's own server** (read-only
+  use of `/home/claude/playerwire`, its demo database in the scratch directory): preview mode — dry run (1 brief, 0
+  with ids, nothing written), real run without `--allow-synthetic` (0 written, 1 synthetic skipped), with it (1),
+  then a second brief published + the first withdrawn → `upserts 1, deletes 1`: the withdrawn row `version 2,
+  withdrawn, deleted, headline / news / evidence NULL, payload without the player's name`; the new one with its
+  related player in `brief_players`. Production mode on another port: no key → `HTTP 401 missing_credentials`
+  (recorded in `sync_state.last_error`); with the key → `409 cursor_filter_mismatch` (the preview cursor) →
+  bootstrap again, 0 eligible briefs, the synthetic one marked `absent_from_snapshot`. The API's SQL on the stand-in
+  as `league_lab_app`: Jefferson's card = his own brief, a related mention (`related: true`) and a Sleeper-only brief;
+  a 16-day-old, a conflicting, an unmapped and a withdrawn brief hidden; status `rows 6, withdrawn 1, unmapped 2,
+  conflicting 1`. The nightly's `drop schema analytics cascade` left the 7 brief rows; during the gap the card
+  answered [] from PlayerWire with one warning (`DataNotReady: relation "analytics.player_id_map" does not exist`).
+* **Data touched**: none of Andrew's. Neon, Render, GitHub Actions and the Mac are unchanged until Andrew runs
+  `docs/PLAYERWIRE.md` § "Set up".
+* **Limitations**: freshness bound by the Mac being awake and PlayerWire's server running (≤ ~16 minutes when it is);
+  a withdrawal leaves the card on the next sync (+ ≤ 1 minute); only published, hand-reviewed, non-synthetic briefs
+  (none exist yet: PlayerWire has no real source); PlayerWire first even when ESPN is newer, no de-duplication across
+  the two; unmapped players' briefs invisible; no retention (≈ 5 MB per thousand briefs, outside the nightly's
+  480 MB budget, inside Neon's 0.5 GB).
+* **Next**: Andrew's answer on § 5, then § "Set up" (five steps); after the first real brief, a "What's new" line.

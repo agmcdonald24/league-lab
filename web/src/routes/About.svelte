@@ -58,6 +58,11 @@
     The news line on a player's card is the latest headline from ESPN's public player news (RotoWire's updates and ESPN's own stories), with its source and a link to ESPN; {APP_NAME} keeps none of it.
   </p>
   <!-- ---- end N1 -->
+  <!-- ---- N2: PlayerWire's briefs come first on the news line (docs/PLAYERWIRE.md) -->
+  <p class="text-sm leading-snug text-ink-3" data-testid="about-news-playerwire">
+    Some cards show a PlayerWire brief first: a short note on the player that a person checked before it was published, with its source, a link to it, and whether the news is official, reported, corroborated or disputed. A brief that is taken back disappears from the card.
+  </p>
+  <!-- ---- end N2 -->
 
   {#if imp}
     <section class="space-y-3" data-testid="importance">

@@ -348,6 +348,26 @@ unit's card is its starter's):
   (`news_<espn_id>.json`, age measured from the recorded answer's `timestamp`). `/api/status` → `news` (calls,
   failures, cached athletes).
 
+**PlayerWire first (N2, 2026-10-03 — `docs/PLAYERWIRE.md`).** The line now leads with Andrew's own PlayerWire briefs:
+hand-reviewed, sourced news replicated every 15 minutes from PlayerWire's loopback API on the Mac into the hosted
+database's own schema `playerwire` (role `playerwire_writer`, never the nightly; HOSTING.md § 5 extended to "one writer
+per schema", awaiting Andrew's yes). `news.for_card(gsis)`:
+
+- **PlayerWire's items first**: his own briefs and the briefs naming him as a related player (`related: true`), mapped
+  through `analytics.player_id_map` by Sleeper id, else gsis id (a disagreement shows to nobody), live and published,
+  newest first, none older than 14 days, at most 3 — each `{headline, date (published_at), source ("<first evidence
+  publisher> via PlayerWire"), url (its https link), summary (the brief's news), kind: "playerwire", verification
+  (official / reported / corroborated / disputed), related}`.
+- **ESPN fills the slots left** exactly as above, with `kind: "espn"` added; ESPN is not asked when PlayerWire fills all
+  three. The shape is backward compatible (N1's four keys on every item; the rest are new keys).
+- **The card**: when the first item has a `summary`, the brief's news goes under the headline (muted, full width, cut
+  at a word to 220 characters) and a small verification tag after the source; an ESPN item renders as before.
+- **Switches**: `LEAGUE_LAB_PLAYERWIRE=off` (ESPN only); `LEAGUE_LAB_NEWS=off` still turns the whole line off. No schema
+  or the marts mid-restore → ESPN only, one log warning, a minute's pause. Fixture mode: off unless
+  `LEAGUE_LAB_PLAYERWIRE_FIXTURES` names a rows file (`api/tests/fixtures/playerwire/briefs.json`). `/api/status` →
+  `news.playerwire` (`rows`, `withdrawn`, `newest_published_at`, `unmapped`, `conflicting`, `last_sync_at`,
+  `last_error`).
+
 ## MyFantasyLeague (Wave I-0, I0-B, 2026-10-03)
 
 **Design.** The rest of the code only sees Sleeper shapes. A league key with a platform prefix (`mfl:21861`; Sleeper

@@ -83,7 +83,7 @@ pytest: ## python unit tests (no database required)
 	uv run pytest -q
 
 lint: ## ruff
-	uv run ruff check src app tests
+	uv run ruff check src app tests scripts/playerwire_sync.py
 
 .PHONY: help setup sync migrate check ingest-sleeper ingest-nfl fit-rankings backtest backtest-v2 project sleeper-projections sync-hosted pilot backfill dbt-deps build test docs refresh nightly status app backup pytest lint
 
@@ -94,3 +94,15 @@ weekly-pack: ## facts pack for the newsletter: make weekly-pack WEEK=3 TEAM=2
 	uv run league-lab weekly-pack $(if $(WEEK),--week $(WEEK),) $(if $(TEAM),--team $(TEAM),)
 
 .PHONY: teams weekly-pack
+
+# ---- N2: PlayerWire briefs on the news line (docs/PLAYERWIRE.md). The Mac is the one writer of schema `playerwire`.
+playerwire-schema: ## create / update schema playerwire + role playerwire_writer on the hosted DB (LEAGUE_LAB_HOSTED_ADMIN_URL, PLAYERWIRE_WRITER_PASSWORD from .env)
+	uv run python scripts/playerwire_sync.py init-schema
+
+playerwire-sync: ## one PlayerWire -> hosted `playerwire` sync (what launchd runs every 15 minutes); DRY=1 writes nothing
+	uv run python scripts/playerwire_sync.py sync --once $(if $(DRY),--dry-run,)
+
+playerwire-status: ## the hosted briefs replica: counts, the last sync, whether PlayerWire's API answers
+	uv run python scripts/playerwire_sync.py status
+
+.PHONY: playerwire-schema playerwire-sync playerwire-status
