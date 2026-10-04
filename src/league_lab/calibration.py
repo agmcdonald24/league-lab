@@ -392,13 +392,24 @@ def load_oof(conn: psycopg.Connection, before_season: int) -> pd.DataFrame | Non
 
 def calibrate_outputs(conn: psycopg.Connection, season: int, pred: pd.DataFrame, ranges: pd.DataFrame,
                       source: dict[str, str]) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """``projections.project``'s hook. Flag off (the default): ``pred`` and ``ranges`` returned untouched. Flag on: the
-    maps fitted on ``ops.calibration_oof`` (seasons before ``season``; the house leagues' scorings, the ones the
+    """``projections.project``'s hook. Flags off (the default): ``pred`` and ``ranges`` returned untouched. cal1.0's flag
+    on: the maps fitted on ``ops.calibration_oof`` (seasons before ``season``; the house leagues' scorings, the ones the
     backtest prices) applied to the house leagues' rows (``pred``, QB-TE) and to the ranges of the reference scorings
     those leagues are (``source``). The stat line is not changed, so on-demand leagues (priced from the line at
-    request time) do not see it. ``project`` writes through the B5 freeze, so kicked-off weeks keep their stored rows."""
-    if not enabled():
-        return pred, ranges
+    request time) do not see it. ``project`` writes through the B5 freeze, so kicked-off weeks keep their stored rows.
+    M5 (Wave I-G): then the fringe level and the cold-start prior, each behind its own switch (``v31_outputs``)."""
+    if enabled():
+        pred, ranges = _cal10_outputs(conn, season, pred, ranges, source)
+    # ---- M5 (Wave I-G)
+    if fringe_enabled() or cold_start_enabled():
+        pred, ranges = v31_outputs(conn, season, pred, ranges, source)
+    # ---- /M5
+    return pred, ranges
+
+
+def _cal10_outputs(conn: psycopg.Connection, season: int, pred: pd.DataFrame, ranges: pd.DataFrame,
+                   source: dict[str, str]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """cal1.0 (M1): the two-piece maps of ``CAL_POSITIONS`` applied (``calibrate_outputs`` checks the flag)."""
     oof = load_oof(conn, season)
     oof = oof[(oof["season"] >= season - WINDOW) & oof["position"].isin(CAL_POSITIONS)] if oof is not None else None
     if oof is None or oof.empty:
@@ -490,3 +501,355 @@ def bonus_delta(rows: pd.DataFrame, scoring: dict[str, float], curves: dict[tupl
             p[sel] = np.clip(p_lo - p_hi, 0, 1)
         delta += w * (p - det)
     return delta
+
+
+# ---- M5 (Wave I-G): v3.1 -- the fringe level and cold starts (docs/METRICS.md § "Calibration of the top" -> "v3.1").
+# Both are post-hoc corrections of the priced point projection, measured walk-forward on the out-of-sample rows and
+# judged by the harness's rules (experiments.decide); each has its own switch, off by default, and moves the ranges
+# with the point (``shift_bands``) as cal1.0's map does.
+FRINGE_FLAG = P.FRINGE_FLAG              # LEAGUE_LAB_FRINGE_LEVEL (the switches are named in projections.py)
+COLD_START_FLAG = P.COLD_START_FLAG      # LEAGUE_LAB_COLD_START
+FRINGE_VERSION = "fr1.0"
+FRINGE_TOP = 24                      # the protected top: at or above the weekly 24th projection nothing moves
+FRINGE_TIERS = (36, 60)              # fringe tiers by weekly rank: 25-36, 37-60, 61+ (cut points in projected points)
+FRINGE_MIN_ROWS = 300                # a tier with fewer fitting rows joins the one above it
+FRINGE_FLOOR = 0.5                   # cal(x) >= FRINGE_FLOOR x: a fringe player is never priced below half his line
+COLD_N = 3                           # cold start: fewer than COLD_N career games before the week
+COLD_VERSION = "cs1.0"
+DRAFT_BUCKETS = ((1, 32, "pick 1-32"), (33, 64, "pick 33-64"), (65, 128, "pick 65-128"), (129, 400, "pick 129+"))
+COLD_SHRINK = 30                     # a bucket's prior is shrunk to the position's by n / (n + COLD_SHRINK)
+COLD_GRID = tuple(round(0.1 * k, 1) for k in range(11))   # the blend weight on the model, fitted per games-played step
+
+
+def _flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+def fringe_enabled() -> bool:
+    """``LEAGUE_LAB_FRINGE_LEVEL=1`` (off by default)."""
+    return _flag(FRINGE_FLAG)
+
+
+def cold_start_enabled() -> bool:
+    """``LEAGUE_LAB_COLD_START=1`` (off by default)."""
+    return _flag(COLD_START_FLAG)
+
+
+@dataclass
+class FringeMap:
+    """``cal(x) = max(x + level(x), FRINGE_FLOOR x)``, ``level`` piecewise linear through ``knots`` (projected points,
+    ascending) and ``levels``: 0 at and above the top cut (the last knot), flat below the first. The levels are the
+    fringe tiers' mean residuals (actual - projected), player-clustered and shrunk like cal1.0's coefficients, then
+    limited so that ``level`` never falls faster than MAX_SLOPE per point: ``cal`` is strictly increasing, so the order
+    within a position (Spearman, the top N) never changes. No knots = the identity."""
+    position: str
+    scoring: str
+    knots: tuple[float, ...] = ()
+    levels: tuple[float, ...] = ()
+    t: tuple[float, ...] = ()
+    n_rows: int = 0
+    seasons: str = ""
+
+    def level(self, x: np.ndarray | pd.Series) -> np.ndarray:
+        x = np.asarray(x, dtype=float)
+        if not self.knots:
+            return np.zeros_like(x)
+        return np.interp(x, np.asarray(self.knots), np.asarray(self.levels))
+
+    def apply(self, x: np.ndarray | pd.Series) -> np.ndarray:
+        x = np.asarray(x, dtype=float)
+        if not self.knots:
+            return x.copy()
+        return np.maximum(x + self.level(x), FRINGE_FLOOR * x)
+
+    @property
+    def identity(self) -> bool:
+        return not self.knots or all(v == 0.0 for v in self.levels)
+
+
+def fit_fringe(rows: pd.DataFrame, position: str = "", scoring: str = "", actual: str = "actual") -> FringeMap:
+    """One position x scoring's fringe map from played out-of-sample rows (``proj_points``, ``actual``, ``gsis_id``,
+    ``season``, ``week``): the weekly rank cut points (median over the weeks of the 24th / 36th / 60th projection) give
+    the tiers, each fringe tier's level is its shrunk mean residual at the tier's median projection, and the top cut
+    is anchored at 0."""
+    d = rows[rows[actual].notna() & rows["proj_points"].notna()]
+    label = f"{int(d['season'].min())}-{int(d['season'].max())}" if len(d) else ""
+    if len(d) < FRINGE_MIN_ROWS:
+        return FringeMap(position, scoring, n_rows=len(d), seasons=label)
+    wk = d.groupby(["season", "week"])["proj_points"]
+    cuts = []
+    for r in (FRINGE_TOP, *FRINGE_TIERS):
+        nth = wk.apply(lambda s, r=r: np.sort(s.to_numpy())[::-1][r - 1] if len(s) >= r else np.nan).dropna()
+        cuts.append(float(nth.median()) if len(nth) else np.nan)
+    top = cuts[0]
+    if np.isnan(top):
+        return FringeMap(position, scoring, n_rows=len(d), seasons=label)
+    edges = [top] + [c for c in cuts[1:] if not np.isnan(c) and c < top] + [-np.inf]
+    x, resid = d["proj_points"].to_numpy(dtype=float), (d[actual] - d["proj_points"]).to_numpy(dtype=float)
+    groups = d["gsis_id"].to_numpy()
+    tiers: list[np.ndarray] = []
+    for hi, lo in zip(edges, edges[1:], strict=False):
+        sel = (x < hi) & (x >= lo)
+        if sel.sum() < FRINGE_MIN_ROWS and tiers:
+            tiers[-1] = tiers[-1] | sel          # too few rows: joins the tier above
+        elif sel.sum() > 0:
+            tiers.append(sel)
+    knots, levels, ts = [], [], []
+    for sel in tiers:
+        if sel.sum() < FRINGE_MIN_ROWS:
+            continue
+        beta, t = _clustered_t(np.ones((int(sel.sum()), 1)), resid[sel], groups[sel])
+        knots.append(float(np.median(x[sel])))
+        levels.append(_shrink(float(beta[0]), float(t[0])))
+        ts.append(round(float(t[0]), 2))
+    if not knots:
+        return FringeMap(position, scoring, n_rows=len(d), seasons=label)
+    order = np.argsort(knots)
+    knots, levels, ts = [knots[i] for i in order] + [top], [levels[i] for i in order] + [0.0], [ts[i] for i in order]
+    for i in range(len(knots) - 2, -1, -1):      # from the top down: never steeper than MAX_SLOPE (cal increasing)
+        levels[i] = min(levels[i], levels[i + 1] + MAX_SLOPE * (knots[i + 1] - knots[i]))
+    return FringeMap(position, scoring, tuple(knots), tuple(float(v) for v in levels), tuple(ts), int(len(d)), label)
+
+
+def fit_fringes(rows: pd.DataFrame, actual: str = "actual") -> dict[tuple[str, str], FringeMap]:
+    d = rows[rows[actual].notna() & rows["proj_points"].notna()]
+    return {(pos, lid): fit_fringe(g, pos, lid, actual) for (pos, lid), g in d.groupby(["position", "league_id"])}
+
+
+def apply_fringe(rows: pd.DataFrame, maps: dict[tuple[str, str], FringeMap], scoring_col: str = "league_id",
+                 band_prefix: str = "") -> pd.DataFrame:
+    """``rows`` with ``proj_points`` moved by the maps and the band columns (``<band_prefix>p10`` ...) by the same
+    amount (``shift_bands``: a band at 0 stays). ``proj_points_raw`` keeps the model's number."""
+    out = rows.copy()
+    out["proj_points_raw"] = out["proj_points"]
+    for (pos, lid), m in maps.items():
+        if m.identity:
+            continue
+        sel = ((out["position"] == pos) & (out[scoring_col] == lid)).to_numpy()
+        if not sel.any():
+            continue
+        raw = out.loc[sel, "proj_points"].to_numpy(dtype=float)
+        delta = m.apply(raw) - raw
+        out.loc[sel, "proj_points"] = raw + delta
+        out.loc[sel] = _shift_prefixed(out.loc[sel], delta, band_prefix)
+    return out
+
+
+def _shift_prefixed(rows: pd.DataFrame, delta: np.ndarray, prefix: str) -> pd.DataFrame:
+    if not prefix:
+        return shift_bands(rows, delta)
+    cols = [f"{prefix}{b}" for b in BAND_COLUMNS if f"{prefix}{b}" in rows]
+    moved = shift_bands(rows[cols].rename(columns=lambda c: c[len(prefix):]), delta)
+    out = rows.copy()
+    for c in cols:
+        out[c] = moved[c[len(prefix):]].to_numpy()
+    return out
+
+
+def walk_forward_fringe(oof: pd.DataFrame, seasons: list[int], window: int = WINDOW, actual: str = "actual",
+                        band_prefix: str = "") -> tuple[pd.DataFrame, list[FringeMap]]:
+    """For each season S: the maps fitted on the out-of-sample rows of the ``window`` seasons before S only, applied
+    to the season-S rows."""
+    outs, maps = [], []
+    for s in seasons:
+        fit_rows = oof[(oof["season"] >= s - window) & (oof["season"] < s)]
+        m = fit_fringes(fit_rows, actual)
+        maps.extend(m.values())
+        outs.append(apply_fringe(oof[oof["season"] == s], m, band_prefix=band_prefix))
+    return pd.concat(outs, ignore_index=True), maps
+
+
+# ------------------------------------------------------------------------------ cold starts
+def draft_bucket(pick: pd.Series | np.ndarray) -> np.ndarray:
+    """'pick 1-32' ... 'pick 129+' for an overall draft pick; 'undrafted' when there is none."""
+    p = pd.to_numeric(pd.Series(np.asarray(pick, dtype=object)), errors="coerce").to_numpy(dtype=float)
+    out = np.full(len(p), "undrafted", dtype=object)
+    for lo, hi, label in DRAFT_BUCKETS:
+        out[(p >= lo) & (p <= hi)] = label
+    return out
+
+
+def is_cold(career_games_before: pd.Series | np.ndarray, career_before_2016: pd.Series | np.ndarray | None = None,
+            n: int = COLD_N) -> np.ndarray:
+    """A cold start: fewer than ``n`` played regular-season games before the week (a career that began before the
+    history window, ``career_before_2016``, is never cold)."""
+    g = pd.to_numeric(pd.Series(np.asarray(career_games_before, dtype=object)), errors="coerce").fillna(0).to_numpy(dtype=float)
+    old = (np.zeros(len(g), dtype=bool) if career_before_2016 is None
+           else pd.Series(np.asarray(career_before_2016, dtype=object)).fillna(False).astype(bool).to_numpy())
+    return (g < n) & ~old
+
+
+@dataclass
+class ColdPrior:
+    """Per position x scoring: the mean actual of cold-start player-weeks by draft bucket (shrunk to the position's)
+    and the fitted weight on the model's projection per games-played step (``weights[g]`` for g = 0 .. COLD_N - 1;
+    1.0 = the model unchanged). At COLD_N games and beyond the blend is the identity."""
+    position: str
+    scoring: str
+    prior: dict[str, float]
+    weights: tuple[float, ...]
+    n_rows: int = 0
+    seasons: str = ""
+
+    def blend(self, proj: np.ndarray, games: np.ndarray, bucket: np.ndarray, cold: np.ndarray) -> np.ndarray:
+        proj = np.asarray(proj, dtype=float)
+        g = np.clip(np.asarray(games, dtype=float), 0, COLD_N).astype(int)
+        w = np.where(cold & (g < COLD_N), np.asarray([*self.weights, 1.0])[np.minimum(g, COLD_N)], 1.0)
+        pr = np.array([self.prior.get(b, self.prior.get("all", np.nan)) for b in bucket], dtype=float)
+        return np.where(np.isnan(pr), proj, w * proj + (1.0 - w) * np.nan_to_num(pr))
+
+
+def blend_identity_at(n: int = COLD_N) -> bool:
+    """The rule the tests pin: a player with ``n`` games of history is never blended."""
+    cp = ColdPrior("WR", "x", {"all": 10.0}, tuple(0.0 for _ in range(n)))
+    return bool(cp.blend(np.array([3.0]), np.array([n]), np.array(["all"]), np.array([False]))[0] == 3.0)
+
+
+def fit_cold_prior(rows: pd.DataFrame, position: str = "", scoring: str = "", actual: str = "actual") -> ColdPrior:
+    """From played rows of earlier seasons carrying ``proj_points``, ``actual``, ``career_games_before``, ``cold`` and
+    ``bucket``: the prior per draft bucket (cold rows only) and, per games-played step, the weight on the model that
+    minimises the absolute error of ``w proj + (1 - w) prior`` (``COLD_GRID``)."""
+    d = rows[rows[actual].notna() & rows["proj_points"].notna()]
+    c = d[d["cold"].astype(bool)]
+    label = f"{int(d['season'].min())}-{int(d['season'].max())}" if len(d) else ""
+    if len(c) < 30:
+        return ColdPrior(position, scoring, {}, tuple(1.0 for _ in range(COLD_N)), len(c), label)
+    pos_mean = float(c[actual].mean())
+    prior = {"all": pos_mean}
+    for b, g in c.groupby("bucket"):
+        n = len(g)
+        prior[str(b)] = (n * float(g[actual].mean()) + COLD_SHRINK * pos_mean) / (n + COLD_SHRINK)
+    pr = np.array([prior.get(b, pos_mean) for b in c["bucket"]], dtype=float)
+    games = np.clip(c["career_games_before"].to_numpy(dtype=float), 0, COLD_N).astype(int)
+    weights = []
+    for k in range(COLD_N):
+        sel = games == k
+        if sel.sum() < 30:
+            weights.append(1.0)
+            continue
+        p, y, q = c["proj_points"].to_numpy(dtype=float)[sel], c[actual].to_numpy(dtype=float)[sel], pr[sel]
+        errs = [np.mean(np.abs(w * p + (1 - w) * q - y)) for w in COLD_GRID]
+        weights.append(float(COLD_GRID[int(np.argmin(errs))]))
+    return ColdPrior(position, scoring, prior, tuple(weights), len(c), label)
+
+
+def walk_forward_cold(oof: pd.DataFrame, seasons: list[int], actual: str = "actual", band_prefix: str = "",
+                      first_fit: int | None = None) -> tuple[pd.DataFrame, list[ColdPrior]]:
+    """For each season S: the priors fitted on the rows of seasons ``first_fit``..S-1, blended into the season-S rows
+    (the bands move with the point). ``oof`` carries ``career_games_before``, ``cold`` and ``bucket``."""
+    first_fit = int(oof["season"].min()) if first_fit is None else first_fit
+    outs, fits = [], []
+    for s in seasons:
+        fit_rows = oof[(oof["season"] >= first_fit) & (oof["season"] < s)]
+        out = oof[oof["season"] == s].copy()
+        out["proj_points_raw"] = out["proj_points"]
+        for (pos, lid), g in fit_rows.groupby(["position", "league_id"]):
+            cp = fit_cold_prior(g, pos, lid, actual)
+            fits.append(cp)
+            sel = ((out["position"] == pos) & (out["league_id"] == lid)).to_numpy()
+            if not sel.any() or not cp.prior:
+                continue
+            raw = out.loc[sel, "proj_points"].to_numpy(dtype=float)
+            new = cp.blend(raw, out.loc[sel, "career_games_before"].to_numpy(dtype=float), out.loc[sel, "bucket"].to_numpy(),
+                           out.loc[sel, "cold"].to_numpy(dtype=bool))
+            out.loc[sel, "proj_points"] = new
+            out.loc[sel] = _shift_prefixed(out.loc[sel], new - raw, band_prefix)
+        outs.append(out)
+    return pd.concat(outs, ignore_index=True), fits
+# ------------------------------------------------------------------------------ v3.1 in production (behind the switches)
+# The positions where the harness kept each correction (docs/METRICS.md § "Calibration of the top" -> "v3.1"); a switch
+# turned on applies its correction at these positions only (empty: the switch logs that and changes nothing).
+FRINGE_POSITIONS: tuple[str, ...] = ()
+COLD_POSITIONS: tuple[str, ...] = ()
+HISTORY_FIRST_SEASON = 2016     # the history window's first season: a career that began earlier is never a cold start
+
+GAMES_SQL = """select gsis_id, season, week from analytics.fct_player_game
+               where season_type = 'REG' and played and position = any(%s)"""
+DRAFT_SQL = "select gsis_id, draft_pick, rookie_season from analytics.dim_player where position = any(%s)"
+
+
+def career_games_before(rows: pd.DataFrame, games: pd.DataFrame) -> np.ndarray:
+    """Per row of ``rows`` (gsis_id, season, week): the player's played regular-season games in ``games`` (gsis_id,
+    season, week) strictly before that week -- for a week not played yet, every game so far."""
+    if rows.empty:
+        return np.zeros(0)
+    g = games.assign(key=games["season"].astype(int) * 100 + games["week"].astype(int)).sort_values("key")
+    g = g.assign(n=g.groupby("gsis_id").cumcount() + 1)[["gsis_id", "key", "n"]]
+    r = rows[["gsis_id"]].assign(key=rows["season"].astype(int).to_numpy() * 100 + rows["week"].astype(int).to_numpy(),
+                                 _i=np.arange(len(rows)))
+    m = pd.merge_asof(r.sort_values("key"), g, on="key", by="gsis_id", allow_exact_matches=False, direction="backward")
+    return m.sort_values("_i")["n"].fillna(0).to_numpy(dtype=float)
+
+
+def cold_columns(rows: pd.DataFrame, games: pd.DataFrame, draft: pd.DataFrame) -> pd.DataFrame:
+    """``rows`` with ``career_games_before``, ``cold`` and ``bucket`` (the draft-slot bucket)."""
+    out = rows.copy()
+    out["career_games_before"] = career_games_before(out, games)
+    dr = draft.drop_duplicates("gsis_id").set_index("gsis_id")
+    pick = out["gsis_id"].map(dr["draft_pick"]) if len(dr) else pd.Series(np.nan, index=out.index)
+    rookie = out["gsis_id"].map(dr["rookie_season"]) if len(dr) else pd.Series(np.nan, index=out.index)
+    out["bucket"] = draft_bucket(pick)
+    early = pd.to_numeric(rookie, errors="coerce") < HISTORY_FIRST_SEASON
+    out["cold"] = is_cold(out["career_games_before"], early.to_numpy())
+    return out
+
+
+def v31_outputs(conn: psycopg.Connection, season: int, pred: pd.DataFrame, ranges: pd.DataFrame,
+                source: dict[str, str]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The fringe level (``LEAGUE_LAB_FRINGE_LEVEL``) and the cold-start prior (``LEAGUE_LAB_COLD_START``) on the house
+    leagues' rows and their reference ranges, fitted on ``ops.calibration_oof`` (the ``WINDOW`` seasons before
+    ``season``), at the positions the harness kept. A missing table or no kept position: unchanged, logged."""
+    oof = load_oof(conn, season)
+    if oof is None or oof.empty:
+        log.warning("v3.1 switches on but %s is empty (run calibration.run_build_oof): unchanged", OOF_TABLE)
+        return pred, ranges
+    oof = oof[oof["season"] >= season - WINDOW]
+    qbte = pred["position"].isin(P.POSITIONS)
+    house, other = pred[qbte].copy(), pred[~qbte]
+    rng = ranges.copy()
+    if fringe_enabled():
+        maps = {k: m for k, m in fit_fringes(oof[oof["position"].isin(FRINGE_POSITIONS)]).items()}
+        if not maps:
+            log.warning("%s=1 but no position is kept (FRINGE_POSITIONS is empty): unchanged", FRINGE_FLAG)
+        for m in maps.values():
+            log.info("fringe %s %s %s: knots %s levels %s (t %s, %s rows %s)", FRINGE_VERSION, m.position, m.scoring[-6:],
+                     [round(k, 2) for k in m.knots], [round(v, 3) for v in m.levels], m.t, m.n_rows, m.seasons)
+        house = apply_fringe(house, maps).drop(columns="proj_points_raw")
+        by_ref = {(pos, source[lid]): m for (pos, lid), m in maps.items() if lid in source}
+        if len(rng):
+            rng = apply_fringe(rng, by_ref, scoring_col="scoring_name").drop(columns="proj_points_raw")
+    if cold_start_enabled():
+        if not COLD_POSITIONS:
+            log.warning("%s=1 but no position is kept (COLD_POSITIONS is empty): unchanged", COLD_START_FLAG)
+        else:
+            with conn.cursor() as cur:
+                cur.execute(GAMES_SQL, (list(P.POSITIONS),))
+                games = pd.DataFrame(cur.fetchall(), columns=["gsis_id", "season", "week"])
+                cur.execute(DRAFT_SQL, (list(P.POSITIONS),))
+                draft = pd.DataFrame(cur.fetchall(), columns=["gsis_id", "draft_pick", "rookie_season"])
+            fit_rows = cold_columns(oof[oof["position"].isin(COLD_POSITIONS)], games, draft)
+            priors = {(pos, lid): fit_cold_prior(g, pos, lid) for (pos, lid), g in fit_rows.groupby(["position", "league_id"])}
+            house = _blend_rows(cold_columns(house, games, draft), priors, "league_id")
+            by_ref = {(pos, source[lid]): cp for (pos, lid), cp in priors.items() if lid in source}
+            if len(rng):
+                rng = _blend_rows(cold_columns(rng, games, draft), by_ref, "scoring_name")
+    out = pd.concat([house, other], ignore_index=True)
+    out.attrs = pred.attrs
+    return out, rng
+
+
+def _blend_rows(rows: pd.DataFrame, priors: dict[tuple[str, str], ColdPrior], scoring_col: str) -> pd.DataFrame:
+    out = rows.copy()
+    for (pos, key), cp in priors.items():
+        sel = ((out["position"] == pos) & (out[scoring_col] == key)).to_numpy()
+        if not sel.any() or not cp.prior:
+            continue
+        raw = out.loc[sel, "proj_points"].to_numpy(dtype=float)
+        new = cp.blend(raw, out.loc[sel, "career_games_before"].to_numpy(dtype=float), out.loc[sel, "bucket"].to_numpy(),
+                       out.loc[sel, "cold"].to_numpy(dtype=bool))
+        out.loc[sel, "proj_points"] = new
+        out.loc[sel] = shift_bands(out.loc[sel], new - raw)
+        log.info("cold start %s %s %s: weights %s, %s rows blended", COLD_VERSION, pos, str(key)[-6:], cp.weights,
+                 int((new != raw).sum()))
+    return out.drop(columns=["career_games_before", "cold", "bucket"])
+# ---- /M5

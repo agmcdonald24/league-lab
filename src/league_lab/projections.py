@@ -76,6 +76,64 @@ QUANTILES_50 = (0.25, 0.75)
 TIER_QUANTILES = (1 / 3, 2 / 3)
 TIER_MIN_ROWS = 200
 
+# ---- M5 (Wave I-G): v3.1 -- the ranges' target. The residual (range) models were fitted on the actual priced from
+# the 12 projected components, so the 2-point conversions, the long-TD bonuses (``pass_td_40p`` ...), fumble-recovery
+# and special-teams TDs the record grades on (``fct_player_game_league.points``) were outside every range: 0.01-0.3 a
+# game low in the dynasty's scoring. With LEAGUE_LAB_RANGE_TARGET=graded the residuals are taken against the graded
+# actual: ``compute_points`` over the components plus these outcome columns (``outx_<column>``, from
+# ``analytics.fct_player_game``; the long-TD counts are play-by-play, as dbt's). Off by default: the harness's verdict
+# is docs/METRICS.md § "Calibration of the top" -> "v3.1". The point projection is unchanged either way.
+RANGE_TARGET_FLAG = "LEAGUE_LAB_RANGE_TARGET"
+GRADED_EXTRAS = ("passing_2pt_conversions", "rushing_2pt_conversions", "receiving_2pt_conversions", "fumbles_total",
+                 "fumble_recovery_tds", "special_teams_tds", "pass_tds_40p", "pass_tds_50p", "rush_tds_40p",
+                 "rush_tds_50p", "rec_tds_40p", "rec_tds_50p")
+
+
+def range_target_graded() -> bool:
+    """The switch: ``LEAGUE_LAB_RANGE_TARGET=graded`` (or 1 / true / on). Default: the components' price (v3.0)."""
+    import os
+
+    return os.environ.get(RANGE_TARGET_FLAG, "").strip().lower() in {"graded", "1", "true", "yes", "on"}
+
+
+def join_graded_extras(conn: psycopg.Connection, df: pd.DataFrame, seasons: list[int]) -> pd.DataFrame:
+    """``df`` with ``outx_<column>`` for every ``GRADED_EXTRAS`` column of the player's regular-season game (row order
+    and count kept; a player-week without a game row gets NaN, as its ``out_`` columns are)."""
+    cols = ", ".join(f"coalesce({c}, 0)::float8 as outx_{c}" for c in GRADED_EXTRAS)
+    with conn.cursor() as cur:
+        cur.execute(f"""select gsis_id, season, week, {cols} from analytics.fct_player_game
+                        where season_type = 'REG' and season = any(%s)""", (seasons,))
+        extra = pd.DataFrame(cur.fetchall(), columns=[d.name for d in cur.description])
+    extra = extra.drop_duplicates(["gsis_id", "season", "week"]).astype({"season": df["season"].dtype, "week": df["week"].dtype})
+    n = len(df)
+    out = df.drop(columns=[c for c in df.columns if c.startswith("outx_")]).merge(
+        extra, on=["gsis_id", "season", "week"], how="left", validate="many_to_one")
+    assert len(out) == n, "graded extras changed the row count"
+    return out
+
+
+def graded_actual(d: pd.DataFrame, scoring: dict[str, float]) -> pd.Series:
+    """The actual the record grades on: ``compute_points`` (bonuses included) over the ``out_`` components and the
+    ``outx_`` columns (a missing ``outx_`` column counts 0, which is the components' price)."""
+    rows = d[[f"out_{c}" for c in ALL_COMPONENTS]].rename(columns=lambda c: c[4:])
+    for c in GRADED_EXTRAS:
+        rows[c] = d[f"outx_{c}"].fillna(0.0).to_numpy(dtype=float) if f"outx_{c}" in d else 0.0
+    if "position" in d.columns:
+        rows["position"] = d["position"].to_numpy()
+    return pd.Series([compute_points(r, scoring) for r in rows.to_dict("records")], index=d.index, dtype=float)
+
+
+def range_actual(d: pd.DataFrame, scoring: dict[str, float]) -> pd.Series:
+    """What the residual models are fitted on: the graded actual under the switch, else the components' price."""
+    return graded_actual(d, scoring) if range_target_graded() else price(d, scoring, "out_")
+
+
+# The other two v3.1 switches (the corrections live in ``calibration``; ``project`` applies them through
+# ``calibration.calibrate_outputs``, after cal1.0's map): the fringe level and the cold-start prior. Off by default.
+FRINGE_FLAG = "LEAGUE_LAB_FRINGE_LEVEL"
+COLD_START_FLAG = "LEAGUE_LAB_COLD_START"
+# ---- /M5
+
 # Stat-line components projected per position (everything else is 0 for that position).
 COMPONENTS: dict[str, list[str]] = {
     "QB": ["attempts", "passing_yards", "passing_tds", "passing_interceptions", "carries", "rushing_yards", "rushing_tds", "fumbles_lost_total"],
@@ -144,6 +202,8 @@ def load_frame(conn: psycopg.Connection, seasons: list[int], extra_tables: dict[
     df["questionable"] = (df["report_status"] == "Questionable").astype(float)
     for table, extra in (extra_tables or {}).items():
         df = _join_feature_table(conn, df, table, extra, seasons)
+    if range_target_graded():   # ---- M5: the graded actual's outcome columns (the residual models' target)
+        df = join_graded_extras(conn, df, seasons)
     return df
 
 
@@ -368,7 +428,7 @@ def fit_position(train: pd.DataFrame, position: str, scorings: dict[str, tuple[s
     for league_id, (_, scoring) in scorings.items():
         line = oof[league_id]
         ok = ~np.isnan(line)
-        y = price(d, scoring, "out_").to_numpy(dtype=float) - line
+        y = range_actual(d, scoring).to_numpy(dtype=float) - line   # ---- M5: the graded actual under LEAGUE_LAB_RANGE_TARGET
         xq = _quantile_features(x, np.nan_to_num(line))
         fit_idx, cal_idx = ok & ~is_cal, ok & is_cal
         for q in QUANTILES:
