@@ -526,8 +526,9 @@ def replacement_chain(players: Sequence[Player | Mapping], slots: Iterable[str],
         if pid != str(player_id) and pid not in seat:
             chain.append({"kind": "benched", "player_id": pid, "position": pos.get(pid), "from_slot": lab,
                           "to_slot": BENCH_SLOT, "move": f"{pos.get(pid)} goes to the bench"})
-    enters = next((c["player_id"] for c in chain if c["kind"] == "enters"), None)
     empty = next((c["to_slot"] for c in chain if c["kind"] == "empty"), None)
+    # integ: when his slot's chain ends empty nobody replaces him (an "enters" then is a tie swap elsewhere)
+    enters = None if empty is not None else next((c["player_id"] for c in chain if c["kind"] == "enters"), None)
     return {"player_id": str(player_id), "slot": vacated, "slot_type": by_label[vacated].type,
             "cost": round(total_with - after.total, 6), "total_with": round(total_with, 6),
             "total_without": round(after.total, 6), "legal": True, "chain": chain, "enters": enters, "empty_slot": empty,
