@@ -59,7 +59,7 @@ def _load_matchups():
     mod = importlib.util.module_from_spec(spec)
     sys.modules[name] = mod
     spec.loader.exec_module(mod)
-    setattr(sys.modules[APPLIB_PKG], "matchups", mod)
+    sys.modules[APPLIB_PKG].matchups = mod
     return mod
 
 
