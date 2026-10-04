@@ -2900,15 +2900,7 @@ def ig3_watch_words(s: dict, span: str) -> str:
     gain, net = _num(s.get("holds_horizon_gain")) or 0.0, _num(s.get("net_horizon_gain"))
     cd = s.get("cheapest_drop") or {}
     dn = _last(cd.get("player_name")) if cd.get("player_name") else None
-    bar = f"under {W.WORTH_WEEK:.0f} this week and {W.WORTH_HORIZON:.0f} over the weeks"
-    head = f"Watch, no claim yet: if his role holds he adds {gain:+.1f} to your lineup over {span}"
-    if dn and net is not None and abs(net - gain) >= 0.05:
-        head += f"; after what dropping {dn} costs, {net:+.1f} — {bar}."
-    elif dn:
-        head += f" with {dn} dropped — {bar}."
-    else:
-        head += f" — {bar}."
-    return head + " Claim him when his role would put him in your lineup for more, or when a roster spot opens."
+    return SG.watch_words(gain, net, dn, span)              # ---- IH-2: the console's words, one source (app/lib/signals)
 # ---- end IG-3
 
 
