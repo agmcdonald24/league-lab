@@ -19,6 +19,7 @@
   // ---- G4 decisions: the four screens, each loaded on first use (src/lib/decisionPages.ts)
   import { decisionPage, isDecision } from "./lib/decisionPages";
   import { countView } from "./lib/usage"; // ---- U-1: usage tracking (one count per screen view)
+  import { pause as gaPause, screenView, trackLogin } from "./lib/analytics"; // ---- INF-1: Google Analytics
   // the research screens and About load on first use (their own chunks): My Week's first screen stays small
   const LAZY = {
     trends: () => import("./routes/Trends.svelte"),
@@ -93,6 +94,11 @@
 
   // ---- U-1: count the screen on screen (route, league, team) once signed in; never blocks rendering (lib/usage.ts)
   $effect(() => void (phase === "ready" && countView(league ? r.name : "leagues", league, team)));
+  // ---- INF-1: Google Analytics beside it (lib/analytics.ts: page_view, screen_view, ids only); silent on the sign-in screen
+  $effect(() => {
+    gaPause(phase === "login");
+    if (phase === "ready") screenView(league ? r.name : "leagues", league, team);
+  });
 
   // ---- II-3: /receivers is the Stats screen's WR / TE preset now (old links and bookmarks land there, league and team
   // kept); the receivers' role cards stay at /receivers?view=cards
@@ -147,6 +153,7 @@
   }
 
   function signedIn() {
+    trackLogin(); // ---- INF-1: GA `login` (the password was accepted; nothing about it is sent)
     clearCache();
     phase = "loading";
     boot();

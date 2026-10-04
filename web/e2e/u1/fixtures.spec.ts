@@ -32,7 +32,12 @@ test("one count per screen view: screen, league, team — and nothing else", asy
   // in-app navigation (no reload): the new screen counts once, Back to My Week is a new view
   await page.getByTestId("foot-about").click();
   await expect(page.getByTestId("usage-notice")).toHaveText(
-    "isuckatfantasy counts screen views — which screen, which league and team, when — and nothing about you.",
+    "isuckatfantasy counts screen views — which screen, which league and team, when — and nothing about you. " +
+      // ---- INF-1 (Wave I-I): the notice names Google Analytics and what it is sent
+      "It also uses Google Analytics: the same screen views and a few taps (a player opened, Compare, a trade evaluated, " +
+      "the link to edit your lineup), with the league and team numbers and the app's version — never your username, " +
+      "team name or password. Google sets a cookie to tell visits apart and sees your browser and rough location, as on " +
+      "any site that uses it.",
   );
   await expect.poll(() => got.map((c) => c.screen)).toEqual(["week", "about"]);
   await page.goBack();

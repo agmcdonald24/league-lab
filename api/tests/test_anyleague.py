@@ -18,6 +18,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from league_lab import anyleague as A
+from league_lab import clock  # ---- INF-1
 
 from league_lab_api import db, ondemand
 from league_lab_api.applib import cards
@@ -60,7 +61,7 @@ def _kicked_off_since(season: int, week: int, as_of) -> bool:
     """Has a game of the week kicked off between the nightly's solve and now (the mart's cards then lock players
     the on-demand solve, pinned to the nightly's clock, does not)?"""
     g = db.query("select count(*) as n from analytics.dim_game where season = %s and week = %s and season_type = 'REG' "
-                 "and kickoff_at > %s and kickoff_at <= now()", (season, week, as_of))
+                 "and kickoff_at > %s and kickoff_at <= %s", (season, week, as_of, clock.now()))   # ---- INF-1
     return int(g["n"].iloc[0]) > 0
 
 

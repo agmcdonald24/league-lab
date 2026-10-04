@@ -1,5 +1,6 @@
 // The read-only API (api/league_lab_api/main.py). Same origin: the API serves this app.
 // Answers are kept in memory for five minutes, so Back and a second tap render at once.
+import { trackTradeEvaluate } from "./analytics"; // ---- INF-1: Google Analytics
 
 export interface Metric {
   label: string;
@@ -1081,6 +1082,7 @@ export const decisionPaths = {
 
 /** POST /api/trades/evaluate (not cached: a package is evaluated once per tap). */
 export async function postEvaluate(body: { league: string; team: number; partner: number; give: string[]; get: string[] }): Promise<TradeEval> {
+  trackTradeEvaluate(body); // ---- INF-1: GA `trade_evaluate` (the partner's number, the package's size; no names)
   const res = await fetch(decisionPaths.evaluate(), {
     method: "POST",
     credentials: "same-origin",

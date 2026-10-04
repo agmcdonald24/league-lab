@@ -24,6 +24,7 @@ from lib.db import missing_relations, query, require_relations
 from lib.signals import alert_headline, alert_lines, scenario_phrase
 from lib.ui import current_leagues, freshness_banner, pct, perspective, player_link, setup
 
+from league_lab import clock as league_clock  # ---- INF-1
 from league_lab import decisions as D
 
 setup("Player")
@@ -274,7 +275,7 @@ with st.container(border=True):
     if week is not None and not game.empty:
         k = pd.Timestamp(game.iloc[0]["kickoff_at"])
         kick = k.tz_convert(ET)
-        if k <= pd.Timestamp.now(tz="UTC"):
+        if k <= pd.Timestamp(league_clock.now()):  # ---- INF-1: the league's now (the API's player.py twin)
             lines.append(f"🔒 **Locked** for week {week}: his game kicked off {kick:%a %b %-d, %-I:%M %p} ET.")
         else:
             lines.append(f"Week {week} kickoff {kick:%a %b %-d, %-I:%M %p} ET — not locked yet.")

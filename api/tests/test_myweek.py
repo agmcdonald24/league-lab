@@ -5,6 +5,7 @@ The acceptance pair: dynasty roster 12 and Scrubs roster 2, the current week (4 
 from __future__ import annotations
 
 import pytest
+from league_lab import clock  # ---- INF-1: "now" is the suite's pinned moment, never the database's now()
 
 from .conftest import ANDREW, DYNASTY, SCRUBS, needs_db
 
@@ -24,14 +25,14 @@ def current_week(sql, season: int) -> int | None:
     rows = sql("""select min(week) as week from (
                       select week, max(kickoff_at) as last_kick from analytics.dim_game
                       where season = %s and season_type = 'REG' group by week) w
-                  where last_kick > now()""", (season,))
+                  where last_kick > %s""", (season, clock.now()))
     return rows[0]["week"]
 
 
 def mart(sql, league: str, season: int, week: int, team: int) -> list[dict]:
     return sql("""select r.slot, r.slot_order, r.gsis_id, r.player_name, r.player_value, r.lineup_margin, r.is_weakest_slot,
                          r.lineup_value, r.is_empty_slot, r.value_source, r.position,
-                         coalesce(g.kickoff_at <= now(), false) or r.is_locked as locked
+                         coalesce(g.kickoff_at <= %s, false) or r.is_locked as locked
                   from analytics.mart_lineup_recommendation r
                   left join analytics.mart_player_week_projections p
                          on p.league_id = r.league_id and p.season = r.season and p.week = r.week and p.gsis_id = r.gsis_id
@@ -40,7 +41,7 @@ def mart(sql, league: str, season: int, week: int, team: int) -> list[dict]:
                                      where g.season = r.season and g.week = r.week and g.season_type = 'REG'
                                        and coalesce(p.team, dp.latest_team) in (g.home_team, g.away_team)) g on true
                   where r.league_id = %s and r.season = %s and r.week = %s and r.roster_id = %s order by r.slot_order""",
-               (league, season, week, team))
+               (clock.now(), league, season, week, team))
 
 
 def test_leagues_and_rosters(client, sql):

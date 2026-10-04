@@ -7695,3 +7695,134 @@ compare against it)
    Stats. II-4 — My roster outlook is Season's default; the stale header line is off with the banner; every card news
    line says "context only"; Waivers' intro replaces the API's sentence on the web. II-5 — ESPN / Yahoo shown as "not
    supported yet"; the platform choice gates the MFL box; the email-link sign-in recommendation.
+
+### INF-1 2026-10-04 — the pinned clock for the suites; Google Analytics 4 (branch `dev/INF1`, database `league_lab` read only)
+
+* **Task**: INF-1 (brief § "INF-1"; two PO items riding with the fifth review: "Sunday afternoons turn ~45 API tests
+  red on any branch" and Andrew's "I logged into my google analytics for you to create tracking on this"). Plan
+  sections: § 17 (Iteration 19); HOSTING § "Usage" → "Google Analytics" (new).
+* **1. The clock** — `src/league_lab/clock.py` (new): `now()` = an in-process `pin(...)`, else `LEAGUE_LAB_NOW` (ISO
+  8601; `Z`, any offset converted, naive taken as UTC; read on every call), else `datetime.now(UTC)`; always aware UTC.
+  `pin(when)`, `unpin()`, `with pinned(when):` (restores the previous pin, also after an error), `is_pinned()`,
+  `parse(s)`, `now_floored(step_minutes=5)` (for a value inside a cached SQL query: kickoffs sit on five-minute marks).
+  **Call sites moved to it** (each a marked `# ---- INF-1` line): `anyleague.lineup_rows` / `opponent` /
+  `league_weeks` (the brief's three), `decisions._moves_on_demand` / `_house_fa_pool` / `waiver_deadline` (the brief's
+  three), `player.player_card`'s lock line and its console twin `app/pages/0_Player.py` (parity test), `lineup.build`'s
+  `as_of` default, `events.clock`, PlayerWire's `for_card` / `recent` defaults, `app/lib/ui.first_open_week` (the
+  decision week), `app/lib/cards.LINEUP_SQL` (`kicked_off` was the database's `now()`; now a parameter,
+  `now_floored()`). **Kept on real time**: `freshness.py` (IH-1's stale rule keeps its own injectable `now`; its
+  tests pass unchanged), `availability.checked_at` and every fetch stamp, `usage`, `auth`, `run_at` of the writers,
+  the nightly writers (`lineup.lineups`, `write_record`), Streamlit's `freshness_banner`, the poll interval.
+* **2. The suites pinned** — `tests/conftest.py` and `api/tests/conftest.py` (`# ---- INF-1` blocks): `PINNED_NOW =
+  "2026-10-03T16:00:00Z"` (the PO's guess, kept: Saturday, week 4's Thursday game played, nothing else) set with
+  `os.environ.setdefault("LEAGUE_LAB_NOW", …)` at import, so the Streamlit twin (a subprocess) reads the same moment
+  and a shell that sets it wins; an autouse fixture unpins after every test; `real_clock` fixture (no pin, no env) for
+  a test that needs the wall clock. Tests' own SQL that used the database's `now()` takes `clock.now()` as a parameter
+  (`api/tests/test_anyleague._kicked_off_since`, `api/tests/test_myweek.current_week` / `mart`,
+  `tests/test_my_week.test_my_week_is_the_mart`). IH-2's three `xfail(strict=False)` MFL pins (`api/tests/test_ih2.py`)
+  are plain tests again — they pass. No test needed a moment of its own beyond the suite's: `test_inf1` pins Sunday
+  17:30Z / Thursday 00:00Z inside `with clock.pinned(...)` to prove the routes follow the clock.
+* **3. Google Analytics 4** — `web/src/lib/analytics.ts` (new), `GA_MEASUREMENT_ID = "G-HJWGHZ79BG"` and `GA_HOSTS` in
+  `lib/brand.ts`. gtag.js is injected at runtime once, on first use, only after sign-in (never in `index.html`, never
+  on the sign-in screen; GA's own `ga-disable-<id>` is on while the sign-in screen shows again);
+  `config` with `send_page_view: false`, `allow_google_signals: false`, `allow_ad_personalization_signals: false`.
+  Events (every one carries `league_key`, `roster_id`, `platform`, `release` = `/api/health` `version`, fetched once —
+  the web held it nowhere): `page_view` per route change (path / league / team; `page_location` keeps only `league`
+  and `team`), `screen_view` beside `countView` (App.svelte, the same dedup), `login` (App.svelte `signedIn`, i.e. the
+  password accepted — `method: "password"`, never the password), `select_content` (the URL's `pane=`: IB-1's pane and
+  II-2's drawer; or II-2's `openPlayer` calling `track(...)` — one open counts once), `edit_link_click` (a delegated
+  click on `a[data-testid="edit-link"]`), `compare_open` / `waiver_view` (the route names), `trade_evaluate`
+  (`lib/api.ts postEvaluate`: partner number, package sizes). **No PII**: ids only; never a username, team or manager
+  name, a manager's player names, a password, a search box's text, another query parameter. **The switch**:
+  `LEAGUE_LAB_GA` at build time (`vite.config.ts` `define` → `__LL_GA__`): `off` = dead code (no gtag URL in the
+  bundle), `on` = always, unset = auto: only on isuckatfantasy.io / www and never under automation
+  (`navigator.webdriver`) — dev, `vite preview`, the fixture e2e and the measure runs send nothing; an e2e forces it
+  with `window.__llGa = "on"`. `web/public/sw.js` passes Google's requests through (same-origin GETs only); the API
+  sends no CSP. About's usage sentence names Google Analytics and what it is sent (U-1's e2e text updated);
+  HOSTING § "Usage" → "Google Analytics" (property 557285408, stream, events table, the switch, no PII, consent, the GA
+  admin steps).
+* **Decisions** (written down, not asked): (a) the product events are sent from code that exists on main in **shared
+  places** (App.svelte, `postEvaluate`, a delegated click, the route names) instead of marked lines inside
+  `Login.svelte` / `Trades.svelte` / `Waivers.svelte` / `Compare*` — those are II-5's, II-1's and II-4's files this
+  wave, so the PO's merge touches none of them; the events are the same. (b) The env name is `LEAGUE_LAB_GA`, not
+  `VITE_LEAGUE_LAB_GA`: only that one value reaches the bundle through `define`. (c) `playwright.fixtures.config.ts`
+  is unchanged: it serves a prebuilt `dist/` with `vite preview`, where a build-time switch is a no-op; fixture runs
+  are off by the auto rule, proven by `e2e/inf1`. (d) No cookie banner (PO call): the beta is password-gated and About
+  discloses GA; a public launch needs Consent Mode and a banner. (e) `wt-base` is not a checkout of `main` (detached
+  at `ad4040e`, 66 commits behind): the baseline below is a fresh detached checkout of `94ed33c` in the scratchpad
+  (`scratchpad/inf1/wt-main`, same `.env`, same database), run in the same minutes.
+* **Interfaces**: INTERFACES.md § INF-1 (the clock; the fixture names; the pinned moment; the analytics exports;
+  `LEAGUE_LAB_GA`; the final note with the one line for II-2's `openPlayer`).
+* **Files**: `src/league_lab/clock.py` (new), `src/league_lab/anyleague.py`, `src/league_lab/lineup.py`,
+  `api/league_lab_api/{decisions,player,events,playerwire}.py`, `app/lib/{cards,ui}.py`, `app/pages/0_Player.py` (one
+  marked line, the parity twin), `tests/conftest.py`, `api/tests/conftest.py`, `tests/test_clock.py` (new, 22),
+  `api/tests/test_inf1.py` (new, 7), `api/tests/{test_ih2,test_anyleague,test_myweek}.py`, `tests/test_my_week.py`,
+  `web/src/lib/analytics.ts` (new), `web/src/lib/{brand,api}.ts`, `web/src/App.svelte`, `web/src/routes/About.svelte`,
+  `web/vite.config.ts`, `web/e2e/inf1/fixtures.spec.ts` (new, 5 × phone / desktop), `web/e2e/u1/fixtures.spec.ts`
+  (the notice's text), `docs/HOSTING.md`, `docs/STATUS.md`, `CHANGELOG.md`.
+* **Commands**: `cd api && PYTHONPATH=. uv run pytest -q --deselect tests/test_u1.py --deselect tests/test_ig2.py`
+  and `uv run pytest -q tests --deselect …` on `dev/INF1` and on the `94ed33c` checkout, side by side, Sunday
+  2026-10-04 22:42–22:56Z (6:42–6:56 PM ET: the 1 PM games final, the late games in progress);
+  `uv run ruff check src app tests api`; `cd web && npm run lint && npm run build`; `FIXTURES_PORT=8627 npx
+  playwright test --config playwright.fixtures.config.ts e2e/inf1 e2e/u1` (and the whole fixture suite). Nothing
+  written to `league_lab` (reads only; `test_u1` / `test_ig2` deselected: they write).
+* **Evidence — the suites on the main database, Sunday evening during games**:
+
+  | Suite | `dev/INF1` (pinned) | `main` `94ed33c` (wall clock), same minutes |
+  |---|---|---|
+  | API (581 / 574 collected, 41 deselected) | **575 passed, 6 skipped, 0 failed** (592 s) | 506 passed, **54 failed**, 11 skipped, 3 xfailed (575 s) |
+  | root | **1,141 passed, 3 skipped, 0 failed** (124 s) | 1,117 passed, **2 failed**, 3 skipped (125 s) |
+
+  `main`'s 54 API failures (ib0 8, decisions 7, if2 5, ie2 5, ie1 5, myweek 3, ic4 3, player 2, ig1 2, if4 2, ic2 2,
+  ib2 2, i0a 2, ih3 / ie_po / ie0 / h1 / f3 / anyleague 1 each) and its 3 xfails (IH-2's MFL pins) all pass on
+  `dev/INF1`; 3 tests that **skip** on `main` while games are in (`test_anyleague::test_route_serves_the_same_week_on_demand`
+  ×2, `test_ie_po::test_lineup_rows_say_what_the_call_says`) run and pass pinned (`main`'s other two skips are
+  `test_static` without a `web/dist` in that checkout). `dev/INF1`'s 6 skips: four `test_record_e2e_answers` recorders
+  (env-gated) and `test_ic3`'s two scoring read-backs (as on main). Root: `main`'s 2 failures are
+  `test_my_week.py::test_my_week_is_the_mart` ×2 (the console's week vs the mart after the kickoffs). The three
+  `*_tds_10p` scoring checks pass on `league_lab` (they fail only on the 2026-09-26 clones). The new tests:
+  `tests/test_clock.py` 22 (pin / unpin / `pinned` restores after an error, ISO with `Z` / offsets / naive / bad,
+  the env read on every call, blank env = unset, real UTC when unset, the stale rule not pinned, `now_floored`),
+  `api/tests/test_inf1.py` 7 (the suite is pinned; `/api/waivers` `deadline` answers the pinned moment — Saturday:
+  the claim run Wed 2026-10-07 07:00Z and the next kickoff Sunday's London game 13:30Z; pinned at 2026-10-08 00:00Z:
+  the next Wednesday's run — and `/api/player`'s lock line: "not locked yet" Saturday, "Locked for week 4" pinned at Sunday 17:30Z;
+  `/api/health` `age_hours` stays the real age; unpinned = the wall clock).
+* **Evidence — web**: `npm run lint` (eslint + svelte-check + tsc) 0 errors / 0 warnings; `npm run build` ok;
+  `ruff` clean; `e2e/inf1` **10 passed** (phone + desktop: `page_view` on navigation and Back with `page_location`
+  stripped to league / team; `screen_view` with `league_key` 9000000000000000001, `roster_id` 3, `platform`, `release`;
+  every parameter on an allow-list and no team / user names; gtag.js requested once; nothing — not even gtag.js — on
+  the sign-in screen while the password is typed, wrong and right, then exactly `login`, `page_view`, `screen_view`;
+  `select_content` from a lineup name (Back is not a new open), `edit_link_click`, `compare_open`, `trade_evaluate`
+  (partner 1, 1-for-1), `waiver_view`; fixture mode by default: no gtag.js, no `dataLayer`; a `LEAGUE_LAB_GA=off`
+  build has no gtag URL and sends nothing even with the override on); `e2e/u1` 4 passed; the whole fixture suite
+  **281 passed, 1 skipped** (282, 6.1 min — GA is inert under automation, nothing else moved). No request leaves for
+  Google in any test (every Google host intercepted, gtag.js a stub).
+* **What moved**: no number. The clock changes which moment a test sees, not any arithmetic; in production
+  `LEAGUE_LAB_NOW` is unset and `now()` is `datetime.now(UTC)` (a test).
+* **Not done**: marked GA lines inside other devs' screens (decision (a)); the Dockerfile `ARG LEAGUE_LAB_GA`
+  (PO-owned; only needed to switch GA off in production); GA custom dimensions and the enhanced-measurement settings
+  (Andrew, in GA — below); a consent banner (decision (d)). `wt-base` was left as it is (others may rely on it).
+* **Next**: once INF-1 is merged, every branch's suites are green at any hour on the main database; a new test that
+  needs another moment uses `with clock.pinned(...)` — never the database's `now()` in its SQL.
+
+**For the PO**
+1. **Merge INF-1 first** (or early): every other branch's API suite turns green on a Sunday only with the clock.
+   Conflicts to expect: `web/src/App.svelte` — II-3 adds an `$effect` right after the `countView` line, as INF-1 does:
+   keep both blocks; `lib/api.ts` — INF-1's import at the top and one line inside `postEvaluate` (others append at the
+   end); `About.svelte` — II-4 changes two StatTile captions, INF-1 the usage notice: no overlap; STATUS / CHANGELOG
+   append-only.
+2. **II-2's drawer** (optional, one line + import, `lib/player-drawer.svelte.ts` inside `openPlayer`, right after
+   `emit(key, origin);`): `track("select_content", { content_type: "player", item_id: key, origin }); // INF-1` with
+   `import { track } from "./analytics"; // INF-1`. Without it the URL's `pane=` already sends `select_content`; with
+   it the drawer's origin (`drawer` for a swap from inside) wins and the URL path skips the same open. Nothing to add
+   on II-0 / II-1 / II-3 / II-4 / II-5: `edit-link`, `postEvaluate` and the route names survive on their branches
+   (checked).
+3. **Andrew, in GA (once, Admin on property 557285408)**: Data streams → isuckatfantasy web → Enhanced measurement →
+   turn off "Page changes based on browser history events" (else every route change counts twice), Form interactions
+   and Site search; Custom definitions → event-scoped dimensions `league_key`, `roster_id`, `platform`, `release`,
+   `origin`, `from`, `link_platform`, `screen_name`; Data retention → 14 months. Then DebugView after the deploy.
+4. **Render**: nothing to set. GA sends from `isuckatfantasy.io` on the first load after the deploy. To switch it
+   off: `ARG LEAGUE_LAB_GA` above `RUN npm run build` in the Dockerfile's web stage + `LEAGUE_LAB_GA=off` on Render.
+5. **Decisions Andrew may reverse**: no cookie banner for the password-gated beta (About discloses GA); the pinned
+   moment (Saturday 16:00Z: change `PINNED_NOW` in both conftests together, and only with a full run on `league_lab`).
+6. `wt-base` is detached at `ad4040e` (66 commits behind `main`): refresh it before the next wave relies on it.

@@ -11,6 +11,8 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
+from league_lab import clock as league_clock  # ---- INF-1
+
 APP = Path(__file__).resolve().parents[1] / "app"
 CASES = [("1321941740235550720", 12), ("1389709692405551104", 2)]
 LINK = re.compile(r"\[([^\]]+)\]\((Player\?[^)]+)\)")
@@ -56,7 +58,7 @@ def test_my_week_is_the_mart(conn, league_id, roster_id):
     season = conn.execute("select season from analytics.dim_league_season where league_id = %s", (league_id,)).fetchone()[0]
     first_open = conn.execute(
         """select min(week) from (select week from analytics.dim_game where season = %s and season_type = 'REG'
-           group by week having max(kickoff_at) > now()) w""", (season,)).fetchone()[0]
+           group by week having max(kickoff_at) > %s) w""", (season, league_clock.now())).fetchone()[0]   # ---- INF-1
     assert week == first_open
 
     # 1. the lineup table = the mart's proposed lineup for that roster-week, slot by slot

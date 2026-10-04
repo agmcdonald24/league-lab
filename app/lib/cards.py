@@ -30,6 +30,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 
+from league_lab import clock as league_clock  # ---- INF-1
 from league_lab import decisions as D
 
 from .db import missing_relations, query
@@ -178,7 +179,7 @@ tm as (
            on pr.league_id = %s and pr.season = %s and pr.week = %s and pr.gsis_id = lr.gsis_id
     left join analytics.dim_player dp on dp.gsis_id = lr.gsis_id
 )
-select tm.*, g.kickoff_at, coalesce(g.kickoff_at <= now(), false) as kicked_off, g.opponent, d.rank_std as opp_rank
+select tm.*, g.kickoff_at, coalesce(g.kickoff_at <= %s::timestamptz, false) as kicked_off, g.opponent, d.rank_std as opp_rank
 from tm
 left join lateral (
     select g.kickoff_at, case when g.home_team = tm.team then g.away_team else g.home_team end as opponent
@@ -195,7 +196,7 @@ def lineup_rows(league_id: str, season: int, week: int, roster_id: int) -> pd.Da
     """Every player of one roster-week of the proposed lineup: role starter (incl. empty slots) / bench /
     unplayable, value, margin, lock, injury, kickoff, opponent and its rank vs his position. One query."""
     s, w, r = int(season), int(week), int(roster_id)
-    df = query(LINEUP_SQL, (league_id, s, w, r, league_id, s, w, r, league_id, s, w, s, w))
+    df = query(LINEUP_SQL, (league_id, s, w, r, league_id, s, w, r, league_id, s, w, league_clock.now_floored(), s, w))  # ---- INF-1: the league's now
     if not df.empty:
         for c in ("is_locked", "is_empty_slot", "kicked_off", "is_weakest_slot"):
             df[c] = df[c].fillna(False).astype(bool)

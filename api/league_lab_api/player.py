@@ -11,6 +11,7 @@ Streamlit's AppTest and compares every metric and sentence, so a change to the p
 from __future__ import annotations
 
 import pandas as pd
+from league_lab import clock
 
 from . import availability as AV
 from .applib import cards, links, signals, ui
@@ -344,7 +345,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
     if week is not None and not game.empty:
         k = pd.Timestamp(game.iloc[0]["kickoff_at"])
         kick = k.tz_convert(ET)
-        if k <= pd.Timestamp.now(tz="UTC"):
+        if k <= pd.Timestamp(clock.now()):  # ---- INF-1: the league's now
             locked = True
             lines.append(f"🔒 **Locked** for week {week}: his game kicked off {kick:%a %b %-d, %-I:%M %p} ET.")
         else:
