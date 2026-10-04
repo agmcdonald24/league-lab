@@ -239,6 +239,7 @@ def test_a_bench_player_with_no_projection_answers_null(client, house):
     d = client.get(f"/api/my-week?league={SCRUBS}&team=6").json()
     jac = next(x for x in d["lineup_full"] if x["player_name"] == "Josh Jacobs")
     assert jac["value"] is None and jac["no_projection"] is True and jac["margin"] is None
+    assert jac["flag"] == "no projection"                             # the console's flag on the same row (parity)
     assert all(x["value"] is not None for x in d["lineup_full"] if not x.get("no_projection") and x["role"] != "unplayable"
                and x.get("player_name"))
     assert d["n_unvalued"] == 0 and d["unvalued_words"] is None      # the bench is not in the total

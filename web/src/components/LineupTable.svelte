@@ -77,7 +77,7 @@
                     >{:else}{r.flag}{/if}</div
                 >{/if}
               <!-- ---- IG-1: no projection row: the words under the name (a dash in the Proj column; never 0.00) -->
-              {#if r.no_projection && r.flag !== NO_PROJECTION}<div class="text-xs leading-snug text-ink-3" data-testid="no-projection">{NO_PROJECTION}</div>{/if}
+              {#if r.no_projection && !(r.flag ?? "").includes(NO_PROJECTION)}<div class="text-xs leading-snug text-ink-3" data-testid="no-projection">{NO_PROJECTION}</div>{/if}
               {#if showMargin && r.margin !== null}<div class="tabnum text-xs text-ink-3 sm:hidden" data-testid="margin-line"
                   >{#if vsWords(r).startsWith("no eligible")}no eligible reserve{:else}margin {r.margin.toFixed(2)}{vsWords(r) ? ` ${vsWords(r)}` : ""}{/if}</div
                 >{/if}

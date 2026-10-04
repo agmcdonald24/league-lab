@@ -149,6 +149,9 @@ def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
         rest["flag"] = rest.apply(lambda r: r["reason"] if r["role"] == "unplayable" else ("locked (game started)" if r["locked_now"]
                                   else cards._flag(r["report_status"])), axis=1)
     full = short + [_lineup_row(r) for _, r in rest.iterrows()]
+    for x in full[len(short):]:                     # ---- IG-1: the console's flag (cards.no_projection_blank), mirrored
+        if x.get("no_projection"):
+            x["flag"] = NO_PROJECTION if not x["flag"] or x["flag"] == NO_PROJECTION else f"{x['flag']} · {NO_PROJECTION}"
     # ---- IA-1
     team_of = {str(r["gsis_id"]): _str(r.get("team")) for _, r in rows.iterrows() if _str(r.get("gsis_id"))}
     for x in full:

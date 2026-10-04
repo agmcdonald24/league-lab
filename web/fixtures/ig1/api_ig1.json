@@ -563,7 +563,7 @@
      "position": "RB",
      "value": null,
      "margin": null,
-     "flag": "",
+     "flag": "no projection",
      "key": "5850",
      "no_projection": true,
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/uceokxeo0uqrqms3e3vl",
@@ -590,7 +590,7 @@
    "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls: who to start, then **why** in one sentence (the matchup, his share of his team's carries or targets, an injury, the betting line). On a coin flip the card says so and names the tiebreaker.\n- The small print starts with **how often your starter outscores the other player** this week, from both players' ranges: 50–55% is a coin flip (go with the latest news), 55–65% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **5th-fewest WR points allowed** is the opponent's rank against that position this season, said one way everywhere: the most points allowed is the matchup you want, the fewest the toughest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
    "movers": [],
    "availability": {
-    "checked_at": "2026-10-04T08:38:31.732623Z",
+    "checked_at": "2026-10-04T09:06:50.904580Z",
     "changes": [],
     "flags": [],
     "applied": 1
@@ -1699,10 +1699,10 @@
    "on_demand": {
     "cost": "every roster solved for 4 weeks: 12 x 4 = 48 lineups (the ranks need the whole league)",
     "timings_ms": {
-     "sleeper": 40.3,
-     "price": 12546.9,
-     "solve": 1254.4,
-     "total": 13841.7
+     "sleeper": 40,
+     "price": 5723.7,
+     "solve": 676.6,
+     "total": 6440.3
     }
    },
    "roster_context": {
@@ -1712,12 +1712,12 @@
     "lineup_value": 115.41,
     "changed": false,
     "changes": [],
-    "checked_at": "2026-10-04T08:38:31.732623Z",
-    "as_of_build": "2026-10-04T08:39:00.955326Z"
+    "checked_at": "2026-10-04T09:06:50.904580Z",
+    "as_of_build": "2026-10-04T09:07:05.679901Z"
    },
    "timings_ms": {
-    "data": 83.5,
-    "total": 635.3
+    "data": 75.6,
+    "total": 348.8
    }
   }
  },
@@ -2420,10 +2420,10 @@
    "on_demand": {
     "cost": "every roster solved for 4 weeks: 12 x 4 = 48 lineups (the ranks need the whole league)",
     "timings_ms": {
-     "sleeper": 40.3,
-     "price": 12546.9,
-     "solve": 1254.4,
-     "total": 13841.7
+     "sleeper": 40,
+     "price": 5723.7,
+     "solve": 676.6,
+     "total": 6440.3
     }
    },
    "roster_context": {
@@ -2433,12 +2433,12 @@
     "lineup_value": 117.46,
     "changed": false,
     "changes": [],
-    "checked_at": "2026-10-04T08:38:31.732623Z",
-    "as_of_build": "2026-10-04T08:39:01.326288Z"
+    "checked_at": "2026-10-04T09:06:50.904580Z",
+    "as_of_build": "2026-10-04T09:07:06.119579Z"
    },
    "timings_ms": {
-    "data": 97.4,
-    "total": 649.8
+    "data": 34.2,
+    "total": 251.7
    }
   }
  },
@@ -3466,13 +3466,13 @@
    },
    "timings_ms": {
     "context": 0,
-    "evaluate": 274,
-    "words": 1167.3,
-    "total": 1441.3,
-    "league.sleeper": 20.3,
-    "league.price": 14579.5,
-    "league.solve": 825.5,
-    "league.total": 15425.3
+    "evaluate": 438,
+    "words": 178,
+    "total": 616,
+    "league.sleeper": 10.7,
+    "league.price": 9255.4,
+    "league.solve": 568.8,
+    "league.total": 9834.8
    }
   }
  },
@@ -5808,10 +5808,10 @@
     "bar_sets": 146,
     "candidates": 8467,
     "evaluated": 139,
-    "seconds": 5.942
+    "seconds": 3.685
    },
    "timings_ms": {
-    "total": 544.8
+    "total": 272.8
    }
   }
  }
