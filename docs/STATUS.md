@@ -6882,3 +6882,113 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
 5. **Decisions Andrew may want to reverse**: the line is on My Week by default (information; a one-line removal); the
    centring of the ranges on the projections; the shrink (0.60; `WEEK_SHRINK`); the opponent's best lineup rather than
    his submitted one.
+
+## Wave I-I (Iteration 19)
+
+### II-1 2026-10-04 — credible trades: both teams' alternatives, the K / DEF guardrail, "No compelling trade found" (branch `dev/II1`, clone `league_lab_i0b`)
+
+* **Task**: II-1 of the Wave I-I brief (`scratchpad/waveII/BRIEF.md`; the fifth review § 2, "Make trade recommendations
+  credible"). Plan sections: METRICS § Trades (appended "Credible trades", ct1.0), WORDS (new table "Credible trades").
+  Branch `dev/II1` from `94ed33c`.
+* **Interfaces** (INTERFACES.md § II-1): every Finder row and the calculator's answer carry **`card`** — `give`, `get`,
+  `drops {mine, theirs}`, `your_effect` / `their_effect` `{this_week, window, by_week, raw_window, words}`,
+  `depth_cost {mine, theirs, roster_spots, season_value, horizon}`, `waiver_alternative {mine, theirs, words}` (each IF-2's
+  alternative + `covered_window` / `covered_by_week` / `availability` "guaranteed" | "claim" / `availability_words`),
+  `beyond {mine, theirs, margin}`, `why_consider[]`, `why_refuse[]`, `plausibility {key, label, reasons}` (plausible /
+  roster_fit / implausible), `guardrails[]`, `legal {ok, notes, checks}`, `credible`. The Finder: each row `tier`
+  ("credible" | "explore") and `credible_rank`; top level `verdict {kind: "compelling" | "none", headline, reason}`,
+  `credible_count`, `explore_count`, `headline_rank`, `guard_positions`, `margin`. **IF-2's row order and `rank` are
+  unchanged** (pinned by IF-2 / IE-1 / IG-1 tests); the headline is the first credible row, or "**No compelling trade
+  found.**" + the reason. Web: `TradeCard.svelte` (full / `compact`), the `lib/api.ts` II-1 block.
+* **What it does** (METRICS § "Credible trades" has the rules in full)
+  1. **The covered frame** (`trades.fill_empty`, `covered_side`): each roster-week valued with every EMPTY starting slot
+     filled from that week's free pool, for both teams, before and after — bye coverage priced against the best free
+     fill, never zero. The old gain stays beside it (`raw_window`), and the card says when the difference is bye cover.
+  2. **Both teams' alternatives** (`decisions.ii1_alternative`): IF-2's `best_alternative` called for each roster (the
+     same function both ways), re-priced on the covered frame (`trades.covered_move`), never below standing pat;
+     "guaranteed" vs "a claim that might be lost" from the league's waiver setting.
+  3. **Legality** (`card.legal`): ownership (`trades.clean_package` / `_owner`), roster limits and required cuts
+     (`trades._after`, B3's rule), locked players (`RosterBoard.is_locked`), position requirements (the solver; a slot the
+     trade empties is named and covered), the trade deadline (Sleeper settings / `dim_league_season`; MFL not read — said).
+  4. **The K / DEF guardrail** (`trades.guard_positions`, `streamable_for_starter`): guard positions derived per league
+     (not a skill position, no multi-position slot admits it, the free pool's best ≥ the league's weakest starter there);
+     a package sending only guard-position players for a **starter** at another position is implausible unless the
+     receiver has nobody at that position all window. No names.
+  5. **Plausibility** (`trades.plausibility`): implausible (the guardrail; rule (a) from their side — they give much more
+     season value above replacement than they get); a roster-fit idea (no season value or no market line for a player);
+     else a plausible offer. **Threshold** (`trades.credible`): legal, both `beyond` ≥ 1.0 starter point over the window,
+     not implausible, and not a trade IF-2's own line marks "below your best waiver move" (`ii1_same_story`); at most
+     three promoted, the rest behind "Explore alternatives".
+  6. **Web**: Trades — the headline is the first credible trade or "No compelling trade found." with the reason (no "Try
+     this trade" then); credible rows with the full card; the rest in an "Explore alternatives" expander with the compact
+     card; "How to read this" says the rule. The calculator: a "Worth proposing?" box with the full card.
+* **Evidence**
+  - **The Folk package** (`api/tests/test_ii1.py::test_folk_package_is_not_promoted`; the Scrubs clone with Nick Folk on
+    roster 2 for Chase McLaughlin, Will Reichard on Run Bijan Run for Trey Smack, MacZaddy's backup QBs off as when the
+    review ran): before (raw, unchanged) MacZaddy +0.5 / **+17.7** / **−8.4** / +0.5 (Mahomes's week-5 bye: the QB slot at
+    zero; Reichard's week-6 bye), Run Bijan Run −17.5 / −17.7 / −8.3 / −17.0 (no QB left, at zero). Now (covered)
+    MacZaddy +0.5 / −0.5 / +0.8 / +0.5 = **+1.2**, Run Bijan Run −2.8 / +0.5 / +0.9 / +0.2 = **−1.2** (beyond their own
+    alternative −1.7); **Implausible** — "A K for a starter (Matthew Stafford): they have a K and the free pool holds one
+    about as good, so a K is not worth a starter to them."; `credible` false; in the Finder it is an "explore" row. Reasons
+    they might refuse: "Their starters lose 2.8 this week." · "It does not improve their starters over weeks 4–7 (-1.2)."
+    · the guardrail. With the clone's own rosters (backup QBs kept): the same verdict.
+  - **Scrubs roster 2 on the clone** (`/api/trades/partners?league=1389709692405551104&team=2`, the fixture API with the
+    ESPN overlay, Sunday afternoon): "**No compelling trade found.** None of the 18 trades that raise both starting
+    lineups over weeks 4–7 is worth proposing: 16 do not beat your own best alternative by a point, 11 do not beat the
+    other team's and 1 is not a plausible offer. Your best move: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop
+    Jacory Croskey-Merritt)." — **0 credible, 18 behind "Explore alternatives"**. Before: "Best partner: PSYCHO
+    SILVERBACKS … Tuten for Corum, +7.2" — on the covered frame that trade is −2.7 for MacZaddy (its +8.6 in week 7 was
+    an empty slot at zero). The clone has no `mart_market_line`, so every card there is "A roster-fit idea" (17) or
+    "Implausible" (1).
+  - **The Test League team 1** (Sleeper fixtures, on demand): 2 credible of 8 — "Best partner: Team 10 … Skattebo for
+    Ja'Marr Chase and Justin Herbert: +4.7 over weeks 4–7, them +3.0" (beyond: you 4.7, them 3.0).
+  - **MFL 70587 team 8** (fixtures, Sunday): 0 credible of 17 ("3 do not beat your own best alternative, 16 do not beat
+    the other team's, 3 are not a plausible offer"); the IF-2 headline "Chicago Bears QB for KC QB + Rice" is −15.2 for
+    the other side on the covered frame.
+  - **K for a starter on the clone**: McLaughlin for Dak Prescott (GIBB ME ANOTA ONE, Brandon Aubrey their kicker) —
+    Implausible.
+  - Tests: `tests/test_trades_ii1.py` 9 (covered frame; guard positions by format; the guardrail both directions and its
+    exception; Superflex K-for-QB and QB scarcity; a 1-QB lost QB priced against the free pool; a legitimate 2-for-1
+    consolidation with a required cut — plausible and credible; plausibility labels and the threshold; symmetry);
+    `api/tests/test_ii1.py` 5 (the Folk package twice; the Finder never headlines it; Scrubs roster 2's card fields, the
+    headline never below its own waiver comparison; the symmetric card); `web/e2e/ii1/` 3 × phone 375 / desktop 1300
+    (Scrubs: No compelling + Explore; the Test League: the credible trade's full card; the calculator: K for a starter
+    labelled Implausible), recorded from the fixture API on :8722 into `web/fixtures/ii1/api_ii1.json`.
+  - Suites (Sunday afternoon, the machine at load 40–60 with seven developers' suites at once): `tests/test_trades_ii1.py`
+    9 passed; `api/tests/test_ii1.py` 5 passed (twice: before and after the guardrail's narrowing); `uv run ruff check
+    src app tests api` clean; web `npm run lint` (eslint + svelte-check + tsc) clean on the Finder / `TradeCard` change
+    (160 files, 0 errors, 0 warnings), `npm run build` clean after the calculator's card; the lint re-run with the
+    calculator's card and `e2e/ii1` was still running at the hand-back. **The whole API and root suites did not finish inside the time box** (each got
+    ~6% of a CPU: the API suite reached 12% in 55 minutes; the PO's `base94` run of `main` on `league_lab_i0a`, started
+    27 minutes earlier, was at 60%). On the first 72 API tests both runs share: `main` 8 failures, `dev/II1` the same 8
+    plus 3 (positions 13, 49 and 61 of the collection — not identified by name before the hand-back: the collection
+    itself did not finish on the loaded machine). `dev/II1`'s run started at 16:08 ET, after the 4:05 PM kickoffs;
+    `base94`'s at 15:41 — more players locked in mine, the brief's clock failures, is the likely cause, **not verified**:
+    the PO's integration run on INF-1's pinned clock is the real delta (and `test_decisions.py` does call the Finder: its
+    headline assertion was widened for "No compelling trade found"). `api/tests/test_if2.py` fails on `wt-base` at the same assertion
+    (`test_finder_ranks_trades_against_the_best_waiver_move`: Cincinnati Bengals vs Atlanta Falcons, the clock).
+  - e2e: `web/e2e/ii1/fixtures.spec.ts` written; the recording (`web/fixtures/ii1/api_ii1.json`) holds the Scrubs Finder's
+    three answers; the Test League and the calculator recordings were still running at the hand-back (Chromium on the
+    loaded machine) — re-record per the spec's header (`-g` one test at a time; recording merges into the file).
+* **Changed tests outside mine** (behaviour moved where the review names the bug): `api/tests/test_if2.py` (the headline
+  is the first credible row or "No compelling trade found"; the IF-2 order assertions untouched), `api/tests/
+  test_decisions.py` (the headline may start "**No compelling trade found.**").
+* **Not done / limits**: the free pool's contention (two teams wanting the same free kicker) is not modelled; the cover's
+  roster spot is not charged; per-player waiver state (on waivers vs a free agent) is not read — the league's setting
+  decides "claim"; no trade-market source exists (Sleeper's projection line is the only market input — production has
+  `mart_market_line`, the clones do not); dynasty / keeper horizons are disclosed, not valued; the Finder's first answer
+  costs more on a cold on-demand league (each partner's alternative is computed once, then kept on the context).
+* **Next**: a real market input (a trade-value feed) would turn roster-fit ideas into offers; waiver state per player
+  (Sleeper's transactions) for "guaranteed" vs "claim".
+* **For the PO**
+  1. Merge order: II-1 touches `trades.py` / `decisions.py` only in `# ---- II-1` blocks plus three marked lines in
+     `partners()` / `evaluate()` (the headline, `words.alternative`, the card hook); II-0 edits `trade_story` / `team()` —
+     no overlap expected. `lib/api.ts`: one block at the end.
+  2. **A decision Andrew may want to reverse**: the guardrail's exception is "they have nobody at that position" only —
+     the brief's "or worse than the free pool" is not applied (the free pool's best kicker beats nearly every rostered
+     kicker by ~1 point, so it let every kicker-for-starter package through). One line in `streamable_for_starter`.
+  3. **A decision Andrew may want to reverse**: a trade must beat the OTHER team's own best waiver move too (the brief's
+     threshold) — on the house league that leaves "No compelling trade found" most days; the margin is 1.0 starter point
+     (`CREDIBLE_MARGIN`).
+  4. No dbt, workflow or render.yaml change. No acceptance probability anywhere (the old dial's "Effect on their
+     starters" words are unchanged).

@@ -16,7 +16,8 @@ import { serveFixtures } from "../fixtures";
 const FILE = join(import.meta.dirname, "..", "..", "fixtures", "ii1", "api_ii1.json");
 const RECORD = process.env.II1_RECORD ?? "";
 type Saved = { status: number; body: unknown };
-const saved: Record<string, Saved> = !RECORD && existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
+// recording merges into the file (one test at a time with -g on a slow machine); replay reads it
+const saved: Record<string, Saved> = existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
 const MINE = /\/api\/(trades|rosters|leagues\?mfl)|mfl|1389709692405551104|9000000000000000001/i;
 const WAIT = RECORD ? 900_000 : 10_000; // recording: the API answers live (minutes on a loaded machine)
 test.setTimeout(RECORD ? 1_800_000 : 60_000);
