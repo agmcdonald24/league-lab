@@ -5990,3 +5990,167 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
    `SLEEPER_WAIVER_TZ`); 180 days of usage.
 5. **Clone state**: `league_lab_i0b`'s `ops.waiver_moves` / `ops.waiver_upside` were rewritten at 05:00 and the two
    views rebuilt (IG-1 was told in INTERFACES); the `usage` schema was created there (empty).
+
+## Wave I-H (Iteration 18)
+
+### V-2 2026-10-04 — the decision record, personal and live: the event store's news flag, one team's calls, MFL leagues, Sleeper's projections as a lineup (branch `dev/V2`, clone `league_lab_i0a`)
+
+* **Task**: Wave I-H V-2 (brief `scratchpad/waveIH/BRIEF.md` § V-2; V-1's "Not done"): METRICS § "The decision record"
+  → "Personal and live" (dr1.1, appended); WORDS § "The decision record, personal"; INTERFACES.md § V-2 (draft 12:00,
+  final 12:50).
+* **Delivered**:
+  1. **News from the event store** (`validation.news_by_starter`, `news_overrides`, `apply_news`). A `kickoff`
+     record's starter is news-affected when `events.events` has an availability event for him after the record's
+     `run_at` and before **his own** kickoff (his game in `dim_game`; unknown → the week's first kickoff + 4 days)
+     whose status differs from the one the build saw (none = ACTIVE). The store answers for a league-week only when it
+     was running across it (first availability event ≤ the first kickoff, newest ≥ `run_at`); otherwise V-1's report
+     rule is the fallback. `news_source` = events | report on every roster-week, `decisions.news.source`, the
+     sentence names the count and the net ("2 lineups had a starter's injury status change between our build and his
+     kickoff; there our lineups scored −4.1 against the ones started. They are graded apart: we could not have
+     known."). The store lives on the hosted copy and the marts are built in the nightly's database, so the marts
+     keep the report rule and **the API applies the store's flags on the request** (`ondemand.event_news`; the store
+     off / missing / unreadable = the marts' flags, never an error); `league-lab validate` reads the store itself where
+     the database has one.
+  2. **One team's view**: `/api/record?league=&team=` → `decisions.team` (`validation.team_summary`): the roster's
+     graded weeks (started / ours / best / Sleeper's / the edge / the regret / `n_changed` / the news flag / its close
+     calls with words), the season sums (they reconcile with the league's to the cent), the calls' calibration, the
+     news-affected weeks and the sentences ("Weeks 1–2: you started 265.0; our lineup would have scored 253.9; the
+     best possible was 281.7."). **Team page "Your calls this season"** (`Team.svelte` V-2 block, end of the left
+     column): the sentence, a short table (Week · You · Ours · Best · Sleeper when we have it; rebuilt weeks starred;
+     the season row), the calls line, "The close calls, week by week" (each with "(we gave it 64%)" and how it landed),
+     the rebuilt-weeks footnote, "The whole league's record" link. Nothing when the team has no graded week. **About**
+     links to it ("Your team's calls this season ›") and shows Sleeper's line; **the console's Record page** shows the
+     picked team's sentences and table.
+  3. **MFL leagues in the record** (new module `league_lab.record_mfl`): the on-demand lineup (`anyleague._solve_roster`,
+     My Week's own frame) frozen under the same rule — the next week written before its first kickoff from the current
+     rosters (`kickoff`); a played week rebuilt once from the rosters MFL's `weeklyResults` lists for it, on that week's
+     frozen projection lines, as of a second before kickoff (`reconstructed`); a week MFL has not scored waits. Rows in
+     `ops.lineup_record` with `league_id = 'mfl:<id>'` (written by `league-lab validate` for `LEAGUE_LAB_RECORD_MFL` /
+     `--mfl`). The grade (`record_mfl.mfl_load`; `/api/record` on request): submitted = the franchise's starters at MFL's
+     scores, optimum = MFL's `opt_pts`, ours = the record's starters at MFL's player scores; a double header once; a
+     starter on no franchise = unknown. `/api/record?league=mfl:…` keeps IC-4's `results` and gains `decisions`
+     (`platform: "mfl"`); About shows dad's league's record with the rebuilt weeks starred.
+  4. **"Had you started Sleeper's projections"** (`ops.decision_market`, `record_run.write_market`, every `validate`):
+     the best lineup of the roster the record saw at Sleeper's last pre-kickoff projection, priced in the league's
+     scoring like ours (a K flat; a DEF keeps our value — Sleeper's DEF line is not priced); graded like ours
+     (`mart_decision_record.market_points`, `market_edge`, `n_market_unknown`; a dbt test holds market_edge = market −
+     submitted); `decisions.weeks[].market`, `season_totals.market`, `sentences.market`; the Team table's Sleeper
+     column. Scrubs / dynasty only.
+  5. **Modules** (decided on the way): the writers that reach outside the database live in two new modules —
+     `record_mfl` (anyleague / MFL; the API imports it lazily) and `record_run` (`validate`, the Sleeper-lineup writer
+     and its `raw.sleeper_projections` read; only the CLI imports it). `scripts/hosted_relations.py` follows every
+     import of a reader's modules: with the code in `validation`, the console's closure had gained `raw.sleeper_projections`
+     and eight more relations (the sync would have tried to publish raw). Now the API and console closures gain exactly
+     `ops.decision_market` (diffed against main). `validation.validate` moved to `record_run.validate` (only the CLI
+     called it).
+* **Files**: `src/league_lab/validation.py` (V-1 code + V-2 block), `src/league_lab/record_mfl.py` (new),
+  `src/league_lab/record_run.py` (new), `src/league_lab/lineup.py` (V-2 block: `MARKET_DDL`, `mfl_record_keys`),
+  `src/league_lab/cli.py` (validate: `--mfl`, the market sentence, the import), `api/league_lab_api/ondemand.py` (V-1 block:
+  `record_decisions(team)`, `_with_decisions(team)`; V-2 block: `event_news`, `decisions_team`, `mfl_decisions`),
+  `api/league_lab_api/main.py` (the record route's `team`), `dbt/models/marts/edge/mart_decision_record.sql`,
+  `mart_decision_calls.sql`, `decision_record.yml`, `app/pages/13_Record.py` (V-2 section), `web/src/lib/api.ts` (V-2
+  block after V-1's), `web/src/routes/Team.svelte` (V-2 block), `web/src/routes/About.svelte` (V-2 lines in the V-1
+  block, `team` destructured), `tests/test_v2.py`, `api/tests/test_v2.py`, `web/e2e/v2/fixtures.spec.ts`,
+  `web/fixtures/v2/record_decisions_1389709692405551104_6.json`, `web/fixtures/v2/record_decisions_mfl70587_8.json`,
+  `docs/METRICS.md`, `docs/WORDS.md`, `CHANGELOG.md`, this section.
+* **Commands**: `league-lab validate --season 2026 --mfl mfl:70587` on the clone with the MFL fixtures
+  (`LEAGUE_LAB_SLEEPER_FIXTURES` / `LEAGUE_LAB_MFL_FIXTURES`; 17 s); `league-lab dbt build --select source:ops_decisions
+  mart_decision_record mart_decision_calls` (**PASS=19**); `uv run pytest -q tests/test_v2.py tests/test_v1.py`; `cd api
+  && PYTHONPATH=. uv run pytest -q tests/test_v2.py tests/test_v1.py`; `cd web && npm run lint && npm run build`;
+  `FIXTURES_PORT=8612 npx playwright test --config playwright.fixtures.config.ts e2e/v2 e2e/v1 e2e/ig3` (recorded with
+  `V2_RECORD=http://localhost:8712`, the fixture API on the clone); `uv run python scripts/hosted_relations.py` (diffed
+  with main's checkout); the whole root and API suites.
+* **Evidence**:
+  * `tests/test_v2.py` **12 passed** (the news flag on synthetic events: a move after the build and before his game
+    flags, the same status / before the build / after his own kickoff do not, a Friday return to ACTIVE does; no
+    store across the week → the report rule; rebuilt weeks never; the grade's count and net and the request-side
+    overrides; the teams add up to the league; the MFL grade on the 70587 fixture's weeks 1–2 — every franchise's
+    submitted = MFL's score, regret = `opt_pts` − score, a swapped starter moves the edge by the difference, a starter
+    on no franchise is unknown; a double header once; Sleeper's lineup on a synthetic roster; the env; the DDL = the
+    dbt pre-hook; the console page). `tests/test_v1.py` 23 passed (unchanged numbers).
+  * `api/tests/test_v2.py` **7 passed** (needs_db, `league_lab_i0a`): Scrubs roster 6's `decisions.team`; all ten
+    rosters' weeks add up to the league's to the cent; a team with no record says why; the event flag reaches the
+    answer; dad's league from the fixtures (record rows built in memory by `record_mfl.mfl_record_rows` through the
+    API's read-only role — nothing written; plan weeks 1–4 reconstruct, 5 write; graded weeks 1–3, 12 teams each,
+    submitted = the fixtures' franchise scores); Knight Train's weeks; an MFL league without rows says so.
+    `api/tests/test_v1.py` 6 passed.
+  * `web/e2e/v2` **10 passed** (5 tests × phone 375 / desktop 1300; no sideways scroll): the Team block from the
+    recording, the Sleeper column with planted numbers (the clone has no snapshot), no block for a team without
+    calls, About → Team link, dad's league on About. `e2e/v1` and `e2e/ig3` still pass. Lint + typecheck 0 / 0, build ok.
+  * **Whole suites** on the clone (Sunday ~12:30–12:50 ET, the box shared with four suites): root **1090 passed, 1
+    failed, 5 skipped** — the failure (`test_my_week.py::test_my_week_is_the_mart[Scrubs-2]`) fails identically with
+    main's checkout (`ad4040e`) on the same clone; API **508 passed, 18 failed, 34 skipped** — 3 are the brief's known
+    scoring-check ones (`test_ic1` ×2, `test_ic_po`), and the other 15 (`test_decisions` ×6, `test_h1`, `test_i0a`,
+    `test_ib0` ×3, `test_ib2` ×2, `test_ic4`, `test_ie1`) fail identically with main's checkout on the same clone at
+    the same hour (re-run: 18 failed) — the clone's state on a Sunday afternoon (e.g. "max() iterable argument is
+    empty", a change before the first lock that Sunday's clock no longer allows), not this branch.
+  * **The numbers** (the clone, weeks rebuilt; no number moved for Scrubs or the dynasty: Scrubs −23.54 / 313.70 /
+    coin flips 59% as V-1):
+    * **Scrubs roster 6 (GoodGameBuddy)**, weeks 1–2: started **265.0** (151.8 + 113.2), ours **253.9** (151.7 +
+      102.2), best **281.7** (160.6 + 121.1): our lineups −11.1, 16.7 left on the bench; the closest calls landed 3 of
+      6 (3.3 expected; Brier 0.262); coin flips 2 of 4 (2.06 expected). Sleeper's lineup: none (no snapshot on the clone).
+    * **Dad's league (MFL 70587)**, the fixtures' weeks 1–3, all rebuilt:
+
+      | Week | Teams | Started | Ours | Best | Added |
+      |---|---|---|---|---|---|
+      | 1 | 12 | 1471 | 1422 | 1711 | −49 |
+      | 2 | 12 | 1325 | 1315 | 1557 | −10 |
+      | 3 | 12 | 1401 | 1322 | 1612 | −79 |
+      | season | 36 | 4197 | 4059 | 4880 | −138 (−3.8 a team a week) |
+
+      The best lineups beat the ones started by 683 (19.0 a team a week); coin flips 57% (52% expected, 27 calls); 100
+      calls with odds, Brier 0.225. Knight Train (team 1): started 224, ours 223, best 331. Big Mac Attack (team 8):
+      336, 328, 396; calls 6 of 9 (4.2 expected).
+* **What moved**: no projection, lineup, total or V-1 grade. New: `ops.decision_market`; `mart_decision_record`'s four
+  columns at the end (`news_source`, `market_points`, `market_edge`, `n_market_unknown`); both marts leave `mfl:` rows out;
+  `/api/record` gains `decisions.team`, `market`, `news_source`, and `decisions` for MFL leagues; `validation.validate`
+  is `record_run.validate`.
+* **Not done / limits**:
+  * Nothing graded on real events yet: the clone has no `events` schema and no scored `kickoff` week. On the hosted
+    copy the store started 2026-10-04 09:46 UTC, so week 5 (Thursday's build) is covered: its news cases will come
+    from the store once week 5 is scored.
+  * Sleeper's lineup has no number anywhere locally (no `raw.sleeper_projections` rows on the clone or the main
+    database); the nightly has the archived snapshots, so it starts with the first week that has one before its kickoff.
+  * MFL's record starts its `kickoff` weeks only once the nightly has `LEAGUE_LAB_RECORD_MFL` (For the PO 2). Until then
+    `/api/record` for dad's league says "we have not kept a lineup record for this league yet".
+  * The MFL grade calls MFL on each `/api/record` (one `weeklyResults` per scored week, the client's cache and token
+    bucket apply); the Team block for an MFL league is answered by the API but not covered by an e2e (no `/api/team`
+    recording for 70587).
+  * The close-call odds of an MFL record leave the opponent out of the pair's correlation (teammates still count).
+  * No My Week line ("our lineups would have added X for you") yet; dad's other fixture league (21861) not proposed.
+* **Next**: after week 5 is scored, read `/api/record` on the hosted copy: `news.source` should say `events` and
+  `weeks[].market` should have Sleeper's lineup; then the My Week line per team once a few `kickoff` weeks exist.
+* **For the PO**:
+  1. **dbt**: `uv run league-lab dbt build --select source:ops_decisions mart_decision_record mart_decision_calls` (the
+     new source `ops_decisions.decision_market`, four new columns, the test `decision_record_market_edge_adds_up`; the
+     pre-hook creates `ops.decision_market`). `league-lab db migrate` also creates it (`lineup.DDL`). Then `league-lab
+     validate` (writes it; on the main database: 0 rows until Sleeper snapshots exist).
+  2. **The nightly (proposal; `nightly.yml` is yours)**: add `LEAGUE_LAB_RECORD_MFL: "mfl:70587"` to the nightly job's
+     env (or the step that runs `scripts/nightly.sh`). Nothing else: `nightly.sh`'s soft `validate` step (after
+     `project`, before `save-record`) already runs `league-lab validate`, which now also writes the MFL record and
+     Sleeper's lineup (~5 s per MFL league, MFL and Sleeper's player directory fetched once; a failure is logged and
+     skipped, never fatal), and the soft `decision-marts` dbt step after `drift` builds the new columns.
+     `ops.lineup_record` is already record state (STATE / RECORD tables), so the MFL rows travel; `ops.decision_market`
+     is recomputed every night (not record state, nothing to add). Without the env, dad's league simply has no record.
+  3. **`metric_registry.csv`** (seed, yours): `decision_market_edge, dr1.1, Sleeper's projections as a lineup − submitted
+     points, —, league-roster-week, available, "ops.decision_market: the record's roster at Sleeper's last pre-kickoff
+     snapshot; a DEF keeps ours"`; and note on `decision_edge` "dr1.1: MFL leagues graded on request from MFL's results".
+  4. **Hosted copy**: `scripts/hosted_relations.py` — the API and the console gain exactly `ops.decision_market` (ops goes
+     whole anyway). The API reads `events.events`, `ops.lineup_record`, `analytics.dim_game`,
+     `analytics.mart_player_week_features` — all already published / granted.
+  5. **Merge order**: any. Touch points: `ondemand.py` (the V-1 block's `record_decisions` / `_with_decisions` gained
+     `team`; the V-2 block sits right above `@_with_decisions` — IH-3's block is in `my_week`, far away), `main.py` (one
+     line: the record route; IH-1's blocks are `/api/health` / `/api/status`), `lib/api.ts` (my block right after
+     V-1's, not at the end), `Team.svelte` (two import lines after the TeamBadge import + a block at the end of the left
+     column — IH-2's MFL freshness block may sit nearby: keep both), `About.svelte` (the props line destructures `team`;
+     lines inside the V-1 block), WORDS / METRICS / CHANGELOG / STATUS as usual (I opened the `## Wave I-H` heading).
+  6. **Decisions Andrew may want to reverse**: (a) a status move counts when it differs from what the build saw —
+     a return to ACTIVE too; (b) the store answers only for weeks it ran across, else the report rule; (c) Sleeper's
+     DEF line is not priced, so a DEF keeps our pick in Sleeper's lineup; (d) MFL's optimum is MFL's own `opt_pts`
+     (its lineup rules), not our solver; (e) an MFL starter on no franchise that week is unknown (the roster-week
+     leaves the sums), a listed player with no score is 0 (MFL's count); (f) the Team block shows only with a graded
+     week; (g) each call names our odds, also when under 50% (a starter picked on value whose odds were under half).
+  7. **Clone state** (`league_lab_i0a`): `ops.decision_market` created (empty); the two marts rebuilt with the new
+     columns; `ops.lineup_record` week 5 rewritten by `validate` (451 rows, as V-1); the `mfl:70587` rows written from
+     the MFL fixtures for the evidence were deleted at the end (re-create: the `validate --mfl` command above with the
+     two fixture variables).
