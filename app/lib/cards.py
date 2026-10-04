@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import re
 
+import numpy as np
 import pandas as pd
 import streamlit as st
 
@@ -881,12 +882,34 @@ def lineup_frame(rows: pd.DataFrame) -> pd.DataFrame:
         if _flag(r["report_status"]):
             return str(r["report_status"])
         if r["value_source"] == "unvalued":
-            return "no value yet"
+            return NO_PROJECTION                                  # ---- IG-1: the dictionary's words (was "no value yet")
         return ""
 
     lu["flag"] = lu.apply(flag, axis=1) if not lu.empty else []
     lu["slot"] = lu["slot"].map(slot_label)
     return lu
+
+
+# ---- IG-1 (Wave I-G, AGENTS.md rule 5): a player with no projection row (the solver's `unvalued`: carried at 0) shows
+# a blank value and the words "no projection" — never "0.00" (the API sends null; the web shows a dash)
+NO_PROJECTION = "no projection"
+
+
+def no_projection_blank(df: pd.DataFrame) -> pd.DataFrame:
+    """The rows with `value` / `margin` blank (NaN) and the flag "no projection" where the row has no projection."""
+    if df is None or df.empty or "value_source" not in df:
+        return df
+    df = df.copy()
+    m = df["value_source"] == "unvalued"
+    if m.any():
+        for c in ("value", "margin"):
+            if c in df:
+                df[c] = pd.to_numeric(df[c], errors="coerce").astype(float)
+                df.loc[m, c] = np.nan
+        if "flag" in df:
+            df.loc[m, "flag"] = df.loc[m, "flag"].map(lambda f: NO_PROJECTION if not f or f == NO_PROJECTION else f"{f} · {NO_PROJECTION}")
+    return df
+# ---- end IG-1
 
 
 NO_SLOT = "No slot for"          # IC-2: lineup.NO_SLOT, the reason of a player no slot of the league admits
@@ -911,7 +934,7 @@ def lineup_table(rows: pd.DataFrame, full: bool = False) -> None:
                                             "(a kicker or defense: points per game this season)"),
           "flag": C("Flag", help="Injury tag, locked (his game has started), or an empty slot"),
           "lineup_margin": C("Margin", "num2", "What the lineup loses without him (re-solved); small = a close call")}
-    lu = lineup_frame(rows).rename(columns={"value": "player_value", "margin": "lineup_margin"})
+    lu = no_projection_blank(lineup_frame(rows)).rename(columns={"value": "player_value", "margin": "lineup_margin"})  # IG-1
     if not full:
         show(lu, ["slot", "player_name", "player_value", "flag"], overrides=ov)
         return
@@ -920,7 +943,7 @@ def lineup_table(rows: pd.DataFrame, full: bool = False) -> None:
                               else no_slot_or_cant(r.get("reason")), axis=1)          # IC-2
     rest["flag"] = rest.apply(lambda r: r["reason"] if r["role"] == "unplayable" else ("locked (game started)" if r["locked_now"]
                               else _flag(r["report_status"])), axis=1)
-    rest = rest.rename(columns={"value": "player_value", "margin": "lineup_margin"})
+    rest = no_projection_blank(rest).rename(columns={"value": "player_value", "margin": "lineup_margin"})       # IG-1
     both = pd.concat([lu, rest], ignore_index=True)
     show(both, ["slot", "player_name", "player_value", "lineup_margin", "flag"], overrides=ov)
 

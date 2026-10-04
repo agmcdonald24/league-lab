@@ -267,6 +267,15 @@ def _move(r: pd.Series, week: int, b: dict, proj: dict, ros: dict) -> dict:
         drop.update({"projection": _num(r.get("drop_value")), "is_starter": _bool(r.get("drop_is_starter")),
                      "horizon_loss": _num(r.get("drop_horizon_loss")), "season_points_left": _num(r.get("drop_ros_points")),
                      "ros_points": (ros.get(dk) or {}).get("ros_points")})
+        # ---- IG-1: a drop with no projection row (the writer stores his value and rest of season as 0: `waivers._write`
+        # `drop_value` / `drop_ros_points`) is sent as null - unknown, not 0 - when the rest-of-season board has no row
+        # for him either (a K / DEF / a bye week keeps its 0: they have a row)
+        no_proj = (not _num(r.get("drop_value"))) and (not _num(r.get("drop_ros_points"))) and \
+            (ros.get(dk) or {}).get("ros_points") is None and bool(ros)
+        drop["no_projection"] = no_proj
+        if no_proj:
+            drop.update({"projection": None, "season_points_left": None})
+        # ---- end IG-1
     gains = r.get("week_gains")
     return {**if1_move_fields(r, drop),                                     # ---- IF-1: the drop's cost, the net gains
             "move_rank": _int(r.get("move_rank")), "add_rank": _int(r.get("add_rank")), "list_kind": r.get("list_kind"),
@@ -746,6 +755,8 @@ class TradeContext:
             r = r.iloc[0]
         if r["role"] == "unplayable":
             return None, (r["reason"] or "can't play")
+        if r.get("value_source") == UNVALUED:                    # ---- IG-1: no projection row - unknown, not 0
+            return None, None
         return (float(r["player_value"]) if pd.notna(r["player_value"]) else None), None
 
     def team(self, rid) -> str:
@@ -974,6 +985,33 @@ def unit_market(lw: A.LeagueWeeks | None, fa: pd.DataFrame | None) -> tuple[dict
         if cur is None or v > cur[0] or (v == cur[0] and k < cur[2]):
             best[pos] = (v, name, k)
     return pts, {p: v[0] for p, v in best.items()}, {p: v[1] for p, v in best.items()}
+
+
+# the unknown-is-not-zero contract on the trade and team answers (AGENTS.md rule 5): the solver carries a player with no
+# projection row at 0 (`value_source = 'unvalued'`); the answers send null and `no_projection`
+def start_value(s) -> float | None:
+    """A lineup start's value to the cent, None when the player in it has no projection (unknown, not 0)."""
+    if s is None or s.player is None or s.player.value_source == UNVALUED or s.value is None:
+        return None
+    return T._r2(s.value)
+
+
+def no_projection_slots(side: T.Side, slots: list[dict]) -> list[dict]:
+    """`lineup_frame`'s slots (one per start of ``side.lineup_after``, in order) with a no-projection start's value null."""
+    starts = list(side.lineup_after.starts) if side.lineup_after is not None else []
+    for x, s in zip(slots, starts, strict=False):
+        none = s.player is not None and s.player.value_source == UNVALUED
+        x["no_projection"] = none
+        if none:
+            x["value"] = None
+    return slots
+
+
+def _no_projection(r) -> dict:
+    """The Team roster row: `value` / `margin` null and `no_projection` true when the row has no projection."""
+    if _str(r.get("value_source")) != UNVALUED:
+        return {"no_projection": False}
+    return {"value": None, "margin": None, "no_projection": True}
 # ---- end IG-1
 
 
@@ -1285,10 +1323,11 @@ def evaluate(league_id: str, team: int, partner: int | None, give, get, *, sourc
     lineups = {}
     for who, side in (("mine", now.mine), ("theirs", now.theirs)):
         frame, notes = ns["lineup_frame"](side)
-        lineups[who] = {"slots": [{"slot": r["slot"], "player_name": _str(r["player_name"]), "gsis_id": _str(r["gsis_id"]),
+        lineups[who] = {"slots": no_projection_slots(side, [  # ---- IG-1: a starter with no projection: null, not 0
+                                  {"slot": r["slot"], "player_name": _str(r["player_name"]), "gsis_id": _str(r["gsis_id"]),
                                    "value": _num(r["trade_value"]),
                                    "change": None if _num(r["trade_change"]) is None else round(float(r["trade_change"]), 2)}
-                                  for _, r in frame.iterrows()],
+                                  for _, r in frame.iterrows()]),
                         "notes": [links(x) for x in notes], "closest_call": links(ns["closest"](side))}
     size = ns["size_words"](me, fa_meta, "you", "") + ns["size_words"](th, fa_meta, "they", "")
     size_words = ("Roster size: " + "; ".join(size) + ".") if size else f"Roster size: no change ({len(g)} for {len(t)})."
@@ -1733,9 +1772,9 @@ def _membership(ctx: TradeContext, side: T.Side) -> dict:
     before = {s.player.id: s for s in side.lineup_before.starts if s.player is not None}
     after = {s.player.id: s for s in side.lineup_after.starts if s.player is not None}
     cut = {c.player_id for c in side.cuts}
-    ins = [{"player": ctx.player(p), "slot": cards.slot_label(s.slot.type), "value": T._r2(s.value or 0.0),
+    ins = [{"player": ctx.player(p), "slot": cards.slot_label(s.slot.type), "value": start_value(s),       # ---- IG-1
             "how": "trade" if p in side.gets else "bench"} for p, s in after.items() if p not in before]
-    outs = [{"player": ctx.player(p), "slot": cards.slot_label(s.slot.type), "value": T._r2(s.value or 0.0),
+    outs = [{"player": ctx.player(p), "slot": cards.slot_label(s.slot.type), "value": start_value(s),      # ---- IG-1
              "why": "traded" if p in side.gives else "cut" if p in cut else "to the bench"}
             for p, s in before.items() if p not in after]
     moved = [f"{_who(ctx, p)} {cards.slot_label(before[p].slot.label)} → {cards.slot_label(s.slot.label)}"
@@ -1833,10 +1872,11 @@ def trade_story(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, boar
         before = {s.player.id for s in side.lineup_before.starts if s.player is not None}
         for row, s in zip(lu["slots"], side.lineup_after.starts, strict=False):
             pid = s.player.id if s.player is not None else None
-            row["change"] = None if pid is None or pid in before else T._r2(s.value or 0.0)
+            row["change"] = None if pid is None or pid in before else start_value(s)                    # ---- IG-1
             row["status"] = "new" if pid is not None and pid in side.gets else "in" if pid is not None and pid not in before else None
         lu["out"] = [{"slot": x["slot"], "player_name": x["player"]["player_name"], "gsis_id": x["player"]["gsis_id"],
-                      "value": x["value"], "change": -x["value"], "why": x["why"]} for x in m["out"]]
+                      "value": x["value"], "change": None if x["value"] is None else -x["value"],        # ---- IG-1
+                      "why": x["why"]} for x in m["out"]]
         lu["reshuffled"] = m["moved"]
         lu["total"] = {"before": T._r2(side.lineup_before.total), "after": T._r2(side.lineup_after.total),
                        "change": T._r2(side.lineup_after.total - side.lineup_before.total)}
@@ -2187,6 +2227,7 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
     out["roster"] = [{**_player(r["sleeper_player_id"], r["gsis_id"], r["player_name"], r["position"], None, b),
                       "role": r["role"], "slot": _str(r["slot"]), "slot_type": _str(r["slot_type"]), "bench_rank": _int(r["bench_rank"]),
                       "value": _num(r["player_value"]), "value_source": _str(r["value_source"]), "margin": _num(r["lineup_margin"]),
+                      **_no_projection(r),                                                         # ---- IG-1
                       "is_locked": _bool(r["is_locked"]), "report_status": _str(r["report_status"]), "reason": _str(r["reason"]),
                       "acquired": _str(r["acquired_label"]), "acquired_how": _str(r["acquired_how_by_manager"])}
                      for _, r in rows.iterrows()]
