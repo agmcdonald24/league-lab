@@ -140,6 +140,15 @@ export function restoreScroll(): void {
   requestAnimationFrame(() => window.scrollTo(0, y));
 }
 
+// ---- II-2 (Wave I-I): a hook that may take a tap on a link before the router navigates (the player drawer takes
+// `/player/<key>` links: lib/player-drawer.svelte.ts). True = handled, the router does nothing.
+type LinkHook = (href: string, a: HTMLAnchorElement) => boolean;
+let linkHook: LinkHook | null = null;
+export function setLinkHook(fn: LinkHook | null): void {
+  linkHook = fn;
+}
+// ---- end II-2
+
 /** Intercept taps on same-site links anywhere in the app (cards' names, tables, search results). */
 export function interceptLinks(root: HTMLElement): () => void {
   const onClick = (e: MouseEvent) => {
@@ -149,6 +158,7 @@ export function interceptLinks(root: HTMLElement): () => void {
     const href = a.getAttribute("href");
     if (!href || !href.startsWith("/") || href.startsWith("/api/")) return;
     e.preventDefault();
+    if (linkHook?.(href, a)) return; // ---- II-2: the player drawer
     navigate(href);
   };
   root.addEventListener("click", onClick);
