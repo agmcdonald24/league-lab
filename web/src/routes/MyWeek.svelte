@@ -16,6 +16,10 @@
   import Expander from "../components/Expander.svelte";
   import LineupTable from "../components/LineupTable.svelte";
   import Md from "../components/Md.svelte";
+  // ---- IH-1: the error card (the API down, a 500, still waiting) and the stale banner (/api/status `nightly`)
+  import ErrorCard from "../components/ErrorCard.svelte";
+  import { forget } from "../lib/api";
+  import { failureOf, SLOW_MS, SLOW_WORDS, type Failure } from "../lib/remote.svelte";
 
   let {
     options,
@@ -36,6 +40,17 @@
   let data = $state<MyWeek | null>(null);
   let error = $state<string | null>(null);
   let loading = $state(false);
+  // ---- IH-1: the failure as a kind (null: none; `slow` while still waiting), a retry that asks the server again, and
+  // the stale state of the morning update (the banner above the actions, the footer's words)
+  let failure = $state<Failure | null>(null);
+  let attempt = $state(0);
+  function retry() {
+    if (team !== null) forget(paths.myWeek(league, team));
+    attempt += 1;
+  }
+  const nightly = $derived(status?.nightly ?? null);
+  const staleWords = $derived(nightly?.stale ? nightly.words : null);
+  // ---- end IH-1
 
   const ctx = $derived({ league, team });
   const leagueRow = $derived(options.find((l) => l.league_id === league) ?? null);
@@ -98,7 +113,9 @@
   $effect(() => {
     const l = league;
     const t = team;
+    const n = attempt; // ---- IH-1: Try again re-runs this
     error = null;
+    failure = null; // ---- IH-1
     if (t === null) {
       data = null;
       return;
@@ -113,24 +130,31 @@
       return;
     }
     loading = true;
+    // ---- IH-1: not a spinner forever: the card after SLOW_MS (the request keeps going; its answer still shows)
+    const slow = setTimeout(() => {
+      if (league === l && team === t && attempt === n && loading && !data) failure = { kind: "slow", status: null, words: SLOW_WORDS };
+    }, SLOW_MS);
     get<MyWeek>(path)
       .then((d) => {
+        clearTimeout(slow); // ---- IH-1
         if (league !== l || team !== t) return;
+        failure = null; // ---- IH-1
         data = d;
         learnLeagueName(d.league_id, d.league_name);
         loading = false;
         restoreScroll();
       })
       .catch((e) => {
+        clearTimeout(slow); // ---- IH-1
         if (league !== l || team !== t) return;
         loading = false;
         data = null;
+        if (!(e instanceof Unauthorized)) failure = failureOf(e); // ---- IH-1: the card's kind (the words below stay)
         if (e instanceof Unauthorized) onauth();
         else if (e instanceof ApiError && e.status === 404)
           error = /league/i.test(e.message) && !/team/i.test(e.message) ? "Sleeper has no league with that id. Check the link, or pick a league above."
                                                                        : "That team is not in this league. Pick your team above.";
-        else if (e instanceof ApiError && e.status === 502) error = "Sleeper did not answer. Try again in a minute.";
-        else if (e instanceof ApiError && e.status === 503) error = "The numbers are not ready yet. Try again in a few minutes.";
+        else if (failure) error = failure.words; // ---- IH-1: one wording (lib/remote.svelte.ts failureOf): our 502 / 503 as before, the host's own 502-504 page and no answer at all = "down", a 500 = "server"
         else error = e instanceof Error ? e.message : String(e);
       });
   });
@@ -151,8 +175,14 @@
       {#if leagueRow?.scoring_label}<p class="mt-1 text-sm text-ink-3">{leagueRow.scoring_label}</p>{/if}
     </div>
   {:else if error}
-    <p class="ll-error">{error}</p>
+    <!-- ---- IH-1: the card (the API down / a 500 / Sleeper) with Try again; a 404's own words stay a plain line -->
+    {#if failure && failure.kind !== "notfound" && failure.kind !== "other"}
+      <ErrorCard {failure} onretry={retry} />
+    {:else}
+      <p class="ll-error">{error}</p>
+    {/if}
   {:else if !data}
+    {#if failure?.kind === "slow"}<ErrorCard {failure} onretry={retry} />{/if}
     <div class="space-y-3" aria-label="Loading" data-testid="loading">
       <div class="ll-skel h-7 w-2/3"></div>
       <div class="ll-skel h-4 w-1/2"></div>
@@ -176,6 +206,14 @@
       {/if}
     </section>
 
+    <!-- ---- IH-1: the stale banner — one line above the actions when the morning update did not run (/api/status
+         `nightly`: the projections' fit older than 30 hours); the injury overlay keeps working, the words say so -->
+    {#if staleWords}
+      <p class="flex items-start gap-2 rounded-md bg-warn-soft px-3 py-2 text-sm leading-snug font-semibold text-warn" role="status" data-testid="stale-banner">
+        <span aria-hidden="true">⚠︎</span><span>{staleWords}</span>
+      </p>
+    {/if}
+    <!-- ---- end IH-1 -->
     {#if data.week !== null}
       <div class="grid grid-cols-1 gap-4 wide:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] wide:items-start">
         <section class="space-y-2.5">
@@ -414,12 +452,14 @@
       {#if upd}
         <details data-testid="updated">
           <summary class="inline-flex min-h-9 cursor-pointer items-center gap-1"
-            >Updated <time datetime={status.updated_at} title={upd.exact} data-testid="updated-ago">{upd.ago}</time> <span class="chev" aria-hidden="true">›</span></summary
+            >Updated <time datetime={status.updated_at} title={upd.exact} data-testid="updated-ago">{upd.ago}</time>{#if staleWords}<span class="text-warn" data-testid="updated-late">&nbsp;· the morning update did not run</span>{/if} <span class="chev" aria-hidden="true">›</span></summary
           >
           <p class="mt-1" data-testid="updated-exact">Last data load {upd.exact}.</p>
+          {#if staleWords}<p class="mt-1 font-semibold text-warn" data-testid="updated-stale">{staleWords}</p>{/if}<!-- ---- IH-1 -->
           <p class="mt-1"><Md text={status.freshness} /></p>
         </details>
       {:else}
+        {#if staleWords}<p class="font-semibold text-warn" data-testid="updated-stale">{staleWords}</p>{/if}<!-- ---- IH-1 -->
         <Md text={status.freshness} />
       {/if}
     </footer>

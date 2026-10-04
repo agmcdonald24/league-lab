@@ -2,7 +2,8 @@
   import { APP_MARK, APP_NAME } from "../lib/brand";
   import { login } from "../lib/api";
 
-  let { onok }: { onok: () => void } = $props();
+  // ---- IH-1: `notice` — "Signed out — sign in again" when this browser was signed in before (App.svelte)
+  let { onok, notice = null }: { onok: () => void; notice?: string | null } = $props();
   let password = $state("");
   let wrong = $state(false);
   let busy = $state(false);
@@ -20,6 +21,9 @@
 
 <form class="mx-auto mt-16 max-w-sm space-y-4 px-4" onsubmit={submit} data-testid="login">
   <h1 class="flex items-center gap-2 text-2xl font-extrabold tracking-tight"><span class="grid h-8 w-8 place-items-center rounded-sm bg-accent text-xs font-black text-on-accent">{APP_MARK}</span>{APP_NAME}</h1>
+  {#if notice}
+    <p class="rounded-md bg-warn-soft px-3 py-2 text-sm font-semibold text-warn" role="status" data-testid="signed-out">{notice}</p>
+  {/if}
   <p class="text-sm text-ink-3">Private beta. Enter the password from your invite.</p>
   <input
     class="ll-input w-full py-3"

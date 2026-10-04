@@ -473,6 +473,65 @@ Edit code → paste `src/index.js` → Deploy; Settings → Variables and Secret
 Worker's URL (`https://isuckatfantasy-nightly-trigger.mcdonald-g-andrew.workers.dev/`) prints what it does and
 today's runs once the code is in.
 
+### When the nightly is late or fails (Wave I-H, IH-1)
+
+Three things now tell someone, from the cheapest up. None needs a new secret.
+
+**1. The product says so (live).** `league_lab/freshness.py` holds the one rule: the published data is **stale** when
+the newest `ops.projections.fitted_at` (the morning update's fit — the same `as_of` `/api/health` has always shown) is
+older than **30 hours**. A normal night lands about 08:00 ET, so a missed morning shows by about 14:00 ET (after the
+trigger's 09:37 and 11:37 re-checks have had their chance). Then:
+* `GET /api/health` (no password) carries `"stale": true` and `"age_hours"` — computed at each answer, so the
+  hour-long cache of `as_of` never hides a missed morning; `null` when `as_of` is unknown (no projections, the
+  database unreachable: unknown is neither stale nor fresh). A keyword monitor on `https://isuckatfantasy.io/api/health`
+  for `"stale":false` (any free uptime service; an account, not a secret in this repository) is the one alarm that
+  also catches a night that never started.
+* `GET /api/status` carries `nightly: {as_of, age_hours, stale, limit_hours: 30, words}` (read on the pool at each
+  call; it hands the newer `as_of` to the health state, so the two agree). `freshness` stays the footer's caption.
+* My Week shows one line above the actions: *"Yesterday's numbers: the morning update did not run. Injury statuses
+  are still live."* (two or more missed mornings: *"Numbers from Friday, Oct 2: the morning update has not run
+  since. …"*), and the footer's "Updated …" adds "· the morning update did not run" with the sentence on tap. The
+  availability overlay keeps reading ESPN and Sleeper's injury feeds on request, so the injury words stay true. The
+  app reads `/api/status` again when it comes back on screen after 10 minutes away (a phone that kept the app open
+  overnight). The console's Data Status page shows the same sentence with its own tail ("This console's injury tags
+  are from that update too": the console has no live overlay).
+* Known edge: out of season `project` may write nothing new, so `as_of` ages and the line shows; the beta is
+  in-season — revisit before the off-season (a "no games this week" exemption in `nightly_state`).
+
+**2. GitHub emails the run's actor (no setup).** When a workflow run fails, GitHub notifies the user it ran as: for
+a `workflow_dispatch` run that is the owner of the token that dispatched it — the trigger's fine-grained token is
+Andrew's, so **Andrew** gets it; for a scheduled run (the late fallback crons), the user who last changed the `cron`
+lines. It comes from **`notifications@github.com`**, subject like **"[agmcdonald24/league-lab] Run failed: nightly -
+main (1a2b3c4)"**, with a link to the run, by email and on github.com / the GitHub app — as long as GitHub → Settings →
+Notifications → **Actions** has email ticked (the default; "Only notify for failed workflows" keeps the successes
+out). Check it once. What it does not cover: a dispatch that never happened (an expired token — no run, no email): that
+is item 1's monitor and the trigger's own page (below).
+
+**3. The run's summary says where (a step, the PO wires it).** `scripts/nightly_failure_summary.sh` reads
+`logs/nightly.log` and writes the top of the run's summary page — the failing stage (an aborted night's step, else
+the first failed step, else "before scripts/nightly.sh": the setup steps), whether this night published (its own
+`step sync-hosted: ok`), the next move (this section's "Reading a failed run" table) and the last 40 log lines with
+anything password-like blanked — plus one `::error` annotation naming the stage. The proposed step, last in the
+`nightly` job (after "Upload dbt run results"):
+
+```yaml
+      # Wave I-H (IH-1): a failed night's summary - the failing stage, published or not, the last 40 log lines
+      # (GitHub's failure email to the run's actor links here; docs/HOSTING.md § 5 "When the nightly is late or fails")
+      - name: Notify (the failing stage and the last 40 log lines)
+        if: ${{ failure() }}
+        run: ./scripts/nightly_failure_summary.sh logs
+```
+
+No permission, no secret, no outside call; it always exits 0. Checked by `tests/test_ih1.py` (four logs: a failed
+build with a password in it, an aborted night after an older night, a night that published, a run that never reached
+the pipeline).
+
+**The trigger's own page** (`ops/nightly-trigger/`, IH-1): with a Workers KV namespace (free) bound as `STATE` the
+Worker records each dispatch and its URL prints `last dispatch: ok (HTTP 204) at Oct 5, 2026, 7:37 AM ET — the
+morning run` or `last dispatch: FAILED at … — the morning run: HTTP 401 …` (401: the token expired or lost "Actions:
+write"; 404: the repository or the workflow file; 422: the branch). Without the binding it works as before and says
+"not recorded". Set-up: `ops/nightly-trigger/README.md`; offline checks: `node ops/nightly-trigger/test.mjs`.
+
 ## The domain
 
 *(2026-10-04.)* The product answers at **https://isuckatfantasy.io** (and `www.`, which Render redirects to the root);
@@ -601,8 +660,8 @@ INSERT` on the table, `UPDATE` of `superseded_by` only and `USAGE` on its id seq
 it: it runs the file after the U-1 block (`scripts/sync_to_hosted.sh`, block "IG-2"; a failure prints a warning and the
 publish stands). Log line: `events: <n> events kept (<live> live), <size>`. Locally `scripts/init_db.sql` runs the same
 file as the pipeline role. Size: ~500 bytes a row with its indexes (measured: 10,000 rows = 5.1 MB) — a season of
-status moves and shown items (an estimate: 30,000–80,000 rows) is 15–40 MB of the 512 MB Neon budget. Nothing is
-pruned yet (the PO decides a retention; IG-3's 180 days for usage is the model).
+status moves and shown items (an estimate: 30,000–80,000 rows) is 15–40 MB of the 512 MB Neon budget. Pruned on
+every run (below, "Retention (events)").
 
 **Reading it.**
 * My Week's **What changed**: a status line cites its stored event — the source (ESPN / Sleeper), the report's time and
@@ -641,6 +700,20 @@ ends with `delete from usage.events where at < now() - interval '180 days'`: the
 views (at 168 bytes a row, a busy beta of 1,000 views a day stays near 30 MB). The owner role deletes; the app role
 still cannot (no `DELETE` grant). The console's Usage page says so under its tables. To keep everything, remove that
 one statement; to keep less, change the interval (one place).
+
+**Retention (events)** *(Wave I-H, IH-1)*. Every run of `scripts/hosted_events.sql` — the sync's "IG-2" block, once a
+night; locally `scripts/init_db.sql` — ends with two deletes, by `ingested_at` (the store's own clock):
+* `news` and `brief` rows **superseded** and ingested more than **120 days** ago. A player's newest item (live) stays
+  however old — one per player; "What changed" reads 24 hours and the card the live item.
+* `availability` rows ingested more than **400 days** ago, live or superseded: a season, its playoffs and the next
+  preseason — longer than the decision record looks back (a starter's status move before this season's kickoffs). A
+  player still listed after his live row went comes back as a new move on the overlay's next copy.
+So the table holds about a season and a half of status moves and four months of superseded news — at IG-2's estimate
+(30–80k rows a season, ~500 bytes each) under ~60 MB at its largest. `depth_chart` rows (no writer yet) are not pruned.
+A kept row's `superseded_by` may name a pruned row: the readers only ask whether it is null. The owner deletes; the app
+role still cannot. Re-running deletes nothing more (`api/tests/test_ih1.py` plants nine rows on the clone and applies the
+file twice; by hand on `league_lab_ia3`: `DELETE 2` / `DELETE 2`, then `DELETE 0` / `DELETE 0`). To keep more, change
+the two intervals (one place each).
 
 ## Licences to keep in mind when sharing
 

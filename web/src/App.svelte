@@ -1,12 +1,14 @@
 <script lang="ts">
   import { APP_NAME } from "./lib/brand";
   import { onMount } from "svelte";
-  import { ApiError, clearCache, get, paths, Unauthorized, type League, type Status, type UserLeagues } from "./lib/api";
+  import { ApiError, clearCache, forget, get, paths, Unauthorized, type League, type Status, type UserLeagues } from "./lib/api";
   import { leagueOptions, type LeagueOption } from "./lib/leagues";
   import { leagueNames } from "./lib/names.svelte";
   import { prefs } from "./lib/prefs";
   import { interceptLinks, route, setParams } from "./lib/router.svelte";
   import Login from "./components/Login.svelte";
+  import ErrorCard from "./components/ErrorCard.svelte"; // ---- IH-1
+  import { failureOf, type Failure } from "./lib/remote.svelte"; // ---- IH-1
   import PlayerPane from "./components/PlayerPane.svelte";
   import { withContext } from "./lib/md";
   import TopBar, { sectionOf } from "./components/TopBar.svelte";
@@ -34,7 +36,29 @@
   // the user's leagues (sign in with a Sleeper username): remembered on this phone, refreshed in the background
   let mine = $state<UserLeagues | null>(prefs.userLeagues());
   let status = $state<Status | null>(null);
-  let failure = $state("");
+  let failure = $state<Failure | null>(null); // ---- IH-1: the boot's failure as a kind (the API down: a card, Try again)
+  // ---- IH-1: a 401 after this browser was signed in (the cookie expired, the password changed) says so on the
+  // password screen; a first visit sees the plain screen. "Signed in before" = the app was on screen in this tab, or
+  // a league was picked on this browser (only possible once signed in).
+  const SIGNED_OUT = "Signed out — sign in again.";
+  let loginNotice = $state<string | null>(null);
+  function toLogin() {
+    loginNotice = phase === "ready" || prefs.league() !== null ? SIGNED_OUT : null;
+    phase = "login";
+  }
+  // the status line (the stale banner, the footer) is read again when the app comes back to the screen after 10
+  // minutes away, and every 15 minutes while it stays on screen: a phone or a desktop tab that kept the app open
+  // overnight must not show yesterday's "fresh"
+  let statusAt = 0;
+  function loadStatus(force = false) {
+    if (!force && Date.now() - statusAt < 10 * 60_000) return;
+    statusAt = Date.now();
+    if (force) forget(paths.status());
+    get<Status>(paths.status())
+      .then((s) => (status = s))
+      .catch(() => {});
+  }
+  // ---- end IH-1
 
   const r = $derived(route.current);
 
@@ -68,15 +92,13 @@
     try {
       house = await get<League[]>(paths.leagues());
       phase = "ready";
-      get<Status>(paths.status())
-        .then((s) => (status = s))
-        .catch(() => {});
+      loadStatus(true); // ---- IH-1
       refreshMine();
     } catch (e) {
-      if (e instanceof Unauthorized) phase = "login";
+      if (e instanceof Unauthorized) toLogin(); // ---- IH-1
       else {
         phase = "error";
-        failure = e instanceof Error ? e.message : String(e);
+        failure = failureOf(e); // ---- IH-1
       }
     }
   }
@@ -91,7 +113,7 @@
         prefs.setUserLeagues(v);
       })
       .catch((e) => {
-        if (e instanceof Unauthorized) phase = "login";
+        if (e instanceof Unauthorized) toLogin(); // ---- IH-1
         else if (e instanceof ApiError && e.status === 404) {
           prefs.forgetUser();
           mine = null;
@@ -104,7 +126,7 @@
   }
 
   function needLogin() {
-    phase = "login";
+    toLogin(); // ---- IH-1: "Signed out — sign in again" when the cookie expired mid-session
   }
 
   function signedIn() {
@@ -115,18 +137,25 @@
 
   onMount(() => {
     boot();
-    return interceptLinks(document.body);
+    // ---- IH-1: back on screen after a while → the status line again (the stale banner)
+    const onVisible = () => document.visibilityState === "visible" && phase === "ready" && loadStatus();
+    document.addEventListener("visibilitychange", onVisible);
+    const every = setInterval(onVisible, 15 * 60_000); // a tab that stays on screen all day (a desktop)
+    const stop = interceptLinks(document.body);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(every);
+      stop();
+    };
   });
 </script>
 
 {#if phase === "login"}
-  <Login onok={signedIn} />
+  <Login onok={signedIn} notice={loginNotice} />
 {:else if phase === "error"}
-  <div class="mx-auto max-w-xl p-4">
-    <div class="ll-error">
-      Cannot reach {APP_NAME} right now ({failure}). Try again in a minute.
-      <button class="mt-3 block rounded-md bg-accent px-4 py-2 font-semibold text-on-accent" onclick={signedIn}>Try again</button>
-    </div>
+  <!-- ---- IH-1: the API down at the first screen: a plain card with Try again (ErrorCard) -->
+  <div class="mx-auto max-w-xl p-4" data-testid="boot-error">
+    <ErrorCard failure={failure ?? { kind: "down", status: null, words: `Cannot reach ${APP_NAME} right now. Try again in a minute.` }} onretry={signedIn} />
   </div>
 {:else if phase === "loading" && !league}
   <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>

@@ -17,7 +17,8 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/record?league=                  our record vs Sleeper's projections (house leagues; F3)
     /api/search?league=&q=               the player card's search box (any league: Sleeper's directory, H1)
     /api/about?league=                   About the numbers: the model, what it leans on most, its grades (H1)
-    /api/status                          the freshness line, the stale-injury warning, Sleeper's cache ages + budget
+    /api/status                          the freshness line, the stale-injury warning, Sleeper's cache ages + budget;
+                                         ---- IH-1: `nightly` = the stale state (a missed morning update: 30 hours)
     /api/league/scoring-check?league=&week=  our points vs the league's own for a scored week (Wave I-C, IC-1)
     POST /api/usage, /api/usage/summary  ---- U-1: one count per screen view (its own read-write transaction), the counts
     /api/events?league=&team=&hours=     ---- IG-2: this roster's stored events (status moves, news, briefs; the PO's QA)
@@ -96,6 +97,16 @@ async def _not_ready(_req: Request, exc: DataNotReady):
 async def _http(_req: Request, exc: StarletteHTTPException):
     return JSONResponse({"error": str(exc.detail), "detail": exc.detail}, status_code=exc.status_code,
                         headers=getattr(exc, "headers", None))
+
+
+# ---- IH-1 (Wave I-H): a 500 in the error contract's shape — plain words that name the status page (the web card
+# says the same); never the exception's text. Starlette still logs the traceback and re-raises it to the server.
+@app.exception_handler(Exception)
+async def _server_error(_req: Request, exc: Exception):
+    words = "Something broke on our side. /api/status says whether the data is up and when it was last updated."
+    return JSONResponse({"error": words, "detail": words, "status": "/api/status"}, status_code=500,
+                        headers={"Cache-Control": "no-store"})
+# ---- end IH-1
 
 
 def require_auth(request: Request) -> None:
@@ -194,9 +205,40 @@ def health(response: Response) -> dict:
             _refresh_as_of()
         finally:
             _health_lock.release()
-    return {"ok": True, "version": _version(), "as_of": _health_state["as_of"], "board_source": A.board_source(),
-            "database": _health_state["database"]}
+    out = {"ok": True, "version": _version(), "as_of": _health_state["as_of"], "board_source": A.board_source(),
+           "database": _health_state["database"]}
+    # ---- IH-1: `stale` (true when as_of is older than 30 hours: a missed nightly; null when as_of is unknown) and
+    # `age_hours` - the age at the moment of the answer, so the hour-long cache of as_of never hides a missed morning
+    nightly = _freshness.nightly_state(_health_state["as_of"])
+    out.update(stale=nightly["stale"], age_hours=nightly["age_hours"])
+    # ---- end IH-1
+    return out
 # ---- end H0 health
+
+
+# ---- IH-1 (Wave I-H): the stale state (league_lab/freshness.py; docs/HOSTING.md § 5 "When the nightly is late or
+# fails"). /api/status reads as_of on the pool at every call (it is behind the password and asked once a screen
+# load, not every few seconds like the health check) and hands the newer value to the health state, so the two
+# never disagree for long; a failed read falls back to the health state's last value.
+from league_lab import freshness as _freshness  # noqa: E402 - the block stays self-contained
+
+
+def _status_nightly() -> dict:
+    try:
+        df = query("select max(fitted_at) as t from ops.projections")
+        t = None if df.empty or pd.isna(df["t"].iloc[0]) else pd.Timestamp(df["t"].iloc[0])
+        if t is not None:
+            t = (t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC")).to_pydatetime()
+            _health_state["as_of"] = t.isoformat()
+        as_of = None if t is None else t.isoformat()
+    except Exception:  # noqa: BLE001 - a status line, never a failure
+        as_of = _health_state["as_of"]
+    try:                                    # the words say injury statuses are live only when the overlay is on
+        live = availability.enabled()
+    except Exception:  # noqa: BLE001
+        live = False
+    return _freshness.nightly_state(as_of, live_injuries=live)
+# ---- end IH-1
 
 
 @app.get("/api/session")
@@ -333,6 +375,7 @@ def status(response: Response):
         out["events"] = _events.info()
     except Exception as exc:  # noqa: BLE001 - a status line, never a failure
         out["events"] = {"enabled": False, "error": exc.__class__.__name__}
+    out["nightly"] = _status_nightly()      # ---- IH-1: {as_of, age_hours, stale, limit_hours, words}
     out["sleeper"] = A.sleeper().stats()
     out["board_source"] = A.board_source()
     try:                                    # QA: the setting is "auto"; say which board the current week really uses

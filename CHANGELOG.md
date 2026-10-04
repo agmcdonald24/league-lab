@@ -20,6 +20,18 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   injury report stays the fallback), and MyFantasyLeague leagues in the record: the on-demand lineup frozen before
   kickoff (`LEAGUE_LAB_RECORD_MFL`), graded from MFL's own weekly results — dad's league shows weeks 1–3, rebuilt.
 
+- **IH-1: the product says when it is stale; the operator hears when the nightly fails.** One rule
+  (`league_lab/freshness.py`: the newest projections' fit older than 30 hours): `/api/health` `stale` + `age_hours`,
+  `/api/status` `nightly` {as_of, age_hours, stale, limit_hours, words}; My Week's one line above the actions
+  ("Yesterday's numbers: the morning update did not run. Injury statuses are still live."), the footer's "Updated …"
+  and the console's Data Status page say the same. The web app's error states: `components/ErrorCard.svelte` (the API
+  down, a 500 naming `/api/status`, still waiting after 25 s — each with a Try again that really asks again) on My
+  Week, the first screen, Trends, Receivers, Players and Compare; "Signed out — sign in again" on a 401 after sign-in;
+  a 500 from the API is the contract's plain words. `scripts/nightly_failure_summary.sh` for a proposed `notify` step
+  (the failing stage, published or not, the last 40 log lines; the PO wires it); GitHub's failure email to the run's
+  actor (Andrew) in HOSTING § 5; the trigger's page reports the last dispatch (an optional KV binding `STATE`).
+  Events retention: `hosted_events.sql` prunes superseded news / briefs after 120 days and availability after 400.
+
 ## 2026-10-04 — Wave I-G
 
 - **The nightly's trigger.** GitHub's schedule started every nightly 3.5–6 hours late; `ops/nightly-trigger/` (a

@@ -16,6 +16,7 @@
   import MatchupEvidence from "../components/MatchupEvidence.svelte"; // ---- IF-3
   import PlayerCard from "../components/PlayerCard.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
+  import ErrorCard from "../components/ErrorCard.svelte"; // ---- IH-1: the API down / a 500 / still waiting
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -228,7 +229,10 @@
   </div>
 
   {#if cmp.error}
-    <p class="ll-error">{cmp.error}</p>
+    <!-- ---- IH-1: a card with Try again for the API down / a 500 / Sleeper; a 404's own words stay a plain line -->
+    {#if cmp.failure && cmp.failure.kind !== "notfound" && cmp.failure.kind !== "other"}<ErrorCard failure={cmp.failure} onretry={() => cmp.retry()} />{:else}<p class="ll-error">{cmp.error}</p>{/if}
+  {:else if cmp.failure?.kind === "slow"}
+    <ErrorCard failure={cmp.failure} onretry={() => cmp.retry()} /><!-- ---- IH-1: still waiting after 25 s -->
   {:else if !A || !B}
     <div class="grid grid-cols-2 gap-2" aria-label="Loading" data-testid="loading"><div class="ll-skel h-52"></div><div class="ll-skel h-52"></div></div>
   {:else}
