@@ -4,10 +4,10 @@
   the app learned about a player or a team — an injury-report status move (the availability overlay: ESPN / Sleeper),
   an ESPN news item it showed, a PlayerWire brief it showed — keyed by player (``gsis_id``; ``player_key`` = the
   source's own id: ``espn:4262921``, ``sleeper:6794``, ``pw:<brief id>``), ``team`` (nflverse abbreviations) and
-  ``game_key`` (nflverse ``game_id``; no writer knows the game yet), with ``status``, ``headline`` / ``summary``,
-  ``source`` and ``source_url``, ``published_at`` / ``effective_at`` / ``ingested_at``, and ``superseded_by`` (the
-  newer event of the same kind about the same player). ``fingerprint`` (sha256 of kind, subject, status, URL and time)
-  is unique: the same item seen twice is one row.
+  ``game_key`` (nflverse ``game_id``: an availability move's team game in the week in play, IH-2), with ``status``,
+  ``headline`` / ``summary``, ``source`` and ``source_url``, ``published_at`` / ``effective_at`` / ``ingested_at``, and
+  ``superseded_by`` (the newer event of the same kind about the same player). ``fingerprint`` (sha256 of kind, subject,
+  status, URL and time) is unique: the same item seen twice is one row.
 * **Times.** Availability: ``published_at`` = the copy's own time (ESPN's feed ``timestamp``, else when it was read;
   Sleeper: when the directory was read), ``effective_at`` = the report's date (ESPN's entry ``date``, Sleeper's
   ``news_updated``; NULL when Sleeper gives none). News and briefs: ``published_at`` = the item's date. The event's
