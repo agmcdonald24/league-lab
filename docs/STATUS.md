@@ -5125,3 +5125,155 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   the two; unmapped players' briefs invisible; no retention (≈ 5 MB per thousand briefs, outside the nightly's
   480 MB budget, inside Neon's 0.5 GB).
 * **Next**: Andrew's answer on § 5, then § "Set up" (five steps); after the first real brief, a "What's new" line.
+
+## Wave I-G (Iteration 17, part G)
+
+### IG-2 2026-10-04 — the event store (the decision-quality review § "Engineering requirements"; branch `dev/IG2`, clone `league_lab_ia3`)
+
+**Plan sections**: PROJECT_PLAN § 17 (the backlog's "`ops.events` (the decision-quality review's event store)"); the
+review § Priority 1 "Engineering requirements", § "Model validation and release gates" (news-affected cases: the store
+V-1 reads). **Branch** `dev/IG2` from `main` 7222f98. **Interfaces**: INTERFACES.md § IG-2 (+ "final shape").
+
+**Files.** New: `scripts/hosted_events.sql`, `api/league_lab_api/events.py`, `api/tests/test_ig2.py`,
+`web/e2e/ig2/fixtures.spec.ts`, `web/fixtures/ig2/api_ig2.json`. Marked blocks (`IG-2`): `scripts/sync_to_hosted.sh`,
+`scripts/init_db.sql`, `api/league_lab_api/{availability,news,playerwire,research,myweek,main}.py`,
+`api/tests/conftest.py` (one line), `web/src/routes/About.svelte`. Edited pins: `web/e2e/{n1,n2}/fixtures.spec.ts`
+(About's N1 sentence). Docs: `docs/HOSTING.md` § "Events" (new), `docs/ANY_LEAGUE.md` § "Events" (new),
+`docs/METRICS.md` § Matchups "Current personnel" (the URL now carried), `docs/ESPN_TERMS.md` § "What we keep",
+`CHANGELOG.md`, this section. **Data touched**: `league_lab_ia3` only (the pipeline role was granted `CREATE` on it,
+as on the Mac where it owns the database; `events` created there; the tests' rows removed); `league_lab` never written.
+**Commands**: `cd api && PYTHONPATH=. uv run pytest -q tests/` (and `tests/test_ig2.py`, `IG2_RECORD=1 … -k record`),
+`uv run pytest -q tests/test_app_guards.py tests/test_nightly_relations.py tests/test_playerwire_sync.py`,
+`uv run ruff check src app tests api`, `cd web && npm run lint && npm run build && FIXTURES_PORT=8604 npx playwright
+test --config playwright.fixtures.config.ts e2e/ig2 e2e/n1 e2e/n2 e2e/if4`, `psql -f scripts/hosted_events.sql` (3×),
+`scripts/init_db.sql` on a scratch database (2×, dropped).
+
+* **The store.** `scripts/hosted_events.sql` (new, plain SQL, idempotent): schema `events`, table `events.events (id
+  bigserial, kind, player_key, gsis_id, team, game_key, status, headline, summary, source, source_url, published_at,
+  effective_at, ingested_at, superseded_by, fingerprint unique)`; checks on `kind` (`availability` | `news` | `brief` |
+  `depth_chart`), the key shapes (`00-0000000`, `espn:` / `sleeper:` / `mfl:` / `pw:` ids, 2–3 letter teams, nflverse
+  game ids), https URLs, lengths, a sha256 fingerprint, at least one of gsis / team; indexes `(gsis_id, ingested_at)`,
+  `(team, ingested_at)`, the live rows by `(kind, gsis_id)`. Grants: `league_lab_app` gets `USAGE` on the schema,
+  `SELECT, INSERT`, `UPDATE (superseded_by)` and the id sequence's `USAGE` — no delete, no other column. The sync's
+  marked block (`scripts/sync_to_hosted.sh`, "IG-2", after U-1, its own transaction on the owner connection, a warning
+  on failure — the publish stands); `scripts/init_db.sql`'s marked block runs the same file as the pipeline role.
+* **The writers** (`api/league_lab_api/events.py`, U-1's pattern): rows go on a bounded queue (500 batches) that one
+  daemon thread drains, each batch in `BEGIN; SET TRANSACTION READ WRITE; …; COMMIT` on its own connection
+  (`application_name` `league-lab-events`, one retry on a dropped connection); a failure is counted and logged, never
+  raised; a fingerprint the process already queued is not queued again. (1) **The overlay** (`availability.snapshot`,
+  marked lines: the ESPN / Sleeper ids on the entries, the feed's timestamp, `events.observe_availability(s)`): the
+  writer thread diffs each new merged copy against the one before — the first copy of a process against the store's
+  live statuses — per player (the overlay's own newer-of-two rule), one event per move, off both lists = `ACTIVE`;
+  only when both sources loaded (ESPN failing to load is not 300 players turning healthy). `published_at` = the copy's
+  time (ESPN's feed `timestamp`), `effective_at` = the report's (the entry's `date`, Sleeper's `news_updated`),
+  `source_url` = the player's ESPN page (ESPN's injuries feed carries no story link; a Sleeper report has none).
+  (2) **The card's news line** (`news.for_card`, marked lines): every item it shows — ESPN's as `news` (`status` = IF-4's
+  `about`), PlayerWire's as `brief` (`status` = the verification, `summary` = the brief's text, the first evidence
+  link). (3) **My Week's "What changed"** writes the items it shows the same way. **Supersede**: availability — the new
+  row supersedes the player's older live rows (insertion order: the overlay's current status is always the newest);
+  news / brief — by time (a late older item is stored already superseded). **Dedupe**: the fingerprint (sha256 of
+  kind, gsis or team, status, URL, effective-or-published time) is unique, `on conflict do nothing`; a status that
+  returns to a report already stored (a copy that dropped him a while) is re-inserted with `|after:<live id>` salted in.
+* **The readers**: `events.for_player(gsis, since)`, `events.for_team(team, since)` (a corner's IR is an availability
+  event of his team), `events.recent(gsis_ids, hours)`, `events.cite(ev)`, `events.info()` — the read-only pool,
+  cached a minute, `[]` when the store is off / missing / unreachable (one warning). **"What changed"** (`myweek`
+  marked block): a status line cites its stored event — `source` "Injury report (ESPN)" or "(Sleeper)" as the overlay
+  entry says (it was always "ESPN"), `at` = the report's time (it was the time the feed was checked), `url` = the ESPN
+  page, `event_id`; without an event the overlay entry's own source and time (`meta.cites`, a marked addition to
+  `apply_to_rows`, aligned with `meta.changes`). News lines: ESPN's items + PlayerWire's briefs of the last 24 hours
+  (`playerwire.recent`, one query for the week's players, the card's identity rule), merged with the store's live
+  news / brief events by fingerprint, one line per player — his own brief, then a brief naming him, then ESPN's item
+  about him, then league news — with `event_id`, `origin` (`espn` | `playerwire`), `verification`. A brief is a `news`
+  line, so the web needed no change. **The matchup evidence** (`research._cite_missing`): each missing regular's
+  newest live availability event that says he cannot play (the opponent's events first — `for_team` — then his own,
+  60 days) → `changed.missing[].event` / `.url`, `changed.events`; no event: null, the overlay's words stay.
+* **Routes.** `/api/status` → `events: {enabled, ready, rows, live, newest, process}`; `GET
+  /api/events?league=&team=&hours=72` (gated, `no-store`, 1–720 h): the roster's players' events, live and
+  superseded, with names (any league: `availability.roster_context` — house, Sleeper on demand, MFL). About: one
+  sentence (`about-events`), and N1's "keeps none of it" became "keeps only the headline, its date, the source and the
+  link" (it was no longer true; N1's and N2's e2e pins follow).
+* **Switches.** `LEAGUE_LAB_EVENTS=off` (0 / false / no): nothing written, nothing read — the screens are IF-4's.
+  **Off in fixture mode** unless `LEAGUE_LAB_EVENTS=on`, and off in every API test (`conftest.py`) unless the test
+  turns it on (no suite writes made-up rows into a developer's store). `LEAGUE_LAB_EVENTS_ESPN_NEWS=off`: ESPN's
+  headlines stay out of the store (moves and briefs kept).
+
+**Evidence.**
+* `api/tests/test_ig2.py` — **19 passed, 1 skipped** (the recorder, `IG2_RECORD=1`): the row's checks and fingerprint;
+  the diff on hand-built copies (no move = nothing, a move = one row, a missing source = nothing, off the lists =
+  ACTIVE); off / fixture mode write nothing; a 1.5 s failing writer returns to the caller in < 0.5 s and the row is
+  retried next time; the hosted SQL applied 3× is idempotent and leaves `usage.events` (rows, columns, constraints,
+  ACL) identical; the app role's grants (insert, `superseded_by` only, no delete / truncate / other column; a plain
+  insert still `ReadOnlySqlTransaction`; a bad gsis `CheckViolation`); **a status move**: ESPN's fixture copy through
+  `availability.snapshot` writes Jefferson's `OUT` (effective 2026-10-02 18:35Z, published 2026-10-03 03:58:44Z, his
+  ESPN page) once; the same copy again writes nothing; the next copy (Questionable) writes one row and supersedes the
+  first; off both lists → `ACTIVE`, superseding; `for_player` newest first with `live`; a new process (no memory)
+  diffs against the store and writes the one difference; **news and briefs**: the card's ESPN items and PlayerWire's
+  three briefs write one row each; shown again — nothing (process memory); a new process — nothing (fingerprint:
+  `duplicate` = the item count); one live row per kind; `LEAGUE_LAB_EVENTS_ESPN_NEWS=off` keeps ESPN's out; **What
+  changed** (Scrubs roster 2, overlay + PlayerWire fixtures): the status line `Injury report (ESPN)` · 2026-10-02T18:35Z
+  · his ESPN page · `event_id`; his line is the Vikings' brief ("Jefferson (ankle) ruled out for Sunday", `official`,
+  the vikings.com link, `event_id`); with ESPN and PlayerWire both silent the store's live brief still shows; off = IF-4's
+  lines; **matchup evidence** (IF-3's as-of case): Horn's and Jackson's IR events (team CAR) → each missing corner
+  carries `event` (ESPN, IR, 2026-09-30T20:15Z) and its URL, IF-3's sentence unchanged; off → null, the overlay stays;
+  a store that raises on read and write → My Week and the card 200, `/api/status` `events.ready: false`; `/api/status`
+  and `/api/events` (720 h cap, `no-store`, the gate: 401); the sync and init_db blocks.
+* The overlay's first copy on an empty store (the `espn_if3` fixtures): 248 players listed, **151 rows** (the non-active
+  ones), 0 failed. Row size: **~500 bytes with the indexes** (10,000 rows = 5.1 MB, measured in a rolled-back
+  transaction); the empty table 48 kB. `scripts/init_db.sql` run twice on a scratch database (dropped after): `events`
+  owned by `league_lab_pipeline`, the app role's grants as above.
+* Related suites unchanged: `test_if4 test_if3 test_i0a test_n1 test_n2 test_u1 test_myweek` 94 passed, 1 skipped.
+* **The whole API suite** (`cd api && uv run pytest tests/`): **494 passed, 4 skipped, 3 failed** (16 min) — the three
+  known clone scoring checks (`test_ic1` × 2, `test_ic_po`: no `*_tds_10p` columns). A first full run (37 min, the box
+  shared with the root suite) had 3 more failures, all in `test_ig2`, from rows an earlier run of mine left behind (a
+  run killed at its time-out before its teardown); the tests now read their own rows only. That rerun then showed
+  `test_n2`'s database-path test (it leaves fixture mode) writing its made-up brief and ESPN items into the clone's
+  store — so `api/tests/conftest.py`'s autouse fixture now sets `LEAGUE_LAB_EVENTS=off` for every test (one marked
+  line; `test_ig2` turns it on itself). After it: `test_ig2 test_if4 test_n1 test_n2` 56 passed, 2 skipped, and the
+  store empty after the run.
+* Root suite: my change touches no `src/`, `app/`, `tests/` or `dbt/` file; the root tests that read files I changed
+  (`test_app_guards`, `test_nightly_relations`, `test_playerwire_sync`) 26 passed, 1 skipped. The whole root suite
+  did not finish on this box (2 CPUs, load 11–14: `test_kdef` fits models; 7% in 32 minutes) — not run in full.
+* Web: `npm run lint` (eslint + svelte-check + tsc) 0 errors; `npm run build` clean; e2e on fixtures
+  (`FIXTURES_PORT=8604`, `e2e/ig2 e2e/n1 e2e/n2 e2e/if4`) **32 passed** — `web/e2e/ig2/` 2 × phone (375) / desktop
+  (1300): the status line's "Injury report (ESPN) ↗" links to his ESPN page with the report's time, the brief's
+  "Minnesota Vikings via PlayerWire ↗" link, About's sentence, no sideways scroll (recorded answers:
+  `web/fixtures/ig2/api_ig2.json`). Ruff: one finding, `research.py:62` B010 — on `main` already, not in my block.
+
+**What moved.** No number: projections, lineups, gains and the cards' words are untouched. "What changed" status lines
+now name the source that reported the status and the report's time (before: "Injury report (ESPN)" and the time ESPN
+was checked, even when Sleeper's entry won) and link to the player's ESPN page; a PlayerWire brief can be a player's
+news line there (before: ESPN only).
+
+**Not done / limits.**
+* `game_key` is empty and no `depth_chart` writer exists (no feed gives a dated depth-chart move yet; the check allows
+  the kind).
+* Availability moves are recorded only while a server process runs and reads the overlay (Render's one process;
+  between restarts, the next copy's diff against the store catches up — moves that came and went in between are
+  lost). The first copy after the merge writes every listed player once (a few hundred to ~1,500 rows).
+* A Questionable designation on a starter that moves no lineup is stored but not a "What changed" line (IF-4's rule:
+  the lines are the lineup's moves and the news).
+* Team announcements (the Panthers' release) are not read: the URL is ESPN's player page, the date the report's.
+* No retention yet (an estimate: 30,000–80,000 rows a season, 15–40 MB).
+* The sandbox's proxy log shows `site.api.espn.com` refused at 07:20Z / 07:33Z / 08:14Z (UTC) — two of them before this
+  task started: some API test (not test_ig2) reaches for ESPN outside fixture mode; not traced.
+
+**Next**: V-1's news-affected cases read the store once merged (INTERFACES § IG-2 "For V-1"); a retention rule; a
+dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) for `for_team`.
+
+**For the PO** (review first):
+1. **The sync block** (`scripts/sync_to_hosted.sh`, "# ---- IG-2", 12 lines after U-1) — its own `psql -f
+   scripts/hosted_events.sql` on `LEAGUE_LAB_HOSTED_ADMIN_URL`, a warning on failure; no new secret, variable or
+   workflow change. The next nightly creates the schema; until then every write fails quietly (`process.failed`).
+2. **ESPN's headlines are now kept** in the hosted database (headline, date, source, link — the cache file's four
+   fields; never the body). `docs/ESPN_TERMS.md` § "What we keep" says so; ESPN's terms are still unread. To hold it:
+   `LEAGUE_LAB_EVENTS_ESPN_NEWS=off` on Render (status moves and briefs stay), or `LEAGUE_LAB_EVENTS=off` for all.
+3. **Decision taken** (the brief said `(kind, gsis_id, status)`): supersede by `(kind, gsis_id)` — its acceptance
+   ("supersedes it on the next move") needs the status out of the key. The fingerprint uses the report's time for a
+   status move (the brief's "published_at" is the copy's time there, which would make every copy a new row).
+4. **About**: N1's sentence changed ("keeps only the headline, its date, the source and the link"); N1's / N2's e2e pins
+   updated with it. About.svelte is also M4's / V-1's / IG-3's file — my two marked blocks are next to N1's.
+5. Merge order: independent of M4 / IG-1 / IG-3 / M5. V-1 reads the store; `myweek.py` / `research.py` / `main.py`
+   carry other developers' marked blocks too — mine are `# ---- IG-2`. `api/tests/conftest.py` gains one marked line
+   (`LEAGUE_LAB_EVENTS=off` in the autouse fixture) — shared, outside my list, needed so no test writes into a store.
+6. Retention: none (a proposal: drop superseded `news` rows after 120 days; keep availability and briefs for the
+   record).
