@@ -1,6 +1,6 @@
 <script lang="ts">
   import { ApiError, get, paths, peek, Unauthorized, type PlayerCard } from "../lib/api";
-  import { cardHeadLine, cardMissing, cardSections, howtoWords } from "../lib/card";
+  import { cardHeadLine, cardMissing, cardSections, howtoWords, projLabel } from "../lib/card"; // IG-1: projLabel
   import { withContext } from "../lib/md";
   import { learnLeagueName } from "../lib/names.svelte";
   import { back, restoreScroll, route } from "../lib/router.svelte";
@@ -82,7 +82,7 @@
     <PlayerCardView
       player={{ gsis_id: data.gsis_id, player_name: data.player_name, position: data.position, team: data.team, headshot_url: data.headshot_url ?? null }}
       number={fmt.pts(data.proj_points)}
-      numberLabel={data.week ? `Week ${data.week}` : "Projection"}
+      numberLabel={projLabel(data.week, data.proj_points)}
       line={headLine}
       context={data.injury_status ?? null}
       testid="player-header"

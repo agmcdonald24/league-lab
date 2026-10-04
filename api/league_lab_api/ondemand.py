@@ -127,6 +127,11 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     out["league_line"] = cards.league_line(league_id, int(roster_id), week, rows) if not rows.empty else ""
     lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna() if not rows.empty else pd.Series(dtype=float)
     out["lineup_value"] = None if lv.empty else float(lv.iloc[0])
+    # ---- IG-1: the starters the total counts at 0 (no projection), as the database path says it
+    from .myweek import n_unvalued, unvalued_words
+    out["n_unvalued"] = n_unvalued(rows)
+    out["unvalued_words"] = unvalued_words(out["n_unvalued"])
+    # ---- end IG-1
     t1 = time.perf_counter()
     cur = current_starters(league_id, int(roster_id), house=False)                                        # ---- IB-0
     out["notice"], out["cards"] = cards_from_rows(league_id, int(roster_id), week, season, rows, current=cur)

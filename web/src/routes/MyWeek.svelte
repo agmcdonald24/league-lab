@@ -342,6 +342,8 @@
             {/if}
             {#if data.lineup.length}
               <LineupTable rows={data.lineup} {ctx} testid="lineup" margins pane={(row) => lineupPane(row, data!.lineup_full)} /><!-- IF-4: margins -->
+              <!-- ---- IG-1: the total counts a starter with no projection as 0: say how many -->
+              {#if data.unvalued_words}<p class="text-sm leading-snug text-ink-3" data-testid="unvalued-words">{data.unvalued_words}</p>{/if}
             {:else}
               <p class="text-sm text-ink-3">No proposed lineup for this week yet.</p>
             {/if}

@@ -219,8 +219,10 @@
       {#if finder?.rejected_count}
         <!-- IA-2: the sanity bound — what was set aside, and why (three examples) -->
         <Expander title={`${finder.rejected_count} lopsided ${finder.rejected_count === 1 ? "trade" : "trades"} left out`} testid="rejected">
-          <p class="text-sm text-ink-2">
-            We do not suggest a trade that gives away much more rest-of-season value than it brings back (over a quarter of what you give), or one that only works because our number for a player you give is far under Sleeper's.
+          <!-- ---- IG-1: rule (a) is the value gap (season value above replacement); the API says it -->
+          <p class="text-sm text-ink-2" data-testid="rejected-rule">
+            {finder.sanity?.words ??
+              "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's."}
           </p>
           <ul class="mt-2 space-y-1.5 text-sm" data-testid="rejected-list">
             {#each finder.rejected ?? [] as x, i (i)}

@@ -267,6 +267,15 @@ def _move(r: pd.Series, week: int, b: dict, proj: dict, ros: dict) -> dict:
         drop.update({"projection": _num(r.get("drop_value")), "is_starter": _bool(r.get("drop_is_starter")),
                      "horizon_loss": _num(r.get("drop_horizon_loss")), "season_points_left": _num(r.get("drop_ros_points")),
                      "ros_points": (ros.get(dk) or {}).get("ros_points")})
+        # ---- IG-1: a drop with no projection row (the writer stores his value and rest of season as 0: `waivers._write`
+        # `drop_value` / `drop_ros_points`) is sent as null - unknown, not 0 - when the rest-of-season board has no row
+        # for him either (a K / DEF / a bye week keeps its 0: they have a row)
+        no_proj = (not _num(r.get("drop_value"))) and (not _num(r.get("drop_ros_points"))) and \
+            (ros.get(dk) or {}).get("ros_points") is None and bool(ros)
+        drop["no_projection"] = no_proj
+        if no_proj:
+            drop.update({"projection": None, "season_points_left": None})
+        # ---- end IG-1
     gains = r.get("week_gains")
     return {**if1_move_fields(r, drop),                                     # ---- IF-1: the drop's cost, the net gains
             "move_rank": _int(r.get("move_rank")), "add_rank": _int(r.get("add_rank")), "list_kind": r.get("list_kind"),
@@ -697,6 +706,13 @@ class TradeContext:
             if market:
                 self.points = market_points(self.lw)
                 self.replacement, self.repl_name = replacement_level(self.lw, fa, self.points)
+                # ---- IG-1: team units' season value (IC-4's per-week unit rows summed; the best free unit of the same
+                # kind is the baseline, never a player)
+                up, ur, un = unit_market(self.lw, fa)
+                self.points.update(up)
+                self.replacement.update(ur)
+                self.repl_name.update(un)
+                # ---- end IG-1
             self.fa = fa
         # ---- I0-A: this week's availability on the board (an Out player is worth 0 this week; the board re-solves)
         # ---- IB-0: this week's lineup on the board = each roster's context (the rosters the overlay moved): the roster
@@ -739,6 +755,8 @@ class TradeContext:
             r = r.iloc[0]
         if r["role"] == "unplayable":
             return None, (r["reason"] or "can't play")
+        if r.get("value_source") == UNVALUED:                    # ---- IG-1: no projection row - unknown, not 0
+            return None, None
         return (float(r["player_value"]) if pd.notna(r["player_value"]) else None), None
 
     def team(self, rid) -> str:
@@ -917,6 +935,91 @@ def replacement_level(lw: A.LeagueWeeks, fa: pd.DataFrame | None, points: dict[s
         if cur is None or (v, ) > (cur[0], ) or (v == cur[0] and r.sleeper_id < cur[2]):
             best[r.position] = (v, r.player_name, r.sleeper_id)
     return {p: v[0] for p, v in best.items()}, {p: v[1] for p, v in best.items()}
+
+
+# ---- IG-1 (Wave I-G): team units' season value. MFL's team QB / team kicker (TMQB / TMPK) had no `market` row, so the
+# verdict's season value and the sanity warning left them out ("Not counted (no season projection): Houston Texans QB").
+# A unit's season points = its priced weeks summed over the market's window (`market_points`: this week to the last
+# regular-season week) - `lw.priced[w].units`, the rows IC-4's rest of season reads (`anyleague.units_priced_frame`);
+# its replacement = the most season points of a FREE unit of the same kind (`anyleague.free_agents` keeps one free unit
+# per team), never a player. INTERFACES.md § IG-1.
+def unit_market(lw: A.LeagueWeeks | None, fa: pd.DataFrame | None) -> tuple[dict[str, float], dict[str, float], dict[str, str]]:
+    """(points: key -> season points, replacement: unit position -> the best free unit's, its name) for the league's
+    team units. Key = the key the board carries (a rostered unit's MFL id ``mfl:0656``; a free unit's ``free_agents``
+    id). A bye week has no row and adds nothing (a player's bye likewise); a unit with no priced week has no points
+    (unknown, not 0). Empty for a league without unit slots."""
+    if lw is None:
+        return {}, {}, {}
+    from league_lab import lineup as LU
+    units: dict[str, tuple[str, str]] = {}
+    free: dict[str, str] = {}
+    for r in lw.rosters:
+        for sid in (str(x) for x in (r.get("players") or [])):
+            sp = lw.players.get(sid) or {}
+            if sp.get("position") in LU.UNITS and isinstance(sp.get("team"), str) and sp.get("team"):
+                units[sid] = (str(sp["position"]), LU._team(sp["team"]))
+    for r in (fa.itertuples() if fa is not None and not fa.empty else []):
+        if r.position in LU.UNITS and isinstance(r.nfl_team, str) and r.nfl_team:
+            units[str(r.sleeper_id)] = (str(r.position), LU._team(r.nfl_team))
+            free[str(r.sleeper_id)] = str(r.player_name)
+    if not units:
+        return {}, {}, {}
+    pts: dict[str, float] = {}
+    for w in lw.rest_weeks:
+        u = lw.priced[w].units if w in lw.priced else None
+        if u is None or u.empty:
+            continue
+        by = {(str(p), str(t)): float(v) for p, t, v in zip(u["position"], u["team"], u["proj_points"], strict=True)
+              if pd.notna(v)}
+        for k, pt in units.items():
+            v = by.get(pt)
+            if v is not None:
+                pts[k] = pts.get(k, 0.0) + round(v, 2)
+    pts = {k: round(v, 2) for k, v in pts.items()}
+    best: dict[str, tuple[float, str, str]] = {}
+    for k, name in free.items():
+        v = pts.get(k)
+        if v is None:
+            continue
+        pos, cur = units[k][0], best.get(units[k][0])
+        if cur is None or v > cur[0] or (v == cur[0] and k < cur[2]):
+            best[pos] = (v, name, k)
+    return pts, {p: v[0] for p, v in best.items()}, {p: v[1] for p, v in best.items()}
+
+
+# the unknown-is-not-zero contract on the trade and team answers (AGENTS.md rule 5): the solver carries a player with no
+# projection row at 0 (`value_source = 'unvalued'`); the answers send null and `no_projection`
+def start_value(s) -> float | None:
+    """A lineup start's value to the cent, None when the player in it has no projection (unknown, not 0)."""
+    if s is None or s.player is None or s.player.value_source == UNVALUED or s.value is None:
+        return None
+    return T._r2(s.value)
+
+
+def known_value(prices: dict, ids) -> int | None:
+    """A side's season value above replacement (whole points, as the tables sum it), None when a player of it has none
+    (the partial sum of the others is not that side's value: unknown is not zero)."""
+    v, unknown = T.season_value(prices, list(ids))
+    return None if unknown else v
+
+
+def no_projection_slots(side: T.Side, slots: list[dict]) -> list[dict]:
+    """`lineup_frame`'s slots (one per start of ``side.lineup_after``, in order) with a no-projection start's value null."""
+    starts = list(side.lineup_after.starts) if side.lineup_after is not None else []
+    for x, s in zip(slots, starts, strict=False):
+        none = s.player is not None and s.player.value_source == UNVALUED
+        x["no_projection"] = none
+        if none:
+            x["value"] = None
+    return slots
+
+
+def _no_projection(r) -> dict:
+    """The Team roster row: `value` / `margin` null and `no_projection` true when the row has no projection."""
+    if _str(r.get("value_source")) != UNVALUED:
+        return {"no_projection": False}
+    return {"value": None, "margin": None, "no_projection": True}
+# ---- end IG-1
 
 
 def _side(ctx: TradeContext, side: T.Side) -> dict:
@@ -1227,10 +1330,11 @@ def evaluate(league_id: str, team: int, partner: int | None, give, get, *, sourc
     lineups = {}
     for who, side in (("mine", now.mine), ("theirs", now.theirs)):
         frame, notes = ns["lineup_frame"](side)
-        lineups[who] = {"slots": [{"slot": r["slot"], "player_name": _str(r["player_name"]), "gsis_id": _str(r["gsis_id"]),
+        lineups[who] = {"slots": no_projection_slots(side, [  # ---- IG-1: a starter with no projection: null, not 0
+                                  {"slot": r["slot"], "player_name": _str(r["player_name"]), "gsis_id": _str(r["gsis_id"]),
                                    "value": _num(r["trade_value"]),
                                    "change": None if _num(r["trade_change"]) is None else round(float(r["trade_change"]), 2)}
-                                  for _, r in frame.iterrows()],
+                                  for _, r in frame.iterrows()]),
                         "notes": [links(x) for x in notes], "closest_call": links(ns["closest"](side))}
     size = ns["size_words"](me, fa_meta, "you", "") + ns["size_words"](th, fa_meta, "they", "")
     size_words = ("Roster size: " + "; ".join(size) + ".") if size else f"Roster size: no change ({len(g)} for {len(t)})."
@@ -1525,18 +1629,42 @@ def rank_partners(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...],
     return out
 
 
+# ---- IG-1 (Wave I-G): the finder's rule said in words (the "left out" expander on Trades): the value gap, not volume
+FINDER_RULE = "season_value"
+
+
+def finder_rule_words(ctx: TradeContext) -> dict:
+    """`sanity`'s IG-1 keys: the rule (a) the finder applies, how many players of the board have a season value, and
+    the sentence the screen shows above the trades it left out."""
+    return {"rule": FINDER_RULE, "value_players": len(ctx.prices),
+            "words": (f"We do not suggest a trade that gives away much more {VALUE_CONCEPTS['season_value'].lower()} than "
+                      f"it brings back (over a quarter of what you give, and not about even), or one that only works "
+                      f"because our number for a player you give is far under Sleeper's. A player with no season "
+                      f"projection is not judged.")}
+
+
+def rejected_examples(rejected: list, n: int = 3) -> list:
+    """The three packages the screen names as left out: the first of each rule (the market, the value gap) first, then
+    the search's order - so a market refusal is never hidden behind three value gaps."""
+    picked = []
+    for pref in ("the market", "you give"):
+        hit = next((x for x in rejected if str(x[1]).startswith(pref)), None)
+        if hit is not None:
+            picked.append(hit)
+    for x in rejected:
+        if len(picked) >= n:
+            break
+        if not any(x is y for y in picked):
+            picked.append(x)
+    return picked[:n]
+# ---- end IG-1
+
+
 def calc_sanity(give: list[str], get: list[str], prices: dict, ours: dict, mkt: dict, name) -> str | None:
     """The calculator's warning: the market rule (b) as before; the value rule on SEASON VALUE ABOVE REPLACEMENT (the
     fairness test), never on the raw rest-of-season totals — given more than ``T.ROS_GAP_SHARE`` over what comes back,
     every player of the package priced (unknown is not zero: not judged)."""
-    why = T.sanity(give, get, ros={}, ours=ours, market=mkt, name=name)
-    if why or not give or not get or not all(p in prices for p in (*give, *get)):
-        return why
-    po, pi = T.season_value(prices, give)[0] or 0, T.season_value(prices, get)[0] or 0
-    if po > 0 and po - pi > T.ROS_GAP_SHARE * po:
-        return (f"you give {po} season value above replacement for {pi}: {po - pi} more, over "
-                f"{round(T.ROS_GAP_SHARE * 100)}% of what you give")
-    return None
+    return T.sanity(give, get, ros={}, ours=ours, market=mkt, name=name, values=prices)   # ---- IG-1: the one value rule
 
 
 def calc_alternatives(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, board: RosterBoard, weeks, window: str,
@@ -1551,7 +1679,9 @@ def calc_alternatives(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade
     starts_now = tuple(weeks)[0] == ctx.this_week
     out["alternative"] = alt
     out.update(trade_vs_alternative(now.mine.gain_week if starts_now else None, me.gain_horizon, alt, span, window,
-                                    price_out=me.price_out, price_in=me.price_in, spots_used=len(t) - len(g),
+                                    price_out=None if me.unknown_out else me.price_out,           # ---- IG-1: a side
+                                    price_in=None if me.unknown_in else me.price_in,              # with no value: unknown
+                                    spots_used=len(t) - len(g),
                                     bench=(now.mine.bench_before, now.mine.bench_after)))
     out["strip"] = strip(trade.weeks, [a - b for a, b in zip(me.after, me.before, strict=True)],
                          [a - b for a, b in zip(th.after, th.before, strict=True)])
@@ -1651,9 +1781,9 @@ def _membership(ctx: TradeContext, side: T.Side) -> dict:
     before = {s.player.id: s for s in side.lineup_before.starts if s.player is not None}
     after = {s.player.id: s for s in side.lineup_after.starts if s.player is not None}
     cut = {c.player_id for c in side.cuts}
-    ins = [{"player": ctx.player(p), "slot": cards.slot_label(s.slot.type), "value": T._r2(s.value or 0.0),
+    ins = [{"player": ctx.player(p), "slot": cards.slot_label(s.slot.type), "value": start_value(s),       # ---- IG-1
             "how": "trade" if p in side.gets else "bench"} for p, s in after.items() if p not in before]
-    outs = [{"player": ctx.player(p), "slot": cards.slot_label(s.slot.type), "value": T._r2(s.value or 0.0),
+    outs = [{"player": ctx.player(p), "slot": cards.slot_label(s.slot.type), "value": start_value(s),      # ---- IG-1
              "why": "traded" if p in side.gives else "cut" if p in cut else "to the bench"}
             for p, s in before.items() if p not in after]
     moved = [f"{_who(ctx, p)} {cards.slot_label(before[p].slot.label)} → {cards.slot_label(s.slot.label)}"
@@ -1751,10 +1881,11 @@ def trade_story(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade, boar
         before = {s.player.id for s in side.lineup_before.starts if s.player is not None}
         for row, s in zip(lu["slots"], side.lineup_after.starts, strict=False):
             pid = s.player.id if s.player is not None else None
-            row["change"] = None if pid is None or pid in before else T._r2(s.value or 0.0)
+            row["change"] = None if pid is None or pid in before else start_value(s)                    # ---- IG-1
             row["status"] = "new" if pid is not None and pid in side.gets else "in" if pid is not None and pid not in before else None
         lu["out"] = [{"slot": x["slot"], "player_name": x["player"]["player_name"], "gsis_id": x["player"]["gsis_id"],
-                      "value": x["value"], "change": -x["value"], "why": x["why"]} for x in m["out"]]
+                      "value": x["value"], "change": None if x["value"] is None else -x["value"],        # ---- IG-1
+                      "why": x["why"]} for x in m["out"]]
         lu["reshuffled"] = m["moved"]
         lu["total"] = {"before": T._r2(side.lineup_before.total), "after": T._r2(side.lineup_after.total),
                        "change": T._r2(side.lineup_after.total - side.lineup_before.total)}
@@ -1829,8 +1960,9 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
     """The partner finder (the page's partner_sweep: `trades.partners`, the best 1-for-1 and 2-for-1 per team that raise
     both lineups over the window), best partner first; `want` keeps the packages that bring you that position.
     IA-2: `window` (week | next4 | ros | playoffs, default next4) and the sanity bound (`trades.sanity`: a package that
-    gives away much more rest-of-season value than it brings back, or that works only because our number for a player
-    you give is far under Sleeper's, is set aside - `rejected` names three, `rejected_count` counts them)."""
+    gives away much more season value above replacement than it brings back - IG-1; IA-2 compared the raw rest-of-season
+    totals -, or that works only because our number for a player you give is far under Sleeper's, is set aside -
+    `rejected` names three, `rejected_count` counts them)."""
     t0 = time.perf_counter()
     window = check_window(window)
     want = (want or "").upper() or None
@@ -1847,7 +1979,8 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
         stats: dict = {}
         rejected: list = []
         found = T.partners(board, int(team), weeks=weeks, stats=stats, want=want, rejected=rejected,
-                           allow=lambda pk: T.sanity(pk.give, pk.get, ros=ros, ours=ours, market=mkt, name=ctx.name))
+                           allow=lambda pk: T.sanity(pk.give, pk.get, ros=ros, ours=ours, market=mkt, name=ctx.name,
+                                                     values=ctx.prices))          # ---- IG-1: rule (a) on season value
         return ctx, found, stats, (board, weeks, span), rejected, (ros, mkt)
     ctx, found, stats, (board, weeks, span), rejected, (ros, mkt) = (
         search() if as_of is not None else _memo(("partners", str(league_id), int(team), want, is_house, window), is_house, search))
@@ -1863,7 +1996,7 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
                          "you_gain_week": pk.my_week if starts_now else None, "you_gain_horizon": pk.my_horizon,
                          "they_gain_week": pk.their_week if starts_now else None, "they_gain_horizon": pk.their_horizon,
                          "interest": interest(pk.their_horizon, pk.my_horizon, span),
-                         "price_out": T.season_value(ctx.prices, pk.give)[0], "price_in": T.season_value(ctx.prices, pk.get)[0]})
+                         "price_out": known_value(ctx.prices, pk.give), "price_in": known_value(ctx.prices, pk.get)})  # IG-1
     _ie1_cheaper(ctx, board, weeks, found, rows, starts_now, span)                     # ---- IE-1: least costly first
     # ---- IF-2: the ladder (standing pat, the best waiver move, the trades), the rows ranked by the gain beyond it; the
     # headline is the first card, always
@@ -1888,7 +2021,7 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
         head = (f"**No trade raises both lineups.** Nobody in the league has a player who would improve your lineup over "
                 f"{span} and also needs one of yours. Try a trade you have in mind below.")
     examples = []
-    for pk, why in rejected[:3]:
+    for pk, why in rejected_examples(rejected):                                         # ---- IG-1: each rule shown
         examples.append({"partner_team": ctx.team(pk.partner), "give": [ctx.name(x) for x in pk.give],
                          "get": [ctx.name(x) for x in pk.get], "why": why})
     return {"league_id": ctx.league_id, "source": "database" if ctx.is_house else "sleeper", "roster_id": int(team),
@@ -1899,7 +2032,8 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
             "sanity": {"ros_gap_share": T.ROS_GAP_SHARE, "market_share": T.MARKET_SHARE, "ros_players": len(ros),
                        "market_players": len(mkt),
                        "market_note": None if mkt else (f"Sleeper's week-{ctx.this_week} projections are not in the database: "
-                                                        "the market check is not applied")},
+                                                        "the market check is not applied"),
+                       **finder_rule_words(ctx)},                                                     # ---- IG-1
             "words": {"headline": links(head), "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
                       "alternative": rows[0]["alternative_words"] if rows else None},                       # ---- IF-2
             "best_alternative": alt, "alternatives": [_stand_pat(weeks, span, "stand pat"), alt] if alt["kind"] != STAND_PAT
@@ -2102,6 +2236,7 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
     out["roster"] = [{**_player(r["sleeper_player_id"], r["gsis_id"], r["player_name"], r["position"], None, b),
                       "role": r["role"], "slot": _str(r["slot"]), "slot_type": _str(r["slot_type"]), "bench_rank": _int(r["bench_rank"]),
                       "value": _num(r["player_value"]), "value_source": _str(r["value_source"]), "margin": _num(r["lineup_margin"]),
+                      **_no_projection(r),                                                         # ---- IG-1
                       "is_locked": _bool(r["is_locked"]), "report_status": _str(r["report_status"]), "reason": _str(r["reason"]),
                       "acquired": _str(r["acquired_label"]), "acquired_how": _str(r["acquired_how_by_manager"])}
                      for _, r in rows.iterrows()]

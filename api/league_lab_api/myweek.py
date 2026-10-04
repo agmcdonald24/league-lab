@@ -77,7 +77,46 @@ def _lineup_row(r: pd.Series) -> dict:
     if _str(r.get("chip")):
         out["flag"], out["reason"] = r["chip"], _str(r.get("why"))
     # ---- end I0-A
+    out.update(no_projection_fields(r))                                                             # ---- IG-1
     return out
+
+
+# ---- IG-1 (Wave I-G, AGENTS.md rule 5 "unknown is not zero"): a player with no projection row (the solver's
+# `value_source = 'unvalued'`: no projection this week, a K / DEF with no value yet) is carried at 0 by the solver and was
+# sent as `value: 0.0` ("0.00" on the screen: Jacobs on GoodGameBuddy's bench). The API sends `null` and says why; the
+# lineup total says how many starters it counts at 0 (`n_unvalued`). INTERFACES.md § IG-1.
+UNVALUED = "unvalued"
+NO_PROJECTION = "no projection"
+
+
+def unvalued(r) -> bool:
+    """A lineup row with no projection (the solver's source `unvalued`)."""
+    return _str(r.get("value_source")) == UNVALUED
+
+
+def no_projection_fields(r) -> dict:
+    """`value` / `margin` null and `no_projection` true for a row with no projection; `no_projection` false otherwise."""
+    if not unvalued(r):
+        return {"no_projection": False}
+    return {"value": None, "margin": None, "no_projection": True}
+
+
+def n_unvalued(rows: pd.DataFrame | None) -> int:
+    """Starters with no projection (counted as 0 in the lineup total) — ops.lineup_totals.n_unvalued's rule on the rows
+    the screen shows (the overlay may have re-solved them)."""
+    if rows is None or rows.empty or "value_source" not in rows:
+        return 0
+    st = rows[(rows["role"] == "starter") & ~rows.get("is_empty_slot", pd.Series(False, index=rows.index)).fillna(False).astype(bool)]
+    return int((st["value_source"] == UNVALUED).sum())
+
+
+def unvalued_words(n: int) -> str | None:
+    """The lineup total's caveat when it counts a starter with no projection as 0."""
+    if not n:
+        return None
+    return (f"{n} starter{'s have' if n > 1 else ' has'} no projection and {'count' if n > 1 else 'counts'} as 0 in "
+            f"this total.")
+# ---- end IG-1
 
 
 HEADSHOT_SQL = "select gsis_id, headshot_url from analytics.dim_player where gsis_id = any(%s)"    # IA-1
@@ -95,6 +134,8 @@ def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
     # cards' own rule) or "no eligible reserve" (the slot would be empty: the margin is his whole projection)
     for x, i in zip(short, lu.index, strict=True):
         x.update(margin_comparator(rows.loc[i], rows))               # the row as the rows hold it (its own slot code)
+        if x.get("no_projection"):                                    # ---- IG-1: no projection, no margin to name
+            x.update({"margin": None, "margin_vs": None, "margin_words": ""})
     # ---- end IF-4
     # ---- IA-1: the headshot and the NFL team on every row (the player card unit's small size in the slot list)
     ids = sorted({str(g) for g in rows["gsis_id"].dropna()})
@@ -108,6 +149,9 @@ def lineup(rows: pd.DataFrame) -> tuple[list[dict], list[dict]]:
         rest["flag"] = rest.apply(lambda r: r["reason"] if r["role"] == "unplayable" else ("locked (game started)" if r["locked_now"]
                                   else cards._flag(r["report_status"])), axis=1)
     full = short + [_lineup_row(r) for _, r in rest.iterrows()]
+    for x in full:                                  # ---- IG-1: the console's flag (cards.no_projection_blank), mirrored
+        if x.get("no_projection"):
+            x["flag"] = NO_PROJECTION if not x["flag"] or x["flag"] == NO_PROJECTION else f"{x['flag']} · {NO_PROJECTION}"
     # ---- IA-1
     team_of = {str(r["gsis_id"]): _str(r.get("team")) for _, r in rows.iterrows() if _str(r.get("gsis_id"))}
     for x in full:
@@ -172,6 +216,8 @@ def my_week(league_id: str, roster_id: int) -> dict:
         out["league_line"] = cards.league_line(league_id, roster_id, week, rows)
         lv = rows.loc[rows["role"] == "starter", "lineup_value"].dropna()
         out["lineup_value"] = None if lv.empty else float(lv.iloc[0])
+    out["n_unvalued"] = n_unvalued(rows)                                                                   # ---- IG-1
+    out["unvalued_words"] = unvalued_words(out["n_unvalued"])                                              # ---- IG-1
     # the cards: numbers from decisions(), text from decision_cards() as drawn
     cur = current_starters(league_id, int(roster_id), house=True)                                         # IB-0
     out["notice"], out["cards"] = cards_from_rows(league_id, roster_id, week, season, rows, current=cur)
@@ -269,7 +315,8 @@ def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows
         out.append({
             "slot": d["slot"], "slot_label": cards.slot_label(d["slot"]),
             "gsis_id": _str(d["gsis_id"]), "player_name": d["player_name"], "value": _num(d["value"]),
-            "alt_gsis_id": _str(d["alt_gsis_id"]), "alt_name": _str(d["alt_name"]), "alt_value": _num(d["alt_value"]),
+            "alt_gsis_id": _str(d["alt_gsis_id"]), "alt_name": _str(d["alt_name"]),
+            "alt_value": None if _str(d.get("alt_value_source")) == UNVALUED else _num(d["alt_value"]),   # ---- IG-1
             "margin": _num(d["margin"]), "verdict": d["verdict"], "how": d["how"],
             "p_win": _num(d.get("p_win")),
             "why": links(whys[i]) if i < len(whys) and whys[i] else None,     # ---- IA-1

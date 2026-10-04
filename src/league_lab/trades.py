@@ -739,16 +739,21 @@ MARKET_SHARE = 0.65       # (b) refuse when our number for a player you give is 
 
 
 def sanity(give: Sequence[str], get: Sequence[str], *, ros: Mapping[str, float], ours: Mapping[str, float],
-           market: Mapping[str, float], name: Callable[[str], str] = str) -> str | None:
+           market: Mapping[str, float], name: Callable[[str], str] = str,
+           values: Mapping[str, float] | None = None) -> str | None:          # ---- IG-1: values
     """Why a package should not be suggested, or None. (b) the market: a player you give whose projection this week
     (``ours``) is under ``MARKET_SHARE`` of Sleeper's (``market``, the same week in the league's scoring) - the
-    suggestion only works because our number is low; (a) rest of season: the rest-of-season points you give (the
-    rest-of-season board, this league's scoring) exceed what comes back by more than ``ROS_GAP_SHARE`` of what you
-    give. A player with no number is not judged (unknown is not zero): (a) needs every player of the package."""
+    suggestion only works because our number is low; (a) the value gap (IG-1, Wave I-G): with ``values`` (season value
+    above replacement, ``price_by_player``) the season value you give exceeds what comes back by more than
+    ``ROS_GAP_SHARE`` of what you give and the two are not about even (``value_gap``); without it, the IA-2 rule on the
+    raw rest-of-season points (``ros``: all positions added up - a volume gap, kept for callers that pass no values).
+    A player with no number is not judged (unknown is not zero): (a) needs every player of the package."""
     for p in give:
         o, m = ours.get(p), market.get(p)
         if o is not None and m is not None and m > 0 and o < MARKET_SHARE * m:
             return f"the market disagrees with our number on {name(p)} (ours {o:.1f} this week, Sleeper's {m:.1f})"
+    if values is not None:                                                    # ---- IG-1: the value rule
+        return value_gap(give, get, values)
     if give and get and all(p in ros for p in (*give, *get)):
         out, inc = sum(float(ros[p]) for p in give), sum(float(ros[p]) for p in get)
         if out > 0 and out - inc > ROS_GAP_SHARE * out:
@@ -900,8 +905,28 @@ def season_value_line(price_out: int | None, price_in: int | None, n_give: int, 
 # ---- end IF-2
 
 
+# ---- IG-1 (Wave I-G): the finder's rule (a) on SEASON VALUE ABOVE REPLACEMENT (the fairness test, ``price_by_player``),
+# not on the raw rest-of-season totals (a volume gap: "Houston QB + Tuten for Rice" gave "493 rest-of-season points for
+# 134" - two starters' volume, not their value over what the waiver wire holds). One rule for the finder (`partners`'
+# allow) and the calculator's warning (`decisions.calc_sanity`).
+def value_gap(give: Sequence[str], get: Sequence[str], values: Mapping[str, float]) -> str | None:
+    """The value rule: the season value above replacement you give (each player rounded half up, as the tables show
+    it) exceeds what comes back by more than ``ROS_GAP_SHARE`` of what you give, and the two are not ``about_even``
+    (the verdict's fair price: within ``EVEN_POINTS`` / ``EVEN_SHARE`` - a warning never contradicts "about even by
+    season value"). Every player of the package needs a value (unknown is not zero: not judged)."""
+    if not give or not get or not all(p in values for p in (*give, *get)):
+        return None
+    po, pi = season_value(values, give)[0] or 0, season_value(values, get)[0] or 0
+    if po > 0 and po - pi > ROS_GAP_SHARE * po and not about_even(po, pi):
+        return (f"you give {po} season value above replacement for {pi}: {po - pi} more, over "
+                f"{round(ROS_GAP_SHARE * 100)}% of what you give")
+    return None
+# ---- end IG-1
+
+
 __all__ = ["MARKET_SQL", "REPLACEMENT_SQL", "Cut", "Fill", "Package", "Partner", "Side", "Trade", "about_even", "best_fill",
            "clean_package", "evaluate", "fairness_line", "fit_line", "market_by_player", "package_gains", "parse_ids",
            "partners", "partners_exhaustive", "position_of", "price_by_player", "rank_change", "ranks", "roster_limit",
            "sanity", "season_value", "tradeable", "two_for_one_counts", "verdict", "whole",
-           "VALUE_CONCEPTS", "package_weeks", "season_value_line"]          # ---- IF-2
+           "VALUE_CONCEPTS", "package_weeks", "season_value_line",          # ---- IF-2
+           "value_gap"]                                                       # ---- IG-1

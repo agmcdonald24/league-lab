@@ -285,7 +285,7 @@
           <span class="min-w-0 truncate text-base">
             {#if href(row.gsis_id)}<a class="ll-name" href={href(row.gsis_id)}>{row.player_name ?? "—"}</a>{:else}{row.player_name ?? "—"}{/if}
           </span>
-          <span class="tabnum text-right text-base">{f2(row.value)}</span>
+          <span class="tabnum text-right text-base" title={row.value == null && row.player_name ? "no projection" : undefined}>{f2(row.value)}</span><!-- IG-1 -->
           <span class="tabnum text-right text-sm {row.change == null ? 'text-ink-3' : row.change > 0 ? 'text-good' : 'text-bad'}">{row.change == null ? "" : s1(row.change)}</span>
         </li>
       {/each}

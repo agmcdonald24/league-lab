@@ -1144,7 +1144,8 @@ export interface Partners {
   weeks?: number[];
   rejected?: { partner_team: string; give: string[]; get: string[]; why: string }[];
   rejected_count?: number;
-  sanity?: { ros_gap_share: number; market_share: number; ros_players: number; market_players: number; market_note: string | null };
+  sanity?: { ros_gap_share: number; market_share: number; ros_players: number; market_players: number; market_note: string | null;
+    rule?: "season_value"; value_players?: number; words?: string }; // ---- IG-1: rule (a) on season value, said in words
 }
 
 /** GET /api/trades/lists: buy low / sell high (Wave H's lists, moved from /api/waivers). */
@@ -1709,3 +1710,17 @@ export interface RecordRow {
   pricing?: "flat" | "ev" | "mixed" | null;
 }
 // ---- end M4
+
+// ---- IG-1 (Wave I-G): unknown is not zero (INTERFACES.md § IG-1). A player with no projection row is sent with
+// `value: null` and `no_projection: true` (never 0); My Week says how many starters its total counts at 0.
+export interface LineupRow {
+  no_projection?: boolean;
+}
+export interface MyWeek {
+  n_unvalued?: number;
+  unvalued_words?: string | null;
+}
+export interface TeamRosterRow {
+  no_projection?: boolean;
+}
+// ---- end IG-1

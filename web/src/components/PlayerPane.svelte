@@ -4,7 +4,7 @@
   // name swaps the player); on a phone a sheet over the screen (Back, the backdrop, × or Escape close it). The API
   // other screens call: lib/pane.svelte.ts (openPane / paneLink); App.svelte mounts this once.
   import { ApiError, get, paths, peek, Unauthorized, type PlayerCard } from "../lib/api";
-  import { cardHeadLine, cardSections, paneSplit } from "../lib/card";
+  import { cardHeadLine, cardSections, paneSplit, projLabel } from "../lib/card"; // IG-1: projLabel
   import { learnLeagueName } from "../lib/names.svelte";
   import { closePane, openFullPage, pane, paneActions } from "../lib/pane.svelte";
   import { navigate } from "../lib/router.svelte";
@@ -119,7 +119,7 @@
         <PlayerCardView
           player={{ gsis_id: data.gsis_id, player_name: data.player_name, position: data.position, team: data.team, headshot_url: data.headshot_url ?? null }}
           number={fmt.pts(data.proj_points)}
-          numberLabel={data.week ? `Week ${data.week}` : "Projection"}
+          numberLabel={projLabel(data.week, data.proj_points)}
           line={headLine}
           context={data.injury_status ?? null}
           compact

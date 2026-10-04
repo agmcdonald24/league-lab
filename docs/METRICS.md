@@ -1407,6 +1407,41 @@ availability overlay through the board), each week solved with the waiver engine
   (one sentence). Ranked by `lineup_points`, then `lineup_weeks`, then rest-of-season points. A backup QB in a one-QB
   league is 0 except in his starter's bye week (and 0 then too when a free agent would outscore him).
 
+### Team units and the value rule (IG-1, Wave I-G, 2026-10-04; `decisions.unit_market`, `trades.value_gap`)
+
+* **A team unit's season value** (MyFantasyLeague's team QB / team kicker, TMQB / TMPK): the trade context's market
+  (`TradeContext.points` → `trades.market_by_player` / `price_by_player`) had no row for a unit, so the verdict's season
+  value, the calculator's warning and the Finder's rule left it out ("Not counted (no season projection): Houston Texans
+  QB"). Now: **season points** = Σ over the market's window (this week to the last regular-season week —
+  `market_points`' window, the season every player is priced over) of the unit's priced week (`lw.priced[w].units`: IC-4's
+  per-week unit rows — the team's best-projected quarterback who can play that week, priced as TMQB; the team's kicker
+  for TMPK), each week rounded to the cent; a bye week has no row and adds nothing (a player's bye likewise). **The
+  replacement** = the most season points of a **free unit of the same kind** (`anyleague.free_agents` keeps one free unit
+  per team), never a player; season value above replacement = max(0, season points − replacement). A unit with no
+  priced week has no row (unknown, not 0); no free unit priced → baseline 0 (the players' rule for a position with no
+  free agent). On the fixture (MFL 70587 team 8, weeks 4–18): Houston Texans QB 355 season points, the best free team QB
+  Arizona Cardinals QB 378 → 0 above; the best free team kicker New Orleans Saints K 169. A unit's season points equal
+  its rest-of-season rows (`weeks_json`) summed over the same weeks (`api/tests/test_ig1.py`). House leagues have no
+  units: their market is unchanged to the bit.
+* **The Finder's rule (a) on value, not volume** (ti1.2): `trades.value_gap` — the season value above replacement you
+  give (whole points per player, as the tables sum it) exceeds what comes back by more than 25% of what you give **and**
+  the two are not about even (`about_even`: within 10 points or 10% — a warning never contradicts the verdict's "about
+  even by season value"); every player of the package needs a value. One rule for the Finder (`partners`' `allow`) and
+  the calculator's warning (`calc_sanity`). The raw rest-of-season line stays on the calculator, labelled "all
+  positions added up — not a fairness test" (IF-2). What it changes (fixtures / the clone, next four weeks): Scrubs
+  roster 6 — 5 cards → 7, 2 left out → 10 (in: Williams → Purdy + Likely, Lamb → Allen + Chase, Williams → Kyler
+  Murray, Lamb + Javonte Williams → Taylor; out: Warren → Andrews + Purdy "20 for 3", Lamb → Allen + Golden "69 for
+  35"); MFL 70587 team 8 — 15 → 17 cards, the headline unchanged (Chicago Bears QB → Kansas City Chiefs QB + Rice, now
+  "0 for 29"); "Chicago Bears QB + Tuten for Coker" (IA-2: "484 rest-of-season points for 141") is suggested (14 for 14);
+  Tuten → Wan'Dale Robinson stays out ("14 for 0"). No gain number moved.
+* **A side with an unvalued player** has no season-value sum (`decisions.known_value`: the Finder's rows' `price_out` /
+  `price_in`, the calculator's other-objective words) — the partial sum of the others is not that side's value.
+* **No projection** (AGENTS.md rule 5): the solver carries a player with no projection row at 0 (`value_source =
+  'unvalued'`); the API sends `null` + `no_projection` (My Week's lineup and bench, Team's roster, the trade answers'
+  lineups / starters in and out / `this_week`, a Waivers drop with no rest-of-season row), My Week's `n_unvalued` (the
+  starters the total counts at 0) and `unvalued_words`; the web shows a dash titled "no projection", the console a
+  blank with the flag "no projection".
+
 ## Role alerts (ra1.1 rule, version ra1.2 since 2026-10-01; plan R-10, 2026-09-30; `league_lab.signals`, `ops.player_role_alerts`, `mart_player_role_alerts`)
 
 **Question.** Has a player's *role* changed in his last one to three games, and why — before his points show it?
@@ -2243,9 +2278,10 @@ player Sleeper lists; not Sleeper's own scoring (its line is counted the league'
   points)"): a bench player's cost is never 0. Both packages keep their own gains.
 - **Sanity bound** on partner suggestions (never on a trade the user builds; the calculator only says it): (b) the
   market — a player given whose projection this week is under 65% of Sleeper's (`raw.sleeper_projections`, the week's
-  latest snapshot, priced in the league's scoring); (a) rest of season — Σ rest-of-season points given − Σ received >
-  25% of Σ given (the rest-of-season board). Either sets the package aside and the search takes the next best.
-  Unknown is not zero: a player without the number is not judged.
+  latest snapshot, priced in the league's scoring); (a) **the value gap** (ti1.2, IG-1, Wave I-G — was the raw
+  rest-of-season totals, ti1.1): Σ season value above replacement given − Σ received > 25% of Σ given, and the two not
+  about even (`trades.value_gap`; § "Value to my lineup" › "Team units and the value rule"). Either sets the package
+  aside and the search takes the next best. Unknown is not zero: a player without the number is not judged.
 
 - **Against the alternatives** (ta1.0, IF-2, Wave I-F, 2026-10-03 — the decision-quality review § Priority 3: the
   Finder's headline, +9.8 over weeks 4–7 on the live server, lost to a free Arizona team QB claim, +11.4, for an open

@@ -4,6 +4,7 @@
   import { shortName } from "../lib/names.svelte";
   import { paneLink, type PaneOptions } from "../lib/pane.svelte";
   import { AVAILABILITY_CHIPS } from "../lib/shapes";
+  import { NO_PROJECTION, NO_PROJECTION_TITLE } from "../lib/card"; // ---- IG-1
   import Headshot from "./Headshot.svelte";
   import TeamBadge from "./TeamBadge.svelte";
 
@@ -75,6 +76,8 @@
                       data-testid="avail-chip">{r.flag}</span
                     >{:else}{r.flag}{/if}</div
                 >{/if}
+              <!-- ---- IG-1: no projection row: the words under the name (a dash in the Proj column; never 0.00) -->
+              {#if r.no_projection && !(r.flag ?? "").includes(NO_PROJECTION)}<div class="text-xs leading-snug text-ink-3" data-testid="no-projection">{NO_PROJECTION}</div>{/if}
               {#if showMargin && r.margin !== null}<div class="tabnum text-xs text-ink-3 sm:hidden" data-testid="margin-line"
                   >{#if vsWords(r).startsWith("no eligible")}no eligible reserve{:else}margin {r.margin.toFixed(2)}{vsWords(r) ? ` ${vsWords(r)}` : ""}{/if}</div
                 >{/if}
@@ -82,7 +85,9 @@
             </div>
           </div>
         </td>
-        <td class="tabnum py-1.5 text-right font-semibold">{num(r.value)}</td>
+        <td class="tabnum py-1.5 text-right font-semibold" title={r.no_projection ? NO_PROJECTION_TITLE : undefined} data-testid="lineup-proj"
+          >{num(r.value)}{#if r.no_projection}<span class="sr-only"> ({NO_PROJECTION})</span>{/if}</td
+        ><!-- IG-1: the title says why there is no number -->
         {#if showMargin}<td class="tabnum hidden py-1.5 text-right text-ink-2 sm:table-cell" data-testid="margin-cell"
             >{#if r.margin !== null && vsWords(r).startsWith("no eligible")}<span class="text-xs text-ink-3">no eligible reserve</span>{:else if r.margin !== null}{r.margin.toFixed(
                 2,
