@@ -661,22 +661,104 @@ def what_changed(meta: dict | None, rows: pd.DataFrame | None, current: dict[str
     starters and whoever the submitted lineup starts (``current``)."""
     lines: list[dict] = []
     at = (meta or {}).get("checked_at")
-    for text in (meta or {}).get("changes") or []:
-        lines.append({"kind": "status", "gsis_id": None, "text": str(text), "source": "Injury report (ESPN)", "at": at,
-                      "url": None})
+    cites = (meta or {}).get("cites") or []                                                              # ---- IG-2
+    stored = _status_events(cites)                                                                       # ---- IG-2
+    for k, text in enumerate((meta or {}).get("changes") or []):
+        line = {"kind": "status", "gsis_id": None, "text": str(text), "source": "Injury report (ESPN)", "at": at,
+                "url": None}
+        line.update(_status_cite(cites[k] if k < len(cites) else {}, stored, at))                       # ---- IG-2
+        lines.append(line)
     if rows is not None and not rows.empty and len(lines) < MAX_CHANGED:
         sub = set(current or {})
         st_ = rows[((rows["role"] == "starter") | rows["sleeper_player_id"].map(lambda k: isinstance(k, str) and k in sub))
                    & rows["gsis_id"].map(lambda g: isinstance(g, str) and bool(g))]
         names = dict(zip(st_["gsis_id"], st_["player_name"], strict=False))
         from . import news
-        for g, it in news.recent(list(names), names=names):
+        items = news.recent(list(names), names=names)
+        items = _with_events(items, names)                                                               # ---- IG-2
+        for g, it in items:
             if len(lines) >= MAX_CHANGED:
                 break
-            lines.append({"kind": "news", "gsis_id": g, "player_name": _str(names.get(g)), "text": it["headline"],
-                          "source": it.get("source"), "at": it.get("date"), "url": it.get("url"), "about": it.get("about")})
+            line = {"kind": "news", "gsis_id": g, "player_name": _str(names.get(g)), "text": it["headline"],
+                    "source": it.get("source"), "at": it.get("date"), "url": it.get("url"), "about": it.get("about")}
+            if "event_id" in it:                                                                         # ---- IG-2
+                line.update({"event_id": it["event_id"], "origin": "playerwire" if it.get("kind") == "playerwire" else "espn",
+                             "verification": it.get("verification")})
+            lines.append(line)
     return {"lines": lines[:MAX_CHANGED], "empty": NOTHING_CHANGED}
 # ---- end IF-4
+
+
+# ---- IG-2 (Wave I-G): "What changed" reads the event store. A status line cites its own source and the report's time
+# (the stored availability event when there is one — with the player's ESPN page — else the overlay entry), not the
+# time the feed was checked. The news lines: ESPN's items (news.recent, IF-4's order) and PlayerWire's briefs of the
+# last 24 hours (playerwire.recent), each written as an event, merged with the store's live news / brief events of the
+# week's players (an item the live read missed this time — ESPN's one-second budget — still shows); one line per player:
+# his brief first (N2's order), else ESPN's item; about-him first, newest first. Store off / unreachable: IF-4's lines.
+def _status_events(cites: list[dict]) -> dict[str, dict]:
+    from . import events
+    gs = [c.get("gsis_id") for c in cites if c.get("gsis_id")]
+    if not gs or not events.enabled():
+        return {}
+    out: dict[str, dict] = {}
+    for ev in events.recent(gs, hours=24 * 14, kinds=("availability",)):
+        out.setdefault(ev["gsis_id"], ev)
+    return out
+
+
+def _status_cite(c: dict, stored: dict[str, dict], checked_at) -> dict:
+    from . import events
+    g = c.get("gsis_id")
+    ev = stored.get(g) if g else None
+    if ev is not None and ev.get("status") == c.get("code"):
+        return {"gsis_id": g, "source": f"Injury report ({ev['source']})", "at": ev.get("at"), "url": ev.get("source_url"),
+                "event_id": ev.get("id")}
+    if not c.get("source"):
+        return {"gsis_id": g} if g else {}
+    return {"gsis_id": g, "source": f"Injury report ({c['source']})", "at": events.iso(c.get("as_of")) or checked_at}
+
+
+def _event_item(ev: dict) -> dict:
+    brief = ev.get("kind") == "brief"
+    return {"headline": ev.get("headline") or "", "date": ev.get("published_at") or ev.get("at"), "source": ev.get("source"),
+            "url": ev.get("source_url"), "about": "player" if brief else (ev.get("status") or "player"),
+            "kind": "playerwire" if brief else "espn", "verification": ev.get("status") if brief else None,
+            "summary": ev.get("summary"), "event_id": ev.get("id")}
+
+
+def _with_events(items: list[tuple[str, dict]], names: dict[str, str]) -> list[tuple[str, dict]]:
+    from . import events, news
+    from . import playerwire as PW
+    if not events.enabled() or not names:
+        return items
+    try:
+        briefs = PW.recent(list(names), hours=news.RECENT_HOURS) if news.playerwire_enabled() else []
+        live = [(g, {**it, "kind": it.get("kind") or "espn"}) for g, it in items] + \
+               [(g, {**it, "about": "player"}) for g, it in briefs]                     # N2: a brief is his by id
+        for g, it in live:
+            events.observe_items(g, [it])
+        fp: dict[str, tuple[str, dict]] = {}
+        for g, it in live:
+            r = events.item_row(g, it)
+            if r is not None:
+                fp.setdefault(r["fingerprint"], (g, {**it, "event_id": None}))
+        for ev in events.recent(list(names), hours=news.RECENT_HOURS, kinds=("news", "brief")):
+            if ev.get("fingerprint") in fp:
+                fp[ev["fingerprint"]][1]["event_id"] = ev["id"]
+            elif ev.get("gsis_id") in names:
+                fp[ev["fingerprint"]] = (ev["gsis_id"], _event_item(ev))
+        cands = sorted(fp.values(), key=lambda x: x[1].get("date") or "", reverse=True)          # newest first, then
+        cands.sort(key=lambda x: 0 if x[1].get("kind") == "playerwire" else 1 if x[1].get("about") == "player" else 2)
+        best: dict[str, dict] = {}
+        for g, it in cands:                                         # his brief, else the item about him, else league news
+            best.setdefault(g, it)
+        got = list(best.items())
+        mine = sorted((x for x in got if x[1].get("about") == "player"), key=lambda x: x[1].get("date") or "", reverse=True)
+        rest = sorted((x for x in got if x[1].get("about") != "player"), key=lambda x: x[1].get("date") or "", reverse=True)
+        return mine + rest
+    except Exception:  # noqa: BLE001 - the store never fails My Week: IF-4's lines
+        return items
+# ---- end IG-2
 
 
 # ---- IB-0: the roster's lineup in Sleeper right now (the card's status): Sleeper's roster `starters`, each paired with

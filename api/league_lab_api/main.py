@@ -20,6 +20,7 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/status                          the freshness line, the stale-injury warning, Sleeper's cache ages + budget
     /api/league/scoring-check?league=&week=  our points vs the league's own for a scored week (Wave I-C, IC-1)
     POST /api/usage, /api/usage/summary  ---- U-1: one count per screen view (its own read-write transaction), the counts
+    /api/events?league=&team=&hours=     ---- IG-2: this roster's stored events (status moves, news, briefs; the PO's QA)
 Errors are {"error": "<plain words>"} (plus the older "detail"): 404 unknown league / team / player / user,
 502 Sleeper did not answer, 503 the numbers are not ready yet / busy (our Sleeper budget).
 Everything else is the web app (web/dist): a real file, else index.html (the app routes itself).
@@ -327,6 +328,11 @@ def status(response: Response):
         out["news"] = news.info()
     except Exception as exc:  # noqa: BLE001 - a status line, never a failure
         out["news"] = {"enabled": news.enabled(), "error": exc.__class__.__name__}
+    try:                                    # ---- IG-2: the event store (rows, the newest, this process's writer)
+        from . import events as _events
+        out["events"] = _events.info()
+    except Exception as exc:  # noqa: BLE001 - a status line, never a failure
+        out["events"] = {"enabled": False, "error": exc.__class__.__name__}
     out["sleeper"] = A.sleeper().stats()
     out["board_source"] = A.board_source()
     try:                                    # QA: the setting is "auto"; say which board the current week really uses
@@ -524,6 +530,31 @@ def usage_summary(response: Response, days: int = 7):
     response.headers["Cache-Control"] = "no-store"
     return JSONResponse(clean(usage_mod.summary(days)), headers={"Cache-Control": "no-store"})
 # ---- end U-1
+
+# ---- IG-2 (Wave I-G): the event store (league_lab_api/events.py; docs/HOSTING.md § "Events")
+#   GET /api/events?league=&team=&hours=72   this roster's players' stored events of the last `hours` (1–720), newest
+#                                            first, live and superseded (`live` says which): the PO's QA of the store
+from . import events as events_mod  # noqa: E402 - the block stays self-contained
+
+
+@app.get("/api/events", dependencies=[Depends(require_auth)])
+def events_list(league: str, team: int, response: Response, hours: int = 72):
+    hours = max(1, min(int(hours), 720))
+    out: dict = {"league": league, "team": int(team), "hours": hours, "enabled": events_mod.enabled(), "players": 0,
+                 "events": []}
+    ctx = availability.roster_context(league, int(team))
+    if ctx is None:
+        return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
+    rows = ctx.rows[ctx.rows["role"].isin(["starter", "bench", "unplayable"]) & ctx.rows["gsis_id"].map(
+        lambda g: isinstance(g, str) and bool(g))]
+    names = dict(zip(rows["gsis_id"], rows["player_name"], strict=False))
+    out["players"] = len(names)
+    evs = events_mod.recent(list(names), hours=hours, live_only=False)
+    out["events"] = [{**{k: v for k, v in e.items() if k != "fingerprint"}, "player_name": names.get(e["gsis_id"])}
+                     for e in evs]
+    out["live"] = sum(1 for e in evs if e["live"])
+    return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
+# ---- end IG-2
 
 
 # ---------------------------------------------------------------- the web app

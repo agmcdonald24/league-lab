@@ -260,6 +260,19 @@ else
 fi
 # ---- end U-1
 
+# ---- IG-2 (Wave I-G): the event store — docs/HOSTING.md § "Events". The `events` schema is never dropped above (only
+# analytics, analytics_seeds and ops are); scripts/hosted_events.sql creates events.events if missing and grants the
+# app role SELECT + INSERT + UPDATE (superseded_by) on that one table (its default_transaction_read_only stays on).
+# Idempotent, a few ms, its own transaction after U-1, the same owner connection (no new secret). A failure here never
+# fails the publish: the marts are already restored, and the event store is never load-bearing (the screens fall
+# back on the overlay and the live feeds).
+if psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction -f scripts/hosted_events.sql; then
+  echo "events: $(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select count(*) || ' events kept (' || count(*) filter (where superseded_by is null) || ' live), ' || pg_size_pretty(pg_total_relation_size('events.events')) from events.events" 2>/dev/null || echo '?')"
+else
+  echo "WARNING: scripts/hosted_events.sql failed: no events are stored until a sync applies it (the publish itself is fine)" >&2
+fi
+# ---- end IG-2
+
 echo "verifying ..."
 psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -At -c "
   select 'analytics tables: ' || count(*) from information_schema.tables where table_schema = 'analytics';" \

@@ -238,6 +238,7 @@ def snapshot(*, refresh: bool = True) -> Snapshot | None:
         s.espn[g] = {"code": code, "source": "ESPN", "as_of": _ts(e.get("date")), "fetched_at": s.espn_fetched,
                      "note": (e.get("injury") or "").lower() or None, "name": e.get("name"), "team": e.get("team"),
                      "return_date": e.get("return_date")}
+        s.espn[g]["espn_id"] = str(e["espn_id"])            # ---- IG-2: the event's player key and ESPN page
     for sid in flagged_sids:
         p = players.get(sid) or {}
         code = sleeper_code(p)
@@ -245,12 +246,19 @@ def snapshot(*, refresh: bool = True) -> Snapshot | None:
             continue
         ent = {"code": code, "source": "Sleeper", "as_of": _ts(p.get("news_updated")), "fetched_at": s_fetched,
                "note": (p.get("injury_body_part") or "").lower() or None, "name": p.get("full_name"), "team": p.get("team")}
+        ent["sleeper_id"] = sid                                # ---- IG-2: the event's player key
         s.sleeper_by_id[sid] = ent
         if gsis_of.get(sid):
             s.sleeper[gsis_of[sid]] = ent
     s._players = players                         # noqa: SLF001 - a healthy player's Sleeper entry, made on request
     with _lock:
         _snap = (key, s)
+    # ---- IG-2 (Wave I-G): the event store — the copy's own time (ESPN's feed timestamp) and the status moves since the
+    # copy before, diffed on the events writer thread (events.observe_availability never waits, never raises)
+    s.espn_timestamp = None if esp is None else esp.get("source_timestamp")
+    from . import events
+    events.observe_availability(s)
+    # ---- end IG-2
     return s
 
 
@@ -434,6 +442,11 @@ def apply_to_rows(rows: pd.DataFrame, *, build_as_of: datetime | None = None, pl
     meta["applied"] += len(moves)
     new, changes = _resolve(rows, moves, players)
     meta["changes"] = changes
+    # ---- IG-2 (Wave I-G): each change's citation, in the order of `changes` (one line per move): the player and the
+    # overlay entry's source and time — My Week's "What changed" cites the stored event when there is one, else this
+    meta["cites"] = [{"gsis_id": rows.at[i, "gsis_id"] if isinstance(rows.at[i, "gsis_id"], str) else None,
+                      "code": a.get("code"), "source": a.get("source"), "as_of": a.get("as_of")} for i, a in moves.items()]
+    # ---- end IG-2
     return new, meta
 
 
