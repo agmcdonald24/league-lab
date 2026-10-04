@@ -200,6 +200,32 @@ else:
                             "predicted": Col("We said", "pct", "The average percentage the cards gave the player we started"),
                             "observed": Col("Landed", "pct", "How often he outscored the player on the bench (a tie counts half)")}
                 show(pd.DataFrame(cal["table"]), list(CAL_COLS), overrides=CAL_COLS)
+        # ---- V-2 (Wave I-H): Sleeper's projections as a lineup, and the picked team's calls (the API's
+        # `decisions.team`, validation.team_summary over the same marts; METRICS § "The decision record")
+        if dec["sentences"].get("market"):
+            st.markdown(dec["sentences"]["market"])
+        if roster_id is not None:
+            mine = V.team_summary(query("select * from analytics.mart_decision_record where league_id = %s and season = %s "
+                                        "order by week, roster_id", (league_id, s_)),
+                                  query("select * from analytics.mart_decision_calls where league_id = %s and season = %s "
+                                        "order by week, roster_id, call_rank", (league_id, s_)), int(roster_id))
+            if mine["available"]:
+                st.markdown("**Your calls this season**  \n" + "  \n".join(
+                    x for x in (mine["sentences"]["season"], mine["sentences"]["market"], mine["sentences"]["calls"],
+                                mine["sentences"]["news"]) if x))
+                TEAM_COLS = {"week": Col("Week", "int"), "submitted": Col("You", "num1", "Points of the lineup you started"),
+                             "app": Col("Ours", "num1", "Points our recorded lineup would have scored"),
+                             "optimum": Col("Best", "num1", "The best lineup in hindsight"),
+                             "market": Col("Sleeper", "num1", "Sleeper's projections as a lineup (empty: no Sleeper snapshot "
+                                                              "before that week's kickoff)"),
+                             "edge": Col("Added", "signed1", "Ours minus yours")}
+                with st.expander("Your calls, week by week"):
+                    show(pd.DataFrame(mine["weeks"]), list(TEAM_COLS), phone_cols=["week", "submitted", "app", "optimum"],
+                         overrides=TEAM_COLS)
+                    for w in mine["weeks"]:
+                        for c in w["calls"]:
+                            st.markdown(f"- Week {w['week']}: {c['words']}")
+        # ---- end V-2
 # ---- end V-1
 
 # ---------------------------------------------------------------- how to read this

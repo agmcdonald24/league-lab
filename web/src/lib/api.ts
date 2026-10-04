@@ -265,7 +265,7 @@ export interface RecordDecisions {
   season?: number;
   why?: string;
   weeks?: RecordDecisionWeek[];
-  season_totals?: { weeks: number; roster_weeks: number; submitted: number; app: number; optimum: number; regret: number; edge: number } | null;
+  season_totals?: { weeks: number; roster_weeks: number; submitted: number; app: number; optimum: number; regret: number; edge: number; market?: number | null; market_weeks?: number[] } | null; // V-2: market
   calls?: {
     n: number;
     won: number | null;
@@ -274,8 +274,8 @@ export interface RecordDecisions {
     coin_flips: { n: number; won: number | null; expected: number | null };
     table: { bin: number; n: number; p_lo: number; p_hi: number; predicted: number; observed: number }[];
   };
-  news?: { roster_weeks: number; edge: number | null; regret: number | null };
-  sentences?: { edge: string | null; calls: string | null; news: string | null };
+  news?: { roster_weeks: number; edge: number | null; regret: number | null; source?: "events" | "report" | "mixed" }; // V-2: source
+  sentences?: { edge: string | null; calls: string | null; news: string | null; market?: string | null }; // V-2: market
   reconstructed_weeks?: number[];
   note?: string | null;
 }
@@ -283,6 +283,59 @@ export interface RecordAnswer {
   decisions?: RecordDecisions;
 }
 // ---- end V-1
+
+// ---- V-2 (Wave I-H): the decision record, personal and live (GET /api/record?league=&team= `decisions`; INTERFACES.md
+// § V-2): Sleeper's projections as a lineup (`market`), where the news flag came from (`news_source`: the event store
+// or the injury report), an MFL league's record (`platform: "mfl"`), and one team's view (`team`)
+export interface RecordDecisionWeek {
+  market?: number | null;
+  news_source?: "events" | "report" | "mixed";
+}
+export interface RecordTeamCall {
+  call_rank: number;
+  slot: string | null;
+  player_name: string | null;
+  alt_player_name: string | null;
+  p_win: number | null;
+  is_coin_flip: boolean | null;
+  starter_points: number | null;
+  alt_points: number | null;
+  outcome: number | null;
+  words: string;
+}
+export interface RecordTeamWeek {
+  week: number;
+  record_source: "kickoff" | "reconstructed";
+  submitted: number;
+  app: number;
+  optimum: number;
+  market: number | null;
+  edge: number;
+  regret: number;
+  market_edge: number | null;
+  n_changed: number | null;
+  news: boolean;
+  news_source: "events" | "report";
+  calls: RecordTeamCall[];
+}
+export interface RecordTeam {
+  roster_id: number;
+  team_name: string | null;
+  available: boolean;
+  why?: string;
+  weeks: RecordTeamWeek[];
+  season_totals: { weeks: number; submitted: number; app: number; optimum: number; edge: number; regret: number; market: number | null; market_weeks: number[]; market_edge: number | null } | null;
+  calls: { n: number; won: number | null; expected: number | null; brier: number | null; coin_flips: { n: number; won: number | null; expected: number | null } } | null;
+  news: { weeks: number[]; edge: number | null } | null;
+  sentences: { season: string | null; market: string | null; calls: string | null; news: string | null };
+}
+export interface RecordDecisions {
+  platform?: "mfl";
+  team?: RecordTeam | null;
+}
+export const recordTeamPath = (league: string, team: number) =>
+  `/api/record?league=${encodeURIComponent(league)}&team=${team}`;
+// ---- end V-2
 
 export interface Hit {
   gsis_id: string;

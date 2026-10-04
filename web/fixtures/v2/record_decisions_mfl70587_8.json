@@ -1,0 +1,365 @@
+{
+ "season": 2026,
+ "platform": "mfl",
+ "available": true,
+ "weeks": [
+  {
+   "week": 1,
+   "record_source": "reconstructed",
+   "rosters": 12,
+   "submitted": 1471.0,
+   "app": 1422.0,
+   "optimum": 1711.0,
+   "regret": 240.0,
+   "edge": -49.0,
+   "news_rosters": 0,
+   "market": null,
+   "news_source": "report"
+  },
+  {
+   "week": 2,
+   "record_source": "reconstructed",
+   "rosters": 12,
+   "submitted": 1325.0,
+   "app": 1315.0,
+   "optimum": 1557.0,
+   "regret": 232.0,
+   "edge": -10.0,
+   "news_rosters": 0,
+   "market": null,
+   "news_source": "report"
+  },
+  {
+   "week": 3,
+   "record_source": "reconstructed",
+   "rosters": 12,
+   "submitted": 1401.0,
+   "app": 1322.0,
+   "optimum": 1612.0,
+   "regret": 211.0,
+   "edge": -79.0,
+   "news_rosters": 0,
+   "market": null,
+   "news_source": "report"
+  }
+ ],
+ "season_totals": {
+  "weeks": 3,
+  "roster_weeks": 36,
+  "submitted": 4197.0,
+  "app": 4059.0,
+  "optimum": 4880.0,
+  "regret": 683.0,
+  "edge": -138.0,
+  "market": null,
+  "market_weeks": [],
+  "market_submitted": null,
+  "market_app": null
+ },
+ "calls": {
+  "n": 100,
+  "won": 63.0,
+  "expected": 60.25,
+  "brier": 0.2249,
+  "coin_flips": {
+   "n": 27,
+   "won": 15.5,
+   "expected": 14.09
+  },
+  "table": [
+   {
+    "bin": 1,
+    "n": 10,
+    "p_lo": 0.4884,
+    "p_hi": 0.5153,
+    "predicted": 0.4993,
+    "observed": 0.4
+   },
+   {
+    "bin": 2,
+    "n": 10,
+    "p_lo": 0.5168,
+    "p_hi": 0.5422,
+    "predicted": 0.5273,
+    "observed": 0.55
+   },
+   {
+    "bin": 3,
+    "n": 10,
+    "p_lo": 0.543,
+    "p_hi": 0.5518,
+    "predicted": 0.5478,
+    "observed": 0.75
+   },
+   {
+    "bin": 4,
+    "n": 10,
+    "p_lo": 0.5531,
+    "p_hi": 0.5689,
+    "predicted": 0.5634,
+    "observed": 0.6
+   },
+   {
+    "bin": 5,
+    "n": 10,
+    "p_lo": 0.57,
+    "p_hi": 0.5942,
+    "predicted": 0.5834,
+    "observed": 0.9
+   },
+   {
+    "bin": 6,
+    "n": 10,
+    "p_lo": 0.5943,
+    "p_hi": 0.613,
+    "predicted": 0.601,
+    "observed": 0.6
+   },
+   {
+    "bin": 7,
+    "n": 10,
+    "p_lo": 0.6175,
+    "p_hi": 0.6419,
+    "predicted": 0.6272,
+    "observed": 0.7
+   },
+   {
+    "bin": 8,
+    "n": 10,
+    "p_lo": 0.6425,
+    "p_hi": 0.6673,
+    "predicted": 0.6576,
+    "observed": 0.8
+   },
+   {
+    "bin": 9,
+    "n": 10,
+    "p_lo": 0.669,
+    "p_hi": 0.7034,
+    "predicted": 0.6855,
+    "observed": 0.65
+   },
+   {
+    "bin": 10,
+    "n": 10,
+    "p_lo": 0.706,
+    "p_hi": 0.7786,
+    "predicted": 0.7323,
+    "observed": 0.35
+   }
+  ]
+ },
+ "news": {
+  "roster_weeks": 0,
+  "edge": null,
+  "regret": null,
+  "source": "report"
+ },
+ "sentences": {
+  "edge": "Weeks 1\u20133: had every team started our lineup, the league would have scored 138.0 points fewer than it did (\u22123.8 a team a week). The best lineups in hindsight beat the ones started by 683.0 points (19.0 a team a week).",
+  "calls": "The coin flips landed 57% for the side we leaned (52% expected, 27 calls).",
+  "news": "No graded lineup had a starter's injury report change after our build (the rebuilt weeks cannot tell: they read the final report).",
+  "market": null
+ },
+ "reconstructed_weeks": [
+  1,
+  2,
+  3
+ ],
+ "note": "Weeks 1\u20133 were played before this record existed: their lineups were rebuilt after kickoff from the projections frozen then, with the final injury report.",
+ "team": {
+  "roster_id": 8,
+  "team_name": "Big Mac Attack",
+  "available": true,
+  "weeks": [
+   {
+    "week": 1,
+    "record_source": "reconstructed",
+    "submitted": 175.0,
+    "app": 167.0,
+    "optimum": 183.0,
+    "market": null,
+    "edge": -8.0,
+    "regret": 8.0,
+    "market_edge": null,
+    "n_changed": 1,
+    "news": false,
+    "news_source": "report",
+    "calls": [
+     {
+      "call_rank": 1,
+      "slot": "WR+TE3",
+      "player_name": "Malik Nabers",
+      "alt_player_name": "Ladd McConkey",
+      "p_win": 0.4896,
+      "is_coin_flip": true,
+      "starter_points": 6.0,
+      "alt_points": 14.0,
+      "outcome": 0.0,
+      "words": "Malik Nabers over Ladd McConkey (we gave it 49%): 6.0 to 14.0 \u2014 Ladd McConkey scored more."
+     },
+     {
+      "call_rank": 2,
+      "slot": "WR+TE2",
+      "player_name": "Christian Watson",
+      "alt_player_name": "Ladd McConkey",
+      "p_win": 0.5749,
+      "is_coin_flip": false,
+      "starter_points": 42.0,
+      "alt_points": 14.0,
+      "outcome": 1.0,
+      "words": "Christian Watson over Ladd McConkey (we gave it 57%): 42.0 to 14.0 \u2014 the right call."
+     },
+     {
+      "call_rank": 3,
+      "slot": "TMQB",
+      "player_name": "Chicago Bears QB",
+      "alt_player_name": "Houston Texans QB",
+      "p_win": null,
+      "is_coin_flip": false,
+      "starter_points": 59.0,
+      "alt_points": 33.0,
+      "outcome": 1.0,
+      "words": "Chicago Bears QB over Houston Texans QB: 59.0 to 33.0 \u2014 the right call."
+     }
+    ]
+   },
+   {
+    "week": 2,
+    "record_source": "reconstructed",
+    "submitted": 80.0,
+    "app": 80.0,
+    "optimum": 103.0,
+    "market": null,
+    "edge": 0.0,
+    "regret": 23.0,
+    "market_edge": null,
+    "n_changed": 0,
+    "news": false,
+    "news_source": "report",
+    "calls": [
+     {
+      "call_rank": 1,
+      "slot": "WR+TE3",
+      "player_name": "Ladd McConkey",
+      "alt_player_name": "Brian Thomas",
+      "p_win": 0.7032,
+      "is_coin_flip": false,
+      "starter_points": 3.0,
+      "alt_points": 4.0,
+      "outcome": 0.0,
+      "words": "Ladd McConkey over Brian Thomas (we gave it 70%): 3.0 to 4.0 \u2014 Brian Thomas scored more."
+     },
+     {
+      "call_rank": 2,
+      "slot": "RB2",
+      "player_name": "Christian McCaffrey",
+      "alt_player_name": "Jacory Croskey-Merritt",
+      "p_win": 0.6748,
+      "is_coin_flip": false,
+      "starter_points": 18.0,
+      "alt_points": 4.0,
+      "outcome": 1.0,
+      "words": "Christian McCaffrey over Jacory Croskey-Merritt (we gave it 67%): 18.0 to 4.0 \u2014 the right call."
+     },
+     {
+      "call_rank": 3,
+      "slot": "TMQB",
+      "player_name": "Chicago Bears QB",
+      "alt_player_name": "Houston Texans QB",
+      "p_win": null,
+      "is_coin_flip": false,
+      "starter_points": 10.0,
+      "alt_points": 29.0,
+      "outcome": 0.0,
+      "words": "Chicago Bears QB over Houston Texans QB: 10.0 to 29.0 \u2014 Houston Texans QB scored more."
+     }
+    ]
+   },
+   {
+    "week": 3,
+    "record_source": "reconstructed",
+    "submitted": 81.0,
+    "app": 81.0,
+    "optimum": 110.0,
+    "market": null,
+    "edge": 0.0,
+    "regret": 29.0,
+    "market_edge": null,
+    "n_changed": 0,
+    "news": false,
+    "news_source": "report",
+    "calls": [
+     {
+      "call_rank": 1,
+      "slot": "WR+TE3",
+      "player_name": "Malik Nabers",
+      "alt_player_name": "Brian Thomas",
+      "p_win": 0.5409,
+      "is_coin_flip": true,
+      "starter_points": 2.0,
+      "alt_points": 0.0,
+      "outcome": 1.0,
+      "words": "Malik Nabers over Brian Thomas (we gave it 54%): 2.0 to 0.0 \u2014 the right call."
+     },
+     {
+      "call_rank": 2,
+      "slot": "WR+TE2",
+      "player_name": "Ladd McConkey",
+      "alt_player_name": "Brian Thomas",
+      "p_win": 0.5689,
+      "is_coin_flip": false,
+      "starter_points": 6.0,
+      "alt_points": 0.0,
+      "outcome": 1.0,
+      "words": "Ladd McConkey over Brian Thomas (we gave it 57%): 6.0 to 0.0 \u2014 the right call."
+     },
+     {
+      "call_rank": 3,
+      "slot": "RB2",
+      "player_name": "Christian McCaffrey",
+      "alt_player_name": "Blake Corum",
+      "p_win": 0.698,
+      "is_coin_flip": false,
+      "starter_points": 17.0,
+      "alt_points": 1.0,
+      "outcome": 1.0,
+      "words": "Christian McCaffrey over Blake Corum (we gave it 70%): 17.0 to 1.0 \u2014 the right call."
+     }
+    ]
+   }
+  ],
+  "season_totals": {
+   "weeks": 3,
+   "submitted": 336.0,
+   "app": 328.0,
+   "optimum": 396.0,
+   "edge": -8.0,
+   "regret": 60.0,
+   "market": null,
+   "market_weeks": [],
+   "market_edge": null
+  },
+  "calls": {
+   "n": 7,
+   "won": 5.0,
+   "expected": 4.25,
+   "brier": 0.2155,
+   "coin_flips": {
+    "n": 2,
+    "won": 1.0,
+    "expected": 1.03
+   }
+  },
+  "news": {
+   "weeks": [],
+   "edge": null
+  },
+  "sentences": {
+   "season": "Weeks 1\u20133: you started 336.0; our lineup would have scored 328.0; the best possible was 396.0.",
+   "market": null,
+   "calls": "Our closest calls for you landed 6 of 9 (4.2 expected).",
+   "news": null
+  }
+ }
+}

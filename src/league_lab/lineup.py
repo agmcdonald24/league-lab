@@ -1114,3 +1114,33 @@ def run_record(season: int | None = None, as_of: datetime | None = None) -> Reco
             return None
         return write_record(conn, load_inputs(conn, int(season)), as_of=as_of)
 # ---- end V-1
+
+
+# ---- V-2 (Wave I-H): MyFantasyLeague leagues in the decision record. An MFL league has no ``ops.lineups`` rows (the
+# nightly does not price it), so its record is the ON-DEMAND lineup (``anyleague._solve_roster``: the frame My Week
+# serves), frozen under the same rule (``record_plan``): the next week to kick off is written by every run before its
+# first kickoff (``kickoff``) from the league's current rosters; a played week with no rows is rebuilt once
+# (``reconstructed``) from the rosters MFL's ``weeklyResults`` list for it (every franchise's starters and bench),
+# priced on that week's frozen projection lines in the league's scoring, as of one second before its first
+# kickoff. A week MFL has not scored yet is left until it has. Rows: ``ops.lineup_record`` with ``league_id =
+# 'mfl:<id>'``; the calls' odds from the on-demand ranges. Written by ``league-lab validate`` for the keys in
+# ``LEAGUE_LAB_RECORD_MFL`` (comma list) or ``--mfl``; the grade is ``validation.mfl_weekly`` + ``mfl_inputs``.
+# The writer itself is ``league_lab.record_mfl`` (it reaches anyleague / MFL: kept out of this module, which the console
+# imports, so scripts/hosted_relations.py does not count the on-demand tables as the console's).
+MFL_RECORD_ENV = "LEAGUE_LAB_RECORD_MFL"
+# Sleeper's projections as a lineup (league_lab.record_run writes it; `db migrate` creates it)
+MARKET_DDL = """create table if not exists ops.decision_market (league_id text, season integer, week integer,
+        roster_id integer, slot text, sleeper_player_id text, gsis_id text, player_name text, position text,
+        market_value double precision, value_source text, fetched_at timestamptz, pricing text, written_at timestamptz);
+        create index if not exists decision_market_idx on ops.decision_market (league_id, season, week, roster_id)"""
+DDL["ops.decision_market"] = MARKET_DDL
+
+
+def mfl_record_keys(raw: str | None = None) -> list[str]:
+    """The MFL leagues the record is kept for: ``LEAGUE_LAB_RECORD_MFL`` (comma list of ``mfl:<id>``)."""
+    import os
+    text = os.environ.get(MFL_RECORD_ENV, "") if raw is None else raw
+    return sorted({k.strip() for k in text.split(",") if k.strip().startswith("mfl:")})
+
+
+# ---- end V-2

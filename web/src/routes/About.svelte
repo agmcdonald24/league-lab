@@ -8,6 +8,7 @@
   import type { LeagueOption } from "../lib/leagues";
   import { aboutSections, MODEL_ANSWER } from "../lib/about";
   import { RECORD_HOWTO, recordView } from "../lib/record";
+  import { withContext } from "../lib/md"; // ---- V-2: the link to the Team page
   import { Remote } from "../lib/remote.svelte";
   import Card from "../components/Card.svelte";
   import Expander from "../components/Expander.svelte";
@@ -18,7 +19,7 @@
   import StatTile from "../components/StatTile.svelte";
   import Tabs from "../components/Tabs.svelte";
 
-  let { options, league, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
+  let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props(); // V-2: team
 
   const r = new Remote<RecordAnswer>();
   $effect(() => r.load(paths.record(league), onauth));
@@ -226,6 +227,12 @@
           <p class="text-sm leading-snug text-ink-3">Points summed over the league's {dec.weeks?.[0]?.rosters ?? ""} teams each week.</p>
           {#if dec.sentences?.calls}<p class="text-base leading-snug" data-testid="decisions-calls">{dec.sentences.calls}</p>{/if}
           {#if dec.sentences?.news}<p class="text-sm leading-snug text-ink-3" data-testid="decisions-news">{dec.sentences.news}</p>{/if}
+          <!-- ---- V-2 (Wave I-H): Sleeper's projections as a lineup, and the way to your own team's calls -->
+          {#if dec.sentences?.market}<p class="text-base leading-snug" data-testid="decisions-market">{dec.sentences.market}</p>{/if}
+          {#if team !== null}
+            <p class="text-base"><a class="ll-link" href={withContext("/team", { league, team })} data-testid="decisions-team-link">Your team's calls this season ›</a></p>
+          {/if}
+          <!-- ---- end V-2 -->
           {#if dec.note}<p class="text-sm leading-snug text-ink-3" data-testid="decisions-note">* {dec.note}</p>{/if}
           <Expander title="How to read our lineups' record" testid="decisions-howto"><Md text={DECISIONS_HOWTO} block class="text-base leading-snug" /></Expander>
         </div>

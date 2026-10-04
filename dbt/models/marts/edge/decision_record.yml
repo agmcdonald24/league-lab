@@ -25,6 +25,12 @@ sources:
                     values: [kickoff, reconstructed]
           - name: run_at
             tests: [not_null]
+      - name: decision_market
+        description: "V-2 (Wave I-H), written by `league-lab validate` (league_lab.validation.write_market; rebuilt every run from raw.sleeper_projections, so not record state): per record roster-week of a Sleeper league with a Sleeper snapshot fetched before the week's first kickoff, the best lineup of the roster the record saw valued by Sleeper's projections priced in the league's scoring (a DEF keeps our value). One row per starter (slot, the player, market_value, value_source sleeper | ours | unvalued)."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [league_id, season, week, roster_id, slot]
 
 models:
   - name: mart_decision_record
@@ -48,6 +54,11 @@ models:
           arguments:
             expression: "regret >= -0.01"
             condition: "regret is not null"
+      - expression_is_true:
+          name: decision_record_market_edge_adds_up
+          arguments:
+            expression: "abs(market_edge - (market_points - submitted_points)) < 0.011"
+            condition: "market_edge is not null"
       - expression_is_true:
           name: decision_record_edge_adds_up
           arguments:

@@ -10,7 +10,8 @@
 -- = 0; a K / DEF with no number = unknown -> no outcome). Python twin: league_lab.validation.grade_calls; the
 -- calibration table and the coin-flip line: validation.calibration (docs/METRICS.md § "The decision record").
 with calls as (
-    select * from {{ source('ops_decisions', 'lineup_record') }} where role = 'starter' and call_rank is not null
+    select * from {{ source('ops_decisions', 'lineup_record') }}
+    where role = 'starter' and call_rank is not null and league_id not like 'mfl:%'   -- V-2: MFL graded on request
 ),
 
 weekly as (
