@@ -3,6 +3,23 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 4 · The record grades our calls, and a few things said plainly
+
+- **Our lineups, graded.** About's record now keeps the lineup the app would have started each week (frozen before the
+  week's first game) and grades it against what you actually started and the best lineup in hindsight. The first
+  numbers come from rebuilt weeks and are not flattering — About says so in plain words; the real record starts in
+  week 5.
+- **No more "0.00" for a player we have no number for.** A dash and "no projection" instead, and the lineup total
+  says when it counts a starter at 0.
+- **Waivers says when claims run** ("Claims run Wednesday 3:00 AM ET") and MFL leagues see when their rosters were
+  last read.
+- **What changed now cites its sources**: an injury-report move names the report and its time; a hand-checked brief
+  shows there too.
+- **Team QB / team kicker have a season value** in trades, measured against the best free unit; the trade finder's
+  "left out" rule now looks at season value above replacement, not raw totals.
+- **From week 5 the bonuses are priced at their odds** in every league with one; About's record says which weeks were
+  priced which way.
+
 ## Oct 4 · A new name and address: isuckatfantasy.io
 
 - The app is now called **isuckatfantasy** and lives at **isuckatfantasy.io** — same app, same numbers, new name on

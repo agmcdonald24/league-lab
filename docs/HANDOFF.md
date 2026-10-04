@@ -159,12 +159,24 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   `docs/PLAYERWIRE.md`). Waits on Andrew's yes to HOSTING.md § 5 as "one writer per schema", then five set-up steps. Merged over
   IF-4: ESPN's items keep IF-4's order and `about`; a PlayerWire brief is `about: "player"` (his by id); every item has `kind`.
 
-  **Next: Monday's flip of `LEAGUE_LAB_EV_PRICING`** (STATUS § "Wave I-D" PO section: the nightly's env + a manual
-  run first, then Render's env; week 5 is the record's first EV-priced week; M3's `pricing` column proposal for the
-  record goes with it). Then `ops.events` (IF-3's design in STATUS § "Wave I-F"), the finder's raw-total filter on
-  season value, team units' season value, the validation harness the review asks for (frozen as-of inputs, decision
-  regret, news-affected cases), v3.1 (the ranges' target with the long-TD bonus, the fringe level, cold starts); Wave J
-  (accounts, Stripe, ESPN) on Sleeper's licence.
+* **Wave I-G (2026-10-04, overnight, six Opus devs; STATUS § "Wave I-G" PO section first)**: the record's `pricing`
+  column and the request side following the record's label per week (M4; **the flip ships**: `LEAGUE_LAB_EV_PRICING:
+  "1"` on the nightly's `project` step only — never on Render; the first nightly after the push prices weeks 5–18 at
+  their odds, week 4 stays flat); v3.1 measured and off (M5: the cold-start prior is the keep worth finishing — on
+  the stat line, v3.2); team units' season value, the Finder on season value above replacement, unknown is not zero
+  (IG-1); the event store `events.events` written by the overlay / the news line / PlayerWire's briefs and read by
+  "What changed" and the matchup evidence (IG-2; `scripts/hosted_events.sql` by the sync; `LEAGUE_LAB_EVENTS=off`,
+  `LEAGUE_LAB_EVENTS_ESPN_NEWS=off`); the validation harness — `ops.lineup_record` frozen at kickoff,
+  `mart_decision_record` / `mart_decision_calls`, `league-lab validate`, `/api/record` `decisions`, About's block
+  (V-1; the first numbers are small-sample and unflattering: −1.2 a team a week on the rebuilt weeks 1–2 of Scrubs;
+  the real record starts at week 5's kickoff); the stash writer's drop rule, MFL's freshness line, the waiver
+  deadline, the MFL grade's qualification, usage retention 180 days (IG-3).
+
+  **Next**: after the push, the first nightly (`ops.lineup_record` keeps week 5 before kickoff; `events` and
+  `mart_decision_*` appear on Neon; the record's About sentence reads "from week 5 the bonuses are priced at their
+  odds" on Monday); then the cold-start prior on the stat line (v3.2, M5's lead, with "veterans on a new team"), the
+  record's news-affected cases on the events (`validation._news_starters`), MFL leagues and a per-team view in the
+  record, Waivers' drop cost on units, events retention; Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a

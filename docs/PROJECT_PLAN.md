@@ -586,6 +586,16 @@ tracking is in (the table appears on Neon at the next nightly; no new secret). N
 `LEAGUE_LAB_EV_PRICING`; then `ops.events` (IF-3's design), the finder's raw-total filter on season value, team units'
 season value, the validation harness the review asks for (frozen as-of inputs, decision regret, news-affected cases),
 v3.1, Wave J.
+**I-G delivered 2026-10-04 07:00 ET** (STATUS § "Wave I-G": 1082 root / 548 API / 222 e2e; six devs overnight on
+Andrew's "knock out a big chunk of the roadmap"): the record's `pricing` column and a request side that prices as the
+record does (the flip of `LEAGUE_LAB_EV_PRICING` ships, nightly env only); v3.1 measured — the ranges' graded target
+(QB marginal), the fringe level (drops), the cold-start prior (keeps at RB / WR / TE, waits for the stat-line move) —
+all off; team units' season value and the Finder's rule on season value above replacement; unknown is not zero on
+every screen; the event store (`events.events`: status moves, news, briefs; "What changed" and the matchup evidence
+cite them); the validation harness (`ops.lineup_record` frozen at kickoff, `mart_decision_record`: the app's edge,
+regret, the coin flips' calibration, news-affected cases; the first numbers are small-sample and unflattering, said
+so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
+usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 

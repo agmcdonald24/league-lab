@@ -4,6 +4,11 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-04 — Wave I-G
 
+- **PO (integration).** Six packages merged overnight (M4, M5, IG-1, IG-2, V-1, IG-3 below); the registry rows
+  `decision_edge`, `decision_regret`, `call_calibration`, `unit_season_value`; the flip of `LEAGUE_LAB_EV_PRICING`
+  ships (the nightly's env only — Render untouched; the first nightly after the push prices weeks 5–18 at their
+  odds, week 4 stays flat and frozen); v3.1 measured and left off; the hosted copy gains `mart_decision_record`,
+  `mart_decision_calls`, `ops.lineup_record` and the `events` schema. Root 1082 / API 548 / e2e 222.
 - **M4: the record says how it was priced, and every screen prices as the record does.** `ops.projections`,
   `ops.projection_ranges` and `ops.projection_backtest` carry `pricing` (`flat` | `ev`); `LEAGUE_LAB_EV_PRICING` is now
   an override and, when unset, the newest build's label decides (a frozen week keeps its own), so My Week, Waivers,

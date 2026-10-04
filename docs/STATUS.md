@@ -5128,6 +5128,79 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
 
 ## Wave I-G (Iteration 17, part G)
 
+### PO merge — Wave I-G, 2026-10-04 (Sunday, 03:00–07:00 ET, overnight; Andrew asleep)
+
+* **Why**: Andrew (02:50 ET): "You've got time for a big push iteration-wise overnight while I sleep. Let's take
+  advantage and knock out a big chunk of the roadmap/backlog." The backlog after I-F, all of it but Wave J (the
+  licence): the brief is `scratchpad/waveIG/BRIEF.md` (six Opus devs; M4 ran first alone — the PO's mistake, a
+  blocking spawn — then M5 / IG-1 / IG-2 / V-1 / IG-3 in parallel, 75–100 min each).
+* **Delivered** (the hand-backs below; integration branch `integ/IG`, merged into `main`): **M4** the record's
+  `pricing` column (`flat` | `ev`) on the three writers and `mart_projection_record` / `mart_player_week_projections`;
+  `scoring.ev_pricing()` is a mode — the nightly writer pins the env (default flat), a request follows **the record's
+  own label per week** (`ev_for_week`; the env overrides either way), so My Week, Waivers, Trades and the card can
+  no longer disagree with Trends and the record over the bonuses (IB-0's class of bug closed by construction);
+  "Sleeper's projection" and the market line priced the same way; `/api/record` `pricing` and About / the console's
+  sentence; a `signals.scenarios` bug found on the way (the scenario base priced without the position — the first EV
+  nightly would have failed its dbt test); **the flip commit shipped** (`LEAGUE_LAB_EV_PRICING: "1"` on the nightly's
+  `project` step only — **Render stays untouched**: an env there would price a frozen week by the env instead of its
+  label). **M5** v3.1 measured, every switch **off**: the ranges' target on graded points (QB keep is marginal: −0.0066
+  interval score, 2 of 3 seasons; RB / WR / TE no change), the fringe level **drops** (its sign flips by era), the
+  cold-start prior **keeps** at RB / WR / TE (cold rows' MAE −0.16 / −0.31 / −0.30; 4–5 of 5 seasons) but as wired it
+  moves `ops.projections` and not the stat line — on-demand requests would show the unblended number (IB-0 again), so
+  it waits for the line move (v3.2 lead, with "veterans on a new team are over-projected like rookies, WR −0.95").
+  104 harness rows in `feature_experiments.csv`. **IG-1** team units' season value (`decisions.unit_market`: a unit
+  against the best free unit of its kind, never a player — Houston QB 355 vs the free Arizona QB 378 = 0 above
+  replacement; the verdict and the warning count units), the Finder's rule (a) on **season value above replacement**
+  (`trades.value_gap`, ti1.2; before / after lists for Scrubs 6 and 70587 team 8 in the hand-back — the headline
+  trades did not move), **unknown is not zero** (`value: null` + `no_projection` from the API, a dash and "no
+  projection" on every screen and the console, My Week's `unvalued_words`; nine coercions to 0 removed, listed).
+  **IG-2** the event store `events.events` (the review's § Engineering requirements: kind / player / team / game keys,
+  source URL, published / effective / ingested, status, `superseded_by`, a unique fingerprint; the `usage` pattern:
+  `scripts/hosted_events.sql` run by the sync, never dropped; U-1's writer thread), written by the overlay (each
+  status move, with the report's time), the ESPN news items a screen showed and PlayerWire's briefs; read by "What
+  changed" (a brief shows there now, each line with its source and `event_id`) and by `matchup_evidence.changed`
+  (the missing corner's event, URL and date); `/api/status` `events`, `GET /api/events` for QA. **V-1** the
+  validation harness: `ops.lineup_record` (the app's lineup per roster-week frozen at the week's first kickoff —
+  the projections' freeze rule; 2026 weeks 1–4 rebuilt from the frozen projections and labelled `reconstructed`),
+  `mart_decision_record` / `mart_decision_calls`, `league-lab validate`, `/api/record` `decisions`, About's block and
+  the console's Record section: **the app's edge** (our lineup − the submitted), **regret** (the hindsight optimum −
+  the submitted), the coin flips' calibration, news-affected cases apart. **IG-3** the stash writer's drop follows
+  `choose_drops` (`ops.waiver_upside` + 5 columns; the API shows the writer's call; roster 6's drops {Harrison} →
+  {McPherson, Cousins, Harrison}; all 83 stashes are "watch"), MFL's own roster-freshness line, **the waiver
+  deadline** under Waivers' title (Sleeper's `waiver_type` / day / hour read as Pacific — one constant,
+  `SLEEPER_WAIVER_TZ`; MFL "see MFL" when the export has no time), the MFL grade's qualification next to the headline
+  grade, usage retention 180 days, the console Home guide's Usage page.
+* **PO, on the merge**: five doc conflicts and two `api.ts` end-of-file blocks (keep both; `WORDS.md` theirs first so
+  IG-3's rows stay in their table); the ruff B010 in `research._load_matchups` (the PO's own, from the N2 merge);
+  `metric_registry.csv` rows `decision_edge`, `decision_regret`, `call_calibration` (dr1.0), `unit_season_value`;
+  the main database migrated (`db migrate`: `ops.lineup_record`, the `pricing` columns), `league-lab validate`,
+  `league-lab waivers` (the stash call), the wave's seeds and models built (`PASS=74`), `hosted_events.sql` applied
+  locally; the hosted copy gains `analytics.mart_decision_record` (56 kB), `mart_decision_calls` (88 kB),
+  `ops.lineup_record` (576 kB) and the `events` schema (~500 B a row). **Checks on the merge**: root **1082 passed /
+  2 skipped**, API **548 passed / 5 skipped** (test_ic1 included, on the main database), e2e **222 passed**, ruff /
+  svelte-check / eslint / build clean; the fixture API on the main database with the store on: 151 events on the
+  overlay's first copy, Jefferson's news as events, `/api/events` lists them; `/api/waivers` "Claims run Wednesday
+  3:00 AM ET (rolling waivers); players lock at their own kickoff — the next game starts Sunday 9:30 AM ET"; the
+  MFL grade note; Jacobs `value: null`.
+* **Decisions the PO took (Andrew may reverse)**: (1) **the flip ships with the wave** — the Monday 07:37 nightly
+  prices weeks 5–18 at their odds; if the push lands before Sunday's 07:37 run, Sunday's does (week 4 is frozen and
+  keeps its flat rows either way: M4's clone build moved 0 week-4 rows); nothing to set on Render; rollback = delete
+  the line and re-run. (2) **v3.1 stays off**: the QB range keep is marginal and the cold-start prior needs the line
+  move first. (3) **ESPN headlines are kept** in `events` (headline, date, source, link — the four fields the cache
+  file already holds; `LEAGUE_LAB_EVENTS_ESPN_NEWS=off` on Render holds them back; ESPN's terms are still unread —
+  `docs/ESPN_TERMS.md`). (4) The decision record's **first numbers are unflattering and small-sample**: on the
+  rebuilt weeks 1–2 our lineups would have scored **1.2 points a team a week less** than what Scrubs' managers
+  started (−23.5 over 20 team-weeks; the hindsight optimum beat the started lineups by 15.7 a team a week), the
+  dynasty −148 in week 1 (Andrew's own roster −35: three starters differed) and +30 in week 2; the coin flips landed
+  59% our way (52% expected, 34 calls). Week 1's board is the model's weakest (no in-season data) and the rebuilt
+  weeks read the final injury report; the real record starts at week 5's kickoff. Nobody should quote "the app's
+  edge" before saying so — About says it in those words.
+* **Not done / next**: the cold-start prior onto the stat line (v3.2), `validation._news_starters` on IG-2's events,
+  a per-team decision view and MFL leagues in the record, Waivers' drop cost on units, the console's stash words on
+  `stash_action`, the Team page's MFL freshness line, `daily_waivers_days`, events retention (30–80k rows a season;
+  prune superseded news after 120 days), `game_key` / a depth-chart writer, the record's Sleeper side priced at the
+  odds (`ops.market_record` proposal), `why.weights` reading the week's mode. Then Wave J on the licence.
+
 ### M4 2026-10-04 — the record's pricing column, and the request side follows the record (branch `dev/M4`, clone `league_lab_m1`)
 
 * **Task**: Wave I-G M4 (plan § 17, "Monday's flip of `LEAGUE_LAB_EV_PRICING` with M3's `pricing` column"); METRICS
