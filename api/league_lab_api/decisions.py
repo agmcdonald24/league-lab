@@ -2696,7 +2696,61 @@ def _stash(r: dict, b: dict) -> dict:
             "holds_slot": _str(r.get("holds_slot")), "drop_horizon_loss": _num(r.get("drop_horizon_loss")),
             "change_text": _str(r.get("change_text")), "cause_text": _str(r.get("cause_text")),
             "since_week": _int(r.get("since_week")), "games_held": _int(r.get("games_held")), "kind": _str(r.get("kind")),
-            "headline": SG.stash_headline(r), "lines": SG.upside_detail(r)}
+            "headline": SG.stash_headline(r), "lines": SG.upside_detail(r), **ig3_stash_fields(r)}
+
+
+# ---- IG-3 (Wave I-G): the stash writer decides claim / watch with IF-1's ``choose_drops`` (waivers.upside_for_roster);
+# a mart row that carries the call (``stash_action``, from the writer of Wave I-G on) is shown as written — the API
+# re-decides only older rows (``if1_stashes``), so the screen says what the mart says.
+def ig3_stash_fields(r: dict) -> dict:
+    """The writer's call on one ``mart_waiver_upside`` row ({} for a row written before it)."""
+    act = _str(r.get("stash_action"))
+    if act not in ("claim", "watch"):
+        return {}
+    return {"stash_action": act, "stash_source": "writer", "net_weekly_gain": _num(r.get("net_weekly_gain")),
+            "net_horizon_gain": _num(r.get("net_horizon_gain")),
+            "cheapest_drop": ({"sleeper_id": _str(r.get("drop_sleeper_id")), "player_name": _str(r.get("drop_name")),
+                               "cost": _num(r.get("drop_cost")), "piece": _str(r.get("drop_cost_piece"))}
+                              if _str(r.get("drop_name")) else None)}
+
+
+IG3_HAS_CALL_SQL = """select 1 from information_schema.columns where table_schema = 'analytics'
+                       and table_name = 'mart_waiver_upside' and column_name = 'stash_action'"""
+IG3_CALL_SQL = """select upside_rank, stash_action, drop_cost, drop_cost_piece, net_weekly_gain, net_horizon_gain
+                   from analytics.mart_waiver_upside where league_id = %s and roster_id = %s and week = %s"""
+
+
+def ig3_with_call(up: pd.DataFrame, league_id: str, team: int, week: int) -> pd.DataFrame:
+    """The stash rows with the writer's call joined on (``upside_rank``); unchanged when the mart predates it (the view
+    without the columns, or rows written before Wave I-G)."""
+    if up is None or up.empty or "stash_action" in up or "upside_rank" not in up:
+        return up
+    try:
+        if query(IG3_HAS_CALL_SQL).empty:        # a mart built before Wave I-G: the API re-decides (if1_stashes)
+            return up
+        call = query(IG3_CALL_SQL, (league_id, int(team), int(week)))
+    except Exception:  # noqa: BLE001 - the call is a refinement; the older path still answers
+        return up
+    if call.empty:
+        return up
+    return up.merge(call, on="upside_rank", how="left")
+
+
+def ig3_watch_words(s: dict, span: str) -> str:
+    """The watch line from the writer's numbers: what the role adds if it holds, after the cheapest drop's cost."""
+    gain, net = _num(s.get("holds_horizon_gain")) or 0.0, _num(s.get("net_horizon_gain"))
+    cd = s.get("cheapest_drop") or {}
+    dn = _last(cd.get("player_name")) if cd.get("player_name") else None
+    bar = f"under {W.WORTH_WEEK:.0f} this week and {W.WORTH_HORIZON:.0f} over the weeks"
+    head = f"Watch, no claim yet: if his role holds he adds {gain:+.1f} to your lineup over {span}"
+    if dn and net is not None and abs(net - gain) >= 0.05:
+        head += f"; after what dropping {dn} costs, {net:+.1f} — {bar}."
+    elif dn:
+        head += f" with {dn} dropped — {bar}."
+    else:
+        head += f" — {bar}."
+    return head + " Claim him when his role would put him in your lineup for more, or when a roster spot opens."
+# ---- end IG-3
 
 
 def _scenario_on_demand(r: dict, scoring: dict, league_name: str, week: int) -> dict:
@@ -2729,6 +2783,7 @@ def _upside(league_id: str, team: int | None, week: int, is_house: bool, od_info
             return {"title": UPSIDE_TITLE, "stashes": [], "howto": UPSIDE_HOWTO,
                     "why": "Upside stashes (a player whose role is growing before his points do) arrive with the nightly update."}
         up = query(UPSIDE_SQL, (league_id, int(team), int(week)))
+        up = ig3_with_call(up, league_id, int(team), int(week))                                       # ---- IG-3
         rows = up.to_dict("records")
         b = bio([r.get("add_gsis_id") for r in rows] + [r.get("drop_gsis_id") for r in rows])
         out = [_stash(r, b) for r in rows]
@@ -3516,6 +3571,17 @@ def if1_stashes(out: dict, mv: pd.DataFrame, week: int, last: int) -> None:
     what the drop costs (his own cost: the lineup loss alone, his depth, later starts, season value, upside);
     otherwise ``stash_action`` 'watch', no drop, and what would change it."""
     stashes = (out.get("upside") or {}).get("stashes") or []
+    # ---- IG-3: the writer's call stands (it used choose_drops); only older rows are re-decided below
+    for s in stashes:
+        if s.get("stash_source") == "writer":
+            if s["stash_action"] == "watch":
+                s["drop"], s["watch_words"] = None, ig3_watch_words(s, _span_words(week, last))
+            else:
+                s["watch_words"] = None
+            cd = s.get("cheapest_drop") or {}
+            s["drop_cost"] = {"cost": cd.get("cost"), "piece": cd.get("piece")} if cd else None
+    stashes = [s for s in stashes if s.get("stash_source") != "writer"]
+    # ---- end IG-3
     if not stashes or mv is None or mv.empty or "drop_cost" not in mv:
         return
     span = _span_words(week, last)
