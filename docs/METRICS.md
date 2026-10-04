@@ -2546,9 +2546,12 @@ not a skill position (QB / RB / WR / TE; a team QB unit), admitted by no multi-p
 pool's best projects at least as much as the league's weakest starter at that slot (average over the window) — K and DEF
 in most leagues; none in a deep league whose free pool holds no starting kicker. A package where one side sends only
 guard-position players and the other sends a **starter** at another position (starts in at least half the weeks) is
-**implausible** unless the receiving side has that slot **empty** (nobody at the position in any week) or **worse than
-the free pool** (its starters there more than 1 point under the free pool's best, averaged over the weeks it has one — a
-bye is not a need). No player name is in the rule. Format: QB scarcity is not a guardrail; it lives in the replacement
+**implausible** unless the receiving side has that slot **empty** (nobody at the position in any week of the window; a
+bye is not a need — the free pool covers it and the covered frame prices it). II-1's decision: the brief's second
+exception, "or worse than the free pool", is **not** applied — on the clone the free pool's best kicker beats nearly
+every rostered kicker by about a point (the best of ~20 near-equal projections), so it let every kicker-for-starter
+package through (McLaughlin for Dak Prescott, against Brandon Aubrey); a team whose kicker is worse than the free pool
+claims the free one, it does not give a starter for one. No player name is in the rule. Format: QB scarcity is not a guardrail; it lives in the replacement
 levels (`price_by_player`: in a 1-QB league the free pool holds starting QBs, in a Superflex league it does not) and in the
 covered frame (losing a QB in Superflex is priced against a poor free QB).
 

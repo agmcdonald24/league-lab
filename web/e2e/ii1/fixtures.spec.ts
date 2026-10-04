@@ -4,8 +4,8 @@
 // shows the plausibility label (a plausible offer / a roster-fit idea / implausible), both lineup effects, both waiver
 // alternatives, why they might consider it and reasons they might refuse — never a probability. Phone 375, desktop 1300.
 //
-// The answers are the API's own, recorded from a fixture API (II-1's clone league_lab_i0b for League of Scrubs, the MFL
-// fixtures for 70587) into web/fixtures/ii1/api_ii1.json and replayed here. Re-record:
+// The answers are the API's own, recorded from a fixture API (II-1's clone league_lab_i0b for League of Scrubs, the
+// Sleeper fixtures for the Test League) into web/fixtures/ii1/api_ii1.json and replayed here. Re-record:
 //   (api on :8722 — scratchpad/ii1/api_ii1.sh: LEAGUE_LAB_MFL_FIXTURES / _SLEEPER_FIXTURES / _ESPN_FIXTURES / _PLAYER_IDS_CSV)
 //   II1_RECORD=http://127.0.0.1:8722 FIXTURES_PORT=8622 npx playwright test --config playwright.fixtures.config.ts e2e/ii1
 import { expect, test, type Page, type Route } from "@playwright/test";
@@ -17,9 +17,10 @@ const FILE = join(import.meta.dirname, "..", "..", "fixtures", "ii1", "api_ii1.j
 const RECORD = process.env.II1_RECORD ?? "";
 type Saved = { status: number; body: unknown };
 const saved: Record<string, Saved> = !RECORD && existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
-const MINE = /\/api\/(trades|rosters|leagues\?mfl)|mfl|1389709692405551104/i;
+const MINE = /\/api\/(trades|rosters|leagues\?mfl)|mfl|1389709692405551104|9000000000000000001/i;
 const MFL = "mfl:70587";
 const SCRUBS = "1389709692405551104";
+const TEST_LEAGUE = "9000000000000000001";
 
 const keyOf = (u: URL, body: string | null) => {
   const q = [...u.searchParams.entries()].sort(([a], [b]) => a.localeCompare(b));
@@ -95,30 +96,36 @@ test("Scrubs roster 2: No compelling trade found, the reason, and the trades beh
   await shot(page, "scrubs2-finder", info.project.name);
 });
 
-test("MFL 70587 team 8: the credible trade leads, with its full card", async ({ page }, info) => {
-  await page.goto(`/trades?league=${encodeURIComponent(MFL)}&team=8`);
+test("the Test League team 1: the credible trades lead, each with its full card; the rest behind Explore", async ({ page }, info) => {
+  await page.goto(`/trades?league=${TEST_LEAGUE}&team=1`);
   const head = page.getByTestId("best-partner");
   await expect(head).toContainText("Best partner:");
+  await expect(page.getByTestId("try-best")).toBeVisible();
   const finder = page.getByTestId("finder");
   const first = finder.getByTestId("partner-row").first();
   const card = first.getByTestId("trade-card");
   await expect(card.getByTestId("card-credible")).toHaveText("Beats both teams' alternatives");
+  await expect(card.getByTestId("card-plausibility")).toHaveText(/^(Plausible offer|A roster-fit idea)$/);
   await expect(card.getByTestId("card-alternatives")).toContainText("Yours:");
   await expect(card.getByTestId("card-alternatives")).toContainText("Theirs:");
-  await expect(card.getByTestId("card-alternatives")).toContainText(/claim|first come/);
+  await expect(card.getByTestId("card-alternatives")).toContainText(/claim|first come|nothing to claim/);
   await expect(card.getByTestId("card-consider")).toContainText("Why they might consider it");
   // the rest are behind Explore alternatives
   await expect(page.getByTestId("explore")).toContainText("Explore alternatives");
+  await expect(page.locator("main")).not.toContainText(/probab|% chance|likely to accept/i);
   await noSidewaysScroll(page);
-  await shot(page, "mfl8-finder", info.project.name);
+  await shot(page, "test-league-finder", info.project.name);
 });
 
 test("the calculator: a kicker for a starter is labelled implausible, from the slots and the free pool", async ({ page }, info) => {
-  // Scrubs: MacZaddy's kicker (Chase McLaughlin) for Run Bijan Run's starting QB (Matthew Stafford)
-  await page.goto(`/trade-calc?league=${SCRUBS}&team=2&partner=3&give=6650&get=421`);
+  // Scrubs: MacZaddy's kicker (Chase McLaughlin) for GIBB ME ANOTA ONE's starting QB (Dak Prescott); their kicker
+  // (Brandon Aubrey) is as good as the free pool's best, so a kicker is not worth a starter to them
+  await page.goto(`/trade-calc?league=${SCRUBS}&team=2&partner=10&give=6650&get=3294`);
   const card = page.getByTestId("calc-trade-card");
   await expect(card.getByTestId("card-plausibility")).toHaveText("Implausible");
-  await expect(card.getByTestId("card-refuse")).toContainText("A K for a starter (Matthew Stafford)");
+  await expect(card.getByTestId("card-refuse")).toContainText("A K for a starter (Dak Prescott)");
+  await expect(card.getByTestId("card-alternatives")).toContainText("Yours:");
+  await expect(card.getByTestId("card-alternatives")).toContainText("Theirs:");
   await expect(card.getByTestId("card-credible")).toHaveCount(0);
   await noSidewaysScroll(page);
   await shot(page, "scrubs2-calc-k-for-qb", info.project.name);

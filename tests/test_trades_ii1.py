@@ -115,10 +115,11 @@ def test_kicker_for_a_starter_is_implausible_unless_they_need_one():
     nok = [p for p in B1 if p.id != "bk"] + [P("bwr5", "WR", 3)]
     b2 = board({1: {1: A1, 2: A1}, 2: {1: nok, 2: nok}}, ONE_QB)
     assert streamable_for_starter(b2, ["ak"], ["bwr1"], weeks, guard_positions(b2, weeks, fr), fr) is None
-    # their kicker projects far below the free pool's best: a need - passes
-    weak = [p for p in B1 if p.id != "bk"] + [P("bk", "K", 4)]
+    # their kicker projects below the free pool's best: still implausible (II-1's decision: they would claim the free
+    # kicker, not give a starter for one - the brief's "worse than the free pool" exception is not applied)
+    weak = [p for p in B1 if p.id != "bk"] + [P("bk", "K", 6)]
     b3 = board({1: {1: A1, 2: A1}, 2: {1: weak, 2: weak}}, ONE_QB)
-    assert streamable_for_starter(b3, ["ak"], ["bwr1"], weeks, guard_positions(b3, weeks, fr), fr) is None
+    assert streamable_for_starter(b3, ["ak"], ["bwr1"], weeks, guard_positions(b3, weeks, fr), fr) is not None
 
 
 def test_superflex_kicker_for_qb_and_qb_scarcity():

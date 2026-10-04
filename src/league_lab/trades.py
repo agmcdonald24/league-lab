@@ -1111,10 +1111,9 @@ def streamable_for_starter(board: RosterBoard, give: Sequence[str], get: Sequenc
                            name: Callable[[str], str] = str) -> dict | None:
     """The K / DEF guardrail: one side sends only players at positions the free pool covers (``guard_positions``) and
     the other sends a starter at another position (one who starts for them in at least half the weeks). Implausible
-    unless the side receiving the kicker (defense …) has that slot EMPTY (nobody at the position in any week) or WORSE
-    than the free pool (its starters there project more than ``CREDIBLE_MARGIN`` under the free pool's best, on average
-    over the weeks it has one: a bye is not a need — the free pool covers it and the covered frame prices it). None when
-    the rule does not apply or passes."""
+    unless the side receiving the kicker (defense …) has that slot EMPTY — nobody at the position in any week of the
+    window (see the comment below for why "worse than the free pool" is not an exception). None when the rule does not
+    apply or passes."""
     streamable = {p for p, g in guard.items() if g.get("streamable")}
     for xs, ys in ((tuple(give), tuple(get)), (tuple(get), tuple(give))):
         pos_x = {position_of(board, p) for p in xs}
@@ -1125,23 +1124,20 @@ def streamable_for_starter(board: RosterBoard, give: Sequence[str], get: Sequenc
                         and 2 * _starts_for(board, y, p, weeks) >= len(weeks)), None)
         if starter is None:
             continue
-        # their need at the position: no such starter in any week (a structural hole), or their starters there project
-        # below the free pool's best by more than CREDIBLE_MARGIN on average over the weeks they have one (a bye week is
-        # left out: the free pool covers it, and the covered frame already prices it - a bye is not a need)
+        # their need at the position: nobody at it in any week of the window (a structural hole). II-1's decision: the
+        # brief's second exception ("worse than the free pool") is not applied - the free pool's best kicker beats nearly
+        # every rostered kicker by about a point (the best of ~20 near-equal projections), so it would let every kicker-
+        # for-starter package through; a team whose kicker is worse than the free pool claims the free one, it does not
+        # give a starter for one. A bye is not a need either: the free pool covers it and the covered frame prices it.
         need = False
         for pos in sorted(pos_x):
-            own, pool_best = [], []
+            has = False
             for w in weeks:
                 lu = solve(board.pool(y, w), board.slots, margins=False)
-                vals = [float(s.value) for s in lu.starts if s.player is not None and s.slot.elig == frozenset({pos})
-                        and s.value is not None]
-                best = next((float(p.value) for p in free.get(int(w), ()) if pos in p.positions), None)
-                if vals and best is not None:
-                    own.append(min(vals))
-                    pool_best.append(best)
-            if not own:
-                need = True
-            elif sum(pool_best) / len(pool_best) - sum(own) / len(own) > CREDIBLE_MARGIN:
+                if any(s.player is not None and s.slot.elig == frozenset({pos}) for s in lu.starts):
+                    has = True
+                    break
+            if not has:
                 need = True
         if need:
             continue
