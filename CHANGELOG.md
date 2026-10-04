@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-G
+
+- **M5 — v3.1 measured, nothing switched on.** Three candidates through the walk-forward harness, each behind its own
+  switch (off): the ranges fitted on the graded points (`LEAGUE_LAB_RANGE_TARGET=graded`: the 2-point and long-TD
+  points the record grades were outside every range), a level for the fringe (`LEAGUE_LAB_FRINGE_LEVEL`) and a
+  draft-slot prior for a player's first games (`LEAGUE_LAB_COLD_START`). Verdicts, the harness table and the rules:
+  STATUS § "Wave I-G" (M5), METRICS § "Calibration of the top" → "v3.1"; the rows in
+  `dbt/seeds/feature_experiments.csv`.
+
 ## 2026-10-04 — the product is isuckatfantasy
 
 - **Renamed.** Everything a manager sees — the sign-in screen, the top bar, the home-screen icon and its mark ("isaf"),
