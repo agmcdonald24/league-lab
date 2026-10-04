@@ -3,11 +3,14 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
-## Oct 4 · A new name: isuckatfantasy
+## Oct 4 · A new name and address: isuckatfantasy.io
 
-- The app is now called **isuckatfantasy** — same app, same numbers, new name on the sign-in screen, the home-screen
-  icon and the top bar. If you added it to your home screen, remove it and add it again to pick up the new icon.
-  The address stays the same for now; a new one is coming.
+- The app is now called **isuckatfantasy** and lives at **isuckatfantasy.io** — same app, same numbers, new name on
+  the sign-in screen, the home-screen icon and the top bar. The old address keeps working. If you added it to your
+  home screen, remove it and add it again from the new address to pick up the new icon; you sign in once more there.
+- A player's news line can now lead with a hand-checked brief (its source named, a link, and whether the news is
+  official, reported, corroborated or disputed) when one exists; ESPN's headlines fill the rest, the one about him
+  first.
 
 ## Oct 4 · Better reasons: the drop, the alternative, the matchup
 

@@ -439,6 +439,22 @@ The two records drift apart a little: the Mac's 08:00 board and GitHub's 07:37 b
 from the same data minutes apart, and each freezes its own at kickoff. The hosted one (GitHub's) is the record
 the beta shows; the Mac's is the research console's.
 
+## The domain
+
+*(2026-10-04.)* The product answers at **https://isuckatfantasy.io** (and `www.`, which Render redirects to the root);
+`https://league-lab.onrender.com` keeps answering. The pieces, in case one has to be redone:
+
+* **Cloudflare** (zone `isuckatfantasy.io`, the Free plan): SSL/TLS encryption mode **Full**; two **DNS-only** (grey
+  cloud) records — `CNAME @ league-lab.onrender.com` and `CNAME www league-lab.onrender.com`; no `AAAA` record.
+  Cloudflare flattens the root CNAME, which is what Render's own Cloudflare guide asks for. Proxying (orange cloud)
+  is optional once Render shows the certificate issued; it is off.
+* **Render**: the service is Blueprint-managed, so the domain is in `render.yaml` (`domains: [isuckatfantasy.io]`;
+  the dashboard shows no Custom Domains section for it). Render adds `www.isuckatfantasy.io` itself, verifies both
+  against the records above and issues the certificates (minutes). The beta password and the sign-in cookie are
+  host-only, so a browser signed in at one address signs in again at the other.
+* **Nothing in the code names the host**: the API and the web app are one origin; `scripts/smoke.sh <url>` takes
+  either address.
+
 ## Usage
 
 *(Wave I-F, U-1; plan § 17 E: "which screens get used".)* The phone web app counts screen views on the hosted copy,

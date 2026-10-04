@@ -1,6 +1,7 @@
 # Putting League Lab on a server (the beta)
 
-> **Done on 2026-10-02.** The beta is live at **https://league-lab.onrender.com** (Render Blueprint `league-lab`,
+> **Done on 2026-10-02; the product's own address since 2026-10-04: https://isuckatfantasy.io** (docs/HOSTING.md
+> § "The domain"). The beta is live at **https://league-lab.onrender.com** (Render Blueprint `league-lab`,
 > service `srv-db01bl60tbcc73fpbuh0`, Starter, Ohio). Steps 1–8 below are the record of how, and what to redo if
 > the service is ever recreated. Day to day: a merge to `main` reaches the server by itself ("How a new version
 > reaches the server"); if something is off, "When it breaks". **Neon is published by GitHub's nightly** (07:37 ET;

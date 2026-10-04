@@ -3,7 +3,7 @@
 #
 #   scripts/smoke.sh <base-url> [password] [sleeper-username]
 #
-#   scripts/smoke.sh https://league-lab.onrender.com 'the beta password'
+#   scripts/smoke.sh https://isuckatfantasy.io 'the beta password'      (league-lab.onrender.com answers too)
 #   scripts/smoke.sh http://localhost:8701 h0-beta-pass test_manager      # + a league by username (calls Sleeper)
 #
 # Checks: /api/health (200, the version, the database's as_of, database "ok"); the web app at "/"; the beta gate

@@ -21,6 +21,11 @@ services:
     # one process: one Sleeper call budget and one cache (docs/SLEEPER_TERMS.md)
     numInstances: 1
     healthCheckPath: /api/health
+    # The product's address (2026-10-04): Render adds www. with a redirect to the root and issues the certificate once
+    # Cloudflare answers for it (two DNS-only CNAMEs, @ and www -> league-lab.onrender.com; SSL/TLS "Full";
+    # docs/HOSTING.md § "The domain"). league-lab.onrender.com keeps answering.
+    domains:
+      - isuckatfantasy.io
     autoDeployTrigger: checksPass
     # a push that changes none of these (docs, dbt, the Streamlit pages) does not rebuild the server
     buildFilter:
