@@ -1,0 +1,100 @@
+version: 2
+
+# V-1 (Wave I-G): the decision record (docs/METRICS.md § "The decision record"). The source block is its own (a second
+# `ops` source file would collide with sources.yml): `ops_decisions` = schema ops, the table V-1's writer owns.
+sources:
+  - name: ops_decisions
+    schema: ops
+    tables:
+      - name: lineup_record
+        description: "Written by every `league-lab lineups` run (so every `project`) and by `league-lab validate` (src/league_lab/lineup.py V-1 block): the app's proposed lineup per league x season x week x roster as of the last build before the week's first kickoff (record_source 'kickoff'; a week not kicked off is replaced by every build, a kicked-off week is never rewritten), or rebuilt once from the frozen ops.projections rows for a week played before the record existed ('reconstructed'). One row per player (role starter | empty | bench | unplayable), the lineup total on every row, and on a starter's row the decision cards' call (call_rank 1-3: the bench player who would come in, P(starter outscores him), is_coin_flip)."
+        tests:
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [league_id, season, week, roster_id, sleeper_player_id]
+              config: {where: "sleeper_player_id is not null"}
+          - unique_combination_of_columns:
+              arguments:
+                combination_of_columns: [league_id, season, week, roster_id, call_rank]
+              config: {where: "call_rank is not null"}
+        columns:
+          - name: record_source
+            tests:
+              - accepted_values:
+                  arguments:
+                    values: [kickoff, reconstructed]
+          - name: run_at
+            tests: [not_null]
+
+models:
+  - name: mart_decision_record
+    description: >
+      V-1 (Wave I-G): the decision record graded, one row per league x season x week x roster: the app's lineup as
+      recorded before kickoff (ops.lineup_record) against the submitted lineup (Sleeper's starters and points) and the
+      hindsight optimum (ops.lineup_totals is_realised). regret = optimum - submitted; app_edge = app - submitted;
+      app_regret = optimum - app; is_news_affected = a starter's injury report changed after the build ('kickoff'
+      records only). Point columns are NULL until the week is scored. Python twin: league_lab.validation.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season, week, roster_id]
+      - expression_is_true:
+          name: decision_record_in_play_rows_have_no_points
+          arguments:
+            expression: "submitted_points is null and app_points is null and optimum_points is null"
+            condition: "status = 'in_play'"
+      - expression_is_true:
+          name: decision_record_regret_is_not_negative
+          arguments:
+            expression: "regret >= -0.01"
+            condition: "regret is not null"
+      - expression_is_true:
+          name: decision_record_edge_adds_up
+          arguments:
+            expression: "abs(app_edge + app_regret - regret) < 0.011"
+            condition: "app_edge is not null and regret is not null and app_regret is not null"
+    columns:
+      - name: status
+        tests:
+          - accepted_values:
+              arguments:
+                values: [scored, in_play]
+      - name: record_source
+        tests:
+          - accepted_values:
+              arguments:
+                values: [kickoff, reconstructed]
+      - name: pricing
+        tests:
+          - accepted_values:
+              arguments:
+                values: [flat, ev]
+
+  - name: mart_decision_calls
+    description: >
+      V-1 (Wave I-G): the decision cards' closest calls as recorded before kickoff (ops.lineup_record call rows),
+      graded: outcome 1 = the starter outscored the bench player who would have come in, 0.5 = equal, 0 = not; NULL
+      until the week is scored. The calibration table and the coin-flip line are league_lab.validation.calibration.
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [league_id, season, week, roster_id, call_rank]
+      - expression_is_true:
+          name: decision_calls_outcome_only_when_scored
+          arguments:
+            expression: "outcome is null"
+            condition: "status = 'in_play'"
+    columns:
+      - name: p_win
+        tests:
+          - expression_is_true:
+              arguments:
+                expression: "p_win between 0 and 1"
+              config: {where: "p_win is not null"}
+      - name: outcome
+        tests:
+          - accepted_values:
+              arguments:
+                values: [0, 0.5, 1]
+                quote: false
+              config: {where: "outcome is not null"}
