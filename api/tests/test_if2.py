@@ -199,7 +199,9 @@ def test_the_calculator_names_its_value_concepts_and_drops_the_raw_fairness_line
     assert v["season_value"]["fairness"] is True and v["ros_points"]["fairness"] is False
     assert v["season_value"]["words"].startswith("Season value above replacement: you give 14, you get 7")
     assert "You give 2 players for 1: 1 roster spot freed." in v["season_value"]["words"]
-    assert "Not counted (no season projection): Houston Texans QB." in v["season_value"]["words"]
+    # ---- IG-1 (Wave I-G): the team QB has a season value now (355 points, the best free team QB 378: 0 above it) - it is
+    # counted, so the "Not counted" clause is gone (IF-2 pinned "Not counted (no season projection): Houston Texans QB.")
+    assert "Not counted" not in v["season_value"]["words"] and v["season_value"]["unknown"] == []
     assert e["ros"]["words"] == ("Rest-of-season projected points (weeks 4–18), all positions added up — not a fairness test: "
                                  "you give 493, you get 134.")
     assert e["how"]["ros"] == e["ros"]["words"]
@@ -207,7 +209,7 @@ def test_the_calculator_names_its_value_concepts_and_drops_the_raw_fairness_line
     texts = [e.get("verdict"), e.get("headline"), e.get("sanity"), e.get("hold_words"), e.get("alternative_words"),
              *(x for x in e["how"].values() if isinstance(x, str)), *(x["words"] or "" for x in v.values())]
     assert not any(RAW_FAIRNESS.search(t or "") for t in texts)
-    assert e["sanity"] is None                                   # Houston Texans QB has no season value: not judged
+    assert e["sanity"] is None                                   # IG-1: 14 for 7 is about even by season value
     assert v["depth"]["mine"] == {"before": 43.91, "after": 22.61}
     assert v["starter_points"]["mine"] == e["fit"]["window"]["mine"]
 

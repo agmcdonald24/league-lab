@@ -194,7 +194,9 @@ def test_partners_route_applies_both_rules(client, monkeypatch):
     ros, ours, _ = decisions.sanity_inputs(ctx)
     for r in d["partners"]:
         give, get = [x["sleeper_id"] for x in r["give"]], [x["sleeper_id"] for x in r["get"]]
-        assert T.sanity(give, get, ros=ros, ours={}, market={}) is None
+        # ---- IG-1 (Wave I-G): rule (a) is on season value above replacement now (IA-2: the raw rest-of-season totals)
+        assert T.sanity(give, get, ros=ros, ours={}, market={}, values=ctx.prices) is None
+    assert d["sanity"]["rule"] == "season_value"
     assert d["rejected_count"] >= 1 and all(x["why"] for x in d["rejected"])
     assert d["sanity"]["market_note"] and d["sanity"]["ros_players"] > 0
     best = next(r for r in d["partners"] if r["is_best"])
