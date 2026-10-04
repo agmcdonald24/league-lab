@@ -1,0 +1,835 @@
+{
+ "/api/my-week?league=1389709692405551104&team=2": {
+  "status": 200,
+  "body": {
+   "league_id": "1389709692405551104",
+   "league_name": "League of Scrubs",
+   "season": 2026,
+   "scoring_label": "10-team redraft \u00b7 half PPR \u00b7 4\u2011pt pass TD",
+   "roster_id": 2,
+   "team_name": "MacZaddy",
+   "manager_name": "amcdonald24",
+   "week": 4,
+   "record": {
+    "wins": 1,
+    "losses": 1,
+    "standing": 6
+   },
+   "opponent": {
+    "roster_id": 6,
+    "team_name": "GoodGameBuddy",
+    "manager": "Chazk92",
+    "matchup_id": 4,
+    "lineup_value": 120.31,
+    "changes": []
+   },
+   "source": "database",
+   "summary": "**MacZaddy** \u00b7 1-1, #6 in the league",
+   "league_line": "Your best lineup projects **113.54** in week 4, 6th of 10 in the league.",
+   "cards": [
+    {
+     "slot": "FLEX2",
+     "slot_label": "FLEX2",
+     "gsis_id": "00-0038559",
+     "player_name": "Michael Wilson",
+     "value": 9.2,
+     "alt_gsis_id": "00-0040242",
+     "alt_name": "Jacory Croskey-Merritt",
+     "alt_value": 9.19,
+     "margin": 0.01,
+     "verdict": "a coin flip",
+     "how": "best bench player who can play FLEX2",
+     "p_win": 0.508825,
+     "why": "Too close to call: the projection has them level, the ranges say either; the matchup rank does not settle it this week: one of New York's regular corners changed (Hood is no longer listed as a starter). Go with Croskey-Merritt on the matchup: he is at home against the Colts, who give up the 2nd-most points to running backs.",
+     "status": "close",
+     "strength": "coin flip",
+     "in_sleeper_lineup": {
+      "player": false,
+      "alt": false
+     },
+     "blocks": [
+      {
+       "kind": "markdown",
+       "text": "**FLEX2: [Michael Wilson](/player/00-0038559) or [Jacory Croskey-Merritt](/player/00-0040242) \u2014 a coin flip**"
+      },
+      {
+       "kind": "markdown",
+       "text": "Too close to call: the projection has them level, the ranges say either; the matchup rank does not settle it this week: one of New York's regular corners changed (Hood is no longer listed as a starter). Go with Croskey-Merritt on the matchup: he is at home against the Colts, who give up the 2nd-most points to running backs."
+      },
+      {
+       "kind": "caption",
+       "text": "Michael Wilson outscores Jacory Croskey-Merritt 51% of the time \u2014 a coin flip. 9.20 vs 9.19 projected: 0.01 apart.  \nTypical range (the middle 50%): Michael Wilson 4\u201313, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Michael Wilson 2\u201319, Jacory Croskey-Merritt 1\u201319.  \nMichael Wilson vs NYG (11th-most WR points allowed) \u00b7 Jacory Croskey-Merritt vs IND (2nd-most RB points allowed)"
+      }
+     ],
+     "key": "10232",
+     "alt_key": "12533",
+     "tiebreak": {
+      "kind": "matchup",
+      "pick": "Croskey-Merritt",
+      "side": "alt"
+     },
+     "action": 0,
+     "matchup_uncertain": true
+    },
+    {
+     "slot": "FLEX1",
+     "slot_label": "FLEX1",
+     "gsis_id": "00-0040719",
+     "player_name": "Bhayshul Tuten",
+     "value": 9.72,
+     "alt_gsis_id": "00-0040242",
+     "alt_name": "Jacory Croskey-Merritt",
+     "alt_value": 9.19,
+     "margin": 0.53,
+     "verdict": "a coin flip",
+     "how": "best bench player who can play FLEX1",
+     "p_win": 0.56365,
+     "why": "Croskey-Merritt's share of the carries fell from 50% to 38% last game, and the projection has Tuten 0.5 points ahead.",
+     "status": "set",
+     "strength": "lean",
+     "in_sleeper_lineup": {
+      "player": true,
+      "alt": false
+     },
+     "blocks": [
+      {
+       "kind": "markdown",
+       "text": "**FLEX1: start [Bhayshul Tuten](/player/00-0040719) over [Jacory Croskey-Merritt](/player/00-0040242)**"
+      },
+      {
+       "kind": "markdown",
+       "text": "Croskey-Merritt's share of the carries fell from 50% to 38% last game, and the projection has Tuten 0.5 points ahead."
+      },
+      {
+       "kind": "caption",
+       "text": "Bhayshul Tuten outscores Jacory Croskey-Merritt 56% of the time \u2014 a lean. 9.72 vs 9.19 projected: 0.53 apart.  \nTypical range (the middle 50%): Bhayshul Tuten 5\u201315, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Bhayshul Tuten 2\u201322, Jacory Croskey-Merritt 1\u201319.  \nBhayshul Tuten vs CIN (9th-fewest RB points allowed) \u00b7 Jacory Croskey-Merritt vs IND (2nd-most RB points allowed)"
+      }
+     ],
+     "key": "12490",
+     "alt_key": "12533",
+     "tiebreak": null,
+     "action": 0,
+     "matchup_uncertain": false
+    },
+    {
+     "slot": "RB2",
+     "slot_label": "RB2",
+     "gsis_id": "00-0040666",
+     "player_name": "Omarion Hampton",
+     "value": 11.28,
+     "alt_gsis_id": "00-0040242",
+     "alt_name": "Jacory Croskey-Merritt",
+     "alt_value": 9.19,
+     "margin": 2.09,
+     "verdict": "a lean",
+     "how": "best bench player who can play RB2",
+     "p_win": 0.622075,
+     "why": "Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game.",
+     "status": "set",
+     "strength": "lean",
+     "in_sleeper_lineup": {
+      "player": true,
+      "alt": false
+     },
+     "blocks": [
+      {
+       "kind": "markdown",
+       "text": "**RB2: start [Omarion Hampton](/player/00-0040666) over [Jacory Croskey-Merritt](/player/00-0040242)**"
+      },
+      {
+       "kind": "markdown",
+       "text": "Hampton's share of the carries rose from 57% to 72% last game; Croskey-Merritt's share of the carries fell from 50% to 38% last game."
+      },
+      {
+       "kind": "caption",
+       "text": "Omarion Hampton outscores Jacory Croskey-Merritt 62% of the time \u2014 a lean. 11.28 vs 9.19 projected: 2.09 apart.  \nTypical range (the middle 50%): Omarion Hampton 6\u201315, Jacory Croskey-Merritt 4\u201312.  \nA bad week to a good week: Omarion Hampton 3\u201323, Jacory Croskey-Merritt 1\u201319.  \nOmarion Hampton vs SEA (7th-fewest RB points allowed) \u00b7 Jacory Croskey-Merritt vs IND (2nd-most RB points allowed)"
+      }
+     ],
+     "key": "12507",
+     "alt_key": "12533",
+     "tiebreak": null,
+     "action": 0,
+     "matchup_uncertain": false
+    }
+   ],
+   "notice": null,
+   "lineup": [
+    {
+     "role": "starter",
+     "slot": "QB",
+     "player_name": "Patrick Mahomes",
+     "gsis_id": "00-0033873",
+     "position": "QB",
+     "value": 20.26,
+     "margin": 2.09,
+     "flag": "",
+     "key": "4046",
+     "margin_vs": "Shough",
+     "margin_words": "over Shough",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "team": "KC",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "RB1",
+     "player_name": "Kyren Williams",
+     "gsis_id": "00-0037840",
+     "position": "RB",
+     "value": 12.8,
+     "margin": 3.61,
+     "flag": "",
+     "key": "8150",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+     "team": "LA",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "RB2",
+     "player_name": "Omarion Hampton",
+     "gsis_id": "00-0040666",
+     "position": "RB",
+     "value": 11.28,
+     "margin": 2.09,
+     "flag": "",
+     "key": "12507",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "team": "LAC",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "WR1",
+     "player_name": "Tetairoa McMillan",
+     "gsis_id": "00-0040124",
+     "position": "WR",
+     "value": 12.75,
+     "margin": 3.56,
+     "flag": "",
+     "key": "12526",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gilgvjemumd6kpc9eiku",
+     "team": "CAR",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "WR2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "position": "WR",
+     "value": 12.16,
+     "margin": 2.97,
+     "flag": "",
+     "key": "9487",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+     "team": "JAX",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "TE",
+     "player_name": "Travis Kelce",
+     "gsis_id": "00-0030506",
+     "position": "TE",
+     "value": 10.14,
+     "margin": 10.14,
+     "flag": "",
+     "key": "1466",
+     "margin_vs": null,
+     "margin_words": "no eligible reserve: the slot would be empty",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+     "team": "KC",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "FLEX1",
+     "player_name": "Bhayshul Tuten",
+     "gsis_id": "00-0040719",
+     "position": "RB",
+     "value": 9.72,
+     "margin": 0.53,
+     "flag": "",
+     "key": "12490",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "team": "JAX",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "FLEX2",
+     "player_name": "Michael Wilson",
+     "gsis_id": "00-0038559",
+     "position": "WR",
+     "value": 9.2,
+     "margin": 0.01,
+     "flag": "",
+     "key": "10232",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+     "team": "ARI",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "K",
+     "player_name": "Chase McLaughlin",
+     "gsis_id": "00-0035358",
+     "position": "K",
+     "value": 8.07,
+     "margin": 8.07,
+     "flag": "",
+     "key": "6650",
+     "margin_vs": null,
+     "margin_words": "no eligible reserve: the slot would be empty",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+     "team": "TB",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "DEF",
+     "player_name": "Kansas City Chiefs",
+     "gsis_id": null,
+     "position": "DEF",
+     "value": 7.16,
+     "margin": 7.16,
+     "flag": "",
+     "key": "KC",
+     "margin_vs": null,
+     "margin_words": "no eligible reserve: the slot would be empty",
+     "headshot_url": null,
+     "team": "KC",
+     "market_points": null
+    }
+   ],
+   "lineup_full": [
+    {
+     "role": "starter",
+     "slot": "QB",
+     "player_name": "Patrick Mahomes",
+     "gsis_id": "00-0033873",
+     "position": "QB",
+     "value": 20.26,
+     "margin": 2.09,
+     "flag": "",
+     "key": "4046",
+     "margin_vs": "Shough",
+     "margin_words": "over Shough",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/wdckwtob1lybvkmxnf7p",
+     "team": "KC",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "RB1",
+     "player_name": "Kyren Williams",
+     "gsis_id": "00-0037840",
+     "position": "RB",
+     "value": 12.8,
+     "margin": 3.61,
+     "flag": "",
+     "key": "8150",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xti3pek6rmojqchakxpy",
+     "team": "LA",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "RB2",
+     "player_name": "Omarion Hampton",
+     "gsis_id": "00-0040666",
+     "position": "RB",
+     "value": 11.28,
+     "margin": 2.09,
+     "flag": "",
+     "key": "12507",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/lf2jxvxnbexlinoydbej",
+     "team": "LAC",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "WR1",
+     "player_name": "Tetairoa McMillan",
+     "gsis_id": "00-0040124",
+     "position": "WR",
+     "value": 12.75,
+     "margin": 3.56,
+     "flag": "",
+     "key": "12526",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gilgvjemumd6kpc9eiku",
+     "team": "CAR",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "WR2",
+     "player_name": "Parker Washington",
+     "gsis_id": "00-0038606",
+     "position": "WR",
+     "value": 12.16,
+     "margin": 2.97,
+     "flag": "",
+     "key": "9487",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yn0hc5xrz5nqeccg8two",
+     "team": "JAX",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "TE",
+     "player_name": "Travis Kelce",
+     "gsis_id": "00-0030506",
+     "position": "TE",
+     "value": 10.14,
+     "margin": 10.14,
+     "flag": "",
+     "key": "1466",
+     "margin_vs": null,
+     "margin_words": "no eligible reserve: the slot would be empty",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/dpxovcfku6ud2aohgf6a",
+     "team": "KC",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "FLEX1",
+     "player_name": "Bhayshul Tuten",
+     "gsis_id": "00-0040719",
+     "position": "RB",
+     "value": 9.72,
+     "margin": 0.53,
+     "flag": "",
+     "key": "12490",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ryjnphuyjbedmgpx5qqj",
+     "team": "JAX",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "FLEX2",
+     "player_name": "Michael Wilson",
+     "gsis_id": "00-0038559",
+     "position": "WR",
+     "value": 9.2,
+     "margin": 0.01,
+     "flag": "",
+     "key": "10232",
+     "margin_vs": "Croskey-Merritt",
+     "margin_words": "over Croskey-Merritt",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hm2b9z4zujjmbiyldh8n",
+     "team": "ARI",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "K",
+     "player_name": "Chase McLaughlin",
+     "gsis_id": "00-0035358",
+     "position": "K",
+     "value": 8.07,
+     "margin": 8.07,
+     "flag": "",
+     "key": "6650",
+     "margin_vs": null,
+     "margin_words": "no eligible reserve: the slot would be empty",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/enkzsuyzk232mbq5oe4w",
+     "team": "TB",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "DEF",
+     "player_name": "Kansas City Chiefs",
+     "gsis_id": null,
+     "position": "DEF",
+     "value": 7.16,
+     "margin": 7.16,
+     "flag": "",
+     "key": "KC",
+     "margin_vs": null,
+     "margin_words": "no eligible reserve: the slot would be empty",
+     "headshot_url": null,
+     "team": "KC",
+     "market_points": null
+    },
+    {
+     "role": "bench",
+     "slot": "Bench 1",
+     "player_name": "Tyler Shough",
+     "gsis_id": "00-0040743",
+     "position": "QB",
+     "value": 18.17,
+     "margin": null,
+     "flag": "",
+     "key": "12545",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toiafc7qighw86geo7jf",
+     "team": "NO",
+     "market_points": null
+    },
+    {
+     "role": "bench",
+     "slot": "Bench 2",
+     "player_name": "Bryce Young",
+     "gsis_id": "00-0039150",
+     "position": "QB",
+     "value": 17.25,
+     "margin": null,
+     "flag": "",
+     "key": "9228",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/vcvhmxvxw2a3armle0af",
+     "team": "CAR",
+     "market_points": null
+    },
+    {
+     "role": "bench",
+     "slot": "Bench 3",
+     "player_name": "Jacory Croskey-Merritt",
+     "gsis_id": "00-0040242",
+     "position": "RB",
+     "value": 9.19,
+     "margin": null,
+     "flag": "",
+     "key": "12533",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qew4qhlj4yuf50voko61",
+     "team": "WAS",
+     "market_points": null
+    },
+    {
+     "role": "unplayable",
+     "slot": "Can't play",
+     "player_name": "Justin Jefferson",
+     "gsis_id": "00-0036322",
+     "position": "WR",
+     "value": 12.68,
+     "margin": null,
+     "flag": "OUT",
+     "key": "6794",
+     "reason": "Out (ankle) \u00b7 ESPN, Oct 2 2:35 PM ET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/htjevkugzk6ietrjysny",
+     "team": "MIN",
+     "market_points": null
+    },
+    {
+     "role": "unplayable",
+     "slot": "Can't play",
+     "player_name": "Terrance Ferguson",
+     "gsis_id": "00-0040737",
+     "position": "TE",
+     "value": 5.79,
+     "margin": null,
+     "flag": "IR",
+     "key": "12487",
+     "reason": "IR (ankle) \u00b7 ESPN, Oct 2 5:56 PM ET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/w5o0s5yf6j5dsmiwdtfg",
+     "team": "LA",
+     "market_points": null
+    },
+    {
+     "role": "unplayable",
+     "slot": "Can't play",
+     "player_name": "Jonah Coleman",
+     "gsis_id": "00-0041496",
+     "position": "RB",
+     "value": 7.09,
+     "margin": null,
+     "flag": "IR",
+     "key": "13345",
+     "reason": "IR (ankle) \u00b7 ESPN, Sep 26 4:36 PM ET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/qbauucaxakkhtxihuvmr",
+     "team": "DEN",
+     "market_points": null
+    },
+    {
+     "role": "unplayable",
+     "slot": "Can't play",
+     "player_name": "Zach Charbonnet",
+     "gsis_id": "00-0039165",
+     "position": "RB",
+     "value": 6.05,
+     "margin": null,
+     "flag": "IR",
+     "key": "9753",
+     "reason": "PUP (knee - acl) \u00b7 ESPN, Oct 2 5:12 PM ET",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cuuyog0lpxfaj0y0huvp",
+     "team": "SEA",
+     "market_points": null
+    }
+   ],
+   "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls: who to start, then **why** in one sentence (the matchup, his share of his team's carries or targets, an injury, the betting line). On a coin flip the card says so and names the tiebreaker.\n- The small print starts with **how often your starter outscores the other player** this week, from both players' ranges: 50\u201355% is a coin flip (go with the latest news), 55\u201365% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **5th-fewest WR points allowed** is the opponent's rank against that position this season, said one way everywhere: the most points allowed is the matchup you want, the fewest the toughest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
+   "movers": [],
+   "availability": {
+    "checked_at": "2026-10-04T08:55:21.070844Z",
+    "changes": [
+     "Justin Jefferson is out (ankle) \u2014 Michael Wilson starts at FLEX2",
+     "Terrance Ferguson is on injured reserve (ankle) \u2014 he was on your bench; the lineup does not change"
+    ],
+    "flags": [],
+    "applied": 6,
+    "cites": [
+     {
+      "gsis_id": "00-0036322",
+      "code": "OUT",
+      "source": "ESPN",
+      "as_of": "2026-10-02T18:35:00Z"
+     },
+     {
+      "gsis_id": "00-0040737",
+      "code": "IR",
+      "source": "ESPN",
+      "as_of": "2026-10-02T21:56:00Z"
+     }
+    ]
+   },
+   "lineup_value": 113.54,
+   "actions": [
+    {
+     "kind": "change",
+     "urgency": 1,
+     "action": "Start [Wilson](/player/00-0038559) at FLEX (or [Croskey-Merritt](/player/00-0040242): a coin flip) in place of [Jefferson](/player/00-0036322).",
+     "reason": "Jefferson is out; the change is worth about 9 more projected points this week. Wilson and Croskey-Merritt are level by the projection; the matchup leans Croskey-Merritt. Check the news again before kickoff.",
+     "start": [
+      {
+       "key": "12507",
+       "name": "Hampton",
+       "link": "[Hampton](/player/00-0040666)"
+      },
+      {
+       "key": "12490",
+       "name": "Tuten",
+       "link": "[Tuten](/player/00-0040719)"
+      },
+      {
+       "key": "10232",
+       "name": "Wilson",
+       "link": "[Wilson](/player/00-0038559)"
+      }
+     ],
+     "sit": [
+      {
+       "key": "6794",
+       "name": "Jefferson",
+       "link": "[Jefferson](/player/00-0036322)"
+      },
+      {
+       "key": "12533",
+       "name": "Croskey-Merritt",
+       "link": "[Croskey-Merritt](/player/00-0040242)"
+      }
+     ],
+     "submitted": false,
+     "submitted_words": "Not in your Sleeper lineup yet: make the change in Sleeper.",
+     "gain": 9.2,
+     "href": null,
+     "lock": {
+      "kickoff": "2026-10-04T13:30:00+00:00",
+      "words": "before Sun 9:30 AM ET"
+     },
+     "slots": [
+      "FLEX2"
+     ],
+     "slot_label": "FLEX2",
+     "cards": [
+      0,
+      1,
+      2
+     ]
+    }
+   ],
+   "set_line": "The rest of your lineup is set.",
+   "next_lock": {
+    "kickoff": "2026-10-04T13:30:00+00:00",
+    "words": "before Sun 9:30 AM ET",
+    "players": [
+     "Jefferson",
+     "Wilson",
+     "Croskey-Merritt"
+    ]
+   },
+   "platform_name": "Sleeper",
+   "review": [],
+   "swaps": [],
+   "edit_link": {
+    "label": "Open Sleeper to edit your lineup",
+    "url": "https://sleeper.com/leagues/1389709692405551104",
+    "platform": "Sleeper"
+   },
+   "nothing_submitted": "isuckatfantasy never changes your lineup or claims; it tells you what to do in your league's app.",
+   "changed": {
+    "lines": [
+     {
+      "kind": "status",
+      "gsis_id": "00-0036322",
+      "text": "Justin Jefferson is out (ankle) \u2014 Michael Wilson starts at FLEX2",
+      "source": "Injury report (ESPN)",
+      "at": "2026-10-02T18:35:00Z",
+      "url": "https://www.espn.com/nfl/player/_/id/4262921",
+      "event_id": 756
+     },
+     {
+      "kind": "status",
+      "gsis_id": "00-0040737",
+      "text": "Terrance Ferguson is on injured reserve (ankle) \u2014 he was on your bench; the lineup does not change",
+      "source": "Injury report (ESPN)",
+      "at": "2026-10-02T21:56:00Z",
+      "url": "https://www.espn.com/nfl/player/_/id/4570037",
+      "event_id": 656
+     },
+     {
+      "kind": "news",
+      "gsis_id": "00-0036322",
+      "player_name": "Justin Jefferson",
+      "text": "Jefferson (ankle) ruled out for Sunday",
+      "source": "Minnesota Vikings via PlayerWire",
+      "at": "2026-10-03T14:10:00Z",
+      "url": "https://www.vikings.com/news/injury-report-week-5",
+      "about": "player",
+      "event_id": 776,
+      "origin": "playerwire",
+      "verification": "official"
+     }
+    ],
+    "empty": "Nothing has changed since the morning build."
+   }
+  }
+ },
+ "/api/status": {
+  "status": 200,
+  "body": {
+   "freshness": "**nflverse** loaded Sat Sep 26, 9:55 AM ET \u00b7 **sleeper** loaded Sat Sep 26, 5:26 PM ET \u00b7 NFL 2026 final games through 2026-09-24 (REG week 3) \u00b7 league scored through week 2",
+   "warning": null,
+   "updated_at": "2026-09-26T21:26:01.495715+00:00",
+   "availability": {
+    "enabled": true,
+    "checked_at": "2026-10-04T08:55:21.070844Z",
+    "source_ages": {
+     "espn_s": 4,
+     "sleeper_s": 4
+    },
+    "n_out": 109,
+    "n_questionable": 40,
+    "espn": {
+     "mode": "fixtures",
+     "calls": 1,
+     "failures": 0,
+     "stale_served": 0,
+     "age_s": 3.7,
+     "interval_s": 900,
+     "entries": 158,
+     "last_error": null
+    },
+    "unmapped_espn": 0
+   },
+   "news": {
+    "enabled": true,
+    "mode": "fixtures",
+    "calls": 1,
+    "failures": 0,
+    "stale_served": 0,
+    "athletes_cached": 1,
+    "per_minute": 60.0,
+    "last_error": null,
+    "playerwire": {
+     "enabled": true,
+     "source": "fixtures",
+     "rows": 8,
+     "withdrawn": 1,
+     "newest_published_at": "2026-10-03T18:00:00Z",
+     "unmapped": 2,
+     "last_sync_at": "2026-10-03T18:45:00Z",
+     "last_error": null
+    }
+   },
+   "events": {
+    "enabled": true,
+    "ready": true,
+    "rows": 153,
+    "live": 151,
+    "newest": "2026-10-04T08:55:22Z",
+    "process": {
+     "queued": 4,
+     "written": 153,
+     "duplicate": 0,
+     "superseded": 2,
+     "failed": 0,
+     "dropped": 0,
+     "moves": 149
+    }
+   },
+   "sleeper": {
+    "mode": "fixtures",
+    "calls": 5,
+    "stale_served": 0,
+    "bucket": {
+     "tokens": 300.0,
+     "capacity": 300.0,
+     "per_minute": 300.0,
+     "refused": 0
+    },
+    "cache": {
+     "players": {
+      "entries": 1,
+      "fresh": 1,
+      "oldest_s": 3.7,
+      "newest_s": 3.7,
+      "ttl_s": 86400
+     },
+     "matchups": {
+      "entries": 1,
+      "fresh": 1,
+      "oldest_s": 3.3,
+      "newest_s": 3.3,
+      "ttl_s": 300
+     },
+     "rosters": {
+      "entries": 1,
+      "fresh": 1,
+      "oldest_s": 3.3,
+      "newest_s": 3.3,
+      "ttl_s": 600
+     },
+     "users": {
+      "entries": 1,
+      "fresh": 1,
+      "oldest_s": 3.3,
+      "newest_s": 3.3,
+      "ttl_s": 86400
+     },
+     "league": {
+      "entries": 1,
+      "fresh": 1,
+      "oldest_s": 3.0,
+      "newest_s": 3.0,
+      "ttl_s": 86400
+     }
+    },
+    "players_file_age_s": null
+   },
+   "board_source": "auto",
+   "board_source_in_use": "nfl_wide"
+  }
+ }
+}

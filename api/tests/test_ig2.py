@@ -7,7 +7,9 @@ the readers feed My Week's "What changed" and the matchup evidence's missing cor
 
 The database tests apply scripts/hosted_events.sql themselves (twice: it is idempotent) with the pipeline role, write
 with the API's read-only app role exactly as the server does, and remove their own rows afterwards (every row above the
-id the test started from). Fixtures only: the ESPN feeds of ``fixtures/espn`` / ``fixtures/espn_if3`` (IF-3's as-of
+id the test started from). A run killed before its teardown leaves its rows behind, and their fingerprints then refuse
+the next run's inserts: remove them (`delete from events.events where id > <the id the run started from>`) — on a
+clone, `truncate events.events`. Fixtures only: the ESPN feeds of ``fixtures/espn`` / ``fixtures/espn_if3`` (IF-3's as-of
 case: Horn and Jackson on IR), PlayerWire's ``fixtures/playerwire/briefs.json``; nothing calls ESPN, Sleeper or Neon."""
 
 from __future__ import annotations
@@ -324,9 +326,9 @@ def test_a_status_move_writes_one_event_and_the_next_move_supersedes_it(on, over
     assert (a["superseded_by"], b["superseded_by"], c["superseded_by"]) == (b["id"], c["id"], None)
     # the readers: his history newest first (live and superseded), the live one only in `recent`
     db.clear_cache()
-    hist = events.for_player(JEFFERSON)
+    hist = [e for e in events.for_player(JEFFERSON) if e["id"] > on.start]          # this test's rows only
     assert [e["status"] for e in hist] == ["ACTIVE", "QUESTIONABLE", "OUT"] and [e["live"] for e in hist] == [True, False, False]
-    assert [e["status"] for e in events.recent([JEFFERSON], hours=48, kinds=("availability",))] == ["ACTIVE"]
+    assert [e["status"] for e in events.recent([JEFFERSON], hours=48, kinds=("availability",)) if e["id"] > on.start] == ["ACTIVE"]
     # a new process (no memory) diffs against the store: the store says ACTIVE, the copy says Out -> one event
     events.reset()
     AV._snap = None
@@ -482,7 +484,7 @@ def test_status_and_the_qa_route(client, on, overlay):
     assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
     body = r.json()
     assert body["enabled"] is True and body["players"] >= 10 and body["hours"] == 720
-    jj = [e for e in body["events"] if e["gsis_id"] == JEFFERSON]
+    jj = [e for e in body["events"] if e["gsis_id"] == JEFFERSON and e["id"] > on.start and e["kind"] == "availability"]
     assert jj and jj[0]["player_name"] == "Justin Jefferson" and jj[0]["status"] == "OUT" and "fingerprint" not in jj[0]
     assert client.get(f"/api/events?league={SCRUBS}&team=2&hours=99999").json()["hours"] == 720
 
