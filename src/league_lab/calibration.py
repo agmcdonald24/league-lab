@@ -40,6 +40,10 @@ fitted at ``project`` time from ``ops.calibration_oof`` (the seasons before the 
 leagues' rows and their reference scorings' ranges that ``project`` writes; the B5 freeze keeps every kicked-off week's
 stored rows as they were (``frozen_source`` rows are never touched). The stat line is not changed: on-demand leagues,
 priced from the line at request time, do not see it.
+
+v3.2 (M6, Wave I-H): the cold-start prior is the exception -- ``blend_lines`` scales a cold start's STAT LINE before
+anything is priced (``LEAGUE_LAB_COLD_START``, on by default), so the house rows, the NFL-wide line, the ranges and
+every request carry the same number. ``ensure_oof`` keeps ``ops.calibration_oof`` current where the nightly runs.
 """
 
 from __future__ import annotations

@@ -2583,6 +2583,95 @@ read-only, weeks 5–18; weeks 1–4 are frozen): 2,754 of 19,822 QB–TE rows m
 Jordyn Tyson (WR, pick 8, no game yet) 6.08 → 8.42, rookie TEs 3.7–3.8 → 2.7. Turning any switch on is
 a model change (v3.1): the PO's call, with the version bump.
 
+### v3.2: the cold-start prior on the stat line, veterans on a new team (Wave I-H M6, 2026-10-04; `calibration.blend_lines`, `LEAGUE_LAB_COLD_START`, **on**)
+
+**Why the move.** v3.1's cold-start prior (cs1.0, above) moved the house leagues' points and their reference ranges,
+not the stat line. Every request is priced from the line (`ops.projection_lines` → `price_lines`), so the house
+board and an on-demand league would have shown two numbers for the same rookie: IB-0's bug. v3.2 (cs1.1) applies the
+same prior **to the line, before anything is priced from it**.
+
+**How.** In `projections.project`, right after the models predict and before `nfl_lines`, `calibration.blend_lines`:
+
+1. fits M5's prior and weights (`fit_cold_prior`: position × draft slot, w per games-played step) on
+   `ops.calibration_oof` (the 3 seasons before), in **one** scoring, the anchor: the reference league's (the first id
+   of `LEAGUE_LAB_SLEEPER_LEAGUE_ID`; Scrubs, half PPR, no bonus);
+2. for each cold RB / WR / TE player-week (fewer than 3 played regular-season games, M5's rule), prices the model's
+   line in the anchor scoring (`raw`), blends it (`blended`) and sets `k = blended / raw` (1 when nothing moves or
+   the line is under half a point: `LINE_MIN_RAW`);
+3. multiplies **every component** of that line by `k` and prices and ranges the scaled line with the same models,
+   through the path a frozen line already takes (`predict_position(..., lines=)`): the range is the model's range
+   for that line, not a shifted band.
+
+So `ops.projection_lines`, `ops.projections`, `ops.projection_ranges` and every request agree to the cent, in any
+scoring and either pricing mode (the line is the only input). In a linear scoring the points move by exactly `k`; in
+a bonus scoring they move by the price of the scaled line (a 95-yard line × 1.2 crosses the 100-yard bonus band at
+its odds). `signals.scenarios`' base follows the scaled line (`rescale_to_stored`; the larger role moves by the same
+`k`). Frozen weeks (B5) never move. `MODEL_VERSION` stays v3.0 (the blend's version is `LINE_VERSION = "cs1.1"`,
+logged with every run; a bump is the PO's call).
+
+**The harness on the line** (`scratchpad/m6/harness.py`; the walk-forward of 2018–2025 with the stat line kept,
+`oof_rows(..., lines=True)`, RB / WR / TE; applied to S = 2021–2025; both house scorings; the cold rows' MAE, the
+leagues averaged per season; the whole board = every played row). Re-running M5's wiring on the same rows reproduces
+M5's table to the third decimal, so the harness is the same one. One thing M5's harness and M5's production code did
+not share: the harness fitted the prior on every season from 2018 to S−1, production (`v31_outputs`, and now
+`line_scales`) on the 3 seasons before S (`WINDOW`, what `ops.calibration_oof` holds). v3.2 is measured both ways and
+ships the production window (the decision row):
+
+| Variant | Position | cold rows (a league) | cold Δ MAE (seasons lower, of 5) | cold bias: before → after | board Δ MAE | board Δ Spearman | decision |
+|---|---|---|---|---|---|---|---|
+| M5: points per scoring, priors on 2018..S−1 (cs1.0) | RB | 461 | −0.159 (4) | −0.62 → −0.33 | −0.009 | +0.0018 | keep |
+| | WR | 690 | −0.314 (5) | −0.80 → −0.17 | −0.018 | +0.0034 | keep |
+| | TE | 347 | −0.298 (5) | −0.98 → −0.08 | −0.017 | +0.0037 | keep |
+| **v3.2: on the line, anchor = the reference league, priors on the 3 seasons before (cs1.1, shipped)** | RB | 461 | **−0.092 (4)** | −0.62 → −0.33 | −0.006 | +0.0012 | **keep** |
+| | WR | 690 | **−0.314 (5)** | −0.80 → −0.12 | −0.018 | +0.0030 | **keep** |
+| | TE | 347 | **−0.341 (5)** | −0.98 → +0.06 | −0.019 | +0.0028 | **keep** |
+| on the line, the reference league, priors on 2018..S−1 | RB | 461 | −0.159 (4) | −0.62 → −0.32 | −0.009 | +0.0018 | keep |
+| | WR | 690 | −0.320 (5) | −0.80 → −0.15 | −0.018 | +0.0034 | keep |
+| | TE | 347 | −0.291 (5) | −0.98 → −0.05 | −0.016 | +0.0034 | keep |
+| on the line, anchor = the dynasty, priors on 2018..S−1 (sensitivity) | RB | 461 | −0.158 (4) | −0.62 → −0.35 | −0.009 | +0.0018 | keep |
+| | WR | 690 | −0.307 (5) | −0.80 → −0.20 | −0.018 | +0.0035 | keep |
+| | TE | 347 | −0.303 (5) | −0.98 → −0.11 | −0.017 | +0.0038 | keep |
+
+Per season (cold Δ MAE, shipped): RB −0.05 / +0.09 / −0.06 / −0.16 / −0.27; WR −0.56 / −0.22 / −0.12 / −0.37 / −0.29;
+TE −0.31 / −0.41 / −0.24 / −0.38 / −0.37 (2021 → 2025). Per league: the dynasty RB −0.10 / WR −0.34 / TE −0.35,
+Scrubs −0.09 / −0.29 / −0.33 — one scale serves both scorings as well as each scoring's own blend did. Same rule as
+M5 (the cold rows' MAE ≥ 0.05 lower in ceil(2n/3) seasons, `decide` not "hurts" on the board). **Verdict: keep at RB /
+WR / TE; the switch defaults on** (`COLD_DEFAULT = True`: unset or empty = on, `0` / `off` turns it off; read only by
+the nightly writer). The 3-season fit is weaker at RB than the expanding one (−0.09 against −0.16) and better at TE;
+both keep. The fitted weights differ from M5's too: on 2023–2025 (what 2026 uses) the reference league's WR weights
+are 0.0 / 1.0 / 1.0 at career games 0 / 1 / 2 — a debut is the draft slot's, the model is kept from the first game
+on (M5's 2018–2024 fit: 0.0 / 0.5 / 0.6). Ranges: not re-scored here (the harness rows are the component-only
+walk-forward); the scaled line's range is the model's own for that line.
+
+**Veterans on a new team.** M5's lead: a veteran's first games for a new team are over-projected (dynasty bias RB
+−0.52, WR −0.94, TE −0.45 on 542 / 943 / 389 rows a league). "New team": not a cold start, at least 3 career games,
+fewer than 3 with his current team in the current stint (`team_games_before`: the games since his last game for
+another team; a trade or a signing resets it). Three shapes, the same harness, the same rule, the flagged rows' MAE:
+
+| Shape | RB | WR | TE | decision |
+|---|---|---|---|---|
+| the cold-start blend keyed on games with the team (the brief's design; draft-slot prior) | +0.028 (2 of 5) | +0.011 (0) | +0.030 (2) | drop everywhere (the fitted weights stay at the model; bias unchanged) |
+| a scale on the line per games-with-team step, fitted on MAE (0.70–1.10 grid) | −0.283 (4) | −0.438 (5) | −0.242 (5) | **not kept** (see below) |
+| a mean-unbiased scale, Σ actual / Σ projected per step | −0.023 (3) | −0.102 (4) | +0.031 (1) | not kept (WR passes the rule; a lead) |
+
+The MAE-fitted scale passes the rule everywhere, by projecting the median instead of the mean. Its factor sits at
+the grid's floor (0.70) in most fits, and the mean bias flips sign (RB −0.52 → +1.00, WR −0.94 → +0.50, TE −0.45 →
++0.47). Every other number on the board is a mean, and lineups compare means, so this would under-rank every traded
+veteran. It is not kept, on principle. The mean-unbiased scale is the honest version. It keeps at WR only
+(−0.10, 4 of 5; bias −0.94 → −0.65), and it was the third shape tried after the first two were read, so it is a
+v3.3 lead with a rule fixed first, not a keep. The helpers ship and the blend is wired for any kept position
+(`NEW_TEAM_POSITIONS`, empty). Seed rows: `feature_experiments.csv` groups `cold_start_line`, `new_team_blend`,
+`new_team_scale_mae`, `new_team_scale_mean` (30 rows each; whole-board rows, the decision from the flagged rows).
+
+**Where the nightly fits it.** `calibration.ensure_oof` (the nightly's `calibration-oof` step, before `project`;
+soft) rebuilds `ops.calibration_oof` only when it does not already hold the newest 3 completed seasons of this
+`MODEL_VERSION` (a new column, `model_version`): once a season or after a model bump, else it reads two rows and
+writes nothing. A rebuild is 3 seasons × 4 positions of component fits, about 2 CPU-minutes alone and 10 on the
+shared sandbox (34,592 rows). The table is in `STATE_TABLES` (restored from the hosted copy; the sync publishes all of
+`ops`), and `db migrate` creates it. Without rows `project` logs "stat lines unchanged" and publishes v3.0's lines.
+
+<!-- M6: the 2026 board -->
+
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)
 
 **Why.** A projected line is a set of means. A linear rule (points per yard, per catch, per TD) prices a mean
@@ -2932,6 +3021,13 @@ bonus all or nothing. In an EV week ours is priced at the odds and Sleeper's is 
 effect at about ±0.02 on MAE and ±0.002 on Spearman. A few close start/sit calls could flip. The proposal for the PO:
 a Python-priced `ops.market_record`, written by `project` for the league-weeks labelled `ev` (the pre-kickoff
 snapshot already exists by then), coalesced in `sl_priced`. That change needs a `sources.yml` row.
+*Built (M6, Wave I-H):* `projections.market_record` writes `ops.market_record` at the end of every `project`
+(soft): for each house league-week labelled `ev`, Sleeper's last snapshot before the week's first kickoff, its QB–TE
+lines priced with `price_projected(ev=True)` (`price_market`: the call `why.market_points` makes for that week);
+`sl_priced` reads `coalesce(mr.sleeper_points, league_points(…))`, joined on the same snapshot (`fetched_at`) and only
+when the week's label is `ev`. Flat weeks, Scrubs and every K / DEF keep the macro. Rewritten every run (the
+snapshots are replayed from the archive each night); `sources.yml` has the row; `db migrate` and the mart's
+pre-hook create the table.
 `ops.projection_backtest` is rewritten only when the model version changes, so its v3.0 rows stay NULL, which means
 flat, after the flip. Their numbers were priced flat, so the label is true.
 
