@@ -1,7 +1,12 @@
 {{ config(
     materialized='view',
     pre_hook=[
-        "create table if not exists ops.waiver_upside ( run_at timestamptz, as_of timestamptz, league_id text, season integer, week integer, roster_id integer, horizon_last_week integer, list_kind text, upside_rank integer, add_sleeper_id text, add_gsis_id text, add_name text, add_position text, add_team text, base_value double precision, scenario_value double precision, points_gain double precision, with_alert_value double precision, presentation text, alert_week integer, since_week integer, games_held integer, confidence text, kind text, trigger_kind text, trigger_name text, cause_text text, change_text text, expires_after_week integer, expiry_rule text, drop_sleeper_id text, drop_gsis_id text, drop_name text, drop_position text, drop_horizon_loss double precision, base_weekly_gain double precision, base_horizon_gain double precision, holds_weekly_gain double precision, holds_horizon_gain double precision, holds_week_gains double precision[], holds_slot text, open_roster_spots integer, inputs_fingerprint text)"
+        "create table if not exists ops.waiver_upside ( run_at timestamptz, as_of timestamptz, league_id text, season integer, week integer, roster_id integer, horizon_last_week integer, list_kind text, upside_rank integer, add_sleeper_id text, add_gsis_id text, add_name text, add_position text, add_team text, base_value double precision, scenario_value double precision, points_gain double precision, with_alert_value double precision, presentation text, alert_week integer, since_week integer, games_held integer, confidence text, kind text, trigger_kind text, trigger_name text, cause_text text, change_text text, expires_after_week integer, expiry_rule text, drop_sleeper_id text, drop_gsis_id text, drop_name text, drop_position text, drop_horizon_loss double precision, base_weekly_gain double precision, base_horizon_gain double precision, holds_weekly_gain double precision, holds_horizon_gain double precision, holds_week_gains double precision[], holds_slot text, open_roster_spots integer, inputs_fingerprint text)",
+        "alter table ops.waiver_upside add column if not exists stash_action text",
+        "alter table ops.waiver_upside add column if not exists drop_cost double precision",
+        "alter table ops.waiver_upside add column if not exists drop_cost_piece text",
+        "alter table ops.waiver_upside add column if not exists net_weekly_gain double precision",
+        "alter table ops.waiver_upside add column if not exists net_horizon_gain double precision"
     ]
 ) }}
 -- Waiver upside stashes (plan R-12, list_kind = 'upside'; the list B3 left out): per league x season x
@@ -12,6 +17,9 @@
 -- costs the lineup least over the horizon (none on an open spot). Written by the waiver engine right after
 -- ops.waiver_moves (src/league_lab/waivers.py § upside). `inputs_current` = the league's rosters and
 -- statuses are unchanged since (the same fingerprint as mart_waiver_moves).
+-- IG-3 (Wave I-G): the drop is IF-1's choose_drops' cheapest "if it holds"; `stash_action` = 'claim' when that pairing
+-- is worth a roster spot (net >= 1 this week or >= 3 over the horizon), else 'watch' (no claim yet: the screen shows no
+-- drop; the row keeps the drop a claim would take, its cost `drop_cost` and the net gains). NULL before Wave I-G.
 with u as (
     select * from {{ source('ops', 'waiver_upside') }}
 ),
@@ -36,6 +44,7 @@ select
     u.trigger_name, u.cause_text, u.change_text,
     u.expires_after_week, u.expiry_rule, u.drop_sleeper_id, u.drop_gsis_id, u.drop_name, u.drop_position, u.drop_horizon_loss,
     u.base_weekly_gain, u.base_horizon_gain, u.holds_weekly_gain, u.holds_horizon_gain, u.holds_week_gains, u.holds_slot,
-    u.open_roster_spots, coalesce(fp.fp = u.inputs_fingerprint, false) as inputs_current, u.inputs_fingerprint, u.as_of, u.run_at
+    u.open_roster_spots, coalesce(fp.fp = u.inputs_fingerprint, false) as inputs_current, u.inputs_fingerprint, u.as_of, u.run_at,
+    u.stash_action, u.drop_cost, u.drop_cost_piece, u.net_weekly_gain, u.net_horizon_gain
 from u
 left join fp on fp.league_id = u.league_id
