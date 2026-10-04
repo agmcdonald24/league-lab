@@ -710,6 +710,7 @@ def score_v31(rows: pd.DataFrame, value: str = "proj_points", actual: str = "act
             b = {q: g[f"{bands}{q}"].to_numpy(dtype=float) for q in ("p10", "p25", "p50", "p75", "p90")}
             rec |= {"coverage_80": float(((y >= b["p10"]) & (y <= b["p90"])).mean()),
                     "coverage_50": float(((y >= b["p25"]) & (y <= b["p75"])).mean()),
+                    "interval_width": float(np.mean(b["p90"] - b["p10"])),
                     "interval_score": (P._pinball(y, b["p10"], 0.1) + P._pinball(y, b["p90"], 0.9)) / 2,
                     "interval_score_50": (P._pinball(y, b["p25"], 0.25) + P._pinball(y, b["p75"], 0.75)) / 2,
                     "pinball_50": P._pinball(y, b["p50"], 0.5)}
@@ -717,7 +718,7 @@ def score_v31(rows: pd.DataFrame, value: str = "proj_points", actual: str = "act
     return pd.DataFrame(out)
 
 
-V31_METRICS = ["spearman", "hit_rate", "mae", "coverage_80", "coverage_50", "interval_score", "interval_score_50"]
+V31_METRICS = ["spearman", "hit_rate", "mae", "coverage_80", "coverage_50", "interval_width", "interval_score", "interval_score_50"]
 
 
 def paired_v31(base: pd.DataFrame, alt: pd.DataFrame) -> pd.DataFrame:

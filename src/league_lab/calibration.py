@@ -693,7 +693,7 @@ class ColdPrior:
 
     def blend(self, proj: np.ndarray, games: np.ndarray, bucket: np.ndarray, cold: np.ndarray) -> np.ndarray:
         proj = np.asarray(proj, dtype=float)
-        g = np.clip(np.asarray(games, dtype=float), 0, COLD_N).astype(int)
+        g = np.clip(np.nan_to_num(np.asarray(games, dtype=float), nan=0.0), 0, COLD_N).astype(int)   # unknown: ``cold`` decides
         w = np.where(cold & (g < COLD_N), np.asarray([*self.weights, 1.0])[np.minimum(g, COLD_N)], 1.0)
         pr = np.array([self.prior.get(b, self.prior.get("all", np.nan)) for b in bucket], dtype=float)
         return np.where(np.isnan(pr), proj, w * proj + (1.0 - w) * np.nan_to_num(pr))
@@ -720,7 +720,7 @@ def fit_cold_prior(rows: pd.DataFrame, position: str = "", scoring: str = "", ac
         n = len(g)
         prior[str(b)] = (n * float(g[actual].mean()) + COLD_SHRINK * pos_mean) / (n + COLD_SHRINK)
     pr = np.array([prior.get(b, pos_mean) for b in c["bucket"]], dtype=float)
-    games = np.clip(c["career_games_before"].to_numpy(dtype=float), 0, COLD_N).astype(int)
+    games = np.clip(np.nan_to_num(c["career_games_before"].to_numpy(dtype=float), nan=0.0), 0, COLD_N).astype(int)
     weights = []
     for k in range(COLD_N):
         sel = games == k
