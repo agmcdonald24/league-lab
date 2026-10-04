@@ -2611,6 +2611,29 @@ def units_named(out: dict) -> dict:
 # ---- end IC-4
 
 
+# ---- II-0 (Wave I-I): the closest call's replacement when he cannot play the slot himself (a WR named for an RB):
+# the legal chain that makes it true, from the Team rows ("Without him, Bhayshul Tuten (RB) moves from FLEX to RB;
+# Michael Wilson (WR) fills the open FLEX.")
+def _weakest_chain_words(v: dict, rows: pd.DataFrame) -> str:
+    try:
+        if rows is None or rows.empty:
+            return ""
+        f = rows.rename(columns={"player_value": "value", "lineup_margin": "margin"}).copy()
+        f["locked_now"] = f["is_locked"].fillna(False).astype(bool) if "is_locked" in f else False
+        f["is_locked"] = f["locked_now"]
+        f["is_empty_slot"] = f["role"] == "empty"
+        me = f[(f["role"] == "starter") & (f["slot"] == v.get("weakest_slot"))]
+        if me.empty:
+            return ""
+        ch = cards.replacement_chain_rows(me.iloc[0], f)
+        if ch is None or not any(c["kind"] == "slides" for c in ch["chain"]):
+            return ""
+        return f" Without him, {ch['named_words']}."
+    except (KeyError, TypeError, ValueError):
+        return ""
+# ---- end II-0
+
+
 def team_words(out: dict, rows: pd.DataFrame) -> dict:
     """The Team Hub's card sentences (quoted from app/pages/1_Team_Hub.py: top-level page code, not importable)."""
     v = out["value"]
@@ -2627,7 +2650,8 @@ def team_words(out: dict, rows: pd.DataFrame) -> dict:
         who = f"{v['weakest_player_name']} ({v['weakest_position']})" if isinstance(v.get("weakest_position"), str) else str(v["weakest_player_name"])
         if isinstance(v.get("weakest_replacement_name"), str):
             lines.append(f"Your closest call: **{v['weakest_slot']}, {v['weakest_player_name']} over "
-                         f"{v['weakest_replacement_name']} by {v['weakest_margin']:.2f}**.")
+                         f"{v['weakest_replacement_name']} by {v['weakest_margin']:.2f}**."
+                         + _weakest_chain_words(v, rows))                                 # ---- II-0: the legal chain
         else:
             lines.append(f"Your closest call: **{v['weakest_slot']}, {who}** — nobody on the bench can fill in for him "
                          f"(he is worth {v['weakest_margin']:.1f} to the lineup).")

@@ -152,6 +152,10 @@ def test_partner_story_is_the_strips_numbers(client):
     assert e.status_code == 200, e.text[:300]
     e = e.json()
     assert [x["change"] for x in e["story"]["by_week"]] == e["strip"]["mine"]
+    w0 = e["strip"]["mine"][0]                       # the effect sentence's "this week" is the strip's first week
+    if e["story"]["this_week"]["kind"] in ("gain", "loss"):
+        assert f"{abs(w0):.1f} {'more' if w0 > 0 else 'fewer'} points this week" in e["effect_words"]
+        assert e["fit"]["this_week"]["mine"] == pytest.approx(w0, abs=0.006)
 
 
 # ------------------------------------------------------------------ an MFL team QB (dad's league fixtures)
@@ -207,3 +211,23 @@ def test_record_e2e_answers(client):
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(json.dumps(out, indent=1, default=str) + "\n")
     assert all(v["status"] == 200 for v in out.values()), {k: v["status"] for k, v in out.items()}
+
+
+def test_team_closest_call_names_the_legal_chain():
+    """The Team card's closest call: when the replacement cannot play the slot himself, the chain that makes it legal."""
+    import pandas as pd
+
+    def r(role, slot, stype, order, name, pos, value, margin=None, rank=None):
+        return {"role": role, "slot": slot, "slot_type": stype, "slot_order": order, "bench_rank": rank,
+                "sleeper_player_id": name, "gsis_id": name, "player_name": name, "position": pos, "player_value": value,
+                "value_source": "proj_points", "lineup_margin": margin, "is_locked": False}
+    rows = pd.DataFrame([r("starter", "RB", "RB", 1, "Kyren Williams", "RB", 9.0, 0.5),
+                         r("starter", "WR", "WR", 2, "Puka Nacua", "WR", 14.8, 5.0),
+                         r("starter", "FLEX", "FLEX", 3, "Bhayshul Tuten", "RB", 8.6, 0.6),
+                         r("bench", None, None, None, "Malik Washington", "WR", 8.5, rank=1)])
+    v = {"weakest_slot": "RB", "weakest_player_name": "Kyren Williams", "weakest_position": "RB",
+         "weakest_replacement_name": "Malik Washington", "weakest_margin": 0.5}
+    assert decisions._weakest_chain_words(v, rows) == (" Without him, Bhayshul Tuten (RB) moves from FLEX to RB; "
+                                                       "Malik Washington (WR) fills the open FLEX.")
+    v2 = dict(v, weakest_slot="FLEX", weakest_player_name="Bhayshul Tuten")
+    assert decisions._weakest_chain_words(v2, rows) == ""            # a direct swap needs no chain
