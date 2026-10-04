@@ -694,8 +694,18 @@ def margin_comparator(r: pd.Series, rows: pd.DataFrame) -> dict:
     alt = a.get("alt")
     if alt is None:
         return {"margin_vs": None, "margin_words": "no eligible reserve: the slot would be empty"}
-    nm = cards.last_name(_str(alt.get("player_name")) or "", alt.get("position"))
-    return {"margin_vs": nm, "margin_words": f"over {nm}"}          # (a teammate may slide over: the card says how)
+    # ---- II-0: the full name on a surname collision (Parker / Malik Washington); a cascade says who slides where; a
+    # lock since the solve (his game started) moves the margin to the re-solve's
+    nm = cards.display_name(_str(alt.get("player_name")) or "", rows["player_name"], alt.get("position"))
+    mover, ch = a.get("mover"), a.get("chain")
+    fix = ({"margin": round(float(ch["cost"]), 2)} if ch is not None and _num(r.get("margin")) is not None
+           and abs(float(ch["cost"]) - float(r["margin"])) > cards.TOL else {})
+    if mover is not None and ch is not None:
+        mv = cards.display_name(_str(mover.get("player_name")) or "", rows["player_name"], mover.get("position"))
+        return {"margin_vs": nm, "margin_words": f"over {nm} ({alt.get('position')}) after {mv} moves to "
+                                                 f"{cards.slot_label(r.get('slot'))}", "margin_chain": ch["named_words"], **fix}
+    return {"margin_vs": nm, "margin_words": f"over {nm}", **fix}   # (a teammate may slide over: the card says how)
+    # ---- end II-0
 
 
 # What changed: the overlay's changes since the morning build (with the feed and the time it was checked) and the news
