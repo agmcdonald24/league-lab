@@ -184,7 +184,7 @@
            line per game of a double header, nothing when the league has no ranges yet -->
       {#each winLines as w (w.key)}
         <p class="text-sm leading-snug text-ink-2" data-testid="win-line" data-side={w.side} title={w.title}>
-          {#if w.team}<span class="font-semibold text-ink">{w.team}: </span>{/if}{w.line}
+          {#if w.team}<span class="font-semibold text-ink">{w.team}:</span>{" "}{/if}{w.line}
         </p>
       {/each}
       <!-- ---- end IH-3 -->
