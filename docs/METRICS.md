@@ -2333,7 +2333,7 @@ week 1, −2.66 week 2; −1.2 a team a week); the best lineups in hindsight bea
 landed 59% for the side we leaned (52% expected, 34 calls); 60 graded calls, Brier 0.235. Forever Unclean Dynasty —
 118.10 fewer (−148.05 week 1, +29.95 week 2); hindsight +677.9; coin flips 49% (52% expected, 42 calls); Brier 0.251.
 
-#### Personal and live (dr1.1, V-2, Wave I-H, 2026-10-04; `league_lab.validation` V-2 block, `ops.decision_market`, `/api/record?team=`)
+#### Personal and live (dr1.1, V-2, Wave I-H, 2026-10-04; `league_lab.validation` V-2 block, `league_lab.record_mfl`, `league_lab.record_run`, `ops.decision_market`, `/api/record?team=`)
 
 Four additions; every dr1.0 number above is unchanged (the clone's Scrubs and dynasty weeks grade to the cent as before).
 
@@ -2373,13 +2373,13 @@ started 265.0; our lineup would have scored 253.9; the best possible was 281.7."
 of 6 (3.3 expected)."
 
 **MyFantasyLeague leagues.** An MFL league has no `ops.lineups` rows, so its record is the **on-demand** lineup
-(`anyleague._solve_roster`, the frame My Week serves) frozen under the same rule (`lineup.mfl_record_rows`): the next
+(`anyleague._solve_roster`, the frame My Week serves) frozen under the same rule (`record_mfl.mfl_record_rows`): the next
 week to kick off is written before its first kickoff from the league's current rosters (`kickoff`); a played week
 with no rows is rebuilt once (`reconstructed`) from the rosters MFL's `weeklyResults` lists for it, priced on that
 week's frozen `ops.projection_lines` in the league's scoring, as of one second before its first kickoff; a week MFL
 has not scored waits. The calls' odds come from the on-demand ranges (the opponent is left out of the pair's
 correlation). Rows: `ops.lineup_record` with `league_id = 'mfl:<id>'`, written by `league-lab validate` for the keys
-in `LEAGUE_LAB_RECORD_MFL` (or `--mfl`). **The grade** reads MFL itself on the request (`validation.mfl_load`):
+in `LEAGUE_LAB_RECORD_MFL` (or `--mfl`). **The grade** reads MFL itself on the request (`record_mfl.mfl_load`):
 submitted = the franchise's starters at MFL's scores (= its score), optimum = MFL's own `opt_pts`, ours = the
 record's starters at MFL's player scores (a listed player with no score = 0, MFL's count; a starter on no franchise
 that week = unknown, never 0); a double-header franchise counted once a week; no final injury report (the news flag
