@@ -197,3 +197,18 @@ def test_both_teams_get_the_same_treatment():
     assert a_mine == b_theirs and a_theirs == b_mine
     # and the free pool covers an empty slot for whichever side has one (here mine, week 2)
     assert a_mine.fills_before[1] == ("fk",)
+
+
+def test_a_one_qb_league_prices_a_lost_qb_against_the_free_pool():
+    """1-QB, shallow: a team that trades its only QB is not left with an empty QB slot at zero - the free pool holds a
+    starting-calibre QB (15.5), so the covered loss is his margin over that QB (raw: the whole QB). The same rule in a
+    Superflex league prices the loss against a free pool with no starter (the test above)."""
+    weeks = (1,)
+    solo = [p for p in B1 if p.id != "bqb2"] + [P("brb4", "RB", 3)]
+    b = board({1: {1: A1}, 2: {1: solo}}, ONE_QB)
+    fr = _free_by_week(free({1: FREE1}), weeks)
+    raw_m, raw_t = package_weeks(b, ["awr3"], ["bqb"], weeks)
+    cov = covered_side(b, 2, ["bqb"], ["awr3"], weeks, fr)
+    assert raw_t[0] <= -14                       # raw: the QB slot empties (−15), the WR adds little
+    assert cov.empty_after == (("QB",),) and cov.fills_after == (("fqb",),)
+    assert cov.by_week[0] > raw_t[0] + 14        # covered: the free QB starts; the loss is not manufactured
