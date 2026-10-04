@@ -2464,7 +2464,7 @@ blended / raw points of a reference scoring before `nfl_lines`, so `ops.projecti
 it), which is a v3.1 change for the PO to schedule. What it would do to the 2026 board as wired (the main database,
 read-only, weeks 5–18; weeks 1–4 are frozen): 2,754 of 19,822 QB–TE rows move, 120 players — mean −1.6 (RB) /
 −0.9 (TE) / −1.8 (WR) a week in the dynasty, from −8.6 to +5.5; e.g. Germie Bernard (WR, pick 47, one game) 9.93 → 4.85,
-Jordyn Tyson (WR, pick 8, no game yet) 6.08 → 8.42, the rookie TEs without a game 3.7–3.8 → 2.7. Turning any switch on is
+Jordyn Tyson (WR, pick 8, no game yet) 6.08 → 8.42, rookie TEs 3.7–3.8 → 2.7. Turning any switch on is
 a model change (v3.1): the PO's call, with the version bump.
 
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)

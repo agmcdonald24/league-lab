@@ -78,17 +78,16 @@ TIER_MIN_ROWS = 200
 
 # ---- M5 (Wave I-G): v3.1 -- the ranges' target. The residual (range) models were fitted on the actual priced from
 # the 12 projected components, so the 2-point conversions, the long-TD bonuses (``pass_td_40p`` ...), fumble-recovery
-# and special-teams TDs the record grades on (``fct_player_game_league.points``) were outside every range: 0.01-0.3 a
-# game low in the dynasty's scoring. With LEAGUE_LAB_RANGE_TARGET=graded the residuals are taken against the graded
-# actual: ``compute_points`` over the components plus these outcome columns (``outx_<column>``, from
-# ``analytics.fct_player_game``; the long-TD counts are play-by-play, as dbt's). Off by default: the harness's verdict
-# is docs/METRICS.md § "Calibration of the top" -> "v3.1". The point projection is unchanged either way.
+# and special-teams TDs the record grades on (``fct_player_game_league.points``) were outside every range (2024, a game:
+# QB 0.44, RB 0.07, WR 0.12, TE 0.04 in the dynasty's scoring). With LEAGUE_LAB_RANGE_TARGET=graded the residuals are
+# taken against the graded actual: ``compute_points`` over the components plus these outcome columns (``outx_<column>``,
+# from ``analytics.fct_player_game``; the long-TD counts are play-by-play, as dbt's), at the positions the harness kept.
+# Off by default: the verdicts are docs/METRICS.md § "Calibration of the top" -> "v3.1". The point projection is
+# unchanged either way.
 RANGE_TARGET_FLAG = "LEAGUE_LAB_RANGE_TARGET"
 GRADED_EXTRAS = ("passing_2pt_conversions", "rushing_2pt_conversions", "receiving_2pt_conversions", "fumbles_total",
                  "fumble_recovery_tds", "special_teams_tds", "pass_tds_40p", "pass_tds_50p", "rush_tds_40p",
                  "rush_tds_50p", "rec_tds_40p", "rec_tds_50p")
-
-
 RANGE_TARGET_POSITIONS = ("QB",)   # where the harness kept it (2023-2025: the dynasty's QB interval score -0.0066, 2 of 3)
 
 
