@@ -1,0 +1,119 @@
+# Data inventory (II-3, Wave I-I, 2026-10-04; the fifth review § 10)
+
+Every number the Stats Explorer shows, and the feeds behind the rest of the app, with **where it comes from, how far back
+and how far into 2026 it reaches, how it is refreshed, what is missing, what we may do with it, whether the model uses it
+and where the screen shows it**. Each is marked exactly one of:
+
+* **verified present**: a field a feed supplies and this app stores as delivered (checked on the II-3 clone,
+  `league_lab_m1`, a 2026-09-26 snapshot, and against `mart_player_season` by `api/tests/test_ii3.py`);
+* **derived**: computed here from present fields (the formula is the numerator / denominator column);
+* **planned**: the data is ingested or obtainable, the column is not built yet;
+* **unavailable**: no feed this app has supplies it. A variable a model specification mentions is not evidence a feed
+  supplies it.
+
+**Routes run, route participation and every per-route metric are unavailable in-season.** nflverse publishes
+participation (who was on the field) after the postseason, so `analytics.bridge_play_participation` ends at 2025; the
+app's route numbers are *estimates* (dropbacks on the field) for completed seasons only, and no licensed routes feed
+(`raw.routes_feed`) is connected. In 2026 those cells are `null` (—), with that reason on hover, never 0.
+
+The machine-readable form of this table is the API's column catalogue (`GET /api/players?window=…` → `catalogue`,
+`api/league_lab_api/stats.py`); `api/tests/test_ii3.py` fails when a catalogue column is missing here or its status
+differs.
+
+## Feeds
+
+| Feed | What we take | Stored as | History | 2026 so far | Refresh | Permitted use |
+|---|---|---|---|---|---|---|
+| nflverse weekly player stats | counting stats per player-game (targets, carries, yards, TDs, passing, kicking), nflfastR CPOE per game | `stg_nflverse__player_stats_week` → `fct_player_game` | 2016 → now | weeks 1–3 on the main DB (the clone: 1–2 + week 3's Thursday game) | the nightly (07:37 ET) | open data; attribution per docs/HOSTING.md § "Licences" |
+| nflverse play-by-play | play flags: red zone (≤ 20), inside the 10 / 5, dropbacks, scrambles, kneels | `fct_play` → `int_player_game_pbp` / `int_team_game_pbp` | 2016 → now | weeks 1–3 | nightly | open data |
+| nflverse snap counts | offensive snaps and the per-game snap share (rounded to the percent) | `int_player_game_snaps` | 2016 → now | weeks 1–3 | nightly | open data |
+| FTN charting (via nflverse) | per targeted play: first read thrown, designed, check-down, catchable, contested, drop | `fct_play_charting` | 2022 → now | weeks 1–3 charted | nightly (FTN turns a week around in ~1 day) | CC BY-SA 4.0, attribute FTN Data |
+| nflverse participation | players on the field per play (NGS 2016–22, FTN 2023+) | `bridge_play_participation` | 2016–2025 | **none: published after the postseason** | yearly | open data |
+| NFL Next Gen Stats (via nflverse) | passing (time to throw, CPOE), rushing (yards over expected), receiving (separation, cushion); qualifying player-weeks only | `stg_nflverse__ngs_passing` / `_rushing` / `_receiving` (staging only) | 2016 → now | weeks 1–3 | nightly | open data; NGS's own qualification rules |
+| Licensed routes feed | routes run per player-week | `raw.routes_feed` → `fct_player_game.routes` | none | none | — | not connected (FTN's commercial API ≈ $5,000 a year; PFF's API terms are personal / non-public) |
+| This league's scoring | fantasy points per game row | `fct_player_game_league` (a house league) or priced on request (`scoring.compute_points`) | 2016 → now | weeks 1–3 | nightly / on request | ours |
+| Sleeper / MFL | rosters (ownership), league settings, projections | `mart_player_availability`, `dim_league_season`, on demand | the league's seasons | live | on request | each provider's terms (docs/SLEEPER_TERMS.md, docs/MFL_TERMS.md) |
+
+## The Stats Explorer's columns
+
+Shares and rates over several games are the summed numerator over the summed denominator (never a mean of weekly
+percentages); team denominators are summed over the games the player **played** (a missed game is not counted against
+him). The one exception is snap share (nflverse publishes the per-game share, not the team's snap total). Coverage:
+"history" is the seasons the column exists for; "2026" what this season has so far.
+
+| Column | Label | Status | Numerator / denominator | Aggregation | Source | History | 2026 | Missingness | Model use | UI exposure |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `games` | Games played | **verified present** | games with an appearance / — | count of games played | nflverse weekly player stats + snap counts | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no game in the window | no | Stats default: WR / TE, RB, QB |
+| `points` | Fantasy points | **derived** | points in this league's scoring / — | summed over his game rows in the window | this league's scoring over nflverse weekly player stats | 2016 → now | weeks 1–3 | not null for a player with a game | projection features (as-of, lagged) | Stats default: WR / TE, RB, QB |
+| `expected_points_per_game` | Expected fantasy points per game | **derived** | expected points in the window / games with an expected value | summed numerator / summed denominator over the window | mart_player_expected_points (play-by-play opportunity model) | 2016 → now | weeks 1–3 | null (—): no expected value for his games (a kicker, or games before the opportunity model) | no | Stats column picker |
+| `targets` | Targets | **verified present** | targets / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | projection features (as-of, lagged) | Stats default: WR / TE, RB |
+| `target_share` | Target share | **derived** | targets / team targets in the games he played | summed numerator / summed denominator over the games he played in the window (never a mean of weekly %) | nflverse weekly player stats (team totals: fct_team_game) | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no team targets in his games | projection features (as-of, lagged) | Stats default: WR / TE |
+| `receptions` | Receptions | **verified present** | receptions / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats column picker |
+| `receiving_yards` | Receiving yards | **verified present** | receiving yards / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats default: WR / TE, RB |
+| `receiving_tds` | Receiving touchdowns | **verified present** | receiving TDs / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats column picker |
+| `catch_rate` | Catch rate | **derived** | receptions / targets | summed numerator / summed denominator over the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no targets | no | Stats column picker |
+| `yards_per_target` | Receiving yards per target | **derived** | receiving yards / targets | summed numerator / summed denominator over the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no targets | no | Stats column picker |
+| `air_yards_share` | Air-yard share | **derived** | receiving air yards / team passing air yards in the games he played | summed numerator / summed denominator over the games he played in the window (never a mean of weekly %) | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): his team's air yards in his games are zero | projection features (as-of, lagged) | Stats column picker |
+| `adot` | Average depth of target | **derived** | receiving air yards / targets | summed numerator / summed denominator over the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no targets | no | Stats column picker |
+| `yac_per_reception` | Yards after the catch per reception | **derived** | yards after the catch / receptions | summed numerator / summed denominator over the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no receptions | no | Stats column picker |
+| `red_zone_targets` | Red-zone targets | **derived** | red-zone targets / — | summed over his game rows in the window | nflverse play-by-play (fct_play) | 2016 → now | weeks 1–3 | not null for a player with a game | no | Stats column picker |
+| `red_zone_target_share` | Red-zone target share | **derived** | red-zone targets / team red-zone targets in the games he played | summed numerator / summed denominator over the games he played in the window (never a mean of weekly %) | nflverse play-by-play (fct_play) | 2016 → now | weeks 1–3 | null (—): no team red-zone targets in his games | projection features (as-of, lagged) | Stats column picker |
+| `first_read_target_share` | First-read target share | **derived** | his charted targets marked first read / team charted first-read targets in the charted games he played | summed numerator / summed denominator over the games he played in the window (never a mean of weekly %) | FTN charting via nflverse (CC BY-SA 4.0) | 2022 → now | weeks 1–3 charted | null (—): FTN charting starts in 2022 and covers only the games charted so far this season. | projection features (as-of, lagged) | Stats column picker |
+| `catchable_rate` | Catchable-target rate | **derived** | catchable charted targets / charted targets | summed numerator / summed denominator over the window | FTN charting via nflverse (CC BY-SA 4.0) | 2022 → now | weeks 1–3 charted | null (—): FTN charting starts in 2022 and covers only the games charted so far this season. | no | Stats column picker |
+| `charted_targets` | Charted targets | **derived** | charted targets / — | summed over his game rows in the window | FTN charting via nflverse (CC BY-SA 4.0) | 2022 → now | weeks 1–3 charted | null (—): FTN charting starts in 2022 and covers only the games charted so far this season. | no | Stats column picker |
+| `route_participation` | Route participation (estimate) | **derived** | dropbacks on the field / team dropbacks with participation in his games | summed numerator / summed denominator over the games he played in the window (never a mean of weekly %) | nflverse participation (bridge_play_participation) | 2016–2025 (NGS 2016–22, FTN 2023+) | none: published after the postseason | null (—): Routes: nflverse publishes participation after the season (2025 is the last season with it), so this season is blank until then; no licensed routes feed is connected. | projection features (as-of, lagged) | Stats column picker |
+| `tprr_proxy` | Targets per route run (estimate) | **derived** | targets in games with participation / dropbacks on the field | summed numerator / summed denominator over the window | nflverse participation (bridge_play_participation) | 2016–2025 (NGS 2016–22, FTN 2023+) | none: published after the postseason | null (—): Routes: nflverse publishes participation after the season (2025 is the last season with it), so this season is blank until then; no licensed routes feed is connected. | no | Stats column picker |
+| `yprr_proxy` | Yards per route run (estimate) | **derived** | receiving yards in games with participation / dropbacks on the field | summed numerator / summed denominator over the window | nflverse participation (bridge_play_participation) | 2016–2025 (NGS 2016–22, FTN 2023+) | none: published after the postseason | null (—): Routes: nflverse publishes participation after the season (2025 is the last season with it), so this season is blank until then; no licensed routes feed is connected. | no | Stats column picker |
+| `routes` | Routes run | **unavailable** | routes run / — | summed over his game rows in the window | licensed routes feed (raw.routes_feed): not connected | none | none | null (—): No licensed routes feed is connected; nflverse participation is published after the season. | no | picker, disabled with the reason |
+| `carries` | Carries | **verified present** | carries / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | projection features (as-of, lagged) | Stats default: RB, QB |
+| `carry_share` | Carry share | **derived** | carries / team carries in the games he played | summed numerator / summed denominator over the games he played in the window (never a mean of weekly %) | nflverse weekly player stats (team totals: fct_team_game) | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no team carries in his games | projection features (as-of, lagged) | Stats default: RB |
+| `rb_carry_share` | Backfield carry share (RBs only) | **derived** | carries / team RB + FB carries in the games he played | summed numerator / summed denominator over the games he played in the window (never a mean of weekly %) | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no running-back carries for his team in his games | no | Stats column picker |
+| `rushing_yards` | Rushing yards | **verified present** | rushing yards / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats default: RB, QB |
+| `rushing_tds` | Rushing touchdowns | **verified present** | rushing TDs / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats column picker |
+| `yards_per_carry` | Rushing yards per carry | **derived** | rushing yards / carries | summed numerator / summed denominator over the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no carries | no | Stats column picker |
+| `red_zone_carries` | Red-zone carries | **derived** | red-zone carries / — | summed over his game rows in the window | nflverse play-by-play (fct_play) | 2016 → now | weeks 1–3 | not null for a player with a game | no | Stats column picker |
+| `red_zone_carry_share` | Red-zone carry share | **derived** | red-zone carries / team red-zone carries in the games he played | summed numerator / summed denominator over the games he played in the window (never a mean of weekly %) | nflverse play-by-play (fct_play) | 2016 → now | weeks 1–3 | null (—): no team red-zone carries in his games | projection features (as-of, lagged) | Stats column picker |
+| `inside_5_carries` | Carries inside the 5 | **derived** | carries inside the 5 / — | summed over his game rows in the window | nflverse play-by-play (fct_play) | 2016 → now | weeks 1–3 | not null for a player with a game | no | Stats column picker |
+| `inside_5_carry_share` | Inside-the-5 carry share | **derived** | carries inside the 5 / team carries inside the 5 in the games he played | summed numerator / summed denominator over the games he played in the window (never a mean of weekly %) | nflverse play-by-play (fct_play) | 2016 → now | weeks 1–3 | null (—): his team had no carries inside the 5 in his games | no | Stats column picker |
+| `red_zone_opportunities` | Red-zone opportunities | **derived** | red-zone carries + red-zone targets / — | summed over his game rows in the window | nflverse play-by-play (fct_play) | 2016 → now | weeks 1–3 | not null for a player with a game | no | Stats column picker |
+| `ryoe_per_attempt` | Rushing yards over expected per attempt | **planned** | rushing yards over expected / carries (NGS-qualified) | NGS's own season aggregate | NFL Next Gen Stats via nflverse (staging only) | 2016 → now (staging only) | weeks 1–3 (staging only) | null (—): Next Gen Stats are ingested but not in this table yet (planned). | no | picker, disabled with the reason |
+| `attempts` | Pass attempts | **verified present** | pass attempts / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats default: QB |
+| `completions` | Completions | **verified present** | completions / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats column picker |
+| `completion_rate` | Completion percentage | **derived** | completions / pass attempts | summed numerator / summed denominator over the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no pass attempts | no | Stats column picker |
+| `passing_yards` | Passing yards | **verified present** | passing yards / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats default: QB |
+| `yards_per_attempt` | Passing yards per attempt | **derived** | passing yards / pass attempts | summed numerator / summed denominator over the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no pass attempts | no | Stats column picker |
+| `passing_tds` | Passing touchdowns | **verified present** | passing TDs / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats column picker |
+| `passing_interceptions` | Interceptions | **verified present** | interceptions / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats column picker |
+| `sacks_suffered` | Sacks taken | **verified present** | sacks / — | summed over his game rows in the window | nflverse weekly player stats | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | not null for a player with a game | no | Stats column picker |
+| `dropbacks` | Dropbacks | **derived** | dropbacks / — | summed over his game rows in the window | nflverse play-by-play (fct_play) | 2016 → now | weeks 1–3 | not null for a player with a game | no | Stats column picker |
+| `scrambles` | Scrambles | **derived** | scrambles / — | summed over his game rows in the window | nflverse play-by-play (fct_play) | 2016 → now | weeks 1–3 | not null for a player with a game | no | Stats column picker |
+| `cpoe` | Completion % over expected (play-by-play) | **derived** | per-game CPOE x pass attempts / pass attempts | attempt-weighted mean of per-game CPOE | nflverse weekly player stats (nflfastR CPOE) | 2016 → now | weeks 1–3 (main DB; the clone: 1–2 + week 3's Thursday) | null (—): no pass attempts with a CPOE | no | Stats column picker |
+| `time_to_throw` | Time to throw | **planned** | — / — | NGS's own season aggregate | NFL Next Gen Stats via nflverse (staging only) | 2016 → now (staging only) | weeks 1–3 (staging only) | null (—): Next Gen Stats are ingested but not in this table yet (planned). | no | picker, disabled with the reason |
+| `pressure_splits` | Pressure splits | **unavailable** | — / — | — | licensed charting: not connected | none | none | null (—): Pressure charting is licensed data; none is connected. | no | picker, disabled with the reason |
+| `snap_share` | Snap share | **verified present** | per-game offensive snap % / games with snap counts | mean of per-game snap share over games with snap counts | nflverse snap counts | 2016 → now | weeks 1–3 | null (—): no snap counts recorded for his games | projection features (as-of, lagged) | Stats default: WR / TE, RB |
+
+## Other metrics the app shows or the model uses
+
+These are defined in `docs/METRICS.md` and versioned in `dbt/seeds/metric_registry.csv` (its `status` column); the
+table says where each stands against this inventory's four words.
+
+| Metric (registry name) | Status | Source | Where it shows |
+|---|---|---|---|
+| `proj_points`, `projection_v2_line`, `projection_v2_interval` (this week's projection and range) | derived | our model over the as-of features (`mart_player_week_features`) | My Week, the card, Waivers, Season |
+| `expected_points` (opportunity-based, past games) | derived | play-by-play opportunity model (`mart_player_expected_points`) | Trends, the card; Stats `expected_points_per_game` |
+| `recent_form_l3_l5`, `recent_share_trend`, `trend_*`, `momentum` | derived | `mart_player_recent_form`, `mart_player_trends` | Trends, role alerts |
+| `defense_vs_position`, `defense_trend`, `cb_coverage_context`, `matchup_personnel` | derived | play-by-play, participation (completed seasons), depth charts | Matchups, the card |
+| `context_split` (half / score / down / field zone / QB) | derived | play-by-play (+ charting for first reads) | Receivers' role cards (`/receivers?view=cards`) |
+| `routes_proxy`, `route_participation`, `tprr_proxy`, `yprr_proxy` | derived, **completed seasons only** | participation | Stats (2025 and before), role cards |
+| `routes` (licensed), TPRR / YPRR without the estimate label | **unavailable** | no licensed feed | — |
+| NGS time to throw, RYOE, separation | **planned** (ingested to staging, no mart) | NFL Next Gen Stats via nflverse | — |
+| Pressure splits, alignment / coverage splits | **unavailable** | licensed charting only | — |
+| `market_line`, `trade_beyond_alternative`, `drop_cost`, `decision_*`, `week_win_probability` | derived | our decision layer (METRICS.md sections of the same names) | Trades, Waivers, My Week, League |
+
+## How to add a column
+
+1. Find the field in a feed above (a staging or mart column you can query), with its history and 2026 coverage.
+2. Add its catalogue entry in `api/league_lab_api/stats.py` (definition, numerator, denominator, aggregation, source,
+   status) and its row here; the test keeps the two together.
+3. Only **verified present** or **derived** columns go into a preset; **planned** / **unavailable** ones are offered
+   disabled in the column picker with the reason.

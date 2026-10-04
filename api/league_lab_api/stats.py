@@ -191,10 +191,11 @@ CATALOGUE: list[dict] = [
        "Red-zone carries + red-zone targets (a count; no combined percentage).", "red-zone carries + red-zone targets",
        None, GAMES_AGG, source=PBP, status="derived", per_game=True),
     _c("ryoe_per_attempt", "Rushing yards over expected per attempt", "RYOE/Att", "rate", "dec2",
-       "NFL Next Gen Stats' rushing yards over expected per attempt. Not ingested: nflverse publishes it (planned).",
+       "NFL Next Gen Stats' rushing yards over expected per attempt. Ingested (staging.stg_nflverse__ngs_rushing; NGS "
+       "publishes rows only for qualifying player-weeks) but not in a mart or this table yet (planned).",
        "rushing yards over expected", "carries (NGS-qualified)", "NGS's own season aggregate", source="NFL Next Gen "
-       "Stats via nflverse: not ingested", status="planned", positions=("RB",),
-       reason="Next Gen Stats are not ingested yet (planned)."),
+       "Stats via nflverse (staging only)", status="planned", positions=("RB",),
+       reason="Next Gen Stats are ingested but not in this table yet (planned)."),
     # passing
     _c("attempts", "Pass attempts", "Att", "count", "int", "Pass attempts (spikes included, sacks excluded).",
        "pass attempts", None, GAMES_AGG, source=NFLV, status="present", positions=("QB",), per_game=True),
@@ -226,9 +227,10 @@ CATALOGUE: list[dict] = [
        "attempt-weighted mean of per-game CPOE", source=NFLV + " (nflfastR CPOE)", status="derived", positions=("QB",),
        reason="no pass attempts with a CPOE"),
     _c("time_to_throw", "Time to throw", "TTT", "rate", "dec2",
-       "NFL Next Gen Stats' average time to throw. Not ingested: nflverse publishes it (planned).", None, None,
-       "NGS's own season aggregate", source="NFL Next Gen Stats via nflverse: not ingested", status="planned",
-       positions=("QB",), reason="Next Gen Stats are not ingested yet (planned)."),
+       "NFL Next Gen Stats' average time to throw. Ingested (staging.stg_nflverse__ngs_passing; qualifying player-weeks "
+       "only) but not in a mart or this table yet (planned).", None, None,
+       "NGS's own season aggregate", source="NFL Next Gen Stats via nflverse (staging only)", status="planned",
+       positions=("QB",), reason="Next Gen Stats are ingested but not in this table yet (planned)."),
     _c("pressure_splits", "Pressure splits", "Press.", "rate", "pct",
        "Results under pressure. Needs a licensed charting feed (PFF / FTN pressure); not available.", None, None, None,
        source="licensed charting: not connected", status="unavailable", positions=("QB",),
@@ -476,6 +478,37 @@ def parse_weeks(weeks: str | None) -> tuple[int, int] | None:
         return None
     lo, hi = int(m.group(1)), int(m.group(2))
     return (lo, hi) if 1 <= lo <= hi <= 22 else None
+
+
+IDENTITY = ["gsis_id", "player_name", "position", "team", "headshot_url", "rostered_by_roster_id", "rostered_by_team", "games",
+            "first_week", "last_week", "points", "points_per_game"]
+# the sample behind a column (shown on hover: "12 of 57 team carries")
+SAMPLE = {"target_share": ["team_targets"], "carry_share": ["team_carries"], "rb_carry_share": ["team_rb_carries"],
+          "air_yards_share": ["receiving_air_yards", "team_air_yards"], "adot": ["receiving_air_yards"],
+          "red_zone_target_share": ["team_red_zone_targets"], "red_zone_carry_share": ["team_red_zone_carries"],
+          "inside_5_carry_share": ["team_inside_5_carries"],
+          "first_read_target_share": ["first_read_targets", "team_first_read_targets", "charted_games"],
+          "catchable_rate": ["catchable_targets", "charted_targets", "charted_games"],
+          "route_participation": ["routes_proxy", "team_dropbacks_with_participation", "games_with_participation"],
+          "tprr_proxy": ["routes_proxy", "games_with_participation"], "yprr_proxy": ["routes_proxy", "games_with_participation"],
+          "snap_share": ["snap_games"], "expected_points_per_game": ["games_with_expected"],
+          "yac_per_reception": ["receiving_yards_after_catch"]}
+
+
+def fields(positions: list[str]) -> list[str]:
+    """The row's fields for these positions: identity, the catalogue's columns that apply, their per-game twins and
+    the samples behind them (a WR row carries no passing columns)."""
+    out = list(IDENTITY)
+    for c in CATALOGUE:
+        if c["id"] in ("games", "points") or not set(c["positions"]) & set(positions):
+            continue
+        if c["status"] in ("planned",) or c["id"] == "pressure_splits":
+            continue
+        out.append(c["id"])
+        if c["per_game"]:
+            out.append(f"{c['id']}_per_game")
+        out += SAMPLE.get(c["id"], [])
+    return list(dict.fromkeys(out))
 
 
 def owner_filter(df: pd.DataFrame, who: str, team: int | None) -> pd.DataFrame:

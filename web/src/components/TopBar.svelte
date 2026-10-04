@@ -29,16 +29,18 @@
     {
       key: "players",
       label: "Players",
+      // ---- II-3 (the fifth review § 4): the research tabs are Stats · Trends · Matchups · Compare; Receivers is the
+      // Stats WR / TE preset (/receivers redirects there; its role cards stay at /receivers?view=cards, lit as Stats)
       screens: [
+        { name: "players", label: "Stats", path: "/players" },
         { name: "trends", label: "Trends", path: "/trends" },
         { name: "matchups", label: "Matchups", path: "/matchups" },
-        { name: "receivers", label: "Receivers", path: "/receivers" },
         { name: "compare", label: "Compare", path: "/compare" },
-        { name: "players", label: "Players", path: "/players" },
       ],
     },
   ];
   export function sectionOf(name: RouteName): Section | null {
+    if (name === "receivers") return "players"; // ---- II-3: the role cards sit under Players
     return SECTIONS.find((s) => s.screens.some((x) => x.name === name))?.key ?? null;
   }
   // the player's page and About keep the tab you came from lit (Back goes there)
@@ -311,10 +313,10 @@
         {#each sub as s (s.name)}
           <a
             href={href(s.path)}
-            class="inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-sm font-semibold {here === s.name
+            class="inline-flex min-h-9 shrink-0 items-center rounded-full border px-3 text-sm font-semibold {here === s.name || (here === 'receivers' && s.name === 'players')
               ? 'border-accent bg-accent-soft text-ink'
               : 'border-line text-ink-2 hover:text-ink'}"
-            aria-current={here === s.name ? "page" : undefined}
+            aria-current={here === s.name || (here === "receivers" && s.name === "players") ? "page" : undefined}
             data-testid={`sub-${s.name}`}>{s.label}</a
           >
         {/each}

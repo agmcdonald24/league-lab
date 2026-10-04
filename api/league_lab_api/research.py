@@ -1134,6 +1134,7 @@ def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None
     n = max(1, min(int(limit if limit is not None else ST.STATS_LIMIT), ST.STATS_LIMIT))
     default = next((p["sort"] for p in ST.PRESETS if p["positions"] == pos), "points")
     page = _sort(df, sort, dir, default).iloc[off: off + n]
+    page = page[[c for c in ST.fields(pos) if c in page.columns]]
     return {**ctx.meta(), "season": season, "season_type": season_type, "positions": pos, "window": desc,
             "who": wh, "team": team, "nfl": nfl, "min_games": min_games, "total": total, "offset": off,
             "players": _records(page), "catalogue": cat, "presets": ST.PRESETS, "howto": STATS_HOWTO}

@@ -3180,6 +3180,59 @@ yesterday's flat rows. The projection-marts step's test `scenario_base_is_the_pr
 first nightly after the flip. The position now rides along, as it does in `predict_position`. In flat mode nothing
 moves, because the house leagues have no position premium.
 
+## The Stats Explorer (sx1.0, II-3, Wave I-I, 2026-10-04; `api/league_lab_api/stats.py`, `GET /api/players?window=…`, Players · Stats)
+
+The fifth review § 4: Players and Receivers become one research table, **Players · Stats**, with position presets
+(WR / TE, RB, QB), whose players, NFL team, search, a window, totals or per game, minimum games, a column picker and 2–4
+players side by side. The inventory of every column (status, source, coverage, permitted use) is
+`docs/DATA_INVENTORY.md`; the definitions travel with the data as the API's `catalogue`.
+
+**One source, one arithmetic.** Rows are `analytics.fct_player_game` (player × game, already on the hosted copy)
+aggregated on request exactly as `mart_player_season` aggregates a season: counts summed over his game rows in the
+window; the team's denominators (team targets, carries, air yards, red-zone targets / carries, charted first-read
+targets, RB carries, inside-5 carries) summed over the games he **played**; then divided and rounded like Postgres
+`numeric` (half away from zero, 4 places for shares). `api/tests/test_ii3.py` asserts the season window equals
+`mart_player_season` for every QB / RB / WR / TE on the clone (2025 and 2026), column by column, so the table, the card
+and the season table cannot drift.
+
+**Multi-game shares** are the summed numerator over the summed denominator — never an unweighted mean of weekly
+percentages (a test: 10 of 20 then 2 of 40 carries is 12 / 60 = 20%, not 27.5%). **Snap share is the one exception**:
+nflverse publishes each game's snap share rounded to the percent, not the team's snap total, so a window's snap share
+is the mean of his per-game shares over games with snap counts (each game weighted equally) — the card's Snap share.
+
+**Windows.** *Season*: every regular-season week so far. *Last 3 / 5 games played*: his own last N appearances (a
+player with fewer shows fewer). *Last 3 / 5 calendar weeks*: the last N weeks of the season with games, whatever he did
+in them (a bye or a missed game leaves fewer games). *Week range*: calendar weeks lo–hi. The **G** column is always the
+games he played in the window, and the screen states the window ("Last 3 calendar weeks (weeks 1–3)"), so "last 5"
+never reads as five observed games. An appearance is an offensive snap or a pass, carry, target or kick
+(`fct_player_game.played`).
+
+**Per game** divides the window's total by the games he played in it; shares and rates keep their own denominators
+(target share = targets / team targets in his games; yards per target = yards / targets). Points are this league's
+scoring (the league mart for a house league, priced on request otherwise); points per game divides by the games with a
+points row, as `mart_league_player_season` does.
+
+**Carry share** includes quarterback scrambles and kneel-downs in the team's carries (nflverse `carries`; two-point
+tries excluded) — the card's number. **Backfield carry share** (`rb_carry_share`) divides by the carries of his team's
+RBs and FBs only. **Red-zone share** says which: targets (`red_zone_target_share`) or carries (`red_zone_carry_share`);
+**red-zone opportunities** is a count, never a combined percentage. **First-read target share** is built from FTN's
+charted targeted plays: of his team's charted targets thrown to the first read, the share thrown to him — it does not
+know every play's first-read assignment. **Catchable-target rate** = catchable charted targets / his charted targets.
+**Routes**: the estimates (`route_participation`, `tprr_proxy`, `yprr_proxy`) exist for completed seasons only
+(participation is published after the postseason); in 2026 they are null with that reason, and the licensed `routes`
+column is unavailable. **CPOE** is nflfastR's, attempt-weighted across games (close to, not equal to, the per-throw mean;
+not Next Gen Stats'). NGS time to throw and rushing yards over expected are ingested to staging only: planned.
+
+**Kyren Williams's carry share, reconciled.** The card's "Carry share" is `mart_player_availability.carry_share` =
+`mart_player_recent_form.carry_share_std` = summed carries / summed team carries in his games this season; the Stats
+table's season window is the same arithmetic from `fct_player_game`. On the clone (weeks 1–2): 23 of 57 = **40.4%** on
+both (the weekly mean would be 40.4% too by coincidence: 37.9% and 42.9%); on the main database with week 3 in, the
+card's **47.5%** is the table's number (the test `test_kyren_carry_share_card_and_table_agree` holds on any database).
+
+**Unknown is null.** A zero denominator, a season before FTN charting (2022), a season without participation, a column
+no feed supplies: `null`, shown as — with the catalogue's reason on hover; never 0. Sorting runs over the full filtered
+set (nulls last) before the page is cut.
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |
