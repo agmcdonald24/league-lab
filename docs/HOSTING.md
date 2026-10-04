@@ -617,9 +617,11 @@ Without it the local API counts nothing (each insert fails quietly) and the Usag
 ### Google Analytics
 
 *(Wave I-I, INF-1; Andrew: "I logged into my google analytics for you to create tracking on this".)* Beside the
-first-party count, the web app sends the same screen views and a few taps to Google Analytics 4 — property stream
-**isuckatfantasy web** (`https://isuckatfantasy.io`), measurement id **`G-HJWGHZ79BG`** (`web/src/lib/brand.ts`
-`GA_MEASUREMENT_ID`). Code: `web/src/lib/analytics.ts`; App.svelte calls it beside `countView`.
+first-party count, the web app sends the same screen views and a few taps to Google Analytics 4 — property
+**557285408** (Andrew's Google account), web stream **isuckatfantasy web** (`https://isuckatfantasy.io`), measurement
+id **`G-HJWGHZ79BG`** (`web/src/lib/brand.ts` `GA_MEASUREMENT_ID`; public by design — it is in every page GA runs on,
+not a secret). Code: `web/src/lib/analytics.ts`; App.svelte calls it beside `countView`. **No PII**: ids only (league
+keys and team numbers); never a username, a team or manager name, a manager's player names, a password or free text.
 
 **What is sent** (every event carries `league_key`, `roster_id`, `platform` (`sleeper` / `mfl`) and `release` —
 `/api/health`'s `version`, so a release boundary shows in GA; ids only):
@@ -629,7 +631,7 @@ first-party count, the web app sends the same screen views and a few taps to Goo
 | `page_view` | every route change (a new path, league or team; not a filter, a sort or the drawer) | `page_location` (the address with only `league` and `team` kept), `page_path`, `page_title` (the route's name: `week`, `waivers`, …) |
 | `screen_view` | beside the first-party count (the same rule: once per screen, league and team) | `screen_name` (the route's name) |
 | `login` | the beta password was accepted | `method: "password"` |
-| `select_content` | a player's drawer opened (the URL's `pane=`; IB-1's pane and II-2's drawer share it) | `content_type: "player"`, `item_id` (the NFL player id, `00-0036322`), `origin` (the route), `from` (`lineup` / `waiver` / `trade` / `search` / `list`) |
+| `select_content` | a player's drawer opened (the URL's `pane=`, IB-1's pane and II-2's drawer share it; II-2's `openPlayer` may also call `track` — one open counts once) | `content_type: "player"`, `item_id` (the NFL player id, `00-0036322`), `origin` (the route), `from` (`lineup` / `waiver` / `trade` / `search` / `list`) |
 | `edit_link_click` | "Open Sleeper / MFL to edit your lineup" tapped (My Week) | `link_platform` |
 | `compare_open` | the Compare screen opened | `has_pair` (1 when two players are set) |
 | `trade_evaluate` | a trade evaluated (the calculator; `POST /api/trades/evaluate`) | `partner_roster_id`, `give_count`, `get_count` |

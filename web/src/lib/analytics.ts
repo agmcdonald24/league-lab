@@ -105,9 +105,14 @@ function clean(p: Params): Record<string, string | number | boolean> {
   return out;
 }
 
-/** One event, with the screen's context and the release. Never throws, never waits the page. */
+let lastPlayer = ""; // the last select_content's item_id, whichever path sent it (the drawer's hook or the URL's pane)
+
+/** One event, with the screen's context and the release. Never throws, never waits the page. Any caller may use it
+ *  (II-2's drawer: `track("select_content", { content_type: "player", item_id: key, origin })` — the URL's `pane`
+ *  then does not count the same open twice). */
 export function track(name: string, params: Params = {}): void {
   if (!gaEnabled()) return;
+  if (name === "select_content" && params.item_id) lastPlayer = String(params.item_id);
   const snapshot = { ...ctx };
   load()
     .then((g) => g?.("event", name, clean({ ...snapshot, release, ...params })))
@@ -147,7 +152,10 @@ export function screenView(screen: string, league: string | null, team: number |
     if (screen === "compare") track("compare_open", { has_pair: q.get("a") && q.get("b") ? 1 : 0 });
   }
   const pane = screen === "player" ? "" : (q.get("pane") ?? "");
-  if (pane && pane !== lastPane) trackPlayerOpen({ item_id: pane, origin: screen, from: q.get("from") });
+  // the URL's pane is the fallback: when the drawer's own hook already sent this player (II-2's openPlayer → track),
+  // the URL catching up is not a second open
+  if (pane && pane !== lastPane && pane !== lastPlayer) trackPlayerOpen({ item_id: pane, origin: screen, from: q.get("from") });
+  if (!pane) lastPlayer = ""; // closed: the next open of the same player counts again
   lastPane = pane;
 }
 
@@ -171,8 +179,9 @@ export function trackLogin(): void {
   track("login", { method: "password" });
 }
 
-/** A player's drawer opened (`select_content`). II-2's `onPlayerOpen(e)` hands the same shape; screenView sends it
- *  from the URL's `pane` today — wire one of the two, never both. */
+/** A player's drawer opened (`select_content`). screenView sends it from the URL's `pane`; II-2's drawer may also call
+ *  `track("select_content", …)` inside `openPlayer` (or `onPlayerOpen((e) => track("select_content", e))`) — the same
+ *  open is counted once either way (`lastPlayer`). */
 export function trackPlayerOpen(e: { item_id: string; origin?: string | null; from?: string | null }): void {
   track("select_content", { content_type: "player", item_id: e.item_id, origin: e.origin ?? null, from: e.from ?? null });
 }
