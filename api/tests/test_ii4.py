@@ -44,6 +44,15 @@ def test_the_three_views_state_their_counterfactuals():
     assert ondemand.COSTS_INCLUDED["upgrades"] == [] and "the players a trade sends" in ondemand.COSTS_NOT_INCLUDED["upgrades"]
 
 
+def test_the_web_says_the_projections_counterfactual_in_the_same_words():
+    """The web's projections view asks the plain path (its cache and saved answers keep working) and says the API's
+    words from lib/ros.ts PROJECTIONS_VIEW: the two stay one sentence."""
+    from pathlib import Path
+    ts = (Path(__file__).resolve().parents[2] / "web" / "src" / "lib" / "ros.ts").read_text()
+    assert f'counterfactual: "{ondemand.COUNTERFACTUAL["projections"]}"' in ts
+    assert f'label: "{ondemand.SEASON_LABELS["projections"]}"' in ts
+
+
 def test_cover_is_apart_and_unknown_is_not_zero():
     assert ondemand.cover_of("RB", []) is None
     assert ondemand.cover_of("RB", [None, None]) is None

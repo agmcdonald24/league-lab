@@ -1467,6 +1467,32 @@ availability overlay through the board), each week solved with the waiver engine
   starters the total counts at 0) and `unvalued_words`; the web shows a dash titled "no projection", the console a
   blank with the flag "no projection".
 
+### The three views (II-4, Wave I-I, 2026-10-04; `ondemand.season_view`, `/api/ros?view=outlook|upgrades|projections`)
+
+The fifth review (§ 6): one label over two counterfactuals made an owned player's loss and another team's player's
+hypothetical gain read as one number (Bijan, on another roster, led "Everyone" at about +124). Season is now **three
+named views; the arithmetic above is unchanged** — the same rows, the same values (`api/tests/test_ii4.py` checks
+every outlook / upgrades row's `lineup_points` against `view=lineup`'s, and projections' `ros_points` against
+`view=points`'). `view=lineup` / `view=points` answer as before (old links, pinned tests).
+
+| View | Rows | The number | The counterfactual said on the page |
+|---|---|---|---|
+| **My roster outlook** (`outlook`, the default with a team) | your players only (`lineup_kind = mine`) | `lineup_points`: what your best lineup loses over the weeks left without him | "Your players only. Each number is what your best lineup loses over the weeks left without him: his edge over whoever would start instead (your next-best player, or the best free agent at his position). A reserve who never starts adds nothing here; his injury cover is shown apart and is not added in." |
+| **Potential upgrades** (`upgrades`; `who` = all / fa / others) | everyone else | `lineup_points`: what he would add if he were on your roster, nobody dropped, nothing sent — **before acquisition cost** | "Before acquisition cost: what each player would add to your best lineup over the weeks left if he were on your roster, with nobody dropped and nothing sent. A free agent costs a roster spot (the add / drop on Waivers prices it); a player on another team costs what you send (the trade calculator subtracts it). This is not his trade value." + "Not included: the drop a free agent needs, the players a trade sends, a waiver claim that might be lost." |
+| **Rest-of-season projections** (`projections`; the web asks the plain `/api/ros` path and says the API's words from `lib/ros.ts` `PROJECTIONS_VIEW`, pinned equal) | everyone at the position | `ros_points` (total), `ros_per_game` (= ros_points ÷ ros_games, one decimal), `ros_games` (expected games: byes out), the 80% range (p10–p90), `playoff_points` (the league's playoff weeks) | "Projected points in this league's scoring over the weeks left, whoever rosters him: no roster, no lineup and no cost considered." |
+
+* `season_view = {key, label, counterfactual, costs_included, costs_not_included}` on each of the three answers.
+* **Contingent injury cover** (outlook rows, `cover = {points, weeks, words}`): over his **bench weeks** (the weeks he
+  is in the pool but not a starter), max(0, his week value − the best free agent at his position that week), averaged
+  per week — what he is worth if a starter there misses a week. **Never added to `lineup_points`.** `null` when he
+  starts every week or no free-agent bar is known for any bench week (unknown is not zero); "none over the waiver wire"
+  when the average is under 0.05.
+* **The next step** (upgrades rows, `acquire`): a free agent → `/waivers?add=<sleeper id>` (the add / drop comparison:
+  the drop is the cost); a rostered player → `/trade-calc?partner=<roster>&get=<sleeper id>` (what you send and any
+  drop subtracted there). A hypothetical starter-point gain is never labelled trade or market value.
+* `lineup_start_weeks` (the weeks he starts, or would) rides on every lineup row; `lineup_sid` / `lineup_owner` say who
+  he is to the next step. No number moved.
+
 ## Role alerts (ra1.1 rule, version ra1.2 since 2026-10-01; plan R-10, 2026-09-30; `league_lab.signals`, `ops.player_role_alerts`, `mart_player_role_alerts`)
 
 **Question.** Has a player's *role* changed in his last one to three games, and why — before his points show it?
