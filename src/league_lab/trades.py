@@ -77,7 +77,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import combinations
 
-from .lineup import UNVALUED, Lineup, Player, Start, solve
+from .lineup import SKILL, UNVALUED, Lineup, Player, Start, solve
 from .roster_value import RosterBoard, _get, _r2, incoming_player
 from .waivers import entry_bar, prepare
 
@@ -932,12 +932,265 @@ def value_gap(give: Sequence[str], get: Sequence[str], values: Mapping[str, floa
 # ---- end IG-1
 
 
+# ---- II-1 (Wave I-I, the product and analytics handoff § 2 "Make trade recommendations credible"): a suggestion is
+# promoted only when it is legal, beats BOTH teams' realistic alternatives by a margin, and is a plausible offer.
+# The review's case: "Folk -> Run Bijan Run for Stafford + Reichard", +19.4 for MacZaddy in one week because the engine
+# priced a week with an empty kicker / QB slot at zero. Here a roster-week's lineup is valued with every EMPTY starting
+# slot filled from that week's free pool (a one-week pickup — bye coverage is priced against the best free fill, never
+# against zero), for both sides alike (`covered_side`); each side's gain is then compared with its OWN best alternative
+# (the same function for both teams: `decisions.ii1_alternative`); the K / DEF guardrail is a rule from the league's
+# slots and the free pool (`guard_positions`, `streamable_for_starter`), never a name; the value rule (a) is applied both
+# ways. Words come from these numbers only; there is no acceptance probability anywhere (docs/METRICS.md § "Credible
+# trades"). Numbers of `evaluate` / `partners` are unchanged: these are new fields beside them.
+CREDIBLE_MARGIN = 1.0      # starter points over the window each side must gain beyond its own best alternative
+CREDIBLE_MAX = 3           # the Finder promotes at most this many; the rest go behind "Explore alternatives"
+NO_COMPELLING = "No compelling trade found"
+PLAUSIBILITY = {"plausible": "Plausible offer", "roster_fit": "A roster-fit idea", "implausible": "Implausible"}
+
+
+def _free_by_week(free_agents: Mapping[str, Mapping[int, Player | None]] | None,
+                  weeks: Sequence[int]) -> dict[int, list[Player]]:
+    """week -> the free agents who can play that week, best first (``best_fill``'s pool shape)."""
+    out: dict[int, list[Player]] = {int(w): [] for w in weeks}
+    for fid in sorted(free_agents or {}):
+        for w, p in (free_agents[fid] or {}).items():
+            if int(w) in out and _valued(p):
+                out[int(w)].append(p)
+    for w in out:
+        out[w].sort(key=lambda p: (-float(p.value), p.id))
+    return out
+
+
+def fill_empty(pool: Sequence[Player], slots: Sequence[str], free: Sequence[Player],
+               exclude: Iterable[str] = ()) -> tuple[float, tuple[str, ...]]:
+    """(the best lineup's total with each EMPTY starting slot filled from ``free`` — one week's free agents, best first —,
+    the ids of the free agents used). Only empty slots are filled: a free agent better than a rostered starter is a
+    waiver move (the alternatives), not coverage. An empty slot no free agent can fill stays empty (0)."""
+    lu = solve(list(pool), slots, margins=False)
+    gone = {str(x) for x in exclude} | {p.id for p in pool}
+    used: list[str] = []
+    cur = list(pool)
+    for _ in range(len(lu.starts)):
+        empties = [s for s in lu.starts if s.player is None]
+        if not empties:
+            break
+        elig = frozenset().union(*(s.slot.elig for s in empties))
+        pick = next((p for p in free if p.id not in gone and p.id not in used and p.positions & elig), None)
+        if pick is None:
+            break
+        used.append(pick.id)
+        cur.append(pick)
+        nxt = solve(cur, slots, margins=False)
+        if nxt.total <= lu.total + TOL:
+            cur.pop()
+            used.pop()
+            break
+        lu = nxt
+    return lu.total, tuple(used)
+
+
+@dataclass(frozen=True)
+class Covered:
+    """One side of a package, every roster-week valued with its empty starting slots filled from the free pool."""
+    roster_id: int
+    weeks: tuple[int, ...]
+    before: tuple[float, ...]
+    after: tuple[float, ...]
+    fills_before: tuple[tuple[str, ...], ...]     # per week: the free agents that cover an empty slot
+    fills_after: tuple[tuple[str, ...], ...]
+    cuts: tuple[Cut, ...]
+    starting: tuple[tuple[str, ...], ...] = ()    # per week: the incoming players who start after the trade
+    empty_after: tuple[tuple[str, ...], ...] = ()  # per week: starting slots no rostered player fills after (uncovered)
+    empty_before: tuple[tuple[str, ...], ...] = ()
+
+    @property
+    def by_week(self) -> tuple[float, ...]:
+        return tuple(_r2(a - b) for a, b in zip(self.after, self.before, strict=True))
+
+    @property
+    def gain_week(self) -> float:
+        return self.by_week[0] if self.weeks else 0.0
+
+    @property
+    def gain_window(self) -> float:
+        return _r2(sum(self.after) - sum(self.before))
+
+
+def covered_side(board: RosterBoard, roster: int, out: Sequence[str], inc: Sequence[str], weeks: Sequence[int],
+                 free: Mapping[int, Sequence[Player]], market: Mapping[str, float] | None = None) -> Covered:
+    """Before / after per week for one roster (``evaluate``'s pools and cuts) with the empty slots covered."""
+    pools, lineups, cuts, _ = _after(board, roster, out, inc, weeks, market)
+    before, after, fb, fa, st, em, eb = [], [], [], [], [], [], []
+    incs = set(inc)
+    for h, w in enumerate(weeks):
+        fw = free.get(int(w), ())
+        b, ub = fill_empty(board.pool(roster, w), board.slots, fw)
+        a, ua = fill_empty(pools[h], board.slots, fw)
+        before.append(b)
+        after.append(a)
+        fb.append(ub)
+        fa.append(ua)
+        st.append(tuple(p for p in lineups[h].starter_ids if p in incs))
+        em.append(tuple(lineups[h].empty_slots))
+        eb.append(tuple(solve(board.pool(roster, w), board.slots, margins=False).empty_slots))
+    return Covered(int(roster), tuple(int(w) for w in weeks), tuple(before), tuple(after), tuple(fb), tuple(fa), tuple(cuts),
+                   tuple(st), tuple(em), tuple(eb))
+
+
+def covered_move(board: RosterBoard, roster: int, add: Mapping[int, Player | None] | None, drop: str | None,
+                 weeks: Sequence[int], free: Mapping[int, Sequence[Player]], add_id: str | None = None) -> tuple[float, ...]:
+    """Per week: what a waiver move (add, maybe a drop) adds to the covered lineup — the alternative on the same frame
+    as the trade (a claim that only covers a bye is worth what it adds over the free fill)."""
+    out = []
+    for w in weeks:
+        fw = free.get(int(w), ())
+        b, _ = fill_empty(board.pool(roster, w), board.slots, fw)
+        remove = [drop] if drop and not board.is_locked(drop, w) else []
+        pool = board.pool_with(roster, w, remove)
+        p = (add or {}).get(int(w))
+        if _valued(p):
+            pool = [*pool, p]
+        a, _ = fill_empty(pool, board.slots, fw, exclude=[add_id] if add_id else ())
+        out.append(_r2(a - b))
+    return tuple(out)
+
+
+def flex_positions(slots: Sequence[str]) -> frozenset[str]:
+    """The positions some multi-position starting slot of the league admits (FLEX, SUPER_FLEX, WR+TE ...)."""
+    from .lineup import parse_slots
+    out: set[str] = set()
+    for s in parse_slots(slots)[0]:
+        if len(s.elig) > 1:
+            out |= set(s.elig)
+    return frozenset(out)
+
+
+def guard_positions(board: RosterBoard, weeks: Sequence[int], free: Mapping[int, Sequence[Player]]) -> dict[str, dict]:
+    """The positions the free pool covers in THIS league (the K / DEF guardrail's, derived — never a name): a position
+    that is not a skill position (QB / RB / WR / TE), fills only its own slot (no FLEX / SUPER_FLEX / IDP flex of the
+    league admits it) and whose best free agent projects at least as much as the league's weakest starter at that slot,
+    on average over the weeks: K and DEF (MFL's TMPK / TMDEF) in most leagues; a deep league whose free pool holds no
+    starting-calibre kicker has none. {position: {free_best, weakest_starter, streamable}}."""
+    from .lineup import parse_slots
+    flex = flex_positions(board.slots)
+    single = {next(iter(s.elig)) for s in parse_slots(board.slots)[0] if len(s.elig) == 1}
+    out: dict[str, dict] = {}
+    # the skill positions (and a team QB unit) are never guard positions: a RB for a WR is an ordinary trade even in a
+    # league with no FLEX; their scarcity is in the replacement levels (prices) and the covered frame
+    for pos in sorted(single - flex - SKILL - {"TMQB"}):
+        fb, ws = [], []
+        for w in weeks:
+            best = next((float(p.value) for p in free.get(int(w), ()) if pos in p.positions), None)
+            starters = []
+            for r in board.rosters:
+                lu = solve(board.pool(r, w), board.slots, margins=False)
+                starters += [float(s.value) for s in lu.starts if s.player is not None and pos in s.slot.elig
+                             and s.value is not None and s.player.value_source != UNVALUED]
+            if best is not None:
+                fb.append(best)
+            if starters:
+                ws.append(min(starters))
+        f = sum(fb) / len(fb) if fb else None
+        k = sum(ws) / len(ws) if ws else None
+        out[pos] = {"free_best": None if f is None else _r2(f), "weakest_starter": None if k is None else _r2(k),
+                    "streamable": f is not None and (k is None or f + TOL >= k)}
+    return out
+
+
+def _starts_for(board: RosterBoard, roster: int, pid: str, weeks: Sequence[int]) -> int:
+    """In how many of the weeks he starts in his roster's best lineup."""
+    n = 0
+    for w in weeks:
+        if pid in solve(board.pool(roster, w), board.slots, margins=False).starter_ids:
+            n += 1
+    return n
+
+
+def streamable_for_starter(board: RosterBoard, give: Sequence[str], get: Sequence[str], weeks: Sequence[int],
+                           guard: Mapping[str, Mapping], free: Mapping[int, Sequence[Player]],
+                           name: Callable[[str], str] = str) -> dict | None:
+    """The K / DEF guardrail: one side sends only players at positions the free pool covers (``guard_positions``) and
+    the other sends a starter at another position (one who starts for them in at least half the weeks). Implausible
+    unless the side receiving the kicker (defense …) has that slot EMPTY — nobody at the position in any week of the
+    window (see the comment below for why "worse than the free pool" is not an exception). None when the rule does not
+    apply or passes."""
+    streamable = {p for p, g in guard.items() if g.get("streamable")}
+    for xs, ys in ((tuple(give), tuple(get)), (tuple(get), tuple(give))):
+        pos_x = {position_of(board, p) for p in xs}
+        if not xs or not ys or None in pos_x or not pos_x <= streamable:
+            continue
+        y = board.owner(ys[0])
+        starter = next((p for p in ys if position_of(board, p) not in pos_x
+                        and 2 * _starts_for(board, y, p, weeks) >= len(weeks)), None)
+        if starter is None:
+            continue
+        # their need at the position: nobody at it in any week of the window (a structural hole). II-1's decision: the
+        # brief's second exception ("worse than the free pool") is not applied - the free pool's best kicker beats nearly
+        # every rostered kicker by about a point (the best of ~20 near-equal projections), so it would let every kicker-
+        # for-starter package through; a team whose kicker is worse than the free pool claims the free one, it does not
+        # give a starter for one. A bye is not a need either: the free pool covers it and the covered frame prices it.
+        need = False
+        for pos in sorted(pos_x):
+            has = False
+            for w in weeks:
+                lu = solve(board.pool(y, w), board.slots, margins=False)
+                if any(s.player is not None and s.slot.elig == frozenset({pos}) for s in lu.starts):
+                    has = True
+                    break
+            if not has:
+                need = True
+        if need:
+            continue
+        what = "/".join(sorted(pos_x))
+        return {"rule": "streamable_for_starter", "positions": sorted(pos_x), "receiver": y, "starter": starter,
+                "words": (f"a {what} for a starter ({name(starter)}): they have a {what} and the free pool holds one "
+                          f"about as good, so a {what} is not worth a starter to them")}
+    return None
+
+
+def _one(x: float) -> str:
+    return f"{x:+.1f}" if abs(x) >= 0.05 else "+0.0"
+
+
+def plausibility(*, guard_hit: dict | None, their_value_gap: str | None, unpriced: Sequence[str],
+                 no_market_line: Sequence[str]) -> dict:
+    """{key, label, reasons}: implausible (a guardrail, or they give away much more season value than they get — rule (a)
+    from their side), a roster-fit idea (a market input is missing: a player with no season value, or no market line),
+    else a plausible offer. Never a probability."""
+    if guard_hit is not None:
+        return {"key": "implausible", "label": PLAUSIBILITY["implausible"], "reasons": [guard_hit["words"]]}
+    if their_value_gap:
+        return {"key": "implausible", "label": PLAUSIBILITY["implausible"], "reasons": [their_value_gap]}
+    missing = [*unpriced, *[x for x in no_market_line if x not in unpriced]]
+    if missing:
+        return {"key": "roster_fit", "label": PLAUSIBILITY["roster_fit"],
+                "reasons": [f"no market price for {', '.join(missing)}: this is how the rosters fit, not what the players "
+                            f"would fetch"]}
+    return {"key": "plausible", "label": PLAUSIBILITY["plausible"], "reasons": []}
+
+
+def their_value_gap(give: Sequence[str], get: Sequence[str], values: Mapping[str, float]) -> str | None:
+    """Rule (a) from the other side (the same rule, both teams): they give much more season value than they get."""
+    why = value_gap(get, give, values)
+    return None if why is None else why.replace("you give", "they give", 1)
+
+
+def credible(beyond_mine: float | None, beyond_theirs: float | None, plaus: Mapping, legal: bool = True) -> bool:
+    """The threshold: legal, both sides beyond their own best alternative by ``CREDIBLE_MARGIN``, and not implausible."""
+    return (legal and beyond_mine is not None and beyond_theirs is not None and beyond_mine >= CREDIBLE_MARGIN
+            and beyond_theirs >= CREDIBLE_MARGIN and plaus.get("key") != "implausible")
+# ---- end II-1
+
+
 __all__ = ["MARKET_SQL", "REPLACEMENT_SQL", "Cut", "Fill", "Package", "Partner", "Side", "Trade", "about_even", "best_fill",
            "clean_package", "evaluate", "fairness_line", "fit_line", "market_by_player", "package_gains", "parse_ids",
            "partners", "partners_exhaustive", "position_of", "price_by_player", "rank_change", "ranks", "roster_limit",
            "sanity", "season_value", "tradeable", "two_for_one_counts", "verdict", "whole",
            "VALUE_CONCEPTS", "package_weeks", "season_value_line",          # ---- IF-2
-           "value_gap"]                                                       # ---- IG-1
+           "value_gap",                                                       # ---- IG-1
+           "CREDIBLE_MARGIN", "CREDIBLE_MAX", "NO_COMPELLING", "PLAUSIBILITY", "Covered", "covered_move",  # ---- II-1
+           "covered_side", "credible", "fill_empty", "flex_positions", "guard_positions", "plausibility",
+           "streamable_for_starter", "their_value_gap"]
 
 
 # ---- II-0 (Wave I-I, the fifth review § 1.6): one frame, one story. The partner card said "Nothing changes this week"

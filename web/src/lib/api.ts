@@ -1971,3 +1971,52 @@ export interface PartnerRow {
   story?: WeekStory | null;
 }
 // ---- end II-0
+
+// ---- II-1 (Wave I-I, the product and analytics handoff § 2): the trade card and the Finder's threshold (INTERFACES.md
+// § II-1). Every Finder row and the calculator's answer carry `card`; the Finder carries `verdict` ("No compelling trade
+// found" with the reason when no trade passes) and each row's `tier` (credible / explore). No probability anywhere.
+export interface CardAlternative extends TradeAlternative {
+  covered_window: number | null; // the claim's gain once empty slots are filled from the free pool (the card's frame)
+  covered_week: number | null;
+  covered_by_week: number[] | null;
+  availability: "guaranteed" | "claim";
+  availability_words: string;
+}
+export interface CardEffect {
+  this_week: number;
+  window: number;
+  by_week: number[];
+  raw_window: number | null; // the same gain with an empty slot left empty (the old number)
+  words: string;
+}
+export interface TradeCard {
+  give: TradePlayer[];
+  get: TradePlayer[];
+  partner: number;
+  drops: { mine: { player: TradePlayer; words: string }[]; theirs: { player: TradePlayer; words: string }[] };
+  your_effect: CardEffect;
+  their_effect: CardEffect;
+  depth_cost: { mine: string | null; theirs: string | null; roster_spots: number; season_value: { give: number | null; get: number | null }; horizon: string | null };
+  waiver_alternative: { mine: CardAlternative; theirs: CardAlternative; words: string };
+  beyond: { mine: number; theirs: number; margin: number };
+  why_consider: string[];
+  why_refuse: string[];
+  plausibility: { key: "plausible" | "roster_fit" | "implausible"; label: string; reasons: string[] };
+  guardrails: { rule: string; words: string }[];
+  legal: { ok: boolean; notes: string[]; checks: string[] };
+  credible: boolean;
+}
+export interface PartnerRow {
+  card?: TradeCard;
+  tier?: "credible" | "explore";
+}
+export interface Partners {
+  verdict?: { kind: "compelling" | "none"; headline: string | null; reason: string | null };
+  credible_count?: number;
+  explore_count?: number;
+  margin?: number;
+}
+export interface TradeEval {
+  card?: TradeCard;
+}
+// ---- end II-1

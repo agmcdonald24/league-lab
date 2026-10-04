@@ -250,7 +250,8 @@ def test_partners_are_the_pages_sweep(client, sql, league):
                  tuple(sorted(x["sleeper_id"] for x in r["get"])), r["you_gain_horizon"], r["they_gain_horizon"]) for r in rows]
     assert key(d["partners"]) == key(od["partners"])
     assert all(r["you_gain_horizon"] >= 0.01 and r["they_gain_horizon"] >= 0.01 for r in d["partners"])
-    assert d["words"]["headline"].startswith(("**Best partner:", "**No trade raises both lineups.**"))
+    assert d["words"]["headline"].startswith(("**Best partner:", "**No trade raises both lineups.**",
+                                              "**No compelling trade found.**"))           # ---- II-1: the honest answer
     w = client.get(f"/api/trades/partners?league={league}&team={team}&want=WR").json()
     assert all(x["position"] == "WR" for r in w["partners"] for x in r["get"])
 

@@ -100,7 +100,13 @@ def test_finder_ranks_trades_against_the_best_waiver_move(client):
     key = [(not r["beats_alternative"], -r["beyond_alternative"]) for r in rows]
     assert key == sorted(key)
     head = p["words"]["headline"]
-    first = rows[0]
+    # ---- II-1 (Wave I-I): the headline is the first CREDIBLE row (beats both teams' own alternatives, plausible), or
+    # "No compelling trade found" with the reason; the order and the ranks above are IF-2's, unchanged
+    if p["verdict"]["kind"] == "none":
+        assert head.startswith("**No compelling trade found.**") and p["verdict"]["reason"] in head
+        return
+    first = next(r for r in rows if r["tier"] == "credible")
+    # ---- end II-1
     assert all(n in head for n in _names(first["give"]) + [re.sub(r"\[|\]\(.*?\)", "", x) for x in _names(first["get"])])
     assert f"**{first['you_gain_horizon']:+.1f}** over weeks 4–7" in head
     assert p["ordering"]["words"].startswith("Ranked by gain beyond your best waiver move over weeks 4–7 (Atlanta Falcons defense, +12.8)")

@@ -2573,6 +2573,72 @@ rebuilt): started 4197, ours 4059, best 4880 — our lineups 138 fewer (−3.8 a
   above replacement (given − received > 25% of given, every player priced); the Finder's sanity bound on suggestions
   (rule (a), the raw rest-of-season totals) is unchanged.
 
+### Credible trades (ct1.0, II-1, Wave I-I, 2026-10-04; `league_lab.trades` § II-1, `decisions.ii1_*`)
+
+The fifth review (§ 2) reproduced "Nick Folk → Run Bijan Run for Matthew Stafford + Will Reichard": +19.4 for MacZaddy in
+week 5 because Mahomes's bye left the QB slot empty and the engine priced it at **zero**, −8.4 in week 6 for Reichard's
+bye, "Improves it a lot" for the other side, and a headline (Mahomes for Maye) that lost to its own waiver comparison. The
+lineup gains (`evaluate`, `partners`, the IF-2 ladder) are unchanged; every Finder row and the calculator now carry a
+**trade card** (`card`, INTERFACES.md § II-1) and the Finder a **threshold**.
+
+**The covered frame** (`trades.fill_empty`, `covered_side`). Each roster-week is valued with every **empty** starting
+slot filled from that week's free pool: the best free agent eligible for it (playable, valued), one at a time until no
+slot is empty or nobody fits. Only empty slots — a free agent better than a rostered starter is a waiver move (the
+alternatives), not coverage. Both teams, before and after, the same pool (two teams may want the same free kicker: not
+modelled). The cover is a one-week pickup and needs a roster spot; the bench player it costs is not charged (said).
+`your_effect` / `their_effect` = after − before on this frame, per week and over the window; `raw_window` keeps the old
+number (an empty slot at zero); when they differ the card says the difference is bye cover the free pool gives anyway.
+
+**Both teams' alternatives** (`decisions.ii1_alternative`). One function for both rosters: IF-2's `best_alternative`
+(IF-1's best waiver move over the next four weeks, else the open-spot fill / best add-for-drop on today's free agents),
+re-priced on the covered frame (`covered_move`: a claim that only covers a bye adds nothing the free fill did not), and
+never below standing pat (0). `availability`: **guaranteed** (standing pat; an MFL first-come-first-served league) or
+**claim** (the league runs waivers: it can be lost to a team ahead in the order or a bigger bid — per-player waiver state
+is not read). `beyond.mine` / `beyond.theirs` = each side's covered gain − its own alternative's.
+
+**Legality** (`card.legal`): ownership (`trades.clean_package` / `_owner`), roster limits and the required cuts (B3's rule,
+`trades._after`; `drops`), locked players (`RosterBoard.is_locked`: he changes teams after this week), position
+requirements (the solver's eligibility: a slot the trade leaves nobody for is named and covered from the free pool), the
+trade deadline (Sleeper `settings.trade_deadline` / `dim_league_season.trade_deadline_week`; not read on MFL — said).
+
+**The K / DEF guardrail** (`trades.guard_positions`, `streamable_for_starter`). Guard positions are derived per league:
+not a skill position (QB / RB / WR / TE; a team QB unit), admitted by no multi-position slot of the league, and the free
+pool's best projects at least as much as the league's weakest starter at that slot (average over the window) — K and DEF
+in most leagues; none in a deep league whose free pool holds no starting kicker. A package where one side sends only
+guard-position players and the other sends a **starter** at another position (starts in at least half the weeks) is
+**implausible** unless the receiving side has that slot **empty** (nobody at the position in any week of the window; a
+bye is not a need — the free pool covers it and the covered frame prices it). II-1's decision: the brief's second
+exception, "or worse than the free pool", is **not** applied — on the clone the free pool's best kicker beats nearly
+every rostered kicker by about a point (the best of ~20 near-equal projections), so it let every kicker-for-starter
+package through (McLaughlin for Dak Prescott, against Brandon Aubrey); a team whose kicker is worse than the free pool
+claims the free one, it does not give a starter for one. No player name is in the rule. Format: QB scarcity is not a guardrail; it lives in the replacement
+levels (`price_by_player`: in a 1-QB league the free pool holds starting QBs, in a Superflex league it does not) and in the
+covered frame (losing a QB in Superflex is priced against a poor free QB).
+
+**Plausibility** (`trades.plausibility`): **Implausible** — the guardrail, or rule (a) from **their** side (they give
+much more season value above replacement than they get: `their_value_gap`, the same rule as the Finder's for you);
+**A roster-fit idea** — a market input is missing (a player with no season value, or no market line: Sleeper's projection
+in `mart_market_line`; the clones have no such mart, so every card there is a roster-fit idea); else **Plausible offer**.
+"Starter-point gain is not exchange value": the label never comes from the lineup gain.
+
+**The threshold** (`trades.credible`): legal, `beyond.mine ≥ 1.0` and `beyond.theirs ≥ 1.0` (starter points over the
+window; `CREDIBLE_MARGIN`), and not implausible. At most three (`CREDIBLE_MAX`) are promoted (`tier: "credible"`, first, in
+IF-2's order); the rest are `tier: "explore"` behind **Explore alternatives**. None → `verdict.kind = "none"`, headline
+**No compelling trade found** and the reason (how many fail each test; your best move).
+
+**Words** (`why_consider`, `why_refuse`): from the numbers only — their gain and what it beats, who starts for them in
+which weeks, season value in their favour, roster spots freed; their this-week loss, a gain under their own claim, the
+guardrail's words, the cuts, the backups they lose, "our numbers only" without market inputs. **No acceptance
+probability, anywhere.** Keeper / dynasty leagues: the card says the numbers cover this season's weeks only (next season,
+ages and draft picks are not valued).
+
+The Folk package on the fixture (`api/tests/test_ii1.py`, Scrubs clone with Folk on roster 2 and Reichard on Run Bijan
+Run, MacZaddy without a backup QB as when the review ran): raw +0.5 / +17.7 / −8.4 / +0.5 for MacZaddy (their raw −17.5 /
+−17.7 / −8.3 / −17.0: Run Bijan Run left with no QB at zero); covered +0.5 / −0.5 / +0.8 / +0.5 (+1.2) for MacZaddy and
+−2.8 / +0.5 / +0.9 / +0.2 (−1.2) for them (this week's number moves with the kickoffs: −2.0 before the 1 PM games);
+**Implausible** ("a K for a starter (Matthew Stafford): they have a K and the free pool holds one about as good, so a K is
+not worth a starter to them"); beyond their own alternative −1.7; not promoted.
+
 ## Calibration of the top (cal1.0, Wave I-A M1, 2026-10-03; `league_lab.calibration`, flag `LEAGUE_LAB_PROJECTION_CALIBRATION`, off)
 
 The question (Andrew, Iteration 17 B): does the model pull the best players toward the middle? If it did, the

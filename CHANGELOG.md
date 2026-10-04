@@ -15,6 +15,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   card says a losing week ("loses 0.5 this week but gains 7.2 over weeks 4–7"), never "Nothing changes this week"
   beside its own −0.5 (`trades.week_story`).
 
+- **II-1 — credible trades.** The Finder promotes a trade only when it is legal, beats **both** teams' own best
+  alternative by a starter point (every empty slot — a bye — filled from the free pool for both sides, never priced at
+  zero) and is a plausible offer (a kicker or defense for a starter is not, derived from the league's slots and free
+  pool; nor a trade that takes much more season value than it gives); otherwise "**No compelling trade found**" with the
+  reason, the rest under "Explore alternatives". Each card: the label (plausible offer / a roster-fit idea /
+  implausible), both lineup effects, required drops, depth, both waiver alternatives (guaranteed or a claim), why they
+  might consider it, reasons they might refuse — no probability. The review's Folk package is a regression fixture:
+  Implausible, not promoted.
+
 ## 2026-10-04 — Wave I-H
 
 - **PO (integration).** Five packages merged (M6, V-2, IH-1, IH-2, IH-3 below). On Andrew's word the stale banner
