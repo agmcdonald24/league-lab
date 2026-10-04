@@ -466,8 +466,12 @@ and today's runs; nothing dispatches over HTTP.
 Render that can start a build; it cannot read code or secrets. Rotation: a new token into the same secret. Rollback:
 delete the Worker. Set-up steps: `ops/nightly-trigger/README.md`.
 
-**Status**: the Worker is written and tested offline (hours, DST, the midnight edge, the dispatch and check paths);
-creating it in Cloudflare and the token are Andrew's (2026-10-04, morning).
+**Status (2026-10-04, 10:30 ET)**: the Worker `isuckatfantasy-nightly-trigger` exists in Cloudflare with the cron
+`37 * * * *` and the five variables (set by the PO from the dashboard); the code and the `GITHUB_TOKEN` secret are
+Andrew's two steps (the dashboard's code editor is a cross-origin frame the PO's browser pane cannot type into):
+Edit code → paste `src/index.js` → Deploy; Settings → Variables and Secrets → `GITHUB_TOKEN` (Secret). The
+Worker's URL (`https://isuckatfantasy-nightly-trigger.mcdonald-g-andrew.workers.dev/`) prints what it does and
+today's runs once the code is in.
 
 ## The domain
 
