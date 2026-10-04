@@ -41,6 +41,7 @@ from .myweek import (  # IE-1 (+ annotate_swaps, PO I-E)
     annotate_swaps,
     build_actions,
     cards_from_rows,
+    clocks,  # ---- II-4
     current_starters,
     edit_link,
     howto,
@@ -142,6 +143,7 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
     out.update({"edit_link": edit_link(league_id, league), "nothing_submitted": NOTHING_SUBMITTED})
     # ---- end IE-1
     out["changed"] = what_changed(avail, rows, cur)                                  # ---- IF-4: what changed (myweek)
+    out["clocks"] = clocks(avail, out["changed"])                                    # ---- II-4: the home's three stamps
     t2 = time.perf_counter()
     out["lineup"], out["lineup_full"] = lineup(rows)
     annotate_swaps(out["lineup"], out["lineup_full"], out.get("swaps") or [])                              # ---- PO I-E
@@ -301,6 +303,8 @@ def ros(league_id: str, position: str = "ALL", limit: int = 50, *, view: str = "
         who: str = "all") -> dict:
     from .applib import ros as ROS
     from .myweek import known_league
+    if (view or "points").lower() in SEASON_VIEWS:                                              # ---- II-4
+        return season_view(league_id, view.lower(), position, limit, team, who)                  # ---- II-4
     if (view or "points").lower() == "lineup":                                                  # ---- IB-3
         return ros_lineup_view(league_id, team, position, limit, who)                            # ---- IB-3
     if (view or "points").lower() not in VIEWS:                                                 # ---- IB-3
@@ -564,6 +568,7 @@ def lineup_values(league_id: str, team: int, frame: pd.DataFrame, *, house: bool
         pos = r.get("position")
         per: list[float] = []
         starts: list[int] = []
+        cover: list[float | None] = []                                           # ---- II-4: bench weeks' edge
         if owner == me:
             kind = "mine"
             for w, pr in zip(weeks, preps, strict=True):
@@ -574,6 +579,9 @@ def lineup_values(league_id: str, team: int, frame: pd.DataFrame, *, house: bool
                         fill = W._norm(Player(id="__replacement__", position=pos, value=rv, value_source="proj_points"))
                         without = max(without, W._what_if(pr, fill, sid)[0])
                     loss = max(0.0, pr.total - without)
+                    if sid not in pr.starters:                                   # ---- II-4
+                        mv = float(pr.vals[pr.index[sid]])                       # ---- II-4
+                        cover.append(None if rv is None or not np.isfinite(mv) else max(0.0, mv - float(rv)))  # II-4
                 else:
                     loss = 0.0
                 per.append(loss)
@@ -610,6 +618,9 @@ def lineup_values(league_id: str, team: int, frame: pd.DataFrame, *, house: bool
         out[key] = {"lineup_points": pts, "lineup_weeks": len(starts), "lineup_kind": kind,
                     "lineup_why": lineup_why(kind, pos, starts, len(weeks), pts, team_name=team_name, starter=starter,
                                              one_qb=one_qb)}
+        out[key].update({"lineup_start_weeks": [int(w) for w in starts], "lineup_sid": sid,               # ---- II-4
+                         "lineup_owner": None if owner is None else int(owner),                           # ---- II-4
+                         "cover": cover_of(pos, cover) if kind == "mine" else None})                      # ---- II-4
     return out, {"first": weeks[0], "last": weeks[-1], "weeks": len(weeks), "span": span}
 
 
@@ -618,7 +629,8 @@ def incoming(row):
     return incoming_player(row) if row is not None else None
 
 
-def ros_lineup_view(league_id: str, team: int | None, position: str = "ALL", limit: int = 50, who: str = "all") -> dict:
+def ros_lineup_view(league_id: str, team: int | None, position: str = "ALL", limit: int = 50, who: str = "all", *,
+                    kinds: frozenset[str] | None = None) -> dict:                                 # ---- II-4: kinds
     """GET /api/ros?view=lineup&team=: the rest-of-season answer, its rows ranked by `lineup_points` for the team."""
     from .applib import ros as ROS
     from .myweek import known_league
@@ -659,7 +671,9 @@ def ros_lineup_view(league_id: str, team: int | None, position: str = "ALL", lim
     for p in players:
         p.update(vals.get(str(p.get("player_key") or p.get("gsis_id")), {"lineup_points": None, "lineup_weeks": None,
                                                                            "lineup_kind": None, "lineup_why": None}))
-    if who != "all":
+    if kinds is not None:                                                                        # ---- II-4
+        players = [p for p in players if p.get("lineup_kind") in kinds]                          # ---- II-4
+    elif who != "all":
         players = [p for p in players if p.get("lineup_kind") == who]
     # value first; among equals (a starter a free agent could replace is worth 0 too) the one who starts more weeks,
     # then the rest-of-season points
@@ -688,6 +702,106 @@ LINEUP_NOTE = ("Value to your lineup: what each player adds to your best lineup 
                "instead); for anyone else, what he would add if he were on your roster, nobody dropped. A backup "
                "who never starts adds nothing, however many points he scores somewhere else.")
 # ---- end IB-3
+
+
+# ---- II-4 (Wave I-I; the product and analytics review § 6): Season's three named views, each with its counterfactual
+# stated — the arithmetic is IB-3's and F2's, unchanged (no number moves; only the labels and the split):
+#   * `outlook`  — My roster outlook (the default with a team): your players only; what your best lineup loses without
+#     each one (his edge over whoever would start instead: your next-best, or the best free agent at his position).
+#     Contingent injury cover (`cover`) is apart and never added to that number.
+#   * `upgrades` — Potential upgrades, before acquisition cost: everyone else; what he would add to your best lineup if
+#     he were on your roster with nobody dropped and nothing sent. Never trade value: a free agent leads to the add /
+#     drop comparison (Waivers), a rostered player to the trade calculator (what you send is subtracted there).
+#   * `projections` — Rest-of-season projections: the research ranking (points, per game, games, range, playoffs).
+# `lineup` / `points` stay as they were (old links, pinned tests). docs/METRICS.md § "Value to my lineup" → "The three
+# views"; INTERFACES.md § II-4.
+SEASON_VIEWS = ("outlook", "upgrades", "projections")
+SEASON_LABELS = {"outlook": "My roster outlook", "upgrades": "Potential upgrades",
+                 "projections": "Rest-of-season projections"}
+COUNTERFACTUAL = {
+    "outlook": ("Your players only. Each number is what your best lineup loses over the weeks left without him: his "
+                "edge over whoever would start instead (your next-best player, or the best free agent at his "
+                "position). A reserve who never starts adds nothing here; his injury cover is shown apart and is not "
+                "added in."),
+    "upgrades": ("Before acquisition cost: what each player would add to your best lineup over the weeks left if he were "
+                 "on your roster, with nobody dropped and nothing sent. A free agent costs a roster spot (the add / "
+                 "drop on Waivers prices it); a player on another team costs what you send (the trade calculator "
+                 "subtracts it). This is not his trade value."),
+    "projections": ("Projected points in this league's scoring over the weeks left, whoever rosters him: no roster, "
+                    "no lineup and no cost considered."),
+}
+COSTS_INCLUDED = {"outlook": ["the player who would start in his place (your next-best, or the best free agent)"],
+                  "upgrades": [], "projections": []}
+COSTS_NOT_INCLUDED = {"outlook": [],
+                      "upgrades": ["the drop a free agent needs", "the players a trade sends",
+                                   "a waiver claim that might be lost"],
+                      "projections": ["your roster", "your lineup", "any acquisition cost"]}
+UPGRADE_WHO = {"all": frozenset({"fa", "others"}), "fa": frozenset({"fa"}), "others": frozenset({"others"})}
+
+
+def cover_of(pos: str | None, bench_edges: list[float | None]) -> dict | None:
+    """Contingent injury cover for one of yours (his bench weeks: his projection over the best free agent at his
+    position that week, averaged per week) — what he is worth if a starter there misses time. None: he starts every
+    week, or no free-agent bar is known for any of his bench weeks (unknown is not zero)."""
+    known = [e for e in bench_edges if e is not None]
+    if not known:
+        return None
+    pw = round(sum(known) / len(known), 2)
+    pos_w = UNIT_WORDS.get(pos or "", pos or "his position")
+    if pw < 0.05:
+        words = (f"Injury cover: none over the waiver wire — the best free agent at {pos_w} projects as much in his "
+                 f"{len(known)} bench week{'s' if len(known) != 1 else ''}.")
+    else:
+        p = f"{pw:.1f}"
+        words = (f"Injury cover: if a starting {pos_w} misses a week, he projects +{p} per week over the best free agent "
+                 f"({len(known)} bench week{'s' if len(known) != 1 else ''}; not counted in his value above).")
+    return {"points": pw, "weeks": len(known), "words": words}
+
+
+def acquire_of(p: dict, league_id: str) -> dict | None:
+    """Where a potential upgrade leads: a free agent → the add / drop comparison on Waivers; a rostered player → the
+    trade calculator with him asked for (what you send and any drop subtracted there)."""
+    sid, owner = p.get("lineup_sid"), p.get("lineup_owner")
+    if not sid:
+        return None
+    if p.get("lineup_kind") == "fa":
+        return {"kind": "add_drop", "words": "Free agent: compare the add / drop on Waivers (the drop is the cost)",
+                "path": f"/waivers?add={sid}"}
+    if p.get("lineup_kind") == "others" and owner is not None:
+        return {"kind": "trade", "words": f"On {p.get('rostered_by_team') or 'another team'}: price a trade (what you "
+                                          "send is subtracted)",
+                "path": f"/trade-calc?partner={int(owner)}&get={sid}"}
+    return None
+
+
+def season_view(league_id: str, view: str, position: str = "ALL", limit: int = 50, team: int | None = None,
+                who: str = "all") -> dict:
+    """GET /api/ros?view=outlook|upgrades|projections — the three named Season views (same numbers as before)."""
+    view = view.lower()
+    if view == "projections":
+        out = ros(league_id, position, limit, view="points", team=team, who=who)
+        for p in out.get("players") or []:
+            pts, g = p.get("ros_points"), p.get("ros_games")
+            p["ros_per_game"] = round(pts / g, 1) if pts is not None and g else None
+    elif view == "outlook":
+        if team is None:
+            raise BadView("pick your team: My roster outlook is one roster's")
+        out = ros_lineup_view(league_id, team, position, limit, "mine")
+    else:
+        if team is None:
+            raise BadView("pick your team: Potential upgrades are measured against one roster's lineup")
+        w = (who or "all").lower()
+        if w not in UPGRADE_WHO:
+            raise BadView(f"no who={who} (all, fa or others)")
+        out = ros_lineup_view(league_id, team, position, limit, "all", kinds=UPGRADE_WHO[w])
+        out["who"] = w
+        for p in out.get("players") or []:
+            p["acquire"] = acquire_of(p, league_id)
+    out["view"] = view
+    out["season_view"] = {"key": view, "label": SEASON_LABELS[view], "counterfactual": COUNTERFACTUAL[view],
+                          "costs_included": COSTS_INCLUDED[view], "costs_not_included": COSTS_NOT_INCLUDED[view]}
+    return out
+# ---- end II-4
 
 
 # ---------------------------------------------------------------- plan F3: our record (house leagues)
