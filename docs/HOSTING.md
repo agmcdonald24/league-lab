@@ -382,6 +382,13 @@ hosted record uses for that week, the same run whose board is frozen. Archive: `
 in the Actions cache; like the
 weather forecasts, a lost cache cannot rebuild these snapshots.
 
+### Expected-value pricing (Wave I-G, M4)
+
+`LEAGUE_LAB_EV_PRICING: "1"` is set on the nightly step (`.github/workflows/nightly.yml`) and **nowhere else**: `project`
+records the mode in `ops.projections.pricing` and the API follows the newest build's label (a frozen week keeps its
+own; docs/METRICS.md § "The record's pricing column"), so Render never needs it — rollback = remove the line, run the
+nightly by hand.
+
 ### Cost
 
 Measured in a 2-CPU / 7 GB sandbox (the size of GitHub's standard runner for private

@@ -188,6 +188,10 @@ jobs:
           LEAGUE_LAB_HOSTED_ADMIN_URL: ${{ secrets.LEAGUE_LAB_HOSTED_ADMIN_URL }}
           LEAGUE_LAB_HOSTED_APP_PASSWORD: ${{ secrets.LEAGUE_LAB_HOSTED_APP_PASSWORD }}
           NIGHTLY_BACKTESTS: ${{ inputs.backtests && '1' || '' }}
+          # Wave I-G (M4): the bonuses of a projected line priced at their odds (docs/METRICS.md § "The record's pricing
+          # column"). `project` writes the mode into ops.projections.pricing and every request follows that record, so
+          # Render needs no setting; rollback = delete this line and run the nightly again
+          LEAGUE_LAB_EV_PRICING: "1"
         run: ./scripts/nightly.sh ${{ inputs.full && '--full' || '' }}
 
       # Save the archive only when its content changed (the key is a fingerprint of every data
