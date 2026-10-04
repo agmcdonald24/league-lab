@@ -699,12 +699,15 @@ def market_sentence(tot: Mapping | None) -> str | None:
 
 # ------------------------------------------------------------------------------ one team
 def _call_words(c: Mapping) -> str:
+    """"Chris Olave over Xavier Worthy (we gave it 64%): 18.6 to 11.0 — the right call." """
     a, b = c.get("player_name") or "our starter", c.get("alt_player_name") or "the bench player"
+    p = _f(c.get("p_win"))
+    head = f"{a} over {b}" + (f" (we gave it {_pct(p)}%)" if p is not None else "")
     if c.get("outcome") is None:
-        return f"{a} over {b}: not scored yet."
+        return f"{head}: not scored yet."
     pts = f"{_f(c['starter_points']):.1f} to {_f(c['alt_points']):.1f}"
     o = float(c["outcome"])
-    return f"{a} over {b}: {pts} — " + ("the right call." if o == 1 else "a tie." if o == 0.5 else f"{b} would have scored more.")
+    return f"{head}: {pts} — " + ("the right call." if o == 1 else "a tie." if o == 0.5 else f"{b} scored more.")
 
 
 def team_summary(rw: pd.DataFrame, calls: pd.DataFrame, roster_id: int, team_name: str | None = None) -> dict:

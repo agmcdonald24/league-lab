@@ -114,7 +114,7 @@ def test_the_teams_add_up_to_the_league_and_the_sentence():
         assert sum(t["season_totals"][k] for t in teams) == pytest.approx(league["season_totals"][k], abs=1e-9)
     t1 = teams[0]
     assert t1["sentences"]["season"] == "Week 1: you started 25.0; our lineup would have scored 33.0; the best possible was 33.0."
-    assert t1["weeks"][0]["calls"][0]["words"] == "x over y: 20.0 to 12.0 — the right call."
+    assert t1["weeks"][0]["calls"][0]["words"] == "x over y (we gave it 53%): 20.0 to 12.0 — the right call."
     assert t1["sentences"]["calls"] == "Our closest calls for you landed 1 of 1 (0.5 expected)."
     assert validation.team_summary(rw, calls, 7)["why"] == "this team has no lineup on the record"
 

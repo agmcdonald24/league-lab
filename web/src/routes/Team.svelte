@@ -216,29 +216,29 @@
               <table class="w-full table-fixed border-collapse text-base" data-testid="team-calls-table">
                 <thead>
                   <tr class="ll-label border-b border-line text-left">
-                    <th class="w-[3.25rem] py-1.5 font-semibold">Week</th>
-                    <th class="py-1.5 text-right font-semibold">You</th>
-                    <th class="py-1.5 text-right font-semibold">Ours</th>
-                    <th class="py-1.5 text-right font-semibold">Best</th>
-                    {#if market}<th class="py-1.5 text-right font-semibold">Sleeper's</th>{/if}
+                    <th class="w-[3.5rem] py-1.5 font-semibold">Week</th>
+                    <th class="py-1.5 pl-2 text-right font-semibold">You</th>
+                    <th class="py-1.5 pl-2 text-right font-semibold">Ours</th>
+                    <th class="py-1.5 pl-2 text-right font-semibold">Best</th>
+                    {#if market}<th class="py-1.5 pl-2 text-right font-semibold">Sleeper</th>{/if}
                   </tr>
                 </thead>
                 <tbody>
                   {#each mine.weeks as w (w.week)}
                     <tr class="border-b border-line">
                       <td class="tabnum py-1.5">{w.week}{w.record_source === "reconstructed" ? "*" : ""}</td>
-                      <td class="tabnum py-1.5 text-right">{pts(w.submitted)}</td>
-                      <td class="tabnum py-1.5 text-right">{pts(w.app)}</td>
-                      <td class="tabnum py-1.5 text-right">{pts(w.optimum)}</td>
-                      {#if market}<td class="tabnum py-1.5 text-right">{pts(w.market)}</td>{/if}
+                      <td class="tabnum py-1.5 pl-2 text-right">{pts(w.submitted)}</td>
+                      <td class="tabnum py-1.5 pl-2 text-right">{pts(w.app)}</td>
+                      <td class="tabnum py-1.5 pl-2 text-right">{pts(w.optimum)}</td>
+                      {#if market}<td class="tabnum py-1.5 pl-2 text-right">{pts(w.market)}</td>{/if}
                     </tr>
                   {/each}
                   <tr class="font-bold" data-testid="team-calls-total">
                     <td class="py-1.5">Season</td>
-                    <td class="tabnum py-1.5 text-right">{pts(tot.submitted)}</td>
-                    <td class="tabnum py-1.5 text-right">{pts(tot.app)}</td>
-                    <td class="tabnum py-1.5 text-right">{pts(tot.optimum)}</td>
-                    {#if market}<td class="tabnum py-1.5 text-right">{pts(tot.market)}</td>{/if}
+                    <td class="tabnum py-1.5 pl-2 text-right">{pts(tot.submitted)}</td>
+                    <td class="tabnum py-1.5 pl-2 text-right">{pts(tot.app)}</td>
+                    <td class="tabnum py-1.5 pl-2 text-right">{pts(tot.optimum)}</td>
+                    {#if market}<td class="tabnum py-1.5 pl-2 text-right">{pts(tot.market)}</td>{/if}
                   </tr>
                 </tbody>
               </table>
@@ -250,14 +250,14 @@
                   <ul class="space-y-1.5 text-base leading-snug">
                     {#each callWeeks as w (w.week)}
                       {#each w.calls as c (c.call_rank)}
-                        <li><span class="font-semibold">Week {w.week}:</span> {c.words}{c.p_win !== null ? ` (we gave it ${Math.round(c.p_win * 100)}%)` : ""}</li>
+                        <li><span class="font-semibold">Week {w.week}:</span> {c.words}</li>
                       {/each}
                     {/each}
                   </ul>
                 </Expander>
               {/if}
               {#if rebuilt}<p class="text-xs leading-snug text-ink-3">* Played before this record existed: rebuilt after kickoff from the projections locked then, with the final injury report — kinder to us than a real Thursday call.</p>{/if}
-              <p class="text-xs text-ink-3"><a class="ll-link" href={withContext("/about#record", ctx)} data-testid="team-calls-league">The whole league's record</a></p>
+              <p class="text-xs text-ink-3"><a class="ll-link" href={withContext("/about", ctx)} data-testid="team-calls-league">The whole league's record</a></p>
             </div>
           </Card>
         {/if}

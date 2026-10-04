@@ -1,0 +1,268 @@
+{
+ "season": 2026,
+ "available": true,
+ "weeks": [
+  {
+   "week": 1,
+   "record_source": "reconstructed",
+   "rosters": 10,
+   "submitted": 1242.28,
+   "app": 1221.4,
+   "optimum": 1417.78,
+   "regret": 175.5,
+   "edge": -20.88,
+   "news_rosters": 0,
+   "market": null,
+   "news_source": "report"
+  },
+  {
+   "week": 2,
+   "record_source": "reconstructed",
+   "rosters": 10,
+   "submitted": 1126.7,
+   "app": 1124.04,
+   "optimum": 1264.9,
+   "regret": 138.2,
+   "edge": -2.66,
+   "news_rosters": 0,
+   "market": null,
+   "news_source": "report"
+  }
+ ],
+ "season_totals": {
+  "weeks": 2,
+  "roster_weeks": 20,
+  "submitted": 2368.98,
+  "app": 2345.44,
+  "optimum": 2682.68,
+  "regret": 313.7,
+  "edge": -23.54,
+  "market": null,
+  "market_weeks": [],
+  "market_submitted": null,
+  "market_app": null
+ },
+ "calls": {
+  "n": 60,
+  "won": 39,
+  "expected": 33.44,
+  "brier": 0.2346,
+  "coin_flips": {
+   "n": 34,
+   "won": 20,
+   "expected": 17.75
+  },
+  "table": [
+   {
+    "bin": 1,
+    "n": 10,
+    "p_lo": 0.4644,
+    "p_hi": 0.5104,
+    "predicted": 0.4989,
+    "observed": 0.7
+   },
+   {
+    "bin": 2,
+    "n": 10,
+    "p_lo": 0.5107,
+    "p_hi": 0.5299,
+    "predicted": 0.5175,
+    "observed": 0.5
+   },
+   {
+    "bin": 3,
+    "n": 10,
+    "p_lo": 0.5325,
+    "p_hi": 0.5445,
+    "predicted": 0.5394,
+    "observed": 0.7
+   },
+   {
+    "bin": 4,
+    "n": 10,
+    "p_lo": 0.5467,
+    "p_hi": 0.5604,
+    "predicted": 0.5539,
+    "observed": 0.6
+   },
+   {
+    "bin": 5,
+    "n": 10,
+    "p_lo": 0.567,
+    "p_hi": 0.5961,
+    "predicted": 0.582,
+    "observed": 0.6
+   },
+   {
+    "bin": 6,
+    "n": 10,
+    "p_lo": 0.6171,
+    "p_hi": 0.6971,
+    "predicted": 0.6518,
+    "observed": 0.8
+   }
+  ]
+ },
+ "news": {
+  "roster_weeks": 0,
+  "edge": null,
+  "regret": null,
+  "source": "report"
+ },
+ "sentences": {
+  "edge": "Weeks 1–2: had every team started our lineup, the league would have scored 23.5 points fewer than it did (−1.2 a team a week). The best lineups in hindsight beat the ones started by 313.7 points (15.7 a team a week).",
+  "calls": "The coin flips landed 59% for the side we leaned (52% expected, 34 calls).",
+  "news": "No graded lineup had a starter's injury report change after our build (the rebuilt weeks cannot tell: they read the final report).",
+  "market": null
+ },
+ "reconstructed_weeks": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "note": "Weeks 1–4 were played before this record existed: their lineups were rebuilt after kickoff from the projections frozen then, with the final injury report.",
+ "team": {
+  "roster_id": 6,
+  "team_name": "GoodGameBuddy",
+  "available": true,
+  "weeks": [
+   {
+    "week": 1,
+    "record_source": "reconstructed",
+    "submitted": 151.8,
+    "app": 151.7,
+    "optimum": 160.6,
+    "market": null,
+    "edge": -0.1,
+    "regret": 8.8,
+    "market_edge": null,
+    "n_changed": 1,
+    "news": false,
+    "news_source": "report",
+    "calls": [
+     {
+      "call_rank": 1,
+      "slot": "FLEX2",
+      "player_name": "J.K. Dobbins",
+      "alt_player_name": "Marvin Harrison",
+      "p_win": 0.508,
+      "is_coin_flip": true,
+      "starter_points": 3.6,
+      "alt_points": 3.8,
+      "outcome": 0,
+      "words": "J.K. Dobbins over Marvin Harrison (we gave it 51%): 3.6 to 3.8 — Marvin Harrison scored more."
+     },
+     {
+      "call_rank": 2,
+      "slot": "RB2",
+      "player_name": "Quinshon Judkins",
+      "alt_player_name": "Marvin Harrison",
+      "p_win": 0.5407,
+      "is_coin_flip": true,
+      "starter_points": 6,
+      "alt_points": 3.8,
+      "outcome": 1,
+      "words": "Quinshon Judkins over Marvin Harrison (we gave it 54%): 6.0 to 3.8 — the right call."
+     },
+     {
+      "call_rank": 3,
+      "slot": "QB",
+      "player_name": "Jaxson Dart",
+      "alt_player_name": "Matthew Stafford",
+      "p_win": 0.4644,
+      "is_coin_flip": true,
+      "starter_points": 26.6,
+      "alt_points": 5.1,
+      "outcome": 1,
+      "words": "Jaxson Dart over Matthew Stafford (we gave it 46%): 26.6 to 5.1 — the right call."
+     }
+    ]
+   },
+   {
+    "week": 2,
+    "record_source": "reconstructed",
+    "submitted": 113.2,
+    "app": 102.2,
+    "optimum": 121.1,
+    "market": null,
+    "edge": -11,
+    "regret": 7.9,
+    "market_edge": null,
+    "n_changed": 1,
+    "news": false,
+    "news_source": "report",
+    "calls": [
+     {
+      "call_rank": 1,
+      "slot": "RB2",
+      "player_name": "Quinshon Judkins",
+      "alt_player_name": "MarShawn Lloyd",
+      "p_win": 0.5493,
+      "is_coin_flip": true,
+      "starter_points": 7.3,
+      "alt_points": 7.6,
+      "outcome": 0,
+      "words": "Quinshon Judkins over MarShawn Lloyd (we gave it 55%): 7.3 to 7.6 — MarShawn Lloyd scored more."
+     },
+     {
+      "call_rank": 2,
+      "slot": "FLEX2",
+      "player_name": "Jameson Williams",
+      "alt_player_name": "Xavier Worthy",
+      "p_win": 0.6233,
+      "is_coin_flip": false,
+      "starter_points": 4.3,
+      "alt_points": 11,
+      "outcome": 0,
+      "words": "Jameson Williams over Xavier Worthy (we gave it 62%): 4.3 to 11.0 — Xavier Worthy scored more."
+     },
+     {
+      "call_rank": 3,
+      "slot": "FLEX1",
+      "player_name": "Chris Olave",
+      "alt_player_name": "Xavier Worthy",
+      "p_win": 0.6416,
+      "is_coin_flip": false,
+      "starter_points": 18.6,
+      "alt_points": 11,
+      "outcome": 1,
+      "words": "Chris Olave over Xavier Worthy (we gave it 64%): 18.6 to 11.0 — the right call."
+     }
+    ]
+   }
+  ],
+  "season_totals": {
+   "weeks": 2,
+   "submitted": 265,
+   "app": 253.9,
+   "optimum": 281.7,
+   "edge": -11.1,
+   "regret": 16.7,
+   "market": null,
+   "market_weeks": [],
+   "market_edge": null
+  },
+  "calls": {
+   "n": 6,
+   "won": 3,
+   "expected": 3.33,
+   "brier": 0.2624,
+   "coin_flips": {
+    "n": 4,
+    "won": 2,
+    "expected": 2.06
+   }
+  },
+  "news": {
+   "weeks": [],
+   "edge": null
+  },
+  "sentences": {
+   "season": "Weeks 1–2: you started 265.0; our lineup would have scored 253.9; the best possible was 281.7.",
+   "market": null,
+   "calls": "Our closest calls for you landed 3 of 6 (3.3 expected).",
+   "news": null
+  }
+ }
+}
