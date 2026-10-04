@@ -268,7 +268,7 @@ def decisions(rows: pd.DataFrame, n: int = 3) -> pd.DataFrame:
             continue
         # ---- II-0: a lock since the solve (a bench player whose game started) changes what sitting him costs: the
         # card's margin is the re-solve's then, never the stored one beside a chain that cannot happen
-        if a.get("chain") is not None and abs(float(a["chain"]["cost"]) - float(s["margin"])) > TOL:
+        if a.get("chain") is not None and locks_since_solve(rows) and abs(float(a["chain"]["cost"]) - float(s["margin"])) > 0.005:
             s = s.copy()
             s["margin"] = round(float(a["chain"]["cost"]), 2)
         # ---- end II-0
@@ -466,6 +466,22 @@ def replacement_chain_rows(starter: pd.Series, rows: pd.DataFrame) -> dict | Non
     first = ch["chain"][0] if ch["chain"] else None
     ch["mover_row"] = by_key.get(first["player_id"]) if first and first["kind"] == "slides" else None
     return ch
+
+
+def locks_since_solve(rows: pd.DataFrame) -> bool:
+    """A game kicked off since the lineup was solved (a row locked now that the solve did not lock): the stored margins
+    assumed he could move, so a card's cost is the chain's re-solve then (otherwise the stored margin, to the cent)."""
+    if rows is None or rows.empty or "locked_now" not in rows or "is_locked" not in rows:
+        return False
+    return bool((rows["locked_now"].fillna(False).astype(bool) & ~rows["is_locked"].fillna(False).astype(bool)).any())
+
+
+def chain_cost(starter: pd.Series, a: dict, rows: pd.DataFrame) -> float:
+    """What sitting him costs, as the card says it: the stored margin, or the re-solve's after a lock since the solve."""
+    ch = a.get("chain")
+    if ch is not None and (starter.get("margin") is None or pd.isna(starter.get("margin")) or locks_since_solve(rows)):
+        return round(float(ch["cost"]), 2)
+    return float(starter["margin"])
 
 
 def chain_alternative(starter: pd.Series, ch: dict) -> dict:

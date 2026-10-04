@@ -546,7 +546,9 @@ def chain_words(chain: Sequence[Mapping], names: Mapping[str, str] | None = None
     A lone empty slot: "no legal move: RB goes empty"."""
     if not chain:
         return ""
-    by_label_word = (lambda lab: chain_slot_word(re.sub(r"\d+$", "", str(lab or ""))))
+    def by_label_word(lab) -> str:
+        return chain_slot_word(re.sub(r"\d+$", "", str(lab or "")))
+
     bits: list[str] = []
     for k, c in enumerate(chain):
         who = (f"{names[c['player_id']]} ({c['position']})" if names and c.get("player_id") in names

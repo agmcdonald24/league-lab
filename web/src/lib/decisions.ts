@@ -248,6 +248,11 @@ export function partnerReason(p: PartnerRow, span: string): string {
   if (out) return `${out.player_name} cannot play this week (${String(out.cannot_play).toLowerCase()}): the gain comes after it.`;
   const starter = p.get.slice().sort((a, b) => (b.this_week ?? 0) - (a.this_week ?? 0))[0];
   if (p.you_gain_week >= 0.05 && starter) return `${starter.player_name} starts for you this week: ${s1(p.you_gain_week)} now, ${s1(p.you_gain_horizon)} over ${span}.`;
+  // ---- II-0 (Wave I-I): a week that loses is said, never "Nothing changes this week" beside its own −1.5 (the row's story:
+  // trades.week_story on the strip's numbers; an older answer without it reads the row's own this-week number)
+  if (p.story && p.story.this_week.kind === "loss") return p.story.words;
+  if (p.you_gain_week != null && p.you_gain_week <= -0.05) return `Your lineup loses ${Math.abs(p.you_gain_week).toFixed(1)} this week; ${s1(p.you_gain_horizon)} over ${span} in total.`;
+  // ---- end II-0
   if (p.you_gain_horizon >= 0.05) return `Nothing changes this week; your lineup gains ${s1(p.you_gain_horizon)} over ${span}.`;
   return `Your lineup does not gain over ${span}: they do (${s1(p.they_gain_horizon)}).`;
 }

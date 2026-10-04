@@ -698,8 +698,8 @@ def margin_comparator(r: pd.Series, rows: pd.DataFrame) -> dict:
     # lock since the solve (his game started) moves the margin to the re-solve's
     nm = cards.display_name(_str(alt.get("player_name")) or "", rows["player_name"], alt.get("position"))
     mover, ch = a.get("mover"), a.get("chain")
-    fix = ({"margin": round(float(ch["cost"]), 2)} if ch is not None and _num(r.get("margin")) is not None
-           and abs(float(ch["cost"]) - float(r["margin"])) > cards.TOL else {})
+    fix = ({"margin": cards.chain_cost(r, a, rows)} if ch is not None and _num(r.get("margin")) is not None
+           and abs(cards.chain_cost(r, a, rows) - float(r["margin"])) > 0.005 else {})
     if mover is not None and ch is not None:
         mv = cards.display_name(_str(mover.get("player_name")) or "", rows["player_name"], mover.get("position"))
         return {"margin_vs": nm, "margin_words": f"over {nm} ({alt.get('position')}) after {mv} moves to "

@@ -1606,6 +1606,20 @@ def trade_vs_alternative(gain_week: float | None, gain_window: float, alt: dict,
     return {"beyond_alternative": b, "beats_alternative": beats, "alternative_words": words, "other_objective": other}
 
 
+# ---- II-0 (Wave I-I): a partner row's story (trades.week_story) from its week strip, the numbers the card shows; a
+# row without a strip (no week-by-week split) reads its own this-week and window gains
+def row_story(r: dict, weeks, span: str, this_week: int | None) -> dict:
+    s = r.get("strip") or {}
+    if s.get("mine"):
+        return T.week_story(s["weeks"], s["mine"], span, this_week=this_week)
+    ws = list(weeks)
+    if this_week is not None and ws and len(ws) > 1 and r.get("you_gain_week") is not None:
+        rest = None if r.get("you_gain_horizon") is None else r["you_gain_horizon"] - r["you_gain_week"]
+        return T.week_story([ws[0], ws[-1]], [r["you_gain_week"], rest], span, this_week=this_week)
+    return T.week_story(ws[:1], [r.get("you_gain_horizon")], span, this_week=None)
+# ---- end II-0
+
+
 def strip(weeks, mine, theirs) -> dict:
     """The week-by-week starter points gained, both sides (this week · next · …): a four-week win can hide a loss."""
     return {"weeks": [int(w) for w in weeks], "mine": [T._r2(x) for x in mine], "theirs": [T._r2(x) for x in theirs]}
@@ -1694,6 +1708,8 @@ def calc_alternatives(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade
                                     bench=(now.mine.bench_before, now.mine.bench_after)))
     out["strip"] = strip(trade.weeks, [a - b for a, b in zip(me.after, me.before, strict=True)],
                          [a - b for a, b in zip(th.after, th.before, strict=True)])
+    out["story"] = T.week_story(out["strip"]["weeks"], out["strip"]["mine"], span,          # ---- II-0: the table's
+                                this_week=ctx.this_week if starts_now else None)            # numbers, the words
     unknown = [*me.unknown_out, *me.unknown_in]
     ros = out.get("ros") or {}
     ros_words = None
@@ -2011,6 +2027,8 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
     # headline is the first card, always
     alt = best_alternative(ctx, board, tuple(weeks), int(team), span, window, source=source, as_of=as_of)
     rows = rank_partners(ctx, board, tuple(weeks), rows, alt, span, window)
+    for r in rows:                     # ---- II-0: the row's words from the strip's own numbers (one frame, one story)
+        r["story"] = row_story(r, weeks, span, ctx.this_week if starts_now else None)
     head = None
     if rows:
         r0 = rows[0]

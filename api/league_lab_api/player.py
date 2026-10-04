@@ -416,7 +416,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
                     head = f"Week {week}: **starts at {where_slot}** for {team_name}, {float(m['value']):.2f}{src}"
                     # ---- II-0: the cost and the words are the re-solved legal lineup's (locks kept), the chain said
                     ch = a.get("chain")
-                    cost = float(ch["cost"]) if ch is not None else float(m["margin"])
+                    cost = cards.chain_cost(m, a, rows)
                     if alt is not None and ch is not None and a.get("mover") is not None:
                         lineup_line = (f"{head} — without him the lineup loses **{cost:.2f}**: {ch['named_words']} "
                                        f"({player_link(alt['gsis_id'], alt['player_name'])}, {float(alt['value']):.2f}, comes in): "
