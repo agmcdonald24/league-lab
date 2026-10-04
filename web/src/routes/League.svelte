@@ -4,6 +4,7 @@
   // without a team, the league's luckiest and unluckiest), then the standings with the record against everyone, who
   // has been lucky (bars either side of 0), points left on the bench, the latest moves, the draft where Sleeper has it.
   import { get, peek, Unauthorized, decisionPaths, type LeagueView, type TransactionRow } from "../lib/api";
+  import { weekOddsPath, type WeekOdds, type WeekOddsGame } from "../lib/api"; // ---- IH-3
   import type { LeagueOption } from "../lib/leagues";
   import { md, withContext } from "../lib/md";
   import { allPlayRecord, errorWords, f1, luckLine, moveKind, moveWords, s1 } from "../lib/decisions";
@@ -48,6 +49,44 @@
       });
   });
 
+  // ---- IH-3: this week's odds per game, asked after the screen shows (one lineup per team: 1-5 s the first time);
+  // information only — the lineup calls stay on My Week. Nothing is shown when the ask fails or has no numbers.
+  let odds = $state<WeekOdds | null>(null);
+  $effect(() => {
+    const l = league;
+    if (!data) return;
+    const path = weekOddsPath(l);
+    const hit = peek<WeekOdds>(path);
+    if (hit) {
+      odds = hit;
+      return;
+    }
+    odds = null;
+    get<WeekOdds>(path)
+      .then((o) => {
+        if (league === l) odds = o;
+      })
+      .catch(() => {
+        if (league === l) odds = null;
+      });
+  });
+  const oddsBy = $derived(new Map((odds?.games ?? []).filter((g) => g.p != null).map((g) => [g.matchup_id, g])));
+  /** "53% · 120 expected" for one side of a game; "" without a number */
+  function sideOdds(g: WeekOddsGame | undefined, rid: number): string {
+    const sd = g ? (g.a.roster_id === rid ? g.a : g.b.roster_id === rid ? g.b : null) : null;
+    if (!sd || sd.percent == null) return "";
+    return `${sd.percent}%` + (sd.expected != null ? ` · ${Math.round(sd.expected)} expected` : "");
+  }
+  // a house league's screen has no "this week" games block (IC-4 serves the on-demand path): the odds bring their own
+  const ownOdds = $derived(!!odds && odds.week != null && oddsBy.size > 0 && !(data?.matchups ?? []).some((m) => !m.played && m.week === odds?.week));
+  // my game first, as IC-4's card orders them
+  const ownGames = $derived(
+    (odds?.games ?? []).filter((g) => g.p != null).sort((x, y) => Number(isMine(y)) - Number(isMine(x)) || x.matchup_id - y.matchup_id),
+  );
+  function isMine(g: WeekOddsGame): boolean {
+    return team != null && (g.a.roster_id === team || g.b.roster_id === team);
+  }
+  // ---- end IH-3
   const allPlay = $derived(new Map((data?.all_play ?? []).map((r) => [r.roster_id, r])));
   const luck = $derived([...(data?.all_play ?? [])].filter((r) => r.luck_wins != null).sort((a, b) => (b.luck_wins ?? 0) - (a.luck_wins ?? 0)));
   const luckMax = $derived(Math.max(0.5, ...luck.map((r) => Math.abs(r.luck_wins ?? 0))));
@@ -167,14 +206,37 @@
                   <span class="min-w-0 {j === 1 ? 'text-right' : ''}">
                     <span class="line-clamp-2 text-base leading-tight break-words {sd.roster_id === team ? 'font-bold' : sd.result === 'W' ? 'font-semibold' : ''}">{sd.team_name}</span>
                     {#if sd.points != null}<span class="tabnum block text-xs text-ink-3">{f1(sd.points)}{sd.result ? ` · ${sd.result}` : ""}</span>{/if}
+                    {#if !m.played && sideOdds(oddsBy.get(g.matchup_id), sd.roster_id)}<span class="tabnum block text-xs text-ink-3" data-testid="game-odds">{sideOdds(oddsBy.get(g.matchup_id), sd.roster_id)}</span>{/if}<!-- IH-3 -->
                   </span>
                 {/each}
               </li>
             {/each}
           </ul>
+          {#if !m.played && oddsBy.size}<p class="px-3 pt-1 pb-2 text-xs text-ink-3" data-testid="odds-note">How often each team wins, from both best lineups' ranges ({odds?.assumptions}).</p>{/if}<!-- IH-3 -->
         </Card>
       {/each}
       <!-- ---- end IC-4 -->
+      <!-- ---- IH-3: a house league's games this week with both teams' chance (the on-demand path's sit in IC-4's card above) -->
+      {#if ownOdds && odds}
+        <Card title={`Week ${odds.week} matchups`} pad={false} testid="league-odds">
+          <ul class="divide-y divide-line">
+            {#each ownGames as g (g.matchup_id)}
+              {@const mine = isMine(g)}
+              <li class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-2 px-3 py-1.5 {mine ? 'bg-accent-soft' : ''}" data-testid="league-game" data-mine={mine ? "1" : undefined}>
+                {#each [g.a, g.b] as sd, j (j)}
+                  {#if j === 1}<span class="text-xs text-ink-3">vs</span>{/if}
+                  <span class="min-w-0 {j === 1 ? 'text-right' : ''}">
+                    <span class="line-clamp-2 text-base leading-tight break-words {sd.roster_id === team ? 'font-bold' : ''}">{sd.team_name}</span>
+                    <span class="tabnum block text-xs text-ink-3" data-testid="game-odds">{sideOdds(g, sd.roster_id)}</span>
+                  </span>
+                {/each}
+              </li>
+            {/each}
+          </ul>
+          <p class="px-3 pt-1 pb-2 text-xs text-ink-3" data-testid="odds-note">How often each team wins, from both best lineups' ranges ({odds.assumptions}).</p>
+        </Card>
+      {/if}
+      <!-- ---- end IH-3 -->
       {#if weekCols.length}
         <Card title="Weekly scoring rank" testid="week-ranks">
           <!-- the last 5 weeks on a phone, the last 10 from 900 px: the grid never scrolls sideways -->

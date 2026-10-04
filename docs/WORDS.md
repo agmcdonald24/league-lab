@@ -234,6 +234,15 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | a trade verdict with a player the season value cannot count (`trades.verdict`) | "…; season value not compared (1 player in it has no season projection): a lineup loss for them." | a lean ("you give up more season value") from the counted players alone |
 | a dropped team unit (Waivers, MFL) | its cost reads as a player's: season value above the best **free unit of its kind** (IG-1), its later starts against that unit — a kicker claim drops the kicker it replaces ("New Orleans Saints K … Jacksonville Jaguars K") | a unit's later starts measured against a free unit worth 0 |
 
+## The week's win probability (Wave I-H, IH-3)
+
+| Where | The words we use | Never |
+|---|---|---|
+| My Week, under the opponent line (`myweek.week_line`) | "This week is a coin flip: 53%, 120 to 117 expected." · "You're a slight favorite this week: 58%, 121 to 117 expected." · "You're a clear underdog this week: 34%, 96 to 115 expected." · with games in: "… 2 of your 9 have played, 3 of theirs." · a double header: one line per game, the opponent's name first ("Big Mac Attack: You're …") · on hover: "assuming the players' weeks are independent except teammates and opponents" | a recommendation from it ("you're an underdog, start the boom-or-bust receiver"); "win probability" as a label on the page; 0% / 100% |
+| 50–55% / 55–65% / 65%+ either way (`decisions.week_words`) | a coin flip / a slight favorite (underdog) / a clear favorite (underdog) | "a lean" for a week (the card's word for one call) |
+| no number (`win.note`) | "no range for this league yet" · "the week has started and this league's live scores are not read yet" (an MFL league after the first kickoff): the page shows nothing | a 50% stand-in |
+| the League screen, per team of a game this week | "53% · 120 expected" under each team; the note "How often each team wins, from both best lineups' ranges (assuming the players' weeks are independent except teammates and opponents)." | a favourite's name in bold as a pick |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

@@ -39,6 +39,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   MFL's roster was read; Sleeper's `daily_waivers_days` decoded ("Claims run every day except Saturday at 5:00 AM
   ET"); a Questionable starter shows once in "What changed"; availability events carry their `game_key`.
 
+- **IH-3: the week's win probability, as information.** My Week says under the opponent line how often your starters
+  outscore his ("This week is a coin flip: 53%, 120 to 117 expected."; one line per game of a double header; "2 of your
+  9 have played, 3 of theirs" once games are in), and the League screen shows both teams' chance for every game of the
+  week (`/api/league/week-odds`, asked after the screen shows). Both lineups' ranges, centred on the projections, one
+  copula with D6's teammate / opponent correlations across both sides, played games at their actual points; calibrated
+  on 308 house-league matchups of 2024–2025 (a shrink toward 50%: Brier 0.2395 against a coin flip's 0.25; the
+  favourite predicted 58.0%, won 57.5%). It never picks a player: the cards still decide on expected points.
+  METRICS § "Win probability — the week".
+
 ## 2026-10-04 — Wave I-G
 
 - **The nightly's trigger.** GitHub's schedule started every nightly 3.5–6 hours late; `ops/nightly-trigger/` (a

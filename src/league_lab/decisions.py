@@ -226,3 +226,177 @@ def brier(pairs: Sequence[tuple[float, float]]) -> float:
     p = np.array([x[0] for x in pairs], dtype=float)
     o = np.array([x[1] for x in pairs], dtype=float)
     return float(np.mean((p - o) ** 2))
+
+
+# ---- IH-3 (Wave I-H): the week's win probability — the game objective, as information. The decision-quality review
+# § "The analytics worth building next" item 5: compare expected points with the matchup's win probability, and never
+# turn "underdog" into an instruction to chase ceilings. This block describes the week; the cards decide the lineup.
+#
+# P(my starters outscore the opponent's) from every starter's predictive distribution (``Predictive`` through his
+# P10 ... P90 in the league's scoring), one Gaussian copula over BOTH lineups: every pair that shares a game gets
+# ``pair_rho`` (teammates / opponents, QB-TE as measured in D6, on either side of the matchup — my QB and his WR who
+# catches passes from him move together); every other pair is independent. Paired draws with the fixed seed, a tie
+# counts half. A starter whose game is in (``actual`` not None) is a point mass at his actual points. What is ignored
+# (and said in ``WEEK_ASSUMPTIONS``): pairs in different games (weather and league-wide scoring trends tie them a
+# little), a kicker / defense / team unit's correlation with anyone (not measured: independent), and a starter who
+# does not play at all (the ranges are "if he plays": an inactive starter scores 0, which the distribution does not
+# carry — the morning's statuses already sit him when he is ruled out).
+WEEK_ASSUMPTIONS = "assuming the players' weeks are independent except teammates and opponents"
+# The calibration (docs/METRICS.md § "Win probability — the week"; 2024-2025 house-league matchups, the managers' real
+# starters, walk-forward ranges centred on the projection): the raw probability is overconfident (the favourite
+# predicted 62.7%, won 57.5%; "clear" 73% vs 63%) — the ranges are "if he plays", and weeks of different games are not
+# independent. A logit shrink ``p = sigmoid(WEEK_SHRINK * logit(p_raw))`` fitted on one season improves the other
+# (Brier 2025 0.2436 -> 0.2403 with 2024's 0.60; 2024 0.2424 -> 0.2387 with 2025's 0.585) and 2026 weeks 1-2
+# (0.2451 -> 0.2410); the pooled fit (0.593) is used, rounded.
+WEEK_SHRINK = 0.60
+KD_POSITIONS = frozenset({"K", "DEF", "TMPK", "TMDEF"})
+WEEK_DRAWS = 20_000      # a whole percent on the page: Monte Carlo error ±0.4 points at 50% (the calibration's draws too)
+UNIT_AS = {"TMQB": "QB"}          # an MFL team quarterback correlates like his starter
+
+
+def _week_dist(r: Mapping) -> tuple[str, Predictive | float]:
+    """('played', actual) | ('range', Predictive) | ('point', value): one starter's week. A K / DEF row with only P10 /
+    P90 (kd1.0 ranges, the MFL kicker unit) takes its projection, clipped into the range, as the median."""
+    act = _num(r.get("actual"))
+    if act is not None:
+        return "played", act
+    d = Predictive.from_row(r)
+    if d is None:
+        p10, p90, v = _num(r.get("p10")), _num(r.get("p90")), _num(r.get("value"))
+        if p10 is not None and p90 is not None and v is not None and p90 >= p10:
+            d = Predictive.from_quantiles(p10, min(max(v, p10), p90), p90)
+    if d is not None:
+        return "range", d
+    v = _num(r.get("value"))
+    return "point", 0.0 if v is None else v
+
+
+def _nearest_corr(c: np.ndarray) -> np.ndarray:
+    """A correlation matrix made positive semi-definite (eigenvalues floored at 0, the diagonal rescaled to 1): pairwise
+    estimates measured separately need not be jointly consistent (two QBs of one team with the same receiver)."""
+    w, v = np.linalg.eigh(c)
+    if w.min() >= 1e-10:
+        return c
+    a = (v * np.maximum(w, 1e-10)) @ v.T
+    d = np.sqrt(np.diag(a))
+    return a / np.outer(d, d)
+
+
+def _centred(d: Predictive, value: float | None) -> Predictive:
+    """The range moved so its mean is the projection (``value``), its shape kept (floored at 0): the probability then
+    agrees with the expected totals the page prints. The stored ranges are fitted apart from the point projection
+    (and priced apart since EV pricing), so their means drift from it — on 2026 week 4 a lineup's range means sum to
+    within a few points of its projected total, either way."""
+    if value is None:
+        return d
+    shift = float(value) - d.mean(4000)
+    return Predictive(d.levels, tuple(max(0.0, x + shift) for x in d.values))
+
+
+def lineup_win_probability(mine: Sequence[Mapping], theirs: Sequence[Mapping], *, n: int = WEEK_DRAWS,
+                           seed: int = SEED, centre: bool = True) -> dict:
+    """P(``mine`` outscores ``theirs``) this week. Each starter is a mapping: ``key`` (who: a gsis id; the same key on
+    both sides is the same player, one draw), ``position``, ``team``, ``opponent``, ``p10`` ... ``p90``, ``value`` (his
+    projection: the expected total, and his whole week when he has no range) and ``actual`` (his points when his game
+    is in; None before). Empty slots carry nothing (leave them out, or value 0). ``centre`` (default): each range is
+    moved so its mean is his projection (``_centred``).
+
+    Returns ``p`` (calibrated: ``shrink_week`` of the Monte Carlo ``p_raw``; None when neither side has a single range),
+    ``mine`` / ``theirs`` (the expected totals: projections,
+    actual points where the game is in — the numbers the page shows), ``sim_mine`` / ``sim_theirs`` (the
+    distributions' means, a check), ``n_played`` / ``n_starters`` / ``opp_n_played`` / ``opp_n_starters``,
+    ``n_no_range`` / ``opp_n_no_range`` (starters counted at their projection: no range) and the pairs correlated."""
+    sides = [list(mine), list(theirs)]
+    cols: dict[str, int] = {}
+    dists: list[Predictive] = []
+    meta: list[Mapping] = []
+    fixed = [0.0, 0.0]
+    expected = [0.0, 0.0]
+    plays = [[], []]                     # per side: (column, ) for each ranged starter
+    counts = [{"n": 0, "played": 0, "no_range": 0}, {"n": 0, "played": 0, "no_range": 0}]
+    for s, rows in enumerate(sides):
+        for i, r in enumerate(rows):
+            kind, d = _week_dist(r)
+            counts[s]["n"] += 1
+            if kind == "played":
+                counts[s]["played"] += 1
+                fixed[s] += float(d)
+                expected[s] += float(d)
+                continue
+            v = _num(r.get("value"))
+            expected[s] += 0.0 if v is None else v
+            if kind == "point":
+                counts[s]["no_range"] += 1
+                fixed[s] += float(d)
+                continue
+            key = r.get("key")
+            key = f"_{s}_{i}" if not isinstance(key, str) or not key else key
+            if key not in cols:
+                cols[key] = len(dists)
+                dists.append(_centred(d, v) if centre else d)
+                meta.append(r)
+            plays[s].append(cols[key])
+    m = len(dists)
+    # the draws are assigned to players in key order, not in the order given: swapping the sides gives the same draws
+    # per player, so P(A beats B) + P(B beats A) = 1 exactly (My Week and the League screen agree)
+    keys = list(cols)
+    perm = sorted(range(m), key=lambda j: str(keys[j]))
+    pos = {old: new for new, old in enumerate(perm)}
+    dists, meta = [dists[j] for j in perm], [meta[j] for j in perm]
+    plays = [[pos[j] for j in side] for side in plays]
+    out = {"mine": round(expected[0], 2), "theirs": round(expected[1], 2),
+           "n_starters": counts[0]["n"], "n_played": counts[0]["played"], "n_no_range": counts[0]["no_range"],
+           "opp_n_starters": counts[1]["n"], "opp_n_played": counts[1]["played"], "opp_n_no_range": counts[1]["no_range"],
+           "n_correlated_pairs": 0, "p": None, "p_raw": None, "sim_mine": None, "sim_theirs": None}
+    if m == 0:
+        if counts[0]["n"] and counts[1]["n"] and counts[0]["played"] == counts[0]["n"] and counts[1]["played"] == counts[1]["n"]:
+            out["p"] = out["p_raw"] = 1.0 if fixed[0] > fixed[1] else 0.0 if fixed[0] < fixed[1] else 0.5   # the week is over
+        return out
+    corr = np.eye(m)
+    npairs = 0
+    for a in range(m):
+        ra = meta[a]
+        pa = UNIT_AS.get(str(ra.get("position")), ra.get("position"))
+        if pa in KD_POSITIONS:
+            continue
+        for b in range(a + 1, m):
+            rb = meta[b]
+            pb = UNIT_AS.get(str(rb.get("position")), rb.get("position"))
+            if pb in KD_POSITIONS:
+                continue
+            rel = relationship(ra.get("team"), ra.get("opponent"), rb.get("team"), rb.get("opponent"))
+            rho = pair_rho(rel, pa, pb)
+            if rho:
+                corr[a, b] = corr[b, a] = rho
+                npairs += 1
+    out["n_correlated_pairs"] = npairs
+    corr = _nearest_corr(corr)
+    w, v = np.linalg.eigh(corr)
+    root = v * np.sqrt(np.maximum(w, 0.0))
+    rng = np.random.default_rng(seed)
+    z = rng.standard_normal((n, m)) @ root.T
+    u = np.clip(_std_normal_cdf(z), 1e-12, 1 - 1e-12)
+    x = np.column_stack([dists[j].ppf(u[:, j]) for j in range(m)])
+    tot = [fixed[s] + (x[:, plays[s]].sum(axis=1) if plays[s] else np.zeros(n)) for s in (0, 1)]
+    raw = float(np.mean(tot[0] > tot[1]) + 0.5 * np.mean(tot[0] == tot[1]))
+    out["p_raw"], out["p"] = raw, shrink_week(raw)
+    out["sim_mine"], out["sim_theirs"] = round(float(tot[0].mean()), 2), round(float(tot[1].mean()), 2)
+    return out
+
+
+def shrink_week(p: float, k: float = WEEK_SHRINK) -> float:
+    """The calibrated week probability from the raw Monte Carlo one (a logit shrink toward 50%; 0 and 1 stay)."""
+    if p <= 0.0 or p >= 1.0:
+        return float(p)
+    return float(1.0 / (1.0 + math.exp(-k * math.log(p / (1.0 - p)))))
+
+
+def week_words(p: float) -> str:
+    """The week in words, on ``words``' scale read from my side: 50-55% either way a coin flip, 55-65% slight, 65%+
+    clear; favorite above 50%, underdog below."""
+    w = words(p)
+    if w == "a coin flip":
+        return w
+    side = "favorite" if p > 0.5 else "underdog"
+    return f"a slight {side}" if w == "a lean" else f"a clear {side}"
+# ---- end IH-3

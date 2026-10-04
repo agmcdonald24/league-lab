@@ -238,6 +238,7 @@ def my_week(league_id: str, roster_id: int) -> dict:
     )
     out["movers"] = [{"gsis_id": _str(r.gsis_id), "player_name": r.player_name, "position": r.position,
                       "tags": _str(r.tags), "momentum": _num(r.momentum)} for r in mv.itertuples()]
+    out["win"] = win(league_id, int(roster_id), season, week, rows, out["opponent"], house=True)          # ---- IH-3
     return out
 
 
@@ -940,3 +941,233 @@ def updated_at() -> str | None:
     return pd.Timestamp(df["t"].iloc[0]).tz_convert("UTC").isoformat() if pd.Timestamp(df["t"].iloc[0]).tzinfo else \
         pd.Timestamp(df["t"].iloc[0]).tz_localize("UTC").isoformat()
 # ---- end IF-4
+
+
+# ---- IH-3 (Wave I-H; the decision-quality review § "The analytics worth building next" item 5, the game objective as
+# information): `win` on My Week — how often my starters outscore the opponent's this week, from both lineups' ranges
+# (`league_lab.decisions.lineup_win_probability`), the expected totals and one line of words. It describes the week;
+# it never chooses a player (the cards decide on expected points, and "underdog" is not an instruction to chase
+# ceilings). A starter's game is "in" once the nightly has scored it (his NFL team has rows in fct_player_game_league
+# for the week): his points are then Sleeper's own (`league_player_week.points_observed`, the league's scoring; a
+# starter who did not play scores 0); a game in progress still counts as his range.
+WIN_NO_RANGE = "no range for this league yet"
+WIN_NO_LIVE = "the week has started and this league's live scores are not read yet"
+WIN_EARLY = False            # True: the line says "early: N weeks graded" instead of a percentage (see METRICS § Win probability)
+WIN_GRADED_WEEKS = 2         # the 2026 weeks the calibration graded (METRICS § Win probability — the week): 1-2
+MIN_RANGED_SHARE = 0.5       # fewer of a side's expected points carried by ranges than this: no probability
+SCORED_TEAMS_SQL = """select distinct team from analytics.fct_player_game_league
+                      where season = %s and week = %s and season_type = 'REG' and team is not null"""
+OBSERVED_SQL = """select sleeper_player_id, points_observed as points from analytics.league_player_week
+                  where league_id = %s and season = %s and week = %s and roster_id = any(%s) and sleeper_player_id is not null"""
+
+
+def win_starters(rows: pd.DataFrame | None) -> list[dict]:
+    """The starters of a lineup frame (`cards.lineup_rows`' shape) as `lineup_win_probability` reads them; empty slots
+    are left out (they score nothing)."""
+    if rows is None or rows.empty:
+        return []
+    st = rows[(rows["role"] == "starter") & ~rows["is_empty_slot"].fillna(False).astype(bool)]
+    out = []
+    for _, r in st.iterrows():
+        key = _str(r.get("gsis_id")) or _str(r.get("sleeper_player_id")) or _str(r.get("player_name"))
+        out.append({"key": key, "sleeper_player_id": _str(r.get("sleeper_player_id")), "position": _str(r.get("position")),
+                    "team": _str(r.get("team")), "opponent": _str(r.get("opponent")), "value": _num(r.get("value")),
+                    **{q: _num(r.get(q)) for q in ("p10", "p25", "p50", "p75", "p90")}, "actual": None})
+    return out
+
+
+def scored_teams(season: int, week: int) -> set[str]:
+    try:
+        df = query(SCORED_TEAMS_SQL, (int(season), int(week)))
+    except Exception:  # noqa: BLE001 - a missing table on a fresh copy: nobody has played
+        return set()
+    return {str(t) for t in df["team"]} if not df.empty else set()
+
+
+def _team_code(t: str | None) -> str | None:
+    return {"LAR": "LA", "JAC": "JAX", "WSH": "WAS"}.get(t, t) if t else t
+
+
+def with_actuals(starters: list[dict], scored: set[str], points: dict[str, float] | None) -> bool:
+    """Set ``actual`` on every starter whose team's game is in (``points``: Sleeper id -> his points this week; a
+    starter missing from it scored 0). Returns False when a game is in but the league's points are unknown (None)."""
+    if not scored:
+        return True
+    for s in starters:
+        if _team_code(s.get("team")) not in scored:
+            continue
+        if points is None:
+            return False
+        s["actual"] = float(points.get(s.get("sleeper_player_id") or "", 0.0) or 0.0)
+    return True
+
+
+def week_line(w: dict) -> str | None:
+    """"You're a slight favorite this week: 58%, 121 to 117 expected." (+ "2 of your 9 have played, 3 of theirs.")"""
+    if w.get("p") is None:
+        return None
+    mine, theirs = f"{w['mine']:.0f}", f"{w['theirs']:.0f}"
+    if w.get("early"):
+        head = f"Early: {WIN_GRADED_WEEKS} weeks graded — {mine} to {theirs} expected."
+    elif w["words"] == "a coin flip":
+        head = f"This week is a coin flip: {w['percent']}%, {mine} to {theirs} expected."
+    else:
+        head = f"You're {w['words']} this week: {w['percent']}%, {mine} to {theirs} expected."
+    return f"{head} {w['played_words']}." if w.get("played_words") else head
+
+
+def played_words(r: dict) -> str | None:
+    if not r.get("n_played") and not r.get("opp_n_played"):
+        return None
+    return f"{r['n_played']} of your {r['n_starters']} have played, {r['opp_n_played']} of theirs"
+
+
+def win_answer(mine: list[dict], theirs: list[dict], opponent_roster_id: int | None) -> dict:
+    """The `win` object for one opponent (INTERFACES.md § IH-3)."""
+    from league_lab import decisions as D
+
+    base = {"opponent_roster_id": opponent_roster_id, "p": None, "percent": None, "words": None, "side": None,
+            "line": None, "note": None, "assumptions": D.WEEK_ASSUMPTIONS, "early": WIN_EARLY, "played_words": None}
+
+    def ranged_share(side: list[dict]) -> float:
+        tot = sum(abs(s["value"] or 0.0) for s in side if s["actual"] is None)
+        rng = sum(abs(s["value"] or 0.0) for s in side if s["actual"] is None and s.get("p10") is not None and s.get("p90") is not None)
+        return 1.0 if tot == 0 else rng / tot
+
+    if not mine or not theirs or min(ranged_share(mine), ranged_share(theirs)) < MIN_RANGED_SHARE:
+        return {**base, "note": WIN_NO_RANGE}
+    r = D.lineup_win_probability(mine, theirs)
+    out = {**base, **{k: r[k] for k in ("mine", "theirs", "n_played", "n_starters", "opp_n_played", "opp_n_starters",
+                                         "n_no_range", "opp_n_no_range")}}
+    if r["p"] is None:
+        return {**out, "note": WIN_NO_RANGE}
+    p = float(r["p"])
+    pct = D.percent(p)
+    words = D.week_words(pct / 100)        # the words of the percent printed beside them (64.96% is "65%": clear)
+    out.update({"p": round(p, 4), "percent": pct, "words": words,
+                "side": "even" if words == "a coin flip" else ("favorite" if p > 0.5 else "underdog"),
+                "played_words": played_words(r)})
+    out["line"] = week_line(out)
+    return out
+
+
+def win(league_id: str, roster_id: int, season: int, week: int, rows: pd.DataFrame | None, opp: dict | None, *,
+        house: bool, points_fn=None, context_fn=None) -> dict | None:
+    """`win` on My Week: None without an opponent; one object per opponent (a double header's second in ``also``).
+    ``points_fn(roster_ids) -> {Sleeper id: points} | None`` reads the week's points for the on-demand path (None: not
+    known, e.g. an MFL league); the database path reads `league_player_week`. ``context_fn(roster_id)`` = the
+    opponent's roster context (default `availability.roster_context`, the same rows his total on the page comes from)."""
+    if opp is None:
+        return None
+    opps = [opp, *(opp.get("also") or [])]
+    context_fn = context_fn or (lambda rid: availability.roster_context(league_id, int(rid), week, house=house))
+    try:
+        ctxs = {int(o["roster_id"]): context_fn(int(o["roster_id"])) for o in opps}
+    except Exception:  # noqa: BLE001 - the opponent is a nicety: his rows not readable leaves the line out
+        return None
+    scored = scored_teams(season, week)
+    rids = [int(roster_id), *ctxs]
+    points: dict[str, float] | None = {}
+    if scored:
+        if house:
+            df = query(OBSERVED_SQL, (league_id, int(season), int(week), rids))
+            points = {str(r.sleeper_player_id): float(r.points) for r in df.itertuples() if r.points is not None and not pd.isna(r.points)}
+        else:
+            points = points_fn(rids) if points_fn is not None else None
+        points = points or None            # no points at all for the week (the league's load failed): unknown, not 0
+    mine = win_starters(rows)
+    live_ok = with_actuals(mine, scored, points)
+    answers = []
+    for o in opps:
+        oc = ctxs.get(int(o["roster_id"]))
+        theirs = win_starters(oc.rows if oc is not None else None)
+        ok = live_ok and with_actuals(theirs, scored, points)
+        if not ok:
+            answers.append({"opponent_roster_id": int(o["roster_id"]), "p": None, "line": None, "note": WIN_NO_LIVE,
+                            "early": WIN_EARLY})
+            continue
+        answers.append(win_answer(mine, theirs, int(o["roster_id"])))
+    head = answers[0]
+    if len(answers) > 1:
+        head["also"] = answers[1:]
+    return head
+
+
+MATCHUPS_DB_SQL = """select matchup_id, roster_id from analytics.fct_league_matchup
+                     where league_id = %s and season = %s and week = %s and matchup_id is not null"""
+
+
+def week_odds(league_id: str, *, house: bool | None = None) -> dict:
+    """The League screen: this week's games, each with both teams' chance (a's p, b's 1 - p) and expected totals —
+    every roster's context read side by side (the house path: one query each; on demand: one solve each, ~1-3 s cold,
+    so the screen asks for it after it shows). Games from Sleeper's matchups call (MFL's schedule), else the nightly's
+    fct_league_matchup; a double header's games each once."""
+    from league_lab import anyleague as A
+    from league_lab import decisions as D
+
+    from .ondemand import week_points
+
+    league_id = str(league_id)
+    house = known_league(league_id) if house is None else bool(house)
+    client = A.sleeper()
+    season = int(cards.league_season(league_id)) if house else int(client.league(A.check_id(league_id))["season"])
+    week = cards.decision_week(season)
+    out: dict = {"league_id": league_id, "season": season, "week": week, "games": [], "assumptions": D.WEEK_ASSUMPTIONS,
+                 "note": None}
+    if week is None:
+        return out
+    try:
+        ms = client.matchups(league_id, int(week))
+    except (A.SleeperBusy, A.SleeperUnavailable):
+        ms = []
+    if not ms and house:
+        ms = query(MATCHUPS_DB_SQL, (league_id, int(season), int(week))).to_dict("records")
+    by: dict = {}
+    for m in ms or []:
+        if m.get("matchup_id") is not None and m.get("roster_id") is not None:
+            by.setdefault(int(m["matchup_id"]), []).append(int(m["roster_id"]))
+    pairs = [(mid, sorted(set(r))) for mid, r in sorted(by.items()) if len(set(r)) == 2]
+    if not pairs:
+        return out
+    rids = sorted({r for _, pr in pairs for r in pr})
+    if house:
+        ctxs = availability.contexts(league_id, rids, week, house=True)
+    else:
+        ctxs = {r: availability.roster_context(league_id, r, week, house=False, client=client) for r in rids}
+    scored = scored_teams(season, week)
+    points: dict[str, float] | None = {}
+    if scored:
+        if house:
+            df = query(OBSERVED_SQL, (league_id, int(season), int(week), rids))
+            points = {str(r.sleeper_player_id): float(r.points) for r in df.itertuples() if r.points is not None and not pd.isna(r.points)}
+        else:
+            points = week_points(client, league_id, week, rids)
+        points = points or None            # no points at all for the week: unknown, not 0
+    names = {int(r["roster_id"]): r["team_name"] for r in rosters(league_id)} if house else {
+        int(k): v.get("team_name") for k, v in A.team_names(client.rosters(league_id), client.users(league_id)).items()}
+    starters = {}
+    live_ok = True
+    for r in rids:
+        c = ctxs.get(r)
+        starters[r] = win_starters(c.rows if c is not None else None)
+        live_ok = with_actuals(starters[r], scored, points) and live_ok
+    for mid, (a, b) in pairs:
+        side = {"a": {"roster_id": a, "team_name": names.get(a)}, "b": {"roster_id": b, "team_name": names.get(b)}}
+        g = {"matchup_id": mid, **side, "p": None, "words": None, "note": None}
+        if not live_ok:
+            g["note"] = WIN_NO_LIVE
+        else:
+            w = win_answer(starters[a], starters[b], b)
+            g["note"] = w.get("note")
+            if w.get("p") is not None:
+                p = float(w["p"])
+                g["p"] = round(p, 4)
+                g["a"].update({"percent": D.percent(p), "expected": w["mine"], "n_played": w["n_played"]})
+                g["b"].update({"percent": 100 - D.percent(p), "expected": w["theirs"], "n_played": w["opp_n_played"]})
+                g["words"] = w["words"].replace("underdog", "favorite")          # read from the favourite's side
+                g["favorite"] = None if w["words"] == "a coin flip" else (a if p > 0.5 else b)
+        out["games"].append(g)
+    if out["games"] and all(g["p"] is None for g in out["games"]):
+        out["note"] = out["games"][0]["note"]
+    return out
+# ---- end IH-3

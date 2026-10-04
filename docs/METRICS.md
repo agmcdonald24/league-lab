@@ -2173,6 +2173,73 @@ roster 2: Croskey-Merritt projects 9.13 to Tuten's 9.07, but Tuten's range sits 
 the 50% range ("Most weeks"), the floor and ceiling in the full table; a week without it shows the 80% range
 under its old name.
 
+### Win probability — the week (wp1.0, IH-3, Wave I-H, 2026-10-04; `decisions.lineup_win_probability`, `myweek.win`, `/api/league/week-odds`)
+
+The decision-quality review's item 5 ("the game objective"): how often **my starters outscore the opponent's** this
+week, shown as information. It never picks a player: the lineup is still solved on expected points (§ Lineup value),
+and "underdog" is never turned into an instruction to chase ceilings. My Week: one line under the opponent line —
+"**This week is a coin flip: 53%, 120 to 117 expected.**" (League of Scrubs roster 6 vs MacZaddy, week 4); a double
+header gets one line per game ("Big Mac Attack: You're a clear underdog this week: 34%, 96 to 115 expected." /
+"Klaby Crew: … 37%, 96 to 111 expected."). The League screen: both teams' chance per game of the week
+(`/api/league/week-odds`, asked after the screen shows).
+
+* **The lineups**: our lineup for me (the one My Week proposes, its total = `lineup_value`) against the opponent's
+  best lineup (the total the opponent line shows), both through the availability overlay — the same two numbers the
+  opponent line prints. Empty slots score nothing; a starter with no range (a points-per-game value, no projection)
+  counts as a point at his value; when ranges carry under half of a side's expected points there is no number ("no
+  range for this league yet").
+* **Each starter** is D6's piecewise-linear quantile function through his P10 … P90 in the league's scoring (three knots
+  on rows without the 50% range; a K / DEF row with P10 / P90 only takes its projection as the median), **moved so its
+  mean is his projection** (shape kept, floored at 0). Why: the stored ranges are fitted apart from the point
+  projection, so their means drift (as stored, a lineup's range means sum to 3.5 points above its projected total on
+  the 2024–2025 walk-forward; ± several points on 2026 week 4 either way); centred, the probability agrees with the
+  expected totals printed next to it. Calibration is the same either way (2024–2025, raw: Brier 0.2430 centred vs
+  0.2432 as stored).
+* **One Gaussian copula over both lineups**: every pair that shares an NFL game gets D6's `pair_rho` — on either side
+  (my WR and *their* QB who throws to him move together, which narrows the difference); pairs in different games are
+  independent; a kicker, a defense or a team unit is independent of everyone (not measured). A correlation matrix that
+  is not jointly consistent is repaired (eigenvalues floored, diagonal rescaled). 20,000 joint draws (whole percent: ±0.4 at 50%), fixed seed, a
+  tie counts half; the same player on both sides is one draw.
+* **Played games**: a starter's game is in once the nightly has scored it (his team has rows in
+  `fct_player_game_league` for the week): his points are then the league's own — `league_player_week.points_observed`
+  (Sleeper's number) on the house path, Sleeper's matchups `players_points` on demand; a starter missing from them
+  scored 0. A game in progress still counts as his whole range. The line says so: "… 2 of your 9 have played, 3 of
+  theirs." An MFL league's live scores are not read yet: once any starter's game is in, the line steps aside ("the week
+  has started and this league's live scores are not read yet").
+* **What is ignored** (the assumption on the line, `WEEK_ASSUMPTIONS`): "assuming the players' weeks are independent
+  except teammates and opponents". Also: a starter who does not play at all (the ranges are "if he plays"; the
+  morning's statuses already sit the ruled-out), a game in progress (its full range), the opponent setting a lineup
+  other than his best.
+* **The calibration shrink** (`WEEK_SHRINK = 0.60`): `p = sigmoid(0.60 × logit(p_raw))`. The raw Monte Carlo number is
+  overconfident (2024–2025: the favourite predicted 62.7%, won 57.5%; "clear" 73% vs 63%) — the "if he plays" ranges
+  and the cross-game dependence it ignores. Fitted on one season, the shrink improves the other: Brier 2025 0.2436 →
+  **0.2403** with 2024's factor 0.60; 2024 0.2424 → **0.2387** with 2025's 0.585; 2026 weeks 1–2 0.2451 → 0.2410 with
+  the pooled 0.593 (used rounded, 0.60). Whole percent 1–99 on the page (`percent`); a finished week is 0 or 1.
+* **Words** (`week_words`, D6's scale read from my side): 50–55% either way **a coin flip**, 55–65% **a slight
+  favorite / underdog**, 65%+ **a clear favorite / underdog**.
+
+**Calibration** (`scratchpad/waveIH/ih3/calib.py`): the house leagues' real regular-season matchups, the starters each
+manager actually started (`league_player_week`), every QB–TE starter's walk-forward range (the production fit on the
+seasons before — `calibration.oof_rows(ranges=True)` — priced in the league's 2026 scoring), K / DEF one distribution
+per league-season (that season's started K / DEF points; 2026: 2025's), the outcome `fct_league_matchup.result`; each
+matchup once, read from the favourite's side; 0 starters without a range. As shipped (centred, shrink 0.60):
+
+| | Matchups | Brier | Favourite predicted | Favourite won | "The higher projection wins" |
+|---|---|---|---|---|---|
+| 2024–2025 | 308 | **0.2395** (coin flip 0.25) | 58.0% | 57.5% | 57.1% |
+| 2024 | 154 | 0.2387 | 58.4% | 57.8% | |
+| 2025 | 154 | 0.2403 | 57.6% | 57.1% | |
+| 2026 weeks 1–2 (frozen P10 / P50 / P90 rows) | 22 | 0.2410 | 58.6% | 63.6% | 63.6% |
+
+2024–2025 by fifth of the prediction (equal counts): predicted 51.2 / 53.8 / 56.5 / 60.7 / 68.1%, won 50.0 / 56.5 /
+53.2 / 55.7 / 72.1%. By word: "a coin flip" 123 matchups, 52.5% predicted / 53.7% won; "slight" 141, 59.2% / 54.6%;
+"clear" 44, 69.7% / 77.3%. The honest reading: a fantasy week is close to a coin flip — the number beats "50%" by a
+little (Brier 0.239 vs 0.25) and is calibrated on average within a point; by band the "slight" weeks run about 5
+points hot and the "clear" ones about 8 points cold (44 matchups: noise of ±6), so the words are the safer read than
+the exact percent. It is not a forecast to bet on. 2026 has two graded
+weeks (22 matchups): too few to say more, and nothing in them is badly off, so the line shows the percentage (the
+"early: N weeks graded" fallback, `myweek.WIN_EARLY`, stays off).
+
 ## Rest of season (ros1.0, plan E2, Wave E, 2026-10-01; `mart_player_ros_projection`, `app/lib/ros.py`)
 
 One row per league × player (current season): the projection added up over the weeks left in **the league's**
