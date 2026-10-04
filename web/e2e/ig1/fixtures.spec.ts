@@ -17,7 +17,7 @@ const FILE = join(import.meta.dirname, "..", "..", "fixtures", "ig1", "api_ig1.j
 const RECORD = process.env.IG1_RECORD ?? "";
 type Saved = { status: number; body: unknown };
 const saved: Record<string, Saved> = !RECORD && existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
-const MINE = /\/api\/(my-week|trades\/(partners|evaluate)|team\?)|mfl/i;
+const MINE = /\/api\/(my-week|trades\/(partners|evaluate)|team\?|player\/00-0035700\?)|mfl/i;
 const MFL = "mfl:70587";
 
 const keyOf = (u: URL, body: string | null) => {
@@ -88,6 +88,12 @@ test("a bench player with no projection shows a dash and the words, never 0.00",
   await expect(page.getByTestId("unvalued-words")).toHaveCount(0); // the bench is not in the total: nothing to say
   await noSidewaysScroll(page);
   await shot(page, "scrubs6-bench", info.project.name);
+  // his card in the research pane: a dash, and the label says why
+  await row.getByTestId("lineup-name").click();
+  const card = page.getByTestId("pane-card");
+  await expect(card).toContainText("—", { timeout: 60_000 });
+  await expect(card).toContainText("no projection");
+  await expect(card).not.toContainText("0.0");
 });
 
 test("the team QB is counted in the season value, and the Finder leaves out trades on the value gap", async ({ page }, info) => {

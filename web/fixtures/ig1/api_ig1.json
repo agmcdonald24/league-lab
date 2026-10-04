@@ -590,7 +590,7 @@
    "howto": "- The lineup is the best one your roster can start this week, in your league's scoring, with FLEX and superflex filled by whoever is worth most there. Start it, then check the cards.\n- Each card is one of the week's closest calls: who to start, then **why** in one sentence (the matchup, his share of his team's carries or targets, an injury, the betting line). On a coin flip the card says so and names the tiebreaker.\n- The small print starts with **how often your starter outscores the other player** this week, from both players' ranges: 50–55% is a coin flip (go with the latest news), 55–65% a lean, 65% or more clear. Teammates and players facing each other are not independent (a shootout lifts both), and the percentage allows for that.\n- **Apart** is how many projected points separate them: the lineup is built on those averages. On a coin flip the two can disagree (under 50% but more points): the card then says both.\n- **Typical range** is the middle 50% of his outcomes: half of his weeks land in it (a quarter below, a quarter above). **A bad week to a good week** is the wider range 8 weeks in 10 land in. A card without a percentage (a kicker, a defense) falls back on the points: under 1 point apart is a coin flip, under 3 a lean.\n- The named player is the one who would really come in: your best bench player for that spot, or, when moving a teammate over works better, the card says who moves.\n- **5th-fewest WR points allowed** is the opponent's rank against that position this season, said one way everywhere: the most points allowed is the matchup you want, the fewest the toughest.\n- No card for a player whose game has started (he is locked) or for a starter nobody on your bench can replace, like your only kicker.",
    "movers": [],
    "availability": {
-    "checked_at": "2026-10-04T08:06:46.580033Z",
+    "checked_at": "2026-10-04T08:38:31.732623Z",
     "changes": [],
     "flags": [],
     "applied": 1
@@ -668,6 +668,292 @@
     "lines": [],
     "empty": "Nothing has changed since the morning build."
    }
+  }
+ },
+ "/api/player/00-0035700?league=1389709692405551104&team=6": {
+  "status": 200,
+  "body": {
+   "why": null,
+   "market": {
+    "market_points": null,
+    "ours": null,
+    "ratio": null,
+    "week": 4,
+    "words": null,
+    "why": "Sleeper's number for this week is not in yet.",
+    "far": false
+   },
+   "leans_on": {
+    "features": [
+     "share of his team's carries, last 3 games",
+     "rushing yards per game, season",
+     "share of his team's targets, season"
+    ],
+    "words": "For RBs the model leans most on **share of his team's carries, last 3 games**. Next: rushing yards per game, season · share of his team's targets, season.",
+    "scored_in": "League of Scrubs"
+   },
+   "gsis_id": "00-0035700",
+   "player_name": "Josh Jacobs",
+   "position": "RB",
+   "team": "GB",
+   "header": "RB · GB · RB4 on the depth chart · on **GoodGameBuddy** (Chazk92)",
+   "league_id": "1389709692405551104",
+   "league_name": "League of Scrubs",
+   "season": 2026,
+   "week": 4,
+   "rostered_by_roster_id": 6,
+   "is_free_agent": false,
+   "injury_status": null,
+   "locked": false,
+   "proj_points": null,
+   "sections": {
+    "usage": {
+     "title": "**Usage** — his share of the team's opportunities",
+     "blocks": [
+      {
+       "kind": "unavailable",
+       "text": "unavailable: no games this season yet."
+      }
+     ]
+    },
+    "projection": {
+     "title": "**Projection** — week 4, League of Scrubs scoring",
+     "blocks": [
+      {
+       "kind": "unavailable",
+       "text": "unavailable: he is on the exempt list."
+      },
+      {
+       "kind": "caption",
+       "text": "Rest of season: no projection yet."
+      },
+      {
+       "kind": "markdown",
+       "text": "Next: week 4 @ TB — TB ranks **#18** of 32 vs RB (1 = gives up the most)"
+      },
+      {
+       "kind": "caption",
+       "text": "Next 4: wk 4 @ TB (#18) · wk 5 vs CHI (#10) · wk 6 vs DAL (#11) · wk 7 @ DET (#12)"
+      }
+     ]
+    },
+    "availability": {
+     "title": "**Availability**",
+     "blocks": [
+      {
+       "kind": "markdown",
+       "text": "Rostered by **GoodGameBuddy** (Chazk92), on the bench in Sleeper.  \nNo injury designation.  \nBye: week 11.  \nWeek 4 kickoff Sun Oct 4, 1:00 PM ET — not locked yet."
+      }
+     ]
+    },
+    "value": {
+     "title": "**Value** — League of Scrubs scoring",
+     "blocks": [
+      {
+       "kind": "markdown",
+       "text": "No games this season yet. Last season: **14.6** points per game over 15 games."
+      },
+      {
+       "kind": "markdown",
+       "text": "Week 4: **on GoodGameBuddy's bench** (5 of 5) with no value this week (no projection): he starts only where nobody else can play."
+      }
+     ]
+    },
+    "signals": {
+     "title": "**Signals** — has his role changed lately?",
+     "blocks": [
+      {
+       "kind": "markdown",
+       "text": "Role: **no role change detected** in his last three games: his share of the snaps, targets and carries is where it has been.  \nUpside: nothing beyond the projection above."
+      },
+      {
+       "kind": "caption",
+       "text": "A role alert needs his share of the snaps, targets or carries to jump (or fall) well past his usual swing, in every one of his last one to three games. The what-if re-runs the same projection with his last three games at the new level, in League of Scrubs scoring."
+      }
+     ]
+    }
+   },
+   "howto": "- **Usage** is the work he gets: his share of his team's targets or carries, of its plays, of the quarterback's first looks and of the red-zone chances. The arrow is the last 3 games: up means a growing role.\n- **Projection** is this week's projected points in League of Scrubs scoring. **Most weeks** is the range half his weeks land in (a quarter below, a quarter above); the **floor** and **ceiling** are a bad week and a good week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. The opponent's rank is 1 for the defense that gives up the most to his position.\n- **Rest of season** adds up his projection for every week left in this league's season, up to its final: use it for trades and waivers, where the next four weeks are not the whole story. His bye is a week with no game, not a low score. *Likely* is the range 8 seasons in 10 would land in if every week were its own roll of the dice; a role change or an injury moves the weeks together, so the real range is wider. The rank is among every player at his position in this league, rostered or not. Only this week has betting lines yet: the later weeks lean on his usage and the schedule.\n- **Availability** says whose team he is on (or that he is a free agent), his injury status, and whether his game has started.\n- **Value** compares what he scores with what his work is usually worth (above = running hot, below = due), and says where he sits in his team's best lineup this week and how much that lineup would lose without him.",
+   "ros": null,
+   "missing": [],
+   "missing_keys": [],
+   "source": "database",
+   "platform": "sleeper",
+   "news": [],
+   "matchup_evidence": {
+    "gsis_id": "00-0035700",
+    "player_name": "Josh Jacobs",
+    "position": "RB",
+    "season": 2026,
+    "week": 4,
+    "opponent": "TB",
+    "opponent_name": "Tampa Bay",
+    "is_home": false,
+    "history": {
+     "defense": "TB",
+     "position": "RB",
+     "rank_most": 18,
+     "tough_rank": 15,
+     "n": 32,
+     "words": "gives up the 15th-fewest points to running backs",
+     "games": 2,
+     "through_week": 2,
+     "period": "2026, weeks 1–2",
+     "points_allowed_pg": 16,
+     "scoring": "League of Scrubs scoring",
+     "adjusted": false,
+     "adjusted_words": "not adjusted for the offenses it faced",
+     "adjusted_rank": {
+      "rank_most": 13,
+      "n": 32,
+      "words": "gives up the 13th-most",
+      "scoring": "League of Scrubs scoring"
+     }
+    },
+    "changed": {
+     "kind": "not_checked",
+     "depth_chart_at": null,
+     "regulars": [],
+     "listed": [],
+     "missing": [],
+     "expected": [],
+     "words": null
+    },
+    "implication": {
+     "kind": "unchecked",
+     "words": "the historical rank, without a personnel check: corners are checked for receivers only"
+    },
+    "forecast_treatment": {
+     "kind": "contextual",
+     "words": "contextual only; not in the forecast",
+     "detail": "The projection's opponent inputs are the points this defense has allowed to the position (the season, the last 4 games, its rank) and the betting lines; none of them says who plays corner.",
+     "features": [
+      "opp_allowed_std",
+      "opp_allowed_l4",
+      "opp_rank_std",
+      "f_opp_allowed_diff",
+      "league_allowed_avg",
+      "implied_team_total",
+      "spread_line",
+      "total_line"
+     ]
+    },
+    "matchup_uncertain": false,
+    "caveat": null,
+    "sentences": [
+     "Tampa Bay gives up the 15th-fewest points to running backs (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced).",
+     "Who plays for Tampa Bay's defense is checked for receivers (the corners) only; the projection counts the points it has allowed."
+    ]
+   },
+   "schedule": [
+    {
+     "week": 4,
+     "opponent": "TB",
+     "is_home": false,
+     "opp_rank": 18,
+     "proj": null
+    },
+    {
+     "week": 5,
+     "opponent": "CHI",
+     "is_home": true,
+     "opp_rank": 10,
+     "proj": null
+    },
+    {
+     "week": 6,
+     "opponent": "DAL",
+     "is_home": true,
+     "opp_rank": 11,
+     "proj": null
+    },
+    {
+     "week": 7,
+     "opponent": "DET",
+     "is_home": false,
+     "opp_rank": 12,
+     "proj": null
+    },
+    {
+     "week": 8,
+     "opponent": "CAR",
+     "is_home": true,
+     "opp_rank": 1,
+     "proj": null
+    },
+    {
+     "week": 9,
+     "opponent": "NE",
+     "is_home": false,
+     "opp_rank": 23,
+     "proj": null
+    },
+    {
+     "week": 10,
+     "opponent": "MIN",
+     "is_home": true,
+     "opp_rank": 28,
+     "proj": null
+    },
+    {
+     "week": 11,
+     "opponent": null,
+     "is_home": null,
+     "opp_rank": null,
+     "proj": null
+    },
+    {
+     "week": 12,
+     "opponent": "LA",
+     "is_home": false,
+     "opp_rank": 25,
+     "proj": null
+    },
+    {
+     "week": 13,
+     "opponent": "NO",
+     "is_home": false,
+     "opp_rank": 7,
+     "proj": null
+    },
+    {
+     "week": 14,
+     "opponent": "BUF",
+     "is_home": true,
+     "opp_rank": 6,
+     "proj": null
+    },
+    {
+     "week": 15,
+     "opponent": "MIA",
+     "is_home": true,
+     "opp_rank": 3,
+     "proj": null
+    },
+    {
+     "week": 16,
+     "opponent": "CHI",
+     "is_home": false,
+     "opp_rank": 10,
+     "proj": null
+    },
+    {
+     "week": 17,
+     "opponent": "HOU",
+     "is_home": true,
+     "opp_rank": 29,
+     "proj": null
+    },
+    {
+     "week": 18,
+     "opponent": "DET",
+     "is_home": true,
+     "opp_rank": 12,
+     "proj": null
+    }
+   ],
+   "games_played": null,
+   "viewer_roster_id": 6
   }
  },
  "/api/leagues/mfl%3A70587/rosters": {
@@ -1413,10 +1699,10 @@
    "on_demand": {
     "cost": "every roster solved for 4 weeks: 12 x 4 = 48 lineups (the ranks need the whole league)",
     "timings_ms": {
-     "sleeper": 3.8,
-     "price": 5537.6,
-     "solve": 629.3,
-     "total": 6170.6
+     "sleeper": 40.3,
+     "price": 12546.9,
+     "solve": 1254.4,
+     "total": 13841.7
     }
    },
    "roster_context": {
@@ -1426,12 +1712,12 @@
     "lineup_value": 115.41,
     "changed": false,
     "changes": [],
-    "checked_at": "2026-10-04T08:06:46.580033Z",
-    "as_of_build": "2026-10-04T08:07:05.602295Z"
+    "checked_at": "2026-10-04T08:38:31.732623Z",
+    "as_of_build": "2026-10-04T08:39:00.955326Z"
    },
    "timings_ms": {
-    "data": 25.4,
-    "total": 766.9
+    "data": 83.5,
+    "total": 635.3
    }
   }
  },
@@ -2134,10 +2420,10 @@
    "on_demand": {
     "cost": "every roster solved for 4 weeks: 12 x 4 = 48 lineups (the ranks need the whole league)",
     "timings_ms": {
-     "sleeper": 3.8,
-     "price": 5537.6,
-     "solve": 629.3,
-     "total": 6170.6
+     "sleeper": 40.3,
+     "price": 12546.9,
+     "solve": 1254.4,
+     "total": 13841.7
     }
    },
    "roster_context": {
@@ -2147,12 +2433,12 @@
     "lineup_value": 117.46,
     "changed": false,
     "changes": [],
-    "checked_at": "2026-10-04T08:06:46.580033Z",
-    "as_of_build": "2026-10-04T08:07:05.619391Z"
+    "checked_at": "2026-10-04T08:38:31.732623Z",
+    "as_of_build": "2026-10-04T08:39:01.326288Z"
    },
    "timings_ms": {
-    "data": 122.7,
-    "total": 866.3
+    "data": 97.4,
+    "total": 649.8
    }
   }
  },
@@ -3180,13 +3466,13 @@
    },
    "timings_ms": {
     "context": 0,
-    "evaluate": 205.1,
-    "words": 299.4,
-    "total": 504.6,
-    "league.sleeper": 29.2,
-    "league.price": 10147.3,
-    "league.solve": 506.9,
-    "league.total": 10683.4
+    "evaluate": 274,
+    "words": 1167.3,
+    "total": 1441.3,
+    "league.sleeper": 20.3,
+    "league.price": 14579.5,
+    "league.solve": 825.5,
+    "league.total": 15425.3
    }
   }
  },
@@ -5522,10 +5808,10 @@
     "bar_sets": 146,
     "candidates": 8467,
     "evaluated": 139,
-    "seconds": 3.686
+    "seconds": 5.942
    },
    "timings_ms": {
-    "total": 483.3
+    "total": 544.8
    }
   }
  }

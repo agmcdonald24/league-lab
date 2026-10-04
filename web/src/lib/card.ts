@@ -226,6 +226,13 @@ export function matchupBlocks(d: Pick<PlayerCard, "matchup_evidence">): Block[] 
 export const NO_PROJECTION = "no projection";
 export const NO_PROJECTION_TITLE = "No projection for him this week: unknown, not 0";
 
+/** The player card's number label: "Week 4", "Week 4 · no projection" when the card has no projection (the number is a
+ * dash, never 0.00). */
+export function projLabel(week: number | null | undefined, proj: number | null | undefined): string {
+  const base = week ? `Week ${week}` : "Projection";
+  return proj === null || proj === undefined ? `${base} · ${NO_PROJECTION}` : base;
+}
+
 /** 12.34 / "—" for no number (unknown is not zero). */
 export function projText(v: number | null | undefined, digits = 2): string {
   return v === null || v === undefined || Number.isNaN(v) ? "—" : v.toFixed(digits);
