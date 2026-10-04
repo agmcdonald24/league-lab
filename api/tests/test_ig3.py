@@ -261,3 +261,34 @@ def test_the_console_guide_names_the_usage_page():
     home = (ROOT / "app/Home.py").read_text()
     assert '("Which screens of the web app get used?", ("99_Usage.py",))' in home
     assert "older than 180 days are deleted every night" in (ROOT / "app/pages/99_Usage.py").read_text()
+
+
+# ------------------------------------------------------------------ the web's e2e recordings (web/e2e/ig3)
+@needs_db
+@pytest.mark.skipif(not __import__("os").environ.get("IG3_RECORD"), reason="records web/fixtures/ig3/api_ig3.json: IG3_RECORD=1")
+def test_record_e2e_answers(client):
+    """The answers web/e2e/ig3 replays: dad's league team 8 (the MFL pick, My Week with the MFL line, Waivers with the
+    FCFS line, About with the qualification), League of Scrubs roster 6's Waivers (Sleeper's Wednesday line), the status."""
+    from urllib.parse import urlencode
+
+    def key(path: str, **q) -> str:
+        return path + ("?" + urlencode(sorted((k, str(v)) for k, v in q.items())) if q else "")
+
+    out: dict = {}
+
+    def rec(path: str, **q):
+        r = client.get(key(path, **q))
+        out[key(path, **q)] = {"status": r.status_code, "body": r.json()}
+
+    rec("/api/leagues", mfl_search="70587")
+    rec("/api/leagues/mfl%3A70587/rosters")
+    rec("/api/my-week", league=DAD, team=8)
+    rec("/api/waivers", league=DAD, team=8, position="ALL")
+    rec("/api/about", league=DAD)
+    rec("/api/record", league=DAD)
+    rec("/api/waivers", league=SCRUBS, team=6, position="ALL")
+    rec("/api/status")
+    f = ROOT / "web" / "fixtures" / "ig3" / "api_ig3.json"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(out, indent=1, default=str) + "\n")
+    assert all(v["status"] == 200 for v in out.values()), {k: v["status"] for k, v in out.items()}
