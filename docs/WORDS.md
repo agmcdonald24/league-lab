@@ -223,6 +223,17 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | our own 502 / 503 | "Sleeper did not answer. Try again in a minute." (MyFantasyLeague's name for an MFL league) · "The numbers are not ready yet. Try again in a few minutes." · "Busy right now. Try again in a minute." | — |
 | a 401 after this browser was signed in (the cookie expired) | the password screen with "Signed out — sign in again." above "Private beta. Enter the password from your invite."; signing in goes back to the same screen | the plain password screen with no word on why |
 
+## The small opens (Wave I-H, IH-2)
+
+| Where | The words we use | Never |
+|---|---|---|
+| when daily claims run (Waivers, under the title; `decisions.waiver_deadline` + `daily_waivers_days`) | "Claims run every day except Saturday at 5:00 AM ET (FAAB blind bids); players lock at their own kickoff — …" (the dynasty; IG-3's "every day" stays for a league whose settings leave no day out) · "every day except Monday and Saturday" · "on Monday, Wednesday and Thursday" (three days or fewer: named) — ET day names | "every day" when the league's settings leave a day out |
+| a Questionable tag that changes no lineup (My Week's "What changed") | "Questionable: Flowers (hamstring) — your lineup is unchanged · Injury report (ESPN) · 1 d ago" — once per player, only when the tag is news since the morning build (the store's event of the last 24 hours, or a copy newer than the build) | nothing at all; a second line for the same tag; "check before kickoff" as an instruction to bench him |
+| MFL's roster freshness (Team, under the roster) | "MFL rosters updated 12:16 PM ET ›" → "This roster was read from MyFantasyLeague Sun, Oct 4, 12:16 PM ET (just now); isuckatfantasy reads it again after 10 minutes. The projections are the morning build's." | the morning build's time as the roster's |
+| the console's stash card (Waiver Wire; `signals.stash_call_words`) | the caption "Upside stash · watch, no claim yet: his role is growing before his points do" (or "· claim: …"); a watch names no drop and says the web's watch line word for word; a claim: "Claim: if his role holds he adds +6.4 to your lineup over weeks 4–7; after what dropping Harrison Jr. costs, +4.1." | "Drop X: …" on a watch |
+| a trade verdict with a player the season value cannot count (`trades.verdict`) | "…; season value not compared (1 player in it has no season projection): a lineup loss for them." | a lean ("you give up more season value") from the counted players alone |
+| a dropped team unit (Waivers, MFL) | its cost reads as a player's: season value above the best **free unit of its kind** (IG-1), its later starts against that unit — a kicker claim drops the kicker it replaces ("New Orleans Saints K … Jacksonville Jaguars K") | a unit's later starts measured against a free unit worth 0 |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

@@ -20,6 +20,9 @@
   import { recordTeamPath, type RecordAnswer } from "../lib/api"; // ---- V-2: "Your calls this season"
   import { Remote } from "../lib/remote.svelte"; // ---- V-2
 
+  import { ago } from "../lib/card"; // ---- IH-2: the MFL roster freshness line
+  import { APP_NAME } from "../lib/brand"; // ---- IH-2
+
   let { league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
   let data = $state<Team | null>(null);
@@ -100,6 +103,17 @@
     if (r.acquired) bits.push(r.acquired);
     return bits.join(" · ");
   }
+  // ---- IH-2: an MFL league's roster freshness ("MFL rosters updated 4:05 AM ET ›", the exact day and time on tap) — My
+  // Week's IG-3 line, on the page that shows the roster
+  function rosterRead(iso: string | null | undefined): { clock: string; exact: string; ago: string } | null {
+    if (!iso) return null;
+    const t = new Date(iso);
+    if (Number.isNaN(t.getTime())) return null;
+    const exact = t.toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    const clock = t.toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" });
+    return { clock: `${clock} ET`, exact: `${exact} ET`, ago: ago(iso) };
+  }
+  // ---- end IH-2
 </script>
 
 <main class="space-y-4" data-testid="team">
@@ -297,6 +311,22 @@
             {/each}
           </ul>
         </Card>
+        <!-- ---- IH-2: an MFL league's own roster freshness, under the roster it qualifies (My Week's IG-3 words) -->
+        {#if data.roster_updated_at}
+          {@const mu = rosterRead(data.roster_updated_at)}
+          {#if mu}
+            <details class="-mt-2 text-xs leading-snug text-ink-3" data-testid="team-mfl-updated">
+              <summary class="inline-flex min-h-9 cursor-pointer items-center gap-1"
+                >{data.roster_source ?? "MFL"} rosters updated <time datetime={data.roster_updated_at} title={mu.exact} data-testid="team-mfl-updated-time">{mu.clock}</time>
+                <span class="chev" aria-hidden="true">›</span></summary
+              >
+              <p class="mt-1" data-testid="team-mfl-updated-exact">
+                This roster was read from MyFantasyLeague {mu.exact} ({mu.ago}); {APP_NAME} reads it again after 10 minutes. The projections are the morning build's.
+              </p>
+            </details>
+          {/if}
+        {/if}
+        <!-- ---- end IH-2 -->
 
         {#if data.season}
           <p class="text-sm text-ink-2" data-testid="team-season">

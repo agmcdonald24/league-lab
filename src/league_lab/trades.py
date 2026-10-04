@@ -805,6 +805,14 @@ def verdict(trade: Trade, span: str) -> str:
     they_pay_more = not even and pi > po           # by season value they give up more than they get
     value = ("about even by season value" if even else
              "you give up more season value" if po > pi else "you get more season value")
+    # ---- IH-2 (Wave I-H, unknown is not zero): a side with a player the season value cannot count (no season projection)
+    # has no season-value sum — the lean would be a partial sum's. Say so and lean on nothing (team units count: IG-1).
+    n_unknown = len(m.unknown_out) + len(m.unknown_in)
+    if n_unknown:
+        even, they_pay_more = True, False
+        value = (f"season value not compared ({n_unknown} player{'s' if n_unknown > 1 else ''} in it "
+                 f"{'have' if n_unknown > 1 else 'has'} no season projection)")
+    # ---- end IH-2
 
     if abs(th_w) < 0.05 and abs(th_h) < 0.05:
         them = "no change for their lineup"

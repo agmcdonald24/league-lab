@@ -151,11 +151,11 @@ def upside_detail(r) -> list[str]:
                      f"lineup{where} and {hh:+.1f} over weeks {wk}–{last}.")
     else:
         lines.append(f"Even if it holds he would not start for you in weeks {wk}–{last}: a stash, not a starter yet.")
-    if _s(r["drop_name"]):
+    if _s(r["drop_name"]) and stash_call(r) != "watch":            # ---- IH-2: a watch names no drop (the writer's call)
         loss = _n(r["drop_horizon_loss"]) or 0.0
         lines.append(f"Drop {r['drop_name']} ({r['drop_position']}): "
                      + (f"costs your lineup {loss:.1f} over weeks {wk}–{last}." if loss > 0.05 else f"he would not start for you in weeks {wk}–{last}."))
-    else:
+    elif not _s(r["drop_name"]):
         lines.append("You have an open roster spot, so nobody has to go.")
     exp = expiry_phrase(r)
     if exp:
@@ -179,15 +179,21 @@ def upside_cards(league_id: str, roster_id: int, week: int) -> None:
         st.caption(f"No upside stash for week {week}: no free agent's role grew in his last one to three games without "
                    "already making the lists above (see Trends for every role change).")
         return
+    up = with_call(up, query(UPSIDE_CALL_SQL, (league_id, roster_id, week))                      # ---- IH-2
+                   if not query(UPSIDE_HAS_CALL_SQL).empty else None)
     r = up.iloc[0]
     with st.container(border=True):
-        st.caption("Upside stash: his role is growing before his points do")
+        st.caption(STASH_CAPTION.get(stash_call(r), STASH_CAPTION[None]))                            # ---- IH-2
         head = stash_headline(r).replace(str(r["add_name"]), player_link(r["add_gsis_id"], r["add_name"]), 1)
         st.markdown(f"**{head}**")
         st.markdown("  \n".join(upside_detail(r)))
+        call = stash_call_words(r)                                                                   # ---- IH-2
+        if call:
+            st.info(call)
     if len(up) > 1:
         with st.expander(f"All {len(up)} upside stashes"):
-            tab = up.assign(upside_stash=up["add_name"] + " " + up["add_position"], upside_drop=up["drop_name"],
+            tab = up.assign(upside_stash=up["add_name"] + " " + up["add_position"],
+                            upside_drop=[None if stash_call(x) == "watch" else x["drop_name"] for _, x in up.iterrows()],  # IH-2
                             role_change=up["change_text"], upside_if_holds=up["scenario_value"], upside_gain=up["holds_horizon_gain"],
                             role_cause=up["cause_text"])
             show(tab, ["upside_stash", "role_change", "upside_if_holds", "upside_gain", "upside_drop", "role_cause"],
@@ -195,3 +201,73 @@ def upside_cards(league_id: str, roster_id: int, week: int) -> None:
                  links={"upside_stash": ("add_gsis_id", "add_name"), "upside_drop": ("drop_gsis_id", "drop_name")})
             st.caption("Each stash with the drop your lineup misses least. **If it holds** is his projection this week with his "
                        "bigger role (a what-if); **Lineup gain if it holds** adds up the next four weeks.")
+
+
+# ---- IH-2 (Wave I-H): the stash region reads the writer's call (IG-3's `stash_action` on `mart_waiver_upside`: 'claim'
+# when the cheapest pairing is worthwhile if the role holds, else 'watch'). A watch names no drop (the API hides it too)
+# and says what would change it — the API's words (`decisions.ig3_watch_words` calls `watch_words` below: one source).
+# A row written before the call (or a mart without the columns) keeps the region's older words.
+UPSIDE_HAS_CALL_SQL = """select 1 from information_schema.columns where table_schema = 'analytics'
+                          and table_name = 'mart_waiver_upside' and column_name = 'stash_action'"""
+UPSIDE_CALL_SQL = """select upside_rank, stash_action, drop_cost, drop_cost_piece, net_weekly_gain, net_horizon_gain
+                      from analytics.mart_waiver_upside where league_id = %s and roster_id = %s and week = %s"""
+STASH_CAPTION = {"claim": "Upside stash · claim: his role is growing before his points do, and he is worth the roster spot if it holds",
+                 "watch": "Upside stash · watch, no claim yet: his role is growing before his points do",
+                 None: "Upside stash: his role is growing before his points do"}
+WORTH_WEEK, WORTH_HORIZON = 1.0, 3.0      # waivers.WORTH_WEEK / WORTH_HORIZON: the claims' bar (tests pin the parity)
+TEAM_NICKNAMES = frozenset("Cardinals Falcons Ravens Bills Panthers Bears Bengals Browns Cowboys Broncos Lions Packers "
+                           "Texans Colts Jaguars Chiefs Raiders Chargers Rams Dolphins Vikings Patriots Saints Giants Jets "
+                           "Eagles Steelers 49ers Seahawks Buccaneers Titans Commanders".split())
+
+
+def with_call(up: pd.DataFrame, call: pd.DataFrame | None) -> pd.DataFrame:
+    """The stash rows with the writer's call joined on ``upside_rank`` (unchanged without one)."""
+    if call is None or call.empty or up.empty or "stash_action" in up or "upside_rank" not in up:
+        return up
+    return up.merge(call, on="upside_rank", how="left")
+
+
+def stash_call(r) -> str | None:
+    """'claim' / 'watch' as the writer decided; None for a row written before the call."""
+    a = _s(r.get("stash_action")) if hasattr(r, "get") else None
+    return a if a in ("claim", "watch") else None
+
+
+def short_name(name: str | None) -> str:
+    """The API's short name (``decisions._last``): 'Croskey-Merritt'; a team keeps its name ('Kansas City Chiefs')."""
+    n = (name or "").strip()
+    if not n or len(n.split()) < 2 or n.split()[-1] in TEAM_NICKNAMES:
+        return n
+    parts = n.split()
+    return " ".join(parts[1:]) if parts[-1] in ("Jr.", "Sr.", "II", "III", "IV") and len(parts) > 2 else parts[-1]
+
+
+def watch_words(gain: float | None, net: float | None, drop_short: str | None, span: str) -> str:
+    """The watch line: what the role adds if it holds, after the cheapest drop's cost, and what would make it a claim."""
+    gain = gain or 0.0
+    bar = f"under {WORTH_WEEK:.0f} this week and {WORTH_HORIZON:.0f} over the weeks"
+    head = f"Watch, no claim yet: if his role holds he adds {gain:+.1f} to your lineup over {span}"
+    if drop_short and net is not None and abs(net - gain) >= 0.05:
+        head += f"; after what dropping {drop_short} costs, {net:+.1f} — {bar}."
+    elif drop_short:
+        head += f" with {drop_short} dropped — {bar}."
+    else:
+        head += f" — {bar}."
+    return head + " Claim him when his role would put him in your lineup for more, or when a roster spot opens."
+
+
+def stash_call_words(r) -> str | None:
+    """The console's call line: the watch words for a watch (the API's ``watch_words`` box); for a claim, the drop it
+    takes and what is left after its cost; None for a row without the writer's call."""
+    act = stash_call(r)
+    if act is None:
+        return None
+    wk, last = int(r["week"]), int(r["horizon_last_week"])
+    span = f"weeks {wk}–{last}" if last > wk else f"week {wk}"
+    gain, net = _n(r.get("holds_horizon_gain")), _n(r.get("net_horizon_gain"))
+    drop = _s(r.get("drop_name"))
+    if act == "watch":
+        return watch_words(gain, net, short_name(drop) if drop else None, span)
+    after = f"; after what dropping {short_name(drop)} costs, {net:+.1f}" if drop and net is not None else ""
+    return f"Claim: if his role holds he adds {(gain or 0.0):+.1f} to your lineup over {span}{after}."
+# ---- end IH-2

@@ -4,10 +4,10 @@
   the app learned about a player or a team — an injury-report status move (the availability overlay: ESPN / Sleeper),
   an ESPN news item it showed, a PlayerWire brief it showed — keyed by player (``gsis_id``; ``player_key`` = the
   source's own id: ``espn:4262921``, ``sleeper:6794``, ``pw:<brief id>``), ``team`` (nflverse abbreviations) and
-  ``game_key`` (nflverse ``game_id``; no writer knows the game yet), with ``status``, ``headline`` / ``summary``,
-  ``source`` and ``source_url``, ``published_at`` / ``effective_at`` / ``ingested_at``, and ``superseded_by`` (the
-  newer event of the same kind about the same player). ``fingerprint`` (sha256 of kind, subject, status, URL and time)
-  is unique: the same item seen twice is one row.
+  ``game_key`` (nflverse ``game_id``: an availability move's team game in the week in play, IH-2), with ``status``,
+  ``headline`` / ``summary``, ``source`` and ``source_url``, ``published_at`` / ``effective_at`` / ``ingested_at``, and
+  ``superseded_by`` (the newer event of the same kind about the same player). ``fingerprint`` (sha256 of kind, subject,
+  status, URL and time) is unique: the same item seen twice is one row.
 * **Times.** Availability: ``published_at`` = the copy's own time (ESPN's feed ``timestamp``, else when it was read;
   Sleeper: when the directory was read), ``effective_at`` = the report's date (ESPN's entry ``date``, Sleeper's
   ``news_updated``; NULL when Sleeper gives none). News and briefs: ``published_at`` = the item's date. The event's
@@ -405,6 +405,7 @@ def availability_rows(snap: Any) -> list[dict]:
             continue
         eid, sid = c.get("espn_id"), c.get("sleeper_id")
         rows.append(make("availability", source=c["source"], gsis_id=g, team=c.get("team"),
+                         game_key=game_key_for(c.get("team")),                                  # ---- IH-2
                          player_key=f"espn:{eid}" if c["source"] == "ESPN" and eid else f"sleeper:{sid}" if sid else None,
                          status=c["code"], headline=_headline(c.get("name"), c["code"], c.get("note")),
                          summary=None, source_url=NF.PLAYER_PAGE.format(id=eid) if c["source"] == "ESPN" and eid else None,
@@ -414,6 +415,7 @@ def availability_rows(snap: Any) -> list[dict]:
             continue
         src = prev.get("source") or "ESPN"
         rows.append(make("availability", source=src, gsis_id=g, team=prev.get("team"), status="ACTIVE",
+                         game_key=game_key_for(prev.get("team")),                               # ---- IH-2
                          headline=_headline(prev.get("name"), "ACTIVE", None),
                          summary=f"No longer listed by {src} (the injury report and Sleeper's directory both clear).",
                          published_at=_copy_time(snap, src) or clock(), effective_at=None))
@@ -429,6 +431,57 @@ def availability_rows(snap: Any) -> list[dict]:
                 _seen[r["fingerprint"]] = None
                 fresh.append(r)
     return fresh
+
+
+# ---- IH-2 (Wave I-H): the game an availability move is about (IG-2 left `game_key` empty). The NFL week in play = the
+# week of the first kickoff no more than 12 hours ago (a Monday-night status is still that week's; Tuesday's is the
+# next week's); the player's team's game that week (nflverse `game_id` from `analytics.dim_game`, the key V-2's grade
+# and the matchup evidence join on); a team on bye that week, an unknown team or an unreadable schedule: null — unknown
+# is not a game. Read on the writer thread, cached an hour.
+WEEK_GAMES_SQL = """with wk as (select season, week from analytics.dim_game
+                               where kickoff_at is not null and kickoff_at >= %s order by kickoff_at limit 1)
+                    select g.game_id, g.home_team, g.away_team from analytics.dim_game g join wk using (season, week)"""
+GAMES_TTL_S = 3600
+GAME_WINDOW = timedelta(hours=12)
+_games: tuple[float, dict[str, str]] | None = None
+
+
+def week_games(now: datetime | None = None) -> dict[str, str]:
+    """{team (nflverse abbreviation): game_id} for the week in play; a team on bye is absent. {} when unreadable."""
+    global _games
+    t = time.monotonic()
+    if now is None and _games is not None and t - _games[0] < GAMES_TTL_S:
+        return _games[1]
+    at = (now or clock()) - GAME_WINDOW
+    try:
+        df = db.fresh(WEEK_GAMES_SQL, (at,))
+    except Exception as exc:  # noqa: BLE001 - no schedule: no game key, never a failed write
+        log.warning("events: the schedule could not be read (%s): game_key stays empty", exc.__class__.__name__)
+        if now is None:                 # not asked again for five minutes (the writer thread writes rows in batches)
+            _games = (t - GAMES_TTL_S + 300, {})
+        return {}
+    out: dict[str, str] = {}
+    for r in df.to_dict("records"):
+        gid = r.get("game_id")
+        if isinstance(gid, str) and _GAME.match(gid):
+            for k in ("home_team", "away_team"):
+                if isinstance(r.get(k), str):
+                    out[r[k]] = gid
+    if now is None:
+        _games = (t, out)
+    return out
+
+
+def game_key_for(team: Any, now: datetime | None = None) -> str | None:
+    """The nflverse game id of ``team``'s game in the week in play (None: a bye, no team, or no schedule)."""
+    t = team_abbr(team)
+    if t is None:
+        return None
+    try:
+        return week_games(now).get(t)
+    except Exception:  # noqa: BLE001 - a key, never a failure
+        return None
+# ---- end IH-2
 
 
 # ------------------------------------------------------------------------------------------------ news and briefs

@@ -715,6 +715,7 @@ def what_changed(meta: dict | None, rows: pd.DataFrame | None, current: dict[str
                 "url": None}
         line.update(_status_cite(cites[k] if k < len(cites) else {}, stored, at))                       # ---- IG-2
         lines.append(line)
+    lines += questionable_lines(meta, rows, current, lines, at)[:max(0, MAX_CHANGED - len(lines))]       # ---- IH-2
     if rows is not None and not rows.empty and len(lines) < MAX_CHANGED:
         sub = set(current or {})
         st_ = rows[((rows["role"] == "starter") | rows["sleeper_player_id"].map(lambda k: isinstance(k, str) and k in sub))
@@ -808,6 +809,70 @@ def _with_events(items: list[tuple[str, dict]], names: dict[str, str]) -> list[t
     except Exception:  # noqa: BLE001 - the store never fails My Week: IF-4's lines
         return items
 # ---- end IG-2
+
+
+# ---- IH-2 (Wave I-H): a Questionable tag that changes no lineup, shown once in "What changed" (IG-2 stored it, IF-4's
+# rule showed nothing: the lines were the lineup's moves and the news). A week's player (the best lineup's starters and
+# whoever the submitted lineup starts) tagged Questionable gets one line — "Questionable: Jefferson (ankle) — your lineup
+# is unchanged" — when the tag is news since the morning build: a live QUESTIONABLE availability event of the last 24
+# hours (the store; cited by it), else the overlay's own flag (a copy newer than the build moved him to Questionable;
+# cited by the overlay entry). A tag the build already knew (Questionable since last week) is not a change: no line.
+# Never a second line for a player who already has one (a "can play again" move); a Questionable never moves a lineup
+# (only Out / Doubtful / IR do), so the words can say so.
+QUESTIONABLE_TAIL = "your lineup is unchanged"
+_NOTE = re.compile(r"\(([^()]{1,60})\)\s*$")
+
+
+def questionable_lines(meta: dict | None, rows: pd.DataFrame | None, current: dict[str, str] | None,
+                       have: list[dict], checked_at) -> list[dict]:
+    if rows is None or rows.empty or "report_status" not in rows.columns:
+        return []
+    sub = set(current or {})
+    wk = rows[((rows["role"] == "starter") | rows["sleeper_player_id"].map(lambda k: isinstance(k, str) and k in sub))
+              & rows["gsis_id"].map(lambda g: isinstance(g, str) and bool(g))
+              & (rows["report_status"] == "Questionable")].drop_duplicates("gsis_id")
+    if wk.empty:
+        return []
+    from . import events, news
+    done = {x.get("gsis_id") for x in have if x.get("gsis_id")}
+    flags = [str(f) for f in ((meta or {}).get("flags") or [])]
+    stored: dict[str, dict] = {}
+    if events.enabled():
+        for ev in events.recent(list(wk["gsis_id"]), hours=news.RECENT_HOURS, kinds=("availability",)):
+            if ev.get("status") == "QUESTIONABLE":
+                stored.setdefault(ev["gsis_id"], ev)
+    try:
+        live = availability.now(list(wk["gsis_id"]))
+    except Exception:  # noqa: BLE001 - the note is a nicety
+        live = {}
+    out: list[dict] = []
+    for _, r in wk.iterrows():
+        g, name = r["gsis_id"], _str(r.get("player_name")) or "A player"
+        if g in done:
+            continue
+        ev = stored.get(g)
+        flagged = any(f.startswith(f"{name} is questionable") for f in flags)
+        if ev is None and not flagged:
+            continue
+        a = live.get(g) or {}
+        note = a.get("note")
+        if not note and ev is not None:
+            m = _NOTE.search(str(ev.get("headline") or ""))
+            note = m.group(1) if m else None
+        last = cards.last_name(name, _str(r.get("position"))) or name
+        line = {"kind": "status", "flag": "questionable", "gsis_id": g, "player_name": name,
+                "text": f"Questionable: {last}" + (f" ({note})" if note else "") + f" — {QUESTIONABLE_TAIL}",
+                "source": f"Injury report ({a.get('source') or 'ESPN'})", "at": checked_at, "url": None}
+        if ev is not None:
+            line.update({"source": f"Injury report ({ev['source']})", "at": ev.get("at"), "url": ev.get("source_url"),
+                         "event_id": ev.get("id")})
+        elif a.get("as_of"):
+            from .events import iso
+            line["at"] = iso(a.get("as_of")) or checked_at
+        out.append(line)
+        done.add(g)
+    return out
+# ---- end IH-2
 
 
 # ---- IB-0: the roster's lineup in Sleeper right now (the card's status): Sleeper's roster `starters`, each paired with
