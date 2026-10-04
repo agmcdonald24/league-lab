@@ -113,8 +113,12 @@ def test_finder_never_headlines_the_folk_package(monkeypatch):
     cred = [r for r in p["partners"] if r["tier"] == "credible"]
     assert len(cred) <= T.CREDIBLE_MAX and p["credible_count"] == len(cred)
     assert all(r["card"]["credible"] for r in cred)
-    # the credible rows come first; a headline is either the first credible row or the honest empty state
-    assert [r["tier"] for r in p["partners"]] == sorted((r["tier"] for r in p["partners"]), key=lambda t: t != "credible")
+    # IF-2's order and ranks are kept; the credible rows are numbered in that order and the headline is the first one,
+    # or the honest empty state
+    assert [r["rank"] for r in p["partners"]] == list(range(1, len(p["partners"]) + 1))
+    assert [r["credible_rank"] for r in cred] == list(range(1, len(cred) + 1))
+    if cred:
+        assert p["headline_rank"] == cred[0]["rank"]
     if not cred:
         assert p["verdict"]["kind"] == "none" and p["verdict"]["headline"] == T.NO_COMPELLING
         assert p["words"]["headline"].startswith(f"**{T.NO_COMPELLING}.**") and p["verdict"]["reason"]
@@ -138,7 +142,8 @@ def test_scrubs_roster_2_finder(client):
         for side in ("mine", "theirs"):
             assert c["waiver_alternative"][side]["availability"] in ("guaranteed", "claim")
     if p["verdict"]["kind"] == "compelling":
-        assert p["partners"][0]["tier"] == "credible"
+        first = next(r for r in p["partners"] if r["tier"] == "credible")
+        assert all(x["player_name"] in p["words"]["headline"] for x in first["give"])
     else:
         assert p["words"]["headline"].startswith("**No compelling trade found.**")
 

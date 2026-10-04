@@ -2012,18 +2012,18 @@ def _s1w(x: float) -> str:
 
 
 def ii1_verdict(rows: list[dict], alt: dict, span: str, window: str) -> dict:
-    """The Finder's answer: the credible rows first (the IF-2 order kept within each tier), `tier` on every row, and
-    {kind, headline, reason} — "No compelling trade found" with the reason when nothing passes."""
+    """The Finder's answer: `tier` on every row (the first ``CREDIBLE_MAX`` credible rows in IF-2's order "credible", with
+    `credible_rank` 1…; the rest "explore") and {kind, headline, reason} — "No compelling trade found" with the reason
+    when nothing passes. The rows keep IF-2's order and `rank` (pinned by its tests); the headline is the first credible
+    row, and the screen lists the credible rows, then the rest behind "Explore alternatives"."""
     cred = [r for r in rows if (r.get("card") or {}).get("credible")][:T.CREDIBLE_MAX]
     ids = {id(r) for r in cred}
-    rest = [r for r in rows if id(r) not in ids]
-    for r in cred:
-        r["tier"] = "credible"
-    for r in rest:
-        r["tier"] = "explore"
-    out = cred + rest
-    for i, r in enumerate(out, 1):
-        r["rank"] = i
+    for r in rows:
+        r["tier"] = "credible" if id(r) in ids else "explore"
+        r["credible_rank"] = None
+    for i, r in enumerate(cred, 1):
+        r["credible_rank"] = i
+    out = rows
     when = "this week" if window == "week" else f"over {span}"
     if cred:
         return {"rows": out, "verdict": {"kind": "compelling", "headline": None, "reason": None}}
@@ -2342,7 +2342,7 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
     if verdict["kind"] == "none":                                                       # ---- II-1: the honest answer
         head = f"**{T.NO_COMPELLING}.** {verdict['reason']}"
     elif rows:
-        r0 = rows[0]
+        r0 = next(r for r in rows if r.get("tier") == "credible")                      # ---- II-1: the first credible row
         give0, get0 = [x["sleeper_id"] for x in r0["give"]], [x["sleeper_id"] for x in r0["get"]]
         m = ctx.names.get(r0["partner"], {}).get("manager_name")
         who = f"{ctx.team(r0['partner'])} ({m})" if m else ctx.team(r0["partner"])
@@ -2370,8 +2370,10 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
                                                         "the market check is not applied"),
                        **finder_rule_words(ctx)},                                                     # ---- IG-1
             "words": {"headline": links(head), "source": "quoted from app/pages/6_Trade_Finder.py (the best-partner card)",
-                      "alternative": rows[0]["alternative_words"] if rows else None},                       # ---- IF-2
+                      "alternative": next((r["alternative_words"] for r in rows if r.get("tier") == "credible"),  # II-1
+                                          None)},                                                                # ---- IF-2
             "verdict": verdict, "credible_count": sum(1 for r in rows if r.get("tier") == "credible"),     # ---- II-1
+            "headline_rank": next((r["rank"] for r in rows if r.get("tier") == "credible"), None),          # ---- II-1
             "explore_count": sum(1 for r in rows if r.get("tier") == "explore"),                           # ---- II-1
             "guard_positions": frame["guard"], "margin": T.CREDIBLE_MARGIN,                                  # ---- II-1
             "best_alternative": alt, "alternatives": [_stand_pat(weeks, span, "stand pat"), alt] if alt["kind"] != STAND_PAT

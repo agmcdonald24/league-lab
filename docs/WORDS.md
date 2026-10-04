@@ -243,6 +243,18 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | no number (`win.note`) | "no range for this league yet" · "the week has started and this league's live scores are not read yet" (an MFL league after the first kickoff): the page shows nothing | a 50% stand-in |
 | the League screen, per team of a game this week | "53% · 120 expected" under each team; the note "How often each team wins, from both best lineups' ranges (assuming the players' weeks are independent except teammates and opponents)." | a favourite's name in bold as a pick |
 
+## Credible trades (Wave I-I, II-1)
+
+| Where | The words we use | Never |
+|---|---|---|
+| the Finder when no trade passes (`verdict`) | **No compelling trade found.** "None of the 18 trades that raise both starting lineups over weeks 4–7 is worth proposing: 16 do not beat your own best alternative by a point, 10 do not beat the other team's and 4 are not a plausible offer. Your best move: …" | "Best partner" on a trade that loses to its own waiver comparison; a quota of weak trades |
+| the trades that did not pass | **Explore alternatives** · "ideas to look at, not trades to propose" | a ranked list that reads as recommendations |
+| the card's label (`plausibility.label`) | **Plausible offer** / **A roster-fit idea** (no market price for a player: "this is how the rosters fit, not what the players would fetch") / **Implausible** | "Likely", "Hard to say no", any percentage or chance of acceptance |
+| a bye on the card (`your_effect.words`) | "+17.7 if an empty slot were left empty: the difference is bye cover the free pool gives anyway" | a gain from a slot priced at zero |
+| the alternatives (`waiver_alternative.words`) | "Yours: … (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: …" · "first come, first served: he is yours if you add him before anyone else" | a claim presented as certain |
+| the K / DEF guardrail | "A K for a starter (Matthew Stafford): they have a K and the free pool holds one about as good, so a K is not worth a starter to them." | a rule naming a player |
+| the card's two lists | **Why they might consider it** · **Reasons they might refuse** | "they will accept", "they would say yes" |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

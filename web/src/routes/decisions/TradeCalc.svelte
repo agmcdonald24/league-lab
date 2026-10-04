@@ -21,6 +21,7 @@
   import { openPlayer } from "../../lib/decisions";
   import { effectTone } from "../../lib/decisions"; // ---- IE-1
   import WeekStrip from "./WeekStrip.svelte"; // ---- IF-2: the week strip, both sides
+  import TradeCard from "./TradeCard.svelte"; // ---- II-1: the trade card (plausibility, both sides, the reasons each way)
   import { restoreScroll, route, setParams } from "../../lib/router.svelte";
   import { fmt } from "../../lib/theme";
   import Bar from "../../components/Bar.svelte";
@@ -404,6 +405,13 @@
               </div>
             {/if}
             <!-- ---- end IF-2 -->
+            <!-- ---- II-1: the trade card — would it be worth proposing? (both teams' alternatives, the label, the reasons) -->
+            {#if r.card}
+              <div class="rounded-md border border-line p-3" data-testid="calc-card">
+                <h3 class="ll-label mb-1">Worth proposing?</h3>
+                <TradeCard card={r.card} testid="calc-trade-card" />
+              </div>
+            {/if}
             <div data-testid="trade-starters">
               <h3 class="ll-label mb-1">Your starters this week</h3>
               <ul class="space-y-1 text-base">
