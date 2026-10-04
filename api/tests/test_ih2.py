@@ -37,6 +37,12 @@ from .conftest import DYNASTY, SCRUBS, SLEEPER_FIXTURES, needs_db
 from .test_if4 import overlay  # noqa: F401 - the ESPN overlay on the fixtures
 from .test_ig1 import mfl  # noqa: F401 - dad's league on the MFL fixtures
 
+# PO (2026-10-04): the three on-demand MFL waiver pins below read the wall clock through the on-demand path (locked
+# players after a kickoff change the legal moves: 41 -> 40 on a Sunday afternoon, and which drop is cheapest). Until a
+# pinned clock exists for the API's fixture tests (`LEAGUE_LAB_NOW`, the PO's next item — docs/HANDOFF.md), they are
+# expected to fail only while games are in progress; strict=False keeps them green when the clock is kind.
+CLOCK_DEPENDENT = pytest.mark.xfail(strict=False, reason="reads the wall clock through the on-demand path (locks during games)")
+
 DAD = "mfl:70587"
 sys.path.insert(0, str(ROOT / "app"))
 from lib import signals as SG  # noqa: E402 - the console's module (the API loads the same file through applib)
@@ -56,6 +62,7 @@ def _row(mv: pd.DataFrame, add: str, drop: str) -> pd.Series:
     return r.iloc[0]
 
 
+@CLOCK_DEPENDENT
 def test_a_dropped_team_unit_has_a_season_value(mfl):  # noqa: F811
     """Team 8 "Big Mac Attack": dropping the Chicago Bears QB (a team QB) for the Atlanta Falcons defense. Before, the
     unit had no season points and its later starts were measured against a free team QB worth 0 (cost 28.22, future
@@ -76,6 +83,7 @@ def test_a_dropped_team_unit_has_a_season_value(mfl):  # noqa: F811
     assert units["drop_replacement_points"].gt(0).all()
 
 
+@CLOCK_DEPENDENT
 def test_team_8s_waivers_answer_has_no_drop_to_price(client, mfl):  # noqa: F811
     """Team 8 has an open roster spot: every best claim is "no drop needed", so its Waivers numbers do not move (the
     hand-back's before / after); the first move stays the Falcons defense, +1.2 this week, +12.8 over the horizon."""
@@ -85,6 +93,7 @@ def test_team_8s_waivers_answer_has_no_drop_to_price(client, mfl):  # noqa: F811
     assert (m["add"]["player_name"], m["net_weekly_gain"], m["net_horizon_gain"]) == ("Atlanta Falcons", 1.2, 12.81)
 
 
+@CLOCK_DEPENDENT
 def test_a_kicker_claim_drops_the_kicker_it_replaces(client, mfl):  # noqa: F811
     """Team 2: claiming the New Orleans Saints kicker now drops the Jacksonville Jaguars kicker it replaces (before: Cooper
     Kupp — the unit's drop looked expensive against a free kicker worth 0). Same gains, the cost 0 either way."""
