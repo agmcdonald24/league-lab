@@ -179,6 +179,22 @@ def test_status_survives_a_failed_read(client, clock, monkeypatch):
     assert main._status_nightly()["stale"] is True
 
 
+def test_a_500_is_plain_words_naming_the_status_page(monkeypatch):
+    """An unexpected error: the contract's {"error": …} with the status page named, no-store, never the exception."""
+    from fastapi.testclient import TestClient
+
+    def boom(*_a, **_k):
+        raise RuntimeError("secret internals")
+
+    monkeypatch.delenv("LEAGUE_LAB_APP_PASSWORD", raising=False)
+    monkeypatch.setattr(main.ondemand, "record", boom)
+    with TestClient(main.app, raise_server_exceptions=False) as c:
+        r = c.get("/api/record?league=1")
+    assert r.status_code == 500 and r.headers["cache-control"] == "no-store"
+    body = r.json()
+    assert body["status"] == "/api/status" and "/api/status" in body["error"] and "secret" not in r.text
+
+
 # ------------------------------------------------------------------------------------------------ events retention
 def _pipeline_dsn() -> str:
     from league_lab.config import get_settings

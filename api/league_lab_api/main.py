@@ -99,6 +99,16 @@ async def _http(_req: Request, exc: StarletteHTTPException):
                         headers=getattr(exc, "headers", None))
 
 
+# ---- IH-1 (Wave I-H): a 500 in the error contract's shape — plain words that name the status page (the web card
+# says the same); never the exception's text. Starlette still logs the traceback and re-raises it to the server.
+@app.exception_handler(Exception)
+async def _server_error(_req: Request, exc: Exception):
+    words = "Something broke on our side. /api/status says whether the data is up and when it was last updated."
+    return JSONResponse({"error": words, "detail": words, "status": "/api/status"}, status_code=500,
+                        headers={"Cache-Control": "no-store"})
+# ---- end IH-1
+
+
 def require_auth(request: Request) -> None:
     token = auth.token_from(request.cookies.get(auth.COOKIE), request.headers.get("authorization"))
     if not auth.valid(token):
