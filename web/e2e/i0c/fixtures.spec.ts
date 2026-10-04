@@ -44,6 +44,7 @@ test.beforeEach(async ({ context }) => {
 test("MyFantasyLeague by name: type the name → pick the league → pick the team → My Week", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("leagues")).toBeVisible();
+  await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
   await expect(page.getByTestId("mfl-help")).toContainText(
     "Paste your league link, or type your league's name as it appears in the MFL app.",
   );
@@ -93,6 +94,7 @@ test("MyFantasyLeague by name: type the name → pick the league → pick the te
 
 test("MyFantasyLeague box: an id or a link still goes straight to the league card; two letters ask for more", async ({ page }) => {
   await page.goto("/");
+  await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
   await page.getByTestId("mfl-link").fill("ad");
   await page.getByTestId("mfl-go").click();
   await expect(page.getByTestId("mfl-search-note")).toContainText("at least 3 letters");

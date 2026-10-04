@@ -83,7 +83,7 @@
     mfl = null;
     mflFound = null;
     try {
-      const v = await get<MflLeague | MflSearch>(mflSearchPath(t));
+      const v = await setupGet<MflLeague | MflSearch>(mflSearchPath(t)); // II-5: keeps the error's key (was get)
       if (isMflSearch(v)) mflFound = v;
       else mfl = v;
     } catch (err) {
@@ -98,7 +98,7 @@
     mflOpening = leagueId;
     mflError = null;
     try {
-      mfl = await get<MflLeague>(mflPath(leagueId));
+      mfl = await setupGet<MflLeague>(mflPath(leagueId)); // II-5: keeps the error's key (was get)
     } catch (err) {
       mflFail(err);
     } finally {
@@ -133,6 +133,7 @@
   let platform = $state<Platform>(
     urlPlatform === "sleeper" || urlPlatform === "mfl" ? urlPlatform : (prefs.platform() ?? (prefs.mflLeagues().length && !prefs.userLeagues() ? "mfl" : "sleeper")),
   );
+  if (urlPlatform === "sleeper" || urlPlatform === "mfl") prefs.setPlatform(urlPlatform); // a shared ?platform= link
   let sleeperLeague = $state<SleeperLeague | null>(null);
   let caps = $state<Providers | null>(null);
   const FEATURES: FeatureKey[] = ["scoring", "roster_slots", "matchups", "players", "waivers", "transactions", "team_assets", "news"];
@@ -275,14 +276,14 @@
   </header>
 
   <!-- ---- II-5 (Wave I-I): the steps, the one platform choice, then that platform's box -->
-  <ol class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm" aria-label="Setup" data-testid="setup-steps">
+  <ol class="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs sm:text-sm" aria-label="Setup" data-testid="setup-steps">
     {#each STEPS as s, i (s.key)}
       <li
-        class="rounded-full px-2.5 py-0.5 {i === stepIndex ? 'bg-accent font-bold text-on-accent' : i < stepIndex ? 'text-ink-2' : 'text-ink-3'}"
+        class="rounded-full px-2 py-0.5 whitespace-nowrap {i === stepIndex ? 'bg-accent font-bold text-on-accent' : i < stepIndex ? 'text-ink-2' : 'text-ink-3'}"
         aria-current={i === stepIndex ? "step" : undefined}
         data-step={s.key}
       >
-        {i < stepIndex ? "✓ " : `${i + 1}. `}{s.label}
+        {i < stepIndex ? "✓ " : ""}{s.label}
       </li>
       {#if i < STEPS.length - 1}<li class="text-ink-3" aria-hidden="true">›</li>{/if}
     {/each}
@@ -405,7 +406,7 @@
           {#each FEATURES as f (f)}
             {@const x = pv.features[f]}
             <li class="flex gap-2" data-testid="cap" data-feature={f} data-status={x.status}>
-              <span class="w-14 shrink-0 text-xs font-semibold tracking-wide uppercase {x.status === 'yes' ? 'text-good' : x.status === 'partial' ? 'text-warn' : 'text-bad'}">{STATUS_WORDS[x.status]}</span>
+              <span class="w-16 shrink-0 text-xs font-semibold tracking-wide whitespace-nowrap uppercase {x.status === 'yes' ? 'text-good' : x.status === 'partial' ? 'text-warn' : 'text-bad'}">{STATUS_WORDS[x.status]}</span>
               <span class="min-w-0 text-ink-2">{#if x.status === "no"}{x.unavailable}.{:else}<strong class="text-ink">{x.label}</strong>: {x.words}.{/if}</span>
             </li>
           {/each}

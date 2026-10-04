@@ -435,11 +435,11 @@ _CAPS: dict[str, dict] = {
         "name": "Sleeper", "short": "Sleeper", "status": "supported",
         "connect": {"kind": "username", "label": "Your Sleeper username, or a league link",
                     "example": "sleeper.com/leagues/1389709692405551104/team",
-                    "where": "Your username is the name you sign in to Sleeper with (Sleeper app → your avatar → the name "
-                             "under it). A league's link is in the Sleeper website's address bar on the league's page: "
-                             "the long number after /leagues/ is the league id."},
+                    "where": "Your username is the name you sign in to Sleeper with, not your team's name. A league's "
+                             "link is in the address bar of the league's page on sleeper.com: the long number after "
+                             "/leagues/ is the league id."},
         "features": {
-            "scoring": ("yes", "the league's own scoring settings; a setting League Lab does not price is listed on the league card"),
+            "scoring": ("yes", "the league's own scoring settings; a setting not priced here is listed on the league card"),
             "roster_slots": ("yes", "every offensive slot, superflex included; IDP slots are left out and said so"),
             "matchups": ("yes", "this week's opponent and every played week's points, in the league's scoring"),
             "players": ("yes", "Sleeper's player directory, matched to nflverse ids for the projections"),
@@ -456,7 +456,7 @@ _CAPS: dict[str, dict] = {
                     "where": "Open your league on the MFL website: the number after /home/ in the address is the league "
                              "id (70587 in the example). In the MFL app, type the league's name as the app shows it."},
         "features": {
-            "scoring": ("partial", "MFL's rules compiled into League Lab's scoring; any piece estimated or not priced is listed on the league card"),
+            "scoring": ("partial", "MFL's rules read into the projections' scoring; any piece estimated or not priced is listed on the league card"),
             "roster_slots": ("partial", "starter ranges (2–4 WR) read as the minimum plus FLEX; IDP spots are left out and said so"),
             "matchups": ("partial", "the schedule and each week's opponent; the week's live points are not read"),
             "players": ("partial", "MFL ids matched to Sleeper's; a player with no match is listed by name and not valued"),
@@ -470,14 +470,14 @@ _CAPS: dict[str, dict] = {
         "name": "ESPN", "short": "ESPN", "status": "not_supported",
         "connect": {"kind": "none", "label": "ESPN leagues are not supported yet", "example": None,
                     "where": "ESPN publishes no developer API or terms for fantasy leagues; a private league can only be "
-                             "read with the manager's own login cookies, which League Lab will not ask for."},
+                             "read with the manager's own login cookies, which we will not ask for."},
         "features": {f: ("no", "not supported yet (docs/PROVIDERS.md § ESPN)") for f in FEATURES},
     },
     "yahoo": {
         "name": "Yahoo", "short": "Yahoo", "status": "not_supported",
         "connect": {"kind": "none", "label": "Yahoo leagues are not supported yet", "example": None,
                     "where": "Yahoo's Fantasy Sports API needs an approved application and each manager's OAuth "
-                             "sign-in; League Lab has neither yet."},
+                             "sign-in; neither is set up yet."},
         "features": {f: ("no", "not supported yet (docs/PROVIDERS.md § Yahoo)") for f in FEATURES},
     },
 }
