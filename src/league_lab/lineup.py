@@ -888,6 +888,7 @@ RECORD_DDL = """create table if not exists ops.lineup_record (
         reason text, lineup_value double precision, call_rank integer, alt_sleeper_player_id text, alt_gsis_id text,
         alt_player_name text, alt_value double precision, p_win double precision, is_coin_flip boolean);
         create index if not exists lineup_record_idx on ops.lineup_record (league_id, season, week, roster_id)"""
+DDL["ops.lineup_record"] = RECORD_DDL      # `league-lab db migrate` creates it (a fresh nightly database restores into it)
 RECORD_SOURCES = ("kickoff", "reconstructed")
 N_CALLS = 3                  # the cards' closest calls per roster-week (cards.decisions' n)
 CALL_TOL = 0.011             # = cards.TOL: values and margins are stored to the cent

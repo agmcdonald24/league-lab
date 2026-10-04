@@ -256,6 +256,13 @@ dbt_step() {  # dbt_step <name> <dbt args...>
 STATE_TABLES="ops.backtest_results ops.projection_backtest ops.projection_importance ops.projections ops.projection_drift ops.lineups ops.lineup_totals ops.waiver_moves ops.waiver_upside ops.player_role_alerts ops.player_scenarios ops.feature_experiments ops.projection_lines ops.projection_ranges ops.kd_lines ops.kd_ranges"
 RECORD_TABLES="ops.projections ops.projection_drift ops.projection_lines ops.projection_ranges ops.kd_lines ops.kd_ranges"   # each also in STATE_TABLES
 RECORD_DIR="$RAW_DIR/record"   # one <schema>.<table>.sql.gz per record table
+# ---- V-1 (Wave I-G): the decision record ops.lineup_record (the app's lineups as recommended before each week's first
+# kickoff; src/league_lab/lineup.py V-1 block) is record state too: it cannot be recomputed after kickoff. `db migrate`
+# creates it (lineup.DDL), so a fresh database restores into it; empty everywhere (the first night) = it starts tonight,
+# the weeks already played are rebuilt once from the frozen ops.projections and labelled `reconstructed`.
+STATE_TABLES="$STATE_TABLES ops.lineup_record"
+RECORD_TABLES="$RECORD_TABLES ops.lineup_record"
+# ---- end V-1
 
 is_record() { case " $RECORD_TABLES " in *" $1 "*) return 0;; esac; return 1; }
 
@@ -484,6 +491,11 @@ else
   FAILED+=(project)
   finish
 fi
+# ---- V-1 (Wave I-G): `project` wrote the decision record (lineups() -> lineup.write_record, never fatal there);
+# `league-lab validate` writes it again when that failed (same freeze rule: idempotent) and prints the grade. Soft:
+# the weeks already kept are untouched, and a week not written tonight is rebuilt (labelled) the night after kickoff.
+SOFT_WHY="the record's kept weeks are untouched; a week missed tonight is rebuilt from the frozen projections" soft validate uv run league-lab validate
+# ---- end V-1
 # plan E1: Sleeper's projections for the next week to kick off, one snapshot a night, so the record has the last one
 # saved before the first kickoff (the moment this board freezes). Soft: a failed pull loses one night's snapshot.
 if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then
@@ -497,6 +509,9 @@ soft save-record save_record
 # and the lineup mart on the lineups `project` solved last (plan B1)
 hard projection-marts dbt_step projection-marts build --select mart_player_week_projections+ mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+ mart_waiver_upside mart_player_ros_projection mart_projection_record
 soft drift drift_if_unscored
+# ---- V-1 (Wave I-G): the decision record graded (the marts /api/record's `decisions` and the console's Record page read)
+SOFT_WHY="the hosted copy keeps last night's grade; the record itself is saved" soft decision-marts dbt_step decision-marts build --select mart_decision_record mart_decision_calls
+# ---- end V-1
 
 # 4. Keep and publish.
 if [ "${NIGHTLY_BACKUP:-}" = 1 ]; then
