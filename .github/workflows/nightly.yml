@@ -195,6 +195,10 @@ jobs:
           # column"). `project` writes the mode into ops.projections.pricing and every request follows that record, so
           # Render needs no setting; rollback = delete this line and run the nightly again
           LEAGUE_LAB_EV_PRICING: "1"
+          # Wave I-H (V-2): the MyFantasyLeague leagues whose lineups the decision record keeps (comma-separated league
+          # keys; the on-demand lineup is frozen at the week's first kickoff and graded on MFL's own weekly scores).
+          # Dad's league. Rollback = delete the line: the league then says it has no lineup record yet.
+          LEAGUE_LAB_RECORD_MFL: "mfl:70587"
         run: ./scripts/nightly.sh ${{ inputs.full && '--full' || '' }}
 
       # Save the archive only when its content changed (the key is a fingerprint of every data
@@ -245,3 +249,10 @@ jobs:
             logs/run_results.*.json
           retention-days: 14
           if-no-files-found: warn
+
+      # Wave I-H (IH-1): the failure summary — the failing stage, whether this night published the hosted copy, the next
+      # move and the last 40 log lines (passwords blanked) in the run summary + one ::error annotation; always exits 0.
+      # GitHub's own failure email goes to the actor (a dispatched run: the token's owner) — HOSTING § 5.
+      - name: Notify (the failing stage and the last 40 log lines)
+        if: ${{ failure() }}
+        run: ./scripts/nightly_failure_summary.sh logs

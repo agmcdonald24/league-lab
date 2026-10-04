@@ -48,8 +48,11 @@
     if (team !== null) forget(paths.myWeek(league, team));
     attempt += 1;
   }
-  const nightly = $derived(status?.nightly ?? null);
-  const staleWords = $derived(nightly?.stale ? nightly.words : null);
+  // PO (Andrew, 2026-10-04: "do not tell people that the data is stale — make it robust so it doesn't fail"): the
+  // stale state never reaches a league-mate's screen. It stays on /api/health, /api/status `nightly` and the console's
+  // Data Status page for the operator; the trigger (HOSTING § 5) is the robustness. `staleWords` is therefore null
+  // here (the markup below stays, so turning it back on is one line: `status?.nightly?.stale ? status.nightly.words : null`).
+  const staleWords: string | null = null;
   // ---- end IH-1
 
   const ctx = $derived({ league, team });

@@ -626,7 +626,7 @@ tell news-affected weeks apart (V-1).
 ESPN's injuries feed or Sleeper's directory; `news` — an ESPN news item the player card or My Week showed; `brief` — a
 PlayerWire brief they showed; `depth_chart` — allowed, no writer yet); the keys `gsis_id` (`00-0036322`), `player_key`
 (the source's own id: `espn:4262921`, `sleeper:6794`, `pw:<brief id>`), `team` (nflverse abbreviations: `LA`, `WAS`,
-`JAX`), `game_key` (nflverse `game_id`; empty for now); `status` (availability: `OUT`, `DOUBTFUL`, `QUESTIONABLE`,
+`JAX`), `game_key` (nflverse `game_id` from `dim_game` for the player's team that week — IH-2; empty when the team has no game); `status` (availability: `OUT`, `DOUBTFUL`, `QUESTIONABLE`,
 `IR`, `PUP`, `NFI`, `SUS`, `INACTIVE`, `ACTIVE`; brief: PlayerWire's verification — `official`, `reported`,
 `corroborated`, `disputed`; news: `player` or `league`, IF-4's "about"); `headline`, `summary` (a brief's text; ESPN's
 items: none); `source` (`ESPN`, `Sleeper`, `RotoWire via ESPN`, `Minnesota Vikings via PlayerWire`) and `source_url`

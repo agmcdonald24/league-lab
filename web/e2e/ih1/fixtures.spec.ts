@@ -44,30 +44,20 @@ async function noSidewaysScroll(page: Page) {
 const shot = (page: Page, name: string, project: string) =>
   page.screenshot({ path: join(process.env.SHOTS_DIR ?? "e2e/.out", `ih1-${name}-${project}.png`), fullPage: false });
 
-test("stale: one line above the actions, the footer says the same; nothing when fresh", async ({ context, page, isMobile }, info) => {
+// PO (Andrew, 2026-10-04): a league-mate never sees "stale". The status still says so (/api/status `nightly`) for the
+// operator; the screen shows nothing — not the banner, not the footer suffix — whatever the status says.
+test("stale in the status: nothing on the screen, the footer as before", async ({ context, page, isMobile }) => {
   await serveFixtures(context);
   await status(context, stale());
   await page.goto(HOME);
   await expect(page.getByTestId("my-week")).toBeVisible();
-  const banner = page.getByTestId("stale-banner");
-  await expect(banner).toHaveText(`⚠︎${STALE}`);
-  await expect(banner).toHaveAttribute("role", "status");
-  // above the actions / the cards, under the team's lines
-  const b = await banner.boundingBox();
-  const team = await page.getByTestId("team-name").boundingBox();
-  const lineup = await page.getByText("Your lineup", { exact: false }).first().boundingBox();
-  expect(b && team && b.y > team.y).toBeTruthy();
-  expect(b && lineup && b.y < lineup.y).toBeTruthy();
-  // one line on a desktop; at 375 it wraps inside its box, never sideways
-  if (!isMobile) expect(b!.height).toBeLessThan(44);
-  await noSidewaysScroll(page);
-  await shot(page, "stale-banner", info.project.name);
-  // the footer: "Updated 1 day ago · the morning update did not run ›", the sentence on tap
+  await expect(page.getByTestId("stale-banner")).toHaveCount(0);
+  await expect(page.getByTestId("updated-late")).toHaveCount(0);
   const foot = page.getByTestId("updated");
-  await expect(page.getByTestId("updated-late")).toContainText("the morning update did not run");
   if (isMobile) await foot.locator("summary").tap();
   else await foot.locator("summary").click();
-  await expect(page.getByTestId("updated-stale")).toHaveText(STALE);
+  await expect(page.getByTestId("updated-stale")).toHaveCount(0);
+  await noSidewaysScroll(page);
 });
 
 test("fresh: no banner, the footer as before", async ({ context, page }) => {
@@ -80,21 +70,21 @@ test("fresh: no banner, the footer as before", async ({ context, page }) => {
   await expect(page.getByTestId("updated-late")).toHaveCount(0);
 });
 
-test("an app left open is told: the status is read again after 15 minutes on screen", async ({ context, page }) => {
+test("an app left open re-reads the status after 15 minutes on screen (still nothing shown)", async ({ context, page }) => {
   await page.clock.install();
   await serveFixtures(context);
   let n = 0;
   await context.route(/\/api\/status$/, (route) => {
     n += 1;
-    const body = n === 1 ? fresh() : stale(); // fresh at first, the next read finds the missed morning
+    const body = n === 1 ? fresh() : stale();
     return route.fulfill({ status: 200, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
   });
   await page.goto(HOME);
   await expect(page.getByTestId("team-name")).toBeVisible();
   await expect(page.getByTestId("stale-banner")).toHaveCount(0);
   await page.clock.fastForward("16:00");
-  await expect(page.getByTestId("stale-banner")).toHaveText(`⚠︎${STALE}`);
-  expect(n).toBe(2);
+  await expect.poll(() => n).toBe(2);
+  await expect(page.getByTestId("stale-banner")).toHaveCount(0);
 });
 
 test("the API down at the first screen: a card with Try again, and Try again asks again", async ({ context, page }, info) => {
