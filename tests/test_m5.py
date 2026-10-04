@@ -260,3 +260,55 @@ def test_v31_switches_on_without_a_kept_position_change_nothing(monkeypatch):
     out, _ = C.calibrate_outputs(None, 2026, pred, pd.DataFrame(), {"L": "ref"})
     moved = out["proj_points"].to_numpy() - pred["proj_points"].to_numpy()
     assert (moved < -0.1).any() and (moved <= 1e-12).all()
+
+
+class _FakeConn:
+    """Answers the two history queries of ``v31_outputs`` (the games, the draft slots) from fixtures."""
+
+    def __init__(self, games, draft):
+        self.games, self.draft = games, draft
+
+    def cursor(self):
+        conn = self
+
+        class Cur:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def execute(self, sql, params=None):
+                self.rows = conn.games if "fct_player_game" in sql else conn.draft
+
+            def fetchall(self):
+                return self.rows
+
+        return Cur()
+
+
+def test_cold_start_on_moves_a_rookie_toward_his_draft_slot_and_never_a_veteran(monkeypatch):
+    monkeypatch.setenv(C.COLD_START_FLAG, "1")
+    monkeypatch.delenv(C.FRINGE_FLAG, raising=False)
+    monkeypatch.delenv(C.FLAG, raising=False)
+    monkeypatch.setattr(C, "COLD_POSITIONS", ("WR",))
+    rng = np.random.default_rng(5)
+    fit = []      # 3 seasons of cold WR rows: first-round rookies score 9, the model said 5 at game 0
+    for s in (2023, 2024, 2025):
+        for i in range(60):
+            fit.append({"gsis_id": f"r{s}_{i}", "season": s, "week": 1, "position": "WR", "league_id": "L",
+                        "proj_points": 5.0, "actual": 9.0 + rng.normal(0, 1)})
+    oof = pd.DataFrame(fit)
+    monkeypatch.setattr(C, "load_oof", lambda conn, season: oof)
+    draft = [(f"r{s}_{i}", 10, s) for s in (2023, 2024, 2025) for i in range(60)] + [("rook", 12, 2026), ("vet", 40, 2019)]
+    games = [("vet", 2025, w) for w in range(1, 18)]
+    pred = pd.DataFrame({"gsis_id": ["rook", "vet"], "season": 2026, "week": 5, "position": "WR", "league_id": "L",
+                         "proj_points": [5.0, 5.0], "p10": [1.0, 1.0], "p25": [3.0, 3.0], "p50": [5.0, 5.0],
+                         "p75": [7.0, 7.0], "p90": [9.0, 9.0]})
+    ranges = pred.drop(columns="league_id").assign(scoring_name="ref")
+    out, rng_out = C.calibrate_outputs(_FakeConn(games, draft), 2026, pred, ranges, {"L": "ref"})
+    rook, vet = out.set_index("gsis_id").loc["rook"], out.set_index("gsis_id").loc["vet"]
+    assert rook["proj_points"] > 8.0 and vet["proj_points"] == 5.0
+    assert rook["p90"] - rook["proj_points"] == pytest.approx(4.0)        # the range moved with the point
+    assert rng_out.set_index("gsis_id").loc["rook", "proj_points"] == pytest.approx(rook["proj_points"])
+    assert list(out.columns) == list(pred.columns)

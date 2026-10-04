@@ -275,7 +275,7 @@ def apply_maps(rows: pd.DataFrame, maps: dict[tuple[str, str], CalMap], scoring_
         raw = out.loc[sel, "proj_points"].to_numpy(dtype=float)
         delta = m.apply(raw) - raw
         out.loc[sel, "proj_points"] = raw + delta
-        out.loc[sel] = shift_bands(out.loc[sel], delta)
+        _put_bands(out, sel.to_numpy(), shift_bands(out.loc[sel], delta))   # M5: column by column
     return out
 
 
@@ -291,6 +291,14 @@ def shift_bands(rows: pd.DataFrame, delta: np.ndarray) -> pd.DataFrame:
     for lo, hi in zip(bands, bands[1:], strict=False):
         out[hi] = np.maximum(out[hi], out[lo])
     return out
+
+
+def _put_bands(out: pd.DataFrame, sel: np.ndarray, moved: pd.DataFrame, prefix: str = "") -> None:
+    """Write the band columns of ``moved`` (the ``sel`` rows) back into ``out`` column by column (M5: a whole-row
+    ``out.loc[sel] = frame`` silently kept the old bands on frames carrying string / bool helper columns)."""
+    for b in BAND_COLUMNS:
+        if f"{prefix}{b}" in out and f"{prefix}{b}" in moved:
+            out.loc[sel, f"{prefix}{b}"] = moved[f"{prefix}{b}"].to_numpy(dtype=float)
 
 
 def walk_forward_calibrate(oof: pd.DataFrame, seasons: list[int], first_fit: int | None = None, mode: str | None = None,
@@ -628,10 +636,10 @@ def apply_fringe(rows: pd.DataFrame, maps: dict[tuple[str, str], FringeMap], sco
         sel = ((out["position"] == pos) & (out[scoring_col] == lid)).to_numpy()
         if not sel.any():
             continue
-        raw = out.loc[sel, "proj_points"].to_numpy(dtype=float)
+        raw = out.loc[sel, "proj_points"].to_numpy(dtype=float).copy()
         delta = m.apply(raw) - raw
         out.loc[sel, "proj_points"] = raw + delta
-        out.loc[sel] = _shift_prefixed(out.loc[sel], delta, band_prefix)
+        _put_bands(out, sel, _shift_prefixed(out.loc[sel], delta, band_prefix), band_prefix)
     return out
 
 
@@ -749,18 +757,19 @@ def walk_forward_cold(oof: pd.DataFrame, seasons: list[int], actual: str = "actu
             sel = ((out["position"] == pos) & (out["league_id"] == lid)).to_numpy()
             if not sel.any() or not cp.prior:
                 continue
-            raw = out.loc[sel, "proj_points"].to_numpy(dtype=float)
+            raw = out.loc[sel, "proj_points"].to_numpy(dtype=float).copy()   # a copy: the view would follow the write below
             new = cp.blend(raw, out.loc[sel, "career_games_before"].to_numpy(dtype=float), out.loc[sel, "bucket"].to_numpy(),
                            out.loc[sel, "cold"].to_numpy(dtype=bool))
+            delta = new - raw
             out.loc[sel, "proj_points"] = new
-            out.loc[sel] = _shift_prefixed(out.loc[sel], new - raw, band_prefix)
+            _put_bands(out, sel, _shift_prefixed(out.loc[sel], delta, band_prefix), band_prefix)
         outs.append(out)
     return pd.concat(outs, ignore_index=True), fits
 # ------------------------------------------------------------------------------ v3.1 in production (behind the switches)
 # The positions where the harness kept each correction (docs/METRICS.md § "Calibration of the top" -> "v3.1"); a switch
 # turned on applies its correction at these positions only (empty: the switch logs that and changes nothing).
-FRINGE_POSITIONS: tuple[str, ...] = ()
-COLD_POSITIONS: tuple[str, ...] = ()
+FRINGE_POSITIONS: tuple[str, ...] = ()                 # dropped at every position (the walk-forward, 2021-2025)
+COLD_POSITIONS: tuple[str, ...] = ("RB", "WR", "TE")   # kept: cold-start MAE -0.16 / -0.31 / -0.30 (QB: the identity)
 HISTORY_FIRST_SEASON = 2016     # the history window's first season: a career that began earlier is never a cold start
 
 # every played regular-season game, whatever the position he was listed at that week (a fullback or a converted tight
@@ -845,12 +854,13 @@ def _blend_rows(rows: pd.DataFrame, priors: dict[tuple[str, str], ColdPrior], sc
         sel = ((out["position"] == pos) & (out[scoring_col] == key)).to_numpy()
         if not sel.any() or not cp.prior:
             continue
-        raw = out.loc[sel, "proj_points"].to_numpy(dtype=float)
+        raw = out.loc[sel, "proj_points"].to_numpy(dtype=float).copy()   # a copy: the view would follow the write below
         new = cp.blend(raw, out.loc[sel, "career_games_before"].to_numpy(dtype=float), out.loc[sel, "bucket"].to_numpy(),
                        out.loc[sel, "cold"].to_numpy(dtype=bool))
+        delta = new - raw
         out.loc[sel, "proj_points"] = new
-        out.loc[sel] = shift_bands(out.loc[sel], new - raw)
+        _put_bands(out, sel, shift_bands(out.loc[sel], delta))
         log.info("cold start %s %s %s: weights %s, %s rows blended", COLD_VERSION, pos, str(key)[-6:], cp.weights,
-                 int((new != raw).sum()))
+                 int((delta != 0).sum()))
     return out.drop(columns=["career_games_before", "cold", "bucket"])
 # ---- /M5
