@@ -7586,3 +7586,112 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
    is gone as one list); the header's "⚠️ Injury news may be stale" is off with the stale banner (`SHOW_STALE`, one
    line); the card's news line says "· context only, not in the projection" on every item; Waivers' intro replaces
    the API's sentence on the web.
+
+### Integration 2026-10-04 — II-0…II-5 into integ/II
+
+* **Branch** `integ/II` from `main` `94ed33c` (worktree `/home/claude/wt-integ`; `.env` → the main database `league_lab`,
+  read only: nothing written, no dbt run, `api/tests/test_u1.py` and `test_ig2.py` deselected in every API run). INF-1
+  (`dev/INF1`, the pinned clock and GA) is **not** in this branch.
+* **Merge order** (`git merge --no-ff` each, the merge commit renamed "integ: merge dev/IIx (…)"; `uv run ruff check src
+  app tests api` and `npm run lint` (eslint + svelte-check + tsc; the package has no `check` script — `lint` runs the
+  typecheck) green after every merge): **II-0** `80306a9` → **II-1** `9ea7b92` → **II-2** `93e7238` → **II-3** `fe6553a`
+  → **II-5** `64002dc` → **II-4** `8f0550f` (last: the sweep), then three fix commits (`159f847`, `2f852c2`, `48ff411`).
+  All six dev tips are ancestors of `integ/II`; nothing rebased, nothing force-pushed, `main` untouched.
+
+**Conflicts and how they were resolved**
+
+| Merge | File | Resolution |
+|---|---|---|
+| II-0 | — | clean |
+| II-1 | `src/league_lab/trades.py` (`__all__`) | II-1's names kept in the list; II-0's `week_story` block after it (its own `__all__ += ["week_story"]`) |
+| II-1 | `api/league_lab_api/decisions.py` (`partners()`) | II-0's `story` loop, then II-1's card / threshold block: every Finder row carries both `story` and `card`; IF-2's order and `rank` unchanged |
+| II-1 | `web/src/lib/api.ts` | both end blocks (the two `PartnerRow` declarations merge in TypeScript) |
+| II-1 | `docs/WORDS.md` | both sections (II-0's "The calculation audit", II-1's "Credible trades") |
+| II-1, II-2, II-3, II-5, II-4 | `docs/STATUS.md`, `CHANGELOG.md` | `keepboth.py` (one `## Wave I-I` heading, one CHANGELOG heading, six sections / bullets) |
+| II-3 | `web/src/lib/api.ts` | II-0 + II-1 blocks, then II-3's |
+| II-5 | `docs/WORDS.md` | both (II-5's "The setup flow and the platforms" after II-1's) |
+| II-4 | `web/src/routes/Team.svelte` ("How to read") | II-4's "Depth (bench lineup)" line + II-0's "By slot" line |
+| II-4 | `web/src/routes/Players.svelte` (2 hunks), `web/e2e/fixtures.spec.ts` (1) | II-3's rewritten Stats screen and its assertion kept (they already say "per game"); II-4's three edits were to the old screen's lines |
+| II-4 | `web/src/lib/api.ts`, `docs/WORDS.md` | both (II-4's copy standard after the II-0 / II-1 / II-5 sections) |
+
+Checks after the last merge: `scripts/copy_standard.py --check` → 0 lines left (no re-sweep needed); every branch's
+`II-x` markers survive in every file it touched; every line any branch added is in the result verbatim except II-4's
+three superseded `Players` / `fixtures.spec` lines; `dbt/` changed only by II-3's 8 seed rows (70 rows, 7 columns, no
+duplicates); `render.yaml`, `Dockerfile`, `.github/` untouched (`app/pages/*` changed only by II-4's console sweep).
+Interfaces held: `/receivers` → the WR/TE preset with the role cards at `/receivers?view=cards` (II-3's redirect beside
+II-2's one-promise lazy screens in `App.svelte`); II-3's Players links keep IB-1's `paneLink` line, which opens II-2's
+drawer, and every other `/player/` link goes through II-2's router hook (incl. II-4's feed "Inspect" link); II-0's
+`strength_by_slot` / `week_story` and II-1's `card` on the same partner rows (`partnerReason` still reads `story`).
+
+**Fix commits** (each the smallest change; the failures exist on the dev branch alone except where said)
+1. `159f847` `src/league_lab/lineup.py` `replacement_chain` (II-0's block, one line): `enters` is None when his slot's
+   chain ends empty. **dev/II0 alone fails** `tests/test_v1.py::test_close_calls_are_the_cards_decisions[0…11]` (12;
+   II-0's root run reached 394 of 1,138, so it was never run): with two players tied at 0.0 (two DEFs) the re-solve
+   swaps them, the "second path" loop recorded the swap as an `enters`, and `cards.decisions` offered the other DEF as
+   the RB's / Superflex's alternative (a starter nobody can replace is not a decision). 12/12 pass; `test_lineup_ii0`,
+   `test_ii0` unchanged.
+2. `2f852c2` three older e2e re-pinned to II-4's words — **dev/II4 alone fails them the same** (8: `decisions`
+   waivers light / dark, `ie1` Waivers, `n2` ESPN item; phone + desktop): the Waivers answer is II-4's `topIntro`
+   ("The three strongest claims below: 2 help this week, 1 covers a bye (week 7). Each card's total is its gain over
+   weeks 4–7."), the card news line ends "· context only, not in the projection".
+3. `48ff411` `e2e/ii2` Players — **dev/II2 alone fails the URL check the same** (the 250 ms search debounce lands
+   after the drawer's history entry, and closing goes Back to the entry before it); the test now waits for `q=n`
+   before the first open. Merge interaction: on II-3's taller Stats screen the names are scrolled to and the screen
+   beside the drawer is narrower, so the exact pixel scroll is not kept on close (528 → 461); the test now asserts
+   the row you opened from is in view.
+
+**Suites** (Sunday 19:27–19:50 ET; the base is `/home/claude/wt-integ-base`, a fresh detached checkout of `main`
+`94ed33c` with the same `.env` — `/home/claude/wt-base` is at `ad4040e`, 66 commits behind `main`, so I did not
+compare against it)
+
+| Suite | integ/II | main `94ed33c` |
+|---|---|---|
+| root `uv run pytest -q tests` | **2 failed**, 1,142 passed, 3 skipped | **2 failed**, 1,117 passed, 3 skipped (the same two ids) |
+| API `PYTHONPATH=. uv run pytest -q --deselect …u1 --deselect …ig2` (same minutes) | **55 failed**, 561 passed, 13 skipped, 3 xfailed | **54 failed**, 506 passed, 11 skipped, 3 xfailed |
+| ruff | clean | clean |
+| web `npm run lint` (eslint + svelte-check + tsc) | 0 errors, 0 warnings (163 files) | 0 / 0 (159 files) |
+| web `npm run build` | ok (188 modules) | ok (184 modules) |
+| e2e fixtures, the whole set (`FIXTURES_PORT=8630`) | **325 passed, 0 failed**, 1 skipped (`ih1` phone, by design) | 271 passed, 0 failed, 1 skipped (the same) |
+
+* **Failing ids not in main's set**: API — one, `tests/test_ii4.py::test_my_week_feed_on_the_overlay_fixture` (new in
+  II-4). The clock: dev/II4 alone fails it at the same hour on the same database (19:02 ET, beside IF-4's
+  `test_if4.py::test_what_changed_from_the_overlay_fixture`, which fails on `main` too): Jefferson is locked after his
+  4:05 PM ET kickoff, so no "changed" status line is produced — II-4's hand-back names it in this class.
+  Root — none (both `test_my_week.py::test_my_week_is_the_mart[…]` fail on `main` the same). Main's 54 API failures
+  all fail on `integ/II` too (none fixed, none new beyond the one). Before the fix commits: root 14 failed (the 12
+  above), e2e 10 failed (the 8 + 2 above).
+* The new tests: API +55 passed / +2 skipped (the branches' `test_ii*`; `test_ii0` skips "every starter is locked or
+  has no reserve this hour" and its record mode), root +25 passed, e2e +54 passed (`e2e/ii0`…`ii5`).
+
+**For the PO**
+1. **Not resolved, noted** (each is the developer's, left as built):
+   * II-0: the replacement chain's re-solve is not anchored to the lineup shown on ties — with two tied players the
+     chain's *words* can still carry a phantom swap ("no legal move: RB goes empty; Rams (DEF) fills the open DEF;
+     Chiefs (DEF) goes to the bench") on the player card / Team; fix 1 only stops it becoming the alternative. A
+     follow-up: prefer the current seat on equal value in `_reseat` / the second-path loop.
+   * II-2: closing the drawer goes Back to the entry before it opened, so any URL parameter written while it was open
+     is dropped — Players' search typed less than 250 ms before tapping a name stays in the box but leaves the URL
+     (a shared link then lacks it). `web/e2e/app.spec.ts` (live API, not run) still expects one tap → the full page.
+   * II-4: the API's Waivers `answer` still says "each with what it adds this week" while the web shows `topIntro` —
+     console / API and web say different things until one line changes; `web/fixtures/ii4/api_ii4.json` wants a
+     re-record with INF-1's clock.
+2. **dbt / hosted copy**: no model to build. II-3: `dbt seed --select metric_registry` (8 new rows) on the main database
+   and for the nightly's hosted copy. Nothing for workflows, `render.yaml` or Neon from any branch.
+3. **Env vars**: none new on the request path. II-5's `docs/ACCOUNTS.md` (design only, nothing built) names four for a
+   future sign-in (`LEAGUE_LAB_RESEND_API_KEY`, `LEAGUE_LAB_MAIL_FROM`, `LEAGUE_LAB_SESSION_SECRET`,
+   `LEAGUE_LAB_ACCOUNTS_DB_URL`). II-5: ESPN's terms bear on the shipped news line and injury overlay
+   (`LEAGUE_LAB_NEWS=off`, `LEAGUE_LAB_AVAILABILITY=off` switch them off) — a decision before anything is charged for.
+4. **INF-1 next**: merge `dev/INF1` onto `integ/II`, then re-run the whole API / root / e2e suites for the count of
+   record — its pinned clock should turn the clock class green (main's 54 and `test_ii4`'s overlay test). A dry run
+   of `dev/INF1` (`a9de549`) onto `integ/II` (aborted) conflicts only in STATUS / CHANGELOG; the II branches add no
+   new `datetime.now` / `now()` read in Python for its sweep to miss. II-5 asked to go after INF-1; it went before it
+   here with no conflict on its side.
+5. **Decisions Andrew may want to reverse** (from the hand-backs): II-0 — an empty slot counts 0 in the league
+   population; RB1 = the better RB starter, not Sleeper's slot order. II-1 — the K / DEF guardrail's exception is
+   "they have nobody there" only; a trade must beat the other team's best waiver move too (margin 1.0), so the house
+   league shows "No compelling trade found" most days; the cold on-demand Finder is ~7 s slower (10.1 → 17.7 s).
+   II-2 — every player link opens the drawer (names in sentences and Compare too); Add to compare waits for a second
+   player. II-3 — snap share is the mean of per-game shares; carry share keeps scrambles / kneels; Players opens on
+   Stats. II-4 — My roster outlook is Season's default; the stale header line is off with the banner; every card news
+   line says "context only"; Waivers' intro replaces the API's sentence on the web. II-5 — ESPN / Yahoo shown as "not
+   supported yet"; the platform choice gates the MFL box; the email-link sign-in recommendation.
