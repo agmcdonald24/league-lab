@@ -25,6 +25,10 @@
     <p class="rounded-md bg-warn-soft px-3 py-2 text-sm font-semibold text-warn" role="status" data-testid="signed-out">{notice}</p>
   {/if}
   <p class="text-sm text-ink-3">Private beta. Enter the password from your invite.</p>
+  <!-- ---- II-5 (Wave I-I): what comes next, so the password is not mistaken for a Sleeper / MFL sign-in -->
+  <p class="text-sm text-ink-3" data-testid="login-next">
+    Then pick your fantasy platform — Sleeper or MyFantasyLeague — and your league. This is not your Sleeper or MFL password.
+  </p>
   <input
     class="ll-input w-full py-3"
     type="password"

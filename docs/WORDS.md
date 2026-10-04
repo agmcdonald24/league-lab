@@ -243,6 +243,15 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | no number (`win.note`) | "no range for this league yet" · "the week has started and this league's live scores are not read yet" (an MFL league after the first kickoff): the page shows nothing | a 50% stand-in |
 | the League screen, per team of a game this week | "53% · 120 expected" under each team; the note "How often each team wins, from both best lineups' ranges (assuming the players' weeks are independent except teammates and opponents)." | a favourite's name in bold as a pick |
 
+## The setup flow and the platforms (Wave I-I, II-5)
+
+| Where | The words we use | Never |
+|---|---|---|
+| the setup screen (`/leagues`) | "Fantasy platform" · Sleeper / MyFantasyLeague · the steps "Platform › League › Team › My Week" · "Your Sleeper username, or a league link" · "Find your MyFantasyLeague league" · "Where do I find these?" with the example `sleeper.com/leagues/1389709692405551104/team` / "Where do I find the league id?" with `www45.myfantasyleague.com/2026/home/70587` · "No account needed: isuckatfantasy remembers your leagues on this device." | "log in with Sleeper" (Sleeper has no sign-in for us); "connect" for a public lookup |
+| ESPN / Yahoo (`other-platforms`) | "Not supported yet." and why in one sentence each (ESPN: only your login cookies, which we will not ask for; Yahoo: an approved app and your Yahoo sign-in) | a "coming soon" badge, a disabled ESPN button, "supported" for anything not built |
+| setup errors (`ondemand.SetupError`, the API's `code`) | `sleeper_user_unknown` "That Sleeper username does not exist: “x”." + the fix · `sleeper_username_invalid` "“x” cannot be a Sleeper username: they are letters, numbers and _ . - only." · `sleeper_league_unknown` "Sleeper has no football league 123…." · `sleeper_link_invalid` "That is not a Sleeper league link or id." · `mfl_league_private` "MFL league 70587 is private or does not exist. Ask the commissioner to allow API access to the league's data (MFL's league setup, the privacy option)." · `mfl_link_invalid` "That is not a MyFantasyLeague league link or id." — each with one line of what to do next (`fix`) | "Not found", "invalid input", an HTTP code, blaming the user |
+| what a platform gives (`platforms.capabilities`) | "What isuckatfantasy reads from MFL leagues — 1 not available yet" · Yes / Partly / Not yet · "Transactions: not available for MFL leagues yet." wherever a screen would otherwise show an empty list (League's Latest moves) | an empty list or "No completed moves" for data we do not read; a substitute from another source without saying so |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to
