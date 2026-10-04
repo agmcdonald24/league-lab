@@ -763,9 +763,10 @@ FRINGE_POSITIONS: tuple[str, ...] = ()
 COLD_POSITIONS: tuple[str, ...] = ()
 HISTORY_FIRST_SEASON = 2016     # the history window's first season: a career that began earlier is never a cold start
 
-GAMES_SQL = """select gsis_id, season, week from analytics.fct_player_game
-               where season_type = 'REG' and played and position = any(%s)"""
-DRAFT_SQL = "select gsis_id, draft_pick, rookie_season from analytics.dim_player where position = any(%s)"
+# every played regular-season game, whatever the position he was listed at that week (a fullback or a converted tight
+# end has a career: counting only QB-TE weeks made Alec Ingold a "cold start" in 2026)
+GAMES_SQL = """select gsis_id, season, week from analytics.fct_player_game where season_type = 'REG' and played"""
+DRAFT_SQL = "select gsis_id, draft_pick, rookie_season from analytics.dim_player"
 
 
 def career_games_before(rows: pd.DataFrame, games: pd.DataFrame) -> np.ndarray:
@@ -823,9 +824,9 @@ def v31_outputs(conn: psycopg.Connection, season: int, pred: pd.DataFrame, range
             log.warning("%s=1 but no position is kept (COLD_POSITIONS is empty): unchanged", COLD_START_FLAG)
         else:
             with conn.cursor() as cur:
-                cur.execute(GAMES_SQL, (list(P.POSITIONS),))
+                cur.execute(GAMES_SQL)
                 games = pd.DataFrame(cur.fetchall(), columns=["gsis_id", "season", "week"])
-                cur.execute(DRAFT_SQL, (list(P.POSITIONS),))
+                cur.execute(DRAFT_SQL)
                 draft = pd.DataFrame(cur.fetchall(), columns=["gsis_id", "draft_pick", "rookie_season"])
             fit_rows = cold_columns(oof[oof["position"].isin(COLD_POSITIONS)], games, draft)
             priors = {(pos, lid): fit_cold_prior(g, pos, lid) for (pos, lid), g in fit_rows.groupby(["position", "league_id"])}
