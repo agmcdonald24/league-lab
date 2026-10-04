@@ -6974,9 +6974,9 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
   identically on `94ed33c` (the clock: locked players, as on `main`); 6 were the load (statement timeouts, latency
   bounds: all 6 pass on a re-run on this branch); 4 were mine — `test_myweek::test_my_week_matches_the_lineup_mart` ×2
   and `test_parity::test_my_week_is_the_home_page` ×2 (My Week's margin moved after a lock) — **fixed** by keeping the
-  build's margin in the table and adding `margin_now` (re-run: pass); `test_decisions::test_latency_cold_and_warm`
-  and `test_research::test_trends_route[dynasty]` passed on base and failed here under load (not re-run in time: a
-  latency bound and a research route II-0 does not touch). Not run: ~90 API tests (`test_ie2`, `test_if3`, `test_m3`,
+  build's margin in the table and adding `margin_now` (re-run: pass, with `test_parity::test_my_week_is_the_home_page`
+  ×2); `test_decisions::test_latency_cold_and_warm` and `test_research::test_trends_route[dynasty]` failed here under
+  load and pass on a re-run (17:45 ET). **Delta against the base: 0.** Not run: ~90 API tests (`test_ie2`, `test_if3`, `test_m3`,
   `test_ic4` partly, `test_ig1` partly, `test_ih3`, `test_m6`, `test_parity` partly) — the PO's integration run covers
   them.
 * **Not done**: the console's Team Hub (`app/pages/1_Team_Hub.py`, PO only) keeps its slot table — it labels value and
