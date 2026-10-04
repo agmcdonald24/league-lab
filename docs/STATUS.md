@@ -6029,12 +6029,15 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
      status is still that week's; Tuesday's is the next week's); a bye, an unknown team or an unreadable schedule:
      null. Read on the writer thread, cached an hour (a failed read: not retried for 5 minutes). The fingerprint is
      unchanged (no duplicate rows from the new column).
+  6. **Found on the way**: dad's league team 12's Waivers said "Fills your empty team QB in week 5, when QB and QB are
+     on a bye." (`_name_list` → `_last` reads "Houston Texans QB" as "QB"); team units are named by their team there now
+     ("Texans QB", IC-4's `unit_short`; `_unit_name`, a marked line).
 * **Interfaces**: INTERFACES.md § IH-2 (11:58), as built: no new keys on the moves (the numbers move); `deadline.days`,
   `deadline.days_mask`; `/api/team` `roster_updated_at`, `roster_source` (MFL only); `changed.lines[]` `flag:
   "questionable"` (+ `player_name`); `events.events.game_key`; `signals.with_call / stash_call / stash_call_words /
   watch_words / short_name / STASH_CAPTION / UPSIDE_CALL_SQL`; `lib/api.ts` one `// ---- IH-2` block.
 * **Files**: `api/league_lab_api/{decisions,myweek,events}.py`, `src/league_lab/trades.py`, `app/lib/signals.py`,
-  `web/src/routes/Team.svelte`, `web/src/lib/api.ts`, `api/tests/test_ih2.py` (new, 21), `api/tests/twin_ih2.py` (new:
+  `web/src/routes/Team.svelte`, `web/src/lib/api.ts`, `api/tests/test_ih2.py` (new, 22 with the recorder), `api/tests/twin_ih2.py` (new:
   the console twin of the stash card, `streamlit_twin.py`'s pattern), `api/tests/test_ig3.py` (one re-pin, marked),
   `web/e2e/ih2/fixtures.spec.ts` (new, 4 × phone / desktop), `web/fixtures/ih2/api_ih2.json` (the recording),
   `docs/{WORDS,STATUS}.md`, `CHANGELOG.md`.
@@ -6085,8 +6088,14 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
     `test_h1` trade lists, `test_i0a` Jefferson out, `test_ib0` × 3, `test_ib2` × 2, `test_ic4` RB2 claim, `test_ie1`
     "a change before the first lock"; plus `test_parity` player card ×2 (00-0038797 fails on `main` too; 00-0036963
     passed on re-run on both).
-  - **Root** (`uv run pytest -q tests/`): ROOT_RESULT
-  - **e2e** (fixtures, `FIXTURES_PORT=8614`, the whole suite): E2E_RESULT
+  - **Root** (`uv run pytest -q tests/`, 69 min): **1076 passed, 2 failed, 6 skipped** — the two are
+    `test_my_week::test_my_week_is_the_mart` (dynasty 12, Scrubs 2), failing identically on `ad4040e` today (the same
+    clock). The root tests of the modules touched (`test_signals test_trades test_waivers test_waivers_if1
+    test_waivers_ig3 test_app_guards test_trade_finder_page`): 160 passed.
+  - **e2e** (fixtures, `FIXTURES_PORT=8614`, the whole suite): **230 passed** (10.6 min; 222 on I-G's merge + `ih2`'s 8).
+  - The last commit's `_name_list` change ran after the full API run: `test_ib2 test_ie0 test_ih2` again — the bye
+    words pass; `test_ie0::test_review_package_is_a_two_for_one_end_to_end` is red on `main` too since the 1 PM ET
+    kickoffs ("Houston Texans QB (locked)"): the clock-dependent list grows through the afternoon.
 * **What moved and why** (the brief's allowed move: MFL Waivers numbers when units get a drop cost): the drop cost,
   season value, future starts, net gains and worthwhile flag of every move that drops an MFL team unit (lists above);
   the best drop of a unit-position claim on 6 of dad's league's 12 teams; `move_rank` order. Words: the dynasty's
