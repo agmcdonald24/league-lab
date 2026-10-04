@@ -6076,14 +6076,15 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
     `api/tests/test_v1.py` 6 passed.
   * `web/e2e/v2` **10 passed** (5 tests × phone 375 / desktop 1300; no sideways scroll): the Team block from the
     recording, the Sleeper column with planted numbers (the clone has no snapshot), no block for a team without
-    calls, About → Team link, dad's league on About. `e2e/v1` and `e2e/ig3` still pass. Lint + typecheck 0 / 0, build ok.
-  * **Whole suites** on the clone (Sunday ~12:30–12:50 ET, the box shared with four suites): root **1090 passed, 1
-    failed, 5 skipped** — the failure (`test_my_week.py::test_my_week_is_the_mart[Scrubs-2]`) fails identically with
+    calls, About → Team link, dad's league on About. The whole fixtures e2e: **232 passed** (14 min). Lint + typecheck 0 / 0, build ok.
+  * **Whole suites** on the clone (Sunday ~12:30–13:00 ET, the box shared with four suites): root **1090 passed, 1
+    failed, 5 skipped** (run twice, before and after the module move) — the failure (`test_my_week.py::test_my_week_is_the_mart[Scrubs-2]`) fails identically with
     main's checkout (`ad4040e`) on the same clone; API **508 passed, 18 failed, 34 skipped** — 3 are the brief's known
     scoring-check ones (`test_ic1` ×2, `test_ic_po`), and the other 15 (`test_decisions` ×6, `test_h1`, `test_i0a`,
     `test_ib0` ×3, `test_ib2` ×2, `test_ic4`, `test_ie1`) fail identically with main's checkout on the same clone at
     the same hour (re-run: 18 failed) — the clone's state on a Sunday afternoon (e.g. "max() iterable argument is
-    empty", a change before the first lock that Sunday's clock no longer allows), not this branch.
+    empty", a change before the first lock that Sunday's clock no longer allows), not this branch. (The API suite ran
+    before the module move; after it `tests/test_v1.py` + `tests/test_v2.py` re-ran: 13 passed.)
   * **The numbers** (the clone, weeks rebuilt; no number moved for Scrubs or the dynasty: Scrubs −23.54 / 313.70 /
     coin flips 59% as V-1):
     * **Scrubs roster 6 (GoodGameBuddy)**, weeks 1–2: started **265.0** (151.8 + 113.2), ours **253.9** (151.7 +
