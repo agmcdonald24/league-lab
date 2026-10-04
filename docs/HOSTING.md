@@ -598,7 +598,8 @@ psql "$(uv run python -c 'from league_lab.config import get_settings; print(get_
 ```
 
 In fixture mode (`LEAGUE_LAB_SLEEPER_FIXTURES`: the tests, the sandbox) the store is off unless `LEAGUE_LAB_EVENTS=on`,
-so a test run never writes fixture events into a developer's database. `api/tests/test_ig2.py` applies the file itself
+and `api/tests/conftest.py` sets it off for every test, so a test run never writes made-up events into a developer's
+database. `api/tests/test_ig2.py` applies the file itself
 and removes its rows.
 
 ## Licences to keep in mind when sharing

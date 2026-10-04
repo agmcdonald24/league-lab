@@ -702,7 +702,7 @@ def _status_events(cites: list[dict]) -> dict[str, dict]:
     if not gs or not events.enabled():
         return {}
     out: dict[str, dict] = {}
-    for ev in events.recent(gs, hours=24 * 14, kinds=("availability",)):
+    for ev in events.recent(gs, hours=24 * 60, kinds=("availability",)):      # the report may be weeks old (IR)
         out.setdefault(ev["gsis_id"], ev)
     return out
 
