@@ -302,8 +302,8 @@ async def _bad_view(_req: Request, exc: ondemand.BadView):
 
 
 @app.get("/api/record", dependencies=[Depends(require_auth)])
-def record(league: str, response: Response):
-    return _json(ondemand.record(league), response)
+def record(league: str, response: Response, team: int | None = None):   # ---- V-2: `team` -> decisions.team
+    return _json(ondemand.record(league, team=team), response)
 
 
 @app.get("/api/search", dependencies=[Depends(require_auth)])

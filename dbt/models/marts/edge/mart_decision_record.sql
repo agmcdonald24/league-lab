@@ -3,7 +3,8 @@
     indexes=[{'columns': ['league_id', 'season', 'week', 'roster_id']}],
     pre_hook=[
         "create table if not exists ops.lineup_record (run_at timestamptz, as_of timestamptz, first_kickoff_at timestamptz, record_source text, model_version text, pricing text, league_id text, season integer, week integer, roster_id integer, role text, slot text, slot_type text, slot_order integer, bench_rank integer, sleeper_player_id text, gsis_id text, player_name text, position text, value double precision, value_source text, margin double precision, report_status text, reason text, lineup_value double precision, call_rank integer, alt_sleeper_player_id text, alt_gsis_id text, alt_player_name text, alt_value double precision, p_win double precision, is_coin_flip boolean)",
-        "create table if not exists ops.lineup_totals (run_at timestamptz, as_of timestamptz, model_version text, league_id text, season integer, week integer, roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision, slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision, weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer, n_questionable integer, n_ppg_valued integer, inputs_fingerprint text, n_unvalued integer)"
+        "create table if not exists ops.lineup_totals (run_at timestamptz, as_of timestamptz, model_version text, league_id text, season integer, week integer, roster_id integer, is_realised boolean, lineup_value double precision, bench_value double precision, slots_total integer, slots_filled integer, empty_slots text, weakest_slot text, weakest_margin double precision, weakest_sleeper_player_id text, n_players integer, n_bench integer, n_unplayable integer, n_locked integer, n_questionable integer, n_ppg_valued integer, inputs_fingerprint text, n_unvalued integer)",
+        "create table if not exists ops.decision_market (league_id text, season integer, week integer, roster_id integer, slot text, sleeper_player_id text, gsis_id text, player_name text, position text, market_value double precision, value_source text, fetched_at timestamptz, pricing text, written_at timestamptz)"
     ]
 ) }}
 -- V-1 (Wave I-G), the decision record graded: per league x season x week x roster, the app's lineup as recorded
@@ -23,8 +24,14 @@
 --   report: never flagged);
 -- * status 'scored' once Sleeper has scored the week (every league_player_week row is_scored_week); before that
 --   'in_play' and every point column is NULL (nothing after the outcome enters before it is final).
+-- V-2 (Wave I-H): market_points = "had you started Sleeper's projections" — ops.decision_market (Sleeper's projections
+-- as a lineup of the same roster, written by `league-lab validate`) at the points scored, graded like ours (NULL when
+-- the roster-week has no market lineup or a starter has no number); market_edge = market - submitted. news_source
+-- 'report' here: the event store lives on the hosted copy, so the API applies its flag on the request side
+-- (league_lab.validation.news_overrides).
 with rec as (
-    select * from {{ source('ops_decisions', 'lineup_record') }} where role = 'starter'
+    select * from {{ source('ops_decisions', 'lineup_record') }}
+    where role = 'starter' and league_id not like 'mfl:%'     -- V-2: an MFL league is graded on request (MFL's results)
 ),
 
 weekly as (
@@ -97,6 +104,19 @@ per_roster as (
     group by 1, 2, 3, 4
 ),
 
+market as (
+    select
+        m.league_id, m.season, m.week, m.roster_id,
+        count(*) as n_market,
+        count(*) filter (where (case when o.points is not null then o.points
+                                     when m.gsis_id is not null then coalesce(fb.points, 0) end) is null) as n_market_unknown,
+        sum(case when o.points is not null then o.points when m.gsis_id is not null then coalesce(fb.points, 0) end) as market_raw
+    from {{ source('ops_decisions', 'decision_market') }} as m
+    left join obs as o using (league_id, season, week, sleeper_player_id)
+    left join fb on fb.league_id = m.league_id and fb.season = m.season and fb.week = m.week and fb.gsis_id = m.gsis_id
+    group by 1, 2, 3, 4
+),
+
 opt as (
     select league_id, season, week, roster_id, lineup_value as optimum_points
     from {{ source('ops', 'lineup_totals') }}
@@ -116,11 +136,14 @@ graded as (
         end as n_changed,
         case when s.week is not null then p.n_unknown end as n_app_unknown,
         p.n_news_starters,
-        p.n_news_starters > 0 as is_news_affected
+        p.n_news_starters > 0 as is_news_affected,
+        case when s.week is not null and mk.n_market_unknown = 0 then round(mk.market_raw::numeric, 2) end as market_points,
+        case when s.week is not null then mk.n_market_unknown end as n_market_unknown
     from per_roster as p
     left join scored as s using (league_id, season, week)
     left join submitted as sub using (league_id, season, week, roster_id)
     left join opt as o using (league_id, season, week, roster_id)
+    left join market as mk using (league_id, season, week, roster_id)
 )
 
 select
@@ -130,6 +153,7 @@ select
     g.optimum_points - g.submitted_points as regret,
     g.app_points - g.submitted_points as app_edge,
     g.optimum_points - g.app_points as app_regret,
-    g.n_starters, g.n_changed, g.n_app_unknown, g.n_news_starters, g.is_news_affected
+    g.n_starters, g.n_changed, g.n_app_unknown, g.n_news_starters, g.is_news_affected,
+    'report'::text as news_source, g.market_points, g.market_points - g.submitted_points as market_edge, g.n_market_unknown
 from graded as g
 left join {{ ref('dim_league_member') }} as m on m.league_id = g.league_id and m.roster_id = g.roster_id

@@ -1207,7 +1207,7 @@ def mfl_record_rows(query, key: str, as_of: datetime, stored: Iterable[tuple[str
     kickoffs = first_kickoffs(games)
     reg = [w for w in sorted(kickoffs) if not po or w < po]
     plan = record_plan({key: reg}, stored, kickoffs, as_of)
-    players = router.players()
+    router.rosters(key)                 # registers the league's team units and translates its players (My Week's order)
     out: list[dict] = []
     for (_lg, week), act in sorted(plan.items()):
         if act == "write":
@@ -1218,6 +1218,7 @@ def mfl_record_rows(query, key: str, as_of: datetime, stored: Iterable[tuple[str
             continue
         if not rosters:
             continue
+        players = router.players()      # after the translation: the directory carries this league's MFL-only rows
         pr = A.price_week(query, key, scoring, slots, season, week, cache=False)
         rows, totals = [], []
         for ro in rosters:

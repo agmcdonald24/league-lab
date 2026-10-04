@@ -791,7 +791,8 @@ def mfl_weekly(league_id: str, results: Mapping[int, Mapping], translate: Callab
                 sid = (tr.get(str(p.get("id"))) or (f"mfl:{p.get('id')}",))[0]
                 weekly.append({"league_id": league_id, "week": int(week), "roster_id": rid, "sleeper_player_id": sid,
                                "gsis_id": None, "is_starter": str(p.get("status") or "").lower() == "starter",
-                               "points_observed": _f(p.get("score")), "is_scored_week": int(week) in scored})
+                               # a listed player with no score did not score: MFL counts him 0
+                               "points_observed": _f(p.get("score")) or 0.0, "is_scored_week": int(week) in scored})
             opt.append({"league_id": league_id, "week": int(week), "roster_id": rid, "optimum_points": _f(f.get("opt_pts"))})
     cols_w = ["league_id", "week", "roster_id", "sleeper_player_id", "gsis_id", "is_starter", "points_observed", "is_scored_week"]
     return pd.DataFrame(weekly, columns=cols_w), pd.DataFrame(opt, columns=["league_id", "week", "roster_id", "optimum_points"])

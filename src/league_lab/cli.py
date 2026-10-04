@@ -449,6 +449,8 @@ def validate_cmd(
     season: int | None = typer.Option(None, help="Season (default: the newest in ops.projections)"),
     league: list[str] = typer.Option([], help="League id(s) to grade (default: every league on the record)"),
     no_write: bool = typer.Option(False, "--no-write", help="Grade only: do not write ops.lineup_record"),
+    mfl: list[str] = typer.Option([], help="V-2: MFL league key(s) (mfl:<id>) to keep a record for (default: "  # ---- V-2
+                                           "LEAGUE_LAB_RECORD_MFL)"),
 ):
     """The decision record (V-1): write ops.lineup_record (the next week's lineup before its first kickoff; a played
     week with no record is rebuilt once from the frozen projections, labelled `reconstructed`), then grade the scored
@@ -456,7 +458,7 @@ def validate_cmd(
     `mart_decision_record` / `mart_decision_calls` publish the same grade (dbt)."""
     from .validation import validate
 
-    v = validate(season, league or None, write=not no_write)
+    v = validate(season, league or None, write=not no_write, mfl=mfl or None)          # ---- V-2: mfl
     if v is None:
         console.print("nothing to grade: ops.projections / ops.lineup_record is empty")
         return
@@ -486,8 +488,8 @@ def validate_cmd(
                 c.add_row(str(r["bin"]), str(r["n"]), f"{r['p_lo']:.2f}", f"{r['p_hi']:.2f}", f"{r['predicted']:.0%}",
                           f"{r['observed']:.0%}")
             console.print(c)
-        for k in ("edge", "calls", "news"):
-            if s["sentences"][k]:
+        for k in ("edge", "market", "calls", "news"):                                    # ---- V-2: market
+            if s["sentences"].get(k):
                 console.print(s["sentences"][k])
         if s["note"]:
             console.print(s["note"])

@@ -705,7 +705,7 @@ DECISION_CALLS_SQL = """select * from analytics.mart_decision_calls where league
                         order by week, roster_id, call_rank"""
 
 
-def record_decisions(league_id: str, season: int) -> dict:
+def record_decisions(league_id: str, season: int, team: int | None = None) -> dict:
     from league_lab import validation as V
 
     from .db import missing_relations
@@ -716,25 +716,114 @@ def record_decisions(league_id: str, season: int) -> dict:
         calls = query(DECISION_CALLS_SQL, (league_id, season))
     except Exception:  # noqa: BLE001 - a mart from an older build: say so, never fail the record
         return {"available": False, "season": season, "why": "the decision record could not be read"}
-    for c in ("submitted_points", "app_points", "optimum_points", "regret", "app_edge", "app_regret"):
+    for c in ("submitted_points", "app_points", "optimum_points", "regret", "app_edge", "app_regret",
+              "market_points", "market_edge"):                                                  # ---- V-2: market
         if c in rw:
             rw[c] = pd.to_numeric(rw[c], errors="coerce")
     for c in ("p_win", "outcome", "starter_points", "alt_points", "value", "alt_value", "margin"):
         if c in calls:
             calls[c] = pd.to_numeric(calls[c], errors="coerce")
-    return {"season": season, **V.summary(rw, calls)}
+    rw = V.apply_news(rw, event_news(league_id, season))                                         # ---- V-2
+    out = {"season": season, **V.summary(rw, calls)}
+    out["team"] = decisions_team(rw, calls, team)                                                # ---- V-2
+    return out
 
 
 def _with_decisions(fn):
-    """``record``'s answer + ``decisions`` for a league we keep the record for (``available``)."""
+    """``record``'s answer + ``decisions`` for a league we keep the record for (``available``); V-2: + an MFL league's
+    record (graded from MFL's results) and ``decisions.team`` when a team is asked."""
     @functools.wraps(fn)
-    def wrapped(league_id: str) -> dict:
+    def wrapped(league_id: str, team: int | None = None) -> dict:
         out = fn(league_id)
         if out.get("available") and out.get("season") is not None:
-            out["decisions"] = record_decisions(out["league_id"], int(out["season"]))
+            out["decisions"] = record_decisions(out["league_id"], int(out["season"]), team)
+        elif A.platforms.is_mfl(out.get("league_id") or "") and "results" in out:                # ---- V-2
+            out["decisions"] = mfl_decisions(out["league_id"], team)
         return out
     return wrapped
 # ---- end V-1
+
+
+# ---- V-2 (Wave I-H): the decision record, personal and live (INTERFACES.md § V-2; docs/METRICS.md § "The decision
+# record" → "Personal and live"): the event store's news flag on the request side (the store lives on the hosted copy,
+# the marts are built where it is not), one team's view (`/api/record?league=&team=` -> `decisions.team`), and an MFL
+# league's record graded from MFL's own results (its rows in ops.lineup_record are written by `league-lab validate`
+# for the keys in LEAGUE_LAB_RECORD_MFL).
+KICKOFF_STARTERS_SQL = """select league_id, season, week, roster_id, record_source, run_at, first_kickoff_at, gsis_id,
+                                 report_status
+                          from ops.lineup_record where league_id = %s and season = %s and role = 'starter'
+                            and record_source = 'kickoff' and gsis_id is not null"""
+EVENTS_KICKOFF_SQL = """select f.week, f.gsis_id, min(g.kickoff_at) as kickoff_at
+                        from analytics.mart_player_week_features as f
+                        join analytics.dim_game as g on g.season = f.season and g.week = f.week and g.season_type = 'REG'
+                         and f.team in (g.home_team, g.away_team)
+                        where f.season = %s and f.gsis_id = any(%s) group by 1, 2"""
+MFL_RECORD_SQL = """select league_id, season, week, roster_id, record_source, run_at, first_kickoff_at, model_version,
+                           pricing, role, slot, sleeper_player_id, gsis_id, player_name, position, value, margin,
+                           report_status, lineup_value, call_rank, alt_sleeper_player_id, alt_gsis_id, alt_player_name,
+                           alt_value, p_win, is_coin_flip
+                    from ops.lineup_record where league_id = %s and season = %s and role = 'starter'"""
+MFL_NO_RECORD = "we have not kept a lineup record for this league yet"
+
+
+def event_news(league_id: str, season: int) -> dict[tuple[str, int, int], int]:
+    """(league, week, roster) -> news-affected starters where the event store answers (``validation.news_overrides``);
+    {} when the store is off, missing or unreadable — the marts' report rule stands (never an error)."""
+    from league_lab import validation as V
+
+    from . import events as EV
+    if not EV.enabled():
+        return {}
+    try:
+        rec = query(KICKOFF_STARTERS_SQL, (league_id, int(season)))
+        if rec.empty:
+            return {}
+        gsis = sorted({g for g in rec["gsis_id"] if isinstance(g, str)})
+        ev = query(V.EVENTS_SQL, (gsis,), ttl=60)
+        sp = query(V.EVENTS_SPAN_SQL, (), ttl=60)
+        kick = query(EVENTS_KICKOFF_SQL, (int(season), gsis))
+    except Exception:  # noqa: BLE001 - the store is a nicety here
+        return {}
+    span = None if sp.empty or pd.isna(sp.iloc[0]["first"]) else (sp.iloc[0]["first"], sp.iloc[0]["last"])
+    return V.news_overrides(rec, ev, kick, span)
+
+
+def decisions_team(rw: pd.DataFrame, calls: pd.DataFrame, team: int | None, team_name: str | None = None) -> dict | None:
+    """``decisions.team`` (None when no team is asked)."""
+    from league_lab import validation as V
+    if team is None:
+        return None
+    if team_name is None and not rw.empty and "team_name" in rw:
+        names = rw.loc[pd.to_numeric(rw["roster_id"]) == int(team), "team_name"].dropna()
+        team_name = str(names.iloc[0]) if len(names) else None
+    return V.team_summary(rw, calls, int(team), team_name)
+
+
+def mfl_decisions(league_id: str, team: int | None = None) -> dict:
+    """An MFL league's decision record: its ops.lineup_record rows graded from MFL's weeklyResults
+    (``validation.mfl_load``); unavailable (never an error) without rows or when MFL cannot answer."""
+    from league_lab import validation as V
+    try:
+        cl = A.sleeper()
+        season = int(cl.league(league_id)["season"])
+        rec = query(MFL_RECORD_SQL, (league_id, season))
+    except Exception:  # noqa: BLE001 - no table yet / MFL down: the record is simply not there
+        return {"available": False, "platform": "mfl", "why": MFL_NO_RECORD}
+    if rec.empty:
+        return {"available": False, "platform": "mfl", "season": season, "why": MFL_NO_RECORD}
+    for c in ("value", "margin", "alt_value", "p_win", "lineup_value"):
+        rec[c] = pd.to_numeric(rec[c], errors="coerce")
+    try:
+        g = V.mfl_load(league_id, rec, router=cl)
+    except Exception:  # noqa: BLE001 - MFL down / busy: say so, never fail the record
+        return {"available": False, "platform": "mfl", "season": season, "why": "MyFantasyLeague did not answer"}
+    rw, calls = V.grade_roster_weeks(g), V.grade_calls(g)
+    names = {int(k): v.get("team_name") for k, v in A.team_names(cl.rosters(league_id), cl.users(league_id)).items()}
+    rw["team_name"] = [names.get(int(r)) for r in rw["roster_id"]] if not rw.empty else []
+    out = {"season": season, "platform": "mfl", **V.summary(rw, calls)}
+    out["team"] = decisions_team(rw, calls, team, names.get(int(team)) if team is not None else None)
+    return out
+# ---- end V-2
 
 
 @_with_decisions                                                     # ---- V-1 (Wave I-G)
