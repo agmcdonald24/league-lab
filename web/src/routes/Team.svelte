@@ -17,6 +17,8 @@
   import ScreenHead from "../components/ScreenHead.svelte";
   import StatTile from "../components/StatTile.svelte";
   import TeamBadge from "../components/TeamBadge.svelte"; // ---- IC-4: a team unit's badge
+  import { recordTeamPath, type RecordAnswer } from "../lib/api"; // ---- V-2: "Your calls this season"
+  import { Remote } from "../lib/remote.svelte"; // ---- V-2
 
   let { league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -69,6 +71,17 @@
     "game started (bench)": "Locked · bench",
     "no NFL team": "No NFL team",
   };
+
+  // ---- V-2 (Wave I-H): "Your calls this season" — this roster's weeks on the decision record (GET /api/record?team=
+  // `decisions.team`): what you started, what our lineup would have scored, the best possible, Sleeper's projections
+  // as a lineup when we have them, the close calls and how they landed. Nothing when the league keeps no record.
+  const rec = new Remote<RecordAnswer>();
+  $effect(() => rec.load(team === null ? null : recordTeamPath(league, team), onauth));
+  const mine = $derived(rec.data?.decisions?.team ?? null);
+  const callWeeks = $derived((mine?.weeks ?? []).filter((w) => w.calls.length));
+  const rebuilt = $derived((mine?.weeks ?? []).some((w) => w.record_source === "reconstructed"));
+  const pts = (v: number | null | undefined) => (v === null || v === undefined ? "—" : v.toFixed(1));
+  // ---- end V-2
 
   // 1_Team_Hub.py's "How to read this", the screen's own words
   const HOWTO =
@@ -192,6 +205,63 @@
           </div>
           <p class="mt-3 text-xs text-ink-3">Your best lineup each week, byes and injuries included; the tick is the league's middle team that week.</p>
         </Card>
+
+        <!-- ---- V-2 (Wave I-H): your calls this season (GET /api/record?team= `decisions.team`; METRICS § "The decision record") -->
+        {#if mine?.available && mine.season_totals}
+          {@const tot = mine.season_totals}
+          {@const market = tot.market !== null}
+          <Card title="Your calls this season" testid="team-calls">
+            <div class="space-y-2.5">
+              {#if mine.sentences.season}<p class="text-base leading-snug" data-testid="team-calls-season">{mine.sentences.season}</p>{/if}
+              <table class="w-full table-fixed border-collapse text-base" data-testid="team-calls-table">
+                <thead>
+                  <tr class="ll-label border-b border-line text-left">
+                    <th class="w-[3.25rem] py-1.5 font-semibold">Week</th>
+                    <th class="py-1.5 text-right font-semibold">You</th>
+                    <th class="py-1.5 text-right font-semibold">Ours</th>
+                    <th class="py-1.5 text-right font-semibold">Best</th>
+                    {#if market}<th class="py-1.5 text-right font-semibold">Sleeper's</th>{/if}
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each mine.weeks as w (w.week)}
+                    <tr class="border-b border-line">
+                      <td class="tabnum py-1.5">{w.week}{w.record_source === "reconstructed" ? "*" : ""}</td>
+                      <td class="tabnum py-1.5 text-right">{pts(w.submitted)}</td>
+                      <td class="tabnum py-1.5 text-right">{pts(w.app)}</td>
+                      <td class="tabnum py-1.5 text-right">{pts(w.optimum)}</td>
+                      {#if market}<td class="tabnum py-1.5 text-right">{pts(w.market)}</td>{/if}
+                    </tr>
+                  {/each}
+                  <tr class="font-bold" data-testid="team-calls-total">
+                    <td class="py-1.5">Season</td>
+                    <td class="tabnum py-1.5 text-right">{pts(tot.submitted)}</td>
+                    <td class="tabnum py-1.5 text-right">{pts(tot.app)}</td>
+                    <td class="tabnum py-1.5 text-right">{pts(tot.optimum)}</td>
+                    {#if market}<td class="tabnum py-1.5 text-right">{pts(tot.market)}</td>{/if}
+                  </tr>
+                </tbody>
+              </table>
+              {#if mine.sentences.market}<p class="text-sm leading-snug text-ink-2" data-testid="team-calls-market">{mine.sentences.market}</p>{/if}
+              {#if mine.sentences.calls}<p class="text-sm leading-snug text-ink-2" data-testid="team-calls-calls">{mine.sentences.calls}</p>{/if}
+              {#if mine.sentences.news}<p class="text-sm leading-snug text-ink-2" data-testid="team-calls-news">{mine.sentences.news}</p>{/if}
+              {#if callWeeks.length}
+                <Expander title="The close calls, week by week" testid="team-calls-list">
+                  <ul class="space-y-1.5 text-base leading-snug">
+                    {#each callWeeks as w (w.week)}
+                      {#each w.calls as c (c.call_rank)}
+                        <li><span class="font-semibold">Week {w.week}:</span> {c.words}{c.p_win !== null ? ` (we gave it ${Math.round(c.p_win * 100)}%)` : ""}</li>
+                      {/each}
+                    {/each}
+                  </ul>
+                </Expander>
+              {/if}
+              {#if rebuilt}<p class="text-xs leading-snug text-ink-3">* Played before this record existed: rebuilt after kickoff from the projections locked then, with the final injury report — kinder to us than a real Thursday call.</p>{/if}
+              <p class="text-xs text-ink-3"><a class="ll-link" href={withContext("/about#record", ctx)} data-testid="team-calls-league">The whole league's record</a></p>
+            </div>
+          </Card>
+        {/if}
+        <!-- ---- end V-2 -->
       </div>
 
       <div class="space-y-4">
