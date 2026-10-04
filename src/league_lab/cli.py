@@ -443,6 +443,57 @@ def lineups_cmd(
     console.print(tab)
 
 
+# ---- V-1 (Wave I-G): the validation harness — write the decision record, grade it
+@app.command("validate")
+def validate_cmd(
+    season: int | None = typer.Option(None, help="Season (default: the newest in ops.projections)"),
+    league: list[str] = typer.Option([], help="League id(s) to grade (default: every league on the record)"),
+    no_write: bool = typer.Option(False, "--no-write", help="Grade only: do not write ops.lineup_record"),
+):
+    """The decision record (V-1): write ops.lineup_record (the next week's lineup before its first kickoff; a played
+    week with no record is rebuilt once from the frozen projections, labelled `reconstructed`), then grade the scored
+    weeks: the app's edge over the submitted lineups, the regret, the close calls' calibration, news-affected cases.
+    `mart_decision_record` / `mart_decision_calls` publish the same grade (dbt)."""
+    from .validation import validate
+
+    v = validate(season, league or None, write=not no_write)
+    if v is None:
+        console.print("nothing to grade: ops.projections / ops.lineup_record is empty")
+        return
+    if v.record is not None:
+        console.print(f"decision record {v.season}: {v.record.rows} rows written "
+                      f"(next week: {v.record.written or 'none'}; reconstructed: {v.record.reconstructed or 'none'})")
+    for league_id, s in v.summary.items():
+        if not s["available"]:
+            console.print(f"{league_id}: no scored week on the record yet")
+            continue
+        t = Table(title=f"decision record {league_id}, {v.season}")
+        for c in ("week", "record", "rosters", "submitted", "app", "optimum", "edge", "regret", "news"):
+            t.add_column(c)
+        for w in s["weeks"]:
+            t.add_row(str(w["week"]), w["record_source"], str(w["rosters"]), f"{w['submitted']:.2f}", f"{w['app']:.2f}",
+                      f"{w['optimum']:.2f}", f"{w['edge']:+.2f}", f"{w['regret']:.2f}", str(w["news_rosters"]))
+        tot = s["season_totals"]
+        t.add_row("season", "", str(tot["roster_weeks"]), f"{tot['submitted']:.2f}", f"{tot['app']:.2f}",
+                  f"{tot['optimum']:.2f}", f"{tot['edge']:+.2f}", f"{tot['regret']:.2f}", str(s["news"]["roster_weeks"]))
+        console.print(t)
+        cal = s["calls"]
+        if cal["n"]:
+            c = Table(title=f"close calls: {cal['n']} graded, Brier {cal['brier']:.3f}")
+            for col in ("bin", "calls", "P from", "P to", "predicted", "landed"):
+                c.add_column(col)
+            for r in cal["table"]:
+                c.add_row(str(r["bin"]), str(r["n"]), f"{r['p_lo']:.2f}", f"{r['p_hi']:.2f}", f"{r['predicted']:.0%}",
+                          f"{r['observed']:.0%}")
+            console.print(c)
+        for k in ("edge", "calls", "news"):
+            if s["sentences"][k]:
+                console.print(s["sentences"][k])
+        if s["note"]:
+            console.print(s["note"])
+# ---- end V-1
+
+
 @app.command("waivers")
 def waivers_cmd(
     season: int | None = typer.Option(None, help="Projected season (default: the newest in ops.lineup_totals)"),
