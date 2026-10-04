@@ -34,7 +34,7 @@ table (``decisions.coverage_table``) and the Brier score (``decisions.brier``); 
 under 55%) are the line "the coin flips landed 54% for the side we leaned (52% expected, 31 calls)".
 
 ``summary`` makes the season-to-date block `/api/record` (``decisions``), the About page and the console's Record page
-show; ``validate`` (``league-lab validate``) writes the record and prints the grade.
+show; ``record_run.validate`` (``league-lab validate``) writes the record and prints the grade.
 """
 
 from __future__ import annotations
@@ -376,7 +376,7 @@ def grade_calls_scored(calls: pd.DataFrame) -> pd.DataFrame:
     return calls[calls["status"] == "scored"] if not calls.empty else calls
 
 
-# ------------------------------------------------------------------------------ the command
+# ------------------------------------------------------------------------------ the command (league_lab.record_run.validate)
 @dataclass
 class Validation:
     season: int
@@ -384,54 +384,6 @@ class Validation:
     roster_weeks: pd.DataFrame
     calls: pd.DataFrame
     summary: dict
-
-
-def validate(season: int | None = None, league_ids: Iterable[str] | None = None, write: bool = True,
-             mfl: Iterable[str] | None = None) -> Validation | None:
-    """``league-lab validate``: write the decision record (``lineup.run_record``: the next week's lineup before kickoff,
-    reconstructed weeks once), then grade it on the scored weeks. V-2: also the MFL leagues' record (``mfl`` or
-    ``LEAGUE_LAB_RECORD_MFL``), Sleeper's projections as a lineup (``ops.decision_market``) and, where this database
-    has the event store, the news flag from it."""
-    import psycopg
-
-    from . import lineup
-    from .config import get_settings
-
-    run = lineup.run_record(season) if write else None
-    mfl_keys = list(mfl) if mfl is not None else lineup.mfl_record_keys()          # ---- V-2
-    if write and mfl_keys:
-        lineup.run_mfl_record(mfl_keys)
-    with psycopg.connect(get_settings().pipeline_dsn(), autocommit=False) as conn:
-        q = frame_query(conn)
-        if season is None:
-            s = q("select max(season) as s from ops.lineup_record", ())
-            season = None if s.empty or pd.isna(s.iloc[0]["s"]) else int(s.iloc[0]["s"])
-        if season is None:
-            log.warning("validate: the decision record is empty")
-            return None
-        ids = list(league_ids) if league_ids else q("select distinct league_id from ops.lineup_record where season = %s",
-                                                   (season,))["league_id"].tolist()
-        sl_ids = [i for i in ids if not str(i).startswith("mfl:")]
-        if write:
-            try:                                                                       # ---- V-2: never fatal
-                write_market(conn, int(season), sl_ids)
-            except Exception:
-                conn.rollback()
-                log.exception("Sleeper's lineup (ops.decision_market) failed; the grade goes on without it")
-        g = load_inputs(q, int(season), sl_ids, events=True)
-        mfl_rec = q(RECORD_SQL, (season, [i for i in ids if str(i).startswith("mfl:")])) if len(sl_ids) < len(ids) else None
-        conn.commit()
-    rw, calls = grade_roster_weeks(g), grade_calls(g)
-    for key in [i for i in ids if str(i).startswith("mfl:")]:                          # ---- V-2: MFL leagues
-        try:
-            gm = mfl_load(key, mfl_rec[mfl_rec["league_id"] == key])
-        except Exception:
-            log.exception("validate: %s could not be graded (MFL unreachable?)", key)
-            continue
-        rw = pd.concat([rw, grade_roster_weeks(gm)], ignore_index=True)
-        calls = pd.concat([calls, grade_calls(gm)], ignore_index=True)
-    by_league = {lg: summary(rw[rw["league_id"] == lg], calls[calls["league_id"] == lg]) for lg in ids}
-    return Validation(int(season), run, rw, calls, by_league)
 
 
 # ---- V-2 (Wave I-H): the decision record, personal and live — the event store's news flag, Sleeper's projections as a
@@ -565,51 +517,16 @@ def apply_news(rw: pd.DataFrame, overrides: Mapping[tuple[str, int, int], int]) 
 
 
 # ------------------------------------------------------------------------------ Sleeper's projections as a lineup
-SLEEPER_LINES_SQL = """with k as (select season, week, min(kickoff_at) as first_kickoff_at from analytics.dim_game
-                                  where season = %s and season_type = 'REG' group by 1, 2),
-                       s as (select p.season, p.week, max(p.fetched_at) as fetched_at
-                             from raw.sleeper_projections as p join k using (season, week)
-                             where p.season_type = 'regular' and p.fetched_at < k.first_kickoff_at group by 1, 2)
-                       select m.gsis_id, p.*
-                       from raw.sleeper_projections as p join s using (season, week, fetched_at)
-                       join analytics.player_id_map as m on m.sleeper_id = p.player_id
-                       where p.season_type = 'regular' and p.position in ('QB', 'RB', 'WR', 'TE', 'K')"""
-LEAGUES_SQL = """select league_id, scoring_settings, roster_positions from analytics.dim_league_season
-                 where season = %s and league_id = any(%s)"""
-ROSTER_SQL = """select league_id, season, week, roster_id, record_source, role, slot, sleeper_player_id, gsis_id,
-                       player_name, position, value, value_source, reason, pricing
-                from ops.lineup_record where season = %s and league_id = any(%s) and role in ('starter', 'bench', 'unplayable')"""
-_LINE_META = ("gsis_id", "player_id", "sleeper_id", "position", "team", "opponent", "game_id", "company", "category",
-              "proj_date", "fetched_at", "season", "season_type", "week", "pts_ppr", "pts_half_ppr", "pts_std")
-
-
 def _json(v) -> object:
     import json
     return json.loads(v) if isinstance(v, str) else v
 
 
-def price_sleeper_lines(lines: pd.DataFrame, scoring: Mapping[str, float], ev: bool) -> dict[str, float]:
-    """gsis -> Sleeper's line in this scoring (``why.market_points``' rule: ``scoring.price_projected``, QB-TE in the
-    week's mode, a K flat)."""
-    from . import scoring as S
-    if lines is None or lines.empty:
-        return {}
-    df = lines.drop_duplicates("gsis_id", keep="first").reset_index(drop=True)
-    cols = [c for c in df.columns if c not in _LINE_META]
-    stats = df[cols].apply(pd.to_numeric, errors="coerce").fillna(0.0)
-    stats["position"] = df["position"].to_numpy()
-    skill = stats["position"].isin(["QB", "RB", "WR", "TE"]).to_numpy()
-    pts = np.zeros(len(stats))
-    if skill.any():
-        pts[skill] = S.price_projected(stats[skill], scoring, ev=ev)
-    if (~skill).any():
-        pts[~skill] = S.price_projected(stats[~skill], scoring, ev=False)
-    return {str(g): round(float(p), 2) for g, p in zip(df["gsis_id"].to_numpy(), pts, strict=True)}
-
-
-def market_rows(roster: pd.DataFrame, lines: pd.DataFrame, leagues: Mapping[str, dict], written_at=None) -> list[dict]:
+def market_rows(roster: pd.DataFrame, lines: pd.DataFrame, leagues: Mapping[str, dict], written_at=None, *,
+                price: Callable[[pd.DataFrame, Mapping[str, float], bool], Mapping[str, float]]) -> list[dict]:
     """``ops.decision_market`` rows: per record roster-week of a league in ``leagues`` (league -> {scoring, slots}) with a
-    Sleeper snapshot for its week, the best lineup of the record's roster at Sleeper's numbers (module block above)."""
+    Sleeper snapshot for its week, the best lineup of the record's roster at Sleeper's numbers (module block above).
+    ``price(lines, scoring, ev)`` -> gsis -> points (``record_run.price_sleeper_lines``)."""
     from . import lineup as LU
     if roster.empty or lines is None or lines.empty:
         return []
@@ -622,7 +539,7 @@ def market_rows(roster: pd.DataFrame, lines: pd.DataFrame, leagues: Mapping[str,
         pricing = str(grp["pricing"].dropna().iloc[0]) if grp["pricing"].notna().any() else "flat"
         key = (lg, int(week), pricing)
         if key not in priced:
-            priced[key] = price_sleeper_lines(by_week[int(week)], leagues[lg]["scoring"], ev=pricing == "ev")
+            priced[key] = price(by_week[int(week)], leagues[lg]["scoring"], pricing == "ev")
         mkt = priced[key]
         fetched = by_week[int(week)]["fetched_at"].iloc[0]
         players, meta = [], {}
@@ -646,32 +563,6 @@ def market_rows(roster: pd.DataFrame, lines: pd.DataFrame, leagues: Mapping[str,
                         "position": pos, "market_value": v, "value_source": src, "fetched_at": fetched,
                         "pricing": pricing, "written_at": written_at})
     return out
-
-
-def write_market(conn, season: int, league_ids: Iterable[str]) -> int:
-    """``ops.decision_market`` for the season's Sleeper leagues of the record, rebuilt (it is recomputable every night
-    from ``raw.sleeper_projections``): delete the leagues' rows, insert. Returns the rows written."""
-    from datetime import UTC, datetime
-    ids = [str(x) for x in league_ids if not str(x).startswith("mfl:")]
-    q = frame_query(conn)
-    from .lineup import MARKET_DDL
-    with conn.cursor() as cur:
-        cur.execute(MARKET_DDL)
-    if not ids:
-        return 0
-    lg = q(LEAGUES_SQL, (season, ids))
-    leagues = {r.league_id: {"scoring": {k: float(v) for k, v in (_json(r.scoring_settings) or {}).items() if v is not None},
-                             "slots": [str(x) for x in (_json(r.roster_positions) or [])]} for r in lg.itertuples(index=False)}
-    lines = q(SLEEPER_LINES_SQL, (season,)) if _has(q, "raw.sleeper_projections") else pd.DataFrame()
-    rows = market_rows(q(ROSTER_SQL, (season, ids)), lines, leagues, datetime.now(UTC))
-    with conn.cursor() as cur:
-        cur.execute("delete from ops.decision_market where season = %s and league_id = any(%s)", (season, ids))
-        with cur.copy(f"copy ops.decision_market ({', '.join(MARKET_COLUMNS)}) from stdin") as cp:
-            for d in rows:
-                cp.write_row([d.get(c) for c in MARKET_COLUMNS])
-    conn.commit()
-    log.info("Sleeper's lineup (ops.decision_market) for %s: %s rows", season, len(rows))
-    return len(rows)
 
 
 def market_points(market: pd.DataFrame | None, points) -> dict[tuple[str, int, int], tuple[float | None, int]]:
@@ -805,25 +696,6 @@ def _as_list(v) -> list:
     if v is None:
         return []
     return list(v) if isinstance(v, list) else [v]
-
-
-def mfl_load(key: str, record: pd.DataFrame, router=None) -> GradeInputs:
-    """An MFL league's grade inputs: its record rows (RECORD_SQL's starters) and MFL's results for the recorded weeks it
-    has scored (``last_scored_leg``), through the league's own translation (``anyleague.sleeper()``)."""
-    from . import anyleague as A
-    from . import platforms as PL
-    router = router or A.sleeper()
-    lid = PL.mfl_id(key)
-    lg = router.league(key)
-    last = int((lg.get("settings") or {}).get("last_scored_leg") or 0)
-    weeks = sorted({int(w) for w in record["week"]}) if not record.empty else []
-    results = {}
-    for w in weeks:
-        if w <= last:
-            results[w] = router.mfl.client.weekly_results(lid, w)
-    weekly, opt = mfl_weekly(key, results, lambda ids: router.mfl.translate(lid, ids),
-                             router.mfl._rid_of(lid), range(1, last + 1))            # noqa: SLF001
-    return mfl_inputs(record, weekly, opt)
 
 
 def mfl_inputs(record: pd.DataFrame, weekly: pd.DataFrame, optimum: pd.DataFrame) -> GradeInputs:

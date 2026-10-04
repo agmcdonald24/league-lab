@@ -3,7 +3,7 @@
 
 * ``decisions.team`` for Scrubs roster 6 ("GoodGameBuddy"): its graded weeks, the sums, the sentence, the close calls;
   every roster's weeks add up to the league's, to the cent.
-* Dad's league (MFL 70587) from the fixtures: its record rows are built in memory by ``lineup.mfl_record_rows`` on the
+* Dad's league (MFL 70587) from the fixtures: its record rows are built in memory by ``record_mfl.mfl_record_rows`` on the
   MFL fixtures (the reads go through the API's read-only role; nothing is written) and graded from the fixtures'
   ``weeklyResults``: weeks 1-3 rebuilt and said so, the submitted points are MFL's franchise scores, a double header
   counted once.
@@ -102,11 +102,11 @@ def _fixture_scores() -> dict[int, dict[str, float]]:
 @pytest.fixture
 def dad(client, monkeypatch):
     """/api/record for dad's league with its record rows built in memory from the fixtures (nothing written)."""
-    from league_lab import lineup as LU
+    from league_lab import record_mfl
 
     from league_lab_api import ondemand
 
-    rows, plan = LU.mfl_record_rows(ondemand.query, DAD, datetime(2026, 10, 4, 16, 0, tzinfo=UTC))
+    rows, plan = record_mfl.mfl_record_rows(ondemand.query, DAD, datetime(2026, 10, 4, 16, 0, tzinfo=UTC))
     rec = pd.DataFrame(rows)
     rec = rec[rec["role"] == "starter"].assign(run_at=rec["as_of"])
     real = ondemand.query

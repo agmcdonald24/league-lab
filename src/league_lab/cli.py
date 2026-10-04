@@ -456,7 +456,7 @@ def validate_cmd(
     week with no record is rebuilt once from the frozen projections, labelled `reconstructed`), then grade the scored
     weeks: the app's edge over the submitted lineups, the regret, the close calls' calibration, news-affected cases.
     `mart_decision_record` / `mart_decision_calls` publish the same grade (dbt)."""
-    from .validation import validate
+    from .record_run import validate  # ---- V-2: its own module
 
     v = validate(season, league or None, write=not no_write, mfl=mfl or None)          # ---- V-2: mfl
     if v is None:

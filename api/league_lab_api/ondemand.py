@@ -801,7 +801,7 @@ def decisions_team(rw: pd.DataFrame, calls: pd.DataFrame, team: int | None, team
 
 def mfl_decisions(league_id: str, team: int | None = None) -> dict:
     """An MFL league's decision record: its ops.lineup_record rows graded from MFL's weeklyResults
-    (``validation.mfl_load``); unavailable (never an error) without rows or when MFL cannot answer."""
+    (``record_mfl.mfl_load``); unavailable (never an error) without rows or when MFL cannot answer."""
     from league_lab import validation as V
     try:
         cl = A.sleeper()
@@ -814,7 +814,8 @@ def mfl_decisions(league_id: str, team: int | None = None) -> dict:
     for c in ("value", "margin", "alt_value", "p_win", "lineup_value"):
         rec[c] = pd.to_numeric(rec[c], errors="coerce")
     try:
-        g = V.mfl_load(league_id, rec, router=cl)
+        from league_lab.record_mfl import mfl_load
+        g = mfl_load(league_id, rec, router=cl)
     except Exception:  # noqa: BLE001 - MFL down / busy: say so, never fail the record
         return {"available": False, "platform": "mfl", "season": season, "why": "MyFantasyLeague did not answer"}
     rw, calls = V.grade_roster_weeks(g), V.grade_calls(g)

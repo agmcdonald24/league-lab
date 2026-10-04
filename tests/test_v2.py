@@ -17,7 +17,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from league_lab import lineup, validation
+from league_lab import lineup, record_run, validation
 
 from .test_v1 import _grade_inputs
 
@@ -189,7 +189,7 @@ def test_sleeper_s_lineup_is_the_roster_the_record_saw_at_sleeper_s_numbers():
                           ("g5", "RB", 500.0)], columns=["gsis_id", "position", "passing_yards"])
     lines = lines.assign(week=5, fetched_at=RUN, rushing_yards=lines["passing_yards"])
     leagues = {"L": {"scoring": {"pass_yd": 0.04, "rush_yd": 0.1}, "slots": ["QB", "RB", "DEF", "BN", "BN"]}}
-    rows = validation.market_rows(roster, lines, leagues)
+    rows = validation.market_rows(roster, lines, leagues, price=record_run.price_sleeper_lines)
     got = {r["slot"]: (r["sleeper_player_id"], r["value_source"]) for r in rows}
     # Sleeper prefers Q2 (300 yds) and R2 (90); R3 is out whatever Sleeper says; the DEF keeps our pick
     assert got == {"QB": ("Q2", "sleeper"), "RB": ("R2", "sleeper"), "DEF": ("D1", "ours")}
