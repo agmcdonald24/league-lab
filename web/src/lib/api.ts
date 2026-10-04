@@ -1789,3 +1789,22 @@ export interface AboutAnswer {
   grade_note?: string | null; // the qualification shown right under the headline grade (a league we do not score)
 }
 // ---- end IG-3
+
+// ---- IH-1 (Wave I-H): the stale state (/api/status `nightly`; league_lab/freshness.py) and a retry that really asks
+// again (INTERFACES.md § IH-1)
+export interface Nightly {
+  as_of: string | null; // the newest projections' fit (ISO); null = unknown
+  age_hours: number | null;
+  stale: boolean | null; // true: older than limit_hours (a missed morning update); null: unknown
+  limit_hours: number; // 30
+  words: string | null; // the banner's sentence when stale, else null
+}
+export interface Status {
+  nightly?: Nightly;
+}
+/** Forget a path's cached answer and its request in flight, so the next get() asks the server again (a retry). */
+export function forget(path: string): void {
+  cache.delete(path);
+  inflight.delete(path);
+}
+// ---- end IH-1

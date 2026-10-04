@@ -3,6 +3,7 @@
 // partner card). Numbers keep their units; unknown is not zero (docs/WORDS.md).
 import type { AllPlayRow, LeagueView, PartnerRow, Team, TradePlayer, TradeWindow, WaiverMove, Waivers } from "./api";
 import { APP_NAME } from "./brand";
+import { failureOf } from "./remote.svelte"; // ---- IH-1
 
 export const f1 = (x: number | null | undefined): string => (x == null ? "—" : x.toFixed(1));
 export const f2 = (x: number | null | undefined): string => (x == null ? "—" : x.toFixed(2));
@@ -185,6 +186,10 @@ export function parseIds(s: string | null): string[] {
 export function errorWords(e: unknown): string {
   const status = typeof e === "object" && e !== null && "status" in e ? (e as { status: number }).status : null;
   if (status === 404) return `${APP_NAME} cannot find this for your league on Sleeper. Pick another league or team above.`;
+  // ---- IH-1: the API down (no answer, the host's own 502-504 page), a 500, MFL / busy — lib/remote.svelte.ts's words
+  const f = failureOf(e);
+  if (f.kind !== "other" && f.kind !== "notfound") return f.words;
+  // ---- end IH-1
   if (status === 502) return "Sleeper did not answer. Try again in a minute.";
   if (status === 503) return "The numbers are not ready yet. Try again in a few minutes.";
   return e instanceof Error ? e.message : String(e);
