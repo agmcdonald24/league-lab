@@ -38,6 +38,18 @@
   const grades = $derived(ab.data?.grades ?? null);
   const pct = (v: number | null | undefined) => (v === null || v === undefined ? "—" : `${Math.round(v * 100)}%`);
   const GRADES_HOWTO = $derived((grades?.howto ?? []).map((h) => `- ${h}`).join("\n"));
+
+  // ---- V-1 (Wave I-G): the decision record block (GET /api/record `decisions`)
+  const dec = $derived(r.data?.decisions ?? null);
+  const signed = (v: number) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)}`;
+  const DECISIONS_HOWTO = [
+    "- **Ours** is the lineup we recommended for each team before the week's first kickoff, kept since: later news does not change it.",
+    "- **Started** is what each team really started, at Sleeper's points. **Best** is the best lineup the same roster could have started knowing the scores — nobody can do that; it shows how much was left on the bench.",
+    "- **Added** is ours minus started: what following our lineups would have added (below zero: the managers' own lineups did better).",
+    "- **Coin flips** are the cards' closest calls (under 55%). **Landed** counts the weeks the player we started outscored the one on the bench (a tie counts half); **expected** is what our percentages said. Over a season the two should be close.",
+    "- A week marked with a star was played before this record existed: its lineups were rebuilt from the projections locked then, with the final injury report — kinder to us than a real Thursday-morning call.",
+  ].join("\n");
+  // ---- end V-1
 </script>
 
 <main class="space-y-5" data-testid="about">
@@ -168,6 +180,54 @@
           </div>
         </div>
       {/if}
+      <!-- ---- V-1 (Wave I-G): our lineups against the ones started (GET /api/record `decisions`; METRICS § "The decision record") -->
+      {#if dec?.available && dec.season_totals}
+        {@const tot = dec.season_totals}
+        {@const cf = dec.calls?.coin_flips}
+        <div class="space-y-2.5" data-testid="record-decisions">
+          <h3 class="ll-label">Our lineups against the ones started</h3>
+          {#if dec.sentences?.edge}<p class="text-base leading-snug" data-testid="decisions-edge">{dec.sentences.edge}</p>{/if}
+          <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <StatTile label="Our lineups would have added" value={signed(tot.edge)} unit="pts" caption={`${signed(tot.edge / tot.roster_weeks)} a team a week`} size="sm" testid="decisions-tile-edge" />
+            <StatTile label="Best lineup in hindsight" value={`+${tot.regret.toFixed(1)}`} unit="pts" caption={`${(tot.regret / tot.roster_weeks).toFixed(1)} a team a week over the one started`} size="sm" testid="decisions-tile-regret" />
+            {#if cf && cf.n && cf.won !== null && cf.expected !== null}
+              <StatTile label="Coin flips landed" value={`${Math.round((100 * cf.won) / cf.n)}%`} caption={`${Math.round((100 * cf.expected) / cf.n)}% expected · ${cf.n} calls`} size="sm" testid="decisions-tile-flips" />
+            {/if}
+          </div>
+          <div class="overflow-hidden rounded-lg border border-line bg-surface">
+            <table class="w-full table-fixed border-collapse text-base" data-testid="decisions-table">
+              <thead>
+                <tr class="ll-label border-b border-line bg-raised text-left">
+                  <th class="w-[3.25rem] px-3 py-2 font-semibold">Week</th>
+                  <th class="py-2 text-right font-semibold">Started</th>
+                  <th class="py-2 text-right font-semibold">Ours</th>
+                  <th class="py-2 text-right font-semibold">Best</th>
+                  <th class="py-2 pr-3 text-right font-semibold">Added</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#each dec.weeks ?? [] as w (w.week)}
+                  <tr class="border-b border-line last:border-0">
+                    <td class="tabnum px-3 py-2">{w.week}{w.record_source === "reconstructed" ? "*" : ""}</td>
+                    <td class="tabnum py-2 text-right">{w.submitted.toFixed(1)}</td>
+                    <td class="tabnum py-2 text-right">{w.app.toFixed(1)}</td>
+                    <td class="tabnum py-2 text-right">{w.optimum.toFixed(1)}</td>
+                    <td class="tabnum py-2 pr-3 text-right font-bold">{signed(w.edge)}</td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+          <p class="text-sm leading-snug text-ink-3">Points summed over the league's {dec.weeks?.[0]?.rosters ?? ""} teams each week.</p>
+          {#if dec.sentences?.calls}<p class="text-base leading-snug" data-testid="decisions-calls">{dec.sentences.calls}</p>{/if}
+          {#if dec.sentences?.news}<p class="text-sm leading-snug text-ink-3" data-testid="decisions-news">{dec.sentences.news}</p>{/if}
+          {#if dec.note}<p class="text-sm leading-snug text-ink-3" data-testid="decisions-note">* {dec.note}</p>{/if}
+          <Expander title="How to read our lineups' record" testid="decisions-howto"><Md text={DECISIONS_HOWTO} block class="text-base leading-snug" /></Expander>
+        </div>
+      {:else if dec && !dec.available}
+        <p class="text-sm leading-snug text-ink-3" data-testid="record-decisions-empty">Our lineups are graded against the ones started once a week on the record has been scored.</p>
+      {/if}
+      <!-- ---- end V-1 -->
       {#if view.byPosition.length}
         <Expander title="Projections by position, week by week" testid="record-positions">
           <table class="w-full table-fixed border-collapse text-sm" data-testid="record-positions-table">

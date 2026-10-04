@@ -20,6 +20,7 @@ record (`record`, house leagues only).
 
 from __future__ import annotations
 
+import functools  # ---- V-1 (Wave I-G): record()'s decisions wrapper
 import time
 
 import numpy as np
@@ -676,6 +677,50 @@ RECORD_SQL = """select * from analytics.mart_projection_record where league_id =
 RECORD_WHY = "we keep the record for the leagues we score every morning; yours is not one of them yet"
 
 
+# ---- V-1 (Wave I-G): the decision record on /api/record — what the app's lineups would have added, the regret, the
+# close calls' calibration, the news-affected cases (league_lab.validation.summary over the two dbt marts;
+# docs/METRICS.md § "The decision record"; INTERFACES.md § V-1). Unavailable (never an error) before the marts exist.
+# `record()` gains the `decisions` key through `_with_decisions` (a wrapper, so this block never touches the lines
+# M4's `pricing` block changed: the two merge cleanly in either order).
+DECISIONS_SQL = """select * from analytics.mart_decision_record where league_id = %s and season = %s
+                   order by week, roster_id"""
+DECISION_CALLS_SQL = """select * from analytics.mart_decision_calls where league_id = %s and season = %s
+                        order by week, roster_id, call_rank"""
+
+
+def record_decisions(league_id: str, season: int) -> dict:
+    from league_lab import validation as V
+
+    from .db import missing_relations
+    if missing_relations(("mart_decision_record", "mart_decision_calls")):
+        return {"available": False, "season": season, "why": "the decision record is not built here yet"}
+    try:
+        rw = query(DECISIONS_SQL, (league_id, season))
+        calls = query(DECISION_CALLS_SQL, (league_id, season))
+    except Exception:  # noqa: BLE001 - a mart from an older build: say so, never fail the record
+        return {"available": False, "season": season, "why": "the decision record could not be read"}
+    for c in ("submitted_points", "app_points", "optimum_points", "regret", "app_edge", "app_regret"):
+        if c in rw:
+            rw[c] = pd.to_numeric(rw[c], errors="coerce")
+    for c in ("p_win", "outcome", "starter_points", "alt_points", "value", "alt_value", "margin"):
+        if c in calls:
+            calls[c] = pd.to_numeric(calls[c], errors="coerce")
+    return {"season": season, **V.summary(rw, calls)}
+
+
+def _with_decisions(fn):
+    """``record``'s answer + ``decisions`` for a league we keep the record for (``available``)."""
+    @functools.wraps(fn)
+    def wrapped(league_id: str) -> dict:
+        out = fn(league_id)
+        if out.get("available") and out.get("season") is not None:
+            out["decisions"] = record_decisions(out["league_id"], int(out["season"]))
+        return out
+    return wrapped
+# ---- end V-1
+
+
+@_with_decisions                                                     # ---- V-1 (Wave I-G)
 def record(league_id: str) -> dict:
     from .db import missing_relations
     from .myweek import known_league, league_row

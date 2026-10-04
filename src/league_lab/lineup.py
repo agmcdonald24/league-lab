@@ -54,7 +54,7 @@ import time
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, fields, replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pandas as pd
@@ -833,6 +833,7 @@ def lineups(conn: psycopg.Connection, season: int | None = None, as_of: datetime
         log.warning("lineups: no current league plays season %s; nothing written", season)
     rows, totals, solve_s = build(inp, as_of=as_of)
     _write(conn, season, rows, totals)
+    record_after_lineups(conn, inp, rows, totals, as_of)       # ---- V-1 (Wave I-G): the decision record, never fatal
     upcoming = sorted(w for w, teams in inp.games.items() if any(k is not None and k > as_of for k in teams.values()))
     run = LineupRun(season, pd.DataFrame(rows, columns=LINEUP_COLUMNS), pd.DataFrame(totals, columns=TOTALS_COLUMNS),
                     time.perf_counter() - t0, solve_s, upcoming[0] if upcoming else None)
@@ -858,3 +859,258 @@ def run_lineups(season: int | None = None) -> LineupRun:
 
     with psycopg.connect(get_settings().pipeline_dsn(), autocommit=False) as conn:
         return lineups(conn, season)
+
+
+# ---- V-1 (Wave I-G): the decision record — what the app recommended, frozen before the week's first kickoff
+# ``lineups()`` re-solves and overwrites ``ops.lineups`` every run, so nothing kept what the app said before kickoff.
+# ``ops.lineup_record`` keeps it, under the ``ops.projections`` freeze rule (plan B5; docs/METRICS.md § "The decision
+# record"): per league x week,
+#   * the week has not kicked off -> ``write``: every build replaces the rows (the last build before kickoff wins),
+#     labelled ``kickoff``; only the NEXT week to kick off is written (a later week is replaced before it can count);
+#   * kicked off, rows stored -> ``keep``: never rewritten or deleted;
+#   * kicked off, nothing stored (2026 weeks 1-4: played before this record existed; a league added mid-season) ->
+#     ``reconstruct`` once from the frozen ``ops.projections`` rows (the as-of inputs), solved as of one second before
+#     the first kickoff (no locks), labelled ``reconstructed``. Caveat: a reconstructed week reads the week's final
+#     injury report (``mart_player_week_features``), not the one the morning build saw.
+# One row per player of the proposed lineup (starters, empty slots, bench, unplayable) with the lineup total, and on
+# a starter's row the decision cards' call (app/lib/cards.py ``decisions``: the three smallest-margin valued starters
+# a bench player could replace, with that player and P(starter outscores him), ``league_lab.decisions``).
+RECORD_COLUMNS = ["run_at", "as_of", "first_kickoff_at", "record_source", "model_version", "pricing", "league_id", "season",
+                  "week", "roster_id", "role", "slot", "slot_type", "slot_order", "bench_rank", "sleeper_player_id",
+                  "gsis_id", "player_name", "position", "value", "value_source", "margin", "report_status", "reason",
+                  "lineup_value", "call_rank", "alt_sleeper_player_id", "alt_gsis_id", "alt_player_name", "alt_value",
+                  "p_win", "is_coin_flip"]
+RECORD_DDL = """create table if not exists ops.lineup_record (
+        run_at timestamptz, as_of timestamptz, first_kickoff_at timestamptz, record_source text, model_version text,
+        pricing text, league_id text, season integer, week integer, roster_id integer, role text, slot text,
+        slot_type text, slot_order integer, bench_rank integer, sleeper_player_id text, gsis_id text, player_name text,
+        position text, value double precision, value_source text, margin double precision, report_status text,
+        reason text, lineup_value double precision, call_rank integer, alt_sleeper_player_id text, alt_gsis_id text,
+        alt_player_name text, alt_value double precision, p_win double precision, is_coin_flip boolean);
+        create index if not exists lineup_record_idx on ops.lineup_record (league_id, season, week, roster_id)"""
+DDL["ops.lineup_record"] = RECORD_DDL      # `league-lab db migrate` creates it (a fresh nightly database restores into it)
+RECORD_SOURCES = ("kickoff", "reconstructed")
+N_CALLS = 3                  # the cards' closest calls per roster-week (cards.decisions' n)
+CALL_TOL = 0.011             # = cards.TOL: values and margins are stored to the cent
+CLOSE_PWIN, COIN_FLIP_MARGIN = 0.55, 1.0    # = cards.CLOSE_PWIN / cards.COIN_FLIP: the card's "coin flip"
+QUANTILES = ("p10", "p25", "p50", "p75", "p90")
+
+
+def first_kickoffs(games: Mapping[int, Mapping[str, datetime | None]]) -> dict[int, datetime]:
+    """week -> the week's first kickoff (``LineupInputs.games``); a week without a kickoff time is left out."""
+    out = {}
+    for week, teams in games.items():
+        ks = [k for k in teams.values() if k is not None]
+        if ks:
+            out[int(week)] = min(ks)
+    return out
+
+
+def record_plan(weeks: Mapping[str, Iterable[int]], stored: Iterable[tuple[str, int]], kickoffs: Mapping[int, datetime],
+                now: datetime) -> dict[tuple[str, int], str]:
+    """What this build does to each league-week of the record: ``write`` (the next week to kick off), ``keep`` (kicked
+    off, stored), ``reconstruct`` (kicked off, nothing stored). A week without a known kickoff, or a later unstarted
+    week, is left alone (absent from the answer)."""
+    have = {(str(lg), int(w)) for lg, w in stored}
+    plan: dict[tuple[str, int], str] = {}
+    for league_id, ws in weeks.items():
+        ws = sorted({int(w) for w in ws if int(w) in kickoffs})
+        started = [w for w in ws if kickoffs[w] <= now]
+        ahead = [w for w in ws if kickoffs[w] > now]
+        for w in started:
+            plan[(league_id, w)] = "keep" if (league_id, w) in have else "reconstruct"
+        if ahead:
+            plan[(league_id, ahead[0])] = "write"
+    return plan
+
+
+def _elig(position: str | None, slot_type: str | None) -> bool:
+    e = slot_eligibility(slot_type)
+    return bool(position) and e is not None and position in e
+
+
+def _alternative(s: dict, bench: list[dict]) -> dict | None:
+    """cards.alternative on record rows: the bench player who comes in when starter ``s`` sits (value = starter value -
+    margin; the slot's best eligible bench player when that matches, else the one with that value), or None."""
+    target = float(s["value"]) - float(s["margin"])
+    valued = [b for b in bench if b["value"] is not None]
+    elig = sorted((b for b in valued if _elig(b["position"], s["slot_type"])), key=lambda b: (-b["value"], b["bench_rank"]))
+    best = elig[0] if elig else None
+    if best is not None and abs(best["value"] - target) <= CALL_TOL:
+        return best
+    if abs(target) <= CALL_TOL:
+        return None
+    entering = [b for b in valued if abs(b["value"] - target) <= CALL_TOL]
+    if entering:
+        return sorted(entering, key=lambda b: (not _elig(b["position"], s["slot_type"]), b["bench_rank"]))[0]
+    return best
+
+
+def close_calls(rows: list[dict], weakest_slot: str | None, quantiles: Mapping[str, dict] | None = None,
+                n: int = N_CALLS) -> list[tuple[dict, dict, float | None]]:
+    """The decision cards' closest calls for one roster-week of record rows (no locks before kickoff): the n valued
+    starters with the smallest margins (weakest slot first on a tie, then value, slot order) someone on the bench
+    could replace, each with that bench player and P(starter outscores him) (``decisions.win_probability`` on the
+    frozen quantiles; only for two QB-TE projections, like the card). ``quantiles``: gsis -> p10..p90, team, opponent."""
+    from . import decisions as D
+
+    starters = [r for r in rows if r["role"] == "starter" and r["margin"] is not None and not r.get("is_locked")
+                and r["value_source"] != UNVALUED and r["value"] is not None]
+    starters.sort(key=lambda r: (r["margin"], r["slot"] != weakest_slot, r["value"], r["slot_order"]))
+    bench = [r for r in rows if r["role"] == "bench" and not r.get("is_locked")]
+    out = []
+    for s in starters:
+        if len(out) >= n:
+            break
+        alt = _alternative(s, bench)
+        if alt is None:
+            continue
+        p = None
+        if (quantiles is not None and s["value_source"] == alt["value_source"] == "proj_points"
+                and s["position"] in SKILL and alt["position"] in SKILL):
+            qa, qb = quantiles.get(s["gsis_id"]), quantiles.get(alt["gsis_id"])
+            if qa is not None and qb is not None:
+                p = D.win_probability({**qa, "position": s["position"]}, {**qb, "position": alt["position"]})
+        out.append((s, alt, p))
+    return out
+
+
+def is_coin_flip(p_win: float | None, margin: float | None) -> bool:
+    """The card's own rule (cards.is_coin_flip): under 55% when the odds exist, else under a point apart."""
+    return (p_win < CLOSE_PWIN) if p_win is not None else float(margin or 0.0) < COIN_FLIP_MARGIN
+
+
+def record_rows(rows: list[dict], totals: list[dict], meta: Mapping[tuple[str, int], dict],
+                quantiles: Mapping[tuple[str, int], Mapping[str, dict]], source: str, as_of: datetime) -> list[dict]:
+    """``ops.lineup_record`` rows from a build's proposed (not realised) rows of the league-weeks in ``meta``
+    ((league, week) -> first_kickoff_at, model_version, pricing)."""
+    by_rw: dict[tuple[str, int, int], list[dict]] = defaultdict(list)
+    for r in rows:
+        if not r["is_realised"] and (r["league_id"], int(r["week"])) in meta:
+            by_rw[(r["league_id"], int(r["week"]), int(r["roster_id"]))].append(r)
+    tot = {(t["league_id"], int(t["week"]), int(t["roster_id"])): t for t in totals
+           if not t["is_realised"] and (t["league_id"], int(t["week"])) in meta}
+    out = []
+    for key, rw in sorted(by_rw.items()):
+        league_id, week, _ = key
+        t = tot.get(key, {})
+        m = meta[(league_id, week)]
+        calls = {}
+        for k, (s, alt, p) in enumerate(close_calls(rw, t.get("weakest_slot"), quantiles.get((league_id, week))), 1):
+            calls[id(s)] = {"call_rank": k, "alt_sleeper_player_id": alt["sleeper_player_id"], "alt_gsis_id": alt["gsis_id"],
+                            "alt_player_name": alt["player_name"], "alt_value": alt["value"],
+                            "p_win": None if p is None else round(float(p), 4), "is_coin_flip": is_coin_flip(p, s["margin"])}
+        for r in rw:
+            out.append({c: r.get(c) for c in RECORD_COLUMNS} | {
+                "as_of": as_of, "first_kickoff_at": m.get("first_kickoff_at"), "record_source": source,
+                "model_version": m.get("model_version") or r.get("model_version"), "pricing": m.get("pricing") or "flat",
+                "lineup_value": t.get("lineup_value"), **calls.get(id(r), {})})
+    return out
+
+
+def _record_meta(cur: psycopg.Cursor, season: int, keys: list[tuple[str, int]], kickoffs: Mapping[int, datetime]) -> dict:
+    """(league, week) -> first_kickoff_at, model_version (the league-week's ops.projections versions), pricing (M4's
+    column when it exists: ``coalesce(max(pricing), 'flat')``; NULL / no column = flat, every row before Wave I-G)."""
+    cur.execute("""select 1 from information_schema.columns
+                   where table_schema = 'ops' and table_name = 'projections' and column_name = 'pricing'""")
+    pricing = "coalesce(max(pricing), 'flat')" if cur.fetchone() else "'flat'"
+    cur.execute(f"""select league_id, week, string_agg(distinct model_version, ',' order by model_version) as mv, {pricing} as pricing
+                    from ops.projections where season = %s and (league_id, week) in (select * from unnest(%s::text[], %s::int[]))
+                    group by 1, 2""", (season, [k[0] for k in keys], [k[1] for k in keys]))
+    got = {(lg, int(w)): {"model_version": mv, "pricing": pr} for lg, w, mv, pr in cur.fetchall()}
+    return {k: {"first_kickoff_at": kickoffs.get(k[1]), **got.get(k, {"model_version": None, "pricing": "flat"})} for k in keys}
+
+
+def _record_quantiles(cur: psycopg.Cursor, season: int, keys: list[tuple[str, int]]) -> dict:
+    """(league, week) -> gsis -> the frozen p10..p90, team and opponent (the card's win probability inputs)."""
+    cur.execute("""select p.league_id, p.week, p.gsis_id, p.p10, p.p25, p.p50, p.p75, p.p90, f.team,
+                          case when g.home_team = f.team then g.away_team when g.away_team = f.team then g.home_team end as opponent
+                   from ops.projections as p
+                   left join analytics.mart_player_week_features as f using (gsis_id, season, week)
+                   left join analytics.dim_game as g
+                     on g.season = p.season and g.week = p.week and g.season_type = 'REG' and f.team in (g.home_team, g.away_team)
+                   where p.season = %s and p.position in ('QB', 'RB', 'WR', 'TE')
+                     and (p.league_id, p.week) in (select * from unnest(%s::text[], %s::int[]))""",
+                (season, [k[0] for k in keys], [k[1] for k in keys]))
+    out: dict[tuple[str, int], dict[str, dict]] = defaultdict(dict)
+    for lg, w, g, *vals in cur.fetchall():
+        q = dict(zip([*QUANTILES, "team", "opponent"], vals, strict=True))
+        out[(lg, int(w))][g] = {k: (_num(v) if k in QUANTILES else v) for k, v in q.items()}
+    return out
+
+
+@dataclass
+class RecordRun:
+    plan: dict[tuple[str, int], str]
+    rows: int
+    written: list[tuple[str, int]]
+    reconstructed: list[tuple[str, int]]
+
+
+def write_record(conn: psycopg.Connection, inp: LineupInputs, rows: list[dict] | None = None, totals: list[dict] | None = None,
+                 as_of: datetime | None = None) -> RecordRun:
+    """Write ``ops.lineup_record`` for one build under the freeze rule (``record_plan``), in one transaction. ``rows`` /
+    ``totals``: this build's ``build()`` output at ``as_of`` (the ``write`` weeks are taken from it; None = solve them
+    here); ``reconstruct`` weeks are solved here, as of one second before their first kickoff."""
+    as_of = as_of or datetime.now(UTC)
+    kickoffs = first_kickoffs(inp.games)
+    with conn.cursor() as cur:
+        cur.execute(RECORD_DDL)
+        cur.execute("select distinct league_id, week from ops.lineup_record where season = %s", (inp.season,))
+        stored = [(lg, int(w)) for lg, w in cur.fetchall()]
+        plan = record_plan(inp.weeks, stored, kickoffs, as_of)
+        write = sorted(k for k, a in plan.items() if a == "write")
+        rebuild = sorted(k for k, a in plan.items() if a == "reconstruct")
+        if not write and not rebuild:
+            conn.commit()
+            return RecordRun(plan, 0, [], [])
+        meta = _record_meta(cur, inp.season, write + rebuild, kickoffs)
+        quant = _record_quantiles(cur, inp.season, write + rebuild)
+        out: list[dict] = []
+        if write:
+            if rows is None or totals is None:
+                rows, totals, _ = build(replace(inp, weeks={lg: [w for (g, w) in write if g == lg] for lg in inp.weeks}), as_of=as_of)
+            out += record_rows(rows, totals, {k: meta[k] for k in write}, quant, "kickoff", as_of)
+        for league_id, week in rebuild:
+            just_before = kickoffs[week] - timedelta(seconds=1)
+            r_rows, r_tot, _ = build(replace(inp, weeks={league_id: [week]}), as_of=just_before, run_at=as_of)
+            out += record_rows(r_rows, r_tot, {(league_id, week): meta[(league_id, week)]}, quant, "reconstructed", just_before)
+        for r in out:
+            r["run_at"] = as_of
+        cur.execute("delete from ops.lineup_record where season = %s and (league_id, week) in (select * from unnest(%s::text[], %s::int[]))",
+                    (inp.season, [k[0] for k in write], [k[1] for k in write]))
+        with cur.copy(f"copy ops.lineup_record ({', '.join(RECORD_COLUMNS)}) from stdin") as cp:
+            for d in out:
+                cp.write_row([d.get(c) for c in RECORD_COLUMNS])
+    conn.commit()
+    log.info("decision record for %s: %s rows (written: %s; reconstructed: %s; kept: %s)", inp.season, len(out),
+             write or "none", rebuild or "none", sorted(k for k, a in plan.items() if a == "keep") or "none")
+    return RecordRun(plan, len(out), write, rebuild)
+
+
+def record_after_lineups(conn: psycopg.Connection, inp: LineupInputs, rows: list[dict], totals: list[dict],
+                         as_of: datetime) -> RecordRun | None:
+    """Called by ``lineups()`` after its own write: a failure here is logged, never fatal (the lineups are written;
+    ``league-lab validate`` writes the record again)."""
+    try:
+        return write_record(conn, inp, rows, totals, as_of)
+    except Exception:
+        conn.rollback()
+        log.exception("decision record failed (lineups were written); run `league-lab validate`")
+        return None
+
+
+def run_record(season: int | None = None, as_of: datetime | None = None) -> RecordRun | None:
+    """``league-lab validate``'s writer: load the inputs and write the record without touching ``ops.lineups``."""
+    from .config import get_settings
+
+    with psycopg.connect(get_settings().pipeline_dsn(), autocommit=False) as conn:
+        if season is None:
+            with conn.cursor() as cur:
+                cur.execute("select max(season) from ops.projections")
+                season = cur.fetchone()[0]
+        if season is None:
+            log.warning("record: ops.projections is empty (run `league-lab project` first)")
+            return None
+        return write_record(conn, load_inputs(conn, int(season)), as_of=as_of)
+# ---- end V-1

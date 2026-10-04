@@ -5645,3 +5645,133 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
    (`LEAGUE_LAB_EVENTS=off` in the autouse fixture) — shared, outside my list, needed so no test writes into a store.
 6. Retention: none (a proposal: drop superseded `news` rows after 120 days; keep availability and briefs for the
    record).
+
+### V-1 2026-10-04 — the validation harness: the decision record, graded (branch `dev/V1`, clone `league_lab_i0a`)
+
+* **Task**: Wave I-G V-1 (plan § 17 "the validation harness the review asks for": frozen as-of inputs, decision
+  regret, news-affected cases); the review § "Model validation and release gates"; METRICS § "Projection record" →
+  "The decision record" (dr1.0, new); INTERFACES.md § V-1.
+* **Why**: `lineups()` re-solves and overwrites `ops.lineups` every run, so nothing kept what the app recommended
+  before kickoff, and nothing graded whether following it would have helped. The record against Sleeper grades the
+  numbers; this grades the lineups.
+* **Delivered**:
+  * **`ops.lineup_record`** (`lineup.py` V-1 block). Per league × week it follows the `ops.projections` freeze rule.
+    The **next** week to kick off is replaced by every build: the last build before its first kickoff wins
+    (`record_source = 'kickoff'`). A week that has kicked off is never rewritten. A kicked-off week with no rows is
+    **rebuilt once** from its frozen projections, solved as of one second before its first kickoff (no locks), and
+    labelled `reconstructed` (2026 weeks 1–4). The table holds one row per player of the proposed lineup, the lineup
+    total, `model_version` and `pricing` (M4's label when the column exists, else `flat`). A starter's row also
+    carries the cards' call: `call_rank` 1–3, the bench player who would come in, `p_win` on the frozen ranges, and
+    `is_coin_flip`. `lineup.close_calls` = `cards.decisions` (tested on 12 random rosters). It is written by every
+    `lineups()` run (so every `project`; never fatal there) and by `league-lab validate`. `db migrate` creates it
+    (`lineup.DDL`).
+  * **`league_lab.validation`**: `grade_roster_weeks` (submitted, ours, the hindsight optimum, regret = optimum −
+    submitted, edge = ours − submitted, `n_changed`, news-affected), `grade_calls` (outcome 1 / ½ / 0),
+    `calibration` (`decisions.coverage_table` + `brier` + the coin flips), `summary` (the `decisions` block with
+    the sentences), `validate`. Unknown is not zero: a K / DEF with no number makes the roster-week's `app_points`
+    NULL (`n_app_unknown`). An unscored week has no point at all.
+  * **dbt twins** `mart_decision_record` (roster-week) and `mart_decision_calls` (call), with
+    `decision_record.yml`: the source `ops_decisions.lineup_record` (its own source name, so `sources.yml` is
+    untouched) and 15 tests (unique keys, accepted values, in-play rows carry no points, regret ≥ 0, edge +
+    app_regret = regret). The marts equal the Python on the clone: 110 roster-weeks and 330 calls, 0 differences.
+  * **`/api/record` `decisions`** (`ondemand.py` V-1 block, above `record()`): `validation.summary` over the two marts;
+    `{"available": false, "why": …}` (never an error) before they exist. The key is added by a wrapper,
+    `@_with_decisions` on `record()`, rather than a line beside M4's `out.update(record_pricing(…))`. That line
+    conflicted in a trial merge (`git merge-tree dev/M4 dev/V1`). With the wrapper, the trial merges with dev/M4,
+    IG1, IG2, IG3 and M5 are all clean.
+  * **About** (record section, V-1 block between the Sleeper calls table and "Projections by position"): "Our lineups
+    against the ones started". It shows the edge sentence and three tiles (our lineups would have added · best lineup
+    in hindsight · coin flips landed), then a week table (Started · Ours · Best · Added; rebuilt weeks starred), the
+    calls line, the news line, the rebuilt-weeks note, and "How to read our lineups' record". `lib/api.ts`:
+    `RecordDecisions` / `RecordDecisionWeek` and `RecordAnswer.decisions` (declaration merge, V-1 block after
+    `RecordAnswer`).
+  * **Console Record page** (new section before "How to read this"): the same sentences, three `st.metric`s, the
+    week table and the calls' calibration table with the Brier score.
+  * **`league-lab validate`** (`cli.py` V-1 block; `--season`, `--league`, `--no-write`): writes the record, then
+    prints the weeks, the season, the calibration table and the sentences.
+  * **`scripts/nightly.sh`** (three V-1 blocks): `ops.lineup_record` joins `STATE_TABLES` / `RECORD_TABLES` (restored
+    from the hosted copy, saved to the archive). A soft `validate` step runs after `project`, and a soft
+    `decision-marts` dbt build runs after `drift`.
+* **Interfaces**: INTERFACES.md § V-1 (updated ~04:10 for the wrapper). Shapes are in METRICS § "The decision record".
+* **Commands**: `league-lab validate --season 2026` (clone); `league-lab lineups` (the hook: 451 record rows for week
+  5; weeks 1–4 kept); `league-lab dbt build --select mart_decision_record mart_decision_calls source:ops_decisions`
+  (PASS=17); `uv run pytest -q tests/test_v1.py`; `cd api && PYTHONPATH=. uv run pytest -q tests/test_v1.py`;
+  `cd web && npm run lint && npm run build`; `FIXTURES_PORT=8605 npx playwright test --config
+  playwright.fixtures.config.ts e2e/v1` (recorded with `V1_RECORD=http://localhost:8705`, API on the clone).
+* **Evidence**:
+  * Tests: `tests/test_v1.py` **23 passed**: the freeze (two builds before kickoff → the second wins; a build after →
+    nothing changes; the next week becomes the written one), regret / edge on a synthetic week, unknown and unscored
+    weeks, weeks summing to the season, the calibration table on 400 synthetic coin flips, calls = `cards.decisions`
+    ×12, the DDL = the dbt pre-hooks, and the console page (AppTest). `api/tests/test_v1.py` **6 passed** (needs_db,
+    `league_lab_i0a`): Scrubs weeks 1–2 graded; submitted = `fct_league_matchup`; weeks sum to the season and
+    roster-weeks to the week; the calls line and table; the API = the Python twin on the source tables; a league we
+    do not keep has no `decisions`; marts missing → unavailable. `web/e2e/v1` **2 passed** (phone 375 / desktop
+    1300, no sideways scroll). Web lint + typecheck 0 / 0. Ruff: one finding, `api/league_lab_api/research.py:61`
+    B010, which is on main and not in this branch's diff. **Whole suites** on the clone: root **1036 passed, 3
+    skipped** (8 min, `OMP_NUM_THREADS=1`: the box was at load 17–20 with six suites); API **470 passed, 14 skipped,
+    3 failed**. The 3 failures are the brief's known scoring-check ones: `test_ic1` dad's league weeks 1–2 and
+    `test_ic_po` ten-yard cut, which fail because the clone has no `*_tds_10p` columns.
+  * The record on the clone: 2,235 rows. Weeks 1–4 are rebuilt for both leagues; week 5 is `kickoff`. The rebuilt
+    weeks 1–2 match `ops.lineups`' proposed starters exactly (392 of 392). 330 calls, every QB–TE pair with odds
+    (one Scrubs week-4 and one week-5 call without: a K / DEF).
+  * **Graded, League of Scrubs, weeks 1–2** (both rebuilt from the refit v2.0 board):
+
+    | Week | Teams | Started | Ours | Best | Added (ours − started) | Best − started |
+    |---|---|---|---|---|---|---|
+    | 1 | 10 | 1242.28 | 1221.40 | 1417.78 | −20.88 | 175.50 |
+    | 2 | 10 | 1126.70 | 1124.04 | 1264.90 | −2.66 | 138.20 |
+    | season | 20 | 2368.98 | 2345.44 | 2682.68 | −23.54 (−1.2 a team a week) | 313.70 |
+
+    Calls: 60 graded, the starter won 39.0 against 33.44 expected, Brier 0.235. The coin flips landed **59%** for the
+    side we leaned (52% expected, 34 calls). News-affected: 0, because rebuilt weeks cannot tell.
+  * Forever Unclean Dynasty, same weeks: Added −148.05 / +29.95 → −118.10 (−4.9 a team a week); best − started
+    677.90. Coin flips 49% (52% expected, 42 calls); Brier 0.251.
+* **What moved**: no projection, lineup total or gain changes. `lineups()` now also writes `ops.lineup_record` (the whole
+  `league-lab lineups` run took 4.2 s on the clone with it; the record's cost is mostly the calls' odds). `lineup.DDL` gains the record table.
+* **Not done / limits**:
+  * The rebuilt weeks are kinder to us than a real Thursday call: they read the final injury report. For weeks 1–3
+    they also use the refit board: trained 2016–2025, so no 2026 outcome is in it, but it is not the board managers
+    saw. A rebuilt week 3 / 4 that Sleeper had not scored yet reads IR / taxi from today's roster.
+  * News-affected cases are measurable only on `kickoff` weeks (from week 5). The flag is a change in the injury
+    report, not IG-2's events. When `events.events` merges, the flag can also count an availability event with
+    `published_at` between `run_at` and the player's kickoff (a `validation._news_starters` hook; not built).
+  * No baseline other than the managers' own lineups: Sleeper's projections as a lineup-maker would be the next
+    one (the projection record already compares the calls).
+  * No per-team view (About is league-wide). Nothing for MFL leagues: no record is kept for them, and IG-3 owns
+    that qualification.
+  * Two weeks are a small sample; the page says the weeks were rebuilt.
+* **Next**: the PO applies the dbt models and lets the nightly write week 5's record before Thursday's kickoff; after
+  week 5 is scored, the first `kickoff` week and its news-affected cases appear. A per-team line on My Week ("our
+  lineups would have added X for you") once a few `kickoff` weeks exist.
+* **For the PO**:
+  1. **dbt to apply**: `dbt/models/marts/edge/mart_decision_record.sql`, `mart_decision_calls.sql`,
+     `decision_record.yml` (new source `ops_decisions` + tests). Run `uv run league-lab db migrate` (creates
+     `ops.lineup_record`), then `uv run league-lab validate` (rebuilds weeks 1–4, writes the next week), then `uv
+     run league-lab dbt build --select source:ops_decisions mart_decision_record mart_decision_calls`. The sync
+     publishes both marts: the API names them, and `ops` goes whole. `scripts/hosted_relations.py` against main's
+     checkout: the API and the console gain exactly `analytics.mart_decision_record`, `analytics.mart_decision_calls`
+     and `ops.lineup_record` (nothing heavier: the grade's other inputs were already published).
+  2. **The nightly step (proposal)**: no workflow change. `.github/workflows/nightly.yml` runs `scripts/nightly.sh`,
+     and the three V-1 blocks there are the wiring: (a) `ops.lineup_record` in `STATE_TABLES` / `RECORD_TABLES`; (b)
+     `soft validate uv run league-lab validate` right after `project`, before `save-record`, so the archive carries
+     tonight's rows; (c) `soft decision-marts dbt_step decision-marts build --select mart_decision_record
+     mart_decision_calls` after `drift`. Keep (a) in any case: without it a fresh CI database would rebuild every
+     played week as `reconstructed` each night and never keep a `kickoff` week. (b) is a safety net: `project`
+     already writes the record. Optional: add the two marts to the Makefile's `project` selection (line 41).
+  3. **`metric_registry.csv` rows** (dbt seed, PO-owned): `decision_edge, dr1.0, our recorded lineups' points −
+     submitted points, —, league-roster-week, available, "Sleeper's points; a K/DEF with no number = NULL"`;
+     `decision_regret, dr1.0, hindsight optimum − submitted points, —, league-roster-week, available, "ops.lineup_totals
+     is_realised"`; `call_calibration, dr1.0, calls the starter won (tie = ½), calls with odds, league-season,
+     available, "Brier + coverage_table"`.
+  4. **Merge order**: any. The `ondemand.py` block sits above `record()`, so it does not touch M4's lines. `lib/api.ts`
+     sits after `RecordAnswer`, not at the end of the file (where M4 appended). About sits between the calls table
+     and "Projections by position" (M4's line is above the calls table). STATUS and CHANGELOG conflict only in the
+     usual way: both open a `Wave I-G` heading.
+  5. **Decisions Andrew may want to reverse**:
+     * the record freezes at the week's **first** kickoff, Thursday, as the brief says. The lineups served on Sunday
+       morning are graded only through the news-affected cases;
+     * weeks 1–4 are shown, rebuilt and starred, rather than hidden;
+     * a starter with no stat row counts 0 (Sleeper's rule) but a K / DEF with no number makes the lineup unknown;
+     * About shows the coin-flip line, not the full calibration table, which is on the console only;
+     * the weeks so far are unflattering: our lineups would have scored fewer points than the ones started in 3 of
+       the 4 league-weeks. That is what the record is for. Say so before "the app's edge" is quoted anywhere.

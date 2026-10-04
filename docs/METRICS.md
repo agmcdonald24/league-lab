@@ -2263,6 +2263,61 @@ the counts and calls; `week` = the last scored week, `first_week` = the first.
 player Sleeper lists; not Sleeper's own scoring (its line is counted the league's way); a few weeks are noise
 (the page says so under four weeks).
 
+### The decision record (dr1.0, V-1, Wave I-G, 2026-10-04; `ops.lineup_record`, `league_lab.validation`, `mart_decision_record`, `mart_decision_calls`, `league-lab validate`)
+
+The projection record grades the numbers; this grades **the lineups we recommended**. Before it, `lineups()` re-solved
+and overwrote `ops.lineups` every night, so nothing kept what the app said before kickoff (the review's "audit the
+distinction between a frozen evaluation snapshot and the forecasts actually served").
+
+**The record** (`ops.lineup_record`, written by every `lineups()` run — so every `project` — and by `league-lab
+validate`). Per league × week, the `ops.projections` freeze rule (B5): the **next** week to kick off is replaced by
+every build (the last build before its first kickoff wins: `record_source = 'kickoff'`); a week that has kicked off
+is never rewritten; a kicked-off week with no rows (2026 weeks 1–4, played before the record existed; a league added
+mid-season) is **rebuilt once** from its frozen `ops.projections` rows, solved as of one second before its first
+kickoff (no locks), and labelled `reconstructed`. One row per player of the proposed lineup (starters, empty slots,
+bench, unplayable: `ops.lineups`' columns), the lineup total, `model_version`, `pricing` (M4's label of the
+league-week's projections; `flat` before it), and on a starter's row the decision cards' call: `call_rank` 1–3 (the
+three smallest-margin valued starters a bench player could replace, weakest slot first on a tie — `cards.decisions`,
+reproduced in `lineup.close_calls`; `tests/test_v1.py` holds them equal on random rosters), the bench player who
+would come in, `p_win` = P(starter outscores him) (`decisions.win_probability` on the frozen ranges; QB–TE pairs only,
+like the card) and `is_coin_flip` (the card's rule: under 55%, else under a point apart).
+
+**The grade** (per roster-week; `validation.grade_roster_weeks` = `mart_decision_record`, equal on the clone's 110
+roster-weeks and 330 calls):
+
+| Column | Definition |
+|---|---|
+| `submitted_points` | the starters Sleeper lists for the roster-week, at Sleeper's points (= the matchup score) |
+| `app_points` | the record's starters at the points they scored that week: Sleeper's count in the league; a starter on no roster that week, his points in the league's scoring (`fct_player_game_league`); no stat row = he did not play = 0 (Sleeper's own rule); a K / DEF with no number = **unknown**: the roster-week's `app_points` is NULL, left out of the sums, counted in `n_app_unknown` |
+| `optimum_points` | the hindsight optimum (`ops.lineup_totals` `is_realised`: the best lineup the roster Sleeper listed could have started, at Sleeper's points) |
+| `regret` | optimum − submitted (≥ 0) |
+| `app_edge` | app − submitted: what following our lineup would have added |
+| `app_regret` | optimum − app (can be below 0 when the record's roster held a player dropped before kickoff who then scored) |
+| `n_changed` | the record's starters Sleeper did not start |
+| `is_news_affected` | a starter of a `kickoff` record whose week's final injury report (`mart_player_week_features`) differs from the one the build saw, or who went to NFL injured reserve; graded apart (`news`). A rebuilt week read the final report: never flagged |
+| `status` | `scored` once Sleeper has scored the week; `in_play` before, every point column NULL |
+
+**The calls** (`mart_decision_calls`): each card call graded by what happened — `outcome` 1 = the starter outscored the
+bench player, ½ = equal, 0 = not. The calls with a percentage make the calibration: `decisions.coverage_table`
+(equal-count bins, at least 10 calls a bin, at most 10 bins: predicted vs landed) and `decisions.brier`; the coin
+flips (under 55%) make the line "The coin flips landed 54% for the side we leaned (52% expected, 31 calls)".
+
+**The season to date** (`validation.summary`; `/api/record` `decisions`, About, the console's Record page): per scored
+week the league's sums over the roster-weeks with every number known; the season = the sum of the weeks (to the
+cent; `api/tests/test_v1.py`).
+
+**What it is not.** Not a backtest (the record starts in 2026). The rebuilt weeks are kinder to us than a real
+Thursday-morning call: they read the final injury report and, for weeks 1–3, the refit board (`frozen_source =
+'refit'`, trained on 2016–2025, so no 2026 outcome is in the model, but the board is not the one managers saw). The
+record freezes at the week's **first** kickoff (Thursday): Friday–Sunday news reaches the lineups served later in the
+week, not the record — that is exactly what the news-affected cases measure. Two or three weeks are a small sample.
+
+**First numbers** (the sandbox clone `league_lab_i0a`, 2026-09-26 snapshot, weeks 1–2 scored, both rebuilt from the
+refit v2.0 board): League of Scrubs — our lineups would have scored 23.54 points fewer than the ones started (−20.88
+week 1, −2.66 week 2; −1.2 a team a week); the best lineups in hindsight beat the ones started by 313.7; the coin flips
+landed 59% for the side we leaned (52% expected, 34 calls); 60 graded calls, Brier 0.235. Forever Unclean Dynasty —
+118.10 fewer (−148.05 week 1, +29.95 week 2); hindsight +677.9; coin flips 49% (52% expected, 42 calls); Brier 0.251.
+
 ## Effect on their starters and the sanity bound (ti1.1, IE-1, Wave I-E, 2026-10-03; was "Trade interest and the sanity bound", ti1.0, IA-2; `api/league_lab_api/decisions.py`, `league_lab.trades.sanity`)
 
 - **Window**: the weeks a trade is priced over — `week` (this week), `next4` (this week and the next three: the board's

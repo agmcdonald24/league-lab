@@ -1,0 +1,115 @@
+{
+ "season": 2026,
+ "available": true,
+ "weeks": [
+  {
+   "week": 1,
+   "record_source": "reconstructed",
+   "rosters": 10,
+   "submitted": 1242.28,
+   "app": 1221.4,
+   "optimum": 1417.78,
+   "regret": 175.5,
+   "edge": -20.88,
+   "news_rosters": 0
+  },
+  {
+   "week": 2,
+   "record_source": "reconstructed",
+   "rosters": 10,
+   "submitted": 1126.7,
+   "app": 1124.04,
+   "optimum": 1264.9,
+   "regret": 138.2,
+   "edge": -2.66,
+   "news_rosters": 0
+  }
+ ],
+ "season_totals": {
+  "weeks": 2,
+  "roster_weeks": 20,
+  "submitted": 2368.98,
+  "app": 2345.44,
+  "optimum": 2682.68,
+  "regret": 313.7,
+  "edge": -23.54
+ },
+ "calls": {
+  "n": 60,
+  "won": 39,
+  "expected": 33.44,
+  "brier": 0.2346,
+  "coin_flips": {
+   "n": 34,
+   "won": 20,
+   "expected": 17.75
+  },
+  "table": [
+   {
+    "bin": 1,
+    "n": 10,
+    "p_lo": 0.4644,
+    "p_hi": 0.5104,
+    "predicted": 0.4989,
+    "observed": 0.7
+   },
+   {
+    "bin": 2,
+    "n": 10,
+    "p_lo": 0.5107,
+    "p_hi": 0.5299,
+    "predicted": 0.5175,
+    "observed": 0.5
+   },
+   {
+    "bin": 3,
+    "n": 10,
+    "p_lo": 0.5325,
+    "p_hi": 0.5445,
+    "predicted": 0.5394,
+    "observed": 0.7
+   },
+   {
+    "bin": 4,
+    "n": 10,
+    "p_lo": 0.5467,
+    "p_hi": 0.5604,
+    "predicted": 0.5539,
+    "observed": 0.6
+   },
+   {
+    "bin": 5,
+    "n": 10,
+    "p_lo": 0.567,
+    "p_hi": 0.5961,
+    "predicted": 0.582,
+    "observed": 0.6
+   },
+   {
+    "bin": 6,
+    "n": 10,
+    "p_lo": 0.6171,
+    "p_hi": 0.6971,
+    "predicted": 0.6518,
+    "observed": 0.8
+   }
+  ]
+ },
+ "news": {
+  "roster_weeks": 0,
+  "edge": null,
+  "regret": null
+ },
+ "sentences": {
+  "edge": "Weeks 1–2: had every team started our lineup, the league would have scored 23.5 points fewer than it did (−1.2 a team a week). The best lineups in hindsight beat the ones started by 313.7 points (15.7 a team a week).",
+  "calls": "The coin flips landed 59% for the side we leaned (52% expected, 34 calls).",
+  "news": "No graded lineup had a starter's injury report change after our build (the rebuilt weeks cannot tell: they read the final report)."
+ },
+ "reconstructed_weeks": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "note": "Weeks 1–4 were played before this record existed: their lineups were rebuilt after kickoff from the projections frozen then, with the final injury report."
+}
