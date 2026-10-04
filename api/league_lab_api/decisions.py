@@ -1942,7 +1942,9 @@ def _ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], spa
     consider, refuse = [], []
     if b_t >= T.CREDIBLE_MARGIN:
         consider.append(f"Their starters gain {g_t:+.1f} {when}, {b_t:.1f} more than "
-                        + ("standing pat" if alt_t.get("kind") == STAND_PAT else "their best waiver move") + ".")
+                        + ("standing pat" if alt_t.get("kind") == STAND_PAT else
+                           f"their best waiver move ({_alt_gain(alt_t, window):+.1f} once empty slots are filled from the "
+                           f"free pool)") + ".")
     elif g_t >= 0.05:
         consider.append(f"Their starters gain {g_t:+.1f} {when}.")
     start_wks = [w for w, s in zip(theirs.weeks, theirs.starting, strict=True) if s]
@@ -1991,9 +1993,18 @@ def _ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], spa
     lt = rules.get("league_type")
     horizon = (f"This is a {lt} league: these numbers cover weeks of this season only; next season, ages and draft picks "
                f"are not valued." if lt in ("keeper", "dynasty") else None)
-    alt_words = (f"Yours: {alternative_words(alt_m, span, window)} ({alt_m['availability_words']}). "
-                 f"Theirs: {alternative_words(alt_t, span, window).replace('your starting', 'their starting')} "
-                 f"({alt_t['availability_words']}).")
+    def _covered_note(a: dict) -> str:
+        """The claim's gain on the card's frame when it differs from its own (a claim that covers a bye is worth what it
+        adds over the free fill) - the number `beyond` uses."""
+        if a.get("kind") == STAND_PAT:
+            return ""
+        own = float(a.get("gain_week" if window == "week" else "gain_window") or 0.0)
+        cov = _alt_gain(a, window)
+        return "" if abs(own - cov) < 0.05 else f"; {cov:+.1f} once empty slots are filled from the free pool"
+
+    alt_words = (f"Yours: {alternative_words(alt_m, span, window)}{_covered_note(alt_m)} ({alt_m['availability_words']}). "
+                 f"Theirs: {alternative_words(alt_t, span, window).replace('your starting', 'their starting')}"
+                 f"{_covered_note(alt_t)} ({alt_t['availability_words']}).")
     return {
         "give": [ctx.player(x) for x in give], "get": [ctx.player(x) for x in get], "partner": int(them),
         "drops": {"mine": [{"player": ctx.player(x.player_id), "words": f"You must cut {ctx.name(x.player_id)}."}

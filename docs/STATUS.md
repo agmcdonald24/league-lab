@@ -6956,20 +6956,24 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
     labelled Implausible), recorded from the fixture API on :8722 into `web/fixtures/ii1/api_ii1.json`.
   - Suites (Sunday afternoon, the machine at load 40–60 with seven developers' suites at once): `tests/test_trades_ii1.py`
     9 passed; `api/tests/test_ii1.py` 5 passed (twice: before and after the guardrail's narrowing); `uv run ruff check
-    src app tests api` clean; web `npm run lint` (eslint + svelte-check + tsc) clean on the Finder / `TradeCard` change
-    (160 files, 0 errors, 0 warnings), `npm run build` clean after the calculator's card; the lint re-run with the
-    calculator's card and `e2e/ii1` was still running at the hand-back. **The whole API and root suites did not finish inside the time box** (each got
+    src app tests api` clean; web `npm run lint` (eslint + svelte-check + tsc: 160 files, 0 errors, 0 warnings) and
+    `npm run build` clean; root `tests/test_trades.py tests/test_trades_ii1.py tests/test_trade_finder_page.py` 47 passed.
+    **Latency** (`test_decisions.py::test_latency_cold_and_warm`, the Test League on demand, same minute): the Finder cold
+    **10.1 s on `wt-base` → 17.7 s on `dev/II1`** (each partner's own best waiver move is computed once per context), warm
+    0.40 → 0.57 s (the cards are kept on the context's frame); the budget (cold < 20 s) holds, narrowly on a loaded
+    machine (one run at load ~20 measured 20.5 s and failed it — as did `/api/waivers`' 16 s). **The whole API and root suites did not finish inside the time box** (each got
     ~6% of a CPU: the API suite reached 12% in 55 minutes; the PO's `base94` run of `main` on `league_lab_i0a`, started
     27 minutes earlier, was at 60%). On the first 72 API tests both runs share: `main` 8 failures, `dev/II1` the same 8
-    plus 3 (positions 13, 49 and 61 of the collection — not identified by name before the hand-back: the collection
-    itself did not finish on the loaded machine). `dev/II1`'s run started at 16:08 ET, after the 4:05 PM kickoffs;
-    `base94`'s at 15:41 — more players locked in mine, the brief's clock failures, is the likely cause, **not verified**:
-    the PO's integration run on INF-1's pinned clock is the real delta (and `test_decisions.py` does call the Finder: its
-    headline assertion was widened for "No compelling trade found"). `api/tests/test_if2.py` fails on `wt-base` at the same assertion
+    plus 3: `test_anyleague.py::test_latency_cold_and_warm[1389709692405551104]` and `test_decisions.py::
+    test_latency_cold_and_warm` (latency budgets at load 40–60; the second passes when re-run at load ~15, above) and
+    `test_f3.py::test_opponent_on_demand_reproduces_the_nightly[1321941740235550720-borrow]` (the on-demand opponent vs
+    the nightly — no trade code; `dev/II1`'s run started 16:08 ET after the 4:05 PM kickoffs, `base94`'s at 15:41: the
+    brief's clock failures, not re-run on `wt-base`). **The PO's integration run on INF-1's pinned clock is the delta that
+    counts.** `api/tests/test_if2.py` fails on `wt-base` at the same assertion
     (`test_finder_ranks_trades_against_the_best_waiver_move`: Cincinnati Bengals vs Atlanta Falcons, the clock).
-  - e2e: `web/e2e/ii1/fixtures.spec.ts` written; the recording (`web/fixtures/ii1/api_ii1.json`) holds the Scrubs Finder's
-    three answers; the Test League and the calculator recordings were still running at the hand-back (Chromium on the
-    loaded machine) — re-record per the spec's header (`-g` one test at a time; recording merges into the file).
+  - e2e: `web/e2e/ii1/fixtures.spec.ts` — recorded from the fixture API on :8722 into `web/fixtures/ii1/api_ii1.json`
+    (recording merges into the file, one test at a time with `-g`): Scrubs replayed ✓ phone 375 + desktop 1300; the Test
+    League and the calculator recorded ✓ desktop (against the live API); the full replay (6) E2E_REPLAY.
 * **Changed tests outside mine** (behaviour moved where the review names the bug): `api/tests/test_if2.py` (the headline
   is the first credible row or "No compelling trade found"; the IF-2 order assertions untouched), `api/tests/
   test_decisions.py` (the headline may start "**No compelling trade found.**").
@@ -6990,5 +6994,9 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
   3. **A decision Andrew may want to reverse**: a trade must beat the OTHER team's own best waiver move too (the brief's
      threshold) — on the house league that leaves "No compelling trade found" most days; the margin is 1.0 starter point
      (`CREDIBLE_MARGIN`).
-  4. No dbt, workflow or render.yaml change. No acceptance probability anywhere (the old dial's "Effect on their
+  4. **Cost**: the Finder's first (cold) answer on an on-demand league is ~7 s slower (each partner's own best waiver move,
+     once per context; 10.1 → 17.7 s on the Test League); warm is unchanged. If Render's cold Finder matters more than the
+     other team's alternative on every card, compute theirs only for rows that pass your side (one condition in
+     `ii1_card`).
+  5. No dbt, workflow or render.yaml change. No acceptance probability anywhere (the old dial's "Effect on their
      starters" words are unchanged).
