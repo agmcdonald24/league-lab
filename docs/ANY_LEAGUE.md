@@ -608,3 +608,17 @@ once per copy whatever was opened, and a news item or brief one row however many
   them by the opponent (`events.for_team`), for any league's receiver.
 - **Cost per league**: none — the rows grow with the NFL's news, not with the leagues (an estimate: 30,000–80,000 rows
   a season, ~500 bytes each). The readers are one cached query per screen (a minute).
+
+## The setup flow and the provider matrix (Wave I-I, II-5, 2026-10-04)
+
+**One setup flow** at `/leagues` (also what `/` shows with no league): **Fantasy platform** (Sleeper / MyFantasyLeague;
+`?platform=` and remembered on the device) → the identifier (Sleeper: a username, or a league link / id — the new
+`GET /api/leagues?sleeper=<link or id>` answers the MFL card's shape: the league, its teams, `roster_id: null`, the card)
+→ the league → the team (pre-selected when the username owns one; a picker on the card otherwise, and on a username row
+with no team of yours) → My Week. Inline "where to find it" with an example per platform; specific errors with a fix
+(`code` / `error` / `fix` on the 404s — `ondemand.SETUP_CODES`; 502 `provider_down`, 503 `busy`); no account.
+**Capabilities**: `platforms.capabilities(provider)` — eight features (scoring, roster slots, matchups, players,
+waivers, transactions, team assets, news), each `yes` / `partial` / `no` with words; `GET /api/providers`; the setup
+answers carry their provider's. A screen says `unavailable` instead of an empty list (League's moves on MFL). The
+matrix, the ESPN verdict and the Yahoo note: `docs/PROVIDERS.md`; the account design: `docs/ACCOUNTS.md`.
+

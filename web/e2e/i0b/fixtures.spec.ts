@@ -38,7 +38,8 @@ test.beforeEach(async ({ context }) => {
 test("MyFantasyLeague: paste the league link → pick the team → My Week; the switcher says MFL", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("leagues")).toBeVisible();
-  await expect(page.getByText("On MyFantasyLeague? Find your league")).toBeVisible(); // I0-C: the box also takes a name
+  await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
+  await expect(page.getByText("Find your MyFantasyLeague league")).toBeVisible(); // I0-C: the box also takes a name; II-5: the label
 
   // a league MFL will not share: the sentence, no card
   await page.getByTestId("mfl-link").fill("https://www45.myfantasyleague.com/2026/home/99999999");

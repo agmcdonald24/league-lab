@@ -103,3 +103,14 @@ One line on the player card, page and research pane, under the availability line
 * In fixture mode (`LEAGUE_LAB_SLEEPER_FIXTURES`) it is off unless `LEAGUE_LAB_ESPN_FIXTURES` is set (then it reads
   `<dir>/news_<espn_id>.json` and measures age from the answer's own `timestamp`); no test and no sandbox run calls ESPN.
 * `/api/status` → `news`: `{enabled, mode, calls, failures, stale_served, athletes_cached, per_minute, last_error}`.
+
+## Disney's terms, read (Wave I-I, II-5, 2026-10-04)
+
+The Terms of Use above were read through WebFetch at <https://disneytermsofuse.com/english/>. Three clauses bear on
+the two feeds and on any ESPN league adapter: you may not "access, monitor, copy or extract the Disney Products using a
+robot, spider, script, or other automated means"; not "use the Disney Products for any commercial or business-related
+use or build a business utilizing the Disney Products"; and "you will not share your account or account information
+with others". So the news line and the injury overlay are outside those terms as written (free beta or not), and a
+paid product needs ESPN's written permission or another source. The decision is the PO's and Andrew's; the switches
+above (`LEAGUE_LAB_NEWS`, `LEAGUE_LAB_AVAILABILITY`) turn both off. ESPN leagues: `docs/PROVIDERS.md` § ESPN.
+

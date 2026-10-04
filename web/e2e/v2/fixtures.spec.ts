@@ -152,6 +152,7 @@ test("About: dad's league shows its lineups' record, rebuilt weeks starred", asy
   if (info.project.name === "phone") await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");
   await expect(page.getByTestId("leagues")).toBeVisible();
+  await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
   await page.getByTestId("mfl-link").fill("70587");
   await page.getByTestId("mfl-go").click();
   await page.getByTestId("mfl-team").filter({ hasText: "Big Mac Attack" }).click();

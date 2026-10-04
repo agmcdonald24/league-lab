@@ -7298,3 +7298,129 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
   of it).
 - Kyren's 47.5% on the main database: `PYTHONPATH=. uv run pytest -q api/tests/test_ii3.py -k kyren` there confirms it
   (I did not touch `league_lab`).
+
+### II-5 2026-10-04 — one setup flow, what each platform gives, the ESPN / Yahoo verdicts, the account design (branch `dev/II5`, database `league_lab_i0b`, read only)
+
+* **Task / plan**: Wave I-I brief § II-5; the fifth review § 9 ("Simplify onboarding and add accounts/profiles", the
+  provider plan) and § 11 item 5 ("an account/provider capability matrix and an explicit ESPN feasibility outcome").
+  Plan § 17 (Iteration 19). Branch `dev/II5` from `main` `94ed33c`.
+* **Delivered**
+  1. **One setup flow** at `/leagues` (also what `/` shows with no league) — `Leagues.svelte` `<!-- ---- II-5 -->`
+     blocks: the steps "Platform › League › Team › My Week" (the current one marked, `aria-current="step"`); one
+     **Fantasy platform** choice (Sleeper / MyFantasyLeague — native radios styled as two buttons; `?platform=` deep
+     link; remembered on the device, `prefs.platform`); then that platform's box only: **Sleeper** takes a username **or
+     a league link / id** (a link goes to the new `GET /api/leagues?sleeper=` — the league, "Which team is yours?", the
+     read-back card); **MFL** keeps I0-C's one box (link, id or name). "Where do I find these?" / "Where do I find the
+     league id?" with an example each (`sleeper.com/leagues/1389709692405551104/team`,
+     `www45.myfantasyleague.com/2026/home/70587`). A username row with no team of yours gets "Pick the team to see" on
+     the setup screen (it said "after you open it"). "ESPN or Yahoo?" says not supported yet, and why, in two sentences.
+     "No account needed: isuckatfantasy remembers your leagues on this device." (guest exploration kept). The password
+     screen (`Login.svelte`) says what comes next and that it is not a Sleeper / MFL password.
+  2. **Specific recoverable errors** (`ondemand.py` `# ---- II-5`: `SetupError(NotFound)` with `code` / `fix`;
+     `main.py`'s NotFound handler passes them through; 502 gains `code: "provider_down"`, 503 `code: "busy"`):
+     `sleeper_user_unknown` "That Sleeper username does not exist: “nobody_here”." · `sleeper_username_invalid` ·
+     `sleeper_league_unknown` "Sleeper has no football league 1234567890123456." · `sleeper_link_invalid` ·
+     `mfl_league_private` "MFL league 99999999 is private or does not exist. Ask the commissioner to allow API access to
+     the league's data (MFL's league setup, the privacy option)." · `mfl_link_invalid` — each with a `fix` line (where
+     the id is). MFL answers a private and a missing league with the same error body, so the sentence says both. The web
+     reads them through `providers.setupGet` (keeps the error body; `api.get` drops it) and shows the words, the fix
+     (`setup-fix`) and `data-code`; an older answer without a code keeps the old words.
+  3. **`platforms.capabilities(provider)`** (`platforms.py` `# ---- II-5`): eight features — scoring, roster slots,
+     matchups, players, waivers, transactions, team assets, news — each `yes` / `partial` / `no` with its words and, for
+     `no`, the sentence a screen says (`unavailable(provider, feature)` → "Transactions: not available for MFL leagues
+     yet"); `capabilities_for(league_key)`, `all_capabilities()`; `GET /api/providers`; the username and MFL answers
+     carry `capabilities`. The setup screen lists them ("What isuckatfantasy reads from MFL leagues — 1 not available
+     yet"; Yes / Partly / Not yet). **The one substitution found and fixed**: League's "Latest moves" on an MFL league said
+     "No completed moves yet this season" (MFL's transactions are never read: `MFLLeagues.transactions` answers `[]`) —
+     it now says "Transactions: not available for MFL leagues yet." (`League.svelte` `# ---- II-5`, from
+     `lib/providers.gapLine`).
+  4. **`docs/PROVIDERS.md`** (new): the matrix (Sleeper / MFL as built, ESPN / Yahoo as researched), what was read and
+     quoted (WebFetch, 2026-10-04: docs.sleeper.com, ESPN support's public-league article, Disney's terms, the community
+     ESPN clients' docs, Yahoo's developer access / docs / API terms, ffscrapr's MFL connection; MFL's own `api_info` is
+     robots-blocked), **the ESPN verdict** and the Yahoo note. **`docs/ACCOUNTS.md`** (new, design only): the model
+     (sign-in identity apart from provider connections; stable external ids; `league_key` = provider + season + id;
+     scoped preferences; disconnect / expiry / idempotent per-league sync; public caches never hold account data) and the
+     sign-in recommendation with costs and what it needs on Render / Neon / Cloudflare.
+  5. **Found on the way**: the switcher would have called a Sleeper league opened by its link "· MFL"
+     (`leagues.leagueOptions`, a marked line); `docs/ESPN_TERMS.md` said Disney's terms were not read — they are now,
+     and they bear on the shipped news line and injury overlay too (For the PO).
+* **The ESPN verdict**: we would support, at most, **ESPN public leagues, read-only, by league id**, labelled an
+  unofficial read, free beta only — **not built now**. We would **not** support pasting `espn_s2` / `SWID` login cookies
+  (not as the normal path, not hidden), any ESPN write, or ESPN in a paid product without ESPN's written permission
+  (Disney's terms forbid automated access and commercial use; no ESPN developer program exists).
+* **Sign-in recommendation**: a passwordless **emailed link** built in our FastAPI (three tables in a new `accounts`
+  schema on Neon, a separate read-write role, Resend for mail — free to 3,000 a month / 100 a day, then $20), Google as a
+  second button later; ~$0 at beta scale. Needs on Render `LEAGUE_LAB_RESEND_API_KEY`, `LEAGUE_LAB_MAIL_FROM`,
+  `LEAGUE_LAB_SESSION_SECRET`, `LEAGUE_LAB_ACCOUNTS_DB_URL`; SPF / DKIM on `isuckatfantasy.io`; a `hosted_accounts.sql`
+  the nightly never drops.
+* **Interfaces**: INTERFACES.md § II-5 (15:30), as built: route `/leagues` (+ `?platform=sleeper|mfl`); `GET
+  /api/providers` → `{providers: [capabilities], features}`; `GET /api/leagues?sleeper=<link or id>` → `{platform,
+  league, teams, roster_id: null, card, capabilities}`; `capabilities` on `?username=` / `?mfl=` / `?mfl_search=` (a link)
+  answers; `capabilities(provider)` = `{provider, name, short, status, connect: {kind, label, example, where}, features:
+  {<8>: {label, status, words, unavailable}}}`; error keys `ondemand.SETUP_CODES`; web `lib/providers.ts` (`gapLine(league,
+  feature)`, `setupGet`, `setupError`, `platformOf`, `looksLikeSleeperLeague`); `prefs.platform / setPlatform`; testids
+  `setup-steps`, `platform-sleeper` / `platform-mfl`, `other-platforms`, `setup-help`, `setup-fix`, `provider-caps` /
+  `cap`, `setup-guest`, `sleeper-card`, `team-pick`, `team-option`, `team-pick-open`, `moves-unavailable`, `login-next`.
+* **Files**: `src/league_lab/platforms.py`, `api/league_lab_api/{ondemand,main}.py`, `api/tests/test_ii5.py` (new, 18),
+  `api/tests/test_f3.py` (two re-pins, marked: the unknown user's words, the 503's `code`), `web/src/routes/{Leagues,League}.svelte`,
+  `web/src/components/Login.svelte`, `web/src/lib/{providers.ts (new), prefs.ts, leagues.ts}`, `web/e2e/ii5/fixtures.spec.ts`
+  (new, 6 × phone 375 / desktop 1300), `web/fixtures/ii5/*.json` (8 recordings), the platform click in ten older e2e specs
+  that open the MFL box (`i0b`, `i0c`, `ic3`, `ic4`, `ie0`, `ie2`, `ig3`, `ih2`, `ih3`, `v2` — one marked line each; `i0b`'s
+  label line re-pinned), `docs/{PROVIDERS,ACCOUNTS}.md` (new), `docs/{WORDS,ANY_LEAGUE,ESPN_TERMS,STATUS}.md`,
+  `CHANGELOG.md`.
+* **Recordings** (`web/fixtures/ii5/`): from a fixture API on :8726 (`api_po.sh`'s env, this worktree, `league_lab_i0b`):
+  `curl :8726/api/providers`, `/api/leagues?username=nobody_here`, `?sleeper=9000000000000000001`,
+  `?sleeper=1234567890123456`, `?mfl_search=70587`, `?mfl_search=99999999`, `?mfl_search=https%3A%2F%2Fexample.com%2Fx`,
+  `/api/my-week?league=mfl%3A70587&team=8`. The League test reuses IC-4's recording (`fixtures/mfl/api_70587_ic4.json`).
+* **Commands and evidence** (Sunday afternoon; the machine's load average was 35–50 on 2 cores for the last hour, so the
+  long runs below were cut — said plainly):
+  - `api/tests/test_ii5.py` **18 passed**; with `test_f3.py`: 44 passed, 1 failed —
+    `test_fictional_league_prices_and_solves_with_k_and_def[nfl_wide]`, which fails the same on `wt-base` (the Sunday
+    lock). `test_ii5` + `test_i0b` + `test_i0c` + `test_f3::test_leagues_by_username`: 62 passed (before the load).
+    The targeted set (`test_ii5, f3, auth, i0b, i0c, ic3, ih1, myweek, ig3, ic2`) under load: 113 passed, 51 skipped, 2
+    failed — both `PoolTimeout` (Postgres had stopped); re-run with it up: green.
+  - **The whole API suite** (`cd api && PYTHONPATH=. uv run pytest -q --deselect tests/test_u1.py --deselect
+    tests/test_ig2.py`, 589 collected): **cut at 372 of 589 (63%) by the hand-back time** (a first run under load 35–50
+    was abandoned at 12%). Through those 372: 317 passed, 6 skipped, **49 failed — every one run by id on `wt-base`**:
+    46 fail there too — the Sunday-afternoon locks (`test_anyleague` 1, `test_decisions` 7, `test_f3` 1, `test_h1` 1,
+    `test_i0a` 2, `test_ib0` 8, `test_ib2` 2, `test_ic2` 2, `test_ic4` 3, `test_ie0` 1, `test_ie1` 5, `test_ie2` 5,
+    `test_ie_po` 1, `test_if2` 5, `test_if4` 2); the other 3 (`test_ic1.py::test_dads_league_week_1_units_and_the_named_miss`,
+    `::test_dads_league_week_2`, `test_ic_po.py::test_scoring_check_without_play_by_play_is_exact_on_the_ten_yard_cut`)
+    pass on `wt-base`'s `league_lab` and are the brief's three known clone failures (no `*_tds_10p` columns on
+    `league_lab_i0b`). **Delta against `wt-base`: 0** through 63%; the last 217 tests were not run (none is II-5's).
+  - Root suite: not run (load). II-5's root change is one additive block in `platforms.py`; no root test imports it.
+  - Lint: `ruff check` on every Python file II-5 touched — clean (the tree-wide run was cut by the load after reporting
+    only test_ii5's import order, fixed). Web: `npm run typecheck` (svelte-check + tsc) 0 errors, 0 warnings; `eslint`
+    on the nine changed web files clean (the full `npm run lint` passed at 15:50, before the last two small edits);
+    `npm run build` ok.
+  - e2e (`FIXTURES_PORT=8626`): **`e2e/ii5` 12 passed** (6 × phone at 375 / desktop at 1300), with `e2e/i0b` + `e2e/ic4`:
+    20 passed. The other specs with the platform click (`i0c, ic3, ie0, ie2, ig3, ih2, ih3, v2, fixtures.spec.ts`): 81
+    passed, 7 failed under load (60 s test timeouts, a browser launch over 180 s) — **the 7 re-run: 7 passed**.
+    Screenshots: `web/e2e/.out/ii5-*.png` (the Sleeper error, the Sleeper link card, the MFL error, the MFL team picker;
+    phone and desktop).
+* **What moved and why**: no number moves. Words: the unknown-username sentence (API and web), the MFL private-league
+  sentence (keeps "Ask the commissioner to allow API access"), the MFL label ("Find your MyFantasyLeague league"), the
+  Sleeper label ("…, or a league link"), the no-team row ("pick the team to see below"), League's moves on MFL.
+  Behaviour: the MFL box shows only after choosing MyFantasyLeague (one more tap than before; a device with saved MFL
+  leagues and no Sleeper username opens on MFL).
+* **Not done**: accounts (design only, by the brief); ESPN / Yahoo adapters (verdicts only); MFL's per-league API key as a
+  private-league path (documented in PROVIDERS, not built); the capability lines on screens other than League's moves
+  (My Week's win line — "this league's live scores are not read yet" — and Waivers' claim time on MFL already state their
+  gaps in their own words; not rewired to `gapLine`); the whole API and root suites to the end (load; see the evidence).
+* **Next task**: when Andrew wants saved leagues across devices — build ACCOUNTS.md's option A (the email link, the
+  `accounts` schema, the import of a device's guest picks); then Yahoo (apply, OAuth connection) if there is demand.
+
+**For the PO**
+1. **Merge order**: anywhere after INF-1. Conflicts to expect: `main.py` (II-5's NotFound handler line and `?sleeper=`
+   param; the 502 / 503 handlers gain `code`), `League.svelte` (one import, one effect, the moves card's first branch —
+   II-4 edits other lines there), the ten e2e specs (one added line each, near the start of an MFL test).
+2. **INF-1's GA**: the setup screen's events are INF-1's (`login` etc.); `platform` is already an event param there. No
+   username or league id is sent by II-5.
+3. **ESPN's terms bear on what is shipped**: Disney's terms (read today, quoted in `docs/ESPN_TERMS.md` and
+   `PROVIDERS.md`) forbid automated access and commercial use; the news line and the injury overlay read ESPN's public
+   feeds. Fine to keep for the free beta as a known risk; a decision before anything is charged for (`LEAGUE_LAB_NEWS=off`,
+   `LEAGUE_LAB_AVAILABILITY=off` switch them off).
+4. **Decisions Andrew may want to reverse**: ESPN and Yahoo are named on the setup screen as "not supported yet" (rather
+   than hidden); the platform choice gates the MFL box (one more tap for MFL users; remembered after the first time);
+   the sign-in recommendation (email link over Google first).
+5. Nothing for dbt, workflows, render.yaml or Neon in this package.

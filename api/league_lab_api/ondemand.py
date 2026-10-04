@@ -21,6 +21,7 @@ record (`record`, house leagues only).
 from __future__ import annotations
 
 import functools  # ---- V-1 (Wave I-G): record()'s decisions wrapper
+import re  # ---- II-5: the setup flow's Sleeper link
 import time
 from datetime import UTC, datetime  # IG-3
 
@@ -190,11 +191,13 @@ def leagues_for_user(username: str) -> dict:
     from .myweek import known_league
     season = ui.current_season()
     try:
-        return with_cards(A.user_leagues(username, int(season), in_database=known_league))  # ---- IC-3: the cards
+        answer = with_cards(A.user_leagues(username, int(season), in_database=known_league))  # ---- IC-3: the cards
     except A.LeagueNotFound as exc:
-        raise NotFound("no such Sleeper user") from exc
+        raise sleeper_user_error(username) from exc                    # ---- II-5: the specific words
     except A.SleeperUnavailable as exc:
         raise SleeperDown(str(exc)) from exc
+    answer["capabilities"] = A.platforms.capabilities("sleeper")     # ---- II-5
+    return answer
 
 
 def rosters_for_league(league_id: str) -> list[dict]:
@@ -1119,6 +1122,7 @@ def mfl_league(text: str) -> dict:
     """`/api/leagues?mfl=<link or id>`: the league card (name, size, scoring), its teams for the picker (MFL has no
     username lookup without a login), the team an `F=0004` in the link names, the players without a Sleeper id."""
     from league_lab.mfl_client import parse_link
+    lid = None
     try:
         lid, fid, _year = parse_link(text)
         key = A.check_id(f"mfl:{lid}")
@@ -1126,7 +1130,7 @@ def mfl_league(text: str) -> dict:
         league = sl.league(key)
         rosters, users = sl.rosters(key), sl.users(key)
     except A.LeagueNotFound as exc:
-        raise NotFound(str(exc)) from exc
+        raise mfl_error(lid, str(exc)) from exc                       # ---- II-5: the specific words
     except A.SleeperUnavailable as exc:
         raise SleeperDown(str(exc)) from exc
     names = A.team_names(rosters, users)
@@ -1140,7 +1144,8 @@ def mfl_league(text: str) -> dict:
     unmapped = sl.mfl.unmapped(key)
     return {"platform": "mfl", "league": lg, "teams": teams, "roster_id": pick, "unmapped": unmapped,
             "players": n_players, "mapped": n_players - len(unmapped), "scoring_note": mfl_scoring_note(league),
-            "card": league_card(key, league)}  # ---- IC-3: the read-backs
+            "card": league_card(key, league),  # ---- IC-3: the read-backs
+            "capabilities": A.platforms.capabilities("mfl")}  # ---- II-5
 
 
 # I0-C: one box, a link / an id / the league's name. `/api/leagues?mfl_search=<text>`: a link, an id or an `mfl:` key
@@ -1171,6 +1176,87 @@ def mfl_search(text: str) -> dict:
         note = f"{len(rows)} {'league has' if len(rows) == 1 else 'leagues have'} “{t}” in the name. Tap yours."
     return {**base, "matches": matches, "total": len(rows), "note": note}
 # ---- end I0-B
+
+
+# ---- II-5 (Wave I-I): the setup flow's errors — specific and recoverable (review § 9: "Validate and show specific
+# recoverable errors"). A setup 404 carries `code` (the key the web keys its help on), `error` (the sentence) and `fix`
+# (what to do next); main.py's NotFound handler passes `code` / `fix` through. The keys (INTERFACES.md § II-5):
+SETUP_CODES = ("sleeper_user_unknown", "sleeper_username_invalid", "sleeper_league_unknown", "sleeper_link_invalid",
+               "mfl_league_private", "mfl_link_invalid", "provider_down", "busy")
+SLEEPER_WHERE = "the long number after /leagues/ in the league's address on sleeper.com (sleeper.com/leagues/1389709692405551104/team)"
+MFL_WHERE = "the number after /home/ in your league's address on the MFL website (www45.myfantasyleague.com/2026/home/70587)"
+
+
+class SetupError(NotFound):
+    """A setup lookup that failed in a way the user can fix: `code` (SETUP_CODES), the sentence, `fix`."""
+
+    def __init__(self, code: str, words: str, fix: str | None = None) -> None:
+        super().__init__(words)
+        self.code = code
+        self.fix = fix
+
+
+def sleeper_user_error(username: str) -> SetupError:
+    u = " ".join(str(username or "").split())[:40]
+    from league_lab.sleeper_client import check_username
+    try:
+        check_username(u)
+    except A.LeagueNotFound:
+        return SetupError("sleeper_username_invalid", f"“{u}” cannot be a Sleeper username: they are letters, numbers and _ . - only.",
+                          "Type the name you sign in to Sleeper with, or paste your league's link.")
+    return SetupError("sleeper_user_unknown", f"That Sleeper username does not exist: “{u}”.",
+                      "Check the spelling: it is the name you sign in to Sleeper with, not your team's name. "
+                      "Or paste your league's link instead.")
+
+
+def mfl_error(league_id: str | None, cause: str) -> SetupError:
+    if league_id is None or "look like" in cause or "not a MyFantasyLeague" in cause:
+        return SetupError("mfl_link_invalid", "That is not a MyFantasyLeague league link or id.",
+                          f"Paste your league's address, or the league id alone: {MFL_WHERE}. In the MFL app, type the "
+                          "league's name instead.")
+    return SetupError("mfl_league_private", f"MFL league {league_id} is private or does not exist. Ask the commissioner to "
+                      "allow API access to the league's data (MFL's league setup, the privacy option).",
+                      f"Check the id first: it is {MFL_WHERE}.")
+
+
+_SLEEPER_LINK = re.compile(r"sleeper\.(?:com|app)/leagues/(\d{10,24})", re.I)
+_SLEEPER_ID = re.compile(r"^\d{10,24}$")
+
+
+def sleeper_league_id(text: str) -> str | None:
+    """A Sleeper league link or id -> the id; None when the text is neither (a username)."""
+    t = str(text or "").strip()
+    m = _SLEEPER_LINK.search(t)
+    if m:
+        return m.group(1)
+    return t if _SLEEPER_ID.match(t) else None
+
+
+def sleeper_league(text: str) -> dict:
+    """`/api/leagues?sleeper=<league link or id>`: the MFL answer's shape for a Sleeper league — the league, its teams for
+    the picker (a league id says nothing about which team is yours), the card, the capabilities."""
+    lid = sleeper_league_id(text)
+    if lid is None:
+        raise SetupError("sleeper_link_invalid", "That is not a Sleeper league link or id.",
+                         f"Copy {SLEEPER_WHERE}, or type your Sleeper username instead.")
+    sl = A.sleeper()
+    try:
+        league = sl.league(lid)
+        rosters, users = sl.rosters(lid), sl.users(lid)
+    except A.LeagueNotFound as exc:
+        raise SetupError("sleeper_league_unknown", f"Sleeper has no football league {lid}.",
+                         f"Check the number: it is {SLEEPER_WHERE}.") from exc
+    except A.SleeperUnavailable as exc:
+        raise SleeperDown(str(exc)) from exc
+    names = A.team_names(rosters, users)
+    teams = sorted(({"roster_id": rid, "team_name": n["team_name"], "manager_name": n["manager_name"]}
+                    for rid, n in names.items()), key=lambda r: r["roster_id"])
+    lg = {"league_id": lid, "name": league.get("name"), "season": int(league.get("season") or ui.current_season()),
+          "total_rosters": league.get("total_rosters"), "scoring_label": A.scoring_label(league),
+          "url": f"https://sleeper.com/leagues/{lid}", "platform": "sleeper"}
+    return {"platform": "sleeper", "league": lg, "teams": teams, "roster_id": None, "card": league_card(lid, league),
+            "capabilities": A.platforms.capabilities("sleeper")}
+# ---- end II-5
 
 
 # ---- IC-3 (Wave I-C): the Leagues card tells the truth. After a pick (an MFL league's card, each Sleeper league row)

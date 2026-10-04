@@ -1,0 +1,1 @@
+{"error":"Sleeper has no football league 1234567890123456.","detail":"Sleeper has no football league 1234567890123456.","code":"sleeper_league_unknown","fix":"Check the number: it is the long number after /leagues/ in the league's address on sleeper.com (sleeper.com/leagues/1389709692405551104/team)."}

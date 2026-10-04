@@ -17,12 +17,23 @@
   import Md from "../components/Md.svelte";
   import PosBadge from "../components/PosBadge.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
+  import { gapLine } from "../lib/providers"; // ---- II-5: "Transactions: not available for MFL leagues yet"
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
   let data = $state<LeagueView | null>(null);
   let error = $state<string | null>(null);
   const ctx = $derived({ league, team });
+  // ---- II-5 (Wave I-I): a platform whose moves League Lab does not read says so (never "No completed moves")
+  let movesGap = $state<string | null>(null);
+  $effect(() => {
+    const l = league;
+    movesGap = null;
+    void gapLine(l, "transactions").then((v) => {
+      if (l === league) movesGap = v;
+    });
+  });
+  // ---- end II-5
 
   $effect(() => {
     const l = league;
@@ -307,7 +318,9 @@
 
     <div class="grid grid-cols-1 gap-4 wide:grid-cols-2 wide:items-start">
       <Card title="Latest moves" pad={false} testid="moves">
-        {#if !moves.length}
+        {#if !moves.length && movesGap}
+          <p class="px-4 pb-4 text-base text-ink-2" data-testid="moves-unavailable">{movesGap}.</p><!-- II-5 -->
+        {:else if !moves.length}
           <p class="px-4 pb-4 text-base text-ink-2">No completed moves yet this season.</p>
         {:else}
           <ul class="divide-y divide-line">

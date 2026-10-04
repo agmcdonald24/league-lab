@@ -416,3 +416,100 @@ class Router:
         if self._mfl is not None:
             out["mfl"] = self._mfl.client.stats()
         return out
+
+
+# ---- II-5 (Wave I-I): what each provider gives League Lab — explicit, so a screen says "not available for MFL leagues
+# yet" instead of showing an empty list as if the league had none (review § 9: "Unsupported data should be clearly
+# unavailable rather than silently substituted"). Sleeper and MFL as built; ESPN and Yahoo are not supported (the
+# research and the verdict: docs/PROVIDERS.md). One status per feature: "yes" (read and used as the provider has it),
+# "partial" (read, with a stated gap), "no" (not read: the screen says the `unavailable` line). Served at
+# `GET /api/providers` and on the setup answers (`capabilities`); `api/tests/test_ii5.py` pins the matrix.
+FEATURES = ("scoring", "roster_slots", "matchups", "players", "waivers", "transactions", "team_assets", "news")
+FEATURE_WORDS = {"scoring": "Scoring", "roster_slots": "Lineup slots", "matchups": "Matchups", "players": "Players",
+                 "waivers": "Waivers", "transactions": "Transactions", "team_assets": "Team assets", "news": "News"}
+PROVIDERS = ("sleeper", "mfl", "espn", "yahoo")
+_NEWS = "ESPN's player news (most items RotoWire's), by player — the same on every platform"
+
+_CAPS: dict[str, dict] = {
+    "sleeper": {
+        "name": "Sleeper", "short": "Sleeper", "status": "supported",
+        "connect": {"kind": "username", "label": "Your Sleeper username, or a league link",
+                    "example": "sleeper.com/leagues/1389709692405551104/team",
+                    "where": "Your username is the name you sign in to Sleeper with, not your team's name. A league's "
+                             "link is in the address bar of the league's page on sleeper.com: the long number after "
+                             "/leagues/ is the league id."},
+        "features": {
+            "scoring": ("yes", "the league's own scoring settings; a setting not priced here is listed on the league card"),
+            "roster_slots": ("yes", "every offensive slot, superflex included; IDP slots are left out and said so"),
+            "matchups": ("yes", "this week's opponent and every played week's points, in the league's scoring"),
+            "players": ("yes", "Sleeper's player directory, matched to nflverse ids for the projections"),
+            "waivers": ("yes", "free agents, and the claim type and time from the league's settings"),
+            "transactions": ("yes", "adds, drops and trades, from Sleeper's transactions"),
+            "team_assets": ("partial", "team defenses are players; draft picks and waiver budgets are not read for a league opened on demand"),
+            "news": ("yes", _NEWS),
+        },
+    },
+    "mfl": {
+        "name": "MyFantasyLeague", "short": "MFL", "status": "supported",
+        "connect": {"kind": "league_link", "label": "Your MFL league link, id or name",
+                    "example": "www45.myfantasyleague.com/2026/home/70587",
+                    "where": "Open your league on the MFL website: the number after /home/ in the address is the league "
+                             "id (70587 in the example). In the MFL app, type the league's name as the app shows it."},
+        "features": {
+            "scoring": ("partial", "MFL's rules read into the projections' scoring; any piece estimated or not priced is listed on the league card"),
+            "roster_slots": ("partial", "starter ranges (2–4 WR) read as the minimum plus FLEX; IDP spots are left out and said so"),
+            "matchups": ("partial", "the schedule and each week's opponent; the week's live points are not read"),
+            "players": ("partial", "MFL ids matched to Sleeper's; a player with no match is listed by name and not valued"),
+            "waivers": ("partial", "free agents are the players no team rosters; MFL's waiver type is read, the claim time is not shared"),
+            "transactions": ("no", "MFL's transactions are not read yet"),
+            "team_assets": ("partial", "team QBs, kickers and defenses are priced as players; draft picks and blind-bid budgets are not read"),
+            "news": ("yes", _NEWS),
+        },
+    },
+    "espn": {
+        "name": "ESPN", "short": "ESPN", "status": "not_supported",
+        "connect": {"kind": "none", "label": "ESPN leagues are not supported yet", "example": None,
+                    "where": "ESPN publishes no developer API or terms for fantasy leagues; a private league can only be "
+                             "read with the manager's own login cookies, which we will not ask for."},
+        "features": {f: ("no", "not supported yet (docs/PROVIDERS.md § ESPN)") for f in FEATURES},
+    },
+    "yahoo": {
+        "name": "Yahoo", "short": "Yahoo", "status": "not_supported",
+        "connect": {"kind": "none", "label": "Yahoo leagues are not supported yet", "example": None,
+                    "where": "Yahoo's Fantasy Sports API needs an approved application and each manager's OAuth "
+                             "sign-in; neither is set up yet."},
+        "features": {f: ("no", "not supported yet (docs/PROVIDERS.md § Yahoo)") for f in FEATURES},
+    },
+}
+
+
+def unavailable(provider: str, feature: str) -> str | None:
+    """The sentence a screen says where a feature is not read for this provider ("Transactions: not available for MFL
+    leagues yet"); None when it is read ("yes" / "partial")."""
+    p = _CAPS.get(str(provider).lower())
+    if p is None or feature not in FEATURES:
+        raise KeyError(f"unknown provider or feature: {provider!r} {feature!r}")
+    status, _ = p["features"][feature]
+    if status != "no":
+        return None
+    return f"{FEATURE_WORDS[feature]}: not available for {p['short']} leagues yet"
+
+
+def capabilities(provider: str) -> dict:
+    """``{provider, name, short, status, connect, features: {<FEATURES>: {status, words, unavailable}}}`` — a fresh
+    dict each call (callers may add to it). ``provider``: sleeper | mfl | espn | yahoo (KeyError otherwise)."""
+    key = str(provider).lower()
+    p = _CAPS[key]
+    return {"provider": key, "name": p["name"], "short": p["short"], "status": p["status"], "connect": dict(p["connect"]),
+            "features": {f: {"label": FEATURE_WORDS[f], "status": p["features"][f][0], "words": p["features"][f][1],
+                             "unavailable": unavailable(key, f)} for f in FEATURES}}
+
+
+def capabilities_for(key: Any) -> dict:
+    """The capabilities of the provider serving a league key (``mfl:70587`` -> MFL, digits -> Sleeper)."""
+    return capabilities(platform(key))
+
+
+def all_capabilities() -> list[dict]:
+    return [capabilities(p) for p in PROVIDERS]
+# ---- end II-5

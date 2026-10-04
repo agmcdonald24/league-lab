@@ -71,6 +71,7 @@ test("dad's league 70587: the card reads back the lineup and the scoring, then K
 
   await page.goto("/");
   await expect(page.getByTestId("leagues")).toBeVisible();
+  await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
   await page.getByTestId("mfl-link").fill("70587");
   await page.getByTestId("mfl-go").click();
 

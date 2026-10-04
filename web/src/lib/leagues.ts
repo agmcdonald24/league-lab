@@ -42,7 +42,8 @@ export function leagueOptions(
   // I0-B: the MyFantasyLeague leagues opened on this phone ("MFL" after the name in the switcher)
   for (const m of prefs.mflLeagues()) {
     if (out.some((o) => o.league_id === m.league_id)) continue;
-    out.push({ league_id: m.league_id, name: `${m.name} · MFL`, scoring_label: m.scoring_label, total_rosters: m.total_rosters, roster_id: m.roster_id, team_name: m.team_name, mine: true });
+    // ---- II-5: a Sleeper league opened by its link is remembered here too: "· MFL" only on an MFL league
+    out.push({ league_id: m.league_id, name: isMfl(m.league_id) ? `${m.name} · MFL` : m.name, scoring_label: m.scoring_label, total_rosters: m.total_rosters, roster_id: m.roster_id, team_name: m.team_name, mine: true });
   }
   if (current && !out.some((o) => o.league_id === current)) {
     out.push({ league_id: current, name: names[current] ?? "This league", scoring_label: null, total_rosters: null, roster_id: null, team_name: null, mine: false });
