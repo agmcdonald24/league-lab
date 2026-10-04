@@ -147,6 +147,26 @@ def test_scrubs_roster_6_and_his_opponent(client):
     assert f"{w['percent']}%" in w["line"]
 
 
+@needs_db
+def test_league_week_odds_scrubs(client):
+    """The League screen's odds: every game of the week once, the two sides adding to 100, the same number My Week shows
+    for roster 6."""
+    r = client.get(f"/api/league/week-odds?league={SCRUBS}")
+    assert r.status_code == 200, r.text[:300]
+    d = r.json()
+    if not d["games"]:
+        pytest.skip("no games this week in the database / fixtures")
+    rids = [sd["roster_id"] for g in d["games"] for sd in (g["a"], g["b"])]
+    assert len(rids) == len(set(rids))                                   # one game each (no double header here)
+    for g in d["games"]:
+        assert 0 < g["p"] < 1 and g["a"]["percent"] + g["b"]["percent"] == 100
+        assert g["words"] in {"a coin flip", "a slight favorite", "a clear favorite"}
+    g6 = next(g for g in d["games"] if 6 in (g["a"]["roster_id"], g["b"]["roster_id"]))
+    mw = client.get(f"/api/my-week?league={SCRUBS}&team=6").json()["win"]
+    mine = g6["a"] if g6["a"]["roster_id"] == 6 else g6["b"]
+    assert mine["percent"] == mw["percent"] and mine["expected"] == pytest.approx(mw["mine"])
+
+
 @pytest.fixture
 def mfl(monkeypatch):
     monkeypatch.setenv(M.FIXTURES_ENV, str(MFL_FX))
@@ -177,7 +197,8 @@ def test_dads_double_header_on_my_week(client, mfl):
 @pytest.mark.skipif(not __import__("os").environ.get("IH3_RECORD"), reason="records web/fixtures/ih3/api_ih3.json: IH3_RECORD=1")
 def test_record_e2e_answers(client, mfl):
     """The answers web/e2e/ih3 replays: League of Scrubs roster 6's My Week (one game), dad's league team 1 (Knight
-    Train: the week-4 double header, two lines), the MFL pick and the status."""
+    Train: the week-4 double header, two lines), the MFL pick, the status, and both leagues' League screen with the
+    week's odds."""
     import json
     from urllib.parse import urlencode
 
@@ -197,8 +218,22 @@ def test_record_e2e_answers(client, mfl):
     rec("/api/leagues/mfl%3A70587/rosters")
     rec("/api/my-week", league="mfl:70587", team=1)
     rec("/api/status")
+    rec("/api/league", league=SCRUBS, team=6)                  # the League screen: a house league (its own odds card)
+    rec("/api/league/week-odds", league=SCRUBS)
+    rec("/api/league", league="mfl:70587", team=1)              # on demand: the odds inside IC-4's matchups card
+    rec("/api/league/week-odds", league="mfl:70587")
     f = ROOT / "web" / "fixtures" / "ih3" / "api_ih3.json"
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(json.dumps(out, indent=1, default=str) + "\n")
     assert all(v["status"] == 200 for v in out.values()), {k: v["status"] for k, v in out.items()}
     assert out[key("/api/my-week", league=SCRUBS, team=6)]["body"]["win"]["line"]
+
+
+@needs_db
+def test_league_week_odds_double_header(client, mfl):
+    d = client.get("/api/league/week-odds?league=mfl:70587").json()
+    if d["week"] != 4:
+        pytest.skip(f"the fixture's week is {d['week']}, not a double-header week")
+    assert len(d["games"]) == 12                                         # 12 teams, two games each
+    kt = [g for g in d["games"] if 1 in (g["a"]["roster_id"], g["b"]["roster_id"])]
+    assert len(kt) == 2

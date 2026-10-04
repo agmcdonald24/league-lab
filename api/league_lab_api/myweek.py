@@ -1023,4 +1023,82 @@ def win(league_id: str, roster_id: int, season: int, week: int, rows: pd.DataFra
     if len(answers) > 1:
         head["also"] = answers[1:]
     return head
+
+
+MATCHUPS_DB_SQL = """select matchup_id, roster_id from analytics.fct_league_matchup
+                     where league_id = %s and season = %s and week = %s and matchup_id is not null"""
+
+
+def week_odds(league_id: str, *, house: bool | None = None) -> dict:
+    """The League screen: this week's games, each with both teams' chance (a's p, b's 1 - p) and expected totals —
+    every roster's context read side by side (the house path: one query each; on demand: one solve each, ~1-3 s cold,
+    so the screen asks for it after it shows). Games from Sleeper's matchups call (MFL's schedule), else the nightly's
+    fct_league_matchup; a double header's games each once."""
+    from league_lab import anyleague as A
+    from league_lab import decisions as D
+
+    from .ondemand import week_points
+
+    league_id = str(league_id)
+    house = known_league(league_id) if house is None else bool(house)
+    client = A.sleeper()
+    season = int(cards.league_season(league_id)) if house else int(client.league(A.check_id(league_id))["season"])
+    week = cards.decision_week(season)
+    out: dict = {"league_id": league_id, "season": season, "week": week, "games": [], "assumptions": D.WEEK_ASSUMPTIONS,
+                 "note": None}
+    if week is None:
+        return out
+    try:
+        ms = client.matchups(league_id, int(week))
+    except (A.SleeperBusy, A.SleeperUnavailable):
+        ms = []
+    if not ms and house:
+        ms = query(MATCHUPS_DB_SQL, (league_id, int(season), int(week))).to_dict("records")
+    by: dict = {}
+    for m in ms or []:
+        if m.get("matchup_id") is not None and m.get("roster_id") is not None:
+            by.setdefault(int(m["matchup_id"]), []).append(int(m["roster_id"]))
+    pairs = [(mid, sorted(set(r))) for mid, r in sorted(by.items()) if len(set(r)) == 2]
+    if not pairs:
+        return out
+    rids = sorted({r for _, pr in pairs for r in pr})
+    if house:
+        ctxs = availability.contexts(league_id, rids, week, house=True)
+    else:
+        ctxs = {r: availability.roster_context(league_id, r, week, house=False, client=client) for r in rids}
+    scored = scored_teams(season, week)
+    points: dict[str, float] | None = {}
+    if scored:
+        if house:
+            df = query(OBSERVED_SQL, (league_id, int(season), int(week), rids))
+            points = {str(r.sleeper_player_id): float(r.points) for r in df.itertuples() if r.points is not None and not pd.isna(r.points)}
+        else:
+            points = week_points(client, league_id, week, rids)
+    names = {int(r["roster_id"]): r["team_name"] for r in rosters(league_id)} if house else {
+        int(k): v.get("team_name") for k, v in A.team_names(client.rosters(league_id), client.users(league_id)).items()}
+    starters = {}
+    live_ok = True
+    for r in rids:
+        c = ctxs.get(r)
+        starters[r] = win_starters(c.rows if c is not None else None)
+        live_ok = with_actuals(starters[r], scored, points) and live_ok
+    for mid, (a, b) in pairs:
+        side = {"a": {"roster_id": a, "team_name": names.get(a)}, "b": {"roster_id": b, "team_name": names.get(b)}}
+        g = {"matchup_id": mid, **side, "p": None, "words": None, "note": None}
+        if not live_ok:
+            g["note"] = WIN_NO_LIVE
+        else:
+            w = win_answer(starters[a], starters[b], b)
+            g["note"] = w.get("note")
+            if w.get("p") is not None:
+                p = float(w["p"])
+                g["p"] = round(p, 4)
+                g["a"].update({"percent": D.percent(p), "expected": w["mine"], "n_played": w["n_played"]})
+                g["b"].update({"percent": 100 - D.percent(p), "expected": w["theirs"], "n_played": w["opp_n_played"]})
+                g["words"] = w["words"].replace("underdog", "favorite")          # read from the favourite's side
+                g["favorite"] = None if w["words"] == "a coin flip" else (a if p > 0.5 else b)
+        out["games"].append(g)
+    if out["games"] and all(g["p"] is None for g in out["games"]):
+        out["note"] = out["games"][0]["note"]
+    return out
 # ---- end IH-3

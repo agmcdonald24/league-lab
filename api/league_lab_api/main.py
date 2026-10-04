@@ -556,6 +556,15 @@ def events_list(league: str, team: int, response: Response, hours: int = 72):
     return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
 # ---- end IG-2
 
+# ---- IH-3 (Wave I-H): the League screen's odds for this week's games (myweek.week_odds; information, never a pick),
+#   /api/league/week-odds?league=      asked by the screen after it shows (on demand: one solve per roster, 1-3 s cold)
+
+
+@app.get("/api/league/week-odds", dependencies=[Depends(require_auth)])
+def league_week_odds(league: str, response: Response, source: str | None = None):
+    return _json(myweek.week_odds(league, house=False if source == "sleeper" else None), response)
+# ---- end IH-3
+
 
 # ---------------------------------------------------------------- the web app
 ASSET_CACHE = "public, max-age=31536000, immutable"     # vite's hashed file names

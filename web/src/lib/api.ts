@@ -1814,4 +1814,30 @@ export interface WinProbability {
 export interface MyWeek {
   win?: WinProbability | null;
 }
+/** /api/league/week-odds: this week's games with both teams' chance (asked after the League screen shows) */
+export interface WeekOddsSide {
+  roster_id: number;
+  team_name: string | null;
+  percent?: number; // whole percent; the two sides add to 100
+  expected?: number; // the best lineup's projection (actual points where the game is in)
+  n_played?: number;
+}
+export interface WeekOddsGame {
+  matchup_id: number;
+  a: WeekOddsSide;
+  b: WeekOddsSide;
+  p: number | null; // a's chance
+  words: string | null; // "a coin flip" | "a slight favorite" | "a clear favorite" (the favourite's side)
+  favorite?: number | null;
+  note: string | null;
+}
+export interface WeekOdds {
+  league_id: string;
+  season: number;
+  week: number | null;
+  games: WeekOddsGame[];
+  assumptions: string;
+  note: string | null;
+}
+export const weekOddsPath = (league: string) => `/api/league/week-odds?league=${encodeURIComponent(league)}`;
 // ---- end IH-3

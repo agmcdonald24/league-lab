@@ -88,3 +88,36 @@ test("an answer without `win` shows no line", async ({ page }) => {
   await expect(page.getByTestId("opponent-line")).toBeVisible();
   await expect(page.getByTestId("win-line")).toHaveCount(0);
 });
+
+test("League screen, a house league: this week's games with both teams' chance, asked after the screen shows", async ({ page }, info) => {
+  await page.goto(`/league?league=${SCRUBS}&team=6`);
+  const card = page.getByTestId("league-odds");
+  await expect(card).toBeVisible();
+  const games = card.getByTestId("league-game");
+  await expect(games).toHaveCount(5);
+  const mine = card.locator('[data-testid="league-game"][data-mine="1"]');
+  await expect(mine).toHaveCount(1);
+  await expect(mine.getByTestId("game-odds")).toHaveText(["47% · 117 expected", "53% · 120 expected"]);
+  for (const t of await card.getByTestId("game-odds").allTextContents()) expect(t).toMatch(/^\d{1,2}% · \d+ expected$/);
+  await expect(card.getByTestId("odds-note")).toContainText("independent except teammates and opponents");
+  await noSidewaysScroll(page);
+  await card.scrollIntoViewIfNeeded();
+  await shot(page, "league-scrubs", info.project.name);
+});
+
+test("League screen, dad's league: the odds sit in the week's matchups card, both games of the double header", async ({ page }, info) => {
+  await page.goto(`/league?league=${encodeURIComponent("mfl:70587")}&team=1`);
+  const card = page.getByTestId("league-matchups");
+  await expect(card).toBeVisible();
+  await expect(card.getByTestId("game-odds").first()).toBeVisible();
+  await expect(page.getByTestId("league-odds")).toHaveCount(0);          // no second card
+  const mine = card.locator('[data-testid="league-game"][data-mine="1"]');
+  await expect(mine).toHaveCount(2);
+  await expect(mine.nth(0).getByTestId("game-odds")).toHaveCount(2);
+  const got = (await mine.nth(0).getByTestId("game-odds").allTextContents()).sort();
+  expect(got).toEqual(["34% · 96 expected", "66% · 115 expected"]);           // vs Big Mac Attack, as My Week says
+  await expect(page.getByTestId("league-results").getByTestId("game-odds")).toHaveCount(0);   // last week's results: none
+  await noSidewaysScroll(page);
+  await card.scrollIntoViewIfNeeded();
+  await shot(page, "league-mfl", info.project.name);
+});
