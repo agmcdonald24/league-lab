@@ -18,7 +18,8 @@ const RECORD = process.env.II1_RECORD ?? "";
 type Saved = { status: number; body: unknown };
 const saved: Record<string, Saved> = !RECORD && existsSync(FILE) ? (JSON.parse(readFileSync(FILE, "utf8")) as Record<string, Saved>) : {};
 const MINE = /\/api\/(trades|rosters|leagues\?mfl)|mfl|1389709692405551104|9000000000000000001/i;
-const MFL = "mfl:70587";
+const WAIT = RECORD ? 900_000 : 10_000; // recording: the API answers live (minutes on a loaded machine)
+test.setTimeout(RECORD ? 1_800_000 : 60_000);
 const SCRUBS = "1389709692405551104";
 const TEST_LEAGUE = "9000000000000000001";
 
@@ -75,11 +76,11 @@ const shot = (page: Page, name: string, project: string) =>
 test("Scrubs roster 2: No compelling trade found, the reason, and the trades behind Explore alternatives", async ({ page }, info) => {
   await page.goto(`/trades?league=${SCRUBS}&team=2`);
   const head = page.getByTestId("best-partner");
-  await expect(head.getByTestId("no-compelling")).toHaveText("No compelling trade found.");
+  await expect(head.getByTestId("no-compelling")).toHaveText("No compelling trade found.", { timeout: WAIT });
   await expect(head).toContainText("is worth proposing");
   await expect(head).toContainText("Your best move:");
   await expect(page.getByTestId("try-best")).toHaveCount(0);
-  await expect(page.getByTestId("finder-none")).toContainText("No compelling trade found");
+  await expect(page.getByTestId("finder-none")).toContainText("No compelling trade found", { timeout: WAIT });
   const explore = page.getByTestId("explore");
   await expect(explore).toContainText("Explore alternatives");
   await explore.locator("summary").first().click();
@@ -99,12 +100,12 @@ test("Scrubs roster 2: No compelling trade found, the reason, and the trades beh
 test("the Test League team 1: the credible trades lead, each with its full card; the rest behind Explore", async ({ page }, info) => {
   await page.goto(`/trades?league=${TEST_LEAGUE}&team=1`);
   const head = page.getByTestId("best-partner");
-  await expect(head).toContainText("Best partner:");
+  await expect(head).toContainText("Best partner:", { timeout: WAIT });
   await expect(page.getByTestId("try-best")).toBeVisible();
   const finder = page.getByTestId("finder");
   const first = finder.getByTestId("partner-row").first();
   const card = first.getByTestId("trade-card");
-  await expect(card.getByTestId("card-credible")).toHaveText("Beats both teams' alternatives");
+  await expect(card.getByTestId("card-credible")).toHaveText("Beats both teams' alternatives", { timeout: WAIT });
   await expect(card.getByTestId("card-plausibility")).toHaveText(/^(Plausible offer|A roster-fit idea)$/);
   await expect(card.getByTestId("card-alternatives")).toContainText("Yours:");
   await expect(card.getByTestId("card-alternatives")).toContainText("Theirs:");
@@ -122,7 +123,7 @@ test("the calculator: a kicker for a starter is labelled implausible, from the s
   // (Brandon Aubrey) is as good as the free pool's best, so a kicker is not worth a starter to them
   await page.goto(`/trade-calc?league=${SCRUBS}&team=2&partner=10&give=6650&get=3294`);
   const card = page.getByTestId("calc-trade-card");
-  await expect(card.getByTestId("card-plausibility")).toHaveText("Implausible");
+  await expect(card.getByTestId("card-plausibility")).toHaveText("Implausible", { timeout: WAIT });
   await expect(card.getByTestId("card-refuse")).toContainText("A K for a starter (Dak Prescott)");
   await expect(card.getByTestId("card-alternatives")).toContainText("Yours:");
   await expect(card.getByTestId("card-alternatives")).toContainText("Theirs:");

@@ -2573,9 +2573,11 @@ probability, anywhere.** Keeper / dynasty leagues: the card says the numbers cov
 ages and draft picks are not valued).
 
 The Folk package on the fixture (`api/tests/test_ii1.py`, Scrubs clone with Folk on roster 2 and Reichard on Run Bijan
-Run, MacZaddy without a backup QB as when the review ran): raw +0.5 / +17.7 / −8.4 / +0.5 for MacZaddy; covered +0.5 /
-−0.5 / +0.8 / +0.5; their covered −2.0 / +0.5 / +0.9 / +0.2; **Implausible** ("a K for a starter (Matthew Stafford): they
-have a K and the free pool holds one about as good"); not promoted.
+Run, MacZaddy without a backup QB as when the review ran): raw +0.5 / +17.7 / −8.4 / +0.5 for MacZaddy (their raw −17.5 /
+−17.7 / −8.3 / −17.0: Run Bijan Run left with no QB at zero); covered +0.5 / −0.5 / +0.8 / +0.5 (+1.2) for MacZaddy and
+−2.8 / +0.5 / +0.9 / +0.2 (−1.2) for them (this week's number moves with the kickoffs: −2.0 before the 1 PM games);
+**Implausible** ("a K for a starter (Matthew Stafford): they have a K and the free pool holds one about as good, so a K is
+not worth a starter to them"); beyond their own alternative −1.7; not promoted.
 
 ## Calibration of the top (cal1.0, Wave I-A M1, 2026-10-03; `league_lab.calibration`, flag `LEAGUE_LAB_PROJECTION_CALIBRATION`, off)
 
