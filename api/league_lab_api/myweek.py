@@ -692,14 +692,14 @@ def margin_comparator(r: pd.Series, rows: pd.DataFrame) -> dict:
     except (KeyError, TypeError, ValueError):
         return {"margin_vs": None, "margin_words": ""}
     alt = a.get("alt")
-    if alt is None:
-        return {"margin_vs": None, "margin_words": "no eligible reserve: the slot would be empty"}
-    # ---- II-0: the full name on a surname collision (Parker / Malik Washington); a cascade says who slides where; a
-    # lock since the solve (his game started) moves the margin to the re-solve's
-    nm = cards.display_name(_str(alt.get("player_name")) or "", rows["player_name"], alt.get("position"))
+    # ---- II-0: a lock since the solve (a game kicked off) moves the margin to the re-solve's (the chain's), so the
+    # number and its words are one answer; the full name on a surname collision; a cascade says who slides where
     mover, ch = a.get("mover"), a.get("chain")
     fix = ({"margin": cards.chain_cost(r, a, rows)} if ch is not None and _num(r.get("margin")) is not None
            and abs(cards.chain_cost(r, a, rows) - float(r["margin"])) > 0.005 else {})
+    if alt is None:
+        return {"margin_vs": None, "margin_words": "no eligible reserve: the slot would be empty", **fix}
+    nm = cards.display_name(_str(alt.get("player_name")) or "", rows["player_name"], alt.get("position"))
     if mover is not None and ch is not None:
         mv = cards.display_name(_str(mover.get("player_name")) or "", rows["player_name"], mover.get("position"))
         return {"margin_vs": nm, "margin_words": f"over {nm} ({alt.get('position')}) after {mv} moves to "
