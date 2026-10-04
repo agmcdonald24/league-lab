@@ -5,7 +5,7 @@
   import { leagueOptions, type LeagueOption } from "./lib/leagues";
   import { leagueNames } from "./lib/names.svelte";
   import { prefs } from "./lib/prefs";
-  import { interceptLinks, route, setParams } from "./lib/router.svelte";
+  import { interceptLinks, navigate, route, setParams } from "./lib/router.svelte";
   import Login from "./components/Login.svelte";
   import ErrorCard from "./components/ErrorCard.svelte"; // ---- IH-1
   import { failureOf, type Failure } from "./lib/remote.svelte"; // ---- IH-1
@@ -93,6 +93,17 @@
 
   // ---- U-1: count the screen on screen (route, league, team) once signed in; never blocks rendering (lib/usage.ts)
   $effect(() => void (phase === "ready" && countView(league ? r.name : "leagues", league, team)));
+
+  // ---- II-3: /receivers is the Stats screen's WR / TE preset now (old links and bookmarks land there, league and team
+  // kept); the receivers' role cards stay at /receivers?view=cards
+  $effect(() => {
+    if (r.name !== "receivers" || r.params.get("view") === "cards") return;
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a scratch copy for the redirect, never observed
+    const qs = new URLSearchParams(r.params);
+    qs.set("position", "WRTE");
+    for (const k of ["limit", "context", "weeks", "players"]) qs.delete(k);
+    navigate(`/players?${qs.toString()}`, { replace: true });
+  });
 
   async function boot() {
     try {

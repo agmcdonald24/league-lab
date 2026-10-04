@@ -60,13 +60,12 @@ const TABS: { tab: string; label: string; first: string; subs: [string, string, 
   {
     tab: "players",
     label: "Players",
-    first: "trends",
+    first: "players", // ---- II-3: Stats · Trends · Matchups · Compare (Receivers is the Stats WR / TE preset)
     subs: [
+      ["players", "Stats", "players"],
       ["trends", "Trends", "trends"],
       ["matchups", "Matchups", "matchups"],
-      ["receivers", "Receivers", "receivers"],
       ["compare", "Compare", "compare"],
-      ["players", "Players", "players"],
     ],
   },
 ];

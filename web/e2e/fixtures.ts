@@ -16,6 +16,20 @@ export interface FixtureApi {
   signedIn: boolean;
 }
 
+// ---- II-3: the Stats Explorer's answers, recorded from the API (api/tests/test_ii3.py::test_record_e2e_answers) and keyed
+// by the request's path + sorted query; a key that was not recorded answers 404 (the spec says which ones it uses)
+let ii3: Record<string, { status: number; body: unknown }> | null = null;
+function statsFrame(q: URLSearchParams): string | null {
+  if (ii3 === null) {
+    const f = join(FIXTURES, "ii3", "api_ii3.json");
+    ii3 = existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")) as typeof ii3) : {};
+  }
+  const sorted = [...q.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const hit = ii3![`/api/players?${new URLSearchParams(sorted).toString()}`];
+  return hit ? JSON.stringify(hit.body) : null;
+}
+// ---- end II-3
+
 function file(name: string): string | null {
   const p = join(FIXTURES, name);
   return existsSync(p) ? readFileSync(p, "utf8") : null;
@@ -77,6 +91,7 @@ export async function serveFixtures(context: BrowserContext, opts: { gate?: bool
     else if (p === "/api/trends") body = file(`trends_${q.get("league")}.json`);
     else if (p === "/api/matchups/defense") body = file(`matchups_defense_${q.get("league")}_${q.get("team")}.json`) ?? file(`matchups_defense_${q.get("league")}.json`);
     else if (p === "/api/matchups/cb") body = file(`matchups_cb_${q.get("league")}_${q.get("team")}.json`);
+    else if (p === "/api/players" && q.get("window")) body = statsFrame(q); // ---- II-3: the Stats frame (recorded answers)
     else if (p === "/api/players") body = file(`players_${q.get("league")}.json`);
     else if (p === "/api/receivers") body = file(`receivers_${q.get("league")}.json`);
     else if (p === "/api/compare") {

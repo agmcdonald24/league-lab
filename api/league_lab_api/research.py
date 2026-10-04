@@ -34,6 +34,7 @@ from league_lab import anyleague as A
 from league_lab import research as R
 
 from . import availability
+from . import stats as ST  # ---- II-3: the Stats Explorer
 from .applib import PKG as APPLIB_PKG
 from .applib import cards, links, signals
 from .applib import ros as ROS
@@ -1046,12 +1047,20 @@ def _league_points_season(ctx: Ctx, season: int, season_type: str) -> pd.DataFra
 
 def players(league_id: str, *, season: int | None = None, position: str | None = None, sort: str | None = None,
             dir: str | None = None, limit: int | None = None, offset: int = 0, q: str | None = None,
-            season_type: str = "REG", min_games: int = 1, source: str | None = None) -> dict:
+            season_type: str = "REG", min_games: int = 1, source: str | None = None,
+            window: str | None = None, basis: str | None = None, weeks: str | None = None, who: str | None = None,
+            team: int | None = None, nfl: str | None = None) -> dict:            # ---- II-3: the Stats frame's params
     ctx = context(league_id, source)
     season = int(season or ctx.season)
     st = (season_type or "REG").upper()
     if st not in ("REG", "POST"):
         raise BadRequest("season_type is REG or POST")
+    # ---- II-3: a window → the Stats Explorer's frame (api/league_lab_api/stats.py); none → the season table as before
+    if window is not None:
+        return stats_frame(ctx, season=season, season_type=st, position=position, window=window, basis=basis, weeks=weeks,
+                           who=who, team=team, nfl=nfl, q=q, min_games=min_games, sort=sort, dir=dir, limit=limit,
+                           offset=offset)
+    # ---- end II-3
     pos = _positions(position, POSITIONS)
     cols = list(dict.fromkeys(c for p in pos for c in POSITION_COLUMNS[p]))
     df = query(f"""select gsis_id, player_name, position, teams, games_played, {', '.join(cols)},
@@ -1069,7 +1078,67 @@ def players(league_id: str, *, season: int | None = None, position: str | None =
     page = decorate(df, ctx)
     return {**ctx.meta(), "season": season, "season_type": st, "positions": pos, "columns": cols,
             "total": total, "offset": off, "players": _records(page), "howto": PLAYERS_HOWTO,
-            "scoring_note": REF_NOTE.format(ref=reference_name())}
+            "scoring_note": REF_NOTE.format(ref=reference_name()),
+            "catalogue": ST.catalogue(season), "presets": ST.PRESETS}                       # ---- II-3 (additive)
+
+
+# ---- II-3: the Stats Explorer's frame (the fifth review § 4; docs/METRICS.md § "The Stats Explorer") ------------------
+STATS_HOWTO = (
+    "- **One row per player over the window you pick**: the season, his last 3 or 5 *games played*, the last 3 or 5 "
+    "*calendar weeks* (a bye or a missed game leaves fewer games: **G** says how many), or a week range.\n"
+    "- **Per game** divides the window's total by the games he played in it; shares and rates keep their own "
+    "denominators (target share = his targets / his team's targets in the games he played).\n"
+    "- A share over several games is the summed numerator over the summed denominator, never an average of weekly "
+    "percentages.\n"
+    "- A dash means the number cannot be worked out here (no targets, a season without charting, routes in season); "
+    "hover it for the reason. Never zero.")
+
+
+def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None, window: str, basis: str | None,
+                weeks: str | None, who: str | None, team: int | None, nfl: str | None, q: str | None, min_games: int,
+                sort: str | None, dir: str | None, limit: int | None, offset: int) -> dict:
+    w = (window or "season").lower()
+    if w not in ST.WINDOWS:
+        raise BadRequest(f"window is one of {', '.join(ST.WINDOWS)}")
+    b = (basis or "games").lower()
+    if b not in ST.BASES:
+        raise BadRequest("basis is games or weeks")
+    wk = ST.parse_weeks(weeks)
+    if w == "weeks" and wk is None:
+        raise BadRequest("weeks is a range like 2-4 (calendar weeks)")
+    wh = (who or "all").lower()
+    if wh not in ("all", "mine", "fa", "others", "rostered"):
+        raise BadRequest("who is all, mine, fa, others or rostered")
+    pos = _positions(position, SKILL)
+    rows = ST.season_rows(season, season_type)
+    frame, desc = ST.window_rows(rows, w, b, wk)
+    cat = ST.catalogue(season, rows)
+    mine = frame[frame["position"].isin(SKILL)] if not frame.empty else frame
+    agg = ST.aggregate(mine)
+    if not agg.empty:
+        agg = agg[agg["position"].isin(pos)]
+        lg = league_games(ctx, season, None if len(agg) > 200 else list(agg["gsis_id"]))
+        lg = lg[lg["season_type"] == season_type]
+        agg = agg.merge(ST.points(lg, mine[mine["gsis_id"].isin(agg["gsis_id"])]), on="gsis_id", how="left")
+        agg = agg[agg["games"] >= max(0, int(min_games if min_games is not None else 1))]
+    if agg.empty:
+        agg = pd.DataFrame(columns=["gsis_id", "player_name", "position", "games"])
+    if q and len(q.strip()) >= 2:
+        agg = agg[agg["player_name"].map(_norm).str.contains(_norm(q), regex=False)]
+    df = decorate(agg.drop(columns=[c for c in ("team",) if c in agg]), ctx)
+    df = ST.owner_filter(df, wh, team)
+    if nfl:
+        df = df[df["team"].fillna("").str.upper() == nfl.strip().upper()]
+    total = int(len(df))
+    off = max(0, int(offset or 0))
+    n = max(1, min(int(limit if limit is not None else ST.STATS_LIMIT), ST.STATS_LIMIT))
+    default = next((p["sort"] for p in ST.PRESETS if p["positions"] == pos), "points")
+    page = _sort(df, sort, dir, default).iloc[off: off + n]
+    page = page[[c for c in ST.fields(pos) if c in page.columns]]
+    return {**ctx.meta(), "season": season, "season_type": season_type, "positions": pos, "window": desc,
+            "who": wh, "team": team, "nfl": nfl, "min_games": min_games, "total": total, "offset": off,
+            "players": _records(page), "catalogue": cat, "presets": ST.PRESETS, "howto": STATS_HOWTO}
+# ---- end II-3
 
 
 # ------------------------------------------------------------------------------ /api/receivers

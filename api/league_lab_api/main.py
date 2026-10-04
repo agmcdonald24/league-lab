@@ -414,9 +414,11 @@ def matchups_cb(league: str, response: Response, team: int | None = None, limit:
 @app.get("/api/players", dependencies=[Depends(require_auth)])
 def players(league: str, response: Response, season: int | None = None, position: str = "ALL", sort: str | None = None,
             dir: str | None = None, limit: int = 50, offset: int = 0, q: str | None = None, season_type: str = "REG",
-            min_games: int = 1, source: str | None = None):
+            min_games: int = 1, source: str | None = None, window: str | None = None, basis: str | None = None,
+            weeks: str | None = None, who: str | None = None, team: int | None = None, nfl: str | None = None):  # ---- II-3
     return _json(research.players(league, season=season, position=position, sort=sort, dir=dir, limit=limit, offset=offset,
-                                  q=q, season_type=season_type, min_games=min_games, source=source), response)
+                                  q=q, season_type=season_type, min_games=min_games, source=source, window=window,
+                                  basis=basis, weeks=weeks, who=who, team=team, nfl=nfl), response)
 
 
 @app.get("/api/receivers", dependencies=[Depends(require_auth)])

@@ -2020,3 +2020,68 @@ export interface TradeEval {
   card?: TradeCard;
 }
 // ---- end II-1
+
+// ---- II-3: the Stats Explorer (GET /api/players?window=…; api/league_lab_api/stats.py). Unknown is null (never 0).
+export type StatsStatus = "present" | "derived" | "planned" | "unavailable";
+export interface StatsColumn {
+  id: string;
+  label: string; // "Target share"
+  short: string; // "Tgt %"
+  kind: "games" | "count" | "share" | "rate";
+  format: "int" | "pct" | "dec1" | "dec2" | "pts";
+  per_game: boolean; // a count with a `<id>_per_game` twin
+  definition: string;
+  numerator: string | null;
+  denominator: string | null;
+  aggregation: string | null;
+  source: string;
+  status: StatsStatus;
+  available: boolean; // for the season asked (routes estimates need participation; first read needs charting)
+  reason: string | null; // why a cell is —
+  coverage?: string | null;
+  positions: string[];
+}
+export interface StatsPreset {
+  key: "wrte" | "rb" | "qb";
+  label: string;
+  positions: string[];
+  columns: string[];
+  extra: string[];
+  sort: string;
+}
+export interface StatsWindow {
+  key: "season" | "last3" | "last5" | "weeks";
+  basis: "games" | "weeks";
+  n?: number;
+  weeks: [number, number] | null;
+  through_week: number | null;
+  label: string;
+  note?: string;
+}
+export interface StatsRow extends PlayerHead, Owned {
+  games: number;
+  first_week: number | null;
+  last_week: number | null;
+  points: number | null;
+  points_per_game: number | null;
+  [field: string]: unknown;
+}
+export interface StatsFrame {
+  league_id: string;
+  season: number;
+  positions: string[];
+  window: StatsWindow;
+  total: number;
+  players: StatsRow[];
+  catalogue: StatsColumn[];
+  presets: StatsPreset[];
+  howto: string;
+}
+export const statsPath = (league: string, o: { position: string; window: string; basis?: string; weeks?: string; season?: number | null }) => {
+  const qs = new URLSearchParams({ league, limit: "1000", position: o.position, window: o.window });
+  if (o.basis) qs.set("basis", o.basis);
+  if (o.weeks) qs.set("weeks", o.weeks);
+  if (o.season) qs.set("season", String(o.season));
+  return `/api/players?${qs.toString()}`;
+};
+// ---- end II-3

@@ -352,31 +352,36 @@ test("Matchups: your starters' best and toughest, the heatmap with your cells ri
   void isMobile;
 });
 
-test("Players: the points leader, search, position, sort, whose — and no sideways table on a phone", async ({ page, isMobile }) => {
+// ---- II-3 (Wave I-I): Players is the Stats Explorer now (its own spec: e2e/ii3); here the shared basics on the dynasty
+test("Players · Stats: the sorted column's leader, search, position, sort, whose — the table scrolls in its box, not the page", async ({ page, isMobile }) => {
   await page.goto(dyn("/players"));
-  await expect(page.getByTestId("players-answer")).toContainText("Most points: Josh Allen, 99.3 (49.6 a game) in Forever Unclean Dynasty scoring · 428 players.");
+  await expect(page.getByTestId("players-answer")).toContainText(/Highest fantasy points per game: .+ · \d+ players · Season \(weeks 1–3\)\./);
   const table = page.getByTestId("players-table");
   await expect(table.getByTestId("players-table-row")).toHaveCount(50);
-  const visibleHeads = await table.locator("thead th:visible").count();
-  if (isMobile) expect(visibleHeads).toBe(3);
-  else expect(visibleHeads).toBeGreaterThanOrEqual(8);
   await noSidewaysScroll(page);
   await tap(page, page.getByTestId("pos-WR"), isMobile);
   await expect(page).toHaveURL(/position=WR/);
-  await expect(page.getByTestId("players-answer")).toContainText("Most points: Jaxon Smith-Njigba");
-  await tap(page, page.getByTestId("sort-points_per_game"), isMobile);
-  await expect(page).toHaveURL(/sort=points_per_game&dir=desc/);
+  await expect(page.getByTestId("players-answer")).toContainText("Highest target share:");
+  await page.getByTestId("sort-points").evaluate((n) => n.scrollIntoView({ block: "center" })); // clear of the phone's tab bar
+  await tap(page, page.getByTestId("sort-points"), isMobile);
+  await expect(page).toHaveURL(/sort=points&dir=desc/);
   await page.getByTestId("players-search").fill("st. brown");
   await expect(table.getByTestId("players-table-row")).toHaveCount(1);
   await expect(table.getByTestId("players-table-row")).toContainText("Amon-Ra St. Brown");
-  await expect(table.getByTestId("players-table-row")).toHaveClass(/bg-accent-soft/); // yours
+  await expect(table.getByTestId("players-table-row")).toHaveClass(/ll-mine/); // yours
   await page.getByTestId("players-search").fill("");
   await tap(page, page.getByTestId("who-mine"), isMobile);
-  await expect(page.getByTestId("players-answer")).toContainText("Most points: Amon-Ra St. Brown");
+  const mine = table.getByTestId("players-table-row");
+  await expect(mine.first()).toBeVisible();
+  for (const row of await mine.all()) await expect(row).toHaveClass(/ll-mine/);
 });
 
-test("Receivers: the biggest share first, role bars against the top-12 yardstick, TE switch", async ({ page, isMobile }) => {
+test("Receivers: /receivers lands on the Stats WR / TE preset; the role cards keep their own view (biggest share first, TE switch)", async ({ page, isMobile }) => {
   await page.goto(dyn("/receivers"));
+  await expect(page).toHaveURL(/\/players\?.*position=WRTE/);
+  await expect(page.getByTestId("players-table")).toBeVisible();
+  await expect(page.getByTestId("role-cards")).toBeVisible();
+  await page.goto(dyn("/receivers", "&view=cards"));
   await expect(page.getByTestId("receivers-answer")).toContainText("Biggest share of his team's targets: Jaxon Smith-Njigba (44%; the top-12 WRs average 29%).");
   const detail = page.getByTestId("receivers-detail");
   await expect(detail).toBeVisible(); // stacked on a phone (the answer first), on the right at 1300
@@ -389,6 +394,7 @@ test("Receivers: the biggest share first, role bars against the top-12 yardstick
   await expect(page.getByTestId("receivers-answer")).toContainText("top-12 TEs average");
   await noSidewaysScroll(page);
 });
+// ---- end II-3
 
 test("Compare: opens on your closest call (same numbers as My Week), paired bars, pick another player", async ({ page, isMobile }) => {
   await page.goto(dyn("/compare"));
@@ -443,7 +449,7 @@ test("the decisions tabs say what is coming; the bottom bar on a phone, the top 
   await tap(page, page.getByTestId("tab-myteam"), isMobile);
   for (const s of ["team", "league"]) await expect(page.getByTestId(`sub-${s}`)).toBeVisible();
   await tap(page, page.getByTestId("tab-players"), isMobile);
-  await expect(page).toHaveURL(/\/trends\?/);
+  await expect(page).toHaveURL(/\/players\?/); // ---- II-3: the Players tab opens Stats
 });
 
 // every screen, light and dark, at this project's size: no sideways scroll, the screen's answer on screen; screenshots
@@ -454,7 +460,7 @@ const SCREENS: { name: string; url: string; ready: string }[] = [
   { name: "trends", url: dyn("/trends"), ready: "trends-answer" },
   { name: "matchups", url: dyn("/matchups"), ready: "cb-card" },
   { name: "players", url: dyn("/players"), ready: "players-table" },
-  { name: "receivers", url: dyn("/receivers"), ready: "receivers-detail" },
+  { name: "receivers", url: dyn("/receivers", "&view=cards"), ready: "receivers-detail" }, // ---- II-3: the role cards
   { name: "compare", url: dyn("/compare"), ready: "compare-group" },
   { name: "about", url: dyn("/about"), ready: "record-answer" },
   { name: "leagues", url: "/leagues", ready: "username-form" },
