@@ -212,7 +212,8 @@ def test_sleeper_down_is_502_and_busy_is_503(client, monkeypatch):
     busy = SC.Sleeper(fixtures=SLEEPER_FIXTURES, bucket=SC.TokenBucket(60, capacity=0), cache_path=None)
     monkeypatch.setattr(A, "sleeper", lambda: busy)
     r = client.get(f"/api/leagues?username={USER}")
-    assert r.status_code == 503 and r.json() == {"error": "busy, try again in a minute", "detail": "busy, try again in a minute"}
+    assert r.status_code == 503 and r.json() == {"error": "busy, try again in a minute", "detail": "busy, try again in a minute",
+                                                 "code": "busy"}                     # ---- II-5: the setup errors' key
     assert r.headers["retry-after"] == "60"
 
 

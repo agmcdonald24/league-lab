@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-I
+
+- **II-5 — one setup flow; what each platform gives, said; ESPN and Yahoo researched; accounts designed.** The league
+  screen is one **Fantasy platform** choice (Sleeper / MyFantasyLeague, remembered, `?platform=`) → the username or the
+  league link → the league → the team → My Week, with "where do I find it?" and an example per platform, specific
+  errors with the fix ("That Sleeper username does not exist: “x”.", "MFL league 70587 is private or does not exist. Ask
+  the commissioner to allow API access…"; `code` / `fix` on the API's 404s), a Sleeper league by its link
+  (`/api/leagues?sleeper=`), a team picker where you have no team, and "No account needed". `platforms.capabilities()`
+  (`/api/providers`): eight features per provider, said instead of substituted — League's moves on an MFL league read
+  "Transactions: not available for MFL leagues yet." `docs/PROVIDERS.md` (the matrix; ESPN: public leagues read-only at
+  most, not built, never login cookies; Yahoo: after accounts and Yahoo's approval) and `docs/ACCOUNTS.md` (the model;
+  sign-in by an emailed link, ~$0 at beta scale).
+
 ## 2026-10-04 — Wave I-H
 
 - **PO (integration).** Five packages merged (M6, V-2, IH-1, IH-2, IH-3 below). On Andrew's word the stale banner
