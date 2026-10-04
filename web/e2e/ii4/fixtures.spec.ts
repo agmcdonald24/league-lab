@@ -101,7 +101,7 @@ test("Season: three named views, each with its counterfactual; upgrades before a
   await shot(page, "projections", info.project.name);
 });
 
-test("My Week: decisions, then What changed as decision items (status, forecast, why here, next step), then the lineup's status; three clocks", async ({ page, isMobile }, info) => {
+test("My Week: decisions, then What changed as decision items (status, forecast, why here, next step), then the lineup's status; three clocks", async ({ page }, info) => {
   await page.goto(`/?league=${SCRUBS}&team=2`);
   const box = page.getByTestId("what-changed");
   await expect(box).toBeVisible();

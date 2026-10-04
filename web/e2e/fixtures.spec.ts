@@ -141,7 +141,7 @@ test("a stranger: password → username → picker → My Week → player → Ba
   await expect(page.getByTestId("ros-yours")).toContainText("Yours: #3 Jaxon Smith-Njigba 178");
   // IA-3 (Wave I-A): sortable headers (the sorted one marked), the range, the pieces from 900 px, the expand column
   expect((await page.getByTestId("ros-table").locator("thead th").allTextContents()).map((t) => t.trim())).toEqual(
-    ["Rank▲", "Player", "Games", "Points", "Likely", "Playoffs", "Tgt", "Rec", "Rec yd", "TD", "More"],
+    ["Rank▲", "Player", "Games", "Points", "Per game", "Likely", "Playoffs", "Tgt", "Rec", "Rec yd", "TD", "More"], // II-4: per game
   );
   await expect(page.getByTestId("ros-table").locator("tbody tr")).toHaveCount(50);
   await noSidewaysScroll(page);
