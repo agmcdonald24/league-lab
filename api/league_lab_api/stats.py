@@ -152,7 +152,7 @@ CATALOGUE: list[dict] = [
        positions=("RB", "WR", "TE"), reason=ROUTES_REASON),
     _c("routes", "Routes run", "Routes", "count", "int",
        "Routes run from a licensed charting feed. None is connected (FTN and PFF sell one; see docs/DATA_INVENTORY.md).",
-       "routes run", None, GAMES_AGG, source="licensed routes feed (raw.routes_feed): not connected",
+       "routes run", None, GAMES_AGG, source="licensed routes feed (routes_feed): not connected",
        status="unavailable", positions=("RB", "WR", "TE"), per_game=True,
        reason="No licensed routes feed is connected; nflverse participation is published after the season."),
     # rushing
@@ -193,7 +193,7 @@ CATALOGUE: list[dict] = [
        "Red-zone carries + red-zone targets (a count; no combined percentage).", "red-zone carries + red-zone targets",
        None, GAMES_AGG, source=PBP, status="derived", per_game=True),
     _c("ryoe_per_attempt", "Rushing yards over expected per attempt", "RYOE/Att", "rate", "dec2",
-       "NFL Next Gen Stats' rushing yards over expected per attempt. Ingested (staging.stg_nflverse__ngs_rushing; NGS "
+       "NFL Next Gen Stats' rushing yards over expected per attempt. Ingested (stg_nflverse__ngs_rushing; NGS "
        "publishes rows only for qualifying player-weeks) but not in a mart or this table yet (planned).",
        "rushing yards over expected", "carries (NGS-qualified)", "NGS's own season aggregate", source="NFL Next Gen "
        "Stats via nflverse (staging only)", status="planned", positions=("RB",),
@@ -229,7 +229,7 @@ CATALOGUE: list[dict] = [
        "attempt-weighted mean of per-game CPOE", source=NFLV + " (nflfastR CPOE)", status="derived", positions=("QB",),
        reason="no pass attempts with a CPOE"),
     _c("time_to_throw", "Time to throw", "TTT", "rate", "dec2",
-       "NFL Next Gen Stats' average time to throw. Ingested (staging.stg_nflverse__ngs_passing; qualifying player-weeks "
+       "NFL Next Gen Stats' average time to throw. Ingested (stg_nflverse__ngs_passing; qualifying player-weeks "
        "only) but not in a mart or this table yet (planned).", None, None,
        "NGS's own season aggregate", source="NFL Next Gen Stats via nflverse (staging only)", status="planned",
        positions=("QB",), reason="Next Gen Stats are ingested but not in this table yet (planned)."),
