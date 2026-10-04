@@ -1,0 +1,528 @@
+{
+ "why": {
+  "per": "week",
+  "points": 8.12,
+  "pieces": [
+   {
+    "stat": "targets",
+    "label": "targets",
+    "value": 5.6,
+    "each": 0.0,
+    "points": 0.0,
+    "words": "5.6 targets (no points on their own)"
+   },
+   {
+    "stat": "receptions",
+    "label": "catches",
+    "value": 3.7,
+    "each": 0.5,
+    "points": 1.85,
+    "words": "3.7 catches × 0.5 = +1.9"
+   },
+   {
+    "stat": "receiving_yards",
+    "label": "receiving yards",
+    "value": 46.4,
+    "each": 0.1,
+    "points": 4.64,
+    "words": "46 receiving yards × 0.1 = +4.6"
+   },
+   {
+    "stat": "receiving_tds",
+    "label": "receiving TDs",
+    "value": 0.25,
+    "each": 6.0,
+    "points": 1.5,
+    "words": "0.25 receiving TDs × 6 = +1.5"
+   },
+   {
+    "stat": "rushing_yards",
+    "label": "rushing yards",
+    "value": 1.5,
+    "each": 0.1,
+    "points": 0.15,
+    "words": "1.5 rushing yards × 0.1 = +0.2"
+   },
+   {
+    "stat": "rushing_tds",
+    "label": "rushing TDs",
+    "value": 0.01,
+    "each": 6.0,
+    "points": 0.06,
+    "words": "0.01 rushing TDs × 6 = +0.1"
+   },
+   {
+    "stat": "fumbles_lost_total",
+    "label": "fumbles lost",
+    "value": 0.03,
+    "each": -2.0,
+    "points": -0.06,
+    "words": "0.03 fumbles lost × -2 = -0.1"
+   }
+  ],
+  "sentence": "5.6 targets → 3.7 catches → 46 yards → 0.26 TDs → 8.1 points this week",
+  "games": null,
+  "total": null
+ },
+ "market": {
+  "market_points": null,
+  "ours": 8.12,
+  "ratio": null,
+  "week": 4,
+  "words": null,
+  "why": "Sleeper's number for this week is not in yet.",
+  "far": false
+ },
+ "leans_on": {
+  "features": [
+   "snap share, last 3 games",
+   "expected points per game (what his touches are worth), season",
+   "receiving yards per game, last season"
+  ],
+  "words": "For WRs the model leans most on **snap share, last 3 games**. Next: expected points per game (what his touches are worth), season · receiving yards per game, last season.",
+  "scored_in": "League of Scrubs"
+ },
+ "gsis_id": "00-0038544",
+ "player_name": "Quentin Johnston",
+ "position": "WR",
+ "team": "LAC",
+ "header": "WR · LAC · WR2 on the depth chart · **free agent** in this league",
+ "league_id": "1389709692405551104",
+ "league_name": "League of Scrubs",
+ "season": 2026,
+ "week": 4,
+ "rostered_by_roster_id": null,
+ "is_free_agent": true,
+ "injury_status": null,
+ "locked": false,
+ "proj_points": 8.12,
+ "sections": {
+  "usage": {
+   "title": "**Usage** — his share of the team's opportunities",
+   "blocks": [
+    {
+     "kind": "metrics",
+     "metrics": [
+      {
+       "label": "Target share",
+       "value": "20.8%",
+       "delta": null,
+       "trend": null,
+       "help": null
+      },
+      {
+       "label": "First-read share",
+       "value": "23.7%",
+       "delta": null,
+       "trend": null,
+       "help": null
+      },
+      {
+       "label": "Snap share",
+       "value": "79.5%",
+       "delta": null,
+       "trend": null,
+       "help": null
+      },
+      {
+       "label": "Red-zone share",
+       "value": "0.0%",
+       "delta": null,
+       "trend": null,
+       "help": null
+      }
+     ]
+    },
+    {
+     "kind": "caption",
+     "text": "Season to date, 2 games. Trend: not enough games yet. Trends are called from a player's fourth game."
+    }
+   ]
+  },
+  "projection": {
+   "title": "**Projection** — week 4, League of Scrubs scoring",
+   "blocks": [
+    {
+     "kind": "metrics",
+     "metrics": [
+      {
+       "label": "Projected",
+       "value": "8.1",
+       "delta": null,
+       "trend": null,
+       "help": null
+      },
+      {
+       "label": "Most weeks",
+       "value": "3–12",
+       "delta": null,
+       "trend": null,
+       "help": "Half his weeks land in this range: a quarter below it, a quarter above"
+      },
+      {
+       "label": "Floor",
+       "value": "1.4",
+       "delta": null,
+       "trend": null,
+       "help": "One week in ten he scores less"
+      },
+      {
+       "label": "Ceiling",
+       "value": "17.4",
+       "delta": null,
+       "trend": null,
+       "help": "One week in ten he scores more"
+      }
+     ]
+    },
+    {
+     "kind": "markdown",
+     "text": "Stat line: 5.6 targets, 3.7 catches for 46 yds, 0.25 TD"
+    },
+    {
+     "kind": "markdown",
+     "text": "Rest of season: **102 points** over 12 games (likely 72–131), **WR38** in this league · playoffs (weeks 15–16): 17"
+    },
+    {
+     "kind": "caption",
+     "text": "Week by week (weeks 4–16, through this league's final): wk 4 8.1 · 5 9.0 · 6 8.9 · 7 bye · 8 8.4 · 9 8.8 · 10 8.4 · 11 8.3 · 12 8.3 · 13 8.3 · 14 8.4 · 15 8.4 · 16 8.4. Only week 4 has betting lines yet: the later weeks lean on his usage and the schedule."
+    },
+    {
+     "kind": "markdown",
+     "text": "Next: week 4 @ SEA — SEA ranks **#32** of 32 vs WR (1 = gives up the most)"
+    },
+    {
+     "kind": "caption",
+     "text": "Next 4: wk 4 @ SEA (#32) · wk 5 vs DEN (#28) · wk 6 @ KC (#30) · wk 7 BYE"
+    }
+   ]
+  },
+  "availability": {
+   "title": "**Availability**",
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "**Free agent** — nobody in this league has him.  \nNo injury designation.  \nBye: week 7.  \nWeek 4 kickoff Sun Oct 4, 4:25 PM ET — not locked yet."
+    }
+   ]
+  },
+  "value": {
+   "title": "**Value** — League of Scrubs scoring",
+   "blocks": [
+    {
+     "kind": "metrics",
+     "metrics": [
+      {
+       "label": "Points / game",
+       "value": "2.3",
+       "delta": null,
+       "trend": null,
+       "help": "This season, 2 games, League of Scrubs scoring"
+      },
+      {
+       "label": "Expected",
+       "value": "6.8",
+       "delta": "-4.5",
+       "trend": "down",
+       "help": "Expected points per game: what his targets and carries were worth on average (depth, field position). The arrow is points per game above or below that: above = he beat his opportunity"
+      },
+      {
+       "label": "Rank",
+       "value": "WR101",
+       "delta": null,
+       "trend": null,
+       "help": "By points per game among all players at the position"
+      },
+      {
+       "label": "Last season",
+       "value": "11.2",
+       "delta": null,
+       "trend": null,
+       "help": "Points per game in 2025, 13 games, this league's scoring; WR18"
+      }
+     ]
+    },
+    {
+     "kind": "caption",
+     "text": "Free agent: the Waiver Wire page shows what he would add to your lineup."
+    }
+   ]
+  },
+  "signals": {
+   "title": "**Signals** — has his role changed lately?",
+   "blocks": [
+    {
+     "kind": "markdown",
+     "text": "Role: **no role change detected** in his last three games: his share of the snaps, targets and carries is where it has been.  \nUpside: nothing beyond the projection above."
+    },
+    {
+     "kind": "caption",
+     "text": "A role alert needs his share of the snaps, targets or carries to jump (or fall) well past his usual swing, in every one of his last one to three games. The what-if re-runs the same projection with his last three games at the new level, in League of Scrubs scoring."
+    }
+   ]
+  }
+ },
+ "howto": "- **Usage** is the work he gets: his share of his team's targets or carries, of its plays, of the quarterback's first looks and of the red-zone chances. The arrow is the last 3 games: up means a growing role.\n- **Projection** is this week's projected points in League of Scrubs scoring. **Most weeks** is the range half his weeks land in (a quarter below, a quarter above); the **floor** and **ceiling** are a bad week and a good week: 1 week in 10 lands below the floor, 1 in 10 above the ceiling. The opponent's rank is 1 for the defense that gives up the most to his position.\n- **Rest of season** adds up his projection for every week left in this league's season, up to its final: use it for trades and waivers, where the next four weeks are not the whole story. His bye is a week with no game, not a low score. *Likely* is the range 8 seasons in 10 would land in if every week were its own roll of the dice; a role change or an injury moves the weeks together, so the real range is wider. The rank is among every player at his position in this league, rostered or not. Only this week has betting lines yet: the later weeks lean on his usage and the schedule.\n- **Availability** says whose team he is on (or that he is a free agent), his injury status, and whether his game has started.\n- **Value** compares what he scores with what his work is usually worth (above = running hot, below = due), and says where he sits in his team's best lineup this week and how much that lineup would lose without him.",
+ "ros": {
+  "points": 101.66,
+  "games": 12,
+  "p10": 72.3,
+  "p90": 131.1,
+  "pos_rank": 38,
+  "playoff_points": 16.72,
+  "from_week": 4,
+  "last_week": 16
+ },
+ "missing": [],
+ "missing_keys": [],
+ "source": "database",
+ "platform": "sleeper",
+ "news": [],
+ "matchup_evidence": {
+  "gsis_id": "00-0038544",
+  "player_name": "Quentin Johnston",
+  "position": "WR",
+  "season": 2026,
+  "week": 4,
+  "opponent": "SEA",
+  "opponent_name": "Seattle",
+  "is_home": false,
+  "history": {
+   "defense": "SEA",
+   "position": "WR",
+   "rank_most": 32,
+   "tough_rank": 1,
+   "n": 32,
+   "words": "gives up the fewest points to receivers",
+   "games": 2,
+   "through_week": 2,
+   "period": "2026, weeks 1–2",
+   "points_allowed_pg": 10.3,
+   "scoring": "League of Scrubs scoring",
+   "adjusted": false,
+   "adjusted_words": "not adjusted for the offenses it faced",
+   "adjusted_rank": {
+    "rank_most": 32,
+    "n": 32,
+    "words": "gives up the fewest",
+    "scoring": "League of Scrubs scoring"
+   }
+  },
+  "changed": {
+   "kind": "changed",
+   "depth_chart_at": "2026-09-26T06:02:26+00:00",
+   "regulars": [
+    {
+     "gsis_id": "00-0039169",
+     "name": "Devon Witherspoon",
+     "share": 1.0,
+     "coverage_snaps": 71.2,
+     "games": 2
+    },
+    {
+     "gsis_id": "00-0037137",
+     "name": "Josh Jobe",
+     "share": 1.0,
+     "coverage_snaps": 71.2,
+     "games": 2
+    },
+    {
+     "gsis_id": "00-0039795",
+     "name": "Nehemiah Pritchett",
+     "share": 0.77,
+     "coverage_snaps": 55.0,
+     "games": 2
+    }
+   ],
+   "listed": [
+    {
+     "gsis_id": "00-0039169",
+     "name": "Devon Witherspoon",
+     "slot": "LCB"
+    },
+    {
+     "gsis_id": "00-0037137",
+     "name": "Josh Jobe",
+     "slot": "RCB"
+    },
+    {
+     "gsis_id": "00-0040733",
+     "name": "Nick Emmanwori",
+     "slot": "NB"
+    }
+   ],
+   "missing": [
+    {
+     "gsis_id": "00-0039795",
+     "name": "Nehemiah Pritchett",
+     "status": null,
+     "code": null,
+     "source": null,
+     "as_of": null,
+     "note": null,
+     "reason": "depth chart",
+     "date_words": null,
+     "event": null,
+     "url": null
+    }
+   ],
+   "expected": [
+    {
+     "gsis_id": "00-0039169",
+     "name": "Devon Witherspoon",
+     "slot": "LCB",
+     "replaces": null,
+     "is_new": false,
+     "rank": 13,
+     "label": "shutdown",
+     "n_ranked": 74,
+     "rank_words": "the 13th-hardest of 74 starting corners to throw on"
+    },
+    {
+     "gsis_id": "00-0037137",
+     "name": "Josh Jobe",
+     "slot": "RCB",
+     "replaces": null,
+     "is_new": false,
+     "rank": 19,
+     "label": "shutdown",
+     "n_ranked": 74,
+     "rank_words": "the 19th-hardest of 74 starting corners to throw on"
+    },
+    {
+     "gsis_id": "00-0040733",
+     "name": "Nick Emmanwori",
+     "slot": "NB",
+     "replaces": null,
+     "is_new": true,
+     "rank": null,
+     "label": null,
+     "n_ranked": null,
+     "rank_words": "unranked (insufficient snaps)"
+    }
+   ],
+   "words": "Pritchett is no longer listed as a starter; Emmanwori is expected to start, unranked (insufficient snaps)",
+   "events": []
+  },
+  "implication": {
+   "kind": "less_representative",
+   "words": "the historical rank is less representative this week: one of its regular corners changed"
+  },
+  "forecast_treatment": {
+   "kind": "contextual",
+   "words": "contextual only; not in the forecast",
+   "detail": "The projection's opponent inputs are the points this defense has allowed to the position (the season, the last 4 games, its rank) and the betting lines; none of them says who plays corner.",
+   "features": [
+    "opp_allowed_std",
+    "opp_allowed_l4",
+    "opp_rank_std",
+    "f_opp_allowed_diff",
+    "league_allowed_avg",
+    "implied_team_total",
+    "spread_line",
+    "total_line"
+   ]
+  },
+  "matchup_uncertain": true,
+  "caveat": "one of Seattle's regular corners changed (Pritchett is no longer listed as a starter)",
+  "sentences": [
+   "Seattle gives up the fewest points to receivers (weeks 1–2, 2 games, League of Scrubs scoring, not adjusted for the offenses it faced), but with different corners: Pritchett is no longer listed as a starter; Emmanwori is expected to start, unranked (insufficient snaps).",
+   "The historical rank is less representative this week (one of its regular corners changed), so treat it cautiously: it does not settle a close call. Who plays corner is contextual only; not in the forecast."
+  ]
+ },
+ "schedule": [
+  {
+   "week": 4,
+   "opponent": "SEA",
+   "is_home": false,
+   "opp_rank": 32,
+   "proj": 8.12
+  },
+  {
+   "week": 5,
+   "opponent": "DEN",
+   "is_home": true,
+   "opp_rank": 28,
+   "proj": 8.99
+  },
+  {
+   "week": 6,
+   "opponent": "KC",
+   "is_home": false,
+   "opp_rank": 30,
+   "proj": 8.86
+  },
+  {
+   "week": 7,
+   "opponent": null,
+   "is_home": null,
+   "opp_rank": null,
+   "proj": null
+  },
+  {
+   "week": 8,
+   "opponent": "LA",
+   "is_home": false,
+   "opp_rank": 15,
+   "proj": 8.42
+  },
+  {
+   "week": 9,
+   "opponent": "HOU",
+   "is_home": true,
+   "opp_rank": 1,
+   "proj": 8.76
+  },
+  {
+   "week": 10,
+   "opponent": "BAL",
+   "is_home": false,
+   "opp_rank": 17,
+   "proj": 8.38
+  },
+  {
+   "week": 11,
+   "opponent": "NYJ",
+   "is_home": true,
+   "opp_rank": 23,
+   "proj": 8.35
+  },
+  {
+   "week": 12,
+   "opponent": "NE",
+   "is_home": true,
+   "opp_rank": 22,
+   "proj": 8.35
+  },
+  {
+   "week": 13,
+   "opponent": "TB",
+   "is_home": false,
+   "opp_rank": 24,
+   "proj": 8.35
+  },
+  {
+   "week": 14,
+   "opponent": "LV",
+   "is_home": false,
+   "opp_rank": 29,
+   "proj": 8.36
+  },
+  {
+   "week": 15,
+   "opponent": "SF",
+   "is_home": true,
+   "opp_rank": 26,
+   "proj": 8.36
+  },
+  {
+   "week": 16,
+   "opponent": "MIA",
+   "is_home": false,
+   "opp_rank": 27,
+   "proj": 8.36
+  }
+ ],
+ "games_played": 2,
+ "viewer_roster_id": 2
+}

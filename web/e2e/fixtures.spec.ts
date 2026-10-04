@@ -180,6 +180,7 @@ test("a house league through the picker: opponent, a card's name, all five secti
   const name = page.getByTestId("decision-card").first().locator("a").first();
   const who = (await name.textContent())!.trim();
   await tap(page, name, isMobile);
+  await tap(page, page.getByTestId("pane-full"), isMobile); // II-2: a name opens the drawer; its Full player page is the page
   await expect(page.getByTestId("player-name")).toHaveText(who);
   for (const s of ["projection", "value", "availability", "usage", "signals"]) await expect(page.getByTestId(`section-${s}`)).toBeVisible();
   await expect(page.getByTestId("missing")).toHaveCount(0);
@@ -319,6 +320,7 @@ test("Trends: the answer first (below / above expectation), the gap bars, filter
   const name = rows.filter({ hasText: "Emanuel Wilson" }).locator("a").first();
   const who = (await name.textContent())!.trim();
   await tap(page, name, isMobile);
+  await tap(page, page.getByTestId("pane-full"), isMobile); // II-2: a name opens the drawer; its Full player page is the page
   await expect(page.getByTestId("player-name")).toHaveText(who);
   await expect(page.getByTestId("player-header")).toBeVisible();
   const log = page.getByTestId("game-log");

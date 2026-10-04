@@ -6,10 +6,10 @@
 // is offered, never a dead button.
 import type { Attachment } from "svelte/attachments";
 import { withContext, type LinkContext } from "./md";
-import { navigate, route, setParams } from "./router.svelte";
+import { route } from "./router.svelte";
+import { closePlayer, drawer, openFullPage as drawerFullPage, openPlayer, playerLink } from "./player-drawer.svelte"; // ---- II-2
 
 export type PaneFrom = "lineup" | "waiver" | "trade" | "search" | "list";
-const FROM: PaneFrom[] = ["lineup", "waiver", "trade", "search", "list"];
 
 export interface PaneContext {
   name?: string | null; // his name while his card loads
@@ -37,54 +37,36 @@ export interface PaneAction {
   href: string;
 }
 
-// the context of the pane on screen, keyed by gsis + from (a Forward / a swap back finds it again)
-const memo = $state<{ key: string; context: PaneContext }>({ key: "", context: {} });
-
+// ---- II-2 (Wave I-I): the pane is the player drawer now — its state, open / close, focus, cache and the link hook are
+// lib/player-drawer.svelte.ts; these names stay for the screens and components that call them.
 /** The pane on screen: from the URL. */
 export const pane = {
   get gsis(): string | null {
-    return route.current.name === "player" ? null : route.current.params.get("pane");
+    return drawer.key;
   },
   get from(): PaneFrom {
-    const f = route.current.params.get("from") as PaneFrom | null;
-    return f && FROM.includes(f) ? f : "list";
+    return drawer.from;
   },
   get context(): PaneContext {
-    return memo.key === `${this.gsis}|${this.from}` ? memo.context : {};
+    return drawer.context;
   },
 };
 
-/** Open the pane on player `gsis`. A pane already open is swapped in place (no extra Back step); the first one is a
- *  new history entry on the same screen (Back closes it; the screen does not scroll). */
+/** Open the pane on player `gsis` (the drawer: `openPlayer`). */
 export function openPane(gsis: string, opts: PaneOptions = {}): void {
-  if (!gsis) return;
-  const from = opts.from ?? "list";
-  memo.key = `${gsis}|${from}`;
-  memo.context = opts.context ?? {};
-  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a scratch copy of the query string
-  const qs = new URLSearchParams(location.search);
-  if (qs.get("pane")) {
-    setParams({ pane: gsis, from });
-    return;
-  }
-  qs.set("pane", gsis);
-  qs.set("from", from);
-  navigate(`${location.pathname}?${qs.toString()}`, { keepScroll: true, state: { pane: true } });
+  openPlayer(gsis, opts);
 }
 
-/** Close the pane: Back when the pane added the history entry, else drop it from the URL in place. */
+/** Close the pane (the drawer: `closePlayer`). */
 export function closePane(): void {
-  if (!route.current.params.get("pane")) return;
-  if (history.state?.pane === true) history.back();
-  else setParams({ pane: null, from: null });
+  closePlayer();
 }
 
 /** "Full page": the player's own page in place of the pane's entry, so Back lands on the screen without the pane. */
 export function openFullPage(gsis: string, ctx: LinkContext): void {
-  const href = withContext(`/player/${gsis}`, ctx);
-  if (history.state?.pane === true) navigate(href, { replace: true, top: true, state: { pane: false } });
-  else navigate(href);
+  drawerFullPage(gsis, ctx);
 }
+// ---- end II-2
 
 /** The actions for where the pane was opened from (always followed by "Full page" in the pane). Missing context →
  *  no action. */
@@ -127,18 +109,9 @@ function tradeHref(c: PaneContext): string {
 }
 
 /** For a name that is a link (`<a href="/player/<gsis>…">`): a plain tap opens the pane instead; Cmd / Ctrl /
- *  middle click still opens the full page. No gsis → nothing changes. */
+ *  middle click still opens the full page. No gsis → nothing changes. (II-2: the drawer's `playerLink`.) */
 export function paneLink(gsis: string | null | undefined, opts: PaneOptions = {}): Attachment<HTMLElement> {
-  return (el) => {
-    if (!gsis) return;
-    const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault(); // the app's link handler (router.interceptLinks) then leaves it alone
-      openPane(gsis, opts);
-    };
-    el.addEventListener("click", onClick);
-    return () => el.removeEventListener("click", onClick);
-  };
+  return playerLink(gsis, opts);
 }
 
 // ---- My Week's lineup rows: who to compare him with

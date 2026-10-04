@@ -241,6 +241,7 @@
                   <PlayerRow
                     player={{ ...u.add, player_name: u.add.player_name ?? "" }}
                     href={u.add.gsis_id ? withContext(`/player/${u.add.gsis_id}`, ctx) : null}
+                    pane={{ from: "waiver", context: { add: u.add.sleeper_id, name: u.add.player_name } }} /* II-2: the drawer, with Evaluate add / drop */
                     context={u.change_text ? `${u.change_text} since week ${u.since_week}` : null}
                     value={f1(u.scenario_value)}
                     valueLabel="If it holds"
@@ -289,6 +290,7 @@
                       <PlayerRow
                         player={{ ...f, player_name: f.player_name ?? "" }}
                         href={f.gsis_id ? withContext(`/player/${f.gsis_id}`, ctx) : null}
+                        pane={{ from: "waiver", context: { add: f.sleeper_id, name: f.player_name } }} /* II-2: the drawer, with Evaluate add / drop */
                         rank={i + 1}
                         context={faContext(f)}
                         value={f1(f.projection)}
@@ -318,6 +320,7 @@
                     .filter(Boolean)
                     .join(" ")}
                   href={fa.gsis_id ? withContext(`/player/${fa.gsis_id}`, ctx) : null}
+                  pane={{ from: "waiver", context: { add: fa.sleeper_id, name: fa.player_name } }} /* II-2: the drawer, with Evaluate add / drop */
                   testid="fa-detail"
                 >
                   {#snippet extra()}

@@ -116,7 +116,7 @@ test("the drawer is focused on the decision: role words, the ledger and the sche
   // the role line says which comparison is valid (2 games: not enough to say) — never "no role change detected"
   await expect(pane.getByTestId("pane-section-signals")).toContainText("not enough games to say");
   await expect(pane.getByTestId("pane-section-signals")).not.toContainText("no role change detected");
-  for (const id of ["pane-more", "pane-schedule", "pane-gamelog"]) await expect(pane.getByTestId(id)).not.toHaveAttribute("open", /.*/);
+  for (const id of ["pane-more", "pane-schedule"]) await expect(pane.getByTestId(id)).not.toHaveAttribute("open", /.*/); // II-2: the game log is a section of its own
   await tap(page, pane.getByTestId("pane-more").locator("summary"), isMobile);
   await expect(pane.getByTestId("pane-more-body")).toContainText("Week by week");
   await tap(page, pane.getByTestId("pane-schedule").locator("summary"), isMobile);

@@ -30,6 +30,12 @@
   } as const;
   type LazyName = keyof typeof LAZY;
   const isLazy = (n: string): n is LazyName => n in LAZY;
+  // ---- II-2 (Wave I-I): one promise per screen — a new import() promise on every route change (the drawer's
+  // `?pane=`, a filter) re-mounted the screen and lost its state (a "Show all", the pick, the focused name)
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- a plain cache, never observed
+  const lazyLoaded = new Map<LazyName, ReturnType<(typeof LAZY)[LazyName]>>();
+  const lazy = (n: LazyName) => lazyLoaded.get(n) ?? lazyLoaded.set(n, LAZY[n]()).get(n)!;
+  // ---- end II-2
 
   let phase = $state<"loading" | "login" | "ready" | "error">("loading");
   let house = $state<League[]>([]);
@@ -172,7 +178,7 @@
       {:else if r.name === "ros"}
         <RosPage {options} {league} {team} onauth={needLogin} />
       {:else if isLazy(r.name)}
-        {#await LAZY[r.name]()}
+        {#await lazy(r.name)}<!-- II-2: one promise per screen -->
           <div class="space-y-3" aria-label="Loading" data-testid="loading"><div class="ll-skel h-8 w-1/2"></div><div class="ll-skel h-40"></div></div>
         {:then m}
           <m.default {options} {league} {team} onauth={needLogin} />
