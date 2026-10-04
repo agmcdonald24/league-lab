@@ -986,11 +986,12 @@ the open FLEX"); no one: "no legal move: RB goes empty". `cost` = the lineup tot
 
 The cards (`cards.alternative`), the player card's "without him the lineup loses x" and My Week's lineup margins read
 it. **A lock since the solve** (a game kicked off after the nightly solved the lineup: `locked_now` and not
-`is_locked`) makes the stored margin wrong — it assumed a now-locked player could move or come in; the card's number
-is then the chain's (`cards.chain_cost`), so the number and its words are one answer. Without a lock since the solve
-the stored margin stands (to the cent). On the clone at Sunday 15:45 ET (1 PM games locked): Omarion Hampton's margin
-2.08 → 11.28 ("no eligible reserve: the slot would be empty": every bench RB and WR is locked); before the kickoffs
-nothing moves.
+`is_locked`) makes the stored margin wrong — it assumed a now-locked player could move or come in; the cards' and the
+player card's number is then the chain's (`cards.chain_cost`), so the number and its words are one answer. My Week's
+lineup table keeps the build's margin (the mart's and the console's number, pinned by the parity suites) and says the
+re-solve beside it: `margin_now` and "no eligible reserve now (games kicked off since the build): sitting him costs
+11.28" (Omarion Hampton on the clone at Sunday 15:45 ET, build margin 2.08). Without a lock since the solve the stored
+margin stands (to the cent); before the kickoffs nothing moves.
 
 ### One frame, one story (II-0; `trades.week_story`)
 

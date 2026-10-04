@@ -123,7 +123,7 @@ def test_lineup_margins_and_the_card_say_the_same_number(client):
         text = c.text
         m = re.search(r"without him the lineup loses \*\*(\d+\.\d\d)\*\*", text)
         assert m, f"no lineup sentence for {x['gsis_id']}"
-        assert float(m.group(1)) == pytest.approx(x["margin"], abs=0.006)
+        assert float(m.group(1)) == pytest.approx(x.get("margin_now", x["margin"]), abs=0.006)   # the re-solve after a lock
         if x.get("margin_chain"):                                  # a cascade: the card says the same moves
             plain = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", c.json().get("lineup_line") or text)
             assert x["margin_chain"] in plain or x["margin_chain"] in re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)

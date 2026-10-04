@@ -695,10 +695,15 @@ def margin_comparator(r: pd.Series, rows: pd.DataFrame) -> dict:
     # ---- II-0: a lock since the solve (a game kicked off) moves the margin to the re-solve's (the chain's), so the
     # number and its words are one answer; the full name on a surname collision; a cascade says who slides where
     mover, ch = a.get("mover"), a.get("chain")
-    fix = ({"margin": cards.chain_cost(r, a, rows)} if ch is not None and _num(r.get("margin")) is not None
-           and abs(cards.chain_cost(r, a, rows) - float(r["margin"])) > 0.005 else {})
+    # the table's margin stays the build's (the mart's, the console's); a lock since the build that changes what sitting
+    # him costs is said beside it: `margin_now` and the words
+    now = cards.chain_cost(r, a, rows) if ch is not None and _num(r.get("margin")) is not None else None
+    fix = ({"margin_now": now} if now is not None and abs(now - float(r["margin"])) > 0.005 else {})
     if alt is None:
-        return {"margin_vs": None, "margin_words": "no eligible reserve: the slot would be empty", **fix}
+        words = "no eligible reserve: the slot would be empty"
+        if fix:
+            words = f"no eligible reserve now (games kicked off since the build): sitting him costs {now:.2f}"
+        return {"margin_vs": None, "margin_words": words, **fix}
     nm = cards.display_name(_str(alt.get("player_name")) or "", rows["player_name"], alt.get("position"))
     if mover is not None and ch is not None:
         mv = cards.display_name(_str(mover.get("player_name")) or "", rows["player_name"], mover.get("position"))
