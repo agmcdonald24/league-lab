@@ -103,6 +103,7 @@ def _fixture_scores() -> dict[int, dict[str, float]]:
 def dad(client, monkeypatch):
     """/api/record for dad's league with its record rows built in memory from the fixtures (nothing written)."""
     from league_lab import lineup as LU
+
     from league_lab_api import ondemand
 
     rows, plan = LU.mfl_record_rows(ondemand.query, DAD, datetime(2026, 10, 4, 16, 0, tzinfo=UTC))
