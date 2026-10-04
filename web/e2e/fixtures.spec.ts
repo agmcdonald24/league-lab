@@ -323,7 +323,7 @@ test("Trends: the answer first (below / above expectation), the gap bars, filter
   await expect(page.getByTestId("player-header")).toBeVisible();
   const log = page.getByTestId("game-log");
   await expect(log.getByTestId("legend")).toContainText("Expected points");
-  await expect(log.getByTestId("game-log-answer")).toContainText("points a game");
+  await expect(log.getByTestId("game-log-answer")).toContainText("points per game");
   await expect(log.locator("svg circle").first()).toBeVisible();
   await tap(page, log.getByTestId("game-log-season-2025"), isMobile); // last season: more weeks
   await expect.poll(() => log.locator("svg circle").count()).toBeGreaterThan(3);
@@ -352,7 +352,7 @@ test("Matchups: your starters' best and toughest, the heatmap with your cells ri
 
 test("Players: the points leader, search, position, sort, whose — and no sideways table on a phone", async ({ page, isMobile }) => {
   await page.goto(dyn("/players"));
-  await expect(page.getByTestId("players-answer")).toContainText("Most points: Josh Allen, 99.3 (49.6 a game) in Forever Unclean Dynasty scoring · 428 players.");
+  await expect(page.getByTestId("players-answer")).toContainText("Most points: Josh Allen, 99.3 (49.6 per game) in Forever Unclean Dynasty scoring · 428 players.");
   const table = page.getByTestId("players-table");
   await expect(table.getByTestId("players-table-row")).toHaveCount(50);
   const visibleHeads = await table.locator("thead th:visible").count();

@@ -1,9 +1,9 @@
-// The research screens' words and small sums (Wave G, G3). Words follow docs/WORDS.md: "expected points a game: what
+// The research screens' words and small sums (Wave G, G3). Words follow docs/WORDS.md: "expected points per game: what
 // his targets and carries are usually worth"; below expectation = due to pick up, above = due to cool off (IA-1: Andrew's
 // "below / above expectation" in place of "due / running hot").
 import { fmt } from "./theme";
 
-export const NEAR = 0.5; // points a game: closer than this to his work is "about what his work is worth"
+export const NEAR = 0.5; // points per game: closer than this to his work is "about what his work is worth"
 
 export function gapWords(gap: number | null | undefined): string {
   if (gap === null || gap === undefined) return "no expected points yet";
@@ -13,10 +13,10 @@ export function gapWords(gap: number | null | undefined): string {
   return "about what his work is worth";
 }
 
-/** "14.9 a game on work worth 25.3" */
+/** "14.9 per game on work worth 25.3" */
 export function workLine(ppg: number | null, xppg: number | null): string {
   if (ppg === null) return "no games yet";
-  return xppg === null ? `${fmt.pts(ppg)} a game` : `${fmt.pts(ppg)} a game on work worth ${fmt.pts(xppg)}`;
+  return xppg === null ? `${fmt.pts(ppg)} per game` : `${fmt.pts(ppg)} per game on work worth ${fmt.pts(xppg)}`;
 }
 
 /** Who owns him, from the viewer's side: "yours" / the team / "free agent". */
@@ -50,7 +50,7 @@ const WORK_WORDS: Record<string, string> = { QB: "the throws and runs", RB: "the
 /** "getting the targets of a 15.3-point player, scoring 3.6" (the API's `why` without its reason; for rows saved before it) */
 export function expectLine(p: { position?: string | null; ppg: number | null; xppg: number | null }): string {
   if (p.ppg === null || p.ppg === undefined) return "no games yet";
-  if (p.xppg === null || p.xppg === undefined) return `scoring ${fmt.pts(p.ppg)} a game`;
+  if (p.xppg === null || p.xppg === undefined) return `scoring ${fmt.pts(p.ppg)} per game`;
   const x = p.xppg.toFixed(1);
   const an = /^(8|11\.|18\.)/.test(x) ? "an" : "a";
   return `getting ${WORK_WORDS[p.position ?? ""] ?? "the work"} of ${an} ${x}-point player, scoring ${p.ppg.toFixed(1)}`;

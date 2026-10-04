@@ -94,7 +94,7 @@ def kicker_projection_section(league_id: str, roster_id: int | None) -> None:
         "so a 50-yard kicker is worth more here where 50+ pays 5. The same number values him in your lineup and on the waiver list.",
         "**Likely range**: eight weeks in ten land inside it. Kicking is noisy: a projection of 8 often ends at 3 or 14.",
         "Is it better than just using points per game? Tested on each of the 2021–2025 seasons with only earlier seasons to learn "
-        "from, it put kickers in a better order than their points per game so far in all five, and missed by 3.7 points a week "
+        "from, it put kickers in a better order than their points per game so far in all five, and missed by 3.7 points per week "
         "on average against 4.1. The edge is real but small: kickers are close to each other, so do not chase half a point.",
         title="How to read this",
     )
@@ -125,9 +125,9 @@ howto(
     "slot empty (a bye it did not cover) would look worse for a reason that is not the kicker.",
     "**vs week avg** is a team's kicker minus the average started kicker that week: above zero, its kicker choices beat the "
     "league. Why it matters: it takes out the weeks when every kicker scored a lot or a little. "
-    + (f"Example: {ex_top['team_name']}, {float(ex_top['avg_points_vs_week_avg']):+.1f} a week: over a 17-week season that is "
+    + (f"Example: {ex_top['team_name']}, {float(ex_top['avg_points_vs_week_avg']):+.1f} per week: over a 17-week season that is "
        f"{17 * float(ex_top['avg_points_vs_week_avg']):+.0f} points from the kicker slot alone. " if ex_top is not None else "")
-    + "Kickers sit close together, so ±1 a week is already a good or bad kicker.",
+    + "Kickers sit close together, so ±1 per week is already a good or bad kicker.",
     "**Kickers used**, **Changes** and **Acquired** show how much swapping it took. Why it matters: streaming costs waiver "
     "moves; if it does not beat the average, keep one kicker. "
     + (f"Example: {ex_used.iloc[0]['team_name']} started {int(ex_used.iloc[0]['distinct_kickers_started'])} different kickers "
@@ -169,7 +169,7 @@ howto(
     "**Use it to see whether a kicker is steady or lucky.** Each line is the kicker a team started that week and what he scored.",
     "Why it matters: kicking is noisy, so one big week says little; a kicker who stays above the league's average started "
     "kicker week after week is the one worth keeping. "
-    + (f"This season the average started kicker scored {wk_avg:.1f} a week. " if wk_avg is not None else ""),
+    + (f"This season the average started kicker scored {wk_avg:.1f} per week. " if wk_avg is not None else ""),
     ("Example: the best single week so far was "
      f"{wk_best['kicker_name']} for {wk_best['team_name']}, {float(wk_best['points']):.1f} points in week {int(wk_best['week'])}. "
      if wk_best is not None else "")
@@ -181,7 +181,7 @@ sub = weekly[weekly["team_name"].isin(pick)]
 if not sub.empty:
     st.plotly_chart(line_chart(sub, "week", "points", "team_name", "Started kicker points by week", "points", y_format=".1f", colors=color_map(teams)), width="stretch")
     st.caption("A good line stays high and flat: above the average started kicker"
-               + (f" (about {wk_avg:.0f} points a week)" if wk_avg is not None else "")
+               + (f" (about {wk_avg:.0f} points per week)" if wk_avg is not None else "")
                + " most weeks. Spikes and drops are normal for kickers; a line that sits low for three or four weeks is the one to stream away.")
 with st.expander("Every started kicker, week by week"):
     show(weekly, [c for c in weekly.columns if c != "gsis_id"], height=420, phone_cols=["week", "team_name", "kicker_name", "points", "week_rank"])

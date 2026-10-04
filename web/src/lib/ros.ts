@@ -126,7 +126,7 @@ export function byeWords(weeks: number[] | undefined): string {
 export const RANKINGS_HOWTO =
   "**How to read the rankings.** We project each player from his work, not his name: his targets, carries and " +
   "passes, his role, how fast his offense plays and the defenses left on his schedule. A star whose targets are " +
-  "down reads lower than his name; a quarterback who starts and throws 35 times a game counts like any starter " +
+  "down reads lower than his name; a quarterback who starts and throws 35 times per game counts like any starter " +
   "while he starts. In a superflex league, or one that pays 6 points for a passing touchdown, quarterbacks lead " +
   "the list by design, and among them volume beats reputation. Sleeper's own number is there to compare: where " +
   "ours is far from it, open his card and read why before you trade on it.";

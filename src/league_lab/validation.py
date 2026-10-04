@@ -341,8 +341,8 @@ def summary(rw: pd.DataFrame, calls: pd.DataFrame) -> dict:
         per = tot["edge"] / tot["roster_weeks"]
         sentences["edge"] = (f"{ww.capitalize()}: had every team started our lineup, the league would have scored "
                              f"{abs(tot['edge']):.1f} points {'more' if tot['edge'] >= 0 else 'fewer'} than it did "
-                             f"({_signed(per)} a team a week). The best lineups in hindsight beat the ones started by "
-                             f"{tot['regret']:.1f} points ({tot['regret'] / tot['roster_weeks']:.1f} a team a week).")
+                             f"({_signed(per)} per team per week). The best lineups in hindsight beat the ones started by "
+                             f"{tot['regret']:.1f} points ({tot['regret'] / tot['roster_weeks']:.1f} per team per week).")
     cf = cal["coin_flips"]
     if cf["n"]:
         sentences["calls"] = (f"The coin flips landed {_pct(cf['won'] / cf['n'])}% for the side we leaned "

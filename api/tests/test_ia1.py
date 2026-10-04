@@ -171,7 +171,7 @@ def test_api_trends_rows_carry_the_work(client, sql):
             assert k in p
         if p["ppg"] is not None and p["xppg"] is not None:
             assert p["why"].startswith("Getting ")
-    # one row checked by hand against fct_player_game: targets a game over the season
+    # one row checked by hand against fct_player_game: targets per game over the season
     p = next(p for p in rows if p["position"] == "WR" and p["targets_pg"] is not None)
     want = sql("""select avg(targets) as t from analytics.fct_player_game
                   where gsis_id = %s and season = %s and season_type = 'REG' and played""", (p["gsis_id"], d["season"]))[0]["t"]

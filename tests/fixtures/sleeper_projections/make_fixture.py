@@ -25,7 +25,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 
-# Sleeper's default (standard) weights, keyed by Sleeper's own stat keys; half PPR adds 0.5 a catch, PPR 1
+# Sleeper's default (standard) weights, keyed by Sleeper's own stat keys; half PPR adds 0.5 per catch, PPR 1
 SLEEPER_DEFAULT = {"pass_yd": 0.04, "pass_td": 4, "pass_int": -1, "pass_2pt": 2, "rush_yd": 0.1, "rush_td": 6,
                    "rush_2pt": 2, "rec_yd": 0.1, "rec_td": 6, "rec_2pt": 2, "fum_lost": -2,
                    "fgm_0_19": 3, "fgm_20_29": 3, "fgm_30_39": 3, "fgm_40_49": 4, "fgm_50p": 5, "fgmiss": -1,

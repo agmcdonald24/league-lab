@@ -497,12 +497,12 @@ export interface TrendRow extends PlayerHead, Owned {
   points_l3: number | null;
   points_change: number | null;
   games_with_expected: number | null;
-  ppg: number | null; // points a game, this league's scoring
-  xppg: number | null; // expected points a game (what his work is usually worth)
+  ppg: number | null; // points per game, this league's scoring
+  xppg: number | null; // expected points per game (what his work is usually worth)
   gap: number | null; // ppg − xppg
   direction: "over" | "under" | "even";
   role_alert: RoleAlert | null;
-  // ---- IA-1: the work a game (last 3 games and the season), snaps over the last 3, the reason in a sentence
+  // ---- IA-1: the work per game (last 3 games and the season), snaps over the last 3, the reason in a sentence
   targets_pg_l3?: number | null;
   targets_pg?: number | null;
   carries_pg_l3?: number | null;
@@ -1270,7 +1270,7 @@ export interface Why {
   per: "game" | "week";
   points: number;
   pieces: WhyPiece[];
-  sentence: string; // "8.9 targets → 5.5 catches → 96 yards → 0.48 TDs → 15.4 points a game × 12 games = 185"
+  sentence: string; // "8.9 targets → 5.5 catches → 96 yards → 0.48 TDs → 15.4 points per game × 12 games = 185"
   games: number | null;
   total: number | null;
 }

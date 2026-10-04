@@ -333,9 +333,9 @@
                     <RangeBar value={fa!.projection} p10={fa!.p10} p25={fa!.p25} p75={fa!.p75} p90={fa!.p90} max={scale} />
                     <div class="mt-3 grid grid-cols-3 gap-2">
                       <StatTile label="Rest of season" value={fmt.whole(fa!.ros_points)} caption={fa!.ros_rank_pos ? `${fa!.position}${fa!.ros_rank_pos} in this league` : null} size="sm" />
-                      <StatTile label="Points a game" value={f1(fa!.ppg_std)} caption={fa!.games_played != null ? `${fa!.games_played} games` : null} size="sm" />
+                      <StatTile label="Points per game" value={f1(fa!.ppg_std)} caption={fa!.games_played != null ? `${fa!.games_played} games` : null} size="sm" />
                       <StatTile
-                        label="Expected a game"
+                        label="Expected per game"
                         value={f1(fa!.expected_per_game)}
                         caption={fa!.diff_per_game != null ? `${s1(fa!.diff_per_game)} scored vs his work` : "what his work is worth"}
                         size="sm"

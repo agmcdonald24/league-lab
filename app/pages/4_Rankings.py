@@ -552,7 +552,7 @@ if model == "v2":
             "target or top ball carrier is out. A backup quarterback who starts is no longer projected from his few "
             "garbage-time snaps, and a backup who is not starting is no longer projected as if he might. Graded the same "
             "way on 2021 to 2025, the quarterback order score went up by 0.045 in every one of the five seasons and the "
-            "average miss fell by about half a point a game; for running backs, receivers and tight ends the top-teammate-out "
+            "average miss fell by about half a point per game; for running backs, receivers and tight ends the top-teammate-out "
             "inputs add about 0.005 to the order score, in every season tested. We also tried the kickoff time and rest days, "
             "the weather, how fast and how often a team throws, injuries on the offensive line and a player's own injury "
             "history: none made the projections better on seasons they had not seen (Vegas lines already price most of it), "
@@ -603,7 +603,7 @@ if model == "v2":
                         st.markdown(
                             f"For {pos}s the model leans most on **{names[0]}**."
                             + (" Next: " + " · ".join(f"*{n}*" for n in names[1:3]) + "." if len(names) > 1 else "")
-                            + f" It misses a {pos} by {base:.1f} points a game on average; scrambling the top input adds "
+                            + f" It misses a {pos} by {base:.1f} points per game on average; scrambling the top input adds "
                             f"{float(t['importance'].iloc[0]):.2f} to that."
                         )
                         # a list, not a grid: it wraps at phone width and the number stays on screen

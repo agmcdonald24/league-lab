@@ -2,7 +2,7 @@
   // Research · Receivers (Wave G): the role behind a receiver's points. The answer first (the biggest share of his
   // team's targets, the biggest riser over his last 3 games), then the list (target share as the headline number) and
   // the picked receiver's role as bars against the yardstick (what the season's top 12 at his position average):
-  // target share, targets a game, air-yard share, how far downfield, first-read share, snaps; then the share over his
+  // target share, targets per game, air-yard share, how far downfield, first-read share, snaps; then the share over his
   // last 3 and 5 games vs the season. GET /api/receivers (mart_player_season + mart_player_recent_form).
   import { researchPaths, type ReceiverRow, type Receivers } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
@@ -53,9 +53,9 @@
   // the role bars: label, the row's key, the bar's top, how to show it
   const METRICS: { key: keyof ReceiverRow; label: string; max: number; show: (v: number | null) => string }[] = [
     { key: "target_share", label: "Share of his team's targets", max: 0.4, show: (v) => fmt.pct(v) },
-    { key: "targets_per_game", label: "Targets a game", max: 12, show: (v) => fmt.pts(v) },
+    { key: "targets_per_game", label: "Targets per game", max: 12, show: (v) => fmt.pts(v) },
     { key: "air_yards_share", label: "Share of his team's air yards", max: 0.55, show: (v) => fmt.pct(v) },
-    { key: "adot", label: "How far downfield (yards a target)", max: 20, show: (v) => fmt.pts(v) },
+    { key: "adot", label: "How far downfield (yards per target)", max: 20, show: (v) => fmt.pts(v) },
     { key: "first_read_target_share", label: "First-read share (the quarterback's first look)", max: 0.45, show: (v) => fmt.pct(v) },
     { key: "route_participation", label: "On the field for pass plays", max: 1, show: (v) => fmt.pct(v) },
     { key: "avg_offense_snap_pct", label: "Snaps", max: 1, show: (v) => fmt.pct(v) },
@@ -124,7 +124,7 @@
                 <PlayerRow
                   player={p}
                   href={withContext(`/player/${p.gsis_id}`, ctx)}
-                  context={`${fmt.pts(p.targets_per_game)} targets a game · ${ownerWord(p, team)}`}
+                  context={`${fmt.pts(p.targets_per_game)} targets per game · ${ownerWord(p, team)}`}
                   value={fmt.pct(p.target_share)}
                   valueLabel={p.target_share_l3 !== null ? `last 3: ${fmt.pct(p.target_share_l3)}` : undefined}
                   yours={team !== null && p.rostered_by_roster_id === team}
@@ -147,7 +147,7 @@
               player={picked}
               number={fmt.pct(picked.target_share)}
               numberLabel="Share of team passes"
-              line={`${fmt.pts(picked.targets_per_game)} targets a game · ${fmt.pts(picked.ppg)} points a game in ${leagueName} scoring · ${picked.games_played} games`}
+              line={`${fmt.pts(picked.targets_per_game)} targets per game · ${fmt.pts(picked.ppg)} points per game in ${leagueName} scoring · ${picked.games_played} games`}
               context={ownerWord(picked, team)}
               href={withContext(`/player/${picked.gsis_id}`, ctx)}
             />
@@ -166,7 +166,7 @@
                 {/each}
               </div>
               <p class="mt-3 flex items-center gap-1.5 text-xs text-ink-3">
-                <span class="inline-block h-3 w-0.5 rounded bg-ink"></span> the top-12 {position}s' average (the 12 with the most points a game)
+                <span class="inline-block h-3 w-0.5 rounded bg-ink"></span> the top-12 {position}s' average (the 12 with the most points per game)
               </p>
             </Card>
             <Card title="His share of the targets, lately" testid="form-bars">

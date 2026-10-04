@@ -729,7 +729,7 @@ CAP_QUANTILE = 0.90       # a moved input stops at the position's 90th percentil
 # the alert" line). Neither beat the projection more often than not (45.6% / 47.4% nearer at one / two games held;
 # the mean miss moved by under 0.04 points), so SCENARIO_SHIP is False: the pages show the larger role as a "what if"
 # with its hit rate, never a probability. (On average those players did outscore the projection by about the
-# scenario's gap: +1.1 vs +1.0 points a game at one game held — the gap is the right size on average, but single
+# scenario's gap: +1.1 vs +1.0 points per game at one game held — the gap is the right size on average, but single
 # outcomes are too noisy for the scenario to be the nearer number; docs/METRICS.md § Scenario upside.)
 HOLD_RATE: dict[int, float] = {1: 0.695, 2: 0.764, 3: 0.814}
 BACKTEST: dict[int, tuple[int, float, float, float, float, float]] = {

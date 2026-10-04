@@ -1,7 +1,7 @@
 <script lang="ts">
   // Research · Players (Wave G): every skill player's season as one sortable list with headshots. The answer first
   // (the points leader at the filter), then search, position, NFL team and whose players, then the table: a phone
-  // keeps Player · Points a game · Points; from 640 px the usage columns join. GET /api/players (mart_player_season +
+  // keeps Player · Points per game · Points; from 640 px the usage columns join. GET /api/players (mart_player_season +
   // points in this league's scoring), loaded once per league; the filters and the sort run on the phone (instant).
   import { researchPaths, type Players, type SeasonRow } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
@@ -94,7 +94,7 @@
     {#snippet answer()}
       {#if leader}
         <span data-testid="players-answer"
-          ><strong>Most points: {leader.player_name}, {fmt.pts(leader.points)}</strong> ({fmt.pts(leader.points_per_game)} a game) in {leagueName} scoring · {filtered.length}
+          ><strong>Most points: {leader.player_name}, {fmt.pts(leader.points)}</strong> ({fmt.pts(leader.points_per_game)} per game) in {leagueName} scoring · {filtered.length}
           player{filtered.length === 1 ? "" : "s"}.</span
         >
       {:else if r.data}

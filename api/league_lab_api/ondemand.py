@@ -406,7 +406,7 @@ def _od_lines(df: pd.DataFrame) -> dict[str, dict]:
 
 def ros_rows(league_id: str, league: dict | None, df: pd.DataFrame, players: list[dict], *, house: bool) -> list[dict]:
     """Each row + headshot_url, bye_weeks, games-left words, ``per_game`` (the table's columns for his position),
-    ``why`` (the pieces of his points a game, then x games = the total) and ``market_points`` (this week's)."""
+    ``why`` (the pieces of his points per game, then x games = the total) and ``market_points`` (this week's)."""
     if not players:
         return players
     season, scoring = _scoring_of(league_id, league, house)

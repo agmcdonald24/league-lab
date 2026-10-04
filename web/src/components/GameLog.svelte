@@ -49,7 +49,7 @@
     <p class="text-sm text-ink-3" data-testid="game-log-empty">No games played in {shown} yet.</p>
   {:else}
     <p class="mb-3 text-base leading-snug" data-testid="game-log-answer">
-      <strong>{ppg?.toFixed(1)} points a game</strong> over {points.length} game{points.length === 1 ? "" : "s"}{#if xppg !== null}
+      <strong>{ppg?.toFixed(1)} points per game</strong> over {points.length} game{points.length === 1 ? "" : "s"}{#if xppg !== null}
         &nbsp;on work worth <strong>{xppg.toFixed(1)}</strong>
         <!-- ---- IF-4 (the decision-quality review: '"Expect him to pick up" follows below-expected historical scoring'): the
              observed gap and its uncertainty, no promise of regression -->

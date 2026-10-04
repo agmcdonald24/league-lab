@@ -251,7 +251,7 @@
                     <PlayerRow
                       player={{ ...r.player, player_name: r.player.player_name ?? "" }}
                       href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
-                      context={`${r.team_name ?? "another team"} · ${s1(r.diff_per_game)} a game vs his work · you gain ${s1(r.gain_week)} this week`}
+                      context={`${r.team_name ?? "another team"} · ${s1(r.diff_per_game)} per game vs his work · you gain ${s1(r.gain_week)} this week`}
                       value={s1(r.fit_horizon)}
                       valueLabel="Fit"
                       testid="buy-best"
@@ -270,7 +270,7 @@
                     <PlayerRow
                       player={{ ...r.player, player_name: r.player.player_name ?? "" }}
                       href={r.player.gsis_id ? withContext(`/player/${r.player.gsis_id}`, ctx) : null}
-                      context={`${s1(r.diff_per_game)} a game vs his work · best fit ${r.team_name ?? "—"}`}
+                      context={`${s1(r.diff_per_game)} per game vs his work · best fit ${r.team_name ?? "—"}`}
                       value={s1(r.fit_horizon)}
                       valueLabel="Fit"
                       testid="sell-row"

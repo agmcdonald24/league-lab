@@ -173,7 +173,7 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
 ## Sep 27 · Your league's scoring everywhere
 
-- Every league page counts points your league's way. Josh Allen showed 38.2 a game on the dynasty's Team Hub;
+- Every league page counts points your league's way. Josh Allen showed 38.2 per game on the dynasty's Team Hub;
   it says 49.6 now, exactly what Sleeper says.
 - The NFL-wide pages (Players, Trends, Receivers, defense vs position) use one scale for everyone and say so.
 - Rankings shows how the projections are doing this season next to how they did in past seasons.

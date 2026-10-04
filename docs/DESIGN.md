@@ -84,11 +84,11 @@ team bar). A free agent is neutral gray. `teamLabel("LA")` → `LAR`.
   `onselect` (list + detail: a tap on the row picks him for the detail pane; a tap on the name opens his card), a `trailing`
   snippet (a bar instead of the number). `player` = `{ gsis_id, player_name, position, team, headshot_url }` — the
   contract's player fields.
-- **PlayerCard** — the unit: `<PlayerCard player={p} number={fmt.pts(p.proj)} numberLabel="Week 5" line="7.1 targets a game · 26% share"
+- **PlayerCard** — the unit: `<PlayerCard player={p} number={fmt.pts(p.proj)} numberLabel="Week 5" line="7.1 targets per game · 26% share"
   context="Shake & Bake" href={…} />`; `compact` for a grid; an `extra` snippet for bars under the line.
 - **Headshot** — `<Headshot url={p.headshot_url} team={p.team} size={40} />`: lazy, the team's color behind, a silhouette
   when null or broken. **PosBadge** `<PosBadge pos="WR" />`, **TeamBadge** `<TeamBadge team="DET" />`.
-- **StatTile** — `<StatTile label="Points a game" value="14.2" delta={+2.1} caption="vs his expected" />`; `upIsGood={false}`
+- **StatTile** — `<StatTile label="Points per game" value="14.2" delta={+2.1} caption="vs his expected" />`; `upIsGood={false}`
   flips the delta's color; `size="sm" | "md" | "lg"`; a grid of them: `grid grid-cols-2 gap-2 sm:grid-cols-4`.
 - **Bar** — a comparison bar (label · value · bar): `<Bar label="Target share" value={0.26} max={0.35} display="26%" mark={0.2}
   markLabel="top-12 average" />`; with `min < 0` the bar grows either way from a middle zero (over / under):

@@ -245,7 +245,7 @@ else:
     with st.container(border=True):
         soft = dt[dt["direction"] == "softer"].head(1)
         stiff = dt[dt["direction"] == "stiffer"].head(1)
-        bits = [f"{r.defense} vs {r.position} ({r.direction}: {float(r.allowed_l3):.1f} a game lately, {float(r.allowed_prior):.1f} before)"
+        bits = [f"{r.defense} vs {r.position} ({r.direction}: {float(r.allowed_l3):.1f} per game lately, {float(r.allowed_prior):.1f} before)"
                 for r in pd.concat([soft, stiff]).itertuples()]
         st.markdown("**Biggest moves: " + "; ".join(bits) + ".**")
     with st.expander("Every defense that moved beyond noise"):

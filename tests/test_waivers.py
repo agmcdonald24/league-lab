@@ -46,7 +46,7 @@ def test_gain_from_filling_an_empty_slot():
     assert (m.weekly_gain, m.horizon_gain) == pytest.approx((6.0, 24.0))
     assert (m.add_slot, m.displaced) == ("TE", None)          # fills an empty slot: nobody is displaced
     assert m.lineup_after == pytest.approx(solve(roster + [P("te", "TE", 6.0)], SMALL).total)
-    # dropping the FLEX WR to make room would cost his 9 a week for the TE's 6: a loss, so not a move
+    # dropping the FLEX WR to make room would cost his 9 per week for the TE's 6: a loss, so not a move
     assert ("te", "wr2") not in moves
 
 

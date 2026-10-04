@@ -135,7 +135,7 @@ test("Compare bolds what bears on the call, says Typical range, and shows the se
   await expect(page.getByTestId("compare-answer")).toBeVisible();
   await expect(page.getByTestId("compare-bold-rule")).toHaveText("bold: the better number in points (usage is not compared across positions)");
   const pair = (label: string) => page.getByTestId("pair").filter({ has: page.getByText(label, { exact: true }) });
-  for (const label of ["Carries a game", "Targets a game"]) {
+  for (const label of ["Carries per game", "Targets per game"]) {
     if ((await pair(label).count()) === 0) continue;
     await expect(pair(label).getByTestId("pair-a")).not.toHaveClass(/font-extrabold/);
     await expect(pair(label).getByTestId("pair-b")).not.toHaveClass(/font-extrabold/);

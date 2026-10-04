@@ -64,7 +64,7 @@ NAMES = {JJ: "Justin Jefferson", ML: "MarShawn Lloyd", "q1": "QB One", "w2": "WR
 def _board() -> RosterBoard:
     """Two rosters (QB, RB, WR, FLEX and a bench spot; two weeks alike). Ours has Jefferson at 10.0 (our number this
     week: a usage dip) in the FLEX and a weak RB; theirs has three RBs and a weak WR. By the lineups alone, Jefferson for
-    Lloyd is the best 1-for-1: you +5 a week, them +4 (it was suggested on the live beta, +3.85 over weeks 4–7)."""
+    Lloyd is the best 1-for-1: you +5 per week, them +4 (it was suggested on the live beta, +3.85 over weeks 4–7)."""
     me = [("q1", "QB", 20.0), (JJ, "WR", 10.0), ("w2", "WR", 14.0), ("r1", "RB", 8.0)]
     them = [("q2", "QB", 18.0), (ML, "RB", 15.0), ("r3", "RB", 13.0), ("w4", "WR", 3.0), ("r4", "RB", 12.0)]
     rows = []

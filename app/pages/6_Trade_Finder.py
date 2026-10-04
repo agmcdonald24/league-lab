@@ -290,7 +290,7 @@ with st.container(border=True):
     else:
         t = max(top.values(), key=lambda r: (r["fit_horizon"], r["gain_horizon"]))
         st.markdown(f"**Buy low: ask {who(t['owner'])} about {player_link(t['gsis_id'], t['player_name'])} ({t['position']}).** "
-                    f"He scores {abs(t['diff_per_game']):.1f} a game below what his usage is worth, adds **{t['gain_week']:+.1f}** "
+                    f"He scores {abs(t['diff_per_game']):.1f} per game below what his usage is worth, adds **{t['gain_week']:+.1f}** "
                     f"to your week-{this_week} lineup and costs them **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** "
                     f"over {span_words}).")
         bits = []
@@ -311,7 +311,7 @@ with st.container(border=True):
     else:
         t = stop_.iloc[0]
         st.markdown(f"**Sell high: shop {player_link(t['gsis_id'], t['player_name'])} ({t['position']}) to {who(t['partner'])}.** "
-                    f"He scores {t['diff_per_game']:.1f} a game above what his usage is worth. Their week-{this_week} lineup "
+                    f"He scores {t['diff_per_game']:.1f} per game above what his usage is worth. Their week-{this_week} lineup "
                     f"gains **{t['gain_week']:+.1f}**, yours loses **{t['loss_week']:.1f}** (fit **{t['fit_horizon']:+.1f}** "
                     f"over {span_words}).")
 
