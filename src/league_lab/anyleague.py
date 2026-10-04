@@ -320,7 +320,8 @@ def _load_nfl_wide(query: Query, season: int, week: int) -> Board:
                  labels, kd_fitted)
 
 
-def price_lines(line: pd.DataFrame, scoring: Mapping[str, float] | ScoringSpec) -> pd.Series:
+def price_lines(line: pd.DataFrame, scoring: Mapping[str, float] | ScoringSpec, *, season: int | None = None,
+                week: int | None = None) -> pd.Series:   # ---- M4: season / week when the frame does not carry them
     """League points of every PROJECTED stat line, every row at once: ``scoring.price_projected`` — the one entry point
     ``projections.price`` (the nightly) calls too, so a house league reproduces its nightly ``proj_points`` to the bit
     under either state of ``LEAGUE_LAB_EV_PRICING``.
@@ -334,19 +335,22 @@ def price_lines(line: pd.DataFrame, scoring: Mapping[str, float] | ScoringSpec) 
         stats["position"] = line["position"].to_numpy()
     # ---- M3 (Wave I-D): IC-1's own branch folded into the shared entry point
     # ---- M4 (Wave I-G): the mode follows the record (``scoring.ev_for_week``): a week the record holds is priced as
-    # its rows were (a frozen week keeps its label), any other week as the newest build; the env overrides
-    if "week" in line and "season" in line and len(line):
-        keys = line[["season", "week"]].apply(pd.to_numeric, errors="coerce")
-        modes = {(s_, w_): ev_for_week(s_, w_) for s_, w_ in
-                 {(int(a), int(b)) for a, b in keys.dropna().itertuples(index=False, name=None)}}
+    # its rows were (a frozen week keeps its label), any other week as the newest build; the env overrides. The week
+    # comes from the frame's ``week`` / ``season`` columns, else the caller's (``price_board``: the board's week)
+    if len(line) and ("week" in line or week is not None):
+        wk = (pd.to_numeric(line["week"], errors="coerce") if "week" in line else pd.Series(float(week), index=line.index))
+        se = (pd.to_numeric(line["season"], errors="coerce") if "season" in line
+              else pd.Series(np.nan if season is None else float(season), index=line.index))
+        sa, wa = se.fillna(-1).astype(int).to_numpy(), wk.fillna(-1).astype(int).to_numpy()
+        modes = {(a, b): ev_for_week(None if a < 0 else int(a), None if b < 0 else int(b))
+                 for a, b in set(zip(sa.tolist(), wa.tolist(), strict=True))}
         if len(set(modes.values())) > 1:
             out = np.full(len(line), np.nan)
-            for (s_, w_), ev in modes.items():
-                sel = ((keys["season"] == s_) & (keys["week"] == w_)).to_numpy()
+            for (a, b), ev in modes.items():
+                sel = (sa == a) & (wa == b)
                 out[sel] = price_projected(stats[sel], scoring, ev=ev)
             return pd.Series(out, index=line.index, dtype=float)
-        if modes:
-            return pd.Series(price_projected(stats, scoring, ev=next(iter(modes.values()))), index=line.index, dtype=float)
+        return pd.Series(price_projected(stats, scoring, ev=next(iter(modes.values()))), index=line.index, dtype=float)
     # ---- /M4
     return pd.Series(price_projected(stats, scoring), index=line.index, dtype=float)
     # ---- /M3
@@ -640,7 +644,7 @@ def price_board(b: Board, league_id: str, scoring: Mapping[str, float], starts: 
     K / DEF."""
     t0 = time.perf_counter() if t0 is None else t0
     t1 = time.perf_counter() if t1 is None else t1
-    proj = price_lines(b.line, scoring)
+    proj = price_lines(b.line, scoring, season=b.season, week=b.week)   # ---- M4: the board's week decides the mode
     t2 = time.perf_counter()
     ref = reference_for(proj, b, scoring, str(league_id), exclude_reference)
     if ref is None:

@@ -996,9 +996,14 @@ def ev_for_week(season: int | None, week: int | None) -> bool:
     """The mode for pricing one week's lines: pinned / env as ``ev_pricing``; else the label of that week's rows in
     the record (a frozen week keeps the label it was priced with); a week the record has no rows for: the newest
     build's."""
-    if _PINNED or env_pricing() is not None or season is None or week is None:
+    if _PINNED or env_pricing() is not None or week is None:
         return ev_pricing()
-    lab = record_pricing()["weeks"].get((int(season), int(week)))
+    weeks = record_pricing()["weeks"]
+    if season is None:              # a frame without its season (a rest-of-season window): the record's newest season
+        season = max((s for s, _ in weeks), default=None)
+        if season is None:
+            return ev_pricing()
+    lab = weeks.get((int(season), int(week)))
     return lab == "ev" if lab is not None else ev_pricing()
 
 
