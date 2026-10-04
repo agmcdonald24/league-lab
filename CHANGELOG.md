@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-I
+
+- **INF-1 — a pinned clock for the suites; Google Analytics.** `league_lab.clock.now()` (an in-process pin, else
+  `LEAGUE_LAB_NOW`, else the wall clock — unset in production) now decides the locks and the decision week on the
+  request path (`anyleague`, `decisions`, the card, `lineup.build`, events, PlayerWire, `app/lib/ui.first_open_week`,
+  `app/lib/cards` — whose `kicked_off` was the database's `now()`); the stale rule and every fetch / write stamp keep
+  the real time. Both suites run at Saturday 2026-10-03 16:00 UTC: on a Sunday evening during games, on the main
+  database, the API suite is 575 passed / 0 failed (`main` in the same minutes: 54 failed) and the root suite 1,141
+  passed / 0 failed (`main`: 2 failed); IH-2's three xfails are plain passing tests. The web app sends Google
+  Analytics 4 (property 557285408, `G-HJWGHZ79BG`) page views, screen views and a few taps — ids only, only after
+  sign-in, only from isuckatfantasy.io (`LEAGUE_LAB_GA=off` removes it at build time); About says so; no cookie
+  banner for the password-gated beta (PO call). HOSTING § "Usage" → "Google Analytics".
+
 ## 2026-10-04 — Wave I-H
 
 - **PO (integration).** Five packages merged (M6, V-2, IH-1, IH-2, IH-3 below). On Andrew's word the stale banner
