@@ -88,7 +88,8 @@ export class Remote<T> {
     this.loading = true;
     // ---- IH-1: not a spinner forever — after SLOW_MS the card says so and offers Try again; the request keeps going
     this.#slow = setTimeout(() => {
-      if (this.#path === path && this.loading) this.failure = { kind: "slow", status: null, words: SLOW_WORDS };
+      // an answer kept on screen while the next loads (keep) is not "waiting": only an empty screen says so
+      if (this.#path === path && this.loading && this.data === null) this.failure = { kind: "slow", status: null, words: SLOW_WORDS };
     }, SLOW_MS);
     get<unknown>(path)
       .then((d) => {

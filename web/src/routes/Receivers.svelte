@@ -21,6 +21,7 @@
   import PlayerCard from "../components/PlayerCard.svelte";
   import PlayerRow from "../components/PlayerRow.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
+  import ErrorCard from "../components/ErrorCard.svelte"; // ---- IH-1: the API down / a 500 / still waiting
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -102,7 +103,10 @@
   </div>
 
   {#if r.error}
-    <p class="ll-error">{r.error}</p>
+    <!-- ---- IH-1: a card with Try again for the API down / a 500 / Sleeper; a 404's own words stay a plain line -->
+    {#if r.failure && r.failure.kind !== "notfound" && r.failure.kind !== "other"}<ErrorCard failure={r.failure} onretry={() => r.retry()} />{:else}<p class="ll-error">{r.error}</p>{/if}
+  {:else if r.failure?.kind === "slow"}
+    <ErrorCard failure={r.failure} onretry={() => r.retry()} /><!-- ---- IH-1: still waiting after 25 s -->
   {:else if !r.data}
     <div class="space-y-3" aria-label="Loading" data-testid="loading"><div class="ll-skel h-48"></div>{#each [0, 1, 2] as i (i)}<div class="ll-skel h-14"></div>{/each}</div>
   {:else}

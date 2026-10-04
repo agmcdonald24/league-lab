@@ -147,6 +147,20 @@ test("our own 502 still says Sleeper did not answer", async ({ context, page }) 
   await expect(page.getByTestId("error-words")).toHaveText("⚠︎Sleeper did not answer. Try again in a minute.");
 });
 
+test("a research screen (Trends) shows the same card and its Try again asks again", async ({ context, page }) => {
+  await serveFixtures(context);
+  let fail = true;
+  await context.route(/\/api\/trends\?/, (route: Route) => (fail ? route.fulfill({ status: 500, contentType: "text/plain", body: "Internal Server Error" }) : route.fallback()));
+  await page.goto(`/trends?league=${SCRUBS}&team=2`);
+  const card = page.getByTestId("error-card");
+  await expect(card).toHaveAttribute("data-kind", "server");
+  await expect(page.getByTestId("error-status-link")).toHaveAttribute("href", "/api/status");
+  fail = false;
+  await page.getByTestId("error-retry").click();
+  await expect(card).toHaveCount(0);
+  await expect(page.getByTestId("loading")).toHaveCount(0);
+});
+
 test("signed out mid-session: the password screen says so, and signing in goes back to the screen", async ({ context, page }, info) => {
   const api = await serveFixtures(context, { gate: true });
   await page.goto(HOME);
