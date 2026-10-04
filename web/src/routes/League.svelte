@@ -226,7 +226,7 @@
                 {#each [g.a, g.b] as sd, j (j)}
                   {#if j === 1}<span class="text-xs text-ink-3">vs</span>{/if}
                   <span class="min-w-0 {j === 1 ? 'text-right' : ''}">
-                    <span class="line-clamp-2 text-base leading-tight break-words {sd.roster_id === team ? 'font-bold' : g.favorite === sd.roster_id ? 'font-semibold' : ''}">{sd.team_name}</span>
+                    <span class="line-clamp-2 text-base leading-tight break-words {sd.roster_id === team ? 'font-bold' : ''}">{sd.team_name}</span>
                     <span class="tabnum block text-xs text-ink-3" data-testid="game-odds">{sideOdds(g, sd.roster_id)}</span>
                   </span>
                 {/each}

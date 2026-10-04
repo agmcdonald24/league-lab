@@ -198,6 +198,15 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | a team unit's season value (MFL's team QB / team kicker) | **Season value above replacement**, against the best **free unit of the same kind** — "Houston Texans QB: 355 season points; the best free team QB, Arizona Cardinals QB, 378: 0 above" | a player as a team unit's replacement; "Not counted" for a unit that has a projection |
 | the Finder's "left out" (`sanity.words`) | "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's. A player with no season projection is not judged." · a row: "you give 20 season value above replacement for 3: 17 more, over 25% of what you give" | "rest-of-season points" as the reason (a volume gap: all positions added up) |
 
+## The week's win probability (Wave I-H, IH-3)
+
+| Where | The words we use | Never |
+|---|---|---|
+| My Week, under the opponent line (`myweek.week_line`) | "This week is a coin flip: 53%, 120 to 117 expected." · "You're a slight favorite this week: 58%, 121 to 117 expected." · "You're a clear underdog this week: 34%, 96 to 115 expected." · with games in: "… 2 of your 9 have played, 3 of theirs." · a double header: one line per game, the opponent's name first ("Big Mac Attack: You're …") · on hover: "assuming the players' weeks are independent except teammates and opponents" | a recommendation from it ("you're an underdog, start the boom-or-bust receiver"); "win probability" as a label on the page; 0% / 100% |
+| 50–55% / 55–65% / 65%+ either way (`decisions.week_words`) | a coin flip / a slight favorite (underdog) / a clear favorite (underdog) | "a lean" for a week (the card's word for one call) |
+| no number (`win.note`) | "no range for this league yet" · "the week has started and this league's live scores are not read yet" (an MFL league after the first kickoff): the page shows nothing | a 50% stand-in |
+| the League screen, per team of a game this week | "53% · 120 expected" under each team; the note "How often each team wins, from both best lineups' ranges (assuming the players' weeks are independent except teammates and opponents)." | a favourite's name in bold as a pick |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to
