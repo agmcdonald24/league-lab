@@ -198,6 +198,19 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | a team unit's season value (MFL's team QB / team kicker) | **Season value above replacement**, against the best **free unit of the same kind** — "Houston Texans QB: 355 season points; the best free team QB, Arizona Cardinals QB, 378: 0 above" | a player as a team unit's replacement; "Not counted" for a unit that has a projection |
 | the Finder's "left out" (`sanity.words`) | "We do not suggest a trade that gives away much more season value above replacement than it brings back (over a quarter of what you give, and not about even), or one that only works because our number for a player you give is far under Sleeper's. A player with no season projection is not judged." · a row: "you give 20 season value above replacement for 3: 17 more, over 25% of what you give" | "rest-of-season points" as the reason (a volume gap: all positions added up) |
 
+## The decision record, personal (Wave I-H, V-2)
+
+| Where | The words we use | Never |
+|---|---|---|
+| the Team page's block (title) | **Your calls this season** | "decision record", "regret", "edge" on a manager's screen |
+| its sentence (`decisions.team.sentences.season`) | "Weeks 1–2: you started 265.0; our lineup would have scored 253.9; the best possible was 281.7." | "you lost 16.7 points"; "you should have" |
+| its table | Week · You · Ours · Best · Sleeper; a rebuilt week starred, the footnote "Played before this record existed: rebuilt after kickoff from the projections locked then, with the final injury report — kinder to us than a real Thursday call." | "optimum", "app", "submitted" |
+| one close call | "Chris Olave over Xavier Worthy (we gave it 64%): 18.6 to 11.0 — the right call." / "… — Xavier Worthy scored more." / "… — a tie." | "wrong", "bad call" |
+| the calls line | "Our closest calls for you landed 3 of 6 (3.3 expected)." | "accuracy" |
+| Sleeper as a comparator | **Sleeper's projections as a lineup** — "had every team started Sleeper's projections, the league would have scored …" | "the market's lineup"; "Sleeper's AI" |
+| the news cases from the event store | "2 lineups had a starter's injury status change between our build and his kickoff; there our lineups scored −4.1 against the ones started. They are graded apart: we could not have known." | "news-affected" on a screen |
+| About → Team | "Your team's calls this season ›" | |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

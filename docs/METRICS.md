@@ -2333,6 +2333,64 @@ week 1, −2.66 week 2; −1.2 a team a week); the best lineups in hindsight bea
 landed 59% for the side we leaned (52% expected, 34 calls); 60 graded calls, Brier 0.235. Forever Unclean Dynasty —
 118.10 fewer (−148.05 week 1, +29.95 week 2); hindsight +677.9; coin flips 49% (52% expected, 42 calls); Brier 0.251.
 
+#### Personal and live (dr1.1, V-2, Wave I-H, 2026-10-04; `league_lab.validation` V-2 block, `ops.decision_market`, `/api/record?team=`)
+
+Four additions; every dr1.0 number above is unchanged (the clone's Scrubs and dynasty weeks grade to the cent as before).
+
+**News from the event store.** `events.events` (IG-2) holds every injury-status move the server saw, with its time.
+A `kickoff` record's starter is **news-affected** when the store has an availability event for him after the record's
+`run_at` and before **his own** kickoff (his game's `dim_game.kickoff_at`; unknown → the week's first kickoff + 4
+days) whose status differs from the one the build saw (`report_status`; none = `ACTIVE`). The store answers for a
+league-week only when it was running across it (its first availability event at or before the week's first kickoff,
+its newest at or after `run_at`); otherwise the dr1.0 rule (the final report differs) stands. Each roster-week says
+which: `news_source` = `events` | `report` (`decisions.news.source`, `weeks[].news_source`: `mixed` when both). The
+store lives on the hosted copy and the marts are built in the nightly's database, so the marts carry the report rule
+and **the API applies the store's flags on the request** (`validation.news_overrides` → `apply_news`); `league-lab
+validate` reads the store itself where the database has it. Graded apart as before; the sentence names the count and
+the net: "2 lineups had a starter's injury status change between our build and his kickoff; there our lineups scored
+−4.1 against the ones started. They are graded apart: we could not have known." Rebuilt weeks are never flagged.
+
+**"Had you started Sleeper's projections"** (`ops.decision_market`, written by `league-lab validate`; recomputed
+every run, so not record state). For each record roster-week of a Sleeper league: the best lineup of **the roster the
+record saw** (its starters and bench; the unplayable stay out) valued by Sleeper's projection — the last snapshot
+fetched before the week's first kickoff (`mart_projection_record`'s rule) — priced in the league's scoring the way the
+record priced ours (`scoring.price_projected` in the week's `pricing`; a K flat; `why.market_points`' rule). Sleeper's
+DEF line is not priced: a DEF keeps our value, so the two lineups never differ there. A player Sleeper has no line for
+is unvalued (seated only where nobody valued can play). Graded like ours: `market_points` (NULL when a starter has no
+number, `n_market_unknown`), `market_edge` = market − submitted (`mart_decision_record`; a dbt test holds the
+identity). A week's league sum (`weeks[].market`) only when every team has one; the season (`season_totals.market`,
+`market_weeks`) over those weeks; `sentences.market`: "Weeks 5–6: had every team started Sleeper's projections, the
+league would have scored 2410.3 — 12.4 fewer than our lineups and 8.1 more than the ones started." The house leagues
+only (Sleeper's projections are archived for them); the sandbox clone holds no snapshot, so its numbers are null.
+
+**One team** (`/api/record?league=&team=` → `decisions.team`; `validation.team_summary`; the Team page's "Your calls
+this season", the console's Record page). The roster's graded weeks under the league's filter (scored, every number
+known — so the teams' weeks add up to the league's to the cent: `api/tests/test_v2.py` sums all ten Scrubs rosters),
+each with started / ours / best / Sleeper's / the edge / the regret / `n_changed` / the news flag and its close calls
+("Chris Olave over Xavier Worthy (we gave it 64%): 18.6 to 11.0 — the right call."), the season sums, the calls'
+calibration (n, landed, expected, Brier, the coin flips), the news-affected weeks, and the sentences: "Weeks 1–2: you
+started 265.0; our lineup would have scored 253.9; the best possible was 281.7." · "Our closest calls for you landed 3
+of 6 (3.3 expected)."
+
+**MyFantasyLeague leagues.** An MFL league has no `ops.lineups` rows, so its record is the **on-demand** lineup
+(`anyleague._solve_roster`, the frame My Week serves) frozen under the same rule (`lineup.mfl_record_rows`): the next
+week to kick off is written before its first kickoff from the league's current rosters (`kickoff`); a played week
+with no rows is rebuilt once (`reconstructed`) from the rosters MFL's `weeklyResults` lists for it, priced on that
+week's frozen `ops.projection_lines` in the league's scoring, as of one second before its first kickoff; a week MFL
+has not scored waits. The calls' odds come from the on-demand ranges (the opponent is left out of the pair's
+correlation). Rows: `ops.lineup_record` with `league_id = 'mfl:<id>'`, written by `league-lab validate` for the keys
+in `LEAGUE_LAB_RECORD_MFL` (or `--mfl`). **The grade** reads MFL itself on the request (`validation.mfl_load`):
+submitted = the franchise's starters at MFL's scores (= its score), optimum = MFL's own `opt_pts`, ours = the
+record's starters at MFL's player scores (a listed player with no score = 0, MFL's count; a starter on no franchise
+that week = unknown, never 0); a double-header franchise counted once a week; no final injury report (the news flag
+only through the event store). The marts leave MFL rows out.
+
+**First numbers.** Scrubs roster 6 (GoodGameBuddy), weeks 1–2 rebuilt: started 265.0, ours 253.9, best 281.7 (−11.1
+for us; 16.7 left on the bench); calls 3 of 6 (3.3 expected). Dad's league (MFL 70587, the fixtures' weeks 1–3, all
+rebuilt): started 4197, ours 4059, best 4880 — our lineups 138 fewer (−3.8 a team a week), the best lineups 683 more
+(19.0 a team a week); coin flips 57% (52% expected, 27 calls); 100 calls with odds, Brier 0.225. Knight Train: started
+224, ours 223, best 331.
+
 ## Effect on their starters and the sanity bound (ti1.1, IE-1, Wave I-E, 2026-10-03; was "Trade interest and the sanity bound", ti1.0, IA-2; `api/league_lab_api/decisions.py`, `league_lab.trades.sanity`)
 
 - **Window**: the weeks a trade is priced over — `week` (this week), `next4` (this week and the next three: the board's

@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-H
+
+- **V-2: the decision record, personal and live.** The Team page's "Your calls this season" (what you started, what
+  our lineup would have scored, the best possible, each close call and how it landed; `/api/record?league=&team=` →
+  `decisions.team`, the console's Record page too), "had you started Sleeper's projections" next to ours
+  (`ops.decision_market`, `league-lab validate`), the news-affected weeks from the event store's status moves (the
+  injury report stays the fallback), and MyFantasyLeague leagues in the record: the on-demand lineup frozen before
+  kickoff (`LEAGUE_LAB_RECORD_MFL`), graded from MFL's own weekly results — dad's league shows weeks 1–3, rebuilt.
+
 ## 2026-10-04 — Wave I-G
 
 - **The nightly's trigger.** GitHub's schedule started every nightly 3.5–6 hours late; `ops/nightly-trigger/` (a
