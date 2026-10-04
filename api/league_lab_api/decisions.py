@@ -3112,7 +3112,7 @@ def _last(name: str | None) -> str:
 
 
 def _name_list(ns: list[str], k: int = 2) -> str:
-    ns = [_last(n) for n in ns if n]
+    ns = [unit_short(n) if _unit_name(n) else _last(n) for n in ns if n]     # ---- IH-2: "Texans QB", not "QB"
     if len(ns) <= k:
         return " and ".join(ns) if len(ns) <= 2 else ", ".join(ns[:-1]) + " and " + ns[-1]
     return ", ".join(ns[:k]) + f" and {len(ns) - k} more"
@@ -4013,6 +4013,13 @@ def deadline_days(settings: dict, daily: bool | None) -> dict:
     days = waiver_days(raw) if daily else None
     return {"days": None if days is None or len(days) == 7 else [DAY_NAMES[d] for d in sorted(days)],
             "days_mask": _int(raw) if raw is not None else None}
+
+
+def _unit_name(name: str | None) -> bool:
+    """A team unit's name ("Houston Texans QB", "Houston Texans K"): `_last` would say "QB" — two on a bye read "when QB
+    and QB are on a bye" (dad's league team 12's Waivers); `_name_list` names them "Texans QB" (IC-4's `unit_short`)."""
+    parts = str(name or "").split()
+    return len(parts) >= 3 and parts[-1] in ("QB", "K") and parts[-2] in NICKNAMES
 
 
 # the Team page's roster freshness (IG-3's not-done): an MFL league's roster is MFL's export as read (the client's cache,

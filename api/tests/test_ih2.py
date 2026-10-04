@@ -392,3 +392,17 @@ def test_record_e2e_answers(client, mfl, overlay):  # noqa: F811
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text(json.dumps(out, indent=1, default=str) + "\n")
     assert all(v["status"] == 200 for v in out.values()), {k: v["status"] for k, v in out.items()}
+
+
+# ------------------------------------------------------------------ found on the way: team units in the bye words
+def test_units_on_a_bye_are_named_by_their_team(client, mfl):  # noqa: F811
+    """Dad's league team 12: "Fills your empty team QB in week 5, when QB and QB are on a bye." — two team QBs read by
+    `_last` as "QB"; now named as IC-4 names a unit ("Ravens QB")."""
+    assert decisions._name_list(["Houston Texans QB", "Chicago Bears QB"]) == "Texans QB and Bears QB"
+    assert decisions._name_list(["Justin Jefferson", "Houston Texans K"]) == "Jefferson and Texans K"
+    assert decisions._name_list(["Kansas City Chiefs"]) == "Kansas City Chiefs"
+    w = client.get("/api/waivers", params={"league": DAD, "team": 12}).json()
+    words = " ".join(c.get("reason") or "" for c in [*w["top3"], *w["views"]["help"]["moves"], *w["views"]["bye"]["moves"]])
+    assert "QB and QB" not in words and "when QB " not in words
+    r = next(c["reason"] for c in w["top3"] if c["move"]["add"]["player_name"] == "Arizona Cardinals QB")
+    assert re.match(r"^Fills your empty team QB in week 5, when \w+ QB and \w+ QB are on a bye", r), r
