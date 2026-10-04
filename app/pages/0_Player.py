@@ -384,7 +384,7 @@ with st.container(border=True):
         )
         if sig.empty:
             st.markdown("Role: **no role change detected** in his last three games: his share of the snaps, targets and "
-                        "carries is where it has been.  \nUpside: nothing beyond the projection above.")
+                        "carries is where it has been.  \nUpside: no additional modeled upside scenario available.")  # ---- II-4
         else:
             r = sig.iloc[0]
             st.markdown(f"Role: **{alert_headline(r, p['player_name'])}**. {alert_lines(r)}")

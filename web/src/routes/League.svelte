@@ -284,11 +284,11 @@
               </div>
             {/each}
           </div>
-          <p class="mt-3 text-xs text-ink-3">Right of the line: more wins than the points deserve (a soft schedule). Left: fewer (a hard one). It evens out over a season.</p>
+          <p class="mt-3 text-xs text-ink-3">Right of the line: more wins than the points deserve (a soft schedule). Left: fewer (a hard one). Past luck says nothing about the weeks left: they depend on your points and the schedule ahead.</p><!-- II-4 -->
         </Card>
 
         {#if data.profiles}
-        <Card title="Points left on the bench" testid="bench">
+        <Card title="Points left on the bench (hindsight)" testid="bench"><!-- ---- II-4: hindsight labelled -->
             <div class="space-y-2">
               {#each bench as r (r.roster_id)}
                 {@const yours = r.roster_id === team}
@@ -383,7 +383,7 @@
         {@html md(
           "- **Who has been lucky**: each team's record if it had played every other team every week is what its points deserve; luck is the real wins minus those. A 2-0 team with a big minus is scoring like a 1-1 team.\n" +
             "- **All-play** is that record against everyone, every week.\n" +
-            "- **Points left on the bench** is how much a better lineup would have added. High numbers mark managers who don't sweat start / sit: useful when you trade with them.\n" +
+            "- **Points left on the bench (hindsight)** is how much the best lineup *knowing the final scores* would have added: hindsight, not an avoidable mistake — before kickoff nobody knows the scores. High numbers over many weeks mark managers who don't sweat start / sit: useful when you trade with them.\n" + // ---- II-4
             "- **Latest moves**: completed claims, adds, drops and trades, newest first: who is chasing the same positions and what bids clear.\n" +
             "- **The draft**: every pick and where the player ranks at his position by points so far.",
         )}

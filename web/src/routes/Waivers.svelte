@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { competing, horizonOf, topIntro } from "../lib/feed"; // ---- II-4: when each claim helps; competing claims
   // Waivers (plan G4; app/pages/2_Waiver_Wire.py on GET /api/waivers). IB-2 (Wave I-B): short — the answer first, the
   // three strongest moves (one card each: the move, the lineup gain, one reason, the claim's cost; a drop who starts
   // for you carries the best claim that keeps him), then ONE view at a time behind chips: Help now (this week's lineup
@@ -77,8 +78,10 @@
   const view = $derived(viewOf(route.current.params.get("view"), data?.default_view ?? "help"));
   // ---- IE-1: the answer is not the first card's move again (the API's `answer`: "The three strongest claims are below …")
   const lead = $derived(
-    data ? (data.answer ? `**${data.answer}**` : top3.length ? `**${waiverHeadline(top3[0].move, data.week ?? 0, data.horizon_last_week ?? 0)}**` : waiverAnswer(data)) : "",
+    data ? (top3.length ? `**${topIntro(top3, data.week ?? 0, data.horizon_last_week ?? data.week ?? 0)}**` /* ---- II-4: the horizon, honest */ : data.answer ? `**${data.answer}**` : waiverAnswer(data)) : "",
   );
+  void waiverHeadline; // ---- II-4: IE-1's first-card headline gave way to topIntro
+  const rivals = $derived(competing(top3)); // ---- II-4
   const chips = $derived(
     VIEW_TABS.map((t) => ({ key: t.key, label: t.key === "stash" && views?.stash.count ? `${t.label} (${views.stash.count})` : t.label })),
   );
@@ -205,9 +208,15 @@
         <h2 class="text-xl font-bold">{top3.length === 1 ? "The strongest move" : `The ${top3.length === 2 ? "two" : "three"} strongest moves`}</h2>
         <div class="grid grid-cols-1 gap-3 wide:grid-cols-3">
           {#each top3 as c, i (one(c))}
-            <ClaimCard card={c} {ctx} rank={i + 1} testid="top-move" />
+            <!-- ---- II-4: the horizon on each claim (helps this week / covers a bye / helps later / upside stash) -->
+            {@const h = horizonOf(c, data.week ?? 0)}
+            <div class="space-y-1" data-testid="top-move-wrap">
+              <span class="inline-block rounded-sm px-2 py-0.5 text-xs font-bold {h.key === 'now' ? 'bg-accent-soft text-accent' : 'bg-raised text-ink-2'}" data-testid="top-move-horizon" data-horizon={h.key}>{h.label}</span>
+              <ClaimCard card={c} {ctx} rank={i + 1} testid="top-move" />
+            </div>
           {/each}
         </div>
+        {#each rivals as r, i (i)}<p class="text-sm leading-snug font-semibold text-ink" data-testid="top-compete">{r}</p>{/each}<!-- II-4 -->
         {#if data.not_additive}<p class="text-sm leading-snug text-ink-2" data-testid="not-additive">{data.not_additive}</p>{/if}<!-- IE-1 -->
       </section>
     {/if}
