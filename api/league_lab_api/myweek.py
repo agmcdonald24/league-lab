@@ -977,8 +977,10 @@ def win_answer(mine: list[dict], theirs: list[dict], opponent_roster_id: int | N
     if r["p"] is None:
         return {**out, "note": WIN_NO_RANGE}
     p = float(r["p"])
-    out.update({"p": round(p, 4), "percent": D.percent(p), "words": D.week_words(p),
-                "side": "even" if D.week_words(p) == "a coin flip" else ("favorite" if p > 0.5 else "underdog"),
+    pct = D.percent(p)
+    words = D.week_words(pct / 100)        # the words of the percent printed beside them (64.96% is "65%": clear)
+    out.update({"p": round(p, 4), "percent": pct, "words": words,
+                "side": "even" if words == "a coin flip" else ("favorite" if p > 0.5 else "underdog"),
                 "played_words": played_words(r)})
     out["line"] = week_line(out)
     return out
