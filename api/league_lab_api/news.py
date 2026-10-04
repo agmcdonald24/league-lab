@@ -190,6 +190,11 @@ def for_card(gsis: str, name: str | None = None) -> list[dict]:
             out = []
     if len(out) < NF.MAX_ITEMS and espn_enabled():
         out += _espn(gsis, name)[: NF.MAX_ITEMS - len(out)]
+    # ---- IG-2 (Wave I-G): every item the card shows becomes an event (ESPN's as news, PlayerWire's as a brief), queued
+    # for the events writer thread — the line itself is unchanged (N2's), and the store never fails the card
+    from . import events
+    events.observe_items(str(gsis), out)
+    # ---- end IG-2
     return out
 
 

@@ -26,6 +26,14 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   gap, not the raw rest-of-season totals; a player with no projection shows a dash and "no projection", never 0.00
   (the API sends null; My Week says how many starters its total counts at 0).
 
+- **IG-2: the event store.** The server keeps what it learned and showed — each injury-report status move (ESPN /
+  Sleeper), each ESPN headline and PlayerWire brief a screen showed — in `events.events` (keyed by player, team and
+  game; source URL, publication / effective / ingestion times, superseded), written off the request path by one
+  writer thread (`scripts/hosted_events.sql`, run by the sync after U-1; `LEAGUE_LAB_EVENTS=off`). My Week's "What
+  changed" reads it: a status line cites its source, the report's time and the player's ESPN page; his PlayerWire brief
+  shows there too. The matchup evidence's missing corners carry the event and its URL. `/api/status` → `events`;
+  `/api/events?league=&team=` for QA; About says what is kept (docs/HOSTING.md § "Events").
+
 ## 2026-10-04 — the product is isuckatfantasy
 
 - **Renamed.** Everything a manager sees — the sign-in screen, the top bar, the home-screen icon and its mark ("isaf"),

@@ -89,6 +89,9 @@ def _fresh_cache(monkeypatch):
     # tests pin (Jefferson Out in the fixture feed)
     monkeypatch.delenv("LEAGUE_LAB_ESPN_FIXTURES", raising=False)
     monkeypatch.delenv("LEAGUE_LAB_AVAILABILITY", raising=False)
+    # ---- IG-2 (Wave I-G): the event store stays off in every test (a test that leaves fixture mode — test_n2's database
+    # path — would otherwise write its made-up items into the developer's events.events); test_ig2 turns it on itself
+    monkeypatch.setenv("LEAGUE_LAB_EVENTS", "off")
     db.clear_cache()
     A._default = None
     A.clear_priced()

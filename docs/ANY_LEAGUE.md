@@ -589,3 +589,22 @@ each day (`leagues`) and which screens a day's views went to; the console also s
 were MyFantasyLeague ones. Storage: 168 bytes a view with its index (measured) — at 10,000 leagues × 20 views a week
 ≈ 34 MB a week, which is when the table needs a retention rule (a monthly roll-up into counts per screen per day,
 then delete the rows; not built — at the beta's size it is kilobytes).
+
+## Events (Wave I-G, IG-2, 2026-10-04)
+
+The event store (`events.events` on the hosted copy; `docs/HOSTING.md` § "Events": the row, the write path, the
+rollout) is **per player and per team, never per league**: an injury-report move, an ESPN item or a PlayerWire brief
+is the same fact for every league that rosters the player, so a league the database has never seen (any Sleeper key,
+an MFL league) reads the same events as the house leagues and adds no rows of its own — the overlay writes its moves
+once per copy whatever was opened, and a news item or brief one row however many leagues' screens showed it.
+
+- **Keys**: `gsis_id` (the overlay maps ESPN athletes and Sleeper players to it, AGENTS.md rule 3 — ids only), `team`
+  (nflverse abbreviations: Sleeper's `LAR` and ESPN's `WSH` are stored as `LA` and `WAS`), `player_key` (the source's
+  own id). An MFL team unit (TMQB / TMPK / TMDEF) has no gsis id and no events of its own; its starter's are his.
+- **Which roster**: `GET /api/events?league=&team=` reads the roster through `availability.roster_context` — the
+  house path for the house leagues, Sleeper on demand, MFL from the league's export — then the store by its players'
+  gsis ids. So "What changed" and the QA route work the same for `mfl:70587` team 8 as for Scrubs roster 2.
+- **Defensive events**: a corner's IR is an `availability` event with his team (`CAR`); the matchup evidence reads
+  them by the opponent (`events.for_team`), for any league's receiver.
+- **Cost per league**: none — the rows grow with the NFL's news, not with the leagues (an estimate: 30,000–80,000 rows
+  a season, ~500 bytes each). The readers are one cached query per screen (a minute).

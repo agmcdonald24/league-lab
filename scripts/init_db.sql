@@ -48,3 +48,10 @@ alter default privileges for role league_lab_pipeline in schema analytics_seeds 
 alter default privileges for role league_lab_pipeline in schema ops             grant select on tables to league_lab_app;
 alter role league_lab_app set default_transaction_read_only = on;
 alter role league_lab_app set statement_timeout = '30s';
+
+-- ---- IG-2 (Wave I-G): the event store events.events — the same file the sync runs on the hosted copy, run here as the
+-- pipeline role so the schema is its own (the app role: SELECT, INSERT, UPDATE of superseded_by; docs/HOSTING.md § "Events")
+set role league_lab_pipeline;
+\ir hosted_events.sql
+reset role;
+-- ---- end IG-2

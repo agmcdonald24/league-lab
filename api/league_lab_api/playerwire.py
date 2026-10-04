@@ -306,3 +306,41 @@ def reset() -> None:
     global _warned, _down_until, _last_error, _fx_cache
     with _lock:
         _warned, _down_until, _last_error, _fx_cache = False, 0.0, None, None
+
+
+# ---- IG-2 (Wave I-G): My Week's "What changed" reads PlayerWire too — the week's players' briefs of the last hours in one
+# read (the card's identity rule and order: `select`), each item with its ``brief_id`` (the event's player key). The
+# answers become events (events.observe_items) and "What changed" lists them with their source. Never raises.
+RECENT_SQL = CANDIDATES_SQL.replace("(ms.gsis_id = %s or mg.gsis_id = %s)", "(ms.gsis_id = any(%s) or mg.gsis_id = any(%s))")
+
+
+def recent(gsis_ids: list[str], *, hours: float = 24, now: datetime | None = None) -> list[tuple[str, dict]]:
+    """[(gsis, item)] for the players' briefs dated within ``hours`` (newest first per player, at most 3 each)."""
+    ids = sorted({g for g in gsis_ids or [] if isinstance(g, str) and g})
+    if not enabled() or not ids:
+        return []
+    try:
+        if fixtures_path() is not None:
+            fx = _fixture()
+            clock = now or _when(fx.get("as_of")) or datetime.now(UTC)
+            by = {g: _fixture_rows(fx, g) for g in ids}
+        else:
+            if time.monotonic() < _down_until:
+                return []
+            rows = _records(query(RECENT_SQL, (ids,) * 4, ttl=CACHE_TTL_S))
+            _ok()
+            clock = now or datetime.now(UTC)
+            by = {g: [r for r in rows if g in (_s(r.get("via_sleeper")), _s(r.get("via_gsis")))] for g in ids}
+        out: list[tuple[str, dict]] = []
+        for g in ids:
+            rs = by.get(g) or []
+            for it in select(rs, g, clock, max_age=timedelta(hours=hours)):
+                bid = next((_s(r.get("brief_id")) for r in rs if _s(r.get("evidence_url")) == it["url"]
+                            and _when(r.get("published_at")) is not None and _iso(_when(r.get("published_at"))) == it["date"]),
+                           None)
+                out.append((g, {**it, "brief_id": bid}))
+        return sorted(out, key=lambda x: x[1]["date"], reverse=True)
+    except Exception as exc:  # noqa: BLE001 - an outage is no line
+        _failed(exc)
+        return []
+# ---- end IG-2

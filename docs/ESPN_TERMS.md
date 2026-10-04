@@ -76,6 +76,14 @@ One line on the player card, page and research pane, under the availability line
 * A per-athlete cache file `LEAGUE_LAB_CACHE_DIR/espn_news/<espn_id>.json` with only `{headline, date, source, url}`
   per item, `fetched_at` and the answer's `timestamp`: read again after an hour, 15 minutes on a game day. A failed
   read serves the last copy (still subject to the 14-day rule), or no line. The body is dropped before the cache.
+* **Since Wave I-G (IG-2, 2026-10-04): the event store.** The hosted database keeps a row per item a screen *showed*
+  (`events.events`, `docs/HOSTING.md` § "Events") with the same four fields — headline, date, source, link — plus the
+  player's id; never the description, body, images or authors. And a row per injury-report status move read from the
+  injuries feed (the status, the body part, the entry's date, the player's ESPN page). The decision-quality review
+  asks for it (a recommendation cites the event behind it). Kept until a retention is decided. **Switch**:
+  `LEAGUE_LAB_EVENTS_ESPN_NEWS=off` keeps ESPN's news items out of the store (status moves and PlayerWire's briefs
+  stay); `LEAGUE_LAB_EVENTS=off` stores nothing. The first bullet ("nothing in the database") holds for the nightly
+  and git only. Read ESPN's terms before anything is charged for, as above — keeping headlines is part of that check.
 
 ## How much we call
 

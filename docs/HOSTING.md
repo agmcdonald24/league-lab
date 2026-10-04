@@ -528,6 +528,87 @@ psql "$(uv run python -c 'from league_lab.config import get_settings; print(get_
 Without it the local API counts nothing (each insert fails quietly) and the Usage page says how to set it up.
 `api/tests/test_u1.py` applies the file itself.
 
+## Events
+
+*(Wave I-G, IG-2; the decision-quality review § "Engineering requirements": "Store structured events keyed to player,
+team, and game IDs, with source URL, publication time, effective time, ingestion time, status, and superseded
+status".)* The server keeps a record of what it learned and showed — each injury-report status move, each news item
+and PlayerWire brief a screen showed — so a recommendation can cite the event behind it, and the record can later
+tell news-affected weeks apart (V-1).
+
+**What a row holds** (`events.events`): `id`; `kind` (`availability` — a status move from the availability overlay,
+ESPN's injuries feed or Sleeper's directory; `news` — an ESPN news item the player card or My Week showed; `brief` — a
+PlayerWire brief they showed; `depth_chart` — allowed, no writer yet); the keys `gsis_id` (`00-0036322`), `player_key`
+(the source's own id: `espn:4262921`, `sleeper:6794`, `pw:<brief id>`), `team` (nflverse abbreviations: `LA`, `WAS`,
+`JAX`), `game_key` (nflverse `game_id`; empty for now); `status` (availability: `OUT`, `DOUBTFUL`, `QUESTIONABLE`,
+`IR`, `PUP`, `NFI`, `SUS`, `INACTIVE`, `ACTIVE`; brief: PlayerWire's verification — `official`, `reported`,
+`corroborated`, `disputed`; news: `player` or `league`, IF-4's "about"); `headline`, `summary` (a brief's text; ESPN's
+items: none); `source` (`ESPN`, `Sleeper`, `RotoWire via ESPN`, `Minnesota Vikings via PlayerWire`) and `source_url`
+(https only: the player's ESPN page for an ESPN report, the story, the brief's first evidence link); `published_at`,
+`effective_at`, `ingested_at`; `superseded_by`; `fingerprint`. **Times**: for a status move `published_at` is the copy's
+own time (ESPN's feed timestamp; Sleeper: when its directory was read) and `effective_at` the report's (ESPN's entry
+date, Sleeper's `news_updated`); for news and briefs `published_at` is the item's date. Every reader orders by
+`coalesce(effective_at, published_at, ingested_at)`.
+
+**Superseded and deduplicated.** One live event per player per kind: a new status move supersedes the player's older
+live ones (the overlay's current status is always the newest row); a news item or brief supersedes the older ones by
+date (one arriving late is stored already superseded). `fingerprint` (sha256 of kind, player, status, URL, time) is
+unique: the same report or item seen twice — two screens, a restart, two processes — is one row. A status that
+returns to a report already stored (a copy that dropped a player for a while) is a new move.
+
+**How it is written.** U-1's pattern: the screens only put rows on a bounded queue (500 batches; full = dropped,
+counted) that one writer thread of its own drains, each batch in its own `BEGIN; SET TRANSACTION READ WRITE; ...;
+COMMIT` on its own connection (`league_lab_api/events.py`; the read pool never sees a read-write transaction, the role
+stays `default_transaction_read_only = on`). A failure is counted and logged (`events: a write failed (<class>)`), never
+shown. The overlay's moves are worked out on that thread too: each new merged copy is compared with the one before
+(the first copy after a restart with the store's live statuses), and only when both ESPN and Sleeper loaded — a source
+that failed to load is not a status move. The first copy on an empty store writes every listed player once (~150 rows on
+the fixtures, a few hundred to ~1,500 on the live feeds). **Off switches**: `LEAGUE_LAB_EVENTS=off` — nothing written
+or read (the screens use the live sources, as before); `LEAGUE_LAB_EVENTS_ESPN_NEWS=off` — ESPN's news items stay out
+of the store (status moves and briefs are kept; docs/ESPN_TERMS.md § What we keep).
+
+**Where it lives.** Schema `events` on the hosted copy, created by `scripts/hosted_events.sql` (plain SQL, idempotent:
+the schema, the table with its checks — `kind`, the id shapes, https URLs, the lengths — the indexes on
+`(gsis_id, ingested_at)`, `(team, ingested_at)` and the live rows, and the app role's `USAGE` on the schema, `SELECT,
+INSERT` on the table, `UPDATE` of `superseded_by` only and `USAGE` on its id sequence — no delete). The sync never drops
+it: it runs the file after the U-1 block (`scripts/sync_to_hosted.sh`, block "IG-2"; a failure prints a warning and the
+publish stands). Log line: `events: <n> events kept (<live> live), <size>`. Locally `scripts/init_db.sql` runs the same
+file as the pipeline role. Size: ~500 bytes a row with its indexes (measured: 10,000 rows = 5.1 MB) — a season of
+status moves and shown items (an estimate: 30,000–80,000 rows) is 15–40 MB of the 512 MB Neon budget. Nothing is
+pruned yet (the PO decides a retention; IG-3's 180 days for usage is the model).
+
+**Reading it.**
+* My Week's **What changed**: a status line cites its stored event — the source (ESPN / Sleeper), the report's time and
+  the player's ESPN page; the news lines are ESPN's items and PlayerWire's briefs of the last 24 hours, one per player
+  (his own brief first), with the store's live events filling in what a live read missed (`changed.lines[].event_id`,
+  `origin`, `verification`).
+* The matchup evidence (Compare, the card, Matchups): each missing corner's `event` (source, URL, date, id) and `url`;
+  `changed.events` lists them (docs/METRICS.md § Matchups "Current personnel").
+* `GET /api/status` → `events: {enabled, ready, rows, live, newest, process: {queued, written, duplicate, superseded,
+  failed, dropped, moves}}`.
+* `GET /api/events?league=&team=&hours=72` (behind the password; `no-store`; 1–720 hours): the roster's players' events,
+  newest first, live and superseded (`live`), each with `player_name` — the PO's QA.
+* SQL on the hosted copy: `select kind, status, count(*) from events.events where ingested_at > now() - interval '1 day'
+  group by 1, 2 order by 3 desc;`
+
+**Rollout** (no new secret, no new variable, no workflow change): merge; the next nightly's sync creates the schema
+(its log: `events: 0 events kept (0 live), 48 kB` — an empty table with its indexes); until then every write fails
+quietly and the screens read the live sources as before. Check: `/api/status` → `events.ready: true`, then `rows`
+growing after a few screens (the overlay's first copy writes every listed player once);
+`/api/events?league=1389709692405551104&team=2`.
+
+**Local development.**
+
+```bash
+psql "$(uv run python -c 'from league_lab.config import get_settings; print(get_settings().pipeline_dsn())')" \
+     -v ON_ERROR_STOP=1 -f scripts/hosted_events.sql
+```
+
+In fixture mode (`LEAGUE_LAB_SLEEPER_FIXTURES`: the tests, the sandbox) the store is off unless `LEAGUE_LAB_EVENTS=on`,
+and `api/tests/conftest.py` sets it off for every test, so a test run never writes made-up events into a developer's
+database. `api/tests/test_ig2.py` applies the file itself
+and removes its rows.
+
 ## Licences to keep in mind when sharing
 
 * nflverse data: free to use with attribution (kept on Home → Data & attribution).

@@ -26,6 +26,7 @@ import re
 import sys
 import time
 from dataclasses import dataclass, field
+from datetime import timedelta
 
 import numpy as np
 import pandas as pd
@@ -1500,6 +1501,7 @@ def matchup_evidence(ctx: Ctx, gsis: str, week: int | None = None, *, dvp: pd.Da
                            else "unranked (insufficient snaps)")
     for m in p["missing"]:
         m["date_words"] = _date_words(m.get("as_of"))
+    cited = _cite_missing(p["missing"], opp)                                                            # ---- IG-2
     changed_words = _changed_words(p, place)
     kind = {"changed": "less_representative", "same": "stands", "unknown": "unknown"}.get(p["kind"], "unchecked")
     n, k = len(p["regulars"]), len(p["missing"])
@@ -1512,11 +1514,49 @@ def matchup_evidence(ctx: Ctx, gsis: str, week: int | None = None, *, dvp: pd.Da
     ev = {"gsis_id": gsis, "player_name": head.get("player_name"), "position": pos, "season": ctx.season, "week": int(week),
           "opponent": opp, "opponent_name": place, "is_home": home, "history": hist,
           "changed": {"kind": p["kind"], "depth_chart_at": _iso_ts(p.get("depth_chart_at")), "regulars": p["regulars"],
-                      "listed": p["listed"], "missing": p["missing"], "expected": p["expected"], "words": changed_words},
+                      "listed": p["listed"], "missing": p["missing"], "expected": p["expected"], "words": changed_words,
+                      "events": cited},                                                                  # ---- IG-2
           "implication": implication, "forecast_treatment": treatment, "matchup_uncertain": kind == "less_representative",
           "caveat": cards.personnel_caveat(p, place)}
     ev["sentences"] = evidence_sentences(ev)
     return ev
+
+
+# ---- IG-2 (Wave I-G): the event behind each missing regular. The store's newest live availability event of the
+# player (his team's events first — events.for_team, the defensive events of the matchup — then his own), the one
+# that says he cannot play (his overlay status when there is one): `missing[].event` = events.cite(...) and
+# `missing[].url` its source URL (his ESPN page for an ESPN report); `changed.events` lists them. No event (the store
+# off, empty, unreachable, a depth-chart change): None, and the overlay's status with its source and date stays.
+EVENT_LOOKBACK = timedelta(days=60)
+
+
+def _cite_missing(missing: list[dict], team: str | None) -> list[dict]:
+    from . import availability as AV
+    from . import events
+    for m in missing:
+        m["event"], m["url"] = None, None
+    want = [m for m in missing if isinstance(m.get("gsis_id"), str)]
+    if not want or not events.enabled():
+        return []
+    try:
+        since = events.clock() - EVENT_LOOKBACK
+        evs = [e for e in events.for_team(team or "", since, kinds=("availability",)) if e["live"]]
+        found = {e["gsis_id"] for e in evs}
+        rest = [m["gsis_id"] for m in want if m["gsis_id"] not in found]
+        if rest:
+            evs += events.recent(rest, hours=EVENT_LOOKBACK.total_seconds() / 3600, kinds=("availability",))
+        out = []
+        for m in want:
+            mine = [e for e in evs if e["gsis_id"] == m["gsis_id"] and e.get("status") in AV.CANNOT_PLAY]
+            ev = next((e for e in mine if m.get("code") and e.get("status") == m.get("code")), None) or next(iter(mine), None)
+            if ev is None:
+                continue
+            m["event"], m["url"] = events.cite(ev), ev.get("source_url")
+            out.append({"gsis_id": m["gsis_id"], "name": m.get("name"), **events.cite(ev)})
+        return out
+    except Exception:  # noqa: BLE001 - the store never fails the evidence: the overlay's status stays
+        return []
+# ---- end IG-2
 
 
 def _iso_ts(v) -> str | None:
