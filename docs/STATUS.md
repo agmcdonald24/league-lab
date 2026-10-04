@@ -5990,3 +5990,151 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
    `SLEEPER_WAIVER_TZ`); 180 days of usage.
 5. **Clone state**: `league_lab_i0b`'s `ops.waiver_moves` / `ops.waiver_upside` were rewritten at 05:00 and the two
    views rebuilt (IG-1 was told in INTERFACES); the `usage` schema was created there (empty).
+
+## Wave I-H (Iteration 18)
+
+### IH-3 2026-10-04 — the week's win probability: the game objective, as information (branch `dev/IH3`, database `league_lab` read only)
+
+* **Task**: IH-3 (brief § "IH-3"; the decision-quality review § "The analytics worth building next" item 5: "compare
+  expected points with matchup win probability … Do not turn 'underdog' into an automatic instruction to chase the
+  player with the highest individual ceiling"). Plan sections: § 17 (Iteration 18); METRICS § "Ranges and decisions"
+  (new subsection "Win probability — the week"); WORDS § "The week's win probability".
+* **1. `decisions.lineup_win_probability(mine, theirs)`** (`src/league_lab/decisions.py`, block `# ---- IH-3` at the
+  end; nothing above it changed). Each starter: D6's `Predictive` through his P10 … P90 (three knots without the 50%
+  range; a K / DEF row with P10 / P90 only takes its projection as the median), **centred on his projection** (the
+  shape kept, floored at 0 — so the number agrees with the expected totals printed beside it); one Gaussian copula over
+  **both** lineups with `pair_rho` for every same-game pair on either side (my WR and their QB move together); pairs in
+  different games independent; K / DEF / team units independent of everyone (not measured); an inconsistent matrix
+  repaired (eigenvalues floored, unit diagonal). 20,000 joint draws, fixed seed, ties half, the draws assigned in key
+  order (swapping the sides gives exactly 1 − p, so My Week and the League screen agree). A starter whose game is in
+  (`actual`) is a point mass; one without a range a point at his value. Returns `p` (calibrated: `shrink_week`, logit ×
+  `WEEK_SHRINK = 0.60`), `p_raw`, `mine` / `theirs` (the projections, actual points where in), the simulated means,
+  the counts. `week_words(p)`: "a coin flip" / "a slight favorite (underdog)" / "a clear favorite (underdog)" on D6's
+  55 / 65 cut points. A finished week is 1 / 0 / ½.
+* **2. On My Week** (`myweek.py` block `# ---- IH-3`: `win`, `win_answer`, `win_starters`, `with_actuals`, `week_line`;
+  one call line at the end of `my_week`; `ondemand.py` block: `win_on_demand`, `week_points`, one call line). `win` =
+  `{p, percent, words, side, line, note, assumptions, early, mine, theirs, n_played, n_starters, opp_n_played,
+  opp_n_starters, n_no_range, opp_n_no_range, played_words, opponent_roster_id, also}` (INTERFACES § IH-3). The lineups:
+  our proposed lineup (its total = `lineup_value`) against the opponent's best lineup (the opponent line's number),
+  both through the availability overlay — the same rows the page's totals come from. A game is **in** when the nightly
+  has scored it (his team has rows in `fct_player_game_league` for the week); his points are then the league's own
+  (`league_player_week.points_observed` on the house path, Sleeper's matchups `players_points` on demand; missing = 0;
+  **no points at all for the week = unknown**, the line steps aside); a game in progress still counts as his range. MFL:
+  no live points read — before the first game the line is there; after it, `note` "the week has started and this
+  league's live scores are not read yet" and no line. No range (ranges carry under half a side's expected points): `note`
+  "no range for this league yet", no line. The words follow the printed percent (64.96% prints 65%: "clear").
+  **The screen** (`MyWeek.svelte` block): one line under the opponent line, `text-sm text-ink-2`, the assumption on
+  hover; a double header names each opponent ("Big Mac Attack: You're a clear underdog this week: …").
+* **3. Calibration** (METRICS § "Win probability — the week"; `scratchpad/waveIH/ih3/calib.py`, `oof.py`): the house
+  leagues' 2024–2025 regular-season matchups with the starters each manager **actually** started, every QB–TE
+  starter's walk-forward range (`calibration.oof_rows(ranges=True)`: the production fit on the seasons before, 2024 and
+  2025, both house scorings; 7 CPU-min, read only), K / DEF one distribution per league-season, the outcome
+  `fct_league_matchup.result`; 2026 weeks 1–2 from the frozen `ops.projections` rows. The raw number was overconfident
+  (the favourite predicted 62.7%, won 57.5%) → a logit shrink, fitted on one season and tested on the other (2025
+  0.2436 → 0.2403, 2024 0.2424 → 0.2387, 2026 w1–2 0.2451 → 0.2410). **As shipped**:
+
+  | | Matchups | Brier (coin flip 0.25) | Favourite predicted | Favourite won | Higher projection won |
+  |---|---|---|---|---|---|
+  | 2024–2025 | 308 | **0.2395** | 58.0% | 57.5% | 57.1% |
+  | 2024 / 2025 | 154 / 154 | 0.2387 / 0.2403 | 58.4% / 57.6% | 57.8% / 57.1% | |
+  | 2026 weeks 1–2 | 22 | 0.2410 | 58.6% | 63.6% | 63.6% |
+
+  Fifths (2024–2025): predicted 51.2 / 53.8 / 56.5 / 60.7 / 68.1%, won 50.0 / 56.5 / 53.2 / 55.7 / 72.1%. By word: coin
+  flip 123 (52.5 / 53.7%), slight 141 (59.2 / 54.6%), clear 44 (69.7 / 77.3%). Not badly off → the percentage is shown
+  (`WIN_EARLY` False; the "Early: 2 weeks graded" wording is kept behind it). Honest reading: a week is close to a coin
+  flip; the number is a little better than 50% and calibrated on average, not a forecast to bet on.
+* **4. The League screen** (`/api/league/week-odds?league=`, `myweek.week_odds`, main.py block `# ---- IH-3` before the
+  web-app section; `League.svelte` block): this week's games, both teams' chance (`a.percent + b.percent = 100`) and
+  expected totals. **Asked after the screen shows** — cold it costs one lineup per team: 1.8 s (Scrubs, 10 rosters) /
+  2.0 s (dynasty, 12) / 4.9 s (MFL 70587, 12 on demand) here under load; cached in process after. On demand the
+  numbers sit inside IC-4's "Week N matchups" card (one marked line per side + a note); a house league has no such card,
+  so the odds bring their own (`league-odds`). No favourite in bold (a pick, by WORDS).
+* **Scrubs roster 6 "GoodGameBuddy"** (week 4, the main database, the opponent from the Sleeper fixtures' week-4
+  matchups): **"This week is a coin flip: 53%, 120 to 117 expected."** (vs MacZaddy; 10 starters a side, 0 played;
+  the PIT defense has no range — `LINEUP_SQL` joins ranges by gsis id — and counts at its 9.35). League screen: MacZaddy
+  47% · 117, GoodGameBuddy 53% · 120. Week 3 as the main database has it (Thursday's ATL–GB scored, the rest not):
+  Run Bijan Run (roster 3) vs PSYCHO SILVERBACKS "You're a clear favorite this week: 84%, 140 to 104 expected. 2 of
+  your 10 have played, 1 of theirs." (the two Falcons at Sleeper's points; `test_a_played_game_on_the_main_database`).
+  Dad's league, Knight Train (team 1) at 12:10 ET: "Big Mac Attack: You're a clear underdog this week: 34%, 96 to 115
+  expected." / "Klaby Crew: … 37%, 96 to 111"; after the 1 PM kickoffs (locked lineups) the recording says 3% / 4%, 47
+  to 115 / 111.
+* **Interfaces**: INTERFACES.md § IH-3 (draft 12:08 + final): `win` on `/api/my-week` (both paths); `GET
+  /api/league/week-odds`; Python `decisions.lineup_win_probability`, `week_words`, `shrink_week`, `WEEK_ASSUMPTIONS`,
+  `WEEK_SHRINK`, `WEEK_DRAWS`; web `WinProbability`, `WeekOdds*`, `weekOddsPath` (`lib/api.ts` block).
+* **Files**: `src/league_lab/decisions.py` (block at the end), `api/league_lab_api/myweek.py` (block at the end + one
+  line in `my_week`), `api/league_lab_api/ondemand.py` (block at the end + one line in `my_week`),
+  `api/league_lab_api/main.py` (one route block), `api/README.md` (one row), `web/src/lib/api.ts` (block at the end),
+  `web/src/routes/MyWeek.svelte` (two marked blocks), `web/src/routes/League.svelte` (marked blocks; two marked lines
+  inside IC-4's card), `tests/test_ih3.py` (new, 7), `api/tests/test_ih3.py` (new, 11 + the recorder),
+  `web/e2e/ih3/fixtures.spec.ts` (new, 5 × phone / desktop), `web/fixtures/ih3/api_ih3.json` (the recording),
+  `docs/{METRICS,WORDS,STATUS}.md`, `CHANGELOG.md`.
+* **Commands**: `uv run pytest -q tests` (in two parts, `OMP_NUM_THREADS=1`: the machine ran at load 12–15);
+  `cd api && PYTHONPATH=. uv run pytest -q tests --ignore=tests/test_u1.py --ignore=tests/test_ig2.py` (those two apply
+  the hosted SQL and write rows with the pipeline role — not on the main database); the failing ones again on `main`
+  (`/home/claude/league-lab`, `ad4040e`); `uv run ruff check src app tests api`; `cd web && npm run lint && npm run
+  build`; `FIXTURES_PORT=8615 npx playwright test --config playwright.fixtures.config.ts e2e/ih3 e2e/ic4 e2e/if4
+  e2e/fixtures.spec.ts e2e/decisions`; `IH3_RECORD=1 … pytest tests/test_ih3.py -k record`; the calibration scripts.
+  Nothing written to `league_lab` (reads only; the calibration's frame and rows went to the scratchpad).
+* **Evidence — tests**: root **1,086 passed, 3 skipped, 2 failed** (`tests/test_ih3.py` 7 new: identical lineups →
+  exactly 50%; every starter higher → > 50% and the closed form for normal sums within 0.02; teammates' correlation
+  moves the spread both ways (my QB–WR stack lowers a favourite's chance, my WRs with *their* QB raise it, teammate RBs
+  narrow); played games use the actual points; a kicker with P10 / P90 only; the shrink symmetric; inconsistent
+  correlations repaired, fixed seed). The 2 failures (`test_my_week.py::test_my_week_is_the_mart` × 2) fail the same on
+  `main` (`ad4040e`) at this hour. API (without `test_u1` / `test_ig2`, which write to the database with the pipeline
+  role) **471 passed, 45 failed, 7 skipped**; **every one of the 45 fails the same on `main`** run against the same
+  database minutes later (45 failed in 118 s): pinned pre-kickoff numbers against Sunday-afternoon locks (e.g.
+  `test_ie1::test_scrubs_roster2_a_change_before_the_first_lock`, the on-demand vs house totals of locked rosters,
+  `test_i0a`'s Jefferson-out lineups) — nothing IH-3 touches. `api/tests/test_ih3.py` alone after the last commit: 11
+  passed, 1 skipped (the recorder). Web: `npm run lint` (eslint + svelte-check 0 errors / 0 warnings) and build clean;
+  e2e `ih3` **10 passed** (phone 375 / desktop 1300: the line under the opponent line and above the league line, its
+  hover text, no imperative words, the double header's two lines naming their opponents, no line without `win`, the
+  League card for a house league with my game's two numbers = My Week's, the odds inside IC-4's card for MFL, none on
+  last week's results, no sideways scroll); with `ic4`, `if4`: 24 passed; `fixtures.spec.ts` + `decisions`: 52 passed.
+  Ruff clean.
+* **What moved**: no existing number (only new keys, a new route and new lines on two screens). The page's existing
+  totals are untouched; the line's expected totals are those totals.
+* **Decisions** (nobody to ask): (1) **centred ranges** — each range moved so its mean is the projection: calibration is
+  a wash (raw Brier 0.2430 vs 0.2432) and the line's percentage then agrees with its own "120 to 117" (as stored, a
+  lineup's range means sat 3.5 points above its projection on the walk-forward and either way by several points on
+  week 4; Scrubs roster 6 read 50% next to "120 to 117"). (2) **The shrink** (0.60) is applied in `decisions`, not on the
+  screen: every reader gets the calibrated number; `p_raw` stays in the function's result. (3) **The opponent's best
+  lineup**, not his submitted one (the opponent line's number; the submitted lineup is only known for Sleeper's roster
+  `starters`, and the brief's "expected totals" are the page's). (4) **A game is in when the nightly scored it**, not at
+  kickoff: a game in progress counts as its full range (no live partial scores: no outside calls during a request
+  beyond Sleeper's cached matchups). (5) **Points from the league itself** (Sleeper's number in its own scoring) rather
+  than our recomputation; no points at all for an in week = unknown, the line steps aside (never 0). (6) **MFL after the
+  first game**: no line (no live points read) rather than a stale pre-week number. (7) **Words follow the printed
+  percent** (64.96% → "65%: clear"), D6's 55 / 65 cut points read either side. (8) The League screen's odds are a
+  **separate route asked after the screen shows** (1–5 s cold) instead of a key on `/api/league` (which would have
+  slowed the screen for everyone); on demand they sit in IC-4's card, a house league gets its own card. (9) 20,000
+  draws (±0.4 points at 50%; whole percent on the page) and the draws assigned in key order so My Week and League agree
+  exactly. (10) "Early: N weeks graded" is built but off: the calibration is not badly off.
+* **Not done**: live (in-game) scores — a game in progress is its full range; MFL's live points (MFL's `liveScoring`
+  export would serve it; the line steps aside after the first kickoff); a DEF has no range on the house path
+  (`cards.LINEUP_SQL` joins ranges by gsis id: the defense counts at its projection — the console's SQL, PO-owned); the
+  console (Home) shows no win line (PO-owned pages); the inactive-starter risk (the ranges are "if he plays"); the
+  calibration on the 2026 frozen record rows with the 50% range (weeks 4+, once scored) and per league; a metric
+  registry row (`dbt/seeds`, PO).
+* **Next**: re-grade after weeks 4–6 (the frozen rows carry P25 / P75 from week 4: the five-knot ranges) and refit the
+  shrink on 2024–2026; MFL live points; the defense's range in `LINEUP_SQL`.
+
+**For the PO**
+1. **No dbt, no workflow, no render.yaml change.** The API reads `analytics.league_player_week` (already on the hosted
+   copy: the console names it) and `analytics.fct_player_game_league` (already slim-published); `hosted_relations.py`
+   lists both for `api` now.
+2. **Merge notes**: `myweek.py` — one line at the end of `my_week` (`out["win"] = win(...)`) + a block at the end of the
+   file (IH-1 and IH-2 add blocks there too: keep all three); `ondemand.py` — one line after the movers in `my_week` + a
+   block at the end; `main.py` — one route block right before "the web app" section (it must stay above the
+   `/api/{rest:path}` catch-all); `MyWeek.svelte` — a derived block after `versus` and a block right after the
+   `opponent-line` paragraph (IH-1's banner sits above the actions: no overlap); `League.svelte` — an import line, a
+   script block before `allPlay`, one marked line inside IC-4's side span and one after its list, a card after IC-4's
+   block; `api.ts` — one block at the end; `api/README.md` one row. `src/league_lab/decisions.py` — a block at the end
+   (M6 does not touch this file).
+3. **Running the API suite on the main database writes**: `test_u1` and `test_ig2` apply `hosted_usage.sql` /
+   `hosted_events.sql` and insert / delete rows with the pipeline role (the main `league_lab` has both schemas, owned
+   by the pipeline role). IH-3 ran the suite with both ignored; the PO's own run on main is as before.
+4. **The 45 API / 2 root failures** are the clock (Sunday after the 1 PM kickoffs) against pinned pre-kickoff numbers;
+   they fail identically on `main` — expect them on any run between Sunday 1 PM and the next build.
+5. **Decisions Andrew may want to reverse**: the line is on My Week by default (information; a one-line removal); the
+   centring of the ranges on the projections; the shrink (0.60; `WEEK_SHRINK`); the opponent's best lineup rather than
+   his submitted one.
