@@ -121,7 +121,7 @@ test("an ESPN item first: N1's line exactly, no summary, no tag", async ({ page,
   await withNews(context, [ESPN_ITEM(Date.now())]);
   await page.goto(`/player/${JJ}?league=${SCRUBS}&team=2`);
   const line = page.getByTestId("player-news");
-  await expect(line).toHaveText("News · 14 h ago · Fantasy football Week 4 inactives: Daniels, DeVonta to sit; McConkey questionable · ESPN ›");
+  await expect(line).toHaveText("News · 14 h ago · Fantasy football Week 4 inactives: Daniels, DeVonta to sit; McConkey questionable · ESPN ›· context only, not in the projection"); // integ: II-4's forecast words on every card news line
   await expect(line.getByTestId("player-news-summary")).toHaveCount(0);
   await expect(line.getByTestId("player-news-verification")).toHaveCount(0);
 });

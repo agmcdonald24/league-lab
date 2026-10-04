@@ -135,7 +135,7 @@ test("Scrubs roster 2: the change before the first kickoff, and the Sleeper link
 
 test("Waivers: this week's gain is the number, the four-week total is second and cumulative, no triple copy", async ({ page }, info) => {
   await page.goto(`/waivers?league=${encodeURIComponent(MFL)}&team=8`);
-  await expect(page.getByTestId("waiver-answer")).toHaveText("The three strongest claims are below, each with what it adds this week.");
+  await expect(page.getByTestId("waiver-answer")).toHaveText("The three strongest claims below: each helps this week. Each card's total is its gain over weeks 4–7."); // integ: II-4's intro
   const top = page.getByTestId("top-move");
   await expect(top).toHaveCount(3);
   // PO (I-E): the three are ordered by this week's gain — Schultz (+3.0) first; the Falcons' bye cover (+1.2 this week,

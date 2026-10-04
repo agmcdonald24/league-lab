@@ -84,9 +84,8 @@ for (const scheme of SCHEMES) {
       // League of Scrubs, roster 2: real claims (G2's answer from the marts). IB-2: the answer is the first of the three
       // strongest moves; the four tiles became one lineup line; the free agents are the "All available" view
       const w = fx(`waivers_${SCRUBS}_2_ALL.json`);
-      const top = w.top3[0].move;
       await page.goto(`/waivers?league=${SCRUBS}&team=2`);
-      await expect(page.getByTestId("waiver-answer")).toHaveText(top.words.headline);
+      await expect(page.getByTestId("waiver-answer")).toHaveText("The three strongest claims below: 2 help this week, 1 covers a bye (week 7). Each card's total is its gain over weeks 4–7."); // integ: II-4's intro (lib/feed.ts topIntro) replaces the API's headline on the web
       expect(await isDark(page)).toBe(scheme === "dark");
       await expect(page.getByTestId("waiver-lineup")).toContainText(f1(w.lineup_value));
       const cards = page.getByTestId("top-move");
