@@ -13,6 +13,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[2]          # the repository: app/, api/, web/ side by side
+# The product's name as a manager sees it (renamed from League Lab on 2026-10-04; the codebase, the package, the
+# LEAGUE_LAB_* variables, the repository and the research console keep the old name). web/src/lib/brand.ts is its twin.
+APP_NAME = "isuckatfantasy"
 APP_LIB = ROOT / "app" / "lib"
 
 if (ROOT / ".env").exists():

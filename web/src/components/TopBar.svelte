@@ -1,4 +1,5 @@
 <script lang="ts" module>
+  import { APP_MARK, APP_NAME } from "../lib/brand";
   import type { RouteName } from "../lib/router.svelte";
 
   // IB-1 (Wave I-B): the screens grouped by task — four tabs: My Team · Waivers · Trades · Players. Each tab with more
@@ -185,9 +186,9 @@
 <header class="border-b border-line bg-surface pt-[env(safe-area-inset-top)]" data-testid="top-bar">
   <div class="relative mx-auto flex max-w-6xl items-center gap-2 px-4 py-2 wide:gap-4 wide:py-2.5">
     <!-- the wordmark: from 640 px (on a phone My Team is the way home, and the picker needs the room) -->
-    <a href={href("/")} class="order-1 hidden shrink-0 items-center gap-1.5 text-sm font-extrabold tracking-tight uppercase sm:flex" aria-label="League Lab, my team">
-      <span class="grid h-7 w-7 place-items-center rounded-sm bg-accent text-[11px] font-black text-on-accent">LL</span>
-      <span class="hidden xl:inline">League Lab</span>
+    <a href={href("/")} class="order-1 hidden shrink-0 items-center gap-1.5 text-sm font-extrabold tracking-tight uppercase sm:flex" aria-label="{APP_NAME}, my team">
+      <span class="grid h-7 w-7 place-items-center rounded-sm bg-accent text-[11px] font-black text-on-accent">{APP_MARK}</span>
+      <span class="hidden xl:inline normal-case">{APP_NAME}</span>
     </a>
 
     <!-- one nav: the bottom bar on a phone, inline in the top bar from 900 px -->

@@ -49,10 +49,10 @@ test("a stranger: password → username → picker → My Week → player → Ba
   await page.goto("/");
   await expect(page.getByTestId("login")).toBeVisible();
   await page.getByPlaceholder("Password").fill("not it");
-  await page.getByRole("button", { name: "Open League Lab" }).click();
+  await page.getByRole("button", { name: "Open isuckatfantasy" }).click();
   await expect(page.getByText("That is not it.")).toBeVisible();
   await page.getByPlaceholder("Password").fill(FIXTURE_PASSWORD);
-  await page.getByRole("button", { name: "Open League Lab" }).click();
+  await page.getByRole("button", { name: "Open isuckatfantasy" }).click();
 
   // 2. no league known on this phone: the username screen
   await expect(page.getByTestId("username-form")).toBeVisible();

@@ -50,7 +50,7 @@ from .applib import ros as ROS
 from .db import query
 from .myweek import NotFound, _num, _str, known_league
 from .ondemand import SleeperDown, ros_on_demand
-from .settings import ROOT
+from .settings import APP_NAME, ROOT
 
 PAGES = ROOT / "app" / "pages"
 POSITIONS = ("QB", "RB", "WR", "TE", "K", "DEF")
@@ -783,11 +783,11 @@ class TradeContext:
                 name, owner = self.known_name(k), self.board.owner(k)
                 pos = self.pos(k) if k in self.info.index else str((self.directory_row(k) or {}).get("position") or "")
                 if owner == rid and pos in IDP_POSITIONS:
-                    why = f"League Lab does not price defensive players ({pos}) yet"
+                    why = f"{APP_NAME} does not price defensive players ({pos}) yet"
                 elif owner == rid:
                     continue
                 elif name is None:
-                    why = "not a player League Lab knows in this league"
+                    why = f"not a player {APP_NAME} knows in this league"
                 elif owner is not None:
                     why = f"on {self.team(owner)}'s roster, not {self.team(rid)}'s"
                 else:
@@ -2738,7 +2738,7 @@ def _upside(league_id: str, team: int | None, week: int, is_house: bool, od_info
     # any other league: the alert and the stat-line what-if are NFL-wide; the lineup gains are the nightly's per house league
     fa = od_info.get("fa")
     why = ("The role alert and the what-if are NFL-wide, priced here in your league's scoring; what claiming him adds to your "
-           "lineup if the role holds is worked out each night for the leagues League Lab updates, not on request.")
+           f"lineup if the role holds is worked out each night for the leagues {APP_NAME} updates, not on request.")
     has = query("select to_regclass('ops.player_scenarios') is not null as ok", ())
     if fa is None or fa.empty or not bool(has["ok"].iloc[0]):
         return {"title": UPSIDE_TITLE, "stashes": [], "why": why, "howto": UPSIDE_HOWTO, "source": "on demand"}

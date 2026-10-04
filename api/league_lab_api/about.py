@@ -17,11 +17,12 @@ import pandas as pd
 from . import research
 from .db import query
 from .myweek import _num, _str, known_league
+from .settings import APP_NAME
 
 POSITIONS = ("QB", "RB", "WR", "TE")
 
 # quoted from app/pages/4_Rankings.py ("The model" expander), cut into the About screen's cards (web/src/lib/about.ts)
-MODEL_ANSWER = ("**League Lab trains its own model**: these are not Sleeper's or ESPN's projections. It predicts each player's "
+MODEL_ANSWER = (f"**{APP_NAME} trains its own model**: these are not Sleeper's or ESPN's projections. It predicts each player's "
                 "stat line from what was known before kickoff, then your league's scoring turns the line into points.")
 
 
@@ -236,7 +237,7 @@ def about(league_id: str, source: str | None = None) -> dict:
                "rankings_howto": RANKINGS_HOWTO}                                                   # ---- IA-3
         if not ctx.house:
             out["why"] = (f"The importance and the grades are measured once per house league's scoring each night. "
-                          f"{ctx.league_name} reads {name or 'the closest league'}'s: the closest scoring League Lab measures."
+                          f"{ctx.league_name} reads {name or 'the closest league'}'s: the closest scoring {APP_NAME} measures."
                           if name else "The importance and the grades are measured per house league's scoring; none is close.")
         if len(_cache) > 100:
             _cache.clear()

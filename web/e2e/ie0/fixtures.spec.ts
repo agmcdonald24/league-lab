@@ -178,7 +178,7 @@ test("an asset nobody can analyse is named, with no verdict, and can be taken ou
   const un = calc.getByTestId("unavailable");
   await expect(un).toBeVisible();
   await expect(un.getByTestId("unavailable-row")).toHaveCount(1);
-  await expect(un).toContainText("Can't analyse mfl:9999 (you give): not a player League Lab knows in this league.");
+  await expect(un).toContainText("Can't analyse mfl:9999 (you give): not a player isuckatfantasy knows in this league.");
   await expect(calc.getByTestId("trade-result")).toHaveCount(0); // no verdict
   await expect(calc.getByTestId("picked-give")).toContainText(/Houston Texans QB \+ mfl:9999\s\(not on this roster\)/);
   await page.screenshot({ path: shot("unavailable", info.project.name), fullPage: true });

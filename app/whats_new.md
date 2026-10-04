@@ -3,6 +3,12 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 4 · A new name: isuckatfantasy
+
+- The app is now called **isuckatfantasy** — same app, same numbers, new name on the sign-in screen, the home-screen
+  icon and the top bar. If you added it to your home screen, remove it and add it again to pick up the new icon.
+  The address stays the same for now; a new one is coming.
+
 ## Oct 4 · Better reasons: the drop, the alternative, the matchup
 
 - A waiver claim now says what the drop costs and why that player — the player he replaces goes first, and a bench

@@ -44,6 +44,7 @@ from .myweek import (  # IE-1 (+ annotate_swaps, PO I-E)
     lineup,
     what_changed,
 )
+from .settings import APP_NAME
 
 MOVERS_SQL = """select t.gsis_id, t.player_name, t.position, t.tags, t.momentum
                 from analytics.mart_player_trend_tags t
@@ -1035,7 +1036,7 @@ def lineup_readback(league: dict) -> dict:
     out = {"text": text, "slots": [getattr(s, "label", str(s)) for s in slots], "unread": unread,
            "bench": sum(1 for x in positions if x.upper() in NOT_SLOTS)}
     if unread:
-        out["unread_text"] = "Not in the lineup League Lab solves: " + ", ".join(unread) + "."
+        out["unread_text"] = f"Not in the lineup {APP_NAME} solves: " + ", ".join(unread) + "."
     return out
 
 

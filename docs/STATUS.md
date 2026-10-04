@@ -4725,6 +4725,19 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   desktop (1300) on answers recorded from the API (`web/fixtures/ie1/api_ie1.json`); `e2e/ia2` no longer reads the
   0–100 text. Root `uv run pytest` 986 passed (cards.py: the tiebreaker as data, the card text unchanged).
 
+## The rename — isuckatfantasy (2026-10-04, 00:20–00:50 ET)
+
+* Andrew: "we need to rename the app effective immediately. I want to call this, isuckatfantasy. I'm working on
+  the domain now." Done as a PO change on `main`: one constant on each side (`web/src/lib/brand.ts` `APP_NAME` /
+  `APP_MARK`; `api/league_lab_api/settings.py` `APP_NAME`), every user-facing sentence reads from it (sign-in, the
+  top bar's wordmark, About, the League / Leagues / Ros screens' error lines, `NOTHING_SUBMITTED`, the calculator's
+  "not a player … knows", the card's "Not in the lineup … solves", the About model answer, the usage notice), the
+  page title and the manifest, the icons regenerated with the mark "isaf" (`web/scripts/make-icons.py`), the e2e
+  assertions and the recorded answers, What's new ("A new name"). Not renamed, on purpose: the package, the
+  `LEAGUE_LAB_*` variables, the roles, the repository, the Render service, the workflows, the console, the docs'
+  prose (README says so at the top). Checks: the renamed-word API tests 74 passed, the e2e that assert the name 64
+  passed, lint / typecheck / build clean. The domain: Andrew; the steps are in HANDOFF § "Where things stand".
+
 ## Wave I-F (Iteration 17, part F)
 
 ### PO merge — Wave I-F, 2026-10-03 (Saturday night, 22:00–00:10 ET)

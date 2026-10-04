@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { APP_NAME } from "../lib/brand";
   // About the numbers (Wave G; was "Our record", plan F2): where the projections come from — the model explanation
   // (the Streamlit Rankings page's "The model" words: what it learned from, what it predicts, the ranges, how it was
   // graded, what it does not know, what we tried) — then the record against Sleeper's own projections, week by week
@@ -54,7 +55,7 @@
 
   <!-- ---- N1 (Wave I-D): where the card's news line comes from (docs/ESPN_TERMS.md) -->
   <p class="text-sm leading-snug text-ink-3" data-testid="about-news-source">
-    The news line on a player's card is the latest headline from ESPN's public player news (RotoWire's updates and ESPN's own stories), with its source and a link to ESPN; League Lab keeps none of it.
+    The news line on a player's card is the latest headline from ESPN's public player news (RotoWire's updates and ESPN's own stories), with its source and a link to ESPN; {APP_NAME} keeps none of it.
   </p>
   <!-- ---- end N1 -->
 
@@ -185,5 +186,5 @@
     {/if}
   </section>
   <!-- ---- U-1: the usage notice (lib/usage.ts; docs/HOSTING.md § "Usage") -->
-  <p class="mt-6 border-t border-line pt-3 text-sm text-ink-3" data-testid="usage-notice">League Lab counts screen views — which screen, which league and team, when — and nothing about you.</p>
+  <p class="mt-6 border-t border-line pt-3 text-sm text-ink-3" data-testid="usage-notice">{APP_NAME} counts screen views — which screen, which league and team, when — and nothing about you.</p>
 </main>

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { APP_NAME } from "../lib/brand";
   // League (plan G4; app/pages/8_League.py on GET /api/league): the answer first (your schedule luck and your bench;
   // without a team, the league's luckiest and unluckiest), then the standings with the record against everyone, who
   // has been lucky (bars either side of 0), points left on the bench, the latest moves, the draft where Sleeper has it.
@@ -237,7 +238,7 @@
             <p class="mt-3 text-xs text-ink-3">How much a better lineup would have added, {data.weeks_scored} week{data.weeks_scored === 1 ? "" : "s"}. High numbers mark managers who don't sweat start / sit: useful to know when you trade with them.</p>
           </Card>
         {:else}
-          <p class="ll-empty text-sm" data-testid="no-profiles">Points left on the bench need every lineup of the league's past weeks: they show for the leagues League Lab keeps every night.</p>
+          <p class="ll-empty text-sm" data-testid="no-profiles">Points left on the bench need every lineup of the league's past weeks: they show for the leagues {APP_NAME} Lab keeps every night.</p>
         {/if}
       </div>
     </div>
@@ -278,7 +279,7 @@
         {#if !data.draft}
           <p class="px-4 pb-4 text-base text-ink-2" data-testid="no-draft">
             {data.source === "sleeper"
-              ? "The draft review needs the league's history: it shows for the leagues League Lab keeps every night."
+              ? `The draft review needs the league's history: it shows for the leagues ${APP_NAME} keeps every night.`
               : "No draft for this league this season yet."}
           </p>
         {:else}

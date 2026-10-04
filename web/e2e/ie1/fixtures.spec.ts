@@ -105,7 +105,7 @@ test("the review's roster: one receiver decision, already in the MFL lineup, whe
   await expect(link).toHaveText("Open MFL to edit your lineup ↗");
   await expect(link).toHaveAttribute("href", "https://www44.myfantasyleague.com/2026/options?L=70587&O=02");
   await expect(link).toHaveAttribute("target", "_blank");
-  await expect(page.getByTestId("nothing-submitted")).toHaveText("League Lab never changes your lineup or claims; it tells you what to do in your league's app.");
+  await expect(page.getByTestId("nothing-submitted")).toHaveText("isuckatfantasy never changes your lineup or claims; it tells you what to do in your league's app.");
   // the action list comes before the lineup table on a phone (the first screen answers "what do I do?")
   const a = await acts.boundingBox();
   const t = await page.getByTestId("lineup-head").boundingBox();

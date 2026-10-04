@@ -177,10 +177,10 @@ test("the password gate (E2E_GATED_URL: an API started with LEAGUE_LAB_APP_PASSW
   await expect(page.getByTestId("login")).toBeVisible();
   expect((await page.request.get("/api/leagues")).status()).toBe(401);
   await page.getByPlaceholder("Password").fill("not it");
-  await page.getByRole("button", { name: "Open League Lab" }).click();
+  await page.getByRole("button", { name: "Open isuckatfantasy" }).click();
   await expect(page.getByText("That is not it.")).toBeVisible();
   await page.getByPlaceholder("Password").fill(process.env.E2E_GATED_PASSWORD ?? "");
-  await page.getByRole("button", { name: "Open League Lab" }).click();
+  await page.getByRole("button", { name: "Open isuckatfantasy" }).click();
   await expect(page.getByTestId("decision-card").first()).toBeVisible();
   // a name tap keeps the session (same tab, same cookie): no second password prompt
   await page.getByTestId("decision-card").first().locator("a").first().click();

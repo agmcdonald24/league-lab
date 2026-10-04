@@ -1,4 +1,4 @@
-// League Lab service worker: makes the app installable and the second launch instant.
+// isuckatfantasy (League Lab) service worker: makes the app installable and the second launch instant.
 // * hashed build files (/assets/*) are immutable: cache first;
 // * the app shell (navigations): network first, the cached shell when offline;
 // * /api/*: never cached here (the data changes nightly; the API's own Cache-Control applies).

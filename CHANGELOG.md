@@ -2,6 +2,14 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — the product is isuckatfantasy
+
+- **Renamed.** Everything a manager sees — the sign-in screen, the top bar, the home-screen icon and its mark ("isaf"),
+  the page title, the manifest, every sentence that named the app ("isuckatfantasy never changes your lineup or
+  claims…") — now says isuckatfantasy (`web/src/lib/brand.ts`, `api/league_lab_api/settings.py:APP_NAME`). The
+  codebase, the package, the environment variables, the roles, the repository, the Render service and the research
+  console keep the name League Lab. The domain follows (Andrew).
+
 ## 2026-10-03 — Wave I-F
 
 - **PO (integration).** `mart_waiver_moves` carries the drop's cost pieces (the rows fill at the next nightly; older

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { APP_NAME } from "../lib/brand";
   // Rest of season (plan F2): the answer first (#1 at the position), then "Yours", then the list
   // (Rank · Player · Points · Games · Playoffs) from GET /api/ros. Position switch: QB RB WR TE, K and DEF only when
   // the league starts them, All = the overall rank. The switch rewrites the URL in place (no Back step).
@@ -96,7 +97,7 @@
       .catch((e) => {
         if (league !== l || position !== p || path !== currentPath()) return;
         if (e instanceof Unauthorized) onauth();
-        else if (e instanceof ApiError && e.status === 404) error = "League Lab cannot find this league on Sleeper. Pick another above.";
+        else if (e instanceof ApiError && e.status === 404) error = `${APP_NAME} cannot find this league on Sleeper. Pick another above.`;
         else if (e instanceof ApiError && e.status === 502) error = "Sleeper did not answer. Try again in a minute.";
         else if (e instanceof ApiError && e.status === 503) error = "The numbers are not ready yet. Try again in a few minutes.";
         else error = e instanceof Error ? e.message : String(e);

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { APP_MARK, APP_NAME } from "../lib/brand";
   // Sign in with a Sleeper username → the league picker (plan F2). One field; the answer is the user's leagues this
   // season, each a real link to its My Week with the user's own team pre-selected. Remembered on this phone.
   import { ApiError, get, paths, Unauthorized, type UserLeagues } from "../lib/api";
@@ -33,7 +34,7 @@
       if (err instanceof Unauthorized) onauth();
       else if (err instanceof ApiError && err.status === 404) error = `Sleeper has no user called “${u}”. Check the spelling: it is the name you sign in to Sleeper with.`;
       else if (err instanceof ApiError && err.status === 502) error = "Sleeper did not answer. Try again in a minute.";
-      else error = `Cannot reach League Lab right now (${err instanceof Error ? err.message : String(err)}). Try again in a minute.`;
+      else error = `Cannot reach ${APP_NAME} right now (${err instanceof Error ? err.message : String(err)}). Try again in a minute.`;
     } finally {
       busy = false;
     }
@@ -92,8 +93,8 @@
     if (err instanceof Unauthorized) onauth();
     else if (err instanceof ApiError && err.status === 404) mflError = `${err.message}.`;
     else if (err instanceof ApiError && err.status === 502) mflError = "MyFantasyLeague did not answer. Try again in a minute.";
-    else if (err instanceof ApiError && err.status === 503) mflError = "League Lab is busy reading MyFantasyLeague. Try again in a minute.";
-    else mflError = `Cannot reach League Lab right now (${err instanceof Error ? err.message : String(err)}). Try again in a minute.`;
+    else if (err instanceof ApiError && err.status === 503) mflError = `${APP_NAME} is busy reading MyFantasyLeague. Try again in a minute.`;
+    else mflError = `Cannot reach ${APP_NAME} right now (${err instanceof Error ? err.message : String(err)}). Try again in a minute.`;
   }
 
   function pickMfl(v: MflLeague, rosterId: number) {
@@ -184,7 +185,7 @@
       >
     {/if}
     <h1 class="flex items-center gap-2 text-3xl font-extrabold tracking-tight">
-      <span class="grid h-9 w-9 place-items-center rounded-sm bg-accent text-sm font-black text-on-accent">LL</span>League Lab
+      <span class="grid h-9 w-9 place-items-center rounded-sm bg-accent text-sm font-black text-on-accent">{APP_MARK}</span>{APP_NAME}
     </h1>
     <p class="text-base leading-snug text-ink-2">
       <!-- IE-0 (Wave I-E): both platforms, not Sleeper only (the review's P0 #3) -->
@@ -214,7 +215,7 @@
       >
     </div>
     <p class="text-sm leading-snug text-ink-3">
-      No password to Sleeper: League Lab only reads what Sleeper shows anyone (your leagues, rosters and scoring).
+      No password to Sleeper: {APP_NAME} only reads what Sleeper shows anyone (your leagues, rosters and scoring).
     </p>
     {#if error}<p class="text-base text-bad" data-testid="username-error">{error}</p>{/if}
   </form>
@@ -242,7 +243,7 @@
       >
     </div>
     <p class="text-sm leading-snug text-ink-3" data-testid="mfl-help">
-      Paste your league link, or type your league's name as it appears in the MFL app. League Lab only reads what the league shares.
+      Paste your league link, or type your league's name as it appears in the MFL app. {APP_NAME} only reads what the league shares.
     </p>
     {#if mflError}<p class="text-base text-bad" data-testid="mfl-error">{mflError}</p>{/if}
   </form>

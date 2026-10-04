@@ -1,5 +1,7 @@
 """Draw the home-screen icons (web/public/icons/*.png) with Pillow: `python3 scripts/make-icons.py`.
-A plain monogram on the app's green; the maskable variant keeps the mark inside the 80% safe zone."""
+A plain monogram on the app's green ("isaf", the product's short mark since the rename to isuckatfantasy on
+2026-10-04; the chip in the top bar and on the sign-in screen says the same); the maskable variant keeps the mark
+inside the 80% safe zone."""
 
 from pathlib import Path
 
@@ -7,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 OUT = Path(__file__).resolve().parents[1] / "public" / "icons"
 GREEN, WHITE = (21, 128, 61), (255, 255, 255)
+MARK = "isaf"
 FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 
 
@@ -19,13 +22,15 @@ def icon(size: int, maskable: bool = False, radius: float = 0.0) -> Image.Image:
         d.rounded_rectangle([0, 0, s - 1, s - 1], radius=int(s * radius), fill=GREEN)
     else:
         d.rectangle([0, 0, s, s], fill=GREEN)
-    mark = 0.36 if maskable else 0.46
-    font = ImageFont.truetype(FONT, int(s * mark))
-    text = "LL"
+    text = MARK
+    width = 0.58 if maskable else 0.76                    # the mark's width as a share of the square
+    font = ImageFont.truetype(FONT, int(s * 0.3))
+    box = d.textbbox((0, 0), text, font=font)
+    font = ImageFont.truetype(FONT, int(s * 0.3 * (s * width) / (box[2] - box[0])))
     box = d.textbbox((0, 0), text, font=font)
     w, h = box[2] - box[0], box[3] - box[1]
     d.text(((s - w) / 2 - box[0], (s - h) / 2 - box[1] - s * 0.02), text, font=font, fill=WHITE)
-    # a thin underline: the "lab" bench line
+    # a thin underline under the mark (kept from the League Lab icon: the "bench" line)
     y = (s + h) / 2 + s * 0.05
     d.rounded_rectangle([s * 0.3, y, s * 0.7, y + s * 0.035], radius=int(s * 0.02), fill=WHITE)
     return img.resize((size, size), Image.LANCZOS)

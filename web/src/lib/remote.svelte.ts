@@ -2,9 +2,10 @@
 // plain words (the Wave F pages' wording). A newer path wins over a late answer for an older one.
 import { ApiError, get, peek, Unauthorized } from "./api";
 import { restoreScroll } from "./router.svelte";
+import { APP_NAME } from "./brand";
 
 export function errorWords(e: unknown): string {
-  if (e instanceof ApiError && e.status === 404) return /league/i.test(e.message) ? "League Lab cannot find this league on Sleeper. Pick another above." : e.message;
+  if (e instanceof ApiError && e.status === 404) return /league/i.test(e.message) ? `${APP_NAME} cannot find this league on Sleeper. Pick another above.` : e.message;
   if (e instanceof ApiError && e.status === 502) return "Sleeper did not answer. Try again in a minute.";
   if (e instanceof ApiError && e.status === 503) return "The numbers are not ready yet. Try again in a few minutes.";
   return e instanceof Error ? e.message : String(e);

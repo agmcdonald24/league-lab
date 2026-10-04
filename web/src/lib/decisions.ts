@@ -2,6 +2,7 @@
 // (app/pages/2_Waiver_Wire.py `_headline`, 1_Team_Hub.py's cards, 8_League.py's luck line, 6_Trade_Finder.py's
 // partner card). Numbers keep their units; unknown is not zero (docs/WORDS.md).
 import type { AllPlayRow, LeagueView, PartnerRow, Team, TradePlayer, TradeWindow, WaiverMove, Waivers } from "./api";
+import { APP_NAME } from "./brand";
 
 export const f1 = (x: number | null | undefined): string => (x == null ? "—" : x.toFixed(1));
 export const f2 = (x: number | null | undefined): string => (x == null ? "—" : x.toFixed(2));
@@ -183,7 +184,7 @@ export function parseIds(s: string | null): string[] {
 /** The screens' error line (the Wave F pages' words). */
 export function errorWords(e: unknown): string {
   const status = typeof e === "object" && e !== null && "status" in e ? (e as { status: number }).status : null;
-  if (status === 404) return "League Lab cannot find this for your league on Sleeper. Pick another league or team above.";
+  if (status === 404) return `${APP_NAME} cannot find this for your league on Sleeper. Pick another league or team above.`;
   if (status === 502) return "Sleeper did not answer. Try again in a minute.";
   if (status === 503) return "The numbers are not ready yet. Try again in a few minutes.";
   return e instanceof Error ? e.message : String(e);

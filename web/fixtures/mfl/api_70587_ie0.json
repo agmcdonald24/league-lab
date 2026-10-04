@@ -485,7 +485,7 @@
     "url": "https://www44.myfantasyleague.com/2026/options?L=70587&O=02",
     "platform": "MFL"
    },
-   "nothing_submitted": "League Lab never changes your lineup or claims; it tells you what to do in your league's app.",
+   "nothing_submitted": "isuckatfantasy never changes your lineup or claims; it tells you what to do in your league's app.",
    "lineup": [
     {
      "role": "starter",
@@ -6236,14 +6236,14 @@
  "POST /api/trades/evaluate {\"get\":[\"10229\"],\"give\":[\"mfl:0682\",\"mfl:9999\"],\"league\":\"mfl:70587\",\"partner\":12,\"team\":8}": {
   "status": 400,
   "body": {
-   "error": "Can't analyse mfl:9999: not a player League Lab knows in this league.",
-   "detail": "Can't analyse mfl:9999: not a player League Lab knows in this league.",
+   "error": "Can't analyse mfl:9999: not a player isuckatfantasy knows in this league.",
+   "detail": "Can't analyse mfl:9999: not a player isuckatfantasy knows in this league.",
    "unavailable": [
     {
      "key": "mfl:9999",
      "side": "give",
      "name": null,
-     "why": "not a player League Lab knows in this league"
+     "why": "not a player isuckatfantasy knows in this league"
     }
    ]
   }

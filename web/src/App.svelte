@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { APP_NAME } from "./lib/brand";
   import { onMount } from "svelte";
   import { ApiError, clearCache, get, paths, Unauthorized, type League, type Status, type UserLeagues } from "./lib/api";
   import { leagueOptions, type LeagueOption } from "./lib/leagues";
@@ -123,7 +124,7 @@
 {:else if phase === "error"}
   <div class="mx-auto max-w-xl p-4">
     <div class="ll-error">
-      Cannot reach League Lab right now ({failure}). Try again in a minute.
+      Cannot reach {APP_NAME} right now ({failure}). Try again in a minute.
       <button class="mt-3 block rounded-md bg-accent px-4 py-2 font-semibold text-on-accent" onclick={signedIn}>Try again</button>
     </div>
   </div>

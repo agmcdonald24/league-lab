@@ -1,3 +1,4 @@
+import { APP_NAME } from "./brand";
 // "About the numbers" (Wave G): the model explanation, in the words of the Streamlit Rankings page's "The model"
 // expander (app/pages/4_Rankings.py), cut into the sections the screen shows. The league's name goes where the page
 // names the scoring. docs/WORDS.md: plain words, one gloss per technical number.
@@ -9,7 +10,7 @@ export interface AboutSection {
 }
 
 export const MODEL_ANSWER =
-  "**League Lab trains its own model**: these are not Sleeper's or ESPN's projections. It predicts each player's stat line from what was known before kickoff, then your league's scoring turns the line into points.";
+  `**${APP_NAME} trains its own model**: these are not Sleeper's or ESPN's projections. It predicts each player's stat line from what was known before kickoff, then your league's scoring turns the line into points.`;
 
 export function aboutSections(leagueName: string): AboutSection[] {
   return [

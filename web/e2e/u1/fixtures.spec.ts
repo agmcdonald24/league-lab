@@ -32,7 +32,7 @@ test("one count per screen view: screen, league, team — and nothing else", asy
   // in-app navigation (no reload): the new screen counts once, Back to My Week is a new view
   await page.getByTestId("foot-about").click();
   await expect(page.getByTestId("usage-notice")).toHaveText(
-    "League Lab counts screen views — which screen, which league and team, when — and nothing about you.",
+    "isuckatfantasy counts screen views — which screen, which league and team, when — and nothing about you.",
   );
   await expect.poll(() => got.map((c) => c.screen)).toEqual(["week", "about"]);
   await page.goBack();
@@ -51,7 +51,7 @@ test("not before sign-in; a failing count never shows", async ({ context, page }
   await page.waitForTimeout(300);
   expect(got).toEqual([]);
   await page.getByPlaceholder("Password").fill(FIXTURE_PASSWORD);
-  await page.getByRole("button", { name: "Open League Lab" }).click();
+  await page.getByRole("button", { name: "Open isuckatfantasy" }).click();
   await expect(page.getByTestId("myteam-foot")).toBeVisible();
   await expect.poll(() => got.length).toBe(1);
   await expect(page.locator(".ll-error")).toHaveCount(0);

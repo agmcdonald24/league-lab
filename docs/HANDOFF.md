@@ -6,6 +6,14 @@ For the next agent (Claude Code or any other) picking this repo up. Read in this
 
 ## Where things stand
 
+* **The product's name is isuckatfantasy** (2026-10-04, Andrew: "rename the app effective immediately"; he is on the
+  domain). One constant on each side — `web/src/lib/brand.ts` (`APP_NAME`, `APP_MARK` "isaf"; the icons from
+  `web/scripts/make-icons.py`) and `api/league_lab_api/settings.py` (`APP_NAME`) — every sentence a manager reads
+  takes it from there. The codebase, the package, the `LEAGUE_LAB_*` variables, the roles, the repository, the
+  Render service and the console stay League Lab. When the domain exists: Render → the service → Settings → Custom
+  Domains (add the apex and `www`, CNAME / ALIAS to `league-lab.onrender.com`, Render issues the certificate), then
+  the URL in `app/whats_new.md`, `README.md`, `docs/HOSTING.md`, the About page and `render.yaml`'s comments.
+
 * Everything through **Wave A of Iteration 9** is built, tested and committed: two Sleeper leagues side by
   side (`LEAGUE_LAB_SLEEPER_LEAGUE_ID=<reference>,<other>`), the Phase 2 play-by-play layer, the
   OLS baseline rankings with backtest, and **Projection v2** (per-league stat-line projections with

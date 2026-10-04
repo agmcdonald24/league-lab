@@ -1,4 +1,10 @@
-# League Lab
+# League Lab — shipped as **isuckatfantasy**
+
+The product a manager opens (the phone web app at `https://league-lab.onrender.com`, its API, the home-screen icon)
+is called **isuckatfantasy** since 2026-10-04 (`web/src/lib/brand.ts`, `api/league_lab_api/settings.py:APP_NAME`).
+The codebase, the Python package (`league_lab`), the environment variables (`LEAGUE_LAB_*`), the database roles,
+the repository, the Render service and the research console keep the name League Lab: nothing a league-mate sees
+says it, and renaming the internals would move every secret and workflow for no gain.
 
 Local, reproducible analytics for a Sleeper fantasy league (League of Scrubs) and NFL
 skill-position research, 2016 → today.

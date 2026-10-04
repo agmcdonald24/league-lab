@@ -3,7 +3,7 @@
  "league_name": "League of Scrubs",
  "source": "database",
  "model": {
-  "answer": "**League Lab trains its own model**: these are not Sleeper's or ESPN's projections. It predicts each player's stat line from what was known before kickoff, then your league's scoring turns the line into points.",
+  "answer": "**isuckatfantasy trains its own model**: these are not Sleeper's or ESPN's projections. It predicts each player's stat line from what was known before kickoff, then your league's scoring turns the line into points.",
   "sections": [
    {
     "key": "learned",

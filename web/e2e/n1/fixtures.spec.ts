@@ -110,5 +110,5 @@ test("ESPN's own story: named ESPN, linked to the story", async ({ page, context
 test("About names where the news line comes from", async ({ page }) => {
   await page.goto(`/about?league=${SCRUBS}&team=2`);
   await expect(page.getByTestId("about-news-source")).toContainText("ESPN's public player news");
-  await expect(page.getByTestId("about-news-source")).toContainText("League Lab keeps none of it.");
+  await expect(page.getByTestId("about-news-source")).toContainText("isuckatfantasy keeps none of it.");
 });

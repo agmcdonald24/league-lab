@@ -85,7 +85,7 @@ def test_an_asset_the_analysis_cannot_use_is_named_never_dropped(client, overlay
     assert r.status_code == 400
     d = r.json()
     assert d["unavailable"] == [{"key": "mfl:9999", "side": "give", "name": None,
-                                 "why": "not a player League Lab knows in this league"}]
+                                 "why": "not a player isuckatfantasy knows in this league"}]
     assert d["error"].startswith("Can't analyse mfl:9999")
     # a known player on the wrong side: named, with whose roster he is on
     r = _eval(client, [HOU_QB], ["11632"])                     # Malik Nabers is Big Mac Attack's own

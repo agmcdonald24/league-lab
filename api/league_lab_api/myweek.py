@@ -20,6 +20,7 @@ import pandas as pd
 from . import availability
 from .applib import blocks, capture, cards, links, ui
 from .db import query
+from .settings import APP_NAME
 
 
 class NotFound(LookupError):
@@ -298,7 +299,7 @@ def cards_from_rows(league_id: str, roster_id: int, week: int, season: int, rows
 # lineup and the cards are the ones below; an action only names who starts and what the submitted lineup still needs.
 ACTION_MIN_GAIN = 0.5
 MAX_ACTIONS = 3
-NOTHING_SUBMITTED = "League Lab never changes your lineup or claims; it tells you what to do in your league's app."
+NOTHING_SUBMITTED = f"{APP_NAME} never changes your lineup or claims; it tells you what to do in your league's app."
 SET_ALL = "Your lineup is set — nothing to change."
 # ---- IF-4 (the decision-quality review § Priority 4: "No clear upgrade" is more accurate than "nothing to change" when a
 # close call exists): the rest is "set" (no tail), and "No clear upgrade elsewhere" when the review lines are shown

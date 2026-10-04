@@ -44,7 +44,7 @@ from . import auth, availability, db, myweek, news, ondemand, player, research  
 from .applib import cards, ui
 from .db import DataNotReady, query
 from .myweek import NotFound
-from .settings import web_dist
+from .settings import APP_NAME, web_dist
 
 mimetypes.add_type("application/manifest+json", ".webmanifest")
 mimetypes.add_type("text/javascript", ".js")
@@ -57,7 +57,7 @@ async def lifespan(_app: FastAPI):
     db.close()
 
 
-app = FastAPI(title="League Lab API", version="0.1.0", lifespan=lifespan, docs_url="/api/docs",
+app = FastAPI(title=f"{APP_NAME} API (League Lab)", version="0.1.0", lifespan=lifespan, docs_url="/api/docs",
               openapi_url="/api/openapi.json", redoc_url=None)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
