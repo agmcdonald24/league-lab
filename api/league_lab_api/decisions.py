@@ -381,6 +381,13 @@ def _moves_on_demand(league_id: str, team: int, *, as_of: datetime | None = None
     # ---- IF-1: the drop's season value against the Trade Finder's replacement (market_points / replacement_level)
     points = market_points(lw)
     repl, _ = replacement_level(lw, fa, points)
+    # ---- IH-2 (Wave I-H): a dropped team unit's season value (IG-1's `unit_market`: its priced weeks over the market's
+    # window, above the best FREE unit of its kind) — `market_points` has no unit rows, so a unit's drop cost had no
+    # season-value piece and its future starts were measured against a free unit worth 0
+    u_pts, u_repl, _ = unit_market(lw, fa)
+    points.update(u_pts)
+    repl.update(u_repl)
+    # ---- end IH-2
     for r in fa.itertuples():                       # a team unit (MFL's TMQB / TMPK) against the best free unit
         v = points.get(r.gsis_id if isinstance(r.gsis_id, str) else r.sleeper_id)
         if r.position in UNIT_POSITIONS and v is not None:
@@ -3846,11 +3853,15 @@ def _sleeper_runs(settings: dict, now: pd.Timestamp) -> tuple[pd.Timestamp | Non
         return None, None, daily
     local = now.tz_convert(SLEEPER_WAIVER_TZ)
     if daily:
+        days = waiver_days(settings.get("daily_waivers_days"))                          # ---- IH-2: the days they run
         nxt = local.normalize().replace(hour=hour)
         if nxt <= local:
             nxt = (local.normalize() + pd.Timedelta(days=1)).replace(hour=hour)
+        while days is not None and days and nxt.weekday() not in days:                   # ---- IH-2: skip the days off
+            nxt = (nxt.normalize() + pd.Timedelta(days=1)).replace(hour=hour)
         t = nxt.tz_convert(ET)
-        return t.tz_convert("UTC"), f"every day at {_clock(t)} ET", True
+        et_days = None if days is None else frozenset((d + (t.weekday() - nxt.weekday())) % 7 for d in days)  # ---- IH-2
+        return t.tz_convert("UTC"), f"{daily_days_words(et_days)} at {_clock(t)} ET", True               # ---- IH-2
     try:
         day = int(day)
     except (TypeError, ValueError):
@@ -3936,7 +3947,8 @@ def waiver_deadline(league: dict | None, *, platform: str = "sleeper", mfl_type:
     tail = f"; players lock at their own kickoff — the next game starts {lock['words']}." if lock else "."
     return {"platform": platform, "kind": kind, "kind_words": kw, "daily": daily,
             "runs_at": runs_at.isoformat() if runs_at is not None else None, "runs_words": runs_words,
-            "clear_days": clear, "lock": lock, "words": head + tail, "source": source}
+            "clear_days": clear, "lock": lock, "words": head + tail, "source": source,
+            **deadline_days(settings if platform != "mfl" else {}, daily)}                         # ---- IH-2
 
 
 def waivers_deadline_for(league_id: str, season: int | None, week: int | None, is_house: bool) -> dict | None:
@@ -3959,3 +3971,53 @@ def waivers_deadline_for(league_id: str, season: int | None, week: int | None, i
     except Exception:  # noqa: BLE001 - a line on the page, never a failure
         return None
 # ---- end IG-3
+
+
+# ---- IH-2 (Wave I-H): which days Sleeper's daily waivers run (``daily_waivers_days``; IG-3 said "every day"). The
+# setting is two bits per day — Sleeper's default 5461 = 0b01_0101_0101_0101 sets the low bit of each of the 7 pairs.
+# Decision (no Sleeper documentation; the 2021–2026 values of Andrew's two leagues: 5461, 729, 6484, 15356, 15359): the
+# LOW bit of day d's pair (bit 2·d) = claims run that day; the high bit is not read (it is set for every day in the
+# dynasty since 2025, for none in the default). The day order is `waiver_day_of_week`'s (0 = Monday … 6 = Sunday:
+# IG-3's reading of Sleeper's default 2 = Wednesday), in the league's own clock (Pacific, `SLEEPER_WAIVER_TZ`). The
+# dynasty's 15359 reads "every day except Saturday"; its 2022–2024 value 15356 "except Monday and Saturday". If Andrew's
+# settings screen names other days, the order is the one constant below.
+WAIVER_DAYS_FIRST = 0          # the weekday (0 = Monday) of the mask's lowest pair
+
+
+def waiver_days(mask: Any) -> frozenset[int] | None:
+    """The weekdays (0 = Monday) daily waivers run, from Sleeper's ``daily_waivers_days``; None when the mask is missing
+    or not a number (unknown: the line says "every day", IG-3's words, only when nothing says otherwise)."""
+    try:
+        m = int(mask)
+    except (TypeError, ValueError):
+        return None
+    if m < 0:
+        return None
+    return frozenset((WAIVER_DAYS_FIRST + d) % 7 for d in range(7) if (m >> (2 * d)) & 1)
+
+
+def _day_list(names: list[str]) -> str:
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def daily_days_words(days: frozenset[int] | None) -> str:
+    """'every day' / 'every day except Saturday' / 'on Monday, Wednesday and Thursday' (``days`` = ET weekdays: the
+    caller shifts a Pacific run at 9 PM or later to the next ET day). ``days`` empty: 'on no day of the week (see
+    Sleeper)'."""
+    if days is None or len(days) == 7:
+        return "every day"
+    if not days:
+        return "on no day of the week (see Sleeper)"
+    if len(days) >= 4:
+        return "every day except " + _day_list([DAY_NAMES[d] for d in range(7) if d not in days])
+    return "on " + _day_list([DAY_NAMES[d] for d in sorted(days)])
+
+
+def deadline_days(settings: dict, daily: bool | None) -> dict:
+    """The deadline's extra fields: ``days`` (the day names claims run, Monday first) for daily waivers that skip a day,
+    else None; ``days_mask`` = Sleeper's raw ``daily_waivers_days`` (None for MFL or when absent)."""
+    raw = settings.get("daily_waivers_days")
+    days = waiver_days(raw) if daily else None
+    return {"days": None if days is None or len(days) == 7 else [DAY_NAMES[d] for d in sorted(days)],
+            "days_mask": _int(raw) if raw is not None else None}
+# ---- end IH-2
