@@ -5125,3 +5125,125 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   the two; unmapped players' briefs invisible; no retention (≈ 5 MB per thousand briefs, outside the nightly's
   480 MB budget, inside Neon's 0.5 GB).
 * **Next**: Andrew's answer on § 5, then § "Set up" (five steps); after the first real brief, a "What's new" line.
+
+## Wave I-G (Iteration 17, part G)
+
+### IG-1 2026-10-04 — team units' season value, the finder on season value, unknown is not zero (branch `dev/IG1`, clone `league_lab_i0b`, read only)
+
+* **Task / plan**: Wave I-G brief § IG-1; plan § 17 (the backlog after I-F: "team units' season value", "the finder's
+  raw-total filter", "unknown is not zero"); STATUS § "Wave I-F" PO "Open" and IF-2's "Open".
+* **Why**: MFL's team units (team QB / team kicker) had no `market` row, so "Houston Texans QB + Tuten for Rice" said
+  "Not counted (no season projection): Houston Texans QB." and the warning could not judge it; the Finder still set
+  trades aside on the raw rest-of-season totals (a volume gap: "you give 484 rest-of-season points for 141"); a bench
+  player with no projection showed "0.00" (Jacobs on GoodGameBuddy's bench).
+* **Delivered**
+  1. **Units' season value** (`decisions.unit_market`, `# ---- IG-1`; merged into `TradeContext.points` /
+     `replacement` / `repl_name` on demand): season points = IC-4's per-week unit rows (`lw.priced[w].units`) summed
+     over `market_points`' window (this week → the last regular-season week; a bye adds nothing), keyed as the board /
+     free-agent frame key them (`mfl:0682`); replacement = the best **free unit of the same kind**, never a player; a
+     unit with no priced week has no row. The verdict, `values.season_value`, `season_value_line`, `calc_sanity` and the
+     Finder count units. House leagues: unchanged (no units).
+  2. **The Finder's rule (a)** = `trades.value_gap` (via `trades.sanity(..., values=)`; `ros=` kept for callers without
+     values): season value above replacement given − received > 25% of given **and not about even** (a warning never
+     contradicts "about even by season value"); one rule for the Finder and the calculator (`calc_sanity` delegates).
+     `/api/trades/partners` `sanity` gains `rule: "season_value"`, `value_players`, `words` (the "left out" sentence, now
+     from the API); the three named examples show the first of each rule first (`rejected_examples`).
+  3. **Unknown is not zero**: the API sends `null` + `no_projection: true` for a player with no projection row (the
+     solver's `value_source = 'unvalued'`, carried at 0): My Week `lineup` / `lineup_full` (value and margin), Team's
+     roster, the trade answers (`this_week`, the lineups' slots, starters in / out and their change), a Waivers drop
+     with no rest-of-season row; My Week gains `n_unvalued` (starters the total counts at 0) and `unvalued_words`
+     ("1 starter has no projection and counts as 0 in this total."); a package side with an unvalued player has no
+     season-value sum (`known_value`: the Finder rows' `price_out` / `price_in`, the calculator's other-objective
+     words). Web: `LineupTable` (a dash titled "No projection for him this week: unknown, not 0", "no projection" under
+     the name), My Week (the total's line), Team (row words), TradeCalc (title), the card / pane label ("Week 4 · no
+     projection"), Trades ("left out" words from the API). Console: `cards.lineup_table` blank + the flag "no
+     projection" (was "no value yet" + 0.00).
+* **Interfaces**: INTERFACES.md § IG-1 (units' market rows, the value rule's `values=`, the null contract).
+* **Evidence**
+  - Houston Texans QB + Tuten for Rice (MFL 70587 team 8 → 12, fixtures + ESPN overlay): **before** "Season value above
+    replacement: you give 14, you get 7 (about even). You give 2 players for 1: 1 roster spot freed. Not counted (no
+    season projection): Houston Texans QB." (Houston QB `market_price` / `season_points` null; `market.unknown`
+    ["mfl:0682"]); **after** Houston QB 355 season points, the best free team QB Arizona Cardinals QB 378 → 0 above;
+    "Season value above replacement: you give 14, you get 7 (about even). You give 2 players for 1: 1 roster spot
+    freed."; `market.replacement` gains TMQB (378, Arizona Cardinals QB) and TMPK (169, New Orleans Saints K); no
+    warning either way (14 for 7: about even). "Houston QB for Rice + Carolina QB": "you give 0, you get 7", nothing
+    "Not counted". A unit's season points = its rest-of-season rows (`weeks_json`) over the same weeks (tested).
+  - **The Finder, Scrubs roster 6** (clone, next four weeks) — before: 5 cards, 2 left out (raw rule): Williams → Purdy;
+    Lloyd + Boston → Mahomes; Judkins → Mahomes; Warren → Andrews + Purdy; Lamb → Allen + Golden · left out: Lamb +
+    Javonte Williams → Taylor ("321 rest-of-season points for 213"), Williams → Kyler Murray ("112 for 75"). After: 7
+    cards, 10 left out: Williams → Purdy + Likely; Williams → Purdy; Lloyd + Boston → Mahomes; Lamb → Allen + Chase;
+    Judkins → Mahomes; Williams → Kyler Murray; Lamb + Javonte Williams → Taylor · left out (value gap): Williams +
+    Judkins → Lamar Jackson ("32 season value above replacement for 6"), Williams + Boston → Jackson ("35 for 6"),
+    Warren → Andrews + Purdy ("20 for 3"), Lamb → Allen + Golden ("69 for 35"), … All cards stay below the best
+    waiver move (Carlson, +13.5); no gain moved.
+  - **The Finder, MFL 70587 team 8** (fixtures) — before: 15 cards, 11 left out: Bears QB → KC QB + Rice (headline);
+    McCaffrey → Achane + Coker; Corum → Downs + Johnston; Corum → Downs; Houston QB → KC QB; Tuten → Kincaid; Watson →
+    Chase + Wilson; Houston K → Higgins + Packers K; Corum → Kraft; Bears QB + Tuten → Bucs QB; Tuten → Evans; Corum →
+    Wan'Dale Robinson; Houston K → Smith + Chiefs K; Corum → McLaurin; McConkey → McLaurin + Hockenson · left out
+    (raw): Tuten → Robinson ("138 for 98"), Corum → Hockenson ("127 for 83"), Bears QB + Tuten → Coker ("484 for
+    141"). After: 17 cards, 12 left out: Bears QB → KC QB + Rice (headline, unchanged, now "0 for 29"); Bears QB →
+    Tyler Warren; Corum → Downs + Johnston; Bears QB → Coker; Bears QB + Tuten → Coker; Corum → Downs; Houston QB → KC
+    QB; Corum → Kincaid; Watson → Chase + Wilson; Houston K → Higgins + Packers K; Corum → Kraft; Bears QB + Corum →
+    Bucs QB; Corum → Robinson; Houston K → Smith + Chiefs K; Corum → McLaurin; McConkey → McLaurin + Hockenson; Corum
+    → Shakir · left out (value gap): Tuten → Robinson, Bears QB + Tuten → Bucs QB, Tuten → Kincaid ("14 season value
+    above replacement for 0"). Why the team-QB cards: a team QB below the best free team QB is worth 0 above
+    replacement — giving it costs no season value (the waiver wire has a better one).
+  - **No projection**: Scrubs roster 6 My Week — Jacobs `value` 0.0 → null, `no_projection` true; Team roster 0.0 →
+    null; a trade giving Jacobs: `this_week` 0.0 → null; his card `proj_points` null (unchanged) with the label "Week 4
+    · no projection"; `n_unvalued` 0 (the bench is not in the total).
+  - Commands: `cd api && PYTHONPATH=. uv run pytest -q tests/test_ig1.py` **13 passed**; trade / week neighbours
+    (`test_if2 test_ia2 test_ic4 test_ie0 test_ie1 test_ie2 test_ic_po`) green except `test_ic_po`'s scoring check
+    (the clone has no `*_tds_10p`: known); root `tests/test_cards.py test_trades.py test_trade_finder_page.py
+    test_my_week.py test_decisions.py test_app_guards.py` **70 passed**; **whole suites**: API **476 passed, 4 failed, 14 skipped** (the three scoring checks the clones cannot pass — `test_ic1` dad's league weeks 1–2, `test_ic_po` ten-yard cut: no `*_tds_10p` columns; and `test_if1::test_the_engine_drops_mcpherson_for_carlson`, which passed on the first run and fails since IG-3 rewrote `ops.waiver_moves` on `league_lab_i0b` at 05:00 ET — IG-3 re-pins it; skips: `test_u1`'s hosted SQL needs a superuser, IC-3's flat path, IF-4's recorder) + `test_myweek test_parity test_i0a test_ib0 test_if4 test_ig1` re-run after the last commit: 78 passed, 1 skipped; root **1013 passed, 3 skipped**;
+    `uv run ruff check src app tests api`: 1 error, `api/league_lab_api/research.py:61` B010 — on `main` too, not
+    this branch's; web `npm run lint` (eslint + svelte-check + tsc) clean, `npm run build` clean, **fixture e2e 206
+    passed** (`web/e2e/ig1/` 2 × phone / desktop on answers recorded from the API on the fixtures + the clone,
+    `web/fixtures/ig1/api_ig1.json`: Jacobs' dash, title, words and his card; the team QB counted on the calculator;
+    the Finder's "left out" words on season value).
+* **What moved and why**: the Finder's suggestions (rule (a) on value — the brief's allowed move, lists above); the
+  partner rows' `price_out` / `price_in` (null when a side has an unvalued player; the team units now priced); the
+  calculator's season-value line and `market` for packages with a unit; the console's starter flag "no value yet" →
+  "no projection". No projection, lineup total or gain moved.
+* **Every place that coerced a missing projection to 0** — fixed (now null): (1) `myweek._lineup_row` `value:
+  _num(r.get("value"))` (the solver's 0.0 for `unvalued`; both paths) and its margin; (2) `myweek.cards_from_rows`
+  `alt_value`; (3) `decisions.team` roster `value: _num(r["player_value"])`; (4) `TradeContext.week_value` →
+  `ctx.player()['this_week']` (every trade answer's players); (5) `decisions.evaluate` lineups' `slots[].value` (the
+  page's `lineup_frame`: `(s.value or 0.0)`); (6) `decisions._membership` `T._r2(s.value or 0.0)` ×2 and `trade_story`
+  `row["change"] = T._r2(s.value or 0.0)`, `lu["out"]` `change: -x["value"]`; (7) `decisions._move` drop `projection` /
+  `season_points_left` (the writer stores `drop_value` 0 and `ros.get(m.drop, 0.0)` — `waivers._write`); (8)
+  `decisions.partners` `price_out` / `price_in` = `T.season_value(...)[0]` (0 or a partial sum when a side has an
+  unvalued player) and the calculator's other-objective prices; (9) the console's `cards.lineup_table`. Left (named,
+  not changed): `app/pages/6_Trade_Finder.py` `lineup_frame` `(s.value or 0.0)` and its notes' `{value or 0.0:.2f}`
+  (PO-only page; the API's `lineups.*.notes` carry those words); `trades.verdict` / `fairness_line` /
+  `season_value_line` `price_out or 0` (sums of the counted players — the lines name the uncounted, the verdict's lean
+  does not); `waivers._write`'s stored zeros (IG-3's writer; nulled on read); ordering keys only (`_ie1_cheaper`
+  `pts.get(x) or 0`, `myweek.build_actions.val`); `ondemand.lineup_values` adds 0 for a week with no value (a sum over
+  weeks of projected players); `lineup.solve` carries an unvalued player at 0 by design (the total's caveat is
+  `n_unvalued`).
+* **Not done**: Waivers' drop cost (IF-1, `_moves_on_demand`) does not read the units' season value — its unit
+  baseline loop is there but `market_points` has no unit rows; `points.update(unit_market(lw, fa)[0])` there would
+  price a dropped unit's season value (moves MFL Waivers numbers: a PO call). The verdict's value lean with an
+  uncounted player (above). The console's Trade Finder page's 0.00 (PO-only file).
+* **Next**: the PO's merge; then the drop cost on units (one line, above) with its before / after.
+* **For the PO**
+  1. Merge: marked blocks in `decisions.py` (IG-1 blocks + marked lines in `evaluate`, `team`, `_move`, `partners`,
+     `calc_alternatives`), `myweek.py` (after `_lineup_row`; `my_week`'s two lines; `alt_value`), `ondemand.py`
+     (`my_week`'s block) — IG-2 / IG-3 touch other blocks of the same files; `web/src/lib/api.ts` one IG-1 block +
+     the `Partners.sanity` line; `MyWeek.svelte` (one line under the lineup), `Trades.svelte` (the "left out" text).
+  2. Two other developers' tests re-pinned (marked `IG-1`): `api/tests/test_if2.py` (Houston QB is counted now: no
+     "Not counted"; the warning's comment), `api/tests/test_ia2.py` (the route test checks the value rule, `rule ==
+     "season_value"`). `test_ia2`'s rule (b) example now relies on `rejected_examples` showing the market refusal first.
+  3. Registry (dbt seed, PO): the sanity bound `ti1.1` → `ti1.2` (rule (a) on season value above replacement), and a
+     row for the units' season value if you keep one per concept (METRICS § "Value to my lineup" › "Team units and the
+     value rule").
+  4. Decisions Andrew may reverse: (a) the value rule also requires "not about even" (a 9-point gap never warns; a
+     25% gap on small values would otherwise flag 3-for-0 packages); (b) no free unit priced → baseline 0 (the
+     players' rule); (c) a team unit below the best free unit is worth 0 above replacement, so the Finder now offers
+     "Chicago Bears QB → …" packages (giving him costs no season value: the waiver wire's team QB is better); (d) the
+     card label "Week 4 · no projection" when the card has no number.
+  5. The e2e recording reads the clone `league_lab_i0b` of 2026-09-26 (Jacobs has no projection there); re-record with
+     the header's command if the clone changes.
+  6. Parity: the console now shows a blank (NaN) where the API sends null for a player with no projection, and both
+     flag him "no projection" (a bench row's flag mirrored in `myweek.lineup`). `api/tests/test_parity.py` compares
+     values with `==` (NaN ≠ None): fine for its cases (Andrew's rosters have no unvalued player on the clone); a case
+     with one (Scrubs 6) needs `nan_ok`-style matching there.

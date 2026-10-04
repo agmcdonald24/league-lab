@@ -2,6 +2,13 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-G
+
+- **IG-1** — team units count: MFL's team QB / team kicker get a season value above the best free unit of the same kind
+  ("Houston Texans QB + Tuten for Rice" no longer says "Not counted"); the Finder leaves out trades on the season-value
+  gap, not the raw rest-of-season totals; a player with no projection shows a dash and "no projection", never 0.00
+  (the API sends null; My Week says how many starters its total counts at 0).
+
 ## 2026-10-04 — the product is isuckatfantasy
 
 - **Renamed.** Everything a manager sees — the sign-in screen, the top bar, the home-screen icon and its mark ("isaf"),
