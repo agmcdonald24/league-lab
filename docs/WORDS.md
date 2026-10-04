@@ -243,6 +243,56 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | no number (`win.note`) | "no range for this league yet" · "the week has started and this league's live scores are not read yet" (an MFL league after the first kickoff): the page shows nothing | a 50% stand-in |
 | the League screen, per team of a game this week | "53% · 120 expected" under each team; the note "How often each team wins, from both best lineups' ranges (assuming the players' weeks are independent except teammates and opponents)." | a favourite's name in bold as a pick |
 
+## The copy standard (Wave I-I, II-4: the fifth review § 5–8)
+
+*(II-4 owns this section; the other tasks add rows to theirs.)* One way to say a rate, everywhere — headings, chart
+labels, tooltips, summaries, accessibility labels and generated text, the console too:
+
+1. **Rates say "per"**: **per game**, **per target**, **per route run**, **per attempt**, **per carry**, **per week**
+   ("8.9 targets per game", "yards per target", "+2.1 per week", "−1.2 per team per week"). Never "targets a game",
+   "points a game", "yards a target", "a team a week". A noun stays a noun ("a game in progress", "they share a game").
+   Compact headers keep an abbreviation (Tgt/g, Car/g, YPRR) with the full name and definition in the tooltip.
+2. **Every rate names its denominator and how it adds up.** A share over several games is the **summed numerator ÷
+   the summed denominator over the same games** — never the average of weekly percentages.
+3. **A window says what it counts**: games played vs calendar weeks; a "last 5" with three games played says
+   "3 games", never five.
+4. **The help layer carries the sample** (games), **the source and coverage**, and **the refresh time**.
+5. **A share says share of what** (carries, targets, opportunities) and where (the red zone: inside the opponent's 20).
+6. **Expected points** is the opportunity-based estimate (what his targets and carries are usually worth); **projected
+   points** is the forecast for a coming week. Never one for the other.
+7. The sweep: `scripts/copy_standard.py` rewrites rate phrasing in every user-facing file and the tests that pin it
+   (idempotent; `--check` exits 1 while any is left). Run it after a merge.
+
+| Label | Meaning (numerator ÷ denominator) | How it adds up | What we have |
+|---|---|---|---|
+| Receiving yards per game | his receiving yards ÷ the games he played (a game counts when he took an offensive snap or had a pass, carry, target or kick: `fct_player_game.played`) | summed yards ÷ games played in the window | verified present (nflverse weekly stats) |
+| Target share | his targets ÷ his team's targets in the games he played (games he missed are out of both) | summed ÷ summed | verified present |
+| Carry share | his rush attempts ÷ his team's rush attempts in the games he played — every rusher, quarterbacks included, as nflverse's weekly stats count them; kneel-downs are not removed by us | summed ÷ summed | verified present (the card's tile has this definition: Kyren Williams's 47.5%) |
+| RB backfield carry share | his carries ÷ his team's running backs' carries in the same games — **apart** from carry share, which counts every rusher | summed ÷ summed | planned (not computed today) |
+| Route participation | routes run ÷ team dropbacks in the games with participation data | summed ÷ summed | the participation **proxy** only (nflverse participation ends at 2025; unavailable in-season) — labelled as a proxy where shown |
+| Targets per route run | targets ÷ routes run, both from the same games with route data | summed ÷ summed | proxy, 2025 and before; unavailable in-season |
+| Yards per route run | receiving yards ÷ routes run, the same games | summed ÷ summed | proxy, 2025 and before; unavailable in-season |
+| First-read target share | his first-read targets ÷ his team's charted first-read targets (FTN charting, from 2022; 2026 weeks 1–3) | summed ÷ summed, with the charting coverage beside it | derived from charted targeted plays — it is not every first-read assignment, and the words never imply it |
+| Red-zone share | **red-zone carry share** (RB, QB: his carries inside the opponent's 20 ÷ his team's) or **red-zone target share** (WR, TE: targets inside the 20 ÷ the team's) — never a combined percentage | summed ÷ summed | verified present (play-by-play) |
+| Expected fantasy points | what his targets and carries are usually worth (depth, field position), in the league's scoring — an opportunity-based estimate of the past | per game over the games played | verified present |
+| Projected points | the forecast for a coming week in the league's scoring (the range beside it) | one week; rest of season = the sum of the weeks left | verified present |
+
+### Season, news and the home (review § 6–8)
+
+| Where | The words we use | Never |
+|---|---|---|
+| Season's three views (`/api/ros?view=`) | **My roster outlook** (default): "Your players only. Each number is what your best lineup loses over the weeks left without him …" · **Potential upgrades**: "Before acquisition cost: what each player would add to your best lineup … with nobody dropped and nothing sent … This is not his trade value." + "Not included: the drop a free agent needs, the players a trade sends, a waiver claim that might be lost." · **Rest-of-season projections**: "Projected points in this league's scoring over the weeks left, whoever rosters him: no roster, no lineup and no cost considered." | "Value to my lineup" over everyone at once; a hypothetical starter-point gain called trade value or market value |
+| injury cover (My roster outlook, a reserve) | "Injury cover: if a starting RB misses a week, he projects +2.3 per week over the best free agent (6 bench weeks; not counted in his value above)." | adding cover into the lineup value |
+| an upgrade's next step | "Free agent: compare the add / drop on Waivers (the drop is the cost) ›" · "On Run Bijan Run: price a trade (what you send is subtracted) ›" | a trade value |
+| a news item's decision status | **Recommendation changed** · **Watch for confirmation** · **No action currently indicated** | "act now", a probability |
+| its forecast status | "Included in the current projection: the injury report's status is applied to this week" — only with a recorded update (the overlay's applied status, or the report already in the rows) · "Context only: not in the projection" (news, briefs; "a Questionable tag does not change the projection"; a recap: "a game already played is in his stats") · "Update pending: the next injury check may move his projection" (an injury item newer than the last check) | "included" for a headline alone; counting an injury twice (the item and the status) |
+| why it matters here | "Starts at WR1 in your best lineup this week" · "In the lineup you submitted, and he cannot play this week" · "On your bench this week" | — |
+| the home's clocks (the footer) | "Data built 1 d ago · Injuries checked 3:32 PM ET · News 2 h ago ›" (the exact times on tap) | "Updated 1 d ago" alone; a stale warning (PO 2026-10-04: never tell users the data is stale) |
+| Waivers' top claims | each card labelled **Helps this week (+3.0)** / **Covers a bye in week 7** / **Helps from week 6** / **Upside stash: no lineup gain yet**; the intro "The three strongest claims below: 2 help this week, 1 covers a bye (week 7). Each card's total is its gain over weeks 4–7."; "Vele and Schultz compete for the same roster spot (each drops McConkey): claim one of them." | "each with what it adds this week" when one adds nothing this week |
+| Team | **Depth (bench lineup)**: "the best legal lineup your bench alone could field this week if every starter sat: usable depth, not raw bench points" | "Depth (the bench alone)" undefined |
+| League | "Past luck says nothing about the weeks left: they depend on your points and the schedule ahead." · **Points left on the bench (hindsight)**: "the best lineup *knowing the final scores* … hindsight, not an avoidable mistake" | "It evens out over a season" |
+| the player card's role line | "Upside: no additional modeled upside scenario available." | "Upside: nothing beyond the projection above" (an absent scenario is not an absence of upside) |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

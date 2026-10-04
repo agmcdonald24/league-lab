@@ -47,6 +47,12 @@ const TILE_DEFS: Record<string, string> = {
   "Red-zone share":
     "His share of his team's red-zone chances (inside the opponent's 20): targets for a receiver or tight end, carries for a running back or quarterback, in the games he played.",
   "Snap share": "Share of his team's offensive plays he was on the field for, in the games he played.",
+  // ---- II-4 (Wave I-I; the review § 5: Kyren's Carry share had no definition): docs/WORDS.md § "The copy standard"
+  "Carry share":
+    "His rush attempts ÷ his team's rush attempts, both summed over the games he played this season (not an average of weekly percentages). The team count is every rusher's attempts, quarterbacks included, as nflverse's weekly stats count them; kneel-downs are not removed. Not his share of the running backs' carries.",
+  "Target share": "His targets ÷ his team's targets, both summed over the games he played this season (not an average of weekly percentages).",
+  "Passes / game": "His pass attempts ÷ the games he played this season (per game).",
+  // ---- end II-4
 };
 const NOT_AVAILABLE = "Not available for this player: no charted plays for him yet (unknown, not zero).";
 
