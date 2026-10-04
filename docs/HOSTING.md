@@ -614,6 +614,63 @@ psql "$(uv run python -c 'from league_lab.config import get_settings; print(get_
 Without it the local API counts nothing (each insert fails quietly) and the Usage page says how to set it up.
 `api/tests/test_u1.py` applies the file itself.
 
+### Google Analytics
+
+*(Wave I-I, INF-1; Andrew: "I logged into my google analytics for you to create tracking on this".)* Beside the
+first-party count, the web app sends the same screen views and a few taps to Google Analytics 4 — property stream
+**isuckatfantasy web** (`https://isuckatfantasy.io`), measurement id **`G-HJWGHZ79BG`** (`web/src/lib/brand.ts`
+`GA_MEASUREMENT_ID`). Code: `web/src/lib/analytics.ts`; App.svelte calls it beside `countView`.
+
+**What is sent** (every event carries `league_key`, `roster_id`, `platform` (`sleeper` / `mfl`) and `release` —
+`/api/health`'s `version`, so a release boundary shows in GA; ids only):
+
+| Event | When | Its own parameters |
+|---|---|---|
+| `page_view` | every route change (a new path, league or team; not a filter, a sort or the drawer) | `page_location` (the address with only `league` and `team` kept), `page_path`, `page_title` (the route's name: `week`, `waivers`, …) |
+| `screen_view` | beside the first-party count (the same rule: once per screen, league and team) | `screen_name` (the route's name) |
+| `login` | the beta password was accepted | `method: "password"` |
+| `select_content` | a player's drawer opened (the URL's `pane=`; IB-1's pane and II-2's drawer share it) | `content_type: "player"`, `item_id` (the NFL player id, `00-0036322`), `origin` (the route), `from` (`lineup` / `waiver` / `trade` / `search` / `list`) |
+| `edit_link_click` | "Open Sleeper / MFL to edit your lineup" tapped (My Week) | `link_platform` |
+| `compare_open` | the Compare screen opened | `has_pair` (1 when two players are set) |
+| `trade_evaluate` | a trade evaluated (the calculator; `POST /api/trades/evaluate`) | `partner_roster_id`, `give_count`, `get_count` |
+| `waiver_view` | the Waivers screen opened | — |
+
+**Never sent**: a username, a team or manager name, a password, a search box's text, any other query parameter, a
+user id. Google signals and ad personalisation are off (`allow_google_signals: false`,
+`allow_ad_personalization_signals: false`); the page views are ours (`send_page_view: false`). gtag.js is not in
+`index.html`: the module loads it once, on first use, **only after sign-in** — the sign-in screen never loads it, and
+when it shows again (a cookie expired) GA's own switch `window["ga-disable-G-HJWGHZ79BG"]` is on until the app is back.
+The service worker passes Google's requests through (it handles same-origin GETs only) and the API sends no CSP header,
+so nothing blocks gtag; a CSP added later must allow `https://www.googletagmanager.com` (script) and
+`https://*.google-analytics.com` / `https://*.analytics.google.com` (connect).
+
+**The switch** (build time — the web app is built into the image): **`LEAGUE_LAB_GA`**, read by `web/vite.config.ts`
+(`define` → `__LL_GA__`; only that one value reaches the bundle).
+* unset (the default, and Render today): **auto** — sends only from `isuckatfantasy.io` / `www.isuckatfantasy.io`
+  (`brand.ts` `GA_HOSTS`) and never under automation (`navigator.webdriver`): `npm run dev`, `vite preview`, a LAN
+  address on the phone, the fixture e2e runs and the measure runs send nothing.
+* `LEAGUE_LAB_GA=off npm run build`: nothing loads, ever — the bundle holds no gtag URL (`web/e2e/inf1` builds one
+  and checks).
+* `LEAGUE_LAB_GA=on`: always (GA's DebugView from a dev machine).
+* An e2e that wants it on sets `window.__llGa = "on"` in an init script (`web/e2e/inf1`: a gtag stub, nothing leaves).
+To switch it off in production, `api/Dockerfile`'s web stage needs `ARG LEAGUE_LAB_GA` above `RUN npm run build` and the
+variable on Render (a redeploy) — not needed today.
+
+**Consent** (PO call, 2026-10-04): the beta is password-gated and About says what is counted and that Google Analytics
+is used (the cookie, what is sent, never the username, team name or password) — no cookie banner. A public launch (or
+visitors from the EU / UK) needs a consent banner with Consent Mode before GA loads; revisit then.
+
+**In GA** (Andrew, once — Admin, on the property):
+1. Data streams → *isuckatfantasy web* → Enhanced measurement → Page views → advanced: **turn off "Page changes based
+   on browser history events"** (the app sends its own `page_view`; with it on, every route change counts twice), and
+   turn off **Form interactions** and **Site search** (the sign-in form and the search box are none of GA's business).
+2. Custom definitions → Create custom dimensions (event scope): `league_key`, `roster_id`, `platform`, `release`,
+   `origin`, `from`, `link_platform`, `screen_name`; custom metrics (optional): `give_count`, `get_count`. Until then
+   the parameters arrive (DebugView, BigQuery) but the standard reports do not show them.
+3. Admin → Data retention: 14 months (the default is 2).
+4. Key events (optional): mark `edit_link_click` and `trade_evaluate`.
+Check after the deploy: Reports → Realtime shows a `page_view` within a minute of opening the app on the phone.
+
 ## Events
 
 *(Wave I-G, IG-2; the decision-quality review § "Engineering requirements": "Store structured events keyed to player,
