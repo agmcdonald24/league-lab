@@ -170,3 +170,35 @@ def test_dads_double_header_on_my_week(client, mfl):
     assert w is not None and len(w.get("also") or []) == 1
     for x in (w, w["also"][0]):
         assert (x["p"] is None and x["note"]) or (0 < x["p"] < 1 and x["words"] in WORDS)
+
+
+# ------------------------------------------------------------------ the web's e2e recordings (web/e2e/ih3)
+@needs_db
+@pytest.mark.skipif(not __import__("os").environ.get("IH3_RECORD"), reason="records web/fixtures/ih3/api_ih3.json: IH3_RECORD=1")
+def test_record_e2e_answers(client, mfl):
+    """The answers web/e2e/ih3 replays: League of Scrubs roster 6's My Week (one game), dad's league team 1 (Knight
+    Train: the week-4 double header, two lines), the MFL pick and the status."""
+    import json
+    from urllib.parse import urlencode
+
+    from league_lab_api.settings import ROOT
+
+    def key(path: str, **q) -> str:
+        return path + ("?" + urlencode(sorted((k, str(v)) for k, v in q.items())) if q else "")
+
+    out: dict = {}
+
+    def rec(path: str, **q):
+        r = client.get(key(path, **q))
+        out[key(path, **q)] = {"status": r.status_code, "body": r.json()}
+
+    rec("/api/my-week", league=SCRUBS, team=6)
+    rec("/api/leagues", mfl_search="70587")
+    rec("/api/leagues/mfl%3A70587/rosters")
+    rec("/api/my-week", league="mfl:70587", team=1)
+    rec("/api/status")
+    f = ROOT / "web" / "fixtures" / "ih3" / "api_ih3.json"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(out, indent=1, default=str) + "\n")
+    assert all(v["status"] == 200 for v in out.values()), {k: v["status"] for k, v in out.items()}
+    assert out[key("/api/my-week", league=SCRUBS, team=6)]["body"]["win"]["line"]

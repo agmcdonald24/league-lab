@@ -45,6 +45,20 @@
   // opponent gets its own line when the API sends the contract's object
   const record = $derived(data ? recordLine(data) : "");
   const versus = $derived(data ? opponentLine(data) : "");
+  // ---- IH-3: one line per game (a double header names each opponent); the assumption on hover / long-press
+  const winLines = $derived.by(() => {
+    const w = data?.win;
+    const o = data?.opponent && typeof data.opponent === "object" ? data.opponent : null;
+    if (!w || !o || data?.week === null) return [];
+    const games = [w, ...(w.also ?? [])];
+    const teams = [o, ...(o.also ?? [])];
+    const two = games.length > 1;
+    return games
+      .map((g, i) => ({ key: `${g.opponent_roster_id ?? i}-${i}`, line: g.line, side: g.side ?? "", title: g.assumptions ?? "",
+        team: two ? (teams.find((t) => t.roster_id === g.opponent_roster_id)?.team_name ?? teams[i]?.team_name ?? null) : null }))
+      .filter((g): g is typeof g & { line: string } => !!g.line);
+  });
+  // ---- end IH-3
   // I0-A: the availability overlay — when injuries were last checked, and who moved since the nightly build
   const avail = $derived((data as (MyWeek & { availability?: Availability | null }) | null)?.availability ?? null);
   const checked = $derived(
@@ -166,6 +180,14 @@
       <h1 class="text-2xl leading-tight font-extrabold tracking-tight wide:text-3xl" data-testid="team-name">{data.team_name}</h1>
       {#if record}<p class="text-sm text-ink-2" data-testid="record-line"><Md text={record} {ctx} /></p>{/if}
       {#if versus}<p class="text-base leading-snug" data-testid="opponent-line"><Md text={versus} {ctx} /></p>{/if}
+      <!-- ---- IH-3: the week's win probability under the opponent line (information: the cards decide the lineup); one
+           line per game of a double header, nothing when the league has no ranges yet -->
+      {#each winLines as w (w.key)}
+        <p class="text-sm leading-snug text-ink-2" data-testid="win-line" data-side={w.side} title={w.title}>
+          {#if w.team}<span class="font-semibold text-ink">{w.team}: </span>{/if}{w.line}
+        </p>
+      {/each}
+      <!-- ---- end IH-3 -->
       {#if data.league_line}<p class="text-sm text-ink-2" data-testid="league-line"><Md text={data.league_line} {ctx} /></p>{/if}
       {#if checked}<p class="text-sm text-ink-3" data-testid="injuries-checked">{checked}</p>{/if}
       {#if status?.warning}

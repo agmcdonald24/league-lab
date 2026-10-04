@@ -47,9 +47,11 @@ def test_every_starter_higher_is_a_favorite():
     assert D.lineup_win_probability(theirs, mine)["p"] == pytest.approx(1 - r["p"], abs=0.01)
     assert D.week_words(r["p"]).endswith("favorite")
     assert D.week_words(1 - r["p"]).endswith("underdog")
-    # the distributions' means sit a little above the projections (the floor at 0 and the exponential upper tail):
-    # the expected totals on the page are the projections, the means are kept as a check
-    assert 0 < r["sim_mine"] - r["mine"] < 1.5
+    # each range is centred on its projection: the simulated totals are the expected totals the page prints
+    assert r["sim_mine"] == pytest.approx(r["mine"], abs=0.3)
+    # as stored, the ranges' means sit a little above the projections (the floor at 0, the exponential upper tail)
+    raw = D.lineup_win_probability(mine, theirs, centre=False)
+    assert 0 < raw["sim_mine"] - raw["mine"] < 1.5
 
 
 def test_teammates_correlation_moves_the_spread():

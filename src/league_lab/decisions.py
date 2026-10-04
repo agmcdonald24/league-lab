@@ -243,11 +243,12 @@ def brier(pairs: Sequence[tuple[float, float]]) -> float:
 # carry — the morning's statuses already sit him when he is ruled out).
 WEEK_ASSUMPTIONS = "assuming the players' weeks are independent except teammates and opponents"
 # The calibration (docs/METRICS.md § "Win probability" → "The week"; 2024-2025 house-league matchups, the managers' real
-# starters, walk-forward ranges): the raw probability is overconfident (the favourite predicted 62.9%, won 57.8%; "clear"
-# 73.2% vs 62.3%) — the ranges are "if he plays" and the weeks of different games are not independent. A logit shrink
-# ``p = sigmoid(WEEK_SHRINK * logit(p_raw))`` fitted on one season improves the other (Brier 2025 0.2452 -> 0.2412 with
-# 2024's 0.64; 2024 0.2405 -> 0.2379 with 2025's 0.54) and 2026 weeks 1-2 (0.2454 -> 0.2402); the pooled fit is used.
-WEEK_SHRINK = 0.59
+# starters, walk-forward ranges centred on the projection): the raw probability is overconfident (the favourite
+# predicted 62.7%, won 57.5%) — the ranges are "if he plays", and weeks of different games are not independent. A logit
+# shrink ``p = sigmoid(WEEK_SHRINK * logit(p_raw))`` fitted on one season improves the other (Brier 2025 0.2436 ->
+# 0.2404 with 2024's 0.61; 2024 0.2417 -> 0.2384 with 2025's 0.58) and 2026 weeks 1-2 (0.2448 -> 0.2408); the pooled
+# fit is used.
+WEEK_SHRINK = 0.60
 KD_POSITIONS = frozenset({"K", "DEF", "TMPK", "TMDEF"})
 UNIT_AS = {"TMQB": "QB"}          # an MFL team quarterback correlates like his starter
 
@@ -280,12 +281,24 @@ def _nearest_corr(c: np.ndarray) -> np.ndarray:
     return a / np.outer(d, d)
 
 
+def _centred(d: Predictive, value: float | None) -> Predictive:
+    """The range moved so its mean is the projection (``value``), its shape kept (floored at 0): the probability then
+    agrees with the expected totals the page prints. The stored ranges are fitted apart from the point projection
+    (and priced apart since EV pricing), so their means drift from it — on 2026 week 4 a lineup's range means sum to
+    within a few points of its projected total, either way."""
+    if value is None:
+        return d
+    shift = float(value) - d.mean(4000)
+    return Predictive(d.levels, tuple(max(0.0, x + shift) for x in d.values))
+
+
 def lineup_win_probability(mine: Sequence[Mapping], theirs: Sequence[Mapping], *, n: int = N_DRAWS,
-                           seed: int = SEED) -> dict:
+                           seed: int = SEED, centre: bool = True) -> dict:
     """P(``mine`` outscores ``theirs``) this week. Each starter is a mapping: ``key`` (who: a gsis id; the same key on
     both sides is the same player, one draw), ``position``, ``team``, ``opponent``, ``p10`` ... ``p90``, ``value`` (his
     projection: the expected total, and his whole week when he has no range) and ``actual`` (his points when his game
-    is in; None before). Empty slots carry nothing (leave them out, or value 0).
+    is in; None before). Empty slots carry nothing (leave them out, or value 0). ``centre`` (default): each range is
+    moved so its mean is his projection (``_centred``).
 
     Returns ``p`` (calibrated: ``shrink_week`` of the Monte Carlo ``p_raw``; None when neither side has a single range),
     ``mine`` / ``theirs`` (the expected totals: projections,
@@ -319,7 +332,7 @@ def lineup_win_probability(mine: Sequence[Mapping], theirs: Sequence[Mapping], *
             key = f"_{s}_{i}" if not isinstance(key, str) or not key else key
             if key not in cols:
                 cols[key] = len(dists)
-                dists.append(d)
+                dists.append(_centred(d, v) if centre else d)
                 meta.append(r)
             plays[s].append(cols[key])
     m = len(dists)

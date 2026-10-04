@@ -1789,3 +1789,29 @@ export interface AboutAnswer {
   grade_note?: string | null; // the qualification shown right under the headline grade (a league we do not score)
 }
 // ---- end IG-3
+
+// ---- IH-3 (Wave I-H): the week's win probability on My Week (INTERFACES.md § IH-3) — information, never a pick: the
+// cards decide the lineup on expected points; this line only describes the matchup
+export interface WinProbability {
+  opponent_roster_id: number | null;
+  p: number | null; // calibrated P(my starters outscore theirs); null: no range for this league yet / live scores unread
+  percent: number | null; // whole percent, 1–99
+  words: string | null; // "a coin flip" | "a slight favorite" | "a clear favorite" | "a slight underdog" | "a clear underdog"
+  side: "favorite" | "underdog" | "even" | null;
+  line: string | null; // "You're a slight favorite this week: 58%, 121 to 117 expected."
+  note: string | null; // why there is no number ("no range for this league yet")
+  assumptions?: string; // "assuming the players' weeks are independent except teammates and opponents"
+  early: boolean;
+  mine?: number | null; // expected totals: the lineups' projections, actual points where the game is in
+  theirs?: number | null;
+  n_played?: number;
+  n_starters?: number;
+  opp_n_played?: number;
+  opp_n_starters?: number;
+  played_words?: string | null; // "2 of your 9 have played, 3 of theirs"
+  also?: WinProbability[]; // a double header's other game(s)
+}
+export interface MyWeek {
+  win?: WinProbability | null;
+}
+// ---- end IH-3
