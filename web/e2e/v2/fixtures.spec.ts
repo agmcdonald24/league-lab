@@ -124,3 +124,50 @@ test("About: the record block links to your team's calls", async ({ page, contex
   await expect(page.getByTestId("team-calls")).toBeVisible();
   await noSidewaysScroll(page);
 });
+
+// Dad's league (MFL 70587, team 8 "Big Mac Attack"): About shows its lineups' record, weeks 1–3 rebuilt from MFL's own
+// weekly results. The rest of the league's answers are IG-3's recording (web/fixtures/ig3/api_ig3.json); `decisions`
+// was recorded from the V-2 API (:8712; the clone's MFL rows written by `league-lab validate --mfl mfl:70587` on the
+// MFL fixtures) into web/fixtures/v2/record_decisions_mfl70587_8.json.
+const MFL_KEY = "mfl:70587";
+const IG3 = join(FIXTURES, "ig3", "api_ig3.json");
+const MFL_DEC = join(FIXTURES, "v2", "record_decisions_mfl70587_8.json");
+
+test("About: dad's league shows its lineups' record, rebuilt weeks starred", async ({ page, context }, info) => {
+  test.skip(!existsSync(IG3) || !existsSync(MFL_DEC), "no IG-3 / V-2 recording");
+  const saved = JSON.parse(readFileSync(IG3, "utf8")) as Record<string, { status: number; body: Record<string, unknown> }>;
+  const dec = JSON.parse(readFileSync(MFL_DEC, "utf8")) as { weeks: { week: number }[]; sentences: { edge: string } };
+  await context.route(/\/api\//, async (route) => {
+    const u = new URL(route.request().url());
+    const q = [...u.searchParams.entries()].filter(([k]) => k !== "team").sort(([a], [b]) => a.localeCompare(b));
+    const key = u.pathname + (q.length ? `?${new URLSearchParams(q).toString()}` : "");
+    const s = saved[key] ?? saved[u.pathname + u.search];
+    if (u.pathname === "/api/record" && u.searchParams.get("league") === MFL_KEY) {
+      const base = saved[`/api/record?league=${encodeURIComponent(MFL_KEY)}`]?.body ?? { league_id: MFL_KEY, available: false };
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ ...base, decisions: dec }) });
+    }
+    if (!s) return route.fallback();
+    return route.fulfill({ status: s.status, contentType: "application/json", body: JSON.stringify(s.body) });
+  });
+  if (info.project.name === "phone") await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+  await expect(page.getByTestId("leagues")).toBeVisible();
+  await page.getByTestId("mfl-link").fill("70587");
+  await page.getByTestId("mfl-go").click();
+  await page.getByTestId("mfl-team").filter({ hasText: "Big Mac Attack" }).click();
+  await expect(page.getByTestId("my-week")).toBeVisible();
+  await page.goto(`/about?league=${encodeURIComponent(MFL_KEY)}&team=8`);
+  const block = page.getByTestId("record-decisions");
+  await block.scrollIntoViewIfNeeded();
+  await expect(block).toBeVisible();
+  await expect(page.getByTestId("decisions-edge")).toHaveText(dec.sentences.edge);
+  expect(dec.sentences.edge).toMatch(/^Weeks 1–3: had every team started our lineup/);
+  const rows = page.getByTestId("decisions-table").locator("tbody tr");
+  await expect(rows).toHaveCount(dec.weeks.length);
+  await expect(rows.first().locator("td").first()).toHaveText("1*");
+  await expect(block).toContainText("Points summed over the league's 12 teams each week.");
+  await expect(page.getByTestId("decisions-note")).toContainText("played before this record existed");
+  await expect(page.getByTestId("decisions-team-link")).toBeVisible();
+  await noSidewaysScroll(page);
+  await block.screenshot({ path: shot("about-mfl", info.project.name) });
+});

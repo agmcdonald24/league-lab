@@ -818,6 +818,7 @@ def mfl_decisions(league_id: str, team: int | None = None) -> dict:
     except Exception:  # noqa: BLE001 - MFL down / busy: say so, never fail the record
         return {"available": False, "platform": "mfl", "season": season, "why": "MyFantasyLeague did not answer"}
     rw, calls = V.grade_roster_weeks(g), V.grade_calls(g)
+    rw = V.apply_news(rw, event_news(league_id, season))          # the event store answers for MFL starters too
     names = {int(k): v.get("team_name") for k, v in A.team_names(cl.rosters(league_id), cl.users(league_id)).items()}
     rw["team_name"] = [names.get(int(r)) for r in rw["roster_id"]] if not rw.empty else []
     out = {"season": season, "platform": "mfl", **V.summary(rw, calls)}

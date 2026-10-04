@@ -2347,7 +2347,7 @@ which: `news_source` = `events` | `report` (`decisions.news.source`, `weeks[].ne
 store lives on the hosted copy and the marts are built in the nightly's database, so the marts carry the report rule
 and **the API applies the store's flags on the request** (`validation.news_overrides` → `apply_news`); `league-lab
 validate` reads the store itself where the database has it. Graded apart as before; the sentence names the count and
-the net: "2 lineups had a starter's injury status change between our build and his kickoff; there our lineups scored
+the net, e.g.: "2 lineups had a starter's injury status change between our build and his kickoff; there our lineups scored
 −4.1 against the ones started. They are graded apart: we could not have known." Rebuilt weeks are never flagged.
 
 **"Had you started Sleeper's projections"** (`ops.decision_market`, written by `league-lab validate`; recomputed
@@ -2359,7 +2359,7 @@ DEF line is not priced: a DEF keeps our value, so the two lineups never differ t
 is unvalued (seated only where nobody valued can play). Graded like ours: `market_points` (NULL when a starter has no
 number, `n_market_unknown`), `market_edge` = market − submitted (`mart_decision_record`; a dbt test holds the
 identity). A week's league sum (`weeks[].market`) only when every team has one; the season (`season_totals.market`,
-`market_weeks`) over those weeks; `sentences.market`: "Weeks 5–6: had every team started Sleeper's projections, the
+`market_weeks`) over those weeks; `sentences.market`, e.g. (the shape; no number yet): "Weeks 5–6: had every team started Sleeper's projections, the
 league would have scored 2410.3 — 12.4 fewer than our lineups and 8.1 more than the ones started." The house leagues
 only (Sleeper's projections are archived for them); the sandbox clone holds no snapshot, so its numbers are null.
 
