@@ -5125,3 +5125,141 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   the two; unmapped players' briefs invisible; no retention (≈ 5 MB per thousand briefs, outside the nightly's
   480 MB budget, inside Neon's 0.5 GB).
 * **Next**: Andrew's answer on § 5, then § "Set up" (five steps); after the first real brief, a "What's new" line.
+
+## Wave I-G (Iteration 17, part G)
+
+### IG-3 2026-10-04 — the small opens: the stash writer's drop, MFL's roster freshness, the waiver deadline, the MFL grade's qualification, usage retention (branch `dev/IG3`, database `league_lab_i0b`)
+
+* **Task**: IG-3 (brief § "IG-3"; plan § 17 "I-F delivered … Next": the nightly stash writer's drop rule, the MFL
+  roster-freshness line, the waiver deadline, the MFL grade's qualification, usage retention, the console Home guide).
+  Plan sections: § 17 (Iteration 17, part G); METRICS § "Drop cost"; WORDS § "Decision quality"; HOSTING § "Usage".
+* **1. The stash writer follows `choose_drops`** (`src/league_lab/waivers.py`, `# ---- IG-3` blocks). The moves'
+  writer already ranked by IF-1's cost (`sweep_roster` → `choose_drops`); the **stash writer** (`upside_for_roster`)
+  still named B3's drop (the least lineup loss, ties to the fewest rest-of-season points) and the API decided claim /
+  watch on read. Now each stash add is paired with every legal drop (none on an open spot) at the scenario's
+  projection; each pairing is an `ops.waiver_moves`-shaped row (the lineup loss with the add + the drop's pieces) and
+  `choose_drops` names the cheapest. The pieces come from the same sweep: `load_and_sweep(pieces_out=…)` computes
+  `drop_pieces` for **every droppable player** (a player's pieces do not depend on the add, so no move row's number
+  changes) and `waiver_moves` hands them to `upside_after_waivers(conn, season, pieces)`; run alone, the stash writer
+  reads them back from `ops.waiver_moves` (`stored_pieces`). `ops.waiver_upside` gains `stash_action` ('claim' when the
+  pairing is worthwhile if the role holds — net ≥ 1 this week or ≥ 3 over the horizon, the claims' bar — else
+  'watch'), `drop_cost`, `drop_cost_piece`, `net_weekly_gain`, `net_horizon_gain` (`UPSIDE_COST_DDL`, `alter table …
+  add column if not exists`; `UPSIDE_DDL` / `UPSIDE_COLUMNS` unchanged so the view's pre-hook copy still matches). A
+  watch row keeps the drop a claim would take (the legality tests and the console read it); the screen shows no drop.
+  **API** (`decisions.py`, `# ---- IG-3`): `ig3_with_call` joins the writer's call onto the stash rows (`SG.UPSIDE_SQL`
+  is the console's and lists its columns; a cached `information_schema` check skips the join on a mart without
+  them), `ig3_stash_fields` / `ig3_watch_words`; `ig3_apply_call` applies the call where the stashes are built (`_upside`:
+  a roster with no claim never reaches `if1_stashes`) and `if1_stashes` re-decides only rows written before Wave I-G. **Proposed for the PO** (separate commit `a1fc04a`): `mart_waiver_upside.sql` gains the
+  five columns (pre_hook `alter table … add column if not exists`, the select).
+* **2. MFL's roster freshness** (`mfl_client.MFL.fetched_at(type, league)` — the wall-clock time each cached export
+  was read, kept with the cache entry: a stale answer served on an MFL failure keeps its own time; `ondemand.
+  mfl_roster_freshness`): `/api/my-week` for an `mfl:` league gains `roster_updated_at` (ISO UTC, to the second) and
+  `roster_source` "MFL"; Sleeper answers unchanged. My Week's footer (`MyWeek.svelte`, `# ---- IG-3`): "MFL rosters
+  updated 4:05 AM ET ›" → "Rosters and lineups read from MyFantasyLeague Sun, Oct 4, 4:05 AM ET (1 min ago);
+  isuckatfantasy reads them again after 10 minutes. The projections are the morning build's." — above IF-4's line,
+  which stays the morning build's.
+* **3. The waiver deadline** (`decisions.waiver_deadline` / `waivers_deadline_for`; `/api/waivers` → `deadline`,
+  INTERFACES § IG-3): Sleeper's `waiver_type` (0 rolling / 1 reverse standings / 2 FAAB), `daily_waivers`,
+  `waiver_day_of_week`, `daily_waivers_hour`, `waiver_clear_days` from the league's settings (the client's cache; a
+  house league falls back to `dim_league_season.waiver_type` with "see Sleeper" when Sleeper cannot be read); MFL's
+  `currentWaiverType` from the league export ("see MFL": the export carries no time); the week's next kickoff from
+  `dim_game` ("players lock at their own kickoff — the next game starts Sunday 1:00 PM ET"). Waivers: one line under
+  the title (`data-testid="waiver-deadline"`, a `<time>` when the run time is known); the how-to gains "When claims
+  run" and the drop's cost words. Scrubs: "Claims run Wednesday 3:00 AM ET (rolling waivers); …"; the dynasty "Claims
+  run every day at 5:00 AM ET (FAAB blind bids); …"; dad's league "Free agents are first come, first served on MFL: a
+  claim is yours as soon as MFL takes it; …"; 21861 "Claims run on MFL's schedule for this league (blind bids, then
+  first come, first served): see MFL for the time; …".
+* **4. The MFL grade's qualification** next to the headline grade: `/api/about` gains `grade_note` (`about.grade_note`,
+  a small `# ---- IG-3` block in `about.py` — the grades' answer comes from `/api/about`, not `/api/record`); About
+  shows it right under "How the model is doing"'s answer, above the grade cards (`grades-qualification`): "These grades
+  use Forever Unclean Dynasty's scoring, not Make Football Great Again's, and there is no direct projection record for
+  this MyFantasyLeague league: read them as how the model does in general." A non-house Sleeper league: "…
+  isuckatfantasy keeps no projection record for <league> yet …". The older `about-why` line below stays (it also
+  explains the importance). M4's sentence and V-1's block untouched.
+* **5. Usage retention**: `scripts/hosted_usage.sql` ends with `delete from usage.events where at < now() - interval
+  '180 days'` (the sync's U-1 block runs it every night as the owner; the app role still has no DELETE); the console's
+  Usage page and HOSTING § "Usage" (new paragraph "Retention") say so; `app/Home.py`'s page guide gains "Which screens of
+  the web app get used? · Usage".
+* **Interfaces**: INTERFACES.md § IG-3 (+ the 05:01 update): `/api/waivers` `deadline {platform, kind, kind_words,
+  daily, runs_at, runs_words, clear_days, lock {kickoff, words}, words, source}`; `/api/my-week` (MFL) `roster_updated_at`,
+  `roster_source`; `/api/about` `grade_note`; `ops.waiver_upside` + `stash_action`, `drop_cost`, `drop_cost_piece`,
+  `net_weekly_gain`, `net_horizon_gain`; `mfl_client.MFL.fetched_at(type, league)`; `waivers.load_and_sweep(pieces_out=)`,
+  `upside_for_roster(…, pieces)`, `upside_stashes(…, pieces=)`, `upside_after_waivers(conn, season, pieces=None)`,
+  `stored_pieces`, `STASH_PIECE_KEYS`, `UPSIDE_COST_COLUMNS` / `UPSIDE_COST_DDL` / `UPSIDE_ALL_COLUMNS`.
+* **Files**: `src/league_lab/waivers.py`, `src/league_lab/mfl_client.py`, `api/league_lab_api/{decisions,ondemand,about}.py`,
+  `web/src/lib/api.ts` (one marked block at the end), `web/src/routes/{Waivers,MyWeek,About}.svelte` (marked blocks),
+  `scripts/hosted_usage.sql`, `app/Home.py` (one line), `app/pages/99_Usage.py` (one sentence), `dbt/models/marts/edge/
+  mart_waiver_upside.sql` (the PO's call, its own commit), `tests/test_waivers_ig3.py` (new, 9), `api/tests/test_ig3.py`
+  (new, 24 + the recorder), `api/tests/test_if1.py` (re-pinned), `web/e2e/ig3/fixtures.spec.ts` (new, 3 × phone /
+  desktop), `web/fixtures/ig3/api_ig3.json` (the recording, 0.5 MB), `docs/{METRICS,WORDS,HOSTING,STATUS}.md`, `CHANGELOG.md`.
+* **Commands**: `uv run league-lab waivers` and `uv run league-lab dbt build --select mart_waiver_moves mart_waiver_upside`
+  on `league_lab_i0b` (05:00 ET, as INTERFACES said: 14.6 s; dbt PASS=22, `assert_waiver_upside_is_legal` and
+  `upside_drop_or_open_spot` included); `scripts/hosted_usage.sql` twice on the clone as its owner (`postgres`: the
+  pipeline role cannot create a schema there) — idempotent, the app role still has no DELETE; `uv run pytest -q tests`;
+  `cd api && PYTHONPATH=. uv run pytest -q tests`; `uv run ruff check src app tests api`; `cd web && npm run typecheck &&
+  npx eslint . && npm run build`; `FIXTURES_PORT=8606 npx playwright test --config playwright.fixtures.config.ts e2e/ig3
+  e2e/if4 e2e/u1 e2e/ib2`.
+* **Evidence — the writer's drops, before → after on `league_lab_i0b`** (before = the clone's rows of 2026-10-02, B3's
+  rule; after = the writer of this branch):
+  `ops.waiver_moves` 3,660 → 3,660 rows, every weekly / horizon gain identical; the best drop per claim changed on
+  **44 of 617** Scrubs claims and **3 of 13** dynasty claims; distinct best drops summed over rosters Scrubs 15 → 26
+  (roster 6 {Harrison} → {McPherson, Cousins, Harrison}; Carlson's drop Harrison → McPherson, +13.46 both), dynasty
+  5 → 5; worthwhile best claims after: 335 of 617 / 3 of 13. `choose_drops` re-run on the written rows of each of the
+  22 rosters changes nothing (the API's re-rank finds nothing to change).
+  `ops.waiver_upside` 83 → 83 rows (47 Scrubs, 36 dynasty), the stash case and every gain unchanged; `stash_action`
+  83 × **watch**, 0 × claim (the scenarios add +0.0 to these lineups over weeks 4–7); the drop a claim would take moved
+  on **6** dynasty rows (rosters 9 and 10: Jordan Mason → DeeJay Dallas, Carson Beck → Greg Dulcich — the cheaper by
+  season value), 0 on Scrubs. **The screen**: before, 15 dynasty stash cards on rosters with no claim (e.g. roster 12)
+  still showed B3's drop (they never reached IF-1's on-read decision); after, 0 cards show a drop — every one says
+  watch, as the mart does.
+* **Evidence — tests**: root **1,022 passed, 3 skipped** (`tests/test_waivers_ig3.py` 9 new). API **487 passed, 4
+  failed, 15 skipped** on the full run after the writer: the three known clone scoring checks (`test_ic1` × 2,
+  `test_ic_po`: no `*_tds_10p` columns) and `test_h1::test_waivers_upside_is_mart_waiver_upside[dynasty]` — a real
+  catch (a watch with a drop on roster 12), fixed in `b5f22d6`; `test_h1` + `test_ig3` + `test_if1` again: 44 passed,
+  1 skipped (the recorder). The 15 skips: the U-1 database tests (the pipeline role cannot apply the usage SQL on this
+  clone), IC-3's two flat-settings tests, the IF-4 / IG-3 recorders. Web: typecheck 0 errors / 0 warnings, eslint
+  clean, build clean; e2e `ig3` 6 passed (phone 375 / desktop 1300: the MFL line and its exact time on tap, the
+  deadline line under the title on both leagues, the qualification between the headline grade and the first grade
+  card, no sideways scroll) and with `if4`, `u1`, `ib2` 32 passed. Ruff clean on everything touched
+  (`api/league_lab_api/research.py:61` B010 is on `main`, not this branch).
+* **Decisions** (nobody to ask): (1) a stash says **claim** only when the cheapest pairing is worthwhile if the role
+  holds — the same 1 / 3-point bar as every claim (IF-1's on-read rule compared the scenario's lineup gain with the
+  drop's own cost); (2) a watch row **keeps** the drop a claim would take in the table (the dbt legality tests and the
+  console's Waiver Wire page read it; `app/lib/signals.upside_detail` would otherwise say "You have an open roster
+  spot" on a full roster) — the API hides it; (3) Sleeper's `waiver_day_of_week` read as 0 = Monday … 6 = Sunday
+  (2 = Wednesday is Sleeper's default and the one value seen in the leagues here) and `daily_waivers_hour` as an hour in
+  **Pacific** time (Sleeper's default 0 = midnight PT = the 3:00 AM ET everyone knows); daily waivers say "every day"
+  (`daily_waivers_days`, a bitmask, is not decoded); (4) the lock half names the week's **next kickoff** ("players lock
+  at their own kickoff — the next game starts Sunday 9:30 AM ET"), not "the lineup locks Sunday 1 PM" (Sleeper locks per
+  player); (5) MFL's export has no claim time: FCFS says a claim is yours when MFL takes it, any other type "see MFL";
+  (6) the grade's qualification lives in `about.py` (the grades come from `/api/about`), shown under the headline
+  grade; the older line below the metrics stays (it also qualifies the importance); (7) retention 180 days, a plain
+  delete in the nightly's SQL file; (8) the moves' writer was already on `choose_drops` (IF-1's `sweep_roster`): the
+  only change there is that the sweep also prices every droppable player for the stash writer — no move row's number
+  changes.
+* **Not done**: the console's Waiver Wire stash region (`app/lib/signals.py`, PO-owned) still words every stash with
+  its drop ("Drop X: …") and does not read `stash_action`; the Team page has no freshness line at all (only My Week
+  shows IF-4's and now MFL's); `daily_waivers_days` (which days daily waivers run) is not decoded; MFL waiver times
+  (the export does not carry them).
+* **Next**: the PO's view change and a nightly; then the console's stash wording on `stash_action`.
+
+**For the PO**
+1. **dbt** (commit `a1fc04a`, apply or re-make): `mart_waiver_upside.sql` — five `alter table ops.waiver_upside add
+   column if not exists …` pre-hooks and the five columns in the select. Until it is applied the API joins nothing
+   (a cached `information_schema` check) and keeps IF-1's on-read decision, so the merge order does not matter; after
+   it, the next nightly's rows carry the writer's call. The view's tests (`upside_drop_or_open_spot`,
+   `assert_waiver_upside_is_legal`) pass unchanged because watch rows keep their drop.
+2. **The nightly** needs nothing new: `project` → `waivers_after_project` → `waiver_moves` → `upside_after_waivers` with
+   the sweep's pieces. The hosted sync runs `scripts/hosted_usage.sql` as before; its last statement now deletes views
+   older than 180 days (the first run deletes nothing: the table is a day old).
+3. **Merge notes**: `decisions.py` gains one line in `waivers()` (the deadline), one in `_upside`, a block in
+   `if1_stashes` and two blocks at the end of the file; `ondemand.py` one line at the end of `my_week` + a block after
+   it; `About.svelte` a block right under `grades-answer` (not in the record section — no overlap with M4 / V-1);
+   `api.ts` one block at the end (adds `Waivers.deadline`, `MyWeek.roster_updated_at` / `roster_source`,
+   `AboutAnswer.grade_note`). `api/tests/test_if1.py` is re-pinned to the rule: it passes on a mart written before
+   IF-1's cost and after.
+4. **Decisions Andrew may want to reverse**: the stash's claim bar (the claims' 1 / 3 points, not "any gain over the
+   drop's cost"); Sleeper's hour read as Pacific (if his leagues' Wednesday run is not 3:00 AM ET, it is one constant,
+   `SLEEPER_WAIVER_TZ`); 180 days of usage.
+5. **Clone state**: `league_lab_i0b`'s `ops.waiver_moves` / `ops.waiver_upside` were rewritten at 05:00 and the two
+   views rebuilt (IG-1 was told in INTERFACES); the `usage` schema was created there (empty).
