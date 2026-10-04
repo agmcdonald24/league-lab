@@ -949,6 +949,11 @@ def scenarios(conn: psycopg.Connection, season: int, train: pd.DataFrame, target
         ref = target[target["position"] == pos]
         comp_b = predict_lines(models, base_rows.iloc[idx], ref, pos)
         comp_s = predict_lines(models, scen.iloc[idx], ref, pos)
+        # ---- M6 (Wave I-H): a cold start's stored line is the model's line x k (calibration.blend_lines): the base is
+        # the stored line and the larger role moves by the same k, so the base still equals the stored projection
+        from .calibration import rescale_to_stored
+        comp_b, comp_s = rescale_to_stored(comp_b, comp_s, [(meta[i]["gsis_id"], int(meta[i]["week"])) for i in idx], pred)
+        # ---- /M6
         for league_id, (_, scoring) in scorings.items():
             # ---- M4 (Wave I-G): the position rides along, as in predict_position — expected-value pricing reads the
             # position's curves (without it the pooled ones: the base missed the stored projection by 0.04 under
@@ -1249,9 +1254,14 @@ def run_signals(season: int | None = None) -> ScenarioRun | None:
         frame = load_frame(conn, [*train_seasons, season])
         target = frame[frame["season"] == season]
         with conn.cursor() as cur:
-            cur.execute("""select league_id, gsis_id, week, position, proj_points from ops.projections
+            # ---- M6 (Wave I-H): the stored stat line rides along (a cold start's is the model's x k: rescale_to_stored)
+            from .projections import ALL_COMPONENTS
+            comps = [f"proj_{c}" for c in ALL_COMPONENTS]
+            cur.execute(f"""select league_id, gsis_id, week, position, proj_points, {', '.join(comps)} from ops.projections
                            where season = %s and position = any(%s)""", (season, list(SCENARIO_POSITIONS)))
-            pred = pd.DataFrame(cur.fetchall(), columns=["league_id", "gsis_id", "week", "position", "proj_points"])
+            pred = pd.DataFrame(cur.fetchall(), columns=["league_id", "gsis_id", "week", "position", "proj_points", *comps])
+            pred[comps] = pred[comps].astype(float)
+            # ---- /M6
         pred["proj_points"] = pred["proj_points"].astype(float)
         # ops.projections keeps two decimals: the refit reproduces it to the rounding (project() checks to 1e-6)
         return signals_after_project(conn, season, frame[frame["season"] < season], target, pred, league_scorings(conn), 0.0051)

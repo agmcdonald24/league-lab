@@ -1051,6 +1051,33 @@ def blend_lines(conn: psycopg.Connection, season: int, every: pd.DataFrame, mode
     return out
 
 
+def rescale_to_stored(comp_b: pd.DataFrame, comp_s: pd.DataFrame, keys: list[tuple[str, int]], pred: pd.DataFrame
+                      ) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """``signals.scenarios``' base (``comp_b``, the refit models' line) and larger-role lines (``comp_s``), row-aligned
+    with ``keys`` (gsis_id, week): where the stored line (``pred``'s ``proj_*``) differs from the model's -- a cold start
+    scaled by ``blend_lines`` -- the base becomes the stored line and the larger role is scaled by the same ``k``. Every
+    other row (and a ``pred`` without the line) is returned as it was."""
+    cols = [f"proj_{c}" for c in P.ALL_COMPONENTS]
+    if not set(cols) <= set(pred.columns) or comp_b.empty:
+        return comp_b, comp_s
+    line = pred.drop_duplicates(["gsis_id", "week"]).assign(week=lambda d: d["week"].astype(int)).set_index(["gsis_id", "week"])[cols]
+    b, s = comp_b.copy(), comp_s.copy()
+    at = b.columns.get_indexer(cols)
+    for j, key in enumerate(keys):
+        if key not in line.index:
+            continue
+        st, mo = line.loc[key].to_numpy(dtype=float), b[cols].iloc[j].to_numpy(dtype=float)
+        if np.allclose(st, mo, rtol=0.0, atol=1e-9):
+            continue
+        c = int(np.argmax(np.abs(mo)))
+        if mo[c] == 0:
+            continue
+        k = st[c] / mo[c]
+        b.iloc[j, at] = st
+        s.iloc[j, s.columns.get_indexer(cols)] = s[cols].iloc[j].to_numpy(dtype=float) * k
+    return b, s
+
+
 # ------------------------------------------------------------------------------ the out-of-sample rows where the nightly runs
 OOF_MODEL_DDL = f"alter table {OOF_TABLE} add column if not exists model_version text"
 

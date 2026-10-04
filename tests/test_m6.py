@@ -344,3 +344,20 @@ def test_the_market_record_prices_sleepers_line_like_the_card():
     assert ev[0] != flat[0]                        # 95 yards: all or nothing pays 0; at the odds about 40% of 3 points
     assert P.price_market(df, cols, REF).tolist() == list(S.price_projected(stats, REF, ev=False))   # no bonus: the same
     assert "market_record" in P.MARKET_RECORD_DDL and "primary key" in P.MARKET_RECORD_DDL
+
+
+def test_the_scenario_base_follows_a_scaled_line():
+    """signals.scenarios refits the models (the unscaled line): a cold start's base becomes the stored (scaled) line,
+    the larger role moves by the same k; an unscaled row and a pred without the line are left as they were."""
+    model = {c: 0.0 for c in COMPS} | {"proj_targets": 5.0, "proj_receptions": 3.0, "proj_receiving_yards": 40.0}
+    comp_b = pd.DataFrame([model, model])
+    comp_s = pd.DataFrame([{c: v * 1.2 for c, v in model.items()}] * 2)
+    stored = [{"gsis_id": "rook", "week": 5, **{c: v * 1.5 for c, v in model.items()}},
+              {"gsis_id": "vet", "week": 5, **model}]
+    pred = pd.DataFrame(stored + [{**stored[0], "league_id": "L2"}])
+    b, s = C.rescale_to_stored(comp_b, comp_s, [("rook", 5), ("vet", 5)], pred)
+    assert b.iloc[0][COMPS].tolist() == [v * 1.5 for v in model.values()]
+    assert s.iloc[0]["proj_receiving_yards"] == pytest.approx(40.0 * 1.2 * 1.5)
+    assert b.iloc[1].tolist() == comp_b.iloc[1].tolist() and s.iloc[1].tolist() == comp_s.iloc[1].tolist()
+    b2, s2 = C.rescale_to_stored(comp_b, comp_s, [("rook", 5)], pred[["gsis_id", "week"]])
+    assert b2 is comp_b and s2 is comp_s
