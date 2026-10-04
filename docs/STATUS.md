@@ -6882,3 +6882,167 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
 5. **Decisions Andrew may want to reverse**: the line is on My Week by default (information; a one-line removal); the
    centring of the ranges on the projections; the shrink (0.60; `WEEK_SHRINK`); the opponent's best lineup rather than
    his submitted one.
+
+## Wave I-I (Iteration 19)
+
+### II-4 2026-10-04 — the copy standard, Season's three views, news as a decision-impact feed, the presentation (branch `dev/II4`, database `league_lab_ia3`, read only)
+
+* **Task / plan**: Wave I-I brief § II-4; the fifth review (`docs/reviews/2026-10-04-product-and-analytics-handoff.md`)
+  § 5 (metric dictionary and copy standard), § 6 (Season), § 7 (news), § 8 (home, Waivers, Team, League, the card).
+  Branch `dev/II4` from `main` `94ed33c`.
+* **Delivered**
+  1. **The copy standard** — `docs/WORDS.md` § "The copy standard" (II-4 owns it): rates say **per game / per target /
+     per route run / per attempt / per carry / per week**; every rate names its denominator and aggregation (summed ÷
+     summed over the same games); windows say games played vs calendar weeks; the help layer carries sample, source,
+     coverage, refresh; shares say share of what; expected vs projected points. The review's table, each label with
+     its numerator ÷ denominator, how it adds up, and **what we have** (verified present / proxy, unavailable
+     in-season / derived / planned — RB backfield carry share is planned, route metrics are the participation proxy
+     ending 2025). **The sweep**: `scripts/copy_standard.py` (idempotent; `--check` exits 1 while any rate phrasing is
+     left; a line can opt out with `<!-- copy-standard: keep -->`, used only by WORDS.md's "Never" examples) rewrote
+     106 lines in 47 files — headings, labels, tooltips, captions, generated sentences (the API, the console, the web)
+     and the tests that pin those words (`api/tests/test_ia1/ia2/ia3/research`, `tests/test_matchups/m5/waivers*`,
+     `web/e2e/fixtures.spec.ts`, `ia1`, `ia3`, `if4`). **Kyren's "Carry share"** tile has its definition on the card
+     (`lib/card.ts` TILE_DEFS, marked: his rush attempts ÷ the team's, summed over his games, every rusher, kneel-downs
+     not removed; "Target share" and "Passes / game" too).
+  2. **Season: three named views** (`ondemand.season_view`, `# ---- II-4`; `Ros.svelte` + `lib/ros.ts` marked blocks).
+     **My roster outlook** (default with a team; `view=outlook`), **Potential upgrades** (`view=upgrades`, before
+     acquisition cost; `who` = all / fa / others), **Rest-of-season projections** (`view=projections`). Each answer has
+     `season_view = {key, label, counterfactual, costs_included, costs_not_included}`; the page says the counterfactual
+     under the answer and, for upgrades, "Not included: the drop a free agent needs, the players a trade sends, a
+     waiver claim that might be lost." **The arithmetic is IB-3's / F2's unchanged** (a test compares every row).
+     Outlook rows gain **contingent injury cover** (`cover`: his bench weeks' edge over the best free agent at his
+     position, per week; never added to the value; null when unknown); upgrades rows gain `acquire` (a free agent →
+     `/waivers?add=`; a rostered player → `/trade-calc?partner=&get=`), so a hypothetical starter-point gain is never
+     called trade value. Projections show **per game** (from 640 px), games, range, playoffs. `view=lineup` / `points`
+     answer as before. The web's projections tab asks the plain `/api/ros` path (cache and every saved answer keep
+     working) and says the API's words from `PROJECTIONS_VIEW` (a test pins them equal).
+  3. **News as a decision-impact feed** (`myweek.decision_feed` / `decision_parts` / `clocks`, `# ---- II-4`; one
+     marked line each in `my_week` and `ondemand`'s My Week). Every "What changed" line gains `what_changed` {text,
+     source, event_at, published_at, checked_at}, `why_here`, `decision_status` (changed / watch / none, with
+     `decision_words`), `forecast_status` (included / contextual / pending, with `forecast_words`), `next_step`,
+     `item_kind` (development / recap) and `priority`; lines are ranked changed → watch → none, recaps after every
+     development, the same event once. **"Included" only with a recorded update**: the overlay's applied status change
+     (`availability` `changes`) — or the report already in the rows (an unplayable player's injury item is reflected,
+     never counted twice); a headline, a brief, a Questionable tag, a recap are **context only** (IF-3's
+     `forecast_treatment` model: the projection reads no news); an injury item published after the last injury check
+     is **update pending**. The defensive-personnel rule is IF-3's, untouched. **The clocks** (`/api/my-week` `clocks`
+     = data_built / injuries_checked / news): the footer reads "Data built 1 d ago · Injuries checked 3:45 PM ET · News
+     1 d ago ›" with the exact times on tap — stamps, never a warning; the header's "⚠️ Injury news may be stale"
+     (`/api/status` `warning`) is off too (`SHOW_STALE = false`, the PO's I-H call extended). The card's news line says
+     "· context only, not in the projection" (`NewsLine.svelte`).
+  4. **The home's order** (`MyWeek.svelte`, `<!-- ---- II-4 -->`): the decisions (actions, "No clear upgrade") → What
+     changed (each item: the decision chip, the sourced fact with its time and a "More" for the rest, why it matters
+     here · the forecast status, the next step; game recaps under their own heading) → the lineup's status (the set
+     line, where to change it) → the lineup. A long action explanation (the alternative drops) shows its first sentence;
+     the rest is behind "More" (`lib/feed.ts splitLead`).
+  5. **Waivers** (`Waivers.svelte` marked block, `lib/feed.ts`): each top claim carries its horizon — **Helps this week
+     (+8.3)** / **Covers a bye in week 7** / **Helps from week N** / **Upside stash: no lineup gain yet**; the intro is
+     built from them ("The three strongest claims below: 2 help this week, 1 covers a bye (week 7). Each card's total is
+     its gain over weeks 4–7." — the API's "each with what it adds this week" is no longer shown when top claims
+     exist); claims that drop the same player (or the API's `alternative_to`) are named: "Wan'Dale Robinson and Tyler
+     Allgeier compete for the same roster spot (each drops Jacory Croskey-Merritt): claim one of them."
+  6. **§ 8's words**: Team "Depth (bench lineup)" with "best legal lineup from the bench" and the how-to's definition
+     (usable depth, not raw bench points), "per week left on the bench (hindsight)"; League "Past luck says nothing about
+     the weeks left: they depend on your points and the schedule ahead." (was "It evens out over a season") and "Points
+     left on the bench (hindsight)" with its how-to line; the card's role line "Upside: no additional modeled upside
+     scenario available." (`player.py`, marked, and the console's `0_Player.py`); the console's Team Hub and League
+     how-to lines the same (marked).
+* **Interfaces** (INTERFACES.md § II-4, 15:40, as built): `/api/ros?view=outlook|upgrades|projections` + `season_view`;
+  rows `lineup_start_weeks`, `cover`, `acquire`, `lineup_sid`, `lineup_owner`, `ros_per_game`; `changed.lines[]`'s
+  five parts + `item_kind` / `priority`; `/api/my-week` `clocks`. `lib/api.ts` one `// ---- II-4` block (+ the
+  `RosList.view` union widened on IB-3's line, marked).
+* **Files**: `api/league_lab_api/{ondemand,myweek,player}.py` (marked blocks / lines), the sweep's lines in
+  `api/league_lab_api/{about,decisions,research,why}.py`, `app/Home.py`, `app/lib/{charts,matchups}.py`,
+  `app/pages/{0_Player,1_Team_Hub,3_Trends,4_Rankings,5_Matchups,6_Trade_Finder,8_League,9_Players,10_Receivers,
+  11_Kickers}.py`, `app/whats_new.md`, `src/league_lab/{scoring,signals,validation}.py` (comments / sentences only);
+  `web/src/lib/{feed.ts (new),ros.ts,card.ts,api.ts,research.ts,about.ts}`, `web/src/routes/{Ros,MyWeek,Waivers,Team,
+  League,Compare,Trends,Receivers,Players,Trades,About}.svelte`, `web/src/components/{NewsLine,GameLog}.svelte`;
+  `api/tests/test_ii4.py` (new), `web/e2e/ii4/fixtures.spec.ts` (new), `web/fixtures/ii4/api_ii4.json` (new, recorded),
+  `web/e2e/fixtures.ts` (marked: outlook / upgrades served from IB-3's saved lineup lists), `web/e2e/{fixtures.spec,
+  ib3/fixtures.spec}.ts` (the new view names), `web/fixtures/mfl/api_70587{,_ic4}.json` (one alias key each:
+  `view=outlook` = the recorded `view=lineup` answer, yours only); `scripts/copy_standard.py` (new);
+  `docs/{WORDS,METRICS,DESIGN}.md`.
+* **Commands and evidence** (the sandbox ran at a load average of 35–52 from 16:00 — seven developers' suites at once
+  on 8 GB — so the whole-suite runs could not finish inside the time box; what ran is listed as it ran):
+  * `api/tests/test_ii4.py` — **12 passed, 1 skipped** (the recorder) at 15:45, before the Sunday 4:05 PM kickoff of
+    Jefferson's game. After 16:05 ET `test_my_week_feed_on_the_overlay_fixture` fails exactly as IF-4's
+    `test_what_changed_from_the_overlay_fixture` does on `main`: Jefferson's game has started, the overlay never moves a
+    locked player, so the fixture's "Jefferson is out" status line is not produced (the Sunday-afternoon clock; INF-1's
+    pinned clock — Saturday 16:00Z — restores both). The rest of the file does not read the clock.
+  * **The API files my changes reach** (`test_ii4 if4 ih2 ib3 ia3 ia1 ia2 research myweek player n1 n2 ic4 i0a f3`,
+    16:36–17:17 at load ~40): **222 passed, 15 failed, 3 skipped, 3 xfailed**. The 14 failures that are not mine,
+    re-run on a `main` worktree (`94ed33c`, same database, 17:10–17:24): **all 14 fail on `main` identically**
+    (`test_if4` ×2, `test_ih2::test_the_console_twin_says_what_the_api_says`, `test_myweek` ×3, `test_player` ×2,
+    `test_ic4` ×3 — incl. `test_value_to_my_lineup_counts_units_against_the_wire`, the same `{'mfl:0675','mfl:0714'}`
+    on both —, `test_i0a` ×2, `test_f3[nfl_wide]`); the 15th is `test_ii4`'s overlay test (the clock, above).
+    **Delta against `main`: 0 regressions.**
+  * The whole API suite (`--ignore test_u1 test_ig2`) was started on this branch and on a `main` worktree
+    (`94ed33c`, the same database `league_lab_ia3` — `wt-base` is 66 commits behind `main` and reads `league_lab`, not a
+    like-for-like base) at 15:58; `main`'s run was stopped at 16:28 after 34 tests, this branch's at 16:36 after 50.
+    In the 34 both ran: the same two failures (`test_anyleague::test_latency_cold_and_warm` ×2 — a timing test at a
+    load of 40) plus, on `main` only, `test_decisions::test_waivers_on_demand_reproduce_every_mart_move[dynasty]`
+    (passed here), and `test_decisions::test_waivers_route_on_demand_matches_the_house_route` on both. Tests 35–50,
+    reached on this branch only, failed in `test_decisions` (`trade_evaluate_reproduces_the_trade_finder` ×2,
+    `partners_are_the_pages_sweep` ×2, `team_reproduces_the_roster_marts[&source=sleeper]` ×2, `latency_cold_and_warm`)
+    — the on-demand-vs-house reproductions that the kickoff locks break (the brief's ~45); this branch changes no
+    decision arithmetic (two f-string words in `decisions.py`, and the console's twin the same). **Those ids on the
+    `main` worktree at 17:10: all 7 fail there too** (with IF-4's two overlay / roster-6 tests: 9 failed, 6 passed —
+    the same as this branch). **No full-suite delta against `main` could be measured in the time box — the PO's
+    integration run (with INF-1's clock) is the count of record.**
+  * Every failure seen on this branch, checked on `main` (same database, same hour): `test_ih2::
+    test_the_console_twin_says_what_the_api_says` fails on `main` too (the console caption "Upside stash: his role is
+    growing …" vs the expected "Upside stash · watch, no claim yet" — pre-existing); `test_if4` ×2 and `test_decisions`
+    ×7 above fail on `main` too; `test_ii4`'s overlay test is the new member of the clock class. **Delta on the ids
+    checked: 0 new failures, +1 clock-dependent test of my own.**
+  * Root: `tests/test_matchups.py test_waivers.py test_waivers_if1.py test_waivers_ig3.py` — **152 passed**
+    (`test_m5.py`, whose only change is a docstring, did not finish under the load). `uv run ruff check src app tests
+    api` — clean (before the last commits; the later ones touch no Python but `scripts/`).
+  * Web: `npm run typecheck` (svelte-check, `--fail-on-warnings`) — **0 errors, 0 warnings, 160 files**; `npm run build`
+    — ok; `eslint` on the 23 touched files — clean after one fix (an unused argument in the new spec); the full
+    `eslint .` did not finish under the load. **`e2e/ii4` — 8 passed** (phone 375 / desktop 1300: the three views and
+    their words, the feed's five parts and the order, the clocks, Waivers' horizons and competing claims, Team / League
+    words; screenshots `e2e/.out/ii4-*`). The older specs that pin Season's names were updated (`fixtures.spec.ts`,
+    `ib3`) and re-run with `ia3 ic3 ic4 if4 ig2 ih1 ih2 i0a ie1 ib2 n1 n2 ig3`: 14 passed before the batch was stopped
+    for load; `fixtures.spec.ts` "a stranger …" failed on the projections table's new **Per game** header (fixed in
+    the spec: the header list gains "Per game"; its re-run at 17:25 timed out at the sign-in step, before the Season
+    step — load); "every screen in light / dark" and `i0a` hit the 60 s test timeout at that load (1.2 / 3.2 / 2.0 min)
+    — **not re-verified quietly: the PO's e2e run is the check** (`fixtures.spec.ts`, `ib3`, `ic3`, `ic4` read the new
+    Season names / keys).
+  * The acceptance grep — no rate phrasing left in headings, tooltips or generated text:
+    `uv run python scripts/copy_standard.py --check` → exit 0 (nothing left); and
+    `grep -rniE "\b(points|targets|carries|yards|touchdowns|times|catches|receptions|expected) a (game|target)\b|[}0-9)%] a (game|target)\b|a team a week" --include=*.py --include=*.svelte --include=*.ts api/league_lab_api app src/league_lab web/src | wc -l` → **0**.
+    (Before the sweep the check listed 106 lines in 47 files.)
+* **What moved and why**: **no number** — Season's three views read IB-3's and F2's values (`test_ii4` compares every
+  row of outlook / upgrades with `view=lineup` and projections with `view=points`); `ros_per_game` is a new derived
+  column (ros_points ÷ ros_games), `cover` a new contingent number kept apart. Words moved: the copy standard (106
+  lines), Season's labels and counterfactuals, the feed's statuses, the Waivers intro (the API's "each with what it
+  adds this week" is no longer shown when the top claims exist — Scrubs roster 2's third claim, Allgeier, adds 0 this
+  week and covers the week-7 bye), Team / League / card words. The order of "What changed" lines can move (changed →
+  watch → none; recaps last; IF-4's order kept within each).
+* **Not done**: a RB backfield carry share (planned in the table, not computed); the help layer's sample / coverage /
+  refresh on every rate (the rule is written; the Stats Explorer — II-3 — is where the columns get them); the console's
+  Season page has no three views (the console has no "Value to my lineup" either); the drawer call on the feed's "next
+  step" link (it links the full player page / Compare — II-2's swap is one line at `changed-next`); the news item's
+  `next_step.kind = "matchup"` is defined but not produced yet (no item is about a defense today).
+* **Next task**: with INF-1's clock, re-run the whole API / root / e2e suites for the count of record; give the feed's
+  "Inspect" link II-2's `openPlayer`; let II-3's Stats columns carry the WORDS.md table's definitions as their tooltips.
+
+**For the PO**
+
+1. **Merge order**: after II-2 (the drawer swaps touch `MyWeek` / `Ros` / `Waivers` / `Team` / `League` at the player
+   links — my edits there are marked `<!-- II-4 -->` blocks away from the link markup) and after II-0 / II-1 / II-3.
+   **Then run `uv run python scripts/copy_standard.py`** — it rewrites any "points a game" a merged branch brought in
+   (idempotent; `--check` for the grep). If my sweep commit (`0eb4045`) conflicts, drop its hunks and re-run the script:
+   it is the whole sweep.
+2. **Re-records**: `web/fixtures/ii4/api_ii4.json` (`II4_RECORD=1 … -k record_e2e`, before a Sunday 4:05 PM kickoff or
+   with INF-1's clock). Two MFL recordings gained one alias key each (`view=outlook`); IC4 / IC3 re-records would
+   produce them for real.
+3. **The clock**: `test_ii4::test_my_week_feed_on_the_overlay_fixture` joins IF-4's overlay test in the Sunday-afternoon
+   class (Jefferson locked after 4:05 PM ET); INF-1's pinned clock fixes both.
+4. **The API's Waivers `answer`** (`decisions.py`, IE-1's block, not mine) still says "each with what it adds this week";
+   the web no longer shows it when top claims exist. A one-line API change (or reading `lib/feed.ts topIntro`'s rule)
+   would make the console and the API say the same.
+5. **Decisions Andrew may want to reverse**: My roster outlook is Season's default (Value to my lineup over everyone
+   is gone as one list); the header's "⚠️ Injury news may be stale" is off with the stale banner (`SHOW_STALE`, one
+   line); the card's news line says "· context only, not in the projection" on every item; Waivers' intro replaces
+   the API's sentence on the web.
