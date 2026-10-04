@@ -20,6 +20,12 @@
   import ErrorCard from "../components/ErrorCard.svelte";
   import { forget } from "../lib/api";
   import { failureOf, SLOW_MS, SLOW_WORDS, type Failure } from "../lib/remote.svelte";
+  // ---- II-4 (Wave I-I): the home's order (decisions → changes to watch → lineup status), What changed as a decision
+  // feed (each line: the fact, why it matters here, the decision status, the forecast status, the next step), long
+  // explanations collapsed, the three clocks apart (data built / injuries checked / news — stamps, never a warning)
+  import { DECISION_CHIP, DECISION_MARK, nextHref, splitLead, splitRecaps, stampET } from "../lib/feed";
+  import type { ChangedLine } from "../lib/api";
+  // ---- end II-4
 
   let {
     options,
@@ -53,6 +59,7 @@
   // Data Status page for the operator; the trigger (HOSTING § 5) is the robustness. `staleWords` is therefore null
   // here (the markup below stays, so turning it back on is one line: `status?.nightly?.stale ? status.nightly.words : null`).
   const staleWords: string | null = null;
+  const SHOW_STALE = false; // ---- II-4: the same PO call for the header's "Injury news may be stale" (/api/status `warning`)
   // ---- end IH-1
 
   const ctx = $derived({ league, team });
@@ -223,7 +230,7 @@
       <!-- ---- end IH-3 -->
       {#if data.league_line}<p class="text-sm text-ink-2" data-testid="league-line"><Md text={data.league_line} {ctx} /></p>{/if}
       {#if checked}<p class="text-sm text-ink-3" data-testid="injuries-checked">{checked}</p>{/if}
-      {#if status?.warning}
+      {#if status?.warning && SHOW_STALE}<!-- ---- II-4: PO 2026-10-04 — never tell users the data is stale -->
         <details class="text-sm text-warn" data-testid="stale-warning">
           <summary class="inline-flex items-center gap-1">⚠️ Injury news may be stale <span class="chev" aria-hidden="true">›</span></summary>
           <p class="mt-1 leading-snug">{status.warning}</p>
@@ -264,7 +271,17 @@
                     {#if a.lock}<span class="ml-auto text-sm font-semibold text-ink-2" data-testid="action-lock">{a.lock.words}</span>{/if}
                   </div>
                   <p class="text-lg leading-snug font-semibold" data-testid="action-text"><Md text={a.action} {ctx} /></p>
-                  {#if a.reason}<p class="text-base leading-snug text-ink-2" data-testid="action-reason"><Md text={a.reason} {ctx} /></p>{/if}
+                  {#if a.reason}
+                    <!-- ---- II-4: a long explanation (the alternative drops) collapsed after its first sentence -->
+                    {@const rs = splitLead(a.reason, 200)}
+                    <p class="text-base leading-snug text-ink-2" data-testid="action-reason"><Md text={rs.lead} {ctx} /></p>
+                    {#if rs.rest}
+                      <details class="text-sm leading-snug text-ink-2" data-testid="action-reason-more">
+                        <summary class="inline-flex min-h-8 cursor-pointer items-center gap-1 font-semibold text-accent"><span class="chev" aria-hidden="true">›</span>More</summary>
+                        <p class="mt-1"><Md text={rs.rest} {ctx} /></p>
+                      </details>
+                    {/if}
+                  {/if}
                   {#if a.submitted_words}
                     <p class="text-sm leading-snug font-semibold {a.submitted ? 'text-good' : 'text-warn'}" data-testid="action-submitted">
                       {a.submitted ? "✓ " : "→ "}{a.submitted_words}
@@ -313,6 +330,66 @@
                 </article>
               {/each}
               <!-- ---- end IF-4 -->
+              {#if changed}
+                <!-- ---- IF-4: What changed — the overlay's moves since the morning build and the week's news from the last
+                     24 hours (at most five lines, the source and the time on each).
+                     ---- II-4: second on the home (after the decisions, before the lineup's status); each line a decision
+                     item — the decision status, the fact (sourced, timed; a long one behind More), why it matters here,
+                     the forecast status, the next step; the game recaps apart, after the developments -->
+                {@const parts = splitRecaps(changed.lines)}
+                <section class="space-y-1.5 rounded-lg border border-line bg-surface p-4" data-testid="what-changed">
+                  <h2 class="ll-label">What changed</h2>
+                  {#if changed.lines.length === 0}
+                    <p class="text-sm text-ink-2" data-testid="changed-empty">{changed.empty}</p>
+                  {:else}
+                    {#snippet item(l: ChangedLine)}
+                      {@const when = changedTime(l.at)}
+                      {@const t = splitLead(l.text, 180)}
+                      {@const nx = nextHref(l)}
+                      <li class="space-y-1 text-sm leading-snug" data-testid="changed-line" data-kind={l.kind} data-decision={l.decision_status ?? ""} data-forecast={l.forecast_status ?? ""}>
+                        {#if l.decision_status}
+                          <span class="inline-block rounded-sm px-1.5 py-0.5 text-xs font-bold {DECISION_CHIP[l.decision_status]}" data-testid="changed-decision"
+                            >{DECISION_MARK[l.decision_status]}{l.decision_words}</span
+                          >
+                        {/if}
+                        <p>
+                          {#if l.kind === "news" && l.player_name}<span class="font-semibold">{l.player_name}:</span>{/if}
+                          <span class={l.kind === "status" ? "text-warn" : "text-ink"}>{t.lead}</span>
+                          <span class="text-ink-3"
+                            >{SEP}{#if l.url}<a class="ll-link" href={l.url} target="_blank" rel="noopener noreferrer">{l.source ?? "source"} ↗</a
+                              >{:else}{l.source ?? ""}{/if}{#if when}{SEP}<time datetime={l.at} title={when.exact}>{when.ago}</time>{/if}</span
+                          >
+                        </p>
+                        {#if t.rest}
+                          <details class="text-ink-2" data-testid="changed-more">
+                            <summary class="inline-flex min-h-8 cursor-pointer items-center gap-1 text-xs font-semibold text-accent"><span class="chev" aria-hidden="true">›</span>More</summary>
+                            <p class="mt-0.5">{t.rest}</p>
+                          </details>
+                        {/if}
+                        {#if l.why_here || l.forecast_words}
+                          <p class="text-xs text-ink-3" data-testid="changed-context">
+                            {#if l.why_here}<span data-testid="changed-why">{l.why_here}</span>{/if}{#if l.why_here && l.forecast_words}{SEP}{/if}{#if l.forecast_words}<span
+                                data-testid="changed-forecast">{l.forecast_words}</span
+                              >{/if}
+                          </p>
+                        {/if}
+                        {#if nx && l.next_step}
+                          <a class="inline-flex min-h-8 items-center text-xs font-semibold text-accent" href={withContext(nx, ctx)} data-testid="changed-next">{l.next_step.label} ›</a>
+                        {/if}
+                      </li>
+                    {/snippet}
+                    <ul class="space-y-2.5">
+                      {#each parts.developments as l, i (i)}{@render item(l)}{/each}
+                    </ul>
+                    {#if parts.recaps.length}
+                      <h3 class="ll-label pt-1 text-ink-3" data-testid="changed-recaps">Game recaps</h3>
+                      <ul class="space-y-2.5">
+                        {#each parts.recaps as l, i (i)}{@render item(l)}{/each}
+                      </ul>
+                    {/if}
+                  {/if}
+                </section>
+              {/if}
               {#if !allSet && data.set_line}
                 <p class="px-1 text-base leading-snug text-ink-2" data-testid="set-line"><span class="text-good" aria-hidden="true">✓ </span>{data.set_line}</p>
               {/if}
@@ -323,30 +400,6 @@
                 {/if}
                 {#if data.nothing_submitted}<p class="text-sm leading-snug text-ink-2" data-testid="nothing-submitted">{data.nothing_submitted}</p>{/if}
               </div>
-              {#if changed}
-                <!-- ---- IF-4: What changed — the overlay's moves since the morning build and the week's news from the last
-                     24 hours (at most five lines, the source and the time on each) -->
-                <section class="space-y-1.5 rounded-lg border border-line bg-surface p-4" data-testid="what-changed">
-                  <h2 class="ll-label">What changed</h2>
-                  {#if changed.lines.length === 0}
-                    <p class="text-sm text-ink-2" data-testid="changed-empty">{changed.empty}</p>
-                  {:else}
-                    <ul class="space-y-1.5">
-                      {#each changed.lines as l, i (i)}
-                        {@const when = changedTime(l.at)}
-                        <li class="text-sm leading-snug" data-testid="changed-line" data-kind={l.kind}>
-                          {#if l.kind === "news" && l.player_name}<span class="font-semibold">{l.player_name}:</span>{/if}
-                          <span class={l.kind === "status" ? "text-warn" : "text-ink"}>{l.text}</span>
-                          <span class="text-ink-3"
-                            >{SEP}{#if l.url}<a class="ll-link" href={l.url} target="_blank" rel="noopener noreferrer">{l.source ?? "source"} ↗</a
-                              >{:else}{l.source ?? ""}{/if}{#if when}{SEP}<time datetime={l.at} title={when.exact}>{when.ago}</time>{/if}</span
-                          >
-                        </li>
-                      {/each}
-                    </ul>
-                  {/if}
-                </section>
-              {/if}
               <!-- ---- end IF-4 -->
             </div>
           {:else}
@@ -473,13 +526,22 @@
   {#if status?.freshness}
     <!-- ---- IF-4: "Updated 3 h ago" (the exact time and the feed names behind a tap) in place of the feed list -->
     {@const upd = changedTime(status.updated_at ?? null)}
+    {@const ck = data?.clocks}<!-- ---- II-4 -->
+    {@const inj = stampET(ck?.injuries_checked ?? avail?.checked_at ?? null)}
+    {@const nw = changedTime(ck?.news ?? null)}
     <footer class="pt-2 text-xs leading-snug text-ink-3" data-testid="freshness">
       {#if upd}
         <details data-testid="updated">
-          <summary class="inline-flex min-h-9 cursor-pointer items-center gap-1"
-            >Updated <time datetime={status.updated_at} title={upd.exact} data-testid="updated-ago">{upd.ago}</time>{#if staleWords}<span class="text-warn" data-testid="updated-late">&nbsp;· the morning update did not run</span>{/if} <span class="chev" aria-hidden="true">›</span></summary
+          <!-- ---- II-4: the three clocks apart — data built · injuries checked · news (stamps, never a stale warning) -->
+          <summary class="inline-flex min-h-9 cursor-pointer flex-wrap items-center gap-x-1"
+            >Data built <time datetime={status.updated_at} title={upd.exact} data-testid="updated-ago">{upd.ago}</time>{#if inj}<span data-testid="clock-injuries"
+                >{SEP}Injuries checked {inj}</span
+              >{/if}{#if nw}<span data-testid="clock-news">{SEP}News <time datetime={ck?.news} title={nw.exact}>{nw.ago}</time></span>{/if}{#if staleWords}<span class="text-warn" data-testid="updated-late">&nbsp;· the morning update did not run</span>{/if} <span class="chev" aria-hidden="true">›</span></summary
           >
           <p class="mt-1" data-testid="updated-exact">Last data load {upd.exact}.</p>
+          {#if inj}<p data-testid="clock-injuries-exact">The injury report was last checked {inj}; it is read again every few minutes.</p>{/if}
+          {#if nw}<p data-testid="clock-news-exact">The newest news item above was published {nw.exact}.</p>{/if}
+          <!-- ---- end II-4 -->
           {#if staleWords}<p class="mt-1 font-semibold text-warn" data-testid="updated-stale">{staleWords}</p>{/if}<!-- ---- IH-1 -->
           <p class="mt-1"><Md text={status.freshness} /></p>
         </details>

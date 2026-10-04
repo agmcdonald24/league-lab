@@ -171,3 +171,47 @@ export function lineupAnswer(top: RosPlayer, span: string | null): string {
   return `**Most valuable to your lineup${span ? ` over ${span}` : ""}: ${top.player_name} (${top.position}), ${v} points.** ${top.lineup_why ?? ""}`.trim();
 }
 // ---- end IB-3
+
+// ---- II-4 (Wave I-I; the review § 6): Season's three named views. "My roster outlook" leads with a team picked; the
+// old keys (`lineup`, `points`) in an old link open their successors (`lineup` → outlook, `points` → projections).
+export type SeasonKey = "outlook" | "upgrades" | "projections";
+export const SEASON_VIEWS: { key: SeasonKey; label: string }[] = [
+  { key: "outlook", label: "My roster outlook" },
+  { key: "upgrades", label: "Potential upgrades" },
+  { key: "projections", label: "Rest-of-season projections" },
+];
+export const SEASON_SHORT: Record<SeasonKey, string> = { outlook: "My roster", upgrades: "Upgrades", projections: "Projections" };
+export function seasonView(param: string | null, team: number | null): SeasonKey {
+  if (team === null) return "projections";
+  if (param === "upgrades") return "upgrades";
+  if (param === "projections" || param === "points") return "projections";
+  return "outlook";
+}
+export type UpgradeWho = "all" | "fa" | "others";
+export const UPGRADE_WHO: { key: UpgradeWho; label: string }[] = [
+  { key: "all", label: "Everyone else" },
+  { key: "fa", label: "Free agents" },
+  { key: "others", label: "Other teams" },
+];
+export function upgradeWho(param: string | null): UpgradeWho {
+  return param === "fa" || param === "others" ? param : "all";
+}
+export const seasonPath = (league: string, position: string, team: number | null, view: SeasonKey, who: UpgradeWho, limit = 50) =>
+  `/api/ros?league=${encodeURIComponent(league)}&position=${encodeURIComponent(position)}&limit=${limit}&view=${view}` +
+  (team !== null ? `&team=${team}` : "") +
+  (view === "upgrades" && who !== "all" ? `&who=${who}` : "");
+/** The answer line of each view (the top row, in the view's own unit). */
+export function seasonAnswer(view: SeasonKey, top: RosPlayer, span: string | null): string {
+  const over = span ? ` over ${span}` : "";
+  if (view === "outlook")
+    return `**Your most important player${over}: ${top.player_name} (${top.position}), ${valueText(top.lineup_points)} points to your lineup.** ${top.lineup_why ?? ""}`.trim();
+  if (view === "upgrades")
+    return `**The biggest potential upgrade${over}, before acquisition cost: ${top.player_name} (${top.position}), ${valueText(top.lineup_points)} points to your lineup.** ${top.lineup_why ?? ""}`.trim();
+  return `**Most projected points${over}: ${top.player_name} (${top.position}), ${whole(top.ros_points) ?? "—"}.**`;
+}
+/** "18.2" — points per game over the games left. */
+export function perGameText(p: RosPlayer): string {
+  const v = p.ros_per_game ?? (p.ros_points != null && p.ros_games ? p.ros_points / p.ros_games : null);
+  return v == null || Number.isNaN(v) ? "—" : v.toFixed(1);
+}
+// ---- end II-4

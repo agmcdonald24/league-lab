@@ -1356,7 +1356,7 @@ export interface RosPlayer {
   lineup_rank?: number | null;
 }
 export interface RosList {
-  view?: "points" | "lineup";
+  view?: "points" | "lineup" | "outlook" | "upgrades" | "projections"; // ---- II-4: the three named Season views
   team?: number;
   who?: string;
   window?: { first: number | null; last: number | null; weeks: number; span: string | null };
@@ -1925,3 +1925,48 @@ export interface WeekOdds {
 }
 export const weekOddsPath = (league: string) => `/api/league/week-odds?league=${encodeURIComponent(league)}`;
 // ---- end IH-3
+
+// ---- II-4 (Wave I-I): Season's three named views (GET /api/ros?view=outlook|upgrades|projections; INTERFACES.md
+// § II-4), the news item's five parts on My Week's "What changed" lines, the home's three clocks. Additive.
+export interface SeasonView {
+  key: "outlook" | "upgrades" | "projections";
+  label: string; // "My roster outlook" | "Potential upgrades" | "Rest-of-season projections"
+  counterfactual: string; // the view's counterfactual, said once at the top
+  costs_included: string[];
+  costs_not_included: string[];
+}
+export interface RosList {
+  season_view?: SeasonView;
+}
+export interface RosPlayer {
+  lineup_start_weeks?: number[]; // the weeks he starts for you (outlook) / would (upgrades)
+  cover?: { points: number; weeks: number; words: string } | null; // contingent injury cover — never in lineup_points
+  acquire?: { kind: "add_drop" | "trade"; words: string; path: string } | null; // upgrades: where the cost is priced
+  ros_per_game?: number | null; // projections: points per game over the games left
+}
+export type DecisionStatus = "changed" | "watch" | "none";
+export type ForecastStatus = "included" | "contextual" | "pending";
+export interface ChangedLine {
+  what_changed?: { text: string; source: string | null; event_at: string | null; published_at: string | null; checked_at: string | null };
+  why_here?: string;
+  decision_status?: DecisionStatus;
+  decision_words?: string;
+  forecast_status?: ForecastStatus;
+  forecast_words?: string;
+  next_step?: { kind: "player" | "compare" | "matchup"; label: string; gsis_id: string | null };
+  item_kind?: "development" | "recap";
+  priority?: number;
+}
+export interface Clocks {
+  data_built: string | null; // the morning build's newest data load (ISO UTC)
+  injuries_checked: string | null; // the injury report's last check
+  news: string | null; // the newest news item among What changed's lines
+}
+export interface MyWeek {
+  clocks?: Clocks;
+}
+export interface NewsItem {
+  forecast_status?: ForecastStatus; // the card's items: "contextual" (the projection reads no news)
+  forecast_words?: string;
+}
+// ---- end II-4
