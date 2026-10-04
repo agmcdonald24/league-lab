@@ -12,7 +12,15 @@
 // has no success / nothing running). Secret: GITHUB_TOKEN — a fine-grained personal access token for that one
 // repository with "Actions: Read and write" (never in this file, never in git; docs/HOSTING.md § "The trigger").
 //
-// HTTP: GET / answers a status line (what it does, today's runs); nothing dispatches over HTTP.
+// HTTP: GET / answers a status line (what it does, the last dispatch, today's runs); nothing dispatches over HTTP.
+//
+// ---- IH-1 (Wave I-H): the last dispatch's result on the status page. A Worker keeps nothing between invocations
+// without a binding, so the result is written to an OPTIONAL Workers KV namespace bound as `STATE` (free plan: 100,000
+// reads and 1,000 writes a day; this writes at most 3 a day): key `last_dispatch` = {at, hour_et, why, ok, status,
+// error}. Without the binding everything works as before and the page says "last dispatch: not recorded (no STATE
+// binding)". To add it: Cloudflare → Workers & Pages → KV → Create namespace `isuckatfantasy-nightly-state`; the
+// Worker → Settings → Bindings → Add → KV namespace, variable name `STATE`. docs/HOSTING.md § 5 "When the nightly is
+// late or fails".
 
 const API = "https://api.github.com";
 
@@ -52,8 +60,63 @@ async function dispatch(env) {
     headers: { ...headers(env), "Content-Type": "application/json" },
     body: JSON.stringify({ ref: env.GIT_REF || "main" }),
   });
-  if (r.status !== 204) throw new Error(`dispatch: HTTP ${r.status} ${(await r.text()).slice(0, 200)}`);
+  if (r.status !== 204) {
+    const e = new Error(`dispatch: HTTP ${r.status} ${(await r.text()).slice(0, 200)}`);
+    e.status = r.status;
+    throw e;
+  }
 }
+
+// ---- IH-1: the last dispatch, kept in the optional KV binding `STATE` (see the header); never fails the run
+const LAST_KEY = "last_dispatch";
+
+async function remember(env, rec) {
+  if (!env.STATE || typeof env.STATE.put !== "function") return false;
+  try {
+    await env.STATE.put(LAST_KEY, JSON.stringify(rec));
+    return true;
+  } catch (e) {
+    console.error(`could not record the dispatch in STATE: ${e.message}`);
+    return false;
+  }
+}
+
+async function lastDispatch(env) {
+  if (!env.STATE || typeof env.STATE.get !== "function") return { line: "last dispatch: not recorded (no STATE binding: a KV namespace, free — docs/HOSTING.md § 5)" };
+  try {
+    const raw = await env.STATE.get(LAST_KEY);
+    if (!raw) return { line: "last dispatch: none recorded yet" };
+    const r = JSON.parse(raw);
+    const when = etStamp(new Date(r.at));
+    return {
+      record: r,
+      line: r.ok
+        ? `last dispatch: ok (HTTP 204) at ${when} — ${r.why}`
+        : `last dispatch: FAILED at ${when} — ${r.why}: ${r.status ? `HTTP ${r.status}` : "no answer"} ${r.error || ""}`.trim(),
+    };
+  } catch (e) {
+    return { line: `last dispatch: could not read STATE (${e.message})` };
+  }
+}
+
+/** Dispatch and record the result (success, or the HTTP error and when); a failure is re-thrown so the Worker's
+ * own log marks the invocation as failed too. */
+async function dispatchAndRecord(env, now, why) {
+  const rec = { at: now.toISOString(), hour_et: etHour(now), why, ok: false, status: null, error: null };
+  try {
+    await dispatch(env);
+    rec.ok = true;
+    rec.status = 204;
+  } catch (e) {
+    rec.status = e.status ?? null;
+    rec.error = String(e.message || e).slice(0, 300);
+    await remember(env, rec);
+    throw e;
+  }
+  await remember(env, rec);
+  return rec;
+}
+// ---- end IH-1
 
 function hours(s, fallback) {
   const v = String(s || "").split(",").map((x) => Number(x.trim())).filter((x) => Number.isInteger(x));
@@ -66,9 +129,13 @@ export default {
     const h = etHour(now);
     const fire = hours(env.FIRE_HOUR_ET, [7]);
     const check = hours(env.CHECK_HOURS_ET, [9, 11]);
-    if (!env.GITHUB_TOKEN) { console.error("no GITHUB_TOKEN secret: nothing dispatched"); return; }
+    if (!env.GITHUB_TOKEN) {
+      console.error("no GITHUB_TOKEN secret: nothing dispatched");
+      if (fire.includes(h) || check.includes(h)) await remember(env, { at: now.toISOString(), hour_et: h, why: "a trigger hour", ok: false, status: null, error: "no GITHUB_TOKEN secret" }); // ---- IH-1
+      return;
+    }
     if (fire.includes(h)) {
-      await dispatch(env);
+      await dispatchAndRecord(env, now, "the morning run"); // ---- IH-1: recorded in STATE when bound
       console.log(`${etStamp(now)}: dispatched ${env.WORKFLOW_FILE} (the morning run)`);
       return;
     }
@@ -76,7 +143,7 @@ export default {
       const runs = await todaysRuns(env, now);
       const fine = runs.some((r) => r.conclusion === "success" || r.status === "in_progress" || r.status === "queued");
       if (fine) { console.log(`${etStamp(now)}: a nightly succeeded or is running today; nothing to do`); return; }
-      await dispatch(env);
+      await dispatchAndRecord(env, now, "a re-check: nothing succeeded or running today"); // ---- IH-1
       console.log(`${etStamp(now)}: no successful nightly today; dispatched ${env.WORKFLOW_FILE}`);
       return;
     }
@@ -90,6 +157,7 @@ export default {
         `${hours(env.FIRE_HOUR_ET, [7]).map((x) => `${x}:37`).join(", ")} America/New_York; re-checks at ` +
         `${hours(env.CHECK_HOURS_ET, [9, 11]).map((x) => `${x}:37`).join(", ")} (dispatches only when nothing succeeded or is running today, UTC).`,
       `now: ${etStamp(now)}; token: ${env.GITHUB_TOKEN ? "set" : "MISSING"}`,
+      (await lastDispatch(env)).line, // ---- IH-1
     ];
     if (env.GITHUB_TOKEN) {
       try {

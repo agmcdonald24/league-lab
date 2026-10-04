@@ -20,3 +20,12 @@ Set-up (once):
    in GitHub Actions within a minute.
 
 Rotation: a new token → the same secret. Rollback: delete the Worker (GitHub's schedule carries on, late).
+
+**The last dispatch on the status page (Wave I-H, IH-1; optional).** A Worker keeps nothing between runs without a
+binding. Bind a Workers KV namespace (free) as `STATE` and the Worker records each dispatch — success, or the HTTP error
+(401: the token expired or lacks "Actions: write"; 404: the repository or workflow name; 422: the branch) and when —
+and its URL prints `last dispatch: ok (HTTP 204) at Oct 5, 2026, 7:37 AM ET — the morning run`, or `FAILED at …`.
+Cloudflare → Workers & Pages → **KV** → Create namespace `isuckatfantasy-nightly-state`; the Worker → Settings →
+**Bindings** → Add → KV namespace → variable name `STATE`, that namespace → Deploy. Or in `wrangler.jsonc`:
+`"kv_namespaces": [{ "binding": "STATE", "id": "<the namespace id>" }]`. Without it the Worker works as before and
+the page says the dispatch is not recorded. Offline checks (GitHub mocked, KV faked): `node ops/nightly-trigger/test.mjs`.
