@@ -2,6 +2,16 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-G
+
+- **M4: the record says how it was priced, and every screen prices as the record does.** `ops.projections`,
+  `ops.projection_ranges` and `ops.projection_backtest` carry `pricing` (`flat` | `ev`); `LEAGUE_LAB_EV_PRICING` is now
+  an override and, when unset, the newest build's label decides (a frozen week keeps its own), so My Week, Waivers,
+  Trades and the player card can no longer disagree with Trends and the record over the bonuses; "Sleeper's
+  projection" is priced the same way; `/api/record` and About say "Weeks 1–4 were priced flat; from week 5 the bonuses
+  are priced at their odds." The flip is the nightly's env alone (a separate commit: "M4: the flip"). Fixed on the
+  way: the scenarios' base under expected-value pricing (it would have failed the first nightly after the flip).
+
 ## 2026-10-04 — the product is isuckatfantasy
 
 - **Renamed.** Everything a manager sees — the sign-in screen, the top bar, the home-screen icon and its mark ("isaf"),

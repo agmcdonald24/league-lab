@@ -176,6 +176,7 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | below / above expectation (Trends, the game log) | "1.2 below what his opportunities suggest: an observed gap, not a forecast"; Trends' help: "a buy needs a price, which this screen does not have" | "expect him to pick up / cool off", "buy him while he is cheap" |
 | the drawer (research pane) | the projection and its range, where he stands, the news, his role, his usage, his lineup line; behind expanders: "Week by week and season numbers", "Schedule" (week · opponent · projected), "Game by game this season" | the whole player page |
 | freshness (My Week's footer) | "Updated 7 d ago ›" → "Last data load Sat, Sep 26, 5:26 PM ET." and the feed names | the feed list as the first line |
+| how a week was priced (M4, Wave I-G; About's record, the console's Record page; `scoring.record_pricing_sentence`) | "Weeks 1–4 were priced flat; from week 5 the bonuses are priced at their odds." — **priced flat**: a bonus counts only when the projected line reaches it; **at their odds**: the bonus × its chance of happening; nothing at all for a league without a bonus | "expected value", "EV", "the flag" on a page |
 
 ## Adding to it
 

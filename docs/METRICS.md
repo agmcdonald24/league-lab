@@ -2602,6 +2602,87 @@ or nothing): with the flag on it warns on every dynasty row, by design, until it
 `ev_moves` leaves flat. Sleeper's own projection in the record (`mart_projection_record`, `why`'s "Sleeper's
 projection") is still priced all or nothing.
 
+### The record's pricing column (Wave I-G, M4, 2026-10-04; `scoring.pricing_mode`, `ops.projections.pricing`)
+
+**The column.** `pricing` (text, nullable) on `ops.projections`, `ops.projection_ranges` and `ops.projection_backtest`
+says how a row's bonuses were priced: `flat` (all or nothing on the projected line) or `ev` (at their odds). The writer
+sets it from `pricing_engine(scoring)` under the build's mode, with `spec` mapped to `ev` because an MFL spec is always
+priced in expectation. K and DEF rows are always `flat` (`kdef`). A row written before the column existed is NULL,
+which means flat. A frozen week keeps its rows and therefore its label. A range unit copied from the record keeps the
+record's label. The writers add the column themselves (`add column if not exists`, also in `db migrate` and the two
+marts' pre-hooks), so the hosted restore carries it. `mart_player_week_projections.pricing` carries the row's label.
+`mart_projection_record.pricing` gives one label per league × week (every QB–TE row of a league-week is written by
+one build), `mixed` if a week ever has two. A season row gets the scored weeks' label, or `mixed` when they differ.
+
+**The mode.** `scoring.ev_pricing()`, M3's flag, is now a mode, resolved in this order:
+
+1. The nightly writer's pinned mode. `projections.project` and `backtest` run under `pinned_pricing()`, which uses
+   the env alone and defaults to flat. The writer never follows the record it is writing. So a rollback is "unset
+   the env and re-run the nightly", and EV cannot keep itself on.
+2. `LEAGUE_LAB_EV_PRICING` when it is set and non-empty. This is an override in either direction: `1` / `true` /
+   `yes` / `on` means EV, anything else means flat.
+3. The newest build in `ops.projections`: EV when any QB–TE row of the newest `fitted_at` says `ev`. Only Sleeper
+   leagues count, because an MFL spec's `ev` says nothing about the build's mode.
+4. Otherwise flat.
+
+The record is read with one query (`RECORD_PRICING_SQL`), cached ten minutes per process. A failure (no database,
+or no column before the first Wave I-G nightly) gives flat and is cached for a minute. The API reads the record
+through its read-only `db.query`. The console and the CLI read it through `league_lab`'s connection, app role first.
+
+`scoring.ev_for_week(season, week)` prices one week's lines. A week the record holds is priced as its rows were. A
+week the record does not hold is priced as the newest build. `anyleague.price_lines` uses it per row: the frame's
+`season` / `week`, or the board's week (`price_board`), or the record's newest season for a window frame that has
+weeks but no season. `price_week`'s cache key carries the mode. `why.market_points` uses it for Sleeper's line.
+
+**So the two sides agree by construction.** My Week, Waivers, Trades, rest of season and the player card price at
+request time. Trends, the house board and the record were priced by the nightly. Both now use the same mode for the
+same week. **Render needs no env change. The flip is the nightly's env alone**: `LEAGUE_LAB_EV_PRICING: "1"` in
+`.github/workflows/nightly.yml`.
+
+**The morning the record is half flat and half EV.** Take the first nightly after the flip, run during week 4.
+Week 4 kicked off under flat and is frozen (B5): its rows stay flat and keep the label. Weeks 5–18 are rewritten
+under EV. On the request side, from that nightly on:
+
+* the newest build wins for every week it wrote;
+* the frozen week is priced by its own label (week 4 stays flat on My Week and on the board alike);
+* a frame with no week is priced as the newest build.
+
+There is no window in which one side has flipped and the other has not. Rolling back works the same way in
+reverse: weeks that kicked off under EV keep `ev`.
+
+**Measured on the M4 clone** (`league_lab_m1`; `project` with the env on, against the flat build before it):
+
+* Scrubs: 0 of 9,911 player-weeks moved, and 0 of 180 lineup totals.
+* The dynasty: 7,464 of 9,911 player-weeks moved, all of them in weeks 5–18, by −1.26 to +1.63. Week 4 is
+  unchanged because it is frozen. Lineup totals in weeks 5–18 rose by +4.97 per roster-week on average; Andrew's
+  roster 12 went from 118.12 to 123.24 in week 5 and stayed at 111.15 in week 4.
+* Under the record's mode, the week-5 top 24 moved as M3 measured: QB +1.01, RB +0.71, WR +0.73, TE +0.18
+  (96 players, +0.66 on average, none down). Josh Allen in week 4 is 30.24 under the frozen flat label and 31.68
+  priced at the odds; in week 5 he went from 22.85 to 23.76.
+* The scenarios' base reproduces the stored projection to 0 under EV once the position rides along (`signals.py`,
+  below).
+
+**"Sleeper's projection"** (`why.market_points`: the card, rest of season, My Week, the Finder's market sanity bound)
+is priced like ours. It goes through `price_projected` in the week's mode, and a K stays flat. In flat mode it gives
+the pre-I-G number to the cent. Josh Allen's week-4 line (the fixture's invented line: 267 passing yards, 2.0 passing
+TDs) in the dynasty is 31.58 flat and 33.20 at the odds (+1.62). Ours moves +1.44, so the ratio barely changes
+(0.958 → 0.954). In Scrubs it is 25.50 both ways. In EV mode a long-TD bonus on Sleeper's line is priced the way
+ours is: Sleeper's projected TDs × the measured share that long. Sleeper's own `*_tds_40p` columns are not used.
+
+**Not covered.** The record's Sleeper side (`mart_projection_record.sl_priced`) is still the SQL macro, which pays a
+bonus all or nothing. In an EV week ours is priced at the odds and Sleeper's is not. M2's measurements put the
+effect at about ±0.02 on MAE and ±0.002 on Spearman. A few close start/sit calls could flip. The proposal for the PO:
+a Python-priced `ops.market_record`, written by `project` for the league-weeks labelled `ev` (the pre-kickoff
+snapshot already exists by then), coalesced in `sl_priced`. That change needs a `sources.yml` row.
+`ops.projection_backtest` is rewritten only when the model version changes, so its v3.0 rows stay NULL, which means
+flat, after the flip. Their numbers were priced flat, so the label is true.
+
+**Found on the way.** `signals.scenarios` priced the scenario base without the position. Under EV the base then
+used the pooled curves and missed the stored projection by 0.04. The scenario step failed (logged) and kept
+yesterday's flat rows. The projection-marts step's test `scenario_base_is_the_projection` would then have failed the
+first nightly after the flip. The position now rides along, as it does in `predict_position`. In flat mode nothing
+moves, because the house leagues have no position premium.
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |
