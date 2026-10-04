@@ -597,7 +597,7 @@ def why_block(league_id: str, gsis: str, pos: str, season: int, week: int | None
             scoring, line = od.scoring, proj
         r = line.iloc[0].to_dict() if not line.empty else {}
         ours = float(r["proj_points"]) if is_num(r.get("proj_points")) else None
-        explained = why.explain(why.line_of(r), ours, scoring, pos) if r else None
+        explained = why.explain(why.line_of(r), ours, scoring, pos, season=season, week=week) if r else None   # ---- M6
         market = why.market_points(season, week, [gsis], scoring).get(gsis)
         if is_mfl_league(league_id):                    # ---- IE-0: the market line is Sleeper's: not on an MFL card
             return {"why": explained, "market": None, "leans_on": why.leans_on(

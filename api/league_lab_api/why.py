@@ -56,15 +56,19 @@ COLUMNS = {
 MIN_SHOWN = 0.05          # a piece under this (per game, in units and in points) is left out of the list, not the sum
 
 
-def weights(scoring: Mapping[str, float], position: str | None) -> dict[str, float]:
+def weights(scoring: Mapping[str, float], position: str | None, *, season: int | None = None,
+            week: int | None = None) -> dict[str, float]:
     """stat -> points per unit in this scoring, for the projected stats: every stat key whose expression is one of
-    them (``rec`` -> receptions …), plus a position premium for his position (``bonus_rec_te`` for a TE)."""
+    them (``rec`` -> receptions …), plus a position premium for his position (``bonus_rec_te`` for a TE).
+    M6 (Wave I-H): a Sleeper scoring's per-unit values follow the WEEK's pricing mode (``scoring.ev_for_week``: a frozen
+    flat week keeps flat pieces on the morning after the flip); no week = the newest build's mode, as before."""
     out = dict.fromkeys(STAT_LINE.values(), 0.0)
     # ---- IC-1 (Wave I-C): the pieces follow the league's ScoringSpec. A Sleeper spec keeps the flat reading below
     # (the same per-unit values as before, bit for bit); any other (MFL's per-position rules) reads the position's
     # rules: rates and premiums, "1/10" yards at a tenth a yard, a touchdown by distance at its expected points.
     spec = S.spec_of(scoring) if scoring is not None else None
-    if spec is not None and (spec.flat is None or S.ev_pricing()):
+    ev = S.ev_for_week(season, week) if week is not None else S.ev_pricing()     # ---- M6: the week's own mode
+    if spec is not None and (spec.flat is None or ev):
         r = spec.rules_for(position)
         if r is None:
             return out
@@ -134,13 +138,15 @@ def line_of(row: Mapping) -> dict[str, float | None]:
 
 
 def explain(line: Mapping[str, float | None], points: float | None, scoring: Mapping[str, float], position: str | None,
-            *, games: int | None = None, total: float | None = None) -> dict | None:
+            *, games: int | None = None, total: float | None = None, season: int | None = None,
+            week: int | None = None) -> dict | None:
     """The pieces of ``points`` (per game when ``games`` is given: ``line`` and ``points`` are then per game, and
-    ``total`` the whole window's points). None without a stat line (a kicker, a defense, no projection)."""
+    ``total`` the whole window's points). None without a stat line (a kicker, a defense, no projection).
+    ``season`` / ``week`` (M6): the week the line is for, so the pieces are priced in that week's mode."""
     pos = position if position in ORDER else None
     if pos is None or points is None or not any(_f(line.get(s)) for s in STAT_LINE.values()):
         return None
-    w = weights(scoring, pos)
+    w = weights(scoring, pos, season=season, week=week)
     pieces, listed = [], 0.0
     for stat in ORDER[pos]:
         v = _f(line.get(stat)) or 0.0

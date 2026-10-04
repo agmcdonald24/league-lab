@@ -940,6 +940,12 @@ def project(conn: psycopg.Connection, season: int | None = None) -> pd.DataFrame
         preds.append(predict_position(m, target[target["position"] == pos], fit))
     every = pd.concat(preds, ignore_index=True)     # one row per fitted scoring x player-week (league_id = the scoring key)
     every["model_version"], every["fitted_at"], every["train_seasons"] = MODEL_VERSION, fitted_at, trained
+    # ---- M6 (Wave I-H): v3.2 -- the cold-start prior scales the stat line itself, before anything is priced from it
+    # (LEAGUE_LAB_COLD_START; docs/METRICS.md § "v3.2"): the lines, the house rows, the ranges and every on-demand
+    # price of the line are one number. Off (or nothing to scale): ``every`` unchanged.
+    from . import calibration as _cal_m6
+    every = _cal_m6.blend_lines(conn, season, every, models, target, fit, leagues)
+    # ---- /M6
     lines = nfl_lines(every)
     ranges = every[every["league_id"].isin(list(references))].rename(columns={"league_id": "scoring_name"})[RANGE_COLUMNS]
     pred = house_rows(every, leagues, source)

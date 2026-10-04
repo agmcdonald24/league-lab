@@ -375,8 +375,10 @@ def write_oof(conn: psycopg.Connection, rows: pd.DataFrame) -> int:
 
     d = rows[rows["actual"].notna()][["gsis_id", "season", "week", "position", "league_id", "proj_points", "actual", "train_seasons"]].copy()
     d["built_at"] = datetime.now(UTC)
+    d["model_version"] = P.MODEL_VERSION          # ---- M6: what ``ensure_oof`` checks (a model bump rebuilds)
     with conn.cursor() as cur:
         cur.execute(OOF_DDL)
+        cur.execute(OOF_MODEL_DDL)                # ---- M6
         cur.execute(f"truncate {OOF_TABLE}")
         with cur.copy(f"copy {OOF_TABLE} ({', '.join(d.columns)}) from stdin") as cp:
             for rec in d.itertuples(index=False):
@@ -408,8 +410,9 @@ def calibrate_outputs(conn: psycopg.Connection, season: int, pred: pd.DataFrame,
     M5 (Wave I-G): then the fringe level and the cold-start prior, each behind its own switch (``v31_outputs``)."""
     if enabled():
         pred, ranges = _cal10_outputs(conn, season, pred, ranges, source)
-    # ---- M5 (Wave I-G)
-    if fringe_enabled() or cold_start_enabled():
+    # ---- M5 (Wave I-G); M6 (Wave I-H): the cold-start prior acts on the stat line before it is priced
+    # (``blend_lines``, called by ``project``), never here on the points: only the fringe level is left in v31_outputs
+    if fringe_enabled():
         pred, ranges = v31_outputs(conn, season, pred, ranges, source)
     # ---- /M5
     return pred, ranges
@@ -539,7 +542,11 @@ def fringe_enabled() -> bool:
 
 
 def cold_start_enabled() -> bool:
-    """``LEAGUE_LAB_COLD_START=1`` (off by default)."""
+    """``LEAGUE_LAB_COLD_START``: M6 (Wave I-H) moved the blend onto the stat line (``blend_lines``); unset or empty =
+    ``COLD_DEFAULT`` (the harness's verdict on the line, docs/METRICS.md § "v3.2"), ``1`` / ``0`` either way."""
+    v = os.environ.get(COLD_START_FLAG)
+    if v is None or not v.strip():
+        return COLD_DEFAULT
     return _flag(COLD_START_FLAG)
 
 
@@ -805,10 +812,11 @@ def cold_columns(rows: pd.DataFrame, games: pd.DataFrame, draft: pd.DataFrame) -
 
 
 def v31_outputs(conn: psycopg.Connection, season: int, pred: pd.DataFrame, ranges: pd.DataFrame,
-                source: dict[str, str]) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """The fringe level (``LEAGUE_LAB_FRINGE_LEVEL``) and the cold-start prior (``LEAGUE_LAB_COLD_START``) on the house
-    leagues' rows and their reference ranges, fitted on ``ops.calibration_oof`` (the ``WINDOW`` seasons before
-    ``season``), at the positions the harness kept. A missing table or no kept position: unchanged, logged."""
+                source: dict[str, str], cold_on_points: bool = False) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """The fringe level (``LEAGUE_LAB_FRINGE_LEVEL``) on the house leagues' rows and their reference ranges, fitted on
+    ``ops.calibration_oof`` (the ``WINDOW`` seasons before ``season``), at the positions the harness kept. A missing
+    table or no kept position: unchanged, logged. ``cold_on_points``: M5's cold-start blend on the points (kept for
+    the comparison; ``project`` blends the stat line instead -- ``blend_lines``, M6)."""
     oof = load_oof(conn, season)
     if oof is None or oof.empty:
         log.warning("v3.1 switches on but %s is empty (run calibration.run_build_oof): unchanged", OOF_TABLE)
@@ -828,7 +836,7 @@ def v31_outputs(conn: psycopg.Connection, season: int, pred: pd.DataFrame, range
         by_ref = {(pos, source[lid]): m for (pos, lid), m in maps.items() if lid in source}
         if len(rng):
             rng = apply_fringe(rng, by_ref, scoring_col="scoring_name").drop(columns="proj_points_raw")
-    if cold_start_enabled():
+    if cold_on_points and cold_start_enabled():     # M5's wiring (the harness's comparison); production: blend_lines
         if not COLD_POSITIONS:
             log.warning("%s=1 but no position is kept (COLD_POSITIONS is empty): unchanged", COLD_START_FLAG)
         else:
@@ -864,3 +872,217 @@ def _blend_rows(rows: pd.DataFrame, priors: dict[tuple[str, str], ColdPrior], sc
                  int((delta != 0).sum()))
     return out.drop(columns=["career_games_before", "cold", "bucket"])
 # ---- /M5
+
+
+# ---- M6 (Wave I-H): v3.2 -- the cold-start prior on the stat line, veterans on a new team (docs/METRICS.md
+# § "Calibration of the top" -> "v3.2"). M5's blend moved the house leagues' points and not the line, so a request
+# priced from ``ops.projection_lines`` showed the unblended number (IB-0's two numbers). Here the blend sets ONE scale
+# per player-week -- blended / raw points in the anchor scoring (the reference league's: the scoring the blend was
+# fitted in) -- and multiplies every component of the model's line by it before anything is priced. ``project`` then
+# prices and ranges the scaled line exactly as it does a frozen one (``predict_position(..., lines=)``), so
+# ``ops.projection_lines``, ``ops.projections``, ``ops.projection_ranges`` and every on-demand price of the line are
+# one number by construction, in any scoring and either pricing mode.
+COLD_DEFAULT = True              # unset LEAGUE_LAB_COLD_START = on: the harness kept it on the line (RB -0.16 4 of 5, WR -0.32 / TE -0.29 5 of 5)
+LINE_VERSION = "cs1.1"           # cs1.0 (M5) on the stat line
+LINE_MIN_RAW = 0.5               # a line priced under half a point has nothing to scale: left as the model made it
+NEW_TEAM_N = 3                   # a veteran with fewer than this many games with his current team is "on a new team"
+NEW_TEAM_POSITIONS: tuple[str, ...] = ()      # where the harness kept the new-team blend (empty: measured, dropped)
+TEAM_GAMES_SQL = """select gsis_id, season, week, team from analytics.fct_player_game where season_type = 'REG' and played"""
+
+
+def line_scale(raw: np.ndarray, blended: np.ndarray) -> np.ndarray:
+    """The factor every component of a line is multiplied by: ``blended / raw`` (anchor points); 1.0 where nothing
+    moved or the raw line is under ``LINE_MIN_RAW`` points (or not finite)."""
+    raw, blended = np.asarray(raw, dtype=float), np.asarray(blended, dtype=float)
+    ok = np.isfinite(raw) & np.isfinite(blended) & (raw >= LINE_MIN_RAW) & (blended != raw)
+    out = np.ones(len(raw))
+    out[ok] = blended[ok] / raw[ok]
+    return out
+
+
+def team_games_before(rows: pd.DataFrame, games: pd.DataFrame) -> np.ndarray:
+    """Per row (gsis_id, season, week, team): his played regular-season games with ``team`` in the current stint --
+    the games since his last game for another team, strictly before the week. A row whose last game was for another
+    team (a trade, a signing): 0. No history: 0."""
+    if rows.empty:
+        return np.zeros(0)
+    g = games.dropna(subset=["team"]).assign(key=games["season"].astype(int) * 100 + games["week"].astype(int))
+    g = g.sort_values(["gsis_id", "key"])
+    stint = (g["team"] != g.groupby("gsis_id")["team"].shift()).astype(int).groupby(g["gsis_id"]).cumsum()
+    g = g.assign(stint=stint.to_numpy())
+    g = g.assign(n=g.groupby(["gsis_id", "stint"]).cumcount() + 1)[["gsis_id", "key", "team", "n"]].rename(columns={"team": "last_team"})
+    r = rows[["gsis_id"]].assign(key=rows["season"].astype(int).to_numpy() * 100 + rows["week"].astype(int).to_numpy(),
+                                 team=rows["team"].to_numpy() if "team" in rows else None, _i=np.arange(len(rows)))
+    m = pd.merge_asof(r.sort_values("key"), g.sort_values("key"), on="key", by="gsis_id", allow_exact_matches=False,
+                      direction="backward").sort_values("_i")
+    same = (m["last_team"] == m["team"]).to_numpy()
+    return np.where(same, m["n"].fillna(0).to_numpy(dtype=float), 0.0)
+
+
+def is_new_team(team_games: pd.Series | np.ndarray, career_games: pd.Series | np.ndarray, cold: pd.Series | np.ndarray,
+                n: int = NEW_TEAM_N) -> np.ndarray:
+    """A veteran on a new team: not a cold start (``cold``: M5's rule), at least ``n`` career games, fewer than ``n``
+    with his current team."""
+    tg = pd.to_numeric(pd.Series(np.asarray(team_games, dtype=object)), errors="coerce").fillna(0).to_numpy(dtype=float)
+    cg = pd.to_numeric(pd.Series(np.asarray(career_games, dtype=object)), errors="coerce").fillna(0).to_numpy(dtype=float)
+    c = pd.Series(np.asarray(cold, dtype=object)).fillna(False).astype(bool).to_numpy()
+    return ~c & (tg < n) & (cg >= n)
+
+
+def blend_frame(rows: pd.DataFrame, kind: str) -> pd.DataFrame:
+    """``rows`` in the columns ``ColdPrior`` / ``fit_cold_prior`` read: 'cold' = as they are (career games, M5);
+    'new_team' = the games with the current team as ``career_games_before`` and the new-team flag as ``cold``."""
+    if kind == "cold":
+        return rows
+    if kind == "new_team":
+        return rows.assign(career_games_before=rows["team_games_before"], cold=rows["new_team"].astype(bool))
+    raise ValueError(kind)
+
+
+def _history(conn: psycopg.Connection) -> tuple[pd.DataFrame, pd.DataFrame]:
+    with conn.cursor() as cur:
+        cur.execute(TEAM_GAMES_SQL)
+        games = pd.DataFrame(cur.fetchall(), columns=["gsis_id", "season", "week", "team"])
+        cur.execute(DRAFT_SQL)
+        draft = pd.DataFrame(cur.fetchall(), columns=["gsis_id", "draft_pick", "rookie_season"])
+    return games, draft
+
+
+def history_columns(rows: pd.DataFrame, games: pd.DataFrame, draft: pd.DataFrame) -> pd.DataFrame:
+    """``cold_columns`` plus ``team_games_before`` and ``new_team`` (rows need ``team``)."""
+    out = cold_columns(rows, games[["gsis_id", "season", "week"]], draft)
+    out["team_games_before"] = team_games_before(out, games)
+    out["new_team"] = is_new_team(out["team_games_before"], out["career_games_before"], out["cold"])
+    return out
+
+
+def anchor_league(oof: pd.DataFrame, leagues: dict[str, tuple[str, dict[str, float]]]) -> str | None:
+    """The scoring the scale is set in: the reference league (the first id of LEAGUE_LAB_SLEEPER_LEAGUE_ID) when the
+    out-of-sample rows hold it, else the first house league they hold."""
+    from .config import get_settings
+
+    held = [lid for lid in dict.fromkeys(oof["league_id"].astype(str)) if lid in leagues]
+    ref = get_settings().reference_league_id
+    return ref if ref in held else (held[0] if held else None)
+
+
+def line_scales(conn: psycopg.Connection, season: int, lines: pd.DataFrame,
+                leagues: dict[str, tuple[str, dict[str, float]]]) -> pd.DataFrame:
+    """Per player-week of ``lines`` (gsis_id, season, week, position, team, ``proj_*``): the blend's scale ``k`` with
+    ``kind`` ('cold' | 'new_team'), the games it keyed on and the anchor's raw / blended points; only the rows that
+    move (k != 1). Fitted on ``ops.calibration_oof`` (the ``WINDOW`` seasons before ``season``) in the anchor league."""
+    cols = ["gsis_id", "season", "week", "position", "kind", "games", "raw", "blended", "k"]
+    positions = tuple(dict.fromkeys((*COLD_POSITIONS, *NEW_TEAM_POSITIONS)))
+    oof = load_oof(conn, season)
+    if oof is None or oof.empty or not positions:
+        log.warning("%s on but %s (run calibration.run_build_oof): stat lines unchanged", COLD_START_FLAG,
+                    "no position is kept" if not positions else f"{OOF_TABLE} is empty")
+        return pd.DataFrame(columns=cols)
+    oof = oof[(oof["season"] >= season - WINDOW) & oof["position"].isin(positions)]
+    anchor = anchor_league(oof, leagues)
+    if anchor is None:
+        log.warning("%s on but %s holds none of the house leagues: stat lines unchanged", COLD_START_FLAG, OOF_TABLE)
+        return pd.DataFrame(columns=cols)
+    games, draft = _history(conn)
+    fit = oof[oof["league_id"].astype(str) == anchor]
+    fit = fit.merge(games, on=["gsis_id", "season", "week"], how="left")       # the team he played for that week
+    fit = history_columns(fit, games, draft)
+    rows = history_columns(lines[lines["position"].isin(positions)].reset_index(drop=True), games, draft)
+    rows["raw"] = P.price(rows, leagues[anchor][1], "proj_").to_numpy(dtype=float)
+    rows["blended"], rows["kind"], rows["games"] = rows["raw"], None, np.nan
+    for kind, kept in (("cold", COLD_POSITIONS), ("new_team", NEW_TEAM_POSITIONS)):
+        for pos in kept:
+            cp = fit_cold_prior(blend_frame(fit[fit["position"] == pos], kind), pos, anchor)
+            sel = ((rows["position"] == pos) & rows["kind"].isna()).to_numpy()
+            if not cp.prior or not sel.any():
+                continue
+            r = blend_frame(rows[sel], kind)
+            new = cp.blend(r["raw"].to_numpy(dtype=float), r["career_games_before"].to_numpy(dtype=float),
+                           r["bucket"].to_numpy(), r["cold"].to_numpy(dtype=bool))
+            hit = r["cold"].to_numpy(dtype=bool) & (new != r["raw"].to_numpy(dtype=float))
+            idx = rows.index[sel][hit]
+            rows.loc[idx, "blended"], rows.loc[idx, "kind"] = new[hit], kind
+            rows.loc[idx, "games"] = r["career_games_before"].to_numpy(dtype=float)[hit]
+            log.info("%s %s %s (%s): weights %s, prior %s, %s player-weeks", LINE_VERSION, kind, pos, anchor[-6:],
+                     cp.weights, {k: round(v, 2) for k, v in cp.prior.items()}, int(hit.sum()))
+    rows["k"] = line_scale(rows["raw"].to_numpy(), rows["blended"].to_numpy())
+    return rows[rows["k"] != 1.0][cols].reset_index(drop=True)
+
+
+def blend_lines(conn: psycopg.Connection, season: int, every: pd.DataFrame, models: dict, target: pd.DataFrame,
+                fit: dict[str, tuple[str, dict[str, float]]], leagues: dict[str, tuple[str, dict[str, float]]]
+                ) -> pd.DataFrame:
+    """``projections.project``'s hook, before ``nfl_lines``: ``every`` (one row per fitted scoring x player-week) with
+    the cold starts' stat lines scaled (``line_scales``) and those rows priced and ranged again from the scaled line by
+    the same models (``predict_position(..., lines=)``, the path a frozen line takes). Switch off (or nothing to
+    scale): ``every`` itself, untouched."""
+    if not cold_start_enabled() or every.empty:
+        return every
+    first = every["league_id"].iloc[0]
+    line = every[every["league_id"] == first]
+    line = line.merge(target[["gsis_id", "week", "team"]].drop_duplicates(["gsis_id", "week"]), on=["gsis_id", "week"],
+                      how="left")
+    plan = line_scales(conn, season, line, leagues)
+    if plan.empty:
+        return every
+    comps = [f"proj_{c}" for c in P.ALL_COMPONENTS]
+    keys = ["gsis_id", "week"]
+    new = []
+    for pos, p in plan.groupby("position"):
+        tgt = target[target["position"] == pos].drop_duplicates(keys)
+        rows = p[keys].merge(tgt, on=keys, how="inner", validate="one_to_one")
+        ln = rows[keys].merge(line[[*keys, *comps]], on=keys, how="left").merge(p[[*keys, "k"]], on=keys, how="left")
+        ln[comps] = ln[comps].to_numpy(dtype=float) * ln[["k"]].to_numpy(dtype=float)
+        new.append(P.predict_position(models[pos], rows, fit, lines=ln))
+    moved = pd.concat(new, ignore_index=True)
+    for c in ("model_version", "fitted_at", "train_seasons"):
+        if c in every:
+            moved[c] = every[c].iloc[0]
+    hit = every.set_index(keys).index.isin(plan.set_index(keys).index)
+    out = pd.concat([every[~hit], moved[every.columns]], ignore_index=True)
+    out.attrs = every.attrs
+    out.attrs["line_blend"] = plan
+    top = plan.assign(d=plan["blended"] - plan["raw"]).sort_values("d", key=np.abs, ascending=False).head(5)
+    log.info("%s on the line: %s player-weeks scaled (%s); the five biggest in the anchor scoring: %s", LINE_VERSION,
+             len(plan), plan["kind"].value_counts().to_dict(),
+             "; ".join(f"{r.gsis_id} wk{r.week} {r.raw:.2f}->{r.blended:.2f}" for r in top.itertuples()))
+    return out
+
+
+# ------------------------------------------------------------------------------ the out-of-sample rows where the nightly runs
+OOF_MODEL_DDL = f"alter table {OOF_TABLE} add column if not exists model_version text"
+
+
+def oof_current(conn: psycopg.Connection, seasons: list[int]) -> bool:
+    """``ops.calibration_oof`` already holds exactly ``seasons``, built by this ``MODEL_VERSION``."""
+    with conn.cursor() as cur:
+        cur.execute("select to_regclass(%s)", (OOF_TABLE,))
+        if cur.fetchone()[0] is None:
+            return False
+        cur.execute(OOF_MODEL_DDL)
+        cur.execute(f"select distinct season, model_version from {OOF_TABLE}")
+        held = cur.fetchall()
+    conn.commit()
+    return bool(held) and {int(s) for s, _ in held} == set(seasons) and {m for _, m in held} == {P.MODEL_VERSION}
+
+
+def oof_target_seasons(conn: psycopg.Connection) -> list[int]:
+    """The newest ``WINDOW`` completed seasons (what the next season's fits read)."""
+    alls = P.available_seasons(conn)
+    done = [s for s in alls if OOF_FIRST_SEASON <= s < max(alls)]
+    return done[-WINDOW:]
+
+
+def ensure_oof(force: bool = False) -> int:
+    """The nightly's step (``scripts/nightly.sh``, before ``project``): ``run_build_oof`` only when the table does not
+    already hold the newest ``WINDOW`` completed seasons of this model version (once a season, or after a model bump;
+    otherwise a no-op that reads two rows). Returns the rows written, 0 when current."""
+    from .config import get_settings
+
+    with psycopg.connect(get_settings().pipeline_dsn()) as conn:
+        seasons = oof_target_seasons(conn)
+        if not force and oof_current(conn, seasons):
+            log.info("%s holds %s (%s): current, nothing to do", OOF_TABLE, seasons, P.MODEL_VERSION)
+            return 0
+    return run_build_oof(seasons)
+# ---- /M6
