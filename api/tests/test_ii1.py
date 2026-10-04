@@ -138,6 +138,7 @@ def test_scrubs_roster_2_finder(client):
         # the headline trade never loses to its own waiver comparison (the review's Mahomes-for-Maye)
         if r["tier"] == "credible":
             assert c["beyond"]["mine"] >= T.CREDIBLE_MARGIN and c["beyond"]["theirs"] >= T.CREDIBLE_MARGIN
+            assert r["beats_alternative"] and not r["demoted"]       # never a trade its own IF-2 line marks below
         # both alternatives are named with whether they are guaranteed or a claim that might be lost
         for side in ("mine", "theirs"):
             assert c["waiver_alternative"][side]["availability"] in ("guaranteed", "claim")

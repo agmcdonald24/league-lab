@@ -1388,6 +1388,7 @@ def evaluate(league_id: str, team: int, partner: int | None, give, get, *, sourc
     calc_alternatives(ctx, out, now, trade, board, weeks, window, (g, t), (ros, ours, mkt), source=source, as_of=as_of)  # IF-2
     out["card"] = ii1_card(ctx, board, tuple(weeks), span, window, ii1_frame(ctx, board, tuple(weeks), window),  # ---- II-1
                            int(team), g, t, source=source, as_of=as_of)
+    ii1_same_story(out["card"], out.get("beats_alternative"))                                                 # ---- II-1
     t3 = time.perf_counter()
     out["timings_ms"] = {"context": round((t1 - t0) * 1000, 1), "evaluate": round((t2 - t1) * 1000, 1),
                          "words": round((t3 - t2) * 1000, 1), "total": round((t3 - t0) * 1000, 1)}
@@ -2007,6 +2008,16 @@ def ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span
     }
 
 
+def ii1_same_story(card: dict, beats_alternative: bool | None) -> dict:
+    """One story on one card: a trade the IF-2 line marks "below your best waiver move" (its claim counted as the Waivers
+    screen counts it) is never promoted, whatever the covered frame says — the review's Mahomes-for-Maye headline lost to
+    its own waiver comparison."""
+    if beats_alternative is False and card.get("credible"):
+        card["credible"] = False
+        card["why_not"] = "It does not beat your best waiver move as the Waivers screen counts it."
+    return card
+
+
 def _s1w(x: float) -> str:
     return f"{x:+.1f}" if abs(x) >= 0.05 else "no change"
 
@@ -2335,6 +2346,7 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
     for r in rows:
         r["card"] = ii1_card(ctx, board, tuple(weeks), span, window, frame, int(team), [x["sleeper_id"] for x in r["give"]],
                              [x["sleeper_id"] for x in r["get"]], source=source, as_of=as_of)
+        ii1_same_story(r["card"], r.get("beats_alternative"))
     ii1 = ii1_verdict(rows, alt, span, window)
     rows, verdict = ii1["rows"], ii1["verdict"]
     # ---- end II-1
