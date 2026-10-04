@@ -52,9 +52,16 @@ def files() -> list[Path]:
 
 
 def sweep(text: str) -> str:
-    for pat, rep in RULES:
-        text = pat.sub(rep, text)
-    return text
+    out = []
+    for line in text.splitlines(keepends=True):
+        if KEEP not in line:                      # a line quoting the old words on purpose
+            for pat, rep in RULES:
+                line = pat.sub(rep, line)
+        out.append(line)
+    return "".join(out)
+
+
+KEEP = "copy-standard: keep"      # WORDS.md's "Never" examples carry it (an HTML comment)
 
 
 def main(argv: list[str]) -> int:

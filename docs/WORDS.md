@@ -249,8 +249,8 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 labels, tooltips, summaries, accessibility labels and generated text, the console too:
 
 1. **Rates say "per"**: **per game**, **per target**, **per route run**, **per attempt**, **per carry**, **per week**
-   ("8.9 targets per game", "yards per target", "+2.1 per week", "−1.2 per team per week"). Never "targets a game",
-   "points a game", "yards a target", "a team a week". A noun stays a noun ("a game in progress", "they share a game").
+   ("8.9 targets per game", "yards per target", "+2.1 per week", "−1.2 per team per week"). Never "targets a game", <!-- copy-standard: keep -->
+   "points a game", "yards a target", "a team a week". A noun stays a noun ("a game in progress", "they share a game"). <!-- copy-standard: keep -->
    Compact headers keep an abbreviation (Tgt/g, Car/g, YPRR) with the full name and definition in the tooltip.
 2. **Every rate names its denominator and how it adds up.** A share over several games is the **summed numerator ÷
    the summed denominator over the same games** — never the average of weekly percentages.
