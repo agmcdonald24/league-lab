@@ -5125,3 +5125,137 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   the two; unmapped players' briefs invisible; no retention (≈ 5 MB per thousand briefs, outside the nightly's
   480 MB budget, inside Neon's 0.5 GB).
 * **Next**: Andrew's answer on § 5, then § "Set up" (five steps); after the first real brief, a "What's new" line.
+
+## Wave I-G (Iteration 17, part G)
+
+### M4 2026-10-04 — the record's pricing column, and the request side follows the record (branch `dev/M4`, clone `league_lab_m1`)
+
+* **Task**: Wave I-G M4 (plan § 17, "Monday's flip of `LEAGUE_LAB_EV_PRICING` with M3's `pricing` column"); METRICS
+  § "Expected-value pricing" → "The record's pricing column" (new); INTERFACES.md § M4.
+* **Why**: M3 made one pricing entry point, but the flag still had to be set on two machines (the nightly and Render).
+  For the length of a deploy, one side would have priced the bonuses at their odds and the other all or nothing:
+  IB-0's trust bug coming back through the flag. Now the record says how it was priced, and every request prices
+  the same way.
+* **Delivered**:
+  * **The column.** `pricing` (`flat` | `ev`; NULL = flat, every row before Wave I-G) on `ops.projections`,
+    `ops.projection_ranges` and `ops.projection_backtest`. It is written by `project` / `backtest` from
+    `pricing_engine` (`spec` → `ev`). K / DEF rows are `flat`. A range unit copied from the record keeps the record's
+    label. The column is added by the writers' DDL, `db migrate` and the two marts' pre-hooks.
+    `mart_projection_record.pricing` holds one label per league-week (`flat` | `ev` | `mixed`; season rows: the
+    scored weeks'). `mart_player_week_projections.pricing` holds the row's label. Both have schema tests (not null,
+    accepted values).
+  * **The mode** (`scoring.pricing_mode` / `ev_pricing` / `ev_for_week`), in this order:
+    1. the nightly writer's pinned mode: `@pinned_writer` on `project` and `backtest`, the env alone, default flat;
+    2. `LEAGUE_LAB_EV_PRICING` when it is set and non-empty (an override in either direction);
+    3. the newest build's label in `ops.projections` (Sleeper leagues, QB–TE; one query, cached ten minutes; a
+       failure gives flat);
+    4. flat.
+
+    Per week, a week the record holds is priced by its own label, so a frozen week keeps the label it was priced
+    with. `anyleague.price_lines` uses the mode per row (the frame's season / week, or the board's week from
+    `price_board`). `price_week`'s cache key carries the mode. The API reads the record through its read-only
+    `db.query` (`ondemand._pricing_rows`). The console and the CLI read it through `league_lab`'s connection, app
+    role first.
+  * **"Sleeper's projection"** (`why.market_points`: the card, rest of season, My Week, the Finder's market sanity
+    bound) is priced with `price_projected` in the week's mode instead of `compute_points`. A K stays flat.
+  * **The record says which.** `/api/record` gives every week row a `pricing` and adds `pricing: {now, by_week,
+    sentence}`. About shows the sentence under the record's answer, e.g. "Weeks 1–4 were priced flat; from week 5
+    the bonuses are priced at their odds." Nothing is shown for a league without a bonus. The console's Record page
+    shows the same sentence (`scoring.record_pricing_sentence`, one source for both).
+  * **Fixed on the way.** `signals.scenarios` priced the scenario base without the position. Under EV the base used
+    the pooled curves and missed the stored projection by 0.04, so the scenario step failed and kept yesterday's
+    flat rows. `scenario_base_is_the_projection` then failed in the projection-marts step. **The flip would have
+    turned the first nightly red.** The position now rides along. Under EV the base is 0.00e+00 from the stored
+    projection on 14 rows; in flat mode nothing moves.
+* **Interfaces**: INTERFACES.md § M4 (the column, `pricing_mode`, `pinned_pricing`, `set_record_reader`, the
+  `/api/record` keys; for V-1: `ops.lineup_record.pricing` = the league-week's label).
+* **Evidence** (clone `league_lab_m1`; `league-lab project` run three times: EV, EV again after the scenario fix, then
+  flat with the env unset while the record said EV):
+  * **The flat rebuild reproduces the pre-M4 board to the bit**: 19,822 of 19,822 player-weeks and 396 of 396 lineup
+    totals, max |Δ| 0.0. The writer did not follow the EV record.
+  * **EV build against flat:**
+    * Scrubs: 0 of 9,911 player-weeks moved, 0 of 180 lineup totals.
+    * The dynasty: 7,464 of 9,911 player-weeks moved, all in weeks 5–18, by −1.26 to +1.63. Frozen week 4 did not
+      move.
+    * Lineup totals in weeks 5–18: +4.97 per roster-week on average. Andrew's roster 12: week 4 111.15 → 111.15
+      (frozen), week 5 118.12 → 123.24, week 6 107.51 → 111.93. Scrubs roster 2: unchanged.
+    * Labels: dynasty weeks 5–18 `ev`, weeks 1–4 NULL; Scrubs and every K / DEF row `flat`. The dynasty reference's
+      ranges carry the dynasty board's label week by week, and the other references are `flat`.
+  * **M3's numbers under the record's mode** (env unset, the record saying week 4 flat and the newest build EV):
+    week 5's top 24 by QB +1.01, RB +0.71, WR +0.73, TE +0.18; 96 players, +0.66, none down. Scrubs is identical to
+    the bit. Josh Allen's week 4 stays at 30.24 (its frozen label) and is 31.68 when week 4 is labelled EV (Scrubs
+    24.42). His week 5 goes 22.85 → 23.76.
+  * **Josh Allen's "Sleeper's projection"**, week 4 (the Sleeper projections fixture's invented line: 267.3 passing
+    yards, 2.01 passing TDs, 0.78 rushing TDs), dynasty: **31.58 flat → 33.20 at the odds** (+1.62). The card reads
+    "Sleeper has him at 31.6." → "Sleeper has him at 33.2." Ours goes 30.24 → 31.68, so the ratio barely moves
+    (0.958 → 0.954) and the "well under / well over" words do not change. Scrubs: 25.50 both ways. Flat mode gives
+    the old `compute_points` number to the cent. The fixture was loaded into the clone's `raw.sleeper_projections`
+    (fetched 12 h before week 4's kickoff) for the record and market marts, then removed again; the API test uses a
+    stand-in row.
+  * **My Week = the record**, under the record's mode, in both clone states. The on-demand lineup total (NFL-wide
+    board, lines priced now) equals `ops.lineup_totals` for the dynasty and Scrubs in weeks 4 and 5, to 0.005.
+    Forced to the other mode, the dynasty's moves away (the bug the mode prevents) and Scrubs' does not.
+* **Tests**:
+  * `tests/test_m4.py`, 19 passed. It covers the DDL; the label per scoring; the backtest writer's label in the
+    writer's own mode; the mode following the record; the env overriding it either way; the writer pinning the env;
+    a frozen week keeping its label and a rollback; an unreadable record giving flat, cached a minute and then ten;
+    `price_lines` per week, by board week and by window; the sentence (7 cases); and, on the clone, the label
+    invariants in either state and M3's pins under the record's mode.
+  * `api/tests/test_m4.py`, 8 passed in both clone states: `/api/record` `pricing` for the dynasty and Scrubs; the
+    record without the column; My Week = the record ×4; Sleeper's projection.
+  * `web/e2e/m4/` (4: the sentence on phone 375 / desktop 1300; none for Scrubs).
+  * Edited elsewhere: `tests/conftest.py` (autouse: every root test starts with an empty record, so no root test
+    follows a database's pricing state by accident); `api/tests/test_anyleague.py` (passes the board's week to
+    `price_lines`); `api/tests/test_h1.py` (pins the flat engine: it is a flat-engine parity test).
+* **Checks** (flat clone, the end state):
+  * Root: **1032 passed**, 3 skipped.
+  * API: **482 passed**, 3 skipped, 4 failed. Three are the known `*_tds_10p` scoring checks (`test_ic1` ×2,
+    `test_ic_po`), the same on base. The fourth is `test_if1::test_the_engine_drops_mcpherson_for_carlson`, which
+    pins the pre-IF-1 mart ("before: Harrison"). Any `project` run with IF-1's writer rewrites that mart, and Scrubs
+    did not move by a cent here, so the failure is the clone's state, not this change.
+  * Web: lint and typecheck 0 / 0, build ok. Fixture e2e `fixtures.spec.ts` + `m4` + `u1`: 42 passed.
+  * ruff: one error, `api/league_lab_api/research.py:61` B010, already on `main` (`7222f98`, the PO's N2-merge fix).
+  * dbt: `mart_player_week_projections+ mart_projection_record mart_market_line`, PASS=60.
+  * The API suite on the **EV** clone: 11 failed. They are the 4 above; `test_ia3` ×4 and `test_ia2` ×1, which
+    assume the clone has no market mart (it held the fixture then); and `test_anyleague` / `test_h1` (both now fixed:
+    a frame without a week, priced as the newest build).
+* **What moved and why**: only the pricing mode, and only for a league with a yardage or long-TD bonus, from the
+  first build with the env on. Every number in flat mode is unchanged to the bit (above).
+* **Not done**:
+  * The record's Sleeper side (`mart_projection_record.sl_priced`) is still the SQL macro, all or nothing. In an EV
+    week ours is priced at the odds and Sleeper's is not. M2's measurements put the effect at about ±0.02 on MAE
+    and ±0.002 on Spearman, and a few close calls could flip. Proposal: below.
+  * `why.weights` (the "why this number" pieces) reads the newest mode, not the week's, so on the half-and-half
+    morning a frozen week's pieces carry the difference in their "rest" line.
+  * `ops.projection_backtest` keeps its v3.0 rows NULL (= flat) until the model version changes. That is true: they
+    were priced flat.
+* **Next**: the PO ships or holds "M4: the flip". Then the record's Sleeper side, priced in Python for EV weeks.
+* **For the PO**:
+  1. **Merge.** M4 touches the following shared places:
+     * `ondemand.record()`'s return: now `out = {…}; out.update(record_pricing(…)); return out`. V-1 adds
+       `decisions` at the same spot; keep both.
+     * About's record section: one `<p>` under the answer card. V-1 and IG-3 add blocks nearby.
+     * `lib/api.ts`: an end-of-file block that merges into `RecordAnswer` / `RecordRow`.
+     * `projections.py`: the import line, the `@pinned_writer` decorators, a label block after `_with_kd_rows`,
+       `_ranges_from_record`'s select, the ranges' `_replace` columns. M5 works in the same file.
+     * `CHANGELOG`'s `## 2026-10-04 — Wave I-G` heading: every dev adds it; keep one.
+  2. **dbt**: the nightly's projection-marts step rebuilds both marts. The pre-hooks add the column on a database that
+     has not run `project` yet. No `sources.yml` change.
+  3. **`signals.py`'s one-line fix is required before the flip.** Without it, the first EV nightly fails the marts'
+     `scenario_base_is_the_projection` test.
+  4. **The flip** ("M4: the flip", the last commit): `LEAGUE_LAB_EV_PRICING: "1"` on the nightly step's env plus a
+     HOSTING note. **Render gets nothing.** Do not do M3's step (2): a Render override would price a frozen week by
+     the env instead of its label. Run the nightly by hand on Monday after merging, never on a game-day morning.
+     Rollback: drop the line and re-run; the weeks that kicked off under EV keep `ev`.
+  5. **Decisions Andrew may reverse**:
+     * An empty `LEAGUE_LAB_EV_PRICING` now means "unset" (the record decides). In M3 it meant off.
+     * The nightly writer never follows the record. Otherwise a rollback would need an explicit "0".
+     * In EV mode, a long TD on Sleeper's line is priced by our measured share × Sleeper's projected TDs, not by
+       Sleeper's own `*_tds_40p`. That is the same rule as ours.
+     * The About sentence's words are "priced flat" / "at their odds" (a WORDS row).
+  6. **Proposal (not built)**: `ops.market_record` (league_id, season, week, sleeper_id, fetched_at, sleeper_points,
+     pricing), written by `project` for the league-weeks labelled `ev`. The last pre-kickoff snapshot exists by the
+     first build after kickoff. `sl_priced` would read `coalesce(mr.sleeper_points, league_points(…))`. That needs a
+     `sources.yml` row (PO).
+  7. `test_if1::test_the_engine_drops_mcpherson_for_carlson` fails on any clone after a `project` run (its "before"
+     is the pre-IF-1 mart). IG-3 rewrites the writer's drop rule and may want to re-pin it.
