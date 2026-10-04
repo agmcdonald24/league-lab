@@ -245,6 +245,45 @@ export interface RecordAnswer {
   summary?: RecordRow | null;
 }
 
+// ---- V-1 (Wave I-G): the decision record (GET /api/record `decisions`; INTERFACES.md § V-1): per scored week the
+// league's sums over its teams — what they started, what our lineups (recorded before the first kickoff) would have
+// scored, the best lineups in hindsight — the season (= the sum of the weeks), the close calls graded by the outcome
+// (the coin-flip line, the calibration table) and the lineups whose starter's injury report changed after our build
+export interface RecordDecisionWeek {
+  week: number;
+  record_source: "kickoff" | "reconstructed" | "mixed";
+  rosters: number;
+  submitted: number;
+  app: number;
+  optimum: number;
+  regret: number;
+  edge: number;
+  news_rosters: number;
+}
+export interface RecordDecisions {
+  available: boolean;
+  season?: number;
+  why?: string;
+  weeks?: RecordDecisionWeek[];
+  season_totals?: { weeks: number; roster_weeks: number; submitted: number; app: number; optimum: number; regret: number; edge: number } | null;
+  calls?: {
+    n: number;
+    won: number | null;
+    expected: number | null;
+    brier: number | null;
+    coin_flips: { n: number; won: number | null; expected: number | null };
+    table: { bin: number; n: number; p_lo: number; p_hi: number; predicted: number; observed: number }[];
+  };
+  news?: { roster_weeks: number; edge: number | null; regret: number | null };
+  sentences?: { edge: string | null; calls: string | null; news: string | null };
+  reconstructed_weeks?: number[];
+  note?: string | null;
+}
+export interface RecordAnswer {
+  decisions?: RecordDecisions;
+}
+// ---- end V-1
+
 export interface Hit {
   gsis_id: string;
   player_name: string;

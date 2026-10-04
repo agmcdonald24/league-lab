@@ -270,6 +270,11 @@ def _pct(x: float) -> int:
     return int(round(100 * x))
 
 
+def _signed(x: float) -> str:
+    """+1.2 / −1.2 (the minus sign, as the page's tiles write it) / 0.0."""
+    return f"{'+' if x > 0 else '−' if x < 0 else ''}{abs(x):.1f}"
+
+
 def summary(rw: pd.DataFrame, calls: pd.DataFrame) -> dict:
     """``/api/record``'s ``decisions`` (docs/INTERFACES V-1): per scored week the league's sums over the roster-weeks
     with every number known, the season to date (= the sum of the weeks, to the cent), the calls' calibration, the
@@ -300,7 +305,7 @@ def summary(rw: pd.DataFrame, calls: pd.DataFrame) -> dict:
         per = tot["edge"] / tot["roster_weeks"]
         sentences["edge"] = (f"{ww.capitalize()}: had every team started our lineup, the league would have scored "
                              f"{abs(tot['edge']):.1f} points {'more' if tot['edge'] >= 0 else 'fewer'} than it did "
-                             f"({per:+.1f} a team a week). The best lineups in hindsight beat the ones started by "
+                             f"({_signed(per)} a team a week). The best lineups in hindsight beat the ones started by "
                              f"{tot['regret']:.1f} points ({tot['regret'] / tot['roster_weeks']:.1f} a team a week).")
     cf = cal["coin_flips"]
     if cf["n"]:
@@ -313,7 +318,7 @@ def summary(rw: pd.DataFrame, calls: pd.DataFrame) -> dict:
         if news_block["roster_weeks"]:
             n = news_block["roster_weeks"]
             sentences["news"] = (f"{n} lineup{'s' if n != 1 else ''} had a starter's injury report change after our "
-                                 f"morning build; there our lineup scored {news_block['edge']:+.1f} against the one started.")
+                                 f"morning build; there our lineups scored {_signed(news_block['edge'])} against the ones started.")
         else:
             sentences["news"] = ("No graded lineup had a starter's injury report change after our build"
                                  + (" (the rebuilt weeks cannot tell: they read the final report)." if recon else "."))
