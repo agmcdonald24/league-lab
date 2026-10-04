@@ -2,6 +2,17 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-G
+
+- **V-1: the decision record — what our lineups would have scored, graded.** `ops.lineup_record` keeps the lineup
+  the app recommended for every team before each week's first kickoff (the projections' freeze rule; weeks played
+  before it existed are rebuilt once from the frozen projections and labelled so), with the cards' closest calls and
+  their odds. `league_lab.validation` and the marts `mart_decision_record` / `mart_decision_calls` grade it: the points
+  our lineups would have added over the ones started, the best lineup in hindsight, how the coin flips landed against
+  their percentages, the lineups whose starter's injury report changed after the build. `/api/record` carries
+  `decisions`; About and the console's Record page show "Our lineups against the ones started"; `league-lab validate`
+  writes and grades (a nightly step proposed).
+
 ## 2026-10-04 — the product is isuckatfantasy
 
 - **Renamed.** Everything a manager sees — the sign-in screen, the top bar, the home-screen icon and its mark ("isaf"),

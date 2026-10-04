@@ -70,6 +70,13 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | weakest slot | your closest call |
 | bench value / depth | what your bench alone could put out |
 | lineup gain, fit (B2, B3) | what the move adds to your lineup, in points |
+| decision record, `ops.lineup_record` (V-1, Wave I-G) | **our lineup** / **ours**: the lineup we recommended before the week's first kickoff, kept since (later news does not change it) |
+| `submitted_points` (V-1) | **started**: what the team really started, at Sleeper's points |
+| `app_edge` (V-1) | **added** · "our lineups would have added": ours minus started (below zero: the managers' own lineups did better) |
+| `regret`, the hindsight optimum (V-1) | **best lineup in hindsight** ("+313.7 pts over the ones started") · the console's column **left on bench**; never "regret" on a page |
+| `record_source = 'reconstructed'` (V-1) | **rebuilt**: a week played before the record existed, its lineups rebuilt from the projections locked then, with the final injury report (a star on the week) |
+| the close calls graded (V-1, `validation.calibration`) | "The coin flips landed 54% for the side we leaned (52% expected, 31 calls)": **landed** = the player we started outscored the one on the bench (a tie counts half); the console's **Brier score**: 0 = perfect, 0.25 = a coin flip every time |
+| `is_news_affected` (V-1) | "a starter's injury report changed after our build" |
 | all-play | your record if you had played every team every week |
 | luck_wins | wins above (+) or below (−) what your points deserve |
 | reference league / reference scoring | League of Scrubs scoring; "one scale for every league" on NFL-wide pages |
