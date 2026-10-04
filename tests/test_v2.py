@@ -222,3 +222,29 @@ def test_the_market_table_is_in_the_ddl_and_the_dbt_pre_hook():
     cols = [c.split()[0] for c in lineup.MARKET_DDL.split("(", 1)[1].split(");")[0].replace("\n", " ").split(",")]
     assert cols == validation.MARKET_COLUMNS
     assert "create table if not exists ops.decision_market" in (ROOT / "dbt/models/marts/edge/mart_decision_record.sql").read_text()
+
+
+def test_the_console_record_page_shows_your_calls():
+    """app/pages/13_Record.py on the database (.env), Scrubs roster 6: the team's sentence under the league's block."""
+    import sys
+
+    psycopg = pytest.importorskip("psycopg")
+    from league_lab.config import get_settings
+
+    try:
+        with psycopg.connect(get_settings().pipeline_dsn(), connect_timeout=3) as c:
+            if not c.execute("select to_regclass('analytics.mart_decision_record')").fetchone()[0]:
+                pytest.skip("mart_decision_record not built")
+    except psycopg.OperationalError as exc:
+        pytest.skip(f"no database: {exc}")
+    from streamlit.testing.v1 import AppTest
+
+    app = ROOT / "app"
+    if str(app) not in sys.path:
+        sys.path.insert(0, str(app))
+    at = AppTest.from_file(str(app / "pages" / "13_Record.py"), default_timeout=240)
+    at.query_params["league"] = "1389709692405551104"
+    at.query_params["team"] = "6"
+    at.run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert any(m.value.startswith("**Your calls this season**") and "you started" in m.value for m in at.markdown)
