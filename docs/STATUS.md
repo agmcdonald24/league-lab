@@ -6042,19 +6042,22 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
   code before = `ad4040e`):
   - **Team 8 "Big Mac Attack"**: the answer **does not move** — the team has an open roster spot, so every best claim is
     "no drop needed" (41 moves, all `drop: null`; the first stays the Atlanta Falcons defense, +1.2 this week, +12.81
-    over weeks 4–7); only the internal `move_rank` of the full table re-orders. The table behind it moves on its **35
-    unit-drop rows** (of 288): dropping the **Chicago Bears QB** (29 claims) cost **28.22 → about 4** (season points
-    345.93 vs the best free team QB's 378.22 = 0 above replacement; later starts 28.22 → 0.20), e.g. "Falcons defense,
-    drop the Bears QB": net +1.2 / +12.81 → … net horizon **−15.41 → +8.72**, and **24 of the 29 become worthwhile**
-    (still below the no-drop claim); **Houston Texans K** 118.55 → about 5 (2.14 for the Saints kicker claim; 166.01
-    season points vs the free kicker's 169.47); **Houston Texans QB** 29.15 → about 9.
+    over weeks 4–7); only `move_rank` (each move's place in the full table) changes, on 24 of the 41. The table behind
+    it moves on its **35 unit-drop rows** (of 288): dropping the **Chicago Bears QB** (29 claims) cost **28.22 → about
+    4** (season points 345.93 against the best free team QB's 378.22 = 0 above replacement; his later starts 28.22 →
+    0.20), e.g. "Falcons defense, drop the Bears QB": drop cost 28.22 → 4.09, net horizon gain **−15.41 → +8.72**, and
+    **24 of the 29 claims become worthwhile** with that drop (still below the same claim with no drop: +12.81);
+    **Houston Texans K** 118.55 → about 5 (2.14 for the Saints kicker claim; 166.01 season points against the best free
+    kicker's 169.47); **Houston Texans QB** 29.15 → about 9.
   - **Where the screen moves** (12 teams, every move compared): teams 1, 3, 5, 7, 8, 11 unchanged; on **2, 4, 6, 9, 10,
     12** a kicker (or team QB) claim's drop changes from a player to the unit it replaces, the gains unchanged (cost 0
     either way): team 2 "New Orleans Saints K" drop Cooper Kupp → **Jacksonville Jaguars K** (+2.55 / +17.06; also the
     third of its three top moves), team 4 Jonathon Brooks → Detroit Lions K, team 6 Jakobi Meyers → Los Angeles Rams K
     (and "Arizona Cardinals QB": → Philadelphia Eagles QB), team 9 Kenny Gainwell → Green Bay Packers K, team 10 Quentin
-    Johnston → Seattle Seahawks K / Denver Broncos QB, team 12 RJ Harvey → Baltimore Ravens K (6 kicker claims).
-    House leagues: no units, nothing moves.
+    Johnston → Seattle Seahawks K / Denver Broncos QB, team 12 RJ Harvey → Baltimore Ravens K. Why: both drops now cost
+    0, and IF-1's tie-break prefers the starter the claim pushes out (`choose_drops`: `drop_is_incumbent`) — before,
+    the unit's drop carried its whole future (no replacement) and a bench player won. House leagues: no units, nothing
+    moves.
 * **Evidence — the rest**: dynasty deadline "Claims run every day except Saturday at 5:00 AM ET (FAAB blind bids); …"
   (Sunday 3:50 AM ET → the next run Sunday 5 AM; Friday 11 PM ET → Sunday, Saturday skipped); Scrubs (weekly) unchanged.
   Dad's league Team 8: `roster_source` "MFL", read just now; Scrubs roster 6: no MFL keys. Scrubs roster 3 with the
