@@ -72,11 +72,18 @@ def _carlson(w: dict) -> dict:
 # ------------------------------------------------------------------------------ the engine (the nightly's rows)
 @needs_db
 def test_the_engine_drops_mcpherson_for_carlson(sql):
-    """Before: the mart's Carlson claim drops Harrison (B3: equal horizon gains, the fewest rest-of-season points).
-    After: the engine evaluates Carlson for McPherson as the direct replacement and names him the best drop."""
-    before = sql("""select drop_name, horizon_gain from analytics.mart_waiver_moves where league_id = %s and roster_id = %s
-                    and add_name = %s and is_best_drop""", (SCRUBS, TEAM, CARLSON))
-    assert before and before[0]["drop_name"].startswith(HARRISON) and before[0]["horizon_gain"] == pytest.approx(13.46)
+    """B3 (a mart written before IF-1's writer) dropped Harrison for Carlson (equal horizon gains, the fewest rest-of-
+    season points); the engine evaluates Carlson for McPherson as the direct replacement and names him the best drop.
+    IG-3 (Wave I-G) re-pins the mart half to the rule instead of the clone's age: a mart the writer filled with the cost
+    names choose_drops' drop (McPherson); one written before the cost still holds B3's (Harrison) — either way the
+    gain is the same 13.46."""
+    mart = sql("""select * from analytics.mart_waiver_moves where league_id = %s and roster_id = %s and add_name = %s
+                  and is_best_drop""", (SCRUBS, TEAM, CARLSON))
+    assert mart and mart[0]["horizon_gain"] == pytest.approx(13.46)
+    if mart[0].get("drop_cost") is not None:                       # the writer ran with IF-1's cost (IG-3 on the clone)
+        assert mart[0]["drop_name"] == MCPHERSON and mart[0]["drop_is_incumbent"]
+    else:                                                          # a mart written before the cost: B3's drop
+        assert mart[0]["drop_name"].startswith(HARRISON)
     df = engine_rows(sql)
     c = df[(df["add_name"] == CARLSON)]
     best = c[c["is_best_drop"].astype(bool)].iloc[0]
@@ -152,6 +159,10 @@ def test_stashes_stay_a_watchlist(client, sql, monkeypatch):
     st = _waivers(client)["upside"]["stashes"]
     assert st, "roster 6 has upside stashes on the clone"
     for s in st:
+        if s.get("stash_source") == "writer":     # IG-3: the writer's call (choose_drops) is shown as written
+            if s["stash_action"] == "watch":
+                assert s["drop"] is None and s["watch_words"].startswith("Watch, no claim yet")
+            continue
         if (s.get("holds_horizon_gain") or 0.0) - ((s.get("drop_cost") or {}).get("cost") or 0.0) < decisions.GAIN_EPS:
             assert s["stash_action"] == "watch" and s["drop"] is None and s["watch_words"].startswith("Watch, no claim yet")
         else:
