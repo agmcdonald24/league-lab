@@ -61,8 +61,9 @@ def test_sleeper_daily_faab_waivers():
     """The dynasty: FAAB (waiver_type 2), daily waivers at hour 2 Pacific = 5:00 AM ET — the next run is this morning."""
     d = decisions.waiver_deadline(_league(DYNASTY), now=NOW)
     assert d["kind"] == "faab" and d["daily"] is True
-    assert d["runs_words"] == "every day at 5:00 AM ET" and d["runs_at"] == "2026-10-04T09:00:00+00:00"
-    assert d["words"].startswith("Claims run every day at 5:00 AM ET (FAAB blind bids)")
+    # IH-2 (Wave I-H): `daily_waivers_days` decoded — the dynasty's 15359 leaves Saturday out (test_ih2)
+    assert d["runs_words"] == "every day except Saturday at 5:00 AM ET" and d["runs_at"] == "2026-10-04T09:00:00+00:00"
+    assert d["words"].startswith("Claims run every day except Saturday at 5:00 AM ET (FAAB blind bids)")
 
 
 def test_the_next_run_rolls_to_next_week_once_passed():

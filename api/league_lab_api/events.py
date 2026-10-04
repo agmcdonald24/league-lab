@@ -457,6 +457,8 @@ def week_games(now: datetime | None = None) -> dict[str, str]:
         df = db.fresh(WEEK_GAMES_SQL, (at,))
     except Exception as exc:  # noqa: BLE001 - no schedule: no game key, never a failed write
         log.warning("events: the schedule could not be read (%s): game_key stays empty", exc.__class__.__name__)
+        if now is None:                 # not asked again for five minutes (the writer thread writes rows in batches)
+            _games = (t - GAMES_TTL_S + 300, {})
         return {}
     out: dict[str, str] = {}
     for r in df.to_dict("records"):
