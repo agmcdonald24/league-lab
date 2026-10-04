@@ -518,7 +518,8 @@ the Team Hub / the League screen / the unit's card, the League screen's double h
 Waivers filling an empty starting slot first, and the player news line (ESPN's public feed, headline + link out).
 **`LEAGUE_LAB_EV_PRICING` flips Monday** (STATUS § "Wave I-D" has the order: the nightly's env + a manual run, then
 Render's env; week 5 is the first EV-priced week of the record). Still after: usage tracking; v3.1's ranges with
-the long-TD bonus in the target, the fringe level, cold starts; Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
+the long-TD bonus in the target, the fringe level, cold starts; Wave J (accounts, Stripe, ESPN) — parked (2026-10-04:
+Andrew has not asked Sleeper for a licence and will not until the prototype is prod-ready).
 
 **Fourth: the casual-user review (2026-10-03 evening).** Andrew had an outside agent walk the live app (`042f199`,
 Wave I-C) "taking the perspective of my dad" — a manager who knows football and does not enjoy analytics — on MFL

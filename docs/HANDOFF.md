@@ -78,8 +78,8 @@ one nightly writer). Andrew checks Sleeper's commercial terms before anything is
 / `_ranges` per reference scoring, `ops.kd_lines` / `_ranges`), the API for any Sleeper league (`/api/leagues?username=`,
 on-demand My Week with the opponent, player card, rest of season, record; Sleeper client with caches + token bucket;
 Dockerfile serving `web/dist`), the web app (username → picker → My Week → player → rest of season → record). Sleeper's
-API terms: free for non-commercial use, a licence for commercial use — Andrew has asked; **Wave G** (accounts, Stripe,
-hosting, one nightly writer) waits for the answer. Run it: `cd web && npm ci && npm run build`, then
+API terms: free for non-commercial use, a licence for commercial use — **not asked** (Andrew, 2026-10-04: a prototype he
+would love to commercialize, the odds slim; the licence question waits until it is prod-ready). **Wave G** shipped as the beta. Run it: `cd web && npm ci && npm run build`, then
 `cd api && uv sync && uv run uvicorn league_lab_api.main:app --port 8581` → http://localhost:8581/.
 
 **Iteration 15 (Wave G) delivered 2026-10-02 — the lab in the app**: the research (trends, matchups, players, receivers,
@@ -182,7 +182,7 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   `mart_decision_*` appear on Neon; the record's About sentence reads "from week 5 the bonuses are priced at their
   odds" on Monday); then the cold-start prior on the stat line (v3.2, M5's lead, with "veterans on a new team"), the
   record's news-affected cases on the events (`validation._news_starters`), MFL leagues and a per-team view in the
-  record, Waivers' drop cost on units, events retention; Wave J (accounts, Stripe, ESPN) on Sleeper's licence.
+  record, Waivers' drop cost on units, events retention; Wave J (accounts, Stripe, ESPN) parked until the prototype is prod-ready (Andrew, 2026-10-04; no licence request made).
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a
