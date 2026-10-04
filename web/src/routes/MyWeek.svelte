@@ -459,6 +459,7 @@
           <p class="mt-1"><Md text={status.freshness} /></p>
         </details>
       {:else}
+        {#if staleWords}<p class="font-semibold text-warn" data-testid="updated-stale">{staleWords}</p>{/if}<!-- ---- IH-1 -->
         <Md text={status.freshness} />
       {/if}
     </footer>
