@@ -6972,8 +6972,10 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
     counts.** `api/tests/test_if2.py` fails on `wt-base` at the same assertion
     (`test_finder_ranks_trades_against_the_best_waiver_move`: Cincinnati Bengals vs Atlanta Falcons, the clock).
   - e2e: `web/e2e/ii1/fixtures.spec.ts` — recorded from the fixture API on :8722 into `web/fixtures/ii1/api_ii1.json`
-    (recording merges into the file, one test at a time with `-g`): Scrubs replayed ✓ phone 375 + desktop 1300; the Test
-    League and the calculator recorded ✓ desktop (against the live API); the full replay (6) E2E_REPLAY.
+    (recording merges into the file, one test at a time with `-g` on a slow machine), re-recorded on the final code:
+    **6/6 passed** on replay, phone 375 + desktop 1300 (the phone Scrubs run once timed out on its full-page screenshot at
+    load ~40 after every assertion had passed; re-run alone: passed). Screenshots `ii1-*-{phone,desktop}.png` in
+    `scratchpad/ii1/shots`.
 * **Changed tests outside mine** (behaviour moved where the review names the bug): `api/tests/test_if2.py` (the headline
   is the first credible row or "No compelling trade found"; the IF-2 order assertions untouched), `api/tests/
   test_decisions.py` (the headline may start "**No compelling trade found.**").

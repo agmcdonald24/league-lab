@@ -834,7 +834,7 @@
    "roster_id": 2,
    "position": "ALL",
    "timings_ms": {
-    "total": 2819.9
+    "total": 4179.6
    }
   }
  },
@@ -1172,7 +1172,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +11.4 over weeks 4–7 (drop Cam Little) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +11.4 over weeks 4–7 (drop Cam Little); +0.3 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": 0.07,
@@ -1490,7 +1490,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +11.4 over weeks 4–7 (drop Cam Little) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +11.4 over weeks 4–7 (drop Cam Little); +0.3 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -0.92,
@@ -1847,7 +1847,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the New York Giants defense claim gives +9.2 over weeks 4–7 (drop Brian Thomas Jr.) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the New York Giants defense claim gives +9.2 over weeks 4–7 (drop Brian Thomas Jr.); +0.6 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -1.02,
@@ -1855,7 +1855,7 @@
        "margin": 1
       },
       "why_consider": [
-       "Their starters gain +3.0 over weeks 4–7, 2.4 more than their best waiver move.",
+       "Their starters gain +3.0 over weeks 4–7, 2.4 more than their best waiver move (+0.6 once empty slots are filled from the free pool).",
        "Omarion Hampton starts for them in weeks 4, 5 and 6.",
        "It frees 1 roster spot for them."
       ],
@@ -2161,7 +2161,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the New York Giants defense claim gives +9.2 over weeks 4–7 (drop Brian Thomas Jr.) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the New York Giants defense claim gives +9.2 over weeks 4–7 (drop Brian Thomas Jr.); +0.6 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -2.71,
@@ -2169,7 +2169,7 @@
        "margin": 1
       },
       "why_consider": [
-       "Their starters gain +1.6 over weeks 4–7, 1.0 more than their best waiver move.",
+       "Their starters gain +1.6 over weeks 4–7, 1.0 more than their best waiver move (+0.6 once empty slots are filled from the free pool).",
        "Bhayshul Tuten starts for them in weeks 4, 5 and 6."
       ],
       "why_refuse": [
@@ -2472,7 +2472,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Atlanta Falcons defense claim gives +4.7 over weeks 4–7 (drop Carnell Tate) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Atlanta Falcons defense claim gives +4.7 over weeks 4–7 (drop Carnell Tate) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -3.46,
@@ -2827,7 +2827,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +5.6 over weeks 4–7 (drop Trey Smack) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +5.6 over weeks 4–7 (drop Trey Smack) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -4.92,
@@ -3185,7 +3185,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +13.5 over weeks 4–7 (drop Evan McPherson) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +13.5 over weeks 4–7 (drop Evan McPherson); +4.3 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -4.93,
@@ -3501,7 +3501,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +14.2 over weeks 4–7 (drop Tyler Bass) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +14.2 over weeks 4–7 (drop Tyler Bass); +4.4 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -3.68,
@@ -3866,7 +3866,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +14.2 over weeks 4–7 (drop Tyler Bass) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +14.2 over weeks 4–7 (drop Tyler Bass); +4.4 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -4.3,
@@ -4224,7 +4224,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +12.8 over weeks 4–7 (drop Kaelon Black) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +12.8 over weeks 4–7 (drop Kaelon Black); +3.4 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -5.85,
@@ -4583,7 +4583,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Atlanta Falcons defense claim gives +4.7 over weeks 4–7 (drop Carnell Tate) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Atlanta Falcons defense claim gives +4.7 over weeks 4–7 (drop Carnell Tate) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -6.47,
@@ -4941,7 +4941,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Atlanta Falcons defense claim gives +9.9 over weeks 4–7 (drop Sam Darnold) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Atlanta Falcons defense claim gives +9.9 over weeks 4–7 (drop Sam Darnold); +1.2 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -6.51,
@@ -4949,7 +4949,7 @@
        "margin": 1
       },
       "why_consider": [
-       "Their starters gain +3.9 over weeks 4–7, 2.7 more than their best waiver move.",
+       "Their starters gain +3.9 over weeks 4–7, 2.7 more than their best waiver move (+1.2 once empty slots are filled from the free pool).",
        "Patrick Mahomes starts for them in weeks 4, 6 and 7.",
        "It frees 1 roster spot for them."
       ],
@@ -5255,7 +5255,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +12.8 over weeks 4–7 (drop Kaelon Black) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +12.8 over weeks 4–7 (drop Kaelon Black); +3.4 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -6.52,
@@ -5566,7 +5566,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Chris Boswell claim gives +11.2 over weeks 4–7 (drop Brock Bowers) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Chris Boswell claim gives +11.2 over weeks 4–7 (drop Brock Bowers); +2.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": 3.28,
@@ -5878,7 +5878,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +13.5 over weeks 4–7 (drop Evan McPherson) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +13.5 over weeks 4–7 (drop Evan McPherson); +4.3 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -6.74,
@@ -6234,7 +6234,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Chris Boswell claim gives +11.2 over weeks 4–7 (drop Brock Bowers) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Chris Boswell claim gives +11.2 over weeks 4–7 (drop Brock Bowers); +2.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": 2.5,
@@ -6549,7 +6549,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Atlanta Falcons defense claim gives +9.9 over weeks 4–7 (drop Sam Darnold) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Atlanta Falcons defense claim gives +9.9 over weeks 4–7 (drop Sam Darnold); +1.2 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -8.02,
@@ -6557,7 +6557,7 @@
        "margin": 1
       },
       "why_consider": [
-       "Their starters gain +6.0 over weeks 4–7, 4.8 more than their best waiver move.",
+       "Their starters gain +6.0 over weeks 4–7, 4.8 more than their best waiver move (+1.2 once empty slots are filled from the free pool).",
        "Patrick Mahomes starts for them in weeks 4, 6 and 7."
       ],
       "why_refuse": [
@@ -6859,7 +6859,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +5.6 over weeks 4–7 (drop Trey Smack) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Daniel Carlson claim gives +5.6 over weeks 4–7 (drop Trey Smack) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": -9.09,
@@ -6867,7 +6867,7 @@
        "margin": 1
       },
       "why_consider": [
-       "Their starters gain +6.9 over weeks 4–7, 1.3 more than their best waiver move.",
+       "Their starters gain +6.9 over weeks 4–7, 1.3 more than their best waiver move (+5.6 once empty slots are filled from the free pool).",
        "Patrick Mahomes starts for them in weeks 4, 6 and 7."
       ],
       "why_refuse": [
@@ -7107,10 +7107,10 @@
     "bar_sets": 143,
     "candidates": 19374,
     "evaluated": 336,
-    "seconds": 29.624
+    "seconds": 8.532
    },
    "timings_ms": {
-    "total": 5396.9
+    "total": 52237.3
    }
   }
  },
@@ -7970,7 +7970,7 @@
    "roster_id": 1,
    "position": "ALL",
    "timings_ms": {
-    "total": 35526.7
+    "total": 36653.4
    }
   }
  },
@@ -9572,7 +9572,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: no waiver claim improves your starting lineup over weeks 4–7 (nothing to claim). Theirs: the Daniel Carlson claim gives +14.4 over weeks 4–7 (drop Kyle Pitts) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: no waiver claim improves your starting lineup over weeks 4–7 (nothing to claim). Theirs: the Daniel Carlson claim gives +14.4 over weeks 4–7 (drop Kyle Pitts); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": 4.68,
@@ -9580,7 +9580,7 @@
        "margin": 1
       },
       "why_consider": [
-       "Their starters gain +3.0 over weeks 4–7, 3.0 more than their best waiver move.",
+       "Their starters gain +3.0 over weeks 4–7, 3.0 more than their best waiver move (+0.0 once empty slots are filled from the free pool).",
        "Cam Skattebo starts for them in weeks 5, 6 and 7.",
        "It frees 1 roster spot for them."
       ],
@@ -10233,7 +10233,7 @@
         "availability": "claim",
         "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
        },
-       "words": "Yours: no waiver claim improves your starting lineup over weeks 4–7 (nothing to claim). Theirs: the Michael Penix Jr. claim gives +10.6 over weeks 4–7 (drop Juwan Johnson) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+       "words": "Yours: no waiver claim improves your starting lineup over weeks 4–7 (nothing to claim). Theirs: the Michael Penix Jr. claim gives +10.6 over weeks 4–7 (drop Juwan Johnson); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
       },
       "beyond": {
        "mine": 2.97,
@@ -10741,10 +10741,10 @@
     "bar_sets": 117,
     "candidates": 9481,
     "evaluated": 431,
-    "seconds": 15.4
+    "seconds": 14.126
    },
    "timings_ms": {
-    "total": 66850.7
+    "total": 72708.1
    }
   }
  },
@@ -11804,12 +11804,12 @@
     "lineup_value": 117.02,
     "changed": false,
     "changes": [],
-    "checked_at": "2026-10-04T21:09:05.814322Z",
+    "checked_at": "2026-10-04T21:22:23.483218Z",
     "as_of_build": "2026-10-02T05:30:24.167386Z"
    },
    "timings_ms": {
-    "data": 716.3,
-    "total": 2387.3
+    "data": 838.4,
+    "total": 2065.2
    }
   }
  },
@@ -12794,12 +12794,12 @@
     "lineup_value": 121.11,
     "changed": false,
     "changes": [],
-    "checked_at": "2026-10-04T21:09:05.814322Z",
+    "checked_at": "2026-10-04T21:22:23.483218Z",
     "as_of_build": "2026-10-02T05:30:24.167386Z"
    },
    "timings_ms": {
-    "data": 599,
-    "total": 2216.2
+    "data": 820.9,
+    "total": 1895.8
    }
   }
  },
@@ -13840,7 +13840,7 @@
       "availability": "claim",
       "availability_words": "a waiver claim (rolling waivers): it can be lost to a team ahead of you"
      },
-     "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt) (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Atlanta Falcons defense claim gives +4.7 over weeks 4–7 (drop Carnell Tate) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
+     "words": "Yours: the Tyler Allgeier claim gives +9.8 over weeks 4–7 (drop Jacory Croskey-Merritt); +0.0 once empty slots are filled from the free pool (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: the Atlanta Falcons defense claim gives +4.7 over weeks 4–7 (drop Carnell Tate) (a waiver claim (rolling waivers): it can be lost to a team ahead of you)."
     },
     "beyond": {
      "mine": 8.63,
@@ -13888,10 +13888,10 @@
     "credible": false
    },
    "timings_ms": {
-    "context": 367.4,
-    "evaluate": 22.6,
-    "words": 2063.7,
-    "total": 2453.7
+    "context": 0.6,
+    "evaluate": 24.2,
+    "words": 924.6,
+    "total": 949.4
    }
   }
  }
