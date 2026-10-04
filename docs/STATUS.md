@@ -6952,12 +6952,14 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
   screen light + dark; `e2e/ib1` four tabs) **14 / 14**. Root `tests/test_nightly_relations.py` 6 / 6 (the hosted
   relation audit picks up nothing new). Ruff clean; eslint + svelte-check clean (159 files, 0 warnings); build ok.
 - **The whole API suite vs `wt-base`** (both on `league_lab_m1`, `LEAGUE_LAB_DB_NAME` overriding wt-base's `.env`;
-  wt-base is at `ad4040e`, not `94ed33c`): the machine sat at load 30–60 (seven developers' suites and builds), so
-  neither run could finish in the time box; both were stopped at the same point with **identical progress: 205 passed,
-  4 failed, same positions** (delta 0). The research files run whole: II-3 `test_research.py` + `test_i0b.py` + the
-  first 7 of `test_ii3.py` 53 / 53 before the two heaviest II-3 tests hit the load (re-run alone: pass); wt-base's same
-  files 56 passed / 6 failed, every failure `QueryCanceled: statement timeout` (load, not code). The PO's full run on
-  a quiet machine is the number to trust.
+  wt-base is at `ad4040e`, not `94ed33c`; `test_u1` / `test_ig2` ignored): the machine sat at load 15–60 (seven
+  developers' suites and builds), so neither whole run could finish in the time box. Run twice side by side and stopped
+  at the same point; the second, quieter run: **the first 191 tests identical outcome by outcome — 176 passed, 13
+  failed, 2 skipped on both** (delta 0; the failures are the Sunday-afternoon locks the brief names). The files that
+  read `/api/players` run whole on II-3 at lower load: `test_research.py` + `test_i0b.py` + `test_n2.py` **62 / 62**
+  (wt-base on the same files under peak load: 56 passed, 6 `QueryCanceled: statement timeout` — load, not code); the
+  two heaviest II-3 tests that once timed out under peak load pass alone. The PO's full run on a quiet machine is the
+  number to trust.
 - **What moved**: no number moved. The Players screen is redesigned (its old G3 assertions — "Most points: …",
   three visible headers on a phone — are replaced in `e2e/fixtures.spec.ts`, marked); the Players tab opens Stats
   (it opened Trends); `/receivers` redirects.
