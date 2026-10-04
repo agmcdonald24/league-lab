@@ -6882,3 +6882,87 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
 5. **Decisions Andrew may want to reverse**: the line is on My Week by default (information; a one-line removal); the
    centring of the ranges on the projections; the shrink (0.60; `WEEK_SHRINK`); the opponent's best lineup rather than
    his submitted one.
+
+## Wave I-I (Iteration 19)
+
+### II-2 2026-10-04 — one shared player viewer: the drawer (branch `dev/II2`, clone `league_lab_ia3`, read only)
+
+* **Task / plan**: II-2 of the Wave I-I brief (`scratchpad/waveII/BRIEF.md`), the fifth review § 3 ("Use one shared
+  player viewer everywhere"). DESIGN § "The drawer" (appended). Branch `dev/II2` from `94ed33c`.
+* **Interfaces** (INTERFACES.md § II-2, with its 16:50 update): `web/src/lib/player-drawer.svelte.ts` — `openPlayer(key,
+  {origin?, from?, context?, returnFocus?})`, `closePlayer()`, `playerLink(key, opts)` (attachment), `drawer` (`key`,
+  `from`, `context`, `origin`, `expanded`, `section`), `DRAWER_SECTIONS`, `setSection`, `setExpanded`, `restoreFocus`,
+  `openFullPage`, `loadCard` / `cachedCard` / `cardKey`, `addToCompare` / `compareTray` / `removeFromCompare`,
+  `onPlayerOpen(fn)` → `{content_type: "player", item_id, origin, league_key, roster_id}` (ids only; INF-1 chose to send
+  `select_content` from the URL's `pane=` instead, so nothing subscribes today). `lib/router.svelte.ts` `setLinkHook(fn)`
+  (marked block). IB-1's `lib/pane.svelte.ts` keeps every export (`openPane`, `closePane`, `paneLink`, `pane`,
+  `openFullPage`, `paneActions`, `lineupPane`) and delegates to the drawer. URL unchanged: `?pane=<key>&from=<from>`.
+* **What it does**
+  1. **Every player link opens the drawer.** The router's link hook takes a plain tap on any `<a href="/player/<key>…">`
+     on a league screen and opens the drawer instead of the page (Cmd / Ctrl / middle click still open the page; on the
+     player page itself links still navigate; `data-full-page` opts a link out). So Waivers, Receivers, Team and Season
+     rows, the Trades lists, League, Matchups, My Week, Compare and the names inside sentences ("Michael Wilson, 9.20,
+     would come in") all open it with **no change in those routes** — which keeps II-3's and II-4's files free of my
+     edits. The one route edit: **Waivers** passes the claim's context on its three name links (the free-agent list,
+     its detail card, the stashes: `pane={{ from: "waiver", … }}`, one line each, marked) so the drawer offers
+     **Evaluate add / drop** — the review's own path (All available → WR → a free agent).
+  2. **A compact first view in four sections** — Overview (the card unit with this week's projection, the one-line
+     reason, the actions, the projection tiles with the typical range and low- / high-end outcomes, availability and
+     the news line, his lineup value, his role; the week-by-week ledger, the stat line — the same pieces as the one-line
+     reason — and the schedule behind expanders), Usage, Game log, News (status + every item, sourced, dated, linked
+     out). ARIA tabs (arrows, Home / End). The league and its scoring in the head ("League of Scrubs scoring · week 4").
+  3. **Expand** (⤢): a modal `<dialog>` lightbox with every section open in two columns; Escape or "Back to the panel"
+     collapses it to the drawer and focus returns to Expand.
+  4. **Add to compare** (a pair: the first waits for the second, the screen stays; the second opens Compare with both,
+     league and team kept) and **Full player page** (league and team kept; Back lands on the screen without the drawer).
+  5. **History and focus**: the first open is one history entry — browser Back closes the drawer before it leaves the
+     screen; a swap adds none; the drawer takes focus on open; ×, Escape and Back return focus to the name that opened
+     it (a name inside the drawer swaps it without losing that), never scrolling the screen.
+  6. **Phone**: a full-height sheet (was 88 dvh from the bottom).
+  7. **Cache and the stale guard**: the card is cached by player + league + team + data version (`/api/status`
+     `updated_at`; a new build drops every cached card and the API module's copy), five minutes at most; a request
+     token makes an older, slower answer resolve to nothing, so it never overwrites a newer pick.
+  8. **State kept under it — a fix in `App.svelte`** (marked): the lazy screens (Trends, Matchups, Players, Receivers,
+     Compare, About) were awaited through a fresh `import()` promise on every route change, so opening the drawer (or
+     any `?param` change) re-mounted the screen: Receivers lost its "Show all", its pick and the focused name. One
+     promise per screen now; the screen stays mounted under the drawer.
+* **Files**: `web/src/lib/player-drawer.svelte.ts` (new), `web/src/components/PlayerPane.svelte`, `web/src/lib/pane.svelte.ts`
+  (II-2 block: delegates), `web/src/lib/router.svelte.ts` (II-2 block: `setLinkHook`), `web/src/App.svelte` (II-2 block:
+  one promise per lazy screen), `web/src/routes/Waivers.svelte` (three marked lines), `web/e2e/ii2/fixtures.spec.ts`
+  (new), `web/e2e/ib1/fixtures.spec.ts` + `web/e2e/if4/fixtures.spec.ts` (one line each: the game log is the drawer's
+  Game log section now, not an expander), `web/e2e/fixtures.spec.ts` (two lines: a name → the drawer → Full player page), `web/fixtures/player/1389709692405551104_{00-0038117,00-0039880,00-0038544}.json`
+  + `web/fixtures/save_ii2_fixtures.py` (three Scrubs free agents' cards — Wan'Dale Robinson, Malik Washington, Quentin
+  Johnston — recorded from a fixture API on port 8723: the API's test fixtures for Sleeper / ESPN / MFL, this clone,
+  events off; their projections equal the Waivers fixture's 8.30 / 8.21 / 8.12), `docs/DESIGN.md` (§ "The drawer").
+* **Commands**: `cd web && npm run lint` (eslint + svelte-check + tsc: 0 errors, 0 warnings; there is no `npm run check`
+  script — `lint` runs `typecheck`), `npm run build`, `FIXTURES_PORT=8623 npx playwright test --config
+  playwright.fixtures.config.ts e2e/ii2` (**14 passed**: 7 tests × phone 375 / desktop 1300); the suites that open the
+  pane — `e2e/ib1 if4 n1 n2 if3 ig1` — **46 passed** (4 failed on the first run: the two `pane-gamelog` lines, fixed
+  in ib1 / if4 and re-run green); `e2e/fixtures.spec.ts` "a stranger…", "a house league through the picker…", "Trends…"
+  **6 passed** (the last two tapped a name and expected the page: now name → drawer → Full player page);
+  `e2e/fixtures.spec.ts h1 decisions ib2` **72 passed**; `uv run ruff check
+  web/fixtures/save_ii2_fixtures.py` (clean). No Python under `src app tests api` touched.
+* **Whole e2e** (`FIXTURES_PORT=8623 npx playwright test --config playwright.fixtures.config.ts --workers 3`, after the
+  load on the shared machine dropped): **285 passed, 1 skipped, 0 failed** (286 tests; `e2e/ii2` adds 14). Two
+  earlier full runs stalled when `vite preview` stopped answering under load 40–112 (seven developers' suites, no
+  swap); the chunks above were run in between.
+* **Numbers**: none moved (a web-only task; no API, no model).
+* **Not done**: the phone sheet does not make the page behind it `inert` (a keyboard on a phone could tab behind the
+  sheet; the desktop drawer is nonmodal by design); no prefetch on hover; Compare is still a pair (II-3's 2–4 selection
+  opens the first two); `onPlayerOpen` has no subscriber (INF-1 reads `pane=` from the URL).
+* **Next**: after II-3's merge, re-run `e2e/ii2` — its Players test uses `players-table` / `players-search` and
+  `position=WR&sort=target_share`; its Receivers tests use `/receivers?view=cards` (II-3 redirects bare `/receivers` to
+  the Stats preset; the role-card view stays at `view=cards`).
+* **For the PO**
+  1. **Merge order**: anywhere; conflicts are unlikely — `App.svelte` (II-2 block near `LAZY`; INF-1 also edits App for
+     `page_view`), `Waivers.svelte` (three lines inside the free-agent / stash `PlayerRow` / `PlayerCard` tags; II-4
+     edits the top-three intro), `router.svelte.ts` (`interceptLinks`, one line + the hook block).
+  2. II-3's Players links keep IB-1's `paneLink` line: it delegates to the drawer, so nothing to swap there.
+  3. Two older e2e lines changed on purpose (ib1, if4): the game log left the Overview for its own section.
+  4. `web/e2e/app.spec.ts` (the live-API suite, not run here; IB-1's lineup names already broke its "one tap → the page"
+     lines) still expects a My Week name to open the page in one tap (~lines 58–80, 85–92, 186): with the drawer a name
+     opens the drawer and `pane-full` opens the page. Not edited blind.
+  5. **Decisions Andrew may want to reverse**: every player link opens the drawer, including names inside sentences
+     and on Compare (the full page is one tap away; Cmd-click opens it); the drawer takes focus on every open; Add to
+     compare waits for a second player instead of opening Compare at once; the stat line sits behind the expander in
+     the drawer (the one-line reason says the same).

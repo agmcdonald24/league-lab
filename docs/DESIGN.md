@@ -264,3 +264,39 @@ candidate, a trade list row, a search hit, a research list. His full page stays 
 6. **No horizontal tables on a phone**: `Table` hides `phone: false` columns under 640 px; otherwise rows or cards.
 7. **No decoration that slows the first screen**: no web fonts, no background images, headshots lazy below the fold.
 8. **Same numbers everywhere**: format with `fmt` (`pts`, `signed`, `pct`, `whole`), "—" for unknown.
+
+## The drawer (Wave I-I, II-2)
+
+The fifth review (§ 3, "Use one shared player viewer everywhere") made IB-1's pane **the** player viewer: every player
+name on a league screen opens it — Players, Waivers, Receivers, Team and Season rows, trade players, matchup references,
+My Week, search hits, and a name inside a sentence (a name inside the drawer swaps the drawer). The screen under it keeps
+its search, filters, sort, page, selected rows and scroll. The player's page stays one tap away (**Full player page**).
+
+- **Layout**: from 900 px a panel beside the screen (`25rem`, sticky; the list stays usable and another name swaps the
+  player in place); **on a phone a full-height sheet** (the whole screen, the safe areas respected; × / Escape / Back
+  close it). The head keeps the player's name and **the active league and its scoring** ("League of Scrubs scoring ·
+  week 4"), the **Expand** control (⤢) and ×.
+- **Sections** (tabs, the ARIA pattern: arrows, Home / End): **Overview** — the card unit (this week's projection), the
+  one-line reason ("8.1 targets → … → 12.7 points this week"), the actions, then the projection's tiles (projection,
+  typical range, low- / high-end), where he stands (availability + the news line), his lineup value and his role; the
+  week-by-week ledger, the stat line and the schedule behind expanders. **Usage** — the usage tiles. **Game log** — the
+  points-by-week chart. **News** — his status, then every news item (sourced, dated, linked out; "League news" when the
+  item is not about him). The section chosen sticks while players are swapped; a new open starts where you left it.
+- **Expand**: a modal `<dialog>` (focus inside, the page inert behind it) with every section open in two columns —
+  Escape or "Back to the panel" collapses it to the drawer (focus back on Expand); × closes both.
+- **Actions**: IB-1's by where it was opened from (`lineup` → Compare with my starter / my best bench option, `waiver` →
+  **Evaluate add / drop**, `trade` → Add to trade), then **Add to compare** and **Full player page**. Add to compare is a
+  pair: the first player waits ("Parker Washington is waiting to be compared…", the screen stays), the second's button
+  reads "Compare with Parker Washington" and opens Compare with both (league and team kept).
+- **Focus and history**: the drawer takes focus (its title) when a player opens; closing it — ×, Escape, Back — returns
+  focus to the name that opened it, without scrolling the screen. The first open is one history entry: **browser Back
+  closes the drawer before it leaves the screen**; a swap adds none; Full player page replaces it (Back from the page
+  lands on the screen without the drawer). URL: `?pane=<key>&from=<from>` (IB-1's keys).
+- **API** (`lib/player-drawer.svelte.ts`): nothing to do for a plain `<a href="/player/<key>…">` (the router's link hook
+  catches the tap; Cmd / Ctrl / middle click still opens the page; `data-full-page` keeps a link a page link);
+  `{@attach playerLink(key, { from, context })}` (or `PlayerRow` / `PlayerCard` / `LineupTable`'s `pane` prop) to give
+  the actions their context; `openPlayer(key, opts)` for a row tap; `closePlayer()`; `onPlayerOpen(fn)` (ids only).
+  IB-1's `lib/pane.svelte.ts` names keep working and delegate here.
+- **Loading**: the card is cached by player + league + team + data version (`/api/status` `updated_at`, five minutes at
+  most: injuries and news move during the day); a slower, older answer never replaces a newer pick (a request token);
+  his name shows while the card loads.

@@ -2,6 +2,16 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-I
+
+- **II-2 — one player viewer everywhere: the drawer.** Every player name on a league screen (Players, Waivers,
+  Receivers, Team, Season, Trades, League, Matchups, My Week, search, names inside sentences) opens the same drawer —
+  beside the screen from 900 px, a full-height sheet on a phone — and the screen under it keeps its search, filters,
+  sort and scroll. A compact first view in four sections (Overview · Usage · Game log · News), Expand (a larger view
+  with every section), Add to compare, Full player page; Escape, × and browser Back close it and focus returns to the
+  name that opened it. Waivers' free agents offer Evaluate add / drop from it. The research screens no longer re-mount
+  when the drawer opens.
+
 ## 2026-10-04 — Wave I-H
 
 - **PO (integration).** Five packages merged (M6, V-2, IH-1, IH-2, IH-3 below). On Andrew's word the stale banner
