@@ -888,7 +888,7 @@ def updated_at() -> str | None:
 WIN_NO_RANGE = "no range for this league yet"
 WIN_NO_LIVE = "the week has started and this league's live scores are not read yet"
 WIN_EARLY = False            # True: the line says "early: N weeks graded" instead of a percentage (see METRICS § Win probability)
-WIN_GRADED_WEEKS = 0         # the 2026 weeks the calibration graded (METRICS § Win probability, "The week")
+WIN_GRADED_WEEKS = 2         # the 2026 weeks the calibration graded (METRICS § Win probability — the week): 1-2
 MIN_RANGED_SHARE = 0.5       # fewer of a side's expected points carried by ranges than this: no probability
 SCORED_TEAMS_SQL = """select distinct team from analytics.fct_player_game_league
                       where season = %s and week = %s and season_type = 'REG' and team is not null"""
