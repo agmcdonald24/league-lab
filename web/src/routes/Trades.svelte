@@ -7,7 +7,7 @@
   // playoffs; ?window=), with one line saying why; suggestions the sanity bound set aside are counted under the list.
   // IB-2 (Wave I-B): each suggestion's card is the package, the dial's label, your gain and ONE reason (when the gain
   // comes, or who cannot play); "Try it" opens the calculator. A name opens the research pane ("Add to trade").
-  import { get, peek, Unauthorized, tradePaths, type Partners, type TradeLists, type TradePlayer, type TradeWindow } from "../lib/api";
+  import { get, peek, Unauthorized, tradePaths, type Partners, type PartnerRow, type TradeLists, type TradePlayer, type TradeWindow } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { md, withContext } from "../lib/md";
   import { errorWords, f1, partnerLine, s1, windowOf } from "../lib/decisions";
@@ -24,6 +24,7 @@
   import Tabs from "../components/Tabs.svelte";
   import WindowControl from "./decisions/WindowControl.svelte";
   import WeekStrip from "./decisions/WeekStrip.svelte"; // ---- IF-2: the week strip, both sides
+  import TradeCard from "./decisions/TradeCard.svelte"; // ---- II-1: the trade card (plausibility, both sides, reasons)
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -108,7 +109,14 @@
 
   // ---- IF-2: the headline is the first card (rank 1: the most starter points beyond your best waiver move)
   // (an answer without IF-2's ordering — an older recording — keeps the old pick: the partner's best package)
-  const top = $derived(best?.ordering ? (best.partners[0] ?? null) : (best?.partners.find((p) => p.is_best) ?? best?.partners[0] ?? null));
+  const top0 = $derived(best?.ordering ? (best.partners[0] ?? null) : (best?.partners.find((p) => p.is_best) ?? best?.partners[0] ?? null));
+  // ---- II-1: the headline is the first CREDIBLE trade (beats both teams' alternatives, a plausible offer or a roster-fit
+  // idea), or the honest answer "No compelling trade found" with its reason; an answer without `verdict` keeps IF-2's
+  const noneFound = $derived(best?.verdict?.kind === "none");
+  const top = $derived(best?.verdict ? (noneFound ? null : (best.partners.find((p) => p.tier === "credible") ?? null)) : top0);
+  const credibleRows = $derived(finder?.verdict ? finder.partners.filter((p) => p.tier === "credible") : (finder?.partners.slice(0, 12) ?? []));
+  const exploreRows = $derived(finder?.verdict ? finder.partners.filter((p) => p.tier !== "credible") : []);
+  // ---- end II-1
   const wantTabs = [
     { key: "ALL", label: "Any" },
     { key: "QB", label: "QB" },
@@ -133,6 +141,44 @@
   </span>
 {/snippet}
 
+<!-- ---- II-1: one Finder card (the IF-2 / IE-1 lines, then the trade card); `compact` behind "Explore alternatives" -->
+{#snippet partnerCard(p: PartnerRow, compact: boolean)}
+  <Card testid="partner-row">
+    <div class="flex items-baseline justify-between gap-2">
+      <span class="min-w-0 truncate text-lg font-bold">{p.partner_team}</span>
+      {#if p.interest}
+        <span class="shrink-0 text-sm" data-testid="partner-label"
+          ><span class="ll-label">Their starters</span> <strong class={effectTone(p.interest.label)}>{p.interest.label}</strong></span
+        >
+      {:else}
+        <span class="ll-label shrink-0">{p.shape}</span>
+      {/if}
+    </div>
+    <div class="mt-2 space-y-1.5 text-base">
+      <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"><span class="ll-label w-14">You get</span>{#each p.get as x (x.sleeper_id)}{@render face(x)}{/each}</div>
+      <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"><span class="ll-label w-14">You give</span>{#each p.give as x (x.sleeper_id)}{@render face(x)}{/each}</div>
+    </div>
+    {#if p.strip}<div class="mt-2"><WeekStrip strip={p.strip} them={p.partner_team} testid="partner-strip" /></div>{/if}
+    <div class="mt-3 flex items-end justify-between gap-3">
+      <div class="min-w-0">
+        <div class="flex items-baseline gap-2">
+          <span class="tabnum text-2xl leading-none font-extrabold {p.you_gain_horizon >= 0.05 ? 'text-good' : 'text-ink'}" data-testid="partner-gain">{s1(p.you_gain_horizon)}</span>
+          <span class="ll-label">you · {finder?.span ?? ""}</span>
+        </div>
+        <p class="mt-1.5 text-sm leading-snug text-ink-2" data-testid="partner-reason">{partnerReason(p, finder?.span ?? "")}</p>
+        <!-- ---- IF-2: against the best alternative; a trade that does not beat it is marked -->
+        {#if p.alternative_words}<p class="mt-1 text-sm leading-snug {p.demoted ? 'text-warn' : 'text-ink'}" data-testid="partner-alternative">{#if p.demoted}<strong data-testid="partner-demoted">Below your best waiver move.</strong> {/if}{p.alternative_words}</p>{/if}
+        <!-- ---- IE-1: the least costly package first; the extra asset named as optional (what it costs you) -->
+        {#if p.cheaper_than}<p class="mt-1 text-sm leading-snug font-semibold text-good" data-testid="partner-cheaper">{p.cheaper_than.words}</p>{/if}
+        {#if p.optional}<p class="mt-1 text-sm leading-snug text-ink-2" data-testid="partner-optional">{p.optional.words}</p>{/if}
+      </div>
+      <button type="button" class="min-h-10 shrink-0 rounded-md bg-accent px-4 text-sm font-semibold text-on-accent" onclick={() => tryTrade(p)} data-testid="try-partner">Try it</button>
+    </div>
+    <!-- ---- II-1: the card's fields (the label, both sides, the reasons each way) -->
+    {#if p.card}<div class="mt-3 border-t border-line pt-2"><TradeCard card={p.card} {compact} /></div>{/if}
+  </Card>
+{/snippet}
+
 <main class="space-y-4" data-testid="trades">
   {#if team === null}
     <p class="ll-empty" data-testid="pick-team-first">Pick your team above: this screen then finds the trades that raise both lineups, and lets you try your own.</p>
@@ -147,6 +193,9 @@
           <p data-testid="best-partner"><Md text={best.words?.headline ?? `**Best partner: ${top.partner_team}.** ${partnerLine(top, best.span)}`} {ctx} /></p>
           <!-- ---- IF-2: the trade against the best alternative (standing pat, the best waiver move) -->
           {#if top.alternative_words}<p class="mt-1 text-base leading-snug {top.beats_alternative ? 'text-ink' : 'text-warn'}" data-testid="best-alternative">{top.alternative_words}</p>{/if}
+        {:else if noneFound}
+          <!-- ---- II-1: "No compelling trade found" is a first-class answer, with the reason -->
+          <p data-testid="best-partner"><strong class="text-ink" data-testid="no-compelling">{best.verdict?.headline ?? "No compelling trade found"}.</strong> {best.verdict?.reason ?? ""} Try one you have in mind in the <a class="ll-name" href={calcHref}>trade calculator</a>.</p>
         {:else}
           <p data-testid="best-partner"><strong class="text-ink">No trade raises both lineups.</strong> Nobody in the league has a player who would improve your lineup over {best.span} and also needs one of yours. Try one you have in mind in the <a class="ll-name" href={calcHref}>trade calculator</a>.</p>
         {/if}
@@ -178,42 +227,22 @@
       {:else if !finder.partners.length}
         <p class="ll-empty" data-testid="finder-empty">No trade that raises both lineups brings you {want === "ALL" ? "anyone" : `a ${want}`}. Try one you have in mind in the <a class="ll-name" href={calcHref}>trade calculator</a>.</p>
       {:else}
-        <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
-          {#each finder.partners.slice(0, 12) as p, i (`${p.partner}-${p.shape}-${i}`)}
-            <Card testid="partner-row">
-              <div class="flex items-baseline justify-between gap-2">
-                <span class="min-w-0 truncate text-lg font-bold">{p.partner_team}</span>
-                {#if p.interest}
-                  <span class="shrink-0 text-sm" data-testid="partner-label"
-                    ><span class="ll-label">Their starters</span> <strong class={effectTone(p.interest.label)}>{p.interest.label}</strong></span
-                  >
-                {:else}
-                  <span class="ll-label shrink-0">{p.shape}</span>
-                {/if}
-              </div>
-              <div class="mt-2 space-y-1.5 text-base">
-                <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"><span class="ll-label w-14">You get</span>{#each p.get as x (x.sleeper_id)}{@render face(x)}{/each}</div>
-                <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1"><span class="ll-label w-14">You give</span>{#each p.give as x (x.sleeper_id)}{@render face(x)}{/each}</div>
-              </div>
-              {#if p.strip}<div class="mt-2"><WeekStrip strip={p.strip} them={p.partner_team} testid="partner-strip" /></div>{/if}
-              <div class="mt-3 flex items-end justify-between gap-3">
-                <div class="min-w-0">
-                  <div class="flex items-baseline gap-2">
-                    <span class="tabnum text-2xl leading-none font-extrabold {p.you_gain_horizon >= 0.05 ? 'text-good' : 'text-ink'}" data-testid="partner-gain">{s1(p.you_gain_horizon)}</span>
-                    <span class="ll-label">you · {finder.span}</span>
-                  </div>
-                  <p class="mt-1.5 text-sm leading-snug text-ink-2" data-testid="partner-reason">{partnerReason(p, finder.span)}</p>
-                  <!-- ---- IF-2: against the best alternative; a trade that does not beat it is marked -->
-                  {#if p.alternative_words}<p class="mt-1 text-sm leading-snug {p.demoted ? 'text-warn' : 'text-ink'}" data-testid="partner-alternative">{#if p.demoted}<strong data-testid="partner-demoted">Below your best waiver move.</strong> {/if}{p.alternative_words}</p>{/if}
-                  <!-- ---- IE-1: the least costly package first; the extra asset named as optional (what it costs you) -->
-                  {#if p.cheaper_than}<p class="mt-1 text-sm leading-snug font-semibold text-good" data-testid="partner-cheaper">{p.cheaper_than.words}</p>{/if}
-                  {#if p.optional}<p class="mt-1 text-sm leading-snug text-ink-2" data-testid="partner-optional">{p.optional.words}</p>{/if}
-                </div>
-                <button type="button" class="min-h-10 shrink-0 rounded-md bg-accent px-4 text-sm font-semibold text-on-accent" onclick={() => tryTrade(p)} data-testid="try-partner">Try it</button>
-              </div>
-            </Card>
-          {/each}
-        </div>
+        {#if finder.verdict && !credibleRows.length}
+          <!-- ---- II-1: the honest empty state, with the reason; the trades found are behind "Explore alternatives" -->
+          <p class="ll-empty" data-testid="finder-none"><strong>{finder.verdict.headline ?? "No compelling trade found"}{want === "ALL" ? "" : ` for a ${want}`}.</strong> {finder.verdict.reason ?? ""}</p>
+        {:else}
+          <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
+            {#each credibleRows as p, i (`${p.partner}-${p.shape}-${i}`)}{@render partnerCard(p, false)}{/each}
+          </div>
+        {/if}
+        {#if exploreRows.length}
+          <Expander title={`Explore alternatives · ${exploreRows.length} ${exploreRows.length === 1 ? "trade" : "trades"} that did not pass`} testid="explore">
+            <p class="mb-2 text-sm text-ink-2" data-testid="explore-why">Each raises both starting lineups, but does not beat both teams' own best alternative by {finder.margin ?? 1} point, or is not a plausible offer: ideas to look at, not trades to propose.</p>
+            <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
+              {#each exploreRows.slice(0, 12) as p, i (`x-${p.partner}-${p.shape}-${i}`)}{@render partnerCard(p, true)}{/each}
+            </div>
+          </Expander>
+        {/if}
         {#if finder.no_trade_with?.length}<p class="text-sm text-ink-3">No trade helps both lineups with: {finder.no_trade_with.join(", ")}.</p>{/if}
       {/if}
       {#if finder?.rejected_count}
@@ -305,7 +334,8 @@
     <Expander title="How to read this" testid="howto">
       <div class="text-base leading-snug">
         {@html md(
-          "- **Who to call**: the first line and the first card are the same trade: of the trades that raise *both* starting lineups over the weeks you picked above, the one that adds the most **starter points beyond your best waiver move** (a free agent for an open spot, or for the player you would drop). A trade that does not beat that claim comes after those that do, marked, with any other reason the numbers give (more this week, more season value above replacement). When a smaller package gets you the same gain, it comes first and the extra player is shown as optional, with what he costs you.\n" +
+          "- **Worth proposing** (II-1): a trade is shown up top only when it beats **both** teams' own best alternative (standing pat or their best waiver move, over the same weeks) by at least a point, with every empty slot — a bye — filled from the free pool for both sides (never counted as zero), and when it is a plausible offer: a kicker or defense for a starter is not, unless they really need one; nor is a trade that gives them much less season value than it takes. Otherwise the answer is **No compelling trade found**, with the reason, and the trades we found are under **Explore alternatives**. Each card says why they might consider it and why they might refuse — never a chance that they accept. Without a market price for a player it is labelled **a roster-fit idea**.\n" +
+            "- **Who to call**: the first line and the first card are the same trade: of the trades that raise *both* starting lineups over the weeks you picked above, the one that adds the most **starter points beyond your best waiver move** (a free agent for an open spot, or for the player you would drop). A trade that does not beat that claim comes after those that do, marked, with any other reason the numbers give (more this week, more season value above replacement). When a smaller package gets you the same gain, it comes first and the extra player is shown as optional, with what he costs you.\n" +
             "- **The strip** under each trade is the starter points it adds each week, for you and for them: a gain over four weeks can hide a loss this week.\n" +
             "- **The weeks**: this week, the next four (the default: far enough to matter, near enough to trust), the rest of the season (every week to this league's final) or the playoffs. A longer span sees more of the season and is less sure.\n" +
             "- **Left out**: a trade that gives away much more rest-of-season value than it brings back (over a quarter of what you give), or that works only because our projection for a player you give is far under Sleeper's (under 65% of it), is never suggested, however much it helps the lineups.\n" +

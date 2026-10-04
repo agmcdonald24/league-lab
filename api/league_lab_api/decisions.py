@@ -1837,12 +1837,15 @@ def ii1_alternative(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...
 
 
 def _alt_gain(alt: dict, window: str) -> float:
-    """The alternative's gain on the covered frame (its own number when the claim could not be re-priced)."""
+    """The alternative's gain on the covered frame (its own number when the claim could not be re-priced), never below
+    standing pat (0): a claim that loses points is not an alternative anyone takes."""
     if window == "week":
         v = alt.get("covered_week")
-        return float(alt.get("gain_week") or 0.0) if v is None else float(v)
-    v = alt.get("covered_window")
-    return float(alt.get("gain_window") or 0.0) if v is None else float(v)
+        g = float(alt.get("gain_week") or 0.0) if v is None else float(v)
+    else:
+        v = alt.get("covered_window")
+        g = float(alt.get("gain_window") or 0.0) if v is None else float(v)
+    return max(0.0, g)
 
 
 def _weeks_list(ws: list[int]) -> str:

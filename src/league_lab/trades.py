@@ -77,7 +77,7 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from itertools import combinations
 
-from .lineup import UNVALUED, Lineup, Player, Start, solve
+from .lineup import SKILL, UNVALUED, Lineup, Player, Start, solve
 from .roster_value import RosterBoard, _get, _r2, incoming_player
 from .waivers import entry_bar, prepare
 
@@ -1067,14 +1067,17 @@ def flex_positions(slots: Sequence[str]) -> frozenset[str]:
 
 def guard_positions(board: RosterBoard, weeks: Sequence[int], free: Mapping[int, Sequence[Player]]) -> dict[str, dict]:
     """The positions the free pool covers in THIS league (the K / DEF guardrail's, derived — never a name): a position
-    that fills only its own slot (no FLEX / SUPER_FLEX of the league admits it) and whose best free agent projects at
-    least as much as the league's weakest starter at that slot, on average over the weeks. In a 1-QB league a QB can be
-    one; in a Superflex league a QB never is. {position: {free_best, weakest_starter, streamable}}."""
+    that is not a skill position (QB / RB / WR / TE), fills only its own slot (no FLEX / SUPER_FLEX / IDP flex of the
+    league admits it) and whose best free agent projects at least as much as the league's weakest starter at that slot,
+    on average over the weeks: K and DEF (MFL's TMPK / TMDEF) in most leagues; a deep league whose free pool holds no
+    starting-calibre kicker has none. {position: {free_best, weakest_starter, streamable}}."""
     from .lineup import parse_slots
     flex = flex_positions(board.slots)
     single = {next(iter(s.elig)) for s in parse_slots(board.slots)[0] if len(s.elig) == 1}
     out: dict[str, dict] = {}
-    for pos in sorted(single - flex):
+    # the skill positions (and a team QB unit) are never guard positions: a RB for a WR is an ordinary trade even in a
+    # league with no FLEX; their scarcity is in the replacement levels (prices) and the covered frame
+    for pos in sorted(single - flex - SKILL - {"TMQB"}):
         fb, ws = [], []
         for w in weeks:
             best = next((float(p.value) for p in free.get(int(w), ()) if pos in p.positions), None)

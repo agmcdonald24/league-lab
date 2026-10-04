@@ -84,11 +84,13 @@ def test_guard_positions_follow_the_league_slots():
     weeks = (1,)
     fr = _free_by_week(free({1: FREE1}), weeks)
     g1 = guard_positions(board({1: {1: A1}, 2: {1: B1}}, ONE_QB), weeks, fr)
-    # 1-QB: QB fills only its own slot and the free QB (15.5) is as good as the weakest starting QB (15): covered
-    assert g1["QB"]["streamable"] and g1["K"]["streamable"]
-    assert "RB" not in g1 and "WR" not in g1 and "TE" not in g1          # FLEX-eligible: never a guard position
-    # Superflex: a QB can start at SUPER_FLEX - never a guard position, whatever the free pool holds
-    assert "QB" in flex_positions(SUPER)
+    # K: its own slot, and the free kicker (8.4) is as good as the weakest starting kicker (8): covered by the free pool
+    assert g1["K"]["streamable"]
+    # the skill positions are never guard positions (their scarcity lives in the replacement levels and the covered
+    # frame), even a QB in a 1-QB league whose free pool holds a starting-calibre QB
+    assert set(g1) == {"K"}
+    # Superflex: a QB can start at SUPER_FLEX (flex-eligible)
+    assert "QB" in flex_positions(SUPER) and "QB" not in flex_positions(ONE_QB)
     gs = guard_positions(board({1: {1: A1}, 2: {1: B1}}, SUPER), weeks, fr)
     assert "QB" not in gs and gs["K"]["streamable"]
     # a deep league whose free pool holds no starting-calibre kicker: K is not covered there
