@@ -6078,7 +6078,7 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
   - **API** (`cd api && PYTHONPATH=. uv run pytest -q tests/`, 50 min): **516 passed, 20 failed, 38 skipped**. Every
     failure reproduces on `ad4040e`'s own code against this clone today (a scratch worktree of `main`, the same `.env`)
     or passes on a re-run — none is this branch's: the three known scoring checks (`test_ic1` × 2, `test_ic_po`: no
-    `*_tds_10p` columns on the 09-26 clones), and **fourteen that read the wall clock** — it is Sunday of week 4 and
+    `*_tds_10p` columns on the 09-26 clones), and **fifteen that read the wall clock** — it is Sunday of week 4 and
     its games are being played (the London game kicked off 9:30 AM ET, the rest at 1 PM): the on-demand path locks
     started players while the clone's marts (built 09-26) do not, and the ESPN fixture's Jefferson is now locked —
     `test_decisions` × 6 (house vs on-demand: Team's `bench_value` 33.16 vs 42.35, the partners, the trade evaluation),
@@ -6109,7 +6109,7 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
 * **Not done**: the Waivers screen shows a unit's drop cost only through the existing drop words (no new UI —
   `Waivers.svelte` unchanged: the deadline line already reads `words`); MFL waiver times (the export has none);
   `game_key` for news / brief rows (only availability: a headline is not tied to a game); a depth-chart writer; the
-  console's Trade Finder page's `0.00` (PO-only file, IG-1's note); the fourteen clock-dependent tests (below).
+  console's Trade Finder page's `0.00` (PO-only file, IG-1's note); the fifteen clock-dependent tests (below).
 * **Next**: pin a clock in the API tests that read "now" against a fixed week (they fail every Sunday afternoon until
   the clones are rebuilt); then V-2's news flag on `game_key` if it wants the game.
 
@@ -6132,7 +6132,7 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
 4. **Re-recordings**: the web's watch-stash cards lose their "Drop X: …" line on the next recording (`web/e2e/h1`
    compares the first line only: unaffected); `web/fixtures/ih2/api_ih2.json` was recorded from the fixtures + the
    clone `league_lab_i0b` with the ESPN fixtures' overlay (the header has the command).
-5. **The suites on a Sunday**: fourteen API tests (and root `test_my_week::test_my_week_is_the_mart` × 2) fail on
+5. **The suites on a Sunday**: fifteen API tests (and root `test_my_week::test_my_week_is_the_mart` × 2) fail on
    `main` itself this afternoon — they compare the on-demand path, which locks the players whose games have started,
    with marts built on 09-26. Not a regression; worth a pinned clock before the next wave's full runs.
 
