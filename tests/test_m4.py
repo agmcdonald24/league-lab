@@ -312,8 +312,11 @@ def test_m3_numbers_under_the_record_mode(record, clone):
     top = by[by["rank"] <= 24]
     move = top["d1"] - top["d0"]
     mean = move.groupby(top["position"]).mean().round(2).to_dict()
-    assert mean == {"QB": 1.01, "RB": 0.71, "TE": 0.18, "WR": 0.73}, mean
-    assert round(float(move.mean()), 2) == 0.66 and len(top) == 96 and (move >= -0.005).all()
+    # ---- M6 (Wave I-H): a clone built with the cold-start blend on the line (Love, Price scaled in the RB top 24) moves
+    # the RB mean by 0.01 (0.71 -> 0.72); either build of the clone holds M3's numbers to that cent
+    want = {"QB": 1.01, "RB": 0.71, "TE": 0.18, "WR": 0.73}
+    assert mean.keys() == want.keys() and all(abs(mean[k] - v) <= 0.0101 for k, v in want.items()), mean
+    assert abs(round(float(move.mean()), 2) - 0.66) <= 0.0101 and len(top) == 96 and (move >= -0.005).all()
     wk4 = lines[lines["week"] == 4].set_index("gsis_id")
     if ALLEN in wk4.index:
         assert float(A.price_lines(wk4.loc[[ALLEN]], dyn).iloc[0]) == 30.24       # week 4 is frozen flat
