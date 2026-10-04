@@ -1925,3 +1925,49 @@ export interface WeekOdds {
 }
 export const weekOddsPath = (league: string) => `/api/league/week-odds?league=${encodeURIComponent(league)}`;
 // ---- end IH-3
+
+// ---- II-0 (Wave I-I): strength by slot, one metric over one population (GET /api/team `strength_by_slot`; INTERFACES.md
+// § II-0) and the partner row's story (the words from the row's own numbers)
+export interface SlotLeague {
+  avg: number | null;
+  best: number | null;
+  worst: number | null;
+  rank: number | null; // 1 = best
+  n: number;
+  n_empty?: number;
+}
+export interface StrengthSlot {
+  slot: string; // "RB1", "RB2", "FLEX1", "QB"
+  slot_type: string;
+  slot_order: number | null;
+  player: (DPlayer & { unit?: boolean; short_name?: string | null }) | null; // null: an empty slot
+  value: number | null; // projected points; 0 for an empty slot; null = no projection (unknown, not 0)
+  empty: boolean;
+  unvalued: boolean;
+  is_locked: boolean;
+  league: SlotLeague;
+}
+export interface StrengthBySlot {
+  metric: "projected_points";
+  metric_words: string;
+  week: number | null;
+  n_rosters: number;
+  population: string;
+  slots: StrengthSlot[];
+  groups: { slot_type: string; slots: number; total: number | null; n_unvalued: number; league: SlotLeague }[];
+  depth: { usable: number | null; raw_bench: number; league: SlotLeague; words: string | null };
+  words: string;
+}
+export interface Team {
+  strength_by_slot?: StrengthBySlot | null;
+}
+export interface WeekStory {
+  this_week: { week: number | null; change: number | null; kind: "gain" | "loss" | "none" | "unknown" };
+  window: { change: number | null; kind: "gain" | "loss" | "none" | "unknown" };
+  by_week: { week: number; change: number | null }[];
+  words: string;
+}
+export interface PartnerRow {
+  story?: WeekStory | null;
+}
+// ---- end II-0

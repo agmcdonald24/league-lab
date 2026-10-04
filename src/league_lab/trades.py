@@ -938,3 +938,63 @@ __all__ = ["MARKET_SQL", "REPLACEMENT_SQL", "Cut", "Fill", "Package", "Partner",
            "sanity", "season_value", "tradeable", "two_for_one_counts", "verdict", "whole",
            "VALUE_CONCEPTS", "package_weeks", "season_value_line",          # ---- IF-2
            "value_gap"]                                                       # ---- IG-1
+
+
+# ---- II-0 (Wave I-I, the fifth review § 1.6): one frame, one story. The partner card said "Nothing changes this week"
+# beside a −1.5 in its own week strip: the sentence read one number (only a gain counted as a change) and the strip
+# another. ``week_story`` builds the sentence from the very numbers the week-by-week table shows, so a loss is said as
+# a loss and every number in the words is a number in the table (rounded the way the table rounds it: one decimal).
+STORY_EPS = 0.05
+
+
+def _story_kind(x: float | None) -> str:
+    if x is None:
+        return "unknown"
+    return "none" if abs(x) < STORY_EPS else ("gain" if x > 0 else "loss")
+
+
+def week_story(weeks, by_week, span: str | None, *, this_week: int | None = None) -> dict:
+    """{this_week: {week, change, kind}, window: {change, kind}, by_week: [{week, change}], words} from one list of
+    week-by-week changes to your starting lineup (``by_week[i]`` for ``weeks[i]``; None = not known). ``this_week``: the
+    current week (the first entry is "this week" only when it is that week). kind: gain | loss | none | unknown."""
+    ws = [int(w) for w in weeks]
+    vals = [None if x is None else round(float(x), 2) for x in list(by_week)[:len(ws)]]
+    vals += [None] * (len(ws) - len(vals))
+    rows = [{"week": w, "change": v} for w, v in zip(ws, vals, strict=True)]
+    first = rows[0] if rows and this_week is not None and rows[0]["week"] == int(this_week) else None
+    known = [v for v in vals if v is not None]
+    total = round(sum(known), 2) if known else None
+    tw = {"week": None if first is None else first["week"], "change": None if first is None else first["change"],
+          "kind": "unknown" if first is None else _story_kind(first["change"])}
+    win = {"change": total, "kind": _story_kind(total)}
+    when = f"over {span}" if span else "over these weeks"
+    bits = []
+    if first is not None:
+        bits.append({"gain": f"Your lineup gains {first['change']:.1f} this week",
+                     "loss": f"Your lineup loses {-first['change']:.1f} this week",
+                     "none": "Nothing changes this week",
+                     "unknown": "This week's change is not known"}[tw["kind"]])
+    if len(rows) > 1 or first is None:
+        lead = "" if first is not None else "Your lineup "
+        bits.append(lead + {"gain": f"gains {total:.1f} {when} in total" if total is not None else "",
+                            "loss": f"loses {-total:.1f} {when} in total" if total is not None else "",
+                            "none": f"does not change {when} in total",
+                            "unknown": f"has no known change {when}"}[win["kind"]])
+    if first is not None and len(bits) == 2 and tw["kind"] == win["kind"] and tw["kind"] in ("gain", "loss"):
+        bits[1] = bits[1].split(" ", 1)[1]                      # "gains 0.1 this week and 11.1 over weeks 4–7 in total"
+        words = " and ".join(bits)
+    elif first is not None and len(bits) == 2 and {tw["kind"], win["kind"]} == {"gain", "loss"}:
+        words = " but ".join(bits)
+    else:
+        if first is not None and len(bits) == 2:
+            bits[1] = "your lineup " + bits[1]
+        words = "; ".join(b for b in bits if b)
+    worst = min((r for r in rows[1:] if r["change"] is not None and r["change"] <= -STORY_EPS), key=lambda r: r["change"],
+                default=None)
+    if worst is not None and win["kind"] == "gain":
+        words += f" (week {worst['week']} loses {-worst['change']:.1f})"
+    return {"this_week": tw, "window": win, "by_week": rows, "words": (words + ".") if words else ""}
+
+
+__all__ += ["week_story"]
+# ---- end II-0

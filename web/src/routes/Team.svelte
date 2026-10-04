@@ -92,7 +92,7 @@
     "- **Margin** is how much your lineup loses without that starter. The smallest one is your **closest call**: check the news on those two players before kickoff.\n" +
     "- **Next 4 weeks** adds up your best lineup for each of the next four weeks, byes and injuries included. Low here but high this week? Look for cover now.\n" +
     "- **Depth** is the lineup your bench alone could put out. Low depth means one injury hurts: a trade or a claim for a starter matters more to you than to most.\n" +
-    "- **By slot**: your best starter at each slot against the league's average (the tick) and its best (the end of the scale). An orange bar is below the average: that is where a claim or a trade helps most.";
+    "- **By slot**: each starting slot apart (RB1 and RB2, each FLEX): the player you start there, his projected points, against the player every other team starts at the same slot — the league's average (the tick) and its best (the end of the scale). An orange bar is below the average: that is where a claim or a trade helps most. Under the bars: each position's starters added up, and usable depth — the best lineup your bench alone could field, not the bench's raw points."; // ---- II-0
 
   function rowContext(r: TeamRosterRow): string {
     const where = r.role === "starter" ? slotLabel(r.slot) + (r.is_locked ? " · locked" : "") : r.role === "bench" ? "Bench" : (REASON[r.reason ?? ""] ?? r.reason ?? "Out");
@@ -162,6 +162,59 @@
           {#if acquiredLine(data)}<p class="mt-2 text-sm leading-snug text-ink-2"><Md text={acquiredLine(data)} {ctx} /></p>{/if}
         </Card>
 
+        <!-- ---- II-0 (Wave I-I): strength by slot, one metric over one population — each starting slot apart (RB1, RB2,
+        each FLEX), the player you start there against every roster's starter at the same slot; group totals and usable
+        depth as the secondary lines (decisions.strength_by_slot; METRICS § "Strength by slot, fixed") -->
+        {#if data.strength_by_slot?.slots?.length}
+          {@const sb = data.strength_by_slot}
+          {@const sbMax = Math.max(1, ...sb.slots.map((s) => Math.max(s.league.best ?? 0, s.value ?? 0)))}
+          <Card title="Strength by slot vs the league" testid="team-slots">
+            <div class="space-y-3">
+              {#each sb.slots as s (s.slot)}
+                {@const avg = s.league.avg}
+                <div data-testid="slot-bar" data-slot={s.slot}>
+                  <Bar
+                    value={s.value}
+                    max={sbMax}
+                    mark={avg}
+                    markLabel="league average"
+                    display={s.value == null ? "—" : s.league.rank ? `${f1(s.value)} · ${ordinal(s.league.rank)} of ${s.league.n}` : f1(s.value)}
+                    color={avg == null || s.value == null || s.value >= avg ? "var(--ll-series-1)" : "var(--ll-div-hot)"}
+                  >
+                    {#snippet labelSnippet()}
+                      <span class="font-semibold text-ink">{slotLabel(s.slot)}</span>
+                      ·
+                      {#if !s.player}<span class="text-warn">empty</span>
+                      {:else if s.player.unit}<span class="inline-flex items-center gap-1 align-middle" data-testid="slot-unit"
+                          ><TeamBadge team={s.player.team} /><a
+                            class="ll-name"
+                            href={withContext(`/player/${encodeURIComponent(s.player.sleeper_id ?? "")}`, ctx)}>{s.player.short_name ?? s.player.player_name}</a
+                          ></span
+                        >
+                      {:else if s.player.gsis_id}<a class="ll-name" href={withContext(`/player/${s.player.gsis_id}`, ctx)}>{s.player.player_name}</a
+                        >{:else}{s.player.player_name}{/if}
+                      {#if s.is_locked}<span class="text-xs text-ink-3"> (locked)</span>{/if}
+                    {/snippet}
+                  </Bar>
+                  <p class="mt-0.5 text-xs text-ink-3" data-testid="slot-league">
+                    {#if avg != null}League average {f1(avg)}, best {f1(s.league.best)} at {slotLabel(s.slot)}{s.league.n_empty ? ` (${s.league.n_empty} empty)` : ""}.{/if}
+                    {#if s.unvalued}No projection for him yet: not ranked.{/if}
+                  </p>
+                </div>
+              {/each}
+            </div>
+            <p class="mt-3 text-xs text-ink-3" data-testid="slot-words">{sb.words} Orange: below the average.</p>
+            <div class="mt-3 border-t border-line pt-2" data-testid="slot-groups">
+              <p class="text-sm text-ink-2">
+                <span class="font-semibold text-ink">By position, starters added up:</span>
+                {#each sb.groups.filter((g) => g.slots > 1) as g, i (g.slot_type)}{i ? " · " : " "}{slotLabel(g.slot_type)}
+                  {f1(g.total)}{g.league.rank ? ` (${ordinal(g.league.rank)} of ${g.league.n}, average ${f1(g.league.avg)})` : ""}{/each}{sb.groups.some((g) => g.slots > 1) ? "." : " every position has one slot."}
+              </p>
+              {#if sb.depth.words}<p class="mt-1 text-sm text-ink-2" data-testid="slot-depth">{sb.depth.words}</p>{/if}
+            </div>
+          </Card>
+        {:else}
+        <!-- ---- end II-0 (the block below is the recorded answers' shape, before strength_by_slot) -->
         <Card title="Strength by slot vs the league" testid="team-slots">
           <div class="space-y-3">
             {#each data.slot_strength as s (s.slot_type)}
@@ -199,6 +252,7 @@
           </div>
           <p class="mt-3 text-xs text-ink-3">The bar is your best starter at the slot this week; the tick is the league's average best starter there. Orange: below the average.</p>
         </Card>
+        {/if}<!-- ---- II-0 -->
 
         <Card title={`The next ${data.weekly.length} weeks`} testid="team-horizon">
           <div class="space-y-3">

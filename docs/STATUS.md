@@ -6882,3 +6882,121 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
 5. **Decisions Andrew may want to reverse**: the line is on My Week by default (information; a one-line removal); the
    centring of the ranges on the projections; the shrink (0.60; `WEEK_SHRINK`); the opponent's best lineup rather than
    his submitted one.
+
+## Wave I-I (Iteration 19)
+
+### II-0 2026-10-04 — the calculation audit: one metric per comparison, legal replacement chains, one story per frame (branch `dev/II0`, clone `league_lab_i0a`)
+
+* **Task**: II-0 (brief § "II-0"; the fifth review § 1 "Fix calculation and explanation inconsistencies", P0). Plan
+  sections: § 19 (Iteration 19); METRICS § "Roster value" (new subsections "Strength by slot, fixed", "The legal
+  replacement chain", "One frame, one story"); WORDS § "The calculation audit (Wave I-I, II-0)". Interfaces:
+  INTERFACES.md § II-0 (written in the first 15 minutes; unchanged since).
+* **1. Strength by slot — the cause.** Team's bar was the roster's best starter at a slot type, **his projected points**
+  (`slot_strength[].top.value`); the "League average x, best y" under it and the rank were every roster's
+  `starter_strength` — that starter's **margin** over his replacement (`decisions.team` `_slot_league`). Points against
+  margins: a unit mismatch, not a population or horizon one (both were this week, both every roster's best starter at
+  the type). It also drew one bar per slot *type* (RB2, WR2, FLEX2 invisible). **The fix** (`decisions.py` block
+  `# ---- II-0`: `SLOT_POPULATION_SQL`, `_slot_population`, `_seats`, `_league_line`, `strength_by_slot`,
+  `_units_on_slots`; one call in `team()`): `/api/team` gains `strength_by_slot` — every starting slot apart (each
+  slot type's starters ranked best first: RB1 ≥ RB2, FLEX1 ≥ FLEX2), the value = this week's projected points of the
+  player the roster starts there, the league's average / best / worst / rank over **every roster's value at the same
+  slot**; an empty slot is 0 and counted (`n_empty`), an unvalued starter is unknown (left out, "—"); `groups` (a slot
+  type's starters added up, ranked) and `depth` (`usable` = `bench_value`, the bench's own best legal lineup, beside
+  `raw_bench`, the bench projections added up) are the secondary lines. The population is the mart's this-week rows
+  (house) or the solved frame (on demand), with the overlay's moved rosters swapped in (IB-0's rule). The old
+  `slot_strength[].league` is re-based on `top_value` (the bar's metric): it equals the first slot of each type.
+  **Team.svelte** (block `<!-- ---- II-0 -->`): one bar per slot ("RB1 · Kyren Williams — 12.8 · 8th of 10", "League
+  average 16.5, best 21.8 at RB1."), the card's sentence, "By position, starters added up: …", the usable-depth line;
+  an answer without `strength_by_slot` (the recorded fixtures) keeps the old card. "How to read this" says so.
+* **Before → after, League of Scrubs roster 2 (MacZaddy), the clone, week 4** (bar · league average / best · rank):
+
+  | Slot | Before (bar vs margins) | After (one metric, one population) |
+  |---|---|---|
+  | QB Mahomes | 20.26 · 9.63 / **18.48** · 9th (a best below the bar) | 20.26 · 18.32 / 24.42 · 3rd of 10 |
+  | RB | 12.80 · 8.66 / 14.76 · 10th | RB1 Kyren 12.80 · 16.52 / 21.81 · 8th; RB2 Hampton 11.28 · 12.94 / 17.73 · 8th |
+  | WR | 12.75 · **4.13 / 6.83** · 6th | WR1 McMillan 12.75 · 13.02 / 15.55 · 6th; WR2 Jefferson 12.68 · 10.82 / 12.68 · 1st |
+  | TE | 10.14 · 5.63 / 11.19 · 5th | 10.14 · 9.58 / 12.45 · 5th |
+  | FLEX | 12.16 · **2.50 / 5.18** · 4th | FLEX1 P. Washington 12.16 · 11.42 / 15.16 · 4th; FLEX2 Tuten 9.72 · 10.03 / 13.47 · 7th |
+  | K | 8.07 · 8.17 / 8.93 · 7th | the same (a lone K's margin is his value) |
+  | DEF | 7.16 · 6.79 / 10.54 · 4th (n 9) | 7.16 · 7.73 / 10.54 · 6th (n 10) |
+
+  Groups: RB 24.08 (9th of 10, average 29.47), WR 25.43 (3rd), FLEX 21.88 (4th). Usable depth 42.35 (4th of 10) beside a
+  raw bench of 59.60. The review's Puka 14.8 vs 5.0 / 7.3 and Wilson 11.7 vs 2.5 / 4.3 are this same mismatch on the
+  live data (WR and FLEX).
+* **2. Legal replacement chains** (`src/league_lab/lineup.py` block `# ---- II-0`: `replacement_chain(players, slots,
+  player_id, *, current=None)`, `chain_words`, `chain_slot_word`, `_reseat`). The re-solved legal lineup without him
+  (locks kept: a locked starter keeps his very slot, a locked bench player never enters; eligibility the slots':
+  FLEX, Superflex, MFL's "WR+TE" and team units), seated to move as few players as possible, read from the slot he
+  leaves; returns `{cost, total_with, total_without, chain: [{kind: slides | enters | empty | benched, player_id,
+  position, from_slot, to_slot, move}], enters, empty_slot, words}`. On a lineup frame: `cards.replacement_chain_rows`
+  (`app/lib/cards.py` block; `locked_now` respected; `named_words` with full names), `cards.chain_alternative`,
+  `cards.chain_cost`, `cards.locks_since_solve`, `cards.chain_words_linked`. **`cards.alternative` reads the chain**
+  (the old value-matching search stays as the fallback when the chain cannot be read), so the cards, the player card
+  (`player.py` block), My Week's margins (`myweek.margin_comparator` block) and Team's closest call
+  (`decisions._weakest_chain_words`) say one chain. The review's case on the clone's numbers: Kyren sits → "Bhayshul
+  Tuten (RB) moves from FLEX to RB; Michael Wilson (WR) fills the open FLEX", cost 3.60 (was "(Michael Wilson, 9.20,
+  would come in)" with no move). Tuten locked at FLEX (his game started): he stays; "an RB comes off the bench into RB"
+  (Croskey-Merritt), cost **3.61**. **Numbers that move** (the named bug): only after a lock since the solve (a game
+  kicked off after the nightly solved the lineup: `locked_now` and not `is_locked`) — the stored margin assumed a
+  now-locked player could move or come in, so the cards' and the player card's cost becomes the chain's. My Week's
+  lineup table keeps the build's margin (the mart's and the console's: `test_myweek` / `test_parity` pin it) and adds
+  `margin_now` with the words: on the clone at Sunday 15:45 ET (1 PM games locked) Hampton 2.08 / now 11.28, McMillan
+  3.55 / 12.75, Jefferson 3.48 / 12.68, Kelce 4.35 / 10.14 — "no eligible reserve now (games kicked off since the
+  build): sitting him costs 11.28" (every bench RB / WR / TE is locked). Before the kickoffs nothing moves.
+* **3. Full names on a surname collision**: `cards.display_name(name, roster, position=None)` — the last name, or the
+  full name when another player of the same roster shares it. `cards.decisions()` rows carry `short_name` /
+  `alt_short_name`; `reason_line` / `tiebreak` and My Week's "over …" use them (the console shares `cards`).
+* **4. One frame, one story** (`src/league_lab/trades.py` block: `week_story(weeks, by_week, span, *, this_week)`).
+  The partner card's "Nothing changes this week" was `web/src/lib/decisions.ts` `partnerReason` treating any week
+  under +0.05 as no change — beside the strip's own −1.5. Partner rows gain `story` (`decisions.row_story`, from the
+  row's strip), the calculator's answer gains `story` (from its `strip`); `partnerReason` (marked line) says a losing
+  week from the story (an older answer: from `you_gain_week`). On the clone every top Scrubs-2 package loses this week:
+  "Nothing changes this week; your lineup gains +7.2 over weeks 4–7." → "Your lineup loses 0.5 this week but gains 7.2
+  over weeks 4–7 in total (week 6 loses 0.6)." The calculator's `effect_words` already read the strip's numbers when
+  the window starts this week (`now is trade`): now a test.
+* **Files**: `src/league_lab/lineup.py`, `src/league_lab/trades.py`, `app/lib/cards.py`, `api/league_lab_api/
+  decisions.py`, `myweek.py`, `player.py`, `web/src/routes/Team.svelte`, `web/src/lib/api.ts` (block at the end),
+  `web/src/lib/decisions.ts` (marked lines), `tests/test_lineup_ii0.py` (new, 16), `tests/test_cards.py` (one assertion:
+  the chain's words), `api/tests/test_ii0.py` (new, 7: 6 + the recorder), `web/e2e/ii0/fixtures.spec.ts` (new, 2 × 2),
+  `web/fixtures/ii0/api_ii0.json` (recorded from the clone), `web/e2e/decisions/fixtures.spec.ts` (marked: either Team
+  answer shape), `docs/METRICS.md`, `docs/WORDS.md`, this section, `CHANGELOG.md`.
+* **Commands / evidence**: `uv run pytest -q tests/test_lineup_ii0.py tests/test_cards.py tests/test_lineup.py
+  tests/test_lineup_ic2.py` (all pass); `cd api && PYTHONPATH=. uv run pytest -q tests/test_ii0.py` 6 passed (+1
+  recorder, skipped without `II0_RECORD=1`); `FIXTURES_PORT=8621 npx playwright test --config
+  playwright.fixtures.config.ts e2e/ii0` 4 passed (phone 375, desktop 1300; screenshots `e2e/.out/ii0-*`); `npm run
+  lint` (eslint + svelte-check, 0 errors) and `npm run build`; `uv run ruff check src app tests api` clean.
+* **Whole suites, Sunday afternoon, load average 40–50 on 2 CPUs (seven developers)** — run in shards on the clone;
+  `wt-base` is at `ad4040e` (behind `main`), so the base is a scratch worktree of `94ed33c` (this branch's base) on
+  the same clone, and every failure was re-run there. **Root**: 394 of 1,138 ran before the machine thrashed (393 passed,
+  1 skipped, 0 failed); the II-0-relevant files (`test_lineup_ii0`, `test_cards`, `test_lineup`, `test_lineup_ic2`)
+  were run whole beforehand (all pass). **API**: ~490 of 581 ran (round 1: 38 failed / 218 passed / 7 skipped / 3
+  xfailed; round 2: 30 failed / 208 passed / 4 skipped, `test_decisions` counted twice). Of the 68 failures, 56 fail
+  identically on `94ed33c` (the clock: locked players, as on `main`); 6 were the load (statement timeouts, latency
+  bounds: all 6 pass on a re-run on this branch); 4 were mine — `test_myweek::test_my_week_matches_the_lineup_mart` ×2
+  and `test_parity::test_my_week_is_the_home_page` ×2 (My Week's margin moved after a lock) — **fixed** by keeping the
+  build's margin in the table and adding `margin_now` (re-run: pass, with `test_parity::test_my_week_is_the_home_page`
+  ×2); `test_decisions::test_latency_cold_and_warm` and `test_research::test_trends_route[dynasty]` failed here under
+  load and pass on a re-run (17:45 ET). **Delta against the base: 0.** Not run: ~90 API tests (`test_ie2`, `test_if3`, `test_m3`,
+  `test_ic4` partly, `test_ig1` partly, `test_ih3`, `test_m6`, `test_parity` partly) — the PO's integration run covers
+  them.
+* **Not done**: the console's Team Hub (`app/pages/1_Team_Hub.py`, PO only) keeps its slot table — it labels value and
+  strength as separate columns, so it has no mismatch, but it shows one row per slot type; Team's roster rows on the
+  house path keep the stored margins (they carry no live lock: `TEAM_ROWS_SQL` reads the mart's `is_locked`), so on a
+  Sunday afternoon My Week's re-solved margin can differ from Team's roster row (the words beside each are right);
+  `ondemand.lineup_values` (Season) is II-4's.
+* **Next**: re-record `web/fixtures/team_*.json` once the PO merges (the decisions e2e reads either shape); feed
+  `strength_by_slot` to the console if Andrew wants the bars there.
+
+**For the PO**
+1. **Merge order**: II-0 touches shared files only in marked blocks — `decisions.py` (the Team block before IC-4's,
+   `_weakest_chain_words` above `team_words`, `row_story` above `strip`, one line after `rank_partners` in `partners`,
+   one in `calc_alternatives`, the `_slot_league` re-base), `trades.py` (a block at the end, after `__all__`),
+   `cards.py`, `myweek.margin_comparator`, `player.py`'s starter sentence, `Team.svelte`'s slot card and its "How to
+   read" line (II-4 edits other Team lines), `decisions.ts` `partnerReason` (II-1 may rewrite the partner card — keep
+   `story`), `api.ts` (end block). Merge II-0 before II-1 if II-1 rebuilds partner rows, so the `story` line lands once.
+2. **No dbt, no workflow, no render.yaml change.** One more read per `/api/team` (`SLOT_POPULATION_SQL`, the mart).
+3. **Clock**: every II-0 test compares answers with each other, not pinned numbers; INF-1's pinned clock changes
+   nothing here. The margins move on a Sunday afternoon by design (above).
+4. **Decisions Andrew may want to reverse**: an empty slot counts 0 in the league population (it scores 0); the slot
+   ranking within a type is by value (RB1 = the better RB starter), not Sleeper's slot order; the stored margin
+   stands unless a game kicked off since the solve (no cent-level re-rounding).

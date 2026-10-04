@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-I
+
+- **II-0 — the calculation audit (the fifth review § 1).** Team's "Strength by slot" compared a starter's projected
+  points with every roster's *margin* (Puka 14.8 against "average 5.0, best 7.3"); it now draws one bar per starting
+  slot (RB1 and RB2, each FLEX apart), the player you start there against every roster's starter at the same slot, in
+  the same points — the best is never below a member — with each position's starters added up and usable depth (the
+  bench's own best lineup, not its raw points) under the bars (`/api/team` `strength_by_slot`). A replacement is a legal
+  chain: "Bhayshul Tuten (RB) moves from FLEX to RB; Michael Wilson (WR) fills the open FLEX" (`lineup.replacement_chain`,
+  locks kept: a locked FLEX stays put, a locked bench player never comes in; after a kickoff since the build the card's
+  number is the re-solve's). Full names when two players on a roster share one (`cards.display_name`). The partner
+  card says a losing week ("loses 0.5 this week but gains 7.2 over weeks 4–7"), never "Nothing changes this week"
+  beside its own −0.5 (`trades.week_story`).
+
 ## 2026-10-04 — Wave I-H
 
 - **PO (integration).** Five packages merged (M6, V-2, IH-1, IH-2, IH-3 below). On Andrew's word the stale banner

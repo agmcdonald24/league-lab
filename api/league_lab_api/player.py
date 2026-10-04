@@ -414,12 +414,20 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
                     alt = a["alt"]
                     src = {"season_ppg": " (his points per game this season)", "observed_ppg": f" (points per game {plat} scored)"}.get(m["value_source"], "")
                     head = f"Week {week}: **starts at {where_slot}** for {team_name}, {float(m['value']):.2f}{src}"
-                    if alt is not None:
-                        lineup_line = (f"{head} — without him the lineup loses **{float(m['margin']):.2f}** "
+                    # ---- II-0: the cost and the words are the re-solved legal lineup's (locks kept), the chain said
+                    ch = a.get("chain")
+                    cost = cards.chain_cost(m, a, rows)
+                    if alt is not None and ch is not None and a.get("mover") is not None:
+                        linked = cards.chain_words_linked(ch, player_link)
+                        lineup_line = (f"{head} — without him the lineup loses **{cost:.2f}**: {linked} "
+                                       f"(worth {float(alt['value']):.2f}): {cards.verdict(cost)}.")
+                    elif alt is not None:
+                        lineup_line = (f"{head} — without him the lineup loses **{cost:.2f}** "
                                        f"({player_link(alt['gsis_id'], alt['player_name'])}, {float(alt['value']):.2f}, would come in): "
-                                       f"{cards.verdict(float(m['margin']))}.")
+                                       f"{cards.verdict(cost)}.")
                     else:
                         lineup_line = f"{head} — {a['how']}: he is a must-start."
+                    # ---- end II-0
             elif m["role"] == "bench":
                 rival = cards.bench_gap(m, rows)
                 n_bench = int((rows["role"] == "bench").sum())

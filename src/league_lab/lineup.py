@@ -412,6 +412,161 @@ def solve(players: Sequence[Player | Mapping], slots: Iterable[str], *, margins:
     return Lineup(starts, locked_total + free_total, bench, tuple(unplayable), tuple(ignored))
 
 
+# ---- II-0 (Wave I-I, the fifth review § 1): the legal replacement chain. "Losing Kyren costs 5.18, Malik Washington
+# (WR) 7.56 comes in" is true only through a cascade: an RB slides from FLEX to RB and the WR fills the open FLEX. The
+# chain is the re-solved legal lineup without him (locks kept: a locked starter never moves, a locked bench player
+# never enters; eligibility is the slots'), seated to move as few players as possible, read as moves from the slot he
+# leaves: who fills it, who fills that player's old slot, ... until someone comes off the bench or a slot goes empty.
+BENCH_SLOT = "BN"
+CHAIN_SLOT_WORDS = {"SUPER_FLEX": "Superflex", "REC_FLEX": "WR/TE flex", "WRRB_FLEX": "RB/WR flex", "TMQB": "team QB",
+                    "TMPK": "team K", "TMDEF": "team DEF"}
+
+
+def chain_slot_word(slot_type: str | None) -> str:
+    """A slot type as the chain's words say it: "RB", "FLEX", "Superflex", "WR/TE" (an MFL "WR+TE"), "team QB"."""
+    t = str(slot_type or "").upper()
+    return CHAIN_SLOT_WORDS.get(t) or t.replace("+", "/")
+
+
+def _reseat(starters: list[Player], slot_list: list[Slot], fixed: Mapping[str, str], before: Mapping[str, str]) -> dict[str, str]:
+    """{player id: slot label}: an eligible seating of exactly ``starters`` (any is legal and scores the same) that keeps
+    the locked players in their slots (``fixed``) and the most players where ``before`` had them (same slot first, then
+    a slot of the same type, then the narrowest slot)."""
+    by_label = {s.label: s for s in slot_list}
+    out = {pid: lab for pid, lab in fixed.items() if lab in by_label}
+    free_players = [p for p in starters if p.id not in out]
+    free_slots = [s for s in slot_list if s.label not in out.values()]
+    if not free_players:
+        return out
+    w = np.zeros((len(free_players), len(free_slots)))
+    for i, p in enumerate(free_players):
+        was = by_label.get(before.get(p.id, ""))
+        for j, s in enumerate(free_slots):
+            if not (p.positions & s.elig):
+                continue
+            w[i, j] = 1e6 + (1e3 if was is not None and was.label == s.label else 0.0) \
+                + (1e2 if was is not None and was.type == s.type else 0.0) + 1.0 / max(1, len(s.elig))
+    rows, cols = linear_sum_assignment(w, maximize=True)
+    for i, j in zip(rows, cols, strict=True):
+        if w[i, j] > 0:
+            out[free_players[i].id] = free_slots[j].label
+    return out
+
+
+def replacement_chain(players: Sequence[Player | Mapping], slots: Iterable[str], player_id: str, *,
+                      current: Mapping[str, str] | None = None) -> dict | None:
+    """What happens to the best legal lineup when ``player_id`` sits (or leaves): the re-solve without him, as data.
+
+    ``players``: the roster as the solver sees it (``Player`` / mappings; ``locked_slot`` = a locked starter, a locked
+    bench player is ``playable=False``); ``slots``: the league's ``roster_positions``; ``current``: {id: slot label} of
+    the lineup the manager is shown (default: ``solve(players)``'s). None when he does not start or is locked (not a
+    decision). Returns {player_id, slot, slot_type, cost, total_with, total_without, legal, chain, enters, empty_slot,
+    words}; ``chain`` is a list of {kind: slides | enters | empty | benched, player_id, position, from_slot, to_slot,
+    move}, starting at his slot; ``words`` the positions-only sentence ("RB moves from FLEX to RB; a WR fills the open
+    FLEX"; "no legal move: RB goes empty")."""
+    ps = [_as_player(p) for p in players]
+    slots = list(slots)
+    slot_list, _ = parse_slots(slots)
+    by_label = {s.label: s for s in slot_list}
+    me = next((p for p in ps if p.id == str(player_id)), None)
+    if me is None or me.locked_slot is not None:
+        return None
+    if current is None:
+        base = solve(ps, slots, margins=False)
+        current = {s.player.id: s.slot.label for s in base.starts if s.player is not None}
+        total_with = base.total
+    else:
+        current = {str(k): v for k, v in current.items() if v in by_label}
+        val = {p.id: (p.value if p.value is not None and math.isfinite(p.value) and p.value_source != UNVALUED else 0.0)
+               for p in ps}
+        total_with = float(sum(val.get(pid, 0.0) for pid in current))
+    if str(player_id) not in current:
+        return None
+    vacated = current[str(player_id)]
+    rest = [p for p in ps if p.id != str(player_id)]
+    after = solve(rest, slots, margins=False)
+    fixed = {}
+    for s in after.starts:                      # a locked starter stays in the very slot he is shown in
+        if s.player is not None and s.locked:
+            was = current.get(s.player.id)
+            fixed[s.player.id] = was if was in by_label and by_label[was].type == s.slot.type else s.slot.label
+    seat = _reseat([s.player for s in after.starts if s.player is not None], slot_list, fixed, current)
+    occupant = {lab: pid for pid, lab in seat.items()}
+    pos = {p.id: p.position for p in ps}
+    chain: list[dict] = []
+    seen: set[str] = set()
+    cur = vacated
+    while cur not in seen:
+        seen.add(cur)
+        t = by_label[cur].type
+        who = occupant.get(cur)
+        if who is None:
+            chain.append({"kind": "empty", "player_id": None, "position": None, "from_slot": None, "to_slot": cur,
+                          "move": f"nobody can play {chain_slot_word(t)}: it goes empty"})
+            break
+        if who not in current:
+            chain.append({"kind": "enters", "player_id": who, "position": pos.get(who), "from_slot": BENCH_SLOT,
+                          "to_slot": cur, "move": f"{_a(pos.get(who))} comes off the bench into {chain_slot_word(t)}"})
+            break
+        frm = current[who]
+        chain.append({"kind": "slides", "player_id": who, "position": pos.get(who), "from_slot": frm, "to_slot": cur,
+                      "move": f"{pos.get(who)} moves from {chain_slot_word(by_label[frm].type)} to {chain_slot_word(t)}"})
+        cur = frm
+    in_chain = {c["player_id"] for c in chain if c["player_id"]}
+    for pid, lab in seat.items():                     # anything else the re-solve changed (rare: a second path)
+        if pid in in_chain or current.get(pid) == lab:
+            continue
+        frm = current.get(pid)
+        chain.append({"kind": "slides" if frm else "enters", "player_id": pid, "position": pos.get(pid),
+                      "from_slot": frm or BENCH_SLOT, "to_slot": lab,
+                      "move": (f"{pos.get(pid)} moves from {chain_slot_word(by_label[frm].type)} to "
+                               f"{chain_slot_word(by_label[lab].type)}") if frm else
+                              f"{pos.get(pid)} comes off the bench into {chain_slot_word(by_label[lab].type)}"})
+    for pid, lab in current.items():
+        if pid != str(player_id) and pid not in seat:
+            chain.append({"kind": "benched", "player_id": pid, "position": pos.get(pid), "from_slot": lab,
+                          "to_slot": BENCH_SLOT, "move": f"{pos.get(pid)} goes to the bench"})
+    enters = next((c["player_id"] for c in chain if c["kind"] == "enters"), None)
+    empty = next((c["to_slot"] for c in chain if c["kind"] == "empty"), None)
+    return {"player_id": str(player_id), "slot": vacated, "slot_type": by_label[vacated].type,
+            "cost": round(total_with - after.total, 6), "total_with": round(total_with, 6),
+            "total_without": round(after.total, 6), "legal": True, "chain": chain, "enters": enters, "empty_slot": empty,
+            "words": chain_words(chain)}
+
+
+def _a(position: str | None) -> str:
+    """'an RB', 'a WR', 'a team QB' (the letter's sound: R, F, L, M, N, S, X and the vowels take "an")."""
+    w = chain_slot_word(position) if str(position or "").upper() in CHAIN_SLOT_WORDS else str(position or "player")
+    return f"{'an' if w[:1].upper() in 'AEFHILMNORSX' and not w.startswith('team') else 'a'} {w}"
+
+
+def chain_words(chain: Sequence[Mapping], names: Mapping[str, str] | None = None) -> str:
+    """The chain as one sentence. Without ``names``: positions only ("RB moves from FLEX to RB; a WR fills the open
+    FLEX"); with {player id: name}: "Bhayshul Tuten (RB) moves from FLEX to RB; Michael Wilson (WR) fills the open FLEX".
+    A lone empty slot: "no legal move: RB goes empty"."""
+    if not chain:
+        return ""
+    def by_label_word(lab) -> str:
+        return chain_slot_word(re.sub(r"\d+$", "", str(lab or "")))
+
+    bits: list[str] = []
+    for k, c in enumerate(chain):
+        who = (f"{names[c['player_id']]} ({c['position']})" if names and c.get("player_id") in names
+               else None)
+        to = by_label_word(c["to_slot"])
+        if c["kind"] == "slides":
+            bits.append(f"{who or c['position']} moves from {by_label_word(c['from_slot'])} to {to}")
+        elif c["kind"] == "enters":
+            bits.append(f"{who or _a(c['position'])} fills the open {to}" if k > 0 else
+                        f"{who or _a(c['position'])} comes off the bench into {to}")
+        elif c["kind"] == "empty":
+            bits.append(f"no legal move: {to} goes empty" if k == 0 else f"nobody can fill the open {to}: it goes empty")
+        elif c["kind"] == "benched":
+            bits.append(f"{who or c['position']} goes to the bench")
+    return "; ".join(bits)
+# ---- end II-0
+
+
 # ------------------------------------------------------------------------------ persistence
 DDL = {
     "ops.lineups": """create table if not exists ops.lineups (

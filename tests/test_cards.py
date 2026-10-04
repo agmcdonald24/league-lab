@@ -86,7 +86,7 @@ def test_reshuffle_names_who_comes_in_and_who_slides():
     assert w2["margin"] == pytest.approx(2.0)
     a = cards.alternative(w2, rows)
     assert a["alt"]["gsis_id"] == "R1" and a["mover"]["gsis_id"] == "W3"
-    assert "moves to WR2" in a["how"]
+    assert "PW3 (WR) moves from FLEX to WR; PR1 (RB) fills the open FLEX" in a["how"]   # ---- II-0: the legal chain
 
 
 def test_forced_locked_and_unvalued_starters_are_not_decisions():

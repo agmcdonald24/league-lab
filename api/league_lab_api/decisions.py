@@ -1606,6 +1606,20 @@ def trade_vs_alternative(gain_week: float | None, gain_window: float, alt: dict,
     return {"beyond_alternative": b, "beats_alternative": beats, "alternative_words": words, "other_objective": other}
 
 
+# ---- II-0 (Wave I-I): a partner row's story (trades.week_story) from its week strip, the numbers the card shows; a
+# row without a strip (no week-by-week split) reads its own this-week and window gains
+def row_story(r: dict, weeks, span: str, this_week: int | None) -> dict:
+    s = r.get("strip") or {}
+    if s.get("mine"):
+        return T.week_story(s["weeks"], s["mine"], span, this_week=this_week)
+    ws = list(weeks)
+    if this_week is not None and ws and len(ws) > 1 and r.get("you_gain_week") is not None:
+        rest = None if r.get("you_gain_horizon") is None else r["you_gain_horizon"] - r["you_gain_week"]
+        return T.week_story([ws[0], ws[-1]], [r["you_gain_week"], rest], span, this_week=this_week)
+    return T.week_story(ws[:1], [r.get("you_gain_horizon")], span, this_week=None)
+# ---- end II-0
+
+
 def strip(weeks, mine, theirs) -> dict:
     """The week-by-week starter points gained, both sides (this week · next · …): a four-week win can hide a loss."""
     return {"weeks": [int(w) for w in weeks], "mine": [T._r2(x) for x in mine], "theirs": [T._r2(x) for x in theirs]}
@@ -1694,6 +1708,8 @@ def calc_alternatives(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade
                                     bench=(now.mine.bench_before, now.mine.bench_after)))
     out["strip"] = strip(trade.weeks, [a - b for a, b in zip(me.after, me.before, strict=True)],
                          [a - b for a, b in zip(th.after, th.before, strict=True)])
+    out["story"] = T.week_story(out["strip"]["weeks"], out["strip"]["mine"], span,          # ---- II-0: the table's
+                                this_week=ctx.this_week if starts_now else None)            # numbers, the words
     unknown = [*me.unknown_out, *me.unknown_in]
     ros = out.get("ros") or {}
     ros_words = None
@@ -2011,6 +2027,8 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
     # headline is the first card, always
     alt = best_alternative(ctx, board, tuple(weeks), int(team), span, window, source=source, as_of=as_of)
     rows = rank_partners(ctx, board, tuple(weeks), rows, alt, span, window)
+    for r in rows:                     # ---- II-0: the row's words from the strip's own numbers (one frame, one story)
+        r["story"] = row_story(r, weeks, span, ctx.this_week if starts_now else None)
     head = None
     if rows:
         r0 = rows[0]
@@ -2223,11 +2241,13 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
                            key=lambda r: (r.get("lineup_value_rank") or 99, r["roster_id"]))
     ss = slots[slots["roster_id"] == int(team_id)] if not slots.empty else slots
     b = bio(list(rows["gsis_id"]) + (list(ss["top_gsis_id"]) if not ss.empty else []))
-    # the league behind each slot (G4's screen: "· 3rd", "League average x, best y"): every roster's starter strength
+    # the league behind each slot (G4's screen: "· 3rd", "League average x, best y"). ---- II-0: over the bar's own
+    # metric - every roster's best starter at that slot type, his projected points (was: the starter's margin, so the
+    # bar's 14.8 sat against "average 5.0 / best 7.3", margins of other rosters)
     def _slot_league(slot_type: str, mine_value) -> dict | None:
-        if slots.empty or "starter_strength" not in slots:
+        if slots.empty or "top_value" not in slots:
             return None
-        g = pd.to_numeric(slots.loc[slots["slot_type"] == slot_type, "starter_strength"], errors="coerce").dropna()
+        g = pd.to_numeric(slots.loc[slots["slot_type"] == slot_type, "top_value"], errors="coerce").dropna()
         if g.empty or mine_value is None:
             return None
         return {"avg": round(float(g.mean()), 2), "best": round(float(g.max()), 2), "n": int(g.size),
@@ -2238,7 +2258,7 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
                               "slot": r["top_slot"], "value": _num(r["top_value"]), "is_locked": _bool(r["top_is_locked"])},
                              "starter_strength": _num(r["starter_strength"]), "replacement_name": _str(r["replacement_name"]),
                              "replacement_value": _num(r["replacement_value"]),
-                             "league": _slot_league(r["slot_type"], _num(r["starter_strength"]))} for _, r in ss.iterrows()]
+                             "league": _slot_league(r["slot_type"], _num(r["top_value"]))} for _, r in ss.iterrows()]  # II-0
     order = {"starter": 0, "empty": 0, "bench": 1, "unplayable": 2}
     rows = rows.assign(_o=rows["role"].map(order)).sort_values(["_o", "slot_order", "bench_rank", "player_value"],
                                                                ascending=[True, True, True, False], na_position="last")
@@ -2249,8 +2269,13 @@ def team(league_id: str, team_id: int, *, source: str | None = None, as_of: date
                       "is_locked": _bool(r["is_locked"]), "report_status": _str(r["report_status"]), "reason": _str(r["reason"]),
                       "acquired": _str(r["acquired_label"]), "acquired_how": _str(r["acquired_how_by_manager"])}
                      for _, r in rows.iterrows()]
+    # ---- II-0: strength by slot, one metric over one population (every roster's starter at each slot this week)
+    out["strength_by_slot"] = strength_by_slot(int(team_id), _slot_population(league_id, is_house, None if is_house else hf,
+                                                                              moved, int(team_id), rows), value, b)
+    # ---- end II-0
     if not is_house:
         units_named(out)                                                          # ---- IC-4
+        _units_on_slots(out)                                                      # ---- II-0: the same names
     if is_house:
         wk = query(WEEKLY_SQL, (league_id, season, int(team_id), int(v["horizon_first_week"]), int(v["horizon_last_week"])))
         allw = query(WEEKLY_LEAGUE_SQL, (league_id, season, int(v["horizon_first_week"]), int(v["horizon_last_week"])))
@@ -2415,6 +2440,142 @@ def _weekly_on_context(out: dict, moved: dict, allw: pd.DataFrame, team_id: int)
 # ---- end IB-0
 
 
+# ---- II-0 (Wave I-I, the fifth review § 1): strength by slot, fixed. One metric (this week's projected points in the
+# league's scoring), one population (the player each roster starts at that slot this week), every slot of the
+# allotment apart: each roster's RB1 is its better RB starter, RB2 the other, FLEX1 / FLEX2 the same. The league's
+# average, best, worst and the rank are over the same numbers the bar shows, so the best is never below a member. An
+# empty slot scores 0 and is counted (n_empty); an unvalued starter (no projection) is unknown, not 0: left out. Group
+# totals (the slot type's starters added up) and usable depth (the best lineup the bench alone can field: the
+# lineup totals' bench_value) are the secondary lines; the raw bench total is shown beside usable depth, never as it.
+SLOT_POPULATION_SQL = """select roster_id, role, slot, slot_type, slot_order, sleeper_player_id, gsis_id, player_name, position,
+                                player_value, value_source, is_locked
+                         from analytics.mart_league_roster_horizon
+                         where league_id = %s and is_this_week and role in ('starter', 'empty', 'bench')"""
+POP_COLS = ["roster_id", "role", "slot", "slot_type", "slot_order", "sleeper_player_id", "gsis_id", "player_name", "position",
+            "player_value", "value_source", "is_locked"]
+
+
+def _slot_population(league_id: str, is_house: bool, hf: pd.DataFrame | None, moved: dict, team_id: int,
+                     mine: pd.DataFrame) -> pd.DataFrame:
+    """Every roster's this-week starters, empty slots and bench (POP_COLS); a roster the overlay moved has its context's
+    rows, mine the rows the page shows."""
+    if is_house:
+        df = query(SLOT_POPULATION_SQL, (league_id,))
+    else:
+        df = hf[hf["is_this_week"] & hf["role"].isin(["starter", "empty", "bench"])] if hf is not None else pd.DataFrame()
+        df = df.reindex(columns=POP_COLS)
+    if df is None or df.empty:
+        df = pd.DataFrame(columns=POP_COLS)
+    parts = [df[~df["roster_id"].astype(int).isin(set(moved) | {team_id})]]
+    for rid, c in moved.items():
+        if rid != team_id:
+            parts.append(_team_rows(c, None).assign(roster_id=rid))
+    m = mine.copy() if mine is not None else pd.DataFrame(columns=POP_COLS)
+    parts.append(m.assign(roster_id=team_id))
+    out = pd.concat([x.reindex(columns=POP_COLS) for x in parts if not x.empty], ignore_index=True)
+    out = out[out["role"].isin(["starter", "empty", "bench"])].copy()
+    out["player_value"] = pd.to_numeric(out["player_value"], errors="coerce")
+    return out
+
+
+def _seats(g: pd.DataFrame) -> list[dict]:
+    """One roster's starting slots in the allotment's order, each slot type's starters best first (RB1 >= RB2):
+    [{slot, slot_type, slot_order, value (0 for an empty slot, None unvalued), empty, unvalued, row}]."""
+    st = g[g["role"].isin(["starter", "empty"])]
+    out = []
+    for t, x in st.groupby("slot_type", sort=False):
+        orders = sorted(int(o) for o in pd.to_numeric(x["slot_order"], errors="coerce").dropna())
+        empty = (x["role"] == "empty") | x["player_name"].isna() & x["gsis_id"].isna() & x["sleeper_player_id"].isna()
+        unval = ~empty & ((x["value_source"] == "unvalued") | x["player_value"].isna())
+        key = x.assign(_e=empty.astype(int), _v=x["player_value"].where(~unval, -1e9).fillna(-1e9))
+        key = key.sort_values(["_e", "_v"], ascending=[True, False])
+        n = len(key)
+        for k, (i, r) in enumerate(key.iterrows(), 1):
+            e, u = bool(empty.loc[i]), bool(unval.loc[i])
+            out.append({"slot": f"{t}{k}" if n > 1 else str(t), "slot_type": str(t),
+                        "slot_order": orders[k - 1] if k - 1 < len(orders) else None,
+                        "value": 0.0 if e else (None if u else round(float(r["player_value"]), 2)), "empty": e,
+                        "unvalued": u, "row": r})
+    return sorted(out, key=lambda s: (s["slot_order"] is None, s["slot_order"] or 0, s["slot"]))
+
+
+def _league_line(vals: dict[int, float | None], team_id: int, *, n_empty: int = 0) -> dict:
+    """{avg, best, worst, rank, n, n_empty} over the known values (rank 1 = best; None when mine is unknown)."""
+    known = {r: float(v) for r, v in vals.items() if v is not None}
+    if not known:
+        return {"avg": None, "best": None, "worst": None, "rank": None, "n": 0, "n_empty": n_empty}
+    mine = known.get(team_id)
+    xs = list(known.values())
+    return {"avg": round(sum(xs) / len(xs), 2), "best": round(max(xs), 2), "worst": round(min(xs), 2),
+            "rank": None if mine is None else 1 + sum(1 for x in xs if x > mine + 1e-9), "n": len(xs), "n_empty": n_empty}
+
+
+def strength_by_slot(team_id: int, pop: pd.DataFrame, value: pd.DataFrame, b: dict | None = None) -> dict | None:
+    """The Team Hub's strength by slot (INTERFACES.md § II-0)."""
+    if pop is None or pop.empty or int(team_id) not in set(pop["roster_id"].astype(int)):
+        return None
+    seats = {int(rid): _seats(g) for rid, g in pop.groupby("roster_id")}
+    mine = seats.get(int(team_id)) or []
+    slots_out, groups_out = [], []
+    for s in mine:
+        vals = {}
+        n_empty = 0
+        for rid, ss in seats.items():
+            o = next((x for x in ss if x["slot"] == s["slot"]), None)
+            if o is None:
+                continue
+            vals[rid] = o["value"]
+            n_empty += int(o["empty"])
+        r = s["row"]
+        player = None if s["empty"] else {**_player(r["sleeper_player_id"], r["gsis_id"], r["player_name"], r["position"], None, b)}
+        slots_out.append({"slot": s["slot"], "slot_type": s["slot_type"], "slot_order": s["slot_order"], "player": player,
+                          "value": s["value"], "empty": s["empty"], "unvalued": s["unvalued"],
+                          "is_locked": bool(_bool(r.get("is_locked"))) if not s["empty"] else False,
+                          "league": _league_line(vals, int(team_id), n_empty=n_empty)})
+    for t in dict.fromkeys(s["slot_type"] for s in mine):
+        tot = {rid: round(sum(x["value"] or 0.0 for x in ss if x["slot_type"] == t), 2) for rid, ss in seats.items()
+               if any(x["slot_type"] == t for x in ss)}
+        n = sum(1 for x in mine if x["slot_type"] == t)
+        groups_out.append({"slot_type": t, "slots": n, "total": tot.get(int(team_id)),
+                           "n_unvalued": sum(1 for x in mine if x["slot_type"] == t and x["unvalued"]),
+                           "league": _league_line(tot, int(team_id))})
+    bench = pop[(pop["roster_id"].astype(int) == int(team_id)) & (pop["role"] == "bench")]
+    raw = round(float(pd.to_numeric(bench["player_value"], errors="coerce").fillna(0.0).sum()), 2)
+    usable_vals = ({int(r): _num(v) for r, v in zip(value["roster_id"], value["bench_value"], strict=True)}
+                   if value is not None and not value.empty and "bench_value" in value else {})
+    usable = usable_vals.get(int(team_id))
+    dl = _league_line(usable_vals, int(team_id))
+    depth_words = None
+    if usable is not None:
+        depth_words = (f"Usable depth {usable:.1f}: the best lineup your bench alone could field this week"
+                       + (f" ({_ordinal(dl['rank'])} of {dl['n']})" if dl["rank"] else "") + ". "
+                       + (f"Your bench players' projections add up to {raw:.1f}, but only {usable:.1f} of it fits the "
+                          "starting slots: the rest is surplus no starting slot could use." if raw - usable >= 0.05 else
+                          "Every bench player fits a starting slot."))
+    below = [x["slot"] for x in slots_out if x["value"] is not None and x["league"]["avg"] is not None
+             and x["value"] < x["league"]["avg"] - 1e-9]
+    week = None
+    if value is not None and not value.empty and "week" in value:
+        mv = value[value["roster_id"].astype(int) == int(team_id)]
+        week = _int(mv["week"].iloc[0]) if not mv.empty else None
+    words = (f"Each bar is the player you start at that slot{f' in week {week}' if week else ' this week'}, his projected "
+             f"points; the tick is the league's average starter at the same slot, the end of the scale its best. "
+             + (f"Below the league's average: {', '.join(below)}." if below else "At or above the league's average everywhere."))
+    return {"metric": "projected_points", "metric_words": "projected points this week, in this league's scoring",
+            "week": week, "n_rosters": len(seats), "population": "the player each roster starts at that slot this week",
+            "slots": slots_out, "groups": groups_out,
+            "depth": {"usable": usable, "raw_bench": raw, "league": dl, "words": depth_words}, "words": words}
+def _units_on_slots(out: dict) -> None:
+    """IC-4's unit names (badge team, "Bengals QB") on strength_by_slot's players, from the roster rows."""
+    sb = out.get("strength_by_slot") or {}
+    by_id = {str(r.get("sleeper_id")): r for r in out.get("roster") or [] if r.get("unit")}
+    for x in sb.get("slots") or []:
+        r = by_id.get(str((x.get("player") or {}).get("sleeper_id")))
+        if r is not None:
+            x["player"].update({"unit": True, "team": x["player"].get("team") or r.get("team"), "short_name": r.get("short_name")})
+# ---- end II-0
+
+
 # ---- IC-4 (Wave I-D): a team unit is named with its team. The roster rows and the slot strength's best starter carry
 # the unit's team (the directory's Sleeper code: the badge), `unit: true` and the short name "Bengals QB".
 UNIT_POSITIONS = ("TMQB", "TMPK")
@@ -2450,6 +2611,29 @@ def units_named(out: dict) -> dict:
 # ---- end IC-4
 
 
+# ---- II-0 (Wave I-I): the closest call's replacement when he cannot play the slot himself (a WR named for an RB):
+# the legal chain that makes it true, from the Team rows ("Without him, Bhayshul Tuten (RB) moves from FLEX to RB;
+# Michael Wilson (WR) fills the open FLEX.")
+def _weakest_chain_words(v: dict, rows: pd.DataFrame) -> str:
+    try:
+        if rows is None or rows.empty:
+            return ""
+        f = rows.rename(columns={"player_value": "value", "lineup_margin": "margin"}).copy()
+        f["locked_now"] = f["is_locked"].fillna(False).astype(bool) if "is_locked" in f else False
+        f["is_locked"] = f["locked_now"]
+        f["is_empty_slot"] = f["role"] == "empty"
+        me = f[(f["role"] == "starter") & (f["slot"] == v.get("weakest_slot"))]
+        if me.empty:
+            return ""
+        ch = cards.replacement_chain_rows(me.iloc[0], f)
+        if ch is None or not any(c["kind"] == "slides" for c in ch["chain"]):
+            return ""
+        return f" Without him, {ch['named_words']}."
+    except (KeyError, TypeError, ValueError):
+        return ""
+# ---- end II-0
+
+
 def team_words(out: dict, rows: pd.DataFrame) -> dict:
     """The Team Hub's card sentences (quoted from app/pages/1_Team_Hub.py: top-level page code, not importable)."""
     v = out["value"]
@@ -2466,7 +2650,8 @@ def team_words(out: dict, rows: pd.DataFrame) -> dict:
         who = f"{v['weakest_player_name']} ({v['weakest_position']})" if isinstance(v.get("weakest_position"), str) else str(v["weakest_player_name"])
         if isinstance(v.get("weakest_replacement_name"), str):
             lines.append(f"Your closest call: **{v['weakest_slot']}, {v['weakest_player_name']} over "
-                         f"{v['weakest_replacement_name']} by {v['weakest_margin']:.2f}**.")
+                         f"{v['weakest_replacement_name']} by {v['weakest_margin']:.2f}**."
+                         + _weakest_chain_words(v, rows))                                 # ---- II-0: the legal chain
         else:
             lines.append(f"Your closest call: **{v['weakest_slot']}, {who}** — nobody on the bench can fill in for him "
                          f"(he is worth {v['weakest_margin']:.1f} to the lineup).")
