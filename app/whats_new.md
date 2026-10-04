@@ -3,6 +3,17 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 4 (afternoon) · Your calls, your odds, and rookies priced honestly
+
+- **Your calls this season** on the Team page: week by week, what you started, what our lineup would have scored, the
+  best possible, and how the close calls landed. The About page's record links there.
+- **Your odds this week** under the opponent line on My Week ("You're a slight favorite this week: 64%, 120 to 104
+  expected") and for every matchup on the League screen. It describes; it never picks for you.
+- **Rookies and other newcomers** are projected from where they were drafted until the games say otherwise, instead
+  of from a model that had never seen them. Every screen shows the same number.
+- Clearer messages when the app cannot reach the server; a kicker claim in your dad's league drops the kicker it
+  replaces.
+
 ## Oct 4 · The record grades our calls, and a few things said plainly
 
 - **Our lineups, graded.** About's record now keeps the lineup the app would have started each week (frozen before the

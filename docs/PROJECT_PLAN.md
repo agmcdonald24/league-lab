@@ -598,6 +598,18 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 18 — Wave I-H (2026-10-04, Sunday; delivered 14:30 ET)
+
+Andrew: "Proceed with the next waves." Five devs: **M6** v3.2 — the cold-start prior on the stat line (on by default;
+rookies no longer projected from a model that has never seen them), veterans on a new team measured and not kept, the
+record's Sleeper side at the odds; **V-2** the decision record personal (the Team page's "Your calls this season"),
+live (news-affected weeks from the event store) and for MFL leagues; **IH-1** error states and the stale state
+(operator-only by Andrew's word), events retention, the nightly's failure summary; **IH-2** the I-G opens (units' drop
+cost, the console's stash words, the Team page's MFL freshness, `daily_waivers_days`); **IH-3** the week's win
+probability on My Week and the League screen (calibrated: 58% predicted / 57.5% won on 308 matchups), information
+only. STATUS § "Wave I-H": root 1118 / API 518 / e2e 271. Next: a pinned clock for the suites, then the opens in
+STATUS. Wave J stays parked by Andrew's choice.
+
 ### Iteration 16 — the beta on a server (agreed 2026-10-02, Wave H)
 
 Andrew ran the Wave G app on his Mac ("Oh hell yea … proceed"). Next: put the non-commercial beta on a host so his

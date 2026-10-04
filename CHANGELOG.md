@@ -4,6 +4,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-04 — Wave I-H
 
+- **PO (integration).** Five packages merged (M6, V-2, IH-1, IH-2, IH-3 below). On Andrew's word the stale banner
+  never shows to a league-mate (the state stays on `/api/health`, `/api/status` and the console); the nightly gains
+  the failure summary step and `LEAGUE_LAB_RECORD_MFL`; registry rows `decision_market_edge`, `week_win_probability`.
+  Root 1118 / API 518 / e2e 271 (plus the Sunday-afternoon clock failures that `main` shares).
 - **M6 — v3.2: a rookie's first games are projected from his draft slot, on the stat line, and on by default.** M5's
   cold-start prior moved onto the line itself (`calibration.blend_lines`, before anything is priced): the house board,
   the NFL-wide line, the ranges and every on-demand league now carry the same number for a player in his first three

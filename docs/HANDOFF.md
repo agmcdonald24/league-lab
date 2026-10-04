@@ -174,6 +174,15 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   the real record starts at week 5's kickoff); the stash writer's drop rule, MFL's freshness line, the waiver
   deadline, the MFL grade's qualification, usage retention 180 days (IG-3).
 
+* **Wave I-H (2026-10-04, Sunday; five Opus devs; STATUS § "Wave I-H" PO section first)**: v3.2 (the cold-start
+  prior on the stat line, on by default — `LEAGUE_LAB_COLD_START=0` turns it off; the first nightly builds
+  `ops.calibration_oof`, ~3 min once), the decision record personal / live / MFL (`LEAGUE_LAB_RECORD_MFL` on the
+  nightly), error states (`ErrorCard`), the stale state **operator-only** (Andrew: never tell people the data is
+  stale), events retention, the nightly's failure summary, the I-G opens, the week's win probability. **Sunday
+  afternoons turn ~45 API tests and 2 root tests red on any branch** (the on-demand path locks players as games kick
+  off): compare against `main` at the same hour before believing a failure; the fix is a pinned clock
+  (`league_lab.clock.now()` + `LEAGUE_LAB_NOW`) — the next PO item.
+
   **The nightly's trigger (2026-10-04)**: GitHub's `schedule` fired 3.5–6 h late every day since 2026-09-30 —
   `ops/nightly-trigger/` (a Cloudflare Worker, 07:37 ET + re-checks) replaces it as the clock; needs Andrew's
   fine-grained token in the Worker's secret (HOSTING § 5 "The trigger"). Until it exists, "Run workflow" by hand.

@@ -5993,6 +5993,67 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
 
 ## Wave I-H (Iteration 18)
 
+### PO merge — Wave I-H, 2026-10-04 (Sunday, 11:50–14:30 ET)
+
+* **Why**: Andrew: "Proceed with the next waves." (and: Wave J is parked by his choice — no Sleeper licence request;
+  "a prototype I would love to commercialize, the odds impossibly slim"). The brief is `scratchpad/waveIH/BRIEF.md`;
+  five Opus devs in parallel (spawned in one message this time), 65–125 min each.
+* **Delivered** (the hand-backs below; integration branch `integ/IH` → `main`): **M6** v3.2 — the cold-start prior
+  lives on the stat line (`calibration.blend_lines` before `nfl_lines`: every component scaled by blended ÷ raw, so
+  `ops.projections`, `_lines`, `_ranges` and every on-demand request agree to the cent; **on by default**,
+  `LEAGUE_LAB_COLD_START=0` to turn off; re-measured on the line it still keeps at RB / WR / TE: flagged MAE −0.09 /
+  −0.31 / −0.34, 4–5 of 5 seasons, the board a hair better), `ensure_oof` in the nightly (`ops.calibration_oof`
+  travels), veterans on a new team measured three ways and **not kept** (the MAE-fitted scale wins by projecting the
+  median — rejected; a mean-unbiased WR scale is a v3.3 lead), `why.weights` per week, the record's Sleeper side at
+  the odds (`ops.market_record`, `sl_priced` coalesced in EV weeks). 2026 board: 1,014 of 9,911 stat lines move
+  (78 players, weeks 5–18 only; undrafted rookies with no game fall from the model's 5–6 to ~2.1–2.6; Jordyn Tyson
+  6.08 → 8.62; Germie Bernard unchanged); 37 of 440 lineup totals move, Andrew's rosters not. `MODEL_VERSION` stays
+  v3.0 (M6's call). **V-2** the decision record personal and live — news-affected cases from the event store
+  (`validation.news_overrides`), `decisions.team` on `/api/record?team=` + the Team page's "Your calls this season"
+  (started / ours / best / Sleeper's lineup per week, the close calls graded), **MFL leagues** (`record_mfl.py`: the
+  on-demand lineup frozen at the week's first kickoff for `LEAGUE_LAB_RECORD_MFL`, graded on MFL's weekly scores;
+  dad's league on the fixture: our lineups −3.8 a team a week, the coin flips 57%), "Sleeper's projections as a
+  lineup" as a comparator (`ops.decision_market`); the writers moved to `record_mfl` / `record_run` so
+  `hosted_relations.py` does not publish raw tables. **IH-1** the stale state (`freshness.py`, 30 h; `/api/health`
+  `stale` / `age_hours`, `/api/status` `nightly`, the console's Data Status page), **error states** the app never had
+  (`ErrorCard`: the API down with Try again, a 500 naming `/api/status`, "Still waiting" after 25 s, "Signed out —
+  sign in again" after a 401), events retention (120 d superseded news / briefs, 400 d availability), the failure
+  summary `scripts/nightly_failure_summary.sh`, the Worker's status page reports the last dispatch when a KV binding
+  exists. **IH-2** units' drop cost on Waivers (dad's league team 2: the Saints K claim drops the Jaguars K, not Cooper
+  Kupp; team 8's screen unchanged — an open spot), the console's stash words on `stash_action`, the Team page's MFL
+  freshness, `daily_waivers_days` ("every day except Saturday"), the Questionable line in "What changed", `game_key`
+  on availability events, "when QB and QB are on a bye" fixed. **IH-3** the week's win probability
+  (`decisions.lineup_win_probability`: per-player distributions from the ranges centred on the projection, paired
+  draws, teammates / opponents correlated, a logit shrink of 0.60 fitted on 2024 and tested on 2025; calibration on
+  308 house-league matchups: Brier 0.2395, the favourite predicted 58.0% / won 57.5%), the line under the opponent on
+  My Week ("You're a slight favorite this week: 64%, 120 to 104 expected."), `GET /api/league/week-odds` on the
+  League screen; information only, never a pick.
+* **PO, on the merge**: nine doc / `api.ts` / `Team.svelte` conflicts (keep both); **Andrew (14:05 ET): "DO NOT TELL
+  PEOPLE THAT THE DATA IS STALE... MAKE IT ROBUST SO IT DOESNT FAIL"** — IH-1's My Week banner and footer suffix are
+  **off** (`staleWords` is null in `MyWeek.svelte`; the markup stays, one line turns it back on); the stale state stays
+  on `/api/health`, `/api/status` and the console for the operator; the robustness is the trigger (HOSTING § 5), with
+  GitHub's own schedule as the fallback (it fired twice today, 11:57 and 13:33 ET, both green) and the failure summary
+  + GitHub's failure email. Wired: the `notify` step (`if: failure()`) and `LEAGUE_LAB_RECORD_MFL: "mfl:70587"` on the
+  nightly; registry rows `decision_market_edge` (dr1.1), `week_win_probability`; HOSTING's `game_key` line; the main
+  database migrated (`calibration_oof`, `market_record`, `decision_market`), `validate --mfl mfl:70587` (Scrubs /
+  dynasty weeks 1–5 recorded: the dynasty −4.9 a team a week on weeks 1–2, 42 coin flips 49%), the wave's dbt models
+  and seeds built (`PASS=73`). **Checks**: root **1118 passed** (+2 Sunday-clock failures identical on `main`), API
+  **518 passed / 3 xfail** (+45 Sunday-clock failures — every one re-run on `main`'s code at the same hour fails the
+  same way: the on-demand path locks players as games kick off; `test_u1` / `test_ig2` deselected because they write
+  to the main database's schemas), e2e **271 passed**; ruff / svelte-check / eslint / build clean; the merged API on
+  the main database answers `win`, `decisions.team`, `week-odds`, `nightly`, the dynasty's deadline words.
+* **Decisions the PO took (Andrew may reverse)**: the stale words never reach a league-mate (his call); the cold-start
+  prior **on by default** (M6's call, kept); IH-2's three on-demand MFL pins are `xfail(strict=False)` until the
+  API's fixture tests get a pinned clock — **the next PO item**: a `league_lab.clock.now()` read by the six wall-clock
+  sites (`anyleague` ×3, `decisions` ×3) with `LEAGUE_LAB_NOW` for tests, so the suites stop going red on Sunday
+  afternoons; IH-3's shrink 0.60 and the opponent's *best* lineup; V-2's "a status change counts as news whenever it
+  differs from what the build saw".
+* **Not done / next**: the pinned clock (above); the error card on the remaining screens (one line each); the Worker's
+  KV binding for the last-dispatch line (optional); live in-game points in the win probability (a game in progress
+  counts as its full range); MFL live points; a DEF's range on the house path; the mean-unbiased new-team scale at WR
+  (v3.3); the re-grade of the win probability after weeks 4–6; `MODEL_VERSION` bump when the record should tell
+  blended weeks apart.
+
 ### M6 2026-10-04 — v3.2: the cold-start prior on the stat line, veterans on a new team, the market at the odds (branch `dev/M6`, clone `league_lab_m1`)
 
 * **Task**: Wave I-H M6 (`scratchpad/waveIH/BRIEF.md` § M6; plan § 17 "v3.1 → v3.2"); METRICS § "Calibration of the
