@@ -70,4 +70,4 @@ with st.expander("Views, leagues and browser-days per day", expanded=True):
     show(by_day.rename(columns={"day": "Day", "views": "Views", "leagues": "Leagues", "sessions": "Browser-days"}))
 st.caption("What a row holds: the time, the screen, the league id and team number, the platform, the release and the "
            "browser-day id. No names, usernames or IP addresses are kept. `LEAGUE_LAB_USAGE=off` on the server stops "
-           "the counting.")
+           "the counting. Views older than 180 days are deleted every night (the sync runs `scripts/hosted_usage.sql`).")

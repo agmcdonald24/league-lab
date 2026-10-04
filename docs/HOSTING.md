@@ -521,6 +521,12 @@ psql "$(uv run python -c 'from league_lab.config import get_settings; print(get_
 Without it the local API counts nothing (each insert fails quietly) and the Usage page says how to set it up.
 `api/tests/test_u1.py` applies the file itself.
 
+**Retention** *(Wave I-G, IG-3)*. Every run of `scripts/hosted_usage.sql` — the sync's "U-1" block, once a night —
+ends with `delete from usage.events where at < now() - interval '180 days'`: the table holds about six months of
+views (at 168 bytes a row, a busy beta of 1,000 views a day stays near 30 MB). The owner role deletes; the app role
+still cannot (no `DELETE` grant). The console's Usage page says so under its tables. To keep everything, remove that
+one statement; to keep less, change the interval (one place).
+
 ## Licences to keep in mind when sharing
 
 * nflverse data: free to use with attribution (kept on Home → Data & attribution).
