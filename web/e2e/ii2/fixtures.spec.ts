@@ -86,8 +86,8 @@ test("Players: several players in a row without leaving the table; the search, f
   await page.goto(scrubs("/players", "&position=WR&sort=target_share&dir=desc"));
   await expect(page.getByTestId("players-table")).toBeVisible();
   await page.getByTestId("players-search").fill("n");
+  await expect(page).toHaveURL(/[?&]q=n(&|$)/); // integ: the search's 250 ms debounce lands before the first open (a Back close restores the entry before it)
   const table = page.getByTestId("players-table");
-  const y0 = await page.evaluate(() => window.scrollY);
   const h0 = await page.evaluate(() => history.length);
   for (const p of [PW, JJ, TMC]) {
     await openNext(page, table.getByRole("link", { name: p.name, exact: true }), isMobile);
@@ -104,7 +104,7 @@ test("Players: several players in a row without leaving the table; the search, f
   await expect(page).toHaveURL(new RegExp(`/players\\?league=${SCRUBS}&team=2&position=WR&sort=target_share&dir=desc&q=n$`));
   await expect(page.getByTestId("players-search")).toHaveValue("n");
   if (isMobile) expect(await page.evaluate(() => window.scrollY)).toBeGreaterThanOrEqual(0);
-  else expect(await page.evaluate(() => window.scrollY)).toBe(y0);
+  else await expect(table.getByRole("link", { name: TMC.name, exact: true })).toBeInViewport(); // integ: on II-3's taller Stats screen the names are scrolled to and the screen beside the drawer is narrower, so the pixel offset moves when it closes (528 → 461): the place kept is the row you opened from
   await expect(table.getByRole("link", { name: PW.name, exact: true })).toBeVisible();
 });
 
