@@ -8,6 +8,8 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/leagues                         current-season leagues (ui.current_leagues)
     /api/leagues?username=               a Sleeper user's leagues this season, their team in each (plan F3)
     /api/leagues?mfl=<link or id>        a MyFantasyLeague league: its card and team picker (Wave I-0, key mfl:<id>)
+    /api/leagues?sleeper=<link or id>    ---- II-5: a Sleeper league by its link or id: its card and team picker
+    /api/providers                       ---- II-5: each provider's capabilities (platforms.capabilities)
     /api/leagues/{league_id}/rosters     the team picker's options
     /api/my-week?league=&team=           Home's My Week: record line, the cards (numbers + the cards' own text), lineup;
                                          a league the database does not have is served on demand from Sleeper
@@ -69,19 +71,20 @@ JSON_CACHE = "private, max-age=120"
 # errors: {"error": "<plain words>"} (the contract), "detail" kept for the D7 spike's web client
 @app.exception_handler(NotFound)
 async def _not_found(_req: Request, exc: NotFound):
-    return JSONResponse({"error": str(exc), "detail": str(exc)}, status_code=404, headers={"Cache-Control": "no-store"})
+    extra = {k: getattr(exc, k) for k in ("code", "fix") if getattr(exc, k, None)}   # ---- II-5: the setup errors' key
+    return JSONResponse({"error": str(exc), "detail": str(exc), **extra}, status_code=404, headers={"Cache-Control": "no-store"})
 
 
 @app.exception_handler(ondemand.SleeperDown)
 async def _sleeper_down(_req: Request, exc: ondemand.SleeperDown):
     who = "MyFantasyLeague" if "MyFantasyLeague" in str(exc) else "Sleeper"      # I0-B: an MFL league says so
     return JSONResponse({"error": f"{who} did not answer", "detail": f"{who} did not answer. Try again in a minute.",
-                         "cause": str(exc)}, status_code=502, headers={"Cache-Control": "no-store"})
+                         "cause": str(exc), "code": "provider_down"}, status_code=502, headers={"Cache-Control": "no-store"})  # II-5: code
 
 
 @app.exception_handler(A.SleeperBusy)
 async def _sleeper_busy(_req: Request, exc: A.SleeperBusy):
-    return JSONResponse({"error": "busy, try again in a minute", "detail": "busy, try again in a minute"}, status_code=503,
+    return JSONResponse({"error": "busy, try again in a minute", "detail": "busy, try again in a minute", "code": "busy"}, status_code=503,  # II-5: code
                         headers={"Cache-Control": "no-store", "Retry-After": "60"})
 
 
@@ -273,7 +276,10 @@ def logout(response: Response) -> dict:
 # `mfl:<id>` (anyleague.check_id accepts both; known_league is false for them: always served on demand).
 # I0-C: `?mfl_search=<link, id or the league's name>` (ondemand.mfl_search): a link or an id answers as `?mfl=`.
 @app.get("/api/leagues", dependencies=[Depends(require_auth)])
-def leagues(response: Response, username: str | None = None, mfl: str | None = None, mfl_search: str | None = None):
+def leagues(response: Response, username: str | None = None, mfl: str | None = None, mfl_search: str | None = None,
+            sleeper: str | None = None):
+    if sleeper is not None:                    # ---- II-5: a Sleeper league link or id -> its card and team picker
+        return _json(ondemand.sleeper_league(sleeper), response)
     if mfl_search is not None:
         return _json(ondemand.mfl_search(mfl_search), response)
     if mfl is not None:
@@ -281,6 +287,14 @@ def leagues(response: Response, username: str | None = None, mfl: str | None = N
     if username is None:
         return _json(myweek.leagues(), response)
     return _json(ondemand.leagues_for_user(username), response)
+
+
+# ---- II-5 (Wave I-I): what each provider gives (platforms.capabilities; docs/PROVIDERS.md) — the setup screen's
+# "what works on MFL" lines and any screen's "not available for MFL leagues yet". Static: cached like the app's JSON.
+@app.get("/api/providers", dependencies=[Depends(require_auth)])
+def providers(response: Response):
+    return _json({"providers": A.platforms.all_capabilities(), "features": list(A.platforms.FEATURES)}, response)
+# ---- end II-5
 
 
 @app.get("/api/leagues/{league_id}/rosters", dependencies=[Depends(require_auth)])

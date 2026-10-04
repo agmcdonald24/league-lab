@@ -198,7 +198,8 @@ def test_leagues_by_username(client, sql):
     assert [x["league_id"] for x in client.get("/api/leagues").json()] == \
            [x["league_id"] for x in client.get("/api/leagues").json()] and "user" not in client.get("/api/leagues").json()
     bad = client.get("/api/leagues?username=nobody_at_all")
-    assert bad.status_code == 404 and bad.json()["error"] == "no such Sleeper user"
+    assert bad.status_code == 404 and bad.json()["code"] == "sleeper_user_unknown"     # ---- II-5: the setup words
+    assert bad.json()["error"] == "That Sleeper username does not exist: “nobody_at_all”."
     assert client.get("/api/leagues?username=../etc").status_code == 404
 
 
