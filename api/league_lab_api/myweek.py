@@ -1007,6 +1007,7 @@ def win(league_id: str, roster_id: int, season: int, week: int, rows: pd.DataFra
             points = {str(r.sleeper_player_id): float(r.points) for r in df.itertuples() if r.points is not None and not pd.isna(r.points)}
         else:
             points = points_fn(rids) if points_fn is not None else None
+        points = points or None            # no points at all for the week (the league's load failed): unknown, not 0
     mine = win_starters(rows)
     live_ok = with_actuals(mine, scored, points)
     answers = []
@@ -1074,6 +1075,7 @@ def week_odds(league_id: str, *, house: bool | None = None) -> dict:
             points = {str(r.sleeper_player_id): float(r.points) for r in df.itertuples() if r.points is not None and not pd.isna(r.points)}
         else:
             points = week_points(client, league_id, week, rids)
+        points = points or None            # no points at all for the week: unknown, not 0
     names = {int(r["roster_id"]): r["team_name"] for r in rosters(league_id)} if house else {
         int(k): v.get("team_name") for k, v in A.team_names(client.rosters(league_id), client.users(league_id)).items()}
     starters = {}

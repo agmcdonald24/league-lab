@@ -148,6 +148,34 @@ def test_scrubs_roster_6_and_his_opponent(client):
 
 
 @needs_db
+def test_a_played_game_on_the_main_database(sql):
+    """League of Scrubs week 3 as the main database has it: Thursday's game (ATL at GB) scored, the rest not. Roster 3
+    starts two Falcons: both count at Sleeper's own points (`league_player_week`), everyone else at his range."""
+    from league_lab_api import availability
+
+    week = 3
+    m = sql("""select opponent_roster_id from analytics.fct_league_matchup where league_id = %s and season = 2026
+               and week = %s and roster_id = 3""", (SCRUBS, week))
+    scored = {r["team"] for r in sql("""select distinct team from analytics.fct_player_game_league
+                                         where season = 2026 and week = %s and season_type = 'REG'""", (week,))}
+    if not m or m[0]["opponent_roster_id"] is None or scored != {"ATL", "GB"}:
+        pytest.skip("the main database is not at week 3's Thursday any more")
+    rows = availability.roster_context(SCRUBS, 3, week, house=True).rows
+    w = myweek.win(SCRUBS, 3, 2026, week, rows, {"roster_id": int(m[0]["opponent_roster_id"])}, house=True)
+    starters = myweek.win_starters(rows)
+    falcons = [x for x in starters if x["team"] in scored]
+    assert len(falcons) == 2 and w["n_played"] == 2
+    obs = {r["sleeper_player_id"]: float(r["points"]) for r in sql(
+        """select sleeper_player_id, points_observed as points from analytics.league_player_week
+           where league_id = %s and season = 2026 and week = %s and roster_id = 3""", (SCRUBS, week))}
+    expected = sum(obs.get(x["sleeper_player_id"], 0.0) for x in falcons) + sum(
+        x["value"] or 0.0 for x in starters if x["team"] not in scored)
+    assert w["mine"] == pytest.approx(expected, abs=0.01)
+    assert w["line"].endswith(f"2 of your {len(starters)} have played, {w['opp_n_played']} of theirs.")
+    assert 0 < w["p"] < 1
+
+
+@needs_db
 def test_league_week_odds_scrubs(client):
     """The League screen's odds: every game of the week once, the two sides adding to 100, the same number My Week shows
     for roster 6."""
