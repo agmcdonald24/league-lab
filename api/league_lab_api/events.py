@@ -53,6 +53,7 @@ from typing import Any
 import pandas as pd
 import psycopg
 from league_lab import anyleague as A
+from league_lab.clock import now as league_now
 
 from . import db
 from .settings import app_dsn
@@ -77,7 +78,7 @@ _STATUS = re.compile(r"^[A-Za-z_-]{1,24}$")
 COLUMNS = ("kind", "player_key", "gsis_id", "team", "game_key", "status", "headline", "summary", "source", "source_url",
            "published_at", "effective_at", "fingerprint")
 
-clock: Callable[[], datetime] = lambda: datetime.now(UTC)    # noqa: E731 - the readers' "now" (tests pin it)
+clock: Callable[[], datetime] = league_now    # the readers' "now" (tests pin it); ---- INF-1: league_lab.clock
 stats = {"queued": 0, "written": 0, "duplicate": 0, "superseded": 0, "failed": 0, "dropped": 0, "moves": 0}
 _queue: queue.Queue = queue.Queue(maxsize=QUEUE_MAX)
 _worker: threading.Thread | None = None

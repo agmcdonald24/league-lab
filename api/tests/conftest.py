@@ -34,6 +34,32 @@ def _db_ok() -> bool:
 DB_OK = _db_ok()
 needs_db = pytest.mark.skipif(not DB_OK, reason="database not reachable with the app role")
 
+# ---- INF-1 (Wave I-I): the suite runs at one pinned moment (league_lab.clock). Saturday 2026-10-03 16:00 UTC: week 4's
+# Thursday game played, nothing else — so a run on a Sunday afternoon does not see players lock as the games kick off
+# (about 45 tests turned red every Sunday before). Set in the environment so the Streamlit twin (a subprocess) reads
+# the same moment; a shell that sets LEAGUE_LAB_NOW wins. Another moment: `with clock.pinned(...)`; the real time:
+# the `real_clock` fixture. The stale rule (league_lab.freshness) and availability's fetch stamps keep the real time.
+PINNED_NOW = "2026-10-03T16:00:00Z"
+os.environ.setdefault("LEAGUE_LAB_NOW", PINNED_NOW)
+
+
+@pytest.fixture(autouse=True)
+def _clock_unpinned_after():
+    """A test's `clock.pin(...)` never leaks into the next test."""
+    yield
+    from league_lab import clock
+    clock.unpin()
+
+
+@pytest.fixture
+def real_clock(monkeypatch):
+    """The production clock for one test: no pin, no LEAGUE_LAB_NOW."""
+    from league_lab import clock
+    monkeypatch.delenv(clock.ENV, raising=False)
+    clock.unpin()
+    yield clock
+# ---- end INF-1
+
 
 @pytest.fixture
 def client(monkeypatch):

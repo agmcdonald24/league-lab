@@ -36,6 +36,7 @@ from pathlib import Path
 from typing import Any
 
 from league_lab import anyleague as A
+from league_lab.clock import now as league_now  # ---- INF-1: the league's now
 
 from .db import query
 
@@ -255,13 +256,13 @@ def for_card(gsis: str, now: datetime | None = None) -> list[dict]:
     try:
         if fixtures_path() is not None:
             fx = _fixture()
-            clock = now or _when(fx.get("as_of")) or datetime.now(UTC)
+            clock = now or _when(fx.get("as_of")) or league_now()
             return select(_fixture_rows(fx, gsis), gsis, clock)
         if time.monotonic() < _down_until:
             return []
         rows = _records(query(CANDIDATES_SQL, (gsis,) * 4, ttl=CACHE_TTL_S))
         _ok()
-        return select(rows, gsis, now or datetime.now(UTC))
+        return select(rows, gsis, now or league_now())  # ---- INF-1
     except Exception as exc:  # noqa: BLE001 - no schema / no grant / the marts mid-restore: ESPN only
         _failed(exc)
         return []
@@ -322,14 +323,14 @@ def recent(gsis_ids: list[str], *, hours: float = 24, now: datetime | None = Non
     try:
         if fixtures_path() is not None:
             fx = _fixture()
-            clock = now or _when(fx.get("as_of")) or datetime.now(UTC)
+            clock = now or _when(fx.get("as_of")) or league_now()
             by = {g: _fixture_rows(fx, g) for g in ids}
         else:
             if time.monotonic() < _down_until:
                 return []
             rows = _records(query(RECENT_SQL, (ids,) * 4, ttl=CACHE_TTL_S))
             _ok()
-            clock = now or datetime.now(UTC)
+            clock = now or league_now()  # ---- INF-1
             by = {g: [r for r in rows if g in (_s(r.get("via_sleeper")), _s(r.get("via_gsis")))] for g in ids}
         out: list[tuple[str, dict]] = []
         for g in ids:

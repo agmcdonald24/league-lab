@@ -5,6 +5,8 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from league_lab import clock as league_clock  # ---- INF-1
+
 from .db import connection_ok, query, setting
 
 SKILL_POSITIONS = ["QB", "RB", "WR", "TE", "K"]
@@ -407,7 +409,7 @@ def first_open_week(games: pd.DataFrame, now=None) -> int | None:
     kickoff is after `now` (default: the clock). None when every week's last game has kicked off (off-season)."""
     if games is None or games.empty:
         return None
-    now = pd.Timestamp.now(tz="UTC") if now is None else pd.Timestamp(now)
+    now = pd.Timestamp(league_clock.now()) if now is None else pd.Timestamp(now)  # ---- INF-1: the league's now
     if now.tzinfo is None:
         now = now.tz_localize("UTC")
     last = pd.to_datetime(games["kickoff_at"], utc=True).groupby(games["week"].astype(int)).max()

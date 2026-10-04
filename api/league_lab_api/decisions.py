@@ -33,12 +33,13 @@ import ast
 import math
 import re
 import time
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 import numpy as np
 import pandas as pd
 from league_lab import anyleague as A
+from league_lab import clock  # ---- INF-1: the league's now
 from league_lab import trades as T
 from league_lab import waivers as W
 from league_lab.lineup import UNVALUED, Player
@@ -374,7 +375,7 @@ def _moves_on_demand(league_id: str, team: int, *, as_of: datetime | None = None
         return add_ros[sid]
 
     tot0 = lw.total(team, lw.weeks[0])
-    key = {"run_at": datetime.now(UTC), "as_of": lw.as_of, "model_version": lw.inp.model_version, "league_id": lid,
+    key = {"run_at": clock.now(), "as_of": lw.as_of, "model_version": lw.inp.model_version, "league_id": lid,
            "season": season, "week": lw.weeks[0], "roster_id": int(team), "horizon_weeks": len(lw.weeks),
            "horizon_last_week": lw.weeks[-1], "inputs_fingerprint": None}
     stats: dict = {}
@@ -899,7 +900,7 @@ def _house_fa_pool(league_id: str, season: int, weeks: tuple[int, ...]) -> tuple
     kick = {}
     for g in games.itertuples():
         kick[g.home_team] = kick[g.away_team] = pd.Timestamp(g.kickoff_at)
-    now = pd.Timestamp(datetime.now(UTC))
+    now = pd.Timestamp(clock.now())  # ---- INF-1
     pool: dict[str, dict[int, Player]] = {}
     meta: dict[str, dict] = {}
     for r in fa.itertuples():
@@ -3904,7 +3905,7 @@ def waiver_deadline(league: dict | None, *, platform: str = "sleeper", mfl_type:
     """When claims run, in one line (``INTERFACES.md`` § IG-3). ``league`` = Sleeper's league dict (its ``settings``);
     an MFL league passes ``platform='mfl'`` and the export's ``currentWaiverType`` as ``mfl_type``; ``kind_fallback`` =
     the database's ``waiver_type`` when Sleeper's settings could not be read. None when nothing is known."""
-    now = pd.Timestamp(now or datetime.now(UTC))
+    now = pd.Timestamp(now or clock.now())  # ---- INF-1
     now = now.tz_localize("UTC") if now.tzinfo is None else now.tz_convert("UTC")
     settings = dict((league or {}).get("settings") or {})
     runs_at = runs_words = daily = clear = None

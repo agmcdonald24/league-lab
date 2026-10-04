@@ -61,6 +61,8 @@ import pandas as pd
 import psycopg
 from scipy.optimize import linear_sum_assignment
 
+from . import clock
+
 log = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------------------ slots
@@ -735,7 +737,7 @@ def _emit(lu: Lineup, key: dict, names: dict[str, dict]) -> tuple[list[dict], di
 def build(inp: LineupInputs, as_of: datetime | None = None, run_at: datetime | None = None) -> tuple[list[dict], list[dict], float]:
     """Solve every league x roster x projected week (and realised scored weeks). Returns
     (ops.lineups rows, ops.lineup_totals rows, seconds spent in the solver)."""
-    as_of = as_of or datetime.now(UTC)
+    as_of = as_of or clock.now()  # ---- INF-1: the league's now (run_at below stamps the run: real time)
     run_at = run_at or datetime.now(UTC)
     obs_ppg = _observed_ppg(inp)
     rows: list[dict] = []

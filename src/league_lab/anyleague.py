@@ -51,12 +51,13 @@ import re
 import time
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+from . import clock
 from . import lineup as LU
 from .scoring import (  # noqa: F401 - compute_points: the reference the vector form equals
     MAPPED_KEYS,
@@ -998,7 +999,7 @@ def lineup_rows(query: Query, league_id: str, roster_id: int, week: int, *, as_o
         raise LeagueNotFound(f"no team {roster_id} in league {league_id}")
     season = int(league.get("season"))
     scoring, slots = league_scoring(league)
-    as_of = as_of or datetime.now(UTC)
+    as_of = as_of or clock.now()  # ---- INF-1
     pr = price_week(query, league_id, scoring, slots, season, week, board=board, exclude_reference=exclude_reference)
     t["priced"] = time.perf_counter()
     rows, totals, unmapped, dp, g = _solve_roster(query, league_id, roster, players, pr, slots, as_of)
@@ -1049,7 +1050,7 @@ def opponent(query: Query | None, league_id: str, roster_id: int, week: int, *, 
              "matchup_id": int(opp["matchup_id"]), "lineup_value": None}
         roster = next((r for r in rosters if int(r.get("roster_id", -1)) == oid), None)
         if pr is not None and roster is not None:
-            _, totals, _, _, _ = _solve_roster(query, league_id, roster, sl.players(), pr, slots, as_of or datetime.now(UTC))
+            _, totals, _, _, _ = _solve_roster(query, league_id, roster, sl.players(), pr, slots, as_of or clock.now())  # ---- INF-1
             if totals and totals[0].get("lineup_value") is not None:
                 d["lineup_value"] = round(float(totals[0]["lineup_value"]), 2)
         return d
@@ -1695,7 +1696,7 @@ def league_weeks(query: Query, league_id: str, week: int, *, client: Sleeper | N
     priced = {w: price_week(query, league_id, scoring, slots, season, w, exclude_reference=exclude_reference)
               for w in sorted(set(weeks) | set(rest_weeks))}
     t2 = time.perf_counter()
-    when = as_of or datetime.now(UTC)
+    when = as_of or clock.now()  # ---- INF-1
     inp, gsis_of, dp = league_inputs(query, league_id, season, rosters, players, priced, slots, weeks, extra_sids=extra)
     rows, totals, _ = LU.build(inp, as_of=when)
     t3 = time.perf_counter()
