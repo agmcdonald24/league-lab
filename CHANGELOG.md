@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-H
+
+- **IH-2: the small opens from I-G.** A dropped MFL team unit has a season value and a replacement (IG-1's
+  `unit_market` in Waivers' drop cost): a kicker claim now drops the kicker it replaces (dad's league teams 2, 4, 6,
+  9, 10, 12; team 8 has an open spot and does not move); a trade verdict with an uncounted player leans on nothing;
+  the console's stash card reads the nightly's claim / watch (one source for the watch words); the Team page says when
+  MFL's roster was read; Sleeper's `daily_waivers_days` decoded ("Claims run every day except Saturday at 5:00 AM
+  ET"); a Questionable starter shows once in "What changed"; availability events carry their `game_key`.
+
 ## 2026-10-04 — Wave I-G
 
 - **The nightly's trigger.** GitHub's schedule started every nightly 3.5–6 hours late; `ops/nightly-trigger/` (a
