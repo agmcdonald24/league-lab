@@ -10,9 +10,11 @@ For the next agent (Claude Code or any other) picking this repo up. Read in this
   domain). One constant on each side — `web/src/lib/brand.ts` (`APP_NAME`, `APP_MARK` "isaf"; the icons from
   `web/scripts/make-icons.py`) and `api/league_lab_api/settings.py` (`APP_NAME`) — every sentence a manager reads
   takes it from there. The codebase, the package, the `LEAGUE_LAB_*` variables, the roles, the repository, the
-  Render service and the console stay League Lab. When the domain exists: Render → the service → Settings → Custom
-  Domains (add the apex and `www`, CNAME / ALIAS to `league-lab.onrender.com`, Render issues the certificate), then
-  the URL in `app/whats_new.md`, `README.md`, `docs/HOSTING.md`, the About page and `render.yaml`'s comments. The
+  Render service and the console stay League Lab. **The domain `isuckatfantasy.io` (2026-10-04)**: Cloudflare has
+  the two DNS-only CNAMEs and SSL "Full" (done by the PO on Andrew's yes); `render.yaml` carries `domains:
+  [isuckatfantasy.io]` (the service is Blueprint-managed: the push syncs it, Render adds `www.` and the certificate);
+  README / HOSTING § "The domain" / DEPLOY / smoke.sh say the address. **Verify after the push**: Render's service
+  page lists the domain as verified; `https://isuckatfantasy.io/api/health` answers. The
   `image` workflow's smoke step and `scripts/smoke.sh` assert the product name in the served page title (the rename's
   first CI run failed there; fixed 2026-10-04) — a future rename changes `brand.ts`, `settings.py` and those two lines.
 
