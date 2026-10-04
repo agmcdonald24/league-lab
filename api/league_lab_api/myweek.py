@@ -694,7 +694,8 @@ def what_changed(meta: dict | None, rows: pd.DataFrame | None, current: dict[str
 # time the feed was checked. The news lines: ESPN's items (news.recent, IF-4's order) and PlayerWire's briefs of the
 # last 24 hours (playerwire.recent), each written as an event, merged with the store's live news / brief events of the
 # week's players (an item the live read missed this time — ESPN's one-second budget — still shows); one line per player:
-# his brief first (N2's order), else ESPN's item; about-him first, newest first. Store off / unreachable: IF-4's lines.
+# his own brief first, then a brief naming him (N2's order), else ESPN's item; about-him first, newest first. Store off /
+# unreachable: IF-4's lines.
 def _status_events(cites: list[dict]) -> dict[str, dict]:
     from . import events
     gs = [c.get("gsis_id") for c in cites if c.get("gsis_id")]
@@ -742,15 +743,16 @@ def _with_events(items: list[tuple[str, dict]], names: dict[str, str]) -> list[t
             r = events.item_row(g, it)
             if r is not None:
                 fp.setdefault(r["fingerprint"], (g, {**it, "event_id": None}))
-        for ev in events.recent(list(names), hours=news.RECENT_HOURS, kinds=("news", "brief")):
-            if ev.get("fingerprint") in fp:
+        for ev in events.recent(list(names), hours=news.RECENT_HOURS, kinds=("news", "brief"), live_only=False):
+            if ev.get("fingerprint") in fp:                           # an item shown now: its stored event's id
                 fp[ev["fingerprint"]][1]["event_id"] = ev["id"]
-            elif ev.get("gsis_id") in names:
+            elif ev.get("live") and ev.get("gsis_id") in names:       # the store's own: live events only
                 fp[ev["fingerprint"]] = (ev["gsis_id"], _event_item(ev))
         cands = sorted(fp.values(), key=lambda x: x[1].get("date") or "", reverse=True)          # newest first, then
-        cands.sort(key=lambda x: 0 if x[1].get("kind") == "playerwire" else 1 if x[1].get("about") == "player" else 2)
+        cands.sort(key=lambda x: (0 if not x[1].get("related") else 1) if x[1].get("kind") == "playerwire"
+                   else 2 if x[1].get("about") == "player" else 3)
         best: dict[str, dict] = {}
-        for g, it in cands:                                         # his brief, else the item about him, else league news
+        for g, it in cands:              # his brief, else a brief naming him, else the item about him, else league news
             best.setdefault(g, it)
         got = list(best.items())
         mine = sorted((x for x in got if x[1].get("about") == "player"), key=lambda x: x[1].get("date") or "", reverse=True)

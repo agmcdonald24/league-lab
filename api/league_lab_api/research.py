@@ -26,7 +26,7 @@ import re
 import sys
 import time
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 
 import numpy as np
 import pandas as pd
@@ -1539,7 +1539,7 @@ def _cite_missing(missing: list[dict], team: str | None) -> list[dict]:
     if not want or not events.enabled():
         return []
     try:
-        since = datetime.now(UTC) - EVENT_LOOKBACK
+        since = events.clock() - EVENT_LOOKBACK
         evs = [e for e in events.for_team(team or "", since, kinds=("availability",)) if e["live"]]
         found = {e["gsis_id"] for e in evs}
         rest = [m["gsis_id"] for m in want if m["gsis_id"] not in found]

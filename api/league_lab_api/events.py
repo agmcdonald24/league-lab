@@ -77,6 +77,7 @@ _STATUS = re.compile(r"^[A-Za-z_-]{1,24}$")
 COLUMNS = ("kind", "player_key", "gsis_id", "team", "game_key", "status", "headline", "summary", "source", "source_url",
            "published_at", "effective_at", "fingerprint")
 
+clock: Callable[[], datetime] = lambda: datetime.now(UTC)    # noqa: E731 - the readers' "now" (tests pin it)
 stats = {"queued": 0, "written": 0, "duplicate": 0, "superseded": 0, "failed": 0, "dropped": 0, "moves": 0}
 _queue: queue.Queue = queue.Queue(maxsize=QUEUE_MAX)
 _worker: threading.Thread | None = None
@@ -248,6 +249,8 @@ SUPERSEDE_BY_ORDER_SQL = ("update events.events set superseded_by = %s where kin
 SUPERSEDE_BY_TIME_SQL = (f"update events.events set superseded_by = %s where kind = %s and gsis_id = %s and id <> %s "
                          f"and superseded_by is null and {AT} <= %s")
 SELF_SQL = "update events.events set superseded_by = %s where id = %s"
+LIVE_SQL = ("select id, status from events.events where kind = 'availability' and gsis_id = %s and superseded_by is null "
+            "order by id desc limit 1")
 
 
 def _writer() -> psycopg.Connection:
@@ -270,6 +273,13 @@ def write(rows: list[dict]) -> int:
                     conn.execute("set transaction read write")
                     for r in rows:
                         got = conn.execute(INSERT_SQL, tuple(r[c] for c in COLUMNS)).fetchone()
+                        if got is None and r["kind"] == "availability" and r["gsis_id"]:
+                            live = conn.execute(LIVE_SQL, (r["gsis_id"],)).fetchone()
+                            if live is not None and live[1] != r["status"]:
+                                # the same report again after another status (a copy that dropped him for a while):
+                                # a new move, not a duplicate — its fingerprint names the event it follows
+                                again = {**r, "fingerprint": hashlib.sha256(f"{r['fingerprint']}|after:{live[0]}".encode()).hexdigest()}
+                                got = conn.execute(INSERT_SQL, tuple(again[c] for c in COLUMNS)).fetchone()
                         if got is None:
                             dup += 1
                             continue
@@ -347,7 +357,7 @@ def _store_statuses() -> dict[str, dict]:
     out = {}
     for r in df.to_dict("records"):
         out[str(r["gsis_id"])] = {"code": r["status"] or "ACTIVE", "source": r["source"], "team": r["team"],
-                                  "name": str(r["headline"] or "").split(":")[0] or None}
+                                  "name": str(r["headline"] or "").split(" is ")[0] or None}
     return out
 
 
@@ -363,12 +373,13 @@ def current_statuses(snap: Any) -> dict[str, dict]:
 
 
 def _headline(name: str | None, code: str, note: str | None) -> str:
+    """"Jaycee Horn is on injured reserve (knee)" / "... is questionable" / "... is no longer on the injury report"."""
     from . import availability as AV
-    label = AV.LABEL.get(code) or ("active" if code == "ACTIVE" else code.title())
     who = name or "A player"
     if code == "ACTIVE":
-        return f"{who}: no longer on the injury report"
-    return f"{who}: {label}" + (f" ({note})" if note else "")
+        return f"{who} is no longer on the injury report"
+    words = AV.WORDS.get(code) or f"is {(AV.LABEL.get(code) or code).lower()}"
+    return f"{who} {words}" + (f" ({note})" if note else "")
 
 
 def _copy_time(snap: Any, source: str) -> datetime | None:
@@ -405,7 +416,7 @@ def availability_rows(snap: Any) -> list[dict]:
         rows.append(make("availability", source=src, gsis_id=g, team=prev.get("team"), status="ACTIVE",
                          headline=_headline(prev.get("name"), "ACTIVE", None),
                          summary=f"No longer listed by {src} (the injury report and Sleeper's directory both clear).",
-                         published_at=_copy_time(snap, src) or datetime.now(UTC), effective_at=None))
+                         published_at=_copy_time(snap, src) or clock(), effective_at=None))
     _avail_last = {g: {"code": c["code"], "source": c["source"], "team": team_abbr(c.get("team")), "name": c.get("name")}
                    for g, c in cur.items()}
     _avail_present = present
@@ -460,7 +471,7 @@ INFO_SQL = ("select count(*)::int as rows, count(*) filter (where superseded_by 
 def _since(since: Any = None, hours: float | None = None) -> datetime:
     """The window's start, floored to the minute (the query cache keys on it)."""
     if hours is not None:
-        d = datetime.now(UTC) - timedelta(hours=float(hours))
+        d = clock() - timedelta(hours=float(hours))
     else:
         d = _when(since) or EPOCH
     return d.replace(second=0, microsecond=0)
