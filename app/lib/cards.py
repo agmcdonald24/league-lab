@@ -468,6 +468,14 @@ def replacement_chain_rows(starter: pd.Series, rows: pd.DataFrame) -> dict | Non
     return ch
 
 
+def chain_words_linked(ch: dict, link) -> str:
+    """The chain's named words with each name as ``link(gsis_id, name)`` (the card's player links)."""
+    from league_lab import lineup as L
+    names = {pid: (link(r.get("gsis_id"), r.get("player_name")) if isinstance(r.get("gsis_id"), str) else str(r.get("player_name")))
+             for pid, r in (ch.get("rows") or {}).items()}
+    return L.chain_words(ch["chain"], names)
+
+
 def locks_since_solve(rows: pd.DataFrame) -> bool:
     """A game kicked off since the lineup was solved (a row locked now that the solve did not lock): the stored margins
     assumed he could move, so a card's cost is the chain's re-solve then (otherwise the stored margin, to the cent)."""

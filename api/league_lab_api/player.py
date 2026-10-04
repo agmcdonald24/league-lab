@@ -418,9 +418,9 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
                     ch = a.get("chain")
                     cost = cards.chain_cost(m, a, rows)
                     if alt is not None and ch is not None and a.get("mover") is not None:
-                        lineup_line = (f"{head} — without him the lineup loses **{cost:.2f}**: {ch['named_words']} "
-                                       f"({player_link(alt['gsis_id'], alt['player_name'])}, {float(alt['value']):.2f}, comes in): "
-                                       f"{cards.verdict(cost)}.")
+                        linked = cards.chain_words_linked(ch, player_link)
+                        lineup_line = (f"{head} — without him the lineup loses **{cost:.2f}**: {linked} "
+                                       f"(worth {float(alt['value']):.2f}): {cards.verdict(cost)}.")
                     elif alt is not None:
                         lineup_line = (f"{head} — without him the lineup loses **{cost:.2f}** "
                                        f"({player_link(alt['gsis_id'], alt['player_name'])}, {float(alt['value']):.2f}, would come in): "

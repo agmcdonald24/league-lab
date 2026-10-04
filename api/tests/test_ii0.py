@@ -125,7 +125,8 @@ def test_lineup_margins_and_the_card_say_the_same_number(client):
         assert m, f"no lineup sentence for {x['gsis_id']}"
         assert float(m.group(1)) == pytest.approx(x["margin"], abs=0.006)
         if x.get("margin_chain"):                                  # a cascade: the card says the same moves
-            assert x["margin_chain"] in text.replace("\\u2019", "'")
+            plain = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", c.json().get("lineup_line") or text)
+            assert x["margin_chain"] in plain or x["margin_chain"] in re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)
 
 
 # ------------------------------------------------------------------ one frame, one story
