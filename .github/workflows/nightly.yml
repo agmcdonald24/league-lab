@@ -23,6 +23,9 @@ on:
     # 13:07 UTC = 09:07 EDT. The `gate` job below lets it through only when no nightly has succeeded today (UTC), so
     # a normal morning costs it ten seconds; `concurrency: nightly` makes it wait if the 11:37 run is still going.
     - cron: "7 13 * * *"
+  # 2026-10-04: neither cron is a clock (every scheduled run 2026-09-30..10-03 started 3.5-6 h late; HOSTING.md § 5
+  # "The trigger"). The morning run is dispatched from outside by the Cloudflare Worker in ops/nightly-trigger/
+  # (07:37 America/New_York, re-checks 09:37 and 11:37); the two cron lines above are the last resort.
   workflow_dispatch:
     inputs:
       full:

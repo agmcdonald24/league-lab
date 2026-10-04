@@ -1,0 +1,16 @@
+{
+  // The nightly's trigger: `wrangler deploy` from this directory (docs/HOSTING.md § "The trigger"), or paste
+  // src/index.js into a Worker in the Cloudflare dashboard and set the cron, the variables and the secret there.
+  "name": "isuckatfantasy-nightly-trigger",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "triggers": { "crons": ["37 * * * *"] },
+  "vars": {
+    "GITHUB_REPO": "agmcdonald24/league-lab",
+    "WORKFLOW_FILE": "nightly.yml",
+    "GIT_REF": "main",
+    "FIRE_HOUR_ET": "7",
+    "CHECK_HOURS_ET": "9,11"
+  }
+  // Secret (never here): GITHUB_TOKEN — `wrangler secret put GITHUB_TOKEN`, or the dashboard's Variables and Secrets.
+}

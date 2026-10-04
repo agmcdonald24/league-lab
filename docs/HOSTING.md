@@ -446,6 +446,29 @@ The two records drift apart a little: the Mac's 08:00 board and GitHub's 07:37 b
 from the same data minutes apart, and each freezes its own at kickoff. The hosted one (GitHub's) is the record
 the beta shows; the Mac's is the research console's.
 
+### The trigger — GitHub's schedule is not a clock (2026-10-04)
+
+**What happened.** Every scheduled nightly from 2026-09-30 to 2026-10-03 started 3.5–6 hours late (12:59, 13:29,
+12:48, 11:13 ET), the 09:07 ET backup never appeared as a run of its own, and on Sunday 2026-10-04 nothing had started
+by 09:45 ET. That is how GitHub Actions' `schedule` works: best-effort, delayed under load, a delayed run dropped when
+the next is due, worse on repositories with little traffic. A `workflow_dispatch` run, by contrast, starts within
+seconds, and the `gate` job never skips one.
+
+**The fix.** `ops/nightly-trigger/` — a Cloudflare Worker (free plan; the account that holds the domain) on a Cron
+Trigger `37 * * * *` (UTC). At **07:37 America/New_York** (DST-aware: the Worker reads the hour in New York) it
+dispatches `nightly.yml` on `main`; at 09:37 and 11:37 it lists today's runs (UTC, the gate's day) and dispatches
+only when none has succeeded or is running. GitHub's own two cron lines stay in the workflow as the last resort — a
+late scheduled run is skipped by the gate once the dispatched one has succeeded. The Worker's URL prints what it does
+and today's runs; nothing dispatches over HTTP.
+
+**Secret.** `GITHUB_TOKEN` on the Worker — a fine-grained personal access token scoped to the one repository with
+"Actions: Read and write" (one year; the expiry date goes in STATUS). It is the only credential outside GitHub and
+Render that can start a build; it cannot read code or secrets. Rotation: a new token into the same secret. Rollback:
+delete the Worker. Set-up steps: `ops/nightly-trigger/README.md`.
+
+**Status**: the Worker is written and tested offline (hours, DST, the midnight edge, the dispatch and check paths);
+creating it in Cloudflare and the token are Andrew's (2026-10-04, morning).
+
 ## The domain
 
 *(2026-10-04.)* The product answers at **https://isuckatfantasy.io** (and `www.`, which Render redirects to the root);

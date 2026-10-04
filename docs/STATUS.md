@@ -5195,6 +5195,12 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   59% our way (52% expected, 34 calls). Week 1's board is the model's weakest (no in-season data) and the rebuilt
   weeks read the final injury report; the real record starts at week 5's kickoff. Nobody should quote "the app's
   edge" before saying so — About says it in those words.
+* **The nightly's trigger (2026-10-04, 09:45 ET; Andrew: "sounds like we have a major issue if github just starts and
+  stops at its own convenience")**: it does — every scheduled nightly since 2026-09-30 started 3.5–6 hours late and
+  today's had not started by 09:45 ET. `ops/nightly-trigger/` is a Cloudflare Worker that dispatches the workflow at
+  07:37 America/New_York and re-checks at 09:37 / 11:37 (HOSTING § 5 "The trigger"); tested offline against a mocked
+  GitHub API (EDT, EST, midnight, the three paths). Needs Andrew's fine-grained token (Actions: read and write, one
+  repository) as the Worker's secret; the PO creates the Worker in the dashboard on his yes.
 * **Not done / next**: the cold-start prior onto the stat line (v3.2), `validation._news_starters` on IG-2's events,
   a per-team decision view and MFL leagues in the record, Waivers' drop cost on units, the console's stash words on
   `stash_action`, the Team page's MFL freshness line, `daily_waivers_days`, events retention (30–80k rows a season;

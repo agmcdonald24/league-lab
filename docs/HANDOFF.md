@@ -174,6 +174,10 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   the real record starts at week 5's kickoff); the stash writer's drop rule, MFL's freshness line, the waiver
   deadline, the MFL grade's qualification, usage retention 180 days (IG-3).
 
+  **The nightly's trigger (2026-10-04)**: GitHub's `schedule` fired 3.5–6 h late every day since 2026-09-30 —
+  `ops/nightly-trigger/` (a Cloudflare Worker, 07:37 ET + re-checks) replaces it as the clock; needs Andrew's
+  fine-grained token in the Worker's secret (HOSTING § 5 "The trigger"). Until it exists, "Run workflow" by hand.
+
   **Next**: after the push, the first nightly (`ops.lineup_record` keeps week 5 before kickoff; `events` and
   `mart_decision_*` appear on Neon; the record's About sentence reads "from week 5 the bonuses are priced at their
   odds" on Monday); then the cold-start prior on the stat line (v3.2, M5's lead, with "veterans on a new team"), the

@@ -4,6 +4,9 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-04 — Wave I-G
 
+- **The nightly's trigger.** GitHub's schedule started every nightly 3.5–6 hours late; `ops/nightly-trigger/` (a
+  Cloudflare Worker on a cron) dispatches the workflow at 07:37 ET and re-checks at 09:37 / 11:37 (HOSTING § 5 "The
+  trigger"); the workflow's own schedule stays as the last resort.
 - **PO (integration).** Six packages merged overnight (M4, M5, IG-1, IG-2, V-1, IG-3 below); the registry rows
   `decision_edge`, `decision_regret`, `call_calibration`, `unit_season_value`; the flip of `LEAGUE_LAB_EV_PRICING`
   ships (the nightly's env only — Render untouched; the first nightly after the push prices weeks 5–18 at their

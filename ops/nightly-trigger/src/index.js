@@ -1,0 +1,103 @@
+// The nightly's trigger (2026-10-04): a Cloudflare Worker on a Cron Trigger that starts the GitHub Actions
+// workflow `nightly.yml` at 07:37 America/New_York every day, and re-checks at 09:37 and 11:37 — dispatching again
+// only when no run has succeeded or started today (UTC, the same day the workflow's `gate` job uses).
+//
+// Why: GitHub's own `schedule` is best-effort. Every scheduled nightly from 2026-09-30 to 2026-10-03 started 3.5-6
+// hours late (12:59, 13:29, 12:48, 11:13 ET) and the 09:07 backup never ran as its own run; on 2026-10-04 nothing had
+// started by 09:45 ET. A `workflow_dispatch` run starts within seconds and the gate never skips it. GitHub's schedule
+// stays in the workflow as the last resort.
+//
+// Configuration (wrangler.jsonc `vars`, or the dashboard's Variables): GITHUB_REPO (owner/name), WORKFLOW_FILE,
+// GIT_REF, FIRE_HOUR_ET (the hour that always dispatches), CHECK_HOURS_ET (the hours that dispatch only when today
+// has no success / nothing running). Secret: GITHUB_TOKEN — a fine-grained personal access token for that one
+// repository with "Actions: Read and write" (never in this file, never in git; docs/HOSTING.md § "The trigger").
+//
+// HTTP: GET / answers a status line (what it does, today's runs); nothing dispatches over HTTP.
+
+const API = "https://api.github.com";
+
+function etHour(d) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", hour12: false }).formatToParts(d);
+  return Number(parts.find((p) => p.type === "hour").value) % 24;
+}
+
+function etStamp(d) {
+  return new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", dateStyle: "medium", timeStyle: "short" }).format(d) + " ET";
+}
+
+function headers(env) {
+  return {
+    Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "isuckatfantasy-nightly-trigger",
+  };
+}
+
+async function todaysRuns(env, now) {
+  const day = now.toISOString().slice(0, 10);
+  const url = `${API}/repos/${env.GITHUB_REPO}/actions/workflows/${env.WORKFLOW_FILE}/runs?created=>=${day}T00:00:00Z&per_page=20`;
+  const r = await fetch(url, { headers: headers(env) });
+  if (!r.ok) throw new Error(`runs: HTTP ${r.status}`);
+  const j = await r.json();
+  return (j.workflow_runs || []).map((x) => ({
+    number: x.run_number, event: x.event, status: x.status, conclusion: x.conclusion, created: x.created_at,
+  }));
+}
+
+async function dispatch(env) {
+  const url = `${API}/repos/${env.GITHUB_REPO}/actions/workflows/${env.WORKFLOW_FILE}/dispatches`;
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { ...headers(env), "Content-Type": "application/json" },
+    body: JSON.stringify({ ref: env.GIT_REF || "main" }),
+  });
+  if (r.status !== 204) throw new Error(`dispatch: HTTP ${r.status} ${(await r.text()).slice(0, 200)}`);
+}
+
+function hours(s, fallback) {
+  const v = String(s || "").split(",").map((x) => Number(x.trim())).filter((x) => Number.isInteger(x));
+  return v.length ? v : fallback;
+}
+
+export default {
+  async scheduled(event, env, ctx) {
+    const now = new Date(event.scheduledTime);
+    const h = etHour(now);
+    const fire = hours(env.FIRE_HOUR_ET, [7]);
+    const check = hours(env.CHECK_HOURS_ET, [9, 11]);
+    if (!env.GITHUB_TOKEN) { console.error("no GITHUB_TOKEN secret: nothing dispatched"); return; }
+    if (fire.includes(h)) {
+      await dispatch(env);
+      console.log(`${etStamp(now)}: dispatched ${env.WORKFLOW_FILE} (the morning run)`);
+      return;
+    }
+    if (check.includes(h)) {
+      const runs = await todaysRuns(env, now);
+      const fine = runs.some((r) => r.conclusion === "success" || r.status === "in_progress" || r.status === "queued");
+      if (fine) { console.log(`${etStamp(now)}: a nightly succeeded or is running today; nothing to do`); return; }
+      await dispatch(env);
+      console.log(`${etStamp(now)}: no successful nightly today; dispatched ${env.WORKFLOW_FILE}`);
+      return;
+    }
+    console.log(`${etStamp(now)}: not a trigger hour`);
+  },
+
+  async fetch(request, env) {
+    const now = new Date();
+    const lines = [
+      `isuckatfantasy nightly trigger: dispatches ${env.GITHUB_REPO} / ${env.WORKFLOW_FILE} at ` +
+        `${hours(env.FIRE_HOUR_ET, [7]).map((x) => `${x}:37`).join(", ")} America/New_York; re-checks at ` +
+        `${hours(env.CHECK_HOURS_ET, [9, 11]).map((x) => `${x}:37`).join(", ")} (dispatches only when nothing succeeded or is running today, UTC).`,
+      `now: ${etStamp(now)}; token: ${env.GITHUB_TOKEN ? "set" : "MISSING"}`,
+    ];
+    if (env.GITHUB_TOKEN) {
+      try {
+        const runs = await todaysRuns(env, now);
+        lines.push(runs.length ? "today's runs (UTC):" : "today's runs (UTC): none yet");
+        for (const r of runs) lines.push(`  #${r.number} ${r.event} ${r.status} ${r.conclusion || ""} ${r.created}`);
+      } catch (e) { lines.push(`could not list today's runs: ${e.message}`); }
+    }
+    return new Response(lines.join("\n") + "\n", { headers: { "content-type": "text/plain; charset=utf-8" } });
+  },
+};
