@@ -47,7 +47,8 @@
     phase = "login";
   }
   // the status line (the stale banner, the footer) is read again when the app comes back to the screen after 10
-  // minutes away: a phone that kept the app open overnight must not show yesterday's "fresh"
+  // minutes away, and every 15 minutes while it stays on screen: a phone or a desktop tab that kept the app open
+  // overnight must not show yesterday's "fresh"
   let statusAt = 0;
   function loadStatus(force = false) {
     if (!force && Date.now() - statusAt < 10 * 60_000) return;
@@ -139,9 +140,11 @@
     // ---- IH-1: back on screen after a while → the status line again (the stale banner)
     const onVisible = () => document.visibilityState === "visible" && phase === "ready" && loadStatus();
     document.addEventListener("visibilitychange", onVisible);
+    const every = setInterval(onVisible, 15 * 60_000); // a tab that stays on screen all day (a desktop)
     const stop = interceptLinks(document.body);
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
+      clearInterval(every);
       stop();
     };
   });

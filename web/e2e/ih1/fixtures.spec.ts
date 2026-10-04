@@ -80,6 +80,23 @@ test("fresh: no banner, the footer as before", async ({ context, page }) => {
   await expect(page.getByTestId("updated-late")).toHaveCount(0);
 });
 
+test("an app left open is told: the status is read again after 15 minutes on screen", async ({ context, page }) => {
+  await page.clock.install();
+  await serveFixtures(context);
+  let n = 0;
+  await context.route(/\/api\/status$/, (route) => {
+    n += 1;
+    const body = n === 1 ? fresh() : stale(); // fresh at first, the next read finds the missed morning
+    return route.fulfill({ status: 200, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(body) });
+  });
+  await page.goto(HOME);
+  await expect(page.getByTestId("team-name")).toBeVisible();
+  await expect(page.getByTestId("stale-banner")).toHaveCount(0);
+  await page.clock.fastForward("16:00");
+  await expect(page.getByTestId("stale-banner")).toHaveText(`⚠︎${STALE}`);
+  expect(n).toBe(2);
+});
+
 test("the API down at the first screen: a card with Try again, and Try again asks again", async ({ context, page }, info) => {
   await serveFixtures(context);
   let down = true;
