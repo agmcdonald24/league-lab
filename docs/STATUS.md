@@ -6067,10 +6067,72 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
   `2026_04_MIA_MIN` for MIN; Tuesday after → week 5 (byes absent); Thursday night → `2026_04_PIT_CLE`. The console twin
   (Scrubs roster 6, the clone: every stash a watch) and the API's first stash: the same lines, no drop named, the same
   watch line word for word.
-* **Tests**: `api/tests/test_ih2.py` **20 passed, 1 skipped** (the recorder); with `test_ig3 test_ig1 test_if1 test_ig2
+* **Tests**: `api/tests/test_ih2.py` **21 passed, 1 skipped** (the recorder); with `test_ig3 test_ig1 test_if1 test_ig2
   test_if4 test_h1`: 72 passed, 12 skipped, 1 failed — `test_h1::test_waivers_trade_lists_on_demand_equal_the_house_path`,
   which fails identically on `ad4040e`'s code against this clone (below). Whole suites: see "Full runs" below. Ruff
   `src app tests api` clean; web `npm run lint` (eslint + svelte-check + tsc) 0 errors, `npm run build` clean; e2e
   `FIXTURES_PORT=8614 … e2e/ih2` **8 passed** (phone 375 / desktop 1300: the Team MFL line under the roster and its
   exact time on tap, no line on a Sleeper Team page, the dynasty's waiver days, the Questionable line once; no sideways
   scroll).
+* **Full runs** (the box shared with four other developers' suites: 2 CPUs, load 12–14).
+  - **API** (`cd api && PYTHONPATH=. uv run pytest -q tests/`, 50 min): **516 passed, 20 failed, 38 skipped**. Every
+    failure reproduces on `ad4040e`'s own code against this clone today (a scratch worktree of `main`, the same `.env`)
+    or passes on a re-run — none is this branch's: the three known scoring checks (`test_ic1` × 2, `test_ic_po`: no
+    `*_tds_10p` columns on the 09-26 clones), and **fourteen that read the wall clock** — it is Sunday of week 4 and
+    its games are being played (the London game kicked off 9:30 AM ET, the rest at 1 PM): the on-demand path locks
+    started players while the clone's marts (built 09-26) do not, and the ESPN fixture's Jefferson is now locked —
+    `test_decisions` × 6 (house vs on-demand: Team's `bench_value` 33.16 vs 42.35, the partners, the trade evaluation),
+    `test_h1` trade lists, `test_i0a` Jefferson out, `test_ib0` × 3, `test_ib2` × 2, `test_ic4` RB2 claim, `test_ie1`
+    "a change before the first lock"; plus `test_parity` player card ×2 (00-0038797 fails on `main` too; 00-0036963
+    passed on re-run on both).
+  - **Root** (`uv run pytest -q tests/`): ROOT_RESULT
+  - **e2e** (fixtures, `FIXTURES_PORT=8614`, the whole suite): E2E_RESULT
+* **What moved and why** (the brief's allowed move: MFL Waivers numbers when units get a drop cost): the drop cost,
+  season value, future starts, net gains and worthwhile flag of every move that drops an MFL team unit (lists above);
+  the best drop of a unit-position claim on 6 of dad's league's 12 teams; `move_rank` order. Words: the dynasty's
+  deadline ("every day except Saturday"); the web's watch-stash lines lose "Drop X: …" (the API's `lines` come from
+  the console's `upside_detail`); a trade verdict with an uncounted player; MFL bye words ("Texans QB", was "QB").
+  No projection, lineup, house-league waiver number or trade gain moved.
+* **Decisions** (nobody to ask): (1) **`daily_waivers_days` = two bits a day, the low bit = claims run that day,
+  Monday first** — Sleeper's default 5461 sets the low bit of all seven pairs; the raw values of Andrew's two leagues
+  2021–2026 (`raw.sleeper_league`: 5461, 729, 6484, 15356, 15359) read consistently that way (the dynasty's 2022–2024
+  values 15356 and 6484 differ only in the high bits and give the same days: Monday and Saturday off; 2025–2026's 15359:
+  Saturday off), while reading the high bit would make 2023 a one-day-a-week league. The high bit is not read. The day
+  order follows IG-3's `waiver_day_of_week` reading (0 = Monday). **Andrew can check in one look**: if his dynasty's
+  waiver settings do not skip Saturday, the order is one constant (`WAIVER_DAYS_FIRST`). (2) The Questionable line
+  only when the tag is news since the morning build (a live event of the last 24 hours, or a copy newer than the
+  build) — a tag the build knew stays a chip, not a "change"; one line per player, never a second one. (3) The week
+  in play for `game_key` = the week of the first kickoff no more than 12 hours ago. (4) A watch stash names no drop in
+  its detail lines on both surfaces (the drop stays in the table for the legality tests, as IG-3 decided). (5) The
+  verdict says "season value not compared" rather than leaning on a partial sum. (6) Team units in bye words by team
+  ("Texans QB") — found on the way (dad's league team 12: "when QB and QB are on a bye").
+* **Not done**: the Waivers screen shows a unit's drop cost only through the existing drop words (no new UI —
+  `Waivers.svelte` unchanged: the deadline line already reads `words`); MFL waiver times (the export has none);
+  `game_key` for news / brief rows (only availability: a headline is not tied to a game); a depth-chart writer; the
+  console's Trade Finder page's `0.00` (PO-only file, IG-1's note); the fourteen clock-dependent tests (below).
+* **Next**: pin a clock in the API tests that read "now" against a fixed week (they fail every Sunday afternoon until
+  the clones are rebuilt); then V-2's news flag on `game_key` if it wants the game.
+
+**For the PO**
+1. **Merge** (all marked `IH-2`): `decisions.py` — two lines in IF-1's block of `_moves_on_demand`, three lines in
+   `_sleeper_runs`' daily path, one in `waiver_deadline`'s return, one in `team()`, `ig3_watch_words`' body (now
+   `SG.watch_words`), `_name_list`'s first line, and one block after IG-3's end (`waiver_days`, `daily_days_words`,
+   `deadline_days`, `team_roster_freshness`, `_unit_name`); `myweek.py` — one call line in `what_changed` + a block after
+   IG-2's (IH-3 adds `win` in another block of the same file); `events.py` — two `make(...)` arguments, a block before
+   "news and briefs", one docstring line; `trades.py` — one block in `verdict`; `app/lib/signals.py` — one line in
+   `upside_detail`, four in `upside_cards`, a block at the end; `Team.svelte` — two imports, a function, a block under
+   the roster card (V-2 adds "Your calls this season" to the same file: keep both); `lib/api.ts` — a block at the end
+   (keep every wave's block). `api/tests/test_ig3.py`: one re-pin (the dynasty's words), marked.
+2. **Nothing to apply**: no dbt, workflow, `render.yaml` or hosted-SQL change. `events.events.game_key` exists since
+   IG-2 (its check accepts nflverse ids); the writer fills it from the next server start. HOSTING § "Events" still says
+   `game_key` is empty — one line for whoever edits HOSTING next (IH-1 owns § 5).
+3. **Decision Andrew may want to check**: the dynasty's waiver days ("every day except Saturday at 5:00 AM ET") —
+   decoded from Sleeper's undocumented mask (above); if his Sleeper settings say another day, flip
+   `WAIVER_DAYS_FIRST`. And dad's league: a kicker claim now drops the kicker it replaces (teams 2, 4, 6, 9, 10, 12).
+4. **Re-recordings**: the web's watch-stash cards lose their "Drop X: …" line on the next recording (`web/e2e/h1`
+   compares the first line only: unaffected); `web/fixtures/ih2/api_ih2.json` was recorded from the fixtures + the
+   clone `league_lab_i0b` with the ESPN fixtures' overlay (the header has the command).
+5. **The suites on a Sunday**: fourteen API tests (and root `test_my_week::test_my_week_is_the_mart` × 2) fail on
+   `main` itself this afternoon — they compare the on-demand path, which locks the players whose games have started,
+   with marts built on 09-26. Not a regression; worth a pinned clock before the next wave's full runs.
+
