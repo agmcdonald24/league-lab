@@ -2,6 +2,15 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-04 — Wave I-I
+
+- **II-3 — Players · Stats: one research table with WR / TE, RB and QB presets, and a data inventory.** Receivers is
+  the WR / TE preset (`/receivers` redirects; role cards at `/receivers?view=cards`); windows (season, last 3 / 5 games
+  played, last 3 / 5 calendar weeks, a week range), totals or per game, whose players, NFL team, minimum games / opportunities, a column
+  picker with definitions, sticky player column and header, saved views, 2–4 side by side. Shares over several games
+  are summed numerator / summed denominator; unknown is — with the reason; routes are unavailable in-season (said).
+  `docs/DATA_INVENTORY.md` lists every column: 15 verified present, 29 derived, 2 planned, 2 unavailable.
+
 ## 2026-10-04 — Wave I-H
 
 - **PO (integration).** Five packages merged (M6, V-2, IH-1, IH-2, IH-3 below). On Andrew's word the stale banner

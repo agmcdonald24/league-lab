@@ -6882,3 +6882,101 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
 5. **Decisions Andrew may want to reverse**: the line is on My Week by default (information; a one-line removal); the
    centring of the ranges on the projections; the shrink (0.60; `WEEK_SHRINK`); the opponent's best lineup rather than
    his submitted one.
+
+## Wave I-I (Iteration 19)
+
+### II-3 2026-10-04 — the Stats Explorer and the data inventory (the fifth review § 4, § 10)
+
+- **Task**: II-3 (brief `scratchpad/waveII/BRIEF.md` § II-3; review § 4 "Consolidate Players and Receivers into a Stats
+  Explorer", § 10 "Audit and expand the advanced-data layer"). Branch `dev/II3` from `94ed33c`; clone `league_lab_m1`
+  (read only — **no new mart, no scratch schema**: the frame is aggregated on request from `analytics.fct_player_game`,
+  already on the hosted copy).
+- **Files**: `api/league_lab_api/stats.py` (new: the column catalogue, presets, windows, the aggregation),
+  `research.py` (marked II-3 blocks: `players(..., window=, basis=, weeks=, who=, team=, nfl=)` → `stats_frame`; the
+  legacy answer gains `catalogue` / `presets`), `main.py` (the route's params, marked), `web/src/routes/Players.svelte`
+  (Players · Stats), `web/src/components/TopBar.svelte` (Players tab = **Stats · Trends · Matchups · Compare**, marked),
+  `web/src/App.svelte` (marked: `/receivers` → `/players?position=WRTE`; role cards at `/receivers?view=cards`),
+  `web/src/lib/api.ts` (II-3 block: `StatsColumn`, `StatsPreset`, `StatsWindow`, `StatsRow`, `StatsFrame`, `statsPath`),
+  `web/e2e/fixtures.ts` (marked: the Stats frame served from the recording), `web/e2e/fixtures.spec.ts` + `web/e2e/ib1`
+  (marked: the Players / Receivers tests and the tab list follow the new screen), `web/e2e/ii3/fixtures.spec.ts`,
+  `web/fixtures/ii3/api_ii3.json`, `api/tests/test_ii3.py`, **`docs/DATA_INVENTORY.md` (new)**, `docs/METRICS.md`
+  § "The Stats Explorer", `dbt/seeds/metric_registry.csv` (+8 rows: `stats_window`, `rb_carry_share`,
+  `inside_5_carry_share`, `red_zone_opportunities`, `catchable_rate`, `snap_share_window`, `cpoe_weighted`,
+  `ngs_ryoe_time_to_throw`).
+- **Interfaces** (INTERFACES.md § II-3): `GET /api/players?window=season|last3|last5|weeks&basis=games|weeks&weeks=lo-hi
+  &who=all|mine|fa|others&team=&nfl=&position=ALL|QB|RB|WR|TE|WR,TE&min_games=&sort=&dir=&limit≤1000` → `{window:
+  {key, basis, weeks, through_week, label, note}, total, players: [identity + games + first_week/last_week + points /
+  points_per_game + counts with `<count>_per_game` + shares / rates + their samples], catalogue: [{id, label, short, kind,
+  format, per_game, definition, numerator, denominator, aggregation, source, status, available, reason, coverage,
+  positions}], presets: [{key: wrte|rb|qb, label, positions, columns, extra, sort}], howto}`. Without `window` the
+  answer is the old season table (pinned by the old tests) + `catalogue` / `presets`.
+- **Columns shipped by status** (the catalogue = the inventory; 48 columns): **verified present** 15 — games, targets,
+  receptions, receiving yards / TDs, carries, rushing yards / TDs, pass attempts, completions, passing yards / TDs,
+  interceptions, sacks, snap share; **derived** 29 — fantasy points (league scoring), expected points per game, target
+  share, catch rate, yards per target, air-yard share, aDOT, YAC per reception, red-zone targets / target share,
+  first-read target share, catchable-target rate, charted targets, route participation / TPRR / YPRR (estimates,
+  completed seasons only), carry share, backfield (RB-only) carry share, yards per carry, red-zone carries / carry
+  share, inside-5 carries / share, red-zone opportunities, completion %, yards per attempt, dropbacks, scrambles, CPOE
+  (nflfastR, attempt-weighted); **planned** 2 — NGS rushing yards over expected per attempt, NGS time to throw
+  (ingested to `staging.stg_nflverse__ngs_*` 2016 → 2026 week 3, no mart); **unavailable** 2 — licensed routes run,
+  pressure splits. **Routes run / route participation / per-route metrics are unavailable in-season** (participation
+  is published after the postseason; `bridge_play_participation` ends at 2025): in 2026 those cells are null with that
+  reason, and the picker offers them disabled.
+- **Presets** (the review's defaults; extras only where present / derived): WR / TE — G, Pts/G, Tgt/G, Tgt %, Rec yds/G,
+  Snap % (sort target share); RB — G, Pts/G, Car/G, Car %, Tgt/G, Snap %, Rush yds/G, Rec yds/G (sort carry share);
+  QB — G, Pts/G, Att/G, Pass yds/G, Car/G, Rush yds/G (sort points). All — G, Pts/G, Tgt/G, Tgt %, Car/G, Car %, Snap %.
+- **The screen**: Players · Stats — search, position (All / WR / TE / WR+TE / RB / QB), whose (Everyone / Yours / Free
+  agents / Other teams), NFL team, the window (Season / Last 3 or 5 games played / Last 3 or 5 calendar weeks / Week
+  range), Per game ↔ Totals (counts switch; shares keep their denominators), minimum games and minimum opportunities
+  (targets + carries, + pass attempts for a QB), the window stated under the
+  controls ("Last 3 calendar weeks (weeks 1–3) · … the G column says how many"), the column picker (definitions on
+  hover; planned / unavailable disabled with the reason; coverage for charting), saved views (localStorage, this
+  browser only), the role cards link on WR / TE, 2–4 players side by side (+ "Open … in Compare" for the first two),
+  the table scrolling inside its box with a **sticky header and player column** (no page sideways scroll at 375), —
+  with the reason on hover, a cell's sample on hover ("23 of 57 team carries in his 2 games"), sorting over the full
+  filtered set before "Show more", the definitions of the shown columns under "How to read this". Player links keep
+  the existing `paneLink` line unchanged (II-2's drawer had not landed in this worktree; `pane.svelte.ts` delegates to
+  it once merged — the PO merges II-2's one-line swap).
+- **Kyren Williams's carry share** — card and table are one arithmetic: the card's `mart_player_availability.carry_share`
+  (= `mart_player_recent_form.carry_share_std`) and the table's season window are summed carries / summed team carries
+  in his games. Clone (weeks 1–2): 11/29 + 12/28 → **23 / 57 = 40.4%** on both (`test_kyren_carry_share_card_and_table_agree`,
+  e2e "Kyren Williams: the table's carry share is the card's"); on the main database with week 3 the card's **47.5%**
+  is the table's number by the same test. The carry share includes QB scrambles and kneel-downs in the team total
+  (nflverse carries) — said in its definition; the backfield share (RBs + FBs only) is a separate column.
+- **Evidence**: `api/tests/test_ii3.py` **17 passed, 1 skipped** (the recorder) — the season window equals
+  `mart_player_season` column by column for every QB / RB / WR / TE in 2025 and 2026; summed ratio vs weekly mean; a
+  missed game not widening the denominator; Postgres rounding; windows; ownership partition; NFL team; the review's
+  question in one call; sorted before the page; routes null in season; bad params 400; the legacy answer unchanged;
+  the inventory lists every catalogue column with its status. e2e `web/e2e/ii3` **10 / 10** (phone 375 + desktop 1300);
+  the shared specs the new screen touches (`e2e/fixtures.spec.ts` Players · Stats, Receivers, Compare, Matchups, every
+  screen light + dark; `e2e/ib1` four tabs) **14 / 14**. Root `tests/test_nightly_relations.py` 6 / 6 (the hosted
+  relation audit picks up nothing new). Ruff clean; eslint + svelte-check clean (159 files, 0 warnings); build ok.
+- **The whole API suite vs `wt-base`** (both on `league_lab_m1`, `LEAGUE_LAB_DB_NAME` overriding wt-base's `.env`;
+  wt-base is at `ad4040e`, not `94ed33c`): the machine sat at load 30–60 (seven developers' suites and builds), so
+  neither run could finish in the time box; both were stopped at the same point with **identical progress: 205 passed,
+  4 failed, same positions** (delta 0). The research files run whole: II-3 `test_research.py` + `test_i0b.py` + the
+  first 7 of `test_ii3.py` 53 / 53 before the two heaviest II-3 tests hit the load (re-run alone: pass); wt-base's same
+  files 56 passed / 6 failed, every failure `QueryCanceled: statement timeout` (load, not code). The PO's full run on
+  a quiet machine is the number to trust.
+- **What moved**: no number moved. The Players screen is redesigned (its old G3 assertions — "Most points: …",
+  three visible headers on a phone — are replaced in `e2e/fixtures.spec.ts`, marked); the Players tab opens Stats
+  (it opened Trends); `/receivers` redirects.
+- **Not done**: NGS columns (planned: a small mart over `stg_nflverse__ngs_*` with NGS's qualification rules); a team
+  snap total for a ratio-of-sums snap share (nflverse publishes the rounded per-game share only); Compare with 3–4
+  players (the side-by-side panel shows up to 4; Compare opens the first two); CSV export (none exists; the API is the
+  export and agrees with the card).
+- **Next**: the NGS mart; the review's "role changes" analytics on the same frame (window vs earlier window).
+
+**For the PO**
+- **No dbt model to build** on the main database or the hosted copy: the frame reads `analytics.fct_player_game`
+  (already published) and the league marts the old screen read; `scripts/hosted_relations.py` picks up nothing new
+  (`stats.py` names only `analytics.fct_player_game`). Run `dbt seed --select metric_registry` for the 8 new rows.
+- Merge with II-2: `Players.svelte` was rewritten; its player link line (`{@attach paneLink(...)}`) is kept verbatim —
+  apply II-2's one-line swap there by hand if git does not. `Receivers.svelte` is untouched (II-2's line applies
+  cleanly). II-4's sweep may touch the Stats labels: the catalogue's `label` / `definition` are the words (stats.py).
+- Decisions Andrew may reverse: snap share stays the mean of per-game shares (the card's number); carry share keeps
+  scrambles and kneels in the team total (the card's number) with the RB-only share beside it; the Players tab opens
+  Stats first; the recording `web/fixtures/ii3/api_ii3.json` is 3 MB (compact JSON; the dynasty's All frame is most
+  of it).
+- Kyren's 47.5% on the main database: `PYTHONPATH=. uv run pytest -q api/tests/test_ii3.py -k kyren` there confirms it
+  (I did not touch `league_lab`).
