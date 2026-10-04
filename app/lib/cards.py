@@ -216,6 +216,9 @@ def alternative(starter: pd.Series, rows: pd.DataFrame) -> dict:
     value = starter value - margin (B1's margin is the re-solve). First choice: the best bench player
     eligible for the slot, if his value is that one (no reshuffle). Otherwise the bench player with that
     value enters after a teammate slides into this slot (`mover`); none means nobody can fill it."""
+    ch = replacement_chain_rows(starter, rows)                     # ---- II-0: the re-solved legal lineup, locks kept
+    if ch is not None:
+        return chain_alternative(starter, ch)
     bench = rows[(rows["role"] == "bench") & ~rows["locked_now"]].copy()
     target = float(starter["value"]) - float(starter["margin"])
     elig = bench[bench["position"].map(lambda p: _eligible(p, starter["slot_type"])).astype(bool)]
@@ -263,6 +266,12 @@ def decisions(rows: pd.DataFrame, n: int = 3) -> pd.DataFrame:
         alt, mover = a["alt"], a["mover"]
         if alt is None:
             continue
+        # ---- II-0: a lock since the solve (a bench player whose game started) changes what sitting him costs: the
+        # card's margin is the re-solve's then, never the stored one beside a chain that cannot happen
+        if a.get("chain") is not None and abs(float(a["chain"]["cost"]) - float(s["margin"])) > TOL:
+            s = s.copy()
+            s["margin"] = round(float(a["chain"]["cost"]), 2)
+        # ---- end II-0
         pw = win_probability(s, alt)
         out.append({
             "p_win": pw, "win_words": D.words(pw) if pw is not None else None,
@@ -286,6 +295,11 @@ def decisions(rows: pd.DataFrame, n: int = 3) -> pd.DataFrame:
             "mover_name": mover["player_name"] if mover is not None else None,
             "mover_slot": mover["slot"] if mover is not None else None,
             "how": a["how"],
+            # ---- II-0: the chain (data + words) and the roster-aware short names (Parker vs Malik Washington)
+            "chain": (a.get("chain") or {}).get("chain"), "chain_words": (a.get("chain") or {}).get("named_words"),
+            "short_name": display_name(s["player_name"], rows["player_name"], s["position"]),
+            "alt_short_name": display_name(alt["player_name"], rows["player_name"], alt["position"]),
+            # ---- end II-0
         })
         # ---- IB-0 (Wave I-B): the call's strength, and (when the rows say who Sleeper starts now) its status
         d = out[-1]
@@ -372,6 +386,101 @@ def last_name(name: str | None, position: str | None = None) -> str:
     while len(parts) > 2 and parts[-1].lower() in SUFFIXES:
         parts = parts[:-1]
     return " ".join(parts[1:])
+
+
+# ---- II-0 (Wave I-I, the fifth review § 1): full names on a surname collision, and the legal replacement chain on a
+# lineup frame. "Over Washington" is ambiguous with Parker and Malik Washington on one roster: ``display_name`` gives
+# the last name unless another player of the same roster shares it. ``replacement_chain_rows`` is
+# ``league_lab.lineup.replacement_chain`` on the rows a card reads (``lineup_rows``, a roster context's, the Team
+# frame): the starters as they are seated, a locked starter kept in his slot, a locked bench player never entering.
+def display_name(name: str | None, roster, position: str | None = None) -> str:
+    """'Washington' -> 'Parker Washington' when the roster (any iterable of full names, e.g. a frame's ``player_name``
+    column) also has Malik Washington; a defense or a team unit keeps its name; a missing name is ''."""
+    if not isinstance(name, str) or not name.strip():
+        return ""
+    short = last_name(name, position)
+    if short == name:
+        return name
+    others = {str(n).strip() for n in (list(roster) if roster is not None else []) if isinstance(n, str) and n.strip()}
+    others.discard(name.strip())
+    return name if any(last_name(o).lower() == short.lower() for o in others) else short
+
+
+def _row_key(r: pd.Series, i) -> str:
+    for k in ("gsis_id", "sleeper_player_id", "sleeper_id"):
+        v = r.get(k)
+        if isinstance(v, str) and v:
+            return v
+    return f"row{i}"
+
+
+def replacement_chain_rows(starter: pd.Series, rows: pd.DataFrame) -> dict | None:
+    """``lineup.replacement_chain`` on a lineup frame: None when it cannot be read from the rows (no solver in this
+    install, a frame without its slots, he is locked or not a starter). Adds ``named_words`` (full names, as the card
+    says them), ``enters_row`` / ``mover_row`` (the frame's rows) and ``rows`` {chain player id: row}."""
+    try:
+        from league_lab import lineup as L
+    except ImportError:                     # pragma: no cover - the hosted console without the solver
+        return None
+    if rows is None or rows.empty or "slot_order" not in rows or "role" not in rows:
+        return None
+    locked = rows["locked_now"] if "locked_now" in rows else rows.get("is_locked", pd.Series(False, index=rows.index))
+    locked = locked.fillna(False).astype(bool)
+    empty = rows["is_empty_slot"].fillna(False).astype(bool) if "is_empty_slot" in rows else (rows["role"] == "empty")
+    seats = rows[rows["role"].isin(["starter", "empty"])].sort_values("slot_order")
+    if seats.empty or seats["slot_type"].isna().any():
+        return None
+    slots = [str(t) for t in seats["slot_type"]]
+    players, current, by_key, me = [], {}, {}, None
+    for i, r in rows.iterrows():
+        if r["role"] not in ("starter", "bench") or bool(empty.get(i, False)):
+            continue
+        k = _row_key(r, i)
+        by_key[k] = r
+        v = _num(r.get("value"))
+        src = r.get("value_source") if isinstance(r.get("value_source"), str) else None
+        if r["role"] == "starter":
+            current[k] = str(r["slot"])
+            players.append({"id": k, "position": r.get("position"), "value": v, "value_source": src,
+                            "locked_slot": str(r["slot_type"]) if bool(locked.get(i, False)) else None})
+        else:
+            players.append({"id": k, "position": r.get("position"), "value": v, "value_source": src,
+                            "playable": not bool(locked.get(i, False)),
+                            "reason": "game started (bench)" if bool(locked.get(i, False)) else None})
+    ids = [(c, starter.get(c)) for c in ("gsis_id", "sleeper_player_id") if isinstance(starter.get(c), str) and starter.get(c)]
+    me = next((k for k, r in by_key.items() if any(r.get(c) == v for c, v in ids)), None) if ids else None
+    if me is None and not ids and getattr(starter, "name", None) in rows.index:     # no ids: the same frame's row
+        me = next((k for k, r in by_key.items() if r.name == starter.name), None)
+    if me is None or current.get(me) is None:
+        return None
+    try:
+        ch = L.replacement_chain(players, slots, me, current=current)
+    except (KeyError, ValueError, TypeError):
+        return None
+    if ch is None:
+        return None
+    names = {k: str(r.get("player_name") or "") for k, r in by_key.items()}
+    ch["named_words"] = L.chain_words(ch["chain"], names)
+    ch["rows"] = {c["player_id"]: by_key[c["player_id"]] for c in ch["chain"] if c.get("player_id") in by_key}
+    ch["enters_row"] = by_key.get(ch["enters"]) if ch["enters"] else None
+    first = ch["chain"][0] if ch["chain"] else None
+    ch["mover_row"] = by_key.get(first["player_id"]) if first and first["kind"] == "slides" else None
+    return ch
+
+
+def chain_alternative(starter: pd.Series, ch: dict) -> dict:
+    """``alternative``'s {alt, mover, how} from a replacement chain (+ ``chain``)."""
+    alt, mover = ch["enters_row"], ch["mover_row"]
+    slot = slot_label(starter["slot"])
+    if alt is None:
+        how = (f"nobody on the bench can play {slot}" if not any(c["kind"] == "slides" for c in ch["chain"])
+               else f"no legal move fills {slot}: {ch['named_words']}")
+    elif mover is None:
+        how = f"best bench player who can play {slot}"
+    else:
+        how = f"comes in after a teammate slides over: {ch['named_words']}"
+    return {"alt": alt, "mover": mover, "how": how, "chain": ch}
+# ---- end II-0
 
 
 def _nick(team, nicks: dict) -> str:
@@ -476,6 +585,7 @@ def reason_line(d: dict, facts: dict | None = None, nicks: dict | None = None) -
     facts, nicks = facts or {}, nicks or {}
     a_full, b_full = d.get("player_name") or "", d.get("alt_name") or ""
     a, b = last_name(a_full, d.get("position")), last_name(b_full, d.get("alt_position"))
+    a, b = d.get("short_name") or a, d.get("alt_short_name") or b          # ---- II-0: roster-aware (display_name)
     if a == b:                                   # Michael Wilson vs Emanuel Wilson: the whole names
         a, b = a_full, b_full
     d["_short_me"], d["_short_alt_"] = a, b
@@ -541,6 +651,7 @@ def tiebreak(d: dict, facts: dict | None = None, nicks: dict | None = None) -> d
     facts, nicks = facts or {}, nicks or {}
     a_full, b_full = d.get("player_name") or "", d.get("alt_name") or ""
     a, b = last_name(a_full, d.get("position")), last_name(b_full, d.get("alt_position"))
+    a, b = d.get("short_name") or a, d.get("alt_short_name") or b          # ---- II-0: roster-aware (display_name)
     if a == b:
         a, b = a_full, b_full
     d["_short_me"], d["_short_alt_"] = a, b
