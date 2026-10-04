@@ -12,7 +12,9 @@ For the next agent (Claude Code or any other) picking this repo up. Read in this
   takes it from there. The codebase, the package, the `LEAGUE_LAB_*` variables, the roles, the repository, the
   Render service and the console stay League Lab. When the domain exists: Render → the service → Settings → Custom
   Domains (add the apex and `www`, CNAME / ALIAS to `league-lab.onrender.com`, Render issues the certificate), then
-  the URL in `app/whats_new.md`, `README.md`, `docs/HOSTING.md`, the About page and `render.yaml`'s comments.
+  the URL in `app/whats_new.md`, `README.md`, `docs/HOSTING.md`, the About page and `render.yaml`'s comments. The
+  `image` workflow's smoke step and `scripts/smoke.sh` assert the product name in the served page title (the rename's
+  first CI run failed there; fixed 2026-10-04) — a future rename changes `brand.ts`, `settings.py` and those two lines.
 
 * Everything through **Wave A of Iteration 9** is built, tested and committed: two Sleeper leagues side by
   side (`LEAGUE_LAB_SLEEPER_LEAGUE_ID=<reference>,<other>`), the Phase 2 play-by-play layer, the

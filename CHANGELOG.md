@@ -9,6 +9,8 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   claims…") — now says isuckatfantasy (`web/src/lib/brand.ts`, `api/league_lab_api/settings.py:APP_NAME`). The
   codebase, the package, the environment variables, the roles, the repository, the Render service and the research
   console keep the name League Lab. The domain follows (Andrew).
+- **CI.** The image workflow's smoke step and `scripts/smoke.sh` check the served page for the product name (the
+  rename's first run failed on the old title; the image was not pushed, so that deploy was by hand).
 
 ## 2026-10-03 — Wave I-F
 

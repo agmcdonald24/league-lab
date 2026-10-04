@@ -71,7 +71,7 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.description=League Lab - the API and the phone web app
+            org.opencontainers.image.description=isuckatfantasy (League Lab) - the API and the phone web app
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -92,7 +92,8 @@ jobs:
           assert h["ok"] is True and h["version"] == sys.argv[1], h
           assert h["database"].startswith("unreachable"), h
           PY
-          curl -sf http://localhost:8080/ | grep -q "<title>League Lab</title>"
+          # the product name (web/src/lib/brand.ts APP_NAME) is the page title; the codebase stays League Lab
+          curl -sf http://localhost:8080/ | grep -q "<title>isuckatfantasy</title>"
           test "$(docker exec league-lab id -un)" = nobody
           docker exec league-lab sh -c 'touch "$LEAGUE_LAB_CACHE_DIR/.w" && ! touch /srv/api/.w 2>/dev/null'
           docker image ls "${IMAGE%%:*}"

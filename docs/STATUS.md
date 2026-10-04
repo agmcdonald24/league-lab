@@ -4737,6 +4737,11 @@ the app read "2 RB, DEF", seated a started TE at RB2, called every WR and both t
   `LEAGUE_LAB_*` variables, the roles, the repository, the Render service, the workflows, the console, the docs'
   prose (README says so at the top). Checks: the renamed-word API tests 74 passed, the e2e that assert the name 64
   passed, lint / typecheck / build clean. The domain: Andrew; the steps are in HANDOFF § "Where things stand".
+* **Follow-up (2026-10-04, morning)**: the `image` workflow's run for the rename (`95e354f`) failed at the
+  "Start the image once" smoke step — it grepped the served page for `<title>League Lab</title>`, the one assertion
+  the rename missed (the image was never pushed, so Render had nothing to autodeploy; Andrew deployed by hand). Fixed
+  to the product name (`.github/workflows/image.yml`; the image's OCI description names both), and the same check in
+  `scripts/smoke.sh`. Nothing else in `.github/` or the ops scripts asserts the old name.
 
 ## Wave I-F (Iteration 17, part F)
 

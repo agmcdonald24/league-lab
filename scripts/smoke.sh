@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Smoke test of a running League Lab server (plan H0, Wave H): one line per check, exit 1 if any check fails.
+# Smoke test of a running isuckatfantasy (League Lab) server (plan H0, Wave H): one line per check, exit 1 if any check fails.
 #
 #   scripts/smoke.sh <base-url> [password] [sleeper-username]
 #
@@ -91,7 +91,7 @@ check "health" 200 GET /api/health \
 
 # 2. the web app's page
 check "web app (/)" 200 GET / \
-  'isinstance(b, str) and "<html" in b.lower() and "League Lab" in b' '"index.html served"'
+  'isinstance(b, str) and "<html" in b.lower() and "isuckatfantasy" in b' '"index.html served (isuckatfantasy)"'
 
 # 3. the beta gate
 SESSION="$(request GET /api/session)"
