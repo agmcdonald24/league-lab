@@ -250,6 +250,7 @@ WEEK_ASSUMPTIONS = "assuming the players' weeks are independent except teammates
 # fit is used.
 WEEK_SHRINK = 0.60
 KD_POSITIONS = frozenset({"K", "DEF", "TMPK", "TMDEF"})
+WEEK_DRAWS = 20_000      # a whole percent on the page: Monte Carlo error ±0.4 points at 50% (the calibration's draws too)
 UNIT_AS = {"TMQB": "QB"}          # an MFL team quarterback correlates like his starter
 
 
@@ -292,7 +293,7 @@ def _centred(d: Predictive, value: float | None) -> Predictive:
     return Predictive(d.levels, tuple(max(0.0, x + shift) for x in d.values))
 
 
-def lineup_win_probability(mine: Sequence[Mapping], theirs: Sequence[Mapping], *, n: int = N_DRAWS,
+def lineup_win_probability(mine: Sequence[Mapping], theirs: Sequence[Mapping], *, n: int = WEEK_DRAWS,
                            seed: int = SEED, centre: bool = True) -> dict:
     """P(``mine`` outscores ``theirs``) this week. Each starter is a mapping: ``key`` (who: a gsis id; the same key on
     both sides is the same player, one draw), ``position``, ``team``, ``opponent``, ``p10`` ... ``p90``, ``value`` (his
@@ -336,6 +337,13 @@ def lineup_win_probability(mine: Sequence[Mapping], theirs: Sequence[Mapping], *
                 meta.append(r)
             plays[s].append(cols[key])
     m = len(dists)
+    # the draws are assigned to players in key order, not in the order given: swapping the sides gives the same draws
+    # per player, so P(A beats B) + P(B beats A) = 1 exactly (My Week and the League screen agree)
+    keys = list(cols)
+    perm = sorted(range(m), key=lambda j: str(keys[j]))
+    pos = {old: new for new, old in enumerate(perm)}
+    dists, meta = [dists[j] for j in perm], [meta[j] for j in perm]
+    plays = [[pos[j] for j in side] for side in plays]
     out = {"mine": round(expected[0], 2), "theirs": round(expected[1], 2),
            "n_starters": counts[0]["n"], "n_played": counts[0]["played"], "n_no_range": counts[0]["no_range"],
            "opp_n_starters": counts[1]["n"], "opp_n_played": counts[1]["played"], "opp_n_no_range": counts[1]["no_range"],

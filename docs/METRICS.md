@@ -2198,7 +2198,7 @@ header gets one line per game ("Big Mac Attack: You're a clear underdog this wee
 * **One Gaussian copula over both lineups**: every pair that shares an NFL game gets D6's `pair_rho` — on either side
   (my WR and *their* QB who throws to him move together, which narrows the difference); pairs in different games are
   independent; a kicker, a defense or a team unit is independent of everyone (not measured). A correlation matrix that
-  is not jointly consistent is repaired (eigenvalues floored, diagonal rescaled). 40,000 paired draws, fixed seed, a
+  is not jointly consistent is repaired (eigenvalues floored, diagonal rescaled). 20,000 joint draws (whole percent: ±0.4 at 50%), fixed seed, a
   tie counts half; the same player on both sides is one draw.
 * **Played games**: a starter's game is in once the nightly has scored it (his team has rows in
   `fct_player_game_league` for the week): his points are then the league's own — `league_player_week.points_observed`

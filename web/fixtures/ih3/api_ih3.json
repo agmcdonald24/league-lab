@@ -28,86 +28,6 @@
    "league_line": "Your best lineup projects **120.31** in week 4, 4th of 10 in the league.",
    "cards": [
     {
-     "slot": "FLEX2",
-     "slot_label": "FLEX2",
-     "gsis_id": "00-0036358",
-     "player_name": "CeeDee Lamb",
-     "value": 13.47,
-     "alt_gsis_id": "00-0037240",
-     "alt_name": "Jameson Williams",
-     "alt_value": 9.98,
-     "margin": 3.49,
-     "verdict": "clear",
-     "how": "best bench player who can play FLEX2",
-     "p_win": 0.630325,
-     "why": "Lamb is on the road against the Texans, who give up the most points to receivers; Williams's share of the targets fell from 23% to 11% last game.",
-     "status": "change",
-     "strength": "clear",
-     "in_sleeper_lineup": {
-      "player": true,
-      "alt": true
-     },
-     "blocks": [
-      {
-       "kind": "markdown",
-       "text": "**FLEX2: start [CeeDee Lamb](/player/00-0036358) over [Jameson Williams](/player/00-0037240)**"
-      },
-      {
-       "kind": "markdown",
-       "text": "Lamb is on the road against the Texans, who give up the most points to receivers; Williams's share of the targets fell from 23% to 11% last game."
-      },
-      {
-       "kind": "caption",
-       "text": "CeeDee Lamb outscores Jameson Williams 63% of the time \u2014 a lean. 13.47 vs 9.98 projected: 3.49 apart.  \nTypical range (the middle 50%): CeeDee Lamb 7\u201318, Jameson Williams 5\u201315.  \nA bad week to a good week: CeeDee Lamb 5\u201323, Jameson Williams 2\u201319.  \nCeeDee Lamb vs HOU (the most WR points allowed) \u00b7 Jameson Williams vs CAR (12th-fewest WR points allowed)"
-      }
-     ],
-     "key": "6786",
-     "alt_key": "8148",
-     "tiebreak": null,
-     "action": 0,
-     "matchup_uncertain": false
-    },
-    {
-     "slot": "RB1",
-     "slot_label": "RB1",
-     "gsis_id": "00-0036997",
-     "player_name": "Javonte Williams",
-     "value": 12.65,
-     "alt_gsis_id": "00-0039811",
-     "alt_name": "MarShawn Lloyd",
-     "alt_value": 8.02,
-     "margin": 4.63,
-     "verdict": "clear",
-     "how": "best bench player who can play RB1",
-     "p_win": 0.70755,
-     "why": "Williams gets 62% of his team's carries; Lloyd's share of the carries fell from 62% to 44% last game.",
-     "status": "set",
-     "strength": "clear",
-     "in_sleeper_lineup": {
-      "player": true,
-      "alt": false
-     },
-     "blocks": [
-      {
-       "kind": "markdown",
-       "text": "**RB1: start [Javonte Williams](/player/00-0036997) over [MarShawn Lloyd](/player/00-0039811)**"
-      },
-      {
-       "kind": "markdown",
-       "text": "Williams gets 62% of his team's carries; Lloyd's share of the carries fell from 62% to 44% last game."
-      },
-      {
-       "kind": "caption",
-       "text": "Javonte Williams outscores MarShawn Lloyd 71% of the time \u2014 clear. 12.65 vs 8.02 projected: 4.63 apart.  \nTypical range (the middle 50%): Javonte Williams 8\u201317, MarShawn Lloyd 3\u201311.  \nA bad week to a good week: Javonte Williams 4\u201324, MarShawn Lloyd 1\u201318.  \nJavonte Williams vs HOU (4th-fewest RB points allowed) \u00b7 MarShawn Lloyd vs TB (15th-fewest RB points allowed)"
-      }
-     ],
-     "key": "7588",
-     "alt_key": "11581",
-     "tiebreak": null,
-     "action": null,
-     "matchup_uncertain": false
-    },
-    {
      "slot": "FLEX1",
      "slot_label": "FLEX1",
      "gsis_id": "00-0037239",
@@ -144,7 +64,7 @@
      "key": "8144",
      "alt_key": "8148",
      "tiebreak": null,
-     "action": 0,
+     "action": null,
      "matchup_uncertain": true
     }
    ],
@@ -175,11 +95,11 @@
      "position": "RB",
      "value": 12.65,
      "margin": 4.63,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "7588",
      "no_projection": false,
-     "margin_vs": "Lloyd",
-     "margin_words": "over Lloyd",
+     "margin_vs": null,
+     "margin_words": "",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xvwroirev2kie6oiphtz",
      "team": "DAL",
      "market_points": null
@@ -209,11 +129,11 @@
      "position": "WR",
      "value": 15.55,
      "margin": 5.57,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "9493",
      "no_projection": false,
-     "margin_vs": "Williams",
-     "margin_words": "over Williams",
+     "margin_vs": null,
+     "margin_words": "",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ipy6qw7hdygdfc8k86ba",
      "team": "LA",
      "market_points": null
@@ -277,11 +197,11 @@
      "position": "WR",
      "value": 13.47,
      "margin": 3.49,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "6786",
      "no_projection": false,
-     "margin_vs": "Williams",
-     "margin_words": "over Williams",
+     "margin_vs": null,
+     "margin_words": "",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
      "team": "DAL",
      "market_points": null
@@ -294,11 +214,11 @@
      "position": "K",
      "value": 8.23,
      "margin": 8.23,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "7839",
      "no_projection": false,
      "margin_vs": null,
-     "margin_words": "no eligible reserve: the slot would be empty",
+     "margin_words": "",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/t6fs7i54i4n7xjiayoz0",
      "team": "CIN",
      "market_points": null
@@ -347,11 +267,11 @@
      "position": "RB",
      "value": 12.65,
      "margin": 4.63,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "7588",
      "no_projection": false,
-     "margin_vs": "Lloyd",
-     "margin_words": "over Lloyd",
+     "margin_vs": null,
+     "margin_words": "",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xvwroirev2kie6oiphtz",
      "team": "DAL",
      "market_points": null
@@ -381,11 +301,11 @@
      "position": "WR",
      "value": 15.55,
      "margin": 5.57,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "9493",
      "no_projection": false,
-     "margin_vs": "Williams",
-     "margin_words": "over Williams",
+     "margin_vs": null,
+     "margin_words": "",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/ipy6qw7hdygdfc8k86ba",
      "team": "LA",
      "market_points": null
@@ -449,11 +369,11 @@
      "position": "WR",
      "value": 13.47,
      "margin": 3.49,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "6786",
      "no_projection": false,
-     "margin_vs": "Williams",
-     "margin_words": "over Williams",
+     "margin_vs": null,
+     "margin_words": "",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/mbblzwtynxr15ovzkevi",
      "team": "DAL",
      "market_points": null
@@ -466,11 +386,11 @@
      "position": "K",
      "value": 8.23,
      "margin": 8.23,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "7839",
      "no_projection": false,
      "margin_vs": null,
-     "margin_words": "no eligible reserve: the slot would be empty",
+     "margin_words": "",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/t6fs7i54i4n7xjiayoz0",
      "team": "CIN",
      "market_points": null
@@ -515,7 +435,7 @@
      "position": "RB",
      "value": 8.02,
      "margin": null,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "11581",
      "no_projection": false,
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xp8sd4enimuk4zd0aqgu",
@@ -530,7 +450,7 @@
      "position": "WR",
      "value": 6.29,
      "margin": null,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "8121",
      "no_projection": false,
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yxvzijmgwyyigljxfmyb",
@@ -545,7 +465,7 @@
      "position": "WR",
      "value": 5.94,
      "margin": null,
-     "flag": "",
+     "flag": "locked (game started)",
      "key": "11628",
      "no_projection": false,
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/hwpoo1icpnh8emjvqaii",
@@ -560,7 +480,7 @@
      "position": "RB",
      "value": null,
      "margin": null,
-     "flag": "no projection",
+     "flag": "locked (game started) \u00b7 no projection",
      "key": "5850",
      "no_projection": true,
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/uceokxeo0uqrqms3e3vl",
@@ -589,63 +509,9 @@
    "lineup_value": 120.31,
    "n_unvalued": 0,
    "unvalued_words": null,
-   "actions": [
-    {
-     "kind": "change",
-     "urgency": 1,
-     "action": "Start [Nacua](/player/00-0039075) at WR in place of [Williams](/player/00-0037240).",
-     "reason": "The change is worth about 6 more projected points this week.",
-     "start": [
-      {
-       "key": "9493",
-       "name": "Nacua",
-       "link": "[Nacua](/player/00-0039075)"
-      },
-      {
-       "key": "8144",
-       "name": "Olave",
-       "link": "[Olave](/player/00-0037239)"
-      },
-      {
-       "key": "6786",
-       "name": "Lamb",
-       "link": "[Lamb](/player/00-0036358)"
-      }
-     ],
-     "sit": [
-      {
-       "key": "8148",
-       "name": "Williams",
-       "link": "[Williams](/player/00-0037240)"
-      }
-     ],
-     "submitted": false,
-     "submitted_words": "Not in your Sleeper lineup yet: make the change in Sleeper.",
-     "gain": 5.57,
-     "href": null,
-     "lock": {
-      "kickoff": "2026-10-04T17:00:00+00:00",
-      "words": "before Sun 1:00 PM ET"
-     },
-     "slots": [
-      "WR1"
-     ],
-     "slot_label": "WR1",
-     "cards": [
-      0,
-      2
-     ]
-    }
-   ],
-   "set_line": "The rest of your lineup is set.",
-   "next_lock": {
-    "kickoff": "2026-10-04T17:00:00+00:00",
-    "words": "before Sun 1:00 PM ET",
-    "players": [
-     "Nacua",
-     "Williams"
-    ]
-   },
+   "actions": [],
+   "set_line": "Your lineup is set \u2014 nothing to change. (Where your lineup differs from ours, it is by less than half a point.)",
+   "next_lock": null,
    "platform_name": "Sleeper",
    "review": [],
    "swaps": [],
@@ -661,7 +527,7 @@
    },
    "win": {
     "opponent_roster_id": 2,
-    "p": 0.5268,
+    "p": 0.5294,
     "percent": 53,
     "words": "a coin flip",
     "side": "even",
@@ -904,234 +770,101 @@
    "source": "sleeper",
    "availability": null,
    "summary": "**Knight Train** \u00b7 1-3, #11 in the league \u00b7 week 4 vs **Big Mac Attack**",
-   "league_line": "Your best lineup projects **95.78** in week 4.",
-   "lineup_value": 95.78,
+   "league_line": "Your best lineup projects **46.54** in week 4.",
+   "lineup_value": 46.54,
    "n_unvalued": 0,
    "unvalued_words": null,
-   "notice": null,
-   "cards": [
-    {
-     "slot": "WR+TE2",
-     "slot_label": "WR/TE 2",
-     "gsis_id": "00-0038117",
-     "player_name": "Wan'Dale Robinson",
-     "value": 7.36,
-     "alt_gsis_id": "00-0040735",
-     "alt_name": "Luther Burden III",
-     "alt_value": 6.93,
-     "margin": 0.43,
-     "verdict": "a coin flip",
-     "how": "best bench player who can play WR/TE 2",
-     "p_win": 0.495125,
-     "why": "Too close to call: the projection says Robinson by 0.4, the ranges say either. Go with Burden on the role: Robinson's share of the targets fell from 21% to 6% last game.",
-     "status": "close",
-     "strength": "coin flip",
-     "in_sleeper_lineup": {
-      "player": false,
-      "alt": false
-     },
-     "blocks": [
-      {
-       "kind": "markdown",
-       "text": "**WR/TE 2: [Wan'Dale Robinson](/player/00-0038117) or [Luther Burden III](/player/00-0040735) \u2014 a coin flip**"
-      },
-      {
-       "kind": "markdown",
-       "text": "Too close to call: the projection says Robinson by 0.4, the ranges say either. Go with Burden on the role: Robinson's share of the targets fell from 21% to 6% last game."
-      },
-      {
-       "kind": "caption",
-       "text": "Wan'Dale Robinson projects 0.43 more on average; Luther Burden III outscores him 50% of the time \u2014 a coin flip. 7.36 vs 6.93 projected: 0.43 apart.  \nTypical range (the middle 50%): Wan'Dale Robinson 2\u201310, Luther Burden III 3\u201310.  \nA bad week to a good week: Wan'Dale Robinson 1\u201314, Luther Burden III 1\u201315.  \nWan'Dale Robinson vs BAL (16th-fewest WR points allowed) \u00b7 Luther Burden III vs NYJ (10th-fewest WR points allowed)"
-      }
-     ],
-     "key": "8126",
-     "alt_key": "12519",
-     "tiebreak": {
-      "kind": "role",
-      "pick": "Burden",
-      "side": "alt"
-     },
-     "action": null,
-     "matchup_uncertain": false
-    },
-    {
-     "slot": "RB2",
-     "slot_label": "RB2",
-     "gsis_id": "00-0036555",
-     "player_name": "Chuba Hubbard",
-     "value": 10.97,
-     "alt_gsis_id": "00-0041512",
-     "alt_name": "Jadarian Price",
-     "alt_value": 9.44,
-     "margin": 1.53,
-     "verdict": "a lean",
-     "how": "best bench player who can play RB2",
-     "p_win": 0.6022125,
-     "why": "Price's share of the carries fell from 45% to 32% last game, and the projection has Hubbard 1.5 points ahead.",
-     "status": "change",
-     "strength": "lean",
-     "in_sleeper_lineup": {
-      "player": false,
-      "alt": false
-     },
-     "blocks": [
-      {
-       "kind": "markdown",
-       "text": "**RB2: start [Chuba Hubbard](/player/00-0036555) over [Jadarian Price](/player/00-0041512)**"
-      },
-      {
-       "kind": "markdown",
-       "text": "Price's share of the carries fell from 45% to 32% last game, and the projection has Hubbard 1.5 points ahead."
-      },
-      {
-       "kind": "caption",
-       "text": "Chuba Hubbard outscores Jadarian Price 60% of the time \u2014 a lean. 10.97 vs 9.44 projected: 1.53 apart.  \nTypical range (the middle 50%): Chuba Hubbard 6\u201316, Jadarian Price 4\u201313.  \nA bad week to a good week: Chuba Hubbard 2\u201325, Jadarian Price 1\u201319.  \nChuba Hubbard vs DET (12th-most RB points allowed) \u00b7 Jadarian Price vs LAC (11th-fewest RB points allowed)"
-      }
-     ],
-     "key": "7594",
-     "alt_key": "13286",
-     "tiebreak": null,
-     "action": null,
-     "matchup_uncertain": false
-    },
-    {
-     "slot": "TMQB",
-     "slot_label": "team QB",
-     "gsis_id": null,
-     "player_name": "Cincinnati Bengals QB",
-     "value": 29.0,
-     "alt_gsis_id": null,
-     "alt_name": "Tampa Bay Buccaneers QB",
-     "alt_value": 26.57,
-     "margin": 2.43,
-     "verdict": "a lean",
-     "how": "best bench player who can play team QB",
-     "p_win": null,
-     "why": "Nothing in the matchups or the roles splits them: the projection has Bengals QB 2.4 points ahead.",
-     "status": "change",
-     "strength": "lean",
-     "in_sleeper_lineup": {
-      "player": false,
-      "alt": false
-     },
-     "blocks": [
-      {
-       "kind": "markdown",
-       "text": "**team QB: start Cincinnati Bengals QB over Tampa Bay Buccaneers QB**"
-      },
-      {
-       "kind": "markdown",
-       "text": "Nothing in the matchups or the roles splits them: the projection has Bengals QB 2.4 points ahead."
-      },
-      {
-       "kind": "caption",
-       "text": "29.00 vs 26.57 projected \u2014 **2.43 apart, a lean**.  \nCincinnati Bengals QB vs JAX \u00b7 Tampa Bay Buccaneers QB vs GB"
-      }
-     ],
-     "key": "mfl:0656",
-     "alt_key": "mfl:0675",
-     "tiebreak": null,
-     "action": 0,
-     "matchup_uncertain": false
-    }
-   ],
+   "notice": "No lineup calls this week: nobody on your bench can play (byes, injuries).",
+   "cards": [],
    "actions": [
     {
      "kind": "change",
      "urgency": 1,
-     "action": "Start Cincinnati Bengals QB at team QB (an open spot in your MFL lineup).",
-     "reason": "The change is worth about 29 more projected points this week.",
+     "action": "Start Los Angeles Chargers K at team K (an open spot in your MFL lineup).",
+     "reason": "The change is worth about 10 more projected points this week.",
      "start": [
       {
-       "key": "mfl:0656",
-       "name": "Cincinnati Bengals QB",
-       "link": "Cincinnati Bengals QB"
-      }
-     ],
-     "sit": [
-      {
-       "key": "mfl:0675",
-       "name": "Tampa Bay Buccaneers QB",
-       "link": "Tampa Bay Buccaneers QB"
-      }
-     ],
-     "submitted": false,
-     "submitted_words": "Not in your MFL lineup yet: make the change in MFL.",
-     "gain": 29.0,
-     "href": null,
-     "lock": {
-      "kickoff": "2026-10-04T17:00:00+00:00",
-      "words": "before Sun 1:00 PM ET"
-     },
-     "slots": [
-      "TMQB"
-     ],
-     "slot_label": "team QB",
-     "cards": [
-      2
-     ]
-    },
-    {
-     "kind": "change",
-     "urgency": 1,
-     "action": "Start [Hall](/player/00-0038120) at RB (an open spot in your MFL lineup).",
-     "reason": "The change is worth about 13 more projected points this week.",
-     "start": [
-      {
-       "key": "8155",
-       "name": "Hall",
-       "link": "[Hall](/player/00-0038120)"
+       "key": "mfl:0714",
+       "name": "Los Angeles Chargers K",
+       "link": "Los Angeles Chargers K"
       }
      ],
      "sit": [],
      "submitted": false,
      "submitted_words": "Not in your MFL lineup yet: make the change in MFL.",
-     "gain": 12.84,
+     "gain": 10.02,
      "href": null,
      "lock": {
-      "kickoff": "2026-10-04T17:00:00+00:00",
-      "words": "before Sun 1:00 PM ET"
+      "kickoff": "2026-10-04T20:25:00+00:00",
+      "words": "before Sun 4:25 PM ET"
+     },
+     "slots": [
+      "TMPK"
+     ],
+     "slot_label": "team K",
+     "cards": []
+    },
+    {
+     "kind": "change",
+     "urgency": 1,
+     "action": "Start [Price](/player/00-0041512) at RB (an open spot in your MFL lineup).",
+     "reason": "The change is worth about 9 more projected points this week.",
+     "start": [
+      {
+       "key": "13286",
+       "name": "Price",
+       "link": "[Price](/player/00-0041512)"
+      }
+     ],
+     "sit": [],
+     "submitted": false,
+     "submitted_words": "Not in your MFL lineup yet: make the change in MFL.",
+     "gain": 9.44,
+     "href": null,
+     "lock": {
+      "kickoff": "2026-10-04T20:25:00+00:00",
+      "words": "before Sun 4:25 PM ET"
+     },
+     "slots": [
+      "RB2"
+     ],
+     "slot_label": "RB2",
+     "cards": []
+    },
+    {
+     "kind": "change",
+     "urgency": 1,
+     "action": "Start [Hubbard](/player/00-0036555) at RB (an open spot in your MFL lineup).",
+     "reason": "The change is worth about 11 more projected points this week.",
+     "start": [
+      {
+       "key": "7594",
+       "name": "Hubbard",
+       "link": "[Hubbard](/player/00-0036555)"
+      }
+     ],
+     "sit": [],
+     "submitted": false,
+     "submitted_words": "Not in your MFL lineup yet: make the change in MFL.",
+     "gain": 10.97,
+     "href": null,
+     "lock": {
+      "kickoff": "2026-10-05T00:20:00+00:00",
+      "words": "before Sun 8:20 PM ET"
      },
      "slots": [
       "RB1"
      ],
      "slot_label": "RB1",
      "cards": []
-    },
-    {
-     "kind": "change",
-     "urgency": 1,
-     "action": "Start [Egbuka](/player/00-0040129) at WR/TE (an open spot in your MFL lineup).",
-     "reason": "The change is worth about 9 more projected points this week.",
-     "start": [
-      {
-       "key": "12514",
-       "name": "Egbuka",
-       "link": "[Egbuka](/player/00-0040129)"
-      }
-     ],
-     "sit": [],
-     "submitted": false,
-     "submitted_words": "Not in your MFL lineup yet: make the change in MFL.",
-     "gain": 9.48,
-     "href": null,
-     "lock": {
-      "kickoff": "2026-10-04T17:00:00+00:00",
-      "words": "before Sun 1:00 PM ET"
-     },
-     "slots": [
-      "WR+TE1"
-     ],
-     "slot_label": "WR/TE 1",
-     "cards": []
     }
    ],
-   "set_line": "4 more changes: the lineup below shows every slot.",
+   "set_line": "1 more change: the lineup below shows every slot.",
    "next_lock": {
-    "kickoff": "2026-10-04T17:00:00+00:00",
-    "words": "before Sun 1:00 PM ET",
+    "kickoff": "2026-10-04T20:25:00+00:00",
+    "words": "before Sun 4:25 PM ET",
     "players": [
-     "Cincinnati Bengals QB"
+     "Los Angeles Chargers K"
     ]
    },
    "platform_name": "MFL",
@@ -1151,91 +884,57 @@
     {
      "role": "starter",
      "slot": "team QB",
-     "player_name": "Cincinnati Bengals QB",
+     "player_name": null,
      "gsis_id": null,
-     "position": "TMQB",
-     "value": 29.0,
-     "margin": 2.43,
-     "flag": "",
-     "key": "mfl:0656",
+     "position": null,
+     "value": null,
+     "margin": null,
+     "flag": "EMPTY: nobody can play",
+     "key": null,
      "no_projection": false,
-     "margin_vs": "Bay Buccaneers QB",
-     "margin_words": "over Bay Buccaneers QB",
+     "margin_vs": null,
+     "margin_words": "",
      "headshot_url": null,
-     "team": "CIN",
+     "team": null,
      "market_points": null
     },
     {
      "role": "starter",
      "slot": "RB1",
-     "player_name": "Breece Hall",
-     "gsis_id": "00-0038120",
-     "position": "RB",
-     "value": 12.84,
-     "margin": 3.4,
-     "flag": "",
-     "key": "8155",
-     "no_projection": false,
-     "margin_vs": "Price",
-     "margin_words": "over Price",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
-     "team": "NYJ",
-     "market_points": null
-    },
-    {
-     "role": "starter",
-     "slot": "RB2",
      "player_name": "Chuba Hubbard",
      "gsis_id": "00-0036555",
      "position": "RB",
      "value": 10.97,
-     "margin": 1.53,
+     "margin": 10.97,
      "flag": "",
      "key": "7594",
      "no_projection": false,
-     "margin_vs": "Price",
-     "margin_words": "over Price",
+     "margin_vs": null,
+     "margin_words": "no eligible reserve: the slot would be empty",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rzsvnt0pxsaize2ndhxm",
      "team": "CAR",
      "market_points": null
     },
     {
      "role": "starter",
+     "slot": "RB2",
+     "player_name": "Jadarian Price",
+     "gsis_id": "00-0041512",
+     "position": "RB",
+     "value": 9.44,
+     "margin": 9.44,
+     "flag": "",
+     "key": "13286",
+     "no_projection": false,
+     "margin_vs": null,
+     "margin_words": "no eligible reserve: the slot would be empty",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toy90i08oumgbdlvctja",
+     "team": "SEA",
+     "market_points": null
+    },
+    {
+     "role": "starter",
      "slot": "WR/TE 1",
-     "player_name": "Emeka Egbuka",
-     "gsis_id": "00-0040129",
-     "position": "WR",
-     "value": 9.48,
-     "margin": 2.55,
-     "flag": "",
-     "key": "12514",
-     "no_projection": false,
-     "margin_vs": "Burden",
-     "margin_words": "over Burden",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z224kbzs62rjuykc0vha",
-     "team": "TB",
-     "market_points": null
-    },
-    {
-     "role": "starter",
-     "slot": "WR/TE 2",
-     "player_name": "Wan'Dale Robinson",
-     "gsis_id": "00-0038117",
-     "position": "WR",
-     "value": 7.36,
-     "margin": 0.43,
-     "flag": "",
-     "key": "8126",
-     "no_projection": false,
-     "margin_vs": "Burden",
-     "margin_words": "over Burden",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yzcvyhmilvxedfjfjglc",
-     "team": "TEN",
-     "market_points": null
-    },
-    {
-     "role": "starter",
-     "slot": "WR/TE 3",
      "player_name": "Harold Fannin Jr.",
      "gsis_id": "00-0040663",
      "position": "TE",
@@ -1248,6 +947,40 @@
      "margin_words": "",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fxublmpnxx9uggsddwik",
      "team": "CLE",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "WR/TE 2",
+     "player_name": null,
+     "gsis_id": null,
+     "position": null,
+     "value": null,
+     "margin": null,
+     "flag": "EMPTY: nobody can play",
+     "key": null,
+     "no_projection": false,
+     "margin_vs": null,
+     "margin_words": "",
+     "headshot_url": null,
+     "team": null,
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "WR/TE 3",
+     "player_name": null,
+     "gsis_id": null,
+     "position": null,
+     "value": null,
+     "margin": null,
+     "flag": "EMPTY: nobody can play",
+     "key": null,
+     "no_projection": false,
+     "margin_vs": null,
+     "margin_words": "",
+     "headshot_url": null,
+     "team": null,
      "market_points": null
     },
     {
@@ -1289,91 +1022,57 @@
     {
      "role": "starter",
      "slot": "team QB",
-     "player_name": "Cincinnati Bengals QB",
+     "player_name": null,
      "gsis_id": null,
-     "position": "TMQB",
-     "value": 29.0,
-     "margin": 2.43,
-     "flag": "",
-     "key": "mfl:0656",
+     "position": null,
+     "value": null,
+     "margin": null,
+     "flag": "EMPTY: nobody can play",
+     "key": null,
      "no_projection": false,
-     "margin_vs": "Bay Buccaneers QB",
-     "margin_words": "over Bay Buccaneers QB",
+     "margin_vs": null,
+     "margin_words": "",
      "headshot_url": null,
-     "team": "CIN",
+     "team": null,
      "market_points": null
     },
     {
      "role": "starter",
      "slot": "RB1",
-     "player_name": "Breece Hall",
-     "gsis_id": "00-0038120",
-     "position": "RB",
-     "value": 12.84,
-     "margin": 3.4,
-     "flag": "",
-     "key": "8155",
-     "no_projection": false,
-     "margin_vs": "Price",
-     "margin_words": "over Price",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
-     "team": "NYJ",
-     "market_points": null
-    },
-    {
-     "role": "starter",
-     "slot": "RB2",
      "player_name": "Chuba Hubbard",
      "gsis_id": "00-0036555",
      "position": "RB",
      "value": 10.97,
-     "margin": 1.53,
+     "margin": 10.97,
      "flag": "",
      "key": "7594",
      "no_projection": false,
-     "margin_vs": "Price",
-     "margin_words": "over Price",
+     "margin_vs": null,
+     "margin_words": "no eligible reserve: the slot would be empty",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/rzsvnt0pxsaize2ndhxm",
      "team": "CAR",
      "market_points": null
     },
     {
      "role": "starter",
+     "slot": "RB2",
+     "player_name": "Jadarian Price",
+     "gsis_id": "00-0041512",
+     "position": "RB",
+     "value": 9.44,
+     "margin": 9.44,
+     "flag": "",
+     "key": "13286",
+     "no_projection": false,
+     "margin_vs": null,
+     "margin_words": "no eligible reserve: the slot would be empty",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toy90i08oumgbdlvctja",
+     "team": "SEA",
+     "market_points": null
+    },
+    {
+     "role": "starter",
      "slot": "WR/TE 1",
-     "player_name": "Emeka Egbuka",
-     "gsis_id": "00-0040129",
-     "position": "WR",
-     "value": 9.48,
-     "margin": 2.55,
-     "flag": "",
-     "key": "12514",
-     "no_projection": false,
-     "margin_vs": "Burden",
-     "margin_words": "over Burden",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z224kbzs62rjuykc0vha",
-     "team": "TB",
-     "market_points": null
-    },
-    {
-     "role": "starter",
-     "slot": "WR/TE 2",
-     "player_name": "Wan'Dale Robinson",
-     "gsis_id": "00-0038117",
-     "position": "WR",
-     "value": 7.36,
-     "margin": 0.43,
-     "flag": "",
-     "key": "8126",
-     "no_projection": false,
-     "margin_vs": "Burden",
-     "margin_words": "over Burden",
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yzcvyhmilvxedfjfjglc",
-     "team": "TEN",
-     "market_points": null
-    },
-    {
-     "role": "starter",
-     "slot": "WR/TE 3",
      "player_name": "Harold Fannin Jr.",
      "gsis_id": "00-0040663",
      "position": "TE",
@@ -1386,6 +1085,40 @@
      "margin_words": "",
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/fxublmpnxx9uggsddwik",
      "team": "CLE",
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "WR/TE 2",
+     "player_name": null,
+     "gsis_id": null,
+     "position": null,
+     "value": null,
+     "margin": null,
+     "flag": "EMPTY: nobody can play",
+     "key": null,
+     "no_projection": false,
+     "margin_vs": null,
+     "margin_words": "",
+     "headshot_url": null,
+     "team": null,
+     "market_points": null
+    },
+    {
+     "role": "starter",
+     "slot": "WR/TE 3",
+     "player_name": null,
+     "gsis_id": null,
+     "position": null,
+     "value": null,
+     "margin": null,
+     "flag": "EMPTY: nobody can play",
+     "key": null,
+     "no_projection": false,
+     "margin_vs": null,
+     "margin_words": "",
+     "headshot_url": null,
+     "team": null,
      "market_points": null
     },
     {
@@ -1423,14 +1156,29 @@
      "market_points": null
     },
     {
-     "role": "bench",
-     "slot": "Bench 1",
+     "role": "unplayable",
+     "slot": "Can't play",
+     "player_name": "Cincinnati Bengals QB",
+     "gsis_id": null,
+     "position": "TMQB",
+     "value": 29.0,
+     "margin": null,
+     "flag": "game started (bench)",
+     "key": "mfl:0656",
+     "no_projection": false,
+     "headshot_url": null,
+     "team": "CIN",
+     "market_points": null
+    },
+    {
+     "role": "unplayable",
+     "slot": "Can't play",
      "player_name": "Tampa Bay Buccaneers QB",
      "gsis_id": null,
      "position": "TMQB",
      "value": 26.57,
      "margin": null,
-     "flag": "",
+     "flag": "game started (bench)",
      "key": "mfl:0675",
      "no_projection": false,
      "headshot_url": null,
@@ -1438,29 +1186,59 @@
      "market_points": null
     },
     {
-     "role": "bench",
-     "slot": "Bench 2",
-     "player_name": "Jadarian Price",
-     "gsis_id": "00-0041512",
+     "role": "unplayable",
+     "slot": "Can't play",
+     "player_name": "Breece Hall",
+     "gsis_id": "00-0038120",
      "position": "RB",
-     "value": 9.44,
+     "value": 12.84,
      "margin": null,
-     "flag": "",
-     "key": "13286",
+     "flag": "game started (bench)",
+     "key": "8155",
      "no_projection": false,
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/toy90i08oumgbdlvctja",
-     "team": "SEA",
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/i01xtqbfajfq68lb6orh",
+     "team": "NYJ",
      "market_points": null
     },
     {
-     "role": "bench",
-     "slot": "Bench 3",
+     "role": "unplayable",
+     "slot": "Can't play",
+     "player_name": "Emeka Egbuka",
+     "gsis_id": "00-0040129",
+     "position": "WR",
+     "value": 9.48,
+     "margin": null,
+     "flag": "game started (bench)",
+     "key": "12514",
+     "no_projection": false,
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/z224kbzs62rjuykc0vha",
+     "team": "TB",
+     "market_points": null
+    },
+    {
+     "role": "unplayable",
+     "slot": "Can't play",
+     "player_name": "Wan'Dale Robinson",
+     "gsis_id": "00-0038117",
+     "position": "WR",
+     "value": 7.36,
+     "margin": null,
+     "flag": "game started (bench)",
+     "key": "8126",
+     "no_projection": false,
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/yzcvyhmilvxedfjfjglc",
+     "team": "TEN",
+     "market_points": null
+    },
+    {
+     "role": "unplayable",
+     "slot": "Can't play",
      "player_name": "Luther Burden III",
      "gsis_id": "00-0040735",
      "position": "WR",
      "value": 6.93,
      "margin": null,
-     "flag": "",
+     "flag": "game started (bench)",
      "key": "12519",
      "no_projection": false,
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/iyuwdz7pbowdkwzq2tg5",
@@ -1468,33 +1246,18 @@
      "market_points": null
     },
     {
-     "role": "bench",
-     "slot": "Bench 4",
+     "role": "unplayable",
+     "slot": "Can't play",
      "player_name": "Jake Ferguson",
      "gsis_id": "00-0038041",
      "position": "TE",
      "value": 4.69,
      "margin": null,
-     "flag": "",
+     "flag": "game started (bench)",
      "key": "8110",
      "no_projection": false,
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/xpykb0tbosfwsn6dqstb",
      "team": "DAL",
-     "market_points": null
-    },
-    {
-     "role": "bench",
-     "slot": "Bench 5",
-     "player_name": "Konata Mumpfield",
-     "gsis_id": "00-0040590",
-     "position": "WR",
-     "value": 2.61,
-     "margin": null,
-     "flag": "",
-     "key": "12718",
-     "no_projection": false,
-     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cehkowkvb4aujslmppbj",
-     "team": "LA",
      "market_points": null
     },
     {
@@ -1505,11 +1268,26 @@
      "position": "WR",
      "value": 3.71,
      "margin": null,
-     "flag": "NFL injured reserve",
+     "flag": "game started (bench)",
      "key": "13293",
      "no_projection": false,
      "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/gjezd2a8imfrxyv16wuj",
      "team": "BAL",
+     "market_points": null
+    },
+    {
+     "role": "unplayable",
+     "slot": "Can't play",
+     "player_name": "Konata Mumpfield",
+     "gsis_id": "00-0040590",
+     "position": "WR",
+     "value": 2.61,
+     "margin": null,
+     "flag": "game started (bench)",
+     "key": "12718",
+     "no_projection": false,
+     "headshot_url": "https://static.www.nfl.com/image/upload/f_auto,q_auto/league/cehkowkvb4aujslmppbj",
+     "team": "LA",
      "market_points": null
     }
    ],
@@ -1517,19 +1295,19 @@
    "movers": [],
    "win": {
     "opponent_roster_id": 8,
-    "p": 0.3421,
-    "percent": 34,
+    "p": 0.0252,
+    "percent": 3,
     "words": "a clear underdog",
     "side": "underdog",
-    "line": "You're a clear underdog this week: 34%, 96 to 115 expected.",
+    "line": "You're a clear underdog this week: 3%, 47 to 115 expected.",
     "note": null,
     "assumptions": "assuming the players' weeks are independent except teammates and opponents",
     "early": false,
     "played_words": null,
-    "mine": 95.78,
+    "mine": 46.54,
     "theirs": 115.41,
     "n_played": 0,
-    "n_starters": 8,
+    "n_starters": 5,
     "opp_n_played": 0,
     "opp_n_starters": 8,
     "n_no_range": 1,
@@ -1537,19 +1315,19 @@
     "also": [
      {
       "opponent_roster_id": 7,
-      "p": 0.3745,
-      "percent": 37,
-      "words": "a slight underdog",
+      "p": 0.0387,
+      "percent": 4,
+      "words": "a clear underdog",
       "side": "underdog",
-      "line": "You're a slight underdog this week: 37%, 96 to 111 expected.",
+      "line": "You're a clear underdog this week: 4%, 47 to 111 expected.",
       "note": null,
       "assumptions": "assuming the players' weeks are independent except teammates and opponents",
       "early": false,
       "played_words": null,
-      "mine": 95.78,
+      "mine": 46.54,
       "theirs": 111.24,
       "n_played": 0,
-      "n_starters": 8,
+      "n_starters": 5,
       "opp_n_played": 0,
       "opp_n_starters": 8,
       "n_no_range": 1,
@@ -1576,19 +1354,19 @@
     "stat_line_mismatches": 0,
     "sleeper_calls": 0,
     "timings_ms": {
-     "sleeper": 2.5,
-     "priced": 677.7,
-     "solve": 65.2,
-     "frame": 67.4,
-     "total": 812.9,
-     "priced.board": 181.4,
-     "priced.price": 31.2,
-     "priced.ranges": 34.0,
-     "priced.kd": 426.3,
-     "opponent": 318.9,
-     "cards": 193.1,
-     "rest": 663.0,
-     "request_total": 2219.2
+     "sleeper": 16.2,
+     "priced": 856.2,
+     "solve": 75.8,
+     "frame": 106.5,
+     "total": 1054.6,
+     "priced.board": 232.0,
+     "priced.price": 112.2,
+     "priced.ranges": 50.4,
+     "priced.kd": 461.2,
+     "opponent": 374.4,
+     "cards": 242.1,
+     "rest": 505.0,
+     "request_total": 2460.3
     },
     "board_source": "nfl_wide",
     "opponent_note": null,
@@ -1601,7 +1379,7 @@
     "mfl_scoring_note": "Lineup read as team QB, 2 RB, 3 WR/TE, team K, DEF. Points allowed on a projection: the league's bands (0, 1\u20133) are spread over the defense projection's (0, 1\u20136, 7\u201313 \u2026) by the average over each. Kicks of 50+ yards on a projection: priced at the 50\u201359 band (10); the projection does not split off 60+. Return touchdowns are not projected (they count on actual lines). 2-point conversions are not projected."
    },
    "platform": "mfl",
-   "roster_updated_at": "2026-10-04T16:23:21+00:00",
+   "roster_updated_at": "2026-10-04T17:03:36+00:00",
    "roster_source": "MFL"
   }
  },
@@ -1609,7 +1387,7 @@
   "status": 200,
   "body": {
    "freshness": "**nflverse** loaded Sat Sep 26, 9:55 AM ET \u00b7 **sleeper** loaded Sat Sep 26, 5:26 PM ET \u00b7 NFL 2026 final games through 2026-09-24 (REG week 3) \u00b7 league scored through week 2",
-   "warning": "Injury report is from Sat Sep 26, 7:02 AM ET \u2014 treat Questionable tags as stale (it was loaded more than 48 h before the next kickoff (Sun Oct 4, 1:00 PM ET)).",
+   "warning": "Injury report is from Sat Sep 26, 7:02 AM ET \u2014 treat Questionable tags as stale (it was loaded more than 48 h before the next kickoff (Sun Oct 4, 4:05 PM ET)).",
    "updated_at": "2026-09-26T21:26:01.495715+00:00",
    "availability": {
     "enabled": false,
@@ -1642,36 +1420,36 @@
      "matchups": {
       "entries": 1,
       "fresh": 1,
-      "oldest_s": 3.6,
-      "newest_s": 3.6,
+      "oldest_s": 4.1,
+      "newest_s": 4.1,
       "ttl_s": 300
      },
      "rosters": {
       "entries": 1,
       "fresh": 1,
-      "oldest_s": 3.6,
-      "newest_s": 3.6,
+      "oldest_s": 4.1,
+      "newest_s": 4.1,
       "ttl_s": 600
      },
      "users": {
       "entries": 1,
       "fresh": 1,
-      "oldest_s": 3.6,
-      "newest_s": 3.6,
+      "oldest_s": 4.1,
+      "newest_s": 4.1,
       "ttl_s": 86400
      },
      "league": {
       "entries": 1,
       "fresh": 1,
-      "oldest_s": 3.3,
-      "newest_s": 3.3,
+      "oldest_s": 3.8,
+      "newest_s": 3.8,
       "ttl_s": 86400
      },
      "players": {
       "entries": 1,
       "fresh": 1,
-      "oldest_s": 2.4,
-      "newest_s": 2.4,
+      "oldest_s": 2.8,
+      "newest_s": 2.8,
       "ttl_s": 86400
      }
     },
@@ -1685,7 +1463,7 @@
       "70587": "https://www44.myfantasyleague.com"
      },
      "bucket": {
-      "tokens": 54.4,
+      "tokens": 54.8,
       "capacity": 60.0,
       "per_minute": 60.0,
       "refused": 0
@@ -1694,49 +1472,49 @@
       "league": {
        "entries": 1,
        "fresh": 1,
-       "oldest_s": 2.4,
+       "oldest_s": 2.8,
        "ttl_s": 86400
       },
       "rules": {
        "entries": 1,
        "fresh": 1,
-       "oldest_s": 2.4,
+       "oldest_s": 2.8,
        "ttl_s": 86400
       },
       "rosters": {
        "entries": 1,
        "fresh": 1,
-       "oldest_s": 2.4,
+       "oldest_s": 2.8,
        "ttl_s": 600
       },
       "live_scoring": {
        "entries": 1,
        "fresh": 1,
-       "oldest_s": 2.4,
+       "oldest_s": 2.8,
        "ttl_s": 300
       },
       "weekly_results": {
        "entries": 1,
        "fresh": 1,
-       "oldest_s": 2.4,
+       "oldest_s": 2.8,
        "ttl_s": 600
       },
       "players": {
        "entries": 1,
        "fresh": 1,
-       "oldest_s": 2.4,
+       "oldest_s": 2.8,
        "ttl_s": 86400
       },
       "standings": {
        "entries": 1,
        "fresh": 1,
-       "oldest_s": 2.4,
+       "oldest_s": 2.8,
        "ttl_s": 600
       },
       "schedule": {
        "entries": 1,
        "fresh": 1,
-       "oldest_s": 1.4,
+       "oldest_s": 1.5,
        "ttl_s": 300
       }
      }
@@ -6934,7 +6712,7 @@
     "source": "quoted from app/pages/8_League.py (the first line)"
    },
    "timings_ms": {
-    "total": 447.9
+    "total": 361.6
    }
   }
  },
@@ -6961,7 +6739,7 @@
       "expected": 117.95,
       "n_played": 0
      },
-     "p": 0.4447,
+     "p": 0.4442,
      "words": "a slight favorite",
      "note": null,
      "favorite": 9
@@ -6982,7 +6760,7 @@
       "expected": 124.06,
       "n_played": 0
      },
-     "p": 0.5504,
+     "p": 0.5515,
      "words": "a slight favorite",
      "note": null,
      "favorite": 3
@@ -7003,7 +6781,7 @@
       "expected": 112.87,
       "n_played": 0
      },
-     "p": 0.5198,
+     "p": 0.5157,
      "words": "a coin flip",
      "note": null,
      "favorite": null
@@ -7024,7 +6802,7 @@
       "expected": 120.31,
       "n_played": 0
      },
-     "p": 0.4737,
+     "p": 0.4706,
      "words": "a coin flip",
      "note": null,
      "favorite": null
@@ -7045,7 +6823,7 @@
       "expected": 121.11,
       "n_played": 0
      },
-     "p": 0.4554,
+     "p": 0.4552,
      "words": "a coin flip",
      "note": null,
      "favorite": null
@@ -8712,7 +8490,7 @@
     "source": "quoted from app/pages/8_League.py (the first line)"
    },
    "timings_ms": {
-    "total": 261.0
+    "total": 391.8
    }
   }
  },
@@ -8739,7 +8517,7 @@
       "expected": 117.46,
       "n_played": 0
      },
-     "p": 0.4528,
+     "p": 0.4525,
      "words": "a coin flip",
      "note": null,
      "favorite": null
@@ -8749,18 +8527,18 @@
      "a": {
       "roster_id": 1,
       "team_name": "Knight Train",
-      "percent": 34,
-      "expected": 95.78,
+      "percent": 3,
+      "expected": 46.54,
       "n_played": 0
      },
      "b": {
       "roster_id": 8,
       "team_name": "Big Mac Attack",
-      "percent": 66,
+      "percent": 97,
       "expected": 115.41,
       "n_played": 0
      },
-     "p": 0.3421,
+     "p": 0.0252,
      "words": "a clear favorite",
      "note": null,
      "favorite": 8
@@ -8770,60 +8548,60 @@
      "a": {
       "roster_id": 2,
       "team_name": "Blitzburg",
-      "percent": 42,
+      "percent": 46,
       "expected": 110.75,
       "n_played": 0
      },
      "b": {
       "roster_id": 9,
       "team_name": "Rock33",
-      "percent": 58,
-      "expected": 120.69,
+      "percent": 54,
+      "expected": 116.1,
       "n_played": 0
      },
-     "p": 0.4245,
-     "words": "a slight favorite",
+     "p": 0.4579,
+     "words": "a coin flip",
      "note": null,
-     "favorite": 9
+     "favorite": null
     },
     {
      "matchup_id": 4,
      "a": {
       "roster_id": 3,
       "team_name": "Uh, Winning!",
-      "percent": 50,
-      "expected": 112.31,
+      "percent": 87,
+      "expected": 111.55,
       "n_played": 0
      },
      "b": {
       "roster_id": 10,
       "team_name": "Just One More",
-      "percent": 50,
-      "expected": 113.03,
+      "percent": 13,
+      "expected": 66.31,
       "n_played": 0
      },
-     "p": 0.4955,
-     "words": "a coin flip",
+     "p": 0.8691,
+     "words": "a clear favorite",
      "note": null,
-     "favorite": null
+     "favorite": 3
     },
     {
      "matchup_id": 5,
      "a": {
       "roster_id": 4,
       "team_name": "Bad Mojo",
-      "percent": 54,
-      "expected": 125.78,
+      "percent": 53,
+      "expected": 118.51,
       "n_played": 0
      },
      "b": {
       "roster_id": 11,
       "team_name": "Hang-Over",
-      "percent": 46,
-      "expected": 119.72,
+      "percent": 47,
+      "expected": 114.18,
       "n_played": 0
      },
-     "p": 0.5402,
+     "p": 0.5347,
      "words": "a coin flip",
      "note": null,
      "favorite": null
@@ -8833,18 +8611,18 @@
      "a": {
       "roster_id": 5,
       "team_name": "Millertime",
-      "percent": 77,
-      "expected": 126.98,
+      "percent": 97,
+      "expected": 122.65,
       "n_played": 0
      },
      "b": {
       "roster_id": 6,
       "team_name": "Stick it to the Man",
-      "percent": 23,
-      "expected": 91.68,
+      "percent": 3,
+      "expected": 49.32,
       "n_played": 0
      },
-     "p": 0.7677,
+     "p": 0.9735,
      "words": "a clear favorite",
      "note": null,
      "favorite": 5
@@ -8854,19 +8632,19 @@
      "a": {
       "roster_id": 1,
       "team_name": "Knight Train",
-      "percent": 37,
-      "expected": 95.78,
+      "percent": 4,
+      "expected": 46.54,
       "n_played": 0
      },
      "b": {
       "roster_id": 7,
       "team_name": "Klaby Crew",
-      "percent": 63,
+      "percent": 96,
       "expected": 111.24,
       "n_played": 0
      },
-     "p": 0.3745,
-     "words": "a slight favorite",
+     "p": 0.0387,
+     "words": "a clear favorite",
      "note": null,
      "favorite": 7
     },
@@ -8886,7 +8664,7 @@
       "expected": 115.41,
       "n_played": 0
      },
-     "p": 0.4636,
+     "p": 0.4616,
      "words": "a coin flip",
      "note": null,
      "favorite": null
@@ -8896,40 +8674,40 @@
      "a": {
       "roster_id": 3,
       "team_name": "Uh, Winning!",
-      "percent": 44,
-      "expected": 112.31,
+      "percent": 46,
+      "expected": 111.55,
       "n_played": 0
      },
      "b": {
       "roster_id": 9,
       "team_name": "Rock33",
-      "percent": 56,
-      "expected": 120.69,
+      "percent": 54,
+      "expected": 116.1,
       "n_played": 0
      },
-     "p": 0.4355,
-     "words": "a slight favorite",
+     "p": 0.4628,
+     "words": "a coin flip",
      "note": null,
-     "favorite": 9
+     "favorite": null
     },
     {
      "matchup_id": 10,
      "a": {
       "roster_id": 4,
       "team_name": "Bad Mojo",
-      "percent": 59,
-      "expected": 125.78,
+      "percent": 89,
+      "expected": 118.51,
       "n_played": 0
      },
      "b": {
       "roster_id": 10,
       "team_name": "Just One More",
-      "percent": 41,
-      "expected": 113.03,
+      "percent": 11,
+      "expected": 66.31,
       "n_played": 0
      },
-     "p": 0.5942,
-     "words": "a slight favorite",
+     "p": 0.8916,
+     "words": "a clear favorite",
      "note": null,
      "favorite": 4
     },
@@ -8938,18 +8716,18 @@
      "a": {
       "roster_id": 5,
       "team_name": "Millertime",
-      "percent": 55,
-      "expected": 126.98,
+      "percent": 57,
+      "expected": 122.65,
       "n_played": 0
      },
      "b": {
       "roster_id": 11,
       "team_name": "Hang-Over",
-      "percent": 45,
-      "expected": 119.72,
+      "percent": 43,
+      "expected": 114.18,
       "n_played": 0
      },
-     "p": 0.5532,
+     "p": 0.5683,
      "words": "a slight favorite",
      "note": null,
      "favorite": 5
@@ -8959,18 +8737,18 @@
      "a": {
       "roster_id": 6,
       "team_name": "Stick it to the Man",
-      "percent": 31,
-      "expected": 91.68,
+      "percent": 4,
+      "expected": 49.32,
       "n_played": 0
      },
      "b": {
       "roster_id": 12,
       "team_name": "Madeyes Revenge",
-      "percent": 69,
+      "percent": 96,
       "expected": 117.46,
       "n_played": 0
      },
-     "p": 0.3102,
+     "p": 0.0439,
      "words": "a clear favorite",
      "note": null,
      "favorite": 12

@@ -44,7 +44,7 @@ def test_every_starter_higher_is_a_favorite():
     sd = np.sqrt(2 * 9 * 36.0)
     assert r["p_raw"] == pytest.approx(norm.cdf(9.0 / sd), abs=0.02)
     assert r["p"] == pytest.approx(D.shrink_week(r["p_raw"])) and 0.5 < r["p"] < r["p_raw"]
-    assert D.lineup_win_probability(theirs, mine)["p"] == pytest.approx(1 - r["p"], abs=0.01)
+    assert D.lineup_win_probability(theirs, mine)["p"] == pytest.approx(1 - r["p"], abs=1e-12)    # side order: exact
     assert D.week_words(r["p"]).endswith("favorite")
     assert D.week_words(1 - r["p"]).endswith("underdog")
     # each range is centred on its projection: the simulated totals are the expected totals the page prints
