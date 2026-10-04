@@ -18,7 +18,7 @@ _nightly = nightly_state(None if _asof.empty or pd.isna(_asof["t"].iloc[0]) else
                          console=True)
 if _nightly["stale"]:
     st.warning(f"{_nightly['words']} (The projections were last refit {_nightly['age_hours']:.0f} hours ago; "
-               f"the line shows after {_nightly['limit_hours']}.)")
+               f"this note shows after {_nightly['limit_hours']} hours.)")
 # ---- end IH-1
 
 st.subheader("Sources")
