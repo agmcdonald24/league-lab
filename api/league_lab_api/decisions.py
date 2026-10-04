@@ -996,6 +996,13 @@ def start_value(s) -> float | None:
     return T._r2(s.value)
 
 
+def known_value(prices: dict, ids) -> int | None:
+    """A side's season value above replacement (whole points, as the tables sum it), None when a player of it has none
+    (the partial sum of the others is not that side's value: unknown is not zero)."""
+    v, unknown = T.season_value(prices, list(ids))
+    return None if unknown else v
+
+
 def no_projection_slots(side: T.Side, slots: list[dict]) -> list[dict]:
     """`lineup_frame`'s slots (one per start of ``side.lineup_after``, in order) with a no-projection start's value null."""
     starts = list(side.lineup_after.starts) if side.lineup_after is not None else []
@@ -1672,7 +1679,9 @@ def calc_alternatives(ctx: TradeContext, out: dict, now: T.Trade, trade: T.Trade
     starts_now = tuple(weeks)[0] == ctx.this_week
     out["alternative"] = alt
     out.update(trade_vs_alternative(now.mine.gain_week if starts_now else None, me.gain_horizon, alt, span, window,
-                                    price_out=me.price_out, price_in=me.price_in, spots_used=len(t) - len(g),
+                                    price_out=None if me.unknown_out else me.price_out,           # ---- IG-1: a side
+                                    price_in=None if me.unknown_in else me.price_in,              # with no value: unknown
+                                    spots_used=len(t) - len(g),
                                     bench=(now.mine.bench_before, now.mine.bench_after)))
     out["strip"] = strip(trade.weeks, [a - b for a, b in zip(me.after, me.before, strict=True)],
                          [a - b for a, b in zip(th.after, th.before, strict=True)])
@@ -1987,7 +1996,7 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
                          "you_gain_week": pk.my_week if starts_now else None, "you_gain_horizon": pk.my_horizon,
                          "they_gain_week": pk.their_week if starts_now else None, "they_gain_horizon": pk.their_horizon,
                          "interest": interest(pk.their_horizon, pk.my_horizon, span),
-                         "price_out": T.season_value(ctx.prices, pk.give)[0], "price_in": T.season_value(ctx.prices, pk.get)[0]})
+                         "price_out": known_value(ctx.prices, pk.give), "price_in": known_value(ctx.prices, pk.get)})  # IG-1
     _ie1_cheaper(ctx, board, weeks, found, rows, starts_now, span)                     # ---- IE-1: least costly first
     # ---- IF-2: the ladder (standing pat, the best waiver move, the trades), the rows ranked by the gain beyond it; the
     # headline is the first card, always

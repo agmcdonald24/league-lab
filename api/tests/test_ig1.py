@@ -250,3 +250,19 @@ def test_a_bench_player_with_no_projection_answers_null(client, house):
     assert g["player_name"] == "Josh Jacobs" and g["this_week"] is None and g["market_price"] is None
     card = client.get(f"/api/player/{JACOBS}?league={SCRUBS}&team=6").json()
     assert card["proj_points"] is None
+
+
+def test_the_console_shows_a_blank_and_the_words_never_0_00():
+    from league_lab_api.applib import cards
+    df = pd.DataFrame([{"value": 12.5, "margin": 3.0, "value_source": "proj_points", "flag": ""},
+                       {"value": 0.0, "margin": 0.0, "value_source": UNVALUED, "flag": ""},
+                       {"value": 0.0, "margin": None, "value_source": UNVALUED, "flag": "Questionable"}])
+    out = cards.no_projection_blank(df)
+    assert out["value"].isna().tolist() == [False, True, True] and out["margin"].isna().tolist() == [False, True, True]
+    assert out["flag"].tolist() == ["", "no projection", "Questionable · no projection"]
+    assert df["value"].tolist() == [12.5, 0.0, 0.0]                  # a copy: the rows the cards read are untouched
+
+
+def test_a_side_with_an_unvalued_player_has_no_season_value_sum():
+    assert decisions.known_value({"a": 10.4, "b": 3.6}, ["a", "b"]) == 14
+    assert decisions.known_value({"a": 10.4}, ["a", "b"]) is None       # b unknown: the partial 10 is not the side's value
