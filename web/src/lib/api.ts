@@ -1763,3 +1763,29 @@ export interface TeamRosterRow {
   no_projection?: boolean;
 }
 // ---- end IG-1
+
+// ---- IG-3 (Wave I-G): the waiver deadline on Waivers; MFL's roster freshness on My Week; the MFL grade's
+// qualification next to the headline grade on About (INTERFACES.md § IG-3)
+export interface WaiverDeadline {
+  platform: "sleeper" | "mfl";
+  kind: string | null; // rolling | reverse_standings | faab | fcfs | blind_bid | blind_bid_fcfs | waiver_order | none
+  kind_words: string | null;
+  daily: boolean | null;
+  runs_at: string | null; // the next time claims run (ISO UTC); null: the platform does not say (MFL)
+  runs_words: string | null; // "Wednesday 3:00 AM ET" / "every day at 5:00 AM ET"
+  clear_days: number | null;
+  lock: { kickoff: string; words: string } | null; // the week's next kickoff not yet played
+  words: string; // the one line under the title
+  source: string;
+}
+export interface Waivers {
+  deadline?: WaiverDeadline | null;
+}
+export interface MyWeek {
+  roster_updated_at?: string | null; // MFL: when the rosters export was read from MyFantasyLeague (ISO UTC)
+  roster_source?: string | null; // "MFL"
+}
+export interface AboutAnswer {
+  grade_note?: string | null; // the qualification shown right under the headline grade (a league we do not score)
+}
+// ---- end IG-3

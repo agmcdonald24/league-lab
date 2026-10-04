@@ -186,6 +186,9 @@ class MFL:
         self._backoff_until = 0.0
         self._cache: dict[str, tuple[float, float, str, Any]] = {}
         self._lock = threading.Lock()
+        # ---- IG-3: when each cached answer was read from MFL (wall clock, epoch seconds): the "MFL rosters updated" line
+        self.wall: Callable[[], float] = time.time
+        self._read_at: dict[str, float] = {}
 
     # ------------------------------------------------------------------ the one read
     def _url(self, type_: str, league: str | None, extra: Mapping[str, str | int] | None, host: str | None) -> str:
@@ -264,11 +267,20 @@ class MFL:
             raise LeagueNotFound(PRIVATE_SENTENCE)
         with self._lock:
             self._cache[key] = (now + TTL_S[kind], now, kind, data)
+            self._read_at[key] = self.wall()                                                    # ---- IG-3
         if kind == "league" and league and isinstance(data, dict):
             base = str((data.get("league") or {}).get("baseURL") or "").rstrip("/")
             if _HOST.match(base) and league not in self.hosts:
                 self.hosts[league] = base
         return data
+
+    # ---- IG-3 (Wave I-G): the export's fetch time (the on-demand cache's age): a stale answer served on an MFL failure
+    # keeps the time it was read, so the line never claims a fresher roster than the one shown
+    def fetched_at(self, type_: str, league_id: str, extra: Mapping[str, str | int] | None = None) -> float | None:
+        """When the cached ``TYPE=type_`` export of this league was read from MFL (epoch seconds; None: not read)."""
+        with self._lock:
+            return self._read_at.get(self._url(type_, check_league(league_id), extra, None))
+    # ---- end IG-3
 
     # ------------------------------------------------------------------ the calls
     def league(self, league_id: str) -> dict:

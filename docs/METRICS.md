@@ -1038,6 +1038,21 @@ with the season value (and upside) only.
 
 **Not modelled.** Trade value from a real market; injury-specific absence rates (constants); the add's own future
 starts beyond the horizon (only the drop's); a probability on the role scenario (it is a what-if).
+
+**The stash writer (IG-3, Wave I-G, 2026-10-04; `waivers.upside_for_roster`, `upside_stashes`).** The nightly's upside
+stashes (`ops.waiver_upside`) used B3's drop (the least lineup loss over the horizon, ties to the fewest
+rest-of-season points) and the API decided claim / watch on read. Now each stash add is paired with every legal drop
+(none on an open roster spot) at the scenario's projection ("if it holds"); each pairing is an `ops.waiver_moves`-shaped
+row — the lineup loss with the add, plus the drop's pieces from the same sweep (`load_and_sweep(pieces_out=…)` hands
+every droppable player's `drop_pieces` to the stash writer; run alone, it reads them back from `ops.waiver_moves`) —
+and `choose_drops` names the cheapest. The row carries `stash_action` = **claim** when that pairing is worthwhile if the
+role holds (net ≥ 1 this week or ≥ 3 over the horizon — the same bar as any claim), else **watch**, plus `drop_cost`,
+`drop_cost_piece`, `net_weekly_gain`, `net_horizon_gain`. A watch row keeps the drop a claim would take (the legality
+tests read it); the screen shows no drop for it. The API shows the writer's call as written and re-decides only rows
+written before Wave I-G (the old rule: the scenario's lineup gain against the drop's own cost). The stash case itself
+(no pairing gains at his projection) and every gain are unchanged. On `league_lab_i0b` (2026-09-26 clone): 83 stashes,
+all **watch** (the scenarios add nothing to these lineups over weeks 4–7); their drops moved on 6 of 36 dynasty rows
+(B3's Jordan Mason / Carson Beck → DeeJay Dallas / Greg Dulcich: the cheaper by season value), none on Scrubs.
 ### Decision cards (B4, 2026-09-30; `app/lib/cards.py`, Home "My week", Matchups, the player card)
 
 No new number: a card restates B1's lineup for one roster-week. **Which week**: the first regular-season

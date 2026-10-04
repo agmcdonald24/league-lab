@@ -609,6 +609,12 @@ and `api/tests/conftest.py` sets it off for every test, so a test run never writ
 database. `api/tests/test_ig2.py` applies the file itself
 and removes its rows.
 
+**Retention** *(Wave I-G, IG-3)*. Every run of `scripts/hosted_usage.sql` — the sync's "U-1" block, once a night —
+ends with `delete from usage.events where at < now() - interval '180 days'`: the table holds about six months of
+views (at 168 bytes a row, a busy beta of 1,000 views a day stays near 30 MB). The owner role deletes; the app role
+still cannot (no `DELETE` grant). The console's Usage page says so under its tables. To keep everything, remove that
+one statement; to keep less, change the interval (one place).
+
 ## Licences to keep in mind when sharing
 
 * nflverse data: free to use with attribution (kept on Home → Data & attribution).

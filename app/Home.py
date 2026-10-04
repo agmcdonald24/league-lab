@@ -206,6 +206,7 @@ GUIDE = [
     ("Season stats for every player", ("9_Players.py",)),
     ("Did streaming kickers pay off?", ("11_Kickers.py",)),
     ("Is the data up to date?", ("12_Data_Status.py",)),
+    ("Which screens of the web app get used?", ("99_Usage.py",)),                         # ---- IG-3
 ]
 seen: dict[str, list[str]] = {}
 for question, files in GUIDE:

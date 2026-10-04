@@ -42,3 +42,9 @@ comment on table usage.events is
 grant usage on schema usage to league_lab_app;
 grant select, insert on usage.events to league_lab_app;
 revoke update, delete, truncate, references, trigger on usage.events from league_lab_app;
+
+-- ---- IG-3 (Wave I-G): retention. Every run (the sync's U-1 block, once a night) deletes the views older than 180 days,
+-- so usage.events holds about six months (at ~168 bytes a row with its index: well under the hosted plan's room). The
+-- owner deletes; the app role still cannot. The console's Usage page and docs/HOSTING.md § "Usage" say so.
+delete from usage.events where at < now() - interval '180 days';
+-- ---- end IG-3

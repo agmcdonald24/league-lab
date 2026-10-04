@@ -43,6 +43,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `decisions`; About and the console's Record page show "Our lineups against the ones started"; `league-lab validate`
   writes and grades (a nightly step proposed).
 
+- **IG-3, the small opens.** The nightly's upside stashes name their drop by IF-1's cost (`choose_drops`) and say
+  claim or watch on the row, so the mart and the screen agree; Waivers says when claims run, from the league's own
+  settings ("Claims run Wednesday 3:00 AM ET (rolling waivers); players lock at their own kickoff — the next game
+  starts Sunday 1:00 PM ET", MFL: first come, first served / "see MFL"); My Week for an MFL league says when MFL's
+  rosters were read ("MFL rosters updated 4:05 AM ET ›"); About puts the MFL grade's qualification under the headline
+  grade; `usage.events` keeps 180 days (the sync deletes older views); the console's page guide lists Usage.
+
 ## 2026-10-04 — the product is isuckatfantasy
 
 - **Renamed.** Everything a manager sees — the sign-in screen, the top bar, the home-screen icon and its mark ("isaf"),

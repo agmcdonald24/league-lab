@@ -442,6 +442,7 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
         if od_info.get("week"):
             week = od_info["week"]
     out["week"] = week
+    out["deadline"] = None                                                                      # ---- IG-3
     if week is None:
         out["notice"] = "The regular season is over: no waiver claims left."
         return out
@@ -503,6 +504,7 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
     out.update(waiver_views(league_id, team, season, int(week), mv, out, is_house, od_info, ros))
     # ---- end IB-2
     out.setdefault("no_worthwhile_move", None)                                         # ---- IF-1
+    out["deadline"] = waivers_deadline_for(str(league_id), season, int(week), is_house)        # ---- IG-3
     if not is_house:
         out["on_demand"] = {k: v for k, v in od_info.items() if k not in ("lw", "fa")}
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
@@ -2831,7 +2833,75 @@ def _stash(r: dict, b: dict) -> dict:
             "holds_slot": _str(r.get("holds_slot")), "drop_horizon_loss": _num(r.get("drop_horizon_loss")),
             "change_text": _str(r.get("change_text")), "cause_text": _str(r.get("cause_text")),
             "since_week": _int(r.get("since_week")), "games_held": _int(r.get("games_held")), "kind": _str(r.get("kind")),
-            "headline": SG.stash_headline(r), "lines": SG.upside_detail(r)}
+            "headline": SG.stash_headline(r), "lines": SG.upside_detail(r), **ig3_stash_fields(r)}
+
+
+# ---- IG-3 (Wave I-G): the stash writer decides claim / watch with IF-1's ``choose_drops`` (waivers.upside_for_roster);
+# a mart row that carries the call (``stash_action``, from the writer of Wave I-G on) is shown as written — the API
+# re-decides only older rows (``if1_stashes``), so the screen says what the mart says.
+def ig3_stash_fields(r: dict) -> dict:
+    """The writer's call on one ``mart_waiver_upside`` row ({} for a row written before it)."""
+    act = _str(r.get("stash_action"))
+    if act not in ("claim", "watch"):
+        return {}
+    return {"stash_action": act, "stash_source": "writer", "net_weekly_gain": _num(r.get("net_weekly_gain")),
+            "net_horizon_gain": _num(r.get("net_horizon_gain")),
+            "cheapest_drop": ({"sleeper_id": _str(r.get("drop_sleeper_id")), "player_name": _str(r.get("drop_name")),
+                               "cost": _num(r.get("drop_cost")), "piece": _str(r.get("drop_cost_piece"))}
+                              if _str(r.get("drop_name")) else None)}
+
+
+IG3_HAS_CALL_SQL = """select 1 from information_schema.columns where table_schema = 'analytics'
+                       and table_name = 'mart_waiver_upside' and column_name = 'stash_action'"""
+IG3_CALL_SQL = """select upside_rank, stash_action, drop_cost, drop_cost_piece, net_weekly_gain, net_horizon_gain
+                   from analytics.mart_waiver_upside where league_id = %s and roster_id = %s and week = %s"""
+
+
+def ig3_with_call(up: pd.DataFrame, league_id: str, team: int, week: int) -> pd.DataFrame:
+    """The stash rows with the writer's call joined on (``upside_rank``); unchanged when the mart predates it (the view
+    without the columns, or rows written before Wave I-G)."""
+    if up is None or up.empty or "stash_action" in up or "upside_rank" not in up:
+        return up
+    try:
+        if query(IG3_HAS_CALL_SQL).empty:        # a mart built before Wave I-G: the API re-decides (if1_stashes)
+            return up
+        call = query(IG3_CALL_SQL, (league_id, int(team), int(week)))
+    except Exception:  # noqa: BLE001 - the call is a refinement; the older path still answers
+        return up
+    if call.empty:
+        return up
+    return up.merge(call, on="upside_rank", how="left")
+
+
+def ig3_apply_call(stashes: list[dict], week: int, last: int) -> None:
+    """The writer's call on the stash cards (idempotent): a watch shows no drop and the watch line; a claim keeps its
+    drop. Applied where the stashes are built (``_upside``: a roster with no claim never reaches ``if1_stashes``)."""
+    for s in stashes:
+        if s.get("stash_source") != "writer":
+            continue
+        if s["stash_action"] == "watch":
+            s["drop"], s["watch_words"] = None, ig3_watch_words(s, _span_words(int(week), int(last)))
+        else:
+            s["watch_words"] = None
+        cd = s.get("cheapest_drop") or {}
+        s["drop_cost"] = {"cost": cd.get("cost"), "piece": cd.get("piece")} if cd else None
+
+
+def ig3_watch_words(s: dict, span: str) -> str:
+    """The watch line from the writer's numbers: what the role adds if it holds, after the cheapest drop's cost."""
+    gain, net = _num(s.get("holds_horizon_gain")) or 0.0, _num(s.get("net_horizon_gain"))
+    cd = s.get("cheapest_drop") or {}
+    dn = _last(cd.get("player_name")) if cd.get("player_name") else None
+    bar = f"under {W.WORTH_WEEK:.0f} this week and {W.WORTH_HORIZON:.0f} over the weeks"
+    head = f"Watch, no claim yet: if his role holds he adds {gain:+.1f} to your lineup over {span}"
+    if dn and net is not None and abs(net - gain) >= 0.05:
+        head += f"; after what dropping {dn} costs, {net:+.1f} — {bar}."
+    elif dn:
+        head += f" with {dn} dropped — {bar}."
+    else:
+        head += f" — {bar}."
+    return head + " Claim him when his role would put him in your lineup for more, or when a roster spot opens."
+# ---- end IG-3
 
 
 def _scenario_on_demand(r: dict, scoring: dict, league_name: str, week: int) -> dict:
@@ -2864,9 +2934,12 @@ def _upside(league_id: str, team: int | None, week: int, is_house: bool, od_info
             return {"title": UPSIDE_TITLE, "stashes": [], "howto": UPSIDE_HOWTO,
                     "why": "Upside stashes (a player whose role is growing before his points do) arrive with the nightly update."}
         up = query(UPSIDE_SQL, (league_id, int(team), int(week)))
+        up = ig3_with_call(up, league_id, int(team), int(week))                                       # ---- IG-3
         rows = up.to_dict("records")
         b = bio([r.get("add_gsis_id") for r in rows] + [r.get("drop_gsis_id") for r in rows])
         out = [_stash(r, b) for r in rows]
+        if rows:                                                                                    # ---- IG-3
+            ig3_apply_call(out, int(week), _int(rows[0].get("horizon_last_week")) or int(week) + W.HORIZON - 1)
         why = None if out else (f"No upside stash for week {week}: no free agent's role grew in his last one to three games "
                                 "without already making the lists above (see Trends for every role change).")
         return {"title": UPSIDE_TITLE, "stashes": out, "why": why, "howto": UPSIDE_HOWTO, "source": "mart_waiver_upside"}
@@ -3651,6 +3724,10 @@ def if1_stashes(out: dict, mv: pd.DataFrame, week: int, last: int) -> None:
     what the drop costs (his own cost: the lineup loss alone, his depth, later starts, season value, upside);
     otherwise ``stash_action`` 'watch', no drop, and what would change it."""
     stashes = (out.get("upside") or {}).get("stashes") or []
+    # ---- IG-3: the writer's call stands (it used choose_drops); only older rows are re-decided below
+    ig3_apply_call(stashes, week, last)
+    stashes = [s for s in stashes if s.get("stash_source") != "writer"]
+    # ---- end IG-3
     if not stashes or mv is None or mv.empty or "drop_cost" not in mv:
         return
     span = _span_words(week, last)
@@ -3730,3 +3807,155 @@ def best_waiver_move(league_id: str, team: int, *, source: str | None = None, as
             "by_week": [_num(g) for g in gains] if isinstance(gains, list | tuple | np.ndarray) else [],
             "weeks": weeks, "span": span, "drop_cost": f["drop_cost"], "words": words, "source": "waivers.best_waiver_move"}
 # ---- end IF-1
+
+
+# ---- IG-3 (Wave I-G): the waiver deadline — Waivers says when claims run, from the league's own settings, and when
+# the next game starts (players lock at their own kickoff; My Week's ``next_lock`` machinery). Sleeper: ``waiver_type``
+# 0 rolling / 1 reverse standings / 2 FAAB, ``daily_waivers`` (1 = every day), ``waiver_day_of_week`` (0 = Monday …
+# 6 = Sunday; Sleeper's default 2 = Wednesday, the one value measured), ``daily_waivers_hour`` (an hour of the day in
+# Pacific time: Sleeper's default 0 = midnight PT = 3:00 AM ET), ``waiver_clear_days``. MFL: the league export carries
+# ``currentWaiverType`` but no time — "see MFL". Unknown is not a time: a league without the settings says nothing.
+WAIVER_KIND = {0: "rolling", 1: "reverse_standings", 2: "faab"}
+WAIVER_KIND_WORDS = {"rolling": "rolling waivers", "reverse_standings": "waiver order by reverse standings",
+                     "faab": "FAAB blind bids", "fcfs": "first come, first served", "blind_bid": "blind bids",
+                     "blind_bid_fcfs": "blind bids, then first come, first served", "waiver_order": "waiver order",
+                     "none": "no free-agent moves"}
+DAY_NAMES = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+SLEEPER_WAIVER_TZ = "America/Los_Angeles"
+ET = "America/New_York"
+KICKOFFS_SQL = """select kickoff_at from analytics.dim_game where season = %s and week = %s and kickoff_at is not null
+                  order by kickoff_at"""
+
+
+def _clock(t: pd.Timestamp) -> str:
+    """'3:00 AM' for a time (any zone)."""
+    return f"{t.hour % 12 or 12}:{t:%M} {'AM' if t.hour < 12 else 'PM'}"
+
+
+def _sleeper_runs(settings: dict, now: pd.Timestamp) -> tuple[pd.Timestamp | None, str | None, bool | None]:
+    """(the next time claims run, its words in ET, daily) from a Sleeper league's settings; (None, None, …) when the
+    settings do not say."""
+    daily = settings.get("daily_waivers")
+    daily = None if daily is None else bool(int(daily))
+    hour, day = settings.get("daily_waivers_hour"), settings.get("waiver_day_of_week")
+    try:
+        hour = int(hour)
+    except (TypeError, ValueError):
+        return None, None, daily
+    if not 0 <= hour <= 23:
+        return None, None, daily
+    local = now.tz_convert(SLEEPER_WAIVER_TZ)
+    if daily:
+        nxt = local.normalize().replace(hour=hour)
+        if nxt <= local:
+            nxt = (local.normalize() + pd.Timedelta(days=1)).replace(hour=hour)
+        t = nxt.tz_convert(ET)
+        return t.tz_convert("UTC"), f"every day at {_clock(t)} ET", True
+    try:
+        day = int(day)
+    except (TypeError, ValueError):
+        return None, None, daily
+    if not 0 <= day <= 6:
+        return None, None, daily
+    nxt = (local.normalize() + pd.Timedelta(days=(day - local.weekday()) % 7)).replace(hour=hour)
+    if nxt <= local:
+        nxt += pd.Timedelta(days=7)
+    t = nxt.tz_convert(ET)
+    return t.tz_convert("UTC"), f"{DAY_NAMES[t.weekday()]} {_clock(t)} ET", False
+
+
+def mfl_waiver_kind(v: Any) -> str | None:
+    """MFL's ``currentWaiverType`` (FCFS, BBID, BBID_FCFS, WAIVER …) as one of WAIVER_KIND_WORDS' keys."""
+    s = str(v or "").strip().upper()
+    if not s:
+        return None
+    if s == "NONE":
+        return "none"
+    if s.startswith("BBID"):
+        return "blind_bid_fcfs" if "FCFS" in s else "blind_bid"
+    if s == "FCFS":
+        return "fcfs"
+    return "waiver_order" if "WAIVER" in s else None
+
+
+def next_kickoff(season: int | None, week: int | None, now: pd.Timestamp) -> dict | None:
+    """The decision week's next kickoff not yet played: {kickoff (ISO UTC), words 'Sunday 1:00 PM ET'}."""
+    if season is None or week is None:
+        return None
+    try:
+        g = query(KICKOFFS_SQL, (int(season), int(week)))
+    except Exception:  # noqa: BLE001 - a line on the page, never a failure
+        return None
+    ks = [pd.Timestamp(k) for k in g["kickoff_at"]] if not g.empty else []
+    ks = [(k.tz_localize("UTC") if k.tzinfo is None else k.tz_convert("UTC")) for k in ks]
+    up = [k for k in ks if k > now]
+    if not up:
+        return None
+    t = up[0].tz_convert(ET)
+    return {"kickoff": up[0].isoformat(), "words": f"{DAY_NAMES[t.weekday()]} {_clock(t)} ET"}
+
+
+def waiver_deadline(league: dict | None, *, platform: str = "sleeper", mfl_type: Any = None, season: int | None = None,
+                    week: int | None = None, now: datetime | pd.Timestamp | None = None, kind_fallback: int | None = None) -> dict | None:
+    """When claims run, in one line (``INTERFACES.md`` § IG-3). ``league`` = Sleeper's league dict (its ``settings``);
+    an MFL league passes ``platform='mfl'`` and the export's ``currentWaiverType`` as ``mfl_type``; ``kind_fallback`` =
+    the database's ``waiver_type`` when Sleeper's settings could not be read. None when nothing is known."""
+    now = pd.Timestamp(now or datetime.now(UTC))
+    now = now.tz_localize("UTC") if now.tzinfo is None else now.tz_convert("UTC")
+    settings = dict((league or {}).get("settings") or {})
+    runs_at = runs_words = daily = clear = None
+    if platform == "mfl":
+        kind, source = mfl_waiver_kind(mfl_type), "MFL league export"
+    else:
+        wt = settings.get("waiver_type", kind_fallback)
+        try:
+            kind = WAIVER_KIND.get(int(wt)) if wt is not None else None
+        except (TypeError, ValueError):
+            kind = None
+        runs_at, runs_words, daily = _sleeper_runs(settings, now)
+        try:
+            clear = int(settings["waiver_clear_days"]) if settings.get("waiver_clear_days") is not None else None
+        except (TypeError, ValueError):
+            clear = None
+        source = "Sleeper league settings"
+    lock = next_kickoff(season, week, now)
+    if kind is None and runs_words is None and platform != "mfl":
+        return None
+    kw = WAIVER_KIND_WORDS.get(kind) if kind else None
+    if platform == "mfl":
+        if kind == "fcfs":
+            head = "Free agents are first come, first served on MFL: a claim is yours as soon as MFL takes it"
+        elif kind == "none":
+            head = "This league takes no free-agent moves on MFL right now"
+        else:
+            head = f"Claims run on MFL's schedule for this league{f' ({kw})' if kw else ''}: see MFL for the time"
+    elif runs_words:
+        head = f"Claims run {runs_words}" + (f" ({kw})" if kw else "")
+    else:
+        head = f"Claims run on Sleeper's schedule ({kw}): see Sleeper for the time"
+    tail = f"; players lock at their own kickoff — the next game starts {lock['words']}." if lock else "."
+    return {"platform": platform, "kind": kind, "kind_words": kw, "daily": daily,
+            "runs_at": runs_at.isoformat() if runs_at is not None else None, "runs_words": runs_words,
+            "clear_days": clear, "lock": lock, "words": head + tail, "source": source}
+
+
+def waivers_deadline_for(league_id: str, season: int | None, week: int | None, is_house: bool) -> dict | None:
+    """The deadline for /api/waivers: Sleeper's league settings (the client's cache; a house league falls back to the
+    database's waiver type when Sleeper cannot be read), or the MFL export's waiver type. Never raises."""
+    try:
+        if A.platforms.is_mfl(league_id):
+            raw = A.sleeper().mfl.client.league(A.platforms.mfl_id(league_id))
+            return waiver_deadline(None, platform="mfl", mfl_type=(raw or {}).get("currentWaiverType"), season=season, week=week)
+        try:
+            league = A.sleeper().league(A.check_id(league_id))
+        except Exception:  # noqa: BLE001 - Sleeper down: the database's waiver type, no time
+            league = None
+        fallback = None
+        if league is None and is_house:
+            d = query("select waiver_type from analytics.dim_league_season where league_id = %s and is_current_season",
+                      (str(league_id),))
+            fallback = _int(d["waiver_type"].iloc[0]) if not d.empty else None
+        return waiver_deadline(league, season=season, week=week, kind_fallback=fallback)
+    except Exception:  # noqa: BLE001 - a line on the page, never a failure
+        return None
+# ---- end IG-3

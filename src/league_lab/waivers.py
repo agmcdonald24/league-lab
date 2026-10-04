@@ -595,9 +595,11 @@ def _roster_player(r: dict, sleeper: Mapping[str, dict]) -> Player:
 
 
 def load_and_sweep(conn: psycopg.Connection, season: int, as_of: datetime | None = None, *,
-                   only: tuple[str, int] | None = None, unpruned: bool = False) -> tuple[list[dict], dict, dict]:
+                   only: tuple[str, int] | None = None, unpruned: bool = False,
+                   pieces_out: dict | None = None) -> tuple[list[dict], dict, dict]:
     """Read the inputs and evaluate every roster (or ``only`` = (league, roster)). Returns
-    (ops.waiver_moves rows, stats, decision week per league)."""
+    (ops.waiver_moves rows, stats, decision week per league). IG-3: ``pieces_out`` (a dict) receives each roster's
+    drop pieces for every droppable player, keyed (league, roster) — the stash writer's input."""
     t_load = time.perf_counter()
     with conn.cursor() as cur:
         totals = _frame(cur, """
@@ -697,7 +699,7 @@ def load_and_sweep(conn: psycopg.Connection, season: int, as_of: datetime | None
             rows += sweep_roster(slots, week_rows, inp.current.get(lid, {}).get(roster_id, []), adds, fa_meta,
                                  [r for w in rest for r in by_roster_week.get((lid, w, roster_id), [])], len(rest), add_ros_of, key,
                                  inp.sleeper, lineup_value=float(tot0["lineup_value"]), stats=stats, unpruned=unpruned,
-                                 **values.get(lid, {}))
+                                 pieces_out=pieces_out, **values.get(lid, {}))                          # ---- IG-3
     stats["sweep_seconds"] = time.perf_counter() - t_sweep
     stats["rows"] = len(rows)
     return rows, stats, decision
@@ -726,7 +728,8 @@ def sweep_roster(slots: Sequence[str], week_rows: Sequence[Sequence[Mapping]], c
                  adds: Mapping[str, Sequence[Player | None]], fa_meta: Mapping[str, Mapping], rest_rows: Sequence[Mapping],
                  rest_weeks: int, add_ros_of, key: Mapping, sleeper: Mapping[str, dict], *, lineup_value: float | None = None,
                  stats: dict | None = None, unpruned: bool = False, market: Mapping[str, float] | None = None,
-                 replacement: Mapping[str, float] | None = None, upside: Mapping[str, float] | None = None) -> list[dict]:
+                 replacement: Mapping[str, float] | None = None, upside: Mapping[str, float] | None = None,
+                 pieces_out: dict | None = None) -> list[dict]:
     """One roster's ``ops.waiver_moves`` rows (``load_and_sweep``'s per-roster step; Wave G's on-demand path calls it
     with lineups solved on request). ``week_rows`` = the roster's lineup rows per horizon week (ops.lineups' columns,
     no empty slots), ``cur_rows`` = today's roster (IR / taxi flags), ``adds`` = every free agent as B1 carries him per
@@ -765,6 +768,13 @@ def sweep_roster(slots: Sequence[str], week_rows: Sequence[Sequence[Mapping]], c
         log.warning("waivers: %s roster %s week %s re-solves to %.2f, ops.lineup_totals says %.2f",
                     lid, roster_id, week0, chk, float(lineup_value))
     key = {**key, "open_roster_spots": open_spots}
+    # ---- IG-3: the drop's value pieces of every droppable player, for the stash writer (``upside_stashes`` names the
+    # stash's drop by the same cost); a player's pieces do not depend on the add or on which other players are priced
+    if pieces_out is not None and droppable:
+        pieces_out[(lid, int(roster_id))] = drop_pieces(
+            slots, players, rest_rows, adds, fa_meta, info, sleeper, set(droppable), key.get("horizon_last_week"), rest_weeks,
+            add_ros_of, market=market, replacement=replacement, upside=upside)
+    # ---- end IG-3
     if not moves:
         rows.append({**key, "list_kind": "nothing", "lineup_before": _r2(chk), "lineup_after": _r2(chk),
                      "weekly_gain": 0.0, "horizon_gain": 0.0})
@@ -811,8 +821,11 @@ def sweep_roster(slots: Sequence[str], week_rows: Sequence[Sequence[Mapping]], c
             "displaced_slot": disp0["slot"] if disp0 else None,
         })
     # ---- IF-1: the drop's value pieces (per player: the add does not change them), then the cost-ordered ranks
-    pieces = drop_pieces(slots, players, rest_rows, adds, fa_meta, info, sleeper, {r["drop_sleeper_id"] for r in rows if r.get("drop_sleeper_id")},
-                         key.get("horizon_last_week"), rest_weeks, add_ros_of, market=market, replacement=replacement, upside=upside)
+    need = {r["drop_sleeper_id"] for r in rows if r.get("drop_sleeper_id")}
+    have = (pieces_out or {}).get((lid, int(roster_id))) or {}                                            # ---- IG-3
+    pieces = {**have, **drop_pieces(slots, players, rest_rows, adds, fa_meta, info, sleeper, need - set(have),
+                                     key.get("horizon_last_week"), rest_weeks, add_ros_of, market=market,
+                                     replacement=replacement, upside=upside)}
     for r in rows:
         r.update(pieces.get(r.get("drop_sleeper_id"), {}))
     return choose_drops(rows)
@@ -931,12 +944,13 @@ def waiver_moves(conn: psycopg.Connection, season: int | None = None, as_of: dat
         log.warning("waivers: ops.lineup_totals is empty (run `league-lab project` first)")
         return WaiverRun(None, pd.DataFrame(columns=ALL_COLUMNS), 0.0, 0.0)
     season = int(season)
-    rows, stats, decision = load_and_sweep(conn, season, as_of)
+    pieces: dict = {}                                                                                  # ---- IG-3
+    rows, stats, decision = load_and_sweep(conn, season, as_of, pieces_out=pieces)
     _write(conn, season, rows)
     run = WaiverRun(season, pd.DataFrame(rows, columns=ALL_COLUMNS), time.perf_counter() - t0,
                     stats.get("sweep_seconds", 0.0), stats, decision)
     moves = int((run.rows["list_kind"] != "nothing").sum()) if len(run.rows) else 0
-    upside_after_waivers(conn, season)    # R-12: the upside stash list (ops.waiver_upside); logged, never fatal
+    upside_after_waivers(conn, season, pieces)    # R-12: the upside stash list (ops.waiver_upside); logged, never fatal
     log.info("waiver moves written for %s: %s rows (%s moves, %s rosters with nothing better) for weeks %s "
              "in %.2f s (sweep %.2f s; %s of %s free-agent x roster pairs past the bar)",
              season, len(rows), moves, len(rows) - moves, decision, run.seconds, run.sweep_seconds,
@@ -1002,8 +1016,8 @@ __all__ = ["ALL_COLUMNS", "COST_COLUMNS", "DDL", "DropCost", "FINGERPRINT_SQL", 
 # (horizon gain <= 0: B3's start-now / cover lists do not carry him) — the stash case. Per roster he is
 # valued the B3 way twice over the same horizon: the lineup gain at his projection (base_*_gain, <= 0 by
 # construction) and "if it holds" at the scenario's projection for the weeks the scenario covers (the
-# projection after it lapses). The drop is the droppable player whose loss costs the lineup least over the
-# horizon (B3's rule: ties to the fewest rest-of-season points; none on an open roster spot). Written to
+# projection after it lapses). The drop is ``choose_drops``' cheapest for the add "if it holds" (IG-3; was B3's
+# least lineup loss: see the IG-3 block below; none on an open roster spot). Written to
 # ops.waiver_upside (its own table: the B3 lists, their dbt tests and the page's B3 region read
 # ops.waiver_moves untouched); view mart_waiver_upside.
 
@@ -1037,37 +1051,77 @@ class Stash:
     base_gains: tuple[float, ...]
     holds_gains: tuple[float, ...]
     holds_slot: str | None
+    # ---- IG-3: the drop chosen by ``choose_drops`` (the cheapest by the drop's cost) and the claim / watch call
+    choice: dict = field(default_factory=dict, compare=False)
+
+
+# ---- IG-3 (Wave I-G): the stash writer follows ``choose_drops``. B3's rule named the drop that costs the LINEUP least
+# (a bench WR who never starts was free), and the API re-decided claim / watch on read from IF-1's cost. Now each
+# stash add is paired with every legal drop (none on an open roster spot) "if his role holds", the candidate rows carry
+# the same value pieces as ``ops.waiver_moves`` (``drop_pieces``: depth, later starts, season value, upside) and go
+# through ``choose_drops``: the stash's drop is the cheapest, the net gains are IF-1's, and the row says
+# ``stash_action`` = 'claim' when that best pairing is worth a roster spot (``is_worthwhile``: net ≥ 1 this week or ≥ 3
+# over the horizon, if the role holds), else 'watch' — no claim yet: the screen recommends no drop, the row keeps the
+# drop a claim would take (the legality tests and the console read it) and its cost. The mart then says what the
+# screen says.
+STASH_PIECE_KEYS = ("drop_depth_lost", "drop_future_starts", "drop_future_start_weeks", "drop_season_value",
+                    "drop_season_points", "drop_replacement_points", "drop_upside")
 
 
 def upside_for_roster(slots: Sequence[str], weeks: Sequence[Sequence[Player]], adds_base: Mapping[str, Sequence[Player | None]],
                       adds_holds: Mapping[str, Sequence[Player | None]], droppable: Sequence[str], open_spot: bool,
-                      ros: Mapping[str, float]) -> list[Stash]:
+                      ros: Mapping[str, float], pieces: Mapping[str, Mapping] | None = None) -> list[Stash]:
     """One roster's stashes (pure). ``weeks`` / ``droppable`` / ``open_spot`` as for ``roster_moves``;
     ``adds_base[id][h]`` the free agent as B1 carries him in horizon week h, ``adds_holds[id][h]`` the
     same with the larger-role projection where the scenario covers week h; ``ros`` = each rostered
-    player's projected points over the rest of the season (the drop's tie-break)."""
+    player's projected points over the rest of the season (the drop's tie-break); ``pieces`` = each drop
+    candidate's value pieces (``drop_pieces``' columns; missing = not measured: the cost is his lineup loss).
+    IG-3: the drop is ``choose_drops``' best for the add "if it holds" (``Stash.choice`` carries the cost, the
+    net gains and ``stash_action``)."""
     weeks, droppable = guard(slots, weeks, droppable)
     if not open_spot and not droppable:
         return []
     preps = [prepare(ps, slots) for ps in weeks]
     loss = {d: sum(w.total - (_what_if(w, None, d)[0] if d in w.starters else w.total) for w in preps) for d in droppable}
-    drop = None if open_spot else min(droppable, key=lambda d: (round(loss[d], 2), round(ros.get(d, 0.0), 2), d))
+    drops: list[str | None] = [None] if open_spot else list(droppable)
+    pieces = pieces or {}
     out = []
     for a in sorted(adds_holds):
-        gains = {}
+        gains: dict[str, dict[str | None, tuple[float, ...]]] = {"base": {}, "holds": {}}
+        alone_h: list[float] = []
+        displaced: str | None = None
         for label, seq in (("base", adds_base[a]), ("holds", adds_holds[a])):
-            g = []
-            for h, w in enumerate(preps):
-                p = _norm(seq[h]) if h < len(seq) and seq[h] is not None else None
-                g.append(_what_if(w, p, drop)[0] - w.total if p is not None else (_what_if(w, None, drop)[0] - w.total))
-            gains[label] = tuple(g)
+            ps = [_norm(seq[h]) if h < len(seq) and seq[h] is not None else None for h in range(len(preps))]
+            for d in drops:
+                gains[label][d] = tuple((_what_if(w, p, d)[0] if p is not None else _what_if(w, None, d)[0]) - w.total
+                                        for w, p in zip(preps, ps, strict=True))
+            if label == "holds":
+                for h, (w, p) in enumerate(zip(preps, ps, strict=True)):
+                    t, st = _what_if(w, p, None) if p is not None else (w.total, set())
+                    alone_h.append(t - w.total)
+                    if h == 0 and p is not None and t - w.total > 0:     # the starter the add pushes out this week
+                        gone = [q for q in w.pool if q.id in w.starters and q.id not in st]
+                        displaced = min(gone, key=lambda q: q.value or 0.0).id if gone else None
+        rows = [{"add_sleeper_id": a, "drop_sleeper_id": d, "list_kind": "upside",
+                 "weekly_gain": gains["holds"][d][0], "horizon_gain": sum(gains["holds"][d]),
+                 "add_horizon_gain": sum(alone_h), "drop_ros_points": ros.get(d, 0.0) if d else None,
+                 "displaced_sleeper_id": displaced, **({k: (pieces.get(d) or {}).get(k) for k in STASH_PIECE_KEYS} if d else {})}
+                for d in drops]
+        best = next(r for r in choose_drops(rows) if r.get("is_best_drop"))
+        d = best["drop_sleeper_id"]
+        claim = bool(best["is_worthwhile"])
+        choice = {"stash_action": "claim" if claim else "watch", "drop_cost": best.get("drop_cost"),
+                  "drop_cost_piece": best.get("drop_cost_piece"), "net_weekly_gain": best["net_weekly_gain"],
+                  "net_horizon_gain": best["net_horizon_gain"],
+                  "base_max_horizon": max(sum(g) for g in gains["base"].values())}
         slot = None
         p0 = _norm(adds_holds[a][0]) if adds_holds[a] and adds_holds[a][0] is not None else None
         if p0 is not None:
-            lu = solve([q for q in weeks[0] if q.id != drop] + [p0], slots, margins=False)
+            lu = solve([q for q in weeks[0] if q.id != d] + [p0], slots, margins=False)
             slot = next((s.slot.label for s in lu.starts if s.player is not None and s.player.id == a), None)
-        out.append(Stash(a, drop, loss.get(drop, 0.0) if drop else 0.0, gains["base"], gains["holds"], slot))
+        out.append(Stash(a, d, loss.get(d, 0.0) if d else 0.0, gains["base"][d], gains["holds"][d], slot, choice))
     return out
+# ---- end IG-3
 
 
 UPSIDE_SQL = """
@@ -1081,12 +1135,38 @@ where s.season = %s and a.is_free_agent and a.roster_status = 'ACT' and a.sleepe
   and a.injury_status is distinct from 'Out' and a.injury_status is distinct from 'IR'"""
 
 
-def upside_stashes(conn: psycopg.Connection, season: int, as_of: datetime | None = None) -> list[dict]:
-    """Every roster's upside stashes for the decision week and horizon of ``ops.waiver_moves`` (just written)."""
+# ---- IG-3: the drop pieces the stash writer reads when the sweep did not hand them over (``upside_after_waivers`` run
+# alone): one row per roster x drop of the season's ``ops.waiver_moves`` (a player's pieces are the same for every add)
+STASH_PIECES_SQL = """select distinct on (league_id, roster_id, drop_sleeper_id) league_id, roster_id, drop_sleeper_id,
+       drop_depth_lost, drop_future_starts, drop_future_start_weeks, drop_season_value, drop_season_points,
+       drop_replacement_points, drop_upside
+from ops.waiver_moves where season = %s and drop_sleeper_id is not null and drop_cost is not null
+order by league_id, roster_id, drop_sleeper_id, move_rank"""
+
+
+def stored_pieces(cur: psycopg.Cursor, season: int) -> dict:
+    """{(league, roster): {drop sleeper id: pieces}} from ``ops.waiver_moves`` ({} before IF-1's columns exist)."""
+    cur.execute("""select count(*) from information_schema.columns where table_schema = 'ops' and table_name = 'waiver_moves'
+                   and column_name = 'drop_cost'""")
+    if not cur.fetchone()[0]:
+        return {}
+    out: dict = defaultdict(dict)
+    for r in _frame(cur, STASH_PIECES_SQL, (season,)):
+        out[(r["league_id"], int(r["roster_id"]))][r["drop_sleeper_id"]] = {k: r.get(k) for k in STASH_PIECE_KEYS}
+    return dict(out)
+# ---- end IG-3
+
+
+def upside_stashes(conn: psycopg.Connection, season: int, as_of: datetime | None = None,
+                   pieces: Mapping[tuple[str, int], Mapping[str, Mapping]] | None = None) -> list[dict]:
+    """Every roster's upside stashes for the decision week and horizon of ``ops.waiver_moves`` (just written).
+    IG-3: ``pieces`` = the sweep's drop pieces per (league, roster) (None: read from ``ops.waiver_moves``)."""
     with conn.cursor() as cur:
         cur.execute("select to_regclass('ops.player_scenarios') is not null")
         if not cur.fetchone()[0]:
             return []
+        if pieces is None:                                                                           # ---- IG-3
+            pieces = stored_pieces(cur, season)
         wk = _frame(cur, """select league_id, max(week) as week, max(horizon_last_week) as last, max(as_of) as as_of
                             from ops.waiver_moves where season = %s group by 1""", (season,))
         scen = _frame(cur, UPSIDE_SQL, (season,))
@@ -1167,8 +1247,11 @@ def upside_stashes(conn: psycopg.Connection, season: int, as_of: datetime | None
                         ros[r["sleeper_player_id"]] += float(r["value"])
             pool_b = {a: s for a, s in base_adds.items() if a not in info}
             pool_h = {a: s for a, s in holds_adds.items() if a not in info}
-            stashes = [s for s in upside_for_roster(slots, players, pool_b, pool_h, droppable, open_spots > 0, ros)
-                       if _r2(sum(s.base_gains)) <= 0]      # the stash case: B3's lists do not carry him today
+            # the stash case: B3's lists do not carry him today (no pairing gains at his projection). IG-3: the drop is
+            # choose_drops' cheapest "if it holds", with the roster's drop pieces from the sweep
+            stashes = [s for s in upside_for_roster(slots, players, pool_b, pool_h, droppable, open_spots > 0, ros,
+                                                    (pieces or {}).get((lid, int(roster_id))))
+                       if _r2(s.choice.get("base_max_horizon", sum(s.base_gains))) <= 0]
             # order: what the bigger role adds to THIS lineup beyond what he adds as he is (B3's lists already
             # carry the base value), then the scenario's points gain, then the scenario's projection
             stashes.sort(key=lambda s: (-round(sum(s.holds_gains) - sum(s.base_gains), 2), -round(max(float(x["points_gain"]) for x in meta[s.add].values()), 2),
@@ -1177,6 +1260,7 @@ def upside_stashes(conn: psycopg.Connection, season: int, as_of: datetime | None
                 wks = meta[s.add]
                 w_show = week0 if week0 in wks else min(wks)
                 sc = wks[w_show]
+                ch = s.choice                                                                        # ---- IG-3
                 d = info.get(s.drop) if s.drop else None
                 rows.append({
                     "run_at": run_at, "as_of": as_of_l, "league_id": lid, "season": season, "week": week0, "roster_id": roster_id,
@@ -1195,25 +1279,41 @@ def upside_stashes(conn: psycopg.Connection, season: int, as_of: datetime | None
                     "holds_weekly_gain": _r2(s.holds_gains[0]), "holds_horizon_gain": _r2(sum(s.holds_gains)),
                     "holds_week_gains": [_r2(g) for g in s.holds_gains], "holds_slot": s.holds_slot,
                     "open_roster_spots": open_spots, "inputs_fingerprint": fps.get(lid),
+                    # ---- IG-3: the claim / watch call and the cheapest drop's cost (choose_drops)
+                    "stash_action": ch.get("stash_action"), "drop_cost": ch.get("drop_cost"),
+                    "drop_cost_piece": ch.get("drop_cost_piece"), "net_weekly_gain": ch.get("net_weekly_gain"),
+                    "net_horizon_gain": ch.get("net_horizon_gain"),
                 })
     return rows
+
+
+# ---- IG-3: the stash's call and its drop's cost, added to a table created before them (``write_upside`` runs these)
+UPSIDE_COST_COLUMNS = ["stash_action", "drop_cost", "drop_cost_piece", "net_weekly_gain", "net_horizon_gain"]
+UPSIDE_COST_DDL = [f"alter table ops.waiver_upside add column if not exists {c} {t}" for c, t in (
+    ("stash_action", "text"), ("drop_cost", "double precision"), ("drop_cost_piece", "text"),
+    ("net_weekly_gain", "double precision"), ("net_horizon_gain", "double precision"))]
+UPSIDE_ALL_COLUMNS = [*UPSIDE_COLUMNS, *UPSIDE_COST_COLUMNS]
+# ---- end IG-3
 
 
 def write_upside(conn: psycopg.Connection, season: int, rows: list[dict]) -> None:
     with conn.cursor() as cur:
         cur.execute(UPSIDE_DDL)
+        for ddl in UPSIDE_COST_DDL:                                                                    # ---- IG-3
+            cur.execute(ddl)
         cur.execute("delete from ops.waiver_upside where season = %s", (season,))
-        with cur.copy(f"copy ops.waiver_upside ({', '.join(UPSIDE_COLUMNS)}) from stdin") as cp:
+        with cur.copy(f"copy ops.waiver_upside ({', '.join(UPSIDE_ALL_COLUMNS)}) from stdin") as cp:
             for d in rows:
-                cp.write_row([d.get(c) for c in UPSIDE_COLUMNS])
+                cp.write_row([d.get(c) for c in UPSIDE_ALL_COLUMNS])
     conn.commit()
 
 
-def upside_after_waivers(conn: psycopg.Connection, season: int) -> int | None:
-    """The upside list after the B3 moves (same decision week and horizon). Logged, never fatal."""
+def upside_after_waivers(conn: psycopg.Connection, season: int, pieces: Mapping | None = None) -> int | None:
+    """The upside list after the B3 moves (same decision week and horizon). Logged, never fatal. IG-3: ``pieces`` =
+    the sweep's drop pieces (``load_and_sweep(pieces_out=…)``; None: read back from ``ops.waiver_moves``)."""
     try:
         t0 = time.perf_counter()
-        rows = upside_stashes(conn, season)
+        rows = upside_stashes(conn, season, pieces=pieces)
         write_upside(conn, season, rows)
         log.info("upside stashes written for %s: %s rows (%s rosters, %s free agents) in %.2f s", season, len(rows),
                  len({(r["league_id"], r["roster_id"]) for r in rows}), len({(r["league_id"], r["add_sleeper_id"]) for r in rows}),
@@ -1225,4 +1325,5 @@ def upside_after_waivers(conn: psycopg.Connection, season: int) -> int | None:
         return None
 
 
-__all__ += ["UPSIDE_COLUMNS", "Stash", "upside_after_waivers", "upside_for_roster", "upside_stashes"]
+__all__ += ["UPSIDE_ALL_COLUMNS", "UPSIDE_COLUMNS", "UPSIDE_COST_COLUMNS", "Stash", "stored_pieces", "upside_after_waivers",
+            "upside_for_roster", "upside_stashes"]
