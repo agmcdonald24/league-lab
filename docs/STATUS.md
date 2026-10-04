@@ -5990,3 +5990,140 @@ dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) fo
    `SLEEPER_WAIVER_TZ`); 180 days of usage.
 5. **Clone state**: `league_lab_i0b`'s `ops.waiver_moves` / `ops.waiver_upside` were rewritten at 05:00 and the two
    views rebuilt (IG-1 was told in INTERFACES); the `usage` schema was created there (empty).
+
+## Wave I-H (Iteration 18)
+
+### IH-1 2026-10-04 — the product says when it is stale; the operator hears when the nightly fails (branch `dev/IH1`, clone `league_lab_ia3`)
+
+* **Task**: IH-1 of the Wave I-H brief (`scratchpad/waveIH/BRIEF.md`): the stale state (API, My Week, the footer, the
+  console), the web app's error states, the nightly's failure → someone knows, the trigger's last dispatch, events
+  retention. Plan sections: HOSTING § 5 (appended "When the nightly is late or fails"), HOSTING § Events (appended
+  "Retention (events)"), WORDS (new table "The stale state and the error states"). Branch `dev/IH1` from `ad4040e`.
+* **Interfaces** (INTERFACES.md § IH-1): `league_lab/freshness.py` — `STALE_AFTER_HOURS = 30`, `STALE_WORDS`,
+  `nightly_state(as_of, now=None, *, console=False, live_injuries=True) → {as_of, age_hours, stale, limit_hours,
+  words}` (`stale` null when `as_of` is unknown). `/api/health` + `stale`, `age_hours`. `/api/status` + **`nightly`**
+  (the brief's "freshness block": `/api/status.freshness` is already the footer's caption string, so the block got
+  its own key; nothing else on `/api/status` or `/api/my-week` changes shape). Web: `Status.nightly?: Nightly`,
+  `forget(path)` (`lib/api.ts` block), `failureOf` / `Failure` / `SLOW_MS` / `Remote.failure` / `Remote.retry()`
+  (`lib/remote.svelte.ts`), `components/ErrorCard.svelte` (`failure`, `onretry`, `compact`), `Login notice=`.
+* **What it does**
+  1. **Stale**: `as_of` = the newest `ops.projections.fitted_at` (what `/api/health` has always reported: the morning
+     update refits and publishes it); stale when older than 30 hours (a normal night lands ~08:00 ET → a missed
+     morning shows ~14:00 ET, after the trigger's 09:37 / 11:37 re-checks). `/api/health`'s age is computed at the
+     answer (the hourly `as_of` cache never hides a missed morning); `/api/status` reads `as_of` on the pool each call
+     and hands it to the health state. Words by New York's calendar: "Yesterday's numbers: the morning update did
+     not run. Injury statuses are still live." (the brief's, exactly, in production) — two or more missed mornings
+     "Numbers from Friday, Oct 2: the morning update has not run since. …"; the tail claims live injuries only when
+     the availability overlay is on (off → "Injury statuses are from that update too."; the console → "This
+     console's injury tags are from that update too.": it has no live overlay). **My Week**: one line above the
+     actions (`stale-banner`, `role=status`, warn tokens); the footer: "Updated 1 d ago · the morning update did not
+     run ›", the sentence on tap. The app reads `/api/status` again on coming back on screen after 10 minutes and
+     every 15 minutes on screen (a tab left open overnight). **Console** Data Status page: the same line as a warning.
+  2. **Error states** (`failureOf`): no answer at all, or the host's own 502 / 503 / 504 page → **down** ("Cannot reach
+     isuckatfantasy right now. Check your connection, then try again." / "… is not answering right now (error 502).
+     It is usually back within a few minutes."); a 500 → **server** (titled "Something broke on our side", names the
+     status page `/api/status`); our own 502 / 503 keep their words (MFL named for an MFL league; "busy" said as
+     busy); **slow**: an empty screen still loading after 25 s says "Still waiting" (the request keeps going; its
+     answer still shows). Every card has **Try again**, which really asks again (`forget` drops the cached / in-flight
+     request). On My Week, the first screen (App's boot error), Trends, Receivers, Players and Compare; every other
+     screen gets the same words through `errorWords` (and `lib/decisions.ts errorWords`, its 404 words kept). A 401
+     after this browser was signed in (the app was on screen, or a league is remembered) → the password screen with
+     **"Signed out — sign in again."**; signing in returns to the same screen; a first visit sees no such line. The
+     API's own 500 is now the contract's plain words naming `/api/status` (an `Exception` handler; never the
+     exception's text).
+  3. **The nightly fails → someone knows** (HOSTING § 5 "When the nightly is late or fails"): (a) the product's own
+     line and `/api/health` `stale` (a free keyword monitor on `"stale":false` is the one alarm that also catches a
+     night that never started); (b) GitHub's failure email goes to the run's actor — for the trigger's
+     `workflow_dispatch` runs the token's owner, **Andrew**, from `notifications@github.com`, "Run failed: nightly -
+     main (<sha>)" (Settings → Notifications → Actions, email ticked: the default); (c) **`scripts/nightly_failure_summary.sh`**
+     for a `notify` step the PO wires (`if: failure()`): the failing stage (an aborted night's step / the first failed
+     step / "before scripts/nightly.sh"), whether this night published (its own `step sync-hosted: ok`, never an older
+     sync.log), the next move, the last 40 lines of `logs/nightly.log` with password-like strings blanked, one
+     `::error` annotation; always exits 0.
+  4. **The trigger's page** reports the last dispatch (ok / the HTTP error, when, why) through an **optional** Workers
+     KV binding `STATE` (free; ≤ 3 writes a day); without it, as before, and the page says "not recorded". A failed
+     dispatch is recorded then re-thrown (Cloudflare's log marks it); no token at a trigger hour is recorded too.
+  5. **Events retention** (`scripts/hosted_events.sql`, block IH-1, every sync): superseded `news` / `brief` rows
+     ingested > 120 days ago; `availability` rows ingested > 400 days ago (live or superseded). A player's live news
+     item is kept however old (one per player). Readers only test `superseded_by is null`, so a dangling pointer to a
+     pruned row is harmless.
+* **Commands**: `cd api && PYTHONPATH=. uv run pytest -q tests/test_ih1.py tests/test_h0.py` · `uv run pytest -q tests/test_ih1.py` · `node ops/nightly-trigger/test.mjs` · `cd web && npm run lint && npm run build && FIXTURES_PORT=8613 npx playwright test --config playwright.fixtures.config.ts e2e/ih1` (and the whole fixtures suite) · `psql <pipeline dsn of league_lab_ia3> -f scripts/hosted_events.sql` (twice, rows planted) · Streamlit `AppTest` on `app/pages/12_Data_Status.py` · the whole API and root suites (and their failures re-run on a clean export of `ad4040e`). No dbt, no migration, no write to `league_lab`.
+* **Evidence**
+  - `api/tests/test_ih1.py` **15 passed** (the rule: 30.0 h not stale, 30.1 h stale, unknown → null; the words —
+    yesterday, a named day, the console's, the overlay-off tail; `/api/health` stale at 40 h, not at 29.5 h, null
+    for unknown, the age growing under the cache; `/api/status.nightly` on the clone with `as_of` 40 h before a fixed
+    clock = `{as_of, age_hours: 40.0, stale: true, limit_hours: 30, words}`; the clone read as it is; a failed read
+    falls back; the 500 shape; **retention**: nine rows planted on `league_lab_ia3`, the file applied twice — pruned
+    once, the kept set exact). `api/tests/test_h0.py` 3 passed (its pinned body gained the two keys).
+  - By hand on the clone: rows planted, `hosted_events.sql` applied twice → `DELETE 2` / `DELETE 2`, then `DELETE 0` /
+    `DELETE 0`; the kept four were the ones the rule keeps.
+  - `tests/test_ih1.py` **4 passed** (the summary script on four logs). `node ops/nightly-trigger/test.mjs`: **7 checks
+    passed** (no binding; a 204 recorded; a 401 recorded, shown FAILED, re-thrown; a re-check with a success dispatches
+    nothing; a re-check after a failure dispatches; no token; a broken binding).
+  - `web/e2e/ih1/` **21 passed, 1 skipped** (phone at 375 and desktop at 1300: the banner above the actions and the
+    footer's words; nothing when fresh; the status read again after 15 minutes on screen; the API down at the first
+    screen and on My Week with Try again; a 500 naming `/api/status`; the host's own 502 = down; our 502 keeps
+    "Sleeper did not answer"; Trends' card; signed out mid-session and in an open tab; still waiting after 25 s —
+    desktop only, 27 s). Screenshots: `web/e2e/.out/ih1-*.png`. The whole fixtures suite: **241 passed, 1 skipped**
+    (before the last IH-1 test was added; `e2e/if4` and `e2e/ig3` re-run after the last footer change: 8 + 2 passed).
+  - The console: Streamlit's `AppTest` on `12_Data_Status.py` against the clone — no exception; the warning "Numbers
+    from Friday, Oct 2: the morning update has not run since. This console's injury tags are from that update too.
+    (The projections were last refit 59 hours ago; this note shows after 30 hours.)" (the clone is a Sep 26 snapshot
+    refit Oct 2).
+  - **Whole suites**: API **531 passed, 19 failed, 18 skipped** — the 19 fail identically on `main` `ad4040e` against
+    the same clone (re-run from a clean export of `ad4040e`: 19 failed): the clone's 2026-09-26 snapshot (the scoring
+    check, the overlay / on-demand parity tests, `test_u1::test_the_summary`), none touches this task's code. Root:
+    **1080 passed, 2 failed, 6 skipped** (47 min on a shared 2-CPU box) — the 2 (`test_my_week.py::test_my_week_is_the_mart`, both leagues) fail identically on `ad4040e` against the same clone. `ruff check src app tests api` clean; `npm run lint` (eslint + svelte-check 0 / 0) and `npm run
+    build` clean.
+* **What moved**: no number (rule 2). Words: a 500 / the API down / Render's 502 page no longer read "Sleeper did not
+  answer" or "Failed to fetch"; an MFL league's 502 names MyFantasyLeague; our 503 "busy" says busy (was "not ready").
+  `/api/health`'s body gained two keys (`test_h0` updated).
+* **Decisions** (written down, reversible): `nightly` not `freshness` (the key exists); the stale clock is the
+  projections' fit (`/api/health`'s `as_of`), not `mart_data_status` (a night whose `project` failed but synced also
+  shows stale — "the morning update did not run" is then a little strong, but the numbers are yesterday's); `>` 30 h;
+  the banner on My Week only (not the TopBar on every screen: the screen opened daily; one line, not noise
+  everywhere); slow at 25 s (an MFL league's first on-demand load can take 10–20 s); "signed in before" = the app was
+  on screen or a league is remembered on this browser; retention by `ingested_at`, live news kept, availability
+  pruned live or superseded at 400 days.
+* **Not done**: the card on Waivers / Trades / Team / League / the trade calculator / Matchups / About / Rest of season /
+  the player page and pane (they show the improved words in their own line; the swap is one line each, as in
+  Trends); the TopBar banner on other screens; the off-season edge (`project` may refit nothing in the off-season, so
+  the line would show — an exemption for "no game this week" before the off-season); a monitor on `/api/health`
+  (needs an account: Andrew's choice); `app/whats_new.md` (PO only).
+* **Next**: the PO wires the notify step; Andrew checks his GitHub notification setting; optionally the KV binding and
+  a keyword monitor.
+
+**For the PO**
+1. **Wire the `notify` step** in `.github/workflows/nightly.yml`, last in the `nightly` job (after "Upload dbt run
+   results"; no permission, no secret):
+   ```yaml
+         # Wave I-H (IH-1): a failed night's summary - the failing stage, published or not, the last 40 log lines
+         # (GitHub's failure email to the run's actor links here; docs/HOSTING.md § 5 "When the nightly is late or fails")
+         - name: Notify (the failing stage and the last 40 log lines)
+           if: ${{ failure() }}
+           run: ./scripts/nightly_failure_summary.sh logs
+   ```
+2. **Andrew**: GitHub → Settings → Notifications → **Actions**: email ticked ("Only notify for failed workflows" keeps
+   successes out). That email is the alarm for a run that started and failed; a run that never starts (the trigger's
+   token expired) sends nothing — the product's line at 30 h, the trigger's page and (optional) a keyword monitor on
+   `https://isuckatfantasy.io/api/health` for `"stale":false` cover that.
+3. **The Worker** (optional, Andrew's dashboard steps as before): paste the new `ops/nightly-trigger/src/index.js`
+   (works unchanged without a binding); for the last dispatch on its page, KV → Create namespace
+   `isuckatfantasy-nightly-state` → the Worker → Settings → Bindings → KV namespace `STATE` (README).
+4. **Merge notes**: `main.py` — three IH-1 blocks (an `Exception` handler before `require_auth`, the health body's two
+   keys + `_status_nightly` right after the health block, one line in `status()`); `myweek.py` is untouched (the
+   status block lives in `main.py`). `MyWeek.svelte` — the banner sits just before `{#if data.week !== null}`, the
+   footer edits are inside IF-4's footer; IH-2 / IH-3 add their own blocks there (keep all). `lib/api.ts` — an
+   end-of-file block (keep every wave's). `WORDS.md` — a new table before "## Adding to it" (keep the others').
+   `CHANGELOG.md` — I created `## 2026-10-04 — Wave I-H`; `STATUS.md` — I created `## Wave I-H (Iteration 18)`
+   (merge the others' sections under one heading). `api/tests/test_h0.py` — the pinned health body gained `stale` /
+   `age_hours`.
+5. **Rollout**: nothing to set on Render; `hosted_events.sql`'s deletes run with the next sync (they delete nothing
+   until rows are 120 / 400 days old). After the push: `/api/health` → `"stale": false` (with `age_hours` under 30
+   after a good morning); `/api/status` → `nightly`.
+6. **Docs for the PO's pen**: `app/whats_new.md` — proposed: "**The app says when the numbers are a day old.** If the
+   morning update did not run, My Week says so in one line (injury statuses still update live), and a screen that
+   cannot reach the server says so with a Try again button instead of loading forever." `docs/DESIGN.md` — add
+   `ErrorCard` to the components list (`<ErrorCard failure={r.failure} onretry={() => r.retry()} />`: a screen's
+   error state; `Remote.failure` / `retry()`).
+7. **Andrew may reverse**: 30 hours; the words; 120 / 400 days; the banner on My Week only.
