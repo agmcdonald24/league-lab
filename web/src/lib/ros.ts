@@ -196,10 +196,21 @@ export const UPGRADE_WHO: { key: UpgradeWho; label: string }[] = [
 export function upgradeWho(param: string | null): UpgradeWho {
   return param === "fa" || param === "others" ? param : "all";
 }
+/** The request of each view. Projections ask the plain rest-of-season path (the same numbers; the browser's cache and
+ * every saved answer keep working) and say the counterfactual from `PROJECTIONS_VIEW` (the API's `season_view` words,
+ * pinned equal by api/tests/test_ii4.py); outlook and upgrades ask `view=outlook|upgrades&team=`. */
 export const seasonPath = (league: string, position: string, team: number | null, view: SeasonKey, who: UpgradeWho, limit = 50) =>
-  `/api/ros?league=${encodeURIComponent(league)}&position=${encodeURIComponent(position)}&limit=${limit}&view=${view}` +
-  (team !== null ? `&team=${team}` : "") +
-  (view === "upgrades" && who !== "all" ? `&who=${who}` : "");
+  view === "projections" || team === null
+    ? `/api/ros?league=${encodeURIComponent(league)}&position=${encodeURIComponent(position)}&limit=${limit}`
+    : `/api/ros?league=${encodeURIComponent(league)}&position=${encodeURIComponent(position)}&limit=${limit}&view=${view}&team=${team}` +
+      (view === "upgrades" && who !== "all" ? `&who=${who}` : "");
+export const PROJECTIONS_VIEW = {
+  key: "projections" as const,
+  label: "Rest-of-season projections",
+  counterfactual: "Projected points in this league's scoring over the weeks left, whoever rosters him: no roster, no lineup and no cost considered.",
+  costs_included: [] as string[],
+  costs_not_included: ["your roster", "your lineup", "any acquisition cost"],
+};
 /** The answer line of each view (the top row, in the view's own unit). */
 export function seasonAnswer(view: SeasonKey, top: RosPlayer, span: string | null): string {
   const over = span ? ` over ${span}` : "";

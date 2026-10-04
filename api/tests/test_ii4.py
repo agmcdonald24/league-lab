@@ -210,3 +210,36 @@ def test_my_week_feed_on_the_overlay_fixture(client, overlay):  # noqa: F811
     assert nw and nw[0]["forecast_status"] == "included" and nw[0]["decision_status"] == "none"
     assert set(d["clocks"]) == {"data_built", "injuries_checked", "news"}
     assert d["clocks"]["injuries_checked"] and d["clocks"]["news"] == max(x["what_changed"]["published_at"] for x in nw)
+
+
+# ------------------------------------------------------------------------------------------------ the e2e's recordings
+@needs_db
+@pytest.mark.skipif(not __import__("os").environ.get("II4_RECORD"), reason="records web/fixtures/ii4/api_ii4.json: II4_RECORD=1")
+def test_record_e2e_answers(client, overlay):  # noqa: F811
+    """The answers web/e2e/ii4 replays: Scrubs roster 2's My Week with the ESPN fixture overlay (the decision feed, the
+    clocks), the three Season views (ALL and WR), Upgrades' free agents, Waivers and the status line; keyed like
+    web/e2e/if4's recordings (path + the sorted query)."""
+    import json
+    from pathlib import Path
+    from urllib.parse import urlencode
+
+    def key(path: str, **q) -> str:
+        return path + ("?" + urlencode(sorted((k, str(v)) for k, v in q.items())) if q else "")
+
+    out: dict = {}
+
+    def rec(path: str, **q):
+        r = client.get(key(path, **q))
+        out[key(path, **q)] = {"status": r.status_code, "body": r.json()}
+
+    rec("/api/my-week", league=SCRUBS, team=2)
+    rec("/api/status")
+    for v in ("outlook", "upgrades", "projections"):
+        for pos in ("ALL", "WR"):
+            rec("/api/ros", league=SCRUBS, position=pos, limit=50, view=v, team=2)
+    rec("/api/ros", league=SCRUBS, position="ALL", limit=50, view="upgrades", team=2, who="fa")
+    rec("/api/waivers", league=SCRUBS, team=2, position="ALL")
+    f = Path(__file__).resolve().parents[2] / "web" / "fixtures" / "ii4" / "api_ii4.json"
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(out, indent=1, default=str) + "\n")
+    assert all(v["status"] == 200 for v in out.values()), {k: v["status"] for k, v in out.items()}

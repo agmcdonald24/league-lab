@@ -18,7 +18,7 @@
   // ---- end IB-3
   // ---- II-4 (Wave I-I): the three named views — My roster outlook (default) / Potential upgrades (before acquisition
   // cost) / Rest-of-season projections — each with its counterfactual said at the top (GET /api/ros?view=…)
-  import { perGameText, SEASON_SHORT, SEASON_VIEWS, seasonAnswer, seasonPath, seasonView, UPGRADE_WHO, upgradeWho } from "../lib/ros";
+  import { perGameText, PROJECTIONS_VIEW, SEASON_SHORT, SEASON_VIEWS, seasonAnswer, seasonPath, seasonView, UPGRADE_WHO, upgradeWho } from "../lib/ros";
   // ---- end II-4
   import { restoreScroll, route, setParams } from "../lib/router.svelte";
   import Expander from "../components/Expander.svelte";
@@ -61,6 +61,7 @@
   const who = $derived(upgradeWho(route.current.params.get("who"))); // ---- II-4
   const isLineup = $derived(view !== "projections" && team !== null); // ---- II-4: a value column (outlook / upgrades)
   const viewLabel = $derived(SEASON_VIEWS.find((v) => v.key === view)?.label ?? "Rest-of-season projections"); // ---- II-4
+  const sv = $derived(data?.season_view ?? (view === "projections" ? PROJECTIONS_VIEW : null)); // ---- II-4: the counterfactual
 
   // ---- end IB-3
   const players = $derived(data?.players ?? []);
@@ -201,10 +202,10 @@
         {#if team !== null}<p class="text-base leading-snug" data-testid="ros-yours">{yoursLine(players, team, position)}</p>{/if}
       {/if}
       <!-- ---- II-4: the view's counterfactual, said once; an acquisition view names the costs it leaves out -->
-      {#if data.season_view}
-        <p class="text-sm leading-snug text-ink-2" data-testid="ros-counterfactual"><span class="font-semibold text-ink">{data.season_view.label}:</span> {data.season_view.counterfactual}</p>
-        {#if data.season_view.costs_not_included.length && view === "upgrades"}
-          <p class="text-sm leading-snug text-ink-2" data-testid="ros-costs">Not included: {data.season_view.costs_not_included.join(", ")}.</p>
+      {#if sv}
+        <p class="text-sm leading-snug text-ink-2" data-testid="ros-counterfactual"><span class="font-semibold text-ink">{sv.label}:</span> {sv.counterfactual}</p>
+        {#if sv.costs_not_included.length && view === "upgrades"}
+          <p class="text-sm leading-snug text-ink-2" data-testid="ros-costs">Not included: {sv.costs_not_included.join(", ")}.</p>
         {/if}
       {:else if isLineup && data.lineup_note}<p class="text-sm leading-snug text-ink-2" data-testid="ros-lineup-note">{data.lineup_note}</p>{/if}
       <!-- ---- end II-4 -->

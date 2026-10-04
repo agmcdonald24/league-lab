@@ -70,6 +70,20 @@ export async function serveFixtures(context: BrowserContext, opts: { gate?: bool
         body = JSON.stringify({ ...d, who, players: d.players.filter((r) => r.lineup_kind === who) });
       }
     } // ---- end IB-3
+    // ---- II-4: My roster outlook / Potential upgrades from IB-3's saved lineup lists (outlook = yours, upgrades = the rest;
+    // the same numbers — the API's split moves none); a `_mine` file when there is one
+    else if (p === "/api/ros" && (q.get("view") === "outlook" || q.get("view") === "upgrades")) {
+      const base = `ros-lineup_${q.get("league")}_${q.get("team")}_${(q.get("position") ?? "ALL").toUpperCase()}`;
+      const outlook = q.get("view") === "outlook";
+      const all = file(`${base}.json`);
+      const src = outlook ? (file(`${base}_mine.json`) ?? all) : all;
+      if (src !== null) {
+        const d = JSON.parse(src) as { players: { lineup_kind?: string }[] };
+        const who = q.get("who");
+        const keep = (k?: string) => (outlook ? k === "mine" : k !== "mine" && (!who || who === "all" || k === who));
+        body = JSON.stringify({ ...d, view: q.get("view"), players: d.players.filter((r) => keep(r.lineup_kind)) });
+      }
+    } // ---- end II-4
     else if (p === "/api/ros") body = file(`ros_${q.get("league")}_${(q.get("position") ?? "ALL").toUpperCase()}.json`);
     else if (p === "/api/record") body = file(`record_${q.get("league")}.json`);
     else if (p === "/api/about") body = file(`about_${q.get("league")}.json`); // H1 (Wave H)

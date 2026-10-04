@@ -35,7 +35,11 @@
           : 'bg-accent-soft text-accent'}"
         title={`PlayerWire marks this brief ${line.verification}`}
         data-testid={`${testid}-verification`}>{line.verification}</span
-      >{/if}{#if line.summary}<span
+      >{/if}<span
+      class="ml-1.5 text-xs text-ink-3"
+      title="The projection reads no news: his injury-report status is the part of it the numbers use."
+      data-testid={`${testid}-forecast`}>· context only, not in the projection</span
+    ><!-- ---- II-4: the item's forecast status (the card's news is never "included": nothing records it into the projection) -->{#if line.summary}<span
         class="mt-1 block w-full text-ink-3"
         title={line.summaryFull ?? undefined}
         data-testid={`${testid}-summary`}>{line.summary}</span

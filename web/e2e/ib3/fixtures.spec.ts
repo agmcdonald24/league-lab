@@ -69,15 +69,14 @@ test("Rest of season: Value to my lineup leads, a reason per row, whose players,
   const d = read(`ros-lineup_${SCRUBS}_2_ALL.json`);
   const mine = read(`ros-lineup_${SCRUBS}_2_ALL_mine.json`);
   await page.goto(`/ros?league=${SCRUBS}&team=2`);
-  await expect(page.getByTestId("ros-title")).toHaveText("Value to my lineup");
-  await expect(page.getByTestId("ros-view-lineup")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByTestId("ros-lineup-answer")).toContainText(`Most valuable to your lineup over weeks 4–16: ${d.players[0].player_name}`);
-  await expect(page.getByTestId("ros-row")).toHaveCount(d.players.length);
-  await expect(page.getByTestId("ros-lineup-why").first()).toHaveText(d.players[0].lineup_why);
-  await expect(page.getByTestId("ros-value").first()).toContainText(`+${Math.round(d.players[0].lineup_points)}`);
+  // II-4: the view is "My roster outlook" (yours only; IB-3's "Value to my lineup" over everyone became two views)
+  void d;
+  await expect(page.getByTestId("ros-title")).toHaveText("My roster outlook");
+  await expect(page.getByTestId("ros-view-outlook")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByTestId("ros-lineup-answer")).toContainText(`Your most important player over weeks 4–16: ${mine.players[0].player_name}`);
+  await expect(page.getByTestId("ros-lineup-why").first()).toContainText(mine.players[0].lineup_why);
+  await expect(page.getByTestId("ros-value").first()).toContainText(`+${Math.round(mine.players[0].lineup_points)}`);
   // yours: the backup QB ranks below every starter, and says why
-  await tap(page, page.getByTestId("ros-who-mine"), isMobile);
-  await expect(page).toHaveURL(/who=mine/);
   await expect(page.getByTestId("ros-row")).toHaveCount(mine.players.length);
   const rows = page.getByTestId("ros-row");
   const names = await rows.evaluateAll((els) => els.map((e) => e.querySelector("td:nth-child(2) a, td:nth-child(2) .min-w-0")?.textContent ?? ""));
@@ -92,9 +91,9 @@ test("Rest of season: Value to my lineup leads, a reason per row, whose players,
   await noSidewaysScroll(page);
   await page.screenshot({ path: join(SHOTS, `ib3_ros_lineup_${info.project.name}.png`), fullPage: true });
   // the other view: who scores the most (the old screen, unchanged)
-  await tap(page, page.getByTestId("ros-view-points"), isMobile);
-  await expect(page).toHaveURL(/view=points/);
-  await expect(page.getByTestId("ros-title")).toHaveText("Who scores the most from here");
+  await tap(page, page.getByTestId("ros-view-projections"), isMobile); // II-4
+  await expect(page).toHaveURL(/view=projections/);
+  await expect(page.getByTestId("ros-title")).toHaveText("Rest-of-season projections");
   await expect(page.getByTestId("ros-answer")).toContainText(/^#1 overall for the rest of the season/);
   await expect(page.getByTestId("ros-lineup-why")).toHaveCount(0);
   await noSidewaysScroll(page);
