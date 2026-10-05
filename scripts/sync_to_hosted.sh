@@ -273,6 +273,18 @@ else
 fi
 # ---- end IG-2
 
+# ---- IK-4 (Wave I-K): accounts — docs/HOSTING.md § "Accounts". The `accounts` schema is never dropped above (only
+# analytics, analytics_seeds and ops are); scripts/hosted_accounts.sql creates its eight tables if missing, grants the
+# app role SELECT / INSERT / UPDATE / DELETE on those eight only (its default_transaction_read_only stays on) and prunes
+# spent links and ended sessions. Idempotent, a few ms, its own transaction after IG-2, the same owner connection (no
+# new secret). A failure here never fails the publish: accounts stay off (status: not_ready) until a sync applies it.
+if psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction -f scripts/hosted_accounts.sql; then
+  echo "accounts: $(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select (select count(*) from accounts.users) || ' accounts, ' || (select count(*) from accounts.user_leagues) || ' saved leagues, ' || pg_size_pretty((select sum(pg_total_relation_size(c.oid)) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'accounts' and c.relkind = 'r')::bigint)" 2>/dev/null || echo '?')"
+else
+  echo "WARNING: scripts/hosted_accounts.sql failed: accounts stay off until a sync applies it (the publish itself is fine)" >&2
+fi
+# ---- end IK-4
+
 echo "verifying ..."
 psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -At -c "
   select 'analytics tables: ' || count(*) from information_schema.tables where table_schema = 'analytics';" \
