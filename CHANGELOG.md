@@ -2,6 +2,20 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-05 — Wave I-K
+
+- **IK-1 — ESPN leagues on demand (unofficial).** A public ESPN league opens by its id or link (`espn:<id>`):
+  `league_lab.espn_client` reads ESPN's own web endpoints (`lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/…`, the
+  views `mSettings`, `mStatus`, `mTeam`, `mRoster`, `mMatchupScore`, `mTransactions2`, `kona_player_info`, as the
+  open-source client cwendt94/espn-api documents them) with TTL caches, a 30-a-minute budget and the answers trimmed to
+  what is read; `league_lab.espn_leagues.ESPNLeagues` serves the league in Sleeper's shapes — ESPN's lineup slots (OP as
+  superflex, D/ST as the team's defense, IDP / P / HC left out and said), its scoring on Sleeper's keys (what is
+  approximated or not priced listed on the card), rosters with ESPN's starters, the schedule and points, adds / drops /
+  trades. Private leagues are in the code behind `LEAGUE_LAB_ESPN_PRIVATE` (**off**): the user's own `espn_s2` /
+  `SWID` cookies, sealed into an `ll_espn` cookie in their browser, never stored or logged. `LEAGUE_LAB_ESPN_LEAGUES=off`
+  is the kill switch. Synthetic fixtures `espn:4242` (public) / `espn:5150` (private); **not verified live** — the PO
+  checks after the deploy (STATUS § IK-1), and Andrew needs any public ESPN league id for 2026.
+
 ## 2026-10-05 — Wave I-J
 
 - **PO (the merge, 2026-10-05 01:50 ET).** `MALLOC_ARENA_MAX=2` / `MALLOC_TRIM_THRESHOLD_` in the image; the memory
