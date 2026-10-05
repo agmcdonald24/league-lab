@@ -715,7 +715,7 @@ are deep reserves no house roster carries.
 naming different players (different gsis / Sleeper ids) is **quarantined**: the lookup answers no match — never "the
 first row wins" or "the last row wins" — and the adapter's next step takes the player (the unique name + position match,
 reported, else the unmapped row, listed and unvalued). AGENTS.md rule 3 (identity never through a name) is kept: the
-name step is the adapters' reported fallback, not a join. Today: 6 `espn_id`s are duplicated (none on a current skill
-player: S, PN, CB/LB and 2015–2016 depth players), 0 `yahoo_id`, 0 `mfl_id` (`--list-quarantine` lists them).
+name step is the adapters' reported fallback, not a join. Today: 6 `espn_id`s are duplicated (none on a 2026 QB–TE:
+safeties, a punter, and RB / TE depth players of 2015–2016), 0 `yahoo_id`, 0 `mfl_id` (`--list-quarantine` lists them).
 `player_ids.read` does not apply the rule yet (ESPN: the last row wins; IK-2's Yahoo map: the first) — a one-line change
 for whoever next owns the loader; with no current skill player affected it moves no answer.
