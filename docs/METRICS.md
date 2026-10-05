@@ -2326,6 +2326,61 @@ the exact percent. It is not a forecast to bet on. 2026 has two graded
 weeks (22 matchups): too few to say more, and nothing in them is badly off, so the line shows the percentage (the
 "early: N weeks graded" fallback, `myweek.WIN_EARLY`, stays off).
 
+### Odds grades (og1.0, IL-3, Wave I-L, 2026-10-05; `league_lab.odds_grade`, `league-lab grade-odds`, `analytics.odds_grades`, `/api/status` `odds_grades`)
+
+IH-3 calibrated the week's win probability once, by hand. This grades it **every night on the decision record** — the
+lineups the app proposed, frozen before each week's first kickoff (`ops.lineup_record`, `kickoff`, or rebuilt once from
+the frozen projections, `reconstructed`) — together with the ranges those lineups were built from.
+
+**What is graded.** Per record roster-week of a Sleeper league with a **scored** week (`league_player_week.is_scored_week`;
+an unscored week has no row, never a zero; MFL leagues are not read — their outcomes are MFL's):
+
+* the **win probability** My Week showed: `decisions.lineup_win_probability` of the roster's record lineup against its
+  opponent's record lineup (the opponent's best lineup, IH-3's choice), each starter's range from the frozen board
+  (`ops.projections` of that league-week: P10 / P50 / P90, plus P25 / P75 where the row carries them — from 2026 week 4)
+  centred on his record value, calibrated (`shrink_week`); a starter with no range row (a DEF on the house path, a K
+  before week 4) counts at his record value; same-game pairs correlated (`pair_rho`) from his NFL team and opponent that
+  week. Against the **matchup's real result** (`fct_league_matchup.result`: the lineups the managers submitted — the
+  result a manager reads);
+* each record **starter's range and median** against his points that week in the league (`validation._points_lookup`:
+  Sleeper's count; no stat row = 0, Sleeper's rule — so an inactive starter is a miss: the ranges are "if he plays").
+
+**Metrics** (one row per league × season × week × metric, `scope = 'week'`; season to date per league and pooled as
+`league_id = 'all'`, `scope = 'to_date'`, `week` = the last week graded; `n` = what it was measured on):
+
+| metric | definition | n |
+|---|---|---|
+| `brier` | mean (p − outcome)², outcome W 1 / T ½ / L 0; each matchup once (the score is the same from either side); a coin flip scores 0.25 | matchups |
+| `log_loss` | mean −[y ln p + (1 − y) ln(1 − p)], p clipped to [1e-6, 1 − 1e-6]; a coin flip scores ln 2 = 0.693 | matchups |
+| `favourite_won` | the share of matchups the side over 50% won (a tie ½; exactly 50% has no favourite); `detail.predicted` = the favourite's mean p | matchups with a favourite |
+| `calibration` (to date only) | ten **fixed-width** deciles of the predicted p (0–10%, …, 90–100%), every matchup **from both sides** (p and 1 − p), so the table is symmetric; `detail.deciles` = [{decile, lo, hi, n, predicted, observed}]; `value` = the count-weighted mean \|predicted − observed\| | 2 × matchups |
+| `coverage_80` | the share of starters whose points fell inside P10–P90 | starters with a range and points |
+| `coverage_50` | inside P25–P75, **only the rows that carry P25 / P75** (the five-knot ranges, 2026 week 4 on) | those rows |
+| `mae_median_<POS>` | mean \|P50 − points\| (a starter without a range: his record value) | starters at the position |
+| `mae_projection_<POS>` | mean \|record value − points\| (the projection: the mean) | starters at the position |
+
+`graded_at` is the run's real time (a writer's stamp). The nightly re-grades the whole season each run (the rows of the
+season are replaced). `/api/status` → `odds_grades`: `{season, through_week, brier, coverage_50, coverage_80,
+graded_at}` from the newest pooled to-date rows; `None` when there is no row.
+
+**First grade** (the clone of the main database, 2026-10-05; weeks 1–2 scored, week 3 not yet; both weeks
+`reconstructed` from the refit board with three knots, so no 50% range yet):
+
+| | matchups | Brier | log loss | favourite won (predicted) | P10–P90 coverage (starters) |
+|---|---|---|---|---|---|
+| Forever Unclean Dynasty, weeks 1–2 | 12 | 0.202 | 0.593 | 75.0% (57.6%) | 69.3% (192) |
+| League of Scrubs, weeks 1–2 | 10 | 0.354 | 0.921 | 40.0% (62.2%) | 70.0% (160) |
+| both | 22 | **0.271** | 0.742 | 59.1% (59.7%) | **69.6%** (352) |
+
+Calibration to date (both sides, 44): 20–30% predicted 25.3% → won 66.7% (3); 30–40% 36.5% → 60.0% (5); 40–50% 44.9% →
+28.6% (14); 50–60% 55.1% → 71.4% (14); 60–70% 63.5% → 40.0% (5); 70–80% 74.7% → 33.3% (3); mean |predicted − observed|
+0.214. Read with the counts: 22 matchups is noise (the Brier's standard error is ±0.029), and the 80% range's 70%
+includes the 13 of 392 starters who did not play (0 points). The K / DEF values of weeks 1–3 are not projections (the record's
+`value_source`: a kicker's `season_ppg`, a defense's `observed_ppg` — points it had already scored), so their MAE is
+not a forecast's grade; from week 4 they are `proj_points`. IH-3's 0.2410 on the same weeks graded the lineups the managers started;
+this grades the lineups the app proposed. The real re-grade is the nightly's from week 4 on (the frozen kickoff record
+with the five-knot ranges).
+
 ## Rest of season (ros1.0, plan E2, Wave E, 2026-10-01; `mart_player_ros_projection`, `app/lib/ros.py`)
 
 One row per league × player (current season): the projection added up over the weeks left in **the league's**
@@ -2965,6 +3020,66 @@ morning's board to the bit):
 * **Lineup totals**: 37 of 440 moved (dynasty mean −1.52, Scrubs −1.35, at most −2.50).
 * **One number everywhere**: My Week equals the record (M4's parity) for every roster starting a rookie, and a
   rookie's line priced on request equals his stored projection.
+
+### v3.3: the mean-unbiased new-team scale at WR (nt1.0, IL-3, Wave I-L, 2026-10-05; `calibration.new_team_scale`, `LEAGUE_LAB_NEW_TEAM_SCALE`, **on**; `MODEL_VERSION` v3.3)
+
+M6 measured veterans on a new team three ways and kept none; the third shape (a mean-unbiased scale per
+games-with-team step, the reference league only, fitted on 2018..S−1) passed M6's rule at WR after the first two had
+been read, so it was a lead, not a keep. **One more shape, written down before any code or number (12:27 ET)**:
+
+* **Flag**: M6's `is_new_team` — not a cold start, ≥ 3 career games, < 3 games with his current team in the current
+  stint (`team_games_before`: a trade or a signing resets it). WR only.
+* **Fit, per test season S**: the walk-forward rows (the production model fitted on 2016..S−1, applied to S, ranges on)
+  of the **3 seasons before S** (production's window: what `ops.calibration_oof` holds), the flagged WR rows that were
+  played and priced ≥ 0.5, **both house scorings pooled**: k_S = Σ actual / Σ projected — the scale that makes the mean
+  of the scaled projection equal the mean of the actual on the fitting rows. Clipped to [0.70, 1.10]; **one k**, not
+  one per step.
+* **Apply**: every component of a flagged WR's line × k_S; the scaled line priced and ranged by the same models
+  (`predict_position(..., lines=)`, the frozen-line path).
+* **Rule**: keep only if (1) the flagged rows' MAE (each season's change averaged over the two leagues) is at least
+  0.05 lower on average **and** lower in ⌈2·5/3⌉ = 4 of the 5 seasons (D1's MAE threshold and season count on the rows
+  the change moves, as M5 / M6 applied it); (2) `experiments.decide` on the WR board is not "hurts"; (3) the flagged
+  rows' mean bias shrinks in magnitude without flipping sign. Interval score and coverage reported (D1: they do not
+  decide). Sensitivity, reported only: the same k on the expanding window 2018..S−1.
+
+**The harness table** (`scratchpad/waveIL/il3/v33_rows.py` / `v33_table.py` on the clone `league_lab_il3`, WR, test
+seasons 2021–2025, both house scorings; Δ = candidate − v3.0; the flagged rows' numbers are per-season means of the
+two leagues, then averaged over the seasons; "board" = every played WR row, D1's paired season means):
+
+| Variant | flagged rows (a league) | Δ MAE flagged (seasons lower) | flagged bias before → after | Δ interval score flagged (seasons lower) | flagged 80% / 50% coverage before → after | board Δ MAE | board Δ Spearman | board Δ interval score | decision |
+|---|---|---|---|---|---|---|---|---|---|
+| **one k, 3 seasons before, both scorings pooled (nt1.0)** | 943 | **−0.181 (4 of 5)** | −0.94 → **−0.41** | −0.014 (4 of 5) | 79.6 → 81.2% / 50.4 → 50.7% | −0.0140 | +0.0003 | −0.0011 | **keep** |
+| the same k on 2018..S−1 (sensitivity) | 943 | −0.086 (4 of 5) | −0.94 → −0.69 | −0.008 (4 of 5) | 79.6 → 80.4% / 50.4 → 50.6% | −0.0067 | +0.0003 | −0.0006 | (would keep) |
+| M6's third shape: k per step, reference league, 2018..S−1 (M6's table) | 943 | −0.102 (4 of 5) | −0.94 → −0.65 | not measured | — | −0.008 | +0.0004 | — | not kept (a lead) |
+
+Per season (nt1.0): k = 1.022 / 0.918 / 0.912 / 0.833 / 0.822 (2021 → 2025, on 966–1,118 fitting rows across both
+scorings), flagged Δ MAE +0.055 / −0.137 / −0.247 / −0.375 / −0.199, bias after −1.18 / +0.14 / −0.88 / −0.40 / +0.27;
+per league Δ MAE −0.190 (the dynasty) / −0.171 (Scrubs). The one season it misses (2021) is the one whose k came out
+above 1 (fitted on 2018–2020). On the WR board D1's `decide` reads "drop" (no consistent **board** gain: Δ MAE −0.014 is
+under D1's 0.05 bar, better in 4 of 5; Δ Spearman +0.0003, better in 3 of 5) and **not "hurts"** — rule (2) passes.
+All three parts of the rule pass: **kept, `MODEL_VERSION` v3.3**.
+
+**In production** (`calibration._new_team_scale_rows`, called by `line_scales` after the cold-start blend; the same
+`blend_lines` hook, so `ops.projection_lines`, `ops.projections`, `ops.projection_ranges` and every on-demand price of
+the line agree to the cent): k fitted on `ops.calibration_oof` (the 3 seasons before; the house leagues' rows pooled),
+on the clone **k = 0.7946 on 1,118 fitting rows for 2026** — the harness's own 2023–2025 rows give the same 0.7946 on
+1,118 rows. A cold start is never also scaled. **The flag looks ahead one game a week** (`new_team_ahead`): the harness
+flagged a row by the games he had actually played with the team before that week, so a future week adds his projected
+games before it (his own earlier rows past the newest played week) — a WR with 2 games for his new team is scaled for
+his next game only, not for the rest of the season (without it the 2026 board would scale 507 player-weeks of weeks 5–18 instead of
+34). Switches: `LEAGUE_LAB_COLD_START=0` turns the whole line blend off (v3.0's lines); `LEAGUE_LAB_NEW_TEAM_SCALE=0`
+only this part (v3.2). Frozen weeks never move. `backtest-v2` under v3.3 measures the model without either line blend
+(as under v3.2): the About page's backtest numbers are the model's, the blends are measured here.
+
+**The 2026 board** (the clone `league_lab_il3`, a full `project` with the default switches after `ensure_oof` built
+`ops.calibration_oof` for v3.3, against the board before it — which had no `ops.calibration_oof`, so no cold-start
+blend either): "nt1.0 new team WR: k = 0.7946 on 1118 fitting rows (2 scorings pooled), 202 player-weeks" (weeks
+1–18; weeks 1–4 kept frozen). **34 WR lines move in weeks 5–18** (20 players: weeks 5 / 6 / 7 = 19 / 13 / 2 — each
+until his third game with the team), every component × 0.7946 to 1.1e-16; house rows: the dynasty −1.01 a row on
+average (−0.57 to −2.11), Scrubs −0.84 (−0.48 to −1.69). The biggest, week 5: A.J. Brown (NE, 1 game) 10.24 → 8.13
+in the dynasty / 8.23 → 6.54 in Scrubs, Michael Pittman (PIT, 1 game) 9.84 → 7.82 / 7.94 → 6.31, Jauan Jennings (MIN)
+6.45 → 5.13. Rostered in week 5: A.J. Brown (unplayable on both), Pittman, Jennings and Marquise Brown (bench) — no
+week-5 starter is scaled. The same run's cold-start blend moves 1,014 lines (M6's count); frozen weeks 1–4 moved 0.
 
 
 ## Expected-value pricing (ev1.0, Wave I-C M2, 2026-10-03; `league_lab.scoring_ev`, seed `scoring_distributions`)

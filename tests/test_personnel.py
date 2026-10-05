@@ -133,7 +133,7 @@ SHIPPED = {"personnel", "qb", "teammates"}
 def test_v3_ships_qb_at_qb_and_teammates_at_rb_wr_te():
     from league_lab import projections as P
 
-    assert P.MODEL_VERSION == "v3.0"
+    assert P.MODEL_VERSION == "v3.3"          # ---- IL-3: v3.3 (the WR new-team scale on the line)
     assert P.FEATURES_BY_POSITION["QB"] == [*P.FEATURES, *PN.QB]
     for pos in ("RB", "WR", "TE"):
         assert P.FEATURES_BY_POSITION[pos] == [*P.FEATURES, *PN.TEAMMATES]

@@ -453,7 +453,20 @@ def status(response: Response):
     except Exception as exc:  # noqa: BLE001 - a status line, never a failure
         out["board_source_in_use"] = f"unknown ({exc.__class__.__name__})"
     out["memory"] = memory_status()          # ---- INF-2: the server's RSS and the caches' budget, region by region
+    out["odds_grades"] = _status_odds_grades()   # ---- IL-3: the latest grade of the week's odds and the ranges
     return _json(out, response)
+
+
+# ---- IL-3 (Wave I-L): the week's win probability and the ranges, graded nightly on the decision record
+# (league_lab.odds_grade, `league-lab grade-odds` writes analytics.odds_grades). Read only: the newest season-to-date
+# pooled rows, {season, through_week, brier, coverage_50, coverage_80, graded_at}; None when no row (or no table).
+def _status_odds_grades() -> dict | None:
+    from league_lab import odds_grade as _og
+    try:
+        return _og.status(query)
+    except Exception:  # noqa: BLE001 - a status line, never a failure
+        return None
+# ---- end IL-3
 
 
 def memory_status() -> dict:

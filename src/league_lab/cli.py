@@ -496,6 +496,45 @@ def validate_cmd(
 # ---- end V-1
 
 
+# ---- IL-3 (Wave I-L): the grading harness for the week's win probability and the ranges
+@app.command("grade-odds")
+def grade_odds_cmd(
+    season: int | None = typer.Option(None, help="Season (default: the newest on the decision record)"),
+    through: int | None = typer.Option(None, help="Last week to grade (default: the newest week Sleeper has scored)"),
+    no_write: bool = typer.Option(False, "--no-write", help="Grade and print only: do not write analytics.odds_grades"),
+):
+    """Grade the week's win probability (Brier, log loss, the favourite's record, the calibration deciles) and the
+    ranges (P10–P90 / P25–P75 coverage, the median's MAE per position) on the decision record's scored weeks, per league
+    and week and season to date; write analytics.odds_grades (docs/METRICS.md § "Odds grades")."""
+    from .odds_grade import TABLE, run
+
+    grades, matchups = run(season, through, write_rows=not no_write)
+    if grades.empty:
+        console.print("nothing to grade: no scored week on the decision record")
+        return
+    s, w = int(grades["season"].iloc[0]), int(grades["through_week"].max())
+    keep = ("brier", "log_loss", "favourite_won", "coverage_80", "coverage_50", "mae_median_QB", "mae_median_RB",
+            "mae_median_WR", "mae_median_TE", "mae_median_K", "mae_median_DEF")
+    t = Table(title=f"odds grades {s} through week {w} ({len(matchups)} matchups)")
+    for c in ("league", "scope", "week", *keep):
+        t.add_column(c)
+    for (lg, scope, wk), g in grades.groupby(["league_id", "scope", "week"], sort=True):
+        v = {r.metric: r for r in g.itertuples(index=False)}
+        t.add_row(lg[-6:], scope, str(wk), *(f"{v[k].value:.3f} ({v[k].n})" if k in v and v[k].value is not None else "—"
+                                            for k in keep))
+    console.print(t)
+    cal = grades[(grades["league_id"] == "all") & (grades["metric"] == "calibration")]
+    if not cal.empty and cal["detail"].iloc[0]:
+        c = Table(title=f"calibration, both sides of every matchup (mean |predicted − observed| {cal['value'].iloc[0]:.3f})")
+        for col in ("decile", "n", "predicted", "observed"):
+            c.add_column(col)
+        for d in cal["detail"].iloc[0]["deciles"]:
+            c.add_row(f"{d['lo']:.0%}–{d['hi']:.0%}", str(d["n"]), f"{d['predicted']:.1%}", f"{d['observed']:.1%}")
+        console.print(c)
+    console.print("written to " + TABLE if not no_write else "not written (--no-write)")
+# ---- end IL-3
+
+
 @app.command("waivers")
 def waivers_cmd(
     season: int | None = typer.Option(None, help="Projected season (default: the newest in ops.lineup_totals)"),

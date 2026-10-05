@@ -977,7 +977,7 @@ def line_scales(conn: psycopg.Connection, season: int, lines: pd.DataFrame,
     ``kind`` ('cold' | 'new_team'), the games it keyed on and the anchor's raw / blended points; only the rows that
     move (k != 1). Fitted on ``ops.calibration_oof`` (the ``WINDOW`` seasons before ``season``) in the anchor league."""
     cols = ["gsis_id", "season", "week", "position", "kind", "games", "raw", "blended", "k"]
-    positions = tuple(dict.fromkeys((*COLD_POSITIONS, *NEW_TEAM_POSITIONS)))
+    positions = tuple(dict.fromkeys((*COLD_POSITIONS, *NEW_TEAM_POSITIONS, *_nt_positions())))   # ---- IL-3: + v3.3
     oof = load_oof(conn, season)
     if oof is None or oof.empty or not positions:
         log.warning("%s on but %s (run calibration.run_build_oof): stat lines unchanged", COLD_START_FLAG,
@@ -1010,6 +1010,7 @@ def line_scales(conn: psycopg.Connection, season: int, lines: pd.DataFrame,
             rows.loc[idx, "games"] = r["career_games_before"].to_numpy(dtype=float)[hit]
             log.info("%s %s %s (%s): weights %s, prior %s, %s player-weeks", LINE_VERSION, kind, pos, anchor[-6:],
                      cp.weights, {k: round(v, 2) for k, v in cp.prior.items()}, int(hit.sum()))
+    _new_team_scale_rows(oof, games, draft, leagues, rows)                       # ---- IL-3: v3.3, the WR new-team scale
     rows["k"] = line_scale(rows["raw"].to_numpy(), rows["blended"].to_numpy())
     return rows[rows["k"] != 1.0][cols].reset_index(drop=True)
 
@@ -1119,3 +1120,91 @@ def ensure_oof(force: bool = False) -> int:
             return 0
     return run_build_oof(seasons)
 # ---- /M6
+
+
+# ---- IL-3 (Wave I-L): v3.3 — the mean-unbiased new-team scale at WR (nt1.0; docs/METRICS.md § "v3.3"). A veteran WR on a
+# new team (``is_new_team``: not a cold start, >= 3 career games, < 3 with his current team in the current stint) gets one
+# scale on every component of his line: k = sum(actual) / sum(projected) over the new-team WR rows of the ``WINDOW``
+# seasons before (``ops.calibration_oof``, the house scorings pooled, rows priced at least ``LINE_MIN_RAW``), clipped to
+# ``NEW_TEAM_SCALE_BOUNDS``; fewer than ``NEW_TEAM_SCALE_MIN_ROWS`` fitting rows: no scale. Decided by a rule written
+# before the run (walk-forward 2021-2025, both scorings: the flagged rows' MAE -0.18, lower in 4 of 5 seasons, mean bias
+# -0.94 -> -0.41, the board not hurt). It rides the cold-start switch (``blend_lines``: off = v3.0's lines) and has its
+# own, ``LEAGUE_LAB_NEW_TEAM_SCALE`` (unset = on; ``0`` turns only this part off). A cold start is never also scaled.
+NEW_TEAM_SCALE_FLAG = "LEAGUE_LAB_NEW_TEAM_SCALE"
+NEW_TEAM_SCALE_POSITIONS: tuple[str, ...] = ("WR",)
+NEW_TEAM_SCALE_VERSION = "nt1.0"
+NEW_TEAM_SCALE_BOUNDS = (0.70, 1.10)
+NEW_TEAM_SCALE_MIN_ROWS = 30
+LAST_NEW_TEAM_SCALE: dict[str, tuple[float, int]] = {}     # the last ``line_scales`` run's {position: (k, fitting rows)}
+
+
+def new_team_scale_enabled() -> bool:
+    v = os.environ.get(NEW_TEAM_SCALE_FLAG)
+    if v is None or not v.strip():
+        return True
+    return _flag(NEW_TEAM_SCALE_FLAG)
+
+
+def _nt_positions() -> tuple[str, ...]:
+    return NEW_TEAM_SCALE_POSITIONS if new_team_scale_enabled() else ()
+
+
+def new_team_scale(fit: pd.DataFrame, position: str) -> tuple[float, int]:
+    """(k, fitting rows): sum(actual) / sum(proj_points) over ``fit``'s rows at ``position`` flagged ``new_team``, played
+    (``actual`` known) and priced at least ``LINE_MIN_RAW``, every scoring in ``fit`` pooled; clipped to
+    ``NEW_TEAM_SCALE_BOUNDS``. (1.0, n) under ``NEW_TEAM_SCALE_MIN_ROWS`` rows or a non-positive projected sum."""
+    if fit.empty:
+        return 1.0, 0
+    f = fit[(fit["position"] == position) & fit["new_team"].fillna(False).astype(bool) & fit["actual"].notna()
+            & (pd.to_numeric(fit["proj_points"], errors="coerce") >= LINE_MIN_RAW)]
+    n, den = len(f), float(pd.to_numeric(f["proj_points"], errors="coerce").sum())
+    if n < NEW_TEAM_SCALE_MIN_ROWS or den <= 0:
+        return 1.0, n
+    lo, hi = NEW_TEAM_SCALE_BOUNDS
+    return float(np.clip(float(pd.to_numeric(f["actual"], errors="coerce").sum()) / den, lo, hi)), n
+
+
+def new_team_ahead(rows: pd.DataFrame, games: pd.DataFrame) -> pd.Series:
+    """The new-team flag as the harness measured it (games with the team before *that* week), seen from today: a week
+    after the newest played week of its season adds his projected games before it (his own earlier rows beyond that
+    week: one a week he has a game) to the games he has with the team now. A WR with 2 games for his new team is flagged
+    for his next game only, not for the rest of the season. Rows need ``team_games_before``, ``career_games_before``,
+    ``cold``, ``season``, ``week``, ``gsis_id``."""
+    if rows.empty:
+        return pd.Series(dtype=bool)
+    g = games.dropna(subset=["week"])
+    last = g.groupby(g["season"].astype(int))["week"].max().astype(int).to_dict()
+    season = rows["season"].astype(int)
+    future = rows["week"].astype(int) > season.map(last).fillna(0).astype(int)
+    ahead = pd.Series(0.0, index=rows.index)
+    if future.any():
+        f = rows[future]
+        ahead.loc[f.index] = f.groupby(["gsis_id", f["season"].astype(int)])["week"].rank(method="first").to_numpy() - 1.0
+    tg = pd.to_numeric(rows["team_games_before"], errors="coerce").fillna(0) + ahead
+    cg = pd.to_numeric(rows["career_games_before"], errors="coerce").fillna(0) + ahead
+    return pd.Series(is_new_team(tg, cg, rows["cold"]), index=rows.index)
+
+
+def _new_team_scale_rows(oof: pd.DataFrame, games: pd.DataFrame, draft: pd.DataFrame,
+                         leagues: dict[str, tuple[str, dict[str, float]]], rows: pd.DataFrame) -> None:
+    """``line_scales``' v3.3 step, in place on ``rows`` (the lines with ``raw`` / ``blended`` / ``kind`` / ``games`` and
+    the history columns): each kept position's new-team rows not already blended get ``blended = raw x k``."""
+    LAST_NEW_TEAM_SCALE.clear()
+    flag = new_team_ahead(rows, games)
+    for pos in _nt_positions():
+        sel = ((rows["position"] == pos) & rows["kind"].isna() & flag & (rows["raw"] >= LINE_MIN_RAW)).to_numpy()
+        if not sel.any():
+            continue
+        pool = oof[(oof["position"] == pos) & oof["league_id"].astype(str).isin(list(leagues))]
+        pool = history_columns(pool.merge(games, on=["gsis_id", "season", "week"], how="left"), games, draft)
+        k, n = new_team_scale(pool, pos)
+        LAST_NEW_TEAM_SCALE[pos] = (k, n)
+        if k == 1.0:
+            log.info("%s new team %s: %s fitting rows, no scale", NEW_TEAM_SCALE_VERSION, pos, n)
+            continue
+        idx = rows.index[sel]
+        rows.loc[idx, "blended"] = rows.loc[idx, "raw"].to_numpy(dtype=float) * k
+        rows.loc[idx, "kind"], rows.loc[idx, "games"] = "new_team", rows.loc[idx, "team_games_before"].to_numpy(dtype=float)
+        log.info("%s new team %s: k = %.4f on %s fitting rows (%s scorings pooled), %s player-weeks", NEW_TEAM_SCALE_VERSION,
+                 pos, k, n, pool["league_id"].nunique(), int(sel.sum()))
+# ---- end IL-3

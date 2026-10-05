@@ -5707,6 +5707,7 @@ news line there (before: ESPN only).
 **Next**: V-1's news-affected cases read the store once merged (INTERFACES § IG-2 "For V-1"); a retention rule; a
 dated depth-chart writer (Sleeper's `depth_chart_order` moves between copies) for `for_team`.
 
+
 **For the PO** (review first):
 1. **The sync block** (`scripts/sync_to_hosted.sh`, "# ---- IG-2", 12 lines after U-1) — its own `psql -f
    scripts/hosted_events.sql` on `LEAGUE_LAB_HOSTED_ADMIN_URL`, a warning on failure; no new secret, variable or
@@ -9383,3 +9384,256 @@ compare against it)
    alternative is ESPN connections stay device-only; one Yahoo / ESPN connection per account; Watch saves a player for
    every league (not per league); the watchlist in the league on screen (not always the default league); 30 rows per
    answer; an expired connection kept and labelled rather than deleted.
+
+### IL-3 2026-10-05 — the model's follow-ups: the win-probability grading harness, v3.3 at WR, the registry (branch `dev/IL3` from `main` `93115db`, database `league_lab_il3`)
+
+* **Task**: IL-3 of Wave I-L (`scratchpad/waveIL/BRIEF.md` § IL-3): (1) grade the week's win probability and the ranges
+  on the decision record every night (`odds_grade.py`, `league-lab grade-odds`, `analytics.odds_grades`, `/api/status`
+  `odds_grades`); (2) v3.3 — the mean-unbiased new-team scale at WR through the harness, a rule fixed first; (3) the
+  registry. Plan sections: METRICS § "Win probability — the week" → "Odds grades" (new), § "v3.2" → "v3.3" (new);
+  the registry seed. No web work.
+* **Files**: `src/league_lab/odds_grade.py` (new), `src/league_lab/cli.py` (block `# ---- IL-3`: `grade-odds`),
+  `src/league_lab/calibration.py` (block `# ---- IL-3` at the end + two marked lines in `line_scales`),
+  `src/league_lab/projections.py` (`MODEL_VERSION = "v3.3"`, one marked line), `api/league_lab_api/main.py` (one line
+  in `status` + a block after it), `dbt/seeds/metric_registry.csv` (12 rows inserted after `week_win_probability`, not
+  at the end), `tests/test_odds_grade.py` (new, 12), `tests/test_il3_v33.py` (new, 6), `tests/test_metric_registry.py`
+  (new, 3), `tests/test_personnel.py` (the version pin → v3.3, one marked line), `api/tests/test_il3.py` (new, 6),
+  `docs/METRICS.md` (two new subsections, mid-file), this section, `CHANGELOG.md`.
+* **Interfaces**: `league-lab grade-odds [--season S] [--through W] [--no-write]` (defaults: the newest season on
+  the record, through its newest scored week); `analytics.odds_grades (league_id, season, week, scope 'week' |
+  'to_date', metric, value, n, detail jsonb, through_week, grade_version 'og1.0', graded_at)`, primary key (league_id,
+  season, week, scope, metric), the season's rows replaced each run, `select` granted to `league_lab_app`; metrics
+  `brier`, `log_loss`, `favourite_won`, `calibration` (to date; `detail.deciles`), `coverage_80`, `coverage_50`,
+  `mae_median_<POS>`, `mae_projection_<POS>`; `/api/status` → `odds_grades: {season, through_week, brier,
+  coverage_50, coverage_80, graded_at} | null`. Python: `odds_grade.run / grade_rows / build_inputs / status`,
+  `calibration.new_team_scale`, `new_team_ahead`, `NEW_TEAM_SCALE_*`, `LAST_NEW_TEAM_SCALE`; env
+  `LEAGUE_LAB_NEW_TEAM_SCALE` (unset = on, `0` = off; read by the nightly writer only).
+* **1. The grading harness** (`odds_grade.py`; METRICS § "Odds grades"). Per record roster-week of a Sleeper league
+  with a **scored** week (`league_player_week.is_scored_week`; no row otherwise — never a zero): the win probability
+  My Week showed is recomputed from the frozen rows — `decisions.lineup_win_probability(record lineup, opponent's
+  record lineup)` with every starter's range from `ops.projections` of that league-week (P10 / P50 / P90, P25 / P75
+  where carried), centred on the record value, shrunk; a starter with no range row (a DEF; a K before week 4) at his
+  value; NFL team / opponent from `league_player_week` for the same-game correlations — and graded against the
+  matchup's result (`fct_league_matchup.result`); each record starter's range / P50 / value against his points
+  (`validation._points_lookup`: Sleeper's count, no stat row = 0). Brier and log loss (one row per matchup), the
+  favourite's record, the calibration table in ten fixed-width deciles (both sides of each matchup: symmetric, counts
+  in `detail`), P10–P90 and P25–P75 coverage (P25–P75 only on rows that carry it), the median's and the projection's
+  MAE per position; per league × week, to date per league, and pooled (`all`). MFL leagues are not graded (their
+  outcomes are MFL's, not in the database). **What the clone holds**: `ops.lineup_record` 2026 weeks 1–4
+  `reconstructed` (weeks 1–3 from the `refit` board: three knots, no P25 / P75; week 4 from the kickoff-frozen board
+  with five knots) and week 5 `kickoff`; Sleeper has scored weeks 1–2 (`is_scored_week` false for week 3, its matchups
+  `is_scored` false) — so the grade covers **weeks 1–2**, and the 50% range is not graded yet (week 4 is the first
+  five-knot week; not scored on the clone).
+
+  **The grading table, 2026 weeks 1–2** (`league-lab grade-odds` on the clone; the win probability's p in brackets
+  after the favourite's record; MAE of the median in points, starters in brackets):
+
+  | league | weeks | matchups | Brier | log loss | favourite won (predicted) | P10–P90 coverage | MAE QB | RB | WR | TE | K | DEF |
+  |---|---|---|---|---|---|---|---|---|---|---|---|---|
+  | Forever Unclean Dynasty | 1 | 6 | 0.198 | 0.588 | 83.3% (56.9%) | 67.7% (96) | 11.27 | 9.28 | 7.27 | 4.77 | — | — |
+  | | 2 | 6 | 0.205 | 0.599 | 66.7% (58.3%) | 70.8% (96) | 9.65 | 5.35 | 8.47 | 7.19 | — | — |
+  | | 1–2 | 12 | 0.202 | 0.593 | 75.0% (57.6%) | 69.3% (192) | 10.50 | 7.35 | 7.90 | 5.98 | — | — |
+  | League of Scrubs | 1 | 5 | 0.340 | 0.898 | 40.0% (61.1%) | 72.5% (80) | 8.15 | 8.62 | 6.20 | 4.15 | 2.50 | 2.40 |
+  | | 2 | 5 | 0.368 | 0.944 | 40.0% (63.3%) | 67.5% (80) | 9.16 | 4.34 | 7.44 | 6.29 | 2.35 | 1.90 |
+  | | 1–2 | 10 | 0.354 | 0.921 | 40.0% (62.2%) | 70.0% (160) | 8.65 | 6.44 | 6.81 | 5.22 | 2.42 | 2.15 |
+  | **both** | **1–2** | **22** | **0.271** | **0.742** | **59.1% (59.7%)** | **69.6% (352)** | 9.94 | 6.91 | 7.35 | 5.64 | 2.42 | 2.15 |
+
+  Calibration to date (both sides, 44): 20–30% predicted 25.3% → won 66.7% (3), 30–40% 36.5% → 60.0% (5), 40–50%
+  44.9% → 28.6% (14), 50–60% 55.1% → 71.4% (14), 60–70% 63.5% → 40.0% (5), 70–80% 74.7% → 33.3% (3); mean |predicted −
+  observed| 0.214. **Reading**: 22 matchups — the Brier's standard error is ±0.029, so 0.271 is not distinguishable from
+  a coin flip's 0.25 nor from IH-3's 0.241; Scrubs's favourites won 2 of 10. The 80% ranges held 69.6% (13 of 392
+  starters did not play: 0 points, a miss by construction — the ranges are "if he plays"). K / DEF in weeks 1–3 are
+  not projections (`value_source` `season_ppg` / `observed_ppg`), so their MAE grades nothing. **The 50% range is not
+  graded yet**: no scored week carries P25 / P75 on the clone. IH-3's 0.2410 on the same two weeks graded the lineups
+  the managers started; this grades the lineups the app proposed.
+* **2. v3.3 — the mean-unbiased new-team scale at WR** (METRICS § "v3.3"). **Written down before any code or number**
+  (`scratchpad/waveIL/il3/DECISION_v33.md`, 12:27 ET): the flag is M6's `is_new_team` (not a cold start, ≥ 3 career
+  games, < 3 with his current team in the current stint — M6's shipped definition); **one** k per test
+  season = Σ actual / Σ projected over the flagged WR rows of the 3 seasons before (production's window), both house
+  scorings pooled, clipped 0.70–1.10, applied to every component of the line and re-priced / re-ranged by the same
+  models; the rule: flagged MAE ≥ 0.05 lower on average and in ≥ 4 of 5 seasons (D1's threshold and count on the rows
+  moved, as M5 / M6 applied it) **and** D1's `decide` on the WR board not "hurts" **and** the flagged bias shrinking
+  without a sign flip. Walk-forward on the clone (`v33_rows.py`: the production model fitted on 2016..S−1 with ranges,
+  8 seasons of WR, 7 min; `v33_table.py`):
+
+  | Variant | flagged rows (a league) | Δ MAE flagged (seasons lower) | flagged bias before → after | Δ interval score flagged (seasons lower) | flagged 80% / 50% coverage | board Δ MAE | board Δ Spearman | board Δ interval score | decision |
+  |---|---|---|---|---|---|---|---|---|---|
+  | **one k, 3 seasons before, both scorings (nt1.0)** | 943 | **−0.181 (4 of 5)** | −0.94 → **−0.41** | −0.014 (4 of 5) | 79.6 → 81.2% / 50.4 → 50.7% | −0.0140 | +0.0003 | −0.0011 | **keep** |
+  | the same k on 2018..S−1 (sensitivity, does not decide) | 943 | −0.086 (4 of 5) | −0.94 → −0.69 | −0.008 (4 of 5) | 79.6 → 80.4% / 50.4 → 50.6% | −0.0067 | +0.0003 | −0.0006 | (would keep) |
+  | M6's third shape (k per step, reference league, 2018..S−1; M6's numbers) | 943 | −0.102 (4 of 5) | −0.94 → −0.65 | — | — | −0.008 | +0.0004 | — | not kept (a lead) |
+
+  Per season: k 1.022 / 0.918 / 0.912 / 0.833 / 0.822 (2021 → 2025), flagged Δ MAE +0.055 / −0.137 / −0.247 / −0.375 /
+  −0.199; per league −0.190 (dynasty) / −0.171 (Scrubs). D1's `decide` on the WR board: "drop" (Δ MAE −0.014 under its
+  0.05 bar; better in 4 of 5, Spearman in 3 of 5), **not "hurts"**. **Kept → `MODEL_VERSION` v3.3.** Wired as
+  `calibration._new_team_scale_rows` after the cold-start blend in `line_scales` (the same `blend_lines` hook: lines,
+  house rows, ranges and every request agree), k fitted on `ops.calibration_oof`. **One wiring decision after the
+  numbers** (said): the flag looks ahead one game a week (`new_team_ahead`) — the harness flagged each row by the games
+  actually played with the team before *that* week, so a future week counts his projected games before it; without it
+  the 2026 board would scale 507 player-weeks of weeks 5–18 (39 WRs × every week left) instead of 34 (20 WRs, each
+  until his third game with the team; a frozen week he has a game in counts as one).
+* **3. The registry.** `week_win_probability` **already has its row** (`grep`: added by the PO in `b9fcfff`, "Wave I-H
+  wiring … the registry rows (decision_market_edge, week_win_probability)") — nothing to add for it. New rows (inserted
+  after it, not at the end of the file, so IL-1's NGS rows at the end merge cleanly): the odds grades —
+  `week_odds_brier` (with log loss and the favourite's record in its notes), `week_odds_calibration`,
+  `range_coverage_record`, `median_mae_record` (og1.0) — and the seven METRICS families with a version tag and no row:
+  `kd_projection` (kd1.0), `role_alert` (ra1.2), `scenario_upside` (sc1.0), `ros_projection` (ros1.0),
+  `projection_record` (pr1.0), `credible_trade` (ct1.0), `cold_start_line_blend` (cs1.1); and v3.3's own,
+  `new_team_line_scale` (nt1.0). **The check**:
+  `tests/test_metric_registry.py` (root suite, no database, 0.7 s) reads every `##` / `###` heading of METRICS.md
+  carrying a version tag (bare model versions `vN.N` aside) and fails listing any tag no registry row carries (as its
+  version, in its notes, or through the test's `ALIASES` for rows older than their tag: `wp1.0` → `week_win_probability`,
+  `cb1.0`, `pers1.0`, `ti1.0` / `ti1.1` → `trade_interest`, `ev1.0`, `sx1.0`, `ra1.1`); `fx1.0` (the experiment
+  harness) is not a metric. **Found, not changed**: `trade_interest`'s row says version 1.0 while METRICS has moved it to
+  ti1.1 (IE-1) — the PO's call whether to bump it.
+* **The 2026 board on the clone** (a full `project` with the default switches after `ensure_oof`; against the board
+  before it, which had no `ops.calibration_oof` — so the run also turned on M6's cold-start blend, 1,014 lines, M6's own
+  count): the log says "nt1.0 new team WR: k = 0.7946 on 1118 fitting rows (2 scorings pooled), 202 player-weeks" (weeks
+  1–18; 1–4 kept frozen) — **the harness's own 2023–2025 rows give the same k, 0.7946 on 1,118 rows**. **34 WR lines move
+  in weeks 5–18** (20 players; weeks 5 / 6 / 7: 19 / 13 / 2), every component × k to 1.1e-16; house rows the dynasty
+  −1.01 a row (−0.57 to −2.11), Scrubs −0.84 (−0.48 to −1.69); A.J. Brown (NE, 1 game with the team) 10.24 → 8.13 in
+  the dynasty / 8.23 → 6.54 in Scrubs, Michael Pittman (PIT) 9.84 → 7.82 / 7.94 → 6.31, Jauan Jennings (MIN) 6.45 →
+  5.13. Rostered in week 5: A.J. Brown (unplayable, dynasty 1 / Scrubs 5), Pittman (bench, dynasty 2), Jennings
+  (bench, dynasty 4), Marquise Brown (bench, dynasty 9) — **no week-5 starter is scaled**; Andrew's rosters (dynasty 12,
+  Scrubs 2) have none. Frozen weeks 1–4: 0 rows moved. `ops.projection_lines` carry `model_version` v3.3 for the live
+  weeks.
+* **Commands** (clone `league_lab_il3`, `OMP_NUM_THREADS=1`; the box at load 10–22 with four other devs):
+  `uv run league-lab grade-odds [--no-write]` (3.8 s); `scratchpad/waveIL/il3/v33_rows.py` (the harness rows, 7 min) and
+  `v33_table.py` (the table); `uv run python -c "…ensure_oof()"` (`ops.calibration_oof` for v3.3: 34,592 rows,
+  2023–2025, 3.5 min); `plan2026.py` (`line_scales` on the clone's lines) and `board_diff.py`; `uv run league-lab
+  project` (12:43 → 13:08 every table written and committed; **stopped at 13:20 in its last step**, the U-15 importance
+  refit for the new model version — CPU-bound 12 min at load 13, nothing of it written: the connection sat idle after
+  its last COMMIT; the nightly runs it in full); `uv run league-lab dbt build --select mart_player_week_projections+
+  mart_projection_backtest+ mart_lineup_recommendation+ mart_projection_importance mart_player_role_alerts+
+  mart_waiver_upside mart_player_ros_projection mart_projection_record` (**PASS=143 WARN=0 ERROR=0**, the parity tests
+  `assert_projection_ranges_price_the_lines` / `assert_house_projections_are_the_nfl_wide_rows` among them);
+  `uv run ruff check src app tests api`; root `uv run pytest -q tests`; API `cd api && PYTHONPATH=. uv run pytest -q
+  --deselect tests/test_u1.py --deselect tests/test_ig2.py`; `uv run python scripts/copy_standard.py --check` (no new
+  screen words; exit 0); `uv run python scripts/hosted_relations.py` (lists `api analytics.odds_grades`).
+* **Evidence — tests** (all on the clone; the clock pinned as the suites pin it): **root 1,283 passed, 3 skipped, 0 failed** (594 s; main's 1,263 + the 21
+  new — one more skip than main's two, a data condition on the clone); **API 723 passed, 3 failed, 11 skipped**
+  (`test_u1` / `test_ig2` deselected: 41; 1,866 s at load 13–16) — the 3 are not IL-3's: `test_decisions::
+  test_latency_cold_and_warm` (cold `/api/waivers` on the Test League 21.2 s against its 20 s bound, the box at load
+  14) and `test_ik3::test_real_yahoo_setup_needs_the_connection` / `test_real_my_week_and_screens[yahoo:…]` (404 on
+  the redirect to the web app's `/leagues`: this worktree has no `web/dist` — no web work, no build); **ruff** `src app tests api` clean; `copy_standard.py --check` exit 0. New:
+  `tests/test_odds_grade.py` 12 (a perfectly calibrated coin flip scores Brier 0.25 and log loss ln 2 with one decile at
+  50% / 50%; p = 0.7 with 7 of 10 won scores 0.21 and the deciles 30% → 30% / 70% → 70%; an overconfident set shows
+  in the table; a 50% range built to cover half covers half, the 80% one 80%; P25 / P75 only where carried; a starter
+  without a range graded at his value; unknown points left out, never 0; the scopes and `all`; identical lineups →
+  p = 0.5 ± 0.02 end to end through `build_inputs` with an unscored week left out; `status`), `tests/test_il3_v33.py`
+  6 (the scale's sum / clip / 30-row floor and the rows it ignores; a new-team WR's every component × 0.8 in both
+  scorings; a WR long with his team, a new-team RB and a cold start untouched; the two switches; the look-ahead: a WR
+  with 1 game flagged for his next two games and not after, a bye not counted), `tests/test_metric_registry.py` 3
+  (it caught this branch's own METRICS § v3.3 before its row existed), `api/tests/test_il3.py` 6 (the status block,
+  None without the table or on a failed read, the route on the clone; **every week-5 WR line priced on request equals
+  his house projection in both leagues** — on the board before and after the v3.3 project).
+  **The clone's state, for whoever runs the suites there next**: `project` ran at Monday 13:00 ET's wall clock, so its
+  lineups were solved with week 4's Sunday games locked, and the Saturday-pinned house-vs-mart tests read that (an
+  interim API run: 14 failures in its first 47 tests — `test_anyleague` route parity, `test_decisions` waivers / trades
+  / team / league parity; root: `test_my_week_is_the_mart` × 2, the same two M6 / IK-3 / IH-3 saw on their clones). An
+  earlier API run on the same clone before the re-projection (same v3.3 code) passed its first quarter with none of
+  them. The lineups and waivers were then re-solved as of the suites' pinned moment (`lineup.lineups(conn, 2026,
+  as_of=2026-10-03T16:00Z)`, `waivers.run_waivers`) and their marts rebuilt (PASS=85) — the numbers above are on that
+  state. (A read-only API run against `league_lab` was stopped at test 63, before any test that uses the pipeline role;
+  a root run there was refused by the sandbox's permission check and not tried another way.)
+* **Data touched (the clone `league_lab_il3` only; `league_lab` read, never written)**: `analytics.odds_grades` (new,
+  103 rows: 2026 weeks 1–2); `ops.calibration_oof` (rebuilt for v3.3, 34,592 rows); 2026 weeks 5–18 of
+  `ops.projections` / `_lines` / `_ranges`, `ops.kd_*`, `ops.player_role_alerts` / `_scenarios`, `ops.market_record`;
+  `ops.lineups` / `lineup_totals` / `waiver_moves` / `waiver_upside` and week 5 of `ops.lineup_record` (re-solved as of
+  the pinned moment, above); the projection marts and the lineup / waiver / record marts. The key of
+  `analytics.odds_grades` is its primary key (a Python writer's table, not a dbt model).
+* **What moved**: on the nightly after the merge, the live weeks' lines of WRs in their first games with a new team
+  (about 0.8–1 point a row; on the clone 34 lines of 20 players, none a week-5 starter) and their house rows, ranges,
+  lineups, rest of season; `model_version` v3.3 on new rows (frozen weeks keep theirs); `/api/status` gains
+  `odds_grades`. No screen word, no existing route's shape.
+* **Not done**:
+  * **The 50% range is not graded** (no scored week on the clone carries P25 / P75; week 4 is the first) and weeks 3–4
+    are not scored on the clone — the real grade is the nightly's on Neon, from the line above.
+  * MFL leagues are not graded (their outcomes are MFL's; V-2's `record_mfl.mfl_load` could feed it).
+  * The second reading — would the app's lineup have won (the two record lineups' points) — is not computed; the grade
+    is against the real result.
+  * IH-3's shrink (0.60) is not refitted: two scored weeks say nothing; refit on 2024–2026 after weeks 4–6.
+  * "Why this number" does not say a WR's line is scaled for a new team (the pieces add up to the scaled line; the same
+    is true of M6's cold starts).
+  * On the clone: the v3.3 importance refit and `backtest-v2` for v3.3 were not run (the nightly runs both once);
+    `feature_experiments` has no nt1.0 rows (the console's "What we tried" does not list it).
+  * **Found, not changed**: M6's cold-start blend scales a player with < 3 career games on **every** future week (his
+    career count as of today), not just until his third game — the look-ahead question v3.3 answers with
+    `new_team_ahead`; the rest-of-season sum of a rookie who has not played carries the draft-slot prior on all his
+    weeks. M6's measured verdict stands; worth a look by the model's owner. `trade_interest`'s registry version (1.0
+    vs METRICS ti1.1).
+* **Next**: after weeks 4–6 are scored on Neon, read `odds_grades` (and the 50% range's first grade) and refit the week
+  shrink on 2024–2026; MFL in the grade; a "new team" / "rookie" line in "why this number"; the QB graded range target
+  (M5's marginal keep, the remaining v3.x lead).
+
+**For the PO**
+1. **`scripts/nightly.sh`** — after the `validate` step (after `# ---- end V-1`, before the `fetch-projections` block;
+   it needs the record `validate` writes and the marts `dbt-build` made; the sync comes later), add exactly:
+
+   ```bash
+   # ---- IL-3 (Wave I-L): grade the week's win probability and the ranges on the decision record (analytics.odds_grades,
+   # the whole season re-graded each night; /api/status odds_grades reads it). Soft: without it the hosted copy has no
+   # grade tonight (odds_grades: null) and the next night re-grades the season from the record.
+   SOFT_WHY="the hosted copy has no grade tonight (odds_grades: null); the next night re-grades the season" soft grade-odds uv run league-lab grade-odds
+   # ---- end IL-3
+   ```
+
+   About 4 s on the clone for two weeks (Monte Carlo, 20,000 draws a matchup); a full season ≈ 190 matchups, well under
+   a minute.
+2. **`scripts/hosted_relations.py` / the sync: nothing to change.** `uv run python scripts/hosted_relations.py` already
+   prints `api analytics.odds_grades` (it follows `main.py`'s import of `league_lab.odds_grade`); the sync publishes every
+   named analytics relation the local database has and grants `select on all tables in schema analytics` to
+   `league_lab_app` (`sync_to_hosted.sh` 243–246). On a night the grade step fails the table is not on the runner,
+   so it is not published (the hosted analytics schema is rebuilt each sync): `/api/status` then says `null`.
+3. **The first nightly after the merge runs longer once** (`MODEL_VERSION` v3.3): the `backtests` step re-runs
+   `backtest-v2` for v3.3 (it measures the model without the line blends; the model itself is unchanged, so its numbers
+   should equal v3.0's rows, under the new label — not run on the clone), `project` refits the importance for v3.3, and `calibration-oof` rebuilds `ops.calibration_oof` (the
+   model version changed; 2–3 min on the runner). Later nights as before.
+4. **Rollback** (no deploy): `LEAGUE_LAB_NEW_TEAM_SCALE: "0"` on the `project` step's env in
+   `.github/workflows/nightly.yml` → v3.2's lines (the label stays v3.3); `LEAGUE_LAB_COLD_START: "0"` turns both line
+   blends off. Weeks already frozen keep their rows.
+5. **The console's Record page** (`app/pages/13_Record.py`, before `# ---- how to read this`), if you want the grade
+   there:
+
+   ```python
+   # ---- IL-3 (Wave I-L): the week's odds and the ranges, graded (analytics.odds_grades; METRICS § "Odds grades")
+   st.subheader("The week's odds and ranges, graded")
+   if missing_relations(("odds_grades",)):
+       st.caption("Not graded on this database yet: `league-lab grade-odds` writes analytics.odds_grades.")
+   else:
+       _og = query("select week, scope, metric, value, n from analytics.odds_grades where season = %s and league_id = %s "
+                   "and metric in ('brier', 'log_loss', 'favourite_won', 'coverage_80', 'coverage_50') order by scope desc, week",
+                   (int(current_season()), league_id))
+       if _og.empty:
+           st.caption("No scored week graded yet for this league.")
+       else:
+           st.dataframe(_og.pivot_table(index=["scope", "week"], columns="metric", values="value").reset_index().round(3),
+                        hide_index=True)
+           st.caption("Brier: a coin flip scores 0.25, lower is better. Favourite won: how often the side we gave over 50% "
+                      "won. Coverage: the share of starters inside their 80% / 50% range (the 50% range from week 4).")
+   # ---- end IL-3
+   ```
+   (not run: `app/` is yours.)
+6. **The console's Rankings "The model"** (`app/pages/4_Rankings.py`, after the "New in October" paragraph), one
+   paragraph if you want v3.3 said there: "**New in October: a receiver on a new team.** A receiver's first games with
+   a new team (a trade or a signing) used to be projected about a point a game too high. Until his third game with
+   the team his projection is now scaled down by the same share for everyone (0.79 this season), fitted each year on
+   the three seasons before; graded on 2021 to 2025 it missed by 0.18 points a game less on those games, in four of
+   the five seasons."
+7. **`docs/HOSTING.md` "What stops a night"** (yours), a proposed row: `| grade-odds | the week's odds could not be
+   graded | Nothing urgent: /api/status says odds_grades: null; reproduce with uv run league-lab grade-odds --no-write |`.
+8. **Merge notes** (every shared file a marked block): `main.py` — one line in `status` after INF-2's `memory` line and
+   a block right after the function (IL-4 adds `directory` inside `memory_status`: no overlap); `cli.py` — a block after
+   V-1's; `calibration.py` — a block at the end + two marked lines in `line_scales`; `projections.py` — the
+   `MODEL_VERSION` line; `metric_registry.csv` — 12 rows after `week_win_probability` (mid-file; IL-1's rows at the end do not touch them); METRICS — two new
+   subsections mid-file (after "Win probability — the week" and after "v3.2"); `tests/test_personnel.py` — the
+   version pin; `CHANGELOG` adds `## 2026-10-05 — Wave I-L` (keep one heading).
+   **`tests/test_metric_registry.py` reads the merged METRICS**: if another branch of the wave adds a METRICS heading
+   with a version tag (IL-1's roles / NGS sections, say `rl1.0`) that none of its registry rows names in `version` or
+   `notes`, the test fails listing the tag — add the tag to the row's notes (or an `ALIASES` entry), not a skip.
+9. **Decisions Andrew may want to reverse**: v3.3 **on by default** (k = 0.79 for 2026: a fifth off a veteran WR's
+   first games with a new team); `MODEL_VERSION` **bumped** to v3.3 (M6 kept v3.0 for v3.2; from this night the record
+   tells the blended weeks apart, at the cost of the one-night re-run in 3); the scale **ends at his third game** with
+   the team (the look-ahead), one scale for both scorings; the odds graded against the **real result** (not the app
+   lineup's points), the reconstructed weeks graded with the rest, the calibration in fixed-width deciles seen from both
+   sides; `analytics.odds_grades` in `analytics` as the brief named it (a Python writer's table in dbt's schema; in
+   `ops` it would have travelled with the sync's `ops.*` as well).

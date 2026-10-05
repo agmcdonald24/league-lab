@@ -42,6 +42,19 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   ESPN ids in nflverse's table, all retired / free agents, now map to nobody). Root 1,258 / API 730 (4 failed on the
   clone, as on `main`) / e2e 380, 0 failed. Verified live: no (`docs/STATUS.md` § IL-5).
 
+- **IL-3 — the week's odds graded every night; v3.3 (a receiver on a new team); the registry.** `league-lab
+  grade-odds` grades the win probability My Week showed (Brier, log loss, how often the favourite won, a ten-decile
+  calibration table) and the ranges (P10–P90 and P25–P75 coverage, the median's miss per position) on the decision
+  record's scored weeks, per league and week and season to date, into `analytics.odds_grades`; `/api/status` carries
+  the latest (`odds_grades`). First grade on 2026 weeks 1–2: 22 matchups, Brier 0.271, 80% ranges held 69.6% of 352
+  starters — two weeks are noise; the nightly re-grades from week 4 with the five-knot ranges. **v3.3**: a veteran WR
+  in his first games with a new team is projected about a fifth lower (k = 0.79 for 2026; one mean-unbiased scale on
+  his stat line, fitted on the three seasons before, both scorings), kept by a rule written before the run: on
+  2021–2025 his projection's miss fell 0.18 a game (4 of 5 seasons), its bias −0.94 → −0.41, the board not hurt;
+  `MODEL_VERSION` v3.3, `LEAGUE_LAB_NEW_TEAM_SCALE=0` turns it off. Twelve metric registry rows (the odds grades, v3.3
+  and seven documented families that had none) and a test that lists any METRICS family without one (`docs/STATUS.md` §
+  IL-3).
+
 ## 2026-10-05 — Wave I-K
 
 - **PO (the merge, 2026-10-05 12:30 ET).** The accounts block in `scripts/sync_to_hosted.sh`; the accounts schema on
