@@ -710,13 +710,52 @@ def capabilities(provider: str) -> dict:
     dict each call (callers may add to it). ``provider``: sleeper | mfl | espn | yahoo (KeyError otherwise)."""
     key = str(provider).lower()
     p = _CAPS[key]
-    tail = UNVERIFIED if p["status"] == "unverified" else ""             # ---- IK-3: said on every unverified feature
-    out = {"provider": key, "name": p["name"], "short": p["short"], "status": p["status"], "connect": dict(p["connect"]),
+    status = provider_status(key)                                        # ---- IL-5: the verified flip, the kill switch
+    tail = UNVERIFIED if status == "unverified" else ""                  # ---- IK-3: said on every unverified feature
+    out = {"provider": key, "name": p["name"], "short": p["short"], "status": status, "connect": dict(p["connect"]),
            "features": {f: {"label": FEATURE_WORDS[f], "status": p["features"][f][0], "words": p["features"][f][1] + tail,
                             "unavailable": unavailable(key, f)} for f in FEATURES}}
     if p.get("note"):                                                    # ---- IK-3: ESPN's "unofficial", Yahoo's OAuth
         out["note"] = p["note"]
+    if status == "off":                                                  # ---- IL-5
+        out["off"] = f"{p['name']} leagues: {OFF_WORDS}"
     return out
+
+
+# ---- IL-5 (Wave I-L): the two switches `/api/providers` follows, so a flip is a Render environment change, not a deploy.
+# * LEAGUE_LAB_PROVIDER_VERIFIED=espn,yahoo (default empty): the providers the PO has checked on a live league — their
+#   status goes from "unverified" to "supported" and the UNVERIFIED tail leaves every feature's words (the features keep
+#   their own status: "partial" stays partial). A provider already "supported" (Sleeper, MFL) is unchanged by it.
+# * LEAGUE_LAB_ESPN_LEAGUES=off (espn_client's kill switch): ESPN's status is "off" with OFF_WORDS; the setup screen
+#   says so in place of the form. Yahoo without its secrets stays "unverified" and its button says "coming soon" (the
+#   setup screen reads `yahoo_configured`): "coming soon" is the right word while the app is not registered.
+VERIFIED_ENV = "LEAGUE_LAB_PROVIDER_VERIFIED"
+ESPN_SWITCH_ENV = "LEAGUE_LAB_ESPN_LEAGUES"
+OFF_WORDS = "not available right now"
+
+
+def verified_providers() -> frozenset[str]:
+    raw = os.environ.get(VERIFIED_ENV) or ""
+    return frozenset(x for x in (w.strip().lower() for w in raw.split(",")) if x in PROVIDERS)
+
+
+def switched_off(provider: str) -> bool:
+    """The provider's kill switch is off (ESPN only today: ``LEAGUE_LAB_ESPN_LEAGUES``, default on)."""
+    if provider == "espn":
+        return str(os.environ.get(ESPN_SWITCH_ENV) or "on").strip().lower() in ("off", "0", "false", "no")
+    return False
+
+
+def provider_status(provider: str) -> str:
+    """supported | unverified | not_supported | off — ``_CAPS``'s status with the two switches applied."""
+    key = str(provider).lower()
+    status = _CAPS[key]["status"]
+    if switched_off(key):
+        return "off"
+    if status == "unverified" and key in verified_providers():
+        return "supported"
+    return status
+# ---- end IL-5
 
 
 def capabilities_for(key: Any) -> dict:

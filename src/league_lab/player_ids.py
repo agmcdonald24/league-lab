@@ -18,6 +18,7 @@ Identity never goes through a name here (AGENTS.md rule 3): the table is keyed b
 from __future__ import annotations
 
 import csv
+import logging
 import os
 import threading
 import time
@@ -36,6 +37,13 @@ MAX_AGE_S = 24 * 3600
 COLUMNS = ("mfl_id", "gsis_id", "sleeper_id", "espn_id", "name", "position", "team",
            "yahoo_id")                                     # ---- IK-2 (Wave I-K): Yahoo player ids
 _NA = {"", "NA", "None", "none", "nan", "NaN", "NULL", "null"}
+log = logging.getLogger("league_lab.player_ids")
+# ---- IL-5 (Wave I-L): the duplicate-id rule on every external id column the adapters map through — an id on two
+# players' rows (two different gsis ids, or a gsis id and none) maps to nobody: quarantined, logged once per process
+# with the ids, the way IK-2 did it for yahoo_id (and as int_player_id_map keeps an ambiguous sleeper_id out of the map,
+# AGENTS.md rule 3). The same player on two rows (one gsis id) is not a duplicate.
+DUPE_COLUMNS = ("mfl_id", "espn_id", "yahoo_id")
+_logged: set[tuple[str, str]] = set()
 
 
 def _clean(v: str | None) -> str | None:
@@ -59,6 +67,8 @@ class IdTable:
     espn_gsis: dict[str, str] = field(default_factory=dict)
     by_yahoo: dict[str, dict] = field(default_factory=dict)          # ---- IK-2: yahoo_id -> the row
     yahoo_dupes: set[str] = field(default_factory=set)               # ---- IK-2: ids on two players (no match)
+    mfl_dupes: set[str] = field(default_factory=set)                 # ---- IL-5: the same rule for mfl_id
+    espn_dupes: set[str] = field(default_factory=set)                # ---- IL-5: and espn_id
 
     def mfl_to_sleeper(self, mfl_id: str | int | None) -> str | None:
         r = self.by_mfl.get(_clean(str(mfl_id)) or "")
@@ -95,10 +105,14 @@ def read(path: str | Path) -> IdTable:
     """Parse the CSV (only ``COLUMNS`` are kept). A missing column is tolerated (its lookups answer None)."""
     p = Path(path)
     t = IdTable(path=p, loaded_at=time.time(), mtime=p.stat().st_mtime)
+    owners: dict[str, dict[str, set]] = {c: {} for c in DUPE_COLUMNS}          # ---- IL-5: id -> the gsis ids on it
     with p.open(newline="", encoding="utf-8") as fh:
         for raw in csv.DictReader(fh):
             r = {c: _clean(raw.get(c)) for c in COLUMNS}
             t.rows += 1
+            for c in DUPE_COLUMNS:                                                 # ---- IL-5
+                if r[c]:
+                    owners[c].setdefault(r[c], set()).add(r["gsis_id"])
             if r["mfl_id"]:
                 t.by_mfl[r["mfl_id"]] = r
             if r["sleeper_id"] and r["gsis_id"]:
@@ -112,7 +126,34 @@ def read(path: str | Path) -> IdTable:
                     t.by_yahoo.pop(r["yahoo_id"], None)
                 elif prev is None:
                     t.by_yahoo[r["yahoo_id"]] = r
+    _quarantine(t, owners)                                                         # ---- IL-5
     return t
+
+
+# ---- IL-5 (Wave I-L)
+def _quarantine(t: IdTable, owners: dict[str, dict[str, set]]) -> None:
+    """Drop every id two players' rows carry from its lookup (``DUPE_COLUMNS``); log each once per process."""
+    held = {"mfl_id": (t.by_mfl, t.mfl_dupes), "espn_id": (t.espn_gsis, t.espn_dupes),
+            "yahoo_id": (t.by_yahoo, t.yahoo_dupes)}
+    for col, ids in owners.items():
+        lookup, dupes = held[col]
+        bad = {x: g for x, g in ids.items() if len(g) > 1}
+        for x in bad:
+            lookup.pop(x, None)
+            dupes.add(x)
+        fresh = sorted(x for x in bad if (col, x) not in _logged)
+        if fresh:
+            _logged.update((col, x) for x in fresh)
+            shown = "; ".join(f"{col} {x}: " + ", ".join(sorted(g or "no gsis id" for g in bad[x])) for x in fresh[:20])
+            log.warning("player ids: %d %s value(s) on two players' rows map to nobody (quarantined): %s%s",
+                        len(fresh), col, shown, " …" if len(fresh) > 20 else "")
+
+
+def duplicates(t: IdTable | None = None) -> dict[str, list[str]]:
+    """The quarantined ids per column (the audit script, tests)."""
+    t = t or table()
+    return {"mfl_id": sorted(t.mfl_dupes), "espn_id": sorted(t.espn_dupes), "yahoo_id": sorted(t.yahoo_dupes)}
+# ---- end IL-5
 
 
 def path() -> Path:

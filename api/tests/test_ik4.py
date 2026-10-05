@@ -235,7 +235,8 @@ def test_link_session_leagues_upserted_twice_is_one_row(api, caplog):
     assert r.status_code == 200 and r.json() == {"ok": True, "email": email}
     cookie = r.headers["set-cookie"]
     assert cookie.startswith(f"{accounts.COOKIE}=") and "HttpOnly" in cookie and "Secure" in cookie
-    assert "samesite=lax" in cookie.lower() and "Path=/api/account" in cookie and f"Max-Age={90 * 86400}" in cookie
+    # ---- IL-5: the path is /api (the Yahoo / ESPN connect and disconnect routes must see who is signed in)
+    assert "samesite=lax" in cookie.lower() and "Path=/api;" in cookie and f"Max-Age={90 * 86400}" in cookie
     assert token not in r.text and token not in cookie
     api.cookies.clear()                                                     # the jar keeps a Secure one off http
     api.cookies.set(accounts.COOKIE, r.cookies[accounts.COOKIE])

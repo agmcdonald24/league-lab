@@ -62,7 +62,8 @@ log = logging.getLogger("league_lab_api.accounts")
 
 ENV = "LEAGUE_LAB_ACCOUNTS"
 COOKIE = "ll_session"
-COOKIE_PATH = "/api/account"
+COOKIE_PATH = "/api"     # ---- IL-5: was /api/account — the Yahoo / ESPN connect and disconnect routes must see who is
+LEGACY_COOKIE_PATH = "/api/account"   # signed in (connections.py); sign-out also clears a cookie set at the old path
 SESSION_DAYS = 90
 LINK_MINUTES = 15
 PER_EMAIL_HOUR, PER_IP_HOUR, DAILY_MAX = 5, 30, 90
@@ -472,7 +473,9 @@ def me(user_id: str, email: str) -> dict:
                           "order by scope, key", (user_id,)).fetchall()
         watch = c.execute("select league_key, player_key, added_at from accounts.watchlist where user_id = %s "
                           "order by added_at, player_key", (user_id,)).fetchall()
-        return {"created": created[0] if created else None, "leagues": leagues, "prefs": prefs, "watch": watch}
+        from . import connections  # ---- IL-5: never a secret
+        return {"created": created[0] if created else None, "leagues": leagues, "prefs": prefs, "watch": watch,
+                "connections": connections.listing(c, user_id)}
 
     got = db.run_rw(tx)
     rows = []
@@ -487,7 +490,8 @@ def me(user_id: str, email: str) -> dict:
     return {"email": email, "created_at": _iso(got["created"]), "default_league": default, "leagues": rows,
             "preferences": [{"scope": s, "key": k, "value": v, "updated_at": _iso(t)} for s, k, v, t in got["prefs"]],
             "watchlist": [{"league_key": lk, "league": app_key(lk) if lk else None, "player_key": pk,
-                           "added_at": _iso(t)} for lk, pk, t in got["watch"]]}
+                           "added_at": _iso(t)} for lk, pk, t in got["watch"]],
+            "connections": got["connections"]}                             # ---- IL-5
 
 
 def _iso(t) -> str | None:
@@ -716,6 +720,7 @@ def _set_cookie(resp: Response, request: Request, session_id: str) -> None:
 
 def _drop_cookie(resp: Response) -> None:
     resp.delete_cookie(COOKIE, path=COOKIE_PATH)
+    resp.delete_cookie(COOKIE, path=LEGACY_COOKIE_PATH)                  # ---- IL-5
 
 
 @router.get("/status")
@@ -746,6 +751,11 @@ def verify_route(body: VerifyIn, request: Request) -> JSONResponse:
     sid, email = verify(body.token, client_ip(request), request.headers.get("user-agent"))
     resp = _ok({"email": email})
     _set_cookie(resp, request, sid)
+    # ---- IL-5: this device's Yahoo / ESPN connection joins the account; the account's come back to this device
+    from . import connections
+    uid = db.run_rw(lambda c: c.execute("select user_id from accounts.sessions where id = %s", (sid,)).fetchone()[0])
+    connections.sync(request, resp, str(uid), adopt=True)
+    # ---- end IL-5
     return resp
 
 
@@ -764,7 +774,10 @@ def logout_route(request: Request, body: LogoutIn | None = None) -> JSONResponse
 @router.get("/me")
 def me_route(request: Request) -> JSONResponse:
     uid, email, _sid = _user(request)
-    return JSONResponse(me(uid, email), headers=NO_STORE)
+    resp = JSONResponse(me(uid, email), headers=NO_STORE)
+    from . import connections  # ---- IL-5: the restore (cookie missing)
+    connections.sync(request, resp, uid, adopt=False)
+    return resp
 
 
 @router.put("/leagues")
