@@ -80,3 +80,44 @@ test("Waivers' top three: the name wins over the gain label — drawer open and 
   }
   await shot(page, "waivers-top-drawer", info);
 });
+
+// ---- 2. the Trades screen says "No compelling trade found" once
+const II1 = join(import.meta.dirname, "..", "..", "fixtures", "ii1", "api_ii1.json");
+const ii1: Record<string, Saved> = existsSync(II1) ? (JSON.parse(readFileSync(II1, "utf8")) as Record<string, Saved>) : {};
+const SCRUBS_FINDER = `/api/trades/partners?league=${SCRUBS}&team=2`;
+
+test("Trades: 'No compelling trade found' is said once — the answer says it, the Finder does not repeat it (Any, and a position)", async ({ page, context, isMobile }, info) => {
+  test.skip(!ii1[SCRUBS_FINDER], "no II-1 recording");
+  // the recorded Scrubs roster 2 answer (no credible trade; 18 behind Explore); for a position the same rows stand in
+  // for that position's answer (the rendering rule is what is checked here, not the API's filter)
+  await context.route(/\/api\/trades\/(partners|lists)/, (route) => {
+    const u = new URL(route.request().url());
+    if (u.pathname.endsWith("/lists")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ buy_low: [], sell_high: [] }) });
+    const s = ii1[SCRUBS_FINDER];
+    return route.fulfill({ status: s.status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(s.body) });
+  });
+  await page.goto(`/trades?league=${SCRUBS}&team=2`);
+  const head = page.getByTestId("best-partner");
+  await expect(head.getByTestId("no-compelling")).toHaveText("No compelling trade found.");
+  await expect(head).toContainText("is worth proposing");
+  await expect(head).toContainText("Your best move: the Tyler Allgeier claim");
+  const explore = page.getByTestId("explore");
+  await expect(explore).toBeVisible();
+  await expect(page.getByTestId("finder-none")).toHaveCount(0);
+  await expect(page.getByTestId("finder-none-why")).toHaveCount(0);
+  const main = page.locator("main");
+  const count = async (t: string) => (await main.innerText()).split(t).length - 1;
+  expect(await count("No compelling trade found")).toBe(1);
+  expect(await count("Your best move:")).toBe(1);
+  await noSidewaysScroll(page);
+  await shot(page, "trades-none", info, true);
+  // a position: one line, that position's reason, without the verdict words or the best move again
+  await tap(page, page.getByTestId("want-WR"), isMobile);
+  await expect(page).toHaveURL(/want=WR/);
+  const why = page.getByTestId("finder-none-why");
+  await expect(why).toHaveText(/^For a WR: none of the 18 trades that raise both starting lineups over weeks 4–7 is worth proposing: .*\.$/);
+  await expect(why).not.toContainText("Your best move");
+  expect(await count("No compelling trade found")).toBe(1);
+  expect(await count("Your best move:")).toBe(1);
+  await shot(page, "trades-none-wr", info, true);
+});
