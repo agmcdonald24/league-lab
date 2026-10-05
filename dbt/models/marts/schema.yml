@@ -399,7 +399,7 @@ models:
 
   # ---- IL-1 (Wave I-L): NFL Next Gen Stats per player x season x regular-season week (week 0 = NGS's season aggregate)
   - name: mart_player_ngs_week
-    description: "IL-1: NFL Next Gen Stats (via nflverse) per gsis id x season x regular-season week, passing / rushing / receiving side by side, joined on gsis id (never by name). Week 0 is NGS's own season aggregate (is_season_aggregate). NGS publishes a weekly row only for a qualifying player-week (15+ pass attempts, 10+ carries, 5+ targets in our data): no row = unknown, never 0. Each value sits beside the denominator NGS states (ngs_pass_attempts, ngs_rush_attempts, ngs_targets, ngs_receptions): a window is the denominator-weighted mean of the weekly values."
+    description: "IL-1: NFL Next Gen Stats (via nflverse) per gsis id x season x regular-season week, passing / rushing / receiving side by side, joined on gsis id (never by name). Week 0 is NGS's own season aggregate (is_season_aggregate). NGS publishes a weekly row only for a qualifying player-week (in our data: QBs with 15+ pass attempts, running backs with 10+ carries, WRs / TEs with 5+ targets): no row = unknown, never 0. Each value sits beside the denominator NGS states (ngs_pass_attempts, ngs_rush_attempts, ngs_targets, ngs_receptions): a window is the denominator-weighted mean of the weekly values."
     tests:
       - unique_combination_of_columns:
           arguments:

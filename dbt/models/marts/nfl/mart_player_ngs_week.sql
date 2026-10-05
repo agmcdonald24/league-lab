@@ -6,8 +6,9 @@
 --   never by name; analytics.player_id_map maps it on to Sleeper (AGENTS rule 3).
 -- * Regular season only: NGS numbers the playoffs from week 18 (17-game seasons) or 19, which would collide with
 --   week 18 of a regular season.
--- * NGS publishes a weekly row only for a player-week that clears its minimum (in our data every weekly row has
---   15+ pass attempts, 10+ carries or 5+ targets): a player-week with no row is unknown here (null), never 0.
+-- * NGS publishes a weekly row only for a player-week that clears its minimum (in our data: QBs with 15+ pass attempts,
+--   running backs with 10+ carries, WRs / TEs with 5+ targets — the rushing table has no QBs, the receiving table no
+--   running backs): a player-week with no row is unknown here (null), never 0.
 -- * Each value is NGS's per-player aggregate for the week; the denominator NGS states sits beside it
 --   (ngs_pass_attempts, ngs_rush_attempts, ngs_targets, ngs_receptions), so a window over several weeks is the mean
 --   of the weekly values weighted by that denominator — never a mean of means (docs/METRICS.md § "Next Gen Stats").

@@ -104,7 +104,8 @@ CHART_REASON = "FTN charting starts in 2022 and covers only the games charted so
 NGS = "NFL Next Gen Stats via nflverse (mart_player_ngs_week)"
 NGS_AGG = ("mean of NGS's weekly values weighted by the denominator NGS states, over his weeks in the window that NGS "
            "published (never a mean of means)")
-NGS_QUAL = {"pass": "15+ pass attempts", "rush": "10+ carries", "rec": "5+ targets"}
+NGS_QUAL = {"pass": "15+ pass attempts", "rush": "10+ carries, running backs only",
+            "rec": "5+ targets, receivers and tight ends only"}
 NGS_REASON = ("No Next Gen Stats week in this window: NGS publishes a week only when he clears its minimum ({q}), so "
               "this is unknown, not zero.")
 NGS_OFF = "Next Gen Stats here cover the regular season, 2016 onward; none for this selection."
@@ -186,15 +187,15 @@ CATALOGUE: list[dict] = [
     # ---- IL-1: NFL Next Gen Stats, receiving
     _c("separation", "Average separation (yards)", "Sep", "rate", "dec1",
        "NFL Next Gen Stats' average distance, in yards, between him and the nearest defender when the pass arrives (a "
-       "catch or an incompletion), per target. A context number, not a talent score. NGS publishes a week only when he "
-       "has 5+ targets; over several weeks it is the mean of his weekly values weighted by NGS's targets — never a mean "
+       "catch or an incompletion), per target. A context number, not a talent score. NGS publishes a week only for a "
+       "receiver or tight end with 5+ targets; over several weeks it is the mean of his weekly values weighted by NGS's targets — never a mean "
        "of means.", "weekly separation x NGS targets", "NGS targets in his qualifying weeks", NGS_AGG, source=NGS,
-       status="derived", positions=("RB", "WR", "TE"), reason=NGS_REASON.format(q=NGS_QUAL["rec"])),
+       status="derived", positions=("WR", "TE"), reason=NGS_REASON.format(q=NGS_QUAL["rec"])),
     _c("yac_over_expected", "Yards after the catch over expected per reception", "YACOE", "rate", "dec1",
        "NFL Next Gen Stats' yards after the catch minus what its tracking model expected at the catch, per reception. "
-       "NGS publishes a week only when he has 5+ targets; over several weeks it is the mean of his weekly values "
-       "weighted by NGS's receptions — never a mean of means.", "weekly YAC over expected x NGS receptions",
-       "NGS receptions in his qualifying weeks", NGS_AGG, source=NGS, status="derived", positions=("RB", "WR", "TE"),
+       "NGS publishes a week only for a receiver or tight end with 5+ targets; over several weeks it is the mean of "
+       "his weekly values weighted by NGS's receptions — never a mean of means.", "weekly YAC over expected x NGS receptions",
+       "NGS receptions in his qualifying weeks", NGS_AGG, source=NGS, status="derived", positions=("WR", "TE"),
        reason=NGS_REASON.format(q=NGS_QUAL["rec"])),
     # ---- end IL-1
     _c("routes", "Routes run", "Routes", "count", "int",
@@ -243,7 +244,7 @@ CATALOGUE: list[dict] = [
     _c("ryoe_per_attempt", "Rushing yards over expected per carry", "RYOE/Car", "rate", "dec2",
        "NFL Next Gen Stats' rushing yards over expected per carry: his yards minus what NGS's tracking model expected "
        "from the blockers and defenders around him at the handoff. A context number, not a talent score. NGS publishes "
-       "a week only when he has 10+ carries (from 2018); over several weeks it is the mean of his weekly values "
+       "a week only for a running back with 10+ carries (from 2018); over several weeks it is the mean of his weekly values "
        "weighted by NGS's carries — never a mean of means.",
        "weekly RYOE per carry x NGS carries", "NGS carries in his qualifying weeks", NGS_AGG, source=NGS,
        status="derived", positions=("RB",), reason=NGS_REASON.format(q=NGS_QUAL["rush"])),
@@ -317,7 +318,7 @@ PRESETS = [
      "columns": ["games", "points", "carries", "carry_share", "targets", "snap_share", "rushing_yards", "receiving_yards",
                  "ryoe_per_attempt"],                                                         # ---- IL-1: + NGS
      "extra": ["rb_carry_share", "inside_5_carries", "inside_5_carry_share", "red_zone_opportunities", "route_participation",
-               "tprr_proxy", "separation", "yac_over_expected"],
+               "tprr_proxy"],
      "sort": "carry_share"},
     {"key": "qb", "label": "QB", "positions": ["QB"],
      "columns": ["games", "points", "attempts", "passing_yards", "carries", "rushing_yards",
