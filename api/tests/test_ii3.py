@@ -110,7 +110,7 @@ def test_catalogue_entries_are_complete_and_presets_name_known_columns():
         # the review's default columns are present or derived, never planned / unavailable
         assert all(ST.CAT[c]["status"] in ("present", "derived") for c in p["columns"]), p["key"]
     assert ST.CAT["routes"]["status"] == "unavailable"
-    assert ST.CAT["ryoe_per_attempt"]["status"] == "planned"
+    assert ST.CAT["ryoe_per_attempt"]["status"] == "derived"          # ---- IL-1: NGS mart (was planned)
 
 
 def test_the_inventory_lists_every_catalogue_column_with_its_status():

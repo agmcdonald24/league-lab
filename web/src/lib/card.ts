@@ -5,8 +5,10 @@ import type { Block, PlayerCard, Section, SectionKey } from "./api";
 import { plain } from "./md";
 import { teamLabel } from "./theme";
 
-export const SECTION_ORDER: SectionKey[] = ["projection", "value", "availability", "usage", "signals"];
-const NAMES: Record<string, string> = { usage: "Usage", projection: "Projection", availability: "Availability", value: "Value", signals: "Signals" };
+// ---- IL-1 (Wave I-L): the Role block (the API's `role` section: league_lab.roles) right after the projection and its
+// "Why this number"
+export const SECTION_ORDER: SectionKey[] = ["projection", "role", "value", "availability", "usage", "signals"];
+const NAMES: Record<string, string> = { usage: "Usage", projection: "Projection", availability: "Availability", value: "Value", signals: "Signals", role: "Role" };
 const RANKED = ["QB", "RB", "WR", "TE", "K", "DEF"];
 
 // The Projection section plus the rest-of-season line: the API's sentence (app/lib/ros.py card_line) is in the

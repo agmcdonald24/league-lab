@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 from league_lab import memo
 
-from .db import query
+from .db import missing_relations, query
 
 WINDOWS = ("season", "last3", "last5", "weeks")
 BASES = ("games", "weeks")
@@ -47,6 +47,29 @@ FCT_COLS = ["gsis_id", "game_id", "season", "season_type", "week", "team", "posi
 FCT_SQL = f"""select {", ".join(FCT_COLS)} from analytics.fct_player_game
               where season = %s and season_type = %s and week between %s and %s
                 and (position in ('QB', 'RB', 'WR', 'TE', 'FB') or coalesce(carries, 0) > 0)"""
+
+# ---- IL-1 (Wave I-L): Next Gen Stats from analytics.mart_player_ngs_week, merged onto his game row of the same week
+# (regular season only). NGS's weekly values are per-player aggregates: a window is the mean of the weekly values
+# weighted by the denominator NGS states (never a mean of means); a week NGS did not publish (under its minimum) is
+# not in the window's value, and a window with no published week is null with the reason.
+NGS_REL = "mart_player_ngs_week"
+NGS_SQL = """select gsis_id, week, ngs_pass_attempts, avg_time_to_throw, completion_percentage_above_expectation,
+                    ngs_rush_attempts, rush_yards_over_expected_per_att, ngs_targets, ngs_receptions, avg_separation,
+                    avg_yac_above_expectation
+             from analytics.mart_player_ngs_week
+             where season = %s and week between 1 and 18 and not is_season_aggregate"""
+# column id -> (NGS's weekly value, the weight NGS states, the sample family)
+NGS_METRICS = {
+    "time_to_throw": ("avg_time_to_throw", "ngs_pass_attempts", "pass"),
+    "ngs_cpoe": ("completion_percentage_above_expectation", "ngs_pass_attempts", "pass"),
+    "ryoe_per_attempt": ("rush_yards_over_expected_per_att", "ngs_rush_attempts", "rush"),
+    "separation": ("avg_separation", "ngs_targets", "rec"),
+    "yac_over_expected": ("avg_yac_above_expectation", "ngs_receptions", "rec"),
+}
+NGS_VALUES = sorted({v for v, _, _ in NGS_METRICS.values()})
+NGS_WEIGHTS = ["ngs_pass_attempts", "ngs_rush_attempts", "ngs_targets", "ngs_receptions"]
+NGS_FIRST = {"ryoe_per_attempt": 2018}        # NGS publishes rushing yards over expected from 2018
+# ---- end IL-1
 
 # counts summed over every game row of the player in the window (mart_player_season's sum(...))
 SUMS = ["completions", "attempts", "passing_yards", "passing_tds", "passing_interceptions", "sacks_suffered", "carries",
@@ -77,6 +100,17 @@ PG_AGG = "the window's total / games he played in the window"
 ROUTES_REASON = ("Routes: nflverse publishes participation after the season (2025 is the last season with it), so this "
                  "season is blank until then; no licensed routes feed is connected.")
 CHART_REASON = "FTN charting starts in 2022 and covers only the games charted so far this season."
+# ---- IL-1: Next Gen Stats (mart_player_ngs_week): the source, the qualification words, the reasons for a dash
+NGS = "NFL Next Gen Stats via nflverse (mart_player_ngs_week)"
+NGS_AGG = ("mean of NGS's weekly values weighted by the denominator NGS states, over his weeks in the window that NGS "
+           "published (never a mean of means)")
+NGS_QUAL = {"pass": "15+ pass attempts", "rush": "10+ carries, running backs only",
+            "rec": "5+ targets, receivers and tight ends only"}
+NGS_REASON = ("No Next Gen Stats week in this window: NGS publishes a week only when he clears its minimum ({q}), so "
+              "this is unknown, not zero.")
+NGS_OFF = "Next Gen Stats here cover the regular season, 2016 onward; none for this selection."
+NGS_NOT_BUILT = "Next Gen Stats arrive with the nightly update; they are not on this copy yet."
+# ---- end IL-1
 
 CATALOGUE: list[dict] = [
     _c("games", "Games played", "G", "games", "int",
@@ -150,6 +184,20 @@ CATALOGUE: list[dict] = [
        "Receiving yards / dropbacks he was on the field for, in games with participation.",
        "receiving yards in games with participation", "dropbacks on the field", RATE_AGG, source=PART, status="derived",
        positions=("RB", "WR", "TE"), reason=ROUTES_REASON),
+    # ---- IL-1: NFL Next Gen Stats, receiving
+    _c("separation", "Average separation (yards)", "Sep", "rate", "dec1",
+       "NFL Next Gen Stats' average distance, in yards, between him and the nearest defender when the pass arrives (a "
+       "catch or an incompletion), per target. A context number, not a talent score. NGS publishes a week only for a "
+       "receiver or tight end with 5+ targets; over several weeks it is the mean of his weekly values weighted by NGS's targets — never a mean "
+       "of means.", "weekly separation x NGS targets", "NGS targets in his qualifying weeks", NGS_AGG, source=NGS,
+       status="derived", positions=("WR", "TE"), reason=NGS_REASON.format(q=NGS_QUAL["rec"])),
+    _c("yac_over_expected", "Yards after the catch over expected per reception", "YACOE", "rate", "dec1",
+       "NFL Next Gen Stats' yards after the catch minus what its tracking model expected at the catch, per reception. "
+       "NGS publishes a week only for a receiver or tight end with 5+ targets; over several weeks it is the mean of "
+       "his weekly values weighted by NGS's receptions — never a mean of means.", "weekly YAC over expected x NGS receptions",
+       "NGS receptions in his qualifying weeks", NGS_AGG, source=NGS, status="derived", positions=("WR", "TE"),
+       reason=NGS_REASON.format(q=NGS_QUAL["rec"])),
+    # ---- end IL-1
     _c("routes", "Routes run", "Routes", "count", "int",
        "Routes run from a licensed charting feed. None is connected (FTN and PFF sell one; see docs/DATA_INVENTORY.md).",
        "routes run", None, GAMES_AGG, source="licensed routes feed (routes_feed): not connected",
@@ -192,12 +240,15 @@ CATALOGUE: list[dict] = [
     _c("red_zone_opportunities", "Red-zone opportunities", "RZ Opp", "count", "int",
        "Red-zone carries + red-zone targets (a count; no combined percentage).", "red-zone carries + red-zone targets",
        None, GAMES_AGG, source=PBP, status="derived", per_game=True),
-    _c("ryoe_per_attempt", "Rushing yards over expected per attempt", "RYOE/Att", "rate", "dec2",
-       "NFL Next Gen Stats' rushing yards over expected per attempt. Ingested (stg_nflverse__ngs_rushing; NGS "
-       "publishes rows only for qualifying player-weeks) but not in a mart or this table yet (planned).",
-       "rushing yards over expected", "carries (NGS-qualified)", "NGS's own season aggregate", source="NFL Next Gen "
-       "Stats via nflverse (staging only)", status="planned", positions=("RB",),
-       reason="Next Gen Stats are ingested but not in this table yet (planned)."),
+    # ---- IL-1: NFL Next Gen Stats (was planned: staging only)
+    _c("ryoe_per_attempt", "Rushing yards over expected per carry", "RYOE/Car", "rate", "dec2",
+       "NFL Next Gen Stats' rushing yards over expected per carry: his yards minus what NGS's tracking model expected "
+       "from the blockers and defenders around him at the handoff. A context number, not a talent score. NGS publishes "
+       "a week only for a running back with 10+ carries (from 2018); over several weeks it is the mean of his weekly values "
+       "weighted by NGS's carries — never a mean of means.",
+       "weekly RYOE per carry x NGS carries", "NGS carries in his qualifying weeks", NGS_AGG, source=NGS,
+       status="derived", positions=("RB",), reason=NGS_REASON.format(q=NGS_QUAL["rush"])),
+    # ---- end IL-1
     # passing
     _c("attempts", "Pass attempts", "Att", "count", "int", "Pass attempts (spikes included, sacks excluded).",
        "pass attempts", None, GAMES_AGG, source=NFLV, status="present", positions=("QB",), per_game=True),
@@ -228,11 +279,20 @@ CATALOGUE: list[dict] = [
        "per-throw mean, not identical. Not Next Gen Stats' CPOE.", "per-game CPOE x pass attempts", "pass attempts",
        "attempt-weighted mean of per-game CPOE", source=NFLV + " (nflfastR CPOE)", status="derived", positions=("QB",),
        reason="no pass attempts with a CPOE"),
-    _c("time_to_throw", "Time to throw", "TTT", "rate", "dec2",
-       "NFL Next Gen Stats' average time to throw. Ingested (stg_nflverse__ngs_passing; qualifying player-weeks "
-       "only) but not in a mart or this table yet (planned).", None, None,
-       "NGS's own season aggregate", source="NFL Next Gen Stats via nflverse (staging only)", status="planned",
-       positions=("QB",), reason="Next Gen Stats are ingested but not in this table yet (planned)."),
+    # ---- IL-1: NFL Next Gen Stats (time to throw was planned: staging only)
+    _c("time_to_throw", "Time to throw (seconds)", "TTT", "rate", "dec2",
+       "NFL Next Gen Stats' average time from the snap to his throw, in seconds. NGS publishes a week only when he has "
+       "15+ pass attempts; over several weeks it is the mean of his weekly values weighted by NGS's pass attempts — "
+       "never a mean of means.", "weekly time to throw x NGS pass attempts", "NGS pass attempts in his qualifying weeks",
+       NGS_AGG, source=NGS, status="derived", positions=("QB",), reason=NGS_REASON.format(q=NGS_QUAL["pass"])),
+    _c("ngs_cpoe", "Completion % over expected (Next Gen Stats)", "CPOE (NGS)", "rate", "dec1",
+       "NFL Next Gen Stats' completion percentage over expected, in points of percentage: NGS's tracking model sets "
+       "each throw's expected completion (separation, depth, pressure). Not the play-by-play CPOE beside it. NGS "
+       "publishes a week only when he has 15+ pass attempts; over several weeks it is the mean of his weekly values "
+       "weighted by NGS's pass attempts — never a mean of means.",
+       "weekly CPOE x NGS pass attempts", "NGS pass attempts in his qualifying weeks", NGS_AGG, source=NGS,
+       status="derived", positions=("QB",), reason=NGS_REASON.format(q=NGS_QUAL["pass"])),
+    # ---- end IL-1
     _c("pressure_splits", "Pressure splits", "Press.", "rate", "pct",
        "Results under pressure. Needs a licensed charting feed (PFF / FTN pressure); not available.", None, None, None,
        source="licensed charting: not connected", status="unavailable", positions=("QB",),
@@ -249,18 +309,21 @@ CAT = {c["id"]: c for c in CATALOGUE}
 
 PRESETS = [
     {"key": "wrte", "label": "WR / TE", "positions": ["WR", "TE"],
-     "columns": ["games", "points", "targets", "target_share", "receiving_yards", "snap_share"],
+     "columns": ["games", "points", "targets", "target_share", "receiving_yards", "snap_share",
+                 "separation", "yac_over_expected"],                                          # ---- IL-1: + NGS
      "extra": ["route_participation", "tprr_proxy", "yprr_proxy", "routes", "air_yards_share", "adot",
                "first_read_target_share", "red_zone_targets", "catchable_rate"],
      "sort": "target_share"},
     {"key": "rb", "label": "RB", "positions": ["RB"],
-     "columns": ["games", "points", "carries", "carry_share", "targets", "snap_share", "rushing_yards", "receiving_yards"],
+     "columns": ["games", "points", "carries", "carry_share", "targets", "snap_share", "rushing_yards", "receiving_yards",
+                 "ryoe_per_attempt"],                                                         # ---- IL-1: + NGS
      "extra": ["rb_carry_share", "inside_5_carries", "inside_5_carry_share", "red_zone_opportunities", "route_participation",
-               "tprr_proxy", "ryoe_per_attempt"],
+               "tprr_proxy"],
      "sort": "carry_share"},
     {"key": "qb", "label": "QB", "positions": ["QB"],
-     "columns": ["games", "points", "attempts", "passing_yards", "carries", "rushing_yards"],
-     "extra": ["cpoe", "time_to_throw", "scrambles", "pressure_splits"],
+     "columns": ["games", "points", "attempts", "passing_yards", "carries", "rushing_yards",
+                 "time_to_throw", "cpoe"],                                                    # ---- IL-1: + NGS, CPOE
+     "extra": ["ngs_cpoe", "scrambles", "pressure_splits"],
      "sort": "points"},
 ]
 
@@ -279,6 +342,17 @@ def catalogue(season: int, frame: pd.DataFrame | None = None, through: int | Non
             c["available"] = has_part
             if not has_part:
                 c["reason"] = ROUTES_REASON
+        elif c["source"] == NGS:                                        # ---- IL-1
+            fam = NGS_METRICS[c["id"]][0]
+            has = bool(frame is not None and not frame.empty and fam in frame and frame[fam].notna().any())
+            c["available"] = has and season >= NGS_FIRST.get(c["id"], 2016)
+            if not c["available"]:
+                c["reason"] = (NGS_NOT_BUILT if frame is not None and not frame.empty and frame.attrs.get("ngs") == "missing"
+                               else NGS_OFF if c["id"] not in NGS_FIRST or season >= NGS_FIRST[c["id"]]
+                               else f"NGS publishes this from {NGS_FIRST[c['id']]}; none for {season}.")
+            elif frame is not None:
+                weeks = sorted({int(w) for w in frame.loc[frame[fam].notna(), "week"]})
+                c["coverage"] = f"NGS weeks {weeks[0]}–{weeks[-1]}" if weeks else None
         elif c["source"] == FTN:
             c["available"] = has_chart and season >= 2022
             if c["available"] and frame is not None:
@@ -340,7 +414,32 @@ def season_rows(season: int, season_type: str) -> pd.DataFrame:
         i5 = df.groupby(["team", "game_id"])["inside_5_carries"].sum(min_count=1).rename("team_inside_5_carries")
         df = df.merge(rb.reset_index(), on=["team", "game_id"], how="left").merge(i5.reset_index(), on=["team", "game_id"],
                                                                                      how="left")
+        df = with_ngs(df, int(season), season_type)                    # ---- IL-1
     return _frames.put(key, df, ttl=TTL_S)
+
+
+# ---- IL-1: NGS's weekly row onto his game row of the same week (regular season; one game a week per player)
+def with_ngs(df: pd.DataFrame, season: int, season_type: str) -> pd.DataFrame:
+    state = "off"
+    if season_type == "REG":
+        try:
+            state = "missing" if missing_relations((NGS_REL,)) else "ok"
+        except Exception:  # noqa: BLE001 - the Stats frame never fails for its NGS columns: they show — with the reason
+            state = "missing"
+    ngs = query(NGS_SQL, (int(season),)) if state == "ok" else pd.DataFrame()
+    if ngs.empty:
+        out = df.assign(**{c: np.nan for c in NGS_VALUES + NGS_WEIGHTS})
+    else:
+        for c in NGS_VALUES + NGS_WEIGHTS + ["week"]:
+            ngs[c] = pd.to_numeric(ngs[c], errors="coerce")
+        # his first row of the week carries NGS's numbers (a second row the same week would double the weights)
+        first = ~df.duplicated(["gsis_id", "week"])
+        out = df.merge(ngs, on=["gsis_id", "week"], how="left")
+        for c in NGS_VALUES + NGS_WEIGHTS:
+            out[c] = out[c].where(first.to_numpy())
+    out.attrs["ngs"] = state
+    return out
+# ---- end IL-1
 
 
 def clear() -> None:
@@ -394,6 +493,24 @@ def aggregate(g: pd.DataFrame) -> pd.DataFrame:
     g["charted_game"] = g["played"] & (g["team_charted_targets"] > 0)
     g["_cpoe_w"] = g["passing_cpoe"] * g["attempts"].where(g["passing_cpoe"].notna())
     g["_cpoe_n"] = g["attempts"].where(g["passing_cpoe"].notna())
+    # ---- IL-1: NGS — the value x NGS's weight over the weeks NGS published, and the weight alone (the same weeks)
+    ngs_cols = []
+    for cid, (val, wt, _fam) in NGS_METRICS.items():
+        if val in g:
+            v = pd.to_numeric(g[val], errors="coerce")
+            n = pd.to_numeric(g[wt], errors="coerce").where(v.notna())
+            g[f"_{cid}_w"], g[f"_{cid}_n"] = v * n, n
+            ngs_cols += [f"_{cid}_w", f"_{cid}_n"]
+    for fam, (val, wt) in {"pass": ("avg_time_to_throw", "ngs_pass_attempts"), "rush": ("rush_yards_over_expected_per_att",
+                           "ngs_rush_attempts"), "rec": ("avg_separation", "ngs_targets")}.items():
+        if val in g:
+            g[f"ngs_{fam}_week"] = pd.to_numeric(g[val], errors="coerce").notna()
+            g[f"_ngs_{fam}_den"] = pd.to_numeric(g[wt], errors="coerce").where(g[f"ngs_{fam}_week"])
+            ngs_cols += [f"ngs_{fam}_week", f"_ngs_{fam}_den"]
+    if "ngs_receptions" in g:
+        g["_ngs_rec_receptions"] = pd.to_numeric(g["ngs_receptions"], errors="coerce").where(g.get("ngs_rec_week", False))
+        ngs_cols.append("_ngs_rec_receptions")
+    # ---- end IL-1
     by = g.groupby("gsis_id", sort=False)
     # position = mode() within group (order by position): the most frequent, ties to the first alphabetically
     cnt = g.dropna(subset=["position"]).groupby(["gsis_id", "position"]).size().reset_index(name="n")
@@ -414,6 +531,7 @@ def aggregate(g: pd.DataFrame) -> pd.DataFrame:
         "snap_share": by["_snap"].mean(),
         "_cpoe_w": by["_cpoe_w"].sum(min_count=1),
         "_cpoe_n": by["_cpoe_n"].sum(min_count=1),
+        **{c: (by[c].sum().astype(int) if c.endswith("_week") else by[c].sum(min_count=1)) for c in ngs_cols},  # IL-1
     })
     out = out.join(pos.set_index("gsis_id")["position"])
     out["red_zone_opportunities"] = out["red_zone_carries"].add(out["red_zone_targets"], fill_value=0).where(
@@ -443,7 +561,17 @@ def aggregate(g: pd.DataFrame) -> pd.DataFrame:
     # the routes columns stay null without a licensed feed (routes = sum of nulls = null)
     for c in [c["id"] for c in CATALOGUE if c["per_game"] and c["id"] != "points"]:
         out[f"{c}_per_game"] = ratio(out[c], out["games"], 2)
-    out = out.drop(columns=["_cpoe_w", "_cpoe_n"])
+    # ---- IL-1: NGS over the window = sum(value x weight) / sum(weight), the weeks NGS published only; none → null
+    for cid in NGS_METRICS:
+        if f"_{cid}_w" in out:
+            out[cid] = (out[f"_{cid}_w"] / out[f"_{cid}_n"].where(out[f"_{cid}_n"] > 0)).round(2)
+    renames = {"ngs_pass_week": "ngs_pass_weeks", "ngs_rush_week": "ngs_rush_weeks", "ngs_rec_week": "ngs_rec_weeks",
+               "_ngs_pass_den": "ngs_pass_attempts", "_ngs_rush_den": "ngs_rush_attempts", "_ngs_rec_den": "ngs_targets",
+               "_ngs_rec_receptions": "ngs_receptions"}
+    out = out.rename(columns={k: v for k, v in renames.items() if k in out})
+    out = out.drop(columns=[c for c in out.columns if c.startswith("_") and c.endswith(("_w", "_n"))])
+    # ---- end IL-1
+    out = out.drop(columns=["_cpoe_w", "_cpoe_n"], errors="ignore")
     return out.reset_index()
 
 
@@ -490,7 +618,11 @@ SAMPLE = {"target_share": ["team_targets"], "carry_share": ["team_carries"], "rb
           "route_participation": ["routes_proxy", "team_dropbacks_with_participation", "games_with_participation"],
           "tprr_proxy": ["routes_proxy", "games_with_participation"], "yprr_proxy": ["routes_proxy", "games_with_participation"],
           "snap_share": ["snap_games"], "expected_points_per_game": ["games_with_expected"],
-          "yac_per_reception": ["receiving_yards_after_catch"]}
+          "yac_per_reception": ["receiving_yards_after_catch"],
+          # ---- IL-1: the NGS weeks and NGS's own denominator behind each NGS column
+          "time_to_throw": ["ngs_pass_weeks", "ngs_pass_attempts"], "ngs_cpoe": ["ngs_pass_weeks", "ngs_pass_attempts"],
+          "ryoe_per_attempt": ["ngs_rush_weeks", "ngs_rush_attempts"], "separation": ["ngs_rec_weeks", "ngs_targets"],
+          "yac_over_expected": ["ngs_rec_weeks", "ngs_receptions"]}
 
 
 def fields(positions: list[str]) -> list[str]:

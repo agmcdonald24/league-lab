@@ -163,6 +163,17 @@
         return `${n("routes_proxy")} of ${n("team_dropbacks_with_participation")} dropbacks on the field (an estimate)`;
       case "snap_share":
         return `mean of ${n("snap_games")} games with snap counts`;
+      // ---- IL-1: Next Gen Stats — the weeks NGS published of his games, and NGS's own denominator (the weight)
+      case "time_to_throw":
+      case "ngs_cpoe":
+        return `NGS published ${n("ngs_pass_weeks")} of his ${g} (15+ pass attempts): ${n("ngs_pass_attempts")} attempts, weighted by attempts`;
+      case "ryoe_per_attempt":
+        return `NGS published ${n("ngs_rush_weeks")} of his ${g} (10+ carries): ${n("ngs_rush_attempts")} carries, weighted by carries`;
+      case "separation":
+        return `NGS published ${n("ngs_rec_weeks")} of his ${g} (5+ targets): ${n("ngs_targets")} targets, weighted by targets`;
+      case "yac_over_expected":
+        return `NGS published ${n("ngs_rec_weeks")} of his ${g} (5+ targets): ${n("ngs_receptions")} receptions, weighted by receptions`;
+      // ---- end IL-1
       default:
         return c.per_game && mode === "game" ? `${c.label} ${fmt.whole(n(c.id))} in ${g}` : `${c.label}: ${g}`;
     }

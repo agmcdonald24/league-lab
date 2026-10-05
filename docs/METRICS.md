@@ -3488,7 +3488,7 @@ know every play's first-read assignment. **Catchable-target rate** = catchable c
 **Routes**: the estimates (`route_participation`, `tprr_proxy`, `yprr_proxy`) exist for completed seasons only
 (participation is published after the postseason); in 2026 they are null with that reason, and the licensed `routes`
 column is unavailable. **CPOE** is nflfastR's, attempt-weighted across games (close to, not equal to, the per-throw mean;
-not Next Gen Stats'). NGS time to throw and rushing yards over expected are ingested to staging only: planned.
+not Next Gen Stats'). NGS columns: § "Next Gen Stats" below (IL-1; they were planned here).
 
 **Kyren Williams's carry share, reconciled.** The card's "Carry share" is `mart_player_availability.carry_share` =
 `mart_player_recent_form.carry_share_std` = summed carries / summed team carries in his games this season; the Stats
@@ -3499,6 +3499,64 @@ card's **47.5%** is the table's number (the test `test_kyren_carry_share_card_an
 **Unknown is null.** A zero denominator, a season before FTN charting (2022), a season without participation, a column
 no feed supplies: `null`, shown as — with the catalogue's reason on hover; never 0. Sorting runs over the full filtered
 set (nulls last) before the page is cut.
+
+### Next Gen Stats (ngs1.0, IL-1, Wave I-L, 2026-10-05; `analytics.mart_player_ngs_week`, `stats.py` § IL-1)
+
+**The mart**: one row per gsis id × season × regular-season week from `stg_nflverse__ngs_passing` / `_rushing` /
+`_receiving`, joined on gsis id (never by name); week 0 is NGS's own season aggregate (`is_season_aggregate`), which
+the Stats windows never read. Postseason rows are left out (NGS numbers the playoffs from week 18 or 19). NGS publishes
+a weekly row only for a qualifying player-week — in our data QBs with 15+ pass attempts, running backs with 10+ carries
+(the rushing table has no QBs), WRs / TEs with 5+ targets (the receiving table has no running backs) — so a player-week
+with no row is **unknown, not zero**.
+
+**The window rule**: NGS's weekly values are already per-player aggregates, so a window is the mean of the weekly values
+**weighted by the denominator NGS states**, over the weeks NGS published inside the window — never a mean of means:
+
+| Column (registry) | Weekly value | Weight | History |
+|---|---|---|---|
+| `time_to_throw` (`ngs_time_to_throw`) | `avg_time_to_throw` (seconds) | NGS pass attempts | 2016 → |
+| `ngs_cpoe` (`ngs_cpoe`) | `completion_percentage_above_expectation` | NGS pass attempts | 2016 → |
+| `ryoe_per_attempt` (`ngs_ryoe_per_carry`) | `rush_yards_over_expected_per_att` | NGS carries | 2018 → (none for 2016–17) |
+| `separation` (`ngs_separation`) | `avg_separation` (yards) | NGS targets | 2016 → |
+| `yac_over_expected` (`ngs_yac_over_expected`) | `avg_yac_above_expectation` | NGS receptions (NGS's YAC is per catch) | 2016 → |
+
+The sample travels with each row (`ngs_pass_weeks` / `ngs_pass_attempts`, `ngs_rush_weeks` / `ngs_rush_attempts`,
+`ngs_rec_weeks` / `ngs_targets` / `ngs_receptions`) and the screen says it on hover ("NGS published 2 of his 2 games
+(15+ pass attempts): 55 attempts, weighted by attempts"). A player with games and no published week in the window is
+`null` (—) with the qualification as the reason; a season or selection NGS does not cover (the playoffs, RYOE before
+2018) marks the column unavailable with its reason. These are context numbers, not talent scores (the review § 10).
+The QB preset shows time to throw and the play-by-play `cpoe` (every passer has it); NGS's CPOE is in the picker.
+
+## Role, opportunity vs production, contingent upside (role1.0, IL-1, Wave I-L, 2026-10-05; `league_lab.roles`, the card's `role` section)
+
+The fifth review § 10's first three analytics, as **labels about the past** — no model feature, no change to a
+projection, no probability, never "due for regression" or "will continue". The drawer's **Role** block (after the
+projection and its "Why this number"); the console's page does not draw it.
+
+* **Role change** (`role_change`): recent = his last 2 games with an offensive snap (a game with no snap count counts
+  when he played); earlier = his games before them this season, **at least 3** (else "Too early to say", with the
+  counts). Per game: carries, targets, red-zone touches (red-zone carries + targets: a count), and snap share (the mean
+  of per-game shares). A change is **named** only when the recent sample is 2 games **and** the difference exceeds one
+  standard deviation of his earlier games (n − 1) **and** clears a floor (1.0 carries or targets per game, 0.5 red-zone
+  touches per game, 5 points of snap share — so a receiver's 0 → 0.5 carries is not a change). Otherwise "steady"
+  with both numbers and his usual swing. The headline leads with the position's first metric that changed (RB:
+  carries; WR / TE: targets; QB: carries).
+* **Opportunity vs production** (`opportunity_vs_production`): over his games on his current team this season, his
+  share of his position group's opportunities (targets + carries, + pass attempts for a QB; WR and TE together) against
+  his share of the group's fantasy points in **the league's scoring**. Labels: **production ahead of his volume**
+  (points share ≥ opportunity share + 5 points and ≥ 1.25 ×), **volume ahead of his production** (≤ − 5 points and
+  ≤ 0.8 ×), else **in line**; both shares printed, 2 games minimum. Beside it, from `fct_team_game`'s totals: his share
+  of the whole team's targets + carries and his red-zone share (carries for RB / QB, targets for WR / TE). The group's
+  points are summed player rows (no team table holds a position's points); every opportunity denominator for the team
+  share is `fct_team_game`'s.
+* **Contingent upside** (`pick_teammate`, `contingent_upside`): the teammate on his current team at his position (WR or
+  TE for a receiver) with the highest opportunity share this season (targets for WR / TE, targets + carries for RB, pass
+  attempts for QB). From 2024, same team only: the games he played while the teammate was on the roster that week
+  (`player_team_history`: active, reserve or inactive) and did not play. With **2 or more**: his per-game opportunity
+  and points (league scoring) in them against the games they both played, with the counts and the seasons ("in the 5
+  games without Tee Higgins (2024), 10.0 targets and 17.7 points per game, against 11.0 and 19.1 in the 21 games with
+  him (2024–25)"); fewer: "no games without X to go on". The words say what is assumed: same team, the games X missed
+  while on the roster, not a forecast.
 
 ## Deferred (status in registry)
 

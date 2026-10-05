@@ -175,7 +175,7 @@ export interface PlayerCard {
   missing?: string[];
 }
 
-export type SectionKey = "usage" | "projection" | "availability" | "value" | "signals";
+export type SectionKey = "usage" | "projection" | "availability" | "value" | "signals" | "role"; // ---- IL-1: + role
 
 export interface Ros {
   points: number | null;
