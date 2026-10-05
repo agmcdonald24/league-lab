@@ -324,6 +324,8 @@ class YahooSessionMiddleware:
                     flags = "; Path=/api; HttpOnly; SameSite=lax" + ("; Secure" if secure else "")
                     if session.expired:
                         line = f'{COOKIE}=""; Max-Age=0{flags}'
+                        from . import connections  # ---- IL-5: Yahoo refused the refresh: the account's row says so
+                        connections.mark_expired(jar.get("ll_session").value if "ll_session" in jar else None, "yahoo")
                     else:
                         line = f"{COOKIE}={cookie_value(session)}; Max-Age={COOKIE_DAYS * 86400}{flags}"
                     message = {**message, "headers": [*(message.get("headers") or []),

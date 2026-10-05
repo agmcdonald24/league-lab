@@ -386,3 +386,18 @@ def test_an_external_id_on_two_players_maps_to_nobody(tmp_path, caplog, monkeypa
 def test_the_fixture_id_table_has_no_duplicates():
     t = PI.read(FX / "ff" / "db_playerids.csv")
     assert PI.duplicates(t) == {"mfl_id": [], "espn_id": [], "yahoo_id": []}
+
+
+def test_a_refused_refresh_marks_the_row_expired_and_it_is_not_restored(api):
+    sign_in(api, addr("expired"))
+    connect_yahoo(api)
+    api.cookies.set(YC.COOKIE, YC.cookie_value(Y.YahooSession(refresh_token="dead-token", expires_at=1)), path="/api")
+    r = api.get("/api/yahoo/leagues")                        # the read refreshes; Yahoo (the fixture) refuses
+    assert any(c.startswith(f'{YC.COOKIE}=""') for c in r.headers.get_list("set-cookie"))
+    assert rows(addr("expired"))[0][3] == "expired"
+    api.cookies.delete(YC.COOKIE)
+    me = api.get("/api/account/me")
+    assert me.json()["connections"][0]["status"] == "expired"
+    assert not any(c.startswith(f"{YC.COOKIE}=") for c in me.headers.get_list("set-cookie"))
+    connect_yahoo(api)                                       # connecting again makes it active
+    assert rows(addr("expired"))[0][3] == "active"

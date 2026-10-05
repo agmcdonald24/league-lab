@@ -174,3 +174,14 @@ def test_setup_answers_carry_their_providers_capabilities(client):
     assert d["capabilities"]["features"]["transactions"]["unavailable"] == "Transactions: not available for MFL leagues yet"
     u = client.get("/api/leagues", params={"username": "test_manager"}).json()
     assert u["capabilities"] == P.capabilities("sleeper")
+
+
+# ---- IL-5 (Wave I-L): the matrix under the switches — ESPN's kill switch says "off"; verified providers say supported
+def test_the_matrix_under_the_switches(monkeypatch):
+    monkeypatch.setenv(P.ESPN_SWITCH_ENV, "off")
+    monkeypatch.setenv(P.VERIFIED_ENV, "yahoo")
+    got = {c["provider"]: c["status"] for c in P.all_capabilities()}
+    assert got == {"sleeper": "supported", "mfl": "supported", "espn": "off", "yahoo": "supported"}
+    assert P.capabilities("espn")["off"] == "ESPN leagues: not available right now"
+    assert all(v["status"] in ("yes", "partial", "no") for v in P.capabilities("espn")["features"].values())
+# ---- end IL-5

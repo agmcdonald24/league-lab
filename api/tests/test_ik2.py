@@ -181,7 +181,7 @@ def test_disconnect_clears_the_cookie(client, monkeypatch, fixture_mode):
     client.cookies.set(C.COOKIE, C.fixture_cookie())
     assert client.get("/api/yahoo/status").json()["connected"] is True
     r = client.post("/api/yahoo/disconnect")
-    assert r.json() == {"connected": False}
+    assert r.json() == {"connected": False, "removed": 0}    # ---- IL-5: `removed` = the account's row (none: a guest)
     sc = r.headers["set-cookie"]
     assert sc.startswith(C.COOKIE + "=") and "Max-Age=0" in sc and "Path=/api" in sc
 

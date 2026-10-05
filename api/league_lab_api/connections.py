@@ -196,6 +196,21 @@ def on_disconnect(request: Request, provider: str) -> int:
         return 0
 
 
+def mark_expired(session_cookie: str | None, provider: str) -> None:
+    """The provider refused the stored connection (IK-2's middleware cleared the cookie): the row is ``expired`` and is
+    not restored again until the person connects anew (a fresh connect stores ``active``)."""
+    sid = accounts.session_id_from(session_cookie)
+    if sid is None:
+        return
+    try:
+        db.run_rw(lambda c: c.execute(
+            "update accounts.connections set status = 'expired', last_error = %s where provider = %s and user_id = "
+            "(select user_id from accounts.sessions where id = %s and revoked_at is null)",
+            (f"{provider} refused the connection", provider, sid)))
+    except psycopg.Error as exc:
+        log.warning("connections: could not mark the %s connection expired (%s)", provider, exc.__class__.__name__)
+
+
 def sync(request: Request, resp: Response, user_id: str, *, adopt: bool) -> list[str]:
     """Rows ↔ this request's cookies for a signed-in account. ``adopt`` (the sign-in): a cookie the account has no row
     for joins it. Always: a row with no cookie re-issues it (the restore); a cookie that differs from the account's

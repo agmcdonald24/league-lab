@@ -338,8 +338,9 @@ def test_the_watchlist(api):
     for _ in range(2):
         assert api.put("/api/account/watchlist", json={"player_key": "00-0036963"}).status_code == 200
         assert api.put("/api/account/watchlist", json={"player_key": "00-0036963", "league": SCRUBS}).status_code == 200
-    w = api.get("/api/account/watchlist").status_code                     # no GET: `me` carries it
-    assert w in (404, 405)
+    # ---- IL-5: GET /api/account/watchlist is the watchlist screen's answer now (league_lab_api/watchlist.py)
+    w = api.get("/api/account/watchlist", params={"league": SCRUBS})
+    assert w.status_code == 200 and w.json()["count"] == 1               # one player, saved with and without a league
     rows = api.get("/api/account/me").json()["watchlist"]
     assert len(rows) == 2 and {r["league"] for r in rows} == {None, SCRUBS}
     assert api.put("/api/account/watchlist", json={"player_key": "<script>"}).json()["code"] == "bad_player"
