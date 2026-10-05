@@ -291,6 +291,7 @@ def test_client_budget_backoff_and_stale_on_error():
     c2 = E.ESPN(fixtures="", fetch=lambda u, h: (500, ""))
     with pytest.raises(E.ESPNUnavailable):
         c2.settings("4242")
+    assert c2.stats()["last_error"] == "mSettings: HTTP 500"
 
 
 # ------------------------------------------------------------------ the adapter on the fixture league

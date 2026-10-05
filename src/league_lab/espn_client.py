@@ -721,6 +721,7 @@ class ESPN:
         self._fetch = fetch
         self.calls = 0
         self.stale_served = 0
+        self.last_error: str | None = None             # "mRoster: HTTP 500" — what /api/status shows (no cookies, no query)
         self._backoff_until = 0.0
         self._cache: dict[str, tuple[float, float, str, Any]] = {}
         self._read_at: dict[str, float] = {}
@@ -803,7 +804,8 @@ class ESPN:
                 if auth:
                     headers["Cookie"] = f"espn_s2={auth[0]}; SWID={auth[1]}"
                 status, text = self._http(url, headers)
-        except ESPNUnavailable:
+        except ESPNUnavailable as exc:
+            self.last_error = f"{VIEW_OF[kind]}: {str(exc).rsplit(': ', 1)[-1]}"
             if hit is not None:
                 self.stale_served += 1
                 return hit[3]
@@ -821,6 +823,7 @@ class ESPN:
         if status == 404:
             raise unknown_league(lid, season)
         if status != 200:
+            self.last_error = f"{VIEW_OF[kind]}: HTTP {status}"
             if hit is not None:
                 self.stale_served += 1
                 return hit[3]
@@ -828,10 +831,12 @@ class ESPN:
         try:
             data = json.loads(text or "null")
         except json.JSONDecodeError as exc:
+            self.last_error = f"{VIEW_OF[kind]}: not JSON"
             raise ESPNUnavailable(f"ESPN {VIEW_OF[kind]}: not JSON") from exc
         if isinstance(data, list):                  # espn-api: a list answer is the league in a list
             data = data[0] if data and isinstance(data[0], dict) else {}
         if not isinstance(data, dict):
+            self.last_error = f"{VIEW_OF[kind]}: not a league"
             raise ESPNUnavailable(f"ESPN {VIEW_OF[kind]}: not a league")
         self._note_access(lid, season, data, dg)
         data = trim(kind, data)
@@ -902,7 +907,8 @@ class ESPN:
             k["fresh"] += int(exp > now)
             k["oldest_s"] = round(max(k["oldest_s"], now - fetched), 1)
         return {"mode": "fixtures" if self.fixtures is not None else "live", "season": self.season, "calls": self.calls,
-                "stale_served": self.stale_served, "private_enabled": private_enabled(),
+                "stale_served": self.stale_served, "private_enabled": private_enabled(), "enabled": enabled(),
+                "last_error": self.last_error,
                 "bucket": {"tokens": round(self.bucket.tokens(), 1), "capacity": self.bucket.capacity,
                            "per_minute": self.bucket.per_minute, "refused": self.bucket.refused},
                 "cache": kinds}
