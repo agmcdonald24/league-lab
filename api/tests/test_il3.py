@@ -5,10 +5,11 @@ brier, coverage_50, coverage_80, graded_at}; None when no row or no table. Read 
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from league_lab_api import main
 
-from .conftest import needs_db
+from .conftest import DYNASTY, SCRUBS, needs_db
 
 KEYS = {"season", "through_week", "brier", "coverage_50", "coverage_80", "graded_at"}
 
@@ -52,3 +53,40 @@ def test_status_carries_odds_grades(client):
     assert "odds_grades" in body
     og = body["odds_grades"]
     assert og is None or (set(og) == KEYS and (og["brier"] is None or 0.0 <= og["brier"] <= 1.0))
+
+
+# ------------------------------------------------------------------------------ v3.3: the scaled line is one number
+@pytest.fixture
+def record_mode(monkeypatch):
+    from league_lab import scoring as S
+
+    from league_lab_api import ondemand
+    monkeypatch.delenv("LEAGUE_LAB_EV_PRICING", raising=False)
+    S.set_record_reader(ondemand._pricing_rows)
+    yield
+    S.set_record_reader(ondemand._pricing_rows)
+
+
+@needs_db
+@pytest.mark.parametrize("league", [DYNASTY, SCRUBS])
+def test_every_wr_line_prices_to_his_stored_projection(sql, record_mode, league):
+    """v3.3 scales a new-team WR's line (calibration nt1.0) before anything is priced: on a board built with it, every
+    week-5 WR line priced on request equals his house projection (M6's rookie parity, widened to every WR — the
+    new-team WRs among them). Holds on a board built without it too."""
+    from league_lab import anyleague as A
+
+    from league_lab_api import db
+    season, week = 2026, 5
+    if not A.nfl_wide_ready(db.query, season, week):
+        pytest.skip("no NFL-wide tables for week 5")
+    lines = db.query("select * from ops.projection_lines where season = %s and week = %s and position = 'WR'", (season, week))
+    stored = db.query("""select gsis_id, proj_points from ops.projections where league_id = %s and season = %s
+                         and week = %s and position = 'WR'""", (league, season, week)).set_index("gsis_id")
+    sc = sql("select scoring_settings from analytics.dim_league_season where league_id = %s and is_current_season", (league,))
+    scoring = {k: float(v) for k, v in sc[0]["scoring_settings"].items() if v is not None}
+    priced = A.price_lines(lines, scoring).set_axis(lines["gsis_id"])
+    both = [g for g in priced.index if g in stored.index]
+    assert len(both) > 100
+    off = {g: (round(float(priced[g]), 4), round(float(stored.loc[g, "proj_points"]), 4)) for g in both
+           if abs(float(priced[g]) - float(stored.loc[g, "proj_points"])) > 1e-9}
+    assert not off, off
