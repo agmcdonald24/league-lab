@@ -27,6 +27,8 @@ from league_lab.sleeper_client import Sleeper
 
 from league_lab_api import yahoo_connect as C
 
+from .conftest import needs_db
+
 FX = Path(__file__).with_name("fixtures")
 YFX = FX / "yahoo"
 IDS = FX / "ff" / "db_playerids.csv"
@@ -298,3 +300,56 @@ def test_the_league_without_a_session_needs_sign_in(fixture_mode):
         _adapter().league(KEY)
     code, words, fix = Y.setup_parts(e.value)
     assert code == "yahoo_sign_in_required" and "Connect" in words and fix
+
+
+# ------------------------------------------------------------------ the pricing pipeline (until IK-3's Router lands)
+class _RouterShim:
+    """Test-only: what IK-3's Router does for a ``yahoo:`` key (dispatch to ``YahooLeagues``; ``players()`` merges its
+    unmapped rows), so the real on-demand pipeline prices and solves the Yahoo league on this branch."""
+
+    def __init__(self) -> None:
+        self.sleeper = Sleeper()
+        self.yahoo = YL.YahooLeagues(Y.Yahoo(), self.sleeper.players, ids=PI.table)
+        self.calls = 0
+
+    def __getattr__(self, name):
+        return getattr(self.sleeper, name)
+
+    def _p(self, key):
+        return self.yahoo if YL.is_yahoo(key) else self.sleeper
+
+    def league(self, key):
+        return self._p(key).league(key)
+
+    def rosters(self, key):
+        return self._p(key).rosters(key)
+
+    def users(self, key):
+        return self._p(key).users(key)
+
+    def matchups(self, key, week):
+        return self._p(key).matchups(key, week)
+
+    def players(self):
+        return {**self.sleeper.players(), **self.yahoo.extra_players}
+
+
+@needs_db
+def test_the_yahoo_league_prices_and_solves_through_the_pipeline(fixture_mode, monkeypatch):
+    from league_lab import anyleague as A
+
+    from league_lab_api.db import query
+    orig = A.check_id
+    monkeypatch.setattr(A, "check_id", lambda k: YL.check_key(k) if YL.is_yahoo(k) else orig(k))
+    token = Y.request_session.set(C.session_from_cookie(C.fixture_cookie()))
+    try:
+        od = A.lineup_rows(query, KEY, 3, 4, client=_RouterShim())
+    finally:
+        Y.request_session.reset(token)
+    t = od.totals
+    assert t["slots_total"] == 11 and t["slots_filled"] == 11 and t["lineup_value"] > 60
+    slots = list(od.rows.loc[od.rows["role"] == "starter", "slot"])
+    assert "SUPER_FLEX" in slots and "FLEX" in slots and "DEF" in slots
+    assert od.unmapped_players == [{"sleeper_player_id": "yahoo:99001", "player_name": "Synthetic Prospect",
+                                    "position": "WR", "team": "KC"}]
+    assert "0.5 per catch" in od.scoring["priced"]
