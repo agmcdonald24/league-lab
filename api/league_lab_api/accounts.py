@@ -518,8 +518,8 @@ def save_leagues(user_id: str, items: list[LeagueIn]) -> int:
                       (r["key"], r["provider"], r["season"], r["ext"]))
             c.execute(
                 "insert into accounts.user_leagues (user_id, league_key, team_external_id, name, team_name, "
-                "scoring_label, total_rosters) values (%(u)s, %(key)s, %(team)s, %(name)s, %(team_name)s, %(scoring)s, "
-                "%(total)s) on conflict (user_id, league_key) do update set "
+                "scoring_label, total_rosters, added_at) values (%(u)s, %(key)s, %(team)s, %(name)s, %(team_name)s, "
+                "%(scoring)s, %(total)s, clock_timestamp()) on conflict (user_id, league_key) do update set "
                 "team_external_id = case when %(set_team)s then excluded.team_external_id "
                 "else accounts.user_leagues.team_external_id end, "
                 "team_name = case when %(set_team)s then excluded.team_name "
