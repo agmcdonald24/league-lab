@@ -141,7 +141,9 @@ def test_scrubs_roster_2_finder(client):
             assert r["beats_alternative"] and not r["demoted"]       # never a trade its own IF-2 line marks below
         # both alternatives are named with whether they are guaranteed or a claim that might be lost
         for side in ("mine", "theirs"):
-            assert c["waiver_alternative"][side]["availability"] in ("guaranteed", "claim")
+            assert c["waiver_alternative"][side]["availability"] in ("guaranteed", "claim") or (   # ---- IL-4: a partner
+                side == "theirs" and c["waiver_alternative"][side]["kind"] == D.IL4_NOT_COMPARED   # not compared, said
+                and not c["credible"])
     if p["verdict"]["kind"] == "compelling":
         first = next(r for r in p["partners"] if r["tier"] == "credible")
         assert all(x["player_name"] in p["words"]["headline"] for x in first["give"])
