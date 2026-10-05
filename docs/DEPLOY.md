@@ -168,7 +168,10 @@ about a minute: for a league-mate opening it on Sunday morning, that looks broke
 Memory: the server uses about 150 MB after it starts and about 290 MB after every screen of three leagues has been
 opened (Sleeper's whole player directory in memory). If Render → **Metrics** → **Memory** gets near 512 MB, or the
 Events list says the server ran out of memory, switch to **Standard** (2 GB, $25 a month): **Settings** →
-**Instance Type**.
+**Instance Type**. **It happened once**: 2026-10-04 15:25 ET (a Sunday afternoon, the heaviest hour; `c47c5ea`), "ran
+out of memory (used over 512 MB)", the instance restarted itself and recovered within the minute. Andrew's call:
+Standard now, or the memory diet planned for the next wave (the player directory and the per-league caches are the
+big eaters); the PO recommends the diet regardless.
 
 ## How a new version reaches the server
 
@@ -193,6 +196,7 @@ need no deploy at all: the nightly publishes them to Neon and the server picks t
 | A page says **the numbers are not ready yet** | The nightly is publishing right now (one or two minutes, around 08:00 New York), or a table is missing on Neon. Reload in two minutes; if it stays, run the nightly by hand. |
 | **busy, try again in a minute** | The server's Sleeper allowance (300 calls a minute) is spent. It refills within a minute. |
 | The site does not load at all | Render → the service: **Live**? If not, **Manual Deploy** → **Deploy latest commit**. Still not: **Manual Deploy** → **Clear build cache & deploy**. |
+| A push is green on GitHub but Render shows **no deploy at all** for it (not failed — nothing started) | Seen 2026-10-04 for `c47c5ea` and `786c2f5`, the first two pushes after the Blueprint sync that added the domain (`dc8d668` before it auto-deployed fine). **Manual Deploy** → **Deploy latest commit** (36 s) is the remedy; the PO does it after every push and says so until the cause is known (the Blueprint / webhook path is the suspect — Render's Events list has nothing to explain it). |
 | The smoke test prints `FAIL` | The line says which check and what the server answered. `health` → the rows above; `gate` → the password you typed; `my week` → a missing table on Neon (run the nightly). |
 | The Blueprint page rejects a line of `render.yaml` | Render renames a setting now and then. The message names the line; send it to the PO. (If it is `autoDeployTrigger`, replacing that line with `autoDeploy: true` works: Render then deploys every commit without waiting for the check.) |
 

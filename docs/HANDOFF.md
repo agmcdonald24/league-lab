@@ -200,8 +200,14 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   (`web/src/lib/analytics.ts`, `G-HJWGHZ79BG` in `brand.ts`, `LEAGUE_LAB_GA=off` to strip it; no PII — ids only);
   Andrew's three GA settings are in the STATUS PO section.
 
-  **Next**: after the push, verify live (`/api/health` `version`, Team's bars, the Finder's verdict, the drawer, GA's
-  realtime view once Andrew opens the site); the presentation list in STATUS (Waivers' card names beside the drawer,
+  **Render has not auto-deployed a push since the domain's Blueprint sync** (`c47c5ea` and `786c2f5`: CI green, no
+  deploy event at all; `786c2f5` deployed by the PO by hand 2026-10-04 20:31 ET) — after every push, check Render's
+  Events for a "Deploy started" and otherwise **Manual Deploy → Deploy latest commit** (DEPLOY § troubleshooting).
+  **The server ran out of memory once** (2026-10-04 15:25 ET, Starter's 512 MB, recovered on its own): Andrew's call
+  between Standard ($25) and the memory diet (DEPLOY § Memory).
+
+  **Next**: after the push, deploy (by hand if Render does not) and verify live (`/api/health` `version`, Team's
+  bars, the Finder's verdict, the drawer, GA's realtime view once Andrew opens the site); the presentation list in STATUS (Waivers' card names beside the drawer,
   the Finder's doubled headline, the drawer's Back and the URL, `app.spec.ts`); accounts (ACCOUNTS.md) when Andrew
   says so; the two planned NGS columns as marts; the Finder's cold cost if Render's first answer matters; Wave J
   (Stripe, ESPN beyond public read) parked until the prototype is prod-ready (Andrew, 2026-10-04; no licence request
