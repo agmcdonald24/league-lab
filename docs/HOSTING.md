@@ -774,6 +774,79 @@ role still cannot. Re-running deletes nothing more (`api/tests/test_ih1.py` plan
 file twice; by hand on `league_lab_ia3`: `DELETE 2` / `DELETE 2`, then `DELETE 0` / `DELETE 0`). To keep more, change
 the two intervals (one place each).
 
+## Yahoo (Wave I-K, IK-2): Connect with Yahoo
+
+Yahoo leagues are read through Yahoo's official Fantasy Sports API with each manager's own sign-in (OAuth 2.0;
+`docs/YAHOO_TERMS.md`). Until the two secrets below exist on Render, `GET /api/yahoo/connect` answers 503
+`yahoo_not_configured` ("Yahoo sign-in is not set up on this server yet") and the setup screen says "coming soon".
+Nothing else changes for Sleeper or MFL leagues.
+
+### 1. Register the app (Andrew, 10 minutes, once)
+
+1. Sign in to Yahoo with the account that should own the app (Andrew's own is fine; managers never see it).
+2. Open **https://developer.yahoo.com/apps/create/** and fill in *Create an App*:
+   | Field | Value |
+   |---|---|
+   | Application Name | `isuckatfantasy` |
+   | Description | `A free beta that reads a manager's own Yahoo fantasy football leagues, read-only and with the manager's permission, to suggest lineups, waiver claims and trades. No writes; league data is held in memory for minutes, never stored.` |
+   | Homepage URL | `https://isuckatfantasy.io` |
+   | Redirect URI(s) | `https://isuckatfantasy.io/api/yahoo/callback` — exactly this: https, no trailing slash |
+   | OAuth Client Type | **Confidential Client** (the older form calls it *Web Application*): the secret stays on our server |
+   | API Permissions | **Fantasy Sports** → **Read** (not Read/Write). Leave *OpenID Connect Permissions* unchecked. |
+   Then *Create App*.
+3. The app's page shows **Client ID** (Yahoo also calls it *Consumer Key*) and **Client Secret** (*Consumer Secret*).
+   Copy both; never paste them into a chat, an issue or git.
+4. Apply for Fantasy access at **https://sports.yahoo.com/developer/access/** (Yahoo reviews every application and closes
+   thin ones without a reply): *Product*: the description above plus "a private beta for a few dozen managers, free";
+   *Data*: "league settings, teams, rosters, scoreboard, standings, transactions and free agents of the signing-in
+   manager's own leagues, read-only"; *Expected users*: **Small (<1,000)**; *Client ID*: the one from step 3; *Notes*:
+   "Read-only. Tokens stay in the manager's browser (an encrypted cookie); league data is cached in memory for minutes;
+   attribution 'Fantasy data provided by Yahoo Fantasy' on every Yahoo league screen."
+
+### 2. The secrets on Render (2 minutes)
+
+Render → the `isuckatfantasy` service → *Environment* → *Add Environment Variable* (as secrets):
+
+| Name | Value |
+|---|---|
+| `LEAGUE_LAB_YAHOO_CLIENT_ID` | the Client ID from step 3 |
+| `LEAGUE_LAB_YAHOO_CLIENT_SECRET` | the Client Secret from step 3 |
+| `LEAGUE_LAB_YAHOO_REDIRECT_URI` | `https://isuckatfantasy.io/api/yahoo/callback` (the registered URI; without it the server builds it from the request's host) |
+
+`LEAGUE_LAB_API_SECRET` already exists (`render.yaml`: `generateValue: true`); it seals the `ll_yahoo` cookie. Changing it
+signs every Yahoo manager out (they connect again in seconds). Optional: `LEAGUE_LAB_YAHOO_PER_MIN` (default 60 calls a
+minute). Save → Render redeploys. The same lines for `render.yaml` (PO):
+
+```yaml
+      - key: LEAGUE_LAB_YAHOO_CLIENT_ID
+        sync: false     # Render asks for it: the Yahoo app's Client ID (developer.yahoo.com/apps)
+      - key: LEAGUE_LAB_YAHOO_CLIENT_SECRET
+        sync: false     # Render asks for it: the Yahoo app's Client Secret
+      - key: LEAGUE_LAB_YAHOO_REDIRECT_URI
+        value: https://isuckatfantasy.io/api/yahoo/callback
+```
+
+### 3. Verify live (the PO, after the deploy; nothing Yahoo-shaped is verified until this passes)
+
+1. `https://isuckatfantasy.io/api/yahoo/status` (signed in to the beta) → `{"configured": true, "connected": false, …}`.
+2. `https://isuckatfantasy.io/leagues?platform=yahoo` → *Connect with Yahoo* → Yahoo's consent screen names
+   *isuckatfantasy* and "Fantasy Sports — Read" → *Agree* → back on `/leagues?platform=yahoo` with your leagues listed.
+   An error lands on `/leagues?platform=yahoo&yahoo_error=<denied|state|refused|down>`: `refused` usually means the
+   redirect URI or the secret does not match the app page; a 401 on the leagues list right after connecting can mean
+   Yahoo has not approved the Fantasy access yet (step 1.4).
+3. `https://isuckatfantasy.io/api/yahoo/leagues` → your leagues with `team_id` = your team. Open one; check against
+   Yahoo's own pages: the roster slots (a superflex league shows `Q/W/R/T` as SUPER_FLEX), the scoring card (the
+   "not priced" list should hold only stats you know are odd), this week's starters exactly as Yahoo shows them, the
+   record, last week's scores, the latest moves (and which week each lands in).
+4. A public league that is not yours, by its link (`https://football.fantasysports.yahoo.com/f1/<id>`): it should
+   open while connected. **The anonymous check** (settles whether public leagues could open without sign-in): with
+   any access token removed, `curl -s 'https://fantasysports.yahooapis.com/fantasy/v2/league/nfl.l.<public id>/settings?format=json'`
+   — a 401 means sign-in stays required (as built); a 200 means a "public league without Yahoo" path is a small change.
+5. *Disconnect Yahoo* → the list asks to connect again. After an hour connected, reload a Yahoo screen: it must still
+   answer (the access token is refreshed and the cookie re-set without a prompt).
+6. Render's logs for the session: no `access_token`, `refresh_token` or `ll_yahoo=` value anywhere.
+
+
 ## Licences to keep in mind when sharing
 
 * nflverse data: free to use with attribution (kept on Home → Data & attribution).
