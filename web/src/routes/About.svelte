@@ -271,4 +271,6 @@
   </section>
   <!-- ---- U-1: the usage notice (lib/usage.ts; docs/HOSTING.md § "Usage"); INF-1: and Google Analytics (lib/analytics.ts) -->
   <p class="mt-6 border-t border-line pt-3 text-sm text-ink-3" data-testid="usage-notice">{APP_NAME} counts screen views — which screen, which league and team, when — and nothing about you. It also uses Google Analytics: the same screen views and a few taps (a player opened, Compare, a trade evaluated, the link to edit your lineup), with the league and team numbers and the app's version — never your username, team name or password. Google sets a cookie to tell visits apart and sees your browser and rough location, as on any site that uses it.</p>
+  <!-- ---- IK-4: the account's privacy line (docs/ACCOUNTS.md § "Built, phase 1") -->
+  <p class="mt-2 text-sm text-ink-3" data-testid="account-notice">An account is optional. If you make one, {APP_NAME} keeps your email address, the leagues and teams you save and your saved views — nothing else, never a provider password — and screen counts never carry it. Delete it on the Account page at any time: everything goes at once.</p>
 </main>

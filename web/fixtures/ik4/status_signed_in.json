@@ -1,0 +1,8 @@
+{
+ "enabled": true,
+ "reason": null,
+ "signed_in": true,
+ "email": "manager@example.com",
+ "mailer": "stub",
+ "session_days": 90
+}

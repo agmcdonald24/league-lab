@@ -1,0 +1,8 @@
+{
+ "enabled": false,
+ "reason": "no_mailer",
+ "signed_in": false,
+ "email": null,
+ "mailer": null,
+ "session_days": 90
+}

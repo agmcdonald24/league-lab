@@ -23,6 +23,7 @@
   import ScreenHead from "../components/ScreenHead.svelte";
   import ErrorCard from "../components/ErrorCard.svelte"; // ---- IH-1: the API down / a 500 / still waiting
   import TeamBadge from "../components/TeamBadge.svelte";
+  import { accountPrefs, type StatsView } from "../lib/prefs"; // ---- IK-4: the saved views through prefs (an account keeps them)
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -182,15 +183,9 @@
   }
 
   // ---- saved views (this browser only; a per-viewer convenience)
-  const SAVED_KEY = "ll.stats.views";
-  type View = { name: string; qs: string };
-  function readViews(): View[] {
-    try {
-      return JSON.parse(localStorage.getItem(SAVED_KEY) ?? "[]") as View[];
-    } catch {
-      return [];
-    }
-  }
+  // ---- IK-4: read and written through lib/prefs.ts (`ll.stats.views`, unchanged) so a signed-in account keeps them too
+  type View = StatsView;
+  const readViews = (): View[] => accountPrefs.statsViews();
   let views = $state<View[]>(readViews());
   let viewName = $state("");
   function saveView() {
@@ -202,11 +197,7 @@
     const name = viewName.trim() || `${POS.find((x) => x.key === position)?.label} · ${WINDOWS.find((w) => w.key === win)?.label}`;
     views = [...views.filter((v) => v.name !== name), { name, qs: keep.toString() }].slice(-8);
     viewName = "";
-    try {
-      localStorage.setItem(SAVED_KEY, JSON.stringify(views));
-    } catch {
-      /* private window: the view stays for this visit */
-    }
+    accountPrefs.setStatsViews(views); // ---- IK-4 (a private window: the view stays for this visit)
   }
   function openView(v: View) {
     const want = Object.fromEntries(new URLSearchParams(v.qs));
@@ -216,11 +207,7 @@
   }
   function dropView(v: View) {
     views = views.filter((x) => x.name !== v.name);
-    try {
-      localStorage.setItem(SAVED_KEY, JSON.stringify(views));
-    } catch {
-      /* ignore */
-    }
+    accountPrefs.setStatsViews(views); // ---- IK-4
   }
 
   // ---- 2–4 players side by side

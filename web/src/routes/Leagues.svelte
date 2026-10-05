@@ -327,6 +327,7 @@
     }
   });
   // ---- end IC-3
+  import AccountEntry from "../components/AccountEntry.svelte"; // ---- IK-4: the account entry (the block at the bottom)
 </script>
 
 <!-- ---- IC-3: the card's read-backs and the scoring check -->
@@ -880,4 +881,8 @@
       </ul>
     </section>
   {/if}
+  <!-- ---- IK-4 (Wave I-K): the account entry — sign in with your email to keep these leagues on any device (only when
+       the server has accounts on: components/AccountEntry.svelte) -->
+  <AccountEntry />
+  <!-- ---- end IK-4 -->
 </main>

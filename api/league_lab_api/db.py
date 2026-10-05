@@ -197,6 +197,54 @@ def close_writer() -> None:
         if _writer is not None:
             _writer.close()
             _writer = None
+    close_rw()                                                 # ---- IK-4: the other purposes' writers too
+
+
+# ---- IK-4 (Wave I-K): the writer generalised — one read-write connection per purpose ("accounts"; usage keeps its
+# own above), each behind its own lock, each transaction `BEGIN; SET TRANSACTION READ WRITE; …; COMMIT` on an
+# autocommit connection the read pool never sees. `run_rw(fn)` runs `fn(conn)` inside that transaction and returns its
+# result; a dropped connection (Neon suspended) rolls the transaction back and runs `fn` once more on a new connection,
+# so `fn` must only touch the database. Accounts' rows are read here too (read-your-writes, never the 10-minute cache).
+_rw: dict[str, psycopg.Connection] = {}
+_rw_locks: dict[str, threading.Lock] = {}
+_rw_guard = threading.Lock()
+
+
+def _rw_conn(purpose: str) -> psycopg.Connection:
+    conn = _rw.get(purpose)
+    if conn is None or conn.closed or conn.broken:
+        conn = psycopg.connect(app_dsn(), autocommit=True, connect_timeout=5, application_name=f"league-lab-{purpose}")
+        _rw[purpose] = conn
+    return conn
+
+
+def run_rw(fn, *, purpose: str = "accounts"):
+    """``fn(conn)`` in one read-write transaction on the purpose's own connection (one retry on a dropped one)."""
+    with _rw_guard:
+        lock = _rw_locks.setdefault(purpose, threading.Lock())
+    with lock:
+        for attempt in (1, 2):
+            try:
+                conn = _rw_conn(purpose)
+                with conn.transaction():
+                    conn.execute("set transaction read write")
+                    return fn(conn)
+            except psycopg.OperationalError:
+                stale = _rw.pop(purpose, None)
+                if stale is not None:
+                    stale.close()
+                if attempt == 2:
+                    raise
+    return None
+
+
+def close_rw() -> None:
+    with _rw_guard:
+        for purpose in list(_rw):
+            conn = _rw.pop(purpose, None)
+            if conn is not None:
+                conn.close()
+# ---- end IK-4
 
 
 atexit.register(close_writer)

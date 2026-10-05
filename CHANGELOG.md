@@ -38,6 +38,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `yahoo_not_configured`. Synthetic 12-team superflex fixture league; it prices and solves through the real pipeline.
   `docs/YAHOO_TERMS.md`, HOSTING § Yahoo (Andrew's app registration). No Sleeper / MFL number moves.
 
+- **IK-4 — accounts, phase 1 (built, off until the Resend key is set).** Sign in with an emailed link (no password;
+  `/account`, the ⋯ menu, a line on the setup screen): the leagues, the team in each, a default league and the saved
+  Stats views follow the account — a fresh browser that signs in gets them and opens the default league's week with
+  no setup (the fifth review § 9's acceptance; `web/e2e/ik4` at 375 / 1300). `scripts/hosted_accounts.sql` (schema
+  `accounts`, the design's eight tables, the app role's grants on those only), `api/league_lab_api/accounts.py`
+  (`/api/account/*`, `ll_session` 90 days and revocable, limits 5 / address / hour, 30 / IP, 90 a day), `db.run_rw`;
+  the link's token rides in the URL fragment and is never logged. Without `LEAGUE_LAB_RESEND_API_KEY` nothing shows.
+  For the PO: the `sync_to_hosted.sh` lines, Resend + four DNS records (HOSTING § "Accounts"). Verified live: no.
+
 ## 2026-10-05 — Wave I-J
 
 - **PO (the merge, 2026-10-05 01:50 ET).** `MALLOC_ARENA_MAX=2` / `MALLOC_TRIM_THRESHOLD_` in the image; the memory
