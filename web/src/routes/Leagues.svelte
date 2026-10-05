@@ -388,7 +388,7 @@
     </h1>
     <p class="text-base leading-snug text-ink-2">
       <!-- IE-0 (Wave I-E): both platforms, not Sleeper only (the review's P0 #3) -->
-      Who to start this week and what each player is worth, in your league's own scoring — on Sleeper or MyFantasyLeague.
+      Who to start this week and what each player is worth, in your league's own scoring — on Sleeper, MyFantasyLeague, ESPN or Yahoo.
     </p>
   </header>
 
