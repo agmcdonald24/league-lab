@@ -47,8 +47,13 @@ COPY --from=web /src/web/dist /srv/web/dist
 RUN /srv/api/.venv/bin/python -m compileall -q /srv/api/league_lab_api /srv/app /srv/src \
  && mkdir -p /srv/cache && chown nobody:nogroup /srv/cache
 ARG LEAGUE_LAB_VERSION=dev
+# MALLOC_ARENA_MAX / MALLOC_TRIM_THRESHOLD_ (INF-2, the memory diet): the sync endpoints run on uvicorn's threadpool,
+# and glibc would give every thread its own arena — fragmented memory that never returns; two arenas and an eager
+# trim keep the process near what it uses (docs/DEPLOY.md § Memory). LEAGUE_LAB_CACHE_MB (default 64) is the caches'
+# budget; set it on Render to change it.
 ENV PATH="/srv/api/.venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
-    LEAGUE_LAB_WEB_DIST=/srv/web/dist LEAGUE_LAB_CACHE_DIR=/srv/cache LEAGUE_LAB_VERSION=${LEAGUE_LAB_VERSION}
+    LEAGUE_LAB_WEB_DIST=/srv/web/dist LEAGUE_LAB_CACHE_DIR=/srv/cache LEAGUE_LAB_VERSION=${LEAGUE_LAB_VERSION} \
+    MALLOC_ARENA_MAX=2 MALLOC_TRIM_THRESHOLD_=131072
 USER nobody
 EXPOSE 8080
 # one process (one Sleeper call budget and one cache per server: docs/SLEEPER_TERMS.md); $PORT from the host, else 8080
