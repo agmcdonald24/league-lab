@@ -492,7 +492,8 @@ class MFLLeagues:
                         "status": "complete", "leg": week, "roster_ids": rids, "adds": adds or None,
                         "drops": drops or None, "draft_picks": picks, "waiver_budget": [], "creator": None,
                         "created": created, "status_updated": created,
-                        "settings": {"waiver_bid": int(round(m["bid"]))} if m["bid"] is not None else None,
+                        "settings": ({"waiver_bid": int(m["bid"]) if float(m["bid"]).is_integer() else m["bid"]}
+                                     if m["bid"] is not None else None),          # MFL bids can carry cents ($12.50)
                         "metadata": {"mfl_type": m["type"]}, "consenter_ids": rids})
         return sorted(out, key=lambda x: (x["created"] or 0, x["transaction_id"]))
 

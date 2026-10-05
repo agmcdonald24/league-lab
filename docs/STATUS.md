@@ -8925,3 +8925,148 @@ compare against it)
    spend it); delete is immediate (no audit window); no new database role (the app role writes these eight tables
    in its own transaction); a username's league list is saved by one tap, not automatically; the display names of a
    saved league are per user.
+
+## Wave I-L (Iteration 22)
+
+### IL-2 2026-10-05 — MFL complete on dad's league: transactions, live points, waivers, the correctness sweep (branch `dev/IL2` from `main` `93115db`, database `league_lab` read only)
+
+* **Task**: IL-2 (brief `scratchpad/waveIL/BRIEF.md` § "IL-2"; the deferred list: IH-3's "MFL live points", II-5's
+  "Transactions: not available for MFL leagues yet", IG-3's "the claim time is not shared"). Plan sections: PROVIDERS §
+  MyFantasyLeague, MFL_TERMS, WORDS § "MyFantasyLeague, complete" (new). The league is `mfl:70587`; "team 1" / "team 8"
+  are the franchises `0001` / `0008`. **The sandbox cannot reach MFL**: built from MFL's documented export shapes (the
+  `api_info` page is robots-blocked from here; ffscrapr's `mfl_transactions` reads the same shapes) — **the transactions
+  run on a synthetic fixture** written for this task (`api/tests/fixtures/mfl/70587/transactions.json` +
+  `transactions_1..4.json`: five moves consistent with MFL's recorded week-4 rosters — team 8 adds Tuten for Conner (wk
+  1), team 3 Carnell Tate for Chris Godwin (wk 2), team 1 Ja'Kobi Lane for Mack Hollins and a 5 ↔ 8 trade A.J. Brown +
+  a 2027 3rd for DK Metcalf (wk 3), team 8 drops Dalton Schultz (wk 4)); the live scoring runs on MFL's own recording
+  (`liveScoring_4`, IC-3).
+* **Files**: `src/league_lab/mfl_client.py` (IL-2 blocks: `TTL_S` `transactions` 10 min / `transactions_past` a day;
+  `MFL.transactions(league_id, week=None, *, settled=False)`; `transaction_moves`, `TRANSACTION_KIND`; `live_players`,
+  `live_franchises`; `range_gaps` + the slots note's `range_gaps`); `src/league_lab/platforms.py` (`translate(...,
+  record=False)`; `MFLLeagues.transactions` in Sleeper's shape, `live_points`, `_with_live` on this week's `matchups`;
+  `playoff_teams` capped at the league's size; `_CAPS["mfl"]` matchups / waivers / transactions words);
+  `src/league_lab/scoring_audit.py` (MFL names "First Last" — "Kansas City Chiefs", was "Chiefs, Kansas City"; "1
+  player's", was "1 players'"; rows carry `mfl_id`; `franchise_recompute`); `api/league_lab_api/ondemand.py`
+  (`week_points` reads MFL's live scoring; `mfl_week_points`, `mfl_teams_done`); `api/league_lab_api/myweek.py` (one
+  line in `win` and one in `week_odds`: `live_scored`; the block at the end); `api/league_lab_api/decisions.py` (one
+  line in `week_matchups`: `live`; two lines in `waivers`: `mfl_waiver_franchise`, `recent_adds`; blocks at the end);
+  `web/src/lib/api.ts` (`MatchupSide.live`, a block at the end: `RecentAdd(s)`, the deadline's `budget_left` /
+  `waiver_order`); `web/src/routes/League.svelte` (one line in IC-4's card: "8.0 so far"); `web/src/routes/
+  Waivers.svelte` (one block: "Recently added in this league"); tests `tests/test_mfl_il2.py` (new, 16),
+  `api/tests/test_il2.py` (new, 12 + the recorder), pins in `api/tests/test_ii5.py`, `test_ik3.py`, `test_ih3.py`;
+  `web/e2e/il2/fixtures.spec.ts` (new, 3 × phone / desktop) + `web/fixtures/il2/api_il2.json` (the recording); the
+  fixtures above; `docs/{PROVIDERS,MFL_TERMS,WORDS,STATUS}.md`, `CHANGELOG.md`.
+* **Interfaces**: `MFL.transactions(lid, week=None, *, settled=False) -> [MFL rows]`; `mfl_client.transaction_moves(row)
+  -> {kind, type, franchise, adds, drops, bid, picks, timestamp} | None`; `MFLLeagues.transactions(key, round)` →
+  Sleeper's `/transactions/<round>` dicts (`type` free_agent / waiver / trade, `adds` / `drops` by Sleeper id → roster
+  id, `roster_ids`, `created` epoch ms, `status` "complete", `settings.waiver_bid`, `draft_picks`, `metadata.mfl_type`,
+  `transaction_id` `mfl-<timestamp>-<franchise>-<sha1 of the row, 8>`); `MFLLeagues.live_points(key, week) -> {points,
+  done, teams_done, franchises}`; this week's `matchups` rows carry `points` (the franchise's score so far) and
+  `players_points` as Sleeper's call does; `/api/league` `matchups[].games[].a|b.live` (this week, > 0, else null);
+  `/api/waivers` `recent_adds = {weeks, rows: [{week, transaction_type, roster_id, team_name, player_name, position,
+  gsis_id, waiver_bid, created_at, mine}], total, unavailable, source}` and `deadline.budget_left` / `waiver_order`
+  (MFL); `scoring_audit.franchise_recompute(query, league, week)`.
+* **What moved**: MFL's `capabilities`: transactions `no` → **`yes`** "adds, drops, trades and waiver claims from MFL's
+  transactions export — as built, not verified on a live league yet"; matchups `partial` → **`yes`** (… "this week's
+  live points from MFL's live scoring (a game in progress counts as its full range)"); waivers stays `partial` ("…
+  MFL's waiver type, waiver order and blind-bid balances are read; MFL does not share the claim time"). League's
+  "Latest moves" on 70587: "Transactions: not available for MFL leagues yet" → five moves (11 rows). The week's odds
+  on 70587 (fixture API, ESPN overlay on, pinned clock — Saturday, Thursday's CLE–PIT game over): team 1 vs team 8
+  **before** "You're a clear underdog this week: 23%, 83 to 115 expected." → **after** "… 24%, 85 to 115 expected. 1
+  of your 7 have played, 0 of theirs." (Fannin's 8 in place of his range); the League card: 7 of 12 games have a
+  starter in, "8.0 so far" under team 1 (both games of the double header), 10.0 team 10, 4.0 team 5, 12.0 team 6.
+  Sleeper / house answers: unchanged (new keys only; `live_scored` returns the nightly's set for them). `playoff_teams`
+  on 70587: 16 → 12 (the rest-of-season window is unchanged: weeks to 18).
+* **The correctness sweep on `mfl:70587`** (fixtures + the main database, read only; `scratchpad/waveIL/il2/sweep*.py`):
+
+  | Where | What we read | Against MFL | Verdict |
+  |---|---|---|---|
+  | Scoring rules (`rules.json`: QB / PK / WR / RB / TE / Def groups) | every rule priced by IC-1's spec (`spec_unpriced` = []): TDs by distance 6 / 9 / 12 (0–9 / 10–39 / 40+, return TDs too), 1 per 10 rushing / receiving, 1 per 20 passing (QB), +10 at 250 passing / 75 or 100 rushing / receiving by group, INT −3, fumble lost −3, 2-pt +2, FG 3 / 5 / 10 / 15 by distance, XP 1, DEF sack 2, INT 3, fumble recovery 3, safety 4, points allowed 0 → 10, 1–3 → 8 | the scoring check (`/api/league/scoring-check?league=mfl:70587&week=`): **week 1 161 / 163, week 2 155 / 156 within 1 point**; week 3: "not complete in our NFL stats yet" (the main database holds only week 3's Thursday game) | right. **Estimated on projections only**: the two points-allowed bands spread over the projection's, a 50+ field goal at the 50–59 band (no 60+ split), return TDs and 2-pt conversions not projected — on the card. The old I0-B flat report (`league.mfl.scoring.approximated` / `unpriced`: 16 "yardage bands … extended" sentences, 8 "unpriced" events) still rides in the league payload; no screen reads it (the card reads the spec) — say so, not fixed |
+  | **The weekly results recomputed** (`franchise_recompute`: each franchise's starters priced by our spec vs MFL's franchise score) | weeks 1–2, 24 franchise-weeks, every starter priced | **21 exact; 3 off, all team defenses**: team 7 week 1 −2.00 (Kansas City Chiefs DEF: MFL counts one sack more than nflverse's line), team 10 week 1 +1.36 (Pittsburgh DEF) and team 6 week 2 +1.36 (New England DEF): a defensive return TD with no play-by-play length, priced at its expected value 10.36 against MFL's band (9) | tolerance 2 points a franchise (`test_il2`); the gap is the stat source, not a rule. Week 3: not recomputable here |
+  | Starter slots | `TMQB · RB × 2 · WR+TE × 3 · TMPK · DEF`, bench 6 (`rosterSize` 14, count 8; no ranges; `partialLineupAllowed` YES) | **exact both ways**: no lineup we allow that MFL refuses, none the reverse (WR+TE admits WR or TE, three of them) | the ranges' reading (minimum + FLEX) differs only when a range is narrower than the FLEX spots (we would allow more of that position) or a K / DEF / unit / QB-beyond-superflex has a range (MFL allows, our FLEX does not): `slots()`' note now lists those (`range_gaps`); **none** in the three fixture leagues (21861 RB / WR 2–4, TE 1–3 with 2 FLEX; 10015 RB 1–3, WR 2–4, TE 1–3 with 2 FLEX; 70587) |
+  | Team units (TMQB / TMPK) | 34 rostered unit rows `mfl:<id>`; TMQB priced from the starting QB's line (projection), the team's QBs summed (actual: the check); TMPK the team's kicker | 0 unit misses in the check, weeks 1–2 | kept (IC-2's measured decision); a backup's snaps count for MFL and not in our TMQB projection — the projection is low the week a starter is pulled |
+  | Kickers | PK group: FG 3 / 5 / 10 / 15, XP 1, no miss penalty | 0 misses | right |
+  | Defenses | Def group (above) | 3 of 24 defense rows off by > 1 (above) | the sack count and the return TD length; not fixable from our data |
+  | Players with no Sleeper id | rosters: **0 of 167** unmapped (121 by the id table, 12 defenses by team code, 34 team units by design) | — | right; transaction players are mapped without counting as rostered (`translate(record=False)`) |
+  | Schedule | weeks 1–14 regular season (`lastRegularSeasonWeek` 14), double headers in weeks 2, 4, 6–9, 11, 13 (12 games, else 6), no franchise byes; weeks 15–18 no games yet (`endWeek` 18: the playoffs) | the export has no playoff bracket or team count | **fixed**: `playoff_teams` was 2⁴ = 16 for a 12-team league → capped at 12; `playoff_week_start` 15 right; NFL byes come from our NFL schedule |
+  | Live scoring (week 4) | MFL's recording: 4 starters done (Thursday CLE–PIT: Fannin 8 for team 1, the PIT defense 10 for team 10, the PIT team kicker 4 for team 5, Jaylen Warren 12 for team 6) | parsed to the point | read now (above) |
+  | Waivers | `currentWaiverType` FCFS; `waiverSortOrder` per franchise; no claim time; no blind-bid balance in the export (21861 is BBID_FCFS and carries none either) | — | the stamp line says first come, first served on 70587; a waiver-order league names the team's place, a blind-bid league its balance or that MFL's export has none |
+  | The check's own words | "Chiefs, Kansas City (theirs 14, ours 12 …)"; "1 players' touchdowns" | — | **fixed**: "Kansas City Chiefs"; "1 player's" |
+* **Waivers** (item 4 + the history): the stamp line on 70587 reads "Free agents are first come, first served on MFL: a
+  claim is yours as soon as MFL takes it; players lock at their own kickoff — the next game starts Sunday 9:30 AM ET."
+  (IG-3's words, MFL states no claim time — verified: `league.json` has only `currentWaiverType`); `mfl_waiver_franchise`
+  adds "you are 4th in the waiver order" (`waiverSortOrder`, a waiver-order league) or "your blind-bid balance is $87.5"
+  (`bbidAvailableBalance`, MFL's documented field, **in no fixture** — tested on a patched export) / "… is not in MFL's
+  league export" (21861). **Sleeper's Waivers had no "recently added" or claim history** (verified: `Waivers.svelte`
+  and `decisions.waivers` read no transactions; only League lists moves) — so IL-2 added one for every platform:
+  **"Recently added in this league"** (`recent_adds`: every team's free-agent and waiver adds of the decision week and
+  the week before, newest first, 10 shown; a house league from `mart_league_transactions`, on demand from the
+  platform's transactions; "No adds in weeks 3–4." / the `unavailable` sentence when moves are not read). 70587: "Ja'Kobi
+  Lane · WR — Knight Train (you) · week 3"; Scrubs roster 6: 18 adds in weeks 3–4.
+* **Commands**: `uv run ruff check src app tests api`; `uv run pytest -q tests`; `cd api && PYTHONPATH=. uv run pytest -q
+  --deselect tests/test_u1.py --deselect tests/test_ig2.py`; `cd web && npm run lint && npm run build`;
+  `FIXTURES_PORT=8642 npx playwright test --config playwright.fixtures.config.ts …`; `cd api && IL2_RECORD=1
+  PYTHONPATH=. uv run pytest -q tests/test_il2.py -k record`; `uv run python scripts/copy_standard.py --check`; the
+  fixture API on :8762 (`scratchpad/waveIL/il2/api.sh`: the fixtures' env + `LEAGUE_LAB_NOW=2026-10-03T16:00:00Z`);
+  `scratchpad/waveIL/il2/sweep.py`, `sweep2.py`, `beforeafter.py`. Nothing written to `league_lab`.
+* **Evidence — tests** (the main database, read only; the pinned clock): root **1,277 passed**, 3 skipped (1,263 + the
+  15 new `tests/test_mfl_il2.py`; 5 min 22 s with `OMP_NUM_THREADS=1` — multi-threaded BLAS stalled one model test for
+  15 min on this 2-core machine at load 15); API (`test_u1` / `test_ig2` deselected) **@@API@@**; ruff clean; `npm run
+  lint` 0 errors / 0 warnings (167 files), build ok; the fixture e2e **@@E2E@@** (`e2e/il2` 6 passed; with `ih3`,
+  `ic4`, `ig3`, `ii5`: 40 passed); `copy_standard.py --check` clean. `tests/test_mfl_il2.py` (16): the export's URL
+  and params, the 10-minute / one-day caches, the budget, a fixture league without moves, every documented row shape
+  (free agent, waiver, blind bid with and without a drop and its cents kept, a trade both ways with a future pick; IR / taxi / pool /
+  pending rows → none), MFL's live recording parsed (4 starters done, 12 franchises), `range_gaps`, the adapter's
+  Sleeper shape and stable ids. `api/tests/test_il2.py` (12 + the recorder): the Router's transactions in shape (every
+  player mapped), League's moves (11 rows, 5 moves, the trade both ways, gsis ids), live points by Sleeper id
+  (`teams_done` {CLE, PIT}), this week's matchups rows with the live score, the week's odds narrowed (n_played 1; 0 with
+  MFL's live scoring switched off, a different expected total), League's `live` per side, the waiver line (FCFS; 21861's
+  missing balance said; a patched export's balance and order), Waivers' recent adds on 70587 and the `unavailable`
+  branch, **the weekly results recomputed within 2 points** (weeks 1–2: 10 / 12 and 11 / 12 within 1, the three gaps
+  named), the capabilities, the playoff teams.
+* **Not done**: (1) **live verification** — everything about MFL's transactions is built on a synthetic fixture (the
+  shape from MFL's documentation, not seen live); the blind-bid balance field (`bbidAvailableBalance`) is in no fixture;
+  (2) week 3 of 70587 not recomputed (our NFL stats hold only its Thursday game; the scoring check says so); (3) the
+  ranges' reading still solves min + FLEX — `range_gaps` names a difference, the solver does not enforce MFL's maxima
+  (none of the three fixture leagues needs it); (4) MFL's playoff bracket (`TYPE=playoffBrackets`) is not read — the
+  team count is capped, not known; (5) the old I0-B flat report in `league.mfl.scoring` (superseded by the spec, read by
+  no screen) is left in the payload; (6) the live score uses MFL's starters list only (`liveScoring` without
+  `DETAILS=1`): a starter in our proposed lineup whose game is over but whom MFL does not list counts 0 (the lock rule
+  keeps a played starter where MFL has him, so it should not arise); a starter on a bye with 0 seconds left counts as
+  "played" with 0; (7) `web/fixtures/ii5/*` still replay MFL's old "Transactions: not available" row (they test the
+  rendering of a `no` feature; not re-recorded); the IH-3 recording (`web/fixtures/ih3/api_ih3.json`) predates live
+  points (its spec compares against its own recording: green).
+* **Next**: the PO's live check on `mfl:70587` (below); then `TYPE=playoffBrackets` for MFL playoffs; the solver's
+  per-position maxima for MFL ranges if a league needs it; MFL's per-player official scores (`weeklyResults`) for an
+  MFL player's points per game (IE-0's open).
+
+**For the PO**
+1. **No PO-owned file changes**: no `api/Dockerfile`, `render.yaml`, workflow, `scripts/nightly.sh`,
+   `scripts/sync_to_hosted.sh` or console page. No new relation: `recent_adds` reads `analytics.mart_league_transactions`
+   and `analytics.player_id_map`, both already in `hosted_relations.py`'s api closure (verified).
+2. **The live check after the deploy** (the sandbox cannot reach MFL): open `mfl:70587` → League: "Latest moves" against
+   MFL's own Transactions report on the league's site (`https://www44.myfantasyleague.com/2026/home/70587`, Reports) — the
+   moves, the week each lands in (we read MFL's `W=`), the team names, the dates; Waivers' "Recently added in this
+   league" the same adds; during a game window, League's "N so far" against MFL's live scoring page and My Week's "1 of
+   your N have played". If it holds: `src/league_lab/platforms.py` `_CAPS["mfl"]["features"]["transactions"]` — drop
+   ` + " — as built, not verified on a live league yet"`; the pins: `api/tests/test_ii5.py`
+   (`words.endswith(P.UNVERIFIED)`), `api/tests/test_ik3.py` (`== [("mfl", "transactions")]` → `== []`); PROVIDERS'
+   MFL row "(IL-2; as built, not verified on a live league yet — a synthetic fixture)". If MFL's rows differ from the
+   documented shape, `mfl_client.transaction_moves` is the one reader.
+3. **Merge notes** (shared files, every edit marked `# ---- IL-2`): `platforms.py` — `translate` gains `record=True`, the
+   `MFLLeagues.transactions` body (was `return []`), `live_points`, `matchups` → `_with_live`, one `playoff_teams` line,
+   three `_CAPS["mfl"]` feature lines (**IL-5 also edits `_CAPS` / the `UNVERIFIED` tail for its verified switch** — keep
+   both; MFL's transactions carry the tail inline, so `LEAGUE_LAB_PROVIDER_VERIFIED` does not drop it: the PO drops it
+   by hand after the check, item 2); `decisions.py` — one line in IC-4's `week_matchups`, two lines after IG-3's
+   deadline in `waivers`, blocks at the end; `myweek.py` — one line in `win`, one in `week_odds`, a block at the end;
+   `ondemand.py` — the first branch of `week_points`, a block at the end; `League.svelte` one line; `Waivers.svelte` one
+   block before "Buy low and sell high"; `api.ts` one field + a block at the end; `test_ik3.py` / `test_ii5.py` /
+   `test_ih3.py` pins (IL-5 edits `test_ik3` / `test_ii5` too).
+4. **Decisions Andrew may want to reverse**: (a) MFL transactions `yes` with "not verified on a live league yet" in the
+   words (rather than `partial`) until the check; (b) **Waivers' "Recently added in this league" for every platform** —
+   new on Sleeper too (the brief assumed Sleeper had a claim history on Waivers; it had none) — one block to remove;
+   (c) "so far" under each team on League's this-week card for every platform whose matchups carry live points
+   (Sleeper's too); (d) a starter is "in" when MFL lists him with 0 game seconds left — MFL's clock, ahead of the
+   nightly's — a game in progress still counts as its full range (IH-3's rule kept); (e) one transactions call per week
+   (MFL assigns the week) rather than one season call (no week field in MFL's rows): ~N calls the first time, a past week
+   cached a day; (f) the playoff team count capped at the league's size (2⁴ = 16 for 12 teams before).

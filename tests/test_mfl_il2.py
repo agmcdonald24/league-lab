@@ -192,3 +192,13 @@ def test_adapter_transactions_in_sleeper_shape(ids):
     assert w4[0]["adds"] is None and list(w4[0]["drops"].values()) == [8]
     assert [x["roster_ids"] for x in mf.transactions("mfl:70587", 3)] == [[1], [5, 8]]    # oldest first
     assert mf.unmapped("mfl:70587") == []                                # transaction players are not "rostered"
+
+
+def test_adapter_blind_bid_keeps_its_cents(ids, monkeypatch):
+    mf = P.MFLLeagues(M.MFL(fixtures=MFL_FX, year=2026), lambda: {})
+    rows = [{"timestamp": "1789600320", "franchise": "0003", "type": "BBID_WAIVER", "transaction": "17497,|12.50|13163,"},
+            {"timestamp": "1789600330", "franchise": "0001", "type": "BBID_WAIVER", "transaction": "17517,|7.00|"}]
+    monkeypatch.setattr(mf.client, "transactions", lambda lid, week, settled=False: rows)
+    got = mf.transactions("mfl:70587", 2)
+    assert [t["type"] for t in got] == ["waiver", "waiver"]
+    assert [t["settings"]["waiver_bid"] for t in got] == [12.5, 7]
