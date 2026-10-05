@@ -8929,6 +8929,90 @@ compare against it)
 
 ## Wave I-L (Iteration 22)
 
+### PO merge — Wave I-L, 2026-10-05 (12:20–15:10 ET; the deferred list: advanced data, MFL complete, the model's follow-ups, the next memory lever, accounts phase 2)
+
+* **Why**: Andrew: "sweet. idk whats on tap for the next wave but proceed." The wave is the deferred list from Wave
+  I-K's PO section — the fifth review's § 10 analytics and the two NGS marts, MFL transactions / waivers / live points
+  on dad's league, the model follow-ups (the win-probability grading, v3.3), the Sleeper directory trim and the
+  Finder's cold cost, and IK's leftovers (`connections`, the watchlist screen, the providers' switches, the
+  duplicate-id rule). The brief is `scratchpad/waveIL/BRIEF.md`; five Opus devs in one message, 2 h – 2 h 30 each,
+  from `main` `93115db`; the PO merged IL-4, IL-2, IL-5, IL-3, IL-1 in that order (`integ/IL`), then the lines the
+  hand-backs asked for in PO-owned files.
+* **Delivered** (the hand-backs below; `main` after this section): **IL-1** `analytics.mart_player_ngs_week` (NGS
+  passing / rushing / receiving, weekly + the season aggregate, joined by gsis id; 26,069 rows, 2016 → 2026 week 3), five
+  Stats columns (time to throw, NGS CPOE, RYOE per carry, separation, YAC over expected — denominator-weighted over the
+  window, "—" under NGS's qualification; the QB preset gains TTT + CPOE, RB RYOE/att, WR/TE separation + YAC o/e) with
+  DATA_INVENTORY rows (two planned → derived) and registry rows; `src/league_lab/roles.py` — **the drawer's "Role"
+  block**: his recent role against his earlier one (last 2 games vs ≥ 3 before, the change named only past the earlier
+  games' spread and a floor; "Too early to say" with the counts otherwise), opportunity vs production within his
+  position group (words only, no regression claim), and "games without X" (a positional teammate's missed games, 2024
+  on, `player_team_history`; ≥ 2 games or "no games without X to go on"). **IL-2** MFL complete: `MFL.transactions`
+  (week by week; the synthetic fixture `mfl/70587/transactions*.json`) → League's "Latest moves" for MFL leagues and
+  **Waivers' "Recently added in this league" on every platform**; `MFL.live_scoring` into the week's odds and League's
+  this-week card ("8.0 so far"); the waiver order / blind-bid balance on the stamp line; the correctness sweep on
+  `mfl:70587` (every rule priced; weeks 1–2 recomputed: 21 of 24 franchise-weeks exact, 3 within 2 points, all team
+  defenses; 0 of 167 rostered unmapped; slots exact; `playoff_teams` capped at the league's size — was 16 for 12 teams;
+  "Kansas City Chiefs" / "1 player's"). **IL-3** `league-lab grade-odds` → `analytics.odds_grades` (Brier, log loss,
+  calibration deciles, range coverage, per league × week; 2026 weeks 1–2 on the clone: Brier 0.271 ± 0.029 over 22
+  matchups, P10–P90 coverage 69.6 % — two weeks cannot be told from a coin flip; the real grade is the nightly's from
+  week 4, the 50 % range once rows carry it); `/api/status` `odds_grades`; **v3.3** — the mean-unbiased new-team scale
+  at WR until his third game with the team (k = 0.79 for 2026; walk-forward 2021–25: the flagged rows' MAE −0.181 in 4
+  of 5 seasons, bias −0.94 → −0.41; the rule written before the numbers, `scratchpad/waveIL/il3/DECISION_v33.md`;
+  `MODEL_VERSION` v3.3; `LEAGUE_LAB_NEW_TEAM_SCALE=0` restores v3.2); `tests/test_metric_registry.py` (every METRICS
+  heading with a version tag has a registry row). **IL-4** Sleeper's directory trimmed as it is read (15 fields, nulls
+  dropped, strings interned, one read-only copy: **38.7 → 8.8 MB** at Sleeper's size; the four-league server 281 → 247
+  MB on the synthetic directory), the Finder's partner alternatives priced only where a trade can still be credible
+  (`LEAGUE_LAB_FINDER_LAZY_THEIRS`, default on; "not compared" on the cards it skips) and a league's free agents read
+  once per roster state: a cold Finder with the whole directory **23.5–25.6 → 8.7–10.1 s**, the same verdict and cards;
+  `/api/status` `memory.directory`. **IL-5** `accounts.connections` — a Yahoo (or, switch on, ESPN) connection made
+  while signed in is kept sealed under the account and re-issued on another device, Disconnect / delete-account clear
+  it, a refused refresh marks it expired; **`/watchlist`** (☆ Watch / ★ Watching in the drawer, the rows' status,
+  projection, free agent / rostered by whom, Remove, GA `watchlist_add` / `_remove`); `/api/providers` follows
+  `LEAGUE_LAB_ESPN_LEAGUES=off` (status `off`, the setup screen says so) and **`LEAGUE_LAB_PROVIDER_VERIFIED=espn,yahoo`
+  flips a provider to supported without a deploy**; the duplicate-id rule on `espn_id` / `mfl_id` / `yahoo_id` (4 ESPN
+  ids on two players each: neither maps); `ll_session`'s path is `/api`.
+* **PO, on the merge**: STATUS / CHANGELOG / WORDS keep both; IL-1's registry rows carry their family tags (`ngs1.0`,
+  `role1.0`) so IL-3's registry test covers METRICS' headings; IL-5's providers recordings re-recorded after IL-2
+  changed MFL's words; the PO-owned lines the hand-backs asked for: `scripts/nightly.sh` gains the soft `grade-odds`
+  step after `validate` (IL-3), `scripts/sync_to_hosted.sh` windows `player_team_history` with the per-game tables
+  (IL-1: 50 → ~14 MB), the console's Data Status memory line reads the directory (IL-4), the Record page shows the
+  odds grades and Rankings' "The model" says v3.3 (IL-3), HOSTING's "What stops a night" has the `grade-odds` row.
+  On the main database: `dbt seed --select metric_registry` (90 rows) and `dbt build --select mart_player_ngs_week`
+  (12 pass, 1 warn: two unmapped players). **Checks** (main DB, the pinned clock): root **1,318 passed** / 2 skipped
+  (1,263 + 55 new); API **782 passed** / 11 skipped (`test_u1` / `test_ig2` deselected; 722 + 60 new); ruff clean;
+  `copy_standard --check` clean; `npm run lint` 0 / 0 (169 files); build ok; fixtures e2e: see the line below this
+  section once the run ends. QA on the fixture API at 375 and 1300 (the wave's env: ESPN / Yahoo fixtures, accounts
+  on): the drawer's Role block on a house league ("Too early to say: 2 games with a snap so far this season …" — the
+  main database holds three weeks) and on `mfl:70587`; Players → Stats QB preset shows TTT and CPOE; League on
+  `mfl:70587` lists "Latest moves" (adds, drops, a trade both ways) and "8.0 so far" on the this-week card; Waivers on
+  MFL shows the first-come stamp line and "Recently added in this league"; `/watchlist` signed out shows the one-line
+  invitation; `/api/providers` four providers; no console errors but the blocked headshot host.
+* **Verified live: nothing yet** (the sandbox reaches neither Sleeper nor MFL). After the deploy the PO checks:
+  `/api/status` `memory.directory` (rows ≈ 12,200, fields 15, mb ≈ 9; `outside_mb.sleeper` was 37) and `odds_grades`
+  (null until the first nightly); a Finder on an on-demand league answers with the same verdict as before; the drawer's
+  Role block on a house league; Stats' NGS columns ("Next Gen Stats arrive with the nightly update" until the first
+  nightly builds the mart on Neon); `mfl:70587` League "Latest moves" against MFL's Transactions report and Waivers'
+  "Recently added"; during a game window League's "N so far" against MFL's live scoring. Then drop the "as built, not
+  verified" tail from MFL's transactions words (`platforms._CAPS`, the pins in `test_ii5` / `test_ik3`, PROVIDERS).
+* **The first nightly after the push runs longer once**: `MODEL_VERSION` v3.3 re-runs `backtest-v2`, `project` refits
+  the importance, `calibration-oof` rebuilds (2–3 min); `dbt build` adds `mart_player_ngs_week`; `grade-odds` writes
+  `analytics.odds_grades` (~seconds); the sync publishes both relations and the windowed `player_team_history`.
+* **Decisions the PO took (Andrew may reverse)**: v3.3 on by default and `MODEL_VERSION` bumped (34 WR lines move in
+  weeks 5–7 on the clone, −1.0 a row; A.J. Brown 10.2 → 8.1 in the dynasty; none of Andrew's starters); the Finder skips
+  a partner's own best move when it cannot change the answer and says "not compared"; the directory drops nulls and is
+  read-only (a reader indexing a missing field fails loudly); "Recently added in this league" and "N so far" on every
+  platform, not just MFL; the QB preset shows play-by-play CPOE (NGS's in the picker); opportunity vs production labels
+  against the position group; a Watch saves a player for every league; ESPN cookies kept (sealed) with the account
+  when the private switch is on; rotating `LEAGUE_LAB_API_SECRET` drops every saved connection.
+* **Not done / next**: live verification of all five (above); the public 2026 ESPN league id, Yahoo's access approval
+  and the Resend key (Andrew) — then `LEAGUE_LAB_PROVIDER_VERIFIED`; the 50 % range grade and IH-3's shrink refit
+  after weeks 4–6; a role-change Stats column; the other NGS fields as columns; MFL's lineup maxima in the solver and
+  the playoff bracket; the watchlist's news line and the Watch control on the full page; `id_map_audit.py` listing the
+  quarantined ids; `Router.players()` copying the directory once an on-demand league adds rows; one waiver search
+  shared across a league's rosters (the next Finder lever); v3.3 rows in `feature_experiments`; "Why this number"
+  saying a line was scaled.
+
+
 ### IL-4 2026-10-05 — the next memory lever and the Finder's cold cost (branch `dev/IL4` from `main` `93115db`, database `league_lab` read only)
 
 * **Task**: IL-4 of the Wave I-L brief (`scratchpad/waveIL/BRIEF.md`; INF-2's "Next task": slim the Sleeper directory;

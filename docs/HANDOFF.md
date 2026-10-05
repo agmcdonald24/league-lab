@@ -187,6 +187,21 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   `ops/nightly-trigger/` (a Cloudflare Worker, 07:37 ET + re-checks) replaces it as the clock; needs Andrew's
   fine-grained token in the Worker's secret (HOSTING § 5 "The trigger"). Until it exists, "Run workflow" by hand.
 
+* **Wave I-L (2026-10-05, Monday 12:20–15:10 ET; five Opus devs; STATUS § "Wave I-L" PO section first)**: the
+  deferred list. **Data**: `analytics.mart_player_ngs_week` (NGS weekly; the nightly's `dbt build` makes it, the sync
+  publishes it — until then Stats says "Next Gen Stats arrive with the nightly update") and `src/league_lab/roles.py`
+  behind the drawer's Role block (reads `player_team_history`, now windowed in `sync_to_hosted.sh`). **MFL**:
+  transactions, live points, waiver order / blind bids — built on a synthetic fixture, **not verified on a live league**
+  (the PO checks `mfl:70587` after the deploy, then drops the "as built" tail in `platforms._CAPS` and the pins).
+  **Model**: `MODEL_VERSION` **v3.3** (the WR new-team scale, `LEAGUE_LAB_NEW_TEAM_SCALE=0` restores v3.2 on the
+  `project` step) — the first nightly re-runs `backtest-v2` and the calibration once; `league-lab grade-odds` is a soft
+  nightly step writing `analytics.odds_grades` (`/api/status` `odds_grades`; the Record page's table). **Memory**: the
+  Sleeper directory trimmed at the read (`DIRECTORY_FIELDS` in `sleeper_client.py` — a new screen that needs a field
+  adds it there; `/api/status` `memory.directory`), `LEAGUE_LAB_FINDER_LAZY_THEIRS` (default on). **Accounts phase
+  2**: `accounts.connections`, `/watchlist`, `LEAGUE_LAB_PROVIDER_VERIFIED=espn,yahoo` on Render flips a provider to
+  supported with no deploy; `ll_session`'s path is `/api`. Run `scripts/measure_memory.py` before touching the
+  directory or the Finder again.
+
 * **Wave I-K (2026-10-05, Monday 08:40–12:30 ET; four Opus devs; STATUS § "Wave I-K" PO section first)**: **ESPN**
   leagues on demand (`espn:<id>`, public read-only, unofficial; private via the manager's cookies behind
   `LEAGUE_LAB_ESPN_PRIVATE=off`; kill switch `LEAGUE_LAB_ESPN_LEAGUES=off`), **Yahoo** leagues through the official

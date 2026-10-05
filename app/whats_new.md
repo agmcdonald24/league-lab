@@ -3,6 +3,31 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 5 (evening) · a player's role, Next Gen Stats, MyFantasyLeague moves and live scores, a watchlist
+
+- **A player's card has a "Role" block**: his last two games against the games before them (targets, carries, snap
+  share, red-zone touches — a change is named only when it is bigger than his usual week-to-week swing; otherwise
+  "steady" or "too early to say" with the counts), whether his points run ahead of or behind his share of the work
+  (said as a fact, never "due for regression"), and what he did in the games a teammate missed, when there are at
+  least two.
+- **Next Gen Stats on Players → Stats**: time to throw and completion % over expected for quarterbacks, rushing yards
+  over expected per carry for running backs, separation and yards after catch over expected for receivers and tight
+  ends — weighted by the plays they are measured on; a dash under NGS's own minimums, never a zero. They arrive with
+  the next nightly update.
+- **MyFantasyLeague leagues** now show the league's latest moves and every team's score so far during a game window;
+  the week's odds narrow as MFL's games finish; the waiver line names your place in the waiver order or your blind-bid
+  balance when MFL shares it. New, built from MFL's documentation — say so if a move looks wrong.
+- **Waivers shows "Recently added in this league"** on every platform: who every team added this week and last.
+- **Receivers on a new team**: a receiver's first games with a new team used to be projected about a point a game too
+  high; until his third game the line is scaled down by the same share for everyone (0.79 this season). Graded on
+  five past seasons it missed by 0.18 points per game less on those games.
+- **The week's odds are graded**: from this week on, every past week's win probability and ranges are scored against
+  what happened; the grade is on the Record page as the weeks come in.
+- **A watchlist, when you are signed in**: ☆ Watch on any player's card; `/watchlist` shows his status, this week's
+  projection and who has him, on any device.
+- **Faster and lighter**: the first trade search on a league you open on demand answers in about a third of the time;
+  the server carries a quarter of the player directory it used to.
+
 ## Oct 5 (afternoon) · ESPN and Yahoo leagues, and an account that remembers your leagues
 
 - **ESPN leagues** open by league id or link — public leagues only, read-only, through the same unofficial path every

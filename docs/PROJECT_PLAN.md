@@ -598,6 +598,24 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 22 — Wave I-L (2026-10-05, Monday 12:20–15:10 ET; the deferred list)
+
+Andrew: "idk whats on tap for the next wave but proceed." Five devs on Wave I-K's deferred list: **IL-1** the
+advanced-data layer — `mart_player_ngs_week` (Next Gen Stats via nflverse, weekly), five Stats columns with the
+qualification rule honoured, the drawer's **Role** block (his recent role vs his earlier one, opportunity vs
+production labelled without a regression claim, "games without X" from the teammate's missed games); **IL-2** MFL
+complete on dad's league — transactions (League's "Latest moves", Waivers' "Recently added in this league" on every
+platform), live points in the week's odds, the waiver order / blind-bid balance, the correctness sweep (weeks 1–2
+recomputed franchise by franchise: 21 of 24 exact, the rest team defenses within 2 points; the playoff count capped);
+**IL-3** `league-lab grade-odds` → `analytics.odds_grades` (Brier, calibration, range coverage; the nightly runs it)
+and **v3.3** — the new-team scale at WR until his third game (k = 0.79; kept on the walk-forward rule written down
+first); **IL-4** Sleeper's directory trimmed at the read (38.7 → 8.8 MB at Sleeper's size) and the Finder's partner
+alternatives priced lazily (a cold Finder 24 → 9 s with the whole directory, same cards); **IL-5** accounts phase 2 —
+`connections` (a Yahoo / ESPN connection kept sealed under the account), the `/watchlist` screen with ☆ Watch in the
+drawer, `/api/providers` under the kill switch and **`LEAGUE_LAB_PROVIDER_VERIFIED`** (the supported flip without a
+deploy), the duplicate-id rule. STATUS § "Wave I-L": root 1,318 / API 782 / e2e (the PO section), 0 failed. **Nothing
+is verified live yet** — the PO's list is in the STATUS PO section. Next: the live checks, then whatever Andrew names.
+
 ### Iteration 21 — Wave I-K (2026-10-05, Monday 08:40–12:30 ET; other platforms: ESPN and Yahoo; accounts phase 1)
 
 Andrew: "I would really like to prioritize pulling other leagues into this like yahoo and espn next." Four devs:

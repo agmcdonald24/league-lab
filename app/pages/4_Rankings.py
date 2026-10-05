@@ -561,9 +561,9 @@ if model == "v2":
         # ---- IL-3 (Wave I-L): v3.3, the new-team scale at WR
         st.markdown(
             "**New in October: a receiver on a new team.** A receiver's first games with a new team (a trade or a "
-            "signing) used to be projected about a point a game too high. Until his third game with the team his "
+            "signing) used to be projected about a point per game too high. Until his third game with the team his "
             "projection is now scaled down by the same share for everyone (0.79 this season), fitted each year on the "
-            "three seasons before; graded on 2021 to 2025 it missed by 0.18 points a game less on those games, in four "
+            "three seasons before; graded on 2021 to 2025 it missed by 0.18 points per game less on those games, in four "
             "of the five seasons."
         )
         # ---- end IL-3
