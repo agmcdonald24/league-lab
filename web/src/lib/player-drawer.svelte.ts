@@ -137,7 +137,7 @@ export function openPlayer(key: string | null | undefined, opts: OpenPlayerOptio
   memo.origin = origin;
   if (open === key && (qs.get("from") ?? "list") === from) return; // already on screen: nothing to count
   emit(key, origin);
-  track("select_content", { content_type: "player", item_id: key, origin }); // INF-1
+  track("select_content", { content_type: "player", item_id: key, origin, from }); // INF-1: counted once (the URL's pane= path dedupes)
   if (open) {
     setParams({ pane: key, from });
     return;
