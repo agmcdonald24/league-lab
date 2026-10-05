@@ -780,4 +780,16 @@ the two intervals (one place each).
 * FTN Data charting via nflverse: **CC BY-SA 4.0** — first-read shares and other charting-derived
   numbers are adaptations and carry the same licence and attribution (they do).
 * Sleeper: public, read-only API; league data belongs to the league.
+* ---- IK-3 (Wave I-K) **ESPN**: no official API; isuckatfantasy reads public leagues through the undocumented
+  `lm-api-reads.fantasy.espn.com` endpoints, labelled "unofficial", read-only, free beta only. Disney's terms prohibit
+  automated access and commercial use (`docs/PROVIDERS.md` § ESPN, `docs/ESPN_TERMS.md`): a known risk the owner accepts
+  for the free beta; a paid product needs a written agreement. **The private switch** `LEAGUE_LAB_ESPN_PRIVATE` ships
+  **off**: on, a user may paste their own `espn_s2` / `SWID` into "Private league?" — kept only in their browser's sealed
+  `ll_espn` cookie, never stored or logged on the server. **Risk if Andrew turns it on**: it asks users to share their
+  ESPN login session (Disney: "you will not share your account"), and a leaked cookie is a full ESPN session for that
+  user; turn it on only for people who understand that, and off again with the one variable.
+* ---- IK-3 **Yahoo**: the official Fantasy Sports API under Yahoo's developer API terms — read-only; no income derived
+  from it without Yahoo's written permission; Yahoo user data not kept beyond 24 hours (our caches are minutes); the
+  attribution "Fantasy data provided by Yahoo Fantasy" (`docs/YAHOO_TERMS.md`, IK-2). "Connect with Yahoo" stays "coming
+  soon" until `LEAGUE_LAB_YAHOO_CLIENT_ID` / `LEAGUE_LAB_YAHOO_CLIENT_SECRET` are set (HOSTING § "Yahoo", IK-2).
 * Do not redistribute the raw files; the hosted copy holds only derived marts.

@@ -622,3 +622,100 @@ waivers, transactions, team assets, news), each `yes` / `partial` / `no` with wo
 answers carry their provider's. A screen says `unavailable` instead of an empty list (League's moves on MFL). The
 matrix, the ESPN verdict and the Yahoo note: `docs/PROVIDERS.md`; the account design: `docs/ACCOUNTS.md`.
 
+
+## Four providers: the seam (Wave I-K, IK-3, 2026-10-05)
+
+`platforms.provider_of(key)` is the one place a league key's provider is read: Sleeper ids bare, `mfl:<id>`,
+`espn:<id>` (or `espn:<season>:<id>` for a past season), `yahoo:<game>.l.<id>` (Yahoo's league key, `yahoo:461.l.4242`;
+`yahoo:nfl.l.<id>` means this season's game and is resolved to the number before a key is remembered). The old names
+stay (`platform(key)` = `provider_of`, `is_mfl`, `check_key`); new `is_espn`, `is_yahoo`, `is_sleeper`,
+`provider_short` ("Sleeper" / "MFL" / "ESPN" / "Yahoo"). **The Router** (`anyleague.sleeper()`) dispatches every
+Sleeper-shaped call by prefix: Sleeper's client, `MFLLeagues`, IK-1's `ESPNLeagues(espn_client.ESPN(), directory)`,
+IK-2's `YahooLeagues(yahoo_client.Yahoo(), directory)` — the last two built on first use from the environment (fixture
+dirs `LEAGUE_LAB_ESPN_LEAGUE_FIXTURES` / `LEAGUE_LAB_YAHOO_FIXTURES`; the Router is rebuilt when one changes). A provider
+whose module is missing or whose client cannot be built — or whose read says the server is not set up (IK-2's
+`YahooNotConfigured`) — answers `ProviderNotConfigured` (a `LeagueNotFound`, code `<provider>_not_configured`): every
+route says it in words, never a 500. `players()` merges each built adapter's `extra_players` (`espn:<id>` / `yahoo:<id>`
+rows); `stats()` and `calls` add each client's. A Sleeper or MFL answer does not move (`test_ik3`
+`test_router_sleeper_and_mfl_answers_unchanged`; the whole suites unchanged).
+
+Screen by screen, a prefixed key is "not Sleeper": no Sleeper market line (IE-0's rule, now `not is_sleeper`), the
+league's own app named ("Open ESPN to edit your lineup ↗" → the league's page), the waiver line "Claims run on ESPN's
+schedule for this league: see ESPN for the time" (the claim time is not read), a manager with no shared name has none
+(not "unknown"). `known_league` is false for every prefixed key (always on demand).
+
+**Private data and the caches.** The memo regions key by league id, so a private ESPN league read with one user's
+cookies must never be served from a cache to another: `main.require_auth` (which every data route depends on) runs
+`provider_gate` — for an `espn:` key the Router runs IK-1's `ESPNLeagues.require_access` (a known-private league whose
+cookies this request does not carry → `espn_league_private`) **before** the route and its memo; the trade POST checks its
+body's league. Yahoo's client keys its own cache by who read (a hash of the refresh token).
+
+## ESPN (Wave I-K, IK-1 adapter + IK-3 setup, 2026-10-05)
+
+`GET /api/leagues?espn=<id or link>` answers the `?mfl=` shape (`ondemand.espn_league`): the league (`league_id`
+`espn:4242`, name, season, size, scoring label, the league's ESPN page), the teams to pick from, the team a link names
+(`fantasy.espn.com/football/team?leagueId=4242&teamId=3` → that team pre-selected, through IK-1's `roster_id_of` — ESPN
+team ids can skip numbers), the players with no Sleeper id (`unmapped`), the card (lineup and scoring read-back), the
+capabilities, `espn_private`. Links: IK-1's `espn_client.parse_link` (a bare id, `espn:4242`, `…/league?leagueId=`,
+`…/team?leagueId=&teamId=&seasonId=`, `…/league/standings?leagueId=`). Errors (II-5's `SetupError`, IK-1's words through
+`espn_client.setup_words`): `espn_link_invalid` ("That is not an ESPN league link or id."), `espn_league_unknown` ("ESPN
+has no league 777 in 2026."), `espn_league_private` ("ESPN league 5150 is private. ESPN has no sign-in for other apps; a
+public league works by its id (Settings → Basic Settings → League Visibility in ESPN)"), `espn_not_configured`; ESPN down
+→ 502 "ESPN did not answer". **The private switch**: with `LEAGUE_LAB_ESPN_PRIVATE=on` (and `LEAGUE_LAB_API_SECRET`),
+`/api/providers.espn_private` is true and a private-league error carries `private_form: true`: the setup screen opens
+**Private league?** — "Your ESPN cookies stay in your browser; isuckatfantasy reads your league with them and never
+stores them." — two password fields (`espn_s2`, `SWID`) posted to IK-1's `POST /api/espn/connect` (the sealed `ll_espn`
+cookie), then the league is asked again. Off (the default), the form never shows and the fix line says to ask the
+commissioner to make the league public. The setup screen's line: "Unofficial: ESPN has no public API for fantasy
+leagues. isuckatfantasy reads what a public league shows anyone, read-only. New: not verified on a live league yet."
+
+## Yahoo (Wave I-K, IK-2 adapter + IK-3 setup, 2026-10-05)
+
+Yahoo shares no league without a signed-in Yahoo user (IK-2's reading of the OAuth guide: the authorization-code grant
+only, no app-only token), so the setup is **Connect with Yahoo → your leagues → the team**: the button is a link to
+IK-2's `GET /api/yahoo/connect` (Yahoo's consent page, back to `/leagues?platform=yahoo` with the sealed `ll_yahoo`
+cookie); `GET /api/leagues?yahoo_me=1` (`ondemand.yahoo_me`, never cached, always 200) answers `{configured, connected,
+season, leagues: [{league_id, name, season, total_rosters, scoring_label, roster_id, team_name, url, card}], note}` from
+IK-2's `YahooLeagues.my_leagues()` — each row opens My Week on the user's own team. A league link works too once
+connected: `GET /api/leagues?yahoo=<link, key or id>` (`football.fantasysports.yahoo.com/f1/12345` and `…/f1/12345/3` →
+team 3 pre-selected; `461.l.12345`, `461.l.12345.t.3`, `yahoo:461.l.12345`; a bare id) → the `?mfl=` shape. Without
+`LEAGUE_LAB_YAHOO_CLIENT_ID` / `_SECRET` the server says **"Connect with Yahoo — coming soon"** (`/api/providers.
+yahoo_configured: false`; `?yahoo=` → `yahoo_not_configured` before any read). Errors are IK-2's codes and words
+(`yahoo_client.setup_parts`): `yahoo_sign_in_required`, `yahoo_session_expired`, `yahoo_league_unknown`,
+`yahoo_link_invalid`, `yahoo_not_configured`. "Disconnect Yahoo" posts IK-2's `POST /api/yahoo/disconnect`.
+
+## The id map (Wave I-K, IK-3 audit, 2026-10-05)
+
+`scripts/id_map_audit.py` (read-only; the database in `.env`, or `--csv <db_playerids.csv>`) measures how many of this
+season's QB–TE carry each provider's id in nflverse / dynastyprocess `ff_playerids` (`raw.nfl_ff_playerids`, the
+nightly's copy) and in Sleeper's own directory (`staging.stg_sleeper__players.espn_id` / `yahoo_id`). On `league_lab_m1`
+(the 2026-09-26 snapshot; ff 12,508 rows):
+
+| measure | dim_player 2026 QB–TE | Sleeper directory, active QB–TE | rostered in a house league |
+|---|---|---|---|
+| players | 772 | 817 | 286 |
+| a row in ff_playerids | 713 (92.4%) | 735 (90.0%) | 286 (100.0%) |
+| `espn_id` in ff | 713 (92.4%) | 734 (89.8%) | 286 (100.0%) |
+| `espn_id` in Sleeper's directory | 161 (20.9%) | 201 (24.6%) | 73 (25.5%) |
+| `espn_id` in either | 713 (92.4%) | 741 (90.7%) | 286 (100.0%) |
+| ff and Sleeper disagree (espn) | 1 | 0 | 0 |
+| `yahoo_id` in ff | 459 (59.5%) | 495 (60.6%) | 188 (65.7%) |
+| `yahoo_id` in Sleeper's directory | 161 (20.9%) | 208 (25.5%) | 73 (25.5%) |
+| `yahoo_id` in either | 459 (59.5%) | 509 (62.3%) | 188 (65.7%) |
+| `mfl_id` in ff | 713 (92.4%) | 735 (90.0%) | 286 (100.0%) |
+
+**What it means.** ESPN and MFL ids cover every rostered skill player. **Yahoo does not**: of the 98 rostered QB–TE
+without a `yahoo_id`, 50 are 2026 rookies (50 of 50), 47 are 2025 rookies (47 of 47), 1 is from 2023 — nflverse has not
+filled `yahoo_id` for the last two draft classes, and Sleeper's directory fills none of them. A Yahoo league's rookies
+(Jeanty, Cam Ward, Hampton, Skattebo …) are matched by IK-2's second step — a unique name + position in Sleeper's
+directory, reported as "name" — or listed unvalued as `yahoo:<id>`. The players outside ff (7–10% of the wider lists)
+are deep reserves no house roster carries.
+
+**The quarantine rule (duplicates).** An external id (`espn_id`, `yahoo_id`, `mfl_id`) that sits on two or more ff rows
+naming different players (different gsis / Sleeper ids) is **quarantined**: the lookup answers no match — never "the
+first row wins" or "the last row wins" — and the adapter's next step takes the player (the unique name + position match,
+reported, else the unmapped row, listed and unvalued). AGENTS.md rule 3 (identity never through a name) is kept: the
+name step is the adapters' reported fallback, not a join. Today: 6 `espn_id`s are duplicated (none on a current skill
+player: S, PN, CB/LB and 2015–2016 depth players), 0 `yahoo_id`, 0 `mfl_id` (`--list-quarantine` lists them).
+`player_ids.read` does not apply the rule yet (ESPN: the last row wins; IK-2's Yahoo map: the first) — a one-line change
+for whoever next owns the loader; with no current skill player affected it moves no answer.
