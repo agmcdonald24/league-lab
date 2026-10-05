@@ -558,6 +558,15 @@ if model == "v2":
             "history: none made the projections better on seasons they had not seen (Vegas lines already price most of it), "
             "so they were left out. Each test is listed under *What we tried*."
         )
+        # ---- IL-3 (Wave I-L): v3.3, the new-team scale at WR
+        st.markdown(
+            "**New in October: a receiver on a new team.** A receiver's first games with a new team (a trade or a "
+            "signing) used to be projected about a point a game too high. Until his third game with the team his "
+            "projection is now scaled down by the same share for everyone (0.79 this season), fitted each year on the "
+            "three seasons before; graded on 2021 to 2025 it missed by 0.18 points a game less on those games, in four "
+            "of the five seasons."
+        )
+        # ---- end IL-3
         # What drives the projection: the component models' permutation importance (ops.projection_importance,
         # model = 'component', component = 'total'), in points of error of the priced line. The old table here
         # was the interval model's (its main input is the projection itself); those rows stay in the mart,

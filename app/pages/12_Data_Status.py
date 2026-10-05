@@ -24,7 +24,7 @@ if _nightly["stale"]:
 # ---- INF-2 (Wave I-J): the API's memory in one line (its /api/status `memory` block; docs/DEPLOY.md § Memory). The
 # console does not run the API: LEAGUE_LAB_API_URL says where it is (hosted: https://isuckatfantasy.io), and
 # LEAGUE_LAB_API_TOKEN a token from its /api/login when the password gate is on.
-from league_lab.memo import status_words  # noqa: E402
+from league_lab.memo import directory_words, status_words  # noqa: E402
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -43,7 +43,7 @@ def _api_memory(url: str, token: str) -> dict | None:
 _api = setting("API_URL")
 if _api:
     _mem = _api_memory(_api, setting("API_TOKEN"))
-    st.caption("**API memory:** " + (status_words(_mem) if _mem else f"{_api} did not answer /api/status."))
+    st.caption("**API memory:** " + (status_words(_mem) + " " + directory_words(_mem) if _mem else f"{_api} did not answer /api/status."))  # IL-4
 else:
     st.caption("**API memory:** set LEAGUE_LAB_API_URL (and LEAGUE_LAB_API_TOKEN when the gate is on) to read it here.")
 # ---- end INF-2

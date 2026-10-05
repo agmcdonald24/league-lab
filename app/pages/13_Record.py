@@ -228,6 +228,23 @@ else:
         # ---- end V-2
 # ---- end V-1
 
+# ---- IL-3 (Wave I-L): the week's odds and the ranges, graded (analytics.odds_grades; METRICS § "Odds grades")
+st.subheader("The week's odds and ranges, graded")
+if missing_relations(("odds_grades",)):
+    st.caption("Not graded on this database yet: `league-lab grade-odds` writes analytics.odds_grades.")
+else:
+    _og = query("select week, scope, metric, value, n from analytics.odds_grades where season = %s and league_id = %s "
+                "and metric in ('brier', 'log_loss', 'favourite_won', 'coverage_80', 'coverage_50') order by scope desc, week",
+                (int(season), league_id))
+    if _og.empty:
+        st.caption("No scored week graded yet for this league.")
+    else:
+        st.dataframe(_og.pivot_table(index=["scope", "week"], columns="metric", values="value").reset_index().round(3),
+                     hide_index=True)
+        st.caption("Brier: a coin flip scores 0.25, lower is better. Favourite won: how often the side we gave over 50% "
+                   "won. Coverage: the share of starters inside their 80% / 50% range (the 50% range from week 4).")
+# ---- end IL-3
+
 # ---------------------------------------------------------------- how to read this
 with st.expander("How to read this"):
     st.markdown(

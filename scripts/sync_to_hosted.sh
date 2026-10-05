@@ -132,7 +132,7 @@ echo "ops published whole except: $OPS_EXCLUDE"
 # Mechanism: season-filtered copies in a local schema `hosted_slim` (same names, same indexes),
 # dumped first and moved into `analytics` on the hosted side before the rest is restored, so the
 # views that read them restore unchanged.
-SLIM_TABLES="fct_player_game fct_player_game_league mart_player_week_features mart_player_week_rankings mart_player_context mart_player_recent_form mart_player_expected_points mart_player_trends mart_player_season mart_player_season_team mart_receiver_vs_cb"
+SLIM_TABLES="fct_player_game fct_player_game_league mart_player_week_features mart_player_week_rankings mart_player_context mart_player_recent_form mart_player_expected_points mart_player_trends mart_player_season mart_player_season_team mart_receiver_vs_cb player_team_history"  # IL-1: the Role block's "games without X" reads 2024 on
 HOSTED_SEASONS="${LEAGUE_LAB_HOSTED_SEASONS:-3}"
 MAX_MB="${LEAGUE_LAB_HOSTED_MAX_MB:-480}"    # refuse to publish above this (Neon free: 512 MB; leave room for the catalog and WAL)
 first_season="$(psql "$LOCAL_DSN" -At -c "select max(season) - ${HOSTED_SEASONS} + 1 from analytics.fct_player_game")"

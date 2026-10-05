@@ -506,6 +506,11 @@ fi
 # the weeks already kept are untouched, and a week not written tonight is rebuilt (labelled) the night after kickoff.
 SOFT_WHY="the record's kept weeks are untouched; a week missed tonight is rebuilt from the frozen projections" soft validate uv run league-lab validate
 # ---- end V-1
+# ---- IL-3 (Wave I-L): grade the week's win probability and the ranges on the decision record (analytics.odds_grades,
+# the whole season re-graded each night; /api/status odds_grades reads it). Soft: without it the hosted copy has no
+# grade tonight (odds_grades: null) and the next night re-grades the season from the record.
+SOFT_WHY="the hosted copy has no grade tonight (odds_grades: null); the next night re-grades the season" soft grade-odds uv run league-lab grade-odds
+# ---- end IL-3
 # plan E1: Sleeper's projections for the next week to kick off, one snapshot a night, so the record has the last one
 # saved before the first kickoff (the moment this board freezes). Soft: a failed pull loses one night's snapshot.
 if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then
