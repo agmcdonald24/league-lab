@@ -165,13 +165,48 @@ Render's **Free** server costs $0 but goes to sleep after 15 minutes without vis
 about a minute: for a league-mate opening it on Sunday morning, that looks broken. To try it anyway, change
 `plan: starter` to `plan: free` in `render.yaml`.
 
-Memory: the server uses about 150 MB after it starts and about 290 MB after every screen of three leagues has been
-opened (Sleeper's whole player directory in memory). If Render → **Metrics** → **Memory** gets near 512 MB, or the
-Events list says the server ran out of memory, switch to **Standard** (2 GB, $25 a month): **Settings** →
-**Instance Type**. **It happened once**: 2026-10-04 15:25 ET (a Sunday afternoon, the heaviest hour; `c47c5ea`), "ran
-out of memory (used over 512 MB)", the instance restarted itself and recovered within the minute. Andrew's call:
-Standard now, or the memory diet planned for the next wave (the player directory and the per-league caches are the
-big eaters); the PO recommends the diet regardless.
+Memory: see **Memory** below. If Render → **Metrics** → **Memory** gets near 512 MB, or the Events list says the
+server ran out of memory, switch to **Standard** (2 GB, $25 a month): **Settings** → **Instance Type**. **It happened
+once**: 2026-10-04 15:25 ET (a Sunday afternoon, the heaviest hour; `c47c5ea`), "ran out of memory (used over
+512 MB)", the instance restarted itself and recovered within the minute. Andrew chose the memory diet (Wave I-J,
+INF-2) over Standard.
+
+## Memory
+
+What the server holds, measured with `scripts/measure_memory.py` (the fixture leagues, the main database, the pinned
+clock; `tree` = the PO's figure, which includes the `uv run` wrapper's ~33 MB that Render does not have):
+
+| | before (Wave I-I) | after (Wave I-J, INF-2) |
+|---|---|---|
+| started, nothing opened | 172–177 MB | 176 MB (the server alone: 144) |
+| the two house leagues, every screen | 229–234 MB | 218 MB |
+| + the Test League and MFL 70587 on demand | 400–405 MB | 272–276 MB (the server alone: ~243) |
+| each further league | +75–100 MB, never given back | a plateau: the caches stay inside their budget |
+
+**Where it goes.** About 145 MB is Python, pandas, numpy and scipy standing there. On top: the caches (a league's
+priced weeks, its solved lineups, its rest of season, the SQL results, the trade finder's context …), which now share
+**one budget** (`LEAGUE_LAB_CACHE_MB`, default **64**): past it, the least recently used entries go first, whichever
+league they belong to, and the server hands the freed memory back (`malloc_trim` after a request). A league evicted
+and opened again is rebuilt from the database in a second or two. Text values are stored once however many tables hold
+them (a player id is one string, not one per row), one week's projections board is shared by every league, and a
+board's raw rows are not kept next to the board. Not in the budget: Sleeper's player directory (one per day; in
+production the whole directory, tens of MB) and each league's Sleeper / MFL payloads.
+
+**Seeing it.** `/api/status` → `memory`: `rss_mb` (what Render meters), `cache_mb` of `budget_mb`, `regions` (MB per
+cache: `sql`, `boards`, `priced`, `ros`, `league_weeks`, `contexts`, `decisions`, `research_priced`, `research_memo`,
+`about`, `stats`, `scoring_checks`), `entries`, `evictions`, `trims`, `outside_mb` (the Sleeper / MFL clients' own
+caches), `malloc_arena_max`. The console's **Data Status** page says it in one line when `LEAGUE_LAB_API_URL` (and,
+with the password gate on, `LEAGUE_LAB_API_TOKEN` from `/api/login`) are set.
+
+**The switches.**
+* `LEAGUE_LAB_CACHE_MB` (Render → **Environment**; default 64): the caches' budget. Lower = less memory, more
+  rebuilding; on **Standard** (2 GB) 300 is comfortable. The budget counts a table's arrays (a text column as pointers:
+  the strings are shared), so the Python heap the caches really hold is about 1.5 times the figure.
+* `MALLOC_ARENA_MAX=2` and `MALLOC_TRIM_THRESHOLD_=131072` in the image (`api/Dockerfile`'s `ENV` line): fewer glibc
+  heaps for the server's worker threads and an earlier hand-back; about 4–15 MB less on the script, more under
+  concurrent Sunday traffic (each worker thread otherwise gets a heap of its own).
+* Re-measure after a change: `uv run python scripts/measure_memory.py --plateau --cycles 2` (Postgres up; see its
+  header for the options); `LEAGUE_LAB_CACHE_MB=40 …` to see a smaller budget.
 
 ## How a new version reaches the server
 

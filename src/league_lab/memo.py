@@ -7,12 +7,15 @@ SQL results). Nothing bounded the BYTES, so every league a server had seen in th
 and four leagues filled 400 of the Starter plan's 512 MB (Render, Sunday 2026-10-04: "ran out of memory").
 
 Here: one least-recently-used order across every cache, a TTL per entry (each cache keeps its own), and one budget in
-bytes (``LEAGUE_LAB_CACHE_MB``, default 160). Each cache is a named ``Region`` of that budget, so ``/api/status``
-can say what holds the memory. A ``put`` that takes the sum over the budget evicts the least recently USED entries,
-whichever region they are in, until it fits (the entry just put stays, even alone over the budget). An entry's size
-is measured once when it is put: a frame by its arrays (``frame_bytes``: a ``str`` column's pointers, the interned
-strings themselves being shared; an ``object`` column deep), containers and dataclasses by walking them (a shared object — a ``Board``, marked ``_memo_shared`` — is counted in its own region only; a
-dataclass's ``_memo_skip`` fields — the Sleeper client's cached payloads — are not counted).
+bytes (``LEAGUE_LAB_CACHE_MB``, default 64: the brief's 160 was in ``memory_usage(deep=True)`` units, which count an
+interned string at every row — 64 here is about what 160 deep-counted was, and about 100 MB of the Python heap once
+pandas' own objects are added; see docs/DEPLOY.md § Memory). Each cache is a named ``Region`` of that budget, so
+``/api/status`` can say what holds the memory. A ``put`` that takes the sum over the budget evicts the least recently
+USED entries, whichever region they are in, until it fits (the entry just put stays, even alone over the budget). An
+entry's size is measured once when it is put: a frame by its arrays (``frame_bytes``: a ``str`` column's pointers, the
+interned strings themselves being shared; an ``object`` column deep), containers and dataclasses by walking them (a
+shared object — a ``Board``, marked ``_memo_shared`` — is counted in its own region only; a dataclass's ``_memo_skip``
+fields — the Sleeper client's cached payloads — are not counted).
 
 After an eviction pass that dropped a few MB, and after a request when the RSS grew (``relieve``, the API's
 middleware), ``malloc_trim(0)`` (Linux / glibc, best effort, at most every few seconds) hands the freed pages back to
@@ -372,7 +375,7 @@ PLAN_MB = 512          # Render's Starter plan (docs/DEPLOY.md § Memory): the R
 
 def status_words(m: dict, plan_mb: int = PLAN_MB) -> str:
     """``/api/status``'s ``memory`` block in one line (the console's Data Status page): "412 MB of the plan's 512 in
-    use; the caches hold 61 of their 160 MB (sql 22, decisions 25, league weeks 19)"."""
+    use; the caches hold 61 of their 64 MB (decisions 25, sql 22, league weeks 19)"."""
     if not m or m.get("rss_mb") is None:
         return "The API did not say how much memory it uses."
     regions = sorted(((v, k) for k, v in (m.get("regions") or {}).items() if v and v >= 1), reverse=True)[:4]
