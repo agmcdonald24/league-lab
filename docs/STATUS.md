@@ -8588,3 +8588,168 @@ compare against it)
    drops every `ll_espn` cookie; (d) ESPN's points-allowed bands are averaged onto Sleeper's (not priced exactly);
    (e) the ESPN cookie lives 30 days.
 4. Nothing for `render.yaml`, the Dockerfile, the workflows, dbt, Neon or `sync_to_hosted.sh`.
+
+### IK-2 2026-10-05 — Yahoo leagues on demand through the official OAuth 2.0 Fantasy Sports API (branch `dev/IK2` from `main` `07dcdd0`, database `league_lab_i0a`, read only)
+
+* **Task / plan**: Wave I-K brief § IK-2 (Andrew: "prioritize pulling other leagues into this like yahoo and espn");
+  the PO's call (2): Yahoo through the official OAuth flow, the refresh token in an encrypted `ll_yahoo` cookie, no
+  server state this wave, "coming soon" until the secrets exist; (3): nothing "supported" until verified live.
+  `docs/PROVIDERS.md` § Yahoo (II-5's note) was the starting frame. **Verified live: no** — everything Yahoo-shaped is
+  built from Yahoo's docs and the open-source clients' documented shapes, against synthetic fixtures.
+* **Delivered**
+  1. **`src/league_lab/yahoo_client.py`** (new) — OAuth 2.0 (authorization-code grant: `authorize_url`
+     → `https://api.login.yahoo.com/oauth2/request_auth` with `client_id`, `redirect_uri`, `response_type=code`, `state`,
+     `scope=fspt-r`; `exchange_code` / `refresh` → `…/oauth2/get_token`, Basic auth + the form, the client id / secret in
+     the body too as Yahoo's guide lists them), the per-request `YahooSession` in the context variable `request_session`
+     (refreshed in place a minute before expiry or on a 401 `token_expired`, once), the Fantasy Sports API v2 by resource
+     (`game/nfl`, `game/<key>/game_weeks`, `league/<key>/settings | teams | standings | scoreboard;week=<w> | transactions
+     | players;status=FA;sort=AR;start=0;count=25`, `team/<team_key>/roster;week=<w>/players`,
+     `users;use_login=1/games;game_keys=nfl/leagues | teams`, all `?format=json`), **one normaliser** (`normalise` +
+     `items`: Yahoo's `{"0": …, "count": n}` collections → lists, a resource's metadata list + sub-resources → one dict,
+     repeated elements kept as lists, a roster position's real `count` kept), the stat id table `STAT_KEYS` (Yahoo NFL
+     stat ids → Sleeper scoring keys: 1–13 passing / rushing / receiving, 15 return TD, 16 two-point (all three keys),
+     17/18 fumbles, 19–28 FG made / missed by distance, 29/30 PAT, 32–37 DEF, 49 DEF return TD, 50–56 points-allowed
+     bands, 57 fumble-return TD, 60/62/64 40+ TDs, 78 targets, 79–81 first downs; the rest listed unpriced by the
+     league's own names; yardage bonuses read as cumulative onto Sleeper's 300/400, 100/200 bands — said in
+     `approximated`), `slots` (QB RB WR TE K DEF; **W/R/T → FLEX, Q/W/R/T → SUPER_FLEX, W/R → WRRB_FLEX, W/T →
+     REC_FLEX**; BN; IR counted apart; IDP left out and reported), `team_code` (`Jax`/`Was` → `JAX`/`WAS`), a TTL cache by
+     kind **keyed by who read it** (a hash of the refresh token — one manager's private league is never served to
+     another; Yahoo's terms § 2), stale on error, bounded (`MAX_ENTRIES` 400), a token bucket (`LEAGUE_LAB_YAHOO_PER_MIN`,
+     60), 429 / 999 → a minute's back-off, fixture mode (`LEAGUE_LAB_YAHOO_FIXTURES`), errors with II-5's codes
+     (`setup_parts(exc) → (code, words, fix)`): `yahoo_not_configured`, `yahoo_sign_in_required`, `yahoo_session_expired`,
+     `yahoo_league_unknown`, `yahoo_link_invalid`, `busy`, `provider_down`; `parse_link` (a `football.fantasysports.
+     yahoo.com/f1/<id>[/<team>]` link → `nfl.l.<id>` + the team; keys `461.l.4242`, `yahoo:…`, a team key).
+  2. **`src/league_lab/yahoo_leagues.py`** (new) — `YahooLeagues(client, directory, ids=player_ids.table)`, `MFLLeagues`'s
+     method set in Sleeper's shapes for `yahoo:<game>.l.<id>` keys: `league` (slots, scoring, playoffs, `leg` = Yahoo's
+     `current_week`, FAAB → `waiver_type` 2, a `yahoo` block: `league_key, url, public, slots, scoring`), `users`
+     (`user_id` = the team id; nickname, team name, guid), `rosters` (`roster_id` = Yahoo's team id; **starters seated
+     exactly where Yahoo has them this week** (`selected_position`), IR in `reserve`, the record and points from the
+     standings), `matchups` / `season_matchups` (the scoreboard), `transactions` (Sleeper's dicts: free_agent / waiver /
+     trade, the round = the Yahoo game week holding the time, a FAAB bid in `settings.waiver_bid`), `translate`
+     (`yahoo_id` → Sleeper through nflverse's table, else gsis → Sleeper through `GSIS_LOOKUP`, a DEF by its team code,
+     else a unique name + position in Sleeper's directory — a tie broken by Yahoo's NFL team — else `yahoo:<id>`,
+     unvalued, listed), `unmapped`, `mapped_by`, `week`; plus `my_leagues(session=None)`, `free_agents`, `standings`.
+  3. **`api/league_lab_api/yahoo_connect.py`** (new; one marked block in `main.py`: `yahoo_connect.install(app)`) —
+     `GET /api/yahoo/connect` (302 to Yahoo; `state` = a random nonce + expiry signed with HMAC, ten minutes, the nonce
+     also in `ll_yahoo_state` so the callback is bound to the browser that started it; fixture mode: straight to our
+     callback with the code `fixture`), `GET /api/yahoo/callback` (state checked → code exchanged → the **sealed
+     `ll_yahoo` cookie** → 302 `/leagues?platform=yahoo`; a refusal / bad state / refused exchange / Yahoo down → 302
+     `…&yahoo_error=denied|state|refused|down`), `POST /api/yahoo/disconnect`, `GET /api/yahoo/status` (`{configured,
+     connected, fixtures}`), `GET /api/yahoo/leagues` (the signed-in manager's leagues); all behind the beta gate,
+     `no-store`; **503 `yahoo_not_configured`** ("Yahoo sign-in is not set up on this server yet") without
+     `LEAGUE_LAB_YAHOO_CLIENT_ID` / `_SECRET` (or without `LEAGUE_LAB_API_SECRET`). The cookie: `seal` / `unseal` —
+     stdlib encrypt-then-MAC (no `cryptography` in the lock): an HMAC-SHA256 counter-mode keystream XORed with the JSON,
+     an HMAC-SHA256 tag over version + purpose + nonce + ciphertext checked in constant time first, two keys derived from
+     `LEAGUE_LAB_API_SECRET` per purpose (`yahoo`; IK-1 may use `espn`), a random nonce, the expiry inside; HttpOnly,
+     SameSite=Lax, Secure on https, path `/api`, 60 days; an over-long access token is left out (refreshed on the next
+     read). `YahooSessionMiddleware` (pure ASGI, outermost) puts the session in the context variable for every `/api/`
+     request and re-sets the cookie after a refresh / clears it after a refused one. Tokens never in a log, a body or the
+     database (`YahooSession.__repr__` hides them).
+  4. **`player_ids.py` gains `yahoo_id`** (IK-2 owns it, INTERFACES): `COLUMNS` + `by_yahoo`, `yahoo_to_sleeper`,
+     `yahoo_to_gsis`, `row_by_yahoo`; a `yahoo_id` on two different players is quarantined (`yahoo_dupes`: no match —
+     IK-3's rule). The fixture `api/tests/fixtures/ff/db_playerids.csv` gains a last column `yahoo_id` with **nflverse's
+     real values** (matched by `mfl_id` from the full file; 538 of 830 rows; CRLF kept).
+  5. **The synthetic fixture league** `api/tests/fixtures/yahoo/` (25 files, built by
+     `api/tests/fixtures/make_ik2_yahoo_fixtures.py`; each carries `_comment`: SYNTHETIC): `461.l.4242` "Synthetic
+     Superflex League" — 12 teams, QB / 3 WR / 2 RB / TE / W/R/T / Q/W/R/T / K / DEF, 6 BN, 1 IR, half-PPR with
+     300/400 passing bonuses and one unpriced stat (Extra Point Returned), FAAB, week 4 current (weeks 1–3 played),
+     real players (the Sleeper fixture directory with their real `yahoo_id`s), the fixture user on team 3; transactions:
+     an add/drop in week 2, a trade and a FAAB claim (14) in week 3, a drop and an add in week 4, the rosters after them;
+     one player matched by name (`99002`) and one unmapped (`yahoo:99001` "Synthetic Prospect"). `461.l.5151` has no
+     files: Yahoo's answer for a private league you are not in.
+  6. **Docs**: `docs/YAHOO_TERMS.md` (new: what we read and with whose permission, the tokens, the calls, the terms
+     quoted with what each means for us), `docs/HOSTING.md` § "Yahoo" (the app registration field by field, the Fantasy
+     access application, the Render secrets, the live check).
+* **The public-league answer**: **not without a sign-in.** Yahoo's OAuth 2.0 guide lists one grant, the authorization
+  code — no client-credentials / app-only token — and the Fantasy docs: "A particular user can only retrieve data for
+  private leagues of which they are a member, or for public leagues." So every read uses a connected manager's token;
+  connected, he can open any public league by its link. (`yfpy`'s README says public leagues need no app setup — not in
+  Yahoo's OAuth 2.0 docs and not tried from here; the PO's anonymous `curl` in HOSTING § Yahoo step 3.4 settles it.)
+* **Interfaces** (INTERFACES.md § IK-2, 08:47 + updates): key `yahoo:<game>.l.<id>` (`yahoo_leagues.is_yahoo /
+  check_key / league_key`); `Router.yahoo = YahooLeagues(yahoo_client.Yahoo(), self.sleeper.players, ids=PI.table)`;
+  no per-request hook for IK-3 (the middleware does it); errors through `yahoo_client.setup_parts`;
+  `/api/providers.yahoo_configured` = `yahoo_connect.configured()`; fixture env `LEAGUE_LAB_YAHOO_FIXTURES`; the
+  callback's four `yahoo_error` words, the attribution line ("Fantasy data provided by Yahoo Fantasy"), the Connect /
+  Disconnect words and About's privacy line for IK-3 / IK-4.
+* **Files**: `src/league_lab/{yahoo_client,yahoo_leagues}.py` (new), `src/league_lab/player_ids.py` (marked),
+  `api/league_lab_api/yahoo_connect.py` (new), `api/league_lab_api/main.py` (one marked block), `api/tests/test_ik2.py`
+  (new, 22), `tests/test_yahoo_ik2.py` (new, 46), `api/tests/fixtures/make_ik2_yahoo_fixtures.py` (new),
+  `api/tests/fixtures/yahoo/*.json` (new, 25), `api/tests/fixtures/ff/db_playerids.csv` (+ `yahoo_id`),
+  `docs/YAHOO_TERMS.md` (new), `docs/HOSTING.md` (§ Yahoo), this section, `CHANGELOG.md`.
+* **Commands and evidence**
+  - `cd api && PYTHONPATH=. uv run pytest -q tests/test_ik2.py` — **22 passed** (the 503 ×2, the gate, the OAuth flow
+    against a stub token endpoint: the redirect and its signed state, the exchange's Basic header and form, the sealed
+    cookie and its flags, denied / forged / missing / another browser's state / refused exchange; disconnect; seal round
+    trip, tamper, purpose, expiry, secret; the long-token fallback; the fixture flow end to end; the middleware's
+    refresh and refusal; the league end to end in Sleeper's shapes; **the fixture league priced and solved through the
+    real on-demand pipeline** (`anyleague.lineup_rows`, a test-only Router shim until IK-3's lands): team 3 week 4 —
+    11 of 11 slots filled, SUPER_FLEX / FLEX / DEF seated, 110.6 points, the unmapped prospect listed, "0.5 per catch").
+  - `uv run pytest -q tests/test_yahoo_ik2.py` — **46 passed**.
+  - A fixture API on :8742 (this worktree; `api_po.sh`'s env + `LEAGUE_LAB_YAHOO_FIXTURES`, `LEAGUE_LAB_NOW`):
+    `curl -c jar :8742/api/yahoo/connect` → 302 `/api/yahoo/callback?code=fixture&state=…` → 302
+    `/leagues?platform=yahoo` with `ll_yahoo`; `/api/yahoo/status` `{"configured":true,"connected":true,"fixtures":true}`;
+    `/api/yahoo/leagues` → `yahoo:461.l.4242`, team 3; without the cookie → 401 `yahoo_sign_in_required`; the server log
+    holds no token (`grep -c "ll_yahoo=\|fixture-refresh\|access_token"` → 0). Recordings for IK-3:
+    `scratchpad/waveIK/ik2_recordings/`.
+  - **The whole API suite**: `cd api && PYTHONPATH=. uv run pytest -q --deselect tests/test_u1.py --deselect
+    tests/test_ig2.py`: **643 passed, 18 skipped, 5 failed** (41 deselected; 21 min 58 s under the wave's load) — 666 =
+    tonight's 635 + 9 + IK-2's 22. **The 5 fail identically on `wt-base` (`07dcdd0`) against the same clone**
+    (`LEAGUE_LAB_DB_NAME=league_lab_i0a`, run by id: 5 failed, same assertions): `test_ic1.py::
+    test_dads_league_week_1_units_and_the_named_miss`, `::test_dads_league_week_2`, `test_ic_po.py::
+    test_scoring_check_without_play_by_play_is_exact_on_the_ten_yard_cut` (the clones' known `*_tds_10p` gap),
+    `test_ih1.py::test_hosted_events_sql_prunes_old_rows_once` ("permission denied for database league_lab_i0a": the
+    clone refuses the test's `create schema`), `test_ih2.py::test_the_console_twin_says_what_the_api_says` (the clone's
+    stash caption). **Delta against base: 0.** The skips (re-run with `-rs` once the wave's load dropped: the same
+    643 / 18 / 5 in 9 min 4 s): 18 on the clone against tonight's 9 on `league_lab` — the clone's missing pricing columns
+    / NFL-wide tables (`test_m4` 6) and stash view (`test_ig3` 1), the recorders off (`*_RECORD=1`: 7), the flat-settings
+    path (`test_ic3` 2), `web/dist` not built in this worktree (`test_static` 2); none is IK-2's (`test_ik2.py`: 22
+    passed, 0 skipped).
+  - **The whole root suite**: `uv run pytest -q`: **1,220 passed, 5 skipped, 0 failed** (47 min 44 s under the wave's
+    load) — 1,225 = tonight's 1,177 + 2 + IK-2's 46; the skips: 5 on the clone against tonight's 2 on `league_lab`; none
+    is IK-2's (`tests/test_yahoo_ik2.py`: 46 passed).
+  - `uv run ruff check src app tests api scripts` — clean.
+* **What moved and why**: no number for Sleeper / MFL leagues. `player_ids.read` keeps one more column; the id table's
+  old lookups answer as before. The middleware passes every request without `ll_yahoo` straight through.
+* **Unverified live (everything) and how the PO verifies** — HOSTING § Yahoo step 3, after the deploy and the two
+  secrets: `https://isuckatfantasy.io/api/yahoo/status` → `configured: true`; `https://isuckatfantasy.io/leagues?
+  platform=yahoo` → Connect → Yahoo's consent → back with your leagues; `https://isuckatfantasy.io/api/yahoo/leagues` →
+  your team; open one (IK-3's wiring) and compare with Yahoo's pages: the slots (Q/W/R/T as SUPER_FLEX), the scoring
+  card's "not priced" list, this week's starters, the record, last week's scores, the moves and their weeks; a public
+  league that is not yours by its link; the anonymous `curl` (public leagues without sign-in?); Disconnect; a reload
+  after an hour (the silent refresh); Render's logs free of tokens. **Specifically unverified**: the JSON nesting of
+  every resource (from the docs + `yfpy` / `yahoo_fantasy_api`), the stat id table beyond the core ids, Yahoo's answer
+  to a private league (assumed 400/401 "not in this league") and to an expired token (401 `token_expired`), the 2026
+  game key (read from `game/nfl`; the fixture uses 461), `scope=fspt-r` on the sign-in URL (`LEAGUE_LAB_YAHOO_SCOPE=`
+  drops it), `redirect_uri` on the refresh, whether the app works before Yahoo's access review, the rate Yahoo
+  tolerates.
+* **Not done**: the Router / `ondemand` / setup-screen wiring and the e2e are IK-3's (done on `dev/IK3` `a3e4f88`
+  against this branch's `89f745a`; the three later IK-2 commits change no interface); persistence of the connection
+  (accounts, next wave: `accounts.connections` — the cookie's refresh token moves there); the free agents beyond Yahoo's
+  first 25 (the screens compute free agents from the directory minus rosters, as for MFL); a team's FAAB balance and
+  waiver priority are read (`rosters()[i].metadata`) but not shown; Yahoo's projected points (`team_projected_points`)
+  ride on `matchups()` as `projected`, unused; past seasons.
+* **Next**: IK-3's wiring and the e2e on the fixture; then the live check; then accounts persist the connection.
+
+**For the PO**
+1. **Andrew registers the Yahoo app** (HOSTING § Yahoo step 1): `https://developer.yahoo.com/apps/create/` — Application
+   Name `isuckatfantasy`; Description (the sentence in HOSTING); Homepage URL `https://isuckatfantasy.io`; Redirect
+   URI(s) **`https://isuckatfantasy.io/api/yahoo/callback`**; OAuth Client Type **Confidential Client** (older form: Web
+   Application); API Permissions **Fantasy Sports → Read**. Then apply for Fantasy access at
+   `https://sports.yahoo.com/developer/access/` (Expected users: Small (<1,000); the Client ID; the notes in HOSTING).
+2. **Render secrets, by exact name**: `LEAGUE_LAB_YAHOO_CLIENT_ID`, `LEAGUE_LAB_YAHOO_CLIENT_SECRET`, and the value
+   `LEAGUE_LAB_YAHOO_REDIRECT_URI=https://isuckatfantasy.io/api/yahoo/callback`. `LEAGUE_LAB_API_SECRET` already exists
+   (it seals the cookie; rotating it signs Yahoo managers out). Optional: `LEAGUE_LAB_YAHOO_PER_MIN` (60),
+   `LEAGUE_LAB_YAHOO_SCOPE` (only if Yahoo refuses `fspt-r`). `render.yaml` lines in HOSTING § Yahoo step 2.
+3. **No DNS, no Dockerfile, no workflow, no `sync_to_hosted.sh` line, no new dependency** (the cipher is the standard
+   library's).
+4. **Merge**: `player_ids.py` and the fixture CSV are IK-2's (IK-1 fills `espn_id` cells in the same CSV — keep both:
+   the `yahoo_id` column is last); `main.py` one block before the web-app section (IK-3 / IK-4 add theirs: keep all);
+   the `## Wave I-K` heading here and `## 2026-10-05 — Wave I-K` in CHANGELOG: keep one each.
+5. **Decisions Andrew may want to reverse**: the connection lives only in a 60-day cookie on the device (a second device
+   connects again; accounts move it server-side next wave); every Yahoo read needs a connected manager even for a public
+   league (per Yahoo's OAuth 2.0 docs — the anonymous `curl` may reopen this); cached answers are per manager (more Yahoo
+   calls when two managers of one league visit; the price of Yahoo's no-third-party-access clause); Yahoo's
+   yardage bonuses read as cumulative; the callback's one-time `code` appears in the access log (as in every OAuth web
+   app: useless without the client secret, and spent); **Yahoo's terms**: no income from the API without Yahoo's written
+   permission (a paid isuckatfantasy with Yahoo leagues needs it), and § 1.g's "competes with Yahoo" clause is a risk to
+   name in the access application honestly.
