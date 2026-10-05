@@ -314,7 +314,7 @@ def contingent_upside(his: pd.DataFrame, mate_games: pd.DataFrame, mate_roster: 
             "seasons_without": sorted({int(s) for s in without["season"]})}
     if n_wo < CONTINGENT_MIN_GAMES:
         why = (f"only {_games(n_wo)} without him ({_seasons(without['season'])})" if n_wo
-               else f"no game since {CONTINGENT_FROM} that {name} missed while on the roster")
+               else f"no game ({CONTINGENT_FROM} on) that {name} missed while on the roster")
         return {**base, "status": "not_enough",
                 "words": f"Contingent upside: no games without {name} to go on — {why}; a scenario needs "
                          f"{CONTINGENT_MIN_GAMES}."}

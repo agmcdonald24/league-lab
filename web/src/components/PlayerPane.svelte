@@ -59,7 +59,7 @@
   // call needs — the projection and its range, where he stands, the news, his role — and puts the week-by-week line,
   // the next four, the season tiles and the schedule behind expanders (the full page shows everything open).
   // II-2: Usage and the game log are sections of their own.
-  const PANE_ORDER = ["projection", "availability", "value", "signals"];
+  const PANE_ORDER = ["projection", "role", "availability", "value", "signals"]; // ---- IL-1: + role, after the projection
   const focused = $derived(
     sections
       .filter((x) => PANE_ORDER.includes(x.key))

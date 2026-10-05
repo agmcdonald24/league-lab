@@ -143,3 +143,25 @@ def test_ngs_columns_say_why_outside_the_regular_season_and_before_2018(client):
     assert not post["time_to_throw"]["available"] and "regular season" in post["time_to_throw"]["reason"]
     old = {c["id"]: c for c in _stats(client, window="season", season=2017, position="RB")["catalogue"]}
     assert not old["ryoe_per_attempt"]["available"] and "2018" in old["ryoe_per_attempt"]["reason"]
+
+
+# ------------------------------------------------------------------------------------------------- the e2e recording
+WAN = "00-0038117"            # Wan'Dale Robinson: a Scrubs free agent the shared fixtures already have a card for
+
+
+@pytest.mark.skipif(not __import__("os").environ.get("IL1_RECORD"), reason="records web/fixtures/il1 (IL1_RECORD=1)")
+def test_record_e2e_answers(client):
+    """The answers web/e2e/il1 replays (League of Scrubs roster 2, this clone, the pinned clock): Wan'Dale Robinson's
+    card with its Role block, and the Stats frame of the QB preset. Re-record:
+    cd api && IL1_RECORD=1 PYTHONPATH=. uv run pytest -q tests/test_il1.py -k record"""
+    import json
+
+    from league_lab_api.settings import ROOT
+    out_dir = ROOT / "web" / "fixtures" / "il1"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    card = client.get(f"/api/player/{WAN}?league={SCRUBS}&team=2")
+    frame = client.get("/api/players?" + urlencode({"league": SCRUBS, "limit": 1000, "position": "QB", "window": "season"}))
+    assert card.status_code == 200 and frame.status_code == 200
+    assert card.json()["sections"]["role"]["blocks"]
+    (out_dir / f"player_{SCRUBS}_{WAN}.json").write_text(json.dumps(card.json(), separators=(",", ":"), default=str) + "\n")
+    (out_dir / "players_qb_season.json").write_text(json.dumps(frame.json(), separators=(",", ":"), default=str) + "\n")
