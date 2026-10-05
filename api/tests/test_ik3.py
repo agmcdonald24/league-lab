@@ -370,3 +370,47 @@ def test_real_my_week_and_screens(real, client, key, team, cookie):
                          ("/api/trades/lists", {"league": key, "team": team}), ("/api/league", {"league": key, "team": team})):
         rr = client.get(path, params=params)
         assert rr.status_code == 200, (path, rr.text[:300])
+
+
+def test_real_espn_kill_switch_says_so(real, client, monkeypatch):
+    """IK-1's LEAGUE_LAB_ESPN_LEAGUES=off: every ESPN read stops; the setup and the screens say so (never a 500)."""
+    monkeypatch.setenv("LEAGUE_LAB_ESPN_LEAGUES", "off")
+    d = _err(client.get("/api/leagues", params={"espn": "4242"}), 404, "espn_not_configured")
+    assert "switched off" in d["error"] and d["fix"]
+    r = client.get("/api/my-week", params={"league": ESPN, "team": 1})
+    assert r.status_code == 404 and "switched off" in r.json()["error"]
+
+
+# ------------------------------------------------------------------ usage counts ESPN / Yahoo views (hosted_usage.sql)
+def test_usage_checks_take_the_four_providers():
+    """The IK-3 block of scripts/hosted_usage.sql on a temporary copy of the table's checks (rolled back): ESPN / Yahoo
+    keys and platforms insert, anything else is still refused."""
+    import re
+    from pathlib import Path
+
+    import psycopg
+    from league_lab.config import get_settings
+    text = (Path(__file__).resolve().parents[2] / "scripts" / "hosted_usage.sql").read_text()
+    block = text[text.index("-- ---- IK-3"):text.index("-- ---- end IK-3")]
+    stmts = [s.strip() for s in re.sub(r"--[^\n]*", "", block).split(";") if s.strip()]
+    assert len(stmts) == 4 and text.index("create table if not exists usage.events") < text.index("-- ---- IK-3")
+    try:
+        conn = psycopg.connect(get_settings().pipeline_dsn(), connect_timeout=5)
+    except Exception as e:  # noqa: BLE001
+        pytest.skip(f"the pipeline role is not reachable: {e}")
+    with conn:
+        cur = conn.cursor()
+        cur.execute("create temp table events (league_key text, platform text, "
+                    "constraint events_league_key_id check (league_key ~ '^(mfl:)?[0-9]{1,24}$'), "
+                    "constraint events_platform_name check (platform in ('sleeper', 'mfl'))) on commit drop")
+        for s in stmts:
+            cur.execute(s.replace("usage.events", "pg_temp.events"))
+        for key, plat in (("1389709692405551104", "sleeper"), ("mfl:70587", "mfl"), (ESPN, "espn"),
+                          ("espn:2025:4242", "espn"), (YAHOO, "yahoo")):
+            cur.execute("insert into events values (%s, %s)", (key, plat))
+        for key, plat in (("espn:x", "espn"), (YAHOO, "fleaflicker")):
+            cur.execute("savepoint s")
+            with pytest.raises(psycopg.errors.CheckViolation):
+                cur.execute("insert into events values (%s, %s)", (key, plat))
+            cur.execute("rollback to savepoint s")
+        conn.rollback()

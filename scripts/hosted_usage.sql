@@ -48,3 +48,14 @@ revoke update, delete, truncate, references, trigger on usage.events from league
 -- owner deletes; the app role still cannot. The console's Usage page and docs/HOSTING.md § "Usage" say so.
 delete from usage.events where at < now() - interval '180 days';
 -- ---- end IG-3
+
+-- ---- IK-3 (Wave I-K): ESPN and Yahoo leagues are counted too — the league key and platform checks widened to the four
+-- providers' keys (`espn:4242`, `espn:2025:4242`, `yahoo:461.l.4242`, `yahoo:nfl.l.4242`; platforms.check_key). Without
+-- this the insert of an ESPN / Yahoo view fails the old checks (usage.write swallows it: the view is just not counted).
+-- Idempotent: dropped and re-added every run (the table is small; every existing row passes the wider checks).
+alter table usage.events drop constraint if exists events_league_key_id;
+alter table usage.events add constraint events_league_key_id
+  check (league_key ~ '^((mfl:)?[0-9]{1,24}|espn:([0-9]{4}:)?[0-9]{1,12}|yahoo:([0-9]{1,4}|nfl)\.l\.[0-9]{1,10})$');
+alter table usage.events drop constraint if exists events_platform_name;
+alter table usage.events add constraint events_platform_name check (platform in ('sleeper', 'mfl', 'espn', 'yahoo'));
+-- ---- end IK-3

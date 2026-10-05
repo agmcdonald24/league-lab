@@ -1767,10 +1767,11 @@ def provider_error(provider: str, league_id: str | None, exc: Exception) -> Setu
             pass
     where = ESPN_WHERE if provider == "espn" else YAHOO_WHERE
     if isinstance(exc, A.platforms.ProviderNotConfigured) or code == f"{provider}_not_configured":
+        if isinstance(exc, A.platforms.ProviderNotConfigured) or not words:    # the provider's own words otherwise
+            words = (f"{A.platforms.LONG[provider]} leagues are not set up on this server yet." if provider == "espn"
+                     else "Yahoo sign-in is not set up on this server yet.")    # (IK-1's kill switch says "switched off")
         code = f"{provider}_not_configured"
-        words = (f"{A.platforms.LONG[provider]} leagues are not set up on this server yet." if provider == "espn" else
-                 "Yahoo sign-in is not set up on this server yet.")
-        fix = "Coming soon. Sleeper and MyFantasyLeague leagues work today."
+        fix = fix or "Coming soon. Sleeper and MyFantasyLeague leagues work today."
     elif code not in SETUP_CODES:
         if league_id is None:
             code, words = f"{provider}_link_invalid", f"That is not {'an ESPN' if provider == 'espn' else 'a Yahoo'} league link or id."
