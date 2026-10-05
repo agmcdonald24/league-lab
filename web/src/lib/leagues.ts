@@ -43,7 +43,8 @@ export function leagueOptions(
   for (const m of prefs.mflLeagues()) {
     if (out.some((o) => o.league_id === m.league_id)) continue;
     // ---- II-5: a Sleeper league opened by its link is remembered here too: "· MFL" only on an MFL league
-    out.push({ league_id: m.league_id, name: isMfl(m.league_id) ? `${m.name} · MFL` : m.name, scoring_label: m.scoring_label, total_rosters: m.total_rosters, roster_id: m.roster_id, team_name: m.team_name, mine: true });
+    // ---- IK-3: "· ESPN" / "· Yahoo" by the key's prefix (suffixOf)
+    out.push({ league_id: m.league_id, name: `${m.name}${suffixOf(m.league_id)}`, scoring_label: m.scoring_label, total_rosters: m.total_rosters, roster_id: m.roster_id, team_name: m.team_name, mine: true });
   }
   if (current && !out.some((o) => o.league_id === current)) {
     out.push({ league_id: current, name: names[current] ?? "This league", scoring_label: null, total_rosters: null, roster_id: null, team_name: null, mine: false });
@@ -74,6 +75,11 @@ export interface MflLeague {
 
 export const mflPath = (text: string) => `/api/leagues?mfl=${encodeURIComponent(text.trim())}`;
 export const isMfl = (league: string | null | undefined) => !!league && league.toLowerCase().startsWith("mfl:");
+// ---- IK-3 (Wave I-K): the switcher's suffix by the key's prefix — "· MFL", "· ESPN", "· Yahoo"; a Sleeper league none
+export const suffixOf = (league: string | null | undefined): string => {
+  const s = (league ?? "").toLowerCase();
+  return s.startsWith("mfl:") ? " · MFL" : s.startsWith("espn:") ? " · ESPN" : s.startsWith("yahoo:") ? " · Yahoo" : "";
+};
 
 // ---- I0-C (Wave I-0): one MFL box for a link, an id or the league's name. GET /api/leagues?mfl_search=<text>: a link or
 // an id answers as ?mfl= does (an MflLeague); a name answers this season's matches (at most 25) to pick from.

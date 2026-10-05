@@ -75,16 +75,21 @@ export const prefs = {
     if (row.roster_id !== null) write(keyTeam(row.league_id), String(row.roster_id));
   },
   // ---- end I0-B
+  // ---- IK-3 (Wave I-K): every league opened on demand (MFL, a Sleeper link, ESPN, Yahoo) is remembered in the one list
+  // above, keyed by its league key — the prefix says the provider (the switcher's "· ESPN" / "· Yahoo")
+  rememberLeague: (row: RememberedMfl) => prefs.rememberMfl(row),
+  remembered: (): RememberedMfl[] => prefs.mflLeagues(),
+  // ---- end IK-3
   /** Forget the user (the "Not you?" link): the username and their league list; league / team picks stay. */
   forgetUser: () => {
     write(KEY_USER, null);
     write(KEY_USER_LEAGUES, null);
   },
   // ---- II-5 (Wave I-I): the fantasy platform picked on the setup screen (the next visit opens on it)
-  platform: (): "sleeper" | "mfl" | null => {
+  platform: (): "sleeper" | "mfl" | "espn" | "yahoo" | null => {
     const v = read(KEY_PLATFORM);
-    return v === "sleeper" || v === "mfl" ? v : null;
+    return v === "sleeper" || v === "mfl" || v === "espn" || v === "yahoo" ? v : null; // ---- IK-3: ESPN / Yahoo too
   },
-  setPlatform: (p: "sleeper" | "mfl") => write(KEY_PLATFORM, p),
+  setPlatform: (p: "sleeper" | "mfl" | "espn" | "yahoo") => write(KEY_PLATFORM, p),
   // ---- end II-5
 };
