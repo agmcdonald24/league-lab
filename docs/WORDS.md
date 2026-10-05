@@ -324,6 +324,13 @@ labels, tooltips, summaries, accessibility labels and generated text, the consol
 | League | "Past luck says nothing about the weeks left: they depend on your points and the schedule ahead." · **Points left on the bench (hindsight)**: "the best lineup *knowing the final scores* … hindsight, not an avoidable mistake" | "It evens out over a season" |
 | the player card's role line | "Upside: no additional modeled upside scenario available." | "Upside: nothing beyond the projection above" (an absent scenario is not an absence of upside) |
 
+## The presentation list (Wave I-J, II-6)
+
+| Where | The words we use | Never |
+|---|---|---|
+| Trades, when the answer at the top is "No compelling trade found" | the answer says it once, with its reason and "Your best move: …"; the Finder under it adds nothing for **Any** (Explore alternatives follows the chips); under a position chip one line, that position's reason: "**For a WR:** none of the 5 trades that raise both starting lineups over weeks 4–7 is worth proposing: …" | "No compelling trade found" twice on one screen; "Your best move" twice |
+| Waivers' top three (a narrow card: three across, the drawer open, a phone) | the whole name (it wraps), then the badges, then the number with its label on one line: "+9.8 WEEKS 4–7 IN TOTAL" | a cut name ("Tyler …"); a badge under the label |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

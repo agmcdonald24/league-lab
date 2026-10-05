@@ -36,25 +36,34 @@
 </script>
 
 {#snippet body()}
-  <div class="flex items-center gap-3">
-    {#if rank !== null}<span class="tabnum w-4 shrink-0 text-sm font-bold text-ink-3">{rank}</span>{/if}
+  <div class="flex gap-3 {compact ? 'items-center' : 'items-start'}"><!-- II-6: a card's headshot sits beside the name, not mid-block -->
+    {#if rank !== null}<span class="tabnum w-4 shrink-0 text-sm font-bold text-ink-3 {compact ? '' : 'mt-3.5'}">{rank}</span>{/if}
     <Headshot url={m.add.headshot_url} name={m.add.player_name ?? ""} team={m.add.team} size={compact ? 40 : 48} />
-    <div class="min-w-0 flex-1">
-      {#if href(m.add.gsis_id)}
-        <a class="ll-name block truncate text-base leading-tight font-bold wide:text-lg" href={href(m.add.gsis_id)} {@attach paneAt(m.add.gsis_id, paneOpts)} data-testid="claim-add">{m.add.player_name}</a>
-      {:else}
-        <span class="block truncate text-base leading-tight font-bold wide:text-lg" data-testid="claim-add">{m.add.player_name}</span>
-      {/if}
-      <div class="mt-0.5 flex min-w-0 items-center gap-1.5 text-sm text-ink-3">
-        <PosBadge pos={m.add.position} />
-        {#if m.add.position !== "DEF"}<TeamBadge team={m.add.team} />{/if}
-        <span class="min-w-0 truncate">{m.add.projection != null ? `projects ${f1(m.add.projection)}` : "no projection yet"}</span>
+    <!-- ---- II-6 (Wave I-J): the name wins. A card (the top three) stacks the gain under the name when the space beside
+         the headshot is under 22rem (a three-across card at 1300, with or without the drawer; a phone): a container
+         query, so the drawer opening narrows it too. The name wraps, never cut; a list row (`compact`) keeps the gain on
+         the right (the list scans down that column) and lets the name wrap. -->
+    <div class="min-w-0 flex-1 {compact ? '' : '@container'}">
+      <div class={compact ? "flex items-center gap-3" : "flex flex-col gap-1.5 @min-[22rem]:flex-row @min-[22rem]:items-center @min-[22rem]:gap-3"}>
+        <div class="min-w-0 flex-1">
+          {#if href(m.add.gsis_id)}
+            <a class="ll-name block text-base leading-tight font-bold break-words wide:text-lg" href={href(m.add.gsis_id)} {@attach paneAt(m.add.gsis_id, paneOpts)} data-testid="claim-add">{m.add.player_name}</a>
+          {:else}
+            <span class="block text-base leading-tight font-bold break-words wide:text-lg" data-testid="claim-add">{m.add.player_name}</span>
+          {/if}
+          <div class="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-ink-3" data-testid="claim-meta">
+            <PosBadge pos={m.add.position} />
+            {#if m.add.position !== "DEF"}<TeamBadge team={m.add.team} />{/if}
+            <span class="min-w-0 truncate">{m.add.projection != null ? `projects ${f1(m.add.projection)}` : "no projection yet"}</span>
+          </div>
+        </div>
+        <div class={compact ? "shrink-0 text-right" : "flex items-baseline gap-2 @min-[22rem]:block @min-[22rem]:shrink-0 @min-[22rem]:text-right"} data-testid="claim-gain-box">
+          <div class="tabnum text-2xl leading-none font-extrabold {big != null && big >= 0.05 ? 'text-good' : 'text-ink'}" data-testid="claim-gain">{s1(big)}</div>
+          <div class="ll-label {compact ? 'mt-1' : '@min-[22rem]:mt-1'}">{bigLabel}</div>
+        </div>
       </div>
     </div>
-    <div class="shrink-0 text-right">
-      <div class="tabnum text-2xl leading-none font-extrabold {big != null && big >= 0.05 ? 'text-good' : 'text-ink'}" data-testid="claim-gain">{s1(big)}</div>
-      <div class="ll-label mt-1">{bigLabel}</div>
-    </div>
+    <!-- ---- end II-6 -->
   </div>
   {#if c.lead}
     <!-- ---- IE-1: this week's starter gain first, the window's total second and cumulative; an alternative says so -->

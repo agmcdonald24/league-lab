@@ -117,6 +117,7 @@
   const credibleRows = $derived(finder?.verdict ? finder.partners.filter((p) => p.tier === "credible") : (finder?.partners.slice(0, 12) ?? []));
   const exploreRows = $derived(finder?.verdict ? finder.partners.filter((p) => p.tier !== "credible") : []);
   // ---- end II-1
+  const lowerFirst = (t: string) => t.charAt(0).toLowerCase() + t.slice(1); // ---- II-6: "For a WR: none of the 5 trades …"
   const wantTabs = [
     { key: "ALL", label: "Any" },
     { key: "QB", label: "QB" },
@@ -229,7 +230,15 @@
       {:else}
         {#if finder.verdict && !credibleRows.length}
           <!-- ---- II-1: the honest empty state, with the reason; the trades found are behind "Explore alternatives" -->
-          <p class="ll-empty" data-testid="finder-none"><strong>{finder.verdict.headline ?? "No compelling trade found"}{want === "ALL" ? "" : ` for a ${want}`}.</strong> {finder.verdict.reason ?? ""}</p>
+          <!-- ---- II-6 (Wave I-J): said once. When the answer above already says "No compelling trade found" (with its
+               reason and your best move), the Finder does not say it again: for Any nothing (the same answer), for a
+               position one line — that position's reason, without the best move the answer above names. -->
+          {#if !noneFound}
+            <p class="ll-empty" data-testid="finder-none"><strong>{finder.verdict.headline ?? "No compelling trade found"}{want === "ALL" ? "" : ` for a ${want}`}.</strong> {finder.verdict.reason ?? ""}</p>
+          {:else if want !== "ALL" && finder.verdict.reason}
+            <p class="text-base leading-snug text-ink-2" data-testid="finder-none-why"><strong class="text-ink">For a {want}:</strong> {lowerFirst(finder.verdict.reason.split(" Your best move:")[0])}</p>
+          {/if}
+          <!-- ---- end II-6 -->
         {:else}
           <div class="grid grid-cols-1 gap-3 wide:grid-cols-2">
             {#each credibleRows as p, i (`${p.partner}-${p.shape}-${i}`)}{@render partnerCard(p, false)}{/each}

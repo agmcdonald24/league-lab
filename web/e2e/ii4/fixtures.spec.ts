@@ -3,7 +3,8 @@
 //
 // The answers are the API's own, recorded by api/tests/test_ii4.py::test_record_e2e_answers (League of Scrubs roster 2,
 // MacZaddy — the review's team — with the ESPN fixture overlay: Jefferson Out since the build, his RotoWire news; the
-// three Season views; Waivers) into web/fixtures/ii4/api_ii4.json. Re-record:
+// three Season views; Waivers) into web/fixtures/ii4/api_ii4.json — at the API suite's pinned clock (INF-1: Saturday
+// 2026-10-03 16:00 UTC, before week 4's first kickoff; II-6 re-recorded it on league_lab_ia3). Re-record:
 //   cd api && II4_RECORD=1 PYTHONPATH=. uv run pytest -q tests/test_ii4.py -k record_e2e
 import { expect, test, type Locator, type Page, type Route } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
@@ -148,15 +149,26 @@ test("Waivers: each top claim says when it helps; the claims competing for one r
   await expect(top).toBeVisible();
   const hz = top.getByTestId("top-move-horizon");
   await expect(hz).toHaveCount(3);
-  await expect(hz.nth(0)).toHaveText("Helps this week (+8.3)");
+  await expect(hz.nth(0)).toHaveText("Helps this week (+1.8)"); // II-6: re-recorded at the pinned clock (Saturday noon ET: Daniel Carlson first; on the Sunday-afternoon recording Wan'Dale Robinson filled an empty WR2, +8.3)
   await expect(hz.nth(2)).toHaveText("Covers a bye in week 7");
   await expect(hz.nth(2)).toHaveAttribute("data-horizon", "bye");
   // the intro is honest about the horizon (the review: not "each with what it adds this week")
   await expect(page.getByTestId("waiver-answer")).toContainText("The three strongest claims below: 2 help this week, 1 covers a bye (week 7). Each card's total is its gain over weeks 4–7.");
   await expect(page.getByTestId("waiver-answer")).not.toContainText("each with what it adds this week");
-  await expect(top.getByTestId("top-compete")).toContainText("compete for the same roster spot (each drops Jacory Croskey-Merritt): claim one of them.");
+  // II-6: at the pinned moment the three drop three different players, so no competing line; the rule is checked below
+  // on the same answer with the first claim's drop made the third's (a variant of the recording, not an API answer)
+  await expect(top.getByTestId("top-compete")).toHaveCount(0);
   await noSidewaysScroll(page);
   await shot(page, "waivers-top", info.project.name);
+  type Waivers = { top3: { move: { add: { player_name: string }; drop: { sleeper_id: string; player_name: string } | null } }[] };
+  const k = `/api/waivers?league=${SCRUBS}&position=ALL&team=2`;
+  const w = structuredClone(body<Waivers>(k));
+  w.top3[0].move.drop = w.top3[2].move.drop;
+  await page.route(/\/api\/waivers\?/, (route) => route.fulfill({ status: 200, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body: JSON.stringify(w) }));
+  await page.goto(`/waivers?league=${SCRUBS}&team=2`);
+  await expect(page.getByTestId("top-compete")).toHaveText(
+    `${w.top3[0].move.add.player_name} and ${w.top3[2].move.add.player_name} compete for the same roster spot (each drops ${w.top3[2].move.drop!.player_name}): claim one of them.`,
+  );
 });
 
 test("Team, League: depth defined, hindsight labelled, no promise that luck evens out", async ({ page }) => {

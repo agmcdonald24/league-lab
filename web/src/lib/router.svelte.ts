@@ -61,6 +61,8 @@ function parse(): Route {
 export const route = $state<{ current: Route }>({ current: parse() });
 // the path on screen (popstate compares the new one to it: the pane's entries share the screen's path)
 let lastPath = typeof location !== "undefined" ? location.pathname : "/";
+// ---- II-6: the whole URL on screen (path + query): what a Back leaves, for the pop hook below
+let lastHref = typeof location !== "undefined" ? location.pathname + location.search : "/";
 
 if (typeof history !== "undefined") {
   history.scrollRestoration = "manual";
@@ -98,6 +100,7 @@ export function navigate(href: string, opts: NavigateOptions = {}): void {
     if (!opts.keepScroll) window.scrollTo(0, 0);
   }
   lastPath = url.pathname;
+  lastHref = target; // ---- II-6
   route.current = parse();
 }
 
@@ -111,6 +114,7 @@ export function setParams(updates: Record<string, string | null>): void {
   }
   const s = qs.toString();
   history.replaceState({ ...(history.state ?? {}) }, "", location.pathname + (s ? `?${s}` : ""));
+  lastHref = location.pathname + location.search; // ---- II-6
   route.current = parse();
 }
 
@@ -124,6 +128,13 @@ let pendingScroll: number | null = null;
 
 if (typeof window !== "undefined") {
   window.addEventListener("popstate", () => {
+    // ---- II-6: the pop hook may rewrite the entry just landed on before anything renders it (here, in this one
+    // listener: a second popstate listener would run after a microtask checkpoint, so the screen would see the old URL)
+    const landed = location.pathname + location.search;
+    const fix = popHook?.(lastHref, landed) ?? null;
+    if (fix && fix !== landed) history.replaceState({ ...(history.state ?? {}) }, "", fix);
+    lastHref = location.pathname + location.search;
+    // ---- end II-6
     // the same screen (the pane opened or closed over it): it never moved, nothing to restore
     const samePage = location.pathname === lastPath;
     pendingScroll = samePage ? null : typeof history.state?.scroll === "number" ? history.state.scroll : 0;
@@ -148,6 +159,16 @@ export function setLinkHook(fn: LinkHook | null): void {
   linkHook = fn;
 }
 // ---- end II-2
+
+// ---- II-6 (Wave I-J): a hook that may rewrite the history entry a Back (or `history.back()`) lands on, before the
+// screen sees it: `left` is the URL being left, `landed` the entry's URL; a string replaces the entry's URL in place.
+// The player drawer uses it: a parameter the screen wrote while the drawer was open (a search, a filter) stays.
+type PopHook = (left: string, landed: string) => string | null;
+let popHook: PopHook | null = null;
+export function setPopHook(fn: PopHook | null): void {
+  popHook = fn;
+}
+// ---- end II-6
 
 /** Intercept taps on same-site links anywhere in the app (cards' names, tables, search results). */
 export function interceptLinks(root: HTMLElement): () => void {

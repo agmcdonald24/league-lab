@@ -13,6 +13,16 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `/api/status` gains `memory` (RSS, the budget by region), the console's Data Status page one line,
   `scripts/measure_memory.py` re-measures, DEPLOY § Memory. Same answers: no test re-pinned.
 
+- **II-6 — the presentation list.** Waivers' top three: the name wins — a narrow card (three across at 1300, the drawer
+  open, a phone) puts the gain and its label under the name ("+9.8 WEEKS 4–7 IN TOTAL"), the name wraps and is never
+  cut ("Tyler …" before), no badge under the label (`ClaimCard`, a container query). Trades says "No compelling trade
+  found" once: the answer at the top; the Finder adds nothing for Any, and one line of that position's reason under a
+  position chip. Closing the drawer (×, Escape, Back) keeps what the screen wrote to the URL while it was open — a search
+  typed just before the tap, a filter changed beside it — still one history entry per screen (the router's pop hook).
+  `e2e/app.spec.ts` (the live-API suite) follows the drawer (a tap → the drawer, `pane-full` → the page); the II-4
+  recording re-recorded at the pinned clock (its words differed). Fixtures e2e 344 passed. For the PO: web only; the
+  live-API suite was updated blind (type-checked); the re-record's injury-check stamp is real time.
+
 ## 2026-10-04 — Wave I-I
 
 - **PO (the merge, 2026-10-05).** The pinned clock lands (`league_lab.clock`, `LEAGUE_LAB_NOW`; both suites pinned to

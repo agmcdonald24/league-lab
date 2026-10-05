@@ -81,8 +81,12 @@ test("Scrubs roster 2: No compelling trade found, the reason, and the trades beh
   await expect(head).toContainText("is worth proposing");
   await expect(head).toContainText("Your best move:");
   await expect(page.getByTestId("try-best")).toHaveCount(0);
-  await expect(page.getByTestId("finder-none")).toContainText("No compelling trade found", { timeout: WAIT });
+  // II-6 (Wave I-J): said once — the answer above says it (with the reason and the best move); the Finder does not repeat it
   const explore = page.getByTestId("explore");
+  await expect(explore).toBeVisible({ timeout: WAIT });
+  await expect(page.getByTestId("finder-none")).toHaveCount(0);
+  expect((await page.locator("main").innerText()).split("No compelling trade found").length - 1).toBe(1);
+  expect((await page.locator("main").innerText()).split("Your best move:").length - 1).toBe(1);
   await expect(explore).toContainText("Explore alternatives");
   await explore.locator("summary").first().click();
   await expect(page.getByTestId("explore-why")).toBeVisible();
