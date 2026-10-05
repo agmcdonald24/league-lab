@@ -48,7 +48,10 @@ authenticated answer carries an HMAC digest of the pair (a per-process random ke
 visitor without the same cookies never gets a private league's cached answer; ``require_access`` refuses a league
 known to be private to a request without them.
 
-**Budget**: a token bucket of ``LEAGUE_LAB_ESPN_PER_MIN`` calls a minute (default 30); HTTP 429 backs off for a
+**Switches**: ``LEAGUE_LAB_ESPN_LEAGUES=off`` stops every ESPN league read (``espn_not_configured``: the kill switch
+should ESPN object; default on); ``LEAGUE_LAB_ESPN_PRIVATE=on`` opens the private path (default off).
+
+**Budget**: a token bucket of ``LEAGUE_LAB_ESPN_LEAGUE_PER_MIN`` calls a minute (default 30); HTTP 429 backs off for a
 minute (``ESPNBusy``). Caches by kind (``TTL_S``); an expired answer is served when ESPN fails (stale on error).
 
 **Fixtures**: ``LEAGUE_LAB_ESPN_LEAGUE_FIXTURES=<dir>`` reads ``<dir>/<league>/<view>.json`` (``mSettings``,
@@ -80,10 +83,11 @@ from .sleeper_client import LeagueNotFound, SleeperBusy, SleeperUnavailable, Tok
 
 ESPN_API = "https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl"
 FIXTURES_ENV = "LEAGUE_LAB_ESPN_LEAGUE_FIXTURES"
-API_ENV = "LEAGUE_LAB_ESPN_API"
+API_ENV = "LEAGUE_LAB_ESPN_LEAGUE_API"            # (LEAGUE_LAB_ESPN_API is the injury feed's)
 SEASON_ENV = "LEAGUE_LAB_ESPN_SEASON"
-PER_MIN_ENV = "LEAGUE_LAB_ESPN_PER_MIN"
+PER_MIN_ENV = "LEAGUE_LAB_ESPN_LEAGUE_PER_MIN"    # (LEAGUE_LAB_ESPN_PER_MIN is the injury feed's)
 PRIVATE_ENV = "LEAGUE_LAB_ESPN_PRIVATE"
+ENABLED_ENV = "LEAGUE_LAB_ESPN_LEAGUES"         # off: no ESPN league is read (the kill switch; default on)
 SECRET_ENV = "LEAGUE_LAB_API_SECRET"
 DEFAULT_PER_MIN = 30
 PREFIX = "espn:"
@@ -490,6 +494,16 @@ def unknown_league(league_id: str, season: int | None = None) -> LeagueNotFound:
                 f"Check the id: it is {WHERE}.", league_id)
 
 
+def enabled() -> bool:
+    """``LEAGUE_LAB_ESPN_LEAGUES`` is not off (default on): the kill switch for every ESPN league read."""
+    return str(os.environ.get(ENABLED_ENV) or "on").strip().lower() not in ("off", "0", "false", "no")
+
+
+def switched_off(league_id: str | None = None) -> LeagueNotFound:
+    return _err(LeagueNotFound("ESPN leagues are switched off on this server."), "espn_not_configured",
+                "A Sleeper or MyFantasyLeague league works as before.", league_id)
+
+
 def invalid_link(text: Any = None) -> LeagueNotFound:
     return _err(LeagueNotFound("That is not an ESPN league link or id."), "espn_link_invalid",
                 f"Paste your league's address, or the league id alone: {WHERE}.")
@@ -705,6 +719,8 @@ class ESPN:
     def _get(self, kind: str, league_id: str, season: int, week: int | None = None,
              filt: Mapping | None = None) -> dict:
         lid = check_league(league_id)
+        if not enabled():
+            raise switched_off(lid)
         season = self.season_of(season)
         auth = current_auth()
         dg = digest(auth)

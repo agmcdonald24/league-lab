@@ -28,6 +28,7 @@ def _env(monkeypatch):
     monkeypatch.setenv(PI.CSV_ENV, str(FX / "ff" / "db_playerids.csv"))
     monkeypatch.delenv(E.PRIVATE_ENV, raising=False)
     monkeypatch.delenv(E.SECRET_ENV, raising=False)
+    monkeypatch.delenv(E.ENABLED_ENV, raising=False)
     PI.reset()
     yield
     PI.reset()
@@ -407,3 +408,12 @@ def test_season_key_and_private_league(directory, monkeypatch):
 def test_fixture_files_say_synthetic():
     for f in LEAGUES.rglob("*.json"):
         assert json.loads(f.read_text())["_synthetic"].startswith("SYNTHETIC"), f
+
+
+def test_kill_switch(monkeypatch):
+    monkeypatch.setenv(E.ENABLED_ENV, "off")
+    with pytest.raises(LeagueNotFound) as e:
+        E.ESPN().settings("4242")
+    assert e.value.code == "espn_not_configured" and E.setup_words(e.value)[0] == "espn_not_configured"
+    monkeypatch.setenv(E.ENABLED_ENV, "on")
+    assert E.ESPN().settings("4242")["id"] == 4242

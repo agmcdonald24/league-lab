@@ -42,6 +42,7 @@ def _espn_fixtures(monkeypatch):
     monkeypatch.setenv(E.SEASON_ENV, "2026")
     monkeypatch.setenv(PI.CSV_ENV, str(FX / "ff" / "db_playerids.csv"))
     monkeypatch.delenv(E.PRIVATE_ENV, raising=False)
+    monkeypatch.delenv(E.ENABLED_ENV, raising=False)
     PI.reset()
     A._default = None
     yield
