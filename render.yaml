@@ -55,3 +55,14 @@ services:
         value: auto
       - key: PYTHONUNBUFFERED
         value: "1"
+      # ---- Wave I-K (2026-10-05): other platforms and accounts. The two Yahoo secrets and the Resend key are pasted
+      # once in Render (Environment → Add Environment Variable, or when the Blueprint sync asks); each feature stays
+      # "coming soon" / off until its value exists (docs/HOSTING.md § "Yahoo", § "Accounts").
+      - key: LEAGUE_LAB_YAHOO_CLIENT_ID
+        sync: false     # Render asks for it: the Yahoo app's Client ID (developer.yahoo.com/apps)
+      - key: LEAGUE_LAB_YAHOO_CLIENT_SECRET
+        sync: false     # Render asks for it: the Yahoo app's Client Secret
+      - key: LEAGUE_LAB_YAHOO_REDIRECT_URI
+        value: https://isuckatfantasy.io/api/yahoo/callback
+      - key: LEAGUE_LAB_RESEND_API_KEY
+        sync: false     # Render asks for it: Resend's re_… key with sending access to isuckatfantasy.io — turns accounts on
