@@ -92,7 +92,7 @@ def write(path: str, content: dict) -> None:
     body = {"_comment": COMMENT, "fantasy_content": {"xml:lang": "en-US", "yahoo:uri": f"/fantasy/v2/{path}",
                                                      **content, "time": "21.4ms", "copyright": "Data synthetic",
                                                      "refresh_rate": "60"}}
-    (OUT / name).write_text(json.dumps(body, indent=1, ensure_ascii=False) + "\n")
+    (OUT / name).write_text(json.dumps(body, separators=(",", ":"), ensure_ascii=False) + "\n")
 
 
 def league_meta() -> dict:

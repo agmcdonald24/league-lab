@@ -18,7 +18,9 @@ app-only token, so even a public league needs a connected Yahoo account) and tra
 
 Player ids: Yahoo's player id (``461.p.30121`` -> ``30121``) -> ``sleeper_id`` through nflverse's ``yahoo_id``
 (``player_ids``), else -> ``gsis_id`` -> Sleeper through ``platforms.GSIS_LOOKUP``, else a team defense by its team
-(Sleeper's DEF id is the team code), else a unique name + position match in Sleeper's directory, else the player stays
+(Sleeper's DEF id is the team code), else a unique name + position match in Sleeper's directory (two of the name: the
+one on Yahoo's NFL team) — load-bearing: nflverse gives no 2025 or 2026 rookie a ``yahoo_id`` (IK-3's audit) —, else the
+player stays
 on the roster as ``yahoo:<id>`` with Yahoo's name and position (unvalued, reported in ``unmapped``).
 """
 
@@ -128,6 +130,9 @@ class YahooLeagues:
             p = info[i]
             pos = p.get("position")
             hits = idx.get((_norm(str(p.get("name") or "")), str(pos))) if p.get("name") and pos else None
+            if hits and len(hits) > 1 and p.get("team"):      # two of the name: the one on Yahoo's NFL team
+                d = self.directory()
+                hits = [h for h in hits if str((d.get(h) or {}).get("team") or "") == str(p["team"])]
             if hits and len(hits) == 1:
                 out[i] = (hits[0], "name")
                 continue

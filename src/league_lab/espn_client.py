@@ -398,8 +398,9 @@ def scoring(settings: Mapping) -> tuple[dict[str, float], dict]:
 
 def slots(settings: Mapping) -> tuple[list[str], dict]:
     """ESPN ``settings.rosterSettings.lineupSlotCounts`` ({slot id: count}) -> Sleeper ``roster_positions`` (QB … K,
-    DEF in Sleeper's order, then ``BN`` × bench) and a note: ``left_out`` (ESPN's names of slots not modelled — IDP,
-    P, HC, …), ``idp`` (True when any), ``bench``, ``ir`` (Sleeper's ``reserve_slots``)."""
+    DEF in Sleeper's order, then ``BN`` × bench) and a note: ``left_out`` (ESPN's names of every starting spot not
+    modelled, one per spot), ``idp`` (the IDP slot names, once each: DT, DE, LB, DL, CB, S, DB, DP), ``unknown`` (the
+    others, once each: TQB, P, HC, ER, Rookie), ``bench``, ``ir`` (Sleeper's ``reserve_slots``)."""
     rs = settings.get("rosterSettings") if isinstance(settings.get("rosterSettings"), Mapping) else settings
     counts: dict[int, int] = {}
     for k, v in (rs.get("lineupSlotCounts") or {}).items():
@@ -410,17 +411,22 @@ def slots(settings: Mapping) -> tuple[list[str], dict]:
             continue
     out: list[str] = []
     left: list[str] = []
+    idp: list[str] = []
+    unknown: list[str] = []
     for sid, n in sorted(counts.items()):
         if sid in (BENCH_SLOT, IR_SLOT):
             continue
         espn_name, ours = SLOT_IDS.get(sid, (f"slot {sid}", None))
         if ours is None:
-            left += [espn_name or f"slot {sid}"] * n
+            name = espn_name or f"slot {sid}"
+            left += [name] * n
+            (idp if sid in IDP_SLOT_IDS else unknown).append(name)
             continue
         out += [ours] * n
     out.sort(key=lambda s: SLOT_ORDER.get(s, 99))
     bench = counts.get(BENCH_SLOT, 0)
-    return out + ["BN"] * bench, {"left_out": left, "idp": any(s in IDP_SLOT_IDS for s in counts), "bench": bench,
+    # ``idp`` / ``unknown``: the names once each, as MFL's note carries them (the card reads ``idp`` as a list)
+    return out + ["BN"] * bench, {"left_out": left, "idp": idp, "unknown": unknown, "bench": bench,
                                   "ir": counts.get(IR_SLOT, 0)}
 
 
@@ -646,6 +652,62 @@ def current_auth() -> tuple[str, str] | None:
     return pair if (pair and private_enabled()) else None
 
 
+# ================================================================================================ trimming
+# ESPN's answers carry far more than we read: a roster entry's player has every stat line of the season, rankings,
+# outlooks and ownership (espn-api's own test data: one league's week-1 rosters are 17 MB of JSON). Only the fields
+# the adapter reads are kept in the cache (the server has 512 MB: docs/DEPLOY.md § Memory).
+PLAYER_KEEP = ("id", "fullName", "firstName", "lastName", "defaultPositionId", "eligibleSlots", "proTeamId",
+               "injuryStatus", "injured", "active")
+TEAM_KEEP = ("id", "abbrev", "name", "location", "nickname", "owners", "primaryOwner", "record", "playoffSeed",
+             "waiverRank", "transactionCounter", "divisionId", "points")
+SIDE_KEEP = ("teamId", "totalPoints", "pointsByScoringPeriod")
+TOP_KEEP = ("id", "seasonId", "scoringPeriodId", "segmentId", "gameId", "status", "settings", "members", "_synthetic")
+
+
+def _pick(d: Any, keep: tuple[str, ...]) -> dict:
+    return {k: d[k] for k in keep if isinstance(d, Mapping) and k in d}
+
+
+def _player(p: Any) -> dict:
+    return _pick(p, PLAYER_KEEP)
+
+
+def trim(kind: str, data: dict) -> dict:
+    """The answer with only what ``espn_leagues`` reads (the rest dropped before it is cached)."""
+    out = _pick(data, TOP_KEEP)
+    if kind == "teams":
+        out["teams"] = [_pick(t, TEAM_KEEP) for t in data.get("teams") or [] if isinstance(t, Mapping)]
+    elif kind == "rosters":
+        teams = []
+        for t in data.get("teams") or []:
+            if not isinstance(t, Mapping):
+                continue
+            ents = []
+            for e in ((t.get("roster") or {}).get("entries") or []):
+                if not isinstance(e, Mapping):
+                    continue
+                pe = e.get("playerPoolEntry") or {}
+                ents.append({"playerId": e.get("playerId", pe.get("id")), "lineupSlotId": e.get("lineupSlotId"),
+                             "acquisitionType": e.get("acquisitionType"),
+                             "playerPoolEntry": {"id": pe.get("id"), "player": _player(pe.get("player"))}})
+            teams.append({"id": t.get("id"), "roster": {"entries": ents}})
+        out["teams"] = teams
+    elif kind == "schedule":
+        out["schedule"] = [{**_pick(m, ("id", "matchupPeriodId", "winner", "playoffTierType")),
+                            **{s: _pick(m[s], SIDE_KEEP) for s in ("home", "away") if isinstance(m.get(s), Mapping)}}
+                           for m in data.get("schedule") or [] if isinstance(m, Mapping)]
+    elif kind == "transactions":
+        out["transactions"] = [{**_pick(t, ("id", "type", "status", "teamId", "scoringPeriodId", "processDate",
+                                            "acceptedDate", "proposedDate", "bidAmount")),
+                                "items": [_pick(i, ("type", "playerId", "fromTeamId", "toTeamId"))
+                                          for i in t.get("items") or [] if isinstance(i, Mapping)]}
+                               for t in data.get("transactions") or [] if isinstance(t, Mapping)]
+    elif kind == "free_agents":
+        out["players"] = [{**_pick(p, ("id", "onTeamId", "status")), "player": _player(p.get("player"))}
+                          for p in data.get("players") or [] if isinstance(p, Mapping)]
+    return out
+
+
 # ================================================================================================ the client
 class ESPN:
     """Read-only ESPN fantasy football client (see the module docstring). ``fetch`` (tests): ``(url, headers) ->
@@ -665,6 +727,7 @@ class ESPN:
         self._fetch = fetch
         self.calls = 0
         self.stale_served = 0
+        self.last_error: str | None = None             # "mRoster: HTTP 500" — what /api/status shows (no cookies, no query)
         self._backoff_until = 0.0
         self._cache: dict[str, tuple[float, float, str, Any]] = {}
         self._read_at: dict[str, float] = {}
@@ -747,7 +810,8 @@ class ESPN:
                 if auth:
                     headers["Cookie"] = f"espn_s2={auth[0]}; SWID={auth[1]}"
                 status, text = self._http(url, headers)
-        except ESPNUnavailable:
+        except ESPNUnavailable as exc:
+            self.last_error = f"{VIEW_OF[kind]}: {str(exc).rsplit(': ', 1)[-1]}"
             if hit is not None:
                 self.stale_served += 1
                 return hit[3]
@@ -765,6 +829,7 @@ class ESPN:
         if status == 404:
             raise unknown_league(lid, season)
         if status != 200:
+            self.last_error = f"{VIEW_OF[kind]}: HTTP {status}"
             if hit is not None:
                 self.stale_served += 1
                 return hit[3]
@@ -772,12 +837,15 @@ class ESPN:
         try:
             data = json.loads(text or "null")
         except json.JSONDecodeError as exc:
+            self.last_error = f"{VIEW_OF[kind]}: not JSON"
             raise ESPNUnavailable(f"ESPN {VIEW_OF[kind]}: not JSON") from exc
         if isinstance(data, list):                  # espn-api: a list answer is the league in a list
             data = data[0] if data and isinstance(data[0], dict) else {}
         if not isinstance(data, dict):
+            self.last_error = f"{VIEW_OF[kind]}: not a league"
             raise ESPNUnavailable(f"ESPN {VIEW_OF[kind]}: not a league")
         self._note_access(lid, season, data, dg)
+        data = trim(kind, data)
         with self._lock:
             self._cache[key] = (now + TTL_S[kind], now, kind, data)
             self._read_at[f"{kind}|{lid}|{season}"] = self.wall()
@@ -845,7 +913,8 @@ class ESPN:
             k["fresh"] += int(exp > now)
             k["oldest_s"] = round(max(k["oldest_s"], now - fetched), 1)
         return {"mode": "fixtures" if self.fixtures is not None else "live", "season": self.season, "calls": self.calls,
-                "stale_served": self.stale_served, "private_enabled": private_enabled(),
+                "stale_served": self.stale_served, "private_enabled": private_enabled(), "enabled": enabled(),
+                "last_error": self.last_error,
                 "bucket": {"tokens": round(self.bucket.tokens(), 1), "capacity": self.bucket.capacity,
                            "per_minute": self.bucket.per_minute, "refused": self.bucket.refused},
                 "cache": kinds}

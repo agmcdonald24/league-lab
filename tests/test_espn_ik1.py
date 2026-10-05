@@ -68,12 +68,12 @@ def test_slots_default_league_and_superflex_idp():
     counts.update({"0": 1, "2": 2, "4": 2, "6": 1, "16": 1, "17": 1, "20": 7, "21": 1, "23": 1})
     slots, note = E.slots({"rosterSettings": {"lineupSlotCounts": counts}})
     assert slots == ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF"] + ["BN"] * 7
-    assert note == {"left_out": [], "idp": False, "bench": 7, "ir": 1}
+    assert note == {"left_out": [], "idp": [], "unknown": [], "bench": 7, "ir": 1}
     counts.update({"7": 1, "10": 2, "14": 1, "5": 1, "18": 1})
     slots, note = E.slots({"rosterSettings": {"lineupSlotCounts": counts}})
     assert [s for s in slots if s != "BN"] == ["QB", "RB", "RB", "WR", "WR", "TE", "REC_FLEX", "FLEX", "SUPER_FLEX",
                                               "K", "DEF"]
-    assert note["idp"] is True and note["left_out"] == ["LB", "LB", "DB", "P"]
+    assert note["idp"] == ["LB", "DB"] and note["unknown"] == ["P"] and note["left_out"] == ["LB", "LB", "DB", "P"]
 
 
 def test_scoring_standard_items_on_sleeper_keys():
@@ -291,6 +291,7 @@ def test_client_budget_backoff_and_stale_on_error():
     c2 = E.ESPN(fixtures="", fetch=lambda u, h: (500, ""))
     with pytest.raises(E.ESPNUnavailable):
         c2.settings("4242")
+    assert c2.stats()["last_error"] == "mSettings: HTTP 500"
 
 
 # ------------------------------------------------------------------ the adapter on the fixture league
@@ -417,3 +418,34 @@ def test_kill_switch(monkeypatch):
     assert e.value.code == "espn_not_configured" and E.setup_words(e.value)[0] == "espn_not_configured"
     monkeypatch.setenv(E.ENABLED_ENV, "on")
     assert E.ESPN().settings("4242")["id"] == 4242
+
+
+def test_answers_are_trimmed_before_the_cache():
+    """A roster entry's season of stat lines, rankings and ownership never reach the cache (the server has 512 MB)."""
+    big = {"id": 4242, "seasonId": 2026, "teams": [{"id": 1, "roster": {"entries": [{
+        "playerId": 13934, "lineupSlotId": 4, "acquisitionType": "DRAFT", "injuryStatus": "NORMAL",
+        "playerPoolEntry": {"id": 13934, "appliedStatTotal": 9.9, "ratings": {"0": {}}, "player": {
+            "id": 13934, "fullName": "Antonio Brown", "defaultPositionId": 3, "eligibleSlots": [3, 4, 5], "proTeamId": 23,
+            "stats": [{"stats": {str(i): i for i in range(200)}}] * 20, "rankings": {"0": [1] * 50},
+            "ownership": {"percentOwned": 99.1}, "draftRanksByRankType": {"PPR": {"rank": 5}}}}}]}}]}
+    c = E.ESPN(fixtures="", fetch=lambda u, h: (200, json.dumps(big)))
+    got = c.rosters("4242")
+    p = got["teams"][0]["roster"]["entries"][0]["playerPoolEntry"]["player"]
+    assert p == {"id": 13934, "fullName": "Antonio Brown", "defaultPositionId": 3, "eligibleSlots": [3, 4, 5],
+                 "proTeamId": 23}
+    assert len(json.dumps(got)) < 400 < len(json.dumps(big))
+
+
+def test_idp_and_punter_spots_are_left_out_and_named(directory, tmp_path, monkeypatch):
+    import shutil
+    d = tmp_path / "4242"
+    shutil.copytree(LEAGUES / "4242", d)
+    s = json.loads((d / "mSettings.json").read_text())
+    s["settings"]["rosterSettings"]["lineupSlotCounts"].update({"10": 2, "14": 1, "18": 1})
+    (d / "mSettings.json").write_text(json.dumps(s))
+    monkeypatch.setenv(E.FIXTURES_ENV, str(tmp_path))
+    lg = _adapter(directory).league("espn:4242")
+    assert lg["roster_positions"][:9] == ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF"]
+    assert len([x for x in lg["roster_positions"] if x != "BN"]) == 9
+    assert lg["espn"]["slots"]["idp"] == ["LB", "DB"] and lg["espn"]["slots"]["unknown"] == ["P"]
+    assert any("ESPN's P spots are left out" in a for a in lg["espn"]["scoring"]["approximated"])
