@@ -291,7 +291,11 @@ its search, filters, sort, page, selected rows and scroll. The player's page sta
 - **Focus and history**: the drawer takes focus (its title) when a player opens; closing it — ×, Escape, Back — returns
   focus to the name that opened it, without scrolling the screen. The first open is one history entry: **browser Back
   closes the drawer before it leaves the screen**; a swap adds none; Full player page replaces it (Back from the page
-  lands on the screen without the drawer). URL: `?pane=<key>&from=<from>` (IB-1's keys).
+  lands on the screen without the drawer). URL: `?pane=<key>&from=<from>` (IB-1's keys). **What the screen writes to
+  the URL while the drawer is open stays when it closes** (II-6, Wave I-J: a search typed just before the tap — its
+  250 ms debounce lands on the drawer's entry —, a filter or sort changed beside the drawer from 900 px): the Back that
+  closes it rewrites the entry it lands on to the screen as it is now, minus `pane` / `from` (`screenUnderDrawer`, the
+  router's pop hook), before the screen renders it — still one history entry per screen.
 - **API** (`lib/player-drawer.svelte.ts`): nothing to do for a plain `<a href="/player/<key>…">` (the router's link hook
   catches the tap; Cmd / Ctrl / middle click still opens the page; `data-full-page` keeps a link a page link);
   `{@attach playerLink(key, { from, context })}` (or `PlayerRow` / `PlayerCard` / `LineupTable`'s `pane` prop) to give

@@ -121,3 +121,56 @@ test("Trades: 'No compelling trade found' is said once — the answer says it, t
   expect(await count("Your best move:")).toBe(1);
   await shot(page, "trades-none-wr", info, true);
 });
+
+// ---- 3. closing the drawer keeps what the screen wrote to the URL while it was open
+const PLAYERS = `/players?league=${SCRUBS}&team=2&position=WR&sort=target_share&dir=desc`;
+const PW = { gsis: "00-0038606", name: "Parker Washington" };
+
+for (const how of ["×", "Back"] as const) {
+  test(`the drawer: a search typed just before the tap stays in the URL when ${how} closes it; Back then leaves the screen`, async ({ page, isMobile }) => {
+    await page.goto(`/?league=${SCRUBS}&team=2`);
+    await expect(page.getByTestId("my-week")).toBeVisible();
+    await page.goto(PLAYERS);
+    const table = page.getByTestId("players-table");
+    await expect(table).toBeVisible();
+    // type, then tap a name at once (in one task, so the race is the same on every machine): the search's 250 ms
+    // debounce writes `q` AFTER the drawer's history entry
+    await expect(table.getByRole("link", { name: PW.name, exact: true })).toBeVisible();
+    await page.evaluate(async (name) => {
+      const input = document.querySelector<HTMLInputElement>('[data-testid="players-search"]')!;
+      input.value = "n";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await new Promise((ok) => requestAnimationFrame(ok)); // the list filters (one frame, as a hand would) …
+      [...document.querySelectorAll<HTMLAnchorElement>('[data-testid="players-table"] a')].find((a) => a.textContent?.trim() === name)!.click(); // … and the tap lands well inside the 250 ms
+    }, PW.name);
+    await expect(pane(page)).toHaveAttribute("data-gsis", PW.gsis);
+    await expect(page).toHaveURL(/[?&]pane=00-0038606&from=list&q=n$/); // written on the drawer's entry
+    if (how === "×") await tap(page, pane(page).getByTestId("pane-close"), isMobile);
+    else await page.goBack();
+    await expect(pane(page)).toHaveCount(0);
+    await expect(page).toHaveURL(new RegExp(`/players\\?league=${SCRUBS}&team=2&position=WR&sort=target_share&dir=desc&q=n$`));
+    await expect(page.getByTestId("players-search")).toHaveValue("n");
+    // one entry per screen: Back leaves the screen (no second stop on the same screen without the search)
+    await page.goBack();
+    await expect(page).not.toHaveURL(/\/players/);
+    await expect(page.getByTestId("my-week")).toBeVisible();
+    // Forward returns to the screen with its search
+    await page.goForward();
+    await expect(page).toHaveURL(/\/players\?.*q=n$/);
+  });
+}
+
+test("the drawer (from 900 px): a filter changed beside the open drawer stays when Escape closes it", async ({ page, isMobile }) => {
+  test.skip(isMobile, "on a phone the sheet covers the screen: nothing to change beside it");
+  await page.goto(PLAYERS);
+  const table = page.getByTestId("players-table");
+  await tap(page, table.getByRole("link", { name: PW.name, exact: true }), isMobile);
+  await expect(pane(page)).toHaveAttribute("data-gsis", PW.gsis);
+  await page.getByTestId("players-search").fill("wash");
+  await expect(page).toHaveURL(/q=wash$/);
+  await pane(page).getByTestId("pane-title").focus();
+  await page.keyboard.press("Escape");
+  await expect(pane(page)).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/players\\?league=${SCRUBS}&team=2&position=WR&sort=target_share&dir=desc&q=wash$`));
+  await expect(page.getByTestId("players-search")).toHaveValue("wash");
+});

@@ -20,7 +20,7 @@ import type { Attachment } from "svelte/attachments";
 import { get, forget, paths, peek, type PlayerCard, type Status } from "./api";
 import { withContext, type LinkContext } from "./md";
 import type { PaneContext, PaneFrom } from "./pane.svelte";
-import { navigate, route, setLinkHook, setParams } from "./router.svelte";
+import { navigate, route, setLinkHook, setParams, setPopHook } from "./router.svelte";
 import { track } from "./analytics"; // INF-1
 
 export type DrawerSection = "overview" | "usage" | "gamelog" | "news";
@@ -148,7 +148,8 @@ export function openPlayer(key: string | null | undefined, opts: OpenPlayerOptio
   navigate(`${location.pathname}?${qs.toString()}`, { keepScroll: true, state: { pane: true } });
 }
 
-/** Close the drawer: Back when the drawer added the history entry, else drop it from the URL in place. */
+/** Close the drawer: Back when the drawer added the history entry, else drop it from the URL in place. (II-6: the Back
+ *  keeps what the screen wrote to the URL while the drawer was open — `screenUnderDrawer` below.) */
 export function closePlayer(): void {
   ui.expanded = false;
   if (!route.current.params.get("pane")) return;
@@ -208,6 +209,25 @@ function hook(href: string, a: HTMLAnchorElement): boolean {
   return true;
 }
 setLinkHook(hook);
+
+// ---- II-6 (Wave I-J): a Back that closes the drawer (×, Escape, the browser's Back) lands on the entry before the
+// first open. A parameter the screen wrote while the drawer was open — a search typed < 250 ms before the tap (its
+// debounce lands after the open), a filter or sort changed beside the drawer from 900 px — is on the drawer's entry
+// only, so the landed entry is rewritten to the screen as it is now, minus `pane` / `from`, before the screen renders
+// it: one history entry per screen, Back still closes the drawer first, nothing typed is lost.
+export function screenUnderDrawer(left: string, landed: string): string | null {
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- scratch copies of two URLs, never observed
+  const a = new URL(left, "http://x");
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- the same
+  const b = new URL(landed, "http://x");
+  if (a.pathname !== b.pathname || !a.searchParams.has("pane") || b.searchParams.has("pane")) return null;
+  a.searchParams.delete("pane");
+  a.searchParams.delete("from");
+  const screen = a.pathname + a.search;
+  return screen !== b.pathname + b.search ? screen : null;
+}
+setPopHook(screenUnderDrawer);
+// ---- end II-6
 
 // ---- the card: cached by player + league + team (the path) + data version; the league key carries the scoring and
 // the season (the API serves one season per league key; a new season is a new data build). A request token guards
