@@ -3,8 +3,9 @@
 Plan F3 (Wave F) split it out of ``anyleague`` (E3's spike) so the API for any league holds Sleeper's rules in one
 place. Sleeper's API is free, read-only and keyless; it asks for **under 1,000 calls a minute** (docs/SLEEPER_TERMS.md).
 
-* **Caches** (``TTL_S``): the player directory (~15 MB) a day, on disk under ``LEAGUE_LAB_CACHE_DIR`` (default
-  ``<repo>/.cache/``, git-ignored) so a restart does not re-download it; a league's settings and its users a day;
+* **Caches** (``TTL_S``): the player directory (~16 MB of JSON from Sleeper) a day, on disk under ``LEAGUE_LAB_CACHE_DIR`` (default
+  ``<repo>/.cache/``, git-ignored) so a restart does not re-download it — **trimmed at the load** to the fields the code
+  reads (``DIRECTORY_FIELDS``, IL-4), its text interned, one shared read-only copy (``Directory``); a league's settings and its users a day;
   rosters 10 minutes; matchups 5 minutes (a played week's matchups and a round's transactions an hour: Wave G); a username lookup and a user's league list an hour; the NFL state an hour.
 * **Stale on error**: an expired entry is kept; when Sleeper fails (or the bucket is empty) the last good answer is
   served instead of an error, and the response is no older than the last success.
@@ -26,6 +27,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import threading
 import time
 import urllib.error
@@ -45,7 +47,7 @@ PLAYERS_FILE = "sleeper_players_nfl.json"
 
 # seconds an answer is fresh, by kind of call
 TTL_S: dict[str, float] = {
-    "players": 24 * 3600,       # ~15 MB; Sleeper: at most once a day
+    "players": 24 * 3600,       # ~16 MB of JSON (trimmed at the load: IL-4); Sleeper: at most once a day
     "league": 24 * 3600,        # settings, scoring, slots: change a few times a season
     "users": 24 * 3600,         # team names: cosmetic
     "rosters": 10 * 60,         # waivers and trades
@@ -56,6 +58,79 @@ TTL_S: dict[str, float] = {
     "season_matchups": 3600,    # Wave G (G2): a played week's matchups (standings, all-play, luck): settled
     "transactions": 3600,       # Wave G (G2): a round's transactions (claims, drops, trades)
 }
+
+# ---- IL-4 (Wave I-L): the player directory trimmed at the load. Sleeper sends ~53 fields for ~12,200 players (16 MB
+# of JSON, 37 MB in memory once parsed: `/api/status` `memory.outside_mb.sleeper` read 37 live); the code reads these
+# 15. Every reader of `players()` / `Router.players()`, and what it reads (grepped 2026-10-05; `tests/test_il4.py` pins
+# the list against a recording directory run through the readers):
+#   anyleague (league weeks, free agents, rosters, `_sleeper_name`): full_name, first_name, last_name, position,
+#     fantasy_positions, team, status, injury_status (`mfl_id` / `unit` live on MFL's own rows, not Sleeper's)
+#   availability (the overlay's Sleeper side, `sleeper_code`, `depth_order`, `_fantasy_positions`): espn_id, gsis_id,
+#     injury_status, status, team, full_name, news_updated, injury_body_part, depth_chart_order, fantasy_positions
+#   research.search_on_demand: position, full_name, first_name, last_name, team
+#   news._from_sleeper: espn_id · decisions (units_named, directory_row, known_name): team, full_name, first_name, last_name
+#   espn_leagues / yahoo_leagues (the name index for ids no table maps): full_name, first_name, last_name, position, team
+#   ondemand.unit_card: MFL's unit rows only · player_ids / cards.display_name / the console's pages (`app/`): the
+#     database, not this directory
+# Kept besides: player_id (the key's twin: one interned string for both) and active (the fixtures' shape). ROWS are not
+# trimmed: a retired player can sit on a dynasty roster, and a league opened on demand is read after the directory.
+DIRECTORY_FIELDS: tuple[str, ...] = (
+    "player_id", "full_name", "first_name", "last_name", "position", "fantasy_positions", "team", "status",
+    "injury_status", "active", "gsis_id", "espn_id", "news_updated", "injury_body_part", "depth_chart_order")
+_DIRECTORY_FIELDS = frozenset(DIRECTORY_FIELDS)
+
+
+class Directory(dict):
+    """The player directory: ONE copy per process, shared by every reader (``players()`` returns it, no per-call copy)
+    and so read only — a reader that needs to add rows copies it first (``dict(d)``, as ``Router.players`` does)."""
+
+    def _read_only(self, *_a, **_k):
+        raise TypeError("the player directory is shared and read only: copy it first (dict(directory))")
+
+    __setitem__ = __delitem__ = _read_only
+    clear = pop = popitem = setdefault = update = __ior__ = _read_only
+
+
+def _intern(v: Any) -> Any:
+    if isinstance(v, str):
+        return sys.intern(v)
+    if isinstance(v, list):
+        return [sys.intern(x) if isinstance(x, str) else x for x in v]
+    return v
+
+
+def trim_row(p: dict) -> dict:
+    """One directory row with only ``DIRECTORY_FIELDS``, its text interned (a team, a position, a status, a first name is
+    one string for the whole directory) and its nulls left out: every reader asks ``row.get(field)``, which answers None
+    for an absent field exactly as for a null one, and a 10-field dict is 272 bytes where a 15-field one is 464 (most
+    players have no team, no injury, no depth chart): 3 MB of the 12,200 rows."""
+    return {f: _intern(p[f]) for f in DIRECTORY_FIELDS if p.get(f) is not None}
+
+
+def _row_hook(d: dict) -> dict:
+    """``json.loads``' object hook: a player row is trimmed the moment it is parsed, so the 53-field rows never pile up
+    (the parse peaks near the trimmed size, not at 37 MB). Any other object (a row's ``metadata``, the outer map) passes."""
+    return trim_row(d) if "player_id" in d else d
+
+
+def trim_directory(data: Any) -> Any:
+    """The directory as kept: every row trimmed (``trim_row``; a row the hook already trimmed is kept as it is), the ids
+    interned (a row's ``player_id`` and its key are one string), in a read-only ``Directory``. Idempotent."""
+    if not isinstance(data, dict):
+        return data
+    out = {}
+    for k, v in data.items():
+        if isinstance(v, dict) and (not v.keys() <= _DIRECTORY_FIELDS or None in v.values()):
+            v = trim_row(v)
+        out[sys.intern(k) if isinstance(k, str) else k] = v
+    return Directory(out)
+
+
+def loads_directory(text: str) -> Any:
+    """Sleeper's ``/players/nfl`` answer (or the disk copy, or the fixture) parsed and trimmed in one pass."""
+    return trim_directory(json.loads(text or "null", object_hook=_row_hook))
+# ---- end IL-4
+
 
 _ID = re.compile(r"^\d{1,24}$")
 _USERNAME = re.compile(r"^[A-Za-z0-9_.\-]{1,40}$")
@@ -163,7 +238,8 @@ class Sleeper:
         self._lock = threading.Lock()
 
     # ------------------------------------------------------------------ the one read
-    def _read(self, path: str, fixture: str) -> Any:
+    def _read(self, path: str, fixture: str, kind: str | None = None) -> Any:
+        parse = loads_directory if kind == "players" else json.loads          # ---- IL-4: the directory trimmed as parsed
         if self._fetch is not None:
             return self._fetch(path)
         if self.fixtures is not None:
@@ -174,11 +250,11 @@ class Sleeper:
                 if fixture.startswith(("matchups_", "transactions_")):
                     return []                  # a week Sleeper has no pairings (or no transactions) for
                 raise SleeperUnavailable(f"no fixture {f}")
-            return json.loads(f.read_text())
+            return parse(f.read_text())
         req = urllib.request.Request(f"{self.base}{path}", headers={"User-Agent": "league-lab/api"})
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as r:  # noqa: S310 - fixed https host
-                return json.loads(r.read().decode("utf-8") or "null")
+                return parse(r.read().decode("utf-8") or "null")
         except (urllib.error.URLError, TimeoutError, OSError, json.JSONDecodeError) as exc:
             raise SleeperUnavailable(f"Sleeper {path}: {exc}") from exc
 
@@ -199,7 +275,9 @@ class Sleeper:
             raise SleeperBusy("busy, try again in a minute")
         self.calls += 1
         try:
-            data = self._read(path, fixture)
+            data = self._read(path, fixture, kind)
+            if kind == "players":              # ---- IL-4: trimmed whatever read it (an injected fetch too)
+                data = trim_directory(data)
         except SleeperUnavailable:
             if hit is not None:
                 self.stale_served += 1
@@ -223,7 +301,7 @@ class Sleeper:
         if age >= TTL_S["players"]:
             return None
         try:
-            data = json.loads(f.read_text())
+            data = loads_directory(f.read_text())      # ---- IL-4: a copy written before the trim is trimmed here
         except (OSError, json.JSONDecodeError):
             return None
         now = self.clock()
@@ -279,7 +357,27 @@ class Sleeper:
                               "transactions") or [])
 
     def players(self) -> dict[str, dict]:
-        return dict(self._get("/players/nfl", "players_nfl.json", "players") or {})
+        """Sleeper's player directory, trimmed (``DIRECTORY_FIELDS``): the one shared read-only copy (IL-4: no copy per
+        call — a reader that adds rows copies it)."""
+        d = self._get("/players/nfl", "players_nfl.json", "players")
+        return d if isinstance(d, Directory) else Directory(d or {})
+
+    def directory_info(self) -> dict:
+        """IL-4: ``/api/status`` ``memory.directory`` — {loaded, rows, fields (the distinct fields the rows hold), mb
+        (``memo.sizeof``, the unit of ``outside_mb``), kept (``DIRECTORY_FIELDS``)} of the copy in memory; nothing is read
+        to answer (rows 0 before the first league asks for the directory)."""
+        from . import memo
+        with self._lock:
+            hit = self._cache.get("/players/nfl")
+        d = hit[3] if hit is not None else None
+        if not isinstance(d, dict):
+            return {"loaded": False, "rows": 0, "fields": 0, "mb": 0.0, "kept": len(DIRECTORY_FIELDS)}
+        fields: set[str] = set()
+        for row in d.values():
+            if isinstance(row, dict):
+                fields.update(row.keys())
+        return {"loaded": True, "rows": len(d), "fields": len(fields), "mb": round(memo.sizeof(d) / 1048576, 1),
+                "kept": len(DIRECTORY_FIELDS)}
 
     def user(self, username: str) -> dict:
         name = check_username(username)

@@ -9,6 +9,15 @@ UTC — calls each league's screens in turn and reads the server's resident memo
     uv run python scripts/measure_memory.py --port 8752 --label plateau --plateau  # + mfl:21861 + the leagues again
     LEAGUE_LAB_CACHE_MB=60 uv run python scripts/measure_memory.py --plateau --cycles 2
     MALLOC_ARENA_MAX=2 uv run python scripts/measure_memory.py --label arena2      # what the Dockerfile's ENV does
+    uv run python scripts/measure_memory.py --synthetic-directory --label il4      # Sleeper's directory at its real size
+
+``--synthetic-directory`` (IL-4, Wave I-L): the fixtures' player directory is 842 players and 11 fields (1 MB); live,
+Sleeper's is ~12,200 players and 53 fields (16 MB of JSON, 37 MB once parsed). The flag writes a directory of that size
+and shape into the run's own fixtures copy (``synthetic_directory``: the fixture's 842 rows with every other field
+Sleeper sends added — null where the readers would see a value the fixture does not have, so the screens' answers stay
+the fixture's —, plus generated players with generated ids, fields and null rates as ``raw.sleeper_player``'s payloads
+of 2026-09-26 have them; no team defenses, no units: those stay the fixture's 32 + MFL's own) and reads it through the
+same Sleeper fixtures path. ``--repo`` runs another checkout's server with this script's directory (the before figure).
 
 Two figures per step: ``tree`` is the PO's (the ``uv run`` process plus the uvicorn python under it: Wave I-J's
 before / after table is in this column), ``server`` is the python process alone (what Render meters: the image runs
@@ -21,6 +30,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -52,6 +63,99 @@ def fixture_env(api: Path, cache_dir: str) -> dict[str, str]:
                 "LEAGUE_LAB_MFL_FIXTURES": str(fx / "mfl"), "LEAGUE_LAB_PLAYER_IDS_CSV": str(fx / "ff" / "db_playerids.csv"),
                 "LEAGUE_LAB_MFL_YEAR": "2026", "LEAGUE_LAB_CACHE_DIR": cache_dir})
     return env
+
+
+# ---- IL-4 (Wave I-L): Sleeper's player directory at its real size and shape
+DIRECTORY_ROWS = 12229                     # raw.sleeper_player, 2026-09-26 (Sleeper's /players/nfl that morning)
+SLEEPER_FIELDS = (                          # every field Sleeper sends (raw.sleeper_player.payload's keys)
+    "active", "age", "birth_city", "birth_country", "birth_date", "birth_state", "college", "competitions",
+    "depth_chart_order", "depth_chart_position", "espn_id", "fantasy_data_id", "fantasy_positions", "first_name",
+    "full_name", "gsis_id", "hashtag", "height", "high_school", "injury_body_part", "injury_notes", "injury_start_date",
+    "injury_status", "kalshi_id", "last_name", "metadata", "news_updated", "number", "oddsjam_id", "opta_id",
+    "pandascore_id", "player_id", "player_shard", "position", "practice_description", "practice_participation",
+    "rotowire_id", "rotoworld_id", "search_first_name", "search_full_name", "search_last_name", "search_rank",
+    "sport", "sportradar_id", "stats_id", "status", "swish_id", "team", "team_abbr", "team_changed_at", "weight",
+    "yahoo_id", "years_exp")
+_POSITIONS = (("WR", 18), ("RB", 12), ("TE", 8), ("QB", 7), ("K", 2), ("P", 2), ("LS", 1), ("OL", 6), ("OT", 4),
+              ("G", 3), ("C", 2), ("DL", 6), ("DE", 5), ("DT", 4), ("LB", 9), ("OLB", 2), ("ILB", 1), ("CB", 9),
+              ("S", 6), ("DB", 3), ("FB", 1))
+_TEAMS = ("ARI", "ATL", "BAL", "BUF", "CAR", "CHI", "CIN", "CLE", "DAL", "DEN", "DET", "GB", "HOU", "IND", "JAX", "KC",
+          "LAC", "LAR", "LV", "MIA", "MIN", "NE", "NO", "NYG", "NYJ", "PHI", "PIT", "SEA", "SF", "TB", "TEN", "WAS")
+_SYL = ("an", "ber", "cal", "dar", "el", "fen", "gor", "hal", "is", "jo", "ka", "lin", "mar", "nor", "os", "pel",
+        "quin", "ros", "sen", "tor", "ul", "van", "wes", "xan", "yor", "zek", "tre", "von", "mic", "dez")
+
+
+def _name(rng: random.Random, lo: int, hi: int) -> str:
+    return "".join(rng.choice(_SYL) for _ in range(rng.randint(lo, hi))).capitalize()
+
+
+def synthetic_row(rng: random.Random, pid: str) -> dict:
+    """One generated player: every field Sleeper sends, the null rates and lengths of the real payloads."""
+    pos = rng.choices([p for p, _ in _POSITIONS], [w for _, w in _POSITIONS])[0]
+    first, last = _name(rng, 1, 3), _name(rng, 2, 4)
+    team = rng.choice(_TEAMS) if rng.random() < 0.22 else None
+    maybe = lambda p, v: v if rng.random() < p else None  # noqa: E731 - a null rate
+    meta = maybe(0.78, {"channel_id": str(rng.randrange(10**18, 10**19)), "rookie_year": str(rng.randint(2000, 2026)),
+                        **({"genius_id": f"{rng.randrange(16**24):024x}"} if rng.random() < 0.35 else {})})
+    return {
+        "active": rng.random() < 0.77, "age": maybe(0.9, rng.randint(21, 40)), "birth_city": None, "birth_country": None,
+        "birth_date": maybe(0.9, f"{rng.randint(1980, 2004)}-{rng.randint(1, 12):02d}-{rng.randint(1, 28):02d}"),
+        "birth_state": None, "college": maybe(0.97, f"{_name(rng, 2, 3)} State"), "competitions": [],
+        "depth_chart_order": maybe(0.13, rng.randint(1, 4)), "depth_chart_position": maybe(0.16, pos),
+        "espn_id": maybe(0.55, rng.randint(10**5, 5 * 10**6)), "fantasy_data_id": maybe(0.83, rng.randint(1000, 99999)),
+        "fantasy_positions": maybe(0.97, [pos]), "first_name": first, "full_name": f"{first} {last}",
+        "gsis_id": maybe(0.32, f"00-00{rng.randint(10000, 99999)}"),
+        "hashtag": f"#{first}{last}-NFL-{team or 'FA'}-{rng.randint(0, 99)}".lower(),
+        "height": maybe(0.99, str(rng.randint(68, 80))), "high_school": maybe(0.89, f"{_name(rng, 2, 4)} High School "
+                                                                                    f"({_name(rng, 2, 3)}, TX)"),
+        "injury_body_part": maybe(0.055, rng.choice(("Knee", "Ankle", "Hamstring", "Shoulder", "Concussion"))),
+        "injury_notes": maybe(0.008, "Day-to-day"), "injury_start_date": None,
+        "injury_status": maybe(0.06, rng.choice(("Questionable", "Out", "IR", "PUP", "Doubtful"))),
+        "kalshi_id": maybe(0.33, f"{rng.randrange(16**32):032x}"[:36]), "last_name": last, "metadata": meta,
+        "news_updated": maybe(0.67, rng.randint(1_600_000_000_000, 1_760_000_000_000)),
+        "number": maybe(0.93, rng.randint(0, 99)), "oddsjam_id": maybe(0.35, f"{rng.randrange(16**16):016X}"),
+        "opta_id": None, "pandascore_id": None, "player_id": pid, "player_shard": f"{rng.randrange(16**3):03x}",
+        "position": maybe(0.98, pos), "practice_description": None, "practice_participation": None,
+        "rotowire_id": maybe(0.84, rng.randint(1000, 20000)), "rotoworld_id": maybe(0.17, rng.randint(1000, 20000)),
+        "search_first_name": first.lower(), "search_full_name": f"{first}{last}".lower(),
+        "search_last_name": last.lower(), "search_rank": maybe(0.98, rng.randint(1, 9_999_999)), "sport": "nfl",
+        "sportradar_id": maybe(0.99, f"{rng.randrange(16**32):032x}"), "stats_id": maybe(0.24, rng.randint(10**5, 10**6)),
+        "status": maybe(0.996, rng.choice(("Active", "Inactive", "Injured Reserve", "Practice Squad", "Retired"))),
+        "swish_id": maybe(0.43, rng.randint(10**5, 2 * 10**6)), "team": team, "team_abbr": None, "team_changed_at": None,
+        "weight": maybe(0.99, str(rng.randint(170, 340))), "yahoo_id": maybe(0.55, rng.randint(10**4, 4 * 10**4)),
+        "years_exp": maybe(0.99, rng.randint(0, 18)),
+    }
+
+
+def synthetic_directory(fixture: dict, rows: int = DIRECTORY_ROWS, seed: int = 4) -> dict:
+    """The fixture's rows (every other Sleeper field added: generated where no reader reads it, null where one does —
+    the fields the API keeps, so the answers stay the fixture's) plus generated players up to ``rows``."""
+    rng = random.Random(seed)
+    kept = {"player_id", "full_name", "first_name", "last_name", "position", "fantasy_positions", "team", "status",
+            "injury_status", "active", "gsis_id", "espn_id", "news_updated", "injury_body_part", "depth_chart_order"}
+    out: dict[str, dict] = {}
+    for pid, p in fixture.items():
+        full = synthetic_row(rng, str(pid))
+        out[pid] = {f: (p[f] if f in p else (None if f in kept else full[f])) for f in SLEEPER_FIELDS}
+    n = 0
+    while len(out) < rows:
+        pid = str(9_000_000 + n)
+        n += 1
+        if pid not in out:
+            out[pid] = synthetic_row(rng, pid)
+    return out
+
+
+def synthetic_fixtures(api: Path, cache_dir: str) -> tuple[Path, dict]:
+    """A copy of the Sleeper fixtures with the synthetic directory in ``players_nfl.json``; (the directory, its stats)."""
+    src = api / "tests" / "fixtures" / "sleeper"
+    dst = Path(cache_dir) / "sleeper_fixtures"
+    shutil.copytree(src, dst)
+    d = synthetic_directory(json.loads((src / "players_nfl.json").read_text()))
+    text = json.dumps(d)
+    (dst / "players_nfl.json").write_text(text)
+    return dst, {"rows": len(d), "fields": len(SLEEPER_FIELDS), "json_mb": round(len(text) / 1048576, 1)}
+# ---- end IL-4
 
 
 def _ps(args: list[str]) -> list[tuple[int, int, str]]:
@@ -96,12 +200,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--plateau", action="store_true", help="add mfl:21861 (a fifth league) and the leagues again")
     ap.add_argument("--cycles", type=int, default=1, help="with --plateau: how many more rounds of the five leagues")
     ap.add_argument("--json", help="write the rows here")
+    ap.add_argument("--synthetic-directory", action="store_true",
+                    help="IL-4: Sleeper's player directory at its real size and shape (~12,200 players, 53 fields)")
     a = ap.parse_args(argv)
     api = Path(a.repo) / "api"
     cache_dir = tempfile.mkdtemp(prefix=f"measure_{a.label}_")
     log = open(Path(cache_dir) / "api.log", "w")
+    env = fixture_env(api, cache_dir)
+    directory = None
+    if a.synthetic_directory:                                    # ---- IL-4: the fixtures, with the real-size directory
+        fx, directory = synthetic_fixtures(Path(ROOT) / "api", cache_dir)
+        env["LEAGUE_LAB_SLEEPER_FIXTURES"] = str(fx)
+        print(f"synthetic directory: {directory}", file=sys.stderr, flush=True)
     proc = subprocess.Popen(["uv", "run", "uvicorn", "league_lab_api.main:app", "--port", str(a.port)], cwd=api,
-                            env=fixture_env(api, cache_dir), stdout=log, stderr=subprocess.STDOUT)
+                            env=env, stdout=log, stderr=subprocess.STDOUT)
     rows: list[dict] = []
     try:
         for _ in range(90):
@@ -117,6 +229,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{tree:7.1f} MB tree {server:7.1f} MB server  {step}  {calls}", file=sys.stderr, flush=True)
 
         mark("start (health)", ["/api/health"])
+        if a.synthetic_directory:                                # ---- IL-4: the directory alone, before any league
+            mark("player directory (a search on demand)", [f"/api/search?league={TEST}&q=jo"])
         mark("scrubs", screens(SCRUBS, 2))
         mark("dynasty", screens(DYNASTY, 12))
         mark("test league (on demand, sleeper fixtures)", screens(TEST, 3))
@@ -146,8 +260,11 @@ def main(argv: list[str] | None = None) -> int:
     for r in rows:
         print(f"| {r['step']} | {r['tree_mb']} | {r['server_mb']} | {r['seconds']} |")
     print(f"\nmemory (/api/status): {json.dumps(memory)}")
+    if directory is not None:
+        print(f"synthetic directory: {json.dumps(directory)}")
     if a.json:
-        Path(a.json).write_text(json.dumps({"label": a.label, "rows": rows, "memory": memory}, indent=1))
+        Path(a.json).write_text(json.dumps({"label": a.label, "rows": rows, "memory": memory, "directory": directory},
+                                           indent=1))
     return 0
 
 

@@ -373,6 +373,18 @@ def region(name: str, ttl: float = 600.0, max_entries: int | None = None) -> Reg
 PLAN_MB = 512          # Render's Starter plan (docs/DEPLOY.md § Memory): the RSS the host meters against
 
 
+def directory_words(m: dict) -> str:
+    """IL-4 (Wave I-L): ``/api/status``'s ``memory.directory`` in one line (the console's Data Status page, next to
+    ``status_words``): "Sleeper's player directory: 12,229 players, 15 fields, 8.6 MB (outside the caches' budget)."."""
+    d = (m or {}).get("directory")
+    if not isinstance(d, dict):
+        return "Sleeper's player directory: not reported by this server."
+    if not d.get("loaded"):
+        return "Sleeper's player directory: not read yet (the first league opened reads it)."
+    return (f"Sleeper's player directory: {int(d.get('rows') or 0):,} players, {int(d.get('fields') or 0)} fields, "
+            f"{float(d.get('mb') or 0):.1f} MB (outside the caches' budget).")
+
+
 def status_words(m: dict, plan_mb: int = PLAN_MB) -> str:
     """``/api/status``'s ``memory`` block in one line (the console's Data Status page): "412 MB of the plan's 512 in
     use; the caches hold 61 of their 64 MB (decisions 25, sql 22, league weeks 19)"."""

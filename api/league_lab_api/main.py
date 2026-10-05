@@ -474,6 +474,11 @@ def memory_status() -> dict:
                              if isinstance(getattr(c, "_cache", None), dict)}
     except Exception:  # noqa: BLE001
         out["outside_mb"] = {}
+    try:                                    # ---- IL-4: Sleeper's player directory as kept (trimmed at the load)
+        sl = getattr(A.sleeper(), "sleeper", None)
+        out["directory"] = sl.directory_info() if sl is not None and hasattr(sl, "directory_info") else None
+    except Exception:  # noqa: BLE001 - a status line, never a failure
+        out["directory"] = None
     return out
 
 
