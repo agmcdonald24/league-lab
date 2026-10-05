@@ -31,7 +31,7 @@ from league_lab import anyleague as A
 from league_lab import scoring as S  # ---- M4 (Wave I-G): the pricing mode (record_pricing)
 from league_lab.lineup import UNVALUED, Player  # ---- IB-3
 
-from . import availability, why
+from . import availability, db, why
 from .applib import cards, ui
 from .db import query
 from .myweek import (  # IE-1 (+ annotate_swaps, PO I-E)
@@ -50,6 +50,9 @@ from .myweek import (  # IE-1 (+ annotate_swaps, PO I-E)
     what_changed,
 )
 from .settings import APP_NAME
+
+# ---- INF-2 (Wave I-J): a Board / a window is kept as built (anyleague's ``boards`` / ``ros`` regions), not its raw rows
+db.not_kept(*A.BOARD_INPUT_SQL)
 
 MOVERS_SQL = """select t.gsis_id, t.player_name, t.position, t.tags, t.momentum
                 from analytics.mart_player_trend_tags t

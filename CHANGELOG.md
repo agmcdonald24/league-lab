@@ -2,6 +2,17 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-05 — Wave I-J
+
+- **INF-2 — the memory diet** (Render ran out of its 512 MB on Sunday 2026-10-04). Every in-process cache is now a
+  region of one byte budget (`league_lab.memo`, `LEAGUE_LAB_CACHE_MB`, default 64; least recently used out first,
+  TTLs kept), text values are interned at the fetch and `numeric` read as float, one projections Board per week is
+  shared by every league (its raw rows not kept beside it), the cache hands out copy-on-write copies, and the server
+  `malloc_trim`s after a request. Four leagues: **405 → 276 MB** on the PO's script (272 with `MALLOC_ARENA_MAX=2`,
+  the Dockerfile line for the PO; the server alone 243); a fifth league and two more rounds of all five hold at ~308.
+  `/api/status` gains `memory` (RSS, the budget by region), the console's Data Status page one line,
+  `scripts/measure_memory.py` re-measures, DEPLOY § Memory. Same answers: no test re-pinned.
+
 ## 2026-10-04 — Wave I-I
 
 - **PO (the merge, 2026-10-05).** The pinned clock lands (`league_lab.clock`, `LEAGUE_LAB_NOW`; both suites pinned to

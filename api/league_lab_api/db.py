@@ -6,6 +6,10 @@
 * `query(sql, params)` returns a DataFrame (Decimal columns as floats, like the app) and caches it for
   10 minutes keyed on the SQL and its parameters (the app's `st.cache_data(ttl=600)`). The data changes
   once a night, so a cached answer is the answer. Every call returns a copy: callers may add columns.
+  INF-2 (Wave I-J, the memory diet): the cache is the `sql` region of `league_lab.memo`'s one byte budget
+  (`LEAGUE_LAB_CACHE_MB`, least recently used out first; it was 2,000 entries whatever their size), the copy is
+  shallow (pandas 3's copy-on-write makes a caller's change its own without copying the data for every caller),
+  and every text value is interned at the fetch (`intern_strings`: one "00-0037840" however many frames hold it).
 * A connection pool keeps one connection open (Neon's pooler, or the local server), checked before use
   because Neon closes idle connections when its compute suspends.
 * A relation that is missing (the hosted copy is dropped and restored by every sync, for a minute or two)
@@ -15,12 +19,15 @@
 from __future__ import annotations
 
 import atexit
+import sys
 import threading
-import time
 from decimal import Decimal
 
+import numpy as np
 import pandas as pd
 import psycopg
+from league_lab import memo
+from psycopg.types.numeric import FloatLoader
 from psycopg_pool import ConnectionPool
 
 from .settings import app_dsn
@@ -35,8 +42,7 @@ class DataNotReady(RuntimeError):
 
 _pool: ConnectionPool | None = None
 _pool_lock = threading.Lock()
-_cache: dict[tuple, tuple[float, pd.DataFrame]] = {}
-_cache_lock = threading.Lock()
+_cache = memo.region("sql", ttl=CACHE_TTL_SECONDS)       # INF-2: (sql, params) -> DataFrame, in the shared budget
 
 
 def pool() -> ConnectionPool:
@@ -45,8 +51,15 @@ def pool() -> ConnectionPool:
         if _pool is None:
             _pool = ConnectionPool(app_dsn(), min_size=1, max_size=4, open=True, timeout=30,
                                    kwargs={"autocommit": True}, check=ConnectionPool.check_connection,
-                                   max_idle=240, name="league-lab-api")
+                                   max_idle=240, name="league-lab-api", configure=_numeric_as_float)
         return _pool
+
+
+def _numeric_as_float(conn: psycopg.Connection) -> None:
+    """INF-2: ``numeric`` comes back as a float, parsed from Postgres' text (no Decimal per cell to convert and drop:
+    fewer short-lived objects, less heap left fragmented). The same value ``_run`` made before: ``float(Decimal(t))``
+    and ``float(t)`` are both the correctly rounded double of the text ``t``."""
+    conn.adapters.register_loader("numeric", FloatLoader)
 
 
 def close() -> None:
@@ -61,8 +74,40 @@ atexit.register(close)
 
 
 def clear_cache() -> None:
-    with _cache_lock:
-        _cache.clear()
+    _cache.clear()
+
+
+def intern_strings(df: pd.DataFrame) -> pd.DataFrame:
+    """INF-2: every text column's values through ``sys.intern``, in place (the frame stays equal, value for value and
+    dtype for dtype): a gsis_id, a position, a team, a scoring name is one object in the process however many rows and
+    frames hold it. Vectorised (``pd.factorize``: one hash pass in C, one ``intern`` per distinct value). A column is
+    interned when pandas made it ``str`` or when it is ``object`` holding only strings; anything else is left alone.
+    ``category`` was not chosen: consumers group, merge, sort and ``isin`` on these columns, and a categorical changes
+    groupby's rows (``observed``) and concat's dtypes."""
+    for c in df.columns:
+        s = df[c]
+        if isinstance(s.dtype, pd.StringDtype):
+            pass
+        elif s.dtype == object:
+            if pd.api.types.infer_dtype(s, skipna=True) != "string":
+                continue
+        else:
+            continue
+        vals = np.asarray(s.array, dtype=object)
+        codes, uniques = pd.factorize(vals, use_na_sentinel=True)
+        na = s.dtype.na_value if isinstance(s.dtype, pd.StringDtype) else None
+        pool = np.empty(len(uniques) + 1, dtype=object)
+        pool[:-1] = [sys.intern(u) for u in uniques]
+        pool[-1] = na                                         # code -1 (a NULL) takes the last element
+        new = pool.take(codes)
+        if s.dtype == object:
+            nulls = s.isna().to_numpy()
+            if nulls.any():                                   # keep each NULL as it came (None, never NaN)
+                new[nulls] = vals[nulls]
+            df[c] = pd.Series(new, index=df.index, dtype=object)   # stays object (pandas 3 would infer str)
+        else:
+            df[c] = pd.array(new, dtype=s.dtype)
+    return df
 
 
 def _run(sql: str, params: tuple) -> pd.DataFrame:
@@ -79,24 +124,31 @@ def _run(sql: str, params: tuple) -> pd.DataFrame:
             sample = df[c].dropna()
             if not sample.empty and isinstance(sample.iloc[0], Decimal):
                 df[c] = df[c].astype(float)
-    return df
+    return intern_strings(df)
+
+
+_not_kept: set[str] = set()
+
+
+def not_kept(*sqls: str) -> None:
+    """INF-2: these statements' results are not kept in the ``sql`` region — their caller keeps what it builds from them
+    (``anyleague.BOARD_INPUT_SQL``: a week's Board, a window's rest-of-season table), so keeping the raw rows as well
+    held every board twice."""
+    _not_kept.update(sqls)
 
 
 def query(sql: str, params: tuple = (), *, ttl: float | None = None) -> pd.DataFrame:
-    """Run a read-only query (cached 10 minutes, or ``ttl`` seconds); returns a fresh copy every time."""
+    """Run a read-only query (cached 10 minutes, or ``ttl`` seconds, in the budget's ``sql`` region — unless
+    ``not_kept``); returns a fresh (shallow, copy-on-write) copy every time."""
+    if sql in _not_kept:
+        return _run(sql, tuple(params))
     key = (sql, tuple(tuple(p) if isinstance(p, list) else p for p in params))
-    now = time.monotonic()
-    with _cache_lock:
-        hit = _cache.get(key)
-    if hit is not None and hit[0] > now:
-        return hit[1].copy()
+    hit = _cache.get(key)
+    if hit is not None:
+        return hit.copy(deep=False)
     df = _run(sql, tuple(params))
-    with _cache_lock:
-        _cache[key] = (now + (CACHE_TTL_SECONDS if ttl is None else ttl), df)
-        if len(_cache) > 2000:                       # bounded: drop the expired, then the oldest half
-            for k in [k for k, (exp, _) in _cache.items() if exp <= now] or list(_cache)[: len(_cache) // 2]:
-                _cache.pop(k, None)
-    return df.copy()
+    _cache.put(key, df, ttl=ttl)
+    return df.copy(deep=False)
 
 
 def scalar(sql: str, params: tuple = ()):

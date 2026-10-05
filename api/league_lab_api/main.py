@@ -21,6 +21,7 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/about?league=                   About the numbers: the model, what it leans on most, its grades (H1)
     /api/status                          the freshness line, the stale-injury warning, Sleeper's cache ages + budget;
                                          ---- IH-1: `nightly` = the stale state (a missed morning update: 30 hours)
+                                         ---- INF-2: `memory` = the RSS and the caches' byte budget by region
     /api/league/scoring-check?league=&week=  our points vs the league's own for a scored week (Wave I-C, IC-1)
     POST /api/usage, /api/usage/summary  ---- U-1: one count per screen view (its own read-write transaction), the counts
     /api/events?league=&team=&hours=     ---- IG-2: this roster's stored events (status moves, news, briefs; the PO's QA)
@@ -41,6 +42,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from league_lab import anyleague as A
+from league_lab import memo  # ---- INF-2: the memory budget
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -64,6 +66,15 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title=f"{APP_NAME} API (League Lab)", version="0.1.0", lifespan=lifespan, docs_url="/api/docs",
               openapi_url="/api/openapi.json", redoc_url=None)
 app.add_middleware(GZipMiddleware, minimum_size=500)
+
+
+@app.middleware("http")
+async def _give_memory_back(request: Request, call_next):
+    """INF-2 (Wave I-J): after a request, hand the freed heap back to the system when the RSS grew since the last time
+    (``memo.relieve``: glibc's malloc_trim, at most every few seconds; a no-op elsewhere)."""
+    response = await call_next(request)
+    memo.relieve()
+    return response
 
 JSON_CACHE = "private, max-age=120"
 
@@ -398,7 +409,30 @@ def status(response: Response):
         out["board_source_in_use"] = None if week is None else A.load_board(query, season, week).source
     except Exception as exc:  # noqa: BLE001 - a status line, never a failure
         out["board_source_in_use"] = f"unknown ({exc.__class__.__name__})"
+    out["memory"] = memory_status()          # ---- INF-2: the server's RSS and the caches' budget, region by region
     return _json(out, response)
+
+
+def memory_status() -> dict:
+    """INF-2 (Wave I-J, the memory diet): {rss_mb, cache_mb, budget_mb, regions: {name: MB}, entries, evictions, trims,
+    malloc_arena_max, outside_mb} — the process's resident memory (what Render meters against the plan's 512 MB) next to what the
+    in-process caches hold in ``league_lab.memo``'s one budget (``LEAGUE_LAB_CACHE_MB``)."""
+    import os
+    try:
+        out = {"rss_mb": memo.rss_mb(), **memo.BUDGET.report(), **memo.relief(),
+               "malloc_arena_max": os.environ.get("MALLOC_ARENA_MAX")}
+    except Exception as exc:  # noqa: BLE001 - a status line, never a failure
+        return {"error": exc.__class__.__name__}
+    # outside the budget: the platform clients' own caches (Sleeper's player directory for the day, MFL's payloads)
+    try:
+        router = A.sleeper()
+        mfl = getattr(getattr(router, "_mfl", None), "client", None) or getattr(router, "_mfl_client", None)
+        out["outside_mb"] = {name: round(memo.sizeof(c._cache) / 1048576, 1)
+                             for name, c in (("sleeper", getattr(router, "sleeper", None)), ("mfl", mfl))
+                             if isinstance(getattr(c, "_cache", None), dict)}
+    except Exception:  # noqa: BLE001
+        out["outside_mb"] = {}
+    return out
 
 
 # ---- G1 research (plan G1, Wave G: league_lab_api/research.py; README § Research (G1)) ---------------------------
@@ -527,19 +561,17 @@ def about(league: str, response: Response, source: str | None = None):
 
 # ---- IC-1 (Wave I-C): the scoring check — our points against the league's own for a scored week
 #   /api/league/scoring-check?league=&week=     league_lab.scoring_audit.check (default: the last complete week)
-_scoring_checks: dict[tuple[str, int | None], tuple[float, dict]] = {}
 SCORING_CHECK_TTL_S = 24 * 3600.0        # a scored week does not change; the stat corrections land overnight
+_scoring_checks = memo.region("scoring_checks", ttl=SCORING_CHECK_TTL_S)   # INF-2: in the memory budget (was 200 entries)
 
 
 @app.get("/api/league/scoring-check", dependencies=[Depends(require_auth)])
 def scoring_check(league: str, response: Response, week: int | None = None):
-    import time as _t
-
     from league_lab import scoring_audit
     key = (str(league), week)
     hit = _scoring_checks.get(key)
-    if hit is not None and hit[0] > _t.monotonic():
-        return _json(hit[1], response)
+    if hit is not None:
+        return _json(hit, response)
     try:
         lid = A.check_id(league)
         lg = A.sleeper().league(lid)
@@ -554,9 +586,7 @@ def scoring_check(league: str, response: Response, week: int | None = None):
     except A.SleeperUnavailable as exc:
         raise ondemand.SleeperDown(str(exc)) from exc
     out["name"] = lg.get("name")
-    if len(_scoring_checks) > 200:
-        _scoring_checks.clear()
-    _scoring_checks[key] = (_t.monotonic() + SCORING_CHECK_TTL_S, out)
+    _scoring_checks.put(key, out)
     return _json(out, response)
 # ---- end IC-1
 

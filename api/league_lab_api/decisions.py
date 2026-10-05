@@ -40,6 +40,7 @@ import numpy as np
 import pandas as pd
 from league_lab import anyleague as A
 from league_lab import clock  # ---- INF-1: the league's now
+from league_lab import memo as budget  # ---- INF-2: the memory budget
 from league_lab import trades as T
 from league_lab import waivers as W
 from league_lab.lineup import UNVALUED, Player
@@ -173,22 +174,19 @@ def _members(league_id: str) -> dict[int, dict]:
     return {int(r.roster_id): {"team_name": r.team_name, "manager_name": _str(r.manager_name)} for r in m.itertuples()}
 
 
-_memo_cache: dict[tuple, tuple[float, Any]] = {}
 MEMO_TTL_S = {"house": 600, "sleeper": 120}      # the marts change once a night; Sleeper's rosters every 10 minutes
+# INF-2 (Wave I-J): the memory budget's ``decisions`` region (was a dict cleared past 256 entries)
+_memo_cache = budget.region("decisions", ttl=MEMO_TTL_S["house"])
+_MISS = object()
 
 
 def _memo(key: tuple, is_house: bool, fn):
     """A computed answer kept a while (the partner search and the league solve cost a second or two): 10 minutes on a
     house league (the page's own st.cache_data(ttl=600)), 2 minutes on demand (rosters move with claims and trades)."""
-    now = time.monotonic()
-    hit = _memo_cache.get(key)
-    if hit is not None and hit[0] > now:
-        return hit[1]
-    out = fn()
-    if len(_memo_cache) > 256:
-        _memo_cache.clear()
-    _memo_cache[key] = (now + MEMO_TTL_S["house" if is_house else "sleeper"], out)
-    return out
+    hit = _memo_cache.get(key, _MISS)
+    if hit is not _MISS:
+        return hit
+    return _memo_cache.put(key, fn(), ttl=MEMO_TTL_S["house" if is_house else "sleeper"])
 
 
 def clear_memo() -> None:

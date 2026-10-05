@@ -7946,3 +7946,165 @@ compare against it)
 5. **Decisions Andrew may reverse**: no cookie banner for the password-gated beta (About discloses GA); the pinned
    moment (Saturday 16:00Z: change `PINNED_NOW` in both conftests together, and only with a full run on `league_lab`).
 6. `wt-base` is detached at `ad4040e` (66 commits behind `main`): refresh it before the next wave relies on it.
+
+## Wave I-J (Iteration 20)
+
+### INF-2 2026-10-05 — the memory diet (branch `dev/INF2`, database `league_lab` read only)
+
+* **Task**: INF-2 (brief § "INF-2"; Render, Sunday 2026-10-04 15:25 ET: "Instance failed: ran out of memory (used
+  over 512 MB)"; Andrew: the memory diet, not the bigger plan). Plan sections: DEPLOY § Memory (new), § "What it costs".
+* **1. Strings interned at the fetch** — `api/league_lab_api/db.py` `intern_strings` (called by `_run`): every `str`
+  column (pandas 3 makes text `str`; an `object` column that holds only text too) goes through `pd.factorize` (one C
+  hash pass) and `sys.intern` once per distinct value, in place; dtypes, NULLs and values unchanged
+  (`assert_frame_equal`). Cost, measured on the main database with the suites running: ~20 ms for the 37,765-row
+  rest-of-season ranges (every reference × weeks 4–17), ~5 ms for a 600-row week frame (about 1 ms a text column);
+  paid once per SQL per 10 minutes. Saving: the window's 3 text columns held 5.4 MB of string objects, 0.03 MB after.
+  **`category` not chosen**: consumers group, merge, sort and `isin` on these columns, and a categorical changes
+  groupby's rows (`observed`) and concat's dtypes. **Also at the fetch**: `numeric` comes back as a float
+  (`_numeric_as_float`, psycopg's `FloatLoader` on the pool's connections) instead of a Decimal per cell converted
+  later — the same double (`float(Decimal(t)) == float(t)`, both correctly rounded; 200,000 random texts checked), no
+  Decimal objects to churn the heap. **And** `query()` hands out a shallow copy (`copy(deep=False)`): pandas 3's
+  copy-on-write makes a caller's change its own without copying the data for every caller (a test pins that a
+  caller's new column does not reach the cache).
+* **2. One Board per week, shared** — `src/league_lab/anyleague.py` `load_board(query, season, week, source, *,
+  cache=True)`: the `boards` region, key `(query, season, week, source)` (the query callable too: a test's stand-in
+  never sees the database's board), TTL 600 s, at most 20 weeks (`BOARD_MAX`). `price_week` prices on it; `Priced.board`
+  is the shared object and is not counted again in `priced` (`Board._memo_shared`). `price_week(cache=False)` (the MFL
+  record writer) still builds a fresh Board. **Nothing mutates a Board** after construction: grepped every
+  `b.` / `board.` / `pr.board.` use of `line`, `status`, `kd`, `fitted`, `kd_fitted` (reads, `.loc` / `.at` reads,
+  `reindex`, `to_dict`; no assignment, no in-place method). Frames not flagged read-only (pandas 3 has no public switch;
+  copy-on-write already keeps a derived frame from writing into the Board's). **And the raw rows are not kept twice**:
+  `anyleague.BOARD_INPUT_SQL` (the 7 board and 5 window statements) are registered with `db.not_kept` by `ondemand`
+  — the Board and the league's rest-of-season table are what is kept.
+* **3. One budget** — `src/league_lab/memo.py` (new): `Budget` (one LRU order over every region, one byte limit,
+  `RLock`), `Region.get / put / pop / clear / keys` (a TTL per entry: each cache keeps its own), `sizeof` (a frame by its
+  arrays — `frame_bytes`: a `str` column's pointers, an `object` column deep; containers and dataclasses walked, depth
+  6, a container over 256 items sized from 64 of them; `_memo_shared` objects counted only where they are the entry;
+  `_memo_skip` fields — the Sleeper payloads in `LeagueWeeks` — not counted), `malloc_trim`, `relieve`, `rss_mb`,
+  `status_words`. A `put` past the budget drops the expired entries, then the least recently used, any region, never
+  the entry just put. **Regions** (each replaces a dict with its own `clear()`-when-full rule; TTLs kept): `sql`
+  (`db._cache`, was 2,000 entries), `boards` (new), `priced` (`anyleague._priced`, was 500), `ros` (`_ros_cache`, 100),
+  `league_weeks` (64), `contexts` (`availability._ctx_cache`, 512), `decisions` (`decisions._memo_cache`, 256; a cached
+  `None` still counts as a hit), `research_priced` (50) / `research_memo` (200), `about` (100), and two the brief did
+  not list: `stats` (`stats._frames`, the Stats Explorer's season rows, 8) and `scoring_checks` (`main._scoring_checks`,
+  24 h, 200). **Budget default 64 MB, not 160** (decision): the brief's 160 assumed `memory_usage(deep=True)`, which
+  counts an interned string at every row — on the four leagues the deep count read 119 MB while emptying the caches
+  gave back 36 MB of RSS (tracemalloc: 92 MB of Python heap); 64 by the array count is about what 160 deep-counted was.
+  Andrew may want it higher on Standard (DEPLOY § Memory).
+* **4. Giving memory back** — `memo.malloc_trim()` (ctypes, `libc.so.6`, Linux only, never raises) after an eviction
+  pass that dropped ≥ 8 MB (at most every 30 s) and after a request (`main._give_memory_back` middleware →
+  `memo.relieve()`: when the RSS grew ≥ 4 MB since the last trim, at most once a second; a trim measured 0.1–6 ms).
+  In-process, a collection and a trim took the four leagues from 274 to 250 MB. `MALLOC_ARENA_MAX=2` + `MALLOC_TRIM_THRESHOLD_=131072`
+  measured below (−4 MB on the script, sequential; more under concurrent traffic); the Dockerfile line is in "For the
+  PO". `PYTHONMALLOC=malloc` measured and rejected (+4 MB, slower). `gc.freeze()` not done: one process, no fork — it
+  saves collector passes, not memory.
+* **5. The operator can see it** — `/api/status` → `memory`: `rss_mb`, `cache_mb`, `budget_mb`, `regions` (MB),
+  `entries`, `evictions`, `trims`, `last_trim_ms`, `malloc_arena_max`, `outside_mb` (the Sleeper / MFL clients' own
+  caches, sampled). The console's Data Status page: one caption line (`memo.status_words`: "248 MB of the plan's 512 in
+  use; the caches hold 61 of their 64 MB (decisions 25, sql 22, …)") read from `LEAGUE_LAB_API_URL` (+
+  `LEAGUE_LAB_API_TOKEN` with the gate on), else a line saying how to switch it on. DEPLOY § Memory (new): the numbers,
+  what is in the budget and what is not, the switches, how to re-measure.
+* **6. Answers identical** — no pinned number moved; nothing re-pinned. New tests: `tests/test_memo.py` (9: eviction
+  order across regions, the entry just put stays, expired first, a region's own `max_entries`, replace / pop / clear,
+  `configure`, the size estimate and the shared skip, the env, `status_words`), `api/tests/test_inf2.py` (5: interning
+  keeps the frame equal and shares the objects, an object column's NULL stays `None`, the fetch interns and the cache's
+  copies are separate, **two leagues priced one after the other share the Board** and price as a fresh Board does,
+  `/api/status` `memory`).
+* **7.** `scripts/measure_memory.py` — the PO's `measure.py` cleaned: `--port`, `--label`, `--plateau` (+ `mfl:21861`
+  team 1, then `--cycles N` rounds of the five leagues), `--json`; both RSS figures per step (`tree` = the PO's, with the
+  `uv run` wrapper's ~33 MB; `server` = the uvicorn process, what Render meters); ends with `/api/status`'s `memory`;
+  prints a Markdown table.
+* **Interfaces**: `league_lab.memo` (`BUDGET`, `region(name, ttl, max_entries)`, `Region.get(key, default)` /
+  `put(key, value, ttl=None, nbytes=None) -> value` / `pop` / `clear` / `keys`, `sizeof`, `frame_bytes`, `malloc_trim`,
+  `relieve`, `relief`, `rss_mb`, `status_words`, `ENV = "LEAGUE_LAB_CACHE_MB"`, `DEFAULT_MB = 64`);
+  `anyleague.load_board(..., cache=True)`, `anyleague.BOARD_INPUT_SQL`, `anyleague.BOARD_TTL_S / BOARD_MAX`;
+  `db.intern_strings(df)`, `db.not_kept(*sql)`; `_cache` / `_priced` / `_ros_cache` / `_league_weeks` / `_ctx_cache` /
+  `_memo_cache` / `_memo` / `_frames` / `_scoring_checks` are `memo.Region`s now (`clear()` keeps working; the
+  `clear_*` helpers unchanged, `anyleague.clear_priced()` also empties `boards`).
+* **Files**: `src/league_lab/memo.py` (new), `src/league_lab/anyleague.py`, `api/league_lab_api/{db,main,ondemand,
+  availability,decisions,research,about,stats}.py`, `app/pages/12_Data_Status.py` (the INF-2 block),
+  `scripts/measure_memory.py` (new), `tests/test_memo.py` (new), `api/tests/test_inf2.py` (new), `docs/DEPLOY.md`,
+  `docs/STATUS.md`, `CHANGELOG.md`. Not touched: `api/Dockerfile`, `render.yaml`, `.github/`, the web.
+* **Commands**: `python3 scratchpad/waveIJ/measure.py /home/claude/wt-inf2 8752 <label>` (the PO's script, unchanged:
+  the before / after table) and `scripts/measure_memory.py --plateau --cycles 2` (the plateau), with and without
+  `MALLOC_ARENA_MAX=2 MALLOC_TRIM_THRESHOLD_=131072`; tracemalloc / RSS diagnostics in the scratchpad (`inf2/*.py`);
+  `uv run ruff check src app tests api`; `cd api && PYTHONPATH=. uv run pytest -q --deselect tests/test_u1.py
+  --deselect tests/test_ig2.py`; `uv run pytest -q tests`. Nothing written to `league_lab`.
+* **Evidence — before / after, the PO's script** (RSS of `uv run` + uvicorn, MB; "before" is the PO's 00:20 run and my
+  re-run of `8b74f7f` in this worktree):
+
+  | step | before (PO) | before (re-run) | after | after + `MALLOC_ARENA_MAX=2` |
+  |---|---|---|---|---|
+  | start (`/api/health`) | 172.0 | 177.3 | 176.5 | 176.1 |
+  | League of Scrubs (house) | 214.7 | 219.7 | 207.4 | 206.3 |
+  | Forever Unclean Dynasty (house) | 228.8 | 234.1 | 218.2 | 217.1 |
+  | the Test League (on demand) | 326.3 | 331.7 | 247.2 | 246.6 |
+  | MFL 70587 (on demand) | **399.8** | **404.8** | **276.2** | **272.1** |
+  | Scrubs again (warm) | 401.1 | 406.1 | 278.5 | 274.4 |
+  | five other Scrubs teams | 404.0 | 409.1 | 280.2 | 276.2 |
+  | four player cards | 404.0 | 409.1 | 280.4 | 276.4 |
+  | compare + week odds | 404.1 | 409.1 | 292.9 | 286.5 |
+
+  Per league: the Test League +97 → +29 MB, MFL +73 → +29 (arena: +26), Scrubs +43 → +31, Dynasty +14 → +11. The
+  last row's +12 / +10 is the week odds rebuilt after an eviction (two other runs of the same code: +0 and −1). The
+  server alone (Render has no `uv`): 144 MB started, **243 MB** after the four leagues (239 with the arena line).
+  What moved it (the same script, after the four leagues): interning + the shared Board + the shallow copies 405 →
+  ~292; numeric as float + trim after a request + the 64 MB budget → 288; the board / window rows not kept twice →
+  276; the arena line → 272. Before any of it, the arena line alone: 405 → 389.
+* **Evidence — the plateau** (`scripts/measure_memory.py --plateau --cycles 2`; the fixtures hold no other Sleeper
+  league, so the fifth is `mfl:21861` team 1 and then the five leagues cycle twice; tree / server MB):
+
+  | step | budget 64 (default) | 64 + `MALLOC_ARENA_MAX=2` | budget 40 (full: 1,319 evictions) | seconds (64 / 40) |
+  |---|---|---|---|---|
+  | mfl 70587 (fixtures) | 276.0 / 243.1 | 272.2 / 239.4 | 271.5 / 238.7 | 16.0 / 10.4 |
+  | scrubs again (warm) | 278.8 / 245.8 | 275.0 / 242.1 | 273.7 / 240.9 | 1.6 / 5.3 |
+  | scrubs other teams | 280.1 / 247.1 | 276.8 / 244.0 | 287.3 / 254.5 | 3.2 / 2.2 |
+  | players: a few cards | 280.2 / 247.3 | 276.8 / 244.0 | 273.7 / 241.0 | 0.5 / 0.4 |
+  | compare + week odds | 280.0 / 247.1 | 276.2 / 243.4 | 287.7 / 254.9 | 0.4 / 0.3 |
+  | mfl 21861 (fixtures, a fifth league) | 304.4 / 271.5 | 300.0 / 267.2 | 280.8 / 248.1 | 11.5 / 8.2 |
+  | cycle 1: test league | 305.3 / 272.4 | 301.3 / 268.4 | 281.6 / 248.9 | 1.2 / 5.4 |
+  | cycle 1: mfl 70587 | 306.5 / 273.6 | 302.0 / 269.2 | 288.9 / 256.1 | 1.3 / 10.8 |
+  | cycle 1: dynasty | 306.5 / 273.6 | 301.9 / 269.0 | 289.6 / 256.8 | 0.9 / 4.3 |
+  | cycle 1: scrubs | 308.2 / 275.3 | 303.8 / 271.0 | 286.8 / 254.1 | 1.7 / 4.8 |
+  | cycle 1: mfl 21861 | 307.7 / 274.8 | 303.5 / 270.7 | 289.7 / 257.0 | 1.5 / 8.3 |
+  | cycle 2: test league | 307.5 / 274.6 | 303.3 / 270.5 | 293.9 / 261.1 | 1.4 / 5.6 |
+  | cycle 2: mfl 70587 | 307.5 / 274.6 | 303.4 / 270.5 | 291.7 / 258.9 | 1.2 / 10.6 |
+  | cycle 2: dynasty | 307.5 / 274.6 | 303.4 / 270.5 | 292.3 / 259.5 | 1.2 / 4.3 |
+  | cycle 2: scrubs | 309.8 / 276.9 | 305.2 / 272.4 | 285.0 / 252.2 | 1.8 / 4.9 |
+  | cycle 2: mfl 21861 | 308.5 / 275.6 | 304.4 / 271.6 | 292.0 / 259.2 | 1.6 / 8.4 |
+
+  The fifth league: +24 MB at 64 (the budget's last MB fill; 0 evictions, the cycles reuse the caches within their
+  TTLs), **−7 MB at 40** (budget full: it evicts the oldest leagues); then every round of all five leagues holds within
+  ±3 MB at 64 (305–310) and ±7 MB at 40 (281–294) — the plateau. The price of the smaller budget is time: a round of the
+  five leagues takes 5–11 s a league at 40 against ~1.5 s at 64 (every league rebuilt). `/api/status` at the end
+  (64): cache 61.9 of 64 MB — decisions 24.8, league_weeks 19.2, sql 6.8, boards 4.6, priced 3.3; 30 trims, 0.6 ms.
+
+* **Suites**: API `633 passed, 11 skipped, 41 deselected` (7 min 20 s; tonight's 630 + the 5 new; the 2 skips beyond
+  tonight's 9 are `test_static`'s "web/dist not built" — this worktree has no `web/dist`, nothing to do with the
+  change); root `1176 passed, 3 skipped` (1,167 + the 9 new); `ruff` clean.
+* **Not done / known**: (a) **the ≤ 260 MB target after the four leagues is not met on the PO's figure**: 276 (272 with
+  the arena line) — 243 / 239 for the server alone, which is what Render meters; what is left is ~145 MB of
+  interpreter + pandas + numpy + scipy at rest and ~60 MB of caches inside the budget (≈ 90 MB of heap, tracemalloc),
+  plus the heap the work leaves fragmented. A lower budget trades memory for rebuilds (`LEAGUE_LAB_CACHE_MB=40`:
+  measured above). (b) The fifth league still adds ~24 MB the first time (its caches fill the budget's last MB plus its
+  own work's heap); after that the RSS holds (the cycles: ≤ 2 MB a round). (c) **Production holds one thing the
+  fixtures do not**: Sleeper's whole player directory (one per day, outside the budget; the fixture's is 842 players,
+  1 MB) — `/api/status` `outside_mb.sleeper` now says how big it is live; trimming it to the fields the code reads
+  (`anyleague.PLAYER_FIELDS` + availability's depth chart) is the next lever, not done: `availability` reads more
+  fields than the fixtures carry. (d) The size estimate under-counts the heap by about 1.5× (pandas' own objects per
+  frame); the budget is in that unit. (e) `LeagueWeeks.cache` (`horizon_frame`) and `TradeContext.window_cache` fill
+  after the entry is put and are not counted.
+* **Next task**: read `/api/status` `memory` on the live server on a Sunday (the RSS, `outside_mb.sleeper`) and decide
+  the budget from it; slim the Sleeper directory to the fields read (with a test that lists them).
+* **For the PO**:
+  1. `api/Dockerfile`, the runtime stage's `ENV` line — add two variables:
+     `ENV PATH="/srv/api/.venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \`
+     `    LEAGUE_LAB_WEB_DIST=/srv/web/dist LEAGUE_LAB_CACHE_DIR=/srv/cache LEAGUE_LAB_VERSION=${LEAGUE_LAB_VERSION} \`
+     `    MALLOC_ARENA_MAX=2 MALLOC_TRIM_THRESHOLD_=131072`
+  2. `render.yaml`: nothing required (`LEAGUE_LAB_CACHE_MB` defaults to 64; set it under `envVars` only to change it —
+     300 on Standard).
+  3. Decisions Andrew may want to reverse: the budget's default (64 MB by the array count, not the brief's 160 deep
+     count — same order of memory, see 3.); a league evicted from the budget costs a second or two to rebuild; `numeric`
+     read as float at the fetch (same values, no Decimal anywhere in the API's frames).
+  4. The console's memory line needs `LEAGUE_LAB_API_URL=https://isuckatfantasy.io` and a token
+     (`curl -s -X POST …/api/login -d '{"password": …}'`) as `LEAGUE_LAB_API_TOKEN` in the console's `.env`.
