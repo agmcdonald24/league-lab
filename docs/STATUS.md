@@ -8260,3 +8260,103 @@ compare against it)
    — on a 1300 screen that is always (three across), drawer open or not; the Finder says nothing under the answer for
    Any when nothing passes (not a "Your best move" line: the answer already ends with it); a Back that closes the drawer
    keeps a filter changed beside it (the screen as you left it), not the screen as it was when you opened the player.
+
+## Wave I-K (Iteration 21)
+
+### IK-4 2026-10-05 — accounts, phase 1: sign in by an emailed link, saved leagues, preferences (branch `dev/IK4`, database `league_lab_i0b`)
+
+* **Task**: IK-4 (the brief § "IK-4"; the fifth review § 9: "returning on another device restores saved selections";
+  the design `docs/ACCOUNTS.md`, option A). Plan sections: ACCOUNTS § "Built, phase 1" (new), HOSTING § "Accounts"
+  (new). Independent of IK-1 / IK-2 / IK-3 this wave (keys for their providers parsed here; no import of their code).
+* **Files**: `scripts/hosted_accounts.sql` (new: schema `accounts`, the design's eight tables, grants to
+  `league_lab_app` on those eight only, retention; idempotent, drops nothing); `api/league_lab_api/accounts.py` (new:
+  the routes, the switch, the Resend and stub mailers, the limits); `api/league_lab_api/db.py` (`run_rw` /
+  `close_rw`: U-1's writer generalised — one read-write connection per purpose, marked `# ---- IK-4`; `write_one`
+  unchanged); `api/league_lab_api/main.py` (one marked block: the router behind `require_auth`, the error handler);
+  `api/tests/test_ik4.py` (new, 17); `web/src/lib/account.svelte.ts`, `web/src/routes/Account.svelte`,
+  `web/src/components/AccountEntry.svelte` (new); marked edits in `web/src/lib/prefs.ts` (the remote hook +
+  `accountPrefs`), `router.svelte.ts` (`/account`), `App.svelte` (the lazy `/account` branch), `Leagues.svelte` (one
+  import + one block at the bottom), `TopBar.svelte` (the ⋯ item), `About.svelte` (the privacy line),
+  `Players.svelte` (saved views through `prefs`); `web/e2e/ik4/fixtures.spec.ts` (new, 3 × 2 sizes),
+  `web/fixtures/ik4/*.json` (recorded from the API on the clone); `docs/ACCOUNTS.md`, `docs/HOSTING.md`.
+* **The flow** (all behind the beta password): `POST /api/account/login {email}` → a single-use link (32 random bytes,
+  SHA-256 at rest, 15 minutes) emailed with Resend: `https://isuckatfantasy.io/account#signin=<token>` → the page's
+  one tap posts it, `POST /api/account/verify {token}` → a server session (90 days) + `ll_session` (HMAC with
+  `LEAGUE_LAB_API_SECRET`; HttpOnly, SameSite=Lax, Secure on https, path `/api/account`) → `GET /api/account/me`;
+  `PUT /api/account/leagues` (upsert by `league_key` = `provider:season:external_id`, the four providers' forms),
+  `DELETE /api/account/leagues/{key}`, `PUT /api/account/default`, `PUT|DELETE /api/account/preferences`,
+  `PUT|DELETE /api/account/watchlist`, `POST /api/account/logout {everywhere}`, `DELETE /api/account`;
+  `GET /api/account/status` → `{enabled, reason, signed_in, email, mailer}`.
+* **With and without the Resend key**: `LEAGUE_LAB_ACCOUNTS=auto` (default) is on only with
+  `LEAGUE_LAB_RESEND_API_KEY` + `LEAGUE_LAB_API_SECRET` + the schema; otherwise `status` says `enabled: false` and why
+  (`no_mailer` / `no_secret` / `not_ready`), every other route answers 404 `accounts_off`, and the web shows nothing
+  about accounts (the ⋯ item, the setup screen's line and `/account`'s form are all behind `enabled`). `off` wins over
+  a key. `on` without a key = the stub mailer (memory only) for tests / the fixture API. A link, token or email body
+  is never logged, printed or returned (`test_link_session…` checks the log and the answers); a failed send logs the
+  exception's class only and removes the link.
+* **Interfaces**: `INTERFACES.md` § IK-4 (09:00 and 09:10 as built). For IK-3: ESPN / Yahoo leagues remembered through
+  `prefs.rememberMfl` follow the account with no further work.
+* **Commands**: the schema on the clone by its owner (`postgres`; the pipeline role has no CREATE there — the test
+  applies it itself where it may, else needs it present), twice: `psql -d league_lab_i0b -v ON_ERROR_STOP=1
+  --single-transaction -f scripts/hosted_accounts.sql`; `cd api && PYTHONPATH=. uv run pytest -q tests/test_ik4.py`;
+  `IK4_RECORD=1 … -k record` (the web fixtures); `cd web && npm run lint && npm run build`;
+  `FIXTURES_PORT=8644 npx playwright test --config playwright.fixtures.config.ts e2e/ik4` then the whole set;
+  `uv run ruff check src app tests api scripts`; the whole API and root suites.
+* **Evidence**: `test_ik4.py` **17 passed** (link → session → four leagues upserted twice = four rows; a second user
+  never sees the first's leagues, preferences or watchlist, and B saving the same league leaves A's words; preferences
+  by scope + key with the size / name checks; the watchlist; default and its hand-over; sign out / everywhere;
+  expired link and session; delete = every row gone; off without a key / `off` / no secret; the gate in front; the
+  limits — 5 per address, 30 per IP, 20 checks a minute, the daily cap, 60 writes a minute; a failed send; the app
+  role read-only outside its transaction, no TRUNCATE, no CREATE; the script drops nothing; the Resend call's
+  shape without the network). e2e `ik4` **6 passed** (375 and 1300): a guest picks three Sleeper leagues → signs in →
+  "Save these 3" → makes the Test League the default; **a fresh browser context signs in and gets the three leagues,
+  the team in each, the default and the Stats view; `/` opens the Test League's week with no setup**; a team picked
+  there goes to the account; sign out, everywhere, a used link's words, delete; accounts off → no entry, no menu item,
+  one line on `/account`. The **whole API suite** (on `league_lab_i0b`, `test_u1` / `test_ig2` deselected):
+  **634 passed, 23 skipped, 4 failed** — the four (`test_ic1` ×2 dad's-league scoring check, `test_ic_po` ten-yard
+  cut, `test_ih1` events SQL prune — `InsufficientPrivilege`) fail the same way on `main` `07dcdd0` against the same
+  clone (checked in a scratch worktree): the clone's data / privileges, not this branch. **Root suite** (the same
+  clone): **1,172 passed, 7 skipped**, none failed (no root code changed; the extra skips are the clone's).
+  **Fixtures e2e (the whole set, port 8644)**: **350 passed, 2 skipped** (344 before + IK-4's 6). ruff clean; `npm run lint` 0 / 0; `npm run build` ok (`/account` is its
+  own 9 kB chunk; the first screen's bundle grows by the account state and the entry, ~3 kB).
+* **Unverified live — all of it** (verified live: no). After the deploy, the nightly and Andrew's Resend setup:
+  `https://isuckatfantasy.io/api/account/status` → `"enabled": true, "mailer": "resend"`; on a phone: ⋯ → "Sign in to
+  save your leagues" → your email → the email arrives from `signin@isuckatfantasy.io` (Gmail → Show original: SPF,
+  DKIM, DMARC PASS) → the link → "Sign in on this device" → "Save these N leagues"; then a laptop or a private window:
+  the beta password → `https://isuckatfantasy.io/account` → the same email → the link → the leagues are there; `/`
+  opens the default league's week. Then Delete my account and check `select count(*) from accounts.users` on Neon.
+* **Not done**: `connections` rows (Yahoo / ESPN keep their cookies this wave; table only); the profile's "last sync"
+  (nothing writes `leagues.last_sync_at` yet: the row says "read when you open it"); a watchlist button (API only);
+  Google sign-in (B); the per-league default view (no such stored view exists in the web today — the team per league
+  and the default league are what move; `preferences` takes any league scope when one exists); usage counts the
+  `/account` screen as `other` (U-1's allow-list is not mine); `sync_to_hosted.sh` not edited (the PO adds the lines).
+* **Next**: phase 2 per ACCOUNTS § "Built, phase 1" "Next".
+
+**For the PO**
+1. **`scripts/sync_to_hosted.sh`** — add after the IG-2 block (the full text with its comment is in HOSTING §
+   "Accounts"):
+   ```bash
+   if psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction -f scripts/hosted_accounts.sql; then
+     echo "accounts: $(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select (select count(*) from accounts.users) || ' accounts, ' || (select count(*) from accounts.user_leagues) || ' saved leagues, ' || pg_size_pretty((select sum(pg_total_relation_size(c.oid)) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'accounts' and c.relkind = 'r')::bigint)" 2>/dev/null || echo '?')"
+   else
+     echo "WARNING: scripts/hosted_accounts.sql failed: accounts stay off until a sync applies it (the publish itself is fine)" >&2
+   fi
+   ```
+2. **Render secrets** (exact names): `LEAGUE_LAB_RESEND_API_KEY` (the one that turns accounts on). Already there:
+   `LEAGUE_LAB_API_SECRET`. Optional with defaults: `LEAGUE_LAB_MAIL_FROM=signin@isuckatfantasy.io`,
+   `LEAGUE_LAB_PUBLIC_URL=https://isuckatfantasy.io`, `LEAGUE_LAB_ACCOUNTS_DAILY_MAX=90`, `LEAGUE_LAB_ACCOUNTS=auto`.
+   No `render.yaml` / Dockerfile / workflow change is required (if you want Render to prompt for the key, add
+   `- key: LEAGUE_LAB_RESEND_API_KEY` / `sync: false` under the service's `envVars`).
+3. **Andrew registers**: a Resend account (free: 3,000 a month, 100 a day) → Domains → `isuckatfantasy.io` (us-east-1)
+   → API key with "Sending access" for that domain only.
+4. **DNS in Cloudflare** (names as typed in Cloudflare; values as Resend shows them): `MX send →
+   feedback-smtp.us-east-1.amazonses.com` priority 10; `TXT send → v=spf1 include:amazonses.com ~all`; `TXT
+   resend._domainkey → p=<Resend's DKIM key>`; `TXT _dmarc → v=DMARC1; p=none; rua=mailto:<an address Andrew reads>;`.
+   The site's `CNAME @` / `www` are untouched. Then Resend → Verify.
+5. **Neon**: these are the first rows the nightly cannot rebuild — check the plan's point-in-time restore window.
+6. **Decisions Andrew may reverse**: the session length (**90 days**, fixed from sign-in; `SESSION_DAYS`); **the beta
+   password stays in front** of accounts (an account does not open the gate; removing the gate is a separate call);
+   the link's token in the URL fragment + one tap instead of a GET link (no token in any log; a mail scanner cannot
+   spend it); delete is immediate (no audit window); no new database role (the app role writes these eight tables
+   in its own transaction); a username's league list is saved by one tap, not automatically; the display names of a
+   saved league are per user.
