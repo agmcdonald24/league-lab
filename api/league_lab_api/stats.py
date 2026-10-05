@@ -19,10 +19,10 @@ Rules (docs/METRICS.md § "The Stats Explorer", docs/DATA_INVENTORY.md):
 from __future__ import annotations
 
 import re
-import time
 
 import numpy as np
 import pandas as pd
+from league_lab import memo
 
 from .db import query
 
@@ -317,17 +317,16 @@ def _cents(v) -> pd.Series:
     return (pd.to_numeric(v, errors="coerce") * 100).round()
 
 
-_frames: dict[tuple, tuple[float, pd.DataFrame]] = {}
+_frames = memo.region("stats", ttl=TTL_S)   # INF-2 (Wave I-J): in the memory budget (was cleared past 8 seasons)
 
 
 def season_rows(season: int, season_type: str) -> pd.DataFrame:
     """Every fct_player_game row of the season (all positions), + the team's RB carries and inside-5 carries per game.
     Cached 10 minutes (NFL-wide: the same for every league)."""
     key = (int(season), season_type)
-    now = time.monotonic()
     hit = _frames.get(key)
-    if hit is not None and hit[0] > now:
-        return hit[1]
+    if hit is not None:
+        return hit
     lo, hi = (19, 22) if season_type == "POST" else (1, 18)
     df = query(FCT_SQL, (int(season), season_type, lo, hi))
     if not df.empty:
@@ -341,10 +340,7 @@ def season_rows(season: int, season_type: str) -> pd.DataFrame:
         i5 = df.groupby(["team", "game_id"])["inside_5_carries"].sum(min_count=1).rename("team_inside_5_carries")
         df = df.merge(rb.reset_index(), on=["team", "game_id"], how="left").merge(i5.reset_index(), on=["team", "game_id"],
                                                                                      how="left")
-    if len(_frames) > 8:
-        _frames.clear()
-    _frames[key] = (now + TTL_S, df)
-    return df
+    return _frames.put(key, df, ttl=TTL_S)
 
 
 def clear() -> None:

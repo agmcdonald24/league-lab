@@ -13,6 +13,7 @@ from __future__ import annotations
 import time
 
 import pandas as pd
+from league_lab import memo as budget
 
 from . import research
 from .db import query
@@ -109,8 +110,8 @@ GRADES_HOWTO = (
     "sample: one odd Sunday moves them a lot.",
 )
 
-_cache: dict[tuple, tuple[float, dict]] = {}
 TTL_S = 600
+_cache = budget.region("about", ttl=TTL_S)        # INF-2 (Wave I-J): in the memory budget (was cleared past 100)
 
 
 def _lower_first(s: str) -> str:
@@ -240,10 +241,9 @@ def about(league_id: str, source: str | None = None) -> dict:
     t0 = time.perf_counter()
     house = source != "sleeper" and known_league(str(league_id))
     key = (str(league_id), house)
-    now = time.monotonic()
     hit = _cache.get(key)
-    if hit is not None and hit[0] > now:
-        out = dict(hit[1])
+    if hit is not None:
+        out = dict(hit)
     else:
         ctx = research.context(str(league_id), source)
         lid, name = _measured_in(ctx)
@@ -256,9 +256,7 @@ def about(league_id: str, source: str | None = None) -> dict:
             out["why"] = (f"The importance and the grades are measured once per house league's scoring each night. "
                           f"{ctx.league_name} reads {name or 'the closest league'}'s: the closest scoring {APP_NAME} measures."
                           if name else "The importance and the grades are measured per house league's scoring; none is close.")
-        if len(_cache) > 100:
-            _cache.clear()
-        _cache[key] = (now + TTL_S, out)
+        _cache.put(key, out)
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
     return out
 

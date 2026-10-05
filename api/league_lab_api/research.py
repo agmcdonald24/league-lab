@@ -24,13 +24,13 @@ from __future__ import annotations
 import importlib.util
 import re
 import sys
-import time
 from dataclasses import dataclass, field
 from datetime import timedelta
 
 import numpy as np
 import pandas as pd
 from league_lab import anyleague as A
+from league_lab import memo as budget  # ---- INF-2: the memory budget
 from league_lab import research as R
 
 from . import availability
@@ -239,7 +239,7 @@ PRICE_GAMES_SQL = f"""select {GAME_KEYS}, {", ".join("p." + c for c in R.PRICE_C
     where p.season = %s {{where}}"""
 GAMES_OUT = ["gsis_id", "game_id", "season", "season_type", "week", "team", "opponent_team", "position", "player_name",
              "played", "has_stat_row", "points", "points_expected", "expected_known"]
-_priced: dict[tuple, tuple[float, pd.DataFrame]] = {}
+_priced = budget.region("research_priced", ttl=PRICED_TTL_S)   # INF-2: in the memory budget (was cleared past 50)
 
 
 def house_scorings() -> dict[str, dict]:
@@ -261,11 +261,10 @@ def league_games(ctx: Ctx, season: int, gsis: list[str] | None = None) -> pd.Dat
         return query(HOUSE_GAMES_SQL.format(where=where), (ctx.league_id, int(season), *params))[GAMES_OUT]
     ref, _exact = expected_ref(ctx)
     key = (A._scoring_key(ctx.scoring), ref, int(season))
-    now = time.monotonic()
     if gsis is None:
         hit = _priced.get(key)
-        if hit is not None and hit[0] > now:
-            return hit[1].copy()
+        if hit is not None:
+            return hit.copy()
     df = query(PRICE_GAMES_SQL.format(where=where), (ref, int(season), *params))
     scorings = house_scorings()
     df["points"] = R.price_games(df, ctx.scoring)
@@ -273,9 +272,7 @@ def league_games(ctx: Ctx, season: int, gsis: list[str] | None = None) -> pd.Dat
     df["points_expected"] = df["points_expected"].where(df["expected_known"].astype(bool))
     out = df[GAMES_OUT]
     if gsis is None:
-        if len(_priced) > 50:
-            _priced.clear()
-        _priced[key] = (now + PRICED_TTL_S, out)
+        _priced.put(key, out)
         return out.copy()
     return out
 
@@ -285,7 +282,7 @@ def clear_priced() -> None:
     _memo.clear()
 
 
-_memo: dict[tuple, tuple[float, pd.DataFrame]] = {}
+_memo = budget.region("research_memo", ttl=PRICED_TTL_S)       # INF-2: in the memory budget (was cleared past 200)
 
 
 def _ctx_key(ctx: Ctx) -> tuple:
@@ -295,15 +292,10 @@ def _ctx_key(ctx: Ctx) -> tuple:
 def memo(kind: str, ctx: Ctx, season: int, fn) -> pd.DataFrame:
     """A derived per-season frame (season table, trend windows, points allowed), kept 10 minutes like the priced games."""
     key = (kind, _ctx_key(ctx), int(season))
-    now = time.monotonic()
     hit = _memo.get(key)
-    if hit is not None and hit[0] > now:
-        return hit[1].copy()
-    df = fn()
-    if len(_memo) > 200:
-        _memo.clear()
-    _memo[key] = (now + PRICED_TTL_S, df)
-    return df.copy()
+    if hit is not None:
+        return hit.copy()
+    return _memo.put(key, fn()).copy()
 
 
 LPS_COLS = ["gsis_id", "games_played", "points", "ppg", "points_per_game_l3", "points_per_game_l5", "games_with_expected",

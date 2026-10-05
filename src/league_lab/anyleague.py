@@ -53,11 +53,12 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 import pandas as pd
 
-from . import clock
+from . import clock, memo
 from . import lineup as LU
 from .scoring import (  # noqa: F401 - compute_points: the reference the vector form equals
     MAPPED_KEYS,
@@ -234,6 +235,9 @@ class Board:
     source: str = "borrow"
     labels: dict[str, str] = field(default_factory=dict)
     kd_fitted: dict[str, pd.DataFrame] = field(default_factory=dict)
+    # INF-2 (Wave I-J): one Board per (query, season, week, source) for the whole process (``load_board``'s
+    # ``boards`` region), shared by every league priced on it; counted once, in that region, not in each Priced
+    _memo_shared: ClassVar[bool] = True
 
 
 def _floats(df: pd.DataFrame, cols) -> pd.DataFrame:
@@ -264,13 +268,34 @@ def nfl_wide_ready(query: Query, season: int, week: int) -> bool:
     return bool(not df.empty and df["ok"].iloc[0])
 
 
-def load_board(query: Query, season: int, week: int, source: str | None = None) -> Board:
+# ---- INF-2 (Wave I-J, the memory diet): one Board per week for every league. A Board is NFL-wide (the stat lines, the
+# reference scorings' ranges, status, K / DEF): every league priced on the week reads the same one, so it is built once
+# and kept 10 minutes (the SQL results' TTL), at most BOARD_MAX weeks, in the memory budget's ``boards`` region. Nothing
+# mutates a Board after construction (every consumer reads ``line`` / ``status`` / ``fitted`` / ``kd``; checked by
+# grep at INF-2) and pandas 3's copy-on-write keeps a frame derived from one from writing into it. Keyed on the
+# ``query`` callable too: a test's stand-in query never sees the database's board.
+BOARD_TTL_S = 600
+BOARD_MAX = 20
+_boards = memo.region("boards", ttl=BOARD_TTL_S, max_entries=BOARD_MAX)
+
+
+def load_board(query: Query, season: int, week: int, source: str | None = None, *, cache: bool = True) -> Board:
     """The week's board: F1's NFL-wide tables when they exist and hold the week (``nfl_wide``), else E3's borrowing
-    from ``ops.projections`` (``borrow``). ``source`` / ``LEAGUE_LAB_BOARD_SOURCE`` force one."""
+    from ``ops.projections`` (``borrow``). ``source`` / ``LEAGUE_LAB_BOARD_SOURCE`` force one. INF-2: the same object
+    for every caller for 10 minutes (``cache=False``: a fresh one, not kept)."""
     src = source or board_source()
+    key = (query, int(season), int(week), src)
+    if cache:
+        hit = _boards.get(key)
+        if hit is not None:
+            return hit
     if src == "nfl_wide" or (src == "auto" and nfl_wide_ready(query, season, week)):
-        return _load_nfl_wide(query, season, week)
-    return _load_borrowed(query, season, week)
+        b = _load_nfl_wide(query, season, week)
+    else:
+        b = _load_borrowed(query, season, week)
+    if cache:
+        _boards.put(key, b)
+    return b
 
 
 def _load_borrowed(query: Query, season: int, week: int) -> Board:
@@ -604,10 +629,15 @@ class Priced:
     # IC-2: team units (MFL's TMQB / TMPK) priced this week: one row per (position, nflverse team) — proj_points,
     # p10…p90, the starter whose range it carries (``price_units``); empty in a league without unit slots
     units: pd.DataFrame = field(default_factory=lambda: pd.DataFrame(columns=UNIT_COLUMNS))
+    # INF-2: a Priced is counted in the memory budget's ``priced`` region; a LeagueWeeks or a decision memo holding it
+    # does not count it again
+    _memo_shared: ClassVar[bool] = True
 
 
 PRICED_TTL_S = 600                         # the board changes once a night; a league's scoring almost never
-_priced: dict[tuple, tuple[float, Priced]] = {}
+# INF-2: the memory budget's ``priced`` region (was a dict cleared when it passed 500 entries); a Priced's ``board`` is
+# the shared Board (counted in ``boards``), so an entry here is only the league's own proj / ranges / kd / units
+_priced = memo.region("priced", ttl=PRICED_TTL_S)
 
 
 def _scoring_key(scoring: Mapping[str, float]) -> str:
@@ -623,18 +653,15 @@ def price_week(query: Query, league_id: str, scoring: Mapping[str, float], slots
     starts, units = kd_starts(slots), unit_starts(slots)          # IC-2: from the slots' eligibility sets
     key = (str(league_id), _scoring_key(scoring), starts, units, int(season), int(week), exclude_reference, board_source(),
            ev_for_week(season, week))   # ---- M4: a week priced in the other mode is another answer
-    now = time.monotonic()
     hit = _priced.get(key) if cache and board is None else None
-    if hit is not None and hit[0] > now:
-        return hit[1]
+    if hit is not None:
+        return hit
     t0 = time.perf_counter()
-    b = board or load_board(query, season, week)
+    b = board or load_board(query, season, week, cache=cache)
     t1 = time.perf_counter()
     out = price_board(b, league_id, scoring, starts, exclude_reference=exclude_reference, t0=t0, t1=t1, units=units)
     if cache and board is None:
-        if len(_priced) > 500:
-            _priced.clear()
-        _priced[key] = (now + PRICED_TTL_S, out)
+        _priced.put(key, out)
     return out
 
 
@@ -891,6 +918,7 @@ def unit_keys(league_id: str, out: pd.DataFrame) -> pd.DataFrame:
 def clear_priced() -> None:
     _priced.clear()
     _ros_cache.clear()
+    _boards.clear()            # INF-2: the shared boards go with the priced weeks built on them
 
 
 def _solve_roster(query: Query, league_id: str, roster: dict, players: Mapping[str, dict], pr: Priced, slots: list[str],
@@ -1343,7 +1371,7 @@ def kd_window(win: Window, weeks: list[int], scoring: Mapping[str, float], posit
     return out[cols]
 
 
-_ros_cache: dict[tuple, tuple[float, pd.DataFrame]] = {}
+_ros_cache = memo.region("ros", ttl=PRICED_TTL_S)        # INF-2: in the memory budget (was cleared past 100 entries)
 ROS_LINE = [f"ros_{s}" for s in STAT_LINE.values()]   # ---- IA-3: the window's stat line (ros_targets … ros_fumbles_lost_total)
 
 
@@ -1377,17 +1405,12 @@ def ros_table(query: Query, league_id: str, league: Mapping, from_week: int, las
     src = board_source()
     key = (str(league_id), _scoring_key(scoring), tuple(slots), season, int(from_week), int(last_week), playoff_week_start,
            exclude_reference, src)
-    now = time.monotonic()
     hit = _ros_cache.get(key)
-    if hit is None or hit[0] <= now:
-        out = _ros_table(query, league_id, scoring, slots, season, from_week, last_week, playoff_week_start,
-                         exclude_reference, src)
-        if len(_ros_cache) > 100:
-            _ros_cache.clear()
-        hit = (now + PRICED_TTL_S, out)
-        _ros_cache[key] = hit
-    res = hit[1].copy()
-    res.attrs = dict(hit[1].attrs)
+    if hit is None:
+        hit = _ros_cache.put(key, _ros_table(query, league_id, scoring, slots, season, from_week, last_week,
+                                             playoff_week_start, exclude_reference, src))
+    res = hit.copy()
+    res.attrs = dict(hit.attrs)
     return res
 
 
@@ -1539,7 +1562,7 @@ NFL_STATUS_SQL = """select distinct on (sleeper_id) sleeper_id, gsis_id, player_
                     order by sleeper_id, league_id"""
 HORIZON = 4
 LEAGUE_WEEKS_TTL_S = 300                       # rosters change with waivers and trades (Sleeper's rosters: 10 minutes)
-_league_weeks: dict[tuple, tuple[float, LeagueWeeks]] = {}
+_league_weeks = memo.region("league_weeks", ttl=LEAGUE_WEEKS_TTL_S)   # INF-2: in the budget (was cleared past 64)
 
 
 @dataclass
@@ -1569,6 +1592,11 @@ class LeagueWeeks:
     timings_ms: dict[str, float] = field(default_factory=dict)
     sleeper_calls: int = 0
     cache: dict = field(default_factory=dict)            # derived frames (horizon_frame), built once per solve
+    # INF-2: the Sleeper payloads are the client's own cached objects (the player directory: one per process), not
+    # counted again in the memory budget's ``league_weeks`` region; a decision memo or a TradeContext holding this
+    # LeagueWeeks does not count it again either (it is counted here, in ``league_weeks``)
+    _memo_skip: ClassVar[tuple[str, ...]] = ("league", "rosters", "users", "players")
+    _memo_shared: ClassVar[bool] = True
 
     @property
     def roster_ids(self) -> list[int]:
@@ -1683,10 +1711,9 @@ def league_weeks(query: Query, league_id: str, week: int, *, client: Sleeper | N
     extra = tuple(sorted({str(x) for x in extra_sids}))
     key = (league_id, int(week), json.dumps(rosters, sort_keys=True, default=str), _scoring_key(league.get("scoring_settings") or {}),
            None if as_of is None else as_of.isoformat(), exclude_reference, bool(rest), extra, board_source())
-    now = time.monotonic()
     hit = _league_weeks.get(key) if cache else None
-    if hit is not None and hit[0] > now:
-        return hit[1]
+    if hit is not None:
+        return hit
     scoring, slots = league_scoring(league)
     weeks = horizon_weeks(query, season, int(week))
     if not weeks:
@@ -1707,9 +1734,7 @@ def league_weeks(query: Query, league_id: str, week: int, *, client: Sleeper | N
                                   "solve": round((t3 - t2) * 1000, 1), "total": round((t3 - t0) * 1000, 1)},
                       sleeper_calls=sl.calls - calls0)
     if cache:
-        if len(_league_weeks) > 64:
-            _league_weeks.clear()
-        _league_weeks[key] = (now + LEAGUE_WEEKS_TTL_S, out)
+        _league_weeks.put(key, out)
     return out
 
 

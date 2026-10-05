@@ -42,7 +42,7 @@ import pandas as pd
 from league_lab import anyleague as A
 from league_lab import injury_feed as F
 from league_lab import lineup as LU
-from league_lab import player_ids
+from league_lab import memo, player_ids
 
 from .db import query
 
@@ -744,13 +744,12 @@ def ros_overlay(players: list[dict]) -> list[dict]:
 # card and the trade finder's board all read it, so the lineup total is one number on every screen.
 CONTEXT_TTL_S = {"house": 600, "sleeper": 120}     # the query cache's 10 minutes; Sleeper's rosters move faster
 STATUS_OF_REASON = {"Out": "OUT", "Doubtful": "DOUBTFUL", "NFL injured reserve": "IR", "IR slot": "IR"}
-_ctx_cache: dict[tuple, tuple[float, RosterContext]] = {}
-_ctx_lock = threading.Lock()
+# INF-2 (Wave I-J): the memory budget's ``contexts`` region (was a dict cleared past 512 entries); the TTL per entry
+_ctx_cache = memo.region("contexts", ttl=CONTEXT_TTL_S["house"])
 
 
 def clear_context() -> None:
-    with _ctx_lock:
-        _ctx_cache.clear()
+    _ctx_cache.clear()
 
 
 def _f(v) -> float | None:
@@ -894,10 +893,9 @@ def roster_context(league_id: str, roster_id: int, week: int | None = None, *, h
     keep = as_of is None and exclude_reference is None
     ttl = min(CONTEXT_TTL_S["house" if is_house else "sleeper"], F.feed().interval_s() if on else 10 ** 9)
     if keep:
-        with _ctx_lock:
-            hit = _ctx_cache.get(key)
-            if hit is not None and hit[0] > time.monotonic():
-                return hit[1]
+        hit = _ctx_cache.get(key)
+        if hit is not None:
+            return hit
     od = None
     if is_house:
         base = cards.lineup_rows(league_id, int(season), int(week), int(roster_id))
@@ -909,10 +907,7 @@ def roster_context(league_id: str, roster_id: int, week: int | None = None, *, h
         rows, meta = apply_to_rows(base, build_as_of=build_time())
     ctx = RosterContext(league_id, int(roster_id), int(week), int(season), is_house, base, rows, meta, od)
     if keep:
-        with _ctx_lock:
-            if len(_ctx_cache) > 512:
-                _ctx_cache.clear()
-            _ctx_cache[key] = (time.monotonic() + ttl, ctx)
+        _ctx_cache.put(key, ctx, ttl=ttl)
     return ctx
 
 
