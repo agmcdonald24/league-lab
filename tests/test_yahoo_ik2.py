@@ -397,3 +397,17 @@ def test_the_cache_is_bounded(session, monkeypatch):
         c.game_key(f"g{i}")
     assert len(c._cache) == 5
     assert {k[1] for k in c._cache} == {f"game/g{i}" for i in range(7, 12)}     # the newest five
+
+
+def test_name_match_breaks_a_tie_by_team(monkeypatch):
+    monkeypatch.setenv(PI.CSV_ENV, str(IDS))
+    PI.reset()
+    d = {"1": {"full_name": "Mike Williams", "position": "WR", "team": "PIT"},
+         "2": {"full_name": "Mike Williams", "position": "WR", "team": "NYJ"},
+         "3": {"full_name": "Ashton Jeanty", "position": "RB", "team": "LV"}}
+    yl = YL.YahooLeagues(Y.Yahoo(fixtures=YFX), lambda: d)
+    got = yl.translate("461.l.1", {"91": {"name": "Mike Williams", "position": "WR", "team": "NYJ"},
+                                   "92": {"name": "Mike Williams", "position": "WR", "team": "MIA"},
+                                   "93": {"name": "Ashton Jeanty", "position": "RB", "team": "LV"}})
+    assert got["91"] == ("2", "name") and got["92"] == ("yahoo:92", "unmapped") and got["93"] == ("3", "name")
+    PI.reset()
