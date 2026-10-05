@@ -2,6 +2,20 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-05 — Wave I-K
+
+- **IK-2 — Yahoo leagues through Yahoo's official API** (as built, **not verified live**). *Connect with Yahoo*
+  (OAuth 2.0: `GET /api/yahoo/connect` → Yahoo's consent → `/api/yahoo/callback` → back to `/leagues?platform=yahoo`)
+  keeps the manager's Yahoo tokens only in an encrypted `ll_yahoo` cookie on his device (`LEAGUE_LAB_API_SECRET`; never
+  logged or stored); `yahoo_client` reads the Fantasy Sports API (settings, teams, rosters by week, scoreboard,
+  standings, transactions, free agents, my leagues) with one normaliser for Yahoo's nested JSON, Yahoo's stat ids on
+  Sleeper's scoring keys, W/R/T → FLEX and Q/W/R/T → SUPER_FLEX, a per-manager cache and a budget; `YahooLeagues`
+  serves `yahoo:461.l.4242` in Sleeper's shapes (starters exactly where Yahoo seats them; `yahoo_id` from nflverse's
+  table, else by name, else listed). Every read needs a connected manager, even for a public league (Yahoo's OAuth 2.0
+  has no app-only token). Without `LEAGUE_LAB_YAHOO_CLIENT_ID` / `_SECRET` the connect route answers 503
+  `yahoo_not_configured`. Synthetic 12-team superflex fixture league; it prices and solves through the real pipeline.
+  `docs/YAHOO_TERMS.md`, HOSTING § Yahoo (Andrew's app registration). No Sleeper / MFL number moves.
+
 ## 2026-10-05 — Wave I-J
 
 - **PO (the merge, 2026-10-05 01:50 ET).** `MALLOC_ARENA_MAX=2` / `MALLOC_TRIM_THRESHOLD_` in the image; the memory
