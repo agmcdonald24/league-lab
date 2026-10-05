@@ -8393,3 +8393,198 @@ compare against it)
    verified; the four choices sit two by two on desktop too (MyFantasyLeague does not fit a quarter of the column);
    Yahoo shows a disabled "coming soon" button rather than hiding Yahoo; the ESPN private switch ships off; every
    ESPN / Yahoo feature says "Partly … as built, not verified" until the PO flips it.
+
+### IK-1 2026-10-05 — ESPN leagues on demand: public read-only by id, private behind a switch (branch `dev/IK1` from `main` `07dcdd0`, database `league_lab_ia3`, read only)
+
+* **Task / plan**: IK-1 of the Wave I-K brief (`scratchpad/waveIK/BRIEF.md`): the PO's call (1) — ESPN public leagues
+  read-only by id, labelled "unofficial"; private leagues through the user's own cookies in the code, behind
+  `LEAGUE_LAB_ESPN_PRIVATE` (default off). Docs: `docs/ESPN_TERMS.md` § "ESPN leagues (Wave I-K, IK-1)" (new: what the
+  product does and does not do). The ESPN row's facts for `docs/PROVIDERS.md` are in INTERFACES (IK-3 writes the matrix).
+* **Sources** (ESPN publishes no API; read 2026-10-05 through WebFetch / raw GitHub — the open-source client
+  cwendt94/espn-api, `master`): `espn_api/requests/espn_requests.py` and `requests/constant.py` (the host
+  `lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/<y>/segments/0/leagues/<id>`, the views, the
+  `x-fantasy-filter` header, 401 = private / 404 = no league), `espn_api/football/constant.py` (`POSITION_MAP` = the
+  lineup slot ids, `PRO_TEAM_MAP`, `SETTINGS_SCORING_FORMAT_MAP` = the scoring stat ids, `ACTIVITY_MAP`), the football
+  `league.py` / `settings.py` / `team.py` / `player.py` / `transaction.py` / `base_offer.py` (the JSON shapes: `pointsOverrides`
+  keyed by slot id, `teams[].roster.entries[]`, `schedule[]`, `transactions[].items[]` with `ADD` / `DROP` / `TRADE`,
+  statuses `EXECUTED` / `CANCELED` / `FAILED_*`), and its unit-test data `tests/football/unit/data/league_2018_data.json`
+  (a real 2018 answer: the field names). URLs: <https://github.com/cwendt94/espn-api/blob/master/espn_api/football/constant.py>,
+  <https://github.com/cwendt94/espn-api/blob/master/espn_api/requests/espn_requests.py>,
+  <https://github.com/cwendt94/espn-api/blob/master/espn_api/football/league.py>.
+* **The client** (`src/league_lab/espn_client.py`, new): `ESPN(fixtures=None, season=None, base=None, timeout=10, *,
+  clock, bucket, fetch)` — `settings` (`view=mSettings`), `status` (`mStatus`), `teams` (`mTeam`), `rosters`
+  (`mRoster`), `schedule` (`mMatchupScore`: every matchup period's pairs and points), `transactions(week)`
+  (`mTransactions2` + `scoringPeriodId` + filter `{"transactions": {"filterType": {"value": ["FREEAGENT", "WAIVER",
+  "TRADE_ACCEPT"]}}}`), `free_agents(week)` (`kona_player_info` + filter `{"players": {"filterStatus": {"value":
+  ["FREEAGENT", "WAIVERS"]}, "filterSlotIds": {"value": [0, 2, 4, 6, 16, 17, 23]}, "limit": 150, "sortPercOwned":
+  {"sortPriority": 1, "sortAsc": false}}}`); TTL caches by kind (settings a day, teams an hour, rosters /
+  transactions / the week 10 min, the schedule 5 min, free agents an hour), stale on error, a token bucket
+  (`LEAGUE_LAB_ESPN_LEAGUE_PER_MIN`, default 30; 429 backs off a minute), `stats()` like MFL's; **answers trimmed** to
+  the fields read before caching (a real roster answer carries every stat line of the season — espn-api's own week-1
+  file is 17 MB; Render has 512 MB). Errors: `LeaguePrivate(LeagueNotFound)` code `espn_league_private` (401),
+  `LeagueNotFound` code `espn_league_unknown` (404), `espn_link_invalid`, `espn_not_configured` (the kill switch),
+  `ESPNUnavailable(SleeperUnavailable)` (→ provider_down), `ESPNBusy(SleeperBusy)` (→ busy); each carries `.code` /
+  `.fix`; `setup_words(exc, league_id) -> (code, words, fix)` for II-5's `SetupError`. Keys: `espn:<id>` or
+  `espn:<season>:<id>` (`check_key`, `parse_key`, `make_key`); links: `parse_link` (bare id, key,
+  `fantasy.espn.com/football/league?leagueId=…`, `/football/team?leagueId=…&teamId=…&seasonId=…`, any espn.com path
+  with `leagueId`). Season: the key, else `LEAGUE_LAB_ESPN_SEASON`, else the NFL season of the pinned clock (the year
+  from March). Env names chosen not to collide with the injury feed's `LEAGUE_LAB_ESPN_PER_MIN` / `LEAGUE_LAB_ESPN_API`
+  (found while building) nor the news fixtures' `LEAGUE_LAB_ESPN_FIXTURES`.
+* **The tables** (in the module, each row's source cited). **Slots** (`SLOT_IDS`, espn-api `POSITION_MAP`): 0 QB → QB,
+  2 RB → RB, 3 RB/WR → WRRB_FLEX, 4 WR → WR, 5 WR/TE → REC_FLEX, 6 TE → TE, 7 OP → SUPER_FLEX, 16 D/ST → DEF,
+  17 K → K, 23 FLEX → FLEX, 20 BE → BN, 21 IR → `reserve_slots`; 1 TQB, 8–15 IDP (DT DE LB DL CB S DB DP), 18 P,
+  19 HC, 24 ER, 25 Rookie left out and named on the card (`espn.slots.left_out`, `idp`). Player positions from
+  `defaultPositionId` (1 QB, 2 RB, 3 WR, 4 TE, 5 K, 16 D/ST; the `eligibleSlots` fallback espn-api uses). D/ST player
+  ids are `-16000 - proTeamId` → the team's Sleeper defense (ESPN's WSH = WAS). **Scoring** (`scoring()`, espn-api
+  `SETTINGS_SCORING_FORMAT_MAP`): every stat id with a Sleeper key lands on it — 3 PY → `pass_yd`, 4 PTD → `pass_td`,
+  20 INTT → `pass_int`, 24 RY / 42 REY → `rush_yd` / `rec_yd`, 25 / 43 → `rush_td` / `rec_td`, 41 / 53 REC → `rec`,
+  15 / 16 / 35 / 36 / 45 / 46 long-TD bonuses → `*_td_40p` / `*_50p`, 17 / 18 / 37 / 38 / 56 / 57 yardage-game bonuses →
+  `bonus_*`, 19 / 26 / 44 / 62 2-pt, 63 → `fum_rec_td`, 64 → `pass_sack`, 68 / 72 → `fum` / `fum_lost`, 73 → both
+  turnovers, 74 / 77 / 80 / 83 / 198 FG made by distance → `fgm_*`, 76 / 79 / 82 / 85 / 200 missed → `fgmiss*`, the
+  attempts (75 / 78 / 81 / 84 / 199) on both, 86 / 87 / 88 PAT, 211–213 first downs; D/ST items use
+  `pointsOverrides["16"]` (slot 16 = D/ST): 95 INT, 96 FR, 97 BLKK, 98 SF, 99 SK (100 ½ sack = 2× per sack), 106 FF,
+  93 / 94 / 101–105 return TDs → `def_td` / `def_st_td` (player KR / PR TDs → `st_td`; several different values are
+  averaged and said so), 205 / 206 → `def_2pt`, 128–136 yards-allowed bands → Sleeper's `yds_allow_*` (not projected:
+  listed), 89–92 / 121–125 (and the 187–196 copies) points-allowed bands → Sleeper's seven bands averaged point by
+  point (ESPN's 14–17 / 18–21 / 22–27 / 35–45 / 46+ do not line up; said on the card). Position-specific
+  `pointsOverrides` on receptions (slot 2 / 4 / 6) → `bonus_rec_rb` / `_wr` / `_te`; on anything else: priced at the
+  base and said so. "Every N yards" items (5–14, 27–34, 47–55, 116–119) priced at points ÷ N a unit (approximated,
+  said). FG 60+ (201) priced at the 50+ points (said). Anything else (head coach, punter, FG yards, per-game averages,
+  TD-distance bands 175–186) is unpriced, listed by ESPN's label. A categories league (`scoringType` not points) is
+  flagged `categories: true`. ESPN's scoring goes through Sleeper's flat path (`scoring.from_sleeper`): no
+  `scoring_spec` (decided: the tested parity path; the approximations are listed instead).
+* **The adapter** (`src/league_lab/espn_leagues.py`, new): `ESPNLeagues(client, directory)` — `league`, `users`,
+  `rosters`, `matchups`, `season_matchups`, `transactions`, `translate`, `unmapped`, `mapped_by`, `week`, plus
+  `free_agents(key)` (ESPN's own list, mapped; the Waivers screen keeps the rule every provider uses — the players no
+  roster carries), `require_access(key)`, `roster_id_of(key, espn_team_id)` / `team_id_of`, `url`, `league_name`, `ids`.
+  Rosters: one per ESPN team, `roster_id` 1..N in team-id order (ESPN skips ids: the fixture's 11 is roster 10),
+  starters seated in the slot ESPN has each in ("0" for an empty slot), IR from slot 21, the record from ESPN's
+  standings. Players: D/ST → the team code; ESPN id → gsis (`player_ids.espn_to_gsis`) → the table's Sleeper id for
+  that gsis (a gsis with two Sleeper ids is left undecided), else `platforms.GSIS_LOOKUP`, else a unique name +
+  position in Sleeper's directory ("name"), else `espn:<id>` with ESPN's name / position / team (unvalued, in
+  `unmapped`; a starter is never dropped). Kickers are players. Transactions: `EXECUTED` free-agent adds, waiver
+  claims (with the bid) and trades in Sleeper's shape; cancelled / failed claims and lineup moves left out.
+  `league["settings"]` gains Sleeper's `waiver_type` (2 FAAB / 1 reverse standings / 0 rolling) and `waiver_budget`;
+  `league["espn"] = {league_id, season, url, unofficial: true, public, slots, scoring, waivers}`.
+* **The private path** (`api/league_lab_api/espn_connect.py`, `api/league_lab_api/sealed.py`, new; wired in `main.py`'s
+  `# ---- IK-1` block): `POST /api/espn/connect {espn_s2, swid}` → checks they look like ESPN's (a SWID is a braced
+  UUID; `espn_s2` 40–2048 URL-safe characters), seals them (stdlib encrypt-then-MAC: HMAC-SHA256 counter-mode
+  keystream + HMAC-SHA256 tag, keys derived per purpose from `LEAGUE_LAB_API_SECRET`; no `cryptography` in the lock)
+  into `ll_espn` (HttpOnly, SameSite=Lax, Secure on https, `Path=/api`, 30 days); `POST /api/espn/disconnect`;
+  `GET /api/espn/status` → `{private, connected, words, how}`; all behind the beta gate. A middleware unseals the cookie
+  into `espn_client.AUTH` (a ContextVar) for that request only; the client sends `Cookie: espn_s2=…; SWID=…` with that
+  request's reads. **Switch off (default)**: `connect` → 404 `espn_private_off`, the cookie ignored, a private league →
+  "ESPN league 5150 is private. ESPN has no sign-in for other apps; a public league works by its id (Settings → Basic
+  Settings → League Visibility in ESPN)" + "Ask the commissioner to make the league public". **On** (needs
+  `LEAGUE_LAB_ESPN_PRIVATE=on` and `LEAGUE_LAB_API_SECRET`): the fix offers "Private league?". Never stored, never logged
+  (the tests grep the logs); the cache keys a private answer by an HMAC digest of the pair (a random per-process key),
+  and `require_access` refuses a known-private league to a request without cookies that ESPN accepted (cookies it has
+  not seen: one `mSettings` read with them decides) — IK-3 calls it before every memo'd answer.
+* **The kill switch**: `LEAGUE_LAB_ESPN_LEAGUES=off` stops every ESPN league read ("ESPN leagues are switched off on this
+  server.", `espn_not_configured`), should ESPN object (Disney's terms: `docs/ESPN_TERMS.md`).
+* **Fixtures** (`api/tests/fixtures/espn_leagues/`, new; written by `api/tests/fixtures/make_ik1_fixtures.py`,
+  deterministic): **synthetic, built from the documented shapes**, every file's `_synthetic` key says so. `4242`
+  "Synthetic Public League" — public, 10 teams (ESPN team ids 1–9 and 11), season 2026, scoring period 4 (weeks 1–3
+  scored, week 4's Thursday game), half PPR + 0.5 TE premium (a slot-6 override), ESPN's default lineup (QB, RB×2,
+  WR×2, TE, FLEX, D/ST, K, BE×7, IR×1), FAAB 100; rosters mirror the Sleeper Test League's with each player's ESPN id
+  from `ff/db_playerids.csv` (157 of 159 map: 145 by the table, 11 defenses, 1 by name, 2 left `espn:<id>` — one a
+  FLEX starter); waiver claims, a free-agent add, a week-3 trade (both players on their new rosters), a cancelled
+  claim and a lineup move (both ignored); 31 ESPN free agents. `5150` — the same league, private (`_private`: 401
+  without cookies). Any other id → 404.
+* **Interfaces**: INTERFACES.md § IK-1 (the module / class names, the key forms, the constructor, the fixture env
+  `LEAGUE_LAB_ESPN_LEAGUE_FIXTURES` + `LEAGUE_LAB_ESPN_SEASON=2026`, the SetupError codes, the switch and the routes, the
+  PROVIDERS facts; changes timed). IK-3 wired it (`dev/IK3` `db8bfed`): checked on a scratch merge of `dev/IK1` +
+  `dev/IK3` (below).
+* **Files**: `src/league_lab/espn_client.py`, `src/league_lab/espn_leagues.py`, `api/league_lab_api/espn_connect.py`,
+  `api/league_lab_api/sealed.py` (all new), `api/league_lab_api/main.py` (the `# ---- IK-1` block: the middleware and
+  the router), `api/tests/test_ik1.py`, `tests/test_espn_ik1.py`, `api/tests/fixtures/make_ik1_fixtures.py`,
+  `api/tests/fixtures/espn_leagues/{4242,5150}/` (new), `docs/ESPN_TERMS.md`, this section, `CHANGELOG.md`.
+* **Commands / evidence**:
+  - `uv run pytest -q tests/test_espn_ik1.py` → **40 passed**; `cd api && PYTHONPATH=. uv run pytest -q tests/test_ik1.py`
+    → **8 passed, 4 skipped** on this branch (the 4 Router tests skip: IK-3's wiring is on `dev/IK3`).
+  - **On a scratch merge of `dev/IK1` (final) + `dev/IK3` (`4d31c8b`)** (`scratchpad/waveIK/ik1_int`): `tests/test_ik1.py` **12 passed** (the
+    league card from a team link `…team?leagueId=4242&teamId=11` → roster 10; My Week, Team, Waivers, Trades partners,
+    League and the rosters route 200 for `espn:4242`; the private and unknown errors; the League screen's ESPN
+    transactions and standings), IK-3's `tests/test_ik3.py` every ESPN test passed (46 of 48 with IK-1's file; the two
+    failures are IK-3's Yahoo connect tests, which fail the same on `dev/IK3` alone — not IK-1's). An IDP variant of
+    4242 (LB×2, DB, P added) through the merged card: 200, "Defensive players (LB, DB) are not projected here; those spots
+    are left out. … Lineup: ESPN's P spots are left out" — before the 09:47 fix IK-1's note carried `idp` as a bool and
+    the card's join would have answered 500.
+  - The fixture API on **8741** (the merge; `scratchpad/waveIC/api_po.sh`'s env + `LEAGUE_LAB_NOW=2026-10-03T16:00:00Z`
+    `LEAGUE_LAB_ESPN_LEAGUE_FIXTURES=$PWD/tests/fixtures/espn_leagues LEAGUE_LAB_ESPN_SEASON=2026`): `/api/leagues?espn=
+    <team link>` 200 (0.15 s), `/api/my-week?league=espn:4242&team=3` 200 (1.5 s cold), `/api/waivers…` 200 (4.5 s
+    cold), `/api/trades/partners…` 200 (6.8 s cold), `/api/team…` 200, `/api/league…` 200, `?espn=5150` 404
+    `espn_league_private`. Restarted with `LEAGUE_LAB_ESPN_PRIVATE=on` + a made-up secret: `?espn=5150` 404 → `POST
+    /api/espn/connect` (made-up cookies) 200 + `ll_espn` → `?espn=5150` **200 "Synthetic Private League", 10 teams**,
+    `/api/my-week?league=espn:5150&team=1` **200 with the cookie, 404 without** (the same process, its caches warm);
+    the made-up `espn_s2` appears **0 times** in the server's log.
+  - My Week on `espn:4242` team 2: "Fourth and Long · 1-2, #9 · week 4 vs Mighty Ducks", the lineup QB Jalen Hurts …
+    DEF Kansas City Chiefs, 98.11 projected, the unmapped FLEX listed in `on_demand.unmapped_players`; the card's
+    scoring line "0.5 per catch (TE 1) · 6-pt TDs (pass 4) · 1 pt per 10 rushing / receiving yards · 1 pt per 25
+    passing yards · INT −2 · fumble lost −2 · FG by distance 3 / 3 / 3 / 4 / 5 · DEF points allowed 0 → 5, 1–6 → 4,
+    7–13 → 3".
+  - **Whole suites on `dev/IK1`** (database `league_lab_ia3`, four developers' suites running at once): root `uv run
+    pytest -q` → **1,210 passed, 7 skipped** (43 min; at `ecf88ed` — the later commits touch only `espn_client.py`,
+    `espn_leagues.py` and IK-1's tests, re-run above at the final commit); API `cd api && PYTHONPATH=. uv run pytest -q
+    --deselect tests/test_u1.py --deselect tests/test_ig2.py` → **622 passed, 4 failed, 30 skipped** (30 min; at
+    `880a3ad`, before the slot-note fix — IK-1's files only; the skips: IK-1's 4 Router tests, the record-only tests,
+    `web/dist` not built here, the clone's missing marts — `mart_decision_record`, the pricing column). The pins (API 635 / 9, root 1,177 / 2) are
+    on `league_lab`; on the `league_lab_ia3` clone **4 API tests fail the same on `main` `07dcdd0`** (checked one by one on
+    a detached `main` checkout with this `.env`; the extra skips are data-dependent tests skipping on the clone, plus
+    IK-1's 4 Router tests): `test_ic1.py::test_dads_league_week_2`,
+    `::test_dads_league_week_1_units_and_the_named_miss`, `test_ic_po.py::test_scoring_check_without_play_by_play_is_exact
+    _on_the_ten_yard_cut` (the clone predates the dbt models the dad's-league scoring check reads) and
+    `test_ih2.py::test_the_console_twin_says_what_the_api_says` (the console twin's caption on the clone). No Sleeper /
+    MFL number moved. `uv run ruff check src app tests api scripts` clean.
+* **What is unverified live: everything.** ESPN is unreachable from the sandbox: the view names, the field names and
+  nesting, the 401 / 404 behaviour, the filters, the D/ST id rule, the stat-id meanings, `mStatus` (if ESPN ignores the
+  view, the base answer still carries `scoringPeriodId` and `status`), the trimming, and the cookie path are as
+  documented by espn-api, never seen in an ESPN answer here. **How the PO verifies, after the deploy**:
+  1. ESPN itself (no code of ours): open
+     <https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/2019/segments/0/leagues/48153503?view=mTeam> in a
+     browser — espn-api's integration tests read this public league (2019; "TEAM BERRY", "TEAM HOLLAND"): JSON with
+     `teams[]` and `members[]` = the host and the view answer as documented.
+  2. Our parsing on a real answer: <https://isuckatfantasy.io/api/leagues?espn=espn:2019:48153503> → 200, its teams
+     by name (espn-api's test reads "TEAM BERRY", "TEAM HOLLAND"), `league.url` ESPN's page; a 404 `espn_league_private` means ESPN made it private, a 502 `provider_down`
+     means the host or a view changed (`/api/status` → `sleeper.espn.last_error`, e.g. "mRoster: HTTP 500").
+  3. **A 2026 league: Andrew needs any public ESPN league id** (no public 2026 football league is in the open-source
+     projects' docs or tests: espn-api's are 1234 / 2018 and 48153503 / 2019). Any league whose commissioner set ESPN →
+     League → Settings → Basic Settings → League Visibility → Public. Then on the phone: `https://isuckatfantasy.io/leagues
+     ?platform=espn` → paste `https://fantasy.espn.com/football/league?leagueId=<id>` → pick a team → My Week, Team,
+     Waivers, Trades, League. Compare with ESPN's own pages: the lineup slots (League → Settings → Roster), the scoring
+     line (Settings → Scoring), the team's lineup (ESPN's My Team: the starters), the records (Standings), the week's
+     opponent (Scoreboard), the adds / drops / trades (Recent Activity). The API answers the same at
+     `https://isuckatfantasy.io/api/leagues?espn=<id>` and `…/api/my-week?league=espn:<id>&team=<n>`.
+  4. A private league — only if Andrew turns the switch on (below): ESPN signed in on a computer → developer tools →
+     Application → Cookies → `https://fantasy.espn.com` → copy `espn_s2` and `SWID` → the setup screen's "Private
+     league?" → the league opens; sign out of ESPN in that browser later and the read says "the cookies you gave … may
+     have expired".
+* **Not done / known**:
+  - Trades in a public read: espn-api notes that `mTransactions2`'s `TRADE_ACCEPT` rows "often have empty items except for
+    the authenticated owner's deals" — a trade with no players listed is left out (the League screen shows fewer trades
+    than ESPN's Recent Activity). espn-api fills them from player cards (`kona_playercard`); not done.
+  - Seasons before 2018 (ESPN's `leagueHistory` endpoint) are refused as a bad key; espn-api also retries `leagueHistory`
+    on a 401 for a past season — not done (a past season of a now-private league says private).
+  - Not read: keepers, draft picks, FAAB left (only the spent budget), ESPN's waiver order / claim times (the waiver
+    words say "see ESPN"), divisions, ESPN's own projections. IDP / P / HC slots left out (said). A categories league
+    is flagged, not priced as categories.
+  - The words for Sleeper's `yds_allow_*` keys on the card ("yds allow 100 199") come from `scoring.py`'s word table
+    (IC-1's), the same for a Sleeper league with yards-allowed scoring.
+  - `AUTH` is a ContextVar: a thread pool started inside a request does not inherit it (only matters with the switch on).
+* **Next**: the PO's live check above; Andrew's public league id; then IK-3's capabilities words flip from "unverified".
+
+**For the PO**
+1. **Merge**: `dev/IK1` touches `api/league_lab_api/main.py` in one marked block (before "the web app"; IK-2 / IK-3 /
+   IK-4 add theirs — keep all, the catch-all `/api/{rest}` must stay last) and nothing else shared. IK-3 merged earlier
+   `dev/IK1` commits into `dev/IK3`; merge `dev/IK1` at its last commit (the later ones: the slot note's `idp` as a list —
+   the card's join needs it —, trimming, `last_error`, tests; IK-1's code files only). `STATUS.md` / `CHANGELOG.md`: one `## Wave I-K` heading each.
+2. **Render env**: nothing to set for public leagues. `LEAGUE_LAB_API_SECRET` is already generated by Render
+   (`render.yaml`); the private path needs it. Optional: `LEAGUE_LAB_ESPN_LEAGUE_PER_MIN` (default 30).
+3. **Decisions Andrew may want to reverse**: (a) **`LEAGUE_LAB_ESPN_PRIVATE`** stays **off** — to turn on: Render →
+   the service → Environment → `LEAGUE_LAB_ESPN_PRIVATE` = `on` → Save (users then paste their two ESPN cookies once;
+   they live 30 days in their browser; Disney's terms say not to share account information: the risk is the user's
+   and ours); (b) **`LEAGUE_LAB_ESPN_LEAGUES=off`** is the kill switch for every ESPN league (default on) — the ESPN
+   risk the owner accepts for the free beta; (c) regenerating `LEAGUE_LAB_API_SECRET` ("sign everyone out") also
+   drops every `ll_espn` cookie; (d) ESPN's points-allowed bands are averaged onto Sleeper's (not priced exactly);
+   (e) the ESPN cookie lives 30 days.
+4. Nothing for `render.yaml`, the Dockerfile, the workflows, dbt, Neon or `sync_to_hosted.sh`.
