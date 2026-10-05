@@ -114,3 +114,53 @@ with others". So the news line and the injury overlay are outside those terms as
 paid product needs ESPN's written permission or another source. The decision is the PO's and Andrew's; the switches
 above (`LEAGUE_LAB_NEWS`, `LEAGUE_LAB_AVAILABILITY`) turn both off. ESPN leagues: `docs/PROVIDERS.md` § ESPN.
 
+
+## ESPN leagues (Wave I-K, IK-1, 2026-10-05) — what the product now does and does not do
+
+**Built, not verified live** (ESPN is unreachable from the build sandbox; every answer the tests read is synthetic —
+`api/tests/fixtures/espn_leagues/`, built from the open-source client cwendt94/espn-api's documented shapes). The PO
+verifies after the deploy (`docs/STATUS.md` § IK-1).
+
+**What it reads.** A public ESPN fantasy football league, by its id (`espn:<id>`), read-only, on demand, from the
+endpoints ESPN's own web app calls — `https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/<season>/
+segments/0/leagues/<id>?view=…` with the views `mSettings` (name, lineup slots, scoring), `mStatus` (the week), `mTeam`
+(teams, owners' display names, records), `mRoster` (rosters and lineups), `mMatchupScore` (the schedule and points),
+`mTransactions2` (a week's adds, drops and trades) and `kona_player_info` (ESPN's free agents). No key, no login, no
+account. Code: `src/league_lab/espn_client.py` (the client and ESPN's id tables, each table's source cited in the
+module), `src/league_lab/espn_leagues.py` (the league in Sleeper's shapes). Every request names us
+(`User-Agent: league-lab/0.1 (isuckatfantasy beta; read-only; docs/ESPN_TERMS.md)`).
+
+**How much.** One league when a user opens it; then the answers are cached in the process (settings a day, teams an
+hour, rosters and transactions 10 minutes, the schedule 5 minutes, the week 10 minutes, free agents an hour); a token
+bucket of 30 calls a minute per process (`LEAGUE_LAB_ESPN_LEAGUE_PER_MIN`); ESPN's 429 backs off for a minute and
+serves the last answer. No crawl, no bulk read, no league searched for by name.
+
+**What it keeps.** The league's answers in process memory for the times above, and nothing else: no database row, no
+file, nothing in the nightly, nothing in git but the synthetic fixtures. The user's league key is remembered in the
+user's own browser (as for MFL).
+
+**What it never does.** Write anything to ESPN (no lineup set, no claim, no trade); ask for an ESPN password or sign
+in to ESPN; read a page's HTML; read seasons before 2018 (ESPN's `leagueHistory` endpoint); price a categories league
+as points (the league card says so).
+
+**Private leagues: in the code, off by default.** ESPN has no sign-in for other apps; a private league answers only a
+request carrying the manager's own ESPN cookies `espn_s2` and `SWID`. With `LEAGUE_LAB_ESPN_PRIVATE=on` (and
+`LEAGUE_LAB_API_SECRET` set) the setup screen offers "Private league?": the user pastes the two values once
+(`POST /api/espn/connect`); the server seals them (encrypted and authenticated with `LEAGUE_LAB_API_SECRET`,
+`api/league_lab_api/sealed.py`) into an `ll_espn` cookie that lives only in the user's browser (HttpOnly, `Path=/api`,
+30 days) and keeps nothing. On each of that user's requests the cookie is unsealed for that request alone and sent to
+ESPN with that request's reads; it is never logged, never written to a file or a table, never sent anywhere but ESPN.
+The in-process cache keys a private league's answers by an HMAC digest of the pair (a random per-process key), never
+the pair, and a request without the same cookies is refused a private league even when its answers are cached
+(`require_access`). The words the user reads: "Your ESPN cookies stay in your browser; isuckatfantasy reads your league
+with them and never stores them." `POST /api/espn/disconnect` deletes the cookie. With the switch off (the default)
+the cookie is ignored everywhere and a private league answers `espn_league_private`: "ESPN league 4242 is private.
+ESPN has no sign-in for other apps; a public league works by its id (Settings → Basic Settings → League Visibility in
+ESPN)". Disney's terms (above) say "you will not share your account or account information with others" — the cookies
+are account information: the user sharing them with us is the risk the switch keeps off until Andrew decides.
+
+**The risk, stated.** Disney's terms forbid automated access and commercial use (§ "Disney's terms, read" above). The
+owner accepts that risk for the free beta, labels ESPN "unofficial" on the setup screen, and keeps two switches:
+`LEAGUE_LAB_ESPN_LEAGUES=off` stops every ESPN league read (the answer: "ESPN leagues are switched off on this
+server.", code `espn_not_configured`); `LEAGUE_LAB_ESPN_PRIVATE` stays off unless Andrew turns it on. Before anything
+is charged for: ESPN's written permission, or no ESPN leagues.
