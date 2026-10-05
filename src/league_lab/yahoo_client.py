@@ -53,6 +53,7 @@ import base64
 import contextvars
 import hashlib
 import json
+import logging
 import os
 import re
 import threading
@@ -80,6 +81,7 @@ REDIRECT_ENV = "LEAGUE_LAB_YAHOO_REDIRECT_URI"
 DEFAULT_PER_MIN = 60
 MAX_ENTRIES = 400          # cached answers held at most (a league open is ~18: settings, teams, 12 rosters, …)
 USER_AGENT = "league-lab/0.1 (isuckatfantasy beta; docs/YAHOO_TERMS.md)"
+log = logging.getLogger(__name__)
 FIXTURE_CODE = "fixture"
 
 TTL_S: dict[str, float] = {
@@ -105,6 +107,18 @@ class YahooNotConfigured(_Coded, RuntimeError):
 
     def __init__(self, msg: str | None = None) -> None:
         super().__init__(msg or self.words)
+
+
+# ---- PO 2026-10-05 (a friend's public league, "private or does not exist"): Yahoo answered the APP, not the league.
+# Since August 2026 Yahoo no longer gives a new app the Fantasy Sports API by itself: the sign-in works, the tokens are
+# valid, and every Fantasy call is refused (HTTP 401 / 403, ``oauth_problem="additional_authorization_required"``)
+# until Yahoo approves the access application and adds the client id to its allowlist (sports.yahoo.com/developer/access;
+# docs/HOSTING.md § Yahoo, step 1.4). That is "coming soon" (the not-configured code every route already answers in
+# words), never "your connection has expired" or "your league is private".
+class YahooAccessPending(YahooNotConfigured):
+    words = "Yahoo leagues are not open here yet: Yahoo has not switched on this app's access to fantasy data"
+    fix = ("Nothing is wrong with your league or your Yahoo sign-in. Yahoo leagues are coming soon; Sleeper and "
+           "MyFantasyLeague leagues work today.")
 
 
 class YahooSignInRequired(_Coded, LeagueNotFound):
@@ -264,6 +278,64 @@ def configured() -> bool:
     except YahooNotConfigured:
         return False
     return True
+
+
+# ---- PO 2026-10-05: is the Fantasy API open to this app? Two signals, either says "not yet" (the setup screen then
+# says "coming soon" and invites nobody to connect; `/api/yahoo/connect` itself still works, so the operator can probe):
+# * ``LEAGUE_LAB_YAHOO_ACCESS=pending`` (render.yaml) — what we know: set until `/api/yahoo/status?probe=1` answers ok;
+# * the last refusal Yahoo gave this process for the app's entitlement, for ``ACCESS_RETRY_S`` (Yahoo can also take an
+#   approved app's access away again: the screen follows without a deploy, and the next probe after the hour re-tests).
+# ``access_report()`` is Yahoo's last non-200 answer (status, oauth_problem, the description's first words, the
+# resource — never a token), for `/api/yahoo/status` and the log line.
+ACCESS_ENV = "LEAGUE_LAB_YAHOO_ACCESS"
+ACCESS_RETRY_S = 3600.0
+_OAUTH_PROBLEM = re.compile(r'oauth_problem=\\?"?([a-z_]+)', re.I)     # in a header, or JSON-escaped in the body
+_access: dict[str, Any] = {"pending_until": 0.0, "last": None, "ok_at": None}
+
+
+def access_switch_pending() -> bool:
+    return (os.environ.get(ACCESS_ENV) or "").strip().lower() in ("pending", "off")
+
+
+def access_pending(wall: Callable[[], float] = time.time) -> bool:
+    return access_switch_pending() or float(_access["pending_until"]) > wall()
+
+
+def access_report() -> dict:
+    return {"switch": "pending" if access_switch_pending() else "open", "pending": access_pending(),
+            "last_refusal": _access["last"], "last_ok_at": _access["ok_at"]}
+
+
+def reset_access() -> None:
+    _access.update({"pending_until": 0.0, "last": None, "ok_at": None})
+
+
+def oauth_problem(text: str, headers: Mapping | None = None) -> str | None:
+    h = headers or {}
+    m = _OAUTH_PROBLEM.search(f"{text or ''} {h.get('WWW-Authenticate') or h.get('www-authenticate') or ''}")
+    return m.group(1).lower() if m else None
+
+
+def _description(text: str) -> str:
+    try:
+        d = json.loads(text or "null")
+        err = d.get("error") if isinstance(d, dict) else None
+        s = (err.get("description") if isinstance(err, dict) else err) or ""
+    except (json.JSONDecodeError, AttributeError):
+        s = text or ""
+    return " ".join(str(s).split())[:200]
+
+
+def _note_refusal(path: str, status: int, problem: str | None, text: str, pending: bool,
+                  wall: Callable[[], float] = time.time) -> None:
+    now = wall()
+    _access["last"] = {"at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now)), "status": int(status),
+                       "problem": problem, "resource": path, "description": _description(text),
+                       "access_pending": bool(pending)}
+    if pending:
+        _access["pending_until"] = now + ACCESS_RETRY_S
+    log.warning("yahoo refused: HTTP %s problem=%s resource=%s pending=%s description=%r", status, problem, path,
+                pending, _access["last"]["description"])
 
 
 def scope() -> str:
@@ -655,14 +727,27 @@ class Yahoo:
                 data = None
             else:
                 raise YahooUnavailable(f"Yahoo {path}: not JSON") from exc
-        if status == 401:
+        if status != 200:                                 # ---- PO 2026-10-05: say what Yahoo said, to the right party
             low = text.lower()
-            if "not in this league" in low or "not allowed" in low:
-                raise YahooLeagueNotFound(league_key)
-            session.expired = True
-            raise YahooSessionExpired()
-        if status != 200:
+            problem = oauth_problem(text, headers)
+            not_member = "not in this league" in low or "not allowed to view" in low
+            # the app's entitlement, not the league or the manager: Yahoo's own word for it, or a 403 on a resource
+            # that names no league (this season's game, the manager's own leagues)
+            pending = status in (401, 403) and not not_member and (
+                problem == "additional_authorization_required" or (status == 403 and league_key is None))
+            _note_refusal(path, status, problem, text, pending, self.wall)
+            if pending:
+                raise YahooAccessPending()
+            if status == 401:
+                if not_member or "not allowed" in low:
+                    raise YahooLeagueNotFound(league_key)
+                session.expired = True
+                raise YahooSessionExpired()
+            if league_key is None:                        # no league was asked for: never "that league is private"
+                raise YahooUnavailable(f"Yahoo {path}: HTTP {status}")
             raise YahooLeagueNotFound(league_key)
+        _access["ok_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(self.wall()))
+        _access["pending_until"] = 0.0                    # Yahoo answered a Fantasy call: the app's access is open
         if not isinstance(data, dict) or "fantasy_content" not in data:
             raise YahooLeagueNotFound(league_key) if isinstance(data, dict) and "error" in data \
                 else YahooUnavailable(f"Yahoo {path}: no fantasy_content")

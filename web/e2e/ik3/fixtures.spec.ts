@@ -22,13 +22,15 @@ async function noSidewaysScroll(page: Page) {
   expect(sw, "page wider than the screen").toBeLessThanOrEqual(iw);
 }
 
+const YAHOO_PENDING_NOTE =
+  "Yahoo leagues are coming soon: Yahoo has not switched on this app's access to fantasy data yet. Nothing is wrong with your league or your Yahoo sign-in. Sleeper and MyFantasyLeague leagues work today.";
 // the server's switches for one test: the ESPN private switch, Yahoo's keys, the Yahoo connection
-let server = { espnPrivate: false, yahooKeys: true, yahooConnected: false };
+let server = { espnPrivate: false, yahooKeys: true, yahooConnected: false, yahooPending: false };
 let asked: string[] = [];
 let posted: { path: string; body: unknown }[] = [];
 
 test.beforeEach(async ({ context, page, isMobile }) => {
-  server = { espnPrivate: false, yahooKeys: true, yahooConnected: false };
+  server = { espnPrivate: false, yahooKeys: true, yahooConnected: false, yahooPending: false };
   asked = [];
   posted = [];
   if (isMobile) await page.setViewportSize({ width: 375, height: 812 });
@@ -39,6 +41,9 @@ test.beforeEach(async ({ context, page, isMobile }) => {
     const q = url.searchParams;
     const send = (status: number, body: string) =>
       route.fulfill({ status, contentType: "application/json", headers: { "Cache-Control": "no-store" }, body });
+    // PO 2026-10-05: Yahoo's keys are set but Yahoo has not opened the app's fantasy access — the server's two flags
+    if (url.pathname === "/api/providers" && server.yahooPending)
+      return send(200, JSON.stringify({ ...JSON.parse(read("providers.json")), yahoo_configured: false, yahoo_pending: true }));
     if (url.pathname === "/api/providers") return send(200, read(server.espnPrivate || !server.yahooKeys ? "providers_private_no_yahoo.json" : "providers.json"));
     if (url.pathname === "/api/espn/connect" && req.method() === "POST") {
       posted.push({ path: url.pathname, body: req.postDataJSON() });
@@ -64,6 +69,8 @@ test.beforeEach(async ({ context, page, isMobile }) => {
         return send(404, read("error_espn_link.json"));
       }
       if (q.get("yahoo_me") !== null) {
+        if (server.yahooPending)
+          return send(200, JSON.stringify({ ...JSON.parse(read("yahoo_me_not_configured.json")), pending: true, note: YAHOO_PENDING_NOTE }));
         if (!server.yahooKeys) return send(200, read("yahoo_me_not_configured.json"));
         return send(200, read(server.yahooConnected ? "yahoo_me_connected.json" : "yahoo_me_not_connected.json"));
       }
@@ -192,6 +199,9 @@ test("Yahoo: Connect with Yahoo → your leagues → My Week; the switcher says 
   await row.click();
   await expect(page).toHaveURL(/league=yahoo(%3A|:)461\.l\.4242&team=3/);
   await expect(page.getByTestId("team-name")).toHaveText("Synthetic Team 3");
+  // PO 2026-10-05: Yahoo's attribution under a Yahoo league's screens, with the link back
+  await expect(page.getByTestId("yahoo-attribution")).toHaveText(/Fantasy data provided by\s+Yahoo Fantasy/);
+  await expect(page.getByTestId("yahoo-attribution").locator("a")).toHaveAttribute("href", "https://football.fantasysports.yahoo.com/");
   const saved = await page.evaluate(() => JSON.parse(window.localStorage.getItem("ll.mflLeagues") ?? "[]"));
   expect(saved[0]).toMatchObject({ league_id: YAHOO, roster_id: 3 });
   await expect(page.locator("option", { hasText: "Synthetic Superflex League · Yahoo" })).toHaveCount(1);
@@ -207,6 +217,7 @@ test("Yahoo by a league link: the league, the link's team pre-selected; a wrong 
   await page.getByTestId("yahoo-go").click();
   const card = page.getByTestId("provider-card");
   await expect(card).toHaveAttribute("data-platform", "yahoo");
+  await expect(card.getByTestId("yahoo-attribution")).toContainText("Fantasy data provided by");
   await expect(card.getByTestId("team-option")).toHaveCount(12);
   await expect(card.locator('[data-testid="team-option"][data-roster="3"]')).toHaveClass(/ring-accent/);
   await noSidewaysScroll(page);
@@ -228,6 +239,22 @@ test("Yahoo without the server's keys: “coming soon”, nothing to click", asy
   await expect(page.getByTestId("yahoo-note")).toContainText("Yahoo sign-in is not set up on this server yet");
   await noSidewaysScroll(page);
   await page.screenshot({ path: join(SHOTS, `ik3-yahoo-soon-${info.project.name}.png`), fullPage: true });
+});
+
+test("Yahoo's approval pending: “coming soon” in the server's words — nothing to click, nobody sent round the sign-in", async ({ page }, info) => {
+  server.yahooPending = true;
+  server.yahooConnected = true; // a manager who connected before the switch: still "coming soon", no league list
+  await page.goto("/leagues?platform=yahoo");
+  await expect(page.getByTestId("yahoo-soon")).toBeDisabled();
+  await expect(page.getByTestId("yahoo-connect")).toHaveCount(0);
+  await expect(page.getByTestId("yahoo-form")).toHaveCount(0);
+  const note = page.getByTestId("yahoo-note");
+  await expect(note).toHaveAttribute("data-pending", "1");
+  await expect(note).toContainText("Yahoo has not switched on this app's access to fantasy data yet");
+  await expect(note).toContainText("Nothing is wrong with your league or your Yahoo sign-in");
+  await expect(page.getByTestId("yahoo-setup")).not.toContainText("expired");
+  await noSidewaysScroll(page);
+  await page.screenshot({ path: join(SHOTS, `po-yahoo-pending-${info.project.name}.png`), fullPage: true });
 });
 
 test("four platforms; the choice is remembered and ?platform= opens it", async ({ page }) => {

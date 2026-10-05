@@ -9012,6 +9012,87 @@ compare against it)
   saying a line was scaled.
 
 
+### PO — Yahoo refuses the app; the app blamed the league (2026-10-05, 17:00–17:40 ET; branch `po/yahoo-access` from `main` `93deea5`)
+
+* **Report (Andrew, 16:58 ET)**: "A friend tried to connect his yahoo league but had an issue … an error message due
+  to the league being private/DNE. ID is 1598462. It should be considered a public prize league though."
+* **What was established** (17:00–17:10 ET):
+  * The league exists and is public: `football.fantasysports.yahoo.com/f1/1598462` opens signed out — "Yahoo Prize
+    H2H-Pts 1598462", 10 teams, 2026.
+  * Render's application log, the friend's requests (12:59–13:41 ET): `GET /api/yahoo/connect` → `/api/yahoo/callback`
+    302 → `/leagues?platform=yahoo` (no `yahoo_error`) → `GET /api/leagues?yahoo_me=1` 200 — **four times in three
+    minutes** (12:59:28, 13:00:08, 13:00:20, 13:02:35); no league was ever opened from a list; then
+    `?yahoo=https://football.fantasysports.yahoo.com/f1/1598462` 404 (13:01:53, 13:41:33) and `?yahoo=1598462` 404
+    (13:41:04). Four clean sign-ins and nothing listed is every Fantasy call failing, not one league.
+  * Without a Yahoo connection the same three requests answer `yahoo_sign_in_required` ("Connect your Yahoo account
+    …" — the PO's pane, 16:59 ET), so his "private or does not exist" came with a valid cookie and a non-200 from
+    Yahoo on the first call (`game/nfl`, which names no league).
+  * The code: `Yahoo._read` turned **any** non-200 into `YahooLeagueNotFound` ("… is private or does not exist"), a
+    401 without "not allowed" into a spent session, and `ondemand.yahoo_me` turned every `LeagueNotFound` into "Your
+    Yahoo connection has expired. Connect with Yahoo again." — the loop he walked. Yahoo's status and words were
+    never logged.
+  * Why Yahoo refuses: the Fantasy access application (HOSTING § Yahoo step 1.4, Andrew's open input since Wave I-K)
+    is not approved. Since August 2026 a new app's tokens are valid and its Fantasy calls answer 401 / 403
+    `oauth_problem="additional_authorization_required"` until Yahoo approves it and allow-lists the Client ID
+    (github.com/derekrbreese/fantasy-football-mcp-public/issues/18, read 2026-10-05; Yahoo's access page states the
+    review, not the error). **Inference, not observation: Yahoo's answer to our app has not been seen** — the old code
+    discarded it. The fix records it; the first probe after the deploy shows it.
+* **The fix**:
+  * `src/league_lab/yahoo_client.py` — `YahooAccessPending(YahooNotConfigured)` (code `yahoo_not_configured`: every
+    route already answers it in words, never a 500) raised for 401 / 403 `additional_authorization_required`, or a
+    403 on a resource that names no league; the access state (`ACCESS_ENV` `LEAGUE_LAB_YAHOO_ACCESS=pending`, Yahoo's
+    refusal held `ACCESS_RETRY_S` = 1 h and lifted by the next answered call; `access_pending`, `access_report`,
+    `reset_access`); `_note_refusal` logs and keeps every non-200 (`yahoo refused: HTTP %s problem=%s resource=%s
+    pending=%s description=%r` — the resource path and Yahoo's description, never a token); a non-200 on a resource
+    without a league is `YahooUnavailable`, not a private league; "not in this league" and a rejected token keep their
+    old meanings.
+  * `api/league_lab_api/yahoo_connect.py` — `open_for_users()` (configured and not pending; `/api/yahoo/connect`
+    itself follows `configured()` alone so the operator can probe); `/api/yahoo/status` gains `open`, `access` and
+    `?probe=1` (one `game/nfl` read as the connected manager → `probe: {ok, game_key | error, code}`).
+  * `api/league_lab_api/ondemand.py` — `yahoo_configured()` follows `open_for_users()`; `yahoo_pending()` +
+    `/api/providers` `yahoo_pending`; `yahoo_me` answers `configured: false, pending: true` with the pending note,
+    "expired" only for `yahoo_sign_in_required` / `yahoo_session_expired`, "Yahoo did not share your leagues just now
+    …" for any other refusal; `provider_error` says the pending words for a pasted link.
+  * `web/src/routes/Leagues.svelte`, `lib/providers.ts` — the disabled "Connect with Yahoo — coming soon" with the
+    pending words when `yahoo_pending` / `pending` (the server's note when it sends one).
+  * `render.yaml` — `LEAGUE_LAB_YAHOO_ACCESS: pending` (a PO line; the Blueprint sync sets it with the push).
+  * **Yahoo's attribution was missing** (found writing the access application's notes: HOSTING said "on every Yahoo
+    league screen"; no screen had it). `web/src/App.svelte`: "Fantasy data provided by Yahoo Fantasy" with the link
+    back, under every screen of a `yahoo:` league; `Leagues.svelte`: the same line on a Yahoo league's setup card.
+* **Andrew, 17:16 ET**: the access application "was never asked of me" — true: it lived in HOSTING step 1.4 and the
+  handoffs' "Andrew's inputs", never put to him as a step. The PO read the app's Client ID from the sign-in redirect
+  (`/api/yahoo/connect` → Yahoo's URL carries `client_id`: the public half, shown to every manager who connects; the
+  secret was not read) and gave him the form's text (HOSTING step 1.4's, the attribution sentence held back until this
+  commit is live).
+* **Tests**: `api/tests/test_ik2.py` (the PO block): 401 and 403 refusals on the game, the manager's leagues and a
+  league → `YahooAccessPending`, the session not expired, the report without a token; "not in this league" still the
+  league's; a rejected token still the session's; an answered call lifts the hold, the switch keeps it; **the friend's
+  evening end to end** (the sealed cookie, Yahoo refusing: the list says coming soon and keeps the cookie, the three
+  forms of his league say the pending words, the flags turn, the probe reports 403 +
+  `additional_authorization_required`, connect still redirects); the switch alone asks Yahoo nothing. `test_ik3`
+  (`provider_flags` with the switch), `conftest.py` (the access state reset around every test), `web/e2e/ik3` ("Yahoo's
+  approval pending"), the il5 providers recordings re-recorded (`yahoo_pending`).
+* **Docs**: HOSTING § Yahoo (the approval, the switch, the probe), PROVIDERS, WORDS (two rows), HANDOFF, CHANGELOG,
+  What's new.
+* **Checks** (the same database as the section below: 2026 through week 4, the suites pinned to 2026-10-03, so the
+  week-state tests fail before and after): API **703 passed / 88 failed** / 13 skipped — the 88 are name for name the
+  88 of `93deea5` (+ 7 new tests); root **1,314 passed / 4 failed** / 3 skipped (the same four); ruff clean;
+  `copy_standard --check` clean; `npm run lint` 0 / 0 (169 files); build ok; fixtures e2e **393 passed, 1 failed** / 2
+  skipped on the full run — the failure is `e2e/il5` "signed in: the saved players …" on the phone project (the GA
+  events read one short: `watchlist_remove` not yet in), **8 of 8 green re-run alone**: a timing flake in that test,
+  not this change (a Sleeper league, no Yahoo code on its path); to fix with the next web change. The pending screen
+  at 375: the disabled "Connect with Yahoo — coming soon", the four-sentence note, no form, no sideways scroll.
+* **Decisions the PO took (Andrew may reverse)**: Yahoo's button is off for everyone until the probe answers ok (one
+  word in `render.yaml` to turn it back on); the friend's existing connection is kept (his cookie is untouched: when
+  Yahoo opens the access his leagues list without another sign-in, for 60 days).
+* **Not done / next**: (1) Andrew: has the access application been sent, and has Yahoo answered? (2) After the deploy,
+  Andrew opens `/api/yahoo/connect` then `/api/yahoo/status?probe=1` once (one consent click — the PO does not sign in
+  for him): the PO reads Yahoo's real answer from the status / Render's log and corrects this section if it is not
+  `additional_authorization_required`. (3) When Yahoo approves: remove the `render.yaml` row, deploy, open the friend's
+  league `1598462` and Andrew's own, run HOSTING § Yahoo "3. Verify live", then `LEAGUE_LAB_PROVIDER_VERIFIED`.
+  (4) Nothing in `yahoo_leagues` has met a live Yahoo answer yet: expect shape fixes on the first real league.
+
+
 ### PO — MFL's transactions verified live, two fixes (2026-10-05, 15:00–15:40 ET; branch `po/mfl-verified` from `main` `e4d2fa8`)
 
 * **Task**: the Wave I-L PO list's last line — check `mfl:70587` "Latest moves" against MFL's own report, then drop the

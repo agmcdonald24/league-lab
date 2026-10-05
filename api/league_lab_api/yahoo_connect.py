@@ -192,6 +192,13 @@ def configured() -> bool:
     return Y.configured() and _secret() is not None
 
 
+def open_for_users() -> bool:
+    """PO 2026-10-05: the setup screen may invite a manager to connect — configured AND Yahoo is answering the app's
+    Fantasy calls (``yahoo_client.access_pending``: the ``LEAGUE_LAB_YAHOO_ACCESS=pending`` switch, or Yahoo's own
+    refusal in the last hour). ``/api/yahoo/connect`` follows ``configured()`` alone, so the operator can still probe."""
+    return configured() and not Y.access_pending()
+
+
 def not_configured() -> JSONResponse:
     e = Y.YahooNotConfigured()
     return JSONResponse({"error": e.words, "detail": e.words, "code": e.code, "fix": e.fix}, status_code=503,
@@ -256,10 +263,24 @@ def disconnect(request: Request):
 
 
 @router.get("/api/yahoo/status", dependencies=[Depends(_gate)], include_in_schema=False)
-def status(request: Request):
-    return JSONResponse({"configured": configured(), "connected": Y.request_session.get() is not None
-                         or session_from_cookie(request.cookies.get(COOKIE)) is not None,
-                         "fixtures": Y.fixtures_dir() is not None}, headers={"Cache-Control": "no-store"})
+def status(request: Request, probe: int = 0):
+    """``open``: the setup screen offers Connect; ``access``: the switch and Yahoo's last refusal of a Fantasy call
+    (status, oauth_problem, the resource, the description's first words — never a token). ``?probe=1`` (the operator,
+    connected): one Fantasy call (this season's game) as this manager, and what Yahoo said."""
+    session = Y.request_session.get()
+    out = {"configured": configured(), "open": open_for_users(),
+           "connected": session is not None or session_from_cookie(request.cookies.get(COOKIE)) is not None,
+           "fixtures": Y.fixtures_dir() is not None}
+    if probe:
+        if session is None:
+            out["probe"] = {"ok": None, "why": "not connected: open /api/yahoo/connect first"}
+        else:
+            try:
+                out["probe"] = {"ok": True, "game_key": _client().game_key("nfl")}
+            except Exception as exc:  # noqa: BLE001 - the probe reports, never fails
+                out["probe"] = {"ok": False, "error": type(exc).__name__, "code": getattr(exc, "code", None)}
+    out["access"] = Y.access_report()
+    return JSONResponse(out, headers={"Cache-Control": "no-store"})
 
 
 @router.get("/api/yahoo/leagues", dependencies=[Depends(_gate)], include_in_schema=False)

@@ -29,6 +29,12 @@ Render environment change and not a deploy:
   work as before."). `off` wins over verified.
 * **Yahoo without its two secrets** stays `unverified` and its button says "Connect with Yahoo — coming soon" (the
   screen reads `yahoo_configured`): "coming soon" is the right word while the app is not registered.
+* **Yahoo with its secrets but without Yahoo's access approval** (2026-10-05; the state today) is "coming soon" too,
+  in other words: `yahoo_configured` false **and `yahoo_pending` true** — `LEAGUE_LAB_YAHOO_ACCESS=pending`
+  (`render.yaml`) or Yahoo's own refusal of a Fantasy call in the last hour (HTTP 401 / 403
+  `additional_authorization_required`: `yahoo_client.YahooAccessPending`, the code `yahoo_not_configured`). The screen
+  says "Yahoo has not switched on this app's access to fantasy data yet. Nothing is wrong with your league or your
+  Yahoo sign-in." — never "your connection has expired" or "that league is private" (HOSTING § Yahoo, the probe).
 
 | | Connect | Scoring | Lineup slots | Matchups | Players | Waivers | Transactions | Team assets | News |
 |---|---|---|---|---|---|---|---|---|---|

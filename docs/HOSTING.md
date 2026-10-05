@@ -804,6 +804,27 @@ Nothing else changes for Sleeper or MFL leagues.
    "Read-only. Tokens stay in the manager's browser (an encrypted cookie); league data is cached in memory for minutes;
    attribution 'Fantasy data provided by Yahoo Fantasy' on every Yahoo league screen."
 
+**Without step 4 nothing Yahoo-shaped works** (2026-10-05, a friend's public league): since August 2026 Yahoo no longer
+gives a new app the Fantasy Sports API by itself. The sign-in completes and the tokens are valid, and every Fantasy
+call is refused — HTTP 401 or 403, `oauth_problem="additional_authorization_required"` — until Yahoo has approved the
+application **and** added the Client ID to its allowlist (two stages by other developers' accounts; no published
+timeline; an approved app has also lost access again). The server knows this state two ways:
+
+* **`LEAGUE_LAB_YAHOO_ACCESS: pending`** in `render.yaml` (set 2026-10-05): the setup screen says "Connect with Yahoo —
+  coming soon … Yahoo has not switched on this app's access to fantasy data yet" and invites nobody to connect; a
+  pasted Yahoo link answers the same words (`yahoo_not_configured`), and no request reaches Yahoo. **Remove the row
+  (or set `open`) once the probe below answers ok.**
+* **Yahoo's own refusal**, remembered for an hour (`yahoo_client.access_pending`): with the switch open, the first
+  refused call turns the screen to "coming soon" by itself (so Yahoo taking the access away again needs no deploy) and
+  the next answered call turns it back.
+
+**The probe (the operator, any time — the switch does not block it)**: signed in to the beta, open
+`https://isuckatfantasy.io/api/yahoo/connect` (Yahoo's consent → back to the setup screen), then
+`https://isuckatfantasy.io/api/yahoo/status?probe=1`: `"probe": {"ok": true, "game_key": "…"}` means Yahoo answers
+this app — remove the switch; `{"ok": false, "code": "yahoo_not_configured"}` with `access.last_refusal`
+(`status`, `problem`, `resource`, the description's first words; never a token) is Yahoo's answer, word for word. The
+same line is in Render's logs: `yahoo refused: HTTP 403 problem=additional_authorization_required resource=game/nfl …`.
+
 ### 2. The secrets on Render (2 minutes)
 
 Render → the `isuckatfantasy` service → *Environment* → *Add Environment Variable* (as secrets):
@@ -833,8 +854,8 @@ minute). Save → Render redeploys. The same lines for `render.yaml` (PO):
 2. `https://isuckatfantasy.io/leagues?platform=yahoo` → *Connect with Yahoo* → Yahoo's consent screen names
    *isuckatfantasy* and "Fantasy Sports — Read" → *Agree* → back on `/leagues?platform=yahoo` with your leagues listed.
    An error lands on `/leagues?platform=yahoo&yahoo_error=<denied|state|refused|down>`: `refused` usually means the
-   redirect URI or the secret does not match the app page; a 401 on the leagues list right after connecting can mean
-   Yahoo has not approved the Fantasy access yet (step 1.4). If Yahoo's sign-in page itself complains about the
+   redirect URI or the secret does not match the app page; "coming soon … Yahoo has not switched on this app's
+   access" right after connecting means Yahoo has not approved the Fantasy access yet (step 1.4; the probe above). If Yahoo's sign-in page itself complains about the
    `scope`, set `LEAGUE_LAB_YAHOO_SCOPE` to an empty value on Render (the app's registered permission then applies).
 3. `https://isuckatfantasy.io/api/yahoo/leagues` → your leagues with `team_id` = your team. Open one; check against
    Yahoo's own pages: the roster slots (a superflex league shows `Q/W/R/T` as SUPER_FLEX), the scoring card (the

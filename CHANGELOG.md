@@ -4,6 +4,22 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-05 — Wave I-L
 
+- **PO — Yahoo refuses the app, and the app said so wrongly.** A friend connected with Yahoo four times in three minutes
+  ("Your Yahoo connection has expired. Connect with Yahoo again.") and then got "league is private or does not exist"
+  for a public prize league (`1598462`; Yahoo's own page opens signed out). Render's log: four clean sign-ins, no
+  league ever listed, three 404s — every Yahoo data call failing, which is what Yahoo answers an app whose Fantasy
+  access it has not approved (401 / 403 `oauth_problem="additional_authorization_required"`; self-serve access ended
+  in August 2026). `yahoo_client`: that refusal is `YahooAccessPending` (the `yahoo_not_configured` code: "coming
+  soon", in words that say Yahoo's approval is pending and nothing is wrong with the league or the sign-in), never a
+  session expiry or a private league; a non-200 on a resource that names no league is never "that league is private";
+  every non-200 is logged (status, `oauth_problem`, resource, the description — no token) and kept for
+  `/api/yahoo/status` (`access`, and `?probe=1` for one live call). `render.yaml`: `LEAGUE_LAB_YAHOO_ACCESS: pending` —
+  `/api/providers` `yahoo_configured` false + `yahoo_pending` true, the setup screen's disabled "Connect with Yahoo —
+  coming soon" with the pending words; Yahoo's own refusal holds the same state for an hour without the switch. The
+  league list's "expired" note is only for a refused token now. Yahoo's attribution ("Fantasy data provided by Yahoo
+  Fantasy", linked) is under every screen of a Yahoo league and on its setup card — the docs said it was; no screen
+  had it (`docs/STATUS.md` § "PO — Yahoo refuses the app").
+
 - **PO, after the deploy — MyFantasyLeague's moves verified live; the weekend's moves were missing.** Checked
   `mfl:70587` and `mfl:21861` on the live app against MFL's own transactions export: every listed move matched (time,
   team, adds, drops, blind bids), but MFL files a move made once a week's games have begun under the *next* week, so

@@ -64,5 +64,10 @@ services:
         sync: false     # Render asks for it: the Yahoo app's Client Secret
       - key: LEAGUE_LAB_YAHOO_REDIRECT_URI
         value: https://isuckatfantasy.io/api/yahoo/callback
+      # Yahoo approves every app's Fantasy access itself (sports.yahoo.com/developer/access); until it has, the sign-in
+      # works and every data call is refused. "pending": the setup screen says "coming soon" and invites nobody to
+      # connect. Remove this row (or set `open`) once /api/yahoo/status?probe=1 answers ok (docs/HOSTING.md § Yahoo 3).
+      - key: LEAGUE_LAB_YAHOO_ACCESS
+        value: pending
       - key: LEAGUE_LAB_RESEND_API_KEY
         sync: false     # Render asks for it: Resend's re_… key with sending access to isuckatfantasy.io — turns accounts on

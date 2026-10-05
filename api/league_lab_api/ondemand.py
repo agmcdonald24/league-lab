@@ -1668,7 +1668,7 @@ def yahoo_configured() -> bool:
     (both Yahoo secrets and the API secret to seal the cookie, or fixture mode), else the client's check."""
     try:
         from . import yahoo_connect
-        return bool(yahoo_connect.configured())
+        return bool(yahoo_connect.open_for_users())      # PO 2026-10-05: and Yahoo answers the app's Fantasy calls
     except ImportError:
         pass
     except Exception:  # noqa: BLE001 - a flag: off when it cannot be read
@@ -1683,8 +1683,18 @@ def yahoo_configured() -> bool:
     return bool(os.environ.get("LEAGUE_LAB_YAHOO_CLIENT_ID") and os.environ.get("LEAGUE_LAB_YAHOO_CLIENT_SECRET"))
 
 
+def yahoo_pending() -> bool:
+    """PO 2026-10-05: Yahoo's keys are here but Yahoo is not answering this app's Fantasy calls yet (its access
+    approval): the setup screen says "coming soon" with YAHOO_NOTES["pending"]."""
+    try:
+        from . import yahoo_connect
+        return bool(yahoo_connect.configured() and not yahoo_connect.open_for_users())
+    except ImportError:
+        return False
+
+
 def provider_flags() -> dict:
-    return {"espn_private": espn_private(), "yahoo_configured": yahoo_configured()}
+    return {"espn_private": espn_private(), "yahoo_configured": yahoo_configured(), "yahoo_pending": yahoo_pending()}
 
 
 _ESPN_LEAGUE_ID = re.compile(r"[?&#]leagueId=(\d{1,12})", re.I)
@@ -1771,6 +1781,8 @@ def provider_error(provider: str, league_id: str | None, exc: Exception) -> Setu
             words = (f"{A.platforms.LONG[provider]} leagues are not set up on this server yet." if provider == "espn"
                      else "Yahoo sign-in is not set up on this server yet.")    # (IK-1's kill switch says "switched off")
         code = f"{provider}_not_configured"
+        if provider == "yahoo" and yahoo_pending() and m is not None and hasattr(m, "YahooAccessPending"):
+            words, fix = m.YahooAccessPending.words, m.YahooAccessPending.fix     # PO 2026-10-05: Yahoo's approval, said so
         fix = fix or "Coming soon. Sleeper and MyFantasyLeague leagues work today."
     elif code not in SETUP_CODES:
         if league_id is None:
@@ -1875,9 +1887,13 @@ def yahoo_league(text: str) -> dict:
 
 
 YAHOO_NOTES = {"not_configured": "Yahoo sign-in is not set up on this server yet: coming soon.",
+               "pending": ("Yahoo leagues are coming soon: Yahoo has not switched on this app's access to fantasy data "
+                           "yet. Nothing is wrong with your league or your Yahoo sign-in. Sleeper and MyFantasyLeague "
+                           "leagues work today."),
                "not_connected": "Connect with Yahoo to list your leagues here.",
                "expired": "Your Yahoo connection has expired. Connect with Yahoo again.",
-               "none": "Yahoo lists no football leagues for you this season."}
+               "none": "Yahoo lists no football leagues for you this season.",
+               "refused": "Yahoo did not share your leagues just now. Your connection is fine: try again in a minute."}
 
 
 def yahoo_connected() -> bool:
@@ -1897,23 +1913,29 @@ def yahoo_me() -> dict:
     base = {"platform": "yahoo", "configured": yahoo_configured(), "connected": False,
             "season": int(ui.current_season()), "leagues": [], "capabilities": A.platforms.capabilities("yahoo")}
     if not base["configured"] and not stub:
-        return {**base, "note": YAHOO_NOTES["not_configured"]}
+        return {**base, "pending": yahoo_pending(), "note": YAHOO_NOTES["pending" if yahoo_pending() else "not_configured"]}
     if not yahoo_connected():
         return {**base, "note": YAHOO_NOTES["not_connected"]}
     try:
         ad = adapter_of("yahoo")
         rows = list(ad.my_leagues(YAHOO_TOKEN.get()) if stub else ad.my_leagues())
     except A.platforms.ProviderNotConfigured:
-        return {**base, "configured": False, "note": YAHOO_NOTES["not_configured"]}
-    except A.LeagueNotFound:                                   # IK-2's YahooSignInRequired / YahooSessionExpired
-        return {**base, "note": YAHOO_NOTES["expired"]}
+        return {**base, "configured": False, "pending": yahoo_pending(),
+                "note": YAHOO_NOTES["pending" if yahoo_pending() else "not_configured"]}
+    except A.LeagueNotFound as exc:
+        # IK-2's YahooSignInRequired / YahooSessionExpired: "connect again". PO 2026-10-05: any other refusal is not
+        # the manager's connection — never send him round the sign-in again for it (a friend's four connects)
+        if str(getattr(exc, "code", "")) in ("yahoo_sign_in_required", "yahoo_session_expired"):
+            return {**base, "note": YAHOO_NOTES["expired"]}
+        return {**base, "connected": True, "note": YAHOO_NOTES["refused"]}
     except A.SleeperUnavailable as exc:
         down = SleeperDown(str(exc))
         down.who = "Yahoo"                                     # type: ignore[attr-defined]
         raise down from exc
     except RuntimeError as exc:                                # IK-2's YahooNotConfigured
         if str(getattr(exc, "code", "")).endswith("_not_configured"):
-            return {**base, "configured": False, "note": YAHOO_NOTES["not_configured"]}
+            pend = yahoo_pending()             # PO 2026-10-05: Yahoo's refusal of the app (YahooAccessPending) arms it
+            return {**base, "configured": False, "pending": pend, "note": YAHOO_NOTES["pending" if pend else "not_configured"]}
         raise
     sl = A.sleeper()
     leagues = []

@@ -205,6 +205,18 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   supported with no deploy; `ll_session`'s path is `/api`. Run `scripts/measure_memory.py` before touching the
   directory or the Finder again.
 
+* **Yahoo is "coming soon" again (2026-10-05 evening; STATUS § "PO — Yahoo refuses the app")**: Yahoo has not approved
+  the app's Fantasy access, so the sign-in works and every data call is refused (401 / 403
+  `additional_authorization_required`); a friend was told "expired, connect again" four times, then "league is private
+  or does not exist" for a public league. `render.yaml` carries **`LEAGUE_LAB_YAHOO_ACCESS: pending`** (remove it once
+  `/api/yahoo/status?probe=1` answers ok — HOSTING § Yahoo, "The probe"); `yahoo_client` raises `YahooAccessPending`
+  for that refusal (and holds "coming soon" for an hour by itself if Yahoo ever takes the access away), logs every
+  non-200 Yahoo answer (`yahoo refused: HTTP … problem=… resource=…`, never a token) and no longer calls a refusal on a
+  resource that names no league "that league is private". **Yahoo's actual answer has not been seen yet** (the old
+  code threw it away): the first probe after the deploy shows it. Andrew was given the Client ID and the form's text
+  for `sports.yahoo.com/developer/access/` at 17:20 ET (he had never been asked to send it); Yahoo's attribution line
+  is on the Yahoo league screens now.
+
 * **Wave I-K (2026-10-05, Monday 08:40–12:30 ET; four Opus devs; STATUS § "Wave I-K" PO section first)**: **ESPN**
   leagues on demand (`espn:<id>`, public read-only, unofficial; private via the manager's cookies behind
   `LEAGUE_LAB_ESPN_PRIVATE=off`; kill switch `LEAGUE_LAB_ESPN_LEAGUES=off`), **Yahoo** leagues through the official

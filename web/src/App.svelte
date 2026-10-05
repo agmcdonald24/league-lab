@@ -11,6 +11,7 @@
   import { failureOf, type Failure } from "./lib/remote.svelte"; // ---- IH-1
   import PlayerPane from "./components/PlayerPane.svelte";
   import { withContext } from "./lib/md";
+  import { platformOf } from "./lib/providers"; // PO 2026-10-05: Yahoo's attribution line under a Yahoo league's screens
   import TopBar, { sectionOf } from "./components/TopBar.svelte";
   import LeaguesPage from "./routes/Leagues.svelte";
   import MyWeekPage from "./routes/MyWeek.svelte";
@@ -228,6 +229,12 @@
         <footer class="mt-6 border-t border-line pt-3 text-sm" data-testid="myteam-foot">
           <a class="ll-link" href={withContext("/about", { league, team })} data-testid="foot-about">About the numbers and our record</a>
         </footer>
+      {/if}
+      {#if platformOf(league) === "yahoo"}
+        <!-- PO 2026-10-05: Yahoo's attribution policy (docs/YAHOO_TERMS.md), under every screen of a Yahoo league -->
+        <p class="mt-6 border-t border-line pt-3 text-sm text-ink-3" data-testid="yahoo-attribution">
+          Fantasy data provided by <a class="ll-link" href="https://football.fantasysports.yahoo.com/" target="_blank" rel="noopener noreferrer">Yahoo Fantasy</a>
+        </p>
       {/if}
     </div>
     <PlayerPane {league} {team} onauth={needLogin} />

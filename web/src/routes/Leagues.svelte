@@ -217,6 +217,9 @@
     refused: "Yahoo did not accept the sign-in. Try Connect with Yahoo again.",
     down: "Yahoo did not answer. Try again in a minute.",
   };
+  // PO 2026-10-05: Yahoo approves every app's fantasy access itself; until it has, the sign-in works and the data does not
+  const YAHOO_PENDING =
+    "Yahoo leagues are coming soon: Yahoo has not switched on this app's access to fantasy data yet. Nothing is wrong with your league or your Yahoo sign-in. Sleeper and MyFantasyLeague leagues work today.";
   const yahooError = route.current.params.get("yahoo_error");
 
   async function findProvider(p: "espn" | "yahoo", e?: SubmitEvent) {
@@ -585,7 +588,12 @@
       <button type="button" class="w-full rounded-md border border-line bg-raised px-4 py-2.5 font-bold text-ink-3" disabled data-testid="yahoo-soon"
         >Connect with Yahoo — coming soon</button
       >
-      <p class="text-sm leading-snug text-ink-3" data-testid="yahoo-note">Yahoo sign-in is not set up on this server yet. Sleeper and MyFantasyLeague leagues work today.</p>
+      <!-- PO 2026-10-05: the keys are set and Yahoo has not opened the app's fantasy access yet: said so, in the server's words -->
+      {#if caps?.yahoo_pending || yahooMe?.pending}
+        <p class="text-sm leading-snug text-ink-3" data-testid="yahoo-note" data-pending="1">{yahooMe?.pending && yahooMe.note ? yahooMe.note : YAHOO_PENDING}</p>
+      {:else}
+        <p class="text-sm leading-snug text-ink-3" data-testid="yahoo-note">Yahoo sign-in is not set up on this server yet. Sleeper and MyFantasyLeague leagues work today.</p>
+      {/if}
     {:else if yahooMe?.connected}
       <div class="flex items-baseline justify-between gap-2">
         <h2 class="ll-label">Your Yahoo leagues, {yahooMe.season}</h2>
@@ -720,6 +728,10 @@
       <div>
         <div class="text-lg leading-snug font-bold break-words">{v.league.name} <span class="text-sm font-semibold text-ink-3">{providerShort(v.league.league_id)}</span></div>
         {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
+        {#if v.platform === "yahoo"}
+          <!-- PO 2026-10-05: Yahoo's attribution policy (docs/YAHOO_TERMS.md) -->
+          <div class="text-sm leading-snug text-ink-3" data-testid="yahoo-attribution">Fantasy data provided by <a class="ll-link" href="https://football.fantasysports.yahoo.com/" target="_blank" rel="noopener noreferrer">Yahoo Fantasy</a></div>
+        {/if}
       </div>
       <h2 class="ll-label pt-1">Which team is yours?</h2>
       <ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2" data-testid="team-pick">

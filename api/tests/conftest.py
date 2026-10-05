@@ -51,6 +51,17 @@ def _clock_unpinned_after():
     clock.unpin()
 
 
+@pytest.fixture(autouse=True)
+def _yahoo_access_unset(monkeypatch):
+    """PO 2026-10-05: Yahoo's access state (the switch, the last refusal) is process-wide: no test inherits another's,
+    nor a developer's ``LEAGUE_LAB_YAHOO_ACCESS``."""
+    from league_lab import yahoo_client
+    monkeypatch.delenv(yahoo_client.ACCESS_ENV, raising=False)
+    yahoo_client.reset_access()
+    yield
+    yahoo_client.reset_access()
+
+
 @pytest.fixture
 def real_clock(monkeypatch):
     """The production clock for one test: no pin, no LEAGUE_LAB_NOW."""

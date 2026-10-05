@@ -5,6 +5,10 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
 ## Oct 5 (evening) · a player's role, Next Gen Stats, MyFantasyLeague moves and live scores, a watchlist
 
+- **Yahoo leagues are "coming soon" again.** Yahoo has to switch on our access to fantasy data and has not yet, so
+  connecting worked and then no league opened (it said your connection had expired, or that the league was private:
+  neither was true). The Connect button is off until Yahoo opens it; nothing is wrong with your league or your Yahoo
+  account.
 - **A player's card has a "Role" block**: his last two games against the games before them (targets, carries, snap
   share, red-zone touches — a change is named only when it is bigger than his usual week-to-week swing; otherwise
   "steady" or "too early to say" with the counts), whether his points run ahead of or behind his share of the work

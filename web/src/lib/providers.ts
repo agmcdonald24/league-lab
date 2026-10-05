@@ -32,6 +32,7 @@ export interface Providers {
   features: FeatureKey[];
   espn_private?: boolean; // ---- IK-3: the server reads private ESPN leagues with the user's own cookies (IK-1's switch)
   yahoo_configured?: boolean; // ---- IK-3: Yahoo's app keys are set: "Connect with Yahoo" works (else "coming soon")
+  yahoo_pending?: boolean; // PO 2026-10-05: the keys are set but Yahoo has not opened the app's fantasy access yet
 }
 
 export const providersPath = "/api/providers";
@@ -137,6 +138,7 @@ export interface ProviderLeague {
 export interface YahooMe {
   platform: "yahoo";
   configured: boolean;
+  pending?: boolean; // PO 2026-10-05: "coming soon" because Yahoo's approval of the app is pending (the note says so)
   connected: boolean;
   season: number;
   leagues: {

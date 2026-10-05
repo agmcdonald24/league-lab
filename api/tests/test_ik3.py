@@ -149,7 +149,9 @@ def test_providers_route_flags(client, monkeypatch):
     monkeypatch.setenv("LEAGUE_LAB_API_SECRET", "x" * 32)
     monkeypatch.setenv("LEAGUE_LAB_YAHOO_CLIENT_ID", "id")
     monkeypatch.setenv("LEAGUE_LAB_YAHOO_CLIENT_SECRET", "secret")
-    assert ondemand.provider_flags() == {"espn_private": True, "yahoo_configured": True}
+    assert ondemand.provider_flags() == {"espn_private": True, "yahoo_configured": True, "yahoo_pending": False}
+    monkeypatch.setenv("LEAGUE_LAB_YAHOO_ACCESS", "pending")  # PO 2026-10-05: the keys are here, Yahoo's approval is not
+    assert ondemand.provider_flags() == {"espn_private": True, "yahoo_configured": False, "yahoo_pending": True}
 
 
 # ------------------------------------------------------------------ the links

@@ -84,7 +84,8 @@ def test_connect_503_without_the_secrets(client, monkeypatch):
         assert body["code"] == "yahoo_not_configured"
         assert body["error"] == "Yahoo sign-in is not set up on this server yet"
     st = client.get("/api/yahoo/status").json()
-    assert st == {"configured": False, "connected": False, "fixtures": False}
+    assert {k: st[k] for k in ("configured", "open", "connected", "fixtures")} == {
+        "configured": False, "open": False, "connected": False, "fixtures": False}
 
 
 def test_connect_503_with_yahoo_secrets_but_no_api_secret(client, monkeypatch):
@@ -225,7 +226,11 @@ def test_fixture_connect_flow_end_to_end(client, fixture_mode):
     assert cb.headers["location"] == "/leagues?platform=yahoo"
     assert C.session_from_cookie(cb.cookies.get(C.COOKIE)).guid == "FIXTUREGUID3"
     st = client.get("/api/yahoo/status").json()
-    assert st == {"configured": True, "connected": True, "fixtures": True}
+    assert {k: st[k] for k in ("configured", "open", "connected", "fixtures")} == {
+        "configured": True, "open": True, "connected": True, "fixtures": True}
+    assert st["access"]["pending"] is False and st["access"]["last_refusal"] is None
+    probe = client.get("/api/yahoo/status?probe=1").json()                # PO 2026-10-05: one Fantasy call, as the manager
+    assert probe["probe"] == {"ok": True, "game_key": "461"} and probe["access"]["last_ok_at"]
     leagues = client.get("/api/yahoo/leagues").json()["leagues"]
     assert [x["key"] for x in leagues] == [KEY]
     assert leagues[0]["team_id"] == 3 and leagues[0]["team_name"] == "Synthetic Team 3"
@@ -354,3 +359,151 @@ def test_the_yahoo_league_prices_and_solves_through_the_pipeline(fixture_mode, m
     assert od.unmapped_players == [{"sleeper_player_id": "yahoo:99001", "player_name": "Synthetic Prospect",
                                     "position": "WR", "team": "KC"}]
     assert "0.5 per catch" in od.scoring["priced"]
+
+
+# ====================================================================================== PO 2026-10-05: Yahoo refuses the APP
+# A friend connected four times and was told "your connection has expired", then "league is private or does not exist"
+# for a public league: Yahoo was refusing the app's Fantasy calls (its access approval), and the client read every
+# refusal as the league's or the manager's. Yahoo's refusal as other developers record it since August 2026: HTTP 401
+# or 403, ``oauth_problem="additional_authorization_required"`` (valid tokens, no Fantasy entitlement).
+REFUSED = ('{"error":{"xml:lang":"en-us","yahoo:uri":"/fantasy/v2/game/nfl","description":"Please provide valid '
+           'credentials. OAuth oauth_problem=\\"additional_authorization_required\\", realm=\\"yahooapis.com\\"","detail":""}}')
+NOT_MEMBER = '{"error":{"description":"You are not allowed to view this page because you are not in this league."}}'
+
+
+def _live(answer):
+    """A live-mode client whose every Yahoo answer is ``answer(url)`` -> (status, headers, text); and its session."""
+    y = Y.Yahoo(fixtures="", fetch=lambda url, headers: answer(url))
+    s = Y.YahooSession(refresh_token="RT-1", access_token="AT-1", expires_at=time.time() + 3600, guid="GUID1")
+    return y, s
+
+
+@pytest.mark.parametrize("status", [401, 403])
+def test_yahoo_refusing_the_app_is_coming_soon_not_the_league_or_the_session(status, monkeypatch):
+    monkeypatch.delenv(Y.ACCESS_ENV, raising=False)
+    y, s = _live(lambda url: (status, {}, REFUSED))
+    token = Y.request_session.set(s)
+    try:
+        for read in (lambda: y.game_key("nfl"), lambda: y.my_games(), lambda: y.settings("461.l.1598462")):
+            with pytest.raises(Y.YahooAccessPending) as e:
+                read()
+            assert e.value.code == "yahoo_not_configured" and "private" not in e.value.words
+            assert "Nothing is wrong with your league or your Yahoo sign-in" in e.value.fix
+    finally:
+        Y.request_session.reset(token)
+    assert s.expired is False                                  # never "connect again": the connection is fine
+    assert Y.access_pending() is True
+    rep = Y.access_report()
+    last = rep["last_refusal"]
+    assert (last["status"], last["problem"], last["access_pending"]) == (status, "additional_authorization_required", True)
+    assert last["resource"] == "league/461.l.1598462/settings" and "valid credentials" in last["description"]
+    assert "AT-1" not in str(rep) and "RT-1" not in str(rep)   # never a token
+
+
+def test_a_league_the_manager_is_not_in_is_still_that_leagues_answer(monkeypatch):
+    monkeypatch.delenv(Y.ACCESS_ENV, raising=False)
+    y, s = _live(lambda url: (400, {}, NOT_MEMBER))
+    token = Y.request_session.set(s)
+    try:
+        with pytest.raises(Y.YahooLeagueNotFound) as e:
+            y.settings("461.l.5151")
+        assert e.value.code == "yahoo_league_unknown" and "461.l.5151 is private or does not exist" in e.value.words
+        with pytest.raises(Y.YahooUnavailable):                # no league was asked for: never "that league is private"
+            y.game_key("nfl")
+    finally:
+        Y.request_session.reset(token)
+    assert Y.access_pending() is False and Y.access_report()["last_refusal"]["access_pending"] is False
+
+
+def test_a_rejected_token_is_still_the_managers_connection(monkeypatch):
+    monkeypatch.delenv(Y.ACCESS_ENV, raising=False)
+    y, s = _live(lambda url: (401, {"WWW-Authenticate": 'OAuth oauth_problem="token_rejected"'}, "{}"))
+    token = Y.request_session.set(s)
+    try:
+        with pytest.raises(Y.YahooSessionExpired):
+            y.game_key("nfl")
+    finally:
+        Y.request_session.reset(token)
+    assert s.expired is True and Y.access_pending() is False
+
+
+def test_an_answered_call_reopens_the_access_and_the_switch_holds_it(monkeypatch):
+    monkeypatch.delenv(Y.ACCESS_ENV, raising=False)
+    answers = [(403, {}, REFUSED), (200, {}, '{"fantasy_content":{"game":[{"game_key":"461","code":"nfl"}]}}')]
+    y, s = _live(lambda url: answers.pop(0))
+    token = Y.request_session.set(s)
+    try:
+        with pytest.raises(Y.YahooAccessPending):
+            y.game_key("nfl")
+        assert Y.access_pending() is True
+        assert y.game_key("nfl") == "461"                      # Yahoo answers: the hour's hold is lifted at once
+    finally:
+        Y.request_session.reset(token)
+    assert Y.access_pending() is False and Y.access_report()["last_ok_at"]
+    monkeypatch.setenv(Y.ACCESS_ENV, "pending")                # render.yaml's switch: what we know
+    assert Y.access_pending() is True and Y.access_report()["switch"] == "pending"
+
+
+def test_the_friends_evening_end_to_end(client, monkeypatch, live_mode):
+    """Connected (the sealed cookie), Yahoo refusing the app: the league list says coming soon — not "expired, connect
+    again" — and keeps the cookie; the league link says the same, not "private or does not exist"; the flags the setup
+    screen reads turn; the operator's probe reports Yahoo's own answer without a token."""
+    from league_lab import anyleague as A
+    _set_secret(client, monkeypatch)
+    monkeypatch.delenv(Y.ACCESS_ENV, raising=False)
+    monkeypatch.delenv("LEAGUE_LAB_PROVIDER_STUBS", raising=False)
+    monkeypatch.setattr(Y.Yahoo, "_http", lambda self, path, token: (403, {}, REFUSED))
+    monkeypatch.setattr(C, "_CLIENT", None)
+    A._default = None
+    try:
+        client.cookies.set(C.COOKIE, C.cookie_value(Y.YahooSession(refresh_token="RT-1", access_token="AT-1",
+                                                                   expires_at=time.time() + 3600, guid="GUID1")))
+        assert client.get("/api/providers").json()["yahoo_configured"] is True      # before Yahoo is asked
+        me = client.get("/api/leagues", params={"yahoo_me": "1"})
+        assert me.status_code == 200
+        d = me.json()
+        assert d["configured"] is False and d["pending"] is True and d["leagues"] == []
+        assert "Yahoo has not switched on this app's access" in d["note"] and "expired" not in d["note"]
+        assert not [x for x in me.headers.get_list("set-cookie") if x.startswith(C.COOKIE + "=")]   # the cookie stays
+        flags = client.get("/api/providers").json()
+        assert flags["yahoo_configured"] is False and flags["yahoo_pending"] is True
+        for text in ("1598462", "https://football.fantasysports.yahoo.com/f1/1598462", "nfl.l.1598462"):
+            r = client.get("/api/leagues", params={"yahoo": text})
+            assert r.status_code == 404, r.text
+            e = r.json()
+            assert e["code"] == "yahoo_not_configured" and "private" not in e["error"] and "expired" not in e["error"]
+            assert e["error"].startswith("Yahoo leagues are not open here yet") and "Nothing is wrong" in e["fix"]
+        st = client.get("/api/yahoo/status?probe=1")
+        body = st.json()
+        assert body["configured"] is True and body["open"] is False and body["connected"] is True
+        assert body["probe"] == {"ok": False, "error": "YahooAccessPending", "code": "yahoo_not_configured"}
+        assert body["access"]["last_refusal"]["status"] == 403
+        assert body["access"]["last_refusal"]["problem"] == "additional_authorization_required"
+        assert "AT-1" not in st.text and "RT-1" not in st.text
+        assert client.get("/api/yahoo/connect", follow_redirects=False).status_code == 302   # the operator can still probe
+    finally:
+        A._default = None
+
+
+def test_the_switch_alone_says_coming_soon_and_asks_yahoo_nothing(client, monkeypatch, live_mode):
+    from league_lab import anyleague as A
+    _set_secret(client, monkeypatch)
+    monkeypatch.setenv(Y.ACCESS_ENV, "pending")
+    monkeypatch.delenv("LEAGUE_LAB_PROVIDER_STUBS", raising=False)
+    called: list[str] = []
+    monkeypatch.setattr(Y.Yahoo, "_http", lambda self, path, token: called.append(path) or (403, {}, REFUSED))
+    A._default = None
+    try:
+        client.cookies.set(C.COOKIE, C.cookie_value(Y.YahooSession(refresh_token="RT-1", access_token="AT-1",
+                                                                   expires_at=time.time() + 3600)))
+        flags = client.get("/api/providers").json()
+        assert flags["yahoo_configured"] is False and flags["yahoo_pending"] is True
+        d = client.get("/api/leagues", params={"yahoo_me": "1"}).json()
+        assert d["configured"] is False and d["pending"] is True and "coming soon" in d["note"]
+        e = client.get("/api/leagues", params={"yahoo": "1598462"}).json()
+        assert e["code"] == "yahoo_not_configured" and e["error"].startswith("Yahoo leagues are not open here yet")
+        assert called == []                                    # nobody's request reaches Yahoo while we know
+        st = client.get("/api/yahoo/status").json()
+        assert st["configured"] is True and st["open"] is False and st["access"]["switch"] == "pending"
+    finally:
+        A._default = None

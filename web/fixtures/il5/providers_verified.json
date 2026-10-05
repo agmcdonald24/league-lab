@@ -262,5 +262,6 @@
   "news"
  ],
  "espn_private": false,
- "yahoo_configured": true
+ "yahoo_configured": true,
+ "yahoo_pending": false
 }
