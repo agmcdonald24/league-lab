@@ -2,6 +2,22 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-05 — Wave I-L
+
+- **IL-5 — accounts phase 2: connections, the watchlist, the providers' loose ends.** A Yahoo or (switch on) ESPN
+  connection made while signed in is kept with the account, sealed with the API secret (`accounts.connections`;
+  Yahoo's refresh token + GUID, ESPN's two cookies; never in the clear, never logged): a sign-in on another device
+  re-issues the cookie from it, Disconnect deletes it, deleting the account cascades, a refused Yahoo refresh marks it
+  expired; guests unchanged; `/api/account/me` lists `connections`; `ll_session`'s path is `/api`. **`/watchlist`**:
+  the players saved with **☆ Watch / ★ Watching** in the drawer (signed in), each with his status today, this week's
+  projection in the league on screen and free agent / rostered by whom (`GET /api/account/watchlist`, read the lean
+  way — equal to the drawer's card, ~5× cheaper); a tap opens the drawer; Remove; the ⋯ entry; GA `watchlist_add` /
+  `watchlist_remove` (ids only); a one-line invitation signed out. `/api/providers` follows the switches:
+  `LEAGUE_LAB_PROVIDER_VERIFIED=espn,yahoo` flips a provider to supported without a deploy, `LEAGUE_LAB_ESPN_LEAGUES=off`
+  says "not available right now" in place of the form. The duplicate-id rule on `mfl_id` / `espn_id` / `yahoo_id` (4
+  ESPN ids in nflverse's table, all retired / free agents, now map to nobody). Root 1,258 / API 730 (4 failed on the
+  clone, as on `main`) / e2e 380, 0 failed. Verified live: no (`docs/STATUS.md` § IL-5).
+
 ## 2026-10-05 — Wave I-K
 
 - **PO (the merge, 2026-10-05 12:30 ET).** The accounts block in `scripts/sync_to_hosted.sh`; the accounts schema on
