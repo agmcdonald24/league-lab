@@ -25,6 +25,7 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/league/scoring-check?league=&week=  our points vs the league's own for a scored week (Wave I-C, IC-1)
     POST /api/usage, /api/usage/summary  ---- U-1: one count per screen view (its own read-write transaction), the counts
     /api/events?league=&team=&hours=     ---- IG-2: this roster's stored events (status moves, news, briefs; the PO's QA)
+    /api/account/*                       ---- IK-4: accounts (sign-in by an emailed link, saved leagues, preferences)
 Errors are {"error": "<plain words>"} (plus the older "detail"): 404 unknown league / team / player / user,
 502 Sleeper did not answer, 503 the numbers are not ready yet / busy (our Sleeper budget).
 Everything else is the web app (web/dist): a real file, else index.html (the app routes itself).
@@ -653,6 +654,27 @@ def events_list(league: str, team: int, response: Response, hours: int = 72):
 def league_week_odds(league: str, response: Response, source: str | None = None):
     return _json(myweek.week_odds(league, house=False if source == "sleeper" else None), response)
 # ---- end IH-3
+
+
+# ---- IK-4 (Wave I-K): accounts, phase 1 (league_lab_api/accounts.py; docs/ACCOUNTS.md § "Built, phase 1")
+#   GET  /api/account/status                {enabled, reason, signed_in, email, mailer}: the web shows sign-in when enabled
+#   POST /api/account/login {email}         a single-use sign-in link by email (Resend); the same answer for any address
+#   POST /api/account/verify {token}        the link's token (from the page's URL fragment) -> the ll_session cookie
+#   POST /api/account/logout {everywhere}   this session, or every session of the account
+#   GET  /api/account/me                    the saved leagues, the default, preferences, the watchlist
+#   PUT  /api/account/leagues, DELETE /api/account/leagues/{league}, PUT /api/account/default
+#   PUT / DELETE /api/account/preferences, PUT / DELETE /api/account/watchlist, DELETE /api/account
+# Behind the beta password like every route (the gate stays in front). LEAGUE_LAB_ACCOUNTS=off|auto|on.
+from . import accounts as accounts_mod  # noqa: E402 - the block stays self-contained
+
+
+@app.exception_handler(accounts_mod.AccountError)
+async def _account_error(_req: Request, exc: accounts_mod.AccountError):
+    return accounts_mod.error_response(exc)
+
+
+app.include_router(accounts_mod.router, dependencies=[Depends(require_auth)])
+# ---- end IK-4
 
 
 # ---------------------------------------------------------------- the web app
