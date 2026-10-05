@@ -16,6 +16,7 @@
   import MyWeekPage from "./routes/MyWeek.svelte";
   import PlayerPage from "./routes/Player.svelte";
   import RosPage from "./routes/Ros.svelte";
+  import AccountPage from "./routes/Account.svelte"; // ---- IK-4: the account (sign in by email, the saved leagues)
   // ---- G4 decisions: the four screens, each loaded on first use (src/lib/decisionPages.ts)
   import { decisionPage, isDecision } from "./lib/decisionPages";
   import { countView } from "./lib/usage"; // ---- U-1: usage tracking (one count per screen view)
@@ -85,7 +86,7 @@
 
   // remember the pick and keep the URL shareable (replace: no extra Back step)
   $effect(() => {
-    if (phase !== "ready" || !league || r.name === "leagues" || r.name === "player") return;
+    if (phase !== "ready" || !league || r.name === "leagues" || r.name === "player" || r.name === "account") return; // ---- IK-4: account
     prefs.setLeague(league);
     if (team !== null) prefs.setTeam(league, team);
     const want = { league, team: team === null ? null : String(team) };
@@ -183,6 +184,9 @@
   </div>
 {:else if phase === "loading" && !league}
   <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>
+{:else if r.name === "account"}
+  <!-- ---- IK-4: the account, outside the league frame like the setup screen -->
+  <AccountPage current={league} onauth={needLogin} />
 {:else if r.name === "leagues" || !league}
   <LeaguesPage {mine} current={league} onuser={signedInUser} onauth={needLogin} />
 {:else}

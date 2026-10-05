@@ -60,6 +60,7 @@
   import { prefs } from "../lib/prefs";
   import { navigate, route, setParams } from "../lib/router.svelte";
   import Picker, { OTHER } from "./Picker.svelte";
+  import { account, loadStatus as loadAccount } from "../lib/account.svelte"; // ---- IK-4: the ⋯ menu's Account item
 
   let {
     options,
@@ -152,6 +153,7 @@
 
   // ---- the overflow menu (⋯)
   let menuOpen = $state(false);
+  $effect(() => void loadAccount()); // ---- IK-4: asked once per page load (lib/account.svelte.ts); quiet when off
   $effect(() => {
     void route.current;
     menuOpen = false;
@@ -297,6 +299,13 @@
           data-testid="menu-about">About the numbers</a
         >
         <a href="/leagues" role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised" data-testid="menu-leagues">Other leagues</a>
+        <!-- ---- IK-4: the account (only when the server has accounts on) -->
+        {#if account.status?.enabled}
+          <a href="/account" role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised" data-testid="menu-account"
+            >{account.status.signed_in ? "Your account" : "Sign in to save your leagues"}</a
+          >
+        {/if}
+        <!-- ---- end IK-4 -->
       </div>
     </div>
   </div>
