@@ -1897,27 +1897,29 @@ def solve_lineup(pool, slots):
 
 
 def ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span: str, window: str, frame: dict,
-             team: int, give: list[str], get: list[str], *, source=None, as_of=None) -> dict:
+             team: int, give: list[str], get: list[str], *, source=None, as_of=None,
+             compare_theirs: bool = True) -> dict:                                   # ---- IL-4: the lazy partner
     """The trade card (INTERFACES.md § II-1) for one package: you give / get, required drops, both lineup effects on the
     covered frame, depth and roster-spot cost, both sides' waiver alternatives, why they might consider it / refuse it,
     the plausibility label, the guardrails, the legality checks and `credible`. Kept on the frame (the context's, per
     window): a warm Finder or calculator answer does not re-price its cards; a copy is returned (the caller may mark it)."""
-    key = (int(team), tuple(give), tuple(get))
+    key = (int(team), tuple(give), tuple(get), bool(compare_theirs))                 # ---- IL-4: never a stub for a full card
     cards_ = frame.setdefault("cards", {})
     if key not in cards_:
-        cards_[key] = _ii1_card(ctx, board, weeks, span, window, frame, team, give, get, source=source, as_of=as_of)
+        cards_[key] = _ii1_card(ctx, board, weeks, span, window, frame, team, give, get, source=source, as_of=as_of,
+                                compare_theirs=compare_theirs)
     return dict(cards_[key])
 
 
 def _ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span: str, window: str, frame: dict,
-              team: int, give: list[str], get: list[str], *, source=None, as_of=None) -> dict:
+              team: int, give: list[str], get: list[str], *, source=None, as_of=None, compare_theirs: bool = True) -> dict:
     team = int(team)
     them = board.owner(get[0])
-    mine = T.covered_side(board, team, give, get, weeks, frame["free"], ctx.market)
-    theirs = T.covered_side(board, int(them), get, give, weeks, frame["free"], ctx.market)
+    mine, theirs = il4_sides(ctx, board, weeks, frame, team, give, get)                # ---- IL-4: priced once
     raw_m, raw_t = T.package_weeks(board, give, get, weeks)
     alt_m = ii1_alternative(ctx, board, weeks, team, span, window, frame, source=source, as_of=as_of)
-    alt_t = ii1_alternative(ctx, board, weeks, int(them), span, window, frame, source=source, as_of=as_of)
+    alt_t = (ii1_alternative(ctx, board, weeks, int(them), span, window, frame, source=source, as_of=as_of)
+             if compare_theirs else il4_not_compared(theirs, weeks, span, window))      # ---- IL-4
     g_m = mine.gain_week if window == "week" else mine.gain_window
     g_t = theirs.gain_week if window == "week" else theirs.gain_window
     b_m, b_t = T._r2(g_m - _alt_gain(alt_m, window)), T._r2(g_t - _alt_gain(alt_t, window))
@@ -1952,10 +1954,12 @@ def _ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], spa
         no_line = [ctx.name(p) for p in [*give, *get]]
     plaus = T.plausibility(guard_hit=guard_hit, their_value_gap=gap_t, unpriced=unpriced, no_market_line=no_line)
     ok = T.credible(b_m, b_t, plaus, legal)
+    if alt_t.get("kind") == IL4_NOT_COMPARED:                                           # ---- IL-4: why, in words
+        alt_t["words"] = il4_not_compared_words(g_t, b_m, plaus, legal, when)
     po, pi = known_value(ctx.prices, give), known_value(ctx.prices, get)
     # why they might consider it / refuse it (their side, from the numbers)
     consider, refuse = [], []
-    if b_t >= T.CREDIBLE_MARGIN:
+    if b_t >= T.CREDIBLE_MARGIN and alt_t.get("kind") != IL4_NOT_COMPARED:              # ---- IL-4
         consider.append(f"Their starters gain {g_t:+.1f} {when}, {b_t:.1f} more than "
                         + ("standing pat" if alt_t.get("kind") == STAND_PAT else
                            f"their best waiver move ({_alt_gain(alt_t, window):+.1f} once empty slots are filled from the "
@@ -1975,7 +1979,7 @@ def _ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], spa
         refuse.append(f"Their starters lose {abs(theirs.gain_week):.1f} this week.")
     if g_t < 0.05:
         refuse.append(f"It does not improve their starters {when} ({g_t:+.1f}).")
-    elif b_t < T.CREDIBLE_MARGIN and alt_t.get("kind") != STAND_PAT:
+    elif b_t < T.CREDIBLE_MARGIN and alt_t.get("kind") not in (STAND_PAT, IL4_NOT_COMPARED):        # ---- IL-4
         refuse.append(f"Their best waiver move ({_claim_name(alt_t)}, {_alt_gain(alt_t, window):+.1f}) does about as "
                       f"much or more for them {when}.")
     refuse += [r[0].upper() + r[1:] + "." for r in plaus["reasons"] if plaus["key"] == "implausible"]
@@ -2020,6 +2024,9 @@ def _ii1_card(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], spa
     alt_words = (f"Yours: {alternative_words(alt_m, span, window)}{_covered_note(alt_m)} ({alt_m['availability_words']}). "
                  f"Theirs: {alternative_words(alt_t, span, window).replace('your starting', 'their starting')}"
                  f"{_covered_note(alt_t)} ({alt_t['availability_words']}).")
+    if alt_t.get("kind") == IL4_NOT_COMPARED:                                           # ---- IL-4: said, not hidden
+        alt_words = (f"Yours: {alternative_words(alt_m, span, window)}{_covered_note(alt_m)} "
+                     f"({alt_m['availability_words']}). Theirs: {alt_t['words']}.")
     return {
         "give": [ctx.player(x) for x in give], "get": [ctx.player(x) for x in get], "partner": int(them),
         "drops": {"mine": [{"player": ctx.player(x.player_id), "words": f"You must cut {ctx.name(x.player_id)}."}
@@ -2096,6 +2103,100 @@ def ii1_verdict(rows: list[dict], alt: dict, span: str, window: str) -> dict:
             reason += f" Your best move: {alternative_words(alt, span, window)}."
     return {"rows": out, "verdict": {"kind": "none", "headline": T.NO_COMPELLING, "reason": reason}}
 # ---- end II-1
+
+
+# ---- IL-4 (Wave I-L): the Finder's cold cost — the partner's alternative, lazily. II-1 priced every partner's own best
+# waiver move (IF-1's `best_waiver_move` for that roster: the costly part of a cold Finder, ~2 of its ~3.5 s on the Test
+# League) before any card. A partner's alternative only ever LOWERS what the trade is worth to him (`_alt_gain` >= 0, so
+# `beyond.theirs` <= his covered gain) and `trades.credible` only falls as `beyond.theirs` falls: the first pass
+# (`il4_partners_to_compare`) prices every card with standing pat in the partner's place, and only the partners with a
+# card still credible there are compared (plus, when nothing is credible, every partner whose covered gain clears
+# `CREDIBLE_MARGIN`, so the verdict's counts are exact). The other partners' cards say their move was "not compared"
+# and why, in words (`il4_not_compared_words`); every compared card, the order, the tiers, every `credible` flag and the
+# verdict are the eager path's (api/tests/test_il4.py). `LEAGUE_LAB_FINDER_LAZY_THEIRS=off` restores II-1's order
+# (every partner compared). The calculator (`evaluate`) always compares.
+IL4_LAZY_ENV = "LEAGUE_LAB_FINDER_LAZY_THEIRS"
+IL4_NOT_COMPARED = "not_compared"
+
+
+def il4_lazy_theirs() -> bool:
+    """The switch (default on; off / 0 / false / no restores the eager order)."""
+    import os
+    return str(os.environ.get(IL4_LAZY_ENV, "on")).strip().lower() not in ("off", "0", "false", "no")
+
+
+def il4_sides(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], frame: dict, team: int, give: list[str],
+              get: list[str]) -> tuple[T.Covered, T.Covered]:
+    """Both sides of a package on the covered frame (`trades.covered_side`), kept on the frame: the first pass and the
+    card price each package once."""
+    key = (int(team), tuple(give), tuple(get))
+    sides = frame.setdefault("sides", {})
+    if key not in sides:
+        them = int(board.owner(get[0]))
+        sides[key] = (T.covered_side(board, int(team), give, get, weeks, frame["free"], ctx.market),
+                      T.covered_side(board, them, get, give, weeks, frame["free"], ctx.market))
+    return sides[key]
+
+
+def il4_partners_to_compare(ctx: TradeContext, board: RosterBoard, weeks: tuple[int, ...], span: str, window: str,
+                            frame: dict, team: int, rows: list[dict], *, source=None, as_of=None) -> set[int]:
+    """The first pass, on the covered frame with no partner alternative: each card priced as if the partner's best move
+    were standing pat — `beyond.theirs` is then his covered gain, an upper bound (a real alternative only lowers it), so
+    a card that is not credible here is not credible with any alternative. The partners compared are those with a card
+    that is credible here; when none of their cards is credible after all (the "No compelling trade found" answer, whose
+    reason counts the trades that "do not beat the other team's"), also every partner with a package that adds
+    `CREDIBLE_MARGIN` or more to his starters — so the counts are the eager path's."""
+    keep: set[int] = set()
+    gains: dict[int, float] = {}
+    for r in rows:
+        give, get = [x["sleeper_id"] for x in r["give"]], [x["sleeper_id"] for x in r["get"]]
+        p = int(r["partner"])
+        c = ii1_card(ctx, board, weeks, span, window, frame, int(team), give, get, source=source, as_of=as_of,
+                     compare_theirs=False)
+        if c.get("credible"):
+            keep.add(p)
+        g = c["their_effect"]["this_week" if window == "week" else "window"]
+        gains[p] = max(gains.get(p, float("-inf")), float(g))
+    still = False
+    for r in rows:
+        if int(r["partner"]) not in keep:
+            continue
+        give, get = [x["sleeper_id"] for x in r["give"]], [x["sleeper_id"] for x in r["get"]]
+        c = ii1_card(ctx, board, weeks, span, window, frame, int(team), give, get, source=source, as_of=as_of)
+        if ii1_same_story(dict(c), r.get("beats_alternative")).get("credible"):
+            still = True
+            break
+    if not still:
+        keep |= {p for p, g in gains.items() if g >= T.CREDIBLE_MARGIN}
+    return keep
+
+
+def il4_not_compared(theirs: T.Covered, weeks: tuple[int, ...], span: str, window: str) -> dict:
+    """The partner's alternative when the first pass did not need it: standing pat's numbers (0, so `beyond.theirs` is
+    his covered gain, an upper bound) and words saying why it was not compared (`il4_not_compared_words`, set by the
+    card once the reasons are known)."""
+    alt = _stand_pat(weeks, span, "not compared (IL-4)")
+    alt.update({"kind": IL4_NOT_COMPARED, "covered_by_week": [0.0 for _ in weeks], "covered_window": 0.0,
+                "covered_week": 0.0, "availability": IL4_NOT_COMPARED, "availability_words": "not compared",
+                "words": "not compared"})
+    return alt
+
+
+def il4_not_compared_words(g_t: float, b_m: float, plaus: dict, legal: bool, when: str) -> str:
+    """"their own best waiver move was not compared: the trade does not beat your own best alternative by a point, so
+    no move of theirs changes the answer" — the first reason the card already gives, in the card's words."""
+    if g_t < T.CREDIBLE_MARGIN:
+        why = f"the trade adds {g_t:+.1f} to their starters {when}, under the {T.CREDIBLE_MARGIN:.0f}-point bar"
+    elif b_m < T.CREDIBLE_MARGIN:
+        why = "the trade does not beat your own best alternative by a point"
+    elif plaus.get("key") == "implausible":
+        why = "the trade is not a plausible offer"
+    elif not legal:
+        why = "the trade is not legal now"
+    else:
+        why = "the trade is not worth proposing on your side"
+    return f"their own best waiver move was not compared: {why}, so no move of theirs changes the answer"
+# ---- end IL-4
 
 
 class _View:
@@ -2381,9 +2482,12 @@ def partners(league_id: str, team: int, want: str | None = None, *, source: str 
         r["story"] = row_story(r, weeks, span, ctx.this_week if starts_now else None)
     # ---- II-1: the card on every row (both teams' alternatives, plausibility, legality), the threshold, the empty state
     frame = ii1_frame(ctx, board, tuple(weeks), window)
+    compare = (il4_partners_to_compare(ctx, board, tuple(weeks), span, window, frame, int(team), rows,  # ---- IL-4
+                                       source=source, as_of=as_of) if il4_lazy_theirs() else None)
     for r in rows:
         r["card"] = ii1_card(ctx, board, tuple(weeks), span, window, frame, int(team), [x["sleeper_id"] for x in r["give"]],
-                             [x["sleeper_id"] for x in r["get"]], source=source, as_of=as_of)
+                             [x["sleeper_id"] for x in r["get"]], source=source, as_of=as_of,
+                             compare_theirs=compare is None or int(r["partner"]) in compare)  # ---- IL-4
         ii1_same_story(r["card"], r.get("beats_alternative"))
     ii1 = ii1_verdict(rows, alt, span, window)
     rows, verdict = ii1["rows"], ii1["verdict"]
