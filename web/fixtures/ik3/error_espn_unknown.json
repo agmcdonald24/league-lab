@@ -1,0 +1,1 @@
+{"error":"ESPN has no league 777 in 2026.","detail":"ESPN has no league 777 in 2026.","code":"espn_league_unknown","fix":"Check the id: it is the number after leagueId= in your league's address (fantasy.espn.com/football/league?leagueId=4242).","provider":"espn"}

@@ -177,16 +177,17 @@ test("MFL: platform → league id (a private one first) → team → My Week; tr
   await expect(page.getByTestId("team-name")).toHaveText("Big Mac Attack");
 });
 
-test("the platform is remembered, ?platform= opens it, ESPN and Yahoo are said not supported", async ({ page }) => {
+test("the platform is remembered, ?platform= opens it, ESPN and Yahoo are choices of their own", async ({ page }) => {
   await page.goto("/leagues?platform=mfl");
   await expect(page.getByTestId("mfl-form")).toBeVisible();
   await page.goto("/leagues");
   await expect(page.getByTestId("mfl-form")).toBeVisible(); // remembered on this device
   await page.getByTestId("platform-sleeper").click();
   await expect(page.getByTestId("username-form")).toBeVisible();
-  await page.getByTestId("other-platforms").locator("summary").click();
-  await expect(page.getByTestId("other-platforms")).toContainText("Not supported yet");
-  await expect(page.getByTestId("other-platforms")).toContainText("will not ask for those");
+  // ---- IK-3 (Wave I-K): II-5's "ESPN or Yahoo? Not supported yet" expander became the ESPN and Yahoo choices (e2e/ik3)
+  await expect(page.getByTestId("other-platforms")).toHaveCount(0);
+  await expect(page.getByTestId("platform-espn")).toBeVisible();
+  await expect(page.getByTestId("platform-yahoo")).toBeVisible();
 });
 
 test("League: an MFL league's moves are said not read, never 'No completed moves'", async ({ page }) => {

@@ -399,7 +399,7 @@
 
   <fieldset class="space-y-2" data-testid="platform-pick">
     <legend class="ll-label mb-2 block">Fantasy platform</legend>
-    <div class="grid grid-cols-2 gap-2 sm:grid-cols-4"><!-- IK-3: four platforms (was Sleeper / MFL) -->
+    <div class="grid grid-cols-2 gap-2"><!-- IK-3: four platforms, two by two (MyFantasyLeague does not fit a quarter of the column) -->
       {#each PLATFORMS.map((x) => [x.key, x.name]) as [key, name] (key)}
         <label
           class="flex min-h-11 cursor-pointer items-center justify-center rounded-md border px-3 py-2 text-center text-base font-semibold has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent {platform === key ? 'border-accent bg-accent-soft text-ink ring-1 ring-accent' : 'border-line bg-surface text-ink-2'}"
