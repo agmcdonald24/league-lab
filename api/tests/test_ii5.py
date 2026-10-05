@@ -174,6 +174,6 @@ def test_provider_down_and_busy_carry_a_code(client, monkeypatch):
 def test_setup_answers_carry_their_providers_capabilities(client):
     d = client.get("/api/leagues", params={"mfl": "https://www45.myfantasyleague.com/2026/home/70587"}).json()
     assert d["platform"] == "mfl" and d["capabilities"] == P.capabilities("mfl")
-    assert d["capabilities"]["features"]["transactions"]["unavailable"] == "Transactions: not available for MFL leagues yet"
+    assert d["capabilities"]["features"]["transactions"]["unavailable"] is None          # ---- IL-2: read now
     u = client.get("/api/leagues", params={"username": "test_manager"}).json()
     assert u["capabilities"] == P.capabilities("sleeper")

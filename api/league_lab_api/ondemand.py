@@ -1588,7 +1588,7 @@ def with_cards(answer: dict) -> dict:
 # ranges come with the priced board (`anyleague.lineup_rows` -> `_cards_frame`: the reference scoring's ranges shifted
 # onto this league's points; none when the league's ranges are not priced -> "no range for this league yet"). The
 # week's points for a starter whose game is in: Sleeper's matchups call (`players_points`, the league's own scoring,
-# cached with the opponent's call); an MFL league's live scores are not read yet (the line steps aside once a game is in).
+# cached with the opponent's call); an MFL league's: MFL's live scoring (IL-2, `mfl_week_points`; was not read).
 def week_points(client, league_id: str, week: int, roster_ids) -> dict[str, float] | None:
     if A.platforms.is_mfl(league_id):
         return mfl_week_points(client, league_id, week)        # ---- IL-2: MFL's live scoring (was None: not read)

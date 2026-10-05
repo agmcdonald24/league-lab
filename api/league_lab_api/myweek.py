@@ -1225,7 +1225,7 @@ def win(league_id: str, roster_id: int, season: int, week: int, rows: pd.DataFra
         house: bool, points_fn=None, context_fn=None) -> dict | None:
     """`win` on My Week: None without an opponent; one object per opponent (a double header's second in ``also``).
     ``points_fn(roster_ids) -> {Sleeper id: points} | None`` reads the week's points for the on-demand path (None: not
-    known, e.g. an MFL league); the database path reads `league_player_week`. ``context_fn(roster_id)`` = the
+    known, e.g. the platform did not answer — IL-2: MFL's live scoring is read now); the database path reads `league_player_week`. ``context_fn(roster_id)`` = the
     opponent's roster context (default `availability.roster_context`, the same rows his total on the page comes from)."""
     if opp is None:
         return None

@@ -8953,7 +8953,7 @@ compare against it)
   `web/src/lib/api.ts` (`MatchupSide.live`, a block at the end: `RecentAdd(s)`, the deadline's `budget_left` /
   `waiver_order`); `web/src/routes/League.svelte` (one line in IC-4's card: "8.0 so far"); `web/src/routes/
   Waivers.svelte` (one block: "Recently added in this league"); tests `tests/test_mfl_il2.py` (new, 16),
-  `api/tests/test_il2.py` (new, 12 + the recorder), pins in `api/tests/test_ii5.py`, `test_ik3.py`, `test_ih3.py`;
+  `api/tests/test_il2.py` (new, 11 + the recorder), pins in `api/tests/test_ii5.py`, `test_ik3.py`, `test_ih3.py`;
   `web/e2e/il2/fixtures.spec.ts` (new, 3 × phone / desktop) + `web/fixtures/il2/api_il2.json` (the recording); the
   fixtures above; `docs/{PROVIDERS,MFL_TERMS,WORDS,STATUS}.md`, `CHANGELOG.md`.
 * **Interfaces**: `MFL.transactions(lid, week=None, *, settled=False) -> [MFL rows]`; `mfl_client.transaction_moves(row)
@@ -9009,15 +9009,18 @@ compare against it)
   PYTHONPATH=. uv run pytest -q tests/test_il2.py -k record`; `uv run python scripts/copy_standard.py --check`; the
   fixture API on :8762 (`scratchpad/waveIL/il2/api.sh`: the fixtures' env + `LEAGUE_LAB_NOW=2026-10-03T16:00:00Z`);
   `scratchpad/waveIL/il2/sweep.py`, `sweep2.py`, `beforeafter.py`. Nothing written to `league_lab`.
-* **Evidence — tests** (the main database, read only; the pinned clock): root **1,277 passed**, 3 skipped (1,263 + the
-  15 new `tests/test_mfl_il2.py`; 5 min 22 s with `OMP_NUM_THREADS=1` — multi-threaded BLAS stalled one model test for
-  15 min on this 2-core machine at load 15); API (`test_u1` / `test_ig2` deselected) **@@API@@**; ruff clean; `npm run
-  lint` 0 errors / 0 warnings (167 files), build ok; the fixture e2e **@@E2E@@** (`e2e/il2` 6 passed; with `ih3`,
+* **Evidence — tests** (the main database, read only; the pinned clock): root **1,278 passed**, 3 skipped (1,263 + the
+  16 new `tests/test_mfl_il2.py`, minus one more skip than this morning: the skips are `test_e4_feature_groups` (no
+  `ops.player_prior_oof`), `test_playerwire_sync` (no DSN) and `test_weather` (this worktree's `data/` has no archived
+  nflverse schedules) — none IL-2's; 8 min with `OMP_NUM_THREADS=1`: multi-threaded BLAS stalled one model test for 15
+  min on this 2-core machine at load 15); API (`test_u1` / `test_ig2` deselected) **733 passed**, 10 skipped (722 + the 11 new; the full run's one failure, `test_ii5::test_setup_answers_carry_their_providers_capabilities` — a pin on the old "Transactions: not available" — was fixed after it; the touched files re-run on the final code — `test_il2`, `test_ih3`, `test_ii5`, `test_ik3`,
+  `test_i0b`, `test_ic4` — 102 passed, 2 skipped (the recorders); 43 min at load 9–15); ruff clean; `npm run
+  lint` 0 errors / 0 warnings (167 files), build ok; the fixture e2e **372 passed**, 2 skipped (366 + the 6 new; in two parts: the first run was stopped from outside at test 247 — another worktree's browser cleanup —, so the desktop project re-ran whole, 187 passed; the phone project 184 passed and `ib1` "the player's page keeps the tab bar … Back" failed under load, then passed on its rerun, 5 / 5) (`e2e/il2` 6 passed; with `ih3`,
   `ic4`, `ig3`, `ii5`: 40 passed); `copy_standard.py --check` clean. `tests/test_mfl_il2.py` (16): the export's URL
   and params, the 10-minute / one-day caches, the budget, a fixture league without moves, every documented row shape
   (free agent, waiver, blind bid with and without a drop and its cents kept, a trade both ways with a future pick; IR / taxi / pool /
   pending rows → none), MFL's live recording parsed (4 starters done, 12 franchises), `range_gaps`, the adapter's
-  Sleeper shape and stable ids. `api/tests/test_il2.py` (12 + the recorder): the Router's transactions in shape (every
+  Sleeper shape and stable ids. `api/tests/test_il2.py` (11 + the recorder): the Router's transactions in shape (every
   player mapped), League's moves (11 rows, 5 moves, the trade both ways, gsis ids), live points by Sleeper id
   (`teams_done` {CLE, PIT}), this week's matchups rows with the live score, the week's odds narrowed (n_played 1; 0 with
   MFL's live scoring switched off, a different expected total), League's `live` per side, the waiver line (FCFS; 21861's
