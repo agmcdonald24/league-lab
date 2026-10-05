@@ -1164,14 +1164,35 @@ def new_team_scale(fit: pd.DataFrame, position: str) -> tuple[float, int]:
     return float(np.clip(float(pd.to_numeric(f["actual"], errors="coerce").sum()) / den, lo, hi)), n
 
 
+def new_team_ahead(rows: pd.DataFrame, games: pd.DataFrame) -> pd.Series:
+    """The new-team flag as the harness measured it (games with the team before *that* week), seen from today: a week
+    after the newest played week of its season adds his projected games before it (his own earlier rows beyond that
+    week: one a week he has a game) to the games he has with the team now. A WR with 2 games for his new team is flagged
+    for his next game only, not for the rest of the season. Rows need ``team_games_before``, ``career_games_before``,
+    ``cold``, ``season``, ``week``, ``gsis_id``."""
+    if rows.empty:
+        return pd.Series(dtype=bool)
+    g = games.dropna(subset=["week"])
+    last = g.groupby(g["season"].astype(int))["week"].max().astype(int).to_dict()
+    season = rows["season"].astype(int)
+    future = rows["week"].astype(int) > season.map(last).fillna(0).astype(int)
+    ahead = pd.Series(0.0, index=rows.index)
+    if future.any():
+        f = rows[future]
+        ahead.loc[f.index] = f.groupby(["gsis_id", f["season"].astype(int)])["week"].rank(method="first").to_numpy() - 1.0
+    tg = pd.to_numeric(rows["team_games_before"], errors="coerce").fillna(0) + ahead
+    cg = pd.to_numeric(rows["career_games_before"], errors="coerce").fillna(0) + ahead
+    return pd.Series(is_new_team(tg, cg, rows["cold"]), index=rows.index)
+
+
 def _new_team_scale_rows(oof: pd.DataFrame, games: pd.DataFrame, draft: pd.DataFrame,
                          leagues: dict[str, tuple[str, dict[str, float]]], rows: pd.DataFrame) -> None:
     """``line_scales``' v3.3 step, in place on ``rows`` (the lines with ``raw`` / ``blended`` / ``kind`` / ``games`` and
     the history columns): each kept position's new-team rows not already blended get ``blended = raw x k``."""
     LAST_NEW_TEAM_SCALE.clear()
+    flag = new_team_ahead(rows, games)
     for pos in _nt_positions():
-        sel = ((rows["position"] == pos) & rows["kind"].isna() & rows["new_team"].fillna(False).astype(bool)
-               & (rows["raw"] >= LINE_MIN_RAW)).to_numpy()
+        sel = ((rows["position"] == pos) & rows["kind"].isna() & flag & (rows["raw"] >= LINE_MIN_RAW)).to_numpy()
         if not sel.any():
             continue
         pool = oof[(oof["position"] == pos) & oof["league_id"].astype(str).isin(list(leagues))]

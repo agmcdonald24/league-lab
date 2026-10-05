@@ -132,3 +132,16 @@ def test_the_version():
     assert P.MODEL_VERSION == "v3.3"
     assert C.NEW_TEAM_SCALE_POSITIONS == ("WR",) and C.NEW_TEAM_SCALE_BOUNDS == (0.70, 1.10)
     assert C.NEW_TEAM_POSITIONS == ()                                         # M6's cold blend keyed on team games: still dropped
+
+
+def test_the_flag_looks_ahead_one_game_a_week():
+    """A WR with 1 game for his new team now (2026, played through week 4): flagged for weeks 5 and 6 (his 2nd and 3rd
+    games with the team), not from week 7 (he will have 3 by then); a past week keeps the games actually played; a
+    bye (no row) does not count as a game."""
+    games = pd.DataFrame([("moved", 2025, w, "OLD") for w in range(1, 18)] + [("moved", 2026, w, "OLD") for w in (1, 2, 3)]
+                         + [("moved", 2026, 4, "NEW")], columns=["gsis_id", "season", "week", "team"])
+    rows = pd.DataFrame({"gsis_id": "moved", "season": 2026, "week": [4, 5, 7, 8, 9], "team": ["NEW"] * 5,
+                         "position": "WR"})                       # week 6: his bye (no row)
+    rows = rows.assign(team_games_before=C.team_games_before(rows, games), career_games_before=20.0, cold=False)
+    assert rows["team_games_before"].tolist() == [0.0, 1.0, 1.0, 1.0, 1.0]
+    assert C.new_team_ahead(rows, games).tolist() == [True, True, True, False, False]   # wk 4 (0), 5 (1), 7 (2), 8 (3)
