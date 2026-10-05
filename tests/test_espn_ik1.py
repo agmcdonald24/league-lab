@@ -417,3 +417,19 @@ def test_kill_switch(monkeypatch):
     assert e.value.code == "espn_not_configured" and E.setup_words(e.value)[0] == "espn_not_configured"
     monkeypatch.setenv(E.ENABLED_ENV, "on")
     assert E.ESPN().settings("4242")["id"] == 4242
+
+
+def test_answers_are_trimmed_before_the_cache():
+    """A roster entry's season of stat lines, rankings and ownership never reach the cache (the server has 512 MB)."""
+    big = {"id": 4242, "seasonId": 2026, "teams": [{"id": 1, "roster": {"entries": [{
+        "playerId": 13934, "lineupSlotId": 4, "acquisitionType": "DRAFT", "injuryStatus": "NORMAL",
+        "playerPoolEntry": {"id": 13934, "appliedStatTotal": 9.9, "ratings": {"0": {}}, "player": {
+            "id": 13934, "fullName": "Antonio Brown", "defaultPositionId": 3, "eligibleSlots": [3, 4, 5], "proTeamId": 23,
+            "stats": [{"stats": {str(i): i for i in range(200)}}] * 20, "rankings": {"0": [1] * 50},
+            "ownership": {"percentOwned": 99.1}, "draftRanksByRankType": {"PPR": {"rank": 5}}}}}]}}]}
+    c = E.ESPN(fixtures="", fetch=lambda u, h: (200, json.dumps(big)))
+    got = c.rosters("4242")
+    p = got["teams"][0]["roster"]["entries"][0]["playerPoolEntry"]["player"]
+    assert p == {"id": 13934, "fullName": "Antonio Brown", "defaultPositionId": 3, "eligibleSlots": [3, 4, 5],
+                 "proTeamId": 23}
+    assert len(json.dumps(got)) < 400 < len(json.dumps(big))
