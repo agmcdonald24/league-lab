@@ -226,7 +226,9 @@ def _words(out: dict) -> str:
                         for m in out["misses"][:3])
         s += f" The misses: {top}" + ("…" if len(out["misses"]) > 3 else ".")
     if out.get("approximated_rows"):
-        s += f" {out['approximated_rows']} players' touchdowns by distance were approximated (no play-by-play length)."
+        n_ap = out["approximated_rows"]                                    # ---- IL-2: "1 player's", not "1 players'"
+        who = "player's" if n_ap == 1 else "players'"
+        s += f" {n_ap} {who} touchdowns by distance were approximated (no play-by-play length)."
     return s
 
 
@@ -335,12 +337,12 @@ def _mfl_rows(query, league, week, season, mfl_client):
     for i, theirs in scores.items():
         p = info.get(i, {})
         pos = str(p.get("position") or "")
-        name = str(p.get("name") or i)
+        name = _mfl_name(p.get("name"), pos) or i                       # ---- IL-2: "Kansas City Chiefs", not "Chiefs, Kansas City"
         if pos in ("TMQB", "TMPK"):
             team = _nflverse(M.TEAM.get(str(p.get("team") or "").upper(), str(p.get("team") or "").upper()))
             want = "QB" if pos == "TMQB" else "K"
             lines = [_stat_line(r) for r in recs if r.get("team") == team and r.get("position") == want]
-            rows.append({"player": name, "position": pos, "theirs": theirs, "unit": team,
+            rows.append({"player": name, "position": pos, "theirs": theirs, "unit": team, "mfl_id": i,  # IL-2: mfl_id
                          "line": _sum_lines(lines) if lines else {"position": pos}})
             continue
         if pos in ("Def", "TMDEF"):
@@ -349,7 +351,7 @@ def _mfl_rows(query, league, week, season, mfl_client):
             if d is None:
                 unmatched.append({"player": name, "theirs": theirs, "why": "no defense line"})
                 continue
-            rows.append({"player": name, "position": "DEF", "theirs": theirs,
+            rows.append({"player": name, "position": "DEF", "theirs": theirs, "mfl_id": i,  # IL-2: mfl_id
                          "line": {k: _num(v) for k, v in d.items() if k not in ("unit_id", "team")}})
             continue
         g = gs.get(i)
@@ -363,7 +365,7 @@ def _mfl_rows(query, league, week, season, mfl_client):
                 unmatched.append({"player": name, "gsis_id": g, "theirs": theirs, "why": "no stat row this week"})
             continue
         rows.append({"player": st.get("player_name") or name, "position": M.POS.get(pos, pos) or st.get("position"),
-                     "gsis_id": g, "theirs": theirs, "line": _stat_line(st)})
+                     "gsis_id": g, "theirs": theirs, "line": _stat_line(st), "mfl_id": i})  # IL-2: mfl_id
     del nfl_team
     return rows, unmatched, "MyFantasyLeague weeklyResults"
 
@@ -395,3 +397,71 @@ def _sql_twin(query: Query, lid: str, season: int, week: int, rows: list[dict]) 
                              "spec": r["ours"], "theirs": r.get("theirs"), "gap": round(r["ours"] - sqlp[g], 2),
                              "pieces": {k: round(v, 2) for k, v in (r.get("pieces") or {}).items()}})
     return {"n": n, "agree": n - len(disagree), "disagree": disagree}
+
+
+# ---- IL-2 (Wave I-L): the weekly results recomputed — each MFL franchise's score from our scoring of its starters'
+# stat lines (the league's rules read, ``ScoringSpec``) against MFL's own franchise score (``weeklyResults``). A starter
+# whose line we could not price (no id match, no stat row) counts as unknown: the franchise's row says how many.
+def _mfl_name(name, pos: str) -> str | None:
+    """MFL's "Last, First" as "First Last" ("Chiefs, Kansas City" -> "Kansas City Chiefs"; a unit keeps MFL's words)."""
+    s = str(name or "").strip()
+    if not s:
+        return None
+    if "," in s:
+        last, first = s.split(",", 1)
+        s = f"{first.strip()} {last.strip()}"
+    return s
+
+
+def franchise_recompute(query: Query, league: Mapping, week: int, *, mfl_client=None) -> dict:
+    """{week, franchises: [{franchise, theirs, ours, gap, starters, priced, unpriced: [names], biggest: [{player,
+    theirs, ours, gap}]}], words}. Only for a week our NFL stats hold complete (``scored_weeks``); else ``why_empty``."""
+    from . import anyleague as A
+    from . import mfl_client as M
+    lid = str(league.get("league_id"))
+    season = int(league.get("season") or 0)
+    week = int(week)
+    out: dict[str, Any] = {"league": lid, "week": week, "franchises": [], "why_empty": None}
+    if not lid.startswith("mfl:"):
+        out["why_empty"] = "the franchise recompute reads MFL's weeklyResults: MFL leagues only"
+        return out
+    if week not in scored_weeks(query, season):
+        out["why_empty"] = f"Week {week} is not complete in our NFL stats yet"
+        return out
+    cl = mfl_client or M.MFL()
+    rows, _unmatched, _src = _mfl_rows(query, league, week, season, cl)
+    compare(rows, A.league_spec(league))
+    by_id = {r["mfl_id"]: r for r in rows if r.get("mfl_id")}
+    res = cl.weekly_results(lid.removeprefix("mfl:"), week)
+    seen: set[str] = set()
+    for m in M._as_list(res.get("matchup")) + [{"franchise": res.get("franchise")}]:
+        for f in M._as_list(m.get("franchise")):
+            fid = str(f.get("id") or "")
+            if not fid or fid in seen:
+                continue
+            seen.add(fid)
+            starters = [x for x in str(f.get("starters") or "").split(",") if x]
+            pl = {str(p.get("id")): p for p in M._as_list(f.get("player"))}
+            ours, unpriced, big = 0.0, [], []
+            for i in starters:
+                r = by_id.get(i)
+                theirs_p = _num((pl.get(i) or {}).get("score"))
+                if r is None or "ours" not in r:
+                    if theirs_p:
+                        unpriced.append({"mfl_id": i, "theirs": theirs_p})
+                    continue
+                ours += r["ours"]
+                if abs(r["ours"] - r["theirs"]) > 0.1 + 1e-9:
+                    big.append({"player": r.get("player"), "position": r.get("position"), "theirs": r["theirs"],
+                                "ours": r["ours"], "gap": round(r["ours"] - r["theirs"], 2)})
+            theirs_f = _num(f.get("score"))
+            out["franchises"].append({"franchise": fid, "theirs": theirs_f, "ours": round(ours, 2),
+                                      "gap": round(ours - theirs_f, 2), "starters": len(starters),
+                                      "priced": len(starters) - len(unpriced), "unpriced": unpriced,
+                                      "biggest": sorted(big, key=lambda x: -abs(x["gap"]))})
+    out["franchises"].sort(key=lambda x: x["franchise"])
+    fr = out["franchises"]
+    out["within_1"] = sum(1 for x in fr if abs(x["gap"]) <= 1.0 + 1e-9)
+    out["max_gap"] = max((abs(x["gap"]) for x in fr), default=0.0)
+    return out
+# ---- end IL-2

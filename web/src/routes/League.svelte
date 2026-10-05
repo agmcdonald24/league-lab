@@ -217,6 +217,7 @@
                   <span class="min-w-0 {j === 1 ? 'text-right' : ''}">
                     <span class="line-clamp-2 text-base leading-tight break-words {sd.roster_id === team ? 'font-bold' : sd.result === 'W' ? 'font-semibold' : ''}">{sd.team_name}</span>
                     {#if sd.points != null}<span class="tabnum block text-xs text-ink-3">{f1(sd.points)}{sd.result ? ` · ${sd.result}` : ""}</span>{/if}
+                    {#if !m.played && sd.live != null}<span class="tabnum block text-xs text-ink-3" data-testid="game-live">{f1(sd.live)} so far</span>{/if}<!-- IL-2 -->
                     {#if !m.played && sideOdds(oddsBy.get(g.matchup_id), sd.roster_id)}<span class="tabnum block text-xs text-ink-3" data-testid="game-odds">{sideOdds(oddsBy.get(g.matchup_id), sd.roster_id)}</span>{/if}<!-- IH-3 -->
                   </span>
                 {/each}

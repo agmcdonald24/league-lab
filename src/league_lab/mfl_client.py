@@ -62,6 +62,10 @@ TTL_S: dict[str, float] = {
     "weekly_results": 10 * 60, "standings": 10 * 60, "players": 24 * 3600, "injuries": 3600,
     "search": 10 * 60,                                                     # I0-C: leagueSearch
 }
+# ---- IL-2 (Wave I-L): the transactions export — this week's (and the season's) 10 minutes; a past week's a day
+# (its moves are settled)
+TTL_S.update({"transactions": 10 * 60, "transactions_past": 24 * 3600})
+# ---- end IL-2
 _LEAGUE = re.compile(r"^\d{1,8}$")
 _HOST = re.compile(r"^https://(api|www\d{1,3})\.myfantasyleague\.com$")
 
@@ -320,6 +324,27 @@ class MFL:
                       fixture=f"{lid}/weeklyResults_{int(week)}.json")
         return dict((d or {}).get("weeklyResults") or {})
 
+    # ---- IL-2 (Wave I-L): MFL's transactions export (``TYPE=transactions&L=&W=&TRANS_TYPE=*``): every completed
+    # move of the week MFL names (``W``), or the season to date (no ``week``). Rows as MFL sends them (one dict each:
+    # ``timestamp``, ``franchise``, ``type``, ``transaction`` / the trade's ``franchise2`` + ``franchise1_gave_up`` /
+    # ``franchise2_gave_up``); ``transaction_moves`` reads them. ``settled``: a past week (cached a day, not 10 minutes).
+    # Fixtures: ``<league>/transactions_<w>.json`` (a week) / ``<league>/transactions.json`` (the season).
+    def transactions(self, league_id: str, week: int | None = None, *, settled: bool = False) -> list[dict]:
+        lid = check_league(league_id)
+        extra: dict[str, str | int] = {"TRANS_TYPE": "*"}
+        if week:
+            extra["W"] = int(week)
+        kind = "transactions_past" if settled and week else "transactions"
+        try:
+            d = self._get("transactions", kind, lid, extra,
+                          fixture=f"{lid}/transactions_{int(week)}.json" if week else f"{lid}/transactions.json")
+        except MFLUnavailable:
+            if self.fixtures is not None and self._fetch is None:     # a fixture league with no moves recorded
+                return []
+            raise
+        return [r for r in _as_list(((d or {}).get("transactions") or {}).get("transaction")) if isinstance(r, dict)]
+    # ---- end IL-2
+
     def players(self, ids: list[str] | None = None) -> list[dict]:
         """MFL's player list (``DETAILS=1``): every player, or the ``ids`` given (fixture: one file holds them all)."""
         extra: dict[str, str | int] = {"DETAILS": 1}
@@ -469,7 +494,29 @@ def slots(league: Mapping) -> tuple[list[str], dict]:
     note = {"idp": idp, "flex": flex, "super_flex": sf, "bench": bench,
             "approximated": bool(ranged), "ranges": {k: f"{a}-{b}" for k, (a, b) in ranged.items()},
             "units": sorted({p for p in fixed if p.startswith("TM")})}
+    note["range_gaps"] = range_gaps(ranged, flex, sf)                     # ---- IL-2
     return out + ["BN"] * bench, note
+
+
+# ---- IL-2 (Wave I-L): where "the minimum + FLEX" reading of MFL's starter ranges differs from MFL's own rule (each
+# position within its range, the starters adding up to the count). The count already caps a FLEX position at its
+# minimum + the FLEX spots, so the two differ only when (a) a range is narrower than the FLEX spots (we would start more
+# of that position than MFL's maximum) or (b) a position the FLEX does not admit has a range (a kicker, a defense, a
+# team unit, or a quarterback beyond the superflex spots: MFL lets its extra spots take it, ours do not).
+def range_gaps(ranged: Mapping[str, tuple[int, int]], flex: int, super_flex: int) -> list[str]:
+    out = []
+    for p, (lo, hi) in sorted(ranged.items()):
+        if p in FLEX_OK:
+            if lo + flex > hi:
+                out.append(f"{p}: we allow up to {lo + flex} in the lineup (the {flex} FLEX spot{'s' if flex != 1 else ''}), "
+                           f"MyFantasyLeague at most {hi}")
+        elif p == "QB":
+            if lo + super_flex < hi:
+                out.append(f"QB: MyFantasyLeague allows up to {hi}, we start at most {lo + super_flex}")
+        else:
+            out.append(f"{p}: MyFantasyLeague allows up to {hi}, we start {lo} (the FLEX does not take a {p})")
+    return out
+# ---- end IL-2
 
 
 # --- scoring ---------------------------------------------------------------------------------------------------
@@ -774,6 +821,105 @@ def standings_settings(standings: list[dict]) -> dict[str, dict]:
                                  "ties": int(float(s.get("h2ht") or 0)), "fpts": int(math.floor(pf)),
                                  "fpts_decimal": int(round((pf - math.floor(pf)) * 100))}
     return out
+
+
+# ---- IL-2 (Wave I-L): one MFL transaction row -> the moves it made. MFL's documented shapes (the export's
+# ``transaction`` attribute; ffscrapr's ``mfl_transactions`` reads them the same way): FREE_AGENT and WAIVER
+# ``"<added ids>,|<dropped ids>,"``; BBID_WAIVER ``"<added>,|<bid>|<dropped>,"``; TRADE ``franchise`` gave
+# ``franchise1_gave_up`` to ``franchise2``, which gave ``franchise2_gave_up`` (draft picks ``FP_<franchise>_<year>_<round>``
+# among them). Other types (IR, TAXI, AUCTION_*, the *_REQUEST pending ones, pool picks) move nobody between teams: None.
+TRANSACTION_KIND = {"FREE_AGENT": "free_agent", "WAIVER": "waiver", "BBID_WAIVER": "waiver", "TRADE": "trade"}
+_PICK = re.compile(r"^FP_(\d{4})_(\d{4})_(\d{1,2})$")
+
+
+def _ids(s: Any) -> list[str]:
+    return [x.strip() for x in str(s or "").split(",") if x.strip() and not x.strip().startswith(("FP_", "DP_"))]
+
+
+def _picks(s: Any) -> list[tuple[str, int, int]]:
+    """``FP_0005_2027_1`` -> (original franchise, season, round); current-draft ``DP_`` picks are not read."""
+    out = []
+    for x in str(s or "").split(","):
+        m = _PICK.match(x.strip())
+        if m:
+            out.append((m.group(1), int(m.group(2)), int(m.group(3))))
+    return out
+
+
+def transaction_moves(row: Mapping) -> dict | None:
+    """``{kind, franchise, adds: {mfl id: franchise}, drops: {mfl id: franchise}, bid, picks: [(from, to, original,
+    season, round)], timestamp}`` or None for a type that moves nobody between teams (or a row it cannot read)."""
+    typ = str(row.get("type") or "").strip().upper()
+    kind = TRANSACTION_KIND.get(typ)
+    fid = str(row.get("franchise") or "").strip()
+    try:
+        ts = int(float(row.get("timestamp")))
+    except (TypeError, ValueError):
+        ts = None
+    if kind is None or not fid:
+        return None
+    adds: dict[str, str] = {}
+    drops: dict[str, str] = {}
+    bid: float | None = None
+    picks: list[tuple] = []
+    if kind == "trade":
+        other = str(row.get("franchise2") or "").strip()
+        if not other:
+            return None
+        for giver, taker, gave in ((fid, other, row.get("franchise1_gave_up")), (other, fid, row.get("franchise2_gave_up"))):
+            for i in _ids(gave):
+                drops[i], adds[i] = giver, taker
+            picks += [(giver, taker, o, y, r) for o, y, r in _picks(gave)]
+    else:
+        parts = str(row.get("transaction") or "").split("|")
+        added, dropped = parts[0], parts[-1] if len(parts) > 1 else ""
+        if typ == "BBID_WAIVER" and len(parts) >= 3:
+            try:
+                bid = float(parts[1])
+            except ValueError:
+                bid = None
+        adds = {i: fid for i in _ids(added)}
+        drops = {i: fid for i in _ids(dropped)}
+    if not adds and not drops and not picks:
+        return None
+    return {"kind": kind, "type": typ, "franchise": fid, "adds": adds, "drops": drops, "bid": bid, "picks": picks,
+            "timestamp": ts}
+
+
+def _num(v: Any) -> float | None:
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def live_players(live: Mapping | None) -> dict[str, dict]:
+    """MFL's ``liveScoring`` -> {mfl id: {score, seconds_left, status, franchise}} for every player it lists (a double
+    header lists a franchise twice: one row per player). ``seconds_left`` = MFL's ``gameSecondsRemaining`` (3600 before
+    kickoff, 0 when his game is over — or when he has no game this week)."""
+    out: dict[str, dict] = {}
+    frs = [f for m in _as_list((live or {}).get("matchup")) for f in _as_list(m.get("franchise"))]
+    frs += _as_list((live or {}).get("franchise"))                     # a league without head-to-head
+    for f in frs:
+        for p in _as_list((f.get("players") or {}).get("player")):
+            pid = str(p.get("id") or "")
+            if pid:
+                out[pid] = {"score": _num(p.get("score")), "seconds_left": _num(p.get("gameSecondsRemaining")),
+                            "status": str(p.get("status") or "").lower() or None, "franchise": str(f.get("id"))}
+    return out
+
+
+def live_franchises(live: Mapping | None) -> dict[str, dict]:
+    """MFL's ``liveScoring`` -> {franchise id: {score, seconds_left, yet_to_play, playing}} (the franchise's own totals)."""
+    out: dict[str, dict] = {}
+    frs = [f for m in _as_list((live or {}).get("matchup")) for f in _as_list(m.get("franchise"))]
+    frs += _as_list((live or {}).get("franchise"))
+    for f in frs:
+        out[str(f.get("id"))] = {"score": _num(f.get("score")), "seconds_left": _num(f.get("gameSecondsRemaining")),
+                                 "yet_to_play": _num(f.get("playersYetToPlay")),
+                                 "playing": _num(f.get("playersCurrentlyPlaying"))}
+    return out
+# ---- end IL-2
 
 
 def defense_sleeper_id(team: str | None) -> str | None:

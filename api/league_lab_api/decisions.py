@@ -511,6 +511,7 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
     # ---- end IB-2
     out.setdefault("no_worthwhile_move", None)                                         # ---- IF-1
     out["deadline"] = waivers_deadline_for(str(league_id), season, int(week), is_house)        # ---- IG-3
+    out["deadline"] = mfl_waiver_franchise(out["deadline"], str(league_id), team)              # ---- IL-2
     if not is_house:
         out["on_demand"] = {k: v for k, v in od_info.items() if k not in ("lw", "fa")}
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
@@ -3173,6 +3174,7 @@ def week_matchups(week: int | None, ms: list[dict], names: dict, *, played: bool
             p, q = float(x.get("points") or 0.0), float(o.get("points") or 0.0)
             sides.append({"roster_id": int(x["roster_id"]), "team_name": names.get(int(x["roster_id"]), {}).get("team_name"),
                           "points": round(p, 2) if played else None,
+                          "live": round(p, 2) if not played and p > 0 else None,    # ---- IL-2: the score so far
                           "result": ("W" if p > q else "L" if p < q else "T") if played else None})
         games.append({"matchup_id": mid, "a": sides[0], "b": sides[1],
                       "mine": me is not None and me in (sides[0]["roster_id"], sides[1]["roster_id"])})
@@ -4634,3 +4636,40 @@ def team_roster_freshness(league_id: str) -> dict:
     from .ondemand import mfl_roster_freshness
     return mfl_roster_freshness(A.sleeper(), league_id)
 # ---- end IH-2
+
+
+# ---- IL-2 (Wave I-L): MFL's waivers for the team asked about — the league export's ``waiverSortOrder`` (a waiver-order
+# league: "you are 4th in the waiver order") and ``bbidAvailableBalance`` (a blind-bid league: "your blind-bid balance is
+# $87"), on the stamp line after the claim type. MFL states no claim time in its export (70587's league.json: only
+# ``currentWaiverType``), so the line keeps "see MFL for the time". A first-come league needs neither. Never raises.
+def mfl_waiver_franchise(deadline: dict | None, league_id: str, team: int | None) -> dict | None:
+    if deadline is None or team is None or not A.platforms.is_mfl(league_id):
+        return deadline
+    try:
+        lid = A.platforms.mfl_id(league_id)
+        raw = A.sleeper().mfl.client.league(lid)
+        fids = A.platforms.M.franchise_ids(raw)
+        fid = fids[int(team) - 1] if 0 < int(team) <= len(fids) else None
+        fr = next((f for f in A.platforms.M._as_list((raw.get("franchises") or {}).get("franchise"))
+                   if str(f.get("id")) == fid), None) if fid else None
+    except Exception:  # noqa: BLE001 - a line on the page, never a failure
+        return deadline
+    if fr is None:
+        return deadline
+    kind = deadline.get("kind")
+    out = dict(deadline)
+    extra = None
+    if kind in ("blind_bid", "blind_bid_fcfs"):
+        bal = _num(fr.get("bbidAvailableBalance"))
+        out["budget_left"] = bal
+        extra = (f"your blind-bid balance is ${bal:g}" if bal is not None
+                 else "your blind-bid balance is not in MFL's league export")
+    elif kind == "waiver_order":
+        order = _int(fr.get("waiverSortOrder"))
+        out["waiver_order"] = order
+        if order:
+            extra = f"you are {_ordinal(order)} in the waiver order"
+    if extra and ": see MFL for the time" in str(out.get("words") or ""):
+        out["words"] = out["words"].replace(": see MFL for the time", f": see MFL for the time; {extra}", 1)
+    return out
+# ---- end IL-2

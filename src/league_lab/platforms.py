@@ -19,8 +19,10 @@ unique name + position match in Sleeper's directory (reported as such), else the
 
 from __future__ import annotations
 
+import hashlib  # ---- IL-2: a stable id for an MFL transaction
 import html
 import importlib  # ---- IK-3: the ESPN / Yahoo adapters, imported when first used
+import json  # ---- IL-2
 import os  # ---- IK-3
 import re
 import threading
@@ -215,8 +217,9 @@ class MFLLeagues:
             self._name_index = (id(d), idx)
         return self._name_index[1]
 
-    def translate(self, lid: str, ids: list[str]) -> dict[str, tuple[str, str]]:
-        """MFL ids -> (Sleeper id or ``mfl:<id>``, how: table | gsis | defense | name | unmapped)."""
+    def translate(self, lid: str, ids: list[str], *, record: bool = True) -> dict[str, tuple[str, str]]:
+        """MFL ids -> (Sleeper id or ``mfl:<id>``, how: table | gsis | defense | name | unmapped). IL-2: ``record``
+        False (a transaction's players) keeps them out of the league's rostered-player report (``unmapped``)."""
         out: dict[str, tuple[str, str]] = {}
         need_info: list[str] = []
         gsis_need: dict[str, str] = {}
@@ -269,8 +272,9 @@ class MFLLeagues:
                                            "team": M.defense_sleeper_id(p.get("team")) if p.get("team") else None,
                                            "status": "Active", "active": True, "injury_status": None, "mfl_id": i}
                 out[i] = (key, "unmapped")
-        with self._lock:
-            self.mapping.setdefault(lid, {}).update(out)
+        if record:                                                                          # ---- IL-2
+            with self._lock:
+                self.mapping.setdefault(lid, {}).update(out)
         return out
 
     def register_units(self, positions: set[str] | frozenset[str]) -> int:
@@ -334,7 +338,8 @@ class MFLLeagues:
                 # ---- IC-2 for IC-1 (INTERFACES.md): the league's ScoringSpec as JSON when the compiler gives one
                 **({"scoring_spec": report["spec"]} if isinstance(report, dict) and report.get("spec") else {}),
                 "settings": {"playoff_week_start": (last_reg + 1) if last_reg and rounds else 0,
-                             "playoff_teams": 2 ** rounds if rounds else 0, "playoff_round_type": 0,
+                             # ---- IL-2: MFL's export has no playoff team count; 2 ** rounds, never more than the league
+                             "playoff_teams": min(2 ** rounds, n or 2 ** rounds) if rounds else 0, "playoff_round_type": 0,
                              "leg": week, "last_scored_leg": max(0, week - 1), "num_teams": n,
                              "start_week": int(lg.get("startWeek") or 1), "type": 0,
                              "taxi_slots": int(lg.get("taxiSquad") or 0), "reserve_slots": int(lg.get("injuredReserve") or 0)},
@@ -414,16 +419,110 @@ class MFLLeagues:
 
     def matchups(self, key: str, week: int) -> list[dict]:
         lid = mfl_id(key)
-        return M.weekly_matchups(self.client.schedule(lid), int(week), self._rid_of(lid))
+        rows = M.weekly_matchups(self.client.schedule(lid), int(week), self._rid_of(lid))
+        return self._with_live(key, int(week), rows)                     # ---- IL-2
+
+    # ---- IL-2 (Wave I-L): this week's rows carry MFL's live scores the way Sleeper's matchups call does during a week —
+    # ``points`` = the franchise's score so far, ``players_points`` = its listed players' (Sleeper ids). Another week, or
+    # MFL's live scoring not answering, leaves the schedule's rows as they were.
+    def _with_live(self, key: str, week: int, rows: list[dict]) -> list[dict]:
+        if not rows:
+            return rows
+        lid = mfl_id(key)
+        try:
+            if week != self.week(lid):
+                return rows
+            live = self.client.live_scoring(lid, week)
+        except (M.MFLUnavailable, M.MFLBusy, LeagueNotFound):
+            return rows
+        players = M.live_players(live)
+        tr = self.translate(lid, sorted(players), record=False) if players else {}
+        rid_of = self._rid_of(lid)
+        per: dict[int, dict[str, float]] = {}
+        for i, p in players.items():
+            rid = rid_of.get(p["franchise"])
+            if rid is not None and i in tr and p["score"] is not None:
+                per.setdefault(rid, {})[tr[i][0]] = p["score"]
+        fr = {rid_of[f]: v for f, v in M.live_franchises(live).items() if f in rid_of}
+        out = []
+        for r in rows:
+            f = fr.get(int(r["roster_id"]))
+            if f is not None and f.get("score") is not None:
+                r = {**r, "points": float(f["score"]), "players_points": per.get(int(r["roster_id"]), {})}
+            out.append(r)
+        return out
+    # ---- end IL-2
 
     def season_matchups(self, key: str, through_week: int) -> dict[int, list[dict]]:
         lid = mfl_id(key)
         sched, rid_of = self.client.schedule(lid), self._rid_of(lid)
         return {w: M.weekly_matchups(sched, w, rid_of) for w in range(1, int(through_week) + 1)}
 
+    # ---- IL-2 (Wave I-L): MFL's transactions export in Sleeper's ``/transactions/<round>`` shape (``round_`` = MFL's
+    # week ``W``): free agents -> ``free_agent``, waivers and blind-bid waivers -> ``waiver`` (the bid in
+    # ``settings.waiver_bid``), trades -> ``trade`` (future draft picks in ``draft_picks``); players as Sleeper ids through
+    # the league's id mapping (``translate``, not recorded as rostered). MFL has no transaction id: ``transaction_id`` is
+    # ``mfl-<timestamp>-<franchise>-<hash>`` of the row (stable across reads). A past week is cached a day.
     def transactions(self, key: str, round_: int) -> list[dict]:
-        mfl_id(key)
-        return []                        # not read from MFL yet (the League screen shows no transactions)
+        lid = mfl_id(key)
+        week = int(round_)
+        try:
+            current = self.week(lid)
+        except LeagueNotFound:
+            current = week
+        rows = self.client.transactions(lid, week, settled=week < current)
+        moves = [(r, m) for r in rows if (m := M.transaction_moves(r)) is not None]
+        if not moves:
+            return []
+        rid_of = self._rid_of(lid)
+        ids = sorted({i for _, m in moves for i in (*m["adds"], *m["drops"])})
+        tr = self.translate(lid, ids, record=False) if ids else {}
+        out = []
+        for raw, m in moves:
+            adds = {tr[i][0]: rid_of.get(f) for i, f in m["adds"].items() if i in tr}
+            drops = {tr[i][0]: rid_of.get(f) for i, f in m["drops"].items() if i in tr}
+            picks = [{"season": str(y), "round": r, "roster_id": rid_of.get(o), "previous_owner_id": rid_of.get(g),
+                      "owner_id": rid_of.get(t)} for g, t, o, y, r in m["picks"]]
+            rids = sorted({x for x in (*adds.values(), *drops.values(), rid_of.get(m["franchise"]),
+                                       *(p["owner_id"] for p in picks), *(p["previous_owner_id"] for p in picks))
+                           if x is not None})
+            created = m["timestamp"] * 1000 if m["timestamp"] else None
+            digest = hashlib.sha1(json.dumps(raw, sort_keys=True).encode()).hexdigest()[:8]
+            out.append({"transaction_id": f"mfl-{m['timestamp'] or 0}-{m['franchise']}-{digest}", "type": m["kind"],
+                        "status": "complete", "leg": week, "roster_ids": rids, "adds": adds or None,
+                        "drops": drops or None, "draft_picks": picks, "waiver_budget": [], "creator": None,
+                        "created": created, "status_updated": created,
+                        "settings": {"waiver_bid": int(round(m["bid"]))} if m["bid"] is not None else None,
+                        "metadata": {"mfl_type": m["type"]}, "consenter_ids": rids})
+        return sorted(out, key=lambda x: (x["created"] or 0, x["transaction_id"]))
+
+    def live_points(self, key: str, week: int) -> dict:
+        """IL-2: MFL's live scoring for the week, keyed by Sleeper id: ``{"points": {sid: score}, "done": {sid, ...},
+        "teams_done": {NFL team, ...}, "franchises": {roster_id: {score, seconds_left, yet_to_play, playing}}}``. A
+        player is done when MFL lists him with 0 game seconds left (his game is over, or he has no game); a game in
+        progress is not done (the week's odds keep his full range)."""
+        lid = mfl_id(key)
+        live = self.client.live_scoring(lid, int(week))
+        players = M.live_players(live)
+        tr = self.translate(lid, sorted(players), record=False) if players else {}
+        d = self.directory()
+        points: dict[str, float] = {}
+        done: set[str] = set()
+        teams: set[str] = set()
+        for i, p in players.items():
+            if i not in tr or p["score"] is None:
+                continue
+            sid = tr[i][0]
+            points[sid] = p["score"]
+            if p["seconds_left"] == 0:
+                done.add(sid)
+                row = self.extra_players.get(sid) or d.get(sid) or {}
+                if row.get("team"):
+                    teams.add(str(row["team"]))
+        rid_of = self._rid_of(lid)
+        franchises = {rid_of[f]: v for f, v in M.live_franchises(live).items() if f in rid_of}
+        return {"points": points, "done": done, "teams_done": teams, "franchises": franchises}
+    # ---- end IL-2
 
 
 # ---- IK-3 (Wave I-K): the ESPN and Yahoo adapters (IK-1's ``espn_leagues.ESPNLeagues``, IK-2's
@@ -636,10 +735,10 @@ _CAPS: dict[str, dict] = {
         "features": {
             "scoring": ("partial", "MFL's rules read into the projections' scoring; any piece estimated or not priced is listed on the league card"),
             "roster_slots": ("partial", "starter ranges (2–4 WR) read as the minimum plus FLEX; IDP spots are left out and said so"),
-            "matchups": ("partial", "the schedule and each week's opponent; the week's live points are not read"),
+            "matchups": ("yes", "the schedule, each week's opponent and every played week's points; this week's live points from MFL's live scoring (a game in progress counts as its full range)"),  # ---- IL-2
             "players": ("partial", "MFL ids matched to Sleeper's; a player with no match is listed by name and not valued"),
-            "waivers": ("partial", "free agents are the players no team rosters; MFL's waiver type is read, the claim time is not shared"),
-            "transactions": ("no", "MFL's transactions are not read yet"),
+            "waivers": ("partial", "free agents are the players no team rosters; MFL's waiver type, waiver order and blind-bid balances are read; MFL does not share the claim time"),  # ---- IL-2
+            "transactions": ("yes", "adds, drops, trades and waiver claims from MFL's transactions export" + " — as built, not verified on a live league yet"),  # ---- IL-2 (the PO drops the tail after the live check)
             "team_assets": ("partial", "team QBs, kickers and defenses are priced as players; draft picks and blind-bid budgets are not read"),
             "news": ("yes", _NEWS),
         },

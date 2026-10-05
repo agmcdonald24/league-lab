@@ -1427,6 +1427,7 @@ export interface MatchupSide {
   team_name: string | null;
   points: number | null; // null before the games
   result: "W" | "L" | "T" | null;
+  live?: number | null; // ---- IL-2: this week's score so far (the platform's live points; MFL's live scoring); null before any
 }
 export interface WeekMatchups {
   week: number;

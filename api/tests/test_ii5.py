@@ -43,19 +43,22 @@ def test_sleeper_and_mfl_as_built():
     assert s["status"] == m["status"] == "supported"
     assert s["connect"]["kind"] == "username" and m["connect"]["kind"] == "league_link"
     assert {f for f, v in s["features"].items() if v["status"] == "no"} == set()
-    # MFL: transactions are not read (platforms.MFLLeagues.transactions answers []): said, not shown as "no moves"
-    assert m["features"]["transactions"]["status"] == "no"
-    assert P.unavailable("mfl", "transactions") == "Transactions: not available for MFL leagues yet"
-    assert m["features"]["transactions"]["unavailable"] == "Transactions: not available for MFL leagues yet"
-    assert m["features"]["matchups"]["status"] == "partial"          # the week's live points are not read
+    # ---- IL-2 (Wave I-L): MFL's transactions and live points are read now (api/tests/test_il2.py); the transactions
+    # row says it is not verified on a live league yet (a synthetic fixture from MFL's documented shape)
+    assert m["features"]["transactions"]["status"] == "yes"
+    assert P.unavailable("mfl", "transactions") is None and m["features"]["transactions"]["unavailable"] is None
+    assert m["features"]["transactions"]["words"].endswith(P.UNVERIFIED)
+    assert m["features"]["matchups"]["status"] == "yes" and "live points" in m["features"]["matchups"]["words"]
     assert m["features"]["team_assets"]["status"] == "partial"       # TMQB / TMPK priced; picks / budgets not read
     assert all(P.unavailable("sleeper", f) is None for f in P.FEATURES)
 
 
-def test_mfl_transactions_really_are_not_read():
-    """The matrix is a statement about the code: the MFL adapter's transactions call answers nothing."""
-    mf = P.MFLLeagues(M.MFL(fixtures="/nonexistent"), lambda: {})
-    assert mf.transactions("mfl:70587", 1) == []
+def test_mfl_transactions_really_are_read():
+    """The matrix is a statement about the code (IL-2): the MFL adapter's transactions call reads MFL's export — a fixture
+    league with no moves recorded answers nothing, 70587's synthetic week 2 answers moves (api/tests/test_il2.py)."""
+    from pathlib import Path
+    mf = P.MFLLeagues(M.MFL(fixtures=Path(__file__).with_name("fixtures") / "mfl", year=2026), lambda: {})
+    assert mf.transactions("mfl:21861", 1) == []
 
 
 def test_espn_and_yahoo_are_not_supported():

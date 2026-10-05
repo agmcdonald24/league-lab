@@ -1,0 +1,12 @@
+{
+ "version": "1.0",
+ "transactions": {
+  "transaction": {
+   "timestamp": "1790769600",
+   "franchise": "0008",
+   "type": "FREE_AGENT",
+   "transaction": "|13772,"
+  }
+ },
+ "encoding": "utf-8"
+}
