@@ -360,6 +360,33 @@
       </section>
     {/if}
 
+    <!-- ---- IL-2 (Wave I-L): every team's adds of this week and last, from the league's moves (MFL's export too) -->
+    {#if data.recent_adds}
+      {@const ra = data.recent_adds}
+      {@const span = ra.weeks.length > 1 ? `weeks ${ra.weeks[0]}–${ra.weeks[ra.weeks.length - 1]}` : `week ${ra.weeks[0]}`}
+      <Card title="Recently added in this league" pad={false} testid="recent-adds">
+        {#if ra.unavailable}
+          <p class="px-4 pb-4 text-base text-ink-2" data-testid="recent-adds-unavailable">{ra.unavailable}.</p>
+        {:else if !ra.rows.length}
+          <p class="px-4 pb-4 text-base text-ink-2" data-testid="recent-adds-none">No adds in {span}.</p>
+        {:else}
+          <ul class="divide-y divide-line">
+            {#each ra.rows as r, i (i)}
+              <li class="flex items-center gap-2 px-3 py-2 {r.mine ? 'bg-accent-soft' : ''}" data-testid="recent-add">
+                <span class="min-w-0 flex-1 truncate text-base">
+                  {#if r.gsis_id}<a class="ll-name" href={withContext(`/player/${r.gsis_id}`, ctx)}>{r.player_name}</a>{:else}{r.player_name ?? "—"}{/if}
+                  <span class="text-sm text-ink-3"> · {r.position ?? "—"}</span>
+                </span>
+                <span class="shrink-0 text-right text-sm text-ink-2">{r.team_name ?? "—"}{r.mine ? " (you)" : ""} · week {r.week}{r.waiver_bid != null ? ` · $${r.waiver_bid}` : ""}</span>
+              </li>
+            {/each}
+          </ul>
+          <p class="px-3 pt-1 pb-2 text-xs text-ink-3" data-testid="recent-adds-note">{ra.total} add{ra.total === 1 ? "" : "s"} in {span}{ra.total > ra.rows.length ? `, the latest ${ra.rows.length} shown` : ""} · {ra.source}</p>
+        {/if}
+      </Card>
+    {/if}
+    <!-- ---- end IL-2 -->
+
     <!-- IA-2: buy low / sell high moved to Trades (they are trades to ask about, not claims) -->
     <p class="text-sm text-ink-3" data-testid="buy-sell-moved">
       Buy low and sell high are on <a class="ll-name font-semibold" href={withContext("/trades", ctx)}>Trades ›</a>
