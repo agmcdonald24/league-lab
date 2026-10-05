@@ -82,7 +82,10 @@ export function topIntro(cards: WaiverCard[], week: number, last: number): strin
   const stash = hs.filter((h) => h.key === "stash").length;
   const parts: string[] = [];
   if (now) parts.push(now === n ? (n === 1 ? "it helps this week" : "each helps this week") : `${now} help${now === 1 ? "s" : ""} this week`);
-  if (bye.length) parts.push(`${bye.length} cover${bye.length === 1 ? "s" : ""} a bye (week${bye.length === 1 ? "" : "s"} ${[...new Set(bye.map((h) => h.week))].join(", ")})`);
+  if (bye.length) {
+    const weeks = [...new Set(bye.map((h) => h.week))]; // PO: "weeks" counts the distinct weeks, not the claims
+    parts.push(`${bye.length} cover${bye.length === 1 ? "s" : ""} a bye (week${weeks.length === 1 ? "" : "s"} ${weeks.join(", ")})`);
+  }
   if (later.length) parts.push(`${later.length} help${later.length === 1 ? "s" : ""} later in the window`);
   if (stash) parts.push(`${stash} ${stash === 1 ? "is an upside stash" : "are upside stashes"}`);
   const span = last > week ? `weeks ${week}–${last}` : `week ${week}`;

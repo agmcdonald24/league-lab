@@ -4091,7 +4091,7 @@ def top_intro(cards: list[dict], week: int, last: int) -> str:
                      else f"{now} help{'s' if now == 1 else ''} this week")
     if bye:
         weeks = sorted({h["week"] for h in bye})
-        parts.append(f"{len(bye)} cover{'s' if len(bye) == 1 else ''} a bye (week{'' if len(bye) == 1 else 's'} "
+        parts.append(f"{len(bye)} cover{'s' if len(bye) == 1 else ''} a bye (week{'' if len(weeks) == 1 else 's'} "
                      f"{', '.join(str(w) for w in weeks)})")
     if later:
         parts.append(f"{len(later)} help{'s' if len(later) == 1 else ''} later in the window")
