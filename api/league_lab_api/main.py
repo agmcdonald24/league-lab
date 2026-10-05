@@ -655,6 +655,14 @@ def league_week_odds(league: str, response: Response, source: str | None = None)
 # ---- end IH-3
 
 
+# ---- IK-2 (Wave I-K): Connect with Yahoo — /api/yahoo/* (connect, callback, disconnect, status, leagues) and the
+# ll_yahoo session middleware; the routes go ahead of the /api catch-all whatever the line's place
+from . import yahoo_connect  # noqa: E402 - the block stays self-contained
+
+yahoo_connect.install(app)
+# ---- end IK-2
+
+
 # ---------------------------------------------------------------- the web app
 ASSET_CACHE = "public, max-age=31536000, immutable"     # vite's hashed file names
 SHELL_CACHE = "no-cache"                                # index.html, sw.js, manifest: revalidate every load

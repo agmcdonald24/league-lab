@@ -58,6 +58,7 @@ class IdTable:
     sleeper_gsis: dict[str, str] = field(default_factory=dict)
     espn_gsis: dict[str, str] = field(default_factory=dict)
     by_yahoo: dict[str, dict] = field(default_factory=dict)          # ---- IK-2: yahoo_id -> the row
+    yahoo_dupes: set[str] = field(default_factory=set)               # ---- IK-2: ids on two players (no match)
 
     def mfl_to_sleeper(self, mfl_id: str | int | None) -> str | None:
         r = self.by_mfl.get(_clean(str(mfl_id)) or "")
@@ -104,8 +105,13 @@ def read(path: str | Path) -> IdTable:
                 t.sleeper_gsis[r["sleeper_id"]] = r["gsis_id"]
             if r["espn_id"] and r["gsis_id"]:
                 t.espn_gsis[r["espn_id"]] = r["gsis_id"]
-            if r["yahoo_id"]:                                                   # ---- IK-2
-                t.by_yahoo.setdefault(r["yahoo_id"], r)
+            if r["yahoo_id"]:                       # ---- IK-2: a yahoo_id on two players' rows is quarantined
+                prev = t.by_yahoo.get(r["yahoo_id"])
+                if r["yahoo_id"] in t.yahoo_dupes or (prev is not None and prev.get("gsis_id") != r["gsis_id"]):
+                    t.yahoo_dupes.add(r["yahoo_id"])
+                    t.by_yahoo.pop(r["yahoo_id"], None)
+                elif prev is None:
+                    t.by_yahoo[r["yahoo_id"]] = r
     return t
 
 
