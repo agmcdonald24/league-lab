@@ -4,6 +4,11 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-05 — Wave I-K
 
+- **PO (the merge, 2026-10-05 12:30 ET).** The accounts block in `scripts/sync_to_hosted.sh`; the accounts schema on
+  the sandbox's main database; the setup header names all four platforms. Root 1,263 / API 722 / e2e 366, 0 failed.
+  ESPN and Yahoo ship labelled **unverified** until the PO opens a live league after the deploy; the ESPN private
+  switch is off; Yahoo's button is "coming soon" until Andrew's app registration; accounts are off until a Resend key.
+
 - **IK-3 — ESPN and Yahoo in the setup flow; the four-provider seam; the id-map audit.** The `Router` dispatches
   `espn:<id>` and `yahoo:<game>.l.<id>` keys to IK-1's and IK-2's adapters (a provider not set up answers in words,
   never a 500; Sleeper / MFL answers unchanged); `/api/leagues?espn=` / `?yahoo=` / `?yahoo_me=1` with specific errors;

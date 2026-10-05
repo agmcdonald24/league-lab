@@ -187,6 +187,19 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   `ops/nightly-trigger/` (a Cloudflare Worker, 07:37 ET + re-checks) replaces it as the clock; needs Andrew's
   fine-grained token in the Worker's secret (HOSTING § 5 "The trigger"). Until it exists, "Run workflow" by hand.
 
+* **Wave I-K (2026-10-05, Monday 08:40–12:30 ET; four Opus devs; STATUS § "Wave I-K" PO section first)**: **ESPN**
+  leagues on demand (`espn:<id>`, public read-only, unofficial; private via the manager's cookies behind
+  `LEAGUE_LAB_ESPN_PRIVATE=off`; kill switch `LEAGUE_LAB_ESPN_LEAGUES=off`), **Yahoo** leagues through the official
+  OAuth API (`yahoo:<game>.l.<id>`; needs `LEAGUE_LAB_YAHOO_CLIENT_ID` / `_SECRET` / `_REDIRECT_URI` on Render after
+  Andrew registers the app — HOSTING § Yahoo; until then "coming soon"), the four-provider seam (`platforms.provider_of`,
+  `Router(sleeper, mfl, espn, yahoo)`, `capabilities()` `unverified` for both until a live league is checked), the
+  setup flow's four platforms, **accounts phase 1** (`scripts/hosted_accounts.sql` applied by the nightly's sync; sign-in
+  by an emailed link via Resend — `LEAGUE_LAB_RESEND_API_KEY` turns it on; HOSTING § Accounts has the DNS records).
+  **Nothing ESPN / Yahoo / accounts is verified live yet** — the PO's checklist is in the STATUS PO section; after it
+  passes, flip `capabilities` to `supported`, the words, PROVIDERS, and the pins in `test_ik3` / `test_ii5`. Memory:
+  ESPN answers are trimmed before caching; Yahoo caches are per manager; both clients go through `league_lab.memo`'s
+  rules (`docs/DEPLOY.md` § Memory) — re-run `scripts/measure_memory.py` after the first live leagues.
+
 * **Wave I-J (2026-10-04/05, Sunday night 22:30–01:50 ET; two Opus devs; STATUS § "Wave I-J" PO section first)**: the memory
   diet after Sunday's out-of-memory restart (Starter, 512 MB; four leagues → 400 MB before) — strings interned at the
   fetch, one Board per week shared, one byte budget over every per-league cache (`src/league_lab/memo.py`,

@@ -598,6 +598,21 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 21 — Wave I-K (2026-10-05, Monday 08:40–12:30 ET; other platforms: ESPN and Yahoo; accounts phase 1)
+
+Andrew: "I would really like to prioritize pulling other leagues into this like yahoo and espn next." Four devs:
+**IK-1** ESPN leagues on demand (`espn:<id>`: public read-only by id or link through the community endpoints, labelled
+unofficial; private leagues through the manager's own cookies built but **off** behind `LEAGUE_LAB_ESPN_PRIVATE`);
+**IK-2** Yahoo leagues (`yahoo:<game>.l.<id>`) through the official OAuth 2.0 API — "Connect with Yahoo", the
+connection in an encrypted cookie; waits on Andrew's Yahoo app registration and two Render secrets; **IK-3** the
+four-provider seam, the setup flow's four platforms, nine setup errors, the id-map audit (no 2025–26 rookie has a Yahoo
+id in nflverse: name + position fallback), PROVIDERS / ANY_LEAGUE / HOSTING; **IK-4** accounts phase 1 (sign-in by an
+emailed link via Resend, saved leagues across devices, preferences; off until a Resend key exists; the beta password
+stays in front). STATUS § "Wave I-K": root 1,263 / API 722 / e2e 366, 0 failed. **Nothing is verified on a live ESPN or
+Yahoo league yet** — the PO verifies after the deploy and flips `capabilities` to `supported`. Deferred to the next
+wave: the fifth review's analytics + the NGS marts, MFL transactions / waivers, the model follow-ups, the Sleeper
+directory trim.
+
 ### Iteration 20 — Wave I-J (2026-10-04/05, Sunday night 22:30–01:50 ET; the memory diet)
 
 Render's Starter instance (512 MB) ran out of memory once on Sunday afternoon with 4 leagues open (not traffic: 39

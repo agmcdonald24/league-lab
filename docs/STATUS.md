@@ -8263,6 +8263,80 @@ compare against it)
 
 ## Wave I-K (Iteration 21)
 
+### PO merge — Wave I-K, 2026-10-05 (08:40–12:30 ET; other platforms: ESPN and Yahoo leagues on demand; accounts phase 1)
+
+* **Why**: Andrew: "I would really like to prioritize pulling other leagues into this like yahoo and espn next." The
+  brief is `scratchpad/waveIK/BRIEF.md`; four Opus devs in one message (IK-1 ESPN, IK-2 Yahoo, IK-3 the seam + setup
+  flow + id-map audit, IK-4 accounts phase 1), 2 h 30 each; IK-3 merged IK-1's and IK-2's branches as they landed and
+  wired the real adapters; the PO merged IK-3, then the two adapters' last commits, then IK-4.
+* **Delivered** (the hand-backs below; `main` after this section): **ESPN leagues** `espn:<id>` — public read-only by
+  id or link through the community v3 endpoints, labelled unofficial (IK-1: `espn_client.py` by view with the slot
+  and stat id tables from `cwendt94/espn-api`, answers trimmed to the fields read before caching, a token bucket, TTL
+  caches, `espn_leagues.py` in Sleeper's shapes, D/ST as team units, ESPN id → gsis → Sleeper id → name → `espn:<id>`;
+  **private leagues through the manager's own `espn_s2` + `SWID` exist behind `LEAGUE_LAB_ESPN_PRIVATE=off`** — an
+  encrypted `ll_espn` cookie (`api/league_lab_api/sealed.py`, stdlib HMAC-CTR + tag, keyed from `LEAGUE_LAB_API_SECRET`),
+  never stored or logged, `require_access` before any cache so one manager's private league is never served to
+  another; `LEAGUE_LAB_ESPN_LEAGUES=off` is the kill switch). **Yahoo leagues** `yahoo:<game>.l.<id>` through the
+  official OAuth 2.0 Fantasy Sports API (IK-2: `yahoo_client.py` — the authorization-code flow + refresh, one
+  normaliser for Yahoo's nested JSON, the stat id table, `W/R/T` → FLEX, `Q/W/R/T` → SUPER_FLEX, fixture mode, a rate
+  limiter; `yahoo_leagues.py` in Sleeper's shapes with `my_leagues`; the connection in an encrypted `ll_yahoo` cookie
+  (60 days; tokens never logged); `GET /api/yahoo/connect` / `callback` / `status` / `leagues`, `POST disconnect`;
+  **503 `yahoo_not_configured`** and a disabled "Connect with Yahoo — coming soon" button until
+  `LEAGUE_LAB_YAHOO_CLIENT_ID` / `_SECRET` exist; **public Yahoo leagues also need a signed-in manager** — Yahoo's docs
+  offer no app-only token; `player_ids.py` + the fixture CSV gain `yahoo_id`). **The seam** (IK-3: `provider_of(key)`,
+  a four-provider `Router` with `ProviderNotConfigured` as words never a 500, `capabilities("espn" / "yahoo")` =
+  `unverified` with every feature `partial` "as built, not verified on a live league yet", `GET /api/leagues?espn=` /
+  `?yahoo=` / `?yahoo_me=1`, nine new `SETUP_CODES`, the setup flow's four platform buttons with each platform's help
+  and errors, the "Private league?" form only when `/api/providers` says `espn_private`, `· ESPN` / `· Yahoo` in the
+  switcher; **the id-map audit** (`scripts/id_map_audit.py`): of 772 2026 skill players, 92.4 % have `espn_id` /
+  `mfl_id`, **59.5 % `yahoo_id` — no 2025 or 2026 rookie has one** (nflverse), so Yahoo rookies map by name +
+  position; `hosted_usage.sql` widened so ESPN / Yahoo screen views count). **Accounts, phase 1** (IK-4: `scripts/
+  hosted_accounts.sql` — eight tables, grants on them only, no new role or URL; `api/league_lab_api/accounts.py` —
+  `POST /api/account/login {email}` → a single-use link by Resend (the token in the URL **fragment** and posted by the
+  page — never in a path or query, so never in a log; 15 min; SHA-256 at rest), `POST verify` → a server session +
+  `ll_session` (HMAC, HttpOnly, Lax, Secure, 90 days), `me`, leagues upsert by `provider:season:id` idempotent for all
+  four providers, default league, preferences (II-3's saved Stats views move server-side when signed in), watchlist,
+  `DELETE /api/account`, rate limits in the database; `/account`, the ⋯ menu entry, "Save these N leagues", the About
+  privacy line; **off until `LEAGUE_LAB_RESEND_API_KEY` exists** (`LEAGUE_LAB_ACCOUNTS=auto`); guest exploration
+  untouched; the beta password stays in front).
+* **PO, on the merge**: STATUS / CHANGELOG / HOSTING / `main.py` keep both; the accounts block added to
+  `scripts/sync_to_hosted.sh` after IG-2's (IK-4's text in HOSTING § Accounts); `scripts/hosted_accounts.sql` applied to
+  the sandbox's main database as the owner, the way the nightly will on Neon; the setup header names all four
+  platforms. **Checks** (main DB, the pinned clock): root **1,263 passed** / 2 skipped; API **722 passed** / 9 skipped
+  (`test_u1` / `test_ig2` deselected); ruff clean; `npm run lint` 0 / 0 (167 files); build ok; fixtures e2e **366
+  passed** / 2 skipped. QA on the fixture API with the ESPN / Yahoo / accounts fixtures (`LEAGUE_LAB_ESPN_LEAGUE_FIXTURES`,
+  `LEAGUE_LAB_YAHOO_FIXTURES`, `LEAGUE_LAB_ACCOUNTS=on`): `/api/providers` lists four providers (espn / yahoo
+  `unverified`); `espn:4242` "Synthetic Public League" opens — My Week ("Mighty Ducks", three "Change needed" cards
+  with "make the change in ESPN"), Team, Waivers, Trades, League at 375 and 1300 with no console errors; the setup
+  screen's ESPN and Yahoo panels; `?yahoo_me=1` answers `configured: true, connected: false`; `/api/account/status`
+  says `enabled: false, reason: no_secret` on the fixture API (no `LEAGUE_LAB_API_SECRET` there — on Render it exists).
+* **Verified live: nothing yet.** ESPN and Yahoo were built from documentation and synthetic fixtures (the sandbox
+  cannot reach either). After the deploy the PO verifies: (1) ESPN — `https://isuckatfantasy.io/api/leagues?espn=
+  espn:2019:48153503` (espn-api's public CI league, 2019) answers teams; then **a public 2026 ESPN league id from
+  Andrew** on `/leagues?platform=espn`, compared with ESPN's settings / team / scoring pages and
+  `/api/league/scoring-check?league=espn:<id>&week=4`; (2) Yahoo — after Andrew registers the app and the two
+  secrets exist: `/api/yahoo/status` `configured: true`, Connect, the league list, a league compared with Yahoo's
+  pages, disconnect, a reload after an hour (the refresh), Render's logs free of tokens; (3) accounts — after a
+  Resend key: `/api/account/status` `enabled: true`, the sign-in on a phone, the leagues restored in a private window.
+  Then flip `capabilities` to `supported`, drop "unverified" from the words, update PROVIDERS and the pins in
+  `test_ik3` / `test_ii5`.
+* **Andrew's part (told)**: a Yahoo developer app (`developer.yahoo.com/apps/create`: name `isuckatfantasy`, homepage
+  `https://isuckatfantasy.io`, redirect `https://isuckatfantasy.io/api/yahoo/callback`, Confidential Client, Fantasy
+  Sports → Read; then the access application at `sports.yahoo.com/developer/access/`) → Render secrets
+  `LEAGUE_LAB_YAHOO_CLIENT_ID`, `LEAGUE_LAB_YAHOO_CLIENT_SECRET`, `LEAGUE_LAB_YAHOO_REDIRECT_URI`; a Resend account
+  with `isuckatfantasy.io` → `LEAGUE_LAB_RESEND_API_KEY` (+ the four DNS records in HOSTING § Accounts, which the PO
+  adds in Cloudflare on his word); any public 2026 ESPN league id; the Render auto-deploy word.
+* **Decisions the PO took (Andrew may reverse)**: ESPN and Yahoo are visible, labelled unverified, rather than hidden;
+  the ESPN private switch ships off; the Yahoo connection lives in a 60-day cookie on the device (accounts can hold it
+  next wave — `connections` is reserved); the ESPN cookie 30 days; the sign-in token travels in the fragment plus one
+  tap; sessions 90 days; the beta password stays in front of accounts; a Sleeper username's league list is saved by one
+  tap, not automatically; cached Yahoo answers are per manager (Yahoo's terms).
+* **Not done / next**: live verification of all three (above); `connections` rows for Yahoo / ESPN under an account;
+  the duplicate-id rule on `espn_id` / `mfl_id` in `player_ids.read`; `/api/providers` reflecting the ESPN kill
+  switch; a watchlist screen; the deferred packages — the fifth review's analytics (role changes, opportunity vs
+  production, contingent upside, the two NGS marts), MFL transactions / waivers, the model follow-ups (the win
+  probability re-grade, v3.3, the Finder's cold cost), the Sleeper directory trim (37 MB on live).
+
 ### IK-3 2026-10-05 — the four-provider seam, the ESPN / Yahoo setup flow, the id-map audit, the docs (branch `dev/IK3` from `main` `07dcdd0`, database `league_lab_m1` read only)
 
 * **Task**: IK-3 of Wave I-K (`scratchpad/waveIK/BRIEF.md`): the `Router` → four providers, `capabilities("espn" /
