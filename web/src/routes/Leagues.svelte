@@ -328,6 +328,13 @@
   });
   // ---- end IC-3
   import AccountEntry from "../components/AccountEntry.svelte"; // ---- IK-4: the account entry (the block at the bottom)
+  // ---- IL-5 (Wave I-L): the provider's status from /api/providers (the verified flip, ESPN's kill switch) and, signed
+  // in, where a Yahoo / ESPN connection is kept (this browser and the account)
+  import { account as acct } from "../lib/account.svelte";
+  const statusOf = (p: string) => caps?.providers.find((x) => x.provider === p) ?? null;
+  const espnOff = $derived(statusOf("espn")?.status === "off");
+  const keptWithAccount = $derived(!!(acct.status?.enabled && acct.status.signed_in));
+  // ---- end IL-5
 </script>
 
 <!-- ---- IC-3: the card's read-backs and the scoring check -->
@@ -424,7 +431,7 @@
       <p class="text-sm leading-snug text-ink-3" data-testid="platform-note" data-platform={platform}>
         {#if platform === "espn"}Unofficial: ESPN has no public API for fantasy leagues. {APP_NAME} reads what a public league shows anyone, read-only.{:else}Through
           Yahoo's official Fantasy Sports API, read-only, after you allow it with your Yahoo sign-in.{/if}
-        New: not verified on a live league yet.
+        {#if (statusOf(platform)?.status ?? "unverified") === "unverified"}New: not verified on a live league yet.{/if}<!-- IL-5: the verified flip -->
       </p>
     {/if}
   </fieldset>
@@ -507,6 +514,9 @@
     {#if mflError}<p class="text-base text-bad" role="alert" data-testid="mfl-error" data-code={mflErrorCode}>{mflError}</p>{/if}
     {#if mflError && mflErrorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{mflErrorFix}</p>{/if}
   </form>
+  <!-- ---- IL-5: ESPN switched off on this server (LEAGUE_LAB_ESPN_LEAGUES=off): said, no form -->
+  {:else if platform === "espn" && espnOff}
+  <p class="rounded-lg bg-raised p-4 text-base" data-testid="espn-off">{statusOf("espn")?.off ?? "ESPN leagues: not available right now"}. Sleeper and MyFantasyLeague leagues work as before.</p>
   <!-- ---- IK-3 (Wave I-K): ESPN — a league id or link; "Private league?" only when the server reads private leagues -->
   {:else if platform === "espn"}
   <form class="space-y-2" onsubmit={(e) => findProvider("espn", e)} data-testid="espn-form">
@@ -551,7 +561,8 @@
       <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 font-semibold text-ink"><span class="chev" aria-hidden="true">›</span>Private league?</summary>
       <form class="space-y-2 pt-1" onsubmit={sendEspnCookies} data-testid="espn-private-form">
         <p class="text-ink-2">
-          Your ESPN cookies stay in your browser; {APP_NAME} reads your league with them and never stores them. On a computer signed in to
+          {#if keptWithAccount}Your ESPN cookies stay in this browser and, encrypted, with your account, so your other devices read your league
+            too; Disconnect removes them from both.{:else}Your ESPN cookies stay in your browser; {APP_NAME} reads your league with them and never stores them.{/if} On a computer signed in to
           espn.com, open the browser's cookies for espn.com and copy <span class="font-mono text-xs">espn_s2</span> and
           <span class="font-mono text-xs">SWID</span>.
         </p>
@@ -607,7 +618,9 @@
       >
       <p class="text-sm leading-snug text-ink-3" data-testid="yahoo-note">
         {yahooMeState === "loading" ? "Checking your Yahoo connection…" : yahooMeState === "failed" ? "Could not check your Yahoo connection. Try again in a minute." : (yahooMe?.note ?? "Connect with Yahoo to list your leagues here.")}
-        Yahoo asks you to allow read-only access to your fantasy leagues; {APP_NAME} keeps the connection in this browser only.
+        Yahoo asks you to allow read-only access to your fantasy leagues; {APP_NAME} keeps the connection {keptWithAccount
+          ? "in this browser and, encrypted, with your account (your other devices get it when you sign in)"
+          : "in this browser only"}.
       </p>
     {/if}
     {#if !(caps?.yahoo_configured === false || yahooMe?.configured === false)}

@@ -26,7 +26,9 @@ export type RouteName =
   // ---- IA-2: the trade calculator, its own link in the Decisions row
   | "trade-calc"
   // ---- IK-4: the account (sign in by email, the saved leagues)
-  | "account";
+  | "account"
+  // ---- IL-5: the watchlist (the players the account saved)
+  | "watchlist";
 
 const NAMED: Record<string, RouteName> = {
   "/leagues": "leagues",
@@ -44,6 +46,7 @@ const NAMED: Record<string, RouteName> = {
   "/league": "league",
   "/trade-calc": "trade-calc", // ---- IA-2
   "/account": "account", // ---- IK-4
+  "/watchlist": "watchlist", // ---- IL-5
 };
 
 export interface Route {

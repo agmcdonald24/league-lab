@@ -32,6 +32,7 @@
     receivers: () => import("./routes/Receivers.svelte"),
     compare: () => import("./routes/Compare.svelte"),
     about: () => import("./routes/About.svelte"),
+    watchlist: () => import("./routes/Watchlist.svelte"), // ---- IL-5: the watchlist, in the league frame (the drawer)
   } as const;
   type LazyName = keyof typeof LAZY;
   const isLazy = (n: string): n is LazyName => n in LAZY;
