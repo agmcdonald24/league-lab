@@ -331,7 +331,7 @@ def _moves_on_demand(league_id: str, team: int, *, as_of: datetime | None = None
         return pd.DataFrame(), {"week": None}
     players = _od(A.sleeper().players)
     t0 = time.perf_counter()
-    fa = A.free_agents(query, league["league_id"], rosters, players, A.league_scoring(league)[1])
+    fa = il4_free_agents(league, rosters, players, A.league_scoring(league)[1])        # ---- IL-4: once per league
     lw = _od(A.league_weeks, query, league["league_id"], week, as_of=as_of, rest=True, extra_sids=list(fa["sleeper_id"]))
     _team_check(lw.names, team)
     t1 = time.perf_counter()
@@ -600,7 +600,7 @@ def _free_agents(league_id: str, season: int, week: int, position: str, limit: i
         lw, fa = od_info.get("lw"), od_info.get("fa")
         if lw is None:
             league, rosters, _ = _sleeper_league(league_id)
-            fa = A.free_agents(query, league["league_id"], rosters, _od(A.sleeper().players), A.league_scoring(league)[1])
+            fa = il4_free_agents(league, rosters, _od(A.sleeper().players), A.league_scoring(league)[1])  # ---- IL-4
             pr = A.price_week(query, league["league_id"], *A.league_scoring(league), season, week)
         else:
             pr = lw.priced.get(week)
@@ -703,7 +703,7 @@ class TradeContext:
                 raise NotFound("the regular season is over: no trades to evaluate")
             players = _od(A.sleeper().players)
             self.directory = players                     # ---- IE-0: a unit's team, an unknown key's name
-            fa = A.free_agents(query, league["league_id"], rosters, players, A.league_scoring(league)[1]) if market else None
+            fa = il4_free_agents(league, rosters, players, A.league_scoring(league)[1]) if market else None  # ---- IL-4
             self.lw = _od(A.league_weeks, query, league["league_id"], week, as_of=as_of, rest=market,
                           extra_sids=list(fa["sleeper_id"]) if fa is not None else ())
             self.slots = self.lw.slots
@@ -2117,6 +2117,25 @@ def ii1_verdict(rows: list[dict], alt: dict, span: str, window: str) -> dict:
 # (every partner compared). The calculator (`evaluate`) always compares.
 IL4_LAZY_ENV = "LEAGUE_LAB_FINDER_LAZY_THEIRS"
 IL4_NOT_COMPARED = "not_compared"
+
+
+def il4_free_agents(league: dict, rosters: list[dict], players, slots) -> pd.DataFrame:
+    """`anyleague.free_agents` once per league, roster state and directory for every roster's waiver sweep: the list
+    does not depend on the team asking, and with Sleeper's whole directory (~12,200 players) it was a quarter of a cold
+    Finder (each partner's best waiver move read it again). Kept 2 minutes in the `decisions` region (the on-demand
+    memo's TTL), keyed by who is rostered, the slots, the directory's fetch and its size (an adapter's own rows); a
+    shallow copy out (pandas' copy-on-write: a caller's change stays its own)."""
+    sl = getattr(A.sleeper(), "sleeper", None)
+    hit = getattr(sl, "_cache", {}).get("/players/nfl") if sl is not None else None
+    taken = frozenset(str(p) for r in rosters for p in (r.get("players") or []))
+    key = ("il4_free_agents", str(league["league_id"]), taken, tuple(slots), None if hit is None else hit[1],
+           len(players))
+    fa = _memo_cache.get(key, _MISS) if hit is not None else _MISS
+    if fa is _MISS:
+        fa = A.free_agents(query, league["league_id"], rosters, players, slots)
+        if hit is not None:
+            _memo_cache.put(key, fa, ttl=MEMO_TTL_S["sleeper"])
+    return fa.copy(deep=False)
 
 
 def il4_lazy_theirs() -> bool:

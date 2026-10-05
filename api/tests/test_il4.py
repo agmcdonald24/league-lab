@@ -175,3 +175,27 @@ def test_the_calculator_always_compares(client, monkeypatch):
     assert r.status_code == 200, r.text[:300]
     card = r.json().get("card") or {}
     assert card and card["waiver_alternative"]["theirs"]["kind"] != decisions.IL4_NOT_COMPARED
+
+
+@needs_db
+def test_free_agents_read_once_per_league_with_the_same_answers(client, monkeypatch):
+    """A cold Finder (the trade context's free pool and every roster's waiver sweep) reads the league's free agents
+    once (`il4_free_agents`), and the answer is the one each reader reading its own copy gives."""
+    from league_lab import anyleague as A
+    url = f"/api/trades/partners?league={TEST_LEAGUE}&team=3"
+    calls: list[str] = []
+    orig = A.free_agents
+
+    def counted(*a, **k):
+        calls.append(a[1])
+        return orig(*a, **k)
+    monkeypatch.setattr(A, "free_agents", counted)
+    shared, teams = _finder(client, monkeypatch, False, url)
+    assert len(teams) >= 3 and len(calls) == 1, (len(calls), sorted(teams))
+    monkeypatch.setattr(decisions, "il4_free_agents",
+                        lambda league, rosters, players, slots: orig(decisions.query, league["league_id"], rosters, players, slots))
+    own, _ = _finder(client, monkeypatch, False, url)
+    for x in (shared, own):
+        x.pop("timings_ms", None)
+        x["search"].pop("seconds", None)                       # the clock, not the answer
+    assert shared == own
