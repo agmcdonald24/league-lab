@@ -397,6 +397,56 @@ models:
           arguments:
             combination_of_columns: [gsis_id, season, season_type, team]
 
+  # ---- IL-1 (Wave I-L): NFL Next Gen Stats per player x season x regular-season week (week 0 = NGS's season aggregate)
+  - name: mart_player_ngs_week
+    description: "IL-1: NFL Next Gen Stats (via nflverse) per gsis id x season x regular-season week, passing / rushing / receiving side by side, joined on gsis id (never by name). Week 0 is NGS's own season aggregate (is_season_aggregate). NGS publishes a weekly row only for a qualifying player-week (15+ pass attempts, 10+ carries, 5+ targets in our data): no row = unknown, never 0. Each value sits beside the denominator NGS states (ngs_pass_attempts, ngs_rush_attempts, ngs_targets, ngs_receptions): a window is the denominator-weighted mean of the weekly values."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, season, week]
+      - expression_is_true:
+          arguments:
+            expression: "has_passing or has_rushing or has_receiving"
+      - expression_is_true:
+          arguments:
+            expression: "(week = 0) = is_season_aggregate"
+    columns:
+      - name: gsis_id
+        tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_player'), field: gsis_id}
+          # Sleeper-mapped ids: two NGS players are not in the accepted map today (one quarantined ambiguous pair,
+          # one 2026 rookie not mapped yet) — a warning, so the mart still carries them for the NFL-wide screens
+          - relationships:
+              arguments: {to: ref('player_id_map'), field: gsis_id}
+              config: {severity: warn}
+      - name: season
+        tests: [not_null]
+      - name: week
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]
+                quote: false
+      - name: ngs_pass_attempts
+        description: "NGS's pass attempts for the week: the weight for time to throw, CPOE, aggressiveness and intended air yards."
+        tests:
+          - not_null:
+              config: {where: "has_passing"}
+      - name: ngs_rush_attempts
+        description: "NGS's rush attempts for the week: the weight for rushing yards over expected per attempt, efficiency and 8+ in the box."
+        tests:
+          - not_null:
+              config: {where: "has_rushing"}
+      - name: ngs_targets
+        description: "NGS's targets for the week: the weight for separation, cushion and the share of intended air yards (YAC over expected is weighted by ngs_receptions)."
+        tests:
+          - not_null:
+              config: {where: "has_receiving"}
+  # ---- end IL-1
+
   - name: mart_player_recent_form
     tests:
       - unique_combination_of_columns:
