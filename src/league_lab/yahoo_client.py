@@ -26,8 +26,10 @@ and ``yahoo_fantasy_api`` document. Everything here is **unverified against a li
   ``team/<team_key>/roster;week=<w>/players``, ``users;use_login=1/games;game_keys=nfl/leagues`` and ``…/teams``.
   Keys: game ``461`` (or the code ``nfl``, which Yahoo resolves to this season's), league ``461.l.4242``, team
   ``461.l.4242.t.3``, player ``461.p.30121`` (the number is nflverse's ``yahoo_id``).
-* **Caches by kind** (``TTL_S``, all far inside Yahoo's 24-hour storage rule): keyed by *who* read (a hash of the
-  refresh token), so a private league read with one manager's token is never served to another; stale on error.
+* **Caches by kind** (``TTL_S``, all far inside Yahoo's 24-hour storage rule), in memory only: keyed by *who* read (a
+  hash of the refresh token), so a private league read with one manager's token is never served to another (Yahoo's
+  terms § 2: no third-party access to a user's data); stale on error; at most ``MAX_ENTRIES`` answers (expired ones go
+  first, then the oldest) so many managers cannot grow the 512 MB server.
 * **Budget**: a token bucket of ``LEAGUE_LAB_YAHOO_PER_MIN`` calls a minute (default 60; Yahoo throttles "excessive"
   use without a published number); HTTP 429 or 999 backs off a minute (``YahooBusy``).
 * **One normaliser** (``normalise``): Yahoo's JSON is XML turned inside out — collections are ``{"0": {...}, "1":
@@ -72,6 +74,7 @@ CLIENT_ID_ENV = "LEAGUE_LAB_YAHOO_CLIENT_ID"
 CLIENT_SECRET_ENV = "LEAGUE_LAB_YAHOO_CLIENT_SECRET"
 PER_MIN_ENV = "LEAGUE_LAB_YAHOO_PER_MIN"
 DEFAULT_PER_MIN = 60
+MAX_ENTRIES = 400          # cached answers held at most (a league open is ~18: settings, teams, 12 rosters, …)
 USER_AGENT = "league-lab/0.1 (isuckatfantasy beta; docs/YAHOO_TERMS.md)"
 FIXTURE_CODE = "fixture"
 
@@ -670,6 +673,11 @@ class Yahoo:
             raise
         with self._lock:
             self._cache[key] = (now + TTL_S[kind], now, kind, data)
+            if len(self._cache) > MAX_ENTRIES:            # many managers: expired answers first, then the oldest
+                for k in [k for k, v in self._cache.items() if v[0] <= now]:
+                    del self._cache[k]
+                for k, _ in sorted(self._cache.items(), key=lambda kv: kv[1][1])[:max(0, len(self._cache) - MAX_ENTRIES)]:
+                    del self._cache[k]
         return data
 
     # ------------------------------------------------------------------ resources

@@ -382,3 +382,15 @@ def test_adapter_my_leagues_with_an_explicit_session(monkeypatch):
     rows = yl.my_leagues(Y.YahooSession(refresh_token="fixture-refresh", expires_at=4e9))
     assert rows[0]["key"] == "yahoo:461.l.4242" and rows[0]["roster_id"] == 3 and rows[0]["public"] is True
     assert Y.request_session.get() is None                                  # the explicit session is not left behind
+
+
+def test_the_cache_is_bounded(session, monkeypatch):
+    monkeypatch.delenv(Y.FIXTURES_ENV, raising=False)
+    monkeypatch.setattr(Y, "MAX_ENTRIES", 5)
+    now = {"t": 0.0}
+    c = Y.Yahoo(fetch=lambda url, headers: _ok({"game": [{"game_key": "461"}]}), clock=lambda: now["t"])
+    for i in range(12):
+        now["t"] += 1
+        c.game_key(f"g{i}")
+    assert len(c._cache) == 5
+    assert {k[1] for k in c._cache} == {f"game/g{i}" for i in range(7, 12)}     # the newest five
