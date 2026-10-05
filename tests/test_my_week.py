@@ -98,7 +98,11 @@ def test_my_week_is_the_mart(conn, league_id, roster_id):
     for slot, g, m, v, alt, av, entering in exp:
         if abs(v - m) <= 0.011:
             continue                                              # nobody on the bench can replace him: no card
-        expected.append((slot, g, alt if alt is not None and abs((v - av) - m) < 0.011 else entering))
+        # PO (Wave I-I, II-0): the card's alternative is the one the legal re-solve brings in — the direct bench
+        # replacement only when his cost IS the margin (to the cent); else the player who enters through the chain
+        # (Hampton: Tuten slides FLEX → RB2 and Wilson 9.20 fills FLEX, 2.08, not Croskey-Merritt 9.19 straight in, 2.09)
+        direct = alt is not None and abs((v - av) - m) < 0.0051
+        expected.append((slot, g, alt if direct or entering is None else entering))
     expected = expected[:3]
     # a close call reads "**TE: [A] or [B] — a coin flip**" since Wave I-A; a clear one "**TE: start [A] over [B]**"
     cards = [m.value for m in at.markdown if re.match(r"\*\*[^*]+: (start )?\[", m.value)]
