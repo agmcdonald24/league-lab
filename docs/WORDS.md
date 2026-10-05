@@ -264,6 +264,7 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 | the alternatives (`waiver_alternative.words`) | "Yours: … (a waiver claim (rolling waivers): it can be lost to a team ahead of you). Theirs: …" · "first come, first served: he is yours if you add him before anyone else" | a claim presented as certain |
 | the K / DEF guardrail | "A K for a starter (Matthew Stafford): they have a K and the free pool holds one about as good, so a K is not worth a starter to them." | a rule naming a player |
 | the card's two lists | **Why they might consider it** · **Reasons they might refuse** | "they will accept", "they would say yes" |
+| their alternative not priced (Wave I-L, IL-4: `LEAGUE_LAB_FINDER_LAZY_THEIRS`) | "Theirs: their own best waiver move was not compared: the trade does not beat your own best alternative by a point, so no move of theirs changes the answer." (or "… adds +0.6 to their starters over weeks 4–7, under the 1-point bar" / "… is not a plausible offer" / "… is not legal now") | silence, or a 0 shown as their move |
 
 ## The setup flow and the platforms (Wave I-I, II-5)
 

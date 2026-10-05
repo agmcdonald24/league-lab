@@ -8925,3 +8925,193 @@ compare against it)
    spend it); delete is immediate (no audit window); no new database role (the app role writes these eight tables
    in its own transaction); a username's league list is saved by one tap, not automatically; the display names of a
    saved league are per user.
+
+## Wave I-L (Iteration 22)
+
+### IL-4 2026-10-05 — the next memory lever and the Finder's cold cost (branch `dev/IL4` from `main` `93115db`, database `league_lab` read only)
+
+* **Task**: IL-4 of the Wave I-L brief (`scratchpad/waveIL/BRIEF.md`; INF-2's "Next task": slim the Sleeper directory;
+  II-1's "Not done": the Finder's first answer on an on-demand league). Plan sections: DEPLOY § Memory (the directory,
+  the switch). No web, no console page, no dbt.
+* **1. The directory, trimmed at the load** (`src/league_lab/sleeper_client.py`, block `# ---- IL-4`). Every reader of
+  `Sleeper.players()` / `Router.players()` and the fields it reads (grepped; the list is in the module):
+  `anyleague` (league weeks, free agents, rosters, `_sleeper_name`) — full_name, first_name, last_name, position,
+  fantasy_positions, team, status, injury_status; `availability` (the overlay's Sleeper side, `sleeper_code`,
+  `depth_order`, `_fantasy_positions`) — espn_id, gsis_id, injury_status, status, team, full_name, news_updated,
+  injury_body_part, depth_chart_order, fantasy_positions; `research.search_on_demand` — position, names, team;
+  `news._from_sleeper` — espn_id; `decisions` (`units_named`, `directory_row`, `known_name`) — team, names;
+  `espn_leagues` / `yahoo_leagues` (the name index) — names, position, team; `ondemand.unit_card` — MFL's own unit rows
+  only. **`player_ids`, `cards.display_name` and the console's pages (`app/`) do not read it** (they read the
+  database; `app/` imports neither `anyleague` nor the client). Kept: those 13 + `player_id` (one interned string with
+  its key) + `active` = **`DIRECTORY_FIELDS`, 15 of Sleeper's 53**. Also: **nulls left out** (every reader asks
+  `row.get(f)`, which answers None for an absent field as for a null one; a 10-key dict is 272 bytes, a 15-key one
+  464), **text interned** (`sys.intern`: a team, position, status, first name is one string for the directory; Python
+  3.13's interned strings are mortal), **trimmed as parsed** (`json.loads(..., object_hook=_row_hook)`: a 53-field row
+  is trimmed the moment it is built — the parse peaks at 10.7 MB instead of 38), and **one shared copy**:
+  `players()` returns the cached object itself (was `dict(...)`, a 12,200-entry copy per call — `depth_order` made one
+  per QB), a read-only `Directory(dict)` (a mutation raises `TypeError`; `Router.players` already copies before adding
+  MFL / ESPN / Yahoo rows). **Rows are not dropped**: a retired player can sit on a dynasty roster and a league opened
+  on demand is read after the directory, so no row rule is provably safe. **The refresh keeps the shape**: the network
+  read, the fixture read, an injected fetch and the disk copy (`_players_from_disk`; a copy written before IL-4 is
+  trimmed at read) all go through `loads_directory` / `trim_directory`; the disk copy is written trimmed (≈3 MB
+  instead of 16). The ingestion (`ingest/sleeper.py`) has its own HTTP client: `raw.sleeper_player` keeps the full
+  payload (AGENTS rule 6).
+* **2. The Finder's cold cost** (`api/league_lab_api/decisions.py`: the block `# ---- IL-4` after II-1's, and lines
+  marked `# ---- IL-4` in `ii1_card` / `_ii1_card` / `partners()` and at the three `free_agents` calls).
+  (a) **The partners' alternatives, lazily** (`il4_partners_to_compare`, `LEAGUE_LAB_FINDER_LAZY_THEIRS`, default on): a partner's own best waiver move only lowers what a trade is worth to him (`_alt_gain` ≥ 0) and
+  `trades.credible` only falls as `beyond.theirs` falls, so the first pass prices every card with standing pat in the
+  partner's place (`beyond.theirs` = his covered gain, an upper bound); only partners with a card still credible there
+  are compared — and, when nothing turns out credible, every partner with a package that adds ≥ `CREDIBLE_MARGIN` to his
+  starters, so the "No compelling trade found" reason's counts are exact. The other partners' cards say, in the
+  alternatives line, "Theirs: their own best waiver move was not compared: <the card's first reason — under the 1-point
+  bar / does not beat your own best alternative by a point / not a plausible offer / not legal now>, so no move of
+  theirs changes the answer." (`kind: "not_compared"`; no "Their best waiver move …" refusal line on those cards). The
+  calculator (`evaluate`) always compares (the card cache is keyed by the flag). `off` restores II-1's order. (b)
+  **The league's free agents read once** (`il4_free_agents`): `anyleague.free_agents` — the directory minus every
+  roster, mapped through `player_id_map`, the NFL status — does not depend on the team asking, and the trade context
+  and each partner's waiver sweep each read it again; it is now kept 2 minutes in the `decisions` region keyed by who
+  is rostered, the slots, the directory's fetch and its size. With Sleeper's whole directory it was a quarter of a
+  cold Finder (cProfile: 9.8 of 35 s, ten calls).
+* **3. `/api/status` `memory.directory`** = `{loaded, rows, fields, mb, kept}` (`Sleeper.directory_info()`: the copy in
+  memory, nothing read to answer; `mb` in `memo.sizeof`'s unit, as `outside_mb`); `memo.directory_words(m)` is the
+  console's sentence ("Sleeper's player directory: 12,229 players, 15 fields, 8.6 MB (outside the caches' budget).").
+  DEPLOY § Memory: the directory's numbers, the rule for a new field, the switch, `--synthetic-directory`.
+* **4. `scripts/measure_memory.py --synthetic-directory`** (INF-2's runs unchanged): writes a copy of the Sleeper
+  fixtures whose `players_nfl.json` is Sleeper's size and shape — the fixture's 842 rows with every other field added
+  (generated where no reader reads it, null where one does, so the answers stay the fixture's) + generated players to
+  **12,229 rows × 53 fields** (the count, the field list, the null rates and lengths of `raw.sleeper_player`'s
+  payloads of 2026-09-26; no team defenses or units) — **15.8 MB of JSON, 37.7 MB parsed** (the real payloads: 16.0 /
+  36.6); a first step reads the directory alone (`/api/search` on the Test League). `--repo` runs another checkout's
+  server with the same directory (the before column: `git archive 93115db` in the scratchpad, not a worktree).
+* **Interfaces**: `sleeper_client.DIRECTORY_FIELDS`, `Directory`, `trim_row`, `trim_directory`, `loads_directory`,
+  `Sleeper.directory_info()`; `Sleeper.players()` returns the shared `Directory` (read only);
+  `memo.directory_words(m)`; `decisions.IL4_LAZY_ENV = "LEAGUE_LAB_FINDER_LAZY_THEIRS"`, `IL4_NOT_COMPARED`,
+  `il4_lazy_theirs()`, `il4_partners_to_compare(...)`, `il4_sides(...)`, `il4_not_compared(...)`,
+  `il4_not_compared_words(...)`, `il4_free_agents(league, rosters, players, slots)`; `ii1_card(..., compare_theirs=True)`;
+  `/api/status` `memory.directory`; `measure_memory.synthetic_directory(fixture, rows, seed)`, `--synthetic-directory`.
+* **Files**: `src/league_lab/sleeper_client.py`, `src/league_lab/memo.py` (`directory_words`), `api/league_lab_api/
+  decisions.py` (the IL-4 block + marked lines), `api/league_lab_api/main.py` (5 lines in `memory_status`),
+  `scripts/measure_memory.py`, `tests/test_il4.py` (new, 7), `api/tests/test_il4.py` (new, 6), `api/tests/test_ii1.py`
+  (one assertion, `# ---- IL-4`), `docs/DEPLOY.md`, `docs/WORDS.md` (one row under "Credible trades"), `docs/STATUS.md`,
+  `CHANGELOG.md`. Not touched: `web/`, `app/`, `api/Dockerfile`, `render.yaml`, `.github/`,
+  `scripts/smoke.sh`, `scripts/nightly.sh`.
+* **Commands**: `uv run python scripts/measure_memory.py --synthetic-directory --port 8764 [--repo <93115db copy>]`
+  (before / after; `LEAGUE_LAB_FINDER_LAZY_THEIRS=off` for the trim alone); the Finder's latency by
+  `test_decisions.py::test_latency_cold_and_warm`'s method (a fresh process, caches cleared, `/api/waivers` then
+  `/api/trades/partners` on the Test League team 3, each cold then warm; `best_alternative` timed) interleaved main /
+  IL-4 eager / IL-4 lazy, with the fixtures' directory and the synthetic one (`scratchpad/il4/latency_matrix.sh`);
+  tracemalloc on the real 2026-09-26 payloads (read from `raw.sleeper_player`, never written); cProfile of a cold
+  Finder; `uv run ruff check src app tests api`; the suites below. Nothing written to `league_lab`.
+* **Evidence — the directory** (12,229 players):
+
+  | | before (`93115db`) | after (IL-4) |
+  |---|---|---|
+  | `memory.outside_mb.sleeper` (`memo.sizeof`), synthetic | **38.7 MB** | **8.8 MB** (`memory.directory.mb` 8.6, 15 fields) |
+  | Python's own count (`tracemalloc`), synthetic / the real payloads | 37.7 / 36.6 MB | 9.4 / **11.3 MB** |
+  | the parse's peak (`tracemalloc`), real | 37.0 MB | 12.7 MB |
+  | server RSS: started → the directory read (a search, no league) | 155.4 → 196.9 (**+41.5**) | 144.7 → 159.1 (**+14.4**) |
+
+  Under the brief's 12 MB at Sleeper's size on both counts.
+* **Evidence — the four leagues** (`measure_memory.py --synthetic-directory`, the server alone / the PO's tree, MB):
+
+  | step | before (`93115db`) | the trim, the lazy switch off (`a659c4b`) | **IL-4** (`cfd2b17`) |
+  |---|---|---|---|
+  | started (`/api/health`) | 155.4 / 188.9 | 144.6 / 177.7 | 144.7 / 177.4 |
+  | the directory read (a search on demand, no league) | 196.9 / 230.4 | 158.8 / 191.9 | 159.1 / 191.7 |
+  | League of Scrubs (house) | 226.9 / 260.4 | 189.0 / 222.1 | 189.3 / 222.0 |
+  | Forever Unclean Dynasty (house) | 245.4 / 278.9 | 202.2 / 235.3 | 202.0 / 234.7 |
+  | the Test League (on demand) | 267.5 / 301.0 | 226.5 / 259.6 | 225.7 / 258.4 |
+  | MFL 70587 (on demand): **the four leagues** | **281.3 / 314.8** | 247.8 / 280.9 | **247.1 / 279.8** |
+  | Scrubs again (warm) | 283.0 / 316.4 | 251.2 / 284.3 | 247.5 / 280.2 |
+  | five other Scrubs teams | 286.1 / 319.6 | 251.5 / 284.6 | 248.9 / 281.6 |
+  | four player cards | 287.0 / 320.5 | 252.0 / 285.1 | 248.9 / 281.6 |
+  | compare + week odds | 286.1 / 319.6 | 250.4 / 283.5 | 245.4 / 278.1 |
+  | `outside_mb.sleeper` at the end | 38.7 | 8.8 | 8.8 |
+
+  The four leagues: **281 → 247 MB** for the server alone (what Render meters), 315 → 280 for the PO's tree; from
+  the start, +126 → +102 (main's copy started 10 MB higher in this run: the before column is a `git archive` copy with
+  its own fresh venv — the delta is the fair figure). The directory alone: **+41.5 → +14.4 MB**. The lazy Finder moves
+  memory little (the middle column: `a659c4b`, the switch off, before the free-agents memo): `decisions` 35.3 → 34.1 MB.
+  The caches' budget is unchanged (64 MB; 56 MB used at the end; 272 evictions — the four leagues fill it).
+
+* **Evidence — the Finder, cold / warm** (the Test League team 3, `/api/trades/partners` after `/api/waivers`; ms; the
+  machine shared with four other developers' suites, load 10–13 — the runs interleaved so each column saw the same
+  load; "alternatives" = the seconds in `best_alternative`, and whose):
+
+  | the Finder, cold / warm (alternatives) | main `93115db` | IL-4, `LEAGUE_LAB_FINDER_LAZY_THEIRS=off` | **IL-4** (lazy, default) |
+  |---|---|---|---|
+  | the fixtures' directory (842 players), round 1 | 8,728 / 201 (5.7 s, 10 rosters) | 7,820 / 149 (4.9 s, 10) | **6,104 / 171** (3.1 s, 5) |
+  | the fixtures' directory, round 2 | 11,311 / 324 (7.5 s, 10) | 9,295 / 228 (5.8 s, 10) | **8,215 / 214** (3.9 s, 5) |
+  | Sleeper's size (synthetic, 12,229 players), round 1 | 23,534 / 365 (18.6 s, 10) | 11,932 / 263 (7.3 s, 10) | **8,735 / 284** (4.3 s, 5) |
+  | Sleeper's size, round 2 | 25,619 / 212 (20.6 s, 10) | 10,403 / 196 (6.8 s, 10) | **10,133 / 276** (4.9 s, 5) |
+  | `/api/waivers` cold, the same runs (no change expected) | 8.9 / 10.5 / 12.1 / 16.5 s | 7.6 / 9.1 / 12.7 / 12.6 s | 8.3 / 11.0 / 15.2 / 18.0 s |
+
+  The rosters compared lazily: team 3's own + partners 4, 8, 9, 10 of 9 (the other five have no card that could be
+  credible). The middle column has the trim and the free-agents memo; the right adds the lazy partners. The Waivers
+  row is the noise floor of this machine (the same code in the middle and right columns: ±3 s).
+
+  Same verdict, same 3 credible rows in every run. II-1's "~7 s" was the alternatives on a machine at load 20–60; here
+  they were 5.7–7.5 s of a 8.7–11.3 s cold Finder (main) at load ~11, and 3.1–3.9 s (lazy). Warm stays 0.1–0.3 s.
+* **Answers identical** — `api/tests/test_il4.py`: the readers ask for no field outside `DIRECTORY_FIELDS` (a recording
+  directory through My Week, Team, Waivers, the Finder, League, Players, Search and ROS of the Test League with the
+  availability overlay on); `/api/status` `memory.directory`; lazy vs eager on the Test League (team 3: compelling, 3
+  credible) — the order, ranks, tiers, every `credible` flag, verdict, headline, best alternative and every compared
+  card in full identical; not-compared cards identical but for the partner's alternative (`beyond.theirs` ≥ the eager
+  one, the words) and never a card that was credible; a team with nothing credible — the reason identical; the
+  calculator never gets the stub; the free agents read once in a cold Finder (was once per roster) and the answer equal
+  to every reader reading its own. `tests/test_il4.py`: the rows keep the 15 fields with their values, nulls left out;
+  one shared read-only copy, interned text; the parse is idempotent; the disk copy written trimmed and an old full copy
+  trimmed at read; fixture mode and the day's refresh stay trimmed; `directory_info` / `directory_words`; the synthetic
+  directory under 12 MB.
+* **Suites**: (the final code; the machine's two cores shared with four other developers' suites, load 10–15 —
+  **the two full suites did not fit the box**, so the files that touch the change ran in full and the rest as far as
+  the box allowed): `uv run ruff check src app tests api` clean; `copy_standard.py --check` clean. **Root**: the
+  targeted files **153 passed** (`tests/test_il4.py test_memo.py test_espn_ik1.py test_yahoo_ik2.py
+  test_nightly_relations.py test_sleeper_rows.py test_trades.py test_trades_ii1.py`); the full root suite, started last at low priority, ran **181 of 1,263: 180 passed, 1 skipped, 0 failed** when the box closed (it was in `test_kdef.py`).
+  **API**: the 20 files that read the directory, the Finder or the status (`test_il4 f3 h1 i0a ic2 ik1 ik2 ik3 n1
+  inf2 ii1 if2 if1 decisions auth build_context ib2 i0b player research`) **291 passed, 3 failed** (27 min 53 s):
+  `test_ii1.py::test_scrubs_roster_2_finder` — II-1's pin that every alternative is "guaranteed" or "claim"; the lazy
+  stub says "not_compared" (on a card that is never credible); the test accepts it now with an `IL-4` comment
+  (`62373fb`), re-run **passed**; `test_ik3.py::test_real_yahoo_setup_needs_the_connection` and
+  `test_real_my_week_and_screens[yahoo:461.l.4242-3-fixture]` — **the same two fail on `main`'s copy here** (the
+  Yahoo connect flow ends on a web page and this worktree has no `web/dist`: not built, web untouched; the PO's run
+  has it). The other 38 API files (`anyleague` … `v2`, alphabetical): **321 of 448 ran — 314 passed, 7 skipped, 0 failed** — through `test_ii3.py` when the box closed; not reached: the rest of `ii3`, `ii4`, `ii5`, `ik4`, `inf1`, `m3`, `m4`, `m6`, `myweek`, `n2`, `parity`, `static`, `v1`, `v2` (127 tests) — **the PO's integration run is the full count**. `test_u1` / `test_ig2` deselected (the brief). Web untouched: no lint /
+  build / e2e run (the fixture e2e replays recorded answers; it would not see an API change).
+* **What moved**: the directory 38.7 → 8.8 MB (as counted) / 37 → 11 MB (Python's own); the server after the four
+  leagues 281 → 247 MB (server; +126 → +102 from the start); the Finder's first answer on an on-demand league with
+  Sleeper's whole directory 23.5–25.6 s → 8.7–10.1 s cold (the fixtures' directory: 8.7–11.3 → 6.1–8.2 s); warm
+  unchanged (0.2–0.4 s).
+* **Not done / known**: (a) **the live figure is a prediction**: the sandbox has no Sleeper; the synthetic directory
+  matches the real 2026-09-26 payloads within 3 % parsed — the PO reads `memory.directory` and `outside_mb.sleeper`
+  after the deploy (expect ~12,2xx rows, 15 fields, ~9 MB; was 37). (b) **Rows are not trimmed** (the rule above).
+  (c) The not-compared cards show standing pat's 0 in `waiver_alternative.theirs` and the partner's covered gain as
+  `beyond.theirs` (the words say "not compared"; the web shows only the words); `web/src/lib/api.ts`
+  `CardAlternative.availability` is typed `"guaranteed" | "claim"` and now also receives `"not_compared"` — a type
+  only, nothing renders it; widen it with the next web change. (d) `Router.players()` still builds a merged copy per
+  call once an MFL / ESPN / Yahoo league has added rows (IL-2 owns that file this wave); the free-agents memo still
+  hits (it keys on the directory's fetch and size, not the object). (e) Each partner's own waiver sweep
+  (`waivers.sweep_roster`) is still the bulk of a cold Finder: a shared sweep across rosters is the next lever.
+  (f) `test_decisions.py::test_latency_cold_and_warm` (cold < 20 s) failed once in a full run at load 15–20 on the
+  code before the free-agents memo (the same as II-1 saw; `main` measured 18.6 s cold at that load); in the final
+  targeted run (load ~13) it passed.
+* **Next task**: read `/api/status` `memory.directory` / `outside_mb.sleeper` and the RSS on the live server after the
+  deploy; one waiver sweep for every roster of a league (the Finder's partners and the Waivers screen share it).
+* **For the PO**
+  1. **The console's Data Status line** (`app/pages/12_Data_Status.py`, the INF-2 block) — two lines change:
+     `from league_lab.memo import directory_words, status_words  # noqa: E402`
+     `    st.caption("**API memory:** " + (status_words(_mem) + " " + directory_words(_mem) if _mem else f"{_api} did not answer /api/status."))`
+     (it reads: "248 MB of the plan's 512 in use; the caches hold 56 of their 64 MB (decisions 34, league weeks 11, …).
+     Sleeper's player directory: 12,229 players, 15 fields, 8.6 MB (outside the caches' budget).")
+  2. `api/Dockerfile`, `render.yaml`, `.github/workflows`, `scripts/nightly.sh`, `scripts/sync_to_hosted.sh`: **nothing**.
+     `LEAGUE_LAB_FINDER_LAZY_THEIRS` defaults on; to restore Wave I-I's order add `- key: LEAGUE_LAB_FINDER_LAZY_THEIRS`
+     / `value: "off"` under the service's `envVars` (no deploy needed: a Render env change).
+  3. **The live check after the deploy**: `curl -s https://isuckatfantasy.io/api/status -H "Authorization: Bearer
+     <token>" | jq .memory.directory,.memory.outside_mb` → `rows` ≈ 12,200, `fields` 15, `mb` ≈ 9 (was
+     `outside_mb.sleeper` 37); a Finder on an on-demand league (the Test League has no live twin: any Sleeper league by
+     username) answers, and an "Explore alternatives" card may say "their own best waiver move was not compared".
+  4. **Decisions Andrew may want to reverse**: (a) the not-compared cards — an explore card no longer prices the other
+     manager's own best waiver move when it cannot change the answer, and says so (the switch restores it); (b) the
+     directory drops its nulls and is read only — a future reader that writes into it or indexes a Sleeper field with
+     `row["…"]` fails loudly (`TypeError` / `KeyError`) rather than silently; a field a new screen needs goes into
+     `DIRECTORY_FIELDS` (the recording test names it); (c) the free agents are kept 2 minutes per league and roster
+     state (the on-demand memo's TTL — a claim changes the rosters and so the key).

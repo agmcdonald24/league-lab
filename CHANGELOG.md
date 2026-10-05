@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-05 — Wave I-L
+
+- **IL-4 — Sleeper's player directory a quarter of its size; the Trade Finder's first answer faster.** The directory
+  (Sleeper's ~12,200 players × 53 fields, 37 MB in the server live) is trimmed as it is read to the 15 fields the code
+  reads, nulls dropped, text shared, one read-only copy: **38.7 → 8.8 MB** at Sleeper's size (a synthetic directory of
+  that size and shape, `scripts/measure_memory.py --synthetic-directory`); the server after the four leagues **281 →
+  247 MB**. The Finder prices another manager's own best waiver move only when one of his trades can still be credible
+  (`LEAGUE_LAB_FINDER_LAZY_THEIRS`, default on; the other cards say "not compared" and why) and reads a league's free
+  agents once instead of once per roster: a cold Finder on an on-demand league **23.5–25.6 s → 8.7–10.1 s** with the
+  whole directory (8.7–11.3 → 6.1–8.2 s with the fixtures'), the same verdict and credible trades. `/api/status`
+  `memory.directory`. No screen changed but those "Explore alternatives" cards' "Theirs:" line; unverified live until
+  the PO reads `/api/status` after the deploy (`docs/STATUS.md` § IL-4).
+
 ## 2026-10-05 — Wave I-K
 
 - **PO (the merge, 2026-10-05 12:30 ET).** The accounts block in `scripts/sync_to_hosted.sh`; the accounts schema on
