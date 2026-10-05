@@ -414,15 +414,25 @@ def status(response: Response):
 
 
 def memory_status() -> dict:
-    """INF-2 (Wave I-J, the memory diet): {rss_mb, cache_mb, budget_mb, regions: {name: MB}, entries, evictions,
-    malloc_arena_max} — the process's resident memory (what Render meters against the plan's 512 MB) next to what the
+    """INF-2 (Wave I-J, the memory diet): {rss_mb, cache_mb, budget_mb, regions: {name: MB}, entries, evictions, trims,
+    malloc_arena_max, outside_mb} — the process's resident memory (what Render meters against the plan's 512 MB) next to what the
     in-process caches hold in ``league_lab.memo``'s one budget (``LEAGUE_LAB_CACHE_MB``)."""
     import os
     try:
-        return {"rss_mb": memo.rss_mb(), **memo.BUDGET.report(), **memo.relief(),
-                "malloc_arena_max": os.environ.get("MALLOC_ARENA_MAX")}
+        out = {"rss_mb": memo.rss_mb(), **memo.BUDGET.report(), **memo.relief(),
+               "malloc_arena_max": os.environ.get("MALLOC_ARENA_MAX")}
     except Exception as exc:  # noqa: BLE001 - a status line, never a failure
         return {"error": exc.__class__.__name__}
+    # outside the budget: the platform clients' own caches (Sleeper's player directory for the day, MFL's payloads)
+    try:
+        router = A.sleeper()
+        mfl = getattr(getattr(router, "_mfl", None), "client", None) or getattr(router, "_mfl_client", None)
+        out["outside_mb"] = {name: round(memo.sizeof(c._cache) / 1048576, 1)
+                             for name, c in (("sleeper", getattr(router, "sleeper", None)), ("mfl", mfl))
+                             if isinstance(getattr(c, "_cache", None), dict)}
+    except Exception:  # noqa: BLE001
+        out["outside_mb"] = {}
+    return out
 
 
 # ---- G1 research (plan G1, Wave G: league_lab_api/research.py; README § Research (G1)) ---------------------------

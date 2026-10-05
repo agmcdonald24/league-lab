@@ -1220,6 +1220,11 @@ from analytics.mart_player_week_projections
 where season = %s and week between %s and %s and gsis_id is not null
 order by week, gsis_id, league_id
 """
+# ---- INF-2 (Wave I-J): the SQL whose results only go into a Board (``load_board``) or a Window (``load_window``). The
+# API keeps those products (the memory budget's ``boards`` region; the league's rest-of-season table in ``ros``), not
+# the raw results as well: league_lab_api.ondemand registers these with ``db.not_kept``.
+BOARD_INPUT_SQL = (BOARD_SQL, KD_SQL, LINES_SQL, RANGES_SQL, KD_LINES_SQL, KD_RANGES_SQL, STATUS_SQL,
+                   LINES_WINDOW_SQL, RANGES_WINDOW_SQL, KD_LINES_WINDOW_SQL, KD_RANGES_WINDOW_SQL, STATUS_WINDOW_SQL)
 
 
 @dataclass

@@ -2,7 +2,7 @@
 
 import pandas as pd
 import streamlit as st
-from lib.db import query
+from lib.db import query, setting
 from lib.table import detail_level, howto, show
 from lib.ui import setup
 
@@ -20,6 +20,33 @@ if _nightly["stale"]:
     st.warning(f"{_nightly['words']} (The projections were last refit {_nightly['age_hours']:.0f} hours ago; "
                f"this note shows after {_nightly['limit_hours']} hours.)")
 # ---- end IH-1
+
+# ---- INF-2 (Wave I-J): the API's memory in one line (its /api/status `memory` block; docs/DEPLOY.md § Memory). The
+# console does not run the API: LEAGUE_LAB_API_URL says where it is (hosted: https://isuckatfantasy.io), and
+# LEAGUE_LAB_API_TOKEN a token from its /api/login when the password gate is on.
+from league_lab.memo import status_words  # noqa: E402
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _api_memory(url: str, token: str) -> dict | None:
+    import json
+    import urllib.request
+    req = urllib.request.Request(url.rstrip("/") + "/api/status",
+                                 headers={"Authorization": f"Bearer {token}"} if token else {})
+    try:
+        with urllib.request.urlopen(req, timeout=5) as r:
+            return json.loads(r.read()).get("memory")
+    except Exception:  # noqa: BLE001 - a status line, never a failure
+        return None
+
+
+_api = setting("API_URL")
+if _api:
+    _mem = _api_memory(_api, setting("API_TOKEN"))
+    st.caption("**API memory:** " + (status_words(_mem) if _mem else f"{_api} did not answer /api/status."))
+else:
+    st.caption("**API memory:** set LEAGUE_LAB_API_URL (and LEAGUE_LAB_API_TOKEN when the gate is on) to read it here.")
+# ---- end INF-2
 
 st.subheader("Sources")
 howto("One row per source League Lab reads (NFL stats, Sleeper, charting). **Last loaded** says how fresh each one is.",

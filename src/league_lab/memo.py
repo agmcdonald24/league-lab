@@ -35,7 +35,7 @@ from collections.abc import Callable, Hashable
 from typing import Any
 
 ENV = "LEAGUE_LAB_CACHE_MB"
-DEFAULT_MB = 160.0
+DEFAULT_MB = 64.0
 TRIM_EVERY_S = 30.0                     # malloc_trim at most this often
 TRIM_AFTER_BYTES = 8 * 1024 * 1024      # ... and only after at least this much was evicted since the last one
 _MISSING = object()
@@ -153,8 +153,8 @@ def malloc_trim() -> bool:
         return False
 
 
-RELIEVE_EVERY_S = 5.0                  # after a request: malloc_trim at most this often ...
-RELIEVE_GROWTH_MB = 8.0                # ... and only when the RSS grew this much since the last trim
+RELIEVE_EVERY_S = 1.0                  # after a request: malloc_trim at most this often ...
+RELIEVE_GROWTH_MB = 4.0                # ... and only when the RSS grew this much since the last trim
 _relief = {"at": 0.0, "rss": 0.0, "trims": 0, "ms": 0.0}
 _relief_lock = threading.Lock()
 
@@ -365,3 +365,21 @@ BUDGET = Budget()
 def region(name: str, ttl: float = 600.0, max_entries: int | None = None) -> Region:
     """The process-wide budget's region ``name`` (made on first use)."""
     return BUDGET.region(name, ttl, max_entries)
+
+
+PLAN_MB = 512          # Render's Starter plan (docs/DEPLOY.md § Memory): the RSS the host meters against
+
+
+def status_words(m: dict, plan_mb: int = PLAN_MB) -> str:
+    """``/api/status``'s ``memory`` block in one line (the console's Data Status page): "412 MB of the plan's 512 in
+    use; the caches hold 61 of their 160 MB (sql 22, decisions 25, league weeks 19)"."""
+    if not m or m.get("rss_mb") is None:
+        return "The API did not say how much memory it uses."
+    regions = sorted(((v, k) for k, v in (m.get("regions") or {}).items() if v and v >= 1), reverse=True)[:4]
+    parts = ", ".join(f"{k.replace('_', ' ')} {v:.0f}" for v, k in regions)
+    line = f"{m['rss_mb']:.0f} MB of the plan's {plan_mb} in use"
+    if m.get("budget_mb"):
+        line += f"; the caches hold {m.get('cache_mb', 0):.0f} of their {m['budget_mb']:.0f} MB"
+        line += f" ({parts})" if parts else ""
+    return line + "."
+

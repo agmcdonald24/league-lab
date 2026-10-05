@@ -4,6 +4,7 @@ every in-process cache of the API (no database: a fake clock, sizes given)."""
 from __future__ import annotations
 
 import pandas as pd
+
 from league_lab import memo
 
 MB = 1048576
@@ -117,3 +118,11 @@ def test_budget_from_the_environment(monkeypatch):
     assert memo.budget_mb_from_env() == memo.DEFAULT_MB
     monkeypatch.delenv(memo.ENV)
     assert memo.Budget().limit == int(memo.DEFAULT_MB * MB)
+
+
+def test_status_words_say_the_rss_and_the_biggest_regions():
+    m = {"rss_mb": 248.4, "cache_mb": 61.2, "budget_mb": 160.0,
+         "regions": {"sql": 22.1, "decisions": 24.8, "league_weeks": 19.2, "boards": 4.6, "about": 0.0, "ros": 1.2}}
+    assert memo.status_words(m) == ("248 MB of the plan's 512 in use; the caches hold 61 of their 160 MB "
+                                    "(decisions 25, sql 22, league weeks 19, boards 5).")
+    assert memo.status_words({}) == "The API did not say how much memory it uses."

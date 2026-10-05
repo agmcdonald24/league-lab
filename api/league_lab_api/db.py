@@ -27,6 +27,7 @@ import numpy as np
 import pandas as pd
 import psycopg
 from league_lab import memo
+from psycopg.types.numeric import FloatLoader
 from psycopg_pool import ConnectionPool
 
 from .settings import app_dsn
@@ -50,8 +51,15 @@ def pool() -> ConnectionPool:
         if _pool is None:
             _pool = ConnectionPool(app_dsn(), min_size=1, max_size=4, open=True, timeout=30,
                                    kwargs={"autocommit": True}, check=ConnectionPool.check_connection,
-                                   max_idle=240, name="league-lab-api")
+                                   max_idle=240, name="league-lab-api", configure=_numeric_as_float)
         return _pool
+
+
+def _numeric_as_float(conn: psycopg.Connection) -> None:
+    """INF-2: ``numeric`` comes back as a float, parsed from Postgres' text (no Decimal per cell to convert and drop:
+    fewer short-lived objects, less heap left fragmented). The same value ``_run`` made before: ``float(Decimal(t))``
+    and ``float(t)`` are both the correctly rounded double of the text ``t``."""
+    conn.adapters.register_loader("numeric", FloatLoader)
 
 
 def close() -> None:
@@ -119,9 +127,21 @@ def _run(sql: str, params: tuple) -> pd.DataFrame:
     return intern_strings(df)
 
 
+_not_kept: set[str] = set()
+
+
+def not_kept(*sqls: str) -> None:
+    """INF-2: these statements' results are not kept in the ``sql`` region — their caller keeps what it builds from them
+    (``anyleague.BOARD_INPUT_SQL``: a week's Board, a window's rest-of-season table), so keeping the raw rows as well
+    held every board twice."""
+    _not_kept.update(sqls)
+
+
 def query(sql: str, params: tuple = (), *, ttl: float | None = None) -> pd.DataFrame:
-    """Run a read-only query (cached 10 minutes, or ``ttl`` seconds, in the budget's ``sql`` region); returns a fresh
-    (shallow, copy-on-write) copy every time."""
+    """Run a read-only query (cached 10 minutes, or ``ttl`` seconds, in the budget's ``sql`` region — unless
+    ``not_kept``); returns a fresh (shallow, copy-on-write) copy every time."""
+    if sql in _not_kept:
+        return _run(sql, tuple(params))
     key = (sql, tuple(tuple(p) if isinstance(p, list) else p for p in params))
     hit = _cache.get(key)
     if hit is not None:
