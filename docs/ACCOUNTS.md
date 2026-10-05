@@ -1,4 +1,4 @@
-# Accounts and profiles — the design (Wave I-I, II-5, 2026-10-04; design only, nothing is built)
+# Accounts and profiles — the design (Wave I-I, II-5, 2026-10-04) and phase 1 as built (Wave I-K, IK-4: § "Built, phase 1")
 
 *(The fifth review, § 9: "An account should save multiple provider connections, selected leagues/teams, a default
 league, watchlists, and table preferences … Returning users should not repeat onboarding." Acceptance: "one account can
@@ -97,3 +97,81 @@ as the door in front of it until the PO removes the gate.
 
 **Not decided here (the PO / Andrew):** whether accounts ship before the Sleeper licence question (accounts alone are not
 commercial use; charging is); whether the beta password stays once accounts exist; retention for deleted accounts.
+
+## Built, phase 1 (Wave I-K, IK-4, 2026-10-05)
+
+Option A as recommended: an emailed link, in our FastAPI, Resend for mail, the `accounts` schema on Neon. Operating it
+(secrets, Resend, DNS, the nightly's lines, the rollout): `docs/HOSTING.md` § "Accounts". Verified live: **no** — it
+is off on the server until `LEAGUE_LAB_RESEND_API_KEY` is set and the nightly has created the schema.
+
+**What a manager sees.** The ⋯ menu ("Sign in to save your leagues" / "Your account") and one line at the foot of the
+setup screen ("Want your leagues on another phone or computer? Sign in with your email — no password") open `/account`:
+an email field → "Check your email" → the link → "Sign in on this device" (one tap) → the account: the saved leagues
+(platform · season · the team · the scoring line · when it was last read), the default, "Make default", "Remove",
+"Save these N leagues" for the leagues this device knows that the account does not, Sign out, Sign out everywhere,
+Delete my account (a second tap confirms). About's privacy line says what an account keeps. Nothing shows when the
+server has accounts off; guest use is unchanged.
+
+**What follows the account.** The leagues and the team in each (`user_leagues`), the default league (`is_default`;
+the first league saved until another is chosen), the saved Stats views (`preferences`, scope `global`, key
+`stats.views`). On a new device, signing in writes them into the browser's lists (`ll.mflLeagues`, `ll.team.<league>`,
+`ll.league` when the browser had none, `ll.stats.views`): the switcher lists them and `/` opens the default league's
+week with no setup — the review's acceptance ("returning on another device restores saved selections"), checked by
+`web/e2e/ik4` at 375 and 1300. Signed in, a league picked on the setup screen, a new team in a saved league and the
+Stats views also go to the server; the browser's copy stays the cache the screens read.
+
+**Decisions taken while building** (each reversible):
+* **The link carries its token in the URL fragment** (`/account#signin=<token>`), and the page posts it (`POST
+  /api/account/verify`) after one tap — not `GET /api/account/login/<token>`. A path or query string lands in Render's
+  and uvicorn's access logs (the rule: a link is never logged), and a mail scanner that opens links would spend a
+  single-use link before the manager taps it.
+* **The link's host is `LEAGUE_LAB_PUBLIC_URL`**, never the request's `Host` (a forged header would mail a link to
+  someone else's site).
+* **No new role, no new connection string** (the design had `league_lab_accounts`): the app role gets `SELECT /
+  INSERT / UPDATE / DELETE` on the eight tables only and writes in its own read-write transaction (`db.run_rw`, U-1's
+  writer generalised), like `usage.events` and `events.events`.
+* **`ll_session`** = `<session id>.<HMAC-SHA256(LEAGUE_LAB_API_SECRET, id)>`; HttpOnly, SameSite=Lax, Secure on https
+  (always on Render), path `/api/account`, **90 days** fixed from sign-in; a server row per session, so Sign out and
+  Sign out everywhere revoke at once. A forged cookie is refused before any database read.
+* **Email is lower-cased text** (no `citext` extension); a user row is made when a link is first used, not when one is
+  asked for (a typo makes no account); the answer to "email me a link" is the same for any address.
+* **The display fields of a saved league are per user** (`user_leagues.name`, `team_name`, `scoring_label`,
+  `total_rosters`): one account can never change what another sees. The shared `leagues` row holds the key, the
+  provider, the season, the external id and (later) the sync status.
+* **Delete is immediate and total** (every row of the account, its links), no audit window.
+* **Limits**: 5 links an hour per address, 30 per IP address, 90 a day in all (Resend's free tier: 100), counted in
+  the table (a restart forgets nothing); 20 link checks a minute per IP address and 60 changes a minute per session
+  in memory. 50 leagues, 200 preferences of 8 KB, 200 watchlist rows per account.
+* **A username's league list is not pushed by itself** (it is re-read at every load and would put back a league the
+  manager removed): those leagues go in with the one tap "Save these N leagues".
+* **The per-league default view**: the web has no stored per-league view today (a screen remembers nothing per league
+  but the team); the team per league and the default league are what move. `preferences` takes any scope (`global`
+  or a `league_key`) and key, so a per-league default view is one call when the web grows one.
+* **`connections` exists and nothing writes it** (Yahoo's refresh token and an ESPN connection stay in their
+  encrypted cookies this wave, IK-1 / IK-2); the watchlist has its routes and no screen yet.
+
+**The routes** (all behind the beta password; JSON; `no-store`; errors `{error, detail, code}`):
+
+| Route | Answer |
+|---|---|
+| `GET /api/account/status` | `{enabled, reason, signed_in, email, mailer, session_days}` |
+| `POST /api/account/login {email}` | 202 `{ok, sent, minutes}` for any address · 400 `bad_email` · 429 `rate_limited` · 502 `mail_failed` |
+| `POST /api/account/verify {token}` | `{ok, email}` + the cookie · 400 `link_invalid` |
+| `POST /api/account/logout {everywhere}` | `{ok, revoked}`, the cookie cleared |
+| `GET /api/account/me` | `{email, created_at, default_league, leagues: [...], preferences: [...], watchlist: [...]}` · 401 `signed_out` |
+| `PUT /api/account/leagues {leagues: [{league, season, name, team_id, team_name, scoring_label, total_rosters, default}]}` | upsert by `league_key`; `team_id` only changes when sent |
+| `DELETE /api/account/leagues/{league_key}` · `PUT /api/account/default {league, season}` | the default passes to the next league when the default is removed |
+| `PUT / DELETE /api/account/preferences` | `{scope, key, value}` · `?scope=&key=` |
+| `PUT / DELETE /api/account/watchlist` | `{player_key, league}` · `?player_key=&league=` |
+| `DELETE /api/account` | every row of the account gone; the cookie cleared |
+| off | every route but `status`: 404 `accounts_off` |
+
+**League keys** (`provider:season:external_id`, from the app's key): `1389709692405551104` → `sleeper:2026:1389709692405551104`,
+`mfl:70587` → `mfl:2026:70587`, `espn:4242` (or IK-1's `espn:2026:4242`) → `espn:2026:4242`, `yahoo:461.l.4242` →
+`yahoo:2026:461.l.4242`; the season is the one sent, else the current NFL season.
+
+**Next (phase 2)**: Google as a second button (B); `connections` for Yahoo (the refresh token encrypted with a
+`LEAGUE_LAB_CONNECTION_KEY`, so a connection follows the account) and ESPN; the profile's "last sync" from a small
+per-league job; a watchlist button on the player card; the team picker's change on a shared link's league offered,
+not pushed; the beta password's future (once accounts are live, the PO decides whether the gate stays).
+

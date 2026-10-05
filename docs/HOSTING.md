@@ -774,6 +774,97 @@ role still cannot. Re-running deletes nothing more (`api/tests/test_ih1.py` plan
 file twice; by hand on `league_lab_ia3`: `DELETE 2` / `DELETE 2`, then `DELETE 0` / `DELETE 0`). To keep more, change
 the two intervals (one place each).
 
+## Accounts
+
+*(Wave I-K, IK-4; the design: `docs/ACCOUNTS.md`, what was built: its § "Built, phase 1".)* A manager can sign in
+with an emailed link (no password) and keep their leagues, the team in each, a default league and the saved Stats
+views on any device. Optional: guest use (this browser's memory) is unchanged, and the beta password stays in front of
+everything.
+
+**The switch.** `LEAGUE_LAB_ACCOUNTS` = `auto` (the default: nothing to set) — accounts are on when
+`LEAGUE_LAB_RESEND_API_KEY` and `LEAGUE_LAB_API_SECRET` are set **and** the nightly has created the `accounts` schema;
+until all three, `GET /api/account/status` answers `{"enabled": false, "reason": "no_mailer" | "no_secret" |
+"not_ready"}` and the web app shows no sign-in anywhere. `off` turns it off whatever else is set (the routes answer
+404 `accounts_off`; saved rows stay). `on` is for tests and the fixture API only: with no Resend key it uses the stub
+mailer, which keeps the messages in the process's memory.
+
+**Render → Environment** (secrets by exact name):
+
+| Name | Value | Needed |
+|---|---|---|
+| `LEAGUE_LAB_RESEND_API_KEY` | the `re_…` key from Resend (below), "Sending access" to `isuckatfantasy.io` only | yes — it turns accounts on |
+| `LEAGUE_LAB_API_SECRET` | already set (Render generated it): it signs the session cookie too | already there |
+| `LEAGUE_LAB_MAIL_FROM` | `signin@isuckatfantasy.io` (the default; set it only to change the address) | no |
+| `LEAGUE_LAB_PUBLIC_URL` | `https://isuckatfantasy.io` (the default): the address the emailed link opens | no |
+| `LEAGUE_LAB_ACCOUNTS_DAILY_MAX` | `90` (the default): sign-in emails a day in all; Resend's free tier sends 100 | no |
+
+The link's address is never taken from the request: a forged `Host` header would otherwise mail a victim a link to
+someone else's site. Rotating `LEAGUE_LAB_API_SECRET` (DEPLOY.md "Sign everyone out") signs every account out too.
+
+**Resend (Andrew, once, ~15 minutes).** resend.com → sign up (the free plan: "3,000 emails / mo", "100 emails a day",
+resend.com/pricing, read 2026-10-04) → **Domains → Add Domain** → `isuckatfantasy.io`, region **us-east-1** (the
+default; the MX value below names the region you pick). Resend then shows the records to add — copy its values, the
+DKIM key is yours alone. In **Cloudflare → isuckatfantasy.io → DNS → Records → Add record**, one per row (Cloudflare
+appends the domain to the name: type the name exactly as here, "Omit your domain from the record values in Resend
+when you paste", resend.com/docs/knowledge-base/cloudflare; TTL Auto; MX and TXT records are never proxied):
+
+| Type | Name | Content | Priority | What it is |
+|---|---|---|---|---|
+| MX | `send` | `feedback-smtp.us-east-1.amazonses.com` (the value Resend shows) | 10 | bounces and complaints come back to Resend |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` (the value Resend shows) | — | SPF: who may send for `send.isuckatfantasy.io` |
+| TXT | `resend._domainkey` | `p=MIGfMA0…` (the long key Resend shows) | — | DKIM: the signature on every message |
+| TXT | `_dmarc` | `v=DMARC1; p=none; rua=mailto:<an address Andrew reads>;` | — | DMARC, Resend's recommended start (resend.com/docs/dashboard/domains/dmarc) |
+
+None of them touches the site's records (`CNAME @` / `CNAME www` stay as they are: § "The domain"). If `_dmarc`
+already exists, edit it instead of adding a second. Back in Resend → **Verify DNS Records** (minutes; up to a few
+hours). Then **API Keys → Create API Key** → name `isuckatfantasy-render`, permission **Sending access**, domain
+`isuckatfantasy.io` → copy the `re_…` key once into Render's `LEAGUE_LAB_RESEND_API_KEY` → Save Changes (Render
+redeploys). Later, once a few weeks of DMARC reports show only Resend sending: `p=quarantine`, then `p=reject`.
+
+**Where it lives.** Schema `accounts` on the hosted copy, eight tables (`users`, `login_links`, `sessions`,
+`connections`, `leagues`, `user_leagues`, `preferences`, `watchlist`), created by `scripts/hosted_accounts.sql`
+(plain SQL, idempotent; the app role `league_lab_app` gets `SELECT, INSERT, UPDATE, DELETE` on those eight tables and
+nothing else; no new role, no new connection string). The API writes in its own `BEGIN; SET TRANSACTION READ WRITE;
+…; COMMIT` on its own connection (`db.run_rw`); the role stays `default_transaction_read_only = on` and the read pool
+never writes. The nightly never drops the schema (it drops `analytics`, `analytics_seeds` and `ops` only). These are
+**the first rows the nightly cannot rebuild**: Neon's point-in-time restore is their backup — check the plan's restore
+window before inviting people. Retention (each run of the script): links older than a day, sessions ended more than a
+day ago, a shared league row nobody has saved for a week. Size: a few kB per account.
+
+**The nightly's lines** (`scripts/sync_to_hosted.sh`, after the IG-2 block — the PO adds them):
+
+```bash
+# ---- IK-4 (Wave I-K): accounts — docs/HOSTING.md § "Accounts". The `accounts` schema is never dropped above (only
+# analytics, analytics_seeds and ops are); scripts/hosted_accounts.sql creates its eight tables if missing, grants the
+# app role SELECT / INSERT / UPDATE / DELETE on those eight only (its default_transaction_read_only stays on) and prunes
+# spent links and ended sessions. Idempotent, a few ms, its own transaction after IG-2, the same owner connection (no
+# new secret). A failure here never fails the publish: accounts stay off (status: not_ready) until a sync applies it.
+if psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction -f scripts/hosted_accounts.sql; then
+  echo "accounts: $(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select (select count(*) from accounts.users) || ' accounts, ' || (select count(*) from accounts.user_leagues) || ' saved leagues, ' || pg_size_pretty((select sum(pg_total_relation_size(c.oid)) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'accounts' and c.relkind = 'r')::bigint)" 2>/dev/null || echo '?')"
+else
+  echo "WARNING: scripts/hosted_accounts.sql failed: accounts stay off until a sync applies it (the publish itself is fine)" >&2
+fi
+# ---- end IK-4
+```
+
+**Rollout.**
+1. **PO**: merge to `main`; add the lines above to `scripts/sync_to_hosted.sh`. Render deploys; with no Resend key
+   nothing changes for anyone (`/api/account/status` → `enabled: false, reason: "no_mailer"`).
+2. **The next nightly** (or Actions → nightly → Run workflow) creates the schema: the log line
+   `accounts: 0 accounts, 0 saved leagues, 408 kB`.
+3. **Andrew**: Resend + the four DNS records + `LEAGUE_LAB_RESEND_API_KEY` on Render (above).
+4. **Check** (phone): `https://isuckatfantasy.io/api/account/status` (signed in with the beta password) →
+   `"enabled": true, "mailer": "resend"`; the ⋯ menu shows "Sign in to save your leagues"; `/account` → your email →
+   the email arrives (check the spam folder once; Gmail → "Show original" says `SPF: PASS`, `DKIM: PASS`, `DMARC:
+   PASS`) → the link → "Sign in on this device" → "Save these N leagues" → open the same link flow on a second
+   device (a laptop, a private window): the leagues, the teams and the default come back, `/` opens the default
+   league's week with no setup.
+
+**Local development.** On the Mac (the pipeline role owns the database):
+`psql "$(uv run python -c 'from league_lab.config import get_settings; print(get_settings().pipeline_dsn())')" -v ON_ERROR_STOP=1 -f scripts/hosted_accounts.sql`,
+then run the API with `LEAGUE_LAB_ACCOUNTS=on LEAGUE_LAB_API_SECRET=dev` — the stub mailer keeps the link in the
+process (nothing prints it); `api/tests/test_ik4.py` shows how a test reads it (`accounts.STUB.sent`).
+
 ## Licences to keep in mind when sharing
 
 * nflverse data: free to use with attribution (kept on Home → Data & attribution).
