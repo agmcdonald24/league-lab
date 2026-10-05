@@ -61,7 +61,7 @@ TTL_S: dict[str, float] = {
 
 # ---- IL-4 (Wave I-L): the player directory trimmed at the load. Sleeper sends ~53 fields for ~12,200 players (16 MB
 # of JSON, 37 MB in memory once parsed: `/api/status` `memory.outside_mb.sleeper` read 37 live); the code reads these
-# 15. Every reader of `players()` / `Router.players()`, and what it reads (grepped 2026-10-05; `tests/test_il4.py` pins
+# 15. Every reader of `players()` / `Router.players()`, and what it reads (grepped 2026-10-05; `api/tests/test_il4.py` pins
 # the list against a recording directory run through the readers):
 #   anyleague (league weeks, free agents, rosters, `_sleeper_name`): full_name, first_name, last_name, position,
 #     fantasy_positions, team, status, injury_status (`mfl_id` / `unit` live on MFL's own rows, not Sleeper's)

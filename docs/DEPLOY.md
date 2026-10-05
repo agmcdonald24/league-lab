@@ -205,8 +205,8 @@ with `scripts/measure_memory.py --synthetic-directory` (a directory of Sleeper's
 |---|---|---|
 | the directory, as `/api/status` counts it (`outside_mb.sleeper`) | 38.7 MB | 8.8 MB (`memory.directory.mb` 8.6) |
 | the directory, Python's own count (`tracemalloc`; the real 2026-09-26 payloads) | 36.6 MB | 11.3 MB |
-| the server's RSS: the directory read, no league opened | +41.5 MB | +15.3 MB |
-| the server's RSS after the four leagues (house × 2, the Test League, MFL 70587) | 281 MB | 248 MB |
+| the server's RSS: the directory read, no league opened | +41.5 MB | +14.4 MB |
+| the server's RSS after the four leagues (house × 2, the Test League, MFL 70587) | 281 MB (+126 from start) | 247 MB (+102) |
 
 A field a new reader needs goes into `DIRECTORY_FIELDS` (`api/tests/test_il4.py` runs the on-demand screens over a
 directory that records every field asked for and fails on one outside the list). `/api/status` → `memory.directory`
