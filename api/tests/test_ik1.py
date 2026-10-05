@@ -197,3 +197,24 @@ def test_every_screen_answers_for_an_espn_league(client):
                  f"/api/leagues/{KEY}/rosters"):
         r = client.get(path)
         assert r.status_code == 200, (path, r.text[:300])
+
+
+@needs_router
+def test_router_serves_the_espn_league_in_sleeper_shapes():
+    sl = A.sleeper()
+    lg = sl.league(KEY)
+    assert lg["platform"] == "espn" and lg["roster_positions"][:9] == ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF"]
+    rosters = sl.rosters(KEY)
+    assert len(rosters) == 10 and rosters[1]["starters"][6] == "espn:99990002"
+    assert sl.players()["espn:99990002"]["full_name"] == "Practice Squad Callup"   # the unmapped row in the directory
+    assert [t["type"] for t in sl.transactions(KEY, 3)] == ["trade"]
+    assert len(sl.matchups(KEY, 1)) == 10
+
+
+@needs_router
+@needs_db
+def test_league_screen_lists_espn_transactions(client):
+    d = client.get(f"/api/league?league={KEY}&team=2").json()
+    kinds = {(t["transaction_type"], t["action"]) for t in d["transactions"]}
+    assert ("trade", "add") in kinds and ("waiver", "add") in kinds and ("free_agent", "drop") in kinds
+    assert d["standings"][0]["wins"] == 3 and sum(s["wins"] for s in d["standings"]) == 15
