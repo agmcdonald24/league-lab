@@ -70,7 +70,7 @@ from .waivers import waivers_after_project
 
 log = logging.getLogger(__name__)
 
-MODEL_VERSION = "v3.0"
+MODEL_VERSION = "v3.3"   # ---- IL-3: v3.3 = v3.0 + cs1.1 (cold starts, M6) + nt1.0 (the WR new-team scale)
 POSITIONS = ("QB", "RB", "WR", "TE")
 QUANTILES = (0.1, 0.5, 0.9)
 # Plan D6 (Wave D): the 50% range ("most weeks"), fitted and calibrated with the same machinery as the
