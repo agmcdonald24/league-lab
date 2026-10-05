@@ -38,6 +38,7 @@
 
   const st = $derived(account.status);
   const me = $derived(account.me);
+  const nWatch = $derived(new Set((account.me?.watchlist ?? []).map((w) => w.player_key)).size); // ---- IL-5
   const toSave = $derived(unsaved(me));
 
   onMount(() => {
@@ -195,6 +196,27 @@
         {/if}
       </section>
 
+      <!-- ---- IL-5 (Wave I-L): the watchlist and the connections the account keeps (never a token) -->
+      <section class="space-y-2" data-testid="account-more">
+        <h2 class="ll-label">Players and connections</h2>
+        <p class="text-base text-ink-2">
+          <a class="ll-link" href={current ? withContext("/watchlist", { league: current, team: null }) : "/watchlist"} data-testid="account-watchlist"
+            >Your watchlist</a
+          >: {nWatch === 1 ? "1 player" : `${nWatch} players`}.
+        </p>
+        {#each me.connections ?? [] as c (c.provider + c.external_user_id)}
+          <p class="text-base text-ink-2" data-testid="account-connection" data-provider={c.provider} data-status={c.status}>
+            {c.provider === "yahoo" ? "Yahoo" : "ESPN"}: {c.status === "active"
+              ? `connected${c.connected_at ? ` ${c.connected_at.slice(0, 10)}` : ""} — it comes back on any device you sign in on.`
+              : "needs reconnecting (it no longer opens your leagues)."}
+            {#if c.status !== "active"}<a class="ll-link" href={`/leagues?platform=${c.provider}`} data-testid="account-reconnect">Reconnect {c.provider === "yahoo" ? "Yahoo" : "ESPN"}</a>{/if}
+          </p>
+        {:else}
+          <p class="text-sm text-ink-3" data-testid="account-no-connection">No Yahoo or ESPN connection saved. Connect one on the league setup screen while signed in and it follows you.</p>
+        {/each}
+      </section>
+      <!-- ---- end IL-5 -->
+
       <section class="space-y-3 border-t border-line pt-4">
         <div class="flex flex-wrap gap-x-5 gap-y-2 text-base">
           <button class="ll-link min-h-11" disabled={busy} onclick={() => leave(false)} data-testid="signout">Sign out</button>
@@ -204,7 +226,7 @@
           <button class="min-h-11 text-sm text-bad underline" onclick={() => (confirmDelete = true)} data-testid="delete-ask">Delete my account</button>
         {:else}
           <div class="space-y-2 rounded-lg border border-bad p-3" data-testid="delete-confirm">
-            <p class="text-sm">This deletes your email address, your saved leagues and your preferences from {APP_NAME} now. The leagues on this device stay.</p>
+            <p class="text-sm">This deletes your email address, your saved leagues and your preferences from {APP_NAME} now. Your watchlist and any Yahoo or ESPN connection go too. The leagues on this device stay.</p>
             <div class="flex gap-4">
               <button
                 class="rounded-md border border-bad bg-bad-soft px-3 py-2 text-sm font-bold text-bad disabled:opacity-60"
@@ -225,7 +247,8 @@
       </section>
     {/if}
     <p class="text-sm text-ink-3" data-testid="account-privacy">
-      An account keeps your email address, the leagues and teams you save and your saved views — nothing else. Signing in keeps you signed in on that device for {st.session_days}
+      An account keeps your email address, the leagues and teams you save, your saved views and watchlist, and a Yahoo or ESPN connection only if you
+      make one (encrypted) — nothing else. Signing in keeps you signed in on that device for {st.session_days}
       days.
     </p>
   {/if}

@@ -198,3 +198,67 @@ test("accounts off on the server: no menu item, one plain line on /watchlist", a
   await page.goto(`/watchlist?${Q}`);
   await expect(page.getByTestId("watchlist-off")).toHaveText("A watchlist comes with an account, and accounts are not on for this server yet.");
 });
+
+// ---- the providers' switches on the setup screen (recorded from /api/providers by api/tests/test_il5.py)
+async function providers(context: BrowserContext, name: string) {
+  await context.route(/\/api\/providers$/, (route) => route.fulfill({ status: 200, contentType: "application/json", body: readFileSync(join(IL5, name), "utf8") }));
+}
+
+test("ESPN switched off on the server: the setup screen says so in place of the form", async ({ context, page }, info) => {
+  await serveFixtures(context);
+  await providers(context, "providers_espn_off.json");
+  await page.goto("/leagues?platform=espn");
+  await expect(page.getByTestId("espn-off")).toHaveText("ESPN leagues: not available right now. Sleeper and MyFantasyLeague leagues work as before.");
+  await expect(page.getByTestId("espn-form")).toHaveCount(0);
+  await expect(page.getByTestId("platform-note")).not.toContainText("not verified"); // off: the off line is the one said
+  await noSidewaysScroll(page);
+  await page.screenshot({ path: join(SHOTS, `il5-espn-off-${info.project.name}.png`), fullPage: false });
+  await page.getByTestId("platform-yahoo").click();
+  await expect(page.getByTestId("yahoo-setup")).toBeVisible();
+});
+
+test("ESPN and Yahoo verified (LEAGUE_LAB_PROVIDER_VERIFIED): no 'not verified' words anywhere on the setup screen", async ({ context, page }) => {
+  await serveFixtures(context);
+  await providers(context, "providers_verified.json");
+  for (const p of ["espn", "yahoo"]) {
+    await page.goto(`/leagues?platform=${p}`);
+    await expect(page.getByTestId("provider-caps")).toBeVisible();
+    await expect(page.getByTestId("platform-note")).not.toContainText("not verified");
+    await page.getByTestId("provider-caps").locator("summary").click();
+    await expect(page.getByTestId("provider-caps")).not.toContainText("not verified on a live league yet");
+  }
+  await expect(page.getByTestId("espn-form")).toHaveCount(0);
+});
+
+test("the account page lists the connections it keeps and the watchlist", async ({ context, page }) => {
+  const server = new AccountServer();
+  await serveFixtures(context);
+  await server.attach(context);
+  await context.route(/\/api\/account\/me$/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        ...read<object>(IK4, "me.json"),
+        leagues: [],
+        default_league: null,
+        watchlist: server.watch.map((w) => ({ league_key: null, league: null, player_key: w.player_key, added_at: null })),
+        connections: [
+          { provider: "yahoo", external_user_id: "FIXTUREGUID3", connected_at: "2026-10-05T16:00:00+00:00", status: "active", last_sync_at: null },
+          { provider: "espn", external_user_id: "espn-0123456789abcdef", connected_at: "2026-10-01T16:00:00+00:00", status: "expired", last_sync_at: null },
+        ],
+      }),
+    }),
+  );
+  await page.goto("/account");
+  await expect(page.getByTestId("account-watchlist")).toBeVisible();
+  await expect(page.getByTestId("account-more")).toContainText("Your watchlist: 5 players.");
+  await expect(page.locator('[data-testid="account-connection"][data-provider="yahoo"]')).toHaveText(
+    "Yahoo: connected 2026-10-05 — it comes back on any device you sign in on.",
+  );
+  const espn = page.locator('[data-testid="account-connection"][data-provider="espn"]');
+  await expect(espn).toContainText("ESPN: needs reconnecting (it no longer opens your leagues).");
+  await expect(espn.getByTestId("account-reconnect")).toHaveAttribute("href", "/leagues?platform=espn");
+  await expect(page.getByTestId("account-privacy")).toContainText("a Yahoo or ESPN connection only if you make one (encrypted) — nothing else");
+  await noSidewaysScroll(page);
+});

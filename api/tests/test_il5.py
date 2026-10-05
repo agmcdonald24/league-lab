@@ -401,3 +401,22 @@ def test_a_refused_refresh_marks_the_row_expired_and_it_is_not_restored(api):
     assert not any(c.startswith(f"{YC.COOKIE}=") for c in me.headers.get_list("set-cookie"))
     connect_yahoo(api)                                       # connecting again makes it active
     assert rows(addr("expired"))[0][3] == "active"
+
+
+@pytest.mark.parametrize("name,env", [("providers_espn_off.json", {P.ESPN_SWITCH_ENV: "off"}),
+                                      ("providers_verified.json", {P.VERIFIED_ENV: "espn,yahoo"})])
+def test_record_the_providers_web_fixtures(client, monkeypatch, name, env):
+    """/api/providers under each switch (Yahoo in fixture mode: configured) — the e2e's fixtures (IL5_RECORD=1)."""
+    monkeypatch.setenv(Y.FIXTURES_ENV, str(FX / "yahoo"))
+    monkeypatch.delenv(E.PRIVATE_ENV, raising=False)
+    monkeypatch.delenv(P.ESPN_SWITCH_ENV, raising=False)
+    monkeypatch.delenv(P.VERIFIED_ENV, raising=False)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
+    body = client.get("/api/providers").json()
+    status = {p["provider"]: p["status"] for p in body["providers"]}
+    assert status["espn"] == ("off" if P.ESPN_SWITCH_ENV in env else "supported")
+    if os.environ.get("IL5_RECORD") == "1":
+        WEB_FIXTURES.mkdir(parents=True, exist_ok=True)
+        (WEB_FIXTURES / name).write_text(json.dumps(body, indent=1) + "\n")
+    assert json.loads((WEB_FIXTURES / name).read_text()) == body

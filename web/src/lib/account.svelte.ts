@@ -41,6 +41,8 @@ export interface Me {
   leagues: SavedLeague[];
   preferences: { scope: string; key: string; value: unknown; updated_at: string | null }[];
   watchlist: { league_key: string | null; league: string | null; player_key: string; added_at: string | null }[];
+  // ---- IL-5: the Yahoo / ESPN connections the account keeps (never a token)
+  connections?: { provider: "yahoo" | "espn"; external_user_id: string; connected_at: string | null; status: string; last_sync_at: string | null }[];
 }
 
 /** The beta password's 401 (no `code`): the app's password screen, as for any other call. */
