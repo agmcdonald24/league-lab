@@ -8925,3 +8925,165 @@ compare against it)
    spend it); delete is immediate (no audit window); no new database role (the app role writes these eight tables
    in its own transaction); a username's league list is saved by one tap, not automatically; the display names of a
    saved league are per user.
+
+## Wave I-L (Iteration 22)
+
+### IL-1 2026-10-05 — the advanced-data layer: the NGS mart, role changes, opportunity vs production, contingent upside (branch `dev/IL1` from `main` `93115db`, clone `league_lab_il1`)
+
+* **Task / plan**: IL-1 of the Wave I-L brief (`scratchpad/waveIL/BRIEF.md`); the fifth review § 10 ("Audit and expand the
+  advanced-data layer" → the NGS columns; "Analytics worth developing after the inventory" → role changes, opportunity
+  vs production, contingent upside). **Data and labels only**: no model feature, no change to a projection or a range,
+  no live feed, no probability.
+* **Files**: `dbt/models/marts/nfl/mart_player_ngs_week.sql` (new; in `marts/nfl/` beside the other NFL marts, not
+  `marts/` as the brief wrote — same `analytics` schema), `dbt/models/marts/schema.yml` (IL-1 block: its tests),
+  `api/league_lab_api/stats.py` (IL-1 blocks: the NGS merge, the weighted windows, five catalogue entries, presets,
+  samples), `src/league_lab/roles.py` (new), `api/league_lab_api/player.py` (IL-1 block: `role_section` → the card's
+  `sections.role`), `web/src/lib/api.ts` (`SectionKey` + `"role"`), `web/src/lib/card.ts` (`SECTION_ORDER` /
+  `NAMES`: role after projection), `web/src/components/PlayerPane.svelte` (`PANE_ORDER` + role, one line),
+  `web/src/routes/Players.svelte` (IL-1 block in `why()`: the NGS sample on hover), `tests/test_roles.py` (new),
+  `api/tests/test_il1.py` (new), `api/tests/test_ii3.py` (one pin: `ryoe_per_attempt` planned → derived, marked),
+  `api/tests/test_player.py` (one pin: the section keys + `role`, marked), `web/e2e/il1/fixtures.spec.ts` (new),
+  `web/fixtures/il1/*.json` (recorded), `docs/DATA_INVENTORY.md`, `docs/METRICS.md` (§ "Next Gen Stats", § "Role,
+  opportunity vs production, contingent upside"), `dbt/seeds/metric_registry.csv` (+8 rows, the planned
+  `ngs_ryoe_time_to_throw` row replaced).
+* **Interfaces**: `analytics.mart_player_ngs_week` (gsis_id, season, week, is_season_aggregate, player_name,
+  position, team; `has_passing`, `ngs_pass_attempts`, `avg_time_to_throw`, `completion_percentage_above_expectation`,
+  `aggressiveness`, `pass_avg_intended_air_yards`; `has_rushing`, `ngs_rush_attempts`, `rush_yards_over_expected`,
+  `rush_yards_over_expected_per_att`, `rush_efficiency`, `percent_attempts_gte_eight_defenders`; `has_receiving`,
+  `ngs_targets`, `ngs_receptions`, `avg_separation`, `avg_cushion`, `avg_yac_above_expectation`,
+  `percent_share_of_intended_air_yards`). `GET /api/players?window=…` rows gain `time_to_throw`, `ngs_cpoe`,
+  `ryoe_per_attempt`, `separation`, `yac_over_expected` + their samples (`ngs_pass_weeks` / `ngs_pass_attempts`,
+  `ngs_rush_weeks` / `ngs_rush_attempts`, `ngs_rec_weeks` / `ngs_targets` / `ngs_receptions`); the catalogue gains
+  their entries (`source` "NFL Next Gen Stats via nflverse (mart_player_ngs_week)", `coverage` "NGS weeks 1–3").
+  `GET /api/player/{gsis}` → `sections.role` = `{title: "**Role** — …", blocks: [markdown headline, caption (the four
+  metrics' words), markdown opportunity vs production, markdown contingent upside, caption (the rules)]}` (or one
+  `unavailable` block for K / DEF). `league_lab.roles`: `role_change(games, position)`,
+  `opportunity_vs_production(his, group, position, scoring=, team=)`, `pick_teammate(team_rows, gsis, position)`,
+  `contingent_upside(his, mate_games, mate_roster, mate, position, scoring=)` + the SQL the API runs
+  (`PLAYER_SEASON_SQL`, `TEAM_SEASON_SQL`, `PAIR_SQL`, `ROSTER_SQL`).
+* **What it does**
+  1. **The NGS mart**: the three staging tables joined on gsis id + season + week (never by name), regular season only
+     (NGS numbers the playoffs from week 18 or 19, which would collide with week 18), week 0 = NGS's season aggregate in
+     its own flag. **NGS's qualification, read from the data**: every weekly row is a QB with 15+ pass attempts, a
+     running back with 10+ carries (the rushing table has **no QBs**) or a WR / TE with 5+ targets (the receiving table
+     has **no running backs**) — 2025 check: every QB game with 15+ attempts has its NGS row (537 / 537), every 10+-carry
+     RB game (569 / 569), 883 / 884 WR and 325 / 326 TE games with 5+ targets; **0 of 178 RB games with 5+ targets**.
+     So separation / YAC over expected are WR / TE columns (RBs dropped from them), RYOE is RB-only.
+  2. **The Stats columns**: the window is **the mean of NGS's weekly values weighted by the denominator NGS states**
+     (time to throw and NGS CPOE by NGS pass attempts, RYOE by NGS carries, separation by NGS targets, YAC over expected
+     by **NGS receptions** — NGS's YAC is per catch), over the weeks NGS published in the window; never a mean of means
+     (tests against independent SQL). A player with games and no published week: `null` → "—" with "No Next Gen Stats
+     week in this window: NGS publishes a week only when he clears its minimum (15+ pass attempts), so this is unknown,
+     not zero."; the hover on a number gives its sample ("NGS published 2 of his 2 games (15+ pass attempts): 55
+     attempts, weighted by attempts"); the playoffs and RYOE before 2018 mark the column unavailable with the reason.
+     **Ids**: `time_to_throw` and `ryoe_per_attempt` flipped planned → derived; new `ngs_cpoe`, `separation`,
+     `yac_over_expected` — **`cpoe` already existed** (nflfastR's play-by-play CPOE, attempt-weighted), so NGS's is
+     `ngs_cpoe` beside it. **Presets**: QB + time to throw + `cpoe` (the play-by-play one: every passer has it; NGS's in
+     the picker); RB + RYOE per carry; WR / TE + separation + YAC over expected.
+  3. **Role change**: recent = his last 2 games with a snap, earlier = the games before them this season (3+, else "Too
+     early to say: N games with a snap so far …"); carries, targets, red-zone touches per game and snap share; a change
+     is named only when the difference exceeds one s.d. of the earlier games **and** a floor (1.0 carries / targets per
+     game, 0.5 red-zone touches, 5 points of snap share — my addition, written in the docstring: a receiver's 0 → 0.5
+     carries passes a zero spread). Headline: "Targets up: 8.5 per game in his last 2, 5.6 in the 5 before."
+  4. **Opportunity vs production**: his share of his **position group's** opportunities (targets + carries, + pass
+     attempts for a QB; WR + TE together) against his share of the group's fantasy points in **the league's scoring**,
+     over his games on his current team; "production ahead of his volume" (≥ +5 points and ≥ 1.25 ×) / "volume ahead of
+     his production" (≤ −5 points and ≤ 0.8 ×) / "in line"; both shares printed, plus his share of the whole team's
+     targets + carries and his red-zone share (carries for RB / QB, targets for WR / TE) from `fct_team_game`'s totals.
+     **Why the group, not the whole team, for the label** (decided): his share of the team's opportunities against his
+     share of his *position's* points compares two different bases (a WR1 with 22 % of the team's touches and 38 % of the
+     WRs' points would always read "production ahead"); within the group the two shares are like for like.
+  5. **Contingent upside**: the teammate at his position (WR / TE together for a receiver) with the highest opportunity
+     share this season on his team; from 2024, same team: the games he played while the teammate was **on the roster
+     that week** (`player_team_history`: ACT / RES / INA) and did not play — so games before a teammate joined are not
+     "without him". ≥ 2 → "Contingent upside: in the 5 games without Tee Higgins (2024), 10.0 targets and 17.7 points per
+     game, against 11.0 and 19.1 in the 21 games with him (2024–25). Same team only, 2024 on, League of Scrubs scoring;
+     games Tee Higgins missed while on the roster. What happened, not a forecast: …" (Ja'Marr Chase, 2025 through week
+     10, on the clone); fewer → "no games without X to go on". No probability.
+  6. **Where it shows**: the drawer's Overview, right after the projection section (and its "why" sentence above it);
+     the full player page, first in the right column (after the projection box that holds "Why this number"). The web
+     does **not** render sections generically (`SECTION_ORDER` / `PANE_ORDER` are fixed lists) — the key was added to
+     both. The console's page draws its five sections (test_parity compares those five; unchanged). Players · Stats:
+     the five columns in the picker, presets as above.
+* **Commands**: `uv run league-lab dbt build --select mart_player_ngs_week` (clone); `uv run pytest -q tests`;
+  `cd api && PYTHONPATH=. uv run pytest -q --deselect tests/test_u1.py --deselect tests/test_ig2.py`; `uv run ruff check
+  src app tests api`; `cd web && npm run lint && npm run build`; `FIXTURES_PORT=8641 npx playwright test --config
+  playwright.fixtures.config.ts`; `uv run python scripts/copy_standard.py --check` (exit 0);
+  `cd api && IL1_RECORD=1 PYTHONPATH=. uv run pytest -q tests/test_il1.py -k record` (the e2e answers).
+* **Evidence**
+  * dbt on the clone: **PASS=12 WARN=1 ERROR=0** (13: the model + unique gsis × season × week, not-null keys, accepted
+    weeks 0–18, a relationship to `dim_player`, the per-family not-nulls, two expressions). The WARN is the relationship
+    to `player_id_map` (severity warn, decided): **30 rows, 2 players** — Ronald Jones `00-0034816` (2018–22; a
+    quarantined ambiguous pair) and Jack Strand `00-0041194` (2026 QB, not mapped yet). The mart keeps them (NFL-wide
+    screens key on gsis id).
+  * Rows per season (`analytics.mart_player_ngs_week`): 2016 2,642 · 2017 2,489 · 2018 2,489 · 2019 2,493 · 2020 2,578
+    · 2021 2,679 · 2022 2,563 · 2023 2,604 · 2024 2,550 · 2025 2,532 · 2026 450 (165 season-aggregate + 285 weekly:
+    weeks 1–2 + week 3's Thursday) — **26,069**, 3.2 MB. RYOE is null for every 2016–17 week (NGS starts it in 2018);
+    YAC over expected null on 54 of 13,001 receiving weeks.
+  * **The new columns** (the clone; 2026 = weeks 1–2 complete + week 3's Thursday game, GB–ATL):
+
+    | Column | Source | History | 2026 coverage | NGS's qualification | Qualified, week 3 of 2026 | Qualified / played, weeks 1–3 |
+    |---|---|---|---|---|---|---|
+    | `time_to_throw` | NGS passing → `mart_player_ngs_week` | 2016 → | weeks 1–3 (68 player-weeks) | QB, 15+ pass attempts in the week | QB 2 of 2 | QB 36 of 44 |
+    | `ngs_cpoe` | NGS passing | 2016 → | weeks 1–3 (68) | QB, 15+ pass attempts | QB 2 of 2 | QB 36 of 44 |
+    | `ryoe_per_attempt` | NGS rushing | **2018 →** | weeks 1–3 (69) | RB, 10+ carries | RB 2 of 5 | RB 42 of 99 |
+    | `separation` | NGS receiving | 2016 → | weeks 1–3 (148) | WR / TE, 5+ targets | WR 4 of 10, TE 1 of 5 | WR 77 of 162, TE 25 of 91 |
+    | `yac_over_expected` | NGS receiving | 2016 → | weeks 1–3 (148) | WR / TE, 5+ targets | WR 4 of 10, TE 1 of 5 | WR 77 of 162, TE 25 of 91 |
+  * `tests/test_roles.py` **12 passed** (a change past the spread; one inside it; the floor; "not enough games"; a game
+    without a snap; the three labels; two games minimum; the teammate pick; contingent with 2 games, with 1, a game
+    before the teammate joined, a thin comparison). `api/tests/test_il1.py` **10 passed, 1 skipped** (the recorder):
+    the Role block on three cards with no "regression / unsustainable / due for / probability" and "per game"; a kicker's
+    reason; 2025 through week 10 for the top WR names or holds every metric with both numbers; the five columns derived
+    with "never a mean of means" and "unknown, not zero"; time to throw and NGS CPOE equal the attempt-weighted SQL for
+    every qualified 2026 QB (36) and 8 unqualified QBs with games are null with 0 NGS weeks; a week-2 window reads week
+    2 only; separation (by targets) and YACOE (by receptions) equal the SQL for 2025 WRs; the playoffs and RYOE in 2017
+    say why. `e2e/il1` **6 passed** (3 × phone 375 / desktop 1300: the drawer's Role block right after the projection,
+    the full page's, the QB preset with TTT, a qualified QB's number = the recording, an unqualified one "—" with the
+    reason).
+  * The Role block's cost (the clone, the suites running beside it): 0.4–0.8 s for a player's first card, 35–140 ms
+    warm (the SQL cache).
+  * **Whole suites** (the clone, the pinned clock; a 2-CPU machine at load 12–18 with four other developers' suites):
+    root **1,271 passed, 3 skipped, 3 deselected** + the 3 deselected run on their own: **3 passed** (`test_kdef.py`'s
+    two model fits and its weather hook, ~17 min under that load — a first whole run sat on them for 30 min, so I
+    deselected them and ran them apart) = **1,274 passed** (this morning 1,263 + `test_roles` 12, one skip more);
+    API (`test_u1` / `test_ig2` deselected) **732 passed, 10 skipped, 0 failed** — in two runs: tests 1–336 **333
+    passed, 2 skipped, 1 failed** (`test_decisions.py::test_latency_cold_and_warm`, a load-bound timing on routes this
+    package does not touch — **passed alone**: waivers 5.5 s cold / 0.1 s warm, partners 6.0 / 0.1) — my own 50-minute
+    `timeout` cut that run at test 354, so `test_if2.py` → the end (406 tests) ran again: **398 passed, 8 skipped**
+    (this morning 722 + `test_il1` 10, one skip more: the recorder); ruff clean; `npm run lint` 0 errors / 0 warnings
+    (167 files); build ok; fixtures e2e **372 passed, 2 skipped** (366 + `e2e/il1` 6); `copy_standard.py --check`
+    exit 0.
+* **What moved**: no projection, no range, no model number. The Stats presets gained columns (QB +2, RB +1, WR / TE +2);
+  the card gained a sixth section; `/api/players`' catalogue has 51 columns (was 48).
+* **Not done**: the Role block reads the current season only for the role change (earlier = this season's games: 2026
+  has 3 games at most on the clone, so every player says "Too early to say" until week 5's games are in); NGS's
+  `aggressiveness`, cushion, intended-air-yard share and 8+ in the box are in the mart but not Stats columns (no brief
+  ask); the role numbers are not in the Stats table (a "role change" column would need the same rule per row);
+  `scripts/hosted_relations.py` now lists `analytics.player_team_history` (the contingent scenario's roster check: 50 MB
+  in full — see For the PO); no console line.
+* **Next**: once the hosted copy has a week-5 build, check a house league's Role block for a player whose role moved
+  (the 2025 examples above say what it looks like); a "Role" filter on Stats (players whose targets or carries changed
+  past their spread) reuses `role_change` per row.
+
+**For the PO**
+1. **`scripts/sync_to_hosted.sh`** — the Role block's contingent scenario reads `analytics.player_team_history`
+   (50 MB in full, 474,173 rows; it was not published before). Window it with the other per-game tables — line 135,
+   append ` player_team_history` to `SLIM_TABLES`:
+   `SLIM_TABLES="fct_player_game fct_player_game_league mart_player_week_features mart_player_week_rankings mart_player_context mart_player_recent_form mart_player_expected_points mart_player_trends mart_player_season mart_player_season_team mart_receiver_vs_cb player_team_history"`
+   (≈ 14 MB for 2024–2026; the scenario reads 2024 on). Without the edit it is published in full (+50 MB of the 480 MB
+   budget). `analytics.mart_player_ngs_week` (3.2 MB) needs nothing: the sync derives it from `stats.py`.
+2. **The nightly**: nothing to add — its `dbt build` (no selector, `scripts/nightly.sh` line 484) builds
+   `mart_player_ngs_week`, and its live nflverse step (`ingest nfl --seasons $SEASON`, every dataset including the three
+   NGS files) refreshes the staging. `dbt seed --select metric_registry` for the 8 rows (the nightly's build seeds).
+   Until the first nightly after the deploy, the hosted Stats show the NGS columns unavailable with "Next Gen Stats
+   arrive with the nightly update; they are not on this copy yet." (`missing_relations`), never an error.
+3. **Merge**: `stats.py` (IL-1 blocks; II-3's code untouched), `player.py` (one line before the return + the
+   `sections` dict line + a block at the end), `Players.svelte` (one block in `why()`), `PlayerPane.svelte` (one line),
+   `card.ts` (the order + names), `api.ts` (one type line), `schema.yml` (one block after `mart_player_season_team`).
+   `test_player.py` / `test_ii3.py` pins changed on purpose (marked).
+4. **Decisions Andrew may reverse**: the QB preset shows the play-by-play CPOE, not NGS's (NGS's is in the picker);
+   opportunity vs production labels against the position group's shares (the team-wide share is printed beside it);
+   the change floor (1.0 per game / 0.5 red-zone / 5 points of snap share) on top of the one-s.d. rule; "games without
+   X" counts games X was on the roster (active, reserve, inactive) and did not play — a healthy scratch counts; the
+   `player_id_map` relationship is a warning, not an error (2 players); RBs get no separation / YAC over expected
+   (NGS does not publish them).

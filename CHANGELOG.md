@@ -2,6 +2,21 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-05 — Wave I-L
+
+- **IL-1 — the advanced-data layer (the fifth review § 10).** `analytics.mart_player_ngs_week` (NFL Next Gen Stats per
+  gsis id × season × regular-season week, week 0 = NGS's season aggregate; 26,069 rows 2016 → 2026 week 3; dbt PASS 12 /
+  WARN 1: two NGS players not in `player_id_map`). Players · Stats gains **time to throw**, **NGS CPOE**, **RYOE per
+  carry** (2018 →), **separation** and **YAC over expected** (WR / TE: NGS publishes no RBs) — each window the mean of
+  NGS's weekly values weighted by NGS's own denominator, never a mean of means; "—" with NGS's qualification as the
+  reason (QB 15+ attempts, RB 10+ carries, WR / TE 5+ targets), never 0; presets QB + TTT + CPOE, RB + RYOE, WR / TE +
+  separation + YACOE. The drawer's **Role** block (`league_lab.roles`): his last 2 games against his earlier ones (a
+  change named only past one s.d. of the earlier games and a floor; else "steady" / "too early to say"), his share of
+  his position group's opportunities against its points in the league's scoring ("production ahead of his volume" /
+  "volume ahead of his production" / "in line"), and the games a positional teammate missed while on the roster (2024
+  on, same team, 2+ games or "no games without X to go on") — words about the past, no probability, no model change.
+  For the PO: `player_team_history` into `SLIM_TABLES` (sync); nothing for the nightly.
+
 ## 2026-10-05 — Wave I-K
 
 - **PO (the merge, 2026-10-05 12:30 ET).** The accounts block in `scripts/sync_to_hosted.sh`; the accounts schema on
