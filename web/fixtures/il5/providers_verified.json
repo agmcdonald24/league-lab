@@ -88,8 +88,8 @@
     },
     "matchups": {
      "label": "Matchups",
-     "status": "partial",
-     "words": "the schedule and each week's opponent; the week's live points are not read",
+     "status": "yes",
+     "words": "the schedule, each week's opponent and every played week's points; this week's live points from MFL's live scoring (a game in progress counts as its full range)",
      "unavailable": null
     },
     "players": {
@@ -101,14 +101,14 @@
     "waivers": {
      "label": "Waivers",
      "status": "partial",
-     "words": "free agents are the players no team rosters; MFL's waiver type is read, the claim time is not shared",
+     "words": "free agents are the players no team rosters; MFL's waiver type, waiver order and blind-bid balances are read; MFL does not share the claim time",
      "unavailable": null
     },
     "transactions": {
      "label": "Transactions",
-     "status": "no",
-     "words": "MFL's transactions are not read yet",
-     "unavailable": "Transactions: not available for MFL leagues yet"
+     "status": "yes",
+     "words": "adds, drops, trades and waiver claims from MFL's transactions export \u2014 as built, not verified on a live league yet",
+     "unavailable": null
     },
     "team_assets": {
      "label": "Team assets",
