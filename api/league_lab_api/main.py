@@ -655,6 +655,16 @@ def league_week_odds(league: str, response: Response, source: str | None = None)
 # ---- end IH-3
 
 
+# ---- IK-1 (Wave I-K): a private ESPN league read with the manager's own cookies — off unless LEAGUE_LAB_ESPN_PRIVATE=on
+# (espn_connect: POST /api/espn/connect | disconnect, GET /api/espn/status; the middleware puts this request's ll_espn
+# cookie in espn_client.AUTH for this request only; nothing is stored or logged)
+from . import espn_connect  # noqa: E402
+
+app.middleware("http")(espn_connect.auth_middleware)
+app.include_router(espn_connect.router, dependencies=[Depends(require_auth)])
+# ---- end IK-1
+
+
 # ---------------------------------------------------------------- the web app
 ASSET_CACHE = "public, max-age=31536000, immutable"     # vite's hashed file names
 SHELL_CACHE = "no-cache"                                # index.html, sw.js, manifest: revalidate every load

@@ -777,8 +777,9 @@ class ESPN:
                 a["readers"].add(dg)
 
     def require_access(self, league_id: str, season: int | None = None) -> None:
-        """Raise ``LeaguePrivate`` when this league is known to be private and this request's cookies are not ones
-        that read it (the memo caches above this client key by league only: IK-3 calls this first)."""
+        """Raise ``LeaguePrivate`` when this league is known to be private and this request may not see it (the memo
+        caches above this client key by league only: IK-3 calls this first). No cookies: refused. Cookies that have
+        not read it yet: one read of the settings with them decides (ESPN answers or says 401)."""
         lid, season = check_league(league_id), self.season_of(season)
         with self._lock:
             a = self.access.get((lid, season))
@@ -786,8 +787,10 @@ class ESPN:
                 return
             readers = set(a.get("readers") or ())
         dg = digest(current_auth())
-        if dg is None or dg not in readers:
-            raise LeaguePrivate(lid, with_cookies=dg is not None)
+        if dg is None:
+            raise LeaguePrivate(lid)
+        if dg not in readers:
+            self.settings(lid, season)                 # with this request's cookies: 401 -> LeaguePrivate
 
     def fetched_at(self, kind: str, league_id: str, season: int | None = None) -> float | None:
         with self._lock:
