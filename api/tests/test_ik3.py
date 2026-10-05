@@ -131,10 +131,10 @@ def test_espn_and_yahoo_capabilities_as_built_unverified():
     assert "leagueId=" in P.capabilities("espn")["connect"]["example"]
     assert "/f1/" in P.capabilities("yahoo")["connect"]["example"]
     assert "Unofficial" in P.capabilities("espn")["note"]
-    # Sleeper / MFL carry no unverified words — ---- IL-2: except MFL's transactions (built on a synthetic fixture from
-    # MFL's documented shape; the PO drops the tail after checking mfl:70587 live)
+    # Sleeper / MFL carry no unverified words (---- IL-2: MFL's transactions did until the PO checked mfl:70587 and
+    # mfl:21861 live, 2026-10-05)
     assert [(p, f) for p in ("sleeper", "mfl") for f, v in P.capabilities(p)["features"].items()
-            if P.UNVERIFIED in v["words"]] == [("mfl", "transactions")]
+            if P.UNVERIFIED in v["words"]] == []
 
 
 def test_providers_route_flags(client, monkeypatch):

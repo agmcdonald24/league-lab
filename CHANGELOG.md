@@ -4,6 +4,17 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-05 — Wave I-L
 
+- **PO, after the deploy — MyFantasyLeague's moves verified live; the weekend's moves were missing.** Checked
+  `mfl:70587` and `mfl:21861` on the live app against MFL's own transactions export: every listed move matched (time,
+  team, adds, drops, blind bids), but MFL files a move made once a week's games have begun under the *next* week, so
+  the newest moves — dad's two of the weekend — were not listed until MFL's week turned. `MFLLeagues.transactions`
+  reads the next week's file with MFL's current week (listed under the week in progress; a later round is empty, so
+  nothing shows twice). A dropped team unit on no roster was named by its id (`mfl:0667`) on the first read after a
+  start: the moves are read before the names now (`decisions.moved_directory`). MFL's transactions row loses "as
+  built, not verified on a live league yet" (`platforms._CAPS`, the pins in `test_ii5` / `test_ik3`, PROVIDERS, the
+  il5 / il2 recordings). No trade has been seen on a live MFL league yet (`docs/STATUS.md` § "PO — MFL's transactions
+  verified live").
+
 - **IL-4 — Sleeper's player directory a quarter of its size; the Trade Finder's first answer faster.** The directory
   (Sleeper's ~12,200 players × 53 fields, 37 MB in the server live) is trimmed as it is read to the 15 fields the code
   reads, nulls dropped, text shared, one read-only copy: **38.7 → 8.8 MB** at Sleeper's size (a synthetic directory of

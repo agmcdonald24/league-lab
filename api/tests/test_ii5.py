@@ -44,10 +44,10 @@ def test_sleeper_and_mfl_as_built():
     assert s["connect"]["kind"] == "username" and m["connect"]["kind"] == "league_link"
     assert {f for f, v in s["features"].items() if v["status"] == "no"} == set()
     # ---- IL-2 (Wave I-L): MFL's transactions and live points are read now (api/tests/test_il2.py); the transactions
-    # row says it is not verified on a live league yet (a synthetic fixture from MFL's documented shape)
+    # row was checked on live leagues 2026-10-05 (mfl:70587, mfl:21861 — docs/PROVIDERS.md), so the "as built" tail is gone
     assert m["features"]["transactions"]["status"] == "yes"
     assert P.unavailable("mfl", "transactions") is None and m["features"]["transactions"]["unavailable"] is None
-    assert m["features"]["transactions"]["words"].endswith(P.UNVERIFIED)
+    assert P.UNVERIFIED not in m["features"]["transactions"]["words"]
     assert m["features"]["matchups"]["status"] == "yes" and "live points" in m["features"]["matchups"]["words"]
     assert m["features"]["team_assets"]["status"] == "partial"       # TMQB / TMPK priced; picks / budgets not read
     assert all(P.unavailable("sleeper", f) is None for f in P.FEATURES)

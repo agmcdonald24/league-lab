@@ -9012,6 +9012,80 @@ compare against it)
   saying a line was scaled.
 
 
+### PO — MFL's transactions verified live, two fixes (2026-10-05, 15:00–15:40 ET; branch `po/mfl-verified` from `main` `e4d2fa8`)
+
+* **Task**: the Wave I-L PO list's last line — check `mfl:70587` "Latest moves" against MFL's own report, then drop the
+  "as built, not verified" tail (`platforms._CAPS`, the pins, PROVIDERS) and fix the `mfl:<id>` name of a dropped
+  player. Plan sections: PROVIDERS § MyFantasyLeague, WORDS § "MyFantasyLeague, complete", MFL_TERMS. A new session:
+  the sandbox was rebuilt from the Mac (the repo by bundle; the database from the Mac's own 08:25 ET backup,
+  `backups/league_lab_20261005_082539.dump` — `pg_restore` 17 built from source, the box has 16 — then `db migrate`,
+  `dbt seed --select metric_registry`, `dbt build --select mart_player_ngs_week`; 10 minutes, not the nflverse mirror's
+  hours. **That database holds 2026 through week 4**, the old sandbox's held weeks 1–3: see "Checks").
+* **The live check (the browser pane, 15:05–15:10 ET; the app on `league-lab.onrender.com` `e4d2fa8`, MFL's
+  `TYPE=transactions` export)**. `mfl:70587`: the app listed 10 moves (20 rows); every one is MFL's — the same
+  timestamps, franchises, adds and drops, weeks 2–4. **MFL had 12.** The two missing were the newest, both dad's:
+  Big Mac Attack, Sat 2026-10-03 16:13 UTC (add Jordan Addison; drop Croskey-Merritt, Sadiq) and Knight Train, Sun
+  2026-10-04 16:09 UTC (add Emanuel Wilson; drop Jadarian Price). **Cause: MFL files a move made once a week's games
+  have begun under the NEXT week** — `W=5` held both while MFL's own week (rosters, live scoring) was 4; the app read
+  weeks 1–4. The same on `mfl:21861` (a blind-bid league: 61 rows at MFL; the app's newest was Thu 2026-10-01 14:41
+  UTC, MFL's `W=5` held Fri 10-02 and Sun 10-04). The rule fits every row of both leagues: Tue–Thu before the first
+  kickoff → that week's file; after it → the next week's. On `mfl:21861` the blind bids read right (`"17499,|3|17082,"`
+  = add | bid | drop: $100, $74, $3 as MFL shows them); rows with no franchise (`LOCK_ALL_PLAYERS`,
+  `BBID_AUTO_PROCESS_WAIVERS`) are left out, as built. **No trade in either league** — the trade rows still rest on
+  MFL's documented shape. The dropped unit: MFL's week-3 swap `0677,|0667,` (Madeyes Revenge: Carolina's QBs for the
+  Giants') read "New York Giants QB" at 15:05 ET — and `mfl:0667` at 14:50 ET: the id on the first read after the
+  deploy, the name on every read after.
+* **Fix 1 — the next week's file** (`src/league_lab/platforms.py` `MFLLeagues.transactions`): for MFL's current week
+  the adapter reads `W` and `W + 1` and lists both under the week in progress (`leg` = the round asked for, so
+  League's "Week 4 · Oct 4" and Waivers' "Recently added … weeks 3–4" hold them with no change to either screen); a
+  round past MFL's current week answers `[]` (the caller's clock turns at the last kickoff, MFL's after the last
+  game: Monday night to Tuesday the caller asks one round more — nothing is listed twice); the next file not
+  answering leaves the week's own moves. One more MFL call per 10 minutes per league (the existing cache). **A move's
+  week label changes once**: "Week 4" while week 4 is in progress, "Week 5" (MFL's filing) after MFL's week turns —
+  the date beside it does not. A label that never changes needs the NFL schedule in the adapter (the week in progress
+  at the move's timestamp); not done.
+* **Fix 2 — the name** (`api/league_lab_api/decisions.py` `moved_directory`, `od_transactions`, `recent_adds`): the
+  League route read the player directory, then the moves; the adapter adds a moved player who is on no roster (a
+  dropped team unit, a player with no Sleeper id) to its rows *while* it translates the moves, so the first read
+  after a start named him by id. `od_transactions` reads the moves first and re-reads the directory when a moved id
+  is not in it (the same cached object for a Sleeper league); `recent_adds` reads the directory after the moves. Not
+  `MFL.players([ids])` (the handoff's guess): the adapter already asks MFL for them — the row arrived after the
+  snapshot. ESPN and Yahoo adapters keep their extra rows the same way and get the same fix.
+* **The flip**: `platforms._CAPS["mfl"]["features"]["transactions"]` words without the tail; `test_ii5` (`UNVERIFIED
+  not in`), `test_ik3` (`== []`); PROVIDERS' MFL row (what was checked, and that no trade was); `web/fixtures/il5/
+  providers_*.json` re-recorded (`IL5_RECORD=1 … test_il5 -k record_the_providers`), the two lines of
+  `web/fixtures/il2/api_il2.json` edited in place (a re-record on this database would rewrite every answer in it).
+* **Tests** (`api/tests/test_il2.py`, the PO block; MFL's own rows of 2026-10-05 in a copy of the fixtures —
+  `70587/transactions_5.json`: the two weekend moves and the unit swap): the current week lists the next file under
+  week 4, rounds 5–6 are empty, no id twice; the next file failing keeps the week's own move; the dropped Giants QB
+  unit is named on the first read with a directory read before the moves; "Recently added" counts the weekend's adds
+  (Emanuel Wilson — Knight Train (you), Jordan Addison — Big Mac Attack).
+* **Files**: `src/league_lab/platforms.py`, `api/league_lab_api/decisions.py`, `api/tests/test_il2.py`,
+  `test_ii5.py`, `test_ik3.py`, `web/fixtures/il5/providers_espn_off.json`, `providers_verified.json`,
+  `web/fixtures/il2/api_il2.json`, `docs/PROVIDERS.md`, `MFL_TERMS.md`, `WORDS.md`, `HANDOFF.md`, `STATUS.md`,
+  `CHANGELOG.md`, `app/whats_new.md`. No schema, no mart, no partition touched.
+* **Checks**: on this session's database — the Mac's 2026-10-05 backup, **2026 through week 4; the suites pin Saturday
+  2026-10-03**, so the tests that read the week's state fail on it before and after the change. API **696 passed /
+  88 failed** / 13 skipped (`e4d2fa8` on the same database: 688 / 90 / 15; each of the 88 re-run on `e4d2fa8`: 88 of
+  88 fail there too; the two that differ are `test_ik3`'s Yahoo pair, which pass or fail by order on unchanged code;
+  + the 4 new tests). Root **1,314 passed / 4 failed** / 3 skipped (the same four on `e4d2fa8`: `test_m4` × 1,
+  `test_my_week` × 2, `test_projections_ev` × 1). Ruff clean; `copy_standard --check` clean; `npm run lint` 0 / 0
+  (169 files); build ok; fixtures e2e **392 passed** / 2 skipped. QA on the fixture API (:8744, the pinned clock,
+  MFL's rows of the weekend in a copy of the fixtures) at 375 and 1300: League "Latest moves" leads with "Knight Train
+  · Week 4 · Oct 4" (add Emanuel Wilson, drop Jadarian Price) and "Big Mac Attack · Week 4 · Oct 3"; the unit swap
+  reads "Carolina Panthers QB" / "New York Giants QB" on the first read after the start; Waivers "Recently added":
+  "Emanuel Wilson · RB — Knight Train (you) · week 4"; no console errors but the blocked headshot host. **Not a green
+  suite on this database**: one at the suites' pinned week (the Mac's 2026-10-03 backup, then `dbt build` + `project`
+  at HEAD) is the rebuild for the next wave that needs the whole set green.
+* **Verified live after the deploy**: pending Andrew's push — the PO watches the `image` run and Render, then reads `mfl:70587`
+  League and Waivers against MFL's export again (the Oct 3 and Oct 4 moves listed; `/api/providers` MFL transactions
+  without the tail). The result is in the project handoff (`claude/league-lab-handoff-2026-10-05b.md`) and the next
+  commit's STATUS line.
+* **Not done / next**: a trade on a live MFL league (none exists to check); the week label that never changes (above);
+  the first nightly after Wave I-L (Tue 2026-10-06 07:37 ET: the run green, `/api/status` `odds_grades` a row, Stats'
+  NGS columns filled) — a check-in is scheduled for 09:00 ET.
+
+
 ### IL-4 2026-10-05 — the next memory lever and the Finder's cold cost (branch `dev/IL4` from `main` `93115db`, database `league_lab` read only)
 
 * **Task**: IL-4 of the Wave I-L brief (`scratchpad/waveIL/BRIEF.md`; INF-2's "Next task": slim the Sleeper directory;

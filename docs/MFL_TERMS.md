@@ -3,7 +3,7 @@
 **What League Lab does.** Reads a MyFantasyLeague league's public export (`https://api.myfantasyleague.com/<year>/export
 ?TYPE=…&L=<league>&JSON=1`, followed to the league's own `www4N.` host): the league settings, scoring rules, rosters,
 schedule, standings, the week's live scoring and last week's results, the player list (`DETAILS=1`), the injury
-report and (Wave I-L, IL-2) the transactions export, week by week (`TYPE=transactions&W=<week>&TRANS_TYPE=*`). Read-only: no login, no API key, no writes, no lineup changes. Code: `src/league_lab/mfl_client.py`.
+report and (Wave I-L, IL-2) the transactions export, week by week (`TYPE=transactions&W=<week>&TRANS_TYPE=*`; for MFL's current week the next week's file too — MFL files a move made once a week's games have begun there). Read-only: no login, no API key, no writes, no lineup changes. Code: `src/league_lab/mfl_client.py`.
 
 **Who can be read.** A league whose commissioner allows outside reads. MFL answers anything else with an `error` body;
 League Lab then says: "MyFantasyLeague would not share this league: it may be private or the link may be wrong. Ask

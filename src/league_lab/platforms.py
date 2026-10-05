@@ -463,6 +463,11 @@ class MFLLeagues:
     # ``settings.waiver_bid``), trades -> ``trade`` (future draft picks in ``draft_picks``); players as Sleeper ids through
     # the league's id mapping (``translate``, not recorded as rostered). MFL has no transaction id: ``transaction_id`` is
     # ``mfl-<timestamp>-<franchise>-<hash>`` of the row (stable across reads). A past week is cached a day.
+    # ---- PO 2026-10-05 (the live check on 70587): MFL files a move made once a week's games have begun under the
+    # NEXT week (``W`` + 1: a Saturday add in week 4 is in ``W=5`` while MFL's own week is still 4), so MFL's current
+    # week also lists the next week's file — under the week in progress, the week the move was made in. A round past
+    # MFL's current week is empty (its moves are already listed), so a caller whose clock turns before MFL's (Monday
+    # night to Tuesday) lists nothing twice. The next file not answering leaves the week's own moves.
     def transactions(self, key: str, round_: int) -> list[dict]:
         lid = mfl_id(key)
         week = int(round_)
@@ -470,7 +475,14 @@ class MFLLeagues:
             current = self.week(lid)
         except LeagueNotFound:
             current = week
+        if week > current:
+            return []
         rows = self.client.transactions(lid, week, settled=week < current)
+        if week == current:
+            try:
+                rows = [*rows, *self.client.transactions(lid, week + 1)]
+            except (M.MFLUnavailable, M.MFLBusy, LeagueNotFound):
+                pass
         moves = [(r, m) for r in rows if (m := M.transaction_moves(r)) is not None]
         if not moves:
             return []
@@ -739,7 +751,7 @@ _CAPS: dict[str, dict] = {
             "matchups": ("yes", "the schedule, each week's opponent and every played week's points; this week's live points from MFL's live scoring (a game in progress counts as its full range)"),  # ---- IL-2
             "players": ("partial", "MFL ids matched to Sleeper's; a player with no match is listed by name and not valued"),
             "waivers": ("partial", "free agents are the players no team rosters; MFL's waiver type, waiver order and blind-bid balances are read; MFL does not share the claim time"),  # ---- IL-2
-            "transactions": ("yes", "adds, drops, trades and waiver claims from MFL's transactions export" + " — as built, not verified on a live league yet"),  # ---- IL-2 (the PO drops the tail after the live check)
+            "transactions": ("yes", "adds, drops, trades and waiver claims from MFL's transactions export"),  # ---- IL-2; verified live 2026-10-05 (docs/PROVIDERS.md)
             "team_assets": ("partial", "team QBs, kickers and defenses are priced as players; draft picks and blind-bid budgets are not read"),
             "news": ("yes", _NEWS),
         },

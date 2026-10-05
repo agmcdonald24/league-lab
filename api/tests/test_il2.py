@@ -90,6 +90,82 @@ def test_league_screen_lists_mfls_moves(client):
     assert caps["provider"] == "mfl" and caps["features"]["transactions"]["unavailable"] is None
 
 
+# ---- PO 2026-10-05, the live check (mfl:70587 and mfl:21861 against MFL's own export): MFL files a move made once a
+# week's games have begun under the NEXT week, so "Latest moves" was missing the newest ones (dad's two of the weekend);
+# and a dropped team unit on no roster was listed by its id on the first read. The rows below are MFL's own answers
+# (`TYPE=transactions&L=70587&W=5` and the week-3 unit swap, read 2026-10-05), in a copy of the fixtures.
+NEXT_WEEKS_FILE = {"version": "1.0", "encoding": "utf-8", "transactions": {"transaction": [
+    {"timestamp": "1791130172", "franchise": "0001", "type": "FREE_AGENT", "transaction": "16432,|17473,"},
+    {"timestamp": "1791043992", "franchise": "0008", "type": "FREE_AGENT", "transaction": "16186,|17256,17543,"},
+    {"timestamp": "1790200297", "franchise": "0012", "type": "FREE_AGENT", "transaction": "0677,|0667,"}]}}
+
+
+@pytest.fixture
+def next_weeks_file(tmp_path, monkeypatch):
+    import json
+    import shutil
+    fx = tmp_path / "mfl"
+    shutil.copytree(MFL_FX, fx)
+    (fx / "70587" / "transactions_5.json").write_text(json.dumps(NEXT_WEEKS_FILE))
+    monkeypatch.setenv(M.FIXTURES_ENV, str(fx))
+    A._default = None
+    yield fx
+    A._default = None
+
+
+def test_current_week_lists_the_moves_mfl_files_under_the_next_week(next_weeks_file):
+    sl = A.sleeper()
+    weeks = {w: sl.transactions(KEY, w) for w in range(1, 7)}
+    assert [len(weeks[w]) for w in range(1, 7)] == [1, 1, 2, 4, 0, 0]       # MFL's week is 4: its file + the next one's
+    assert all(t["leg"] == 4 for t in weeks[4])                              # under the week in progress
+    ids = [t["transaction_id"] for ts in weeks.values() for t in ts]
+    assert len(ids) == len(set(ids)) == 8                                     # a later round lists nothing twice
+    assert [t["created"] for t in weeks[4]] == sorted(t["created"] for t in weeks[4])
+    d = sl.players()
+    newest = weeks[4][-1]                                                     # Knight Train, Sunday of week 4
+    assert newest["roster_ids"] == [1] and newest["created"] == 1791130172000
+    assert [d[s]["full_name"] for s in newest["adds"]] == ["Emanuel Wilson"]
+    assert [d[s]["full_name"] for s in newest["drops"]] == ["Jadarian Price"]
+    two_drops = weeks[4][-2]                                                  # one add, two drops (Big Mac Attack)
+    assert len(two_drops["adds"]) == 1 and len(two_drops["drops"]) == 2 and two_drops["roster_ids"] == [8]
+
+
+def test_next_weeks_file_not_answering_keeps_the_weeks_own_moves(next_weeks_file, monkeypatch):
+    sl = A.sleeper()
+    real = sl.mfl.client.transactions
+
+    def flaky(league_id, week=None, *, settled=False):
+        if week == 5:
+            raise M.MFLUnavailable("MFL did not answer")
+        return real(league_id, week, settled=settled)
+
+    monkeypatch.setattr(sl.mfl.client, "transactions", flaky)
+    assert len(sl.transactions(KEY, 4)) == 1
+
+
+def test_a_dropped_unit_on_no_roster_is_listed_by_name_on_the_first_read(next_weeks_file):
+    sl = A.sleeper()
+    rosters, users = sl.rosters(KEY), sl.users(KEY)
+    players = sl.players()                                   # read before the moves, as the League route reads it
+    assert "mfl:0677" in players and "mfl:0667" not in players               # the Giants' QBs are on no roster
+    tx = decisions.od_transactions(KEY, 4, rosters, users, players)
+    swap = tx[tx["transaction_id"].str.startswith("mfl-1790200297-0012-")]
+    assert {(r.action, r.player_name, r.position) for r in swap.itertuples()} == {
+        ("add", "Carolina Panthers QB", "TMQB"), ("drop", "New York Giants QB", "TMQB")}
+    assert not tx["player_name"].str.startswith("mfl:").any()
+    assert decisions.moved_directory(players, []) is players                 # nothing moved: the same directory
+
+
+@needs_db
+def test_recently_added_counts_the_weekends_adds(next_weeks_file):
+    r = decisions.recent_adds(KEY, 1, 4, False)
+    assert r["weeks"] == [3, 4] and r["unavailable"] is None and r["total"] == 4
+    assert [(x["player_name"], x["team_name"], x["week"], x["mine"]) for x in r["rows"]] == [
+        ("Emanuel Wilson", "Knight Train", 4, True), ("Jordan Addison", "Big Mac Attack", 4, False),
+        ("Carolina Panthers QB", "Madeyes Revenge", 4, False), ("Ja'Kobi Lane", "Knight Train", 3, True)]
+# ---- end PO 2026-10-05
+
+
 # ------------------------------------------------------------------ 2. live points
 def test_live_points_are_mfls_scores_by_sleeper_id():
     lp = A.sleeper().mfl.live_points(KEY, 4)

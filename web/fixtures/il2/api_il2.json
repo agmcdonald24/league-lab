@@ -163,7 +163,7 @@
      "transactions": {
       "label": "Transactions",
       "status": "yes",
-      "words": "adds, drops, trades and waiver claims from MFL's transactions export \u2014 as built, not verified on a live league yet",
+      "words": "adds, drops, trades and waiver claims from MFL's transactions export",
       "unavailable": null
      },
      "team_assets": {
@@ -12869,7 +12869,7 @@
       "transactions": {
        "label": "Transactions",
        "status": "yes",
-       "words": "adds, drops, trades and waiver claims from MFL's transactions export \u2014 as built, not verified on a live league yet",
+       "words": "adds, drops, trades and waiver claims from MFL's transactions export",
        "unavailable": null
       },
       "team_assets": {

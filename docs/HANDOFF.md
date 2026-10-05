@@ -191,8 +191,11 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   deferred list. **Data**: `analytics.mart_player_ngs_week` (NGS weekly; the nightly's `dbt build` makes it, the sync
   publishes it — until then Stats says "Next Gen Stats arrive with the nightly update") and `src/league_lab/roles.py`
   behind the drawer's Role block (reads `player_team_history`, now windowed in `sync_to_hosted.sh`). **MFL**:
-  transactions, live points, waiver order / blind bids — built on a synthetic fixture, **not verified on a live league**
-  (the PO checks `mfl:70587` after the deploy, then drops the "as built" tail in `platforms._CAPS` and the pins).
+  transactions, live points, waiver order / blind bids — built on a synthetic fixture; **the transactions verified
+  live 2026-10-05** on `mfl:70587` and `mfl:21861` (STATUS § "PO — MFL's transactions verified live"): MFL files a move
+  made once a week's games have begun under the NEXT week, so `MFLLeagues.transactions` reads the next week's file
+  with MFL's current week; a moved player on no roster is named from a directory read after the moves
+  (`decisions.moved_directory`). No trade seen live yet (neither league has one).
   **Model**: `MODEL_VERSION` **v3.3** (the WR new-team scale, `LEAGUE_LAB_NEW_TEAM_SCALE=0` restores v3.2 on the
   `project` step) — the first nightly re-runs `backtest-v2` and the calibration once; `league-lab grade-odds` is a soft
   nightly step writing `analytics.odds_grades` (`/api/status` `odds_grades`; the Record page's table). **Memory**: the

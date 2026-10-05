@@ -3311,13 +3311,29 @@ def week_matchups(week: int | None, ms: list[dict], names: dict, *, played: bool
 # ---- end IC-4
 
 
+def moved_directory(players: dict, transactions: list[dict]) -> dict:
+    """PO 2026-10-05 (the live check on ``mfl:70587``: a dropped team unit listed as ``mfl:0667``): a provider's adapter
+    learns a moved player who is on no roster (a dropped team unit, a player with no Sleeper id) while it reads the
+    moves — after ``players`` was read. When a moved id is not in ``players``, the directory is read again (the
+    Router merges the adapters' rows at the call), so the move lists his name, never his id. Never raises."""
+    moved = {str(sid) for t in transactions for k in ("adds", "drops") for sid in (t.get(k) or {})}
+    if not moved or moved <= players.keys():
+        return players
+    try:
+        return A.sleeper().players()
+    except Exception:  # noqa: BLE001 - the names are a nicety: the moves are still listed
+        return players
+
+
 def od_transactions(league_id: str, rounds: int, rosters: list[dict], users: list[dict], players: dict) -> pd.DataFrame:
     """mart_league_transactions from Sleeper's `/transactions/<round>` (one row per player moved: adds and drops)."""
     names = A.team_names(rosters, users)
     sl = A.sleeper()
     out = []
-    for rnd in range(1, int(rounds) + 1):
-        for t in sl.transactions(league_id, rnd):
+    by_round = [(rnd, sl.transactions(league_id, rnd)) for rnd in range(1, int(rounds) + 1)]
+    players = moved_directory(players, [t for _rnd, ts in by_round for t in ts])
+    for rnd, ts in by_round:
+        for t in ts:
             for action, moves in (("add", t.get("adds") or {}), ("drop", t.get("drops") or {})):
                 for sid, rid in moves.items():
                     sp = players.get(str(sid)) or {}
@@ -4824,10 +4840,11 @@ def recent_adds(league_id: str, team: int | None, week: int, is_house: bool) -> 
             lg, rosters, users = _sleeper_league(league_id)
             sl = A.sleeper()
             names = A.team_names(rosters, users)
-            players = sl.players()
+            by_round = [(rnd, sl.transactions(lg["league_id"], rnd)) for rnd in weeks]
+            players = sl.players()      # read after the moves: an adapter adds a moved, unrostered player's row as it reads them
             rows = []
-            for rnd in weeks:
-                for t in sl.transactions(lg["league_id"], rnd):
+            for rnd, ts in by_round:
+                for t in ts:
                     for sid, rid in (t.get("adds") or {}).items():
                         sp = players.get(str(sid)) or {}
                         rid = None if rid is None else int(rid)

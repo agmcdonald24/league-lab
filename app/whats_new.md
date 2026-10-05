@@ -16,7 +16,8 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
   the next nightly update.
 - **MyFantasyLeague leagues** now show the league's latest moves and every team's score so far during a game window;
   the week's odds narrow as MFL's games finish; the waiver line names your place in the waiver order or your blind-bid
-  balance when MFL shares it. New, built from MFL's documentation — say so if a move looks wrong.
+  balance when MFL shares it. Checked against MFL's own list on two leagues: a move made during the week's games
+  now shows right away (MFL files it under the following week, so the weekend's adds were missing until Tuesday).
 - **Waivers shows "Recently added in this league"** on every platform: who every team added this week and last.
 - **Receivers on a new team**: a receiver's first games with a new team used to be projected about a point per game too
   high; until his third game the line is scaled down by the same share for everyone (0.79 this season). Graded on
