@@ -598,6 +598,25 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 19 — Wave I-I (2026-10-04, Sunday evening; delivered 2026-10-05 ~00:40 ET)
+
+Andrew: "next wave. plus agent feedback in this markdown. plus I logged into my google analytics for you to create
+tracking on this." The fifth outside review (`docs/reviews/2026-10-04-product-and-analytics-handoff.md`) is the
+specification, in its own delivery order. Seven devs: **II-0** the calculation audit (P0: Team's strength by slot on
+one metric over one population, one bar per starting slot; legal replacement chains with locks kept; full names on a
+surname collision; the trade story from one frame); **II-1** credible trades (P0: the covered frame — byes priced
+against the free pool, never zero — both teams' alternatives, legality, the format-aware K / DEF guardrail,
+plausibility, the threshold, "No compelling trade found", the trade card; the Folk package a regression fixture:
+Implausible); **II-2** one player viewer (P1: the drawer everywhere, four sections, Expand, Add to compare, Back
+closes it, a full-height sheet on a phone); **II-3** the Stats Explorer (P1: Stats / Trends / Matchups / Compare,
+presets, windows, totals or per game, the column picker; `docs/DATA_INVENTORY.md` — 48 columns by status; route
+metrics unavailable in-season, said); **II-4** the copy standard, Season's three named views, news as a decision-impact
+feed, the presentation (P1); **II-5** one setup flow, provider capabilities, `docs/PROVIDERS.md` with the ESPN verdict
+(public leagues read-only at most; never cookie pasting), `docs/ACCOUNTS.md` (design only: an emailed link; nothing
+built) (P2); **INF-1** the pinned clock (`league_lab.clock`, `LEAGUE_LAB_NOW`; the suites green on a Sunday) and
+Google Analytics 4 (`G-HJWGHZ79BG`, no PII, `LEAGUE_LAB_GA`). STATUS § "Wave I-I": root 1,167 / API 630 / e2e 335,
+0 failed. Next: the presentation list in the PO section, accounts when Andrew says so, the two planned NGS columns.
+
 ### Iteration 18 — Wave I-H (2026-10-04, Sunday; delivered 14:30 ET)
 
 Andrew: "Proceed with the next waves." Five devs: **M6** v3.2 — the cold-start prior on the stat line (on by default;

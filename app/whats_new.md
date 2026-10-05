@@ -3,6 +3,30 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 5 · The numbers agree with the words, trades you could actually propose, one player card everywhere
+
+- **Team's "Strength by slot" is one comparison**: the player you start at each slot (RB1 and RB2, each FLEX apart)
+  against what every other team starts there, in the same projected points — the old card compared your points with
+  everyone's *margins*, which is why a 14.8 could sit beside "best 7.3". Group totals and usable depth under it.
+- **Replacements are legal lineups**: "Tuten moves from FLEX to RB2; Wilson fills the open FLEX" — locks respected,
+  full names when two players share one.
+- **Trades says "No compelling trade found" when that is the truth.** A trade is proposed only when it is legal, beats
+  both teams' best waiver move, and is an offer the other manager might consider (a kicker for a starter is not). Each
+  card: what you give and get, the drops, both lineups' effect, why they might consider it, why they might refuse.
+- **Tap any player name, anywhere, and his card opens beside the screen** (a full sheet on a phone) with Overview,
+  Usage, Game log and News; the screen under it keeps your search, filters and scroll. Back closes it.
+- **Players → Stats**: presets for WR/TE, RB and QB, season or last 3 / 5 games, totals or per game, pick your
+  columns, save a view, compare 2–4. A dash with the reason where a number is not available — never a 0.
+- **Season has three views**: My roster outlook (your players; what the lineup loses without each), Potential upgrades
+  (before acquisition cost; free agents lead to a claim, rostered players to the calculator), Rest-of-season projections.
+- **News says what it changes**: what changed, why it matters here, whether the recommendation changed, whether the
+  projection already includes it, and the next step. The home's clocks are separate: data built, injuries checked, news.
+- **One setup flow**: pick your platform, paste a Sleeper username or league link (or an MFL league), pick your team.
+  Plain errors ("That Sleeper username does not exist"). What each platform gives is listed; nothing is substituted.
+- Rates say "per game", "per target", "per attempt" everywhere; every number names its denominator in the help.
+- isuckatfantasy now counts screen views with Google Analytics (league ids and roster numbers only — never names);
+  About says so.
+
 ## Oct 4 (afternoon) · Your calls, your odds, and rookies priced honestly
 
 - **Your calls this season** on the Team page: week by week, what you started, what our lineup would have scored, the

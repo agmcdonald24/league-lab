@@ -4,6 +4,13 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-04 — Wave I-I
 
+- **PO (the merge, 2026-10-05).** The pinned clock lands (`league_lab.clock`, `LEAGUE_LAB_NOW`; both suites pinned to
+  2026-10-03 16:00Z — API 630 passed, 0 failed on a Sunday evening); Google Analytics 4 wired (`G-HJWGHZ79BG`, no PII,
+  `LEAGUE_LAB_GA`). The Waivers answer on the API is the web's `topIntro` (API, console and web agree); the replacement
+  chain keeps the shown lineup on ties (no phantom swap of two tied defenses); the drawer counts a GA `select_content`
+  once; `metric_registry` seeded (+8 rows). Known and left: Waivers' top-three card names squeeze beside an open drawer
+  at 1300; the Trades screen says "No compelling trade found" twice.
+
 - **II-0 — the calculation audit (the fifth review § 1).** Team's "Strength by slot" compared a starter's projected
   points with every roster's *margin* (Puka 14.8 against "average 5.0, best 7.3"); it now draws one bar per starting
   slot (RB1 and RB2, each FLEX apart), the player you start there against every roster's starter at the same slot, in

@@ -6885,6 +6885,126 @@ scorings. The rule is M5's: the flagged rows' MAE at least 0.05 lower in ceil(2n
 
 ## Wave I-I (Iteration 19)
 
+### PO merge — Wave I-I, 2026-10-04/05 (Sunday evening; the fifth review, the pinned clock, Google Analytics)
+
+* **Why**: Andrew: "next wave. plus agent feedback in this markdown. plus I logged into my google analytics for you to
+  create tracking on this." The fifth outside review (`docs/reviews/2026-10-04-product-and-analytics-handoff.md`, a
+  product and analytics implementation handoff) is the specification; the brief is `scratchpad/waveII/BRIEF.md`;
+  seven Opus devs in parallel (II-0 … II-5 in one message, INF-1 beside the integration), 2–2.5 h each; an Opus
+  integration engineer merged the six II branches (its own section below: order, every conflict, the suites); the PO
+  merged INF-1, fixed what was left, QA'd on the main database with the pinned clock, shipped.
+* **Delivered** (the hand-backs below; `integ/II` → `main`): **II-0** the calculation audit — Team's "Strength by slot"
+  compared a starter's projected points with every roster's *margin* (the review's Puka 14.8 vs "average 5.0 / best
+  7.3"); now one bar per starting slot (RB1 and RB2, FLEX1 and FLEX2 apart), the player you start there against
+  every roster's starter at the same slot in the same points (MacZaddy's QB: 20.26 against 18.32 / 24.42, 3rd of 10 —
+  before: against 9.63 / 18.48, a best below the bar), group totals and usable depth under the bars; **legal
+  replacement chains** (`lineup.replacement_chain`: the re-solved lineup with locks kept, as data and words — "Bhayshul
+  Tuten (RB) moves from FLEX to RB2; Michael Wilson (WR) fills the open FLEX"), full names on a surname collision
+  (`cards.display_name`), the trade story from one frame (`trades.week_story`: never "Nothing changes this week"
+  beside −1.5). **II-1** credible trades — the covered frame (every empty slot filled from the free pool for both
+  sides, never zero: the Folk package's "+17.7 in week 5" was Mahomes's bye priced at zero), both teams' alternatives
+  with the same function, legality, the K / DEF guardrail from the league's slots and free pool (no names), plausibility
+  (plausible offer / a roster-fit idea / implausible), the threshold (beat both teams' best alternative by a starter
+  point), "**No compelling trade found**" as the Finder's first-class answer, the trade card (give / get / drops / both
+  effects / depth / both waiver alternatives / why consider / why refuse — no probability). The Folk package: +1.2 for
+  MacZaddy, −1.2 for Run Bijan Run, **Implausible**, a regression fixture. Scrubs roster 2 today: 0 credible of 18.
+  **II-2** one player viewer — every player name on a league screen opens the drawer (the router's link hook; Cmd-click
+  still opens the page), four sections (Overview · Usage · Game log · News), Expand (a dialog lightbox), Add to compare,
+  Full player page; Back closes it first; focus returns; a full-height sheet on a phone; cached by player + league +
+  team + data version with a stale-response guard; the lazy screens stay mounted under it (a real fix: Receivers lost
+  its state on every `?pane=`). **II-3** the Stats Explorer — Players' tabs **Stats / Trends / Matchups / Compare**,
+  presets WR/TE / RB / QB (`/receivers` → the WR/TE preset; the role cards at `?view=cards`), windows (season / last 3 or
+  5 games or weeks / a week range, games played vs calendar weeks said), totals or per game, minimum games and
+  opportunities, column picker, sticky identity column, saved views, 2–4 side by side; `GET /api/players?window=`
+  aggregated on request from `fct_player_game` (no new mart); **`docs/DATA_INVENTORY.md`** — 48 columns: 15 verified
+  present, 29 derived, 2 planned (NGS RYOE, time to throw), 2 unavailable (licensed routes run, pressure splits);
+  routes run / route participation / per-route metrics **unavailable in-season** (nflverse participation lands after
+  the postseason) and the picker says so; Kyren's carry share 47.5% on the card = the table. **II-4** the copy standard
+  (WORDS § "The copy standard": per game / per target / per route run / per attempt, every rate's denominator and
+  aggregation; `scripts/copy_standard.py` swept 106 lines in 47 files, `--check` is clean), Season's three named views
+  (**My roster outlook** default · **Potential upgrades** before acquisition cost, free agents → add / drop, rostered →
+  the calculator · **Rest-of-season projections** with per game, games, range, playoffs; the counterfactual under each
+  answer; the arithmetic unchanged, a test compares every row), news as a decision-impact feed (what changed · why here
+  · decision status changed / watch / none · forecast status included / context only / update pending — "included"
+  only with a recorded status change · next step; ranked, deduplicated, recaps apart), the home's clocks separated
+  (data built / injuries checked / news — stamps, never a warning), the home's order (decisions → changes → lineup),
+  Waivers' horizon labels ("Helps this week (+1.8)" / "Covers a bye in week 7" / "Upside stash") and competing claims
+  named, "Depth (bench lineup)" defined, "It evens out" gone, hindsight labelled, "No additional modeled upside scenario
+  available". **II-5** one setup flow (Fantasy platform → identifier or link → leagues → team → My Week, with "where do
+  I find these" examples, specific recoverable errors with a `code` and a fix line, guest exploration kept),
+  `platforms.capabilities()` per provider (eight features; the UI says "Transactions: not available for MFL leagues
+  yet" where it used to substitute "No completed moves"), `GET /api/providers`, `GET /api/leagues?sleeper=<link>`;
+  **`docs/PROVIDERS.md`** (the matrix; **the ESPN verdict**: at most public leagues read-only by id, labelled
+  unofficial, free beta only, not built now; never cookie pasting, never a paid product without ESPN's written
+  permission — Disney's terms forbid automated access and commercial use; the Yahoo note: OAuth, an application);
+  **`docs/ACCOUNTS.md`** (design only: identity apart from provider connections, stable external ids, `league_key` =
+  provider + season + id, scoped preferences, disconnect / expiry / idempotent sync; the recommendation: a passwordless
+  emailed link in our FastAPI, Resend, ~$0 at beta scale). **INF-1** `league_lab.clock` (`now()` → a pin, else
+  `LEAGUE_LAB_NOW`, else real time) on every request-path wall-clock read (`anyleague` ×3, `decisions` ×3, `player`,
+  the console's Player page, `lineup.build`, `events.clock`, PlayerWire, `cards.LINEUP_SQL`'s `kicked_off`, `ui.first_open_week`;
+  `freshness`, `availability.checked_at`, usage, auth and the nightly's writers keep real time); **both suites pinned
+  to `2026-10-03T16:00:00Z`** — the API suite on `league_lab` on a Sunday evening: 0 failed (main's real clock: 54);
+  IH-2's three xfails are plain passes. **Google Analytics 4**: `web/src/lib/analytics.ts`, measurement id
+  `G-HJWGHZ79BG` (property 557285408 `isuckatfantasy`, stream `isuckatfantasy web`, made by the PO in Andrew's
+  account), gtag.js loaded once after sign-in, `page_view` on every route change, `screen_view` beside
+  `usage.countView`, `login`, `select_content` (the drawer), `edit_link_click`, `compare_open`, `trade_evaluate`,
+  `waiver_view` — every event with `league_key`, `roster_id`, `platform`, `release`; **no PII** (no usernames, team
+  names, player names of a manager, nothing from the password field); `LEAGUE_LAB_GA` build-time switch (`off` strips
+  it, `on` always sends, unset = only on isuckatfantasy.io and never under automation); About names it; HOSTING § "Usage"
+  → "Google Analytics".
+* **PO, on the merge**: the integration engineer's section lists the order (II-0, II-1, II-2, II-3, II-5, II-4) and
+  every conflict (keep both everywhere; II-4's words win over superseded lines, II-3's Stats screen over II-4's edits
+  to the old one); then `dev/INF1` (STATUS / CHANGELOG only). The PO then: **the Waivers `answer` on the API is the
+  web's `topIntro`** (`decisions.top_intro` / `claim_horizon`, the same rules as `lib/feed.ts` — the console, the API
+  and the web say "The three strongest claims below: 2 help this week, 1 covers a bye (week 7). Each card's total is
+  its gain over weeks 4–7."; IE-1's pin re-pinned); **the replacement chain keeps the lineup shown on ties** (a nudge of
+  1e-7 on current starters in the re-solve, the totals from the real values: two DEFs at 0.0 no longer trade places
+  and the chain never carries a phantom swap — `tests/test_lineup_ii0.py` pins it); **the drawer sends GA
+  `select_content`** (`openPlayer`: `track(…, {origin, from})`, counted once with the URL path); the My Week mart test
+  expects the chain's entering player when the direct swap is dearer (Hampton: Wilson through FLEX, 2.08, over
+  Croskey-Merritt straight in, 2.09 — the review's own case); `dbt seed --select metric_registry` on the main database
+  (70 rows); nothing for `render.yaml`, the Dockerfile, the workflows or Neon.
+* **Checks** (the integrated branch on the main database, the pinned clock, Sunday 19:30–20:30 ET): root **1,167
+  passed**, 3 skipped, 0 failed; API **630 passed**, 9 skipped, 0 failed (`test_u1` / `test_ig2` deselected: they
+  write); ruff clean; `npm run lint` (eslint + svelte-check + tsc, 164 files) 0 / 0; `npm run build` ok; fixtures e2e
+  **335 passed**, 1 skipped (`ih1` phone, by design); `scripts/copy_standard.py --check` clean. QA on the main database
+  with the fixture API (`LEAGUE_LAB_NOW=2026-10-03T16:00:00Z`, screenshots at 1300 and 375 of My Week, Team, Trades,
+  Players, Season ×3, Waivers + the drawer, League, the setup screen, Receivers): no console errors beyond the
+  sandbox's blocked image host; Team's bars one metric and population (RB2 "1 empty" counted and said); the Finder's
+  "No compelling trade found" with the reason and 18 behind Explore; Stats on the sandbox's data (weeks 1–2 complete:
+  "G 2"); Season's three views with the counterfactual; the feed's five parts on the Jefferson item ("Recommendation
+  changed", "Included in the current projection: the injury report's status is applied to this week"); the drawer a
+  full-height sheet at 375.
+* **Decisions the PO took (Andrew may reverse)**: II-1 — a trade must beat the *other* team's best waiver move too
+  (margin 1.0), so the house league says "No compelling trade found" most days (an honest answer; the review asked for
+  it); the K / DEF guardrail's exception is "they have nobody there" only; the cold Finder on an on-demand league is
+  ~7 s slower (10.1 → 17.7 s, under the 20 s budget — if Render's cold answer matters more, compute the other side's
+  alternative only for rows that pass yours: one condition in `ii1_card`). II-2 — every player link opens the drawer
+  (names inside sentences too; the page is a Cmd-click or "Full player page" away); Add to compare waits for a second
+  player. II-3 — snap share is the mean of per-game shares (the card's number), carry share keeps scrambles and kneels
+  (the card's number) with the RB-only share beside it; Players opens on Stats. II-4 — My roster outlook is Season's
+  default; the header's "Injury news may be stale" is off with the banner (`SHOW_STALE`); every card news line says
+  "context only, not in the projection". II-5 — ESPN and Yahoo named "not supported yet" on the setup screen rather than
+  hidden; the platform choice gates the MFL box (one tap, remembered). INF-1 — no cookie banner (password-gated beta;
+  About discloses GA); the pinned moment (change both conftests together, after a full run on `league_lab`).
+* **Known, left as built (next wave's presentation list)**: Waivers' top-three cards squeeze the name when the drawer
+  is open at 1300 (the "WEEKS 4–7 IN TOTAL" label wins; IE-1's card header); the Trades screen says "No compelling
+  trade found" twice (the answer line and the Finder's empty state); closing the drawer goes Back to the entry before
+  it opened, so a URL parameter written while it was open (a search typed < 250 ms before the tap) leaves the URL;
+  `web/e2e/app.spec.ts` (the live-API suite) still expects one tap → the full page; `web/fixtures/ii4/api_ii4.json`
+  could be re-recorded with the pinned clock; ESPN's terms bear on the shipped news line and injury overlay
+  (`LEAGUE_LAB_NEWS=off`, `LEAGUE_LAB_AVAILABILITY=off` switch them off) — fine for the free beta, a decision before
+  anything is charged for.
+* **Andrew, in GA (property 557285408), once** (INF-1's list; nothing else is needed from him): Admin → Data streams →
+  the web stream → Enhanced measurement → turn off "Page changes based on browser history events" (else every route
+  change counts twice), Form interactions and Site search; Admin → Custom definitions → event-scoped dimensions
+  `league_key`, `roster_id`, `platform`, `release`, `origin`, `from`, `link_platform`, `screen_name`; Admin → Data
+  retention → 14 months. The first events arrive after this push deploys.
+* **Not done / next**: accounts (ACCOUNTS.md's design, when Andrew says so); the presentation list above; NGS RYOE and
+  time to throw as marts (the two planned columns); the Finder's cold cost; the Worker's KV binding (optional); MFL live
+  points in the win probability; v3.3 (the mean-unbiased new-team scale at WR); `MODEL_VERSION` bump when the record
+  should tell blended weeks apart; the sixth review, when it comes.
+
 ### II-0 2026-10-04 — the calculation audit: one metric per comparison, legal replacement chains, one story per frame (branch `dev/II0`, clone `league_lab_i0a`)
 
 * **Task**: II-0 (brief § "II-0"; the fifth review § 1 "Fix calculation and explanation inconsistencies", P0). Plan

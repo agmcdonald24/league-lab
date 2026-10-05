@@ -1,4 +1,4 @@
-# Handoff — League Lab, 2026-10-02
+# Handoff — League Lab, 2026-10-05
 
 For the next agent (Claude Code or any other) picking this repo up. Read in this order:
 `AGENTS.md` (rules) → this file → `docs/PROJECT_PLAN.md` § Iteration 9 (the tasks) →
@@ -180,18 +180,32 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   nightly), error states (`ErrorCard`), the stale state **operator-only** (Andrew: never tell people the data is
   stale), events retention, the nightly's failure summary, the I-G opens, the week's win probability. **Sunday
   afternoons turn ~45 API tests and 2 root tests red on any branch** (the on-demand path locks players as games kick
-  off): compare against `main` at the same hour before believing a failure; the fix is a pinned clock
-  (`league_lab.clock.now()` + `LEAGUE_LAB_NOW`) — the next PO item.
+  off): compare against `main` at the same hour before believing a failure — **fixed in Wave I-I** (the pinned
+  clock, `league_lab.clock.now()` + `LEAGUE_LAB_NOW`; the suites are green any day).
 
   **The nightly's trigger (2026-10-04)**: GitHub's `schedule` fired 3.5–6 h late every day since 2026-09-30 —
   `ops/nightly-trigger/` (a Cloudflare Worker, 07:37 ET + re-checks) replaces it as the clock; needs Andrew's
   fine-grained token in the Worker's secret (HOSTING § 5 "The trigger"). Until it exists, "Run workflow" by hand.
 
-  **Next**: after the push, the first nightly (`ops.lineup_record` keeps week 5 before kickoff; `events` and
-  `mart_decision_*` appear on Neon; the record's About sentence reads "from week 5 the bonuses are priced at their
-  odds" on Monday); then the cold-start prior on the stat line (v3.2, M5's lead, with "veterans on a new team"), the
-  record's news-affected cases on the events (`validation._news_starters`), MFL leagues and a per-team view in the
-  record, Waivers' drop cost on units, events retention; Wave J (accounts, Stripe, ESPN) parked until the prototype is prod-ready (Andrew, 2026-10-04; no licence request made).
+* **Wave I-I (2026-10-04/05, Sunday evening; seven Opus devs + an integration engineer; STATUS § "Wave I-I" PO
+  section first)**: the fifth review delivered in its order — the calculation audit (Team's strength by slot on one
+  metric and population, legal replacement chains, full names, one frame for the trade story), credible trades (the
+  covered frame, both teams' alternatives, the K / DEF guardrail, "No compelling trade found", the trade card; the Folk
+  package Implausible), the drawer everywhere, the Stats Explorer + `docs/DATA_INVENTORY.md`, the copy standard
+  (`scripts/copy_standard.py --check` must stay clean), Season's three views, the news feed, one setup flow +
+  `platforms.capabilities()` + `docs/PROVIDERS.md` (the ESPN verdict) + `docs/ACCOUNTS.md` (design only). **The
+  pinned clock is in**: `league_lab.clock.now()`, `LEAGUE_LAB_NOW`; both suites pin `2026-10-03T16:00:00Z` in their
+  conftests (`PINNED_NOW`; `real_clock` fixture for a test that needs the wall clock) — the Sunday-afternoon red is
+  over; a new wall-clock read on the request path goes through `clock.now()`. **Google Analytics 4** is wired
+  (`web/src/lib/analytics.ts`, `G-HJWGHZ79BG` in `brand.ts`, `LEAGUE_LAB_GA=off` to strip it; no PII — ids only);
+  Andrew's three GA settings are in the STATUS PO section.
+
+  **Next**: after the push, verify live (`/api/health` `version`, Team's bars, the Finder's verdict, the drawer, GA's
+  realtime view once Andrew opens the site); the presentation list in STATUS (Waivers' card names beside the drawer,
+  the Finder's doubled headline, the drawer's Back and the URL, `app.spec.ts`); accounts (ACCOUNTS.md) when Andrew
+  says so; the two planned NGS columns as marts; the Finder's cold cost if Render's first answer matters; Wave J
+  (Stripe, ESPN beyond public read) parked until the prototype is prod-ready (Andrew, 2026-10-04; no licence request
+  made; ESPN's terms bear on the news line and injury overlay — a decision before anything is charged for).
 
 Do one task per handoff. Update `docs/STATUS.md` and `CHANGELOG.md` in the same change, add the
 dbt/unit tests named in the acceptance column, and cite the task ID in the commit. A release a
