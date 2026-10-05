@@ -187,7 +187,7 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   `ops/nightly-trigger/` (a Cloudflare Worker, 07:37 ET + re-checks) replaces it as the clock; needs Andrew's
   fine-grained token in the Worker's secret (HOSTING § 5 "The trigger"). Until it exists, "Run workflow" by hand.
 
-* **Wave I-J (2026-10-05, Monday 01:00–04:30 ET; two Opus devs; STATUS § "Wave I-J" PO section first)**: the memory
+* **Wave I-J (2026-10-04/05, Sunday night 22:30–01:50 ET; two Opus devs; STATUS § "Wave I-J" PO section first)**: the memory
   diet after Sunday's out-of-memory restart (Starter, 512 MB; four leagues → 400 MB before) — strings interned at the
   fetch, one Board per week shared, one byte budget over every per-league cache (`src/league_lab/memo.py`,
   `LEAGUE_LAB_CACHE_MB` default 64, LRU), `malloc_trim`, `MALLOC_ARENA_MAX=2` in the image, `/api/status` `memory`,

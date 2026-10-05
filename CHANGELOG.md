@@ -4,7 +4,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-05 — Wave I-J
 
-- **PO (the merge, 2026-10-05 04:30 ET).** `MALLOC_ARENA_MAX=2` / `MALLOC_TRIM_THRESHOLD_` in the image; the memory
+- **PO (the merge, 2026-10-05 01:50 ET).** `MALLOC_ARENA_MAX=2` / `MALLOC_TRIM_THRESHOLD_` in the image; the memory
   script re-run on the merged code: four leagues 404 → 272 MB. Render's auto-deploy trigger (`checksPass` → `commit`)
   is left to Andrew (the PO's tooling will not change a CI gate); until then pushes are deployed by hand.
 

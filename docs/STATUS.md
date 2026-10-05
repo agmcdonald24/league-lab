@@ -7949,7 +7949,7 @@ compare against it)
 
 ## Wave I-J (Iteration 20)
 
-### PO merge — Wave I-J, 2026-10-05 (the memory diet, the presentation list)
+### PO merge — Wave I-J, 2026-10-04/05 (22:30–01:50 ET; the memory diet, the presentation list)
 
 * **Why**: Render's events, Sunday 2026-10-04 15:25 ET: "Instance failed: ran out of memory (used over 512 MB)" on
   the Starter plan; the instance restarted and recovered. Not traffic (`/api/usage/summary`: 39 views, 7 sessions, 4

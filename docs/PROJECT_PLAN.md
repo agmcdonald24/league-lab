@@ -598,7 +598,7 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
-### Iteration 20 — Wave I-J (2026-10-05, Monday 01:00–04:30 ET; the memory diet)
+### Iteration 20 — Wave I-J (2026-10-04/05, Sunday night 22:30–01:50 ET; the memory diet)
 
 Render's Starter instance (512 MB) ran out of memory once on Sunday afternoon with 4 leagues open (not traffic: 39
 views); Andrew chose the diet over the $25 plan ("ok, lets do it"). **INF-2** measured first, then: strings interned at
