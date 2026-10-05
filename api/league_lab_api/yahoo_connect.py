@@ -53,7 +53,6 @@ STATE_COOKIE = "ll_yahoo_state"
 COOKIE_DAYS = 60
 STATE_S = 600
 MAX_COOKIE = 3800
-REDIRECT_ENV = "YAHOO_REDIRECT_URI"          # LEAGUE_LAB_YAHOO_REDIRECT_URI: overrides <origin>/api/yahoo/callback
 DONE = "/leagues?platform=yahoo"
 VERSION = b"v1"
 _FIXTURE_SECRET = "league-lab fixture mode only: not a secret"
@@ -176,11 +175,11 @@ def _secure(request: Request) -> bool:
 
 
 def _redirect_uri(request: Request) -> str:
-    fixed = env(REDIRECT_ENV)
+    fixed = Y.redirect_uri_env()
     if fixed:
         return fixed
     proto = request.headers.get("x-forwarded-proto") or request.url.scheme
-    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
+    host = request.headers.get("host") or request.url.netloc
     return f"{proto}://{host}/api/yahoo/callback"
 
 

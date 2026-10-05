@@ -134,7 +134,8 @@ def test_callback_exchanges_the_code_and_sets_the_sealed_cookie(client, monkeypa
     assert cb.status_code == 302 and cb.headers["location"] == "/leagues?platform=yahoo"
     form, headers = live_mode[-1]
     assert form == {"grant_type": "authorization_code", "code": "good-code",
-                    "redirect_uri": "http://testserver/api/yahoo/callback"}
+                    "redirect_uri": "http://testserver/api/yahoo/callback", "client_id": "cid-test",
+                    "client_secret": "csecret-test"}
     assert headers["Authorization"] == "Basic " + base64.b64encode(b"cid-test:csecret-test").decode()
     assert headers["Content-Type"] == "application/x-www-form-urlencoded"
     raw = cb.cookies.get(C.COOKIE)

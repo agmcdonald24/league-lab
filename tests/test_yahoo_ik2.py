@@ -227,7 +227,8 @@ def test_an_expiring_token_is_refreshed_before_the_read(session, monkeypatch):
                                                                  {"access_token": "AT-2", "expires_in": 3600})[0:2])
     c = Y.Yahoo(fetch=_Fetch({"/game/nfl": _ok({"game": [{"game_key": "461"}]})}))
     c.game_key()
-    assert sent == [{"grant_type": "refresh_token", "refresh_token": "RT", "redirect_uri": "oob"}]
+    assert sent == [{"grant_type": "refresh_token", "refresh_token": "RT", "redirect_uri": "oob", "client_id": "cid",
+                     "client_secret": "sec"}]
     assert session.access_token == "AT-2"
 
 
@@ -304,6 +305,8 @@ def test_authorize_url_and_configured(monkeypatch):
     u = Y.authorize_url("https://isuckatfantasy.io/api/yahoo/callback", "st")
     assert u.startswith("https://api.login.yahoo.com/oauth2/request_auth?client_id=cid&redirect_uri=https%3A%2F%2F")
     assert "response_type=code" in u and "scope=fspt-r" in u and "state=st" in u and "sec" not in u
+    monkeypatch.setenv(Y.SCOPE_ENV, "")
+    assert "scope=" not in Y.authorize_url("https://x/cb", "s")
 
 
 # ------------------------------------------------------------------ the id table

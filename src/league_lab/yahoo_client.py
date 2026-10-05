@@ -12,7 +12,9 @@ and ``yahoo_fantasy_api`` document. Everything here is **unverified against a li
   (``client_id``, ``redirect_uri``, ``response_type=code``, ``state``, ``scope=fspt-r``); ``exchange_code`` and
   ``refresh`` POST ``…/oauth2/get_token`` with ``Authorization: Basic base64(client_id:client_secret)`` and a form body
   (``grant_type=authorization_code`` + ``code`` + ``redirect_uri`` / ``grant_type=refresh_token`` + ``refresh_token``);
-  the answer: ``access_token`` (1 hour), ``refresh_token``, ``expires_in``, ``xoauth_yahoo_guid``. The credentials are
+  the client id / secret also in the body, as the guide lists them; the refresh sends the registered redirect URI
+  (``LEAGUE_LAB_YAHOO_REDIRECT_URI``) or ``oob``); the answer: ``access_token`` (1 hour), ``refresh_token``, ``expires_in``,
+  ``xoauth_yahoo_guid``. ``LEAGUE_LAB_YAHOO_SCOPE`` (set empty) drops the ``scope`` parameter. The credentials are
   ``LEAGUE_LAB_YAHOO_CLIENT_ID`` / ``LEAGUE_LAB_YAHOO_CLIENT_SECRET``; without them (and outside fixture mode) Yahoo is
   "not configured" (``YahooNotConfigured``, code ``yahoo_not_configured``).
 * **Who reads**: a request's ``YahooSession`` (refresh token, access token, expiry, guid) sits in the context variable
@@ -73,6 +75,8 @@ FIXTURES_ENV = "LEAGUE_LAB_YAHOO_FIXTURES"
 CLIENT_ID_ENV = "LEAGUE_LAB_YAHOO_CLIENT_ID"
 CLIENT_SECRET_ENV = "LEAGUE_LAB_YAHOO_CLIENT_SECRET"
 PER_MIN_ENV = "LEAGUE_LAB_YAHOO_PER_MIN"
+SCOPE_ENV = "LEAGUE_LAB_YAHOO_SCOPE"
+REDIRECT_ENV = "LEAGUE_LAB_YAHOO_REDIRECT_URI"
 DEFAULT_PER_MIN = 60
 MAX_ENTRIES = 400          # cached answers held at most (a league open is ~18: settings, teams, 12 rosters, …)
 USER_AGENT = "league-lab/0.1 (isuckatfantasy beta; docs/YAHOO_TERMS.md)"
@@ -262,15 +266,30 @@ def configured() -> bool:
     return True
 
 
+def scope() -> str:
+    """``fspt-r`` (Fantasy Sports, read); ``LEAGUE_LAB_YAHOO_SCOPE`` overrides it — set it empty to send no scope (the
+    app's registered permission then applies) if Yahoo ever refuses the parameter."""
+    v = os.environ.get(SCOPE_ENV)
+    return SCOPE if v is None else v.strip()
+
+
+def redirect_uri_env() -> str | None:
+    return (os.environ.get(REDIRECT_ENV) or "").strip() or None
+
+
 def authorize_url(redirect_uri: str, state: str) -> str:
     cid, _ = credentials()
-    q = {"client_id": cid, "redirect_uri": redirect_uri, "response_type": "code", "state": state, "scope": SCOPE,
-         "language": "en-us"}
+    q = {"client_id": cid, "redirect_uri": redirect_uri, "response_type": "code", "state": state}
+    if scope():
+        q["scope"] = scope()
+    q["language"] = "en-us"
     return f"{AUTH_URL}?{urllib.parse.urlencode(q)}"
 
 
 def _token_request(form: dict, wall: Callable[[], float] = time.time) -> dict:
     cid, sec = credentials()
+    # Yahoo's guide lists the client id / secret in the body as well as in the Basic header: both are sent
+    form = {**form, "client_id": cid, "client_secret": sec}
     headers = {"Authorization": "Basic " + base64.b64encode(f"{cid}:{sec}".encode()).decode(),
                "Content-Type": "application/x-www-form-urlencoded", "User-Agent": USER_AGENT}
     if TOKEN_POST is not None:
@@ -320,7 +339,7 @@ def refresh(session: YahooSession, *, wall: Callable[[], float] = time.time) -> 
     """A new access token for the session, in place (``changed``); refused -> ``expired`` + ``YahooSessionExpired``."""
     try:
         body = _token_request({"grant_type": "refresh_token", "refresh_token": session.refresh_token,
-                               "redirect_uri": "oob"}, wall)
+                               "redirect_uri": redirect_uri_env() or "oob"}, wall)
     except YahooSessionExpired:
         session.expired = True
         raise

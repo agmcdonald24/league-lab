@@ -811,7 +811,7 @@ Render → the `isuckatfantasy` service → *Environment* → *Add Environment V
 |---|---|
 | `LEAGUE_LAB_YAHOO_CLIENT_ID` | the Client ID from step 3 |
 | `LEAGUE_LAB_YAHOO_CLIENT_SECRET` | the Client Secret from step 3 |
-| `LEAGUE_LAB_YAHOO_REDIRECT_URI` | `https://isuckatfantasy.io/api/yahoo/callback` (the registered URI; without it the server builds it from the request's host) |
+| `LEAGUE_LAB_YAHOO_REDIRECT_URI` | `https://isuckatfantasy.io/api/yahoo/callback` (the registered URI, sent on sign-in and on every token refresh; without it the server builds it from the request's host and refreshes with `oob`) |
 
 `LEAGUE_LAB_API_SECRET` already exists (`render.yaml`: `generateValue: true`); it seals the `ll_yahoo` cookie. Changing it
 signs every Yahoo manager out (they connect again in seconds). Optional: `LEAGUE_LAB_YAHOO_PER_MIN` (default 60 calls a
@@ -833,7 +833,8 @@ minute). Save → Render redeploys. The same lines for `render.yaml` (PO):
    *isuckatfantasy* and "Fantasy Sports — Read" → *Agree* → back on `/leagues?platform=yahoo` with your leagues listed.
    An error lands on `/leagues?platform=yahoo&yahoo_error=<denied|state|refused|down>`: `refused` usually means the
    redirect URI or the secret does not match the app page; a 401 on the leagues list right after connecting can mean
-   Yahoo has not approved the Fantasy access yet (step 1.4).
+   Yahoo has not approved the Fantasy access yet (step 1.4). If Yahoo's sign-in page itself complains about the
+   `scope`, set `LEAGUE_LAB_YAHOO_SCOPE` to an empty value on Render (the app's registered permission then applies).
 3. `https://isuckatfantasy.io/api/yahoo/leagues` → your leagues with `team_id` = your team. Open one; check against
    Yahoo's own pages: the roster slots (a superflex league shows `Q/W/R/T` as SUPER_FLEX), the scoring card (the
    "not priced" list should hold only stats you know are odd), this week's starters exactly as Yahoo shows them, the
