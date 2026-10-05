@@ -420,3 +420,26 @@ def test_record_the_providers_web_fixtures(client, monkeypatch, name, env):
         WEB_FIXTURES.mkdir(parents=True, exist_ok=True)
         (WEB_FIXTURES / name).write_text(json.dumps(body, indent=1) + "\n")
     assert json.loads((WEB_FIXTURES / name).read_text()) == body
+
+
+TEST_LEAGUE = "9000000000000000001"
+
+
+@pytest.mark.skipif(not DB_OK, reason="database not reachable")
+def test_the_lean_row_equals_the_full_card_house_and_on_demand():
+    """`watchlist.Lean` (the card's first steps only) gives every row the drawer's card gives — a house league from the
+    database, the Test League on demand (Sleeper's fixtures), rostered and free agents alike."""
+    from .conftest import SLEEPER_FIXTURES
+    rosters = json.loads((SLEEPER_FIXTURES / f"rosters_{TEST_LEAGUE}.json").read_text())
+    sids = [str(x) for x in rosters[0]["players"][:4]]
+    with psycopg.connect(main._app_dsn()) as conn:
+        gs = [r[0] for r in conn.execute("select gsis_id from analytics.player_id_map where sleeper_id = any(%s) "
+                                         "order by gsis_id", (sids,)).fetchall()]
+    assert gs
+    for league, keys, team in ((SCRUBS, WATCH, 2), (TEST_LEAGUE, gs + WATCH[:1], 1)):
+        lean = watchlist.Lean(league)
+        assert lean.house is (league == SCRUBS)
+        for k in keys:
+            a, b = watchlist.row(league, k, team, lean), watchlist.row(league, k, team)
+            assert a == b, (league, k)
+            assert a["read"]

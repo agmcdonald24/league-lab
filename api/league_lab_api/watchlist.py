@@ -12,6 +12,8 @@ never disagree:
   team").
 * The league: ``league`` when given (the league on screen), else the account's default league; no league at all → the
   rows with ``player_key`` only and ``league: null`` (the screen asks for a league).
+* Each row is read the lean way (``Lean``: the card's first steps only — the same queries and overlay, not its
+  sections); ``test_il5`` checks it against the full card.
 * A player is a player whatever league he was saved from: a row saved with a league and one without are one row.
   At most ``LIMIT`` players are read per answer (the oldest first; ``count`` says how many are saved); a row that cannot
   be read says why in ``words`` and the others still answer.
@@ -62,6 +64,62 @@ def card(league: str, key: str) -> dict:
     return ondemand.player_card(league, key)
 
 
+class Lean:
+    """The first steps of ``player.player_card`` and nothing else — the same SQL (``PROFILE_SQL``, ``PROJ_SQL``), the
+    same on-demand context (built once for every row), the same overlay — so a row's name, status, projection and
+    owner equal the drawer's card without building its sections (a card is ~1 s on a loaded machine; the list has up to
+    ``LIMIT``). A team unit (``mfl:TMQB-KC``) takes the full card (its line is its starter's)."""
+
+    def __init__(self, league: str) -> None:
+        from . import myweek
+        self.league, self.house, self._od = league, myweek.known_league(league), None
+
+    def od(self):
+        if self._od is None:
+            from . import ondemand
+            self._od = ondemand.PlayerContext(self.league)
+        return self._od
+
+    def card(self, key: str) -> dict:
+        from league_lab import platforms
+
+        from . import player
+        from .applib import cards
+        from .db import query
+        if platforms.is_mfl(key):
+            return card(self.league, key)
+        if self.house:
+            lrow = player.league_row(self.league)
+            season, league_name, prof_league = int(lrow["season"]), str(lrow["league_name"]), self.league
+        else:
+            od = self.od()
+            season, league_name, prof_league = od.season, od.league_name, od.profile_league
+        week = cards.decision_week(season)
+        prof = query(player.PROFILE_SQL, (prof_league, season, season, prof_league, season, prof_league, season, key))
+        if prof.empty:
+            raise player.NotFound(f"No player with id `{key}`. Search for him above.")
+        p = prof.iloc[0]
+        if not self.house:
+            p = p.copy()
+            for k, v in self.od().availability(key).items():
+                p[k] = v
+        pos, team = p["position"], p["team"]
+        proj = (query(player.PROJ_SQL, (self.league, key, season, week if week is not None else -1)) if self.house
+                else self.od().projection(key, pos, week))
+        inj = p["injury_status"] if isinstance(p["injury_status"], str) and p["injury_status"] else None
+        ov = player.overlay_status(key, inj)
+        if ov is not None:
+            inj = ov["status"]
+        rostered = player.is_num(p["rostered_by_roster_id"])
+        rteam = p.get("rostered_by_team")
+        return {"player_name": p["player_name"], "position": pos, "team": team if isinstance(team, str) else None,
+                "injury_status": inj, "week": week, "league_name": league_name,
+                "proj_points": float(proj.iloc[0]["proj_points"]) if not proj.empty else None,
+                "rostered_by_roster_id": int(p["rostered_by_roster_id"]) if rostered else None,
+                "is_free_agent": player.yes(p["is_free_agent"]),
+                "header": f"on **{rteam}**" if rostered and isinstance(rteam, str) and rteam else ""}
+
+
 def owner(c: dict, team: int | None) -> dict:
     rid = c.get("rostered_by_roster_id")
     if rid is not None:
@@ -76,9 +134,9 @@ def owner(c: dict, team: int | None) -> dict:
     return {"kind": "not_in_pool", "team_id": None, "team_name": None, "words": "Not in this league's player pool"}
 
 
-def row(league: str, key: str, team: int | None) -> dict:
+def row(league: str, key: str, team: int | None, lean: Lean | None = None) -> dict:
     try:
-        c = card(league, key)
+        c = lean.card(key) if lean is not None else card(league, key)
     except Exception as exc:  # noqa: BLE001 - one row says why; the rest of the list still answers
         log.info("watchlist: %s not read in %s (%s)", key, league, exc.__class__.__name__)
         words = str(exc) if exc.__class__.__name__ in ("NotFound", "LeagueNotFound") else "not read just now"
@@ -96,11 +154,12 @@ def answer(user_id: str, league: str | None, team: int | None) -> dict:
     lg = (league or "").strip() or default_league(user_id)
     out: dict[str, Any] = {"league": lg, "league_name": None, "week": None, "count": len(items),
                            "shown": min(len(items), LIMIT), "players": []}
+    lean = Lean(lg) if lg else None
     for key, _from in items[:LIMIT]:
         if not lg:
             out["players"].append({"player_key": key, "read": False, "words": "pick a league to see him in it"})
             continue
-        r = row(lg, key, team)
+        r = row(lg, key, team, lean)
         name = r.pop("_league_name", None)
         if r.get("read") and out["league_name"] is None:
             out["league_name"], out["week"] = name, r.get("week")
