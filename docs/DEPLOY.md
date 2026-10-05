@@ -189,8 +189,28 @@ priced weeks, its solved lineups, its rest of season, the SQL results, the trade
 league they belong to, and the server hands the freed memory back (`malloc_trim` after a request). A league evicted
 and opened again is rebuilt from the database in a second or two. Text values are stored once however many tables hold
 them (a player id is one string, not one per row), one week's projections board is shared by every league, and a
-board's raw rows are not kept next to the board. Not in the budget: Sleeper's player directory (one per day; in
-production the whole directory, tens of MB) and each league's Sleeper / MFL payloads.
+board's raw rows are not kept next to the board. Not in the budget: Sleeper's player directory (one per day) and each
+league's Sleeper / MFL payloads.
+
+**Sleeper's player directory (Wave I-L, IL-4).** Sleeper's `/players/nfl` is ~12,200 players × 53 fields (16 MB of
+JSON); parsed as sent it held **37 MB** on the live server (`outside_mb.sleeper`, 2026-10-05). It is now trimmed as it
+is parsed (`league_lab.sleeper_client.DIRECTORY_FIELDS`: the 15 fields the code reads — names, position, fantasy
+positions, team, status, injury status and body part, active, gsis / ESPN ids, news time, depth-chart order; every
+other field and every null dropped, the text interned), kept as **one shared read-only copy** (no copy per call), and
+written to the disk cache in that shape. Rows are not dropped (a retired player can sit on a dynasty roster). Measured
+with `scripts/measure_memory.py --synthetic-directory` (a directory of Sleeper's size and shape; the fixtures' own is
+842 players):
+
+| | before (main `93115db`) | after (IL-4) |
+|---|---|---|
+| the directory, as `/api/status` counts it (`outside_mb.sleeper`) | 38.7 MB | 8.8 MB (`memory.directory.mb` 8.6) |
+| the directory, Python's own count (`tracemalloc`; the real 2026-09-26 payloads) | 36.6 MB | 11.3 MB |
+| the server's RSS: the directory read, no league opened | +41.5 MB | +15.3 MB |
+| the server's RSS after the four leagues (house × 2, the Test League, MFL 70587) | 281 MB | 248 MB |
+
+A field a new reader needs goes into `DIRECTORY_FIELDS` (`api/tests/test_il4.py` runs the on-demand screens over a
+directory that records every field asked for and fails on one outside the list). `/api/status` → `memory.directory`
+says `{loaded, rows, fields, mb, kept}`.
 
 **Seeing it.** `/api/status` → `memory`: `rss_mb` (what Render meters), `cache_mb` of `budget_mb`, `regions` (MB per
 cache: `sql`, `boards`, `priced`, `ros`, `league_weeks`, `contexts`, `decisions`, `research_priced`, `research_memo`,
@@ -205,8 +225,12 @@ with the password gate on, `LEAGUE_LAB_API_TOKEN` from `/api/login`) are set.
 * `MALLOC_ARENA_MAX=2` and `MALLOC_TRIM_THRESHOLD_=131072` in the image (`api/Dockerfile`'s `ENV` line): fewer glibc
   heaps for the server's worker threads and an earlier hand-back; about 4–15 MB less on the script, more under
   concurrent Sunday traffic (each worker thread otherwise gets a heap of its own).
+* `LEAGUE_LAB_FINDER_LAZY_THEIRS` (default on; `off` restores Wave I-I's order): the Trade Finder prices a partner's
+  own best waiver move only when one of his trades can still be credible without it (IL-4) — a cold Finder prices
+  fewer waiver sweeps, and holds fewer of them in the `decisions` region.
 * Re-measure after a change: `uv run python scripts/measure_memory.py --plateau --cycles 2` (Postgres up; see its
-  header for the options); `LEAGUE_LAB_CACHE_MB=40 …` to see a smaller budget.
+  header for the options); `LEAGUE_LAB_CACHE_MB=40 …` to see a smaller budget; `--synthetic-directory` to hold
+  Sleeper's directory at its real size (the fixtures' is 842 players).
 
 ## How a new version reaches the server
 
