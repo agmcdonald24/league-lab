@@ -24,7 +24,7 @@ def test_player_card_numbers(client, sql, league, team, gsis):
     r = client.get(f"/api/player/{gsis}?league={league}&team={team}")
     assert r.status_code == 200
     d = r.json()
-    assert list(d["sections"]) == ["usage", "projection", "availability", "value", "signals"]
+    assert list(d["sections"]) == ["usage", "projection", "availability", "value", "signals", "role"]   # ---- IL-1: + role
     proj = sql("""select proj_points, p10, p25, p75, p90 from analytics.mart_player_week_projections
                   where league_id = %s and gsis_id = %s and season = %s and week = %s""", (league, gsis, d["season"], d["week"]))
     m = blocks(d["sections"]["projection"], "metrics")

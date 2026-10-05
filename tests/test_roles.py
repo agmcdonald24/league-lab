@@ -78,7 +78,7 @@ def test_opportunity_vs_production_labels():
     out = roles.opportunity_vs_production(his, _group(his, [6, 6, 6, 6], [10.0] * 4), "WR", scoring="League of Scrubs")
     assert out["label"] == "production ahead of his volume"
     assert round(out["opportunity_share"], 3) == 0.5 and round(out["production_share"], 3) == 0.667
-    assert "50% of his team's WRs and TEs' targets and carries, 67% of their fantasy points" in out["words"]
+    assert "50% of the targets and carries of his team's WRs and TEs, 67% of their fantasy points" in out["words"]
     assert "Of the whole team: 10% of its targets + carries, 0% of its red-zone targets." in out["words"]   # 24 of 4 x 60
     # the reverse
     out = roles.opportunity_vs_production(games([6] * 4, points=[5.0] * 4), _group(games([6] * 4, points=[5.0] * 4),
@@ -138,3 +138,11 @@ def test_a_game_before_the_teammate_joined_is_not_a_game_without_him():
     roster = roster[roster["week"] <= 5]                 # week 6: he was not on the roster yet → not "without him"
     out = roles.contingent_upside(his, mate, roster, {"gsis_id": "P2", "player_name": "X"}, "WR")
     assert out["games_without"] == 1 and out["status"] == "not_enough"
+
+
+def test_contingent_upside_says_when_there_is_little_to_compare_against():
+    his, mate, roster = _pair(5)                         # the teammate played only week 1 with him
+    out = roles.contingent_upside(his, mate, roster, {"gsis_id": "P2", "player_name": "X"}, "WR")
+    assert out["status"] == "ok" and out["games_without"] == 5 and out["games_with"] == 1
+    assert "; only 1 game with him to compare against (2025)." in out["words"]
+

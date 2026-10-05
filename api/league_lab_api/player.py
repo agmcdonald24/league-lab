@@ -480,6 +480,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
                               f"games at the new level, in {league_name} scoring." if od is None else ""))
 
     extra = why_block(league_id, gsis, pos, season, week, proj, od, league_name)        # ---- IA-3
+    role_sec = role_section(league_id, gsis, pos, team, season, week, league_name)        # ---- IL-1
     return {
         **extra,                                                                           # ---- IA-3
         "gsis_id": p["gsis_id"], "player_name": p["player_name"], "position": pos, "team": team if isinstance(team, str) else None,
@@ -487,7 +488,8 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "rostered_by_roster_id": int(p["rostered_by_roster_id"]) if rostered else None,
         "is_free_agent": yes(p["is_free_agent"]), "injury_status": inj, "locked": locked,
         "proj_points": float(proj.iloc[0]["proj_points"]) if not proj.empty else None,
-        "sections": {"usage": usage, "projection": projection, "availability": availability, "value": value, "signals": sig_sec},
+        "sections": {"usage": usage, "projection": projection, "availability": availability, "value": value, "signals": sig_sec,
+                     "role": role_sec},                                                    # ---- IL-1: the Role block
         "howto": HOWTO.format(league=league_name),
         "ros": ros_out, "missing": [MISSING_WORDS.get(k, k) for k in missing], "missing_keys": missing,
         "source": "database" if od is None else "sleeper",
@@ -664,3 +666,65 @@ def od_points_per_game(league_id: str, gsis: str, season: int) -> dict | None:
            else "counted in this league's scoring from his stat lines")
     return {"ppg": round(float(pts.mean()), 1), "games": int(len(pts)), "source": src}
 # ---- end IE-0
+
+
+# ---- IL-1 (Wave I-L; the fifth review § 10): the Role block — his recent role against his earlier one, his share of
+# his position group's opportunities against its points (this league's scoring), and the games a positional teammate
+# missed (league_lab.roles; the words and thresholds are there). A section of its own, after "Why this number" on the
+# web (lib/card.ts); the console's page does not draw it (test_parity compares the page's five sections only).
+ROLE_CAPTION = ("Recent role = his last 2 games with a snap; earlier = his games before them this season (3 or more). A "
+                "change is named only when it is larger than his usual game-to-game swing (one standard deviation of "
+                "the earlier games). What happened, not a forecast: this block does not move the projection.")
+
+
+def role_section(league_id: str, gsis: str, pos: str, team, season: int, week: int | None, league_name: str) -> dict:
+    sec = _section("**Role** — his recent role, his share of the work, games without a teammate")
+    if pos not in ("QB", "RB", "WR", "TE"):
+        unav(sec, "role numbers cover quarterbacks, running backs, receivers and tight ends.")
+        return sec
+    try:
+        _role_blocks(sec, league_id, gsis, pos, team, season, week, league_name)
+    except Exception:  # noqa: BLE001 - the card never fails for its role block: it says so instead
+        sec["blocks"] = []
+        unav(sec, "role numbers are not available for him right now.")
+    return sec
+
+
+def _role_blocks(sec: dict, league_id: str, gsis: str, pos: str, team, season: int, week: int | None,
+                 league_name: str) -> None:
+    from league_lab import roles
+
+    from . import research as RS
+    through = int(week) if week is not None else 18
+    mine = query(roles.PLAYER_SEASON_SQL, (gsis, int(season), through))
+    rc = roles.role_change(mine, pos)
+    md(sec, f"**{rc['headline']}**")
+    if rc["status"] != "too_early":
+        cap(sec, " ".join(m["words"] for m in rc["metrics"]))
+    if not isinstance(team, str) or not team:
+        unav(sec, "he has no NFL team now: no team share or teammate scenario.")
+        cap(sec, ROLE_CAPTION)
+        return
+    ctx = RS.context(league_id, None)
+    group = query(roles.TEAM_SEASON_SQL, (team, int(season), through, roles.group_positions(pos)))
+    if not group.empty:
+        pts = RS.league_games(ctx, int(season), sorted(set(group["gsis_id"])))[["gsis_id", "game_id", "points"]]
+        group = group.merge(pts, on=["gsis_id", "game_id"], how="left")
+    his = group[group["gsis_id"] == gsis] if not group.empty else group
+    md(sec, roles.opportunity_vs_production(his, group, pos, scoring=league_name, team=team)["words"])
+    mate = roles.pick_teammate(group, gsis, pos) if not group.empty else None
+    if mate is None:
+        md(sec, roles.contingent_upside(pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), None, pos)["words"])
+    else:
+        span = (roles.CONTINGENT_FROM, int(season), int(season), through)
+        pair = query(roles.PAIR_SQL, (team, *span, [gsis, mate["gsis_id"]]))
+        me = pair[pair["gsis_id"] == gsis]
+        if not me.empty:
+            priced = pd.concat([RS.league_games(ctx, int(s), [gsis])[["gsis_id", "game_id", "points"]]
+                                for s in sorted(set(me["season"]))], ignore_index=True)
+            me = me.merge(priced, on=["gsis_id", "game_id"], how="left")
+        roster = query(roles.ROSTER_SQL, (mate["gsis_id"], team, *span, list(roles.ON_ROSTER)))
+        md(sec, roles.contingent_upside(me, pair[pair["gsis_id"] == mate["gsis_id"]], roster, mate, pos,
+                                        scoring=league_name)["words"])
+    cap(sec, ROLE_CAPTION)
+# ---- end IL-1

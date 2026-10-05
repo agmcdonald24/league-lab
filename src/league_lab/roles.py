@@ -69,14 +69,16 @@ PLAYER_SEASON_SQL = f"""select {GAME_COLS} from analytics.fct_player_game
 # his team's rows at a set of positions this regular season through the week (the group and the teammate pick)
 TEAM_SEASON_SQL = f"""select {GAME_COLS} from analytics.fct_player_game
                       where team = %s and season = %s and season_type = 'REG' and week <= %s and position = any(%s)"""
-# 2024 on, regular season, the team's rows for him and the teammate (same team only)
+# 2024 on, regular season, the team's rows for him and the teammate (same team only); params: team, since, season,
+# season, through, ids
 PAIR_SQL = f"""select {GAME_COLS} from analytics.fct_player_game
-               where team = %s and season_type = 'REG' and season >= %s and (season < %s or week <= %s)
-                 and gsis_id = any(%s)"""
-# the weeks the teammate was on the team's roster (active, reserve or inactive), 2024 on
+               where team = %s and season_type = 'REG' and season between %s and %s
+                 and (season < %s or week <= %s) and gsis_id = any(%s)"""
+# the weeks the teammate was on the team's roster (active, reserve or inactive), 2024 on; params: mate, team, since,
+# season, season, through, statuses
 ROSTER_SQL = """select season, week, game_id from analytics.player_team_history
-                where gsis_id = %s and team = %s and season_type = 'REG' and season >= %s and (season < %s or week <= %s)
-                  and roster_status = any(%s) and game_id is not null"""
+                where gsis_id = %s and team = %s and season_type = 'REG' and season between %s and %s
+                  and (season < %s or week <= %s) and roster_status = any(%s) and game_id is not null"""
 
 
 # ---------------------------------------------------------------------------------------------- helpers
@@ -240,7 +242,7 @@ def opportunity_vs_production(his: pd.DataFrame, group: pd.DataFrame, position: 
     grp = "WRs and TEs" if position in ("WR", "TE") else f"{position}s"
     unit = "pass attempts, targets and carries" if position == "QB" else "targets and carries"
     wk = f"week {weeks[0]}" if weeks[0] == weeks[1] else f"weeks {weeks[0]}–{weeks[1]}"
-    words = (f"Opportunity vs production: **{label}** — {_pct(opp_share)} of his team's {grp}' {unit}, "
+    words = (f"Opportunity vs production: **{label}** — {_pct(opp_share)} of the {unit} of his team's {grp}, "
              f"{_pct(pts_share)} of their fantasy points in {scoring} scoring ({wk}, {_games(n)}).")
     ctx = [f"{_pct(team_share)} of its targets + carries"] if team_share is not None else []
     if rz_share is not None:
@@ -333,8 +335,11 @@ def contingent_upside(his: pd.DataFrame, mate_games: pd.DataFrame, mate_roster: 
 
     words = (f"Contingent upside: in the {_games(n_wo)} without {name} ({_seasons(without['season'])}), "
              f"{o_wo:.1f} {word} and {pts(p_wo)} points per game")
-    if n_w:
+    if n_w >= CONTINGENT_MIN_GAMES:
         words += f", against {o_w:.1f} and {pts(p_w)} in the {_games(n_w)} with him ({_seasons(with_['season'])})"
+    else:
+        words += (f"; {'only 1 game' if n_w == 1 else 'no game'} with him to compare against"
+                  + (f" ({_seasons(with_['season'])})" if n_w else ""))
     words += (f". Same team only, {CONTINGENT_FROM} on, {scoring} scoring; games {name} missed while on the roster. "
               "What happened, not a forecast: the rest of the lineup and the opponents were not the same.")
     return {**base, "status": "ok", "without": {"opportunity": o_wo, "points": p_wo},
