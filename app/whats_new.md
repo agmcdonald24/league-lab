@@ -18,7 +18,7 @@ in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
   the week's odds narrow as MFL's games finish; the waiver line names your place in the waiver order or your blind-bid
   balance when MFL shares it. New, built from MFL's documentation — say so if a move looks wrong.
 - **Waivers shows "Recently added in this league"** on every platform: who every team added this week and last.
-- **Receivers on a new team**: a receiver's first games with a new team used to be projected about a point a game too
+- **Receivers on a new team**: a receiver's first games with a new team used to be projected about a point per game too
   high; until his third game the line is scaled down by the same share for everyone (0.79 this season). Graded on
   five past seasons it missed by 0.18 points per game less on those games.
 - **The week's odds are graded**: from this week on, every past week's win probability and ranges are scored against
