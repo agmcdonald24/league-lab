@@ -121,7 +121,8 @@ def sleeper() -> platforms.Router:
     global _default
     fx, mfx = os.environ.get(FIXTURES_ENV), os.environ.get(MFL_FIXTURES_ENV)
     if (_default is None or str(_default.fixtures or "") != str(Path(fx) if fx else "")
-            or _default.mfl_fixtures != str(Path(mfx) if mfx else "")):
+            or _default.mfl_fixtures != str(Path(mfx) if mfx else "")
+            or _default.env != platforms.adapter_env()):           # ---- IK-3: the ESPN / Yahoo settings (tests)
         from .mfl_client import MFL
         _default = platforms.Router(Sleeper(), MFL())
     return _default
@@ -570,7 +571,8 @@ def team_names(rosters: list[dict], users: list[dict]) -> dict[int, dict]:
         dn = u.get("display_name")
         # ---- IC-4: an MFL franchise without a shared owner name has no manager name (was the team name repeated)
         out[int(r["roster_id"])] = {"team_name": tn or dn or f"Roster {r['roster_id']}",
-                                    "manager_name": dn or (None if u.get("platform") == "mfl" else "unknown")}
+                                    "manager_name": dn or (None if u.get("platform") in ("mfl", "espn", "yahoo")  # IK-3
+                                                           else "unknown")}
     return out
 
 

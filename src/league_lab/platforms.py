@@ -20,6 +20,8 @@ unique name + position match in Sleeper's directory (reported as such), else the
 from __future__ import annotations
 
 import html
+import importlib  # ---- IK-3: the ESPN / Yahoo adapters, imported when first used
+import os  # ---- IK-3
 import re
 import threading
 from collections.abc import Callable
@@ -79,15 +81,89 @@ def is_mfl(key: Any) -> bool:
     return str(key or "").strip().lower().startswith(PREFIX)
 
 
+# ---- IK-3 (Wave I-K): four providers by key prefix — Sleeper ids bare, ``mfl:<id>``, ``espn:<id>`` (or
+# ``espn:<season>:<id>``, a past season), ``yahoo:<game>.l.<id>`` (Yahoo's league key, ``461.l.4242``). ``provider_of``
+# is the one place a key's provider is read; ``platform`` / ``is_mfl`` stay (every older caller).
+ESPN_PREFIX = "espn:"
+YAHOO_PREFIX = "yahoo:"
+_ESPN_KEY = re.compile(r"^(?:(\d{4}):)?(\d{1,12})$")
+_YAHOO_KEY = re.compile(r"^(\d{1,4})\.l\.(\d{1,10})$")
+SHORT = {"sleeper": "Sleeper", "mfl": "MFL", "espn": "ESPN", "yahoo": "Yahoo"}
+LONG = {"sleeper": "Sleeper", "mfl": "MyFantasyLeague", "espn": "ESPN", "yahoo": "Yahoo"}
+
+
+def provider_of(key: Any) -> str:
+    """sleeper | mfl | espn | yahoo, by the key's prefix (case-insensitive); a bare key is Sleeper's."""
+    s = str(key or "").strip().lower()
+    if s.startswith(PREFIX):
+        return "mfl"
+    if s.startswith(ESPN_PREFIX):
+        return "espn"
+    if s.startswith(YAHOO_PREFIX):
+        return "yahoo"
+    return "sleeper"
+
+
+def is_espn(key: Any) -> bool:
+    return provider_of(key) == "espn"
+
+
+def is_yahoo(key: Any) -> bool:
+    return provider_of(key) == "yahoo"
+
+
+def is_sleeper(key: Any) -> bool:
+    return provider_of(key) == "sleeper"
+
+
+def provider_short(key: Any) -> str:
+    """"Sleeper" / "MFL" / "ESPN" / "Yahoo" for a league key (the words a screen puts after a league's name)."""
+    return SHORT[provider_of(key)]
+
+
+def check_espn(key: Any) -> str:
+    """``espn:<id>`` / ``espn:<season>:<id>`` (lower-cased prefix) or LeagueNotFound."""
+    s = str(key or "").strip()
+    m = _ESPN_KEY.match(s[len(ESPN_PREFIX):] if s.lower().startswith(ESPN_PREFIX) else s)
+    if not m:
+        raise LeagueNotFound(f"not an ESPN league id: {key!r}")
+    return ESPN_PREFIX + (f"{m.group(1)}:" if m.group(1) else "") + m.group(2)
+
+
+def check_yahoo(key: Any) -> str:
+    """``yahoo:<game>.l.<id>`` (lower-cased prefix and ``.l.``) or LeagueNotFound."""
+    s = str(key or "").strip()
+    m = _YAHOO_KEY.match((s[len(YAHOO_PREFIX):] if s.lower().startswith(YAHOO_PREFIX) else s).lower())
+    if not m:
+        raise LeagueNotFound(f"not a Yahoo league key: {key!r}")
+    return f"{YAHOO_PREFIX}{m.group(1)}.l.{m.group(2)}"
+
+
+def espn_id(key: str) -> str:
+    """``espn:4242`` / ``espn:2025:4242`` -> ``4242``."""
+    return check_espn(key).rsplit(":", 1)[-1]
+
+
+def yahoo_key(key: str) -> str:
+    """``yahoo:461.l.4242`` -> ``461.l.4242`` (Yahoo's own league key)."""
+    return check_yahoo(key)[len(YAHOO_PREFIX):]
+# ---- end IK-3
+
+
 def platform(key: Any) -> str:
-    return "mfl" if is_mfl(key) else "sleeper"
+    return provider_of(key)          # ---- IK-3: was "mfl" if is_mfl(key) else "sleeper"
 
 
 def check_key(key: Any) -> str:
-    """A league key: Sleeper digits, or ``mfl:<digits>`` (lower-cased prefix). Anything else is LeagueNotFound."""
+    """A league key: Sleeper digits, ``mfl:<digits>``, ``espn:<digits>``, ``yahoo:<game>.l.<id>`` (lower-cased
+    prefix). Anything else is LeagueNotFound."""
     s = str(key or "").strip()
     if is_mfl(s):
         return PREFIX + M.check_league(s[len(PREFIX):])
+    if is_espn(s):                   # ---- IK-3
+        return check_espn(s)
+    if is_yahoo(s):                  # ---- IK-3
+        return check_yahoo(s)
     return sleeper_check_id(s)
 
 
@@ -350,14 +426,64 @@ class MFLLeagues:
         return []                        # not read from MFL yet (the League screen shows no transactions)
 
 
-class Router:
-    """``anyleague.sleeper()``: the Sleeper client for Sleeper keys, ``MFLLeagues`` for ``mfl:`` keys; anything
-    else (``bucket``, ``cache_path``, ``stale_served``…) is the Sleeper client's."""
+# ---- IK-3 (Wave I-K): the ESPN and Yahoo adapters (IK-1's ``espn_leagues.ESPNLeagues``, IK-2's
+# ``yahoo_leagues.YahooLeagues``: ``MFLLeagues``'s method set, Sleeper's shapes). Each is built on first use from its
+# client (``espn_client.ESPN()`` / ``yahoo_client.Yahoo()``, configured by env); a module that is not in the tree or a
+# client that cannot be built answers ``ProviderNotConfigured`` — a clean "not set up" error, never a crash.
+# ``LEAGUE_LAB_PROVIDER_STUBS=1`` (tests / e2e only) serves both from ``provider_stubs`` (clearly synthetic).
+STUBS_ENV = "LEAGUE_LAB_PROVIDER_STUBS"
+ADAPTERS = {"espn": ("espn_client", "ESPN", "espn_leagues", "ESPNLeagues"),
+            "yahoo": ("yahoo_client", "Yahoo", "yahoo_leagues", "YahooLeagues")}
+# the env settings the adapters are built from: anyleague.sleeper() rebuilds the Router when one changes (tests)
+ADAPTER_ENV = ("LEAGUE_LAB_ESPN_LEAGUE_FIXTURES", "LEAGUE_LAB_ESPN_SEASON", "LEAGUE_LAB_YAHOO_FIXTURES", STUBS_ENV)
 
-    def __init__(self, sleeper: Sleeper | None = None, mfl: M.MFL | None = None) -> None:
+
+class ProviderNotConfigured(LeagueNotFound):
+    """This server cannot read the provider's leagues (its module or its settings are missing): ``code`` is
+    ``<provider>_not_configured``."""
+
+    def __init__(self, provider: str, why: str | None = None) -> None:
+        self.provider = provider
+        self.code = f"{provider}_not_configured"
+        super().__init__(why or f"{LONG.get(provider, provider)} leagues are not set up on this server yet")
+
+
+def adapter_env() -> tuple:
+    return tuple(os.environ.get(k) or "" for k in ADAPTER_ENV)
+
+
+def build_adapter(provider: str, client: Any, directory: Callable[[], dict]) -> Any:
+    """The provider's adapter in Sleeper's shapes (see ADAPTERS), or ProviderNotConfigured."""
+    if os.environ.get(STUBS_ENV) == "1":
+        from . import provider_stubs  # STUB (tests / e2e only)
+        return provider_stubs.adapter(provider, client, directory)
+    cmod, ccls, amod, acls = ADAPTERS[provider]
+    try:
+        cm = importlib.import_module(f"{__package__}.{cmod}")
+        am = importlib.import_module(f"{__package__}.{amod}")
+    except ImportError as exc:
+        raise ProviderNotConfigured(provider) from exc
+    try:
+        return getattr(am, acls)(client if client is not None else getattr(cm, ccls)(), directory)
+    except (AttributeError, TypeError, ValueError, OSError) as exc:
+        raise ProviderNotConfigured(provider, f"{LONG[provider]} leagues are not set up on this server ({exc})") from exc
+# ---- end IK-3
+
+
+class Router:
+    """``anyleague.sleeper()``: the Sleeper client for Sleeper keys, ``MFLLeagues`` for ``mfl:`` keys, IK-3: the ESPN /
+    Yahoo adapters for ``espn:`` / ``yahoo:`` keys (``provider_of``); anything else (``bucket``, ``cache_path``,
+    ``stale_served``…) is the Sleeper client's."""
+
+    def __init__(self, sleeper: Sleeper | None = None, mfl: M.MFL | None = None, espn: Any = None,
+                 yahoo: Any = None) -> None:
         self.sleeper = sleeper or Sleeper()
         self._mfl_client = mfl
         self._mfl: MFLLeagues | None = None
+        self._espn_client, self._yahoo_client = espn, yahoo          # ---- IK-3: None = built from env on first use
+        self._espn: Any = None
+        self._yahoo: Any = None
+        self.env = adapter_env()                                     # ---- IK-3: what the adapters were built from
         self._lock = threading.Lock()
 
     @property
@@ -367,12 +493,46 @@ class Router:
                 self._mfl = MFLLeagues(self._mfl_client or M.MFL(), self.sleeper.players)
             return self._mfl
 
+    # ---- IK-3
+    @property
+    def espn(self) -> Any:
+        with self._lock:
+            if self._espn is None:
+                self._espn = build_adapter("espn", self._espn_client, self.sleeper.players)
+            return self._espn
+
+    @property
+    def yahoo(self) -> Any:
+        with self._lock:
+            if self._yahoo is None:
+                self._yahoo = build_adapter("yahoo", self._yahoo_client, self.sleeper.players)
+            return self._yahoo
+
+    def adapters(self) -> list[tuple[str, Any]]:
+        """The non-Sleeper adapters built so far (name, adapter) — players(), stats() and calls read them."""
+        return [(n, a) for n, a in (("mfl", self._mfl), ("espn", self._espn), ("yahoo", self._yahoo)) if a is not None]
+
+    def serving(self, key: str) -> Any:
+        """The object that answers a key's Sleeper-shaped calls. An ESPN key passes the adapter's access check first
+        (IK-1's ``require_access``: a private league read with one user's cookies is never served to another)."""
+        p = provider_of(key)
+        if p == "sleeper":
+            return self.sleeper
+        if p == "mfl":
+            return self.mfl
+        ad = self.espn if p == "espn" else self.yahoo
+        check = getattr(ad, "require_access", None)
+        if check is not None:
+            check(key)
+        return ad
+    # ---- end IK-3
+
     @property
     def mfl_fixtures(self) -> str:
         return str((self._mfl_client.fixtures if self._mfl_client else None) or "")
 
     def __getattr__(self, name: str) -> Any:     # only for what Router does not define
-        if name in ("sleeper", "_mfl", "_mfl_client", "_lock"):
+        if name in ("sleeper", "_mfl", "_mfl_client", "_lock", "_espn", "_yahoo", "_espn_client", "_yahoo_client", "env"):
             raise AttributeError(name)
         return getattr(self.sleeper, name)
 
@@ -382,39 +542,43 @@ class Router:
 
     @property
     def calls(self) -> int:
-        return self.sleeper.calls + (self._mfl.client.calls if self._mfl is not None else 0)
+        return self.sleeper.calls + sum(int(getattr(getattr(a, "client", None), "calls", 0) or 0)
+                                        for _n, a in self.adapters())      # IK-3: every provider's client
 
     def league(self, key: str) -> dict:
-        return self.mfl.league(key) if is_mfl(key) else self.sleeper.league(key)
+        return self.serving(key).league(key)
 
     def rosters(self, key: str) -> list[dict]:
-        return self.mfl.rosters(key) if is_mfl(key) else self.sleeper.rosters(key)
+        return self.serving(key).rosters(key)
 
     def users(self, key: str) -> list[dict]:
-        return self.mfl.users(key) if is_mfl(key) else self.sleeper.users(key)
+        return self.serving(key).users(key)
 
     def matchups(self, key: str, week: int) -> list[dict]:
-        return self.mfl.matchups(key, week) if is_mfl(key) else self.sleeper.matchups(key, week)
+        return self.serving(key).matchups(key, week)
 
     def season_matchups(self, key: str, through_week: int) -> dict[int, list[dict]]:
-        return self.mfl.season_matchups(key, through_week) if is_mfl(key) else self.sleeper.season_matchups(key, through_week)
+        return self.serving(key).season_matchups(key, through_week)
 
     def transactions(self, key: str, round_: int) -> list[dict]:
-        return self.mfl.transactions(key, round_) if is_mfl(key) else self.sleeper.transactions(key, round_)
+        return self.serving(key).transactions(key, round_)
 
     def players(self) -> dict[str, dict]:
         d = self.sleeper.players()
-        extra = self._mfl.extra_players if self._mfl is not None else {}
-        if not extra:
+        extras = [getattr(a, "extra_players", None) or {} for _n, a in self.adapters()]    # IK-3: every adapter's
+        if not any(extras):
             return d
         merged = dict(d)
-        merged.update(extra)
+        for extra in extras:
+            merged.update(extra)
         return merged
 
     def stats(self) -> dict:
         out = self.sleeper.stats()
-        if self._mfl is not None:
-            out["mfl"] = self._mfl.client.stats()
+        for n, a in self.adapters():                                          # IK-3: every adapter's client
+            st = getattr(getattr(a, "client", None), "stats", None)
+            if callable(st):
+                out[n] = st()
         return out
 
 
@@ -466,21 +630,53 @@ _CAPS: dict[str, dict] = {
             "news": ("yes", _NEWS),
         },
     },
+    # ---- IK-3 (Wave I-K): ESPN (IK-1) and Yahoo (IK-2) as built, **not verified on a live league yet**: every feature
+    # "partial" with the words saying so, status "unverified". After the deploy the PO opens a live league of each and
+    # flips what held (the status to "supported", a feature's words without UNVERIFIED) — docs/PROVIDERS.md.
     "espn": {
-        "name": "ESPN", "short": "ESPN", "status": "not_supported",
-        "connect": {"kind": "none", "label": "ESPN leagues are not supported yet", "example": None,
-                    "where": "ESPN publishes no developer API or terms for fantasy leagues; a private league can only be "
-                             "read with the manager's own login cookies, which we will not ask for."},
-        "features": {f: ("no", "not supported yet (docs/PROVIDERS.md § ESPN)") for f in FEATURES},
+        "name": "ESPN", "short": "ESPN", "status": "unverified",
+        "note": "Unofficial: ESPN has no public API for fantasy leagues. isuckatfantasy reads what a public league shows "
+                "anyone, read-only.",
+        "connect": {"kind": "league_link", "label": "Your ESPN league link or id",
+                    "example": "fantasy.espn.com/football/league?leagueId=4242",
+                    "where": "Open your league on fantasy.espn.com: the number after leagueId= in the address is the "
+                             "league id (4242 in the example). A public league works by its id alone; ESPN has no "
+                             "sign-in for other apps."},
+        "features": {
+            "scoring": ("partial", "ESPN's scoring items read into the projections' scoring; any item not priced is listed on the league card"),
+            "roster_slots": ("partial", "ESPN's lineup slots read as ours (OP as superflex, D/ST as DEF); IDP slots are left out and said so"),
+            "matchups": ("partial", "the schedule and each week's points from ESPN's matchups"),
+            "players": ("partial", "ESPN ids matched to Sleeper's through nflverse's id table; a player with no match is listed by name and not valued"),
+            "waivers": ("partial", "free agents are the players no team rosters; ESPN's waiver order and budget are not read"),
+            "transactions": ("partial", "adds, drops and trades from ESPN's transactions"),
+            "team_assets": ("partial", "D/ST as team defenses; draft picks and waiver budgets are not read"),
+            "news": ("partial", _NEWS + ", for the players matched to our ids"),
+        },
     },
     "yahoo": {
-        "name": "Yahoo", "short": "Yahoo", "status": "not_supported",
-        "connect": {"kind": "none", "label": "Yahoo leagues are not supported yet", "example": None,
-                    "where": "Yahoo's Fantasy Sports API needs an approved application and each manager's OAuth "
-                             "sign-in; neither is set up yet."},
-        "features": {f: ("no", "not supported yet (docs/PROVIDERS.md § Yahoo)") for f in FEATURES},
+        "name": "Yahoo", "short": "Yahoo", "status": "unverified",
+        "note": "Through Yahoo's official Fantasy Sports API, read-only, after you allow it with your Yahoo sign-in.",
+        "connect": {"kind": "oauth", "label": "Connect with Yahoo",
+                    "example": "football.fantasysports.yahoo.com/f1/12345",
+                    "where": "Connect with Yahoo: Yahoo asks you to allow read-only access to your fantasy leagues, then "
+                             "your leagues are listed here to pick from. A league's link (the number after /f1/) works "
+                             "too once you are connected."},
+        "features": {
+            "scoring": ("partial", "Yahoo's stat modifiers read into the projections' scoring; any stat not priced is listed on the league card"),
+            "roster_slots": ("partial", "Yahoo's positions read as ours (W/R/T as FLEX, Q/W/R/T as superflex); IDP slots are left out and said so"),
+            "matchups": ("partial", "each week's opponent and points from Yahoo's scoreboard"),
+            "players": ("partial", "Yahoo ids matched to Sleeper's through nflverse's id table; a player with no match is listed by name and not valued"),
+            "waivers": ("partial", "free agents from Yahoo's player list; waiver priority and budgets are not read"),
+            "transactions": ("partial", "adds, drops and trades from Yahoo's transactions"),
+            "team_assets": ("partial", "DEF as team defenses; draft picks and waiver budgets are not read"),
+            "news": ("partial", _NEWS + ", for the players matched to our ids"),
+        },
     },
+    # ---- end IK-3
 }
+
+
+UNVERIFIED = " — as built, not verified on a live league yet"   # ---- IK-3 (the PO removes it per provider once checked)
 
 
 def unavailable(provider: str, feature: str) -> str | None:
@@ -500,9 +696,13 @@ def capabilities(provider: str) -> dict:
     dict each call (callers may add to it). ``provider``: sleeper | mfl | espn | yahoo (KeyError otherwise)."""
     key = str(provider).lower()
     p = _CAPS[key]
-    return {"provider": key, "name": p["name"], "short": p["short"], "status": p["status"], "connect": dict(p["connect"]),
-            "features": {f: {"label": FEATURE_WORDS[f], "status": p["features"][f][0], "words": p["features"][f][1],
-                             "unavailable": unavailable(key, f)} for f in FEATURES}}
+    tail = UNVERIFIED if p["status"] == "unverified" else ""             # ---- IK-3: said on every unverified feature
+    out = {"provider": key, "name": p["name"], "short": p["short"], "status": p["status"], "connect": dict(p["connect"]),
+           "features": {f: {"label": FEATURE_WORDS[f], "status": p["features"][f][0], "words": p["features"][f][1] + tail,
+                            "unavailable": unavailable(key, f)} for f in FEATURES}}
+    if p.get("note"):                                                    # ---- IK-3: ESPN's "unofficial", Yahoo's OAuth
+        out["note"] = p["note"]
+    return out
 
 
 def capabilities_for(key: Any) -> dict:

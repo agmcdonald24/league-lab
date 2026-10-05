@@ -362,7 +362,7 @@ CANT_WORDS = {"OUT": "is out", "IR": "is on injured reserve", "PUP": "is on the 
 
 def platform_name(league_id: str) -> str:
     from league_lab import platforms
-    return "MFL" if platforms.is_mfl(league_id) else "Sleeper"
+    return platforms.provider_short(league_id)       # ---- IK-3: "ESPN" / "Yahoo" too (was MFL | Sleeper)
 
 
 def edit_link(league_id: str, league: dict | None = None) -> dict:
@@ -374,6 +374,12 @@ def edit_link(league_id: str, league: dict | None = None) -> dict:
         home = str(((league or {}).get("mfl") or {}).get("url") or "")
         base = home.rsplit("/home/", 1)[0] if "/home/" in home else ""
         url = f"{base}/options?L={lid}&O=02" if base else f"https://www.myfantasyleague.com/{ui.current_season()}/home/{lid}"
+    elif name in ("ESPN", "Yahoo"):                  # ---- IK-3: the league's own page (the adapter's `url`)
+        from league_lab import platforms
+        p = platforms.provider_of(league_id)
+        url = str(((league or {}).get(p) or {}).get("url") or "") or (
+            f"https://fantasy.espn.com/football/league?leagueId={platforms.espn_id(league_id)}" if p == "espn"
+            else f"https://football.fantasysports.yahoo.com/f1/{platforms.yahoo_key(league_id).rsplit('.', 1)[-1]}")
     else:
         url = f"https://sleeper.com/leagues/{league_id}"
     return {"label": f"Open {name} to edit your lineup", "url": url, "platform": name}
@@ -1076,7 +1082,7 @@ def howto() -> str | None:
 
 def known_league(league_id: str) -> bool:
     """Is this a current-season league of the database (else /api/my-week serves it on demand from Sleeper)?"""
-    if str(league_id or "").strip().lower().startswith("mfl:"):     # I0-B: a MyFantasyLeague key is always on demand
+    if str(league_id or "").strip().lower().startswith(("mfl:", "espn:", "yahoo:")):  # I0-B; IK-3: ESPN / Yahoo too
         return False
     df = ui.current_leagues()
     return bool((df["league_id"] == str(league_id)).any())
