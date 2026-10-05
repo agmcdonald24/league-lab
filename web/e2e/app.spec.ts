@@ -1,6 +1,9 @@
 // The web app at both viewports (projects "phone" = iPhone 13 UA at 390 × 844 with touch, "desktop" = 1300 × 900):
 // no sideways scroll, the answer on the first screen, a name is one tap and stays in this tab, Back works,
 // the league / team pick is remembered, search, the password gate (when E2E_GATED_URL is set).
+// II-6 (Wave I-J): since II-2 (Wave I-I) one tap on a player name opens the drawer on the same screen (`?pane=<key>`);
+// its "Full player page" (`pane-full`) opens the page in place of the drawer's history entry (Back from the page lands
+// on the screen without the drawer) — the pattern of e2e/ii2. This suite runs against a live API (not the sandbox).
 import { expect, test, type Page } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -44,53 +47,80 @@ for (const [league, team, tag] of TEAMS) {
   });
 }
 
-test("a name in a card is one tap, stays in this tab and session, and Back returns to the same place", async ({ page, context, isMobile }, info) => {
+/** One tap on a player name: the drawer opens on the same screen with that player (II-2's drawer; e2e/ii2). */
+async function openDrawer(page: Page, link: ReturnType<Page["locator"]>, isMobile: boolean): Promise<string> {
+  const href = (await link.getAttribute("href"))!;
+  const gsis = decodeURIComponent(href.match(/^\/player\/([^?]+)/)![1]);
+  await tapOrClick(page, link, isMobile); // ONE tap
+  await expect(page.getByTestId("pane")).toBeVisible({ timeout: 3000 });
+  await expect(page.getByTestId("pane")).toHaveAttribute("data-gsis", gsis);
+  await expect(page).toHaveURL(new RegExp(`[?&]pane=${encodeURIComponent(gsis)}&from=\\w+`)); // a gsis id or a team unit's key: no regex characters
+  return gsis;
+}
+
+test("a name in a card is one tap to the drawer, stays in this tab and session; Full player page, then Back returns to the same place", async ({ page, context, isMobile }, info) => {
   await page.goto(`/?league=${DYNASTY}&team=12`);
   const card = page.getByTestId("decision-card").first();
   await expect(card).toBeVisible();
   const link = card.locator("a").first();
   const name = (await link.textContent())!.trim();
   const href = (await link.getAttribute("href"))!;
-  expect(href).toMatch(new RegExp(`^/player/[^?]+\\?league=${DYNASTY}&team=12$`));
+  expect(href).toMatch(new RegExp(`^/player/[^?]+\\?league=${DYNASTY}&team=12$`)); // still a real link: Cmd-click opens the page
   const historyBefore = await page.evaluate(() => history.length);
   let popups = 0;
   context.on("page", () => popups++);
-  await tapOrClick(page, link, isMobile); // ONE tap
-  await expect(page).toHaveURL(new RegExp(`/player/[^?]+\\?league=${DYNASTY}&team=12$`), { timeout: 3000 });
-  await expect(page.getByTestId("player-name")).toHaveText(name);
+  const gsis = await openDrawer(page, link, isMobile); // ONE tap → the drawer, on My Week
+  await expect(page).toHaveURL(new RegExp(`/\\?league=${DYNASTY}&team=12&pane=`));
+  await expect(page.getByTestId("pane-card")).toContainText(name.split(" ").at(-1)!);
   expect(popups, "a new tab opened").toBe(0);
   expect(context.pages()).toHaveLength(1);
-  expect(await page.evaluate(() => history.length)).toBe(historyBefore + 1);
+  expect(await page.evaluate(() => history.length)).toBe(historyBefore + 1); // the drawer is one entry
+  // the browser's Back closes the drawer first: the screen stays
+  await page.goBack();
+  await expect(page.getByTestId("pane")).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`/\\?league=${DYNASTY}&team=12$`));
+  await expect(page.getByTestId("decision-card").first()).toBeVisible();
+  // again, then Full player page: the page in place of the drawer's entry
+  await openDrawer(page, card.locator("a").first(), isMobile);
+  await tapOrClick(page, page.getByTestId("pane-full"), isMobile);
+  await expect(page).toHaveURL(new RegExp(`/player/${gsis}\\?league=${DYNASTY}&team=12$`), { timeout: 3000 });
+  await expect(page.getByTestId("player-name")).toHaveText(name);
+  expect(await page.evaluate(() => history.length)).toBe(historyBefore + 1); // replaced, not added
   await expect(page.getByTestId("section-projection")).toBeVisible();
   await noSidewaysScroll(page);
-  // the in-app Back
+  // the in-app Back: My Week, without the drawer
   await expect(page.getByTestId("back")).toHaveText(/Back/);
   await tapOrClick(page, page.getByTestId("back"), isMobile);
   await expect(page).toHaveURL(new RegExp(`/\\?league=${DYNASTY}&team=12$`));
   await expect(page.getByTestId("decision-card").first()).toBeVisible();
+  await expect(page.getByTestId("pane")).toHaveCount(0);
   // the browser's Back and Forward
   await page.goForward();
   await expect(page.getByTestId("player-name")).toHaveText(name);
   await page.goBack();
   await expect(page.getByTestId("team-name")).toHaveText("Shake & Bake");
-  // a name in the lineup table: one tap too
-  await tapOrClick(page, page.getByTestId("lineup").locator("a").first(), isMobile);
+  // a name in the lineup table: one tap to the drawer too, then the page
+  await openDrawer(page, page.getByTestId("lineup").locator("a").first(), isMobile);
+  await tapOrClick(page, page.getByTestId("pane-full"), isMobile);
   await expect(page).toHaveURL(/\/player\//);
   await expect(page.getByTestId("player-name")).toBeVisible();
   expect(popups).toBe(0);
   await page.screenshot({ path: join(SHOTS, `web_tap_${info.project.name}.png`) });
 });
 
-test("Back restores the scroll position of My Week", async ({ page, isMobile }) => {
+test("Back restores the scroll position of My Week (a lineup name → the drawer → Full player page → Back)", async ({ page, isMobile }) => {
   await page.goto(`/?league=${SCRUBS}&team=2`);
   await expect(page.getByTestId("lineup")).toBeVisible();
   const link = page.getByTestId("lineup").locator("a").last();
   await link.scrollIntoViewIfNeeded();
   const y = await page.evaluate(() => window.scrollY);
-  await tapOrClick(page, link, isMobile);
+  await openDrawer(page, link, isMobile);
+  expect(await page.evaluate(() => window.scrollY)).toBe(y); // the drawer never scrolls the screen
+  await tapOrClick(page, page.getByTestId("pane-full"), isMobile);
   await expect(page.getByTestId("player-name")).toBeVisible();
   await page.goBack();
   await expect(page.getByTestId("lineup")).toBeVisible();
+  await expect(page.getByTestId("pane")).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(y);
 });
 
@@ -182,8 +212,10 @@ test("the password gate (E2E_GATED_URL: an API started with LEAGUE_LAB_APP_PASSW
   await page.getByPlaceholder("Password").fill(process.env.E2E_GATED_PASSWORD ?? "");
   await page.getByRole("button", { name: "Open isuckatfantasy" }).click();
   await expect(page.getByTestId("decision-card").first()).toBeVisible();
-  // a name tap keeps the session (same tab, same cookie): no second password prompt
+  // a name tap keeps the session (same tab, same cookie): no second password prompt — the drawer's card, then the page
   await page.getByTestId("decision-card").first().locator("a").first().click();
+  await expect(page.getByTestId("pane-card")).toBeVisible();
+  await page.getByTestId("pane-full").click();
   await expect(page.getByTestId("player-name")).toBeVisible();
   // and a new tab, or the home-screen icon tomorrow, is still signed in (the cookie lasts 180 days)
   const tab = await ctx.newPage();
