@@ -1,0 +1,267 @@
+{
+ "providers": [
+  {
+   "provider": "sleeper",
+   "name": "Sleeper",
+   "short": "Sleeper",
+   "status": "supported",
+   "connect": {
+    "kind": "username",
+    "label": "Your Sleeper username, or a league link",
+    "example": "sleeper.com/leagues/1389709692405551104/team",
+    "where": "Your username is the name you sign in to Sleeper with, not your team's name. A league's link is in the address bar of the league's page on sleeper.com: the long number after /leagues/ is the league id."
+   },
+   "features": {
+    "scoring": {
+     "label": "Scoring",
+     "status": "yes",
+     "words": "the league's own scoring settings; a setting not priced here is listed on the league card",
+     "unavailable": null
+    },
+    "roster_slots": {
+     "label": "Lineup slots",
+     "status": "yes",
+     "words": "every offensive slot, superflex included; IDP slots are left out and said so",
+     "unavailable": null
+    },
+    "matchups": {
+     "label": "Matchups",
+     "status": "yes",
+     "words": "this week's opponent and every played week's points, in the league's scoring",
+     "unavailable": null
+    },
+    "players": {
+     "label": "Players",
+     "status": "yes",
+     "words": "Sleeper's player directory, matched to nflverse ids for the projections",
+     "unavailable": null
+    },
+    "waivers": {
+     "label": "Waivers",
+     "status": "yes",
+     "words": "free agents, and the claim type and time from the league's settings",
+     "unavailable": null
+    },
+    "transactions": {
+     "label": "Transactions",
+     "status": "yes",
+     "words": "adds, drops and trades, from Sleeper's transactions",
+     "unavailable": null
+    },
+    "team_assets": {
+     "label": "Team assets",
+     "status": "partial",
+     "words": "team defenses are players; draft picks and waiver budgets are not read for a league opened on demand",
+     "unavailable": null
+    },
+    "news": {
+     "label": "News",
+     "status": "yes",
+     "words": "ESPN's player news (most items RotoWire's), by player \u2014 the same on every platform",
+     "unavailable": null
+    }
+   }
+  },
+  {
+   "provider": "mfl",
+   "name": "MyFantasyLeague",
+   "short": "MFL",
+   "status": "supported",
+   "connect": {
+    "kind": "league_link",
+    "label": "Your MFL league link, id or name",
+    "example": "www45.myfantasyleague.com/2026/home/70587",
+    "where": "Open your league on the MFL website: the number after /home/ in the address is the league id (70587 in the example). In the MFL app, type the league's name as the app shows it."
+   },
+   "features": {
+    "scoring": {
+     "label": "Scoring",
+     "status": "partial",
+     "words": "MFL's rules read into the projections' scoring; any piece estimated or not priced is listed on the league card",
+     "unavailable": null
+    },
+    "roster_slots": {
+     "label": "Lineup slots",
+     "status": "partial",
+     "words": "starter ranges (2\u20134 WR) read as the minimum plus FLEX; IDP spots are left out and said so",
+     "unavailable": null
+    },
+    "matchups": {
+     "label": "Matchups",
+     "status": "partial",
+     "words": "the schedule and each week's opponent; the week's live points are not read",
+     "unavailable": null
+    },
+    "players": {
+     "label": "Players",
+     "status": "partial",
+     "words": "MFL ids matched to Sleeper's; a player with no match is listed by name and not valued",
+     "unavailable": null
+    },
+    "waivers": {
+     "label": "Waivers",
+     "status": "partial",
+     "words": "free agents are the players no team rosters; MFL's waiver type is read, the claim time is not shared",
+     "unavailable": null
+    },
+    "transactions": {
+     "label": "Transactions",
+     "status": "no",
+     "words": "MFL's transactions are not read yet",
+     "unavailable": "Transactions: not available for MFL leagues yet"
+    },
+    "team_assets": {
+     "label": "Team assets",
+     "status": "partial",
+     "words": "team QBs, kickers and defenses are priced as players; draft picks and blind-bid budgets are not read",
+     "unavailable": null
+    },
+    "news": {
+     "label": "News",
+     "status": "yes",
+     "words": "ESPN's player news (most items RotoWire's), by player \u2014 the same on every platform",
+     "unavailable": null
+    }
+   }
+  },
+  {
+   "provider": "espn",
+   "name": "ESPN",
+   "short": "ESPN",
+   "status": "off",
+   "connect": {
+    "kind": "league_link",
+    "label": "Your ESPN league link or id",
+    "example": "fantasy.espn.com/football/league?leagueId=4242",
+    "where": "Open your league on fantasy.espn.com: the number after leagueId= in the address is the league id (4242 in the example). A public league works by its id alone; ESPN has no sign-in for other apps."
+   },
+   "features": {
+    "scoring": {
+     "label": "Scoring",
+     "status": "partial",
+     "words": "ESPN's scoring items read into the projections' scoring; any item not priced is listed on the league card",
+     "unavailable": null
+    },
+    "roster_slots": {
+     "label": "Lineup slots",
+     "status": "partial",
+     "words": "ESPN's lineup slots read as ours (OP as superflex, D/ST as DEF); IDP slots are left out and said so",
+     "unavailable": null
+    },
+    "matchups": {
+     "label": "Matchups",
+     "status": "partial",
+     "words": "the schedule and each week's points from ESPN's matchups",
+     "unavailable": null
+    },
+    "players": {
+     "label": "Players",
+     "status": "partial",
+     "words": "ESPN ids matched to Sleeper's through nflverse's id table; a player with no match is listed by name and not valued",
+     "unavailable": null
+    },
+    "waivers": {
+     "label": "Waivers",
+     "status": "partial",
+     "words": "free agents are the players no team rosters; ESPN's waiver order and budget are not read",
+     "unavailable": null
+    },
+    "transactions": {
+     "label": "Transactions",
+     "status": "partial",
+     "words": "adds, drops and trades from ESPN's transactions",
+     "unavailable": null
+    },
+    "team_assets": {
+     "label": "Team assets",
+     "status": "partial",
+     "words": "D/ST as team defenses; draft picks and waiver budgets are not read",
+     "unavailable": null
+    },
+    "news": {
+     "label": "News",
+     "status": "partial",
+     "words": "ESPN's player news (most items RotoWire's), by player \u2014 the same on every platform, for the players matched to our ids",
+     "unavailable": null
+    }
+   },
+   "note": "Unofficial: ESPN has no public API for fantasy leagues. isuckatfantasy reads what a public league shows anyone, read-only.",
+   "off": "ESPN leagues: not available right now"
+  },
+  {
+   "provider": "yahoo",
+   "name": "Yahoo",
+   "short": "Yahoo",
+   "status": "unverified",
+   "connect": {
+    "kind": "oauth",
+    "label": "Connect with Yahoo",
+    "example": "football.fantasysports.yahoo.com/f1/12345",
+    "where": "Connect with Yahoo: Yahoo asks you to allow read-only access to your fantasy leagues, then your leagues are listed here to pick from. A league's link (the number after /f1/) works too once you are connected."
+   },
+   "features": {
+    "scoring": {
+     "label": "Scoring",
+     "status": "partial",
+     "words": "Yahoo's stat modifiers read into the projections' scoring; any stat not priced is listed on the league card \u2014 as built, not verified on a live league yet",
+     "unavailable": null
+    },
+    "roster_slots": {
+     "label": "Lineup slots",
+     "status": "partial",
+     "words": "Yahoo's positions read as ours (W/R/T as FLEX, Q/W/R/T as superflex); IDP slots are left out and said so \u2014 as built, not verified on a live league yet",
+     "unavailable": null
+    },
+    "matchups": {
+     "label": "Matchups",
+     "status": "partial",
+     "words": "each week's opponent and points from Yahoo's scoreboard \u2014 as built, not verified on a live league yet",
+     "unavailable": null
+    },
+    "players": {
+     "label": "Players",
+     "status": "partial",
+     "words": "Yahoo ids matched to Sleeper's through nflverse's id table; a player with no match is listed by name and not valued \u2014 as built, not verified on a live league yet",
+     "unavailable": null
+    },
+    "waivers": {
+     "label": "Waivers",
+     "status": "partial",
+     "words": "free agents from Yahoo's player list; waiver priority and budgets are not read \u2014 as built, not verified on a live league yet",
+     "unavailable": null
+    },
+    "transactions": {
+     "label": "Transactions",
+     "status": "partial",
+     "words": "adds, drops and trades from Yahoo's transactions \u2014 as built, not verified on a live league yet",
+     "unavailable": null
+    },
+    "team_assets": {
+     "label": "Team assets",
+     "status": "partial",
+     "words": "DEF as team defenses; draft picks and waiver budgets are not read \u2014 as built, not verified on a live league yet",
+     "unavailable": null
+    },
+    "news": {
+     "label": "News",
+     "status": "partial",
+     "words": "ESPN's player news (most items RotoWire's), by player \u2014 the same on every platform, for the players matched to our ids \u2014 as built, not verified on a live league yet",
+     "unavailable": null
+    }
+   },
+   "note": "Through Yahoo's official Fantasy Sports API, read-only, after you allow it with your Yahoo sign-in."
+  }
+ ],
+ "features": [
+  "scoring",
+  "roster_slots",
+  "matchups",
+  "players",
+  "waivers",
+  "transactions",
+  "team_assets",
+  "news"
+ ],
+ "espn_private": false,
+ "yahoo_configured": true
+}

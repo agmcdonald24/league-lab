@@ -97,7 +97,7 @@
   const section = $derived.by(() => {
     const s = sectionOf(here);
     if (s) lastSection = s;
-    return s ?? (here === "player" || here === "about" ? lastSection : null);
+    return s ?? (here === "player" || here === "about" || here === "watchlist" ? lastSection : null); // IL-5: watchlist
   });
   const href = (path: string) => withContext(path, ctx);
   // a tab opens its first screen
@@ -306,6 +306,16 @@
           >
         {/if}
         <!-- ---- end IK-4 -->
+        <!-- ---- IL-5: the watchlist (accounts on; signed out it says how to start one) -->
+        {#if account.status?.enabled}
+          <a
+            href={href("/watchlist")}
+            role="menuitem"
+            class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised {here === 'watchlist' ? 'font-semibold text-accent' : ''}"
+            aria-current={here === "watchlist" ? "page" : undefined}
+            data-testid="menu-watchlist">Watchlist</a
+          >
+        {/if}
       </div>
     </div>
   </div>

@@ -28,6 +28,7 @@
     type DrawerSection,
   } from "../lib/player-drawer.svelte";
   import { navigate } from "../lib/router.svelte";
+  import { canWatch, isWatched, unwatch, watch } from "../lib/watchlist.svelte"; // ---- IL-5: Watch / Watching
   import { fmt } from "../lib/theme";
   import GameLog from "./GameLog.svelte";
   import NewsLine from "./NewsLine.svelte"; // ---- N1
@@ -175,6 +176,21 @@
     if (r === "waiting") note = `${title} is waiting to be compared: open another player and tap “Compare with ${title}”.`;
   }
 
+  // ---- IL-5 (Wave I-L): Watch / Watching — signed in only; the watchlist is the account's (lib/watchlist.svelte.ts)
+  let watchNote = $state<string | null>(null);
+  const watching = $derived(isWatched(gsis));
+  async function toggleWatch() {
+    if (!gsis) return;
+    watchNote = null;
+    try {
+      if (watching) await unwatch(gsis, drawer.origin ?? null);
+      else await watch(gsis, drawer.origin ?? null);
+    } catch {
+      watchNote = "Not saved: try again in a minute.";
+    }
+  }
+  // ---- end IL-5
+
   const SEP = " · ";
   const newsLabel = (n: NewsItem) => (n.about === "league" ? "League news" : "News");
 </script>
@@ -202,6 +218,16 @@
       onclick={compare}
       data-testid="drawer-compare">{isWaiting ? "Remove from compare" : waiting ? `Compare with ${waiting.name}` : "Add to compare"}</button
     >
+    {#if canWatch() && gsis}
+      <!-- ---- IL-5: the account's watchlist -->
+      <button
+        type="button"
+        class="inline-flex min-h-11 items-center rounded-md border px-3.5 text-sm font-semibold {watching ? 'border-accent bg-accent-soft text-ink' : 'border-line-strong text-ink'}"
+        aria-pressed={watching}
+        onclick={toggleWatch}
+        data-testid="drawer-watch">{watching ? "★ Watching" : "☆ Watch"}</button
+      >
+    {/if}
     <a
       href={`/player/${encodeURIComponent(gsis ?? "")}`}
       class="inline-flex min-h-11 items-center rounded-md border border-line-strong px-3.5 text-sm font-semibold text-ink"
@@ -214,6 +240,7 @@
     >
   </div>
   {#if note}<p class="-mt-1 text-sm text-ink-3" role="status" data-testid="drawer-compare-note">{note}</p>{/if}
+  {#if watchNote}<p class="-mt-1 text-sm text-bad" role="status" data-testid="drawer-watch-note">{watchNote}</p>{/if}<!-- IL-5 -->
   {#if actions[0]?.key === "compare" && context.starterName}
     <p class="-mt-1 text-sm text-ink-3" data-testid="pane-compare-with">With {context.starterName}{context.slot && context.slot !== "bench" ? `, the next best for ${context.slot}` : ""}.</p>
   {/if}

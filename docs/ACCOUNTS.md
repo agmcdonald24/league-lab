@@ -1,4 +1,4 @@
-# Accounts and profiles — the design (Wave I-I, II-5, 2026-10-04) and phase 1 as built (Wave I-K, IK-4: § "Built, phase 1")
+# Accounts and profiles — the design (Wave I-I, II-5, 2026-10-04), phase 1 (Wave I-K, IK-4: § "Built, phase 1") and phase 2 (Wave I-L, IL-5: § "Built, phase 2")
 
 *(The fifth review, § 9: "An account should save multiple provider connections, selected leagues/teams, a default
 league, watchlists, and table preferences … Returning users should not repeat onboarding." Acceptance: "one account can
@@ -175,3 +175,66 @@ Stats views also go to the server; the browser's copy stays the cache the screen
 per-league job; a watchlist button on the player card; the team picker's change on a shared link's league offered,
 not pushed; the beta password's future (once accounts are live, the PO decides whether the gate stays).
 
+
+## Built, phase 2 (Wave I-L, IL-5, 2026-10-05)
+
+Connections follow the account, the watchlist has its screen. Verified live: **no** (accounts are off on the server
+until the Resend key; Yahoo until the app is registered; ESPN private until `LEAGUE_LAB_ESPN_PRIVATE=on`).
+
+**Connections** (`api/league_lab_api/connections.py`; the table IK-4 reserved, unchanged — no `alter`). The cookies
+stay the request-path carriers (IK-2's `ll_yahoo`, IK-1's `ll_espn`); for a signed-in person the row in
+`accounts.connections` is the durable copy:
+
+| When | What happens to the row | The cookie |
+|---|---|---|
+| Connect with Yahoo (`/api/yahoo/callback`) / "Read my private league" (`POST /api/espn/connect`), signed in | stored (one per provider per account: a new identity replaces the old), `status = active` | set as before |
+| the same, as a guest | nothing | set as before (guests unchanged) |
+| sign in (`POST /api/account/verify`) on a device that carries a connection cookie | stored: the guest's connection joins the account | kept |
+| sign in on a device without one, the account has an `active` row | — | **re-issued from the row** (Yahoo: the refresh token only — its first read refreshes the hour-long access token) |
+| `GET /api/account/me` (every page load, signed in) | updated when the cookie carries a newer Yahoo refresh token; **never created** (a device that kept its cookie after a disconnect elsewhere does not put it back) | re-issued when missing (60 / 30 days < the 90-day session) |
+| Yahoo refuses the refresh (IK-2's middleware clears the cookie) | `status = expired`, never restored; the account page says "needs reconnecting" with the link | cleared |
+| Disconnect (`POST /api/yahoo/disconnect` / `POST /api/espn/disconnect`), signed in | deleted (`removed: 1` in the answer) | cleared |
+| `DELETE /api/account` | gone with the user (`connections.user_id … on delete cascade`, in the schema; `test_il5` checks the constraint and the rows) | — |
+
+* **At rest**: `secret_enc` = `sealed.seal("account-connection|<provider>", …)` (IK-1's encrypt-then-MAC, keys
+  derived from `LEAGUE_LAB_API_SECRET`; a cookie never opens as a row, a row never as a cookie), re-sealed at every
+  write, 400 days at most. Sealed: Yahoo `{r: refresh token, g: guid}`, ESPN `{s2, swid}` — the least that restores the
+  connection. `external_user_id`: Yahoo's GUID; ESPN `espn-<16 hex>` = an HMAC of the SWID (never the SWID). No token,
+  cookie or sealed value is logged, returned or printed; a failed write logs the exception's class and never fails the
+  request it rides on. The design's separate `LEAGUE_LAB_CONNECTION_KEY` was not needed: one secret, a purpose per use.
+* **ESPN** only behind its switch: with `LEAGUE_LAB_ESPN_PRIVATE` off nothing is stored or restored (rows already
+  there stay, unused). **Yahoo** is restored only when this server can talk to Yahoo (`yahoo_connect.configured()`).
+* **`ll_session`'s path is `/api`** (was `/api/account`): the Yahoo callback and the two disconnect routes have to
+  know who is signed in. Sign-out clears the cookie at both paths. No live session existed under the old path
+  (accounts were never on).
+* `GET /api/account/me` gains `connections: [{provider, external_user_id, connected_at, status, last_sync_at}]`; the
+  account page lists them ("Yahoo: connected 2026-10-05 — it comes back on any device you sign in on.") with
+  "Reconnect" on an expired one, and says what an account keeps (the watchlist and a connection only if you make one,
+  encrypted — "nothing else"; About's line too).
+
+**The watchlist** (`/watchlist`, `web/src/routes/Watchlist.svelte`; `GET /api/account/watchlist?league=&team=`,
+`api/league_lab_api/watchlist.py`):
+
+* The drawer's **☆ Watch / ★ Watching** (signed in only) saves the player for the account with `league: null` — a
+  player, whatever league is on screen; un-watching removes every row of him (one saved with a league too). The ⋯
+  menu's **Watchlist** (accounts on); the account page links it with the count.
+* Each row: the name (a tap opens the drawer — II-2's link hook), the position, the NFL team, **his status today** (the
+  card's injury designation after the availability overlay; "No injury designation" when none), **this week's
+  projected points in the league on screen** ("8.3 projected · week 4"), the **league-relative note** ("Free agent" /
+  "Rostered by Run Bijan Run" / "On your team" / "Not in this league's player pool"), **Remove**. The head: "5 players
+  · projected points in League of Scrubs scoring, week 4. Tap a name for his card."
+* **The league**: the one on screen (the switcher's — after a sign-in on a new device that is the default league); the
+  API takes `league`, else the account's default. Decided so the drawer a row opens shows the same number as the row
+  (both go through the card's code path: a house league from the database, any other on demand — Sleeper, MFL, ESPN,
+  Yahoo).
+* **Cost**: one card per player, 30 at most per answer (`count` says how many are saved; the head says "the first 30
+  of N"); a row that cannot be read says why and the others answer.
+* Signed out: "Sign in to keep a watchlist on any device: sign in with your email, then tap ☆ Watch on any player's
+  card." (no Watch in the drawer). Accounts off: "A watchlist comes with an account, and accounts are not on for this
+  server yet." (no menu item).
+* GA (INF-1's `track`): `watchlist_add` / `watchlist_remove` with `content_type: "player"`, `item_id` (the gsis id or
+  unit key) and `origin` (the screen) — ids only.
+
+**Next**: the profile's "last sync" (still nothing writes `leagues.last_sync_at`); a watchlist row's news line and
+"what changed since you saved him"; Google sign-in (B); a per-league watchlist view if managers ask for one (the rows
+can carry a league already).

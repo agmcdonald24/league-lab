@@ -9261,3 +9261,125 @@ compare against it)
    nightly's — a game in progress still counts as its full range (IH-3's rule kept); (e) one transactions call per week
    (MFL assigns the week) rather than one season call (no week field in MFL's rows): ~N calls the first time, a past week
    cached a day; (f) the playoff team count capped at the league's size (2⁴ = 16 for 12 teams before).
+
+### IL-5 2026-10-05 — accounts phase 2: connections, the watchlist screen, the providers' loose ends (branch `dev/IL5` from `main` `93115db`, database `league_lab_i0b`)
+
+* **Task**: IL-5 (the brief § "IL-5"; IK-4's "Next (phase 2)", IK-3's "Not done"). Plan sections: ACCOUNTS § "Built,
+  phase 2" (new), PROVIDERS § "The matrix as built" (the switches, the duplicate-id rule), HOSTING § Accounts (phase 2
+  paragraph), WORDS § "Accounts, phase 2" (new).
+* **Files**: `api/league_lab_api/connections.py` (new: seal / open, store, restore, delete, expire, `/me`'s listing);
+  `api/league_lab_api/watchlist.py` (new: `GET /api/account/watchlist`); marked `# ---- IL-5` edits in
+  `accounts.py` (`ll_session` path `/api`, `me` lists `connections`, `verify` and `me` sync), `yahoo_connect.py`
+  (callback stores, disconnect deletes, a refused refresh expires), `espn_connect.py` (connect stores, disconnect
+  deletes, the signed-in words), `main.py` (one block: the watchlist router), `usage.py` (`account` / `watchlist`
+  screens counted by name); `src/league_lab/platforms.py` (`provider_status`, `verified_providers`, `switched_off`,
+  `OFF_WORDS`, `capabilities()` reads them), `src/league_lab/player_ids.py` (the duplicate-id rule on `mfl_id` /
+  `espn_id` / `yahoo_id`, `duplicates()`); `api/tests/test_il5.py` (new, 25), pins in `test_ik4.py` (cookie path; GET
+  watchlist), `test_ik2.py` (`removed` on disconnect), `test_ik3.py` / `test_ii5.py` (one test each: the switches);
+  web: `routes/Watchlist.svelte`, `lib/watchlist.svelte.ts` (new), marked edits in `components/PlayerPane.svelte`
+  (☆ Watch / ★ Watching), `components/TopBar.svelte` (⋯ Watchlist), `lib/router.svelte.ts` (`/watchlist`),
+  `App.svelte` (one LAZY line), `lib/analytics.ts` (`trackWatchlist`), `lib/providers.ts` (status `off`),
+  `lib/account.svelte.ts` (`connections` type), `routes/Leagues.svelte` (the switches; where a connection is kept),
+  `routes/Account.svelte` (players and connections; the privacy line), `routes/About.svelte` (the privacy line);
+  `web/e2e/il5/fixtures.spec.ts` (new, 7 × 2 sizes), `web/fixtures/il5/*.json` (recorded from the API on the clone by
+  `test_il5` with `IL5_RECORD=1`), `web/fixtures/ik4/me.json` (re-recorded: `connections: []`); docs above.
+  `scripts/hosted_accounts.sql` **unchanged** (the table, its `kind = 'cookie'`, the cascade were IK-4's already).
+* **Interfaces**: `GET /api/account/me` + `connections: [{provider, external_user_id, connected_at, status,
+  last_sync_at}]`; `GET /api/account/watchlist?league=&team=` → `{league, league_name, week, count, shown, players:
+  [{player_key, player_name, position, team, status, proj_points, week, owner: {kind, team_id, team_name, words}, read,
+  words}]}`; `POST /api/yahoo/disconnect` / `POST /api/espn/disconnect` + `removed`; `/api/providers` provider
+  `status` ∈ supported | unverified | not_supported | **off** (+ `off` words); `platforms.provider_status(p)`;
+  `player_ids.duplicates()`; GA `watchlist_add` / `watchlist_remove` `{content_type, item_id, origin}`.
+* **How a connection follows the account** (ACCOUNTS § "Built, phase 2" has the table): stored when a signed-in person
+  connects (the Yahoo callback, ESPN's form) or signs in on a device that carries the cookie; re-issued from the row at
+  sign-in and on `/me` when the cookie is missing; deleted by Disconnect (signed in) and with the account; `expired`
+  (never restored) when Yahoo refuses the refresh; `/me` updates a row with a rotated refresh token but never makes
+  one. Sealed with `sealed.seal("account-connection|<provider>", …)`: Yahoo `{refresh token, guid}`, ESPN `{s2, swid}`;
+  `external_user_id` = Yahoo's GUID / `espn-<HMAC of the SWID>`. ESPN only behind `LEAGUE_LAB_ESPN_PRIVATE`; Yahoo
+  restored only when the server is configured for Yahoo. Guests: cookie only, as before.
+* **Commands**: `pg_isready`; `\dn accounts` on `league_lab_i0b` (present) and `scripts/hosted_accounts.sql` applied
+  twice as the owner (exit 0, 0 rows before the tests); `cd api && PYTHONPATH=. uv run pytest -q tests/test_il5.py`;
+  `IL5_RECORD=1 … -k "watchlist_rows or record_the_providers"` (the web fixtures); `IK4_RECORD=1 … test_ik4.py -k
+  record`; the duplicate count on nflverse's table (`player_ids.read(<the 2026-10-02 db_playerids.csv>)`); `cd web &&
+  npm run lint && npm run build`; `FIXTURES_PORT=8645 npx playwright test --config playwright.fixtures.config.ts
+  e2e/il5` then the whole set; `uv run ruff check src app tests api`; `uv run python scripts/copy_standard.py --check`;
+  the root and API suites with `OMP_NUM_THREADS=1` (see below).
+* **Evidence**: `test_il5.py` **25 passed** — the Yahoo row round trip (one row `yahoo · FIXTUREGUID3 · oauth · active`;
+  `secret_enc` starts `v1.` and holds neither the refresh token nor the GUID in the clear; it opens only under its own
+  purpose; `/me` lists it and no answer carries a token); a sign-in on a fresh device re-issues `ll_yahoo` (HttpOnly,
+  `Path=/api`, 60 days; refresh token only) and Yahoo reads with it; a missing cookie comes back on `/me`; Disconnect on
+  A deletes the row (`removed: 1`) and B's own cookie does not bring it back; a guest's connection stays a cookie and
+  joins the account at sign-in on that device; a rotated refresh token updates the row; a refused refresh marks it
+  `expired`, not restored, and a new connect makes it `active`; `DELETE /api/account` leaves 0 rows and
+  `connections_user_id_fkey` is `on delete cascade` (`confdeltype = 'c'`); ESPN behind its switch (the row
+  `espn · espn-<16 hex> · cookie`, no SWID / `espn_s2` in the row, restored on another device, Disconnect deletes; switch
+  off: nothing restored, connect 404); accounts off: no row ever; `ll_session` at `Path=/api;` and sign-out clears both
+  paths; the watchlist in League of Scrubs (five players, saved with and without a league = one row each; the numbers
+  equal the drawer's card; free agent / rostered / yours), the default league when none is sent, an unreadable row says
+  why, signed out / off; the providers under both switches (and the recorded fixtures equal the live answers); the
+  duplicate-id rule per column (500 on two gsis ids and 700 on a gsis id and none map to nobody, 600 twice on one player
+  maps, logged once with the ids, a reload logs nothing new) and none in the fixture table. **nflverse's id table
+  (2026-10-02, 12,518 rows): 4 `espn_id` on two players** (16094, 2516049, 2574010, 2582138 — retired / free agents),
+  **0 `mfl_id`, 0 `yahoo_id`**. The watchlist answer on the clone, League of Scrubs, team 2, week 4: Wan'Dale Robinson
+  WR TEN 8.30 free agent · Malik Washington WR MIA 8.21 free agent · Quentin Johnston WR LAC 8.12 free agent · Zay
+  Flowers WR BAL Questionable 11.28 rostered by Run Bijan Run · Jonah Coleman RB DEN Out 7.09 on your team. **Cost**:
+  the rows are read the lean way (`watchlist.Lean`: the card's first steps — `PROFILE_SQL`, `PROJ_SQL` / the
+  on-demand context built once, the overlay — not its sections), equal to the full card row for row on Scrubs and on
+  the on-demand Test League (`test_the_lean_row_equals_the_full_card…`); on this machine at load 16 on 2 CPUs, five
+  rows: lean 1.85 s warm (7.44 s cold), the full cards 9.94 s. **e2e `il5` 14 passed** (7 × 375 / 1300): the ⋯ Watchlist → five rows with their status,
+  projection and note → a name opens the drawer at ★ Watching → ☆ Watch (the row leaves; DELETE) → ★ Watching (PUT,
+  `league: null`; the row is back) → Remove; GA's `watchlist_remove`, `watchlist_add`, `watchlist_remove` with the ids
+  and `origin: "watchlist"`, no name; Watch from the Waivers drawer fills an empty list; signed out: the one line and no
+  Watch; accounts off: no menu item and one line; ESPN off: the line instead of the form; ESPN / Yahoo verified: no
+  "not verified" words; the account page's connections ("Yahoo: connected 2026-10-05 …", "ESPN: needs reconnecting …"
+  + Reconnect) and "Your watchlist: 5 players.". `ik4` / `ik3` / `ii5` with it: **48 passed**.
+* **Checks** (`league_lab_i0b`, the pinned clock; the machine shared with four other developers' suites at load
+  10–17 on 2 CPUs): ruff clean; `copy_standard.py --check` clean; `npm run lint` 0 / 0 (169 files); `npm run build` ok
+  (`/watchlist` is its own chunk); root **1,258 passed, 7 skipped**, 0 failed (7:46; the 7 skips are the clone's, IK-4 saw the same); API (`test_u1` / `test_ig2` deselected) **730 passed, 23 skipped, 4 failed** — the four IK-4 listed (`test_ic1` ×2, `test_ic_po` ten-yard cut, `test_ih1` events prune): they fail the same on `main` `93115db` against this clone (checked: the same four, detached in this worktree), the clone's data and privileges; the run started before the lean commit, so `test_il5` (25 passed) and the pins were re-run after it; fixtures e2e (port 8645, the whole set) **380 passed, 2 skipped** (366 + `il5`'s 14; 24 min).
+  The suites ran with `OMP_NUM_THREADS=1` (also `OPENBLAS` / `MKL`): without it the root suite sat ~20 minutes on
+  `test_kdef.py::test_fit_and_predict…` (OpenMP threads fighting the other suites for two CPUs) and was restarted —
+  the same tests, one thread each.
+* **What moved**: no number of the model or the screens; `/api/providers` is unchanged with no switch set; four ESPN ids
+  (retired / free agents) no longer map.
+* **Decisions** (written in ACCOUNTS / PROVIDERS): `ll_session`'s path `/api` (the provider routes must see the
+  session; no live session existed under `/api/account`); one connection per provider per account; `/me` restores and
+  updates but never creates a row; an expired Yahoo row is kept (the account page says "needs reconnecting") rather than
+  deleted; Watch saves the **player** (`league: null`) whatever league is on screen; the watchlist shows the **league on
+  screen** (the API's default is the account's default league), so the drawer a row opens says the same number; 30
+  rows read per answer; "No injury designation" (never "Healthy"); ESPN's "off" status hides the "not verified" line
+  (the off line is the one said); the ESPN cookies of a **signed-in** person are kept with the account (encrypted) —
+  IK-1's "never stores them" now holds for guests only, and the words say which (behind `LEAGUE_LAB_ESPN_PRIVATE`,
+  off); usage counts `account` and `watchlist` by name (they were `other`; `test_u1`'s router pin now holds).
+* **Verified live: no** — accounts are off until the Resend key; Yahoo until the app registration; ESPN private until
+  its switch.
+* **Not done**: the profile's "last sync" (nothing writes `leagues.last_sync_at`); `scripts/id_map_audit.py` does not
+  list the quarantined ids (`player_ids.duplicates()` is there for it); the watchlist's news line / "what changed since
+  you saved him"; the full player page (`/player/<id>`) has no Watch control (the drawer has it); GA's two events are
+  checked in the e2e, not on GA's DebugView.
+* **Next**: after the deploy with a Resend key — on a phone, sign in, ☆ Watch two players from the Waivers drawer,
+  ⋯ → Watchlist; on a laptop sign in: the watchlist and (once Yahoo is registered) the Yahoo connection come back with
+  no Connect; Disconnect Yahoo on one, the other keeps its own cookie until it expires but a new sign-in restores
+  nothing; delete the account and check `select count(*) from accounts.connections` on Neon.
+
+**For the PO**
+1. **Nothing in a PO-owned file is required**: no `api/Dockerfile`, `render.yaml`, workflow, `scripts/nightly.sh` or
+   `scripts/sync_to_hosted.sh` change (`scripts/hosted_accounts.sql` is unchanged; the nightly's IK-4 lines apply it
+   as before). No console page changes.
+2. **The verified flip** (after your live check of a provider): Render → isuckatfantasy service → Environment → add
+   `LEAGUE_LAB_PROVIDER_VERIFIED` = `espn` (or `yahoo`, or `espn,yahoo`) → Save (Render restarts the service; no build).
+   Check `https://isuckatfantasy.io/api/providers` → that provider's `"status": "supported"` and no "as built, not
+   verified" in its words; the setup screen drops "New: not verified on a live league yet". Then update the PROVIDERS
+   table's cells by hand. To undo: delete the variable.
+3. **ESPN's kill switch** now shows: `LEAGUE_LAB_ESPN_LEAGUES=off` → `/api/providers` ESPN `"status": "off"`, the setup
+   screen says "ESPN leagues: not available right now. Sleeper and MyFantasyLeague leagues work as before."
+4. **Rotating `LEAGUE_LAB_API_SECRET`** now also drops every saved Yahoo / ESPN connection (they are sealed with it):
+   each person connects once more. HOSTING § Accounts says so.
+5. **Merge notes**: `platforms.py` — my block sits after `capabilities()` and changes its first lines (`status =
+   provider_status(key)`); IL-2 edits `_CAPS["mfl"]` (no overlap expected). `main.py` — one block after IK-4's.
+   `test_ik4.py` pins changed on purpose (cookie path `/api`; `GET /api/account/watchlist` answers now);
+   `web/fixtures/ik4/me.json` re-recorded (`connections: []`). `test_ik3`'s `test_real_yahoo_setup_needs_the_connection` and
+   `test_real_my_week_and_screens[yahoo…]` need `web/dist` (they follow the callback's redirect to the web app): they fail without a build, on `main` too.
+6. **Decisions Andrew may reverse**: a signed-in person's ESPN cookies kept (encrypted) with the account — the
+   alternative is ESPN connections stay device-only; one Yahoo / ESPN connection per account; Watch saves a player for
+   every league (not per league); the watchlist in the league on screen (not always the default league); 30 rows per
+   answer; an expired connection kept and labelled rather than deleted.

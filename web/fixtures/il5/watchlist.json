@@ -1,0 +1,94 @@
+{
+ "league": "1389709692405551104",
+ "league_name": "League of Scrubs",
+ "week": 4,
+ "count": 5,
+ "shown": 5,
+ "players": [
+  {
+   "player_key": "00-0038117",
+   "player_name": "Wan'Dale Robinson",
+   "position": "WR",
+   "team": "TEN",
+   "status": null,
+   "proj_points": 8.3,
+   "week": 4,
+   "owner": {
+    "kind": "free_agent",
+    "team_id": null,
+    "team_name": null,
+    "words": "Free agent"
+   },
+   "read": true,
+   "words": null
+  },
+  {
+   "player_key": "00-0039880",
+   "player_name": "Malik Washington",
+   "position": "WR",
+   "team": "MIA",
+   "status": null,
+   "proj_points": 8.21,
+   "week": 4,
+   "owner": {
+    "kind": "free_agent",
+    "team_id": null,
+    "team_name": null,
+    "words": "Free agent"
+   },
+   "read": true,
+   "words": null
+  },
+  {
+   "player_key": "00-0038544",
+   "player_name": "Quentin Johnston",
+   "position": "WR",
+   "team": "LAC",
+   "status": null,
+   "proj_points": 8.12,
+   "week": 4,
+   "owner": {
+    "kind": "free_agent",
+    "team_id": null,
+    "team_name": null,
+    "words": "Free agent"
+   },
+   "read": true,
+   "words": null
+  },
+  {
+   "player_key": "00-0039064",
+   "player_name": "Zay Flowers",
+   "position": "WR",
+   "team": "BAL",
+   "status": "Questionable",
+   "proj_points": 11.28,
+   "week": 4,
+   "owner": {
+    "kind": "rostered",
+    "team_id": 3,
+    "team_name": "Run Bijan Run",
+    "words": "Rostered by Run Bijan Run"
+   },
+   "read": true,
+   "words": null
+  },
+  {
+   "player_key": "00-0041496",
+   "player_name": "Jonah Coleman",
+   "position": "RB",
+   "team": "DEN",
+   "status": "Out",
+   "proj_points": 7.09,
+   "week": 4,
+   "owner": {
+    "kind": "yours",
+    "team_id": 2,
+    "team_name": "MacZaddy",
+    "words": "On your team"
+   },
+   "read": true,
+   "words": null
+  }
+ ]
+}

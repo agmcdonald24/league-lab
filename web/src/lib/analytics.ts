@@ -199,3 +199,9 @@ export function pause(on: boolean): void {
   (window as unknown as Record<string, unknown>)[DISABLE] = on;
 }
 // ---- end INF-1
+
+// ---- IL-5 (Wave I-L): the watchlist — a player saved / removed (his public id and the screen the tap was on; no PII)
+export function trackWatchlist(kind: "add" | "remove", itemId: string, origin: string | null): void {
+  track(kind === "add" ? "watchlist_add" : "watchlist_remove", { content_type: "player", item_id: itemId, origin });
+}
+// ---- end IL-5

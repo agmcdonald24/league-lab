@@ -933,6 +933,13 @@ fi
    device (a laptop, a private window): the leagues, the teams and the default come back, `/` opens the default
    league's week with no setup.
 
+**Phase 2 (Wave I-L, IL-5): connections and the watchlist** — nothing new to set. A Yahoo / ESPN connection made
+while signed in is kept in `accounts.connections`, sealed with `LEAGUE_LAB_API_SECRET` (purpose
+`account-connection|<provider>`), so **rotating that secret also drops every saved connection** (each person connects
+once more; the cookies on their devices stop opening too). The table, its grants and its `on delete cascade` were in
+IK-4's script already: `scripts/hosted_accounts.sql` is unchanged. `ll_session`'s path is `/api` now (it was
+`/api/account`). `docs/ACCOUNTS.md` § "Built, phase 2".
+
 **Local development.** On the Mac (the pipeline role owns the database):
 `psql "$(uv run python -c 'from league_lab.config import get_settings; print(get_settings().pipeline_dsn())')" -v ON_ERROR_STOP=1 -f scripts/hosted_accounts.sql`,
 then run the API with `LEAGUE_LAB_ACCOUNTS=on LEAGUE_LAB_API_SECRET=dev` — the stub mailer keeps the link in the

@@ -30,6 +30,7 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     POST /api/usage, /api/usage/summary  ---- U-1: one count per screen view (its own read-write transaction), the counts
     /api/events?league=&team=&hours=     ---- IG-2: this roster's stored events (status moves, news, briefs; the PO's QA)
     /api/account/*                       ---- IK-4: accounts (sign-in by an emailed link, saved leagues, preferences)
+    /api/account/watchlist?league=&team= ---- IL-5: the saved players in one league (the watchlist screen)
 Errors are {"error": "<plain words>"} (plus the older "detail"): 404 unknown league / team / player / user,
 502 Sleeper did not answer, 503 the numbers are not ready yet / busy (our Sleeper budget).
 Everything else is the web app (web/dist): a real file, else index.html (the app routes itself).
@@ -738,6 +739,14 @@ async def _account_error(_req: Request, exc: accounts_mod.AccountError):
 
 app.include_router(accounts_mod.router, dependencies=[Depends(require_auth)])
 # ---- end IK-4
+
+# ---- IL-5 (Wave I-L): accounts phase 2 — GET /api/account/watchlist?league=&team= (the watchlist screen: each saved
+# player as the drawer's card has him in that league; league_lab_api/watchlist.py). The connections (Yahoo / ESPN rows
+# under an account) ride on the routes above and IK-1's / IK-2's (league_lab_api/connections.py).
+from . import watchlist as watchlist_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(watchlist_mod.router, dependencies=[Depends(require_auth)])
+# ---- end IL-5
 
 
 # ---------------------------------------------------------------- the web app

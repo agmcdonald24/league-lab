@@ -425,3 +425,15 @@ def test_real_yahoo_bare_id_without_keys_is_not_configured(real, client, monkeyp
     A._default = None
     for text in ("4242", "https://football.fantasysports.yahoo.com/f1/4242"):
         _err(client.get("/api/leagues", params={"yahoo": text}), 404, "yahoo_not_configured")
+
+
+# ---- IL-5 (Wave I-L): the verified switch — the PO's flip after a live check is a Render env change, not a deploy
+def test_espn_and_yahoo_flip_to_supported_with_the_verified_switch(monkeypatch):
+    monkeypatch.setenv(P.VERIFIED_ENV, "espn,yahoo")
+    for prov in ("espn", "yahoo"):
+        c = P.capabilities(prov)
+        assert c["status"] == "supported" and c["note"]
+        assert not any(P.UNVERIFIED in v["words"] for v in c["features"].values())
+    monkeypatch.setenv(P.VERIFIED_ENV, "")
+    assert all(P.capabilities(p)["status"] == "unverified" for p in ("espn", "yahoo"))
+# ---- end IL-5

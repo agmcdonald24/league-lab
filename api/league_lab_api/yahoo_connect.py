@@ -240,13 +240,17 @@ def callback(request: Request, code: str | None = None, state: str | None = None
             r = _done()
             r.set_cookie(COOKIE, cookie_value(session), max_age=COOKIE_DAYS * 86400, httponly=True, samesite="lax",
                          secure=_secure(request), path="/api")
+            from . import connections  # ---- IL-5: signed in, the connection follows the account
+            connections.on_connect(request, "yahoo", {"r": session.refresh_token, "g": session.guid})
     r.delete_cookie(STATE_COOKIE, path="/api/yahoo")
     return r
 
 
 @router.post("/api/yahoo/disconnect", dependencies=[Depends(_gate)], include_in_schema=False)
 def disconnect(request: Request):
-    r = JSONResponse({"connected": False}, headers={"Cache-Control": "no-store"})
+    from . import connections  # ---- IL-5: signed in, the account's row goes too
+    r = JSONResponse({"connected": False, "removed": connections.on_disconnect(request, "yahoo")},
+                     headers={"Cache-Control": "no-store"})
     r.delete_cookie(COOKIE, path="/api", secure=_secure(request), httponly=True, samesite="lax")
     return r
 
@@ -320,6 +324,8 @@ class YahooSessionMiddleware:
                     flags = "; Path=/api; HttpOnly; SameSite=lax" + ("; Secure" if secure else "")
                     if session.expired:
                         line = f'{COOKIE}=""; Max-Age=0{flags}'
+                        from . import connections  # ---- IL-5: Yahoo refused the refresh: the account's row says so
+                        connections.mark_expired(jar.get("ll_session").value if "ll_session" in jar else None, "yahoo")
                     else:
                         line = f"{COOKIE}={cookie_value(session)}; Max-Age={COOKIE_DAYS * 86400}{flags}"
                     message = {**message, "headers": [*(message.get("headers") or []),

@@ -235,7 +235,8 @@ def test_link_session_leagues_upserted_twice_is_one_row(api, caplog):
     assert r.status_code == 200 and r.json() == {"ok": True, "email": email}
     cookie = r.headers["set-cookie"]
     assert cookie.startswith(f"{accounts.COOKIE}=") and "HttpOnly" in cookie and "Secure" in cookie
-    assert "samesite=lax" in cookie.lower() and "Path=/api/account" in cookie and f"Max-Age={90 * 86400}" in cookie
+    # ---- IL-5: the path is /api (the Yahoo / ESPN connect and disconnect routes must see who is signed in)
+    assert "samesite=lax" in cookie.lower() and "Path=/api;" in cookie and f"Max-Age={90 * 86400}" in cookie
     assert token not in r.text and token not in cookie
     api.cookies.clear()                                                     # the jar keeps a Secure one off http
     api.cookies.set(accounts.COOKIE, r.cookies[accounts.COOKIE])
@@ -337,8 +338,9 @@ def test_the_watchlist(api):
     for _ in range(2):
         assert api.put("/api/account/watchlist", json={"player_key": "00-0036963"}).status_code == 200
         assert api.put("/api/account/watchlist", json={"player_key": "00-0036963", "league": SCRUBS}).status_code == 200
-    w = api.get("/api/account/watchlist").status_code                     # no GET: `me` carries it
-    assert w in (404, 405)
+    # ---- IL-5: GET /api/account/watchlist is the watchlist screen's answer now (league_lab_api/watchlist.py)
+    w = api.get("/api/account/watchlist", params={"league": SCRUBS})
+    assert w.status_code == 200 and w.json()["count"] == 1               # one player, saved with and without a league
     rows = api.get("/api/account/me").json()["watchlist"]
     assert len(rows) == 2 and {r["league"] for r in rows} == {None, SCRUBS}
     assert api.put("/api/account/watchlist", json={"player_key": "<script>"}).json()["code"] == "bad_player"

@@ -36,6 +36,9 @@ WORDS = "Your ESPN cookies stay in your browser; isuckatfantasy reads your leagu
 HOW = ("On fantasy.espn.com, signed in: your browser's developer tools → Application (Storage) → Cookies → "
        "https://fantasy.espn.com — copy the values of espn_s2 and SWID.")
 OFF = "Private ESPN leagues are not switched on on this server."
+# ---- IL-5: signed in, the cookies are also kept with the account, encrypted, so another device signs in to them
+WORDS_SAVED = ("Your ESPN cookies are kept in this browser and, encrypted, with your account so your other devices can "
+               "read your league; Disconnect removes them from both.")
 
 
 def _secure(request: Request) -> bool:
@@ -87,14 +90,18 @@ async def connect(request: Request):
     if pair is None:
         words = "Those do not look like ESPN's espn_s2 and SWID cookies."
         return _no_store({"error": words, "detail": words, "code": "espn_cookies_invalid", "fix": HOW}, 400)
-    resp = _no_store({"ok": True, "connected": True, "words": WORDS})
+    from . import connections  # ---- IL-5: signed in, the connection follows the account
+    saved = connections.on_connect(request, "espn", {"s2": pair[0], "swid": pair[1]})
+    resp = _no_store({"ok": True, "connected": True, "words": WORDS_SAVED if saved else WORDS})
     resp.set_cookie(COOKIE, sealed.seal(PURPOSE, {"s2": pair[0], "swid": pair[1]}), max_age=MAX_AGE_S, httponly=True,
                     samesite="lax", secure=_secure(request), path=PATH)
     return resp
 
 
 @router.post("/api/espn/disconnect")
-def disconnect():
-    resp = _no_store({"ok": True, "connected": False, "words": WORDS})
+def disconnect(request: Request):
+    from . import connections  # ---- IL-5: signed in, the account's row goes too
+    resp = _no_store({"ok": True, "connected": False, "words": WORDS,
+                      "removed": connections.on_disconnect(request, "espn")})
     resp.delete_cookie(COOKIE, path=PATH)
     return resp

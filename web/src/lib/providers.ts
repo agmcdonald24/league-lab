@@ -20,10 +20,11 @@ export interface Provider {
   provider: ProviderKey;
   name: string; // "MyFantasyLeague"
   short: string; // "MFL"
-  status: "supported" | "not_supported" | "unverified"; // IK-3: "unverified" = as built, not checked on a live league yet
+  status: "supported" | "not_supported" | "unverified" | "off"; // IK-3: "unverified" = as built, not checked on a live league yet; IL-5: "off" = the server's kill switch
   connect: { kind: "username" | "league_link" | "oauth" | "none"; label: string; example: string | null; where: string };
   features: Record<FeatureKey, ProviderFeature>;
   note?: string; // IK-3: ESPN's "Unofficial: …", Yahoo's "Through Yahoo's official … API"
+  off?: string; // IL-5: "ESPN leagues: not available right now" (status "off")
 }
 
 export interface Providers {
