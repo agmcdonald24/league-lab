@@ -3,6 +3,16 @@
 Written for the people in the league, newest first. Home shows the top entry. Every release adds one here
 in plain words (docs/WORDS.md); CHANGELOG.md keeps the technical version.
 
+## Oct 5 (afternoon) · ESPN and Yahoo leagues, and an account that remembers your leagues
+
+- **ESPN leagues** open by league id or link — public leagues only, read-only, through the same unofficial path every
+  ESPN tool uses, so it says "unofficial" and "new: not verified on a live league yet" until we have checked one.
+- **Yahoo leagues** through Yahoo's own sign-in ("Connect with Yahoo", read-only). The button says "coming soon" until
+  the app is registered with Yahoo.
+- **Sign in to save your leagues** (⋯ → Sign in): an emailed link, no password; your leagues, teams and saved views
+  come back on any device. Off until the mail service is switched on; nobody has to sign in to use the app.
+- The server uses a third less memory after Sunday's restart, and tells us how much it holds.
+
 ## Oct 5 · The numbers agree with the words, trades you could actually propose, one player card everywhere
 
 - **Team's "Strength by slot" is one comparison**: the player you start at each slot (RB1 and RB2, each FLEX apart)
