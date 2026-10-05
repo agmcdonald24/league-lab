@@ -1,4 +1,4 @@
-"""The player-id table (Wave I-0, I0-B): one row per player with his MyFantasyLeague, ESPN, Sleeper and gsis ids.
+"""The player-id table (Wave I-0, I0-B): one row per player with his MyFantasyLeague, ESPN, Yahoo, Sleeper and gsis ids.
 
 Source: nflverse / dynastyprocess ``db_playerids.csv`` (about 12,500 rows; ``mfl_id``, ``gsis_id``, ``sleeper_id``,
 ``espn_id``, ``name``, ``position``, ``team`` and more), published on GitHub raw (``CSV_URL``).
@@ -9,7 +9,8 @@ Source: nflverse / dynastyprocess ``db_playerids.csv`` (about 12,500 rows; ``mfl
   download keeps the last copy (and answers with it) when there is one. ``table()`` calls it on first use and when
   the copy it holds is a day old, so a long-running server picks up the next day's file without a restart.
 * **Lookups** (strings in, string or None out; "NA" and blanks are None): ``mfl_to_sleeper``, ``mfl_to_gsis``,
-  ``espn_to_gsis``, ``sleeper_to_gsis``; ``row_by_mfl`` for the name / position / team.
+  ``espn_to_gsis``, ``sleeper_to_gsis``; ``row_by_mfl`` for the name / position / team; (IK-2, Wave I-K) ``yahoo_to_sleeper``,
+  ``yahoo_to_gsis``, ``row_by_yahoo`` — nflverse's ``yahoo_id`` is the number in Yahoo's player key ``461.p.30121``.
 
 Identity never goes through a name here (AGENTS.md rule 3): the table is keyed by ids only.
 """
@@ -32,7 +33,8 @@ CSV_URL = "https://raw.githubusercontent.com/dynastyprocess/data/master/files/db
 CSV_ENV = "LEAGUE_LAB_PLAYER_IDS_CSV"
 FILE = "db_playerids.csv"
 MAX_AGE_S = 24 * 3600
-COLUMNS = ("mfl_id", "gsis_id", "sleeper_id", "espn_id", "name", "position", "team")
+COLUMNS = ("mfl_id", "gsis_id", "sleeper_id", "espn_id", "name", "position", "team",
+           "yahoo_id")                                     # ---- IK-2 (Wave I-K): Yahoo player ids
 _NA = {"", "NA", "None", "none", "nan", "NaN", "NULL", "null"}
 
 
@@ -55,6 +57,7 @@ class IdTable:
     by_mfl: dict[str, dict] = field(default_factory=dict)
     sleeper_gsis: dict[str, str] = field(default_factory=dict)
     espn_gsis: dict[str, str] = field(default_factory=dict)
+    by_yahoo: dict[str, dict] = field(default_factory=dict)          # ---- IK-2: yahoo_id -> the row
 
     def mfl_to_sleeper(self, mfl_id: str | int | None) -> str | None:
         r = self.by_mfl.get(_clean(str(mfl_id)) or "")
@@ -73,6 +76,19 @@ class IdTable:
     def row_by_mfl(self, mfl_id: str | int | None) -> dict | None:
         return self.by_mfl.get(_clean(str(mfl_id)) or "")
 
+    # ---- IK-2 (Wave I-K): Yahoo's player id (the number in ``461.p.30121``) -> Sleeper / gsis
+    def yahoo_to_sleeper(self, yahoo_id: str | int | None) -> str | None:
+        r = self.by_yahoo.get(_clean(str(yahoo_id)) or "")
+        return r.get("sleeper_id") if r else None
+
+    def yahoo_to_gsis(self, yahoo_id: str | int | None) -> str | None:
+        r = self.by_yahoo.get(_clean(str(yahoo_id)) or "")
+        return r.get("gsis_id") if r else None
+
+    def row_by_yahoo(self, yahoo_id: str | int | None) -> dict | None:
+        return self.by_yahoo.get(_clean(str(yahoo_id)) or "")
+    # ---- end IK-2
+
 
 def read(path: str | Path) -> IdTable:
     """Parse the CSV (only ``COLUMNS`` are kept). A missing column is tolerated (its lookups answer None)."""
@@ -88,6 +104,8 @@ def read(path: str | Path) -> IdTable:
                 t.sleeper_gsis[r["sleeper_id"]] = r["gsis_id"]
             if r["espn_id"] and r["gsis_id"]:
                 t.espn_gsis[r["espn_id"]] = r["gsis_id"]
+            if r["yahoo_id"]:                                                   # ---- IK-2
+                t.by_yahoo.setdefault(r["yahoo_id"], r)
     return t
 
 
@@ -172,3 +190,13 @@ def espn_to_gsis(espn_id: str | int | None) -> str | None:
 
 def sleeper_to_gsis(sleeper_id: str | int | None) -> str | None:
     return table().sleeper_to_gsis(sleeper_id)
+
+
+# ---- IK-2 (Wave I-K)
+def yahoo_to_sleeper(yahoo_id: str | int | None) -> str | None:
+    return table().yahoo_to_sleeper(yahoo_id)
+
+
+def yahoo_to_gsis(yahoo_id: str | int | None) -> str | None:
+    return table().yahoo_to_gsis(yahoo_id)
+# ---- end IK-2
