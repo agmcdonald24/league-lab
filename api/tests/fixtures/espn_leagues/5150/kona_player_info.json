@@ -1,0 +1,956 @@
+{
+ "_synthetic": "SYNTHETIC \u2014 built for League Lab's tests from the documented shapes (cwendt94/espn-api: football modules, constant.py, tests/football/unit/data/league_2018_data.json); not an ESPN answer. api/tests/fixtures/make_ik1_fixtures.py writes it.",
+ "gameId": 1,
+ "id": 5150,
+ "scoringPeriodId": 4,
+ "seasonId": 2026,
+ "segmentId": 0,
+ "players": [
+  {
+   "id": 5155825,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 4,
+    "droppable": true,
+    "eligibleSlots": [
+     5,
+     6,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Carter",
+    "fullName": "Carter Runyon",
+    "id": 5155825,
+    "injured": true,
+    "injuryStatus": "INJURY_RESERVE",
+    "lastName": "Runyon",
+    "proTeamId": 13,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5153650,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 2,
+    "droppable": true,
+    "eligibleSlots": [
+     2,
+     3,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Davon",
+    "fullName": "Davon Booth",
+    "id": 5153650,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Booth",
+    "proTeamId": 11,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5151317,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 2,
+    "droppable": true,
+    "eligibleSlots": [
+     2,
+     3,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Robert",
+    "fullName": "Robert Henry",
+    "id": 5151317,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Henry",
+    "proTeamId": 28,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5150247,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Malik",
+    "fullName": "Malik Benson",
+    "id": 5150247,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Benson",
+    "proTeamId": 13,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5123663,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Isaac",
+    "fullName": "Isaac TeSlaa",
+    "id": 5123663,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "TeSlaa",
+    "proTeamId": 8,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5103197,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Tyren",
+    "fullName": "Tyren Montgomery",
+    "id": 5103197,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Montgomery",
+    "proTeamId": 10,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5097554,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Kameron",
+    "fullName": "Kameron Johnson",
+    "id": 5097554,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Johnson",
+    "proTeamId": 27,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5093923,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Andrew",
+    "fullName": "Andrew Armstrong",
+    "id": 5093923,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Armstrong",
+    "proTeamId": 12,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5092508,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Colbie",
+    "fullName": "Colbie Young",
+    "id": 5092508,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Young",
+    "proTeamId": 4,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5091739,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Chris",
+    "fullName": "Chris Brazzell",
+    "id": 5091739,
+    "injured": true,
+    "injuryStatus": "INJURY_RESERVE",
+    "lastName": "Brazzell",
+    "proTeamId": 29,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5088338,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Elijah",
+    "fullName": "Elijah Sarratt",
+    "id": 5088338,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Sarratt",
+    "proTeamId": 33,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5085189,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 4,
+    "droppable": true,
+    "eligibleSlots": [
+     5,
+     6,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Jack",
+    "fullName": "Jack Endries",
+    "id": 5085189,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Endries",
+    "proTeamId": 4,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5085024,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "CJ",
+    "fullName": "CJ Williams",
+    "id": 5085024,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Williams",
+    "proTeamId": 30,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5083754,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Ryan",
+    "fullName": "Ryan Flournoy",
+    "id": 5083754,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Flournoy",
+    "proTeamId": 6,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5083315,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 4,
+    "droppable": true,
+    "eligibleSlots": [
+     5,
+     6,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Kenyon",
+    "fullName": "Kenyon Sadiq",
+    "id": 5083315,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Sadiq",
+    "proTeamId": 20,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5083297,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Jacoby",
+    "fullName": "Jacoby Jones",
+    "id": 5083297,
+    "injured": false,
+    "injuryStatus": "QUESTIONABLE",
+    "lastName": "Jones",
+    "proTeamId": 0,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5082630,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Jalen",
+    "fullName": "Jalen Royals",
+    "id": 5082630,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Royals",
+    "proTeamId": 12,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5082269,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 2,
+    "droppable": true,
+    "eligibleSlots": [
+     2,
+     3,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Dean",
+    "fullName": "Dean Connors",
+    "id": 5082269,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Connors",
+    "proTeamId": 14,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5081999,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 2,
+    "droppable": true,
+    "eligibleSlots": [
+     2,
+     3,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "CJ",
+    "fullName": "CJ Donaldson",
+    "id": 5081999,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Donaldson",
+    "proTeamId": 18,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5081508,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 2,
+    "droppable": true,
+    "eligibleSlots": [
+     2,
+     3,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Eli",
+    "fullName": "Eli Heidenreich",
+    "id": 5081508,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Heidenreich",
+    "proTeamId": 23,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5081432,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Antonio",
+    "fullName": "Antonio Williams",
+    "id": 5081432,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Williams",
+    "proTeamId": 28,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5081397,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 2,
+    "droppable": true,
+    "eligibleSlots": [
+     2,
+     3,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Dylan",
+    "fullName": "Dylan Sampson",
+    "id": 5081397,
+    "injured": true,
+    "injuryStatus": "INJURY_RESERVE",
+    "lastName": "Sampson",
+    "proTeamId": 5,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5081338,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Kaden",
+    "fullName": "Kaden Wetjen",
+    "id": 5081338,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Wetjen",
+    "proTeamId": 23,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 5065495,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Kaden",
+    "fullName": "Kaden Davis",
+    "id": 5065495,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Davis",
+    "proTeamId": 3,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 4917427,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 4,
+    "droppable": true,
+    "eligibleSlots": [
+     5,
+     6,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Tanner",
+    "fullName": "Tanner Koziol",
+    "id": 4917427,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Koziol",
+    "proTeamId": 30,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 4916349,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 4,
+    "droppable": true,
+    "eligibleSlots": [
+     5,
+     6,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Nikola",
+    "fullName": "Nikola Kalinic",
+    "id": 4916349,
+    "injured": true,
+    "injuryStatus": "INJURY_RESERVE",
+    "lastName": "Kalinic",
+    "proTeamId": 3,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 4912274,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 2,
+    "droppable": true,
+    "eligibleSlots": [
+     2,
+     3,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Sione",
+    "fullName": "Sione Vaki",
+    "id": 4912274,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Vaki",
+    "proTeamId": 8,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 4912218,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 3,
+    "droppable": true,
+    "eligibleSlots": [
+     3,
+     4,
+     5,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Cyrus",
+    "fullName": "Cyrus Allen",
+    "id": 4912218,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Allen",
+    "proTeamId": 12,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 4912052,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 4,
+    "droppable": true,
+    "eligibleSlots": [
+     5,
+     6,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Justin",
+    "fullName": "Justin Joly",
+    "id": 4912052,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Joly",
+    "proTeamId": 15,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 4911851,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 2,
+    "droppable": true,
+    "eligibleSlots": [
+     2,
+     3,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "LeQuint",
+    "fullName": "LeQuint Allen",
+    "id": 4911851,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Allen",
+    "proTeamId": 30,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "FREEAGENT"
+  },
+  {
+   "id": 99990004,
+   "onTeamId": 0,
+   "player": {
+    "active": true,
+    "defaultPositionId": 4,
+    "droppable": true,
+    "eligibleSlots": [
+     5,
+     6,
+     23,
+     7,
+     20,
+     21
+    ],
+    "firstName": "Synthetic",
+    "fullName": "Synthetic Free Agent",
+    "id": 99990004,
+    "injured": false,
+    "injuryStatus": "ACTIVE",
+    "lastName": "Free Agent",
+    "proTeamId": 22,
+    "ownership": {
+     "percentOwned": 50.0,
+     "percentStarted": 25.0
+    },
+    "universeId": 1
+   },
+   "status": "WAIVERS"
+  }
+ ]
+}

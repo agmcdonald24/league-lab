@@ -1,0 +1,80 @@
+{
+ "_synthetic": "SYNTHETIC \u2014 built for League Lab's tests from the documented shapes (cwendt94/espn-api: football modules, constant.py, tests/football/unit/data/league_2018_data.json); not an ESPN answer. api/tests/fixtures/make_ik1_fixtures.py writes it.",
+ "gameId": 1,
+ "id": 5150,
+ "scoringPeriodId": 4,
+ "seasonId": 2026,
+ "segmentId": 0,
+ "transactions": [
+  {
+   "bidAmount": 0,
+   "executionType": "EXECUTE",
+   "id": "00000005-4242-4000-8000-000000000005",
+   "isActingAsTeamOwner": false,
+   "isLeagueManager": false,
+   "isPending": false,
+   "items": [
+    {
+     "fromLineupSlotId": 20,
+     "fromTeamId": 3,
+     "isKeeper": false,
+     "overallPickNumber": 0,
+     "playerId": 4871023,
+     "toLineupSlotId": 20,
+     "toTeamId": 5,
+     "type": "TRADE"
+    },
+    {
+     "fromLineupSlotId": 20,
+     "fromTeamId": 5,
+     "isKeeper": false,
+     "overallPickNumber": 0,
+     "playerId": 4258173,
+     "toLineupSlotId": 20,
+     "toTeamId": 3,
+     "type": "TRADE"
+    }
+   ],
+   "memberId": "{42420003-0000-4000-8000-000000000003}",
+   "processDate": 1789987500000,
+   "proposedDate": 1789983900000,
+   "rating": 0,
+   "scoringPeriodId": 3,
+   "skipTransactionCounter": false,
+   "status": "EXECUTED",
+   "subOrder": 0,
+   "teamId": 3,
+   "type": "TRADE_ACCEPT"
+  },
+  {
+   "bidAmount": 0,
+   "executionType": "EXECUTE",
+   "id": "00000007-4242-4000-8000-000000000007",
+   "isActingAsTeamOwner": false,
+   "isLeagueManager": false,
+   "isPending": false,
+   "items": [
+    {
+     "fromLineupSlotId": 20,
+     "fromTeamId": 8,
+     "isKeeper": false,
+     "overallPickNumber": 0,
+     "playerId": 3918298,
+     "toLineupSlotId": 23,
+     "toTeamId": 8,
+     "type": "LINEUP"
+    }
+   ],
+   "memberId": "{42420008-0000-4000-8000-000000000008}",
+   "processDate": 1789987620000,
+   "proposedDate": 1789984020000,
+   "rating": 0,
+   "scoringPeriodId": 3,
+   "skipTransactionCounter": false,
+   "status": "EXECUTED",
+   "subOrder": 0,
+   "teamId": 8,
+   "type": "ROSTER"
+  }
+ ]
+}

@@ -1,0 +1,120 @@
+{
+ "_synthetic": "SYNTHETIC \u2014 built for League Lab's tests from the documented shapes (cwendt94/espn-api: football modules, constant.py, tests/football/unit/data/league_2018_data.json); not an ESPN answer. api/tests/fixtures/make_ik1_fixtures.py writes it.",
+ "gameId": 1,
+ "id": 5150,
+ "scoringPeriodId": 4,
+ "seasonId": 2026,
+ "segmentId": 0,
+ "transactions": [
+  {
+   "bidAmount": 7,
+   "executionType": "EXECUTE",
+   "id": "00000002-4242-4000-8000-000000000002",
+   "isActingAsTeamOwner": false,
+   "isLeagueManager": false,
+   "isPending": false,
+   "items": [
+    {
+     "fromLineupSlotId": -1,
+     "fromTeamId": 0,
+     "isKeeper": false,
+     "overallPickNumber": 0,
+     "playerId": 4360310,
+     "toLineupSlotId": 20,
+     "toTeamId": 4,
+     "type": "ADD"
+    },
+    {
+     "fromLineupSlotId": 20,
+     "fromTeamId": 4,
+     "isKeeper": false,
+     "overallPickNumber": 0,
+     "playerId": 5220680,
+     "toLineupSlotId": -1,
+     "toTeamId": 0,
+     "type": "DROP"
+    }
+   ],
+   "memberId": "{42420004-0000-4000-8000-000000000004}",
+   "processDate": 1789382520000,
+   "proposedDate": 1789378920000,
+   "rating": 0,
+   "scoringPeriodId": 2,
+   "skipTransactionCounter": false,
+   "status": "EXECUTED",
+   "subOrder": 0,
+   "teamId": 4,
+   "type": "WAIVER"
+  },
+  {
+   "bidAmount": 7,
+   "executionType": "EXECUTE",
+   "id": "00000003-4242-4000-8000-000000000003",
+   "isActingAsTeamOwner": false,
+   "isLeagueManager": false,
+   "isPending": false,
+   "items": [
+    {
+     "fromLineupSlotId": -1,
+     "fromTeamId": 0,
+     "isKeeper": false,
+     "overallPickNumber": 0,
+     "playerId": 4431611,
+     "toLineupSlotId": 20,
+     "toTeamId": 7,
+     "type": "ADD"
+    },
+    {
+     "fromLineupSlotId": 20,
+     "fromTeamId": 7,
+     "isKeeper": false,
+     "overallPickNumber": 0,
+     "playerId": 5192448,
+     "toLineupSlotId": -1,
+     "toTeamId": 0,
+     "type": "DROP"
+    }
+   ],
+   "memberId": "{42420007-0000-4000-8000-000000000007}",
+   "processDate": 1789382580000,
+   "proposedDate": 1789378980000,
+   "rating": 0,
+   "scoringPeriodId": 2,
+   "skipTransactionCounter": false,
+   "status": "EXECUTED",
+   "subOrder": 0,
+   "teamId": 7,
+   "type": "WAIVER"
+  },
+  {
+   "bidAmount": 12,
+   "executionType": "EXECUTE",
+   "id": "00000006-4242-4000-8000-000000000006",
+   "isActingAsTeamOwner": false,
+   "isLeagueManager": false,
+   "isPending": false,
+   "items": [
+    {
+     "fromLineupSlotId": -1,
+     "fromTeamId": 0,
+     "isKeeper": false,
+     "overallPickNumber": 0,
+     "playerId": 5123663,
+     "toLineupSlotId": 20,
+     "toTeamId": 6,
+     "type": "ADD"
+    }
+   ],
+   "memberId": "{42420006-0000-4000-8000-000000000006}",
+   "processDate": 1789382760000,
+   "proposedDate": 1789379160000,
+   "rating": 0,
+   "scoringPeriodId": 2,
+   "skipTransactionCounter": false,
+   "status": "CANCELED",
+   "subOrder": 0,
+   "teamId": 6,
+   "type": "WAIVER"
+  }
+ ]
+}
