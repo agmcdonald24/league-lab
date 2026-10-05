@@ -8980,8 +8980,7 @@ compare against it)
   On the main database: `dbt seed --select metric_registry` (90 rows) and `dbt build --select mart_player_ngs_week`
   (12 pass, 1 warn: two unmapped players). **Checks** (main DB, the pinned clock): root **1,318 passed** / 2 skipped
   (1,263 + 55 new); API **782 passed** / 11 skipped (`test_u1` / `test_ig2` deselected; 722 + 60 new); ruff clean;
-  `copy_standard --check` clean; `npm run lint` 0 / 0 (169 files); build ok; fixtures e2e: see the line below this
-  section once the run ends. QA on the fixture API at 375 and 1300 (the wave's env: ESPN / Yahoo fixtures, accounts
+  `copy_standard --check` clean; `npm run lint` 0 / 0 (169 files); build ok; fixtures e2e **392 passed** / 2 skipped (366 + 26 new). QA on the fixture API at 375 and 1300 (the wave's env: ESPN / Yahoo fixtures, accounts
   on): the drawer's Role block on a house league ("Too early to say: 2 games with a snap so far this season …" — the
   main database holds three weeks) and on `mfl:70587`; Players → Stats QB preset shows TTT and CPOE; League on
   `mfl:70587` lists "Latest moves" (adds, drops, a trade both ways) and "8.0 so far" on the this-week card; Waivers on

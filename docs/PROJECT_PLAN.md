@@ -613,7 +613,7 @@ first); **IL-4** Sleeper's directory trimmed at the read (38.7 → 8.8 MB at Sle
 alternatives priced lazily (a cold Finder 24 → 9 s with the whole directory, same cards); **IL-5** accounts phase 2 —
 `connections` (a Yahoo / ESPN connection kept sealed under the account), the `/watchlist` screen with ☆ Watch in the
 drawer, `/api/providers` under the kill switch and **`LEAGUE_LAB_PROVIDER_VERIFIED`** (the supported flip without a
-deploy), the duplicate-id rule. STATUS § "Wave I-L": root 1,318 / API 782 / e2e (the PO section), 0 failed. **Nothing
+deploy), the duplicate-id rule. STATUS § "Wave I-L": root 1,318 / API 782 / e2e 392, 0 failed. **Nothing
 is verified live yet** — the PO's list is in the STATUS PO section. Next: the live checks, then whatever Andrew names.
 
 ### Iteration 21 — Wave I-K (2026-10-05, Monday 08:40–12:30 ET; other platforms: ESPN and Yahoo; accounts phase 1)
