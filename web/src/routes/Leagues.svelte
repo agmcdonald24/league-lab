@@ -210,6 +210,14 @@
   let espnSaved = $state<string | null>(null);
   let yahooMe = $state<YahooMe | null>(null);
   let yahooMeState = $state<"idle" | "loading" | "failed">("idle");
+  // IK-2's callback comes back with ?yahoo_error=denied | state | refused | down when the sign-in did not complete
+  const YAHOO_ERRORS: Record<string, string> = {
+    denied: "Yahoo sign-in was cancelled: nothing was connected.",
+    state: "That Yahoo sign-in took too long or started in another browser. Try Connect with Yahoo again.",
+    refused: "Yahoo did not accept the sign-in. Try Connect with Yahoo again.",
+    down: "Yahoo did not answer. Try again in a minute.",
+  };
+  const yahooError = route.current.params.get("yahoo_error");
 
   async function findProvider(p: "espn" | "yahoo", e?: SubmitEvent) {
     e?.preventDefault();
@@ -560,6 +568,7 @@
   <!-- ---- IK-3: Yahoo — Connect with Yahoo → your leagues → My Week; a league link works too; "coming soon" until set up -->
   {:else}
   <section class="space-y-2" data-testid="yahoo-setup">
+    {#if yahooError && !yahooMe?.connected}<p class="text-base text-bad" role="alert" data-testid="yahoo-error-back" data-code={yahooError}>{YAHOO_ERRORS[yahooError] ?? YAHOO_ERRORS.refused}</p>{/if}
     {#if caps && caps.yahoo_configured === false && !yahooMe?.configured}
       <button type="button" class="w-full rounded-md border border-line bg-raised px-4 py-2.5 font-bold text-ink-3" disabled data-testid="yahoo-soon"
         >Connect with Yahoo — coming soon</button

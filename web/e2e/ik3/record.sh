@@ -22,7 +22,7 @@ start() { # port, extra env...
   for _ in $(seq 60); do curl -sf "localhost:$port/api/health" >/dev/null 2>&1 && return; sleep 1; done
   echo "API on $port did not start" >&2; exit 1
 }
-get() { curl -s -o "$OUT/$2" -w "%{http_code} $2\n" "localhost:$1$3" ${4:+-H "Cookie: $4"}; }
+get() { curl -s -o "$OUT/$2" -w "%{http_code} $2\n" "localhost:$1$3" ${4:+-b "$4"}; }
 # 8743: Yahoo in fixture mode (set up), the ESPN private switch off
 start 8743 LEAGUE_LAB_YAHOO_FIXTURES=$PWD/tests/fixtures/yahoo
 get 8743 providers.json /api/providers
@@ -32,11 +32,14 @@ get 8743 error_espn_private.json "/api/leagues?espn=5150"
 get 8743 error_espn_unknown.json "/api/leagues?espn=777"
 get 8743 error_espn_link.json "/api/leagues?espn=https%3A%2F%2Fexample.com%2Fx"
 get 8743 yahoo_me_not_connected.json "/api/leagues?yahoo_me=1"
-get 8743 yahoo_me_connected.json "/api/leagues?yahoo_me=1" "ll_yahoo=fixture"
-get 8743 yahoo_461.l.4242.json "/api/leagues?yahoo=https%3A%2F%2Ffootball.fantasysports.yahoo.com%2Ff1%2F4242%2F3" "ll_yahoo=fixture"
-get 8743 error_yahoo_link.json "/api/leagues?yahoo=not%20a%20league" "ll_yahoo=fixture"
+# IK-2's Connect with Yahoo in fixture mode: /api/yahoo/connect → the callback (code "fixture") → the sealed ll_yahoo
+JAR=$CACHE/yahoo.jar; rm -f "$JAR"
+curl -s -o /dev/null -L -c "$JAR" -b "$JAR" "localhost:8743/api/yahoo/connect"
+get 8743 yahoo_me_connected.json "/api/leagues?yahoo_me=1" "$JAR"
+get 8743 yahoo_461.l.4242.json "/api/leagues?yahoo=https%3A%2F%2Ffootball.fantasysports.yahoo.com%2Ff1%2F4242%2F3" "$JAR"
+get 8743 error_yahoo_link.json "/api/leagues?yahoo=not%20a%20league" "$JAR"
 get 8743 my-week_espn_4242_1.json "/api/my-week?league=espn%3A4242&team=1"
-get 8743 my-week_yahoo_461.l.4242_3.json "/api/my-week?league=yahoo%3A461.l.4242&team=3" "ll_yahoo=fixture"
+get 8743 my-week_yahoo_461.l.4242_3.json "/api/my-week?league=yahoo%3A461.l.4242&team=3" "$JAR"
 # 8744: a server with no Yahoo keys ("coming soon") and the ESPN private switch on
 start 8744 LEAGUE_LAB_ESPN_PRIVATE=on LEAGUE_LAB_API_SECRET=ik3-recording-secret-not-real-0123456789
 get 8744 providers_private_no_yahoo.json /api/providers

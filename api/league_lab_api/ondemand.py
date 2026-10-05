@@ -1664,7 +1664,15 @@ def espn_private() -> bool:
 
 
 def yahoo_configured() -> bool:
-    """`/api/providers.yahoo_configured`: Yahoo's app keys are on this server (IK-2's check when present)."""
+    """`/api/providers.yahoo_configured`: Connect with Yahoo works on this server — IK-2's `yahoo_connect.configured()`
+    (both Yahoo secrets and the API secret to seal the cookie, or fixture mode), else the client's check."""
+    try:
+        from . import yahoo_connect
+        return bool(yahoo_connect.configured())
+    except ImportError:
+        pass
+    except Exception:  # noqa: BLE001 - a flag: off when it cannot be read
+        return False
     m = _mod("yahoo_client")
     for name in ("configured", "is_configured"):
         if m is not None and callable(getattr(m, name, None)):
@@ -1941,25 +1949,8 @@ def provider_extras(league_id: str, league: dict) -> dict:
 # ---- end IK-3
 
 
-# ---- IK-3: the `ll_yahoo` cookie per request. STUB: the stand-in Yahoo adapter takes any cookie value as its token.
-# STAND-IN (fixture mode only): until IK-2's middleware (`league_lab_api.yahoo_connect`, which unseals `ll_yahoo` into
-# `yahoo_client.request_session`) is in the tree, a request with any `ll_yahoo` cookie under `LEAGUE_LAB_YAHOO_FIXTURES`
-# reads the fixtures as the fixture manager — so the screens can be recorded on the fixture API. Never on a live server.
+# ---- IK-3: STUB only — the stand-in Yahoo adapter takes any `ll_yahoo` cookie value as its token (main.py's IK-3
+# middleware). The real connection is IK-2's sealed cookie and middleware (`yahoo_connect`, `yahoo_client.request_session`).
 def yahoo_token_from(cookie: str | None) -> str | None:
     return cookie or None if os.environ.get(A.platforms.STUBS_ENV) == "1" else None
-
-
-def yahoo_fixture_session(cookie: str | None):
-    """The context token of the stand-in fixture session (reset it after the request), or None."""
-    if not cookie or not os.environ.get("LEAGUE_LAB_YAHOO_FIXTURES") or os.environ.get(A.platforms.STUBS_ENV) == "1":
-        return None
-    try:
-        importlib.import_module("league_lab_api.yahoo_connect")
-        return None                                    # IK-2's middleware is here: it owns the session
-    except ImportError:
-        pass
-    m = _mod("yahoo_client")
-    if m is None or not hasattr(m, "YahooSession"):
-        return None
-    return m.request_session.set(m.YahooSession(refresh_token="fixture", access_token="fixture", expires_at=4102444800.0))
 # ---- end IK-3

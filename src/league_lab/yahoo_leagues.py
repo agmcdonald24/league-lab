@@ -66,9 +66,11 @@ def _settings(points: float) -> dict:
 class YahooLeagues:
     """Yahoo leagues in Sleeper's shapes (see the module docstring). ``directory``: Sleeper's player directory."""
 
-    def __init__(self, client: Y.Yahoo, directory: Callable[[], dict]) -> None:
+    def __init__(self, client: Y.Yahoo, directory: Callable[[], dict],
+                 ids: Callable[[], PI.IdTable] = PI.table) -> None:
         self.client = client
         self.directory = directory
+        self.ids = ids                                 # the id table (IK-3 passes ``player_ids.table``)
         self.extra_players: dict[str, dict] = {}       # "yahoo:<id>" -> a directory-shaped row (unmapped players)
         self.mapping: dict[str, dict] = {}             # league key -> {yahoo id: (sleeper id, how)}
         self._name_index: tuple[int, dict[tuple[str, str], list[str]]] | None = None
@@ -97,7 +99,7 @@ class YahooLeagues:
         info = {str(k): dict(v) for k, v in players.items()} if isinstance(players, Mapping) \
             else {str(i): {} for i in players}
         out: dict[str, tuple[str, str]] = {}
-        tab = PI.table()
+        tab = self.ids()
         gsis_need: dict[str, str] = {}
         for i, p in info.items():
             if p.get("position") == "DEF":                 # a team defense: Sleeper's DEF id is the team code

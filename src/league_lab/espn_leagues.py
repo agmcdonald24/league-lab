@@ -39,7 +39,7 @@ TX_TYPES = {"FREEAGENT": "free_agent", "WAIVER": "waiver", "TRADE_ACCEPT": "trad
 
 
 def _norm(name: str) -> str:
-    from .platforms import _norm as norm             # MFL's name normaliser (the same rule for both providers)
+    from .platforms import _norm as norm  # MFL's name normaliser (the same rule for both providers)
     return norm(name)
 
 

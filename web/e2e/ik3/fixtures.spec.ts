@@ -212,6 +212,12 @@ test("Yahoo by a league link: the league, the link's team pre-selected; a wrong 
   await noSidewaysScroll(page);
 });
 
+test("Yahoo: a sign-in that did not complete says so (IK-2's ?yahoo_error=)", async ({ page }) => {
+  await page.goto("/leagues?platform=yahoo&yahoo_error=denied");
+  await expect(page.getByTestId("yahoo-error-back")).toHaveText("Yahoo sign-in was cancelled: nothing was connected.");
+  await expect(page.getByTestId("yahoo-connect")).toBeVisible();
+});
+
 test("Yahoo without the server's keys: “coming soon”, nothing to click", async ({ page }, info) => {
   server.yahooKeys = false;
   await page.goto("/leagues?platform=yahoo");

@@ -139,8 +139,8 @@ def require_auth(request: Request) -> None:
 # ---- IK-3 (Wave I-K): ESPN / Yahoo per request. (1) A private ESPN league read with one user's cookies is never served
 # from a cache to another: before any route (and its memo regions) answers for an `espn:` key, IK-1's
 # `require_access` checks this request's cookies (``provider_gate``, from ``require_auth``, which every data route
-# depends on; the trade POST checks its body's league). (2) The signed-in user's Yahoo token for this request
-# (``ondemand.YAHOO_TOKEN``, from IK-2's `ll_yahoo` cookie) for `?yahoo_me=1`.
+# depends on; the trade POST checks its body's league). (2) STUB only: the stand-in Yahoo adapter's token
+# (``ondemand.YAHOO_TOKEN``); the real Yahoo session is IK-2's middleware (``yahoo_connect``, below).
 def provider_gate(league: str | None) -> None:
     if league and A.platforms.is_espn(league):
         try:
@@ -151,16 +151,11 @@ def provider_gate(league: str | None) -> None:
 
 @app.middleware("http")
 async def _provider_context(request: Request, call_next):
-    cookie = request.cookies.get("ll_yahoo")
-    reset = ondemand.YAHOO_TOKEN.set(ondemand.yahoo_token_from(cookie))               # STUB only
-    fx = ondemand.yahoo_fixture_session(cookie)                                        # STAND-IN, fixture mode only
+    reset = ondemand.YAHOO_TOKEN.set(ondemand.yahoo_token_from(request.cookies.get("ll_yahoo")))   # STUB only
     try:
         return await call_next(request)
     finally:
         ondemand.YAHOO_TOKEN.reset(reset)
-        if fx is not None:
-            from league_lab import yahoo_client
-            yahoo_client.request_session.reset(fx)
 # ---- end IK-3
 
 
@@ -700,6 +695,23 @@ def events_list(league: str, team: int, response: Response, hours: int = 72):
 def league_week_odds(league: str, response: Response, source: str | None = None):
     return _json(myweek.week_odds(league, house=False if source == "sleeper" else None), response)
 # ---- end IH-3
+
+
+# ---- IK-1 (Wave I-K): a private ESPN league read with the manager's own cookies — off unless LEAGUE_LAB_ESPN_PRIVATE=on
+# (espn_connect: POST /api/espn/connect | disconnect, GET /api/espn/status; the middleware puts this request's ll_espn
+# cookie in espn_client.AUTH for this request only; nothing is stored or logged)
+from . import espn_connect  # noqa: E402
+
+app.middleware("http")(espn_connect.auth_middleware)
+app.include_router(espn_connect.router, dependencies=[Depends(require_auth)])
+# ---- end IK-1
+
+# ---- IK-2 (Wave I-K): Connect with Yahoo — /api/yahoo/* (connect, callback, disconnect, status, leagues) and the
+# ll_yahoo session middleware; the routes go ahead of the /api catch-all whatever the line's place
+from . import yahoo_connect  # noqa: E402 - the block stays self-contained
+
+yahoo_connect.install(app)
+# ---- end IK-2
 
 
 # ---------------------------------------------------------------- the web app

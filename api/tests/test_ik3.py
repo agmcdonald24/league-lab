@@ -235,6 +235,7 @@ def test_yahoo_me_not_configured_not_connected_connected(stubs, client, monkeypa
     monkeypatch.setenv(P.STUBS_ENV, "1")
     monkeypatch.setenv("LEAGUE_LAB_YAHOO_CLIENT_ID", "id")
     monkeypatch.setenv("LEAGUE_LAB_YAHOO_CLIENT_SECRET", "secret")
+    monkeypatch.setenv("LEAGUE_LAB_API_SECRET", "s" * 40)            # IK-2: the cookie is sealed with it
     d = client.get("/api/leagues", params={"yahoo_me": "1"}).json()
     assert d["configured"] is True and d["connected"] is False and d["note"] == ondemand.YAHOO_NOTES["not_connected"]
     client.cookies.set("ll_yahoo", "stub-token")
@@ -307,6 +308,12 @@ def real(monkeypatch):
     PI.reset()
 
 
+def connect_yahoo(client) -> None:
+    """IK-2's Connect with Yahoo in fixture mode: /api/yahoo/connect → the callback (code "fixture") → ll_yahoo."""
+    r = client.get("/api/yahoo/connect", follow_redirects=True)
+    assert r.status_code == 200 and client.cookies.get("ll_yahoo"), r.status_code
+
+
 def test_real_router_builds_ik1_and_ik2_adapters(real):
     r = A.sleeper()
     assert type(r.espn).__name__ == "ESPNLeagues" and type(r.yahoo).__name__ == "YahooLeagues"
@@ -332,7 +339,7 @@ def test_real_yahoo_setup_needs_the_connection(real, client):
     assert "Connect" in d["fix"]
     me = client.get("/api/leagues", params={"yahoo_me": "1"}).json()
     assert me["configured"] is True and me["connected"] is False                  # fixture mode counts as set up
-    client.cookies.set("ll_yahoo", "fixture")          # the fixture-mode stand-in session (until IK-2's middleware)
+    connect_yahoo(client)                               # IK-2's connect in fixture mode: the sealed ll_yahoo cookie
     d = client.get("/api/leagues", params={"yahoo": "https://football.fantasysports.yahoo.com/f1/4242/3"}).json()
     assert d["league"]["league_id"] == YAHOO and d["roster_id"] == 3 and len(d["teams"]) == 12
     me = client.get("/api/leagues", params={"yahoo_me": "1"}).json()
@@ -354,7 +361,7 @@ def test_real_yahoo_without_keys_is_coming_soon(real, client, monkeypatch):
 @pytest.mark.parametrize("key,team,cookie", [(ESPN, 1, None), (YAHOO, 3, "fixture")])
 def test_real_my_week_and_screens(real, client, key, team, cookie):
     if cookie:
-        client.cookies.set("ll_yahoo", cookie)
+        connect_yahoo(client)
     r = client.get("/api/my-week", params={"league": key, "team": team})
     assert r.status_code == 200, r.text
     d = r.json()

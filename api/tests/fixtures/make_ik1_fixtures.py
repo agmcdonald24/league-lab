@@ -238,7 +238,7 @@ def build(lid: int, name: str, public: bool) -> None:
             rec["wins" if won else "losses"] += 1
     seed = sorted(TEAM_IDS, key=lambda t: (-record[t]["wins"], -record[t]["pointsFor"]))
 
-    members = [{"displayName": f"espn_manager_{i:02d}", "id": "{%08X-0000-4000-8000-%012X}" % (0x42420000 + i, i),
+    members = [{"displayName": f"espn_manager_{i:02d}", "id": f"{{{0x42420000 + i:08X}-0000-4000-8000-{i:012X}}}",
                 "isLeagueManager": i == 1} for i in range(1, TEAMS + 1)]
     teams = []
     for i, tid in enumerate(TEAM_IDS):
@@ -268,7 +268,7 @@ def build(lid: int, name: str, public: bool) -> None:
         nonlocal n
         n += 1
         when = T0 + (w * 7 + 2) * DAY + n * 60000
-        tx[w].append({"bidAmount": bid, "executionType": "EXECUTE", "id": "%08x-4242-4000-8000-%012x" % (n, n),
+        tx[w].append({"bidAmount": bid, "executionType": "EXECUTE", "id": f"{n:08x}-4242-4000-8000-{n:012x}",
                       "isActingAsTeamOwner": False, "isLeagueManager": False, "isPending": False, "items": items,
                       "memberId": members[TEAM_IDS.index(tid)]["id"], "processDate": when, "proposedDate": when - 3600000,
                       "rating": 0, "scoringPeriodId": w, "skipTransactionCounter": False, "status": status,
