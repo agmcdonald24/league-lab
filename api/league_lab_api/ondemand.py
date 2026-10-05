@@ -1632,13 +1632,14 @@ import importlib  # noqa: E402
 import os  # noqa: E402
 
 SETUP_CODES = SETUP_CODES + ("espn_link_invalid", "espn_league_unknown", "espn_league_private", "espn_not_configured",
-                             "yahoo_link_invalid", "yahoo_league_unknown", "yahoo_not_connected", "yahoo_not_configured")
+                             "yahoo_link_invalid", "yahoo_league_unknown", "yahoo_sign_in_required",
+                             "yahoo_session_expired", "yahoo_not_configured")      # the yahoo_* codes are IK-2's
 ESPN_WHERE = ("the number after leagueId= in your league's address on fantasy.espn.com "
               "(fantasy.espn.com/football/league?leagueId=4242)")
 YAHOO_WHERE = ("the number after /f1/ in your league's address on Yahoo "
                "(football.fantasysports.yahoo.com/f1/12345)")
-# the signed-in user's Yahoo token for this request (main.py's IK-3 dependency sets it from the `ll_yahoo` cookie,
-# through IK-2's reader); None: not connected
+# STUB-only: a token for the stand-in Yahoo adapter (main.py's IK-3 middleware sets it from the `ll_yahoo` cookie when
+# `LEAGUE_LAB_PROVIDER_STUBS=1`). The real connection is IK-2's `yahoo_client.request_session` (its own middleware).
 YAHOO_TOKEN: contextvars.ContextVar[str | None] = contextvars.ContextVar("ll_yahoo_token", default=None)
 
 
@@ -1702,32 +1703,44 @@ def espn_parse(text: str) -> tuple[str, str | None]:
     raise A.LeagueNotFound(f"not an ESPN league link or id: {t[:80]!r}")
 
 
-_YAHOO_LINK = re.compile(r"fantasysports\.yahoo\.com/(?:f1|nfl)/(\d{1,10})(?:/(\d{1,3}))?", re.I)
-_YAHOO_KEY_TEXT = re.compile(r"^(?:yahoo:)?(\d{1,4})\.l\.(\d{1,10})(?:\.t\.(\d{1,3}))?$", re.I)
+_YAHOO_LINK = re.compile(r"fantasysports\.yahoo\.com/(?:\d{4}/)?(?:f1|nfl)/(\d{1,10})(?:/(\d{1,3}))?", re.I)
+_YAHOO_KEY_TEXT = re.compile(r"^(?:yahoo:)?(\d{1,4}|nfl)\.l\.(\d{1,10})(?:\.t\.(\d{1,3}))?$", re.I)
 
 
 def yahoo_game_key() -> str:
-    """This season's NFL game key (IK-2's `yahoo_client.game_key()`; 461 in the fixtures and the stubs)."""
-    m = _mod("yahoo_client")
-    for name in ("game_key", "nfl_game_key", "current_game_key"):
-        if m is not None and callable(getattr(m, name, None)):
-            return str(getattr(m, name)())
-    return os.environ.get("LEAGUE_LAB_YAHOO_GAME_KEY") or "461"
+    """This season's NFL game key: IK-2's client resolves Yahoo's code ``nfl`` (a read: needs the user's Yahoo
+    connection — YahooSignInRequired otherwise); the stubs answer 461."""
+    if os.environ.get(A.platforms.STUBS_ENV) == "1":
+        return os.environ.get("LEAGUE_LAB_YAHOO_GAME_KEY") or "461"
+    client = getattr(adapter_of("yahoo"), "client", None)
+    if client is not None and callable(getattr(client, "game_key", None)):
+        return str(client.game_key("nfl"))
+    return os.environ.get("LEAGUE_LAB_YAHOO_GAME_KEY") or "nfl"
 
 
 def yahoo_parse(text: str) -> tuple[str, str | None]:
-    """A Yahoo league link, league key (`461.l.12345`, `yahoo:461.l.12345`) or bare id -> (the key, the team id the link
-    or a team key names, else None). A bare id or a link takes this season's game key."""
+    """A Yahoo league link, league key (`461.l.12345`, `yahoo:461.l.12345`, `461.l.12345.t.3`) or bare id -> (the key with
+    a numeric game, the team id the link or a team key names, else None). A bare id or a link takes this season's game
+    key (IK-2's `parse_link` gives `nfl.l.<id>`; resolved here so a remembered key names its season)."""
     t = " ".join(str(text or "").split())
-    k = _YAHOO_KEY_TEXT.match(t)
-    if k:
-        return A.platforms.check_yahoo(f"yahoo:{k.group(1)}.l.{k.group(2)}"), k.group(3)
-    m = _YAHOO_LINK.search(t)
-    if m:
-        return A.platforms.check_yahoo(f"yahoo:{yahoo_game_key()}.l.{m.group(1)}"), m.group(2)
-    if re.fullmatch(r"\d{1,10}", t):
-        return A.platforms.check_yahoo(f"yahoo:{yahoo_game_key()}.l.{t}"), None
-    raise A.LeagueNotFound(f"not a Yahoo league link or key: {t[:80]!r}")
+    m = _mod("yahoo_client")
+    if m is not None and hasattr(m, "parse_link") and not re.fullmatch(r"\d{1,10}", t):
+        lk, team = m.parse_link(t)
+        team = str(team) if team is not None else None
+    else:
+        k, ln = _YAHOO_KEY_TEXT.match(t), _YAHOO_LINK.search(t)
+        if k:
+            lk, team = f"{k.group(1)}.l.{k.group(2)}", k.group(3)
+        elif ln:
+            lk, team = f"nfl.l.{ln.group(1)}", ln.group(2)
+        elif re.fullmatch(r"\d{1,10}", t):
+            lk, team = f"nfl.l.{t}", None
+        else:
+            raise A.LeagueNotFound(f"not a Yahoo league link or key: {t[:80]!r}")
+    gk, lid = str(lk).lower().split(".l.", 1)
+    if not gk.isdigit():
+        gk = yahoo_game_key()
+    return A.platforms.check_yahoo(f"yahoo:{gk}.l.{lid}"), team
 
 
 def provider_error(provider: str, league_id: str | None, exc: Exception) -> SetupError:
@@ -1736,13 +1749,14 @@ def provider_error(provider: str, league_id: str | None, exc: Exception) -> Setu
     is on (the web then offers "Private league?")."""
     short = A.platforms.SHORT[provider]
     code, words, fix = getattr(exc, "code", None), str(exc), getattr(exc, "fix", None)
-    if provider == "espn":
-        m = _mod("espn_client")
-        if m is not None and hasattr(m, "setup_words") and not isinstance(exc, A.platforms.ProviderNotConfigured):
-            try:
-                code, words, fix = m.setup_words(exc, league_id)
-            except Exception:  # noqa: BLE001 - our own words below
-                pass
+    m = _mod("espn_client" if provider == "espn" else "yahoo_client")
+    words_of = getattr(m, "setup_words" if provider == "espn" else "setup_parts", None) if m is not None else None
+    if words_of is not None and not isinstance(exc, A.platforms.ProviderNotConfigured) and \
+            (provider == "espn" or getattr(exc, "code", None)):
+        try:                                            # IK-1's setup_words(exc, id) / IK-2's setup_parts(exc)
+            code, words, fix = words_of(exc, league_id) if provider == "espn" else words_of(exc)
+        except Exception:  # noqa: BLE001 - our own words below
+            pass
     where = ESPN_WHERE if provider == "espn" else YAHOO_WHERE
     if isinstance(exc, A.platforms.ProviderNotConfigured) or code == f"{provider}_not_configured":
         code = f"{provider}_not_configured"
@@ -1761,7 +1775,8 @@ def provider_error(provider: str, league_id: str | None, exc: Exception) -> Setu
         fix = {f"{provider}_link_invalid": f"Paste your league's address, or the league id alone: {where}.",
                f"{provider}_league_unknown": f"Check the id: it is {where}.",
                "espn_league_private": f"Check the id first: it is {where}.",
-               "yahoo_not_connected": "Connect with Yahoo, then pick the league from your list."}.get(code)
+               "yahoo_sign_in_required": "Connect with Yahoo, then pick the league from your list.",
+               "yahoo_session_expired": "Connect with Yahoo again: your leagues come back."}.get(code)
     if code == "espn_league_private" and espn_private() and fix and "Private league?" not in fix:
         fix += " Or use “Private league?” to read it with your own ESPN cookies."
     se = SetupError(code, words if words.endswith((".", ")")) else words + ".", fix)
@@ -1790,6 +1805,8 @@ def provider_league(provider: str, key: str, team: str | None = None) -> dict:
     link names (by the provider's team id: the roster whose `owner_id` is it, else roster_id), the players without a
     Sleeper id, the card, the capabilities."""
     sl = A.sleeper()
+    if provider == "yahoo" and not yahoo_configured() and os.environ.get(A.platforms.STUBS_ENV) != "1":
+        raise provider_error("yahoo", key, A.platforms.ProviderNotConfigured("yahoo"))   # no keys: no Yahoo read at all
     try:
         league = sl.league(key)
         rosters, users = sl.rosters(key), sl.users(key)
@@ -1804,8 +1821,12 @@ def provider_league(provider: str, key: str, team: str | None = None) -> dict:
     teams = [{"roster_id": rid, "team_name": n["team_name"], "manager_name": n["manager_name"]}
              for rid, n in sorted(names.items())]
     pick = None
-    if team is not None:
-        pick = next((int(r["roster_id"]) for r in rosters if str(r.get("owner_id")) == str(team)), None)
+    if team is not None:                     # the link's team: IK-1's roster_id_of (ESPN team id), else the owner id
+        ad = adapter_of(provider)
+        if callable(getattr(ad, "roster_id_of", None)):
+            pick = ad.roster_id_of(key, team)
+        if pick is None:
+            pick = next((int(r["roster_id"]) for r in rosters if str(r.get("owner_id")) == str(team)), None)
         if pick is None and str(team).isdigit() and int(team) in names:
             pick = int(team)
     block = league.get(provider) or {}
@@ -1832,8 +1853,13 @@ def yahoo_league(text: str) -> dict:
     """`/api/leagues?yahoo=<league key, id or link>`."""
     try:
         key, team = yahoo_parse(text)
-    except A.LeagueNotFound as exc:
-        raise provider_error("yahoo", None, exc) from exc
+    except A.LeagueNotFound as exc:                   # not a link; or this season's game needs the Yahoo connection
+        raise provider_error("yahoo", None if getattr(exc, "code", None) in (None, "yahoo_link_invalid") else text,
+                             exc) from exc
+    except RuntimeError as exc:                       # IK-2's YahooNotConfigured (a RuntimeError with its code)
+        if str(getattr(exc, "code", "")).endswith("_not_configured"):
+            raise provider_error("yahoo", None, A.platforms.ProviderNotConfigured("yahoo")) from exc
+        raise
     return provider_league("yahoo", key, team)
 
 
@@ -1843,35 +1869,49 @@ YAHOO_NOTES = {"not_configured": "Yahoo sign-in is not set up on this server yet
                "none": "Yahoo lists no football leagues for you this season."}
 
 
+def yahoo_connected() -> bool:
+    """This request carries a Yahoo connection: IK-2's ``request_session`` (its middleware reads ``ll_yahoo``); the stubs:
+    any ``ll_yahoo`` cookie."""
+    if os.environ.get(A.platforms.STUBS_ENV) == "1":
+        return bool(YAHOO_TOKEN.get())
+    m = _mod("yahoo_client")
+    s = m.request_session.get() if m is not None and hasattr(m, "request_session") else None
+    return s is not None and not getattr(s, "expired", False)
+
+
 def yahoo_me() -> dict:
     """`/api/leagues?yahoo_me=1`: the signed-in user's Yahoo football leagues this season, their team in each (always 200:
     not set up / not connected are flags and a `note`, the web shows "coming soon" / "Connect with Yahoo")."""
+    stub = os.environ.get(A.platforms.STUBS_ENV) == "1"
     base = {"platform": "yahoo", "configured": yahoo_configured(), "connected": False,
             "season": int(ui.current_season()), "leagues": [], "capabilities": A.platforms.capabilities("yahoo")}
-    if not base["configured"] and os.environ.get(A.platforms.STUBS_ENV) != "1":
+    if not base["configured"] and not stub:
         return {**base, "note": YAHOO_NOTES["not_configured"]}
-    token = YAHOO_TOKEN.get()
-    if not token:
+    if not yahoo_connected():
         return {**base, "note": YAHOO_NOTES["not_connected"]}
     try:
         ad = adapter_of("yahoo")
-        fn = getattr(ad, "my_leagues", None) or getattr(ad.client, "my_leagues", None)
-        rows = list(fn(token) if fn is not None else [])
+        rows = list(ad.my_leagues(YAHOO_TOKEN.get()) if stub else ad.my_leagues())
     except A.platforms.ProviderNotConfigured:
         return {**base, "configured": False, "note": YAHOO_NOTES["not_configured"]}
-    except A.LeagueNotFound:                                   # the token was refused (IK-2's NotConnected)
+    except A.LeagueNotFound:                                   # IK-2's YahooSignInRequired / YahooSessionExpired
         return {**base, "note": YAHOO_NOTES["expired"]}
     except A.SleeperUnavailable as exc:
         down = SleeperDown(str(exc))
         down.who = "Yahoo"                                     # type: ignore[attr-defined]
         raise down from exc
+    except RuntimeError as exc:                                # IK-2's YahooNotConfigured
+        if str(getattr(exc, "code", "")).endswith("_not_configured"):
+            return {**base, "configured": False, "note": YAHOO_NOTES["not_configured"]}
+        raise
     sl = A.sleeper()
     leagues = []
     for r in rows:
-        key = A.platforms.check_yahoo(f"yahoo:{r.get('league_key')}")
-        row = {"league_id": key, "name": r.get("name"), "season": r.get("season"), "total_rosters": r.get("num_teams"),
-               "scoring_label": None, "roster_id": r.get("roster_id") or r.get("team_id"), "team_name": r.get("team_name"),
-               "url": r.get("url"), "card": None}
+        key = A.platforms.check_yahoo(r.get("key") or f"yahoo:{r.get('league_key')}")
+        rid = r.get("roster_id") if r.get("roster_id") is not None else r.get("team_id")
+        row = {"league_id": key, "name": r.get("name"), "season": int(r["season"]) if str(r.get("season") or "").isdigit() else None,
+               "total_rosters": r.get("num_teams"), "scoring_label": None, "roster_id": int(rid) if rid is not None else None,
+               "team_name": r.get("team_name"), "url": r.get("url"), "card": None}
         try:
             league = sl.league(key)
             row["scoring_label"] = A.scoring_label(league)
@@ -1901,20 +1941,25 @@ def provider_extras(league_id: str, league: dict) -> dict:
 # ---- end IK-3
 
 
-# ---- IK-3: the `ll_yahoo` cookie -> this request's Yahoo token (IK-2's reader; the stubs take the cookie as the token)
+# ---- IK-3: the `ll_yahoo` cookie per request. STUB: the stand-in Yahoo adapter takes any cookie value as its token.
+# STAND-IN (fixture mode only): until IK-2's middleware (`league_lab_api.yahoo_connect`, which unseals `ll_yahoo` into
+# `yahoo_client.request_session`) is in the tree, a request with any `ll_yahoo` cookie under `LEAGUE_LAB_YAHOO_FIXTURES`
+# reads the fixtures as the fixture manager — so the screens can be recorded on the fixture API. Never on a live server.
 def yahoo_token_from(cookie: str | None) -> str | None:
-    if not cookie:
+    return cookie or None if os.environ.get(A.platforms.STUBS_ENV) == "1" else None
+
+
+def yahoo_fixture_session(cookie: str | None):
+    """The context token of the stand-in fixture session (reset it after the request), or None."""
+    if not cookie or not os.environ.get("LEAGUE_LAB_YAHOO_FIXTURES") or os.environ.get(A.platforms.STUBS_ENV) == "1":
         return None
+    try:
+        importlib.import_module("league_lab_api.yahoo_connect")
+        return None                                    # IK-2's middleware is here: it owns the session
+    except ImportError:
+        pass
     m = _mod("yahoo_client")
-    for name in ("token_from_cookie", "access_token_from_cookie", "read_cookie"):
-        fn = getattr(m, name, None) if m is not None else None
-        if callable(fn):
-            try:
-                v = fn(cookie)
-            except Exception:  # noqa: BLE001 - a bad cookie is "not connected", never an error
-                return None
-            if isinstance(v, dict):
-                v = v.get("access_token") or v.get("token")
-            return str(v) if v else None
-    return cookie if os.environ.get(A.platforms.STUBS_ENV) == "1" else None    # STUB: any cookie value is a token
+    if m is None or not hasattr(m, "YahooSession"):
+        return None
+    return m.request_session.set(m.YahooSession(refresh_token="fixture", access_token="fixture", expires_at=4102444800.0))
 # ---- end IK-3

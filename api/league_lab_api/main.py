@@ -151,11 +151,16 @@ def provider_gate(league: str | None) -> None:
 
 @app.middleware("http")
 async def _provider_context(request: Request, call_next):
-    reset = ondemand.YAHOO_TOKEN.set(ondemand.yahoo_token_from(request.cookies.get("ll_yahoo")))
+    cookie = request.cookies.get("ll_yahoo")
+    reset = ondemand.YAHOO_TOKEN.set(ondemand.yahoo_token_from(cookie))               # STUB only
+    fx = ondemand.yahoo_fixture_session(cookie)                                        # STAND-IN, fixture mode only
     try:
         return await call_next(request)
     finally:
         ondemand.YAHOO_TOKEN.reset(reset)
+        if fx is not None:
+            from league_lab import yahoo_client
+            yahoo_client.request_session.reset(fx)
 # ---- end IK-3
 
 

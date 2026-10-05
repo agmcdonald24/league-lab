@@ -69,7 +69,8 @@ def test_check_key_four_providers():
     assert P.check_key("ESPN:4242") == "espn:4242" and P.check_key("espn:2025:4242") == "espn:2025:4242"
     assert P.check_key("Yahoo:461.L.4242") == "yahoo:461.l.4242"
     assert P.espn_id("espn:2025:4242") == "4242" and P.yahoo_key("yahoo:461.l.4242") == "461.l.4242"
-    for bad in ("espn:", "espn:abc", "espn:42/../x", "yahoo:4242", "yahoo:nfl.l.42", "yahoo:461.l.", "mfl:x", "../x"):
+    assert P.check_key("yahoo:NFL.l.42") == "yahoo:nfl.l.42"            # Yahoo's code for this season's game (IK-2)
+    for bad in ("espn:", "espn:abc", "espn:42/../x", "yahoo:4242", "yahoo:nhl.l.42", "yahoo:461.l.", "mfl:x", "../x"):
         with pytest.raises(A.LeagueNotFound):
             P.check_key(bad)
 
@@ -190,7 +191,7 @@ def test_espn_setup_errors(stubs, client, monkeypatch):
 
 def test_yahoo_setup_errors(stubs, client):
     d = _err(client.get("/api/leagues", params={"yahoo": "not a league"}), 404, "yahoo_link_invalid")
-    assert d["error"] == "That is not a Yahoo league link or id." and "/f1/" in d["fix"]
+    assert d["error"].startswith("That is not a Yahoo league link") and "/f1/" in d["fix"]
     d = _err(client.get("/api/leagues", params={"yahoo": "461.l.999"}), 404, "yahoo_league_unknown")
     assert d["error"].startswith("Yahoo has no league")
 
@@ -281,3 +282,84 @@ def test_waiver_words_for_espn_and_yahoo():
         out = D.waiver_deadline(None, platform=p, season=2026, week=4)
         assert out["words"].startswith(f"Claims run on {w}'s schedule for this league: see {w} for the time")
         assert out["kind"] is None and out["source"] == f"{w} league"
+
+
+# ------------------------------------------------------------------ the real adapters (IK-1's / IK-2's fixtures)
+@pytest.fixture
+def real(monkeypatch):
+    """IK-1's ESPN fixture leagues (``fixtures/espn_leagues``: 4242 public, 5150 private) and IK-2's Yahoo fixture league
+    (``fixtures/yahoo``: 461.l.4242, 12 teams, superflex) through IK-3's wiring; synthetic, from the documented shapes."""
+    from pathlib import Path
+
+    from league_lab import player_ids as PI
+    fx = Path(__file__).with_name("fixtures")
+    monkeypatch.delenv(P.STUBS_ENV, raising=False)
+    monkeypatch.setenv("LEAGUE_LAB_ESPN_LEAGUE_FIXTURES", str(fx / "espn_leagues"))
+    monkeypatch.setenv("LEAGUE_LAB_ESPN_SEASON", "2026")
+    monkeypatch.setenv("LEAGUE_LAB_YAHOO_FIXTURES", str(fx / "yahoo"))
+    monkeypatch.setenv(PI.CSV_ENV, str(fx / "ff" / "db_playerids.csv"))
+    for k in ("LEAGUE_LAB_ESPN_PRIVATE", "LEAGUE_LAB_YAHOO_CLIENT_ID", "LEAGUE_LAB_YAHOO_CLIENT_SECRET"):
+        monkeypatch.delenv(k, raising=False)
+    PI.reset()
+    A._default = None
+    yield
+    A._default = None
+    PI.reset()
+
+
+def test_real_router_builds_ik1_and_ik2_adapters(real):
+    r = A.sleeper()
+    assert type(r.espn).__name__ == "ESPNLeagues" and type(r.yahoo).__name__ == "YahooLeagues"
+    assert r.league(ESPN)["platform"] == "espn" and r.league(ESPN)["name"] == "Synthetic Public League"
+    assert len(r.rosters(ESPN)) == 10
+
+
+def test_real_espn_setup(real, client):
+    d = client.get("/api/leagues", params={"espn": "4242"}).json()
+    assert d["league"]["name"] == "Synthetic Public League" and len(d["teams"]) == 10 and d["roster_id"] is None
+    assert {u["espn_id"] for u in d["unmapped"]} == {"99990001", "99990002"}     # IK-1's two unmatched players
+    assert d["mapped"] == d["players"] - 2 and d["card"]["lineup"]["text"].startswith("Your lineup:")
+    # ESPN team ids skip 10 (1–9, 11): team 11 is the tenth roster
+    t = client.get("/api/leagues", params={"espn": "fantasy.espn.com/football/team?leagueId=4242&teamId=11"}).json()
+    assert t["roster_id"] == 10
+    d = _err(client.get("/api/leagues", params={"espn": "5150"}), 404, "espn_league_private")
+    assert d["error"].startswith("ESPN league 5150 is private")
+    _err(client.get("/api/leagues", params={"espn": "777"}), 404, "espn_league_unknown")
+
+
+def test_real_yahoo_setup_needs_the_connection(real, client):
+    d = _err(client.get("/api/leagues", params={"yahoo": "461.l.4242"}), 404, "yahoo_sign_in_required")
+    assert "Connect" in d["fix"]
+    me = client.get("/api/leagues", params={"yahoo_me": "1"}).json()
+    assert me["configured"] is True and me["connected"] is False                  # fixture mode counts as set up
+    client.cookies.set("ll_yahoo", "fixture")          # the fixture-mode stand-in session (until IK-2's middleware)
+    d = client.get("/api/leagues", params={"yahoo": "https://football.fantasysports.yahoo.com/f1/4242/3"}).json()
+    assert d["league"]["league_id"] == YAHOO and d["roster_id"] == 3 and len(d["teams"]) == 12
+    me = client.get("/api/leagues", params={"yahoo_me": "1"}).json()
+    assert me["connected"] is True and [(x["league_id"], x["roster_id"]) for x in me["leagues"]] == [(YAHOO, 3)]
+    assert me["leagues"][0]["card"] and me["leagues"][0]["team_name"]
+
+
+def test_real_yahoo_without_keys_is_coming_soon(real, client, monkeypatch):
+    monkeypatch.delenv("LEAGUE_LAB_YAHOO_FIXTURES")
+    A._default = None
+    me = client.get("/api/leagues", params={"yahoo_me": "1"}).json()
+    assert me["configured"] is False and me["note"] == ondemand.YAHOO_NOTES["not_configured"]
+    d = _err(client.get("/api/leagues", params={"yahoo": "461.l.4242"}), 404, "yahoo_not_configured")
+    assert d["error"] == "Yahoo sign-in is not set up on this server yet."
+    assert client.get("/api/providers").json()["yahoo_configured"] is False
+
+
+@needs_db
+@pytest.mark.parametrize("key,team,cookie", [(ESPN, 1, None), (YAHOO, 3, "fixture")])
+def test_real_my_week_and_screens(real, client, key, team, cookie):
+    if cookie:
+        client.cookies.set("ll_yahoo", cookie)
+    r = client.get("/api/my-week", params={"league": key, "team": team})
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["platform"] == P.provider_of(key) and d["lineup"] and d["edit_link"]["platform"] == P.provider_short(key)
+    for path, params in (("/api/team", {"league": key, "team": team}), ("/api/waivers", {"league": key, "team": team}),
+                         ("/api/trades/lists", {"league": key, "team": team}), ("/api/league", {"league": key, "team": team})):
+        rr = client.get(path, params=params)
+        assert rr.status_code == 200, (path, rr.text[:300])

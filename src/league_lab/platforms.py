@@ -87,7 +87,7 @@ def is_mfl(key: Any) -> bool:
 ESPN_PREFIX = "espn:"
 YAHOO_PREFIX = "yahoo:"
 _ESPN_KEY = re.compile(r"^(?:(\d{4}):)?(\d{1,12})$")
-_YAHOO_KEY = re.compile(r"^(\d{1,4})\.l\.(\d{1,10})$")
+_YAHOO_KEY = re.compile(r"^(\d{1,4}|nfl)\.l\.(\d{1,10})$")    # "nfl": this season's game (IK-2 resolves it)
 SHORT = {"sleeper": "Sleeper", "mfl": "MFL", "espn": "ESPN", "yahoo": "Yahoo"}
 LONG = {"sleeper": "Sleeper", "mfl": "MyFantasyLeague", "espn": "ESPN", "yahoo": "Yahoo"}
 
@@ -445,7 +445,8 @@ class ProviderNotConfigured(LeagueNotFound):
     def __init__(self, provider: str, why: str | None = None) -> None:
         self.provider = provider
         self.code = f"{provider}_not_configured"
-        super().__init__(why or f"{LONG.get(provider, provider)} leagues are not set up on this server yet")
+        super().__init__(why or ("Yahoo sign-in is not set up on this server yet" if provider == "yahoo"
+                                 else f"{LONG.get(provider, provider)} leagues are not set up on this server yet"))
 
 
 def adapter_env() -> tuple:
@@ -545,23 +546,36 @@ class Router:
         return self.sleeper.calls + sum(int(getattr(getattr(a, "client", None), "calls", 0) or 0)
                                         for _n, a in self.adapters())      # IK-3: every provider's client
 
+    def _call(self, key: str, name: str, *args: Any) -> Any:
+        """IK-3: one Sleeper-shaped call. A provider error that says the server is not set up for it (IK-2's
+        ``YahooNotConfigured``, a RuntimeError with ``code`` ``<provider>_not_configured``) becomes
+        ``ProviderNotConfigured`` — a LeagueNotFound every route already answers in words, never a 500."""
+        target = self.serving(key)
+        try:
+            return getattr(target, name)(key, *args)
+        except RuntimeError as exc:
+            code = str(getattr(exc, "code", "") or "")
+            if code.endswith("_not_configured"):
+                raise ProviderNotConfigured(provider_of(key)) from exc
+            raise
+
     def league(self, key: str) -> dict:
-        return self.serving(key).league(key)
+        return self._call(key, "league")
 
     def rosters(self, key: str) -> list[dict]:
-        return self.serving(key).rosters(key)
+        return self._call(key, "rosters")
 
     def users(self, key: str) -> list[dict]:
-        return self.serving(key).users(key)
+        return self._call(key, "users")
 
     def matchups(self, key: str, week: int) -> list[dict]:
-        return self.serving(key).matchups(key, week)
+        return self._call(key, "matchups", week)
 
     def season_matchups(self, key: str, through_week: int) -> dict[int, list[dict]]:
-        return self.serving(key).season_matchups(key, through_week)
+        return self._call(key, "season_matchups", through_week)
 
     def transactions(self, key: str, round_: int) -> list[dict]:
-        return self.serving(key).transactions(key, round_)
+        return self._call(key, "transactions", round_)
 
     def players(self) -> dict[str, dict]:
         d = self.sleeper.players()

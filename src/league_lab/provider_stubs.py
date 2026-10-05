@@ -40,8 +40,8 @@ class StubNotConnected(LeagueNotFound):
     """STUB: a Yahoo read that needs the user's Yahoo connection."""
 
     def __init__(self) -> None:
-        self.code = "yahoo_not_connected"
-        super().__init__("Connect with Yahoo first: Yahoo shows a league's data only to an app its member allowed.")
+        self.code = "yahoo_sign_in_required"                  # IK-2's YahooSignInRequired
+        super().__init__("Connect your Yahoo account to open Yahoo leagues.")
 
 
 class StubClient:
@@ -143,9 +143,10 @@ class StubLeagues:
         if not token:
             raise StubNotConnected()
         lg = self.league(f"yahoo:{YAHOO_KEY}")
-        return [{"league_key": YAHOO_KEY, "name": lg["name"], "season": int(lg.get("season") or 2026),
-                 "num_teams": lg.get("total_rosters"), "team_key": f"{YAHOO_KEY}.t.3", "team_id": 3,
-                 "team_name": None, "url": lg["yahoo"]["url"]}]
+        return [{"key": f"yahoo:{YAHOO_KEY}", "league_key": YAHOO_KEY, "name": lg["name"],
+                 "season": str(lg.get("season") or 2026), "num_teams": lg.get("total_rosters"),
+                 "team_key": f"{YAHOO_KEY}.t.3", "team_id": 3, "team_name": None, "roster_id": 3,
+                 "url": lg["yahoo"]["url"], "platform": "yahoo"}]          # IK-2's my_leagues row
 
 
 def adapter(provider: str, client: Any, directory: Callable[[], dict]) -> StubLeagues:
