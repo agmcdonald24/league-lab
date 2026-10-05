@@ -17,6 +17,19 @@ says "New: not verified on a live league yet". **The PO flips a row** after open
 isuckatfantasy.io: `status` → `supported`, each verified feature's words without `UNVERIFIED` (and `yes` where it holds),
 this table's cells without "(unverified live)".
 
+**The switches (Wave I-L, IL-5)** — `platforms.provider_status()`, read on every `/api/providers` answer, so a flip is a
+Render environment change and not a deploy:
+* **`LEAGUE_LAB_PROVIDER_VERIFIED=espn,yahoo`** (default empty; any subset, comma-separated): after the PO's live check,
+  the named provider's `status` is `supported` and the `UNVERIFIED` tail leaves every feature's words; the setup screen
+  drops "New: not verified on a live league yet". A feature keeps its own status (`partial` stays partial — a `yes`
+  is still a code change in `_CAPS`, with this table). Unset it to go back. Pinned by `test_ik3` / `test_ii5` /
+  `test_il5` in both states.
+* **`LEAGUE_LAB_ESPN_LEAGUES=off`** (IK-1's kill switch): ESPN's `status` is `off` with `off: "ESPN leagues: not
+  available right now"`; the setup screen says it in place of the ESPN form ("… Sleeper and MyFantasyLeague leagues
+  work as before."). `off` wins over verified.
+* **Yahoo without its two secrets** stays `unverified` and its button says "Connect with Yahoo — coming soon" (the
+  screen reads `yahoo_configured`): "coming soon" is the right word while the app is not registered.
+
 | | Connect | Scoring | Lineup slots | Matchups | Players | Waivers | Transactions | Team assets | News |
 |---|---|---|---|---|---|---|---|---|---|
 | **Sleeper** (supported) | username, or a league link / id | yes | yes | yes | yes | yes | yes | partial (picks, FAAB not read on demand) | yes |
@@ -33,6 +46,15 @@ soon" until Andrew registers the app; (3) nothing is "supported" until verified 
 **The id map** (IK-3's audit, `scripts/id_map_audit.py`, `league_lab_m1` 2026-09-26 snapshot): of the 286 QB–TE rostered
 in the house leagues, `espn_id` 100%, `mfl_id` 100%, `yahoo_id` 65.7% — every 2025 and 2026 draft-class player lacks a
 `yahoo_id` in nflverse's `ff_playerids` (and in Sleeper's directory). Details: `docs/ANY_LEAGUE.md` § "The id map".
+
+**The duplicate-id rule (Wave I-L, IL-5)** — `player_ids.read`: an `mfl_id`, `espn_id` or `yahoo_id` that two players'
+rows carry (two gsis ids, or a gsis id and none) maps to **nobody** — quarantined (`IdTable.mfl_dupes` /
+`espn_dupes` / `yahoo_dupes`, `player_ids.duplicates()`), logged once per process with the ids; the same player on two
+rows is not a duplicate (IK-2's `yahoo_id` rule, applied to all three, as `int_player_id_map` keeps an ambiguous
+`sleeper_id` out of the map). On nflverse's table of 2026-10-02 (12,518 rows): **4 `espn_id` values** are on two
+players (16094, 2516049, 2574010, 2582138 — all retired or free agents: Steven Miller / Marqueston Huff, Quinton Dunbar
+/ Houston Bates, Aaron Ripkowski / Alonzo Harris, Kyle Carter / David Morgan), **0 `mfl_id`, 0 `yahoo_id`**. Before
+the rule, ESPN's lookup gave the last row's gsis id.
 
 ## The matrix as researched (Wave I-I, II-5, 2026-10-04)
 

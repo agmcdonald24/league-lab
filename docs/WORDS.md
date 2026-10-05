@@ -346,6 +346,18 @@ labels, tooltips, summaries, accessibility labels and generated text, the consol
 | the league's own app (My Week, Waivers) | "Open ESPN to edit your lineup ↗" / "Open Yahoo to edit your lineup ↗" · "Claims run on ESPN's schedule for this league: see ESPN for the time; …" | a guessed claim time |
 | a provider that did not answer | "ESPN did not answer. Try again in a minute." / "Yahoo did not answer. …" | "Sleeper did not answer" for another provider |
 
+## Accounts, phase 2 (Wave I-L, IL-5)
+
+| Where | The words we use | Never |
+|---|---|---|
+| the drawer, signed in | **☆ Watch** / **★ Watching** (a toggle; "Not saved: try again in a minute." if the server refused) | a Watch button for a guest |
+| the watchlist's head | "5 players · projected points in League of Scrubs scoring, week 4. Tap a name for his card." ("(the first 30 of 42)" past the cap) | a count without the league and the week |
+| a watchlist row | the name · position · NFL team · his status ("Questionable"; **"No injury designation"** when the report has none) · "8.3 projected · week 4" (or "not projected this week") · **"Free agent"** / **"Rostered by Run Bijan Run"** / **"On your team"** / "Not in this league's player pool" · **Remove** | "Healthy" (we only know there is no designation); 0 for a missing projection |
+| the watchlist, signed out / off / empty | "Sign in to keep a watchlist on any device: sign in with your email, then tap ☆ Watch on any player's card." · "A watchlist comes with an account, and accounts are not on for this server yet." · "No players on your watchlist yet. Open any player's card and tap ☆ Watch." | a wall in front of the screen |
+| where a connection is kept, signed in | Yahoo: "… keeps the connection in this browser and, encrypted, with your account (your other devices get it when you sign in)." · ESPN: "Your ESPN cookies stay in this browser and, encrypted, with your account, so your other devices read your league too; Disconnect removes them from both." (signed out: IK-1's / IK-2's words, unchanged) | "never stores them" to a signed-in person |
+| the account page | "Yahoo: connected 2026-10-05 — it comes back on any device you sign in on." · "ESPN: needs reconnecting (it no longer opens your leagues)." + **Reconnect ESPN** · "No Yahoo or ESPN connection saved. Connect one on the league setup screen while signed in and it follows you." | a token, a GUID or a cookie value on screen |
+| a provider switched off (`/api/providers` status `off`) | "ESPN leagues: not available right now. Sleeper and MyFantasyLeague leagues work as before." in place of the form | a form that can only fail |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to
