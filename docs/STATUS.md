@@ -7946,3 +7946,106 @@ compare against it)
 5. **Decisions Andrew may reverse**: no cookie banner for the password-gated beta (About discloses GA); the pinned
    moment (Saturday 16:00Z: change `PINNED_NOW` in both conftests together, and only with a full run on `league_lab`).
 6. `wt-base` is detached at `ad4040e` (66 commits behind `main`): refresh it before the next wave relies on it.
+
+## Wave I-J (Iteration 20)
+
+### II-6 2026-10-05 — the presentation list (branch `dev/II6` from `main` `8b74f7f`, database `league_lab_ia3`, read only)
+
+* **Task / plan**: II-6 of the Wave I-J brief (`scratchpad/waveIJ/BRIEF.md`): the five items of Wave I-I's "Known, left as
+  built" (the PO section above). Web only; no API line, no Python. DESIGN § "The drawer" (one sentence added), WORDS
+  § "The presentation list (Wave I-J, II-6)" (new, two rows).
+* **1. Waivers' top three — the name wins** (`web/src/routes/decisions/ClaimCard.svelte`, block `<!-- ---- II-6 -->`).
+  **Before**: the header was one row — rank, headshot, the name (`truncate`), the gain block (`shrink-0`, number over
+  "WEEKS 4–7 IN TOTAL"); in a three-across card the name got what the label left: "Wan'Dale Ro…", "New York Gia…",
+  "Tyler …" **at 1300 with the drawer closed**, and with the drawer open (the screen ~870 px wide, each card ~280 px)
+  "Wan'…", "New…" and no name at all on Allgeier's card, his RB / ARI badges under the label; on a phone (375)
+  "Wan'Dale Ro…" with "pr…". **After**: the space right of the headshot is a container (`@container`); under 22rem
+  (352 px) the gain moves under the name and the badges as one line — the number, then its label ("+9.8 WEEKS 4–7 IN
+  TOTAL"); from 22rem it stays on the right as before. The name never truncates (`break-words`: a long one wraps to two
+  lines), the badge row wraps instead of running under anything, the headshot sits beside the name (top-aligned; the
+  rank beside the headshot). A container query, not a viewport rule, so the drawer opening narrows it too. **At 1300
+  with the drawer open** (`ii6-waivers-top-drawer-desktop.png`): "Daniel Carlson" / K · NO · projects 9.9 / **+1.8
+  THIS WEEK**; "New York Giants" / DEF · projects 7.8 / **+0.6 THIS WEEK**; "Tyler Allgeier" / RB · ARI / projects 9.2
+  / **+9.8 WEEKS 4–7 IN TOTAL** (the label on two lines) — every name whole, nothing overlapping; drawer closed the same
+  three names on one line each; at 375 "Wan'Dale Robinson" whole on the old recording, "Daniel Carlson" on the new.
+  A list row (`compact`: Help now, Bye coverage) keeps the number on the right (the list scans down that column) and
+  lets the name wrap.
+* **2. Trades says "No compelling trade found" once** (`web/src/routes/Trades.svelte`, the II-1 empty-state block, marked).
+  **Before**: the answer line ("**No compelling trade found.** None of the 18 trades … Your best move: the Tyler
+  Allgeier claim gives +9.8 … Try one you have in mind in the trade calculator.") and, under "Who should I trade with?",
+  the Finder's box saying the same headline and the same reason again. **After**: the answer line is unchanged (it is
+  the API's `words.headline`, so the console and the API say the same); when it says none, the Finder adds **nothing**
+  for **Any** (the chips, then "Explore alternatives · 18 trades that did not pass"), and under a position chip one line
+  — "**For a WR:** none of the 18 trades that raise both starting lineups over weeks 4–7 is worth proposing: 16 … ." —
+  that position's reason without the best move (the answer above names it). When the answer at the top is a credible
+  trade and a position has none, the Finder's own "No compelling trade found for a WR." stays (it is a different
+  answer). Decision: dropped rather than turned into "Your best move: …" — the answer line already ends with it, so a
+  second line would repeat it.
+* **3. The drawer's Back keeps the URL written while it was open** (`web/src/lib/router.svelte.ts` block `// ---- II-6`:
+  `setPopHook` + `lastHref`; `web/src/lib/player-drawer.svelte.ts` block: `screenUnderDrawer`). **Before**: the first
+  open pushed one entry; ×, Escape and the browser's Back went `history.back()` to the entry *before* the open, so a
+  parameter the screen wrote on the drawer's entry was lost — a search typed < 250 ms before the tap (its debounce lands
+  after the open), and (found here, wider than the brief) **any filter, sort or search changed beside the open drawer
+  from 900 px**: Players with `q=wash` typed beside the drawer → Escape → the URL without `q`, the box still saying
+  "wash". **After**: still `history.back()` (Back closes the drawer first; one history entry per screen; Forward
+  reopens it), but the router's popstate asks a hook first: when the URL being left has `pane` and the entry landed on
+  (same path) has none and differs, the landed entry is rewritten (`replaceState`, its scroll / depth kept) to the
+  screen as it is now minus `pane` / `from` — inside the router's one listener, before `parse()`, so the screen never
+  renders the old URL (a second popstate listener would run after a microtask checkpoint). Chosen over the brief's two
+  options: `replaceState` instead of Back leaves a stale same-screen entry behind (a second Back stop without the
+  search), and flushing the debounce covers the search only, not a filter changed beside the drawer.
+* **4. `web/e2e/app.spec.ts`** (the live-API suite): "a name in a card is one tap…" → one tap opens the drawer on My
+  Week (`?pane=<gsis>&from=…`, the card's name in `pane-card`, one history entry, no new tab), Back closes it first,
+  again → `pane-full` → the page in place of the drawer's entry (history length unchanged), the in-app Back → My Week
+  without the drawer, Forward / Back, the lineup name → drawer → page; "Back restores the scroll position" → lineup name
+  → drawer (no scroll) → `pane-full` → Back → the same `scrollY`; the password-gate test's name tap → `pane-card` →
+  `pane-full` → the page. A helper `openDrawer` (II-2's `expectDrawer` pattern). "search on the player card" already
+  went through `pane-full`. **Type-checked (eslint + `tsc -p tsconfig.node.json`), not run** (no live API here).
+* **5. `web/fixtures/ii4/api_ii4.json` re-recorded** (`cd api && II4_RECORD=1 PYTHONPATH=. uv run pytest -q
+  tests/test_ii4.py -k record_e2e`: the API conftest pins `LEAGUE_LAB_NOW=2026-10-03T16:00:00Z`; `league_lab_ia3`, the
+  database II-4 recorded from). **The words differed** (10 answers, 7,922 leaf values, 2,855 strings — the old one was
+  recorded Sunday 15:55 ET, after the 1 PM kickoffs): the API's Waivers `answer` was II-4's stale "The three strongest
+  claims are below, each with what it adds this week." → the PO's `topIntro` ("… 2 help this week, 1 covers a bye
+  (week 7). …"); My Week's feed "Justin Jefferson is out (ankle) — nobody on your bench can play WR2: it stays empty"
+  (every bench WR locked) → "… — Michael Wilson starts at FLEX2" + Terrance Ferguson's IR line; the lineup 104.34 →
+  113.54; the next lock "before Sun 4:05 PM ET" → "before Sun 9:30 AM ET"; Waivers' first claim Wan'Dale Robinson
+  (+8.3, the empty WR2) → Daniel Carlson (+1.8). `e2e/ii4` follows: "Helps this week (+1.8)"; the three claims now drop
+  three different players, so no competing line on the recording (asserted absent) and the competing-claims rule is
+  checked on a variant of the same answer (the first claim's drop made the third's: "Daniel Carlson and Tyler Allgeier
+  compete for the same roster spot (each drops Jacory Croskey-Merritt): claim one of them.") — the only e2e of that
+  line. The header says it is the pinned moment.
+* **Interfaces**: `router.svelte.ts` `setPopHook(fn: (left, landed) => string | null)` (one hook; the drawer's);
+  `player-drawer.svelte.ts` `screenUnderDrawer(left, landed)` (exported, pure). ClaimCard test ids `claim-gain-box`,
+  `claim-meta` (new); Trades `finder-none-why` (new; `finder-none` kept for the credible-answer case). No API change.
+* **Files**: `web/src/routes/decisions/ClaimCard.svelte`, `web/src/routes/Trades.svelte`, `web/src/lib/router.svelte.ts`,
+  `web/src/lib/player-drawer.svelte.ts`, `web/e2e/ii6/fixtures.spec.ts` (new: 5 tests × 2), `web/e2e/ii1/fixtures.spec.ts`
+  (the Scrubs test: said once), `web/e2e/ii4/fixtures.spec.ts` (the Waivers test, the header), `web/e2e/app.spec.ts`,
+  `web/fixtures/ii4/api_ii4.json`, `docs/DESIGN.md`, `docs/WORDS.md`, this section, `CHANGELOG.md`.
+* **Commands / evidence**: `cd web && npm run lint` (eslint + svelte-check + tsc: 164 files, 0 errors, 0 warnings) and
+  `npm run build` ok; **the whole fixtures e2e** `FIXTURES_PORT=8632 npx playwright test --config
+  playwright.fixtures.config.ts`: **344 passed, 2 skipped, 0 failed** (7.6 min; tonight's 335 + 1 skipped, + `e2e/ii6`'s
+  9 and 1 skip — the filter-beside-the-drawer test is desktop only: a phone's sheet covers the screen). **The new drawer
+  tests fail on `main`'s drawer** (the two files stashed, rebuilt: 5 of 5 fail with the URL without `q`; pass with the
+  fix). Screenshots (Playwright, the fixtures; `scratchpad/waveIJ/ii6-before/`, `ii6-after/`, `ii6-full/`):
+  `ii6-waivers-top-{closed,drawer}-{desktop,phone}.png`, `ii6-trades-none{,-wr}-{desktop,phone}.png`.
+* **What moved**: no number (web only). Waivers' top cards are taller when narrow (the gain is a line under the name);
+  the Trades screen is one box shorter when nothing passes; a Back that closes the drawer may rewrite the entry it lands
+  on (its URL only).
+* **Not done**: the drawer's first open still pushes before a pending search debounce lands (harmless now: the close
+  carries it). Seen while writing the test: when a search's input event and the tap that opens the drawer happen in the
+  **same task** (only a script can do that) the Players screen remounts under the drawer (a new search box, its state
+  from the URL at that instant) — a hand cannot type and tap in one task; the test leaves one frame between them, not
+  chased further. The phone sheet still does not make the page behind it `inert` (II-2's note).
+* **Next**: run `e2e/app.spec.ts` against the live API once (the PO's smoke after the deploy).
+
+**For the PO**
+1. **Merge**: web only; no file INF-2 touches (it is Python / `api/` / docs). `docs/STATUS.md` (this `## Wave I-J`
+   heading — INF-2 creates it too: keep one) and `CHANGELOG.md` (one `## 2026-10-05 — Wave I-J` heading) are the only
+   shared files. Nothing for `render.yaml`, the Dockerfile, the workflows, dbt or Neon.
+2. **The re-record** carries the real `injuries_checked` stamp of the moment it was made (`2026-10-05T04:53Z`, after
+   the pinned Saturday: INF-1 keeps `availability.checked_at` on real time) — every re-record changes it; nothing pins it.
+3. `e2e/app.spec.ts` is updated blind (type-checked): its first run against the live API is the check.
+4. **Decisions Andrew may want to reverse**: the narrow top card puts the gain under the name (not beside it) below 22rem
+   — on a 1300 screen that is always (three across), drawer open or not; the Finder says nothing under the answer for
+   Any when nothing passes (not a "Your best move" line: the answer already ends with it); a Back that closes the drawer
+   keeps a filter changed beside it (the screen as you left it), not the screen as it was when you opened the player.

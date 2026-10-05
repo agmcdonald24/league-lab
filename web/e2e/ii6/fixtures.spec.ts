@@ -1,4 +1,12 @@
-// Wave I-J (II-6): the presentation list. Phone at 375 px (inside the phone project) and desktop at 1300.
+// Wave I-J (II-6): the presentation list — Wave I-I's "known, left as built". Phone at 375 px (inside the phone project)
+// and desktop at 1300. Screenshots: SHOTS_DIR (default e2e/.out), ii6-*.png.
+// 1. Waivers' top three: the whole name shows (wraps, never cut) and neither the name nor the position badge runs under
+//    the gain label — drawer closed and open (from 900 px the drawer narrows the screen; ClaimCard's container query).
+//    Answers: II-4's recording (web/fixtures/ii4, League of Scrubs roster 2).
+// 2. Trades: "No compelling trade found" once (the answer at the top); the Finder does not repeat it (Any) and says a
+//    position's reason in one line without the best move (a chip). Answers: II-1's recording (web/fixtures/ii1).
+// 3. The drawer: what the screen wrote to the URL while it was open (a search typed just before the tap, a filter
+//    beside it) stays when ×, Escape or Back closes it; one history entry per screen.
 import { expect, test, type Locator, type Page, type Route, type TestInfo } from "@playwright/test";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
