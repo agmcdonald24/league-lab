@@ -7949,6 +7949,57 @@ compare against it)
 
 ## Wave I-J (Iteration 20)
 
+### PO merge — Wave I-J, 2026-10-05 (the memory diet, the presentation list)
+
+* **Why**: Render's events, Sunday 2026-10-04 15:25 ET: "Instance failed: ran out of memory (used over 512 MB)" on
+  the Starter plan; the instance restarted and recovered. Not traffic (`/api/usage/summary`: 39 views, 7 sessions, 4
+  leagues that day). Andrew, offered Standard ($25) or a diet: "ok, lets do it" — the diet. The PO measured first
+  (`scratchpad/waveIJ/measure.py` → `scripts/measure_memory.py`; tracemalloc in `trace.py`): 172 MB idle, +15–45 MB
+  per house league, **+75–100 MB per on-demand league**, never returned; 72 MB of it duplicated row strings inside
+  cached frames (one `"00-0037840"` per league per week), then a full `Board` copied per league, then caches that
+  only ever grew (`db._cache` 2000 frames, `_priced` 500, …). The brief: `scratchpad/waveIJ/BRIEF.md`; two Opus devs.
+* **Delivered** (`dev/INF2`, `dev/II6` merged; the hand-backs below): **INF-2** strings interned at the fetch
+  (`db.intern_strings`, `pd.factorize` + `sys.intern` once per distinct value — the 37,765-row window's strings 5.4 MB
+  → 0.03 MB; ~20 ms), `numeric` read as float at the fetch (200,000 cases checked equal), `query()` hands out shallow
+  copies (pandas 3 copy-on-write), **one Board per week shared across leagues** (`boards` region; `Priced.board` is
+  the shared object; the raw board rows no longer kept beside it via `db.not_kept`), **one byte budget for every
+  per-league cache** (`src/league_lab/memo.py`: an LRU with TTLs and a byte limit over 12 named regions —
+  `LEAGUE_LAB_CACHE_MB`, default **64** in INF-2's array units, which is what the brief's 160 deep-counted meant),
+  `malloc_trim(0)` after evictions and after a request that grew RSS ≥ 4 MB (a middleware, ≤ once a second),
+  `/api/status` `memory` (`rss_mb`, `cache_mb`, `budget_mb`, `regions`, `entries`, `evictions`, `trims`,
+  `malloc_arena_max`, `outside_mb` for the Sleeper / MFL clients' own caches), the console's Data Status line,
+  DEPLOY § Memory, `scripts/measure_memory.py` (`--plateau --cycles`), 14 new tests. **Before → after on the PO's
+  script, the same four leagues: 404 → 272 MB** (tree, with the `uv run` wrapper's ~33 MB that Render does not run;
+  **the server process alone ~240 MB**); per league: the Test League +97 → +29, MFL +73 → +29, Scrubs +43 → +31,
+  Dynasty +14 → +11. **The plateau**: a fifth league (`mfl:21861`) +24 MB as the budget fills, then two full cycles
+  of all five leagues within 3 MB. The target (≤ 260 tree) was missed by 12 MB and met on the server-only figure.
+  **II-6** Waivers' top-three cards never cut the name (a container query stacks the gain under the name below 22rem;
+  with the drawer open at 1300 every name is whole, nothing overlaps), Trades says "No compelling trade found" once
+  (the Finder's box is gone under Any; a position chip shows its one-line reason), closing the drawer keeps what the
+  screen wrote to the URL while it was open (the router's pop hook rewrites the landed entry — a search typed before
+  the tap, a filter changed beside the drawer; Back still closes the drawer first), `web/e2e/app.spec.ts` follows the
+  drawer (type-checked, not run — no live API here), `web/fixtures/ii4/api_ii4.json` re-recorded at the pinned clock.
+* **PO**: the two merges clean (STATUS / CHANGELOG keep both); `api/Dockerfile` `ENV` gains `MALLOC_ARENA_MAX=2
+  MALLOC_TRIM_THRESHOLD_=131072` (INF-2's line; measured −4 MB on the new code, −16 on the old). **Not done by the
+  PO: Render's auto-deploy trigger.** `checksPass` has produced no deploy since the domain's Blueprint sync (DEPLOY §
+  troubleshooting); the one-word change to `autoDeployTrigger: commit` (deploy every push; the Dockerfile build and
+  the `/api/health` check still guard it) is Andrew's to make — in `render.yaml` or Render → Settings → Auto-Deploy →
+  "On Commit" — the PO's tooling refuses to change a CI gate. Until then every push is deployed by hand (Manual
+  Deploy → Deploy latest commit).
+* **Checks** (main `c16f092`, the main database, the pinned clock): root **1,177 passed** / 2 skipped; API **635
+  passed** / 9 skipped (`test_u1` / `test_ig2` deselected); ruff clean; `npm run lint` 0 / 0; `npm run build` ok;
+  fixtures e2e **344 passed**, 2 skipped; the memory script re-run on the merged code with the arena setting: 176 →
+  205 → 217 → 246 → **272 MB** after the four leagues (before: 172 → 215 → 229 → 326 → 400).
+* **Decisions the PO took (Andrew may reverse)**: the budget default 64 (array units ≈ 160 deep-counted; 300 is
+  comfortable on Standard — `LEAGUE_LAB_CACHE_MB` on Render); an evicted league takes 1–2 s to rebuild; `numeric`
+  as float at the fetch; II-6: a narrow top card puts the gain under the name (always at 1300, three across), the
+  Finder shows no line under Any when nothing passes, closing the drawer keeps a filter changed beside it.
+* **Not done / next**: Sleeper's full player directory lives outside the budget (the fixtures' is 1 MB; production's
+  is likely tens of MB — `outside_mb.sleeper` on `/api/status` shows it; trim it to the fields the code reads: the
+  next lever); INF-2's size estimate undercounts real heap by ~1.5×; a Board dropped from `boards` while a `Priced`
+  holds it is uncounted; read `/api/status` `memory` on the live server on a Sunday and set the budget from it; the
+  deploy trigger (Andrew); the Standard plan stays the safety net if a Sunday still crosses 512.
+
 ### INF-2 2026-10-05 — the memory diet (branch `dev/INF2`, database `league_lab` read only)
 
 * **Task**: INF-2 (brief § "INF-2"; Render, Sunday 2026-10-04 15:25 ET: "Instance failed: ran out of memory (used

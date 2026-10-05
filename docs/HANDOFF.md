@@ -187,6 +187,17 @@ Mac's launchd builds locally only), the NFL-wide boards in the record, the hoste
   `ops/nightly-trigger/` (a Cloudflare Worker, 07:37 ET + re-checks) replaces it as the clock; needs Andrew's
   fine-grained token in the Worker's secret (HOSTING § 5 "The trigger"). Until it exists, "Run workflow" by hand.
 
+* **Wave I-J (2026-10-05, Monday 01:00–04:30 ET; two Opus devs; STATUS § "Wave I-J" PO section first)**: the memory
+  diet after Sunday's out-of-memory restart (Starter, 512 MB; four leagues → 400 MB before) — strings interned at the
+  fetch, one Board per week shared, one byte budget over every per-league cache (`src/league_lab/memo.py`,
+  `LEAGUE_LAB_CACHE_MB` default 64, LRU), `malloc_trim`, `MALLOC_ARENA_MAX=2` in the image, `/api/status` `memory`,
+  `scripts/measure_memory.py` (**run it before and after any change that touches caches or frames**: four leagues
+  404 → 272 MB, the server alone ~240; per on-demand league +97 → +29; a plateau over five leagues cycled twice).
+  Also II-6's presentation leftovers. **Open**: Render's auto-deploy trigger — `checksPass` has produced no deploy
+  since the domain's Blueprint sync; the fix is `autoDeployTrigger: commit` (Andrew's one word in `render.yaml`, or
+  Render → Settings → Auto-Deploy → "On Commit"); until then deploy by hand after every push. Sleeper's player
+  directory is outside the budget (`outside_mb.sleeper`) — the next lever if a Sunday still climbs.
+
 * **Wave I-I (2026-10-04/05, Sunday evening; seven Opus devs + an integration engineer; STATUS § "Wave I-I" PO
   section first)**: the fifth review delivered in its order — the calculation audit (Team's strength by slot on one
   metric and population, legal replacement chains, full names, one frame for the trade story), credible trades (the

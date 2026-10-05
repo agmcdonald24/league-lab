@@ -4,6 +4,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
 
 ## 2026-10-05 — Wave I-J
 
+- **PO (the merge, 2026-10-05 04:30 ET).** `MALLOC_ARENA_MAX=2` / `MALLOC_TRIM_THRESHOLD_` in the image; the memory
+  script re-run on the merged code: four leagues 404 → 272 MB. Render's auto-deploy trigger (`checksPass` → `commit`)
+  is left to Andrew (the PO's tooling will not change a CI gate); until then pushes are deployed by hand.
+
 - **INF-2 — the memory diet** (Render ran out of its 512 MB on Sunday 2026-10-04). Every in-process cache is now a
   region of one byte budget (`league_lab.memo`, `LEAGUE_LAB_CACHE_MB`, default 64; least recently used out first,
   TTLs kept), text values are interned at the fetch and `numeric` read as float, one projections Board per week is

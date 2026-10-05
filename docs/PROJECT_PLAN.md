@@ -598,6 +598,18 @@ regret, the coin flips' calibration, news-affected cases; the first numbers are 
 so on About); the stash writer's drop rule, the waiver deadline, MFL's freshness line, the MFL grade's qualification,
 usage retention. Next: the cold-start prior on the line (v3.2), events-aware news cases in the record, Wave J.
 
+### Iteration 20 — Wave I-J (2026-10-05, Monday 01:00–04:30 ET; the memory diet)
+
+Render's Starter instance (512 MB) ran out of memory once on Sunday afternoon with 4 leagues open (not traffic: 39
+views); Andrew chose the diet over the $25 plan ("ok, lets do it"). **INF-2** measured first, then: strings interned at
+the fetch, one projection Board per week shared across leagues, one byte budget (`LEAGUE_LAB_CACHE_MB`, default 64)
+over every per-league cache with LRU eviction, `malloc_trim` after evictions and heavy requests, `MALLOC_ARENA_MAX=2`
+in the image, `/api/status` `memory`, `scripts/measure_memory.py`. Four leagues: **404 → 272 MB** (the server alone
+~240), per on-demand league +97 → +29, and a plateau proven over two cycles of five leagues. **II-6** the Wave I-I
+presentation leftovers (Waivers' card names, the Finder's doubled headline, the drawer keeps the URL it closes over,
+`app.spec.ts`, the ii4 recording). STATUS § "Wave I-J": root 1,177 / API 635 / e2e 344, 0 failed. Open: Render's
+auto-deploy trigger (`commit` — Andrew's one word), the Sleeper directory outside the budget, the live Sunday reading.
+
 ### Iteration 19 — Wave I-I (2026-10-04, Sunday evening; delivered 2026-10-05 ~00:40 ET)
 
 Andrew: "next wave. plus agent feedback in this markdown. plus I logged into my google analytics for you to create
