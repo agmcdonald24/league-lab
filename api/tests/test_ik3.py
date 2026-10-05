@@ -414,3 +414,12 @@ def test_usage_checks_take_the_four_providers():
                 cur.execute("insert into events values (%s, %s)", (key, plat))
             cur.execute("rollback to savepoint s")
         conn.rollback()
+
+
+def test_real_yahoo_bare_id_without_keys_is_not_configured(real, client, monkeypatch):
+    """A bare id needs this season's game key (a Yahoo read): without Yahoo's keys the answer is "not set up", never
+    "connect" (there is nothing to connect to)."""
+    monkeypatch.delenv("LEAGUE_LAB_YAHOO_FIXTURES")
+    A._default = None
+    for text in ("4242", "https://football.fantasysports.yahoo.com/f1/4242"):
+        _err(client.get("/api/leagues", params={"yahoo": text}), 404, "yahoo_not_configured")

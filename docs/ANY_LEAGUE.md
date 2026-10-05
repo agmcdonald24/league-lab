@@ -717,5 +717,5 @@ first row wins" or "the last row wins" — and the adapter's next step takes the
 reported, else the unmapped row, listed and unvalued). AGENTS.md rule 3 (identity never through a name) is kept: the
 name step is the adapters' reported fallback, not a join. Today: 6 `espn_id`s are duplicated (none on a 2026 QB–TE:
 safeties, a punter, and RB / TE depth players of 2015–2016), 0 `yahoo_id`, 0 `mfl_id` (`--list-quarantine` lists them).
-`player_ids.read` does not apply the rule yet (ESPN: the last row wins; IK-2's Yahoo map: the first) — a one-line change
+`player_ids.read` applies it to `yahoo_id` (IK-2) but not yet to `espn_id` (the last row wins) or `mfl_id` — a few lines
 for whoever next owns the loader; with no current skill player affected it moves no answer.

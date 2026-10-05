@@ -569,7 +569,7 @@
   {:else}
   <section class="space-y-2" data-testid="yahoo-setup">
     {#if yahooError && !yahooMe?.connected}<p class="text-base text-bad" role="alert" data-testid="yahoo-error-back" data-code={yahooError}>{YAHOO_ERRORS[yahooError] ?? YAHOO_ERRORS.refused}</p>{/if}
-    {#if caps && caps.yahoo_configured === false && !yahooMe?.configured}
+    {#if caps?.yahoo_configured === false || yahooMe?.configured === false}
       <button type="button" class="w-full rounded-md border border-line bg-raised px-4 py-2.5 font-bold text-ink-3" disabled data-testid="yahoo-soon"
         >Connect with Yahoo — coming soon</button
       >
@@ -609,7 +609,7 @@
         Yahoo asks you to allow read-only access to your fantasy leagues; {APP_NAME} keeps the connection in this browser only.
       </p>
     {/if}
-    {#if !(caps && caps.yahoo_configured === false && !yahooMe?.configured)}
+    {#if !(caps?.yahoo_configured === false || yahooMe?.configured === false)}
       <form class="space-y-2 pt-1" onsubmit={(e) => findProvider("yahoo", e)} data-testid="yahoo-form">
         <label class="ll-label block" for="ll-yahoo">Or a Yahoo league link</label>
         <div class="flex gap-2">

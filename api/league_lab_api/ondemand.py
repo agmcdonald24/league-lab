@@ -1860,6 +1860,8 @@ def espn_league(text: str) -> dict:
 
 def yahoo_league(text: str) -> dict:
     """`/api/leagues?yahoo=<league key, id or link>`."""
+    if not yahoo_configured() and os.environ.get(A.platforms.STUBS_ENV) != "1":       # no keys: no Yahoo read at all
+        raise provider_error("yahoo", None, A.platforms.ProviderNotConfigured("yahoo"))
     try:
         key, team = yahoo_parse(text)
     except A.LeagueNotFound as exc:                   # not a link; or this season's game needs the Yahoo connection
