@@ -16,7 +16,10 @@
   import MyWeekPage from "./routes/MyWeek.svelte";
   import PlayerPage from "./routes/Player.svelte";
   import RosPage from "./routes/Ros.svelte";
-  import AccountPage from "./routes/Account.svelte"; // ---- IK-4: the account (sign in by email, the saved leagues)
+  // ---- IK-4: the account (sign in by email, the saved leagues) loads on first use, like About
+  let accountPage: ReturnType<typeof loadAccountPage> | null = null;
+  const loadAccountPage = () => import("./routes/Account.svelte");
+  const accountChunk = () => (accountPage ??= loadAccountPage());
   // ---- G4 decisions: the four screens, each loaded on first use (src/lib/decisionPages.ts)
   import { decisionPage, isDecision } from "./lib/decisionPages";
   import { countView } from "./lib/usage"; // ---- U-1: usage tracking (one count per screen view)
@@ -186,7 +189,11 @@
   <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>
 {:else if r.name === "account"}
   <!-- ---- IK-4: the account, outside the league frame like the setup screen -->
-  <AccountPage current={league} onauth={needLogin} />
+  {#await accountChunk()}
+    <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>
+  {:then m}
+    <m.default current={league} onauth={needLogin} />
+  {/await}
 {:else if r.name === "leagues" || !league}
   <LeaguesPage {mine} current={league} onuser={signedInUser} onauth={needLogin} />
 {:else}

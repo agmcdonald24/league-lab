@@ -71,13 +71,23 @@
     const ok = await run(() => verifyLink(t));
     dropLinkToken();
     token = null;
-    if (ok) gone = false;
+    if (ok) {
+      gone = false;
+      sentTo = null;
+    }
+  }
+
+  async function leave(everywhere: boolean) {
+    if (await run(() => signOut(everywhere))) sentTo = null;
   }
 
   const teamLine = (l: SavedLeague) => (l.team_name ? l.team_name : l.team_id !== null ? `Team ${l.team_id}` : "No team picked");
   const synced = (l: SavedLeague) => (l.last_sync_at ? `read ${new Date(l.last_sync_at).toLocaleDateString()}` : "read when you open it");
   const openHref = (l: SavedLeague) => withContext("/", { league: l.league, team: typeof l.team_id === "number" ? l.team_id : null });
 </script>
+
+<!-- the link opened in a tab that already shows this page: only the fragment changes (no reload) -->
+<svelte:window onhashchange={() => (token = linkToken())} />
 
 <main class="mx-auto max-w-xl space-y-5 px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-10" data-testid="account">
   <header class="space-y-1">
@@ -187,8 +197,8 @@
 
       <section class="space-y-3 border-t border-line pt-4">
         <div class="flex flex-wrap gap-x-5 gap-y-2 text-base">
-          <button class="ll-link min-h-11" disabled={busy} onclick={() => run(() => signOut(false))} data-testid="signout">Sign out</button>
-          <button class="ll-link min-h-11" disabled={busy} onclick={() => run(() => signOut(true))} data-testid="signout-all">Sign out everywhere</button>
+          <button class="ll-link min-h-11" disabled={busy} onclick={() => leave(false)} data-testid="signout">Sign out</button>
+          <button class="ll-link min-h-11" disabled={busy} onclick={() => leave(true)} data-testid="signout-all">Sign out everywhere</button>
         </div>
         {#if !confirmDelete}
           <button class="min-h-11 text-sm text-bad underline" onclick={() => (confirmDelete = true)} data-testid="delete-ask">Delete my account</button>
@@ -202,6 +212,7 @@
                 onclick={async () => {
                   if (await run(deleteAccount)) {
                     gone = true;
+                    sentTo = null;
                     confirmDelete = false;
                   }
                 }}
