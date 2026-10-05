@@ -106,9 +106,11 @@ def test_played_games_use_the_weeks_points(monkeypatch):
 def test_on_demand_points_and_mfl_without_live_scores(monkeypatch):
     w = _win(monkeypatch, scored={"A1"}, points={"sa0": 25.0}, house=False)
     assert w["n_played"] == 1 and w["mine"] == pytest.approx(88.0 - 21.5 + 25.0)
-    m = _win(monkeypatch, scored={"A1"}, points=None, house=False)              # an MFL league: points unknown
+    m = _win(monkeypatch, scored={"A1"}, points=None, house=False)              # the league's points unknown
     assert m["p"] is None and m["note"] == myweek.WIN_NO_LIVE
-    assert ondemand.week_points(None, "mfl:70587", 4, [1]) is None
+    # ---- IL-2 (Wave I-L): an MFL league's points are MFL's live scoring now (api/tests/test_il2.py reads the fixture)
+    monkeypatch.setattr(ondemand, "mfl_week_points", lambda client, league_id, week: {"x": 1.0})
+    assert ondemand.week_points(None, "mfl:70587", 4, [1]) == {"x": 1.0}
     # before any game: MFL is priced like everyone
     assert _win(monkeypatch, scored=set(), points=None, house=False)["p"] is not None
 

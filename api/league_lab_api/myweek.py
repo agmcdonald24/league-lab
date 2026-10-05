@@ -1225,7 +1225,7 @@ def win(league_id: str, roster_id: int, season: int, week: int, rows: pd.DataFra
         house: bool, points_fn=None, context_fn=None) -> dict | None:
     """`win` on My Week: None without an opponent; one object per opponent (a double header's second in ``also``).
     ``points_fn(roster_ids) -> {Sleeper id: points} | None`` reads the week's points for the on-demand path (None: not
-    known, e.g. an MFL league); the database path reads `league_player_week`. ``context_fn(roster_id)`` = the
+    known, e.g. the platform did not answer — IL-2: MFL's live scoring is read now); the database path reads `league_player_week`. ``context_fn(roster_id)`` = the
     opponent's roster context (default `availability.roster_context`, the same rows his total on the page comes from)."""
     if opp is None:
         return None
@@ -1236,6 +1236,7 @@ def win(league_id: str, roster_id: int, season: int, week: int, rows: pd.DataFra
     except Exception:  # noqa: BLE001 - the opponent is a nicety: his rows not readable leaves the line out
         return None
     scored = scored_teams(season, week)
+    scored = live_scored(league_id, week, scored, house)                                   # ---- IL-2: MFL's live scoring
     rids = [int(roster_id), *ctxs]
     points: dict[str, float] | None = {}
     if scored:
@@ -1305,6 +1306,7 @@ def week_odds(league_id: str, *, house: bool | None = None) -> dict:
     else:
         ctxs = {r: availability.roster_context(league_id, r, week, house=False, client=client) for r in rids}
     scored = scored_teams(season, week)
+    scored = live_scored(league_id, week, scored, house)                                   # ---- IL-2: MFL's live scoring
     points: dict[str, float] | None = {}
     if scored:
         if house:
@@ -1341,3 +1343,17 @@ def week_odds(league_id: str, *, house: bool | None = None) -> dict:
         out["note"] = out["games"][0]["note"]
     return out
 # ---- end IH-3
+
+
+# ---- IL-2 (Wave I-L): MFL's live points in the week's odds. A starter's game is "in" when the nightly scored his team
+# (IH-3) **or**, on an MFL league, when MFL's live scoring lists a player of his NFL team with 0 game seconds left; his
+# points are then MFL's own (`ondemand.mfl_week_points`). A game in progress is still his full range.
+def live_scored(league_id: str, week: int, scored: set[str], house: bool) -> set[str]:
+    from league_lab import anyleague as A
+
+    if house or not A.platforms.is_mfl(league_id):
+        return scored
+    from .ondemand import mfl_teams_done
+
+    return set(scored) | {t for t in (_team_code(x) for x in mfl_teams_done(None, league_id, week)) if t}
+# ---- end IL-2

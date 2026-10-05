@@ -2,8 +2,8 @@
 
 **What League Lab does.** Reads a MyFantasyLeague league's public export (`https://api.myfantasyleague.com/<year>/export
 ?TYPE=…&L=<league>&JSON=1`, followed to the league's own `www4N.` host): the league settings, scoring rules, rosters,
-schedule, standings, the week's live scoring and last week's results, the player list (`DETAILS=1`) and the injury
-report. Read-only: no login, no API key, no writes, no lineup changes. Code: `src/league_lab/mfl_client.py`.
+schedule, standings, the week's live scoring and last week's results, the player list (`DETAILS=1`), the injury
+report and (Wave I-L, IL-2) the transactions export, week by week (`TYPE=transactions&W=<week>&TRANS_TYPE=*`). Read-only: no login, no API key, no writes, no lineup changes. Code: `src/league_lab/mfl_client.py`.
 
 **Who can be read.** A league whose commissioner allows outside reads. MFL answers anything else with an `error` body;
 League Lab then says: "MyFantasyLeague would not share this league: it may be private or the link may be wrong. Ask
@@ -12,9 +12,11 @@ commissioner looks in the league's setup for the API / privacy option.)
 
 **How much we call.** One token bucket of **60 calls a minute** per process (`LEAGUE_LAB_MFL_PER_MIN`), stricter than
 Sleeper's; caches by kind: league and rules a day, rosters and standings 10 minutes, schedule and live scoring 5
-minutes, weekly results 10 minutes, players a day, injuries an hour. An HTTP 429, or an `error` body that asks us
+minutes, weekly results 10 minutes, players a day, injuries an hour, this week's transactions 10 minutes and a past
+week's a day. An HTTP 429, or an `error` body that asks us
 to slow down, stops all MFL calls for a minute (the last answer is served when there is one). A league opened once
-costs about nine calls, then nothing for five to ten minutes.
+costs about nine calls, then nothing for five to ten minutes; the League screen adds one transactions call per week of
+the season so far the first time (a past week then holds a day).
 
 **Who we are.** Every call carries `User-Agent: league-lab/0.1 (beta; contact in docs/MFL_TERMS.md)`. Contact: the
 project owner (put the beta's public contact address here when it has one). The beta is free and charges nobody.

@@ -1427,6 +1427,7 @@ export interface MatchupSide {
   team_name: string | null;
   points: number | null; // null before the games
   result: "W" | "L" | "T" | null;
+  live?: number | null; // ---- IL-2: this week's score so far (the platform's live points; MFL's live scoring); null before any
 }
 export interface WeekMatchups {
   week: number;
@@ -2132,3 +2133,33 @@ export interface NewsItem {
   forecast_words?: string;
 }
 // ---- end II-4
+
+// ---- IL-2 (Wave I-L): Waivers' "Recently added in this league" (every team's adds of the decision week and the week
+// before, from the moves the League screen lists) and MFL's waiver order / blind-bid balance on the stamp line
+export interface RecentAdd {
+  week: number | null;
+  transaction_type: string; // free_agent | waiver
+  roster_id: number | null;
+  team_name: string | null;
+  player_name: string | null;
+  position: string | null;
+  gsis_id: string | null;
+  waiver_bid: number | null;
+  created_at: string | null;
+  mine: boolean;
+}
+export interface RecentAdds {
+  weeks: number[];
+  rows: RecentAdd[];
+  total: number;
+  unavailable: string | null; // "Transactions: not available for … leagues yet" / "Recent adds: not read right now"
+  source: string | null;
+}
+export interface Waivers {
+  recent_adds?: RecentAdds | null;
+}
+export interface WaiverDeadline {
+  budget_left?: number | null; // MFL blind bids: the team's balance when MFL's league export carries it
+  waiver_order?: number | null; // MFL waiver order: the team's place
+}
+// ---- end IL-2

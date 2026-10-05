@@ -511,6 +511,8 @@ def waivers(league_id: str, team: int | None = None, position: str | None = None
     # ---- end IB-2
     out.setdefault("no_worthwhile_move", None)                                         # ---- IF-1
     out["deadline"] = waivers_deadline_for(str(league_id), season, int(week), is_house)        # ---- IG-3
+    out["deadline"] = mfl_waiver_franchise(out["deadline"], str(league_id), team)              # ---- IL-2
+    out["recent_adds"] = recent_adds(str(league_id), team, int(week), is_house)                 # ---- IL-2
     if not is_house:
         out["on_demand"] = {k: v for k, v in od_info.items() if k not in ("lw", "fa")}
     out["timings_ms"] = {"request_total": round((time.perf_counter() - t0) * 1000, 1)}
@@ -3296,6 +3298,7 @@ def week_matchups(week: int | None, ms: list[dict], names: dict, *, played: bool
             p, q = float(x.get("points") or 0.0), float(o.get("points") or 0.0)
             sides.append({"roster_id": int(x["roster_id"]), "team_name": names.get(int(x["roster_id"]), {}).get("team_name"),
                           "points": round(p, 2) if played else None,
+                          "live": round(p, 2) if not played and p > 0 else None,    # ---- IL-2: the score so far
                           "result": ("W" if p > q else "L" if p < q else "T") if played else None})
         games.append({"matchup_id": mid, "a": sides[0], "b": sides[1],
                       "mine": me is not None and me in (sides[0]["roster_id"], sides[1]["roster_id"])})
@@ -4757,3 +4760,111 @@ def team_roster_freshness(league_id: str) -> dict:
     from .ondemand import mfl_roster_freshness
     return mfl_roster_freshness(A.sleeper(), league_id)
 # ---- end IH-2
+
+
+# ---- IL-2 (Wave I-L): MFL's waivers for the team asked about — the league export's ``waiverSortOrder`` (a waiver-order
+# league: "you are 4th in the waiver order") and ``bbidAvailableBalance`` (a blind-bid league: "your blind-bid balance is
+# $87"), on the stamp line after the claim type. MFL states no claim time in its export (70587's league.json: only
+# ``currentWaiverType``), so the line keeps "see MFL for the time". A first-come league needs neither. Never raises.
+def mfl_waiver_franchise(deadline: dict | None, league_id: str, team: int | None) -> dict | None:
+    if deadline is None or team is None or not A.platforms.is_mfl(league_id):
+        return deadline
+    try:
+        lid = A.platforms.mfl_id(league_id)
+        raw = A.sleeper().mfl.client.league(lid)
+        fids = A.platforms.M.franchise_ids(raw)
+        fid = fids[int(team) - 1] if 0 < int(team) <= len(fids) else None
+        fr = next((f for f in A.platforms.M._as_list((raw.get("franchises") or {}).get("franchise"))
+                   if str(f.get("id")) == fid), None) if fid else None
+    except Exception:  # noqa: BLE001 - a line on the page, never a failure
+        return deadline
+    if fr is None:
+        return deadline
+    kind = deadline.get("kind")
+    out = dict(deadline)
+    extra = None
+    if kind in ("blind_bid", "blind_bid_fcfs"):
+        bal = _num(fr.get("bbidAvailableBalance"))
+        out["budget_left"] = bal
+        extra = (f"your blind-bid balance is ${bal:g}" if bal is not None
+                 else "your blind-bid balance is not in MFL's league export")
+    elif kind == "waiver_order":
+        order = _int(fr.get("waiverSortOrder"))
+        out["waiver_order"] = order
+        if order:
+            extra = f"you are {_ordinal(order)} in the waiver order"
+    if extra and ": see MFL for the time" in str(out.get("words") or ""):
+        out["words"] = out["words"].replace(": see MFL for the time", f": see MFL for the time; {extra}", 1)
+    return out
+# ---- end IL-2
+
+
+# ---- IL-2 (Wave I-L): Waivers' "Recently added in this league" — every team's adds (free agents and waiver claims) of
+# the decision week and the week before, newest first, from the same moves the League screen lists (a house league: the
+# nightly's mart_league_transactions; on demand: the platform's transactions — Sleeper's, MFL's export, ESPN's, Yahoo's).
+# A platform whose moves are not read says so (``unavailable``), never an empty list. Never raises.
+RECENT_ADDS_LIMIT = 10
+
+
+def recent_adds(league_id: str, team: int | None, week: int, is_house: bool) -> dict:
+    weeks = sorted({max(1, int(week) - 1), int(week)})
+    out: dict = {"weeks": weeks, "rows": [], "total": 0, "unavailable": None, "source": None}
+    try:
+        gap = A.platforms.unavailable(A.platforms.provider_of(league_id), "transactions")
+    except KeyError:
+        gap = None
+    if gap:
+        out["unavailable"] = gap
+        return out
+    try:
+        if is_house:
+            tx = query(TX_SQL, (league_id,))
+            out["source"] = "analytics.mart_league_transactions"
+        else:
+            lg, rosters, users = _sleeper_league(league_id)
+            sl = A.sleeper()
+            names = A.team_names(rosters, users)
+            players = sl.players()
+            rows = []
+            for rnd in weeks:
+                for t in sl.transactions(lg["league_id"], rnd):
+                    for sid, rid in (t.get("adds") or {}).items():
+                        sp = players.get(str(sid)) or {}
+                        rid = None if rid is None else int(rid)
+                        rows.append({"week": t.get("leg") or rnd, "transaction_id": str(t.get("transaction_id")),
+                                     "transaction_type": t.get("type"), "status": t.get("status"), "action": "add",
+                                     "created_at": pd.Timestamp(int(t["created"]), unit="ms", tz="UTC") if t.get("created") else None,
+                                     "roster_id": rid, "team_name": names.get(rid, {}).get("team_name"),
+                                     "sleeper_player_id": str(sid), "position": sp.get("position"),
+                                     "player_name": sp.get("full_name") or (f"{sp.get('first_name', '')} {sp.get('last_name', '')}".strip()
+                                                                            if sp.get("position") == "DEF" else None) or str(sid),
+                                     "waiver_bid": (t.get("settings") or {}).get("waiver_bid")})
+            tx = pd.DataFrame(rows)
+            if not tx.empty:
+                idm = query("select sleeper_id, gsis_id from analytics.player_id_map where sleeper_id = any(%s)",
+                            (sorted(set(tx["sleeper_player_id"])),))
+                tx["gsis_id"] = tx["sleeper_player_id"].map(dict(zip(idm["sleeper_id"], idm["gsis_id"], strict=False)))
+            out["source"] = f"{A.platforms.LONG[A.platforms.provider_of(league_id)]} transactions"
+    except Exception:  # noqa: BLE001 - a list on the page, never a failure: "not read" rather than "none"
+        out["unavailable"] = "Recent adds: not read right now"
+        return out
+    if tx.empty:
+        return out
+    tx = tx[(tx["action"] == "add") & tx["transaction_type"].isin(["free_agent", "waiver"])
+            & pd.to_numeric(tx["week"], errors="coerce").isin(weeks)
+            & (tx["status"].fillna("complete") == "complete")]
+    tx = tx.sort_values("created_at", ascending=False, na_position="last")
+    out["total"] = int(len(tx))
+    keep = ("week", "transaction_type", "roster_id", "team_name", "player_name", "position", "gsis_id", "waiver_bid",
+            "created_at", "sleeper_player_id")
+    for r in tx.head(RECENT_ADDS_LIMIT).to_dict("records"):
+        row = {k: (r.get(k).item() if hasattr(r.get(k), "item") else r.get(k)) for k in keep}
+        row["created_at"] = row["created_at"].isoformat() if hasattr(row["created_at"], "isoformat") else None
+        row["week"] = _int(row["week"])
+        row["roster_id"] = _int(row["roster_id"])
+        row["waiver_bid"] = _num(row["waiver_bid"])
+        row["gsis_id"] = _str(row["gsis_id"])
+        row["mine"] = team is not None and row["roster_id"] == int(team)
+        out["rows"].append(row)
+    return out
+# ---- end IL-2

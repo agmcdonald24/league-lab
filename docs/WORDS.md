@@ -347,6 +347,15 @@ labels, tooltips, summaries, accessibility labels and generated text, the consol
 | the league's own app (My Week, Waivers) | "Open ESPN to edit your lineup ↗" / "Open Yahoo to edit your lineup ↗" · "Claims run on ESPN's schedule for this league: see ESPN for the time; …" | a guessed claim time |
 | a provider that did not answer | "ESPN did not answer. Try again in a minute." / "Yahoo did not answer. …" | "Sleeper did not answer" for another provider |
 
+## MyFantasyLeague, complete (Wave I-L, IL-2)
+
+| Where | The words we use | Never |
+|---|---|---|
+| League, this week's matchups card (any league whose platform gives live points: Sleeper's matchups call, MFL's live scoring) | under a team's name: "**8.0 so far**" (its score so far; nothing before its first points) beside "24% · 85 expected" | a live score on last week's results (final scores only); "live" without a number |
+| My Week's win line after a game is over | "… 1 of your 7 have played, 0 of theirs." (IH-3's words; MFL counts a starter whose game MFL says is over) | a game in progress counted as played |
+| Waivers, the stamp line (MFL) | first come: "Free agents are first come, first served on MFL: a claim is yours as soon as MFL takes it; players lock …" · blind bids: "Claims run on MFL's schedule for this league (blind bids): see MFL for the time; your blind-bid balance is $87.5; …" or "… your blind-bid balance is not in MFL's league export; …" · waiver order: "…: see MFL for the time; you are 4th in the waiver order; …" | a guessed claim time |
+| Waivers, "Recently added in this league" | each add: "Ja'Kobi Lane · WR — Knight Train (you) · week 3 · $12" (the bid when the league has one); the note "1 add in weeks 3–4 · MyFantasyLeague transactions"; none: "No adds in weeks 3–4."; not read: "Transactions: not available for … leagues yet." | an empty card when the moves are not read |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

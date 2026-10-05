@@ -1588,10 +1588,10 @@ def with_cards(answer: dict) -> dict:
 # ranges come with the priced board (`anyleague.lineup_rows` -> `_cards_frame`: the reference scoring's ranges shifted
 # onto this league's points; none when the league's ranges are not priced -> "no range for this league yet"). The
 # week's points for a starter whose game is in: Sleeper's matchups call (`players_points`, the league's own scoring,
-# cached with the opponent's call); an MFL league's live scores are not read yet (the line steps aside once a game is in).
+# cached with the opponent's call); an MFL league's: MFL's live scoring (IL-2, `mfl_week_points`; was not read).
 def week_points(client, league_id: str, week: int, roster_ids) -> dict[str, float] | None:
     if A.platforms.is_mfl(league_id):
-        return None
+        return mfl_week_points(client, league_id, week)        # ---- IL-2: MFL's live scoring (was None: not read)
     # ---- IK-3: an ESPN / Yahoo league's matchups carry `players_points` only when the adapter reads them (else {})
     try:
         ms = client.matchups(league_id, int(week))
@@ -1957,3 +1957,34 @@ def provider_extras(league_id: str, league: dict) -> dict:
 def yahoo_token_from(cookie: str | None) -> str | None:
     return cookie or None if os.environ.get(A.platforms.STUBS_ENV) == "1" else None
 # ---- end IK-3
+
+
+# ---- IL-2 (Wave I-L): an MFL league's live points — MFL's ``liveScoring`` export (``MFLLeagues.live_points``: each
+# listed player's points so far, by Sleeper id). The week's odds read them for the starters whose game is over (a game in
+# progress keeps its full range, IH-3's rule); ``myweek.live_scored`` adds the NFL teams MFL says are done to the
+# nightly's. MFL down or busy: None (unknown, never 0) — the line steps aside once a game is in, as before.
+def _mfl_adapter(client):
+    c = client if client is not None else A.sleeper()
+    return getattr(c, "mfl", None)
+
+
+def mfl_week_points(client, league_id: str, week: int) -> dict[str, float] | None:
+    mf = _mfl_adapter(client)
+    if mf is None:
+        return None
+    try:
+        return dict(mf.live_points(league_id, int(week))["points"]) or None
+    except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+        return None
+
+
+def mfl_teams_done(client, league_id: str, week: int) -> set[str]:
+    """The NFL teams whose game MFL's live scoring says is over this week (Sleeper's team codes); empty when unknown."""
+    mf = _mfl_adapter(client)
+    if mf is None:
+        return set()
+    try:
+        return set(mf.live_points(league_id, int(week))["teams_done"])
+    except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
+        return set()
+# ---- end IL-2

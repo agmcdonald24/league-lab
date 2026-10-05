@@ -1,0 +1,42 @@
+{
+ "version": "1.0",
+ "transactions": {
+  "transaction": [
+   {
+    "timestamp": "1790769600",
+    "franchise": "0008",
+    "type": "FREE_AGENT",
+    "transaction": "|13772,"
+   },
+   {
+    "timestamp": "1790188200",
+    "franchise": "0005",
+    "type": "TRADE",
+    "franchise2": "0008",
+    "franchise1_gave_up": "14104,FP_0005_2027_3,",
+    "franchise2_gave_up": "14102,",
+    "comments": "",
+    "expires": "1790793000"
+   },
+   {
+    "timestamp": "1790169000",
+    "franchise": "0001",
+    "type": "FREE_AGENT",
+    "transaction": "17517,|13289,"
+   },
+   {
+    "timestamp": "1789609200",
+    "franchise": "0003",
+    "type": "FREE_AGENT",
+    "transaction": "17497,|13163,"
+   },
+   {
+    "timestamp": "1788962700",
+    "franchise": "0008",
+    "type": "FREE_AGENT",
+    "transaction": "17052,|13146,"
+   }
+  ]
+ },
+ "encoding": "utf-8"
+}

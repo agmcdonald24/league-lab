@@ -15,6 +15,19 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `memory.directory`. No screen changed but those "Explore alternatives" cards' "Theirs:" line; unverified live until
   the PO reads `/api/status` after the deploy (`docs/STATUS.md` § IL-4).
 
+- **IL-2 — MyFantasyLeague complete on dad's league.** MFL's transactions export is read (`MFL.transactions`, week by
+  week, a past week cached a day; `MFLLeagues.transactions` in Sleeper's shape: free agents, waivers with the blind
+  bid, trades both ways with future picks): League's "Latest moves" lists an MFL league's moves, and Waivers gains
+  **"Recently added in this league"** on every platform (every team's adds of this week and last). MFL's live scoring
+  narrows the week's odds the way Sleeper's points do (a starter MFL says is done counts at MFL's points; a game in
+  progress keeps its range) and the League card shows each team's score so far ("8.0 so far"). The Waivers stamp line
+  names the team's place in an MFL waiver order or its blind-bid balance when MFL's export carries them. The
+  correctness sweep on `mfl:70587`: every rule MFL states is priced; weeks 1–2 recomputed franchise by franchise from
+  our scoring: 21 of 24 exact, 3 within 2 points (team defenses: a sack count, two return TDs without a length); 0 of
+  167 rostered players unmapped; slots exact both ways; the playoff team count capped at the league's size; the
+  check's names read "Kansas City Chiefs". **Built from MFL's documentation on a synthetic transactions fixture — not
+  verified on a live league yet** (`docs/STATUS.md` § IL-2).
+
 ## 2026-10-05 — Wave I-K
 
 - **PO (the merge, 2026-10-05 12:30 ET).** The accounts block in `scripts/sync_to_hosted.sh`; the accounts schema on

@@ -20,7 +20,7 @@ this table's cells without "(unverified live)".
 | | Connect | Scoring | Lineup slots | Matchups | Players | Waivers | Transactions | Team assets | News |
 |---|---|---|---|---|---|---|---|---|---|
 | **Sleeper** (supported) | username, or a league link / id | yes | yes | yes | yes | yes | yes | partial (picks, FAAB not read on demand) | yes |
-| **MyFantasyLeague** (supported) | league link, id or name | partial | partial (ranges as minimum + FLEX) | partial (live points not read) | partial | partial | **no** | partial | yes |
+| **MyFantasyLeague** (supported) | league link, id or name | partial | partial (ranges as minimum + FLEX; exact on the three fixture leagues — `slots` note `range_gaps` names any difference) | yes: the schedule, every played week's points, **this week's live points** from MFL's live scoring (IL-2) | partial | partial: free agents = unrostered; waiver type, waiver order and blind-bid balance (when MFL's export carries them); MFL states no claim time | **yes: adds, drops, trades and waiver claims from MFL's transactions export** (IL-2; as built, not verified on a live league yet — a synthetic fixture) | partial | yes |
 | **ESPN** (unverified) | league id or link (`fantasy.espn.com/football/league?leagueId=4242`); public leagues; private only behind `LEAGUE_LAB_ESPN_PRIVATE=on` with the user's own cookies | partial: ESPN's scoring items → our keys, the rest listed unpriced (as built, unverified live) | partial: slot ids → ours (OP → superflex, D/ST → DEF), IDP left out and said (as built, unverified live) | partial: schedule + each week's points from `mMatchupScore` (as built, unverified live) | partial: ESPN id → gsis → Sleeper (nflverse), else a unique name + position, else `espn:<id>` listed, unvalued (as built, unverified live) | partial: free agents = unrostered; waiver order / budget not read (as built, unverified live) | partial: adds, drops, trades from `mTransactions2` (as built, unverified live) | partial: D/ST as team defenses; picks / FAAB not read (as built, unverified live) | partial: the same feed, for matched players (as built, unverified live) |
 | **Yahoo** (unverified) | "Connect with Yahoo" (OAuth 2.0, read-only `fspt-r`) → your leagues; or a link `football.fantasysports.yahoo.com/f1/12345` once connected; "coming soon" until the two secrets exist | partial: stat modifiers → our keys, the rest listed unpriced (as built, unverified live) | partial: `W/R/T` → FLEX, `Q/W/R/T` → superflex, IDP left out and said (as built, unverified live) | partial: scoreboard by week (as built, unverified live) | partial: Yahoo id → nflverse `yahoo_id` → Sleeper, else a unique name + position, else `yahoo:<id>` listed (as built, unverified live) — **no 2025 / 2026 rookie has a `yahoo_id` in nflverse** (the audit below) | partial: free agents from Yahoo's list; priority / FAAB not read (as built, unverified live) | partial: adds, drops, trades (as built, unverified live) | partial: DEF as team defenses; picks / FAAB not read (as built, unverified live) | partial: the same feed, for matched players (as built, unverified live) |
 
@@ -61,8 +61,8 @@ for them, and the product says "not supported yet" (the setup screen's "ESPN or 
 
 How the product uses it: the setup screen lists what the chosen platform gives ("What isuckatfantasy reads from MFL
 leagues — 1 not available yet"), and a screen that would show an empty list for a feature a platform does not give says
-the `unavailable` line instead (League's "Latest moves" on an MFL league: "Transactions: not available for MFL leagues
-yet." — it said "No completed moves yet this season" before). Statuses: `yes` (read as the provider has it), `partial`
+the `unavailable` line instead (League's "Latest moves" on an MFL league said "Transactions: not available for MFL leagues
+yet." until Wave I-L read MFL's transactions — it said "No completed moves yet this season" before that). Statuses: `yes` (read as the provider has it), `partial`
 (read, with the gap stated in `words`), `no` (not read; `unavailable` is the sentence). Adding a provider = an adapter
 that answers the `Router` calls in Sleeper's shapes (`platforms.py` module docstring) + its `_CAPS` entry; **no
 "supported" badge for a placeholder** (the review): ESPN and Yahoo are `not_supported` with every feature `no`.
@@ -81,6 +81,23 @@ username change), not the username.
 ## MyFantasyLeague
 
 **Built**: `mfl_client.py` + `platforms.MFLLeagues` — `docs/MFL_TERMS.md`, `docs/ANY_LEAGUE.md` § MyFantasyLeague.
+
+**What is read now (Wave I-L, IL-2, 2026-10-05)**: the league, rules, rosters, schedule, standings, weekly results, the
+player list, the injury report, **the transactions export** (`TYPE=transactions&L=&W=<week>&TRANS_TYPE=*`, one call per
+week, a past week cached a day, this week 10 minutes — `MFL.transactions`; `MFLLeagues.transactions` answers Sleeper's
+`/transactions/<round>` shape: `FREE_AGENT` → `free_agent`, `WAIVER` / `BBID_WAIVER` → `waiver` with the bid in
+`settings.waiver_bid`, `TRADE` → `trade` both ways with future picks `FP_<franchise>_<year>_<round>` in `draft_picks`;
+IR, taxi, auction and pool rows move nobody between teams and are left out; MFL has no transaction id, so the id is
+`mfl-<timestamp>-<franchise>-<hash of the row>`) and **the live scoring** (`TYPE=liveScoring&W=<week>`: each listed
+player's points so far and `gameSecondsRemaining`; a player with 0 seconds left is in — his game is over —, a game in
+progress keeps its full range in the week's odds, IH-3's rule; this week's matchups rows carry each franchise's score so
+far as Sleeper's call does). The shapes are MFL's documented ones (the export's `api_info` page is robots-blocked from
+here; ffscrapr's `mfl_transactions` reads them the same way): **the transactions were built on a synthetic fixture**
+(`api/tests/fixtures/mfl/70587/transactions*.json`) — the PO checks `mfl:70587`'s League "Latest moves" against MFL's
+own Transactions report after the deploy; the live scoring parse runs on MFL's own recording (`liveScoring_4`). Waivers:
+the waiver type (`currentWaiverType`), the team's place in the waiver order (`waiverSortOrder`, a waiver-order league)
+and its blind-bid balance (`bbidAvailableBalance`, a blind-bid league: MFL's documented field — **not in any fixture**:
+21861's public export, a blind-bid league, carries none, and the line says so). MFL's export states no claim time.
 **Read 2026-10-04**: MFL's own API page (`api.myfantasyleague.com/<year>/api_info`) refuses automated readers
 (robots.txt), so it was **not** read from here. Secondary source — the ffverse `ffscrapr` package's MFL connection
 (<https://ffscrapr.ffverse.com/reference/mfl_connect.html>): `APIKEY` "allows access to private leagues. Key is unique for
