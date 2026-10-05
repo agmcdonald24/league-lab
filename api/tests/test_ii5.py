@@ -27,7 +27,8 @@ def test_every_provider_states_every_feature():
     assert P.FEATURES == ("scoring", "roster_slots", "matchups", "players", "waivers", "transactions", "team_assets", "news")
     for prov in P.PROVIDERS:
         c = P.capabilities(prov)
-        assert c["provider"] == prov and c["name"] and c["short"] and c["status"] in ("supported", "not_supported")
+        assert c["provider"] == prov and c["name"] and c["short"] and c["status"] in ("supported", "not_supported",
+                                                                                      "unverified")  # IK-3: ESPN / Yahoo
         assert set(c["connect"]) == {"kind", "label", "example", "where"}
         assert list(c["features"]) == list(P.FEATURES)
         for f, v in c["features"].items():
@@ -58,12 +59,12 @@ def test_mfl_transactions_really_are_not_read():
 
 
 def test_espn_and_yahoo_are_not_supported():
+    """IK-3 (Wave I-K): ESPN and Yahoo are built — as built, not verified live (test_ik3 pins their rows); what stays
+    true here: nothing on them says "yes" until the PO verifies a live league."""
     for prov in ("espn", "yahoo"):
         c = P.capabilities(prov)
-        assert c["status"] == "not_supported" and c["connect"]["kind"] == "none"
-        assert all(v["status"] == "no" for v in c["features"].values())
-    assert P.unavailable("espn", "scoring") == "Scoring: not available for ESPN leagues yet"
-    assert P.unavailable("yahoo", "waivers") == "Waivers: not available for Yahoo leagues yet"
+        assert c["status"] == "unverified" and c["connect"]["kind"] in ("league_link", "oauth")
+        assert all(v["status"] == "partial" for v in c["features"].values())
 
 
 def test_capabilities_for_a_league_key_and_unknowns():

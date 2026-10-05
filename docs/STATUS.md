@@ -8260,3 +8260,136 @@ compare against it)
    — on a 1300 screen that is always (three across), drawer open or not; the Finder says nothing under the answer for
    Any when nothing passes (not a "Your best move" line: the answer already ends with it); a Back that closes the drawer
    keeps a filter changed beside it (the screen as you left it), not the screen as it was when you opened the player.
+
+## Wave I-K (Iteration 21)
+
+### IK-3 2026-10-05 — the four-provider seam, the ESPN / Yahoo setup flow, the id-map audit, the docs (branch `dev/IK3` from `main` `07dcdd0`, database `league_lab_m1` read only)
+
+* **Task**: IK-3 of Wave I-K (`scratchpad/waveIK/BRIEF.md`): the `Router` → four providers, `capabilities("espn" /
+  "yahoo")` honest, the on-demand pipeline and setup answers for `espn:` / `yahoo:` keys, the setup flow, the switcher,
+  the id-map audit, the docs; the integrator of IK-1's ESPN and IK-2's Yahoo adapters. **Both adapters are wired for
+  real**: `dev/IK1` (to `5aee446`) and `dev/IK2` (to `3efc594`) are merged into `dev/IK3`; the stubs
+  (`provider_stubs.py`) remain for tests only.
+* **Files** (IK-3's; marked `# ---- IK-3` / `<!-- ---- IK-3 -->` in shared files): `src/league_lab/platforms.py`
+  (`provider_of`, `is_espn` / `is_yahoo` / `is_sleeper`, `provider_short`, `check_espn` / `check_yahoo` / `espn_id` /
+  `yahoo_key`, `check_key` for four prefixes, `ProviderNotConfigured`, `build_adapter`, the `Router` — `espn` / `yahoo`
+  adapters, `serving`, `_call`, `adapters()`; `_CAPS` ESPN / Yahoo as built + `UNVERIFIED`, `note`),
+  `src/league_lab/provider_stubs.py` (new, STUB, tests only), `src/league_lab/anyleague.py` (the Router rebuilt on the
+  adapters' env; a manager without a shared name is `None` on ESPN / Yahoo), `api/league_lab_api/ondemand.py` (the IK-3
+  block: `espn_league`, `yahoo_league`, `yahoo_me`, `provider_league`, `provider_error`, `espn_parse` / `yahoo_parse`,
+  `provider_flags`, `provider_extras`; My Week's provider notes; the market line Sleeper-only), `main.py` (the routes'
+  params, `/api/providers` flags, `provider_gate` in `require_auth`, the trade POST's gate, the NotFound handler passes
+  `provider` / `private_form`, "ESPN / Yahoo did not answer", the STUB token middleware; IK-1's and IK-2's blocks kept
+  side by side), `myweek.py` (`platform_name`, `edit_link`, `known_league`), `player.py` (`platform`, the market line),
+  `decisions.py` (the home action's app name, the waiver line), `scripts/hosted_usage.sql` (the usage checks take the
+  four providers), `scripts/id_map_audit.py` (new), `api/tests/test_ik3.py` (new, 35), `api/tests/test_ii5.py` (the
+  ESPN / Yahoo matrix test follows "unverified"), `web/src/routes/Leagues.svelte`, `web/src/lib/providers.ts`,
+  `prefs.ts`, `leagues.ts` (`suffixOf`: the switcher's "· ESPN" / "· Yahoo" — TopBar's select reads `leagueOptions`, so
+  `TopBar.svelte` itself is unchanged), `analytics.ts`, `web/e2e/ik3/fixtures.spec.ts` + `record.sh` (new),
+  `web/fixtures/ik3/*.json` (15 recordings), `web/e2e/ii5/fixtures.spec.ts` (the expander test follows the new
+  choices), `docs/PROVIDERS.md`, `docs/ANY_LEAGUE.md`, `docs/HOSTING.md` § Licences, `docs/WORDS.md`, this section,
+  `CHANGELOG.md`.
+* **Interfaces** (`scratchpad/waveIK/INTERFACES.md` § IK-3): keys `espn:<id>` / `espn:<season>:<id>` /
+  `yahoo:<game>.l.<id>` (`yahoo:nfl.l.<id>` accepted, resolved before it is remembered); `Router(sleeper, mfl, espn=,
+  yahoo=)` — the adapters built lazily as `ESPNLeagues(espn_client.ESPN(), directory)` / `YahooLeagues(yahoo_client.
+  Yahoo(), directory)`; `GET /api/leagues?espn=<id or link>` / `?yahoo=<link, key or id>` → `{platform, league, teams,
+  roster_id, unmapped, players, mapped, scoring_note, card, capabilities, espn_private, yahoo_configured}`; `GET
+  /api/leagues?yahoo_me=1` → `{platform, configured, connected, season, leagues[], note}` (200, `no-store`); `GET
+  /api/providers` + `espn_private`, `yahoo_configured`; setup codes added to `SETUP_CODES`: `espn_link_invalid`,
+  `espn_league_unknown`, `espn_league_private`, `espn_not_configured`, `yahoo_link_invalid`, `yahoo_league_unknown`,
+  `yahoo_sign_in_required`, `yahoo_session_expired`, `yahoo_not_configured`; the web's platform ids `sleeper | mfl |
+  espn | yahoo` (`?platform=`, `ll.platform`); remembered leagues in the one `ll.mflLeagues` list by key
+  (`prefs.rememberLeague`).
+* **The setup flow, per provider**: **ESPN** — choose ESPN ("Unofficial … New: not verified on a live league yet") →
+  paste the league id or link (a `teamId=` link pre-selects the team) → the card and "Which team is yours?" → My Week; a
+  private league says so with the fix, and "Private league?" (two password fields for `espn_s2` / `SWID`, "Your ESPN
+  cookies stay in your browser; isuckatfantasy reads your league with them and never stores them.") appears only when
+  the server's switch is on. **Yahoo** — choose Yahoo → **Connect with Yahoo** (IK-2's OAuth; back to
+  `/leagues?platform=yahoo`) → "Your Yahoo leagues, 2026", each with "Your team: …" → My Week; or paste a league link;
+  "Connect with Yahoo — coming soon" (disabled) while the server has no Yahoo keys; IK-2's `?yahoo_error=` said in
+  words. **Both** remembered on the device with "· ESPN" / "· Yahoo" in the switcher.
+* **The id-map audit** (`uv run python scripts/id_map_audit.py`, `league_lab_m1`, ff_playerids 12,508 rows of
+  2026-09-26):
+
+  | measure | dim_player 2026 QB–TE | Sleeper directory, active QB–TE | rostered in a house league |
+  |---|---|---|---|
+  | players | 772 | 817 | 286 |
+  | a row in ff_playerids | 713 (92.4%) | 735 (90.0%) | 286 (100.0%) |
+  | `espn_id` (ff) | 713 (92.4%) | 734 (89.8%) | 286 (100.0%) |
+  | `espn_id` in ff or Sleeper's directory | 713 (92.4%) | 741 (90.7%) | 286 (100.0%) |
+  | `yahoo_id` (ff) | 459 (59.5%) | 495 (60.6%) | 188 (65.7%) |
+  | `yahoo_id` in ff or Sleeper's directory | 459 (59.5%) | 509 (62.3%) | 188 (65.7%) |
+  | `mfl_id` (ff) | 713 (92.4%) | 735 (90.0%) | 286 (100.0%) |
+
+  **Finding**: no 2025 or 2026 draft-class player has a `yahoo_id` in nflverse (of the 98 rostered QB–TE without one:
+  50/50 2026 rookies, 47/47 2025 rookies, 1 from 2023), and Sleeper's directory fills none — a Yahoo league's rookies
+  go through IK-2's name + position step (a tie broken by Yahoo's NFL team) or stay `yahoo:<id>`, unvalued and listed. **Quarantine rule**: an id on two
+  or more ff rows naming different players answers no match (never first / last row wins); today 6 `espn_id`s (no 2026
+  QB–TE), 0 `yahoo_id` (IK-2's loader quarantines), 0 `mfl_id`; `espn_id` in `player_ids.read` still takes the last row.
+* **Commands**: API `cd api && PYTHONPATH=. uv run pytest -q --deselect tests/test_u1.py --deselect tests/test_ig2.py`;
+  root `uv run pytest -q`; `uv run ruff check src app tests api scripts`; `cd web && npm run lint && npm run build`;
+  `FIXTURES_PORT=8643 npx playwright test --config playwright.fixtures.config.ts` (whole) and `e2e/ik3`;
+  `web/e2e/ik3/record.sh` (fixture API on 8743 / 8744); `uv run python scripts/id_map_audit.py --list-quarantine`.
+* **Checks** (`dev/IK3` with IK-1 to `5aee446` and IK-2 to `3efc594` merged; database **`league_lab_m1`** — the
+  2026-09-26 clone this task may read, never `league_lab`; the pinned clock 2026-10-03 16:00 UTC): **API 668 passed / 29
+  failed / 17 skipped** (`test_u1` / `test_ig2` deselected; 714 collected = main's 644 + 70 new from IK-1 / IK-2 / IK-3)
+  — **the 29 failures are main's own on this clone**: the same 29 tests run on `main` `07dcdd0` against
+  `league_lab_m1` fail with identical assertion lines (diffed), all house-league parity checks whose marts the clone
+  built a week earlier than the pinned clock (Scrubs / Dynasty lineups, dad's league week 1–2); **root 1,259 passed / 1
+  failed / 5 skipped** (1,265 collected = main's 1,179 + 86 new from IK-1 / IK-2; run in two halves), the one failure
+  (`test_my_week.py::test_my_week_is_the_mart[1389709692405551104-2]`) and the skips (marts the clone lacks) are main's
+  on this clone too; **e2e (whole fixtures) 360 passed / 2 skipped** (344 + IK-3's 16; II-5's 12 unchanged in number);
+  `uv run ruff check src app tests api scripts` clean; `npm run lint` 0 errors / 0 warnings; `npm run build` ok. **The
+  PO's pin** (635 / 1,177 / 344 on the main database) is for the merge to re-run on `league_lab`: the new tests add 70
+  (API) and 86 (root, IK-1 / IK-2's), the existing ones are untouched by this branch except `test_ii5`'s ESPN / Yahoo
+  matrix test (now "unverified").
+* **Evidence**: `test_ik3` 36 passed: the Router with four providers
+  (stubs and the real adapters), Sleeper / MFL answers identical through the new Router, a provider without its module
+  → `<provider>_not_configured` (never a 500), capabilities, `/api/providers` flags, the links, every setup error, the
+  cards for `espn:4242` and `yahoo:461.l.4242`, `?yahoo_me=1` not configured / not connected / connected (through IK-2's
+  fixture connect), the private-league gate on every route and the trade POST, "ESPN did not answer", the waiver words,
+  IK-1's kill switch, **My Week, Team, Waivers, Trades lists and League answering 200 for `espn:4242` (team 1) and
+  `yahoo:461.l.4242` (team 3) end to end on IK-1's / IK-2's fixtures**, the usage checks on a temp table. e2e/ik3 16
+  passed (8 × phone 375 / desktop 1300), screenshots `web/e2e/.out/ik3-*.png`.
+* **Unverified live — everything ESPN / Yahoo** (the fixtures are synthetic, from the documented shapes). **How the PO
+  verifies after the deploy**: (1) ESPN — open <https://isuckatfantasy.io/leagues?platform=espn>, paste a public ESPN
+  league's id (Andrew needs any public 2026 ESPN league id; see IK-1's hand-back), check the card's lineup and scoring
+  against the league's ESPN settings page (`https://fantasy.espn.com/football/league/settings?leagueId=<id>`), pick a
+  team → My Week; compare the roster with `https://fantasy.espn.com/football/team?leagueId=<id>&teamId=<n>`; open Team,
+  Waivers, Trades, League; `https://isuckatfantasy.io/api/league/scoring-check?league=espn:<id>&week=4` for the points;
+  a private league's id must say "ESPN league … is private". (2) Yahoo — after Andrew registers the app and sets the
+  secrets (IK-2's HOSTING § Yahoo): <https://isuckatfantasy.io/leagues?platform=yahoo> → Connect with Yahoo → allow →
+  the list (`https://isuckatfantasy.io/api/leagues?yahoo_me=1` shows the JSON) → open a league → My Week; compare with
+  `https://football.fantasysports.yahoo.com/f1/<id>`; look at My Week's `on_demand.yahoo_unmapped` /
+  `yahoo_mapped_by` (`/api/my-week?league=yahoo:<key>&team=<n>`) — the rookies should be "name", not unmapped. (3) Then
+  flip: `platforms._CAPS[...]["status"]` → `supported`, drop `UNVERIFIED` from the verified features (and `partial` →
+  `yes` where it holds), the PROVIDERS matrix cells, the setup screen's "New: not verified" line (`Leagues.svelte`
+  `platform-note`), `test_ik3` / `test_ii5`'s pins.
+* **Not done**: the quarantine rule for `espn_id` / `mfl_id` in `player_ids.read` (documented; no current skill player
+  affected); a screen's 404 for an ESPN / Yahoo key carries the words but not the setup `code` (only the setup answers
+  do); `/api/providers` does not reflect IK-1's kill switch (`LEAGUE_LAB_ESPN_LEAGUES=off`: the setup answer says
+  "switched off" instead); the Yahoo "my leagues" card costs one league read per league (cached by IK-2's client).
+* **Next**: the PO's live checks above; then flip the rows; accounts (IK-4) persist the Yahoo connection next wave.
+
+**For the PO**
+
+1. **Merge order**: `dev/IK1`, `dev/IK2`, then `dev/IK3` (it already contains IK-1 to `5aee446` and IK-2 to
+   `3efc594`; the one conflict, `api/league_lab_api/main.py`, is resolved here as IK-1's block then IK-2's), then
+   `dev/IK4` (its `Leagues.svelte` block at the bottom, its `prefs.ts` block — mine are the II-5 platform lines and one
+   IK-3 block after I0-B's). **If IK-1 / IK-2 committed after those tips**: merge their tips; re-run `test_ik3` (it pins
+   the fixture leagues' names, team counts, the unmapped ESPN ids `99990001` / `99990002`, Yahoo's roster 3) and
+   `web/e2e/ik3/record.sh` if an answer's shape moved.
+2. **Render env** (exact names): nothing new for ESPN public leagues. **Yahoo**: `LEAGUE_LAB_YAHOO_CLIENT_ID`,
+   `LEAGUE_LAB_YAHOO_CLIENT_SECRET` (IK-2), and `LEAGUE_LAB_API_SECRET` must exist (it seals `ll_yahoo`; without it
+   Yahoo stays "coming soon"). **ESPN private**: `LEAGUE_LAB_ESPN_PRIVATE` — leave unset / `off`. Kill switch for ESPN
+   reads: `LEAGUE_LAB_ESPN_LEAGUES=off`. **Never set `LEAGUE_LAB_PROVIDER_STUBS`** on Render (tests only).
+3. **Andrew registers**: the Yahoo app (IK-2's HOSTING § "Yahoo": redirect URI
+   `https://isuckatfantasy.io/api/yahoo/callback`, Fantasy Sports — Read). No DNS change.
+4. **Sync**: `scripts/hosted_usage.sql` gains an IK-3 block (the usage checks take `espn:` / `yahoo:` keys and
+   platforms); `sync_to_hosted.sh` already runs the file every night — no new line. Until it runs, ESPN / Yahoo views
+   are simply not counted (the insert fails quietly).
+5. **Decisions Andrew may reverse**: ESPN and Yahoo are visible choices now (labelled "New: not verified on a live
+   league yet"), not hidden until verified; the header line still says "on Sleeper or MyFantasyLeague" until they are
+   verified; the four choices sit two by two on desktop too (MyFantasyLeague does not fit a quarter of the column);
+   Yahoo shows a disabled "coming soon" button rather than hiding Yahoo; the ESPN private switch ships off; every
+   ESPN / Yahoo feature says "Partly … as built, not verified" until the PO flips it.

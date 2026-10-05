@@ -1,0 +1,454 @@
+{
+ "_synthetic": "SYNTHETIC \u2014 built for League Lab's tests from the documented shapes (cwendt94/espn-api: football modules, constant.py, tests/football/unit/data/league_2018_data.json); not an ESPN answer. api/tests/fixtures/make_ik1_fixtures.py writes it.",
+ "gameId": 1,
+ "id": 4242,
+ "scoringPeriodId": 4,
+ "seasonId": 2026,
+ "segmentId": 0,
+ "members": [
+  {
+   "displayName": "espn_manager_01",
+   "id": "{42420001-0000-4000-8000-000000000001}",
+   "isLeagueManager": true
+  },
+  {
+   "displayName": "espn_manager_02",
+   "id": "{42420002-0000-4000-8000-000000000002}",
+   "isLeagueManager": false
+  },
+  {
+   "displayName": "espn_manager_03",
+   "id": "{42420003-0000-4000-8000-000000000003}",
+   "isLeagueManager": false
+  },
+  {
+   "displayName": "espn_manager_04",
+   "id": "{42420004-0000-4000-8000-000000000004}",
+   "isLeagueManager": false
+  },
+  {
+   "displayName": "espn_manager_05",
+   "id": "{42420005-0000-4000-8000-000000000005}",
+   "isLeagueManager": false
+  },
+  {
+   "displayName": "espn_manager_06",
+   "id": "{42420006-0000-4000-8000-000000000006}",
+   "isLeagueManager": false
+  },
+  {
+   "displayName": "espn_manager_07",
+   "id": "{42420007-0000-4000-8000-000000000007}",
+   "isLeagueManager": false
+  },
+  {
+   "displayName": "espn_manager_08",
+   "id": "{42420008-0000-4000-8000-000000000008}",
+   "isLeagueManager": false
+  },
+  {
+   "displayName": "espn_manager_09",
+   "id": "{42420009-0000-4000-8000-000000000009}",
+   "isLeagueManager": false
+  },
+  {
+   "displayName": "espn_manager_10",
+   "id": "{4242000A-0000-4000-8000-00000000000A}",
+   "isLeagueManager": false
+  }
+ ],
+ "teams": [
+  {
+   "abbrev": "T01",
+   "currentProjectedRank": 1,
+   "divisionId": 0,
+   "id": 1,
+   "logo": "",
+   "logoType": "VECTOR",
+   "owners": [
+    "{42420001-0000-4000-8000-000000000001}"
+   ],
+   "primaryOwner": "{42420001-0000-4000-8000-000000000001}",
+   "playoffSeed": 2,
+   "points": 380.51,
+   "pointsAdjusted": 0.0,
+   "rankCalculatedFinal": 0,
+   "rankFinal": 0,
+   "record": {
+    "overall": {
+     "wins": 2,
+     "losses": 1,
+     "ties": 0,
+     "pointsFor": 380.51,
+     "pointsAgainst": 341.17,
+     "gamesBack": 0.0,
+     "percentage": 0.6666666666666666,
+     "streakLength": 1,
+     "streakType": "WIN"
+    }
+   },
+   "transactionCounter": {
+    "acquisitionBudgetSpent": 0,
+    "acquisitions": 0,
+    "drops": 0,
+    "moveToIR": 0,
+    "trades": 0
+   },
+   "waiverRank": 9,
+   "name": "Gridiron Gurus"
+  },
+  {
+   "abbrev": "T02",
+   "currentProjectedRank": 2,
+   "divisionId": 1,
+   "id": 2,
+   "logo": "",
+   "logoType": "VECTOR",
+   "owners": [
+    "{42420002-0000-4000-8000-000000000002}"
+   ],
+   "primaryOwner": "{42420002-0000-4000-8000-000000000002}",
+   "playoffSeed": 9,
+   "points": 287.35,
+   "pointsAdjusted": 0.0,
+   "rankCalculatedFinal": 0,
+   "rankFinal": 0,
+   "record": {
+    "overall": {
+     "wins": 1,
+     "losses": 2,
+     "ties": 0,
+     "pointsFor": 287.35,
+     "pointsAgainst": 304.77,
+     "gamesBack": 0.0,
+     "percentage": 0.3333333333333333,
+     "streakLength": 1,
+     "streakType": "WIN"
+    }
+   },
+   "transactionCounter": {
+    "acquisitionBudgetSpent": 0,
+    "acquisitions": 0,
+    "drops": 0,
+    "moveToIR": 0,
+    "trades": 0
+   },
+   "waiverRank": 2,
+   "name": "Fourth and Long"
+  },
+  {
+   "abbrev": "T03",
+   "currentProjectedRank": 3,
+   "divisionId": 0,
+   "id": 3,
+   "logo": "",
+   "logoType": "VECTOR",
+   "owners": [
+    "{42420003-0000-4000-8000-000000000003}"
+   ],
+   "primaryOwner": "{42420003-0000-4000-8000-000000000003}",
+   "playoffSeed": 4,
+   "points": 299.08,
+   "pointsAdjusted": 0.0,
+   "rankCalculatedFinal": 0,
+   "rankFinal": 0,
+   "record": {
+    "overall": {
+     "wins": 2,
+     "losses": 1,
+     "ties": 0,
+     "pointsFor": 299.08,
+     "pointsAgainst": 321.35,
+     "gamesBack": 0.0,
+     "percentage": 0.6666666666666666,
+     "streakLength": 1,
+     "streakType": "WIN"
+    }
+   },
+   "transactionCounter": {
+    "acquisitionBudgetSpent": 0,
+    "acquisitions": 0,
+    "drops": 0,
+    "moveToIR": 0,
+    "trades": 0
+   },
+   "waiverRank": 7,
+   "location": "Mighty",
+   "nickname": "Ducks"
+  },
+  {
+   "abbrev": "T04",
+   "currentProjectedRank": 4,
+   "divisionId": 1,
+   "id": 4,
+   "logo": "",
+   "logoType": "VECTOR",
+   "owners": [
+    "{42420004-0000-4000-8000-000000000004}"
+   ],
+   "primaryOwner": "{42420004-0000-4000-8000-000000000004}",
+   "playoffSeed": 6,
+   "points": 342.71,
+   "pointsAdjusted": 0.0,
+   "rankCalculatedFinal": 0,
+   "rankFinal": 0,
+   "record": {
+    "overall": {
+     "wins": 1,
+     "losses": 2,
+     "ties": 0,
+     "pointsFor": 342.71,
+     "pointsAgainst": 335.24,
+     "gamesBack": 0.0,
+     "percentage": 0.3333333333333333,
+     "streakLength": 1,
+     "streakType": "WIN"
+    }
+   },
+   "transactionCounter": {
+    "acquisitionBudgetSpent": 0,
+    "acquisitions": 0,
+    "drops": 0,
+    "moveToIR": 0,
+    "trades": 0
+   },
+   "waiverRank": 5,
+   "name": "The Waiver Wire"
+  },
+  {
+   "abbrev": "T05",
+   "currentProjectedRank": 5,
+   "divisionId": 0,
+   "id": 5,
+   "logo": "",
+   "logoType": "VECTOR",
+   "owners": [
+    "{42420005-0000-4000-8000-000000000005}"
+   ],
+   "primaryOwner": "{42420005-0000-4000-8000-000000000005}",
+   "playoffSeed": 8,
+   "points": 292.14,
+   "pointsAdjusted": 0.0,
+   "rankCalculatedFinal": 0,
+   "rankFinal": 0,
+   "record": {
+    "overall": {
+     "wins": 1,
+     "losses": 2,
+     "ties": 0,
+     "pointsFor": 292.14,
+     "pointsAgainst": 352.23,
+     "gamesBack": 0.0,
+     "percentage": 0.3333333333333333,
+     "streakLength": 1,
+     "streakType": "WIN"
+    }
+   },
+   "transactionCounter": {
+    "acquisitionBudgetSpent": 0,
+    "acquisitions": 0,
+    "drops": 0,
+    "moveToIR": 0,
+    "trades": 0
+   },
+   "waiverRank": 3,
+   "name": "Bye Week Blues"
+  },
+  {
+   "abbrev": "T06",
+   "currentProjectedRank": 6,
+   "divisionId": 1,
+   "id": 6,
+   "logo": "",
+   "logoType": "VECTOR",
+   "owners": [
+    "{42420006-0000-4000-8000-000000000006}"
+   ],
+   "primaryOwner": "{42420006-0000-4000-8000-000000000006}",
+   "playoffSeed": 1,
+   "points": 352.29,
+   "pointsAdjusted": 0.0,
+   "rankCalculatedFinal": 0,
+   "rankFinal": 0,
+   "record": {
+    "overall": {
+     "wins": 3,
+     "losses": 0,
+     "ties": 0,
+     "pointsFor": 352.29,
+     "pointsAgainst": 275.69,
+     "gamesBack": 0.0,
+     "percentage": 1.0,
+     "streakLength": 1,
+     "streakType": "WIN"
+    }
+   },
+   "transactionCounter": {
+    "acquisitionBudgetSpent": 0,
+    "acquisitions": 0,
+    "drops": 0,
+    "moveToIR": 0,
+    "trades": 0
+   },
+   "waiverRank": 10,
+   "location": "Taco",
+   "nickname": "Tuesday"
+  },
+  {
+   "abbrev": "T07",
+   "currentProjectedRank": 7,
+   "divisionId": 0,
+   "id": 7,
+   "logo": "",
+   "logoType": "VECTOR",
+   "owners": [
+    "{42420007-0000-4000-8000-000000000007}"
+   ],
+   "primaryOwner": "{42420007-0000-4000-8000-000000000007}",
+   "playoffSeed": 7,
+   "points": 330.5,
+   "pointsAdjusted": 0.0,
+   "rankCalculatedFinal": 0,
+   "rankFinal": 0,
+   "record": {
+    "overall": {
+     "wins": 1,
+     "losses": 2,
+     "ties": 0,
+     "pointsFor": 330.5,
+     "pointsAgainst": 320.36,
+     "gamesBack": 0.0,
+     "percentage": 0.3333333333333333,
+     "streakLength": 1,
+     "streakType": "WIN"
+    }
+   },
+   "transactionCounter": {
+    "acquisitionBudgetSpent": 0,
+    "acquisitions": 0,
+    "drops": 0,
+    "moveToIR": 0,
+    "trades": 0
+   },
+   "waiverRank": 4,
+   "name": "Red Zone Rascals"
+  },
+  {
+   "abbrev": "T08",
+   "currentProjectedRank": 8,
+   "divisionId": 1,
+   "id": 8,
+   "logo": "",
+   "logoType": "VECTOR",
+   "owners": [
+    "{42420008-0000-4000-8000-000000000008}"
+   ],
+   "primaryOwner": "{42420008-0000-4000-8000-000000000008}",
+   "playoffSeed": 3,
+   "points": 325.73,
+   "pointsAdjusted": 0.0,
+   "rankCalculatedFinal": 0,
+   "rankFinal": 0,
+   "record": {
+    "overall": {
+     "wins": 2,
+     "losses": 1,
+     "ties": 0,
+     "pointsFor": 325.73,
+     "pointsAgainst": 300.1,
+     "gamesBack": 0.0,
+     "percentage": 0.6666666666666666,
+     "streakLength": 1,
+     "streakType": "WIN"
+    }
+   },
+   "transactionCounter": {
+    "acquisitionBudgetSpent": 0,
+    "acquisitions": 0,
+    "drops": 0,
+    "moveToIR": 0,
+    "trades": 0
+   },
+   "waiverRank": 8,
+   "name": "Hail Mary Heroes"
+  },
+  {
+   "abbrev": "T09",
+   "currentProjectedRank": 9,
+   "divisionId": 0,
+   "id": 9,
+   "logo": "",
+   "logoType": "VECTOR",
+   "owners": [
+    "{42420009-0000-4000-8000-000000000009}"
+   ],
+   "primaryOwner": "{42420009-0000-4000-8000-000000000009}",
+   "playoffSeed": 5,
+   "points": 296.65,
+   "pointsAdjusted": 0.0,
+   "rankCalculatedFinal": 0,
+   "rankFinal": 0,
+   "record": {
+    "overall": {
+     "wins": 2,
+     "losses": 1,
+     "ties": 0,
+     "pointsFor": 296.65,
+     "pointsAgainst": 309.43,
+     "gamesBack": 0.0,
+     "percentage": 0.6666666666666666,
+     "streakLength": 1,
+     "streakType": "WIN"
+    }
+   },
+   "transactionCounter": {
+    "acquisitionBudgetSpent": 0,
+    "acquisitions": 0,
+    "drops": 0,
+    "moveToIR": 0,
+    "trades": 0
+   },
+   "waiverRank": 6,
+   "name": "Punt Formation"
+  },
+  {
+   "abbrev": "T11",
+   "currentProjectedRank": 10,
+   "divisionId": 1,
+   "id": 11,
+   "logo": "",
+   "logoType": "VECTOR",
+   "owners": [
+    "{4242000A-0000-4000-8000-00000000000A}"
+   ],
+   "primaryOwner": "{4242000A-0000-4000-8000-00000000000A}",
+   "playoffSeed": 10,
+   "points": 286.59,
+   "pointsAdjusted": 0.0,
+   "rankCalculatedFinal": 0,
+   "rankFinal": 0,
+   "record": {
+    "overall": {
+     "wins": 0,
+     "losses": 3,
+     "ties": 0,
+     "pointsFor": 286.59,
+     "pointsAgainst": 333.21,
+     "gamesBack": 0.0,
+     "percentage": 0.0,
+     "streakLength": 1,
+     "streakType": "WIN"
+    }
+   },
+   "transactionCounter": {
+    "acquisitionBudgetSpent": 0,
+    "acquisitions": 0,
+    "drops": 0,
+    "moveToIR": 0,
+    "trades": 0
+   },
+   "waiverRank": 1,
+   "name": "Synthetic Sharks"
+  }
+ ]
+}

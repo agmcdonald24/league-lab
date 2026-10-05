@@ -43,7 +43,9 @@ const ctx: { league_key: string | null; roster_id: number | null; platform: stri
 let release = "unknown";
 let ready: Promise<Gtag | null> | null = null;
 
-const platformOf = (league: string | null): string | null => (league ? (league.startsWith("mfl:") ? "mfl" : "sleeper") : null);
+// ---- IK-3: espn / yahoo by the key's prefix too
+const platformOf = (league: string | null): string | null =>
+  league ? (/^(mfl|espn|yahoo):/i.test(league) ? league.split(":", 1)[0].toLowerCase() : "sleeper") : null;
 
 /** The page's address without anything but the league and the team (a search, a filter, a username never leave). */
 function location_(): string {

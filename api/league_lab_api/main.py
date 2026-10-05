@@ -10,6 +10,10 @@ Endpoints (all GET but login/logout; JSON; read-only role; cached 10 minutes lik
     /api/leagues?mfl=<link or id>        a MyFantasyLeague league: its card and team picker (Wave I-0, key mfl:<id>)
     /api/leagues?sleeper=<link or id>    ---- II-5: a Sleeper league by its link or id: its card and team picker
     /api/providers                       ---- II-5: each provider's capabilities (platforms.capabilities)
+                                         ---- IK-3: + espn_private, yahoo_configured
+    /api/leagues?espn=<link or id>       ---- IK-3: an ESPN league (`espn:<id>`): its card and team picker
+    /api/leagues?yahoo=<link, key or id> ---- IK-3: a Yahoo league (`yahoo:<game>.l.<id>`): its card and team picker
+    /api/leagues?yahoo_me=1              ---- IK-3: the signed-in user's Yahoo leagues (IK-2's `ll_yahoo` cookie)
     /api/leagues/{league_id}/rosters     the team picker's options
     /api/my-week?league=&team=           Home's My Week: record line, the cards (numbers + the cards' own text), lineup;
                                          a league the database does not have is served on demand from Sleeper
@@ -82,13 +86,15 @@ JSON_CACHE = "private, max-age=120"
 # errors: {"error": "<plain words>"} (the contract), "detail" kept for the D7 spike's web client
 @app.exception_handler(NotFound)
 async def _not_found(_req: Request, exc: NotFound):
-    extra = {k: getattr(exc, k) for k in ("code", "fix") if getattr(exc, k, None)}   # ---- II-5: the setup errors' key
+    extra = {k: getattr(exc, k) for k in ("code", "fix", "provider", "private_form")   # ---- II-5 (IK-3: provider, private_form)
+             if getattr(exc, k, None)}
     return JSONResponse({"error": str(exc), "detail": str(exc), **extra}, status_code=404, headers={"Cache-Control": "no-store"})
 
 
 @app.exception_handler(ondemand.SleeperDown)
 async def _sleeper_down(_req: Request, exc: ondemand.SleeperDown):
     who = "MyFantasyLeague" if "MyFantasyLeague" in str(exc) else "Sleeper"      # I0-B: an MFL league says so
+    who = getattr(exc, "who", None) or next((w for w in ("ESPN", "Yahoo") if w in str(exc)), who)   # ---- IK-3
     return JSONResponse({"error": f"{who} did not answer", "detail": f"{who} did not answer. Try again in a minute.",
                          "cause": str(exc), "code": "provider_down"}, status_code=502, headers={"Cache-Control": "no-store"})  # II-5: code
 
@@ -127,6 +133,30 @@ def require_auth(request: Request) -> None:
     token = auth.token_from(request.cookies.get(auth.COOKIE), request.headers.get("authorization"))
     if not auth.valid(token):
         raise HTTPException(status_code=401, detail="Private beta. Enter the password from your invite.")
+    provider_gate(request.query_params.get("league") or request.path_params.get("league_id"))   # ---- IK-3
+
+
+# ---- IK-3 (Wave I-K): ESPN / Yahoo per request. (1) A private ESPN league read with one user's cookies is never served
+# from a cache to another: before any route (and its memo regions) answers for an `espn:` key, IK-1's
+# `require_access` checks this request's cookies (``provider_gate``, from ``require_auth``, which every data route
+# depends on; the trade POST checks its body's league). (2) STUB only: the stand-in Yahoo adapter's token
+# (``ondemand.YAHOO_TOKEN``); the real Yahoo session is IK-2's middleware (``yahoo_connect``, below).
+def provider_gate(league: str | None) -> None:
+    if league and A.platforms.is_espn(league):
+        try:
+            A.sleeper().serving(A.check_id(league))         # the Router runs the adapter's require_access
+        except A.LeagueNotFound as exc:
+            raise ondemand.provider_error("espn", league, exc) from exc
+
+
+@app.middleware("http")
+async def _provider_context(request: Request, call_next):
+    reset = ondemand.YAHOO_TOKEN.set(ondemand.yahoo_token_from(request.cookies.get("ll_yahoo")))   # STUB only
+    try:
+        return await call_next(request)
+    finally:
+        ondemand.YAHOO_TOKEN.reset(reset)
+# ---- end IK-3
 
 
 def clean(v):
@@ -288,7 +318,17 @@ def logout(response: Response) -> dict:
 # I0-C: `?mfl_search=<link, id or the league's name>` (ondemand.mfl_search): a link or an id answers as `?mfl=`.
 @app.get("/api/leagues", dependencies=[Depends(require_auth)])
 def leagues(response: Response, username: str | None = None, mfl: str | None = None, mfl_search: str | None = None,
-            sleeper: str | None = None):
+            sleeper: str | None = None, espn: str | None = None, yahoo: str | None = None, yahoo_me: str | None = None):
+    # ---- IK-3: ESPN by link or id, Yahoo by link / key / id, the signed-in user's Yahoo leagues (never cached)
+    if espn is not None:
+        return _json(ondemand.espn_league(espn), response)
+    if yahoo is not None:
+        return _json(ondemand.yahoo_league(yahoo), response)
+    if yahoo_me is not None:
+        out = _json(ondemand.yahoo_me(), response)
+        out.headers["Cache-Control"] = "no-store"
+        return out
+    # ---- end IK-3
     if sleeper is not None:                    # ---- II-5: a Sleeper league link or id -> its card and team picker
         return _json(ondemand.sleeper_league(sleeper), response)
     if mfl_search is not None:
@@ -304,7 +344,8 @@ def leagues(response: Response, username: str | None = None, mfl: str | None = N
 # "what works on MFL" lines and any screen's "not available for MFL leagues yet". Static: cached like the app's JSON.
 @app.get("/api/providers", dependencies=[Depends(require_auth)])
 def providers(response: Response):
-    return _json({"providers": A.platforms.all_capabilities(), "features": list(A.platforms.FEATURES)}, response)
+    return _json({"providers": A.platforms.all_capabilities(), "features": list(A.platforms.FEATURES),
+                  **ondemand.provider_flags()}, response)       # ---- IK-3: espn_private, yahoo_configured
 # ---- end II-5
 
 
@@ -329,7 +370,7 @@ def why_market_rows(out: dict, league: str, *, house: bool) -> dict:
         else:
             season, scoring = ondemand._scoring_of(league, ondemand.A.sleeper().league(league), False)
         week = out.get("week")
-        m = ({} if ondemand.A.platforms.is_mfl(league)                   # ---- IE-0: Sleeper's number, not on MFL
+        m = ({} if not ondemand.A.platforms.is_sleeper(league)          # ---- IE-0: Sleeper's number (IK-3: not ESPN / Yahoo)
              else why.market_points(season, week, [r.get("gsis_id") for r in rows], scoring))
     except Exception:  # noqa: BLE001 - My Week never fails for the market line
         m = {}
@@ -519,6 +560,7 @@ def waivers(league: str, response: Response, team: int | None = None, position: 
 
 @app.post("/api/trades/evaluate", dependencies=[Depends(require_auth)])
 def trades_evaluate(body: TradeBody, response: Response, source: str | None = None):
+    provider_gate(body.league)                                                                   # ---- IK-3
     out = decisions.evaluate(body.league, body.team, body.partner, body.give, body.get, source=source, window=body.window)
     response.headers["Cache-Control"] = "no-store"
     return JSONResponse(clean(out), headers={"Cache-Control": "no-store"})
@@ -653,6 +695,23 @@ def events_list(league: str, team: int, response: Response, hours: int = 72):
 def league_week_odds(league: str, response: Response, source: str | None = None):
     return _json(myweek.week_odds(league, house=False if source == "sleeper" else None), response)
 # ---- end IH-3
+
+
+# ---- IK-1 (Wave I-K): a private ESPN league read with the manager's own cookies — off unless LEAGUE_LAB_ESPN_PRIVATE=on
+# (espn_connect: POST /api/espn/connect | disconnect, GET /api/espn/status; the middleware puts this request's ll_espn
+# cookie in espn_client.AUTH for this request only; nothing is stored or logged)
+from . import espn_connect  # noqa: E402
+
+app.middleware("http")(espn_connect.auth_middleware)
+app.include_router(espn_connect.router, dependencies=[Depends(require_auth)])
+# ---- end IK-1
+
+# ---- IK-2 (Wave I-K): Connect with Yahoo — /api/yahoo/* (connect, callback, disconnect, status, leagues) and the
+# ll_yahoo session middleware; the routes go ahead of the /api catch-all whatever the line's place
+from . import yahoo_connect  # noqa: E402 - the block stays self-contained
+
+yahoo_connect.install(app)
+# ---- end IK-2
 
 
 # ---------------------------------------------------------------- the web app

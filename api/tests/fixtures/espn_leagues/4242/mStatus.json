@@ -1,0 +1,25 @@
+{
+ "_synthetic": "SYNTHETIC \u2014 built for League Lab's tests from the documented shapes (cwendt94/espn-api: football modules, constant.py, tests/football/unit/data/league_2018_data.json); not an ESPN answer. api/tests/fixtures/make_ik1_fixtures.py writes it.",
+ "gameId": 1,
+ "id": 4242,
+ "scoringPeriodId": 4,
+ "seasonId": 2026,
+ "segmentId": 0,
+ "status": {
+  "currentMatchupPeriod": 4,
+  "finalScoringPeriod": 17,
+  "firstScoringPeriod": 1,
+  "isActive": true,
+  "isExpired": false,
+  "isFull": true,
+  "isViewable": true,
+  "latestScoringPeriod": 4,
+  "previousSeasons": [
+   2024,
+   2025
+  ],
+  "teamsJoined": 10,
+  "transactionScoringPeriod": 4,
+  "waiverLastExecutionDate": 1790419200000
+ }
+}

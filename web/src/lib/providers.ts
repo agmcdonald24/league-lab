@@ -6,7 +6,7 @@ import { ApiError, get, Unauthorized, type Roster } from "./api";
 import { isMfl, type LeagueCard } from "./leagues";
 
 export type ProviderKey = "sleeper" | "mfl" | "espn" | "yahoo";
-export type Platform = "sleeper" | "mfl"; // the two the setup flow offers (ESPN / Yahoo: not supported yet)
+export type Platform = "sleeper" | "mfl" | "espn" | "yahoo"; // ---- IK-3: the setup flow offers all four (was sleeper | mfl)
 export type FeatureKey = "scoring" | "roster_slots" | "matchups" | "players" | "waivers" | "transactions" | "team_assets" | "news";
 
 export interface ProviderFeature {
@@ -20,14 +20,17 @@ export interface Provider {
   provider: ProviderKey;
   name: string; // "MyFantasyLeague"
   short: string; // "MFL"
-  status: "supported" | "not_supported";
-  connect: { kind: "username" | "league_link" | "none"; label: string; example: string | null; where: string };
+  status: "supported" | "not_supported" | "unverified"; // IK-3: "unverified" = as built, not checked on a live league yet
+  connect: { kind: "username" | "league_link" | "oauth" | "none"; label: string; example: string | null; where: string };
   features: Record<FeatureKey, ProviderFeature>;
+  note?: string; // IK-3: ESPN's "Unofficial: …", Yahoo's "Through Yahoo's official … API"
 }
 
 export interface Providers {
   providers: Provider[];
   features: FeatureKey[];
+  espn_private?: boolean; // ---- IK-3: the server reads private ESPN leagues with the user's own cookies (IK-1's switch)
+  yahoo_configured?: boolean; // ---- IK-3: Yahoo's app keys are set: "Connect with Yahoo" works (else "coming soon")
 }
 
 export const providersPath = "/api/providers";
@@ -43,8 +46,14 @@ export interface SleeperLeague {
   capabilities: Provider;
 }
 
-/** A league key's platform ("mfl:70587" → mfl; Sleeper ids are bare digits). */
-export const platformOf = (league: string | null | undefined): Platform => (isMfl(league) ? "mfl" : "sleeper");
+/** A league key's platform ("mfl:70587" → mfl, "espn:4242" → espn, "yahoo:461.l.4242" → yahoo; Sleeper ids are bare). */
+export const platformOf = (league: string | null | undefined): Platform => {
+  const s = (league ?? "").trim().toLowerCase(); // ---- IK-3: four prefixes (was mfl | sleeper)
+  if (isMfl(s)) return "mfl";
+  if (s.startsWith("espn:")) return "espn";
+  if (s.startsWith("yahoo:")) return "yahoo";
+  return "sleeper";
+};
 
 /** A Sleeper league link or id typed in the username box (sleeper.com/leagues/<id>…, or the long number alone). */
 export const looksLikeSleeperLeague = (text: string) => /sleeper\.(com|app)\/leagues\/\d{10,}/i.test(text) || /^\d{15,24}$/.test(text.trim());
@@ -85,3 +94,83 @@ export function setupError(err: unknown): { code: string; words: string; fix: st
   return { code: b.code, words: b.error, fix: typeof b.fix === "string" ? b.fix : null };
 }
 // ---- end II-5
+
+// ---- IK-3 (Wave I-K): ESPN (`espn:<id>`) and Yahoo (`yahoo:<game>.l.<id>`) in the setup flow. GET /api/leagues?espn=<id or
+// link> / ?yahoo=<link, key or id> answer the MFL answer's shape; ?yahoo_me=1 lists the signed-in user's Yahoo leagues
+// (IK-2's `ll_yahoo` cookie; always 200 — `configured` / `connected` say what to show). INTERFACES.md § IK-3.
+export const espnLeaguePath = (text: string) => `/api/leagues?espn=${encodeURIComponent(text.trim())}`;
+export const yahooLeaguePath = (text: string) => `/api/leagues?yahoo=${encodeURIComponent(text.trim())}`;
+export const yahooMePath = "/api/leagues?yahoo_me=1";
+export const yahooConnectPath = "/api/yahoo/connect"; // IK-2: redirects to Yahoo, back to /leagues?platform=yahoo
+export const yahooDisconnectPath = "/api/yahoo/disconnect"; // IK-2: POST, clears the cookie
+export const espnConnectPath = "/api/espn/connect"; // IK-1: POST {espn_s2, swid} → the sealed `ll_espn` cookie
+export const PLATFORMS: { key: Platform; name: string }[] = [
+  { key: "sleeper", name: "Sleeper" },
+  { key: "mfl", name: "MyFantasyLeague" },
+  { key: "espn", name: "ESPN" },
+  { key: "yahoo", name: "Yahoo" },
+];
+export const isPlatform = (v: string | null | undefined): v is Platform => v === "sleeper" || v === "mfl" || v === "espn" || v === "yahoo";
+
+/** The words after a league's name: "Sleeper" / "MFL" / "ESPN" / "Yahoo". */
+export const providerShort = (league: string | null | undefined): string =>
+  ({ sleeper: "Sleeper", mfl: "MFL", espn: "ESPN", yahoo: "Yahoo" })[platformOf(league)];
+
+/** An ESPN or Yahoo league's card and team picker (the MFL answer's shape). */
+export interface ProviderLeague {
+  platform: "espn" | "yahoo";
+  league: { league_id: string; name: string; season: number; total_rosters: number | null; scoring_label: string | null; url: string | null; platform: "espn" | "yahoo" };
+  teams: Roster[];
+  roster_id: number | null; // the team the link names (ESPN teamId=, Yahoo …/f1/<id>/<team>), else null
+  unmapped: { espn_id?: string; yahoo_id?: string; name: string | null; position: string | null }[];
+  players: number;
+  mapped: number;
+  scoring_note: string;
+  card?: LeagueCard | null;
+  capabilities: Provider;
+  espn_private?: boolean;
+  yahoo_configured?: boolean;
+}
+
+/** GET /api/leagues?yahoo_me=1. */
+export interface YahooMe {
+  platform: "yahoo";
+  configured: boolean;
+  connected: boolean;
+  season: number;
+  leagues: {
+    league_id: string;
+    name: string;
+    season: number | null;
+    total_rosters: number | null;
+    scoring_label: string | null;
+    roster_id: number | null;
+    team_name: string | null;
+    url: string | null;
+    card: LeagueCard | null;
+  }[];
+  note: string | null;
+}
+
+/** POST a small JSON body (the ESPN cookie form, Yahoo's disconnect); the API's error words when it refuses. */
+export async function setupPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify(body ?? {}),
+  });
+  if (res.status === 401) throw new Unauthorized("sign in");
+  let data: unknown = null;
+  try {
+    data = await res.json();
+  } catch {
+    /* not JSON */
+  }
+  if (!res.ok) {
+    const b = (data ?? {}) as { error?: string; detail?: string };
+    throw new ApiError(res.status, b.error ?? b.detail ?? res.statusText, data);
+  }
+  return data as T;
+}
+// ---- end IK-3

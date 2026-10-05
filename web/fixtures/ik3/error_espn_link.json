@@ -1,0 +1,1 @@
+{"error":"That is not an ESPN league link or id.","detail":"That is not an ESPN league link or id.","code":"espn_link_invalid","fix":"Paste your league's address, or the league id alone: the number after leagueId= in your league's address (fantasy.espn.com/football/league?leagueId=4242).","provider":"espn"}

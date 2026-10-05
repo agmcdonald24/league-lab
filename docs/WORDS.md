@@ -331,6 +331,21 @@ labels, tooltips, summaries, accessibility labels and generated text, the consol
 | Trades, when the answer at the top is "No compelling trade found" | the answer says it once, with its reason and "Your best move: …"; the Finder under it adds nothing for **Any** (Explore alternatives follows the chips); under a position chip one line, that position's reason: "**For a WR:** none of the 5 trades that raise both starting lineups over weeks 4–7 is worth proposing: …" | "No compelling trade found" twice on one screen; "Your best move" twice |
 | Waivers' top three (a narrow card: three across, the drawer open, a phone) | the whole name (it wraps), then the badges, then the number with its label on one line: "+9.8 WEEKS 4–7 IN TOTAL" | a cut name ("Tyler …"); a badge under the label |
 
+## Other platforms (Wave I-K, IK-3)
+
+| Where | The words we use | Never |
+|---|---|---|
+| the platform choice (`/leagues`) | four choices, two by two: **Sleeper · MyFantasyLeague · ESPN · Yahoo**; under ESPN: "Unofficial: ESPN has no public API for fantasy leagues. isuckatfantasy reads what a public league shows anyone, read-only. New: not verified on a live league yet." · under Yahoo: "Through Yahoo's official Fantasy Sports API, read-only, after you allow it with your Yahoo sign-in. New: not verified on a live league yet." | "supported" for ESPN / Yahoo before the PO verifies a live league |
+| what a provider gives (an unverified provider) | each line ends "— as built, not verified on a live league yet" (`platforms.UNVERIFIED`); "Partly" for all eight | "Yes" before verification |
+| ESPN's box | "Your ESPN league link or id" · "A public ESPN league opens by its id. No password to ESPN: isuckatfantasy only reads what the league shows anyone." | — |
+| a private ESPN league | "ESPN league 5150 is private. ESPN has no sign-in for other apps; a public league works by its id (Settings → Basic Settings → League Visibility in ESPN)" + the fix (switch off: "Ask the commissioner to make the league public, then try again."; on: "Or use “Private league?” …") | asking for cookies when the switch is off |
+| "Private league?" (switch on only) | "Your ESPN cookies stay in your browser; isuckatfantasy reads your league with them and never stores them." · the button **Read my private league** | "log in with ESPN" (there is no such sign-in) |
+| Yahoo, set up | **Connect with Yahoo** · "Yahoo asks you to allow read-only access to your fantasy leagues; isuckatfantasy keeps the connection in this browser only." · then "Your Yahoo leagues, 2026" with "Your team: …" and **Disconnect Yahoo** · "Or a Yahoo league link" | — |
+| Yahoo, not set up | **Connect with Yahoo — coming soon** (disabled) · "Yahoo sign-in is not set up on this server yet. Sleeper and MyFantasyLeague leagues work today." | a button that leads nowhere |
+| a league's provider after its name | "Synthetic Public League **ESPN**"; the switcher: "… · ESPN" / "… · Yahoo" (as "· MFL") | — |
+| the league's own app (My Week, Waivers) | "Open ESPN to edit your lineup ↗" / "Open Yahoo to edit your lineup ↗" · "Claims run on ESPN's schedule for this league: see ESPN for the time; …" | a guessed claim time |
+| a provider that did not answer | "ESPN did not answer. Try again in a minute." / "Yahoo did not answer. …" | "Sleeper did not answer" for another provider |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

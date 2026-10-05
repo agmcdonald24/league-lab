@@ -6,7 +6,37 @@ public and private leagues, synchronization, scoring, and permitted use." This p
 a request to any provider — Andrew has no licence conversation open and plans none before something is
 production-ready.)*
 
-## The matrix
+## The matrix as built (Wave I-K, IK-3, 2026-10-05)
+
+All four providers are built (`src/league_lab/platforms.py` `Router` + `capabilities()`, served at `GET /api/providers`,
+pinned by `api/tests/test_ii5.py` / `test_ik3.py`). **ESPN and Yahoo are "as built, unverified live"**: their adapters
+(IK-1 `espn_leagues.ESPNLeagues`, IK-2 `yahoo_leagues.YahooLeagues`) pass synthetic fixtures built from the documented
+shapes, and nothing has been read from a real ESPN or Yahoo league yet. Their `status` is `unverified` and every feature
+is `partial` with the words "— as built, not verified on a live league yet" (`platforms.UNVERIFIED`); the setup screen
+says "New: not verified on a live league yet". **The PO flips a row** after opening a live league of that provider on
+isuckatfantasy.io: `status` → `supported`, each verified feature's words without `UNVERIFIED` (and `yes` where it holds),
+this table's cells without "(unverified live)".
+
+| | Connect | Scoring | Lineup slots | Matchups | Players | Waivers | Transactions | Team assets | News |
+|---|---|---|---|---|---|---|---|---|---|
+| **Sleeper** (supported) | username, or a league link / id | yes | yes | yes | yes | yes | yes | partial (picks, FAAB not read on demand) | yes |
+| **MyFantasyLeague** (supported) | league link, id or name | partial | partial (ranges as minimum + FLEX) | partial (live points not read) | partial | partial | **no** | partial | yes |
+| **ESPN** (unverified) | league id or link (`fantasy.espn.com/football/league?leagueId=4242`); public leagues; private only behind `LEAGUE_LAB_ESPN_PRIVATE=on` with the user's own cookies | partial: ESPN's scoring items → our keys, the rest listed unpriced (as built, unverified live) | partial: slot ids → ours (OP → superflex, D/ST → DEF), IDP left out and said (as built, unverified live) | partial: schedule + each week's points from `mMatchupScore` (as built, unverified live) | partial: ESPN id → gsis → Sleeper (nflverse), else a unique name + position, else `espn:<id>` listed, unvalued (as built, unverified live) | partial: free agents = unrostered; waiver order / budget not read (as built, unverified live) | partial: adds, drops, trades from `mTransactions2` (as built, unverified live) | partial: D/ST as team defenses; picks / FAAB not read (as built, unverified live) | partial: the same feed, for matched players (as built, unverified live) |
+| **Yahoo** (unverified) | "Connect with Yahoo" (OAuth 2.0, read-only `fspt-r`) → your leagues; or a link `football.fantasysports.yahoo.com/f1/12345` once connected; "coming soon" until the two secrets exist | partial: stat modifiers → our keys, the rest listed unpriced (as built, unverified live) | partial: `W/R/T` → FLEX, `Q/W/R/T` → superflex, IDP left out and said (as built, unverified live) | partial: scoreboard by week (as built, unverified live) | partial: Yahoo id → nflverse `yahoo_id` → Sleeper, else a unique name + position, else `yahoo:<id>` listed (as built, unverified live) — **no 2025 / 2026 rookie has a `yahoo_id` in nflverse** (the audit below) | partial: free agents from Yahoo's list; priority / FAAB not read (as built, unverified live) | partial: adds, drops, trades (as built, unverified live) | partial: DEF as team defenses; picks / FAAB not read (as built, unverified live) | partial: the same feed, for matched players (as built, unverified live) |
+
+**The PO's calls (Wave I-K brief)** — they replace the II-5 verdicts below where they differ: (1) ESPN public leagues
+read-only by id, labelled "unofficial"; private ESPN leagues through the user's own cookies **exist in the code and ship
+off** (`LEAGUE_LAB_ESPN_PRIVATE=off`; Andrew flips it; the cookies live only in the user's sealed `ll_espn` cookie, never
+on the server); (2) Yahoo through the official OAuth flow, the refresh token in the sealed `ll_yahoo` cookie, "coming
+soon" until Andrew registers the app; (3) nothing is "supported" until verified live after the deploy.
+
+**The id map** (IK-3's audit, `scripts/id_map_audit.py`, `league_lab_m1` 2026-09-26 snapshot): of the 286 QB–TE rostered
+in the house leagues, `espn_id` 100%, `mfl_id` 100%, `yahoo_id` 65.7% — every 2025 and 2026 draft-class player lacks a
+`yahoo_id` in nflverse's `ff_playerids` (and in Sleeper's directory). Details: `docs/ANY_LEAGUE.md` § "The id map".
+
+## The matrix as researched (Wave I-I, II-5, 2026-10-04)
+
+*(History: the research before Wave I-K built ESPN and Yahoo. The as-built table above is the current one.)*
 
 Sleeper and MyFantasyLeague **as built** (the code is the source: `src/league_lab/platforms.py` `capabilities()`,
 served at `GET /api/providers`, pinned by `api/tests/test_ii5.py`). ESPN and Yahoo **as researched** — nothing is built

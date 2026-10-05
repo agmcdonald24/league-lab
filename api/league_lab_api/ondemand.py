@@ -173,6 +173,9 @@ def my_week(league_id: str, roster_id: int, *, as_of=None, exclude_reference: st
         out["platform"] = "mfl"
         out["on_demand"].update(mfl_extras(league_id, league))
         out.update(mfl_roster_freshness(client, league_id))                                       # ---- IG-3
+    elif not A.platforms.is_sleeper(league_id):    # ---- IK-3: an ESPN / Yahoo league's notes (provider_extras)
+        out["platform"] = A.platforms.provider_of(league_id)
+        out["on_demand"].update(provider_extras(league_id, league))
     return out
 
 
@@ -214,7 +217,7 @@ def rosters_for_league(league_id: str) -> list[dict]:
         sl.league(league_id)                      # 404 for an id Sleeper does not have (before the rosters call)
         rosters, users = sl.rosters(league_id), sl.users(league_id)
     except A.LeagueNotFound as exc:
-        raise NotFound(str(exc) if A.platforms.is_mfl(league_id) else f"no Sleeper league {league_id}") from exc
+        raise NotFound(str(exc) if not A.platforms.is_sleeper(league_id) else f"no Sleeper league {league_id}") from exc  # IK-3
     except A.SleeperUnavailable as exc:
         raise SleeperDown(str(exc)) from exc
     names = A.team_names(rosters, users)
@@ -429,7 +432,7 @@ def ros_rows(league_id: str, league: dict | None, df: pd.DataFrame, players: lis
     from .applib import ros as ROS
     this_week = {str(r["player_key"]): dict(ROS.weeks_list(r)).get(week) for r in recs} if week is not None else {}
     # ---- IE-0: the market line is Sleeper's number: an MFL league shows none (no "not in yet" either)
-    market = {} if A.platforms.is_mfl(league_id) else why.market_points(season, week, ids, scoring)
+    market = {} if not A.platforms.is_sleeper(league_id) else why.market_points(season, week, ids, scoring)  # IK-3: Sleeper's only
     for p in players:
         key = p.get("player_key") or p.get("gsis_id")
         g = p.get("ros_games") or 0
@@ -458,7 +461,7 @@ def ros_more(league_id: str, league: dict | None, df: pd.DataFrame, *, house: bo
     return {"piece_columns": {k: list(v) for k, v in why.COLUMNS.items()}, "howto_rankings": RANKINGS_HOWTO,
             "leans_on": why.leans_on(league_id if house else None, name),
             "market_week": cards.decision_week(season) if season is not None else None,
-            "market_note": (None if A.platforms.is_mfl(league_id) else                    # ---- IE-0: Sleeper's only
+            "market_note": (None if not A.platforms.is_sleeper(league_id) else  # IK-3: was is_mfl                    # ---- IE-0: Sleeper's only
                             "Sleeper's number is this week's, in this league's scoring, where Sleeper has one; "
                             "the list's totals are ours.")}
 # ---- end IA-3
@@ -962,7 +965,7 @@ def record(league_id: str) -> dict:
         try:
             A.sleeper().league(league_id)             # 404 for an id Sleeper does not have (the contract)
         except A.LeagueNotFound as exc:
-            raise NotFound(str(exc) if A.platforms.is_mfl(league_id) else f"no Sleeper league {league_id}") from exc
+            raise NotFound(str(exc) if not A.platforms.is_sleeper(league_id) else f"no Sleeper league {league_id}") from exc  # IK-3
         except A.SleeperUnavailable:
             pass                                      # Sleeper down: still an honest "not kept" answer
         if A.platforms.is_mfl(league_id):             # ---- IC-4: the league's own results, both games of a double header
@@ -1589,6 +1592,7 @@ def with_cards(answer: dict) -> dict:
 def week_points(client, league_id: str, week: int, roster_ids) -> dict[str, float] | None:
     if A.platforms.is_mfl(league_id):
         return None
+    # ---- IK-3: an ESPN / Yahoo league's matchups carry `players_points` only when the adapter reads them (else {})
     try:
         ms = client.matchups(league_id, int(week))
     except (A.SleeperBusy, A.SleeperUnavailable):
@@ -1616,3 +1620,340 @@ def win_on_demand(client, league_id: str, roster_id: int, season: int, week: int
     except (A.SleeperBusy, A.SleeperUnavailable, A.LeagueNotFound):
         return None
 # ---- end IH-3
+
+
+# ---- IK-3 (Wave I-K): ESPN (`espn:<id>`, IK-1) and Yahoo (`yahoo:<game>.l.<id>`, IK-2) leagues on demand. Every route
+# above serves them unchanged (the Router answers in Sleeper's shapes); here the setup answers: `/api/leagues?espn=<id or
+# link>`, `?yahoo=<league key, id or link>` (the `?mfl=` shape: the league, its teams, the card, the capabilities) and
+# `?yahoo_me=1` (the signed-in user's Yahoo leagues through IK-2's `ll_yahoo` cookie), and their II-5-style errors.
+# The provider modules are optional (guarded imports): a server without one answers `<provider>_not_configured`.
+import contextvars  # noqa: E402 - the block stays self-contained
+import importlib  # noqa: E402
+import os  # noqa: E402
+
+SETUP_CODES = SETUP_CODES + ("espn_link_invalid", "espn_league_unknown", "espn_league_private", "espn_not_configured",
+                             "yahoo_link_invalid", "yahoo_league_unknown", "yahoo_sign_in_required",
+                             "yahoo_session_expired", "yahoo_not_configured")      # the yahoo_* codes are IK-2's
+ESPN_WHERE = ("the number after leagueId= in your league's address on fantasy.espn.com "
+              "(fantasy.espn.com/football/league?leagueId=4242)")
+YAHOO_WHERE = ("the number after /f1/ in your league's address on Yahoo "
+               "(football.fantasysports.yahoo.com/f1/12345)")
+# STUB-only: a token for the stand-in Yahoo adapter (main.py's IK-3 middleware sets it from the `ll_yahoo` cookie when
+# `LEAGUE_LAB_PROVIDER_STUBS=1`). The real connection is IK-2's `yahoo_client.request_session` (its own middleware).
+YAHOO_TOKEN: contextvars.ContextVar[str | None] = contextvars.ContextVar("ll_yahoo_token", default=None)
+
+
+def _mod(name: str):
+    """IK-1's / IK-2's module when it is in the tree, else None."""
+    try:
+        return importlib.import_module(f"league_lab.{name}")
+    except ImportError:
+        return None
+
+
+def espn_private() -> bool:
+    """`/api/providers.espn_private`: IK-1's switch (`LEAGUE_LAB_ESPN_PRIVATE=on` and a secret to seal the cookie)."""
+    m = _mod("espn_client")
+    if m is not None and hasattr(m, "private_enabled"):
+        try:
+            return bool(m.private_enabled())
+        except Exception:  # noqa: BLE001 - a flag: off when it cannot be read
+            return False
+    return (os.environ.get("LEAGUE_LAB_ESPN_PRIVATE") or "").strip().lower() == "on" \
+        and bool(os.environ.get("LEAGUE_LAB_API_SECRET"))
+
+
+def yahoo_configured() -> bool:
+    """`/api/providers.yahoo_configured`: Connect with Yahoo works on this server — IK-2's `yahoo_connect.configured()`
+    (both Yahoo secrets and the API secret to seal the cookie, or fixture mode), else the client's check."""
+    try:
+        from . import yahoo_connect
+        return bool(yahoo_connect.configured())
+    except ImportError:
+        pass
+    except Exception:  # noqa: BLE001 - a flag: off when it cannot be read
+        return False
+    m = _mod("yahoo_client")
+    for name in ("configured", "is_configured"):
+        if m is not None and callable(getattr(m, name, None)):
+            try:
+                return bool(getattr(m, name)())
+            except Exception:  # noqa: BLE001
+                return False
+    return bool(os.environ.get("LEAGUE_LAB_YAHOO_CLIENT_ID") and os.environ.get("LEAGUE_LAB_YAHOO_CLIENT_SECRET"))
+
+
+def provider_flags() -> dict:
+    return {"espn_private": espn_private(), "yahoo_configured": yahoo_configured()}
+
+
+_ESPN_LEAGUE_ID = re.compile(r"[?&#]leagueId=(\d{1,12})", re.I)
+_ESPN_TEAM_ID = re.compile(r"[?&#]teamId=(\d{1,4})", re.I)
+_ESPN_SEASON = re.compile(r"[?&#]seasonId=(\d{4})", re.I)
+
+
+def espn_parse(text: str) -> tuple[str, str | None]:
+    """An ESPN league link, id or key -> (the key `espn:<id>` / `espn:<season>:<id>`, the team id the link names or
+    None). IK-1's `espn_client.parse_link` when present; LeagueNotFound (code espn_link_invalid) otherwise."""
+    t = " ".join(str(text or "").split())
+    m = _mod("espn_client")
+    if m is not None and hasattr(m, "parse_link"):
+        lid, team, season = m.parse_link(t)
+        return A.platforms.check_espn(f"espn:{season}:{lid}" if season else f"espn:{lid}"), (str(team) if team else None)
+    if t.lower().startswith(A.platforms.ESPN_PREFIX) or re.fullmatch(r"\d{1,12}", t):
+        return A.platforms.check_espn(t), None
+    if "espn.com" in t.lower():
+        lid = _ESPN_LEAGUE_ID.search(t)
+        if lid:
+            season, team = _ESPN_SEASON.search(t), _ESPN_TEAM_ID.search(t)
+            key = f"espn:{season.group(1)}:{lid.group(1)}" if season else f"espn:{lid.group(1)}"
+            return A.platforms.check_espn(key), team.group(1) if team else None
+    raise A.LeagueNotFound(f"not an ESPN league link or id: {t[:80]!r}")
+
+
+_YAHOO_LINK = re.compile(r"fantasysports\.yahoo\.com/(?:\d{4}/)?(?:f1|nfl)/(\d{1,10})(?:/(\d{1,3}))?", re.I)
+_YAHOO_KEY_TEXT = re.compile(r"^(?:yahoo:)?(\d{1,4}|nfl)\.l\.(\d{1,10})(?:\.t\.(\d{1,3}))?$", re.I)
+
+
+def yahoo_game_key() -> str:
+    """This season's NFL game key: IK-2's client resolves Yahoo's code ``nfl`` (a read: needs the user's Yahoo
+    connection — YahooSignInRequired otherwise); the stubs answer 461."""
+    if os.environ.get(A.platforms.STUBS_ENV) == "1":
+        return os.environ.get("LEAGUE_LAB_YAHOO_GAME_KEY") or "461"
+    client = getattr(adapter_of("yahoo"), "client", None)
+    if client is not None and callable(getattr(client, "game_key", None)):
+        return str(client.game_key("nfl"))
+    return os.environ.get("LEAGUE_LAB_YAHOO_GAME_KEY") or "nfl"
+
+
+def yahoo_parse(text: str) -> tuple[str, str | None]:
+    """A Yahoo league link, league key (`461.l.12345`, `yahoo:461.l.12345`, `461.l.12345.t.3`) or bare id -> (the key with
+    a numeric game, the team id the link or a team key names, else None). A bare id or a link takes this season's game
+    key (IK-2's `parse_link` gives `nfl.l.<id>`; resolved here so a remembered key names its season)."""
+    t = " ".join(str(text or "").split())
+    m = _mod("yahoo_client")
+    if m is not None and hasattr(m, "parse_link") and not re.fullmatch(r"\d{1,10}", t):
+        lk, team = m.parse_link(t)
+        team = str(team) if team is not None else None
+    else:
+        k, ln = _YAHOO_KEY_TEXT.match(t), _YAHOO_LINK.search(t)
+        if k:
+            lk, team = f"{k.group(1)}.l.{k.group(2)}", k.group(3)
+        elif ln:
+            lk, team = f"nfl.l.{ln.group(1)}", ln.group(2)
+        elif re.fullmatch(r"\d{1,10}", t):
+            lk, team = f"nfl.l.{t}", None
+        else:
+            raise A.LeagueNotFound(f"not a Yahoo league link or key: {t[:80]!r}")
+    gk, lid = str(lk).lower().split(".l.", 1)
+    if not gk.isdigit():
+        gk = yahoo_game_key()
+    return A.platforms.check_yahoo(f"yahoo:{gk}.l.{lid}"), team
+
+
+def provider_error(provider: str, league_id: str | None, exc: Exception) -> SetupError:
+    """The setup error for an ESPN / Yahoo lookup: the adapter's own `code` / words / `fix` when it carries them (IK-1:
+    `espn_client.setup_words`), else the words here. `private_form` rides on an ESPN private league when the switch
+    is on (the web then offers "Private league?")."""
+    short = A.platforms.SHORT[provider]
+    code, words, fix = getattr(exc, "code", None), str(exc), getattr(exc, "fix", None)
+    m = _mod("espn_client" if provider == "espn" else "yahoo_client")
+    words_of = getattr(m, "setup_words" if provider == "espn" else "setup_parts", None) if m is not None else None
+    if words_of is not None and not isinstance(exc, A.platforms.ProviderNotConfigured) and \
+            (provider == "espn" or getattr(exc, "code", None)):
+        try:                                            # IK-1's setup_words(exc, id) / IK-2's setup_parts(exc)
+            code, words, fix = words_of(exc, league_id) if provider == "espn" else words_of(exc)
+        except Exception:  # noqa: BLE001 - our own words below
+            pass
+    where = ESPN_WHERE if provider == "espn" else YAHOO_WHERE
+    if isinstance(exc, A.platforms.ProviderNotConfigured) or code == f"{provider}_not_configured":
+        if isinstance(exc, A.platforms.ProviderNotConfigured) or not words:    # the provider's own words otherwise
+            words = (f"{A.platforms.LONG[provider]} leagues are not set up on this server yet." if provider == "espn"
+                     else "Yahoo sign-in is not set up on this server yet.")    # (IK-1's kill switch says "switched off")
+        code = f"{provider}_not_configured"
+        fix = fix or "Coming soon. Sleeper and MyFantasyLeague leagues work today."
+    elif code not in SETUP_CODES:
+        if league_id is None:
+            code, words = f"{provider}_link_invalid", f"That is not {'an ESPN' if provider == 'espn' else 'a Yahoo'} league link or id."
+            fix = f"Paste your league's address, or the league id alone: {where}."
+        else:
+            code = f"{provider}_league_unknown"
+            words = f"{short} has no league {league_id.split(':', 1)[-1]} this season."
+            fix = f"Check the id: it is {where}."
+    if not fix:                                                         # the fix line for a code that came without one
+        fix = {f"{provider}_link_invalid": f"Paste your league's address, or the league id alone: {where}.",
+               f"{provider}_league_unknown": f"Check the id: it is {where}.",
+               "espn_league_private": f"Check the id first: it is {where}.",
+               "yahoo_sign_in_required": "Connect with Yahoo, then pick the league from your list.",
+               "yahoo_session_expired": "Connect with Yahoo again: your leagues come back."}.get(code)
+    if code == "espn_league_private" and espn_private() and fix and "Private league?" not in fix:
+        fix += " Or use “Private league?” to read it with your own ESPN cookies."
+    se = SetupError(code, words if words.endswith((".", ")")) else words + ".", fix)
+    se.provider = provider                                              # type: ignore[attr-defined]
+    if code == "espn_league_private" and espn_private():
+        se.private_form = True                                          # type: ignore[attr-defined]
+    return se
+
+
+def _mfl_view(league: dict, provider: str) -> dict:
+    """The league with its provider block where the card's readers look for MFL's (`mfl`: slots, scoring report)."""
+    return league if provider == "mfl" or "mfl" in league else {**league, "mfl": league.get(provider) or {}}
+
+
+def provider_scoring_note(league: dict, provider: str) -> str:
+    return mfl_scoring_note(_mfl_view(league, provider))
+
+
+def adapter_of(provider: str):
+    sl = A.sleeper()
+    return sl.espn if provider == "espn" else sl.yahoo
+
+
+def provider_league(provider: str, key: str, team: str | None = None) -> dict:
+    """The `?mfl=` answer's shape for an ESPN / Yahoo league key: the league, its teams for the picker, the team the
+    link names (by the provider's team id: the roster whose `owner_id` is it, else roster_id), the players without a
+    Sleeper id, the card, the capabilities."""
+    sl = A.sleeper()
+    if provider == "yahoo" and not yahoo_configured() and os.environ.get(A.platforms.STUBS_ENV) != "1":
+        raise provider_error("yahoo", key, A.platforms.ProviderNotConfigured("yahoo"))   # no keys: no Yahoo read at all
+    try:
+        league = sl.league(key)
+        rosters, users = sl.rosters(key), sl.users(key)
+        unmapped = list(adapter_of(provider).unmapped(key) or [])
+    except A.LeagueNotFound as exc:
+        raise provider_error(provider, key, exc) from exc
+    except A.SleeperUnavailable as exc:
+        down = SleeperDown(str(exc))
+        down.who = A.platforms.SHORT[provider]                         # type: ignore[attr-defined]
+        raise down from exc
+    names = A.team_names(rosters, users)
+    teams = [{"roster_id": rid, "team_name": n["team_name"], "manager_name": n["manager_name"]}
+             for rid, n in sorted(names.items())]
+    pick = None
+    if team is not None:                     # the link's team: IK-1's roster_id_of (ESPN team id), else the owner id
+        ad = adapter_of(provider)
+        if callable(getattr(ad, "roster_id_of", None)):
+            pick = ad.roster_id_of(key, team)
+        if pick is None:
+            pick = next((int(r["roster_id"]) for r in rosters if str(r.get("owner_id")) == str(team)), None)
+        if pick is None and str(team).isdigit() and int(team) in names:
+            pick = int(team)
+    block = league.get(provider) or {}
+    lg = {"league_id": key, "name": league.get("name"), "season": int(league.get("season") or ui.current_season()),
+          "total_rosters": league.get("total_rosters"), "scoring_label": A.scoring_label(league),
+          "url": block.get("url"), "platform": provider}
+    n_players = sum(len(r.get("players") or []) for r in rosters)
+    return {"platform": provider, "league": lg, "teams": teams, "roster_id": pick, "unmapped": unmapped,
+            "players": n_players, "mapped": n_players - len(unmapped),
+            "scoring_note": provider_scoring_note(league, provider), "card": league_card(key, _mfl_view(league, provider)),
+            "capabilities": A.platforms.capabilities(provider), **provider_flags()}
+
+
+def espn_league(text: str) -> dict:
+    """`/api/leagues?espn=<id or link>`."""
+    try:
+        key, team = espn_parse(text)
+    except A.LeagueNotFound as exc:
+        raise provider_error("espn", None, exc) from exc
+    return provider_league("espn", key, team)
+
+
+def yahoo_league(text: str) -> dict:
+    """`/api/leagues?yahoo=<league key, id or link>`."""
+    if not yahoo_configured() and os.environ.get(A.platforms.STUBS_ENV) != "1":       # no keys: no Yahoo read at all
+        raise provider_error("yahoo", None, A.platforms.ProviderNotConfigured("yahoo"))
+    try:
+        key, team = yahoo_parse(text)
+    except A.LeagueNotFound as exc:                   # not a link; or this season's game needs the Yahoo connection
+        raise provider_error("yahoo", None if getattr(exc, "code", None) in (None, "yahoo_link_invalid") else text,
+                             exc) from exc
+    except RuntimeError as exc:                       # IK-2's YahooNotConfigured (a RuntimeError with its code)
+        if str(getattr(exc, "code", "")).endswith("_not_configured"):
+            raise provider_error("yahoo", None, A.platforms.ProviderNotConfigured("yahoo")) from exc
+        raise
+    return provider_league("yahoo", key, team)
+
+
+YAHOO_NOTES = {"not_configured": "Yahoo sign-in is not set up on this server yet: coming soon.",
+               "not_connected": "Connect with Yahoo to list your leagues here.",
+               "expired": "Your Yahoo connection has expired. Connect with Yahoo again.",
+               "none": "Yahoo lists no football leagues for you this season."}
+
+
+def yahoo_connected() -> bool:
+    """This request carries a Yahoo connection: IK-2's ``request_session`` (its middleware reads ``ll_yahoo``); the stubs:
+    any ``ll_yahoo`` cookie."""
+    if os.environ.get(A.platforms.STUBS_ENV) == "1":
+        return bool(YAHOO_TOKEN.get())
+    m = _mod("yahoo_client")
+    s = m.request_session.get() if m is not None and hasattr(m, "request_session") else None
+    return s is not None and not getattr(s, "expired", False)
+
+
+def yahoo_me() -> dict:
+    """`/api/leagues?yahoo_me=1`: the signed-in user's Yahoo football leagues this season, their team in each (always 200:
+    not set up / not connected are flags and a `note`, the web shows "coming soon" / "Connect with Yahoo")."""
+    stub = os.environ.get(A.platforms.STUBS_ENV) == "1"
+    base = {"platform": "yahoo", "configured": yahoo_configured(), "connected": False,
+            "season": int(ui.current_season()), "leagues": [], "capabilities": A.platforms.capabilities("yahoo")}
+    if not base["configured"] and not stub:
+        return {**base, "note": YAHOO_NOTES["not_configured"]}
+    if not yahoo_connected():
+        return {**base, "note": YAHOO_NOTES["not_connected"]}
+    try:
+        ad = adapter_of("yahoo")
+        rows = list(ad.my_leagues(YAHOO_TOKEN.get()) if stub else ad.my_leagues())
+    except A.platforms.ProviderNotConfigured:
+        return {**base, "configured": False, "note": YAHOO_NOTES["not_configured"]}
+    except A.LeagueNotFound:                                   # IK-2's YahooSignInRequired / YahooSessionExpired
+        return {**base, "note": YAHOO_NOTES["expired"]}
+    except A.SleeperUnavailable as exc:
+        down = SleeperDown(str(exc))
+        down.who = "Yahoo"                                     # type: ignore[attr-defined]
+        raise down from exc
+    except RuntimeError as exc:                                # IK-2's YahooNotConfigured
+        if str(getattr(exc, "code", "")).endswith("_not_configured"):
+            return {**base, "configured": False, "note": YAHOO_NOTES["not_configured"]}
+        raise
+    sl = A.sleeper()
+    leagues = []
+    for r in rows:
+        key = A.platforms.check_yahoo(r.get("key") or f"yahoo:{r.get('league_key')}")
+        rid = r.get("roster_id") if r.get("roster_id") is not None else r.get("team_id")
+        row = {"league_id": key, "name": r.get("name"), "season": int(r["season"]) if str(r.get("season") or "").isdigit() else None,
+               "total_rosters": r.get("num_teams"), "scoring_label": None, "roster_id": int(rid) if rid is not None else None,
+               "team_name": r.get("team_name"), "url": r.get("url"), "card": None}
+        try:
+            league = sl.league(key)
+            row["scoring_label"] = A.scoring_label(league)
+            row["total_rosters"] = row["total_rosters"] or league.get("total_rosters")
+            row["card"] = league_card(key, _mfl_view(league, "yahoo"))
+            if row["roster_id"] is not None and not row["team_name"]:
+                names = A.team_names(sl.rosters(key), sl.users(key))
+                row["team_name"] = (names.get(int(row["roster_id"])) or {}).get("team_name")
+        except (A.LeagueNotFound, A.SleeperUnavailable, A.SleeperBusy, KeyError, TypeError, ValueError):
+            pass                                               # the row still opens; its card says nothing
+        leagues.append(row)
+    return {**base, "connected": True, "leagues": leagues, "note": None if leagues else YAHOO_NOTES["none"]}
+
+
+def provider_extras(league_id: str, league: dict) -> dict:
+    """What My Week adds for an ESPN / Yahoo league (MFL's `mfl_extras` for the other providers): the players without a
+    Sleeper id, how the rest were matched, the scoring note — under `<provider>_…` and the generic `provider_…` keys."""
+    p = A.platforms.provider_of(league_id)
+    try:
+        ad = adapter_of(p)
+        un, by = list(ad.unmapped(league_id) or []), dict(ad.mapped_by(league_id) or {})
+    except A.LeagueNotFound:
+        un, by = [], {}
+    note = provider_scoring_note(league, p)
+    return {f"{p}_unmapped": un, f"{p}_mapped_by": by, f"{p}_scoring_note": note,
+            "provider_unmapped": un, "provider_mapped_by": by, "provider_scoring_note": note}
+# ---- end IK-3
+
+
+# ---- IK-3: STUB only — the stand-in Yahoo adapter takes any `ll_yahoo` cookie value as its token (main.py's IK-3
+# middleware). The real connection is IK-2's sealed cookie and middleware (`yahoo_connect`, `yahoo_client.request_session`).
+def yahoo_token_from(cookie: str | None) -> str | None:
+    return cookie or None if os.environ.get(A.platforms.STUBS_ENV) == "1" else None
+# ---- end IK-3

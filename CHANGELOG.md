@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-05 — Wave I-K
+
+- **IK-3 — ESPN and Yahoo in the setup flow; the four-provider seam; the id-map audit.** The `Router` dispatches
+  `espn:<id>` and `yahoo:<game>.l.<id>` keys to IK-1's and IK-2's adapters (a provider not set up answers in words,
+  never a 500; Sleeper / MFL answers unchanged); `/api/leagues?espn=` / `?yahoo=` / `?yahoo_me=1` with specific errors;
+  `/api/providers` says `espn_private` / `yahoo_configured`; ESPN and Yahoo "as built, not verified on a live league
+  yet" on every feature. `/leagues` offers four platforms: ESPN by id or link ("Private league?" only behind the
+  server's switch, off), Yahoo by "Connect with Yahoo" → your leagues → My Week ("coming soon" until the app is
+  registered); remembered with "· ESPN" / "· Yahoo". The audit: ESPN and MFL ids cover every rostered skill player;
+  nflverse has no `yahoo_id` for any 2025 / 2026 rookie. Usage counts ESPN / Yahoo views. Unverified live: everything
+  ESPN / Yahoo (`docs/STATUS.md` § IK-3).
+
 ## 2026-10-05 — Wave I-J
 
 - **PO (the merge, 2026-10-05 01:50 ET).** `MALLOC_ARENA_MAX=2` / `MALLOC_TRIM_THRESHOLD_` in the image; the memory

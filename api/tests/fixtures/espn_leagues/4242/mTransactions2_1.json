@@ -1,0 +1,50 @@
+{
+ "_synthetic": "SYNTHETIC \u2014 built for League Lab's tests from the documented shapes (cwendt94/espn-api: football modules, constant.py, tests/football/unit/data/league_2018_data.json); not an ESPN answer. api/tests/fixtures/make_ik1_fixtures.py writes it.",
+ "gameId": 1,
+ "id": 4242,
+ "scoringPeriodId": 4,
+ "seasonId": 2026,
+ "segmentId": 0,
+ "transactions": [
+  {
+   "bidAmount": 3,
+   "executionType": "EXECUTE",
+   "id": "00000001-4242-4000-8000-000000000001",
+   "isActingAsTeamOwner": false,
+   "isLeagueManager": false,
+   "isPending": false,
+   "items": [
+    {
+     "fromLineupSlotId": -1,
+     "fromTeamId": 0,
+     "isKeeper": false,
+     "overallPickNumber": 0,
+     "playerId": -16017,
+     "toLineupSlotId": 20,
+     "toTeamId": 1,
+     "type": "ADD"
+    },
+    {
+     "fromLineupSlotId": 20,
+     "fromTeamId": 1,
+     "isKeeper": false,
+     "overallPickNumber": 0,
+     "playerId": 5277116,
+     "toLineupSlotId": -1,
+     "toTeamId": 0,
+     "type": "DROP"
+    }
+   ],
+   "memberId": "{42420001-0000-4000-8000-000000000001}",
+   "processDate": 1788777660000,
+   "proposedDate": 1788774060000,
+   "rating": 0,
+   "scoringPeriodId": 1,
+   "skipTransactionCounter": false,
+   "status": "EXECUTED",
+   "subOrder": 0,
+   "teamId": 1,
+   "type": "WAIVER"
+  }
+ ]
+}

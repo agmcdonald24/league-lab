@@ -4125,7 +4125,7 @@ def _ie1_present(res: dict, league_id: str, week: int, last: int, span: str) -> 
     if first is not None:
         m = first["move"]
         dress([first])
-        pname = "MFL" if str(league_id).lower().startswith("mfl:") else "Sleeper"
+        pname = A.platforms.provider_short(league_id)   # ---- IK-3: ESPN / Yahoo too (was MFL | Sleeper)
         drop = (m.get("drop") or {}).get("player_name")
         d = m.get("displaced") or {}
         res["home_action"] = {
@@ -4507,6 +4507,8 @@ def waiver_deadline(league: dict | None, *, platform: str = "sleeper", mfl_type:
     runs_at = runs_words = daily = clear = None
     if platform == "mfl":
         kind, source = mfl_waiver_kind(mfl_type), "MFL league export"
+    elif platform in ("espn", "yahoo"):              # ---- IK-3: the claim schedule is not read from ESPN / Yahoo yet
+        kind, source = None, f"{A.platforms.SHORT[platform]} league"
     else:
         wt = settings.get("waiver_type", kind_fallback)
         try:
@@ -4520,7 +4522,7 @@ def waiver_deadline(league: dict | None, *, platform: str = "sleeper", mfl_type:
             clear = None
         source = "Sleeper league settings"
     lock = next_kickoff(season, week, now)
-    if kind is None and runs_words is None and platform != "mfl":
+    if kind is None and runs_words is None and platform not in ("mfl", "espn", "yahoo"):    # IK-3: ESPN / Yahoo say so
         return None
     kw = WAIVER_KIND_WORDS.get(kind) if kind else None
     if platform == "mfl":
@@ -4530,6 +4532,9 @@ def waiver_deadline(league: dict | None, *, platform: str = "sleeper", mfl_type:
             head = "This league takes no free-agent moves on MFL right now"
         else:
             head = f"Claims run on MFL's schedule for this league{f' ({kw})' if kw else ''}: see MFL for the time"
+    elif platform in ("espn", "yahoo"):              # ---- IK-3
+        pw = A.platforms.SHORT[platform]
+        head = f"Claims run on {pw}'s schedule for this league: see {pw} for the time"
     elif runs_words:
         head = f"Claims run {runs_words}" + (f" ({kw})" if kw else "")
     else:
@@ -4538,7 +4543,7 @@ def waiver_deadline(league: dict | None, *, platform: str = "sleeper", mfl_type:
     return {"platform": platform, "kind": kind, "kind_words": kw, "daily": daily,
             "runs_at": runs_at.isoformat() if runs_at is not None else None, "runs_words": runs_words,
             "clear_days": clear, "lock": lock, "words": head + tail, "source": source,
-            **deadline_days(settings if platform != "mfl" else {}, daily)}                         # ---- IH-2
+            **deadline_days(settings if platform not in ("mfl", "espn", "yahoo") else {}, daily)}  # ---- IH-2 (IK-3)
 
 
 def waivers_deadline_for(league_id: str, season: int | None, week: int | None, is_house: bool) -> dict | None:
@@ -4548,6 +4553,8 @@ def waivers_deadline_for(league_id: str, season: int | None, week: int | None, i
         if A.platforms.is_mfl(league_id):
             raw = A.sleeper().mfl.client.league(A.platforms.mfl_id(league_id))
             return waiver_deadline(None, platform="mfl", mfl_type=(raw or {}).get("currentWaiverType"), season=season, week=week)
+        if not A.platforms.is_sleeper(league_id):                   # ---- IK-3: ESPN / Yahoo
+            return waiver_deadline(None, platform=A.platforms.provider_of(league_id), season=season, week=week)
         try:
             league = A.sleeper().league(A.check_id(league_id))
         except Exception:  # noqa: BLE001 - Sleeper down: the database's waiver type, no time

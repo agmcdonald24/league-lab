@@ -491,7 +491,7 @@ def player_card(league_id: str, gsis: str, od=None) -> dict:
         "howto": HOWTO.format(league=league_name),
         "ros": ros_out, "missing": [MISSING_WORDS.get(k, k) for k in missing], "missing_keys": missing,
         "source": "database" if od is None else "sleeper",
-        "platform": "mfl" if is_mfl_league(league_id) else "sleeper",           # ---- IE-0
+        "platform": provider_of_league(league_id),           # ---- IE-0; IK-3: espn / yahoo too (was mfl | sleeper)
         **({} if od is None else {"on_demand": od.meta()}),
         "news": news_block(p["gsis_id"]),                                                  # ---- N1
         "matchup_evidence": card_matchup_evidence(league_id, p, pos, team, league_name, season, week),   # ---- IF-3
@@ -608,7 +608,7 @@ def why_block(league_id: str, gsis: str, pos: str, season: int, week: int | None
         ours = float(r["proj_points"]) if is_num(r.get("proj_points")) else None
         explained = why.explain(why.line_of(r), ours, scoring, pos, season=season, week=week) if r else None   # ---- M6
         market = why.market_points(season, week, [gsis], scoring).get(gsis)
-        if is_mfl_league(league_id):                    # ---- IE-0: the market line is Sleeper's: not on an MFL card
+        if provider_of_league(league_id) != "sleeper":  # ---- IE-0: the market line is Sleeper's (IK-3: not ESPN / Yahoo)
             return {"why": explained, "market": None, "leans_on": why.leans_on(
                 od.profile_league if od is not None else league_id, None).get(pos)}
         lean = why.leans_on(league_id if od is None else od.profile_league, league_name if od is None else None).get(pos)
@@ -638,7 +638,13 @@ def is_mfl_league(league_id) -> bool:
 
 
 def platform_word(league_id) -> str:
-    return "MFL" if is_mfl_league(league_id) else "Sleeper"
+    from league_lab import platforms
+    return platforms.provider_short(league_id)          # ---- IK-3: "ESPN" / "Yahoo" too (was MFL | Sleeper)
+
+
+def provider_of_league(league_id) -> str:              # ---- IK-3
+    from league_lab import platforms
+    return platforms.provider_of(league_id)
 
 
 def od_points_per_game(league_id: str, gsis: str, season: int) -> dict | None:
