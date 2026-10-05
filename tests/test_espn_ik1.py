@@ -68,12 +68,12 @@ def test_slots_default_league_and_superflex_idp():
     counts.update({"0": 1, "2": 2, "4": 2, "6": 1, "16": 1, "17": 1, "20": 7, "21": 1, "23": 1})
     slots, note = E.slots({"rosterSettings": {"lineupSlotCounts": counts}})
     assert slots == ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF"] + ["BN"] * 7
-    assert note == {"left_out": [], "idp": False, "bench": 7, "ir": 1}
+    assert note == {"left_out": [], "idp": [], "unknown": [], "bench": 7, "ir": 1}
     counts.update({"7": 1, "10": 2, "14": 1, "5": 1, "18": 1})
     slots, note = E.slots({"rosterSettings": {"lineupSlotCounts": counts}})
     assert [s for s in slots if s != "BN"] == ["QB", "RB", "RB", "WR", "WR", "TE", "REC_FLEX", "FLEX", "SUPER_FLEX",
                                               "K", "DEF"]
-    assert note["idp"] is True and note["left_out"] == ["LB", "LB", "DB", "P"]
+    assert note["idp"] == ["LB", "DB"] and note["unknown"] == ["P"] and note["left_out"] == ["LB", "LB", "DB", "P"]
 
 
 def test_scoring_standard_items_on_sleeper_keys():
@@ -434,3 +434,18 @@ def test_answers_are_trimmed_before_the_cache():
     assert p == {"id": 13934, "fullName": "Antonio Brown", "defaultPositionId": 3, "eligibleSlots": [3, 4, 5],
                  "proTeamId": 23}
     assert len(json.dumps(got)) < 400 < len(json.dumps(big))
+
+
+def test_idp_and_punter_spots_are_left_out_and_named(directory, tmp_path, monkeypatch):
+    import shutil
+    d = tmp_path / "4242"
+    shutil.copytree(LEAGUES / "4242", d)
+    s = json.loads((d / "mSettings.json").read_text())
+    s["settings"]["rosterSettings"]["lineupSlotCounts"].update({"10": 2, "14": 1, "18": 1})
+    (d / "mSettings.json").write_text(json.dumps(s))
+    monkeypatch.setenv(E.FIXTURES_ENV, str(tmp_path))
+    lg = _adapter(directory).league("espn:4242")
+    assert lg["roster_positions"][:9] == ["QB", "RB", "RB", "WR", "WR", "TE", "FLEX", "K", "DEF"]
+    assert len([x for x in lg["roster_positions"] if x != "BN"]) == 9
+    assert lg["espn"]["slots"]["idp"] == ["LB", "DB"] and lg["espn"]["slots"]["unknown"] == ["P"]
+    assert any("ESPN's P spots are left out" in a for a in lg["espn"]["scoring"]["approximated"])

@@ -244,6 +244,10 @@ class ESPNLeagues:
         st = dict(raw.get("settings") or {})
         slots, slot_note = E.slots(st)
         sc, report = E.scoring(st)
+        if slot_note.get("unknown"):           # not IDP (the card says those): a punter / head coach / team-QB spot
+            report = {**report, "approximated": [*report.get("approximated", []),
+                                                 "lineup: ESPN's " + ", ".join(slot_note["unknown"])
+                                                 + " spots are left out (not projected here)"]}
         try:
             week = self.week(key)
         except (LeagueNotFound, E.ESPNUnavailable, E.ESPNBusy):

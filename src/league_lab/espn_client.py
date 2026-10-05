@@ -398,8 +398,9 @@ def scoring(settings: Mapping) -> tuple[dict[str, float], dict]:
 
 def slots(settings: Mapping) -> tuple[list[str], dict]:
     """ESPN ``settings.rosterSettings.lineupSlotCounts`` ({slot id: count}) -> Sleeper ``roster_positions`` (QB … K,
-    DEF in Sleeper's order, then ``BN`` × bench) and a note: ``left_out`` (ESPN's names of slots not modelled — IDP,
-    P, HC, …), ``idp`` (True when any), ``bench``, ``ir`` (Sleeper's ``reserve_slots``)."""
+    DEF in Sleeper's order, then ``BN`` × bench) and a note: ``left_out`` (ESPN's names of every starting spot not
+    modelled, one per spot), ``idp`` (the IDP slot names, once each: DT, DE, LB, DL, CB, S, DB, DP), ``unknown`` (the
+    others, once each: TQB, P, HC, ER, Rookie), ``bench``, ``ir`` (Sleeper's ``reserve_slots``)."""
     rs = settings.get("rosterSettings") if isinstance(settings.get("rosterSettings"), Mapping) else settings
     counts: dict[int, int] = {}
     for k, v in (rs.get("lineupSlotCounts") or {}).items():
@@ -410,17 +411,22 @@ def slots(settings: Mapping) -> tuple[list[str], dict]:
             continue
     out: list[str] = []
     left: list[str] = []
+    idp: list[str] = []
+    unknown: list[str] = []
     for sid, n in sorted(counts.items()):
         if sid in (BENCH_SLOT, IR_SLOT):
             continue
         espn_name, ours = SLOT_IDS.get(sid, (f"slot {sid}", None))
         if ours is None:
-            left += [espn_name or f"slot {sid}"] * n
+            name = espn_name or f"slot {sid}"
+            left += [name] * n
+            (idp if sid in IDP_SLOT_IDS else unknown).append(name)
             continue
         out += [ours] * n
     out.sort(key=lambda s: SLOT_ORDER.get(s, 99))
     bench = counts.get(BENCH_SLOT, 0)
-    return out + ["BN"] * bench, {"left_out": left, "idp": any(s in IDP_SLOT_IDS for s in counts), "bench": bench,
+    # ``idp`` / ``unknown``: the names once each, as MFL's note carries them (the card reads ``idp`` as a list)
+    return out + ["BN"] * bench, {"left_out": left, "idp": idp, "unknown": unknown, "bench": bench,
                                   "ir": counts.get(IR_SLOT, 0)}
 
 
