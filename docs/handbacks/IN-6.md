@@ -107,3 +107,27 @@ recording and the block shows its 404 line; nothing asserts its absence).
   reading it as a fact is misled (I do not).
 * MFL fixture `liveScoring_4.json`: most week-4 starters read as played with 0 points, so `/api/league/week-odds` shows
   several 50% "games" (both sides at 0) — a fixture artifact the outlook reproduces faithfully.
+
+## Fix round (2026-10-06, branch `fix/IN6` from `integ/IN` `cd56421`; the review's M2, L1, the fan-out)
+
+* **M2 — memory and work.** Seasons by size (`seasons_for`: 10,000; 4,500 for 32 × 10 × 11; 2,000 for 32 × 24 × 17;
+  never under 1,000; `outlook.seasons` and the screen say the number run). Chunks with tallies (wins histogram in
+  halves, place counts, summed points for); the first week drawn in ~64k-number chunks into team totals only; the
+  copula rooted per NFL game; one vectorised quantile step per knot set (`ppf_group`, equal to `Predictive.ppf` to
+  1e-14). Checks before any draw (teams ≤ 32, weeks ≤ 18, starters ≤ 30 → the reason; the range rule). One simulation
+  at a time per process (`_SIM`, 5 s wait, then 429 `busy` in plain words, nothing cached; the screen retries 3 × 3 s).
+  Peak MB / s (tracemalloc, load ~0.2), first week + rest: 12×10×11 **7 / 0.20 + 4 / 0.11** (was 37 / 0.16 + 50 / 0.10);
+  32×10×11 **7 / 0.30 + 4 / 0.19** (was 100 / 0.52 + 134 / 0.30); 32×24×17 **7 / 0.71 + 4 / 0.17** (was 249 / 1.53 + 208 / 0.44).
+* **L1 — the key.** `outlook()` canonicalises with `A.check_id` (= `platforms.check_key`) before `D.house` and the cache
+  key; a key naming no league is 404. Test: `%20`-, tab- and newline-padded Scrubs ids → the same answer, one build.
+* **Fan-out.** Schedule kept 6 h per league (`memo` region `outlook_schedule`, ≤ 256), read through the provider client
+  (the week's odds' matchups cache). Provider calls for a cold Scrubs outlook: 12 (settings + weeks 4–14) before and
+  after on the first; a second cold one inside the 6 h: **0** (was 12 once the client's 5-minute matchups cache expired).
+* `ratelimit.py`'s comment says what is true (up to 10,000 seasons, fewer in a big league, one at a time).
+* Checks: `test_in6.py` 25 passed (8 new); `test_im3.py` 63 passed; ruff, copy standard, lint, build clean; e2e in6 +
+  the League specs (ic4, ih3, decisions "league: luck") 24 passed. First week vs `/api/league/week-odds` (week 5): worst
+  0.62 pts (Scrubs), 0.82 (dynasty). Chunked vs before on the same inputs and seed: largest playoff change 1.5 pts
+  (Scrubs), 1.2 (dynasty), mean wins 0.06, P10/P90 unchanged.
+* Seen on `integ/IN`, not mine: the house boards now start at week 4 (span "weeks 4–16"; was 5–16 on `dev/IN6`), so the
+  power numbers moved by up to ±2 per week from the merged tree, not from this round; `tests/test_metric_registry.py`
+  fails on `mb1.0` (IN-3's METRICS section has no registry row).
