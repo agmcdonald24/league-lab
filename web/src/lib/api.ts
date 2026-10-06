@@ -2483,13 +2483,19 @@ export const outlookPath = (league: string, team: number | null) =>
 // ---- IO-2 (Wave I-O): the outlook kept each week (movement from last week's stored ranking), the power part first, the
 // League link (api/league_lab_api/outlook.py § IO-2, outlook_store.py)
 export type PowerRowMoved = PowerRow & { moved?: number | null }; // places up (+) / down (−) since last week's kept ranking
-export type OutlookRowMoved = OutlookRow & { playoff_change?: number | null }; // points of percentage since then
+export type OutlookRowMoved = OutlookRow & { playoff_change?: number | null; title?: number | null }; // points of percentage since then; title odds
 export interface LeagueOutlookMoved extends Omit<LeagueOutlook, "power" | "outlook"> {
   league_name?: string | null;
   week?: number; // the week the ranking looks ahead from (the one it is kept for)
   shareable?: boolean; // anyone can read this league (Sleeper, MyFantasyLeague): a share link
   power: Omit<LeagueOutlook["power"], "rows" | "movement"> & { rows: PowerRowMoved[]; movement: { week: number; built_at: string } | null; kept?: string | null };
-  outlook: Omit<LeagueOutlook["outlook"], "rows"> & { rows: OutlookRowMoved[]; pending?: boolean };
+  outlook: Omit<LeagueOutlook["outlook"], "rows"> & {
+    rows: OutlookRowMoved[];
+    pending?: boolean;
+    title?: boolean; // title odds: the bracket played out in every season (Sleeper, the bracket readable)
+    title_reason?: string | null;
+    bracket?: { rounds: number[][]; reseed: boolean } | null;
+  };
 }
 export const outlookPowerPath = (league: string, team: number | null) => `${outlookPath(league, team)}&part=power`;
 // ---- end IO-2

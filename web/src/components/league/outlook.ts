@@ -71,4 +71,17 @@ export function oddsChange(c: number | null | undefined): string | null {
   if (c === null || c === undefined || Number.isNaN(c) || Math.abs(c) < 1) return null;
   return `${c > 0 ? "+" : "−"}${Math.abs(Math.round(c))} since last week`;
 }
+/** The bracket the title odds play out, said once: "Title: the 6-team bracket played out in every simulated season —
+ * weeks 15–17, the top 2 seeds skip the first round, re-seeded before each round as Sleeper does; a round's points
+ * decide it, a tie goes to the higher seed. Context only: the title odds have not been replayed on past seasons." */
+export function titleWords(spots: number, byes: number, b: { rounds: number[][]; reseed: boolean }): string {
+  const weeks = b.rounds.flat();
+  const span = weeks.length > 1 ? `weeks ${weeks[0]}–${weeks[weeks.length - 1]}` : `week ${weeks[0]}`;
+  const bye = byes ? `, the top ${byes} seed${byes === 1 ? "" : "s"} skip the first round` : "";
+  const pairing = b.reseed ? "re-seeded before each round (the best seed left plays the worst)" : "a fixed bracket (no re-seeding)";
+  return (
+    `Title: the ${spots}-team bracket played out in every simulated season (${span}${bye}), ${pairing}, as the league's Sleeper settings say; ` +
+    "a round's points decide it, a tie goes to the higher seed. Context only: the title odds have not been replayed on past seasons."
+  );
+}
 // ---- end IO-2

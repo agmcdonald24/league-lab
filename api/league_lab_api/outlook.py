@@ -51,7 +51,11 @@ the power rankings without the season simulation (the League screen asks it firs
 paint of a league not kept every night). A league not kept every night is read with a market-free context (the
 outlook needs the lineups, not the trade market: the free agents and the later weeks' prices are what made MFL 70587's
 first build ~10 s); the trade screens' own context is used when it is already built. ``preview`` / ``shell``: the page
-shell's link preview for ``/league?league=<key>`` from what is cached or stored only.
+shell's link preview for ``/league?league=<key>`` from what is cached or stored only. **Title odds** (Sleeper leagues
+whose bracket is readable from the settings): the playoff weeks are drawn in the same simulated seasons, after the
+regular season's (the drift carries on), and the bracket is played out per season (``play_bracket``: seeds by wins then
+points for, the top seeds' byes, a round's points over its weeks, ``playoff_seed_type`` 1 = re-seeded before every
+round — the house dynasty's 2022–2025 brackets pair exactly so — else a fixed bracket; a tie to the higher seed).
 """
 
 from __future__ import annotations
@@ -125,6 +129,9 @@ DEFINITIONS = {
                     "on wins broken by points for). 100% and out only when it is certain on wins alone.",
     "top_seed": "Top seed: how often the team finishes first after the regular season.",
     "bye": "Bye: how often the team finishes in a spot that skips the first playoff round.",
+    # ---- IO-2
+    "title": "Title: how often the team wins the league's playoff bracket in the simulated seasons (the bracket is "
+             "described under the table). Context only: the title odds have not been replayed on past seasons.",
 }
 
 
@@ -411,6 +418,8 @@ class _Tally:
         self.hist = np.zeros((self.T, self.halves), dtype=np.int64)
         self.place = np.zeros((self.T, self.T), dtype=np.int64)
         self.pf = np.zeros(self.T)
+        self.title = np.zeros(self.T, dtype=np.int64)          # ---- IO-2: seasons won (the bracket played out)
+        self.titled = False
         self.n = 0
 
     def add(self, wins: np.ndarray, pf: np.ndarray) -> None:
@@ -437,14 +446,71 @@ class _Tally:
                 "playoff": None if not spots else round(float(self.place[i, :spots].sum() / n), 4),
                 "top_seed": round(float(self.place[i, 0] / n), 4),
                 "bye": None if not spots or not byes else round(float(self.place[i, :byes].sum() / n), 4),
-                "rank_mean": round(float((self.place[i] * np.arange(self.T)).sum() / n) + 1, 2)}
+                "rank_mean": round(float((self.place[i] * np.arange(self.T)).sum() / n) + 1, 2),
+                "title": round(float(self.title[i] / n), 4) if self.titled else None}      # ---- IO-2
+
+
+# ---- IO-2 (Wave I-O): the playoff bracket, played out in every simulated season (title odds)
+def bracket_order(size: int) -> list[int]:
+    """The seeds' places in a single-elimination bracket of ``size`` (a power of two): 8 → [1, 8, 4, 5, 2, 7, 3, 6]
+    (adjacent places meet; a seed past the playoff spots is a bye)."""
+    order = [1, 2]
+    while len(order) < size:
+        m = 2 * len(order)
+        order = [x for sd in order for x in (sd, m + 1 - sd)]
+    return order[:max(1, size)] if size > 1 else [1]
+
+
+def bracket_rounds(settings: Mapping, spots: int) -> list[list[int]]:
+    """The weeks of each playoff round, from Sleeper's settings: ⌈log₂ spots⌉ rounds from ``playoff_week_start``;
+    ``playoff_round_type`` 0 = one week a round, 1 = the final over two weeks, 2 = every round over two weeks
+    (``anyleague.ros_window``'s reading)."""
+    pws = int(settings.get("playoff_week_start") or 0)
+    rounds = math.ceil(math.log2(spots)) if spots and spots > 1 else 0
+    rtype = int(settings.get("playoff_round_type") or 0)
+    out, w = [], pws
+    for r in range(rounds):
+        k = 2 if rtype == 2 or (rtype == 1 and r == rounds - 1) else 1
+        out.append(list(range(w, w + k)))
+        w += k
+    return out
+
+
+def play_bracket(wins: np.ndarray, pf: np.ndarray, ptot: np.ndarray, bracket: Mapping, spots: int) -> np.ndarray:
+    """The champion's team index per season (c,). Seeds: wins, then points for (the regular season's order, as the
+    playoff odds count it); round 1 by ``bracket_order`` (the top seeds' byes); a round's score = the team's points over
+    the round's weeks (``ptot``: c × T × playoff weeks, in ``bracket["rounds"]`` order); a tie goes to the higher seed.
+    ``reseed``: before every later round the teams left are paired highest seed against lowest (Sleeper's
+    ``playoff_seed_type`` 1 — the house dynasty's 2022–2025 brackets pair exactly so); otherwise the bracket is fixed."""
+    c, T = wins.shape
+    order = np.argsort(-(wins * 1e6 + pf), axis=1, kind="stable")[:, :spots]     # c × spots: team index by seed
+    size = 2 ** math.ceil(math.log2(spots))
+    cur = np.tile(np.array([sd if sd <= spots else 0 for sd in bracket_order(size)]), (c, 1))     # seed numbers; 0 = bye
+    rows = np.arange(c)[:, None]
+    col = 0
+    for r, wk in enumerate(bracket["rounds"]):
+        if cur.shape[1] < 2:                                                      # the final is played
+            break
+        pts = ptot[:, :, col:col + len(wk)].sum(axis=2)                           # c × T
+        col += len(wk)
+        if r > 0 and bracket.get("reseed"):
+            srt = np.sort(cur, axis=1)
+            cur = srt[:, [p - 1 for p in bracket_order(srt.shape[1])]]
+        a, b = cur[:, 0::2], cur[:, 1::2]
+        ta = order[rows, np.maximum(a, 1) - 1]
+        tb = order[rows, np.maximum(b, 1) - 1]
+        pa, pb = pts[rows, ta], pts[rows, tb]
+        a_wins = (b == 0) | ((a != 0) & ((pa > pb) | ((pa == pb) & (a < b))))
+        cur = np.where(a_wins, a, b)
+    return order[np.arange(c), cur[:, 0] - 1]
+# ---- end IO-2
 
 
 def simulate(teams: Sequence[int], weeks: Sequence[int], mean: Mapping[tuple[int, int], float], cv: Mapping[int, float],
              level: Mapping[int, float], games: Mapping[int, Sequence[tuple[int, int]]], wins0: Mapping[int, float],
              pf0: Mapping[int, float], spots: int | None, byes: int = 0, *, first: np.ndarray | None = None,
              n: int = SEASONS, seed: int = SEED, k: float = WP.WEEK_SHRINK, drift: float = DRIFT,
-             calibrate_first: bool = True) -> dict:
+             calibrate_first: bool = True, bracket: Mapping | None = None) -> dict:
     """``n`` seasons in chunks (``chunk_rows`` of teams × weeks): each chunk drawn (``season_totals``), played out and
     counted (``_Tally``), then dropped — memory is flat in the season count apart from ``first`` (n × T). The first
     week's games are decided with the week's odds' calibration (``threshold`` over all of ``first``'s draws); later
@@ -471,11 +537,16 @@ def simulate(teams: Sequence[int], weeks: Sequence[int], mean: Mapping[tuple[int
                 q0[(a, b)] = q
                 first_rows.append({"week": int(weeks[0]), "a": int(a), "b": int(b),
                                    "p": round(float(_result(d, q).mean()), 4), "p_raw": round(p_raw, 4)})
-    rows = chunk_rows(T * max(1, W))
+    # ---- IO-2: title odds — the playoff weeks drawn in the same seasons (after the regular season's weeks: the drift
+    # carries on), the bracket played out per season (play_bracket)
+    pweeks = [int(w) for r in (bracket or {}).get("rounds", ()) for w in r]
+    all_weeks = [*weeks, *pweeks] if bracket and spots else list(weeks)
+    tally.titled = bool(bracket and spots and W)
+    rows = chunk_rows(T * max(1, len(all_weeks)))
     seen: dict[tuple[int, int], float] = {}
     for ci, lo in enumerate(range(0, n, rows)):
         c = min(rows, n - lo)
-        tot = season_totals(teams, weeks, mean, cv, level, first=None if first is None else first[lo:lo + c], n=c,
+        tot = season_totals(teams, all_weeks, mean, cv, level, first=None if first is None else first[lo:lo + c], n=c,
                             seed=[seed, ci], k=k, drift=drift)
         wins = np.tile(w0, (c, 1))
         for wi, w in enumerate(weeks):
@@ -486,7 +557,11 @@ def simulate(teams: Sequence[int], weeks: Sequence[int], mean: Mapping[tuple[int
                 wins[:, ix[b]] += 1.0 - res
                 if wi == 0 and (a, b) not in q0:
                     seen[(a, b)] = seen.get((a, b), 0.0) + float(res.sum())
-        tally.add(wins, p0[None, :] + tot.sum(axis=2))
+        pf_c = p0[None, :] + tot[:, :, :W].sum(axis=2)
+        tally.add(wins, pf_c)
+        if tally.titled:                                                    # ---- IO-2
+            champ = play_bracket(wins, pf_c, tot[:, :, W:], bracket, spots)
+            tally.title += np.bincount(champ, minlength=T)
         del tot, wins
     if W and not q0:
         first_rows = [{"week": int(weeks[0]), "a": int(a), "b": int(b), "p": round(seen.get((a, b), 0.0) / n, 4), "p_raw": None}
@@ -741,7 +816,9 @@ def _season_outlook(ol: dict, out_rows: list, left_games: dict, timings: dict, *
     pr = prepare(sides)
     if (pr["ranged_share"] < MW.MIN_RANGED_SHARE).any() or not pr["dists"]:      # the week's odds' rule, before a draw
         return MW.WIN_NO_RANGE
-    n = min(int(seasons), seasons_for(len(rids), len(remaining), most))
+    bracket, title_reason = title_bracket(settings, platform, {w for (_r, w) in lineup})       # ---- IO-2
+    pweeks = sum(len(r) for r in bracket["rounds"]) if bracket else 0
+    n = min(int(seasons), seasons_for(len(rids), len(remaining) + pweeks, most))
     timings["inputs_ms"] = round((time.perf_counter() - t3) * 1000, 1)       # schedule + rosters
     if not _SIM.acquire(timeout=BUSY_WAIT_S):
         raise Busy()
@@ -770,7 +847,10 @@ def _season_outlook(ol: dict, out_rows: list, left_games: dict, timings: dict, *
             spots = None
         byes = byes_for(spots)
         wins0 = {r: rec[r][0] + 0.5 * rec[r][2] for r in rids}
-        res = simulate(rids, remaining, means, cv, level, games, wins0, pf, spots, byes, first=first, n=n)
+        if playoff_reason:                                                         # ---- IO-2
+            bracket, title_reason = None, None
+        res = simulate(rids, remaining, means, cv, level, games, wins0, pf, spots, byes, first=first, n=n,
+                       bracket=bracket)
         timings["simulation_ms"] = round((time.perf_counter() - t4) * 1000, 1)
     finally:
         _SIM.release()
@@ -781,11 +861,32 @@ def _season_outlook(ol: dict, out_rows: list, left_games: dict, timings: dict, *
             row["playoff"] = 1.0
         elif flags.get(r) == "eliminated":
             row["playoff"], row["bye"], row["top_seed"] = 0.0, (0.0 if byes else None), 0.0
+            if row.get("title") is not None:                                       # ---- IO-2
+                row["title"] = 0.0
         out_rows.append(row)
     ol.update({"available": True, "weeks": remaining, "seasons": n, "playoff_teams": spots,
                "byes": byes if spots else None, "playoff_reason": playoff_reason, "first_week": res["first_week"],
-               "first_week_number": w0})
+               "first_week_number": w0,
+               # ---- IO-2: title odds (Sleeper, the bracket readable) or why not
+               "title": bool(bracket and spots), "title_reason": title_reason,
+               "bracket": ({"rounds": bracket["rounds"], "reseed": bracket["reseed"]} if bracket and spots else None)})
     return None
+
+
+# ---- IO-2 (Wave I-O): title odds — which leagues, which bracket
+def title_bracket(settings: Mapping, platform: str, board_weeks: set) -> tuple[dict | None, str | None]:
+    """({"rounds": [[weeks], …], "reseed": bool}, None) for a Sleeper league whose bracket is readable from its
+    settings (playoff teams, start week, round type; ``playoff_seed_type`` 1 = re-seeded each round), or (None, why)."""
+    spots = int(settings.get("playoff_teams") or 0)
+    if platform != "sleeper":
+        return None, "the playoff bracket is read only from Sleeper's settings"
+    if int(settings.get("divisions") or 0) > 1 or spots < 2:
+        return None, "the playoff bracket is not simulated for this league"
+    rounds = bracket_rounds(settings, spots)
+    missing = [w for r in rounds for w in r if int(w) not in board_weeks]
+    if not rounds or missing:
+        return None, f"no projections for playoff week {missing[0] if missing else '?'} yet"
+    return {"rounds": rounds, "reseed": int(settings.get("playoff_seed_type") or 0) == 1}, None
 
 
 # ---- IO-2 (Wave I-O): the board without the trade market, the schedule left before the simulation, the movement
@@ -904,7 +1005,8 @@ def _build(league_id: str, is_house: bool, source: str | None, seasons: int, *, 
     out_rows: list[dict] = []
     ol: dict = {"available": False, "reason": None, "weeks": [], "seasons": seasons, "playoff_teams": None,
                 "playoff_week_start": pws or None, "byes": None, "tiebreak": "points for", "playoff_reason": None,
-                "assumptions": list(ASSUMES), "drift": DRIFT, "shrink": WP.WEEK_SHRINK, "first_week": [], "rows": []}
+                "assumptions": list(ASSUMES), "drift": DRIFT, "shrink": WP.WEEK_SHRINK, "first_week": [], "rows": [],
+                "title": False, "title_reason": None, "bracket": None}                     # ---- IO-2: title odds
     left_games: dict[int, list[int]] = {r: [] for r in rids}
     # ---- IO-2: the schedule left is read for the rankings themselves (the power part has no simulation)
     t5 = time.perf_counter()

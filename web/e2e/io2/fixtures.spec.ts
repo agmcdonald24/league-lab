@@ -6,6 +6,7 @@
 //     `moved` / `playoff_change` (the API draws them from last week's stored row only).
 //   * The power rankings first: while the whole answer is still being simulated the rankings show and the season block
 //     says it is playing out the rest of the season.
+//   * Title odds: the Title column and the bracket's sentence (Sleeper's settings).
 //   * An ESPN league never gets a Share button.
 //
 // The outlook answers are the API's own, recorded from this worktree's fixture API (web/fixtures/io2/, timings dropped):
@@ -109,6 +110,12 @@ test("movement: places moved and the playoff odds' change, from last week's kept
   const changed = o.outlook.rows.filter((r: { playoff_change: number | null }) => r.playoff_change != null && Math.abs(r.playoff_change) >= 1);
   await expect(page.getByTestId("odds-change")).toHaveCount(changed.length);
   if (changed.length) await expect(page.getByTestId("odds-change").first()).toContainText("since last week");
+  // title odds: the bracket played out (Sleeper's settings: 4 teams, a fixed bracket), said once, context only
+  expect(o.outlook.title).toBe(true);
+  await expect(page.getByTestId("title-odds")).toHaveCount(o.outlook.rows.length);
+  await expect(page.getByTestId("title-words")).toContainText("Title: the 4-team bracket played out in every simulated season");
+  await expect(page.getByTestId("title-words")).toContainText("have not been replayed");
+  await expect(page.getByTestId("no-title")).toHaveCount(0);
   await noSidewaysScroll(page);
   await page.getByTestId("outlook").screenshot({ path: join(SHOTS, `io2-movement-${info.project.name}.png`) });
 });

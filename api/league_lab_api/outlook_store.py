@@ -140,7 +140,7 @@ def snapshot(ans: dict, *, league_name: str | None, week: int, built_at: datetim
     power = [{"roster_id": int(r["roster_id"]), "rank": int(r["rank"]), "per_week": _num(r["per_week"], 1),
               "team_name": str(r.get("team_name") or "")[:NAME_MAX]} for r in ans["power"]["rows"]]
     rows = [{"roster_id": int(r["roster_id"]), "wins_mean": _num(r.get("wins_mean"), 2),
-             "playoff": _num(r.get("playoff")), "top_seed": _num(r.get("top_seed"))}
+             "playoff": _num(r.get("playoff")), "top_seed": _num(r.get("top_seed")), "title": _num(r.get("title"))}
             for r in (ans.get("outlook") or {}).get("rows") or []]
     return {"league_key": str(ans["league_id"]), "season": int(ans["season"]), "week": int(week),
             "league_name": (league_name or None) and str(league_name)[:120], "model_version": str(ans["version"]),

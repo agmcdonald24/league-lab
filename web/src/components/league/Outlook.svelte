@@ -9,7 +9,7 @@
   import { ApiError, get, peek, Unauthorized, outlookPath, outlookPowerPath, type LeagueOutlookMoved, type PowerRow } from "../../lib/api";
   import { errorWords } from "../../lib/decisions";
   import Card from "../Card.svelte";
-  import { chance, gapTag, movedLabel, movedWords, oddsChange, ordinal, projectedRecord, record, scheduleLeft, winsRange } from "./outlook";
+  import { chance, gapTag, movedLabel, movedWords, oddsChange, ordinal, projectedRecord, record, scheduleLeft, titleWords, winsRange } from "./outlook";
 
   let { league, team, onauth, onload }: { league: string; team: number | null; onauth: () => void; onload?: (d: LeagueOutlookMoved) => void } = $props();
 
@@ -83,6 +83,7 @@
   const ol = $derived(data?.outlook);
   const showPlayoff = $derived(!!ol && ol.available && ol.playoff_teams != null);
   const showBye = $derived(showPlayoff && !!ol?.byes);
+  const showTitle = $derived(showPlayoff && !!ol?.title); // ---- IO-2: title odds
   const games = $derived.by(() => {
     const p = power[0];
     const r = ol?.rows[0];
@@ -212,6 +213,7 @@
                 {#if showPlayoff}{@render head("season", "playoff_odds", "Playoffs", "wide:w-[26%]")}{/if}
                 {@render head("season", "top_seed", "Top seed", "text-right")}
                 {#if showBye}{@render head("season", "bye", "Bye", "text-right")}{/if}
+                {#if showTitle}{@render head("season", "title", "Title", "text-right")}{/if}<!-- IO-2 -->
               </tr>
             </thead>
             <tbody class="divide-y divide-line">
@@ -247,12 +249,18 @@
                   {/if}
                   <td class="tabnum px-2 py-2 text-right whitespace-nowrap text-ink-2">{chance(o.top_seed, o.status === "eliminated" ? "eliminated" : null)}</td>
                   {#if showBye}<td class="tabnum px-2 py-2 text-right whitespace-nowrap text-ink-2">{chance(o.bye, o.status === "eliminated" ? "eliminated" : null)}</td>{/if}
+                  {#if showTitle}<td class="tabnum px-2 py-2 text-right font-semibold whitespace-nowrap" data-testid="title-odds">{chance(o.title, o.status === "eliminated" ? "eliminated" : null)}</td>{/if}<!-- IO-2 -->
                 </tr>
               {/each}
             </tbody>
           </table>
         </div>
-        <p class="px-4 pt-2 pb-3 text-xs text-ink-3">No title odds: the playoff bracket is not simulated.</p>
+        {#if showTitle && ol.bracket}
+          <!-- ---- IO-2: the bracket, said once; never graded -->
+          <p class="px-4 pt-2 pb-3 text-xs text-ink-3" data-testid="title-words">{titleWords(ol.playoff_teams ?? 0, ol.byes ?? 0, ol.bracket)}</p>
+        {:else}
+          <p class="px-4 pt-2 pb-3 text-xs text-ink-3" data-testid="no-title">No title odds: {ol.title_reason ?? "the playoff bracket is not simulated"}.</p>
+        {/if}
       {/if}
     </Card>
   </div>

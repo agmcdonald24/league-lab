@@ -24,6 +24,7 @@ import json
 import re
 from datetime import UTC, datetime
 
+import numpy as np
 import psycopg
 import pytest
 from fastapi.testclient import TestClient
@@ -350,3 +351,62 @@ def test_the_card_from_the_stored_row_alone_is_escaped(api, dist):
         assert S._card_reads.get(key, "miss") != "miss"
     finally:
         _clean(key)
+
+
+# ================================================================================================ 7. title odds
+def test_the_bracket_order_and_rounds():
+    assert O.bracket_order(4) == [1, 4, 2, 3] and O.bracket_order(8) == [1, 8, 4, 5, 2, 7, 3, 6]
+    assert O.bracket_rounds({"playoff_week_start": 15, "playoff_round_type": 0}, 6) == [[15], [16], [17]]
+    assert O.bracket_rounds({"playoff_week_start": 15, "playoff_round_type": 1}, 4) == [[15], [16, 17]]
+    assert O.bracket_rounds({"playoff_week_start": 14, "playoff_round_type": 2}, 4) == [[14, 15], [16, 17]]
+    weeks = set(range(5, 18))
+    b, why = O.title_bracket({"playoff_week_start": 15, "playoff_teams": 6, "playoff_seed_type": 1}, "sleeper", weeks)
+    assert why is None and b == {"rounds": [[15], [16], [17]], "reseed": True}
+    assert O.title_bracket({"playoff_week_start": 15, "playoff_teams": 6}, "mfl", weeks)[0] is None
+    assert O.title_bracket({"playoff_week_start": 15, "playoff_teams": 6, "divisions": 2}, "sleeper", weeks)[0] is None
+    b, why = O.title_bracket({"playoff_week_start": 15, "playoff_teams": 6}, "sleeper", set(range(5, 17)))
+    assert b is None and "week 17" in why
+
+
+def test_the_bracket_is_reseeded_or_fixed_as_the_settings_say():
+    """Six teams (index = seed − 1 by wins). Round 1: 6 beats 3, 4 beats 5. Re-seeded: 1 meets 6 and 2 meets 4 (as the
+    house dynasty's 2022, 2024 and 2025 brackets paired); fixed: 1 meets the 4–5 winner, 2 the 3–6 winner."""
+    wins = np.array([[10.0, 9, 8, 7, 6, 5]])
+    pf = np.zeros((1, 6))
+    pts = np.zeros((1, 6, 3))
+    pts[0, :, 0] = [0, 0, 10, 20, 10, 20]            # round 1: 3 v 6 → 6; 4 v 5 → 4 (1 and 2 on byes)
+    pts[0, :, 1] = [15, 15, 0, 30, 0, 5]             # round 2
+    pts[0, :, 2] = [50, 0, 0, 10, 0, 0]              # the final
+    rounds = {"rounds": [[15], [16], [17]]}
+    assert O.play_bracket(wins, pf, pts, {**rounds, "reseed": True}, 6).tolist() == [0]    # 1 v 6, 2 v 4 → 1 v 4 → 1
+    assert O.play_bracket(wins, pf, pts, {**rounds, "reseed": False}, 6).tolist() == [3]   # 1 v 4, 2 v 6 → 4 v 2 → 4
+    # a tie goes to the higher seed
+    tie = np.zeros((1, 4, 2))
+    assert O.play_bracket(np.array([[4.0, 3, 2, 1]]), np.zeros((1, 4)), tie, {"rounds": [[15], [16]], "reseed": False}, 4).tolist() == [0]
+
+
+def test_title_odds_add_up_and_a_certain_team_wins_it():
+    teams, weeks, pw = [1, 2, 3, 4], [5, 6, 7, 8, 9, 10], [11, 12]
+    games = {w: [(1, 2), (3, 4)] if i % 3 == 0 else [(1, 3), (2, 4)] if i % 3 == 1 else [(1, 4), (2, 3)]
+             for i, w in enumerate(weeks)}
+    mean = {(t, w): (300.0 if t == 1 else 100.0) for t in teams for w in [*weeks, *pw]}
+    res = O.simulate(teams, weeks, mean, {t: 0.05 for t in teams}, {t: 100.0 for t in teams}, games,
+                     {t: 0.0 for t in teams}, {t: 0.0 for t in teams}, 4, 0, n=2000,
+                     bracket={"rounds": [[11], [12]], "reseed": False})
+    titles = [res["teams"][t]["title"] for t in teams]
+    assert abs(sum(titles) - 1.0) < 1e-3 and res["teams"][1]["title"] == 1.0
+    res = O.simulate(teams, weeks, mean, {t: 0.05 for t in teams}, {t: 100.0 for t in teams}, games,
+                     {t: 0.0 for t in teams}, {t: 0.0 for t in teams}, 2, 0, n=500)
+    assert res["teams"][1]["title"] is None                                    # no bracket: no title odds
+
+
+@needs_db
+def test_title_odds_on_the_house_leagues_and_none_for_mfl(api):
+    s = api.get(f"/api/league/outlook?league={SCRUBS}&team=2").json()["outlook"]
+    assert s["title"] and s["bracket"] == {"rounds": [[15], [16]], "reseed": False}
+    assert abs(sum(r["title"] for r in s["rows"]) - 1.0) < 2e-3
+    assert all(r["title"] <= r["playoff"] + 1e-9 for r in s["rows"])
+    d = api.get("/api/league/outlook?league=1321941740235550720&team=12").json()["outlook"]
+    assert d["title"] and d["bracket"]["reseed"] is True and len(d["bracket"]["rounds"]) == 3     # 6 teams, re-seeded
+    m = api.get("/api/league/outlook?league=mfl:70587").json()["outlook"]
+    assert not m["title"] and all(r["title"] is None for r in m["rows"])
