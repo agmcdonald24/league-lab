@@ -533,7 +533,8 @@ def open_spots(rows: pd.DataFrame, info: dict[str, dict], pairs: list[tuple[str 
                     "slots": labels, "slot_label": " · ".join(cards.slot_label(s) for s in labels),
                     "open_slot": {"slot_type": t, "slots": labels, "position": pos, "words": word, "players": mine,
                                   "named": cant},
-                    "_lock_players": [], "_order": (1, deadline if deadline is not None else pd.Timestamp.max.tz_localize("UTC"), 0.0)})
+                    "_lock_players": [],               # an open spot is worth a whole starter: first among same-time actions
+                    "_order": (1, deadline if deadline is not None else pd.Timestamp.max.tz_localize("UTC"), -1e9)})
     return out
 
 

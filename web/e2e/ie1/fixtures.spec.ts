@@ -120,7 +120,7 @@ test("Scrubs roster 2: the change before the first kickoff, and the Sleeper link
   await expect(first).toBeVisible();
   await expect(first).toHaveAttribute("data-kind", "change");
   await expect(first).toHaveAttribute("data-submitted", "false");
-  await expect(first.getByTestId("action-kind")).toContainText("Change needed");
+  await expect(first.getByTestId("action-kind")).toContainText("Roster alert"); // IN-5: was "Change needed"
   await expect(first.getByTestId("action-text")).toHaveText("Start Wilson at FLEX (or Croskey-Merritt: a coin flip) in place of Jefferson.");
   await expect(first.getByTestId("action-reason")).toContainText("Jefferson is out");
   await expect(first.getByTestId("action-submitted")).toHaveText("→ Not in your Sleeper lineup yet: make the change in Sleeper.");

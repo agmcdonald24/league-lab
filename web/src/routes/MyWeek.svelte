@@ -23,7 +23,7 @@
   // ---- II-4 (Wave I-I): the home's order (decisions → changes to watch → lineup status), What changed as a decision
   // feed (each line: the fact, why it matters here, the decision status, the forecast status, the next step), long
   // explanations collapsed, the three clocks apart (data built / injuries checked / news — stamps, never a warning)
-  import { DECISION_CHIP, DECISION_MARK, nextHref, splitLead, splitRecaps, stampET } from "../lib/feed";
+  import { DECISION_CHIP, DECISION_MARK, NEWS_FEED, nextHref, splitLead, splitRecaps, stampET } from "../lib/feed"; // IN-5: NEWS_FEED
   import type { ChangedLine } from "../lib/api";
   // ---- end II-4
 
@@ -289,7 +289,7 @@
                   {/if}
                   {#if a.href}
                     <a class="inline-flex min-h-9 items-center rounded-sm border border-line-strong px-3 text-sm font-semibold hover:bg-raised"
-                      href={withContext(a.href, ctx)} data-testid="action-open">See it on Waivers ›</a>
+                      href={withContext(a.href, ctx)} data-testid="action-open">{a.href_label ?? "See it on Waivers"} ›</a><!-- IN-5: "Find a quarterback on Waivers" -->
                   {/if}
                   {#if why.length}
                     <details class="group" data-testid="action-why">
@@ -338,7 +338,7 @@
                      the forecast status, the next step; the game recaps apart, after the developments -->
                 {@const parts = splitRecaps(changed.lines)}
                 <section class="space-y-1.5 rounded-lg border border-line bg-surface p-4" data-testid="what-changed">
-                  <h2 class="ll-label">What changed</h2>
+                  <h2 class="ll-label" data-testid="news-feed-title">{NEWS_FEED}</h2><!-- IN-5: was "What changed" -->
                   {#if changed.lines.length === 0}
                     <p class="text-sm text-ink-2" data-testid="changed-empty">{changed.empty}</p>
                   {:else}

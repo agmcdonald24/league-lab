@@ -15,6 +15,7 @@ Team, My Week, League and Waivers answers of the two house leagues.
 from __future__ import annotations
 
 import math
+from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -129,7 +130,7 @@ def test_a_receiver_never_replaces_a_quarterback():
 
 def test_a_spot_the_bench_can_fill_stays_a_swap():
     acts = _actions(morning(qb=_row("starter", "QB", "12497", "Tyler Shough", "QB", 16.2)))["actions"]
-    assert acts[0]["action"] == "Start Shough at QB in place of Mahomes." and not acts[0].get("open_slot")
+    assert [a["action"] for a in acts if not a.get("open_slot")] == ["Start Shough at QB in place of Mahomes."]
     assert [a["action"] for a in acts if a.get("open_slot")] == [AFTER_TE]
 
 
@@ -260,3 +261,61 @@ def test_no_nan_text_on_the_house_answers(client, league):
         found[path] = bad_values(r.json())
     print({k: len(v) for k, v in found.items()})
     assert {k: v[:5] for k, v in found.items() if v} == {}
+
+
+# ------------------------------------------------------------------ 3(a). the recording for the e2e (web/fixtures/in5/)
+# The database holds the nightly's week-5 lineups: League of Scrubs roster 2 has its QB and TE slots empty (Mahomes, Young
+# and Kelce on a bye) — Andrew's morning itself. The clock is pinned to his report (Tuesday 09:20 ET); the Sleeper lineup
+# is reconstructed (the sandbox's Sleeper fixture is an older roster): Mahomes at QB and Kelce at TE still in it,
+# Croskey-Merritt in the second FLEX where the best lineup starts Jefferson (level with Boston: a coin flip).
+IN5_FIXTURES = Path(__file__).resolve().parents[2] / "web" / "fixtures" / "in5"
+ANDREWS_MORNING = "2026-10-06T13:20:00Z"
+LINEUP_0920 = {"4046": "QB", "8150": "RB", "12507": "RB", "9493": "WR", "10232": "WR", "1466": "TE", "9487": "FLEX",
+               "12533": "FLEX", "650": "K", "BUF": "DEF"}
+
+
+def _morning_answers(client, monkeypatch) -> tuple[dict, dict]:
+    from league_lab import clock
+
+    from league_lab_api import availability as AV
+    monkeypatch.setattr(M, "current_starters", lambda league_id, roster_id, house: (
+        dict(LINEUP_0920) if str(league_id) == SCRUBS and int(roster_id) == 2 else None))
+    AV.clear_context()
+    D.clear_memo()
+    with clock.pinned(ANDREWS_MORNING):
+        d = client.get(f"/api/my-week?league={SCRUBS}&team=2").json()
+        t = client.get(f"/api/team?league={SCRUBS}&team=2").json()
+    return d, t
+
+
+@needs_db
+def test_record_andrews_morning(client, monkeypatch):
+    """My Week and Team on the morning's own rows, through the real routes: the open spots are the actions, the swap
+    names the coin flip once, the open rows have no id, nothing spells a missing value. IN5_RECORD=1 writes the e2e's
+    answers (web/fixtures/in5/)."""
+    import json
+    import os
+    d, t = _morning_answers(client, monkeypatch)
+    for a in d["actions"]:
+        print("action:", a["action"], "|", a["reason"])
+    assert d["week"] == 5 and t["week"] == 5
+    acts = [a["action"] for a in d["actions"]]
+    assert acts[0] == ("Your quarterback spot is open: [Mahomes](/player/00-0033873) and [Young](/player/00-0039150) are on a "
+                       "bye. Add a quarterback before Sun 1:00 PM ET.")
+    assert acts[1] == "Your tight end spot is open: [Kelce](/player/00-0030506) is on a bye. Add a tight end before Sun 1:00 PM ET."
+    assert acts[2] == ("Start [Jefferson](/player/00-0036322) at FLEX (or [Boston](/player/00-0041037): a coin flip) in place of "
+                       "[Croskey-Merritt](/player/00-0040242).")
+    assert all(a["kind"] == "change" for a in d["actions"]) and d["actions"][0]["href"] == "/waivers?position=QB"
+    empty = [x for x in t["roster"] if x["role"] == "empty"]
+    assert [x["slot"] for x in empty] == ["QB", "TE"] and all(x["sleeper_id"] is None for x in empty)
+    assert bad_values(d) == [] and bad_values(t) == []
+    if os.environ.get("IN5_RECORD"):
+        IN5_FIXTURES.mkdir(parents=True, exist_ok=True)
+        (IN5_FIXTURES / "my-week_open.json").write_text(json.dumps(d))
+        (IN5_FIXTURES / "team_open.json").write_text(json.dumps(t))
+        # the answer the screen got at 09:20 (before the PO's hotfix): both open rows carried the id "nan"
+        nan = json.loads(json.dumps(t))
+        for x in nan["roster"]:
+            if x["role"] == "empty":
+                x["sleeper_id"] = "nan"
+        (IN5_FIXTURES / "team_open_nan.json").write_text(json.dumps(nan))
