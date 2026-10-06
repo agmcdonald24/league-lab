@@ -464,7 +464,10 @@ def register_verify_route(body: AnswerIn, request: Request) -> JSONResponse:
                 raise _err(400, "too_many", f"An account keeps at most {MAX_PASSKEYS} passkeys. Remove one first.")
             return c.execute(insert, (who[0], cred_id, key, count, transports, label, synced)).fetchone()
 
-        pid, made = db.run_rw(add)
+        try:
+            pid, made = db.run_rw(add)
+        except psycopg.errors.UniqueViolation:            # the same passkey saved by a request a moment earlier
+            raise _taken() from None
         resp = A._ok({"added": True, "passkey": {"id": str(pid), "label": label, "created_at": _iso(made),
                                                  "last_used_at": None, "synced": synced}})
         _drop_ceremony(resp)
@@ -478,7 +481,10 @@ def register_verify_route(body: AnswerIn, request: Request) -> JSONResponse:
         c.execute(insert, (uid, cred_id, key, count, transports, label, synced))
         return uid, _session(c, uid, request)
 
-    uid, sid = db.run_rw(create)
+    try:
+        uid, sid = db.run_rw(create)
+    except psycopg.errors.UniqueViolation:
+        raise _taken() from None
     return _signed_in(request, {"created": True, "email": None}, uid, sid)
 
 
