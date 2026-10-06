@@ -11138,9 +11138,33 @@ The merge with IM-1: run `e2e/im2` against IM-1's API answer (re-record with `sa
     finished week 4, a submitted lineup holding a player who is no longer on the roster reads "Take player no longer
     on your roster out of your lineup." — a fixture state a live Sleeper lineup cannot be in; the live week is
     checked after the push.
-* **Not done / next**: the live checks after the push (the home, a post's preview card in a real chat, the picker,
-  the calculator, the board, `/dfs`, the outlook for a real Sleeper league — the future weeks' pairings were only
-  assumed from fixtures — and memory on the 2 GB plan); **a salary source** — a file in `dfs/slates/` a week (30
+* **Verified live** (2026-10-06 16:00–16:10 ET, the PO in the browser pane; Andrew pushed at 15:19):
+  * **The deploy did not start by itself.** The push's Blueprint sync applied `plan: standard` at 15:19 and restarted
+    the *old* commit on it ("Compute plan updated"); `image` #23 was green at 15:22 (1 m 47 s); 17 minutes later
+    Render had started nothing for `fb8dc1f`. Andrew deployed the latest commit by hand at ~15:58. **A push that
+    changes the plan needs a manual deploy after it** (or push the plan change alone first).
+  * `/api/health` `fb8dc1f1fb22` on Standard; RSS 210 MB after the first screens (64 MB cache budget, 3.9 MB used).
+  * The blog: `/api/blog` lists the launch post; its page carries `og:title` / `og:url` / `og:image` and its own
+    `<title>`; `/sitemap.xml`, `/blog/rss.xml`, `/robots.txt`, `/og.png` 200. The home: 5 top projections with this
+    week's ranges, 5 "Matchups to target" rows, no "No league" anywhere, no loading block left, no sideways scroll.
+  * Reference keys: `ref:espn.sf.t10` → `league_name` "ESPN default · superflex · 10 teams" (1.6 s cold);
+    `ref:evil.sf` → 404; the board on `ref:half` week 5: 207 WRs, 89 ms; the free calculator 167 ms ("About even:
+    you get 22 points more season value than you give, inside the uncertainty (likely -31 to +76).").
+  * **Andrew's week, live** (`/api/my-week`, League of Scrubs team 2): "Your quarterback spot is open: Mahomes and
+    Young are on a bye. Add a quarterback before Sun 1:00 PM ET." → `/waivers?position=QB`; "Your tight end spot is
+    open: Kelce is on a bye…" → `/waivers?position=TE`; one close call; the screen says "Roster alert" and "News
+    feed". Team: the two open rows carry `null` ids, no `"nan"` in the answer.
+  * **The outlook on real Sleeper leagues** (the sandbox only had synthetic schedules): League of Scrubs — weeks
+    5–14 paired, 10,000 seasons, playoff odds sum to **4.00** (Andrew: 49 % playoffs, 7.6 wins, 6–10), 1.9 s cold;
+    the dynasty league — 6 spots, 2 byes, 3.1 s cold; `mfl:70587` — rankings and record, no playoff columns with
+    MFL's reason, **12.4 s cold** (the on-demand rest-of-season board; cached after — slow for a first visit).
+  * `/dfs`: week 5, "Worth a look" lists 3 receivers with their reasons marked in / not in the projection;
+    `/api/dfs/slates` → none published.
+  * Seen and left: two starters sharing a last name read "Start Washington ahead of …" (Malik and Parker
+    Washington on one roster) — short names need the first initial when they collide.
+* **Not done / next**: the remaining live checks (a post's preview card in a real chat, `/leagues` on a desktop in a
+  clean browser, memory after a day on the 2 GB plan); the first names for colliding short names (above); the MFL
+  outlook's 12-second first load; **a salary source** — a file in `dfs/slates/` a week (30
   seconds, Andrew's call against each site's terms before the first one) or a licensed feed (Fantasy Nerds, $499 a
   year, DraftKings / FanDuel / Yahoo); an editor for the blog that is not "a file and a push"; a weather relation in
   `analytics` for DFS; movement arrows (store each week's rest-of-season board); title odds (simulate the bracket);
