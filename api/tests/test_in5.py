@@ -151,6 +151,62 @@ def test_the_slot_chain_pairs_a_receiver_with_a_running_back():
     assert M.fits(["a", "b"], ["", "QB"], {"a": "WR", "b": "QB"}.get)            # a code that says nothing takes anyone
 
 
+def test_45_starting_slots_pair_fast_and_legally():
+    """Reviewer L3: the worst case — every match fails — was 1.9 s at 45 starting slots. 40 QB slots whose submitted
+    quarterbacks cannot play (the best lineup, synthetic, starts receivers there: no legal pair) and 5 FLEX slots whose
+    running backs cannot play (any FLEX-eligible starter replaces them)."""
+    import time
+    rows = [_row("starter", f"QB{i}", f"w{i}", f"Wide Out{i}", "WR", 20.0 + i) for i in range(40)]
+    rows += [_row("starter", f"FLEX{i}", f"r{i}", f"Run Back{i}", "RB", 10.0 + i) for i in range(5)]
+    rows += [_row("unplayable", None, f"q{i}", f"Quarter Back{i}", "QB", 5.0, chip="OUT", report="Out", reason="Out")
+             for i in range(40)]
+    rows += [_row("unplayable", None, f"f{i}", f"Flex Back{i}", "RB", 4.0, chip="OUT", report="Out", reason="Out")
+             for i in range(5)]
+    cur = {**{f"q{i}": "QB" for i in range(40)}, **{f"f{i}": "FLEX" for i in range(5)}}
+    t = time.perf_counter()
+    M.build_actions(pd.DataFrame(rows), [], cur, SCRUBS)
+    took = time.perf_counter() - t
+    print(f"45 starting slots, the whole build_actions: {took:.3f} s")
+    assert took < 0.2
+    # the pairs: every FLEX out gets a FLEX-eligible starter, no QB out gets anyone (no quarterback comes in)
+    pos = {**{f"w{i}": "WR" for i in range(40)}, **{f"r{i}": "RB" for i in range(5)}}
+    ins = [f"w{i}" for i in range(39, -1, -1)] + [f"r{i}" for i in range(4, -1, -1)]
+    outs = [f"q{i}" for i in range(40)] + [f"f{i}" for i in range(5)]
+    t = time.perf_counter()
+    pairs = M.pair_moves(ins, outs, cur, pos.get)
+    assert time.perf_counter() - t < 0.2
+    got = {o: i for i, o in pairs if o}
+    assert all(got[f"q{i}"] is None for i in range(40))
+    assert all(got[f"f{i}"] is not None and pos[got[f"f{i}"]] in ("RB", "WR", "TE") for i in range(5))
+    assert len([p for p in pairs if p[1] is None]) == 40            # the rest come in to no submitted slot
+
+
+def test_the_chain_check_is_the_matching():
+    """`fits_positions` (Hall's condition over position kinds, memoised) agrees with the plain matching on 2,000
+    random lineups; above MAX_CHAIN_SLOTS the pairing uses direct eligibility only."""
+    import random
+    rnd = random.Random(5)
+    codes = ["QB", "RB", "WR", "TE", "FLEX", "SUPER_FLEX", "REC_FLEX", "K", "DEF", "WR+TE", ""]
+    pos = ["QB", "RB", "WR", "TE", "K", "DEF", "*"]
+    memo: dict = {}
+    for _ in range(2000):
+        slots = [rnd.choice(codes) for _ in range(rnd.randint(1, 9))]
+        players = [rnd.choice(pos) for _ in range(rnd.randint(1, len(slots)))]
+        want = M._match(players, [M._slot_elig(x) for x in slots])
+        assert M.fits_positions(players, slots) == want == M.fits_positions(players, slots, memo)
+    assert M.MAX_CHAIN_SLOTS == 24
+    # 25 slots: a receiver no longer reaches an RB slot through the chain (direct only), 24 still do
+    for n, paired in ((24, True), (25, False)):
+        rows = [_row("starter", "RB1", "t", "Bhayshul Tuten", "RB", 9.7), _row("starter", "FLEX", "w", "Parker Washington", "WR", 9.2)]
+        rows += [_row("starter", f"K{i}", f"k{i}", f"Kick Er{i}", "K", 5.0) for i in range(n - 3)]
+        rows += [_row("unplayable", None, "o", "Kyren Williams", "RB", 13.1, chip="OUT", report="Out", reason="Out")]
+        cur = {"o": "RB", "t": "FLEX", **{f"k{i}": "K" for i in range(n - 3)}, "x": "WR"}
+        rows += [_row("starter", "WR1", "x", "Justin Jefferson", "WR", 12.7)]
+        acts = M.build_actions(pd.DataFrame(rows), [], cur, SCRUBS)["actions"]
+        swap = [a for a in acts if "Williams" in a["action"]]
+        assert (swap[0]["action"] == "Start Washington at FLEX in place of Williams.") is paired, (n, swap)
+
+
 def test_the_coin_flip_clause_once():
     # Jefferson (WR2) out; Wilson comes in at FLEX (the chain: Washington to WR2), level with Croskey-Merritt
     rows = pd.DataFrame([
@@ -335,29 +391,3 @@ def test_record_andrews_morning(client, monkeypatch):
             if x["role"] == "empty":
                 x["sleeper_id"] = "nan"
         (IN5_FIXTURES / "team_open_nan.json").write_text(json.dumps(nan))
-
-
-# ------------------------------------------------------------------ 4. the database's "now" follows the pinned clock
-def test_the_pinned_clock_reaches_the_database_setting(monkeypatch):
-    from league_lab import clock
-
-    from league_lab_api import db
-    with clock.pinned("2026-10-03T16:00:00Z"):
-        assert db.pinned_now() == "2026-10-03T16:00:00+00:00"
-    monkeypatch.delenv(clock.ENV, raising=False)
-    clock.unpin()
-    assert db.pinned_now() is None                         # production: nothing is sent, the views read now()
-
-
-@needs_db
-def test_a_statement_reads_the_pinned_clock():
-    """`league_lab.now` is set for the one statement (dbt's `league_lab_now()` reads it before now(); the horizon view
-    `mart_league_roster_horizon` decides "this week" with it once the nightly rebuilds the view)."""
-    from league_lab import clock
-
-    from league_lab_api import db
-    sql = "select coalesce(nullif(current_setting('league_lab.now', true), '')::timestamptz, now()) as t"
-    with clock.pinned("2026-10-03T16:00:00Z"):
-        db.clear_cache()
-        assert pd.Timestamp(db.query(sql)["t"].iloc[0]) == pd.Timestamp("2026-10-03T16:00:00Z")
-    db.clear_cache()

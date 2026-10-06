@@ -12,6 +12,7 @@ Same numbers and words as `app/Home.py`:
 
 from __future__ import annotations
 
+import functools
 import math
 import re
 
@@ -419,30 +420,103 @@ def _slot_elig(code) -> frozenset[str] | None:
     fallback sends "")."""
     if not isinstance(code, str) or not code.strip():
         return None
-    c = code.strip().upper()
+    return _elig_of(code.strip().upper())
+
+
+@functools.lru_cache(maxsize=256)
+def _elig_of(c: str) -> frozenset[str] | None:
     e = cards.slot_elig(cards._PART.get(c) or c)
     return e or None
 
 
-def fits(keys: list[str], slots: list, pos_of) -> bool:
-    """Every player of ``keys`` takes a different slot of ``slots`` (slot codes; a code that says nothing takes anyone;
-    a player of unknown position goes anywhere): the lineup is legal by positions, whatever slides where."""
-    if len(keys) > len(slots):
-        return False
-    elig = [_slot_elig(s) for s in slots]
-    match: dict[int, str] = {}
+# ---- IN-5 fix (reviewer L3): the slot-chain search is bounded. A lineup with more starting slots than this pairs by
+# direct eligibility only (the out's own slot admits the incoming player); real leagues start 8-20 players
+MAX_CHAIN_SLOTS = 24
+MAX_HALL_CLASSES = 10            # position kinds in one check (QB RB WR TE K DEF TMQB TMPK + "any"); more: the matching
 
-    def place(k: str, seen: set[int]) -> bool:
-        p = pos_of(k)
-        for j, e in enumerate(elig):
-            if j in seen or (e is not None and p is not None and p not in e):
+
+def fits_positions(positions: list[str], slots: list, memo: dict | None = None) -> bool:
+    """Players of these positions ("*" = unknown, any slot) each take a different slot of ``slots`` (slot codes).
+    Players of one position are interchangeable, so Hall's condition over the position kinds decides it exactly: every
+    set of kinds has at least as many slots open to it as players. Memoised per (positions, slots) multiset."""
+    if len(positions) > len(slots):
+        return False
+    key = (tuple(sorted(positions)), tuple(sorted(str(x or "") for x in slots)))
+    if memo is not None and key in memo:
+        return memo[key]
+    need: dict[str, int] = {}
+    for p in positions:
+        need[p] = need.get(p, 0) + 1
+    eligs = [_slot_elig(x) for x in slots]
+    kinds = list(need)
+    if len(kinds) > MAX_HALL_CLASSES:
+        ok = _match(positions, eligs)
+    else:
+        ok = True
+        for mask in range(1, 1 << len(kinds)):
+            sel = [kinds[b] for b in range(len(kinds)) if mask >> b & 1]
+            demand = sum(need[k] for k in sel)
+            supply = sum(1 for e in eligs if e is None or "*" in sel or any(k in e for k in sel))
+            if demand > supply:
+                ok = False
+                break
+    if memo is not None:
+        memo[key] = ok
+    return ok
+
+
+def _match(positions: list[str], eligs: list) -> bool:
+    """The plain bipartite matching (augmenting paths): every position its own slot."""
+    match: dict[int, int] = {}
+
+    def place(n: int, seen: set[int]) -> bool:
+        p = positions[n]
+        for j, e in enumerate(eligs):
+            if j in seen or (e is not None and p != "*" and p not in e):
                 continue
             seen.add(j)
             if j not in match or place(match[j], seen):
-                match[j] = k
+                match[j] = n
                 return True
         return False
-    return all(place(k, set()) for k in keys)
+    return all(place(n, set()) for n in range(len(positions)))
+
+
+def fits(keys: list[str], slots: list, pos_of, memo: dict | None = None) -> bool:
+    """Every player of ``keys`` takes a different slot of ``slots`` (slot codes; a code that says nothing takes anyone;
+    a player of unknown position goes anywhere): the lineup is legal by positions, whatever slides where."""
+    return fits_positions([pos_of(k) or "*" for k in keys], slots, memo)
+def pair_moves(ins: list[str], outs: list[str], current: dict[str, str], pos_of) -> list[tuple[str | None, str | None]]:
+    """(incoming, outgoing) pairs, in the outs' order: each out takes the first incoming player his own slot admits,
+    else (up to MAX_CHAIN_SLOTS starting slots) the first the slot chain admits — the submitted lineup with the swap made
+    still fits its slots, one memoised check per position — else nobody; the incoming players left over pair with
+    nobody (an open spot in the submitted lineup)."""
+    ins = list(ins)
+    now_in = list(current or {})
+    slot_list = [current[k] for k in now_in]
+    chain, memo = len(slot_list) <= MAX_CHAIN_SLOTS, {}
+
+    def by_chain(o: str) -> str | None:
+        rest = [pos_of(k) or "*" for k in now_in if k != o]
+        tried: dict[str, bool] = {}
+        for i in ins:
+            p = pos_of(i) or "*"
+            if p not in tried:
+                tried[p] = fits_positions([*rest, p], slot_list, memo)
+            if tried[p]:
+                return i
+        return None
+    pairs: list[tuple[str | None, str | None]] = []
+    for o in outs:
+        ok = _slot_elig((current or {}).get(o))
+        pick = next((i for i in ins if ok is None or pos_of(i) is None or pos_of(i) in ok), None) or (
+            by_chain(o) if chain else None)
+        if pick is not None:
+            ins.remove(pick)
+            now_in = [pick if k == o else k for k in now_in]
+        pairs.append((pick, o))
+    return pairs + [(i, None) for i in ins]
+# ---- end IN-5 fix
 
 
 def open_deadline(rows: pd.DataFrame) -> pd.Timestamp | None:
@@ -665,21 +739,7 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
         # out's own slot admits him) or through the slot chain the solver uses (the submitted lineup with the swap made
         # still fits its slots: an RB slides from FLEX to RB, the WR takes FLEX). Never a receiver "in place of" a
         # quarterback (Andrew's morning, 2026-10-06): an out nobody can replace stays unpaired (an open spot, below).
-        now_in = [k for k in (current or {})]
-        slot_list = [current[k] for k in now_in]
-
-        def pos_of(k: str) -> str | None:
-            return _str((info.get(k) or {}).get("position"))
-        for o in outs:
-            ok = _slot_elig(current.get(o))
-            direct = [i for i in ins if ok is None or pos_of(i) is None or pos_of(i) in ok]
-            pick = next(iter(direct), None) or next(
-                (i for i in ins if fits([*(k for k in now_in if k != o), i], slot_list, pos_of)), None)
-            if pick is not None:
-                ins.remove(pick)
-                now_in = [pick if k == o else k for k in now_in]
-            pairs.append((pick, o))
-        pairs += [(i, None) for i in ins]
+        pairs = pair_moves(ins, outs, current, lambda k: _str((info.get(k) or {}).get("position")))   # ---- IN-5
     # ---- IN-5: a starting spot nobody on the roster can fill (the best lineup leaves it empty) is ONE action of its own,
     # never "Start …": "Your quarterback spot is open: Mahomes and Young are on a bye. Add a quarterback before Sun
     # 1:00 PM ET." An out of the submitted lineup who cannot play and whose position that spot takes belongs to it

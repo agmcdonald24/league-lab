@@ -19,7 +19,6 @@
 from __future__ import annotations
 
 import atexit
-import os
 import sys
 import threading
 from decimal import Decimal
@@ -111,33 +110,10 @@ def intern_strings(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ---- IN-5 (Wave I-N): the database's "now" follows the league's clock when the clock is pinned (the suites'
-# LEAGUE_LAB_NOW, `clock.pin`). A view that decides "this week" by the time — `mart_league_roster_horizon`: the first
-# regular-season week with a kickoff still ahead — reads `league_lab.now` before its own now() (dbt's
-# `league_lab_now()` macro), so the pinned suites stop following the wall clock (five tests turned red when week 4's
-# last game kicked off, Monday 2026-10-05 20:15 ET). Unpinned (production): nothing is sent, the views read now().
-NOW_SETTING_SQL = "select set_config('league_lab.now', %s, true)"
-
-
-def pinned_now() -> str | None:
-    """The pinned clock as ISO text; None when the clock is the real time (no setting is sent)."""
-    from league_lab import clock
-    if clock.is_pinned() or os.environ.get(clock.ENV, "").strip():
-        return clock.now().isoformat()
-    return None
-# ---- end IN-5
-
-
 def _run(sql: str, params: tuple) -> pd.DataFrame:
-    at = pinned_now()                                                                       # ---- IN-5
     with pool().connection() as conn, conn.cursor() as cur:
         try:
-            if at is None:
-                cur.execute(sql, params)
-            else:                                     # ---- IN-5: the setting lives for this one statement's transaction
-                with conn.transaction():
-                    cur.execute(NOW_SETTING_SQL, (at,))
-                    cur.execute(sql, params)
+            cur.execute(sql, params)
         except psycopg.errors.UndefinedTable as exc:
             raise DataNotReady(str(exc).splitlines()[0]) from exc
         cols = [d.name for d in cur.description]

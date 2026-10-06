@@ -49,10 +49,10 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `{#each}` on API data takes a key that cannot collide (42 lists in 19 files); two `<svelte:boundary>` blocks in
   `App.svelte` show `ErrorCard` ("This screen hit a problem" + Reload, an `exception` event with the screen's name) on
   a render error; no "nan" / "None" id on the way out (`decisions._sid` on the alternative and the transactions,
-  "None" too). The five tests that turned red at week 4's last kickoff: `mart_league_roster_horizon` decided "this
-  week" by the database's `now()`; the API sends its pinned clock as `league_lab.now` and the view reads it first (dbt
-  macro `league_lab_now()`, unchanged in production; the view needs its rebuild). `api/tests/test_in5.py` (Andrew's
-  morning from the database's week-5 rows), `web/e2e/in5`, `docs/handbacks/IN-5.md`.
+  "None" too). The five tests that turned red at week 4's last kickoff: the view `mart_league_roster_horizon` decides
+  "this week" by the database's `now()` while the suites pin week 4 — diagnosed, not fixed (a clean fix needs every
+  read path, API, console and root package, on one clock). `api/tests/test_in5.py` (Andrew's morning from the
+  database's week-5 rows), `web/e2e/in5`, `docs/handbacks/IN-5.md`.
 <!-- ---- end IN-5 -->
 - **IN-6 — the League screen's power rankings and the rest of the season** (`GET /api/league/outlook`, `outlook.py`,
   `components/league/Outlook.svelte`; METRICS § "Power rankings and the season outlook", ol1.0): every team ranked by
