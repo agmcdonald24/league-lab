@@ -91,12 +91,21 @@ context record's absence keeps today's sentence (tested with a fake module and w
 
 ## Evidence
 
-* `api/tests/test_io4.py` **24 tests** (My Week 6 incl. the database roster; the board 4 + the record; Stats 4 incl.
-  the old-vs-new role trend on 1,500 random players — identical answers, 347 trends said; the share 8).
+* `api/tests/test_io4.py` **23 tests** (My Week 5 incl. the database roster; the board 4 incl. the record; Stats 4 incl.
+  the old-vs-new role trend on 1,500 random players — identical answers, 347 trends said; the share 10).
 * DFS's tests untouched: `tests/test_in4_dfs.py` + `tests/test_im5_dfs.py` **223 passed**; `api/tests/test_in4.py`
   in the module run below. `role_trend` per call: **0.56 ms** (a first pandas-groupby version took 43 ms a call and was
   thrown away — ~400 players would have made DFS's context ~17 s).
-* Module test files (44 API files that read myweek / the board / stats / ratelimit): see the run below.
+* Module test files — the 44 API files that read myweek / the board / stats / ratelimit (`grep -l`), one run: **726
+  passed, 53 failed, 12 skipped** (574 s). 50 failures are on `known_api_failures.txt` by name; the other 3 are
+  `test_ig2.py` (`test_what_changed_lists_a_brief_with_its_source`, `test_what_changed_without_the_store_is_if4s`,
+  `test_the_matchup_evidence_cites_the_event`): the availability overlay's status lines are empty — IN-5's hand-back
+  reports the same three failing on `main`'s code; nothing of mine builds those lines. **Said plainly**: four of those
+  existing files write to the database with the pipeline role through their own fixtures — `test_ig2.py` (applies
+  `hosted_events.sql`, idempotent; inserts and then deletes its rows in `events.events`), `test_ik4.py`
+  (`hosted_accounts.sql`, idempotent; its test rows), `test_ig3.py` / `test_ik3.py` (temporary tables / a rolled-back
+  transaction) — so this run touched `league_lab` through them, as the PO's merge run does. Nothing in my code writes.
+  I noticed after the run and did not run them again.
 * `test_in3.py` 55, `test_in5.py` + `test_in0.py` 20, `test_im3.py` (limiter) 63, `test_ii3.py` + `test_im1.py` 37 +
   1 skipped — all pass. `ruff check src app tests api` clean; `copy_standard.py --check` clean; `npm run lint` (189
   files, 0 errors / warnings) and `npm run build` clean.

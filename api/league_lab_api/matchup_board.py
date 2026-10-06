@@ -448,15 +448,18 @@ def _personnel(season: int, week: int, defenses: list[str]) -> dict:
     return {d: copy.deepcopy(hit["p"][d]) for d in defenses if d in hit["p"]}
 
 
-def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int) -> dict[str, dict | None]:
+def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int, own: bool = False) -> dict[str, dict | None]:
     """The matchup evidence each row opens (research.matchup_evidence, as the player card has it: the defense's history
-    on the reference mart — the board's own rank — the corners now for a receiver, the forecast's treatment)."""
+    on the reference mart — the board's own rank — the corners now for a receiver, the forecast's treatment). ``own``
+    (IO-4: a real league whose board reads the league's own defense rank): the history in the league's scoring too, so
+    the opened row never shows a second rank; kept per league scoring in the board's region."""
     if not rows:
         return {}
     # the evidence does not depend on the league (its ranks are the reference mart's): kept per week for every league,
     # each player computed once (the answer is rebuilt by the JSON cleaner, so the cached objects are never changed)
-    key = ("ev", int(season), int(week))
-    have: dict = _week.get(key) or {}
+    key = ("ev", int(season), int(week)) if not own else ("ev", R._ctx_key(ctx), int(season), int(week))   # IO-4
+    region = _cache if own else _week                                                                   # IO-4
+    have: dict = region.get(key) or {}
     want = [r for r in rows if r["gsis_id"] not in have]
     if not want:
         return {r["gsis_id"]: have[r["gsis_id"]] for r in rows}
@@ -467,6 +470,8 @@ def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int) -> dict[str,
                 (int(season), pos))
     pers = _personnel(season, week, sorted({r["opponent"] for r in rows if r["position"] == "WR"}))
     scoring = f"{refleague.label(refleague.DEFAULT)} scoring"
+    if own:                                    # ---- IO-4: the league's own ranks (matchup_evidence's default), its name
+        dvp, scoring = None, None
     shared: dict = {}
     out = {}
     for r in rows:
@@ -478,7 +483,7 @@ def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int) -> dict[str,
         except Exception:  # noqa: BLE001 - the evidence is context: a row without it still stands
             out[r["gsis_id"]] = None
     have = {**have, **out}
-    _week.put(key, have)
+    region.put(key, have)                                                                               # IO-4
     return {r["gsis_id"]: have.get(r["gsis_id"]) for r in rows_all}
 
 
@@ -564,7 +569,7 @@ def board(league: str, *, position: str | None = None, q: str | None = None, gam
             o = ro.loc[r["gsis_id"]] if r["gsis_id"] in ro.index else None
             r["rostered_by_roster_id"] = None if o is None or pd.isna(o["rostered_by_roster_id"]) else int(o["rostered_by_roster_id"])
             r["rostered_by_team"] = None if o is None else o["rostered_by_team"]
-    ev = _evidence(ctx, page_rows, season, week)
+    ev = _evidence(ctx, page_rows, season, week, own=league_def is not None)                      # ---- IO-4
     out_rows = []
     for r in page_rows:
         c = copy.deepcopy(wk["rows"][r["gsis_id"]])

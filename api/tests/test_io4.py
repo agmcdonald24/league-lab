@@ -186,6 +186,23 @@ def test_a_real_league_reads_the_defense_rank_the_heatmap_shows(client):
         ref = MB.matchup_context(j["season"], j["week"], [r["gsis_id"]]).get(r["gsis_id"])
         differ += bool(ref and ref["defense"]["tough_rank"] != d["tough_rank"])
     print("rows", len(j["rows"]), "rows whose reference rank differs from the league's:", differ)
+
+    def hist(ev):                                      # the evidence's defense history (research._history's shape)
+        if isinstance(ev, dict):
+            if "tough_rank" in ev and "scoring" in ev and "defense" in ev:
+                return ev
+            for v in ev.values():
+                h = hist(v)
+                if h:
+                    return h
+        return None
+    seen = 0
+    for r in j["rows"][:25]:
+        h = hist(r.get("matchup_evidence"))
+        if h:
+            seen += 1
+            assert h["tough_rank"] == r["context"]["defense"]["tough_rank"] and "Half PPR scoring" != h["scoring"], h
+    assert seen >= 10
     # browsing keeps the reference mart
     b = client.get("/api/matchups/board?league=ref:half&position=WR&show=all&limit=50").json()
     assert b["defense_source"] == "reference"
