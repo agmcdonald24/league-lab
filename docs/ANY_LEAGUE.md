@@ -755,7 +755,9 @@ Sleeper has no single default (a Sleeper league picks PPR, Half PPR or Standard 
 scoring starts from (ESPN's and Yahoo's own K / DEF tables are not modelled: their points-allowed buckets differ from
 Sleeper's keys and a K / DEF outside a fitted reference would be unvalued — Risks above).
 
-**How a key is priced.** `refleague.league(key)` is the Sleeper-shaped league (the shape's scoring, slots and size;
+**How a key is priced.** `refleague.league(key)` is the Sleeper-shaped league (the shape's scoring, slots and size,
+a typical bracket — 6 playoff teams from week 15, 4 at 8 teams — so a card's rest of season runs to week 17, 16 at 8
+teams, where IM-3's ran to week 15;
 its `name` is the key in words — "Half PPR", "PPR · superflex · 10 teams" — never "No league"). Five of the 20 distinct
 scorings are a fitted reference exactly (`ref:half`, `ref:yahoo` = `scrubs`; `ref:ppr`; `ref:std`; `ref:ppr.tep` =
 `te_premium`; with `.sf` / `.tN` they price the same) and take the nightly's ranges as they are; every other is
