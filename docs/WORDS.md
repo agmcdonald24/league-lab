@@ -101,7 +101,7 @@ explainer on Rankings. Docs for developers (`METRICS.md`, `STATUS.md`) keep the 
 | tough rank (IB-3) | one direction on the Matchups screen: "#1 = the toughest for the offense" ("#3 toughest vs RB", small and grey under the tone) |
 | cornerback certainty (IB-3, `call_strength`) | **likely** (his targets lean 15+ points to one side) · **unclear** (either outside corner) · **no call**; beside the tone, never a "shutdown" badge: "the 17th-hardest of 74 starting corners to throw on" |
 | value to my lineup (IB-3, `lineup_points`) | "Value to my lineup": what he adds to your best lineup over the weeks left; one of yours = what you lose without him; "Your QB2 only plays in week 7: 16 points over your next-best there", "Your backup QB never starts for you behind Mahomes: he adds nothing to your lineup (insurance only)", "Free agent: would start for you in 12 of 13 weeks left, +20 points to your lineup" |
-| card status (IB-3, IB-0's `status`) | **Change needed** (the call is not in your Sleeper lineup) · **Already set** · **Close call** (a coin flip); the strength word: Clear · Lean · Coin flip |
+| card status (IB-3, IB-0's `status`) | **Roster alert** (IN-5; was "Change needed": the call is not in your Sleeper lineup) · **Already set** · **Close call** (a coin flip); the strength word: Clear · Lean · Coin flip |
 | yardstick (Receivers, U-17) | what the season's top-12 at the position (the 12 with the most points per game) average |
 | combined slot `WR+TE1` (IC-2, `cards.slot_label`) | "WR/TE 1" (the league's own slot, its parts joined by a slash; "RB/WR/TE 2") |
 | team unit `TMQB` / `TMPK` (IC-2) | "team QB" / "team K" in the slot column; the player is "Kansas City Chiefs QB" / "… K" (his team's quarterbacks / kicker as one player, MyFantasyLeague's) |
@@ -145,7 +145,7 @@ pat and the best free agent for the same need. "About N" is a whole number in a 
 **Freshness**: "Updated 2:51 PM ET" (the exact time on hover / tap); feed names only in the data details; the MFL
 roster's freshness its own line.
 
-| My Week's actions (IE-1, `myweek.build_actions`) | at most three, the most urgent first: **Change needed** ("Start Wilson at FLEX (or Croskey-Merritt: a coin flip) in place of Jefferson.") · **Close call** ("Keep Addison and Nabers ahead of McConkey for now.") · **Waiver claim** ("Claim Dalton Schultz: about 3 more starter points this week."); one sentence naming the players, then the reason and what could change it ("Check his status again before kickoff."); the numbers behind "Why? The numbers behind it" |
+| My Week's actions (IE-1, `myweek.build_actions`) | at most three, the most urgent first: **Roster alert** (IN-5; was "Change needed") ("Start Wilson at FLEX (or Croskey-Merritt: a coin flip) in place of Jefferson.") · **Close call** ("Keep Addison and Nabers ahead of McConkey for now.") · **Waiver claim** ("Claim Dalton Schultz: about 3 more starter points this week."); one sentence naming the players, then the reason and what could change it ("Check his status again before kickoff."); the numbers behind "Why? The numbers behind it" |
 | set line (IE-1) | "Your lineup is set — nothing to change." (a complete answer) / "The rest of your lineup is set — nothing to change." — never three reassurance cards |
 | submitted or not (IE-1) | "Already in your MFL lineup — nothing to change." / "Not in your Sleeper lineup yet: make the change in Sleeper." (the league's own app named); "Nothing is claimed from here: put the claim in on MFL." |
 | nothing is submitted from here (IE-1) | "League Lab never changes your lineup or claims; it tells you what to do in your league's app." beside **Open MFL to edit your lineup ↗** / **Open Sleeper to edit your lineup ↗** |
@@ -170,7 +170,7 @@ does not remove the uncertainty, and every label must say what it compares. Thes
 |---|---|---|
 | a close call the submitted lineup already follows (`myweek.build_actions` → `review`) | **No clear upgrade**: "Tuten or Williams at FLEX: a coin flip, 0.3 points apart; your lineup has Williams — no clear upgrade." + Compare ›; with IF-3's `matchup_uncertain`: "…; your lineup has Williams; the matchup rank does not settle it — no clear upgrade." ("our lineup has" when the submitted lineup is unknown) | "nothing to change" beside a close call |
 | the set line (IF-4) | "No clear upgrade elsewhere." (close calls are shown above it) · "The rest of your lineup is set." (an action is shown, no close call) · "Your lineup is set — nothing to change." (no action, no close call: a complete answer) | |
-| What changed (My Week) | the overlay's move ("Justin Jefferson is out (ankle) — Michael Wilson starts at FLEX2 · Injury report (ESPN) · 2 h ago") then the week's news from the last 24 hours ("Justin Jefferson: <RotoWire's headline> · RotoWire via ESPN ↗ · 5 h ago"), at most five; none: "Nothing has changed since the morning build." | a feed name without a time |
+| **News feed** (My Week; IN-5, was "What changed") | the overlay's move ("Justin Jefferson is out (ankle) — Michael Wilson starts at FLEX2 · Injury report (ESPN) · 2 h ago") then the week's news from the last 24 hours ("Justin Jefferson: <RotoWire's headline> · RotoWire via ESPN ↗ · 5 h ago"), at most five; none: "Nothing has changed since the morning build." | a feed name without a time |
 | the news line (card, pane) | the item about him first (RotoWire's blurb, or a headline that names him); an article-level headline is labelled **League news** | a league story as "News" about him |
 | the matchup rank, anywhere (`cards.rank_words`, `lib/words.ts rankWords`) | "2nd-fewest WR points allowed" (31 of 32) · "5th-most RB points allowed" (5) · "the most / the fewest …" | a bare "#31", or a "#" whose direction changes by screen |
 | a starter's margin (My Week's lineup) | "4.63 over Lloyd" (the bench player who would come in: `cards.alternative`) · "no eligible reserve" (the slot would be empty: the number is his whole projection, not a gap) | "Margin" with no comparator |
@@ -461,3 +461,20 @@ them"). The words on the screen (`routes/Players.svelte`, `components/stats/`):
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to
 `app/whats_new.md` (three to six bullets, newest on top) next to its `CHANGELOG.md` entry.
+
+<!-- ---- IN-5 -->
+## My Week says what it means (Wave I-N, IN-5)
+
+Andrew, 2026-10-06: "you could probably just say, like, roster alert instead of change needed"; "the What Changed below
+… you could probably just call that a news feed"; "Start Kelce out of your lineup — what does that mean?"
+
+| Where | The words we use | Never |
+|---|---|---|
+| the status / action word (My Week's action chip, a card's chip; `lib/week.ts` `ACTION_WORD` / `STATUS_WORD`) | **Roster alert** · Close call · Waiver claim · Already set | "Change needed" |
+| more actions than three (`myweek.more_words`) | "1 more roster alert: the lineup below shows every slot." · "2 more roster alerts and 1 close call: …" · "1 more close call: …" | "1 more change" for a close call |
+| a starting spot nobody on the roster can fill (`myweek.open_spots`; kind `change`, counted with the roster alerts) | "Your quarterback spot is open: Mahomes and Young are on a bye. Add a quarterback before Sun 1:00 PM ET." (who cannot play and why, from the same words as every action: "is on a bye", "is out", "is on injured reserve"; the lineup's own players first; at most four named, "; 2 more can't play") · two spots of one kind: "Your 2 quarterback spots are open: … Add 2 quarterbacks before …" · nobody at the position: "Your kicker spot is open: nobody on your roster can play there this week." · a flex: "Your FLEX spot is open: Tuten is on a bye. Add a running back, wide receiver or tight end before …" · the reason: "Nobody else on your roster can play quarterback this week. Mahomes is still in your Sleeper lineup: start the player you add in his place." · "Nothing is claimed from here: add a quarterback in Sleeper." · the link: **Find a quarterback on Waivers ›** (`/waivers?position=QB`) | "Start Kelce out of your lineup"; a receiver "in place of" a quarterback; "Take Mahomes out" with nobody to put in |
+| the deadline of an open spot (`myweek.open_deadline`) | "before Sun 1:00 PM ET": the kickoff most of the roster's games still to start share (the main slate; the earliest on a tie); "before his game kicks off" when none is left | a Thursday time when the manager can add a Sunday player |
+| a swap (unchanged words) | "Start Jefferson at FLEX (or Boston: a coin flip) in place of Croskey-Merritt." — an incoming player is paired only with an outgoing one he can legally replace (his slot, or the slot chain: an RB slides from FLEX to RB); the coin-flip clause once per action, never for a player the same action takes out | — |
+| the news block's heading (My Week; `lib/feed.ts` `NEWS_FEED`) | **News feed** (its empty line stays "Nothing has changed since the morning build.") | "What changed" (the matchup evidence keeps "What changed" for its own corners line: another thing) |
+| a screen that hit a render error (`ErrorCard crashed`, App.svelte's boundaries) | **This screen hit a problem** — "Something on this screen did not load. Reload the page; the other screens still work." + **Reload** | a blank screen; loading blocks forever |
+<!-- ---- end IN-5 -->

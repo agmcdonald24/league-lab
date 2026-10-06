@@ -603,7 +603,7 @@ once per copy whatever was opened, and a news item or brief one row however many
   own id). An MFL team unit (TMQB / TMPK / TMDEF) has no gsis id and no events of its own; its starter's are his.
 - **Which roster**: `GET /api/events?league=&team=` reads the roster through `availability.roster_context` — the
   house path for the house leagues, Sleeper on demand, MFL from the league's export — then the store by its players'
-  gsis ids. So "What changed" and the QA route work the same for `mfl:70587` team 8 as for Scrubs roster 2.
+  gsis ids. So the News feed (IN-5; was "What changed") and the QA route work the same for `mfl:70587` team 8 as for Scrubs roster 2.
 - **Defensive events**: a corner's IR is an `availability` event with his team (`CAR`); the matchup evidence reads
   them by the opponent (`events.for_team`), for any league's receiver.
 - **Cost per league**: none — the rows grow with the NFL's news, not with the leagues (an estimate: 30,000–80,000 rows
