@@ -21,16 +21,16 @@ export interface RefShape {
 }
 
 export const REF_BASES: { id: RefBase; label: string; rules: string }[] = [
-  { id: "ppr", label: "PPR", rules: "1 point a catch, 4 a passing touchdown, −1 an interception." },
-  { id: "half", label: "Half PPR", rules: "Half a point a catch, 4 a passing touchdown, −1 an interception." },
-  { id: "std", label: "Standard", rules: "No points for a catch, 4 a passing touchdown, −1 an interception." },
-  { id: "espn", label: "ESPN default", rules: "ESPN's default: 1 point a catch, 4 a passing touchdown, −2 an interception." },
-  { id: "yahoo", label: "Yahoo default", rules: "Yahoo's default: half a point a catch, 4 a passing touchdown, −1 an interception (the same points as Half PPR)." },
+  { id: "ppr", label: "PPR", rules: "1 point per catch, 4 per passing touchdown, −1 per interception." },
+  { id: "half", label: "Half PPR", rules: "Half a point per catch, 4 per passing touchdown, −1 per interception." },
+  { id: "std", label: "Standard", rules: "No points for a catch, 4 per passing touchdown, −1 per interception." },
+  { id: "espn", label: "ESPN default", rules: "ESPN's default: 1 point per catch, 4 per passing touchdown, −2 per interception." },
+  { id: "yahoo", label: "Yahoo default", rules: "Yahoo's default: half a point per catch, 4 per passing touchdown, −1 per interception (the same points as Half PPR)." },
 ];
 export const REF_OPTIONS: { id: "sf" | "tep" | "p6"; label: string; help: string }[] = [
   { id: "sf", label: "Superflex", help: "A second spot a quarterback can fill" },
-  { id: "tep", label: "TE premium", help: "+0.5 a tight-end catch" },
-  { id: "p6", label: "6-pt pass TD", help: "6 points a passing touchdown instead of 4" },
+  { id: "tep", label: "TE premium", help: "+0.5 per tight-end catch" },
+  { id: "p6", label: "6-pt pass TD", help: "6 points per passing touchdown instead of 4" },
 ];
 export const REF_TEAMS: RefTeams[] = [8, 10, 12, 14];
 export const REF_TEAMS_DEFAULT: RefTeams = 12;

@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-06 — Wave I-N
+
+- **IN-2 — the lab without a league: scoring choices, a value for every player, the trade calculator.** The reference
+  key is a closed family of 160 (`ref:<ppr|half|std|espn|yahoo>[.sf][.tep][.p6][.t8|.t10|.t14]`, one parser:
+  `platforms.parse_reference`); the bar's scoring picker (scoring with its rules, superflex, TE premium, 6-pt pass TD,
+  8–14 teams; remembered on the device, in the URL); "No league" is gone from every surface, the API's `league_name`
+  included. Every player has a value without a league — season points above the replacement level of a typical league
+  of that shape (docs/METRICS.md § "Value without a league") — on the pane and the player page, with no ownership line
+  and one foot line. Browsing, the tabs are Players · Trades · DFS and Trades is the calculator:
+  `GET /api/trade-calc/free` (two sides by search, the gap in words with its 80% range, how much of it is one player,
+  the roster-spot effect stated). The league calculator's path is unchanged.
+
 ## 2026-10-06 — hotfix: the Team screen with two open lineup spots
 
 - **PO — Team was blank for a roster with two open starting spots** (Andrew's, week 5: QB and TE both open, Mahomes,

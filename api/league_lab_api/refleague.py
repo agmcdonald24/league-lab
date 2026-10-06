@@ -172,7 +172,7 @@ def needs_league() -> JSONResponse:
     return JSONResponse(needs_league_body(), status_code=404, headers={"Cache-Control": "no-store"})
 
 
-RECORD_NOTE = ("Our record is kept in Half PPR scoring (4 points a passing touchdown): the scoring of the league we "
+RECORD_NOTE = ("Our record is kept in Half PPR scoring (4 points per passing touchdown): the scoring of the league we "
                "project every morning.")
 
 
@@ -214,26 +214,26 @@ SCORINGS: dict[str, tuple[str, str, dict[str, float]]] = {
     "ppr": ("ppr", "PPR", {}),
     "half": ("scrubs", "Half PPR", {}),
     "std": ("standard", "Standard", {}),
-    # ESPN's default (PPR since 2019): 1 a catch, 1 per 25 passing yards, 4 a passing TD, -2 an interception, -2 a
+    # ESPN's default (PPR since 2019): 1 per catch, 1 per 25 passing yards, 4 a passing TD, -2 per interception, -2 a
     # fumble lost, 1 per 10 rushing / receiving yards, 6 a TD, 2 a two-point conversion
     "espn": ("ppr", "ESPN default", {"pass_int": -2.0}),
-    # Yahoo's default (help.yahoo.com/kb/SLN6489, as the brief verified it): half a point a catch, 1 per 25 passing
-    # yards, 4 a passing TD, -1 an interception, 1 per 10 rushing / receiving yards, 6 a TD, 2 a two-point conversion,
+    # Yahoo's default (help.yahoo.com/kb/SLN6489, as the brief verified it): half a point per catch, 1 per 25 passing
+    # yards, 4 a passing TD, -1 per interception, 1 per 10 rushing / receiving yards, 6 a TD, 2 a two-point conversion,
     # -2 a fumble lost — the Half PPR seed's offense exactly
     "yahoo": ("scrubs", "Yahoo default", {"pass_int": -1.0}),
 }
 SCORING_ORDER = ("ppr", "half", "std", "espn", "yahoo")
 SCORING_RULES = {
-    "ppr": "1 point a catch, 4 a passing touchdown, −1 an interception.",
-    "half": "Half a point a catch, 4 a passing touchdown, −1 an interception.",
-    "std": "No points for a catch, 4 a passing touchdown, −1 an interception.",
-    "espn": "ESPN's default: 1 point a catch, 4 a passing touchdown, −2 an interception.",
-    "yahoo": "Yahoo's default: half a point a catch, 4 a passing touchdown, −1 an interception (the same points as "
+    "ppr": "1 point per catch, 4 per passing touchdown, −1 per interception.",
+    "half": "Half a point per catch, 4 per passing touchdown, −1 per interception.",
+    "std": "No points for a catch, 4 per passing touchdown, −1 per interception.",
+    "espn": "ESPN's default: 1 point per catch, 4 per passing touchdown, −2 per interception.",
+    "yahoo": "Yahoo's default: half a point per catch, 4 per passing touchdown, −1 per interception (the same points as "
              "Half PPR).",
 }
 SLEEPER_WORDS = "Sleeper has no single default: a Sleeper league picks PPR, Half PPR or Standard when it is made."
 OPTION_WORDS = {"sf": "superflex", "tep": "TE premium", "p6": "6-pt pass TD"}
-TEP = {"bonus_rec_te": 0.5}          # +0.5 a tight-end catch (the te_premium seed's key)
+TEP = {"bonus_rec_te": 0.5}          # +0.5 per tight-end catch (the te_premium seed's key)
 P6 = {"pass_td": 6.0}
 BENCH = 6                            # the typical league's bench, every size (stated wherever the value is)
 KD_WORDS = "Kickers and defenses use the kicking and defense rules of the scoring it starts from."

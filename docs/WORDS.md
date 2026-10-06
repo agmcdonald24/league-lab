@@ -397,14 +397,14 @@ share of what.
 | Where | The words we use | Never |
 |---|---|---|
 | the front door (first visit, no league) | "Our own projections for every player, his trends and his matchups, priced in your scoring — then your lineup, waivers and trades once you open your league." · **Browse the lab** · **Open your league** · the record's line (scored: "Through week 4, we called … right; Sleeper's numbers called …"; before: "Our record against Sleeper's own projections is kept week by week, from the first week both are saved before kickoff.") + **How we keep score** (About) | "sign up", "free trial", a wall in front of the screens |
-| the bar, browsing without a league | "No league · **Half PPR** ▾" (PPR / Half PPR / Standard) and **Open your league** | "Demo", "Guest", a made-up league name |
-| My Team / Waivers / Trades without a league | "Open your league to see your lineup, waivers and trades." · "You are browsing without a league, in Half PPR scoring. Open your league on Sleeper, MyFantasyLeague, ESPN or Yahoo and this screen shows your own team." · **Open your league** · **Keep browsing players** | an error, a warning sign, "not found" |
+| the bar, browsing without a league | IN-2 (Wave I-N): the scoring picker — "**Half PPR** ▾" and **Open your league** (§ "The lab without a league") | "No league", "Demo", "Guest", a made-up league name |
+| My Team / Waivers without a league (IN-2: Trades opens the calculator) | "Open your league to see your lineup, waivers and trades." · "You are browsing without a league, in Half PPR scoring. Open your league on Sleeper, MyFantasyLeague, ESPN or Yahoo and this screen shows your own team." · **Open your league** · **Keep browsing players** | an error, a warning sign, "not found" |
 | a decision answer for a reference key (API) | "Open your league to see this." (`code: needs_league`) | "league not found" |
 | "Team in league" without a league | "—" (the API sends no owner) | "free agent" for every player |
 | the rate limit (429) | "Too many requests from this connection. Try again in N seconds." ("… in a second." for one) | "rate limited", "abuse", "banned", a blank screen |
 | a cross-site write refused (403, API only) | "This request came from another site, so it was refused." | — |
 | a body too large (413, API only) | "That is more than this server takes in one request." | — |
-| the record for PPR / Standard | "Our record is kept in Half PPR scoring (4 points a passing touchdown): the scoring of the league we project every morning." | a record that seems to be in a scoring it was not kept in |
+| the record for PPR / Standard | "Our record is kept in Half PPR scoring (4 points per passing touchdown): the scoring of the league we project every morning." | a record that seems to be in a scoring it was not kept in |
 ## Passkeys (Wave I-M, IM-4)
 
 | Where | The words we use | Never |
@@ -456,6 +456,30 @@ them"). The words on the screen (`routes/Players.svelte`, `components/stats/`):
 | a greyed number (a rate on a small sample) | on hover and on a tap: "6 targets in his 2 games. Small sample: 6 targets (under 10), so this rate moves a lot." — per target / per reception / per carry / per pass attempt rates, charted and Next Gen Stats rates (`SMALL` in `components/stats/columns.ts`: targets < 10, receptions < 8, carries < 15, pass attempts < 30, charted targets < 10, NGS targets < 10 / receptions < 8 / carries < 20 / pass attempts < 50) | "unreliable", "noisy" |
 | a dash | on hover and on a tap: the column's reason ("No Next Gen Stats week in this window: … unknown, not zero.") | 0 |
 | How to read this (added line) | "**Key stats** are the numbers to read first. **Full table** shows every column we have for the position, grouped (Receiving, Air yards, Red zone…): tap a group above the table to hide or show it. A greyed number rests on a small sample: tap it, or a dash, for the reason." | — |
+
+## The lab without a league (Wave I-N, IN-2)
+
+Andrew: "It references that you don't, like, no league, which is just kind of a weird, not something that you would
+really expect to see." Browsing, a screen says the **scoring** where the scoring matters and what a league would add
+where it would add something. "No league" is never shown (the API's `league_name` for a reference key is the scoring).
+
+| Where | The words we use | Never |
+|---|---|---|
+| the picker's button (where the league picker is) | the key in words: **Half PPR** · **PPR · superflex · 10 teams** (a phone: **PPR +2**, the options and the size counted) ▾ | "No league", "Demo" |
+| the picker's panel | **Scoring**: PPR · Half PPR · Standard · ESPN default · Yahoo default, the picked one's rule line ("1 point per catch, 4 per passing touchdown, −1 per interception." · "ESPN's default: 1 point per catch, 4 per passing touchdown, −2 per interception." · "Yahoo's default: half a point per catch, 4 per passing touchdown, −1 per interception (the same points as Half PPR).") and "Sleeper has no single default: a Sleeper league picks PPR, Half PPR or Standard when it is made." · **Options**: Superflex "A second spot a quarterback can fill" · TE premium "+0.5 per tight-end catch" · 6-pt pass TD "6 points per passing touchdown instead of 4" · **League size**: 8 teams · 10 teams · 12 teams · 14 teams, "The size and superflex change a player's value (who is left on waivers), not his points." · **Open your league** · **Done** | a "Sleeper" preset, "custom scoring" |
+| the tabs while browsing | Home · Players · Trades · DFS (My Team and Waivers are behind **Open your league**) | an invitation card on Trades |
+| a player's pane / page head | the key in words + "· week 4" ("PPR · superflex · 10 teams · week 4") | "No league · Half PPR scoring" |
+| the Value block (pane, page) | title "**Value** — in a 12-team Half PPR league, one quarterback"; tiles **Value** (season points above replacement), **Points, wk 4–18**, **Rank** (WR3 by value); the line "Value in a 12-team Half PPR league, one quarterback: his points above the best free WR (Kendrick Bourne, 90 points)." | "trade value", "worth", "free agent" |
+| the foot of the pane / page | "Open your league to see who has him and what he is worth to your team." (the page: "Priced in Half PPR." before it) | "free agent", "rostered by", "your team" lines (absent, not empty) |
+| the calculator's head | **Trade calculator** · "Any two sides, in Half PPR: what each side is worth over the rest of the regular season, and whether the gap is bigger than the uncertainty." | "fair / unfair", "win / lose the trade" |
+| the calculator's answer | "You get more: 188 points of season value (likely +120 to +256)." · "You give more: …" · "About even: you get 30 points more season value than you give, inside the uncertainty (likely −24 to +84)." · "Add a player to each side to compare them." · "Not comparable yet: X has no rest-of-season projection (unknown, not zero)." | "smash accept", "fleece", a verdict without its range |
+| how much of the gap is one player | "Bijan Robinson alone is worth more than the gap (202 points)." · "Bijan Robinson is 48 of the 64-point gap (75%)." | — |
+| an uneven trade | "You get 1 roster spot back: worth one replacement-level player — about 90 points over weeks 4–18 (Kendrick Bourne, the best WR such a league leaves free), which is 0 above replacement, so the values above do not count it." · "You need 1 more roster spot: you drop a player worth about one replacement-level player — …" | a spot silently added to a side |
+| a player row in the calculator | "WR1 by value · week 4: 14.8 (6–25) · 16.4 per game over the season left"; "bye in week N"; "no projection: unknown, not zero" | 0 for unknown |
+| a side's total | "Value 140 · 230 season points, likely 192–268" | — |
+| what a league would add | "Value in a 12-team Half PPR league, one quarterback. **Open your league to see what this does to your lineup.**" | — |
+| How this is priced | fitted: "Priced in Half PPR: the ranges are fitted for this scoring every night." · on request: "Priced on request in ESPN default: the same projected stat lines, this scoring's points; the ranges are the nearest scoring we fit every night (PPR), stretched by how much more or less this one pays for the same line." + the value's definition + "The likely range is the middle 80% of the season points each side could score (each player's weeks read as independent): “about even” means the gap's range holds zero, or the two sides are within 10 points or 10%. A value is this season only: no draft picks, no keeper costs, no seasons after this one." | "accurate", "guaranteed" |
+| the API's refusals (`/api/trade-calc/free`) | "give: at most 6 players" · "give: '…' is not a player id" · "a player cannot be on both sides" · "This calculator is for browsing without a league: open your league's own calculator." · "Not a scoring we know." | — |
 
 ## Adding to it
 

@@ -1271,6 +1271,58 @@ spot); two cuts chosen jointly (they are taken one at a time); 3-for-1 or 2-for-
 simulator takes any package). No `metric_registry.csv` rows (seeds are out of bounds for this task); proposed:
 `trade_fit` (v1.1: package gain per roster, week and horizon), `trade_market_score` (v1.0: season points above
 the best free agent at the position, grain player × league × week).
+## Value without a league (rv1.0, IN-2, Wave I-N, 2026-10-06; `refleague.value_table`, `refleague.values_from`, `/api/trade-calc/free`)
+
+Browsing with a reference key (`ref:half`, `ref:ppr.sf.t10`, …; docs/ANY_LEAGUE.md § "The family of reference keys")
+a player has **the same value the league screens show** — the trade calculator's market score (§ Trades: season points
+above the replacement player at his position) — with the replacement level of a **typical league of the chosen
+shape** instead of real rosters. One function (`values_from`), one population, the league path's horizon:
+
+    season points = Σ his projection in this scoring, this week to the last regular-season week (byes out, each week
+                    to the cent) — anyleague.ros_table over (this week, last REG week): MARKET_SQL's window
+    value         = max(0, season points − replacement(position))
+    replacement   = the season points of the best player at his position that a typical league of this shape leaves
+                    free: the player right after the last one it rosters (0 when it rosters every one)
+
+**The typical league** (`starter_counts`, `rostered_counts`): T teams (8 / 10 / 12 / 14), each starting QB, 2 RB, 2 WR,
+TE, FLEX (RB / WR / TE), SUPER_FLEX (QB / RB / WR / TE) when the key says superflex, K and DEF. The starters are the top
+of each position (T × the dedicated slots), then T FLEX and T SUPER_FLEX spots filled one at a time by the best player
+left among the eligible positions. **Bench: 6 a team**, every size, shared by QB, RB, WR and TE in proportion to their
+starting spots (largest remainders first); no kicker or defense on a bench, so the replacement K / DEF is the (T+1)th.
+Population: every projected player on an active NFL roster (a team defense always) — `ros_table`'s `is_ranked`, the
+rest-of-season mart's rank population. Rounded to a tenth (the screens show whole points).
+
+**What it gives** (week 4, 2026, `ref:half`): rostered QB 23 · RB 50 · WR 61 · TE 22 · K 12 · DEF 12 (starters QB 12 ·
+RB 27 · WR 33 · TE 12); replacement QB 212.6 (Justin Herbert) · RB 81.5 · WR 90.2 · TE 86.9 · K 112.6 · DEF 103.9. The
+top: Bijan Robinson 201.9, Puka Nacua 139.8, Trey McBride 94.0, Patrick Mahomes 58.1. Value never falls as the league
+grows (a deeper league leaves a weaker player free: TE top 80.0 / 81.8 / 94.0 / 98.8 at 8 / 10 / 12 / 14 teams), and
+superflex raises a quarterback's (tested: `api/tests/test_in2.py`).
+
+**Checked against the house league** (League of Scrubs — Half PPR, 10 teams, real rosters; its market score from
+`MARKET_SQL` / `REPLACEMENT_SQL`): the season points are **identical** for every skill player of the top 12 at each
+position (the reference prices the nightly's own lines; two defenses differ by 0.2–0.4: the DEF line is re-priced),
+so the values differ only by the replacement level. They rank alike at RB and WR (Spearman 1.0 over each top 12), TE
+0.98, QB 0.90; the levels differ: Scrubs' waiver wire holds better players than a typical league leaves (QB 243.1
+Malik Willis, RB 107.8, WR 124.5, TE 111.3 — real managers roster by name, need and bye weeks, not by our projection,
+and a 10-team league is shallower than a 12-team one), so `ref:half` reads 24–34 points above Scrubs at RB / WR / TE (the gap between the two replacement levels)
+and its top QBs are worth 25–58 where Scrubs' are 0–28. At K and DEF they do not rank alike: Scrubs' best free kicker
+(Cameron Dicker, 129.9) is the best kicker projected, so every kicker there is worth 0, while a typical league rosters
+the top 12. The hand-back has the table (docs/handbacks/IN-2.md).
+
+**The trade calculator without a league** (`freetrade.py`): per side the values added up and the side's season points
+with an 80% range (each player's rest-of-season P10–P90 read as a normal, players independent: the variances add);
+the gap = what you get − what you give, its 80% range from the two sides' variances; **about even** when that range
+holds zero, or the two sides are within 10 points or 10% (`trades.about_even`, the league calculator's rule); "how
+much of the gap is one player": the most valuable player on the side that gets more, against the gap. An uneven
+trade's spot is stated, never added: the side getting fewer players gets a spot back, worth one replacement-level
+player (the best free FLEX-eligible player — QB too in superflex — whose value is 0 by definition). A player with no
+rest-of-season projection makes his side's sum unknown, never 0.
+
+**Not modelled.** A real league's waiver wire (above); keeper costs, draft picks, seasons after this one; injuries
+beyond what the projection already holds; ESPN's and Yahoo's own K / DEF tables (the seed's are used). Registry row
+proposed (seeds are IN-6's this wave): `reference_value` (rv1.0, season points above the typical league's replacement,
+grain player × reference key × week).
+
 ## Cornerback matchups (cb1.0, plan R-14, 2026-09-30; `mart_cb_rankings`, `mart_cb_matchups`, `mart_receiver_vs_cb`)
 
 **What public data can and cannot say.** Pro-Football-Reference's advanced defense (nflverse, 2018 on, a few

@@ -731,3 +731,45 @@ priced in that scoring. The API takes ownership out of the answer (`refleague.pu
 decision routes with 404 `{"code": "needs_league"}`. `/api/record` for a reference key is the reference house league's
 model record (Half PPR) without its lineup record, and says so for PPR / Standard. A reference key is never remembered
 on the device (`lib/refleague.ts`); GA's `platform` is `none`.
+
+### The family of reference keys (Wave I-N, IN-2, 2026-10-06)
+
+The key grew from three scorings to a small closed family, canonical and strictly parsed in **one place**
+(`platforms.parse_reference`; the web's `lib/refleague.ts` `parseRef` is the same grammar):
+
+    ref:<scoring>[.sf][.tep][.p6][.t8|.t10|.t14]
+
+| part | values | what it changes |
+|---|---|---|
+| scoring | `ppr` (PPR) · `half` (Half PPR, the default) · `std` (Standard) · `espn` (ESPN's default) · `yahoo` (Yahoo's default) | the points: `ppr` / `half` / `std` are the seed's `ppr` / `scrubs` / `standard`; `espn` = `ppr` with −2 per interception; `yahoo` = `scrubs` (−1 per interception: Yahoo's offense *is* Half PPR's — help.yahoo.com/kb/SLN6489 as the brief verified it: 1 per 25 passing yards, 4 per passing TD, 1 per 10 rushing / receiving yards, 6 per TD, 2 per two-point conversion, −2 per fumble lost) |
+| `.sf` | superflex | a `SUPER_FLEX` slot (the value's replacement level; not the points) |
+| `.tep` | TE premium | `bonus_rec_te` 0.5 (+0.5 per tight-end catch) |
+| `.p6` | 6-point passing touchdowns | `pass_td` 6 |
+| `.tN` | 8 · 10 · 14 teams (12 when absent) | `total_rosters` (the value's replacement level; not the points) |
+
+Options come in that order, lower case; any other spelling — another order, `.t12`, a repeat, an unknown part, more
+than 32 characters — is not a key (404, never a cache entry: `api/tests/test_in2.py`). **5 × 2 × 2 × 2 × 4 = 160
+keys** (`platforms.REF_KEYS`); `ref:ppr` / `ref:half` / `ref:std` mean what they meant and `ref:half` stays the default.
+Sleeper has no single default (a Sleeper league picks PPR, Half PPR or Standard when it is made), so there is no
+"Sleeper" preset: the picker says so in one line. Kickers and defenses use the kicking and defense rules of the seed the
+scoring starts from (ESPN's and Yahoo's own K / DEF tables are not modelled: their points-allowed buckets differ from
+Sleeper's keys and a K / DEF outside a fitted reference would be unvalued — Risks above).
+
+**How a key is priced.** `refleague.league(key)` is the Sleeper-shaped league (the shape's scoring, slots and size;
+its `name` is the key in words — "Half PPR", "PPR · superflex · 10 teams" — never "No league"). Five of the 20 distinct
+scorings are a fitted reference exactly (`ref:half`, `ref:yahoo` = `scrubs`; `ref:ppr`; `ref:std`; `ref:ppr.tep` =
+`te_premium`; with `.sf` / `.tN` they price the same) and take the nightly's ranges as they are; every other is
+priced on request with the nearest reference's range stretched (`anyleague.approximate_ranges`, § "The ranges"
+above) — the answers' `pricing` ("how this is priced") says which. **Caches**: a priced week and a rest of season are
+keyed by the scoring (`Shape.scoring_key`: the key without `.sf` / `.tN`), so the 160 keys hold at most 20 priced
+scorings in `anyleague`'s `priced` / `ros` regions; the value tables (`refleague._values`, region `ref_values`) keep
+the 24 most recent keys for 10 minutes (~600 rows each). Nothing is keyed by user text: `shape()` refuses everything
+outside `REF_KEYS` before any cache is read.
+
+**What browsing shows** (`refleague.card`, `refleague.public`): the player card for a reference key drops every
+ownership line (the header's "free agent in this league", Availability's "Free agent — nobody in this league has him",
+Value's "Free agent: the Waiver Wire page…", a search hit's "· free agent"), says the scoring where it said "this
+league's scoring", gains `ref_value` (the value without a league, docs/METRICS.md § "Value without a league") and the
+foot line "Open your league to see who has him and what he is worth to your team." The trade calculator without a
+league is `GET /api/trade-calc/free?league=ref:…&give=&get=` (`api/league_lab_api/freetrade.py`; `research` bucket):
+gsis ids only (`^00-\d{7}$`), six a side at most, a player on one side only.

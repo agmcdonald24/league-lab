@@ -132,7 +132,7 @@
             {:else if p.outlook.points !== null}<span data-testid="ft-outlook"
                 >week {p.outlook.week}: {fmt.pts(p.outlook.points)}{#if p.outlook.p10 !== null && p.outlook.p90 !== null}&nbsp;({fmt.whole(p.outlook.p10)}–{fmt.whole(p.outlook.p90)}){/if}</span
               >{/if}
-            {#if p.outlook.per_game !== null}<span>· {fmt.pts(p.outlook.per_game)} a game over the season left</span>{/if}
+            {#if p.outlook.per_game !== null}<span>· {fmt.pts(p.outlook.per_game)} per game over the season left</span>{/if}
           {/if}
         {:else if p?.no_projection}
           <span class="text-warn">no projection: unknown, not zero</span>

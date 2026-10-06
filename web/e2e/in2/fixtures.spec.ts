@@ -113,7 +113,7 @@ test("the picker: scoring, options and size in the URL and remembered; the tabs 
   await expect(page.getByTestId("ref-sleeper")).toHaveText("Sleeper has no single default: a Sleeper league picks PPR, Half PPR or Standard when it is made.");
   await page.getByTestId("ref-base-ppr").click();
   await expect(page).toHaveURL(/league=ref(%3A|:)ppr(&|$)/);
-  await expect(page.getByTestId("ref-rules")).toContainText("1 point a catch");
+  await expect(page.getByTestId("ref-rules")).toContainText("1 point per catch");
   await page.getByTestId("ref-opt-sf").locator("input").check();
   await expect(page).toHaveURL(/league=ref(%3A|:)ppr\.sf(&|$)/);
   await page.getByTestId("ref-teams-10").click();
