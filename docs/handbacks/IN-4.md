@@ -113,3 +113,19 @@ relations**: none (reads `analytics.fct_player_game`, `analytics.dim_game`, both
 
 Re-record the in4 fixtures on the merged tree (IN-3's real matchup words); a weather mart (PO); a backtest of "Worth a
 look" once a few weeks of published slates exist (the record should say whether it helps before it is dressed as one).
+
+## Fix round (after the merge on `integ/IN` and the independent review; branch `fix/IN4`)
+
+* **M1**: `GET /api/dfs/slates` never builds a slate — matched / unmatched counts once per file (`match_counts`: the
+  priced pool + `dfs.match`), kept with the file; `dfs_published` sized to `MAX_PUBLISHED` (16). Test: 8 files, three
+  listings → 0 builds, ≤ 8 matches, the third call < 0.5 s. On :8764 with the file already read: 3–4 ms a listing.
+* **L4**: `_published_pool` runs in the thread pool. **L5**: slate ids and file names by `fullmatch` (`…\n`, `%0a`,
+  `%0d%0a` → 404, tested).
+* `test_board_with_context_and_no_matchup_module` makes the lazy import fail itself (the package attribute removed,
+  `sys.modules` entry None). `dfs.RATE_BUCKETS` says `research` for projections (as `ratelimit.py`); `test_im5.py` updated.
+* Re-recorded `projections_dk_matchup.json` and `slate_published_dk.json` from the merged tree's fixture API (:8764):
+  IN-3's real context. Week 5 "Worth a look": **WR 4, RB 0, TE 0, QB 0** on both the board and the published slate (7
+  likely soft-corner calls in all; 4 also have a second favourable signal) — not empty, not 40+: the rule stays. The e2e
+  count on the published slate is now 4. Screenshots replaced.
+* Seen, not mine: `tests/test_metric_registry.py::test_every_documented_metric_has_a_registry_row` fails on `integ/IN`
+  itself (IN-3's `mb1.0` in docs/METRICS.md has no `metric_registry.csv` row) — the one new root failure.

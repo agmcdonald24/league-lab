@@ -1,10 +1,10 @@
 // Wave I-N (IN-4): DFS without the homework — /dfs with no file opens on the board with its context (chips, the row's
 // reasons, "What the projection already holds"); with the matchup signal "Worth a look" lists receivers; a published
 // slate opens on its values (no upload) and builds a stacked lineup by its id. The answers were recorded from the
-// fixture API on the clone (web/fixtures/in4/*.json; the salary file is the SYNTHETIC IM-5 fixture published as
-// 2026-w05-dk.csv; the matchup signal in projections_dk_matchup.json / slate_published_dk.json is the TEST FAKE with the
-// brief's exact shape, because IN-3's matchup_board is not in this branch). Phone at 375 and desktop at 1300;
-// screenshots into docs/handbacks/in4/.
+// fixture API (web/fixtures/in4/*.json; the salary file is the SYNTHETIC IM-5 fixture published as 2026-w05-dk.csv).
+// projections_dk_matchup.json and slate_published_dk.json carry IN-3's real matchup context, re-recorded from the merged
+// tree's fixture API on :8764 (the fix round); projections_dk.json is the board without the matchup module.
+// Phone at 375 and desktop at 1300; screenshots into docs/handbacks/in4/.
 import { expect, test, type BrowserContext, type Page, type Route } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -101,7 +101,7 @@ test("DFS with a published slate: values with no upload, then a stacked lineup",
   await expect(page.getByTestId("dfs-published")).toContainText("published here so you do not have to add one");
   await expect(page.getByTestId("dfs-answer")).toContainText("597 of 599 players on the published DraftKings file valued");
   await expect(page.getByTestId("dfs-remove")).toHaveCount(0);
-  await expect(page.getByTestId("dfs-worth").getByTestId("dfs-worth-row")).toHaveCount(8);
+  await expect(page.getByTestId("dfs-worth").getByTestId("dfs-worth-row")).toHaveCount(4);   // IN-3's real context, week 5: 4 receivers
   await expect(page.getByTestId("dfs-worth")).toContainText("Ordered by points per $1,000.");
   await expect(page.getByTestId("dfs-undervalued").getByTestId("dfs-value-row")).toHaveCount(8);
   expect(calls.filter((c) => c.startsWith("POST /api/dfs/slate")).length).toBe(0);   // nothing uploaded
