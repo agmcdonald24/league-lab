@@ -347,7 +347,8 @@ async def slate(request: Request, week: int | None = Query(default=None)):
         return _err(exc, 413 if exc.code == "too_large" else 400)
     except Bad as exc:
         return _err(exc)
-    return JSONResponse(_clean(out), headers=NO_STORE)
+    # ---- IN-4: the answer grew with the context (~0.6 MB): cleaned and rendered in the thread pool
+    return await run_in_threadpool(lambda: JSONResponse(_clean(out), headers=NO_STORE))
 
 
 def _slate_work(text: str, week: int | None) -> dict:
@@ -465,7 +466,7 @@ async def lineups(request: Request):
         contest, players, mode, n, locks, excludes, stack, exposure, sid = _lineups_in(raw)
         outs_from = None
         if sid is not None:                              # ---- IN-4: a published slate's players, from the server
-            built = _cached_slate(sid) or await _one_at_a_time(built_slate, sid)
+            built = await run_in_threadpool(_cached_slate, sid) or await _one_at_a_time(built_slate, sid)
             contest = built["contest"]
             players = _published_pool(built, locks)
             outs_from = built["players"]
@@ -858,9 +859,11 @@ def built_slate(slate_id: str) -> dict:
     return out
 
 
-def _cached_slate(slate_id: str) -> dict | None:
+def _cached_slate(slate_id: str, week: tuple[int, int] | None = None) -> dict | None:
+    """The built slate if it is kept (no build). ``week``: (season, this week) when the caller has it; otherwise read
+    here — a database read, so an async route calls this through the thread pool."""
     try:
-        season, now = _this_week()
+        season, now = week if week is not None else _this_week()
     except Bad:
         return None
     return _built.get((slate_id, season, now, A.board_source()))
@@ -872,7 +875,7 @@ async def slates(site: str | None = None):
     matched. Files of other weeks are listed as not offered; unreadable files with their reason."""
     try:
         s = _site(site) if site else None
-        season, now = _this_week()
+        season, now = await run_in_threadpool(_this_week)          # database reads: off the event loop
         pub = await run_in_threadpool(published)
     except Bad as exc:
         return _err(exc)
@@ -886,7 +889,7 @@ async def slates(site: str | None = None):
             continue
         row = {k: m[k] for k in ("id", "site", "label", "season", "week", "contest", "contest_label", "on_file")}
         row["site_name"] = D.SITE_NAMES[m["site"]]
-        b = _cached_slate(sid)
+        b = _cached_slate(sid, (season, now))
         if b is None:
             try:
                 b = await _one_at_a_time(built_slate, sid)
@@ -908,13 +911,13 @@ async def slate_published(slate_id: str):
     """The published slate's answer: exactly what ``POST /api/dfs/slate`` gives for that file, plus its id."""
     if not D.slate_id_ok(slate_id):
         return _err(Bad(NOT_PUBLISHED, "not_published", 404))
-    hit = _cached_slate(slate_id)
-    if hit is not None:
-        return JSONResponse(_clean(hit), headers={"Cache-Control": "private, max-age=120"})
-    try:
-        out = await _one_at_a_time(built_slate, slate_id)
-    except Busy:
-        return _busy()
-    except Bad as exc:
-        return _err(exc)
-    return JSONResponse(_clean(out), headers={"Cache-Control": "private, max-age=120"})
+    hit = await run_in_threadpool(_cached_slate, slate_id)
+    if hit is None:
+        try:
+            hit = await _one_at_a_time(built_slate, slate_id)
+        except Busy:
+            return _busy()
+        except Bad as exc:
+            return _err(exc)
+    # ~0.6 MB of JSON: cleaned and rendered in the thread pool, never on the event loop
+    return await run_in_threadpool(lambda: JSONResponse(_clean(hit), headers={"Cache-Control": "private, max-age=120"}))
