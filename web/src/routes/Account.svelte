@@ -255,7 +255,7 @@
           <p class="text-base text-ink-2" data-testid="saved-none">None saved yet. <a class="ll-link" href="/leagues">Pick a league</a>: it is saved here as you pick it.</p>
         {:else}
           <ul class="divide-y divide-line rounded-lg border border-line bg-surface">
-            {#each me.leagues as l (l.league_key)}
+            {#each me.leagues as l, ix (`${l.league_key}#${ix}`)}
               <li class="space-y-1 px-3 py-3" data-testid="saved-league" data-league={l.league}>
                 <div class="flex items-baseline justify-between gap-2">
                   <a class="ll-link min-w-0 truncate text-base font-semibold" href={openHref(l)} data-testid="saved-open">{l.name ?? l.league}</a>
@@ -285,7 +285,7 @@
             >Your watchlist</a
           >: {nWatch === 1 ? "1 player" : `${nWatch} players`}.
         </p>
-        {#each me.connections ?? [] as c (c.provider + c.external_user_id)}
+        {#each me.connections ?? [] as c, ix (`${c.provider}|${c.external_user_id}#${ix}`)}
           <p class="text-base text-ink-2" data-testid="account-connection" data-provider={c.provider} data-status={c.status}>
             {c.provider === "yahoo" ? "Yahoo" : "ESPN"}: {c.status === "active"
               ? `connected${c.connected_at ? ` ${c.connected_at.slice(0, 10)}` : ""} — it comes back on any device you sign in on.`
@@ -304,7 +304,7 @@
           <h2 class="ll-label">Passkeys</h2>
           {#if keys.length}
             <ul class="divide-y divide-line rounded-lg border border-line bg-surface">
-              {#each keys as k (k.id)}
+              {#each keys as k, ix (`${k.id}#${ix}`)}
                 {@const last = keys.length === 1 && !emailWorks}
                 <li class="flex items-center justify-between gap-3 px-3 py-3" data-testid="passkey-row" data-label={k.label}>
                   <div class="min-w-0">

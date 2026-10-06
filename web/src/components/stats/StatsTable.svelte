@@ -243,7 +243,7 @@
     </thead>
     <tbody>
       {#if windowed && start > 0}<tr class="ll-spacer" aria-hidden="true" style="height:{start * rowH}px"><td colspan={cols.length + 1 + (owner ? 1 : 0)}></td></tr>{/if}
-      {#each visible as p, i (p.gsis_id)}
+      {#each visible as p, i (`${p.gsis_id}#${i}`)}
         {@const short = shorts[p.gsis_id]}
         <tr class="{mine(p) ? 'll-mine' : ''} {hl === p.gsis_id ? 'll-hl' : ''}" data-id={p.gsis_id} data-testid="players-table-row" aria-rowindex={windowed ? start + i + headRows + 1 : undefined}>
           <th scope="row" class="ll-stick bg-surface py-1.5 pr-2 pl-2 text-left font-normal sm:pl-3">

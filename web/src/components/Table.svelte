@@ -72,7 +72,7 @@
       </tr>
     </thead>
     <tbody>
-      {#each rows as r, i (rowKey(r, i))}
+      {#each rows as r, i (`${rowKey(r, i)}#${i}`)}
         <tr class="border-b border-line last:border-0 {highlight?.(r) ? 'bg-accent-soft' : ''}" data-testid={`${testid}-row`}>
           {#each columns as c (c.key)}
             <td class="px-2 {dense ? 'py-1.5' : 'py-2'} align-middle first:pl-3 last:pr-3 {align(c)} {hide(c)} {c.align === 'right' ? 'tabnum' : ''}">

@@ -297,7 +297,7 @@
                         <span class="chev" aria-hidden="true">›</span>Why? The numbers behind it
                       </summary>
                       <div class="mt-1 space-y-3">
-                        {#each why as c (c.slot)}
+                        {#each why as c, ix (`${c.slot}#${ix}`)}
                           {@const cmp = compareHref(c)}
                           <div class="space-y-1 border-t border-line pt-2" data-testid="action-call">
                             <p class="text-base leading-snug"><span class="ll-label text-ink-3">{c.slot_label}</span> <Md text={cardCall(c, cardStatus(c, data!.lineup_full))} {ctx} /></p>
@@ -407,7 +407,7 @@
           {#if data.cards.length === 0 && data.notice}
             <p class="rounded-lg bg-raised p-4 text-base" data-testid="no-calls"><Md text={data.notice} {ctx} /></p>
           {/if}
-          {#each data.cards as c (c.slot)}
+          {#each data.cards as c, ix (`${c.slot}#${ix}`)}
             <!-- ---- IB-3: the status chip first, the call in one line (both names), the strength, IA-1's one reason (last
                  names), Compare these players; the odds, the ranges and the numbers behind Why? -->
             {@const st = cardStatus(c, data.lineup_full)}

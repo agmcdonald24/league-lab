@@ -16,7 +16,7 @@
       <thead>
         <tr class="text-left text-ink-3">
           <th class="py-0.5 pr-2 font-normal">Week</th>
-          {#each strip.weeks as w (w)}<th class="px-1.5 py-0.5 text-right font-normal">{w}</th>{/each}
+          {#each strip.weeks as w, ix (`${w}#${ix}`)}<th class="px-1.5 py-0.5 text-right font-normal">{w}</th>{/each}
         </tr>
       </thead>
       <tbody>

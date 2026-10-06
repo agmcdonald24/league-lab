@@ -18,7 +18,7 @@
     </tr>
   </thead>
   <tbody>
-    {#each rows as r (r.week)}
+    {#each rows as r, ix (`${r.week}#${ix}`)}
       <tr class="border-b border-line align-top last:border-0" data-testid="schedule-row">
         <td class="py-1.5 font-semibold text-ink-2">{r.week}</td>
         <td class="py-1.5 leading-snug">

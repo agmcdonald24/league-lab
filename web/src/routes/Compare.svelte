@@ -172,7 +172,7 @@
     {/if}
     {#if hs.length}
       <ul class="absolute inset-x-0 top-full z-20 mt-1 max-h-72 overflow-y-auto rounded-md border border-line bg-surface shadow-lg" data-testid={`compare-hits-${side}`}>
-        {#each hs as h (h.gsis_id)}
+        {#each hs as h, ix (`${h.gsis_id}#${ix}`)}
           <li>
             <button type="button" class="block min-h-11 w-full px-3 py-2 text-left text-sm hover:bg-raised" onclick={() => choose(side, h)}>
               <span class="font-semibold">{h.player_name}</span> <span class="text-ink-3">{h.position} · {teamLabel(h.team) ?? "FA"}</span>
@@ -293,7 +293,7 @@
         <table class="tabnum w-full text-sm">
           <thead><tr class="ll-label text-left"><th class="py-1 font-semibold">Week</th><th class="py-1 font-semibold">{A.player_name.split(" ").slice(-1)[0]}</th><th class="py-1 font-semibold">{B.player_name.split(" ").slice(-1)[0]}</th></tr></thead>
           <tbody>
-            {#each A.next4 as w, i (w.week)}
+            {#each A.next4 as w, i (`${w.week}#${i}`)}
               {@const o = B.next4[i]}
               <tr class="border-t border-line">
                 <td class="py-1.5">{w.week}</td>

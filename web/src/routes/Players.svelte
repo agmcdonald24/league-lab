@@ -444,11 +444,11 @@
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-sm tabnum">
-          <thead><tr><th class="py-1 text-left font-normal text-ink-2">{r.data?.window.label}</th>{#each selected as p (p.gsis_id)}<th class="px-2 py-1 text-right">{p.player_name}</th>{/each}</tr></thead>
+          <thead><tr><th class="py-1 text-left font-normal text-ink-2">{r.data?.window.label}</th>{#each selected as p, ix (`${p.gsis_id}#${ix}`)}<th class="px-2 py-1 text-right">{p.player_name}</th>{/each}</tr></thead>
           <tbody>
-            <tr><td class="py-1 text-ink-2">Games</td>{#each selected as p (p.gsis_id)}<td class="px-2 text-right">{p.games}</td>{/each}</tr>
+            <tr><td class="py-1 text-ink-2">Games</td>{#each selected as p, ix (`${p.gsis_id}#${ix}`)}<td class="px-2 text-right">{p.games}</td>{/each}</tr>
             {#each cols.filter((c) => c.id !== "games") as c (c.id)}
-              <tr><td class="py-1 text-ink-2">{title(c)}</td>{#each selected as p (p.gsis_id)}<td class="px-2 text-right" title={why(c, p)}>{show(c, p)}</td>{/each}</tr>
+              <tr><td class="py-1 text-ink-2">{title(c)}</td>{#each selected as p, ix (`${p.gsis_id}#${ix}`)}<td class="px-2 text-right" title={why(c, p)}>{show(c, p)}</td>{/each}</tr>
             {/each}
           </tbody>
         </table>

@@ -177,7 +177,7 @@
             <p class="p-4 text-base text-ink-2" data-testid="trends-empty">No player matches these filters.</p>
           {/if}
           <ul class="divide-y divide-line">
-            {#each shown as p (p.gsis_id)}
+            {#each shown as p, ix (`${p.gsis_id}#${ix}`)}
               <li>
                 <PlayerRow
                   player={p}

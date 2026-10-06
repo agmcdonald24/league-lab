@@ -29,7 +29,7 @@
 <div class="flex min-w-0 gap-2" data-testid="picker">
   <label class="sr-only" for="ll-league">League</label>
   <select id="ll-league" class={sel} value={league ?? ""} onchange={(e) => onleague(e.currentTarget.value)} data-testid="pick-league">
-    {#each leagues as l (l.league_id)}
+    {#each leagues as l, ix (`${l.league_id}#${ix}`)}
       <option value={l.league_id}>{l.name}</option>
     {/each}
     <option value={OTHER}>Other leagues (Sleeper or MFL)…</option><!-- IE-0: both platforms -->
@@ -43,7 +43,7 @@
     data-testid="pick-team"
   >
     <option value="">Pick your team</option>
-    {#each rosters as r (r.roster_id)}
+    {#each rosters as r, ix (`${r.roster_id}#${ix}`)}
       <option value={String(r.roster_id)}>{r.team_name}{r.manager_name ? ` (${r.manager_name})` : ""}</option>
     {/each}
   </select>
