@@ -198,7 +198,7 @@
                   <span class="block truncate font-semibold text-ink" data-testid="board-name">{r.player_name}</span>
                   <span class="block truncate text-xs text-ink-3">
                     {r.position} · {teamLabel(r.team) ?? "—"}{#if status(r)} · <span class="font-semibold text-warn">{status(r)}</span>{/if}{#if owners}<span class="wide:hidden"> · {owner(r)}</span>{/if}
-                    <span class="wide:hidden"> · {r.is_home === false ? "at" : "vs"} {teamLabel(r.opponent)}</span>{#if r.game_state}<span class="wide:hidden"> · </span><span class="rounded bg-raised px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-ink-2 uppercase wide:hidden" data-testid="board-state">{STATE_WORD[r.game_state]}</span>{/if}
+                    <span class="wide:hidden"> · {r.is_home === false ? "at" : "vs"} {teamLabel(r.opponent)}</span>{#if r.game_state}<span class="wide:hidden">{" · "}</span><span class="rounded bg-raised px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-ink-2 uppercase wide:hidden" data-testid="board-state">{STATE_WORD[r.game_state]}</span>{/if}
                   </span>
                 </span>
                 <span class="wide:hidden"><ToneChip tone={r.context.tone as Tone | null} testid="board-tone-chip" /></span>
