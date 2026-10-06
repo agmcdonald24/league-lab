@@ -445,6 +445,17 @@ models:
         tests:
           - not_null:
               config: {where: "has_receiving"}
+      # ---- IM-1 (Wave I-M): the remaining NGS fields the Stats Explorer reads (weighted by the denominators above)
+      - name: avg_time_to_los
+        description: "IM-1: NGS's average time from the handoff to the line of scrimmage (seconds), weighted by ngs_rush_attempts over a window."
+        tests:
+          - not_null:
+              config: {where: "has_rushing and week > 0"}
+      - name: rec_avg_intended_air_yards
+        description: "IM-1: NGS's average intended air yards on the receiver's targets, weighted by ngs_targets over a window."
+        tests:
+          - not_null:
+              config: {where: "has_receiving and week > 0"}
   # ---- end IL-1
 
   # ---- IM-1 (Wave I-M): the Stats Explorer's advanced numerators (play-by-play efficiency + PFR advanced, weekly)
@@ -458,6 +469,10 @@ models:
           name: advanced_pfr_counts_only_with_a_pfr_row
           arguments:
             expression: "(has_pfr_rec or pfr_drops is null) and (has_pfr_rush or pfr_carries is null) and (has_pfr_pass or pfr_times_pressured is null)"
+      - expression_is_true:
+          name: advanced_counts_within_one_game
+          arguments:
+            expression: "coalesce(pfr_drops, 0) <= 30 and coalesce(pfr_times_pressured, 0) <= 60 and coalesce(dropback_successes, 0) <= 90"
       - expression_is_true:
           name: advanced_counts_are_not_negative
           arguments:
