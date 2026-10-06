@@ -86,7 +86,8 @@
 
   // ---- the columns: the preset's defaults, or the URL's pick (the column picker)
   const cat = $derived(new Map((r.data?.catalogue ?? []).map((c) => [c.id, c])));
-  const ALL_COLS = ["games", "points", "targets", "target_share", "carries", "carry_share", "snap_share"];
+  // ---- IN-2: + the value while browsing (`ros_value`: only a reference key's catalogue has it; elsewhere it drops out)
+  const ALL_COLS = ["games", "points", "ros_value", "targets", "target_share", "carries", "carry_share", "snap_share"];
   const preset = $derived(r.data?.presets.find((p) => p.key === group) ?? null);
   const defaults = $derived(preset ? preset.columns : ALL_COLS);
   const picked = $derived((params.get("cols") ?? "").split(",").filter((c) => c && cat.has(c)));

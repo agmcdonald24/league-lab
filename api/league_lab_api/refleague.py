@@ -636,7 +636,8 @@ def stats_values(d: dict, key: str, sort: str | None = None, direction: str | No
             off, n = max(0, int(cut[0] or 0)), max(1, int(cut[1] or 1))
             d["players"], d["offset"] = d["players"][off: off + n], off
     cat = [c for c in (d.get("catalogue") or []) if c.get("id") != VALUE_COLUMN]
-    d["catalogue"] = cat + [value_column(sh)]
+    at = next((i + 1 for i, c in enumerate(cat) if c.get("id") == "points"), len(cat))
+    d["catalogue"] = cat[:at] + [value_column(sh)] + cat[at:]          # beside the points (the table's order)
 
     def _after_points(cols: list) -> list:
         cols = [c for c in cols if c != VALUE_COLUMN]
