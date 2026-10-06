@@ -5,8 +5,11 @@
   // IB-1 (Wave I-B): the screens grouped by task — four tabs: My Team · Waivers · Trades · Players. Each tab with more
   // than one screen shows them as a second row (sub-tabs). The paths stay (bookmarks, shared links); About the
   // numbers moved to the bar's overflow menu (⋯) and the foot of My Team.
-  export type Section = "myteam" | "waivers" | "trades" | "players" | "dfs"; // ---- IM-5: "dfs"
+  export type Section = "home" | "myteam" | "waivers" | "trades" | "players" | "dfs"; // ---- IM-5: "dfs"; PO (I-N merge): "home"
   export const SECTIONS: { key: Section; label: string; screens: { name: RouteName; label: string; path: string }[] }[] = [
+    // ---- PO (Wave I-N merge): Home — a tab while browsing without a league (with a league My Team is the home; the
+    // menu's Home and Blog stay): IN-1's screen in the place IN-2's REF_ORDER keeps for it
+    { key: "home", label: "Home", screens: [{ name: "home", label: "Home", path: "/home" }] },
     {
       key: "myteam",
       label: "My Team",
@@ -125,7 +128,7 @@
   const href = (path: string) => withContext(path, ctx);
   // ---- IN-2 (Wave I-N): browsing without a league the tab bar reads Home · Players · Trades · DFS — My Team and
   // Waivers are behind "Open your league" — and Trades is the calculator alone (never the invitation card)
-  const sections = $derived(isRef(league) ? refSections(SECTIONS) : SECTIONS);
+  const sections = $derived(isRef(league) ? refSections(SECTIONS) : SECTIONS.filter((s) => s.key !== "home"));
   // ---- end IN-2
   // a tab opens its first screen
   const tabs = $derived(sections.map((s) => ({ key: s.key, label: s.label, href: href(s.screens[0].path) })));
@@ -198,7 +201,9 @@
 
 {#snippet icon(key: string)}
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    {#if key === "myteam"}
+    {#if key === "home"}
+      <path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" />
+    {:else if key === "myteam"}
       <rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" />
     {:else if key === "waivers"}
       <path d="M12 5v14M5 12h14" /><circle cx="12" cy="12" r="9" />

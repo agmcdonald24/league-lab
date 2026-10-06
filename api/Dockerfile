@@ -42,6 +42,10 @@ COPY app/lib /srv/app/lib
 COPY app/pages /srv/app/pages
 # the league_lab package the cards (decisions) and the on-demand path (anyleague, lineup, scoring) import (plan E3)
 COPY src/league_lab /srv/src/league_lab
+# Wave I-N: the blog's posts and pictures (docs/BLOG.md: a markdown file in blog/ and a push publishes it) and the
+# week's published DFS salary files (docs/DFS.md § "Published slates"); both are read once at start, never written
+COPY blog /srv/blog
+COPY dfs/slates /srv/dfs/slates
 COPY --from=web /src/web/dist /srv/web/dist
 # compile the code once now: the server runs as nobody and cannot write __pycache__ next to it
 RUN /srv/api/.venv/bin/python -m compileall -q /srv/api/league_lab_api /srv/app /srv/src \

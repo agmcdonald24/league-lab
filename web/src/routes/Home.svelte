@@ -6,7 +6,7 @@
   // existing route on Half PPR (`ref:half`) and hides itself when its call fails: never an error card on the home.
   import { untrack } from "svelte";
   import { APP_MARK, APP_NAME } from "../lib/brand";
-  import { get, aboutPath, blogPaths, homePaths, paths, type AboutAnswer, type BlogMeta, type Board, type RecordAnswer, type RosList } from "../lib/api";
+  import { get, aboutPath, blogPaths, homePaths, paths, type AboutAnswer, type BlogMeta, type MatchupBoard, type RecordAnswer, type RosList } from "../lib/api";
   import { BROWSE_HREF, REF_DEFAULT, refLabel } from "../lib/refleague";
   import { recordView, STARTS } from "../lib/record";
   import { withContext } from "../lib/md";
@@ -31,8 +31,8 @@
     if (top[p] && top[p] !== "failed") return;
     top[p] = "loading";
     // both at once (a missing board must not cost a second round trip); the board wins when it has rows
-    const [b, r] = await Promise.allSettled([get<Board>(homePaths.board(L, p, null, 5)), get<RosList>(homePaths.ros(L, p, 40))]);
-    const fromB = b.status === "fulfilled" ? (b.value.rows ?? b.value.players ?? []).map(fromBoard).filter((x): x is TopRow => x !== null) : [];
+    const [b, r] = await Promise.allSettled([get<MatchupBoard>(homePaths.board(L, p, null, 5)), get<RosList>(homePaths.ros(L, p, 40))]);
+    const fromB = b.status === "fulfilled" ? (b.value.rows ?? []).map(fromBoard).filter((x): x is TopRow => x !== null) : [];
     const fromR = r.status === "fulfilled" ? fromRos(r.value.players, 5) : [];
     top[p] = fromB.length ? fromB.slice(0, 5) : fromR.length ? fromR : "failed";
   }
@@ -46,11 +46,11 @@
 
   // ---- matchups to target this week (IN-3's board, sorted by the matchup's tone); hidden without the route
   let board = $state<ReturnType<typeof fromBoardWithTone> | null>(null);
-  function fromBoardWithTone(b: Board) {
-    return (b.rows ?? b.players ?? []).filter((r) => r.gsis_id).slice(0, 5).map((r) => ({ r, t: toneOf(r) }));
+  function fromBoardWithTone(b: MatchupBoard) {
+    return (b.rows ?? []).filter((r) => r.gsis_id).slice(0, 5).map((r) => ({ r, t: toneOf(r) }));
   }
   $effect(() => {
-    get<Board>(homePaths.board(L, "WR", "tone", 5))
+    get<MatchupBoard>(homePaths.board(L, "WR", "tone", 5))
       .then((b) => {
         const rows = fromBoardWithTone(b);
         board = rows.length ? rows : null;
@@ -177,7 +177,7 @@
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-baseline gap-x-2">
                   <a href={link(`/player/${r.gsis_id}`)} class="font-semibold hover:underline">{r.player_name}</a>
-                  {#if r.opponent}<span class="text-sm text-ink-3">{r.home === false ? "at" : "vs"} {r.opponent}</span>{/if}
+                  {#if r.opponent}<span class="text-sm text-ink-3">{r.is_home === false ? "at" : "vs"} {r.opponent}</span>{/if}
                 </div>
                 {#if t.words}<p class="text-sm leading-snug text-ink-2">{t.words}</p>{/if}
               </div>

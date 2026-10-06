@@ -17,10 +17,9 @@ export interface TopRow {
 
 const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
-/** A row of IN-3's board → the projections module's row (its projection and this week's range, when it carries one). */
+/** A row of IN-3's board → the projections module's row (his projection and this week's range). */
 export function fromBoard(r: BoardRow): TopRow | null {
-  const p = r.projection;
-  const week = num(typeof p === "number" ? p : (p?.proj_points ?? r.proj ?? r.proj_points));
+  const week = num(r.proj_points);
   if (!r.gsis_id || week === null) return null;
   return {
     gsis_id: r.gsis_id,
@@ -29,8 +28,8 @@ export function fromBoard(r: BoardRow): TopRow | null {
     team: r.team ?? null,
     headshot_url: r.headshot_url ?? null,
     week,
-    low: num(r.p10 ?? (typeof p === "object" && p ? p.p10 : null)),
-    high: num(r.p90 ?? (typeof p === "object" && p ? p.p90 : null)),
+    low: num(r.p10),
+    high: num(r.p90),
     ros: null,
     rosLow: null,
     rosHigh: null,
@@ -58,9 +57,8 @@ export function fromRos(players: RosPlayer[], n = 5): TopRow[] {
     }));
 }
 
-export function toneOf(r: BoardRow): MatchupTone {
-  const c = r.context ?? r.matchup ?? null;
-  return { tone: r.tone ?? c?.tone ?? null, words: r.words ?? c?.words ?? null };
+export function toneOf(r: BoardRow): { tone: MatchupTone | null; words: string | null } {
+  return { tone: r.context?.tone ?? null, words: r.context?.words ?? null };
 }
 
 export const TONE_WORDS = { favorable: "Favorable", neutral: "Neutral", difficult: "Difficult" } as const;

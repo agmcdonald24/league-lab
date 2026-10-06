@@ -152,7 +152,8 @@ test("home: the name, one sentence, two actions and live projections above the f
 
 test("home: when the matchup board answers, matchups to target show and the projections carry this week's range", async ({ context, page, isMobile }, info) => {
   const row = (gsis: string, name: string, team: string, opp: string, proj: number, tone: string, words: string) => ({
-    gsis_id: gsis, player_name: name, position: "WR", team, opponent: opp, home: true, proj, p10: proj - 7, p90: proj + 9, tone, words,
+    gsis_id: gsis, player_name: name, position: "WR", team, opponent: opp, is_home: true, proj_points: proj, p10: proj - 7, p90: proj + 9,
+    context: { opponent: opp, home: true, defense: { tone, tough_rank: null, n_ranked: 32, words }, cb: null, tone, words }, // IN-3's shape
   });
   const board = {
     rows: [

@@ -2213,32 +2213,6 @@ export interface BoardCorner {
   tone: MatchupTone | null;
 }
 export interface BoardRow {
-// ---- IN-1 (Wave I-N): the blog (GET /api/blog, /api/blog/{slug}; api/league_lab_api/blog.py) and the home's reads
-export interface BlogMeta {
-  slug: string;
-  title: string;
-  date: string; // YYYY-MM-DD
-  summary: string;
-  author: string;
-  tags: string[];
-  minutes: number;
-  image: string | null; // "/blog/img/<name>" or null
-  draft?: boolean; // only with LEAGUE_LAB_BLOG_DRAFTS=on
-}
-export interface BlogPost extends BlogMeta {
-  markdown: string;
-}
-export const blogPaths = {
-  list: (limit = 20) => `/api/blog?limit=${limit}`,
-  post: (slug: string) => `/api/blog/${encodeURIComponent(slug)}`,
-};
-/** IN-3's matchup board (GET /api/matchups/board; brief § "Interfaces fixed now"): read loosely — the home shows the
- *  player, his projection and the context's words, and hides the module when the route is missing (404). */
-export interface MatchupTone {
-  tone?: "favorable" | "neutral" | "difficult" | null;
-  words?: string | null;
-}
-export interface BoardRow extends MatchupTone {
   gsis_id: string;
   player_name: string;
   position: string;
@@ -2306,6 +2280,7 @@ export const boardPath = (league: string, b: BoardQuery) => {
   return `/api/matchups/board?${p.toString()}`;
 };
 // ---- end IN-3
+
 // ---- IN-2 (Wave I-N): the lab without a league — a player's value on a reference key (the card's `ref_value`, its
 // foot line) and the trade calculator without a league (GET /api/trade-calc/free; api/league_lab_api/freetrade.py)
 export interface RefPricing {
@@ -2398,28 +2373,34 @@ export interface CompareSide {
 export const freeTradePath = (league: string, give: string[], getIds: string[]) =>
   `/api/trade-calc/free?league=${encodeURIComponent(league)}&give=${encodeURIComponent(give.join(","))}&get=${encodeURIComponent(getIds.join(","))}`;
 // ---- end IN-2
-  headshot_url?: string | null;
-  opponent?: string | null;
-  home?: boolean | null;
-  proj?: number | null;
-  proj_points?: number | null;
-  projection?: number | { proj_points?: number | null; p10?: number | null; p90?: number | null } | null;
-  p10?: number | null;
-  p90?: number | null;
-  context?: MatchupTone | null;
-  matchup?: MatchupTone | null;
+
+// ---- IN-1 (Wave I-N): the blog (GET /api/blog, /api/blog/{slug}; api/league_lab_api/blog.py) and the home's reads
+export interface BlogMeta {
+  slug: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  summary: string;
+  author: string;
+  tags: string[];
+  minutes: number;
+  image: string | null; // "/blog/img/<name>" or null
+  draft?: boolean; // only with LEAGUE_LAB_BLOG_DRAFTS=on
 }
-export interface Board {
-  rows?: BoardRow[];
-  players?: BoardRow[];
-  total?: number;
+export interface BlogPost extends BlogMeta {
+  markdown: string;
 }
+export const blogPaths = {
+  list: (limit = 20) => `/api/blog?limit=${limit}`,
+  post: (slug: string) => `/api/blog/${encodeURIComponent(slug)}`,
+};
+// the home reads IN-3's matchup board (MatchupBoard / BoardRow above) and hides its module when the route fails
 export const homePaths = {
   board: (league: string, position: string, sort: string | null, limit: number) =>
     `/api/matchups/board?league=${encodeURIComponent(league)}&position=${position}${sort ? `&sort=${sort}` : ""}&limit=${limit}`,
   ros: (league: string, position: string, limit: number) => `/api/ros?league=${encodeURIComponent(league)}&position=${position}&limit=${limit}`,
 };
 // ---- end IN-1
+
 // ---- IN-5 (Wave I-N): a starting spot nobody on the roster can fill is its own action (kind "change": a roster alert):
 // `open_slot` says which spot and who cannot play; `href` is Waivers at that position, `href_label` the link's words
 // ("Find a quarterback on Waivers"). Additive: declaration merging.
@@ -2436,6 +2417,7 @@ export interface WeekAction {
   href_label?: string | null;
 }
 // ---- end IN-5
+
 // ---- IN-6 (Wave I-N): the League screen's power rankings and the rest of the season (GET /api/league/outlook;
 // api/league_lab_api/outlook.py, docs/METRICS.md § "Power rankings and the season outlook")
 export interface PowerRow {
