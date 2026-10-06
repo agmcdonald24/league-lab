@@ -54,6 +54,14 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   macro `league_lab_now()`, unchanged in production; the view needs its rebuild). `api/tests/test_in5.py` (Andrew's
   morning from the database's week-5 rows), `web/e2e/in5`, `docs/handbacks/IN-5.md`.
 <!-- ---- end IN-5 -->
+- **IN-6 — the League screen's power rankings and the rest of the season** (`GET /api/league/outlook`, `outlook.py`,
+  `components/league/Outlook.svelte`; METRICS § "Power rankings and the season outlook", ol1.0): every team ranked by
+  its best lineup's expected points per week over the rest of the season (record, points for / against, the
+  record-vs-points gap in words and the schedule left beside it; no arrows: last week's board is not kept), and 10,000
+  simulated seasons of the weeks left on the week's odds' own pieces — projected record with its middle 80%, playoff
+  odds (wins, then points for), top seed, a bye where the bracket has byes; clinched / out only when proven; no title
+  odds; MyFantasyLeague without playoff odds (no playoff team count). Replayed on 2024–25 from week 5: Brier 0.179
+  against 0.245 flat. The `heavy` bucket; `memo` region `outlook`.
 
 ## 2026-10-06 — hotfix: the Team screen with two open lineup spots
 

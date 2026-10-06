@@ -528,6 +528,23 @@ where it would add something. "No league" is never shown (the API's `league_name
 | link previews (`blog.py` `PAGES`) | "/blog": "Blog · isuckatfantasy" / "Fantasy football analysis from isuckatfantasy: what the numbers say, how they are made, and where they have been wrong." · "/players": "Every player's numbers · isuckatfantasy" · "/matchups": "This week's matchups · isuckatfantasy" · "/trade-calc": "Trade calculator · isuckatfantasy" · "/dfs": "Daily fantasy values · isuckatfantasy" · a post: its title and summary | a promise ("win your league") |
 | posts written by the site | author **isuckatfantasy**, never Andrew's voice; Andrew's own posts carry his name | — |
 <!-- ---- end IN-1 -->
+<!-- ---- IN-6 (Wave I-N) -->
+## Power rankings and the rest of the season (Wave I-N, IN-6; METRICS § "Power rankings and the season outlook")
+
+| Where | The words we use | Never |
+|---|---|---|
+| League, the first block's title and line | **Power rankings** · "Ranked by the points each team's best lineup is expected to score per week over the rest of the season (weeks 5–16), with today's rosters and injuries." | a blend, a "power score", a secret formula; "best team" |
+| its columns | **Per week** (the rank before the number: "1. 119.5") · **Record · points for** ("2–1 · 383 (5th)") · **Against** · **Schedule left** ("111.9 · 7th-hardest", "hardest", "easiest") | luck words in this table (the luck card has them) |
+| the record against the points, when 3 places or more apart | "3–0 on the 7th-most points: a soft schedule so far" / "1–2 on the most points: a hard schedule so far"; the row's tag **Soft schedule so far** / **Hard schedule so far** | "lucky", "fraud", "due" |
+| no arrows | "No movement arrows: last week's rest-of-season projections are not kept, so last week's ranking cannot be rebuilt." | an arrow made from anything else |
+| the second block | **Rest of season** · "10,000 simulated seasons of weeks 4–14: each game drawn from both lineups' ranges, the same pieces as this week's odds. 4 teams make the playoffs; a tie on wins goes to points for." | "forecast", "prediction", "will make the playoffs" |
+| what it assumes (once) | "It assumes rosters as they are today (no trades, claims or drops ahead); every team starts its best lineup; known injuries only (a player out today is out this week; injured reserve stays out); the further out the week, the wider its range." | — |
+| honesty | "Context, not a graded forecast: the weekly pieces are graded; the season outlook has only been replayed on two past seasons of two leagues." · "No title odds: the playoff bracket is not simulated." | title odds; a percentage as a promise |
+| its columns | **Projected record** ("8.5–5.5", under it "6 to 11 wins") · **Playoffs** ("73%"; "In" when clinched, "Out" when eliminated — proven on wins; "<1%" / ">99%" otherwise at the ends) · **Top seed** · **Bye** (a league with byes only) | 0% / 100% from the simulation alone |
+| no playoff odds | "No playoff odds: MyFantasyLeague does not share how many teams make the playoffs, so playoff odds are left out." · "… this league has divisions: division winners' places are not simulated." | a guessed number of spots |
+| no outlook | "No outlook for the rest of the season: week 3's results are not final yet: the outlook returns once the league has scored it." · "… the schedule for week 9 is not available from the league." · "… the regular season is over." · "… no range for this league yet." | an empty table; an error card |
+| the definitions (a tap on a column's ⓘ) | **Power ranking**: "teams in order of the points their best lineup is expected to score per week over the rest of the season (each week's best legal lineup from today's roster, this league's scoring, the weeks to the league's final). Record and points so far are beside it, not in it." · **Record · points for** ("… \"Soft schedule so far\" / \"Hard schedule so far\" when the record's place and the points' place are 3 or more apart.") · **Against** · **Schedule left** ("Rank 1 = the hardest schedule left.") · **Projected record** ("the middle 80% of the win totals (1 season in 10 ends below, 1 in 10 above)") · **Playoff odds** ("100% and out only when it is certain on wins alone.") · **Top seed** · **Bye** | — |
+<!-- ---- end IN-6 -->
 
 ## Adding to it
 

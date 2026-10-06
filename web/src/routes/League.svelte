@@ -1,7 +1,7 @@
 <script lang="ts">
   import { APP_NAME } from "../lib/brand";
   // League (plan G4; app/pages/8_League.py on GET /api/league): the answer first (your schedule luck and your bench;
-  // without a team, the league's luckiest and unluckiest), then the standings with the record against everyone, who
+  // without a team, the league's luckiest and unluckiest), then IN-6's power rankings and rest of season, then the standings with the record against everyone, who
   // has been lucky (bars either side of 0), points left on the bench, the latest moves, the draft where Sleeper has it.
   import { get, peek, Unauthorized, decisionPaths, type LeagueView, type TransactionRow } from "../lib/api";
   import { weekOddsPath, type WeekOdds, type WeekOddsGame } from "../lib/api"; // ---- IH-3
@@ -18,6 +18,7 @@
   import PosBadge from "../components/PosBadge.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
   import { gapLine } from "../lib/providers"; // ---- II-5: "Transactions: not available for MFL leagues yet"
+  import Outlook from "../components/league/Outlook.svelte"; // ---- IN-6: power rankings + the rest of the season
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
 
@@ -173,6 +174,9 @@
         <p class="mt-1 text-sm text-ink-3">Luck = wins minus the wins your points deserve (your record if you had played every team every week).</p>
       {/snippet}
     </ScreenHead>
+
+    <!-- ---- IN-6 (Wave I-N): the first two blocks — power rankings and the rest of the season (asked after the screen shows) -->
+    <Outlook {league} {team} {onauth} />
 
     <div class="grid grid-cols-1 gap-4 wide:grid-cols-2 wide:items-start">
       <div class="min-w-0 space-y-4">
