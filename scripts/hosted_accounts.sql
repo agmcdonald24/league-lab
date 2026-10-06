@@ -221,6 +221,8 @@ create table if not exists accounts.passkey_challenges (
   constraint passkey_challenges_site    check (length(rp_id) between 1 and 253 and length(origin) between 8 and 300)
 );
 create index if not exists passkey_challenges_created on accounts.passkey_challenges (created_at);
+-- IM-4 fix: the API counts the new accounts of the last hour and day (its global ceilings) on this index
+create index if not exists users_created on accounts.users (created_at);
 -- ---- end IM-4
 
 comment on schema accounts is

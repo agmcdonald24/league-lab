@@ -103,6 +103,15 @@ MAX_ANSWER_BYTES = 32_768                 # an authenticator's answer is a few k
 COOKIE = "ll_passkey"
 COOKIE_PATH = "/api/account/passkey"
 TRANSPORTS = ("usb", "nfc", "ble", "internal", "hybrid", "smart-card", "cable")
+# ---- IM-4 fix (the review's Medium: a script looping register/options → register/verify). Global ceilings counted in
+# the database (a restart forgets nothing, like the emailed links' day cap): new accounts an hour and a day, whatever
+# the address; and the challenges open at once. Sign-in is never paused by them.
+NEW_PER_HOUR_ENV, NEW_PER_DAY_ENV, OPEN_MAX_ENV = ("LEAGUE_LAB_ACCOUNTS_NEW_PER_HOUR", "LEAGUE_LAB_ACCOUNTS_NEW_PER_DAY",
+                                                   "LEAGUE_LAB_PASSKEY_OPEN_MAX")
+NEW_PER_HOUR, NEW_PER_DAY, OPEN_MAX = 30, 200, 1000
+PRUNE_EVERY_S = 60.0
+CREDENTIAL_MAX, KEY_MIN, KEY_MAX, LABEL_MAX = 1023, 16, 2048, 60     # the table's checks, said before the insert
+_pruned = {"at": -1e18}
 
 _LOCAL = re.compile(r"^http://localhost(:\d{1,5})?$")
 _HOST = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$")
@@ -150,6 +159,11 @@ def _cloned() -> A.AccountError:
 def _unknown() -> A.AccountError:
     return _err(400, "passkey_unknown", f"That passkey is not saved to any {APP_NAME} account (it may have been removed). "
                 "Sign in another way, or create a new account.")
+
+
+def _too_big() -> A.AccountError:
+    return _err(400, "passkey_too_big", "We cannot keep that passkey: its id or key is longer than a passkey's may be. "
+                "Try another device or browser.")
 
 
 def _taken() -> A.AccountError:
@@ -294,8 +308,41 @@ def _drop_ceremony(resp: JSONResponse) -> None:
     resp.delete_cookie(COOKIE, path=COOKIE_PATH)
 
 
+def _env_int(name: str, default: int) -> int:
+    try:
+        return max(0, int(os.environ.get(name) or default))
+    except ValueError:
+        return default
+
+
+def _paused() -> A.AccountError:
+    return _err(429, "accounts_paused", "New accounts are paused for a little while. Try again later.")
+
+
+def _creation_paused(c: psycopg.Connection) -> bool:
+    """---- IM-4 fix: the hour's and the day's new accounts (every way in) against the ceilings. Index users_created."""
+    hour, day = c.execute("select count(*) filter (where created_at > now() - interval '1 hour'), count(*) "
+                          "from accounts.users where created_at > now() - interval '1 day'").fetchone()
+    return hour >= _env_int(NEW_PER_HOUR_ENV, NEW_PER_HOUR) or day >= _env_int(NEW_PER_DAY_ENV, NEW_PER_DAY)
+
+
+def _prune(c: psycopg.Connection) -> None:
+    """---- IM-4 fix: challenges older than 10 minutes go (they lived 5), at most once a minute per process — a range
+    delete on the created_at index, a handful of rows (the nightly's script also deletes those older than a day)."""
+    now = A.clock()
+    if now - _pruned["at"] >= PRUNE_EVERY_S:
+        _pruned["at"] = now
+        c.execute("delete from accounts.passkey_challenges where created_at < now() - interval '10 minutes'")
+
+
 def _store_challenge(c: psycopg.Connection, challenge: bytes, nonce: str, purpose: str, user_id: str | None,
                      handle: bytes | None, site: tuple[str, str], ip_hash: bytes) -> None:
+    _prune(c)
+    if c.execute(f"select count(*) from accounts.passkey_challenges where created_at > now() - interval "
+                 f"'{CHALLENGE_MINUTES} minutes'").fetchone()[0] >= _env_int(OPEN_MAX_ENV, OPEN_MAX):
+        raise _err(429, "passkeys_busy", "Passkeys are busy just now. Try again in a few minutes.")
+    if purpose == "create" and _creation_paused(c):
+        raise _paused()
     c.execute("insert into accounts.passkey_challenges (challenge_hash, purpose, user_id, user_handle, browser_hash, "
               f"rp_id, origin, ip_hash, expires_at) values (%s, %s, %s, %s, %s, %s, %s, %s, now() + interval "
               f"'{CHALLENGE_MINUTES} minutes')",
@@ -377,9 +424,7 @@ def _transports(answer: dict) -> list[str]:
 
 
 def _session(c: psycopg.Connection, user_id: str, request: Request) -> str:
-    return str(c.execute(f"insert into accounts.sessions (user_id, expires_at, user_agent_family) values (%s, now() + "
-                         f"interval '{A.SESSION_DAYS} days', %s) returning id",
-                         (user_id, A.agent_family(request.headers.get("user-agent")))).fetchone()[0])
+    return A.new_session(c, user_id, request.headers.get("user-agent"))      # ---- IM-4 fix: at most 20 per account
 
 
 def _signed_in(request: Request, body: dict, user_id: str, session_id: str) -> JSONResponse:
@@ -455,8 +500,10 @@ def register_verify_route(body: AnswerIn, request: Request) -> JSONResponse:
     except _library_errors() as exc:
         raise _refusal(exc, "registration") from None
     cred_id, key, count = bytes(v.credential_id), bytes(v.credential_public_key), int(v.sign_count)
-    label, transports = label_for(request.headers.get("user-agent")), _transports(answer)
+    label, transports = label_for(request.headers.get("user-agent"))[:LABEL_MAX], _transports(answer)
     synced = bool(v.credential_backed_up)
+    if not 1 <= len(cred_id) <= CREDENTIAL_MAX or not KEY_MIN <= len(key) <= KEY_MAX or not 0 <= count <= 0xFFFFFFFF:
+        raise _too_big()                                    # ---- IM-4 fix: the table's checks, in words, never a 500
     insert = ("insert into accounts.passkeys (user_id, credential_id, public_key, sign_count, transports, label, "
               "backed_up) values (%s, %s, %s, %s, %s, %s, %s) returning id, created_at")
 
@@ -477,6 +524,8 @@ def register_verify_route(body: AnswerIn, request: Request) -> JSONResponse:
             pid, made = db.run_rw(add)
         except psycopg.errors.UniqueViolation:            # the same passkey saved by a request a moment earlier
             raise _taken() from None
+        except psycopg.errors.CheckViolation:             # a backstop: the checks above say it first
+            raise _too_big() from None
         resp = A._ok({"added": True, "passkey": {"id": str(pid), "label": label, "created_at": _iso(made),
                                                  "last_used_at": None, "synced": synced}})
         _drop_ceremony(resp)
@@ -485,6 +534,8 @@ def register_verify_route(body: AnswerIn, request: Request) -> JSONResponse:
     def create(c: psycopg.Connection):
         if c.execute("select 1 from accounts.passkeys where credential_id = %s", (cred_id,)).fetchone():
             raise _taken()
+        if _creation_paused(c):                                          # ---- IM-4 fix: the authoritative count
+            raise _paused()
         uid = str(c.execute("insert into accounts.users (email, webauthn_handle, last_seen_at) values (null, %s, now()) "
                             "returning id", (ch["handle"],)).fetchone()[0])
         c.execute(insert, (uid, cred_id, key, count, transports, label, synced))
@@ -494,6 +545,8 @@ def register_verify_route(body: AnswerIn, request: Request) -> JSONResponse:
         uid, sid = db.run_rw(create)
     except psycopg.errors.UniqueViolation:
         raise _taken() from None
+    except psycopg.errors.CheckViolation:
+        raise _too_big() from None
     return _signed_in(request, {"created": True, "email": None}, uid, sid)
 
 
