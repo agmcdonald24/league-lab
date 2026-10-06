@@ -367,8 +367,8 @@ def test_bad_fields_are_refused(editor):
                              (dict(body="a\x1bb"), "bad_body", 400), (dict(body="é" * (100 * 1024 + 1)), "too_big", 413)):
         r = editor.post("/api/blog/posts", json={"title": "t", "body": "b"} | kw, headers=SAME)
         assert r.status_code == status and r.json()["code"] == code, (kw.keys(), r.text[:200])
-    r = editor.post("/api/blog/posts", json={"title": "t", "body": "x" * (200 * 1024 + 2)}, headers=SAME)
-    assert r.status_code in (413, 422)                                  # over the model's bound: refused before anything
+    r = editor.post("/api/blog/posts", json={"title": "t", "body": "x" * (240 * 1024)}, headers=SAME)
+    assert r.status_code == 413 and r.json()["code"] == "too_big"       # in words, never a 422 echoing the body
     r = editor.post("/api/blog/posts", json={"title": "t", "body": "x" * (300 * 1024)}, headers=SAME)
     assert r.status_code == 413                                         # over the Guard's 256 KB: refused at the door
     ok = new_post(editor, title="Line\nbreaks\tgo\u2028too", summary="two\nlines", body="x" * (200 * 1024))

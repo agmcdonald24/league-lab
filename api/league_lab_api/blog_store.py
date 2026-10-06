@@ -162,7 +162,7 @@ class PostIn(BaseModel):
     summary: str = Field(default="", max_length=1200)
     tags: list[str] = Field(default_factory=list, max_length=20)
     author: str = Field(default="", max_length=200)
-    body: str = Field(default="", max_length=MAX_BODY_BYTES + 1)
+    body: str = Field(default="", max_length=256 * 1024)       # the Guard's bound: over 200 KB is clean()'s 413 in words
     slug: str | None = Field(default=None, max_length=200)
 
 
