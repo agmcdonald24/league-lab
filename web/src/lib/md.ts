@@ -14,7 +14,7 @@ export interface LinkContext {
 }
 
 export function withContext(href: string, ctx: LinkContext): string {
-  if (!href.startsWith("/")) return href;
+  if (!inAppPath(href)) return href; // ---- IM-3 fix: "//host" is not ours
   const [path, query = ""] = href.split("?");
   const qs = new URLSearchParams(query);
   if (ctx.league && !qs.has("league")) qs.set("league", String(ctx.league));
@@ -23,13 +23,33 @@ export function withContext(href: string, ctx: LinkContext): string {
   return s ? `${path}?${s}` : path;
 }
 
+// ---- IM-3 fix (the Wave I-M review): provider text (a team or league name) reaches these sentences, so a link is kept
+// only when it is ours: an in-app path is "/" followed by neither "/" nor "\" ("//evil.example" and "/\evil.example" are
+// other sites to a browser), and an outside link must be https to a host the app links to itself. Anything else is
+// the label as plain text.
+const LINK_HOSTS = ["isuckatfantasy.io", "espn.com", "sleeper.com", "sleeper.app", "myfantasyleague.com", "yahoo.com", "nfl.com", "draftkings.com", "fanduel.com"];
+export function inAppPath(raw: string): boolean {
+  return raw.startsWith("/") && !/^\/[/\\]/.test(raw);
+}
+export function trustedHttps(raw: string): boolean {
+  if (!raw.startsWith("https://")) return false;
+  try {
+    const u = new URL(raw);
+    if (u.username || u.password || u.port) return false;
+    const h = u.hostname.toLowerCase();
+    return LINK_HOSTS.some((d) => h === d || h.endsWith(`.${d}`));
+  } catch {
+    return false;
+  }
+}
+
 function inline(text: string, ctx: LinkContext): string {
   let out = escapeHtml(text);
-  // links: [label](href) — label and href are already escaped; only "/..." and "https://..." are kept as links
+  // links: [label](href) — label and href are already escaped; only our "/..." paths and https to our hosts stay links
   out = out.replace(/\[([^\]]*)\]\(([^)\s]*)\)/g, (_m, label: string, href: string) => {
     const raw = href.replace(/&amp;/g, "&");
-    if (raw.startsWith("/")) return `<a href="${escapeHtml(withContext(raw, ctx))}" class="ll-link">${label}</a>`;
-    if (raw.startsWith("https://")) return `<a href="${escapeHtml(raw)}" rel="noopener" target="_blank" class="ll-link">${label}</a>`;
+    if (inAppPath(raw)) return `<a href="${escapeHtml(withContext(raw, ctx))}" class="ll-link">${label}</a>`;
+    if (trustedHttps(raw)) return `<a href="${escapeHtml(raw)}" rel="noopener" target="_blank" class="ll-link">${label}</a>`;
     return label;
   });
   out = out.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");

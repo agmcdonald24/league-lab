@@ -47,6 +47,7 @@ from __future__ import annotations
 import logging  # ---- IM-3
 import math
 import mimetypes
+import os as _os_env  # ---- IM-3 fix: LEAGUE_LAB_API_DOCS
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -76,8 +77,12 @@ async def lifespan(_app: FastAPI):
     db.close()
 
 
-app = FastAPI(title=f"{APP_NAME} API (League Lab)", version="0.1.0", lifespan=lifespan, docs_url="/api/docs",
-              openapi_url="/api/openapi.json", redoc_url=None)
+# ---- IM-3 fix (the Wave I-M review): the API's own documentation (Swagger UI and the OpenAPI schema) is off unless
+# LEAGUE_LAB_API_DOCS=on — a public site does not publish its route map, and the gate does not cover these two paths.
+API_DOCS = _os_env.environ.get("LEAGUE_LAB_API_DOCS", "").strip().lower() in ("on", "1", "true", "yes")
+app = FastAPI(title=f"{APP_NAME} API (League Lab)", version="0.1.0", lifespan=lifespan,
+              docs_url="/api/docs" if API_DOCS else None, openapi_url="/api/openapi.json" if API_DOCS else None,
+              redoc_url=None)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 
@@ -437,7 +442,8 @@ def player_card(gsis: str, league: str, response: Response, team: int | None = N
 @app.get("/api/ros", dependencies=[Depends(require_auth)])
 def ros(league: str, response: Response, position: str = "ALL", limit: int = 50,
         view: str = "points", team: int | None = None, who: str = "all"):          # ---- IB-3: view=lineup&team=
-    if view == "lineup" and refleague.is_reference(league):                                   # ---- IM-3
+    view = ratelimit.norm(view) or "points"           # ---- IM-3 fix: one spelling for the bucket, this rule and ondemand
+    if ratelimit.lineup_view(view) and refleague.is_reference(league):                        # ---- IM-3
         raise refleague.NeedsLeague()
     return _research(ondemand.ros(league, position, limit, view=view, team=team, who=who), league, response)
 
@@ -492,7 +498,8 @@ def status(response: Response):
         out["board_source_in_use"] = f"unknown ({exc.__class__.__name__})"
     out["memory"] = memory_status()          # ---- INF-2: the server's RSS and the caches' budget, region by region
     out["odds_grades"] = _status_odds_grades()   # ---- IL-3: the latest grade of the week's odds and the ranges
-    out["ratelimit"] = ratelimit.limiter().info()   # ---- IM-3: the buckets, clients held, refusals, how clients were keyed
+    out["ratelimit"] = {**ratelimit.limiter().info(), "cpu": ratelimit.slots().info(),   # ---- IM-3 fix
+                        "usage": ratelimit.usage_ceiling().info()}   # ---- IM-3: the buckets, clients held, refusals, how clients were keyed
     out["gate"] = auth.gate()                       # ---- IM-3: open | password
     return _json(out, response)
 
@@ -740,7 +747,9 @@ async def usage_count(request: Request):
         secure = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
         resp.set_cookie(usage_mod.COOKIE, session, max_age=usage_mod.seconds_left_today(), httponly=True,
                         samesite="lax", secure=secure, path="/api/usage")
-    if usage_mod.allow(session):
+    # ---- IM-3 fix: a fresh cookie per request no longer buys rows — an hourly ceiling in all and per visitor
+    # (ratelimit.usage_ceiling, keyed by ratelimit.client_group); a refused count is as silent as an accepted one
+    if usage_mod.allow(session) and ratelimit.usage_ceiling().allow(ratelimit.client_group(request.scope)):
         usage_mod.submit(usage_mod.event(usage_mod.parse(body), version=_version(), session=session))   # its own thread
     return resp
 

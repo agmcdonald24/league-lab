@@ -44,7 +44,14 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Any
 
-from .sleeper_client import LeagueNotFound, SleeperBusy, SleeperUnavailable, TokenBucket
+from .sleeper_client import (
+    LeagueNotFound,
+    SleeperBusy,
+    SleeperUnavailable,
+    TokenBucket,
+    cache_max,
+    prune_cache,
+)
 
 MFL_API = "https://api.myfantasyleague.com"
 FIXTURES_ENV = "LEAGUE_LAB_MFL_FIXTURES"
@@ -287,7 +294,11 @@ class MFL:
             raise LeagueNotFound(PRIVATE_SENTENCE)
         with self._lock:
             self._cache[key] = (now + TTL_S[kind], now, kind, data)
+            prune_cache(self._cache, now)                                     # ---- IM-3 fix: bounded (sleeper_client)
             self._read_at[key] = self.wall()                                                    # ---- IG-3
+            if len(self._read_at) > 2 * cache_max():                                 # ---- IM-3 fix: bounded too
+                for k in list(self._read_at)[:len(self._read_at) - cache_max()]:
+                    del self._read_at[k]
         if kind == "league" and league and isinstance(data, dict):
             base = str((data.get("league") or {}).get("baseURL") or "").rstrip("/")
             if _HOST.match(base) and league not in self.hosts:

@@ -136,6 +136,40 @@ _ID = re.compile(r"^\d{1,24}$")
 _USERNAME = re.compile(r"^[A-Za-z0-9_.\-]{1,40}$")
 
 
+# ---- IM-3 fix (the Wave I-M review: the site is public, so anyone can make these caches grow): the answer caches of the
+# Sleeper, MFL and ESPN clients are bounded. An expired entry is kept for STALE_KEEP_S past its expiry (it is what a
+# "busy" or a provider failure serves instead of an error), then dropped at the next insert; past CACHE_MAX entries
+# (LEAGUE_LAB_PROVIDER_CACHE_MAX, default 1,500 — about 500 leagues' league + rosters + users) the least recently
+# fetched go first. The player directory is never dropped by count.
+CACHE_MAX_ENV = "LEAGUE_LAB_PROVIDER_CACHE_MAX"
+CACHE_MAX_DEFAULT = 1500
+STALE_KEEP_S = 3600.0
+PINNED = frozenset({"/players/nfl"})
+
+
+def cache_max() -> int:
+    try:
+        return max(50, int(os.environ.get(CACHE_MAX_ENV) or CACHE_MAX_DEFAULT))
+    except ValueError:
+        return CACHE_MAX_DEFAULT
+
+
+def prune_cache(cache: dict, now: float, cap: int | None = None, keep_stale_s: float = STALE_KEEP_S) -> int:
+    """Drop the entries expired more than ``keep_stale_s`` ago, then — past ``cap`` — the least recently fetched down to
+    90% of it. Entries are ``(expires, fetched, kind, data)``. Returns how many went. The caller holds the lock."""
+    cap = cache_max() if cap is None else cap
+    gone = [k for k, v in cache.items() if v[0] + keep_stale_s <= now and k not in PINNED]
+    for k in gone:
+        del cache[k]
+    if len(cache) > cap:
+        extra = sorted((v[1], i, k) for i, (k, v) in enumerate(cache.items()) if k not in PINNED)
+        for _t, _i, k in extra[:len(cache) - int(cap * 0.9)]:
+            del cache[k]
+            gone.append(k)
+    return len(gone)
+# ---- end IM-3 fix
+
+
 class LeagueNotFound(LookupError):
     """Sleeper has no such league (or no such roster / user)."""
 
@@ -285,6 +319,7 @@ class Sleeper:
             raise
         with self._lock:
             self._cache[path] = (now + TTL_S[kind], now, kind, data)
+            self.pruned = getattr(self, "pruned", 0) + prune_cache(self._cache, now)      # ---- IM-3 fix: bounded
         if kind == "players":
             self._players_to_disk(data)
         return data
