@@ -29,6 +29,8 @@ Changed: `docs/WORDS.md` (§ "DFS"), `CHANGELOG.md` (the Wave I-M heading + one 
   || !league}` a 4-line branch `{:else if r.name === "dfs" && !league}` rendering the screen alone (no frame: TopBar
   needs a league today). With IM-3's no-league mode the PO can drop that branch and let `/dfs?league=ref:half` render in
   the frame (the screen takes `league = null` or any key; it never sends the league to the API).
+* `web/e2e/ib1/fixtures.spec.ts` (IB-1's navigation test, no owner tonight): `{ tab: "dfs", label: "DFS", first: "dfs",
+  subs: [] }` appended to `TABS`, and its two `toHaveCount(4)` on the tab bar → `toHaveCount(TABS.length)` (the fifth tab).
 * `web/src/components/TopBar.svelte`: `| "dfs"` in `Section`; `{ key: "dfs", label: "DFS", screens: [{ name: "dfs",
   label: "DFS", path: "/dfs" }] }` at the end of `SECTIONS`; an icon branch (a price tag) in `icon`. On a phone the bottom
   bar holds five tabs (78 px each at 390).
@@ -75,7 +77,18 @@ uv run python scripts/copy_standard.py --check                                  
 * **Route timings** (fixture API, this box): `GET /api/dfs/projections` 0.37 s cold, 0.10 s warm; `POST /api/dfs/slate`
   (DK, 599 rows) 0.93 s; pricing a site-week 34 ms (FD) – 434 ms (DK, first call: M2's curves).
 * **Memory**: one region `dfs`, at most 8 entries, 10 minutes: **0.35 MB** a site-week (DK 628 rows, FD 598).
-* **Check scripts**: see the final message (verbatim "NEW failures" sections).
+* **Check scripts**: root — `4 failed, 1456 passed, 3 skipped`, **NEW failures: none**. API — `92 failed, 714 passed,
+  13 skipped, 41 deselected in 1701.20s`, NEW failures: `test_ia2.py::test_partners_route_applies_both_rules`,
+  `test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-off]` and `[dynasty-overlay-on]`,
+  `test_ii1.py::test_folk_package_is_not_promoted`, `test_ii1.py::test_folk_package_on_the_clone_rosters`. **Not IM-5's**:
+  the same five fail with `main.py` put back to `ab50682` (no DFS route registered; 10 failed / 3 passed for those
+  tests' 13 cases either way), and another dev's run of the script printed the same five at the same hour — they read
+  the trade / lineup state of the house leagues (data or clock), not investigated further.
+* **Fixtures e2e (whole suite)**: `400 passed, 2 skipped, 0 failed, 0 flaky` in 11.5 min (with IB-1's tab test updated for
+  the fifth tab; the il5 "saved players" test passed first time). IM-5's own spec: 6 passed.
+* **A trap on this box**: the scratchpad directory is shared by the five devs; fixed file names there
+  (`check_api.out`, `e2e_full.out`) were overwritten by other devs' runs. My numbers come from my own processes' private
+  logs (`/tmp/tmp.4z8YOf89ds` for the API check; `im5_*` files for the e2e).
 
 ## What is approximate or unverified
 

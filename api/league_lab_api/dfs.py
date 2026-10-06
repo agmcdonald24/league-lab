@@ -465,7 +465,7 @@ def _player_in(p: Any) -> dict:
             "cpt_id": None if p.get("cpt_id") is None else str(p.get("cpt_id"))[:40],
             "name": str(p.get("name") or p.get("player_name") or "")[:80], "position": pos, "salary": int(sal),
             "cpt_salary": None if cpt is None else int(cpt), "team": str(p.get("team") or "")[:4] or None,
-            "game": str(p.get("game") or "")[:20] or None, "opponent": p.get("opponent"),
-            "gsis_id": p.get("gsis_id"), "proj": _num(p.get("proj"), name="projection"),
+            "game": str(p.get("game") or "")[:20] or None, "opponent": str(p.get("opponent") or "")[:4] or None,
+            "gsis_id": str(p.get("gsis_id") or "")[:16] or None, "proj": _num(p.get("proj"), name="projection"),
             "p10": _num(p.get("p10"), name="low-end outcome"), "p90": _num(p.get("p90"), name="high-end outcome"),
-            "out": bool(p.get("out")), "status": p.get("status")}
+            "out": bool(p.get("out")), "status": str(p.get("status") or "")[:30] or None}
