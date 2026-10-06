@@ -184,11 +184,13 @@ def test_off_without_a_resend_key(monkeypatch, schema):
     monkeypatch.delenv("LEAGUE_LAB_RESEND_API_KEY", raising=False)
     monkeypatch.setenv("LEAGUE_LAB_API_SECRET", "ik4-test-secret")
     monkeypatch.delenv(accounts.ENV, raising=False)                      # auto
+    monkeypatch.setattr(accounts, "passkeys_ready", lambda: False)       # ---- IM-4: no passkeys either (test_im4)
     accounts.reset()
     with TestClient(app) as c:
         s = c.get("/api/account/status")
         assert s.status_code == 200 and s.headers["cache-control"] == "no-store"
-        assert s.json()["enabled"] is False and s.json()["reason"] == "no_mailer" and s.json()["signed_in"] is False
+        assert s.json()["enabled"] is False and s.json()["reason"] == "not_ready" and s.json()["signed_in"] is False
+        assert s.json()["why"] == {"passkey": "not_ready", "email": "no_mailer"}             # ---- IM-4
         for method, path, body in (("post", "/api/account/login", {"email": addr("off")}), ("get", "/api/account/me", None),
                                    ("put", "/api/account/leagues", {"leagues": []}), ("delete", "/api/account", None)):
             r = c.request(method.upper(), path, json=body)
@@ -220,7 +222,10 @@ def test_link_session_leagues_upserted_twice_is_one_row(api, caplog):
     caplog.set_level(logging.DEBUG)
     email = addr("andrew")
     s = api.get("/api/account/status").json()
-    assert s == {"enabled": True, "reason": None, "signed_in": False, "email": None, "mailer": "stub", "session_days": 90}
+    assert s == {"enabled": True, "reason": None, "signed_in": False, "email": None, "mailer": "stub", "session_days": 90,
+                 # ---- IM-4: the sign-in methods (passkeys too: test_im4) and where passkeys work
+                 "methods": ["passkey", "email"], "why": {"passkey": None, "email": None},
+                 "passkey_home": "https://isuckatfantasy.io", "passkey_here": False}
     r = api.post("/api/account/login", json={"email": "  Andrew@IK4.test "})
     assert r.status_code == 202 and r.json() == {"ok": True, "sent": True, "minutes": 15}
     token = link_token(email)                                  # lower-cased address; the link on the public URL
@@ -483,18 +488,24 @@ def test_the_app_role_stays_read_only_outside_its_transaction(api):
 def test_the_script_is_idempotent_and_drops_nothing():
     sql = SQL_FILE.read_text().lower()
     code = "\n".join(line.split("--")[0] for line in sql.splitlines())
-    assert not re.search(r"\b(drop|truncate|alter)\s+(schema|table|role)", code) and not re.search(r"^\s*truncate", code, re.M)
+    assert not re.search(r"\b(drop|truncate)\s+(schema|table|role|column)", code) and not re.search(r"^\s*truncate", code, re.M)
+    # ---- IM-4: the only alters keep every row (email becomes optional, a column and a check are added): test_im4
+    assert all(a in ("alter table accounts.users alter column email drop not null",
+                     "alter table accounts.users add column if not exists webauthn_handle bytea",
+                     "alter table accounts.users add constraint users_webauthn_handle_len")
+               for a in re.findall(r"alter table[^;\n]*?(?=;|\n)", code)), re.findall(r"alter table[^;\n]*", code)
     assert "create schema if not exists accounts" in sql
-    assert sql.count("create table if not exists accounts.") == 8
+    assert sql.count("create table if not exists accounts.") == 10                                  # ---- IM-4: + 2
     assert "grant select, insert, update, delete on accounts.users" in sql
     assert "create role" not in sql and "alter role" not in sql
 
 
 # ---------------------------------------------------------------- the web app's answers (recorded for web/e2e/ik4)
-def test_record_web_fixtures(api):
+def test_record_web_fixtures(api, monkeypatch):
     """The shapes the e2e's in-test server copies (web/fixtures/ik4/): written when IK4_RECORD=1, else compared."""
     import os
     out: dict[str, object] = {}
+    monkeypatch.setattr(accounts, "passkeys_ready", lambda: False)  # ---- IM-4: these are an email-only server's answers
     out["status_off.json"] = {"enabled": False, "reason": "no_mailer", "signed_in": False, "email": None,
                               "mailer": None, "session_days": 90}
     out["status_signed_out.json"] = api.get("/api/account/status").json()

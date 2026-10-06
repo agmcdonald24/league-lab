@@ -50,5 +50,10 @@
   }
  ],
  "watchlist": [],
- "connections": []
+ "connections": [],
+ "passkeys": [],
+ "sign_in": {
+  "passkeys": 0,
+  "email": true
+ }
 }

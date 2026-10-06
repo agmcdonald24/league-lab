@@ -1,4 +1,4 @@
-# Accounts and profiles — the design (Wave I-I, II-5, 2026-10-04), phase 1 (Wave I-K, IK-4: § "Built, phase 1") and phase 2 (Wave I-L, IL-5: § "Built, phase 2")
+# Accounts and profiles — the design (Wave I-I, II-5, 2026-10-04), phase 1 (Wave I-K, IK-4: § "Built, phase 1"), phase 2 (Wave I-L, IL-5: § "Built, phase 2") and passkeys (Wave I-M, IM-4: § "Passkeys")
 
 *(The fifth review, § 9: "An account should save multiple provider connections, selected leagues/teams, a default
 league, watchlists, and table preferences … Returning users should not repeat onboarding." Acceptance: "one account can
@@ -238,3 +238,99 @@ stay the request-path carriers (IK-2's `ll_yahoo`, IK-1's `ll_espn`); for a sign
 **Next**: the profile's "last sync" (still nothing writes `leagues.last_sync_at`); a watchlist row's news line and
 "what changed since you saved him"; Google sign-in (B); a per-league watchlist view if managers ask for one (the rows
 can carry a league already).
+
+
+## Passkeys (Wave I-M, IM-4, 2026-10-06)
+
+Andrew: "some sort of login/account so people can save their stuff and not have to reconnect each time." The emailed
+link waits for a Resend key; a **passkey** needs no email and no third party, so accounts can be on tonight. A passkey
+is a key pair the person's own device makes for this site and unlocks with its own lock (Face ID, a fingerprint, a PIN);
+the private key never leaves the device (or the person's iCloud Keychain / Google Password Manager, which sync it); we
+keep the public key. Verified live: **no** (the nightly must first apply the new part of `scripts/hosted_accounts.sql`:
+`docs/HOSTING.md` § "Accounts").
+
+**The switch.** `LEAGUE_LAB_ACCOUNTS=auto` (the default) turns accounts on when `LEAGUE_LAB_API_SECRET` is set and the
+tables exist, **with the ways in the server has**: `passkey` when the passkey part of the script has run (the two tables,
+the user handle column, an optional email; one query, re-checked every minute until it is there), `email` when
+`LEAGUE_LAB_RESEND_API_KEY` is set. `GET /api/account/status` adds `methods` (`["passkey"]`, `["email"]`, both, or `[]`),
+`why` (per method: `not_ready` / `no_mailer` / null), `passkey_home` (where passkeys work) and `passkey_here` (a hint:
+this page's address is one of them). No method → `enabled: false, reason: "not_ready"` (the passkey tables are missing)
+and the web shows no sign-in, as before. A passkey-only server answers the link routes with 404 `email_off`; a server
+whose passkey tables are missing answers the passkey routes with 404 `passkeys_off` — never a 500. `off` and `on` are as
+in phase 1 (`on`: also `http://localhost:<port>` for passkeys — tests and the fixture API only).
+
+**The flows** (`api/league_lab_api/passkeys.py`, `web/src/lib/account.svelte.ts`, `routes/Account.svelte`):
+
+| What the person does | What happens |
+|---|---|
+| **Create an account with a passkey** (signed out) | `POST /api/account/passkey/register/options` → the device's sheet (`navigator.credentials.create`) → `POST …/register/verify` → a new account with no email, the passkey, a session (`ll_session`, 90 days, as the link's); then, by themselves, this browser's leagues (the league on screen as the default), its Stats views (the phase-1 save and restore) and its Yahoo / ESPN connection (IL-5's sync, `adopt`) go to the account |
+| **Sign in with a passkey** (any device) | `POST …/login/options` (no account named: discoverable credentials) → the device offers the passkeys it holds for this site (`navigator.credentials.get`) → `POST …/login/verify` → a session; the account's leagues, teams, default and views come into the browser (phase 1's restore); the account's connection comes back (IL-5) |
+| **Add another passkey** (signed in) | the same register ceremony with `purpose: add`: the account's user handle, its passkeys excluded (a device that already holds one says so) |
+| the list | label ("iPhone · Safari"), added, last used (`GET /api/account/me` → `passkeys: [{id, label, created_at, last_used_at, synced}]`, `sign_in: {passkeys, email}`) |
+| **Remove** | `DELETE /api/account/passkeys/{id}`; the account's **only way in** cannot be removed (409 `last_sign_in`, the screen shows "Your only way in" instead of Remove); a removed passkey stays in the device's list but opens nothing |
+| **Add an email** (passkey-only, the server has a mailer) | the link form; the link opened while signed in adds the address to this account (`POST /api/account/verify` → `{ok, email, added: true}`) unless another account has it (409 `email_taken`, and the link is kept for signing in to that account) |
+| sign out, sign out everywhere, delete | phase 1's routes; delete takes the passkeys and any open challenge with the account (`on delete cascade`) |
+
+**What is stored** (`scripts/hosted_accounts.sql`, IM-4 part; the app role gets `SELECT / INSERT / UPDATE / DELETE` on
+the two new tables like the other eight):
+
+* `accounts.users`: `email` becomes optional (`alter … drop not null`: every row kept; the unique constraint and the
+  shape check let NULL through); `webauthn_handle bytea` (32 random bytes, unique; made with the account, or when an email
+  account adds its first passkey) — the WebAuthn user handle, never the email.
+* `accounts.passkeys`: `id`, `user_id` (cascade), `credential_id` (unique), `public_key` (COSE, as the authenticator sent
+  it), `sign_count`, `transports` (the browser's hint, from a fixed list), `label` (fixed words from the User-Agent at
+  creation — never the User-Agent), `backed_up` (a synced passkey), `created_at`, `last_used_at`. No secret.
+* `accounts.passkey_challenges`: `challenge_hash` (SHA-256 of the 32-byte challenge — never the challenge), `purpose`
+  (`create` / `add` / `login`), `user_id` (`add` only), `user_handle`, `browser_hash` (SHA-256 of the HttpOnly
+  `ll_passkey` cookie's random value), `rp_id`, `origin`, `ip_hash` (HMAC), `created_at`, `expires_at` (5 minutes),
+  `used_at`. Deleted after a day by the script's retention.
+* Size: a few hundred bytes per passkey, a few hundred per challenge for a day.
+
+**The checks, in order** (each refusal has its own words: docs/WORDS.md § "Passkeys"): the request is same-site (below);
+the `Origin` is on the allow-list (`passkey_wrong_site`); the per-address limit; the answer's shape and size (32 KB;
+`passkey_bad`); its challenge, looked up by hash and **spent under a row lock before anything else** (unknown or used:
+`passkey_challenge`; older than 5 minutes: `passkey_expired`; another purpose: `passkey_challenge`); the `ll_passkey`
+cookie matches (`passkey_browser`); the request's `Origin` is the one the challenge was made for; then py_webauthn: the
+client data's type, challenge and origin, the rp id hash, user presence, the attestation (`none`) or the signature over
+the stored public key, and the **counter** (a counter that does not go up while either is above zero: `passkey_cloned`,
+logged with the passkey's row id). Sign-in also requires the returned user handle to be the account's
+(`passkey_unknown`); `add` requires the session to be the account's (`signed_out`).
+
+**Where passkeys work.** `LEAGUE_LAB_PASSKEY_ORIGINS` — comma-separated origins, https only, default
+`https://isuckatfantasy.io`. A ceremony's origin is the request's `Origin` header only when it is on the list; the rp
+id is the shortest listed host it belongs to (add `https://www.isuckatfantasy.io` and both share `isuckatfantasy.io`). A
+passkey belongs to its rp id: one made on `isuckatfantasy.io` does not work on any other domain, so **the domain is part
+of every account** — changing it later strands the passkeys (the email, when there is one, still works). Render's own
+`*.onrender.com` address is not on the list: it says "Passkeys work on isuckatfantasy.io only. Open
+https://isuckatfantasy.io/account to use one."
+
+**Same site** (item 5: safe with the beta gate open, by itself). Every state-changing route under `/api/account` —
+phase 1's, IL-5's and these — refuses with 403 `cross_site` a request a browser marks as cross-site: `Sec-Fetch-Site`
+`same-origin` / `none` passes; otherwise the `Origin` must be on the allow-list, `LEAGUE_LAB_PUBLIC_URL`, or this
+request's own `Host` (no `Sec-Fetch-Site` sent); `Origin: null` never passes. A request with neither header is not a
+browser's, so it carries nobody's cookie by accident (tests, curl). Limits (the in-memory bucket, keyed by an HMAC of
+the address): registration options 10 an hour, sign-in options 30 an hour, answers 20 a minute (the link checks'
+bucket); 10 passkeys per account.
+
+**Recovery, honestly.** A passkey-only account whose person loses every device that holds a passkey for it is gone: we
+hold no email to send a link to, and nothing else proves who they are. The screen says so in one line under the list
+("If you lose every device that holds your passkeys, this account cannot be recovered: add one on a second device, or
+add your email below") and offers "Add an email" when the server has a mailer. Synced passkeys (iCloud Keychain,
+Google Password Manager — `backed_up`) survive a lost phone.
+
+**The browser.** `navigator.credentials` and `PublicKeyCredential` only (no npm dependency; base64url by hand, so
+browsers without `PublicKeyCredential.parseCreationOptionsFromJSON` work). A browser without them (an app's built-in
+browser often has none) gets one line and no button; the email form stays when the server has a mailer. No password
+field anywhere.
+
+**Tests.** `api/tests/test_im4.py` (a software ES256 authenticator: every ceremony and every refusal above, an account
+without email through every account route, the cross-site guard on every state-changing route, the limits, localhost
+only under the test switch, the status matrix, the schema); `web/e2e/im4/fixtures.spec.ts` (Chromium's virtual
+authenticator through CDP against the real API on `http://localhost:8754`, at 375 and 1300: create with two leagues, sign
+out and in, a second device with the synced passkey gets the leagues back, add a passkey, remove one, the removed one
+refused in words, delete; and a browser without WebAuthn).
+
+**Next**: the profile's "last sync" (still open from phase 2); `PublicKeyCredential.signalUnknownCredential` (Chrome,
+Safari) to tell the device a removed passkey is gone; conditional mediation (the passkey offered in the browser's
+autofill) once there is a sign-in field to hang it on; Google sign-in (B) if people ask.
+

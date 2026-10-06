@@ -5,11 +5,18 @@ Every route is behind the beta password (main.py includes this router with `requ
 and nobody needs an account — guest exploration (this browser's localStorage) is unchanged.
 
 **The switch** `LEAGUE_LAB_ACCOUNTS` = `off` | `auto` (default) | `on`:
-  * `auto`: on when `LEAGUE_LAB_RESEND_API_KEY` and `LEAGUE_LAB_API_SECRET` are set and `accounts.users` exists (the
-    nightly's sync applies the script) — otherwise off, and `GET /api/account/status` says `enabled: false` and why;
+  * `auto`: on when `LEAGUE_LAB_API_SECRET` is set and `accounts.users` exists (the nightly's sync applies the script),
+    with the sign-in methods this server has (---- IM-4): **`passkey`** when the script's passkey tables are there
+    (`accounts.passkeys`, `accounts.passkey_challenges`, an optional `users.email`: passkeys.py), **`email`** when
+    `LEAGUE_LAB_RESEND_API_KEY` is set. No method → off. `GET /api/account/status` says `enabled`, `methods` and, per
+    method, why not (`why`);
   * `on`: as `auto`, but with no Resend key the **stub mailer** keeps the messages in this process's memory (tests and
-    the fixture API only: nothing is sent, printed or logged);
+    the fixture API only: nothing is sent, printed or logged), and passkeys also accept `http://localhost:<port>`;
   * off: every route but `status` answers 404 `accounts_off`; the web app hides sign-in.
+
+**Same site** (---- IM-4): every state-changing route here (POST / PUT / DELETE, passkeys.py's too) refuses a request a
+browser marks as coming from another site (`Sec-Fetch-Site`, else `Origin` against the allow-list or the request's own
+host) with 403 `cross_site` — by itself, whether or not a gate or a middleware stands in front.
 
 **Sign-in.** `POST /api/account/login {email}` → a link `<LEAGUE_LAB_PUBLIC_URL>/account#signin=<token>` emailed with
 Resend (from `LEAGUE_LAB_MAIL_FROM`). The token is 32 random bytes, stored only as its SHA-256, single use, 15 minutes.
@@ -51,7 +58,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import psycopg
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -97,7 +104,11 @@ def _off() -> AccountError:
 
 
 def _signed_out() -> AccountError:
-    return AccountError(401, "signed_out", "Sign in with your email to see your account.")
+    return AccountError(401, "signed_out", "Sign in to see your account.")
+
+
+def _email_off() -> AccountError:  # ---- IM-4: a passkey-only server
+    return AccountError(404, "email_off", "Signing in by email is not on for this server. Use a passkey.")
 
 
 # ---------------------------------------------------------------- the switch
@@ -123,41 +134,80 @@ def daily_max() -> int:
         return DAILY_MAX
 
 
-_ready = {"ok": False, "next": 0.0}
+_ready = {"ok": False, "passkeys": False, "next": 0.0}
+
+# ---- IM-4: one query says whether the phase-1 tables are there and whether the passkey part of the script has run on
+# this database (the two tables, the user handle column, an optional email) — each with the app role's right to write.
+# A NULL oid (a missing table) makes has_table_privilege NULL, so `coalesce(..., false)` never raises.
+READY_SQL = (
+    "select coalesce(has_table_privilege(to_regclass('accounts.users'), 'insert'), false), "
+    "coalesce(has_table_privilege(to_regclass('accounts.passkeys'), 'insert'), false) "
+    "and coalesce(has_table_privilege(to_regclass('accounts.passkey_challenges'), 'insert'), false) "
+    "and exists (select 1 from pg_attribute where attrelid = to_regclass('accounts.users') and attname = 'webauthn_handle' "
+    "and not attisdropped) "
+    "and exists (select 1 from pg_attribute where attrelid = to_regclass('accounts.users') and attname = 'email' "
+    "and not attnotnull)")
+
+
+def _readiness() -> dict:
+    """{ok, passkeys} — checked at most once a minute; every ten minutes once everything is there."""
+    now = time.monotonic()
+    if now >= _ready["next"]:
+        try:
+            ok, pk = db.run_rw(lambda c: c.execute(READY_SQL).fetchone())
+        except psycopg.Error:
+            ok, pk = False, False
+        ok, pk = bool(ok), bool(ok and pk)
+        _ready.update(ok=ok, passkeys=pk, next=now + (600.0 if ok and pk else 60.0))
+    return _ready
 
 
 def schema_ready() -> bool:
-    """`accounts.users` exists and the app role may write it (checked at most once a minute; ten once it is there)."""
-    now = time.monotonic()
-    if now < _ready["next"]:
-        return bool(_ready["ok"])
-    try:
-        ok = bool(db.run_rw(lambda c: c.execute(
-            "select to_regclass('accounts.users') is not null "
-            "and has_table_privilege('accounts.users', 'insert')").fetchone()[0]))
-    except psycopg.Error:
-        ok = False
-    _ready.update(ok=ok, next=now + (600.0 if ok else 60.0))
-    return ok
+    """`accounts.users` exists and the app role may write it."""
+    return bool(_readiness()["ok"])
+
+
+def passkeys_ready() -> bool:
+    """---- IM-4: the passkey tables (scripts/hosted_accounts.sql's IM-4 part) are there, and webauthn is installed."""
+    from . import passkeys
+    return bool(_readiness()["passkeys"]) and passkeys.LIBRARY
+
+
+def why_not() -> dict[str, str | None]:
+    """---- IM-4: per sign-in method, why it is not offered (None: it is): passkey not_ready, email no_mailer."""
+    return {"passkey": None if passkeys_ready() else "not_ready", "email": None if mailer() is not None else "no_mailer"}
+
+
+def methods() -> list[str]:
+    """---- IM-4: the sign-in methods this server has, in the order the screen offers them."""
+    w = why_not()
+    return [m for m in ("passkey", "email") if w[m] is None]
 
 
 def state() -> tuple[bool, str | None]:
-    """(enabled, why not): off | no_secret | no_mailer | not_ready."""
+    """(enabled, why not): off | no_secret | not_ready (the tables, or no sign-in method yet: `why_not` says which)."""
     m = mode()
     if m == "off":
         return False, "off"
     if not _secret():
         return False, "no_secret"
-    if m == "auto" and not _resend_key():
-        return False, "no_mailer"
     if not schema_ready():
         return False, "not_ready"
+    if not methods():
+        return False, "not_ready" if not passkeys_ready() else "no_mailer"
     return True, None
 
 
 def _require_on() -> None:
     if not state()[0]:
         raise _off()
+
+
+def _require_email() -> None:
+    """---- IM-4: the emailed link needs a mailer (a passkey-only server answers 404 `email_off`)."""
+    _require_on()
+    if mailer() is None:
+        raise _email_off()
 
 
 # ---------------------------------------------------------------- mail
@@ -318,9 +368,10 @@ _lock = threading.Lock()
 _buckets: dict[str, tuple[float, float]] = {}
 
 
-def allow(key: str, per_min: int) -> bool:
+def allow(key: str, per_min: int, per_s: float = 60.0) -> bool:
+    """A token bucket of `per_min` tries refilling over `per_s` seconds (---- IM-4: `per_s`, e.g. 10 an hour)."""
     now = clock()
-    rate = per_min / 60.0
+    rate = per_min / per_s
     with _lock:
         tokens, then = _buckets.get(key, (float(per_min), now))
         tokens = min(float(per_min), tokens + (now - then) * rate)
@@ -329,7 +380,7 @@ def allow(key: str, per_min: int) -> bool:
             return False
         _buckets[key] = (tokens - 1.0, now)
         if len(_buckets) > 10000:
-            for k in [k for k, (t, w) in _buckets.items() if now - w > 600]:
+            for k in [k for k, (t, w) in _buckets.items() if now - w > 3600]:
                 _buckets.pop(k, None)
         return True
 
@@ -338,12 +389,12 @@ def reset() -> None:
     with _lock:
         _buckets.clear()
     STUB.sent.clear()
-    _ready.update(ok=False, next=0.0)
+    _ready.update(ok=False, passkeys=False, next=0.0)
 
 
 # ---------------------------------------------------------------- the flows (each one transaction on db.run_rw)
 def request_link(email_raw: Any, ip: str) -> None:
-    _require_on()
+    _require_email()
     email = normalize_email(email_raw)
     if email is None:
         raise AccountError(400, "bad_email", "That does not look like an email address.")
@@ -386,9 +437,11 @@ def request_link(email_raw: Any, ip: str) -> None:
         raise AccountError(502, "mail_failed", "We could not send the email. Try again in a few minutes.") from None
 
 
-def verify(token: Any, ip: str, user_agent: str | None) -> tuple[str, str]:
-    """(session id, email) for a live link; the link is spent. AccountError 400 `link_invalid` otherwise."""
-    _require_on()
+def verify(token: Any, ip: str, user_agent: str | None, attach_to: str | None = None) -> tuple[str, str]:
+    """(session id, email) for a live link; the link is spent. AccountError 400 `link_invalid` otherwise.
+    ---- IM-4: `attach_to` = a signed-in account with no email (a passkey-only one): the link's address is **added** to it
+    (a second way in) when no other account has that address; when one has, 409 `email_taken` and the link is not spent."""
+    _require_email()
     if not allow(f"check-ip:{_mac('ip', ip).hex()}", CHECKS_PER_MIN):
         raise AccountError(429, "rate_limited", "Too many tries from here. Wait a few minutes.")
     bad = AccountError(400, "link_invalid", "That sign-in link has expired or was already used. Ask for a new one.")
@@ -396,11 +449,24 @@ def verify(token: Any, ip: str, user_agent: str | None) -> tuple[str, str]:
         raise bad
 
     def tx(c: psycopg.Connection):
+        if attach_to is not None:                                           # ---- IM-4: "add an email"
+            live = c.execute("select user_email from accounts.login_links where token_hash = %s and used_at is null and "
+                             "expires_at > now() for update", (_hash_token(token),)).fetchone()
+            if live is not None and c.execute("select 1 from accounts.users where email = %s and id <> %s",
+                                              (live[0], attach_to)).fetchone():
+                return "taken"
         row = c.execute("update accounts.login_links set used_at = now() where token_hash = %s and used_at is null "
                         "and expires_at > now() returning user_email", (_hash_token(token),)).fetchone()
         if row is None:
             return None
         email = row[0]
+        if attach_to is not None and c.execute(
+                "update accounts.users set email = %s, last_seen_at = now() where id = %s and email is null and "
+                "deleted_at is null", (email, attach_to)).rowcount == 1:
+            sid = c.execute(f"insert into accounts.sessions (user_id, expires_at, user_agent_family) values (%s, now() + "
+                            f"interval '{SESSION_DAYS} days', %s) returning id",
+                            (attach_to, agent_family(user_agent))).fetchone()[0]
+            return str(sid), email
         uid = c.execute("insert into accounts.users (email, last_seen_at) values (%s, now()) on conflict (email) do "
                         "update set last_seen_at = now(), deleted_at = null returning id", (email,)).fetchone()[0]
         sid = c.execute(f"insert into accounts.sessions (user_id, expires_at, user_agent_family) values (%s, now() + "
@@ -410,6 +476,9 @@ def verify(token: Any, ip: str, user_agent: str | None) -> tuple[str, str]:
     got = db.run_rw(tx)
     if got is None:
         raise bad
+    if got == "taken":
+        raise AccountError(409, "email_taken", "That email already has its own account. Sign out, then open the link "
+                           "again to sign in to that account.")
     return got
 
 
@@ -458,7 +527,9 @@ def _rosters(v: Any) -> int | None:
     return n if 1 <= n <= 64 else None
 
 
-def me(user_id: str, email: str) -> dict:
+def me(user_id: str, email: str | None) -> dict:
+    pk = passkeys_ready()                                                    # ---- IM-4
+
     def tx(c: psycopg.Connection) -> dict:
         c.execute("update accounts.users set last_seen_at = now() where id = %s and (last_seen_at is null or "
                   "last_seen_at < now() - interval '1 hour')", (user_id,))
@@ -473,9 +544,9 @@ def me(user_id: str, email: str) -> dict:
                           "order by scope, key", (user_id,)).fetchall()
         watch = c.execute("select league_key, player_key, added_at from accounts.watchlist where user_id = %s "
                           "order by added_at, player_key", (user_id,)).fetchall()
-        from . import connections  # ---- IL-5: never a secret
+        from . import connections, passkeys  # IL-5: never a secret; IM-4: labels and dates, never a key
         return {"created": created[0] if created else None, "leagues": leagues, "prefs": prefs, "watch": watch,
-                "connections": connections.listing(c, user_id)}
+                "connections": connections.listing(c, user_id), "passkeys": passkeys.listing(c, user_id) if pk else []}
 
     got = db.run_rw(tx)
     rows = []
@@ -491,7 +562,9 @@ def me(user_id: str, email: str) -> dict:
             "preferences": [{"scope": s, "key": k, "value": v, "updated_at": _iso(t)} for s, k, v, t in got["prefs"]],
             "watchlist": [{"league_key": lk, "league": app_key(lk) if lk else None, "player_key": pk,
                            "added_at": _iso(t)} for lk, pk, t in got["watch"]],
-            "connections": got["connections"]}                             # ---- IL-5
+            "connections": got["connections"],                             # ---- IL-5
+            "passkeys": got["passkeys"],                                   # ---- IM-4
+            "sign_in": {"passkeys": len(got["passkeys"]), "email": bool(email) and mailer() is not None}}
 
 
 def _iso(t) -> str | None:
@@ -657,8 +730,42 @@ def delete_account(user_id: str, email: str) -> None:
     db.run_rw(tx)
 
 
+# ---------------------------------------------------------------- same site (---- IM-4)
+SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
+
+
+def _cross_site() -> AccountError:
+    return AccountError(403, "cross_site", "This request came from another website, so it was refused. Open "
+                        f"{public_url().split('://', 1)[-1]} and try again.")
+
+
+def same_site(request: Request) -> None:
+    """Refuse a state-changing request that a browser says comes from another site (login CSRF, a forged "delete my
+    account"). A browser sends `Sec-Fetch-Site` and / or `Origin` on every POST, PUT and DELETE, and a page cannot
+    forge either; a request with neither is not from a browser, so it carries nobody's cookie by accident.
+      * `Sec-Fetch-Site: same-origin` or `none` → allowed; `same-site` / `cross-site` → only an allowed origin;
+      * no `Sec-Fetch-Site`: `Origin` must be an allowed origin or this request's own host (`Origin: null` never is).
+    Allowed origins: `LEAGUE_LAB_PASSKEY_ORIGINS` (passkeys.allowed_origins: https only, `http://localhost` under the
+    test switch) and `LEAGUE_LAB_PUBLIC_URL`."""
+    if request.method in SAFE_METHODS:
+        return
+    site = (request.headers.get("sec-fetch-site") or "").strip().lower()
+    origin = request.headers.get("origin")
+    if not site and origin is None:
+        return
+    if site in ("same-origin", "none"):
+        return
+    from . import passkeys
+    o = passkeys.normal_origin(origin)
+    if o is not None and (passkeys.site_for(o) is not None or o == passkeys.normal_origin(public_url())):
+        return
+    if not site and o is not None and o.split("://", 1)[1] == (request.headers.get("host") or "").strip().lower():
+        return
+    raise _cross_site()
+
+
 # ---------------------------------------------------------------- the routes (main.py: app.include_router)
-router = APIRouter(prefix="/api/account")
+router = APIRouter(prefix="/api/account", dependencies=[Depends(same_site)])   # ---- IM-4: the guard
 NO_STORE = {"Cache-Control": "no-store"}
 
 
@@ -728,6 +835,13 @@ def status_route(request: Request) -> JSONResponse:
     on, why = state()
     out: dict = {"enabled": on, "reason": why, "signed_in": False, "email": None, "mailer": None,
                  "session_days": SESSION_DAYS}
+    if mode() != "off" and _secret():                                      # ---- IM-4: the methods and why not
+        from . import passkeys
+        w = why_not() if schema_ready() else {"passkey": "not_ready", "email": None if mailer() else "no_mailer"}
+        out.update(methods=[k for k in ("passkey", "email") if w[k] is None] if on else [], why=w,
+                   passkey_home=passkeys.home(), passkey_here=passkeys.request_site(request) is not None)
+    else:
+        out.update(methods=[], why={"passkey": why, "email": why}, passkey_home=None, passkey_here=False)
     if on:
         m = mailer()
         out["mailer"] = m.name if m else None
@@ -748,12 +862,17 @@ def login_route(body: LoginIn, request: Request) -> JSONResponse:
 
 @router.post("/verify")
 def verify_route(body: VerifyIn, request: Request) -> JSONResponse:
-    sid, email = verify(body.token, client_ip(request), request.headers.get("user-agent"))
-    resp = _ok({"email": email})
+    try:                                          # ---- IM-4: signed in with no email: the link adds the address
+        who = current_user(request) if state()[0] else None
+    except psycopg.Error:
+        who = None
+    attach = who[0] if who is not None and not who[1] else None
+    sid, email = verify(body.token, client_ip(request), request.headers.get("user-agent"), attach_to=attach)
+    uid = db.run_rw(lambda c: c.execute("select user_id from accounts.sessions where id = %s", (sid,)).fetchone()[0])
+    resp = _ok({"email": email, "added": True} if attach and str(uid) == attach else {"email": email})
     _set_cookie(resp, request, sid)
     # ---- IL-5: this device's Yahoo / ESPN connection joins the account; the account's come back to this device
     from . import connections
-    uid = db.run_rw(lambda c: c.execute("select user_id from accounts.sessions where id = %s", (sid,)).fetchone()[0])
     connections.sync(request, resp, str(uid), adopt=True)
     # ---- end IL-5
     return resp
@@ -843,3 +962,9 @@ def error_response(exc: AccountError) -> JSONResponse:
         headers["Retry-After"] = "3600" if "hour" in exc.words or "tomorrow" in exc.words else "60"
     return JSONResponse({"error": exc.words, "detail": exc.words, "code": exc.code}, status_code=exc.status,
                         headers=headers)
+
+
+# ---- IM-4 (Wave I-M): passkeys — passkeys.py adds its routes to `router` (above) when it loads; main.py includes the
+# router after importing this module, so the routes are there whichever module Python loads first.
+from . import passkeys as _passkeys  # noqa: E402,F401 - registers /api/account/passkey/* and /api/account/passkeys/*
+# ---- end IM-4

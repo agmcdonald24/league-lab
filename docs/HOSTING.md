@@ -877,9 +877,10 @@ views on any device. Optional: guest use (this browser's memory) is unchanged, a
 everything.
 
 **The switch.** `LEAGUE_LAB_ACCOUNTS` = `auto` (the default: nothing to set) — accounts are on when
-`LEAGUE_LAB_RESEND_API_KEY` and `LEAGUE_LAB_API_SECRET` are set **and** the nightly has created the `accounts` schema;
-until all three, `GET /api/account/status` answers `{"enabled": false, "reason": "no_mailer" | "no_secret" |
-"not_ready"}` and the web app shows no sign-in anywhere. `off` turns it off whatever else is set (the routes answer
+`LEAGUE_LAB_API_SECRET` is set **and** the nightly has created the `accounts` schema, with the ways in the server has
+(---- IM-4, Wave I-M): **passkeys** once the nightly has applied the passkey part of `scripts/hosted_accounts.sql`, **the
+emailed link** once `LEAGUE_LAB_RESEND_API_KEY` is set. With neither, `GET /api/account/status` answers `{"enabled":
+false, "reason": "no_secret" | "not_ready"}` (+ `why`: per method) and the web app shows no sign-in anywhere. `off` turns it off whatever else is set (the routes answer
 404 `accounts_off`; saved rows stay). `on` is for tests and the fixture API only: with no Resend key it uses the stub
 mailer, which keeps the messages in the process's memory.
 
@@ -892,6 +893,7 @@ mailer, which keeps the messages in the process's memory.
 | `LEAGUE_LAB_MAIL_FROM` | `signin@isuckatfantasy.io` (the default; set it only to change the address) | no |
 | `LEAGUE_LAB_PUBLIC_URL` | `https://isuckatfantasy.io` (the default): the address the emailed link opens | no |
 | `LEAGUE_LAB_ACCOUNTS_DAILY_MAX` | `90` (the default): sign-in emails a day in all; Resend's free tier sends 100 | no |
+| `LEAGUE_LAB_PASSKEY_ORIGINS` | `https://isuckatfantasy.io` (the default): where passkeys may be made and used, comma-separated, https only; the rp id is the shortest listed host (---- IM-4) | no |
 
 The link's address is never taken from the request: a forged `Host` header would otherwise mail a victim a link to
 someone else's site. Rotating `LEAGUE_LAB_API_SECRET` (DEPLOY.md "Sign everyone out") signs every account out too.
@@ -961,6 +963,14 @@ while signed in is kept in `accounts.connections`, sealed with `LEAGUE_LAB_API_S
 once more; the cookies on their devices stop opening too). The table, its grants and its `on delete cascade` were in
 IK-4's script already: `scripts/hosted_accounts.sql` is unchanged. `ll_session`'s path is `/api` now (it was
 `/api/account`). `docs/ACCOUNTS.md` § "Built, phase 2".
+
+**Passkeys (Wave I-M, IM-4)** — nothing to set on Render (`LEAGUE_LAB_API_SECRET` is there; the origin list defaults
+to the site). The nightly's IK-4 block already runs `scripts/hosted_accounts.sql` as the owner: its IM-4 part makes
+`accounts.users.email` optional, adds `users.webauthn_handle`, and creates `accounts.passkeys` and
+`accounts.passkey_challenges` with the app role's grants (idempotent; every row kept). The server re-checks once a minute
+until they are there (`accounts.READY_SQL`) and then answers `"methods": ["passkey"]` — **accounts are on for everyone
+from that moment** (the next nightly after the merge, or Actions → nightly → Run workflow). A passkey belongs to its
+domain: do not move the site off `isuckatfantasy.io` without a plan for the accounts. `docs/ACCOUNTS.md` § "Passkeys".
 
 **Local development.** On the Mac (the pipeline role owns the database):
 `psql "$(uv run python -c 'from league_lab.config import get_settings; print(get_settings().pipeline_dsn())')" -v ON_ERROR_STOP=1 -f scripts/hosted_accounts.sql`,

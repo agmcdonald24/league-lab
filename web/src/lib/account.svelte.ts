@@ -6,15 +6,33 @@
 //   it (POST /api/account/verify) after one tap, and the server answers with the `ll_session` cookie (HttpOnly).
 // * Signed in, lib/prefs.ts hands the picks to the server too (`setRemote`): this browser's copy stays the cache the
 //   screens read, the server's is the one another device restores from. A failed push is quiet (the local copy holds).
-import { accountPrefs, setRemote, type SavedLeagueIn, type StatsView } from "./prefs";
+// ---- IM-4 (Wave I-M): passkeys (docs/ACCOUNTS.md § "Passkeys"). The server says which ways in it has (`methods`:
+//   "passkey" when its passkey tables are there, "email" when it has a mailer; an older server sends no `methods`: the
+//   emailed link only). A passkey ceremony is two calls around the browser's own sheet (navigator.credentials): the
+//   server's options → create() / get() → the answer posted back; the server keeps the challenge and checks it.
+import { accountPrefs, prefs, setRemote, type SavedLeagueIn, type StatsView } from "./prefs";
+
+export type Method = "passkey" | "email";
 
 export interface AccountStatus {
   enabled: boolean;
   reason: string | null; // off | no_secret | no_mailer | not_ready
   signed_in: boolean;
-  email: string | null;
+  email: string | null; // ---- IM-4: null for a passkey-only account
   mailer: string | null;
   session_days: number;
+  methods?: Method[]; // ---- IM-4
+  why?: { passkey: string | null; email: string | null };
+  passkey_home?: string | null; // where passkeys work ("https://isuckatfantasy.io")
+  passkey_here?: boolean; // this page's address is one of them
+}
+
+export interface Passkey {
+  id: string;
+  label: string; // "iPhone · Safari"
+  created_at: string | null;
+  last_used_at: string | null;
+  synced: boolean;
 }
 
 export interface SavedLeague {
@@ -35,7 +53,7 @@ export interface SavedLeague {
 }
 
 export interface Me {
-  email: string;
+  email: string | null; // ---- IM-4: a passkey-only account has none
   created_at: string | null;
   default_league: string | null;
   leagues: SavedLeague[];
@@ -43,6 +61,9 @@ export interface Me {
   watchlist: { league_key: string | null; league: string | null; player_key: string; added_at: string | null }[];
   // ---- IL-5: the Yahoo / ESPN connections the account keeps (never a token)
   connections?: { provider: "yahoo" | "espn"; external_user_id: string; connected_at: string | null; status: string; last_sync_at: string | null }[];
+  // ---- IM-4: the passkeys (labels and dates only) and the ways in that work today
+  passkeys?: Passkey[];
+  sign_in?: { passkeys: number; email: boolean };
 }
 
 /** The beta password's 401 (no `code`): the app's password screen, as for any other call. */
@@ -216,3 +237,140 @@ export function dropLinkToken(): void {
 }
 
 export const PROVIDER_LABEL: Record<SavedLeague["provider"], string> = { sleeper: "Sleeper", mfl: "MFL", espn: "ESPN", yahoo: "Yahoo" };
+
+// ---------------------------------------------------------------- ---- IM-4: passkeys
+/** The ways in this server offers (an older server without `methods`: the emailed link). */
+export function methodsOf(st: AccountStatus | null): Method[] {
+  if (!st?.enabled) return [];
+  return st.methods ?? ["email"];
+}
+
+/** Why this browser cannot make or use a passkey (null: it can). An app's built-in browser often has no WebAuthn. */
+export function passkeyBlocked(): string | null {
+  if (typeof window === "undefined" || !window.isSecureContext) return "insecure";
+  if (typeof window.PublicKeyCredential !== "function" || !navigator.credentials?.create || !navigator.credentials?.get) return "no_webauthn";
+  return null;
+}
+
+const b64u = (buf: ArrayBuffer | ArrayBufferView): string => {
+  const bytes = buf instanceof ArrayBuffer ? new Uint8Array(buf) : new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+};
+const unb64u = (s: string): ArrayBuffer => {
+  const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - (s.length % 4)) % 4));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out.buffer;
+};
+
+type Json = Record<string, unknown>;
+type Desc = { id: string; type: "public-key"; transports?: AuthenticatorTransport[] };
+
+function creationOptions(o: Json): PublicKeyCredentialCreationOptions {
+  const user = o.user as { id: string; name: string; displayName: string };
+  return {
+    ...(o as unknown as PublicKeyCredentialCreationOptions),
+    challenge: unb64u(o.challenge as string),
+    user: { ...user, id: unb64u(user.id) },
+    excludeCredentials: ((o.excludeCredentials as Desc[] | undefined) ?? []).map((d) => ({ ...d, id: unb64u(d.id) })),
+  };
+}
+
+function requestOptions(o: Json): PublicKeyCredentialRequestOptions {
+  return {
+    ...(o as unknown as PublicKeyCredentialRequestOptions),
+    challenge: unb64u(o.challenge as string),
+    allowCredentials: ((o.allowCredentials as Desc[] | undefined) ?? []).map((d) => ({ ...d, id: unb64u(d.id) })),
+  };
+}
+
+/** The browser's answer as the server reads it (base64url fields: py_webauthn's JSON shape). */
+function answerJson(cred: PublicKeyCredential): Json {
+  const r = cred.response as AuthenticatorAttestationResponse & AuthenticatorAssertionResponse;
+  const response: Json = { clientDataJSON: b64u(r.clientDataJSON) };
+  if ("attestationObject" in r && r.attestationObject) {
+    response.attestationObject = b64u(r.attestationObject);
+    response.transports = typeof r.getTransports === "function" ? r.getTransports() : [];
+  } else {
+    response.authenticatorData = b64u(r.authenticatorData);
+    response.signature = b64u(r.signature);
+    response.userHandle = r.userHandle ? b64u(r.userHandle) : null;
+  }
+  return {
+    id: cred.id,
+    rawId: b64u(cred.rawId),
+    type: cred.type,
+    response,
+    authenticatorAttachment: cred.authenticatorAttachment ?? null,
+    clientExtensionResults: cred.getClientExtensionResults?.() ?? {},
+  };
+}
+
+/** The browser's sheet refused or was closed: plain words (the server never saw anything). */
+function sheetError(e: unknown, creating: boolean): AccountError {
+  const name = e instanceof DOMException ? e.name : "";
+  if (name === "NotAllowedError" || name === "AbortError") return new AccountError(0, "passkey_cancelled", "Nothing changed: the passkey sheet was closed or timed out.");
+  if (name === "InvalidStateError" && creating) return new AccountError(0, "passkey_exists", "This device already holds a passkey for your account.");
+  if (name === "SecurityError") {
+    const home = account.status?.passkey_home ?? "https://isuckatfantasy.io";
+    return new AccountError(0, "passkey_wrong_site", `Passkeys work on ${home.replace(/^https?:\/\//, "")} only. Open ${home}/account to use one.`);
+  }
+  return new AccountError(0, "passkey_browser_failed", "This browser could not use a passkey just now. Try again, or use another browser.");
+}
+
+async function makePasskey(): Promise<{ created?: boolean; added?: boolean }> {
+  const { options } = await call<{ options: Json; purpose: "create" | "add" }>("POST", "/api/account/passkey/register/options");
+  let cred: Credential | null;
+  try {
+    cred = await navigator.credentials.create({ publicKey: creationOptions(options) });
+  } catch (e) {
+    throw sheetError(e, true);
+  }
+  if (!cred) throw sheetError(null, true);
+  return call("POST", "/api/account/passkey/register/verify", { credential: answerJson(cred as PublicKeyCredential) });
+}
+
+/** "Create an account with a passkey": one sheet, then this browser's leagues (the current one as the default), its
+ * Stats views and its Yahoo / ESPN connection (the server's sync) go to the new account — the phase-1 save, by itself. */
+export async function createWithPasskey(): Promise<Me | null> {
+  await makePasskey();
+  statusAsked = null;
+  await loadStatus(true);
+  const me = account.me;
+  if (!me) return null;
+  const current = prefs.league();
+  const rows = unsaved(me).map((r) => ({ ...r, default: r.league === current }));
+  if (rows.length) await saveLeagues(rows);
+  if (account.me) restore(account.me);
+  return account.me;
+}
+
+/** "Sign in with a passkey": the device offers the account (nothing typed); the account's picks come into this browser. */
+export async function signInWithPasskey(): Promise<Me | null> {
+  const { options } = await call<{ options: Json }>("POST", "/api/account/passkey/login/options");
+  let cred: Credential | null;
+  try {
+    cred = await navigator.credentials.get({ publicKey: requestOptions(options) });
+  } catch (e) {
+    throw sheetError(e, false);
+  }
+  if (!cred) throw sheetError(null, false);
+  await call("POST", "/api/account/passkey/login/verify", { credential: answerJson(cred as PublicKeyCredential) });
+  statusAsked = null;
+  await loadStatus(true);
+  if (account.me) restore(account.me);
+  return account.me;
+}
+
+/** "Add another passkey" (another device or ecosystem), signed in. */
+export async function addPasskey(): Promise<void> {
+  await makePasskey();
+  await loadMe();
+}
+
+export async function removePasskey(id: string): Promise<void> {
+  await call("DELETE", `/api/account/passkeys/${encodeURIComponent(id)}`);
+  await loadMe();
+}
