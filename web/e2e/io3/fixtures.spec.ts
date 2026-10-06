@@ -273,6 +273,27 @@ test("a starter fills a draft from this week's numbers and never publishes", asy
   await page.screenshot({ path: join(SHOTS, `io3-starter-${info.project.name === "desktop" ? 1300 : 375}.png`), fullPage: true });
 });
 
+test("the other two starters: projections by position in tables, roles up and down", async ({ page, isMobile }) => {
+  test.skip(isMobile, "one viewport is enough for the starters' words");
+  test.setTimeout(90_000);
+  await asEditor(page);
+  await page.goto(`${API}/blog/new`);
+  await page.getByTestId("starter-projections").click();
+  await expect(page.getByTestId("editor-title")).toHaveValue(/This week's top projections and their ranges/, { timeout: 30_000 });
+  const body = await page.getByTestId("editor-body").inputValue();
+  for (const h of ["## Quarterbacks", "## Running backs", "## Wide receivers", "## Tight ends", "| Player | Game | Projection | Range (10th to 90th) |", "*Your take: …*"])
+    expect(body).toContain(h);
+  await expect(page.getByTestId("editor-preview").locator("table")).toHaveCount(4);
+  await inert(page, '[data-testid="editor-preview"]');
+  // a second starter on a fresh post
+  await page.goto(`${API}/blog/new`);
+  await page.getByTestId("starter-roles").click();
+  await expect(page.getByTestId("editor-title")).toHaveValue(/Players whose role is changing/, { timeout: 30_000 });
+  const roles = await page.getByTestId("editor-body").inputValue();
+  for (const h of ["## A bigger role lately", "## A smaller role lately", "## What this measures", "*As of "]) expect(roles).toContain(h);
+  await expect(page.getByTestId("editor-status")).toHaveText("Draft", { timeout: 15_000 });
+});
+
 test("a visitor sees no Write and the editor's address says to sign in; the account shows its id", async ({ page, browser, isMobile }) => {
   await page.goto(`${API}/blog`);
   await expect(page.getByTestId("blog")).toBeVisible();

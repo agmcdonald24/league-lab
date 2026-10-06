@@ -238,7 +238,6 @@
       {#if notice}
         <p class="rounded-md bg-accent-soft px-3 py-2 text-sm font-semibold" role="status" data-testid="account-notice-line">{notice}</p>
       {/if}
-      <AccountId id={(me as { id?: string }).id} /><!-- ---- IO-3: the account id, with Copy (LEAGUE_LAB_EDITORS) -->
 
       {#if toSave.length}
         <section class="space-y-2 rounded-lg border border-line bg-surface p-4" data-testid="save-local">
@@ -375,6 +374,7 @@
         </section>
       {/if}
       <!-- ---- end IM-4 -->
+      <AccountId id={(me as { id?: string }).id} /><!-- ---- IO-3: the account id, with Copy (LEAGUE_LAB_EDITORS) -->
 
       <section class="space-y-3 border-t border-line pt-4">
         <div class="flex flex-wrap gap-x-5 gap-y-2 text-base">
