@@ -42,6 +42,10 @@ MAX_BYTES = 1_000_000          # the file's size cap (a real slate file is 20-12
 MAX_ROWS = 2_000               # rows after the header (a full Sunday main slate is ~600 on DraftKings)
 MAX_LINEUPS = 20
 SOLVE_SECONDS = 1.0            # the time box per lineup (HiGHS' time_limit)
+# HiGHS stops when the lineup is within this share of the best possible: 1e-5 of a 150-point lineup is 0.0015 points,
+# under the 0.005 step every total moves in (projections to the hundredth; a captain's x1.5) — so "proven" here is
+# proven best, and the search does not spend its second closing a gap no lineup could fill
+MIP_GAP = 1e-5
 
 # ------------------------------------------------------------------------------------------------ scoring
 # As each site publishes it (checked against the sites' rules pages as remembered, October 2026 — docs/DFS.md says
@@ -706,7 +710,7 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
     ``players``: dicts with ``key``, ``position`` (ours), ``salary``, ``team``, ``game`` (any id of his game),
     ``proj``, ``p90``, ``p10``, ``out`` (cannot play: left out unless locked) and, in showdown, ``cpt_salary`` (no
     captain row: FLEX only). ``mode``: ``cash`` maximises the projection, ``tournament`` the high-end outcome (a player
-    without one is left out). Exact: an integer program solved to optimality (HiGHS, ``mip_rel_gap`` 0) in at most
+    without one is left out). Exact: an integer program solved to optimality (HiGHS, ``MIP_GAP``: exact at the inputs' hundredths) in at most
     ``time_limit`` seconds a lineup; past that the best lineup found is returned with ``proven: false``, or the search
     stops and says so."""
     from scipy.optimize import Bounds, LinearConstraint, milp
@@ -723,15 +727,25 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
         v = p.get(obj_key)
         if v is None or not math.isfinite(float(v)):
             if k in locks:
-                notes.append(f"{p.get('name') or k} is locked but has no {'high-end outcome' if obj_key == 'p90' else 'projection'}: "
-                             "left out.")
+                notes.append(f"{p.get('name') or k} is set to always in but has no "
+                             f"{'high-end outcome' if obj_key == 'p90' else 'projection'}: left out.")
             continue
         if p.get("out") and k not in locks:
             continue
         pool.append(p)
-    # variables: (player i, group g) where his position is eligible (a captain needs a captain row)
+    # variables. Classic / full roster (no multiplier): ONE per player (in the lineup or not), each position's count
+    # between its own slots and its own + the FLEX slots that admit it — the same lineups as a slot-by-slot model
+    # without its symmetry (an RB at RB2 or at FLEX is one lineup), which made the next-N search miss its time box;
+    # the slots are assigned after the solve (``_assign``). Showdown: (player, CPT | FLEX), a captain needing a
+    # captain row.
+    flat = all(g.multiplier == 1.0 for g in c.groups)
     var: list[tuple[int, int]] = []
+    elig_all = frozenset().union(*(g.elig for g in c.groups))
     for i, p in enumerate(pool):
+        if flat:
+            if p["position"] in elig_all:
+                var.append((i, -1))
+            continue
         for gi, g in enumerate(c.groups):
             if p["position"] not in g.elig:
                 continue
@@ -742,11 +756,13 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
     if nv == 0:
         return LineupResult([], ["No player can fill a slot."], [])
 
-    def sal(i: int, gi: int) -> float:
-        g = c.groups[gi]
-        return float(pool[i]["cpt_salary"] if g.multiplier != 1.0 else pool[i]["salary"])
+    def mult(gi: int) -> float:
+        return 1.0 if gi < 0 else c.groups[gi].multiplier
 
-    pts = np.array([float(pool[i][obj_key]) * c.groups[gi].multiplier for i, gi in var])
+    def sal(i: int, gi: int) -> float:
+        return float(pool[i]["cpt_salary"] if mult(gi) != 1.0 else pool[i]["salary"])
+
+    pts = np.array([float(pool[i][obj_key]) * mult(gi) for i, gi in var])
     rows, lo, hi = [], [], []
 
     def add(coef: dict[int, float], lb: float, ub: float) -> None:
@@ -760,15 +776,22 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
     by_player: dict[int, list[int]] = {}
     for j, (i, _gi) in enumerate(var):
         by_player.setdefault(i, []).append(j)
-    for gi, g in enumerate(c.groups):
-        add({j: 1.0 for j, (_i, g2) in enumerate(var) if g2 == gi}, g.count, g.count)
+    if flat:
+        for pos in sorted(elig_all):
+            own = sum(g.count for g in c.groups if g.elig == frozenset({pos}))
+            flex = sum(g.count for g in c.groups if pos in g.elig and len(g.elig) > 1)
+            add({j: 1.0 for j, (i, _g) in enumerate(var) if pool[i]["position"] == pos}, float(own), float(own + flex))
+        add(dict.fromkeys(range(nv), 1.0), float(c.size), float(c.size))
+    else:
+        for gi, g in enumerate(c.groups):
+            add({j: 1.0 for j, (_i, g2) in enumerate(var) if g2 == gi}, g.count, g.count)
     for i, js in by_player.items():
         locked = str(pool[i]["key"]) in locks
         add(dict.fromkeys(js, 1.0), 1.0 if locked else 0.0, 1.0)
     for k in locks:
         if not any(str(pool[i]["key"]) == k for i in by_player):
             name = next((p.get("name") for p in players if str(p["key"]) == k), k)
-            notes.append(f"{name} is locked but cannot fill a slot in this contest: left out.")
+            notes.append(f"{name} is set to always in but cannot fill a slot in this contest: left out.")
     add({j: sal(i, gi) for j, (i, gi) in enumerate(var)}, 0.0, float(c.cap))
     teams: dict[str, list[int]] = {}
     games: dict[str, list[int]] = {}
@@ -824,7 +847,7 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
         t0 = time.perf_counter()
         res = milp(-pts, constraints=LinearConstraint(A_, lo_, hi_), integrality=integrality,
                    bounds=Bounds(np.zeros(width), np.ones(width)),
-                   options={"time_limit": float(time_limit), "mip_rel_gap": 0.0, "disp": False})
+                   options={"time_limit": float(time_limit), "mip_rel_gap": MIP_GAP, "disp": False})
         times.append(round((time.perf_counter() - t0) * 1000, 1))
         if res.x is None:
             if res.status == 1:
@@ -837,12 +860,29 @@ def solve_lineups(players: Sequence[Mapping], contest: str, *, mode: str = "cash
             break
         x = np.round(res.x[:nv]).astype(int)
         chosen = [var[j] for j in range(nv) if x[j] == 1]
+        if flat:
+            chosen = _assign(c, pool, [i for i, _g in chosen])
         lineups.append(_lineup(c, pool, chosen, proven=res.status == 0, mode=mode))
         cut = np.zeros(width)
         for i in {i for i, _gi in chosen}:
             cut[by_player[i]] = 1.0
         cuts.append(cut)
     return LineupResult(lineups, notes, times)
+
+
+def _assign(c: Contest, pool: list[Mapping], ids: list[int]) -> list[tuple[int, int]]:
+    """The chosen players into the site's slots: each position's own slots first (the higher projections), the rest to
+    the FLEX (kick-off times are not read: late swap is not handled, docs/DFS.md)."""
+    left = sorted(ids, key=lambda i: (-float(pool[i]["proj"] or 0), str(pool[i]["key"])))
+    out: list[tuple[int, int]] = []
+    for single in (True, False):
+        for gi, g in enumerate(c.groups):
+            if (len(g.elig) == 1) != single:
+                continue
+            take = [i for i in left if pool[i]["position"] in g.elig][: g.count]
+            out += [(i, gi) for i in take]
+            left = [i for i in left if i not in take]
+    return out
 
 
 def _lineup(c: Contest, pool: list[Mapping], chosen: list[tuple[int, int]], *, proven: bool, mode: str) -> dict:
