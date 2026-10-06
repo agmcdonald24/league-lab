@@ -358,6 +358,10 @@ MAX_REVIEW = 3
 # ---- end IF-4
 CANT_WORDS = {"OUT": "is out", "IR": "is on injured reserve", "PUP": "is on the PUP list", "SUS": "is suspended",
               "DOUBTFUL": "is doubtful", "BYE": "is on a bye"}
+# ---- IN-5: the lineup build's own reasons (lineup.py: who cannot play) in a manager's words, not "can't play (IR slot)"
+REASON_WORDS = {"ir slot": "is in your IR slot", "taxi squad": "is on your taxi squad", "nfl injured reserve":
+                "is on injured reserve", "no nfl team": "has no NFL team", "game started (bench)":
+                "is locked on your bench (his game has started)", "out": "is out", "doubtful": "is doubtful"}
 
 
 def platform_name(league_id: str) -> str:
@@ -595,6 +599,8 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
         r = info.get(k) or {}
         s = (_str(r.get("chip")) or _str(r.get("report_status")) or "").upper()
         why = str(r.get("reason") or "").lower()
+        if s not in CANT_WORDS and why in REASON_WORDS:                 # ---- IN-5: the build's reason in words
+            return REASON_WORDS[why]
         return CANT_WORDS.get("BYE" if why == "bye" else s, f"can't play ({r.get('reason') or s.lower() or 'not active'})")
 
     # the groups: cards that share a player (union-find over the keys); the submitted lineup's differences join them

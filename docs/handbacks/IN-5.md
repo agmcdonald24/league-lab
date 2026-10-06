@@ -34,7 +34,9 @@ link **Find a quarterback on Waivers ›** (`/waivers?position=QB`).
    among same-time actions), `open_slot` {slot_type, slots, position, words, players, named}, `href`, `href_label`;
    the outs it takes over leave the pairs. `open_deadline`: the kickoff most of the roster's games still to start share
    (the main slate), earliest on a tie, "before his game kicks off" when none. The coin-flip clause once per action and
-   never for a player the same action takes out. `more_words`: "1 more roster alert: …".
+   never for a player the same action takes out. `more_words`: "1 more roster alert: …". `REASON_WORDS`: the build's
+   reasons in words ("is in your IR slot", "is on your taxi squad", "is locked on your bench (his game has started)")
+   where the old fallback said "can't play (IR slot)" — swaps and open spots alike.
 2. **Words**: "Change needed" → **Roster alert** (`lib/week.ts` `STATUS_WORD` / `ACTION_WORD`; the API never sent it);
    "What changed" → **News feed** (`lib/feed.ts` `NEWS_FEED`, MyWeek's heading; testid `what-changed` kept). WORDS.md §
    "My Week says what it means" + the three dictionary rows; `copy_standard.py --check` clean.

@@ -201,6 +201,18 @@ def test_a_flex_spot_and_the_deadline():
     assert M.open_deadline(tie.assign(locked_now=True)) is None
 
 
+def test_the_builds_reasons_in_words():
+    rows = pd.DataFrame([_row("starter", "RB1", "8150", "Kyren Williams", "RB", 13.1), _empty("RB2"),
+                         _row("unplayable", None, "12530", "Jonah Coleman", "RB", 7.1, reason="IR slot"),
+                         _row("unplayable", None, "5872", "Zach Charbonnet", "RB", 6.0, reason="taxi squad"),
+                         _row("unplayable", None, "1", "Jaylen Wright", "RB", 3.0, reason="game started (bench)")])
+    acts = M.build_actions(rows, [], {"8150": "RB", "12530": "RB"}, SCRUBS)["actions"]
+    assert acts[0]["action"] == ("Your running back spot is open: Coleman is in your IR slot, Charbonnet is on your taxi "
+                                 "squad and Wright is locked on your bench (his game has started). Add a running back before Sun "
+                                 "1:00 PM ET.")
+    assert acts[0]["href"] == "/waivers?position=RB" and acts[0]["open_slot"]["players"] == ["12530"]
+
+
 def test_the_hotfix_words_stay():
     a = M._action("change", [], ["1466"], False, 0.0, ["1466"], [], [], [(None, "1466")], set(), "Sleeper",
                   name=lambda k: "Kelce", plain=lambda k: "Kelce", status=lambda k: None,
