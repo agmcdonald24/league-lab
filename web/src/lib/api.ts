@@ -2097,7 +2097,8 @@ export const statsCsvPath = (
   league: string,
   o: { position: string; window: string; basis?: string; weeks?: string; season?: number | null; sort: string; dir: string; cols: string[]; mode: string; who?: string; team?: number | null; nfl?: string; q?: string; min?: number },
 ) => {
-  const qs = new URLSearchParams({ league, limit: "1000", position: o.position, window: o.window, sort: o.sort, dir: o.dir, cols: o.cols.join(","), mode: o.mode });
+  const qs = new URLSearchParams({ league, limit: "1000", position: o.position, window: o.window, sort: o.sort, dir: o.dir, cols: o.cols.join(",") });
+  if (o.mode === "game") qs.set("per_game", "1"); // PO (the merge): IM-1's route says per_game=1
   if (o.basis) qs.set("basis", o.basis);
   if (o.weeks) qs.set("weeks", o.weeks);
   if (o.season) qs.set("season", String(o.season));

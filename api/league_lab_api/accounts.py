@@ -303,11 +303,14 @@ def session_id_from(cookie: str | None) -> str | None:
 
 
 def client_ip(request: Request) -> str:
-    """The first X-Forwarded-For hop (Render's proxy), else the socket's peer. A client can forge it, so the per-address
-    and daily limits are the real bound; this one stops a careless loop."""
-    fwd = request.headers.get("x-forwarded-for", "")
-    first = fwd.split(",")[0].strip() if fwd else ""
-    return first or (request.client.host if request.client else "unknown")
+    """The client's address for the sign-in limits (kept only as an HMAC)."""
+    # PO (Wave I-M merge; IM-3's finding): the first hop is whatever the client wrote, and uvicorn's
+    # --forwarded-allow-ips='*' copies it into request.client — so the address is IM-3's (ratelimit.client_address:
+    # the edge's header on Render, else the hop our proxy appended, else the peer), the same key the limiter uses.
+    from . import ratelimit
+    headers = {k.lower(): v for k, v in request.scope.get("headers") or []}
+    _source, addr = ratelimit.client_address(headers, request.client.host if request.client else None)
+    return str(addr)
 
 
 def agent_family(ua: str | None) -> str:

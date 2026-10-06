@@ -74,7 +74,7 @@
         <span data-testid="watchlist-off">A watchlist comes with an account, and accounts are not on for this server yet.</span>
       {:else if !signedIn}
         <span data-testid="watchlist-signin"
-          >Sign in to keep a watchlist on any device: <a class="ll-link font-semibold" href="/account" data-testid="watchlist-signin-link">sign in with your email</a>, then tap
+          >Sign in to keep a watchlist on any device: <a class="ll-link font-semibold" href="/account" data-testid="watchlist-signin-link">sign in or make an account</a>, then tap
           ☆ Watch on any player's card.</span
         >
       {:else if data && rows.length}

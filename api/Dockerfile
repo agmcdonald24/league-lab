@@ -57,4 +57,7 @@ ENV PATH="/srv/api/.venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
 USER nobody
 EXPOSE 8080
 # one process (one Sleeper call budget and one cache per server: docs/SLEEPER_TERMS.md); $PORT from the host, else 8080
+# --forwarded-allow-ips='*' makes request.client the FIRST X-Forwarded-For hop, which the client writes: never key a
+# limit or a log on request.client — league_lab_api.ratelimit.client_address is the one place that names a visitor
+# (Wave I-M, IM-3; docs/SECURITY_PUBLIC.md § 2).
 CMD ["sh", "-c", "exec uvicorn league_lab_api.main:app --host 0.0.0.0 --port \"${PORT:-8080}\" --proxy-headers --forwarded-allow-ips='*'"]

@@ -25,7 +25,7 @@
   import { decisionPage, isDecision } from "./lib/decisionPages";
   import { countView } from "./lib/usage"; // ---- U-1: usage tracking (one count per screen view)
   import { pause as gaPause, screenView, trackLogin } from "./lib/analytics"; // ---- INF-1: Google Analytics
-  import { INVITE_WORDS, isRef, NEEDS_LEAGUE, refLabel } from "./lib/refleague"; // ---- IM-3: no league
+  import { INVITE_WORDS, isRef, NEEDS_LEAGUE, REF_DEFAULT, refLabel } from "./lib/refleague"; // ---- IM-3: no league
   // the research screens and About load on first use (their own chunks): My Week's first screen stays small
   const LAZY = {
     trends: () => import("./routes/Trends.svelte"),
@@ -89,6 +89,11 @@
     const urlLeague = r.params.get("league");
     if (t && /^\d+$/.test(t) && (!urlLeague || urlLeague === league)) return Number(t);
     return prefs.team(league) ?? mine?.leagues.find((l) => l.league_id === league)?.roster_id ?? null;
+  });
+
+  // ---- the PO's merge (IM-3 + IM-5): /dfs with no league at all → the same screen on the reference league
+  $effect(() => {
+    if (phase === "ready" && r.name === "dfs" && !league) setParams({ league: REF_DEFAULT });
   });
 
   // remember the pick and keep the URL shareable (replace: no extra Back step)
@@ -201,11 +206,10 @@
   {:then m}
     <m.default current={league} onauth={needLogin} />
   {/await}
-<!-- ---- IM-5: DFS needs no league: without one it opens on its own (with one, in the frame like any screen) -->
+<!-- ---- IM-5 + IM-3 (the PO's merge): DFS needs no league — without one it opens in the frame on the reference
+     league (Half PPR), so the tabs stay and a player's name opens his card; the effect below writes the URL -->
 {:else if r.name === "dfs" && !league}
-  <div class="mx-auto w-full max-w-6xl px-4 pt-4">
-    {#await LAZY.dfs() then m}<m.default {options} league={null} team={null} onauth={needLogin} />{/await}
-  </div>
+  <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>
 <!-- ---- end IM-5 -->
 {:else if r.name === "leagues" || !league}
   <LeaguesPage {mine} current={league} onuser={signedInUser} onauth={needLogin} />

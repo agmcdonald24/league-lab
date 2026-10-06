@@ -45,6 +45,11 @@ services:
         sync: false     # Render asks for it: Neon's read-only URL (role league_lab_app, pooled, sslmode=require)
       - key: LEAGUE_LAB_APP_PASSWORD
         sync: false     # Render asks for it: the beta password (the one the Streamlit app uses)
+      # Wave I-M (Andrew, 2026-10-05: "lets lose the password"): the site is public — no login screen, research without
+      # a league, per-visitor rate limits (docs/SECURITY_PUBLIC.md). `password` here brings the beta password above
+      # back for every route, with no code change.
+      - key: LEAGUE_LAB_GATE
+        value: open
       - key: LEAGUE_LAB_API_SECRET
         generateValue: true   # signs the sign-in cookie; Render makes one up (a new password then keeps people signed in)
       - key: LEAGUE_LAB_CACHE_DIR

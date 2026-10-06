@@ -74,7 +74,7 @@ HEAVY_EXACT = frozenset({
     "/api/yahoo/leagues",
     "/api/usage/summary", "/api/events",          # the PO's QA reads: uncached database queries, public with the door open
 })
-HEAVY_PREFIX = ("/api/dfs/",)          # IM-5: the salary file and the lineups (stateless, but they solve)
+HEAVY_PREFIX = ("/api/dfs/slate", "/api/dfs/lineups")   # IM-5 (dfs.RATE_BUCKETS): the salary file and the lineups solve; /api/dfs/projections is a read
 LEAGUE_SETUP = frozenset({"username", "mfl", "mfl_search", "sleeper", "espn", "yahoo", "yahoo_me"})
 UNLIMITED = frozenset({"/api/health"})
 WRITES = frozenset({"POST", "PUT", "PATCH", "DELETE"})
