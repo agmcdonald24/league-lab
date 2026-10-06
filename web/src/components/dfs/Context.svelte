@@ -6,8 +6,11 @@
 
   let { signals = [], full = false, testid = "dfs-context" }: { signals?: Signal[]; full?: boolean; testid?: string } = $props();
   const shown = $derived(full ? signals : signals.filter((s) => s.tone === "favorable" || s.tone === "difficult" || s.signal === "weather"));
+  // ---- IO-1 (Wave I-O): a corner graded with no measurable effect keeps its words but not its colour
+  const quiet = (s: Signal) => s.signal === "corner" && s.graded_effect === "none";
   const toneClass = (s: Signal) =>
-    s.tone === "favorable" ? "text-good border-good" : s.tone === "difficult" ? "text-bad border-bad" : "text-ink-2 border-line-strong";
+    quiet(s) ? "text-ink-2 border-line-strong" : s.tone === "favorable" ? "text-good border-good" : s.tone === "difficult" ? "text-bad border-bad" : "text-ink-2 border-line-strong";
+  const title = (s: Signal) => `${s.words} ${s.projection_words}.${s.graded ? ` ${s.graded}` : ""}`;
 </script>
 
 {#if full}
@@ -15,9 +18,10 @@
     <ul class="space-y-1 text-sm" data-testid={testid}>
       {#each shown as s (s.signal)}
         <li data-testid="dfs-signal" data-signal={s.signal}>
-          <span class="font-semibold {s.tone === 'favorable' ? 'text-good' : s.tone === 'difficult' ? 'text-bad' : 'text-ink'}">{s.label}:</span>
+          <span class="font-semibold {quiet(s) ? 'text-ink' : s.tone === 'favorable' ? 'text-good' : s.tone === 'difficult' ? 'text-bad' : 'text-ink'}">{s.label}:</span>
           <span class="text-ink-2">{s.words}</span>
           <span class="text-xs whitespace-nowrap text-ink-3"> · {s.projection_words}</span>
+          {#if s.graded}<span class="block text-xs text-ink-3" data-testid="dfs-signal-graded">{s.graded}</span>{/if}
         </li>
       {/each}
     </ul>
@@ -29,11 +33,12 @@
     {#each shown as s (s.signal)}
       <span
         class="inline-flex items-center rounded-full border px-1.5 py-px text-xs font-semibold whitespace-nowrap {toneClass(s)} {s.in_projection ? '' : 'border-dashed'}"
-        title={`${s.words} ${s.projection_words}.`}
-        aria-label={`${s.label}: ${s.words} ${s.projection_words}.`}
+        title={title(s)}
+        aria-label={`${s.label}: ${title(s)}`}
         data-testid="dfs-chip"
         data-signal={s.signal}
-        data-outside={s.in_projection ? "no" : "yes"}>{chipWords(s)}</span
+        data-outside={s.in_projection ? "no" : "yes"}
+        data-graded={s.graded_effect ?? ""}>{chipWords(s)}</span
       >
     {/each}
   </span>

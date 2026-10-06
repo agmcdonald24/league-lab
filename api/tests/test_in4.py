@@ -75,7 +75,12 @@ def test_board_with_context_and_no_matchup_module(client, monkeypatch):
     m = b["context_meta"]
     assert m["matchup"] is False and m["matchup_words"] == "Matchup: not available here."
     assert m["lines"] is True                                     # 2026 week 5: 15 of 15 games have a line
-    assert m["forecast"] is False                                 # not in a relation the site reads (docs/DFS.md)
+    # IO-1 (Wave I-O): the forecast comes from analytics.mart_game_weather when it exists (absent: no weather, as before)
+    from league_lab_api.db import missing_relations
+    if missing_relations(("mart_game_weather",)):
+        assert m["forecast"] is False
+    else:
+        assert m["forecast"] is True                              # 2026 week 5: 9 outdoor games with a forecast
     assert m["projection"]["corner"]["WR"] is False and m["projection"]["defense"]["WR"] is True
     sigs = [s for p in b["players"] for s in p["context"]]
     kinds = {s["signal"] for s in sigs}
@@ -96,13 +101,15 @@ def test_board_with_the_matchup_signal(client, monkeypatch):
     wr = [p for p in b["players"] if p["position"] == "WR"]
     corner = [s for p in wr for s in p["context"] if s["signal"] == "corner"]
     assert corner and all(not s["in_projection"] and s["projection_words"] == "Not in the projection" for s in corner)
-    look = b["worth_a_look"]
-    assert set(look) == {"WR"} and 0 < len(look["WR"]) <= 8
-    by = {p["key"]: p for p in b["players"]}
-    projs = [by[k]["proj"] for k in look["WR"]]
-    assert projs == sorted(projs, reverse=True)
-    first = by[look["WR"][0]]
-    assert first["worth"] and first["worth_reasons"][0].endswith("(not in the projection)")
+    # IO-1 (Wave I-O): the cornerback call no longer counts toward "Worth a look" (graded with no measurable effect:
+    # league_lab.dfs.WORTH_IGNORES), and nothing else outside the projection can be favourable: the list is empty and
+    # the screen says why. Wave I-N's rule (the corner counting) would have listed these receivers:
+    from league_lab import dfs as D
+    assert b["worth_a_look"] == {}
+    assert b["context_meta"]["worth_empty"].startswith("Nobody this week.")
+    assert "no longer counts" in b["context_meta"]["worth_rule"]
+    old_rule = [p for p in wr if D.worth(p["context"], ignore=())[0]]
+    assert old_rule and not any(p["worth"] for p in wr)
     # an unclear corner never counts: no list
     _fake_matchups(monkeypatch, certainty="unclear")
     b2 = client.get("/api/dfs/projections", params={"site": "dk", "week": 5, "limit": 1000}).json()

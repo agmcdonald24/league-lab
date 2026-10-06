@@ -37,7 +37,7 @@ from starlette.concurrency import run_in_threadpool
 
 from . import availability
 from .applib import cards, ui
-from .db import query
+from .db import missing_relations, query
 from .settings import ROOT, env
 
 router = APIRouter()
@@ -649,13 +649,56 @@ ROLE_SQL = """select gsis_id, position, week, targets, team_targets, carries, te
                 and position in ('RB', 'WR', 'TE')"""
 LINES_SQL = """select game_id, home_team, away_team, spread_line, total_line from analytics.dim_game
                where season = %s and week = %s and season_type = 'REG'"""
-# Weather: the forecast is in the database (``intermediate.int_game_weather``) but the site's database role reads
-# ``analytics`` / ``ops`` only and no analytics relation carries it — so no weather column (docs/DFS.md § Context;
-# ``dfs.weather_flag`` is ready for the day a mart publishes the forecast). This wave ships no new relation.
+# ---- IO-1 (Wave I-O): weather from ``analytics.mart_game_weather`` (one row per game of the season: roof, the forecast
+# or what was observed, when it was forecast). Read only when the relation exists (the live site has it from the first
+# nightly after the deploy: until then no weather, as before — rule 10). Not an input of the projection
+# (``dfs.SIGNAL_INPUTS["weather"]`` is asserted against the model's list).
+WX_SQL = """select game_id, wx_source, wx_dome, wx_wind_mph, wx_precip_in, wx_temp_f, wx_snow, forecast_at
+            from analytics.mart_game_weather where season = %s and week = %s"""
+# ---- end IO-1
 _context = memo.region("dfs_context", ttl=600.0, max_entries=4)
 CONTEXT_WORDS = ("Context, not a forecast: these signals sit beside the projection and do not change it. "
                  "\"Worth a look\" has no record behind it yet (no backtest).")
 MATCHUP_MISSING = "Matchup: not available here."
+# ---- IO-1 (Wave I-O): the record's words (league_lab_api/context_record.py) replace "no record behind it yet" when the
+# grade exists; the rule's words say the cornerback no longer counts (league_lab.dfs.WORTH_IGNORES: graded, no effect)
+RECORD_CONTEXT_WORDS = "Context, not a forecast: these signals sit beside the projection and do not change it."
+WORTH_RULE_WORDS = (f"Worth a look: at least {D.WORTH_MIN_FAVOURABLE} favourable signals, at least "
+                    f"{D.WORTH_MIN_OUTSIDE} of them not in the projection, and no difficult signal outside it. The "
+                    "cornerback call no longer counts: graded on 2025 and 2026 weeks 1–4 it made no measurable "
+                    "difference to how receivers scored against their projection.")
+WORTH_EMPTY_WORDS = ("Nobody this week. The one signal outside the projection that could put a player here, the "
+                     "cornerback call, made no measurable difference when graded, so it no longer counts; nothing "
+                     "else outside the projection is available during the season.")
+
+
+def _record() -> dict:
+    """``context_record.summary()``, or its empty shape when the module is absent or fails (never raises)."""
+    try:
+        from . import context_record
+        return context_record.summary()
+    except Exception:  # noqa: BLE001 - the record is never load-bearing for the board
+        return {"corner": {"graded": False, "n": 0, "words": None, "tiers": {}},
+                "worth": {"graded": False, "n": 0, "words": None}}
+
+
+CORNER_TIER = {"difficult": "shutdown", "favorable": "target", "neutral": "solid"}
+
+
+def _graded_corner(sig: dict, tiers: dict) -> None:
+    """The corner chip carries its tier's graded effect: the certainty x tier row of the record's grade. A likely call
+    only: its tone is exactly its corner's quarter (an unclear call's tone merges two corners, so its row is not
+    knowable from the chip, and an unclear call never colours a chip anyway)."""
+    cert = sig.get("certainty")
+    if cert != "likely":
+        return
+    tone = sig.get("cb_tone")
+    tier = CORNER_TIER.get(str(tone)) if tone else ("unranked" if sig.get("corner_rank") is None and sig.get("corner") else None)
+    g = tiers.get(f"{cert}/{tier}") if cert and tier else None
+    if g and g.get("words"):
+        sig["graded"] = g["words"]
+        sig["graded_effect"] = g.get("effect")
+# ---- end IO-1
 
 
 def _matchup_fn():
@@ -703,6 +746,13 @@ def _context_parts(season: int, week: int) -> dict:
     except Exception:  # noqa: BLE001
         ln = pd.DataFrame()
     wmap: dict = {}
+    # ---- IO-1: the week's weather, when the mart exists (absent: no weather signal, as before)
+    try:
+        if not missing_relations(("mart_game_weather",)):
+            wmap = {r["game_id"]: r for r in query(WX_SQL, (int(season), int(week))).to_dict("records")}
+    except Exception:  # noqa: BLE001 - weather is never load-bearing
+        wmap = {}
+    # ---- end IO-1
     for r in ln.to_dict("records"):
         for team, home in ((r["home_team"], True), (r["away_team"], False)):
             env_ = D.game_environment(team, _f(r.get("total_line")), _f(r.get("spread_line")), home)
@@ -721,6 +771,8 @@ def context_for(season: int, week: int, rows: list[dict], by: str = "proj") -> t
     """Each row (``key``, ``gsis_id``, ``position``, ``team``, ``out`` and ``by``) -> ``{key: {context: [signals],
     worth, worth_reasons}}`` and the meta the screen states (what is available this week, what the projection holds)."""
     parts = _context_parts(season, week)
+    rec = _record()                                                  # ---- IO-1
+    tiers = rec["corner"].get("tiers") or {}                         # ---- IO-1
     fn = _matchup_fn()
     mc: dict[str, dict] = {}
     if fn is not None:
@@ -739,15 +791,30 @@ def context_for(season: int, week: int, rows: list[dict], by: str = "proj") -> t
         wf = None if w is None else D.weather_flag(w.get("wx_source"), w.get("wx_dome"), _f(w.get("wx_wind_mph")),
                                                    _f(w.get("wx_precip_in")), _f(w.get("wx_temp_f")),
                                                    w.get("wx_snow"), p)
-        sig = D.signals(p, mc.get(str(r.get("gsis_id"))), parts["role"].get(str(r.get("gsis_id"))),
-                        parts["game"].get(r.get("team")), wf)
+        m = mc.get(str(r.get("gsis_id")))
+        sig = D.signals(p, m, parts["role"].get(str(r.get("gsis_id"))), parts["game"].get(r.get("team")), wf)
+        # ---- IO-1: the corner chip carries its tier's graded effect (the record's grade, when it exists)
+        if tiers:
+            cb = (m or {}).get("cb") or {}
+            for s_ in sig:
+                if s_["signal"] == "corner":
+                    probe = {**s_, "cb_tone": cb.get("tone")}
+                    _graded_corner(probe, tiers)
+                    if probe.get("graded"):
+                        s_["graded"], s_["graded_effect"] = probe["graded"], probe.get("graded_effect")
+        # ---- end IO-1
         ok, why = D.worth(sig)
         out[r["key"]] = {"context": sig, "worth": ok, "worth_reasons": why}
+    # ---- IO-1: the record's sentence replaces "no record behind it yet"; the rule says the corner no longer counts
+    worth_words = rec["worth"]["words"] if rec["worth"].get("graded") else None
     meta = {"matchup": fn is not None and bool(mc), "matchup_words": None if fn is not None and mc else MATCHUP_MISSING,
             "lines": parts["lines"], "forecast": parts["forecast"], "projection": D.projection_table(),
-            "in_words": D.IN_WORDS, "out_words": D.OUT_WORDS, "words": CONTEXT_WORDS,
-            "worth_rule": (f"Worth a look: at least {D.WORTH_MIN_FAVOURABLE} favourable signals, at least "
-                           f"{D.WORTH_MIN_OUTSIDE} of them not in the projection, and no difficult signal outside it.")}
+            "in_words": D.IN_WORDS, "out_words": D.OUT_WORDS,
+            "words": RECORD_CONTEXT_WORDS if worth_words else CONTEXT_WORDS,
+            "worth_rule": WORTH_RULE_WORDS, "worth_record": worth_words,
+            "corner_record": rec["corner"]["words"] if rec["corner"].get("graded") else None,
+            "worth_empty": WORTH_EMPTY_WORDS}
+    # ---- end IO-1
     return out, meta
 
 

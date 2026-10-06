@@ -889,6 +889,13 @@ app.include_router(outlook_mod.router, dependencies=[Depends(require_auth), Depe
 # ---- end IN-6
 
 
+# ---- IO-1 (Wave I-O): the context record — GET /api/context/record (league_lab_api/context_record.py; read bucket)
+from . import context_record as context_record_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(context_record_mod.router, dependencies=[Depends(require_auth)])
+# ---- end IO-1
+
+
 # ---- IM-3 (Wave I-M): the public site's doors. The rate limiter (ratelimit.py) inside the Guard (security.py: cross-site
 # writes, body sizes, the response headers on every answer, a 429 included); both outermost, ahead of the routes.
 #   GET /api/ratelimit   how this request was keyed ({keyed_by, test_address_used, bucket_tag}; never the address)
