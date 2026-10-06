@@ -159,7 +159,7 @@ def check_id(league_id: str) -> str:
 def check_username(username: str) -> str:
     """Sleeper usernames are letters, digits and _ . - ; lower-cased (Sleeper's lookup ignores case)."""
     s = str(username or "").strip()
-    if not _USERNAME.match(s):
+    if not _USERNAME.match(s) or set(s) <= {"."}:      # IM-3: "." / ".." never reach a URL path
         raise LeagueNotFound(f"not a Sleeper username: {username!r}")
     return s.lower()
 

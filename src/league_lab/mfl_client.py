@@ -70,6 +70,22 @@ _LEAGUE = re.compile(r"^\d{1,8}$")
 _HOST = re.compile(r"^https://(api|www\d{1,3})\.myfantasyleague\.com$")
 
 
+# ---- IM-3 (Wave I-M): MFL moves a league's calls to its www4N host by a redirect; urllib would follow a redirect to any
+# host. Only https://<name>.myfantasyleague.com is followed: anything else is MFLUnavailable (no request leaves for it).
+_REDIRECT_OK = re.compile(r"^https://[a-z0-9-]{1,40}\.myfantasyleague\.com(?::443)?(?:/|$)", re.I)
+
+
+class _MFLRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001 - urllib's signature
+        if not _REDIRECT_OK.match(str(newurl or "")):
+            raise urllib.error.URLError(f"redirect to another host refused: {urllib.parse.urlparse(str(newurl)).netloc!r}")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+_OPENER = urllib.request.build_opener(_MFLRedirects)
+# ---- end IM-3
+
+
 class MFLBusy(SleeperBusy):
     """Our MFL budget is spent for the moment (or MFL asked us to slow down)."""
 
@@ -208,7 +224,7 @@ class MFL:
             return self._fetch(url)
         req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as r:  # noqa: S310 - fixed https hosts
+            with _OPENER.open(req, timeout=self.timeout) as r:  # noqa: S310 - fixed https hosts (IM-3: redirects too)
                 return r.geturl(), r.read().decode("utf-8", "replace")
         except urllib.error.HTTPError as exc:
             if exc.code == 429:

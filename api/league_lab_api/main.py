@@ -44,6 +44,7 @@ Everything else is the web app (web/dist): a real file, else index.html (the app
 
 from __future__ import annotations
 
+import logging  # ---- IM-3
 import math
 import mimetypes
 from contextlib import asynccontextmanager
@@ -89,6 +90,7 @@ async def _give_memory_back(request: Request, call_next):
     return response
 
 JSON_CACHE = "private, max-age=120"
+_log = logging.getLogger("league_lab_api")      # ---- IM-3
 
 from . import ratelimit, refleague, security  # noqa: E402 - ---- IM-3 (Wave I-M): its own block, below
 
@@ -107,8 +109,10 @@ async def _not_found(_req: Request, exc: NotFound):
 async def _sleeper_down(_req: Request, exc: ondemand.SleeperDown):
     who = "MyFantasyLeague" if "MyFantasyLeague" in str(exc) else "Sleeper"      # I0-B: an MFL league says so
     who = getattr(exc, "who", None) or next((w for w in ("ESPN", "Yahoo") if w in str(exc)), who)   # ---- IK-3
+    # ---- IM-3: the cause (a provider's URL, an exception's text) goes to the server's log, not to a public answer
+    _log.warning("provider down (%s): %s", who, exc)
     return JSONResponse({"error": f"{who} did not answer", "detail": f"{who} did not answer. Try again in a minute.",
-                         "cause": str(exc), "code": "provider_down"}, status_code=502, headers={"Cache-Control": "no-store"})  # II-5: code
+                         "code": "provider_down"}, status_code=502, headers={"Cache-Control": "no-store"})  # II-5: code
 
 
 @app.exception_handler(A.SleeperBusy)

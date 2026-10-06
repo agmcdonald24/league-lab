@@ -172,8 +172,8 @@ def record(key: str) -> dict:
     league the nightly projects every morning), without its lineup record (``decisions``: those are managers' teams);
     for ``ref:ppr`` / ``ref:std`` the answer says it is kept in Half PPR. ``available: false`` when no house league."""
     from .applib import ui
-    from .ondemand import record as league_record
     from .myweek import NotFound
+    from .ondemand import record as league_record
     k = str(key).strip().lower()
     if k not in KEYS:
         raise NotFound(f"not a reference league: {key!r}")
