@@ -300,15 +300,22 @@
 {#snippet worthCard(rows: (ProjRow | SlatePlayer)[], perK: boolean)}
   <section class="min-w-0 rounded-lg border border-line bg-surface p-4" data-testid="dfs-worth">
     <h2 class="text-lg font-bold">Worth a look</h2>
-    <p class="text-sm text-ink-3">
-      Players with at least two signals in their favour, one of them something the projection does not hold. Context, not a graded forecast: there is no record behind this list
-      yet. {perK ? "Ordered by points per $1,000." : "Ordered by projection."}
-    </p>
+    <!-- ---- IO-1 (Wave I-O): the record's sentence replaces "no record behind this list yet" when the grade exists -->
+    {#if meta?.worth_record}
+      <p class="text-sm text-ink-3">Players with at least two signals in their favour, one of them something the projection does not hold. {perK ? "Ordered by points per $1,000." : "Ordered by projection."}</p>
+      <p class="mt-1 text-sm text-ink-2" data-testid="dfs-worth-record">{meta.worth_record}</p>
+    {:else}
+      <p class="text-sm text-ink-3">
+        Players with at least two signals in their favour, one of them something the projection does not hold. Context, not a graded forecast: there is no record behind this list
+        yet. {perK ? "Ordered by points per $1,000." : "Ordered by projection."}
+      </p>
+    {/if}
+    <!-- ---- end IO-1 -->
     {#if rows.length}
       <ul class="mt-1 grid grid-cols-1 divide-y divide-line sm:grid-cols-2 sm:gap-x-6 sm:divide-y-0 xl:grid-cols-3">{#each rows as p (p.key)}{@render worthRow(p, perK)}{/each}</ul>
     {:else}
       <p class="mt-2 text-sm text-ink-2" data-testid="dfs-worth-empty">
-        {meta && !meta.matchup ? "Nobody this week: the cornerback call is the signal the projection does not hold, and it is not available here." : "Nobody here this week."}
+        {meta?.worth_empty ? meta.worth_empty : meta && !meta.matchup ? "Nobody this week: the cornerback call is the signal the projection does not hold, and it is not available here." : "Nobody here this week."}
       </p>
     {/if}
   </section>
@@ -320,10 +327,10 @@
       <p class="mb-2 text-sm text-ink-2" data-testid="dfs-context-honest">{meta.words} A chip with a solid border is in the projection; a dashed border is not.</p>
       <ul class="space-y-1 text-sm text-ink-2">
         <li><span class="font-semibold text-ink">Defense against his position</span> (its rank and the points it gives up): {meta.projection.defense?.WR ? meta.in_words : meta.out_words}.</li>
-        <li><span class="font-semibold text-ink">The cornerback</span> (receivers): {meta.projection.corner?.WR ? meta.in_words : meta.out_words}.{meta.matchup_words ? ` ${meta.matchup_words}` : ""}</li>
+        <li><span class="font-semibold text-ink">The cornerback</span> (receivers): {meta.projection.corner?.WR ? meta.in_words : meta.out_words}.{meta.matchup_words ? ` ${meta.matchup_words}` : ""}{#if meta.corner_record}<span data-testid="dfs-corner-record">{` ${meta.corner_record}`}</span>{/if}</li>
         <li><span class="font-semibold text-ink">Role trend</span> (his share of the targets, carries and snaps, his last two games against the ones before): {meta.projection.role?.WR ? meta.in_words : meta.out_words} (it reads his last 3 games and the season). Routes run per dropback: {meta.projection.routes?.WR ? meta.in_words : meta.out_words}, and not available during the season.</li>
         <li><span class="font-semibold text-ink">The betting line</span> (over/under, spread, the team's expected points): {meta.lines ? (meta.projection.game?.WR ? meta.in_words : meta.out_words) + "." : "no line for this week yet."}</li>
-        <li><span class="font-semibold text-ink">Weather</span>: {meta.projection.weather?.WR ? meta.in_words : meta.out_words}; the forecast is not shown here yet.</li>
+        <li data-testid="dfs-weather-honest"><span class="font-semibold text-ink">Weather</span>: {meta.projection.weather?.WR ? meta.in_words : meta.out_words}; {meta.forecast ? "outdoor games carry the forecast at kickoff when it is unusual: wind 15 mph or more, rain 0.1 in or more, snow, below freezing. Since 2016, passers averaged 7.1 yards per attempt under 10 mph of wind, 6.8 at 15–20 mph and 6.2 at 20+ (observed weather, 2,639 games); the forecast can miss." : "no forecast for this week's games yet."}</li>
       </ul>
       <p class="mt-2 text-sm text-ink-3">{meta.worth_rule}</p>
     </Expander>

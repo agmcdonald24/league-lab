@@ -20,6 +20,9 @@ export interface Signal {
   shutdown?: boolean;
   certainty?: string | null;
   implied?: number | null;
+  // ---- IO-1 (Wave I-O): the corner's graded effect (the context record), when the grade exists
+  graded?: string | null;
+  graded_effect?: "none" | "measured" | null;
 }
 export interface ContextMeta {
   matchup: boolean;
@@ -31,6 +34,10 @@ export interface ContextMeta {
   out_words: string;
   words: string;
   worth_rule: string;
+  // ---- IO-1 (Wave I-O): the record's sentences (null without the record) and the empty list's words
+  worth_record?: string | null;
+  corner_record?: string | null;
+  worth_empty?: string | null;
 }
 export interface WithContext {
   context?: Signal[];
@@ -250,6 +257,9 @@ export function chipWords(s: Signal): string {
   if (s.signal === "corner") return s.shutdown ? "Shutdown corner" : s.tone === "favorable" ? "Soft corner" : s.tone === "difficult" ? "Tough corner" : "Corner unclear";
   if (s.signal === "defense") return s.tone === "favorable" ? "Soft defense" : s.tone === "difficult" ? "Tough defense" : "Defense average";
   if (s.signal === "game") return `Team total ${s.implied?.toFixed(1) ?? "—"}`;
+  // ---- IO-1: the forecast's own numbers ("Wind 20 mph", "Rain (0.13 in)") rather than one word
+  const m = /:\s*(.+?)\.?$/.exec(s.words ?? "");
+  if (m) return m[1].charAt(0).toUpperCase() + m[1].slice(1);
   return "Weather";
 }
 

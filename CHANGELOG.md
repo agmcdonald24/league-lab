@@ -14,6 +14,16 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   them, DFS's role trend, now `league_lab.role_trend` — one implementation). **Each visitor has his own share of
   Sleeper's and MFL's budget** (150 Sleeper calls at once then 60 a minute; MFL 50 then 12), set by the limiter's
   middleware, never applied to the nightly or the tests (SECURITY_PUBLIC § 13).
+- **IO-1 — the context, graded; the record kept; weather on DFS.** The cornerback call and DFS's "Worth a look" were
+  rebuilt for 2025 and 2026 weeks 1–4 from what was known before each game (the corner's rank in
+  `mart_cb_matchups` read the whole season — look-ahead; `context_record.cb_rank_asof` rebuilds it, equal to the mart at
+  season end) and graded against the projection (Half PPR, game-resampled intervals): **no measurable effect** for a
+  likely shutdown corner (−0.39, −1.39 to +0.72, 99 games) or an easy one (−0.02, −1.11 to +1.22, 79), and the list was
+  not distinguishable from chance (37 games, +0.72, −1.10 to +2.72). So the corner no longer counts toward "Worth a
+  look" (the list is empty and says why), its chip carries its grade, and the card prints the record's sentence.
+  `league-lab context-record` keeps `ops.context_record` (frozen before each first kickoff; played weeks rebuilt once,
+  labelled) and `ops.context_grade`; `GET /api/context/record`; `analytics.mart_game_weather` puts the forecast
+  on DFS's chips (not in the projection). docs/METRICS.md § "The context record" (cx1.0), docs/handbacks/IO-1.md.
 
 ## 2026-10-06 — Wave I-N
 

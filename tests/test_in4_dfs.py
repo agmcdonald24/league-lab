@@ -146,7 +146,10 @@ def test_signals_carry_their_projection_label():
     assert by["defense"]["in_projection"] and by["defense"]["projection_words"] == "In the projection"
     assert not by["corner"]["in_projection"] and by["corner"]["projection_words"] == "Not in the projection"
     assert by["role"]["in_projection"] and by["game"]["in_projection"]
-    ok, why = D.worth(sig)
+    # IO-1 (Wave I-O): the cornerback call no longer counts toward "Worth a look" (graded: no measurable effect), so
+    # nothing outside the projection is favourable here; Wave I-N's rule (ignore=()) still lists him
+    assert D.worth(sig) == (False, [])
+    ok, why = D.worth(sig, ignore=())
     assert ok and why[0].endswith("(not in the projection)") and len(why) == 4
 
 

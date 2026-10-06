@@ -157,6 +157,10 @@ def bucket_for(method: str, path: str, query: str = "") -> str | None:
     if path == "/api/matchups/board":
         return "research"
     # ---- end IN-3
+    # ---- IO-1 (Wave I-O): the context record's grade — a cached read of a ~20-row table (context_record.py)
+    if path == "/api/context/record":
+        return "read"
+    # ---- end IO-1
     return "read"
 
 

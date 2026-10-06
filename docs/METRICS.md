@@ -3895,6 +3895,148 @@ projection and its "Why this number"); the console's page does not draw it.
   him (2024–25)"); fewer: "no games without X to go on". The words say what is assumed: same team, the games X missed
   while on the roster, not a forecast.
 
+## The context record (cx1.0, IO-1, Wave I-O, 2026-10-06; `league_lab.context_record`, `ops.context_record`, `ops.context_grade`, `GET /api/context/record`)
+
+Two kinds of context were shown without a grade: the **cornerback call** (the matchup board, the home, DFS) and DFS's
+**"Worth a look"** (`dfs.worth`). This section grades both, says what changed because of it, and defines the record
+that keeps grading them from now on. Everything below is reproducible with `league-lab context-record` on a database
+with 2025 and 2026 through week 4 (the sandbox's `league_lab_im1`); the seed of the bootstrap is fixed (20261006).
+
+### What the call knew (the look-ahead finding)
+
+`mart_cb_matchups` builds the **call** from inputs before the game (the opponent's depth chart: the last snapshot
+before kickoff; where his targets went: since the start of last season, before the week) — clean. But the **corner's
+rank and quarter** come from `mart_cb_rankings` window `two_seasons` *of that season*: the season before plus the
+season **as it stands now**, the week itself and every later week included. For a past week that is **look-ahead**
+(for the next week to kick off it is not: the season so far is all that exists). Size: of 2,557 called receiver-weeks
+of 2025, **497 (19%) carry a different quarter** than the one known before the game; of 598 in 2026 weeks 1–4, 63 (11%).
+
+**What was done**: `context_record.cb_rank_asof(season, week)` recomputes the same ranking — the same pool (≥ 20
+coverage snaps per team game, a target, a cornerback in at least half his games), the same three z-scores, the same
+opponent adjustment (the offense's WR + TE yards per target over the game's season and the one before, the game left
+out), the same quarters — from the games **before** the week only (the opponent adjustment too). Check: at the end of
+a season it equals the mart **exactly** (2025: 64 of 64 ranked corners, the same rank and quarter; 2026: 69 of 69).
+The grade uses only the as-of quarter. Test: a week's own games never enter its rank
+(`tests/test_io1_context_record.py::test_asof_rank_never_reads_the_week_itself_or_later`).
+
+The other inputs, rebuilt as-of: the defense against his position = the screen's rank
+(`mart_defense_vs_position_current`: every defense's season-to-date points allowed per game to the position, ranked
+among all of them) from each defense's latest game before the week (`context_record.defense_rank_asof`; for 2026 week
+5 it equals the live mart, 160 of 160 defense-positions) — the same points allowed the projection reads as
+`opp_allowed_std`; the role trend = `dfs.role_trend` on his games of the season before the
+week, **routes per dropback left out** (the participation file arrives after the season: the live screen never had it);
+the weather = the last forecast fetched before kickoff (`int_game_weather.forecast_*`) when one was kept.
+**Not rebuilt as-of**: the betting line (`dim_game` keeps nflverse's closing line — later than a Thursday freeze for
+a Sunday game); the weather for 2025 (no forecasts were kept: a rebuilt 2025 week has no weather signal; weather can only
+remove a player from the list); the availability overlay that turns a call into "no call" when a named corner is not
+expected to play, and the list's "who cannot play" filter (the report as it stood is not kept).
+
+### How it is graded
+
+The projection made before the game, in **Half PPR** (`ref:half`, the reference scoring the site opens on = the
+League of Scrubs' scoring): 2025 from `ops.calibration_oof` (the production v3.0 fit on 2016–2024 applied walk-forward,
+as-of features); 2026 from `ops.projections` (weeks 1–3: the v2.0 refit of 2026-09-26, labelled `refit` — fitted on
+completed seasons with as-of features, but after those weeks kicked off, so not a kickoff record; week 4: the board
+frozen at kickoff). **Miss** = actual − projected, both priced the same way (the projected components; no 2-point
+conversions). Only player-weeks with a projection and a final game count. **Interval**: 95% bootstrap, 2,000 draws,
+**resampling whole games** (every receiver of a drawn game comes along). **vs rest** = the group's mean miss minus the
+mean miss of the comparison group (the other called receivers; for the list, everyone else at the position), with its
+own game-resampled interval — the projection's own bias at the position cancels. **Scored above** = miss > 0. About
+35% of receivers score above their projection in any group: the projection is a mean and the outcome is skewed right,
+so compare a group's share with the rest's, never with 50%.
+
+### The corner calls (receiver-games with a call, 2025 and 2026 weeks 1–4)
+
+| Certainty | Corner's quarter (as-of) | n | games | Mean miss (95%) | Scored above | vs the other called receivers (95%) |
+|---|---|---|---|---|---|---|
+| likely | shutdown | 99 | 72 | −0.59 (−1.58 to +0.42) | 35 (35%) | −0.39 (−1.39 to +0.72) |
+| likely | solid (average) | 133 | 100 | +0.32 (−0.61 to +1.33) | 46 (35%) | +0.57 (−0.48 to +1.63) |
+| likely | target (easy to throw on) | 79 | 61 | −0.23 (−1.32 to +0.95) | 31 (39%) | −0.02 (−1.11 to +1.22) |
+| likely | unranked | 160 | 109 | +0.60 (−0.32 to +1.56) | 69 (43%) | +0.88 (−0.02 to +1.80) |
+| unclear | shutdown | 323 | 166 | −0.58 (−1.17 to 0.00) | 107 (33%) | −0.43 (−1.05 to +0.21) |
+| unclear | solid | 516 | 229 | +0.17 (−0.32 to +0.71) | 223 (43%) | +0.50 (−0.05 to +1.12) |
+| unclear | target | 271 | 141 | −0.76 (−1.40 to −0.05) | 89 (33%) | −0.63 (−1.35 to +0.08) |
+| unclear | unranked | 609 | 238 | −0.37 (−0.82 to +0.07) | 214 (35%) | −0.21 (−0.75 to +0.29) |
+| any | shutdown | 422 | 180 | −0.59 (−1.07 to −0.08) | 142 (34%) | −0.46 (−1.02 to +0.14) |
+| any | solid | 649 | 242 | +0.20 (−0.22 to +0.65) | 269 (41%) | +0.59 (+0.10 to +1.12) |
+| any | target | 350 | 146 | −0.64 (−1.21 to −0.07) | 120 (34%) | −0.51 (−1.15 to +0.09) |
+| any | unranked | 769 | 249 | −0.16 (−0.59 to +0.27) | 283 (37%) | +0.08 (−0.43 to +0.55) |
+| — | every called WR | 2,190 | 335 | −0.21 (−0.47 to +0.04) | 814 (37%) | |
+| — | every WR with a projection | 2,921 | 335 | −0.31 (−0.50 to −0.11) | 1,013 (35%) | |
+
+**The finding: no measurable effect.** A likely shutdown corner: −0.39 points against the other called receivers
+(−1.39 to +0.72, 99 games); a likely easy corner: −0.02 (−1.11 to +1.22, 79 games). The direction the words imply is not
+there: receivers facing an "easy" corner (any certainty) did no better than the rest (−0.51, −1.15 to +0.09), about as
+much below as those facing a shutdown one (−0.46). The one interval clear of 0 is the middle quarter (solid, +0.59,
++0.10 to +1.12) — the tier that carries no direction, one of 12 cells tested at 95%, where one is expected by chance;
+it is not acted on. By season (the same rule): 2025 alone, likely shutdown −0.15 (−1.22 to +0.95, 73), likely easy −0.56
+(−1.63 to +0.60, 56); 2026 weeks 1–4, 26 and 23 games — too few to say anything. **In Standard scoring** (2025 only:
+the same walk-forward fit's component lines re-priced with the seed `standard` through `calibration.oof_rows`, which
+reproduces the Half PPR rows exactly): likely shutdown −0.19 (−1.10 to +0.72, 73), likely easy −0.58 (−1.50 to +0.42,
+56) — the same answer. One cell worth watching, not acted on: a likely call on an **unranked** corner (a backup or a
+new starter with too few snaps to rank) +0.88 against the rest (−0.02 to +1.80, 160 games; 2025 alone +1.22, +0.20 to
++2.30) — no tone is attached to "unranked" and the list never used it. The projection already counts the defense
+against his position; whatever a corner's quarter adds beyond it is smaller than these samples can see.
+
+### "Worth a look" (rebuilt with Wave I-N's rule — the corner counting)
+
+Rebuilt each week from the as-of inputs above, through the screen's own functions (`dfs.signals`, `dfs.worth`), and
+listed as the screen lists it (the top 8 per position by projection; never more than 8 were flagged in a week, so
+listed = flagged). 2025 weeks 1–18 and 2026 weeks 1–4; the role trend first exists in week 5 of each season.
+
+| Group | n | games | Mean miss (95%) | Scored above | vs comparison (95%) |
+|---|---|---|---|---|---|
+| listed | 37 | 29 | +0.40 (−1.47 to +2.51) | 15 (41%) | |
+| everyone else at the position (WR) | 2,884 | 335 | −0.31 (−0.51 to −0.12) | 998 (35%) | listed +0.72 (−1.10 to +2.72) |
+| everyone else projected 6+ points | 1,219 | 335 | −0.23 (−0.64 to +0.16) | 494 (41%) | listed +0.63 (−1.25 to +2.71) |
+
+**Not distinguishable from chance** (in Standard scoring, 2025: −0.44 against the rest, −1.82 to +0.93, 28 games).
+Every listed player is a receiver (only receivers get a corner call); all 37 had a
+likely easy corner, 16 a favourable defense, 17 a team expected to score 26+, 11 a role up. By season: 2025, 28 listed,
+10 above, −0.55 against the rest (−2.09 to +0.89); 2026 weeks 1–4, 9 listed, 5 above, +4.57 (−1.44 to +10.47).
+
+### What changed because of it
+
+* **The cornerback call no longer counts toward "Worth a look"** (`dfs.WORTH_IGNORES = {"corner"}`), neither as the
+  favourable signal outside the projection nor as the difficult one that rules a player out. It was the only signal
+  both outside the projection and able to be favourable (routes per dropback is unavailable during the season), so
+  **the list is empty** and the screen says why. The rule was not tuned on these weeks: the change follows from the
+  corner's grade alone; no other rule was tried in its place. (Looked at, not adopted: two favourable signals with the
+  corner left out — all of them already in the projection — 829 player-weeks, +0.43 against the rest, +0.03 to +0.81:
+  found on the weeks it is graded on, barely clear of 0, and a list of what the projection already holds. The record
+  stores every signal, so it can be graded out of sample from 2026 week 5 before anyone adopts it.)
+* The corner stays on each receiver as **context with its grade** (the chip loses its colour when its quarter's row
+  holds 0; its words say "Graded: no measurable effect (…)").
+* `ops.context_record` keeps **both** verdicts every week (`worth` / `listed`: today's rule; `worth_corner` /
+  `listed_corner`: Wave I-N's), so the corner's list keeps being graded on weeks it has not seen.
+
+### The record (`ops.context_record`) and the stored grade (`ops.context_grade`)
+
+One row per player-week with a priced projection and a signal: the signals as the DFS screen shows them (jsonb: signal,
+tone, words, in the projection), the defense's tone, the corner's certainty / quarter / rank / pool size, the role trend,
+the game's tone, the weather's tone, `worth` / `listed` and `worth_corner` / `listed_corner`, the Half PPR projection at
+the freeze and its model version, `record_source`, `as_of`, `first_kickoff_at`, and after the game `actual_points`,
+`miss`, `graded_at`. **The freeze rule is `ops.lineup_record`'s** (`context_record.record_plan`): the next week to kick
+off is rewritten by every run until its first kickoff (`kickoff`); a week that has kicked off and is stored is never
+rewritten (only its actuals filled once final); a played week with nothing stored is rebuilt once from the as-of inputs
+and labelled `reconstructed` (`as_of` = one second before its first kickoff). Every run then replaces
+`ops.context_grade` (≈20 rows: per certainty × quarter, per quarter, per rule, and the two sentences) — what the site
+reads. Sizes on the sandbox: 8,790 rows, 5.6 MB (2025: 5,829; 2026 weeks 1–4: 2,393; week 5: 568); about 570 rows and
+0.35 MB a week. First run 31 s (22 weeks rebuilt), then 2–3 s a night.
+
+### Weather on DFS (`analytics.mart_game_weather`)
+
+One row per game of the current season and the one before (557 rows, 192 kB): `int_game_weather`'s value for the game
+and its roof, the teams, `forecast_at`. DFS flags an outdoor game's **forecast** (`dfs.weather_flag`, unchanged) at wind
+15 mph or more, precipitation 0.1 in or more, snow, below 32 °F (cold alone carries no tone); wind, rain or snow is
+difficult for a passer or a receiver. What the marks rest on (2016–2025 regular season, observed weather, per game,
+both teams' passing, not adjusted for who played): yards per attempt 7.34 in domes (759 games), 7.13 under 10 mph
+(1,329), 6.86 at 10–15 (407), 6.79 at 15–20 (120), 6.16 at 20+ (24); EPA per attempt +0.044 under 10 mph, −0.030 at 15–20,
+−0.120 at 20+; precipitation 0.1 in or more 6.48 yards per attempt (90 games) against 7.07 (1,790). **Not in the
+projection**: projection v3 reads no `wx_` column (`tests/test_io1_context_record.py::test_weather_is_not_in_the_projection`);
+plan D3 tested the group and did not keep it. A forecast can miss (the train / serve gap above, § Weather). The weather
+flag is not graded (2025 kept no forecasts).
+
 ## Deferred (status in registry)
 
 | Metric | Status | What it needs |
