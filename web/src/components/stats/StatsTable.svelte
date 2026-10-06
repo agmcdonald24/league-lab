@@ -84,7 +84,7 @@
   });
   $effect(() => {
     void visible;
-    if (!scroller) return;
+    if (!scroller || !windowed) return;
     const tr = scroller.querySelector<HTMLElement>("tbody tr[data-id]");
     const th = scroller.querySelector<HTMLElement>("thead");
     if (tr) rowH = Math.max(24, tr.getBoundingClientRect().height);
@@ -114,9 +114,12 @@
   // a phone shows no headshot in the name column (≤ 120 px): not rendered at all there (one component a row fewer)
   const faces = typeof window === "undefined" || typeof window.matchMedia !== "function" || window.matchMedia("(min-width: 640px)").matches;
   const groups = $derived(grouped ? runs(cols) : []);
+  // a group of one or two columns is narrow: its name in a short form (the whole name on hover, and to a screen reader
+  // through the header cell's title)
+  const NARROW: Record<string, string> = { "Games and points": "Games", "Expected points": "Expected", "Snaps and routes": "Snaps", "Next Gen Stats": "Next Gen", "Advanced (PFR)": "PFR" };
   const starts = $derived(new Set(groups.slice(1).map((g) => g.cols[0].id)));
   // a column's cell class, worked out once per column (20,000 cells at 450 rows x 45 columns)
-  const colClass = $derived(cols.map((c) => `px-2 py-1.5 text-right whitespace-nowrap${sortId === c.id ? " ll-sorted" : ""}${starts.has(c.id) ? " ll-gstart" : ""}`));
+  const colClass = $derived(cols.map((c) => `px-1.5 py-1.5 text-right whitespace-nowrap sm:px-2${sortId === c.id ? " ll-sorted" : ""}${starts.has(c.id) ? " ll-gstart" : ""}`));
 
   // ---- the row a tap picked (highlighted until another tap); the note that reads a dash's reason on a tap
   let hl = $state<string | null>(null);
@@ -212,8 +215,9 @@
         <tr class="ll-ghead" data-testid="stats-group-row">
           <th scope="col" rowspan="2" class="ll-stick ll-corner ll-label bg-raised px-2 py-2 pl-3 text-left align-bottom">Player</th>
           {#each groups as g, i (g.name)}
-            <th scope="colgroup" colspan={g.cols.length} class="ll-g bg-raised px-2 text-left whitespace-nowrap {i > 0 ? 'll-gstart' : ''}" data-testid="stats-group-head" data-group={g.name}
-              ><span class="ll-gname">{g.name}</span></th
+            <th scope="colgroup" colspan={g.cols.length} class="ll-g bg-raised px-2 text-left whitespace-nowrap {i > 0 ? 'll-gstart' : ''}" title={g.name} data-testid="stats-group-head" data-group={g.name}
+              >{#if g.cols.length <= 2 && NARROW[g.name]}<span class="ll-gbox" aria-hidden="true"><span class="ll-gname">{NARROW[g.name]}</span></span><span class="sr-only">{g.name}</span
+                >{:else}<span class="ll-gbox"><span class="ll-gname">{g.name}</span></span>{/if}</th
             >
           {/each}
           {#if owner}<th scope="col" rowspan="2" data-owner class="ll-label hidden bg-raised px-2 py-2 pr-3 text-left align-bottom sm:table-cell">Team in league</th>{/if}
@@ -225,7 +229,7 @@
           <th
             scope="col"
             data-c={c.id}
-            class="ll-label bg-raised px-1 py-1 text-right whitespace-nowrap {starts.has(c.id) ? 'll-gstart' : ''} {sortId === c.id ? 'll-sorted' : ''}"
+            class="ll-label bg-raised px-0.5 py-1 text-right whitespace-nowrap {starts.has(c.id) ? 'll-gstart' : ''} {sortId === c.id ? 'll-sorted' : ''}"
             aria-sort={sortId === c.id ? (dir === "asc" ? "ascending" : "descending") : undefined}
             title={`${title(c, mode)} — ${c.definition}${c.denominator ? ` Denominator: ${c.denominator}.` : ""}`}
           >
@@ -324,13 +328,26 @@
     height: var(--ll-gh);
     border-bottom: 1px solid var(--color-line);
   }
+  /* a group's name never widens its columns (width 0, then the cell's width; clipped when the group is narrow, the
+     whole name on hover) and stays in view while a wide group scrolls under it (sticky; clip keeps it working) */
+  .ll-gbox {
+    display: block;
+    width: 0;
+    min-width: 100%;
+    overflow: clip;
+  }
   .ll-gname {
+    display: inline-block;
     position: sticky;
     left: calc(var(--ll-stick) + 0.5rem);
     font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.02em;
     color: var(--color-ink-2);
+  }
+  /* the column labels: the label style, tracked a little tighter (31 columns want the width) */
+  .ll-chead .ll-sortbtn {
+    letter-spacing: 0.03em;
   }
   .ll-table tbody td,
   .ll-table tbody th {

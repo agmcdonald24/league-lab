@@ -371,6 +371,23 @@ labels, tooltips, summaries, accessibility labels and generated text, the consol
 | the account page | "Yahoo: connected 2026-10-05 — it comes back on any device you sign in on." · "ESPN: needs reconnecting (it no longer opens your leagues)." + **Reconnect ESPN** · "No Yahoo or ESPN connection saved. Connect one on the league setup screen while signed in and it follows you." | a token, a GUID or a cookie value on screen |
 | a provider switched off (`/api/providers` status `off`) | "ESPN leagues: not available right now. Sleeper and MyFantasyLeague leagues work as before." in place of the form | a form that can only fail |
 
+## The Stats tables (Wave I-M, IM-2)
+
+Players · Stats is the full table Andrew asked for ("a full table of that shown instead of … you have to click into
+them"). The words on the screen (`routes/Players.svelte`, `components/stats/`):
+
+| Where | The words we use | Never |
+|---|---|---|
+| the view switch (above the table) | **Key stats** · **Full table**, then "31 columns" (the count on screen) | "Basic / Advanced", "Pro view" |
+| the group headers and toggles (IM-1's names; the client's map until the API sends them) | Games and points · Receiving · Rushing · Passing · Air yards · Red zone · Efficiency · Expected points · Next Gen Stats · Charting · Snaps and routes · Advanced (PFR); a chip reads "✓ Receiving" (shown) or "+ Receiving" (hidden: tap to show); a group of one or two columns shows a short form in its header — **Games**, **Expected**, **Snaps**, **Next Gen**, **PFR** — the whole name on hover and to a screen reader | color alone for shown / hidden |
+| every group hidden | "Every column group is hidden. Tap a group above to show its columns." | an empty table |
+| the rows | "Showing 50 of 291" + **Show all 291** · after it **Show the first 50** | "Load more", "Page 2" |
+| the file | **↓ Download CSV**; the file's header row is the column labels ("Target share (%)", "Receiving yards per game"), unknown is an empty cell, never 0; its name `isuckatfantasy-stats-2026-season-wr-te-full.csv` | a 0 for unknown |
+| a phone, the table wider than the screen | "Swipe for more →" (until the first sideways scroll) | — |
+| a greyed number (a rate on a small sample) | on hover and on a tap: "6 targets in his 2 games. Small sample: 6 targets (under 10), so this rate moves a lot." — per target / per reception / per carry / per pass attempt rates, charted and Next Gen Stats rates (`SMALL` in `components/stats/columns.ts`: targets < 10, receptions < 8, carries < 15, pass attempts < 30, charted targets < 10, NGS targets < 10 / receptions < 8 / carries < 20 / pass attempts < 50) | "unreliable", "noisy" |
+| a dash | on hover and on a tap: the column's reason ("No Next Gen Stats week in this window: … unknown, not zero.") | 0 |
+| How to read this (added line) | "**Key stats** are the numbers to read first. **Full table** shows every column we have for the position, grouped (Receiving, Air yards, Red zone…): tap a group above the table to hide or show it. A greyed number rests on a small sample: tap it, or a dash, for the reason." | — |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

@@ -2,6 +2,18 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-06 — Wave I-M
+
+- **IM-2 — the Stats tables' screen: the full table, readable without clicking into anyone.** Players · Stats has two
+  views one tap apart: **Key stats** (the preset's columns) and **Full table** (every column the position has, 31 for
+  WR / TE today, under group headers: Receiving · Air yards · Red zone · Next Gen Stats · …); Full table from 900 px,
+  Key stats on a phone; `?view=` and remembered on the device. A table built for width (`components/stats/`): the name
+  column and both header rows sticky, sideways scroll inside the box only, sort on any column (`aria-sort`), group
+  toggles over the column picker, a tapped row highlighted, a dash's reason and a small sample's size on hover or tap,
+  "Showing 50 of 291 — Show all" (past 100 rows only the rows near the visible part are in the page: smooth at 450 rows
+  x 46 columns), **Download CSV** (`/api/players.csv` when the API has it, else built in the browser). Works on today's
+  answer and on IM-1's (`group`, `full`). The search's pending write no longer lands on the next page's address.
+
 ## 2026-10-05 — Wave I-L
 
 - **PO — Yahoo refuses the app, and the app said so wrongly.** A friend connected with Yahoo four times in three minutes

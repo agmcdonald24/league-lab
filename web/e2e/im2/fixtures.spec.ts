@@ -88,8 +88,9 @@ test("Full table: every WR / TE column we have (> 25) under group headers; Key s
   await expect(colHeads(page)).toHaveCount(wrteAvailable.length);
   expect(wrteAvailable.length).toBeGreaterThan(25);
   const groups = page.getByTestId("stats-group-head");
-  await expect(groups.first()).toHaveText("Games and points");
-  const names = await groups.allTextContents();
+  await expect(groups.first()).toHaveAttribute("data-group", "Games and points");
+  await expect(groups.first()).toContainText("Games and points"); // a narrow group's short name on screen, the whole one for a screen reader
+  const names = await groups.evaluateAll((ths) => ths.map((th) => th.getAttribute("data-group")!));
   for (const g of ["Receiving", "Air yards", "Red zone", "Next Gen Stats", "Charting", "Snaps and routes", "Rushing"]) expect(names).toContain(g);
   expect(names.indexOf("Receiving")).toBeLessThan(names.indexOf("Rushing")); // a receiver's own stats first
   // a group header spans its columns (scope=colgroup + colspan), one <colgroup> per group
@@ -141,7 +142,7 @@ test("sort any column (the sorted column marked, aria-sort), then the group togg
   await expect(chip).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("sort-first_read_target_share")).toHaveCount(0);
   await expect(colHeads(page)).toHaveCount(wrteAvailable.length - 3);
-  await expect(page.getByTestId("stats-group-head").filter({ hasText: "Charting" })).toHaveCount(0);
+  await expect(page.locator('[data-testid="stats-group-head"][data-group="Charting"]')).toHaveCount(0);
   await tap(page, chip, isMobile);
   await expect(page.getByTestId("sort-first_read_target_share")).toHaveCount(1);
   // the column picker on top: untick one column of the Full table
@@ -315,12 +316,12 @@ test("IM-1's answer shape: the API's groups and full list win; a new column the 
   await expect(colHeads(page)).toHaveCount(full.length);
   await expect(page.getByTestId("sort-charted_targets")).toHaveCount(0); // not in the answer's full list
   // the answer's group: yards per target is Efficiency there (Receiving in the client's own map)
-  const eff = page.getByTestId("stats-group-head").filter({ hasText: "Efficiency" });
+  const eff = page.locator('[data-testid="stats-group-head"][data-group="Efficiency"]');
   await expect(eff).toHaveCount(1);
   const ids = await colHeads(page).evaluateAll((ths) => ths.map((th) => th.querySelector("button")?.getAttribute("data-testid")?.replace("sort-", "")));
   const effAt = ids.indexOf("yards_per_target");
   expect(ids[effAt + 1]).toBe("yac_per_reception"); // grouped together, catalogue order inside the group
-  await expect(page.getByTestId("stats-group-head").filter({ hasText: "Advanced (PFR)" })).toHaveCount(1);
+  await expect(page.locator('[data-testid="stats-group-head"][data-group="Advanced (PFR)"]')).toHaveCount(1);
   const drops = rows(page).first().locator('td[data-col="pfr_drops"]');
   await expect(drops).toHaveText("—");
   await expect(drops).toHaveAttribute("title", /PFR has not charted his games yet/);
@@ -386,7 +387,6 @@ test("400 rows x 40 columns: time to show all and to scroll (a phone at 4x CPU s
   if (isMobile) await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
   await page.goto(url("&view=full")); // every position: 453 players x 46 columns on this recording
   await expect(rows(page)).toHaveCount(50);
-  if (process.env.IM2_CSS) await page.addStyleTag({ content: process.env.IM2_CSS }); // TEMP experiment
   const cols = await colHeads(page).count();
   expect(cols).toBeGreaterThanOrEqual(40);
   const n = ALL.total;
