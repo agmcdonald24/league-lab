@@ -213,7 +213,9 @@ def test_write_conflict_publish_read_unpublish_delete_restore(editor, folder):
     assert editor.get(f"/api/blog/{p['slug']}").status_code == 404
     pub = editor.post(f"/api/blog/posts/{p['id']}/publish", json={"revision": p["revision"]}, headers=SAME)
     assert pub.status_code == 200 and pub.json()["status"] == "published" and pub.json()["published_at"]
-    listed = editor.get("/api/blog").json()["posts"]
+    r = editor.get("/api/blog")
+    assert r.headers["cache-control"] == "public, max-age=0, must-revalidate"   # a post published now shows on the next load
+    listed = r.json()["posts"]
     assert [x["slug"] for x in listed][:2] == ["start-washington-a-case", "from-a-file"]       # newest first, one list
     one = editor.get(f"/api/blog/{p['slug']}").json()
     assert one["markdown"] == "Tab A's words." and one["author"] == "Andrew" and one["tags"] == ["matchups"]
@@ -344,6 +346,12 @@ def test_hostile_fields_are_stored_as_text_and_served_escaped(editor, folder):
     assert "<script>alert" not in head and "onerror=" not in head.replace("onerror=alert(2)&gt;", "")
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in head and "&lt;/description&gt;" in head
     assert head.count("<title>") == 1 and head.count('property="og:title"') == 1
+    os.environ["LEAGUE_LAB_WEB_DIST"] = str(d)
+    try:                                                                # the editor's addresses are the app's (200)
+        assert editor.get("/blog/new").status_code == 200
+        assert editor.get(f"/blog/edit/{p['id']}").status_code == 200
+    finally:
+        del os.environ["LEAGUE_LAB_WEB_DIST"]
 
 
 def test_bad_fields_are_refused(editor):
@@ -422,7 +430,8 @@ def test_without_the_tables_the_blog_is_the_files_and_the_editor_is_gone(api, fo
         assert r.status_code == 404 and r.json()["code"] == "not_found", (method, path)
     assert blog_store.published_meta() == []
     files = [blog.meta(p) for p in blog.index()]
-    assert api.get("/api/blog").json() == {"posts": files}
+    r = api.get("/api/blog")
+    assert r.json() == {"posts": files} and r.headers["cache-control"] == "public, max-age=300"   # today's answer
     assert api.get("/api/blog/from-a-file").json()["markdown"].startswith("The file's body.")
     assert api.get("/api/blog/no-such").status_code == 404
     assert api.get("/blog/rss.xml").status_code == 200 and api.get("/sitemap.xml").status_code == 200

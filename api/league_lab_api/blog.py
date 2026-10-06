@@ -240,7 +240,10 @@ pages = APIRouter()         # the feed, the pictures, the sitemap: what crawlers
 def blog_list(limit: int = LIST_DEFAULT) -> JSONResponse:
     if limit < 1 or limit > LIST_MAX:
         raise HTTPException(status_code=400, detail=f"limit is 1 to {LIST_MAX}")
-    return JSONResponse({"posts": [meta(p) for p in posts()[:limit]]}, headers={"Cache-Control": "public, max-age=300"})
+    listed = [meta(p) for p in posts()[:limit]]
+    # ---- IO-3: with the editor's table the list may change any minute (a post just published): revalidate each load
+    cache = "public, max-age=0, must-revalidate" if blog_store.live() else "public, max-age=300"
+    return JSONResponse({"posts": listed}, headers={"Cache-Control": cache})
 
 
 # ---- IO-3 (Wave I-O): the editor (blog_store.py). `mine` and `export` are one path segment like a slug, so they are
@@ -270,8 +273,8 @@ def blog_post(slug: str) -> JSONResponse:
     if post is None or body is None:
         return JSONResponse({"error": NOT_FOUND, "detail": NOT_FOUND, "code": "no_post"}, status_code=404,
                             headers={"Cache-Control": "no-store"})
-    # ---- IO-3: a database post may change when its editor saves: a minute in caches, not five
-    cache = "public, max-age=60" if post.get("source") == "db" else "public, max-age=300"
+    # ---- IO-3: a database post may change when its editor saves: revalidated on each load, like the list
+    cache = "public, max-age=0, must-revalidate" if blog_store.live() else "public, max-age=300"
     return JSONResponse({**meta(post), "markdown": body}, headers={"Cache-Control": cache})
 
 
@@ -361,6 +364,10 @@ def preview(path: str) -> dict[str, Any] | None:
         return {"title": title, "description": desc, "url": ORIGIN + ("/" if p == "/" else p), "image": DEFAULT_IMAGE,
                 "type": "website", "status": 200}
     m = re.fullmatch(r"/blog/([^/]+)", p)
+    if m and m.group(1) == "new":                    # ---- IO-3: the editor's address is the web app's, never a post
+        title, desc = PAGES["/blog"]
+        return {"title": title, "description": desc, "url": f"{ORIGIN}/blog", "image": DEFAULT_IMAGE, "type": "website",
+                "status": 200}
     if m:
         post = find(m.group(1))
         if post is None:

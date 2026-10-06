@@ -513,22 +513,32 @@ def to_markdown(p: dict[str, Any]) -> str:
 # ---------------------------------------------------------------- the public side (blog.py reads these)
 def published_meta() -> list[dict[str, Any]]:
     """The published database posts' meta (no bodies), newest first; [] without the schema. One query a minute."""
+    return _published()[1]
+
+
+def live() -> bool:
+    """The `blog` table is there to read: the public answers then say `no-cache` (a post published a moment ago shows
+    on the next load: max-age=0, must-revalidate); without it they keep the files' five minutes."""
+    return _published()[0]
+
+
+def _published() -> tuple[bool, list[dict[str, Any]]]:
     hit = _pub.get("list")
     if hit is None:
         hit = _pub.put("list", _read_published())
     return hit
 
 
-def _read_published() -> list[dict[str, Any]]:
+def _read_published() -> tuple[bool, list[dict[str, Any]]]:
     try:
         with db.pool().connection(timeout=5) as c:
             if c.execute("select has_table_privilege(to_regclass(%s), 'select')", TABLES[:1]).fetchone()[0] is not True:
-                return []
+                return False, []
             rows = c.execute("select slug, title, summary, tags, author, minutes, published_at from blog.posts "
                              "where status = 'published' order by published_at desc limit %s", (MAX_POSTS,)).fetchall()
     except Exception as exc:                                         # noqa: BLE001 - the files' blog stays up
         log.info("blog: database posts not read (%s)", exc.__class__.__name__)
-        return []
+        return False, []
     out = []
     for slug, title, summary, tags, author, minutes, published in rows:
         if not blog.SLUG.fullmatch(slug or "") or not title:
@@ -536,7 +546,7 @@ def _read_published() -> list[dict[str, Any]]:
         out.append({"slug": slug, "title": title, "date": _date(published), "summary": summary or "",
                     "author": author or blog.SITE_AUTHOR, "tags": list(tags or []), "minutes": minutes or 1,
                     "image": None, "draft": False, "source": "db"})
-    return out
+    return True, out
 
 
 def published_body(slug: str) -> str | None:

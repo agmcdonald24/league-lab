@@ -32,6 +32,11 @@
   let blogChunk: ReturnType<typeof loadBlog> | null = null;
   const blogPage = () => (blogChunk ??= loadBlog());
   // ---- end IN-1
+  // ---- IO-3 (Wave I-O): the blog's editor (its own chunk; only an editor gets past its first call)
+  const loadEditor = () => import("./routes/BlogEditor.svelte");
+  let editorChunk: ReturnType<typeof loadEditor> | null = null;
+  const editorPage = () => (editorChunk ??= loadEditor());
+  // ---- end IO-3
   // the research screens and About load on first use (their own chunks): My Week's first screen stays small
   const LAZY = {
     trends: () => import("./routes/Trends.svelte"),
@@ -84,7 +89,7 @@
   const r = $derived(route.current);
   // ---- IN-1: the screens anyone opens without a league — the home, the blog, a post: in the frame (the tabs, the search,
   // the drawer) on the league in the URL or remembered, else on the reference league (Half PPR)
-  const openDoor = $derived(r.name === "home" || r.name === "blog" || r.name === "post");
+  const openDoor = $derived(r.name === "home" || r.name === "blog" || r.name === "post" || r.name === "write"); // ---- IO-3: + write
 
   // ---- IN-5 (Wave I-N): the boundaries below (a render error shows ErrorCard, never a blank screen) start again when
   // the screen changes (another tab, another player): a boundary that failed leaves its reset here
@@ -272,6 +277,13 @@
           <div class="space-y-3" aria-label="Loading" data-testid="loading"><div class="ll-skel h-8 w-1/2"></div><div class="ll-skel h-40"></div></div>
         {:then m}
           <m.default slug={r.slug} {league} />
+        {/await}
+      {:else if r.name === "write"}
+        <!-- ---- IO-3: the blog's editor (its own chunk) -->
+        {#await editorPage()}
+          <div class="space-y-3" aria-label="Loading" data-testid="loading"><div class="ll-skel h-8 w-1/2"></div><div class="ll-skel h-40"></div></div>
+        {:then m}
+          <m.default id={r.slug === "new" ? null : r.slug} {league} />
         {/await}
       {:else if isRef(league) && NEEDS_LEAGUE.has(r.name)}
         <!-- ---- IM-3: a screen that needs a league and a team, opened without one: the invitation, never an error -->

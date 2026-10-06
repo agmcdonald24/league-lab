@@ -34,7 +34,9 @@ export type RouteName =
   // ---- IN-1: the home page ("/home", and "/" when no league is remembered), the blog ("/blog"), a post ("/blog/<slug>")
   | "home"
   | "blog"
-  | "post";
+  | "post"
+  // ---- IO-3: the blog's editor ("/blog/new", "/blog/edit/<id>": the post's id in `slug`)
+  | "write";
 
 const NAMED: Record<string, RouteName> = {
   "/leagues": "leagues",
@@ -75,8 +77,10 @@ function parse(): Route {
   // ---- IN-1: "/" is the home page when no league is in the URL nor remembered on this device (a returning manager's
   // "/" is his week); "/home" always is
   const home = path === "/" && !params.get("league") && !rememberedLeague();
-  const name: RouteName = m ? "player" : post ? "post" : home ? "home" : (NAMED[path] ?? "week");
-  return { name, gsis: m ? decodeURIComponent(m[1]) : null, params, depth, slug: post ? post[1] : null };
+  // ---- IO-3: "/blog/new" and "/blog/edit/<id>" are the editor, ahead of the post pattern ("new" is never a slug)
+  const write = path === "/blog/new" ? "new" : (path.match(/^\/blog\/edit\/([0-9a-f-]{36})$/)?.[1] ?? null);
+  const name: RouteName = m ? "player" : write ? "write" : post ? "post" : home ? "home" : (NAMED[path] ?? "week");
+  return { name, gsis: m ? decodeURIComponent(m[1]) : null, params, depth, slug: write ?? (post ? post[1] : null) };
 }
 
 // ---- IN-1: lib/prefs.ts's key, read here without importing prefs (the router stays free of the app's modules)
