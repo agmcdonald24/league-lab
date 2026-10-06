@@ -40,6 +40,20 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   upload; lineups take stacks (QB + 1 or 2 pass catchers, a bring-back, no defense against the QB) and a maximum
   exposure, and accept a published `slate_id`. No real salary file ships. `tests/test_in4_dfs.py`, `api/tests/test_in4.py`,
   `web/e2e/in4`.
+<!-- ---- IN-5 -->
+- **IN-5 — My Week says what it means, and no screen can go blank.** A starting spot nobody on the roster can fill is
+  its own roster alert ("Your quarterback spot is open: Mahomes and Young are on a bye. Add a quarterback before Sun
+  1:00 PM ET." + "Find a quarterback on Waivers ›"); an incoming player is paired only with one he can legally replace
+  (his slot or the slot chain) — never a receiver "in place of" a quarterback (`myweek.open_spots`, `fits`,
+  `open_deadline`, `more_words`). "Change needed" → **Roster alert**, "What changed" → **News feed**. Every keyed
+  `{#each}` on API data takes a key that cannot collide (42 lists in 19 files); two `<svelte:boundary>` blocks in
+  `App.svelte` show `ErrorCard` ("This screen hit a problem" + Reload, an `exception` event with the screen's name) on
+  a render error; no "nan" / "None" id on the way out (`decisions._sid` on the alternative and the transactions,
+  "None" too). The five tests that turned red at week 4's last kickoff: `mart_league_roster_horizon` decided "this
+  week" by the database's `now()`; the API sends its pinned clock as `league_lab.now` and the view reads it first (dbt
+  macro `league_lab_now()`, unchanged in production; the view needs its rebuild). `api/tests/test_in5.py` (Andrew's
+  morning from the database's week-5 rows), `web/e2e/in5`, `docs/handbacks/IN-5.md`.
+<!-- ---- end IN-5 -->
 
 ## 2026-10-06 — hotfix: the Team screen with two open lineup spots
 

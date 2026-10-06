@@ -133,7 +133,7 @@ trade sides.
   takes that place). *Tone heatmap*: `Heatmap … tones` fills a cell with its tone's wash (30 %), prints ▲ / ▼ with the
   number, and the legend names the three tones. *View toggle* (Season): `Tabs fill size="sm"` under the screen head
   ("Value to my lineup" · "Who scores the most"), in the URL (`?view=points`; the default left out). *Decision card*
-  (My Week): the status chip first (Change needed on `bg-warn-soft`, Already set on `bg-accent-soft`, Close call on
+  (My Week): the status chip first (Roster alert — IN-5, was Change needed — on `bg-warn-soft`, Already set on `bg-accent-soft`, Close call on
   `bg-raised`; the card's left rule turns warn on a change), the slot label and the strength word on the same row, the
   call in one line (both names whole), the reason (last names), a "Compare these players" button, and the odds, ranges
   and numbers behind a "Why?" `<details>`.

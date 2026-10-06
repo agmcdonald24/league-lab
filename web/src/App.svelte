@@ -25,7 +25,7 @@
   import { decisionPage, isDecision } from "./lib/decisionPages";
   import { countView } from "./lib/usage"; // ---- U-1: usage tracking (one count per screen view)
   import { pause as gaPause, screenView, trackLogin } from "./lib/analytics"; // ---- INF-1: Google Analytics
-  import { INVITE_WORDS, isRef, NEEDS_LEAGUE, REF_DEFAULT, refLabel } from "./lib/refleague"; // ---- IM-3: no league
+  import { INVITE_WORDS, isRef, NEEDS_LEAGUE, REF_DEFAULT, refScoringLabel } from "./lib/refleague"; // ---- IM-3: no league
   // ---- IN-1 (Wave I-N): the home page (in the first bundle: it is a stranger's first screen) and the blog (its chunk)
   import HomePage from "./routes/Home.svelte";
   const loadBlog = () => import("./routes/Blog.svelte");
@@ -85,6 +85,23 @@
   // ---- IN-1: the screens anyone opens without a league — the home, the blog, a post: in the frame (the tabs, the search,
   // the drawer) on the league in the URL or remembered, else on the reference league (Half PPR)
   const openDoor = $derived(r.name === "home" || r.name === "blog" || r.name === "post");
+
+  // ---- IN-5 (Wave I-N): the boundaries below (a render error shows ErrorCard, never a blank screen) start again when
+  // the screen changes (another tab, another player): a boundary that failed leaves its reset here
+  const resets: Record<"app" | "screen", (() => void) | null> = { app: null, screen: null };
+  function crashed(e: unknown, reset: () => void, where: "app" | "screen") {
+    console.error(e);
+    resets[where] = reset;
+  }
+  $effect(() => {
+    void `${r.name}|${r.gsis ?? ""}`;
+    for (const k of ["app", "screen"] as const) {
+      const f = resets[k];
+      resets[k] = null;
+      f?.();
+    }
+  });
+  // ---- end IN-5
 
   // league: the URL's (a shared link: ANY Sleeper league, the API serves it on demand), else the one picked on this
   // phone. None → the sign-in screen (a Sleeper username → the league picker).
@@ -208,6 +225,11 @@
   });
 </script>
 
+<!-- ---- IN-5: a render error anywhere shows ErrorCard ("This screen hit a problem" + Reload), never a blank page; the
+     screens in the league frame have their own boundary below (the bar stays) -->
+<svelte:boundary onerror={(e, reset) => crashed(e, reset, "app")}>
+{#snippet failed()}<div class="mx-auto max-w-xl p-4" data-testid="app-crashed"><ErrorCard crashed={r.name} /></div>{/snippet}
+<!-- ---- end IN-5 -->
 {#if phase === "login"}
   <Login onok={signedIn} notice={loginNotice} />
 {:else if phase === "error"}
@@ -238,6 +260,10 @@
   <TopBar {options} {league} {team} onauth={needLogin} />
   <div class="wide:flex wide:items-start">
     <div class="ll-under-bar mx-auto w-full max-w-6xl min-w-0 px-4 pt-4 wide:flex-1" data-section={sectionOf(r.name)}>
+      <!-- ---- IN-5: each screen behind a boundary (a render error: ErrorCard, the bar stays; a new screen starts again) -->
+      <svelte:boundary onerror={(e, reset) => crashed(e, reset, "screen")}>
+      {#snippet failed()}<ErrorCard crashed={r.name} />{/snippet}
+      <!-- ---- end IN-5 -->
       {#if r.name === "home"}
         <HomePage /><!-- ---- IN-1 -->
       {:else if r.name === "blog" || r.name === "post"}
@@ -252,7 +278,7 @@
         <section class="mx-auto max-w-xl space-y-3 rounded-lg border border-line bg-surface p-5" style="box-shadow:var(--ll-shadow)" data-testid="invite-card">
           <h2 class="text-xl font-bold">{INVITE_WORDS}</h2>
           <p class="leading-snug text-ink-2">
-            You are browsing without a league, in {refLabel(league)} scoring. Open your league on Sleeper, MyFantasyLeague, ESPN or Yahoo and this
+            You are browsing without a league, in {refScoringLabel(league)} scoring. Open your league on Sleeper, MyFantasyLeague, ESPN or Yahoo and this
             screen shows your own team.
           </p>
           <div class="flex flex-wrap gap-2">
@@ -282,6 +308,7 @@
       {:else}
         <MyWeekPage {options} {league} {team} {mine} {status} onauth={needLogin} />
       {/if}
+      </svelte:boundary><!-- ---- IN-5 -->
       {#if sectionOf(r.name) === "myteam" && !isRef(league)}
         <!-- IB-1: About the numbers left the tab bar: the overflow menu (⋯) and here, at the foot of My Team -->
         <footer class="mt-6 border-t border-line pt-3 text-sm" data-testid="myteam-foot">
@@ -298,3 +325,4 @@
     <PlayerPane {league} {team} onauth={needLogin} />
   </div>
 {/if}
+</svelte:boundary><!-- ---- IN-5 -->

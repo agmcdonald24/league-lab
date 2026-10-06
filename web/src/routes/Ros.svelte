@@ -249,7 +249,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each shown as p, i (rowKey(p, i))}
+        {#each shown as p, i (`${rowKey(p, i)}#${i}`)}
           {@const yours = team !== null && p.rostered_by_roster_id === team}
           {@const k = rowKey(p, i)}
           {@const bar = rangeBar(p, maxP90)}
@@ -338,7 +338,7 @@
                       <p class="ll-label text-accent">Why this number</p>
                       <p class="text-base leading-snug font-semibold">{p.why.sentence}</p>
                       <ul class="space-y-0.5 text-sm text-ink-2">
-                        {#each p.why.pieces as w (w.stat)}<li class="tabnum">{w.words}</li>{/each}
+                        {#each p.why.pieces as w, ix (`${w.stat}#${ix}`)}<li class="tabnum">{w.words}</li>{/each}
                       </ul>
                       <p class="text-xs text-ink-3">Each piece counted in {leagueName} scoring: they add up to his points per game.</p><!-- II-4 -->
                     </div>

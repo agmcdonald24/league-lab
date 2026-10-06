@@ -98,7 +98,7 @@
 
   {#if signedIn && rows.length}
     <ul class="grid gap-2 wide:grid-cols-2" data-testid="watchlist-rows">
-      {#each rows as p (p.player_key)}
+      {#each rows as p, ix (`${p.player_key}#${ix}`)}
         <li
           class="flex items-start gap-3 rounded-lg border border-line bg-surface p-3"
           style="box-shadow:var(--ll-shadow)"

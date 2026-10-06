@@ -34,7 +34,7 @@
 </script>
 
 <nav class="flex {fill ? '' : 'flex-wrap'} gap-1 rounded-md border border-line bg-surface p-1" aria-label={label} data-testid={testid}>
-  {#each items as t (t.key)}
+  {#each items as t, ix (`${t.key}#${ix}`)}
     {#if t.href}
       <a
         href={t.href}

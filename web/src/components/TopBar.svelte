@@ -288,7 +288,7 @@
           {#if hits.length === 0}
             <li class="p-3 text-sm text-ink-3">No QB, RB, WR, TE or K named like “{searched}” in this season's pool.</li>
           {/if}
-          {#each hits as h (h.gsis_id)}
+          {#each hits as h, ix (`${h.gsis_id}#${ix}`)}
             <li>
               <a
                 class="block min-h-11 px-3 py-2.5 text-base hover:bg-raised"

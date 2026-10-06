@@ -1,3 +1,8 @@
+// ---- IN-5 (Wave I-N, Andrew 2026-10-06: "the What Changed below … you could probably just call that a news feed"): the
+// block's heading; the code keeps its old name (`changed`, `what-changed`), a user only reads this one
+export const NEWS_FEED = "News feed";
+// ---- end IN-5
+
 // ---- II-4 (Wave I-I; the product and analytics review § 7–8): My Week's "What changed" as a decision-impact feed and
 // the home's three clocks. The API sends each line's five parts (INTERFACES.md § II-4); an answer from before Wave I-I
 // (no `decision_status`) renders as IF-4 drew it.

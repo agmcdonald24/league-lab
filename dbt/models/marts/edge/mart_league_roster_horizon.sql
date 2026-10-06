@@ -3,7 +3,8 @@
 -- of the 4-week horizon. Grain: league x roster x week x lineup row (starting slot, bench player or a
 -- player who cannot play that week), straight from `ops.lineups` (proposed, not realised).
 --
--- "This week" is the first regular-season week with a kickoff still ahead (now(); the same rule as
+-- "This week" is the first regular-season week with a kickoff still ahead (now() — IN-5: `league_lab_now()`, the API's
+-- pinned clock when one is sent, else now(); the same rule as
 -- `league-lab lineups`' next week): during a week in progress (Thursday played, Sunday not yet) it stays
 -- that week. The horizon is this week and the next three that have a proposed lineup (fewer at the end of
 -- the season). Proposed lineups for every remaining week are solved by `league-lab lineups` on projection
@@ -32,7 +33,7 @@ with cur as (
 this_week as (
     select c.league_id, c.season, min(g.week) as this_week
     from cur as c
-    join {{ ref('dim_game') }} as g on g.season = c.season and g.season_type = 'REG' and g.kickoff_at > now()
+    join {{ ref('dim_game') }} as g on g.season = c.season and g.season_type = 'REG' and g.kickoff_at > {{ league_lab_now() }}
     group by 1, 2
 ),
 

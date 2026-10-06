@@ -116,7 +116,7 @@ test("My Week: status first, the call, its strength, one reason, Compare; the nu
       const want = c.status ?? (c.p_win < 0.55 ? "close" : "change");
       await expect(card).toHaveAttribute("data-status", want);
       await expect(card.getByTestId("card-status")).toHaveText(
-        { change: /Change needed/, set: /Already set/, close: /Close call/ }[want as "change" | "set" | "close"],
+        { change: /Roster alert/, set: /Already set/, close: /Close call/ }[want as "change" | "set" | "close"], // IN-5: was /Change needed/
       );
       // the first thing in the card is the status chip
       const firstText = await card.evaluate((el) => (el.querySelector("[data-testid]") as HTMLElement).dataset.testid);

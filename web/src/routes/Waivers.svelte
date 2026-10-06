@@ -207,7 +207,7 @@
       <section class="space-y-2" data-testid="top3">
         <h2 class="text-xl font-bold">{top3.length === 1 ? "The strongest move" : `The ${top3.length === 2 ? "two" : "three"} strongest moves`}</h2>
         <div class="grid grid-cols-1 gap-3 wide:grid-cols-3">
-          {#each top3 as c, i (one(c))}
+          {#each top3 as c, i (`${one(c)}#${i}`)}
             <!-- ---- II-4: the horizon on each claim (helps this week / covers a bye / helps later / upside stash) -->
             {@const h = horizonOf(c, data.week ?? 0)}
             <div class="space-y-1" data-testid="top-move-wrap">
@@ -231,7 +231,7 @@
         {#if v?.moves.length}
           <Card pad={false}>
             <ul class="divide-y divide-line" data-testid="view-list">
-              {#each v.moves as c (one(c))}<li><ClaimCard card={c} {ctx} compact testid="view-move" /></li>{/each}
+              {#each v.moves as c, ix (`${one(c)}#${ix}`)}<li><ClaimCard card={c} {ctx} compact testid="view-move" /></li>{/each}
             </ul>
           </Card>
         {:else if !views}
@@ -245,7 +245,7 @@
           <p class="text-sm text-ink-3">{data.upside.title}.</p>
           {#if data.upside.stashes.length}
             <div class="grid grid-cols-1 gap-3 wide:grid-cols-3">
-              {#each data.upside.stashes.slice(0, 3) as u (u.add.sleeper_id ?? u.add.gsis_id)}
+              {#each data.upside.stashes.slice(0, 3) as u, ix (`${u.add.sleeper_id ?? u.add.gsis_id}#${ix}`)}
                 <Card testid="stash">
                   <PlayerRow
                     player={{ ...u.add, player_name: u.add.player_name ?? "" }}
@@ -294,7 +294,7 @@
             {#snippet list()}
               <Card pad={false} testid="fa-list">
                 <ul class="divide-y divide-line">
-                  {#each fas as f, i (f.gsis_id ?? f.sleeper_id ?? i)}
+                  {#each fas as f, i (`${f.gsis_id ?? f.sleeper_id ?? ""}#${i}`)}
                     <li>
                       <PlayerRow
                         player={{ ...f, player_name: f.player_name ?? "" }}

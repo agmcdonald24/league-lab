@@ -170,7 +170,7 @@ def test_an_out_starter_comes_first_and_at_most_three():
     cur = {"1": "QB", "21": "RB", "23": "WR", "24": "TE", "25": "K"}       # four starters out in the submitted lineup
     res = myweek.build_actions(rows, [], cur, KEY)
     assert len(res["actions"]) == 3 and all(a["kind"] == "change" for a in res["actions"])
-    assert res["set_line"] == "1 more change: the lineup below shows every slot."
+    assert res["set_line"] == "1 more roster alert: the lineup below shows every slot."      # IN-5: was "1 more change"
     assert res["actions"][0]["lock"]["words"] == "before Sun 1:00 PM ET"    # a swap locks at the first of the two kickoffs
     assert all(a["submitted_words"] == "Not in your MFL lineup yet: make the change in MFL." for a in res["actions"])
 

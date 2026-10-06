@@ -724,7 +724,7 @@ status moves and shown items (an estimate: 30,000–80,000 rows) is 15–40 MB o
 every run (below, "Retention (events)").
 
 **Reading it.**
-* My Week's **What changed**: a status line cites its stored event — the source (ESPN / Sleeper), the report's time and
+* My Week's **News feed** (IN-5; was "What changed"): a status line cites its stored event — the source (ESPN / Sleeper), the report's time and
   the player's ESPN page; the news lines are ESPN's items and PlayerWire's briefs of the last 24 hours, one per player
   (his own brief first), with the store's live events filling in what a live read missed (`changed.lines[].event_id`,
   `origin`, `verification`).
@@ -764,7 +764,7 @@ one statement; to keep less, change the interval (one place).
 **Retention (events)** *(Wave I-H, IH-1)*. Every run of `scripts/hosted_events.sql` — the sync's "IG-2" block, once a
 night; locally `scripts/init_db.sql` — ends with two deletes, by `ingested_at` (the store's own clock):
 * `news` and `brief` rows **superseded** and ingested more than **120 days** ago. A player's newest item (live) stays
-  however old — one per player; "What changed" reads 24 hours and the card the live item.
+  however old — one per player; the News feed (was "What changed") reads 24 hours and the card the live item.
 * `availability` rows ingested more than **400 days** ago, live or superseded: a season, its playoffs and the next
   preseason — longer than the decision record looks back (a starter's status move before this season's kickoffs). A
   player still listed after his live row went comes back as a new move on the overlay's next copy.

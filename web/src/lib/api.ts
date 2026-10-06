@@ -2420,3 +2420,19 @@ export const homePaths = {
   ros: (league: string, position: string, limit: number) => `/api/ros?league=${encodeURIComponent(league)}&position=${position}&limit=${limit}`,
 };
 // ---- end IN-1
+// ---- IN-5 (Wave I-N): a starting spot nobody on the roster can fill is its own action (kind "change": a roster alert):
+// `open_slot` says which spot and who cannot play; `href` is Waivers at that position, `href_label` the link's words
+// ("Find a quarterback on Waivers"). Additive: declaration merging.
+export interface OpenSlot {
+  slot_type: string; // QB, TE, FLEX …
+  slots: string[]; // the lineup's labels of the open spots of that type
+  position: string | null; // the Waivers position (null: a flex — every free agent)
+  words: string; // "quarterback"
+  players: string[]; // the submitted lineup's players it takes over (roster keys)
+  named: string[]; // every player of that position who cannot play (roster keys)
+}
+export interface WeekAction {
+  open_slot?: OpenSlot | null;
+  href_label?: string | null;
+}
+// ---- end IN-5

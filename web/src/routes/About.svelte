@@ -93,7 +93,7 @@
         <Card testid="importance-card">
           <p class="text-base leading-snug" data-testid="importance-lead"><Md text={impRows.lead} /></p>
           <div class="mt-3 space-y-2.5" data-testid="importance-bars">
-            {#each impRows.features as f (f.rank)}
+            {#each impRows.features as f, ix (`${f.rank}#${ix}`)}
               <Bar label={`${f.rank}. ${f.feature_label}`} value={f.importance} max={impMax} display={f.importance === null ? "—" : `+${f.importance.toFixed(2)}`} testid="importance-bar" />
             {/each}
           </div>
@@ -114,7 +114,7 @@
       {/if}
       <!-- ---- end IG-3 -->
       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 wide:grid-cols-4">
-        {#each grades.positions as g (g.position)}
+        {#each grades.positions as g, ix (`${g.position}#${ix}`)}
           <Card title={g.position} testid="grade-card">
             <div class="grid grid-cols-2 gap-2">
               <StatTile label="Order · this season" value={num(g.season.spearman, 2)} caption={`backtest ${num(g.backtest.spearman, 2)}`} size="sm" testid="grade-order" />
@@ -172,7 +172,7 @@
                 </tr>
               </thead>
               <tbody>
-                {#each view.calls as w (w.week)}
+                {#each view.calls as w, ix (`${w.week}#${ix}`)}
                   <tr class="border-b border-line last:border-0">
                     <td class="tabnum px-3 py-2">{w.week}</td>
                     <td class="tabnum py-2 text-right">{num(w.pairs_n)}</td>
@@ -212,7 +212,7 @@
                 </tr>
               </thead>
               <tbody>
-                {#each dec.weeks ?? [] as w (w.week)}
+                {#each dec.weeks ?? [] as w, ix (`${w.week}#${ix}`)}
                   <tr class="border-b border-line last:border-0">
                     <td class="tabnum px-3 py-2">{w.week}{w.record_source === "reconstructed" ? "*" : ""}</td>
                     <td class="tabnum py-2 text-right">{w.submitted.toFixed(1)}</td>
@@ -253,7 +253,7 @@
               </tr>
             </thead>
             <tbody>
-              {#each view.byPosition as w (`${w.week}-${w.position}`)}
+              {#each view.byPosition as w, ix (`${w.week}-${w.position}#${ix}`)}
                 <tr class="border-b border-line last:border-0">
                   <td class="tabnum py-1.5 pr-1">{w.week}</td>
                   <td class="py-1.5 pr-1">{w.position}</td>

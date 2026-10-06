@@ -88,7 +88,7 @@
         <line x1={M.l} x2={width - M.r} y1={y(t)} y2={y(t)} stroke={t === 0 ? SERIES.axis : SERIES.grid} stroke-width="1" />
         <text x={M.l - 6} y={y(t)} dy="0.32em" text-anchor="end" class="tabnum fill-ink-3 text-[10px]">{t}</text>
       {/each}
-      {#each points as p, i (p.week)}
+      {#each points as p, i (`${p.week}#${i}`)}
         {#if i % step === 0 || i === points.length - 1}
           <text x={x(p.week)} y={height - 6} text-anchor="middle" class="tabnum fill-ink-3 text-[10px]">{p.week}</text>
         {/if}
@@ -123,7 +123,7 @@
         ></thead
       >
       <tbody>
-        {#each points as p (p.week)}
+        {#each points as p, ix (`${p.week}#${ix}`)}
           <tr class="border-t border-line"
             ><td class="py-1">{p.label ?? p.week}</td><td class="py-1 text-right">{f(p.actual)}</td>{#if hasExpected}<td class="py-1 text-right text-ink-2"
                 >{f(p.expected)}</td

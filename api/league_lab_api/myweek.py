@@ -358,6 +358,10 @@ MAX_REVIEW = 3
 # ---- end IF-4
 CANT_WORDS = {"OUT": "is out", "IR": "is on injured reserve", "PUP": "is on the PUP list", "SUS": "is suspended",
               "DOUBTFUL": "is doubtful", "BYE": "is on a bye"}
+# ---- IN-5: the lineup build's own reasons (lineup.py: who cannot play) in a manager's words, not "can't play (IR slot)"
+REASON_WORDS = {"ir slot": "is in your IR slot", "taxi squad": "is on your taxi squad", "nfl injured reserve":
+                "is on injured reserve", "no nfl team": "has no NFL team", "game started (bench)":
+                "is locked on your bench (his game has started)", "out": "is out", "doubtful": "is doubtful"}
 
 
 def platform_name(league_id: str) -> str:
@@ -396,6 +400,164 @@ def lock_words(ts) -> str | None:
 
 def _and(xs: list[str]) -> str:
     return xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + " and " + xs[-1] if xs else ""
+
+
+# ---- IN-5 (Wave I-N, Andrew's morning of 2026-10-06: "Start Kelce out of your lineup" — what does that mean?): the
+# slot chain for the pairing, and a starting spot nobody on the roster can fill as an action of its own
+POSITION_WORDS = {"QB": "quarterback", "RB": "running back", "WR": "wide receiver", "TE": "tight end", "K": "kicker",
+                  "DEF": "defense", "TMQB": "team quarterback", "TMPK": "team kicker"}
+WAIVER_POSITIONS = ("QB", "RB", "WR", "TE", "K", "DEF")     # the positions Waivers reads from ?position=
+OPEN_WORDS_MAX = 4                                          # players named in an open spot's sentence
+
+
+def _or(xs: list[str]) -> str:
+    return xs[0] if len(xs) == 1 else ", ".join(xs[:-1]) + " or " + xs[-1] if xs else ""
+
+
+def _slot_elig(code) -> frozenset[str] | None:
+    """The positions a submitted slot code admits; None when the code says nothing (any position: the house path's
+    fallback sends "")."""
+    if not isinstance(code, str) or not code.strip():
+        return None
+    c = code.strip().upper()
+    e = cards.slot_elig(cards._PART.get(c) or c)
+    return e or None
+
+
+def fits(keys: list[str], slots: list, pos_of) -> bool:
+    """Every player of ``keys`` takes a different slot of ``slots`` (slot codes; a code that says nothing takes anyone;
+    a player of unknown position goes anywhere): the lineup is legal by positions, whatever slides where."""
+    if len(keys) > len(slots):
+        return False
+    elig = [_slot_elig(s) for s in slots]
+    match: dict[int, str] = {}
+
+    def place(k: str, seen: set[int]) -> bool:
+        p = pos_of(k)
+        for j, e in enumerate(elig):
+            if j in seen or (e is not None and p is not None and p not in e):
+                continue
+            seen.add(j)
+            if j not in match or place(match[j], seen):
+                match[j] = k
+                return True
+        return False
+    return all(place(k, set()) for k in keys)
+
+
+def open_deadline(rows: pd.DataFrame) -> pd.Timestamp | None:
+    """When to fill an open spot by: the kickoff most of the roster's games still to start share (the main slate —
+    Sunday 1:00 PM ET in a normal week; the earliest of them on a tie). None when no game of the roster is left."""
+    if rows is None or rows.empty or "kickoff_at" not in rows:
+        return None
+    count: dict[pd.Timestamp, int] = {}
+    for r in rows.to_dict("records"):
+        k = r.get("kickoff_at")
+        if k is None or (not isinstance(k, str) and pd.isna(k)) or bool(r.get("locked_now")) or bool(r.get("kicked_off")):
+            continue
+        t = pd.Timestamp(k)
+        t = t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC")
+        count[t] = count.get(t, 0) + 1
+    if not count:
+        return None
+    return min(count, key=lambda t: (-count[t], t))
+
+
+def _are(words: str, n: int) -> str:
+    """'is on a bye' for one player, 'are on a bye' for two."""
+    return ("are " + words[3:]) if n > 1 and words.startswith("is ") else words
+
+
+def _spot_words(slot_type: str, elig: frozenset[str] | None) -> tuple[str, str, str | None]:
+    """(the spot's name, what to add, the Waivers position) for an open slot type: ("quarterback", "a quarterback",
+    "QB"); a flex: ("FLEX", "a running back, wide receiver or tight end", None)."""
+    if elig and len(elig) == 1:
+        p = next(iter(elig))
+        w = POSITION_WORDS.get(p, p)
+        return w, f"a {w}", p if p in WAIVER_POSITIONS else None
+    label = re.sub(r"\s*\d+$", "", cards.slot_label(slot_type)) or slot_type
+    order = list(POSITION_WORDS)
+    what = _or([POSITION_WORDS.get(p, p) for p in sorted(elig or [], key=lambda p: (order.index(p) if p in order else 99, p))])
+    return label, (f"a {what}" if what else "a player for it"), None
+
+
+def open_spots(rows: pd.DataFrame, info: dict[str, dict], pairs: list[tuple[str | None, str | None]],
+               sub: set[str] | None, pname: str, *, name, plain, cant_words, val, plays) -> list[dict]:
+    """One action per open starting spot type (the best lineup leaves the slot empty: nobody on the roster can fill it),
+    in the IE-1 action shape plus ``open_slot`` {slot_type, slots, position, words, players (the outs of the submitted
+    lineup it takes over), named}; ``href`` = Waivers at that position. Counted with the roster alerts (kind
+    ``change``), never phrased as "Start"."""
+    if rows is None or rows.empty or "is_empty_slot" not in rows:
+        return []
+    empty = rows[(rows["role"] == "starter") & rows["is_empty_slot"].fillna(False).astype(bool)]
+    if empty.empty:
+        return []
+    by_type: dict[str, list[str]] = {}
+    for r in empty.to_dict("records"):
+        label = _str(r.get("slot")) or ""
+        t = _str(r.get("slot_type")) or re.sub(r"\d+$", "", label)
+        if t:
+            by_type.setdefault(t.upper(), []).append(label or t)
+    unpaired = [o for i, o in pairs if i is None and o is not None and not plays(o)]
+    deadline = open_deadline(rows)
+    lock = None if deadline is None else {"kickoff": deadline.isoformat(), "words": lock_words(deadline)}
+    used: set[str] = set()
+    out = []
+    for t, labels in by_type.items():
+        elig = _slot_elig(t)
+        word, what, pos = _spot_words(t, elig)
+        n = len(labels)
+        cant = sorted((k for k in info if not plays(k) and k not in used                  # who the lineup has first
+                       and (elig is None or _str((info.get(k) or {}).get("position")) in elig)),
+                      key=lambda k: (k not in (sub or ()), -val(k), plain(k)))
+        used.update(cant)
+        mine = [o for o in unpaired if o in cant]
+        groups: dict[str, list[str]] = {}
+        for k in cant[:OPEN_WORDS_MAX]:
+            groups.setdefault(cant_words(k), []).append(k)
+        why = _and([f"{_and([name(k) for k in ks])} {_are(w, len(ks))}" for w, ks in groups.items()])
+        if len(cant) > OPEN_WORDS_MAX:
+            why += f"; {len(cant) - OPEN_WORDS_MAX} more can't play"
+        spot = f"Your {word} spot is open" if n == 1 else f"Your {n} {word} spots are open"
+        add = (f"Add {what}" if n == 1 else f"Add {n} {word}s" if pos else f"Add {n} players for them")
+        when = lock["words"] if lock else "before his game kicks off"
+        action = f"{spot}: {why or 'nobody on your roster can play there this week'}. {add} {when}."
+        reason = f"Nobody else on your roster can play {word} this week." if cant else ""
+        if mine:
+            still = _and([plain(k) for k in mine])
+            reason += (f" {still} {'is' if len(mine) == 1 else 'are'} still in your {pname} lineup: start the player you add "
+                       f"in {'his' if len(mine) == 1 else 'their'} place.")
+        out.append({"kind": "change", "urgency": 1, "action": action, "reason": reason.strip(),
+                    "start": [], "sit": [{"key": k, "name": plain(k), "link": name(k)} for k in mine],
+                    "submitted": None if sub is None else False,
+                    "submitted_words": f"Nothing is claimed from here: add {what if n == 1 else 'them'} in {pname}.",
+                    "lock": lock, "cards": [], "gain": None,
+                    "href": f"/waivers?position={pos}" if pos else "/waivers",
+                    "href_label": f"Find {what} on Waivers" if n == 1 else "Find them on Waivers",
+                    "slots": labels, "slot_label": " · ".join(cards.slot_label(s) for s in labels),
+                    "open_slot": {"slot_type": t, "slots": labels, "position": pos, "words": word, "players": mine,
+                                  "named": cant},
+                    "_lock_players": [],               # an open spot is worth a whole starter: first among same-time actions
+                    "_order": (1, deadline if deadline is not None else pd.Timestamp.max.tz_localize("UTC"), -1e9)})
+    return out
+
+
+def _order_key(o: tuple) -> tuple:
+    """An action's order (urgency, the first kickoff, -gain) with the kickoff as one comparable type: the rows may carry
+    it as a timestamp, a datetime or ISO text, an open spot's deadline is a timestamp."""
+    t = pd.Timestamp(o[1])
+    return (o[0], t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC"), o[2])
+
+
+def more_words(more: list[dict]) -> str:
+    """The set line when more actions wait than the three shown: "1 more roster alert: the lineup below shows every
+    slot." / "2 more roster alerts and 1 close call: …"."""
+    a = sum(1 for x in more if x.get("kind") == "change")
+    c = len(more) - a
+    bits = ([f"{a} more roster alert{'s' if a != 1 else ''}"] if a else []) + (
+        [f"{c} {'more ' if not a else ''}close call{'s' if c != 1 else ''}"] if c else [])
+    return f"{_and(bits)}: the lineup below shows every slot."
+# ---- end IN-5
 
 
 def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, str] | None, league_id: str) -> dict:
@@ -444,6 +606,8 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
         r = info.get(k) or {}
         s = (_str(r.get("chip")) or _str(r.get("report_status")) or "").upper()
         why = str(r.get("reason") or "").lower()
+        if s not in CANT_WORDS and why in REASON_WORDS:                 # ---- IN-5: the build's reason in words
+            return REASON_WORDS[why]
         return CANT_WORDS.get("BYE" if why == "bye" else s, f"can't play ({r.get('reason') or s.lower() or 'not active'})")
 
     # the groups: cards that share a player (union-find over the keys); the submitted lineup's differences join them
@@ -495,22 +659,44 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
         return res
     pairs: list[tuple[str | None, str | None]] = []
     if known:
-        ins = sorted((k for k in suggested if k not in sub and not locked(k)), key=lambda k: -val(k))
-        outs = sorted((k for k in sub if k not in suggested and not locked(k)), key=lambda k: (plays(k), val(k)))
+        ins = sorted((k for k in suggested if k not in sub and not locked(k)), key=lambda k: (-val(k), k))
+        outs = sorted((k for k in sub if k not in suggested and not locked(k)), key=lambda k: (plays(k), val(k), k))
+        # ---- IN-5 (Wave I-N): an incoming player replaces only an outgoing one he can legally replace — at once (the
+        # out's own slot admits him) or through the slot chain the solver uses (the submitted lineup with the swap made
+        # still fits its slots: an RB slides from FLEX to RB, the WR takes FLEX). Never a receiver "in place of" a
+        # quarterback (Andrew's morning, 2026-10-06): an out nobody can replace stays unpaired (an open spot, below).
+        now_in = [k for k in (current or {})]
+        slot_list = [current[k] for k in now_in]
+
+        def pos_of(k: str) -> str | None:
+            return _str((info.get(k) or {}).get("position"))
         for o in outs:
-            ok = cards.slot_elig(cards._PART.get(str(current.get(o) or "").upper()) or current.get(o)) if current.get(o) else frozenset()
-            pick = next((i for i in ins if ok and (info.get(i) or {}).get("position") in ok), ins[0] if ins else None)
+            ok = _slot_elig(current.get(o))
+            direct = [i for i in ins if ok is None or pos_of(i) is None or pos_of(i) in ok]
+            pick = next(iter(direct), None) or next(
+                (i for i in ins if fits([*(k for k in now_in if k != o), i], slot_list, pos_of)), None)
             if pick is not None:
                 ins.remove(pick)
+                now_in = [pick if k == o else k for k in now_in]
             pairs.append((pick, o))
         pairs += [(i, None) for i in ins]
-        for i, o in pairs:
-            union(i, o)
+    # ---- IN-5: a starting spot nobody on the roster can fill (the best lineup leaves it empty) is ONE action of its own,
+    # never "Start …": "Your quarterback spot is open: Mahomes and Young are on a bye. Add a quarterback before Sun
+    # 1:00 PM ET." An out of the submitted lineup who cannot play and whose position that spot takes belongs to it
+    opens = open_spots(rows, info, pairs if known else [], sub if known else None, pname,
+                       name=name, plain=plain, cant_words=cant_words, val=val, plays=plays)
+    taken = {k for a in opens for k in a["open_slot"]["players"]}
+    pairs = [p for p in pairs if not (p[0] is None and p[1] in taken)]
+    # ---- end IN-5
+    for i, o in pairs:
+        union(i, o)
     groups: dict[str, set[str]] = {}
     for k in list(parent):
-        groups.setdefault(find(k), set()).add(k)
+        if k not in taken:                                                              # ---- IN-5
+            groups.setdefault(find(k), set()).add(k)
     acts, tiny = [], False
     review: list[dict] = []                                                                # ---- IF-4
+    acts += opens                                                                          # ---- IN-5
     for members in groups.values():
         g_cards = [i for i, c in enumerate(cards_out) if c.get("key") in members or c.get("alt_key") in members]
         g_pairs = [p for p in pairs if p[0] in members or p[1] in members]
@@ -550,7 +736,7 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
         a["cards"] = g_cards
         a["_order"] = (a["urgency"], first if first is not None else pd.Timestamp.max.tz_localize("UTC"), -(gain or 0.0))
         acts.append(a)
-    acts.sort(key=lambda a: a.pop("_order"))
+    acts.sort(key=lambda a: _order_key(a.pop("_order")))           # ---- IN-5: one time type (an open spot's deadline)
     more = acts[MAX_ACTIONS:]
     acts = acts[:MAX_ACTIONS]
     for n, a in enumerate(acts):
@@ -563,7 +749,7 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
     # ---- end IF-4
     if known:
         if more:
-            res["set_line"] = f"{len(more)} more {'change' if len(more) == 1 else 'changes'}: the lineup below shows every slot."
+            res["set_line"] = more_words(more)                       # ---- IN-5: "1 more roster alert: …"
         else:
             res["set_line"] = (SET_ELSEWHERE if review else SET_REST if acts else SET_ALL) + (     # IF-4: SET_ELSEWHERE
                 " (Where your lineup differs from ours, it is by less than half a point.)" if tiny else "")
@@ -604,8 +790,12 @@ def _action(kind, start, sit, submitted, gain, cant, coin, hurt, pairs, swapped,
                 coin_alt.setdefault(a, b)
     if kind == "change":
         bits, flips = [], []
+        outs_here, named_alt = {o for _, o in pairs if o}, set()          # ---- IN-5: the coin-flip clause, once
         for i, o in pairs:
             alt = coin_alt.get(i) if coin_alt.get(i) not in (None, o) else None
+            if alt in outs_here or alt in named_alt:                     # ---- IN-5: never "(or X …)" and "X out"
+                alt = None
+            named_alt.add(alt)
             at = f" at {slot_of(i)}" if i and slot_of(i) else ""
             if i and o:
                 bits.append(f"{name(i)}{at}" + (f" (or {name(alt)}: a coin flip)" if alt else "") + f" in place of {name(o)}")

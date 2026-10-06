@@ -45,15 +45,16 @@ export function checkedLine(iso: string | null | undefined, now: Date = new Date
   return `Injuries checked ${day}${time}`;
 }
 
-// ---- IB-3 (Wave I-B): the My Week card's default content — a status per call (Change needed / Already set / Close
-// call), the call in one line, its strength, one reason, a Compare button; the odds, the ranges and the numbers behind
+// ---- IB-3 (Wave I-B): the My Week card's default content — a status per call (Roster alert / Already set / Close call;
+// IN-5: "Roster alert" was "Change needed"), the call in one line, its strength, one reason, a Compare button; the odds, the ranges and the numbers behind
 // "Why?". IB-0's API sends `status` / `strength` on each card; until it does (or for an answer saved before), they are
 // derived here the same way (cards.is_coin_flip; the starter's `is_current_starter` on the lineup rows).
 import type { DecisionCard, LineupRow } from "./api";
 
 export type CardStatus = "change" | "set" | "close";
 export type CardStrength = "clear" | "lean" | "coin flip";
-export const STATUS_WORD: Record<CardStatus, string> = { change: "Change needed", set: "Already set", close: "Close call" };
+// ---- IN-5 (Wave I-N, Andrew 2026-10-06: "you could probably just say, like, roster alert instead of change needed")
+export const STATUS_WORD: Record<CardStatus, string> = { change: "Roster alert", set: "Already set", close: "Close call" };
 export const STRENGTH_WORD: Record<CardStrength, string> = { clear: "Clear", lean: "Lean", "coin flip": "Coin flip" };
 const CLOSE_PWIN = 0.55; // cards.CLOSE_PWIN
 const COIN_FLIP = 1.0; // cards.COIN_FLIP (points, without a percentage)
@@ -106,7 +107,7 @@ export function compareHref(c: Card): string | null {
 // ---- IE-1 (Wave I-E, the casual-user review § "weekly action list"): My Week's first layer — the API's actions (a
 // change the submitted lineup needs, then a close call), plus Waivers' `home_action` (a claim that changes this week's
 // starters) when there is room: at most three, the most urgent first.
-export const ACTION_WORD: Record<ActionKind, string> = { change: "Change needed", close: "Close call", move: "Waiver claim" };
+export const ACTION_WORD: Record<ActionKind, string> = { change: "Roster alert", close: "Close call", move: "Waiver claim" }; // IN-5: was "Change needed"
 export const MAX_ACTIONS = 3;
 
 /** The actions to show: My Week's, then the claim from Waivers when there is room and it is not about a player an
@@ -123,3 +124,12 @@ export function homeActions(d: MyWeek, w: Waivers | null | undefined): WeekActio
   return acts.slice(0, MAX_ACTIONS).sort((a, b) => a.urgency - b.urgency);
 }
 // ---- end IE-1
+
+// ---- IN-5 (Wave I-N): an open starting spot's next step — Waivers at its position (the screen reads ?position=); a
+// flex or a team unit: every free agent
+const WAIVER_POSITIONS = new Set(["QB", "RB", "WR", "TE", "K", "DEF"]);
+export function waiversFor(slotType: string | null | undefined): string {
+  const t = String(slotType ?? "").toUpperCase().replace(/\d+$/, "");
+  return WAIVER_POSITIONS.has(t) ? `/waivers?position=${t}` : "/waivers";
+}
+// ---- end IN-5

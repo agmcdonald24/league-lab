@@ -139,8 +139,8 @@ def _sid(sid) -> str | None:
     """A player's Sleeper id as text; an open lineup slot has none (a frame turns its None into NaN: never "nan")."""
     if sid is None or (isinstance(sid, float) and sid != sid):
         return None
-    s = str(sid)
-    return s if s and s.lower() != "nan" else None
+    s = str(sid).strip()
+    return s if s and s.lower() not in ("nan", "none", "null") else None           # ---- IN-5: "None" too
 
 
 def _player(sid, gsis, name, position, team=None, b: dict | None = None) -> dict:
@@ -1483,8 +1483,8 @@ def _alt_player(ctx: TradeContext, meta: dict, sid) -> dict | None:
         return None
     m = meta.get(sid) or {}
     if not m and ctx.board.owner(sid) is not None:
-        return {"sleeper_id": str(sid), "gsis_id": _str(ctx.gsis(sid)), "player_name": ctx.name(sid), "position": ctx.pos(sid)}
-    return {"sleeper_id": str(sid), "gsis_id": _str(m.get("gsis_id")), "player_name": m.get("player_name") or str(sid),
+        return {"sleeper_id": _sid(sid), "gsis_id": _str(ctx.gsis(sid)), "player_name": ctx.name(sid), "position": ctx.pos(sid)}  # IN-5
+    return {"sleeper_id": _sid(sid), "gsis_id": _str(m.get("gsis_id")), "player_name": m.get("player_name") or _sid(sid),  # IN-5
             "position": m.get("position")}
 
 
@@ -3346,13 +3346,14 @@ def od_transactions(league_id: str, rounds: int, rosters: list[dict], users: lis
                 for sid, rid in moves.items():
                     sp = players.get(str(sid)) or {}
                     rid = None if rid is None else int(rid)
-                    out.append({"league_id": str(league_id), "week": t.get("leg") or rnd, "transaction_id": str(t.get("transaction_id")),
+                    out.append({"league_id": str(league_id), "week": t.get("leg") or rnd,      # IN-5: never "None"
+                                "transaction_id": _sid(t.get("transaction_id")) or f"w{rnd}-{ts.index(t)}",
                                 "transaction_type": t.get("type"), "status": t.get("status"),
                                 "created_at": pd.Timestamp(int(t["created"]), unit="ms", tz="UTC") if t.get("created") else None,
                                 "action": action, "roster_id": rid, "team_name": names.get(rid, {}).get("team_name"),
-                                "manager_name": names.get(rid, {}).get("manager_name"), "sleeper_player_id": str(sid),
+                                "manager_name": names.get(rid, {}).get("manager_name"), "sleeper_player_id": _sid(sid),
                                 "player_name": (sp.get("full_name") or (f"{sp.get('first_name', '')} {sp.get('last_name', '')}".strip()
-                                                if sp.get("position") == "DEF" else None) or str(sid)),
+                                                if sp.get("position") == "DEF" else None) or _sid(sid)),
                                 "position": sp.get("position"),
                                 "waiver_bid": (t.get("settings") or {}).get("waiver_bid"), "notes": None})
     df = pd.DataFrame(out)
@@ -4856,13 +4857,14 @@ def recent_adds(league_id: str, team: int | None, week: int, is_house: bool) -> 
                     for sid, rid in (t.get("adds") or {}).items():
                         sp = players.get(str(sid)) or {}
                         rid = None if rid is None else int(rid)
-                        rows.append({"week": t.get("leg") or rnd, "transaction_id": str(t.get("transaction_id")),
+                        rows.append({"week": t.get("leg") or rnd,                                   # IN-5: never "None"
+                                     "transaction_id": _sid(t.get("transaction_id")) or f"w{rnd}-{ts.index(t)}",
                                      "transaction_type": t.get("type"), "status": t.get("status"), "action": "add",
                                      "created_at": pd.Timestamp(int(t["created"]), unit="ms", tz="UTC") if t.get("created") else None,
                                      "roster_id": rid, "team_name": names.get(rid, {}).get("team_name"),
-                                     "sleeper_player_id": str(sid), "position": sp.get("position"),
+                                     "sleeper_player_id": _sid(sid), "position": sp.get("position"),
                                      "player_name": sp.get("full_name") or (f"{sp.get('first_name', '')} {sp.get('last_name', '')}".strip()
-                                                                            if sp.get("position") == "DEF" else None) or str(sid),
+                                                                            if sp.get("position") == "DEF" else None) or _sid(sid),
                                      "waiver_bid": (t.get("settings") or {}).get("waiver_bid")})
             tx = pd.DataFrame(rows)
             if not tx.empty:

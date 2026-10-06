@@ -21,6 +21,7 @@
   import { Remote } from "../lib/remote.svelte"; // ---- V-2
 
   import { ago } from "../lib/card"; // ---- IH-2: the MFL roster freshness line
+  import { waiversFor } from "../lib/week"; // ---- IN-5: an open spot's link to Waivers
   import { APP_NAME } from "../lib/brand"; // ---- IH-2
 
   let { league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
@@ -171,7 +172,7 @@
           {@const sbMax = Math.max(1, ...sb.slots.map((s) => Math.max(s.league.best ?? 0, s.value ?? 0)))}
           <Card title="Strength by slot vs the league" testid="team-slots">
             <div class="space-y-3">
-              {#each sb.slots as s (s.slot)}
+              {#each sb.slots as s, ix (`${s.slot}#${ix}`)}
                 {@const avg = s.league.avg}
                 <div data-testid="slot-bar" data-slot={s.slot}>
                   <Bar
@@ -208,7 +209,7 @@
             <div class="mt-3 border-t border-line pt-2" data-testid="slot-groups">
               <p class="text-sm text-ink-2">
                 <span class="font-semibold text-ink">By position, starters added up:</span>
-                {#each sb.groups.filter((g) => g.slots > 1) as g, i (g.slot_type)}{i ? " · " : " "}{slotLabel(g.slot_type)}
+                {#each sb.groups.filter((g) => g.slots > 1) as g, i (`${g.slot_type}#${i}`)}{i ? " · " : " "}{slotLabel(g.slot_type)}
                   {f1(g.total)}{g.league.rank ? ` (${ordinal(g.league.rank)} of ${g.league.n}, average ${f1(g.league.avg)})` : ""}{/each}{sb.groups.some((g) => g.slots > 1) ? "." : " every position has one slot."}
               </p>
               {#if sb.depth.words}<p class="mt-1 text-sm text-ink-2" data-testid="slot-depth">{sb.depth.words}</p>{/if}
@@ -218,7 +219,7 @@
         <!-- ---- end II-0 (the block below is the recorded answers' shape, before strength_by_slot) -->
         <Card title="Strength by slot vs the league" testid="team-slots">
           <div class="space-y-3">
-            {#each data.slot_strength as s (s.slot_type)}
+            {#each data.slot_strength as s, ix (`${s.slot_type}#${ix}`)}
               {@const v = s.top?.value ?? null}
               {@const avg = s.league?.avg ?? null}
               <div data-testid="slot-bar">
@@ -257,7 +258,7 @@
 
         <Card title={`The next ${data.weekly.length} weeks`} testid="team-horizon">
           <div class="space-y-3">
-            {#each data.weekly as w (w.week)}
+            {#each data.weekly as w, ix (`${w.week}#${ix}`)}
               {@const mid = w.league?.median ?? null}
               <div data-testid="week-bar">
                 <Bar
@@ -293,7 +294,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {#each mine.weeks as w (w.week)}
+                  {#each mine.weeks as w, ix (`${w.week}#${ix}`)}
                     <tr class="border-b border-line">
                       <td class="tabnum py-1.5">{w.week}{w.record_source === "reconstructed" ? "*" : ""}</td>
                       <td class="tabnum py-1.5 pl-2 text-right">{pts(w.submitted)}</td>
@@ -317,8 +318,8 @@
               {#if callWeeks.length}
                 <Expander title="The close calls, week by week" testid="team-calls-list">
                   <ul class="space-y-1.5 text-base leading-snug">
-                    {#each callWeeks as w (w.week)}
-                      {#each w.calls as c (c.call_rank)}
+                    {#each callWeeks as w, ix (`${w.week}#${ix}`)}
+                      {#each w.calls as c, jx (`${c.call_rank}#${jx}`)}
                         <li><span class="font-semibold">Week {w.week}:</span> {c.words}</li>
                       {/each}
                     {/each}
@@ -336,7 +337,7 @@
       <div class="space-y-4">
         <Card title={`Every roster · ${data.value.week_label}`} testid="team-league">
           <div class="space-y-2">
-            {#each leagueSorted as r (r.roster_id)}
+            {#each leagueSorted as r, ix (`${r.roster_id}#${ix}`)}
               {@const yours = r.is_me ?? r.roster_id === data.roster_id}
               <div class={yours ? "rounded-md bg-accent-soft px-2 py-1" : "px-2"} data-testid="league-bar" data-yours={yours ? "1" : undefined}>
                 <Bar label={r.team_name + (yours ? " (you)" : "")} value={r.lineup_value} max={leagueMax} display={f1(r.lineup_value)} color={yours ? "var(--ll-accent)" : "var(--ll-series-1)"} thick={6} />
@@ -351,7 +352,11 @@
             {#each [...starters, ...bench, ...out] as r, i (`${r.role === "empty" || !r.sleeper_id ? "open" : r.sleeper_id}-${i}`)}
               <li>
                 {#if r.role === "empty"}
-                  <div class="flex min-h-14 items-center px-3 text-base text-ink-3">{slotLabel(r.slot)}: nobody can play it this week</div>
+                  <!-- ---- IN-5: an open spot's next step, as on My Week: Waivers at its position -->
+                  <div class="flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 text-base text-ink-3" data-testid="roster-open">
+                    <span>{slotLabel(r.slot)}: nobody can play it this week</span>
+                    <a class="ll-link text-sm font-semibold" href={withContext(waiversFor(r.slot_type ?? r.slot), ctx)} data-testid="roster-open-waivers">Find one on Waivers ›</a>
+                  </div>
                 {:else}
                   <PlayerRow
                     player={{ ...r, player_name: r.player_name ?? "" }}
