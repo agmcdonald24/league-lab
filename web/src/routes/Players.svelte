@@ -310,7 +310,7 @@
       {#if leader && sortCol}
         <span data-testid="players-answer"
           ><strong>{dir === "asc" ? "Lowest" : "Highest"} {title(sortCol).toLowerCase()}: {leader.player_name}, {show(sortCol, leader)}</strong>
-          ({leader.games} game{leader.games === 1 ? "" : "s"}{cols.some((c) => c.id === "receiving_yards") && sortCol.id !== "receiving_yards"
+          ({leader.games} game{leader.games === 1 ? "" : "s"}{cols.some((c) => c.id === "receiving_yards") && sortCol.id !== "receiving_yards" && (leader.position === "WR" || leader.position === "TE")
             ? `, ${fmt.pts(num(leader.receiving_yards_per_game))} receiving yards per game`
             : ""}) · {filtered.length} player{filtered.length === 1 ? "" : "s"} · {r.data?.window.label}.</span
         >
