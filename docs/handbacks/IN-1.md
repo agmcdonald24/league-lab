@@ -163,3 +163,25 @@ The HTML shell's head per path (above).
 
 The PO's `COPY blog /srv/blog`; the merge checks with IN-2 (the Home tab) and IN-3 (the board's rows); Andrew's first
 post from `blog/_template.md`.
+
+## Fix round (2026-10-06, branch `fix/IN1` from `integ/IN` `cd56421`)
+
+* **Review L5**: `blog.py` uses `fullmatch` for `FILE_NAME`, `IMG_NAME` (the post's `image:` and the picture route) and
+  `SLUG`: with `re.match` a `$`-anchored pattern accepted a trailing newline. `test_in1`
+  `test_a_trailing_newline_is_not_a_slug_nor_a_picture` (a file name, a picture actually named `chart.png\n` on disk,
+  `%0a` / `%0A` on both routes, a slug in the index) fails on the old code, passes now.
+* **Review nit (`md.ts`)**: `inline` holds each link's opening tag aside (U+E001) until the end and refuses a target that
+  holds a placeholder, so a picture, code, bold or italic written inside a link's target never lands in its `href`
+  (`[x](/p![a](/blog/img/a.png))` is the words "x"); bold / italic around a link still wrap it. `md()`'s output for
+  ordinary sentences is unchanged. Cases in the e2e's markdown test.
+* **The home on the real board** (fixture API from the merged tree, 8761): "Matchups to target" and this week's range
+  ("range 7.3–28.8") come from `/api/matchups/board`. Read wrong with real data, fixed: (1) the note said the matchup is
+  "not added to" the projection — the defense against his position **is** a projection input (the board's own
+  `projection_words`); now "The defense he faces is already in his projection; who plays cornerback is not."; (2) the
+  board's sentence names both possible corners on an unclear call (every WR this week): five rows ran a page long — the
+  home shows the defense's sentence, plus the corner's only when the call is likely (`home.ts` `homeWords`); (3) "to
+  target" lists favorable rows only (sorted by tone, highest projection first among them); (4) each row shows his
+  projection ("16.8 this week"). The recording `web/fixtures/in1/api_in1.json` now carries the board's real answers
+  (each position by projection, WR by tone); the spec's default is that board, a second test keeps the 404 fallback.
+  Screenshots: `home-{phone,desktop}.png`, `home-full-*.png` (the e2e on the real answers), `home-live-{375,1300}.png`
+  and `home-live-full-*.png` (straight from the fixture API).

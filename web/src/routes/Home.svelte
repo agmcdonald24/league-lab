@@ -47,7 +47,8 @@
   // ---- matchups to target this week (IN-3's board, sorted by the matchup's tone); hidden without the route
   let board = $state<ReturnType<typeof fromBoardWithTone> | null>(null);
   function fromBoardWithTone(b: MatchupBoard) {
-    return (b.rows ?? []).filter((r) => r.gsis_id).slice(0, 5).map((r) => ({ r, t: toneOf(r) }));
+    // "to target": the favorable ones only (sorted by tone they come first, the highest projection first among them)
+    return (b.rows ?? []).filter((r) => r.gsis_id && toneOf(r).tone === "favorable").slice(0, 5).map((r) => ({ r, t: toneOf(r) }));
   }
   $effect(() => {
     get<MatchupBoard>(homePaths.board(L, "WR", "tone", 5))
@@ -168,7 +169,10 @@
       <section class="rounded-lg border border-line bg-surface" data-testid="home-matchups">
         <div class="px-4 pt-3">
           <h2 class="text-lg leading-tight font-bold">Matchups to target this week</h2>
-          <p class="text-sm text-ink-3">Wide receivers, the easiest matchups first. Context beside the projection, not added to it.</p>
+          <p class="text-sm leading-snug text-ink-3" data-testid="home-matchups-note">
+            Wide receivers in a favorable matchup, the highest projection first. The defense he faces is already in his projection; who plays
+            cornerback is not.
+          </p>
         </div>
         <ul class="divide-y divide-line">
           {#each board as { r, t } (r.gsis_id)}
@@ -181,12 +185,15 @@
                 </div>
                 {#if t.words}<p class="text-sm leading-snug text-ink-2">{t.words}</p>{/if}
               </div>
-              {#if t.tone}
-                <span
-                  class="shrink-0 rounded-sm px-2 py-0.5 text-xs font-semibold {t.tone === 'favorable' ? 'bg-good/20 text-good' : t.tone === 'difficult' ? 'bg-bad/20 text-bad' : 'bg-raised text-ink-3'}"
-                  >{t.tone === "favorable" ? "▲ " : t.tone === "difficult" ? "▼ " : ""}{TONE_WORDS[t.tone]}</span
-                >
-              {/if}
+              <div class="shrink-0 space-y-1 text-right">
+                {#if t.tone}
+                  <span
+                    class="inline-block rounded-sm px-2 py-0.5 text-xs font-semibold {t.tone === 'favorable' ? 'bg-good/20 text-good' : t.tone === 'difficult' ? 'bg-bad/20 text-bad' : 'bg-raised text-ink-3'}"
+                    >{t.tone === "favorable" ? "▲ " : t.tone === "difficult" ? "▼ " : ""}{TONE_WORDS[t.tone]}</span
+                  >
+                {/if}
+                {#if r.proj_points !== null}<div class="tabnum text-sm font-semibold" data-testid="home-matchup-proj">{fmt.pts(r.proj_points)} <span class="text-xs font-normal text-ink-3">this week</span></div>{/if}
+              </div>
             </li>
           {/each}
         </ul>

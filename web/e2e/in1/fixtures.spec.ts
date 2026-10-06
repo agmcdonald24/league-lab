@@ -65,16 +65,15 @@ const DEMO = {
   ].join("\n"),
 };
 
-async function api(context: BrowserContext, opts: { board?: unknown } = {}): Promise<string[]> {
+// the board: IN-3's real answers recorded from the merged tree (default), or missing (404: the fallback path)
+async function api(context: BrowserContext, opts: { board?: "recorded" | "missing" } = {}): Promise<string[]> {
   const calls: string[] = [];
   await serveFixtures(context);
   await context.route(/\/api\/(blog|ros|about|record|matchups\/board|player)/, async (route) => {
     const u = new URL(route.request().url());
     calls.push(u.pathname + u.search);
-    if (u.pathname === "/api/matchups/board") {
-      if (opts.board) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(opts.board) });
+    if (u.pathname === "/api/matchups/board" && opts.board === "missing")
       return route.fulfill({ status: 404, contentType: "application/json", body: JSON.stringify({ error: "no endpoint" }) });
-    }
     if (u.pathname === "/api/blog" && u.searchParams.get("limit") === "50") {
       const list = RECORDED["/api/blog?limit=50"].body as { posts: unknown[] };
       const meta = Object.fromEntries(Object.entries(DEMO).filter(([k]) => k !== "markdown"));
@@ -120,11 +119,19 @@ test("home: the name, one sentence, two actions and live projections above the f
   await expect(page.getByTestId("home-top-row")).toHaveCount(5);
   // above the fold at 375 × 667 and 1300 × 800: the name, the sentence, both actions, live rows
   for (const id of ["home-sentence", "home-open", "home-browse", "home-top-row"]) await inView(page, id);
-  // the board is missing on this server: the top projections came from the rest-of-season list, the matchups hide
+  // IN-3's board (its real answer, recorded): this week's projection with this week's range, and the matchups to target
   expect(calls.some((c) => c.startsWith("/api/matchups/board"))).toBe(true);
-  expect(calls.some((c) => c.startsWith("/api/ros?league=ref%3Ahalf&position=WR"))).toBe(true);
-  await expect(page.getByTestId("home-matchups")).toHaveCount(0);
-  await expect(page.getByTestId("home-top-range").first()).toContainText(/season \d+ \(\d+–\d+\)/);
+  await expect(page.getByTestId("home-top-range").first()).toHaveText(/^range \d+\.\d–\d+\.\d$/);
+  await expect(page.getByTestId("home-top-name").first()).toHaveText("Chris Olave");
+  const targets = page.getByTestId("home-matchup-row");
+  await expect(targets).toHaveCount(5);
+  for (let i = 0; i < 5; i++) await expect(targets.nth(i)).toContainText("▲ Favorable"); // "to target": favorable only
+  await expect(targets.first()).toContainText("vs ATL");
+  await expect(targets.nth(1)).toContainText("at PHI");
+  await expect(targets.first()).toContainText("Atlanta gives up the 7th-most points to receivers.");
+  await expect(targets.first()).not.toContainText("starting corners"); // an unclear corner call: the defense's line only
+  await expect(page.getByTestId("home-matchup-proj").first()).toHaveText("16.8 this week");
+  await expect(page.getByTestId("home-matchups-note")).toContainText("who plays cornerback is not");
   // the record, straight: four positions, the worse ones marked
   await expect(page.getByTestId("home-grade")).toHaveCount(4);
   await expect(page.locator('[data-testid="home-grade"][data-verdict="worse"]').first()).toBeVisible();
@@ -141,7 +148,7 @@ test("home: the name, one sentence, two actions and live projections above the f
   // the position tabs switch the list
   await page.getByTestId("home-top-pos").getByRole("button", { name: "RB" }).click();
   await expect(page.getByTestId("home-top-row").first()).toBeVisible();
-  expect(calls.some((c) => c.startsWith("/api/ros?league=ref%3Ahalf&position=RB"))).toBe(true);
+  expect(calls.some((c) => c.startsWith("/api/matchups/board?league=ref%3Ahalf&position=RB"))).toBe(true);
   await page.getByTestId("home-top-pos").getByRole("button", { name: "WR" }).click();
   // "/home" is the same page; a name opens the drawer in Half PPR
   await page.goto("/home");
@@ -150,27 +157,18 @@ test("home: the name, one sentence, two actions and live projections above the f
   await expect(page.getByTestId("pane")).toBeVisible();
 });
 
-test("home: when the matchup board answers, matchups to target show and the projections carry this week's range", async ({ context, page, isMobile }, info) => {
-  const row = (gsis: string, name: string, team: string, opp: string, proj: number, tone: string, words: string) => ({
-    gsis_id: gsis, player_name: name, position: "WR", team, opponent: opp, is_home: true, proj_points: proj, p10: proj - 7, p90: proj + 9,
-    context: { opponent: opp, home: true, defense: { tone, tough_rank: null, n_ranked: 32, words }, cb: null, tone, words }, // IN-3's shape
-  });
-  const board = {
-    rows: [
-      row(PUKA, "Puka Nacua", "LA", "SF", 16.4, "favorable", "San Francisco gives up the 3rd-most points to receivers; his likely corner is unranked."),
-      row("00-0038543", "Jaxon Smith-Njigba", "SEA", "ARI", 15.1, "neutral", "Arizona is in the middle against receivers."),
-    ],
-    total: 2,
-  };
-  await api(context, { board });
+test("home without the matchup board (404): the projections fall back to the season list and its range; the matchups hide", async ({ context, page, isMobile }, info) => {
+  const calls = await api(context, { board: "missing" });
   await size(page, isMobile);
   await page.goto("/");
-  await expect(page.getByTestId("home-matchups")).toBeVisible();
-  await expect(page.getByTestId("home-matchup-row")).toHaveCount(2);
-  await expect(page.getByTestId("home-matchup-row").first()).toContainText("▲ Favorable");
-  await expect(page.getByTestId("home-top-range").first()).toContainText(/range \d+\.\d–\d+\.\d/);
+  await expect(page.getByTestId("home-top-row")).toHaveCount(5);
+  expect(calls.some((c) => c.startsWith("/api/ros?league=ref%3Ahalf&position=WR"))).toBe(true);
+  await expect(page.getByTestId("home-top-range").first()).toContainText(/season \d+ \(\d+–\d+\)/);
+  await expect(page.getByTestId("home-top-note")).toContainText("the rest of the season");
+  await expect(page.getByTestId("home-matchups")).toHaveCount(0);
+  await expect(page.getByTestId("error-card")).toHaveCount(0);
   await noSidewaysScroll(page);
-  await page.screenshot({ path: join(SHOTS, `home-with-board-full-${info.project.name}.png`), fullPage: true, scale: "css" });
+  await page.screenshot({ path: join(SHOTS, `home-without-board-full-${info.project.name}.png`), fullPage: true, scale: "css" });
 });
 
 test("home: every live call failing leaves the name, the sentence, the actions and the tools; no error card", async ({ context, page, isMobile }) => {
@@ -337,8 +335,24 @@ test("markdown documents: escaped first, only our tags", async () => {
   expect(inside).not.toMatch(/href="[^"]*(<img|<code|<strong|<em)/);
   expect(inside).toContain('<strong><a href="/players?league=ref%3Ahalf" class="ll-link">bold link</a></strong>');
   expect(inside).toContain('<em><a href="/trends?league=ref%3Ahalf" class="ll-link">it</a></em>');
-  expect(inside).not.toContain('href="/p'); // a picture inside the target: the words, not a link
+  expect(inside).not.toMatch(/href="\/p[?"]/); // a picture inside the target: the words, not a link
   expect(md("[z](/r**b**)", { league: "1" })).not.toMatch(/href="[^"]*<strong/);
   expect(md("**[Puka](/player/00-0039075)**", { league: "1" })).toBe('<strong><a href="/player/00-0039075?league=1" class="ll-link">Puka</a></strong>');
   expect(md("a \uE0010\uE001 b [x](/y)", {})).not.toContain("\uE001");
+});
+
+test("home: a matchup's line is the defense's, plus the corner's only when the call is likely", async () => {
+  test.skip(test.info().project.name !== "desktop", "pure code: once is enough");
+  const { homeWords } = await import("../../src/components/home/home");
+  const ctx = (certainty: "likely" | "unclear" | "no call") => ({
+    context: {
+      opponent: "KC", home: true, tone: "difficult" as const, words: "the board's long sentence",
+      defense: { tone: "neutral" as const, tough_rank: 12, n_ranked: 32, words: "Kansas City is in the middle against receivers" },
+      cb: { tone: "difficult" as const, certainty, corner: "Trent McDuffie", corner_rank: 2, shutdown: true, words: "he is likely to face Trent McDuffie, a shutdown corner" },
+    },
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  expect(homeWords(ctx("likely") as any)).toBe("Kansas City is in the middle against receivers. He is likely to face Trent McDuffie, a shutdown corner.");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  expect(homeWords(ctx("unclear") as any)).toBe("Kansas City is in the middle against receivers.");
 });
