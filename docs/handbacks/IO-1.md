@@ -105,7 +105,7 @@ Tests: `tests/test_io1_context_record.py` 12 passed (incl. a rolled-back DB test
 75 passed; `api/tests/test_io1.py` 7 passed; `test_in4 test_im5 test_im3` 110 passed; `test_ik4 test_im4 test_in1
 test_in2 test_in3 test_in6` 190 passed; `tests/test_metric_registry.py` 3 passed; ruff clean; copy standard clean;
 `npm run lint && npm run build` clean; e2e `e2e/io1` 4 passed (375 and 1300), `e2e/in4` 6 passed (unchanged);
-`check_root.sh` 1,548 passed, 4 failed — **no new failures**.
+`check_root.sh` 1,549 passed, 4 failed — **no new failures**.
 
 ## Without my relations (the live site until the nightly)
 
