@@ -38,7 +38,8 @@ Worktree `/home/claude/wt-io4`, database `league_lab` (read only — nothing wri
    **Started** / **Final** badge on the row (phone: on the line under the name; desktop: in place of the kickoff),
    "· Final" in the game list, "… still to play" in the count. (b) In a real league the defense read comes from
    `research.league_dvp` (the heatmap's own frame: `league_defense`), the tone recombined with the same corner call
-   (`combine_tone`), the sentence rebuilt; `defense_source` = `league` / `reference`; browsing keeps the reference
+   (`combine_tone`), the sentence rebuilt, and the opened row's evidence (its defense history) in the league's scoring too (kept per
+   league scoring in the board's region); `defense_source` = `league` / `reference`; browsing keeps the reference
    mart (and `matchup_context`, read by the home and DFS, is unchanged). (c) `projection_words()` imports IO-1's
    `context_record` lazily: when `summary()["corner"]["graded"]` is true its `words` replace the last sentence ("Whether
    a tough corner lowers a receiver's points has not been graded yet."); absent, ungraded or raising → today's
@@ -106,6 +107,7 @@ context record's absence keeps today's sentence (tested with a fake module and w
   (`hosted_accounts.sql`, idempotent; its test rows), `test_ig3.py` / `test_ik3.py` (temporary tables / a rolled-back
   transaction) — so this run touched `league_lab` through them, as the PO's merge run does. Nothing in my code writes.
   I noticed after the run and did not run them again.
+* `/home/claude/waveIO/check_root.sh` (I edited `src/`): **1,537 passed, 4 failed — the 4 known, 0 new** (117 s).
 * `test_in3.py` 55, `test_in5.py` + `test_in0.py` 20, `test_im3.py` (limiter) 63, `test_ii3.py` + `test_im1.py` 37 +
   1 skipped — all pass. `ruff check src app tests api` clean; `copy_standard.py --check` clean; `npm run lint` (189
   files, 0 errors / warnings) and `npm run build` clean.
@@ -114,13 +116,14 @@ context record's absence keeps today's sentence (tested with a fake module and w
   Thursday game picked → every row Final; Stats Full table sorted by Target share change (first cell "+17.9 pts",
   Jakobi Meyers), its hover, the dash on a 3-game window with its reason. Screenshots `docs/handbacks/io4/`.
 * **The board**, week 4 clock Sunday 2:30 PM ET: 10 of 16 games started, 136 of 219 WRs in them; Saturday: 1 game
-  final, 13 WRs, default "Still to play" 206. League of Scrubs WR: every row's defense rank = the heatmap's (100 rows);
+  final, 13 WRs, default "Still to play" 206. League of Scrubs WR: every row's defense rank = the heatmap's (100 rows), and its evidence's history rank too;
   on this database the reference and league ranks agree at WR for Scrubs (0 differences) — the change matters where
   the scorings differ.
 * **Stats**: 2026 season window, RB / WR / TE, 423 players: target share change for **185**, carry share change for
   **55** running backs, snap share change for **184**; **157** of DFS's week-5 role-trend measures equal the Stats
   columns (±0.0006). `/api/players` (ref:half, season, RB+WR+TE, limit 1,000): **3.2 s cold** (a fresh process: the
-  season frame, the league's points), **0.27 s warm**; the role columns themselves: see the timing line below.
+  season frame, the league's points), **0.27 s warm**; the role columns inside `stats.aggregate` (once per window, then cached): **24 ms** of 175 ms on
+  2026 (1,414 game rows), **34 ms** of 212 ms on 2025 (6,037 rows) (the aggregate itself was already ~150–180 ms).
 * **The share**: one unknown Sleeper league cold (My Week, Team, League, outlook) = **11 calls** on the fixtures;
   three in 45 s → 33 calls, **0 refused**; fifty in a minute → refused from the **16th**, 140 of 200 answers 503
   "busy", never a 500; another visitor not refused. MFL `mfl:70587` cold = **14 calls**; three → 0 refused. At a live
