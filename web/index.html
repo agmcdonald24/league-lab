@@ -3,18 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- ---- IM-3 (Wave I-M): found by search engines, honestly — the words are brand.ts's name and the setup screen's line.
+         ---- IN-1 (Wave I-N): the block between the ll:seo markers is the DEFAULT link preview; the server puts each
+         public path's own in its place (api/league_lab_api/blog.py `shell`: /, /home, /blog, a post, the tools). Keep the
+         markers and the plain title (the image workflow greps it); the inline script below is not part of it (its hash is the CSP's). -->
+    <!-- ll:seo -->
     <title>isuckatfantasy</title>
-    <!-- ---- IM-3 (Wave I-M): found by search engines, honestly — the words are brand.ts's name and the setup screen's line -->
     <meta name="description" content="Who to start this week and what each player is worth, in your league's own scoring — on Sleeper, MyFantasyLeague, ESPN or Yahoo. Browse every player's numbers without a league." />
     <link rel="canonical" href="https://isuckatfantasy.io/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="isuckatfantasy" />
     <meta property="og:title" content="isuckatfantasy" />
-    <meta property="og:description" content="Who to start this week and what each player is worth, in your league's own scoring — on Sleeper, MyFantasyLeague, ESPN or Yahoo." />
+    <meta property="og:description" content="Who to start this week and what each player is worth, in your league's own scoring — on Sleeper, MyFantasyLeague, ESPN or Yahoo. Browse every player's numbers without a league." />
     <meta property="og:url" content="https://isuckatfantasy.io/" />
-    <meta property="og:image" content="https://isuckatfantasy.io/icons/icon-512.png" />
-    <meta name="twitter:card" content="summary" />
-    <!-- ---- end IM-3 -->
+    <meta property="og:image" content="https://isuckatfantasy.io/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- /ll:seo -->
+    <link rel="alternate" type="application/rss+xml" title="isuckatfantasy · Blog" href="/blog/rss.xml" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#121721" media="(prefers-color-scheme: dark)" />

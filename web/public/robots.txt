@@ -1,4 +1,7 @@
 # isuckatfantasy (Wave I-M, IM-3): the app's pages may be indexed; the API is not a page.
+# IN-1 (Wave I-N): the sitemap lists home, the blog, every post and the public tools.
 User-agent: *
 Allow: /
 Disallow: /api/
+
+Sitemap: https://isuckatfantasy.io/sitemap.xml

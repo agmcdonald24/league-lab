@@ -54,7 +54,7 @@ from pathlib import Path
 import pandas as pd
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse  # IN-1: HTMLResponse
 from league_lab import anyleague as A
 from league_lab import memo  # ---- INF-2: the memory budget
 from pydantic import BaseModel
@@ -847,6 +847,15 @@ app.include_router(dfs_mod.router, dependencies=[Depends(require_auth)])
 # ---- end IM-5
 
 
+# ---- IN-1 (Wave I-N): the blog — GET /api/blog, /api/blog/{slug}, /blog/rss.xml, /blog/img/{name}, /sitemap.xml
+# (league_lab_api/blog.py; docs/BLOG.md). Registered ahead of the web app's catch-all below.
+from . import blog as blog_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(blog_mod.router, dependencies=[Depends(require_auth)])
+app.include_router(blog_mod.pages)          # the feed, the pictures, the sitemap: public like the web app's files
+# ---- end IN-1
+
+
 # ---- IM-3 (Wave I-M): the public site's doors. The rate limiter (ratelimit.py) inside the Guard (security.py: cross-site
 # writes, body sizes, the response headers on every answer, a 429 included); both outermost, ahead of the routes.
 #   GET /api/ratelimit   how this request was keyed ({keyed_by, test_address_used, bucket_tag}; never the address)
@@ -883,4 +892,12 @@ def web(path: str):
             return FileResponse(f, headers={"Cache-Control": cache})
         if Path(path).suffix and Path(path).parts[0] in ("assets", "icons"):
             raise HTTPException(status_code=404)
+        if path.startswith("blog/img/"):            # ---- IN-1: a picture the blog's route did not serve is missing
+            raise HTTPException(status_code=404)
+    # ---- IN-1 (Wave I-N): the link preview for this path (title, description, canonical, Open Graph, Twitter) in the
+    # shell's head — a shared post or tool unfurls in iMessage / X / Reddit / Discord; an unknown post answers 404
+    shaped = blog_mod.shell(index, path)
+    if shaped is not None:
+        return HTMLResponse(shaped[0], status_code=shaped[1], headers={"Cache-Control": SHELL_CACHE})
+    # ---- end IN-1
     return FileResponse(index, headers={"Cache-Control": SHELL_CACHE})

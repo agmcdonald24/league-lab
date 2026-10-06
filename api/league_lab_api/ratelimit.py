@@ -99,6 +99,10 @@ HEAVY_PREFIX = ("/api/dfs/slate", "/api/dfs/lineups")   # IM-5 (dfs.RATE_BUCKETS
 LEAGUE_SETUP = frozenset({"username", "mfl", "mfl_search", "sleeper", "espn", "yahoo", "yahoo_me"})
 UNLIMITED = frozenset({"/api/health"})
 WRITES = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+# ---- IN-1 (Wave I-N): the blog's pages the API builds or reads from disk (not web/dist): `read`, like /api/blog
+PAGES_READ = frozenset({"/blog/rss.xml", "/sitemap.xml"})
+PAGES_READ_PREFIX = ("/blog/img/",)
+# ---- end IN-1
 
 
 def norm(value: str | None) -> str:
@@ -119,6 +123,8 @@ def lineup_view(values: list[str] | str | None) -> bool:
 
 def bucket_for(method: str, path: str, query: str = "") -> str | None:
     """The bucket a request spends, or None (not limited: static files, the health check)."""
+    if path in PAGES_READ or path.startswith(PAGES_READ_PREFIX):     # ---- IN-1: the feed, the sitemap, the pictures
+        return "read"
     if not path.startswith("/api/") or path in UNLIMITED:
         return None
     if path in HEAVY_EXACT or path.startswith(HEAVY_PREFIX):
