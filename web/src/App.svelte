@@ -34,6 +34,7 @@
     compare: () => import("./routes/Compare.svelte"),
     about: () => import("./routes/About.svelte"),
     watchlist: () => import("./routes/Watchlist.svelte"), // ---- IL-5: the watchlist, in the league frame (the drawer)
+    dfs: () => import("./routes/Dfs.svelte"), // ---- IM-5: DFS (in the frame with a league; alone without one, below)
   } as const;
   type LazyName = keyof typeof LAZY;
   const isLazy = (n: string): n is LazyName => n in LAZY;
@@ -196,6 +197,12 @@
   {:then m}
     <m.default current={league} onauth={needLogin} />
   {/await}
+<!-- ---- IM-5: DFS needs no league: without one it opens on its own (with one, in the frame like any screen) -->
+{:else if r.name === "dfs" && !league}
+  <div class="mx-auto w-full max-w-6xl px-4 pt-4">
+    {#await LAZY.dfs() then m}<m.default {options} league={null} team={null} onauth={needLogin} />{/await}
+  </div>
+<!-- ---- end IM-5 -->
 {:else if r.name === "leagues" || !league}
   <LeaguesPage {mine} current={league} onuser={signedInUser} onauth={needLogin} />
 {:else}

@@ -28,7 +28,9 @@ export type RouteName =
   // ---- IK-4: the account (sign in by email, the saved leagues)
   | "account"
   // ---- IL-5: the watchlist (the players the account saved)
-  | "watchlist";
+  | "watchlist"
+  // ---- IM-5: DFS (no league needed)
+  | "dfs";
 
 const NAMED: Record<string, RouteName> = {
   "/leagues": "leagues",
@@ -47,6 +49,7 @@ const NAMED: Record<string, RouteName> = {
   "/trade-calc": "trade-calc", // ---- IA-2
   "/account": "account", // ---- IK-4
   "/watchlist": "watchlist", // ---- IL-5
+  "/dfs": "dfs", // ---- IM-5
 };
 
 export interface Route {
