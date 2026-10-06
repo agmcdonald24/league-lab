@@ -203,3 +203,17 @@ test("GA counts a reference key as platform none (ids only)", async ({ context, 
     )
     .toContain("none");
 });
+
+// ---- IM-3 fix (the Wave I-M review): provider text in the sentences never becomes a link to another site
+test("markdown: a hostile team name stays text; our own links stay links", async () => {
+  test.skip(test.info().project.name !== "desktop", "pure code: once is enough");
+  const { md, withContext } = await import("../../src/lib/md");
+  for (const team of ["[Open](//evil.example)", "[Open](/\\evil.example)", "[Free money](https://evil.example/x)", "[x](https://espn.com.evil.example/)", "[x](https://user@espn.com/)", "[x](javascript:alert(1))"]) {
+    const html = md(`**Best partner: ${team}.** Trade with them.`, { league: "1", team: 2 });
+    expect(html, team).not.toContain("<a ");
+    expect(html).toContain("<strong>Best partner:");
+  }
+  expect(md("[Amon-Ra St. Brown](/player/00-0036963)", { league: "1", team: 2 })).toContain('<a href="/player/00-0036963?league=1&amp;team=2"');
+  expect(md("[ESPN](https://www.espn.com/nfl/player/_/id/4374302)")).toContain('href="https://www.espn.com/nfl/player/_/id/4374302"');
+  expect(withContext("//evil.example", { league: "1" })).toBe("//evil.example");
+});
