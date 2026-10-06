@@ -136,6 +136,20 @@ def test_rebuilt_signals_go_through_the_screens_functions():
     assert C.defense_tone(None) is None
 
 
+def test_defense_rank_asof_is_the_screens_rank_before_the_week():
+    dvp = pd.DataFrame([
+        {"defense": "A", "position": "WR", "week": 1, "points_allowed_per_game_std": 30.0},
+        {"defense": "B", "position": "WR", "week": 1, "points_allowed_per_game_std": 20.0},
+        {"defense": "C", "position": "WR", "week": 2, "points_allowed_per_game_std": 25.0},   # C's bye in week 1
+        {"defense": "A", "position": "WR", "week": 2, "points_allowed_per_game_std": 18.0},
+        {"defense": "B", "position": "WR", "week": 3, "points_allowed_per_game_std": 99.0},   # week 3 itself
+    ])
+    r = C.defense_rank_asof(dvp, 3)
+    assert r == {("C", "WR"): (1, 3), ("B", "WR"): (2, 3), ("A", "WR"): (3, 3)}   # latest before week 3, all ranked
+    assert C.defense_rank_asof(dvp, 2) == {("A", "WR"): (1, 2), ("B", "WR"): (2, 2)}
+    assert C.defense_rank_asof(dvp, 1) == {}
+
+
 def test_weather_is_not_in_the_projection():
     from league_lab.projections import FEATURES_BY_POSITION
     for pos in ("QB", "RB", "WR", "TE"):

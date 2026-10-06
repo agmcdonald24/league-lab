@@ -3919,8 +3919,11 @@ a season it equals the mart **exactly** (2025: 64 of 64 ranked corners, the same
 The grade uses only the as-of quarter. Test: a week's own games never enter its rank
 (`tests/test_io1_context_record.py::test_asof_rank_never_reads_the_week_itself_or_later`).
 
-The other inputs, rebuilt as-of: the defense against his position = `opp_rank_std` of `mart_player_week_features`
-(the rank the projection read for that week); the role trend = `dfs.role_trend` on his games of the season before the
+The other inputs, rebuilt as-of: the defense against his position = the screen's rank
+(`mart_defense_vs_position_current`: every defense's season-to-date points allowed per game to the position, ranked
+among all of them) from each defense's latest game before the week (`context_record.defense_rank_asof`; for 2026 week
+5 it equals the live mart, 160 of 160 defense-positions) — the same points allowed the projection reads as
+`opp_allowed_std`; the role trend = `dfs.role_trend` on his games of the season before the
 week, **routes per dropback left out** (the participation file arrives after the season: the live screen never had it);
 the weather = the last forecast fetched before kickoff (`int_game_weather.forecast_*`) when one was kept.
 **Not rebuilt as-of**: the betting line (`dim_game` keeps nflverse's closing line — later than a Thursday freeze for
@@ -3983,14 +3986,14 @@ listed = flagged). 2025 weeks 1–18 and 2026 weeks 1–4; the role trend first 
 
 | Group | n | games | Mean miss (95%) | Scored above | vs comparison (95%) |
 |---|---|---|---|---|---|
-| listed | 38 | 30 | +0.35 (−1.39 to +2.34) | 15 (39%) | |
-| everyone else at the position (WR) | 2,883 | 335 | −0.31 (−0.51 to −0.12) | 998 (35%) | listed +0.66 (−1.11 to +2.62) |
-| everyone else projected 6+ points | 1,219 | 335 | −0.23 (−0.64 to +0.16) | 494 (41%) | listed +0.58 (−1.25 to +2.62) |
+| listed | 37 | 29 | +0.40 (−1.47 to +2.51) | 15 (41%) | |
+| everyone else at the position (WR) | 2,884 | 335 | −0.31 (−0.51 to −0.12) | 998 (35%) | listed +0.72 (−1.10 to +2.72) |
+| everyone else projected 6+ points | 1,219 | 335 | −0.23 (−0.64 to +0.16) | 494 (41%) | listed +0.63 (−1.25 to +2.71) |
 
-**Not distinguishable from chance** (in Standard scoring, 2025: −0.47 against the rest, −1.80 to +0.85, 29 games).
-Every listed player is a receiver (only receivers get a corner call); all 38 had a
-likely easy corner, 17 a favourable defense, 17 a team expected to score 26+, 11 a role up. By season: 2025, 29 listed,
-10 above, −0.58 against the rest (−2.05 to +0.81); 2026 weeks 1–4, 9 listed, 5 above, +4.57 (−1.44 to +10.47).
+**Not distinguishable from chance** (in Standard scoring, 2025: −0.44 against the rest, −1.82 to +0.93, 28 games).
+Every listed player is a receiver (only receivers get a corner call); all 37 had a
+likely easy corner, 16 a favourable defense, 17 a team expected to score 26+, 11 a role up. By season: 2025, 28 listed,
+10 above, −0.55 against the rest (−2.09 to +0.89); 2026 weeks 1–4, 9 listed, 5 above, +4.57 (−1.44 to +10.47).
 
 ### What changed because of it
 
@@ -3999,8 +4002,9 @@ likely easy corner, 17 a favourable defense, 17 a team expected to score 26+, 11
   both outside the projection and able to be favourable (routes per dropback is unavailable during the season), so
   **the list is empty** and the screen says why. The rule was not tuned on these weeks: the change follows from the
   corner's grade alone; no other rule was tried in its place. (Looked at, not adopted: two favourable signals with the
-  corner left out — all of them already in the projection — 871 player-weeks, +0.37 against the rest, −0.02 to +0.74;
-  in-sample, and a list of what the projection already holds.)
+  corner left out — all of them already in the projection — 829 player-weeks, +0.43 against the rest, +0.03 to +0.81:
+  found on the weeks it is graded on, barely clear of 0, and a list of what the projection already holds. The record
+  stores every signal, so it can be graded out of sample from 2026 week 5 before anyone adopts it.)
 * The corner stays on each receiver as **context with its grade** (the chip loses its colour when its quarter's row
   holds 0; its words say "Graded: no measurable effect (…)").
 * `ops.context_record` keeps **both** verdicts every week (`worth` / `listed`: today's rule; `worth_corner` /

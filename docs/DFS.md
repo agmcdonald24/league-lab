@@ -59,8 +59,8 @@ soft-corner calls on the board; no RB, TE or QB, by construction: only receivers
 Ordered by projection on the board, by points per $1,000 on a slate; who cannot play is left off.
 
 **Graded, and changed (IO-1, Wave I-O; docs/METRICS.md § "The context record", cx1.0).** Rebuilt for 2025 and 2026
-weeks 1–4 from as-of inputs, the list (38 receiver-games) finished 0.66 points better than everyone else at the position
-against the projection (−1.11 to +2.62) and scored above its projection in 15 of 38 games (39%; everyone else 35%) —
+weeks 1–4 from as-of inputs, the list (37 receiver-games) finished 0.72 points better than everyone else at the position
+against the projection (−1.10 to +2.72) and scored above its projection in 15 of 37 games (41%; everyone else 35%) —
 **not distinguishable from chance**. The corner call it leaned on showed **no measurable effect**: a likely shutdown
 corner −0.39 against the other called receivers (−1.39 to +0.72, 99 games), a likely easy one −0.02 (−1.11 to +1.22, 79).
 So **the cornerback call no longer counts** toward the list (`dfs.WORTH_IGNORES`; `dfs.worth(…, ignore=())` is Wave

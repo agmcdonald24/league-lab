@@ -11,8 +11,10 @@ Two kinds of context have been shown without a grade: the **cornerback call** (t
     every later week included (look-ahead). ``cb_rank_asof`` recomputes the same ranking (the same pool, the same three
     z-scores, the same opponent adjustment) from the games **before** the week only; at the end of a season it equals
     the mart (``validate_asof_rank``);
-  - the defense against his position: ``opp_rank_std`` of ``mart_player_week_features`` — the rank the projection
-    read for that week (games before it);
+  - the defense against his position: the screen's rank (``mart_defense_vs_position_current``: every defense's
+    season-to-date points allowed per game to the position, ranked among all of them) computed from the games before
+    the week (``defense_rank_asof``: each defense's latest row of ``mart_defense_vs_position`` before the week) — the
+    same points allowed the projection reads as ``opp_allowed_std``;
   - the role trend: ``dfs.role_trend`` on his games of the season before the week (routes per dropback left out of
     a rebuilt week: the participation file arrives after the season, so the live screen never had it);
   - the betting line: ``dim_game``'s spread and total (nflverse keeps the closing line: later than a Thursday freeze
@@ -328,22 +330,35 @@ def corner_context(call: Mapping | None, rank_of: Mapping[str, Mapping]) -> dict
             "tier": tier_of(first["label"], first["rank"]), "n": n}
 
 
+def defense_rank_asof(dvp: pd.DataFrame, week: int) -> dict[tuple[str, str], tuple[int, int]]:
+    """(defense, position) -> (rank, n) as the screen ranks them (mart_defense_vs_position_current: rank 1 = gives up
+    the most points per game this season, among every defense with a game), from each defense's latest row of
+    ``mart_defense_vs_position`` BEFORE ``week`` (a week's own games never enter its rank)."""
+    d = dvp[(dvp["week"] < int(week)) & dvp["points_allowed_per_game_std"].notna()]
+    if d.empty:
+        return {}
+    latest = d.sort_values("week").groupby(["defense", "position"]).tail(1).copy()
+    latest["rank"] = latest.groupby("position")["points_allowed_per_game_std"].rank(method="min", ascending=False)
+    latest["n"] = latest.groupby("position")["defense"].transform("count")
+    return {(r.defense, r.position): (int(r.rank), int(r.n)) for r in latest.itertuples()}
+
+
 def signals_for(position: str, defense_rank, corner: Mapping | None, role: Mapping | None, game: Mapping | None,
-                weather: Mapping | None) -> tuple[list[dict], bool, bool]:
+                weather: Mapping | None, n_defenses: int = N_DEFENSES) -> tuple[list[dict], bool, bool]:
     """The DFS screen's signals and its "Worth a look" verdicts for one player-week (``dfs.signals`` / ``dfs.worth``,
     the same functions the screen calls), from the as-of parts: (signals, worth under today's rule, worth under Wave
     I-N's rule — the cornerback counting)."""
-    dt = defense_tone(defense_rank)
-    dw = defense_words(defense_rank)
-    matchup = {"defense": {"tone": dt, "words": dw, "tough_rank": None if dt is None else N_DEFENSES + 1 - int(defense_rank),
-                           "n_ranked": N_DEFENSES if dt else None},
+    dt = defense_tone(defense_rank, n_defenses)
+    dw = defense_words(defense_rank, n_defenses)
+    matchup = {"defense": {"tone": dt, "words": dw, "tough_rank": None if dt is None else n_defenses + 1 - int(defense_rank),
+                           "n_ranked": n_defenses if dt else None},
                "cb": corner}
     sig = D.signals(position, matchup, role, game, weather)
     return sig, D.worth(sig)[0], D.worth(sig, ignore=())[0]
 
 
 # ================================================================================================ the database
-WEEK_SQL = """select f.gsis_id, f.position, f.team, f.opponent, f.opp_rank_std, f.spread_line, f.total_line,
+WEEK_SQL = """select f.gsis_id, f.position, f.team, f.opponent, f.spread_line, f.total_line,
                      coalesce(p.player_name, f.gsis_id) as player_name
               from analytics.mart_player_week_features f
               left join analytics.dim_player p on p.gsis_id = f.gsis_id
@@ -369,6 +384,8 @@ ROLE_SQL = """select gsis_id, position, week, targets, team_targets, carries, te
 WX_SQL = """select game_id, wx_source, wx_dome, wx_wind_mph::float8 as wx_wind_mph, wx_precip_in::float8 as wx_precip_in,
                    wx_temp_f::float8 as wx_temp_f, wx_snow, forecast_wind_mph, forecast_precip_in, forecast_temp_f
             from intermediate.int_game_weather where season = %s and week = %s"""
+DVP_SQL = """select defense, position, week, points_allowed_per_game_std::float8 as points_allowed_per_game_std
+             from analytics.mart_defense_vs_position where season = %s"""
 OOF_SQL = """select gsis_id, week, position, proj_points, actual, model_version
              from ops.calibration_oof where season = %s and league_id = %s"""
 PROJ_SQL = """select gsis_id, week, position, proj_points, model_version, frozen_source
@@ -428,6 +445,7 @@ class SeasonInputs:
     off: pd.DataFrame
     proj: pd.DataFrame          # gsis_id, week, proj_points, model_version, source
     actual: pd.DataFrame
+    dvp: pd.DataFrame | None = None
     role_games: pd.DataFrame | None = None
     weeks: dict = field(default_factory=dict)
 
@@ -446,7 +464,8 @@ def load_season(conn, season: int) -> SeasonInputs:
         proj = _df(conn, PROJ_SQL, (s, ANCHOR_LEAGUE))
         proj = proj.assign(source=proj["frozen_source"].fillna("live")).drop(columns=["frozen_source"])
     proj = _num(proj, ["proj_points"])
-    return SeasonInputs(s, games, calls, cov, off, proj, actual_points(conn, s))
+    dvp = _num(_df(conn, DVP_SQL, (s,)), ["points_allowed_per_game_std", "week"])
+    return SeasonInputs(s, games, calls, cov, off, proj, actual_points(conn, s), dvp=dvp)
 
 
 def first_kickoffs(games: pd.DataFrame) -> dict[int, datetime]:
@@ -503,7 +522,7 @@ def rebuild_week(conn, si: SeasonInputs, week: int, *, live: bool = False) -> pd
     as-of inputs; ``live``: the freeze of the next week, whose marts are as-of by construction), Worth a look, listed
     (the top ``LIST_TOP`` per position by projection), the Half PPR projection, the actual where the game is final."""
     w = int(week)
-    players = _num(_df(conn, WEEK_SQL, (si.season, w)), ["opp_rank_std", "spread_line", "total_line"])
+    players = _num(_df(conn, WEEK_SQL, (si.season, w)), ["spread_line", "total_line"])
     if players.empty:
         return pd.DataFrame(columns=COLUMNS)
     g = si.games[si.games["week"] == w]
@@ -515,6 +534,7 @@ def rebuild_week(conn, si: SeasonInputs, week: int, *, live: bool = False) -> pd
     asof = cb_rank_asof(si.cov, si.off, si.season, w)
     rank_of = {str(r["gsis_id"]): r for r in asof.to_dict("records")}
     calls = {str(r["gsis_id"]): r for r in si.calls[si.calls["week"] == w].to_dict("records")}
+    dranks = defense_rank_asof(si.dvp, w) if si.dvp is not None and not si.dvp.empty else {}
     role = _role(conn, si.season, w, routes=live)
     wx = _weather(conn, si.season, w, kept_forecast_only=not live)
     pj = si.proj[si.proj["week"] == w].drop_duplicates("gsis_id").set_index("gsis_id")
@@ -529,7 +549,8 @@ def rebuild_week(conn, si: SeasonInputs, week: int, *, live: bool = False) -> pd
         wf = None if wr is None else D.weather_flag(wr.get("wx_source"), wr.get("wx_dome"), _f(wr.get("wx_wind_mph")),
                                                     _f(wr.get("wx_precip_in")), _f(wr.get("wx_temp_f")),
                                                     wr.get("wx_snow"), pos)
-        sig, ok, ok_corner = signals_for(pos, p.get("opp_rank_std"), c, rl, game, wf)
+        dr, dn = dranks.get((p["opponent"], pos), (None, N_DEFENSES))
+        sig, ok, ok_corner = signals_for(pos, dr, c, rl, game, wf, dn)
         if not sig:
             continue
         tone = {s["signal"]: s.get("tone") for s in sig}
@@ -713,7 +734,7 @@ def worth_sentence(r: Mapping | None, span: str | None, corner: bool = True) -> 
     # the old rule's grade: rebuilt weeks (before 2026 week 5) and frozen ones alike; the date never goes stale
     lead = (f"Graded on {span} with the cornerback counting (the rule until 6 October 2026), listed players"
             if corner else f"Since {span}, listed players")
-    return (f"{lead} scored above their projection in {r['beat']} of {r['n']} games ({r['beat_share']:.0%}{base}) and finished "
+    return (f"{lead} scored above their projection in {r['beat']} of {r['n']} games ({r['beat'] / r['n']:.0%}{base}) and finished "
             f"{_pts(v)} {'better' if v >= 0 else 'worse'} than everyone else against it{ci} — "
             f"{verdict(r.get('vs_rest_lo'), r.get('vs_rest_hi'))}.")
 

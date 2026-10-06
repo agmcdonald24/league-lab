@@ -9,7 +9,7 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   `mart_cb_matchups` read the whole season — look-ahead; `context_record.cb_rank_asof` rebuilds it, equal to the mart at
   season end) and graded against the projection (Half PPR, game-resampled intervals): **no measurable effect** for a
   likely shutdown corner (−0.39, −1.39 to +0.72, 99 games) or an easy one (−0.02, −1.11 to +1.22, 79), and the list was
-  not distinguishable from chance (38 games, +0.66, −1.11 to +2.62). So the corner no longer counts toward "Worth a
+  not distinguishable from chance (37 games, +0.72, −1.10 to +2.72). So the corner no longer counts toward "Worth a
   look" (the list is empty and says why), its chip carries its grade, and the card prints the record's sentence.
   `league-lab context-record` keeps `ops.context_record` (frozen before each first kickoff; played weeks rebuilt once,
   labelled) and `ops.context_grade`; `GET /api/context/record`; `analytics.mart_game_weather` puts the forecast

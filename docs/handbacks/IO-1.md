@@ -13,7 +13,7 @@ IO-1 (BRIEF § "IO-1"); docs/METRICS.md § "The context record" (cx1.0) has ever
    z-scores, same opponent adjustment, games before the week only); at season end it equals the mart exactly (2025 64/64
    ranks and quarters, 2026 69/69). The grade uses only the as-of quarter.
 2. **"Worth a look", graded** — rebuilt per week through the screen's own `dfs.signals` / `dfs.worth` from as-of
-   inputs (defense = `opp_rank_std` as the projection read it; role trend from games before the week, routes left out;
+   inputs (defense = the screen's rank from games before the week, equal to the live mart for week 5, 160/160; role trend from games before the week, routes left out;
    the corner as in 1; weather = the last forecast kept before kickoff). **Not rebuilt as-of**: the betting line (nflverse
    keeps the closing line), 2025 weather (no forecasts kept: no weather signal in a rebuilt 2025 week), the availability
    overlay (a named corner out → "no call") and the list's "who cannot play" filter.
@@ -53,17 +53,20 @@ than the rest (−0.51, −1.15 to +0.09). The only interval clear of 0 is the m
 +0.59, +0.10 to +1.12): no direction, 1 of 12 cells, not acted on. Standard scoring (2025, the same fit re-priced):
 likely shutdown −0.19 (−1.10 to +0.72, 73), likely easy −0.58 (−1.50 to +0.42, 56) — the same answer.
 
-**Worth a look (Wave I-N's rule, rebuilt)**: 38 listed receiver-games in 30 games, mean miss +0.35 (−1.39 to +2.34),
-scored above in 15 (39%) vs everyone else at the position 998 of 2,883 (35%); **+0.66 against the rest (−1.11 to +2.62)**,
-+0.58 against the rest projected 6+ (−1.25 to +2.62) — **not distinguishable from chance**. 2025 alone −0.58 (−2.05 to
-+0.81, 29); 2026 weeks 1–4 +4.57 (−1.44 to +10.47, 9). All 38 leaned on a likely easy corner.
+**Worth a look (Wave I-N's rule, rebuilt)**: 37 listed receiver-games in 29 games, mean miss +0.40 (−1.47 to +2.51),
+scored above in 15 (41%) vs everyone else at the position 998 of 2,884 (35%); **+0.72 against the rest (−1.10 to +2.72)**,
++0.63 against the rest projected 6+ (−1.25 to +2.71) — **not distinguishable from chance**. 2025 alone −0.55 (−2.09 to
++0.89, 28); 2026 weeks 1–4 +4.57 (−1.44 to +10.47, 9); Standard scoring (2025) −0.44 (−1.82 to +0.93). All 37 leaned on a
+likely easy corner.
 
 **What changed on the screen because of it**: the cornerback call **no longer counts toward "Worth a look"**
 (`dfs.WORTH_IGNORES = {"corner"}`). It was the only signal both outside the projection and able to be favourable, so the
 list is **empty** and says why ("Nobody this week. The one signal outside the projection that could put a player here,
 the cornerback call, made no measurable difference when graded, so it no longer counts; …"). Chosen from the corner's
 grade alone; no replacement rule was tuned on these weeks (one looked at and **not** adopted: two favourable signals
-without the corner, all in the projection already — +0.37, −0.02 to +0.74, in-sample). The record keeps grading the old
+without the corner, all in the projection already — 829 player-weeks, +0.43 against the rest, +0.03 to +0.81: found on
+the weeks it is graded on and barely clear of 0; the record stores the signals, so it can be graded out of sample from
+week 5 before anyone adopts it). The record keeps grading the old
 rule (`worth_corner`) on weeks it has not seen. Two existing assertions changed on purpose:
 `tests/test_in4_dfs.py::test_signals_carry_their_projection_label` (today's rule → not listed; `ignore=()` → listed as
 before) and `api/tests/test_in4.py::test_board_with_the_matchup_signal` (the list is empty, `worth_empty` said, Wave
@@ -98,7 +101,7 @@ mart_game_weather.sql` (new) + `matchups.yml`, `dbt/seeds/metric_registry.csv` (
 
 `uv run league-lab context-record` — first run 31 s (22 weeks rebuilt), then 2–3 s ("kept [1..18]; written [5]").
 `uv run league-lab dbt build --select mart_game_weather+` PASS 4; `--select metric_registry` PASS 3.
-Tests: `tests/test_io1_context_record.py` 11 passed (incl. a rolled-back DB test of the freeze); `tests/test_in4_dfs.py`
+Tests: `tests/test_io1_context_record.py` 12 passed (incl. a rolled-back DB test of the freeze); `tests/test_in4_dfs.py`
 75 passed; `api/tests/test_io1.py` 7 passed; `test_in4 test_im5 test_im3` 110 passed; `test_ik4 test_im4 test_in1
 test_in2 test_in3 test_in6` 190 passed; `tests/test_metric_registry.py` 3 passed; ruff clean; copy standard clean;
 `npm run lint && npm run build` clean; e2e `e2e/io1` 4 passed (375 and 1300), `e2e/in4` 6 passed (unchanged);
@@ -136,9 +139,7 @@ dependencies**: none.
 
 ## Limitations
 
-The record's live freeze reads `mart_player_week_features.opp_rank_std` for the defense (the projection's rank), not
-`mart_defense_vs_position_current` as the screen does (they agreed for 2026 week 5's top five; not checked for every
-team). The availability overlay is not in the record. 2026 weeks 1–3 are graded on refit projections. Unclear calls'
+The availability overlay is not in the record. 2026 weeks 1–3 are graded on refit projections. Unclear calls'
 chips carry no graded words (their tone merges two corners). Not graded at all: the weather flag.
 
 ## Seen, not mine
