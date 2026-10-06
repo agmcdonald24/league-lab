@@ -793,8 +793,9 @@ def published() -> dict:
             if p.name.lower() in ("readme.md", ".gitkeep") or p.name.startswith("."):
                 continue
             if len(slates) + len(bad) >= D.MAX_PUBLISHED:
-                bad.append({"file": p.name[:80], "reason": f"more than {D.MAX_PUBLISHED} files in the folder: not read"})
-                continue
+                bad.append({"file": p.name[:80], "reason": f"more than {D.MAX_PUBLISHED} files in the folder: this one "
+                                                          "and the ones after it (by name) are not read"})
+                break
             meta = D.slate_name(p.name)
             if meta is None:
                 bad.append({"file": p.name[:80], "reason": "the name is not <season>-w<week>-<dk|fd>[-<label>].csv "

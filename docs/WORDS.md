@@ -424,7 +424,7 @@ share of what.
 
 | Where | The words we use | Never |
 |---|---|---|
-| the screen's head (`/dfs`) | **Daily fantasy values** · before a file: "This week's projections in DraftKings scoring. Add the contest's salary file to see who is undervalued against its salaries." · after: "597 of 599 players on your DraftKings file valued; 89 project above what their salary buys on this slate." | "picks", "plays of the day" |
+| the screen's head (`/dfs`) | **Daily fantasy values** · before a file: "This week's projections in DraftKings scoring. Add the contest's salary file to see who is undervalued against its salaries." · after: "597 of 599 players on your DraftKings file valued; 89 project above what their salary buys on this slate." (a published file, IN-4: "… on the published DraftKings file valued; …") | "picks", "plays of the day" |
 | the honesty line, under the site switch | "Projections are estimates, not promises: the model's record is on About." (a link to About) | a promise of any outcome |
 | undervalued (the list's head) | **Undervalued** · "Projected well above what his salary buys at his position on this slate. Against this slate's salaries, not a promise." | "lock", "guaranteed", "free money", "beat", "can't miss", "smash" |
 | overpriced | **Overpriced** · "Projected well below what his salary buys at his position on this slate." | "fade" as an order |

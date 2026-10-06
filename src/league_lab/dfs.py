@@ -1142,7 +1142,7 @@ def detect_week(games: Iterable[str], schedule: pd.DataFrame) -> int | None:
 # a strict pattern, never used as a path.
 SLATE_FILE_RE = re.compile(r"^(?P<season>20\d\d)-w(?P<week>\d\d)-(?P<site>dk|fd)(?:-(?P<label>[a-z0-9]{1,20}))?\.csv$")
 SLATE_ID_RE = re.compile(r"^(?P<season>20\d\d)-w(?P<week>\d\d)-(?P<site>dk|fd)-(?P<label>[a-z0-9]{1,20})$")
-MAX_PUBLISHED = 32                     # files read from the folder at most (two sites x a few contests x two weeks)
+MAX_PUBLISHED = 16                     # files read from the folder at most (two sites x four contests x two weeks)
 
 
 def slate_name(filename: str) -> dict | None:

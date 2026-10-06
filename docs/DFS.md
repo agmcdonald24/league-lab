@@ -69,7 +69,7 @@ or fewer than 4 games). Betting lines for all 30 teams playing.
   none); the tests publish the synthetic fixtures into a temporary folder.
 * **The name**: `<season>-w<ww>-<dk|fd>[-<label>].csv` (`dfs.SLATE_FILE_RE`; label: lower-case letters and digits, up
   to 20; default `main`). The id is the name without `.csv`, label always written: `2026-w05-dk-main`.
-* **Read once** per process (the folder ships with the image: a new file is a new deploy), at most 32 files, each
+* **Read once** per process (the folder ships with the image: a new file is a new deploy), at most 16 files, each
   parsed by the same parser with the same limits as an upload (1 MB, 2,000 rows, 200 columns, 300-character cells); a
   link is refused. **Unreadable** — a name off the pattern, a second file for one id, a parse refusal, a DraftKings file
   named FanDuel — is listed with its reason (`GET /api/dfs/slates` → `unreadable`) and **never served**.

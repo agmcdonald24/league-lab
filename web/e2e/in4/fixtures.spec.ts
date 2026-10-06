@@ -99,7 +99,7 @@ test("DFS with a published slate: values with no upload, then a stacked lineup",
   await page.goto("/dfs");
   await expect(page.getByTestId("dfs-slate-head")).toContainText("DraftKings classic · week 5 · 15 games");
   await expect(page.getByTestId("dfs-published")).toContainText("published here so you do not have to add one");
-  await expect(page.getByTestId("dfs-answer")).toContainText("597 of 599 players on your DraftKings file valued");
+  await expect(page.getByTestId("dfs-answer")).toContainText("597 of 599 players on the published DraftKings file valued");
   await expect(page.getByTestId("dfs-remove")).toHaveCount(0);
   await expect(page.getByTestId("dfs-worth").getByTestId("dfs-worth-row")).toHaveCount(8);
   await expect(page.getByTestId("dfs-worth")).toContainText("Ordered by points per $1,000.");

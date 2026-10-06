@@ -335,7 +335,7 @@
     {#snippet answer()}
       {#if slate}
         <span data-testid="dfs-answer"
-          >{slate.counts.matched} of {slate.counts.on_file} players on your {slate.site_name} file valued; {nUnder} project above what their salary buys on this
+          >{slate.counts.matched} of {slate.counts.on_file} players on {isPublished ? "the published" : "your"} {slate.site_name} file valued; {nUnder} project above what their salary buys on this
           slate.</span
         >
       {:else}
