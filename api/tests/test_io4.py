@@ -127,3 +127,90 @@ def test_a_player_who_left_the_roster_is_one_alert_per_spot():
     mfl = [x for x in M.build_actions(rows, [], sub, "mfl:70587")["actions"] if x.get("gone")]
     assert len(mfl) == 1 and mfl[0]["action"] == (f"A player in your {M.platform_name('mfl:70587')} lineup is no longer on "
                                                   "your roster — set that spot again.") and "Sleeper" not in mfl[0]["action"]
+
+
+# ------------------------------------------------------------------ 3. the matchup board
+from league_lab_api import matchup_board as MB  # noqa: E402
+
+SUNDAY_230 = "2026-10-04T18:30:00Z"      # week 4, Sunday 2:30 PM ET: Thursday's game final, the 1:00 PM games started
+
+
+def test_game_state_reads_the_clock_not_a_future_final_flag():
+    now = pd.Timestamp("2026-10-04T18:30:00Z")
+    assert MB.game_state(pd.Timestamp("2026-10-04T20:25Z"), True, now) is None        # final in the data, not yet kicked off
+    assert MB.game_state(pd.Timestamp("2026-10-04T17:00Z"), False, now) == "started"
+    assert MB.game_state(pd.Timestamp("2026-10-04T17:00Z"), True, now) == "final"
+    assert MB.game_state(pd.Timestamp("2026-10-02T00:15Z"), False, now) == "final"    # 4 hours on: over
+    assert MB.game_state(None, True, now) is None
+
+
+@needs_db
+def test_board_puts_started_games_below_and_still_to_play_first(client):
+    from league_lab import clock
+    MB.clear()
+    with clock.pinned(SUNDAY_230):
+        j = client.get("/api/matchups/board?league=ref:half&position=WR&show=all&limit=100").json()
+        default = client.get("/api/matchups/board?league=ref:half&position=WR&limit=100").json()
+        bad = client.get("/api/matchups/board?league=ref:half&show=later")
+    states = [r["game_state"] for r in j["rows"]]
+    print("week", j["week"], "games started", j["started_games"], "of", len(j["games"]), "players started",
+          j["started_players"], "of", j["total"])
+    assert j["week"] == 4 and j["show"] == "all" and 0 < j["started_games"] < len(j["games"])
+    assert {"final", "started"} <= set(states) | {"started"} and "final" in states
+    first_started = next(i for i, s in enumerate(states) if s)
+    assert all(s is None for s in states[:first_started]) and all(s for s in states[first_started:])
+    assert j["total"] == len(j["rows"]) or j["total"] > 100
+    # the default once a game has started: "Still to play" — none of them, the counts follow
+    assert default["show"] == "to_play" and default["total"] == j["total"] - j["started_players"]
+    assert all(r["game_state"] is None for r in default["rows"])
+    assert sum(default["counts"].values()) == default["total"]
+    assert {g["state"] for g in default["games"]} >= {None, "final"}
+    assert bad.status_code == 400
+    # before any kickoff (the suite's Saturday): Thursday's game is final, so "Still to play" is the default too
+    MB.clear()
+    sat = client.get("/api/matchups/board?league=ref:half&position=WR").json()
+    assert sat["started_games"] >= 1 and sat["show"] == "to_play"
+
+
+@needs_db
+def test_a_real_league_reads_the_defense_rank_the_heatmap_shows(client):
+    MB.clear()
+    j = client.get(f"/api/matchups/board?league={SCRUBS}&position=WR&show=all&limit=100").json()
+    heat = client.get(f"/api/matchups/defense?league={SCRUBS}&position=WR").json()
+    assert j["defense_source"] == "league"
+    tough = {t["defense"]: t["tough_rank"] for t in heat["teams"] if t["position"] == "WR"}
+    differ = 0
+    for r in j["rows"]:
+        d = r["context"]["defense"]
+        assert d["tough_rank"] == tough.get(r["opponent"]), (r["player_name"], r["opponent"])
+        ref = MB.matchup_context(j["season"], j["week"], [r["gsis_id"]]).get(r["gsis_id"])
+        differ += bool(ref and ref["defense"]["tough_rank"] != d["tough_rank"])
+    print("rows", len(j["rows"]), "rows whose reference rank differs from the league's:", differ)
+    # browsing keeps the reference mart
+    b = client.get("/api/matchups/board?league=ref:half&position=WR&show=all&limit=50").json()
+    assert b["defense_source"] == "reference"
+    for r in b["rows"]:
+        ref = MB.matchup_context(b["season"], b["week"], [r["gsis_id"]])[r["gsis_id"]]
+        assert r["context"]["defense"] == ref["defense"] and r["context"]["tone"] == ref["tone"]
+
+
+def test_the_record_sentence_replaces_not_graded_only_when_graded(monkeypatch):
+    assert MB.projection_words() == MB.PROJECTION_WORDS                 # IO-1's module absent in this branch
+    fake = types.ModuleType("league_lab_api.context_record")
+    words = ("Receivers facing a likely shutdown corner scored 0.3 points under their projection on average over 212 "
+             "games (−0.9 to +0.4) — no measurable effect")
+    fake.summary = lambda: {"corner": {"graded": True, "n": 212, "words": words},
+                            "worth": {"graded": False, "n": 0, "words": None}}
+    monkeypatch.setitem(sys.modules, "league_lab_api.context_record", fake)
+    import league_lab_api
+    monkeypatch.setattr(league_lab_api, "context_record", fake, raising=False)
+    got = MB.projection_words()
+    assert got.endswith(words + ".") and "has not been graded yet" not in got
+    assert got.startswith("What the projection counts:")
+    fake.summary = lambda: {"corner": {"graded": False, "n": 0, "words": None}, "worth": {"graded": False, "n": 0,
+                                                                                           "words": None}}
+    assert MB.projection_words() == MB.PROJECTION_WORDS
+    def boom():
+        raise RuntimeError("no table")
+    fake.summary = boom
+    assert MB.projection_words() == MB.PROJECTION_WORDS
