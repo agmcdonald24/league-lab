@@ -285,6 +285,30 @@ else
 fi
 # ---- end IK-4
 
+# ---- IO-2 (Wave I-O): the League outlook's weekly snapshots — docs/STATUS.md § "Wave I-O" → IO-2. The `outlook` schema is never
+# dropped above; scripts/hosted_outlook.sql creates outlook.snapshots if missing, grants the app role SELECT / INSERT /
+# UPDATE on it (its default_transaction_read_only stays on) and prunes rows past 20 weeks. Idempotent, a few ms, its own
+# transaction, the same owner connection. A failure never fails the publish: the arrows stay off until a sync applies it.
+if psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction -f scripts/hosted_outlook.sql; then
+  echo "outlook: $(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select count(*) || ' weeks kept (' || count(distinct league_key) || ' leagues), ' || pg_size_pretty(pg_total_relation_size('outlook.snapshots')) from outlook.snapshots" 2>/dev/null || echo '?')"
+else
+  echo "WARNING: scripts/hosted_outlook.sql failed: no outlook is kept until a sync applies it (the publish itself is fine)" >&2
+fi
+# ---- end IO-2
+
+# ---- IO-3 (Wave I-O): the blog's editor — docs/BLOG.md § "The editor". The `blog` schema is never dropped above (only
+# analytics, analytics_seeds and ops are); scripts/hosted_blog.sql creates blog.posts, blog.revisions and blog.images if
+# missing, grants the app role SELECT / INSERT / UPDATE / DELETE on posts and revisions and SELECT / INSERT / DELETE on
+# images (its default_transaction_read_only stays on) and prunes posts deleted 30 days ago and revisions past the newest
+# 20. Idempotent, a few ms, its own transaction after IK-4, the same owner connection (no new secret). A failure here
+# never fails the publish: the blog stays the files' and the editor off until a sync applies it.
+if psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -q --single-transaction -f scripts/hosted_blog.sql; then
+  echo "blog: $(psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -At -c "select (select count(*) from blog.posts where status = 'published') || ' published, ' || (select count(*) from blog.posts) || ' posts, ' || (select count(*) from blog.images) || ' pictures, ' || pg_size_pretty((select sum(pg_total_relation_size(c.oid)) from pg_class c join pg_namespace n on n.oid = c.relnamespace where n.nspname = 'blog' and c.relkind = 'r')::bigint)" 2>/dev/null || echo '?')"
+else
+  echo "WARNING: scripts/hosted_blog.sql failed: the blog stays the files' and the editor off until a sync applies it (the publish itself is fine)" >&2
+fi
+# ---- end IO-3
+
 echo "verifying ..."
 psql "$LEAGUE_LAB_HOSTED_ADMIN_URL" -v ON_ERROR_STOP=1 -At -c "
   select 'analytics tables: ' || count(*) from information_schema.tables where table_schema = 'analytics';" \

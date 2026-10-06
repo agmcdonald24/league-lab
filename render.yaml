@@ -52,6 +52,12 @@ services:
       # back for every route, with no code change.
       - key: LEAGUE_LAB_GATE
         value: open
+      # Wave I-O: who may write the blog on the site — the account id(s) of the editor(s), comma-separated, copied
+      # from Your account → "Your account id" (docs/BLOG.md § "The editor"). Not a secret, but it is set in Render's
+      # dashboard so no id lives in git. Unset: the editor does not exist (its routes are 404) and the blog is the
+      # files in blog/.
+      - key: LEAGUE_LAB_EDITORS
+        sync: false
       - key: LEAGUE_LAB_API_SECRET
         generateValue: true   # signs the sign-in cookie; Render makes one up (a new password then keeps people signed in)
       - key: LEAGUE_LAB_CACHE_DIR

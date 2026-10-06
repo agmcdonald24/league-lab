@@ -268,6 +268,10 @@ RECORD_TABLES="$RECORD_TABLES ops.lineup_record"
 # not record: restored so the night does not refit them, and rebuilt when the hosted copy does not have them.
 STATE_TABLES="$STATE_TABLES ops.calibration_oof"
 # ---- end M6
+# ---- IO-1 (Wave I-O): the context record (kept like the decision record) and its grade
+STATE_TABLES="$STATE_TABLES ops.context_record ops.context_grade"
+RECORD_TABLES="$RECORD_TABLES ops.context_record"
+# ---- end IO-1
 
 is_record() { case " $RECORD_TABLES " in *" $1 "*) return 0;; esac; return 1; }
 
@@ -511,6 +515,11 @@ SOFT_WHY="the record's kept weeks are untouched; a week missed tonight is rebuil
 # grade tonight (odds_grades: null) and the next night re-grades the season from the record.
 SOFT_WHY="the hosted copy has no grade tonight (odds_grades: null); the next night re-grades the season" soft grade-odds uv run league-lab grade-odds
 # ---- end IL-3
+# ---- IO-1 (Wave I-O): the context record and its grade (league-lab context-record; idempotent): the week's signals
+# (the corner call, the role trend, the game environment, "Worth a look") frozen before its first kickoff in
+# ops.context_record, graded after the games in ops.context_grade (docs/METRICS.md § "The context record").
+SOFT_WHY="the record's kept weeks are untouched; a week missed tonight is rebuilt from as-of inputs (labelled reconstructed)" soft context-record uv run league-lab context-record
+# ---- end IO-1
 # plan E1: Sleeper's projections for the next week to kick off, one snapshot a night, so the record has the last one
 # saved before the first kickoff (the moment this board freezes). Soft: a failed pull loses one night's snapshot.
 if [ "${NIGHTLY_SLEEPER_OFFLINE:-}" = 1 ]; then
@@ -541,6 +550,16 @@ if [ -z "${LEAGUE_LAB_HOSTED_ADMIN_URL:-}" ]; then
   skip sync-hosted "LEAGUE_LAB_HOSTED_ADMIN_URL is not set"
 elif in_ci || [ "${LEAGUE_LAB_MAC_WRITES_HOSTED:-}" = 1 ] || [ "${LEAGUE_LAB_HOSTED_ALLOW_LOCAL:-}" = 1 ]; then
   hard sync-hosted ./scripts/sync_to_hosted.sh
+  # ---- IO-2 (Wave I-O): one League outlook build per house league on the live API, so this week's power rankings and
+  # odds are kept (outlook.snapshots) even if nobody opens League before the first kickoff — next week's arrows need
+  # them. Two requests in the heavy bucket; a miss is only a week without arrows for that league.
+  if in_ci; then
+    for L in ${LEAGUE_LAB_SLEEPER_LEAGUE_ID//,/ }; do
+      curl -fsS -m 90 -o /dev/null "https://isuckatfantasy.io/api/league/outlook?league=$L" \
+        || echo "note: the outlook for league $L did not answer; its week is kept when someone opens League" >&2
+    done
+  fi
+  # ---- end IO-2
 else
   skip sync-hosted "GitHub Actions is the one writer of the hosted copy (LEAGUE_LAB_MAC_WRITES_HOSTED=1 publishes from here)"
 fi
