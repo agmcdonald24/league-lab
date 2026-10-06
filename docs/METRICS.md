@@ -1320,8 +1320,8 @@ rest-of-season projection makes his side's sum unknown, never 0.
 
 **Not modelled.** A real league's waiver wire (above); keeper costs, draft picks, seasons after this one; injuries
 beyond what the projection already holds; ESPN's and Yahoo's own K / DEF tables (the seed's are used). Registry row
-proposed (seeds are IN-6's this wave): `reference_value` (rv1.0, season points above the typical league's replacement,
-grain player × reference key × week).
+`reference_value` (rv1.0, season points above the typical league's replacement, grain player × reference key × week;
+`dbt/seeds/metric_registry.csv`, one appended line — the seed is IN-6's this wave).
 
 ## Cornerback matchups (cb1.0, plan R-14, 2026-09-30; `mart_cb_rankings`, `mart_cb_matchups`, `mart_receiver_vs_cb`)
 
