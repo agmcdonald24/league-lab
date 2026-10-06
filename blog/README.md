@@ -36,6 +36,18 @@ Plain markdown: `## headings`, **bold**, lists (`- ` or `1. `), `> quotes`, tabl
 
 - **A player**: link his page and it opens his card like everywhere on the site:
   `[Puka Nacua](/player/00-0039075)`. (His id is the end of his page's address on the site.)
+- **A live table** (one per post): a block fenced with ```` ```players ````, then his id and the columns you want, one
+  per line — the readers see those players' numbers this season, per game, in Half PPR, as they stand that day:
+
+      ```players
+      00-0039075
+      00-0038543
+      cols: targets, target_share, receiving_yards
+      ```
+
+  Up to 12 players and 8 columns; the column ids are the Stats table's (`games`, `points`, `targets`, `target_share`,
+  `receiving_yards`, `carries`, `carry_share`, `rushing_yards`, `attempts`, `passing_yards`, `snap_share` …). With no
+  `cols:` line it shows games, points, targets, share of team passes and receiving yards.
 - **Any page of the site**: `[the trade calculator](/trade-calc?league=ref:half)`.
 - **Outside links** work for the sites the app already links to (ESPN, Sleeper, NFL.com …); others show as text.
 - No raw HTML: it is shown as text, never run.

@@ -38,10 +38,18 @@ the newer file is served, the older is logged. A post's `date` is shown as writt
 **The image needs the folder**: `api/Dockerfile` copies `blog/` to `/srv/blog` (the PO's line:
 `COPY blog /srv/blog`). Without it the blog is empty on the server (an absent folder is an empty blog, never an error).
 
-## Not built (yet)
+## The players block
 
-* **The players block** — a fenced ```` ```players ```` block (gsis ids + column ids, one per line) rendered as live Stats
-  rows on Half PPR — see `docs/handbacks/IN-1.md` for its state. Until it exists such a block shows as a code block.
-* Comments, search, tag pages, a newsletter: none.
+The first ```` ```players ```` fence of a post — gsis ids and column ids, one per line or `cols: a, b`, at most 12
+players and 8 columns — becomes those players' rows of the Stats frame on Half PPR, season to date, per game, in the
+Stats screen's own table (`components/blog/PlayersBlock.svelte`; the Stats screen's request
+`/api/players?league=ref:half&position=ALL&window=season&limit=1000`, cached like it). Without `cols:` it shows games,
+points, targets, share of team passes and receiving yards; an unknown or unavailable column is left out; an id with no
+game this season is counted under the table ("Not in this season's table yet: 1 player"), never a row of zeros. A
+second fence stays a code block. The numbers move with every nightly: the block says "Live: this season to date".
+
+## Not built
+
+* Comments, search, tag pages, a newsletter, scheduled posts.
 * The copy standard's sweep (`scripts/copy_standard.py`) does not read `blog/` (its globs are the code and WORDS); a
   post follows `docs/WORDS.md` by hand.
