@@ -395,9 +395,10 @@ CATALOGUE: list[dict] = [
     _c("rushing_points_share", "Share of his fantasy points from rushing", "Rush pts %", "share", "pct",
        "The fantasy points his rushing line is worth (yards, touchdowns, two-point runs and the league's rushing "
        "bonuses) / all his fantasy points, both in this league's scoring over the games he played. Fumbles stay in "
-       "the total, not in the rushing part.", "points from his rushing line", "his fantasy points", RATE_AGG,
-       source="this league's scoring over " + NFLV, status="derived", positions=("QB",),
-       reason="no fantasy points above zero in the window"),
+       "the total, not in the rushing part. Signed: above 100% when his passing points are below zero (interceptions).",
+       "points from his rushing line", "his fantasy points", RATE_AGG, source="this league's scoring over " + NFLV,
+       status="derived", positions=("QB",), reason="no fantasy points above zero in the window",
+       minimum=("points", 20)),
     # air yards
     _c("wopr", "Weighted opportunity rating (WOPR)", "WOPR", "rate", "dec2",
        "1.5 × target share + 0.7 × air-yard share, both over the window (each summed numerator / summed "
