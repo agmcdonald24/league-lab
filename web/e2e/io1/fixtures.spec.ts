@@ -42,7 +42,7 @@ test("DFS with the record: the grade's words, the graded corner, the weather", a
   await expect(page.getByTestId("dfs-proj-row").first()).toBeVisible();
   // "Worth a look": the record's sentence instead of "no record behind this list yet", and why nobody is listed
   const worth = page.getByTestId("dfs-worth").first();
-  await expect(worth.getByTestId("dfs-worth-record")).toContainText("Rebuilt for 2025 and 2026 weeks 1–4 with the cornerback counting");
+  await expect(worth.getByTestId("dfs-worth-record")).toContainText("Graded on 2025 and 2026 weeks 1–4 with the cornerback counting");
   await expect(worth.getByTestId("dfs-worth-record")).toContainText("not distinguishable from chance");
   await expect(worth).not.toContainText("no record behind this list");
   await expect(worth.getByTestId("dfs-worth-empty")).toContainText("the cornerback call, made no measurable difference when graded, so it no longer counts");

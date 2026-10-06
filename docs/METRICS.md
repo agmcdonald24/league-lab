@@ -3967,8 +3967,13 @@ there: receivers facing an "easy" corner (any certainty) did no better than the 
 much below as those facing a shutdown one (−0.46). The one interval clear of 0 is the middle quarter (solid, +0.59,
 +0.10 to +1.12) — the tier that carries no direction, one of 12 cells tested at 95%, where one is expected by chance;
 it is not acted on. By season (the same rule): 2025 alone, likely shutdown −0.15 (−1.22 to +0.95, 73), likely easy −0.56
-(−1.63 to +0.60, 56); 2026 weeks 1–4, 26 and 23 games — too few to say anything. The projection already counts the
-defense against his position; whatever a corner adds beyond it is smaller than these samples can see.
+(−1.63 to +0.60, 56); 2026 weeks 1–4, 26 and 23 games — too few to say anything. **In Standard scoring** (2025 only:
+the same walk-forward fit's component lines re-priced with the seed `standard` through `calibration.oof_rows`, which
+reproduces the Half PPR rows exactly): likely shutdown −0.19 (−1.10 to +0.72, 73), likely easy −0.58 (−1.50 to +0.42,
+56) — the same answer. One cell worth watching, not acted on: a likely call on an **unranked** corner (a backup or a
+new starter with too few snaps to rank) +0.88 against the rest (−0.02 to +1.80, 160 games; 2025 alone +1.22, +0.20 to
++2.30) — no tone is attached to "unranked" and the list never used it. The projection already counts the defense
+against his position; whatever a corner's quarter adds beyond it is smaller than these samples can see.
 
 ### "Worth a look" (rebuilt with Wave I-N's rule — the corner counting)
 
@@ -3982,7 +3987,8 @@ listed = flagged). 2025 weeks 1–18 and 2026 weeks 1–4; the role trend first 
 | everyone else at the position (WR) | 2,883 | 335 | −0.31 (−0.51 to −0.12) | 998 (35%) | listed +0.66 (−1.11 to +2.62) |
 | everyone else projected 6+ points | 1,219 | 335 | −0.23 (−0.64 to +0.16) | 494 (41%) | listed +0.58 (−1.25 to +2.62) |
 
-**Not distinguishable from chance.** Every listed player is a receiver (only receivers get a corner call); all 38 had a
+**Not distinguishable from chance** (in Standard scoring, 2025: −0.47 against the rest, −1.80 to +0.85, 29 games).
+Every listed player is a receiver (only receivers get a corner call); all 38 had a
 likely easy corner, 17 a favourable defense, 17 a team expected to score 26+, 11 a role up. By season: 2025, 29 listed,
 10 above, −0.58 against the rest (−2.05 to +0.81); 2026 weeks 1–4, 9 listed, 5 above, +4.57 (−1.44 to +10.47).
 

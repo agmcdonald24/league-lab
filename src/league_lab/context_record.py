@@ -710,7 +710,8 @@ def worth_sentence(r: Mapping | None, span: str | None, corner: bool = True) -> 
     v = r["vs_rest"]
     ci = f" ({_signed(r['vs_rest_lo'])} to {_signed(r['vs_rest_hi'])})" if r.get("vs_rest_lo") is not None else ""
     base = f"; everyone else at the position {r['rest_beat_share']:.0%}" if r.get("rest_beat_share") is not None else ""
-    lead = (f"Rebuilt for {span} with the cornerback counting (the rule until this week), listed players"
+    # the old rule's grade: rebuilt weeks (before 2026 week 5) and frozen ones alike; the date never goes stale
+    lead = (f"Graded on {span} with the cornerback counting (the rule until 6 October 2026), listed players"
             if corner else f"Since {span}, listed players")
     return (f"{lead} scored above their projection in {r['beat']} of {r['n']} games ({r['beat_share']:.0%}{base}) and finished "
             f"{_pts(v)} {'better' if v >= 0 else 'worse'} than everyone else against it{ci} — "
