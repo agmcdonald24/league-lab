@@ -12,7 +12,7 @@
   import PlayerCardView from "../components/PlayerCard.svelte";
   import SectionBox from "../components/Section.svelte";
   import ScheduleTable from "../components/ScheduleTable.svelte"; // ---- IF-4
-  import { isRef, PANE_FOOT, refLabel } from "../lib/refleague"; // ---- IN-2: browsing without a league
+  import { isRef, PANE_FOOT, refLabel, refScoringLabel } from "../lib/refleague"; // ---- IN-2: browsing without a league
 
   let { gsis, league, team, onauth }: { gsis: string; league: string | null; team: number | null; onauth: () => void } = $props();
 
@@ -106,7 +106,7 @@
                     <ul class="space-y-0.5 text-sm text-ink-2" data-testid="player-why-pieces">
                       {#each data.why.pieces as w (w.stat)}<li class="tabnum">{w.words}</li>{/each}
                     </ul>
-                    <p class="mt-1 text-sm text-ink-2">His projected stat line, each piece counted in {data.league_name} scoring: they add up to the {fmt.pts(data.why.points)}.</p>
+                    <p class="mt-1 text-sm text-ink-2">His projected stat line, each piece counted in {browsing ? refScoringLabel(league) : data.league_name} scoring: they add up to the {fmt.pts(data.why.points)}.</p>
                   </Expander>
                   <!-- ---- end IE-2 -->
                 {/if}
@@ -129,7 +129,7 @@
           <Expander title="Schedule" testid="player-schedule"><ScheduleTable rows={data.schedule} position={data.position} /></Expander>
         {/if}
         <!-- ---- end IF-4 -->
-        {#if league}<GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={data.league_name} />{/if}
+        {#if league}<GameLog gsis={data.gsis_id} {league} season={data.season} {onauth} leagueName={browsing ? refScoringLabel(league) : data.league_name} />{/if}<!-- IN-2: the scoring -->
       </div>
       <div class="space-y-3">
         {#each sections.slice(1) as x (x.key)}

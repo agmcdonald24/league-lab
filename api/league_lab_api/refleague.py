@@ -115,7 +115,10 @@ def league(key: str) -> dict:
     scoring = scoring_of(sh)
     return {"league_id": sh.key, "name": sh.words, "season": str(_season()), "status": "in_season",
             "sport": "nfl", "scoring_settings": scoring, "roster_positions": slots_of(sh),
-            "total_rosters": sh.teams, "settings": {"num_teams": sh.teams, "playoff_week_start": 15, "type": 0},
+            "total_rosters": sh.teams, "settings": {"num_teams": sh.teams, "playoff_week_start": 15, "type": 0,
+                                                    # IN-2: a typical bracket (6 teams, 4 at 8 teams): the rest of
+                                                    # season runs to its final (week 17; 16), not to week 15
+                                                    "playoff_teams": 4 if sh.teams == 8 else 6},
             "reference": True, "reference_scoring": SCORINGS[sh.base][0], "scoring_label": sh.words}
 
 

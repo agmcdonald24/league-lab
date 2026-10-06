@@ -37,7 +37,7 @@
   import Expander from "./Expander.svelte"; // ---- IF-4
   import Md from "./Md.svelte"; // ---- IF-4
   import ScheduleTable from "./ScheduleTable.svelte"; // ---- IF-4
-  import { isRef, PANE_FOOT, refLabel } from "../lib/refleague"; // ---- IN-2: the scoring in the head, the foot line
+  import { isRef, PANE_FOOT, refLabel, refScoringLabel } from "../lib/refleague"; // ---- IN-2: the scoring in the head, the foot line
 
   let { league, team, onauth }: { league: string; team: number | null; onauth: () => void } = $props();
 
@@ -313,7 +313,7 @@
 
 {#snippet gamelogPanel(d: PlayerCard)}
   <div data-testid="drawer-gamelog">
-    <GameLog gsis={d.gsis_id} {league} season={d.season} {onauth} leagueName={d.league_name} />
+    <GameLog gsis={d.gsis_id} {league} season={d.season} {onauth} leagueName={isRef(league) ? refScoringLabel(league) : d.league_name} /><!-- IN-2: the scoring -->
   </div>
 {/snippet}
 

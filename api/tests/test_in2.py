@@ -290,3 +290,8 @@ def test_compare_carries_the_value_while_browsing(api):
     assert d["a"]["ros_value"] == pytest.approx(float(vals[PUKA]["value"]))
     assert d["b"]["ros_value"] == pytest.approx(float(vals[ARSB]["value"]))
     assert d["value_assumes"] == "Value in a 14-team Half PPR league, one quarterback"
+
+
+def test_a_typical_bracket_ends_the_rest_of_season_at_its_final():
+    assert A.ros_window(refleague.league("ref:half"), 4, 18) == (4, 17, 15)          # 6 playoff teams: weeks 15-17
+    assert A.ros_window(refleague.league("ref:ppr.t8"), 4, 18) == (4, 16, 15)        # 4 playoff teams: weeks 15-16
