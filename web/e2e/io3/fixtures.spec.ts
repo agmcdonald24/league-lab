@@ -288,3 +288,70 @@ test("a visitor sees no Write and the editor's address says to sign in; the acco
   await p.screenshot({ path: join(SHOTS, `io3-account-${isMobile ? 375 : 1300}.png`), fullPage: true });
   await ctx.close();
 });
+
+test("two tabs: the stale save is a conflict in words, never an overwrite; the newer version is one tap", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the conflict's words are the same at 375 (the phone run checks the layout above)");
+  test.setTimeout(90_000);
+  await asEditor(page);
+  await page.goto(`${API}/blog/new`);
+  await page.getByTestId("editor-title").fill(`Two tabs ${randomBytes(3).toString("hex")}`);
+  await page.getByTestId("editor-body").fill("First words.");
+  await expect(page).toHaveURL(/\/blog\/edit\//, { timeout: 15_000 });
+  await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  const b = await page.context().newPage();
+  await b.goto(page.url());
+  await expect(b.getByTestId("editor-body")).toHaveValue("First words.");
+  await page.getByTestId("editor-body").fill("First words. Tab A.");
+  await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  await b.getByTestId("editor-body").fill("First words. Tab B.");
+  await expect(b.getByTestId("editor-conflict")).toBeVisible({ timeout: 15_000 });
+  await expect(b.getByTestId("editor-conflict")).toContainText("Nothing was overwritten.");
+  await b.screenshot({ path: join(SHOTS, "io3-conflict-1300.png") });
+  await b.getByTestId("conflict-newer").click();
+  await expect(b.getByTestId("editor-body")).toHaveValue("First words. Tab A.");
+  await b.getByTestId("editor-body").fill("First words. Tab A. Then B.");
+  await expect(b.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  await b.close();
+});
+
+test("a dropped connection loses nothing: the device keeps the text and offers it back", async ({ page, isMobile }) => {
+  test.skip(isMobile, "the same code path at 375");
+  test.setTimeout(90_000);
+  await asEditor(page);
+  await page.goto(`${API}/blog/new`);
+  await page.getByTestId("editor-title").fill(`Offline ${randomBytes(3).toString("hex")}`);
+  await page.getByTestId("editor-body").fill("Saved words.");
+  await expect(page).toHaveURL(/\/blog\/edit\//, { timeout: 15_000 });
+  await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  await page.route("**/api/blog/posts/**", (route) => (route.request().method() === "PUT" ? route.abort("internetdisconnected") : route.continue()));
+  await page.getByTestId("editor-body").fill("Saved words. Words typed while offline.");
+  await expect(page.getByTestId("editor-problem")).toContainText("Your text is kept on this device", { timeout: 15_000 });
+  await page.unroute("**/api/blog/posts/**");
+  await page.reload();
+  await expect(page.getByTestId("editor-local")).toBeVisible();
+  await expect(page.getByTestId("editor-body")).toHaveValue("Saved words.");
+  await page.getByTestId("editor-local-restore").click();
+  await expect(page.getByTestId("editor-body")).toHaveValue("Saved words. Words typed while offline.");
+  await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  await page.reload();
+  await expect(page.getByTestId("editor-body")).toHaveValue("Saved words. Words typed while offline.");
+  await expect(page.getByTestId("editor-local")).toHaveCount(0);
+});
+
+test("typing in a 20 KB post stays smooth (the preview is debounced)", async ({ page, isMobile }) => {
+  test.skip(isMobile, "measured once, on the desktop");
+  test.setTimeout(90_000);
+  await asEditor(page);
+  await page.goto(`${API}/blog/new`);
+  await page.getByTestId("editor-title").fill(`Long ${randomBytes(3).toString("hex")}`);
+  const para = "Start **him** over [Puka Nacua](/player/00-0039075): the numbers say so, with a range.\n\n| A | B |\n|---|---|\n| 1 | 2 |\n\n";
+  await page.getByTestId("editor-body").fill(para.repeat(Math.ceil(20_480 / para.length)));
+  await expect(page.getByTestId("editor-saved")).toContainText("Saved", { timeout: 15_000 });
+  await page.getByTestId("editor-body").press("End");
+  const t0 = Date.now();
+  await page.getByTestId("editor-body").pressSequentially("More words typed at the end of a long post.", { delay: 0 });
+  const perKey = (Date.now() - t0) / 43;
+  console.log(`IO3 typing: ${perKey.toFixed(1)} ms per key in a ${Math.round((await page.getByTestId("editor-body").inputValue()).length / 1024)} KB post`);
+  expect(perKey).toBeLessThan(60);
+  await expect(page.getByTestId("editor-preview")).toContainText("More words typed at the end of a long post.");
+});
