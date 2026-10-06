@@ -107,6 +107,7 @@ export const prefs = {
 // is not put back by the next load.
 // The saved Stats views (II-3's `ll.stats.views`) are read and written here now, so they can follow the account.
 const KEY_STATS_VIEWS = "ll.stats.views";
+const KEY_STATS_TABLE = "ll.stats.table"; // ---- IM-2
 
 /** A league as the account saves it (PUT /api/account/leagues). */
 export interface SavedLeagueIn {
@@ -159,6 +160,14 @@ export const accountPrefs = {
     write(KEY_STATS_VIEWS, JSON.stringify(views));
     if (push) remote?.pref("stats.views", views);
   },
+  // ---- IM-2 (Wave I-M): the Stats table's view last picked on this device ("key" / "full"; a phone and a desktop keep
+  // their own, so it stays on this browser) — a saved view keeps it too (`view=` is in its address)
+  statsTable: (): "key" | "full" | null => {
+    const v = read(KEY_STATS_TABLE);
+    return v === "key" || v === "full" ? v : null;
+  },
+  setStatsTable: (v: "key" | "full") => write(KEY_STATS_TABLE, v),
+  // ---- end IM-2
   /** Every league this browser knows with the team picked in it (the account's "save these leagues"). */
   localLeagues: (): SavedLeagueIn[] => {
     const out: SavedLeagueIn[] = [];

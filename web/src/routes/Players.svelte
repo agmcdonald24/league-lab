@@ -7,22 +7,25 @@
   // reason), a sticky player column and header, saved views on this browser, and 2–4 players side by side.
   // GET /api/players?window=… (one call per position group and window; the rest runs on the phone: instant).
   // Unknown is — with the reason on hover, never 0. Sorting runs over the full filtered set before "Show more".
-  import { statsPath, type StatsColumn, type StatsFrame, type StatsRow } from "../lib/api";
+  // ---- IM-2 (Wave I-M): two views one tap apart — "Key stats" (the preset's columns) and "Full table" (every column
+  // for the position that we have, under group headers; components/stats/) — group toggles, every player ("Showing 50
+  // of 291 — Show all"), Download CSV (GET /api/players.csv, or built here when the API has no such route).
+  import { statsCsvPath, statsPath, type StatsColumn, type StatsFrame, type StatsRow } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
   import { ownerWord } from "../lib/research";
   import { Remote } from "../lib/remote.svelte";
-  import { paneLink } from "../lib/pane.svelte"; // ---- IB-1: a name opens the research pane
   import { route, setParams } from "../lib/router.svelte";
   import { fmt, TEAMS, teamLabel } from "../lib/theme";
+  import { APP_NAME } from "../lib/brand";
   import Chips from "../components/Chips.svelte";
   import Expander from "../components/Expander.svelte";
-  import Headshot from "../components/Headshot.svelte";
   import Md from "../components/Md.svelte";
-  import PosBadge from "../components/PosBadge.svelte";
   import ScreenHead from "../components/ScreenHead.svelte";
+  import Tabs from "../components/Tabs.svelte";
   import ErrorCard from "../components/ErrorCard.svelte"; // ---- IH-1: the API down / a 500 / still waiting
-  import TeamBadge from "../components/TeamBadge.svelte";
+  import StatsTable from "../components/stats/StatsTable.svelte"; // ---- IM-2
+  import { csv, field as fieldOf, fullColumns, groupOf, show as showOf, title as titleOf, why as whyOf, type Mode, type PosGroup } from "../components/stats/columns"; // ---- IM-2
   import { accountPrefs, type StatsView } from "../lib/prefs"; // ---- IK-4: the saved views through prefs (an account keeps them)
 
   let { options, league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
@@ -46,7 +49,7 @@
     return (POS.some((x) => x.key === p) ? p : "ALL") as Pos;
   });
   const fetchPos = $derived(position === "WR" || position === "TE" || position === "WRTE" ? "WR,TE" : position);
-  const group = $derived<"wrte" | "rb" | "qb" | "all">(fetchPos === "WR,TE" ? "wrte" : position === "RB" ? "rb" : position === "QB" ? "qb" : "all");
+  const group = $derived<PosGroup>(fetchPos === "WR,TE" ? "wrte" : position === "RB" ? "rb" : position === "QB" ? "qb" : "all");
   type Who = "all" | "mine" | "fa" | "others";
   const who = $derived((["all", "mine", "fa", "others"].includes(params.get("who") ?? "") ? params.get("who") : params.get("who") === "rostered" ? "others" : "all") as Who);
   const nfl = $derived(params.get("nfl") ?? "");
@@ -63,7 +66,7 @@
     const m = (params.get("weeks") ?? "").match(/^(\d{1,2})-(\d{1,2})$/);
     return m ? [Number(m[1]), Number(m[2])] : [1, 18];
   });
-  const mode = $derived(params.get("mode") === "total" ? "total" : "game");
+  const mode = $derived<Mode>(params.get("mode") === "total" ? "total" : "game");
   const minGames = $derived(Math.max(1, Number(params.get("min") ?? "1") || 1));
   // opportunities = targets + carries (+ pass attempts for a quarterback) in the window
   const minOpp = $derived(Math.max(0, Number(params.get("minopp") ?? "0") || 0));
@@ -86,20 +89,45 @@
   const preset = $derived(r.data?.presets.find((p) => p.key === group) ?? null);
   const defaults = $derived(preset ? preset.columns : ALL_COLS);
   const picked = $derived((params.get("cols") ?? "").split(",").filter((c) => c && cat.has(c)));
-  const cols = $derived<StatsColumn[]>((picked.length ? picked : defaults).map((c) => cat.get(c)).filter((c): c is StatsColumn => !!c));
+  const keyCols = $derived<StatsColumn[]>((picked.length ? picked : defaults).map((c) => cat.get(c)).filter((c): c is StatsColumn => !!c));
   const offered = $derived(
     (r.data?.catalogue ?? []).filter((c) => c.id !== "games" && c.positions.some((p) => (fetchPos === "ALL" ? true : fetchPos.split(",").includes(p)))),
   );
-  const field = (c: StatsColumn) => (c.per_game && mode === "game" ? `${c.id}_per_game` : c.id);
-  const head = (c: StatsColumn) => (c.per_game && mode === "game" ? `${c.short}/G` : c.short);
-  const title = (c: StatsColumn) => (c.per_game && mode === "game" ? `${c.label} per game` : c.label);
+
+  // ---- IM-2: the two views. `view=` in the URL (a tap writes it: shareable, kept by a saved view); without it the view
+  // last picked on this device, else Full table from 900 px and Key stats on a phone (the PO's call).
+  const remembered = accountPrefs.statsTable();
+  const wideAtOpen = typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(min-width: 900px)").matches;
+  const view = $derived<"key" | "full">(params.get("view") === "full" ? "full" : params.get("view") === "key" ? "key" : (remembered ?? (wideAtOpen ? "full" : "key")));
+  function setView(v: string) {
+    const next = v === "full" ? "full" : "key";
+    setParams({ view: next });
+    accountPrefs.setStatsTable(next);
+  }
+  // the Full table: the answer's `full` list (IM-1) or every available column for the position, grouped; minus the
+  // groups toggled off (`hide=`, group names) and the columns unticked in the picker (`off=`, column ids)
+  const fullPositions = $derived(fetchPos === "ALL" ? [] : position === "WR" || position === "TE" ? [position] : fetchPos.split(","));
+  const fullAll = $derived(r.data ? fullColumns(r.data.catalogue, preset, fullPositions, group) : []);
+  const hidden = $derived((params.get("hide") ?? "").split(",").filter(Boolean));
+  const off = $derived((params.get("off") ?? "").split(",").filter(Boolean));
+  const groupNames = $derived([...new Set(fullAll.map((c) => groupOf(c)))]);
+  const fullCols = $derived(fullAll.filter((c) => !hidden.includes(groupOf(c)) && !off.includes(c.id)));
+  const cols = $derived<StatsColumn[]>(view === "full" ? fullCols : keyCols);
+  function toggleGroup(g: string) {
+    const next = hidden.includes(g) ? hidden.filter((x) => x !== g) : [...hidden, g];
+    setParams({ hide: next.length ? next.join(",") : null });
+  }
+  // ---- end IM-2
+  const field = (c: StatsColumn) => fieldOf(c, mode);
+  const title = (c: StatsColumn) => titleOf(c, mode);
 
   const sortKey = $derived(params.get("sort") ?? preset?.sort ?? "points");
   const sortCol = $derived(cat.get(sortKey) ?? cat.get(sortKey.replace(/_per_game$/, "")) ?? null);
   const dir = $derived(params.get("dir") === "asc" ? "asc" : "desc");
 
   let q = $state(new URLSearchParams(location.search).get("q") ?? "");
-  let limit = $state(50);
+  const PAGE = 50; // ---- IM-2: the first 50, then "Show all" (every row of the answer: the frame carries up to 1000)
+  let showAll = $state(false);
   const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[^a-z0-9 ]/g, "");
   const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
@@ -129,55 +157,15 @@
       return (av - bv) * sign || a.player_name.localeCompare(b.player_name);
     });
   });
-  const shown = $derived(filtered.slice(0, limit));
-  // a new set or filter starts at the top of the list again
+  // a new set or filter starts at the top of the list again (the first 50)
   $effect(() => {
     void [path, position, who, nfl, minGames, minOpp];
-    limit = 50;
+    showAll = false;
   });
 
-  function show(c: StatsColumn, p: StatsRow): string {
-    const v = num(p[field(c)]);
-    if (v === null) return "—";
-    if (c.format === "pct") return fmt.pct(v, 1);
-    if (c.format === "pts" || c.format === "dec1") return fmt.pts(v, 1);
-    if (c.format === "dec2") return fmt.pts(v, 2);
-    return c.per_game && mode === "game" ? fmt.pts(v, 1) : fmt.whole(v);
-  }
-  /** the reason a cell is —, or the sample behind a number ("23 of 57 team carries in 2 games") */
-  function why(c: StatsColumn, p: StatsRow): string {
-    const v = num(p[field(c)]);
-    if (v === null) return c.reason ?? "not available";
-    const g = `${p.games} game${p.games === 1 ? "" : "s"}`;
-    const n = (k: string) => num(p[k]);
-    switch (c.id) {
-      case "target_share":
-        return `${n("targets")} of ${n("team_targets")} team targets in his ${g}`;
-      case "carry_share":
-        return `${n("carries")} of ${n("team_carries")} team carries in his ${g}`;
-      case "rb_carry_share":
-        return `${n("carries")} of ${n("team_rb_carries")} running-back carries in his ${g}`;
-      case "first_read_target_share":
-        return `${n("first_read_targets")} of ${n("team_first_read_targets")} charted first-read targets, ${n("charted_games")} charted games`;
-      case "route_participation":
-        return `${n("routes_proxy")} of ${n("team_dropbacks_with_participation")} dropbacks on the field (an estimate)`;
-      case "snap_share":
-        return `mean of ${n("snap_games")} games with snap counts`;
-      // ---- IL-1: Next Gen Stats — the weeks NGS published of his games, and NGS's own denominator (the weight)
-      case "time_to_throw":
-      case "ngs_cpoe":
-        return `NGS published ${n("ngs_pass_weeks")} of his ${g} (15+ pass attempts): ${n("ngs_pass_attempts")} attempts, weighted by attempts`;
-      case "ryoe_per_attempt":
-        return `NGS published ${n("ngs_rush_weeks")} of his ${g} (10+ carries): ${n("ngs_rush_attempts")} carries, weighted by carries`;
-      case "separation":
-        return `NGS published ${n("ngs_rec_weeks")} of his ${g} (5+ targets): ${n("ngs_targets")} targets, weighted by targets`;
-      case "yac_over_expected":
-        return `NGS published ${n("ngs_rec_weeks")} of his ${g} (5+ targets): ${n("ngs_receptions")} receptions, weighted by receptions`;
-      // ---- end IL-1
-      default:
-        return c.per_game && mode === "game" ? `${c.label} ${fmt.whole(n(c.id))} in ${g}` : `${c.label}: ${g}`;
-    }
-  }
+  // ---- IM-2: a cell's text and its reason / sample (components/stats/columns.ts, shared with the table)
+  const show = (c: StatsColumn, p: StatsRow) => showOf(c, p, mode);
+  const why = (c: StatsColumn, p: StatsRow) => whyOf(c, p, mode);
 
   function onsort(c: StatsColumn) {
     setParams({ sort: c.id, dir: c.id === sortCol?.id && dir === "desc" ? "asc" : "desc" });
@@ -187,11 +175,95 @@
     clearTimeout(timer);
     timer = setTimeout(() => setParams({ q: q.trim() || null }), 250);
   }
+  // ---- IM-2: a search typed just before leaving the screen is never written onto the next page's address
+  $effect(() => () => clearTimeout(timer));
   function toggleCol(id: string) {
-    const now = cols.map((c) => c.id);
+    // ---- IM-2: in the Full table a tick shows / hides one column (`off=`; a column of a hidden group shows its group)
+    if (view === "full") {
+      const c = cat.get(id);
+      if (cols.some((x) => x.id === id)) setParams({ off: [...off, id].join(",") });
+      else {
+        const nextOff = off.filter((x) => x !== id);
+        const g = c ? groupOf(c) : null;
+        setParams({ off: nextOff.length ? nextOff.join(",") : null, ...(g && hidden.includes(g) ? { hide: hidden.filter((x) => x !== g).join(",") || null } : {}) });
+      }
+      return;
+    }
+    const now = keyCols.map((c) => c.id);
     const next = now.includes(id) ? now.filter((x) => x !== id) : [...now, id];
     setParams({ cols: next.join(",") === defaults.join(",") ? null : next.join(",") });
   }
+
+  // ---- IM-2: ownership columns only when the answer has them (a reference league — IM-3's `ref:` keys — has none)
+  const owned = $derived(!r.data || r.data.players.length === 0 || r.data.players.some((p) => "rostered_by_roster_id" in p));
+  const ownerOf = (p: StatsRow) => ownerWord(p, team);
+  const mine = (p: StatsRow) => team !== null && p.rostered_by_roster_id === team;
+  const href = (p: StatsRow) => withContext(`/player/${p.gsis_id}`, ctx);
+
+  // ---- IM-2: Download CSV — GET /api/players.csv with the screen's parameters (IM-1's route); when this server has no
+  // such route (404) the file is built here from the table's rows (every filtered row, the columns on screen)
+  const winKey = $derived(win === "last3w" ? "last3" : win === "last5w" ? "last5" : win);
+  const csvHref = $derived(
+    statsCsvPath(league, {
+      position: fetchPos,
+      window: winKey,
+      basis: win === "last3w" || win === "last5w" ? "weeks" : win === "last3" || win === "last5" ? "games" : undefined,
+      weeks: win === "weeks" ? `${range[0]}-${range[1]}` : undefined,
+      sort: sortCol?.id ?? "points",
+      dir,
+      cols: cols.map((c) => c.id),
+      mode,
+      who,
+      team,
+      nfl,
+      q: q.trim(),
+      min: minGames,
+    }),
+  );
+  const fileName = $derived(
+    `${APP_NAME}-stats-${r.data?.season ?? ""}-${win === "weeks" ? `weeks-${range[0]}-${range[1]}` : win}-${(POS.find((x) => x.key === position)?.label ?? "all").toLowerCase().replace(/[^a-z]+/g, "-")}${view === "full" ? "-full" : ""}.csv`.replace(/-+/g, "-"),
+  );
+  let csvBusy = $state(false);
+  let csvFrom = $state<"server" | "browser" | null>(null);
+  let csvRoute: boolean | null = null; // null: not asked yet; false: this server answered 404
+  function save(blob: Blob, name: string) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+  async function downloadCsv(e: MouseEvent) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey) return; // a modified click: the browser follows the link itself
+    e.preventDefault();
+    if (csvBusy) return;
+    csvBusy = true;
+    try {
+      if (csvRoute !== false) {
+        try {
+          const res = await fetch(csvHref, { credentials: "same-origin", headers: { Accept: "text/csv" } });
+          if (res.ok && /csv/i.test(res.headers.get("content-type") ?? "")) {
+            csvRoute = true;
+            const name = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(res.headers.get("content-disposition") ?? "")?.[1] ?? fileName;
+            save(await res.blob(), decodeURIComponent(name));
+            csvFrom = "server";
+            return;
+          }
+          if (res.status === 404) csvRoute = false;
+        } catch {
+          /* no answer: build it here */
+        }
+      }
+      save(new Blob([csv(filtered, cols, mode, owned ? ownerOf : undefined)], { type: "text/csv;charset=utf-8" }), fileName);
+      csvFrom = "browser";
+    } finally {
+      csvBusy = false;
+    }
+  }
+  // ---- end IM-2
 
   // ---- saved views (this browser only; a per-viewer convenience)
   // ---- IK-4: read and written through lib/prefs.ts (`ll.stats.views`, unchanged) so a signed-in account keeps them too
@@ -212,7 +284,7 @@
   }
   function openView(v: View) {
     const want = Object.fromEntries(new URLSearchParams(v.qs));
-    const clear = Object.fromEntries(["position", "who", "nfl", "window", "weeks", "mode", "min", "minopp", "cols", "sort", "dir", "q"].map((k) => [k, null]));
+    const clear = Object.fromEntries(["position", "who", "nfl", "window", "weeks", "mode", "min", "minopp", "cols", "sort", "dir", "q", "view", "hide", "off"].map((k) => [k, null])); // ---- IM-2: + view, hide, off
     setParams({ ...clear, ...want });
     q = want.q ?? "";
   }
@@ -261,20 +333,22 @@
         items={POS}
       />
     </div>
-    <div class="ll-chiprow">
-      <Chips
-        label="Whose"
-        testid="who"
-        current={who}
-        onpick={(w) => setParams({ who: w === "all" ? null : w })}
-        items={[
-          { key: "all", label: "Everyone" },
-          { key: "mine", label: "Yours" },
-          { key: "fa", label: "Free agents" },
-          { key: "others", label: "Other teams" },
-        ]}
-      />
-    </div>
+    {#if owned}<!-- ---- IM-2: no ownership in the answer (a reference league): no "whose" chips -->
+      <div class="ll-chiprow">
+        <Chips
+          label="Whose"
+          testid="who"
+          current={who}
+          onpick={(w) => setParams({ who: w === "all" ? null : w })}
+          items={[
+            { key: "all", label: "Everyone" },
+            { key: "mine", label: "Yours" },
+            { key: "fa", label: "Free agents" },
+            { key: "others", label: "Other teams" },
+          ]}
+        />
+      </div>
+    {/if}
     <div class="flex flex-wrap items-center gap-2" data-testid="stats-window">
       <label class="sr-only" for="ll-players-nfl">NFL team</label>
       <select id="ll-players-nfl" class="ll-input min-w-0 flex-1 py-1.5 text-sm sm:flex-none" value={nfl} onchange={(e) => setParams({ nfl: e.currentTarget.value || null })} data-testid="players-team">
@@ -390,67 +464,89 @@
   {:else if !r.data}
     <div class="space-y-2" aria-label="Loading" data-testid="loading">{#each [0, 1, 2, 3, 4, 5] as i (i)}<div class="ll-skel h-12"></div>{/each}</div>
   {:else}
-    <div class="ll-stats overflow-auto rounded-lg border border-line bg-surface {r.loading ? 'opacity-60' : ''}" style="box-shadow:var(--ll-shadow)" data-testid="stats-scroll">
-      <table class="min-w-full border-collapse text-base" data-testid="players-table">
-        <thead>
-          <tr>
-            <th class="ll-stick-x ll-label bg-raised px-2 py-2 pl-3 text-left" style="min-width:11rem">Player</th>
-            {#each cols as c (c.id)}
-              <th
-                class="ll-label bg-raised px-2 py-2 text-right whitespace-nowrap"
-                aria-sort={sortCol?.id === c.id ? (dir === "asc" ? "ascending" : "descending") : undefined}
-                title={`${title(c)} — ${c.definition}${c.denominator ? ` Denominator: ${c.denominator}.` : ""}`}
-              >
-                <button type="button" class="inline-flex min-h-8 items-center gap-0.5 uppercase {sortCol?.id === c.id ? 'text-ink' : ''}" onclick={() => onsort(c)} data-testid={`sort-${c.id}`}
-                  >{head(c)}<span aria-hidden="true" class="text-[9px]">{sortCol?.id === c.id ? (dir === "asc" ? "▲" : "▼") : ""}</span></button
-                >
-              </th>
-            {/each}
-            <th class="ll-label hidden bg-raised px-2 py-2 pr-3 text-left sm:table-cell">Team in league</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each shown as p (p.gsis_id)}
-            <tr class="border-t border-line {team !== null && p.rostered_by_roster_id === team ? 'll-mine' : ''}" data-testid="players-table-row">
-              <td class="ll-stick-x bg-surface py-2 pr-2 pl-3">
-                <div class="flex min-w-0 items-center gap-2">
-                  <input
-                    type="checkbox"
-                    class="shrink-0"
-                    aria-label={`Select ${p.player_name} to compare`}
-                    checked={sel.includes(p.gsis_id)}
-                    disabled={!sel.includes(p.gsis_id) && sel.length >= 4}
-                    onchange={() => toggleSel(p.gsis_id)}
-                    data-testid="stats-select"
-                  />
-                  <Headshot url={p.headshot_url} name={p.player_name} team={p.team} size={30} />
-                  <div class="min-w-0">
-              <a
-                class="ll-name block truncate font-semibold"
-                href={withContext(`/player/${p.gsis_id}`, ctx)}
-                {@attach paneLink(p.gsis_id, { from: "list", context: { name: p.player_name } })}>{p.player_name}</a
-              >
-                    <div class="mt-0.5 flex items-center gap-1"><PosBadge pos={p.position} /><TeamBadge team={p.team} /></div>
-                  </div>
-                </div>
-              </td>
-              {#each cols as c (c.id)}
-                <td class="px-2 py-2 text-right tabnum whitespace-nowrap {num(p[field(c)]) === null ? 'text-ink-3' : ''}" title={why(c, p)} data-col={c.id}>{show(c, p)}</td>
-              {/each}
-              <td class="hidden px-2 py-2 pr-3 text-sm text-ink-2 sm:table-cell"><span class="block max-w-[10rem] truncate">{ownerWord(p, team)}</span></td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-    {#if filtered.length > shown.length}
-      <button type="button" class="w-full rounded-md border border-line py-3 text-sm font-semibold text-accent" onclick={() => (limit += 100)} data-testid="more"
-        >Show {Math.min(100, filtered.length - shown.length)} more of {filtered.length - shown.length}</button
+    <!-- ---- IM-2: the view (Key stats · Full table), the CSV, the group toggles, the table, every player -->
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2" data-testid="stats-toolbar">
+      <Tabs
+        items={[
+          { key: "key", label: "Key stats" },
+          { key: "full", label: "Full table" },
+        ]}
+        current={view}
+        onpick={setView}
+        size="sm"
+        label="Table view"
+        testid="stats-table-view"
+      />
+      <span class="text-sm text-ink-2" data-testid="stats-col-count">{cols.length} column{cols.length === 1 ? "" : "s"}</span>
+      <a
+        class="ml-auto inline-flex min-h-9 items-center gap-1 rounded-md border border-line px-2.5 text-sm font-semibold text-accent {csvBusy ? 'opacity-60' : ''}"
+        href={csvHref}
+        download={fileName}
+        onclick={downloadCsv}
+        aria-busy={csvBusy}
+        data-from={csvFrom ?? undefined}
+        data-testid="stats-csv"><span aria-hidden="true">↓</span> Download CSV</a
       >
+    </div>
+    {#if view === "full" && groupNames.length > 1}
+      <div class="ll-chiprow">
+        <div class="flex flex-wrap gap-1.5" role="group" aria-label="Column groups: tap to hide or show" data-testid="stats-groups">
+          {#each groupNames as g (g)}
+            {@const on = !hidden.includes(g)}
+            <button
+              type="button"
+              class="inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 text-sm font-semibold {on ? 'border-accent/60 bg-accent-soft text-ink' : 'border-dashed border-line-strong text-ink-3'}"
+              aria-pressed={on}
+              onclick={() => toggleGroup(g)}
+              data-testid="stats-group"
+              data-group={g}><span aria-hidden="true" class="text-xs">{on ? "✓" : "+"}</span>{g}</button
+            >
+          {/each}
+        </div>
+      </div>
     {/if}
+    {#if cols.length === 0}
+      <p class="ll-empty" data-testid="stats-no-cols">Every column group is hidden. Tap a group above to show its columns.</p>
+    {/if}
+    {#key view}
+      <StatsTable
+        rows={filtered}
+        {cols}
+        grouped={view === "full"}
+        {mode}
+        limit={showAll ? Infinity : PAGE}
+        sortId={sortCol?.id ?? null}
+        {dir}
+        {onsort}
+        {href}
+        {mine}
+        {sel}
+        onselect={toggleSel}
+        owner={owned ? ownerOf : null}
+        caption={`${POS.find((x) => x.key === position)?.label ?? "All"} players, ${r.data.window.label}: ${view === "full" ? "full table" : "key stats"}${sortCol ? `, sorted by ${title(sortCol).toLowerCase()}` : ""}`}
+        dim={r.loading}
+      />
+    {/key}
+    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-2" data-testid="stats-count">
+      <span data-testid="stats-showing">Showing {Math.min(showAll ? filtered.length : PAGE, filtered.length)} of {filtered.length}</span>
+      {#if !showAll && filtered.length > PAGE}
+        <button type="button" class="inline-flex min-h-9 items-center rounded-md border border-line px-3 font-semibold text-accent" onclick={() => (showAll = true)} data-testid="stats-show-all"
+          >Show all {filtered.length}</button
+        >
+      {:else if showAll && filtered.length > PAGE}
+        <button type="button" class="inline-flex min-h-9 items-center rounded-md border border-line px-3 font-semibold text-accent" onclick={() => (showAll = false)} data-testid="stats-show-fewer"
+          >Show the first {PAGE}</button
+        >
+      {/if}
+    </div>
     <Expander title="How to read this" testid="howto">
       <div class="space-y-2 text-base leading-snug">
-        <Md block text={r.data.howto + `\n- Points are in ${leagueName} scoring. Tap a column to sort by it; tap a name for his card; tick 2–4 players to see them side by side.`} />
+        <Md
+          block
+          text={r.data.howto +
+            `\n- Points are in ${leagueName} scoring. Tap a column to sort by it; tap a name for his card; tick 2–4 players to see them side by side.` +
+            `\n- **Key stats** are the numbers to read first. **Full table** shows every column we have for the position, grouped (Receiving, Air yards, Red zone…): tap a group above the table to hide or show it. A greyed number rests on a small sample: tap it, or a dash, for the reason.`}
+        />
         <dl class="space-y-1.5 text-sm" data-testid="stats-definitions">
           {#each cols as c (c.id)}
             <div><dt class="inline font-semibold">{title(c)}</dt> <dd class="inline text-ink-2">— {c.definition}{c.denominator ? ` Denominator: ${c.denominator}.` : ""} Source: {c.source}.</dd></div>
@@ -472,26 +568,5 @@
       flex-shrink: 0;
     }
   }
-  /* the table scrolls inside its box (never the page): the header row and the player column stay put */
-  .ll-stats {
-    max-height: 75vh;
-    max-width: 100%;
-  }
-  .ll-stats thead th {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-  }
-  .ll-stats .ll-stick-x {
-    position: sticky;
-    left: 0;
-    z-index: 1;
-    max-width: 13rem;
-  }
-  .ll-stats thead .ll-stick-x {
-    z-index: 3;
-  }
-  .ll-stats tr.ll-mine td {
-    background: linear-gradient(var(--color-accent-soft), var(--color-accent-soft)), var(--color-surface);
-  }
+  /* ---- IM-2: the table's own styles live in components/stats/StatsTable.svelte */
 </style>
