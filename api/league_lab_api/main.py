@@ -530,6 +530,30 @@ def players(league: str, response: Response, season: int | None = None, position
                                   basis=basis, weeks=weeks, who=who, team=team, nfl=nfl), response)
 
 
+# ---- IM-1 (Wave I-M): the Stats table as a CSV — /api/players?window=…'s parameters + the columns (cols= | preset= +
+# view=key|full) and per_game=1; every row of the selection (limit up to 1000), a header row of labels, streamed
+@app.get("/api/players.csv", dependencies=[Depends(require_auth)])
+def players_csv(league: str, season: int | None = None, position: str = "ALL", sort: str | None = None,
+                dir: str | None = None, limit: int = 1000, offset: int = 0, q: str | None = None, season_type: str = "REG",
+                min_games: int = 1, source: str | None = None, window: str = "season", basis: str | None = None,
+                weeks: str | None = None, who: str | None = None, team: int | None = None, nfl: str | None = None,
+                preset: str | None = None, cols: str | None = None, view: str | None = None, per_game: int = 0):
+    from fastapi.responses import StreamingResponse
+
+    from . import stats as stats_mod
+    d = research.players(league, season=season, position=position, sort=sort, dir=dir, limit=limit, offset=offset, q=q,
+                         season_type=season_type, min_games=min_games, source=source, window=window, basis=basis,
+                         weeks=weeks, who=who, team=team, nfl=nfl)
+    try:
+        columns = stats_mod.csv_columns(d, preset=preset, cols=cols, view=view)
+    except ValueError as exc:
+        raise research.BadRequest(str(exc)) from exc
+    return StreamingResponse(stats_mod.csv_lines(d, columns, per_game=bool(per_game)), media_type="text/csv; charset=utf-8",
+                             headers={"Content-Disposition": f'attachment; filename="{stats_mod.csv_filename(d)}"',
+                                      "Cache-Control": "no-store"})
+# ---- end IM-1
+
+
 @app.get("/api/receivers", dependencies=[Depends(require_auth)])
 def receivers(league: str, response: Response, season: int | None = None, limit: int = 50, season_type: str = "REG",
               weeks: str | None = None, players: str | None = None, context: str = "half", source: str | None = None):

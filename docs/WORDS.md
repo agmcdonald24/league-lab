@@ -371,6 +371,28 @@ labels, tooltips, summaries, accessibility labels and generated text, the consol
 | the account page | "Yahoo: connected 2026-10-05 — it comes back on any device you sign in on." · "ESPN: needs reconnecting (it no longer opens your leagues)." + **Reconnect ESPN** · "No Yahoo or ESPN connection saved. Connect one on the league setup screen while signed in and it follows you." | a token, a GUID or a cookie value on screen |
 | a provider switched off (`/api/providers` status `off`) | "ESPN leagues: not available right now. Sleeper and MyFantasyLeague leagues work as before." in place of the form | a form that can only fail |
 
+## The Stats tables' columns (Wave I-M, IM-1)
+
+The catalogue's labels are the words (`api/league_lab_api/stats.py`: `label` for the header's tooltip and the CSV,
+`short` for the header, `definition` and `reason` for the hover). Rates say "per" (the copy standard above); a share says
+share of what.
+
+| Where | The words we use | Never |
+|---|---|---|
+| the group headers (IM-2 draws them over the Full table, in this order) | **Games and points** · **Receiving** · **Rushing** · **Passing** · **Air yards** · **Red zone** · **Efficiency** · **Expected points** · **Next Gen Stats** · **Charting** · **Snaps and routes** · **Advanced (PFR)** | other spellings ("NGS", "PFR advanced") as a group name |
+| EPA | **Receiving EPA** / **Rushing EPA** / **EPA on dropbacks**, **EPA per target** / **per carry** / **per dropback**; the gloss once: "expected points added: how much each play moved his team's expected score" | "EPA/play" without the denominator; "value added" |
+| success | **Receiving success rate** / **Rushing success rate** / **Dropback success rate**: "plays that gained expected points (EPA above 0) per target / carry / dropback" | "efficient" or "good" plays |
+| first downs, touchdowns | **First downs per target** · **First downs per carry** · **Touchdowns per target** · **Touchdowns per carry** · **Touchdown passes per attempt** · **Interceptions per attempt** · **Sacks per dropback** | "TD rate" alone (rate of what) |
+| air yards | **Weighted opportunity rating (WOPR)** ("1.5 × target share + 0.7 × air-yard share") · **Receiver air conversion ratio (RACR)** ("receiving yards per air yard thrown his way") · **Deep targets (20+ air yards)** · **Deep-target share (of his team's deep targets)** · **Deep targets, share of his targets** | "deep share" without saying of what |
+| red zone | **Targets inside the 10** · **Carries inside the 10** | — |
+| lines | **Receiving yards per reception** · **Yards per touch** ("rushing + receiving yards per carry or catch") · **Adjusted yards per attempt** · **Scramble yards** · **Share of his fantasy points from rushing** ("in this league's scoring; above 100% when his passing points are below zero") | — |
+| expected points | **Expected fantasy points** (a total) · **Points over expected** ("his points minus his expected points over the same games: positive = more than his opportunities usually bring") — looking back, not a forecast (the copy standard's rule 6) | "due", "unlucky", "regression" |
+| Next Gen Stats | **Average cushion (yards)** · **Intended air yards per target (Next Gen Stats)** · **Rushing efficiency (Next Gen Stats)** ("distance travelled per rushing yard: lower is more north–south") · **Carries against 8+ defenders in the box** · **Time to the line of scrimmage (seconds)** · **Aggressiveness (throws into tight windows)** · **Intended air yards per attempt (Next Gen Stats)**; the dash's reason is NGS's qualification ("… so this is unknown, not zero.") | a talent score |
+| Pro Football Reference | **Drops** · **Drops per target** · **Broken tackles** · **Broken tackles per touch** · **Yards before contact per carry** · **Yards after contact per carry** · **Bad throws per attempt** · **Times pressured** · **Pressured per dropback**; the dash: "Pro Football Reference has no row for his games in this window (it lists a player once he has a target, carry or pass), so this is unknown, not zero." | 0 for a game PFR did not cover |
+| unavailable (picker, disabled) | **Receiving yards after contact**: "Pro Football Reference publishes receiving yards after contact per season, not per game, so a window cannot use it." · **On-target throws per attempt**: "… per season only, so a window cannot use it." | an empty column |
+| before the nightly builds the new table | "These columns arrive with the nightly update; they are not on this copy yet." | "stale", "missing data" |
+| the CSV (`/api/players.csv`) | file `isuckatfantasy-stats-2026-wr-te-season-weeks-1-4.csv`; the header is the labels above ("Targets per game" with `per_game=1`); an unknown number is an empty cell | 0 for unknown |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to

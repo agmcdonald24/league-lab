@@ -1071,7 +1071,8 @@ def players(league_id: str, *, season: int | None = None, position: str | None =
     return {**ctx.meta(), "season": season, "season_type": st, "positions": pos, "columns": cols,
             "total": total, "offset": off, "players": _records(page), "howto": PLAYERS_HOWTO,
             "scoring_note": REF_NOTE.format(ref=reference_name()),
-            "catalogue": ST.catalogue(season), "presets": ST.PRESETS}                       # ---- II-3 (additive)
+            "catalogue": (cat := ST.catalogue(season)), "presets": ST.presets(cat),          # ---- II-3 (additive)
+            "groups": ST.GROUPS}                                                             # ---- IM-1
 
 
 # ---- II-3: the Stats Explorer's frame (the fifth review § 4; docs/METRICS.md § "The Stats Explorer") ------------------
@@ -1106,12 +1107,13 @@ def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None
     frame, desc = ST.window_rows(rows, w, b, wk)
     cat = ST.catalogue(season, rows)
     mine = frame[frame["position"].isin(SKILL)] if not frame.empty else frame
-    agg = ST.aggregate(mine)
+    agg = ST.aggregate_window(mine, (season, season_type, w, b, wk, id(rows), len(mine)))     # IM-1: cached per window
     if not agg.empty:
         agg = agg[agg["position"].isin(pos)]
         lg = league_games(ctx, season, None if len(agg) > 200 else list(agg["gsis_id"]))
         lg = lg[lg["season_type"] == season_type]
-        agg = agg.merge(ST.points(lg, mine[mine["gsis_id"].isin(agg["gsis_id"])]), on="gsis_id", how="left")
+        agg = agg.merge(ST.points(lg, mine[mine["gsis_id"].isin(agg["gsis_id"])], ctx.scoring), on="gsis_id",
+                        how="left")                                                    # IM-1: + the league's scoring
         agg = agg[agg["games"] >= max(0, int(min_games if min_games is not None else 1))]
     if agg.empty:
         agg = pd.DataFrame(columns=["gsis_id", "player_name", "position", "games"])
@@ -1129,7 +1131,8 @@ def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None
     page = page[[c for c in ST.fields(pos) if c in page.columns]]
     return {**ctx.meta(), "season": season, "season_type": season_type, "positions": pos, "window": desc,
             "who": wh, "team": team, "nfl": nfl, "min_games": min_games, "total": total, "offset": off,
-            "players": _records(page), "catalogue": cat, "presets": ST.PRESETS, "howto": STATS_HOWTO}
+            "players": _records(page), "catalogue": cat, "presets": ST.presets(cat), "groups": ST.GROUPS,  # IM-1
+            "howto": STATS_HOWTO}
 # ---- end II-3
 
 
