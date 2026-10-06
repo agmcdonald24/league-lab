@@ -3527,6 +3527,82 @@ The sample travels with each row (`ngs_pass_weeks` / `ngs_pass_attempts`, `ngs_r
 2018) marks the column unavailable with its reason. These are context numbers, not talent scores (the review § 10).
 The QB preset shows time to throw and the play-by-play `cpoe` (every passer has it); NGS's CPOE is in the picker.
 
+### More columns, every one honest (adv1.0, IM-1, Wave I-M, 2026-10-06; `analytics.mart_player_game_advanced`, `stats.py` § IM-1)
+
+Andrew, 2026-10-05: "upgrading the tables that are there to include more metrics." Fifty columns join the catalogue
+(51 → 101), each with its definition, numerator, denominator, aggregation, source, status, positions, a `reason` when it
+can be null, its **group** (the twelve in `stats.GROUPS`, which the catalogue follows in order) and, for a noisy rate, a
+`minimum` (`{field, n}`: the sample below which the screen greys the number — e.g. EPA per target under 20 targets). The
+inventory, with 2026 coverage on the clone, is `docs/DATA_INVENTORY.md`.
+
+**Where the numbers come from.**
+* `fct_player_game` (nflverse weekly stats + the play-by-play counts it already carried): receiving / rushing EPA
+  (nflfastR), first downs, deep targets (20+ air yards), targets and carries inside the 10, and the line every rate
+  below is built from.
+* **`analytics.mart_player_game_advanced`** (new; one row per QB / RB / WR / TE / FB × game he played, 59,606 rows,
+  9.3 MB on the clone, 2016 →) — numerators only, merged onto his game row by `stats.with_advanced`:
+  * from `int_player_game_efficiency` (new, from `fct_play` with its eligibility flags): successful targets / carries /
+    dropbacks (nflfastR's `success`: the play's EPA above 0), dropback EPA (the play's EPA on his dropbacks: passes,
+    sacks, scrambles — a receiver's fumble after the catch counts against it, because nflfastR's `qb_epa` is not in
+    `fct_play`), scramble yards; and his team's deep targets counted from his team's plays (an independent team total,
+    never summed player rows). A separate model rather than columns on `int_player_game_pbp`: widening that one rebuilds
+    `fct_player_game` and the 54 models under it, and widens `fct_player_game` on the hosted copy.
+  * Pro Football Reference's weekly advanced stats (nflverse `pfr_advstats`, 2018 →, published in season), joined PFR id
+    → gsis id through `analytics.player_id_map`, never by name. `has_pfr_rec` / `_rush` / `_pass` say PFR covered his
+    game; a PFR count is divided only by the denominator of the games PFR covered (drops / targets in those games), so a
+    game PFR has no row for is out of both — never a 0. Unmapped PFR rows are left out and counted
+    (`dbt/tests/assert_pfr_advstats_rows_map_to_gsis.sql`, warns above 0, fails above 25 in the newest season;
+    `api/tests/test_im1.py`): 7 of 1,290 rows in 2026 on the clone (Matthew Hibner and Jack Strand, rookies the
+    Sleeper-side map has not picked up — `int_pfr_gsis_map` knows them; Cody White, no PFR id in nflverse's players).
+* `mart_player_ngs_week` gains `avg_time_to_los` and the receivers' `rec_avg_intended_air_yards`; the NGS window rule
+  (§ "Next Gen Stats") covers the seven new NGS columns, each weighted by the denominator NGS states for it.
+* This league's scoring (`research.league_games`) for expected points and the quarterback's rushing share.
+
+**What PFR's weekly files carry** (read 2026-10-05, not assumed): receiving — drops, broken tackles, INTs and passer
+rating when targeted; rushing — PFR's carries, yards before / after contact, broken tackles; passing — bad throws, his
+receivers' drops, pressures, hurries, hits, blitzes, sacks. **Season files only** (no window can use them, so
+`unavailable` with the reason): receiving yards before / after contact, on-target throws, pocket time. NGS publishes no
+catch percentage over expected; no column claims one.
+
+| Columns | Numerator / denominator (summed over the window first) | Notes |
+|---|---|---|
+| `receiving_epa`, `rushing_epa`, `dropback_epa` (+ per game) | EPA on his targets / carries / dropbacks | totals; the per-game twin divides by games played |
+| `epa_per_target`, `epa_per_carry`, `epa_per_dropback` | that EPA / targets, carries, dropbacks | nflverse EPA for targets and carries; the play-by-play for dropbacks (same plays as `dropbacks`) |
+| `receiving_success_rate`, `rushing_success_rate`, `passing_success_rate` | plays with EPA above 0 / targets, carries, dropbacks | the plays of `fct_play`'s flags |
+| `receiving_first_downs`, `rushing_first_downs`; `first_downs_per_target`, `first_downs_per_carry` | nflverse first downs; / targets, carries | touchdowns count as first downs, as nflverse counts them |
+| `wopr` | 1.5 × target share + 0.7 × air-yard share | each share summed / summed over the window, then combined (nflverse's weekly `wopr` is not averaged) |
+| `racr` | receiving yards / receiving air yards | null when his air yards are zero or negative |
+| `deep_targets`, `deep_target_share`, `deep_target_rate` | targets 20+ air yards; / the team's deep targets in his games; / his targets | team total from the plays |
+| `inside_10_targets`, `inside_10_carries` | targets, carries at the opponent's 10 or closer | counts (+ per game) |
+| `receiving_td_rate`, `rushing_td_rate` | TDs / targets, carries | |
+| `yards_per_reception`, `yards_per_touch` | receiving yards / receptions; rushing + receiving yards / carries + receptions | |
+| `adjusted_yards_per_attempt`, `td_rate`, `int_rate`, `sack_rate` | (yards + 20 × TD − 45 × INT) / attempts; TD / attempts; INT / attempts; sacks / (attempts + sacks) | PFR's AY/A formula; the official sack rate's denominator (scrambles out) |
+| `scramble_yards` | rushing yards on his scrambles | play-by-play |
+| `rushing_points_share` | his rushing line priced in this league's scoring / his fantasy points, the games he played with a points row | the same pricer as the league's points (`research.price_games`); rushing bonuses in, fumbles out; signed (above 100% when passing points are below zero); null when his points are not above 0 |
+| `expected_points`, `points_over_expected` (+ per game) | expected points over his games with an expected value; his points − expected points on those same games | per game divides by those games |
+| `cushion`, `ngs_intended_air_yards` (WR / TE), `rush_efficiency`, `stacked_box_rate`, `time_to_los` (RB), `aggressiveness`, `ngs_pass_intended_air_yards` (QB) | NGS's weekly value × NGS's weight / the weight, NGS-published weeks only | `aggressiveness` and `stacked_box_rate` are kept as fractions (NGS states percent) |
+| `drops`, `drop_rate`, `broken_tackles`, `broken_tackle_rate`, `yards_before_contact_per_carry`, `yards_after_contact_per_carry`, `bad_throw_rate`, `times_pressured`, `pressure_rate` | PFR's counts / targets, touches, PFR carries, attempts, dropbacks **in the games PFR covered** | `bad_throw_rate` keeps spikes and throwaways in the attempts (PFR's own rate leaves them out, so ours reads a little lower); `pressure_rate` divides by the play-by-play's dropbacks (attempts + sacks + scrambles) |
+
+**Positions.** Receiving-only columns (targets and the rates on them, air yards, red-zone targets, charting) now list
+RB / WR / TE: a QB row no longer carries them, and the QB preset's Full table does not show them.
+
+**Presets** keep their keys and lead with 14 columns each (WR / TE: games, points, targets, target share, receptions,
+receiving yards and TDs, aDOT, air-yard share, WOPR, EPA per target, snap share, separation, YAC over expected; RB:
+… carries inside the 10, EPA per carry, RYOE per carry; QB: … AY/A, EPA per dropback, rushing share of his points, time
+to throw, CPOE), and carry `full` — every column that applies to the position and is available this season, in
+catalogue order (`stats.presets(catalogue)`; the API's `presets` are the season's). `GET /api/players.csv` streams the
+same frame (the preset's columns, `view=full`, or `cols=`; `per_game=1`; a header of labels; unknown = an empty cell;
+a text cell starting `=`, `+`, `-` or `@` is prefixed with `'`).
+
+**Before the nightly builds the mart** (the hosted copy today): the columns it feeds are `null` with "These columns
+arrive with the nightly update; they are not on this copy yet." and the catalogue marks them unavailable, so the Full
+table leaves them out — the request never fails (`test_before_the_nightly_builds_the_mart_the_columns_say_why`).
+
+**Cost.** The season frame (`memo` region `stats`) widens from 56 to 89 columns: 2026 weeks 1–4 0.99 → 1.33 MB; a full
+season (2025) 4.23 → 5.65 MB. `/api/players?position=WR&window=season` on the clone: cold 0.37 → 0.48 s, warm 0.15 →
+0.22 s (TestClient, Scrubs; the catalogue answer grows from 51 to 101 entries, the 50-row page 124 → 217 KB before
+gzip).
+
 ## Role, opportunity vs production, contingent upside (role1.0, IL-1, Wave I-L, 2026-10-05; `league_lab.roles`, the card's `role` section)
 
 The fifth review § 10's first three analytics, as **labels about the past** — no model feature, no change to a

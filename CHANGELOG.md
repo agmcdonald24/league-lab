@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-06 — Wave I-M
+
+- **IM-1 — the Stats tables' data: more metrics, every one honest.** Andrew's two empty WR / TE columns (separation, YAC
+  over expected) fill once the nightly builds `mart_player_ngs_week`: on the clone all 40 of the top 40 receivers by
+  targets have both, and every receiver without one had no week with 5+ targets (NGS's rule). 50 new Stats columns (51 →
+  101): EPA (total, per target / carry / dropback), success rates, first downs, WOPR, RACR, deep targets and deep-target
+  share, looks inside the 10, touchdown rates, yards per reception / touch, AY/A, TD / INT / sack rates, scramble yards,
+  the QB's rushing share of his points, expected points and points over expected, seven more Next Gen Stats fields, and
+  Pro Football Reference's weekly drops, broken tackles, yards before / after contact, bad throws and pressures — new
+  `analytics.mart_player_game_advanced` (+ `int_player_game_efficiency`), PFR joined by id through `player_id_map`
+  (unmapped rows counted). Every column has a `group`; presets lead with 14 columns and carry a `full` list;
+  `GET /api/players.csv`. docs/METRICS.md § "More columns" (adv1.0), DATA_INVENTORY, WORDS; `docs/handbacks/IM-1.md`.
+
 ## 2026-10-05 — Wave I-L
 
 - **PO — Yahoo refuses the app, and the app said so wrongly.** A friend connected with Yahoo four times in three minutes
