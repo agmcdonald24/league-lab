@@ -83,7 +83,8 @@ IN-1. The boundaries catch any of them: a duplicate there is an error card, neve
 * Modules edited — their API test files (37 files: myweek's 32 + decisions' transactions / alternatives): **72 failed /
   504 passed / 10 skipped** (661 s); 66 on `known_api_failures.txt`; the other **6 fail the same on `main`'s API code at
   10:30 ET** (`test_ig2` × 3: the event store's status / brief lines; `test_u1` × 3: usage rows) — not mine, see below.
-  Re-run after the `db.py` change (10 files incl. ia2 / ib0 / ii1): 25 failed / 90 passed, all on the known list.
+  Re-run after the `db.py` change (10 files incl. ia2 / ib0 / ii1): 25 failed / 90 passed, all on the known list; after
+  the last `myweek.py` change (12 My Week files): 23 failed / 144 passed / 6 skipped, all on the known list.
 * `ruff check src app tests api` clean; `npm run lint` (177 files, 0 warnings) and `npm run build` clean;
   `copy_standard.py --check` clean; `league-lab dbt parse` clean.
 * e2e `in5`: **10 passed** (375 and 1300). On `main`'s web code the same spec fails 3: the words, the duplicate-key
