@@ -213,6 +213,13 @@ def test_the_builds_reasons_in_words():
     assert acts[0]["href"] == "/waivers?position=RB" and acts[0]["open_slot"]["players"] == ["12530"]
 
 
+def test_kickoffs_as_text_still_order():
+    rows = morning()
+    rows["kickoff_at"] = rows["kickoff_at"].map(lambda t: None if pd.isna(t) else t.isoformat())   # an adapter's text
+    acts = _actions(rows)["actions"]
+    assert [a["action"] for a in acts] == [AFTER_QB, AFTER_TE]
+
+
 def test_the_hotfix_words_stay():
     a = M._action("change", [], ["1466"], False, 0.0, ["1466"], [], [], [(None, "1466")], set(), "Sleeper",
                   name=lambda k: "Kelce", plain=lambda k: "Kelce", status=lambda k: None,

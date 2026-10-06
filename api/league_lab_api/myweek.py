@@ -542,6 +542,13 @@ def open_spots(rows: pd.DataFrame, info: dict[str, dict], pairs: list[tuple[str 
     return out
 
 
+def _order_key(o: tuple) -> tuple:
+    """An action's order (urgency, the first kickoff, -gain) with the kickoff as one comparable type: the rows may carry
+    it as a timestamp, a datetime or ISO text, an open spot's deadline is a timestamp."""
+    t = pd.Timestamp(o[1])
+    return (o[0], t.tz_localize("UTC") if t.tzinfo is None else t.tz_convert("UTC"), o[2])
+
+
 def more_words(more: list[dict]) -> str:
     """The set line when more actions wait than the three shown: "1 more roster alert: the lineup below shows every
     slot." / "2 more roster alerts and 1 close call: …"."""
@@ -729,7 +736,7 @@ def build_actions(rows: pd.DataFrame, cards_out: list[dict], current: dict[str, 
         a["cards"] = g_cards
         a["_order"] = (a["urgency"], first if first is not None else pd.Timestamp.max.tz_localize("UTC"), -(gain or 0.0))
         acts.append(a)
-    acts.sort(key=lambda a: a.pop("_order"))
+    acts.sort(key=lambda a: _order_key(a.pop("_order")))           # ---- IN-5: one time type (an open spot's deadline)
     more = acts[MAX_ACTIONS:]
     acts = acts[:MAX_ACTIONS]
     for n, a in enumerate(acts):
