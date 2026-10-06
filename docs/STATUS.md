@@ -10129,6 +10129,17 @@ compare against it)
   dependency), `hosted_accounts.sql`, `dbt seed --select metric_registry`, `dbt build --select
   int_player_game_efficiency mart_player_game_advanced mart_player_ngs_week` (29 pass, 1 warn: the id-map relationship,
   as before).
+* **The deploy order (found by the PO at 01:35 ET, after the bundle was first placed)**: the merged API on a database in
+  the state the hosted copy will be in if the push lands after this morning's nightly — Wave I-L's
+  `mart_player_ngs_week` (no `avg_time_to_los`), no `mart_player_game_advanced` — answered **500 on
+  `/api/players`** (`column "avg_time_to_los" does not exist`): Players · Stats, the screen "Browse the lab" opens,
+  down until the next nightly. Fixed in `stats.py`: an optional mart is read for the columns this copy has
+  (`relation_columns`), the ones it lacks are null with "arrive with the nightly update", and any error reading an
+  optional mart is "not built yet", never a failed frame (`test_im1`: an older NGS mart; a mart that cannot be read).
+  Re-checked on the IM-4 clone (exactly that state): 18 routes — Stats on `ref:half` and on a house league, the CSV,
+  Trends, Matchups, search, the player card and games, About, the record, DFS projections for both sites, status,
+  session, providers, the account status — all 200. The only relation this wave newly needs on the hosted copy is
+  `analytics.mart_player_game_advanced` (`scripts/hosted_relations.py`, old against new: nothing else).
 * **Checks** (this session's database: 2026 through week 4, the suites pinned to 2026-10-03 — the week-state tests
   fail before and after, compared by name against `known_api_failures.txt`): API **824 passed / 92 failed** / 13
   skipped — the 92 are all on the known list (the 90 of Monday afternoon + five that began failing on unchanged code

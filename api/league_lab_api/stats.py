@@ -57,13 +57,9 @@ FCT_SQL = f"""select {", ".join(FCT_COLS)} from analytics.fct_player_game
 # weighted by the denominator NGS states (never a mean of means); a week NGS did not publish (under its minimum) is
 # not in the window's value, and a window with no published week is null with the reason.
 NGS_REL = "mart_player_ngs_week"
-NGS_SQL = """select gsis_id, week, ngs_pass_attempts, avg_time_to_throw, completion_percentage_above_expectation,
-                    ngs_rush_attempts, rush_yards_over_expected_per_att, ngs_targets, ngs_receptions, avg_separation,
-                    avg_yac_above_expectation,
-                    aggressiveness, pass_avg_intended_air_yards, rush_efficiency, percent_attempts_gte_eight_defenders,
-                    avg_time_to_los, avg_cushion, rec_avg_intended_air_yards
+NGS_SQL = """select gsis_id, week, {cols}
              from analytics.mart_player_ngs_week
-             where season = %s and week between 1 and 18 and not is_season_aggregate"""
+             where season = %s and week between 1 and 18 and not is_season_aggregate"""   # {cols}: with_ngs, below
 # column id -> (NGS's weekly value, the weight NGS states, the sample family)
 NGS_METRICS = {
     "time_to_throw": ("avg_time_to_throw", "ngs_pass_attempts", "pass"),
@@ -683,7 +679,8 @@ def catalogue(season: int, frame: pd.DataFrame | None = None, through: int | Non
             has = bool(frame is not None and not frame.empty and fam in frame and frame[fam].notna().any())
             c["available"] = has and season >= NGS_FIRST.get(c["id"], 2016)
             if not c["available"]:
-                c["reason"] = (NGS_NOT_BUILT if frame is not None and not frame.empty and frame.attrs.get("ngs") == "missing"
+                c["reason"] = (NGS_NOT_BUILT if frame is not None and not frame.empty
+                               and (frame.attrs.get("ngs") == "missing" or fam in (frame.attrs.get("ngs_absent") or ()))
                                else NGS_OFF if c["id"] not in NGS_FIRST or season >= NGS_FIRST[c["id"]]
                                else f"NGS publishes this from {NGS_FIRST[c['id']]}; none for {season}.")
             elif frame is not None:
@@ -782,7 +779,23 @@ def with_ngs(df: pd.DataFrame, season: int, season_type: str) -> pd.DataFrame:
             state = "missing" if missing_relations((NGS_REL,)) else "ok"
         except Exception:  # noqa: BLE001 - the Stats frame never fails for its NGS columns: they show — with the reason
             state = "missing"
-    ngs = query(NGS_SQL, (int(season),)) if state == "ok" else pd.DataFrame()
+    # ---- PO (Wave I-M, the deploy order): the code can be live before the nightly has rebuilt the mart with this
+    # wave's columns (the hosted copy then holds the older mart). Read the columns this copy has; the ones it lacks are
+    # null with "arrive with the nightly update" — the Stats frame never fails for an optional mart.
+    ngs, absent = pd.DataFrame(), []
+    if state == "ok":
+        try:
+            have = relation_columns(NGS_REL)
+            want = [c for c in NGS_VALUES + NGS_WEIGHTS if c in have]
+            absent = [c for c in NGS_VALUES + NGS_WEIGHTS if c not in have]
+            if not want or not {"gsis_id", "week", "season", "is_season_aggregate"} <= have:
+                state = "missing"
+            else:
+                ngs = query(NGS_SQL.format(cols=", ".join(want)), (int(season),))
+                for c in absent:
+                    ngs[c] = np.nan
+        except Exception:  # noqa: BLE001 - as above: the columns show — with the reason
+            state, ngs, absent = "missing", pd.DataFrame(), []
     if ngs.empty:
         out = df.assign(**{c: np.nan for c in NGS_VALUES + NGS_WEIGHTS})
     else:
@@ -793,8 +806,15 @@ def with_ngs(df: pd.DataFrame, season: int, season_type: str) -> pd.DataFrame:
         out = df.merge(ngs, on=["gsis_id", "week"], how="left")
         for c in NGS_VALUES + NGS_WEIGHTS:
             out[c] = out[c].where(first.to_numpy())
-    out.attrs = {**df.attrs, "ngs": state}                             # IM-1: keep the advanced mart's state
+    out.attrs = {**df.attrs, "ngs": state, "ngs_absent": absent}       # IM-1: keep the advanced mart's state
     return out
+
+
+def relation_columns(rel: str) -> set[str]:
+    """The columns an analytics relation has on this copy (PO, Wave I-M: an older mart is read for what it holds)."""
+    df = query("select column_name from information_schema.columns where table_schema = 'analytics' and table_name = %s",
+               (rel,))
+    return set(df["column_name"]) if not df.empty else set()
 # ---- end IL-1
 
 
@@ -804,7 +824,15 @@ def with_advanced(df: pd.DataFrame, season: int, season_type: str) -> pd.DataFra
         state = "missing" if missing_relations((ADV_REL,)) else "ok"
     except Exception:  # noqa: BLE001 - the Stats frame never fails for these columns: they show — with the reason
         state = "missing"
-    adv = query(ADV_SQL, (int(season), season_type)) if state == "ok" else pd.DataFrame()
+    adv = pd.DataFrame()
+    if state == "ok":
+        try:                                   # PO (the deploy order): a mart older than the code is "missing", never a 500
+            if not {"gsis_id", "game_id", *ADV_PBP, *ADV_PFR, *ADV_FLAGS} <= relation_columns(ADV_REL):
+                state = "missing"
+            else:
+                adv = query(ADV_SQL, (int(season), season_type))
+        except Exception:  # noqa: BLE001 - the columns show — with the reason
+            state, adv = "missing", pd.DataFrame()
     if adv.empty:
         out = df.assign(**{c: np.nan for c in ADV_PBP + ADV_PFR}, **{c: False for c in ADV_FLAGS})
     else:

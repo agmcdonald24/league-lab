@@ -281,6 +281,54 @@ def test_before_the_nightly_builds_the_mart_the_columns_say_why(client, monkeypa
     assert "drop_rate" not in full and "epa_per_target" in full
 
 
+# ---- PO (Wave I-M, the deploy order): the code went live while the hosted copy still held Wave I-L's Next Gen Stats mart
+# (the nightly had not rebuilt it with this wave's seven fields) — `column "avg_time_to_los" does not exist`, a 500 on
+# Players · Stats. An older mart is read for the columns it has; the rest are — with the reason.
+OLD_NGS = {"gsis_id", "week", "season", "is_season_aggregate", "ngs_pass_attempts", "avg_time_to_throw",
+           "completion_percentage_above_expectation", "ngs_rush_attempts", "rush_yards_over_expected_per_att",
+           "ngs_targets", "ngs_receptions", "avg_separation", "avg_yac_above_expectation"}
+
+
+@needs_db
+def test_an_older_ngs_mart_is_read_for_what_it_has(client, monkeypatch):
+    real = ST.relation_columns
+    monkeypatch.setattr(ST, "relation_columns", lambda rel: OLD_NGS if rel == ST.NGS_REL else real(rel))
+    ST.clear()
+    try:
+        d = _get(client, window="season", season=2026, position="WR,TE", min_games=1, limit=1000)
+    finally:
+        ST.clear()
+    cat = {c["id"]: c for c in d["catalogue"]}
+    assert cat["separation"]["available"] and any(p["separation"] is not None for p in d["players"])   # the old five stay
+    for cid in ("cushion", "ngs_intended_air_yards"):
+        assert not cat[cid]["available"] and cat[cid]["reason"] == ST.NGS_NOT_BUILT, cid
+        assert all(p[cid] is None for p in d["players"]), cid
+
+
+@needs_db
+def test_a_mart_this_copy_cannot_read_never_fails_the_frame(client, monkeypatch):
+    """Any error reading an optional mart (an older advanced mart, a column the nightly has not built) is "not built
+    yet" for its columns: the Stats frame answers."""
+    real = ST.relation_columns
+
+    def cols(rel):
+        if rel == ST.ADV_REL:
+            return real(rel) - {"pfr_drops"}                                    # an advanced mart from before a column
+        if rel == ST.NGS_REL:
+            raise RuntimeError("the catalogue did not answer")
+        return real(rel)
+    monkeypatch.setattr(ST, "relation_columns", cols)
+    ST.clear()
+    try:
+        d = _get(client, window="season", season=2026, position="WR,TE", min_games=1, limit=50)
+    finally:
+        ST.clear()
+    cat = {c["id"]: c for c in d["catalogue"]}
+    assert d["players"] and cat["targets"]["available"]
+    assert not cat["drop_rate"]["available"] and cat["drop_rate"]["reason"] == ST.ADV_NOT_BUILT
+    assert not cat["separation"]["available"] and cat["separation"]["reason"] == ST.NGS_NOT_BUILT
+
+
 def _pfr_rows_unmapped() -> list[dict]:
     """The newest season's PFR rows without a mapped gsis id — read as the pipeline role (raw is not the app role's)."""
     import psycopg
