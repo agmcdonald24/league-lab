@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import shutil
 import sys
+import time
 import types
 from pathlib import Path
 
@@ -63,7 +64,13 @@ def _fake_matchups(monkeypatch, *, cb_tone="favorable", certainty="likely"):
 # ------------------------------------------------------------------------------------------------ the board's context
 @needs_db
 def test_board_with_context_and_no_matchup_module(client, monkeypatch):
-    monkeypatch.setitem(sys.modules, "league_lab_api.matchup_board", None)      # an import of it fails
+    # IN-3's module is in the merged tree: make the lazy import fail here (the package attribute gone, the import
+    # refused), the way a build without it would
+    import league_lab_api
+    monkeypatch.delattr(league_lab_api, "matchup_board", raising=False)
+    monkeypatch.setitem(sys.modules, "league_lab_api.matchup_board", None)
+    from league_lab_api import dfs as api_dfs
+    assert api_dfs._matchup_fn() is None
     b = client.get("/api/dfs/projections", params={"site": "dk", "week": 5, "limit": 1000}).json()
     m = b["context_meta"]
     assert m["matchup"] is False and m["matchup_words"] == "Matchup: not available here."
@@ -141,7 +148,8 @@ def test_published_slate_is_the_uploads_answer(client, slates):
 
 @needs_db
 @pytest.mark.parametrize("sid", ["2026-w03-dk-main", "2026-w05-dk-junk", "2026-w05-fd-alt", "2026-w05-dk-other",
-                                 "..%2F..%2Fetc%2Fpasswd", "2026-w05-dk-main.csv", "2026-W05-dk-main", "x" * 300])
+                                 "..%2F..%2Fetc%2Fpasswd", "2026-w05-dk-main.csv", "2026-W05-dk-main", "x" * 300,
+                                 "2026-w05-dk-main%0a", "2026-w05-dk-main%0A", "2026-w05-dk-main%0d%0a"])
 def test_published_slate_hostile_or_absent_ids(client, slates, sid):
     r = client.get(f"/api/dfs/slate/{sid}")
     assert r.status_code == 404
@@ -213,4 +221,53 @@ def test_rate_buckets_and_memory_regions():
     assert bucket_for("POST", "/api/dfs/slate") == "heavy" and bucket_for("POST", "/api/dfs/lineups") == "heavy"
     assert api_dfs.RATE_BUCKETS_IN4 == {"/api/dfs/slates": "research", "/api/dfs/slate/{slate_id}": "research"}
     regions = memo.BUDGET.regions
-    assert regions["dfs_context"].max_entries == 4 and regions["dfs_published"].max_entries == 4
+    assert regions["dfs_context"].max_entries == 4
+    assert regions["dfs_published"].max_entries == api_dfs.D.MAX_PUBLISHED   # all that can be offered (fix round M1)
+
+
+@needs_db
+def test_the_listing_never_builds_a_slate(client, tmp_path, monkeypatch):
+    """Fix round M1: 8 files offered (more than the old cache of 4). Three listings: the counts are worked out once per
+    file (a match, no build), nothing is built, and the third listing is a lookup."""
+    from league_lab import dfs as D
+
+    from league_lab_api import dfs as api_dfs
+    d = tmp_path / "eight"
+    d.mkdir()
+    for site, src in (("dk", "dk_classic_week5.csv"), ("fd", "fd_full_week5.csv")):
+        for label in ("main", "early", "late", "night"):
+            shutil.copy(FX / src, d / f"2026-w05-{site}-{label}.csv")
+    monkeypatch.setenv("LEAGUE_LAB_DFS_SLATES", str(d))
+    api_dfs.reset_published()
+    memo.BUDGET.regions["dfs_published"].clear()
+    calls = {"build": 0, "match": 0}
+    real_build, real_match = api_dfs.build_slate, D.match
+
+    def build(*a, **k):
+        calls["build"] += 1
+        return real_build(*a, **k)
+
+    def match(*a, **k):
+        calls["match"] += 1
+        return real_match(*a, **k)
+    monkeypatch.setattr(api_dfs, "build_slate", build)
+    monkeypatch.setattr(D, "match", match)
+    try:
+        times = []
+        for _ in range(3):
+            t0 = time.perf_counter()
+            b = client.get("/api/dfs/slates").json()
+            times.append(time.perf_counter() - t0)
+            assert len(b["slates"]) == 8
+            assert all(r["matched"] is not None and r["unmatched"] is not None for r in b["slates"])
+        assert calls["build"] == 0                      # the listing never builds
+        assert calls["match"] <= 8                      # at most once per file, in total
+        assert times[2] < 0.5, times
+        by = {r["id"]: r for r in b["slates"]}
+        assert (by["2026-w05-dk-main"]["matched"], by["2026-w05-dk-main"]["unmatched"]) == (597, 2)
+        # a slate opened by id is built once and its counts agree with the listing's
+        one = client.get("/api/dfs/slate/2026-w05-dk-late").json()
+        assert one["counts"]["matched"] == by["2026-w05-dk-late"]["matched"] and calls["build"] == 1
+    finally:
+        api_dfs.reset_published()
+        memo.BUDGET.regions["dfs_published"].clear()

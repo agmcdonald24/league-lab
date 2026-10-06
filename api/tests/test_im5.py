@@ -215,7 +215,7 @@ def test_one_memo_region_and_the_rate_buckets():
     assert "dfs" in memo.BUDGET.regions
     from league_lab_api import dfs as api_dfs
     assert api_dfs.RATE_BUCKETS == {"/api/dfs/slate": "heavy", "/api/dfs/lineups": "heavy",
-                                    "/api/dfs/projections": "read"}
+                                    "/api/dfs/projections": "research"}       # IN-4 fix round: as ratelimit.py has it
 
 
 # ------------------------------------------------------------------------------------------------ IM-5 fix: bounded work
