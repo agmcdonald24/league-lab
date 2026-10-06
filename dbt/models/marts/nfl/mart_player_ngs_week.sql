@@ -46,6 +46,7 @@ select
     r.rush_yards_over_expected_per_att,
     r.efficiency as rush_efficiency,
     r.percent_attempts_gte_eight_defenders,
+    r.avg_time_to_los,                                     -- IM-1 (Wave I-M): weighted by ngs_rush_attempts
     -- receiving
     c.gsis_id is not null as has_receiving,
     c.targets as ngs_targets,
@@ -53,7 +54,8 @@ select
     c.avg_separation,
     c.avg_cushion,
     c.avg_yac_above_expectation,
-    c.percent_share_of_intended_air_yards
+    c.percent_share_of_intended_air_yards,
+    c.avg_intended_air_yards as rec_avg_intended_air_yards  -- IM-1 (Wave I-M): weighted by ngs_targets
 from keys k
 left join pass p on p.gsis_id = k.gsis_id and p.season = k.season and p.week = k.week
 left join rush r on r.gsis_id = k.gsis_id and r.season = k.season and r.week = k.week

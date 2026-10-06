@@ -447,6 +447,36 @@ models:
               config: {where: "has_receiving"}
   # ---- end IL-1
 
+  # ---- IM-1 (Wave I-M): the Stats Explorer's advanced numerators (play-by-play efficiency + PFR advanced, weekly)
+  - name: mart_player_game_advanced
+    description: "IM-1: one row per skill player x game he played (fct_player_game, QB/RB/WR/TE/FB): successful targets / carries / dropbacks, dropback EPA and scramble yards from fct_play; the team's deep targets (20+ air yards) counted from his team's plays; Pro Football Reference's weekly advanced stats (drops, broken tackles, yards before / after contact, bad throws, pressures) joined by PFR id -> gsis id through player_id_map, never by name. has_pfr_* false = PFR has no row for his game: unknown, never 0. Numerators only: the API divides summed numerator by summed denominator over the games PFR covered."
+    tests:
+      - unique_combination_of_columns:
+          arguments:
+            combination_of_columns: [gsis_id, game_id]
+      - expression_is_true:
+          name: advanced_pfr_counts_only_with_a_pfr_row
+          arguments:
+            expression: "(has_pfr_rec or pfr_drops is null) and (has_pfr_rush or pfr_carries is null) and (has_pfr_pass or pfr_times_pressured is null)"
+      - expression_is_true:
+          name: advanced_counts_are_not_negative
+          arguments:
+            expression: "target_successes >= 0 and carry_successes >= 0 and coalesce(dropback_successes, 0) >= 0 and coalesce(team_deep_targets, 0) >= 0 and coalesce(pfr_drops, 0) >= 0 and coalesce(pfr_broken_tackles, 0) >= 0 and coalesce(pfr_bad_throws, 0) >= 0 and coalesce(pfr_times_pressured, 0) >= 0"
+    columns:
+      - name: gsis_id
+        tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_player'), field: gsis_id}
+      - name: game_id
+        tests: [not_null]
+      - name: season
+        tests: [not_null]
+      - name: team_deep_targets
+        description: "His team's targets travelling 20+ air yards in the game (fct_play, two-point tries and no-plays excluded): the deep-target share's denominator."
+        tests: [not_null]
+  # ---- end IM-1
+
   - name: mart_player_recent_form
     tests:
       - unique_combination_of_columns:
