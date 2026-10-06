@@ -314,7 +314,7 @@ def test_players_csv_is_the_same_frame_with_a_header_of_labels(client):
     assert rows[0][:5] == ["Player", "Position", "NFL team", "Rostered by", "Games played"]
     assert rows[0][5:] == [cat[c]["label"] for c in full if c != "games"]
     assert len(rows) - 1 == frame["total"]
-    first = dict(zip(rows[0], rows[1]))
+    first = dict(zip(rows[0], rows[1], strict=True))
     p0 = frame["players"][0]
     assert first["Player"] == p0["player_name"] and first["Targets"] == str(p0["targets"])
     # unknown stays an empty cell (routes in season), never 0
