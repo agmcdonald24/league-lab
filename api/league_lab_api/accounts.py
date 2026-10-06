@@ -76,6 +76,8 @@ LINK_MINUTES = 15
 PER_EMAIL_HOUR, PER_IP_HOUR, DAILY_MAX = 5, 30, 90
 MAX_LEAGUES, MAX_PREFS, MAX_WATCH, MAX_VALUE_BYTES = 50, 200, 200, 8192
 WRITES_PER_MIN, CHECKS_PER_MIN = 60, 20
+MAX_SESSIONS = 20                 # ---- IM-4 fix: live sessions per account (the oldest are dropped past it)
+MAX_BUCKETS = 5000                # ---- IM-4 fix: the in-memory limiter's hard size (≈ 1 MB), least recently used out
 PUBLIC_URL = "https://isuckatfantasy.io"
 MAIL_FROM = "signin@isuckatfantasy.io"
 RESEND_URL = "https://api.resend.com/emails"
@@ -374,16 +376,16 @@ def allow(key: str, per_min: int, per_s: float = 60.0) -> bool:
     now = clock()
     rate = per_min / per_s
     with _lock:
-        tokens, then = _buckets.get(key, (float(per_min), now))
+        tokens, then = _buckets.pop(key, (float(per_min), now))     # popped and put back: the dict is an LRU
         tokens = min(float(per_min), tokens + (now - then) * rate)
-        if tokens < 1.0:
-            _buckets[key] = (tokens, now)
-            return False
-        _buckets[key] = (tokens - 1.0, now)
-        if len(_buckets) > 10000:
-            for k in [k for k, (t, w) in _buckets.items() if now - w > 3600]:
-                _buckets.pop(k, None)
-        return True
+        ok = tokens >= 1.0
+        _buckets[key] = (tokens - 1.0 if ok else tokens, now)
+        if len(_buckets) > MAX_BUCKETS:                              # ---- IM-4 fix: a hard bound, not only a sweep
+            for k in [k for k, (_t, w) in _buckets.items() if now - w > 3600]:
+                del _buckets[k]
+            while len(_buckets) > MAX_BUCKETS * 9 // 10:
+                del _buckets[next(iter(_buckets))]                  # the least recently seen: a fresh bucket later
+        return ok
 
 
 def reset() -> None:
@@ -464,15 +466,10 @@ def verify(token: Any, ip: str, user_agent: str | None, attach_to: str | None = 
         if attach_to is not None and c.execute(
                 "update accounts.users set email = %s, last_seen_at = now() where id = %s and email is null and "
                 "deleted_at is null", (email, attach_to)).rowcount == 1:
-            sid = c.execute(f"insert into accounts.sessions (user_id, expires_at, user_agent_family) values (%s, now() + "
-                            f"interval '{SESSION_DAYS} days', %s) returning id",
-                            (attach_to, agent_family(user_agent))).fetchone()[0]
-            return str(sid), email
+            return new_session(c, attach_to, user_agent), email
         uid = c.execute("insert into accounts.users (email, last_seen_at) values (%s, now()) on conflict (email) do "
                         "update set last_seen_at = now(), deleted_at = null returning id", (email,)).fetchone()[0]
-        sid = c.execute(f"insert into accounts.sessions (user_id, expires_at, user_agent_family) values (%s, now() + "
-                        f"interval '{SESSION_DAYS} days', %s) returning id", (uid, agent_family(user_agent))).fetchone()[0]
-        return str(sid), email
+        return new_session(c, str(uid), user_agent), email
 
     got = db.run_rw(tx)
     if got is None:
@@ -481,6 +478,16 @@ def verify(token: Any, ip: str, user_agent: str | None, attach_to: str | None = 
         raise AccountError(409, "email_taken", "That email already has its own account. Sign out, then open the link "
                            "again to sign in to that account.")
     return got
+
+
+def new_session(c: psycopg.Connection, user_id: str, user_agent: str | None) -> str:
+    """A session row (90 days) — ---- IM-4 fix: and at most `MAX_SESSIONS` live ones per account (the oldest go: a
+    script signing in in a loop cannot grow the table; a person has a few devices)."""
+    sid = str(c.execute(f"insert into accounts.sessions (user_id, expires_at, user_agent_family) values (%s, now() + "
+                        f"interval '{SESSION_DAYS} days', %s) returning id", (user_id, agent_family(user_agent))).fetchone()[0])
+    c.execute("delete from accounts.sessions where id in (select id from accounts.sessions where user_id = %s "
+              "order by created_at desc, id offset %s)", (user_id, MAX_SESSIONS))
+    return sid
 
 
 def current_user(request: Request) -> tuple[str, str, str] | None:
@@ -736,31 +743,37 @@ SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
 
 
 def _cross_site() -> AccountError:
-    return AccountError(403, "cross_site", "This request came from another website, so it was refused. Open "
-                        f"{public_url().split('://', 1)[-1]} and try again.")
+    """---- IM-4 fix: the same words and code as IM-3's Guard (security.CROSS_SITE), whichever layer refuses."""
+    try:
+        from .security import CROSS_SITE as words
+    except ImportError:  # pragma: no cover - a tree without IM-3's module
+        words = "This request came from another site, so it was refused."
+    return AccountError(403, "cross_site", words)
 
 
 def same_site(request: Request) -> None:
     """Refuse a state-changing request that a browser says comes from another site (login CSRF, a forged "delete my
     account"). A browser sends `Sec-Fetch-Site` and / or `Origin` on every POST, PUT and DELETE, and a page cannot
     forge either; a request with neither is not from a browser, so it carries nobody's cookie by accident.
-      * `Sec-Fetch-Site: same-origin` or `none` → allowed; `same-site` / `cross-site` → only an allowed origin;
-      * no `Sec-Fetch-Site`: `Origin` must be an allowed origin or this request's own host (`Origin: null` never is).
+      * an `Origin` (every browser sends one on these) must be an allowed origin or this request's own host
+        (`Origin: null` never is) — whatever `Sec-Fetch-Site` says;
+      * no `Origin`: `Sec-Fetch-Site: cross-site` is refused.
+    The same rule as IM-3's Guard (security.cross_site), which runs first on the merged server; this one holds by
+    itself when the Guard is absent or off (---- IM-4 fix: Origin first, as the Guard; the Guard's words).
     Allowed origins: `LEAGUE_LAB_PASSKEY_ORIGINS` (passkeys.allowed_origins: https only, `http://localhost` under the
     test switch) and `LEAGUE_LAB_PUBLIC_URL`."""
     if request.method in SAFE_METHODS:
         return
     site = (request.headers.get("sec-fetch-site") or "").strip().lower()
     origin = request.headers.get("origin")
-    if not site and origin is None:
-        return
-    if site in ("same-origin", "none"):
+    if origin is None:
+        if site == "cross-site":
+            raise _cross_site()
         return
     from . import passkeys
     o = passkeys.normal_origin(origin)
-    if o is not None and (passkeys.site_for(o) is not None or o == passkeys.normal_origin(public_url())):
-        return
-    if not site and o is not None and o.split("://", 1)[1] == (request.headers.get("host") or "").strip().lower():
+    if o is not None and (passkeys.site_for(o) is not None or o == passkeys.normal_origin(public_url())
+                          or o.split("://", 1)[1] == (request.headers.get("host") or "").strip().lower()):
         return
     raise _cross_site()
 
