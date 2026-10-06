@@ -56,8 +56,9 @@ TONE_ORDER = {"favorable": 0, "neutral": 1, "difficult": 2}
 CONTEXT_TTL_S = 600.0
 # ---- the memory budget (docs/DEPLOY.md § Memory): one region. Keys: ("ctx", season, week) — the week's context, ~600
 # players, ~0.5 MB; ("board", <research._ctx_key>, season, week) — one league scoring's week frame (~600 rows, ~0.2 MB);
-# ("pers", season, week) — the corners now of every defense (~30 KB). Seasons and weeks come from the decision week (no
-# user input); league keys are the research memo's keys (a house league, or a scoring). At most 24 entries.
+# ("pers", season, week) — the corners now of every defense (~30 KB); ("ev", season, week) — the matchup evidence of the
+# players the board has shown (≤ ~800, ~3 KB each). Seasons and weeks come from the decision week (no user input);
+# league keys are the research memo's keys (a house league, or a scoring). At most 24 entries.
 _cache = memo.region("matchup_board", ttl=CONTEXT_TTL_S, max_entries=24)
 
 IN_PROJECTION = ("opp_allowed_std", "opp_allowed_l4", "opp_rank_std", "f_opp_allowed_diff", "league_allowed_avg")
@@ -352,6 +353,14 @@ def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int) -> dict[str,
     on the reference mart — the board's own rank — the corners now for a receiver, the forecast's treatment)."""
     if not rows:
         return {}
+    # the evidence does not depend on the league (its ranks are the reference mart's): kept per week for every league,
+    # each player computed once (the answer is rebuilt by the JSON cleaner, so the cached objects are never changed)
+    key = ("ev", int(season), int(week))
+    have: dict = _cache.get(key) or {}
+    want = [r for r in rows if r["gsis_id"] not in have]
+    if not want:
+        return {r["gsis_id"]: have[r["gsis_id"]] for r in rows}
+    rows_all, rows = rows, want
     pos = sorted({r["position"] for r in rows})
     dvp = query("""select defense, position, games, through_week, points_allowed_per_game_std, rank_std
                    from analytics.mart_defense_vs_position_current where season = %s and position = any(%s)""",
@@ -368,7 +377,9 @@ def _evidence(ctx: R.Ctx, rows: list[dict], season: int, week: int) -> dict[str,
                 game=(r["opponent"], r["is_home"]))
         except Exception:  # noqa: BLE001 - the evidence is context: a row without it still stands
             out[r["gsis_id"]] = None
-    return out
+    have = {**have, **out}
+    _cache.put(key, have)
+    return {r["gsis_id"]: have.get(r["gsis_id"]) for r in rows_all}
 
 
 def board(league: str, *, position: str | None = None, q: str | None = None, game: str | None = None,
