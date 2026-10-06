@@ -42,6 +42,20 @@ guesses 2^rounds): the projected record shows, the playoff columns are absent wi
 divisions: division winners' places are not simulated, so the playoff columns are absent and say so. ESPN reads
 through the same seam (``playoffTeamCount`` and the schedule from its matchups) and is unverified live; Yahoo's data
 access is pending.
+
+**Wave I-O (IO-2)** — marked ``IO-2`` below: every full build offers its power ranking and rows to the snapshot store
+(``outlook_store``: one row per league-week, replaced only until the week's first kickoff, off quietly without the
+table); last week's stored row gives the **movement** (``power.rows[].moved``: places up (+) or down (−);
+``outlook.rows[].playoff_change``: the change in playoff odds) — never anything but a stored row. ``part=power`` answers
+the power rankings without the season simulation (the League screen asks it first, then the whole answer: the first
+paint of a league not kept every night). A league not kept every night is read with a market-free context (the
+outlook needs the lineups, not the trade market: the free agents and the later weeks' prices are what made MFL 70587's
+first build ~10 s); the trade screens' own context is used when it is already built. ``preview`` / ``shell``: the page
+shell's link preview for ``/league?league=<key>`` from what is cached or stored only. **Title odds** (Sleeper leagues
+whose bracket is readable from the settings): the playoff weeks are drawn in the same simulated seasons, after the
+regular season's (the drift carries on), and the bracket is played out per season (``play_bracket``: seeds by wins then
+points for, the top seeds' byes, a round's points over its weeks, ``playoff_seed_type`` 1 = re-seeded before every
+round — the house dynasty's 2021, 2022 and 2024 brackets pair exactly so — else a fixed bracket; a tie to the higher seed).
 """
 
 from __future__ import annotations
@@ -56,12 +70,13 @@ import pandas as pd
 from fastapi import APIRouter, Response
 from fastapi.responses import JSONResponse
 from league_lab import anyleague as A
+from league_lab import clock, memo  # ---- IO-2: clock
 from league_lab import decisions as WP  # the week's win probability: one model in the product
-from league_lab import memo
 
 from . import availability
 from . import decisions as D
 from . import myweek as MW
+from . import outlook_store as S  # ---- IO-2
 from .applib import cards
 from .db import query
 from .myweek import NotFound
@@ -78,7 +93,8 @@ SEED = 20261006
 DRIFT = 0.03                   # the per-week random walk of a team's level, as a share of its weekly points (assumed)
 PATH = "/api/league/outlook"
 TTL_S = {"house": 600.0, "sleeper": 120.0}
-_cache = memo.region("outlook", ttl=TTL_S["house"], max_entries=48)   # one small answer per league (~10 KB)
+# one small answer per league (~10 KB); IO-2: 96 (was 48) — a league holds its power part (~7 KB) and its whole answer
+_cache = memo.region("outlook", ttl=TTL_S["house"], max_entries=96)
 # future pairings do not change: a league's remaining schedule is kept for hours ({week: [(a, b)]}, ~2 KB a league)
 SCHEDULE_TTL_S = 6 * 3600.0
 _schedules = memo.region("outlook_schedule", ttl=SCHEDULE_TTL_S, max_entries=256)
@@ -114,6 +130,9 @@ DEFINITIONS = {
                     "on wins broken by points for). 100% and out only when it is certain on wins alone.",
     "top_seed": "Top seed: how often the team finishes first after the regular season.",
     "bye": "Bye: how often the team finishes in a spot that skips the first playoff round.",
+    # ---- IO-2
+    "title": "Title: how often the team wins the league's playoff bracket in the simulated seasons (the bracket is "
+             "described under the table). Context only: the title odds have not been replayed on past seasons.",
 }
 
 
@@ -400,6 +419,8 @@ class _Tally:
         self.hist = np.zeros((self.T, self.halves), dtype=np.int64)
         self.place = np.zeros((self.T, self.T), dtype=np.int64)
         self.pf = np.zeros(self.T)
+        self.title = np.zeros(self.T, dtype=np.int64)          # ---- IO-2: seasons won (the bracket played out)
+        self.titled = False
         self.n = 0
 
     def add(self, wins: np.ndarray, pf: np.ndarray) -> None:
@@ -426,14 +447,71 @@ class _Tally:
                 "playoff": None if not spots else round(float(self.place[i, :spots].sum() / n), 4),
                 "top_seed": round(float(self.place[i, 0] / n), 4),
                 "bye": None if not spots or not byes else round(float(self.place[i, :byes].sum() / n), 4),
-                "rank_mean": round(float((self.place[i] * np.arange(self.T)).sum() / n) + 1, 2)}
+                "rank_mean": round(float((self.place[i] * np.arange(self.T)).sum() / n) + 1, 2),
+                "title": round(float(self.title[i] / n), 4) if self.titled else None}      # ---- IO-2
+
+
+# ---- IO-2 (Wave I-O): the playoff bracket, played out in every simulated season (title odds)
+def bracket_order(size: int) -> list[int]:
+    """The seeds' places in a single-elimination bracket of ``size`` (a power of two): 8 → [1, 8, 4, 5, 2, 7, 3, 6]
+    (adjacent places meet; a seed past the playoff spots is a bye)."""
+    order = [1, 2]
+    while len(order) < size:
+        m = 2 * len(order)
+        order = [x for sd in order for x in (sd, m + 1 - sd)]
+    return order[:max(1, size)] if size > 1 else [1]
+
+
+def bracket_rounds(settings: Mapping, spots: int) -> list[list[int]]:
+    """The weeks of each playoff round, from Sleeper's settings: ⌈log₂ spots⌉ rounds from ``playoff_week_start``;
+    ``playoff_round_type`` 0 = one week a round, 1 = the final over two weeks, 2 = every round over two weeks
+    (``anyleague.ros_window``'s reading)."""
+    pws = int(settings.get("playoff_week_start") or 0)
+    rounds = math.ceil(math.log2(spots)) if spots and spots > 1 else 0
+    rtype = int(settings.get("playoff_round_type") or 0)
+    out, w = [], pws
+    for r in range(rounds):
+        k = 2 if rtype == 2 or (rtype == 1 and r == rounds - 1) else 1
+        out.append(list(range(w, w + k)))
+        w += k
+    return out
+
+
+def play_bracket(wins: np.ndarray, pf: np.ndarray, ptot: np.ndarray, bracket: Mapping, spots: int) -> np.ndarray:
+    """The champion's team index per season (c,). Seeds: wins, then points for (the regular season's order, as the
+    playoff odds count it); round 1 by ``bracket_order`` (the top seeds' byes); a round's score = the team's points over
+    the round's weeks (``ptot``: c × T × playoff weeks, in ``bracket["rounds"]`` order); a tie goes to the higher seed.
+    ``reseed``: before every later round the teams left are paired highest seed against lowest (Sleeper's
+    ``playoff_seed_type`` 1 — the house dynasty's 2021, 2022 and 2024 brackets pair exactly so); otherwise the bracket is fixed."""
+    c, T = wins.shape
+    order = np.argsort(-(wins * 1e6 + pf), axis=1, kind="stable")[:, :spots]     # c × spots: team index by seed
+    size = 2 ** math.ceil(math.log2(spots))
+    cur = np.tile(np.array([sd if sd <= spots else 0 for sd in bracket_order(size)]), (c, 1))     # seed numbers; 0 = bye
+    rows = np.arange(c)[:, None]
+    col = 0
+    for r, wk in enumerate(bracket["rounds"]):
+        if cur.shape[1] < 2:                                                      # the final is played
+            break
+        pts = ptot[:, :, col:col + len(wk)].sum(axis=2)                           # c × T
+        col += len(wk)
+        if r > 0 and bracket.get("reseed"):
+            srt = np.sort(cur, axis=1)
+            cur = srt[:, [p - 1 for p in bracket_order(srt.shape[1])]]
+        a, b = cur[:, 0::2], cur[:, 1::2]
+        ta = order[rows, np.maximum(a, 1) - 1]
+        tb = order[rows, np.maximum(b, 1) - 1]
+        pa, pb = pts[rows, ta], pts[rows, tb]
+        a_wins = (b == 0) | ((a != 0) & ((pa > pb) | ((pa == pb) & (a < b))))
+        cur = np.where(a_wins, a, b)
+    return order[np.arange(c), cur[:, 0] - 1]
+# ---- end IO-2
 
 
 def simulate(teams: Sequence[int], weeks: Sequence[int], mean: Mapping[tuple[int, int], float], cv: Mapping[int, float],
              level: Mapping[int, float], games: Mapping[int, Sequence[tuple[int, int]]], wins0: Mapping[int, float],
              pf0: Mapping[int, float], spots: int | None, byes: int = 0, *, first: np.ndarray | None = None,
              n: int = SEASONS, seed: int = SEED, k: float = WP.WEEK_SHRINK, drift: float = DRIFT,
-             calibrate_first: bool = True) -> dict:
+             calibrate_first: bool = True, bracket: Mapping | None = None) -> dict:
     """``n`` seasons in chunks (``chunk_rows`` of teams × weeks): each chunk drawn (``season_totals``), played out and
     counted (``_Tally``), then dropped — memory is flat in the season count apart from ``first`` (n × T). The first
     week's games are decided with the week's odds' calibration (``threshold`` over all of ``first``'s draws); later
@@ -460,11 +538,16 @@ def simulate(teams: Sequence[int], weeks: Sequence[int], mean: Mapping[tuple[int
                 q0[(a, b)] = q
                 first_rows.append({"week": int(weeks[0]), "a": int(a), "b": int(b),
                                    "p": round(float(_result(d, q).mean()), 4), "p_raw": round(p_raw, 4)})
-    rows = chunk_rows(T * max(1, W))
+    # ---- IO-2: title odds — the playoff weeks drawn in the same seasons (after the regular season's weeks: the drift
+    # carries on), the bracket played out per season (play_bracket)
+    pweeks = [int(w) for r in (bracket or {}).get("rounds", ()) for w in r]
+    all_weeks = [*weeks, *pweeks] if bracket and spots else list(weeks)
+    tally.titled = bool(bracket and spots and W)
+    rows = chunk_rows(T * max(1, len(all_weeks)))
     seen: dict[tuple[int, int], float] = {}
     for ci, lo in enumerate(range(0, n, rows)):
         c = min(rows, n - lo)
-        tot = season_totals(teams, weeks, mean, cv, level, first=None if first is None else first[lo:lo + c], n=c,
+        tot = season_totals(teams, all_weeks, mean, cv, level, first=None if first is None else first[lo:lo + c], n=c,
                             seed=[seed, ci], k=k, drift=drift)
         wins = np.tile(w0, (c, 1))
         for wi, w in enumerate(weeks):
@@ -475,7 +558,11 @@ def simulate(teams: Sequence[int], weeks: Sequence[int], mean: Mapping[tuple[int
                 wins[:, ix[b]] += 1.0 - res
                 if wi == 0 and (a, b) not in q0:
                     seen[(a, b)] = seen.get((a, b), 0.0) + float(res.sum())
-        tally.add(wins, p0[None, :] + tot.sum(axis=2))
+        pf_c = p0[None, :] + tot[:, :, :W].sum(axis=2)
+        tally.add(wins, pf_c)
+        if tally.titled:                                                    # ---- IO-2
+            champ = play_bracket(wins, pf_c, tot[:, :, W:], bracket, spots)
+            tally.title += np.bincount(champ, minlength=T)
         del tot, wins
     if W and not q0:
         first_rows = [{"week": int(weeks[0]), "a": int(a), "b": int(b), "p": round(seen.get((a, b), 0.0) / n, 4), "p_raw": None}
@@ -655,19 +742,25 @@ def _stamp() -> tuple:
     return (iso(availability.build_time()), iso(availability.checked_at()))
 
 
-def outlook(league_id: str, team: int | None = None, *, source: str | None = None, seasons: int = SEASONS) -> dict:
+def outlook(league_id: str, team: int | None = None, *, source: str | None = None, seasons: int = SEASONS,
+            part: str | None = None) -> dict:
     """``GET /api/league/outlook``: the power rankings and the rest of the season (module docstring). The key is made
     canonical first (``platforms.check_key``: " 1389…104", "1389…104\t" and "MFL:70587" are the leagues they name), so
-    the house check and the cache key never see a padded spelling; a key that names no league is 404."""
+    the house check and the cache key never see a padded spelling; a key that names no league is 404.
+    ``part="power"`` (IO-2): the power rankings alone, no simulation (``outlook.pending`` true)."""
     try:
         league_id = A.check_id(league_id)
     except A.LeagueNotFound as exc:
         raise NotFound(str(exc)) from exc
     is_house = D.house(league_id, source)
-    key = (str(league_id), is_house, int(seasons), _stamp())
-    hit = _cache.get(key)
+    key = (str(league_id), is_house, int(seasons), _stamp(), part)          # ---- IO-2: the part
+    hit = None
+    if part == "power":                                                     # ---- IO-2: the whole answer has it
+        hit = _cache.get((str(league_id), is_house, int(seasons), _stamp(), None))
     if hit is None:
-        hit = _cache.put(key, _build(str(league_id), is_house, source, int(seasons)),
+        hit = _cache.get(key)
+    if hit is None:
+        hit = _cache.put(key, _build(str(league_id), is_house, source, int(seasons), part=part),
                          ttl=TTL_S["house" if is_house else "sleeper"])
     if team is not None and int(team) not in {r["roster_id"] for r in hit["power"]["rows"]}:
         raise NotFound(f"no team {team} in this league")
@@ -711,7 +804,7 @@ def _season_outlook(ol: dict, out_rows: list, left_games: dict, timings: dict, *
     games, missing = schedule(A.sleeper(), lid, remaining)
     if missing is not None:
         return f"the schedule for week {missing} is not available from the league"
-    for w in remaining:                                       # the schedule left (power rankings' column)
+    for w in remaining if not any(left_games.values()) else ():   # the schedule left (IO-2: unless _build read it)
         for a, b in games.get(w, ()):
             left_games.setdefault(a, []).append(b)
             left_games.setdefault(b, []).append(a)
@@ -724,7 +817,9 @@ def _season_outlook(ol: dict, out_rows: list, left_games: dict, timings: dict, *
     pr = prepare(sides)
     if (pr["ranged_share"] < MW.MIN_RANGED_SHARE).any() or not pr["dists"]:      # the week's odds' rule, before a draw
         return MW.WIN_NO_RANGE
-    n = min(int(seasons), seasons_for(len(rids), len(remaining), most))
+    bracket, title_reason = title_bracket(settings, platform, {w for (_r, w) in lineup})       # ---- IO-2
+    pweeks = sum(len(r) for r in bracket["rounds"]) if bracket else 0
+    n = min(int(seasons), seasons_for(len(rids), len(remaining) + pweeks, most))
     timings["inputs_ms"] = round((time.perf_counter() - t3) * 1000, 1)       # schedule + rosters
     if not _SIM.acquire(timeout=BUSY_WAIT_S):
         raise Busy()
@@ -753,7 +848,10 @@ def _season_outlook(ol: dict, out_rows: list, left_games: dict, timings: dict, *
             spots = None
         byes = byes_for(spots)
         wins0 = {r: rec[r][0] + 0.5 * rec[r][2] for r in rids}
-        res = simulate(rids, remaining, means, cv, level, games, wins0, pf, spots, byes, first=first, n=n)
+        if playoff_reason:                                                         # ---- IO-2
+            bracket, title_reason = None, None
+        res = simulate(rids, remaining, means, cv, level, games, wins0, pf, spots, byes, first=first, n=n,
+                       bracket=bracket)
         timings["simulation_ms"] = round((time.perf_counter() - t4) * 1000, 1)
     finally:
         _SIM.release()
@@ -764,21 +862,121 @@ def _season_outlook(ol: dict, out_rows: list, left_games: dict, timings: dict, *
             row["playoff"] = 1.0
         elif flags.get(r) == "eliminated":
             row["playoff"], row["bye"], row["top_seed"] = 0.0, (0.0 if byes else None), 0.0
+            if row.get("title") is not None:                                       # ---- IO-2
+                row["title"] = 0.0
         out_rows.append(row)
     ol.update({"available": True, "weeks": remaining, "seasons": n, "playoff_teams": spots,
                "byes": byes if spots else None, "playoff_reason": playoff_reason, "first_week": res["first_week"],
-               "first_week_number": w0})
+               "first_week_number": w0,
+               # ---- IO-2: title odds (Sleeper, the bracket readable) or why not
+               "title": bool(bracket and spots), "title_reason": title_reason,
+               "bracket": ({"rounds": bracket["rounds"], "reseed": bracket["reseed"]} if bracket and spots else None)})
     return None
 
 
-def _build(league_id: str, is_house: bool, source: str | None, seasons: int) -> dict:
+# ---- IO-2 (Wave I-O): title odds — which leagues, which bracket
+def title_bracket(settings: Mapping, platform: str, board_weeks: set) -> tuple[dict | None, str | None]:
+    """({"rounds": [[weeks], …], "reseed": bool}, None) for a Sleeper league whose bracket is readable from its
+    settings (playoff teams, start week, round type; ``playoff_seed_type`` 1 = re-seeded each round), or (None, why)."""
+    spots = int(settings.get("playoff_teams") or 0)
+    if platform != "sleeper":
+        return None, "the playoff bracket is read only from Sleeper's settings"
+    if int(settings.get("divisions") or 0) > 1 or spots < 2:
+        return None, "the playoff bracket is not simulated for this league"
+    rounds = bracket_rounds(settings, spots)
+    missing = [w for r in rounds for w in r if int(w) not in board_weeks]
+    if not rounds or missing:
+        return None, f"no projections for playoff week {missing[0] if missing else '?'} yet"
+    return {"rounds": rounds, "reseed": int(settings.get("playoff_seed_type") or 0) == 1}, None
+
+
+# ---- IO-2 (Wave I-O): the board without the trade market, the schedule left before the simulation, the movement
+def _context(league_id: str, source: str | None, is_house: bool):
+    """The lineups' board: a house league's (or any league's already built) trade context; otherwise a market-free
+    one kept as long (``market=False``: no free agents, no later weeks priced for season value — the outlook reads the
+    board's lineups and the rest-of-season board only). MFL 70587 cold: 3.7 s → 1.2 s for the context."""
+    if is_house:
+        return D.trade_context(league_id, source)
+    full = D._memo_cache.get(("trade_context", str(league_id), False))
+    if full is not None:
+        return full
+    return D._memo(("outlook_context", str(league_id)), False, lambda: D.TradeContext(league_id, source, market=False))
+
+
+def _schedule_left(lid: str, played: int, settings: Mapping, n_teams: int) -> dict[int, list[int]]:
+    """{roster: [opponents left]} from the remaining regular-season pairings; {} when they are not all readable or
+    the league is beyond the outlook's limits (the season block says why)."""
+    pws = int(settings.get("playoff_week_start") or 0)
+    remaining = list(range(played + 1, pws)) if pws else []
+    if not remaining or n_teams > MAX_TEAMS or len(remaining) > MAX_WEEKS:
+        return {}
+    games, missing = schedule(A.sleeper(), lid, remaining)
+    if missing is not None:
+        return {}
+    left: dict[int, list[int]] = {}
+    for w in remaining:
+        for a, b in games.get(w, ()):
+            left.setdefault(a, []).append(b)
+            left.setdefault(b, []).append(a)
+    return left
+
+
+MOVED_NOTE = "▲ ▼: places moved since the ranking kept before week {week}."
+FIRST_NOTE = "Movement shows from next week: this week's ranking is kept."
+WAIT_NOTE = ("No movement arrows yet: each week's ranking is kept before its first game, and the arrows compare with "
+             "last week's.")
+
+
+def _movement(ans: dict, *, snap_week: int, offered: str | None) -> None:
+    """Last week's stored ranking → ``moved`` per power row (places up +, down −; None: not in last week's) and
+    ``playoff_change`` per outlook row (points of percentage); the note says which. Only ever a stored row."""
+    lid = str(ans["league_id"])
+    on = S.ready() and S.shareable(lid)
+    st = S.stored(lid, int(ans["season"]), snap_week) if on else {"prev": None, "current": False}
+    prev = st["prev"]
+    pw = ans["power"]
+    for r in pw["rows"]:
+        r["moved"] = None
+    for o in ans["outlook"].get("rows") or []:
+        o["playoff_change"] = None
+    if prev is None:
+        pw["movement"] = None
+        pw["movement_note"] = (FIRST_NOTE if st["current"] or offered == "queued" else WAIT_NOTE) if on else NO_ARROWS
+        return
+    ranks = {int(p["roster_id"]): p.get("rank") for p in prev["power"]}
+    for r in pw["rows"]:
+        was = ranks.get(int(r["roster_id"]))
+        r["moved"] = None if was is None else int(was) - int(r["rank"])
+    odds = {int(p["roster_id"]): p.get("playoff") for p in prev["rows"]}
+    for o in ans["outlook"].get("rows") or []:
+        was = odds.get(int(o["roster_id"]))
+        o["playoff_change"] = (None if was is None or o.get("playoff") is None
+                               else round((float(o["playoff"]) - float(was)) * 100))
+    built = prev["built_at"]
+    pw["movement"] = {"week": prev["week"], "built_at": built.isoformat() if hasattr(built, "isoformat") else built}
+    pw["movement_note"] = MOVED_NOTE.format(week=prev["week"])
+
+
+def _league_name(lg: Mapping, lid: str, is_house: bool) -> str | None:
+    name = lg.get("name")
+    if not name and is_house:
+        try:
+            df = query("select league_name from analytics.dim_league_season where league_id = %s", (lid,))
+            name = None if df.empty else df["league_name"].iloc[0]
+        except Exception:  # noqa: BLE001 - no name: "This league"
+            name = None
+    return str(name)[:120] if isinstance(name, str) and name.strip() else None
+# ---- end IO-2
+
+
+def _build(league_id: str, is_house: bool, source: str | None, seasons: int, *, part: str | None = None) -> dict:
     t0 = time.perf_counter()
     timings: dict[str, float] = {}
     inp = _league_inputs(league_id, is_house)
     lg, lid, names, played, season = inp["lg"], inp["lid"], inp["names"], inp["played"], inp["season"]
     timings["league_ms"] = round((time.perf_counter() - t0) * 1000, 1)
     t1 = time.perf_counter()
-    ctx = D.trade_context(league_id, source)
+    ctx = _context(league_id, source, is_house)                    # ---- IO-2: market-free on demand
     note = None
     try:
         board, weeks, span = D.window_board(ctx, "ros")
@@ -808,11 +1006,22 @@ def _build(league_id: str, is_house: bool, source: str | None, seasons: int) -> 
     out_rows: list[dict] = []
     ol: dict = {"available": False, "reason": None, "weeks": [], "seasons": seasons, "playoff_teams": None,
                 "playoff_week_start": pws or None, "byes": None, "tiebreak": "points for", "playoff_reason": None,
-                "assumptions": list(ASSUMES), "drift": DRIFT, "shrink": WP.WEEK_SHRINK, "first_week": [], "rows": []}
+                "assumptions": list(ASSUMES), "drift": DRIFT, "shrink": WP.WEEK_SHRINK, "first_week": [], "rows": [],
+                "title": False, "title_reason": None, "bracket": None}                     # ---- IO-2: title odds
     left_games: dict[int, list[int]] = {r: [] for r in rids}
-    ol["reason"] = _season_outlook(ol, out_rows, left_games, timings, lid=lid, is_house=is_house, season=season,
-                                   settings=settings, platform=platform, played=played, weeks=weeks, rids=rids,
-                                   lineup=lineup, level=level, rec=rec, pf=pf, seasons=seasons)
+    # ---- IO-2: the schedule left is read for the rankings themselves (the power part has no simulation)
+    t5 = time.perf_counter()
+    for r, opp in _schedule_left(lid, played, settings, len(rids)).items():
+        if r in left_games:
+            left_games[r] = opp
+    timings["schedule_ms"] = round((time.perf_counter() - t5) * 1000, 1)
+    if part == "power":
+        ol.update({"pending": True, "reason": None})
+    else:
+        ol["reason"] = _season_outlook(ol, out_rows, left_games, timings, lid=lid, is_house=is_house, season=season,
+                                       settings=settings, platform=platform, played=played, weeks=weeks, rids=rids,
+                                       lineup=lineup, level=level, rec=rec, pf=pf, seasons=seasons)
+    # ---- end IO-2
 
     sched_left = {}
     for r in rids:
@@ -834,20 +1043,103 @@ def _build(league_id: str, is_house: bool, source: str | None, seasons: int) -> 
                      "schedule_left_rank": sl_rank.get(r), "schedule_left_games": len(left_games.get(r) or [])})
     ol["rows"] = sorted(out_rows, key=lambda x: (-(x["playoff"] if x["playoff"] is not None else -1), -x["wins_mean"],
                                                  -x["points_for_mean"]))
+    ans = {"league_id": league_id, "season": season, "version": VERSION, "played_weeks": played,
+           "power": {"rows": rows, "weeks": list(int(w) for w in weeks), "span": span,
+                     "words": POWER_WORDS.format(span=span), "note": note, "movement": None, "movement_note": NO_ARROWS},
+           "outlook": ol, "definitions": DEFINITIONS, "timings_ms": timings}
+    # ---- IO-2: keep the week (a full build only), the movement from last week's stored row, the preview card
+    snap_week = int(played) + 1
+    name = _league_name(lg, lid, is_house)
+    ans["league_name"] = name
+    ans["week"] = snap_week
+    ans["shareable"] = S.shareable(lid)
+    offered = None
+    if part is None and rows:
+        try:
+            offered = S.offer(S.snapshot(ans, league_name=name, week=snap_week, built_at=clock.now()), house=is_house)
+        except Exception:  # noqa: BLE001 - the store is never load-bearing
+            offered = "failed"
+    ans["power"]["kept"] = offered
+    _movement(ans, snap_week=snap_week, offered=offered)
+    top = [{"team": r["team_name"], "per_week": r["per_week"]} for r in rows[:5]]
+    odds = {o["roster_id"]: o.get("playoff") for o in ol.get("rows") or []}
+    for t, r in zip(top, rows[:5], strict=False):
+        t["playoff"] = odds.get(r["roster_id"])
+    S.remember_card(lid, {"name": name, "week": snap_week, "top": top})
+    # ---- end IO-2
     timings["total_ms"] = round((time.perf_counter() - t0) * 1000, 1)
-    return {"league_id": league_id, "season": season, "version": VERSION, "played_weeks": played,
-            "power": {"rows": rows, "weeks": list(int(w) for w in weeks), "span": span,
-                      "words": POWER_WORDS.format(span=span), "note": note, "movement": None, "movement_note": NO_ARROWS},
-            "outlook": ol, "definitions": DEFINITIONS, "timings_ms": timings}
+    return ans
 
 
 @router.get(PATH)
-def league_outlook(league: str, response: Response, team: int | None = None, source: str | None = None):
+def league_outlook(league: str, response: Response, team: int | None = None, source: str | None = None,
+                   part: str | None = None):
     from .main import _json
     if source not in (None, "sleeper"):
         raise D.BadRequest("source is sleeper or nothing")
+    if part not in (None, "power"):                                        # ---- IO-2
+        raise D.BadRequest("part is power or nothing")
     try:
-        return _json(outlook(league, team, source=source), response)
+        return _json(outlook(league, team, source=source, part=part), response)
     except Busy:
         return JSONResponse({"error": BUSY_WORDS, "detail": BUSY_WORDS, "code": "busy", "retry_after_s": 3},
                             status_code=429, headers={"Cache-Control": "no-store", "Retry-After": "3"})
+
+
+# ---- IO-2 (Wave I-O): the page shell's link preview for a League link (`/league?league=<key>`, no team): "League of
+# Scrubs: power rankings, week 5" and the top three with their numbers — from the last build this process kept or the
+# newest stored row only (outlook_store.card): a crawler's hit never calls a provider and never runs a simulation.
+# Nothing kept, a private (ESPN / Yahoo) key, a reference key, a malformed key → None: the default card.
+CARD_TOP = 3
+
+
+def preview(league: str | None) -> dict | None:
+    from urllib.parse import quote
+
+    from . import blog as B
+    c = S.card(league)
+    if not c or not c.get("top"):
+        return None
+    key = A.check_id(str(league))
+    name = c.get("name") or "This league"
+    title = f"{name}: power rankings, week {int(c['week'])}"
+    parts = []
+    top = c["top"][:CARD_TOP]
+    for i, t in enumerate(top, start=1):
+        pw, po = t.get("per_week"), t.get("playoff")
+        num = f"{float(pw):.1f}" if pw is not None else "—"
+        parts.append(f"{i}. {t.get('team') or 'Team'} {num}" + (f" ({round(float(po) * 100)}% playoffs)" if po is not None else ""))
+    odds = any(t.get("playoff") is not None for t in top)
+    desc = ("; ".join(parts) + ". Points per week each team's best lineup should score over the rest of the season"
+            + (", and playoff odds from simulated seasons." if odds else "."))
+    return {"title": title, "description": desc, "url": f"{B.ORIGIN}/league?league={quote(key, safe=':')}",
+            "image": B.DEFAULT_IMAGE, "type": "website", "status": 200}
+
+
+_shell_text: dict[str, tuple[float, str]] = {}
+
+
+def shell(index_html, league: str | None) -> str | None:
+    """index.html with the League link's preview between the shell's ``ll:seo`` markers (blog.SEO_START / SEO_END,
+    every value escaped by ``blog.seo_tags``), or None — the shell as it is."""
+    from . import blog as B
+    try:
+        pv = preview(league)
+    except Exception:  # noqa: BLE001 - a preview never fails the page
+        pv = None
+    if pv is None:
+        return None
+    try:
+        mtime = index_html.stat().st_mtime
+        hit = _shell_text.get(str(index_html))
+        if hit is None or hit[0] != mtime:
+            hit = (mtime, index_html.read_text(encoding="utf-8"))
+            _shell_text[str(index_html)] = hit
+    except OSError:
+        return None
+    text = hit[1]
+    i, j = text.find(B.SEO_START), text.find(B.SEO_END)
+    if i < 0 or j < i:
+        return None
+    return text[: i + len(B.SEO_START)] + "\n    " + B.seo_tags(pv) + "\n    " + text[j:]
+# ---- end IO-2

@@ -4,46 +4,81 @@
   // seasons of the weeks left: projected record, playoff odds, top seed, bye). Asked after the screen shows (GET
   // /api/league/outlook: up to a few seconds the first time on a league not kept every night). A table keeps the team
   // fixed and scrolls the rest at 375; bars for the numbers from 900 px. Every column header opens its definition.
-  import { ApiError, get, peek, Unauthorized, outlookPath, type LeagueOutlook, type PowerRow } from "../../lib/api";
+  // IO-2 (Wave I-O): the power rankings first (`part=power`: no simulation), the rest of the season when it is ready;
+  // movement (▲ ▼ places, the playoff odds' change) only from last week's kept ranking (the API's `moved`).
+  import { ApiError, get, peek, Unauthorized, outlookPath, outlookPowerPath, type LeagueOutlookMoved, type PowerRow } from "../../lib/api";
   import { errorWords } from "../../lib/decisions";
   import Card from "../Card.svelte";
-  import { chance, gapTag, ordinal, projectedRecord, record, scheduleLeft, winsRange } from "./outlook";
+  import { chance, gapTag, movedLabel, movedWords, oddsChange, ordinal, projectedRecord, record, scheduleLeft, titleWords, winsRange } from "./outlook";
 
-  let { league, team, onauth }: { league: string; team: number | null; onauth: () => void } = $props();
+  let {
+    league,
+    team,
+    onauth,
+    onload,
+    onfail,
+  }: { league: string; team: number | null; onauth: () => void; onload?: (d: LeagueOutlookMoved) => void; onfail?: () => void } = $props();
 
-  let data = $state<LeagueOutlook | null>(null);
+  let data = $state<LeagueOutlookMoved | null>(null);
   let error = $state<string | null>(null);
+  let seasonError = $state<string | null>(null); // ---- IO-2: the season block's own failure (the rankings stay)
   $effect(() => {
     const l = league;
     const t = team;
     error = null;
+    seasonError = null;
     const path = outlookPath(l, t);
-    const hit = peek<LeagueOutlook>(path);
+    const hit = peek<LeagueOutlookMoved>(path);
     if (hit) {
       data = hit;
       return;
     }
-    data = null;
+    const quick = peek<LeagueOutlookMoved>(outlookPowerPath(l, t));
+    data = quick ?? null;
+    const same = () => league === l && team === t;
+    const why = (e: unknown) => (e instanceof ApiError && e.status === 404 && e.message ? e.message : errorWords(e)); // the API's reason
     let tries = 0;
     const ask = () =>
-      get<LeagueOutlook>(path)
+      get<LeagueOutlookMoved>(path)
         .then((d) => {
-          if (league === l && team === t) data = d;
+          if (same()) data = d;
         })
         .catch((e) => {
-          if (league !== l || team !== t) return;
+          if (!same()) return;
           if (e instanceof Unauthorized) return onauth();
           // one season simulation at a time on the server: a 429 `busy` is asked again a few seconds later (3 times)
           const busy = e instanceof ApiError && e.status === 429 && (e.body as { code?: string } | null)?.code === "busy";
           if (busy && tries++ < 3) {
             setTimeout(() => {
-              if (league === l && team === t) void ask();
+              if (same()) void ask();
             }, 3000);
             return;
           }
-          error = e instanceof ApiError && e.status === 404 && e.message ? e.message : errorWords(e); // the API's reason
+          if (data) seasonError = why(e);
+          else error = why(e);
         });
-    void ask();
+    if (quick) {
+      void ask();
+      return;
+    }
+    // the power rankings first (no simulation: the first paint of a league not kept every night), then the season
+    get<LeagueOutlookMoved>(outlookPowerPath(l, t))
+      .then((d) => {
+        if (!same()) return;
+        if (!data) data = d;
+        void ask();
+      })
+      .catch((e) => {
+        if (!same()) return;
+        if (e instanceof Unauthorized) return onauth();
+        void ask();
+      });
+  });
+  $effect(() => {
+    if (data) onload?.(data);
+  });
+  $effect(() => {
+    if (error || seasonError) onfail?.(); // ---- IO-2: the screen stops waiting for it (the week's odds)
   });
 
   // one definition open per block (a header tap opens it; the same tap closes it)
@@ -57,6 +92,7 @@
   const ol = $derived(data?.outlook);
   const showPlayoff = $derived(!!ol && ol.available && ol.playoff_teams != null);
   const showBye = $derived(showPlayoff && !!ol?.byes);
+  const showTitle = $derived(showPlayoff && !!ol?.title); // ---- IO-2: title odds
   const games = $derived.by(() => {
     const p = power[0];
     const r = ol?.rows[0];
@@ -130,6 +166,12 @@
                     <span class="hidden h-2 flex-1 overflow-hidden rounded-sm bg-sunken wide:block" aria-hidden="true">
                       <span class="block h-full rounded-r-sm" style="width:{(Math.max(0, p.per_week - perMin) / Math.max(1, perMax - perMin)) * 100}%;background:{p.mine ? 'var(--ll-accent)' : 'var(--ll-series-1)'}"></span>
                     </span>
+                    {#if p.moved != null}<span
+                        class="tabnum shrink-0 text-xs font-semibold {p.moved > 0 ? 'text-good' : p.moved < 0 ? 'text-bad' : 'text-ink-3'}"
+                        title={movedLabel(p.moved)}
+                        aria-label={movedLabel(p.moved)}
+                        data-testid="moved">{movedWords(p.moved)}</span
+                      >{/if}<!-- IO-2 -->
                     <span class="tabnum min-w-[4.75rem] pr-1 text-right text-base font-semibold"><span class="text-xs text-ink-3">{p.rank}.</span> {p.per_week.toFixed(1)}</span>
                   </div>
                 </td>
@@ -149,7 +191,15 @@
     </Card>
 
     <Card title="Rest of season" pad={false} testid="season">
-      {#if !ol || !ol.available}
+      {#if ol?.pending && seasonError}
+        <p class="px-4 pb-4 text-base text-ink-2" data-testid="season-error">No outlook for the rest of the season right now: {seasonError}</p>
+      {:else if ol?.pending}
+        <!-- ---- IO-2: the rankings are on screen; the season is being played out -->
+        <div class="space-y-2 px-4 pb-4" aria-label="Simulating the rest of the season" data-testid="season-pending">
+          <p class="text-sm text-ink-3">Playing out the rest of the season…</p>
+          <div class="ll-skel h-24"></div>
+        </div>
+      {:else if !ol || !ol.available}
         <p class="px-4 pb-4 text-base text-ink-2" data-testid="no-outlook">No outlook for the rest of the season: {ol?.reason ?? "not available"}.</p>
       {:else}
         <div class="space-y-1 px-4 pb-2 text-sm text-ink-2">
@@ -172,6 +222,7 @@
                 {#if showPlayoff}{@render head("season", "playoff_odds", "Playoffs", "wide:w-[26%]")}{/if}
                 {@render head("season", "top_seed", "Top seed", "text-right")}
                 {#if showBye}{@render head("season", "bye", "Bye", "text-right")}{/if}
+                {#if showTitle}{@render head("season", "title", "Title", "text-right")}{/if}<!-- IO-2 -->
               </tr>
             </thead>
             <tbody class="divide-y divide-line">
@@ -202,16 +253,23 @@
                           <span class="block h-full rounded-r-sm" style="width:{(o.playoff ?? 0) * 100}%;background:{o.mine ? 'var(--ll-accent)' : 'var(--ll-series-1)'}"></span>
                         </span>
                       </div>
+                      {#if oddsChange(o.playoff_change)}<span class="tabnum block text-xs whitespace-nowrap {(o.playoff_change ?? 0) > 0 ? 'text-good' : 'text-bad'}" data-testid="odds-change">{oddsChange(o.playoff_change)}</span>{/if}<!-- IO-2 -->
                     </td>
                   {/if}
                   <td class="tabnum px-2 py-2 text-right whitespace-nowrap text-ink-2">{chance(o.top_seed, o.status === "eliminated" ? "eliminated" : null)}</td>
                   {#if showBye}<td class="tabnum px-2 py-2 text-right whitespace-nowrap text-ink-2">{chance(o.bye, o.status === "eliminated" ? "eliminated" : null)}</td>{/if}
+                  {#if showTitle}<td class="tabnum px-2 py-2 text-right font-semibold whitespace-nowrap" data-testid="title-odds">{chance(o.title, o.status === "eliminated" ? "eliminated" : null)}</td>{/if}<!-- IO-2 -->
                 </tr>
               {/each}
             </tbody>
           </table>
         </div>
-        <p class="px-4 pt-2 pb-3 text-xs text-ink-3">No title odds: the playoff bracket is not simulated.</p>
+        {#if showTitle && ol.bracket}
+          <!-- ---- IO-2: the bracket, said once; never graded -->
+          <p class="px-4 pt-2 pb-3 text-xs text-ink-3" data-testid="title-words">{titleWords(ol.playoff_teams ?? 0, ol.byes ?? 0, ol.bracket)}</p>
+        {:else}
+          <p class="px-4 pt-2 pb-3 text-xs text-ink-3" data-testid="no-title">No title odds: {ol.title_reason ?? "the playoff bracket is not simulated"}.</p>
+        {/if}
       {/if}
     </Card>
   </div>

@@ -742,13 +742,17 @@ def unit_lines(b: Board, proj: pd.Series | None = None, rule: str | None = None)
         out_ |= st["roster_status"].eq("RES")
     rank = (proj.reindex(qb.index) if proj is not None else qb["proj_passing_yards"]).astype(float).fillna(-1e9)
     rows = {}
+    # ---- IO-2 (Wave I-O): the stat lines made numeric once, not once per team (the same numbers; the MFL League
+    # screen's first load spent ~1 s here: 32 teams × 15 weeks of a column-wise apply)
+    num = qb[list(STAT_LINE)].apply(pd.to_numeric, errors="coerce").fillna(0.0)
+    # ---- end IO-2
     for t, idx in qb.groupby(team).groups.items():
         if not isinstance(t, str) or not t:
             continue
         keep = [g for g in idx if not out_.get(g, False)] or list(idx)
         starter = rank.loc[keep].idxmax()
         keep = keep if rule == "sum" else [starter]
-        line = qb.loc[keep, list(STAT_LINE)].apply(pd.to_numeric, errors="coerce").fillna(0.0).sum()
+        line = num.loc[keep].sum()                                          # ---- IO-2: was a per-team apply
         rows[t] = {"position": "TMQB", **line.to_dict(), "starter_gsis": starter, "n_players": len(keep)}
     return pd.DataFrame.from_dict(rows, orient="index", columns=cols)
 
