@@ -1202,7 +1202,10 @@ def csv_lines(d: dict, columns: list[str], per_game: bool = False):
     """The header row of labels, then one row per player (the frame's own order). ``per_game`` swaps a count that has a
     per-game twin for that twin ("Targets per game")."""
     cat = {c["id"]: c for c in d["catalogue"]}
-    fields_, labels = [k for k, _ in CSV_IDENTITY], [lab for _, lab in CSV_IDENTITY]
+    # a league without rosters (IM-3's reference leagues) has no ownership field: the column is absent, not empty
+    ident = [(k, lab) for k, lab in CSV_IDENTITY
+             if k != "rostered_by_team" or any("rostered_by_team" in p for p in d["players"]) or not d["players"]]
+    fields_, labels = [k for k, _ in ident], [lab for _, lab in ident]
     for cid in columns:
         c = cat[cid]
         if per_game and c.get("per_game"):

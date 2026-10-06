@@ -161,6 +161,14 @@ def test_points_over_expected_uses_the_same_games_and_the_rushing_share_prices_t
     assert pd.isna(odd["rushing_points_share"]) and pd.isna(odd["rushing_points"]) and odd["points"] == 35.0
 
 
+def test_csv_without_ownership_has_no_rostered_by_column():
+    """IM-3's reference leagues carry no ownership field: the CSV leaves the column out rather than printing it empty."""
+    d = {"catalogue": [{"id": "targets", "label": "Targets", "per_game": True}], "season": 2026, "positions": ["WR"],
+         "players": [{"player_name": "A", "position": "WR", "team": "DAL", "games": 2, "targets": 9, "targets_per_game": 4.5}]}
+    lines = list(ST.csv_lines(d, ["targets"], per_game=True))
+    assert lines[0] == "Player,Position,NFL team,Games played,Targets per game\r\n" and lines[1] == "A,WR,DAL,2,4.5\r\n"
+
+
 def test_csv_cells_keep_unknown_empty_and_disarm_formulas():
     assert ST._csv_cell(None) == "" and ST._csv_cell(float("nan")) == ""
     assert ST._csv_cell(0) == "0" and ST._csv_cell(-0.45) == "-0.45" and ST._csv_cell(0.8300000000000001) == "0.83"
