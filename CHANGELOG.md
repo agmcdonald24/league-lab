@@ -2,6 +2,19 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-06 — Wave I-M
+
+- **IM-4 — passkeys: accounts that work with no email.** "Create an account with a passkey" (one tap, the device's own
+  sheet; this browser's leagues, default, Stats views and Yahoo / ESPN connection go to the account by themselves),
+  "Sign in with a passkey" on any device (nothing typed), "Add another passkey", the list with labels and last use,
+  Remove (never the only way in), "Add an email" when the server has a mailer. WebAuthn with py_webauthn 3.0.1
+  (discoverable credentials, user verification preferred, attestation none); challenges kept on the server (single use,
+  5 minutes, bound to the browser, the site and the purpose); `LEAGUE_LAB_PASSKEY_ORIGINS` (default
+  `https://isuckatfantasy.io`). `LEAGUE_LAB_ACCOUNTS=auto` now turns accounts on when the API secret is set and the
+  tables exist, with the methods the server has (`passkey` once the nightly has applied the new part of
+  `scripts/hosted_accounts.sql`, `email` with the Resend key). Every state-changing account route refuses another site
+  (`cross_site`). docs/ACCOUNTS.md § "Passkeys".
+
 ## 2026-10-05 — Wave I-L
 
 - **PO — Yahoo refuses the app, and the app said so wrongly.** A friend connected with Yahoo four times in three minutes
