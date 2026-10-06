@@ -86,7 +86,8 @@ export function plain(text: string | null | undefined): string {
 // fenced code blocks, ordered lists, block quotes, tables (wrapped in a box that scrolls sideways by itself), pictures
 // from /blog/img/ only, and a horizontal rule. Same rule as `md`: every character is HTML-escaped FIRST, then only
 // the tags this file writes are added — raw HTML in a post is shown as text, never run. `md` above is unchanged.
-const BLOG_IMG = /^\/blog\/img\/[a-z0-9][a-z0-9_-]{0,79}\.(png|jpe?g|webp)$/;
+// ---- IO-3 (Wave I-O): + a picture uploaded from the blog editor, /blog/img/db/<uuid> (api blog_store.py)
+const BLOG_IMG = /^\/blog\/img\/([a-z0-9][a-z0-9_-]{0,79}\.(png|jpe?g|webp)|db\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
 
 function inlineDoc(text: string, ctx: LinkContext): string {
   // code spans and pictures are held aside (their own escaped HTML) while `inline` escapes and marks up the rest

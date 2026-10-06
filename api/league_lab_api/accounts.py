@@ -907,7 +907,7 @@ def logout_route(request: Request, body: LogoutIn | None = None) -> JSONResponse
 @router.get("/me")
 def me_route(request: Request) -> JSONResponse:
     uid, email, _sid = _user(request)
-    resp = JSONResponse(me(uid, email), headers=NO_STORE)
+    resp = JSONResponse({**me(uid, email), "id": uid}, headers=NO_STORE)   # ---- IO-3: the account id (LEAGUE_LAB_EDITORS)
     from . import connections  # ---- IL-5: the restore (cookie missing)
     connections.sync(request, resp, uid, adopt=False)
     return resp

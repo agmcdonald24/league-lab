@@ -57,6 +57,8 @@ def _limit_kb(name: str, default: int) -> int:
 def body_limit(path: str) -> int:
     if path.startswith("/api/dfs/"):
         return _limit_kb("LEAGUE_LAB_MAX_UPLOAD_KB", 2048) * 1024
+    if path == "/api/blog/images":                     # ---- IO-3: a picture, ≤ 300 KB (blog_store.MAX_IMAGE_BYTES)
+        return 320 * 1024
     return _limit_kb("LEAGUE_LAB_MAX_BODY_KB", 256) * 1024
 
 

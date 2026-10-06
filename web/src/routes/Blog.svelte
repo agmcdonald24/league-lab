@@ -6,8 +6,18 @@
   import { ApiError, blogPaths, get, type BlogMeta, type BlogPost } from "../lib/api";
   import { longDate } from "../components/home/home";
   import PostBody from "../components/blog/PostBody.svelte";
+  // ---- IO-3 (Wave I-O): an editor (an account the server lists in LEAGUE_LAB_EDITORS) sees "Write a post" and their
+  // own posts here; everyone else sees exactly the blog as before (the check is quiet: any failure is "not an editor")
+  import { loadStatus } from "../lib/account.svelte";
+  import { checkEditor, editor } from "../components/blog/editor.svelte";
+  // ---- end IO-3
 
   let { slug = null, league }: { slug?: string | null; league: string } = $props();
+  // ---- IO-3: the editor's own posts and "Edit" on a post of theirs
+  $effect(() => void loadStatus().then(() => checkEditor()));
+  const minePosts = $derived(editor.on ? (editor.mine?.posts ?? []) : []);
+  const editOf = $derived(slug && editor.on ? (minePosts.find((p) => p.slug === slug && p.status === "published")?.id ?? null) : null);
+  // ---- end IO-3
 
   let posts = $state<BlogMeta[] | null>(null);
   let listState = $state<"loading" | "ok" | "failed">("loading");
@@ -91,9 +101,33 @@
   <!-- the list -->
   <main class="space-y-5 pb-6" data-testid="blog">
     <header class="space-y-1">
-      <h1 class="text-2xl font-extrabold tracking-tight wide:text-3xl">Blog</h1>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <h1 class="text-2xl font-extrabold tracking-tight wide:text-3xl">Blog</h1>
+        {#if editor.on}<a href="/blog/new" class="inline-flex min-h-11 items-center rounded-md bg-accent px-4 font-semibold text-on-accent" data-testid="blog-write"
+            >Write a post</a
+          >{/if}<!-- ---- IO-3 -->
+      </div>
       <p class="text-base leading-snug text-ink-2">Fantasy football analysis: what the numbers say, and how far to trust them.</p>
     </header>
+    <!-- ---- IO-3: the editor's own posts (drafts, published, deleted) -->
+    {#if minePosts.length}
+      <section class="space-y-2 rounded-lg border border-line bg-surface p-4" data-testid="blog-mine">
+        <h2 class="ll-label">Your posts</h2>
+        <ul class="divide-y divide-line">
+          {#each minePosts as p (p.id)}
+            <li class="flex flex-wrap items-center gap-x-3 gap-y-1 py-2" data-testid="blog-mine-item" data-status={p.status}>
+              <a class="ll-link min-w-0 font-semibold break-words" href={`/blog/edit/${p.id}`}>{p.title || "Untitled"}</a>
+              <span
+                class="rounded-sm px-1.5 text-xs font-semibold text-ink {p.status === 'published' ? 'bg-accent-soft' : p.status === 'deleted' ? 'bg-bad-soft' : 'bg-warn-soft'}"
+                >{p.status === "published" ? "Published" : p.status === "deleted" ? "Deleted" : "Draft"}</span
+              >
+              {#if p.date}<span class="text-sm text-ink-3">{longDate(p.date)}</span>{/if}
+            </li>
+          {/each}
+        </ul>
+      </section>
+    {/if}
+    <!-- ---- end IO-3 -->
     <div class="grid gap-6 wide:grid-cols-[minmax(0,1fr)_18rem] wide:items-start wide:gap-10">
       <section aria-label="Posts">
         {#if listState === "loading"}
@@ -144,6 +178,7 @@
             <h1 class="text-3xl leading-tight font-extrabold tracking-tight wide:text-[2.5rem]" data-testid="post-title">{post.title}</h1>
             <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-ink-3">
               <span data-testid="post-meta">By {post.author} · {@render postMeta(post)}</span>
+              {#if editOf}<a class="ll-link" href={`/blog/edit/${editOf}`} data-testid="post-edit">Edit</a>{/if}<!-- ---- IO-3 -->
               <button
                 type="button"
                 class="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-line px-3 font-semibold text-ink hover:bg-raised"

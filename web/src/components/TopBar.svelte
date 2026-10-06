@@ -81,6 +81,7 @@
   import { navigate, route, setParams } from "../lib/router.svelte";
   import Picker, { OTHER } from "./Picker.svelte";
   import { account, loadStatus as loadAccount } from "../lib/account.svelte"; // ---- IK-4: the ⋯ menu's Account item
+  import { checkEditor, editor } from "./blog/editor.svelte"; // ---- IO-3: the ⋯ menu's Write item (editors only)
   import { isRef } from "../lib/refleague"; // ---- IM-3: the reference picker
   import ScoringPicker from "./scoring/ScoringPicker.svelte"; // ---- IN-2: the scoring choices without a league
 
@@ -184,6 +185,7 @@
   // ---- the overflow menu (⋯)
   let menuOpen = $state(false);
   $effect(() => void loadAccount()); // ---- IK-4: asked once per page load (lib/account.svelte.ts); quiet when off
+  $effect(() => void (account.status?.signed_in && account.me ? checkEditor() : null)); // ---- IO-3: the Write entry
   $effect(() => {
     void route.current;
     menuOpen = false;
@@ -360,6 +362,9 @@
         <a href={href("/home")} role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised {here === 'home' ? 'font-semibold text-accent' : ''}" data-testid="menu-home">Home</a>
         <a href="/blog" role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised {here === 'blog' || here === 'post' ? 'font-semibold text-accent' : ''}" data-testid="menu-blog">Blog</a>
         <!-- ---- end IN-1 -->
+        <!-- ---- IO-3: the blog's editor — only for an account the server lists as an editor -->
+        {#if editor.on}<a href="/blog/new" role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised {here === 'write' ? 'font-semibold text-accent' : ''}" data-testid="menu-write">Write</a>{/if}
+        <!-- ---- end IO-3 -->
       </div>
     </div>
   </div>

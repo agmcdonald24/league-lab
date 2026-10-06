@@ -7,6 +7,7 @@
   // leagues go in by themselves), "Sign in with a passkey", the passkeys listed with "Add another passkey" and Remove
   // (never the last way in). The emailed-link form stays when the server has a mailer; with both, both are offered.
   import { onMount } from "svelte";
+  import AccountId from "../components/blog/AccountId.svelte"; // ---- IO-3: "Your account id" (the blog's editors)
   import { APP_MARK, APP_NAME } from "../lib/brand";
   import { leagueLine } from "../lib/leagues";
   import { withContext } from "../lib/md";
@@ -373,6 +374,7 @@
         </section>
       {/if}
       <!-- ---- end IM-4 -->
+      <AccountId id={(me as { id?: string }).id} /><!-- ---- IO-3: the account id, with Copy (LEAGUE_LAB_EDITORS) -->
 
       <section class="space-y-3 border-t border-line pt-4">
         <div class="flex flex-wrap gap-x-5 gap-y-2 text-base">

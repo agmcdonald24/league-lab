@@ -112,6 +112,10 @@ WRITES = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 PAGES_READ = frozenset({"/blog/rss.xml", "/sitemap.xml"})
 PAGES_READ_PREFIX = ("/blog/img/",)
 # ---- end IN-1
+# ---- IO-3 (Wave I-O): the blog editor's export zips every post (research: behind the CPU slots); its other routes are
+# `write` (POST / PUT / DELETE) and `read` (GET /api/blog/mine, /api/blog/posts/{id}) by the rules below
+RESEARCH_EXACT = RESEARCH_EXACT | {"/api/blog/export"}
+# ---- end IO-3
 
 
 def norm(value: str | None) -> str:
