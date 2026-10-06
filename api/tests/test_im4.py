@@ -118,8 +118,6 @@ def _cleanup() -> None:
             conn.execute("delete from accounts.users where id = any(%s::uuid[])", (MADE,))
         conn.execute("delete from accounts.users where email like %s", (f"%@{DOMAIN}",))
         conn.execute("delete from accounts.login_links where user_email like %s", (f"%@{DOMAIN}",))
-        conn.execute("delete from accounts.passkey_challenges where created_at > now() - interval '1 day' and "
-                     "user_id is null")
         conn.execute("delete from accounts.leagues l where not exists "
                      "(select 1 from accounts.user_leagues u where u.league_key = l.league_key)")
     MADE.clear()
