@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import FileResponse, JSONResponse
 from league_lab import memo
 
@@ -203,11 +203,32 @@ def meta(post: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def posts() -> list[dict[str, Any]]:
+    """---- IO-3 (Wave I-O): the public blog — the files' posts and the published posts written on the site
+    (blog_store.published_meta: no bodies; [] without the `blog` schema), newest first. A slug a file holds is the
+    file's (the editor cannot save it; a database post that meets a newer file is left out and logged)."""
+    files = index()
+    try:
+        extra = blog_store.published_meta()
+    except Exception as exc:                                    # noqa: BLE001 - never more than the files' blog
+        _log.info("blog: database posts left out (%s)", exc.__class__.__name__)
+        extra = []
+    if not extra:
+        return files
+    taken = {p["slug"] for p in files}
+    shadowed = [p["slug"] for p in extra if p["slug"] in taken]
+    if shadowed:
+        _log.warning("blog: %d database post(s) share a file's slug; the file is served", len(shadowed))
+    merged = files + [p for p in extra if p["slug"] not in taken]
+    merged.sort(key=lambda x: (x["date"], x["slug"]), reverse=True)
+    return merged[:MAX_POSTS + blog_store.MAX_POSTS]
+
+
 def find(slug: str) -> dict[str, Any] | None:
     """The post with this slug, or None — the slug is checked against the pattern and then looked up, never opened."""
     if not isinstance(slug, str) or len(slug) > MAX_SLUG or not SLUG.fullmatch(slug):
         return None
-    return next((p for p in index() if p["slug"] == slug), None)
+    return next((p for p in posts() if p["slug"] == slug), None)    # ---- IO-3: files and published database posts
 
 
 # ------------------------------------------------------------------------------------------------ the routes
@@ -219,16 +240,39 @@ pages = APIRouter()         # the feed, the pictures, the sitemap: what crawlers
 def blog_list(limit: int = LIST_DEFAULT) -> JSONResponse:
     if limit < 1 or limit > LIST_MAX:
         raise HTTPException(status_code=400, detail=f"limit is 1 to {LIST_MAX}")
-    return JSONResponse({"posts": [meta(p) for p in index()[:limit]]}, headers={"Cache-Control": "public, max-age=300"})
+    return JSONResponse({"posts": [meta(p) for p in posts()[:limit]]}, headers={"Cache-Control": "public, max-age=300"})
+
+
+# ---- IO-3 (Wave I-O): the editor (blog_store.py). `mine` and `export` are one path segment like a slug, so they are
+# declared here, ahead of /api/blog/{slug}; the editor's other routes come with blog_store's router. Every one is 404
+# unless LEAGUE_LAB_EDITORS names an account, accounts are on and the `blog` tables are there.
+from . import blog_store  # noqa: E402 - imports this module back; it reads nothing of it at import time
+
+
+@router.get("/api/blog/mine")
+def blog_mine(request: Request) -> JSONResponse:
+    return blog_store.mine_route(request)
+
+
+@router.get("/api/blog/export")
+def blog_export(request: Request) -> Response:
+    return blog_store.export_route(request)
+
+
+router.include_router(blog_store.router)
+# ---- end IO-3
 
 
 @router.get("/api/blog/{slug}")
 def blog_post(slug: str) -> JSONResponse:
     post = find(slug)
-    if post is None:
+    body = None if post is None else post["markdown"] if post.get("source") != "db" else blog_store.published_body(slug)
+    if post is None or body is None:
         return JSONResponse({"error": NOT_FOUND, "detail": NOT_FOUND, "code": "no_post"}, status_code=404,
                             headers={"Cache-Control": "no-store"})
-    return JSONResponse({**meta(post), "markdown": post["markdown"]}, headers={"Cache-Control": "public, max-age=300"})
+    # ---- IO-3: a database post may change when its editor saves: a minute in caches, not five
+    cache = "public, max-age=60" if post.get("source") == "db" else "public, max-age=300"
+    return JSONResponse({**meta(post), "markdown": body}, headers={"Cache-Control": cache})
 
 
 def _rfc822(d: str) -> str:
@@ -238,7 +282,7 @@ def _rfc822(d: str) -> str:
 def rss() -> str:
     x = lambda s: html.escape(str(s), quote=True)  # noqa: E731
     items = []
-    for p in index()[:FEED_N]:
+    for p in posts()[:FEED_N]:                     # ---- IO-3: files and published database posts
         url = f"{ORIGIN}/blog/{p['slug']}"
         items.append(f"<item><title>{x(p['title'])}</title><link>{x(url)}</link><guid isPermaLink=\"true\">{x(url)}</guid>"
                      f"<pubDate>{x(_rfc822(p['date']))}</pubDate><description>{x(p['summary'])}</description>"
@@ -382,7 +426,7 @@ def shell(index_html: Path, path: str) -> tuple[str, int] | None:
 
 def sitemap() -> str:
     urls = [(f"{ORIGIN}/", None)] + [(ORIGIN + p, None) for p in SITEMAP_PATHS]
-    urls += [(f"{ORIGIN}/blog/{p['slug']}", p["date"]) for p in index() if not p.get("draft")]
+    urls += [(f"{ORIGIN}/blog/{p['slug']}", p["date"]) for p in posts() if not p.get("draft")]   # ---- IO-3
     body = "".join(f"<url><loc>{html.escape(u)}</loc>" + (f"<lastmod>{d}</lastmod>" if d else "") + "</url>" for u, d in urls)
     return ('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
             + body + "</urlset>\n")

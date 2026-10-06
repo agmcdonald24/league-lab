@@ -526,6 +526,7 @@ def test_record_web_fixtures(api, monkeypatch):
     for p in me["preferences"]:
         p["updated_at"] = "2026-10-05T12:00:00+00:00"
     me["created_at"] = "2026-10-05T12:00:00+00:00"
+    me["id"] = "00000000-0000-4000-8000-0000000000aa"           # ---- IO-3: the account id (a fixed one in the fixture)
     out["me.json"] = me
     out["status_signed_in.json"] = {**api.get("/api/account/status").json(), "email": "manager@example.com"}
     d = Path(ROOT / "web" / "fixtures" / "ik4")
