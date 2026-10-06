@@ -155,8 +155,10 @@ def test_points_over_expected_uses_the_same_games_and_the_rushing_share_prices_t
     assert out["points_over_expected_per_game"] == pytest.approx(5.0) and out["games_with_expected"] == 1
     assert out["rushing_points"] == pytest.approx(12.0)                        # 50 x 0.1 + 6, then 10 x 0.1
     assert out["rushing_points_share"] == pytest.approx(round(12 / 35, 4))
-    # without the league's scoring there is no rushing share: unknown, not zero
+    # without the league's scoring there is no rushing share: unknown, not zero; nor with one the pricer cannot read
     assert pd.isna(ST.points(lg, g).iloc[0]["rushing_points_share"])
+    odd = ST.points(lg, g, {"rush_yd": "not a number"}).iloc[0]
+    assert pd.isna(odd["rushing_points_share"]) and pd.isna(odd["rushing_points"]) and odd["points"] == 35.0
 
 
 def test_csv_cells_keep_unknown_empty_and_disarm_formulas():

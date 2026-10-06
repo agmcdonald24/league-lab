@@ -1051,10 +1051,14 @@ def points(league_rows: pd.DataFrame, g: pd.DataFrame, scoring: dict | None = No
         q = g[(g["position"] == "QB") & g["played"].fillna(False).astype(bool)].drop_duplicates(["gsis_id", "game_id"])
         if not q.empty:
             line = q[RUSH_LINE].apply(pd.to_numeric, errors="coerce").assign(position="QB")  # the league's pricing
-            q = q[["gsis_id", "game_id"]].assign(rc=(LR.price_games(line, scoring) * 100).round().to_numpy())
+            try:
+                rc = (LR.price_games(line, scoring) * 100).round().to_numpy()
+            except Exception:  # noqa: BLE001 - a scoring the flat pricer cannot read: the share is unknown, never a 500
+                rc = np.full(len(q), np.nan)
+            q = q[["gsis_id", "game_id"]].assign(rc=rc)
             q = q.merge(lp[["gsis_id", "game_id", "pc"]], on=["gsis_id", "game_id"], how="inner")
             q = q[q["pc"].notna()]                                  # the games with a points row, both sides
-            rs = q.groupby("gsis_id").agg(rc=("rc", "sum"), pc=("pc", "sum"))
+            rs = q.groupby("gsis_id")[["rc", "pc"]].sum(min_count=1)       # an unpriced line stays unknown
             out.loc[rs.index, "rushing_points"] = rs["rc"] / 100
             out.loc[rs.index, "rushing_points_share"] = ratio(rs["rc"], rs["pc"].where(rs["pc"] > 0))
     cols += ["rushing_points", "rushing_points_share"]
