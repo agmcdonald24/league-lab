@@ -128,3 +128,16 @@ No new env variable, no new dependency, nothing written to the database.
   failures may have the same cause: not checked).
 * Next: the owners' one-line keys above; a real Sleeper lineup with two open spots
   once one exists in the fixtures.
+
+## Fix round (after the merge, branch `fix/IN5` on `integ/IN` `cd56421`)
+
+* **The pinned-view change taken back out**: `api/league_lab_api/db.py` and `dbt/models/marts/edge/mart_league_roster_horizon.sql`
+  as on `967b2d9`, `dbt/macros/league_lab_now.sql` deleted, its two tests removed; item 4 above keeps the diagnosis only.
+* **Reviewer L3 — the slot-chain search bounded** (`myweek.pair_moves`, `fits_positions`): players of one position are
+  interchangeable, so the chain check is Hall's condition over the position kinds (exact; agrees with the plain matching
+  on 2,000 random lineups), memoised per (positions, slots) for the call and asked once per position of the incoming
+  players; above `MAX_CHAIN_SLOTS` = 24 starting slots the pairing uses direct eligibility only. The synthetic worst case
+  (every match fails): 15 / 30 / 45 starting slots 0.024 / 0.325 / 1.872 s before → 0.011 / 0.007 / 0.009 s after (with the
+  chain check forced on at 45: 0.010 s). `test_45_starting_slots_pair_fast_and_legally` (0.012 s, the FLEX outs paired
+  with FLEX-eligible starters, no quarterback "replaced"), `test_the_chain_check_is_the_matching` (24 slots: the chain
+  pairs; 25: direct only).
