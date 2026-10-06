@@ -2,6 +2,17 @@
 
 Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in plain words (docs/WORDS.md).
 
+## 2026-10-06 — hotfix: the Team screen with two open lineup spots
+
+- **PO — Team was blank for a roster with two open starting spots** (Andrew's, week 5: QB and TE both open, Mahomes,
+  Young and Kelce on a bye). The API sent the text `"nan"` as the Sleeper id of an open spot (a frame turns `None` into
+  NaN, `str()` made it a word), the screen keys its roster rows by that id, and two equal keys stop Svelte's list
+  (`each_key_duplicate`): the whole screen stayed on its loading blocks. `decisions._sid` (an open spot has no id:
+  `null`), the roster list's key carries the row's position, and My Week no longer says "Start Kelce out of your
+  lineup" for a spot nobody on the bench can fill ("Take Kelce out of your lineup."; the full open-spot action is
+  Wave I-N's). `api/tests/test_in0.py`. Found on live 2026-10-06 09:20 ET, minutes after Wave I-M's deploy; the bug is
+  older than the wave (latent since the keyed list, first week with two open spots).
+
 ## 2026-10-06 — Wave I-M
 
 - **PO — the wave merged, reviewed and hardened; the site is public from this deploy.** Five branches (IM-1 … IM-5)

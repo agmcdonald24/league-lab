@@ -618,7 +618,9 @@ def _action(kind, start, sit, submitted, gain, cant, coin, hurt, pairs, swapped,
                       and ({c.get("key"), c.get("alt_key")} - {i}) & {alt, o} - {None}]
         if not bits:
             bits = [f"{_and([name(k) for k in start])} ahead of {_and([name(k) for k in sit])}"]
-        action = (f"Start {bits[0]}." if len(bits) == 1 else f"Make {len(bits)} changes: " + "; ".join(bits) + ".")
+        only_out = len(pairs) == 1 and pairs[0][0] is None and pairs[0][1] is not None   # no one to put in his place
+        action = (f"Take {bits[0]}." if only_out else f"Start {bits[0]}." if len(bits) == 1
+                  else f"Make {len(bits)} changes: " + "; ".join(bits) + ".")
         why = [f"{plain(k)} {cant_words(k)}" for k in cant]
         if gain is not None and gain >= ACTION_MIN_GAIN:
             k = int(round(gain))

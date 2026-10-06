@@ -348,7 +348,7 @@
 
         <Card title={`Roster · week ${data.value.week}`} pad={false} testid="team-roster">
           <ul class="divide-y divide-line">
-            {#each [...starters, ...bench, ...out] as r, i (r.sleeper_id ?? `${r.slot}-${i}`)}
+            {#each [...starters, ...bench, ...out] as r, i (`${r.role === "empty" || !r.sleeper_id ? "open" : r.sleeper_id}-${i}`)}
               <li>
                 {#if r.role === "empty"}
                   <div class="flex min-h-14 items-center px-3 text-base text-ink-3">{slotLabel(r.slot)}: nobody can play it this week</div>

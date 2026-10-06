@@ -135,13 +135,21 @@ def bio(gsis_ids) -> dict[str, dict]:
             for r in df.itertuples()}
 
 
+def _sid(sid) -> str | None:
+    """A player's Sleeper id as text; an open lineup slot has none (a frame turns its None into NaN: never "nan")."""
+    if sid is None or (isinstance(sid, float) and sid != sid):
+        return None
+    s = str(sid)
+    return s if s and s.lower() != "nan" else None
+
+
 def _player(sid, gsis, name, position, team=None, b: dict | None = None) -> dict:
     """One player object: ids, name, position, team, headshot (a team defense: its code is its team, no headshot)."""
     g = _str(gsis)
     info = (b or {}).get(g, {}) if g else {}
     pos = _str(position) or info.get("position")
-    tm = _str(team) or info.get("team") or (str(sid) if pos == "DEF" and sid else None)
-    return {"sleeper_id": _str(None if sid is None else str(sid)), "gsis_id": g, "player_name": _str(name),
+    tm = _str(team) or info.get("team") or (_sid(sid) if pos == "DEF" else None)
+    return {"sleeper_id": _sid(sid), "gsis_id": g, "player_name": _str(name),
             "position": pos, "team": tm, "headshot_url": info.get("headshot_url")}
 
 
