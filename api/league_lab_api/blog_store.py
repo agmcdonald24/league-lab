@@ -138,11 +138,18 @@ def on() -> bool:
     return bool(editors()) and accounts.state()[0] and ready()
 
 
+def exists() -> None:
+    """The router's first dependency: without an editor on this server every route here is 404 — before the body is
+    validated (FastAPI runs a route's dependencies before it reports a body's errors), so a stranger cannot tell the
+    routes are there from a 422. Only a body that is not JSON at all is refused (422) before this runs."""
+    if not editors() or not accounts.state()[0] or not ready():
+        raise _err(404, "not_found", NOT_HERE)
+
+
 def editor(request: Request, *, write: bool = False) -> tuple[str, str]:
     """(account id, session id) of the signed-in editor, else the refusal: 404 (no editor on this server), 401 (signed
     out), 403 (signed in, not an editor), 429 (too many changes)."""
-    if not editors() or not accounts.state()[0] or not ready():
-        raise _err(404, "not_found", NOT_HERE)
+    exists()
     try:
         who = accounts.current_user(request)
     except psycopg.Error:
@@ -579,7 +586,7 @@ def published_body(slug: str) -> str | None:
 
 
 # ---------------------------------------------------------------- the routes (blog.py includes `router` into its own)
-router = APIRouter(dependencies=[Depends(accounts.same_site)])
+router = APIRouter(dependencies=[Depends(exists), Depends(accounts.same_site)])
 
 
 def _json(body: Any, status: int = 200) -> JSONResponse:

@@ -158,6 +158,13 @@ def test_no_editors_no_editor_every_route_is_404(api, monkeypatch):
         for method, path in ROUTES:
             r = call(api, method, path)
             assert r.status_code == 404 and r.json()["code"] == "not_found", (value, method, path, r.text)
+            if method in ("POST", "PUT"):                               # a wrong body does not give the routes away
+                r = api.request(method, path, json={"revision": "x", "title": ["no"]}, headers=SAME)
+                assert r.status_code == 404, (method, path, r.status_code)
+            r = api.request(method, path, json=BODY if method in ("POST", "PUT") else None, headers=EVIL)
+            # a cross-site write is the Guard's 403 on every /api/ path (an unknown one too): it gives nothing away
+            want = 404 if method == "GET" else 403
+            assert r.status_code == want and api.request(method, "/api/no-such-route", headers=EVIL).status_code in (want, 405)
 
 
 def test_signed_out_and_not_an_editor(api, monkeypatch):
