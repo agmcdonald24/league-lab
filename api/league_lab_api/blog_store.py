@@ -75,8 +75,8 @@ BODY_ENTRIES = 40                      # bodies kept for the public route: 40 ×
 RESERVED = frozenset({"new", "edit", "mine", "export", "posts", "rss", "img", "editor", "drafts", "db", "feed", "write"})
 _ID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 _TAG = re.compile(r"^[a-z0-9][a-z0-9 -]*$")
-_CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f  ]")     # no control characters (a body keeps \t and \n)
-_LINE_CONTROL = re.compile(r"[\x00-\x1f\x7f  ]")          # a one-line field: no newline, no tab either
+_CONTROL = re.compile(r"[\x00-\x08\x0e-\x1f\x7f]")                 # no control characters (a body keeps \t and \n)
+_LINE_CONTROL = re.compile(r"[\x00-\x1f\x7f\u2028\u2029]")          # a one-line field: no newline, no tab either
 NO_STORE = {"Cache-Control": "no-store"}
 
 _pub = memo.region("blog_db", ttl=PUBLIC_TTL_S, max_entries=BODY_ENTRIES + 21)   # bodies, the list, 20 pictures
@@ -176,7 +176,7 @@ class PublishIn(BaseModel):
 
 
 def _line(v: str, n: int, code: str, what: str) -> str:
-    v = (v or "").replace("\r\n", " ").replace("\n", " ").replace("\r", " ").replace("\t", " ").strip()
+    v = re.sub(r"[\r\n\t\u2028\u2029\x0b\x0c]+", " ", v or "").strip()     # pasted line breaks become spaces
     v = re.sub(r" {2,}", " ", v)
     if _LINE_CONTROL.search(v):
         raise _err(400, code, f"The {what} has a character it cannot hold.")
@@ -202,7 +202,7 @@ def clean(p: PostIn) -> dict[str, Any]:
             raise _err(400, "bad_tags", f"A tag is letters, numbers, spaces and dashes, at most {blog.MAX_TAG} characters.")
         if t not in tags:
             tags.append(t)
-    body = p.body.replace("\r\n", "\n").replace("\r", "\n").lstrip("\n")
+    body = re.sub(r"\r\n?|[\u2028\u2029\x0b\x0c]", "\n", p.body).lstrip("\n")   # every line end a \n (pastes too)
     if _CONTROL.search(body):
         raise _err(400, "bad_body", "The post has a character it cannot hold (a control character).")
     size = len(body.encode("utf-8"))

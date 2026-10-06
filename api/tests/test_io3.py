@@ -371,8 +371,10 @@ def test_bad_fields_are_refused(editor):
     assert r.status_code in (413, 422)                                  # over the model's bound: refused before anything
     r = editor.post("/api/blog/posts", json={"title": "t", "body": "x" * (300 * 1024)}, headers=SAME)
     assert r.status_code == 413                                         # over the Guard's 256 KB: refused at the door
-    ok = new_post(editor, title="Line\nbreaks\tgo", summary="two\nlines", body="x" * (200 * 1024))
-    assert ok["title"] == "Line breaks go" and ok["summary"] == "two lines" and ok["bytes"] == 200 * 1024
+    ok = new_post(editor, title="Line\nbreaks\tgo\u2028too", summary="two\nlines", body="x" * (200 * 1024))
+    assert ok["title"] == "Line breaks go too" and ok["summary"] == "two lines" and ok["bytes"] == 200 * 1024
+    pasted = new_post(editor, body="a\r\nb\rc\u2028d\u2029e\x0cf\tg")             # a paste from a word processor
+    assert pasted["body"] == "a\nb\nc\nd\ne\nf\tg"
     assert all(new_post(editor, tags=["Matchups", "matchups", " Week 5 "])["tags"] == ["matchups", "week 5"] for _ in [0])
 
 
