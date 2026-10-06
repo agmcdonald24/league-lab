@@ -9,6 +9,11 @@ no stored salary: every route works for a visitor who has opened no league.
 * ``POST /api/dfs/lineups``                       the slate's players as returned + locks / excludes / mode / n →
   the lineups (salary, projection, range) and the site's lineup-upload CSV.
 
+Wave I-N (IN-4): **context beyond the projection** on every board (the matchup from ``matchup_board.matchup_context``,
+imported lazily; the role trend; the betting line and the weather) with "Worth a look"; **published slates** —
+``GET /api/dfs/slates`` and ``GET /api/dfs/slate/{id}`` read ``dfs/slates/`` once (``LEAGUE_LAB_DFS_SLATES``) — and
+``POST /api/dfs/lineups`` takes a published ``slate_id`` and **stacks** / **exposure** (docs/DFS.md).
+
 Rate limiting: ``RATE_BUCKETS`` names the bucket of each route in IM-3's limiter terms (``heavy`` for the two POSTs:
 they parse a file and solve integer programs) — the PO wires it at the merge. One ``league_lab.memo`` region
 (``dfs``): the week's board priced per site (``dfs.price_site``), ~0.2 MB a site-week.
@@ -19,6 +24,7 @@ from __future__ import annotations
 import json
 import math
 import threading
+from pathlib import Path
 from typing import Any
 
 import pandas as pd
@@ -32,9 +38,12 @@ from starlette.concurrency import run_in_threadpool
 from . import availability
 from .applib import cards, ui
 from .db import query
+from .settings import ROOT, env
 
 router = APIRouter()
 RATE_BUCKETS = {"/api/dfs/slate": "heavy", "/api/dfs/lineups": "heavy", "/api/dfs/projections": "read"}
+# IN-4: the published slates' two GETs price a slate once and keep it: research (ratelimit.bucket_for, a marked block)
+RATE_BUCKETS_IN4 = {"/api/dfs/slates": "research", "/api/dfs/slate/{slate_id}": "research"}
 NO_STORE = {"Cache-Control": "no-store"}
 _priced = memo.region("dfs", ttl=600.0, max_entries=8)
 # ---- IM-5 fix (the security review): DFS work (parsing a file, pricing, solving) runs in the thread pool, never on the
@@ -276,9 +285,11 @@ def projections(site: str = "dk", week: int | None = None, position: str | None 
                                                "p10", "p25", "p75", "p90", "status", "out")}
                        | {"matchup": _matchup(r, ranks)})
     refs = sorted({str(x) for x in priced(s, season, w)["reference"].dropna() if x != "lines"})
+    players, worth_list, ctx_meta = _with_context(players, season, w, "proj")     # ---- IN-4: context, Worth a look
     body = {"site": s, "site_name": D.SITE_NAMES[s], "season": season, "week": w, "players": players,
             "count": len(players), "reference": refs[0] if refs else None,
-            "scoring": scoring_words(s), "bonus_at_odds": D.BONUS_AT_ODDS and s == "dk"}
+            "scoring": scoring_words(s), "bonus_at_odds": D.BONUS_AT_ODDS and s == "dk",
+            "worth_a_look": worth_list, "context_meta": ctx_meta}
     return JSONResponse(_clean(body), headers={"Cache-Control": "private, max-age=120"})
 
 
@@ -389,7 +400,9 @@ def build_slate(sl: D.Slate, season: int, w: int, *, week_from_file: bool) -> di
                 "contest_label": D.CONTESTS[contest].label, "season": season, "week": w, "games": sl.games,
                 "players": [], "unmatched": unmatched, "skipped": sl.skipped, "matched_by": how, "fit": {},
                 "undervalued": [], "overpriced": [], "notes": notes + ["No player on the file matched ours."],
-                "cap": D.CONTESTS[contest].cap}
+                "cap": D.CONTESTS[contest].cap, "counts": {"on_file": len(sl.players), "matched": 0,
+                                                          "unmatched": len(unmatched), "skipped": len(sl.skipped)},
+                "worth_a_look": {}, "context_meta": None, "published": False, "slate_id": None}
     df = _statuses(df)
     ranks = _ranks()
     df["opp_rank"] = [ranks.get((o, p)) for o, p in zip(df["opponent"], df["position"], strict=True)]
@@ -407,6 +420,7 @@ def build_slate(sl: D.Slate, season: int, w: int, *, week_from_file: bool) -> di
         o["reason"] = reasons.get(r["key"])
         players.append(o)
     players.sort(key=lambda o: (-(o["proj"] or 0), o["key"]))
+    players, worth_list, ctx_meta = _with_context(players, season, w, "pts_per_k")  # ---- IN-4: by value per $1,000
 
     def top(call: str) -> list[dict]:
         sel = [o for o in players if o["value_call"] == call]
@@ -431,7 +445,8 @@ def build_slate(sl: D.Slate, season: int, w: int, *, week_from_file: bool) -> di
                        "skipped": len(sl.skipped)},
             "fit": {p: (None if f is None else {**f, "words": fit_words(p, f, site)}) for p, f in fits.items()},
             "undervalued": [o["key"] for o in top("undervalued")], "overpriced": [o["key"] for o in top("overpriced")],
-            "notes": notes, "scoring": scoring_words(site), "bonus_at_odds": D.BONUS_AT_ODDS and site == "dk"}
+            "notes": notes, "scoring": scoring_words(site), "bonus_at_odds": D.BONUS_AT_ODDS and site == "dk",
+            "worth_a_look": worth_list, "context_meta": ctx_meta, "published": False, "slate_id": None}
 
 
 def fit_words(position: str, f: dict, site: str) -> str:
@@ -447,8 +462,15 @@ async def lineups(request: Request):
         raw = await request.body()
         if len(raw) > 2_000_000:
             raise Bad("Too many players in the request.", "too_large", 413)
-        contest, players, mode, n, locks, excludes = _lineups_in(raw)
-        res = await _one_at_a_time(D.solve_lineups, players, contest, mode=mode, n=n, locks=locks, excludes=excludes)
+        contest, players, mode, n, locks, excludes, stack, exposure, sid = _lineups_in(raw)
+        outs_from = None
+        if sid is not None:                              # ---- IN-4: a published slate's players, from the server
+            built = _cached_slate(sid) or await _one_at_a_time(built_slate, sid)
+            contest = built["contest"]
+            players = _published_pool(built, locks)
+            outs_from = built["players"]
+        res = await _one_at_a_time(D.solve_lineups, players, contest, mode=mode, n=n, locks=locks, excludes=excludes,
+                                   stack=stack, max_exposure=exposure)
     except Busy:
         return _busy()
     except (ValueError, TypeError, UnicodeDecodeError):
@@ -463,11 +485,14 @@ async def lineups(request: Request):
                             "team": by[s["key"]].get("team"), "gsis_id": by[s["key"]].get("gsis_id"),
                             "opponent": by[s["key"]].get("opponent")} for s in lu["slots"]]
         out.append(lu)
-    left_out = [{"key": p["key"], "name": p.get("name"), "status": p.get("status")} for p in players
+    left_out = [{"key": p["key"], "name": p.get("name"), "status": p.get("status")} for p in (outs_from or players)
                 if p.get("out") and p["key"] not in set(locks)]
     c = D.CONTESTS[contest]
     body_out = {"contest": contest, "contest_label": c.label, "cap": c.cap, "mode": mode, "lineups": out,
-                "notes": res.notes, "solve_ms": res.solve_ms, "left_out": left_out,
+                "notes": res.notes, "solve_ms": res.solve_ms, "left_out": left_out, "slate_id": sid,
+                "stack": None if stack is None else {"with_qb": stack.with_qb, "bring_back": stack.bring_back,
+                                                     "no_def_vs_qb": stack.no_def_vs_qb},
+                "max_exposure": exposure,
                 "upload_csv": D.upload_csv(contest, out) if out else None,
                 "filename": f"isuckatfantasy-{contest}-{len(out)}-lineups.csv"}
     return JSONResponse(_clean(body_out), headers=NO_STORE)
@@ -479,12 +504,24 @@ def _lineups_in(raw: bytes) -> tuple:
     body = json.loads(raw.decode("utf-8") or "{}")
     if not isinstance(body, dict):
         raise Bad("The request was not a slate.", "bad_request")
+    stack, exposure = _stack_in(body.get("stack")), _exposure_in(body.get("max_exposure"))   # ---- IN-4
+    sid = body.get("slate_id")
+    if sid is not None:
+        if not isinstance(sid, str) or not D.slate_id_ok(sid):
+            raise Bad(NOT_PUBLISHED, "not_published", 404)
     contest = str(body.get("contest") or "")
-    if contest not in D.CONTESTS:
+    if sid is None and contest not in D.CONTESTS:
         raise Bad("contest is dk_classic, dk_showdown or fd_full.", "bad_contest")
     ps = body.get("players")
-    if not isinstance(ps, list) or not ps:
+    if sid is not None:
+        ps = None                                        # the published slate's players come from the server
+    elif not isinstance(ps, list) or not ps:
         raise Bad("Add the salary file first: no players in the request.", "no_players")
+    if ps is None:
+        mode = "tournament" if str(body.get("mode") or "cash") == "tournament" else "cash"
+        n = _n_in(body)
+        locks, excludes = _picks_in(body)
+        return None, [], mode, n, locks, excludes, stack, exposure, sid
     if len(ps) > D.MAX_PLAYERS:
         raise Bad(f"Too many players for one build: at most {D.MAX_PLAYERS:,} (a full Sunday slate is about 600).",
                   "too_many_players")
@@ -496,13 +533,59 @@ def _lineups_in(raw: bytes) -> tuple:
         raise Bad(f"That is {len(games)} games and {len(teams)} teams: this contest has at most {max_g} game"
                   f"{'s' if max_g != 1 else ''} and {max_t} teams.", "too_many_games")
     mode = "tournament" if str(body.get("mode") or "cash") == "tournament" else "cash"
+    n = _n_in(body)
+    locks, excludes = _picks_in(body)
+    return contest, players, mode, n, locks, excludes, stack, exposure, None
+
+
+def _n_in(body: dict) -> int:
     n = int(body.get("n") or 1)
     if not 1 <= n <= D.MAX_LINEUPS:
         raise Bad(f"Build 1 to {D.MAX_LINEUPS} lineups.", "bad_n")
+    return n
+
+
+def _picks_in(body: dict) -> tuple[list[str], list[str]]:
     locks, excludes = body.get("locks") or [], body.get("excludes") or []
     if not isinstance(locks, list) or not isinstance(excludes, list) or len(locks) > 9 or len(excludes) > D.MAX_PLAYERS:
         raise Bad("At most 9 players always in, and a left-out list no longer than the slate.", "bad_request")
-    return contest, players, mode, n, [_bounded(x, "key") for x in locks], [_bounded(x, "key") for x in excludes]
+    return [_bounded(x, "key") for x in locks], [_bounded(x, "key") for x in excludes]
+
+
+def _stack_in(v: Any) -> D.Stack | None:
+    """IN-4: ``{"with_qb": 0|1|2, "bring_back": bool, "no_def_vs_qb": bool}`` (a closed set), or None."""
+    if v is None:
+        return None
+    if not isinstance(v, dict) or set(v) - {"with_qb", "bring_back", "no_def_vs_qb"}:
+        raise Bad("stack is {with_qb: 0, 1 or 2, bring_back: true or false, no_def_vs_qb: true or false}.", "bad_stack")
+    k = v.get("with_qb", 0)
+    if isinstance(k, bool) or k not in (0, 1, 2):
+        raise Bad("A stack is the quarterback with 0, 1 or 2 of his pass catchers.", "bad_stack")
+    bb, nd = v.get("bring_back", False), v.get("no_def_vs_qb", False)
+    if not isinstance(bb, bool) or not isinstance(nd, bool):
+        raise Bad("bring_back and no_def_vs_qb are true or false.", "bad_stack")
+    s = D.Stack(int(k), bb, nd)
+    return s if s.any else None
+
+
+def _exposure_in(v: Any) -> float | None:
+    """IN-4: the most of the lineups one player may be in, a share in [0.1, 1] (1 = no limit), or None."""
+    if v is None:
+        return None
+    if isinstance(v, bool) or not isinstance(v, int | float) or not math.isfinite(float(v)) or not 0.1 <= float(v) <= 1:
+        raise Bad("Exposure is a share between 10% and 100% of the lineups.", "bad_exposure")
+    return None if float(v) >= 1 else round(float(v), 3)
+
+
+def _published_pool(built: dict, locks: list[str]) -> list[dict]:
+    """A published slate's players for a solve: those who can play (or are set always in) with a projection, checked
+    like a client's, the highest projected first past ``MAX_PLAYERS``."""
+    keep = set(locks)
+    ps = [p for p in built["players"] if p.get("proj") is not None and (not p.get("out") or p["key"] in keep)]
+    ps.sort(key=lambda p: (p["key"] not in keep, -(p.get("proj") or 0), p["key"]))
+    trim = {"name": 80, "player_name": 80, "status": 30}
+    return [_player_in({k: (v[: trim[k]] if k in trim and isinstance(v, str) else v) for k, v in _clean(p).items()})
+            for p in ps[: D.MAX_PLAYERS]]
 
 
 def _bounded(v: Any, what: str, size: int = LIMIT["str"]) -> str:
@@ -551,3 +634,286 @@ def _player_in(p: Any) -> dict:
             "opponent": _bounded(p.get("opponent"), "opponent", 4) or None,
             "gsis_id": _bounded(p.get("gsis_id"), "id", 16) or None, **nums,
             "out": bool(p.get("out")), "status": _bounded(p.get("status"), "status", 30) or None}
+
+
+# ================================================================================================ IN-4 (Wave I-N)
+# ------------------------------------------------------------------------------------------------ context
+# The context the projection does not hold (and the parts it does, labelled): docs/DFS.md § "Context". One memo region
+# (``dfs_context``): per (season, week, board source) the role trends (per player), the betting lines and the
+# forecasts (per team) — ~1,300 game rows read once; the matchup comes from IN-3's ``matchup_context`` (its own cache).
+ROLE_SQL = """select gsis_id, position, week, targets, team_targets, carries, team_carries, offense_snaps, offense_snap_pct,
+                     routes, team_dropbacks_with_participation
+              from analytics.fct_player_game
+              where season = %s and season_type = 'REG' and week < %s and played
+                and position in ('RB', 'WR', 'TE')"""
+LINES_SQL = """select game_id, home_team, away_team, spread_line, total_line from analytics.dim_game
+               where season = %s and week = %s and season_type = 'REG'"""
+# Weather: the forecast is in the database (``intermediate.int_game_weather``) but the site's database role reads
+# ``analytics`` / ``ops`` only and no analytics relation carries it — so no weather column (docs/DFS.md § Context;
+# ``dfs.weather_flag`` is ready for the day a mart publishes the forecast). This wave ships no new relation.
+_context = memo.region("dfs_context", ttl=600.0, max_entries=4)
+CONTEXT_WORDS = ("Context, not a forecast: these signals sit beside the projection and do not change it. "
+                 "\"Worth a look\" has no record behind it yet (no backtest).")
+MATCHUP_MISSING = "Matchup: not available here."
+
+
+def _matchup_fn():
+    """IN-3's ``matchup_board.matchup_context``, or None when the module is not in this build (imported lazily)."""
+    try:
+        from . import matchup_board  # type: ignore[attr-defined]
+        fn = getattr(matchup_board, "matchup_context", None)
+        return fn if callable(fn) else None
+    except Exception:  # noqa: BLE001 - absent or broken: the screen says "not available here"
+        return None
+
+
+def _f(v) -> float | None:
+    try:
+        x = float(v)
+    except (TypeError, ValueError):
+        return None
+    return x if math.isfinite(x) else None
+
+
+def _context_parts(season: int, week: int) -> dict:
+    """{role: {gsis: trend | None}, game: {team: env}, wx: {team: row}, lines: bool, forecast: bool} for the week,
+    kept in the ``dfs_context`` region (a closed key: this week or the next, the board source)."""
+    key = (int(season), int(week), A.board_source())
+    hit = _context.get(key)
+    if hit is not None:
+        return hit
+    role: dict[str, dict | None] = {}
+    try:
+        g = query(ROLE_SQL, (int(season), int(week)))
+    except Exception:  # noqa: BLE001 - no game table: no role trend (said)
+        g = pd.DataFrame()
+    if not g.empty:
+        g = g.copy()
+        pct = pd.to_numeric(g["offense_snap_pct"], errors="coerce")
+        snaps = pd.to_numeric(g["offense_snaps"], errors="coerce")
+        g["team_snaps"] = (snaps / pct).where(pct > 0).round()      # the team's offensive snaps that game
+        for gid, games in g.groupby("gsis_id"):
+            role[str(gid)] = D.role_trend(games, str(games["position"].iloc[-1]))
+    lines: dict[str, dict] = {}
+    wx: dict[str, dict] = {}
+    has_lines = has_wx = False
+    try:
+        ln = query(LINES_SQL, (int(season), int(week)))
+    except Exception:  # noqa: BLE001
+        ln = pd.DataFrame()
+    wmap: dict = {}
+    for r in ln.to_dict("records"):
+        for team, home in ((r["home_team"], True), (r["away_team"], False)):
+            env_ = D.game_environment(team, _f(r.get("total_line")), _f(r.get("spread_line")), home)
+            if env_ is not None:
+                lines[team] = env_
+                has_lines = True
+            if r["game_id"] in wmap:
+                wx[team] = wmap[r["game_id"]]
+                has_wx = has_wx or wmap[r["game_id"]].get("wx_source") == "forecast"
+    out = {"role": role, "game": lines, "wx": wx, "lines": has_lines, "forecast": has_wx}
+    _context.put(key, out)
+    return out
+
+
+def context_for(season: int, week: int, rows: list[dict], by: str = "proj") -> tuple[dict[str, dict], dict]:
+    """Each row (``key``, ``gsis_id``, ``position``, ``team``, ``out`` and ``by``) -> ``{key: {context: [signals],
+    worth, worth_reasons}}`` and the meta the screen states (what is available this week, what the projection holds)."""
+    parts = _context_parts(season, week)
+    fn = _matchup_fn()
+    mc: dict[str, dict] = {}
+    if fn is not None:
+        try:
+            ids = sorted({str(r["gsis_id"]) for r in rows if r.get("gsis_id") and r.get("position") in D.SKILL})
+            mc = fn(int(season), int(week), ids) or {}
+        except Exception:  # noqa: BLE001 - "never raises" is IN-3's promise; we hold it too
+            mc = {}
+    out: dict[str, dict] = {}
+    for r in rows:
+        p = r.get("position")
+        if p not in D.SKILL:
+            out[r["key"]] = {"context": [], "worth": False, "worth_reasons": []}
+            continue
+        w = parts["wx"].get(r.get("team"))
+        wf = None if w is None else D.weather_flag(w.get("wx_source"), w.get("wx_dome"), _f(w.get("wx_wind_mph")),
+                                                   _f(w.get("wx_precip_in")), _f(w.get("wx_temp_f")),
+                                                   w.get("wx_snow"), p)
+        sig = D.signals(p, mc.get(str(r.get("gsis_id"))), parts["role"].get(str(r.get("gsis_id"))),
+                        parts["game"].get(r.get("team")), wf)
+        ok, why = D.worth(sig)
+        out[r["key"]] = {"context": sig, "worth": ok, "worth_reasons": why}
+    meta = {"matchup": fn is not None and bool(mc), "matchup_words": None if fn is not None and mc else MATCHUP_MISSING,
+            "lines": parts["lines"], "forecast": parts["forecast"], "projection": D.projection_table(),
+            "in_words": D.IN_WORDS, "out_words": D.OUT_WORDS, "words": CONTEXT_WORDS,
+            "worth_rule": (f"Worth a look: at least {D.WORTH_MIN_FAVOURABLE} favourable signals, at least "
+                           f"{D.WORTH_MIN_OUTSIDE} of them not in the projection, and no difficult signal outside it.")}
+    return out, meta
+
+
+def _with_context(players: list[dict], season: int, week: int, by: str) -> tuple[list[dict], dict, dict]:
+    ctx, meta = context_for(season, week, players, by)
+    for o in players:
+        o.update(ctx.get(o["key"]) or {"context": [], "worth": False, "worth_reasons": []})
+    return players, D.worth_a_look(players, by=by), meta
+
+
+# ------------------------------------------------------------------------------------------------ published slates
+# One salary file per site per week in the repo (``dfs/slates/``; ``LEAGUE_LAB_DFS_SLATES``; ``/srv/dfs/slates`` in the
+# image). Read ONCE per process (the folder ships with the image: a new file is a new deploy), parsed with the same
+# parser and limits as an upload; an unreadable file is listed with its reason and never served. The id comes from a
+# strict pattern (``dfs.SLATE_ID_RE``) and is looked up in what was read — never joined to a path.
+_published_lock = threading.Lock()
+_published: dict | None = None
+_built = memo.region("dfs_published", ttl=600.0, max_entries=8)
+NOT_PUBLISHED = "No published slate by that name for this week."
+
+
+def slates_dir() -> Path:
+    return Path(env("DFS_SLATES") or ROOT / "dfs" / "slates")
+
+
+def reset_published() -> None:
+    """Forget what was read (tests; a process reads the folder once)."""
+    global _published
+    with _published_lock:
+        _published = None
+
+
+def published() -> dict:
+    """``{"slates": {id: {meta…, "slate": dfs.Slate}}, "unreadable": [{file, reason}]}`` — the folder, read once."""
+    global _published
+    with _published_lock:
+        if _published is not None:
+            return _published
+        slates: dict[str, dict] = {}
+        bad: list[dict] = []
+        root = slates_dir()
+        files = sorted(p for p in root.iterdir() if p.is_file()) if root.is_dir() else []
+        for p in files:
+            if p.name.lower() in ("readme.md", ".gitkeep") or p.name.startswith("."):
+                continue
+            if len(slates) + len(bad) >= D.MAX_PUBLISHED:
+                bad.append({"file": p.name[:80], "reason": f"more than {D.MAX_PUBLISHED} files in the folder: not read"})
+                continue
+            meta = D.slate_name(p.name)
+            if meta is None:
+                bad.append({"file": p.name[:80], "reason": "the name is not <season>-w<week>-<dk|fd>[-<label>].csv "
+                                                          "(for example 2026-w05-dk.csv)"})
+                continue
+            if meta["id"] in slates:
+                bad.append({"file": p.name, "reason": f"a second file for {meta['id']}"})
+                continue
+            try:
+                if p.is_symlink() or p.stat().st_size > D.MAX_BYTES:
+                    raise D.SlateError("over 1 MB (or a link): not a salary file", "too_large")
+                sl = D.parse(p.read_bytes())
+            except D.SlateError as exc:
+                bad.append({"file": p.name, "reason": str(exc)})
+                continue
+            except OSError:
+                bad.append({"file": p.name, "reason": "the file could not be read"})
+                continue
+            if sl.site != meta["site"]:
+                bad.append({"file": p.name, "reason": f"named {D.SITE_NAMES[meta['site']]} but it is a "
+                                                      f"{D.SITE_NAMES[sl.site]} file"})
+                continue
+            slates[meta["id"]] = {**meta, "file": p.name, "contest": sl.contest,
+                                  "contest_label": D.CONTESTS[sl.contest].label, "on_file": len(sl.players), "slate": sl}
+        _published = {"slates": slates, "unreadable": bad}
+        return _published
+
+
+def _offered(meta: dict, season: int, now: int) -> bool:
+    """A published slate is offered for this week and the next only: a past week's is never offered as this week's."""
+    return meta["season"] == int(season) and meta["week"] in (int(now), int(now) + 1)
+
+
+def _this_week() -> tuple[int, int]:
+    season = ui.current_season()
+    if season is None:
+        raise Bad("The numbers are not ready yet. Try again in a few minutes.", "not_ready", 503)
+    now = cards.decision_week(int(season))
+    if now is None:
+        raise Bad("No week to show: the regular season is over.", "no_week", 404)
+    return int(season), int(now)
+
+
+def built_slate(slate_id: str) -> dict:
+    """The published slate's answer (``build_slate`` + its id), kept in the ``dfs_published`` region (ids: a closed set,
+    the files read). Raises ``Bad`` 404 for an id that is not offered."""
+    if not D.slate_id_ok(slate_id):
+        raise Bad(NOT_PUBLISHED, "not_published", 404)
+    pub = published()["slates"].get(slate_id)
+    season, now = _this_week()
+    if pub is None or not _offered(pub, season, now):
+        raise Bad(NOT_PUBLISHED, "not_published", 404)
+    key = (slate_id, season, now, A.board_source())
+    hit = _built.get(key)
+    if hit is not None:
+        return hit
+    out = build_slate(pub["slate"], season, pub["week"], week_from_file=False)
+    out.update({"slate_id": slate_id, "published": True, "label": pub["label"]})
+    _built.put(key, out)
+    return out
+
+
+def _cached_slate(slate_id: str) -> dict | None:
+    try:
+        season, now = _this_week()
+    except Bad:
+        return None
+    return _built.get((slate_id, season, now, A.board_source()))
+
+
+@router.get("/api/dfs/slates")
+async def slates(site: str | None = None):
+    """What is published for this week (and the next): site, label, contest, the players on the file and how many we
+    matched. Files of other weeks are listed as not offered; unreadable files with their reason."""
+    try:
+        s = _site(site) if site else None
+        season, now = _this_week()
+        pub = await run_in_threadpool(published)
+    except Bad as exc:
+        return _err(exc)
+    offered, other = [], []
+    for sid, m in sorted(pub["slates"].items()):
+        if s and m["site"] != s:
+            continue
+        if not _offered(m, season, now):
+            other.append({"id": sid, "reason": f"week {m['week']} of {m['season']}: DFS offers this week (week {now}) "
+                                                f"and next week only"})
+            continue
+        row = {k: m[k] for k in ("id", "site", "label", "season", "week", "contest", "contest_label", "on_file")}
+        row["site_name"] = D.SITE_NAMES[m["site"]]
+        b = _cached_slate(sid)
+        if b is None:
+            try:
+                b = await _one_at_a_time(built_slate, sid)
+            except Busy:
+                b = None
+            except Bad:
+                b = None
+        row["matched"] = None if b is None else b["counts"]["matched"]
+        row["unmatched"] = None if b is None else b["counts"]["unmatched"]
+        offered.append(row)
+    offered.sort(key=lambda r: (r["week"], r["site"], r["label"] != "main", r["label"]))
+    return JSONResponse(_clean({"season": season, "week": now, "slates": offered, "not_offered": other,
+                                "unreadable": pub["unreadable"]}),
+                        headers={"Cache-Control": "private, max-age=120"})
+
+
+@router.get("/api/dfs/slate/{slate_id}")
+async def slate_published(slate_id: str):
+    """The published slate's answer: exactly what ``POST /api/dfs/slate`` gives for that file, plus its id."""
+    if not D.slate_id_ok(slate_id):
+        return _err(Bad(NOT_PUBLISHED, "not_published", 404))
+    hit = _cached_slate(slate_id)
+    if hit is not None:
+        return JSONResponse(_clean(hit), headers={"Cache-Control": "private, max-age=120"})
+    try:
+        out = await _one_at_a_time(built_slate, slate_id)
+    except Busy:
+        return _busy()
+    except Bad as exc:
+        return _err(exc)
+    return JSONResponse(_clean(out), headers={"Cache-Control": "private, max-age=120"})
