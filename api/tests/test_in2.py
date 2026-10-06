@@ -256,3 +256,37 @@ def test_an_unknown_player_makes_his_side_unknown_not_zero(api):
     d = api.get("/api/trade-calc/free", params={"league": "ref:half", "give": "00-0000001", "get": PUKA}).json()
     assert d["give"]["players"][0]["no_projection"] and d["give"]["value"] is None
     assert d["verdict"]["words"].startswith("Not comparable yet") and d["verdict"]["gap"] is None
+
+
+# ====================================================================================== 5. the Stats table's value column
+@needs_db
+def test_the_stats_table_has_the_value_column_while_browsing(api):
+    d = api.get("/api/players", params={"league": "ref:half", "window": "season", "position": "WR", "limit": 1000}).json()
+    cat = {c["id"]: c for c in d["catalogue"]}
+    assert refleague.VALUE_COLUMN in cat and cat["ros_value"]["group"] == "Games and points"
+    assert "Value in a 12-team Half PPR league" in cat["ros_value"]["definition"]
+    for p in d["presets"]:
+        cols = p["columns"]
+        assert cols[cols.index("points") + 1] == "ros_value"
+    vals = refleague.value_of("ref:half", [PUKA])
+    row = next(p for p in d["players"] if p["gsis_id"] == PUKA)
+    assert row["ros_value"] == pytest.approx(float(vals[PUKA]["value"]))
+    top = api.get("/api/players", params={"league": "ref:half", "window": "season", "position": "WR", "sort": "ros_value",
+                                          "limit": 3}).json()["players"]
+    assert [p["ros_value"] for p in top] == sorted((p["ros_value"] for p in top), reverse=True) and top[0]["gsis_id"] == PUKA
+    csv = api.get("/api/players.csv", params={"league": "ref:half", "position": "WR", "sort": "ros_value",
+                                              "cols": "points,ros_value", "limit": 3}).text.splitlines()
+    assert csv[0].endswith('"Value (rest of season, above replacement)"') and "Rostered by" not in csv[0]
+    assert csv[1].startswith("Puka Nacua,")
+    house = api.get("/api/players", params={"league": "1389709692405551104", "window": "season", "position": "WR",
+                                            "limit": 5}).json()
+    assert "ros_value" not in {c["id"] for c in house["catalogue"]}               # a real league: unchanged
+
+
+@needs_db
+def test_compare_carries_the_value_while_browsing(api):
+    d = api.get("/api/compare", params={"league": "ref:half.t14", "a": PUKA, "b": ARSB}).json()
+    vals = refleague.value_of("ref:half.t14", [PUKA, ARSB])
+    assert d["a"]["ros_value"] == pytest.approx(float(vals[PUKA]["value"]))
+    assert d["b"]["ros_value"] == pytest.approx(float(vals[ARSB]["value"]))
+    assert d["value_assumes"] == "Value in a 14-team Half PPR league, one quarterback"

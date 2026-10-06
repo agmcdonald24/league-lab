@@ -2272,6 +2272,9 @@ export interface FreeTrade {
   league_words: string;
   max_side: number;
 }
+export interface CompareSide {
+  ros_value?: number | null; // a reference key only: the value without a league (refleague.compare_values)
+}
 export const freeTradePath = (league: string, give: string[], getIds: string[]) =>
   `/api/trade-calc/free?league=${encodeURIComponent(league)}&give=${encodeURIComponent(give.join(","))}&get=${encodeURIComponent(getIds.join(","))}`;
 // ---- end IN-2

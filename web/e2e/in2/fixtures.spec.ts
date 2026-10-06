@@ -126,7 +126,15 @@ test("the picker: scoring, options and size in the URL and remembered; the tabs 
   expect(await page.evaluate(() => localStorage.getItem("ll.scoring"))).toBe("ref:ppr.sf.t10");
   expect(await page.evaluate(() => localStorage.getItem("ll.league"))).toBeNull(); // never "the league"
   await expect(page.getByTestId("players").getByRole("link", { name: /Smith-Njigba|St\. Brown|Chase|Nacua|Jefferson|Lamb/ }).first()).toBeVisible({ timeout: 30_000 });
+  // the Stats table's value column (after the points), sorted by it on a tap; no "whose" chips while browsing
+  await expect(page.getByTestId("sort-ros_value")).toHaveCount(1);
+  await expect(page.getByTestId("who")).toHaveCount(0);
+  await page.getByTestId("sort-ros_value").click();
+  await expect(page).toHaveURL(/sort=ros_value/);
   await shot(page, `in2-stats-${info.project.name}`);
+  // Compare: each side's value in the picked shape
+  await page.goto(`/compare?league=ref:ppr.sf.t10&a=${PUKA}&b=${ARSB}`);
+  await expect(page.getByText("Value (a typical league)")).toBeVisible({ timeout: 30_000 });
 });
 
 test("a player's pane while browsing: the scoring in the head, his value, no owner, the foot line", async ({ context, page }, info) => {

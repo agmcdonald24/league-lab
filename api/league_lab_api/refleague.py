@@ -594,3 +594,74 @@ def card(out: dict, key: str) -> dict:
         "reference") and [vb["pricing"]["reference"]])}
     return out
 # ---- end IN-2
+
+# ------------------------------------------------------------------ the Stats table's value column while browsing
+VALUE_COLUMN = "ros_value"
+VALUE_POS = ["QB", "RB", "WR", "TE"]
+
+
+def value_column(sh: Shape) -> dict:
+    """The Stats catalogue's entry for the value without a league (not a window stat: the rest of the season)."""
+    return {"id": VALUE_COLUMN, "label": "Value (rest of season, above replacement)", "short": "Value", "kind": "count",
+            "format": "int", "per_game": False,
+            "definition": (f"{sh.assumes}: his projected points from this week to the end of the regular season above "
+                           "the best player at his position that such a league leaves free. Not a window stat: the "
+                           "same whatever window is picked."),
+            "numerator": "projected points, this week to the last regular-season week, minus the replacement's",
+            "denominator": None, "aggregation": "the rest of the season (projections), not the window's games",
+            "source": "our projections in this scoring; a typical league of this shape", "status": "derived",
+            "positions": list(VALUE_POS), "needs": None, "reason": "no rest-of-season projection for him (unknown, not zero)",
+            "group": "Games and points", "available": True}
+
+
+def stats_values(d: dict, key: str, sort: str | None = None, direction: str | None = None,
+                 cut: tuple[int, int] | None = None) -> dict:
+    """A Stats answer (``/api/players?window=…``, its CSV) for a reference key with the value column: each row's
+    ``ros_value``, the catalogue's entry, the column right after the points in every preset. Sorted by the value, the
+    answer was asked for every row and ``cut`` = (offset, limit) is applied after the sort (never the page first)."""
+    sh = shape(key)
+    rows = d.get("players") or []
+    try:
+        vals = value_of(sh.key, [str(r.get("gsis_id")) for r in rows if r.get("gsis_id")])
+    except Exception:  # noqa: BLE001 - no rest of season on this database: the column says unknown, never 0
+        vals = {}
+    for r in rows:
+        v = vals.get(str(r.get("gsis_id")))
+        r[VALUE_COLUMN] = None if v is None or pd.isna(v.get("value")) else float(v["value"])
+    if sort == VALUE_COLUMN:
+        desc = (direction or "desc").lower() != "asc"
+        known = sorted((r for r in rows if r[VALUE_COLUMN] is not None), key=lambda r: (r[VALUE_COLUMN], ), reverse=desc)
+        d["players"] = known + [r for r in rows if r[VALUE_COLUMN] is None]
+        if cut is not None:
+            off, n = max(0, int(cut[0] or 0)), max(1, int(cut[1] or 1))
+            d["players"], d["offset"] = d["players"][off: off + n], off
+    cat = [c for c in (d.get("catalogue") or []) if c.get("id") != VALUE_COLUMN]
+    d["catalogue"] = cat + [value_column(sh)]
+
+    def _after_points(cols: list) -> list:
+        cols = [c for c in cols if c != VALUE_COLUMN]
+        i = cols.index("points") + 1 if "points" in cols else 0
+        return cols[:i] + [VALUE_COLUMN] + cols[i:]
+    d["presets"] = [{**p, **({"columns": _after_points(p["columns"])} if isinstance(p.get("columns"), list) else {}),
+                     **({"full": _after_points(p["full"])} if isinstance(p.get("full"), list) else {})}
+                    for p in (d.get("presets") or [])]
+    return d
+# ---- end IN-2 (the Stats value column)
+
+
+def compare_values(d: dict, key: str) -> dict:
+    """``/api/compare`` for a reference key: each side's value without a league (``ros_value``) and what it assumes."""
+    sh = shape(key)
+    ids = [str((d.get(k) or {}).get("gsis_id")) for k in ("a", "b") if isinstance(d.get(k), dict)]
+    try:
+        vals = value_of(sh.key, ids)
+    except Exception:  # noqa: BLE001 - no rest of season: no value (unknown, not zero)
+        vals = {}
+    for k in ("a", "b"):
+        side = d.get(k)
+        if isinstance(side, dict):
+            v = vals.get(str(side.get("gsis_id")))
+            side["ros_value"] = None if v is None or pd.isna(v.get("value")) else float(v["value"])
+    d["value_assumes"] = sh.assumes
+    return d
+# ---- end IN-2 (Compare)

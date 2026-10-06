@@ -575,10 +575,14 @@ def players(league: str, response: Response, season: int | None = None, position
             dir: str | None = None, limit: int = 50, offset: int = 0, q: str | None = None, season_type: str = "REG",
             min_games: int = 1, source: str | None = None, window: str | None = None, basis: str | None = None,
             weeks: str | None = None, who: str | None = None, team: int | None = None, nfl: str | None = None):  # ---- II-3
-    return _research(research.players(league, season=season, position=position, sort=sort, dir=dir, limit=limit,
-                                      offset=offset, q=q, season_type=season_type, min_games=min_games, source=source,
-                                      window=window, basis=basis, weeks=weeks, who=who, team=team, nfl=nfl),
-                     league, response)                                                            # ---- IM-3
+    vsort = refleague.is_reference(league) and window is not None and sort == refleague.VALUE_COLUMN      # ---- IN-2
+    out = research.players(league, season=season, position=position, sort=None if vsort else sort, dir=dir,
+                           limit=1000 if vsort else limit, offset=0 if vsort else offset, q=q, season_type=season_type,
+                           min_games=min_games, source=source, window=window, basis=basis, weeks=weeks, who=who,
+                           team=team, nfl=nfl)
+    if refleague.is_reference(league) and window is not None:                # ---- IN-2: the value column, browsing
+        out = refleague.stats_values(out, league, sort, dir, (offset, limit) if vsort else None)   # ---- end IN-2
+    return _research(out, league, response)                                                       # ---- IM-3
 
 
 # ---- IM-1 (Wave I-M): the Stats table as a CSV — /api/players?window=…'s parameters + the columns (cols= | preset= +
@@ -592,9 +596,13 @@ def players_csv(league: str, season: int | None = None, position: str = "ALL", s
     from fastapi.responses import StreamingResponse
 
     from . import stats as stats_mod
-    d = research.players(league, season=season, position=position, sort=sort, dir=dir, limit=limit, offset=offset, q=q,
-                         season_type=season_type, min_games=min_games, source=source, window=window, basis=basis,
-                         weeks=weeks, who=who, team=team, nfl=nfl)
+    vsort = refleague.is_reference(league) and sort == refleague.VALUE_COLUMN                        # ---- IN-2
+    d = research.players(league, season=season, position=position, sort=None if vsort else sort, dir=dir,
+                         limit=1000 if vsort else limit, offset=0 if vsort else offset, q=q, season_type=season_type,
+                         min_games=min_games, source=source, window=window, basis=basis, weeks=weeks, who=who,
+                         team=team, nfl=nfl)
+    if refleague.is_reference(league):                                       # ---- IN-2: the value column, no owner
+        d = refleague.public(refleague.stats_values(d, league, sort, dir, (offset, limit) if vsort else None))   # ---- end IN-2
     try:
         columns = stats_mod.csv_columns(d, preset=preset, cols=cols, view=view)
     except ValueError as exc:
@@ -614,7 +622,10 @@ def receivers(league: str, response: Response, season: int | None = None, limit:
 
 @app.get("/api/compare", dependencies=[Depends(require_auth)])
 def compare(league: str, a: str, b: str, response: Response, source: str | None = None):
-    return _research(research.compare(league, a, b, source=source), league, response)
+    out = research.compare(league, a, b, source=source)
+    if refleague.is_reference(league):                         # ---- IN-2: each side's value without a league
+        out = refleague.compare_values(out, league)            # ---- end IN-2
+    return _research(out, league, response)
 
 
 @app.get("/api/player/{gsis}/games", dependencies=[Depends(require_auth)])

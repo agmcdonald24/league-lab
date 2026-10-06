@@ -10,6 +10,7 @@
   // ---- IM-2 (Wave I-M): two views one tap apart — "Key stats" (the preset's columns) and "Full table" (every column
   // for the position that we have, under group headers; components/stats/) — group toggles, every player ("Showing 50
   // of 291 — Show all"), Download CSV (GET /api/players.csv, or built here when the API has no such route).
+  import { isRef } from "../lib/refleague"; // ---- IN-2
   import { statsCsvPath, statsPath, type StatsColumn, type StatsFrame, type StatsRow } from "../lib/api";
   import type { LeagueOption } from "../lib/leagues";
   import { withContext } from "../lib/md";
@@ -195,7 +196,8 @@
   }
 
   // ---- IM-2: ownership columns only when the answer has them (a reference league — IM-3's `ref:` keys — has none)
-  const owned = $derived(!r.data || r.data.players.length === 0 || r.data.players.some((p) => "rostered_by_roster_id" in p));
+  // ---- IN-2: browsing (a reference key) never shows the "whose" chips, not even while the table loads
+  const owned = $derived(!isRef(league) && (!r.data || r.data.players.length === 0 || r.data.players.some((p) => "rostered_by_roster_id" in p)));
   const ownerOf = (p: StatsRow) => ownerWord(p, team);
   const mine = (p: StatsRow) => team !== null && p.rostered_by_roster_id === team;
   const href = (p: StatsRow) => withContext(`/player/${p.gsis_id}`, ctx);
