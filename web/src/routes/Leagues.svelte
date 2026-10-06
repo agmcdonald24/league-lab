@@ -14,6 +14,10 @@
   import { looksLikeSleeperLeague, providersPath, setupError, setupGet, sleeperLeaguePath, type FeatureKey, type Platform, type Providers, type SleeperLeague } from "../lib/providers";
   // ---- IK-3 (Wave I-K): ESPN and Yahoo in the same flow
   import { espnConnectPath, espnLeaguePath, isPlatform, PLATFORMS, providerShort, setupPost, yahooConnectPath, yahooDisconnectPath, yahooLeaguePath, yahooMePath, type ProviderLeague, type YahooMe } from "../lib/providers";
+  // ---- IM-3 (Wave I-M): the front door — browse the lab without a league, the model's record in one line
+  import { BROWSE_HREF, REF_DEFAULT } from "../lib/refleague";
+  import { recordView } from "../lib/record";
+  import type { RecordAnswer } from "../lib/api";
 
   let {
     mine,
@@ -22,6 +26,21 @@
     onauth,
   }: { mine: UserLeagues | null; current: string | null; onuser: (v: UserLeagues | null) => void; onauth: () => void } = $props();
 
+  // ---- IM-3: the record's one line on the front door (the reference league's record: the model, not a team)
+  let recordLine = $state<string | null>(null);
+  $effect(() => {
+    if (current) return;
+    get<RecordAnswer>(`/api/record?league=${REF_DEFAULT}`)
+      .then((d) => {
+        const v = recordView(d, "Half PPR");
+        recordLine =
+          v.kind === "scored" && v.lines[0]
+            ? v.lines[0].replace(/\*\*/g, "")
+            : "Our record against Sleeper's own projections is kept week by week, from the first week both are saved before kickoff.";
+      })
+      .catch(() => (recordLine = null));
+  });
+  // ---- end IM-3
   let username = $state(prefs.user() ?? "");
   let busy = $state(false);
   let error = $state<string | null>(null);
@@ -402,8 +421,27 @@
     </p>
   </header>
 
+  <!-- ---- IM-3 (Wave I-M): the front door for a first visit (no league yet): browse without a league, or open yours -->
+  {#if !current}
+    <section class="space-y-3 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="front-door">
+      <p class="text-base leading-snug">
+        Our own projections for every player, his trends and his matchups, priced in your scoring — then your lineup, waivers and trades once
+        you open your league.
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <a href={BROWSE_HREF} class="inline-flex min-h-11 items-center rounded-md bg-accent px-4 font-semibold text-on-accent" data-testid="browse-lab">Browse the lab</a>
+        <a href="#open-league" class="inline-flex min-h-11 items-center rounded-md border border-line px-4 font-semibold" data-testid="open-your-league">Open your league</a>
+      </div>
+      {#if recordLine}
+        <p class="text-sm leading-snug text-ink-2" data-testid="front-record">
+          {recordLine} <a class="ll-link" href={`/about?league=${REF_DEFAULT}`} data-testid="front-about">How we keep score</a>
+        </p>
+      {/if}
+    </section>
+  {/if}
+
   <!-- ---- II-5 (Wave I-I): the steps, the one platform choice, then that platform's box -->
-  <ol class="flex flex-wrap items-center gap-x-1 gap-y-1 text-xs sm:text-sm" aria-label="Setup" data-testid="setup-steps">
+  <ol id="open-league" class="flex scroll-mt-4 flex-wrap items-center gap-x-1 gap-y-1 text-xs sm:text-sm" aria-label="Setup" data-testid="setup-steps">
     {#each STEPS as s, i (s.key)}
       <li
         class="rounded-full px-2 py-0.5 whitespace-nowrap {i === stepIndex ? 'bg-accent font-bold text-on-accent' : i < stepIndex ? 'text-ink-2' : 'text-ink-3'}"

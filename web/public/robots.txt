@@ -1,0 +1,4 @@
+# isuckatfantasy (Wave I-M, IM-3): the app's pages may be indexed; the API is not a page.
+User-agent: *
+Allow: /
+Disallow: /api/

@@ -399,13 +399,15 @@ export async function get<T>(path: string): Promise<T> {
     if (res.status === 401) throw new Unauthorized("sign in");
     if (!res.ok) {
       let detail = res.statusText;
+      let body: unknown = null; // ---- IM-3: the error's JSON rides on the ApiError (`code`: needs_league, rate_limited)
       try {
-        const body = await res.json();
-        detail = body.error ?? body.detail ?? detail;
+        body = await res.json();
+        const b = body as { error?: string; detail?: string };
+        detail = b.error ?? b.detail ?? detail;
       } catch {
         /* not JSON */
       }
-      throw new ApiError(res.status, detail);
+      throw new ApiError(res.status, detail, body);
     }
     const data = (await res.json()) as T;
     cache.set(path, { at: Date.now(), data });
