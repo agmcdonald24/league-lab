@@ -39,13 +39,16 @@ def _pipeline_dsn() -> str:
 def q(sql: str, *params):
     with psycopg.connect(main._app_dsn(), autocommit=False) as conn:
         conn.execute("set transaction read write")
-        return conn.execute(sql, params).fetchall() if conn.execute(sql, params).description else None
+        cur = conn.execute(sql, params)
+        return cur.fetchall() if cur.description else None
 
 
 def _cleanup() -> None:
     with psycopg.connect(main._app_dsn(), autocommit=False) as conn:
         conn.execute("set transaction read write")
         conn.execute("delete from blog.posts where account_id in (select id from accounts.users where email like %s)",
+                     (f"%@{DOMAIN}",))
+        conn.execute("delete from blog.images where account_id in (select id from accounts.users where email like %s)",
                      (f"%@{DOMAIN}",))
         conn.execute("delete from accounts.users where email like %s", (f"%@{DOMAIN}",))
         conn.execute("delete from accounts.login_links where user_email like %s", (f"%@{DOMAIN}",))
@@ -135,7 +138,8 @@ def save(c: TestClient, p: dict, **kw) -> dict:
 ROUTES = [("GET", "/api/blog/mine"), ("GET", "/api/blog/export"), ("GET", f"/api/blog/posts/{ID}"),
           ("GET", f"/api/blog/posts/{ID}/revisions/1"), ("POST", "/api/blog/posts"), ("PUT", f"/api/blog/posts/{ID}"),
           ("POST", f"/api/blog/posts/{ID}/publish"), ("POST", f"/api/blog/posts/{ID}/unpublish"),
-          ("POST", f"/api/blog/posts/{ID}/restore"), ("DELETE", f"/api/blog/posts/{ID}")]
+          ("POST", f"/api/blog/posts/{ID}/restore"), ("DELETE", f"/api/blog/posts/{ID}"),
+          ("POST", "/api/blog/images"), ("DELETE", f"/api/blog/images/{ID}")]
 BODY = {"title": "x", "body": "x", "revision": 1}
 
 
@@ -190,6 +194,7 @@ def test_every_new_route_has_a_bucket():
     assert ratelimit.bucket_for("GET", "/api/blog/mine") == "read"
     assert ratelimit.bucket_for("GET", f"/api/blog/posts/{ID}") == "read"
     assert ratelimit.bucket_for("GET", "/api/blog/export") == "research"
+    assert ratelimit.bucket_for("GET", f"/blog/img/db/{ID}") == "read"
     for method, path in ROUTES:
         if method != "GET":
             assert ratelimit.bucket_for(method, path) == "write", (method, path)
@@ -423,7 +428,7 @@ def _unzip(z: zipfile.ZipFile) -> Path:
 def test_without_the_tables_the_blog_is_the_files_and_the_editor_is_gone(api, folder, monkeypatch):
     uid = sign_in(api, "notables")
     monkeypatch.setenv(blog_store.EDITORS_ENV, uid)
-    monkeypatch.setattr(blog_store, "TABLES", ("blog.absent_io3", "blog.absent_io3_revisions"))
+    monkeypatch.setattr(blog_store, "TABLES", ("blog.absent_io3", "blog.absent_io3_revisions", "blog.absent_io3_images"))
     blog_store.reset()
     for method, path in ROUTES:
         r = call(api, method, path)
@@ -451,7 +456,60 @@ def test_the_script_is_idempotent_and_grants_only_its_tables():
     sql = SQL_FILE.read_text().lower()
     code = "\n".join(line.split("--")[0] for line in sql.splitlines())
     assert not re.search(r"\b(drop|alter)\b", code) and not re.search(r"^\s*truncate", code, re.M)
-    assert "create schema if not exists blog" in code and code.count("create table if not exists blog.") == 2
+    assert "create schema if not exists blog" in code and code.count("create table if not exists blog.") == 3
     grants = re.findall(r"grant [^;]+;", code)
     assert all(" on blog." in g or " on schema blog " in g or " on sequence blog." in g for g in grants), grants
     assert "create role" not in code and "accounts." not in code and "analytics" not in code
+
+
+# ====================================================================================== pictures
+PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 200
+JPG = b"\xff\xd8\xff\xe0" + b"\x00" * 200
+WEBP = b"RIFF\x00\x00\x00\x00WEBPVP8 " + b"\x00" * 200
+
+
+def upload(c: TestClient, data: bytes, ctype: str = "image/png", headers=SAME):
+    return c.post("/api/blog/images", content=data, headers={**headers, "Content-Type": ctype})
+
+
+def test_pictures_by_first_bytes_served_with_their_type(editor):
+    got = {}
+    for data, kind, mime in ((PNG, "png", "image/png"), (JPG, "jpg", "image/jpeg"), (WEBP, "webp", "image/webp")):
+        r = upload(editor, data, "application/octet-stream")              # the declared type is never trusted
+        assert r.status_code == 201 and r.json()["kind"] == kind, r.text
+        got[kind] = r.json()
+        img = editor.get(r.json()["url"])
+        assert img.status_code == 200 and img.headers["content-type"] == mime and img.content == data
+        assert img.headers["cache-control"] == "public, max-age=31536000, immutable"
+        assert img.headers["x-content-type-options"] == "nosniff"
+    assert {i["id"] for i in editor.get("/api/blog/mine").json()["images"]} == {g["id"] for g in got.values()}
+    for bad in (b"<svg onload=alert(1)>" + b" " * 64, b"<html><script>alert(1)</script>" + b" " * 64, b"GIF89a" + b"\x00" * 64,
+                b"\x89PNG", b""):
+        r = upload(editor, bad, "image/png")
+        assert r.status_code == 400 and r.json()["code"] == "bad_image", bad[:10]
+    r = upload(editor, b"\x89PNG\r\n\x1a\n" + b"\x00" * (300 * 1024))
+    assert r.status_code == 413 and r.json()["code"] == "too_big"
+    r = upload(editor, b"\x89PNG\r\n\x1a\n" + b"\x00" * (330 * 1024))
+    assert r.status_code == 413                                          # the Guard's 320 KB for this route
+    assert upload(editor, PNG, headers=EVIL).status_code == 403
+    # the address: a lower-case uuid only, nothing from it reaches the filesystem
+    for path in (f"/blog/img/db/{ID}", "/blog/img/db/..%2F..%2Fsettings", f"/blog/img/db/{got['png']['id'].upper()}",
+                 "/blog/img/db/x.png", f"/blog/img/db/{got['png']['id']}%0a"):
+        assert editor.get(path).status_code == 404, path
+    assert editor.delete(f"/api/blog/images/{got['png']['id']}", headers=SAME).json() == {"ok": True}
+    assert editor.get(got["png"]["url"]).status_code == 404
+    assert editor.delete(f"/api/blog/images/{got['png']['id']}", headers=SAME).status_code == 404
+
+
+def test_pictures_have_a_count(editor, monkeypatch):
+    there = q("select count(*) from blog.images")[0][0]                # the count is the blog's, all editors'
+    monkeypatch.setattr(blog_store, "MAX_IMAGES", there + 1)
+    assert upload(editor, PNG).status_code == 201
+    r = upload(editor, JPG)
+    assert r.status_code == 409 and r.json()["code"] == "too_many_images"
+
+
+def test_without_the_tables_a_picture_is_404(api, monkeypatch):
+    monkeypatch.setattr(blog_store, "TABLES", ("blog.absent_io3", "blog.absent_io3_revisions", "blog.absent_io3_images"))
+    blog_store.reset()
+    assert api.get(f"/blog/img/db/{ID}").status_code == 404

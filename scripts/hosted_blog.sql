@@ -1,18 +1,21 @@
 -- League Lab blog store (Wave I-O, IO-3; docs/BLOG.md § "The editor"). Plain SQL, idempotent.
 --
--- Two tables: blog.posts (one row per post written on the site: its slug, title, summary, markdown body, tags, author,
+-- Three tables: blog.posts (one row per post written on the site: its slug, title, summary, markdown body, tags, author,
 -- status draft / published / deleted, who wrote it, a revision number) and blog.revisions (the last 20 saved bodies of
--- each post, so a lost draft can be found again). The public blog serves these posts' published rows beside the
+-- each post, so a lost draft can be found again), and blog.images (pictures uploaded from the editor, served at
+-- /blog/img/db/<id>). The public blog serves the posts' published rows beside the
 -- markdown files in blog/ (api/league_lab_api/blog.py); the editor writes them (api/league_lab_api/blog_store.py).
 --
 -- The schema `blog` is NOT one the sync replaces: scripts/sync_to_hosted.sh drops and restores analytics,
 -- analytics_seeds and ops only, then runs this file — so the posts survive every nightly. The read-only app role keeps
--- `default_transaction_read_only = on`; it gets SELECT, INSERT, UPDATE and DELETE on these two tables (the API's writer
+-- `default_transaction_read_only = on`; it gets SELECT, INSERT, UPDATE and DELETE on the posts and revisions, SELECT,
+-- INSERT and DELETE on the pictures (the API's writer
 -- opens its own `BEGIN; SET TRANSACTION READ WRITE; ...; COMMIT`: db.run_rw, purpose "blog") and nothing else here.
 -- No foreign key to accounts.users: a post is the site's content and stays when its writer's account is deleted.
 --
--- Size: the API refuses a body over 200 KB, more than 500 posts, and more than 30 MB of bodies in all (posts and
--- revisions together), so the schema stays under ~32 MB on Neon whatever happens; a real blog is a few hundred KB.
+-- Size: the API refuses a body over 200 KB, more than 500 posts, and more than 30 MB in all (posts, revisions and
+-- pictures together; a picture ≤ 300 KB, 50 at most), so the schema stays under ~32 MB on Neon whatever
+-- happens; a real blog is a few hundred KB plus its pictures.
 --
 -- Run it as the database owner:
 --   hosted:  the sync does it every night (LEAGUE_LAB_HOSTED_ADMIN_URL, the Neon owner role)
@@ -69,16 +72,31 @@ create table if not exists blog.revisions (
 );
 create index if not exists revisions_post_saved on blog.revisions (post_id, saved_at desc);
 
+create table if not exists blog.images (
+  id          uuid primary key default gen_random_uuid(),
+  kind        text not null,
+  bytes       bytea not null,
+  size        integer not null,
+  account_id  uuid not null,
+  created_at  timestamptz not null default now(),
+  constraint images_kind_word check (kind in ('png', 'jpg', 'webp')),
+  constraint images_size      check (size = octet_length(bytes) and size between 12 and 307200)
+);
+create index if not exists images_account on blog.images (account_id, created_at desc);
+
 comment on table blog.posts is
   'Blog posts written on the site (Wave I-O, IO-3): slug, title, summary, markdown body, tags, author, status draft / published / deleted (restorable for 30 days), the writing account, a revision number for the editor''s conflict check.';
 comment on table blog.revisions is
   'The last 20 saved bodies of each blog post (Wave I-O, IO-3), at most one every two minutes while autosaving.';
+comment on table blog.images is
+  'Pictures uploaded from the blog editor (Wave I-O, IO-3): PNG, JPEG or WebP by their first bytes, at most 300 KB each and 50 in all, served at /blog/img/db/<id>.';
 
 grant usage on schema blog to league_lab_app;
 grant select, insert, update, delete on blog.posts to league_lab_app;
 grant select, insert, update, delete on blog.revisions to league_lab_app;
+grant select, insert, delete on blog.images to league_lab_app;
 grant usage on sequence blog.revisions_id_seq to league_lab_app;
-revoke truncate, references, trigger on blog.posts, blog.revisions from league_lab_app;
+revoke truncate, references, trigger on blog.posts, blog.revisions, blog.images from league_lab_app;
 
 -- Retention (every run; the API also prunes when it writes): a deleted post is restorable for 30 days, then gone with
 -- its revisions (on delete cascade); revisions beyond the newest 20 of a post go. Re-running deletes nothing more.

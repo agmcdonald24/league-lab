@@ -50,6 +50,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, Response
 from league_lab import memo
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from . import accounts, blog, db
 
@@ -60,6 +61,10 @@ PURPOSE = "blog"                       # db.run_rw's connection for these writes
 MAX_BODY_BYTES = 200 * 1024
 MAX_POSTS = 500
 MAX_TOTAL_BYTES = 30 * 1024 * 1024
+MAX_IMAGE_BYTES = 300 * 1024
+MAX_IMAGES = 50
+IMAGE_CACHE = "public, max-age=31536000, immutable"   # an id is never reused: a new picture is a new address
+IMAGE_TYPES = {"png": "image/png", "jpg": "image/jpeg", "webp": "image/webp"}
 KEEP_REVISIONS = 20
 REVISION_GAP_S = 120
 RESTORE_DAYS = 30
@@ -74,7 +79,7 @@ _CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f  ]")     # no control charac
 _LINE_CONTROL = re.compile(r"[\x00-\x1f\x7f  ]")          # a one-line field: no newline, no tab either
 NO_STORE = {"Cache-Control": "no-store"}
 
-_pub = memo.region("blog_db", ttl=PUBLIC_TTL_S, max_entries=BODY_ENTRIES + 1)
+_pub = memo.region("blog_db", ttl=PUBLIC_TTL_S, max_entries=BODY_ENTRIES + 21)   # bodies, the list, 20 pictures
 
 
 # ---------------------------------------------------------------- who may write
@@ -96,8 +101,9 @@ def editors() -> frozenset[str]:
     return frozenset(out)
 
 
-TABLES = ("blog.posts", "blog.revisions")   # the existence checks' names (a test points them at absent ones)
+TABLES = ("blog.posts", "blog.revisions", "blog.images")   # the existence checks' names (a test points them elsewhere)
 READY_SQL = ("select coalesce(has_table_privilege(to_regclass(%s), 'insert'), false) "
+             "and coalesce(has_table_privilege(to_regclass(%s), 'insert'), false) "
              "and coalesce(has_table_privilege(to_regclass(%s), 'insert'), false)")
 _ready = {"ok": False, "next": 0.0}
 
@@ -289,7 +295,8 @@ def _prune(c: psycopg.Connection) -> None:
 
 def _room(c: psycopg.Connection, adding: int) -> None:
     total = c.execute("select (select coalesce(sum(body_bytes), 0) from blog.posts) + "
-                      "(select coalesce(sum(body_bytes), 0) from blog.revisions)").fetchone()[0]
+                      "(select coalesce(sum(body_bytes), 0) from blog.revisions) + "
+                      "(select coalesce(sum(size), 0) from blog.images)").fetchone()[0]
     if int(total) + adding > MAX_TOTAL_BYTES:
         raise _err(413, "blog_full", "The blog's storage is full. Delete old drafts, or export and tidy up.")
 
@@ -321,13 +328,19 @@ def mine(uid: str) -> dict[str, Any]:
                          "(status = 'deleted'), updated_at desc limit %s", (uid, MAX_POSTS)).fetchall()
         return {"rows": rows}
     got = db.run_rw(tx, purpose=PURPOSE)
+    images = db.run_rw(lambda c: c.execute("select id, kind, size, created_at from blog.images where account_id = %s "
+                                           "order by created_at desc limit %s", (uid, MAX_IMAGES)).fetchall(),
+                       purpose=PURPOSE)
     posts = [_row(r) for r in got["rows"]]
     last_author = next((p["author"] for p in sorted(posts, key=lambda p: p["updated_at"] or "", reverse=True)
                         if p["author"] and p["status"] != "deleted"), "")
     return {"account_id": uid, "author": last_author, "posts": posts,
+            "images": [{"id": str(i), "url": f"/blog/img/db/{i}", "kind": k, "size": n, "created_at": _iso(t)}
+                       for i, k, n, t in images],
             "limits": {"body_kb": MAX_BODY_BYTES // 1024, "posts": MAX_POSTS, "title": blog.MAX_TITLE,
                        "summary": blog.MAX_SUMMARY, "tags": blog.MAX_TAGS, "tag": blog.MAX_TAG, "slug": blog.MAX_SLUG,
-                       "restore_days": RESTORE_DAYS, "revisions": KEEP_REVISIONS}}
+                       "restore_days": RESTORE_DAYS, "revisions": KEEP_REVISIONS, "image_kb": MAX_IMAGE_BYTES // 1024,
+                       "images": MAX_IMAGES}}
 
 
 def get_post(uid: str, post_id: str) -> dict[str, Any]:
@@ -639,3 +652,87 @@ router.post("/api/blog/posts/{post_id}/restore")(_action("restore"))
 def delete_route(post_id: str, request: Request) -> JSONResponse:
     uid, _sid = editor(request, write=True)
     return _json(_status(uid, post_id, "delete"))
+
+
+# ---------------------------------------------------------------- pictures (blog.images; served by blog.py's pages router)
+def image_kind(data: bytes) -> str | None:
+    """png / jpg / webp by the first bytes (the name and the declared type are never trusted); None for anything else
+    (svg, gif, html named .png …)."""
+    for kind in ("png", "jpg", "webp"):
+        if blog._looks_like(kind, data[:16]):
+            return kind
+    return None
+
+
+def upload(uid: str, data: bytes) -> dict[str, Any]:
+    if len(data) > MAX_IMAGE_BYTES:
+        raise _err(413, "too_big", f"A picture is {MAX_IMAGE_BYTES // 1024} KB at most. Make it smaller first.")
+    kind = image_kind(data)
+    if kind is None or len(data) < 12:
+        raise _err(400, "bad_image", "A picture is a PNG, JPEG or WebP file.")
+
+    def tx(c: psycopg.Connection) -> dict:
+        if c.execute("select count(*) from blog.images").fetchone()[0] >= MAX_IMAGES:
+            raise _err(409, "too_many_images", f"The blog holds {MAX_IMAGES} pictures at most. Delete one first.")
+        _room(c, len(data))
+        r = c.execute("insert into blog.images (kind, bytes, size, account_id) values (%s, %s, %s, %s) "
+                      "returning id, created_at", (kind, data, len(data), uid)).fetchone()
+        return {"id": str(r[0]), "url": f"/blog/img/db/{r[0]}", "kind": kind, "size": len(data), "created_at": _iso(r[1])}
+    return db.run_rw(tx, purpose=PURPOSE)
+
+
+def remove_image(uid: str, image_id: str) -> None:
+    image_id = _check_id(image_id)
+    n = db.run_rw(lambda c: c.execute("delete from blog.images where id = %s and account_id = %s",
+                                      (image_id, uid)).rowcount, purpose=PURPOSE)
+    if not n:
+        raise _err(404, "no_image", "No picture at that address.")
+    _pub.pop(("img", image_id))
+
+
+def image(image_id: str) -> tuple[str, bytes] | None:
+    """(kind, bytes) of a stored picture, or None — the id checked first; kept in the budget's region only once it
+    exists (the keys are the ≤ 50 stored ids: a closed set)."""
+    if not isinstance(image_id, str) or not _ID.fullmatch(image_id):
+        return None
+    hit = _pub.get(("img", image_id))
+    if hit is not None:
+        return hit
+    try:
+        with db.pool().connection(timeout=5) as c:
+            if c.execute("select has_table_privilege(to_regclass(%s), 'select')", TABLES[2:3]).fetchone()[0] is not True:
+                return None
+            r = c.execute("select kind, bytes from blog.images where id = %s", (image_id,)).fetchone()
+    except Exception as exc:                                         # noqa: BLE001
+        log.info("blog: a picture not read (%s)", exc.__class__.__name__)
+        return None
+    if r is None or r[0] not in IMAGE_TYPES or image_kind(bytes(r[1])) != r[0]:
+        return None
+    out = (r[0], bytes(r[1]))
+    _pub.put(("img", image_id), out, nbytes=len(out[1]))
+    return out
+
+
+@router.post("/api/blog/images", status_code=201)
+async def upload_route(request: Request) -> JSONResponse:
+    """The picture is the request's body as it is (no form, no base64): ≤ 320 KB at the Guard, ≤ 300 KB here."""
+    data = await request.body()                                     # the Guard bounds it (security.body_limit)
+
+    def work() -> dict:                                             # the session check and the insert: off the loop
+        uid, _sid = editor(request, write=True)
+        return upload(uid, data)
+    return _json(await run_in_threadpool(work), 201)
+
+
+@router.delete("/api/blog/images/{image_id}")
+def image_delete_route(image_id: str, request: Request) -> JSONResponse:
+    uid, _sid = editor(request, write=True)
+    remove_image(uid, image_id)
+    return _json({"ok": True})
+
+
+def image_response(image_id: str) -> Response:
+    got = image(image_id)
+    if got is None:
+        return Response(status_code=404, headers={"Cache-Control": "no-store"})
+    return Response(got[1], media_type=IMAGE_TYPES[got[0]], headers={"Cache-Control": IMAGE_CACHE})

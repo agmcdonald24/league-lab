@@ -263,6 +263,13 @@ def blog_export(request: Request) -> Response:
 
 
 router.include_router(blog_store.router)
+
+
+@pages.get("/blog/img/db/{image_id}", include_in_schema=False)
+def blog_db_image(image_id: str) -> Response:
+    """A picture uploaded from the editor (blog.images): the id must be a lower-case uuid; its first bytes are checked
+    again; cached a year (an id is never reused). 404 without the table."""
+    return blog_store.image_response(image_id)
 # ---- end IO-3
 
 

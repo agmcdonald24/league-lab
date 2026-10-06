@@ -26,8 +26,10 @@
     slugFrom,
     tagsFrom,
     type Draft,
+    type EditorImage,
     type EditorPost,
     type LocalCopy,
+    uploadImage,
   } from "../components/blog/editor.svelte";
   import { STARTERS, starter, type StarterKind } from "../components/blog/starters";
 
@@ -57,7 +59,7 @@
   let confirmDelete = $state(false);
   let copied = $state<"idle" | "copied" | "manual">("idle");
   let starting = $state<StarterKind | null>(null);
-  let panel = $state<"none" | "player" | "table">("none");
+  let panel = $state<"none" | "player" | "table" | "picture">("none");
   let area = $state<HTMLTextAreaElement | null>(null);
 
   const draft = (): Draft => ({ title, summary, tags: tagsFrom(tagsText), author, body, slug: slug.trim() || null });
@@ -378,6 +380,49 @@
     panel = "none";
   }
 
+  // ---- Picture: upload (PNG / JPEG / WebP, ≤ 300 KB) → ![words](/blog/img/db/<id>); the ones uploaded before
+  let images = $state<EditorImage[]>([]);
+  let uploading = $state(false);
+  let picWords = $state<string | null>(null);
+  $effect(() => {
+    if (panel === "picture") images = editor.mine?.images ?? [];
+  });
+  async function onFile(e: Event) {
+    const input = e.currentTarget as HTMLInputElement;
+    const f = input.files?.[0];
+    input.value = "";
+    if (!f) return;
+    picWords = null;
+    if (f.size > 300 * 1024) {
+      picWords = "A picture is 300 KB at most. Make it smaller first.";
+      return;
+    }
+    uploading = true;
+    try {
+      const img = await uploadImage(f);
+      images = [img, ...images];
+      insertImage(img, f.name.replace(/\.[a-z0-9]+$/i, ""));
+      void checkEditor(true);
+    } catch (err) {
+      picWords = err instanceof Error ? err.message : "The picture did not upload.";
+    } finally {
+      uploading = false;
+    }
+  }
+  function insertImage(img: EditorImage, words = "A picture") {
+    insert(`![${plainName(words).replace(/[!]/g, "") || "A picture"}](${img.url})\n`);
+    panel = "none";
+  }
+  async function deleteImage(img: EditorImage) {
+    try {
+      await editorApi.removeImage(img.id);
+      images = images.filter((x) => x.id !== img.id);
+      void checkEditor(true);
+    } catch (err) {
+      picWords = err instanceof Error ? err.message : "That did not work.";
+    }
+  }
+
   const savedWords = $derived.by(() => {
     if (deleted) return "Deleted";
     if (saveState === "saving") return "Saving…";
@@ -525,9 +570,33 @@
       {@render tool("Table", () => insert(TABLE), "tool-table")}
       {@render tool("Player", () => (panel = panel === "player" ? "none" : "player"), "tool-player", true)}
       {@render tool("Players table", () => (panel = panel === "table" ? "none" : "table"), "tool-players-table", true)}
+      {@render tool("Picture", () => (panel = panel === "picture" ? "none" : "picture"), "tool-picture", true)}
     </div>
 
-    {#if panel !== "none"}
+    {#if panel === "picture"}
+      <section class="space-y-2 rounded-lg border border-line bg-surface p-3" data-testid="editor-picture">
+        <label class="block">
+          <span class="ll-label">Add a picture <span class="font-normal text-ink-3">(PNG, JPEG or WebP, 300 KB at most)</span></span>
+          <input type="file" accept="image/png,image/jpeg,image/webp" class="mt-1 block w-full text-sm" onchange={onFile} disabled={uploading} data-testid="picture-file" />
+        </label>
+        {#if uploading}<p class="text-sm text-ink-3">Uploading…</p>{/if}
+        {#if picWords}<p class="text-sm text-bad" role="alert" data-testid="picture-problem">{picWords}</p>{/if}
+        {#if images.length}
+          <h3 class="ll-label">Your pictures ({images.length} of {editor.mine?.limits.images ?? 50})</h3>
+          <ul class="grid grid-cols-2 gap-2 wide:grid-cols-4" data-testid="picture-list">
+            {#each images as img (img.id)}
+              <li class="space-y-1 rounded-md border border-line p-2">
+                <img src={img.url} alt="" class="h-20 w-full rounded-sm object-cover" loading="lazy" />
+                <div class="flex flex-wrap gap-2 text-sm">
+                  <button type="button" class="ll-link font-semibold" onclick={() => insertImage(img)}>Insert</button>
+                  <button type="button" class="ll-link" onclick={() => deleteImage(img)}>Delete</button>
+                </div>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </section>
+    {:else if panel !== "none"}
       <section class="space-y-2 rounded-lg border border-line bg-surface p-3" data-testid="editor-panel">
         <label class="block">
           <span class="ll-label">{panel === "player" ? "Link a player" : `Players for the table (up to ${MAX_PLAYERS})`}</span>
@@ -605,7 +674,8 @@
           {(size / 1024).toFixed(size < 10240 ? 1 : 0)} KB of {LIMIT_KB} KB
         </p>
         <p class="mt-1 text-sm text-ink-3" data-testid="editor-pictures">
-          Pictures: add the file to <code>blog/img/</code> in the repository, then write <code>![words](/blog/img/name.png)</code>. Uploading from here is not built yet.
+          Pictures: <strong>Picture</strong> above uploads one (PNG, JPEG or WebP, 300 KB at most). A file in <code>blog/img/</code> in the repository works too:
+          <code>![words](/blog/img/name.png)</code>.
         </p>
       </div>
       <section class="min-w-0 {view === 'preview' ? '' : 'hidden wide:block'}" aria-label="Preview" data-testid="editor-preview">

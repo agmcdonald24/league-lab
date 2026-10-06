@@ -29,11 +29,20 @@ export interface EditorPost {
   slug_words?: string;
 }
 
+export interface EditorImage {
+  id: string;
+  url: string; // "/blog/img/db/<id>"
+  kind: "png" | "jpg" | "webp";
+  size: number;
+  created_at: string | null;
+}
+
 export interface Mine {
   account_id: string;
   author: string;
   posts: EditorPost[];
-  limits: { body_kb: number; posts: number; title: number; summary: number; tags: number; tag: number; slug: number; restore_days: number; revisions: number };
+  images?: EditorImage[];
+  limits: { body_kb: number; posts: number; title: number; summary: number; tags: number; tag: number; slug: number; restore_days: number; revisions: number; image_kb?: number; images?: number };
 }
 
 export interface Draft {
@@ -92,7 +101,26 @@ export const editorApi = {
   unpublish: (id: string) => call<EditorPost>("POST", `/api/blog/posts/${encodeURIComponent(id)}/unpublish`),
   remove: (id: string) => call<EditorPost>("DELETE", `/api/blog/posts/${encodeURIComponent(id)}`),
   restore: (id: string) => call<EditorPost>("POST", `/api/blog/posts/${encodeURIComponent(id)}/restore`),
+  removeImage: (id: string) => call<{ ok: boolean }>("DELETE", `/api/blog/images/${encodeURIComponent(id)}`),
 };
+
+/** A picture as it is (the server checks its first bytes: PNG, JPEG or WebP, ≤ 300 KB). */
+export async function uploadImage(file: Blob): Promise<EditorImage> {
+  let res: Response;
+  try {
+    res = await fetch("/api/blog/images", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/octet-stream", Accept: "application/json" }, body: file });
+  } catch {
+    throw new EditorError(0, "offline", "No connection. Try again in a minute.");
+  }
+  let data: { code?: string; error?: string } & Partial<EditorImage> = {};
+  try {
+    data = await res.json();
+  } catch {
+    /* not JSON */
+  }
+  if (!res.ok) throw new EditorError(res.status, data.code ?? null, res.status === 413 && !data.code ? "A picture is 300 KB at most. Make it smaller first." : (data.error ?? "The picture did not upload."));
+  return data as EditorImage;
+}
 export const EXPORT_PATH = "/api/blog/export";
 
 /** Is the signed-in account an editor (asked once per sign-in; quiet: any failure is "no"). */

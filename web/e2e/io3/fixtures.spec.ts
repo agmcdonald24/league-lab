@@ -54,6 +54,7 @@ from league_lab_api import accounts, db
 email = os.environ["IO3_EMAIL"]
 def tx(c):
     c.execute("delete from blog.posts where account_id in (select id from accounts.users where email = %s)", (email,))
+    c.execute("delete from blog.images where account_id in (select id from accounts.users where email = %s)", (email,))
     c.execute("delete from accounts.users where email = %s", (email,))
     c.execute("delete from accounts.login_links where user_email = %s", (email,))
 db.run_rw(tx)
@@ -180,7 +181,7 @@ test("the editor: write, preview, publish, the public post, unpublish, delete", 
   await page.getByTestId("blog-write").click();
   await expect(page).toHaveURL(/\/blog\/new$/);
   await expect(page.getByTestId("editor-starters")).toBeVisible();
-  await expect(page.getByTestId("editor-pictures")).toContainText("Uploading from here is not built yet.");
+  await expect(page.getByTestId("editor-pictures")).toContainText("300 KB at most");
 
   await page.getByTestId("editor-title").fill(title);
   await page.getByTestId("editor-summary").fill('A summary with "quotes" and <tags>.');
@@ -354,4 +355,26 @@ test("typing in a 20 KB post stays smooth (the preview is debounced)", async ({ 
   console.log(`IO3 typing: ${perKey.toFixed(1)} ms per key in a ${Math.round((await page.getByTestId("editor-body").inputValue()).length / 1024)} KB post`);
   expect(perKey).toBeLessThan(60);
   await expect(page.getByTestId("editor-preview")).toContainText("More words typed at the end of a long post.");
+});
+
+const PNG_1PX = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+
+test("a picture: uploaded from the editor, checked by its first bytes, shown in the preview; an svg named .png is refused", async ({ page, isMobile }) => {
+  test.setTimeout(90_000);
+  await asEditor(page);
+  await page.goto(`${API}/blog/new`);
+  await page.getByTestId("editor-title").fill(`Picture ${randomBytes(3).toString("hex")}`);
+  await page.getByTestId("editor-body").fill("A chart below.");
+  await expect(page).toHaveURL(/\/blog\/edit\//, { timeout: 15_000 });
+  await page.getByTestId("tool-picture").click();
+  await page.getByTestId("picture-file").setInputFiles({ name: "evil.png", mimeType: "image/png", buffer: Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" onload="window.__io3=9"></svg>' + " ".repeat(64)) });
+  await expect(page.getByTestId("picture-problem")).toHaveText("A picture is a PNG, JPEG or WebP file.");
+  await page.getByTestId("picture-file").setInputFiles({ name: "week-5-chart.png", mimeType: "image/png", buffer: PNG_1PX });
+  await expect(page.getByTestId("editor-body")).toHaveValue(/!\[week-5-chart\]\(\/blog\/img\/db\/[0-9a-f-]{36}\)/);
+  if (isMobile) await page.getByTestId("switch-preview").click();
+  const img = page.getByTestId("editor-preview").locator('img[src^="/blog/img/db/"]');
+  await expect(img).toHaveCount(1);
+  await expect.poll(() => img.evaluate((el) => (el as HTMLImageElement).naturalWidth)).toBe(1);
+  await inert(page, '[data-testid="editor-preview"]');
+  await page.screenshot({ path: join(SHOTS, `io3-picture-${isMobile ? 375 : 1300}.png`), fullPage: true });
 });
