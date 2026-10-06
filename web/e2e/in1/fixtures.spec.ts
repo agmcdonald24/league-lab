@@ -172,6 +172,18 @@ test("home: when the matchup board answers, matchups to target show and the proj
   await page.screenshot({ path: join(SHOTS, `home-with-board-full-${info.project.name}.png`), fullPage: true, scale: "css" });
 });
 
+test("home: every live call failing leaves the name, the sentence, the actions and the tools; no error card", async ({ context, page, isMobile }) => {
+  await serveFixtures(context);
+  await context.route(/\/api\/(ros|about|record|blog|matchups)/, (route) => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "down" }) }));
+  await size(page, isMobile);
+  await page.goto("/home");
+  await expect(page.getByTestId("home-hero")).toBeVisible();
+  await expect(page.getByTestId("home-tools")).toBeVisible();
+  await page.waitForTimeout(500);
+  for (const id of ["home-top", "home-matchups", "home-record", "home-blog", "error-card"]) await expect(page.getByTestId(id)).toHaveCount(0);
+  await noSidewaysScroll(page);
+});
+
 for (const [label, w, h] of [["desktop", 1300, 700], ["phone", 375, 667]] as const) {
   test(`setup on a ${label} (${w} × ${h}): after Find my leagues the first league row is in view, focus on the results`, async ({ context, page }, info) => {
     test.skip(info.project.name !== (label === "desktop" ? "desktop" : "phone"), "one size per project");

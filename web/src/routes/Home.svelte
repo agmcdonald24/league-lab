@@ -4,6 +4,7 @@
   // week). Above the fold: the name, one sentence, two actions, and this week's top projections. Below: matchups to
   // target, how the projections have done (the bad numbers too), the newest posts, the tools. Every module reads an
   // existing route on Half PPR (`ref:half`) and hides itself when its call fails: never an error card on the home.
+  import { untrack } from "svelte";
   import { APP_MARK, APP_NAME } from "../lib/brand";
   import { get, aboutPath, blogPaths, homePaths, paths, type AboutAnswer, type BlogMeta, type Board, type RecordAnswer, type RosList } from "../lib/api";
   import { BROWSE_HREF, REF_DEFAULT, refLabel } from "../lib/refleague";
@@ -29,26 +30,19 @@
   async function loadTop(p: string) {
     if (top[p] && top[p] !== "failed") return;
     top[p] = "loading";
-    try {
-      const b = await get<Board>(homePaths.board(L, p, null, 5));
-      const rows = (b.rows ?? b.players ?? []).map(fromBoard).filter((r): r is TopRow => r !== null);
-      if (rows.length) {
-        top[p] = rows.slice(0, 5);
-        return;
-      }
-    } catch {
-      /* no board on this server: the rest-of-season list below */
-    }
-    try {
-      const r = await get<RosList>(homePaths.ros(L, p, 40));
-      const rows = fromRos(r.players, 5);
-      top[p] = rows.length ? rows : "failed";
-    } catch {
-      top[p] = "failed";
-    }
+    // both at once (a missing board must not cost a second round trip); the board wins when it has rows
+    const [b, r] = await Promise.allSettled([get<Board>(homePaths.board(L, p, null, 5)), get<RosList>(homePaths.ros(L, p, 40))]);
+    const fromB = b.status === "fulfilled" ? (b.value.rows ?? b.value.players ?? []).map(fromBoard).filter((x): x is TopRow => x !== null) : [];
+    const fromR = r.status === "fulfilled" ? fromRos(r.value.players, 5) : [];
+    top[p] = fromB.length ? fromB.slice(0, 5) : fromR.length ? fromR : "failed";
   }
-  $effect(() => void loadTop(pos));
+  $effect(() => {
+    const p = pos; // the only dependency: loadTop reads and writes `top`, which must not re-run this (a failure would retry forever)
+    untrack(() => void loadTop(p));
+  });
   const topRows = $derived(top[pos]);
+  // the module hides when nothing loaded at all (a tab that fails after another worked says so in one line)
+  const topShown = $derived(topRows !== "failed" || Object.values(top).some((v) => Array.isArray(v)));
 
   // ---- matchups to target this week (IN-3's board, sorted by the matchup's tone); hidden without the route
   let board = $state<ReturnType<typeof fromBoardWithTone> | null>(null);
@@ -116,6 +110,7 @@
     </section>
 
     <!-- live content above the fold: this week's top projections -->
+    {#if topShown}
     <section class="rounded-lg border border-line bg-surface" style="box-shadow:var(--ll-shadow)" data-testid="home-top">
       <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 pt-3">
         <h2 class="text-lg leading-tight font-bold">This week's top projections <span class="text-sm font-semibold text-ink-3">· {scoring}</span></h2>
@@ -152,15 +147,18 @@
           {/each}
         </ol>
         <p class="border-t border-line px-4 py-2.5 text-sm leading-snug text-ink-3" data-testid="home-top-note">
-          {#if topRows[0]?.low !== null}
+          {#if topRows.some((x) => x.low !== null)}
             Projected points this week in {scoring} scoring, with the low-end to high-end outcome (8 weeks in 10 land between).
-          {:else}
+          {:else if topRows.some((x) => x.ros !== null)}
             Projected points this week in {scoring} scoring; beside it the rest of the season and its low-end to high-end range (8 in 10 land between).
+          {:else}
+            Projected points this week in {scoring} scoring.
           {/if}
           <a class="ll-link" href={link("/players")}>Every player ›</a>
         </p>
       {/if}
     </section>
+    {/if}
   </div>
 
   <div class="grid gap-5 wide:grid-cols-2 wide:items-start">
