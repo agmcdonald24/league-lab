@@ -1211,66 +1211,7 @@ def projection_table() -> dict[str, dict[str, bool]]:
 
 
 # ---- role trend: his last two games against his season before them (summed numerator over summed denominator)
-ROLE_RECENT = 2                 # the recent window: his last 2 games played
-ROLE_MIN_BEFORE = 2             # … against at least 2 games before them (else: too small a sample, nothing said)
-ROLE_MEASURES: dict[str, dict] = {
-    # measure: numerator, denominator, the change that counts (share points), positions, the signal it belongs to, words
-    "target_share": {"num": "targets", "den": "team_targets", "move": 0.05, "pos": {"RB", "WR", "TE"},
-                     "signal": "role", "words": "of the targets"},
-    "carry_share": {"num": "carries", "den": "team_carries", "move": 0.10, "pos": {"RB"}, "signal": "role",
-                    "words": "of the carries"},
-    "snap_share": {"num": "offense_snaps", "den": "team_snaps", "move": 0.10, "pos": {"RB", "WR", "TE"},
-                   "signal": "role", "words": "of the snaps"},
-    "route_rate": {"num": "routes", "den": "team_dropbacks_with_participation", "move": 0.10, "pos": {"RB", "WR", "TE"},
-                   "signal": "routes", "words": "routes run per dropback"},
-}
-ROLE_MIN_DEN = {"team_targets": 20.0, "team_carries": 20.0, "team_snaps": 60.0, "team_dropbacks_with_participation": 30.0}
-
-
-def _ratio(g: pd.DataFrame, num: str, den: str) -> float | None:
-    if num not in g or den not in g:
-        return None
-    ok = g[num].notna() & g[den].notna() & (pd.to_numeric(g[den], errors="coerce") > 0)
-    if not ok.any() or ok.sum() < len(g):            # a game without the measure: unknown, not zero
-        return None
-    d = float(pd.to_numeric(g.loc[ok, den]).sum())
-    if d < ROLE_MIN_DEN.get(den, 1.0) * len(g) / ROLE_RECENT:
-        return None
-    return float(pd.to_numeric(g.loc[ok, num]).sum()) / d
-
-
-def role_trend(games: pd.DataFrame, position: str) -> dict | None:
-    """``games``: one player's games this season BEFORE this week, played only (``week``, ``targets``, ``team_targets``,
-    ``carries``, ``team_carries``, ``offense_snaps``, ``team_snaps``, ``routes``, ``team_dropbacks_with_participation``).
-    His last ``ROLE_RECENT`` games against the ones before them (at least ``ROLE_MIN_BEFORE``): each measure as the
-    summed numerator over the summed denominator; a measure moved when it changed by its ``move`` or more. "role up"
-    when at least one moved up and none down, "role down" the other way, else None (nothing said; mixed or too small)."""
-    if position not in ("RB", "WR", "TE") or games is None or games.empty:
-        return None
-    g = games.sort_values("week")
-    recent, before = g.tail(ROLE_RECENT), g.iloc[: max(0, len(g) - ROLE_RECENT)]
-    if len(recent) < ROLE_RECENT or len(before) < ROLE_MIN_BEFORE:
-        return None
-    moved = []
-    for name, m in ROLE_MEASURES.items():
-        if position not in m["pos"]:
-            continue
-        a, b = _ratio(recent, m["num"], m["den"]), _ratio(before, m["num"], m["den"])
-        if a is None or b is None:
-            continue
-        if abs(a - b) >= m["move"] - 1e-9:
-            moved.append({"measure": name, "recent": round(a, 3), "before": round(b, 3), "change": round(a - b, 3),
-                          "signal": m["signal"], "words": m["words"]})
-    ups, downs = [x for x in moved if x["change"] > 0], [x for x in moved if x["change"] < 0]
-    if not moved or (ups and downs):
-        return None
-    up = bool(ups)
-    parts = [f"{x['recent']:.0%} {x['words']} ({x['before']:.0%})" for x in moved]
-    signals = {x["signal"] for x in moved}
-    return {"trend": "up" if up else "down", "tone": "favorable" if up else "difficult",
-            "words": (f"Role {'up' if up else 'down'} in his last two games (the {len(before)} before in brackets): "
-                      + ", ".join(parts) + "."), "measures": moved,
-            "signal": "role" if "role" in signals else "routes", "games": [len(recent), len(before)]}
+from .role_trend import role_trend  # noqa: E402,F401,I001 IO-4: moved, one implementation with Stats
 
 
 # ---- game environment: the betting line (nflverse: spread_line > 0 = the home team favoured by that many)

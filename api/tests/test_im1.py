@@ -46,12 +46,13 @@ def _get(client, **q) -> dict:
 # ------------------------------------------------------------------------------------------------- the catalogue
 def test_every_column_has_a_group_and_the_catalogue_runs_group_by_group():
     assert ST.GROUPS == ["Games and points", "Receiving", "Rushing", "Passing", "Air yards", "Red zone", "Efficiency",
-                         "Expected points", "Next Gen Stats", "Charting", "Snaps and routes", "Advanced (PFR)"]
+                         "Expected points", "Next Gen Stats", "Charting", "Snaps and routes", "Role change",
+                         "Advanced (PFR)"]                    # IO-4 (Wave I-O): the Role change group, on purpose
     seen = [c["group"] for c in ST.CATALOGUE]
     assert all(g in ST.GROUPS for g in seen)
     runs = [g for i, g in enumerate(seen) if i == 0 or seen[i - 1] != g]
     assert runs == ST.GROUPS                                    # one run per group, in GROUPS order
-    assert len({c["id"] for c in ST.CATALOGUE}) == len(ST.CATALOGUE) == 101
+    assert len({c["id"] for c in ST.CATALOGUE}) == len(ST.CATALOGUE) == 104       # IO-4: + the 3 role-change columns
 
 
 def test_every_new_column_says_how_it_adds_up_and_why_it_can_be_null():
