@@ -124,3 +124,12 @@ export function homeActions(d: MyWeek, w: Waivers | null | undefined): WeekActio
   return acts.slice(0, MAX_ACTIONS).sort((a, b) => a.urgency - b.urgency);
 }
 // ---- end IE-1
+
+// ---- IN-5 (Wave I-N): an open starting spot's next step — Waivers at its position (the screen reads ?position=); a
+// flex or a team unit: every free agent
+const WAIVER_POSITIONS = new Set(["QB", "RB", "WR", "TE", "K", "DEF"]);
+export function waiversFor(slotType: string | null | undefined): string {
+  const t = String(slotType ?? "").toUpperCase().replace(/\d+$/, "");
+  return WAIVER_POSITIONS.has(t) ? `/waivers?position=${t}` : "/waivers";
+}
+// ---- end IN-5

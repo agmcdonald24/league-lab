@@ -88,7 +88,10 @@ IN-1. The boundaries catch any of them: a duplicate there is an error card, neve
   answers (blank screen), the render error (blank screen). The two e2e files whose words changed on purpose:
   `e2e/ib3` (`/Change needed/` → `/Roster alert/`), `e2e/ie1` (`"Change needed"` → `"Roster alert"`). **Full fixtures
   suite: 441 passed / 3 skipped / 0 failed** (11.4 min; 431 before + the 10 new).
-* Screenshots (`docs/handbacks/in5/`): My Week, Team (the "nan" answer), the error card — each phone and desktop; no
+* Team's open rows also link to Waivers at the position ("Find one on Waivers ›", `lib/week.ts` `waiversFor`); the
+  Team-related e2e specs (ii4, ic4, ik3, ii0, v2, decisions, ih2: 72) pass after it.
+* Screenshots (`docs/handbacks/in5/`): My Week, Team (the "nan" answer) and its roster card, the error card — each phone
+  and desktop; no
   sideways scroll at 375, the screen's column > 900 px at 1300.
 
 ## Words changed on purpose (old string → where)

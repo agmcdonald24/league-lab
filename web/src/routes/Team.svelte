@@ -21,6 +21,7 @@
   import { Remote } from "../lib/remote.svelte"; // ---- V-2
 
   import { ago } from "../lib/card"; // ---- IH-2: the MFL roster freshness line
+  import { waiversFor } from "../lib/week"; // ---- IN-5: an open spot's link to Waivers
   import { APP_NAME } from "../lib/brand"; // ---- IH-2
 
   let { league, team, onauth }: { options: LeagueOption[]; league: string; team: number | null; onauth: () => void } = $props();
@@ -351,7 +352,11 @@
             {#each [...starters, ...bench, ...out] as r, i (`${r.role === "empty" || !r.sleeper_id ? "open" : r.sleeper_id}-${i}`)}
               <li>
                 {#if r.role === "empty"}
-                  <div class="flex min-h-14 items-center px-3 text-base text-ink-3">{slotLabel(r.slot)}: nobody can play it this week</div>
+                  <!-- ---- IN-5: an open spot's next step, as on My Week: Waivers at its position -->
+                  <div class="flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2 text-base text-ink-3" data-testid="roster-open">
+                    <span>{slotLabel(r.slot)}: nobody can play it this week</span>
+                    <a class="ll-link text-sm font-semibold" href={withContext(waiversFor(r.slot_type ?? r.slot), ctx)} data-testid="roster-open-waivers">Find one on Waivers ›</a>
+                  </div>
                 {:else}
                   <PlayerRow
                     player={{ ...r, player_name: r.player_name ?? "" }}

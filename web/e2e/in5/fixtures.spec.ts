@@ -109,12 +109,19 @@ for (const variant of ["null", "nan"] as const) {
     await expect(roster).toBeVisible();
     await expect(roster.getByText("QB: nobody can play it this week")).toBeVisible();
     await expect(roster.getByText("TE: nobody can play it this week")).toBeVisible();
+    const opens = roster.getByTestId("roster-open-waivers");
+    await expect(opens).toHaveCount(2);
+    await expect(opens.nth(0)).toHaveAttribute("href", `/waivers?position=QB&${Q}`);
+    await expect(opens.nth(1)).toHaveAttribute("href", `/waivers?position=TE&${Q}`);
     await expect(roster.getByText("Justin Jefferson").first()).toBeVisible();
     await expect(page.getByTestId("error-card")).toHaveCount(0);
     await expect(page.locator('[aria-label="Loading"]')).toHaveCount(0);
     await noSidewaysScroll(page);
     await usesTheWidth(page, isMobile);
-    if (variant === "nan") await page.screenshot({ path: join(SHOTS, `in5-team-${info.project.name}.png`), fullPage: true });
+    if (variant === "nan") {
+      await page.screenshot({ path: join(SHOTS, `in5-team-${info.project.name}.png`), fullPage: true });
+      await roster.screenshot({ path: join(SHOTS, `in5-team-roster-${info.project.name}.png`) });
+    }
     expect(crashes).toEqual([]);
   });
 }
