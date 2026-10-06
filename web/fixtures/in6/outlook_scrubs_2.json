@@ -449,7 +449,8 @@
  },
  "definitions": {
   "power": "Power ranking: teams in order of the points their best lineup is expected to score per week over the rest of the season (each week's best legal lineup from today's roster, this league's scoring, the weeks to the league's final). Record and points so far are beside it, not in it.",
-  "points_for_rank": "Points for: points scored so far in the regular season, and where that ranks in the league.",
+  "record": "Record \u00b7 points for: the regular-season record so far and the points scored, with where the points rank in the league (1st = the most). \"Soft schedule so far\" / \"Hard schedule so far\" when the record's place and the points' place are 3 or more apart.",
+  "points_against": "Against: the points scored against the team so far (its opponents' totals in its games).",
   "schedule_left": "Schedule left: the average power number (points per week) of the opponents still to play in the regular season. Rank 1 = the hardest schedule left.",
   "projected_record": "Projected record: the average final regular-season record over the simulated seasons, and the middle 80% of the win totals (1 season in 10 ends below, 1 in 10 above).",
   "playoff_odds": "Playoff odds: how often the team finishes inside the playoff spots in the simulated seasons (ties on wins broken by points for). 100% and out only when it is certain on wins alone.",

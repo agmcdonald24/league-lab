@@ -105,8 +105,8 @@
             <tr>
               <th scope="col" class="ll-fix sticky left-0 z-10 bg-surface px-3 py-1.5 text-left align-bottom"><span class="ll-label">Team</span></th>
               {@render head("power", "power", "Per week", "text-right wide:w-[34%]")}
-              {@render head("power", "points_for_rank", "Record · points for")}
-              <th scope="col" class="px-2 py-1.5 text-right align-bottom"><span class="ll-label">Against</span></th>
+              {@render head("power", "record", "Record · points for")}
+              {@render head("power", "points_against", "Against", "text-right")}
               {@render head("power", "schedule_left", "Schedule left")}
             </tr>
           </thead>

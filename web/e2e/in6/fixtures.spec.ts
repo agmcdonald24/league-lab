@@ -69,6 +69,9 @@ for (const scheme of ["dark", "light"] as const) {
     await expect(page.getByTestId("power").getByTestId("league-def")).toHaveText(o.definitions.power);
     await page.getByTestId("def-power").click();
     await expect(page.getByTestId("power").getByTestId("league-def")).toHaveCount(0);
+    await page.getByTestId("def-record").click();
+    await expect(page.getByTestId("power").getByTestId("league-def")).toHaveText(o.definitions.record);
+    await page.getByTestId("def-record").click();
     // the rest of the season: odds per team, sorted, the assumptions, no title odds
     const season = page.getByTestId("season");
     await expect(page.getByTestId("season-row")).toHaveCount(o.outlook.rows.length);
