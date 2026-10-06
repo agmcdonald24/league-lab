@@ -32,10 +32,10 @@ person's posts stay (they are the site's content; nothing deletes them but the e
 | the toolbar | Bold, Heading, List, Quote, Link, Table; **Player** (search → `[Name](/player/<gsis>)`); **Players table** (pick up to 12 players and up to 8 Stats columns → the ```` ```players ```` block below) |
 | saving | a **draft saves itself** 2.5 s after the last change (`PUT … autosave: true`); the unsent text is also kept on the device (`localStorage` `ll.blog.draft.<id>`, in a try / catch) and offered back on the next visit ("Put it back") when the server never got it. A **published** post saves only on **Save changes** (readers never see half a sentence) |
 | two tabs, one post | every save carries the revision it edited; a stale one is **409** with the newer post, shown as "This post was changed in another tab or on another device … Nothing was overwritten." with **Use the newer version** / **Keep mine and save it over** — never a silent overwrite |
-| revisions | the last 20 bodies of each post (`blog.revisions`); autosaves within two minutes of the last autosave fold into one row, an explicit save is always its own (so 20 reach back at least 40 minutes of typing). `GET /api/blog/posts/{id}` lists them, `…/revisions/{n}` returns one |
+| revisions | the last 20 bodies of each post (`blog.revisions`); autosaves within two minutes of the last autosave fold into one row, an explicit save is always its own (so 20 reach back at least 40 minutes of typing). **Earlier versions** lists them (date, size); **Put this one back** loads one into the editor, where it saves as a new version — nothing earlier is lost |
 | Publish / Unpublish / Delete | publish needs a title and an address no file holds; the first publish sets the post's date (a republish keeps it). Unpublish → a draft. Delete → **Deleted**, restorable for 30 days (**Restore as a draft**), then gone with its revisions (the API prunes on its writes; the nightly's script too). After publishing: "Live at /blog/<slug>" with **Copy link** |
 | **New post from…** | three starters on an empty new post fill a **draft** from the live routes on Half PPR, as plain markdown with the numbers written in and "*As of <date>, week N. The numbers are written in: they will not change after this is published.*", with "*Your take: …*" where his words go: **Matchups to target and avoid** (the matchup board's favorable and difficult WR and TE: projection, 10th–90th range, the defense's and the corner's sentence, the board's own words on what the tone assumes), **This week's top projections and their ranges** (the board's top 8 at QB, RB, WR, TE in a table), **Players whose role is changing** (the DFS board's role signal, up and down; DraftKings' list is only the source of the role words — no DFS points are written). A starter never publishes |
-| pictures | v1: a file in `blog/img/` in the repository and `![words](/blog/img/name.png)`; the editor says so in one line. **Uploading from the editor is not built.** |
+| pictures | **Picture** uploads one from the device: PNG, JPEG or WebP **by its first bytes** (the name and the declared type are never trusted; an SVG or an HTML file named `.png` is refused), ≤ 300 KB, ≤ 50 on the blog; stored in `blog.images`, served at `/blog/img/db/<id>` (`image/png` / `image/jpeg` / `image/webp` as the bytes say, `nosniff`, a year's cache — an id is never reused); the editor inserts `![file name](/blog/img/db/<id>)` and lists the pictures uploaded before (Insert, Delete). A file in `blog/img/` in the repository works as before. `mdDoc` accepts exactly these two forms of picture address |
 | **Download every post** | `GET /api/blog/export`: one zip of `blog/<date>-<slug>.md` files with the files' own front matter (`title`, `date`, `summary`, `author`, `tags`, `draft: true` for a draft; values quoted), the editor's posts that are not deleted. `blog.parse_post` reads each back to the same post (tested): his way out, and the backup |
 
 **Routes** (behind the beta gate like every `/api/`; JSON; `no-store`; errors `{error, detail, code}`; `blog_store.py`):
@@ -48,30 +48,35 @@ person's posts stay (they are the site's content; nothing deletes them but the e
 | `PUT /api/blog/posts/{id}` `{title, summary, tags, author, body, slug, revision, autosave}` | the saved post; 409 `conflict` + `post` (the newer one) when `revision` is stale; an address that cannot be taken leaves the old one and says why (`slug_problem`: `shape` / `reserved` / `taken_by_file` / `taken` / `published`, `slug_words`) — the text is saved all the same | write |
 | `POST …/{id}/publish` `{revision}` · `…/unpublish` · `…/restore` · `DELETE …/{id}` | the post; 400 `no_title`, 409 `slug_taken` / `deleted` / `not_published` / `not_deleted` / `conflict` | write |
 | `GET /api/blog/export` | `application/zip`, `Content-Disposition: attachment; filename="isuckatfantasy-blog-<date>.zip"` | research (CPU slots) |
+| `POST /api/blog/images` (the picture as the body, any content type) · `DELETE /api/blog/images/{id}` | 201 `{id, url, kind, size, created_at}`; 400 `bad_image`, 413 `too_big`, 409 `too_many_images` · `{ok}`, 404 `no_image`. `GET /api/blog/mine` lists `images` | write |
+| `GET /blog/img/db/{id}` (public, never gated) | the picture; 404 for anything but a stored lower-case uuid, and without the table | read (`/blog/img/` prefix) |
 
 Every route: 404 `not_found` without an editor on the server, 401 `signed_out`, 403 `not_editor`; every write also the
 same-site rule (`accounts.same_site`, IM-3's Guard first: 403 `cross_site`), the limiter's `write` bucket and 60 changes
 a minute per session (429 `rate_limited`). Ids are checked as lower-case uuids before any query; an editor reads and
 writes only the posts their account wrote.
 
-**Limits** (`blog_store.py`): a body ≤ 200 KB (UTF-8; 413 `too_big`; the Guard refuses a request over 256 KB first), no
-control characters but tab and newline (400 `bad_body`); ≤ 500 posts (409 `too_many`); ≤ 30 MB of bodies in all, posts
-and revisions together (413 `blog_full`); the last 20 revisions of a post. Words a post's address may not be: `new`,
+**Limits** (`blog_store.py`): a body ≤ 200 KB (UTF-8; 413 `too_big` in words up to the Guard's 256 KB, which refuses
+anything bigger first), no control characters but tab and newline (400 `bad_body`; a paste's line separators — `\r`,
+U+2028, U+2029, form feed — become line ends, and in a one-line field spaces); ≤ 500 posts (409 `too_many`); a picture ≤
+300 KB (the Guard's bound for `/api/blog/images` is 320 KB: `security.body_limit`), ≤ 50 pictures; ≤ 30 MB in all —
+posts, revisions and pictures together (413 `blog_full`); the last 20 revisions of a post. Words a post's address may not be: `new`,
 `edit`, `mine`, `export`, `posts`, `rss`, `img`, `editor`, `drafts`, `db`, `feed`, `write`.
 
 **Stored** (`scripts/hosted_blog.sql`, schema `blog`, idempotent; the nightly's sync runs it after the publish, which
 never drops it): `blog.posts` (id, slug unique, title, summary, body, body_bytes, minutes, tags, author, status `draft` /
 `published` / `deleted`, account_id — no foreign key: a post stays when its writer's account is deleted —, revision,
-created_at, updated_at, published_at, deleted_at; checks on every length and the status) and `blog.revisions` (post_id
-→ posts on delete cascade, revision, title, body, body_bytes, autosave, saved_at). The app role gets SELECT, INSERT,
-UPDATE, DELETE on the two tables (and the revisions' sequence) and writes in its own read-write transaction
+created_at, updated_at, published_at, deleted_at; checks on every length and the status), `blog.revisions` (post_id
+→ posts on delete cascade, revision, title, body, body_bytes, autosave, saved_at) and `blog.images` (id, kind `png` /
+`jpg` / `webp`, bytes, size ≤ 307,200, account_id, created_at). The app role gets SELECT, INSERT, UPDATE, DELETE on the
+posts and revisions (and the revisions' sequence), SELECT, INSERT, DELETE on the pictures and writes in its own read-write transaction
 (`db.run_rw`, purpose `blog`). Size on Neon: a 20 KB post with 20 revisions is ~400 KB before TOAST compression; the
 hard ceiling is ~32 MB (the 30 MB cap plus rows and indexes).
 
 **The public side.** `blog.posts()` = the files' posts + the published database posts (`blog_store.published_meta`:
 no bodies, one query a minute per process, cleared by this process's writes), newest first by date then slug; a
 database post's body is read on demand (`published_body`, only for a slug from that list — a closed set; 40 bodies at
-most in the memory budget's region `blog_db`, ≤ 8 MB). The list, a post, RSS, the sitemap and the shell's meta tags all
+most in the memory budget's region `blog_db`, plus at most 20 pictures once they have been asked for: ≤ 14 MB). The list, a post, RSS, the sitemap and the shell's meta tags all
 read `posts()`: a published database post unfurls, is in the feed and the sitemap like a file. A slug a file holds is
 the file's: the editor cannot save or publish it, and a published database post that later meets a newer file with its
 slug is left out (logged). With the table there, `/api/blog` and a post answer `public, max-age=0, must-revalidate` (a
@@ -145,13 +150,10 @@ second fence stays a code block. The numbers move with every nightly: the block 
 ## Not built
 
 * Comments, search, tag pages, a newsletter, scheduled posts.
-* ---- IO-3: **picture upload from the editor** (the brief's "if time remains": png / jpg / webp by first bytes, ≤ 300 KB,
-  ≤ 50, `blog.images`, `/blog/img/db/<id>`) — not built; pictures stay files in `blog/img/`. A post's `image:` (its
-  link-preview picture) exists for files only; a database post previews with `og.png`.
+* ---- IO-3: a post's `image:` (its link-preview picture) exists for files only; a database post previews with `og.png`
+  (a picture uploaded from the editor shows in the post, not in the link preview).
 * ---- IO-3: the players block's numbers are live (they move with the nightly) even in a post written from a starter —
   the starter's own numbers are written in as text; the block is the one live thing, and it says so.
-* ---- IO-3: the editor's revisions are kept and listed by the API (`GET /api/blog/posts/{id}`), but the screen has no
-  "earlier versions" list yet: a lost text comes back from the device copy or, by hand, from the API.
 * ---- IO-3: RSS and the sitemap keep their 10-minute cache: a post published now reaches a feed reader within 10 minutes.
 * The copy standard's sweep (`scripts/copy_standard.py`) does not read `blog/` (its globs are the code and WORDS); a
   post follows `docs/WORDS.md` by hand.

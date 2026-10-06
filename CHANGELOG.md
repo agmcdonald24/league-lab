@@ -9,9 +9,12 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   unset, the editor does not exist). Title, summary, tags, author line, address, the markdown body with a live preview
   through `mdDoc` (side by side at 1300, Write / Preview at 375), a toolbar with **Player** and **Players table**,
   drafts that save themselves (and stay on the device when the connection drops), a two-tab conflict shown in words,
-  Publish / Unpublish / Delete (30 days to restore), **Download every post** (the files' own markdown, one zip), and
+  **Earlier versions** (the last 20 kept), **Picture** (PNG / JPEG / WebP by their first bytes, ≤ 300 KB, ≤ 50, served at
+  `/blog/img/db/<id>`), Publish / Unpublish / Delete (30 days to restore), **Download every post** (the files' own
+  markdown, one zip), and
   **New post from…** three starters filled from this week's numbers on Half PPR (written in, never published by
-  themselves). Posts live in a new `blog` schema (`scripts/hosted_blog.sql`: `blog.posts`, `blog.revisions`, ≤ 30 MB);
+  themselves). Posts live in a new `blog` schema (`scripts/hosted_blog.sql`: `blog.posts`, `blog.revisions`,
+  `blog.images`, ≤ 30 MB in all);
   the public list, a post, RSS, the sitemap and the link previews serve them beside the files. Without the schema or
   the variable the blog is exactly the files'. The Account screen shows **Your account id** with Copy. docs/BLOG.md.
 
