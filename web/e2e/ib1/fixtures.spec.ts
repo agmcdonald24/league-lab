@@ -68,13 +68,14 @@ const TABS: { tab: string; label: string; first: string; subs: [string, string, 
       ["compare", "Compare", "compare"],
     ],
   },
+  { tab: "dfs", label: "DFS", first: "dfs", subs: [] }, // ---- IM-5 (Wave I-M): the DFS tab
 ];
 
 test("four tabs and their sub-tabs reach every screen (one tap each, same tab, the paths kept)", async ({ page, context, isMobile }, info) => {
   await page.goto(dyn("/"));
   await expect(page.getByTestId("my-week")).toBeVisible();
   const tabs = page.getByTestId("tabs").locator("a");
-  await expect(tabs).toHaveCount(4);
+  await expect(tabs).toHaveCount(TABS.length); // ---- IM-5: was 4 (DFS is the fifth)
   await expect(tabs).toHaveText(TABS.map((t) => t.label));
   const bar = (await page.getByTestId("tabs").boundingBox())!;
   if (isMobile) expect(bar.y + bar.height).toBeGreaterThan(page.viewportSize()!.height - 2); // the bottom bar
@@ -124,7 +125,7 @@ test("the player's page keeps the tab bar and the search field; Back goes where 
   await expect(page.getByTestId("player-name")).toHaveText("Amon-Ra St. Brown");
   await expect(page.getByTestId("top-bar")).toBeVisible();
   await expect(page.getByTestId("tabs")).toBeVisible();
-  await expect(page.getByTestId("tabs").locator("a")).toHaveCount(4);
+  await expect(page.getByTestId("tabs").locator("a")).toHaveCount(TABS.length); // ---- IM-5: was 4
   await expect(page.getByTestId("back")).toHaveText(/My week/);
   await noSidewaysScroll(page);
   await shot(page, "player", info);

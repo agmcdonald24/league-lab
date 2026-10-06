@@ -35,6 +35,15 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   tables exist, with the methods the server has (`passkey` once the nightly has applied the new part of
   `scripts/hosted_accounts.sql`, `email` with the Resend key). Every state-changing account route refuses another site
   (`cross_site`). docs/ACCOUNTS.md § "Passkeys".
+- **IM-5 — DFS: values, undervalued players and lineups from the site's own salary file** (`/dfs`, the DFS tab; no
+  league needed; docs/DFS.md). Nothing fetches salaries: the user adds DraftKings' or FanDuel's salary CSV (classic,
+  showdown, full roster), parsed in one request and kept only in that browser tab. Our stat lines re-priced in the
+  site's scoring (DraftKings' +3 bonuses at their odds), the range from the nearest reference scoring, points per
+  $1,000, each position's salary line on the slate and every player's gap to it (undervalued / overpriced with the
+  app's own reason), unmatched players listed and never guessed, an exact lineup optimiser (checked against brute force;
+  1 s a lineup; cash or tournament, 1–20 lineups, always in / leave out, the sites' team rules) and the lineup-upload
+  CSV (formulas neutralised). `GET /api/dfs/projections`, `POST /api/dfs/slate`, `POST /api/dfs/lineups`. Salary files
+  in the tests are synthetic; the real formats wait for Andrew's upload.
 
 ## 2026-10-05 — Wave I-L
 

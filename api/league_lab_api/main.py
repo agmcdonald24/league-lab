@@ -831,6 +831,13 @@ app.include_router(watchlist_mod.router, dependencies=[Depends(require_auth)])
 # ---- end IL-5
 
 
+# ---- IM-5 (Wave I-M): DFS — GET /api/dfs/projections, POST /api/dfs/slate, POST /api/dfs/lineups (league_lab_api/dfs.py)
+from . import dfs as dfs_mod  # noqa: E402 - the block stays self-contained
+
+app.include_router(dfs_mod.router, dependencies=[Depends(require_auth)])
+# ---- end IM-5
+
+
 # ---- IM-3 (Wave I-M): the public site's doors. The rate limiter (ratelimit.py) inside the Guard (security.py: cross-site
 # writes, body sizes, the response headers on every answer, a 429 included); both outermost, ahead of the routes.
 #   GET /api/ratelimit   how this request was keyed ({keyed_by, test_address_used, bucket_tag}; never the address)

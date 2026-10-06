@@ -5,7 +5,7 @@
   // IB-1 (Wave I-B): the screens grouped by task — four tabs: My Team · Waivers · Trades · Players. Each tab with more
   // than one screen shows them as a second row (sub-tabs). The paths stay (bookmarks, shared links); About the
   // numbers moved to the bar's overflow menu (⋯) and the foot of My Team.
-  export type Section = "myteam" | "waivers" | "trades" | "players";
+  export type Section = "myteam" | "waivers" | "trades" | "players" | "dfs"; // ---- IM-5: "dfs"
   export const SECTIONS: { key: Section; label: string; screens: { name: RouteName; label: string; path: string }[] }[] = [
     {
       key: "myteam",
@@ -38,6 +38,9 @@
         { name: "compare", label: "Compare", path: "/compare" },
       ],
     },
+    // ---- IM-5 (Wave I-M): DFS, one screen (no league needed)
+    { key: "dfs", label: "DFS", screens: [{ name: "dfs", label: "DFS", path: "/dfs" }] },
+    // ---- end IM-5
   ];
   export function sectionOf(name: RouteName): Section | null {
     if (name === "receivers") return "players"; // ---- II-3: the role cards sit under Players
@@ -184,6 +187,9 @@
       <path d="M4 8h13l-3-3M20 16H7l3 3" />
     {:else if key === "players"}
       <circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
+    {:else if key === "dfs"}
+      <!-- ---- IM-5: DFS (a price tag) -->
+      <path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" /><circle cx="7.5" cy="7.5" r="1.5" />
     {:else if key === "search"}
       <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" />
     {:else}
