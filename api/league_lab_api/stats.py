@@ -820,6 +820,22 @@ def with_advanced(df: pd.DataFrame, season: int, season_type: str) -> pd.DataFra
 
 def clear() -> None:
     _frames.clear()
+    _aggs.clear()
+
+
+# ---- IM-1 (Wave I-M): the window's aggregate is NFL-wide (no league in it: the league's points merge after), so it is
+# kept per window — every league and every position preset of the same window reuses it (101 columns made the
+# aggregate the request's largest cost). Keyed by the season frame's identity, so a reloaded season starts afresh.
+_aggs = memo.region("stats_agg", ttl=TTL_S, max_entries=8)   # ≤ 8 windows x ~0.6–0.8 MB
+
+
+def aggregate_window(mine: pd.DataFrame, key: tuple) -> pd.DataFrame:
+    """``aggregate(mine)`` for the window ``key`` (season, season type, window, basis, weeks, the frame's id and size)."""
+    hit = _aggs.get(key)
+    if hit is None:
+        hit = _aggs.put(key, aggregate(mine))
+    return hit.copy()
+# ---- end IM-1
 
 
 def window_rows(rows: pd.DataFrame, window: str, basis: str, weeks: tuple[int, int] | None) -> tuple[pd.DataFrame, dict]:
@@ -910,8 +926,7 @@ def aggregate(g: pd.DataFrame) -> pd.DataFrame:
         "games": by["played"].sum().astype(int),
         "first_week": by["week"].min().astype(int),
         "last_week": by["week"].max().astype(int),
-        **{c: by[c].sum(min_count=1) for c in SUMS},
-        **{c: by[c].sum(min_count=1) for c in TEAM_SUMS},
+        **by[SUMS + TEAM_SUMS + im1_sums].sum(min_count=1).to_dict("series"),   # IM-1: one pass (was one per column)
         "team_dropbacks_with_participation": by["team_dropbacks_with_participation"].sum(min_count=1),
         "targets_in_participation_games": by["targets_in_participation_games"].sum(min_count=1),
         "receiving_yards_in_participation_games": by["receiving_yards_in_participation_games"].sum(min_count=1),
@@ -922,7 +937,6 @@ def aggregate(g: pd.DataFrame) -> pd.DataFrame:
         "_cpoe_w": by["_cpoe_w"].sum(min_count=1),
         "_cpoe_n": by["_cpoe_n"].sum(min_count=1),
         **{c: (by[c].sum().astype(int) if c.endswith("_week") else by[c].sum(min_count=1)) for c in ngs_cols},  # IL-1
-        **{c: by[c].sum(min_count=1) for c in im1_sums},                                                     # IM-1
         "pfr_rec_games": by["pfr_rec_games"].sum().astype(int), "pfr_pass_games": by["pfr_pass_games"].sum().astype(int),
     })
     out = out.join(pos.set_index("gsis_id")["position"])

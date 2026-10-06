@@ -3598,10 +3598,12 @@ a text cell starting `=`, `+`, `-` or `@` is prefixed with `'`).
 arrive with the nightly update; they are not on this copy yet." and the catalogue marks them unavailable, so the Full
 table leaves them out — the request never fails (`test_before_the_nightly_builds_the_mart_the_columns_say_why`).
 
-**Cost.** The season frame (`memo` region `stats`) widens from 56 to 89 columns: 2026 weeks 1–4 0.99 → 1.33 MB; a full
-season (2025) 4.23 → 5.65 MB. `/api/players?position=WR&window=season` on the clone: cold 0.37 → 0.48 s, warm 0.15 →
-0.22 s (TestClient, Scrubs; the catalogue answer grows from 51 to 101 entries, the 50-row page 124 → 217 KB before
-gzip).
+**Cost.** The season frame (`memo` region `stats`) widens from 56 to 89 columns: as the budget counts it, 2026 weeks
+1–4 0.59 → 0.93 MB, a full season (2025) 2.53 → 3.95 MB. The window's aggregate is NFL-wide, so it is now kept per window
+(new region `stats_agg`, at most 8 windows, 0.63 MB for 2026's season window, 0.81 MB for 2025's): a second league or
+preset on the same window skips it. `/api/players?position=WR&window=season` on the clone (TestClient, Scrubs, base and
+branch alternated in fresh processes on the loaded box): cold 0.34–0.61 s → 0.62–0.88 s, warm (median of 5) 0.15–0.28 s
+→ 0.08–0.11 s; the 50-row answer 124 → 217 KB before gzip (the catalogue's 101 entries are most of the growth).
 
 ## Role, opportunity vs production, contingent upside (role1.0, IL-1, Wave I-L, 2026-10-05; `league_lab.roles`, the card's `role` section)
 

@@ -1107,7 +1107,7 @@ def stats_frame(ctx: Ctx, *, season: int, season_type: str, position: str | None
     frame, desc = ST.window_rows(rows, w, b, wk)
     cat = ST.catalogue(season, rows)
     mine = frame[frame["position"].isin(SKILL)] if not frame.empty else frame
-    agg = ST.aggregate(mine)
+    agg = ST.aggregate_window(mine, (season, season_type, w, b, wk, id(rows), len(mine)))     # IM-1: cached per window
     if not agg.empty:
         agg = agg[agg["position"].isin(pos)]
         lg = league_games(ctx, season, None if len(agg) > 200 else list(agg["gsis_id"]))
