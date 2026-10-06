@@ -130,6 +130,14 @@ test("browsing: every receiver's matchup, a search, a row opens the evidence", a
   expect(calls.filter((c) => c.startsWith("/api/matchups/board")).every((c) => !/team=/.test(c))).toBe(true);
 });
 
+test("no league at all: /matchups opens the board in Half PPR", async ({ context, page }) => {
+  await api(context);
+  await page.goto("/matchups");
+  await expect(page).toHaveURL(/league=ref(%3A|:)half/);
+  await expect(page.getByTestId("board-row").first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("matchups")).not.toContainText(/No league/);
+});
+
 test("a league: My players as before, Everyone adds who has him", async ({ context, page }, info) => {
   await api(context);
   await page.goto(`/matchups?league=${SCRUBS}&team=2`);

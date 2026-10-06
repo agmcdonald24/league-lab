@@ -457,6 +457,25 @@ them"). The words on the screen (`routes/Players.svelte`, `components/stats/`):
 | a dash | on hover and on a tap: the column's reason ("No Next Gen Stats week in this window: … unknown, not zero.") | 0 |
 | How to read this (added line) | "**Key stats** are the numbers to read first. **Full table** shows every column we have for the position, grouped (Receiving, Air yards, Red zone…): tap a group above the table to hide or show it. A greyed number rests on a small sample: tap it, or a dash, for the reason." | — |
 
+## Matchups for everyone (Wave I-N, IN-3)
+
+The board on `/matchups` (`components/matchups/Board.svelte`, `GET /api/matchups/board`; METRICS § "Matchups for
+everyone"). Browsing it is the screen; with a league and a team it is one of two views.
+
+| Where | The words we use | Never |
+|---|---|---|
+| the views (a league and a team) | **My players** (default: the screen as before) · **Everyone** (the board, plus who has him) | "All players", "League-wide" |
+| the answer under the title | "Every player's matchup this week: the defense against his position and, for a receiver, the corner likely across from him." Title: "Matchups, week 4" (Everyone) / "Your matchups, week 4" (My players) | "No league", "Demo" |
+| the controls | WR · TE · RB · QB; "Search a player"; **All** · **▲ Favorable (69)** · **Neutral (81)** · **▼ Difficult (69)**; "All games" / "DAL at HOU · Sun 1:00 PM ET"; "Sort: projected points" · "Sort: best matchup first" · "Sort: easiest corner first" (WR only) | "Filter", "Advanced" |
+| the line under the controls | "Projected points in Half PPR scoring. The defense is in the projection; the corner is not (context only)." (+ for TE / RB / QB: "Tight ends get the defense against the position only: they mostly draw linebackers and safeties." / "… no cornerback call.") | "the model knows the matchup" |
+| the line under the board (once) | "Projected points this week in Half PPR scoring, with the range 8 weeks in 10 land in (low-end to high-end). What the projection counts: the points each defense has allowed to the position (this season, the last 4 games and its rank) and the betting lines. Who plays cornerback is not in it: the corner call is context, a lean from where his targets go. Whether a tough corner lowers a receiver's points has not been graded yet." + the tone rule: "Matchup = the defense against his position (favorable: one of the 10 that give up the most; difficult: one of the 10 that give up the fewest), moved by the cornerback only when the call is likely: a shutdown corner turns neutral into difficult, an easy one turns it favorable, and a corner against the defense's read makes it neutral. An unclear call never moves it." | a graded-sounding "edge", "boost", "downgrade" |
+| the columns (1300) | Player · Game · Projected · Defense vs WR · Corner across · Matchup; on a phone the row's own labels: "Projects 14.8 5.6–25.0", "Defense", "Corner" | "DvP", "CB" |
+| a row | "vs ATL / at PHI" + "Sun 1:00 PM ET"; the defense chip + "gives up the 7th-most to WRs"; the corner "McDuffie #3 of 74" (likely) · "Woolen #8 or Mitchell #9" (unclear) · "No call", with **likely** / **unclear** / **no call** beside it and **Shutdown corner** when every named corner is one; the Matchup chip (▲ Favorable / Neutral / ▼ Difficult / No read) | "covered by", "shadowed by" |
+| a row opened | the context's sentence ("Philadelphia gives up the 9th-most points to receivers; either Riq Woolen (the 8th-hardest of 69 starting corners to throw on) or Quinyon Mitchell (…) could be across from him: his targets split about evenly."), the named corners with their side, the certainty in words, his history against the likely corner, the matchup evidence (IF-3's two sentences and "The evidence"), "Who has him: Yours / <team> / Free agent" (a league only), **<name>: his numbers ›** | — |
+| the pager | "Showing 1–25 of 219 wide receivers" · **Previous** · **Next** | "Page 2 of 9", "Load more" |
+| nothing found | "No wide receivers named like “Nacua” with a game this week." · "No wide receivers match these filters this week." · "The regular season is over." · "This week's matchups arrive with the next data refresh." | an error card, a 0 |
+| refused parameters (API, 400) | "position is WR, TE, RB or QB." · "Type at least 2 letters of a name." · "A name is at most 40 characters." · "That game is not on this week's schedule." · "limit is 1 to 100." | — |
+
 ## Adding to it
 
 A new metric or page adds its row here in the same change as its `help=` text. A release adds one entry to
