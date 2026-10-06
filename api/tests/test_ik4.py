@@ -413,6 +413,10 @@ def test_delete_the_account(api):
 
 
 def test_the_rate_limits(api, monkeypatch):
+    # ---- IM-4 fix: the per-address limits count by ratelimit.client_group (the limiter's source); distinct addresses
+    # below are distinct clients only when the limiter reads X-Forwarded-For (as test_im3 configures it)
+    from league_lab_api import ratelimit
+    monkeypatch.setattr(ratelimit, "_limiter", ratelimit.Limiter(mode="x-forwarded-for", enabled=False))  # undone after
     email = addr("limit")
     for i in range(5):
         api.tick(5)

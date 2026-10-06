@@ -41,6 +41,7 @@ test.beforeAll(async () => {
     const env: NodeJS.ProcessEnv = {
       ...process.env,
       LEAGUE_LAB_ACCOUNTS: "on",
+      LEAGUE_LAB_CLIENT_IP: "x-forwarded-for", // each "device" below sends its own address: its own per-client limits
       LEAGUE_LAB_API_SECRET: randomBytes(24).toString("hex"), // throwaway, this run only
       LEAGUE_LAB_NOW: "2026-10-03T16:00:00Z",
       LEAGUE_LAB_SLEEPER_FIXTURES: join(api, "tests", "fixtures", "sleeper"),

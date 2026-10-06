@@ -305,12 +305,37 @@ of every account** — changing it later strands the passkeys (the email, when t
 https://isuckatfantasy.io/account to use one."
 
 **Same site** (item 5: safe with the beta gate open, by itself). Every state-changing route under `/api/account` —
-phase 1's, IL-5's and these — refuses with 403 `cross_site` a request a browser marks as cross-site: `Sec-Fetch-Site`
-`same-origin` / `none` passes; otherwise the `Origin` must be on the allow-list, `LEAGUE_LAB_PUBLIC_URL`, or this
-request's own `Host` (no `Sec-Fetch-Site` sent); `Origin: null` never passes. A request with neither header is not a
-browser's, so it carries nobody's cookie by accident (tests, curl). Limits (the in-memory bucket, keyed by an HMAC of
-the address): registration options 10 an hour, sign-in options 30 an hour, answers 20 a minute (the link checks'
-bucket); 10 passkeys per account.
+phase 1's, IL-5's and these — refuses with 403 `cross_site` ("This request came from another site, so it was
+refused.") a request a browser marks as cross-site. The rule is IM-3's Guard's (`security.cross_site`), which runs
+first on the merged server; `accounts.same_site` repeats it so the routes hold when the Guard is absent or off, with the
+same words and code whichever layer answers: an `Origin` must be on the passkey allow-list, `LEAGUE_LAB_PUBLIC_URL`, or
+this request's own `Host` (whatever `Sec-Fetch-Site` says); `Origin: null` never passes; with no `Origin`,
+`Sec-Fetch-Site: cross-site` is refused. A request with neither header is not a browser's, so it carries nobody's
+cookie by accident (tests, curl).
+
+**Limits per client** (the in-memory bucket, keyed by an HMAC of `ratelimit.client_group`: the limiter's own client
+source — `LEAGUE_LAB_CLIENT_IP`, `LEAGUE_LAB_PROXY_HOPS`; on Render Cloudflare's address — an IPv4 address as it is, an
+IPv6 address as its /64): registration options 10 an hour, sign-in options 30 an hour, answers 20 a minute (the link
+checks' bucket); 10 passkeys per account. The bucket table is bounded: at most 5,000 entries (`MAX_BUCKETS`, ≈ 1 MB),
+the least recently seen dropped first (that client simply starts with a full bucket).
+
+**Global ceilings** (fix round, the review's Medium: a script with a software authenticator looping register/options →
+register/verify from many /64s). Counted in the database, so a restart forgets nothing (like the links' day cap):
+
+| What | Default (env) | Why this number | When reached |
+|---|---|---|---|
+| new accounts in the last hour (every way in) | 30 (`LEAGUE_LAB_ACCOUNTS_NEW_PER_HOUR`) | a league's managers signing up after a group-chat link is ~12; 30 leaves room for two leagues at once | creation answers 429 `accounts_paused` "New accounts are paused for a little while. Try again later." at the options and again at the verify (the authoritative count, in the creating transaction); **sign-in keeps working** |
+| new accounts in the last day | 200 (`LEAGUE_LAB_ACCOUNTS_NEW_PER_DAY`) | a beta's busiest day is tens; 200 a day of abuse is ≈ 200 KB of rows (a user, a passkey, a session ≈ 1 KB) — 73 MB a year if it never stopped, inside Neon's 0.5 GB | the same |
+| passkey challenges open at once (made in the last 5 minutes) | 1,000 (`LEAGUE_LAB_PASSKEY_OPEN_MAX`) | ≈ 250 KB of rows; far above any real moment | options answer 429 `passkeys_busy` "Passkeys are busy just now. Try again in a few minutes." |
+
+Counting uses the index `users_created` (new in the script) and `passkey_challenges_created`: a range count, a few rows.
+
+**Pruning** (so no table grows without bound): challenges older than 10 minutes are deleted by the API itself at most
+once a minute per process, in the transaction that stores a new one (a range delete on `passkey_challenges_created`; a
+handful of rows) — and by the nightly's script after a day. Sessions: at most **20 live sessions per account**
+(`MAX_SESSIONS`; each sign-in, by passkey or link, drops that account's oldest beyond 20 — an index scan of ≤ 21 rows on
+`sessions_user`), and the nightly deletes sessions expired or revoked more than a day ago. Users are bounded by the
+ceilings, passkeys by 10 per account, links by phase 1's limits.
 
 **Recovery, honestly.** A passkey-only account whose person loses every device that holds a passkey for it is gone: we
 hold no email to send a link to, and nothing else proves who they are. The screen says so in one line under the list
