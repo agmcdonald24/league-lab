@@ -181,10 +181,12 @@ def test_a_private_league_is_never_stored_and_the_row_is_bounded():
         assert not S.shareable(key)
         assert S.offer({**_row(FAKE[0]), "league_key": key}, house=False, now=BEFORE) == "private"
     assert S.shareable(SCRUBS) and S.shareable("mfl:70587") and S.shareable(" MFL:70587 ")
-    big = _row(FAKE[8], teams=32, team="W" * 200)           # every name cut to NAME_MAX
+    big = _row(FAKE[8], teams=32, team="W" * 200)           # every name cut to NAME_MAX letters
     assert all(len(p["team_name"]) == S.NAME_MAX for p in big["power"])
-    size = len(json.dumps(big["power"], separators=(",", ":"))) + len(json.dumps(big["rows"], separators=(",", ":")))
-    assert size <= S.MAX_BYTES                               # the largest league the outlook simulates fits
+    assert S.size(big) <= S.MAX_BYTES
+    big = _row(FAKE[8], teams=32, team="😀" * 200)          # … and to NAME_BYTES: 32 teams of 4-byte letters still fit
+    assert all(len(p["team_name"].encode()) <= S.NAME_BYTES for p in big["power"])
+    assert S.size(big) <= S.MAX_BYTES                        # the largest league the outlook simulates fits
     huge = {**big, "power": big["power"] * 3}
     assert S.offer(huge, house=True, now=BEFORE) == "too_big"
 

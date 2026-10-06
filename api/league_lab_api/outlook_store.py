@@ -51,7 +51,7 @@ KEEP_WEEKS = 20
 MAX_BYTES = 8192          # power + rows as JSON text (a 32-team league with names ≈ 7 KB)
 QUEUE_MAX = 64
 SHARE_PLATFORMS = frozenset({"sleeper", "mfl"})     # leagues anyone can read: a share link, a stored row, a preview
-NAME_MAX = 60             # a team's name in a row (provider text, cut)
+NAME_MAX, NAME_BYTES = 40, 80   # a team's name in a row (provider text, cut to 40 letters and 80 UTF-8 bytes: 32 teams fit)
 
 stats = {"queued": 0, "written": 0, "closed": 0, "capped": 0, "failed": 0, "dropped": 0, "skipped": 0}
 _queue: queue.Queue[dict] = queue.Queue(maxsize=QUEUE_MAX)
@@ -153,10 +153,14 @@ def _num(v, nd: int = 3):
     return None if f != f else round(f, nd)
 
 
+def _cut(name) -> str:
+    return str(name or "")[:NAME_MAX].encode("utf-8")[:NAME_BYTES].decode("utf-8", "ignore")
+
+
 def snapshot(ans: dict, *, league_name: str | None, week: int, built_at: datetime) -> dict:
-    """The stored row from an outlook answer (``outlook._build``'s): compact, names cut to ``NAME_MAX``."""
+    """The stored row from an outlook answer (``outlook._build``'s): compact, names cut (``_cut``)."""
     power = [{"roster_id": int(r["roster_id"]), "rank": int(r["rank"]), "per_week": _num(r["per_week"], 1),
-              "team_name": str(r.get("team_name") or "")[:NAME_MAX]} for r in ans["power"]["rows"]]
+              "team_name": _cut(r.get("team_name"))} for r in ans["power"]["rows"]]
     rows = [{"roster_id": int(r["roster_id"]), "wins_mean": _num(r.get("wins_mean"), 2),
              "playoff": _num(r.get("playoff")), "top_seed": _num(r.get("top_seed")), "title": _num(r.get("title"))}
             for r in (ans.get("outlook") or {}).get("rows") or []]
@@ -176,6 +180,11 @@ def first_kickoff(season: int, week: int) -> datetime | None:
     return (k.tz_localize("UTC") if k.tzinfo is None else k.tz_convert("UTC")).to_pydatetime()
 
 
+def size(row: dict) -> int:
+    """The row's JSON as the table's CHECK measures it (``jsonb::text``: ", " and ": " between items)."""
+    return len(json.dumps(row["power"], ensure_ascii=False).encode()) + len(json.dumps(row["rows"], ensure_ascii=False).encode())
+
+
 def offer(row: dict, *, house: bool, now: datetime | None = None) -> str:
     """Hand the row to the writer (never waits). What happened: queued | off | private | closed | too_big | dropped."""
     if not ready():
@@ -188,7 +197,7 @@ def offer(row: dict, *, house: bool, now: datetime | None = None) -> str:
         stats["closed"] += 1
         return "closed"
     power, rows = json.dumps(row["power"], separators=(",", ":")), json.dumps(row["rows"], separators=(",", ":"))
-    if len(power.encode()) + len(rows.encode()) > MAX_BYTES:
+    if size(row) > MAX_BYTES:
         stats["skipped"] += 1
         return "too_big"
     item = {**row, "power": power, "rows": rows, "closes_at": closes, "now": now, "kind": "house" if house else None}

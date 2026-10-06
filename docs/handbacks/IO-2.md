@@ -8,7 +8,7 @@ words: docs/WORDS.md § "The League link and movement (Wave I-O, IO-2)".
 
 1. **Keep each week's outlook — done.** `outlook.snapshots` (`scripts/hosted_outlook.sql`, idempotent, applied twice
    to `league_lab_im4` with the pipeline role): per league key, season, week — the power ranking (rank, per-week
-   number, team name ≤ 60 chars), the outlook's rows (mean wins, playoff, top seed, title), league name, model version,
+   number, team name cut to 40 letters / 80 bytes), the outlook's rows (mean wins, playoff, top seed, title), league name, model version,
    built_at, closes_at (the week's first kickoff from `analytics.dim_game`), kind (house / saved / visitor). `week` =
    the first week the outlook has not seen played (`played_weeks + 1`). Written by `outlook_store.offer` on every
    **whole** build (not the power part): the first build inserts; a later build replaces only while `closes_at > now`
@@ -17,7 +17,7 @@ words: docs/WORDS.md § "The League link and movement (Wave I-O, IO-2)".
    daemon thread through `db.run_rw(purpose="outlook")`; a failure is counted and logged, never raised.
    `LEAGUE_LAB_OUTLOOK_STORE` = `auto` (default: on when the table exists and the app role may select / insert /
    update it; probed once a minute, every ten once it is there) | `off`. **Bounds**: only Sleeper and MyFantasyLeague
-   keys (an ESPN / Yahoo / reference key is never stored); a row ≤ 8 KB of JSON (a table CHECK too); house leagues and
+   keys (an ESPN / Yahoo / reference key is never stored); a row ≤ 8 KB of JSON (a table CHECK too; the largest league the outlook simulates, 32 teams with the longest names, measures 7.6 KB); house leagues and
    leagues an account has saved (`accounts.user_leagues` × `accounts.leagues`, when those tables are there) always;
    any other league **at most 20 new a day (rolling 24 h) and 200 held** (both checked inside the write's
    transaction); pruning in the SQL file (the nightly runs it): rows built > 140 days ago, and each league's newest 20
