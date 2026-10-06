@@ -148,7 +148,7 @@
               : "."}
           </p>
           <p class="text-ink-3" data-testid="season-assumes">It assumes {ol.assumptions.join("; ")}.</p>
-          <p class="text-ink-3" data-testid="season-honest">Context, not a graded forecast: the weekly pieces are graded; the season outlook has not been checked against a past season yet.</p>
+          <p class="text-ink-3" data-testid="season-honest">Context, not a graded forecast: the weekly pieces are graded; the season outlook has only been replayed on two past seasons of two leagues.</p>
           {#if ol.playoff_reason}<p class="text-ink-3" data-testid="no-playoff">No playoff odds: {ol.playoff_reason}.</p>{/if}
           {#if defSeason}<p class="rounded-md bg-raised px-3 py-2 text-ink" data-testid="league-def">{data.definitions[defSeason]}</p>{/if}
         </div>

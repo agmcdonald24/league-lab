@@ -2381,6 +2381,118 @@ not a forecast's grade; from week 4 they are `proj_points`. IH-3's 0.2410 on the
 this grades the lineups the app proposed. The real re-grade is the nightly's from week 4 on (the frozen kickoff record
 with the five-knot ranges).
 
+## Power rankings and the season outlook (ol1.0, IN-6, Wave I-N, 2026-10-06; `api/league_lab_api/outlook.py`, `GET /api/league/outlook`)
+
+Andrew (2026-10-06): "Under the League, though, it would be cool to maybe have, like, some power rankings, or, like,
+rest of season projections kind of thing." The League screen's first two blocks. Both stand on pieces the app already
+computes and grades; the season outlook itself is **not graded** — it is a simulation on graded weekly pieces, and the
+screen says so ("Context, not a graded forecast").
+
+### Power ranking
+
+* **The metric (one, stated):** a team's **best lineup's expected points per week over the rest of the season** —
+  the trade engine's rest-of-season board (`decisions.window_board(ctx, "ros")`: today's rosters; this week through the
+  availability overlay and each roster's context; a player in the IR slot, on the taxi squad, on NFL injured reserve
+  or with no NFL team stays out every week after; every later week his rest-of-season projection in the league's
+  scoring, a bye a zero), each week's best legal lineup re-solved (`RosterBoard.lineup_value`), averaged over the weeks
+  from this week to the league's final (`mart_player_ros_projection.last_week`: League of Scrubs weeks 5–16, the
+  dynasty 5–17 on this sandbox). Playoff weeks are in it: it is "how good is this roster from here", not a record.
+  Rank 1 = the most points per week; ties by roster id.
+* **Beside it, not in it:** the record and the standing (wins, a tie half, then points for), points for and its rank,
+  points against and its rank, **the gap in words** when the standing and the points-for rank are 3 places or more
+  apart (a quarter of the league in a league over 12): "3–0 on the 7th-most points: a soft schedule so far" (standing
+  better than the points) / "1–2 on the most points: a hard schedule so far"; **schedule left** = the opponents still to
+  play in the regular season (the provider's pairings), their power number averaged per game; rank 1 = the hardest.
+* **No movement arrows.** Last week's ranking needs last week's rest-of-season board; the nightly overwrites the weeks
+  ahead (`ops.projections` keeps one row per player-week, refit; `ops.lineup_record` freezes only each week's own
+  lineup at kickoff). Nothing stored rebuilds last week's ranking honestly, so the answer carries `movement: null` and
+  the screen says why.
+
+### Projected record, playoff odds, top seed, bye (the season outlook)
+
+`SEASONS` = 10,000 simulated seasons of the **remaining regular-season schedule** (the weeks after the last week in
+the standings, to `playoff_week_start` − 1), fixed seed (the same answer on a reload).
+
+* **The first week left** (normally this week): the week's odds' own pieces (§ Win probability — the week): every
+  starter of every roster (`availability` contexts, `myweek.win_starters`; a game already in at the league's points)
+  through his P10 … P90, centred on his projection, **one Gaussian copula over the whole league** (`pair_rho` for every
+  pair `relationship` names — teammates, or one's team the other's opponent; K / DEF / team units independent). Each
+  game is decided with the week's odds' calibration: `p_raw` = the share of draws side a outscores side b, `p =
+  shrink_week(p_raw)` (the logit shrink 0.60), and a wins the draws whose margin is above the margin's (1 − p) quantile
+  (so the game's simulated chance is the week's odds' number and a bigger margin still wins first). **Check**: on both
+  house leagues' week 5 (the sandbox's clock set to week 5), every game's simulated chance against
+  `/api/league/week-odds`: worst difference **0.45 points** (League of Scrubs, 5 games) and **0.62 points** (the
+  dynasty, 6 games); the test `test_the_first_week_reproduces_the_weeks_odds_within_a_point` holds a hand-built league
+  to 1 point against `lineup_win_probability`.
+* **Every later week:** each team's best lineup that week on the power ranking's board (`mean`), spread like its own
+  lineup: `cv` = the first week's pre-game standard deviation of its lineup total (every starter's range, played or
+  not) ÷ its expected total (the league's median when a team has none), `sd = cv × mean ÷ 0.60` (the calibration's
+  widening: for a near-normal margin `sigmoid(0.6 · logit Φ(z))` ≈ `Φ(0.6 z)`), plus a **drift**: a random walk per
+  team and season, step `DRIFT` = 3% of its weekly level per week ahead (h weeks out: 3% × √h) — **an assumption, not
+  fitted** (injuries, trades, role changes the projections cannot see: "the further out the week, the wider its
+  range"). The replay below cannot tell 0%, 3% or 6% apart (Brier 0.135 / 0.136 / 0.137). Opposing lineups of later
+  weeks are independent. Points are floored at 0.
+* **The season:** wins (a tie half) and points for add up; the order is **wins, then points for** (the tie-break
+  stated on the screen). **Projected record** = the mean final wins with the season's other games as losses ("8.5–5.5"),
+  and the middle 80% of the win totals ("6 to 11 wins"). **Playoff odds** = the share of seasons inside the league's
+  playoff spots; **top seed** = finishing first; **bye** = finishing in the bracket's byes (2^⌈log₂ spots⌉ − spots top
+  seeds: 6 spots → 2, 4 → 0) — shown only in a league with byes. **No title odds**: the bracket is not simulated.
+* **Clinched / out** are proven on wins alone, never read off the simulation (`clinch_flags`): clinched when fewer than
+  `spots` other teams can still reach the team's wins (a tie could go either way on points), out when at least `spots`
+  teams already have more wins than it can reach. Only then does the page print "In" / "Out"; otherwise a chance is
+  "<1%" / ">99%" at the ends, never 0% or 100%.
+* **Self-consistency** (tests): the playoff odds add up to the playoff spots and the top-seed odds to 1 (by
+  construction, checked); a clinched team reads 100% and an eliminated one 0% in the simulation itself; two identical
+  teams get equal odds within Monte Carlo error; a team certain to win wins every game.
+
+**Who gets an outlook** (the provider must give the regular season's length, the remaining pairings and, for the
+playoff columns, the playoff spots):
+
+| Provider | Power rankings | Projected record | Playoff odds / top seed / bye |
+|---|---|---|---|
+| Sleeper (house and on demand) | yes | yes, from `/league/<id>/matchups/<week>` of every week left | yes (`playoff_teams`, `playoff_week_start`); a league with **divisions** gets none ("division winners' places are not simulated") |
+| MyFantasyLeague | yes | yes (the schedule export, `lastRegularSeasonWeek`) | **no**: MFL's export has no playoff team count (the adapter guesses 2^rounds) — the screen says so |
+| ESPN (public) | through the same seam (`playoffTeamCount`, the schedule from its matchups) — **unverified**, no fixture covers it | | |
+| Yahoo | data access pending (`LEAGUE_LAB_YAHOO_ACCESS: pending`) | | |
+
+A league with no outlook still gets the power rankings and one line saying why: the regular season is over; a week's
+results are not final in the standings while it is also no longer this week ("week 3's results are not final yet: the
+outlook returns once the league has scored it" — the on-demand fixture league); a week of the schedule missing; no
+range for the league (the week's odds' rule: under half a side's points carried by ranges).
+
+**The replay check** (2026-10-06, the sandbox's database; the script is not kept — the method is): the house leagues'
+2024 and 2025 seasons (4 league-seasons, 44 teams), replayed from week 5, 8 and 11 with what was known then: the
+standings before the week (`fct_league_matchup`), each roster at that week (`league_player_week`), each player's
+walk-forward projection for that week (`ops.calibration_oof`: the production fit on the seasons before, priced in the
+chain's 2026 scoring) held as his level for every week left — **the rest-of-season board of the time is not stored, so
+later weeks are that projection, 0 on his bye** — K / DEF at their points per game before the week, the actual
+remaining pairings; no per-player ranges for those seasons (their `cv` is the chain's 2026 week-5 median: 0.175 Scrubs,
+0.204 dynasty) and no injuries. Outcome: the final standing inside the playoff spots (`mart_league_standings`).
+
+| Replayed from | Teams | Brier (ours) | Today's standings order, top N = in (1 / 0) | Flat (spots ÷ teams) |
+|---|---|---|---|---|
+| week 5 | 44 | **0.179** | 0.273 | 0.245 |
+| week 8 | 44 | 0.139 | 0.273 | 0.245 |
+| week 11 | 44 | 0.089 | 0.136 | 0.245 |
+| all (not independent) | 132 | 0.136 | 0.227 | 0.245 |
+
+By bucket of the predicted playoff odds (all 132): 0–10% predicted 3% → 0 of 22 made it; 10–30% 21% → 19% (26);
+30–50% 39% → 22% (23); 50–70% 62% → 80% (30); 70–90% 79% → 76% (21); 90–100% 96% → 100% (10). From week 5 alone (44):
+0–10% 4% → 0/4; 10–30% 22% → 30% (10); 30–50% 41% → 18% (11); 50–70% 61% → 82% (11); 70–90% 78% → 71% (7); 90–100%
+96% → 1/1. The honest reading: it beats both simple baselines at every start week, and the 30–70% teams went the
+"obvious" way more often than predicted (outcomes more separated than the odds: the middle is somewhat under-confident)
+— with 23–30 teams a bucket (±9 points of noise) and only four league-seasons, not a calibration to tune on. The
+production outlook is sharper than the replay's (the real rest-of-season board, ranges per player, injuries), so this
+grades the method, not the live numbers.
+
+Cost (this box, 2 cores shared by six developers, load 2–3): the simulation of a 12-team league (10,000 seasons, the
+whole-league copula of ~120 starters, 10 weeks) 0.36–0.45 s cold; a 14-team synthetic league 0.22–0.25 s; the inputs on
+top (the league's standings, the rest-of-season board — shared with Trades — and every roster's context — shared with
+the week's odds): League of Scrubs 1.0 s cold in all, the dynasty 1.7 s, MFL 70587 7.1 s (6.2 s of it the on-demand
+board the trade screens build too); warm < 1 ms (`memo` region `outlook`, ≤ 48 answers of ~10 KB, keyed by league,
+house / on demand, the build's stamp and the overlay's; 10 minutes on a house league, 2 on demand). The route is in the
+`heavy` bucket and runs in the thread pool.
+
 ## Rest of season (ros1.0, plan E2, Wave E, 2026-10-01; `mart_player_ros_projection`, `app/lib/ros.py`)
 
 One row per league × player (current season): the projection added up over the weeks left in **the league's**
