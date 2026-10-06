@@ -36,7 +36,8 @@ addresses, deleted after each run). No dbt, no other schema, nothing outside.
    published post: **Save changes**), the unsent text kept on the device (`localStorage`, try / catch) and offered back;
    the two-tab conflict in words with **Use the newer version** / **Keep mine and save it over**; **Earlier versions**
    (put one back); Publish / Unpublish / Delete (two taps) / Restore; after publishing "Live at /blog/<slug>" + **Copy
-   link**; **Download every post**. Typing in a 20 KB post: 3.9–9.7 ms a key across runs (the preview is debounced
+   link**; **Download every post**; an address made from the title moves on to `-2` by itself when taken. Typing in a
+   20 KB post: 3.9–9.7 ms a key across runs (the preview is debounced
    150 ms, 400 ms past 20 KB).
 5. **Starters** — **New post from…**: *Matchups to target and avoid* (the board's favorable / difficult WR and TE with
    the defense's and the corner's sentence and the board's own words on what the tone assumes), *This week's top
@@ -129,7 +130,7 @@ commas — that the editor copies from **Your account** → **Your account id**;
   the new `id`). `test_il5::test_watchlist_rows_in_a_league` fails on `main` too (the week's state), untouched.
 * `uv run ruff check src app tests api` — clean. `uv run python scripts/copy_standard.py --check` — clean.
 * `cd web && npm run lint && npm run build` — clean (193 files, 0 errors, 0 warnings).
-* `FIXTURES_PORT=8830 npx playwright test --config playwright.fixtures.config.ts e2e/io3` — **11 passed**, 5 skipped
+* `FIXTURES_PORT=8830 npx playwright test --config playwright.fixtures.config.ts e2e/io3` — **12 passed**, 6 skipped
   (desktop-only checks skip on the phone) at 375 and 1300; the spec starts its own API on :8863 with a throwaway secret
   and an editor made through `accounts.request_link` → the stub mailer → `accounts.verify`, and deletes it after.
   `e2e/in1` + `e2e/ik4` — **22 passed** (4 skipped, as on main).
