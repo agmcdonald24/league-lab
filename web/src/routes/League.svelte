@@ -23,6 +23,7 @@
   // read them; never an ESPN or Yahoo league read with someone's own connection) and, opened with no team, the guest
   // strip "Is this your league? Pick your team"
   import type { LeagueOutlookMoved } from "../lib/api";
+  import { untrack } from "svelte";
   import { platformOf } from "../lib/providers";
   import { isRef } from "../lib/refleague";
   import { setParams } from "../lib/router.svelte";
@@ -107,9 +108,22 @@
   // ---- IH-3: this week's odds per game, asked after the screen shows (one lineup per team: 1-5 s the first time);
   // information only — the lineup calls stay on My Week. Nothing is shown when the ask fails or has no numbers.
   let odds = $state<WeekOdds | null>(null);
+  // ---- IO-2: the week's odds wait for the season outlook (both solve every roster's week: one at a time is faster on
+  // one process — the MFL screen's power rankings 3.6 → 2.6 s), at most 6 s, not at all once it has failed
+  let oddsAfter = $state(false);
+  const outlookDone = $derived(!!info && !info.outlook.pending);
+  $effect(() => {
+    void league;
+    oddsAfter = false;
+    const t = setTimeout(() => (oddsAfter = true), 6000);
+    return () => clearTimeout(t);
+  });
+  // ---- end IO-2
   $effect(() => {
     const l = league;
-    if (!data) return;
+    const was = untrack(() => odds); // ---- IO-2: never another league's odds (read untracked: this effect writes them)
+    if (was && String(was.league_id).toLowerCase() !== l.trim().toLowerCase()) odds = null;
+    if (!data || !(oddsAfter || outlookDone || peek<WeekOdds>(weekOddsPath(l)))) return; // ---- IO-2: after the outlook
     const path = weekOddsPath(l);
     const hit = peek<WeekOdds>(path);
     if (hit) {
@@ -252,7 +266,7 @@
 
   <!-- ---- IN-6 (Wave I-N): the first two blocks — power rankings and the rest of the season. IO-2: asked at once, beside
        the screen's own answer (not after it), the power rankings first -->
-  {#if !error}<Outlook {league} {team} {onauth} onload={(d) => (outlookInfo = d)} />{/if}
+  {#if !error}<Outlook {league} {team} {onauth} onload={(d) => (outlookInfo = d)} onfail={() => (oddsAfter = true)} />{/if}
 
   {#if data}
 

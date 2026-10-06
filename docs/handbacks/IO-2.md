@@ -112,6 +112,11 @@ present and readable). Out: `GET /api/league/outlook` gains `league_name`, `week
   (TMQB over 32 teams × 15 weeks: a column-wise apply per team) — the power part 3.4 → 2.8 s in-process; the outlook no
   longer waits for the League answer; the whole answer after the power part 0.75–0.89 s (the board kept, the first
   week's roster contexts warm).
+  **In a real browser** (Chromium on the built app served by the fixture API, a fresh server each run, outside
+  requests aborted, load ~1, three runs): the League answer 0.52–0.60 s, the power rankings 2.65–2.75 s, the rest of
+  the season 3.34–3.47 s (rendered by 3.73–3.84 s after navigation), this week's odds 3.41–3.55 s — the odds are now
+  asked after the season outlook (at most 6 s; at once if the outlook fails): both solve every roster's week and the
+  process runs one at a time (with them in parallel the power rankings took ~3.6 s).
 * House leagues (whole answer, warm process): Scrubs 0.9 s. Title odds add +0.01–0.04 s to the simulation; peak memory
   unchanged (4.2–4.3 MB with or without the bracket at 12 × 10, 32 × 11 and 32 × 17, tracemalloc). Adding the playoff
   weeks to the draws moved League of Scrubs' playoff chances by ≤ 1.5 points and mean wins by ≤ 0.04 (Monte Carlo);
@@ -162,6 +167,16 @@ power part, title odds and the preview card (from this process's builds) all wor
 ## New env variables / dependencies
 
 `LEAGUE_LAB_OUTLOOK_STORE` (`auto` | `off`; default auto). No new dependency (Python or npm).
+
+## Owned up
+
+* A real-browser check of the MFL screen (after the e2e passed) found an effect loop in my first version of the
+  week's-odds gate (the effect read and wrote `odds`: "This screen hit a problem" on a league whose odds answer) — fixed
+  (`untrack`) before it was committed; the e2e fixtures never answer the week's odds for that path, the real API does.
+* My first ad-hoc timing browser (a scratch script, not committed) loaded the page without aborting outside requests,
+  so Chromium tried the page's outside resources (player pictures, analytics) through the sandbox proxy; every one was
+  refused (`ERR_TUNNEL_CONNECTION_FAILED`), nothing was reached. The later runs abort every request that is not
+  `localhost:8862`.
 
 ## Seen, not mine
 

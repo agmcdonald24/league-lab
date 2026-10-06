@@ -11,7 +11,13 @@
   import Card from "../Card.svelte";
   import { chance, gapTag, movedLabel, movedWords, oddsChange, ordinal, projectedRecord, record, scheduleLeft, titleWords, winsRange } from "./outlook";
 
-  let { league, team, onauth, onload }: { league: string; team: number | null; onauth: () => void; onload?: (d: LeagueOutlookMoved) => void } = $props();
+  let {
+    league,
+    team,
+    onauth,
+    onload,
+    onfail,
+  }: { league: string; team: number | null; onauth: () => void; onload?: (d: LeagueOutlookMoved) => void; onfail?: () => void } = $props();
 
   let data = $state<LeagueOutlookMoved | null>(null);
   let error = $state<string | null>(null);
@@ -70,6 +76,9 @@
   });
   $effect(() => {
     if (data) onload?.(data);
+  });
+  $effect(() => {
+    if (error || seasonError) onfail?.(); // ---- IO-2: the screen stops waiting for it (the week's odds)
   });
 
   // one definition open per block (a header tap opens it; the same tap closes it)
