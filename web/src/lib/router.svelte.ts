@@ -30,7 +30,11 @@ export type RouteName =
   // ---- IL-5: the watchlist (the players the account saved)
   | "watchlist"
   // ---- IM-5: DFS (no league needed)
-  | "dfs";
+  | "dfs"
+  // ---- IN-1: the home page ("/home"; "/" when no league is remembered), the blog ("/blog") and a post ("/blog/<slug>")
+  | "home"
+  | "blog"
+  | "post";
 
 const NAMED: Record<string, RouteName> = {
   "/leagues": "leagues",
@@ -50,6 +54,8 @@ const NAMED: Record<string, RouteName> = {
   "/account": "account", // ---- IK-4
   "/watchlist": "watchlist", // ---- IL-5
   "/dfs": "dfs", // ---- IM-5
+  "/home": "home", // ---- IN-1
+  "/blog": "blog", // ---- IN-1
 };
 
 export interface Route {
@@ -57,14 +63,29 @@ export interface Route {
   gsis: string | null;
   params: URLSearchParams;
   depth: number; // how many in-app pages are behind this one (0 = the app was opened here)
+  slug: string | null; // ---- IN-1: a blog post's slug ("/blog/<slug>"), else null
 }
 
 function parse(): Route {
   const path = location.pathname.replace(/\/+$/, "") || "/";
   const m = path.match(/^\/player\/([^/]+)$/);
   const depth = typeof history.state?.depth === "number" ? history.state.depth : 0;
-  const name: RouteName = m ? "player" : (NAMED[path] ?? "week");
-  return { name, gsis: m ? decodeURIComponent(m[1]) : null, params: new URLSearchParams(location.search), depth };
+  const post = path.match(/^\/blog\/([a-z0-9-]{1,80})$/); // ---- IN-1: a post (the API checks the slug again)
+  const params = new URLSearchParams(location.search);
+  // ---- IN-1: "/" is the home page when no league is in the URL nor remembered on this device (a returning manager's
+  // "/" is his week); "/home" always is
+  const home = path === "/" && !params.get("league") && !rememberedLeague();
+  const name: RouteName = m ? "player" : post ? "post" : home ? "home" : (NAMED[path] ?? "week");
+  return { name, gsis: m ? decodeURIComponent(m[1]) : null, params, depth, slug: post ? post[1] : null };
+}
+
+// ---- IN-1: lib/prefs.ts's key, read here without importing prefs (the router stays free of the app's modules)
+function rememberedLeague(): boolean {
+  try {
+    return !!localStorage.getItem("ll.league");
+  } catch {
+    return false;
+  }
 }
 
 export const route = $state<{ current: Route }>({ current: parse() });

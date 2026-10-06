@@ -26,6 +26,12 @@
   import { countView } from "./lib/usage"; // ---- U-1: usage tracking (one count per screen view)
   import { pause as gaPause, screenView, trackLogin } from "./lib/analytics"; // ---- INF-1: Google Analytics
   import { INVITE_WORDS, isRef, NEEDS_LEAGUE, REF_DEFAULT, refLabel } from "./lib/refleague"; // ---- IM-3: no league
+  // ---- IN-1 (Wave I-N): the home page (in the first bundle: it is a stranger's first screen) and the blog (its chunk)
+  import HomePage from "./routes/Home.svelte";
+  const loadBlog = () => import("./routes/Blog.svelte");
+  let blogChunk: ReturnType<typeof loadBlog> | null = null;
+  const blogPage = () => (blogChunk ??= loadBlog());
+  // ---- end IN-1
   // the research screens and About load on first use (their own chunks): My Week's first screen stays small
   const LAZY = {
     trends: () => import("./routes/Trends.svelte"),
@@ -76,10 +82,14 @@
   // ---- end IH-1
 
   const r = $derived(route.current);
+  // ---- IN-1: the screens anyone opens without a league — the home, the blog, a post: in the frame (the tabs, the search,
+  // the drawer) on the league in the URL or remembered, else on the reference league (Half PPR)
+  const openDoor = $derived(r.name === "home" || r.name === "blog" || r.name === "post");
 
   // league: the URL's (a shared link: ANY Sleeper league, the API serves it on demand), else the one picked on this
   // phone. None → the sign-in screen (a Sleeper username → the league picker).
   const league = $derived(r.params.get("league") || prefs.league() || null);
+  const frameLeague = $derived(league ?? REF_DEFAULT); // ---- IN-1: the frame without a league (the home, the blog)
   const options = $derived<LeagueOption[]>(leagueOptions(mine, house, league, leagueNames));
   // team: the URL's (it belongs to the URL's league), else the one picked in this league on this phone, else the
   // user's own team in that league (pre-selected from the username's league list).
@@ -109,11 +119,13 @@
   });
 
   // ---- U-1: count the screen on screen (route, league, team) once signed in; never blocks rendering (lib/usage.ts)
-  $effect(() => void (phase === "ready" && countView(league ? r.name : "leagues", league, team)));
+  const screenName = $derived(league || openDoor ? r.name : "leagues"); // ---- IN-1: home / blog / post are their own
+  $effect(() => void (phase === "ready" && countView(screenName, league, team)));
   // ---- INF-1: Google Analytics beside it (lib/analytics.ts: page_view, screen_view, ids only); silent on the sign-in screen
+  // IN-1: a post's page view carries its own path (/blog/<slug>): one page_view per post
   $effect(() => {
     gaPause(phase === "login");
-    if (phase === "ready") screenView(league ? r.name : "leagues", league, team);
+    if (phase === "ready") screenView(screenName, league, team);
   });
 
   // ---- II-3: /receivers is the Stats screen's WR / TE preset now (old links and bookmarks land there, league and team
@@ -197,7 +209,7 @@
   <div class="mx-auto max-w-xl p-4" data-testid="boot-error">
     <ErrorCard failure={failure ?? { kind: "down", status: null, words: `Cannot reach ${APP_NAME} right now. Try again in a minute.` }} onretry={signedIn} />
   </div>
-{:else if phase === "loading" && !league}
+{:else if phase === "loading" && !league && !openDoor}<!-- IN-1: the home and the blog render at once -->
   <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>
 {:else if r.name === "account"}
   <!-- ---- IK-4: the account, outside the league frame like the setup screen -->
@@ -211,15 +223,25 @@
 {:else if r.name === "dfs" && !league}
   <div class="mx-auto max-w-xl p-4"><div class="ll-skel h-40" aria-label="Loading"></div></div>
 <!-- ---- end IM-5 -->
-{:else if r.name === "leagues" || !league}
+{:else if r.name === "leagues" || (!league && !openDoor)}<!-- IN-1: the home / blog without a league stay in the frame -->
   <LeaguesPage {mine} current={league} onuser={signedInUser} onauth={needLogin} />
 {:else}
+  {@const league = frameLeague}<!-- IN-1: the frame's league (the reference league on the home / blog without one) -->
   <!-- the league's screens: one bar (picker + tabs + search), then the screen, the research pane beside it (900 px+) or
        over it (a phone). IB-1: a player's page sits in the same frame (the tab bar stays). -->
   <TopBar {options} {league} {team} onauth={needLogin} />
   <div class="wide:flex wide:items-start">
     <div class="ll-under-bar mx-auto w-full max-w-6xl min-w-0 px-4 pt-4 wide:flex-1" data-section={sectionOf(r.name)}>
-      {#if isRef(league) && NEEDS_LEAGUE.has(r.name)}
+      {#if r.name === "home"}
+        <HomePage /><!-- ---- IN-1 -->
+      {:else if r.name === "blog" || r.name === "post"}
+        <!-- ---- IN-1: the blog's list and a post (their own chunk) -->
+        {#await blogPage()}
+          <div class="space-y-3" aria-label="Loading" data-testid="loading"><div class="ll-skel h-8 w-1/2"></div><div class="ll-skel h-40"></div></div>
+        {:then m}
+          <m.default slug={r.slug} {league} />
+        {/await}
+      {:else if isRef(league) && NEEDS_LEAGUE.has(r.name)}
         <!-- ---- IM-3: a screen that needs a league and a team, opened without one: the invitation, never an error -->
         <section class="mx-auto max-w-xl space-y-3 rounded-lg border border-line bg-surface p-5" style="box-shadow:var(--ll-shadow)" data-testid="invite-card">
           <h2 class="text-xl font-bold">{INVITE_WORDS}</h2>

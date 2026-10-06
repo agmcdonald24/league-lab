@@ -349,6 +349,10 @@
             data-testid="menu-watchlist">Watchlist</a
           >
         {/if}
+        <!-- ---- IN-1 (Wave I-N): the home page and the blog (IN-2 lays out the tabs; these two live in the menu) -->
+        <a href={href("/home")} role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised {here === 'home' ? 'font-semibold text-accent' : ''}" data-testid="menu-home">Home</a>
+        <a href="/blog" role="menuitem" class="block min-h-11 border-t border-line px-3 py-3 text-base hover:bg-raised {here === 'blog' || here === 'post' ? 'font-semibold text-accent' : ''}" data-testid="menu-blog">Blog</a>
+        <!-- ---- end IN-1 -->
       </div>
     </div>
   </div>

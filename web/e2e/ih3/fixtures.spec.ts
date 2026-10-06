@@ -79,7 +79,7 @@ test("League of Scrubs roster 6: one line under the opponent line, the percentag
 });
 
 test("dad's league, a double header: two lines, each naming its opponent", async ({ page }, info) => {
-  await page.goto("/");
+  await page.goto("/leagues"); // IN-1: "/" without a league is the home page now; the setup screen is /leagues
   await expect(page.getByTestId("leagues")).toBeVisible();
   await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
   await page.getByTestId("mfl-link").fill("70587");

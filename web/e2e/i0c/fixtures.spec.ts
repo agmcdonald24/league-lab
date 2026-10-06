@@ -42,7 +42,7 @@ test.beforeEach(async ({ context }) => {
 });
 
 test("MyFantasyLeague by name: type the name → pick the league → pick the team → My Week", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/leagues"); // IN-1: "/" without a league is the home page now; the setup screen is /leagues
   await expect(page.getByTestId("leagues")).toBeVisible();
   await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
   await expect(page.getByTestId("mfl-help")).toContainText(
@@ -93,7 +93,7 @@ test("MyFantasyLeague by name: type the name → pick the league → pick the te
 });
 
 test("MyFantasyLeague box: an id or a link still goes straight to the league card; two letters ask for more", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/leagues"); // IN-1: "/" without a league is the home page now; the setup screen is /leagues
   await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
   await page.getByTestId("mfl-link").fill("ad");
   await page.getByTestId("mfl-go").click();

@@ -108,17 +108,17 @@ test("a first visit: the front door, Browse the lab, Players · Stats in Half PP
   const { calls, google } = await api(context);
   const csp = await cspWatch(page);
   await page.goto("/");
-  const door = page.getByTestId("front-door");
+  // ---- IN-1 (Wave I-N): the front door is the home page now (routes/Home.svelte); the setup screen is /leagues
+  const door = page.getByTestId("home");
   await expect(door).toBeVisible();
-  await expect(page.getByTestId("browse-lab")).toHaveText("Browse the lab");
-  await expect(page.getByTestId("open-your-league")).toHaveText("Open your league");
-  await expect(page.getByTestId("front-record")).toBeVisible();
-  await expect(page.getByTestId("front-about")).toHaveAttribute("href", "/about?league=ref:half");
-  await expect(page.getByTestId("setup-steps")).toBeVisible(); // the four-platform setup stays below
+  await expect(page.getByTestId("home-browse")).toHaveText("Browse players");
+  await expect(page.getByTestId("home-open")).toHaveText("Open your league");
+  await expect(page.getByTestId("home-record-line")).toBeVisible();
+  await expect(page.getByTestId("home-about")).toHaveAttribute("href", "/about?league=ref%3Ahalf");
   await noSidewaysScroll(page);
   await page.screenshot({ path: join(SHOTS, `im3-front-door-${info.project.name}.png`), fullPage: true });
 
-  await page.getByTestId("browse-lab").click();
+  await page.getByTestId("home-browse").click();
   await expect(page).toHaveURL(/\/players\?league=ref(%3A|:)half/);
   await expect(page.getByTestId("ref-picker")).toBeVisible();
   await expect(page.getByTestId("ref-select")).toHaveValue("ref:half");
@@ -163,7 +163,8 @@ test("My Team, Waivers and Trades invite you to open your league; Players' tabs 
   await expect(page.getByTestId("invite-card")).toHaveCount(0);
   await page.getByTestId("ref-open").click();
   await expect(page).toHaveURL(/\/leagues$/);
-  await expect(page.getByTestId("front-door")).toBeVisible(); // still no league: the front door again
+  await expect(page.getByTestId("username-form")).toBeVisible(); // IN-1: /leagues is only "open your league" now
+  await expect(page.getByTestId("to-home")).toHaveAttribute("href", "/home");
   expect(csp, csp.join("\n")).toEqual([]);
 });
 
