@@ -26,7 +26,7 @@
   `verify(…, attach_to)` ("add an email"); the email routes need a mailer (`email_off`).
 * `scripts/hosted_accounts.sql`: the IM-4 part (below). `api/pyproject.toml`, `api/uv.lock`: `webauthn>=3.0.1`.
 * `web/src/lib/account.svelte.ts`, `web/src/routes/Account.svelte`, `web/src/components/AccountEntry.svelte`.
-* Tests: `api/tests/test_im4.py` (new, 20 tests), `web/e2e/im4/fixtures.spec.ts` (new, 2 tests × phone / desktop).
+* Tests: `api/tests/test_im4.py` (new, 19 tests), `web/e2e/im4/fixtures.spec.ts` (new, 2 tests × phone / desktop).
 * Outside my files (smallest edits): `api/tests/test_ik4.py` (3 assertions follow the new switch / the script's
   allowed `alter`s / 10 tables; its recording test records an email-only server), `web/fixtures/ik4/*.json`
   (re-recorded: + `methods`, `why`, `passkey_home`, `passkey_here`, `passkeys`, `sign_in`), `docs/HOSTING.md`,
@@ -92,7 +92,25 @@ uv run ruff check src app tests api ; uv run python scripts/copy_standard.py --c
 
 * Dependency: wheels (x86_64, cp313 / abi3 / py3) **5.9 MB** (cryptography 4.75 MB), installed **≈ 19 MB** (cryptography
   15 MB). All are binary wheels: `python:3.13-slim` needs no compiler; **no Dockerfile change** (`uv sync --frozen`).
-* RESULTS (filled in below).
+* `test_im4.py` 19 passed; with `test_ik4.py`, `test_il5.py`, `test_auth.py`: **65 passed, 1 failed** — the failure
+  is `test_il5.py::test_watchlist_rows_in_a_league`, on the known-failure list (the clone's week state).
+* `/home/claude/waveIM/check_api.sh /home/claude/wt-im4` (on `4aba615`, 20 min): `92 failed, 718 passed, 13 skipped,
+  41 deselected`; NEW failures: `test_ia2.py::test_partners_route_applies_both_rules`,
+  `test_ib0.py::test_one_lineup_total_on_every_screen[dynasty-overlay-off]` / `[dynasty-overlay-on]`,
+  `test_ii1.py::test_folk_package_is_not_promoted`, `test_ii1.py::test_folk_package_on_the_clone_rosters` — **all five
+  fail identically at `main` `ab50682` on this clone** (main's tree extracted to a scratch folder, run against
+  `league_lab_im4`: the same 5 + the 5 known `ib0` variants fail): the clone's data state, not this branch.
+* `/home/claude/waveIM/check_root.sh /home/claude/wt-im4`: `4 failed, 1314 passed, 3 skipped`; NEW failures: none.
+* Web: `npm run lint` clean (svelte-check 0 errors / 0 warnings), `npm run build` OK; `ruff check src app tests api`
+  clean; `scripts/copy_standard.py --check` clean.
+* e2e: `e2e/im4` 4 passed (phone 375 + desktop 1300, against the real API on :8754); with `e2e/ik4` and `e2e/il5`:
+  24 passed. The whole fixtures run (`FIXTURES_PORT=8640`, 11.4 min, the im4 spec starting and stopping the API on :8754 by itself): **398 passed, 2 skipped (ih1:277, ii6:216 — skipped by their own conditions), 0 failed**; the il5 test known to be flaky passed.
+* Memory: importing py_webauthn (+ cryptography, pyOpenSSL) **+16 MB RSS** beside the app's libraries — lazy, so only
+  after the first passkey ceremony in a process; nothing at start-up (checked: `webauthn`, `cryptography`, `OpenSSL`
+  absent from `sys.modules` after `import league_lab_api.main`).
+* Screenshots looked at: `web/e2e/.out/im4-{signed-out,account,two-passkeys,removed-passkey,unsupported}-{phone,desktop}.png`
+  (375 and 1300; no sideways scroll asserted on each). One fix from looking: the "Add an email" field's placeholder was
+  cut at 375 — a visible label now.
 
 ## Limitations
 
