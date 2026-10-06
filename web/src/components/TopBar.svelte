@@ -284,12 +284,12 @@
       {#if isRef(league)}
         <!-- ---- IM-3: browsing without a league — "No league · Half PPR ▾" (PPR / Half PPR / Standard) and the way in -->
         <div class="flex min-w-0 items-center gap-2" data-testid="ref-picker">
-          <label class="flex min-w-0 items-center gap-1 text-sm" for="ll-ref">
+          <label class="flex shrink-0 items-center gap-1 text-sm" for="ll-ref">
             <span class="hidden shrink-0 text-ink-2 sm:inline">No league ·</span>
             <span class="sr-only sm:hidden">No league, scoring</span>
             <select
               id="ll-ref"
-              class="ll-input min-w-0 py-1.5 text-sm font-semibold"
+              class="ll-input w-[7.5rem] shrink-0 py-1.5 text-sm font-semibold"
               value={league}
               onchange={(e) => setParams({ league: e.currentTarget.value, team: null })}
               data-testid="ref-select"
