@@ -14,10 +14,8 @@
   import { looksLikeSleeperLeague, providersPath, setupError, setupGet, sleeperLeaguePath, type FeatureKey, type Platform, type Providers, type SleeperLeague } from "../lib/providers";
   // ---- IK-3 (Wave I-K): ESPN and Yahoo in the same flow
   import { espnConnectPath, espnLeaguePath, isPlatform, PLATFORMS, providerShort, setupPost, yahooConnectPath, yahooDisconnectPath, yahooLeaguePath, yahooMePath, type ProviderLeague, type YahooMe } from "../lib/providers";
-  // ---- IM-3 (Wave I-M): the front door — browse the lab without a league, the model's record in one line
-  import { BROWSE_HREF, REF_DEFAULT } from "../lib/refleague";
-  import { recordView } from "../lib/record";
-  import type { RecordAnswer } from "../lib/api";
+  // ---- IM-3 (Wave I-M)'s front door (browse without a league, the record's line) moved to Home in IN-1 (routes/Home.svelte)
+  import { tick } from "svelte";
 
   let {
     mine,
@@ -26,21 +24,19 @@
     onauth,
   }: { mine: UserLeagues | null; current: string | null; onuser: (v: UserLeagues | null) => void; onauth: () => void } = $props();
 
-  // ---- IM-3: the record's one line on the front door (the reference league's record: the model, not a team)
-  let recordLine = $state<string | null>(null);
-  $effect(() => {
-    if (current) return;
-    get<RecordAnswer>(`/api/record?league=${REF_DEFAULT}`)
-      .then((d) => {
-        const v = recordView(d, "Half PPR");
-        recordLine =
-          v.kind === "scored" && v.lines[0]
-            ? v.lines[0].replace(/\*\*/g, "")
-            : "Our record against Sleeper's own projections is kept week by week, from the first week both are saved before kickoff.";
-      })
-      .catch(() => (recordLine = null));
-  });
-  // ---- end IM-3
+  // ---- IN-1 (Wave I-N): after a search, the results are put in view and take the focus (a screen reader hears them; a
+  // keyboard continues from them). The phone stacks them under the field; the desktop has them beside it.
+  let resultsEl = $state<HTMLElement | null>(null);
+  async function reveal() {
+    await tick();
+    const el = resultsEl;
+    if (!el) return;
+    const top = el.getBoundingClientRect().top;
+    // beside the form (desktop) they are usually in view already; under it (a phone) they scroll to the top
+    if (top < 0 || top > window.innerHeight * 0.35) el.scrollIntoView({ block: "start", behavior: "auto" });
+    el.focus({ preventScroll: true });
+  }
+  // ---- end IN-1
   let username = $state(prefs.user() ?? "");
   let busy = $state(false);
   let error = $state<string | null>(null);
@@ -58,12 +54,14 @@
       // ---- II-5: a league link or id in the same box → that league's card and team picker (no username needed)
       if (looksLikeSleeperLeague(u)) {
         sleeperLeague = await setupGet<SleeperLeague>(sleeperLeaguePath(u));
+        void reveal(); // ---- IN-1
         return;
       }
       const v = await setupGet<UserLeagues>(paths.userLeagues(u)); // II-5: keeps the error's key (was get)
       prefs.setUser(u);
       prefs.setUserLeagues(v);
       onuser(v);
+      void reveal(); // ---- IN-1
     } catch (err) {
       const se = setupError(err); // ---- II-5: the API's specific words when it sends them
       if (err instanceof Unauthorized) onauth();
@@ -107,6 +105,7 @@
       const v = await setupGet<MflLeague | MflSearch>(mflSearchPath(t)); // II-5: keeps the error's key (was get)
       if (isMflSearch(v)) mflFound = v;
       else mfl = v;
+      void reveal(); // ---- IN-1
     } catch (err) {
       mflFail(err);
     } finally {
@@ -251,6 +250,7 @@
     try {
       provLeague = await setupGet<ProviderLeague>(p === "espn" ? espnLeaguePath(t) : yahooLeaguePath(t));
       privateForm = false;
+      void reveal(); // ---- IN-1
     } catch (err) {
       const se = setupError(err);
       provErrorCode = se?.code ?? null;
@@ -405,482 +405,499 @@
 {/snippet}
 <!-- ---- end IC-3 -->
 
-<main class="mx-auto max-w-xl space-y-5 px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-10" data-testid="leagues">
-  <header class="space-y-1">
-    {#if current}
-      <a href={withContext("/", { league: current, team: prefs.team(current) })} class="ll-link inline-block py-1 text-base" data-testid="to-week"
-        >‹ My week</a
-      >
-    {/if}
-    <h1 class="flex items-center gap-2 text-3xl font-extrabold tracking-tight">
-      <span class="grid h-9 w-9 place-items-center rounded-sm bg-accent text-sm font-black text-on-accent">{APP_MARK}</span>{APP_NAME}
-    </h1>
-    <p class="text-base leading-snug text-ink-2">
-      <!-- IE-0 (Wave I-E): both platforms, not Sleeper only (the review's P0 #3) -->
-      Who to start this week and what each player is worth, in your league's own scoring — on Sleeper, MyFantasyLeague, ESPN or Yahoo.
-    </p>
-  </header>
-
-  <!-- ---- IM-3 (Wave I-M): the front door for a first visit (no league yet): browse without a league, or open yours -->
-  {#if !current}
-    <section class="space-y-3 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="front-door">
-      <p class="text-base leading-snug">
-        Our own projections for every player, his trends and his matchups, priced in your scoring — then your lineup, waivers and trades once
-        you open your league.
+<!-- ---- IN-1 (Wave I-N): the setup screen on a desktop (Andrew: "you have to scroll down to actually see where your leagues
+     are … a point where people probably bounce"). Three parts: the form (who you are, the platform, its box), the results,
+     the extras (what the platform gives, the account). A phone stacks them in that order, so the leagues come right under
+     the field; from 900 px the results sit beside the form, at the top. A search scrolls the results into view and moves
+     focus to them. The front door (browse without a league) moved to Home (routes/Home.svelte). -->
+<main class="mx-auto max-w-xl px-4 pt-[max(1.5rem,env(safe-area-inset-top))] pb-10 wide:grid wide:max-w-6xl wide:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] wide:items-start wide:gap-x-10" data-testid="leagues">
+  <div class="space-y-5 wide:col-start-1 wide:row-start-1" data-testid="setup-form-col">
+    <header class="space-y-1">
+      {#if current}
+        <a href={withContext("/", { league: current, team: prefs.team(current) })} class="ll-link inline-block py-1 text-base" data-testid="to-week"
+          >‹ My week</a
+        >
+      {:else}
+        <a href="/home" class="ll-link inline-block py-1 text-base" data-testid="to-home">‹ Home</a><!-- IN-1: the front door moved to Home -->
+      {/if}
+      <h1 class="flex items-center gap-2 text-3xl font-extrabold tracking-tight">
+        <span class="grid h-9 w-9 place-items-center rounded-sm bg-accent text-sm font-black text-on-accent">{APP_MARK}</span>{APP_NAME}
+      </h1>
+      <p class="text-base leading-snug text-ink-2">
+        <!-- IE-0 (Wave I-E): both platforms, not Sleeper only (the review's P0 #3) -->
+        Who to start this week and what each player is worth, in your league's own scoring — on Sleeper, MyFantasyLeague, ESPN or Yahoo.
       </p>
-      <div class="flex flex-wrap gap-2">
-        <a href={BROWSE_HREF} class="inline-flex min-h-11 items-center rounded-md bg-accent px-4 font-semibold text-on-accent" data-testid="browse-lab">Browse the lab</a>
-        <a href="#open-league" class="inline-flex min-h-11 items-center rounded-md border border-line px-4 font-semibold" data-testid="open-your-league">Open your league</a>
+    </header>
+
+    <!-- ---- II-5 (Wave I-I): the steps, the one platform choice, then that platform's box -->
+    <ol id="open-league" class="flex scroll-mt-4 flex-wrap items-center gap-x-1 gap-y-1 text-xs sm:text-sm" aria-label="Setup" data-testid="setup-steps">
+      {#each STEPS as s, i (s.key)}
+        <li
+          class="rounded-full px-2 py-0.5 whitespace-nowrap {i === stepIndex ? 'bg-accent font-bold text-on-accent' : i < stepIndex ? 'text-ink-2' : 'text-ink-3'}"
+          aria-current={i === stepIndex ? "step" : undefined}
+          data-step={s.key}
+        >
+          {i < stepIndex ? "✓ " : ""}{s.label}
+        </li>
+        {#if i < STEPS.length - 1}<li class="text-ink-3" aria-hidden="true">›</li>{/if}
+      {/each}
+    </ol>
+
+    <fieldset class="space-y-2" data-testid="platform-pick">
+      <legend class="ll-label mb-2 block">Fantasy platform</legend>
+      <div class="grid grid-cols-2 gap-2"><!-- IK-3: four platforms, two by two (MyFantasyLeague does not fit a quarter of the column) -->
+        {#each PLATFORMS.map((x) => [x.key, x.name]) as [key, name] (key)}
+          <label
+            class="flex min-h-11 cursor-pointer items-center justify-center rounded-md border px-3 py-2 text-center text-base font-semibold has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent {platform === key ? 'border-accent bg-accent-soft text-ink ring-1 ring-accent' : 'border-line bg-surface text-ink-2'}"
+            data-testid="platform-{key}"
+          >
+            <input class="sr-only" type="radio" name="ll-platform" value={key} checked={platform === key} onchange={() => choose(key as Platform)} />
+            {name}
+          </label>
+        {/each}
       </div>
-      {#if recordLine}
-        <p class="text-sm leading-snug text-ink-2" data-testid="front-record">
-          {recordLine} <a class="ll-link" href={`/about?league=${REF_DEFAULT}`} data-testid="front-about">How we keep score</a>
+      <!-- ---- IK-3: II-5's "ESPN or Yahoo?" expander is now the two choices above; what each one is, in a line -->
+      {#if platform === "espn" || platform === "yahoo"}
+        <p class="text-sm leading-snug text-ink-3" data-testid="platform-note" data-platform={platform}>
+          {#if platform === "espn"}Unofficial: ESPN has no public API for fantasy leagues. {APP_NAME} reads what a public league shows anyone, read-only.{:else}Through
+            Yahoo's official Fantasy Sports API, read-only, after you allow it with your Yahoo sign-in.{/if}
+          {#if (statusOf(platform)?.status ?? "unverified") === "unverified"}New: not verified on a live league yet.{/if}<!-- IL-5: the verified flip -->
         </p>
+      {/if}
+    </fieldset>
+
+    {#if platform === "sleeper"}
+    <form class="space-y-2" onsubmit={submit} data-testid="username-form">
+      <label class="ll-label block" for="ll-username">Your Sleeper username, or a league link</label>
+      <div class="flex gap-2">
+        <input
+          id="ll-username"
+          class="ll-input flex-1 py-2.5"
+          type="text"
+          autocomplete="username"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          placeholder="Username or league link"
+          bind:value={username}
+          data-testid="username"
+        />
+        <button
+          class="shrink-0 rounded-md bg-accent px-4 py-2.5 font-bold text-on-accent disabled:opacity-60"
+          disabled={busy || !username.trim()}
+          aria-busy={busy}
+          data-testid="username-go">{busy ? "Looking…" : "Find my leagues"}</button
+        >
+      </div>
+      <p class="text-sm leading-snug text-ink-3">
+        No password to Sleeper: {APP_NAME} only reads what Sleeper shows anyone (your leagues, rosters and scoring).
+      </p>
+      <!-- ---- II-5: where to find it, with an example -->
+      <details class="text-sm leading-snug text-ink-2" data-testid="setup-help">
+        <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3"><span class="chev" aria-hidden="true">›</span>Where do I find these?</summary>
+        <ul class="list-disc space-y-1 pb-1 pl-5">
+          <li><strong>Username</strong>: the name you sign in to Sleeper with — not your team's name.</li>
+          <li>
+            <strong>League link</strong>: open the league on sleeper.com; the address looks like
+            <span class="font-mono text-xs break-all">sleeper.com/leagues/<strong>1389709692405551104</strong>/team</span>. Paste it, or just
+            the long number (the league id).
+          </li>
+        </ul>
+      </details>
+      {#if error}<p class="text-base text-bad" role="alert" data-testid="username-error" data-code={errorCode}>{error}</p>{/if}
+      {#if error && errorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{errorFix}</p>{/if}
+    </form>
+    {:else if platform === "mfl"}<!-- IK-3: was {:else} -->
+    <!-- I0-B: MyFantasyLeague -->
+    <form class="space-y-2" onsubmit={findMfl} data-testid="mfl-form">
+      <label class="ll-label block" for="ll-mfl">Find your MyFantasyLeague league</label><!-- II-5: was "On MyFantasyLeague? …" -->
+      <div class="flex gap-2">
+        <input
+          id="ll-mfl"
+          class="ll-input min-w-0 flex-1 py-2.5"
+          type="text"
+          enterkeyhint="search"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          placeholder="Your league link or name"
+          bind:value={mflText}
+          data-testid="mfl-link"
+        />
+        <button
+          class="shrink-0 rounded-md bg-accent px-4 py-2.5 font-bold text-on-accent disabled:opacity-60"
+          disabled={mflBusy || !mflText.trim()}
+          data-testid="mfl-go">{mflBusy ? "Looking…" : "Find my league"}</button
+        >
+      </div>
+      <p class="text-sm leading-snug text-ink-3" data-testid="mfl-help">
+        Paste your league link, or type your league's name as it appears in the MFL app. {APP_NAME} only reads what the league shares.
+      </p>
+      <!-- ---- II-5: where to find the league id, with an example -->
+      <details class="text-sm leading-snug text-ink-2" data-testid="setup-help">
+        <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3"><span class="chev" aria-hidden="true">›</span>Where do I find the league id?</summary>
+        <p class="pb-1">
+          Open your league on the MFL website: the number after <span class="font-mono text-xs">/home/</span> in the address is the league id —
+          <span class="font-mono text-xs break-all">www45.myfantasyleague.com/2026/home/<strong>70587</strong></span> is league 70587. Paste the
+          whole link or just the number. The MFL app hides the address: type the league's name instead.
+        </p>
+      </details>
+      {#if mflError}<p class="text-base text-bad" role="alert" data-testid="mfl-error" data-code={mflErrorCode}>{mflError}</p>{/if}
+      {#if mflError && mflErrorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{mflErrorFix}</p>{/if}
+    </form>
+    <!-- ---- IL-5: ESPN switched off on this server (LEAGUE_LAB_ESPN_LEAGUES=off): said, no form -->
+    {:else if platform === "espn" && espnOff}
+    <p class="rounded-lg bg-raised p-4 text-base" data-testid="espn-off">{statusOf("espn")?.off ?? "ESPN leagues: not available right now"}. Sleeper and MyFantasyLeague leagues work as before.</p>
+    <!-- ---- IK-3 (Wave I-K): ESPN — a league id or link; "Private league?" only when the server reads private leagues -->
+    {:else if platform === "espn"}
+    <form class="space-y-2" onsubmit={(e) => findProvider("espn", e)} data-testid="espn-form">
+      <label class="ll-label block" for="ll-espn">Your ESPN league link or id</label>
+      <div class="flex gap-2">
+        <input
+          id="ll-espn"
+          class="ll-input min-w-0 flex-1 py-2.5"
+          type="text"
+          inputmode="url"
+          enterkeyhint="search"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          placeholder="League link or id"
+          bind:value={espnText}
+          data-testid="espn-link"
+        />
+        <button
+          class="shrink-0 rounded-md bg-accent px-4 py-2.5 font-bold text-on-accent disabled:opacity-60"
+          disabled={provBusy || !espnText.trim()}
+          data-testid="espn-go">{provBusy ? "Looking…" : "Find my league"}</button
+        >
+      </div>
+      <p class="text-sm leading-snug text-ink-3" data-testid="espn-help">
+        A public ESPN league opens by its id. No password to ESPN: {APP_NAME} only reads what the league shows anyone.
+      </p>
+      <details class="text-sm leading-snug text-ink-2" data-testid="setup-help">
+        <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3"><span class="chev" aria-hidden="true">›</span>Where do I find the league id?</summary>
+        <p class="pb-1">
+          Open your league on fantasy.espn.com: the number after <span class="font-mono text-xs">leagueId=</span> in the address is the league id —
+          <span class="font-mono text-xs break-all">fantasy.espn.com/football/league?leagueId=<strong>4242</strong></span> is league 4242. Paste the whole
+          link or just the number. A private league (the default for many ESPN leagues) can be made public by its manager: Settings → Basic Settings →
+          League Visibility.
+        </p>
+      </details>
+      {#if provError}<p class="text-base text-bad" role="alert" data-testid="espn-error" data-code={provErrorCode}>{provError}</p>{/if}
+      {#if provError && provErrorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{provErrorFix}</p>{/if}
+    </form>
+    {#if privateForm && caps?.espn_private}
+      <details class="rounded-lg border border-line bg-surface p-3 text-sm leading-snug" data-testid="espn-private" open>
+        <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 font-semibold text-ink"><span class="chev" aria-hidden="true">›</span>Private league?</summary>
+        <form class="space-y-2 pt-1" onsubmit={sendEspnCookies} data-testid="espn-private-form">
+          <p class="text-ink-2">
+            {#if keptWithAccount}Your ESPN cookies stay in this browser and, encrypted, with your account, so your other devices read your league
+              too; Disconnect removes them from both.{:else}Your ESPN cookies stay in your browser; {APP_NAME} reads your league with them and never stores them.{/if} On a computer signed in to
+            espn.com, open the browser's cookies for espn.com and copy <span class="font-mono text-xs">espn_s2</span> and
+            <span class="font-mono text-xs">SWID</span>.
+          </p>
+          <label class="ll-label block" for="ll-espn-s2">espn_s2</label>
+          <input id="ll-espn-s2" class="ll-input w-full py-2" type="password" autocomplete="off" bind:value={espnS2} data-testid="espn-s2" />
+          <label class="ll-label block" for="ll-espn-swid">SWID</label>
+          <input id="ll-espn-swid" class="ll-input w-full py-2" type="password" autocomplete="off" placeholder={"{…}"} bind:value={espnSwid} data-testid="espn-swid" />
+          <button class="rounded-md bg-accent px-4 py-2.5 font-bold text-on-accent disabled:opacity-60" disabled={!espnS2.trim() || !espnSwid.trim()} data-testid="espn-private-go"
+            >Read my private league</button
+          >
+          {#if espnSaved}<p class="text-ink-2" data-testid="espn-private-said">{espnSaved}</p>{/if}
+        </form>
+      </details>
+    {/if}
+    <!-- ---- IK-3: Yahoo — Connect with Yahoo → your leagues → My Week; a league link works too; "coming soon" until set up -->
+    {:else}
+    <section class="space-y-2" data-testid="yahoo-setup">
+      {#if yahooError && !yahooMe?.connected}<p class="text-base text-bad" role="alert" data-testid="yahoo-error-back" data-code={yahooError}>{YAHOO_ERRORS[yahooError] ?? YAHOO_ERRORS.refused}</p>{/if}
+      {#if caps?.yahoo_configured === false || yahooMe?.configured === false}
+        <button type="button" class="w-full rounded-md border border-line bg-raised px-4 py-2.5 font-bold text-ink-3" disabled data-testid="yahoo-soon"
+          >Connect with Yahoo — coming soon</button
+        >
+        <!-- PO 2026-10-05: the keys are set and Yahoo has not opened the app's fantasy access yet: said so, in the server's words -->
+        {#if caps?.yahoo_pending || yahooMe?.pending}
+          <p class="text-sm leading-snug text-ink-3" data-testid="yahoo-note" data-pending="1">{yahooMe?.pending && yahooMe.note ? yahooMe.note : YAHOO_PENDING}</p>
+        {:else}
+          <p class="text-sm leading-snug text-ink-3" data-testid="yahoo-note">Yahoo sign-in is not set up on this server yet. Sleeper and MyFantasyLeague leagues work today.</p>
+        {/if}
+      {:else if yahooMe?.connected}
+        <div class="flex items-baseline justify-between gap-2">
+          <h2 class="ll-label">Your Yahoo leagues, {yahooMe.season}</h2>
+          <button type="button" class="text-sm text-accent underline" onclick={disconnectYahoo} data-testid="yahoo-disconnect">Disconnect Yahoo</button>
+        </div>
+        {#if yahooMe.note}<p class="rounded-lg bg-raised p-4 text-base" data-testid="yahoo-note">{yahooMe.note}</p>{/if}
+        <ul class="space-y-2" data-testid="yahoo-leagues">
+          {#each yahooMe.leagues as l (l.league_id)}
+            <li>
+              <a
+                href={href(l.league_id, l.roster_id)}
+                onclick={() => pickYahooRow(l)}
+                class="relative block overflow-hidden rounded-lg border bg-surface p-4 pl-5 {l.league_id === current ? 'border-accent ring-1 ring-accent' : 'border-line'}"
+                style="box-shadow:var(--ll-shadow)"
+                data-testid="yahoo-league"
+                data-league={l.league_id}
+              >
+                <span class="absolute inset-y-0 left-0 w-1 {l.league_id === current ? 'bg-accent' : 'bg-line-strong'}" aria-hidden="true"></span>
+                <div class="text-lg leading-snug font-bold break-words">{l.name} <span class="text-sm font-semibold text-ink-3">Yahoo</span></div>
+                {#if leagueLine(l)}<div class="text-sm leading-snug text-ink-3">{leagueLine(l)}</div>{/if}
+                {#if l.team_name}<div class="mt-1 text-sm leading-snug text-ink-2">Your team: <strong>{l.team_name}</strong></div>{/if}
+              </a>
+              {#if l.card}<div class="px-1 pt-2">{@render readback(l.card, l.league_id)}</div>{/if}
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <a href={yahooConnectPath} class="block w-full rounded-md bg-accent px-4 py-2.5 text-center font-bold text-on-accent" data-testid="yahoo-connect"
+          >Connect with Yahoo</a
+        >
+        <p class="text-sm leading-snug text-ink-3" data-testid="yahoo-note">
+          {yahooMeState === "loading" ? "Checking your Yahoo connection…" : yahooMeState === "failed" ? "Could not check your Yahoo connection. Try again in a minute." : (yahooMe?.note ?? "Connect with Yahoo to list your leagues here.")}
+          Yahoo asks you to allow read-only access to your fantasy leagues; {APP_NAME} keeps the connection {keptWithAccount
+            ? "in this browser and, encrypted, with your account (your other devices get it when you sign in)"
+            : "in this browser only"}.
+        </p>
+      {/if}
+      {#if !(caps?.yahoo_configured === false || yahooMe?.configured === false)}
+        <form class="space-y-2 pt-1" onsubmit={(e) => findProvider("yahoo", e)} data-testid="yahoo-form">
+          <label class="ll-label block" for="ll-yahoo">Or a Yahoo league link</label>
+          <div class="flex gap-2">
+            <input
+              id="ll-yahoo"
+              class="ll-input min-w-0 flex-1 py-2.5"
+              type="text"
+              inputmode="url"
+              enterkeyhint="search"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck="false"
+              placeholder="football.fantasysports.yahoo.com/f1/…"
+              bind:value={yahooText}
+              data-testid="yahoo-link"
+            />
+            <button
+              class="shrink-0 rounded-md border border-accent px-4 py-2.5 font-bold text-accent disabled:opacity-60"
+              disabled={provBusy || !yahooText.trim()}
+              data-testid="yahoo-go">{provBusy ? "Looking…" : "Open"}</button
+            >
+          </div>
+          <details class="text-sm leading-snug text-ink-2" data-testid="setup-help">
+            <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3"><span class="chev" aria-hidden="true">›</span>Where do I find the link?</summary>
+            <p class="pb-1">
+              Open your league on Yahoo Fantasy in a browser: the number after <span class="font-mono text-xs">/f1/</span> is the league id —
+              <span class="font-mono text-xs break-all">football.fantasysports.yahoo.com/f1/<strong>12345</strong></span> is league 12345.
+            </p>
+          </details>
+          {#if provError}<p class="text-base text-bad" role="alert" data-testid="yahoo-error" data-code={provErrorCode}>{provError}</p>{/if}
+          {#if provError && provErrorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{provErrorFix}</p>{/if}
+        </form>
       {/if}
     </section>
-  {/if}
-
-  <!-- ---- II-5 (Wave I-I): the steps, the one platform choice, then that platform's box -->
-  <ol id="open-league" class="flex scroll-mt-4 flex-wrap items-center gap-x-1 gap-y-1 text-xs sm:text-sm" aria-label="Setup" data-testid="setup-steps">
-    {#each STEPS as s, i (s.key)}
-      <li
-        class="rounded-full px-2 py-0.5 whitespace-nowrap {i === stepIndex ? 'bg-accent font-bold text-on-accent' : i < stepIndex ? 'text-ink-2' : 'text-ink-3'}"
-        aria-current={i === stepIndex ? "step" : undefined}
-        data-step={s.key}
-      >
-        {i < stepIndex ? "✓ " : ""}{s.label}
-      </li>
-      {#if i < STEPS.length - 1}<li class="text-ink-3" aria-hidden="true">›</li>{/if}
-    {/each}
-  </ol>
-
-  <fieldset class="space-y-2" data-testid="platform-pick">
-    <legend class="ll-label mb-2 block">Fantasy platform</legend>
-    <div class="grid grid-cols-2 gap-2"><!-- IK-3: four platforms, two by two (MyFantasyLeague does not fit a quarter of the column) -->
-      {#each PLATFORMS.map((x) => [x.key, x.name]) as [key, name] (key)}
-        <label
-          class="flex min-h-11 cursor-pointer items-center justify-center rounded-md border px-3 py-2 text-center text-base font-semibold has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent {platform === key ? 'border-accent bg-accent-soft text-ink ring-1 ring-accent' : 'border-line bg-surface text-ink-2'}"
-          data-testid="platform-{key}"
-        >
-          <input class="sr-only" type="radio" name="ll-platform" value={key} checked={platform === key} onchange={() => choose(key as Platform)} />
-          {name}
-        </label>
-      {/each}
-    </div>
-    <!-- ---- IK-3: II-5's "ESPN or Yahoo?" expander is now the two choices above; what each one is, in a line -->
-    {#if platform === "espn" || platform === "yahoo"}
-      <p class="text-sm leading-snug text-ink-3" data-testid="platform-note" data-platform={platform}>
-        {#if platform === "espn"}Unofficial: ESPN has no public API for fantasy leagues. {APP_NAME} reads what a public league shows anyone, read-only.{:else}Through
-          Yahoo's official Fantasy Sports API, read-only, after you allow it with your Yahoo sign-in.{/if}
-        {#if (statusOf(platform)?.status ?? "unverified") === "unverified"}New: not verified on a live league yet.{/if}<!-- IL-5: the verified flip -->
-      </p>
+    <!-- ---- end IK-3 -->
     {/if}
-  </fieldset>
+  </div>
 
-  {#if platform === "sleeper"}
-  <form class="space-y-2" onsubmit={submit} data-testid="username-form">
-    <label class="ll-label block" for="ll-username">Your Sleeper username, or a league link</label>
-    <div class="flex gap-2">
-      <input
-        id="ll-username"
-        class="ll-input flex-1 py-2.5"
-        type="text"
-        autocomplete="username"
-        autocapitalize="none"
-        autocorrect="off"
-        spellcheck="false"
-        placeholder="Username or league link"
-        bind:value={username}
-        data-testid="username"
-      />
-      <button
-        class="shrink-0 rounded-md bg-accent px-4 py-2.5 font-bold text-on-accent disabled:opacity-60"
-        disabled={busy || !username.trim()}
-        data-testid="username-go">{busy ? "Looking…" : "Find my leagues"}</button
-      >
-    </div>
-    <p class="text-sm leading-snug text-ink-3">
-      No password to Sleeper: {APP_NAME} only reads what Sleeper shows anyone (your leagues, rosters and scoring).
-    </p>
-    <!-- ---- II-5: where to find it, with an example -->
-    <details class="text-sm leading-snug text-ink-2" data-testid="setup-help">
-      <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3"><span class="chev" aria-hidden="true">›</span>Where do I find these?</summary>
-      <ul class="list-disc space-y-1 pb-1 pl-5">
-        <li><strong>Username</strong>: the name you sign in to Sleeper with — not your team's name.</li>
-        <li>
-          <strong>League link</strong>: open the league on sleeper.com; the address looks like
-          <span class="font-mono text-xs break-all">sleeper.com/leagues/<strong>1389709692405551104</strong>/team</span>. Paste it, or just
-          the long number (the league id).
-        </li>
-      </ul>
-    </details>
-    {#if error}<p class="text-base text-bad" role="alert" data-testid="username-error" data-code={errorCode}>{error}</p>{/if}
-    {#if error && errorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{errorFix}</p>{/if}
-  </form>
-  {:else if platform === "mfl"}<!-- IK-3: was {:else} -->
-  <!-- I0-B: MyFantasyLeague -->
-  <form class="space-y-2" onsubmit={findMfl} data-testid="mfl-form">
-    <label class="ll-label block" for="ll-mfl">Find your MyFantasyLeague league</label><!-- II-5: was "On MyFantasyLeague? …" -->
-    <div class="flex gap-2">
-      <input
-        id="ll-mfl"
-        class="ll-input min-w-0 flex-1 py-2.5"
-        type="text"
-        enterkeyhint="search"
-        autocapitalize="none"
-        autocorrect="off"
-        spellcheck="false"
-        placeholder="Your league link or name"
-        bind:value={mflText}
-        data-testid="mfl-link"
-      />
-      <button
-        class="shrink-0 rounded-md bg-accent px-4 py-2.5 font-bold text-on-accent disabled:opacity-60"
-        disabled={mflBusy || !mflText.trim()}
-        data-testid="mfl-go">{mflBusy ? "Looking…" : "Find my league"}</button
-      >
-    </div>
-    <p class="text-sm leading-snug text-ink-3" data-testid="mfl-help">
-      Paste your league link, or type your league's name as it appears in the MFL app. {APP_NAME} only reads what the league shares.
-    </p>
-    <!-- ---- II-5: where to find the league id, with an example -->
-    <details class="text-sm leading-snug text-ink-2" data-testid="setup-help">
-      <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3"><span class="chev" aria-hidden="true">›</span>Where do I find the league id?</summary>
-      <p class="pb-1">
-        Open your league on the MFL website: the number after <span class="font-mono text-xs">/home/</span> in the address is the league id —
-        <span class="font-mono text-xs break-all">www45.myfantasyleague.com/2026/home/<strong>70587</strong></span> is league 70587. Paste the
-        whole link or just the number. The MFL app hides the address: type the league's name instead.
-      </p>
-    </details>
-    {#if mflError}<p class="text-base text-bad" role="alert" data-testid="mfl-error" data-code={mflErrorCode}>{mflError}</p>{/if}
-    {#if mflError && mflErrorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{mflErrorFix}</p>{/if}
-  </form>
-  <!-- ---- IL-5: ESPN switched off on this server (LEAGUE_LAB_ESPN_LEAGUES=off): said, no form -->
-  {:else if platform === "espn" && espnOff}
-  <p class="rounded-lg bg-raised p-4 text-base" data-testid="espn-off">{statusOf("espn")?.off ?? "ESPN leagues: not available right now"}. Sleeper and MyFantasyLeague leagues work as before.</p>
-  <!-- ---- IK-3 (Wave I-K): ESPN — a league id or link; "Private league?" only when the server reads private leagues -->
-  {:else if platform === "espn"}
-  <form class="space-y-2" onsubmit={(e) => findProvider("espn", e)} data-testid="espn-form">
-    <label class="ll-label block" for="ll-espn">Your ESPN league link or id</label>
-    <div class="flex gap-2">
-      <input
-        id="ll-espn"
-        class="ll-input min-w-0 flex-1 py-2.5"
-        type="text"
-        inputmode="url"
-        enterkeyhint="search"
-        autocapitalize="none"
-        autocorrect="off"
-        spellcheck="false"
-        placeholder="League link or id"
-        bind:value={espnText}
-        data-testid="espn-link"
-      />
-      <button
-        class="shrink-0 rounded-md bg-accent px-4 py-2.5 font-bold text-on-accent disabled:opacity-60"
-        disabled={provBusy || !espnText.trim()}
-        data-testid="espn-go">{provBusy ? "Looking…" : "Find my league"}</button
-      >
-    </div>
-    <p class="text-sm leading-snug text-ink-3" data-testid="espn-help">
-      A public ESPN league opens by its id. No password to ESPN: {APP_NAME} only reads what the league shows anyone.
-    </p>
-    <details class="text-sm leading-snug text-ink-2" data-testid="setup-help">
-      <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3"><span class="chev" aria-hidden="true">›</span>Where do I find the league id?</summary>
-      <p class="pb-1">
-        Open your league on fantasy.espn.com: the number after <span class="font-mono text-xs">leagueId=</span> in the address is the league id —
-        <span class="font-mono text-xs break-all">fantasy.espn.com/football/league?leagueId=<strong>4242</strong></span> is league 4242. Paste the whole
-        link or just the number. A private league (the default for many ESPN leagues) can be made public by its manager: Settings → Basic Settings →
-        League Visibility.
-      </p>
-    </details>
-    {#if provError}<p class="text-base text-bad" role="alert" data-testid="espn-error" data-code={provErrorCode}>{provError}</p>{/if}
-    {#if provError && provErrorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{provErrorFix}</p>{/if}
-  </form>
-  {#if privateForm && caps?.espn_private}
-    <details class="rounded-lg border border-line bg-surface p-3 text-sm leading-snug" data-testid="espn-private" open>
-      <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 font-semibold text-ink"><span class="chev" aria-hidden="true">›</span>Private league?</summary>
-      <form class="space-y-2 pt-1" onsubmit={sendEspnCookies} data-testid="espn-private-form">
-        <p class="text-ink-2">
-          {#if keptWithAccount}Your ESPN cookies stay in this browser and, encrypted, with your account, so your other devices read your league
-            too; Disconnect removes them from both.{:else}Your ESPN cookies stay in your browser; {APP_NAME} reads your league with them and never stores them.{/if} On a computer signed in to
-          espn.com, open the browser's cookies for espn.com and copy <span class="font-mono text-xs">espn_s2</span> and
-          <span class="font-mono text-xs">SWID</span>.
-        </p>
-        <label class="ll-label block" for="ll-espn-s2">espn_s2</label>
-        <input id="ll-espn-s2" class="ll-input w-full py-2" type="password" autocomplete="off" bind:value={espnS2} data-testid="espn-s2" />
-        <label class="ll-label block" for="ll-espn-swid">SWID</label>
-        <input id="ll-espn-swid" class="ll-input w-full py-2" type="password" autocomplete="off" placeholder={"{…}"} bind:value={espnSwid} data-testid="espn-swid" />
-        <button class="rounded-md bg-accent px-4 py-2.5 font-bold text-on-accent disabled:opacity-60" disabled={!espnS2.trim() || !espnSwid.trim()} data-testid="espn-private-go"
-          >Read my private league</button
-        >
-        {#if espnSaved}<p class="text-ink-2" data-testid="espn-private-said">{espnSaved}</p>{/if}
-      </form>
-    </details>
-  {/if}
-  <!-- ---- IK-3: Yahoo — Connect with Yahoo → your leagues → My Week; a league link works too; "coming soon" until set up -->
-  {:else}
-  <section class="space-y-2" data-testid="yahoo-setup">
-    {#if yahooError && !yahooMe?.connected}<p class="text-base text-bad" role="alert" data-testid="yahoo-error-back" data-code={yahooError}>{YAHOO_ERRORS[yahooError] ?? YAHOO_ERRORS.refused}</p>{/if}
-    {#if caps?.yahoo_configured === false || yahooMe?.configured === false}
-      <button type="button" class="w-full rounded-md border border-line bg-raised px-4 py-2.5 font-bold text-ink-3" disabled data-testid="yahoo-soon"
-        >Connect with Yahoo — coming soon</button
-      >
-      <!-- PO 2026-10-05: the keys are set and Yahoo has not opened the app's fantasy access yet: said so, in the server's words -->
-      {#if caps?.yahoo_pending || yahooMe?.pending}
-        <p class="text-sm leading-snug text-ink-3" data-testid="yahoo-note" data-pending="1">{yahooMe?.pending && yahooMe.note ? yahooMe.note : YAHOO_PENDING}</p>
-      {:else}
-        <p class="text-sm leading-snug text-ink-3" data-testid="yahoo-note">Yahoo sign-in is not set up on this server yet. Sleeper and MyFantasyLeague leagues work today.</p>
-      {/if}
-    {:else if yahooMe?.connected}
-      <div class="flex items-baseline justify-between gap-2">
-        <h2 class="ll-label">Your Yahoo leagues, {yahooMe.season}</h2>
-        <button type="button" class="text-sm text-accent underline" onclick={disconnectYahoo} data-testid="yahoo-disconnect">Disconnect Yahoo</button>
-      </div>
-      {#if yahooMe.note}<p class="rounded-lg bg-raised p-4 text-base" data-testid="yahoo-note">{yahooMe.note}</p>{/if}
-      <ul class="space-y-2" data-testid="yahoo-leagues">
-        {#each yahooMe.leagues as l (l.league_id)}
+  <!-- ---- IN-1: the results — under the field on a phone, beside it from 900 px; scrolled into view and focused after a search -->
+  <section
+    class="mt-5 space-y-5 scroll-mt-3 outline-none wide:col-start-2 wide:row-span-2 wide:row-start-1 wide:mt-0 wide:pt-10"
+    aria-label="Your leagues"
+    tabindex="-1"
+    bind:this={resultsEl}
+    data-testid="setup-results"
+  >
+    {#if platform === "sleeper"}{@render mineList()}{/if}
+    <!-- ---- II-5: a Sleeper league opened by its link: the league, then "which team is yours?" -->
+    {#if sleeperLeague}
+      {@const v = sleeperLeague}
+      <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="sleeper-card">
+        <div>
+          <div class="text-lg leading-snug font-bold break-words">{v.league.name} <span class="text-sm font-semibold text-ink-3">Sleeper</span></div>
+          {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
+        </div>
+        <h2 class="ll-label pt-1">Which team is yours?</h2>
+        <ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2" data-testid="team-pick">
+          {#each v.teams as t (t.roster_id)}
+            <li>
+              <a
+                href={href(v.league.league_id, t.roster_id)}
+                onclick={() => pickSleeper(v, t.roster_id)}
+                class="block rounded-md border border-line px-3 py-2.5 text-base"
+                data-testid="team-option"
+                data-roster={t.roster_id}
+                >{t.team_name}{#if t.manager_name && t.manager_name !== t.team_name}<span class="block text-sm text-ink-3">{t.manager_name}</span>{/if}</a
+              >
+            </li>
+          {/each}
+        </ul>
+        {#if v.card}{@render readback(v.card, v.league.league_id)}{/if}
+      </section>
+    {/if}
+    <!-- ---- end II-5 -->
+
+    <!-- ---- IK-3: an ESPN / Yahoo league: the league, then "which team is yours?" (the link's team pre-selected) -->
+    {#if provLeague}
+      {@const v = provLeague}
+      <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="provider-card" data-platform={v.platform}>
+        <div>
+          <div class="text-lg leading-snug font-bold break-words">{v.league.name} <span class="text-sm font-semibold text-ink-3">{providerShort(v.league.league_id)}</span></div>
+          {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
+          {#if v.platform === "yahoo"}
+            <!-- PO 2026-10-05: Yahoo's attribution policy (docs/YAHOO_TERMS.md) -->
+            <div class="text-sm leading-snug text-ink-3" data-testid="yahoo-attribution">Fantasy data provided by <a class="ll-link" href="https://football.fantasysports.yahoo.com/" target="_blank" rel="noopener noreferrer">Yahoo Fantasy</a></div>
+          {/if}
+        </div>
+        <h2 class="ll-label pt-1">Which team is yours?</h2>
+        <ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2" data-testid="team-pick">
+          {#each v.teams as t (t.roster_id)}
+            <li>
+              <a
+                href={href(v.league.league_id, t.roster_id)}
+                onclick={() => pickProvider(v, t.roster_id)}
+                class="block rounded-md border px-3 py-2.5 text-base {t.roster_id === v.roster_id ? 'border-accent font-bold ring-1 ring-accent' : 'border-line'}"
+                data-testid="team-option"
+                data-roster={t.roster_id}
+                >{t.team_name}{#if t.manager_name && t.manager_name !== t.team_name}<span class="block text-sm font-normal text-ink-3">{t.manager_name}</span>{/if}</a
+              >
+            </li>
+          {/each}
+        </ul>
+        {#if v.card}{@render readback(v.card, v.league.league_id)}{:else}
+          <p class="text-sm leading-snug text-ink-2" data-testid="provider-note">{v.scoring_note}</p>
+        {/if}
+        {#if v.unmapped.length}
+          <p class="text-sm leading-snug text-warn" data-testid="provider-unmapped">
+            {v.unmapped.length} of {v.players} players have no projection here yet: {v.unmapped.map((u) => u.name ?? u.espn_id ?? u.yahoo_id).join(", ")}.
+          </p>
+        {/if}
+      </section>
+    {/if}
+    <!-- ---- end IK-3 -->
+
+    {#if mfl}
+      {@const v = mfl}
+      <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="mfl-card">
+        {#if mflFound?.matches.length}
+          <button type="button" class="py-1 text-sm text-accent underline" onclick={() => (mfl = null)} data-testid="mfl-back"
+            >‹ Not this league</button
+          >
+        {/if}
+        <div>
+          <div class="text-lg leading-snug font-bold">{v.league.name} <span class="text-sm font-semibold text-ink-3">MFL</span></div>
+          {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
+        </div>
+        <!-- ---- IE-2: the team picker first (it was below the scoring read-back, under the first desktop screen) -->
+        <h2 class="ll-label pt-1">Which team is yours?</h2>
+        <ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          {#each v.teams as t (t.roster_id)}
+            <li>
+              <a
+                href={href(v.league.league_id, t.roster_id)}
+                onclick={() => pickMfl(v, t.roster_id)}
+                class="block rounded-md border px-3 py-2.5 text-base {t.roster_id === v.roster_id ? 'border-accent font-bold ring-1 ring-accent' : 'border-line'}"
+                data-testid="mfl-team"
+                data-roster={t.roster_id}>{t.team_name}</a
+              >
+            </li>
+          {/each}
+        </ul>
+        {#if v.card}{@render readback(v.card, v.league.league_id)}{:else}
+          <p class="text-sm leading-snug text-ink-2" data-testid="mfl-note">{v.scoring_note}</p>
+        {/if}
+        {#if v.unmapped.length}
+          <p class="text-sm leading-snug text-warn" data-testid="mfl-unmapped">
+            {v.unmapped.length} of {v.players} players have no projection here yet: {v.unmapped.map((u) => u.name ?? u.mfl_id).join(", ")}.
+          </p>
+        {/if}
+        <!-- ---- end IE-2 -->
+      </section>
+    {:else if mflFound}
+      <!-- I0-C: the leagues the name matched; tapping one loads its card and the team picker -->
+      <section class="space-y-2" data-testid="mfl-matches">
+        <p class="text-sm leading-snug text-ink-2" data-testid="mfl-search-note">{mflFound.note}</p>
+        {#if mflFound.matches.length}
+          <ul class="space-y-2">
+            {#each mflFound.matches as m (m.league_id)}
+              <li>
+                <button
+                  type="button"
+                  class="block w-full rounded-lg border border-line bg-surface p-4 text-left disabled:opacity-60"
+                  style="box-shadow:var(--ll-shadow)"
+                  disabled={mflOpening !== null}
+                  onclick={() => openMfl(m.league_id)}
+                  data-testid="mfl-match"
+                  data-league={m.league_id}
+                >
+                  <div class="text-lg leading-snug font-bold break-words">{m.name}</div>
+                  <div class="text-sm leading-snug text-ink-3">{mflOpening === m.league_id ? "Opening…" : `MFL · ${m.year}`}</div>
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </section>
+    {:else if mflSaved.length}
+      <ul class="space-y-2" data-testid="mfl-saved">
+        {#each mflSaved as l (l.league_id)}
           <li>
             <a
               href={href(l.league_id, l.roster_id)}
-              onclick={() => pickYahooRow(l)}
               class="relative block overflow-hidden rounded-lg border bg-surface p-4 pl-5 {l.league_id === current ? 'border-accent ring-1 ring-accent' : 'border-line'}"
               style="box-shadow:var(--ll-shadow)"
-              data-testid="yahoo-league"
+              data-testid="league-row"
               data-league={l.league_id}
             >
               <span class="absolute inset-y-0 left-0 w-1 {l.league_id === current ? 'bg-accent' : 'bg-line-strong'}" aria-hidden="true"></span>
-              <div class="text-lg leading-snug font-bold break-words">{l.name} <span class="text-sm font-semibold text-ink-3">Yahoo</span></div>
+              <div class="text-lg leading-snug font-bold">{l.name} <span class="text-sm font-semibold text-ink-3">{providerShort(l.league_id)}</span></div><!-- II-5: a Sleeper league opened by its link too; IK-3: ESPN / Yahoo -->
               {#if leagueLine(l)}<div class="text-sm leading-snug text-ink-3">{leagueLine(l)}</div>{/if}
               {#if l.team_name}<div class="mt-1 text-sm leading-snug text-ink-2">Your team: <strong>{l.team_name}</strong></div>{/if}
             </a>
-            {#if l.card}<div class="px-1 pt-2">{@render readback(l.card, l.league_id)}</div>{/if}
           </li>
         {/each}
       </ul>
-    {:else}
-      <a href={yahooConnectPath} class="block w-full rounded-md bg-accent px-4 py-2.5 text-center font-bold text-on-accent" data-testid="yahoo-connect"
-        >Connect with Yahoo</a
-      >
-      <p class="text-sm leading-snug text-ink-3" data-testid="yahoo-note">
-        {yahooMeState === "loading" ? "Checking your Yahoo connection…" : yahooMeState === "failed" ? "Could not check your Yahoo connection. Try again in a minute." : (yahooMe?.note ?? "Connect with Yahoo to list your leagues here.")}
-        Yahoo asks you to allow read-only access to your fantasy leagues; {APP_NAME} keeps the connection {keptWithAccount
-          ? "in this browser and, encrypted, with your account (your other devices get it when you sign in)"
-          : "in this browser only"}.
-      </p>
     {/if}
-    {#if !(caps?.yahoo_configured === false || yahooMe?.configured === false)}
-      <form class="space-y-2 pt-1" onsubmit={(e) => findProvider("yahoo", e)} data-testid="yahoo-form">
-        <label class="ll-label block" for="ll-yahoo">Or a Yahoo league link</label>
-        <div class="flex gap-2">
-          <input
-            id="ll-yahoo"
-            class="ll-input min-w-0 flex-1 py-2.5"
-            type="text"
-            inputmode="url"
-            enterkeyhint="search"
-            autocapitalize="none"
-            autocorrect="off"
-            spellcheck="false"
-            placeholder="football.fantasysports.yahoo.com/f1/…"
-            bind:value={yahooText}
-            data-testid="yahoo-link"
-          />
-          <button
-            class="shrink-0 rounded-md border border-accent px-4 py-2.5 font-bold text-accent disabled:opacity-60"
-            disabled={provBusy || !yahooText.trim()}
-            data-testid="yahoo-go">{provBusy ? "Looking…" : "Open"}</button
-          >
-        </div>
-        <details class="text-sm leading-snug text-ink-2" data-testid="setup-help">
-          <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3"><span class="chev" aria-hidden="true">›</span>Where do I find the link?</summary>
-          <p class="pb-1">
-            Open your league on Yahoo Fantasy in a browser: the number after <span class="font-mono text-xs">/f1/</span> is the league id —
-            <span class="font-mono text-xs break-all">football.fantasysports.yahoo.com/f1/<strong>12345</strong></span> is league 12345.
-          </p>
-        </details>
-        {#if provError}<p class="text-base text-bad" role="alert" data-testid="yahoo-error" data-code={provErrorCode}>{provError}</p>{/if}
-        {#if provError && provErrorFix}<p class="text-sm leading-snug text-ink-2" data-testid="setup-fix">{provErrorFix}</p>{/if}
-      </form>
+    {#if platform !== "sleeper"}{@render mineList()}{/if}
+    {#if !mine && !sleeperLeague && !provLeague && !mfl && !mflFound && !mflSaved.length}
+      <div class="hidden rounded-lg border border-dashed border-line-strong p-6 text-base text-ink-3 wide:block" data-testid="setup-results-empty">
+        Your leagues show here once you find them.
+        <a class="ll-link" href="/home">Or look around first ›</a>
+      </div>
     {/if}
   </section>
-  <!-- ---- end IK-3 -->
-  {/if}
 
-  <!-- ---- II-5: what this platform gives (GET /api/providers): said, never substituted -->
-  {#if caps}
-    {@const pv = caps.providers.find((x) => x.provider === platform)}
-    {#if pv}
-      {@const gaps = FEATURES.filter((f) => pv.features[f]?.status === "no")}
-      <details class="text-sm leading-snug" data-testid="provider-caps" data-platform={platform}>
-        <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3">
-          <span class="chev" aria-hidden="true">›</span>
-          <span>What {APP_NAME} reads from {pv.short} leagues{gaps.length ? ` — ${gaps.length} not available yet` : ""}</span>
-        </summary>
-        <ul class="space-y-1.5 pb-1">
-          {#each FEATURES as f (f)}
-            {@const x = pv.features[f]}
-            <li class="flex gap-2" data-testid="cap" data-feature={f} data-status={x.status}>
-              <span class="w-16 shrink-0 text-xs font-semibold tracking-wide whitespace-nowrap uppercase {x.status === 'yes' ? 'text-good' : x.status === 'partial' ? 'text-warn' : 'text-bad'}">{STATUS_WORDS[x.status]}</span>
-              <span class="min-w-0 text-ink-2">{#if x.status === "no"}{x.unavailable}.{:else}<strong class="text-ink">{x.label}</strong>: {x.words}.{/if}</span>
-            </li>
-          {/each}
-        </ul>
-      </details>
+  <div class="mt-5 space-y-5 wide:col-start-1 wide:row-start-2" data-testid="setup-extras">
+    <!-- ---- II-5: what this platform gives (GET /api/providers): said, never substituted -->
+    {#if caps}
+      {@const pv = caps.providers.find((x) => x.provider === platform)}
+      {#if pv}
+        {@const gaps = FEATURES.filter((f) => pv.features[f]?.status === "no")}
+        <details class="text-sm leading-snug" data-testid="provider-caps" data-platform={platform}>
+          <summary class="flex min-h-11 cursor-pointer items-center gap-1.5 py-1 text-ink-3">
+            <span class="chev" aria-hidden="true">›</span>
+            <span>What {APP_NAME} reads from {pv.short} leagues{gaps.length ? ` — ${gaps.length} not available yet` : ""}</span>
+          </summary>
+          <ul class="space-y-1.5 pb-1">
+            {#each FEATURES as f (f)}
+              {@const x = pv.features[f]}
+              <li class="flex gap-2" data-testid="cap" data-feature={f} data-status={x.status}>
+                <span class="w-16 shrink-0 text-xs font-semibold tracking-wide whitespace-nowrap uppercase {x.status === 'yes' ? 'text-good' : x.status === 'partial' ? 'text-warn' : 'text-bad'}">{STATUS_WORDS[x.status]}</span>
+                <span class="min-w-0 text-ink-2">{#if x.status === "no"}{x.unavailable}.{:else}<strong class="text-ink">{x.label}</strong>: {x.words}.{/if}</span>
+              </li>
+            {/each}
+          </ul>
+        </details>
+      {/if}
     {/if}
-  {/if}
-  <p class="text-sm leading-snug text-ink-3" data-testid="setup-guest">No account needed: {APP_NAME} remembers your leagues on this device.</p>
+    <p class="text-sm leading-snug text-ink-3" data-testid="setup-guest">No account needed: {APP_NAME} remembers your leagues on this device.</p>
+    <!-- ---- IK-4 (Wave I-K): the account entry — sign in with your email to keep these leagues on any device (only when
+         the server has accounts on: components/AccountEntry.svelte) -->
+    <AccountEntry />
+    <!-- ---- end IK-4 -->
+  </div>
+</main>
 
-  <!-- ---- II-5: a Sleeper league opened by its link: the league, then "which team is yours?" -->
-  {#if sleeperLeague}
-    {@const v = sleeperLeague}
-    <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="sleeper-card">
-      <div>
-        <div class="text-lg leading-snug font-bold break-words">{v.league.name} <span class="text-sm font-semibold text-ink-3">Sleeper</span></div>
-        {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
-      </div>
-      <h2 class="ll-label pt-1">Which team is yours?</h2>
-      <ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2" data-testid="team-pick">
-        {#each v.teams as t (t.roster_id)}
-          <li>
-            <a
-              href={href(v.league.league_id, t.roster_id)}
-              onclick={() => pickSleeper(v, t.roster_id)}
-              class="block rounded-md border border-line px-3 py-2.5 text-base"
-              data-testid="team-option"
-              data-roster={t.roster_id}
-              >{t.team_name}{#if t.manager_name && t.manager_name !== t.team_name}<span class="block text-sm text-ink-3">{t.manager_name}</span>{/if}</a
-            >
-          </li>
-        {/each}
-      </ul>
-      {#if v.card}{@render readback(v.card, v.league.league_id)}{/if}
-    </section>
-  {/if}
-  <!-- ---- end II-5 -->
-
-  <!-- ---- IK-3: an ESPN / Yahoo league: the league, then "which team is yours?" (the link's team pre-selected) -->
-  {#if provLeague}
-    {@const v = provLeague}
-    <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="provider-card" data-platform={v.platform}>
-      <div>
-        <div class="text-lg leading-snug font-bold break-words">{v.league.name} <span class="text-sm font-semibold text-ink-3">{providerShort(v.league.league_id)}</span></div>
-        {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
-        {#if v.platform === "yahoo"}
-          <!-- PO 2026-10-05: Yahoo's attribution policy (docs/YAHOO_TERMS.md) -->
-          <div class="text-sm leading-snug text-ink-3" data-testid="yahoo-attribution">Fantasy data provided by <a class="ll-link" href="https://football.fantasysports.yahoo.com/" target="_blank" rel="noopener noreferrer">Yahoo Fantasy</a></div>
-        {/if}
-      </div>
-      <h2 class="ll-label pt-1">Which team is yours?</h2>
-      <ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2" data-testid="team-pick">
-        {#each v.teams as t (t.roster_id)}
-          <li>
-            <a
-              href={href(v.league.league_id, t.roster_id)}
-              onclick={() => pickProvider(v, t.roster_id)}
-              class="block rounded-md border px-3 py-2.5 text-base {t.roster_id === v.roster_id ? 'border-accent font-bold ring-1 ring-accent' : 'border-line'}"
-              data-testid="team-option"
-              data-roster={t.roster_id}
-              >{t.team_name}{#if t.manager_name && t.manager_name !== t.team_name}<span class="block text-sm font-normal text-ink-3">{t.manager_name}</span>{/if}</a
-            >
-          </li>
-        {/each}
-      </ul>
-      {#if v.card}{@render readback(v.card, v.league.league_id)}{:else}
-        <p class="text-sm leading-snug text-ink-2" data-testid="provider-note">{v.scoring_note}</p>
-      {/if}
-      {#if v.unmapped.length}
-        <p class="text-sm leading-snug text-warn" data-testid="provider-unmapped">
-          {v.unmapped.length} of {v.players} players have no projection here yet: {v.unmapped.map((u) => u.name ?? u.espn_id ?? u.yahoo_id).join(", ")}.
-        </p>
-      {/if}
-    </section>
-  {/if}
-  <!-- ---- end IK-3 -->
-
-  {#if mfl}
-    {@const v = mfl}
-    <section class="space-y-2 rounded-lg border border-line bg-surface p-4" style="box-shadow:var(--ll-shadow)" data-testid="mfl-card">
-      {#if mflFound?.matches.length}
-        <button type="button" class="py-1 text-sm text-accent underline" onclick={() => (mfl = null)} data-testid="mfl-back"
-          >‹ Not this league</button
-        >
-      {/if}
-      <div>
-        <div class="text-lg leading-snug font-bold">{v.league.name} <span class="text-sm font-semibold text-ink-3">MFL</span></div>
-        {#if leagueLine(v.league)}<div class="text-sm leading-snug text-ink-3">{leagueLine(v.league)}</div>{/if}
-      </div>
-      <!-- ---- IE-2: the team picker first (it was below the scoring read-back, under the first desktop screen) -->
-      <h2 class="ll-label pt-1">Which team is yours?</h2>
-      <ul class="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-        {#each v.teams as t (t.roster_id)}
-          <li>
-            <a
-              href={href(v.league.league_id, t.roster_id)}
-              onclick={() => pickMfl(v, t.roster_id)}
-              class="block rounded-md border px-3 py-2.5 text-base {t.roster_id === v.roster_id ? 'border-accent font-bold ring-1 ring-accent' : 'border-line'}"
-              data-testid="mfl-team"
-              data-roster={t.roster_id}>{t.team_name}</a
-            >
-          </li>
-        {/each}
-      </ul>
-      {#if v.card}{@render readback(v.card, v.league.league_id)}{:else}
-        <p class="text-sm leading-snug text-ink-2" data-testid="mfl-note">{v.scoring_note}</p>
-      {/if}
-      {#if v.unmapped.length}
-        <p class="text-sm leading-snug text-warn" data-testid="mfl-unmapped">
-          {v.unmapped.length} of {v.players} players have no projection here yet: {v.unmapped.map((u) => u.name ?? u.mfl_id).join(", ")}.
-        </p>
-      {/if}
-      <!-- ---- end IE-2 -->
-    </section>
-  {:else if mflFound}
-    <!-- I0-C: the leagues the name matched; tapping one loads its card and the team picker -->
-    <section class="space-y-2" data-testid="mfl-matches">
-      <p class="text-sm leading-snug text-ink-2" data-testid="mfl-search-note">{mflFound.note}</p>
-      {#if mflFound.matches.length}
-        <ul class="space-y-2">
-          {#each mflFound.matches as m (m.league_id)}
-            <li>
-              <button
-                type="button"
-                class="block w-full rounded-lg border border-line bg-surface p-4 text-left disabled:opacity-60"
-                style="box-shadow:var(--ll-shadow)"
-                disabled={mflOpening !== null}
-                onclick={() => openMfl(m.league_id)}
-                data-testid="mfl-match"
-                data-league={m.league_id}
-              >
-                <div class="text-lg leading-snug font-bold break-words">{m.name}</div>
-                <div class="text-sm leading-snug text-ink-3">{mflOpening === m.league_id ? "Opening…" : `MFL · ${m.year}`}</div>
-              </button>
-            </li>
-          {/each}
-        </ul>
-      {/if}
-    </section>
-  {:else if mflSaved.length}
-    <ul class="space-y-2" data-testid="mfl-saved">
-      {#each mflSaved as l (l.league_id)}
-        <li>
-          <a
-            href={href(l.league_id, l.roster_id)}
-            class="relative block overflow-hidden rounded-lg border bg-surface p-4 pl-5 {l.league_id === current ? 'border-accent ring-1 ring-accent' : 'border-line'}"
-            style="box-shadow:var(--ll-shadow)"
-            data-testid="league-row"
-            data-league={l.league_id}
-          >
-            <span class="absolute inset-y-0 left-0 w-1 {l.league_id === current ? 'bg-accent' : 'bg-line-strong'}" aria-hidden="true"></span>
-            <div class="text-lg leading-snug font-bold">{l.name} <span class="text-sm font-semibold text-ink-3">{providerShort(l.league_id)}</span></div><!-- II-5: a Sleeper league opened by its link too; IK-3: ESPN / Yahoo -->
-            {#if leagueLine(l)}<div class="text-sm leading-snug text-ink-3">{leagueLine(l)}</div>{/if}
-            {#if l.team_name}<div class="mt-1 text-sm leading-snug text-ink-2">Your team: <strong>{l.team_name}</strong></div>{/if}
-          </a>
-        </li>
-      {/each}
-    </ul>
-  {/if}
-
+<!-- ---- IN-1: the username's leagues (rendered first in the results for Sleeper, after the other platform's card otherwise) -->
+{#snippet mineList()}
   {#if mine}
     <section class="space-y-2" data-testid="league-list">
       <div class="flex items-baseline justify-between gap-2">
@@ -891,7 +908,7 @@
       </div>
       {#if mine.leagues.length === 0}
         <p class="rounded-lg bg-raised p-4 text-base" data-testid="no-leagues">
-          {mine.user.username} has no Sleeper football leagues this season. A league you join shows up here.
+          No leagues for that username this season. <span class="text-ink-2">A league {mine.user.username} joins on Sleeper shows up here; a league link works too.</span>
         </p>
       {/if}
       <ul class="space-y-2">
@@ -944,8 +961,4 @@
       </ul>
     </section>
   {/if}
-  <!-- ---- IK-4 (Wave I-K): the account entry — sign in with your email to keep these leagues on any device (only when
-       the server has accounts on: components/AccountEntry.svelte) -->
-  <AccountEntry />
-  <!-- ---- end IK-4 -->
-</main>
+{/snippet}

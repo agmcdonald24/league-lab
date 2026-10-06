@@ -21,6 +21,18 @@ Newest first. Home's "What's new" is `app/whats_new.md`, the same releases in pl
   and one foot line. Browsing, the tabs are Players · Trades · DFS and Trades is the calculator:
   `GET /api/trade-calc/free` (two sides by search, the gap in words with its 80% range, how much of it is one player,
   the roster-spot effect stated). The league calculator's path is unchanged.
+- **IN-1 — a home page, the setup screen on a desktop, the blog.** `/home` (and `/` when no league is remembered on
+  the device): the name, one sentence, "Open your league" / "Browse players" and this week's top projections above the
+  fold at 375 and 1300; below, matchups to target (IN-3's board, hidden without it), how the projections have done
+  (About's grades with the bad ones first, the record's line), the newest posts, the tools — every module on Half PPR,
+  each hidden when its call fails. `/leagues` is only "open your league" now: the results sit beside the form from
+  900 px and come into view (and take focus) after "Find my leagues". **The blog**: posts are `blog/<date>-<slug>.md`
+  (front matter; `draft: true`; pictures in `blog/img/`), `GET /api/blog`, `/api/blog/{slug}`, `/blog/rss.xml`,
+  `/blog/img/{name}`, `/sitemap.xml` (`api/league_lab_api/blog.py`), `/blog` and `/blog/<slug>` (copy link, a readable
+  measure, tables that scroll by themselves), `lib/md.ts` `mdDoc` (headings, lists, quotes, tables, code, our pictures —
+  escaped first). Link previews per path in the HTML shell (`og:*`, `twitter:card`, canonical; `web/public/og.png`),
+  robots points at the sitemap. The launch post "How to read this site's numbers"; `blog/README.md` for writing one.
+  `docs/BLOG.md`, `docs/handbacks/IN-1.md`.
 
 ## 2026-10-06 — hotfix: the Team screen with two open lineup spots
 

@@ -54,7 +54,9 @@ test("a stranger: password → username → picker → My Week → player → Ba
   await page.getByPlaceholder("Password").fill(FIXTURE_PASSWORD);
   await page.getByRole("button", { name: "Open isuckatfantasy" }).click();
 
-  // 2. no league known on this phone: the username screen
+  // 2. no league known on this phone: the home page (IN-1), "Open your league" → the username screen
+  await expect(page.getByTestId("home")).toBeVisible();
+  await page.getByTestId("home-open").click();
   await expect(page.getByTestId("username-form")).toBeVisible();
   await expect(page.getByText("Your Sleeper username")).toBeVisible();
   await noSidewaysScroll(page);
@@ -169,7 +171,7 @@ test("a house league through the picker: opponent, a card's name, all five secti
   isMobile,
 }, info) => {
   const project = info.project.name;
-  await page.goto("/");
+  await page.goto("/leagues"); // IN-1: "/" without a league is the home page now; the setup screen is /leagues
   await page.getByTestId("username").fill("fixture_user");
   await page.getByTestId("username-go").click();
   await tap(page, page.locator(`[data-testid="league-row"][data-league="${DYNASTY}"]`), isMobile);

@@ -44,7 +44,8 @@ NY = ZoneInfo("America/New_York")
 # the web router's route names (web/src/lib/router.svelte.ts RouteName); anything else is stored as "other"
 SCREENS = frozenset({"week", "player", "leagues", "ros", "about", "trends", "matchups", "players", "receivers",
                      "compare", "waivers", "trades", "trade-calc", "team", "league"}
-                    | {"account", "watchlist"})     # ---- IL-5: IK-4's account screen and the watchlist (were "other")
+                    | {"account", "watchlist"}      # ---- IL-5: IK-4's account screen and the watchlist (were "other")
+                    | {"home", "blog", "post", "dfs"})   # ---- IN-1: the home page, the blog, a post (+ IM-5's "dfs", missing)
 PER_S, BURST = 1.0, 5    # per session: a token bucket (one a second, five at once)
 GLOBAL_PER_S = 20        # all sessions together
 MAX_BODY = 2048          # bytes; a bigger body counts the view with no league / team

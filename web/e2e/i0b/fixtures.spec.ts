@@ -36,7 +36,7 @@ test.beforeEach(async ({ context }) => {
 });
 
 test("MyFantasyLeague: paste the league link → pick the team → My Week; the switcher says MFL", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/leagues"); // IN-1: "/" without a league is the home page now; the setup screen is /leagues
   await expect(page.getByTestId("leagues")).toBeVisible();
   await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
   await expect(page.getByText("Find your MyFantasyLeague league")).toBeVisible(); // I0-C: the box also takes a name; II-5: the label

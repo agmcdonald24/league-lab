@@ -2213,6 +2213,32 @@ export interface BoardCorner {
   tone: MatchupTone | null;
 }
 export interface BoardRow {
+// ---- IN-1 (Wave I-N): the blog (GET /api/blog, /api/blog/{slug}; api/league_lab_api/blog.py) and the home's reads
+export interface BlogMeta {
+  slug: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  summary: string;
+  author: string;
+  tags: string[];
+  minutes: number;
+  image: string | null; // "/blog/img/<name>" or null
+  draft?: boolean; // only with LEAGUE_LAB_BLOG_DRAFTS=on
+}
+export interface BlogPost extends BlogMeta {
+  markdown: string;
+}
+export const blogPaths = {
+  list: (limit = 20) => `/api/blog?limit=${limit}`,
+  post: (slug: string) => `/api/blog/${encodeURIComponent(slug)}`,
+};
+/** IN-3's matchup board (GET /api/matchups/board; brief § "Interfaces fixed now"): read loosely — the home shows the
+ *  player, his projection and the context's words, and hides the module when the route is missing (404). */
+export interface MatchupTone {
+  tone?: "favorable" | "neutral" | "difficult" | null;
+  words?: string | null;
+}
+export interface BoardRow extends MatchupTone {
   gsis_id: string;
   player_name: string;
   position: string;
@@ -2372,3 +2398,25 @@ export interface CompareSide {
 export const freeTradePath = (league: string, give: string[], getIds: string[]) =>
   `/api/trade-calc/free?league=${encodeURIComponent(league)}&give=${encodeURIComponent(give.join(","))}&get=${encodeURIComponent(getIds.join(","))}`;
 // ---- end IN-2
+  headshot_url?: string | null;
+  opponent?: string | null;
+  home?: boolean | null;
+  proj?: number | null;
+  proj_points?: number | null;
+  projection?: number | { proj_points?: number | null; p10?: number | null; p90?: number | null } | null;
+  p10?: number | null;
+  p90?: number | null;
+  context?: MatchupTone | null;
+  matchup?: MatchupTone | null;
+}
+export interface Board {
+  rows?: BoardRow[];
+  players?: BoardRow[];
+  total?: number;
+}
+export const homePaths = {
+  board: (league: string, position: string, sort: string | null, limit: number) =>
+    `/api/matchups/board?league=${encodeURIComponent(league)}&position=${position}${sort ? `&sort=${sort}` : ""}&limit=${limit}`,
+  ros: (league: string, position: string, limit: number) => `/api/ros?league=${encodeURIComponent(league)}&position=${position}&limit=${limit}`,
+};
+// ---- end IN-1

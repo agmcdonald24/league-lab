@@ -69,7 +69,7 @@ test("dad's league 70587: the card reads back the lineup and the scoring, then K
   test.skip(!RECORD && !lg, "no recording yet: run with IC3_RECORD (see the header)");
   if (info.project.name === "phone") await page.setViewportSize({ width: 375, height: 812 });
 
-  await page.goto("/");
+  await page.goto("/leagues"); // IN-1: "/" without a league is the home page now; the setup screen is /leagues
   await expect(page.getByTestId("leagues")).toBeVisible();
   await page.getByTestId("platform-mfl").click(); // ---- II-5 (Wave I-I): the fantasy platform first
   await page.getByTestId("mfl-link").fill("70587");
@@ -140,7 +140,7 @@ test("dad's league 70587: the card reads back the lineup and the scoring, then K
 test("a Sleeper league row carries the same card: lineup, scoring and the check", async ({ page }) => {
   const lg = recorded<unknown>("/api/leagues?username=test_manager");
   test.skip(!RECORD && !lg, "no recording yet: run with IC3_RECORD (see the header)");
-  await page.goto("/");
+  await page.goto("/leagues"); // IN-1: "/" without a league is the home page now; the setup screen is /leagues
   await page.getByTestId("username").fill("test_manager");
   await page.getByTestId("username-go").click();
   const cards = page.getByTestId("league-card");
